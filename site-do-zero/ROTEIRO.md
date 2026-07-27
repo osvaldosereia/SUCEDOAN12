@@ -1,838 +1,714 @@
-# Novo site Dona Antônia — roteiro técnico completo
+# Novo site Dona Antônia — roteiro técnico definitivo
 
-## 1. Objetivo do projeto
+## 1. Objetivo
 
-Construir uma nova loja virtual da Dona Antônia do zero, sem copiar a estrutura, os componentes ou a lógica do site atual. O novo projeto deve preservar apenas os contratos de dados e as integrações necessárias para continuar vendendo.
+Reescrever a loja do zero em um projeto separado, simples, rápido e fácil de manter.
 
-A nova aplicação será mantida inicialmente em um único arquivo `index.html`, com HTML, CSS e JavaScript juntos. Essa decisão facilita manutenção manual, publicação e testes. O código interno, porém, será organizado por seções e funções pequenas, evitando um arquivo confuso.
+O site principal será desenvolvido em um único `index.html`, com HTML, CSS e JavaScript juntos, sem copiar a programação atual e sem framework.
 
-Prioridades, nesta ordem:
+### Prioridades
 
-1. pedido simples e confiável pelo WhatsApp;
-2. carregamento rápido no celular;
-3. catálogo sempre disponível, mesmo quando uma fonte falhar;
-4. carrinho e checkout sem cadastro obrigatório;
-5. compatibilidade com Firebase, Make e Bling;
-6. facilidade para editar configurações e aparência;
-7. SEO local para Cuiabá e Várzea Grande;
-8. evolução por fases sem alterar o site de produção antes da aprovação.
-
----
-
-## 2. Regras fundamentais
-
-- O projeto novo ficará isolado em `/site-do-zero/`.
-- O `index.html` da raiz não será alterado durante a construção.
-- Nenhum trecho de JavaScript, CSS ou HTML antigo será copiado.
-- Os dados existentes poderão continuar sendo consumidos, porque produtos, cestas, kits, cupons e pedidos precisam manter compatibilidade operacional.
-- O WhatsApp é o canal principal. Firebase e Make são integrações secundárias e não podem impedir a abertura do WhatsApp.
-- Toda operação crítica deve apresentar uma mensagem clara ao usuário.
-- O site deve continuar utilizável quando uma imagem falhar, um endpoint estiver lento ou a internet oscilar.
-- O código deve funcionar sem biblioteca visual, framework ou processo de compilação.
-- As dependências externas devem ser reduzidas ao mínimo.
+1. visual leve e quase todo branco;
+2. fotos grandes;
+3. pouco texto;
+4. uso simples no celular;
+5. Firebase como única fonte de dados;
+6. pedido rápido pelo WhatsApp;
+7. integração com Firebase, Make e Bling;
+8. SEO e Merchant Center exclusivamente para cestas básicas;
+9. produtos e kits fora do Google;
+10. produção atual preservada até a aprovação.
 
 ---
 
-## 3. Arquitetura do HTML único
+## 2. Fonte única de dados
 
-O arquivo será dividido internamente nesta ordem:
+O Firebase Realtime Database será a única fonte oficial do novo site.
 
-1. metadados, SEO e dados estruturados;
-2. variáveis visuais em CSS;
-3. estilos básicos e responsivos;
-4. estrutura fixa da página;
-5. configurações editáveis;
-6. utilitários;
-7. camada de dados;
-8. normalização dos registros;
-9. estado central da aplicação;
-10. roteador;
-11. catálogo e busca;
-12. carrinho, favoritos e preços;
-13. cestas e kits;
-14. checkout;
-15. WhatsApp;
-16. Firebase e Make;
-17. renderização;
-18. eventos;
-19. inicialização;
-20. diagnóstico e tratamento de erros.
+Não haverá:
 
-Mesmo em um único arquivo, cada bloco terá um cabeçalho grande e funções com responsabilidade única.
+- catálogo alternativo no GitHub;
+- arquivo de produtos como segunda fonte;
+- fallback para uma base antiga;
+- sincronização entre duas bases;
+- dados de demonstração apresentados ao cliente.
 
----
-
-## 4. Configurações editáveis
-
-No começo do JavaScript haverá um único objeto `CONFIG`, reunindo tudo que pode mudar:
-
-- nome da loja;
-- URL oficial;
-- telefone do WhatsApp;
-- pedido mínimo;
-- cidades atendidas;
-- horário limite para entrega no mesmo dia;
-- número de dias mostrados no agendamento;
-- caminhos dos arquivos JSON;
-- URL do Firebase;
-- webhook de pedidos do Make;
-- webhook de consulta de cliente;
-- regras de desconto;
-- chave e versão do cache;
-- recursos habilitados ou desabilitados;
-- modo de teste e modo de produção.
-
-O modo de teste deve abrir o WhatsApp normalmente, mas não gravar pedidos reais no Firebase ou Make até a integração ser ativada conscientemente.
-
----
-
-## 5. Fontes de dados e tolerância a falhas
-
-### 5.1 Produtos
-
-O carregamento deverá testar fontes em sequência:
-
-1. catálogo rápido publicado no GitHub;
-2. catálogo completo publicado no GitHub;
-3. Firebase Realtime Database;
-4. último catálogo válido salvo no navegador.
-
-Um arquivo vazio, inválido ou sem produtos não poderá ser considerado sucesso.
-
-### 5.2 Recursos independentes
-
-Cestas, kits, cupons e banners serão carregados separadamente. A falha de um desses arquivos não poderá derrubar os produtos.
-
-### 5.3 Cache
-
-- catálogo válido salvo em `localStorage`;
-- versão registrada junto com a data de atualização;
-- conteúdo antigo exibido imediatamente;
-- atualização em segundo plano;
-- substituição do cache somente depois da validação do novo conteúdo;
-- botão de tentar novamente quando nenhuma fonte funcionar.
-
-### 5.4 Validação mínima de produto
-
-Um produto válido precisa ter:
-
-- identificador;
-- nome;
-- preço maior que zero;
-- situação ativa;
-- estoque maior que zero para ficar comprável.
-
-Produtos incompletos podem aparecer como indisponíveis para diagnóstico, mas não entram no carrinho.
-
----
-
-## 6. Contrato normalizado de produto
-
-Independentemente do nome original dos campos, o site trabalhará internamente com:
+Caminhos previstos:
 
 ```text
-id
-firebaseKey
-codigo
-nome
-slug
-preco
-precoOriginal
-precoOferta
-validadeOferta
-estoque
-situacao
-categoria
-subcategoria
-subsubcategoria
-marca
-embalagem
-descricao
-gtin
-ean
-validade
-gondola
-prateleira
-localizacao
-imagens[]
-imagemPrincipal
+/produtos
+/cestas
+/kits
+/cupons
+/banners
+/config_site
+/pedidos
 ```
 
-A normalização deve aceitar variações como `nome`/`name`, `preco`/`price`, `url_imagem`/`imagem` e `gtin`/`ean`.
+O navegador salvará somente dados locais do usuário, como carrinho, favoritos, preferências e formulário. Preço, estoque, validade, oferta e cadastro sempre virão do Firebase.
+
+Se o Firebase falhar, o site mostrará uma mensagem objetiva, botão para tentar novamente e contato pelo WhatsApp. Não exibirá catálogo velho como se estivesse atualizado.
 
 ---
 
-## 7. Páginas e rotas
+## 3. Estrutura do projeto
 
-A aplicação será uma SPA leve, baseada em hash, para funcionar em hospedagem estática sem configuração de servidor.
+```text
+/site-do-zero/
+  index.html              aplicação principal em HTML único
+  ROTEIRO.md              documentação do projeto
+  /cestas/                páginas públicas de SEO das cestas, geradas depois
+  sitemap-cestas.xml      somente páginas de cestas
+  merchant-cestas.xml     somente cestas básicas
+```
 
-Rotas previstas:
+O aplicativo continuará concentrado em um HTML. A única exceção necessária será a geração de páginas públicas individuais das cestas, pois uma SPA com hash não entrega o melhor resultado possível para SEO e Merchant Center.
 
-- `#/` — início;
-- `#/ofertas` — produtos em oferta;
-- `#/categorias` — lista de categorias;
-- `#/categoria/{slug}` — produtos da categoria;
-- `#/subcategoria/{slug}`;
-- `#/marca/{slug}`;
-- `#/busca/{termo}`;
-- `#/produto/{referencia}` — página individual;
-- `#/favoritos`;
-- `#/cestas`;
-- `#/cesta/{referencia}`;
-- `#/kits`;
-- `#/kit/{referencia}`;
-- `#/checkout`;
-- `#/informacoes`.
-
-Cada mudança de rota deve:
-
-1. atualizar o conteúdo sem recarregar a página;
-2. fechar menus e modais abertos;
-3. rolar para o início;
-4. atualizar o título do navegador;
-5. manter o carrinho;
-6. permitir voltar pelo navegador.
+Produtos avulsos, kits, categorias, busca, ofertas e favoritos funcionarão dentro da aplicação, mas não terão páginas indexáveis.
 
 ---
 
-## 8. Estrutura visual
+## 4. Organização interna do HTML único
 
-### 8.1 Cabeçalho
+1. metadados gerais;
+2. CSS;
+3. cabeçalho;
+4. conteúdo principal;
+5. barra móvel;
+6. carrinho;
+7. checkout;
+8. objeto `CONFIG`;
+9. utilitários;
+10. comunicação com Firebase;
+11. normalização dos dados;
+12. estado central;
+13. índices de busca;
+14. rotas;
+15. cards e páginas;
+16. carrinho e favoritos;
+17. cestas e kits;
+18. checkout;
+19. pedido e WhatsApp;
+20. Firebase e Make;
+21. eventos;
+22. inicialização.
 
-- logo;
+O código será separado por comentários grandes e funções pequenas, mesmo estando em um arquivo único.
+
+---
+
+## 5. Configuração central
+
+No começo do JavaScript haverá apenas um objeto editável com:
+
 - nome da loja;
-- campo de busca;
-- acesso aos favoritos;
-- acesso ao carrinho;
-- menu hambúrguer;
-- valor e quantidade do carrinho.
+- domínio;
+- número do WhatsApp;
+- URL do Firebase;
+- caminhos do Firebase;
+- webhook do Make;
+- webhook de consulta de CPF;
+- pedido mínimo;
+- cidades atendidas;
+- horário limite da entrega no mesmo dia;
+- datas disponíveis;
+- descontos;
+- versão do site;
+- modo de teste;
+- recursos habilitados.
 
-### 8.2 Navegação móvel
+Nenhum endereço, número ou regra importante ficará espalhado pelo código.
 
-Barra fixa inferior com:
+---
 
-- Início;
-- Categorias;
-- Ofertas;
-- Favoritos;
-- Compra.
+## 6. Carregamento rápido
 
-### 8.3 Desktop
+O site fará uma leitura principal de `/produtos.json` e leituras menores de cestas, kits, cupons e configurações.
 
-- conteúdo centralizado;
-- largura máxima controlada;
-- quatro cards por linha como padrão;
-- seis colunas somente em áreas compactas apropriadas;
-- carrinho em painel lateral;
-- sem barras de rolagem internas desnecessárias.
+Depois da leitura:
 
-### 8.4 Mobile
+- os registros serão normalizados uma vez;
+- produtos inativos serão descartados;
+- serão criados índices em memória por ID, Firebase key, código, EAN e slug;
+- busca e filtros trabalharão sobre os índices;
+- o Firebase não será consultado novamente em cada clique;
+- listas longas serão renderizadas progressivamente.
 
-- interface operável com uma mão;
+Na primeira versão não haverá listener em tempo real. Isso evita consumo, atualizações desnecessárias e instabilidade visual. A atualização será feita ao abrir ou recarregar a loja.
+
+### Recursos de desempenho
+
+- JavaScript puro;
+- nenhum framework;
+- nenhum carrossel de terceiros;
+- fonte do próprio sistema;
+- CSS no HTML;
+- eventos delegados;
+- busca com pequeno atraso;
+- imagens com dimensões fixas;
+- `loading="lazy"` fora da primeira tela;
+- prioridade alta somente nas primeiras imagens;
+- imagens WebP ou AVIF quando disponíveis;
+- poucas animações;
+- sem service worker na primeira fase;
+- sem reconstruir o campo de busca a cada tecla.
+
+---
+
+## 7. Direção visual
+
+O visual deve parecer uma loja simples, organizada e confiável.
+
+### Regras
+
+- fundo branco ou cinza quase branco;
+- uma cor principal da Dona Antônia;
+- quase nenhum degradê;
+- sem excesso de banners;
+- sem blocos coloridos competindo com os produtos;
+- fotos grandes e quadradas;
+- nomes curtos nos cards;
+- preços grandes;
+- textos auxiliares pequenos;
+- muito espaço entre seções;
+- botões evidentes;
+- ícones simples;
+- cantos discretamente arredondados;
+- sombras leves ou nenhuma sombra.
+
+### Mobile
+
+- duas colunas de produtos;
+- cestas com foto ainda maior;
 - botões com pelo menos 44 px;
-- cards em duas colunas;
-- imagens quadradas;
-- texto sem sobrepor imagens;
-- barra inferior respeitando a área segura do aparelho;
-- checkout em tela completa.
+- navegação inferior;
+- checkout em tela inteira;
+- sem conteúdo escondido por barras fixas;
+- nenhuma rolagem horizontal acidental.
+
+### Desktop
+
+- quatro produtos por linha;
+- cestas em cards largos ou três colunas;
+- conteúdo centralizado;
+- carrinho lateral;
+- sem áreas vazias exageradas;
+- sem carrosséis obrigatórios.
+
+---
+
+## 8. Páginas e rotas internas
+
+```text
+#/                         início
+#/ofertas                  ofertas
+#/categorias               categorias
+#/categoria/{slug}         categoria
+#/subcategoria/{slug}      subcategoria
+#/marca/{slug}             marca
+#/busca/{termo}            busca
+#/produto/{referencia}     produto
+#/favoritos                favoritos
+#/cestas                   cestas
+#/cesta/{referencia}       cesta dentro do aplicativo
+#/kits                     kits
+#/kit/{referencia}         kit
+#/checkout                 checkout
+#/informacoes              informações
+```
+
+Ao mudar de rota:
+
+- somente o conteúdo principal muda;
+- carrinho e favoritos permanecem;
+- a página volta ao topo;
+- menus fecham;
+- o botão voltar funciona;
+- o título do navegador é atualizado.
 
 ---
 
 ## 9. Página inicial
 
-Ordem inicial proposta:
+A home terá poucas seções e será focada em venda.
 
-1. aviso operacional curto;
-2. vantagens da compra;
-3. ofertas de hoje;
-4. cestas básicas;
-5. essenciais da compra do mês;
-6. categorias;
+Ordem inicial:
+
+1. apresentação curta;
+2. cestas básicas em destaque;
+3. condições de entrega e pagamento;
+4. ofertas de hoje;
+5. categorias;
+6. produtos essenciais;
 7. kits promocionais;
-8. escolhidos para você;
-9. marcas mais procuradas;
-10. aqui tem;
-11. informações de entrega e pagamento;
-12. rodapé.
+8. rodapé.
 
-Cada seção deve ser renderizada apenas se tiver conteúdo válido.
+As cestas aparecerão antes dos produtos avulsos e terão mais destaque visual.
 
-No desktop, produtos comuns usam grade. No celular, algumas seções podem usar rolagem horizontal controlada. Banners são tratados como conteúdo independente e nunca podem deslocar ou quebrar os cards.
+Se uma seção não tiver dados válidos, ela não aparece.
 
 ---
 
-## 10. Cards de produto
+## 10. Card de cesta básica
 
-Cada card terá:
+O card principal de cesta terá:
 
-- imagem quadrada;
-- embalagem;
+- foto grande;
 - nome;
-- validade, quando houver;
-- preço original riscado, quando houver desconto;
-- preço atual;
-- percentual de desconto;
-- botão de favorito;
-- botão “Adicionar”;
-- seletor de quantidade após a primeira adição;
-- indicação de indisponível;
-- aviso discreto de desconto por quantidade.
+- quantidade total de produtos ou unidades;
+- preço;
+- texto muito curto;
+- botão `Ver cesta`;
+- botão `Adicionar cesta` quando aplicável.
 
-A imagem terá `loading="lazy"`, dimensões declaradas e fallback. Somente as primeiras imagens visíveis serão prioritárias.
+Não haverá lista completa dos produtos dentro do card. A composição aparecerá somente ao abrir a cesta.
 
 ---
 
-## 11. Busca
+## 11. Card de produto
 
-A busca deve aceitar:
+Cada produto terá:
+
+- foto quadrada grande;
+- embalagem;
+- nome em até duas linhas;
+- validade, quando houver;
+- preço normal riscado, quando necessário;
+- preço atual em destaque;
+- desconto;
+- favorito;
+- botão adicionar;
+- seletor de quantidade depois da adição.
+
+Textos longos e códigos não aparecerão no card.
+
+---
+
+## 12. Busca inteligente
+
+A busca aceitará:
 
 - nome;
 - marca;
 - categoria;
 - subcategoria;
-- código interno;
-- EAN/GTIN;
-- palavras sem acento;
-- múltiplas palavras em qualquer ordem.
+- código;
+- EAN;
+- termos sem acento;
+- várias palavras.
 
-Regras:
+Prioridade dos resultados:
 
-- não reconstruir o campo a cada tecla;
-- não apagar espaços digitados;
-- aplicar atraso curto de aproximadamente 180 ms;
-- priorizar código exato, nome iniciado pelo termo e depois palavras contidas;
-- mostrar quantidade de resultados;
-- manter o termo ao abrir e voltar de um produto.
+1. código ou EAN exato;
+2. nome iniciado pelo termo;
+3. todas as palavras encontradas;
+4. marca ou categoria.
+
+O campo não será recriado durante a digitação, evitando o problema de apagar espaços.
 
 ---
 
-## 12. Página individual de produto
+## 13. Página do produto dentro da loja
 
-Deve mostrar:
+A página interna terá:
 
-- até três imagens;
-- nome completo;
+- foto grande;
+- nome;
 - embalagem;
-- marca;
-- código e EAN quando úteis;
-- preço e oferta;
+- preço;
+- oferta;
 - validade;
-- estoque disponível;
-- seletor de quantidade;
-- descrição;
-- categoria e subcategoria;
-- produtos relacionados;
-- botão de contato pelo WhatsApp;
-- aviso de pagamento na entrega.
+- estoque;
+- descrição curta;
+- quantidade;
+- adicionar;
+- produtos relacionados.
 
-O produto deve ser localizado por Firebase key, ID, código, EAN ou slug.
+Ela receberá `noindex,follow` quando houver uma URL pública intermediária. Não entrará em sitemap nem Merchant Center.
 
 ---
 
-## 13. Carrinho
+## 14. Carrinho
 
-O carrinho será salvo no navegador e terá validade configurável.
-
-Funções:
+O carrinho ficará no navegador e terá:
 
 - adicionar;
 - aumentar;
 - diminuir;
 - remover;
 - limpar;
-- respeitar estoque;
-- manter ordem de adição;
-- recalcular valores imediatamente;
-- mostrar pedido mínimo;
-- mostrar descontos separados;
-- preservar cestas e kits;
-- expirar carrinhos antigos para evitar pedido com preço ultrapassado.
+- limite pelo estoque;
+- ordem de adição;
+- total instantâneo;
+- descontos separados;
+- pedido mínimo;
+- identificação de itens vindos de cesta ou kit.
 
-Nunca confiar apenas no preço salvo. Ao abrir o checkout, os itens devem ser reconciliados com o catálogo atual.
-
----
-
-## 14. Preços e descontos
-
-A ordem de cálculo será explícita e testável:
-
-1. preço normal;
-2. oferta ativa e dentro da validade;
-3. cupom aplicável;
-4. desconto por validade e quantidade;
-5. desconto de atacado;
-6. ajuste fixo de cesta;
-7. ajuste de kit;
-8. arredondamento monetário;
-9. total final.
-
-Toda diferença entre a soma dos itens e o total final deve ser enviada ao Make de forma compatível com os campos de desconto ou outras despesas usados no Bling.
+Antes do pedido, todos os itens serão comparados novamente com o catálogo carregado do Firebase.
 
 ---
 
 ## 15. Cestas básicas
 
-Cada cesta terá:
+A cesta será um registro próprio no Firebase com:
 
-- id;
-- código;
-- nome;
-- imagem;
-- descrição;
-- preço de referência;
-- lista de produtos com quantidade;
-- substitutos opcionais.
+```text
+id
+codigo
+nome
+slug
+descricao_curta
+imagem
+preco
+preco_original
+ativo
+produtos[]
+seo
+merchant
+```
 
-Fluxo:
+Cada item de `produtos[]` terá código, quantidade e substitutos opcionais.
+
+### Funcionamento
 
 1. abrir a cesta;
-2. resolver cada código contra o catálogo;
-3. mostrar os produtos;
-4. permitir ajustar quantidades quando a cesta for personalizável;
-5. informar itens indisponíveis;
-6. recalcular o valor;
-7. adicionar todos os itens ao carrinho;
-8. registrar no carrinho que vieram de uma cesta;
-9. informar alterações na mensagem do WhatsApp e no pedido.
+2. localizar cada produto pelo índice em memória;
+3. mostrar foto, nome e quantidade;
+4. verificar estoque;
+5. usar substituto configurado quando necessário;
+6. permitir ajuste quando a cesta for personalizável;
+7. recalcular o valor conforme a regra definida;
+8. adicionar todos os itens ao carrinho;
+9. registrar a origem `cesta`;
+10. descrever alterações no pedido.
 
-A cesta não deve ser adicionada quando faltar produto obrigatório sem substituto disponível.
+Uma cesta indisponível não será enviada ao Google nem ao Merchant.
 
 ---
 
-## 16. Kits promocionais
+## 16. Kits
 
-Cada kit terá:
+Os kits continuarão funcionando na loja, mas serão exclusivamente comerciais dentro do site.
 
-- período de início e fim;
+Eles terão:
+
+- período;
+- composição;
 - preço promocional;
-- preço original calculado;
-- composição fixa;
-- limite manual;
-- estoque calculado pelo produto mais limitante;
-- percentual de desconto;
-- status ativo.
+- estoque calculado;
+- limite;
+- status.
 
-O kit só aparece quando:
+Regras externas:
 
-- estiver ativo;
-- estiver dentro do período;
-- todos os produtos estiverem disponíveis;
-- houver capacidade de estoque;
-- o valor representar promoção válida.
-
-Ao adicionar, os itens entram individualmente e um ajuste registra o preço final do kit.
+- não indexar;
+- não criar páginas SEO;
+- não incluir no sitemap;
+- não incluir no Merchant;
+- não criar dados estruturados públicos de produto.
 
 ---
 
-## 17. Cupons
+## 17. Ofertas e descontos
 
-O sistema deverá suportar:
+Ordem do cálculo:
 
-- percentual;
-- valor fixo;
-- pedido mínimo;
-- validade;
-- categorias;
-- marcas;
-- palavras-chave;
-- cliente novo;
-- ativação e remoção;
-- mensagem clara de motivo quando inválido.
-
-A consulta do CPF não pode ser obrigatória para navegar, mas pode ser exigida na finalização e usada para validar cupom de primeira compra.
-
----
-
-## 18. Favoritos e personalização
-
-Favoritos ficarão no `localStorage`.
-
-A personalização deverá ser opcional e baseada somente em:
-
-- produtos vistos;
-- categorias visitadas;
-- favoritos;
-- itens adicionados;
-- pedidos concluídos.
-
-Dados pessoais como nome, CPF, telefone e endereço não entram no perfil de recomendação.
-
-O usuário poderá ativar, desativar e apagar o histórico.
-
----
-
-## 19. Checkout
-
-O checkout será curto, sem criação de conta.
-
-Etapas:
-
-1. revisar itens;
-2. revisar valores;
+1. preço normal;
+2. oferta ativa;
 3. cupom;
-4. CPF e busca opcional de cadastro;
-5. escolher data de entrega;
-6. preencher dados;
+4. desconto por validade e quantidade;
+5. atacado;
+6. ajuste da cesta;
+7. ajuste do kit;
+8. arredondamento;
+9. total final.
+
+Toda diferença entre a soma dos itens e o total será enviada ao Make de forma compatível com o Bling.
+
+---
+
+## 18. Checkout
+
+O checkout será curto e sem conta.
+
+### Etapas
+
+1. revisar compra;
+2. revisar valores;
+3. informar cupom;
+4. informar CPF;
+5. escolher data;
+6. preencher entrega;
 7. escolher pagamento;
-8. confirmar e abrir WhatsApp.
+8. abrir WhatsApp.
 
-Campos:
+### Campos
 
-- nome completo;
+- nome;
 - CPF;
 - WhatsApp;
 - e-mail;
 - CEP;
 - cidade;
 - bairro;
-- rua/avenida;
+- rua;
 - quadra;
 - número;
 - referência;
-- data de entrega;
+- entrega;
 - pagamento;
-- observações.
+- observação.
 
-Cidades aceitas inicialmente: Cuiabá e Várzea Grande.
-
-Pagamentos:
-
-- dinheiro;
-- Pix;
-- cartão de débito;
-- cartão de crédito;
-- vale-alimentação;
-- vale-refeição.
-
-As próximas datas devem excluir domingos e feriados nacionais configurados. Entrega para o mesmo dia respeita o horário limite.
+Cidades iniciais: Cuiabá e Várzea Grande.
 
 ---
 
-## 20. Envio pelo WhatsApp
+## 19. WhatsApp e integrações
 
-A mensagem deverá conter:
+Fluxo final:
 
-- número local do pedido;
-- data de entrega;
-- itens e quantidades;
-- indicação de cesta ou kit;
-- itens alterados ou retirados de cesta;
-- valor normal;
-- descontos separados;
-- total final;
-- nome;
-- telefone;
-- endereço;
-- referência;
-- pagamento;
-- pedido de confirmação.
+1. validar formulário;
+2. construir pedido;
+3. construir mensagem;
+4. salvar cópia local temporária;
+5. abrir WhatsApp imediatamente pelo clique;
+6. gravar pedido no Firebase;
+7. enviar ao Make;
+8. Make processar contato e venda no Bling;
+9. registrar resultado no pedido.
 
-Regra crítica: o link do WhatsApp deve ser aberto pela ação direta do clique do usuário. Processos de rede não podem bloquear a abertura.
+Firebase ou Make não podem impedir a abertura do WhatsApp.
 
-Fluxo recomendado:
-
-1. validar o formulário;
-2. construir o pedido e a mensagem;
-3. salvar uma cópia local;
-4. abrir o WhatsApp imediatamente;
-5. tentar Firebase e Make em seguida;
-6. manter uma fila local quando a internet falhar;
-7. não duplicar pedidos graças à chave de idempotência.
+O pedido usará chave de idempotência para evitar duplicidade.
 
 ---
 
-## 21. Pedido para Firebase
+## 20. SEO exclusivo das cestas básicas
 
-Estrutura mínima:
+### O que o Google poderá indexar
 
-```text
-/pedidos/{id}
-  id
-  numero_pedido
-  idempotency_key
-  origem
-  status
-  status_separacao
-  criado_em
-  atualizado_em
-  cliente
-  entrega
-  pagamento
-  itens[]
-  cupom
-  kitPromocional
-  atacado
-  validadeQuantidade
-  separacao
-  envio
-  bling
-  integracao
-  historico[]
-```
+- página inicial com foco em cestas básicas;
+- página `/cestas/`;
+- página individual de cada cesta;
+- política de privacidade;
+- termos;
+- páginas institucionais relevantes.
 
-Cada item deve enviar código, Firebase key, EAN, nome, quantidade, preço, imagem, categoria, gôndola e prateleira para suportar separação e conferência.
+### O que ficará fora do Google
 
----
+- produtos avulsos;
+- kits;
+- ofertas;
+- busca;
+- categorias de produtos;
+- marcas;
+- favoritos;
+- carrinho;
+- checkout;
+- páginas administrativas.
 
-## 22. Pedido para Make e Bling
+### Regras técnicas
 
-O payload manterá:
+- sitemap conterá somente páginas permitidas;
+- produtos e kits usarão `noindex`;
+- links internos poderão usar `nofollow` onde fizer sentido operacional;
+- canonical somente para páginas de cestas;
+- nenhum produto avulso terá `Product` schema público;
+- cada cesta terá título e descrição próprios;
+- cada cesta terá URL limpa;
+- cada cesta terá imagem grande e exclusiva;
+- cada cesta terá breadcrumbs;
+- cada cesta terá dados estruturados `Product`, `Offer`, `BreadcrumbList` e organização;
+- disponibilidade e preço virão do Firebase na geração;
+- conteúdo desatualizado não será publicado.
 
-- `pedido.id`;
-- `pedido.numero`;
-- `pedido.idempotencyKey`;
-- `pedido.itens[]`;
-- total;
-- total dos produtos;
-- desconto;
-- outras despesas;
-- dados do cliente;
-- endereço;
-- agendamento;
-- pagamento;
-- metadados da versão do site e catálogo.
+### Estrutura da página pública de cesta
 
-Requisitos operacionais:
-
-- uma única venda com todos os itens;
-- contato criado ou atualizado antes da venda;
-- nome nunca vazio;
-- prevenção de venda idêntica;
-- controle de até três requisições por segundo ao Bling;
-- novas tentativas com espera;
-- log do erro no pedido;
-- confirmação do ID da venda no Firebase.
-
----
-
-## 23. Banners
-
-Os banners serão implementados depois do catálogo e checkout estarem estáveis.
-
-Regras:
-
-- formato vertical igual à proporção dos cards;
-- até oito por posicionamento;
-- rotação da ordem a cada acesso;
-- período de início e fim;
-- ativo/inativo;
-- destino por produto, categoria, subcategoria, marca, kit ou cesta;
-- remoção visual quando produto estiver sem estoque ou oferta estiver vencida;
-- carregamento depois do conteúdo crítico;
-- falha de banner nunca afeta produtos.
-
----
-
-## 24. Desempenho
-
-Metas técnicas:
-
-- HTML inicial pequeno e sem framework;
-- conteúdo principal visível rapidamente;
-- CSS crítico no próprio arquivo;
-- uma leitura de catálogo por inicialização;
-- busca e filtros sobre índices em memória;
-- imagens AVIF/WebP quando disponíveis;
-- dimensões fixas para evitar salto de tela;
-- `loading="lazy"` fora da primeira dobra;
-- nenhum carrossel pesado de terceiros;
-- eventos delegados;
-- renderização em lotes;
-- limite inicial de cards e carregamento progressivo;
-- cache validado;
-- ausência de service worker na primeira versão.
-
----
-
-## 25. Acessibilidade e usabilidade
-
-- contraste adequado;
-- navegação por teclado;
-- foco visível;
-- `aria-label` em botões de ícone;
-- textos de erro associados aos campos;
-- botões grandes;
-- nenhum fechamento inesperado ao digitar;
-- confirmação de ações importantes;
-- carregamento, vazio e erro com mensagens diferentes;
-- suporte a zoom;
-- respeito a `prefers-reduced-motion`.
-
----
-
-## 26. SEO local
-
-- título e descrição por rota;
+- título principal com nome da cesta;
+- foto grande;
+- preço;
+- disponibilidade;
+- entrega em Cuiabá e Várzea Grande;
+- lista da composição;
+- quantidade de itens;
+- perguntas frequentes curtas;
+- botão para abrir a cesta na aplicação;
+- botão de WhatsApp;
+- dados estruturados completos;
 - canonical;
 - Open Graph;
-- dados estruturados de `OnlineStore`, `Product`, `Offer`, `ItemList` e `BreadcrumbList`;
-- texto natural sobre delivery em Cuiabá e Várzea Grande;
-- URLs compartilháveis;
-- nome, preço, imagem, disponibilidade e validade da oferta na página do produto;
-- páginas específicas para cestas e kits.
-
-Como o projeto usa hash durante o desenvolvimento, a publicação final deverá manter páginas auxiliares ou geração estática para produtos e coleções que precisem de indexação completa.
+- texto original, sem repetição artificial de palavras-chave.
 
 ---
 
-## 27. Segurança e privacidade
+## 21. Merchant Center exclusivo das cestas
 
-- nunca incluir segredo administrativo no HTML;
-- Firebase público limitado ao necessário pelas regras;
-- sanitizar toda string antes de inserir no HTML;
-- validar URLs de imagem e links;
-- não executar HTML vindo do catálogo;
-- limitar tamanho de respostas;
-- timeout de rede;
-- não registrar CPF ou endereço no console;
-- consentimento para personalização;
-- links visíveis para política de privacidade e termos.
+O feed conterá somente cestas básicas ativas e disponíveis.
+
+Campos principais:
+
+```text
+id
+title
+description
+link
+canonical_link
+image_link
+additional_image_link
+availability
+condition
+price
+brand
+mpn
+identifier_exists
+product_type
+shipping
+shipping_label
+custom_label_0...4
+```
+
+### Regras
+
+- nenhum produto avulso no feed;
+- nenhum kit no feed;
+- link apontando para página pública da cesta;
+- preço idêntico ao da página;
+- imagem idêntica à principal;
+- disponibilidade real;
+- descrição da cesta, não descrição genérica;
+- título sem promoções exageradas;
+- composição e quantidade coerentes;
+- atualização sempre que preço, imagem, disponibilidade ou composição mudar;
+- cesta inativa ou indisponível removida do feed.
 
 ---
 
-## 28. Diagnóstico
+## 22. Sitemap e robots
 
-O modo de diagnóstico deverá mostrar somente quando ativado por configuração:
+O sitemap novo terá somente:
 
-- versão do app;
-- fonte do catálogo;
-- quantidade de produtos;
-- quantidade disponível;
-- tempo de carregamento;
-- status de cestas, kits, cupons e banners;
-- itens inválidos descartados;
-- erros de rede sem dados pessoais.
+- home;
+- `/cestas/`;
+- páginas individuais de cestas;
+- páginas institucionais permitidas.
+
+O `robots.txt` bloqueará áreas administrativas e indicará o sitemap de cestas.
+
+Produtos e kits não dependerão apenas de `robots.txt`; receberão `noindex`, porque bloquear rastreamento não é suficiente para garantir remoção do índice.
 
 ---
 
-## 29. Plano de programação por fases
+## 23. Testes obrigatórios
 
-### Fase 0 — isolamento e documentação
+1. Firebase é a única fonte;
+2. nenhuma chamada para catálogo alternativo;
+3. primeira tela estável;
+4. fotos grandes sem salto de layout;
+5. mobile em duas colunas;
+6. busca aceita espaço e acento;
+7. produto abre por ID, código, EAN e slug;
+8. carrinho respeita estoque;
+9. carrinho persiste;
+10. oferta vencida não entra;
+11. cesta resolve todos os componentes;
+12. cesta indisponível não pode ser comprada;
+13. total confere;
+14. pedido mínimo funciona;
+15. checkout valida campos;
+16. WhatsApp abre mesmo se integração falhar;
+17. Firebase recebe pedido completo;
+18. Make recebe contrato correto;
+19. Bling recebe uma única venda;
+20. somente cestas aparecem no sitemap;
+21. somente cestas aparecem no Merchant;
+22. produtos e kits retornam `noindex`;
+23. preço do Merchant é igual ao da página;
+24. disponibilidade do Merchant é real;
+25. páginas das cestas possuem dados estruturados válidos;
+26. barra móvel não cobre conteúdo;
+27. produção não foi alterada;
+28. rollback continua possível.
 
-- criar pasta separada;
-- criar este roteiro;
-- criar branch exclusiva;
-- não alterar produção.
+---
 
-### Fase 1 — fundação funcional
+## 24. Programação por fases
+
+### Fase 0 — preparação
+
+- pasta separada;
+- roteiro;
+- branch separada;
+- produção intacta.
+
+### Fase 1 — loja básica funcional
 
 - HTML único;
-- layout responsivo;
-- configuração central;
-- carregamento com fallback;
-- normalização de produtos;
-- home simples;
+- visual leve;
+- Firebase `/produtos`;
+- índices;
+- home;
 - busca;
 - categorias;
-- página de produto;
-- carrinho local;
+- produto;
+- favoritos;
+- carrinho;
 - checkout básico;
-- mensagem e abertura do WhatsApp;
-- dados de demonstração quando nenhuma fonte responder.
+- WhatsApp.
 
-### Fase 2 — catálogo comercial completo
+### Fase 2 — cestas como prioridade
+
+- Firebase `/cestas`;
+- cards grandes;
+- página da cesta;
+- composição;
+- estoque;
+- personalização;
+- carrinho da cesta;
+- mensagem detalhada.
+
+### Fase 3 — recursos comerciais internos
 
 - ofertas;
-- validade;
-- favoritos;
-- filtros;
-- marcas;
-- produtos relacionados;
-- paginação progressiva;
-- reconciliação de carrinho e estoque.
+- cupons;
+- kits;
+- recomendações;
+- banners mínimos.
 
-### Fase 3 — cestas, kits e cupons
+### Fase 4 — integrações definitivas
 
-- composição e substitutos;
-- personalização de cesta;
-- preço fixo e ajustes;
-- capacidade de kit;
-- cupons e primeira compra;
-- mensagem detalhada de cesta/kit.
-
-### Fase 4 — checkout definitivo e integrações
-
-- busca de cliente;
-- calendário de entrega;
-- máscaras e validações;
-- payload definitivo;
-- Firebase;
-- fila local;
+- pedido no Firebase;
+- consulta de CPF;
 - Make;
+- Bling;
 - idempotência;
-- confirmação da integração.
+- novas tentativas;
+- logs.
 
-### Fase 5 — conteúdo, banners e personalização
+### Fase 5 — SEO e Merchant das cestas
 
-- banners inteligentes;
-- seções da home;
-- escolhidos para você;
-- consentimento;
-- histórico local;
-- páginas informativas.
-
-### Fase 6 — desempenho, SEO e testes
-
-- auditoria de carregamento;
-- auditoria mobile;
-- acessibilidade;
+- páginas públicas geradas;
 - dados estruturados;
-- páginas indexáveis;
-- testes de falha;
-- testes de pedido;
-- comparação controlada com produção.
+- sitemap exclusivo;
+- Merchant exclusivo;
+- robots;
+- canonical;
+- validação no Search Console;
+- validação no Merchant Center.
 
-### Fase 7 — publicação gradual
+### Fase 6 — testes e publicação
 
-- publicar em URL de teste;
-- validar pedidos reais controlados;
-- monitorar Firebase e Make;
-- corrigir divergências;
-- congelar alterações no site antigo;
-- trocar a raiz somente depois da aprovação;
-- manter rollback imediato.
-
----
-
-## 30. Testes de aceitação
-
-O projeto não estará pronto para substituir a produção até passar por todos estes testes:
-
-1. abre em Android, iPhone, iPad e desktop;
-2. primeira tela não pula durante carregamento;
-3. catálogo aparece com conexão rápida, lenta e oscilante;
-4. catálogo em cache aparece sem internet;
-5. arquivo de catálogo vazio aciona outra fonte;
-6. imagens quebradas usam fallback;
-7. busca aceita espaço e acento;
-8. produto abre por ID, código, EAN e slug;
-9. carrinho respeita estoque;
-10. carrinho sobrevive ao recarregamento;
-11. oferta vencida não é aplicada;
-12. total coincide com os itens e ajustes;
-13. pedido mínimo é respeitado;
-14. cesta padrão adiciona composição correta;
-15. cesta alterada é descrita corretamente;
-16. kit respeita estoque e período;
-17. cupom válido e inválido geram respostas corretas;
-18. checkout informa todos os campos pendentes;
-19. WhatsApp abre com a mensagem completa;
-20. WhatsApp abre mesmo quando Firebase ou Make falham;
-21. pedido não é duplicado ao recarregar;
-22. Firebase recebe todos os dados de separação;
-23. Make recebe o contrato esperado;
-24. Bling recebe uma venda com todos os itens;
-25. voltar do navegador preserva a navegação;
-26. barra inferior não cobre o fim da página;
-27. o site continua utilizável sem banners;
-28. nenhuma informação pessoal aparece em logs públicos;
-29. produção permanece intacta até a aprovação;
-30. rollback foi testado.
+- teste mobile e desktop;
+- teste de pedido real;
+- teste de falhas;
+- auditoria de velocidade;
+- auditoria de SEO;
+- URL de homologação;
+- troca da raiz somente após aprovação.
 
 ---
 
-## 31. Critério de conclusão
+## 25. Critério final
 
-O novo site será considerado concluído quando for mais simples que o atual, carregar de forma previsível, permitir localizar produtos rapidamente, calcular corretamente a compra, abrir o WhatsApp sem bloqueio e registrar o mesmo pedido nas integrações sem duplicidade.
+O novo projeto estará pronto quando carregar rápido, mostrar fotos grandes, exigir pouca leitura, permitir comprar sem dificuldade e manter as integrações corretas.
 
-A simplicidade será medida pela experiência do cliente e pela facilidade de manutenção, não apenas pela quantidade de arquivos.
+Externamente, o Google e o Merchant Center deverão enxergar a Dona Antônia como especialista em cestas básicas. Produtos avulsos e kits existirão somente para melhorar a compra dentro da loja.
