@@ -69,7 +69,7 @@ jobs:
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
             test "$(grep -o 'app-next/src/seo-combos.js?v=20260726-2' index.html | wc -l)" -eq 1
-            test "$(grep -o 'app-next/src/main.js?v=20260726-9' index.html | wc -l)" -eq 1
+            test "$(grep -o 'app-next/src/main.js?v=20260726-9' index.html | wc -l)" -eq 2
             ! grep -q 'app-next/src/delivery-only.js' index.html
             ! grep -q '#/cesta/' app-next/src/ui.js app-next/src/live-polish.js
             ! grep -q '#/kit/' app-next/src/ui.js app-next/src/live-polish.js
