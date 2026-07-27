@@ -101,15 +101,18 @@ jobs:
           test -s kits/index.html
           grep -q '"@type":"Product"' cestas/*/index.html
           grep -q 'Somente delivery' cestas/index.html
+          grep -q 'seo-combos-critical' cestas/*/index.html kits/*/index.html
           test -s sitemap.xml
           grep -q 'https://donaantonia.com.br/cestas/' sitemap.xml
           grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
           ! grep -q '?cesta=' sitemap.xml
           ! grep -q 'https://www.donaantonia.com.br' sitemap.xml merchant.xml robots.txt index.html
           grep -q 'app-next/src/seo-combos.js' index.html
-          grep -q 'app-next/src/main.js?v=20260726-9' index.html
+          grep -q 'app-next/src/main.js?v=20260727-4' index.html
           ! grep -q 'app-next/src/delivery-only.js' index.html
-          test "$(grep -o 'app-next/src/seo-combos.js?v=20260726-2' index.html | wc -l)" -eq 1
+          ! grep -q 'app-next/src/detail-review.js' index.html app-next/index.html
+          ! grep -q 'detail-review.css' index.html app-next/index.html
+          test "$(grep -o 'app-next/src/seo-combos.js?v=20260727-4' index.html | wc -l)" -eq 1
           ! grep -q '#/cesta/' app-next/src/ui.js app-next/src/live-polish.js
           ! grep -q '#/kit/' app-next/src/ui.js app-next/src/live-polish.js
           grep -q 'OnlineStore' index.html
@@ -119,6 +122,8 @@ jobs:
           test ! -e scripts/refatorar-rotas-combos.js
           test ! -e scripts/corrigir-validacoes-rotas.js
           test ! -e app-next/src/delivery-only.js
+          test ! -e app-next/src/detail-review.js
+          test ! -e app-next/styles/detail-review.css
           test ! -e scripts/garantir-sinal-delivery.js
           test ! -e scripts/aplicar-seo-delivery-v2.js
           test ! -e scripts/seo-delivery-payload
