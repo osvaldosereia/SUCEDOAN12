@@ -59,24 +59,8 @@ jobs:
       - name: Validar smoke test modular
         run: node app-next/tests/smoke.test.js
 
-      - name: Executar verificador público
-        id: public_check
-        continue-on-error: true
-        shell: bash
-        run: node scripts/check-public-site.mjs > "$RUNNER_TEMP/public-error.log" 2>&1
-
-      - name: Anexar diagnóstico público
-        if: steps.public_check.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: public-error
-          path: ${{ runner.temp }}/public-error.log
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Confirmar verificador público
-        if: steps.public_check.outcome == 'failure'
-        run: exit 1
+      - name: Validar site público
+        run: node scripts/check-public-site.mjs
 
       - name: Publicar alterações validadas
         shell: bash
@@ -84,7 +68,7 @@ jobs:
           set -euo pipefail
           rm -rf .github/site-adjust-patch
           rm -f .github/workflows/aplicar-ajustes-site.yml
-          git config user.name "github-actions[bot]]"
+          git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
