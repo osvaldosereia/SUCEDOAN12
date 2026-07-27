@@ -1,29 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanComboNavigationTarget } from '../src/navigation.js';
+import { rootHashTarget } from '../src/bundle-routes.js';
 
-const currentHref = 'https://donaantonia.com.br/cestas/mini-bonini-cestaminicomarroztiobonini/';
-const currentOrigin = 'https://donaantonia.com.br';
-
-function target(href) {
-  return cleanComboNavigationTarget({ href, currentHref, currentOrigin });
-}
-
-test('não intercepta links hash da aplicação em páginas limpas', () => {
-  for (const href of ['#/', '#/categorias', '#/ofertas', '#/favoritos', '#/produto/P440']) {
-    assert.equal(target(href), '');
-  }
+test('logo e links internos sempre voltam para a raiz da aplicação', () => {
+  assert.equal(rootHashTarget('#/'), '/#/');
+  assert.equal(rootHashTarget('#/categorias'), '/#/categorias');
+  assert.equal(rootHashTarget('#/ofertas'), '/#/ofertas');
+  assert.equal(rootHashTarget('#/favoritos'), '/#/favoritos');
+  assert.equal(rootHashTarget('#/produto/P440'), '/#/produto/P440');
 });
 
-test('intercepta somente URLs limpas de cestas e kits', () => {
-  assert.equal(target('/cestas/'), '/cestas/');
-  assert.equal(target('/cestas/economica-bonini-cestaeconomicacomarroztiobonini/'), '/cestas/economica-bonini-cestaeconomicacomarroztiobonini/');
-  assert.equal(target('/kits/kit-cuidados-nivea-novo-kit-promocional-2/?origem=home'), '/kits/kit-cuidados-nivea-novo-kit-promocional-2/?origem=home');
-});
-
-test('não intercepta links externos, institucionais ou com hash', () => {
-  assert.equal(target('https://example.com/cestas/teste/'), '');
-  assert.equal(target('/sobre-nos.html'), '');
-  assert.equal(target('/cestas/#/ofertas'), '');
-  assert.equal(target('mailto:atendimento@donaantonia.com.br'), '');
+test('links comuns não são alterados', () => {
+  assert.equal(rootHashTarget('/cestas/'), '');
+  assert.equal(rootHashTarget('/sobre-nos.html'), '');
+  assert.equal(rootHashTarget('https://example.com'), '');
+  assert.equal(rootHashTarget('mailto:atendimento@donaantonia.com.br'), '');
 });
