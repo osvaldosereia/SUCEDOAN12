@@ -27,6 +27,7 @@ patch('scripts/check-public-site.mjs', source => source
   .replace(/\s*"params\.get\('cesta'\)",\s*"params\.get\('kit'\)",?/g, '')
   .replace(/\s*"params\.get\('cesta'\)",?/g, '')
   .replace(/\s*"params\.get\('kit'\)",?/g, '')
+  .replace(/\s*"return `\/\$\{type === 'kit' \? 'kits' : 'cestas'\}\/",?/g, '')
 );
 
 console.log('Expectativas de rotas limpas atualizadas.');
