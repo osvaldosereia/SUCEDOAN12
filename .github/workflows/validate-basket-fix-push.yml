@@ -1,0 +1,52 @@
+name: Validar correção final das cestas
+
+on:
+  push:
+    branches:
+      - agent/corrige-imagens-cache-cestas
+    paths:
+      - '.github/workflows/validate-basket-fix-push.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: agent/corrige-imagens-cache-cestas
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app-next/package.json
+      - name: Gerar e validar páginas públicas
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/normalizar-seo-delivery.js
+          node scripts/injetar-seo-combos.js
+          node scripts/gerar-paginas-seo-combos.js
+          node scripts/gerar-merchant.js
+          node scripts/gerar-meta-combos.js
+          node scripts/gerar-sitemap.js
+          node scripts/check-public-site.mjs
+          grep -q 'seo-combos-critical' cestas/*/index.html kits/*/index.html
+          ! grep -R -q 'detail-review' index.html app-next/index.html app-next/src app-next/styles
+      - name: Validar módulos e regras comerciais
+        working-directory: app-next
+        run: |
+          npm test
+          npm run check
+      - name: Remover workflow temporário
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/validate-basket-fix-push.yml
+          git commit -m 'Remove validação temporária da correção das cestas'
+          git push origin HEAD:agent/corrige-imagens-cache-cestas
