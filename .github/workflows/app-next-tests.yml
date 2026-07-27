@@ -69,9 +69,10 @@ jobs:
             grep -q 'app-next/src/home-carousels.js?v=20260727-8' index.html
             grep -q 'app-next/src/fast-offers-v9.js?v=20260727-10' index.html
             grep -q 'storefront-base.css?v=20260727-7' index.html
-            grep -q 'storefront-components.css?v=20260727-8' index.html
-            grep -q 'storefront-responsive.css?v=20260727-8' index.html
+            grep -q 'storefront-components.css?v=20260727-9' index.html
+            grep -q 'storefront-responsive.css?v=20260727-9' index.html
             grep -q 'checkout-flow.css?v=20260727-8' index.html
+            grep -q 'bundle-confirmation.css?v=20260727-5' index.html
             ! grep -q 'app-next/src/seo-combos.js' index.html
             ! grep -q 'app-next/src/live-polish.js' index.html
             ! grep -q 'styles/visual-parity.css' index.html
