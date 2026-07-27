@@ -32,8 +32,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Validar sintaxe do gerador
-        run: node --check site-do-zero/build/gerar-seo-cestas.mjs
+      - name: Validar sintaxe do gerador e dos testes
+        run: |
+          node --check site-do-zero/build/gerar-seo-cestas.mjs
+          node --check site-do-zero/tests/validar-projeto.mjs
 
       - name: Bloquear métodos de escrita no gerador
         shell: bash
@@ -65,24 +67,8 @@ jobs:
           PY
           node --check /tmp/site-do-zero-inline.js
 
-      - name: Validar páginas institucionais
-        shell: bash
-        run: |
-          set -euo pipefail
-          for file in \
-            sobre-nos.html \
-            contato.html \
-            politica-de-entrega.html \
-            politica-de-troca.html \
-            politica-de-privacidade.html \
-            termos-de-uso.html \
-            perguntas-frequentes.html; do
-            test -s "site-do-zero/$file"
-            grep -qi '<title>' "site-do-zero/$file"
-            grep -qi 'rel="canonical"' "site-do-zero/$file"
-            grep -qi 'meta name="description"' "site-do-zero/$file"
-          done
-          test -s site-do-zero/assets/institucional.css
+      - name: Executar testes de regressão
+        run: node site-do-zero/tests/validar-projeto.mjs
 
       - name: Confirmar proteção documentada
         shell: bash
