@@ -26,12 +26,12 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-26-combos-seo-delivery-v2',
-  'app-next/styles/home-parity.css?v=20260724-7',
-  'app-next/styles/live-polish.css?v=20260724-8',
-  'app-next/src/main.js?v=20260726-9',
-  'app-next/src/seo-combos.js?v=20260726-2',
-  'da_v8_cache_migrated_20260724', "params.get('p')",
+  '2026-07-27-cestas-imagens-cache-v1',
+  'app-next/styles/home-parity.css?v=20260727-4',
+  'app-next/styles/live-polish.css?v=20260727-4',
+  'app-next/src/main.js?v=20260727-4',
+  'app-next/src/seo-combos.js?v=20260727-4',
+  'da_v9_cache_migrated_20260727', "params.get('p')",
   "params.get('categoria')", "params.get('secao')",
   'Cestas Básicas e Kits com Delivery em Cuiabá e Várzea Grande',
   'window.__DA_PRODUCTION__ = true',
@@ -45,8 +45,8 @@ assert(!production.includes('R. Trinta, 105'), 'Index publica endereço como loj
 
 const preview = read('app-next/index.html');
 assert(preview.includes('noindex, nofollow'), 'Prévia modular precisa permanecer noindex');
-assert(preview.includes('styles/live-polish.css?v=20260724-8'), 'Prévia sem CSS v8');
-assert(preview.includes('src/main.js?v=20260726-9'), 'Prévia sem main v8');
+assert(preview.includes('styles/live-polish.css?v=20260727-4'), 'Prévia sem CSS v8');
+assert(preview.includes('src/main.js?v=20260727-4'), 'Prévia sem main v8');
 assert(!preview.includes('visual-parity.js'), 'Prévia ainda carrega o módulo visual redundante');
 
 const institutionalFiles = [
@@ -89,7 +89,7 @@ for (const removed of ['class="home-hero"', 'class="quick-links"', "section('Ofe
 const main = read('app-next/src/main.js');
 for (const marker of [
   'window.__DA_CATALOG_STATE__', "new CustomEvent('da:catalog-ready')", 'personalization-settings',
-  "import { prepareProductOffer } from './offer-engine.js'", 'applyProductOffer(prepareProductOffer(product))'
+  "import { prepareProductOffer } from './offer-engine.js?v=20260727-4'", 'applyProductOffer(prepareProductOffer(product))'
 ]) assert(main.includes(marker), `Inicialização limpa incompleta: ${marker}`);
 for (const removed of ['showConsentIfNeeded', 'personalization-consent', 'personalization-accept', 'personalization-decline']) {
   assert(!main.includes(removed), `Código morto do alerta de personalização ainda presente: ${removed}`);
@@ -107,6 +107,8 @@ for (const marker of ['window.__DA_CATALOG_STATE__', 'da:catalog-ready', '.slice
   assert(livePolish.includes(marker), `Otimização progressiva incompleta: ${marker}`);
 }
 assert(!exists('app-next/src/visual-parity.js'), 'Módulo visual redundante ainda existe');
+assert(!exists('app-next/src/detail-review.js'), 'detail-review.js ainda existe');
+assert(!exists('app-next/styles/detail-review.css'), 'detail-review.css ainda existe');
 assert(!livePolish.includes('observe(document.documentElement'), 'live-polish observa o documento inteiro');
 
 const seoCombos = read('app-next/src/seo-combos.js');
@@ -150,7 +152,7 @@ assert(Array.isArray(manifest.files) && manifest.files.length >= 4, 'Manifesto S
 const sampleProductPage = manifest.files.find(file => /^(cestas|kits)\/[^/]+\/index\.html$/.test(file));
 assert(sampleProductPage && exists(sampleProductPage), 'Nenhuma página individual de cesta ou kit foi gerada');
 const sampleProductHtml = read(sampleProductPage);
-for (const marker of ['"@type":"Product"', '"@type":"Offer"', '"@type":"BreadcrumbList"', '<h1>', 'Somente delivery']) {
+for (const marker of ['"@type":"Product"', '"@type":"Offer"', '"@type":"BreadcrumbList"', '<h1>', 'Somente delivery', 'seo-combos-critical']) {
   assert(sampleProductHtml.includes(marker), `Página individual incompleta: ${marker}`);
 }
 

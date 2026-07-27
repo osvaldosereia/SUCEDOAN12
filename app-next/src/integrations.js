@@ -1,9 +1,9 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=20260727-4';
 import {
   cleanCep, cleanCpf, cleanPhone, fmt, formatCep, formatPhone,
   parseDate, readStorage, roundMoney, validEmail, validPhone, writeStorage
-} from './core.js';
-import { calculateCartPricing, isAvailable } from './commerce.js';
+} from './core.js?v=20260727-4';
+import { calculateCartPricing, isAvailable } from './commerce.js?v=20260727-4';
 
 export function normalizePayment(code) {
   const key = String(code || '').trim().toUpperCase();

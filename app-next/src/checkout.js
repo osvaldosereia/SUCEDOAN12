@@ -1,13 +1,13 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=20260727-4';
 import {
   cleanCpf, escapeHtml, fmt, formatCep, formatCpf, formatPhone,
   readStorage, writeStorage
-} from './core.js';
-import { calculateCartPricing } from './commerce.js';
+} from './core.js?v=20260727-4';
+import { calculateCartPricing } from './commerce.js?v=20260727-4';
 import {
   buildOrderPayload, buildWhatsAppMessage, enqueueOrder, lookupClientByCpf,
   openWhatsApp, processOrderQueue, validateCheckoutData
-} from './integrations.js';
+} from './integrations.js?v=20260727-4';
 
 function addDays(date, days) {
   const copy = new Date(date);

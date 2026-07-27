@@ -1,10 +1,10 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=20260727-4';
 import {
   codeVariants, norm, parseDate, parseMoney, readStorage, removeStorage,
   roundMoney, writeStorage
-} from './core.js';
-import { findProductByReference } from './catalog.js';
-import { basketFixedAdjustment } from './basket-pricing.js';
+} from './core.js?v=20260727-4';
+import { findProductByReference } from './catalog.js?v=20260727-4';
+import { basketFixedAdjustment } from './basket-pricing.js?v=20260727-4';
 
 export function applyProductOffer(product, now = new Date()) {
   const copy = { ...product };

@@ -1,4 +1,4 @@
-import { roundMoney } from './core.js';
+import { roundMoney } from './core.js?v=20260727-4';
 
 export function basketDefaultProductTotal(rows = []) {
   return roundMoney(rows.reduce((sum, row) => {

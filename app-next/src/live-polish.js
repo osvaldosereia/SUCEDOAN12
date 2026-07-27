@@ -1,8 +1,8 @@
-import { CONFIG } from './config.js';
-import { indexProducts, loadCatalog } from './catalog.js';
-import { applyProductOffer, isAvailable, kitDiscountPercent, kitIsVisible, kitOriginalPrice } from './commerce.js';
-import { escapeHtml, fmt, readStorage } from './core.js';
-import { comboSeoPath } from './bundle-routes.js';
+import { CONFIG } from './config.js?v=20260727-4';
+import { indexProducts, loadCatalog } from './catalog.js?v=20260727-4';
+import { applyProductOffer, isAvailable, kitDiscountPercent, kitIsVisible, kitOriginalPrice } from './commerce.js?v=20260727-4';
+import { escapeHtml, fmt, readStorage } from './core.js?v=20260727-4';
+import { comboSeoPath } from './bundle-routes.js?v=20260727-4';
 
 const POLISH_VERSION = '2026-07-26-live-polish-v4';
 const carouselState = new WeakMap();

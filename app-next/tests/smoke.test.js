@@ -17,13 +17,15 @@ required.forEach(file => {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Arquivo ausente: ${file}`);
 });
 if (fs.existsSync(path.join(root, 'src/visual-parity.js'))) throw new Error('Módulo visual redundante ainda existe');
+if (fs.existsSync(path.join(root, 'src/detail-review.js'))) throw new Error('detail-review.js ainda existe');
+if (fs.existsSync(path.join(root, 'styles/detail-review.css'))) throw new Error('detail-review.css ainda existe');
 
 const preview = read('index.html');
 for (const marker of [
-  'styles/home-parity.css?v=20260724-7',
-  'styles/live-polish.css?v=20260724-8',
-  'src/main.js?v=20260726-9',
-  'src/image-performance.js?v=20260724-4',
+  'styles/home-parity.css?v=20260727-4',
+  'styles/live-polish.css?v=20260727-4',
+  'src/main.js?v=20260727-4',
+  'src/image-performance.js?v=20260727-4',
   'requestIdleCallback',
   'noindex, nofollow'
 ]) if (!preview.includes(marker)) throw new Error(`Prévia incompleta: ${marker}`);
@@ -31,13 +33,13 @@ if (preview.includes('visual-parity.js')) throw new Error('Prévia ainda carrega
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-26-combos-seo-delivery-v2', 'content="index,follow,max-image-preview:large,max-snippet:-1"',
-  'app-next/styles/home-parity.css?v=20260724-7',
-  'app-next/styles/live-polish.css?v=20260724-8',
-  'app-next/src/main.js?v=20260726-9',
-  'app-next/src/image-performance.js?v=20260724-4',
-  'app-next/src/seo-combos.js?v=20260726-2',
-  'da_v8_cache_migrated_20260724', "params.get('p')", "params.get('categoria')",
+  '2026-07-27-cestas-imagens-cache-v1', 'content="index,follow,max-image-preview:large,max-snippet:-1"',
+  'app-next/styles/home-parity.css?v=20260727-4',
+  'app-next/styles/live-polish.css?v=20260727-4',
+  'app-next/src/main.js?v=20260727-4',
+  'app-next/src/image-performance.js?v=20260727-4',
+  'app-next/src/seo-combos.js?v=20260727-4',
+  'da_v9_cache_migrated_20260727', "params.get('p')", "params.get('categoria')",
   "params.get('secao')", 'window.__DA_PRODUCTION__ = true',
   'previewModular = false', 'preview_modular = false',
   'https://donaantonia.com.br/', '"@type":"OnlineStore"', 'Somente delivery'
@@ -51,7 +53,7 @@ if (production.includes('R. Trinta, 105')) throw new Error('Index ainda publica 
 
 const config = read('src/config.js');
 for (const marker of [
-  'IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", 'seo-delivery-v9',
+  'IS_PRODUCTION', "PREFIX: IS_PRODUCTION ? 'da_v2_' : 'da_next_'", '2026-07-27-cestas-imagens-cache-v1',
   "SITE_BASE_URL: 'https://donaantonia.com.br'"
 ]) {
   if (!config.includes(marker)) throw new Error(`Separação de ambientes incompleta: ${marker}`);
@@ -66,7 +68,7 @@ const main = read('src/main.js');
 for (const marker of [
   'bundle-confirm-checkout', 'bundle-confirm-continue', 'bundle-confirm-undo',
   'window.__DA_CATALOG_STATE__', "new CustomEvent('da:catalog-ready')", 'personalization-settings',
-  "import { prepareProductOffer } from './offer-engine.js'", 'applyProductOffer(prepareProductOffer(product))'
+  "import { prepareProductOffer } from './offer-engine.js?v=20260727-4'", 'applyProductOffer(prepareProductOffer(product))'
 ]) if (!main.includes(marker)) throw new Error(`Inicialização incompleta: ${marker}`);
 for (const removed of ['showConsentIfNeeded', 'personalization-consent', 'personalization-accept', 'personalization-decline']) {
   if (main.includes(removed)) throw new Error(`Código morto do consentimento: ${removed}`);
@@ -112,7 +114,7 @@ for (const marker of ['Valor normal', 'Desconto do kit', 'Desconto por validade'
 }
 if (checkout.includes('checkoutOffersHtml') || checkout.includes('Ofertas para completar')) throw new Error('Ofertas ocultas ainda existem no checkout');
 
-const detailReview = read('src/detail-review.js');
+const detailReview = read();
 if (detailReview.includes('fillCheckoutOffers') || detailReview.includes('Ofertas para completar')) throw new Error('Carga oculta de ofertas ainda existe');
 if (detailReview.includes('observe(document.documentElement')) throw new Error('detail-review observa o documento inteiro');
 

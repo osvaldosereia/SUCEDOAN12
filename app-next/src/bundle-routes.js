@@ -1,4 +1,4 @@
-import { norm, slug } from './core.js';
+import { norm, slug } from './core.js?v=20260727-4';
 
 function decodeRouteReference(value) {
   try { return decodeURIComponent(String(value || '').trim()); }
