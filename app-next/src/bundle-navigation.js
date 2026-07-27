@@ -11,11 +11,13 @@ function goToOffers() {
   closeBundleConfirmation();
   const app = document.getElementById('app');
   if (app) app.scrollTop = 0;
-  if (location.hash === '#/ofertas') {
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+
+  const offersLink = document.querySelector('[data-nav="offers"]');
+  if (offersLink instanceof HTMLElement) {
+    offersLink.click();
     return;
   }
-  location.hash = '#/ofertas';
+  location.assign('/#/ofertas');
 }
 
 document.addEventListener('click', event => {
