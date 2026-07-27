@@ -1,17 +1,10 @@
-const transparentPixel = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22/%3E';
-const supportsNativeLazy = typeof HTMLImageElement !== 'undefined' && 'loading' in HTMLImageElement.prototype;
-const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-const lowEndDevice = Boolean(
-  connection?.saveData
-  || /(^|-)2g$/.test(String(connection?.effectiveType || ''))
-  || Number(navigator.deviceMemory || 8) <= 2
-  || Number(navigator.hardwareConcurrency || 8) <= 2
-);
-const managedLazyLoading = lowEndDevice || !supportsNativeLazy;
-
-let fallbackObserver;
-let fallbackScrollBound = false;
-const fallbackImages = new Set();
+const TRANSPARENT_PIXEL = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221/%3E';
+const PRELOAD_MARGIN = 1100;
+const HORIZONTAL_PRELOAD_MARGIN = 520;
+const app = document.getElementById('app');
+const pendingImages = new Set();
+let appObserver;
+let scanScheduled = false;
 
 function localRepositoryAsset(value) {
   const raw = String(value || '').trim();
@@ -49,12 +42,11 @@ function rewriteImageUrls(image) {
   }
 
   ['fallback', 'detailFallback'].forEach(key => {
-    if (!image.dataset[key]) return;
-    image.dataset[key] = rewriteCandidateList(image.dataset[key]);
+    if (image.dataset[key]) image.dataset[key] = rewriteCandidateList(image.dataset[key]);
   });
 }
 
-function imageDimensions(image) {
+function ensureDimensions(image) {
   if (image.hasAttribute('width') && image.hasAttribute('height')) return;
   if (image.matches('.brand-logo,.sidebar-brand-logo')) {
     image.width = 160;
@@ -66,20 +58,20 @@ function imageDimensions(image) {
     image.height = 410;
     return;
   }
-  image.width = image.width || 300;
-  image.height = image.height || 300;
+  image.width = 300;
+  image.height = 300;
 }
 
 function isCritical(image) {
-  return image.matches('.brand-logo,.sidebar-brand-logo,[fetchpriority="high"],.basket-detail-media img,.product-detail-media>img');
+  return image.matches('.brand-logo,.sidebar-brand-logo,[fetchpriority="high"],.product-detail-media>img,.bundle-detail-hero>img');
 }
 
 function fallbackCandidates(image) {
   const candidates = [
     ...String(image.dataset.fallback || '').split('|'),
-    ...String(image.dataset.detailFallback || '').split('|')
+    ...String(image.dataset.detailFallback || '').split('|'),
+    '/img/logoantonia5.png'
   ].map(item => localRepositoryAsset(item.trim())).filter(Boolean);
-  candidates.push('/img/logoantonia5.png');
   return [...new Set(candidates)];
 }
 
@@ -87,85 +79,88 @@ function bindErrorRecovery(image) {
   if (image.dataset.performanceRecoveryBound === 'true') return;
   image.dataset.performanceRecoveryBound = 'true';
   image.dataset.performanceCandidates = fallbackCandidates(image).join('|');
+
   image.addEventListener('error', () => {
     const candidates = String(image.dataset.performanceCandidates || '')
       .split('|')
       .map(item => item.trim())
       .filter(Boolean);
-    const current = localRepositoryAsset(image.getAttribute('src'));
+    const current = localRepositoryAsset(image.currentSrc || image.getAttribute('src'));
     let next = candidates.shift();
     while (next && next === current) next = candidates.shift();
     image.dataset.performanceCandidates = candidates.join('|');
-    if (next) {
-      image.loading = 'eager';
-      image.src = next;
-    }
+    if (!next) return;
+    image.loading = 'eager';
+    image.fetchPriority = 'high';
+    image.src = next;
   });
 }
 
-function restoreDeferredImage(image) {
+function loadDeferredImage(image) {
+  if (!image?.isConnected) {
+    pendingImages.delete(image);
+    return;
+  }
+
   const source = image.dataset.performanceSrc;
   if (!source) return;
+
+  const sourceSet = image.dataset.performanceSrcset;
   image.loading = 'eager';
   image.src = localRepositoryAsset(source);
+  if (sourceSet) image.srcset = sourceSet;
   delete image.dataset.performanceSrc;
-  fallbackImages.delete(image);
-  fallbackObserver?.unobserve(image);
+  delete image.dataset.performanceSrcset;
+  pendingImages.delete(image);
+  appObserver?.unobserve(image);
 }
 
-function fallbackCheck() {
-  const limit = innerHeight + (lowEndDevice ? 520 : 800);
-  fallbackImages.forEach(image => {
-    if (!image.isConnected) {
-      fallbackImages.delete(image);
-      return;
-    }
-    const rect = image.getBoundingClientRect();
-    if (rect.top <= limit && rect.bottom >= -180) restoreDeferredImage(image);
-  });
-  if (!fallbackImages.size && fallbackScrollBound) {
-    document.getElementById('app')?.removeEventListener('scroll', fallbackCheck);
-    window.removeEventListener('scroll', fallbackCheck);
-    fallbackScrollBound = false;
-  }
-}
-
-function deferManagedImage(image) {
-  if (isCritical(image) || image.dataset.performanceSrc || !image.getAttribute('src')) return;
+function imageIsNearViewport(image) {
+  if (!app || !app.contains(image)) return true;
+  const rootRect = app.getBoundingClientRect();
   const rect = image.getBoundingClientRect();
-  const nearLimit = innerHeight + (lowEndDevice ? 520 : 800);
+  const verticallyNear = rect.top <= rootRect.bottom + PRELOAD_MARGIN && rect.bottom >= rootRect.top - 240;
+  if (!verticallyNear) return false;
 
-  if (rect.top <= nearLimit && rect.bottom >= -180) {
+  const insideHorizontalScroller = Boolean(image.closest('.bundle-carousel,.horizontal-rail,.banner-track,.image-thumbs'));
+  if (!insideHorizontalScroller) return true;
+  return rect.left <= rootRect.right + HORIZONTAL_PRELOAD_MARGIN && rect.right >= rootRect.left - 180;
+}
+
+function ensureObserver() {
+  if (appObserver || !app || !('IntersectionObserver' in window)) return appObserver;
+  appObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) loadDeferredImage(entry.target);
+    });
+  }, { root: app, rootMargin: `${PRELOAD_MARGIN}px ${HORIZONTAL_PRELOAD_MARGIN}px`, threshold: 0.01 });
+  return appObserver;
+}
+
+function deferImage(image) {
+  if (!app?.contains(image) || imageIsNearViewport(image)) {
     image.loading = 'eager';
     return;
   }
 
-  image.dataset.performanceSrc = localRepositoryAsset(image.getAttribute('src'));
-  image.src = transparentPixel;
-  image.loading = 'eager';
-  fallbackImages.add(image);
-
-  if ('IntersectionObserver' in window) {
-    if (!fallbackObserver) {
-      fallbackObserver = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) restoreDeferredImage(entry.target);
-        });
-      }, { root: null, rootMargin: lowEndDevice ? '520px 0px' : '800px 0px' });
-    }
-    fallbackObserver.observe(image);
-  } else if (!fallbackScrollBound) {
-    document.getElementById('app')?.addEventListener('scroll', fallbackCheck, { passive: true });
-    window.addEventListener('scroll', fallbackCheck, { passive: true });
-    fallbackScrollBound = true;
+  const source = image.getAttribute('src');
+  if (!source || source === TRANSPARENT_PIXEL) return;
+  image.dataset.performanceSrc = localRepositoryAsset(source);
+  if (image.hasAttribute('srcset')) {
+    image.dataset.performanceSrcset = image.getAttribute('srcset');
+    image.removeAttribute('srcset');
   }
+  image.src = TRANSPARENT_PIXEL;
+  image.loading = 'eager';
+  pendingImages.add(image);
+  ensureObserver()?.observe(image);
 }
 
 function prepareImage(image) {
   if (!(image instanceof HTMLImageElement) || image.dataset.performancePrepared === 'true') return;
   image.dataset.performancePrepared = 'true';
   rewriteImageUrls(image);
-  imageDimensions(image);
+  ensureDimensions(image);
   image.decoding = 'async';
   bindErrorRecovery(image);
 
@@ -176,11 +171,7 @@ function prepareImage(image) {
   }
 
   image.fetchPriority = 'low';
-  if (managedLazyLoading) {
-    deferManagedImage(image);
-  } else {
-    image.loading = 'lazy';
-  }
+  deferImage(image);
 }
 
 function prepareNode(node) {
@@ -193,22 +184,53 @@ function prepareRoot(root) {
   root?.querySelectorAll?.('img').forEach(prepareImage);
 }
 
+function scanPendingImages() {
+  scanScheduled = false;
+  pendingImages.forEach(image => {
+    if (!image.isConnected) {
+      pendingImages.delete(image);
+      appObserver?.unobserve(image);
+      return;
+    }
+    if (imageIsNearViewport(image)) loadDeferredImage(image);
+  });
+}
+
+function scheduleScan() {
+  if (scanScheduled) return;
+  scanScheduled = true;
+  requestAnimationFrame(scanPendingImages);
+}
+
 function observeRoot(root) {
   if (!root) return;
   prepareRoot(root);
   new MutationObserver(records => {
     records.forEach(record => record.addedNodes.forEach(prepareNode));
+    scheduleScan();
   }).observe(root, { childList: true, subtree: true });
 }
 
 prepareRoot(document);
-observeRoot(document.getElementById('app'));
+observeRoot(app);
 observeRoot(document.getElementById('checkout-content'));
+
 new MutationObserver(records => {
   records.forEach(record => record.addedNodes.forEach(node => {
     if (node instanceof Element && (node.id === 'bundle-confirm-overlay' || node.id === 'personalization-overlay')) prepareNode(node);
   }));
 }).observe(document.body, { childList: true });
 
-document.documentElement.dataset.performanceProfile = lowEndDevice ? 'economy' : 'standard';
+app?.addEventListener('scroll', scheduleScan, { passive: true });
+document.addEventListener('scroll', event => {
+  if (event.target instanceof Element && event.target.matches('.bundle-carousel,.horizontal-rail,.banner-track,.image-thumbs')) scheduleScan();
+}, { passive: true, capture: true });
+window.addEventListener('resize', scheduleScan, { passive: true });
+window.addEventListener('da:route-rendered', () => {
+  prepareRoot(app);
+  scheduleScan();
+});
+
+scheduleScan();
+document.documentElement.dataset.performanceProfile = 'container-aware';
 document.documentElement.dataset.imageSourceMode = 'same-origin';

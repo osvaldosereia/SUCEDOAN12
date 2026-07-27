@@ -17,7 +17,7 @@ const required = [
   'site/produtos-cesta-basica.json', 'site/kits.json', 'site/app-version.json',
   'app-next/index.html', 'app-next/styles/storefront-base.css',
   'app-next/styles/storefront-components.css', 'app-next/styles/storefront-responsive.css',
-  'app-next/src/ui.js', 'app-next/src/main.js',
+  'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/home-carousels.js',
   'app-next/src/image-performance.js', 'app-next/src/bundle-routes.js',
   'app-next/src/config.js', 'app-next/src/catalog.js', 'app-next/src/core.js',
   'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js',
@@ -29,12 +29,14 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-27-storefront-performance-v6',
-  '/app-next/styles/storefront-base.css?v=20260727-6',
-  '/app-next/styles/storefront-components.css?v=20260727-6',
-  '/app-next/styles/storefront-responsive.css?v=20260727-6',
+  '2026-07-27-storefront-carousel-v7',
+  '/app-next/styles/storefront-base.css?v=20260727-7',
+  '/app-next/styles/storefront-components.css?v=20260727-7',
+  '/app-next/styles/storefront-responsive.css?v=20260727-7',
+  '/app-next/src/image-performance.js?v=20260727-7',
+  '/app-next/src/home-carousels.js?v=20260727-7',
   '/app-next/src/main.js?v=20260727-6',
-  'da_v11_storefront_performance_20260727',
+  'da_v12_storefront_carousel_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
   '"@type":"WebSite"', 'Cestas Básicas em Cuiabá e Várzea Grande',
@@ -54,7 +56,11 @@ const css = [
   read('app-next/styles/storefront-responsive.css')
 ].join('\n');
 assert(css.includes('.product-grid{grid-template-columns:repeat(4'), 'Cards de produtos não usam quatro colunas no desktop');
-assert(css.includes('.bundle-grid{grid-template-columns:repeat(4'), 'Cestas e kits não usam quatro colunas no desktop');
+assert(css.includes('.home-page .bundle-grid{display:flex'), 'Cestas e kits da home não usam carrossel');
+assert(css.includes('calc(58.8235% - 7px)'), 'Carrossel mobile não exibe aproximadamente 1,7 card');
+assert(css.includes('.home-page .bundle-card{flex:0 0'), 'Cards de cestas e kits da home não são verticais e roláveis');
+assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem sem estilo consistente');
+assert(css.includes('.category-grid{width:100%;min-width:0'), 'Categorias ainda podem ultrapassar a largura mobile');
 assert(!css.includes('repeat(5,minmax'), 'CSS ainda força cinco colunas de cards');
 assert(css.includes('.bundle-fixed-qty'), 'Quantidade fixa dos kits sem estilo');
 assert(css.includes('[inert]'), 'CSS não protege elementos inertes');
@@ -70,6 +76,14 @@ for (const marker of ['HOME_BUNDLE_LIMIT = 100', 'editable: true', 'editable: fa
 const catalog = read('app-next/src/catalog.js');
 for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed']) {
   assert(catalog.includes(marker), `Catálogo incompleto: ${marker}`);
+}
+const imagePerformance = read('app-next/src/image-performance.js');
+for (const marker of ['root: app', 'PRELOAD_MARGIN', "app?.addEventListener('scroll'", 'loadDeferredImage']) {
+  assert(imagePerformance.includes(marker), `Carregamento de imagens incompleto: ${marker}`);
+}
+const carousel = read('app-next/src/home-carousels.js');
+for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle-carousel-control']) {
+  assert(carousel.includes(marker), `Carrossel incompleto: ${marker}`);
 }
 const stabilizer = read('scripts/estabilizar-catalogo-publico.mjs');
 assert(stabilizer.includes('contentHash'), 'Estabilizador não usa versão por conteúdo');
@@ -139,4 +153,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, SEO focado em cestas básicas, navegação única e cache progressivo.`);
+console.log(`Site validado: ${baskets.length} cestas, carrosséis responsivos, categorias contidas e imagens ligadas à rolagem interna.`);
