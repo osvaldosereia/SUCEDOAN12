@@ -10,21 +10,24 @@ on:
       - 'site/produtos-home.json'
       - 'site/produtos-cesta-basica.json'
       - 'site/kits.json'
-      - 'scripts/aplicar-seo-delivery-v2.js'
-      - 'scripts/seo-delivery-payload/**'
+      - 'scripts/refatorar-rotas-combos.js'
       - 'scripts/catalogos-combos-lib.js'
-      - 'scripts/garantir-sinal-delivery.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
       - 'scripts/gerar-paginas-seo-combos.js'
       - 'scripts/gerar-sitemap.js'
       - 'scripts/injetar-seo-combos.js'
       - 'scripts/normalizar-seo-delivery.js'
+      - 'scripts/check-public-site.mjs'
+      - 'app-next/src/bundle-routes.js'
+      - 'app-next/src/core.js'
+      - 'app-next/src/catalog.js'
+      - 'app-next/src/ui.js'
+      - 'app-next/src/main.js'
+      - 'app-next/src/live-polish.js'
       - 'app-next/src/seo-combos.js'
-      - 'app-next/src/delivery-only.js'
       - 'app-next/src/config.js'
       - 'site-public/assets/seo-combos.css'
-      - 'scripts/check-public-site.mjs'
       - '.github/workflows/update-public-data.yml'
 
 permissions:
@@ -50,14 +53,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Aplicar migração SEO delivery v2
-        run: node scripts/aplicar-seo-delivery-v2.js
+      - name: Refatorar rotas de cestas e kits
+        run: node scripts/refatorar-rotas-combos.js
 
       - name: Normalizar domínio e empresa somente delivery
         run: node scripts/normalizar-seo-delivery.js
-
-      - name: Registrar sinal técnico somente delivery
-        run: node scripts/garantir-sinal-delivery.js
 
       - name: Aplicar metadados principais
         run: node scripts/injetar-seo-combos.js
@@ -78,12 +78,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          node --check scripts/aplicar-seo-delivery-v2.js
+          node --check scripts/refatorar-rotas-combos.js
           node --check scripts/catalogos-combos-lib.js
-          node --check scripts/garantir-sinal-delivery.js
           node --check scripts/gerar-paginas-seo-combos.js
           node --check scripts/normalizar-seo-delivery.js
-          node --check app-next/src/delivery-only.js
+          node --check app-next/src/bundle-routes.js
+          node --check app-next/src/core.js
+          node --check app-next/src/catalog.js
+          node --check app-next/src/ui.js
+          node --check app-next/src/main.js
+          node --check app-next/src/live-polish.js
+          node --check app-next/src/seo-combos.js
           node scripts/check-public-site.mjs
           test -s merchant.xml
           grep -q '<item>' merchant.xml
@@ -107,14 +112,19 @@ jobs:
           ! grep -q '?cesta=' sitemap.xml
           ! grep -q 'https://www.donaantonia.com.br' sitemap.xml merchant.xml robots.txt index.html
           grep -q 'app-next/src/seo-combos.js' index.html
-          grep -q 'app-next/src/delivery-only.js' index.html
+          grep -q 'app-next/src/main.js?v=20260726-9' index.html
+          ! grep -q 'app-next/src/delivery-only.js' index.html
           test "$(grep -o 'app-next/src/seo-combos.js?v=20260726-2' index.html | wc -l)" -eq 1
-          test "$(grep -o 'app-next/src/delivery-only.js?v=20260726-1' index.html | wc -l)" -eq 1
-          grep -q "params.get('cesta')" index.html
+          ! grep -q '#/cesta/' app-next/src/ui.js app-next/src/live-polish.js
+          ! grep -q '#/kit/' app-next/src/ui.js app-next/src/live-polish.js
           grep -q 'OnlineStore' index.html
           grep -q 'Somente delivery' index.html
           ! grep -q '"@type":"GroceryStore"' index.html
-          ! grep -q 'R. Trinta, 105' sobre-nos.html contato.html
+          ! grep -q 'R. Trinta, 105' sobre-nos.html contato.html app-next/src/ui.js
+          test ! -e app-next/src/delivery-only.js
+          test ! -e scripts/garantir-sinal-delivery.js
+          test ! -e scripts/aplicar-seo-delivery-v2.js
+          test ! -e scripts/seo-delivery-payload
 
       - name: Publicar dados e páginas geradas
         shell: bash
@@ -123,12 +133,15 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A -- \
-            .seo-delivery-v2-aplicado SEO-GOOGLE-DELIVERY-CHECKLIST.md \
-            scripts/catalogos-combos-lib.js scripts/garantir-sinal-delivery.js scripts/gerar-merchant.js scripts/gerar-meta-combos.js \
+            SEO-GOOGLE-DELIVERY-CHECKLIST.md \
+            scripts/aplicar-seo-delivery-v2.js scripts/seo-delivery-payload scripts/garantir-sinal-delivery.js \
+            scripts/catalogos-combos-lib.js scripts/gerar-merchant.js scripts/gerar-meta-combos.js \
             scripts/gerar-paginas-seo-combos.js scripts/gerar-sitemap.js scripts/injetar-seo-combos.js \
             scripts/normalizar-seo-delivery.js scripts/check-public-site.mjs \
-            app-next/src/config.js app-next/src/seo-combos.js app-next/src/delivery-only.js \
-            app-next/tests/smoke.test.js site-public/assets/seo-combos.css site/app-version.json \
+            .seo-delivery-v2-aplicado \
+            app-next/src/config.js app-next/src/bundle-routes.js app-next/src/core.js app-next/src/catalog.js \
+            app-next/src/ui.js app-next/src/main.js app-next/src/live-polish.js app-next/src/seo-combos.js app-next/src/delivery-only.js \
+            app-next/index.html app-next/tests/smoke.test.js site-public/assets/seo-combos.css site/app-version.json \
             merchant.xml sitemap.xml robots.txt \
             site/produtos_meta.csv site/produtos_admin_meta.json site/seo-combos-manifest.json \
             cestas kits \
@@ -138,7 +151,7 @@ jobs:
             echo 'SEO e catálogos de cestas e kits já estão atualizados.'
             exit 0
           fi
-          git commit -m 'Atualiza SEO delivery de cestas e kits'
+          git commit -m 'Publica rotas limpas de cestas e kits'
           for tentativa in 1 2 3 4 5; do
             if git push origin 'HEAD:main'; then
               exit 0
@@ -147,5 +160,5 @@ jobs:
             git rebase origin/main
             sleep $((tentativa * 2))
           done
-          echo 'Não foi possível publicar o SEO e os catálogos após cinco tentativas.' >&2
+          echo 'Não foi possível publicar as rotas limpas após cinco tentativas.' >&2
           exit 1

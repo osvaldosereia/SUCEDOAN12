@@ -8,10 +8,8 @@ on:
       - 'app-next/**'
       - 'site-public/**'
       - 'producao-v2/js/services/collections.js'
-      - 'scripts/aplicar-seo-delivery-v2.js'
-      - 'scripts/seo-delivery-payload/**'
+      - 'scripts/refatorar-rotas-combos.js'
       - 'scripts/catalogos-combos-lib.js'
-      - 'scripts/garantir-sinal-delivery.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
       - 'scripts/gerar-paginas-seo-combos.js'
@@ -54,8 +52,8 @@ jobs:
           cache: npm
           cache-dependency-path: app-next/package.json
 
-      - name: Aplicar migração SEO delivery v2
-        run: node scripts/aplicar-seo-delivery-v2.js
+      - name: Refatorar rotas de cestas e kits
+        run: node scripts/refatorar-rotas-combos.js
 
       - name: Gerar SEO, páginas e feeds para validação
         id: seo
@@ -65,14 +63,16 @@ jobs:
           set -o pipefail
           {
             node scripts/normalizar-seo-delivery.js
-            node scripts/garantir-sinal-delivery.js
             node scripts/injetar-seo-combos.js
             node scripts/gerar-paginas-seo-combos.js
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
             test "$(grep -o 'app-next/src/seo-combos.js?v=20260726-2' index.html | wc -l)" -eq 1
-            test "$(grep -o 'app-next/src/delivery-only.js?v=20260726-1' index.html | wc -l)" -eq 1
+            test "$(grep -o 'app-next/src/main.js?v=20260726-9' index.html | wc -l)" -eq 2
+            ! grep -q 'app-next/src/delivery-only.js' index.html
+            ! grep -q '#/cesta/' app-next/src/ui.js app-next/src/live-polish.js
+            ! grep -q '#/kit/' app-next/src/ui.js app-next/src/live-polish.js
           } 2>&1 | tee public-site-test-report.txt
 
       - name: Testar módulos
@@ -112,9 +112,8 @@ jobs:
         run: |
           set -o pipefail
           {
-            node --check scripts/aplicar-seo-delivery-v2.js
+            node --check scripts/refatorar-rotas-combos.js
             node --check scripts/catalogos-combos-lib.js
-            node --check scripts/garantir-sinal-delivery.js
             node --check scripts/gerar-merchant.js
             node --check scripts/gerar-meta-combos.js
             node --check scripts/gerar-paginas-seo-combos.js
@@ -122,8 +121,13 @@ jobs:
             node --check scripts/injetar-seo-combos.js
             node --check scripts/normalizar-seo-delivery.js
             node --check scripts/check-public-site.mjs
+            node --check app-next/src/bundle-routes.js
+            node --check app-next/src/core.js
+            node --check app-next/src/catalog.js
+            node --check app-next/src/ui.js
+            node --check app-next/src/main.js
+            node --check app-next/src/live-polish.js
             node --check app-next/src/seo-combos.js
-            node --check app-next/src/delivery-only.js
           } 2>&1 | tee -a public-site-test-report.txt
 
       - name: Anexar relatório do site
