@@ -18,6 +18,28 @@ function stateWith(product, coupon = null, qty = 1) {
   };
 }
 
+function kitState(stock) {
+  const product = { id: 'P1', codigo: 'P1', name: 'Produto do kit', price: 10, oldPrice: 10, stock, situacao: '' };
+  return {
+    products: [product],
+    productMap: new Map([[product.id, product]]),
+    productExactMap: new Map([[product.id.toLowerCase(), product]]),
+    productCodeMap: new Map([[product.id.toLowerCase(), product]])
+  };
+}
+
+function stockControlledKit() {
+  return {
+    id: 'k-estoque',
+    ativo: true,
+    preco: 8,
+    precoOriginal: 10,
+    produtos: [{ codigo: 'P1', qtd: 1 }],
+    dataInicio: '',
+    dataFim: ''
+  };
+}
+
 test('calcula cupom e atacado na ordem esperada', () => {
   const product = { id: 'p1', name: 'Produto', price: 100, oldPrice: 100, stock: 20, situacao: '', validade: '' };
   const coupon = { codigo: 'TESTE10', ativo: true, tipo: 'percentual', desconto: 10 };
@@ -44,6 +66,14 @@ test('kit sem produtos resolvidos não fica visível', () => {
   const state = { products: [], productMap: new Map(), productCodeMap: new Map(), productExactMap: new Map() };
   const kit = { id: 'k1', ativo: true, preco: 10, produtos: ['1x X'], dataInicio: '', dataFim: '' };
   assert.equal(kitIsVisible(state, kit), false);
+});
+
+test('kit fica visível enquanto todos os itens possuem estoque', () => {
+  assert.equal(kitIsVisible(kitState(2), stockControlledKit(), new Date('2026-07-27T12:00:00-04:00')), true);
+});
+
+test('kit sai do ar quando um dos itens chega a estoque zero', () => {
+  assert.equal(kitIsVisible(kitState(0), stockControlledKit(), new Date('2026-07-27T12:00:00-04:00')), false);
 });
 
 test('detecta cesta alterada mesmo quando o valor total não muda', async () => {

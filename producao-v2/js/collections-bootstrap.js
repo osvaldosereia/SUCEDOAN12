@@ -5,8 +5,11 @@ import './basket-context.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
 import { CollectionsModule } from './modules/collections.js';
+import './kit-lifecycle-admin.js';
 import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
+
+const BUILD = '20260727-admin-kit-lifecycle-v1';
 
 function loadConfig() {
   try {
@@ -26,7 +29,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-collections]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/collections.css?admin_build=20260726-admin-v13-nfe-real';
+  link.href = `./assets/collections.css?admin_build=${BUILD}`;
   link.dataset.adminV2Collections = '1';
   document.head.appendChild(link);
 }
