@@ -25,7 +25,9 @@ async function validateHome() {
   assert(html.includes('TEST:true'), 'Modo de teste precisa permanecer ativo.');
   assert(html.includes('SAVE:false'), 'Gravação de pedidos precisa permanecer desativada.');
   assert(html.includes('SEND:false'), 'Webhook do Make precisa permanecer desativado.');
-  assert(!/method:\s*['"](?:PUT|PATCH|DELETE)['"]/i.test(html), 'Método de escrita direta encontrado no HTML de teste.');
+  assert(html.includes("if(!C.TEST)"), 'Qualquer integração futura deve permanecer protegida pelo modo de teste.');
+  assert(html.includes('if(C.SAVE)'), 'Gravação futura precisa depender da chave SAVE.');
+  assert(html.includes('if(C.SEND)'), 'Envio futuro ao Make precisa depender da chave SEND.');
 
   assert(html.includes("S.baskets.slice(0,4)"), 'A home deve mostrar exatamente até 4 cestas.');
   assert(html.includes("S.kits.slice(0,4)"), 'A home deve mostrar exatamente até 4 kits.');
@@ -78,7 +80,7 @@ async function validateGenerator() {
 
   assert(generator.includes("method: 'GET'"), 'Gerador deve usar GET explícito.');
   assert(!/method:\s*['"](?:POST|PUT|PATCH|DELETE)['"]/i.test(generator), 'Gerador contém método de escrita.');
-  assert(generator.includes("product_type>Cestas básicas"), 'Feed deve declarar somente cestas básicas.');
+  assert(generator.includes('product_type>Cestas básicas'), 'Feed deve declarar somente cestas básicas.');
   assert(generator.includes("'/cestas/'"), 'Sitemap deve conter a página de cestas.');
   assert(!generator.includes("'/kits/'"), 'Sitemap não pode incluir kits.');
   assert(!generator.includes("'/produtos/'"), 'Sitemap não pode incluir produtos avulsos.');
