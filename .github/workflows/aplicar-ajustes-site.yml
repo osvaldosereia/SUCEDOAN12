@@ -3,7 +3,7 @@ name: Aplicar ajustes controlados do site
 on:
   workflow_dispatch:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize]
   push:
     branches: [main]
     paths:
@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/site-adjust-patch/part-*.js.txt > "$RUNNER_TEMP/patch-site.js"
+          cat .github/site-adjust-patch/base64-*.txt | base64 --decode > "$RUNNER_TEMP/patch-site.js"
           node --check "$RUNNER_TEMP/patch-site.js"
 
       - name: Aplicar somente os ajustes solicitados
