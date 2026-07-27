@@ -10,9 +10,10 @@ const assert = (ok, message) => { if (!ok) throw new Error(message); };
 
 const required = [
   'index.html', 'styles/storefront-base.css', 'styles/storefront-components.css',
-  'styles/storefront-responsive.css', 'src/main.js', 'src/ui.js', 'src/catalog.js',
+  'styles/storefront-responsive.css', 'styles/checkout-flow.css',
+  'src/main.js', 'src/ui.js', 'src/catalog.js', 'src/checkout.js',
   'src/core.js', 'src/image-performance.js', 'src/home-carousels.js',
-  'src/bundle-navigation.js', 'src/bundle-routes.js'
+  'src/bundle-routes.js'
 ];
 required.forEach(file => assert(fs.existsSync(path.join(root, file)), `Arquivo ausente: ${file}`));
 
@@ -23,14 +24,15 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-27-storefront-carousel-v7',
+  '2026-07-27-checkout-navigation-v8',
   '/app-next/styles/storefront-base.css?v=20260727-7',
-  '/app-next/styles/storefront-components.css?v=20260727-7',
-  '/app-next/styles/storefront-responsive.css?v=20260727-7',
-  '/app-next/src/image-performance.js?v=20260727-7',
-  '/app-next/src/home-carousels.js?v=20260727-7',
-  '/app-next/src/main.js?v=20260727-6',
-  'da_v12_storefront_carousel_20260727',
+  '/app-next/styles/storefront-components.css?v=20260727-8',
+  '/app-next/styles/storefront-responsive.css?v=20260727-8',
+  '/app-next/styles/checkout-flow.css?v=20260727-8',
+  '/app-next/src/image-performance.js?v=20260727-8',
+  '/app-next/src/home-carousels.js?v=20260727-8',
+  '/app-next/src/main.js?v=20260727-8',
+  'da_v13_checkout_navigation_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
 ]) assert(production.includes(marker), `Produção incompleta: ${marker}`);
@@ -51,6 +53,7 @@ assert(css.includes('.home-page .bundle-grid{display:flex'), 'Cestas e kits da h
 assert(css.includes('calc(58.8235% - 7px)'), 'Carrossel mobile não mostra aproximadamente 1,7 card');
 assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem não possui estilo consistente');
 assert(css.includes('.category-grid{width:100%;min-width:0'), 'Grid de categorias ainda pode extrapolar a tela');
+assert(css.includes('.bundle-detail-hero>img{width:100%;max-width:360px'), 'Foto da cesta não foi ampliada');
 assert(css.includes('.bundle-total{bottom:calc(var(--bottom-h) + var(--safe-bottom))'), 'Resumo da cesta não encosta na barra inferior');
 assert(!css.includes('repeat(5,minmax'), 'Layout ainda cria cinco colunas de cards');
 assert(css.includes('[inert]'), 'Elementos inertes não possuem proteção visual');
@@ -65,23 +68,28 @@ for (const marker of [
 const main = read('src/main.js');
 for (const marker of [
   'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog',
-  'overlay.setAttribute(\'inert\'', 'router.navigate(target)'
+  'overlay.setAttribute(\'inert\'', 'router.navigate(target)',
+  "router.navigate('#/ofertas')", 'warmOfferImages',
+  "createCheckout } from './checkout.js?v=20260727-8'", 'query.length < 3'
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
 
+const checkout = read('src/checkout.js');
+for (const marker of [
+  'Pedir no WhatsApp', 'Buscar o cadastro é opcional',
+  'checkout-whatsapp-note', 'openWhatsApp(message)', 'validateCheckoutData'
+]) assert(checkout.includes(marker), `Checkout incompleto: ${marker}`);
+assert(!checkout.includes('lookupReady ?'), 'Checkout ainda esconde a finalização antes da consulta do CPF');
+
 const imagePerformance = read('src/image-performance.js');
-for (const marker of ['root: app', 'PRELOAD_MARGIN', 'HORIZONTAL_PRELOAD_MARGIN', "app?.addEventListener('scroll'", 'loadDeferredImage']) {
+for (const marker of ['root: app', 'PRELOAD_MARGIN', 'HORIZONTAL_PRELOAD_MARGIN', "app?.addEventListener('scroll'", 'loadDeferredImage', 'height=%221%22']) {
   assert(imagePerformance.includes(marker), `Carregamento de imagens incompleto: ${marker}`);
 }
 
 const carousel = read('src/home-carousels.js');
-for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle-carousel-control', 'bundle-navigation.js']) {
+for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle-carousel-control']) {
   assert(carousel.includes(marker), `Carrossel incompleto: ${marker}`);
 }
-
-const bundleNavigation = read('src/bundle-navigation.js');
-for (const marker of ['bundle-confirm-continue', 'offersLink.click()', 'app.scrollTop = 0']) {
-  assert(bundleNavigation.includes(marker), `Navegação após adicionar cesta incompleta: ${marker}`);
-}
+assert(!carousel.includes('bundle-navigation.js'), 'Carrossel ainda importa navegação paralela');
 
 const catalog = read('src/catalog.js');
 for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed']) {
@@ -97,4 +105,4 @@ for (const file of jsFiles) {
 await import('../src/ui.js');
 await import('../src/checkout.js');
 await import('../src/offer-engine.js');
-console.log(`Smoke test concluído: carrosséis responsivos, imagens ligadas à rolagem interna e ${jsFiles.length} módulos válidos.`);
+console.log(`Smoke test concluído: checkout com WhatsApp, busca estável, navegação direta e ${jsFiles.length} módulos válidos.`);
