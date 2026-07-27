@@ -10,7 +10,7 @@ const assert = (ok, message) => { if (!ok) throw new Error(message); };
 
 const required = [
   'index.html', 'styles/storefront-base.css', 'styles/storefront-components.css',
-  'styles/storefront-responsive.css', 'styles/checkout-flow.css',
+  'styles/storefront-responsive.css', 'styles/checkout-flow.css', 'styles/bundle-confirmation.css',
   'src/main.js', 'src/ui.js', 'src/catalog.js', 'src/checkout.js',
   'src/core.js', 'src/image-performance.js', 'src/home-carousels.js',
   'src/fast-offers-v9.js', 'src/bundle-routes.js'
@@ -24,16 +24,17 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-27-checkout-navigation-v8',
+  '2026-07-27-basket-actions-v9',
   '/app-next/styles/storefront-base.css?v=20260727-7',
-  '/app-next/styles/storefront-components.css?v=20260727-8',
-  '/app-next/styles/storefront-responsive.css?v=20260727-8',
+  '/app-next/styles/storefront-components.css?v=20260727-9',
+  '/app-next/styles/storefront-responsive.css?v=20260727-9',
   '/app-next/styles/checkout-flow.css?v=20260727-8',
+  '/app-next/styles/bundle-confirmation.css?v=20260727-5',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
   '/app-next/src/fast-offers-v9.js?v=20260727-10',
   '/app-next/src/main.js?v=20260727-8',
-  'da_v14_offers_progressive_20260727',
+  'da_v15_basket_actions_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
 ]) assert(production.includes(marker), `Produção incompleta: ${marker}`);
@@ -55,9 +56,14 @@ assert(css.includes('calc(58.8235% - 7px)'), 'Carrossel mobile não mostra aprox
 assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem não possui estilo consistente');
 assert(css.includes('.category-grid{width:100%;min-width:0'), 'Grid de categorias ainda pode extrapolar a tela');
 assert(css.includes('.bundle-detail-hero>img{width:100%;max-width:360px'), 'Foto da cesta não foi ampliada');
-assert(css.includes('.bundle-total{bottom:calc(var(--bottom-h) + var(--safe-bottom))'), 'Resumo da cesta não encosta na barra inferior');
+assert(css.includes('.bundle-total{position:static'), 'Resumo da cesta não está no fluxo normal da página');
+assert(!css.includes('.bundle-total{position:sticky'), 'Resumo da cesta ainda está flutuante');
 assert(!css.includes('repeat(5,minmax'), 'Layout ainda cria cinco colunas de cards');
 assert(css.includes('[inert]'), 'Elementos inertes não possuem proteção visual');
+
+const bundleConfirmation = read('styles/bundle-confirmation.css');
+assert(bundleConfirmation.includes('content:"VEJA AS OFERTAS DE HOJE"'), 'Chamada de ofertas não recebeu o novo texto destacado');
+assert(bundleConfirmation.includes('background:#f28c28!important'), 'Chamada de ofertas não recebeu cor própria');
 
 const ui = read('src/ui.js');
 for (const marker of [
@@ -112,4 +118,4 @@ for (const file of jsFiles) {
 await import('../src/ui.js');
 await import('../src/checkout.js');
 await import('../src/offer-engine.js');
-console.log(`Smoke test concluído: checkout com WhatsApp, busca estável, ofertas progressivas e ${jsFiles.length} módulos válidos.`);
+console.log(`Smoke test concluído: resumo da cesta no fluxo, ofertas destacadas e ${jsFiles.length} módulos válidos.`);
