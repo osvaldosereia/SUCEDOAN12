@@ -1,0 +1,48 @@
+name: Publicar correção de imagens e cache
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-basket-images-cache-publish.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Aplicar arquivos definitivos
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk '
+            /node <<'"'"'NODE'"'"'/ {inside=1; next}
+            inside && /^          NODE$/ {inside=0; exit}
+            inside {sub(/^          /, ""); print}
+          ' .github/workflows/fix-basket-images-cache.yml > /tmp/corrigir.js
+          node /tmp/corrigir.js
+          node scripts/normalizar-seo-delivery.js
+          node scripts/injetar-seo-combos.js
+          node scripts/gerar-paginas-seo-combos.js
+          node scripts/gerar-sitemap.js
+          git checkout -- .github/workflows/app-next-tests.yml .github/workflows/update-public-data.yml
+      - name: Commitar sem alterar workflows permanentes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git reset .github/workflows
+          git commit -m 'Corrige imagens, cache e conflitos das cestas'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
