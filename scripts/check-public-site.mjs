@@ -19,7 +19,7 @@ const required = [
   'app-next/styles/storefront-components.css', 'app-next/styles/storefront-responsive.css',
   'app-next/styles/checkout-flow.css', 'app-next/src/checkout.js',
   'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/home-carousels.js',
-  'app-next/src/image-performance.js', 'app-next/src/bundle-routes.js',
+  'app-next/src/image-performance.js', 'app-next/src/fast-offers-v9.js', 'app-next/src/bundle-routes.js',
   'app-next/src/config.js', 'app-next/src/catalog.js', 'app-next/src/core.js',
   'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js',
   'scripts/gerar-meta-combos.js', 'scripts/gerar-paginas-seo-combos.js',
@@ -37,8 +37,9 @@ for (const marker of [
   '/app-next/styles/checkout-flow.css?v=20260727-8',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
+  '/app-next/src/fast-offers-v9.js?v=20260727-10',
   '/app-next/src/main.js?v=20260727-8',
-  'da_v13_checkout_navigation_20260727',
+  'da_v14_offers_progressive_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
   '"@type":"WebSite"', 'Cestas Básicas em Cuiabá e Várzea Grande',
@@ -75,6 +76,12 @@ for (const marker of [
   'setAttribute(\'inert\'', "router.navigate('#/ofertas')", 'warmOfferImages',
   "createCheckout } from './checkout.js?v=20260727-8'", 'query.length < 3'
 ]) assert(main.includes(marker), `Main incompleto: ${marker}`);
+
+const fastOffers = read('app-next/src/fast-offers-v9.js');
+for (const marker of [
+  'OFFER_BATCH_SIZE = 16', 'holdInitialOffersRoute', "window.addEventListener('da:catalog-refreshed'",
+  'queueMicrotask', "dataset.offersRenderer = 'progressive-v10'"
+]) assert(fastOffers.includes(marker), `Ofertas progressivas incompletas: ${marker}`);
 
 const checkout = read('app-next/src/checkout.js');
 for (const marker of ['Pedir no WhatsApp', 'Buscar o cadastro é opcional', 'checkout-whatsapp-note', 'openWhatsApp(message)']) {
@@ -168,4 +175,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, checkout com WhatsApp, busca estável e navegação direta.`);
+console.log(`Site validado: ${baskets.length} cestas, checkout com WhatsApp, busca estável e ofertas progressivas.`);
