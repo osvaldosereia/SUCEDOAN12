@@ -1,0 +1,75 @@
+
+replaceOnce(checkout, `      render();
+  } catch (error) {`, `      render();
+    ui.updateShell();
+  } catch (error) {`, 'lookup update shell');
+
+const integrations = 'app-next/src/integrations.js';
+replaceOnce(integrations, `export function validateCheckoutData(form, state) {
+  const pricing = calculateCartPricing(state);
+  const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Cuiaba' }));
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const sameDayClosed = form.deliveryDate === todayKey && today.getHours() >= 10;
+  const errors = [];
+  const add = (field, label, valid) => { if (!valid) errors.push({ field, label }); };
+  add('deliveryDate', sameDayClosed ? 'Entrega para hoje somente até 10h' : 'Escolha a entrega', Boolean(form.deliveryDate) && !sameDayClosed);`, `export function validateCheckoutData(form, state, { allowedDeliveryDates = [] } = {}) {
+  const pricing = calculateCartPricing(state);
+  const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Cuiaba' }));
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const sameDayClosed = form.deliveryDate === todayKey && today.getHours() >= 10;
+  const allowedSet = new Set((allowedDeliveryDates || []).map(String));
+  const deliveryAllowed = Boolean(form.deliveryDate)
+    && !sameDayClosed
+    && (!allowedSet.size || allowedSet.has(String(form.deliveryDate)));
+  const errors = [];
+  const add = (field, label, valid) => { if (!valid) errors.push({ field, label }); };
+  add('deliveryDate', sameDayClosed ? 'Entrega para hoje somente até 10h' : 'Escolha uma data de entrega disponível', deliveryAllowed);`, 'validateCheckoutData');
+
+// Número visual passa a usar o identificador completo e não se repete.
+replaceOnce(integrations, `  const orderNumber = String(timestamp).slice(-6);`, `  const orderNumber = orderId;`, 'orderNumber');
+
+// 4) UI: mesmo preço do checkout, ofertas progressivas no roteador e scroll restaurado.
+const ui = 'app-next/src/ui.js';
+replaceOnce(ui, `import { escapeHtml, fmt, formatDateBR, norm, parseDate, slug } from './core.js?v=20260727-6';`, `import { escapeHtml, fmt, formatDateBR, norm, slug } from './core.js?v=20260727-6';`, 'ui core import');
+replaceOnce(ui, `  applyProductOffer, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
+  kitDiscountPercent, kitIsVisible, kitOriginalPrice, resolveBundleRows`, `  applyProductOffer, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
+  kitDiscountPercent, kitIsVisible, kitOriginalPrice, productDisplayPricing, resolveBundleRows`, 'ui commerce import');
+replaceOnce(ui, `const HOME_BUNDLE_LIMIT = 100;`, `const HOME_BUNDLE_LIMIT = 100;
+const OFFER_BATCH_SIZE = 16;`, 'offer batch constant');
+
+replaceRegexOnce(ui, /function productDisplay\(state, product\) \{[\s\S]*?\n\}\n\nfunction quantityControl/, `function productDisplay(state, product, pricing = null) {
+  return productDisplayPricing(state, effectiveProduct(product), pricing);
+}
+
+function quantityControl`, 'productDisplay');
+
+replaceOnce(ui, `  const display = productDisplay(state, product);`, `  const display = productDisplay(state, product, normalizedOptions.pricing);`, 'product card pricing');
+replaceOnce(ui, `<div class="product-price">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>`, `<div class="product-price" data-price-slot="${escapeHtml(id)}">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>`, 'product price slot');
+
+replaceOnce(ui, `function productGrid(state, products, optionsForProduct = () => ({})) {
+  return `<div class="product-grid">${products.map((product, index) => productCard(state, product, {
+    priority: index < 8,
+    ...optionsForProduct(product, index)
+  })).join('')}</div>`;
+}`, `function productGrid(state, products, optionsForProduct = () => ({})) {
+  const pricing = calculateCartPricing(state);
+  return `<div class="product-grid">${products.map((product, index) => productCard(state, product, {
+    priority: index < 8,
+    pricing,
+    ...optionsForProduct(product, index)
+  })).join('')}</div>`;
+}`, 'productGrid pricing');
+
+// Remover definitivamente o sistema de banners dinâmicos da vitrine atual.
+replaceRegexOnce(ui, /\nfunction currentBanners\(state, position, targets = \[\]\) \{[\s\S]*?\n\}\n\nfunction categoryData/, `
+function categoryData`, 'dynamic banners functions');
+update(ui, source => source
+  .replace(`    ${bannerZone(state, 'home.hero')}\n`, '')
+  .replace(`${bannerZone(context.state, 'categorias.topo')}`, '')
+  .replace(`${bannerZone(context.state, 'categoria', [canonical, selectedSub])}`, '')
+  .replace(`${bannerZone(context.state, 'cestas.topo')}`, '')
+  .replace(`${bannerZone(context.state, 'kits.topo')}`, ''));
+
+replaceOnce(ui, `function productGridPage(context, { title, subtitle, products, back = '#/categorias', bannerPosition = '', bannerTargets = [] }) {
+  return `<div class="page-container">${pageHeader(title, subtitle, back)}${bannerPosition ? bannerZone(context.state, bannerPosition, bannerTargets) : ''}${products.length ? productGrid(context.state, products) : empty('Nenhum produto disponível', 'Tente outra categoria ou use a busca.')}</div>`;
+}`, `function productGridPage(context, { title, subtitle, products, back = '#/categorias' }) {
