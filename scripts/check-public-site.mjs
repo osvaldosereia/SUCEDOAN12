@@ -17,9 +17,10 @@ const required = [
   'site/produtos-cesta-basica.json', 'site/kits.json', 'site/app-version.json',
   'app-next/index.html', 'app-next/styles/storefront-base.css',
   'app-next/styles/storefront-components.css', 'app-next/styles/storefront-responsive.css',
-  'app-next/styles/checkout-flow.css', 'app-next/src/checkout.js',
-  'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/home-carousels.js',
-  'app-next/src/image-performance.js', 'app-next/src/fast-offers-v9.js', 'app-next/src/bundle-routes.js',
+  'app-next/styles/checkout-flow.css', 'app-next/styles/bundle-confirmation.css',
+  'app-next/src/checkout.js', 'app-next/src/ui.js', 'app-next/src/main.js',
+  'app-next/src/home-carousels.js', 'app-next/src/image-performance.js',
+  'app-next/src/fast-offers-v9.js', 'app-next/src/bundle-routes.js',
   'app-next/src/config.js', 'app-next/src/catalog.js', 'app-next/src/core.js',
   'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js',
   'scripts/gerar-meta-combos.js', 'scripts/gerar-paginas-seo-combos.js',
@@ -30,16 +31,17 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-27-checkout-navigation-v8',
+  '2026-07-27-basket-actions-v9',
   '/app-next/styles/storefront-base.css?v=20260727-7',
-  '/app-next/styles/storefront-components.css?v=20260727-8',
-  '/app-next/styles/storefront-responsive.css?v=20260727-8',
+  '/app-next/styles/storefront-components.css?v=20260727-9',
+  '/app-next/styles/storefront-responsive.css?v=20260727-9',
   '/app-next/styles/checkout-flow.css?v=20260727-8',
+  '/app-next/styles/bundle-confirmation.css?v=20260727-5',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
   '/app-next/src/fast-offers-v9.js?v=20260727-10',
   '/app-next/src/main.js?v=20260727-8',
-  'da_v14_offers_progressive_20260727',
+  'da_v15_basket_actions_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
   '"@type":"WebSite"', 'Cestas Básicas em Cuiabá e Várzea Grande',
@@ -65,10 +67,15 @@ assert(css.includes('.home-page .bundle-card{flex:0 0'), 'Cards de cestas e kits
 assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem sem estilo consistente');
 assert(css.includes('.category-grid{width:100%;min-width:0'), 'Categorias ainda podem ultrapassar a largura mobile');
 assert(css.includes('.bundle-detail-hero>img{width:100%;max-width:360px'), 'Foto da cesta não foi ampliada');
-assert(css.includes('.bundle-total{bottom:calc(var(--bottom-h) + var(--safe-bottom))'), 'Resumo da cesta não encosta na barra inferior');
+assert(css.includes('.bundle-total{position:static'), 'Resumo da cesta não está no final natural da lista');
+assert(!css.includes('.bundle-total{position:sticky'), 'Resumo da cesta ainda está flutuante');
 assert(!css.includes('repeat(5,minmax'), 'CSS ainda força cinco colunas de cards');
 assert(css.includes('.bundle-fixed-qty'), 'Quantidade fixa dos kits sem estilo');
 assert(css.includes('[inert]'), 'CSS não protege elementos inertes');
+
+const bundleConfirmation = read('app-next/styles/bundle-confirmation.css');
+assert(bundleConfirmation.includes('content:"VEJA AS OFERTAS DE HOJE"'), 'Botão de ofertas sem o novo texto');
+assert(bundleConfirmation.includes('background:#f28c28!important'), 'Botão de ofertas sem cor de destaque');
 
 const main = read('app-next/src/main.js');
 for (const marker of [
@@ -175,4 +182,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, checkout com WhatsApp, busca estável e ofertas progressivas.`);
+console.log(`Site validado: ${baskets.length} cestas, resumo no fim da lista e chamada de ofertas destacada.`);
