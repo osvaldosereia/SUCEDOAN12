@@ -144,6 +144,7 @@ export function normalizeBaskets(data) {
   const list = Array.isArray(data) ? data : Object.values(data || {});
   return list.filter(item => item && item.id && item.nome && Array.isArray(item.produtos)).map(item => ({
     id: String(item.id),
+    codigo: String(item.codigo || item.id),
     nome: String(item.nome || 'Cesta básica'),
     descricao: String(item.descricao || item.description || 'Kit de produtos selecionados.'),
     imagem: assetUrl(item.imagem || item.img || item.url_imagem || 'img/logoantonia5.png'),

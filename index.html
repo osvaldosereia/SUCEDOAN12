@@ -34,7 +34,7 @@
   </noscript>
   <style>html.booting body{background:#fff}html.booting #app{opacity:0}.site-header{min-height:118px}.home-page .content-section{content-visibility:auto;contain-intrinsic-size:680px}</style>
   <link rel="modulepreload" href="app-next/src/detail-review.js?v=20260725-1">
-  <link rel="modulepreload" href="app-next/src/main.js?v=20260724-8">
+  <link rel="modulepreload" href="app-next/src/main.js?v=20260726-9">
   <link rel="modulepreload" href="app-next/src/config.js?v=20260724-8">
   <link rel="modulepreload" href="app-next/src/core.js?v=20260724-3">
   <link rel="modulepreload" href="app-next/src/catalog.js?v=20260724-3">
@@ -49,9 +49,7 @@
     if (!location.hash && params.toString()) {
       var route = '';
       var sectionRoutes = { ofertas: '#/ofertas', cestas: '#/cestas', kits: '#/kits', categorias: '#/categorias', informacoes: '#/informacoes' };
-      if (params.get('cesta')) route = '#/cesta/' + encodeURIComponent(params.get('cesta'));
-      else if (params.get('kit')) route = '#/kit/' + encodeURIComponent(params.get('kit'));
-      else if (params.get('p')) route = '#/produto/' + encodeURIComponent(params.get('p'));
+      if (params.get('p')) route = '#/produto/' + encodeURIComponent(params.get('p'));
       else if (params.get('categoria')) route = '#/categoria/' + encodeURIComponent(params.get('categoria'));
       else if (params.get('subcategoria')) route = '#/subcategoria/' + encodeURIComponent(params.get('subcategoria'));
       else if (params.get('marca')) route = '#/marca/' + encodeURIComponent(params.get('marca'));
@@ -158,13 +156,12 @@
   <aside id="checkout-drawer" class="drawer checkout-drawer" aria-hidden="true" aria-label="Minha compra"><header class="drawer-header"><div><strong>Minha compra</strong><small>Revise e envie pelo WhatsApp</small></div><button data-close-drawer aria-label="Fechar">×</button></header><div id="checkout-content" class="drawer-content"></div></aside>
 
   <script type="module" src="app-next/src/seo-combos.js?v=20260726-2"></script>
-  <script type="module" src="app-next/src/delivery-only.js?v=20260726-1"></script>
   <script type="module" src="app-next/src/image-performance.js?v=20260724-4"></script>
   <script type="module" src="app-next/src/detail-review.js?v=20260725-1"></script>
-  <script type="module" src="app-next/src/main.js?v=20260724-8"></script>
+  <script type="module" src="app-next/src/main.js?v=20260726-9"></script>
   <script type="module">
     let polishPromise;
-    const loadPolish = () => polishPromise || (polishPromise = import('./app-next/src/live-polish.js?v=20260724-7'));
+    const loadPolish = () => polishPromise || (polishPromise = import('./app-next/src/live-polish.js?v=20260726-8'));
     if ('requestIdleCallback' in window) requestIdleCallback(loadPolish, { timeout: 1400 });
     else setTimeout(loadPolish, 700);
   </script>

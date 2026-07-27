@@ -11,7 +11,7 @@ const required = [
   'styles/bundle-confirmation.css', 'styles/live-polish.css',
   'src/config.js', 'src/core.js', 'src/catalog.js', 'src/commerce.js', 'src/offer-engine.js', 'src/integrations.js',
   'src/personalization.js', 'src/ui.js', 'src/checkout.js', 'src/main.js',
-  'src/live-polish.js', 'src/image-performance.js', 'src/seo-combos.js', 'src/delivery-only.js'
+  'src/live-polish.js', 'src/image-performance.js', 'src/seo-combos.js', 'src/bundle-routes.js'
 ];
 required.forEach(file => {
   if (!fs.existsSync(path.join(root, file))) throw new Error(`Arquivo ausente: ${file}`);
@@ -22,7 +22,7 @@ const preview = read('index.html');
 for (const marker of [
   'styles/home-parity.css?v=20260724-7',
   'styles/live-polish.css?v=20260724-8',
-  'src/main.js?v=20260724-8',
+  'src/main.js?v=20260726-9',
   'src/image-performance.js?v=20260724-4',
   'requestIdleCallback',
   'noindex, nofollow'
@@ -34,10 +34,9 @@ for (const marker of [
   '2026-07-26-combos-seo-delivery-v2', 'content="index,follow,max-image-preview:large,max-snippet:-1"',
   'app-next/styles/home-parity.css?v=20260724-7',
   'app-next/styles/live-polish.css?v=20260724-8',
-  'app-next/src/main.js?v=20260724-8',
+  'app-next/src/main.js?v=20260726-9',
   'app-next/src/image-performance.js?v=20260724-4',
   'app-next/src/seo-combos.js?v=20260726-2',
-  'app-next/src/delivery-only.js?v=20260726-1',
   'da_v8_cache_migrated_20260724', "params.get('p')", "params.get('categoria')",
   "params.get('secao')", 'window.__DA_PRODUCTION__ = true',
   'previewModular = false', 'preview_modular = false',
@@ -91,6 +90,11 @@ for (const removed of ['class="home-hero"', 'class="quick-links"', "section('Ofe
   if (ui.includes(removed)) throw new Error(`Renderizador ainda cria conteúdo removido: ${removed}`);
 }
 
+const bundleRoutes = read('src/bundle-routes.js');
+for (const marker of ['comboSeoPath', 'findBasketByReference', 'findKitByReference', 'cleanComboRouteFromLocation']) {
+  if (!bundleRoutes.includes(marker)) throw new Error(`Rotas limpas incompletas: ${marker}`);
+}
+
 const seoCombos = read('src/seo-combos.js');
 for (const marker of [
   "'/cestas/'", "'/kits/'", "'@type': 'Product'", "'@type': 'Offer'",
@@ -99,10 +103,8 @@ for (const marker of [
 ]) if (!seoCombos.includes(marker)) throw new Error(`SEO de combos incompleto: ${marker}`);
 if (seoCombos.includes('/?cesta=') || seoCombos.includes('/?kit=')) throw new Error('Canonical dinâmico ainda usa parâmetros');
 
-const deliveryOnly = read('src/delivery-only.js');
-for (const marker of ['Somente delivery, sem loja física', 'Delivery local', 'MutationObserver']) {
-  if (!deliveryOnly.includes(marker)) throw new Error(`Ajuste delivery incompleto: ${marker}`);
-}
+
+if (ui.includes('#/cesta/') || ui.includes('#/kit/')) throw new Error('UI ainda gera links antigos de cesta ou kit');
 
 const checkout = read('src/checkout.js');
 for (const marker of ['Valor normal', 'Desconto do kit', 'Desconto por validade', 'Desconto de atacado', 'Total final', 'Tem cupom de desconto?', 'Identifique seu cadastro']) {
@@ -125,6 +127,7 @@ for (const removed of ['home-deal-grid', 'home-deal-shortcut', 'home-deal-badge'
 }
 
 const livePolish = read('src/live-polish.js');
+if (livePolish.includes('#/cesta/') || livePolish.includes('#/kit/')) throw new Error('Carrossel ainda gera links antigos de cesta ou kit');
 for (const marker of [
   'window.__DA_CATALOG_STATE__', 'da:catalog-ready', '.slice(0, 30)',
   'IntersectionObserver', 'appendCarouselBatch', 'cardsPerBatch',

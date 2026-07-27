@@ -16,7 +16,7 @@ const required = [
   'cestas/index.html', 'kits/index.html', 'site/seo-combos-manifest.json',
   'app-next/index.html', 'app-next/styles/home-parity.css', 'app-next/styles/live-polish.css',
   'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/offer-engine.js', 'app-next/src/live-polish.js',
-  'app-next/src/seo-combos.js', 'app-next/src/delivery-only.js', 'app-next/src/config.js',
+  'app-next/src/seo-combos.js', 'app-next/src/bundle-routes.js', 'app-next/src/config.js',
   'site-public/assets/institutional.css', 'site-public/assets/seo-combos.css', 'site-public/README.md',
   'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js', 'scripts/gerar-meta-combos.js',
   'scripts/gerar-paginas-seo-combos.js', 'scripts/gerar-sitemap.js', 'scripts/injetar-seo-combos.js',
@@ -29,11 +29,9 @@ for (const marker of [
   '2026-07-26-combos-seo-delivery-v2',
   'app-next/styles/home-parity.css?v=20260724-7',
   'app-next/styles/live-polish.css?v=20260724-8',
-  'app-next/src/main.js?v=20260724-8',
+  'app-next/src/main.js?v=20260726-9',
   'app-next/src/seo-combos.js?v=20260726-2',
-  'app-next/src/delivery-only.js?v=20260726-1',
-  'da_v8_cache_migrated_20260724',
-  "params.get('cesta')", "params.get('kit')", "params.get('p')",
+  'da_v8_cache_migrated_20260724', "params.get('p')",
   "params.get('categoria')", "params.get('secao')",
   'Cestas Básicas e Kits com Delivery em Cuiabá e Várzea Grande',
   'window.__DA_PRODUCTION__ = true',
@@ -48,7 +46,7 @@ assert(!production.includes('R. Trinta, 105'), 'Index publica endereço como loj
 const preview = read('app-next/index.html');
 assert(preview.includes('noindex, nofollow'), 'Prévia modular precisa permanecer noindex');
 assert(preview.includes('styles/live-polish.css?v=20260724-8'), 'Prévia sem CSS v8');
-assert(preview.includes('src/main.js?v=20260724-8'), 'Prévia sem main v8');
+assert(preview.includes('src/main.js?v=20260726-9'), 'Prévia sem main v8');
 assert(!preview.includes('visual-parity.js'), 'Prévia ainda carrega o módulo visual redundante');
 
 const institutionalFiles = [
@@ -113,16 +111,10 @@ assert(!livePolish.includes('observe(document.documentElement'), 'live-polish ob
 
 const seoCombos = read('app-next/src/seo-combos.js');
 for (const marker of [
-  "'@type': 'Product'", "'@type': 'Offer'", 'Cestas Básicas com Delivery em Cuiabá e Várzea Grande',
-  "params.get('cesta')", "params.get('kit')", 'combo-product-jsonld',
-  "return `/${type === 'kit' ? 'kits' : 'cestas'}/"
+  "'@type': 'Product'", "'@type': 'Offer'", 'Cestas Básicas com Delivery em Cuiabá e Várzea Grande', 'combo-product-jsonld',
 ]) assert(seoCombos.includes(marker), `SEO de cestas e kits incompleto: ${marker}`);
 assert(!seoCombos.includes('/?cesta='), 'SEO dinâmico ainda usa canonical por parâmetro');
 
-const deliveryOnly = read('app-next/src/delivery-only.js');
-for (const marker of ['Somente delivery, sem loja física', 'delivery em Cuiabá e Várzea Grande', 'MutationObserver']) {
-  assert(deliveryOnly.includes(marker), `Ajuste delivery incompleto: ${marker}`);
-}
 
 const config = read('app-next/src/config.js');
 assert(config.includes("SITE_BASE_URL: 'https://donaantonia.com.br'"), 'Configuração usa domínio incorreto');

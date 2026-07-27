@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { loadCatalog } from './catalog.js';
 import { kitIsVisible, kitOriginalPrice, kitStockCapacity, resolveBundleRows } from './commerce.js';
+import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js';
 
 const CLEAN_SECTION_PATHS = Object.freeze({ baskets: '/cestas/', kits: '/kits/' });
 
@@ -18,15 +19,6 @@ function clean(value) {
   return String(value ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-function slug(value) {
-  return clean(value)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'combo';
-}
-
 function absoluteUrl(value) {
   try {
     const url = new URL(String(value || ''), `${CONFIG.SITE_BASE_URL}/`);
@@ -35,12 +27,6 @@ function absoluteUrl(value) {
   } catch {
     return `${CONFIG.SITE_BASE_URL}/img/logoantonia5.png`;
   }
-}
-
-function comboSeoPath(bundle, type) {
-  const name = slug(bundle?.nome || (type === 'kit' ? 'kit-promocional' : 'cesta-basica'));
-  const reference = slug(bundle?.codigo || bundle?.id || name);
-  return `/${type === 'kit' ? 'kits' : 'cestas'}/${name}-${reference}/`;
 }
 
 function setMeta(selector, attributes, content) {
@@ -101,6 +87,13 @@ function setJsonLd(value) {
 
 function routeTarget() {
   const params = new URLSearchParams(location.search);
+  const pathMatch = String(location.pathname || '/').match(/^\/(cestas|kits)(?:\/([^/]+))?\/?$/i);
+  if (pathMatch) {
+    const collection = pathMatch[1].toLowerCase();
+    const reference = pathMatch[2] ? decodeURIComponent(pathMatch[2]) : '';
+    if (reference) return { type: collection === 'kits' ? 'kit' : 'basket', id: reference };
+    return { type: 'section', id: collection };
+  }
   const hash = String(location.hash || '').replace(/^#\/?/, '').split('?')[0];
   const parts = hash.split('/').filter(Boolean).map(decodeURIComponent);
   if (params.get('cesta')) return { type: 'basket', id: params.get('cesta') };
@@ -221,11 +214,9 @@ async function applyComboSeo() {
   }
   try {
     const data = await catalog();
-    const list = target.type === 'kit' ? data.kits : data.baskets;
-    const bundle = (list || []).find(item =>
-      String(item.id) === String(target.id)
-      || String(item.codigo || '') === String(target.id)
-    );
+    const bundle = target.type === 'kit'
+      ? findKitByReference(data, target.id)
+      : findBasketByReference(data, target.id);
     if (bundle) comboMeta(data, bundle, target.type);
     else homeMeta(target.type === 'kit' ? 'kits' : 'cestas');
   } catch (error) {

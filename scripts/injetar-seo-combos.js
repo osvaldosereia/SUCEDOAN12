@@ -38,15 +38,6 @@ function injectSeo(html) {
   output = output.replace(/<title>[^<]*<\/title>/, '<title>Cestas Básicas e Kits com Delivery em Cuiabá e Várzea Grande | Dona Antônia</title>');
   output = output.replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${SITE_URL}/">`);
 
-  if (!output.includes("params.get('cesta')")) {
-    output = replaceOnce(
-      output,
-      "if (params.get('p')) route = '#/produto/' + encodeURIComponent(params.get('p'));",
-      "if (params.get('cesta')) route = '#/cesta/' + encodeURIComponent(params.get('cesta'));\n      else if (params.get('kit')) route = '#/kit/' + encodeURIComponent(params.get('kit'));\n      else if (params.get('p')) route = '#/produto/' + encodeURIComponent(params.get('p'));",
-      'rotas de cesta e kit',
-    );
-  }
-
   output = output.replace(
     "if (route) history.replaceState(null, '', location.pathname + route);",
     "if (route) history.replaceState(null, '', location.pathname + location.search + route);",
@@ -57,7 +48,7 @@ function injectSeo(html) {
     'app-next/src/seo-combos.js?v=20260726-1',
     'app-next/src/seo-combos.js?v=20260726-2',
   );
-  output = ensureModule(output, 'app-next/src/delivery-only.js?v=20260726-1', 'app-next/src/image-performance.js?v=20260724-4');
+  output = output.replace(/\n\s*<script type=\"module\" src=\"app-next\/src\/delivery-only\.js[^\n]*<\/script>/g, '');
   output = dedupeModule(output, 'app-next/src/seo-combos.js?v=20260726-2');
   output = dedupeModule(output, 'app-next/src/delivery-only.js?v=20260726-1');
   return output;

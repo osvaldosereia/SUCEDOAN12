@@ -2,8 +2,9 @@ import { CONFIG } from './config.js';
 import { indexProducts, loadCatalog } from './catalog.js';
 import { applyProductOffer, isAvailable, kitDiscountPercent, kitIsVisible, kitOriginalPrice } from './commerce.js';
 import { escapeHtml, fmt, readStorage } from './core.js';
+import { comboSeoPath } from './bundle-routes.js';
 
-const POLISH_VERSION = '2026-07-24-live-polish-v3';
+const POLISH_VERSION = '2026-07-26-live-polish-v4';
 const carouselState = new WeakMap();
 let catalogStatePromise;
 let scheduled = false;
@@ -37,7 +38,8 @@ function optimizedImage(src, alt) {
 }
 
 function basketCardHtml(basket) {
-  return `<article class="bundle-card"><a class="bundle-media" href="#/cesta/${encodeURIComponent(basket.id)}">${optimizedImage(basket.imagem, basket.nome)}</a><div><a class="bundle-name" href="#/cesta/${encodeURIComponent(basket.id)}">${escapeHtml(basket.nome)}</a><p>${escapeHtml(truncate(basket.descricao))}</p><div class="bundle-price">${Number(basket.precoOriginal || 0) > Number(basket.preco || 0) ? `<s>${fmt(basket.precoOriginal)}</s>` : ''}<strong>${basket.preco ? fmt(basket.preco) : 'Ver itens'}</strong></div><a class="secondary-button" href="#/cesta/${encodeURIComponent(basket.id)}">Ver produtos</a></div></article>`;
+  const href = comboSeoPath(basket, 'basket');
+  return `<article class="bundle-card"><a class="bundle-media" href="${href}">${optimizedImage(basket.imagem, basket.nome)}</a><div><a class="bundle-name" href="${href}">${escapeHtml(basket.nome)}</a><p>${escapeHtml(truncate(basket.descricao))}</p><div class="bundle-price">${Number(basket.precoOriginal || 0) > Number(basket.preco || 0) ? `<s>${fmt(basket.precoOriginal)}</s>` : ''}<strong>${basket.preco ? fmt(basket.preco) : 'Ver itens'}</strong></div><a class="secondary-button" href="${href}">Ver produtos</a></div></article>`;
 }
 
 function kitCardHtml(state, kit, favorites) {
@@ -45,7 +47,8 @@ function kitCardHtml(state, kit, favorites) {
   const discount = kitDiscountPercent(state, kit);
   const favoriteKey = `kit:${kit.id}`;
   const active = favorites.has(favoriteKey);
-  return `<article class="bundle-card"><div class="bundle-media-wrap"><a class="bundle-media" href="#/kit/${encodeURIComponent(kit.id)}">${optimizedImage(kit.imagem, kit.nome)}</a><button class="favorite-button ${active ? 'active' : ''}" data-action="favorite" data-id="${escapeHtml(kit.id)}" data-kind="kit" aria-label="${active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" aria-pressed="${active}">♡</button>${discount ? `<span class="discount-badge">-${discount}%</span>` : ''}</div><div><a class="bundle-name" href="#/kit/${encodeURIComponent(kit.id)}">${escapeHtml(kit.nome)}</a><p>${escapeHtml(truncate(kit.descricao))}</p><div class="bundle-price">${original > Number(kit.preco || 0) ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(kit.preco)}</strong></div><div class="bundle-actions"><a class="secondary-button" href="#/kit/${encodeURIComponent(kit.id)}">Ver produtos</a><button class="primary-button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div></article>`;
+  const href = comboSeoPath(kit, 'kit');
+  return `<article class="bundle-card"><div class="bundle-media-wrap"><a class="bundle-media" href="${href}">${optimizedImage(kit.imagem, kit.nome)}</a><button class="favorite-button ${active ? 'active' : ''}" data-action="favorite" data-id="${escapeHtml(kit.id)}" data-kind="kit" aria-label="${active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" aria-pressed="${active}">♡</button>${discount ? `<span class="discount-badge">-${discount}%</span>` : ''}</div><div><a class="bundle-name" href="${href}">${escapeHtml(kit.nome)}</a><p>${escapeHtml(truncate(kit.descricao))}</p><div class="bundle-price">${original > Number(kit.preco || 0) ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(kit.preco)}</strong></div><div class="bundle-actions"><a class="secondary-button" href="${href}">Ver produtos</a><button class="primary-button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div></article>`;
 }
 
 function sectionByTitle(page, fragment) {

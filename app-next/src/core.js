@@ -232,24 +232,88 @@ export function assetUrl(value) {
 }
 
 export function createRouter(onRoute) {
-  const parse = () => {
-    const hash = (hasDOM ? window.location.hash : '#/') || '#/';
+  const aliases = { categorias: 'categories', categoria: 'category', subcategoria: 'subcategory', marca: 'brand', ofertas: 'offers', favoritos: 'favorites', produto: 'product', cestas: 'baskets', cesta: 'basket', kits: 'kits', kit: 'kit', busca: 'search', rotina: 'routine', informacoes: 'info', 'campanha-cupom': 'campaignCoupon' };
+
+  const parseHash = hashValue => {
+    const hash = String(hashValue || '#/');
     const [pathPart, queryPart = ''] = hash.replace(/^#\/?/, '').split('?');
-    const parts = pathPart.split('/').filter(Boolean).map(decodeURIComponent);
+    const parts = pathPart.split('/').filter(Boolean).map(part => {
+      try { return decodeURIComponent(part); } catch { return part; }
+    });
     const first = parts[0] || 'home';
-    const aliases = { categorias: 'categories', categoria: 'category', subcategoria: 'subcategory', marca: 'brand', ofertas: 'offers', favoritos: 'favorites', produto: 'product', cestas: 'baskets', cesta: 'basket', kits: 'kits', kit: 'kit', busca: 'search', rotina: 'routine', informacoes: 'info', 'campanha-cupom': 'campaignCoupon' };
     return { name: aliases[first] || first || 'home', hash: `#/${pathPart}`, params: { segments: parts.slice(1) }, query: new URLSearchParams(queryPart) };
   };
+
+  const parseCleanLocation = () => {
+    if (!hasDOM) return null;
+    const pathname = String(window.location.pathname || '/').replace(/\/{2,}/g, '/');
+    const pathMatch = pathname.match(/^\/(cestas|kits)(?:\/([^/]+))?\/?$/i);
+    if (pathMatch) {
+      const collection = pathMatch[1].toLowerCase();
+      let reference = pathMatch[2] || '';
+      try { reference = decodeURIComponent(reference); } catch {}
+      return {
+        name: reference ? (collection === 'kits' ? 'kit' : 'basket') : (collection === 'kits' ? 'kits' : 'baskets'),
+        hash: '',
+        params: { segments: reference ? [reference] : [] },
+        query: new URLSearchParams(window.location.search),
+      };
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('cesta')) return { name: 'basket', hash: '', params: { segments: [params.get('cesta')] }, query: params };
+    if (params.get('kit')) return { name: 'kit', hash: '', params: { segments: [params.get('kit')] }, query: params };
+    return null;
+  };
+
+  const parse = () => {
+    if (!hasDOM) return parseHash('#/');
+    const hash = window.location.hash || '';
+    if (hash && hash !== '#' && hash !== '#/') return parseHash(hash);
+    return parseCleanLocation() || parseHash(hash || '#/');
+  };
+
+  const normalizeHashFromCleanPath = route => {
+    if (!hasDOM || !window.location.hash || !/^\/(?:cestas|kits)(?:\/|$)/i.test(window.location.pathname)) return;
+    const target = `/${window.location.search || ''}${route.hash || window.location.hash}`;
+    window.history.replaceState({}, '', target);
+  };
+
+  const run = () => {
+    const route = parse();
+    normalizeHashFromCleanPath(route);
+    onRoute(route);
+  };
+
   return {
     current: parse,
     start() {
       if (!hasDOM) return;
-      const run = () => onRoute(parse());
       window.addEventListener('hashchange', run);
+      window.addEventListener('popstate', run);
       run();
     },
-    navigate(hash) {
-      if (hasDOM) window.location.hash = hash;
+    navigate(target, { replace = false } = {}) {
+      if (!hasDOM) return;
+      const destination = String(target || '#/');
+      if (destination.startsWith('#')) {
+        if (/^\/(?:cestas|kits)(?:\/|$)/i.test(window.location.pathname)) {
+          window.history[replace ? 'replaceState' : 'pushState']({}, '', `/${destination}`);
+          run();
+        } else if (replace) {
+          window.history.replaceState({}, '', `${window.location.pathname}${window.location.search}${destination}`);
+          run();
+        } else {
+          window.location.hash = destination;
+        }
+        return;
+      }
+      const url = new URL(destination, window.location.origin);
+      if (url.origin !== window.location.origin) {
+        window.location.assign(url.href);
+        return;
+      }
+      window.history[replace ? 'replaceState' : 'pushState']({}, '', `${url.pathname}${url.search}${url.hash}`);
+      run();
     }
   };
 }

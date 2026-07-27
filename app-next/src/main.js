@@ -5,7 +5,7 @@ import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows
 import { prepareProductOffer } from './offer-engine.js';
 import { basketDraftTotal } from './basket-pricing.js';
 import { createPersonalization } from './personalization.js';
-import { createUI } from './ui.js?v=20260724-7';
+import { createUI } from './ui.js?v=20260726-8';
 import { createCheckout } from './checkout.js';
 import { processOrderQueue } from './integrations.js';
 
@@ -239,12 +239,29 @@ function updateActiveNavigation(route) {
   document.querySelectorAll('[data-nav]').forEach(link => link.classList.toggle('active', link.dataset.nav === active));
 }
 
+function internalCleanNavigation(event) {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return '';
+  const link = event.target.closest('a[href]');
+  if (!link || link.target || link.hasAttribute('download')) return '';
+  let url;
+  try { url = new URL(link.getAttribute('href'), location.href); } catch { return ''; }
+  if (url.origin !== location.origin || !/^\/(?:cestas|kits)(?:\/|$)/i.test(url.pathname)) return '';
+  return `${url.pathname}${url.search}`;
+}
+
 function bindEvents() {
   document.addEventListener('click', async event => {
     const actionButton = event.target.closest('[data-action]');
     if (actionButton) {
       event.preventDefault();
       await handleAction(actionButton);
+      return;
+    }
+    const cleanTarget = internalCleanNavigation(event);
+    if (cleanTarget) {
+      event.preventDefault();
+      ui.closeDrawers();
+      router.navigate(cleanTarget);
       return;
     }
     if (event.target === document.getElementById('drawer-overlay')) ui.closeDrawers();
