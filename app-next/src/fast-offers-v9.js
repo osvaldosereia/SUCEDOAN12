@@ -1,6 +1,10 @@
-const OFFER_BATCH_SIZE = 32;
+const OFFER_BATCH_SIZE = 16;
+const OFFER_ROUTE = '/#/ofertas';
 let currentOffers = [];
 let visibleCount = 0;
+let cachedCatalogKey = '';
+let heldInitialOffersUrl = '';
+let refreshRestoreScheduled = false;
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -19,6 +23,35 @@ function productReference(product) {
   return encodeURIComponent(product.firebaseKey || product.id || product.codigo || product.slug || 'produto');
 }
 
+function routeIsOffers() {
+  return String(location.hash || '').startsWith('#/ofertas');
+}
+
+function catalogKey(state) {
+  return [state?.catalogVersion || '', state?.catalogLoadedAt || '', state?.products?.length || 0].join(':');
+}
+
+function markOffersRouteInState() {
+  const state = window.__DA_CATALOG_STATE__;
+  if (!state) return;
+  state.route = {
+    name: 'offers',
+    hash: '#/ofertas',
+    params: { segments: [] },
+    query: new URLSearchParams()
+  };
+}
+
+function rebuildOfferCache(state, { force = false } = {}) {
+  const nextKey = catalogKey(state);
+  if (!force && nextKey === cachedCatalogKey && currentOffers.length) return;
+
+  currentOffers = (state?.products || [])
+    .filter(product => Number(product.stock || 0) > 0 && Number(product.oldPrice || 0) > Number(product.price || 0))
+    .sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || String(a.name).localeCompare(String(b.name), 'pt-BR'));
+  cachedCatalogKey = nextKey;
+}
+
 function productCard(product, state, index) {
   const id = String(product.id || product.firebaseKey || product.codigo || '');
   const qty = Number(state.cart?.[id] || 0);
@@ -34,7 +67,7 @@ function productCard(product, state, index) {
   return `<article class="product-card" data-product-card="${escapeHtml(id)}">
     <div class="product-card-media">
       <a href="#/produto/${productReference(product)}" aria-label="Ver ${escapeHtml(product.name)}">
-        <img ${index < 8 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="low"'} decoding="async" width="300" height="300" src="${escapeHtml(image)}" data-fallback="${escapeHtml(fallbacks)}" alt="${escapeHtml(product.name)}">
+        <img ${index < 6 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="low"'} decoding="async" width="300" height="300" src="${escapeHtml(image)}" data-fallback="${escapeHtml(fallbacks)}" alt="${escapeHtml(product.name)}">
       </a>
       <button class="favorite-button" data-action="favorite" data-id="${escapeHtml(id)}" data-kind="product" aria-label="Adicionar aos favoritos">♡</button>
       ${discount > 0 ? `<span class="discount-badge">-${discount}%</span>` : ''}
@@ -78,43 +111,107 @@ function updateMoreButton() {
   button.textContent = `Carregar mais ofertas (${remaining})`;
 }
 
+function notifyRouteRendered() {
+  window.dispatchEvent(new CustomEvent('da:route-rendered', {
+    detail: { route: { name: 'offers' }, root: document.getElementById('app') }
+  }));
+}
+
 function appendNextBatch() {
   const state = window.__DA_CATALOG_STATE__;
   const grid = document.getElementById('fast-offers-grid');
   if (!state || !grid) return;
+
   const next = currentOffers.slice(visibleCount, visibleCount + OFFER_BATCH_SIZE);
   if (!next.length) return;
+
   grid.insertAdjacentHTML('beforeend', next.map((product, index) => productCard(product, state, visibleCount + index)).join(''));
   visibleCount += next.length;
   updateMoreButton();
-  window.dispatchEvent(new CustomEvent('da:route-rendered', { detail: { route: { name: 'offers' }, root: document.getElementById('app') } }));
+  notifyRouteRendered();
 }
 
-function renderFastOffers() {
+function renderFastOffers({ preserveVisible = false, forceCatalog = false } = {}) {
   const state = window.__DA_CATALOG_STATE__;
   const app = document.getElementById('app');
   if (!state?.products?.length || !app) return false;
 
-  currentOffers = state.products
-    .filter(product => Number(product.stock || 0) > 0 && Number(product.oldPrice || 0) > Number(product.price || 0))
-    .sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || String(a.name).localeCompare(String(b.name), 'pt-BR'));
+  const previousVisible = preserveVisible ? Math.max(visibleCount, OFFER_BATCH_SIZE) : OFFER_BATCH_SIZE;
+  rebuildOfferCache(state, { force: forceCatalog });
   visibleCount = 0;
 
   closeTransientPanels();
-  history.pushState({}, '', '/#/ofertas');
+  if (!routeIsOffers()) history.pushState({}, '', OFFER_ROUTE);
+  markOffersRouteInState();
   document.querySelectorAll('[data-nav]').forEach(item => item.classList.toggle('active', item.dataset.nav === 'offers'));
   document.title = 'Ofertas - Dona Antônia';
 
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.href = `${location.origin}/?secao=ofertas`;
+  const robots = document.querySelector('meta[name="robots"]');
+  if (robots) robots.content = 'noindex,follow';
+
   app.innerHTML = `<div class="page-container">
-    <header class="page-header"><a class="back-button" href="#/" aria-label="Voltar">←</a><div><h1>Ofertas</h1><p>${currentOffers.length} produtos em oferta. Carregamento rápido em blocos.</p></div></header>
-    <p class="fast-offers-status">As primeiras ofertas já estão disponíveis. Role a página e carregue mais quando precisar.</p>
+    <header class="page-header"><a class="back-button" href="#/" aria-label="Voltar">←</a><div><h1>Ofertas</h1><p>${currentOffers.length} produtos em oferta.</p></div></header>
+    <p class="fast-offers-status">As primeiras ofertas já estão disponíveis. Os próximos produtos são carregados em blocos para não travar o site.</p>
     <div class="product-grid" id="fast-offers-grid"></div>
     ${currentOffers.length ? '<div class="fast-offers-more-wrap"><button class="primary-button fast-offers-more" type="button" data-fast-offers-more>Carregar mais ofertas</button></div>' : '<div class="empty-state"><strong>Nenhuma oferta disponível agora.</strong></div>'}
   </div>`;
   app.scrollTop = 0;
-  appendNextBatch();
+
+  const target = Math.min(previousVisible, currentOffers.length);
+  while (visibleCount < target) appendNextBatch();
+  updateMoreButton();
+  markOffersRouteInState();
+  document.documentElement.dataset.offersRenderer = 'progressive-v10';
   return true;
 }
+
+function currentRelativeUrl() {
+  return `${location.pathname}${location.search}${location.hash}`;
+}
+
+function holdInitialOffersRoute() {
+  if (!routeIsOffers()) return;
+  heldInitialOffersUrl = currentRelativeUrl();
+  history.replaceState({}, '', '/#/informacoes');
+}
+
+holdInitialOffersRoute();
+
+window.addEventListener('da:catalog-ready', () => {
+  if (!heldInitialOffersUrl) return;
+  const restore = heldInitialOffersUrl;
+  heldInitialOffersUrl = '';
+  history.replaceState({}, '', restore);
+  renderFastOffers({ forceCatalog: true });
+}, { once: true });
+
+window.addEventListener('da:catalog-refreshed', () => {
+  const fastPageActive = Boolean(document.getElementById('fast-offers-grid')) || routeIsOffers();
+  if (!fastPageActive || refreshRestoreScheduled) return;
+
+  refreshRestoreScheduled = true;
+  const restore = currentRelativeUrl().includes('#/ofertas') ? currentRelativeUrl() : OFFER_ROUTE;
+  const preservedVisible = Math.max(visibleCount, OFFER_BATCH_SIZE);
+  history.replaceState({}, '', '/#/informacoes');
+
+  queueMicrotask(() => {
+    refreshRestoreScheduled = false;
+    history.replaceState({}, '', restore);
+    visibleCount = preservedVisible;
+    renderFastOffers({ preserveVisible: true, forceCatalog: true });
+  });
+});
+
+function interceptHistoryEvent(event) {
+  if (!routeIsOffers() || !window.__DA_CATALOG_STATE__?.products?.length) return;
+  event.stopImmediatePropagation();
+  renderFastOffers({ forceCatalog: false });
+}
+
+window.addEventListener('popstate', interceptHistoryEvent, true);
+window.addEventListener('hashchange', interceptHistoryEvent, true);
 
 document.addEventListener('click', event => {
   const moreButton = event.target.closest('[data-fast-offers-more]');
@@ -139,5 +236,5 @@ document.addEventListener('click', event => {
 
   event.preventDefault();
   event.stopImmediatePropagation();
-  renderFastOffers();
+  renderFastOffers({ forceCatalog: false });
 }, true);
