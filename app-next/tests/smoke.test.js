@@ -79,7 +79,7 @@ for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle
 }
 
 const bundleNavigation = read('src/bundle-navigation.js');
-for (const marker of ['bundle-confirm-continue', "location.hash = '#/ofertas'", 'app.scrollTop = 0']) {
+for (const marker of ['bundle-confirm-continue', 'offersLink.click()', 'app.scrollTop = 0']) {
   assert(bundleNavigation.includes(marker), `Navegação após adicionar cesta incompleta: ${marker}`);
 }
 
