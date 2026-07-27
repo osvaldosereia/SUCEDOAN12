@@ -21,7 +21,7 @@ permissions:
 jobs:
   validar:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
 
     steps:
       - name: Baixar branch
@@ -32,10 +32,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Validar sintaxe do gerador, diagnóstico e testes
+      - name: Validar sintaxe das ferramentas e testes
         run: |
           node --check site-do-zero/build/gerar-seo-cestas.mjs
           node --check site-do-zero/build/diagnosticar-firebase.mjs
+          node --check site-do-zero/build/preparar-importacao-site-novo.mjs
+          node --check site-do-zero/build/preparar-mock-preview.mjs
           node --check site-do-zero/tests/validar-projeto.mjs
 
       - name: Bloquear métodos de escrita nas ferramentas
@@ -44,7 +46,9 @@ jobs:
           set -euo pipefail
           if grep -En "method:[[:space:]]*['\"](POST|PUT|PATCH|DELETE)['\"]" \
             site-do-zero/build/gerar-seo-cestas.mjs \
-            site-do-zero/build/diagnosticar-firebase.mjs; then
+            site-do-zero/build/diagnosticar-firebase.mjs \
+            site-do-zero/build/preparar-importacao-site-novo.mjs \
+            site-do-zero/build/preparar-mock-preview.mjs; then
             echo 'ERRO: método de escrita encontrado nas ferramentas de leitura.'
             exit 1
           fi
@@ -55,6 +59,8 @@ jobs:
           set -euo pipefail
           grep -En "method:[[:space:]]*['\"]GET['\"]" site-do-zero/build/gerar-seo-cestas.mjs
           grep -En "method:[[:space:]]*['\"]GET['\"]" site-do-zero/build/diagnosticar-firebase.mjs
+          grep -En "method:[[:space:]]*['\"]GET['\"]" site-do-zero/build/preparar-importacao-site-novo.mjs
+          grep -En "method:[[:space:]]*['\"]GET['\"]" site-do-zero/build/preparar-mock-preview.mjs
 
       - name: Validar JavaScript interno do HTML
         shell: bash
@@ -78,26 +84,43 @@ jobs:
         shell: bash
         run: |
           test -f site-do-zero/FIREBASE-SOMENTE-LEITURA.md
+          test -f site-do-zero/FIREBASE-NAMESPACE-NOVO.md
           test -f site-do-zero/build/README.md
           grep -q 'GET_ONLY' site-do-zero/build/gerar-seo-cestas.mjs
 
-      - name: Diagnosticar caminhos do Firebase por GET raso
+      - name: Diagnosticar caminhos do Firebase por GET
         run: node site-do-zero/build/diagnosticar-firebase.mjs
 
-      - name: Gerar preview SEO e Merchant por leitura
+      - name: Preparar pacote isolado de importação
+        run: node site-do-zero/build/preparar-importacao-site-novo.mjs
+
+      - name: Preparar simulação local do namespace
+        run: node site-do-zero/build/preparar-mock-preview.mjs
+
+      - name: Gerar preview SEO e Merchant com o namespace simulado
         id: gerar
         continue-on-error: true
-        env:
-          OUTPUT_DIR: site-do-zero/generated
-        run: node site-do-zero/build/gerar-seo-cestas.mjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --directory site-do-zero/importacao/mock >/tmp/site-novo-mock.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          sleep 1
+          FIREBASE_URL='http://127.0.0.1:8765' \
+          FIREBASE_PRODUCTS_PATH='produtos' \
+          FIREBASE_BASKETS_PATH='site_novo/publico/cestas' \
+          OUTPUT_DIR='site-do-zero/generated' \
+          node site-do-zero/build/gerar-seo-cestas.mjs
 
-      - name: Publicar diagnóstico, relatório e preview
+      - name: Publicar diagnóstico, importação, relatório e preview
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: site-do-zero-seo-preview
           path: |
             site-do-zero/diagnosticos
+            site-do-zero/importacao/site-novo-publico.json
             site-do-zero/generated
           if-no-files-found: warn
           retention-days: 7
@@ -106,7 +129,7 @@ jobs:
         if: steps.gerar.outcome != 'success'
         shell: bash
         run: |
-          echo 'A leitura ou a validação dos dados não gerou páginas válidas.'
+          echo 'A validação do namespace isolado não gerou páginas válidas.'
           if test -f site-do-zero/generated/relatorio.json; then
             cat site-do-zero/generated/relatorio.json
           fi
@@ -116,6 +139,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -s site-do-zero/importacao/site-novo-publico.json
           test -s site-do-zero/generated/cestas/index.html
           test -s site-do-zero/generated/merchant.xml
           test -s site-do-zero/generated/sitemap.xml
