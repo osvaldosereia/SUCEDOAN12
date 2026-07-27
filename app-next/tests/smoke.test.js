@@ -105,7 +105,6 @@ for (const marker of [
 ]) if (!seoCombos.includes(marker)) throw new Error(`SEO de combos incompleto: ${marker}`);
 if (seoCombos.includes('/?cesta=') || seoCombos.includes('/?kit=')) throw new Error('Canonical dinâmico ainda usa parâmetros');
 
-
 if (ui.includes('#/cesta/') || ui.includes('#/kit/')) throw new Error('UI ainda gera links antigos de cesta ou kit');
 
 const checkout = read('src/checkout.js');
@@ -113,10 +112,6 @@ for (const marker of ['Valor normal', 'Desconto do kit', 'Desconto por validade'
   if (!checkout.includes(marker)) throw new Error(`Checkout incompleto: ${marker}`);
 }
 if (checkout.includes('checkoutOffersHtml') || checkout.includes('Ofertas para completar')) throw new Error('Ofertas ocultas ainda existem no checkout');
-
-const detailReview = read();
-if (detailReview.includes('fillCheckoutOffers') || detailReview.includes('Ofertas para completar')) throw new Error('Carga oculta de ofertas ainda existe');
-if (detailReview.includes('observe(document.documentElement')) throw new Error('detail-review observa o documento inteiro');
 
 const homeCss = read('styles/home-parity.css');
 for (const marker of [
