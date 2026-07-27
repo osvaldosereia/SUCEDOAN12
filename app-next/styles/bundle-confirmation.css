@@ -166,6 +166,33 @@
   font-weight:750;
 }
 .bundle-confirm-checkout{background:var(--brand)!important;color:#fff!important}
+.bundle-confirm-actions [data-action="bundle-confirm-continue"]{
+  position:relative;
+  overflow:hidden;
+  background:#f28c28!important;
+  border-color:#f28c28!important;
+  color:transparent!important;
+  box-shadow:0 8px 20px rgba(242,140,40,.28);
+}
+.bundle-confirm-actions [data-action="bundle-confirm-continue"]::after{
+  content:"VEJA AS OFERTAS DE HOJE";
+  position:absolute;
+  inset:0;
+  padding:0 10px;
+  display:grid;
+  place-items:center;
+  color:#fff;
+  font-size:12px;
+  font-weight:850;
+  letter-spacing:.025em;
+  text-align:center;
+}
+.bundle-confirm-actions [data-action="bundle-confirm-continue"]:hover,
+.bundle-confirm-actions [data-action="bundle-confirm-continue"]:focus-visible{
+  background:#d97706!important;
+  border-color:#d97706!important;
+  box-shadow:0 10px 24px rgba(217,119,6,.32);
+}
 .bundle-confirm-undo{
   width:max-content;
   min-height:36px;
