@@ -11,7 +11,8 @@ const assert = (ok, message) => { if (!ok) throw new Error(message); };
 const required = [
   'index.html', 'styles/storefront-base.css', 'styles/storefront-components.css',
   'styles/storefront-responsive.css', 'src/main.js', 'src/ui.js', 'src/catalog.js',
-  'src/core.js', 'src/image-performance.js', 'src/home-carousels.js', 'src/bundle-routes.js'
+  'src/core.js', 'src/image-performance.js', 'src/home-carousels.js',
+  'src/bundle-navigation.js', 'src/bundle-routes.js'
 ];
 required.forEach(file => assert(fs.existsSync(path.join(root, file)), `Arquivo ausente: ${file}`));
 
@@ -50,6 +51,7 @@ assert(css.includes('.home-page .bundle-grid{display:flex'), 'Cestas e kits da h
 assert(css.includes('calc(58.8235% - 7px)'), 'Carrossel mobile não mostra aproximadamente 1,7 card');
 assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem não possui estilo consistente');
 assert(css.includes('.category-grid{width:100%;min-width:0'), 'Grid de categorias ainda pode extrapolar a tela');
+assert(css.includes('.bundle-total{bottom:calc(var(--bottom-h) + var(--safe-bottom))'), 'Resumo da cesta não encosta na barra inferior');
 assert(!css.includes('repeat(5,minmax'), 'Layout ainda cria cinco colunas de cards');
 assert(css.includes('[inert]'), 'Elementos inertes não possuem proteção visual');
 
@@ -67,13 +69,18 @@ for (const marker of [
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
 
 const imagePerformance = read('src/image-performance.js');
-for (const marker of ['root: app', 'PRELOAD_MARGIN', "app?.addEventListener('scroll'", 'loadDeferredImage']) {
+for (const marker of ['root: app', 'PRELOAD_MARGIN', 'HORIZONTAL_PRELOAD_MARGIN', "app?.addEventListener('scroll'", 'loadDeferredImage']) {
   assert(imagePerformance.includes(marker), `Carregamento de imagens incompleto: ${marker}`);
 }
 
 const carousel = read('src/home-carousels.js');
-for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle-carousel-control']) {
+for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle-carousel-control', 'bundle-navigation.js']) {
   assert(carousel.includes(marker), `Carrossel incompleto: ${marker}`);
+}
+
+const bundleNavigation = read('src/bundle-navigation.js');
+for (const marker of ['bundle-confirm-continue', "location.hash = '#/ofertas'", 'app.scrollTop = 0']) {
+  assert(bundleNavigation.includes(marker), `Navegação após adicionar cesta incompleta: ${marker}`);
 }
 
 const catalog = read('src/catalog.js');
