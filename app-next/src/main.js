@@ -1,11 +1,11 @@
-import { CONFIG } from './config.js?v=20260727-4';
-import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js?v=20260727-4';
-import { indexProducts, loadCatalog } from './catalog.js?v=20260727-4';
+import { CONFIG } from './config.js?v=20260727-6';
+import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js?v=20260727-6';
+import { indexProducts, loadCatalog } from './catalog.js?v=20260727-6';
 import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js?v=20260727-4';
 import { prepareProductOffer } from './offer-engine.js?v=20260727-4';
 import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import { createPersonalization } from './personalization.js?v=20260727-4';
-import { createUI } from './ui.js?v=20260727-4';
+import { createUI } from './ui.js?v=20260727-6';
 import { createCheckout } from './checkout.js?v=20260727-4';
 import { processOrderQueue } from './integrations.js?v=20260727-4';
 
@@ -22,6 +22,7 @@ const router = createRouter(route => {
 });
 
 let lastBundleAddition = null;
+let routerStarted = false;
 
 function currentRoute() {
   return router.current();
@@ -73,6 +74,7 @@ function closeBundleConfirmation() {
   if (!overlay) return;
   overlay.classList.remove('show');
   overlay.setAttribute('aria-hidden', 'true');
+  overlay.setAttribute('inert', '');
   document.body.classList.remove('bundle-confirm-open');
 }
 
@@ -102,6 +104,7 @@ function openBundleConfirmation({ type, bundle, quantities = null, snapshot, cus
     overlay.id = 'bundle-confirm-overlay';
     overlay.className = 'bundle-confirm-overlay';
     overlay.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('inert', '');
     document.body.appendChild(overlay);
   }
 
@@ -109,15 +112,16 @@ function openBundleConfirmation({ type, bundle, quantities = null, snapshot, cus
     <button class="bundle-confirm-close" type="button" data-action="bundle-confirm-close" aria-label="Fechar">×</button>
     <div class="bundle-confirm-success" aria-hidden="true">✓</div>
     <div class="bundle-confirm-heading"><span>${escapeHtml(kindLabel)}</span><h2 id="bundle-confirm-title">${escapeHtml(title)}</h2><p>Escolha o próximo passo.</p></div>
-    <div class="bundle-confirm-summary"><div class="bundle-confirm-media"><img src="${escapeHtml(bundle.imagem || '../img/logoantonia5.png')}" alt=""></div><div class="bundle-confirm-copy"><strong>${escapeHtml(bundle.nome || kindLabel)}</strong><span>${escapeHtml(unitText)}</span><div><small>Valor adicionado</small><b>${fmt(value)}</b></div></div></div>
+    <div class="bundle-confirm-summary"><div class="bundle-confirm-media"><img src="${escapeHtml(bundle.imagem || '/img/logoantonia5.png')}" alt=""></div><div class="bundle-confirm-copy"><strong>${escapeHtml(bundle.nome || kindLabel)}</strong><span>${escapeHtml(unitText)}</span><div><small>Valor adicionado</small><b>${fmt(value)}</b></div></div></div>
     <div class="bundle-confirm-progress">${progressText}</div>
     <div class="bundle-confirm-actions"><button class="primary-button bundle-confirm-checkout" type="button" data-action="bundle-confirm-checkout">Ver minha compra</button><button class="secondary-button" type="button" data-action="bundle-confirm-continue">Continuar comprando</button></div>
     <button class="bundle-confirm-undo" type="button" data-action="bundle-confirm-undo">Desfazer adição</button>
   </section>`;
 
   const image = overlay.querySelector('.bundle-confirm-media img');
-  image?.addEventListener('error', () => { image.src = '../img/logoantonia5.png'; }, { once: true });
+  image?.addEventListener('error', () => { image.src = '/img/logoantonia5.png'; }, { once: true });
   lastBundleAddition = { snapshot, name: bundle.nome || kindLabel };
+  overlay.removeAttribute('inert');
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bundle-confirm-open');
@@ -131,14 +135,23 @@ function showPersonalizationPanel() {
     overlay = document.createElement('div');
     overlay.id = 'personalization-overlay';
     overlay.className = 'personalization-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('inert', '');
     document.body.appendChild(overlay);
   }
   overlay.innerHTML = `<section class="personalization-panel" role="dialog" aria-modal="true" aria-labelledby="personalization-title"><header><div><h2 id="personalization-title">Privacidade e personalização</h2><p>Os dados ficam somente neste navegador.</p></div><button data-action="personalization-close" aria-label="Fechar">×</button></header><div class="personalization-status"><span>Personalização</span><strong>${personalization.enabled() ? 'Ativada' : 'Desativada'}</strong></div><p>Quando ativada, a loja usa produtos vistos, favoritos, carrinho e pedidos enviados para organizar sugestões. Nome, CPF, telefone, e-mail e endereço não entram nesse perfil.</p><div class="panel-actions">${personalization.enabled() ? '<button class="secondary-button" data-action="personalization-clear">Apagar histórico</button><button class="danger-button" data-action="personalization-disable">Desativar</button>' : '<button class="primary-button" data-action="personalization-enable">Ativar personalização</button>'}</div></section>`;
+  overlay.removeAttribute('inert');
+  overlay.setAttribute('aria-hidden', 'false');
   overlay.classList.add('show');
+  requestAnimationFrame(() => overlay.querySelector('button')?.focus());
 }
 
 function closePersonalizationPanel() {
-  document.getElementById('personalization-overlay')?.classList.remove('show');
+  const overlay = document.getElementById('personalization-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.setAttribute('inert', '');
 }
 
 function findBasket(id) {
@@ -186,9 +199,14 @@ async function handleAction(button) {
     return;
   }
   if (action === 'add') { cart.add(id); ui.showToast('Produto adicionado.'); ui.updateShell(); return; }
-  if (action === 'inc') { cart.add(id); ui.updateShell(); if (document.getElementById('checkout-drawer').classList.contains('open')) checkout.render(); return; }
-  if (action === 'dec') { cart.setQty(id, Number(store.getState().cart[id] || 0) - 1); ui.updateShell(); if (document.getElementById('checkout-drawer').classList.contains('open')) checkout.render(); return; }
-  if (action === 'favorite') { const active = cart.toggleFavorite(id, button.dataset.kind); ui.showToast(active ? 'Salvo nos favoritos.' : 'Removido dos favoritos.'); if (currentRoute().name === 'favorites') rerender(); return; }
+  if (action === 'inc') { cart.add(id); ui.updateShell(); if (document.getElementById('checkout-drawer')?.classList.contains('open')) checkout.render(); return; }
+  if (action === 'dec') { cart.setQty(id, Number(store.getState().cart[id] || 0) - 1); ui.updateShell(); if (document.getElementById('checkout-drawer')?.classList.contains('open')) checkout.render(); return; }
+  if (action === 'favorite') {
+    const active = cart.toggleFavorite(id, button.dataset.kind);
+    ui.showToast(active ? 'Salvo nos favoritos.' : 'Removido dos favoritos.');
+    if (currentRoute().name === 'favorites') rerender();
+    return;
+  }
   if (action === 'clear-cart') { cart.clear(); checkout.render(); ui.showToast('Compra limpa.'); return; }
   if (action === 'add-kit') {
     const kit = findKit(id);
@@ -223,7 +241,11 @@ async function handleAction(button) {
   }
   if (action === 'basket-inc') { setBasketDraftQty(button.dataset.basketId, id, 1); return; }
   if (action === 'basket-dec') { setBasketDraftQty(button.dataset.basketId, id, -1); return; }
-  if (action === 'image') { const main = document.getElementById('product-main-image'); if (main) main.src = button.dataset.src; return; }
+  if (action === 'image') {
+    const image = document.getElementById('product-main-image');
+    if (image) image.src = button.dataset.src;
+    return;
+  }
   if (action === 'personalization-settings') { showPersonalizationPanel(); return; }
   if (action === 'personalization-close') { closePersonalizationPanel(); return; }
   if (action === 'personalization-enable') { personalization.setConsent(true); closePersonalizationPanel(); rerender(); ui.showToast('Personalização ativada.'); return; }
@@ -239,14 +261,16 @@ function updateActiveNavigation(route) {
   document.querySelectorAll('[data-nav]').forEach(link => link.classList.toggle('active', link.dataset.nav === active));
 }
 
-function internalCleanNavigation(event) {
+function internalAppNavigation(event) {
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return '';
   const link = event.target.closest('a[href]');
   if (!link || link.target || link.hasAttribute('download')) return '';
   let url;
   try { url = new URL(link.getAttribute('href'), location.href); } catch { return ''; }
-  if (url.origin !== location.origin || !/^\/(?:cestas|kits)(?:\/|$)/i.test(url.pathname)) return '';
-  return `${url.pathname}${url.search}`;
+  if (url.origin !== location.origin) return '';
+  if (url.hash.startsWith('#/')) return url.hash;
+  if (/^\/(?:cestas|kits)(?:\/|$)/i.test(url.pathname)) return `${url.pathname}${url.search}`;
+  return '';
 }
 
 function bindEvents() {
@@ -257,18 +281,18 @@ function bindEvents() {
       await handleAction(actionButton);
       return;
     }
-    const cleanTarget = internalCleanNavigation(event);
-    if (cleanTarget) {
+    const target = internalAppNavigation(event);
+    if (target) {
       event.preventDefault();
-      ui.closeDrawers();
-      router.navigate(cleanTarget);
+      ui.closeDrawers(false);
+      router.navigate(target);
       return;
     }
     if (event.target === document.getElementById('drawer-overlay')) ui.closeDrawers();
     if (event.target === document.getElementById('personalization-overlay')) closePersonalizationPanel();
     if (event.target === document.getElementById('bundle-confirm-overlay')) closeBundleConfirmation();
-    if (event.target.closest('#menu-drawer a')) ui.closeDrawers();
   });
+
   document.addEventListener('input', event => checkout.handleInput(event));
   document.addEventListener('change', event => checkout.handleInput(event));
   document.addEventListener('keydown', event => {
@@ -278,11 +302,12 @@ function bindEvents() {
       closeBundleConfirmation();
     }
   });
+
   document.getElementById('open-cart').addEventListener('click', checkout.open);
   document.getElementById('bottom-cart').addEventListener('click', checkout.open);
   document.getElementById('open-menu').addEventListener('click', ui.renderMenu);
-  document.querySelectorAll('[data-close-drawer]').forEach(button => button.addEventListener('click', ui.closeDrawers));
-  document.getElementById('drawer-overlay').addEventListener('click', ui.closeDrawers);
+  document.querySelectorAll('[data-close-drawer]').forEach(button => button.addEventListener('click', () => ui.closeDrawers()));
+  document.getElementById('drawer-overlay').addEventListener('click', () => ui.closeDrawers());
 
   const search = document.getElementById('search-input');
   let timer;
@@ -321,30 +346,44 @@ async function checkPreviewVersion() {
   } catch {}
 }
 
+function applyCatalog(catalog, reason = 'catalog:ready') {
+  const products = catalog.products.map(product => applyProductOffer(prepareProductOffer(product)));
+  const indexes = indexProducts(products);
+  store.mutate(state => {
+    Object.assign(state, catalog, indexes, { products, isReady: true });
+  }, reason);
+  window.__DA_CATALOG_STATE__ = store.getState();
+  cart.rebuildVirtualFees();
+  ui.updateShell();
+
+  if (!routerStarted) {
+    routerStarted = true;
+    router.start();
+    window.dispatchEvent(new CustomEvent('da:catalog-ready'));
+  } else {
+    ui.renderRoute(currentRoute());
+  }
+}
+
 async function init() {
   bindEvents();
   const app = document.getElementById('app');
-  app.innerHTML = '<div class="loading-shell"><div></div><div></div><div></div></div>';
+  app.innerHTML = '<div class="loading-shell" aria-label="Carregando catálogo"><div></div><div></div><div></div></div>';
+  document.documentElement.classList.remove('booting');
+
   try {
-    const catalog = await loadCatalog();
-    const products = catalog.products.map(product => applyProductOffer(prepareProductOffer(product)));
-    const indexes = indexProducts(products);
-    store.mutate(state => {
-      Object.assign(state, catalog, indexes, { products, isReady: true });
-    }, 'catalog:ready');
-    window.__DA_CATALOG_STATE__ = store.getState();
-    window.dispatchEvent(new CustomEvent('da:catalog-ready'));
-    cart.rebuildVirtualFees();
-    ui.updateShell();
-    router.start();
+    applyCatalog(await loadCatalog());
     setTimeout(processOrderQueue, 900);
     checkPreviewVersion();
   } catch (error) {
     console.error(error);
     app.innerHTML = `<div class="page-container"><div class="empty-state"><strong>Não conseguimos carregar o catálogo.</strong><span>${escapeHtml(error.message || 'Tente novamente em alguns instantes.')}</span></div></div>`;
-  } finally {
-    document.documentElement.classList.remove('booting');
   }
 }
+
+window.addEventListener('da:catalog-refreshed', event => {
+  if (!event.detail) return;
+  applyCatalog(event.detail, 'catalog:refreshed');
+});
 
 init();
