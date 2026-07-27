@@ -1,0 +1,75 @@
+      }
+    }
+
+    for (const [bundleId, info] of Object.entries(state.basketCustomizations || {})) {
+      const selected = normalizeQuantityMap(info?.selectedItems || info?.originalItems);
+      const entries = Object.entries(selected);
+      const intact = entries.length > 0 && entries.every(([id, qty]) => {
+        const product = state.productMap.get(String(id));
+        return product && isAvailable(product) && Number(state.cart[id] || 0) >= Number(qty || 0);
+      });
+      if (intact) continue;
+      delete state.basketCustomizations[bundleId];
+      delete state.basketDrafts[bundleId];
+      removeCartId(\`fee_\${bundleId}\`);
+      summary.bundlesRemoved += 1;
+    }
+
+    const activeFeeIds = new Set(Object.keys(state.basketCustomizations || {}).map(id => \`fee_\${id}\`));
+    for (const id of [...state.cartOrder]) {
+      const key = String(id);
+      if (key.startsWith('fee_') && !activeFeeIds.has(key)) removeCartId(key);
+    }
+    state.cartOrder = [...new Set(state.cartOrder.map(String))]
+      .filter(id => Number(state.cart[id] || 0) > 0);
+    summary.changed = summary.removed > 0 || summary.adjusted > 0 || summary.bundlesRemoved > 0;
+  }, 'cart:catalog-reconciled');
+
+  if (summary.changed) {
+    this.persist();
+    this.events.emit('cart:changed', { reconciled: true, ...summary });
+  }
+  return summary;
+}
+
+getProduct(id) {`, 'reconcileCatalog');
+
+// 2) Aplicar reconciliação e carregar mais ofertas pelo roteador principal.
+const main = 'app-next/src/main.js';
+replaceOnce(main, `  if (['lookup-client', 'send-order', 'apply-coupon', 'remove-coupon'].includes(action)) {
+  await checkout.handleAction(action, button);
+  return;
+}`, `  if (['lookup-client', 'send-order', 'apply-coupon', 'remove-coupon'].includes(action)) {
+  await checkout.handleAction(action, button);
+  return;
+}
+if (action === 'load-more-offers') {
+  ui.loadMoreOffers();
+  return;
+}`, 'load-more-offers');
+
+replaceOnce(main, `  window.__DA_CATALOG_STATE__ = store.getState();
+  cart.rebuildVirtualFees();
+  ui.updateShell();`, `  window.__DA_CATALOG_STATE__ = store.getState();
+  const reconciliation = cart.reconcileCatalog();
+  cart.rebuildVirtualFees();
+  ui.updateShell();
+  if (reason === 'catalog:refreshed' && reconciliation.changed) {
+    ui.showToast('Sua compra foi atualizada conforme o estoque atual.');
+  }`, 'applyCatalog reconciliation');
+
+// 3) Datas de entrega precisam pertencer à lista atual.
+const checkout = 'app-next/src/checkout.js';
+replaceOnce(checkout, `    const availableDates = deliveryDates();
+  const selectedDelivery = client.deliveryDate || dateValue(availableDates[0]);`, `    const availableDates = deliveryDates();
+  const availableDateValues = availableDates.map(dateValue);
+  const selectedDelivery = availableDateValues.includes(client.deliveryDate)
+    ? client.deliveryDate
+    : (availableDateValues[0] || '');
+  if (client.deliveryDate !== selectedDelivery) {
+    client.deliveryDate = selectedDelivery;
+    writeStorage(CONFIG.STORAGE.CHECKOUT_CLIENT, { ...client, savedAt: Date.now() });
+  }`, 'selectedDelivery');
+
+replaceOnce(checkout, `    const validation = validateCheckoutData(form, state);`, `    const allowedDeliveryDates = deliveryDates().map(dateValue);
+  const validation = validateCheckoutData(form, state, { allowedDeliveryDates });`, 'checkout allowed dates');
