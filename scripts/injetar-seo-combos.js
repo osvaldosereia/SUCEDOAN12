@@ -29,7 +29,7 @@ function dedupeModule(output, modulePath) {
 
 function injectSeo(html) {
   let output = html.replaceAll('https://www.donaantonia.com.br', SITE_URL);
-  output = output.replace(/<meta name="da-build-version" content="[^"]+">/, '<meta name="da-build-version" content="2026-07-26-combos-seo-delivery-v2">');
+  output = output.replace(/<meta name="da-build-version" content="[^"]+">/, '<meta name="da-build-version" content="2026-07-27-cestas-imagens-cache-v1">');
   output = output.replace(/<meta name="description" content="[^"]*">/, '<meta name="description" content="Cestas básicas e kits promocionais com delivery em Cuiabá e Várzea Grande. Confira a composição, os preços e peça pelo WhatsApp.">');
   output = output.replace(/<meta name="robots" content="[^"]*">/, '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">');
   output = output.replace(/<meta property="og:title" content="[^"]*">/, '<meta property="og:title" content="Cestas Básicas e Kits com Delivery em Cuiabá e Várzea Grande | Dona Antônia">');
@@ -43,13 +43,13 @@ function injectSeo(html) {
     "if (route) history.replaceState(null, '', location.pathname + location.search + route);",
   );
 
-  output = ensureModule(output, 'app-next/src/seo-combos.js?v=20260726-2', 'app-next/src/image-performance.js?v=20260724-4');
+  output = ensureModule(output, 'app-next/src/seo-combos.js?v=20260727-4', 'app-next/src/image-performance.js?v=20260727-4');
   output = output.replace(
-    'app-next/src/seo-combos.js?v=20260726-1',
-    'app-next/src/seo-combos.js?v=20260726-2',
+    'app-next/src/seo-combos.js?v=20260727-4',
+    'app-next/src/seo-combos.js?v=20260727-4',
   );
   output = output.replace(/\n\s*<script type=\"module\" src=\"app-next\/src\/delivery-only\.js[^\n]*<\/script>/g, '');
-  output = dedupeModule(output, 'app-next/src/seo-combos.js?v=20260726-2');
+  output = dedupeModule(output, 'app-next/src/seo-combos.js?v=20260727-4');
   output = dedupeModule(output, 'app-next/src/delivery-only.js?v=20260726-1');
   return output;
 }

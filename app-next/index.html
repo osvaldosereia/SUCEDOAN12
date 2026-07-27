@@ -8,24 +8,22 @@
   <meta name="theme-color" content="#ffffff">
   <title>Dona Antônia - Prévia modular</title>
   <link rel="canonical" href="https://donaantonia.com.br/">
-  <link rel="stylesheet" href="styles/app.css?v=20260724-3">
-  <link rel="stylesheet" href="styles/visual-parity.css?v=20260724-7">
-  <link rel="stylesheet" href="styles/home-parity.css?v=20260724-7">
-  <link rel="stylesheet" href="styles/live-polish.css?v=20260724-8">
-  <link rel="preload" as="style" href="styles/detail-review.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
-  <link rel="preload" as="style" href="styles/checkout-flow.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
-  <link rel="preload" as="style" href="styles/bundle-confirmation.css?v=20260724-3" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="stylesheet" href="styles/app.css?v=20260727-4">
+  <link rel="stylesheet" href="styles/visual-parity.css?v=20260727-4">
+  <link rel="stylesheet" href="styles/home-parity.css?v=20260727-4">
+  <link rel="stylesheet" href="styles/live-polish.css?v=20260727-4">
+  <link rel="preload" as="style" href="styles/checkout-flow.css?v=20260727-4" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="preload" as="style" href="styles/bundle-confirmation.css?v=20260727-4" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
-    <link rel="stylesheet" href="styles/detail-review.css?v=20260724-3">
-    <link rel="stylesheet" href="styles/checkout-flow.css?v=20260724-3">
-    <link rel="stylesheet" href="styles/bundle-confirmation.css?v=20260724-3">
+    <link rel="stylesheet" href="styles/checkout-flow.css?v=20260727-4">
+    <link rel="stylesheet" href="styles/bundle-confirmation.css?v=20260727-4">
   </noscript>
   <style>html.booting body{background:#fff}html.booting #app{opacity:0}.site-header{min-height:118px}.home-page .content-section{content-visibility:auto;contain-intrinsic-size:680px}</style>
-  <link rel="modulepreload" href="src/main.js?v=20260726-9">
-  <link rel="modulepreload" href="src/config.js?v=20260724-8">
-  <link rel="modulepreload" href="src/core.js?v=20260724-3">
-  <link rel="modulepreload" href="src/catalog.js?v=20260724-3">
-  <link rel="modulepreload" href="src/commerce.js?v=20260724-3">
+  <link rel="modulepreload" href="src/main.js?v=20260727-4">
+  <link rel="modulepreload" href="src/config.js?v=20260727-4">
+  <link rel="modulepreload" href="src/core.js?v=20260727-4">
+  <link rel="modulepreload" href="src/catalog.js?v=20260727-4">
+  <link rel="modulepreload" href="src/commerce.js?v=20260727-4">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","name":"Dona Antônia","url":"https://www.donaantonia.com.br/","telephone":"+5565998150975","areaServed":["Cuiabá - MT","Várzea Grande - MT"]}</script>
 </head>
 <body>
@@ -64,20 +62,11 @@
   <aside id="menu-drawer" class="drawer" aria-hidden="true" aria-label="Menu"><header class="drawer-header"><div><strong>Menu Dona Antônia</strong><small>Navegação e informações</small></div><button data-close-drawer aria-label="Fechar">×</button></header><div id="menu-content" class="drawer-content"></div></aside>
   <aside id="checkout-drawer" class="drawer checkout-drawer" aria-hidden="true" aria-label="Minha compra"><header class="drawer-header"><div><strong>Minha compra</strong><small>Revise e envie pelo WhatsApp</small></div><button data-close-drawer aria-label="Fechar">×</button></header><div id="checkout-content" class="drawer-content"></div></aside>
 
-  <script type="module" src="src/image-performance.js?v=20260724-4"></script>
-  <script type="module" src="src/main.js?v=20260726-9"></script>
+  <script type="module" src="src/image-performance.js?v=20260727-4"></script>
+  <script type="module" src="src/main.js?v=20260727-4"></script>
   <script type="module">
-    let detailsPromise;
     let polishPromise;
-    const loadDetails = () => detailsPromise || (detailsPromise = import('./src/detail-review.js?v=20260724-3'));
-    const loadPolish = () => polishPromise || (polishPromise = import('./src/live-polish.js?v=20260726-8'));
-    const routeNeedsDetails = () => /^#\/(cesta|kit)(\/|$)/.test(location.hash || '') || /^\/(cestas|kits)\/[^/]+\/?$/.test(location.pathname || '');
-    if (routeNeedsDetails()) loadDetails();
-    window.addEventListener('hashchange', () => { if (routeNeedsDetails()) loadDetails(); });
-    window.addEventListener('popstate', () => { if (routeNeedsDetails()) loadDetails(); });
-    document.addEventListener('click', event => {
-      if (event.target.closest('#open-cart,#bottom-cart,[data-action="add-basket"],[data-action="add-basket-custom"],[data-action="add-kit"]')) loadDetails();
-    }, { passive: true });
+    const loadPolish = () => polishPromise || (polishPromise = import('./src/live-polish.js?v=20260727-4'));
     if ('requestIdleCallback' in window) requestIdleCallback(loadPolish, { timeout: 1400 });
     else setTimeout(loadPolish, 700);
   </script>

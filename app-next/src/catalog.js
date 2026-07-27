@@ -1,8 +1,8 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=20260727-4';
 import {
   assetUrl, codeVariants, formatName, norm, parseMoney, readStorage,
   slug, words, writeStorage
-} from './core.js';
+} from './core.js?v=20260727-4';
 
 export async function fetchJson(url, { timeoutMs = CONFIG.REQUEST_TIMEOUT_MS, cache = 'default' } = {}) {
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;

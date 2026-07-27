@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from './config.js?v=20260727-4';
 
 export const hasDOM = typeof window !== 'undefined' && typeof document !== 'undefined';
 

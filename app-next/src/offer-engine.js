@@ -1,4 +1,4 @@
-import { parseDate, roundMoney } from './core.js';
+import { parseDate, roundMoney } from './core.js?v=20260727-4';
 
 export const VALIDITY_DISCOUNT_BANDS = Object.freeze([
   { min: 3, max: 7, discount: 50 },

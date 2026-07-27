@@ -3,7 +3,7 @@ const IS_PRODUCTION = !RUNTIME_PATH.includes('/app-next/');
 
 export const CONFIG = Object.freeze({
   APP_NAME: 'Dona Antônia',
-  APP_VERSION: IS_PRODUCTION ? '2026-07-26-seo-delivery-v9' : '2026-07-26-seo-delivery-preview-v9',
+  APP_VERSION: IS_PRODUCTION ? '2026-07-27-cestas-imagens-cache-v1' : '2026-07-27-cestas-imagens-cache-v1-preview',
   ENVIRONMENT: IS_PRODUCTION ? 'production' : 'preview',
   IS_PRODUCTION,
   SITE_BASE_URL: 'https://donaantonia.com.br',

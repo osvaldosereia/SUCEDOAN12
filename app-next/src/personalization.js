@@ -1,6 +1,6 @@
-import { CONFIG } from './config.js';
-import { norm, readStorage, writeStorage } from './core.js';
-import { isAvailable } from './commerce.js';
+import { CONFIG } from './config.js?v=20260727-4';
+import { norm, readStorage, writeStorage } from './core.js?v=20260727-4';
+import { isAvailable } from './commerce.js?v=20260727-4';
 
 const VERSION = 1;
 const MAX_RECENT = 30;

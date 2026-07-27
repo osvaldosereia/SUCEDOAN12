@@ -1,12 +1,12 @@
-import { CONFIG, ROUTINES } from './config.js';
-import { escapeHtml, fmt, formatDateBR, norm, parseDate, slug } from './core.js';
-import { findProductByReference, searchProducts } from './catalog.js';
-import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js';
-import { basketDraftTotal } from './basket-pricing.js';
+import { CONFIG, ROUTINES } from './config.js?v=20260727-4';
+import { escapeHtml, fmt, formatDateBR, norm, parseDate, slug } from './core.js?v=20260727-4';
+import { findProductByReference, searchProducts } from './catalog.js?v=20260727-4';
+import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js?v=20260727-4';
+import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import {
   applyProductOffer, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
   kitDiscountPercent, kitIsVisible, kitOriginalPrice, resolveBundleRows
-} from './commerce.js';
+} from './commerce.js?v=20260727-4';
 
 function productRoute(product) {
   return encodeURIComponent(product.firebaseKey || product.id || product.codigo || slug(product.name));
@@ -372,6 +372,7 @@ export function createUI({ store, cart, events, personalization }) {
     updateMeta(route, ctx);
     syncCleanComboUrl(route, ctx);
     events.emit('route:rendered', { route });
+    window.dispatchEvent(new CustomEvent('da:route-rendered', { detail: { route } }));
   }
 
   function updateMeta(route, ctx) {

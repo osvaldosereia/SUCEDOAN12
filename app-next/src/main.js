@@ -1,13 +1,13 @@
-import { CONFIG } from './config.js';
-import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js';
-import { indexProducts, loadCatalog } from './catalog.js';
-import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js';
-import { prepareProductOffer } from './offer-engine.js';
-import { basketDraftTotal } from './basket-pricing.js';
-import { createPersonalization } from './personalization.js';
-import { createUI } from './ui.js?v=20260726-8';
-import { createCheckout } from './checkout.js';
-import { processOrderQueue } from './integrations.js';
+import { CONFIG } from './config.js?v=20260727-4';
+import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js?v=20260727-4';
+import { indexProducts, loadCatalog } from './catalog.js?v=20260727-4';
+import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js?v=20260727-4';
+import { prepareProductOffer } from './offer-engine.js?v=20260727-4';
+import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
+import { createPersonalization } from './personalization.js?v=20260727-4';
+import { createUI } from './ui.js?v=20260727-4';
+import { createCheckout } from './checkout.js?v=20260727-4';
+import { processOrderQueue } from './integrations.js?v=20260727-4';
 
 const events = createEventBus();
 const store = createStore(createInitialState());
