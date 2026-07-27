@@ -3,7 +3,7 @@ const path = require('path');
 
 const INDEX_PATH = process.env.INDEX_PATH || path.join(__dirname, '..', 'index.html');
 const SITE_URL = 'https://donaantonia.com.br';
-const BUILD_VERSION = '2026-07-27-storefront-performance-v6';
+const BUILD_VERSION = '2026-07-27-storefront-carousel-v7';
 
 function removeLegacyAssets(html) {
   return html
