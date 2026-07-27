@@ -5,6 +5,10 @@ function decodeRouteReference(value) {
   catch { return String(value || '').trim(); }
 }
 
+function isCleanComboPath(pathname = '') {
+  return /^\/(cestas|kits)(?:\/[^/]+)?\/?$/i.test(String(pathname || '').replace(/\/{2,}/g, '/'));
+}
+
 export function comboSeoPath(combo, type) {
   const kind = type === 'kit' ? 'kits' : 'cestas';
   const fallback = type === 'kit' ? 'kit-promocional' : 'cesta-basica';
@@ -58,3 +62,28 @@ export function cleanComboRouteFromLocation(locationLike = globalThis.location) 
   if (params.get('kit')) return { name: 'kit', reference: params.get('kit') };
   return null;
 }
+
+export function rootHashTarget(href) {
+  const value = String(href || '').trim();
+  return value.startsWith('#/') ? `/${value}` : '';
+}
+
+export function installCleanComboNavigationGuard(documentLike = globalThis.document, locationLike = globalThis.location) {
+  if (!documentLike?.addEventListener || !locationLike || !isCleanComboPath(locationLike.pathname)) return false;
+  if (documentLike.documentElement?.dataset.comboNavigationGuard === 'true') return true;
+  if (documentLike.documentElement) documentLike.documentElement.dataset.comboNavigationGuard = 'true';
+
+  documentLike.addEventListener('click', event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target?.closest?.('a[href]');
+    if (!link || link.target || link.hasAttribute('download')) return;
+    const target = rootHashTarget(link.getAttribute('href'));
+    if (!target) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    locationLike.assign(target);
+  }, true);
+  return true;
+}
+
+installCleanComboNavigationGuard();
