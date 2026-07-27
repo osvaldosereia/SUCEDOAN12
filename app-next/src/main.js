@@ -6,7 +6,7 @@ import { prepareProductOffer } from './offer-engine.js?v=20260727-4';
 import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import { createPersonalization } from './personalization.js?v=20260727-4';
 import { createUI } from './ui.js?v=20260727-6';
-import { createCheckout } from './checkout.js?v=20260727-4';
+import { createCheckout } from './checkout.js?v=20260727-8';
 import { processOrderQueue } from './integrations.js?v=20260727-4';
 
 const events = createEventBus();
@@ -69,6 +69,22 @@ function pulseCartTargets() {
   setTimeout(() => targets.forEach(target => target.classList.remove('bundle-added-pulse')), 850);
 }
 
+function warmOfferImages(limit = 8) {
+  const seen = new Set();
+  const products = store.getState().products || [];
+  for (const product of products) {
+    if (seen.size >= limit) break;
+    if (Number(product.stock || 0) <= 0) continue;
+    if (!(Number(product.oldPrice || 0) > Number(product.price || 0))) continue;
+    const source = String(product.img || '').trim();
+    if (!source || seen.has(source)) continue;
+    seen.add(source);
+    const image = new Image();
+    image.decoding = 'async';
+    image.src = source;
+  }
+}
+
 function closeBundleConfirmation() {
   const overlay = document.getElementById('bundle-confirm-overlay');
   if (!overlay) return;
@@ -98,6 +114,8 @@ function openBundleConfirmation({ type, bundle, quantities = null, snapshot, cus
     ? `Faltam <strong>${fmt(missing)}</strong> para atingir o pedido mínimo.`
     : '<strong>Pedido mínimo atingido.</strong> Você já pode revisar e enviar a compra.';
   let overlay = document.getElementById('bundle-confirm-overlay');
+
+  warmOfferImages();
 
   if (!overlay) {
     overlay = document.createElement('div');
@@ -188,8 +206,20 @@ async function handleAction(button) {
     await checkout.handleAction(action, button);
     return;
   }
-  if (action === 'bundle-confirm-close' || action === 'bundle-confirm-continue') { closeBundleConfirmation(); return; }
-  if (action === 'bundle-confirm-checkout') { closeBundleConfirmation(); checkout.open(); return; }
+  if (action === 'bundle-confirm-close') {
+    closeBundleConfirmation();
+    return;
+  }
+  if (action === 'bundle-confirm-continue') {
+    closeBundleConfirmation();
+    router.navigate('#/ofertas');
+    return;
+  }
+  if (action === 'bundle-confirm-checkout') {
+    closeBundleConfirmation();
+    checkout.open();
+    return;
+  }
   if (action === 'bundle-confirm-undo') {
     restoreCartSnapshot(lastBundleAddition?.snapshot);
     const name = lastBundleAddition?.name || 'Item';
@@ -310,29 +340,56 @@ function bindEvents() {
   document.getElementById('drawer-overlay').addEventListener('click', () => ui.closeDrawers());
 
   const search = document.getElementById('search-input');
+  const clearSearch = document.getElementById('search-clear');
   let timer;
+  let composing = false;
+
+  const navigateToSearch = ({ force = false } = {}) => {
+    const query = search.value.trim();
+    clearSearch.hidden = !query;
+    if (!query) {
+      if (currentRoute().name === 'search') router.navigate('#/');
+      return;
+    }
+    const minimum = force ? 2 : 3;
+    if (query.length < minimum) return;
+    router.navigate(`#/busca/${encodeURIComponent(query)}`);
+  };
+
+  search.addEventListener('compositionstart', () => { composing = true; });
+  search.addEventListener('compositionend', () => {
+    composing = false;
+    clearTimeout(timer);
+    timer = setTimeout(() => navigateToSearch(), 450);
+  });
   search.addEventListener('input', () => {
     clearTimeout(timer);
     const query = search.value.trim();
-    document.getElementById('search-clear').hidden = !query;
-    timer = setTimeout(() => {
-      if (query) router.navigate(`#/busca/${encodeURIComponent(query)}`);
-      else if (currentRoute().name === 'search') router.navigate('#/');
-    }, 250);
+    clearSearch.hidden = !query;
+    if (composing || query.length < 3) return;
+    timer = setTimeout(() => navigateToSearch(), 450);
   });
   document.getElementById('search-form').addEventListener('submit', event => {
     event.preventDefault();
+    clearTimeout(timer);
     const query = search.value.trim();
-    if (query) router.navigate(`#/busca/${encodeURIComponent(query)}`);
+    if (query.length < 2) {
+      ui.showToast('Digite pelo menos 2 caracteres para buscar.');
+      search.focus();
+      return;
+    }
+    navigateToSearch({ force: true });
   });
-  document.getElementById('search-clear').addEventListener('click', () => {
+  clearSearch.addEventListener('click', () => {
+    clearTimeout(timer);
     search.value = '';
-    document.getElementById('search-clear').hidden = true;
+    clearSearch.hidden = true;
     router.navigate('#/');
+    search.focus();
   });
 
   events.on('route:rendered', ({ route }) => {
-    if (route.name === 'search') search.value = route.params.segments.join(' ');
+    if (route.name === 'search' && document.activeElement !== search) search.value = route.params.segments.join(' ');
     updateActiveNavigation(route);
   });
 }
