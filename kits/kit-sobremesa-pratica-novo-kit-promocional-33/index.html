@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <base href="/">
-  <meta name="da-build-version" content="2026-07-27-storefront-carousel-v7">
+  <meta name="da-build-version" content="2026-07-27-checkout-navigation-v8">
   <meta name="description" content="Este kit é ideal para quem deseja preparar sobremesas de forma rápida e prática. Inclui: - 2 un Sequilos Leite Condensado 100g - 2 un Sequilhos Biscoito Sequilho Tradicional 100g Economia no kit: R$ 3,70 em comparação à compra avulsa.">
   <meta name="service-model" content="Somente delivery">
   <meta name="robots" content="noindex,follow">
@@ -23,22 +23,22 @@
   <link rel="privacy-policy" href="https://donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://donaantonia.com.br/termos-de-uso.html">
   <link rel="stylesheet" href="/app-next/styles/storefront-base.css?v=20260727-7">
-  <link rel="stylesheet" href="/app-next/styles/storefront-components.css?v=20260727-7">
-  <link rel="stylesheet" href="/app-next/styles/storefront-responsive.css?v=20260727-7">
-  <link rel="preload" as="style" href="/app-next/styles/checkout-flow.css?v=20260727-4" onload="this.onload=null;this.rel='stylesheet'">
+  <link rel="stylesheet" href="/app-next/styles/storefront-components.css?v=20260727-8">
+  <link rel="stylesheet" href="/app-next/styles/storefront-responsive.css?v=20260727-8">
+  <link rel="preload" as="style" href="/app-next/styles/checkout-flow.css?v=20260727-8" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" as="style" href="/app-next/styles/bundle-confirmation.css?v=20260727-4" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
-    <link rel="stylesheet" href="/app-next/styles/checkout-flow.css?v=20260727-4">
+    <link rel="stylesheet" href="/app-next/styles/checkout-flow.css?v=20260727-8">
     <link rel="stylesheet" href="/app-next/styles/bundle-confirmation.css?v=20260727-4">
   </noscript>
   <style>html.booting body{background:#fff}.site-header{min-height:118px}</style>
-  <link rel="modulepreload" href="/app-next/src/main.js?v=20260727-6">
+  <link rel="modulepreload" href="/app-next/src/main.js?v=20260727-8">
   <link rel="modulepreload" href="/app-next/src/core.js?v=20260727-6">
   <link rel="modulepreload" href="/app-next/src/catalog.js?v=20260727-6">
   <link rel="modulepreload" href="/app-next/src/ui.js?v=20260727-6">
   <link rel="modulepreload" href="/app-next/src/commerce.js?v=20260727-4">
-  <link rel="modulepreload" href="/app-next/src/image-performance.js?v=20260727-7">
-  <link rel="modulepreload" href="/app-next/src/home-carousels.js?v=20260727-7">
+  <link rel="modulepreload" href="/app-next/src/image-performance.js?v=20260727-8">
+  <link rel="modulepreload" href="/app-next/src/home-carousels.js?v=20260727-8">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","@id":"https://donaantonia.com.br/#organization","name":"Super Cestas Básicas Dona Antônia","alternateName":"Dona Antônia","url":"https://donaantonia.com.br/","logo":"https://donaantonia.com.br/img/logoantonia5.png","image":"https://donaantonia.com.br/img/logoantonia5.png","description":"Cestas básicas com composição completa e delivery em Cuiabá e Várzea Grande.","email":"atendimento@donaantonia.com.br","telephone":"+5565998150975","taxID":"51.385.335/0001-06","areaServed":[{"@type":"City","name":"Cuiabá","containedInPlace":{"@type":"State","name":"Mato Grosso"}},{"@type":"City","name":"Várzea Grande","containedInPlace":{"@type":"State","name":"Mato Grosso"}}]}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","@id":"https://donaantonia.com.br/#website","url":"https://donaantonia.com.br/","name":"Dona Antônia - Cestas Básicas","inLanguage":"pt-BR","publisher":{"@id":"https://donaantonia.com.br/#organization"},"potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://donaantonia.com.br/?busca={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
   <script>
@@ -65,7 +65,7 @@
       }).catch(function(){});
     }
 
-    var migrationKey = 'da_v12_storefront_carousel_20260727';
+    var migrationKey = 'da_v13_checkout_navigation_20260727';
     try {
       if (!localStorage.getItem(migrationKey)) {
         if ('caches' in window) {
@@ -94,7 +94,7 @@
           <button class="header-menu-btn" id="open-menu" type="button" aria-label="Abrir menu"><span class="hamburger" aria-hidden="true"><span></span><span></span><span></span></span><span class="header-menu-text">Menu</span></button>
         </div>
       </div>
-      <form class="search-wrap search-form" id="search-form"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg><input id="search-input" class="search-input" type="search" placeholder="Buscar produto. Ex: Omo, café, arroz" autocomplete="off" aria-label="Buscar produto"><button id="search-clear" class="search-clear" type="button" hidden aria-label="Limpar busca"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12"></path></svg></button></form>
+      <form class="search-wrap search-form" id="search-form"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg><input id="search-input" class="search-input" type="search" placeholder="Buscar produto. Ex: Omo, café, arroz" autocomplete="off" enterkeyhint="search" aria-label="Buscar produto"><button id="search-clear" class="search-clear" type="button" hidden aria-label="Limpar busca"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18L18 6M6 6l12 12"></path></svg></button></form>
     </div>
   </header>
 
@@ -116,8 +116,8 @@
   <aside id="menu-drawer" class="drawer" aria-hidden="true" aria-label="Menu" inert><header class="drawer-header"><div><strong>Menu Dona Antônia</strong><small>Navegação e informações</small></div><button data-close-drawer type="button" aria-label="Fechar menu">×</button></header><div id="menu-content" class="drawer-content"></div></aside>
   <aside id="checkout-drawer" class="drawer checkout-drawer" aria-hidden="true" aria-label="Minha compra" inert><header class="drawer-header"><div><strong>Minha compra</strong><small>Revise e envie pelo WhatsApp</small></div><button data-close-drawer type="button" aria-label="Fechar minha compra">×</button></header><div id="checkout-content" class="drawer-content"></div></aside>
 
-  <script type="module" src="/app-next/src/image-performance.js?v=20260727-7"></script>
-  <script type="module" src="/app-next/src/home-carousels.js?v=20260727-7"></script>
-  <script type="module" src="/app-next/src/main.js?v=20260727-6"></script>
+  <script type="module" src="/app-next/src/image-performance.js?v=20260727-8"></script>
+  <script type="module" src="/app-next/src/home-carousels.js?v=20260727-8"></script>
+  <script type="module" src="/app-next/src/main.js?v=20260727-8"></script>
 </body>
 </html>
