@@ -1,0 +1,75 @@
+  return `<div class="page-container">${pageHeader(title, subtitle, back)}${products.length ? productGrid(context.state, products) : empty('Nenhum produto disponível', 'Tente outra categoria ou use a busca.')}</div>`;
+}`, 'productGridPage banners');
+
+update(ui, source => source
+  .replace(`, bannerPosition: 'subcategoria', bannerTargets: [name]`, '')
+  .replace(`, bannerPosition: 'marca', bannerTargets: [name]`, '')
+  .replace(`, bannerPosition: 'busca.topo'`, ''));
+
+replaceRegexOnce(ui, /function offersPage\(context\) \{[\s\S]*?\n\}\n\nfunction favoritesPage/, `function offersPage(context) {
+  const products = context.state.products
+    .filter(isAvailable)
+    .map(effectiveProduct)
+    .filter(product => Number(product.oldPrice) > Number(product.price))
+    .sort((a, b) => Number(b.discountPercent || 0) - Number(a.discountPercent || 0) || a.name.localeCompare(b.name, 'pt-BR'));
+  const visibleCount = Math.max(OFFER_BATCH_SIZE, Number(context.offersVisibleCount || OFFER_BATCH_SIZE));
+  const visible = products.slice(0, visibleCount);
+  const remaining = Math.max(products.length - visible.length, 0);
+  return `<div class="page-container">${pageHeader('Ofertas', `${products.length} produtos em oferta.`, '#/')}<p class="fast-offers-status">As ofertas são carregadas em blocos para manter a página leve e rápida.</p>${visible.length ? productGrid(context.state, visible) : empty('Nenhuma oferta disponível agora.', 'Volte mais tarde para conferir novas ofertas.')}${remaining ? `<div class="fast-offers-more-wrap"><button class="primary-button fast-offers-more" type="button" data-action="load-more-offers">Carregar mais ofertas (${remaining})</button></div>` : ''}</div>`;
+}
+
+function favoritesPage`, 'offersPage');
+
+replaceOnce(ui, `<div class="detail-price">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>`, `<div class="detail-price" data-price-slot="${escapeHtml(product.id)}">${display.original > display.effective ? `<s>${fmt(display.original)}</s>` : ''}<strong>${fmt(display.effective)}</strong></div>`, 'detail price slot');
+
+replaceOnce(ui, `  let lastDrawerTrigger = null;`, `  let lastDrawerTrigger = null;
+  let offersVisibleCount = OFFER_BATCH_SIZE;
+  const scrollPositions = new Map();
+  let activeScrollKey = '';
+  let scrollFrame = 0;
+
+  function routeScrollKey(route) {
+    const segments = route?.params?.segments || [];
+    const query = route?.query?.toString?.() || '';
+    return `${route?.name || 'home'}:${segments.join('/')}${query ? `?${query}` : ''}`;
+  }
+
+  app.addEventListener('scroll', () => {
+    if (!activeScrollKey || scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      scrollPositions.set(activeScrollKey, app.scrollTop);
+    });
+  }, { passive: true });`, 'scroll state');
+
+replaceOnce(ui, `  function context(route) {
+  return { state: store.getState(), route, cart, events, personalization };
+}`, `  function context(route) {
+  return { state: store.getState(), route, cart, events, personalization, offersVisibleCount };
+}`, 'ui context');
+
+replaceOnce(ui, `  function renderRoute(route) {
+  store.mutate(state => { state.route = route; }, 'route');`, `  function renderRoute(route) {
+  const nextScrollKey = routeScrollKey(route);
+  if (activeScrollKey) scrollPositions.set(activeScrollKey, app.scrollTop);
+  const restoreScroll = Number(scrollPositions.get(nextScrollKey) || 0);
+  store.mutate(state => { state.route = route; }, 'route');`, 'renderRoute start');
+
+replaceOnce(ui, `    app.querySelector(':scope > .page-container')?.insertAdjacentHTML('beforeend', publicFooterHtml());
+  app.scrollTop = 0;
+  updateShell();`, `    app.querySelector(':scope > .page-container')?.insertAdjacentHTML('beforeend', publicFooterHtml());
+  activeScrollKey = nextScrollKey;
+  requestAnimationFrame(() => { app.scrollTop = restoreScroll; });
+  updateShell();`, 'scroll restore');
+
+replaceOnce(ui, `  function updateMeta(route, ctx) {`, `  function loadMoreOffers() {
+  const state = store.getState();
+  const total = state.products
+    .filter(isAvailable)
+    .map(effectiveProduct)
+    .filter(product => Number(product.oldPrice) > Number(product.price)).length;
+  offersVisibleCount = Math.min(total, offersVisibleCount + OFFER_BATCH_SIZE);
+  renderRoute(state.route);
+}
+
+  function updateMeta(route, ctx) {`, 'loadMoreOffers function');
