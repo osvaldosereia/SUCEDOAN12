@@ -1,0 +1,75 @@
+const fs = require('node:fs');
+const path = require('node:path');
+
+const read = file => fs.readFileSync(file, 'utf8');
+const write = (file, content) => fs.writeFileSync(file, content, 'utf8');
+const fail = message => { throw new Error(message); };
+
+function replaceOnce(file, before, after, label = before.slice(0, 80)) {
+  const source = read(file);
+  const first = source.indexOf(before);
+  if (first >= 0) {
+    if (source.indexOf(before, first + before.length) >= 0) fail(`${file}: trecho duplicado (${label})`);
+    write(file, source.slice(0, first) + after + source.slice(first + before.length));
+    return;
+  }
+
+  const escapeRegex = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const lines = before.split('\n');
+  const pattern = lines.map((line, index) => {
+    const content = escapeRegex(line.trimStart());
+    return `${index ? '\\n' : ''}[\\t ]*${content}`;
+  }).join('');
+  const matches = [...source.matchAll(new RegExp(pattern, 'g'))];
+  if (matches.length !== 1) fail(`${file}: padrão flexível encontrou ${matches.length} ocorrências (${label})`);
+  const match = matches[0];
+  write(file, source.slice(0, match.index) + after + source.slice(match.index + match[0].length));
+}
+
+function replaceRegexOnce(file, regex, after, label) {
+  const source = read(file);
+  const matches = source.match(regex);
+  if (!matches) fail(`${file}: padrão não encontrado (${label})`);
+  const updated = source.replace(regex, after);
+  if (updated === source) fail(`${file}: padrão não alterado (${label})`);
+  write(file, updated);
+}
+
+function update(file, transform) {
+  const source = read(file);
+  const updated = transform(source);
+  if (updated === source) fail(`${file}: nenhuma alteração aplicada`);
+  write(file, updated);
+}
+
+function walk(dir, output = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (['.git', 'node_modules'].includes(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(full, output);
+    else output.push(full);
+  }
+  return output;
+}
+
+// 1) Política de descontos: cupom e desconto por validade não acumulam.
+const commerce = 'app-next/src/commerce.js';
+replaceOnce(commerce, `export function cartUnitPricing(product, qty, coupon, eligibility, today = new Date()) {
+  const original = Number(product.price || 0);
+  const couponPrice = eligibility?.eligible ? couponUnitPrice(product, coupon) : original;
+  const wholesaleEligible = !product.isFee && Number(qty || 0) >= CONFIG.WHOLESALE_MIN_QTY;
+  const expiryBulkEligible = wholesaleEligible && hasExpiryBulkDiscount(product, today);
+  const expiryBulkPrice = expiryBulkEligible ? roundMoney(couponPrice * (1 - CONFIG.EXPIRY_BULK_DISCOUNT_RATE)) : couponPrice;
+  const effective = wholesaleEligible ? roundMoney(expiryBulkPrice * (1 - CONFIG.WHOLESALE_DISCOUNT_RATE)) : expiryBulkPrice;
+  return {
+    original,
+    couponPrice,
+    expiryBulkPrice,
+    effective,
+    wholesaleEligible,
+    expiryBulkEligible,
+    couponDiscount: Math.max(0, original - couponPrice),
+    expiryBulkDiscount: Math.max(0, couponPrice - expiryBulkPrice),
+    wholesaleDiscount: Math.max(0, expiryBulkPrice - effective)
+  };
+}`, `export function cartUnitPricing(product, qty, coupon, eligibility, today = new Date()) {
