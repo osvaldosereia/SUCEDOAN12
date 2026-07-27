@@ -13,7 +13,7 @@ const required = [
   'styles/storefront-responsive.css', 'styles/checkout-flow.css',
   'src/main.js', 'src/ui.js', 'src/catalog.js', 'src/checkout.js',
   'src/core.js', 'src/image-performance.js', 'src/home-carousels.js',
-  'src/bundle-routes.js'
+  'src/fast-offers-v9.js', 'src/bundle-routes.js'
 ];
 required.forEach(file => assert(fs.existsSync(path.join(root, file)), `Arquivo ausente: ${file}`));
 
@@ -31,8 +31,9 @@ for (const marker of [
   '/app-next/styles/checkout-flow.css?v=20260727-8',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
+  '/app-next/src/fast-offers-v9.js?v=20260727-10',
   '/app-next/src/main.js?v=20260727-8',
-  'da_v13_checkout_navigation_20260727',
+  'da_v14_offers_progressive_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
 ]) assert(production.includes(marker), `Produção incompleta: ${marker}`);
@@ -73,6 +74,12 @@ for (const marker of [
   "createCheckout } from './checkout.js?v=20260727-8'", 'query.length < 3'
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
 
+const fastOffers = read('src/fast-offers-v9.js');
+for (const marker of [
+  'OFFER_BATCH_SIZE = 16', 'holdInitialOffersRoute', "window.addEventListener('da:catalog-refreshed'",
+  'queueMicrotask', "dataset.offersRenderer = 'progressive-v10'"
+]) assert(fastOffers.includes(marker), `Ofertas progressivas incompletas: ${marker}`);
+
 const checkout = read('src/checkout.js');
 for (const marker of [
   'Pedir no WhatsApp', 'Buscar o cadastro é opcional',
@@ -105,4 +112,4 @@ for (const file of jsFiles) {
 await import('../src/ui.js');
 await import('../src/checkout.js');
 await import('../src/offer-engine.js');
-console.log(`Smoke test concluído: checkout com WhatsApp, busca estável, navegação direta e ${jsFiles.length} módulos válidos.`);
+console.log(`Smoke test concluído: checkout com WhatsApp, busca estável, ofertas progressivas e ${jsFiles.length} módulos válidos.`);
