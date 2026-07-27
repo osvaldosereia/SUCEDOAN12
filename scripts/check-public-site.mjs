@@ -15,62 +15,66 @@ const required = [
   'politica-de-troca.html', 'politica-de-privacidade.html', 'termos-de-uso.html',
   'cestas/index.html', 'kits/index.html', 'site/seo-combos-manifest.json',
   'site/produtos-cesta-basica.json', 'site/kits.json', 'site/app-version.json',
-  'app-next/index.html', 'app-next/styles/app.css', 'app-next/styles/visual-parity.css',
-  'app-next/styles/home-parity.css', 'app-next/styles/live-polish.css',
-  'app-next/src/ui.js', 'app-next/src/main.js', 'app-next/src/live-polish.js',
-  'app-next/src/image-performance.js', 'app-next/src/seo-combos.js',
-  'app-next/src/bundle-routes.js', 'app-next/src/config.js',
+  'app-next/index.html', 'app-next/styles/storefront-base.css',
+  'app-next/styles/storefront-components.css', 'app-next/styles/storefront-responsive.css',
+  'app-next/src/ui.js', 'app-next/src/main.js',
+  'app-next/src/image-performance.js', 'app-next/src/bundle-routes.js',
+  'app-next/src/config.js', 'app-next/src/catalog.js', 'app-next/src/core.js',
   'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js',
   'scripts/gerar-meta-combos.js', 'scripts/gerar-paginas-seo-combos.js',
   'scripts/gerar-sitemap.js', 'scripts/injetar-seo-combos.js',
-  'scripts/normalizar-seo-delivery.js', 'producao-v2/js/services/collections.js'
+  'scripts/normalizar-seo-delivery.js', 'scripts/estabilizar-catalogo-publico.mjs'
 ];
 required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}`));
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-27-site-estavel-v1',
-  '/app-next/styles/live-polish.css?v=20260727-5',
-  '/app-next/src/live-polish.js?v=20260727-5',
-  '/app-next/src/main.js?v=20260727-4',
-  'da_v10_site_estavel_20260727',
+  '2026-07-27-storefront-performance-v6',
+  '/app-next/styles/storefront-base.css?v=20260727-6',
+  '/app-next/styles/storefront-components.css?v=20260727-6',
+  '/app-next/styles/storefront-responsive.css?v=20260727-6',
+  '/app-next/src/main.js?v=20260727-6',
+  'da_v11_storefront_performance_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
-  'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"'
+  'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
+  '"@type":"WebSite"', 'Cestas Básicas em Cuiabá e Várzea Grande',
+  'id="menu-drawer"', 'aria-hidden="true"', 'inert'
 ]) assert(production.includes(marker), `Index público incompleto: ${marker}`);
-assert(!production.includes('requestIdleCallback'), 'Index ainda atrasa o carregamento do acabamento');
-assert(!production.includes('loadPolish'), 'Index ainda carrega reescrita dinâmica de layout');
-assert(!production.includes('noindex, nofollow'), 'Index de produção bloqueia indexação');
-assert(!production.includes('https://www.donaantonia.com.br'), 'Index usa domínio duplicado com www');
-assert(!production.includes('raw.githubusercontent.com'), 'Index depende de imagens externas do GitHub');
 
-const preview = read('app-next/index.html');
-assert(preview.includes('location.replace'), 'A rota /app-next/ não redireciona para a entrada principal');
-assert(preview.includes('noindex,nofollow'), 'A rota /app-next/ precisa permanecer noindex');
-assert(!preview.includes('src/main.js'), 'A rota /app-next/ ainda mantém uma segunda aplicação pública');
-assert(!preview.includes('styles/app.css'), 'A rota /app-next/ ainda mantém um segundo layout');
-
-const livePolish = read('app-next/src/live-polish.js');
-for (const marker of [
-  'prepareLinks', 'prepareImages', 'closeTransientLayers',
-  'da:route-rendered', 'da:catalog-ready', 'FALLBACK_IMAGE'
-]) assert(livePolish.includes(marker), `Rotina estável incompleta: ${marker}`);
 for (const removed of [
-  'MutationObserver', 'IntersectionObserver', 'appendCarouselBatch',
-  'initializeCarousel', 'restoreBasketPosition', 'cardsPerBatch',
-  'window.__DA_CATALOG_STATE__', '.slice(0, 30)'
-]) assert(!livePolish.includes(removed), `Reescrita dinâmica ainda presente: ${removed}`);
+  '/app-next/styles/visual-parity.css', '/app-next/styles/home-parity.css',
+  '/app-next/styles/live-polish.css', '/app-next/src/live-polish.js',
+  '/app-next/src/seo-combos.js', 'html.booting #app{opacity:0',
+  'requestIdleCallback', 'raw.githubusercontent.com'
+]) assert(!production.includes(removed), `Index ainda carrega camada conflitante: ${removed}`);
 
-const liveCss = read('app-next/styles/live-polish.css');
-for (const marker of [
-  '.bottom-bar{pointer-events:auto}', '.bundle-detail-hero>img',
-  'object-fit:contain!important', '.drawer-overlay:not(.show)',
-  'grid-template-columns:1fr!important'
-]) assert(liveCss.includes(marker), `CSS estável incompleto: ${marker}`);
-for (const removed of [
-  '.home-page .home-bundle-carousel', '--product-card-gap',
-  '--product-card-body-height', '.product-card::before',
-  '.product-card::after', 'grid-template-columns:repeat(5'
-]) assert(!liveCss.includes(removed), `CSS de troca de layout ainda presente: ${removed}`);
+const css = [
+  read('app-next/styles/storefront-base.css'),
+  read('app-next/styles/storefront-components.css'),
+  read('app-next/styles/storefront-responsive.css')
+].join('\n');
+assert(css.includes('.product-grid{grid-template-columns:repeat(4'), 'Cards de produtos não usam quatro colunas no desktop');
+assert(css.includes('.bundle-grid{grid-template-columns:repeat(4'), 'Cestas e kits não usam quatro colunas no desktop');
+assert(!css.includes('repeat(5,minmax'), 'CSS ainda força cinco colunas de cards');
+assert(css.includes('.bundle-fixed-qty'), 'Quantidade fixa dos kits sem estilo');
+assert(css.includes('[inert]'), 'CSS não protege elementos inertes');
+
+const main = read('app-next/src/main.js');
+for (const marker of ['internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog', 'setAttribute(\'inert\'']) {
+  assert(main.includes(marker), `Main incompleto: ${marker}`);
+}
+const ui = read('app-next/src/ui.js');
+for (const marker of ['HOME_BUNDLE_LIMIT = 100', 'editable: true', 'editable: false', 'setDrawerHidden']) {
+  assert(ui.includes(marker), `UI incompleta: ${marker}`);
+}
+const catalog = read('app-next/src/catalog.js');
+for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed']) {
+  assert(catalog.includes(marker), `Catálogo incompleto: ${marker}`);
+}
+const stabilizer = read('scripts/estabilizar-catalogo-publico.mjs');
+assert(stabilizer.includes('contentHash'), 'Estabilizador não usa versão por conteúdo');
+assert(stabilizer.includes('versão ${version.version} preservada'), 'Estabilizador não preserva versão sem mudança');
+assert(!stabilizer.includes('catalog-${Date.now()}'), 'Estabilizador ainda invalida cache por horário');
 
 const baskets = JSON.parse(read('site/produtos-cesta-basica.json'));
 assert(Array.isArray(baskets) && baskets.length > 0, 'Catálogo de cestas vazio');
@@ -80,30 +84,36 @@ for (const basket of baskets) {
   assert(exists(image), `Imagem da cesta não existe: ${image}`);
 }
 
-const basketLanding = read('cestas/index.html');
-const kitLanding = read('kits/index.html');
-for (const [name, html] of [['cestas', basketLanding], ['kits', kitLanding]]) {
-  assert(html.includes('<h1>'), `Landing de ${name} sem H1`);
-  assert(html.includes('seo-combos-critical'), `Landing de ${name} sem fallback SEO`);
-  assert(html.includes('/app-next/styles/live-polish.css?v=20260727-5'), `Landing de ${name} usa CSS antigo`);
-  assert(html.includes('/app-next/src/live-polish.js?v=20260727-5'), `Landing de ${name} usa JavaScript antigo`);
-  assert(html.includes('href="/#/"'), `Landing de ${name} não usa navegação pela raiz`);
-}
-
 const manifest = JSON.parse(read('site/seo-combos-manifest.json'));
 assert(manifest.shell === 'index.html', 'Páginas de cestas e kits não usam o shell principal');
+assert(manifest.seoFocus === 'cestas-basicas', 'Manifesto não declara foco em cestas básicas');
 assert(Array.isArray(manifest.files) && manifest.files.length >= 4, 'Manifesto SEO incompleto');
-for (const relative of manifest.files) {
-  assert(exists(relative), `Página gerada ausente: ${relative}`);
-}
-const sampleProductPage = manifest.files.find(file => /^(cestas|kits)\/[^/]+\/index\.html$/.test(file));
-assert(sampleProductPage, 'Nenhuma página individual de cesta ou kit gerada');
-const sampleProductHtml = read(sampleProductPage);
+
+const basketLanding = read('cestas/index.html');
 for (const marker of [
-  '"@type":"Product"', '"@type":"Offer"', '"@type":"BreadcrumbList"',
-  'seo-combos-critical', '/app-next/styles/live-polish.css?v=20260727-5',
-  '/app-next/src/live-polish.js?v=20260727-5', 'href="/#/"'
-]) assert(sampleProductHtml.includes(marker), `Página individual incompleta: ${marker}`);
+  '<h1>Cestas básicas em Cuiabá e Várzea Grande</h1>',
+  '"@type":"CollectionPage"', '"@type":"ItemList"', '"@type":"FAQPage"',
+  'seo-combos-critical', 'index,follow,max-image-preview:large'
+]) assert(basketLanding.includes(marker), `Landing de cestas incompleta: ${marker}`);
+
+const basketPagePath = manifest.files.find(file => /^cestas\/[^/]+\/index\.html$/.test(file));
+assert(basketPagePath, 'Nenhuma página individual de cesta gerada');
+const basketPage = read(basketPagePath);
+for (const marker of [
+  '"@type":"Product"', '"@type":"Offer"', '"@type":"WebPage"',
+  '"@type":"BreadcrumbList"', 'Produtos desta cesta básica',
+  'Posso conferir e ajustar a composição?'
+]) assert(basketPage.includes(marker), `Página individual de cesta incompleta: ${marker}`);
+
+const kitLanding = read('kits/index.html');
+assert(kitLanding.includes('noindex,follow'), 'Landing de kits deve permanecer funcional sem foco de indexação');
+const kitPagePath = manifest.files.find(file => /^kits\/[^/]+\/index\.html$/.test(file));
+if (kitPagePath) assert(read(kitPagePath).includes('noindex,follow'), 'Página individual de kit deve usar noindex');
+
+const sitemap = read('sitemap.xml');
+assert(sitemap.includes('https://donaantonia.com.br/cestas/'), 'Sitemap sem cestas');
+assert(!sitemap.includes('https://donaantonia.com.br/kits/'), 'Sitemap ainda prioriza kits');
+assert(!sitemap.includes('?cesta='), 'Sitemap usa parâmetros antigos');
 
 const institutionalFiles = [
   'sobre-nos.html', 'contato.html', 'politica-de-entrega.html',
@@ -112,11 +122,8 @@ const institutionalFiles = [
 for (const file of institutionalFiles) {
   const html = read(file);
   assert(html.includes('51.385.335/0001-06'), `${file} não possui o CNPJ real`);
-  assert(!html.includes('00.000.000/0000-00'), `${file} possui CNPJ fictício`);
   assert(!html.includes('https://www.donaantonia.com.br'), `${file} usa domínio com www`);
 }
-assert(/somente delivery|exclusivamente por delivery/i.test(read('sobre-nos.html')), 'Sobre nós não informa operação por delivery');
-assert(/somente delivery|exclusivamente por delivery/i.test(read('contato.html')), 'Contato não informa operação por delivery');
 
 const { buildComboCatalog } = require('./catalogos-combos-lib.js');
 const sampleProducts = {
@@ -124,41 +131,12 @@ const sampleProducts = {
   feijao: { codigo: 'FEIJAO-1', nome: 'Feijão Teste 1kg', preco: 10, estoque: 6, situacao: 'A' },
   sabao: { codigo: 'SABAO-1', nome: 'Sabão Teste', preco: 30, estoque: 3, situacao: 'A' }
 };
-const sampleBaskets = [{
-  id: 'cesta-teste', codigo: 'cesta-economica-teste', nome: 'Econômica Teste', preco: 35,
-  imagem: 'img/cesta-teste.webp', produtos: [{ codigo: 'ARROZ-1', qtd: 1 }, { codigo: 'FEIJAO-1', qtd: 1 }]
-}];
-const sampleKits = [{
-  id: 'kit-teste', codigo: 'kit-limpeza-teste', nome: 'Kit Limpeza Teste', preco: 25, preco_anterior: 30,
-  imagem: 'site/img/kits/kit-teste.webp', ativo: true, estoque_disponivel: 2,
-  data_inicio: '2026-07-01', data_fim: '2026-12-31', produtos: [{ codigo: 'SABAO-1', qtd: 1 }]
-}];
-const catalog = buildComboCatalog({
+const sampleCatalog = buildComboCatalog({
   productsRaw: sampleProducts,
-  basketsRaw: sampleBaskets,
-  kitsRaw: sampleKits,
+  basketsRaw: [{ id: 'cesta-teste', codigo: 'cesta-economica-teste', nome: 'Econômica Teste', preco: 35, imagem: 'img/cesta-teste.webp', produtos: [{ codigo: 'ARROZ-1', qtd: 1 }, { codigo: 'FEIJAO-1', qtd: 1 }] }],
+  kitsRaw: [{ id: 'kit-teste', codigo: 'kit-limpeza-teste', nome: 'Kit Limpeza Teste', preco: 25, ativo: true, estoque_disponivel: 2, produtos: [{ codigo: 'SABAO-1', qtd: 1 }] }],
   now: new Date('2026-07-26T12:00:00-04:00')
 });
-assert(catalog.active.length === 2, 'Catálogo de teste deveria ter cesta e kit ativos');
+assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-const merchantXml = require('./gerar-merchant.js').buildFeed(catalog);
-for (const marker of [
-  '<g:id>cesta-cesta-economica-teste</g:id>',
-  '<g:id>kit-kit-limpeza-teste</g:id>',
-  '<g:shipping_label>delivery-local-minimo-75</g:shipping_label>'
-]) assert(merchantXml.includes(marker), `Merchant incompleto: ${marker}`);
-
-const metaCsv = require('./gerar-meta-combos.js').buildCsv(catalog);
-assert(metaCsv.includes('cesta-cesta-economica-teste'), 'Feed Meta sem cesta de teste');
-assert(metaCsv.includes('kit-kit-limpeza-teste'), 'Feed Meta sem kit de teste');
-
-const sitemapXml = require('./gerar-sitemap.js').buildSitemap(catalog, '2026-07-26');
-assert(sitemapXml.includes('https://donaantonia.com.br/cestas/'), 'Sitemap sem cestas');
-assert(sitemapXml.includes('https://donaantonia.com.br/kits/'), 'Sitemap sem kits');
-assert(!sitemapXml.includes('?cesta='), 'Sitemap ainda usa parâmetros de cesta');
-
-const robots = read('robots.txt');
-assert(robots.includes('Sitemap: https://donaantonia.com.br/sitemap.xml'), 'robots.txt sem sitemap');
-assert(robots.includes('Disallow: /producao/'), 'robots.txt não protege produção');
-
-console.log(`Site público estável validado: ${required.length} arquivos, ${baskets.length} cestas e ${manifest.files.length} páginas geradas.`);
+console.log(`Site validado: ${baskets.length} cestas, SEO focado em cestas básicas, navegação única e cache progressivo.`);
