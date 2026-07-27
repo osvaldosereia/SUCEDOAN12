@@ -1,3 +1,5 @@
+import './bundle-navigation.js?v=20260727-7';
+
 const app = document.getElementById('app');
 const enhancedTracks = new WeakSet();
 const controlsByTrack = new WeakMap();
