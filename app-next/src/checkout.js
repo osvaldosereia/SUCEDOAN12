@@ -147,7 +147,7 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
     const items = pricing.items.filter(item => !item.product.isFee);
     const client = savedClient();
     const activeCoupon = state.coupons.find(coupon => String(coupon.codigo).toUpperCase() === state.activeCouponCode);
-    const availbleDates = deliveryDates();
+    const availableDates = deliveryDates();
   const availableDateValues = availableDates.map(dateValue);
   const selectedDelivery = availableDateValues.includes(client.deliveryDate)
     ? client.deliveryDate
