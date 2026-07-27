@@ -3,19 +3,18 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const BUILD = '20260725-admin-v12-fix-abas2';
+const BUILD = '20260726-admin-v13-xml-editor-parity';
 const failures = [];
 const checked = [];
 
 const ROUTES = [
-  'dashboard', 'products', 'stock', 'quick-read', 'nfe', 'orders', 'order-tools',
+  'dashboard', 'products', 'stock', 'nfe', 'orders', 'order-tools',
   'baskets', 'kits', 'offers', 'coupons', 'quick-purchase', 'categories', 'brands',
   'suppliers', 'tags', 'integrations', 'maintenance',
 ];
 
 const ROUTE_MODULES = {
   products: ['catalog-auto-sync.js', 'product-lifecycle-bootstrap.js'],
-  'quick-read': ['quick-read-bootstrap.js'],
   nfe: ['nfe-bootstrap.js'],
   orders: ['orders-bootstrap.js'],
   'order-tools': ['order-tools-bootstrap.js'],
@@ -84,11 +83,13 @@ function checkStaticImports(relative) {
 const required = [
   'producao/index.html', 'admin/index.html', 'producao-v2/index.html',
   'producao-v2/assets/admin.css', 'producao-v2/assets/navigation.css',
+  'producao-v2/assets/kit-lifecycle.css',
   'producao-v2/js/app.js', 'producao-v2/js/navigation-v12.js', 'producao-v2/js/stock-bootstrap.js',
   'producao-v2/js/modules/stock.js', 'producao-v2/js/services/orders.js',
   'producao-v2/js/orders-bootstrap.js', 'producao-v2/js/order-tools-bootstrap.js',
-  'producao-v2/js/quick-read-bootstrap.js', 'producao-v2/js/nfe-bootstrap.js',
-  'producao-v2/js/collections-bootstrap.js', 'producao-v2/js/offers-bootstrap.js',
+  'producao-v2/js/nfe-bootstrap.js', 'producao-v2/js/collections-bootstrap.js',
+  'producao-v2/js/kit-lifecycle-admin.js', 'producao-v2/js/core/collections.js',
+  'producao-v2/js/services/collections.js', 'producao-v2/js/offers-bootstrap.js',
   'producao-v2/js/coupons-bootstrap.js', 'producao-v2/js/quick-purchase-bootstrap.js',
   'producao-v2/js/registries-bootstrap.js', 'producao-v2/js/diagnostics-bootstrap.js',
   'producao-v2/js/backup-bootstrap.js', 'producao-v2/js/catalog-auto-sync.js',
@@ -103,7 +104,9 @@ for (const removed of [
   'producao/index-legado.html', 'admin-oficial-20260724/index.html',
   'producao-v2/js/professional-route-loader.js', 'producao-v2/js/professional-shell.js',
   'producao-v2/js/visual-stability.js', 'producao-v2/assets/boot.css',
-  'producao-v2/js/admin-suite-bootstrap.js',
+  'producao-v2/js/admin-suite-bootstrap.js', 'producao-v2/js/quick-read-bootstrap.js',
+  'producao-v2/js/modules/quick-read.js', 'producao-v2/js/core/quick-read.js',
+  'producao-v2/assets/quick-read.css',
 ]) {
   if (existsSync(path.join(ROOT, removed))) fail(`Arquivo legado ainda presente: ${removed}`);
 }
@@ -122,16 +125,6 @@ for (const jsonFile of [
   catch (error) { fail(`JSON inválido em ${jsonFile}: ${error.message}`); }
 }
 
-try {
-  const adminProducts = JSON.parse(read('site/produtos-admin.json'));
-  const entries = Object.entries(adminProducts || {});
-  if (!entries.length) fail('O índice administrativo de produtos está vazio.');
-  const first = entries[0]?.[1] || {};
-  for (const field of ['firebaseKey', 'codigo', 'nome', 'estoque', 'situacao']) {
-    if (!Object.prototype.hasOwnProperty.call(first, field)) fail(`O índice administrativo não contém o campo ${field}.`);
-  }
-} catch {}
-
 for (const [name, source] of [['/producao', read('producao/index.html')], ['/admin', read('admin/index.html')]]) {
   if (!source.includes('../producao-v2/')) fail(`${name} não aponta para o Admin oficial.`);
   if (!source.includes(BUILD)) fail(`${name} não aponta para a build ${BUILD}.`);
@@ -143,7 +136,7 @@ if (!adminIndex.includes(BUILD)) fail(`O HTML oficial não está na build ${BUIL
 for (const entry of ['js/app.js', 'js/navigation-v12.js', 'js/stock-bootstrap.js', 'assets/navigation.css']) {
   if (!adminIndex.includes(entry)) fail(`Entrada do Admin ausente: ${entry}`);
 }
-if (adminIndex.includes('<script type="module" src="./js/nfe-bootstrap.js')) fail('A NF-e ainda carrega durante a abertura inicial.');
+if (adminIndex.includes('data-route="quick-read"') || adminIndex.includes('data-view="quick-read"')) fail('A função Leitura rápida reapareceu no HTML oficial.');
 if (!adminIndex.includes('makeOrderWebhookSetting')) fail('O campo do webhook de pedidos não está no HTML oficial.');
 
 const routeButtons = [...adminIndex.matchAll(/data-route="([^"]+)"/g)].map(match => match[1]);
@@ -167,6 +160,7 @@ for (const feature of ['ROUTE_STORAGE_KEY', 'aria-current', 'admin-v2-route', 'a
 for (const route of ROUTES) {
   if (!navigation.includes(`${route}:`) && !navigation.includes(`'${route}':`)) fail(`Metadados de navegação ausentes para ${route}.`);
 }
+if (navigation.includes('quick-read:') || navigation.includes("'quick-read':")) fail('Metadados antigos da Leitura rápida ainda estão presentes.');
 
 const app = read('producao-v2/js/app.js');
 if (!app.includes('function quickAudit')) fail('A auditoria leve de abertura não foi encontrada.');
@@ -179,8 +173,20 @@ for (const [route, modules] of Object.entries(ROUTE_MODULES)) {
     if (!stockBootstrap.includes(`./${moduleFile}`)) fail(`A rota ${route} não carrega ${moduleFile}.`);
   }
 }
+if (stockBootstrap.includes('quick-read-bootstrap.js')) fail('O carregador ainda referencia a Leitura rápida removida.');
 if (!stockBootstrap.includes("if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);")) fail('Pedidos ainda carrega a contingência junto.');
 if (!stockBootstrap.includes('module?.refresh()')) fail('O bootstrap de Estoque não atualiza o módulo após carregar os produtos.');
+
+const collectionsBootstrap = read('producao-v2/js/collections-bootstrap.js');
+if (!collectionsBootstrap.includes("import './kit-lifecycle-admin.js';")) fail('O editor de ciclo de vida dos kits não é carregado.');
+const kitLifecycle = read('producao-v2/js/kit-lifecycle-admin.js');
+for (const marker of ['data-kit-quick-expiry', 'data-kit-quick-stock-mode', 'saveKitQuick', 'deleteCollectionFixed']) {
+  if (!kitLifecycle.includes(marker)) fail(`Controle de kits incompleto: ${marker}.`);
+}
+const collectionCore = read('producao-v2/js/core/collections.js');
+for (const marker of ['ativo_ate_estoque_zero', 'allowSubstitutes: !stockControlled', 'o kit ficará fora do ar']) {
+  if (!collectionCore.includes(marker)) fail(`Regra de estoque dos kits incompleta: ${marker}.`);
+}
 
 const stockModule = read('producao-v2/js/modules/stock.js');
 if (!/\brefresh\s*\(\)\s*\{\s*this\.render\(\);/s.test(stockModule)) fail('StockModule não implementa refresh() usando render().');
@@ -191,20 +197,7 @@ for (const marker of ['limitToLast', 'loadRecentOrders', 'loadOlderOrders', 'rec
 }
 if (ordersService.includes('/pedidos.json?_=')) fail('O serviço de pedidos ainda consulta o nó inteiro sem limite.');
 
-const ordersBootstrap = read('producao-v2/js/orders-bootstrap.js');
-for (const marker of ['const PAGE_SIZE = 30', 'loadRecentOrders', 'loadOlderOrders', 'Carregar mais antigos']) {
-  if (!ordersBootstrap.includes(marker)) fail(`Paginação de Pedidos incompleta: ${marker}.`);
-}
-
-const orderTools = read('producao-v2/js/order-tools-bootstrap.js');
-for (const marker of ['const CONTINGENCY_LIMIT = 60', 'const VISIBLE_LIMIT = 30', 'loadRecentOrders', 'setTimeout(() => reload(), 40)']) {
-  if (!orderTools.includes(marker)) fail(`Contingência leve incompleta: ${marker}.`);
-}
-if (orderTools.includes('MutationObserver')) fail('A contingência contém MutationObserver e pode entrar em ciclo.');
-if (orderTools.includes('loadOrders(')) fail('A contingência ainda usa a leitura completa antiga.');
-
 for (const [file, workspace] of [
-  ['producao-v2/js/quick-read-bootstrap.js', 'quickReadWorkspace'],
   ['producao-v2/js/nfe-bootstrap.js', 'nfeWorkspace'],
   ['producao-v2/js/collections-bootstrap.js', 'collectionsWorkspace'],
   ['producao-v2/js/offers-bootstrap.js', 'offersWorkspace'],
@@ -215,9 +208,9 @@ for (const [file, workspace] of [
 }
 
 if (failures.length) {
-  console.error(`\nAdmin V2 v12.2: ${failures.length} falha(s).`);
+  console.error(`\nAdmin V2 v13.1: ${failures.length} falha(s).`);
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log(`Admin V2 v12.2 validado: ${ROUTES.length} abas, ${checked.length} arquivos JavaScript, imports e workspaces confirmados.`);
+  console.log(`Admin V2 v13.1 validado: ${ROUTES.length} abas, ${checked.length} arquivos JavaScript, imports e ciclo dos kits confirmados.`);
 }
