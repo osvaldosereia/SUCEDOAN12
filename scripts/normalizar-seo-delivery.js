@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { SITE_URL, atomicWrite } = require('./catalogos-combos-lib');
 const { organizationSchema } = require('./gerar-paginas-seo-combos');
+require('./corrigir-validacoes-rotas');
 
 const ROOT = process.env.OUTPUT_DIR || path.join(__dirname, '..');
 
@@ -30,13 +31,7 @@ function normalizeIndex(html) {
     organizationSchema(),
   );
   output = organization.output;
-
-  const deliveryScript = '  <script type="module" src="app-next/src/delivery-only.js?v=20260726-1"></script>\n';
-  if (!output.includes('app-next/src/delivery-only.js')) {
-    const anchor = '  <script type="module" src="app-next/src/seo-combos.js?v=20260726-1"></script>\n';
-    if (output.includes(anchor)) output = output.replace(anchor, `${anchor}${deliveryScript}`);
-    else output = output.replace('</body>', `${deliveryScript}</body>`);
-  }
+  output = output.replace(/\n\s*<script type="module" src="app-next\/src\/delivery-only\.js[^\n]*<\/script>/g, '');
   return output;
 }
 
