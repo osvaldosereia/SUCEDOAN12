@@ -4,10 +4,6 @@ on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize]
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/aplicar-ajustes-site.yml"
 
 permissions:
   contents: write
@@ -46,7 +42,7 @@ jobs:
           set -euo pipefail
           node "$RUNNER_TEMP/patch-site.js"
 
-      - name: Validar site e regras alteradas
+      - name: Validar sintaxe dos módulos
         shell: bash
         run: |
           set -euo pipefail
@@ -55,9 +51,15 @@ jobs:
           node --check app-next/src/checkout.js
           node --check app-next/src/integrations.js
           node --check app-next/src/ui.js
-          node app-next/tests/cart-consistency.test.js
-          node app-next/tests/smoke.test.js
-          node scripts/check-public-site.mjs
+
+      - name: Validar consistência comercial
+        run: node app-next/tests/cart-consistency.test.js
+
+      - name: Validar smoke test modular
+        run: node app-next/tests/smoke.test.js
+
+      - name: Validar site público
+        run: node scripts/check-public-site.mjs
 
       - name: Publicar alterações validadas
         shell: bash
