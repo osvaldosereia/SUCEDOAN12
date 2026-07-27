@@ -1,233 +1,69 @@
-import { CONFIG } from './config.js?v=20260727-4';
-import { indexProducts, loadCatalog } from './catalog.js?v=20260727-4';
-import { applyProductOffer, isAvailable, kitDiscountPercent, kitIsVisible, kitOriginalPrice } from './commerce.js?v=20260727-4';
-import { escapeHtml, fmt, readStorage } from './core.js?v=20260727-4';
-import { comboSeoPath } from './bundle-routes.js?v=20260727-4';
+const FALLBACK_IMAGE = '/img/logoantonia5.png';
 
-const POLISH_VERSION = '2026-07-26-live-polish-v4';
-const carouselState = new WeakMap();
-let catalogStatePromise;
-let scheduled = false;
-let homePreparing = false;
-let pendingBasketPosition = null;
-let homeObserver = null;
-
-function truncate(value, max = 88) {
-  const text = String(value || '').replace(/\s+/g, ' ').trim();
-  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+function rootHashLink(value) {
+  const href = String(value || '').trim();
+  return href.startsWith('#/') ? `/${href}` : href;
 }
 
-function getCatalogState() {
-  if (window.__DA_CATALOG_STATE__?.isReady) return Promise.resolve(window.__DA_CATALOG_STATE__);
-  if (!catalogStatePromise) {
-    catalogStatePromise = loadCatalog().then(catalog => {
-      const products = catalog.products.map(product => applyProductOffer(product)).filter(isAvailable);
-      return { ...catalog, ...indexProducts(products), products };
-    });
-  }
-  return catalogStatePromise;
+function absoluteAsset(value) {
+  const src = String(value || '').trim();
+  if (!src || /^(?:https?:|data:|blob:)/i.test(src)) return src;
+  const clean = src.replace(/^\.\.\//g, '').replace(/^\.\//, '').replace(/^\/+/, '');
+  return clean ? `/${clean}` : FALLBACK_IMAGE;
 }
 
-function favoriteKeys() {
-  const saved = readStorage(CONFIG.STORAGE.FAVORITES, []);
-  return new Set(Array.isArray(saved) ? saved.map(String) : []);
-}
-
-function optimizedImage(src, alt) {
-  return `<img loading="lazy" decoding="async" fetchpriority="low" width="320" height="320" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`;
-}
-
-function basketCardHtml(basket) {
-  const href = comboSeoPath(basket, 'basket');
-  return `<article class="bundle-card"><a class="bundle-media" href="${href}">${optimizedImage(basket.imagem, basket.nome)}</a><div><a class="bundle-name" href="${href}">${escapeHtml(basket.nome)}</a><p>${escapeHtml(truncate(basket.descricao))}</p><div class="bundle-price">${Number(basket.precoOriginal || 0) > Number(basket.preco || 0) ? `<s>${fmt(basket.precoOriginal)}</s>` : ''}<strong>${basket.preco ? fmt(basket.preco) : 'Ver itens'}</strong></div><a class="secondary-button" href="${href}">Ver produtos</a></div></article>`;
-}
-
-function kitCardHtml(state, kit, favorites) {
-  const original = kitOriginalPrice(state, kit);
-  const discount = kitDiscountPercent(state, kit);
-  const favoriteKey = `kit:${kit.id}`;
-  const active = favorites.has(favoriteKey);
-  const href = comboSeoPath(kit, 'kit');
-  return `<article class="bundle-card"><div class="bundle-media-wrap"><a class="bundle-media" href="${href}">${optimizedImage(kit.imagem, kit.nome)}</a><button class="favorite-button ${active ? 'active' : ''}" data-action="favorite" data-id="${escapeHtml(kit.id)}" data-kind="kit" aria-label="${active ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" aria-pressed="${active}">♡</button>${discount ? `<span class="discount-badge">-${discount}%</span>` : ''}</div><div><a class="bundle-name" href="${href}">${escapeHtml(kit.nome)}</a><p>${escapeHtml(truncate(kit.descricao))}</p><div class="bundle-price">${original > Number(kit.preco || 0) ? `<s>${fmt(original)}</s>` : ''}<strong>${fmt(kit.preco)}</strong></div><div class="bundle-actions"><a class="secondary-button" href="${href}">Ver produtos</a><button class="primary-button" data-action="add-kit" data-id="${escapeHtml(kit.id)}">Adicionar</button></div></div></article>`;
-}
-
-function sectionByTitle(page, fragment) {
-  const normalized = fragment.toLowerCase();
-  return [...page.querySelectorAll(':scope > .content-section')].find(section =>
-    String(section.querySelector('.section-heading h2')?.textContent || '').trim().toLowerCase().includes(normalized)
-  );
-}
-
-function bindBundleImageFallbacks(root) {
-  root?.querySelectorAll?.('img:not([data-live-fallback-bound])').forEach(image => {
-    image.dataset.liveFallbackBound = 'true';
-    image.addEventListener('error', () => { image.src = '../img/logoantonia5.png'; }, { once: true });
+function prepareLinks(root = document) {
+  root.querySelectorAll?.('a[href^="#/"]').forEach(link => {
+    link.setAttribute('href', rootHashLink(link.getAttribute('href')));
   });
 }
 
-function cardsPerBatch() {
-  return matchMedia('(max-width:767px)').matches ? 6 : 8;
-}
-
-function appendCarouselBatch(grid) {
-  const info = carouselState.get(grid);
-  if (!info || info.rendered >= info.items.length || info.appending) return;
-  info.appending = true;
-  const amount = cardsPerBatch();
-  const next = info.items.slice(info.rendered, info.rendered + amount);
-  const html = info.kind === 'kits'
-    ? next.map(item => kitCardHtml(info.catalog, item, info.favorites)).join('')
-    : next.map(basketCardHtml).join('');
-  grid.insertAdjacentHTML('beforeend', html);
-  info.rendered += next.length;
-  grid.dataset.renderedItems = String(info.rendered);
-  grid.dataset.totalItems = String(info.items.length);
-  bindBundleImageFallbacks(grid);
-  info.appending = false;
-}
-
-function onCarouselScroll(event) {
-  const grid = event.currentTarget;
-  if (grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - Math.max(220, grid.clientWidth * .65)) appendCarouselBatch(grid);
-}
-
-function initializeCarousel(section, items, kind, catalog, favorites) {
-  const grid = section?.querySelector('.bundle-grid');
-  if (!grid || !items.length || grid.dataset.progressiveCarousel === POLISH_VERSION) return;
-  grid.classList.add('home-bundle-carousel');
-  grid.setAttribute('aria-label', kind === 'kits' ? 'Carrossel de kits promocionais' : 'Carrossel de cestas básicas');
-  grid.dataset.progressiveCarousel = POLISH_VERSION;
-  grid.innerHTML = '';
-  carouselState.set(grid, { items, kind, catalog, favorites, rendered: 0, appending: false });
-  appendCarouselBatch(grid);
-  grid.addEventListener('scroll', onCarouselScroll, { passive: true });
-}
-
-async function initializeHomeSection(section, kind) {
-  if (!section || section.dataset.progressiveReady === 'true') return;
-  section.dataset.progressiveReady = 'true';
-  try {
-    const catalog = await getCatalogState();
-    if (!section.isConnected || !document.querySelector('.home-page')) return;
-    const favorites = favoriteKeys();
-    const items = kind === 'kits'
-      ? (catalog.kits || []).filter(kit => kitIsVisible(catalog, kit)).slice(0, 30)
-      : (catalog.baskets || []).slice(0, 30);
-    initializeCarousel(section, items, kind, catalog, favorites);
-  } catch (error) {
-    console.warn(`Não foi possível preparar o carrossel de ${kind}:`, error);
-    section.removeAttribute('data-progressive-ready');
-  }
-}
-
-function observeHomeSection(section, kind) {
-  if (!section || section.dataset.progressiveObserved === 'true') return;
-  section.dataset.progressiveObserved = 'true';
-  section.dataset.progressiveKind = kind;
-  if ('IntersectionObserver' in window) {
-    if (!homeObserver) {
-      homeObserver = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
-          homeObserver.unobserve(entry.target);
-          initializeHomeSection(entry.target, entry.target.dataset.progressiveKind);
-        });
-      }, { root: document.getElementById('app'), rootMargin: '700px 0px', threshold: .01 });
-    }
-    homeObserver.observe(section);
-  } else {
-    setTimeout(() => initializeHomeSection(section, kind), kind === 'baskets' ? 500 : 1200);
-  }
-}
-
-function prepareHomeBundles() {
-  const page = document.querySelector('.home-page');
-  if (!page || homePreparing) return;
-  homePreparing = true;
-  try {
-    observeHomeSection(sectionByTitle(page, 'cestas básicas'), 'baskets');
-    observeHomeSection(sectionByTitle(page, 'kits promocionais'), 'kits');
-  } finally {
-    homePreparing = false;
-  }
-}
-
-function hideEmptyFavoriteCounts(root = document) {
-  root.querySelectorAll('[data-favorite-count]').forEach(element => {
-    const count = Number(String(element.textContent || '').replace(/\D/g, '') || 0);
-    element.hidden = count <= 0;
+function prepareImage(image) {
+  if (!(image instanceof HTMLImageElement)) return;
+  const current = image.getAttribute('src');
+  const normalized = absoluteAsset(current);
+  if (normalized && normalized !== current) image.setAttribute('src', normalized);
+  if (image.dataset.stableFallbackBound === 'true') return;
+  image.dataset.stableFallbackBound = 'true';
+  image.addEventListener('error', () => {
+    if (image.getAttribute('src') === FALLBACK_IMAGE) return;
+    image.setAttribute('src', FALLBACK_IMAGE);
   });
 }
 
-function closeBundleConfirmationAndOpenOffers(event) {
-  const button = event.target.closest('[data-action="bundle-confirm-continue"]');
-  if (!button) return false;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  const overlay = document.getElementById('bundle-confirm-overlay');
-  overlay?.classList.remove('show');
-  overlay?.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('bundle-confirm-open');
-  location.hash = '#/ofertas';
-  return true;
+function prepareImages(root = document) {
+  root.querySelectorAll?.('img').forEach(prepareImage);
 }
 
-function rememberBasketPosition(button) {
-  const app = document.getElementById('app');
-  if (!app) return;
-  const productId = String(button.dataset.id || '');
-  const card = button.closest('[data-bundle-product]');
-  pendingBasketPosition = {
-    productId,
-    top: card?.getBoundingClientRect().top ?? null,
-    scrollTop: app.scrollTop,
-    expiresAt: Date.now() + 1500
-  };
-  [0, 50, 120, 240, 420, 700, 1050].forEach(delay => setTimeout(restoreBasketPosition, delay));
-}
-
-function restoreBasketPosition() {
-  if (!pendingBasketPosition) return;
-  if (Date.now() > pendingBasketPosition.expiresAt) {
-    pendingBasketPosition = null;
-    return;
-  }
-  const app = document.getElementById('app');
-  if (!app) return;
-  const id = pendingBasketPosition.productId;
-  const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(id) : id.replace(/"/g, '\\"');
-  const anchor = document.querySelector(`[data-bundle-product="${escaped}"]`);
-  if (anchor && pendingBasketPosition.top !== null) app.scrollTop += anchor.getBoundingClientRect().top - pendingBasketPosition.top;
-  else app.scrollTop = pendingBasketPosition.scrollTop;
-}
-
-function handleCaptureClick(event) {
-  if (closeBundleConfirmationAndOpenOffers(event)) return;
-  const button = event.target.closest('[data-action="basket-inc"],[data-action="basket-dec"]');
-  if (button) rememberBasketPosition(button);
-}
-
-function applyPolish() {
-  hideEmptyFavoriteCounts();
-  restoreBasketPosition();
-  prepareHomeBundles();
-}
-
-function schedulePolish() {
-  if (scheduled) return;
-  scheduled = true;
-  requestAnimationFrame(() => {
-    scheduled = false;
-    applyPolish();
+function closeTransientLayers() {
+  document.getElementById('drawer-overlay')?.classList.remove('show');
+  document.querySelectorAll('.drawer.open').forEach(drawer => {
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
   });
+  document.body.classList.remove('drawer-open', 'bundle-confirm-open');
 }
 
-if (typeof document !== 'undefined') {
-  document.addEventListener('click', handleCaptureClick, true);
-  const app = document.getElementById('app');
-  if (app) new MutationObserver(schedulePolish).observe(app, { childList: true });
-  window.addEventListener('hashchange', schedulePolish);
-  window.addEventListener('DOMContentLoaded', schedulePolish);
-  window.addEventListener('da:catalog-ready', schedulePolish);
-  schedulePolish();
+function prepare(root = document) {
+  prepareLinks(root);
+  prepareImages(root);
+}
+
+document.addEventListener('click', event => {
+  const link = event.target.closest?.('a[href]');
+  if (link?.getAttribute('href')?.startsWith('#/')) {
+    link.setAttribute('href', rootHashLink(link.getAttribute('href')));
+  }
+  if (event.target.closest?.('.bottom-nav a,.brand,.sidebar-brand,#menu-drawer a,.back-button')) {
+    closeTransientLayers();
+  }
+}, true);
+
+window.addEventListener('da:route-rendered', event => prepare(event.detail?.root || document.getElementById('app') || document));
+window.addEventListener('da:catalog-ready', () => prepare(document));
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => prepare(document), { once: true });
+} else {
+  prepare(document);
 }
