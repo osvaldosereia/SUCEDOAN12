@@ -7,6 +7,12 @@ on:
     paths:
       - 'site-do-zero/**'
       - '.github/workflows/site-do-zero-readonly-check.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'site-do-zero/**'
+      - '.github/workflows/site-do-zero-readonly-check.yml'
   workflow_dispatch:
 
 permissions:
@@ -58,6 +64,25 @@ jobs:
           Path('/tmp/site-do-zero-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
           PY
           node --check /tmp/site-do-zero-inline.js
+
+      - name: Validar páginas institucionais
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            sobre-nos.html \
+            contato.html \
+            politica-de-entrega.html \
+            politica-de-troca.html \
+            politica-de-privacidade.html \
+            termos-de-uso.html \
+            perguntas-frequentes.html; do
+            test -s "site-do-zero/$file"
+            grep -qi '<title>' "site-do-zero/$file"
+            grep -qi 'rel="canonical"' "site-do-zero/$file"
+            grep -qi 'meta name="description"' "site-do-zero/$file"
+          done
+          test -s site-do-zero/assets/institucional.css
 
       - name: Confirmar proteção documentada
         shell: bash
