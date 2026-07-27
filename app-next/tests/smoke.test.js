@@ -11,7 +11,7 @@ const assert = (ok, message) => { if (!ok) throw new Error(message); };
 const required = [
   'index.html', 'styles/storefront-base.css', 'styles/storefront-components.css',
   'styles/storefront-responsive.css', 'src/main.js', 'src/ui.js', 'src/catalog.js',
-  'src/core.js', 'src/image-performance.js', 'src/bundle-routes.js'
+  'src/core.js', 'src/image-performance.js', 'src/home-carousels.js', 'src/bundle-routes.js'
 ];
 required.forEach(file => assert(fs.existsSync(path.join(root, file)), `Arquivo ausente: ${file}`));
 
@@ -22,12 +22,14 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-27-storefront-performance-v6',
-  '/app-next/styles/storefront-base.css?v=20260727-6',
-  '/app-next/styles/storefront-components.css?v=20260727-6',
-  '/app-next/styles/storefront-responsive.css?v=20260727-6',
+  '2026-07-27-storefront-carousel-v7',
+  '/app-next/styles/storefront-base.css?v=20260727-7',
+  '/app-next/styles/storefront-components.css?v=20260727-7',
+  '/app-next/styles/storefront-responsive.css?v=20260727-7',
+  '/app-next/src/image-performance.js?v=20260727-7',
+  '/app-next/src/home-carousels.js?v=20260727-7',
   '/app-next/src/main.js?v=20260727-6',
-  'da_v11_storefront_performance_20260727',
+  'da_v12_storefront_carousel_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
 ]) assert(production.includes(marker), `Produção incompleta: ${marker}`);
@@ -44,7 +46,10 @@ const css = [
 ].join('\n');
 assert(css.includes('@media(min-width:1040px)'), 'Breakpoint desktop ausente');
 assert(css.includes('.product-grid{grid-template-columns:repeat(4'), 'Grid de produtos não usa quatro colunas');
-assert(css.includes('.bundle-grid{grid-template-columns:repeat(4'), 'Grid de cestas e kits não usa quatro colunas');
+assert(css.includes('.home-page .bundle-grid{display:flex'), 'Cestas e kits da home não usam carrossel horizontal');
+assert(css.includes('calc(58.8235% - 7px)'), 'Carrossel mobile não mostra aproximadamente 1,7 card');
+assert(css.includes('.product-packaging{display:inline-flex'), 'Etiqueta de embalagem não possui estilo consistente');
+assert(css.includes('.category-grid{width:100%;min-width:0'), 'Grid de categorias ainda pode extrapolar a tela');
 assert(!css.includes('repeat(5,minmax'), 'Layout ainda cria cinco colunas de cards');
 assert(css.includes('[inert]'), 'Elementos inertes não possuem proteção visual');
 
@@ -61,6 +66,16 @@ for (const marker of [
   'overlay.setAttribute(\'inert\'', 'router.navigate(target)'
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
 
+const imagePerformance = read('src/image-performance.js');
+for (const marker of ['root: app', 'PRELOAD_MARGIN', "app?.addEventListener('scroll'", 'loadDeferredImage']) {
+  assert(imagePerformance.includes(marker), `Carregamento de imagens incompleto: ${marker}`);
+}
+
+const carousel = read('src/home-carousels.js');
+for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle-carousel-control']) {
+  assert(carousel.includes(marker), `Carrossel incompleto: ${marker}`);
+}
+
 const catalog = read('src/catalog.js');
 for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed']) {
   assert(catalog.includes(marker), `Carregamento de catálogo incompleto: ${marker}`);
@@ -75,4 +90,4 @@ for (const file of jsFiles) {
 await import('../src/ui.js');
 await import('../src/checkout.js');
 await import('../src/offer-engine.js');
-console.log(`Smoke test concluído: entrada única, cache progressivo, navegação estável e ${jsFiles.length} módulos válidos.`);
+console.log(`Smoke test concluído: carrosséis responsivos, imagens ligadas à rolagem interna e ${jsFiles.length} módulos válidos.`);
