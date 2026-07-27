@@ -3,14 +3,7 @@ const path = require('path');
 
 const INDEX_PATH = process.env.INDEX_PATH || path.join(__dirname, '..', 'index.html');
 const SITE_URL = 'https://donaantonia.com.br';
-
-function replaceOnce(source, search, replacement, label) {
-  if (!source.includes(search)) {
-    if (source.includes(replacement)) return source;
-    throw new Error(`Trecho não encontrado para atualizar ${label}.`);
-  }
-  return source.replace(search, replacement);
-}
+const BUILD_VERSION = '2026-07-27-site-estavel-v1';
 
 function ensureModule(output, modulePath, anchorPath) {
   if (output.includes(modulePath)) return output;
@@ -22,14 +15,18 @@ function ensureModule(output, modulePath, anchorPath) {
 }
 
 function dedupeModule(output, modulePath) {
-  const tag = `  <script type="module" src="${modulePath}"></script>\n`;
-  const parts = output.split(tag);
-  return parts.length <= 2 ? output : `${parts.shift()}${tag}${parts.join('')}`;
+  const expression = new RegExp(`\\s*<script type="module" src="/?${modulePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"></script>`, 'g');
+  let found = false;
+  return output.replace(expression, match => {
+    if (found) return '';
+    found = true;
+    return match;
+  });
 }
 
 function injectSeo(html) {
   let output = html.replaceAll('https://www.donaantonia.com.br', SITE_URL);
-  output = output.replace(/<meta name="da-build-version" content="[^"]+">/, '<meta name="da-build-version" content="2026-07-27-cestas-imagens-cache-v1">');
+  output = output.replace(/<meta name="da-build-version" content="[^"]+">/, `<meta name="da-build-version" content="${BUILD_VERSION}">`);
   output = output.replace(/<meta name="description" content="[^"]*">/, '<meta name="description" content="Cestas básicas e kits promocionais com delivery em Cuiabá e Várzea Grande. Confira a composição, os preços e peça pelo WhatsApp.">');
   output = output.replace(/<meta name="robots" content="[^"]*">/, '<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">');
   output = output.replace(/<meta property="og:title" content="[^"]*">/, '<meta property="og:title" content="Cestas Básicas e Kits com Delivery em Cuiabá e Várzea Grande | Dona Antônia">');
@@ -37,20 +34,9 @@ function injectSeo(html) {
   output = output.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${SITE_URL}/">`);
   output = output.replace(/<title>[^<]*<\/title>/, '<title>Cestas Básicas e Kits com Delivery em Cuiabá e Várzea Grande | Dona Antônia</title>');
   output = output.replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${SITE_URL}/">`);
-
-  output = output.replace(
-    "if (route) history.replaceState(null, '', location.pathname + route);",
-    "if (route) history.replaceState(null, '', location.pathname + location.search + route);",
-  );
-
   output = ensureModule(output, 'app-next/src/seo-combos.js?v=20260727-4', 'app-next/src/image-performance.js?v=20260727-4');
-  output = output.replace(
-    'app-next/src/seo-combos.js?v=20260727-4',
-    'app-next/src/seo-combos.js?v=20260727-4',
-  );
-  output = output.replace(/\n\s*<script type=\"module\" src=\"app-next\/src\/delivery-only\.js[^\n]*<\/script>/g, '');
+  output = output.replace(/\n\s*<script type="module" src="\/?app-next\/src\/delivery-only\.js[^\n]*<\/script>/g, '');
   output = dedupeModule(output, 'app-next/src/seo-combos.js?v=20260727-4');
-  output = dedupeModule(output, 'app-next/src/delivery-only.js?v=20260726-1');
   return output;
 }
 
