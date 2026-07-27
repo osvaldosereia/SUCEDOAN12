@@ -8,7 +8,6 @@ on:
       - 'app-next/**'
       - 'site-public/**'
       - 'producao-v2/js/services/collections.js'
-      - 'scripts/refatorar-rotas-combos.js'
       - 'scripts/catalogos-combos-lib.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
@@ -52,9 +51,6 @@ jobs:
           cache: npm
           cache-dependency-path: app-next/package.json
 
-      - name: Refatorar rotas de cestas e kits
-        run: node scripts/refatorar-rotas-combos.js
-
       - name: Gerar SEO, páginas e feeds para validação
         id: seo
         continue-on-error: true
@@ -73,6 +69,12 @@ jobs:
             ! grep -q 'app-next/src/delivery-only.js' index.html
             ! grep -q '#/cesta/' app-next/src/ui.js app-next/src/live-polish.js
             ! grep -q '#/kit/' app-next/src/ui.js app-next/src/live-polish.js
+            test ! -e scripts/refatorar-rotas-combos.js
+            test ! -e scripts/corrigir-validacoes-rotas.js
+            test ! -e app-next/src/delivery-only.js
+            test ! -e scripts/aplicar-seo-delivery-v2.js
+            test ! -e scripts/garantir-sinal-delivery.js
+            test ! -e scripts/seo-delivery-payload
           } 2>&1 | tee public-site-test-report.txt
 
       - name: Testar módulos
@@ -112,7 +114,6 @@ jobs:
         run: |
           set -o pipefail
           {
-            node --check scripts/refatorar-rotas-combos.js
             node --check scripts/catalogos-combos-lib.js
             node --check scripts/gerar-merchant.js
             node --check scripts/gerar-meta-combos.js
