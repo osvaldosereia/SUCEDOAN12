@@ -1,5 +1,6 @@
 const TRANSPARENT_PIXEL = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221/%3E';
 const PRELOAD_MARGIN = 1100;
+const HORIZONTAL_PRELOAD_MARGIN = 520;
 const app = document.getElementById('app');
 const pendingImages = new Set();
 let appObserver;
@@ -118,7 +119,12 @@ function imageIsNearViewport(image) {
   if (!app || !app.contains(image)) return true;
   const rootRect = app.getBoundingClientRect();
   const rect = image.getBoundingClientRect();
-  return rect.top <= rootRect.bottom + PRELOAD_MARGIN && rect.bottom >= rootRect.top - 240;
+  const verticallyNear = rect.top <= rootRect.bottom + PRELOAD_MARGIN && rect.bottom >= rootRect.top - 240;
+  if (!verticallyNear) return false;
+
+  const insideHorizontalScroller = Boolean(image.closest('.bundle-carousel,.horizontal-rail,.banner-track,.image-thumbs'));
+  if (!insideHorizontalScroller) return true;
+  return rect.left <= rootRect.right + HORIZONTAL_PRELOAD_MARGIN && rect.right >= rootRect.left - 180;
 }
 
 function ensureObserver() {
@@ -127,7 +133,7 @@ function ensureObserver() {
     entries.forEach(entry => {
       if (entry.isIntersecting) loadDeferredImage(entry.target);
     });
-  }, { root: app, rootMargin: `${PRELOAD_MARGIN}px 0px`, threshold: 0.01 });
+  }, { root: app, rootMargin: `${PRELOAD_MARGIN}px ${HORIZONTAL_PRELOAD_MARGIN}px`, threshold: 0.01 });
   return appObserver;
 }
 
@@ -216,6 +222,9 @@ new MutationObserver(records => {
 }).observe(document.body, { childList: true });
 
 app?.addEventListener('scroll', scheduleScan, { passive: true });
+document.addEventListener('scroll', event => {
+  if (event.target instanceof Element && event.target.matches('.bundle-carousel,.horizontal-rail,.banner-track,.image-thumbs')) scheduleScan();
+}, { passive: true, capture: true });
 window.addEventListener('resize', scheduleScan, { passive: true });
 window.addEventListener('da:route-rendered', () => {
   prepareRoot(app);
