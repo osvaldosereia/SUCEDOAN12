@@ -2,6 +2,7 @@ import { CONFIG, ROUTINES } from './config.js';
 import { escapeHtml, fmt, formatDateBR, norm, parseDate, slug } from './core.js';
 import { findProductByReference, searchProducts } from './catalog.js';
 import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js';
+import { basketDraftTotal } from './basket-pricing.js';
 import {
   applyProductOffer, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
   kitDiscountPercent, kitIsVisible, kitOriginalPrice, resolveBundleRows
@@ -252,10 +253,10 @@ function basketPage(context, id) {
   if (!basket) return `<div class="page-container">${pageHeader('Cesta não encontrada', '', '/cestas/')}${empty('Cesta indisponível', 'Escolha outra cesta.')}</div>`;
   const rows = resolveBundleRows(context.state, basket);
   const draft = context.state.basketDrafts[`basket:${basket.id}`] || Object.fromEntries(rows.map(row => [row.product.id, row.qty]));
-  const total = Object.entries(draft).reduce((sum, [productId, qty]) => sum + Number(context.state.productMap.get(productId)?.price || 0) * Number(qty), 0);
+  const total = basketDraftTotal(context.state.productMap, basket, rows, draft);
   return `<div class="page-container">${pageHeader(basket.nome, '', '/cestas/')}${bannerZone(context.state, 'cesta', [basket.id, basket.codigo, basket.nome])}<article class="bundle-detail-hero"><img src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}"><div><span>Cesta básica</span><h1>${escapeHtml(basket.nome)}</h1><p>${escapeHtml(basket.descricao)}</p><strong>${basket.preco ? fmt(basket.preco) : fmt(total)}</strong><button class="primary-button" data-action="add-basket" data-id="${escapeHtml(basket.id)}">Adicionar cesta padrão</button></div></article><section class="content-section"><div class="section-heading"><div><h2>Produtos da cesta</h2><p>Ajuste as quantidades antes de adicionar.</p></div></div><div class="bundle-lines">${rows.map(row => {
     const qty = Number(draft[row.product.id] ?? row.qty);
-    return `<div class="bundle-line" data-bundle-product="${escapeHtml(row.product.id)}"><a href="#/produto/${productRoute(row.product)}"><img src="${escapeHtml(row.product.img)}" alt="${escapeHtml(row.product.name)}"></a><div><a href="#/produto/${productRoute(row.product)}">${escapeHtml(row.product.name)}</a><small>${fmt(row.product.price)} cada</small></div><div class="qty-control"><button data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">−</button><span>${qty}</span><button data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">+</button></div></div>`;
+    return `<div class="bundle-line" data-bundle-product="${escapeHtml(row.product.id)}"><a href="#/produto/${productRoute(row.product)}"><img src="${escapeHtml(row.product.img)}" alt="${escapeHtml(row.product.name)}"></a><div><a href="#/produto/${productRoute(row.product)}">${escapeHtml(row.product.name)}</a><small>${escapeHtml(row.product.embalagem || 'Unidade')}</small></div><div class="qty-control"><button data-action="basket-dec" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">−</button><span>${qty}</span><button data-action="basket-inc" data-basket-id="${escapeHtml(basket.id)}" data-id="${escapeHtml(row.product.id)}">+</button></div></div>`;
   }).join('')}</div></section><section class="bundle-total"><span>Total estimado da seleção</span><strong>${fmt(total)}</strong><button class="primary-button" data-action="add-basket-custom" data-id="${escapeHtml(basket.id)}">Adicionar cesta editada</button></section></div>`;
 }
 

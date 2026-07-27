@@ -136,7 +136,7 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
     content.innerHTML = `<div id="checkout-errors" class="checkout-errors" hidden></div>
       <section class="checkout-section checkout-review-section">
         <h2>1. Revise sua compra</h2>
-        ${items.length ? `<div class="checkout-items">${items.map(item => `<div class="checkout-item"><img src="${escapeHtml(item.product.img)}" alt="${escapeHtml(item.product.name)}"><div><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.product.price)} cada</small></div><div class="qty-control"><button data-action="dec" data-id="${escapeHtml(item.id)}">−</button><span>${item.qty}</span><button data-action="inc" data-id="${escapeHtml(item.id)}">+</button></div></div>`).join('')}</div>` : '<p>Sua compra está vazia.</p>'}
+        ${items.length ? `<div class="checkout-items">${items.map(item => `<div class="checkout-item"><img src="${escapeHtml(item.product.img)}" alt="${escapeHtml(item.product.name)}"><div><strong>${escapeHtml(item.product.name)}</strong><small>${escapeHtml(item.product.embalagem || 'Produto')}</small></div><div class="qty-control"><button data-action="dec" data-id="${escapeHtml(item.id)}">−</button><span>${item.qty}</span><button data-action="inc" data-id="${escapeHtml(item.id)}">+</button></div></div>`).join('')}</div>` : '<p>Sua compra está vazia.</p>'}
         <button class="text-button danger" data-action="clear-cart">Limpar compra</button>
       </section>
       <section class="checkout-section checkout-summary-before-cpf">

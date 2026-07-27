@@ -63,3 +63,32 @@ test('detecta cesta alterada mesmo quando o valor total não muda', async () => 
   assert.equal(result.ok, true);
   assert.equal(state.basketCustomizations['basket:c1'].changed, true);
 });
+
+
+test('mantém o ajuste oculto para cada unidade da mesma cesta', async () => {
+  const { CartService } = await import('../src/commerce.js');
+  const products = [
+    { id: 'a', codigo: 'A', name: 'Produto A', price: 10, oldPrice: 10, stock: 20, situacao: '', embalagem: '1un' },
+    { id: 'b', codigo: 'B', name: 'Produto B', price: 10, oldPrice: 10, stock: 20, situacao: '', embalagem: '1un' }
+  ];
+  const state = {
+    products,
+    productMap: new Map(products.map(product => [product.id, product])),
+    productCodeMap: new Map(products.map(product => [product.codigo.toLowerCase(), product])),
+    productExactMap: new Map(products.map(product => [product.codigo.toLowerCase(), product])),
+    virtualFees: {}, cart: {}, cartOrder: [], basketCustomizations: {}, basketDrafts: {},
+    favorites: new Set(), coupons: [], activeCouponCode: '', customerLookupStatus: 'new'
+  };
+  const store = { getState: () => state, mutate(mutator) { mutator(state); } };
+  const cart = new CartService(store, { emit() {} });
+  const basket = { id: 'c1', nome: 'Cesta', preco: 25, produtos: ['1x A', '1x B'] };
+
+  assert.equal(cart.addBasket(basket).ok, true);
+  assert.equal(cart.addBasket(basket).ok, true);
+  assert.equal(state.cart['fee_basket:c1'], 2);
+
+  const pricing = calculateCartPricing(state);
+  assert.equal(pricing.productsSubtotalBefore, 40);
+  assert.equal(pricing.basketAdjustment, 10);
+  assert.equal(pricing.total, 50);
+});

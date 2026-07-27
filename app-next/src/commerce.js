@@ -4,6 +4,7 @@ import {
   roundMoney, writeStorage
 } from './core.js';
 import { findProductByReference } from './catalog.js';
+import { basketFixedAdjustment } from './basket-pricing.js';
 
 export function applyProductOffer(product, now = new Date()) {
   const copy = { ...product };
@@ -439,8 +440,7 @@ export class CartService {
     }
     const originalItems = quantityMapFromRows(rows);
     const selectedItems = normalizeQuantityMap(selected);
-    const defaultTotal = rows.reduce((sum, row) => sum + Number(row.product.price || 0) * Number(row.qty), 0);
-    const fixedAdjustment = basket.preco ? roundMoney(Number(basket.preco) - defaultTotal) : 0;
+    const fixedAdjustment = basketFixedAdjustment(basket, rows);
     const bundleKey = `basket:${basket.id}`;
     this.store.mutate(current => {
       Object.entries(selected).forEach(([id, qty]) => {
@@ -458,7 +458,7 @@ export class CartService {
       };
       const feeId = `fee_${bundleKey}`;
       if (fixedAdjustment !== 0) {
-        current.cart[feeId] = 1;
+        current.cart[feeId] = Number(current.cart[feeId] || 0) + 1;
         if (!current.cartOrder.includes(feeId)) current.cartOrder.push(feeId);
       }
     }, 'cart:basket-added');
