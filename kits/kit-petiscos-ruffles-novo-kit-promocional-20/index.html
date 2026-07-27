@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <base href="/">
-  <meta name="da-build-version" content="2026-07-27-storefront-performance-v6">
+  <meta name="da-build-version" content="2026-07-27-storefront-carousel-v7">
   <meta name="description" content="Aproveite momentos de descontração com este kit de petiscos que reúne os sabores irresistíveis da Ruffles. Inclui: - 1 un Ruffles Batata Original Cream e Cebola Tubo 134g - 1 un Ruffles Batata Cheddar Tubo 134g Economia no kit: R$ 5,56 em comparação à compra avulsa.">
   <meta name="service-model" content="Somente delivery">
   <meta name="robots" content="noindex,follow">
@@ -22,9 +22,9 @@
   <link rel="icon" href="/img/logoantonia5.png">
   <link rel="privacy-policy" href="https://donaantonia.com.br/politica-de-privacidade.html">
   <link rel="terms-of-service" href="https://donaantonia.com.br/termos-de-uso.html">
-  <link rel="stylesheet" href="/app-next/styles/storefront-base.css?v=20260727-6">
-  <link rel="stylesheet" href="/app-next/styles/storefront-components.css?v=20260727-6">
-  <link rel="stylesheet" href="/app-next/styles/storefront-responsive.css?v=20260727-6">
+  <link rel="stylesheet" href="/app-next/styles/storefront-base.css?v=20260727-7">
+  <link rel="stylesheet" href="/app-next/styles/storefront-components.css?v=20260727-7">
+  <link rel="stylesheet" href="/app-next/styles/storefront-responsive.css?v=20260727-7">
   <link rel="preload" as="style" href="/app-next/styles/checkout-flow.css?v=20260727-4" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="preload" as="style" href="/app-next/styles/bundle-confirmation.css?v=20260727-4" onload="this.onload=null;this.rel='stylesheet'">
   <noscript>
@@ -37,6 +37,8 @@
   <link rel="modulepreload" href="/app-next/src/catalog.js?v=20260727-6">
   <link rel="modulepreload" href="/app-next/src/ui.js?v=20260727-6">
   <link rel="modulepreload" href="/app-next/src/commerce.js?v=20260727-4">
+  <link rel="modulepreload" href="/app-next/src/image-performance.js?v=20260727-7">
+  <link rel="modulepreload" href="/app-next/src/home-carousels.js?v=20260727-7">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","@id":"https://donaantonia.com.br/#organization","name":"Super Cestas Básicas Dona Antônia","alternateName":"Dona Antônia","url":"https://donaantonia.com.br/","logo":"https://donaantonia.com.br/img/logoantonia5.png","image":"https://donaantonia.com.br/img/logoantonia5.png","description":"Cestas básicas com composição completa e delivery em Cuiabá e Várzea Grande.","email":"atendimento@donaantonia.com.br","telephone":"+5565998150975","taxID":"51.385.335/0001-06","areaServed":[{"@type":"City","name":"Cuiabá","containedInPlace":{"@type":"State","name":"Mato Grosso"}},{"@type":"City","name":"Várzea Grande","containedInPlace":{"@type":"State","name":"Mato Grosso"}}]}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","@id":"https://donaantonia.com.br/#website","url":"https://donaantonia.com.br/","name":"Dona Antônia - Cestas Básicas","inLanguage":"pt-BR","publisher":{"@id":"https://donaantonia.com.br/#organization"},"potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://donaantonia.com.br/?busca={search_term_string}"},"query-input":"required name=search_term_string"}}</script>
   <script>
@@ -63,7 +65,7 @@
       }).catch(function(){});
     }
 
-    var migrationKey = 'da_v11_storefront_performance_20260727';
+    var migrationKey = 'da_v12_storefront_carousel_20260727';
     try {
       if (!localStorage.getItem(migrationKey)) {
         if ('caches' in window) {
@@ -114,7 +116,8 @@
   <aside id="menu-drawer" class="drawer" aria-hidden="true" aria-label="Menu" inert><header class="drawer-header"><div><strong>Menu Dona Antônia</strong><small>Navegação e informações</small></div><button data-close-drawer type="button" aria-label="Fechar menu">×</button></header><div id="menu-content" class="drawer-content"></div></aside>
   <aside id="checkout-drawer" class="drawer checkout-drawer" aria-hidden="true" aria-label="Minha compra" inert><header class="drawer-header"><div><strong>Minha compra</strong><small>Revise e envie pelo WhatsApp</small></div><button data-close-drawer type="button" aria-label="Fechar minha compra">×</button></header><div id="checkout-content" class="drawer-content"></div></aside>
 
-  <script type="module" src="/app-next/src/image-performance.js?v=20260727-4"></script>
+  <script type="module" src="/app-next/src/image-performance.js?v=20260727-7"></script>
+  <script type="module" src="/app-next/src/home-carousels.js?v=20260727-7"></script>
   <script type="module" src="/app-next/src/main.js?v=20260727-6"></script>
 </body>
 </html>
