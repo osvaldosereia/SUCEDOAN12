@@ -17,15 +17,26 @@ export async function loadCollections(config) {
   };
 }
 
-export async function saveCollectionList(config, type, list, products, queue = []) {
+export async function saveCollectionList(config, type, list, products, queue = [], options = {}) {
   if (!config.writeMode) throw new Error('O modo geral de gravação da V2 está bloqueado.');
   if (!config.collectionsWriteMode) throw new Error('A gravação de cestas e kits está bloqueada.');
   const isKit = type === 'kit';
   const path = isKit ? (config.kitsPath || COLLECTION_PATHS.kits) : (config.basketsPath || COLLECTION_PATHS.baskets);
+  const preserveInvalidExisting = options.preserveInvalidExisting === true;
+  const changedId = text(options.changedId);
   const normalized = [];
+
   for (const collection of list || []) {
     const result = normalizeCollectionForPublish(collection, type, products, queue);
-    if (result.audit.errors.length) throw new Error(`${text(collection?.nome) || text(collection?.codigo) || 'Coleção'}: ${result.audit.errors.join(', ')}.`);
+    const collectionId = text(collection?.id);
+    const changedTarget = changedId && collectionId === changedId;
+    if (result.audit.errors.length) {
+      if (!preserveInvalidExisting || changedTarget) {
+        throw new Error(`${text(collection?.nome) || text(collection?.codigo) || 'Coleção'}: ${result.audit.errors.join(', ')}.`);
+      }
+      normalized.push(clone(collection));
+      continue;
+    }
     normalized.push(result.normalized);
   }
 
