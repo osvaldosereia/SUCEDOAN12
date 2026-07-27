@@ -5,18 +5,19 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/finalize-basket-images-fix.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   finalizar:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
@@ -75,4 +76,4 @@ jobs:
           git rm .github/workflows/finalize-basket-images-fix.yml
           git add -A
           git commit -m 'Finaliza validações da correção de imagens e cache'
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
