@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const { SITE_URL, atomicWrite } = require('./catalogos-combos-lib');
 const { organizationSchema } = require('./gerar-paginas-seo-combos');
-require('./corrigir-validacoes-rotas');
 
 const ROOT = process.env.OUTPUT_DIR || path.join(__dirname, '..');
 
