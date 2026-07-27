@@ -37,7 +37,7 @@ test('catálogo público não possui endpoint nem armazenamento de banners', () 
   assert.equal(Object.prototype.hasOwnProperty.call(CONFIG.STORAGE, 'BANNERS'), false);
 });
 
-test('loadCatalog mantém lista de banners vazia para compatibilidade', async () => {
+test('loadCatalog não recria o campo removido de banners', async () => {
   const originalFetch = globalThis.fetch;
   const resources = {
     '../catalog-version.json': { version: 'teste-sem-banners' },
@@ -60,7 +60,7 @@ test('loadCatalog mantém lista de banners vazia para compatibilidade', async ()
   };
   try {
     const catalog = await loadCatalog();
-    assert.deepEqual(catalog.banners, []);
+    assert.equal(Object.prototype.hasOwnProperty.call(catalog, 'banners'), false);
   } finally {
     globalThis.fetch = originalFetch;
     delete globalThis.localStorage;
