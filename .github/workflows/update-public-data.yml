@@ -24,14 +24,15 @@ on:
       - 'app-next/src/core.js'
       - 'app-next/src/catalog.js'
       - 'app-next/src/ui.js'
+      - 'app-next/src/checkout.js'
       - 'app-next/src/main.js'
       - 'app-next/src/image-performance.js'
       - 'app-next/src/home-carousels.js'
-      - 'app-next/src/bundle-navigation.js'
       - 'app-next/src/config.js'
       - 'app-next/styles/storefront-base.css'
       - 'app-next/styles/storefront-components.css'
       - 'app-next/styles/storefront-responsive.css'
+      - 'app-next/styles/checkout-flow.css'
       - '.github/workflows/update-public-data.yml'
 
 permissions:
@@ -88,10 +89,10 @@ jobs:
           node --check app-next/src/core.js
           node --check app-next/src/catalog.js
           node --check app-next/src/ui.js
+          node --check app-next/src/checkout.js
           node --check app-next/src/main.js
           node --check app-next/src/image-performance.js
           node --check app-next/src/home-carousels.js
-          node --check app-next/src/bundle-navigation.js
           node scripts/check-public-site.mjs
           test -s merchant.xml
           grep -q '<item>' merchant.xml
@@ -105,12 +106,13 @@ jobs:
           test -s sitemap.xml
           grep -q 'https://donaantonia.com.br/cestas/' sitemap.xml
           ! grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
-          grep -q 'app-next/src/main.js?v=20260727-6' index.html
-          grep -q 'app-next/src/image-performance.js?v=20260727-7' index.html
-          grep -q 'app-next/src/home-carousels.js?v=20260727-7' index.html
+          grep -q 'app-next/src/main.js?v=20260727-8' index.html
+          grep -q 'app-next/src/image-performance.js?v=20260727-8' index.html
+          grep -q 'app-next/src/home-carousels.js?v=20260727-8' index.html
           grep -q 'storefront-base.css?v=20260727-7' index.html
-          grep -q 'storefront-components.css?v=20260727-7' index.html
-          grep -q 'storefront-responsive.css?v=20260727-7' index.html
+          grep -q 'storefront-components.css?v=20260727-8' index.html
+          grep -q 'storefront-responsive.css?v=20260727-8' index.html
+          grep -q 'checkout-flow.css?v=20260727-8' index.html
           ! grep -q 'app-next/src/seo-combos.js' index.html
           ! grep -q 'app-next/src/live-polish.js' index.html
           ! grep -q 'styles/visual-parity.css' index.html
