@@ -18,8 +18,6 @@
 .loading-shell div:first-child{min-height:240px}
 @keyframes loading{to{background-position:-200% 0}}
 
-.bundle-total{bottom:calc(var(--bottom-h) + var(--safe-bottom));margin-bottom:0}
-
 @media(min-width:720px){
   :root{--header-h:118px}
   .site-header{padding-inline:24px}
@@ -69,7 +67,6 @@
   .category-card{padding:8px;grid-template-columns:48px minmax(0,1fr);gap:7px}
   .category-card img{width:48px;height:48px}
   .home-page .bundle-grid{margin-right:-10px;padding-right:10px}
-  .bundle-total{border-radius:16px 16px 0 0}
 }
 
 @media(max-width:520px){
