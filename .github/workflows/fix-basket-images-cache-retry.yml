@@ -1,0 +1,63 @@
+name: Reaplicar correção de imagens e cache
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-basket-images-cache-retry.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  reaplicar:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Extrair e executar correção
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk '
+            /node <<'"'"'NODE'"'"'/ {inside=1; next}
+            inside && /^          NODE$/ {inside=0; exit}
+            inside {sub(/^          /, ""); print}
+          ' .github/workflows/fix-basket-images-cache.yml > /tmp/corrigir.js
+          node /tmp/corrigir.js
+          node scripts/normalizar-seo-delivery.js
+          node scripts/injetar-seo-combos.js
+          node scripts/gerar-paginas-seo-combos.js
+          node scripts/gerar-sitemap.js
+      - name: Registrar validação para revisão
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            node --check scripts/gerar-paginas-seo-combos.js
+            node --check scripts/injetar-seo-combos.js
+            node --check app-next/src/main.js
+            node --check app-next/src/ui.js
+            node --check app-next/src/seo-combos.js
+            node scripts/check-public-site.mjs
+            cd app-next
+            npm test
+            npm run check
+          } 2>&1 | tee fix-basket-images-report.txt
+      - name: Publicar arquivos definitivos na branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/fix-basket-images-cache.yml .github/workflows/fix-basket-images-cache-retry.yml
+          git add -A
+          git commit -m 'Corrige imagens, cache e conflitos das cestas'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
