@@ -77,8 +77,8 @@
   .bundle-media{width:96px;height:96px}
   .home-page .bundle-card{grid-template-columns:1fr}
   .home-page .bundle-media,.home-page .bundle-media-wrap .bundle-media{width:100%;height:auto}
-  .bundle-detail-hero{grid-template-columns:1fr}
-  .bundle-detail-hero>img{margin:0 auto}
+  .bundle-detail-hero{grid-template-columns:1fr;padding:14px}
+  .bundle-detail-hero>img{width:100%;max-width:none;margin:0 auto}
   .bundle-total{display:grid;grid-template-columns:1fr auto}
   .bundle-total .primary-button{grid-column:1/-1}
   .delivery-options,.payment-options,.form-grid{grid-template-columns:1fr}

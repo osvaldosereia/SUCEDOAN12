@@ -64,12 +64,13 @@ jobs:
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
-            grep -q 'app-next/src/main.js?v=20260727-6' index.html
-            grep -q 'app-next/src/image-performance.js?v=20260727-7' index.html
-            grep -q 'app-next/src/home-carousels.js?v=20260727-7' index.html
+            grep -q 'app-next/src/main.js?v=20260727-8' index.html
+            grep -q 'app-next/src/image-performance.js?v=20260727-8' index.html
+            grep -q 'app-next/src/home-carousels.js?v=20260727-8' index.html
             grep -q 'storefront-base.css?v=20260727-7' index.html
-            grep -q 'storefront-components.css?v=20260727-7' index.html
-            grep -q 'storefront-responsive.css?v=20260727-7' index.html
+            grep -q 'storefront-components.css?v=20260727-8' index.html
+            grep -q 'storefront-responsive.css?v=20260727-8' index.html
+            grep -q 'checkout-flow.css?v=20260727-8' index.html
             ! grep -q 'app-next/src/seo-combos.js' index.html
             ! grep -q 'app-next/src/live-polish.js' index.html
             ! grep -q 'styles/visual-parity.css' index.html
@@ -130,10 +131,10 @@ jobs:
             node --check app-next/src/core.js
             node --check app-next/src/catalog.js
             node --check app-next/src/ui.js
+            node --check app-next/src/checkout.js
             node --check app-next/src/main.js
             node --check app-next/src/image-performance.js
             node --check app-next/src/home-carousels.js
-            node --check app-next/src/bundle-navigation.js
           } 2>&1 | tee -a public-site-test-report.txt
 
       - name: Anexar relatório
