@@ -33,6 +33,7 @@ on:
       - 'app-next/styles/storefront-components.css'
       - 'app-next/styles/storefront-responsive.css'
       - 'app-next/styles/checkout-flow.css'
+      - 'app-next/styles/bundle-confirmation.css'
       - '.github/workflows/update-public-data.yml'
 
 permissions:
@@ -110,9 +111,10 @@ jobs:
           grep -q 'app-next/src/image-performance.js?v=20260727-8' index.html
           grep -q 'app-next/src/home-carousels.js?v=20260727-8' index.html
           grep -q 'storefront-base.css?v=20260727-7' index.html
-          grep -q 'storefront-components.css?v=20260727-8' index.html
-          grep -q 'storefront-responsive.css?v=20260727-8' index.html
+          grep -q 'storefront-components.css?v=20260727-9' index.html
+          grep -q 'storefront-responsive.css?v=20260727-9' index.html
           grep -q 'checkout-flow.css?v=20260727-8' index.html
+          grep -q 'bundle-confirmation.css?v=20260727-5' index.html
           ! grep -q 'app-next/src/seo-combos.js' index.html
           ! grep -q 'app-next/src/live-polish.js' index.html
           ! grep -q 'styles/visual-parity.css' index.html
