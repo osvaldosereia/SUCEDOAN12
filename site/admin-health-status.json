@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-28T01:53:26.362Z",
+  "checkedAt": "2026-07-28T02:00:28.312Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -56,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 156 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 186 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 197 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 194 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": true,
-      "detail": "catalog-1785203531581 · público 1524 · admin 1524"
+      "ok": false,
+      "detail": "catalog-1785203767449 · público 0 · admin 0"
     },
     {
       "name": "Banners permanecem removidos",
@@ -91,7 +91,7 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -124,14 +124,19 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
+    },
+    {
+      "name": "Versão do catálogo válida",
+      "ok": false,
+      "detail": "catalog-1785203767449 · público 0 · admin 0"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30321357402",
+    "runId": "30321677418",
     "attempt": "1",
-    "sourceSha": "cf172d40be10c70c66945819858073d2a3143419",
-    "publishedAt": "2026-07-28T01:54:00.984Z"
+    "sourceSha": "431de3364aa6263fd2a3fd6cb1042d1631fa551b",
+    "publishedAt": "2026-07-28T02:01:03.309Z"
   }
 }
