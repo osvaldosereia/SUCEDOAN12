@@ -126,6 +126,12 @@ function placeRouteContent(route) {
     moveToRoute('offersWorkspace', route);
     moveToRoute('offerSafetySettings', route);
   }
+  if (route === 'offers-rules') {
+    moveToRoute('campaignOffersPanel', route);
+    const panel = document.getElementById('campaignOffersPanel');
+    if (panel) panel.hidden = false;
+    window.__adminV2CampaignOffersLoad?.();
+  }
   if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) {
     moveToRoute('registriesWorkspace', route);
     moveToRoute('registrySafetySettings', route);
@@ -143,7 +149,7 @@ async function loadRouteModules(route) {
   if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);
   if (route === 'order-tools') task = importOnce('order-tools', ['./order-tools-bootstrap.js']);
   if (route === 'baskets' || route === 'kits') task = importOnce('collections', ['./collections-bootstrap.js']);
-  if (route === 'offers') task = importOnce('offers', ['./offers-bootstrap.js?admin_build=20260727-offers-cancel-v1']);
+  if (route === 'offers' || route === 'offers-rules') task = importOnce('offers', ['./offers-bootstrap.js?admin_build=20260727-offers-rules-page-v1']);
   if (route === 'coupons') task = importOnce('coupons', ['./coupons-bootstrap.js']);
   if (route === 'quick-purchase') task = importOnce('quick-purchase', ['./quick-purchase-bootstrap.js']);
   if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) task = importOnce('registries', ['./registries-bootstrap.js']);
@@ -155,6 +161,7 @@ async function loadRouteModules(route) {
   try {
     await task;
     placeRouteContent(route);
+    if (route === 'offers-rules') setTimeout(() => placeRouteContent(route), 160);
   } catch (error) {
     toast(`Não foi possível abrir esta função: ${error?.message || error}`, 'error');
   }

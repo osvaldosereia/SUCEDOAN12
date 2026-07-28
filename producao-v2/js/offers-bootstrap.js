@@ -1,5 +1,5 @@
-import './campaign-offers-recovery.js?admin_build=20260727-offers-cancel-v1';
-import './campaign-offers-production-guard.js?admin_build=20260727-offers-cancel-v1';
+import './campaign-offers-recovery.js?admin_build=20260727-offers-rules-page-v1';
+import './campaign-offers-production-guard.js?admin_build=20260727-offers-rules-page-v1';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { OffersModule } from './modules/offers.js';
 import { loadProducts } from './services/firebase.js';

@@ -29,7 +29,7 @@ window.addEventListener('click', event => {
   if (cfg.githubBranch !== 'main') {
     event.preventDefault();
     event.stopImmediatePropagation();
-    toast('Processamento bloqueado na branch de homologação: o workflow usa o Firebase real. Use Simular ou Recuperar estado.');
+    toast('Processamento bloqueado fora da main: o admin oficial só executa ofertas reais em produção.');
     return;
   }
   if (sessionStorage.getItem(MAIN_CONFIRM_KEY) !== '1') {

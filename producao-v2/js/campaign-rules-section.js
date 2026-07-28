@@ -115,70 +115,40 @@
     document.head.appendChild(style);
   }
 
-  function ensureTabs(workspace) {
-    let tabs = document.getElementById('offerManagerTabs');
-    if (tabs) return tabs;
-
-    const header = workspace.querySelector('.panel-header');
-    if (!header) return null;
-
-    tabs = document.createElement('div');
-    tabs.className = 'offer-manager-tabs rules-section-tabs';
-    tabs.id = 'offerManagerTabs';
-    tabs.innerHTML = `
-      <button class="active" type="button" data-offer-tab="automatic">Ofertas por validade</button>
-      <button type="button" data-offer-tab="campaign">Ofertas automaticas por regras</button>
-    `;
-    header.insertAdjacentElement('afterend', tabs);
-    return tabs;
-  }
-
   function renameButton(root, selector, label) {
     const button = root.querySelector(selector);
     if (button) button.textContent = label;
   }
 
-  function enhanceCampaignPanel(workspace, panel) {
+  function enhanceCampaignPanel(panel) {
     panel.classList.add('rules-section-page');
+    const routeHost = document.querySelector('.view[data-view="offers-rules"]');
+    if (routeHost && panel.parentElement !== routeHost) routeHost.appendChild(panel);
     panel.hidden = false;
-
-    const validityEnd = workspace.querySelector('.offer-apply-area');
-    if (validityEnd && validityEnd.nextElementSibling !== panel) {
-      validityEnd.insertAdjacentElement('afterend', panel);
-    } else if (!validityEnd && panel.parentElement !== workspace) {
-      workspace.appendChild(panel);
-    }
 
     const toolbar = panel.querySelector('.campaign-toolbar');
     if (!toolbar) return;
 
-    workspace.querySelectorAll('.offer-auto-panel').forEach(node => {
-      node.hidden = false;
-    });
-    const manualPanel = document.getElementById('manualOffersPanel');
-    if (manualPanel) manualPanel.hidden = true;
-
     const eyebrow = toolbar.querySelector('.eyebrow');
     const title = toolbar.querySelector('h3');
     const description = toolbar.querySelector('p');
-    if (eyebrow) eyebrow.textContent = 'Automacao de ofertas';
-    if (title) title.textContent = 'Ofertas automaticas por regras';
+    if (eyebrow) eyebrow.textContent = 'Campanhas por categoria';
+    if (title) title.textContent = 'Ofertas por regra';
     if (description) {
-      description.textContent = 'Fluxo simples: salve as regras, simule sem alterar nada e aplique quando estiver pronto. Recarregar e corrigir divergencia sao apenas apoio.';
+      description.textContent = 'Crie regras, simule e processe. Cancelar remove a regra da lista e encerra as ofertas criadas por ela.';
     }
 
-    renameButton(toolbar, '[data-campaign-reload]', 'Recarregar painel');
-    renameButton(toolbar, '[data-campaign-simulate]', 'Simular sem alterar');
-    renameButton(toolbar, '[data-campaign-reconcile]', 'Corrigir divergencia');
-    renameButton(toolbar, '[data-campaign-run]', 'Aplicar agora');
+    renameButton(toolbar, '[data-campaign-reload]', 'Atualizar');
+    renameButton(toolbar, '[data-campaign-simulate]', 'Simular');
+    toolbar.querySelectorAll('[data-campaign-reconcile]').forEach(button => button.remove());
+    renameButton(toolbar, '[data-campaign-run]', 'Processar agora');
     renameButton(panel, '[data-campaign-save-settings]', 'Salvar regras');
     panel.querySelectorAll('[data-campaign-use-test-branch]').forEach(button => button.remove());
     const actionHelp = [
-      ['[data-campaign-reload]', 'Atualiza a tela com os dados mais recentes do GitHub e Firebase. Nao altera produtos.'],
-      ['[data-campaign-simulate]', 'Testa as regras e mostra produtos elegiveis. Nao salva e nao muda precos.'],
-      ['[data-campaign-reconcile]', 'Uso raro: corrige diferenca entre estado salvo e ofertas reais no Firebase.'],
-      ['[data-campaign-run]', 'Executa de verdade: cria ofertas, encerra regras canceladas e publica o catalogo.'],
-      ['[data-campaign-save-settings]', 'Salva regras e configuracoes no GitHub. Nao mexe nos produtos ate processar.'],
+      ['[data-campaign-reload]', 'Atualiza a tela.'],
+      ['[data-campaign-simulate]', 'Mostra produtos elegiveis sem alterar nada.'],
+      ['[data-campaign-run]', 'Executa as regras e remove ofertas de regras canceladas.'],
+      ['[data-campaign-save-settings]', 'Salva as regras.'],
     ];
     actionHelp.forEach(([selector, title]) => {
       const button = panel.querySelector(selector);
@@ -187,54 +157,15 @@
     panel.querySelectorAll('[data-campaign-cancel]').forEach(button => {
       button.textContent = 'Cancelar regra e ofertas';
       button.classList.add('danger-action');
-      button.title = 'Cancela a regra, salva no GitHub e inicia o encerramento das ofertas criadas por ela.';
+      button.title = 'Remove a regra da lista e inicia o encerramento das ofertas criadas por ela.';
     });
-
-    let guide = panel.querySelector('.rules-guide');
-    if (!guide) {
-      guide = document.createElement('section');
-      guide.className = 'rules-guide rules-guide-didactic';
-      toolbar.insertAdjacentElement('afterend', guide);
-    }
-    if (!guide.dataset.didacticReady) {
-      guide.dataset.didacticReady = '1';
-      guide.className = 'rules-guide rules-guide-didactic';
-      guide.innerHTML = `
-        <article><strong>1. Salvar regras</strong><span>Grava categoria, desconto, quantidade e cancelamentos no GitHub. Ainda nao muda produto.</span></article>
-        <article><strong>2. Simular sem alterar</strong><span>Mostra o que aconteceria se processar agora. Seguro para conferir antes.</span></article>
-        <article class="is-primary"><strong>3. Aplicar agora</strong><span>Roda a automacao oficial. Aqui as ofertas entram, saem ou sao canceladas.</span></article>
-        <article class="is-danger"><strong>Cancelar regra</strong><span>Marca a regra para parar e encerrar as ofertas criadas por ela no proximo processamento.</span></article>
-      `;
-    }
-    if (!panel.querySelector('.rules-cancel-notice')) {
-      const notice = document.createElement('section');
-      notice.className = 'rules-cancel-notice';
-      notice.innerHTML = `
-        <strong>Cancelar regra</strong>
-        <span>Quando uma regra for cancelada, ela fica marcada para encerramento. Ao salvar e processar, todas as ofertas ativas criadas por essa regra tambem sao canceladas.</span>
-      `;
-      const guide = panel.querySelector('.rules-guide');
-      (guide || toolbar).insertAdjacentElement('afterend', notice);
-    }
   }
 
   function refreshRulesSection() {
-    const workspace = document.getElementById('offersWorkspace');
-    if (!workspace) return;
-
     installStyle();
-    const tabs = ensureTabs(workspace);
-    const campaignTab = tabs?.querySelector('[data-offer-tab="campaign"]');
     const panel = document.getElementById('campaignOffersPanel');
-
     if (!panel) return;
-
-    if (!panel.dataset.rulesSectionLoaded && campaignTab) {
-      panel.dataset.rulesSectionLoaded = '1';
-      campaignTab.click();
-    }
-
-    enhanceCampaignPanel(workspace, panel);
+    enhanceCampaignPanel(panel);
   }
 
   function scheduleRefresh(delay = 120) {
@@ -248,7 +179,7 @@
 
   document.addEventListener('DOMContentLoaded', () => scheduleRefresh(0), { once: true });
   document.addEventListener('click', event => {
-    if (event.target.closest?.('[data-route="offers"], [data-view="offers"], [data-view="promotions"]')) {
+    if (event.target.closest?.('[data-route="offers-rules"], [data-view="offers-rules"]')) {
       scheduleRefresh(150);
     }
   }, true);

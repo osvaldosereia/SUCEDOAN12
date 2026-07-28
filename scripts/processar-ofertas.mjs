@@ -189,7 +189,8 @@ function normalizeConfig(raw = {}) {
     ativo: raw.ativo !== false,
     exigir_quantidade_completa: raw.exigir_quantidade_completa !== false,
     timezone: raw.timezone || TIME_ZONE,
-    regras: Array.isArray(raw.regras) ? raw.regras : []
+    regras: Array.isArray(raw.regras) ? raw.regras : [],
+    cancelamentos_regras: Array.isArray(raw.cancelamentos_regras) ? raw.cancelamentos_regras : []
   };
 }
 
@@ -448,7 +449,10 @@ function calculateExecution({ products, config: rawConfig, state: rawState, hist
   const closedKeys = new Set();
   const rules = config.regras.filter(rule => rule && rule.id && text(rule.categoria));
   const rulesById = new Map(rules.map(rule => [text(rule.id), rule]));
-  const cancelled = new Set(rules.filter(rule => rule.status === "cancelada" || rule.encerrar_ofertas_ativas === true).map(rule => text(rule.id)));
+  const cancelled = new Set([
+    ...rules.filter(rule => rule.status === "cancelada" || rule.encerrar_ofertas_ativas === true).map(rule => text(rule.id)),
+    ...config.cancelamentos_regras.map(item => text(item.id || item.regra_id))
+  ].filter(Boolean));
   let requestedTotal = 0;
   let bannersDeactivated = 0;
   let bannersReactivated = 0;

@@ -11,6 +11,7 @@ const ROUTES = Object.freeze({
   baskets: ['Cestas básicas', 'Composição, estoque, substituições e publicação.'],
   kits: ['Kits promocionais', 'Preço, desconto, composição, IA e Instagram.'],
   offers: ['Ofertas automáticas', 'Regras por validade, simulação e aplicação segura.'],
+  'offers-rules': ['Ofertas por regra', 'Campanhas automáticas por categoria.'],
   coupons: ['Cupons', 'Criação, edição, validade e publicação no checkout.'],
   'quick-purchase': ['Compra Rápida', 'Seções, itens e opções do fluxo rápido.'],
   categories: ['Categorias', 'Categorias, subcategorias e padronização em lote.'],

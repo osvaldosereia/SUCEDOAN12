@@ -73,7 +73,7 @@ function correctPanel() {
       : !text(cfg.githubToken)
         ? 'Configure o token do GitHub.'
         : cfg.githubBranch === 'main' && !mainConfirmed()
-          ? 'A branch main está protegida. Confirme explicitamente ou use a branch de homologação.'
+          ? 'A branch main está protegida. Confirme explicitamente antes de salvar ou processar.'
           : `Alterações serão feitas somente na branch ${cfg.githubBranch}.`;
   }
   const metrics = panel.querySelectorAll('.campaign-metrics .metric-card strong');

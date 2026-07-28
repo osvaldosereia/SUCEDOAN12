@@ -11,7 +11,15 @@
   <title>Dona Antônia — Admin oficial</title>
   <link rel="stylesheet" href="./assets/admin.css?admin_build=20260726-admin-v13-xml-editor-parity">
   <link rel="stylesheet" href="./assets/navigation.css?admin_build=20260726-admin-v13-xml-editor-parity">
-  <link rel="stylesheet" href="./assets/admin-ux.css?admin_build=20260727-offers-cancel-v1">
+  <link rel="stylesheet" href="./assets/admin-ux.css?admin_build=20260727-offers-rules-page-v1">
+  <script>
+    try {
+      const key = 'da_admin_v2_config';
+      const current = JSON.parse(localStorage.getItem(key) || '{}');
+      localStorage.setItem(key, JSON.stringify({ ...current, githubBranch: 'main' }));
+      sessionStorage.removeItem('da_admin_v2_campaign_main_confirm');
+    } catch (error) {}
+  </script>
   <script type="importmap">
   {
     "imports": {
@@ -55,6 +63,7 @@
           <button class="nav-item" data-route="baskets" type="button"><span class="nav-icon">CB</span><span>Cestas básicas</span></button>
           <button class="nav-item" data-route="kits" type="button"><span class="nav-icon">KT</span><span>Kits promocionais</span></button>
           <button class="nav-item" data-route="offers" type="button"><span class="nav-icon">OF</span><span>Ofertas automáticas</span></button>
+          <button class="nav-item" data-route="offers-rules" type="button"><span class="nav-icon">RG</span><span>Ofertas por regra</span></button>
           <button class="nav-item" data-route="coupons" type="button"><span class="nav-icon">CP</span><span>Cupons</span></button>
           <button class="nav-item" data-route="quick-purchase" type="button"><span class="nav-icon">CR</span><span>Compra Rápida</span></button>
         </section>
@@ -131,6 +140,7 @@
         <section class="view route-view" data-view="baskets"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CB</span><strong>Preparando cestas básicas</strong><small>Composição, substituições, estoque e publicação.</small></div></div></section>
         <section class="view route-view" data-view="kits"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">KT</span><strong>Preparando kits promocionais</strong><small>Preço, composição, IA e fila do Instagram.</small></div></div></section>
         <section class="view route-view" data-view="offers"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">OF</span><strong>Preparando ofertas automáticas</strong><small>Simulação e aplicação segura das regras de validade.</small></div></div></section>
+        <section class="view route-view" data-view="offers-rules"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">RG</span><strong>Preparando ofertas por regra</strong><small>Campanhas por categoria, cancelamento e processamento.</small></div></div></section>
         <section class="view route-view" data-view="coupons"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CP</span><strong>Preparando cupons</strong><small>Criação, validade, regras e publicação no checkout.</small></div></div></section>
         <section class="view route-view" data-view="quick-purchase"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CR</span><strong>Preparando Compra Rápida</strong><small>Seções, itens, opções e produto padrão.</small></div></div></section>
         <section class="view route-view" data-view="categories"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CT</span><strong>Preparando categorias</strong><small>Padronização de categorias e subcategorias em lote.</small></div></div></section>
@@ -233,9 +243,9 @@
 
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <script type="module" src="./js/app.js?admin_build=20260727-official-ux-v1"></script>
-  <script type="module" src="./js/navigation-v12.js?admin_build=20260727-official-ux-v1"></script>
-  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260727-offers-cancel-v1"></script>
+  <script type="module" src="./js/navigation-v12.js?admin_build=20260727-offers-rules-page-v1"></script>
+  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260727-offers-rules-page-v1"></script>
   <script src="./admin-ux.js?admin_build=20260727-official-ux-v1"></script>
-  <script src="./js/campaign-rules-section.js?admin_build=20260727-offers-cancel-v1"></script>
+  <script src="./js/campaign-rules-section.js?admin_build=20260727-offers-rules-page-v1"></script>
 </body>
 </html>
