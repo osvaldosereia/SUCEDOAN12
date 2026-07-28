@@ -1,0 +1,77 @@
+    offsets[4]=length;push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Interpolate true /Length ${jpegBytes.length} >>\nstream\n`);push(jpegBytes);push('\nendstream\nendobj\n');
+    const content=`q\n${pageW} 0 0 ${pageH} 0 0 cm\n/Im0 Do\nQ\n`;offsets[5]=length;push(`5 0 obj\n<< /Length ${enc.encode(content).length} >>\nstream\n${content}endstream\nendobj\n`);
+    const xref=length;push('xref\n0 6\n0000000000 65535 f \n');for(let i=1;i<=5;i++)push(String(offsets[i]).padStart(10,'0')+' 00000 n \n');push(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+    const out=new Uint8Array(length);let at=0;for(const c of chunks){out.set(c,at);at+=c.length}return new Blob([out],{type:'application/pdf'});
+  }
+
+  async function printNow(){
+    await ensureReady();const root=$('#printRoot');root.innerHTML='';const sheet=document.createElement('div');sheet.className='print-sheet';
+    const addImg=(asset,b,scalePercent=100)=>{const img=document.createElement('img');const placed=getScaledBox(b,scalePercent);img.src=asset.dataUrl;Object.assign(img.style,{left:placed.x+'mm',top:placed.y+'mm',width:placed.w+'mm',height:placed.h+'mm'});sheet.appendChild(img)};
+    addImg(state.left,MM.leftTop,state.layout.leftTop);addImg(state.right[1],MM.rightTop,state.layout.rightTop);addImg(state.left,MM.leftBottom,state.layout.leftBottom);addImg(state.right[2],MM.rightBottom,state.layout.rightBottom);
+    for(const l of MM.lines){const d=document.createElement('div');d.className='print-line';if(Math.abs(l.y2-l.y1)<.001)Object.assign(d.style,{left:l.x1+'mm',top:l.y1+'mm',width:(l.x2-l.x1)+'mm',height:MM.lineWidth+'mm'});else Object.assign(d.style,{left:l.x1+'mm',top:l.y1+'mm',width:MM.lineWidth+'mm',height:(l.y2-l.y1)+'mm'});sheet.appendChild(d)}
+    root.appendChild(sheet);await sleep(180);window.print();
+  }
+
+  function cleanPath(p){return (p||'').replace(/^\/+|\/+$/g,'').replace(/\/{2,}/g,'/')}
+  function githubHeaders(){const token=sessionStorage.getItem('canecasGithubToken')||'';return {'Accept':'application/vnd.github+json','Content-Type':'application/json',...(token?{'Authorization':`Bearer ${token}`}:{})}}
+  function githubApiPath(path){return cleanPath(path).split('/').map(encodeURIComponent).join('/')}
+
+  async function uploadAssetToGithub(asset,kind,slot){
+    const s=state.settings,token=sessionStorage.getItem('canecasGithubToken');if(!token)throw new Error('Informe o token do GitHub em Integrações.');
+    const base=cleanPath(s.folder);const folder=kind==='propagandas'?`${base}/propagandas`:`${base}/artes-geradas/${today()}`;
+    const filename=kind==='propagandas'?`${slug(asset.name)}.jpg`:`${stamp()}-arte-${slot}-${slug(asset.name)}.jpg`;const path=`${folder}/${filename}`;
+    const api=`https://api.github.com/repos/${encodeURIComponent(s.owner)}/${encodeURIComponent(s.repo)}/contents/${githubApiPath(path)}`;
+    let sha;const existing=await fetch(`${api}?ref=${encodeURIComponent(s.branch)}`,{headers:githubHeaders()});if(existing.ok)sha=(await existing.json()).sha;else if(existing.status!==404)throw new Error(`GitHub não permitiu verificar o arquivo (HTTP ${existing.status}).`);
+    const content=asset.dataUrl.split(',')[1];const body={message:`canecas: salvar ${filename}`,content,branch:s.branch,...(sha?{sha}:{})};const r=await fetch(api,{method:'PUT',headers:githubHeaders(),body:JSON.stringify(body)});if(!r.ok){const t=await r.text();throw new Error(`Falha ao salvar no GitHub (HTTP ${r.status}): ${t.slice(0,180)}`)}
+    asset.githubPath=path;asset.githubUrl=(await r.json()).content?.html_url;toast(`Salvo em ${path}`,'ok');return path;
+  }
+
+  async function refreshGithubAds(){
+    const s=state.settings,base=`${cleanPath(s.folder)}/propagandas`,url=`https://api.github.com/repos/${encodeURIComponent(s.owner)}/${encodeURIComponent(s.repo)}/contents/${githubApiPath(base)}?ref=${encodeURIComponent(s.branch)}`;
+    try{const r=await fetch(url,{headers:githubHeaders()});if(r.status===404){toast('A pasta de propagandas ainda não existe no GitHub.','warn');return}if(!r.ok)throw new Error(`HTTP ${r.status}`);const list=await r.json();const remote=list.filter(x=>x.type==='file'&&/\.(jpe?g|png)$/i.test(x.name)).map(x=>({id:'gh-'+x.sha,name:x.name.replace(/\.[^.]+$/,''),downloadUrl:x.download_url,githubPath:x.path,remote:true}));await renderLibrary(remote);toast(`${remote.length} propaganda(s) encontrada(s) no GitHub.`,'ok')}catch(e){toast('Não foi possível ler a pasta do GitHub: '+e.message,'error')}
+  }
+
+  function getProject(){return {version:1,createdAt:new Date().toISOString(),left:state.left,right:state.right,layout:state.layout,art1:getArtConfig(1),art2:getArtConfig(2),settings:{...state.settings,webhook:''}}}
+  function saveProject(){const blob=new Blob([JSON.stringify(getProject(),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`projeto-canecas-${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),10000)}
+  async function loadProjectFile(file){const data=JSON.parse(await file.text());if(!data||!data.version)throw new Error('Arquivo de projeto inválido.');state.left=data.left||null;state.right=data.right||{1:null,2:null};state.layout=normalizeLayout(data.layout);syncScaleControls();if(data.art1)setArtConfig(1,data.art1);if(data.art2)setArtConfig(2,data.art2);renderLeftCurrent();renderArtResult(1);renderArtResult(2);drawPreview();updateReady();toast('Projeto aberto.','ok')}
+
+  function loadSettings(){try{Object.assign(state.settings,JSON.parse(localStorage.getItem('canecasStudioSettings')||'{}'))}catch{}$('#setWebhook').value=state.settings.webhook||'';$('#setOwner').value=state.settings.owner;$('#setRepo').value=state.settings.repo;$('#setBranch').value=state.settings.branch;$('#setFolder').value=state.settings.folder;$('#setToken').value=sessionStorage.getItem('canecasGithubToken')||'';$('#autoGithub').checked=localStorage.getItem('canecasAutoGithub')==='1'}
+  function saveSettings(){state.settings={webhook:$('#setWebhook').value.trim(),owner:$('#setOwner').value.trim(),repo:$('#setRepo').value.trim(),branch:$('#setBranch').value.trim()||'main',folder:cleanPath($('#setFolder').value)||'canecas/imagens'};localStorage.setItem('canecasStudioSettings',JSON.stringify(state.settings));sessionStorage.setItem('canecasGithubToken',$('#setToken').value.trim());$('#settingsDialog').close();toast('Integrações salvas.','ok')}
+
+  function escapeHtml(s=''){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function escapeAttr(s=''){return escapeHtml(s)}
+
+  function bind(){
+    $('#chooseLeft').onclick=()=>$('#leftFile').click();$('#leftFile').onchange=e=>acceptLeftFile(e.target.files[0]).catch(x=>toast(x.message,'error'));
+    const zone=$('#uploadZone');['dragenter','dragover'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.add('drag')}));['dragleave','drop'].forEach(ev=>zone.addEventListener(ev,e=>{e.preventDefault();zone.classList.remove('drag')}));zone.addEventListener('drop',e=>acceptLeftFile(e.dataTransfer.files[0]).catch(x=>toast(x.message,'error')));
+    $$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.toggle('active',x===t));$$('.art-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===t.dataset.tab))});
+    for(const slot of [1,2]){
+      $$(`#a${slot}Phrase,#a${slot}Theme,#a${slot}Audience,#a${slot}Style,#a${slot}Palette,#a${slot}Mood,#a${slot}Amount,#a${slot}Element,#a${slot}Extra,#a${slot}Exact,#a${slot}White,#a${slot}NoMockup,#a${slot}HighRes`).forEach(el=>el.addEventListener('input',()=>refreshPrompt(slot)));
+      $(`[data-generate="${slot}"]`).onclick=async()=>{if(state.busy)return;state.busy=true;try{await generateArt(slot)}catch(e){setArtStatus(slot,e.message,'error');toast(e.message,'error')}finally{state.busy=false}};
+      $(`[data-random="${slot}"]`).onclick=()=>randomize(slot);$(`[data-import="${slot}"]`).onclick=()=>$(`#importArt${slot}`).click();$(`#importArt${slot}`).onchange=e=>importArtFile(slot,e.target.files[0]).catch(x=>toast(x.message,'error'));
+    }
+    $('#generateBoth').onclick=async()=>{if(state.busy)return;state.busy=true;try{await generateArt(1);await sleep(1200);await generateArt(2);toast('As duas artes foram geradas.','ok')}catch(e){toast(e.message,'error')}finally{state.busy=false}};
+    $('#copyArt1').onclick=()=>{setArtConfig(2,getArtConfig(1));$('#a2Extra').value=($('#a2Extra').value+' Criar uma composição visual totalmente diferente da arte 1.').trim();refreshPrompt(2);toast('Campos copiados. A variação 2 continuará recebendo composição diferente.','ok')};
+    $('#randomBoth').onclick=()=>{randomize(1);randomize(2)};
+    $('#downloadPdf').onclick=()=>downloadPDF().catch(e=>toast(e.message,'error'));$('#printNow').onclick=()=>printNow().catch(e=>toast(e.message,'error'));
+    $('#openSettings').onclick=()=>{loadSettings();$('#settingsDialog').showModal()};$$('[data-close]').forEach(b=>b.onclick=()=>$('#settingsDialog').close());$('#saveSettings').onclick=saveSettings;
+    $('#refreshGithubAds').onclick=refreshGithubAds;$('#autoGithub').onchange=e=>localStorage.setItem('canecasAutoGithub',e.target.checked?'1':'0');
+    ['leftTop','rightTop','leftBottom','rightBottom'].forEach(key=>{
+      const range = $(`#scale-${key}`);
+      const number = $(`#scale-${key}-number`);
+      if(range) range.addEventListener('input',e=>setLayoutScale(key,e.target.value));
+      if(number) number.addEventListener('input',e=>setLayoutScale(key,e.target.value));
+      if(number) number.addEventListener('blur',e=>setLayoutScale(key,e.target.value));
+    });
+    $('#resetSizes').onclick=()=>{state.layout={...DEFAULT_LAYOUT};syncScaleControls();drawPreview();toast('Tamanhos resetados para 100%.','ok')};
+    $('#saveProject').onclick=saveProject;$('#loadProject').onclick=()=>$('#projectFile').click();$('#projectFile').onchange=e=>loadProjectFile(e.target.files[0]).catch(x=>toast(x.message,'error'));
+  }
+
+  async function init(){
+    bind();loadSettings();state.layout=normalizeLayout(state.layout);syncScaleControls();state.db=await openDB();await renderLibrary();
+    $('#a1Phrase').value='Tudo floresce no seu tempo';$('#a1Element').value='flores delicadas e ramos botânicos';
+    $('#a2Phrase').value='Permaneça firme, pois Deus cuida de tudo';$('#a2Theme').value='Fé cristã';$('#a2Style').value='Ilustração delicada em aquarela';$('#a2Element').value='flores do campo, fitas e pequenos detalhes de fé';
+    refreshPrompt(1);refreshPrompt(2);drawPreview();updateReady();
+  }
+  init().catch(e=>toast('Falha ao iniciar: '+e.message,'error'));
+})();
