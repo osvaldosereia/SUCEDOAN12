@@ -1,6 +1,7 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { escapeHtml, money, normalizeSearch, number, text } from './core/utils.js';
 import { patchOrder } from './services/firebase.js';
+import { syncCustomersFromOrders } from './services/customers.js';
 import { invalidateOrdersCache, loadOlderOrders, loadRecentOrders } from './services/orders.js';
 
 const AUDIT_KEY = 'da_admin_v2_audit_log';
@@ -36,7 +37,7 @@ function installStyle() {
   const style = document.createElement('style');
   style.id = 'ordersAdminStyle';
   style.textContent = `
-    .orders-panel{margin-bottom:16px}.orders-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.orders-toolbar .search-field{min-width:240px;flex:1}.orders-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 16px;border-top:1px solid var(--line)}.orders-footer-info{color:var(--muted);font-size:11px}.orders-page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.orders-page-actions strong{font-size:11px}.orders-loading{opacity:.68;pointer-events:none}.suite-actions{display:flex;gap:6px;flex-wrap:wrap}.suite-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:1300}.suite-modal{position:fixed;z-index:1301;inset:5vh max(18px,calc((100vw - 900px)/2));background:#fff;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 90px rgba(0,0,0,.3)}.suite-modal header,.suite-modal footer{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid #e4e5e1}.suite-modal footer{border-top:1px solid #e4e5e1;border-bottom:0;justify-content:flex-end}.suite-modal-body{padding:20px 22px;overflow:auto}.order-items{display:grid;gap:8px}.order-item{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #eee;padding:8px 0}.order-status-actions{display:flex;gap:8px;flex-wrap:wrap}.suite-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}.suite-summary span{padding:8px 10px;background:#f1f2ef;border-radius:10px}.suite-danger{color:#9b1c1c}
+    .orders-panel{margin-bottom:16px}.orders-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.orders-toolbar .search-field{min-width:240px;flex:1}.orders-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 16px;border-top:1px solid var(--line)}.orders-footer-info{color:var(--muted);font-size:11px}.orders-page-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.orders-page-actions strong{font-size:11px}.orders-loading{opacity:.68;pointer-events:none}.suite-actions{display:flex;gap:6px;flex-wrap:wrap}.suite-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:1300}.suite-modal{position:fixed;z-index:1301;inset:5vh max(18px,calc((100vw - 900px)/2));background:#fff;border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 28px 90px rgba(0,0,0,.3)}.suite-modal header,.suite-modal footer{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid #e4e5e1}.suite-modal footer{border-top:1px solid #e4e5e1;border-bottom:0;justify-content:flex-end}.suite-modal-body{padding:20px 22px;overflow:auto}.order-customer-card{display:grid;grid-template-columns:1fr 1.4fr;gap:12px;margin:0 0 14px}.order-customer-card>div{border:1px solid #e4e5e1;border-radius:12px;padding:12px;background:#fafbf9}.order-customer-card h3{margin:0 0 8px;font-size:13px}.order-customer-card p{margin:5px 0;color:#4f574f;font-size:12px;line-height:1.45}.order-items{display:grid;gap:8px}.order-item{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #eee;padding:8px 0}.order-status-actions{display:flex;gap:8px;flex-wrap:wrap}.suite-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}.suite-summary span{padding:8px 10px;background:#f1f2ef;border-radius:10px}.suite-danger{color:#9b1c1c}
     @media(max-width:800px){.suite-modal{inset:0;border-radius:0}.orders-toolbar{padding:11px}.orders-toolbar .search-field{min-width:100%}.orders-footer{align-items:stretch}.orders-page-actions{width:100%;justify-content:space-between}}
   `;
   document.head.appendChild(style);
@@ -62,10 +63,28 @@ function orderDate(order) {
 }
 
 function orderNumber(order) { return text(order.numero_pedido || order.numero || order.id || order.firebaseKey); }
-function orderCustomer(order) { return text(order.cliente?.nome || order.nome_cliente || order.nome || 'Cliente'); }
-function orderPhone(order) { return text(order.cliente?.telefone || order.telefone || order.whatsapp); }
+function customer(order) { return order.cliente && typeof order.cliente === 'object' ? order.cliente : {}; }
+function delivery(order) { return order.entrega || order.endereco || order.endereco_entrega || customer(order).endereco || {}; }
+function orderCustomer(order) { return text(customer(order).nome || order.nome_cliente || order.nome || order.cliente_nome || 'Cliente'); }
+function orderPhone(order) { return text(customer(order).telefoneFormatado || customer(order).telefone_formatado || customer(order).telefone || customer(order).whatsapp || order.telefoneFormatado || order.telefone || order.whatsapp || order.celular); }
+function orderEmail(order) { return text(customer(order).email || order.email); }
 function orderStatus(order) { return text(order.status_entrega || order.status_separacao || order.status || 'novo'); }
 function orderItems(order) { return Array.isArray(order.itens) ? order.itens : Array.isArray(order.produtos) ? order.produtos : []; }
+function orderTotal(order) {
+  const payment = order.pagamento && typeof order.pagamento === 'object' ? order.pagamento : {};
+  return number(order.total ?? order.valor_total ?? order.valorTotal ?? order.total_pedido ?? payment.total ?? payment.valor);
+}
+function paymentLabel(order) {
+  const payment = order.pagamento && typeof order.pagamento === 'object' ? order.pagamento : {};
+  return text(payment.forma || payment.metodo || order.forma_pagamento || order.metodo_pagamento || order.pagamento || 'Nao informado');
+}
+function addressLine(address = {}) {
+  if (typeof address === 'string') return text(address);
+  return [address.endereco_completo || address.enderecoCompleto || address.logradouro || address.rua || address.endereco, address.numero || address.casa, address.complemento, address.bairro, address.cidade, address.uf || address.estado, address.cep]
+    .map(text)
+    .filter(Boolean)
+    .join(', ');
+}
 
 class OrdersPanel {
   constructor(container) {
@@ -124,6 +143,7 @@ class OrdersPanel {
       this.page = 1;
       this.setLoading(false, `${this.orders.length} pedidos recentes`);
       this.renderRows();
+      this.syncCustomers(result.orders);
     } catch (error) {
       this.setLoading(false, 'Falha ao carregar');
       rows.innerHTML = `<tr><td colspan="6">${escapeHtml(error?.message || String(error))}</td></tr>`;
@@ -134,7 +154,7 @@ class OrdersPanel {
     const query = normalizeSearch(this.container.querySelector('[data-orders-search]').value);
     const status = normalizeSearch(this.container.querySelector('[data-orders-status]').value);
     return this.orders.filter(order => {
-      const matchesQuery = !query || normalizeSearch([orderNumber(order), orderCustomer(order), orderPhone(order), orderStatus(order)].join(' ')).includes(query);
+      const matchesQuery = !query || normalizeSearch([orderNumber(order), orderCustomer(order), orderPhone(order), orderEmail(order), addressLine(delivery(order)), orderStatus(order)].join(' ')).includes(query);
       const currentStatus = normalizeSearch(orderStatus(order));
       const matchesStatus = !status || currentStatus.includes(status) || (status === 'separacao' && currentStatus.includes('separ'));
       return matchesQuery && matchesStatus;
@@ -147,7 +167,7 @@ class OrdersPanel {
     this.page = Math.min(Math.max(1, this.page), pageCount);
     const start = (this.page - 1) * PAGE_SIZE;
     const pageRows = visible.slice(start, start + PAGE_SIZE);
-    this.container.querySelector('[data-orders-rows]').innerHTML = pageRows.length ? pageRows.map(order => `<tr><td><strong>#${escapeHtml(orderNumber(order))}</strong><small>${orderItems(order).length} item(ns)</small></td><td><strong>${escapeHtml(orderCustomer(order))}</strong><small>${escapeHtml(orderPhone(order))}</small></td><td>${escapeHtml(orderDate(order).toLocaleString('pt-BR'))}</td><td>${money(order.total || order.valor_total || 0)}</td><td><span class="badge info">${escapeHtml(orderStatus(order))}</span></td><td><button class="row-action" type="button" data-order-open="${escapeHtml(order.firebaseKey)}">Abrir</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum pedido encontrado.</td></tr>';
+    this.container.querySelector('[data-orders-rows]').innerHTML = pageRows.length ? pageRows.map(order => `<tr><td><strong>#${escapeHtml(orderNumber(order))}</strong><small>${orderItems(order).length} item(ns)</small></td><td><strong>${escapeHtml(orderCustomer(order))}</strong><small>${escapeHtml([orderPhone(order), addressLine(delivery(order))].filter(Boolean).join(' | '))}</small></td><td>${escapeHtml(orderDate(order).toLocaleString('pt-BR'))}</td><td>${money(orderTotal(order))}</td><td><span class="badge info">${escapeHtml(orderStatus(order))}</span></td><td><button class="row-action" type="button" data-order-open="${escapeHtml(order.firebaseKey)}">Abrir</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">Nenhum pedido encontrado.</td></tr>';
 
     this.container.querySelector('[data-orders-summary]').textContent = visible.length
       ? `Mostrando ${start + 1}–${Math.min(start + PAGE_SIZE, visible.length)} de ${visible.length} resultado(s) · ${this.orders.length} pedido(s) em memória`
@@ -173,6 +193,7 @@ class OrdersPanel {
       this.hasMore = result.hasMore;
       this.oldestKey = result.oldestKey || this.oldestKey;
       this.renderRows();
+      this.syncCustomers(result.orders);
       toast(`${result.orders.length} pedido(s) antigo(s) adicionados.`, 'success');
     } catch (error) {
       toast(error?.message || String(error), 'error');
@@ -182,11 +203,17 @@ class OrdersPanel {
     }
   }
 
+  syncCustomers(orders) {
+    const config = loadConfig();
+    if (!config.writeMode || !orders?.length) return;
+    syncCustomersFromOrders(config, orders).catch(error => console.warn('Clientes nao puderam ser atualizados:', error));
+  }
+
   open(order) {
     const view = modal(`Pedido #${orderNumber(order)}`, `${orderCustomer(order)} · ${orderPhone(order)}`);
-    const delivery = order.entrega || order.endereco || order.cliente?.endereco || {};
+    const deliveryInfo = delivery(order);
     const items = orderItems(order);
-    view.body.innerHTML = `<div class="suite-summary"><span>Status: ${escapeHtml(orderStatus(order))}</span><span>Total: ${money(order.total || order.valor_total || 0)}</span><span>${items.length} item(ns)</span></div><p><strong>Entrega:</strong> ${escapeHtml([delivery.logradouro || delivery.rua, delivery.numero, delivery.bairro, delivery.cidade].filter(Boolean).join(', ') || 'Não informada')}</p><p><strong>Pagamento:</strong> ${escapeHtml(order.pagamento?.forma || order.forma_pagamento || order.pagamento || 'Não informado')}</p><p><strong>Observações:</strong> ${escapeHtml(order.observacoes || order.obs || 'Nenhuma')}</p><h3>Itens</h3><div class="order-items">${items.map(item => `<div class="order-item"><span><strong>${escapeHtml(item.nome || item.produto || item.descricao || item.codigo)}</strong><small>${escapeHtml(item.codigo || item.sku || item.ean || '')}</small></span><strong>${number(item.qtd || item.quantidade || 1)} × ${money(item.price || item.preco || item.valor || 0)}</strong></div>`).join('') || '<p>Nenhum item.</p>'}</div><hr><h3>Atualizar status</h3><div class="order-status-actions"><button class="button secondary" data-order-status="separacao">Em separação</button><button class="button secondary" data-order-status="conferido">Conferido</button><button class="button primary" data-order-status="entregue">Entregue</button><button class="button ghost suite-danger" data-order-status="cancelado">Cancelado</button></div>`;
+    view.body.innerHTML = `<div class="suite-summary"><span>Status: ${escapeHtml(orderStatus(order))}</span><span>Total: ${money(orderTotal(order))}</span><span>${items.length} item(ns)</span><span>Pagamento: ${escapeHtml(paymentLabel(order))}</span></div><section class="order-customer-card"><div><h3>Cliente</h3><p><strong>${escapeHtml(orderCustomer(order))}</strong></p><p>${escapeHtml(orderPhone(order) || 'Telefone nao informado')}</p><p>${escapeHtml(orderEmail(order) || 'E-mail nao informado')}</p></div><div><h3>Entrega</h3><p>${escapeHtml(addressLine(deliveryInfo) || 'Endereco nao informado')}</p><p>${escapeHtml(deliveryInfo.referencia || deliveryInfo.ponto_referencia || order.referencia || '')}</p></div></section><p><strong>Observacoes:</strong> ${escapeHtml(order.observacoes || order.obs || 'Nenhuma')}</p><h3>Itens</h3><div class="order-items">${items.map(item => { const qty = number(item.qtd || item.quantidade || 1) || 1; const unit = number(item.price ?? item.preco ?? item.valor ?? item.preco_unitario ?? (item.subtotal ? number(item.subtotal) / qty : 0)); return `<div class="order-item"><span><strong>${escapeHtml(item.nome || item.produto || item.descricao || item.codigo)}</strong><small>${escapeHtml(item.codigo || item.sku || item.ean || '')}</small></span><strong>${qty} x ${money(unit)}</strong></div>`; }).join('') || '<p>Nenhum item.</p>'}</div><hr><h3>Atualizar status</h3><div class="order-status-actions"><button class="button secondary" data-order-status="separacao">Em separacao</button><button class="button secondary" data-order-status="conferido">Conferido</button><button class="button primary" data-order-status="entregue">Entregue</button><button class="button ghost suite-danger" data-order-status="cancelado">Cancelado</button></div>`;
     view.foot.innerHTML = '<button class="button secondary" type="button" data-print>Imprimir</button><button class="button secondary" type="button" data-close-foot>Fechar</button>';
     view.foot.querySelector('[data-close-foot]').addEventListener('click', view.close);
     view.foot.querySelector('[data-print]').addEventListener('click', () => window.print());

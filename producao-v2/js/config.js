@@ -1,6 +1,7 @@
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
   productsNode: 'produtos',
+  clientsNode: 'clientes',
   writeMode: true,
   nfeImportMode: true,
   stockWriteMode: true,

@@ -7,6 +7,7 @@ const ROUTES = Object.freeze({
   stock: ['Estoque e validade', 'Estoque baixo, vencimentos, lotes e localização.'],
   nfe: ['Entrada de NF-e', 'Leitura, conferência, cadastro completo e importação real do XML.'],
   orders: ['Pedidos', 'Lista paginada, separação, conferência e entrega.'],
+  customers: ['Clientes', 'Cadastro gerado pelos pedidos, contatos, enderecos e historico.'],
   'order-tools': ['Contingência de pedidos', 'Make, Bling, reenvios e etiquetas sem pesar a lista principal.'],
   baskets: ['Cestas básicas', 'Composição, estoque, substituições e publicação.'],
   kits: ['Kits promocionais', 'Preço, desconto, composição, IA e Instagram.'],

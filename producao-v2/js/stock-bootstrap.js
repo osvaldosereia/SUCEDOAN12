@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260727-products-inline-v1';
+const BUILD = '20260728-orders-customers-v1';
 const imports = new Map();
 
 function loadConfig() {
@@ -147,9 +147,10 @@ async function loadRouteModules(route) {
   if (route === 'products') task = importOnce('product-enhancements', ['./catalog-auto-sync.js', './product-lifecycle-bootstrap.js']);
   if (route === 'nfe') task = importOnce('nfe', ['./nfe-bootstrap.js']);
   if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);
+  if (route === 'customers') task = importOnce('customers', ['./customers-bootstrap.js']);
   if (route === 'order-tools') task = importOnce('order-tools', ['./order-tools-bootstrap.js']);
   if (route === 'baskets' || route === 'kits') task = importOnce('collections', ['./collections-bootstrap.js']);
-  if (route === 'offers' || route === 'offers-rules') task = importOnce('offers', ['./offers-bootstrap.js?admin_build=20260727-products-inline-v1']);
+  if (route === 'offers' || route === 'offers-rules') task = importOnce('offers', ['./offers-bootstrap.js']);
   if (route === 'coupons') task = importOnce('coupons', ['./coupons-bootstrap.js']);
   if (route === 'quick-purchase') task = importOnce('quick-purchase', ['./quick-purchase-bootstrap.js']);
   if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) task = importOnce('registries', ['./registries-bootstrap.js']);

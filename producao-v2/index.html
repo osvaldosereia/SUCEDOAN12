@@ -23,7 +23,7 @@
   <script type="importmap">
   {
     "imports": {
-      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260726-admin-v13-xml-editor-parity",
+      "/producao-v2/js/config.js": "/producao-v2/js/config.js?admin_build=20260728-orders-customers-v1",
       "/producao-v2/js/core/catalog.js": "/producao-v2/js/core/catalog.js?admin_build=20260726-admin-v13-xml-editor-parity",
       "/producao-v2/js/core/store.js": "/producao-v2/js/core/store.js?admin_build=20260726-admin-v13-xml-editor-parity",
       "/producao-v2/js/core/utils.js": "/producao-v2/js/core/utils.js?admin_build=20260726-admin-v13-xml-editor-parity",
@@ -59,6 +59,7 @@
         <section class="nav-group">
           <div class="nav-group-label">Vendas</div>
           <button class="nav-item" data-route="orders" type="button"><span class="nav-icon">PD</span><span>Pedidos</span></button>
+          <button class="nav-item" data-route="customers" type="button"><span class="nav-icon">CL</span><span>Clientes</span></button>
           <button class="nav-item" data-route="order-tools" type="button"><span class="nav-icon">CT</span><span>Contingência pedidos</span></button>
           <button class="nav-item" data-route="baskets" type="button"><span class="nav-icon">CB</span><span>Cestas básicas</span></button>
           <button class="nav-item" data-route="kits" type="button"><span class="nav-icon">KT</span><span>Kits promocionais</span></button>
@@ -136,6 +137,7 @@
         <section class="view route-view" data-view="stock"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">ES</span><strong>Preparando estoque e validade</strong><small>Os indicadores serão atualizados após carregar os produtos.</small></div></div></section>
         <section class="view route-view" data-view="nfe"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">NF</span><strong>Preparando entrada de NF-e</strong><small>O XML será conferido e poderá ser importado diretamente no estoque.</small></div></div></section>
         <section class="view route-view" data-view="orders"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">PD</span><strong>Preparando pedidos recentes</strong><small>A tela carrega no máximo 120 pedidos inicialmente e mostra 30 por página.</small></div></div></section>
+        <section class="view route-view" data-view="customers"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CL</span><strong>Preparando clientes</strong><small>Cadastro criado a partir dos pedidos, com contato, endereco e historico.</small></div></div></section>
         <section class="view route-view" data-view="order-tools"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CT</span><strong>Preparando contingência</strong><small>Consulta limitada a 60 pedidos e no máximo 30 linhas visíveis.</small></div></div></section>
         <section class="view route-view" data-view="baskets"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CB</span><strong>Preparando cestas básicas</strong><small>Composição, substituições, estoque e publicação.</small></div></div></section>
         <section class="view route-view" data-view="kits"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">KT</span><strong>Preparando kits promocionais</strong><small>Preço, composição, IA e fila do Instagram.</small></div></div></section>
@@ -243,8 +245,8 @@
 
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <script type="module" src="./js/app.js?admin_build=20260727-official-ux-v1"></script>
-  <script type="module" src="./js/navigation-v12.js?admin_build=20260727-offers-rules-page-v1"></script>
-  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260727-products-inline-v1"></script>
+  <script type="module" src="./js/navigation-v12.js?admin_build=20260728-orders-customers-v1"></script>
+  <script type="module" src="./js/stock-bootstrap.js?admin_build=20260728-orders-customers-v1"></script>
   <script src="./admin-ux.js?admin_build=20260727-official-ux-v1"></script>
   <script src="./js/campaign-rules-section.js?admin_build=20260727-products-inline-v1"></script>
 </body>

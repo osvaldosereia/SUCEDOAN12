@@ -50,6 +50,19 @@ function delivery(order) {
   return order.entrega || order.endereco || customer(order).endereco || {};
 }
 
+function addressLine(address = {}) {
+  if (typeof address === 'string') return text(address);
+  return [
+    address.endereco_completo || address.enderecoCompleto || address.logradouro || address.rua || address.endereco,
+    address.numero || address.casa,
+    address.complemento,
+    address.bairro,
+    address.cidade,
+    address.uf || address.estado,
+    address.cepFormatado || address.cep,
+  ].map(text).filter(Boolean).join(', ');
+}
+
 function items(order) {
   return Array.isArray(order.itens) ? order.itens : Array.isArray(order.produtos) ? order.produtos : [];
 }
@@ -76,14 +89,19 @@ function isSent(order) {
   return status.includes('enviado') || status.includes('sucesso') || status.includes('criado');
 }
 
+function orderTotal(order) {
+  const payment = order.pagamento && typeof order.pagamento === 'object' ? order.pagamento : {};
+  return number(order.total ?? order.valor_total ?? order.valorTotal ?? order.total_pedido ?? payment.total ?? payment.valor);
+}
+
 function labelHtml(order) {
   const client = customer(order);
   const address = delivery(order);
-  const phone = text(client.telefone || order.telefone || order.whatsapp);
-  const missing = items(order).filter(item => item.faltante === true || item.status === 'faltante' || item.separado === false);
-  const regular = items(order).filter(item => !missing.includes(item));
-  const rows = list => list.map(item => `<li><strong>${itemQty(item)}×</strong> ${escapeHtml(itemName(item))}</li>`).join('');
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Etiqueta ${escapeHtml(orderNumber(order))}</title><style>@page{size:100mm 150mm;margin:4mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;color:#000;width:92mm;min-height:142mm}.head{border:2px solid #000;padding:4mm;margin-bottom:3mm}.number{font-size:23pt;font-weight:900}.client{font-size:18pt;font-weight:900;margin-top:2mm}.phone{font-size:16pt;font-weight:800}.address{font-size:13pt;font-weight:700;line-height:1.25;margin-top:2mm}.meta{display:flex;gap:4mm;font-size:10pt;margin-top:2mm}.items{columns:2;column-gap:5mm;padding-left:5mm;margin:2mm 0;font-size:10.5pt}.items li{break-inside:avoid;margin:0 0 1.5mm}.missing{border-top:2px solid #000;margin-top:3mm;padding-top:2mm}.missing h2{font-size:12pt;margin:0 0 1mm}.missing ul{padding-left:5mm;font-size:10pt;margin:0}.footer{position:fixed;bottom:2mm;left:0;right:0;text-align:center;font-size:8pt}</style></head><body><section class="head"><div class="number">PEDIDO #${escapeHtml(orderNumber(order))}</div><div class="client">${escapeHtml(client.nome || order.nome_cliente || order.nome || 'CLIENTE')}</div><div class="phone">${escapeHtml(phone)}</div><div class="address">${escapeHtml([address.logradouro || address.rua, address.numero, address.complemento, address.bairro, address.cidade].filter(Boolean).join(', '))}</div><div class="meta"><span>${escapeHtml(order.agendamento || address.agendamento || '')}</span><span>${escapeHtml(order.forma_pagamento || order.pagamento?.forma || order.pagamento || '')}</span></div></section><h2 style="font-size:12pt;margin:0">PRODUTOS</h2><ol class="items">${rows(regular)}</ol>${missing.length ? `<section class="missing"><h2>FALTANTES</h2><ul>${rows(missing)}</ul></section>` : ''}<div class="footer">Dona Antônia · Conferir antes da saída</div><script>addEventListener('load',()=>setTimeout(()=>print(),180));</script></body></html>`;
+  const phone = text(client.telefoneFormatado || client.telefone_formatado || client.telefone || order.telefoneFormatado || order.telefone || order.whatsapp);
+  const payment = text(order.forma_pagamento || order.pagamento?.forma || order.pagamento || 'Nao informado');
+  const total = orderTotal(order);
+  const reference = text(address.referencia || address.ponto_referencia || order.referencia);
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Etiqueta ${escapeHtml(orderNumber(order))}</title><style>@page{size:100mm 150mm;margin:5mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;color:#000;width:90mm;min-height:140mm}.label{border:2px solid #000;padding:5mm;min-height:132mm}.brand{font-size:12pt;font-weight:900;text-align:center;border-bottom:2px solid #000;padding-bottom:3mm;margin-bottom:5mm}.number{font-size:24pt;font-weight:900}.client{font-size:18pt;font-weight:900;margin-top:5mm}.phone{font-size:16pt;font-weight:800;margin-top:2mm}.address{font-size:14pt;font-weight:800;line-height:1.25;margin-top:5mm}.ref{font-size:11pt;font-weight:700;margin-top:3mm}.meta{display:grid;gap:2mm;margin-top:6mm;font-size:13pt;font-weight:800}.footer{position:fixed;bottom:4mm;left:0;right:0;text-align:center;font-size:9pt;font-weight:700}</style></head><body><section class="label"><div class="brand">DONA ANTONIA - ENTREGA</div><div class="number">PEDIDO #${escapeHtml(orderNumber(order))}</div><div class="client">${escapeHtml(client.nome || order.nome_cliente || order.nome || 'CLIENTE')}</div><div class="phone">${escapeHtml(phone || 'Telefone nao informado')}</div><div class="address">${escapeHtml(addressLine(address) || 'Endereco nao informado')}</div>${reference ? `<div class="ref">Ref.: ${escapeHtml(reference)}</div>` : ''}<div class="meta"><span>Total: ${escapeHtml(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total))}</span><span>Pagamento: ${escapeHtml(payment)}</span></div></section><div class="footer">Sem CPF na etiqueta</div><script>addEventListener('load',()=>setTimeout(()=>print(),180));</script></body></html>`;
 }
 
 function printLabel(order) {
