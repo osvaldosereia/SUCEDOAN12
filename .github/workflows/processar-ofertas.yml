@@ -12,6 +12,7 @@ on:
     paths:
       - ".github/workflows/processar-ofertas.yml"
       - "scripts/processar-ofertas.mjs"
+      - "scripts/processar-ofertas-validade.mjs"
       - "scripts/limpar-ofertas-validade-expiradas.mjs"
       - "scripts/reconciliar-publicacao-ofertas.mjs"
       - "site/ofertas-automaticas.json"
@@ -94,14 +95,22 @@ jobs:
           set +e
           node scripts/limpar-ofertas-validade-expiradas.mjs > "$RUNNER_TEMP/ofertas-limpeza.log" 2>&1
           cleanup_code=$?
+          validity_code=99
           process_code=99
           if [ "$cleanup_code" -eq 0 ]; then
-            node scripts/processar-ofertas.mjs > "$RUNNER_TEMP/ofertas-processamento.log" 2>&1
-            process_code=$?
+            node scripts/processar-ofertas-validade.mjs > "$RUNNER_TEMP/ofertas-validade.log" 2>&1
+            validity_code=$?
+            if [ "$validity_code" -eq 0 ]; then
+              node scripts/processar-ofertas.mjs > "$RUNNER_TEMP/ofertas-processamento.log" 2>&1
+              process_code=$?
+            else
+              printf 'Campanhas por categoria nao executadas porque a validade falhou.\n' > "$RUNNER_TEMP/ofertas-processamento.log"
+            fi
           else
+            printf 'Validade nao executada porque a limpeza falhou.\n' > "$RUNNER_TEMP/ofertas-validade.log"
             printf 'Processamento não executado porque a limpeza falhou.\n' > "$RUNNER_TEMP/ofertas-processamento.log"
           fi
-          CLEANUP_CODE="$cleanup_code" PROCESS_CODE="$process_code" node --input-type=module <<'NODE'
+          CLEANUP_CODE="$cleanup_code" VALIDITY_CODE="$validity_code" PROCESS_CODE="$process_code" node --input-type=module <<'NODE'
           import { readFile, writeFile } from 'node:fs/promises';
           const tail = async file => {
             try {
@@ -112,19 +121,23 @@ jobs:
             }
           };
           const cleanupCode = Number(process.env.CLEANUP_CODE);
+          const validityCode = Number(process.env.VALIDITY_CODE);
           const processCode = Number(process.env.PROCESS_CODE);
           const status = {
-            status: cleanupCode === 0 && processCode === 0 ? 'processado' : 'erro_processamento',
+            status: cleanupCode === 0 && validityCode === 0 && processCode === 0 ? 'processado' : 'erro_processamento',
             executado_em: new Date().toISOString(),
             limpeza_codigo: cleanupCode,
+            validade_codigo: validityCode,
             processamento_codigo: processCode,
             limpeza_log: await tail(process.env.RUNNER_TEMP + '/ofertas-limpeza.log'),
+            validade_log: await tail(process.env.RUNNER_TEMP + '/ofertas-validade.log'),
             processamento_log: await tail(process.env.RUNNER_TEMP + '/ofertas-processamento.log')
           };
           await writeFile(process.env.RUNNER_TEMP + '/ofertas-engine-status.json', JSON.stringify(status, null, 2) + '\n');
           NODE
-          if [ "$cleanup_code" -ne 0 ] || [ "$process_code" -ne 0 ]; then
+          if [ "$cleanup_code" -ne 0 ] || [ "$validity_code" -ne 0 ] || [ "$process_code" -ne 0 ]; then
             cat "$RUNNER_TEMP/ofertas-limpeza.log"
+            cat "$RUNNER_TEMP/ofertas-validade.log"
             cat "$RUNNER_TEMP/ofertas-processamento.log"
             exit 1
           fi

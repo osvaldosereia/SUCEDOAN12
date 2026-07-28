@@ -20,22 +20,37 @@ function isoToday(today) {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 }
 
-function endOfOffer(validity) {
+function endOfOffer(validity, daysBefore = 2) {
   const normalized = normalizeStockDate(validity);
   if (!normalized) return '';
   const [day, month, year] = normalized.split('/').map(Number);
   const date = new Date(year, month - 1, day, 12);
-  date.setDate(date.getDate() - 2);
+  date.setDate(date.getDate() - Math.max(0, Math.floor(number(daysBefore) || 0)));
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T23:59:59-04:00`;
 }
 
-export function discountForValidityDays(days) {
-  const band = VALIDITY_DISCOUNT_BANDS.find(row => days >= row.min && days <= row.max);
+export function normalizedValidityDiscountBands(rules = VALIDITY_DISCOUNT_BANDS) {
+  const rows = Array.isArray(rules) ? rules : VALIDITY_DISCOUNT_BANDS;
+  const normalized = rows.map(row => ({
+    min: Math.max(0, Math.floor(number(row.min))),
+    max: Math.max(0, Math.floor(number(row.max))),
+    discount: Math.max(0, Math.min(90, number(row.discount))),
+  })).filter(row => row.max >= row.min && row.discount > 0);
+  return (normalized.length ? normalized : VALIDITY_DISCOUNT_BANDS)
+    .sort((a, b) => a.min - b.min || a.max - b.max);
+}
+
+export function discountForValidityDays(days, rules = VALIDITY_DISCOUNT_BANDS) {
+  const band = normalizedValidityDiscountBands(rules).find(row => days >= row.min && days <= row.max);
   return band?.discount || 0;
 }
 
+function isValidityOffer(product) {
+  return ['validade', 'validade_automatica'].includes(text(product?.oferta_origem));
+}
+
 function clearValidityOffer(next) {
-  if (text(next.oferta_origem) !== 'validade') return;
+  if (!isValidityOffer(next)) return;
   delete next.preco_oferta;
   delete next.validade_oferta;
   delete next.data_inicio_oferta;
@@ -57,26 +72,31 @@ export function planValidityOffer(product, { today = new Date() } = {}) {
   const days = daysUntilStockDate(validity, today);
   const price = round(source.preco);
   const stock = Math.max(0, number(source.estoque));
-  const manualOffer = number(source.preco_oferta) > 0 && text(source.oferta_origem) !== 'validade';
+  const manualOffer = number(source.preco_oferta) > 0 && !isValidityOffer(source);
   const next = clone(source);
   let action = 'none';
   let reason = 'Sem ação necessária';
   let discount = 0;
 
+  const options = arguments[1] || {};
+  const discountBands = normalizedValidityDiscountBands(options.validityOfferRules);
+  const blockDays = Math.max(0, Math.floor(number(options.validityOfferBlockDays ?? 2)));
+  const endDaysBefore = Math.max(0, Math.floor(number(options.validityOfferEndDaysBefore ?? 2)));
+
   if (!key) errors.push('Produto sem chave do Firebase');
   if (!validity) {
-    action = text(source.oferta_origem) === 'validade' ? 'clear' : 'none';
+    action = isValidityOffer(source) ? 'clear' : 'none';
     reason = 'Produto sem validade cadastrada';
     if (action === 'clear') clearValidityOffer(next);
   } else if (stock <= 0) {
-    action = text(source.oferta_origem) === 'validade' ? 'clear' : 'none';
+    action = isValidityOffer(source) ? 'clear' : 'none';
     reason = 'Produto sem estoque';
     if (action === 'clear') clearValidityOffer(next);
   } else if (manualOffer) {
     action = 'skip-manual';
     reason = 'Oferta manual preservada';
     warnings.push('Existe uma oferta manual; a automação não irá sobrescrevê-la');
-  } else if (days !== null && days <= 2) {
+  } else if (days !== null && days <= blockDays) {
     action = 'block-sale';
     reason = days < 0 ? 'Produto vencido' : days === 0 ? 'Produto vence hoje' : `Restam ${days} dia(s)`;
     clearValidityOffer(next);
@@ -85,7 +105,7 @@ export function planValidityOffer(product, { today = new Date() } = {}) {
     next.bloqueio_validade = true;
     next.bloqueio_validade_em = new Date().toISOString();
   } else {
-    discount = discountForValidityDays(days);
+    discount = discountForValidityDays(days, discountBands);
     if (discount > 0) {
       action = 'apply';
       reason = `${discount}% para validade em ${days} dia(s)`;
@@ -94,8 +114,8 @@ export function planValidityOffer(product, { today = new Date() } = {}) {
       if (offer <= 0 || offer >= price) errors.push('Preço de oferta calculado inválido');
       next.preco_oferta = offer;
       next.data_inicio_oferta = isoToday(today);
-      next.validade_oferta = endOfOffer(validity);
-      next.oferta_origem = 'validade';
+      next.validade_oferta = endOfOffer(validity, endDaysBefore);
+      next.oferta_origem = 'validade_automatica';
       next.desconto_validade = discount;
       if (source.bloqueio_validade) {
         next.situacao = text(source.situacao_antes_bloqueio_validade || 'A').toUpperCase();
@@ -104,7 +124,7 @@ export function planValidityOffer(product, { today = new Date() } = {}) {
         delete next.situacao_antes_bloqueio_validade;
       }
     } else {
-      action = text(source.oferta_origem) === 'validade' || source.bloqueio_validade ? 'clear' : 'none';
+      action = isValidityOffer(source) || source.bloqueio_validade ? 'clear' : 'none';
       reason = days > 105 ? 'Validade fora da janela de ofertas' : 'Sem faixa configurada';
       clearValidityOffer(next);
       if (source.bloqueio_validade) {
@@ -118,7 +138,7 @@ export function planValidityOffer(product, { today = new Date() } = {}) {
 
   const compared = [
     ['preco_oferta', 'Preço de oferta'], ['desconto_validade', 'Desconto'], ['data_inicio_oferta', 'Início'],
-    ['validade_oferta', 'Fim da oferta'], ['situacao', 'Situação'], ['bloqueio_validade', 'Bloqueio por validade'],
+    ['validade_oferta', 'Fim da oferta'], ['oferta_origem', 'Origem da oferta'], ['situacao', 'Situação'], ['bloqueio_validade', 'Bloqueio por validade'],
   ];
   compared.forEach(([field, label]) => {
     const before = source[field] ?? '';

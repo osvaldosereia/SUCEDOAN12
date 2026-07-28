@@ -153,7 +153,9 @@ export class CollectionsModule {
 
   formHtml() {
     const draft = this.draft;
+    const image = draft.imagem || PLACEHOLDER;
     return `<div class="form-grid">${this.makeTools()}
+      <section class="ux-collection-cover"><img src="${escapeHtml(image)}" onerror="this.src='${PLACEHOLDER}'" alt=""><div><strong>Imagem da oferta</strong><span>Previa media para conferir a capa antes de salvar.</span></div></section>
       <label>Nome<input data-collection-field="nome" value="${escapeHtml(draft.nome || '')}"></label>
       <label>Código<input data-collection-field="codigo" value="${escapeHtml(draft.codigo || '')}"></label>
       <label>Preço predefinido<input type="number" min="0" step="0.01" data-collection-field="preco" value="${escapeHtml(draft.preco || 0)}"></label>
@@ -179,6 +181,10 @@ export class CollectionsModule {
     let value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
     if (['preco', 'limite_kits'].includes(field)) value = number(value);
     this.draft[field] = value;
+    if (field === 'imagem') {
+      const cover = this.elements.collectionForm.querySelector('.ux-collection-cover img');
+      if (cover) cover.src = value || PLACEHOLDER;
+    }
     if (field === 'nome' && !text(this.draft.codigo)) this.draft.codigo = slug(value);
     this.elements.collectionEditorTitle.textContent = this.draft.nome || (this.type === 'kit' ? 'Novo kit' : 'Nova cesta');
     this.renderAudit();
