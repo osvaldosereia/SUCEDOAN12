@@ -1,6 +1,10 @@
 (() => {
   'use strict';
 
+  import('./kit-editor-flow-v2.js?admin_build=20260728-kit-editor-flow-v2').catch(error => {
+    console.error('Falha ao carregar o fluxo organizado de kits.', error);
+  });
+
   let refreshTimer = null;
 
   function installStyle() {
