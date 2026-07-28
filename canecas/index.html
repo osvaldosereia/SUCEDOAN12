@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#6f3f2a">
+  <title>Estúdio A4 de Artes para Canecas</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">A4</div>
+      <div><h1>Estúdio de Artes para Canecas</h1><small>2 composições por folha • PDF A4 paisagem • linhas de corte</small></div>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="openSettings">⚙ <span class="txt">Integrações</span></button>
+      <button class="btn secondary" id="saveProject">💾 <span class="txt">Salvar projeto</span></button>
+      <button class="btn" id="loadProject">↥ <span class="txt">Abrir projeto</span></button>
+      <input id="projectFile" type="file" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <main>
+    <div class="workspace">
+      <section class="stack">
+        <article class="card">
+          <div class="card-head">
+            <div class="head-title"><div class="step">1</div><div><h2>Propaganda da esquerda</h2><p>Envie um JPG ou PNG quadrado. A mesma propaganda será repetida nas duas composições.</p></div></div>
+            <span class="badge">98,2 × 98,2 mm</span>
+          </div>
+          <div class="card-body">
+            <div id="uploadZone" class="upload-zone">
+              <strong>Arraste a propaganda aqui</strong>
+              <p>Recomendado: 1500 × 1500 px ou maior, fundo branco.</p>
+              <button class="btn secondary" id="chooseLeft">Escolher imagem</button>
+              <input id="leftFile" type="file" accept="image/png,image/jpeg" hidden>
+            </div>
+            <div id="currentLeft" hidden></div>
+            <div class="section-line"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <div><strong>Biblioteca de propagandas</strong><div style="font-size:12px;color:var(--muted)">Salvas neste navegador para reutilização.</div></div>
+              <button class="btn small" id="refreshGithubAds">↻ GitHub</button>
+            </div>
+            <div id="leftLibrary" class="library"></div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div class="head-title"><div class="step">2</div><div><h2>Artes da direita geradas pela automação</h2><p>Monte dois prompts independentes. A aplicação envia um de cada vez ao webhook do Make.</p></div></div>
+            <span class="badge">1:1 • fundo branco</span>
+          </div>
+          <div class="tabs">
+            <button class="tab active" data-tab="1">Arte 1 — superior</button>
+            <button class="tab" data-tab="2">Arte 2 — inferior</button>
+          </div>
+          <div class="card-body">
+            <div class="art-panel active" data-panel="1"></div>
+            <div class="art-panel" data-panel="2"></div>
+            <div class="section-line"></div>
+            <div class="button-row">
+              <button class="btn primary" id="generateBoth">✨ Gerar as 2 artes</button>
+              <button class="btn secondary" id="copyArt1">Duplicar campos 1 → 2</button>
+              <button class="btn" id="randomBoth">🎲 Sugerir conceitos</button>
+            </div>
+            <div class="notice"><strong>Retorno recomendado do Make</strong>Configure o módulo final “Webhook response” para devolver JSON com <code>image_base64</code> ou <code>image_url</code>. Para URL, a origem precisa permitir CORS.</div>
+          </div>
+        </article>
+      </section>
+
+      <aside class="card sticky">
+        <div class="card-head">
+          <div class="head-title"><div class="step">3</div><div><h2>Montagem final</h2><p>Gabarito A4 paisagem baseado no PDF de referência, com duas artes e marcas de corte.</p></div></div>
+          <span class="badge">297 × 210 mm</span>
+        </div>
+        <div class="preview-wrap"><canvas id="previewCanvas" width="1123" height="794" aria-label="Prévia da folha A4"></canvas><div class="ruler"><span>A4 paisagem</span><span>prévia proporcional</span><span>PDF 300 dpi</span></div></div>
+        <div class="card-body" style="padding-top:15px;padding-bottom:15px">
+          <div id="readyStatus" class="status">Aguardando propaganda e duas artes.</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <div><strong>Ajuste fino de tamanho das 4 artes</strong><div style="font-size:12px;color:var(--muted)">Cada arte permanece centralizada no seu espaço original.</div></div>
+            <button class="btn small" id="resetSizes">↺ Resetar tamanhos</button>
+          </div>
+          <div class="resize-grid">
+            <div class="resize-card">
+              <strong>Propaganda superior esquerda</strong>
+              <div class="resize-controls">
+                <input id="scale-leftTop" type="range" min="40" max="160" step="1" value="100">
+                <input id="scale-leftTop-number" type="number" min="40" max="160" step="1" value="100">
+              </div>
+              <div class="resize-tip">Escala em % do tamanho original</div>
+            </div>
+            <div class="resize-card">
+              <strong>Arte superior direita</strong>
+              <div class="resize-controls">
+                <input id="scale-rightTop" type="range" min="40" max="160" step="1" value="100">
+                <input id="scale-rightTop-number" type="number" min="40" max="160" step="1" value="100">
+              </div>
+              <div class="resize-tip">Escala em % do tamanho original</div>
+            </div>
+            <div class="resize-card">
+              <strong>Propaganda inferior esquerda</strong>
+              <div class="resize-controls">
+                <input id="scale-leftBottom" type="range" min="40" max="160" step="1" value="100">
+                <input id="scale-leftBottom-number" type="number" min="40" max="160" step="1" value="100">
+              </div>
+              <div class="resize-tip">Escala em % do tamanho original</div>
+            </div>
+            <div class="resize-card">
+              <strong>Arte inferior direita</strong>
+              <div class="resize-controls">
+                <input id="scale-rightBottom" type="range" min="40" max="160" step="1" value="100">
+                <input id="scale-rightBottom-number" type="number" min="40" max="160" step="1" value="100">
+              </div>
+              <div class="resize-tip">Escala em % do tamanho original</div>
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" id="autoGithub"><span>Salvar automaticamente as imagens no GitHub após upload/geração.</span></label>
+          <div class="notice"><strong>Ao imprimir</strong>Escolha “Tamanho real” ou escala 100%, margens “Nenhuma” e desative cabeçalhos/rodapés do navegador.</div>
+        </div>
+        <div class="final-actions">
+          <button class="btn ok" id="downloadPdf">⬇ Baixar PDF</button>
+          <button class="btn primary" id="printNow">🖨 Imprimir agora</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<dialog id="settingsDialog">
+  <div class="dialog-head"><div><h2>Integrações</h2><div style="color:var(--muted);font-size:12px">Webhook do Make e salvamento no repositório.</div></div><button class="close-x" data-close>×</button></div>
+  <div class="dialog-body">
+    <div class="grid2">
+      <label class="field" style="grid-column:1/-1">Webhook do Make<input id="setWebhook" type="url" placeholder="https://hook.us1.make.com/..."><span class="help">O webhook recebe POST form-urlencoded, com o JSON no campo payload, e responde com a imagem.</span></label>
+      <label class="field">Proprietário do GitHub<input id="setOwner" type="text" value="osvaldosereia"></label>
+      <label class="field">Repositório<input id="setRepo" type="text" value="SUCEDOAN12"></label>
+      <label class="field">Branch<input id="setBranch" type="text" value="main"></label>
+      <label class="field">Pasta base<input id="setFolder" type="text" value="canecas/imagens"></label>
+      <label class="field" style="grid-column:1/-1">Token do GitHub<input id="setToken" type="password" autocomplete="off" placeholder="github_pat_..."><span class="help">Fica somente nesta aba do navegador. Não é gravado no HTML nem no armazenamento permanente.</span></label>
+    </div>
+    <div class="notice"><strong>Permissão do token</strong>Use um token de acesso refinado com permissão de leitura e gravação em “Contents” somente no repositório SUCEDOAN12.</div>
+    <div class="section-line"></div>
+    <details>
+      <summary>JSON transportado no campo payload</summary>
+      <pre class="prompt-box" style="margin-top:10px">{
+  "action": "generate_mug_art",
+  "slot": 1,
+  "prompt": "...",
+  "output": { "aspect_ratio": "1:1", "background": "white" },
+  "storage": { "folder": "canecas/imagens/artes-geradas/AAAA-MM-DD" }
+}</pre>
+    </details>
+    <details style="margin-top:10px">
+      <summary>Formatos de resposta aceitos</summary>
+      <pre class="prompt-box" style="margin-top:10px">{ "image_base64": "iVBORw0..." }
+{ "image_url": "https://.../arte.png" }
+{ "data": [{ "b64_json": "..." }] }
+{ "data": [{ "url": "https://..." }] }</pre>
+    </details>
+  </div>
+  <div class="dialog-foot"><button class="btn" data-close>Cancelar</button><button class="btn primary" id="saveSettings">Salvar configurações</button></div>
+</dialog>
+
+<div id="printRoot" aria-hidden="true"></div>
+<div class="toast-area" id="toastArea"></div>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
