@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-07-28T01:02:31.706Z",
+  "checkedAt": "2026-07-28T01:16:56.950Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
-      "ok": true,
-      "detail": "Admin V2 v13.1 validado: 17 abas, 64 arquivos JavaScript, imports e ciclo dos kits confirmados."
+      "ok": false,
+      "detail": "Admin V2 v13.1: 1 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 1 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\n"
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
@@ -56,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 121 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 162 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 179 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 146 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785200481582 · público 1524 · admin 1524"
+      "detail": "catalog-1785201346516 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -96,6 +96,11 @@
   ],
   "errors": [
     {
+      "name": "Todas as 18 abas passam no teste estrutural",
+      "ok": false,
+      "detail": "Admin V2 v13.1: 1 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 1 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\n"
+    },
+    {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": false,
       "detail": "Conteúdo ausente: 20260725-admin-v12-fix-abas2"
@@ -124,9 +129,9 @@
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30318902700",
+    "runId": "30319613278",
     "attempt": "1",
-    "sourceSha": "550c6f1a5fd34e43270fafbb10bc92cdbde09689",
-    "publishedAt": "2026-07-28T01:03:05.663Z"
+    "sourceSha": "a61875b5087d8f8ecc3699370b2b3f1880c07c7f",
+    "publishedAt": "2026-07-28T01:17:30.858Z"
   }
 }
