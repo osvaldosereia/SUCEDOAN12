@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-07-28T02:00:28.312Z",
+  "checkedAt": "2026-07-28T02:16:12.491Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": false,
-      "detail": "Admin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\n2. O carregador das abas está com uma build diferente do HTML.\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\n2. O carregador das abas está com uma build diferente do HTML.\n"
+      "detail": "Admin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 19.\n2. O carregador das abas está com uma build diferente do HTML.\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 19.\n2. O carregador das abas está com uma build diferente do HTML.\n"
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
@@ -56,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 186 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 183 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 194 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 206 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1785203767449 · público 0 · admin 0"
+      "ok": true,
+      "detail": "catalog-1785204907309 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,19 +86,19 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "1229 oferta(s) no histórico"
+      "detail": "1241 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": false,
-      "detail": "Admin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\n2. O carregador das abas está com uma build diferente do HTML.\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 18.\n2. O carregador das abas está com uma build diferente do HTML.\n"
+      "detail": "Admin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 19.\n2. O carregador das abas está com uma build diferente do HTML.\nCommand failed: /opt/hostedtoolcache/node/22.23.1/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 2 falha(s).\n1. A barra lateral deve ter exatamente 17 rotas únicas; encontrou 19.\n2. O carregador das abas está com uma build diferente do HTML.\n"
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
@@ -124,19 +124,14 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1785203767449 · público 0 · admin 0"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30321677418",
+    "runId": "30322437301",
     "attempt": "1",
-    "sourceSha": "431de3364aa6263fd2a3fd6cb1042d1631fa551b",
-    "publishedAt": "2026-07-28T02:01:03.309Z"
+    "sourceSha": "283600636881d2696557af6cca0bbd7ee6bc001e",
+    "publishedAt": "2026-07-28T02:16:47.450Z"
   }
 }
