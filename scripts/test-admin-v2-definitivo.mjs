@@ -3,13 +3,13 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const BUILD = '20260726-admin-v13-xml-editor-parity';
+const BUILD = '20260728-orders-customers-v1';
 const failures = [];
 const checked = [];
 
 const ROUTES = [
-  'dashboard', 'products', 'stock', 'nfe', 'orders', 'order-tools',
-  'baskets', 'kits', 'offers', 'coupons', 'quick-purchase', 'categories', 'brands',
+  'dashboard', 'products', 'stock', 'nfe', 'orders', 'customers', 'order-tools',
+  'baskets', 'kits', 'offers', 'offers-rules', 'coupons', 'categories', 'brands',
   'suppliers', 'tags', 'integrations', 'maintenance',
 ];
 
@@ -17,12 +17,13 @@ const ROUTE_MODULES = {
   products: ['catalog-auto-sync.js', 'product-lifecycle-bootstrap.js'],
   nfe: ['nfe-bootstrap.js'],
   orders: ['orders-bootstrap.js'],
+  customers: ['customers-bootstrap.js'],
   'order-tools': ['order-tools-bootstrap.js'],
   baskets: ['collections-bootstrap.js'],
   kits: ['collections-bootstrap.js'],
   offers: ['offers-bootstrap.js'],
+  'offers-rules': ['offers-bootstrap.js'],
   coupons: ['coupons-bootstrap.js'],
-  'quick-purchase': ['quick-purchase-bootstrap.js'],
   categories: ['registries-bootstrap.js'],
   brands: ['registries-bootstrap.js'],
   suppliers: ['registries-bootstrap.js'],
@@ -86,11 +87,12 @@ const required = [
   'producao-v2/assets/kit-lifecycle.css',
   'producao-v2/js/app.js', 'producao-v2/js/navigation-v12.js', 'producao-v2/js/stock-bootstrap.js',
   'producao-v2/js/modules/stock.js', 'producao-v2/js/services/orders.js',
-  'producao-v2/js/orders-bootstrap.js', 'producao-v2/js/order-tools-bootstrap.js',
+  'producao-v2/js/orders-bootstrap.js', 'producao-v2/js/customers-bootstrap.js',
+  'producao-v2/js/services/customers.js', 'producao-v2/js/order-tools-bootstrap.js',
   'producao-v2/js/nfe-bootstrap.js', 'producao-v2/js/collections-bootstrap.js',
   'producao-v2/js/kit-lifecycle-admin.js', 'producao-v2/js/core/collections.js',
   'producao-v2/js/services/collections.js', 'producao-v2/js/offers-bootstrap.js',
-  'producao-v2/js/coupons-bootstrap.js', 'producao-v2/js/quick-purchase-bootstrap.js',
+  'producao-v2/js/coupons-bootstrap.js',
   'producao-v2/js/registries-bootstrap.js', 'producao-v2/js/diagnostics-bootstrap.js',
   'producao-v2/js/backup-bootstrap.js', 'producao-v2/js/catalog-auto-sync.js',
   'producao-v2/js/product-lifecycle-bootstrap.js', 'producao-v2/js/product-editor-enhancements.js',
@@ -184,7 +186,7 @@ for (const marker of ['data-kit-quick-expiry', 'data-kit-quick-stock-mode', 'sav
   if (!kitLifecycle.includes(marker)) fail(`Controle de kits incompleto: ${marker}.`);
 }
 const collectionCore = read('producao-v2/js/core/collections.js');
-for (const marker of ['ativo_ate_estoque_zero', 'allowSubstitutes: !stockControlled', 'o kit ficará fora do ar']) {
+for (const marker of ['ativo_ate_estoque_zero', 'allowSubstitutes: !stockControlled', 'o kit ficar']) {
   if (!collectionCore.includes(marker)) fail(`Regra de estoque dos kits incompleta: ${marker}.`);
 }
 

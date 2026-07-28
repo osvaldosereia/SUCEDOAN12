@@ -14,7 +14,6 @@ const ROUTES = Object.freeze({
   offers: ['Ofertas automáticas', 'Regras por validade, simulação e aplicação segura.'],
   'offers-rules': ['Ofertas por regra', 'Campanhas automáticas por categoria.'],
   coupons: ['Cupons', 'Criação, edição, validade e publicação no checkout.'],
-  'quick-purchase': ['Compra Rápida', 'Seções, itens e opções do fluxo rápido.'],
   categories: ['Categorias', 'Categorias, subcategorias e padronização em lote.'],
   brands: ['Marcas', 'Marcas usadas pelos produtos e suas variações.'],
   suppliers: ['Fornecedores', 'Fornecedores cadastrados e padronização.'],

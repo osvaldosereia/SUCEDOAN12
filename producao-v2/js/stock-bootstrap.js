@@ -152,7 +152,6 @@ async function loadRouteModules(route) {
   if (route === 'baskets' || route === 'kits') task = importOnce('collections', ['./collections-bootstrap.js']);
   if (route === 'offers' || route === 'offers-rules') task = importOnce('offers', ['./offers-bootstrap.js']);
   if (route === 'coupons') task = importOnce('coupons', ['./coupons-bootstrap.js']);
-  if (route === 'quick-purchase') task = importOnce('quick-purchase', ['./quick-purchase-bootstrap.js']);
   if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) task = importOnce('registries', ['./registries-bootstrap.js']);
   if (route === 'integrations') task = importOnce('diagnostics', ['./diagnostics-bootstrap.js']);
   if (route === 'maintenance') task = Promise.all([
