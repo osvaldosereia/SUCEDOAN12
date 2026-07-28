@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-28T01:43:56.615Z",
+  "ultima_execucao": "2026-07-28T01:52:10.423Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -16,6 +16,20 @@
       "inicio": "2026-07-27",
       "fim": "2026-07-30T23:59:59-04:00",
       "historico_id": "oferta-1775971741043-1785203036615-pi504"
+    },
+    {
+      "produto_key": "1775971741044",
+      "codigo": "547849",
+      "nome": "Bala de Gelatina Fini 15g Azedinhos Morango e Nata",
+      "categoria": "BALAS E CHICLETES",
+      "regra_id": "regra-1785202804573",
+      "origem": "campanha_automatica",
+      "preco_normal": 1.69,
+      "preco_oferta": 1.52,
+      "desconto_percentual": 10.06,
+      "inicio": "2026-07-27",
+      "fim": "2026-07-30T23:59:59-04:00",
+      "historico_id": "oferta-1775971741044-1785203530423-2jjem"
     },
     {
       "produto_key": "1776338124227",
@@ -88,6 +102,34 @@
       "historico_id": "oferta-1776338130542-1785203036615-ct51c"
     },
     {
+      "produto_key": "1776338131012",
+      "codigo": "P325",
+      "nome": "Cremer Fralda G 24un",
+      "categoria": "BEBÊ",
+      "regra_id": "regra-1785202788822",
+      "origem": "campanha_automatica",
+      "preco_normal": 26.9,
+      "preco_oferta": 25.1,
+      "desconto_percentual": 6.69,
+      "inicio": "2026-07-27",
+      "fim": "2026-07-30T23:59:59-04:00",
+      "historico_id": "oferta-1776338131012-1785203530423-c9c7d"
+    },
+    {
+      "produto_key": "1776708427490",
+      "codigo": "08427490",
+      "nome": "Seda Máscara de Tratamento Luminous UV 6% Glycol e Vita C Complex 300g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 23.9,
+      "preco_oferta": 21.51,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-27",
+      "fim": "2026-08-03T23:59:59-04:00",
+      "historico_id": "oferta-1776708427490-1785203530423-d629v"
+    },
+    {
       "produto_key": "1776708559941",
       "codigo": "08559941",
       "nome": "Seda Máscara de Tratamento Liso Perfeito 300g",
@@ -113,7 +155,7 @@
       "desconto_percentual": 10,
       "inicio": "2026-07-27",
       "fim": "2026-08-03T23:59:59-04:00",
-      "historico_id": "oferta-1776708574408-1785202979003-8qvj1"
+      "historico_id": "oferta-1776708574408-1785202979003-z5dcy"
     },
     {
       "produto_key": "1776708576223",
@@ -127,7 +169,7 @@
       "desconto_percentual": 10,
       "inicio": "2026-07-27",
       "fim": "2026-08-03T23:59:59-04:00",
-      "historico_id": "oferta-1776708576223-1785202979003-cdd7z"
+      "historico_id": "oferta-1776708576223-1785202979003-sz873"
     },
     {
       "produto_key": "1776710347231",
@@ -141,7 +183,7 @@
       "desconto_percentual": 10,
       "inicio": "2026-07-27",
       "fim": "2026-08-03T23:59:59-04:00",
-      "historico_id": "oferta-1776710347231-1785202979003-w05wu"
+      "historico_id": "oferta-1776710347231-1785202979003-cc7fd"
     },
     {
       "produto_key": "177973081230101494",
@@ -390,8 +432,8 @@
       "regra_id": "regra-bolachas-e-biscoitos-1784035596871"
     },
     "1776338131012": {
-      "ultima_oferta_em": "2026-07-15T04:58:40.313Z",
-      "regra_id": "regra-bebe-1784035600990"
+      "ultima_oferta_em": "2026-07-28T01:52:10.423Z",
+      "regra_id": "regra-1785202788822"
     },
     "P-SVVW": {
       "ultima_oferta_em": "2026-07-25T18:55:36.080Z",
@@ -598,8 +640,8 @@
       "regra_id": "regra-1785202804573"
     },
     "1775971741044": {
-      "ultima_oferta_em": "2026-07-25T02:07:38.592Z",
-      "regra_id": "regra-balas-e-chicletes-1784035604521"
+      "ultima_oferta_em": "2026-07-28T01:52:10.423Z",
+      "regra_id": "regra-1785202804573"
     },
     "1776338132530": {
       "ultima_oferta_em": "2026-07-27T04:10:52.086Z",
@@ -4484,6 +4526,10 @@
     "1776708559941": {
       "ultima_oferta_em": "2026-07-28T01:43:56.615Z",
       "regra_id": "regra-1785202557027"
+    },
+    "1776708427490": {
+      "ultima_oferta_em": "2026-07-28T01:52:10.423Z",
+      "regra_id": "regra-1785202557027"
     }
   },
   "execucoes": [
@@ -5988,6 +6034,23 @@
     {
       "id": "github-1785203036014",
       "executado_em": "2026-07-28T01:43:56.615Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 3,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 0,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "2026-07-28T01:51:26Z",
+      "executado_em": "2026-07-28T01:52:10.423Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
