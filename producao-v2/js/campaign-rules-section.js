@@ -19,7 +19,7 @@
       }
       #campaignOffersPanel.rules-section-page[hidden]{display:none!important}
       #campaignOffersPanel.rules-section-page .campaign-toolbar{
-        align-items:center;
+        align-items:flex-start;
         padding-bottom:16px;
       }
       #campaignOffersPanel.rules-section-page .campaign-toolbar h3{
@@ -57,6 +57,35 @@
       }
       #campaignOffersPanel.rules-section-page .campaign-sources{
         display:none;
+      }
+      #campaignOffersPanel.rules-section-page .campaign-toolbar-actions{
+        display:grid!important;
+        grid-template-columns:repeat(2,minmax(170px,1fr));
+        gap:8px;
+        min-width:min(520px,45vw);
+      }
+      #campaignOffersPanel.rules-section-page .campaign-toolbar-actions .button{
+        min-height:44px;
+        justify-content:center;
+      }
+      #campaignOffersPanel.rules-section-page .campaign-toolbar-actions [data-campaign-run]{
+        grid-column:1/-1;
+      }
+      #campaignOffersPanel.rules-section-page .campaign-toolbar-actions [data-campaign-reconcile]{
+        border-color:#d8c891;
+        background:#fffaf0;
+        color:#8a650d;
+      }
+      #campaignOffersPanel.rules-section-page .rules-guide.rules-guide-didactic{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+      }
+      #campaignOffersPanel.rules-section-page .rules-guide article.is-primary{
+        border-color:#c9ddb9;
+        background:#f5fbf1;
+      }
+      #campaignOffersPanel.rules-section-page .rules-guide article.is-danger{
+        border-color:#efc9c5;
+        background:#fff5f4;
       }
       #campaignOffersPanel.rules-section-page .rules-cancel-notice{
         display:grid;
@@ -135,31 +164,48 @@
     if (eyebrow) eyebrow.textContent = 'Automacao de ofertas';
     if (title) title.textContent = 'Ofertas automaticas por regras';
     if (description) {
-      description.textContent = 'Crie regras por categoria para a automacao gerar ofertas, alternar produtos e respeitar ofertas manuais.';
+      description.textContent = 'Fluxo simples: salve as regras, simule sem alterar nada e aplique quando estiver pronto. Recarregar e corrigir divergencia sao apenas apoio.';
     }
 
-    renameButton(toolbar, '[data-campaign-reload]', 'Atualizar dados');
-    renameButton(toolbar, '[data-campaign-reconcile]', 'Sincronizar estado');
-    renameButton(toolbar, '[data-campaign-run]', 'Processar agora');
+    renameButton(toolbar, '[data-campaign-reload]', 'Recarregar painel');
+    renameButton(toolbar, '[data-campaign-simulate]', 'Simular sem alterar');
+    renameButton(toolbar, '[data-campaign-reconcile]', 'Corrigir divergencia');
+    renameButton(toolbar, '[data-campaign-run]', 'Aplicar agora');
     renameButton(panel, '[data-campaign-save-settings]', 'Salvar regras');
     renameButton(panel, '[data-campaign-use-test-branch]', 'Testar em homologacao');
+    const actionHelp = [
+      ['[data-campaign-reload]', 'Atualiza a tela com os dados mais recentes do GitHub e Firebase. Nao altera produtos.'],
+      ['[data-campaign-simulate]', 'Testa as regras e mostra produtos elegiveis. Nao salva e nao muda precos.'],
+      ['[data-campaign-reconcile]', 'Uso raro: corrige diferenca entre estado salvo e ofertas reais no Firebase.'],
+      ['[data-campaign-run]', 'Executa de verdade: cria ofertas, encerra regras canceladas e publica o catalogo.'],
+      ['[data-campaign-save-settings]', 'Salva regras e configuracoes no GitHub. Nao mexe nos produtos ate processar.'],
+    ];
+    actionHelp.forEach(([selector, title]) => {
+      const button = panel.querySelector(selector);
+      if (button) button.title = title;
+    });
     panel.querySelectorAll('[data-campaign-cancel]').forEach(button => {
       button.textContent = 'Cancelar regra e ofertas';
       button.classList.add('danger-action');
       button.title = 'Ao salvar e processar, todas as ofertas ativas criadas por esta regra serao encerradas.';
     });
 
-    if (!panel.querySelector('.rules-guide')) {
-      const guide = document.createElement('section');
-      guide.className = 'rules-guide';
-      guide.innerHTML = `
-        <article><strong>1. Regra</strong><span>Escolha categoria, desconto, duracao e quantidade por rodada.</span></article>
-        <article><strong>2. Simular</strong><span>Confira os produtos elegiveis antes de salvar ou processar.</span></article>
-        <article><strong>3. Processar</strong><span>Execute a automacao quando as regras estiverem revisadas.</span></article>
-      `;
+    let guide = panel.querySelector('.rules-guide');
+    if (!guide) {
+      guide = document.createElement('section');
+      guide.className = 'rules-guide rules-guide-didactic';
       toolbar.insertAdjacentElement('afterend', guide);
     }
-
+    if (!guide.dataset.didacticReady) {
+      guide.dataset.didacticReady = '1';
+      guide.className = 'rules-guide rules-guide-didactic';
+      guide.innerHTML = `
+        <article><strong>1. Salvar regras</strong><span>Grava categoria, desconto, quantidade e cancelamentos no GitHub. Ainda nao muda produto.</span></article>
+        <article><strong>2. Simular sem alterar</strong><span>Mostra o que aconteceria se processar agora. Seguro para conferir antes.</span></article>
+        <article class="is-primary"><strong>3. Aplicar agora</strong><span>Roda a automacao oficial. Aqui as ofertas entram, saem ou sao canceladas.</span></article>
+        <article class="is-danger"><strong>Cancelar regra</strong><span>Marca a regra para parar e encerrar as ofertas criadas por ela no proximo processamento.</span></article>
+      `;
+    }
     if (!panel.querySelector('.rules-cancel-notice')) {
       const notice = document.createElement('section');
       notice.className = 'rules-cancel-notice';
