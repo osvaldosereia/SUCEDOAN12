@@ -1,0 +1,163 @@
+    lib.innerHTML=items.map(x=>`<div class="library-item"><img src="${x.dataUrl || x.downloadUrl}" alt=""><div class="name" title="${escapeAttr(x.name)}">${escapeHtml(x.name)}</div><div class="lib-actions"><button class="use" data-use="${x.id}">Usar</button>${x.remote?'<button class="use" data-remote="'+x.id+'">Baixar</button>':'<button class="delete" data-del="'+x.id+'">Excluir</button>'}</div></div>`).join('');
+    items.forEach(item=>{
+      const use=$(`[data-use="${item.id}"]`,lib); if(use) use.onclick=async()=>{try{let selected=item;if(item.remote){const d=await fetchImageDataUrl(item.downloadUrl);const n=await normalizeSquare(d);selected={id:crypto.randomUUID(),name:item.name,dataUrl:n.dataUrl,width:n.width,height:n.height,createdAt:new Date().toISOString(),source:'github',githubPath:item.githubPath};await dbPut(selected)}state.left=selected;await renderLeftCurrent();drawPreview();updateReady();toast('Propaganda aplicada.','ok')}catch(e){toast(e.message,'error')}};
+      const del=$(`[data-del="${item.id}"]`,lib); if(del) del.onclick=async()=>{if(confirm('Excluir esta propaganda da biblioteca local?')){await dbDelete(item.id);if(state.left?.id===item.id)state.left=null;renderLibrary();renderLeftCurrent();drawPreview();updateReady()}};
+      const remote=$(`[data-remote="${item.id}"]`,lib); if(remote) remote.onclick=use.onclick;
+    });
+  }
+
+  function getArtConfig(slot){
+    return {
+      phrase:$(`#a${slot}Phrase`).value.trim(), theme:$(`#a${slot}Theme`).value, audience:$(`#a${slot}Audience`).value,
+      style:$(`#a${slot}Style`).value,palette:$(`#a${slot}Palette`).value,mood:$(`#a${slot}Mood`).value,
+      amount:$(`#a${slot}Amount`).value,element:$(`#a${slot}Element`).value.trim(),extra:$(`#a${slot}Extra`).value.trim(),
+      exact:$(`#a${slot}Exact`).checked,white:$(`#a${slot}White`).checked,noMockup:$(`#a${slot}NoMockup`).checked,highRes:$(`#a${slot}HighRes`).checked
+    };
+  }
+
+  function setArtConfig(slot,c){
+    for(const [k,v] of Object.entries(c)){
+      const el=$(`#a${slot}${k[0].toUpperCase()+k.slice(1)}`); if(!el)continue;
+      if(el.type==='checkbox')el.checked=!!v;else el.value=v;
+    }
+    refreshPrompt(slot);
+  }
+
+  function buildPrompt(slot){
+    const c=getArtConfig(slot); const variation=slot===1
+      ? 'Crie uma composição central, equilibrada, com leitura imediata e elementos distribuídos ao redor da frase.'
+      : 'Crie uma segunda composição claramente diferente da primeira, usando outra hierarquia, outra distribuição e outra moldura visual.';
+    return [
+      'Crie UMA ARTE GRÁFICA QUADRADA para impressão por sublimação em caneca branca de 11 oz.',
+      'Entregue somente a arte plana em proporção 1:1, pronta para impressão, sem apresentar caneca, mockup, cenário, mãos ou objetos externos.',
+      `Tema: ${c.theme}. Público-alvo: ${c.audience}. Clima: ${c.mood}.`,
+      `Estilo visual: ${c.style}. Paleta: ${c.palette}.`,
+      `Quantidade de recursos decorativos: ${c.amount}.`,
+      c.element ? `Elemento visual principal sugerido: ${c.element}.` : 'Escolha elementos visuais coerentes com o conceito, sem poluir a composição.',
+      c.phrase ? `Frase obrigatória em português: “${c.phrase}”.` : 'Crie uma frase curta, positiva e original em português, adequada ao tema.',
+      c.exact && c.phrase ? 'Escreva a frase exatamente como fornecida, com ortografia correta, sem acrescentar qualquer outra palavra, assinatura, versículo ou legenda.' : '',
+      c.white ? 'Use fundo branco puro (#FFFFFF), opaco, sem transparência, sem textura cobrindo toda a área e sem bordas cinzas.' : '',
+      c.noMockup ? 'Não desenhe caneca, produto, embalagem, ambiente, fotografia de apresentação ou mockup.' : '',
+      c.highRes ? 'Gere em alta resolução, com contornos limpos, detalhes nítidos e qualidade adequada para impressão a 300 dpi.' : '',
+      'Mantenha margem de segurança visual: nenhum texto importante deve encostar nas bordas. Centralize a leitura e preserve bastante espaço branco.',
+      'Não use logotipos, marcas, assinaturas, marcas-d’água nem texto pequeno ilegível.',
+      variation,
+      c.extra ? `Instruções adicionais: ${c.extra}` : ''
+    ].filter(Boolean).join('\n');
+  }
+
+  function refreshPrompt(slot){ $(`#prompt${slot}`).textContent=buildPrompt(slot) }
+
+  function randomize(slot){
+    const pick=a=>a[Math.floor(Math.random()*a.length)];
+    $(`#a${slot}Phrase`).value=pick(phraseIdeas);$(`#a${slot}Theme`).value=pick(themeOptions);$(`#a${slot}Style`).value=pick(styleOptions);$(`#a${slot}Palette`).value=pick(paletteOptions);$(`#a${slot}Mood`).value=pick(moodOptions);
+    const elems=['flores do campo e folhas finas','borboletas e pequenos corações','ramos botânicos delicados','sol, estrelas e linhas orgânicas','xícara de café estilizada e flores','fitas, flores e pequenos brilhos'];
+    $(`#a${slot}Element`).value=pick(elems);refreshPrompt(slot);
+  }
+
+  async function generateArt(slot){
+    const webhook=state.settings.webhook.trim();if(!webhook)throw new Error('Configure o webhook do Make em Integrações.');
+    const promptText=buildPrompt(slot);refreshPrompt(slot);setArtStatus(slot,'Enviando ao Make...','loading');
+    const payload={
+      action:'generate_mug_art',request_id:crypto.randomUUID(),slot,prompt:promptText,
+      output:{aspect_ratio:'1:1',background:'white',format:'png',minimum_recommended:'1536x1536'},
+      project:{repository:`${state.settings.owner}/${state.settings.repo}`,branch:state.settings.branch},
+      storage:{folder:`${cleanPath(state.settings.folder)}/artes-geradas/${today()}`},
+      art_config:getArtConfig(slot)
+    };
+    let response;
+    const formBody=new URLSearchParams();formBody.set('payload',JSON.stringify(payload));
+    try{response=await fetch(webhook,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:formBody.toString()})}catch(e){setArtStatus(slot,'Falha de conexão/CORS.','error');throw new Error('Não foi possível acessar o webhook. Verifique a URL e o CORS do Webhook response.')}
+    if(!response.ok){const t=await response.text().catch(()=> '');setArtStatus(slot,`Erro HTTP ${response.status}.`,'error');throw new Error(`Make respondeu HTTP ${response.status}${t?': '+t.slice(0,180):''}`)}
+    let dataUrl; const type=response.headers.get('content-type')||'';
+    if(type.startsWith('image/')) dataUrl=await blobToDataURL(await response.blob());
+    else {const text=await response.text();let data;try{data=JSON.parse(text)}catch{data=text}dataUrl=await extractImageFromResponse(data)}
+    const norm=await normalizeSquare(dataUrl,2048);
+    state.right[slot]={id:crypto.randomUUID(),name:`arte-${slot}-${slug(getArtConfig(slot).phrase||getArtConfig(slot).theme)}`,dataUrl:norm.dataUrl,width:norm.width,height:norm.height,createdAt:new Date().toISOString(),prompt:promptText};
+    renderArtResult(slot);drawPreview();updateReady();setArtStatus(slot,`Arte pronta • origem ${norm.width} × ${norm.height} px`,'ok');
+    if($('#autoGithub').checked){try{await uploadAssetToGithub(state.right[slot],'artes-geradas',slot);setArtStatus(slot,'Arte pronta e salva no GitHub.','ok')}catch(e){toast(e.message,'error')}}
+    return state.right[slot];
+  }
+
+  async function extractImageFromResponse(data){
+    const seen=new Set();
+    function find(v){
+      if(v==null)return null;
+      if(typeof v==='string'){
+        const s=v.trim();
+        if(/^data:image\//i.test(s)||/^https?:\/\//i.test(s))return s;
+        if(s.length>500 && /^[A-Za-z0-9+/=\r\n]+$/.test(s))return `data:image/png;base64,${s.replace(/\s/g,'')}`;
+        return null;
+      }
+      if(typeof v!=='object'||seen.has(v))return null;seen.add(v);
+      const priority=['image_base64','imageBase64','b64_json','base64','dataUrl','data_url','image_url','imageUrl','output_url','url','image'];
+      for(const k of priority)if(k in v){const r=find(v[k]);if(r)return r}
+      for(const val of Object.values(v)){const r=find(val);if(r)return r}
+      return null;
+    }
+    const found=find(data);if(!found)throw new Error('O Make respondeu, mas não encontrei image_base64, b64_json ou image_url.');
+    return found.startsWith('http')?fetchImageDataUrl(found):found;
+  }
+
+  async function fetchImageDataUrl(url){
+    let r;try{r=await fetch(url)}catch{throw new Error('A URL da imagem não permite leitura pelo navegador (CORS). Prefira retornar base64 pelo Make.')}
+    if(!r.ok)throw new Error(`Não foi possível baixar a imagem retornada: HTTP ${r.status}.`);
+    return blobToDataURL(await r.blob());
+  }
+
+  function renderArtResult(slot){
+    const box=$(`#artBox${slot}`),art=state.right[slot];
+    box.innerHTML=art?`<img src="${art.dataUrl}" alt="Arte ${slot}">`:`Arte ${slot}<br>ainda não gerada`;
+  }
+
+  async function importArtFile(slot,file){
+    if(!file)return;const raw=await fileToDataURL(file);const norm=await normalizeSquare(raw);
+    state.right[slot]={id:crypto.randomUUID(),name:`arte-${slot}-${slug(file.name.replace(/\.[^.]+$/,''))}`,dataUrl:norm.dataUrl,width:norm.width,height:norm.height,createdAt:new Date().toISOString(),prompt:buildPrompt(slot),manual:true};
+    renderArtResult(slot);setArtStatus(slot,'Imagem importada para teste/retorno manual.','ok');drawPreview();updateReady();
+  }
+
+  async function drawPreview(){
+    const c=$('#previewCanvas'); await renderSheet(c,96,true);
+  }
+
+  async function renderSheet(canvas,dpi=300,placeholders=false){
+    const px=dpi/25.4;canvas.width=Math.round(MM.pageW*px);canvas.height=Math.round(MM.pageH*px);
+    const ctx=canvas.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    const drawAsset=async(asset,box,label,scalePercent=100)=>{
+      const placed = getScaledBox(box, scalePercent);
+      if(asset?.dataUrl){const img=await loadImage(asset.dataUrl);ctx.drawImage(img,placed.x*px,placed.y*px,placed.w*px,placed.h*px)}
+      else if(placeholders){ctx.save();ctx.setLineDash([2.5*px,2*px]);ctx.strokeStyle='#c7b8ab';ctx.lineWidth=.35*px;ctx.strokeRect(placed.x*px,placed.y*px,placed.w*px,placed.h*px);ctx.setLineDash([]);ctx.fillStyle='#8a7c72';ctx.font=`700 ${Math.max(11,3.2*px)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,(placed.x+placed.w/2)*px,(placed.y+placed.h/2)*px);ctx.restore()}
+    };
+    await drawAsset(state.left,MM.leftTop,'PROPAGANDA',state.layout.leftTop);await drawAsset(state.right[1],MM.rightTop,'ARTE 1',state.layout.rightTop);
+    await drawAsset(state.left,MM.leftBottom,'PROPAGANDA',state.layout.leftBottom);await drawAsset(state.right[2],MM.rightBottom,'ARTE 2',state.layout.rightBottom);
+    ctx.strokeStyle='#000';ctx.lineWidth=Math.max(1,MM.lineWidth*px);ctx.setLineDash([]);ctx.lineCap='butt';
+    for(const l of MM.lines){ctx.beginPath();ctx.moveTo(l.x1*px,l.y1*px);ctx.lineTo(l.x2*px,l.y2*px);ctx.stroke()}
+    return canvas;
+  }
+
+  function updateReady(){
+    const el=$('#readyStatus');const missing=[];if(!state.left)missing.push('propaganda');if(!state.right[1])missing.push('arte 1');if(!state.right[2])missing.push('arte 2');
+    if(missing.length){el.className='status';el.textContent='Falta: '+missing.join(', ')+'.'}else{el.className='status ok';el.textContent='Tudo pronto para baixar ou imprimir.'}
+  }
+
+  async function hashDataUrl(dataUrl){const b64=dataUrl.split(',')[1];const raw=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const d=await crypto.subtle.digest('SHA-256',raw);return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+  async function ensureReady(){
+    if(!state.left||!state.right[1]||!state.right[2])throw new Error('Selecione a propaganda e gere as duas artes antes de finalizar.');
+    if(await hashDataUrl(state.right[1].dataUrl)===await hashDataUrl(state.right[2].dataUrl))throw new Error('As duas artes da direita estão idênticas. Gere uma segunda variação diferente.');
+  }
+
+  async function downloadPDF(){
+    await ensureReady();toast('Montando PDF A4 em 300 dpi...');
+    const canvas=document.createElement('canvas');await renderSheet(canvas,300,false);
+    const blob=await canvasToPdfBlob(canvas);const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`canecas-a4-${today()}.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);toast('PDF criado com sucesso.','ok');
+  }
+
+  async function canvasToPdfBlob(canvas){
+    const jpegUrl=canvas.toDataURL('image/jpeg',.985);const jpegBytes=new Uint8Array(await (await fetch(jpegUrl)).arrayBuffer());
+    const pageW=841.8898,pageH=595.2756;const enc=new TextEncoder();const chunks=[];const offsets=[0];let length=0;
+    const push=b=>{if(typeof b==='string')b=enc.encode(b);chunks.push(b);length+=b.length};
+    const obj=(n,content)=>{offsets[n]=length;push(`${n} 0 obj\n${content}\nendobj\n`)};
+    push('%PDF-1.4\n%CANECAS-A4\n');
+    obj(1,'<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2,'<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
