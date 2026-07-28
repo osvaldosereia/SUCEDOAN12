@@ -1,4 +1,4 @@
-const BUILD = '20260728-kit-editor-order-v3';
+const BUILD = '20260728-kit-editor-order-v4';
 let scheduled = false;
 
 function currentContext() {
@@ -66,12 +66,18 @@ function prepareReview(editor) {
     head = document.createElement('div');
     review.prepend(head);
   }
-  head.className = 'ux-editor-section-head kit-step-head';
+  const className = 'ux-editor-section-head kit-step-head';
+  if (head.className !== className) head.className = className;
   if (head.dataset.kitOrderBuild !== BUILD) {
     head.dataset.kitOrderBuild = BUILD;
     head.innerHTML = '<span class="kit-step-no">✓</span><div><strong>5. Revisão final</strong><span>Confira preço, desconto, disponibilidade, período, erros e avisos antes de publicar.</span></div>';
   }
   return review;
+}
+
+function orderIsCorrect(root, desired) {
+  const current = [...root.children].filter(node => desired.includes(node));
+  return current.length === desired.length && current.every((node, index) => node === desired[index]);
 }
 
 function applyOrder() {
@@ -91,7 +97,8 @@ function applyOrder() {
   relabel(duration, 4);
   relabel(automation, 'IA');
 
-  [info, composition, price, duration, automation, review].filter(Boolean).forEach(node => root.appendChild(node));
+  const desired = [info, composition, price, duration, automation, review].filter(Boolean);
+  if (!orderIsCorrect(root, desired)) desired.forEach(node => root.appendChild(node));
 }
 
 function schedule() {
@@ -105,6 +112,8 @@ function schedule() {
 
 window.addEventListener('admin-v2-route', schedule);
 window.addEventListener('admin-v2-route-ready', schedule);
-new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+new MutationObserver(() => {
+  if (currentContext()) schedule();
+}).observe(document.documentElement, { childList: true, subtree: true });
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
 else schedule();
