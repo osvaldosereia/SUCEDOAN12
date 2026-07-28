@@ -150,6 +150,39 @@ export function customerFromOrder(order = {}) {
   });
 }
 
+export function customersFromOrders(orders = []) {
+  const grouped = new Map();
+  for (const order of Array.isArray(orders) ? orders : []) {
+    const normalized = customerFromOrder(order);
+    if (!normalized?.key) continue;
+    const current = grouped.get(normalized.key) || {
+      firebaseKey: normalized.key,
+      ...normalized.cadastro,
+      pedidos: {},
+    };
+    current.pedidos[normalized.orderKey] = normalized.pedido;
+    const currentDate = new Date(current.ultimo_pedido_em || 0).getTime() || 0;
+    const nextDate = new Date(normalized.cadastro.ultimo_pedido_em || 0).getTime() || 0;
+    grouped.set(normalized.key, {
+      ...current,
+      ...normalized.cadastro,
+      ultimo_pedido_em: nextDate >= currentDate ? normalized.cadastro.ultimo_pedido_em : current.ultimo_pedido_em,
+      ultimo_pedido_numero: nextDate >= currentDate ? normalized.cadastro.ultimo_pedido_numero : current.ultimo_pedido_numero,
+      ultimo_pedido_valor: nextDate >= currentDate ? normalized.cadastro.ultimo_pedido_valor : current.ultimo_pedido_valor,
+      pedidos: current.pedidos,
+    });
+  }
+  return [...grouped.values()].map(customer => {
+    const orderRows = Object.entries(customer.pedidos || {}).map(([key, row]) => ({ firebaseKey: key, ...(row || {}) }));
+    return {
+      ...customer,
+      pedidos_lista: orderRows.sort((a, b) => new Date(b.criado_em || 0) - new Date(a.criado_em || 0)),
+      total_pedidos: orderRows.length,
+      valor_total_pedidos: orderRows.reduce((sum, row) => sum + number(row.total), 0),
+    };
+  }).sort((a, b) => new Date(b.ultimo_pedido_em || 0) - new Date(a.ultimo_pedido_em || 0));
+}
+
 export async function upsertCustomerFromOrder(config, order) {
   if (!config.writeMode) return null;
   const normalized = customerFromOrder(order);

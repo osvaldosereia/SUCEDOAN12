@@ -1,6 +1,6 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { escapeHtml, money, normalizeSearch, text } from './core/utils.js';
-import { invalidateCustomersCache, loadCustomers, syncCustomersFromOrders } from './services/customers.js';
+import { customersFromOrders, invalidateCustomersCache, loadCustomers, syncCustomersFromOrders } from './services/customers.js?admin_build=20260728-customers-fallback-v1';
 import { invalidateOrdersCache, loadRecentOrders } from './services/orders.js';
 
 const ORDER_LIMIT = 180;
@@ -116,8 +116,22 @@ class CustomersPanel {
       this.setStatus(`${this.customers.length} cliente(s)`, 'success');
       this.renderRows();
     } catch (error) {
+      await this.loadFromOrdersFallback(error);
+    }
+  }
+
+  async loadFromOrdersFallback(error) {
+    this.setStatus('Lendo pedidos...', 'warning');
+    try {
+      const result = await loadRecentOrders(loadConfig(), { limit: ORDER_LIMIT, force: true });
+      this.customers = customersFromOrders(result.orders);
+      this.setStatus(`${this.customers.length} cliente(s) pelos pedidos`, 'warning');
+      this.renderRows();
+      toast('Clientes exibidos pelos pedidos. O cadastro /clientes ainda nao liberou leitura no Firebase.', 'error');
+      console.warn('Clientes Firebase indisponivel; usando pedidos:', error);
+    } catch (fallbackError) {
       this.setStatus('Falha', 'danger');
-      this.container.querySelector('[data-customers-rows]').innerHTML = `<tr><td colspan="6">${escapeHtml(error?.message || String(error))}</td></tr>`;
+      this.container.querySelector('[data-customers-rows]').innerHTML = `<tr><td colspan="6">${escapeHtml(fallbackError?.message || error?.message || String(fallbackError || error))}</td></tr>`;
     }
   }
 
@@ -155,10 +169,19 @@ class CustomersPanel {
     try {
       invalidateOrdersCache();
       const result = await loadRecentOrders(loadConfig(), { limit: ORDER_LIMIT, force: true });
+      const localCustomers = customersFromOrders(result.orders);
       const saved = await syncCustomersFromOrders(loadConfig(), result.orders);
       invalidateCustomersCache();
-      toast(`${saved} cadastro(s) de cliente atualizados.`, 'success');
-      await this.reload({ force: true });
+      try {
+        this.customers = await loadCustomers(loadConfig(), { force: true });
+        toast(`${saved} cadastro(s) de cliente atualizados.`, 'success');
+      } catch (loadError) {
+        this.customers = localCustomers;
+        toast('Clientes atualizados na tela pelos pedidos. O Firebase /clientes ainda bloqueia leitura.', 'error');
+        console.warn('Clientes atualizados localmente; /clientes indisponivel:', loadError);
+      }
+      this.setStatus(`${this.customers.length} cliente(s)`, saved ? 'success' : 'warning');
+      this.renderRows();
     } catch (error) {
       this.setStatus('Falha', 'danger');
       toast(error?.message || String(error), 'error');

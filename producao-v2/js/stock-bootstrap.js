@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260728-orders-customers-v1';
+const BUILD = '20260728-customers-fallback-v1';
 const imports = new Map();
 
 function loadConfig() {

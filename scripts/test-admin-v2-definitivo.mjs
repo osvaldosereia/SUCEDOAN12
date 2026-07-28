@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const BUILD = '20260728-orders-customers-v1';
+const BUILD = '20260728-customers-fallback-v1';
 const failures = [];
 const checked = [];
 
