@@ -37,9 +37,9 @@ function stepByTitle(root, title) {
   ) || null;
 }
 
-function renumber(step, number) {
+function relabel(step, label) {
   const badge = step?.querySelector(':scope > .kit-step-head .kit-step-no');
-  if (badge && badge.textContent !== String(number)) badge.textContent = String(number);
+  if (badge && badge.textContent !== String(label)) badge.textContent = String(label);
 }
 
 function prepareComposition(editor) {
@@ -69,7 +69,7 @@ function prepareReview(editor) {
   head.className = 'ux-editor-section-head kit-step-head';
   if (head.dataset.kitOrderBuild !== BUILD) {
     head.dataset.kitOrderBuild = BUILD;
-    head.innerHTML = '<span class="kit-step-no">6</span><div><strong>Revisão final</strong><span>Confira preço, desconto, disponibilidade, período, erros e avisos antes de publicar.</span></div>';
+    head.innerHTML = '<span class="kit-step-no">✓</span><div><strong>5. Revisão final</strong><span>Confira preço, desconto, disponibilidade, período, erros e avisos antes de publicar.</span></div>';
   }
   return review;
 }
@@ -86,10 +86,10 @@ function applyOrder() {
   const composition = prepareComposition(editor);
   const review = prepareReview(editor);
 
-  renumber(info, 1);
-  renumber(price, 3);
-  renumber(duration, 4);
-  renumber(automation, 5);
+  relabel(info, 1);
+  relabel(price, 3);
+  relabel(duration, 4);
+  relabel(automation, 'IA');
 
   [info, composition, price, duration, automation, review].filter(Boolean).forEach(node => root.appendChild(node));
 }
