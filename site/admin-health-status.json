@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-28T20:23:11.149Z",
+  "checkedAt": "2026-07-28T20:51:25.173Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -56,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 201 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 191 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 282 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 208 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785270125923 · público 1524 · admin 1524"
+      "detail": "catalog-1785271391019 · público 1524 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "2029 oferta(s) no histórico"
+      "detail": "2038 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -124,9 +124,9 @@
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "30395855655",
+    "runId": "30397895623",
     "attempt": "1",
-    "sourceSha": "f6591480cb5276f2eec26daa2030dfa58b407691",
-    "publishedAt": "2026-07-28T20:23:46.132Z"
+    "sourceSha": "8699b5578bc2eb8b02736674d31d34ae65e73473",
+    "publishedAt": "2026-07-28T20:51:59.782Z"
   }
 }
