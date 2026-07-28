@@ -172,7 +172,7 @@
     renameButton(toolbar, '[data-campaign-reconcile]', 'Corrigir divergencia');
     renameButton(toolbar, '[data-campaign-run]', 'Aplicar agora');
     renameButton(panel, '[data-campaign-save-settings]', 'Salvar regras');
-    renameButton(panel, '[data-campaign-use-test-branch]', 'Testar em homologacao');
+    panel.querySelectorAll('[data-campaign-use-test-branch]').forEach(button => button.remove());
     const actionHelp = [
       ['[data-campaign-reload]', 'Atualiza a tela com os dados mais recentes do GitHub e Firebase. Nao altera produtos.'],
       ['[data-campaign-simulate]', 'Testa as regras e mostra produtos elegiveis. Nao salva e nao muda precos.'],
@@ -187,7 +187,7 @@
     panel.querySelectorAll('[data-campaign-cancel]').forEach(button => {
       button.textContent = 'Cancelar regra e ofertas';
       button.classList.add('danger-action');
-      button.title = 'Ao salvar e processar, todas as ofertas ativas criadas por esta regra serao encerradas.';
+      button.title = 'Cancela a regra, salva no GitHub e inicia o encerramento das ofertas criadas por ela.';
     });
 
     let guide = panel.querySelector('.rules-guide');

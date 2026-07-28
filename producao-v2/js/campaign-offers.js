@@ -18,14 +18,16 @@ const state = {
 
 function config() {
   try {
-    return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') };
+    const next = { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}'), githubBranch: 'main' };
+    localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(next));
+    return next;
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return { ...DEFAULT_CONFIG, githubBranch: 'main' };
   }
 }
 
 function saveConfig(patch) {
-  const next = { ...config(), ...(patch || {}) };
+  const next = { ...config(), ...(patch || {}), githubBranch: 'main' };
   localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(next));
   return next;
 }
@@ -244,7 +246,7 @@ function render() {
       <article class="metric-card ${expired.length ? 'danger' : 'success'}"><strong>${expired.length}</strong><span>Vencidas aguardando limpeza</span><small>Serão removidas no próximo processamento</small></article>
       <article class="metric-card ${execution.ultima_execucao_status === 'sucesso' ? 'success' : 'warning'}"><strong>${escapeHtml(execution.ultima_execucao_status)}</strong><span>Última execução</span><small>${escapeHtml(dateTime(execution.ultima_execucao))}</small></article>
     </div>
-    <section class="campaign-control-card"><div class="campaign-control-grid"><label class="switch-row"><span><strong>Automação ativa</strong><small>Permite criar novas ofertas nas execuções.</small></span><input id="campaignEnabled" type="checkbox" ${rules.ativo ? 'checked' : ''}></label><label class="switch-row"><span><strong>Exigir quantidade completa</strong><small>Se faltar produto elegível, a regra aguarda a próxima execução.</small></span><input id="campaignRequireComplete" type="checkbox" ${rules.exigir_quantidade_completa ? 'checked' : ''}></label><label>Fuso horário<input id="campaignTimezone" value="${escapeHtml(rules.timezone)}"></label><label>Branch da execução<input value="${escapeHtml(cfg.githubBranch)}" disabled></label></div><div class="campaign-main-warning ${cfg.githubBranch === 'main' ? '' : 'safe'}"><label><input id="campaignMainConfirm" type="checkbox" ${cfg.githubBranch === 'main' ? '' : 'checked disabled'}><span><strong>${cfg.githubBranch === 'main' ? 'Confirmo alterações na main' : 'Branch de homologação'}</strong><small>${cfg.githubBranch === 'main' ? 'Sem esta confirmação, salvar e executar ficam bloqueados.' : `Ambiente seguro: ${escapeHtml(cfg.githubBranch)}`}</small></span></label>${cfg.githubBranch === 'main' ? '<button class="button secondary compact" type="button" data-campaign-use-test-branch>Usar branch de homologação</button>' : ''}</div><div class="campaign-control-actions"><span id="campaignSafety">${escapeHtml(safetyText())}</span><button class="button secondary" type="button" data-campaign-save-settings>Salvar configuração geral</button></div></section>
+    <section class="campaign-control-card"><div class="campaign-control-grid"><label class="switch-row"><span><strong>Automação ativa</strong><small>Permite criar novas ofertas nas execuções.</small></span><input id="campaignEnabled" type="checkbox" ${rules.ativo ? 'checked' : ''}></label><label class="switch-row"><span><strong>Exigir quantidade completa</strong><small>Se faltar produto elegível, a regra aguarda a próxima execução.</small></span><input id="campaignRequireComplete" type="checkbox" ${rules.exigir_quantidade_completa ? 'checked' : ''}></label><label>Fuso horário<input id="campaignTimezone" value="${escapeHtml(rules.timezone)}"></label><label>Branch da execução<input value="${escapeHtml(cfg.githubBranch)}" disabled></label></div><div class="campaign-main-warning ${cfg.githubBranch === 'main' ? '' : 'safe'}"><label><input id="campaignMainConfirm" type="checkbox" ${cfg.githubBranch === 'main' ? '' : 'checked disabled'}><span><strong>${cfg.githubBranch === 'main' ? 'Confirmo alterações na main' : 'Branch de homologação'}</strong><small>${cfg.githubBranch === 'main' ? 'Sem esta confirmação, salvar e executar ficam bloqueados.' : `Ambiente seguro: ${escapeHtml(cfg.githubBranch)}`}</small></span></label></div><div class="campaign-control-actions"><span id="campaignSafety">${escapeHtml(safetyText())}</span><button class="button secondary" type="button" data-campaign-save-settings>Salvar configuração geral</button></div></section>
     <div class="campaign-layout"><section class="campaign-column"><div id="campaignRuleEditor" class="campaign-rule-editor">${ruleEditorHtml()}</div><div class="campaign-section-head"><div><h3>Regras cadastradas</h3><p>As regras antigas foram recuperadas de ${escapeHtml(cfg.offersRulesPath)}.</p></div></div><div class="campaign-rules">${rules.regras.length ? rules.regras.map(ruleCard).join('') : '<div class="empty-state">Nenhuma regra cadastrada.</div>'}</div></section><section class="campaign-column"><div class="campaign-section-head"><div><h3>Ofertas automáticas ativas</h3><p>A automação preserva ofertas manuais e alterna os produtos pelo histórico.</p></div><span class="badge info">${active.length}</span></div><div class="campaign-offers-list">${active.length ? active.slice(0, 60).map(row => offerCard(row)).join('') : '<div class="empty-state">Nenhuma oferta automática ativa registrada.</div>'}</div>${expired.length ? `<div class="campaign-section-head danger-head"><div><h3>Vencidas aguardando limpeza</h3><p>Estas ofertas ainda estão no Firebase porque o processamento ficou sem execução.</p></div><span class="badge danger">${expired.length}</span></div><div class="campaign-offers-list">${expired.slice(0, 60).map(product => offerCard({ ...product, produto_key: productKey(product), fim: product.validade_oferta }, true)).join('')}</div>` : ''}</section></div>
     <section class="campaign-history"><div class="campaign-section-head"><div><h3>Histórico e execuções</h3><p>${history.ofertas.length} registros históricos · ${execution.execucoes.length} execuções registradas.</p></div></div><div class="campaign-executions">${execution.execucoes.slice(-12).reverse().map(item => `<div><strong>${escapeHtml(dateTime(item.executado_em))}</strong><span>${escapeHtml(item.origem || 'github')} · ${escapeHtml(item.modo || 'completo')}</span><small>${escapeHtml(JSON.stringify(item.resumo || {}))}</small></div>`).join('') || '<div class="empty-state">Nenhuma execução registrada.</div>'}</div></section>`;
   panel.querySelectorAll('[data-campaign-run], [data-campaign-save-settings]').forEach(button => { button.disabled = !canWriteRules(); });
@@ -415,7 +417,7 @@ function bind() {
     if (action.matches('[data-campaign-edit]')) { state.draftRuleId = action.dataset.campaignEdit; render(); }
     if (action.matches('[data-campaign-toggle]')) mutateRule(action.dataset.campaignToggle, rule => { rule.status = rule.status === 'ativa' ? 'pausada' : 'ativa'; rule.encerrar_ofertas_ativas = false; });
     if (action.matches('[data-campaign-cancel]')) mutateRule(action.dataset.campaignCancel, rule => { rule.status = 'cancelada'; rule.encerrar_ofertas_ativas = true; });
-    if (action.matches('[data-campaign-use-test-branch]')) { saveConfig({ githubBranch: 'agent/admin-v2-refactor' }); toast('Branch de homologação selecionada. Reabra Configurações para conferir.', 'success'); render(); }
+    if (action.matches('[data-campaign-use-test-branch]')) { saveConfig({ githubBranch: 'main' }); toast('Admin oficial fixado na main.', 'success'); render(); }
   }, true);
   document.addEventListener('change', event => {
     if (event.target.id === 'campaignMainConfirm') render();

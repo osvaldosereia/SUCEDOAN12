@@ -1,19 +1,21 @@
-import './campaign-offers-recovery.js';
-import './campaign-offers-production-guard.js';
+import './campaign-offers-recovery.js?admin_build=20260727-offers-cancel-v1';
+import './campaign-offers-production-guard.js?admin_build=20260727-offers-cancel-v1';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { OffersModule } from './modules/offers.js';
 import { loadProducts } from './services/firebase.js';
 
 function loadConfig() {
   try {
-    return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') };
+    const next = { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}'), githubBranch: 'main' };
+    localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(next));
+    return next;
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return { ...DEFAULT_CONFIG, githubBranch: 'main' };
   }
 }
 
 function saveConfig(patch) {
-  const next = { ...loadConfig(), ...(patch || {}) };
+  const next = { ...loadConfig(), ...(patch || {}), githubBranch: 'main' };
   localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(next));
   return next;
 }

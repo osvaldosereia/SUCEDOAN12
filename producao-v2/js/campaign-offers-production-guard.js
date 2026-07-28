@@ -4,9 +4,11 @@ const MAIN_CONFIRM_KEY = 'da_admin_v2_campaign_main_confirm';
 
 function config() {
   try {
-    return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') };
+    const next = { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}'), githubBranch: 'main' };
+    localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(next));
+    return next;
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return { ...DEFAULT_CONFIG, githubBranch: 'main' };
   }
 }
 

@@ -26,14 +26,16 @@ const state = {
 
 function config() {
   try {
-    return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') };
+    const next = { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}'), githubBranch: 'main' };
+    localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(next));
+    return next;
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return { ...DEFAULT_CONFIG, githubBranch: 'main' };
   }
 }
 
 function saveConfig(patch) {
-  const next = { ...config(), ...(patch || {}) };
+  const next = { ...config(), ...(patch || {}), githubBranch: 'main' };
   localStorage.setItem(STORAGE_KEYS.config, JSON.stringify(next));
   return next;
 }
@@ -181,6 +183,18 @@ function automaticExpiredProducts() {
     && ended(product.validade_oferta));
 }
 
+function cancelledRuleIds() {
+  return new Set(rulesDocument().regras
+    .filter(rule => rule.status === 'cancelada' || rule.encerrar_ofertas_ativas === true)
+    .map(rule => text(rule.id))
+    .filter(Boolean));
+}
+
+function isPendingCancellationOffer(offer, product) {
+  const ruleId = text(offer?.regra_id || product?.oferta_regra_id);
+  return Boolean(ruleId && cancelledRuleIds().has(ruleId));
+}
+
 function offerSnapshot(product) {
   const regular = number(product.preco);
   const offer = number(product.preco_oferta);
@@ -256,7 +270,7 @@ function safetyText() {
   const cfg = config();
   if (!cfg.writeMode || !cfg.campaignOfferWriteMode) return 'Ative a gravação geral e a trava de campanhas nas Configurações.';
   if (!text(cfg.githubToken)) return 'Configure o token do GitHub.';
-  if (cfg.githubBranch === 'main' && !mainConfirmed()) return 'A main está protegida. Confirme explicitamente ou use a branch de homologação.';
+  if (cfg.githubBranch === 'main' && !mainConfirmed()) return 'A main está protegida. Confirme explicitamente antes de salvar ou processar.';
   return `Gravações permitidas somente em ${cfg.githubBranch}.`;
 }
 
@@ -272,10 +286,18 @@ function offerCard(source, kind = 'active') {
   const product = source.product || productByRef(offer.produto_key || offer.codigo);
   const expired = kind === 'expired';
   const stale = kind === 'stale';
+  const pendingCancel = !expired && !stale && isPendingCancellationOffer(offer, product);
   const image = productImage(product || {}) || PLACEHOLDER;
   const name = product ? productName(product) : offer.nome || offer.codigo || offer.produto_key;
-  const label = expired ? 'Aguardando limpeza' : stale ? 'Somente no estado antigo' : 'Ativa no Firebase';
-  return `<article class="campaign-offer-card ${expired || stale ? 'expired' : ''}"><img src="${escapeHtml(image)}" onerror="this.src='${PLACEHOLDER}'" alt=""><div><strong>${escapeHtml(name)}</strong><small>${escapeHtml(offer.categoria || product?.categoria || 'Sem categoria')} · ${money(offer.preco_normal || product?.preco)} → ${money(offer.preco_oferta || product?.preco_oferta)}</small><small>${label}${dateOnly(offer.fim || product?.validade_oferta) ? ` · até ${escapeHtml(dateOnly(offer.fim || product?.validade_oferta))}` : ''}</small></div><span class="badge ${expired || stale ? 'danger' : 'success'}">${expired ? 'Limpar' : stale ? 'Reconciliar' : 'Ativa'}</span></article>`;
+  const date = dateOnly(offer.fim || product?.validade_oferta);
+  const label = expired ? 'Aguardando limpeza'
+    : stale ? 'Somente no estado antigo'
+      : pendingCancel ? 'Aguardando processamento do cancelamento'
+        : 'Ativa no Firebase';
+  const badgeText = expired ? 'Limpar' : stale ? 'Reconciliar' : pendingCancel ? 'Aguardando cancelar' : 'Ativa';
+  const badgeKind = expired || stale ? 'danger' : pendingCancel ? 'warning' : 'success';
+  const cardKind = expired || stale ? 'expired' : pendingCancel ? 'pending-cancel' : '';
+  return `<article class="campaign-offer-card ${cardKind}"><img src="${escapeHtml(image)}" onerror="this.src='${PLACEHOLDER}'" alt=""><div><strong>${escapeHtml(name)}</strong><small>${escapeHtml(offer.categoria || product?.categoria || 'Sem categoria')} · ${money(offer.preco_normal || product?.preco)} → ${money(offer.preco_oferta || product?.preco_oferta)}</small><small>${label}${date ? ` · até ${escapeHtml(date)}` : ''}</small></div><span class="badge ${badgeKind}">${badgeText}</span></article>`;
 }
 
 function ruleEditorHtml() {
@@ -309,7 +331,7 @@ function render() {
   panel.innerHTML = `<div class="campaign-toolbar"><div><span class="eyebrow">Fontes recuperadas</span><h3>Campanhas automáticas por regras</h3><p>Firebase é a fonte real das ofertas. Os arquivos do GitHub guardam regras, estado e histórico da automação.</p></div><div class="campaign-toolbar-actions"><button class="button secondary" type="button" data-campaign-reload>Atualizar fontes</button><button class="button secondary" type="button" data-campaign-simulate>Simular</button><button class="button secondary" type="button" data-campaign-reconcile>Recuperar estado</button><button class="button primary" type="button" data-campaign-run>Processar agora</button></div></div>
     <div class="attention-grid campaign-metrics"><article class="metric-card info"><strong>${rules.regras.length}</strong><span>Regras recuperadas</span><small>${rules.regras.filter(rule => rule.status === 'ativa').length} ativas</small></article><article class="metric-card success"><strong>${active.length}</strong><span>Ativas no Firebase</span><small>Fonte real dos preços</small></article><article class="metric-card ${expired.length ? 'danger' : 'success'}"><strong>${expired.length}</strong><span>Vencidas no Firebase</span><small>Serão limpas no processamento</small></article><article class="metric-card ${stale.length ? 'warning' : 'success'}"><strong>${stale.length}</strong><span>Estado desatualizado</span><small>Registros sem oferta ativa correspondente</small></article></div>
     <section class="campaign-sources"><div class="campaign-section-head"><div><h3>Onde cada informação está salva</h3><p>Separação das fontes para evitar perda ou duplicidade.</p></div></div><div class="system-list">${sourceCard('Regras da automação', cfg.offersRulesPath, state.rulesSourceBranch, rulesDetail, state.rulesFile ? 'success' : 'warning')}${sourceCard('Estado gerado', cfg.offersStatePath, state.statusSourceBranch, stateDetail, state.statusFile ? 'success' : 'warning')}${sourceCard('Histórico', cfg.offersHistoryPath, state.historySourceBranch || cfg.githubBranch, historyDetail, state.historyLoaded && !state.historyFile ? 'warning' : 'success')}${sourceCard('Ofertas efetivas', `${cfg.productsNode}/<produto> no Firebase`, 'Firebase', `${active.length} campanhas ativas e ${expired.length} vencidas`, 'success')}</div>${state.warnings.length ? `<div class="notice warning">${state.warnings.map(item => `<span>${escapeHtml(item)}</span>`).join('')}</div>` : ''}</section>
-    <section class="campaign-control-card"><div class="campaign-control-grid"><label class="switch-row"><span><strong>Automação ativa</strong><small>Permite criar novas ofertas.</small></span><input id="campaignEnabled" type="checkbox" ${rules.ativo ? 'checked' : ''}></label><label class="switch-row"><span><strong>Exigir quantidade completa</strong><small>A regra aguarda quando faltam elegíveis.</small></span><input id="campaignRequireComplete" type="checkbox" ${rules.exigir_quantidade_completa ? 'checked' : ''}></label><label>Fuso horário<input id="campaignTimezone" value="${escapeHtml(rules.timezone)}"></label><label>Branch configurada<input value="${escapeHtml(cfg.githubBranch)}" disabled></label></div><div class="campaign-main-warning ${cfg.githubBranch === 'main' ? '' : 'safe'}"><label><input id="campaignMainConfirm" type="checkbox" ${cfg.githubBranch === 'main' ? (mainConfirmed() ? 'checked' : '') : 'checked disabled'}><span><strong>${cfg.githubBranch === 'main' ? 'Confirmo alterações na main' : 'Branch de homologação'}</strong><small>${cfg.githubBranch === 'main' ? 'Sem confirmação, salvar e executar permanecem bloqueados.' : escapeHtml(cfg.githubBranch)}</small></span></label>${cfg.githubBranch === 'main' ? '<button class="button secondary compact" type="button" data-campaign-use-test-branch>Usar branch de homologação</button>' : ''}</div><div class="campaign-control-actions"><span id="campaignSafety">${escapeHtml(safetyText())}${state.rulesDirty ? ' · Existem regras ainda não publicadas.' : ''}</span><button class="button secondary" type="button" data-campaign-save-settings>Salvar regras e configuração</button></div></section>
+    <section class="campaign-control-card"><div class="campaign-control-grid"><label class="switch-row"><span><strong>Automação ativa</strong><small>Permite criar novas ofertas.</small></span><input id="campaignEnabled" type="checkbox" ${rules.ativo ? 'checked' : ''}></label><label class="switch-row"><span><strong>Exigir quantidade completa</strong><small>A regra aguarda quando faltam elegíveis.</small></span><input id="campaignRequireComplete" type="checkbox" ${rules.exigir_quantidade_completa ? 'checked' : ''}></label><label>Fuso horário<input id="campaignTimezone" value="${escapeHtml(rules.timezone)}"></label><label>Branch configurada<input value="${escapeHtml(cfg.githubBranch)}" disabled></label></div><div class="campaign-main-warning ${cfg.githubBranch === 'main' ? '' : 'safe'}"><label><input id="campaignMainConfirm" type="checkbox" ${cfg.githubBranch === 'main' ? (mainConfirmed() ? 'checked' : '') : 'checked disabled'}><span><strong>${cfg.githubBranch === 'main' ? 'Confirmo alterações na main' : 'Branch de homologação'}</strong><small>${cfg.githubBranch === 'main' ? 'Sem confirmação, salvar e executar permanecem bloqueados.' : escapeHtml(cfg.githubBranch)}</small></span></label></div><div class="campaign-control-actions"><span id="campaignSafety">${escapeHtml(safetyText())}${state.rulesDirty ? ' · Existem regras ainda não publicadas.' : ''}</span><button class="button secondary" type="button" data-campaign-save-settings>Salvar regras e configuração</button></div></section>
     <div class="campaign-layout"><section class="campaign-column"><div class="campaign-rule-editor">${ruleEditorHtml()}</div><div class="campaign-section-head"><div><h3>Regras cadastradas</h3><p>Recuperadas de ${escapeHtml(cfg.offersRulesPath)}.</p></div></div><div class="campaign-rules">${rules.regras.length ? rules.regras.map(ruleCard).join('') : '<div class="empty-state">Nenhuma regra encontrada.</div>'}</div></section><section class="campaign-column"><div class="campaign-section-head"><div><h3>Ofertas ativas no Firebase</h3><p>A lista não depende do estado antigo.</p></div><span class="badge success">${active.length}</span></div><div class="campaign-offers-list">${active.length ? active.slice(0, 50).map(row => offerCard(row)).join('') : '<div class="empty-state">Nenhuma campanha automática ativa.</div>'}</div>${expired.length ? `<div class="campaign-section-head danger-head"><div><h3>Vencidas aguardando limpeza</h3><p>Não serão recuperadas como novas ofertas.</p></div><span class="badge danger">${expired.length}</span></div><div class="campaign-offers-list">${expired.slice(0, 50).map(product => offerCard({ ...offerSnapshot(product), product }, 'expired')).join('')}</div>` : ''}${stale.length ? `<div class="campaign-section-head danger-head"><div><h3>Somente no estado antigo</h3><p>Registros preservados para conferência, sem reativação automática.</p></div><span class="badge warning">${stale.length}</span></div><div class="campaign-offers-list">${stale.slice(0, 50).map(offer => offerCard(offer, 'stale')).join('')}</div>` : ''}</section></div>
     <section class="campaign-history"><div class="campaign-section-head"><div><h3>Histórico e execuções</h3><p>${state.historyLoaded ? `${history.ofertas.length} ofertas históricas` : 'Carregue somente quando precisar consultar.'}</p></div><button class="button secondary compact" type="button" data-campaign-load-history>${state.historyLoaded ? 'Atualizar histórico' : 'Carregar histórico'}</button></div><div class="campaign-executions">${execution.execucoes.slice(-12).reverse().map(item => `<div><strong>${escapeHtml(dateTime(item.executado_em))}</strong><span>${escapeHtml(item.origem || 'github')} · ${escapeHtml(item.modo || 'completo')}</span><small>${escapeHtml(JSON.stringify(item.resumo || {}))}</small></div>`).join('') || '<div class="empty-state">Nenhuma execução registrada.</div>'}</div></section>`;
   panel.querySelectorAll('[data-campaign-run], [data-campaign-save-settings], [data-campaign-reconcile]').forEach(button => { button.disabled = !canWriteRules(); });
@@ -516,6 +538,28 @@ async function dispatchWorkflow() {
   toast(`Processamento iniciado em ${cfg.githubBranch}.`, 'success');
 }
 
+async function cancelRuleAndProcess(id, button) {
+  if (!canWriteRules()) return toast(safetyText(), 'error');
+  const rule = rulesDocument().regras.find(item => text(item.id) === text(id));
+  if (!rule) return toast('Regra não encontrada.', 'error');
+  const activeCount = automaticActiveProducts()
+    .filter(product => text(product.oferta_regra_id) === text(id))
+    .length;
+  const suffix = activeCount
+    ? ` Isso vai iniciar o encerramento de ${activeCount} oferta(s) ativa(s) criada(s) por ela.`
+    : ' Não encontrei ofertas ativas desta regra no Firebase agora.';
+  if (!confirm(`Cancelar esta regra?${suffix}`)) return;
+  if (button) button.disabled = true;
+  mutateRule(id, item => {
+    item.status = 'cancelada';
+    item.encerrar_ofertas_ativas = true;
+  });
+  await saveRulesFile();
+  await dispatchWorkflow();
+  toast('Cancelamento salvo e processamento iniciado. A lista pode levar alguns minutos para refletir a remoção no Firebase.', 'success');
+  loadData({ force: true });
+}
+
 function installSettings() {
   const grid = document.querySelector('[data-view="settings"] .settings-grid');
   if (!grid || document.getElementById('campaignOfferSafetySettings')) return;
@@ -586,13 +630,13 @@ function bind() {
     if (action.matches('[data-campaign-new]')) { state.draftRuleId = ''; render(); }
     if (action.matches('[data-campaign-edit]')) { state.draftRuleId = action.dataset.campaignEdit; render(); }
     if (action.matches('[data-campaign-toggle]')) mutateRule(action.dataset.campaignToggle, rule => { rule.status = rule.status === 'ativa' ? 'pausada' : 'ativa'; rule.encerrar_ofertas_ativas = false; });
-    if (action.matches('[data-campaign-cancel]')) mutateRule(action.dataset.campaignCancel, rule => { rule.status = 'cancelada'; rule.encerrar_ofertas_ativas = true; });
+    if (action.matches('[data-campaign-cancel]')) cancelRuleAndProcess(action.dataset.campaignCancel, action).catch(error => toast(error?.message || String(error), 'error'));
     if (action.matches('[data-campaign-use-test-branch]')) {
-      saveConfig({ githubBranch: 'agent/admin-v2-refactor' });
+      saveConfig({ githubBranch: 'main' });
       sessionStorage.removeItem(MAIN_CONFIRM_KEY);
       state.loadedBranch = '';
       state.historyLoaded = false;
-      toast('Branch de homologação selecionada.', 'success');
+      toast('Admin oficial fixado na main.', 'success');
       loadData({ force: true });
     }
   }, true);
