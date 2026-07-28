@@ -1,0 +1,193 @@
+(() => {
+  'use strict';
+
+  const MM = {
+    pageW: 297, pageH: 210,
+    leftTop: { x: 38.4000, y: 6.8064, w: 98.1936, h: 98.1936 },
+    leftBottom: { x: 38.4000, y: 105.1322, w: 98.1936, h: 98.1936 },
+    rightTop: { x: 163.5332, y: 9.5101, w: 93.3932, h: 93.3932 },
+    rightBottom: { x: 162.0511, y: 107.6170, w: 96.3035, h: 96.3035 },
+    lineWidth: 0.2647,
+    lines: [
+      {x1:7.2330,y1:6.8064,x2:19.7994,y2:6.8064},
+      {x1:275.9859,y1:6.6741,x2:288.5525,y2:6.6741},
+      {x1:2.9998,y1:105.0000,x2:15.5664,y2:105.0000},
+      {x1:2.9998,y1:105.1322,x2:15.5664,y2:105.1322},
+      {x1:275.9859,y1:105.2645,x2:288.5525,y2:105.2645},
+      {x1:8.4323,y1:203.7455,x2:20.9989,y2:203.7455},
+      {x1:275.9859,y1:203.8550,x2:288.5525,y2:203.8550},
+      {x1:275.9859,y1:204.1424,x2:288.5525,y2:204.1424},
+      {x1:25.2594,y1:50.1352,x2:25.2594,y2:152.1349},
+      {x1:271.7223,y1:53.9984,x2:271.7223,y2:155.9984}
+    ]
+  };
+
+  const DEFAULT_LAYOUT = { leftTop:100, rightTop:100, leftBottom:100, rightBottom:100 };
+
+  const state = {
+    left: null,
+    right: {1:null,2:null},
+    layout: {...DEFAULT_LAYOUT},
+    db: null,
+    busy: false,
+    settings: {
+      webhook:'', owner:'osvaldosereia', repo:'SUCEDOAN12', branch:'main', folder:'canecas/imagens'
+    }
+  };
+
+  const $ = (s, p=document) => p.querySelector(s);
+  const $$ = (s, p=document) => [...p.querySelectorAll(s)];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const today = () => new Date().toISOString().slice(0,10);
+  const stamp = () => new Date().toISOString().replace(/[:.]/g,'-');
+  const slug = s => (s || 'arte').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70) || 'arte';
+
+  const clampScale = value => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 100;
+    return Math.min(160, Math.max(40, Math.round(n)));
+  };
+
+  function normalizeLayout(layout){
+    return {
+      leftTop: clampScale(layout?.leftTop ?? DEFAULT_LAYOUT.leftTop),
+      rightTop: clampScale(layout?.rightTop ?? DEFAULT_LAYOUT.rightTop),
+      leftBottom: clampScale(layout?.leftBottom ?? DEFAULT_LAYOUT.leftBottom),
+      rightBottom: clampScale(layout?.rightBottom ?? DEFAULT_LAYOUT.rightBottom)
+    };
+  }
+
+  function getScaledBox(box, scalePercent=100){
+    const ratio = clampScale(scalePercent) / 100;
+    const w = box.w * ratio;
+    const h = box.h * ratio;
+    return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h };
+  }
+
+  function syncScaleControls(){
+    for (const key of Object.keys(DEFAULT_LAYOUT)){
+      const value = clampScale(state.layout[key]);
+      const range = $(`#scale-${key}`);
+      const number = $(`#scale-${key}-number`);
+      if (range) range.value = value;
+      if (number) number.value = value;
+    }
+  }
+
+  function setLayoutScale(key, value){
+    state.layout[key] = clampScale(value);
+    syncScaleControls();
+    drawPreview();
+  }
+
+  const phraseIdeas = [
+    'Tudo floresce no seu tempo', 'Permaneça firme, pois Deus cuida de tudo',
+    'Ela acreditou, respirou fundo e floresceu', 'A vida fica leve quando a alma agradece',
+    'Café, coragem e um coração cheio de fé', 'Que hoje não faltem motivos para sorrir',
+    'Deus transforma espera em testemunho', 'Bonita por fora, forte por dentro',
+    'Calma, mulher: você está indo muito bem', 'Onde existe fé, sempre nasce esperança',
+    'Floresça sem pedir licença', 'O melhor ainda está sendo preparado'
+  ];
+  const themeOptions = ['Motivacional','Fé cristã','Otimismo','Humor leve','Autocuidado','Família','Amizade','Profissional','Gratidão','Aniversário'];
+  const styleOptions = ['Lettering artesanal com flores','Ilustração delicada em aquarela','Desenho manual moderno','Minimalista elegante','Boho feminino','Vintage delicado','Cute contemporâneo','Colagem botânica','Tipografia expressiva','Ilustração editorial suave'];
+  const paletteOptions = ['Rosa, verde sálvia e marrom','Azul-claro, creme e dourado','Terracota, bege e verde','Colorida em tons pastel','Preto, branco e um tom de destaque','Lilás, rosa e verde','Amarelo suave, coral e verde','Paleta livre coerente com o conceito'];
+  const moodOptions = ['Acolhedor e inspirador','Alegre e otimista','Delicado e feminino','Divertido e espontâneo','Elegante e sereno','Forte e encorajador'];
+
+  function artForm(slot){
+    return `
+      <div class="grid2">
+        <label class="field" style="grid-column:1/-1">Frase principal
+          <textarea id="a${slot}Phrase" placeholder="Digite a frase exatamente como deve aparecer"></textarea>
+        </label>
+        <label class="field">Tema<select id="a${slot}Theme">${themeOptions.map(x=>`<option>${x}</option>`).join('')}</select></label>
+        <label class="field">Público<select id="a${slot}Audience"><option>Mulheres adultas</option><option>Mulheres 25+</option><option>Público feminino geral</option><option>Famílias</option><option>Profissionais</option><option>Jovens adultas</option><option>Público geral</option></select></label>
+        <label class="field">Estilo visual<select id="a${slot}Style">${styleOptions.map(x=>`<option>${x}</option>`).join('')}</select></label>
+        <label class="field">Paleta<select id="a${slot}Palette">${paletteOptions.map(x=>`<option>${x}</option>`).join('')}</select></label>
+        <label class="field">Clima<select id="a${slot}Mood">${moodOptions.map(x=>`<option>${x}</option>`).join('')}</select></label>
+        <label class="field">Elementos visuais<select id="a${slot}Amount"><option value="sem">Sem elementos decorativos</option><option value="pouco">Poucos elementos</option><option value="medio" selected>Quantidade média</option><option value="muito">Muitos elementos</option></select></label>
+        <label class="field" style="grid-column:1/-1">Elemento principal<input id="a${slot}Element" type="text" placeholder="Ex.: flores do campo, borboletas, café, coração..."></label>
+        <label class="field" style="grid-column:1/-1">Instruções adicionais<textarea id="a${slot}Extra" placeholder="Ex.: evitar personagens, usar moldura floral, destacar uma palavra..."></textarea></label>
+      </div>
+      <div class="checks">
+        <label class="check"><input id="a${slot}Exact" type="checkbox" checked><span>Usar a frase exatamente, sem acrescentar outras palavras.</span></label>
+        <label class="check"><input id="a${slot}White" type="checkbox" checked><span>Fundo totalmente branco, sem transparência.</span></label>
+        <label class="check"><input id="a${slot}NoMockup" type="checkbox" checked><span>Somente a arte plana, sem caneca ou mockup.</span></label>
+        <label class="check"><input id="a${slot}HighRes" type="checkbox" checked><span>Alta resolução para sublimação.</span></label>
+      </div>
+      <div class="preview-art">
+        <div class="art-image-box" id="artBox${slot}">Arte ${slot}<br>ainda não gerada</div>
+        <div>
+          <div id="artStatus${slot}" class="status">Aguardando geração.</div>
+          <div class="button-row">
+            <button class="btn primary small" data-generate="${slot}">✨ Gerar arte ${slot}</button>
+            <button class="btn small" data-random="${slot}">🎲 Sugerir</button>
+            <button class="btn small" data-import="${slot}">↥ Importar retorno</button>
+            <input id="importArt${slot}" type="file" accept="image/png,image/jpeg" hidden>
+          </div>
+          <details style="margin-top:10px"><summary>Ver prompt final</summary><pre id="prompt${slot}" class="prompt-box" style="margin-top:8px"></pre></details>
+        </div>
+      </div>`;
+  }
+
+  $('.art-panel[data-panel="1"]').innerHTML = artForm(1);
+  $('.art-panel[data-panel="2"]').innerHTML = artForm(2);
+
+  function toast(message, type=''){
+    const el=document.createElement('div'); el.className=`toast ${type}`; el.textContent=message;
+    $('#toastArea').appendChild(el); setTimeout(()=>el.remove(),4300);
+  }
+
+  function setArtStatus(slot, text, type=''){
+    const el=$(`#artStatus${slot}`); el.className=`status ${type}`; el.textContent=text;
+  }
+
+  async function openDB(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open('canecasStudioA4',1);
+      req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains('leftAds')) db.createObjectStore('leftAds',{keyPath:'id'}); };
+      req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+    });
+  }
+
+  async function dbAll(){
+    if(!state.db) return [];
+    return new Promise((resolve,reject)=>{const tx=state.db.transaction('leftAds','readonly');const r=tx.objectStore('leftAds').getAll();r.onsuccess=()=>resolve(r.result.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));r.onerror=()=>reject(r.error)});
+  }
+  async function dbPut(item){return new Promise((resolve,reject)=>{const tx=state.db.transaction('leftAds','readwrite');const r=tx.objectStore('leftAds').put(item);r.onsuccess=()=>resolve();r.onerror=()=>reject(r.error)})}
+  async function dbDelete(id){return new Promise((resolve,reject)=>{const tx=state.db.transaction('leftAds','readwrite');const r=tx.objectStore('leftAds').delete(id);r.onsuccess=()=>resolve();r.onerror=()=>reject(r.error)})}
+
+  function fileToDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(file)})}
+  function blobToDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(blob)})}
+  function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('Não foi possível abrir a imagem.'));img.src=src})}
+
+  async function normalizeSquare(dataUrl, target=2048){
+    const img=await loadImage(dataUrl);
+    const c=document.createElement('canvas');c.width=target;c.height=target;
+    const ctx=c.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,target,target);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    const scale=Math.min(target/img.naturalWidth,target/img.naturalHeight);
+    const w=img.naturalWidth*scale,h=img.naturalHeight*scale;
+    ctx.drawImage(img,(target-w)/2,(target-h)/2,w,h);
+    return {dataUrl:c.toDataURL('image/jpeg',.97),width:img.naturalWidth,height:img.naturalHeight};
+  }
+
+  async function acceptLeftFile(file){
+    if(!file || !/^image\/(png|jpeg)$/.test(file.type)){toast('Escolha um arquivo JPG ou PNG.','error');return}
+    const raw=await fileToDataURL(file); const norm=await normalizeSquare(raw);
+    state.left={id:crypto.randomUUID(),name:file.name.replace(/\.[^.]+$/,''),dataUrl:norm.dataUrl,width:norm.width,height:norm.height,createdAt:new Date().toISOString(),source:'local'};
+    await dbPut(state.left); await renderLeftCurrent(); await renderLibrary(); await drawPreview(); updateReady();
+    if(Math.min(norm.width,norm.height)<1180) toast('Imagem salva, mas a resolução está abaixo do ideal para 300 dpi.','warn'); else toast('Propaganda salva na biblioteca.','ok');
+    if($('#autoGithub').checked) try{await uploadAssetToGithub(state.left,'propagandas')}catch(e){toast(e.message,'error')}
+  }
+
+  async function renderLeftCurrent(){
+    const box=$('#currentLeft');
+    if(!state.left){box.hidden=true;box.innerHTML='';return}
+    box.hidden=false; box.innerHTML=`<div class="current-asset"><img class="thumb" src="${state.left.dataUrl}" alt="Propaganda selecionada"><div class="asset-meta"><h3>${escapeHtml(state.left.name)}</h3><p>${state.left.width} × ${state.left.height} px • normalizada em quadrado</p><p>${state.left.githubPath ? 'GitHub: '+escapeHtml(state.left.githubPath) : 'Ainda não enviada ao GitHub'}</p><div class="button-row"><button class="btn small" id="renameLeft">Renomear</button><button class="btn small" id="syncLeft">Salvar no GitHub</button><button class="btn small danger" id="removeLeft">Remover da folha</button></div></div></div>`;
+    $('#renameLeft').onclick=async()=>{const name=prompt('Nome da propaganda:',state.left.name);if(name){state.left.name=name.trim();await dbPut(state.left);renderLeftCurrent();renderLibrary()}};
+    $('#syncLeft').onclick=async()=>{try{await uploadAssetToGithub(state.left,'propagandas');await dbPut(state.left);renderLeftCurrent();renderLibrary();toast('Propaganda salva no GitHub.','ok')}catch(e){toast(e.message,'error')}};
+    $('#removeLeft').onclick=()=>{state.left=null;renderLeftCurrent();drawPreview();updateReady()};
+  }
+
+  async function renderLibrary(extra=[]){
+    const items=[...(await dbAll()),...extra]; const lib=$('#leftLibrary');
+    if(!items.length){lib.innerHTML='<div style="grid-column:1/-1;color:var(--muted);font-size:12px;padding:8px 0">Nenhuma propaganda salva.</div>';return}
