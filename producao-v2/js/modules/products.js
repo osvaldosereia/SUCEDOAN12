@@ -27,6 +27,15 @@ function brDateToIso(value) {
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+function displayDateInput(value) {
+  const formatted = formatDate(value);
+  return /^\d{2}\/\d{2}\/\d{4}$/.test(formatted) ? formatted : '';
+}
+
+function roundMoney(value) {
+  return Math.max(0, Math.round((number(value) || 0) * 100) / 100);
+}
+
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -58,6 +67,7 @@ export class ProductsModule {
     this.editorTab = 'essential';
     this.pendingImages = new Map();
     this.imageZoom = new Map();
+    this.bulkPriceElements = null;
     this.bind();
   }
 
@@ -80,7 +90,14 @@ export class ProductsModule {
       this.elements.filterBar.hidden = !this.elements.filterBar.hidden;
     });
     this.elements.clearFiltersButton.addEventListener('click', () => this.clearFilters());
+    this.elements.productsTableBody.addEventListener('input', event => this.handleInlineInput(event));
+    this.elements.productsTableBody.addEventListener('change', event => this.handleInlineInput(event));
     this.elements.productsTableBody.addEventListener('click', event => {
+      const saveButton = event.target.closest('[data-inline-save]');
+      if (saveButton) {
+        this.saveInlineProduct(saveButton.dataset.inlineSave, saveButton);
+        return;
+      }
       const button = event.target.closest('[data-product-key]');
       if (button) this.openEditor(button.dataset.productKey);
     });
@@ -136,6 +153,40 @@ export class ProductsModule {
     this.elements.categoryFilter.innerHTML = '<option value="">Todas</option>'
       + categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('');
     this.elements.categoryFilter.value = categories.includes(current) ? current : '';
+    this.renderBulkPriceCategories(categories);
+  }
+
+  installBulkPriceTools() {
+    if (this.bulkPriceElements || document.getElementById('bulkPricePanel')) return;
+    const panel = document.createElement('section');
+    panel.className = 'bulk-price-panel';
+    panel.id = 'bulkPricePanel';
+    panel.innerHTML = `<div><strong>Ajuste de preco por categoria</strong><small>Aplique aumento ou reducao percentual e salve todos os produtos da categoria no Firebase.</small></div>
+      <label>Categoria<select id="bulkPriceCategory"><option value="">Selecione</option></select></label>
+      <label>Acao<select id="bulkPriceMode"><option value="increase">Aumentar</option><option value="decrease">Reduzir</option></select></label>
+      <label>Percentual<input id="bulkPricePercent" type="number" min="0" max="90" step="0.01" placeholder="%"></label>
+      <button class="button primary" id="bulkPriceApply" type="button">Aplicar e salvar</button>
+      <span id="bulkPriceStatus"></span>`;
+    this.elements.filterBar.insertAdjacentElement('afterend', panel);
+    this.bulkPriceElements = {
+      panel,
+      category: panel.querySelector('#bulkPriceCategory'),
+      mode: panel.querySelector('#bulkPriceMode'),
+      percent: panel.querySelector('#bulkPricePercent'),
+      apply: panel.querySelector('#bulkPriceApply'),
+      status: panel.querySelector('#bulkPriceStatus'),
+    };
+    this.bulkPriceElements.apply.addEventListener('click', () => this.applyBulkPriceChange());
+  }
+
+  renderBulkPriceCategories(categories = unique(this.store.state.products.map(product => product.categoria))) {
+    this.installBulkPriceTools();
+    const select = this.bulkPriceElements?.category;
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">Selecione</option>'
+      + categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('');
+    select.value = categories.includes(current) ? current : '';
   }
 
   productValidation(product) {
@@ -177,6 +228,106 @@ export class ProductsModule {
     return products.sort(sorters[filters.sort] || sorters.name);
   }
 
+  inlineInput(key, field, value, type = 'text', attrs = '') {
+    return `<input class="inline-product-input inline-${escapeHtml(field)}" data-inline-product="${escapeHtml(key)}" data-inline-field="${escapeHtml(field)}" type="${escapeHtml(type)}" ${attrs} value="${escapeHtml(value ?? '')}">`;
+  }
+
+  handleInlineInput(event) {
+    const input = event.target.closest('[data-inline-product][data-inline-field]');
+    if (!input) return;
+    const key = input.dataset.inlineProduct;
+    const field = input.dataset.inlineField;
+    if (!key || !field) return;
+    let value = input.value;
+    if (field === 'validade') {
+      value = maskBrDate(value);
+      input.value = value;
+      const iso = brDateToIso(value);
+      if (iso === null) {
+        if (value.replace(/\D/g, '').length === 8) this.onToast('Digite uma validade valida no formato DD/MM/AAAA.', 'error');
+        return;
+      }
+      value = iso;
+    } else if (field === 'estoque') {
+      value = Math.max(0, Math.floor(number(value)));
+    } else if (field === 'preco') {
+      value = roundMoney(value);
+    } else {
+      return;
+    }
+    this.store.updateProduct(key, { [field]: value });
+    input.closest('tr')?.classList.add('dirty-row');
+    const save = input.closest('tr')?.querySelector('[data-inline-save]');
+    if (save) save.disabled = false;
+    this.renderDirty();
+    const selected = this.store.getProduct(this.store.state.selectedProductKey);
+    if (selected) this.renderValidation(selected);
+  }
+
+  async saveInlineProduct(key, button = null) {
+    const product = this.store.getProduct(key);
+    if (!product) return;
+    const validation = this.productValidation(product);
+    if (validation.errors.length) return this.onToast(`Corrija: ${validation.errors.join(', ')}.`, 'error');
+    if (!this.store.state.dirtyProducts.has(String(key))) return this.onToast('Esta linha nao possui alteracao pendente.', 'success');
+    const originalText = button?.textContent || '';
+    try {
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Salvando...';
+      }
+      await this.onSave(product, { silent: true });
+      this.onToast(`${productName(product)} salvo no Firebase.`, 'success');
+      this.renderTable();
+      this.renderDirty();
+    } catch (error) {
+      if (button) button.disabled = false;
+      this.onToast(error?.message || String(error), 'error');
+    } finally {
+      if (button) button.textContent = originalText || 'Salvar';
+    }
+  }
+
+  async applyBulkPriceChange() {
+    const controls = this.bulkPriceElements;
+    if (!controls) return;
+    const category = text(controls.category.value);
+    const percent = number(controls.percent.value);
+    const mode = controls.mode.value === 'decrease' ? 'decrease' : 'increase';
+    if (!category) return this.onToast('Selecione uma categoria para aplicar o ajuste.', 'error');
+    if (!percent || percent <= 0) return this.onToast('Informe um percentual maior que zero.', 'error');
+    const targets = this.store.state.products.filter(product => text(product.categoria) === category && number(product.preco) > 0);
+    if (!targets.length) return this.onToast('Nao encontrei produtos com preco nesta categoria.', 'error');
+    const label = mode === 'increase' ? 'aumentar' : 'reduzir';
+    if (!confirm(`Aplicar e salvar no Firebase: ${label} ${percent}% em ${targets.length} produto(s) da categoria "${category}"?`)) return;
+    controls.apply.disabled = true;
+    controls.status.textContent = 'Preparando...';
+    const factor = mode === 'increase' ? (1 + percent / 100) : (1 - percent / 100);
+    let saved = 0;
+    try {
+      for (const product of targets) {
+        const key = productKey(product);
+        const nextPrice = roundMoney(number(product.preco) * factor);
+        this.store.updateProduct(key, { preco: nextPrice });
+        const updated = this.store.getProduct(key);
+        controls.status.textContent = `Salvando ${saved + 1}/${targets.length}...`;
+        await this.onSave(updated, { silent: true });
+        saved += 1;
+      }
+      controls.status.textContent = `${saved} produto(s) salvos.`;
+      controls.percent.value = '';
+      this.onToast(`Ajuste de preco aplicado em ${saved} produto(s).`, 'success');
+      this.render();
+    } catch (error) {
+      controls.status.textContent = `Parou em ${saved}/${targets.length}.`;
+      this.onToast(error?.message || String(error), 'error');
+      this.renderTable();
+      this.renderDirty();
+    } finally {
+      controls.apply.disabled = false;
+    }
+  }
+
   renderTable() {
     const products = this.filteredProducts();
     const pages = Math.max(1, Math.ceil(products.length / this.pageSize));
@@ -194,15 +345,16 @@ export class ProductsModule {
           ? `<span class="badge warning">${validation.warnings.length} aviso${validation.warnings.length > 1 ? 's' : ''}</span>`
           : '<span class="badge success">Completo</span>';
       const stock = number(product.estoque);
+      const key = productKey(product);
       return `<tr${dirty ? ' class="dirty-row"' : ''}>
         <td><div class="product-cell"><img class="product-thumb" src="${escapeHtml(image)}" onerror="this.src='${PLACEHOLDER}'" alt=""><div><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(product.marca || product.categoria || 'Sem classificação')}${dirty ? ' · alteração pendente' : ''}</small></div></div></td>
         <td><div class="cell-stack"><strong>${escapeHtml(productCode(product) || '—')}</strong><span>${escapeHtml(product.gtin || product.ean || 'Sem EAN')}</span></div></td>
-        <td><div class="cell-stack"><strong>${money(product.preco)}</strong><span>Custo ${money(product.preco_custo)}</span></div></td>
-        <td><span class="badge ${stock >= 30 ? 'success' : stock > 0 ? 'warning' : 'danger'}">${stock}</span></td>
-        <td>${escapeHtml(formatDate(product.validade))}</td>
+        <td><div class="inline-price-cell">${this.inlineInput(key, 'preco', product.preco ?? '', 'number', 'min="0" step="0.01" inputmode="decimal"')}<small>Custo ${money(product.preco_custo)}</small></div></td>
+        <td><div class="inline-stock-cell">${this.inlineInput(key, 'estoque', stock, 'number', 'min="0" step="1" inputmode="numeric"')}<span class="badge ${stock >= 30 ? 'success' : stock > 0 ? 'warning' : 'danger'}">${stock}</span></div></td>
+        <td>${this.inlineInput(key, 'validade', displayDateInput(product.validade), 'text', 'inputmode="numeric" maxlength="10" placeholder="DD/MM/AAAA"')}</td>
         <td><span class="badge ${isActive(product) ? 'success' : 'neutral'}">${isActive(product) ? 'Ativo' : 'Inativo'}</span></td>
         <td>${qualityBadge}</td>
-        <td><button class="row-action" type="button" data-product-key="${escapeHtml(productKey(product))}">Corrigir</button></td>
+        <td><div class="row-actions"><button class="row-action save-inline" type="button" data-inline-save="${escapeHtml(key)}" ${dirty ? '' : 'disabled'}>Salvar</button><button class="row-action" type="button" data-product-key="${escapeHtml(key)}">Corrigir</button></div></td>
       </tr>`;
     }).join('') : '<tr><td class="empty-state" colspan="8">Nenhum produto corresponde aos filtros.</td></tr>';
     this.elements.productsPagination.innerHTML = `<span class="pagination-info">Página ${this.store.state.filters.page} de ${pages}</span><div class="pagination-buttons"><button class="button secondary" data-page="${Math.max(1, this.store.state.filters.page - 1)}" ${this.store.state.filters.page <= 1 ? 'disabled' : ''}>Anterior</button><button class="button secondary" data-page="${Math.min(pages, this.store.state.filters.page + 1)}" ${this.store.state.filters.page >= pages ? 'disabled' : ''}>Próxima</button></div>`;

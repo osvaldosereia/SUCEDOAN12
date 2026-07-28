@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260726-admin-v13-xml-editor-parity';
+const BUILD = '20260727-products-inline-v1';
 const imports = new Map();
 
 function loadConfig() {
@@ -149,7 +149,7 @@ async function loadRouteModules(route) {
   if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);
   if (route === 'order-tools') task = importOnce('order-tools', ['./order-tools-bootstrap.js']);
   if (route === 'baskets' || route === 'kits') task = importOnce('collections', ['./collections-bootstrap.js']);
-  if (route === 'offers' || route === 'offers-rules') task = importOnce('offers', ['./offers-bootstrap.js?admin_build=20260727-offers-rules-page-v1']);
+  if (route === 'offers' || route === 'offers-rules') task = importOnce('offers', ['./offers-bootstrap.js?admin_build=20260727-products-inline-v1']);
   if (route === 'coupons') task = importOnce('coupons', ['./coupons-bootstrap.js']);
   if (route === 'quick-purchase') task = importOnce('quick-purchase', ['./quick-purchase-bootstrap.js']);
   if (['categories', 'brands', 'suppliers', 'tags'].includes(route)) task = importOnce('registries', ['./registries-bootstrap.js']);

@@ -52,6 +52,17 @@ function toast(message, type = '') {
   setTimeout(() => node.remove(), type === 'error' ? 7000 : 3800);
 }
 
+function setBusy(button, label) {
+  if (!button) return () => {};
+  const previous = button.textContent;
+  button.disabled = true;
+  button.textContent = label;
+  return (nextLabel = previous) => {
+    button.disabled = false;
+    button.textContent = nextLabel;
+  };
+}
+
 function products() {
   return window.__adminV2OffersStore?.state?.products
     || window.__adminV2CollectionsModule?.store?.state?.products
@@ -394,9 +405,13 @@ function formRule() {
   });
 }
 
-function saveRuleLocal() {
+function saveRuleLocal(button) {
+  const done = setBusy(button, 'Preparando...');
   const rule = formRule();
-  if (!rule.categoria) return toast('Selecione a categoria da regra.', 'error');
+  if (!rule.categoria) {
+    done();
+    return toast('Selecione a categoria da regra.', 'error');
+  }
   const doc = rulesDocument();
   const index = doc.regras.findIndex(item => item.id === rule.id);
   if (index >= 0) doc.regras[index] = rule;
@@ -405,6 +420,7 @@ function saveRuleLocal() {
   state.rulesDirty = true;
   state.draftRuleId = '';
   simulateRules({ notify: false });
+  done('Regra pronta');
   toast('Regra preparada. Salve para publicar no GitHub.', 'success');
 }
 
@@ -437,8 +453,9 @@ function removeRuleForCancellation(id) {
   return rule;
 }
 
-async function saveRulesFile() {
+async function saveRulesFile(button) {
   if (!canWriteRules()) return toast(safetyText(), 'error');
+  const done = setBusy(button, 'Salvando...');
   const cfg = config();
   const doc = rulesDocument();
   doc.ativo = Boolean(document.getElementById('campaignEnabled')?.checked);
@@ -450,6 +467,7 @@ async function saveRulesFile() {
   state.rulesSourceBranch = cfg.githubBranch;
   state.rulesDirty = false;
   toast(result.skipped ? 'As regras já estavam atualizadas.' : 'Regras salvas corretamente no GitHub.', 'success');
+  done('Salvo');
   render();
 }
 
@@ -652,8 +670,12 @@ function bind() {
     if (action.matches('[data-campaign-run]')) dispatchWorkflow().catch(error => toast(error?.message || String(error), 'error'));
     if (action.matches('[data-campaign-reconcile]')) reconcileState().catch(error => toast(error?.message || String(error), 'error'));
     if (action.matches('[data-campaign-load-history]')) loadHistory().catch(error => toast(error?.message || String(error), 'error'));
-    if (action.matches('[data-campaign-save-settings]')) saveRulesFile().catch(error => toast(error?.message || String(error), 'error'));
-    if (action.matches('[data-campaign-save-rule]')) saveRuleLocal();
+    if (action.matches('[data-campaign-save-settings]')) saveRulesFile(action).catch(error => {
+      action.disabled = false;
+      action.textContent = 'Salvar regras';
+      toast(error?.message || String(error), 'error');
+    });
+    if (action.matches('[data-campaign-save-rule]')) saveRuleLocal(action);
     if (action.matches('[data-campaign-new]')) { state.draftRuleId = ''; render(); }
     if (action.matches('[data-campaign-edit]')) { state.draftRuleId = action.dataset.campaignEdit; render(); }
     if (action.matches('[data-campaign-toggle]')) mutateRule(action.dataset.campaignToggle, rule => { rule.status = rule.status === 'ativa' ? 'pausada' : 'ativa'; rule.encerrar_ofertas_ativas = false; });

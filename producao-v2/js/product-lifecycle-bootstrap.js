@@ -147,8 +147,6 @@ function newProductMarkup(products) {
     <label class="wide">Ou URL da imagem<input name="url_imagem" type="url"></label>
     <label class="wide">Tags<input name="tags" placeholder="Separe por vírgulas"></label>
     <label class="wide">Descrição<textarea name="descricao"></textarea></label>
-    <label class="wide">Título SEO<input name="seo_titulo"></label>
-    <label class="wide">Descrição SEO<textarea name="seo_descricao"></textarea></label>
     <datalist id="lifecycleCategories">${options('categoria')}</datalist><datalist id="lifecycleSubcategories">${options('subcategoria')}</datalist><datalist id="lifecycleSubsubcategories">${options('subsubcategoria')}</datalist><datalist id="lifecycleBrands">${options('marca')}</datalist><datalist id="lifecycleSuppliers">${options('fornecedor')}</datalist><datalist id="lifecyclePackaging">${options('embalagem')}</datalist><datalist id="lifecycleGondolas">${options('gondola')}</datalist><datalist id="lifecycleShelves">${options('prateleira')}</datalist>
   </form>`;
 }
