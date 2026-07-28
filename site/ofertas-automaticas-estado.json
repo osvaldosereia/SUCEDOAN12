@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-28T01:52:10.423Z",
+  "ultima_execucao": "2026-07-28T01:58:54.147Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -30,6 +30,20 @@
       "inicio": "2026-07-27",
       "fim": "2026-07-30T23:59:59-04:00",
       "historico_id": "oferta-1775971741044-1785203530423-2jjem"
+    },
+    {
+      "produto_key": "1776029960762",
+      "codigo": "733835P",
+      "nome": "Seda Óleo em Gel Boom Volumao Power 190ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 23.9,
+      "preco_oferta": 21.51,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-27",
+      "fim": "2026-08-03T23:59:59-04:00",
+      "historico_id": "oferta-1776029960762-1785203934147-uvy9t"
     },
     {
       "produto_key": "1776338124227",
@@ -86,6 +100,20 @@
       "inicio": "2026-07-27",
       "fim": "2026-08-03T23:59:59-04:00",
       "historico_id": "oferta-1776338126625-1785202653585-vxadp"
+    },
+    {
+      "produto_key": "1776338130360",
+      "codigo": "P0032",
+      "nome": "Bala de Gelatina Fini 15g Beijos Morango e Nata",
+      "categoria": "BALAS E CHICLETES",
+      "regra_id": "regra-1785202804573",
+      "origem": "campanha_automatica",
+      "preco_normal": 1.69,
+      "preco_oferta": 1.52,
+      "desconto_percentual": 10.06,
+      "inicio": "2026-07-27",
+      "fim": "2026-07-30T23:59:59-04:00",
+      "historico_id": "oferta-1776338130360-1785203934147-xoply"
     },
     {
       "produto_key": "1776338130542",
@@ -212,6 +240,20 @@
       "inicio": "2026-07-27",
       "fim": "2026-08-03T23:59:59-04:00",
       "historico_id": "oferta-17797319512497261-1785202707598-yngo6"
+    },
+    {
+      "produto_key": "P-J6SU",
+      "codigo": "P-J6SU",
+      "nome": "Cremer Fralda M 68un",
+      "categoria": "BEBÊ",
+      "regra_id": "regra-1785202788822",
+      "origem": "campanha_automatica",
+      "preco_normal": 56.9,
+      "preco_oferta": 53.09,
+      "desconto_percentual": 6.7,
+      "inicio": "2026-07-27",
+      "fim": "2026-07-30T23:59:59-04:00",
+      "historico_id": "oferta-pj6su-1785203934147-pylwm"
     }
   ],
   "historico_produtos": {
@@ -628,8 +670,8 @@
       "regra_id": "regra-bolachas-e-biscoitos-1784035596871"
     },
     "P-J6SU": {
-      "ultima_oferta_em": "2026-07-25T02:07:38.592Z",
-      "regra_id": "regra-bebe-1784035600990"
+      "ultima_oferta_em": "2026-07-28T01:58:54.147Z",
+      "regra_id": "regra-1785202788822"
     },
     "177997649613872351": {
       "ultima_oferta_em": "2026-07-25T02:07:38.592Z",
@@ -852,8 +894,8 @@
       "regra_id": "regra-bebe-1784035600990"
     },
     "1776338130360": {
-      "ultima_oferta_em": "2026-07-25T05:25:02.562Z",
-      "regra_id": "regra-balas-e-chicletes-1784035604521"
+      "ultima_oferta_em": "2026-07-28T01:58:54.147Z",
+      "regra_id": "regra-1785202804573"
     },
     "1775971741046": {
       "ultima_oferta_em": "2026-07-25T05:25:02.562Z",
@@ -4530,6 +4572,10 @@
     "1776708427490": {
       "ultima_oferta_em": "2026-07-28T01:52:10.423Z",
       "regra_id": "regra-1785202557027"
+    },
+    "1776029960762": {
+      "ultima_oferta_em": "2026-07-28T01:58:54.147Z",
+      "regra_id": "regra-1785202557027"
     }
   },
   "execucoes": [
@@ -6051,6 +6097,23 @@
     {
       "id": "2026-07-28T01:51:26Z",
       "executado_em": "2026-07-28T01:52:10.423Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 3,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 0,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1785203933753",
+      "executado_em": "2026-07-28T01:58:54.147Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
