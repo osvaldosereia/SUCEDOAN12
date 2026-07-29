@@ -14,10 +14,10 @@
   </style>
 </head>
 <body>
-  <main><strong>Abrindo o Admin oficial…</strong><small>Carregando a versão com salvamento produtivo e mesclagem segura.</small></main>
+  <main><strong>Abrindo o Admin oficial…</strong><small>Carregando a versão corrigida de estoque, produtos, kits e cestas.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260729-save-merge-v1';
+      const BUILD = '20260729-stock-save-v2';
       try {
         const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
@@ -30,9 +30,15 @@
           `      "/producao-v2/js/collections-bootstrap.js?admin_build=20260728-customers-fallback-v1": "/producao-v2/js/collections-bootstrap.js?admin_build=${BUILD}",`,
         ].join('\n');
 
+        const oldStockModule = '"/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260726-admin-v13-xml-editor-parity"';
+        const productiveStockModule = `"/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=${BUILD}"`;
+
         if (!html.includes(oldFirebase)) throw new Error('Não foi possível localizar o mapa de importação do Firebase.');
+        if (!html.includes(oldStockModule)) throw new Error('Não foi possível localizar o módulo de estoque.');
+
         html = html.replace(oldFirebase, productiveImports);
-        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · salvamento produtivo.</strong>');
+        html = html.replace(oldStockModule, productiveStockModule);
+        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · estoque produtivo.</strong>');
         html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
 
         document.open();
