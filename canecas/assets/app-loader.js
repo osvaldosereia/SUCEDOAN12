@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const scriptUrl = document.currentScript.src;
-  const version = '20260729-4';
+  const version = '20260729-7';
 
   const css = document.createElement('link');
   css.rel = 'stylesheet';
@@ -22,6 +22,11 @@
     source = source.replace(
       "async function dbDelete(id){return new Promise((resolve,reject)=>{const tx=state.db.transaction('leftAds','readwrite');const r=tx.objectStore('leftAds').delete(id);r.onsuccess=()=>resolve();r.onerror=()=>reject(r.error)})}",
       "async function dbDelete(id){if(!state.db)return false;return new Promise(resolve=>{try{const tx=state.db.transaction('leftAds','readwrite');const r=tx.objectStore('leftAds').delete(id);r.onsuccess=()=>resolve(true);r.onerror=()=>resolve(false);tx.onabort=()=>resolve(false)}catch(e){resolve(false)}})}"
+    );
+
+    source = source.replace(
+      "`Tema: ${c.theme}. Público-alvo: ${c.audience}. Clima: ${c.mood}.`,",
+      "`Tema: ${c.theme}. Clima: ${c.mood}.`,"
     );
 
     return source;
