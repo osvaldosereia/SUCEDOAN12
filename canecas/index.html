@@ -18,8 +18,8 @@
     (async()=>{
       try{
         if(typeof DecompressionStream!=='function') throw new Error('Atualize o navegador para abrir esta aplicação.');
-        const version='20260729-10';
-        const names=['app-v9.1.b64','app-v9.2.b64','app-v9.3.b64','app-v9.4.b64'];
+        const version='20260729-11';
+        const names=['app-v10.1.b64','app-v10.2.b64','app-v10.3.b64','app-v10.4.b64','app-v10.5.b64','app-v10.6.b64','app-v10.7.b64','app-v10.8.b64'];
         const parts=await Promise.all(names.map(async name=>{
           const response=await fetch(`assets/${name}?v=${version}`,{cache:'no-store'});
           if(!response.ok) throw new Error(`Falha ao carregar ${name}: HTTP ${response.status}`);
