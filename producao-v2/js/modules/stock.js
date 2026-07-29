@@ -1,6 +1,6 @@
 import { filterStockRows, normalizeStockDate, stockDashboard } from '../core/stock.js';
 import { debounce, escapeHtml, number, productCode, productImage, productKey, productName } from '../core/utils.js';
-import { executeStockAdjustment } from '../services/stock-transaction.js';
+import { executeStockAdjustment } from '../services/stock-transaction.js?admin_build=20260729-stock-save-v2';
 
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="100%" height="100%" fill="#f1f2ef"/><text x="50%" y="53%" text-anchor="middle" fill="#899087" font-family="Arial" font-size="10">sem foto</text></svg>')}`;
 
@@ -145,7 +145,7 @@ export class StockModule {
     const config = this.reloadConfig();
     this.elements.stockSaveEditor.disabled = !(changes.length && this.elements.stockReason.value.trim() && config.writeMode && config.stockWriteMode);
     this.elements.stockEditorSafety.textContent = config.writeMode && config.stockWriteMode
-      ? 'Ajuste habilitado para teste controlado.'
+      ? 'Ajuste habilitado. Descrição e outros conteúdos paralelos serão preservados.'
       : 'Gravação bloqueada nas configurações.';
   }
 
@@ -162,7 +162,7 @@ export class StockModule {
         noExpiry: this.elements.stockNoExpiry.checked,
         reason: this.elements.stockReason.value,
       });
-      this.onToast(`${productName(saved)} ajustado com segurança.`, 'success');
+      this.onToast(`${productName(saved)} ajustado. Alterações de descrição foram preservadas.`, 'success');
       await this.onReload();
       this.closeEditor();
     } catch (error) {
