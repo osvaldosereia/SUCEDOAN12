@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-29T21:43:26.995Z",
+  "ultima_execucao": "2026-07-29T22:15:18.445Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -4524,6 +4524,20 @@
       "inicio": "2026-07-28",
       "fim": "2026-07-31T23:59:59-04:00",
       "historico_id": "oferta-1776338127709-1785245146044-d0k9z"
+    },
+    {
+      "produto_key": "1776338127743",
+      "codigo": "P548",
+      "nome": "Lixa de Unha Unidade",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 2.9,
+      "preco_oferta": 2.61,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-29",
+      "fim": "2026-08-05T23:59:59-04:00",
+      "historico_id": "oferta-1776338127743-1785363318445-l6w7n"
     },
     {
       "produto_key": "1776338127753",
@@ -14242,20 +14256,6 @@
       "historico_id": "oferta-produto1784905865256-1785230072105-68xtr"
     },
     {
-      "produto_key": "produto_1784906133515",
-      "codigo": "melitta.cafe.250",
-      "nome": "Café Moído Melitta Tradicional Sabor Encorpado Embalagem 250g",
-      "categoria": "CAFÉ DA MANHÃ",
-      "regra_id": "regra-1785205019989",
-      "origem": "campanha_automatica",
-      "preco_normal": 17.9,
-      "preco_oferta": 16.9,
-      "desconto_percentual": 5.59,
-      "inicio": "2026-07-28",
-      "fim": "2026-07-31T23:59:59-04:00",
-      "historico_id": "oferta-produto1784906133515-1785228605215-fa8lc"
-    },
-    {
       "produto_key": "produto_1784906490550",
       "codigo": "amanda.bolachachocolate.100",
       "nome": "Biscoito Recheado Amanda Sabor Chocolate 100g",
@@ -18136,8 +18136,8 @@
       "regra_id": "regra-1785202557027"
     },
     "1776338127743": {
-      "ultima_oferta_em": "2026-07-26T13:58:01.501Z",
-      "regra_id": "regra-beleza-1784031773317"
+      "ultima_oferta_em": "2026-07-29T22:15:18.445Z",
+      "regra_id": "regra-1785202557027"
     },
     "177887332885863376": {
       "ultima_oferta_em": "2026-07-28T23:37:26.030Z",
@@ -19133,23 +19133,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1784967938576",
-      "executado_em": "2026-07-25T08:25:39.279Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 54,
-        "ofertas_criadas": 51,
-        "ofertas_nao_criadas": 3,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-07-25T09:22:56Z",
       "executado_em": "2026-07-25T09:23:36.614Z",
@@ -22526,6 +22509,23 @@
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
         "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "2026-07-29T22:14:25Z",
+      "executado_em": "2026-07-29T22:15:18.445Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 1,
         "vencidos": 0,
         "ofertas_reativadas": 0,
         "reativacoes_com_falha": 0,
