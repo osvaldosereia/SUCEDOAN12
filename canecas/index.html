@@ -21,7 +21,7 @@
     (async()=>{
       try{
         if(typeof DecompressionStream!=='function') throw new Error('Atualize o navegador para abrir esta aplicação.');
-        const version='20260729-15';
+        const version='20260729-16';
         const names=['app-v10.1.b64','app-v10.2.b64','app-v10.3.b64','app-v10.4.b64','app-v10.5.b64','app-v10.6.b64','app-v10.7.b64','app-v10.8.b64'];
         const parts=await Promise.all(names.map(async name=>{
           const response=await fetch(`assets/${name}?v=${version}`,{cache:'no-store'});
@@ -31,8 +31,11 @@
         const compressed=Uint8Array.from(atob(parts.join('')),character=>character.charCodeAt(0));
         const stream=new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
         const html=await new Response(stream).text();
-        const enhancement='<scr'+'ipt src="assets/canecas-v15.js?v='+version+'"></scr'+'ipt>';
-        const finalHtml=html.includes('</body>')?html.replace('</body>',enhancement+'</body>'):html+enhancement;
+        const enhancements=[
+          '<scr'+'ipt src="assets/canecas-ui-v16.js?v='+version+'"></scr'+'ipt>',
+          '<scr'+'ipt src="assets/canecas-v15.js?v='+version+'"></scr'+'ipt>'
+        ].join('');
+        const finalHtml=html.includes('</body>')?html.replace('</body>',enhancements+'</body>'):html+enhancements;
         document.open();document.write(finalHtml);document.close();
       }catch(error){
         console.error(error);
