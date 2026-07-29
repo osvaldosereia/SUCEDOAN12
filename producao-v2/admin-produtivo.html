@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Dona Antônia — Abrindo Admin produtivo</title>
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f6f4ef;color:#20211f;font:16px system-ui,-apple-system,Segoe UI,sans-serif}
+    main{max-width:520px;padding:32px;text-align:center}strong{display:block;font-size:22px;margin-bottom:8px}small{color:#686b66}
+  </style>
+</head>
+<body>
+  <main><strong>Abrindo o Admin oficial…</strong><small>Carregando a versão com salvamento produtivo e mesclagem segura.</small></main>
+  <script>
+    (async function () {
+      const BUILD = '20260729-save-merge-v1';
+      try {
+        const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
+        let html = await response.text();
+
+        const oldFirebase = '"/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260726-admin-v13-xml-editor-parity",';
+        const productiveImports = [
+          `"/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase-productive.js?admin_build=${BUILD}",`,
+          `      "/producao-v2/js/services/collections.js": "/producao-v2/js/services/collections.js?admin_build=${BUILD}",`,
+          `      "/producao-v2/js/collections-bootstrap.js?admin_build=20260728-customers-fallback-v1": "/producao-v2/js/collections-bootstrap.js?admin_build=${BUILD}",`,
+        ].join('\n');
+
+        if (!html.includes(oldFirebase)) throw new Error('Não foi possível localizar o mapa de importação do Firebase.');
+        html = html.replace(oldFirebase, productiveImports);
+        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · salvamento produtivo.</strong>');
+        html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
+
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (error) {
+        console.error(error);
+        document.body.innerHTML = `<main><strong>Não foi possível abrir o Admin</strong><small>${String(error?.message || error)}</small><p><a href="./index.html?admin_fallback=${Date.now()}">Abrir versão padrão</a></p></main>`;
+      }
+    }());
+  </script>
+</body>
+</html>
