@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-29T19:55:47.629Z",
+  "ultima_execucao": "2026-07-29T20:36:19.712Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -7802,6 +7802,20 @@
       "historico_id": "oferta-1776338132523-1785251092095-pco12"
     },
     {
+      "produto_key": "1776338132530",
+      "codigo": "685601C",
+      "nome": "Condicionador TRESemmé Reconstrução e Força 650ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 34.9,
+      "preco_oferta": 32.46,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-07-29",
+      "fim": "2026-08-01T23:59:59-04:00",
+      "historico_id": "oferta-1776338132530-1785357379712-e3vb8"
+    },
+    {
       "produto_key": "1776338132554",
       "codigo": "83714689",
       "nome": "Oeste Sabão Pó - Lavanda 800g",
@@ -11442,6 +11456,20 @@
       "historico_id": "oferta-1779474694691283419-1785248752571-wbslx"
     },
     {
+      "produto_key": "1779474694691297826",
+      "codigo": "P-6CPP",
+      "nome": "Kolene Creme de Pentear Cronograma 500ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 16.9,
+      "preco_oferta": 15.21,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-29",
+      "fim": "2026-08-05T23:59:59-04:00",
+      "historico_id": "oferta-1779474694691297826-1785357379712-qlbg2"
+    },
+    {
       "produto_key": "177955023802584435",
       "codigo": "2380250848",
       "nome": "Remmus Amaciante Proteo Carinhoso 2 LITROS",
@@ -14686,8 +14714,8 @@
       "regra_id": "regra-1785202804573"
     },
     "1776338132530": {
-      "ultima_oferta_em": "2026-07-27T04:10:52.086Z",
-      "regra_id": "regra-shampoo-e-condicionador-1784091294397"
+      "ultima_oferta_em": "2026-07-29T20:36:19.712Z",
+      "regra_id": "regra-1785205192100"
     },
     "1776691211320": {
       "ultima_oferta_em": "2026-07-27T04:10:52.086Z",
@@ -17978,8 +18006,8 @@
       "regra_id": "regra-1785205019989"
     },
     "1779474694691297826": {
-      "ultima_oferta_em": "2026-07-26T11:37:42.540Z",
-      "regra_id": "regra-beleza-1784031773317"
+      "ultima_oferta_em": "2026-07-29T20:36:19.712Z",
+      "regra_id": "regra-1785202557027"
     },
     "1779474694692308307": {
       "ultima_oferta_em": "2026-07-26T11:37:42.540Z",
@@ -19007,18 +19035,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "2026-07-15T04:57:58.490Z",
-      "executado_em": "2026-07-15T04:58:40.313Z",
-      "origem": "make",
-      "resumo": {
-        "ofertas_solicitadas": 38,
-        "ofertas_criadas": 36,
-        "ofertas_nao_criadas": 2,
-        "ofertas_encerradas": 0,
-        "vencidos": 0
-      }
-    },
     {
       "id": "github-1784945258176",
       "executado_em": "2026-07-25T02:07:38.592Z",
@@ -22388,6 +22404,23 @@
     {
       "id": "2026-07-29T19:54:58Z",
       "executado_em": "2026-07-29T19:55:47.629Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 2,
+        "ofertas_nao_criadas": 21,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1785357379166",
+      "executado_em": "2026-07-29T20:36:19.712Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
