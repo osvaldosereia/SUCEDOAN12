@@ -2,7 +2,7 @@ import { CollectionsModule } from './modules/collections.js';
 import { clone, escapeHtml, text } from './core/utils.js';
 import { saveCollectionList } from './services/collections.js';
 
-const BUILD = '20260727-admin-kit-lifecycle-v1';
+const BUILD = '20260729-save-merge-v1';
 
 function installStylesheet() {
   if (document.querySelector('link[data-admin-kit-lifecycle]')) return;
@@ -107,7 +107,11 @@ if (!CollectionsModule.prototype.__kitLifecycleAdminInstalled) {
         list,
         this.store.state.products,
         this.store.state.queue,
-        { preserveInvalidExisting: true, changedId: key },
+        {
+          preserveInvalidExisting: true,
+          changedId: key,
+          changedFields: ['ativo', 'ativo_ate_estoque_zero', 'data_fim', 'atualizado_em'],
+        },
       );
       this.setCurrentList(saved.list);
       this.onToast(stockMode
@@ -138,7 +142,7 @@ if (!CollectionsModule.prototype.__kitLifecycleAdminInstalled) {
         list,
         this.store.state.products,
         this.store.state.queue,
-        { preserveInvalidExisting: true },
+        { preserveInvalidExisting: true, deletedId: key },
       );
       this.setCurrentList(saved.list);
       this.render();
