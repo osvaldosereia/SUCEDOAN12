@@ -6,10 +6,11 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
 import { CollectionsModule } from './modules/collections.js';
 import './kit-lifecycle-admin.js';
+import './collection-concurrency.js';
 import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
 
-const BUILD = '20260727-admin-kit-lifecycle-v1';
+const BUILD = '20260729-save-merge-v1';
 
 function loadConfig() {
   try {
