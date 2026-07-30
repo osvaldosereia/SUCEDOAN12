@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-30T09:45:26.160Z",
+  "ultima_execucao": "2026-07-30T10:05:54.412Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -10182,6 +10182,20 @@
       "historico_id": "oferta-1778508267542136874-1785290987721-qb5uz"
     },
     {
+      "produto_key": "177850826754252766",
+      "codigo": "P-NP6Y",
+      "nome": "Lola Cosmetics Óleo Pinga Patua e Moringa Unidade",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 23.9,
+      "preco_oferta": 21.51,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-30",
+      "fim": "2026-08-06T23:59:59-04:00",
+      "historico_id": "oferta-177850826754252766-1785405954412-9q49j"
+    },
+    {
       "produto_key": "177850826754256242",
       "codigo": "P-F0QU",
       "nome": "Harpic Desinfetante e Desodorizador Sanitário 10x - 500ml",
@@ -18576,8 +18590,8 @@
       "regra_id": "regra-1785202557027"
     },
     "177850826754252766": {
-      "ultima_oferta_em": "2026-07-26T22:14:01.091Z",
-      "regra_id": "regra-beleza-1784031773317"
+      "ultima_oferta_em": "2026-07-30T10:05:54.412Z",
+      "regra_id": "regra-1785202557027"
     },
     "1776714516745": {
       "ultima_oferta_em": "2026-07-26T22:14:01.091Z",
@@ -19469,23 +19483,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1785074280901",
-      "executado_em": "2026-07-26T13:58:01.501Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 54,
-        "ofertas_criadas": 5,
-        "ofertas_nao_criadas": 49,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1785079811598",
       "executado_em": "2026-07-26T15:30:12.229Z",
@@ -22855,6 +22852,23 @@
     {
       "id": "2026-07-30T09:44:24Z",
       "executado_em": "2026-07-30T09:45:26.160Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1785405954023",
+      "executado_em": "2026-07-30T10:05:54.412Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
