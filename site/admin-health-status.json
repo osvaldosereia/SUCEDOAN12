@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-31T03:38:07.200Z",
+  "checkedAt": "2026-07-31T05:07:37.629Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1524 produto(s)"
+      "detail": "1403 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1524 produto(s) administrativos · 1524 público(s) · campos OK"
+      "detail": "1524 produto(s) administrativos · 1403 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 123 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 161 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 190 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 145 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785469024877 · público 1524 · admin 1524"
+      "detail": "catalog-86e3d4b20bb039ed · público 1403 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -90,8 +90,8 @@
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": true,
-      "detail": "0.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "ok": false,
+      "detail": "1.5h desde a execução · status sucesso · 162 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,14 +119,19 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "1.5h desde a execução · status sucesso · 162 expirada(s) ainda ativa(s)"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "30601931958",
+    "runId": "30605788034",
     "attempt": "1",
-    "sourceSha": "9b2268fbd3922d7d45a85f7e84ee3124638868a8",
-    "publishedAt": "2026-07-31T03:38:41.747Z"
+    "sourceSha": "043d752030cac8e0ee4acf2bb3f5b27babef2d76",
+    "publishedAt": "2026-07-31T05:08:11.886Z"
   }
 }
