@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-31T12:08:29.314Z",
+  "checkedAt": "2026-07-31T13:04:39.174Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1403 produto(s)"
+      "detail": "1524 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1524 produto(s) administrativos · 1403 público(s) · campos OK"
+      "detail": "1524 produto(s) administrativos · 1524 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 176 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 201 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 219 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 262 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": true,
-      "detail": "catalog-1f26b29e82c73a39 · público 1403 · admin 1524"
+      "ok": false,
+      "detail": "catalog-1785502811402 · público 0 · admin 0"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "2530 oferta(s) no histórico"
+      "detail": "2533 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,14 +119,19 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
+    },
+    {
+      "name": "Versão do catálogo válida",
+      "ok": false,
+      "detail": "catalog-1785502811402 · público 0 · admin 0"
     }
   ],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "30629297145",
+    "event": "push",
+    "runId": "30632737130",
     "attempt": "1",
-    "sourceSha": "6e7a3221157f95a562a0c18f628dc34656f8b937",
-    "publishedAt": "2026-07-31T12:09:06.607Z"
+    "sourceSha": "e073bfca1fef4c2179d1a75f031af183a6edce29",
+    "publishedAt": "2026-07-31T13:05:14.333Z"
   }
 }
