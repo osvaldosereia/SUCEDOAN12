@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-31T05:07:37.629Z",
+  "checkedAt": "2026-07-31T06:29:20.546Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -56,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 161 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 162 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 145 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 153 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-86e3d4b20bb039ed · público 1403 · admin 1524"
+      "detail": "catalog-98dbdfd98ae39855 · público 1403 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "2359 oferta(s) no histórico"
+      "detail": "2383 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "1.5h desde a execução · status sucesso · 162 expirada(s) ainda ativa(s)"
+      "ok": true,
+      "detail": "1.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,19 +119,14 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "1.5h desde a execução · status sucesso · 162 expirada(s) ainda ativa(s)"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "30605788034",
+    "runId": "30609631568",
     "attempt": "1",
-    "sourceSha": "043d752030cac8e0ee4acf2bb3f5b27babef2d76",
-    "publishedAt": "2026-07-31T05:08:11.886Z"
+    "sourceSha": "90380604a9358ff6ec32f09abbec1329cc28f1e7",
+    "publishedAt": "2026-07-31T06:29:53.915Z"
   }
 }
