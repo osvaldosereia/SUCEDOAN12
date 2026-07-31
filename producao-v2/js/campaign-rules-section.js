@@ -1,6 +1,20 @@
 (() => {
   'use strict';
 
+  import('./products-offer-columns.js?admin_build=20260731-product-offer-columns-v1')
+    .then(() => {
+      const refreshProductsTable = () => {
+        const search = document.getElementById('productSearch');
+        if (search) search.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      refreshProductsTable();
+      setTimeout(refreshProductsTable, 500);
+      setTimeout(refreshProductsTable, 1500);
+    })
+    .catch(error => {
+      console.error('Falha ao carregar as colunas de oferta dos produtos.', error);
+    });
+
   import('./kit-editor-flow-v2.js?admin_build=20260728-kit-editor-flow-v2').catch(error => {
     console.error('Falha ao carregar o fluxo organizado de kits.', error);
   });
