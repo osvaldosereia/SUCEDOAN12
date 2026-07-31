@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-31T02:09:45.126Z",
+  "ultima_execucao": "2026-07-31T03:03:05.160Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -4146,6 +4146,20 @@
       "inicio": "2026-07-28",
       "fim": "2026-07-31T23:59:59-04:00",
       "historico_id": "oferta-1776338126885-1785282264576-23sg9"
+    },
+    {
+      "produto_key": "1776338126887",
+      "codigo": "561846X",
+      "nome": "NIVEA Hidratante Milk Pele Seca A Extrasseca 400ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 29.5,
+      "preco_oferta": 26.55,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-30",
+      "fim": "2026-08-06T23:59:59-04:00",
+      "historico_id": "oferta-1776338126887-1785466985160-oshq9"
     },
     {
       "produto_key": "1776338126900",
@@ -19286,8 +19300,8 @@
       "regra_id": "regra-1785202557027"
     },
     "1776338126887": {
-      "ultima_oferta_em": "2026-07-27T08:25:05.039Z",
-      "regra_id": "regra-beleza-1784031773317"
+      "ultima_oferta_em": "2026-07-31T03:03:05.160Z",
+      "regra_id": "regra-1785202557027"
     },
     "1776542768880": {
       "ultima_oferta_em": "2026-07-27T11:40:48.602Z",
@@ -20015,23 +20029,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1785198687755",
-      "executado_em": "2026-07-28T00:31:28.185Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 54,
-        "ofertas_criadas": 3,
-        "ofertas_nao_criadas": 51,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-07-28T00:32:29Z",
       "executado_em": "2026-07-28T00:33:13.450Z",
@@ -23401,6 +23398,23 @@
     {
       "id": "2026-07-31T02:08:45Z",
       "executado_em": "2026-07-31T02:09:45.126Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "make-20260731000210743",
+      "executado_em": "2026-07-31T03:03:05.160Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
