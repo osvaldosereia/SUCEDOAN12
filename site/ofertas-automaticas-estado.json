@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-31T13:03:47.146Z",
+  "ultima_execucao": "2026-07-31T13:07:43.970Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -7100,6 +7100,20 @@
       "inicio": "2026-07-28",
       "fim": "2026-07-31T23:59:59-04:00",
       "historico_id": "oferta-1776338131059-1785239868171-mjc66"
+    },
+    {
+      "produto_key": "1776338131068",
+      "codigo": "P0261",
+      "nome": "Pente para Cabelo Dentes Largos de Plástico Color Unidade",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 3.5,
+      "preco_oferta": 3.15,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-31",
+      "fim": "2026-08-07T23:59:59-04:00",
+      "historico_id": "oferta-1776338131068-1785503263970-t0j3n"
     },
     {
       "produto_key": "1776338131076",
@@ -19568,8 +19582,8 @@
       "regra_id": "regra-1785202557027"
     },
     "1776338131068": {
-      "ultima_oferta_em": "2026-07-27T16:38:13.467Z",
-      "regra_id": "regra-beleza-1784031773317"
+      "ultima_oferta_em": "2026-07-31T13:07:43.970Z",
+      "regra_id": "regra-1785202557027"
     },
     "1776338130928": {
       "ultima_oferta_em": "2026-07-27T17:12:39.898Z",
@@ -20225,23 +20239,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1785203933753",
-      "executado_em": "2026-07-28T01:58:54.147Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 3,
-        "ofertas_criadas": 3,
-        "ofertas_nao_criadas": 0,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-07-28T01:58:27Z",
       "executado_em": "2026-07-28T01:59:47.476Z",
@@ -23618,6 +23615,23 @@
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
         "ofertas_encerradas": 1,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "2026-07-31T13:06:50Z",
+      "executado_em": "2026-07-31T13:07:43.970Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
         "reativacoes_com_falha": 0,
