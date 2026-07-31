@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  import('./products-offer-columns.js?admin_build=20260731-product-offer-columns-v1')
+  import('./products-offer-columns.js?admin_build=20260731-product-offer-columns-v2')
     .then(() => {
       const refreshProductsTable = () => {
         const search = document.getElementById('productSearch');
