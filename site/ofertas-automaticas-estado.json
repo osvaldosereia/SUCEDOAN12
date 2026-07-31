@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-07-31T16:07:53.885Z",
+  "ultima_execucao": "2026-07-31T16:24:49.912Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -6218,6 +6218,20 @@
       "inicio": "2026-07-28",
       "fim": "2026-07-31T23:59:59-04:00",
       "historico_id": "oferta-1776338129789-1785225983008-29vvt"
+    },
+    {
+      "produto_key": "1776338129796",
+      "codigo": "P369",
+      "nome": "Presilha de Cabelo Formatos Sortidos 4 Peças",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 6.9,
+      "preco_oferta": 6.21,
+      "desconto_percentual": 10,
+      "inicio": "2026-07-31",
+      "fim": "2026-08-07T23:59:59-04:00",
+      "historico_id": "oferta-1776338129796-1785515089912-10h1n"
     },
     {
       "produto_key": "1776338129831",
@@ -19716,8 +19730,8 @@
       "regra_id": "regra-1785202557027"
     },
     "1776338129796": {
-      "ultima_oferta_em": "2026-07-27T18:48:33.930Z",
-      "regra_id": "regra-beleza-1784031773317"
+      "ultima_oferta_em": "2026-07-31T16:24:49.912Z",
+      "regra_id": "regra-1785202557027"
     },
     "1776338129836": {
       "ultima_oferta_em": "2026-07-27T20:01:55.602Z",
@@ -20341,23 +20355,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "2026-07-28T03:56:51Z",
-      "executado_em": "2026-07-28T03:57:50.228Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 22,
-        "ofertas_nao_criadas": 1,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1785216228444",
       "executado_em": "2026-07-28T05:23:48.732Z",
@@ -23727,6 +23724,23 @@
     {
       "id": "2026-07-31T16:06:10Z",
       "executado_em": "2026-07-31T16:07:53.885Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "make-20260731132206773",
+      "executado_em": "2026-07-31T16:24:49.912Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
