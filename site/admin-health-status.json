@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-31T22:46:11.526Z",
+  "checkedAt": "2026-07-31T23:17:48.372Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1524 produto(s)"
+      "detail": "1400 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1524 produto(s) administrativos · 1524 público(s) · campos OK"
+      "detail": "1524 produto(s) administrativos · 1400 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 196 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 111 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 248 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 98 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785537562766 · público 1524 · admin 1524"
+      "detail": "catalog-430d81fd5ea471d0 · público 1400 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "2562 oferta(s) no histórico"
+      "detail": "2563 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.6h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -124,9 +124,9 @@
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "30670786610",
+    "runId": "30672328343",
     "attempt": "1",
-    "sourceSha": "77592d3c778e1acf74165dee59460d7dafcb30c8",
-    "publishedAt": "2026-07-31T22:46:46.258Z"
+    "sourceSha": "f84fea769ec458c73801456d3531e18d2021f8ea",
+    "publishedAt": "2026-07-31T23:18:22.304Z"
   }
 }
