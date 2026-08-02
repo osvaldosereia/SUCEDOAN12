@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-02T03:37:57.124Z",
+  "checkedAt": "2026-08-02T05:02:51.541Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1524 produto(s)"
+      "detail": "1400 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1524 produto(s) administrativos · 1524 público(s) · campos OK"
+      "detail": "1524 produto(s) administrativos · 1400 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 134 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 170 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 120 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 167 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785641214482 · público 1524 · admin 1524"
+      "detail": "catalog-c3be526878bea881 · público 1400 · admin 1524"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "3218 oferta(s) no histórico"
+      "detail": "3222 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": true,
-      "detail": "0.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "ok": false,
+      "detail": "1.4h desde a execução · status sucesso · 82 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,14 +119,19 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "1.4h desde a execução · status sucesso · 82 expirada(s) ainda ativa(s)"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "30730862337",
+    "runId": "30733309556",
     "attempt": "1",
-    "sourceSha": "1a1dfc8bf4e59c5521a5c98d9fad03900e6baaa4",
-    "publishedAt": "2026-08-02T03:38:30.711Z"
+    "sourceSha": "ec512b3d65f4b4ae4f73fc4c1b71d5e90a622a0e",
+    "publishedAt": "2026-08-02T05:03:24.903Z"
   }
 }
