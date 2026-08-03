@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando a versão corrigida da lista de produtos e do estoque.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260803-manual-status-v1';
+      const BUILD = '20260803-manual-status-v2';
       try {
         const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
@@ -48,14 +48,20 @@
         html = html.replace(oldAppScript, productiveAppScript);
         html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · status confirmado no Firebase.</strong>');
         html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
-        html = html.replace('</body>', `<script src="./js/manual-status-save.js?admin_build=${BUILD}"></script></body>`);
+
+        // A tag é montada em partes para não encerrar este script carregador antes da hora.
+        const openScript = '<scr' + 'ipt';
+        const closeScript = '</scr' + 'ipt>';
+        const statusScript = `${openScript} src="./js/manual-status-save.js?admin_build=${BUILD}">${closeScript}`;
+        html = html.replace('</body>', `${statusScript}</body>`);
 
         document.open();
         document.write(html);
         document.close();
       } catch (error) {
         console.error(error);
-        document.body.innerHTML = `<main><strong>Não foi possível abrir o Admin</strong><small>${String(error?.message || error)}</small><p><a href="./index.html?admin_fallback=${Date.now()}">Abrir versão padrão</a></p></main>`;
+        const message = String(error?.message || error);
+        document.body.innerHTML = `<main><strong>Não foi possível abrir o Admin</strong><small>${message}</small><p><a href="./index.html?admin_fallback=${Date.now()}">Abrir versão padrão</a></p></main>`;
       }
     }());
   </script>
