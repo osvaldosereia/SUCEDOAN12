@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-08-03T15:59:53.486Z",
+  "checkedAt": "2026-08-03T16:19:06.231Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 75 arquivos JavaScript, imports e ciclo dos kits confirmados."
+      "detail": "Admin V2 v13.1 validado: 18 abas, 76 arquivos JavaScript, imports e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1408 produto(s)"
+      "detail": "1526 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1526 produto(s) administrativos · 1408 público(s) · campos OK"
+      "detail": "1526 produto(s) administrativos · 1526 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1526 produto(s) em 140 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1526 produto(s) em 125 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 167 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 102 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-e6ec50910ce117a9 · público 1408 · admin 1526"
+      "detail": "catalog-1785772743160 · público 1526 · admin 1526"
     },
     {
       "name": "Banners permanecem removidos",
@@ -91,7 +91,7 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.3h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -124,9 +124,9 @@
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30829776554",
+    "runId": "30831265026",
     "attempt": "1",
-    "sourceSha": "7f4f94124660154872aafae4a0b3bf13ea53d32b",
-    "publishedAt": "2026-08-03T16:00:27.209Z"
+    "sourceSha": "b3856e8125b79c22b640313721f552a10bde321f",
+    "publishedAt": "2026-08-03T16:19:39.872Z"
   }
 }
