@@ -1,6 +1,10 @@
 (() => {
   'use strict';
 
+  import('./campaign-execution-history.js?admin_build=20260803-offers-history-v1').catch(error => {
+    console.error('Falha ao carregar o histórico das ofertas por regra.', error);
+  });
+
   import('./products-offer-columns.js?admin_build=20260731-product-offer-columns-v2')
     .then(() => {
       const refreshProductsTable = () => {
