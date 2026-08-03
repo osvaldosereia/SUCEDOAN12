@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-03T16:58:50.887Z",
+  "checkedAt": "2026-08-03T17:31:50.711Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1526 produto(s)"
+      "detail": "1408 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1526 produto(s) administrativos · 1526 público(s) · campos OK"
+      "detail": "1526 produto(s) administrativos · 1408 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1526 produto(s) em 138 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1526 produto(s) em 367 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 202 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 252 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785775539653 · público 1526 · admin 1526"
+      "detail": "catalog-d3c16f5ca7521647 · público 1408 · admin 1526"
     },
     {
       "name": "Banners permanecem removidos",
@@ -91,7 +91,7 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -123,10 +123,10 @@
   ],
   "warnings": [],
   "workflow": {
-    "event": "push",
-    "runId": "30834307242",
+    "event": "schedule",
+    "runId": "30836899415",
     "attempt": "1",
-    "sourceSha": "7e9cf137f8fc6cfca5e2c95b908b479b5f66e6c7",
-    "publishedAt": "2026-08-03T16:59:25.005Z"
+    "sourceSha": "937eee750aa4499bb805216f554c2331df22f068",
+    "publishedAt": "2026-08-03T17:32:24.702Z"
   }
 }
