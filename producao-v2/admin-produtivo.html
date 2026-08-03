@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando a versão corrigida da lista de produtos e do estoque.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260803-manual-status-v2';
+      const BUILD = '20260803-nfe-image-make-v3';
       try {
         const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
@@ -46,14 +46,15 @@
         html = html.replace(oldProductsModule, productiveProductsModule);
         html = html.replace(oldStockModule, productiveStockModule);
         html = html.replace(oldAppScript, productiveAppScript);
-        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · status confirmado no Firebase.</strong>');
+        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · status e imagens confirmados.</strong>');
         html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
 
-        // A tag é montada em partes para não encerrar este script carregador antes da hora.
+        // As tags são montadas em partes para não encerrar este script carregador antes da hora.
         const openScript = '<scr' + 'ipt';
         const closeScript = '</scr' + 'ipt>';
         const statusScript = `${openScript} src="./js/manual-status-save.js?admin_build=${BUILD}">${closeScript}`;
-        html = html.replace('</body>', `${statusScript}</body>`);
+        const nfeImageScript = `${openScript} type="module" src="./js/nfe-image-make-fix.js?admin_build=${BUILD}">${closeScript}`;
+        html = html.replace('</body>', `${statusScript}${nfeImageScript}</body>`);
 
         document.open();
         document.write(html);
