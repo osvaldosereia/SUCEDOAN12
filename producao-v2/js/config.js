@@ -1,4 +1,5 @@
 import './direct-product-save.js?admin_build=20260803-direct-save-v1';
+import './duplicate-product.js?admin_build=20260803-duplicate-product-v1';
 
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
