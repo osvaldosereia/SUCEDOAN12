@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-03T12:36:57.645Z",
+  "checkedAt": "2026-08-03T13:10:15.341Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -56,17 +56,17 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1524 produto(s) em 146 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1524 produto(s) em 155 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 138 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 143 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": true,
-      "detail": "catalog-1785756455091 · público 1524 · admin 1524"
+      "ok": false,
+      "detail": "catalog-1785762369464 · público 0 · admin 0"
     },
     {
       "name": "Banners permanecem removidos",
@@ -91,7 +91,7 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "1.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.6h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,14 +119,19 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
+    },
+    {
+      "name": "Versão do catálogo válida",
+      "ok": false,
+      "detail": "catalog-1785762369464 · público 0 · admin 0"
     }
   ],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "30814076878",
+    "event": "push",
+    "runId": "30816391529",
     "attempt": "1",
-    "sourceSha": "37a06f94e153d74b7876105c5c93dbafd70c8da5",
-    "publishedAt": "2026-08-03T12:37:31.277Z"
+    "sourceSha": "3e50cac10567a9122373618c3b442e8be4ffd75c",
+    "publishedAt": "2026-08-03T13:10:50.411Z"
   }
 }
