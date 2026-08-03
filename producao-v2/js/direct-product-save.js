@@ -1,3 +1,10 @@
+import { ProductsModule } from './modules/products.js';
+import { MakeModule } from './modules/make.js';
+import { loadProduct, saveProduct } from './services/firebase.js';
+import { assertMakeProductIdentity, callMake, compactProductForMake } from './services/make.js';
+import { rawGithubUrl } from './services/github-binary.js';
+import { isActive, productCode, productImage, productKey, productName, text } from './core/utils.js';
+
 const DEFAULT_FIREBASE_URL = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const CONFIG_KEY = 'da_admin_v2_config';
 const originalFetch = globalThis.fetch.bind(globalThis);
@@ -8,15 +15,23 @@ function readConfig() {
       firebaseUrl: DEFAULT_FIREBASE_URL,
       productsNode: 'produtos',
       writeMode: true,
+      githubOwner: 'osvaldosereia',
+      githubRepo: 'SUCEDOAN12',
+      githubBranch: 'main',
+      githubImagesPath: 'site/img/produtos_3',
       ...JSON.parse(globalThis.localStorage?.getItem(CONFIG_KEY) || '{}'),
     };
   } catch {
-    return { firebaseUrl: DEFAULT_FIREBASE_URL, productsNode: 'produtos', writeMode: true };
+    return {
+      firebaseUrl: DEFAULT_FIREBASE_URL,
+      productsNode: 'produtos',
+      writeMode: true,
+      githubOwner: 'osvaldosereia',
+      githubRepo: 'SUCEDOAN12',
+      githubBranch: 'main',
+      githubImagesPath: 'site/img/produtos_3',
+    };
   }
-}
-
-function text(value = '') {
-  return String(value ?? '').trim();
 }
 
 function firebaseBase() {
@@ -48,283 +63,376 @@ function isAdminIndexRequest(input, init = {}) {
   }
 }
 
-// A lista administrativa passa a ler a fonte oficial. O JSON estático fica apenas
-// como fallback interno do módulo original quando o Firebase estiver indisponível.
+// A lista administrativa sempre lê o Firebase. O arquivo estático não participa
+// mais do salvamento nem pode recolocar uma versão antiga na tela.
 globalThis.fetch = function adminV2FirebaseFirst(input, init = {}) {
   if (isAdminIndexRequest(input, init)) {
-    const url = `${productUrl()}?_admin_v2_direct=${Date.now()}`;
-    return originalFetch(url, { ...init, cache: 'no-store' });
+    return originalFetch(`${productUrl()}?_admin_v2=${Date.now()}`, { ...init, cache: 'no-store' });
   }
   return originalFetch(input, init);
 };
 
-function toast(message, type = '') {
-  const region = document.getElementById('toastRegion');
-  if (!region) return;
-  const node = document.createElement('div');
-  node.className = `toast ${type}`.trim();
-  node.textContent = message;
-  region.appendChild(node);
-  setTimeout(() => node.remove(), type === 'error' ? 6500 : 3500);
+function cloneValue(value) {
+  if (typeof structuredClone === 'function') return structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
 }
 
-async function firebaseRequest(url, options = {}, timeout = 20000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await originalFetch(url, { cache: 'no-store', ...options, signal: controller.signal });
-    if (!response.ok) {
-      const detail = await response.text().catch(() => '');
-      throw new Error(`Firebase retornou ${response.status}${detail ? `: ${detail.slice(0, 180)}` : ''}`);
-    }
-    if (response.status === 204) return null;
-    return response.json().catch(() => null);
-  } catch (error) {
-    if (error?.name === 'AbortError') throw new Error('Tempo esgotado ao salvar no Firebase.');
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
+function canonicalProduct(product) {
+  const next = cloneValue(product || {});
+  const active = isActive(next);
+  next.situacao = active ? 'A' : 'I';
+  next.status = active ? 'A' : 'I';
+  next.ativo = active;
+  next.visivel = active;
+  return next;
 }
 
-function brDateToIso(value) {
-  const raw = text(value);
-  if (!raw) return '';
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length !== 8) throw new Error('Use a data no formato DD/MM/AAAA.');
-  const day = Number(digits.slice(0, 2));
-  const month = Number(digits.slice(2, 4));
-  const year = Number(digits.slice(4));
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
-    throw new Error('A data informada é inválida.');
-  }
-  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+function toast(module, message, type = '') {
+  module?.onToast?.(message, type);
 }
 
-function parseField(field, input) {
-  const value = input?.value ?? '';
-  if (field === 'situacao') return value === 'I' ? 'I' : 'A';
-  if (field === 'validade') return brDateToIso(value);
-  if (field === 'tags') return String(value).split(/[,;|]/).map(item => item.trim()).filter(Boolean);
-  if (['preco', 'preco_custo', 'preco_oferta', 'preco_atacado', 'peso', 'largura', 'altura', 'comprimento'].includes(field)) {
-    return Math.max(0, Number(String(value).replace(',', '.')) || 0);
-  }
-  if (['estoque', 'estoque_minimo', 'quantidade_caixa', 'ordem'].includes(field)) {
-    return Math.max(0, Math.floor(Number(value) || 0));
-  }
-  if (field === 'multiplo_venda') return Math.max(1, Math.floor(Number(value) || 1));
-  if (['gtin', 'ean', 'ncm', 'cest'].includes(field)) return String(value).replace(/\D/g, '');
-  return String(value);
-}
-
-function sameValue(a, b) {
-  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-}
-
-async function savePatch(key, desiredPatch) {
-  const config = readConfig();
-  if (config.writeMode === false) throw new Error('As gravações estão bloqueadas nas configurações.');
+async function saveFromProductsModule(module, product, { silent = false } = {}) {
+  const key = productKey(product);
   if (!key) throw new Error('Produto sem chave do Firebase.');
+  if (module.store.state.config.writeMode === false) throw new Error('As gravações estão bloqueadas nas configurações.');
 
-  const remote = await firebaseRequest(`${productUrl(key)}?_=${Date.now()}`);
-  if (!remote || typeof remote !== 'object') throw new Error('Produto não encontrado no Firebase.');
+  const button = module.elements?.saveProductButton;
+  const previousText = button?.textContent || 'Salvar produto';
+  if (!silent && button) {
+    button.disabled = true;
+    button.textContent = 'Salvando…';
+  }
 
-  const patch = {};
-  Object.entries(desiredPatch || {}).forEach(([field, value]) => {
-    if (!sameValue(remote[field], value)) patch[field] = value;
-  });
-  if (!Object.keys(patch).length) return { remote, patch: {}, verified: remote };
-
-  patch.updated_at = new Date().toISOString();
-  patch.last_update = Date.now();
-  if (Object.prototype.hasOwnProperty.call(patch, 'estoque')) patch.stock_updated_at = new Date().toISOString();
-
-  await firebaseRequest(productUrl(key), {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  });
-
-  const verified = await firebaseRequest(`${productUrl(key)}?_verify=${Date.now()}`);
-  const failed = Object.entries(patch)
-    .filter(([field]) => !['updated_at', 'last_update', 'stock_updated_at'].includes(field))
-    .filter(([field, value]) => !sameValue(verified?.[field], value))
-    .map(([field]) => field);
-  if (failed.length) throw new Error(`O Firebase não confirmou os campos: ${failed.join(', ')}.`);
-  return { remote, patch, verified };
+  try {
+    const prepared = canonicalProduct(product);
+    const snapshot = module.store.state.remoteSnapshots.get(String(key));
+    const saved = await saveProduct(module.store.state.config, prepared, snapshot);
+    module.store.markProductSaved(key, saved, { emit: true });
+    module.renderDirty();
+    return saved;
+  } finally {
+    if (!silent && button) {
+      button.disabled = false;
+      button.textContent = previousText;
+    }
+  }
 }
 
-function currentRouteProducts() {
-  document.querySelector('[data-route="products"]')?.click();
-}
-
-function refreshProducts() {
-  const reload = document.getElementById('reloadButton');
-  if (reload && !reload.disabled) reload.click();
+function markRowDirty(module, input, key) {
+  input.closest('tr')?.classList.add('dirty-row');
+  const save = input.closest('tr')?.querySelector('[data-inline-save]');
+  if (save) save.disabled = false;
+  module.renderDirty();
+  const selected = module.store.getProduct(module.store.state.selectedProductKey);
+  if (selected) module.renderValidation(selected);
 }
 
 function statusSelect(key, active) {
-  return `<select class="inline-product-input direct-status-select" data-direct-status-key="${String(key).replace(/"/g, '&quot;')}"><option value="A"${active ? ' selected' : ''}>Ativo</option><option value="I"${active ? '' : ' selected'}>Inativo</option></select>`;
+  return `<select class="inline-product-input inline-situacao" data-inline-product="${String(key).replace(/"/g, '&quot;')}" data-inline-field="situacao"><option value="A"${active ? ' selected' : ''}>Ativo</option><option value="I"${active ? '' : ' selected'}>Inativo</option></select>`;
 }
 
-function enhanceProductRows() {
-  document.querySelectorAll('#productsTableBody tr').forEach(row => {
+function imageVersion(product) {
+  return text(product?.imagem_gerada_em || product?.imagem_editada_em || product?.updated_at || product?.last_update || '0');
+}
+
+function versionedImage(product) {
+  const source = productImage(product);
+  if (!source || /^data:image\//i.test(source)) return source;
+  const version = encodeURIComponent(imageVersion(product));
+  if (/[?&](?:v|admin_image)=/i.test(source)) {
+    return source.replace(/([?&](?:v|admin_image)=)[^&]*/i, `$1${version}`);
+  }
+  return `${source}${source.includes('?') ? '&' : '?'}admin_image=${version}`;
+}
+
+function enhanceRows(module) {
+  module.elements.productsTableBody.querySelectorAll('tr').forEach(row => {
     const save = row.querySelector('[data-inline-save]');
     if (!save) return;
-    const key = save.dataset.inlineSave;
+    const key = text(save.dataset.inlineSave);
+    const product = module.store.getProduct(key);
+    if (!product) return;
+
     const statusCell = row.children[5];
-    if (!statusCell || statusCell.querySelector('[data-direct-status-key]')) return;
-    const active = /\bAtivo\b/i.test(statusCell.textContent || '') && !/\bInativo\b/i.test(statusCell.textContent || '');
-    statusCell.innerHTML = statusSelect(key, active);
-    save.textContent = 'Salvar';
-    save.title = 'Salva esta linha diretamente no Firebase';
+    if (statusCell && !statusCell.querySelector('[data-inline-field="situacao"]')) {
+      statusCell.innerHTML = statusSelect(key, isActive(product));
+    }
+
+    const image = row.querySelector('.product-thumb');
+    const freshSource = versionedImage(product);
+    if (image && freshSource && image.src !== freshSource) image.src = freshSource;
   });
 }
 
-function makeEditorSaveAvailable() {
-  const button = document.getElementById('saveProductButton');
-  if (!button) return;
-  const writable = readConfig().writeMode !== false;
-  if (writable && button.disabled) button.disabled = false;
-  button.title = writable
-    ? 'Salva as alterações deste produto diretamente no Firebase'
-    : 'As gravações estão bloqueadas nas configurações';
-
-  const strong = document.querySelector('#editorValidation .validation-box strong');
-  if (strong && /impedem o salvamento/i.test(strong.textContent || '')) {
-    strong.textContent = 'Pendências impedem apenas a publicação do catálogo';
-  }
+function slug(value = '') {
+  return text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70) || 'produto';
 }
 
-function markInlineDirty(input) {
-  const row = input.closest('tr');
-  if (!row) return;
-  row.classList.add('dirty-row');
-  const save = row.querySelector('[data-inline-save]');
-  if (save) save.disabled = false;
+function deepImage(value, depth = 0, visited = new Set()) {
+  if (depth > 7 || value === null || value === undefined) return '';
+  if (typeof value === 'string') {
+    const raw = text(value);
+    if (!raw) return '';
+    if (/^data:image\//i.test(raw)) return raw;
+    if (/^https?:\/\/\S+/i.test(raw) && /\.(?:png|jpe?g|webp|gif|avif)(?:[?#].*)?$/i.test(raw)) return raw;
+    if (/^(?:\/)?(?:site|img)\//i.test(raw) && /\.(?:png|jpe?g|webp|gif|avif)(?:[?#].*)?$/i.test(raw)) return raw;
+    try {
+      const parsed = JSON.parse(raw);
+      return deepImage(parsed, depth + 1, visited);
+    } catch {
+      return '';
+    }
+  }
+  if (typeof value !== 'object' || visited.has(value)) return '';
+  visited.add(value);
+
+  const priority = [
+    'imagem_principal', 'url_imagem', 'imagem_url', 'image_url', 'download_url',
+    'raw_url', 'github_url', 'imagem', 'image', 'url', 'src', 'output_url',
+    'generated_image', 'arquivo_url', 'file_url', 'b64_json', 'base64',
+  ];
+  for (const key of priority) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      if (['b64_json', 'base64'].includes(key) && typeof value[key] === 'string' && text(value[key]).length > 120) {
+        return `data:image/png;base64,${text(value[key])}`;
+      }
+      const found = deepImage(value[key], depth + 1, visited);
+      if (found) return found;
+    }
+  }
+  for (const child of Object.values(value)) {
+    const found = deepImage(child, depth + 1, visited);
+    if (found) return found;
+  }
+  return '';
 }
 
-let selectedProductKey = '';
-let saving = false;
-
-async function saveInline(button) {
-  if (saving) return;
-  const key = button.dataset.inlineSave;
-  const row = button.closest('tr');
-  if (!key || !row) return;
-  const desired = {};
-  row.querySelectorAll('[data-inline-field]').forEach(input => {
-    desired[input.dataset.inlineField] = parseField(input.dataset.inlineField, input);
-  });
-  const status = row.querySelector('[data-direct-status-key]');
-  if (status) desired.situacao = parseField('situacao', status);
-
-  const original = button.textContent;
-  saving = true;
-  button.disabled = true;
-  button.textContent = 'Salvando…';
-  try {
-    const result = await savePatch(key, desired);
-    row.classList.remove('dirty-row');
-    button.textContent = Object.keys(result.patch).length ? 'Salvo' : 'Sem mudanças';
-    toast(Object.keys(result.patch).length ? 'Produto salvo diretamente no Firebase.' : 'Nenhuma mudança para salvar.', 'success');
-    setTimeout(refreshProducts, 120);
-  } catch (error) {
-    button.disabled = false;
-    button.textContent = original || 'Salvar';
-    toast(error?.message || String(error), 'error');
-  } finally {
-    saving = false;
+async function waitForRemoteImage(config, key, beforeImage, beforeVersion) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    if (attempt) await new Promise(resolve => setTimeout(resolve, 650));
+    const remote = await loadProduct(config, key).catch(() => null);
+    if (!remote) continue;
+    const nextImage = productImage(remote);
+    const nextVersion = imageVersion(remote);
+    if (nextImage && (nextImage !== beforeImage || nextVersion !== beforeVersion)) return remote;
   }
+  return null;
 }
 
-function editorPatch() {
-  const form = document.getElementById('productForm');
-  if (!form) return {};
-  const patch = {};
-  form.querySelectorAll('[data-field]').forEach(input => {
-    const field = input.dataset.field;
-    if (field) patch[field] = parseField(field, input);
-  });
-  return patch;
+function makeImagePayload(config, product) {
+  const path = `${text(config.githubImagesPath || 'site/img/produtos_3').replace(/\/+$/, '')}/${slug(productCode(product) || productName(product))}-ia.webp`;
+  return {
+    path,
+    payload: {
+      acao: 'melhorar_imagem_produto',
+      quantidade_imagens: 1,
+      produto: compactProductForMake(product),
+      storage_destino: 'github',
+      substituir_imagens_existentes: true,
+      imagem_path: path,
+      instrucoes: 'Usar obrigatoriamente a imagem de referência enviada no produto. Gerar exatamente 1 imagem quadrada fiel ao produto, fundo branco puro, sem cenário e sem inventar informações da embalagem.',
+    },
+  };
 }
 
-async function saveEditor(button) {
-  if (saving) return;
-  if (!selectedProductKey) throw new Error('Não foi possível identificar a chave do produto. Feche e abra o produto novamente.');
-  const original = button.textContent;
-  saving = true;
-  button.disabled = true;
-  button.textContent = 'Salvando…';
-  try {
-    const result = await savePatch(selectedProductKey, editorPatch());
-    toast(Object.keys(result.patch).length ? 'Produto salvo diretamente no Firebase.' : 'Nenhuma mudança para salvar.', 'success');
-    document.getElementById('closeEditorButton')?.click();
-    currentRouteProducts();
-    setTimeout(refreshProducts, 120);
-  } catch (error) {
-    button.disabled = false;
-    button.textContent = original || 'Salvar produto';
-    toast(error?.message || String(error), 'error');
-  } finally {
-    saving = false;
-  }
+function installProductsFixes() {
+  const prototype = ProductsModule.prototype;
+  if (prototype.__adminV2UnifiedSaveInstalled) return;
+  prototype.__adminV2UnifiedSaveInstalled = true;
+
+  const originalBind = prototype.bind;
+  prototype.bind = function bindUnifiedSave() {
+    this.onSave = (product, options = {}) => saveFromProductsModule(this, product, options);
+    return originalBind.call(this);
+  };
+
+  const originalInline = prototype.handleInlineInput;
+  prototype.handleInlineInput = function handleUnifiedInline(event) {
+    const input = event.target.closest('[data-inline-product][data-inline-field]');
+    if (!input || input.dataset.inlineField !== 'situacao') return originalInline.call(this, event);
+    const key = text(input.dataset.inlineProduct);
+    const active = input.value !== 'I';
+    this.store.updateProduct(key, {
+      situacao: active ? 'A' : 'I',
+      status: active ? 'A' : 'I',
+      ativo: active,
+      visivel: active,
+    });
+    markRowDirty(this, input, key);
+  };
+
+  const originalEditorInput = prototype.handleEditorInput;
+  prototype.handleEditorInput = function handleUnifiedEditorInput(event) {
+    originalEditorInput.call(this, event);
+    if (event.target?.dataset?.field !== 'situacao') return;
+    const key = text(this.store.state.selectedProductKey);
+    const active = event.target.value !== 'I';
+    this.store.updateProduct(key, {
+      situacao: active ? 'A' : 'I',
+      status: active ? 'A' : 'I',
+      ativo: active,
+      visivel: active,
+    });
+    const updated = this.store.getProduct(key);
+    if (updated) this.renderValidation(updated);
+  };
+
+  const originalRenderTable = prototype.renderTable;
+  prototype.renderTable = function renderUnifiedTable() {
+    originalRenderTable.call(this);
+    enhanceRows(this);
+  };
+
+  const originalRenderEditor = prototype.renderEditor;
+  prototype.renderEditor = function renderUnifiedEditor(product) {
+    originalRenderEditor.call(this, product);
+    if (this.pendingImages.has(productKey(product))) return;
+    const preview = document.getElementById('editorImagePreview');
+    const source = versionedImage(product);
+    if (preview && source) preview.src = source;
+  };
+
+  prototype.renderValidation = function renderSaveAndPublicationValidation(product) {
+    const validation = this.productValidation(product);
+    const messages = [...validation.errors, ...validation.warnings];
+    this.elements.editorValidation.innerHTML = messages.length
+      ? `<div class="validation-box warning"><div><strong>O produto pode ser salvo</strong><small>Pendências para publicar no site: ${messages.map(item => String(item).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]))).join(' · ')}</small></div></div>`
+      : '<div class="validation-box success"><div><strong>Produto pronto</strong><small>Nenhum erro ou aviso encontrado.</small></div></div>';
+    this.elements.saveProductButton.disabled = this.store.state.config.writeMode === false;
+    this.elements.saveProductButton.title = this.store.state.config.writeMode === false
+      ? 'As gravações estão bloqueadas nas configurações.'
+      : 'Salva imediatamente no Firebase. A publicação do site é separada.';
+  };
+
+  prototype.saveInlineProduct = async function saveUnifiedInline(key, button = null) {
+    const product = this.store.getProduct(key);
+    if (!product) return;
+    if (!this.store.state.dirtyProducts.has(String(key))) return toast(this, 'Esta linha não possui alteração pendente.', 'success');
+    const originalText = button?.textContent || 'Salvar';
+    try {
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Salvando…';
+      }
+      const saved = await this.onSave(product, { silent: true });
+      toast(this, `${productName(saved)} salvo no Firebase.`, 'success');
+      this.renderTable();
+      this.renderDirty();
+    } catch (error) {
+      if (button) button.disabled = false;
+      toast(this, error?.message || String(error), 'error');
+    } finally {
+      if (button) button.textContent = originalText;
+    }
+  };
+
+  prototype.saveCurrent = async function saveUnifiedCurrent() {
+    const key = text(this.store.state.selectedProductKey);
+    if (!key) return;
+    const product = this.store.getProduct(key);
+    if (!product) return;
+    if (!this.store.state.dirtyProducts.has(key)) return toast(this, 'Este produto não possui alterações pendentes.', 'success');
+    try {
+      const saved = await this.onSave(product);
+      this.renderEditor(saved);
+      this.renderTable();
+      toast(this, `${productName(saved)} salvo no Firebase.`, 'success');
+    } catch (error) {
+      toast(this, error?.message || String(error), 'error');
+    }
+  };
+
+  prototype.preparePendingImageForAutomation = async function preparePendingImageForAutomation(key) {
+    const normalizedKey = text(key);
+    if (!this.pendingImages.has(normalizedKey)) return this.store.getProduct(normalizedKey);
+    const previousKey = this.store.state.selectedProductKey;
+    this.store.state.selectedProductKey = normalizedKey;
+    try {
+      toast(this, 'Preparando a imagem colada como referência da IA…');
+      await this.uploadEditedImage();
+      return this.store.getProduct(normalizedKey);
+    } finally {
+      this.store.state.selectedProductKey = previousKey || normalizedKey;
+    }
+  };
 }
 
-function interceptProductInput(event) {
-  const inline = event.target.closest?.('#productsTableBody [data-inline-field], #productsTableBody [data-direct-status-key]');
-  if (inline) {
-    event.stopImmediatePropagation();
-    markInlineDirty(inline);
-    return;
-  }
-  const editorField = event.target.closest?.('#productForm [data-field]');
-  if (editorField) {
-    event.stopImmediatePropagation();
-    const subtitle = document.getElementById('editorSubtitle');
-    if (subtitle && !/alteração pronta para salvar/i.test(subtitle.textContent || '')) subtitle.textContent += ' · alteração pronta para salvar';
-    makeEditorSaveAvailable();
-  }
+function installMakeImageFix() {
+  const prototype = MakeModule.prototype;
+  if (prototype.__adminV2ImageFlowInstalled) return;
+  prototype.__adminV2ImageFlowInstalled = true;
+  const originalRun = prototype.runProductAction;
+
+  prototype.runProductAction = async function runUnifiedProductAction(action, key) {
+    if (action !== 'image') return originalRun.call(this, action, key);
+
+    const id = `${key}:${action}`;
+    if (this.busy.has(id)) return;
+    this.setBusy(key, action, true);
+    try {
+      await this.productsModule.preparePendingImageForAutomation?.(key);
+      let product = this.store.getProduct(key);
+      if (!product) throw new Error('Produto não encontrado.');
+
+      const beforeImage = productImage(product);
+      const beforeVersion = imageVersion(product);
+      const { path, payload } = makeImagePayload(this.config(), product);
+      this.onToast(`Make: gerando imagem de ${productName(product)} com a referência atual…`);
+
+      const rawResult = await callMake(this.config(), 'image', payload);
+      const result = assertMakeProductIdentity(product, rawResult);
+      let patch = {};
+      let resultError = null;
+
+      try {
+        patch = await this.patchFromResult('image', product, result);
+      } catch (error) {
+        resultError = error;
+        const found = deepImage(rawResult);
+        if (found) patch = await this.patchFromResult('image', product, { imagem: found });
+      }
+
+      if (!Object.keys(patch).length) {
+        const remote = await waitForRemoteImage(this.config(), key, beforeImage, beforeVersion);
+        if (remote) {
+          this.store.markProductSaved(key, remote, { emit: true });
+          this.productsModule.refreshAfterExternalChange(key);
+          this.onToast('Imagem gerada pelo Make e carregada do Firebase.', 'success');
+          return remote;
+        }
+
+        // Alguns cenários gravam exatamente no caminho solicitado e respondem apenas "ok".
+        const fallbackUrl = `${rawGithubUrl(this.config(), path)}?v=${Date.now()}`;
+        patch = {
+          url_imagem: fallbackUrl,
+          imagem: fallbackUrl,
+          imagem_url: fallbackUrl,
+          imagens: [fallbackUrl],
+          imagem_path: path,
+          imagem_storage: 'github',
+          imagem_origem: 'ia_make',
+          imagem_status: 'ok',
+          imagem_gerada_em: new Date().toISOString(),
+        };
+        if (resultError) console.warn('Resposta do Make sem URL explícita; usando o caminho solicitado.', resultError);
+      }
+
+      this.store.updateProduct(key, patch);
+      product = this.store.getProduct(key);
+      const saved = await this.productsModule.onSave(product, { silent: true });
+      this.productsModule.refreshAfterExternalChange(key);
+      this.onToast('Imagem gerada, aplicada e salva no Firebase.', 'success');
+      return saved;
+    } catch (error) {
+      console.error(error);
+      this.onToast(error?.message || String(error), 'error');
+      throw error;
+    } finally {
+      this.setBusy(key, action, false);
+    }
+  };
 }
 
-document.addEventListener('input', interceptProductInput, true);
-document.addEventListener('change', interceptProductInput, true);
-document.addEventListener('click', event => {
-  const open = event.target.closest?.('[data-product-key]');
-  if (open) selectedProductKey = text(open.dataset.productKey);
-  const review = event.target.closest?.('[data-review-product]');
-  if (review) selectedProductKey = text(review.dataset.reviewProduct);
-
-  const inlineSave = event.target.closest?.('[data-inline-save]');
-  if (inlineSave) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    saveInline(inlineSave);
-    return;
-  }
-
-  const editorSave = event.target.closest?.('#saveProductButton');
-  if (editorSave) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    saveEditor(editorSave).catch(error => toast(error?.message || String(error), 'error'));
-  }
-}, true);
-
-window.addEventListener('admin-v2-open-product', event => {
-  selectedProductKey = text(event.detail?.key);
-});
-
-function start() {
-  enhanceProductRows();
-  makeEditorSaveAvailable();
-  const table = document.getElementById('productsTableBody');
-  if (table) new MutationObserver(enhanceProductRows).observe(table, { childList: true, subtree: true });
-  const editor = document.getElementById('productEditor');
-  if (editor) new MutationObserver(makeEditorSaveAvailable).observe(editor, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
-else start();
+installProductsFixes();
+installMakeImageFix();
