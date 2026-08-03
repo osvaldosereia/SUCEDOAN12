@@ -1,4 +1,4 @@
-import './direct-product-save.js?admin_build=20260803-direct-save-v1';
+import './direct-product-save.js?admin_build=20260803-product-flow-v2';
 import './duplicate-product.js?admin_build=20260803-duplicate-product-v1';
 
 export const DEFAULT_CONFIG = Object.freeze({
@@ -127,7 +127,7 @@ function updateOfficialProductionLabels() {
     const brand = document.querySelector('.brand span');
     if (brand) brand.textContent = 'Admin oficial';
     const banner = document.querySelector('.environment-banner');
-    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> Produtos carregados do Firebase. Alterou e clicou em salvar, a mudança é gravada imediatamente; publicar catálogo é uma etapa separada.';
+    if (banner) banner.innerHTML = '<strong>Fluxo simplificado ativo.</strong> Lista, editor, Firebase e automação usam o mesmo produto. Salvar grava imediatamente; imagem colada vira automaticamente a referência da IA.';
     const sourceHelp = document.querySelector('[data-view="settings"] .settings-grid .panel .panel-header p');
     if (sourceHelp) sourceHelp.textContent = 'Fonte oficial fixa do Firebase e arquivos operacionais.';
     const writeHelp = document.querySelector('#writeModeSetting')?.closest('.switch-row')?.querySelector('small');
