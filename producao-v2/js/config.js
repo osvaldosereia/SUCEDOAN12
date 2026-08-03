@@ -1,5 +1,20 @@
-import './direct-product-save.js?admin_build=20260803-product-flow-v2';
-import './duplicate-product.js?admin_build=20260803-duplicate-product-v1';
+async function loadCriticalEnhancement(path, label) {
+  try {
+    await import(path);
+  } catch (error) {
+    console.error(`Falha ao carregar ${label}. O painel continuará sem esse complemento.`, error);
+  }
+}
+
+// O salvamento unificado precisa ser instalado antes da criação do módulo de produtos,
+// mas uma falha nele não pode impedir o restante do Admin de inicializar.
+await loadCriticalEnhancement('./direct-product-save.js?admin_build=20260803-product-flow-v3', 'o fluxo unificado de produtos');
+
+// Complementos visuais e operacionais são carregados sem bloquear a tela inicial.
+void import('./duplicate-product.js?admin_build=20260803-duplicate-product-v2')
+  .catch(error => console.error('Falha ao carregar a duplicação de produtos.', error));
+void import('./basket-products-grid.js?admin_build=20260803-basket-grid-v1')
+  .catch(error => console.error('Falha ao carregar a grade rápida das cestas.', error));
 
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
