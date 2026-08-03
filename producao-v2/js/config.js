@@ -15,6 +15,8 @@ void import('./duplicate-product.js?admin_build=20260803-duplicate-product-v2')
   .catch(error => console.error('Falha ao carregar a duplicação de produtos.', error));
 void import('./basket-products-grid.js?admin_build=20260803-basket-grid-v1')
   .catch(error => console.error('Falha ao carregar a grade rápida das cestas.', error));
+void import('./basket-editor-polish.js?admin_build=20260803-basket-editor-polish-v1')
+  .catch(error => console.error('Falha ao ajustar o editor das cestas.', error));
 
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
