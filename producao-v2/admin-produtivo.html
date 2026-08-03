@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando a versão corrigida da lista de produtos e do estoque.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260729-inline-save-v3';
+      const BUILD = '20260803-manual-status-v1';
       try {
         const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
@@ -46,8 +46,9 @@
         html = html.replace(oldProductsModule, productiveProductsModule);
         html = html.replace(oldStockModule, productiveStockModule);
         html = html.replace(oldAppScript, productiveAppScript);
-        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · salvamento rápido produtivo.</strong>');
+        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · status confirmado no Firebase.</strong>');
         html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
+        html = html.replace('</body>', `<script src="./js/manual-status-save.js?admin_build=${BUILD}"></script></body>`);
 
         document.open();
         document.write(html);
