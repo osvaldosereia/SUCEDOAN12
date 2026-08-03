@@ -1,3 +1,5 @@
+import './direct-product-save.js?admin_build=20260803-direct-save-v1';
+
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
   productsNode: 'produtos',
@@ -124,7 +126,7 @@ function updateOfficialProductionLabels() {
     const brand = document.querySelector('.brand span');
     if (brand) brand.textContent = 'Admin oficial';
     const banner = document.querySelector('.environment-banner');
-    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> A lista abre pelo índice administrativo leve e cada cadastro completo é consultado diretamente no Firebase ao ser aberto.';
+    if (banner) banner.innerHTML = '<strong>Sistema oficial em uso.</strong> Produtos carregados do Firebase. Alterou e clicou em salvar, a mudança é gravada imediatamente; publicar catálogo é uma etapa separada.';
     const sourceHelp = document.querySelector('[data-view="settings"] .settings-grid .panel .panel-header p');
     if (sourceHelp) sourceHelp.textContent = 'Fonte oficial fixa do Firebase e arquivos operacionais.';
     const writeHelp = document.querySelector('#writeModeSetting')?.closest('.switch-row')?.querySelector('small');
