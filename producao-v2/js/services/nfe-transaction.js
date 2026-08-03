@@ -2,7 +2,7 @@ import { validateProduct } from '../core/catalog.js';
 import { digits, round } from '../core/nfe.js';
 import { buildNfeImportRecord, NFE_EDITABLE_FIELDS } from '../core/nfe-simulation.js?admin_build=20260726-admin-v13-nfe-real';
 import { clone, number, productKey, text } from '../core/utils.js';
-import { loadProduct, saveProduct } from './firebase.js';
+import { createProduct, loadProduct, saveProduct } from './firebase.js';
 import { archiveNfeXml, inspectNfeImport, nfeXmlPath, writeNfeImportRecord } from './github.js';
 
 function listFromValue(value) {
@@ -75,24 +75,51 @@ function assertConfig(config) {
   if (!text(config.githubToken)) throw new Error('Informe o token do GitHub para arquivar o XML e registrar a NF-e.');
 }
 
+function hasEntry(product, entryId) {
+  return listFromValue(product?.entradas_nfe)
+    .some(entry => String(entry?.id || '') === String(entryId || ''));
+}
+
+async function confirmSavedProduct(config, plan, expected) {
+  const confirmed = await loadProduct(config, plan.productKey);
+  if (!confirmed) {
+    throw new Error(`${expected.nome || plan.productKey}: o Firebase não confirmou o produto após a gravação.`);
+  }
+
+  if (!hasEntry(confirmed, plan.entryRecord?.id)) {
+    throw new Error(`${expected.nome || plan.productKey}: o produto foi encontrado, mas a entrada desta NF-e não foi confirmada.`);
+  }
+
+  const expectedStock = round(number(expected.estoque));
+  const confirmedStock = round(number(confirmed.estoque));
+  if (confirmedStock !== expectedStock) {
+    throw new Error(`${expected.nome || plan.productKey}: o Firebase confirmou estoque ${confirmedStock}, mas a importação esperava ${expectedStock}.`);
+  }
+
+  return confirmed;
+}
+
 export async function executeNfeImport({ config, analysis, simulation, rawXml, onProgress = () => {} }) {
   assertConfig(config);
   if (!analysis?.note?.key || digits(analysis.note.key).length !== 44) throw new Error('Análise sem chave válida da NF-e.');
   if (!simulation?.canImport) throw new Error('A conferência possui bloqueadores. Corrija todos antes de importar.');
   if (!String(rawXml || '').trim()) throw new Error('O XML original não está disponível para arquivamento.');
 
-  const pendingPlans = simulation.plans.filter(plan => ['update', 'new'].includes(plan.status));
-  if (!pendingPlans.length) throw new Error('Não há itens válidos para importar.');
+  const allPendingPlans = simulation.plans.filter(plan => ['update', 'new'].includes(plan.status));
+  if (!allPendingPlans.length) throw new Error('Não há itens válidos para importar.');
 
   const remoteRecord = await inspectNfeImport(config, analysis.note.key);
   if (remoteRecord?.status === 'concluida') throw new Error(`A NF-e ${analysis.note.key} já está concluída no registro fiscal.`);
   const alreadyApplied = new Set((Array.isArray(remoteRecord?.itens_aplicados) ? remoteRecord.itens_aplicados : [])
     .map(item => String(item?.grupo || '')).filter(Boolean));
-  const repeatedPlan = pendingPlans.find(plan => alreadyApplied.has(plan.groupKey));
-  if (repeatedPlan) throw new Error(`O grupo ${repeatedPlan.groupKey} já consta como aplicado no registro fiscal.`);
+  const pendingPlans = allPendingPlans.filter(plan => !alreadyApplied.has(String(plan.groupKey || '')));
+  if (!pendingPlans.length) {
+    throw new Error('Todos os itens válidos desta NF-e já foram aplicados anteriormente. Atualize o catálogo antes de tentar novamente.');
+  }
 
   const session = `nfe_v2_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const applied = Array.isArray(remoteRecord?.itens_aplicados) ? clone(remoteRecord.itens_aplicados) : [];
+  const appliedAtStart = applied.length;
   const ignored = [
     ...(Array.isArray(remoteRecord?.itens_ignorados) ? clone(remoteRecord.itens_ignorados) : []),
     ...simulation.plans.filter(plan => plan.status === 'skipped').map(plan => ({
@@ -115,7 +142,7 @@ export async function executeNfeImport({ config, analysis, simulation, rawXml, o
       const plan = pendingPlans[index];
       onProgress({
         step: 'product',
-        message: `Salvando ${index + 1} de ${pendingPlans.length}: ${plan.nextProduct.nome || plan.productKey}`,
+        message: `${plan.isNew ? 'Cadastrando' : 'Atualizando'} ${index + 1} de ${pendingPlans.length}: ${plan.nextProduct.nome || plan.productKey}`,
         current: index + 1,
         total: pendingPlans.length,
         plan,
@@ -126,14 +153,20 @@ export async function executeNfeImport({ config, analysis, simulation, rawXml, o
       payload.firebaseKey = plan.productKey;
       payload.id = text(payload.id || plan.productKey);
       payload.codigo = text(payload.codigo || payload.sku || payload.id || plan.productKey);
+      payload.origem_cadastro = text(payload.origem_cadastro || 'entrada_nfe_admin_v2');
       const validation = validateProduct(payload, config);
       if (validation.errors.length) throw new Error(`${payload.nome || plan.productKey}: ${validation.errors.join(', ')}.`);
 
-      const saved = await saveProduct(config, validation.product, plan.isNew ? null : remote);
+      const written = plan.isNew
+        ? await createProduct(config, validation.product, plan.productKey)
+        : await saveProduct(config, validation.product, remote);
+      const saved = await confirmSavedProduct(config, plan, validation.product);
       savedProducts.push(saved);
       applied.push({
         grupo: plan.groupKey,
-        produto_key: productKey(saved),
+        produto_key: productKey(saved || written),
+        operacao: plan.isNew ? 'criado' : 'atualizado',
+        confirmado_no_firebase: true,
         aplicado_em: new Date().toISOString(),
         quantidade: round(plan.item.incomingUnits),
         estoque_somado: plan.item.addStock !== false,
@@ -150,7 +183,7 @@ export async function executeNfeImport({ config, analysis, simulation, rawXml, o
     record = (await writeNfeImportRecord(config, record)).record;
     onProgress({
       step: 'done',
-      message: 'NF-e importada no Firebase e conciliada com sucesso.',
+      message: `${savedProducts.length} produto(s) confirmado(s) no Firebase. NF-e conciliada com sucesso.`,
       current: pendingPlans.length,
       total: pendingPlans.length,
     });
@@ -168,8 +201,9 @@ export async function executeNfeImport({ config, analysis, simulation, rawXml, o
       failure.xml_arquivado_em = xmlResult.archivedAt;
     }
     await writeNfeImportRecord(config, failure).catch(() => {});
-    if (applied.length) {
-      throw new Error(`A importação parou após ${applied.length} item(ns) registrado(s): ${error?.message || error}. Reabra o mesmo XML para conciliar; os itens já aplicados permanecerão bloqueados.`);
+    const appliedThisSession = Math.max(0, applied.length - appliedAtStart);
+    if (appliedThisSession) {
+      throw new Error(`A importação parou após ${appliedThisSession} item(ns) confirmado(s) nesta tentativa: ${error?.message || error}. Reabra o mesmo XML para continuar; os itens já aplicados não serão repetidos.`);
     }
     throw error;
   }
