@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando a versão corrigida da lista de produtos e do estoque.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260803-nfe-save-v4';
+      const BUILD = '20260803-nfe-save-v5';
       try {
         const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
