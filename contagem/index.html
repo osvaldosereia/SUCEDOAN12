@@ -5,8 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#8b6418">
   <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Contagem de Produtos · Dona Antônia</title>
-  <link rel="stylesheet" href="./contagem.css?v=20260803-1">
+  <link rel="stylesheet" href="./contagem.css?v=20260804-2">
+  <link rel="stylesheet" href="./contagem-resultados-v2.css?v=20260804-2">
 </head>
 <body>
 <header class="top">
@@ -33,8 +37,8 @@
 
     <div>
       <div class="searchgrid">
-        <input id="nameInput" class="input" autocomplete="off" placeholder="Nome do produto">
-        <button id="findNameBtn" class="btn soft" type="button">Buscar</button>
+        <input id="nameInput" class="input" autocomplete="off" placeholder="Nome, marca ou categoria; vazio mostra todos">
+        <button id="findNameBtn" class="btn soft" type="button">Buscar / todos</button>
       </div>
       <div id="nameResults" class="nameResults"></div>
     </div>
@@ -100,6 +104,7 @@
 
 <div id="busy" class="busy"><div id="busyText">Carregando...</div></div>
 
-<script src="./contagem.js?v=20260803-1"></script>
+<script src="./contagem.js?v=20260804-2"></script>
+<script src="./contagem-resultados-v2.js?v=20260804-2"></script>
 </body>
 </html>
