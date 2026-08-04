@@ -35,6 +35,15 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   }
 
+  function forget(key) {
+    const normalized = text(decodeURIComponent(text(key)));
+    if (!normalized) return;
+    const map = readMap();
+    if (!Object.prototype.hasOwnProperty.call(map, normalized)) return;
+    delete map[normalized];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  }
+
   function deletedSet() {
     return new Set(Object.keys(readMap()));
   }
@@ -112,5 +121,5 @@
     }
   };
 
-  window.AdminV2DeletedProducts = { remember, filterData, keys: () => [...deletedSet()] };
+  window.AdminV2DeletedProducts = { remember, forget, filterData, keys: () => [...deletedSet()] };
 })();

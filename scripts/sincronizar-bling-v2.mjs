@@ -10,7 +10,7 @@ const API_BASE = 'https://api.bling.com.br/Api/v3';
 const MAX_PRODUCTS = Math.max(0, Number.parseInt(process.env.MAX_PRODUCTS || '0', 10) || 0);
 const SYNC_STOCK = /^(1|true|yes|sim)$/i.test(String(process.env.SYNC_STOCK || '').trim());
 const MIN_INTERVAL_MS = Math.max(360, Number(process.env.BLING_REQUEST_INTERVAL_MS || 420));
-const SOFT_DELETE_STATUS = 'E';
+const SOFT_DELETE_STATUS = 'I';
 const SYNC_SCHEMA_VERSION = 2;
 let lastRequestAt = 0;
 let accessToken = '';
@@ -221,7 +221,7 @@ function productFromFirebase(firebaseKey, source) {
   const estoque = {};
   optional(estoque, 'minimo', sourceNumber(source, 'estoqueMinimo', 'estoque_minimo'));
   optional(estoque, 'maximo', sourceNumber(source, 'estoqueMaximo', 'estoque_maximo'));
-  optional(estoque, 'crossdocking', sourceNumber(source, 'crossDocking', 'crossdocking'));
+  optional(estoque, 'crossDocking', sourceNumber(source, 'crossDocking', 'crossdocking'));
   optional(estoque, 'localizacao', sourceText(source, 'localizacao'));
   if (Object.keys(estoque).length) patch.estoque = estoque;
 
@@ -229,7 +229,7 @@ function productFromFirebase(firebaseKey, source) {
   optional(dimensoes, 'largura', sourceNumber(source, 'largura'));
   optional(dimensoes, 'altura', sourceNumber(source, 'altura'));
   optional(dimensoes, 'profundidade', sourceNumber(source, 'profundidade', 'comprimento'));
-  optional(dimensoes, 'unidadeMedida', sourceNumber(source, 'unidadeMedida', 'unidade_medida'));
+  optional(dimensoes, 'unidadeMedida', sourceText(source, 'unidadeMedida', 'unidade_medida'));
   if (Object.keys(dimensoes).length) patch.dimensoes = dimensoes;
 
   const tributacao = {};
@@ -296,11 +296,15 @@ function resolveExisting(product, previous, indexes) {
   const stateRow = stateId ? indexes.byId.get(stateId) : null;
   const codeRow = indexes.byCode.get(product.codigo) || null;
 
-  if (stateRow && codeRow && String(stateRow.id) !== String(codeRow.id)) {
-    return { row: codeRow, matchedBy: 'codigo-remapeado', staleStateRow: stateRow };
+  // O ID histórico é a identidade principal. Nunca remapeamos silenciosamente
+  // para outro produto apenas porque o código atual já está ocupado no Bling.
+  if (stateRow) {
+    if (codeRow && String(stateRow.id) !== String(codeRow.id)) {
+      return { row: stateRow, matchedBy: 'state-id', codeConflictRow: codeRow };
+    }
+    return { row: stateRow, matchedBy: 'state-id' };
   }
   if (codeRow) return { row: codeRow, matchedBy: 'codigo' };
-  if (stateRow) return { row: stateRow, matchedBy: 'state-id' };
 
   const previousCode = text(previous?.codigo);
   if (previousCode && indexes.byCode.has(previousCode)) return { row: indexes.byCode.get(previousCode), matchedBy: 'codigo-anterior' };
@@ -308,10 +312,36 @@ function resolveExisting(product, previous, indexes) {
   return { row: null, matchedBy: '' };
 }
 
-async function patchProduct(id, patch) {
+async function productDetail(id) {
+  const response = await apiFetch(`/produtos/${encodeURIComponent(id)}`, { headers: authHeaders() }, { label: `Detalhe do produto Bling ${id}` });
+  return (await response.json())?.data || {};
+}
+
+function completeProductPayload(detail, patch, existing = {}) {
+  const allowed = [
+    'nome', 'codigo', 'preco', 'tipo', 'formato', 'descricaoCurta', 'descricaoComplementar',
+    'dataValidade', 'unidade', 'pesoLiquido', 'pesoBruto', 'volumes', 'itensPorCaixa',
+    'gtin', 'gtinEmbalagem', 'tipoProducao', 'condicao', 'freteGratis', 'marca',
+    'observacoes', 'linkExterno', 'estoque', 'dimensoes', 'tributacao', 'midia', 'categoria'
+  ];
+  const payload = {};
+  for (const key of allowed) {
+    if (detail[key] !== undefined && detail[key] !== null) payload[key] = detail[key];
+  }
+  Object.assign(payload, patch);
+  payload.tipo = text(payload.tipo || existing.tipo || 'P');
+  payload.formato = text(payload.formato || existing.formato || 'S');
+  delete payload.id;
+  delete payload.situacao;
+  return payload;
+}
+
+async function updateProduct(id, patch, existing) {
+  const detail = await productDetail(id);
+  const payload = completeProductPayload(detail, patch, existing);
   const response = await apiFetch(`/produtos/${encodeURIComponent(id)}`, {
-    method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(patch)
-  }, { label: `PATCH produto ${patch.codigo}` });
+    method: 'PUT', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload)
+  }, { label: `PUT produto ${patch.codigo}` });
   const body = await response.json().catch(() => ({}));
   return body?.data?.id || id;
 }
@@ -558,6 +588,17 @@ try {
       const resolved = resolveExisting(product, previous, indexes);
       let existing = resolved.row;
       if (resolved.matchedBy === 'state-id') report.matchedByStateId++;
+      if (resolved.codeConflictRow) {
+        report.conflicts.push({
+          firebaseKey: product.firebaseKey,
+          codigo: product.codigo,
+          gtin: product.gtin,
+          blingIdHistorico: existing?.id,
+          blingIdQueJaUsaOCodigo: resolved.codeConflictRow.id,
+          reason: 'O código atual já pertence a outro produto no Bling. O ID histórico foi preservado e nenhuma alteração foi aplicada.'
+        });
+        continue;
+      }
 
       const duplicateRows = indexes.duplicateCodes.get(product.codigo) || [];
       if (duplicateRows.length) {
@@ -591,18 +632,6 @@ try {
           observacao: 'Os demais registros não foram excluídos nem alterados automaticamente.'
         });
       }
-      if (!duplicateRows.length && resolved.staleStateRow) {
-        report.relinked++;
-        report.staleLinks.push({
-          firebaseKey: product.firebaseKey,
-          codigo: product.codigo,
-          gtin: product.gtin,
-          blingIdAnterior: resolved.staleStateRow.id,
-          codigoAnteriorNoBling: text(resolved.staleStateRow.codigo),
-          blingIdCanonico: existing?.id,
-          motivo: 'O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo.'
-        });
-      }
 
       const legacyEntry = Number(previous.syncSchemaVersion || 0) !== SYNC_SCHEMA_VERSION;
       const codeChanged = Boolean(existing && text(existing.codigo) !== product.codigo);
@@ -613,9 +642,10 @@ try {
         || codeChanged
         || (!legacyEntry && hashChanged && reliableTimestamp && product.changedAt > previousSyncedAt);
       const currentStatus = text(existing?.situacao).toUpperCase();
+      const desiredBlingStatus = product.status === 'E' ? 'I' : product.status;
       const wasDeleted = text(previous.status) === 'E' || Boolean(previous.deletedAt);
       const statusNeedsSync = existing
-        ? product.status !== currentStatus || (wasDeleted && product.status !== 'E')
+        ? desiredBlingStatus !== currentStatus || (wasDeleted && desiredBlingStatus !== 'I')
         : product.status === 'E';
       const nextSupplierHash = product.supplier ? sha256(product.supplier) : '';
       const supplierNeedsSync = Boolean(product.supplier && (previous.supplierHash !== nextSupplierHash || !previous.supplierLinkId));
@@ -653,12 +683,12 @@ try {
         report.created++;
       } else if (dataChanged) {
         if (codeChanged) report.codeChanges++;
-        if (APPLY) await patchProduct(id, patch);
+        if (APPLY) await updateProduct(id, patch, existing);
         report.updated++;
       }
 
       if (statusNeedsSync) {
-        if (APPLY && !String(id).startsWith('novo:')) await setProductStatus(id, product.status, product.codigo);
+        if (APPLY && !String(id).startsWith('novo:')) await setProductStatus(id, desiredBlingStatus, product.codigo);
         report.statusUpdated++;
         if (wasDeleted && product.status !== 'E') report.restored++;
       }
@@ -681,6 +711,7 @@ try {
           blingId: id,
           codigo: product.codigo,
           status: product.status,
+          blingStatus: desiredBlingStatus,
           syncedAt: new Date().toISOString(),
           deletedAt: null,
           supplierHash,

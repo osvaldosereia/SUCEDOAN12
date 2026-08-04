@@ -721,7 +721,9 @@ async function run() {
     mode
   });
   await syncFirebase(result.changed);
-  await Promise.all([    writeJson(PRODUCTS_HOME_PATH, Object.fromEntries(Object.entries(result.products).map(([key, product]) => [key, homeProduct(key, product)]))),
+  await Promise.all([    writeJson(PRODUCTS_HOME_PATH, Object.fromEntries(Object.entries(result.products)
+      .filter(([, product]) => productEligible(product, new Date()))
+      .map(([key, product]) => [key, homeProduct(key, product)]))),
     writeJson(STATE_PATH, result.state),
     writeJson(HISTORY_PATH, result.history),
     writeJson(BANNERS_PATH, result.banners)
