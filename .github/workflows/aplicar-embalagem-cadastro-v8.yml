@@ -1,0 +1,34 @@
+name: Aplicar embalagem cadastro V8
+
+on:
+  push:
+    paths:
+      - '.github/workflows/aplicar-embalagem-cadastro-v8.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  atualizar-blueprint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Aplicar correção
+        run: node scripts/patch-cadastro-embalagem-v8.mjs
+      - name: Validar JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('cadastro/cadastro-produtos-3-fotos-categorias-marcas-manual-v6.blueprint.json','utf8')); console.log('Blueprint válido')"
+      - name: Publicar alteração
+        run: |
+          if git diff --quiet; then
+            echo 'Nenhuma alteração necessária.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add cadastro/cadastro-produtos-3-fotos-categorias-marcas-manual-v6.blueprint.json
+          git commit -m 'Ajusta embalagem, unidade e nome no cenário de cadastro'
+          git push
