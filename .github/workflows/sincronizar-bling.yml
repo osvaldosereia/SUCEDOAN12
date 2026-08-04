@@ -1,6 +1,7 @@
 name: Sincronizar Firebase para Bling
 run-name: Bling seguro · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
 
+# Validação v2: migração inicial, remapeamento por código e deduplicação simulada.
 on:
   workflow_dispatch:
     inputs:
