@@ -1,0 +1,50 @@
+name: Aplicar correções documentadas do Bling V2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/patch-bling-sync-v2.mjs'
+      - '.github/workflows/aplicar-correcoes-bling-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Aplicar patch
+        run: node scripts/patch-bling-sync-v2.mjs
+      - name: Validar JavaScript
+        run: |
+          node --check scripts/sincronizar-bling.mjs
+          node --check scripts/processar-ofertas.mjs
+          node --check producao-v2/js/product-delete-filter.js
+      - name: Validar contratos corrigidos
+        run: |
+          grep -q "produtos/.*/situacoes" scripts/sincronizar-bling.mjs
+          grep -q "inactivatedRemoved" scripts/sincronizar-bling.mjs
+          grep -q "identityConflicts" scripts/sincronizar-bling.mjs
+          grep -q "productEligible(product, new Date())" scripts/processar-ofertas.mjs
+          grep -q "cron: '23 \* \* \* \*'" .github/workflows/sincronizar-bling.yml
+      - name: Publicar arquivos corrigidos
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/sincronizar-bling.mjs scripts/processar-ofertas.mjs producao-v2/js/product-delete-filter.js .github/workflows/sincronizar-bling.yml
+          if git diff --cached --quiet; then
+            echo 'Nenhuma alteração necessária.'
+            exit 0
+          fi
+          git commit -m 'Corrige sincronização de produtos com Bling e catálogo público'
+          git pull --rebase origin main
+          git push origin HEAD:main
