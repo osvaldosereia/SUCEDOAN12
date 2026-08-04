@@ -22,3 +22,105 @@ main{max-width:780px;margin:auto;padding:12px;display:grid;gap:10px}
 .busy{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.42);place-items:center}.busy.show{display:grid}.busy div{background:#fff;border-radius:14px;padding:18px 22px;font-weight:900}
 @media(min-width:700px){.grid{grid-template-columns:repeat(3,1fr)}.head{grid-template-columns:150px 1fr}.photo{width:150px;height:150px}.pname{font-size:23px}.searches{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cameraBox{grid-column:1/-1}}
 @media(max-width:370px){.head{grid-template-columns:92px 1fr}.photo{width:92px;height:92px}.grid{grid-template-columns:1fr}.span{grid-column:auto}.savein{grid-template-columns:1fr 1.3fr}.btn{padding:8px}}
+
+/* Correção definitiva de largura no mobile */
+html{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+  overscroll-behavior-x:none;
+}
+body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+  position:relative;
+}
+img,video,canvas,svg{max-width:100%}
+.top,.topin,main,.card,.status,.searches,.searchgrid,.cameraBox,.videoWrap,.cameraActions,.nameResults,.product,.head,.grid,.field,.savebar,.savein,.recent{
+  max-width:100%;
+  min-width:0;
+}
+.top{width:100%}
+.topin{width:100%}
+.top-actions{
+  min-width:0;
+  flex:0 1 auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:7px;
+}
+.tool-link{
+  min-width:0;
+  max-width:100%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:0 11px;
+  border-radius:12px;
+  background:#fff3cf;
+  border:1px solid #e8cf87;
+  color:#73530f;
+  text-decoration:none;
+  font-weight:900;
+  white-space:nowrap;
+}
+.brand>div:last-child{min-width:0;max-width:100%}
+.brand b,.brand small,.pname,.meta,.status,.field label,.searchCardBody b,.searchCardBody small{
+  max-width:100%;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.brand b,.brand small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{width:100%;overflow:hidden}
+.card{width:100%;overflow:hidden}
+.searches>div{min-width:0;max-width:100%}
+.searchgrid{width:100%;grid-template-columns:minmax(0,1fr) auto}
+.input,.btn,select,textarea{
+  min-width:0;
+  max-width:100%;
+}
+.cameraActions,.savein,.grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.head{grid-template-columns:minmax(0,112px) minmax(0,1fr)}
+.head>div{min-width:0;max-width:100%}
+.photo{max-width:100%}
+.nameResults{width:100%;overflow:hidden}
+.searchProductCard,.searchPhoto,.searchCardBody,.searchBadges{min-width:0;max-width:100%}
+.searchProductCard{width:100%}
+.searchCardBody{overflow:hidden}
+.recent{width:100%}
+.recent button{flex:0 0 auto;max-width:88vw;overflow:hidden;text-overflow:ellipsis}
+.busy{width:100vw;max-width:100vw;overflow:hidden}
+.busy div{max-width:calc(100vw - 32px);overflow-wrap:anywhere;text-align:center}
+
+@media(max-width:520px){
+  .top{padding:8px 10px}
+  .topin{gap:7px}
+  .brand{flex:1 1 auto;overflow:hidden}
+  .logo{flex:0 0 38px;width:38px;height:38px}
+  .brand b{font-size:14px}
+  .brand small{font-size:10px}
+  .top-actions{flex:0 0 auto;gap:5px}
+  .tool-link{width:42px;max-width:42px;padding:0;font-size:0}
+  .tool-link .tool-icon{font-size:18px}
+  .tool-link .tool-text{display:none}
+  .count{min-width:50px;padding:4px 6px}
+  .count strong{font-size:16px}
+  main{padding:10px}
+  .card{padding:10px}
+  .searchgrid{gap:6px}
+  .searchgrid .btn{padding-left:9px;padding-right:9px}
+  .head{grid-template-columns:minmax(0,92px) minmax(0,1fr);gap:9px}
+  .photo{width:92px;height:92px}
+}
+
+@media(max-width:340px){
+  .brand small{display:none}
+  .logo{flex-basis:34px;width:34px;height:34px;border-radius:10px}
+  .count{min-width:46px}
+  .searchgrid{grid-template-columns:minmax(0,1fr) 86px}
+  .searchgrid .btn{font-size:12px;padding:7px}
+  .cameraActions,.savein{gap:6px}
+}
