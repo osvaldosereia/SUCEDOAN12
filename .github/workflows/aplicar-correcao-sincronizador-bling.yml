@@ -1,5 +1,6 @@
 name: Aplicar correção segura do sincronizador Bling
 
+# Disparo de aplicação após o workflow já estar registrado no GitHub.
 on:
   push:
     branches: [main]
