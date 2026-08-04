@@ -1,26 +1,27 @@
 {
-  "startedAt": "2026-08-04T17:48:51.407Z",
+  "startedAt": "2026-08-04T18:03:03.594Z",
   "mode": "dry-run",
   "stockSync": false,
-  "firebaseProducts": 1591,
+  "firebaseProducts": 1593,
   "blingProducts": 2043,
-  "selected": 1594,
-  "created": 63,
-  "updated": 1304,
+  "selected": 1596,
+  "created": 65,
+  "updated": 2,
   "unchanged": 0,
-  "baselined": 186,
+  "baselined": 1528,
   "statusUpdated": 15,
   "softDeleted": 3,
   "restored": 0,
   "codeChanges": 2,
   "matchedByStateId": 10,
   "relinked": 30,
-  "categoriesPlanned": 248,
+  "duplicateResolved": 8,
+  "categoriesPlanned": 23,
   "categoriesCreated": 0,
-  "categoriesReused": 3772,
+  "categoriesReused": 128,
   "suppliersPlanned": 7,
   "suppliersCreated": 0,
-  "suppliersReused": 58,
+  "suppliersReused": 60,
   "supplierLinksCreated": 0,
   "supplierLinksUpdated": 0,
   "stockChecked": 0,
@@ -300,80 +301,97 @@
       "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     }
   ],
-  "conflicts": [
+  "duplicateLinks": [
     {
       "firebaseKey": "1776338125363",
       "codigo": "76858834",
-      "blingIds": [
-        16604569986,
-        16604585446
+      "gtin": "7892840808044",
+      "blingIdCanonico": 16604585446,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
+        16604569986
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     },
     {
       "firebaseKey": "1776338126280",
       "codigo": "77034754",
-      "blingIds": [
-        16604569985,
-        16604585445
+      "gtin": "7896292340503",
+      "blingIdCanonico": 16604585445,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
+        16604569985
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     },
     {
       "firebaseKey": "1776338127135",
       "codigo": "P574",
-      "blingIds": [
-        16605701618,
+      "gtin": "7898616501775",
+      "blingIdCanonico": 16605701618,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
         16604584588
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     },
     {
       "firebaseKey": "1776338127451",
       "codigo": "76685539",
-      "blingIds": [
-        16604585447,
+      "gtin": "7896327514541",
+      "blingIdCanonico": 16604585447,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
         16604569988
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     },
     {
       "firebaseKey": "1776338127994",
       "codigo": "65435141",
-      "blingIds": [
-        16604585450,
+      "gtin": "2711654351414",
+      "blingIdCanonico": 16604585450,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
         16604569991
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     },
     {
       "firebaseKey": "1776338128634",
       "codigo": "76409162",
-      "blingIds": [
-        16604585448,
+      "gtin": "7896327514558",
+      "blingIdCanonico": 16604585448,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
         16604569989
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     },
     {
       "firebaseKey": "1776338131018",
       "codigo": "P575",
-      "blingIds": [
-        16605701619,
+      "gtin": "7898215151807",
+      "blingIdCanonico": 16605701619,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
         16604584589
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     },
     {
       "firebaseKey": "1776338132294",
       "codigo": "69880233",
-      "blingIds": [
-        16604585449,
+      "gtin": "7896327511502",
+      "blingIdCanonico": 16604585449,
+      "resolvidoPor": "state-id",
+      "outrosBlingIds": [
         16604569990
       ],
-      "reason": "Há mais de um produto no Bling com o mesmo código."
+      "observacao": "Os demais registros não foram excluídos nem alterados automaticamente."
     }
   ],
+  "conflicts": [],
   "errors": [],
-  "finishedAt": "2026-08-04T17:49:17.054Z"
+  "finishedAt": "2026-08-04T18:04:37.153Z"
 }
