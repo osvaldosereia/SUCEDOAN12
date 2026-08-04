@@ -1,0 +1,60 @@
+name: Reparar catálogo após ofertas
+
+on:
+  workflow_run:
+    workflows: ["Processar ofertas automáticas"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reparar-catalogo-apos-ofertas
+  cancel-in-progress: true
+
+jobs:
+  reparar:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Gerar catálogo oficial filtrado
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          PRODUCTS_HOME_PATH: site/produtos-home.json
+          PRODUCTS_ADMIN_PATH: site/produtos-admin.json
+          CATALOG_VERSION_PATH: catalog-version.json
+        run: node scripts/sincronizar-produtos-home-firebase.mjs
+      - name: Compactar e validar
+        env:
+          PRODUCTS_HOME_PATH: site/produtos-home.json
+          PRODUCTS_ADMIN_PATH: site/produtos-admin.json
+          CATALOG_VERSION_PATH: catalog-version.json
+        run: |
+          node scripts/estabilizar-catalogo-publico.mjs
+          node -e "const v=require('./catalog-version.json'); if(!v.version || !v.productCount || v.productCount > v.adminProductCount) process.exit(1)"
+      - name: Publicar catálogo corrigido
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/produtos-home.json site/produtos-admin.json catalog-version.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Repara catálogo público após processamento de ofertas"
+          for tentativa in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+            sleep $((tentativa * 2))
+          done
+          exit 1
