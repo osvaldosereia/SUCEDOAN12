@@ -1,24 +1,26 @@
 {
-  "startedAt": "2026-08-04T17:40:50.628Z",
+  "startedAt": "2026-08-04T17:48:51.407Z",
   "mode": "dry-run",
   "stockSync": false,
   "firebaseProducts": 1591,
   "blingProducts": 2043,
   "selected": 1594,
   "created": 63,
-  "updated": 1359,
+  "updated": 1304,
   "unchanged": 0,
-  "statusUpdated": 78,
+  "baselined": 186,
+  "statusUpdated": 15,
   "softDeleted": 3,
   "restored": 0,
   "codeChanges": 2,
-  "matchedByStateId": 1445,
-  "categoriesPlanned": 1548,
+  "matchedByStateId": 10,
+  "relinked": 30,
+  "categoriesPlanned": 248,
   "categoriesCreated": 0,
-  "categoriesReused": 1555,
-  "suppliersPlanned": 21,
+  "categoriesReused": 3772,
+  "suppliersPlanned": 7,
   "suppliersCreated": 0,
-  "suppliersReused": 40,
+  "suppliersReused": 58,
   "supplierLinksCreated": 0,
   "supplierLinksUpdated": 0,
   "stockChecked": 0,
@@ -26,188 +28,352 @@
   "stockUnchanged": 0,
   "deferred": 0,
   "invalid": [],
-  "conflicts": [
+  "staleLinks": [
     {
       "firebaseKey": "07898568540297",
       "codigo": "diodoro.camomila.01",
-      "reason": "Código já pertence ao produto Bling 16681397523."
+      "gtin": "07898568540297",
+      "blingIdAnterior": 16678772191,
+      "codigoAnteriorNoBling": "07898568540297",
+      "blingIdCanonico": 16681397523,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1775966798602",
       "codigo": "tricofacil.perfumebebe.1.6",
-      "reason": "Código já pertence ao produto Bling 16681975749."
+      "gtin": "07896369163097",
+      "blingIdAnterior": 16632979690,
+      "codigoAnteriorNoBling": "262886U",
+      "blingIdCanonico": 16681975749,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338123264",
       "codigo": "diodoro.colorifico.01",
-      "reason": "Código já pertence ao produto Bling 16681397532."
+      "gtin": "7898568540204",
+      "blingIdAnterior": 16598430513,
+      "codigoAnteriorNoBling": "P0103",
+      "blingIdCanonico": 16681397532,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338123772",
       "codigo": "andorinha.azeite.500",
-      "reason": "Código já pertence ao produto Bling 16681975751."
+      "gtin": "5601216120053",
+      "blingIdAnterior": 16598430523,
+      "codigoAnteriorNoBling": "P0027",
+      "blingIdCanonico": 16681975751,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338124284",
       "codigo": "diodoro.pimentacalabresa.01",
-      "reason": "Código já pertence ao produto Bling 16681397537."
+      "gtin": "7898568540358",
+      "blingIdAnterior": 16598060244,
+      "codigoAnteriorNoBling": "P0267",
+      "blingIdCanonico": 16681397537,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338124533",
       "codigo": "ole.legumes.170",
-      "reason": "Código já pertence ao produto Bling 16681975757."
+      "gtin": "7891032012504",
+      "blingIdAnterior": 16598430509,
+      "codigoAnteriorNoBling": "P0308",
+      "blingIdCanonico": 16681975757,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338125205",
       "codigo": "maxton.6.1",
-      "reason": "Código já pertence ao produto Bling 16680137895."
+      "gtin": "7896013553021",
+      "blingIdAnterior": 16610602568,
+      "codigoAnteriorNoBling": "562812R",
+      "blingIdCanonico": 16680137895,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338126120",
       "codigo": "pringles.original.104",
-      "reason": "Código já pertence ao produto Bling 16682457299."
+      "gtin": "7896004006277",
+      "blingIdAnterior": 16601899027,
+      "codigoAnteriorNoBling": "P522",
+      "blingIdCanonico": 16682457299,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338126800",
       "codigo": "pringles.stranger.100g",
-      "reason": "Código já pertence ao produto Bling 16682457302."
-    },
-    {
-      "firebaseKey": "1776338127135",
-      "codigo": "P574",
-      "reason": "Código já pertence ao produto Bling 16604584588."
-    },
-    {
-      "firebaseKey": "1776338127451",
-      "codigo": "76685539",
-      "reason": "Código já pertence ao produto Bling 16604569988."
+      "gtin": "7896004011653",
+      "blingIdAnterior": 16604585441,
+      "codigoAnteriorNoBling": "78249739",
+      "blingIdCanonico": 16682457302,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338127553",
       "codigo": "diodoro.pimentareino.01",
-      "reason": "Código já pertence ao produto Bling 16681397540."
-    },
-    {
-      "firebaseKey": "1776338127994",
-      "codigo": "65435141",
-      "reason": "Código já pertence ao produto Bling 16604569991."
+      "gtin": "7898568540228",
+      "blingIdAnterior": 16598060291,
+      "codigoAnteriorNoBling": "P0268",
+      "blingIdCanonico": 16681397540,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338128041",
       "codigo": "diodoro.bicarbonato.01",
-      "reason": "Código já pertence ao produto Bling 16681397544."
-    },
-    {
-      "firebaseKey": "1776338128634",
-      "codigo": "76409162",
-      "reason": "Código já pertence ao produto Bling 16604569989."
+      "gtin": "7898568540198",
+      "blingIdAnterior": 16598430515,
+      "codigoAnteriorNoBling": "P0048",
+      "blingIdCanonico": 16681397544,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338130419",
       "codigo": "diodoro.oregano.01",
-      "reason": "Código já pertence ao produto Bling 16681397549."
+      "gtin": "7898568540273",
+      "blingIdAnterior": 16598060252,
+      "codigoAnteriorNoBling": "P0250",
+      "blingIdCanonico": 16681397549,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338130480",
       "codigo": "diodoro.baiano.01",
-      "reason": "Código já pertence ao produto Bling 16681397552."
+      "gtin": "7898568540334",
+      "blingIdAnterior": 16598430520,
+      "codigoAnteriorNoBling": "P0317",
+      "blingIdCanonico": 16681397552,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338130553",
       "codigo": "maxton.7.0",
-      "reason": "Código já pertence ao produto Bling 16680137899."
-    },
-    {
-      "firebaseKey": "1776338131018",
-      "codigo": "P575",
-      "reason": "Código já pertence ao produto Bling 16604584589."
+      "gtin": "7896013544289",
+      "blingIdAnterior": 16610602533,
+      "codigoAnteriorNoBling": "958478V",
+      "blingIdCanonico": 16680137899,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338132124",
       "codigo": "diodoro.acafrao.01",
-      "reason": "Código já pertence ao produto Bling 16681397556."
-    },
-    {
-      "firebaseKey": "1776338132294",
-      "codigo": "69880233",
-      "reason": "Código já pertence ao produto Bling 16604569990."
+      "gtin": "7898568540341",
+      "blingIdAnterior": 16598430517,
+      "codigoAnteriorNoBling": "P0029",
+      "blingIdCanonico": 16681397556,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338132411",
       "codigo": "pringles.churrasco.104",
-      "reason": "Código já pertence ao produto Bling 16682457324."
+      "gtin": "7896004006406",
+      "blingIdAnterior": 16601899041,
+      "codigoAnteriorNoBling": "P523",
+      "blingIdCanonico": 16682457324,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "1776338132417",
       "codigo": "diodoro.louro.01",
-      "reason": "Código já pertence ao produto Bling 16681397560."
+      "gtin": "7898568540259",
+      "blingIdAnterior": 16598060239,
+      "codigoAnteriorNoBling": "P0229",
+      "blingIdCanonico": 16681397560,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "177930406475646966",
       "codigo": "vale.uvapassa.150",
-      "reason": "Código já pertence ao produto Bling 16682457328."
+      "gtin": "7896272009918",
+      "blingIdAnterior": 16654315376,
+      "codigoAnteriorNoBling": "P-Q3Y4",
+      "blingIdCanonico": 16682457328,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "177981630828323885",
       "codigo": "goldcolor.12.89",
-      "reason": "Código já pertence ao produto Bling 16680137901."
+      "gtin": "7896852627051",
+      "blingIdAnterior": 16655989559,
+      "codigoAnteriorNoBling": "3082830381",
+      "blingIdCanonico": 16680137901,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "6194017200509",
       "codigo": "allegro.azeite.500",
-      "reason": "Código já pertence ao produto Bling 16681397575."
+      "gtin": "6194017200509",
+      "blingIdAnterior": 16678772194,
+      "codigoAnteriorNoBling": "6194017200509",
+      "blingIdCanonico": 16681397575,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7896328200948",
       "codigo": "barao.tererelimao.500",
-      "reason": "Código já pertence ao produto Bling 16681397613."
+      "gtin": "7896328200948",
+      "blingIdAnterior": 16678772199,
+      "codigoAnteriorNoBling": "7896328200948",
+      "blingIdCanonico": 16681397613,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898215152439",
       "codigo": "piracanjuba.pointegral.400",
-      "reason": "Código já pertence ao produto Bling 16681975765."
+      "gtin": "7898215152439",
+      "blingIdAnterior": 16678772200,
+      "codigoAnteriorNoBling": "7898215152439",
+      "blingIdCanonico": 16681975765,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568540211",
       "codigo": "diodoro.pimenta;grao.01",
-      "reason": "Código já pertence ao produto Bling 16681397624."
+      "gtin": "7898568540211",
+      "blingIdAnterior": 16678772202,
+      "codigoAnteriorNoBling": "7898568540211",
+      "blingIdCanonico": 16681397624,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568540266",
       "codigo": "diodoro.ervadoce.01",
-      "reason": "Código já pertence ao produto Bling 16681397628."
+      "gtin": "7898568540266",
+      "blingIdAnterior": 16678772205,
+      "codigoAnteriorNoBling": "7898568540266",
+      "blingIdCanonico": 16681397628,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568540303",
       "codigo": "diodoro.canelapo.01",
-      "reason": "Código já pertence ao produto Bling 16681397633."
+      "gtin": "7898568540303",
+      "blingIdAnterior": 16678772206,
+      "codigoAnteriorNoBling": "7898568540303",
+      "blingIdCanonico": 16681397633,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568540310",
       "codigo": "diodoro.canelaemcasca.01",
-      "reason": "Código já pertence ao produto Bling 16681397642."
+      "gtin": "7898568540310",
+      "blingIdAnterior": 16678772207,
+      "codigoAnteriorNoBling": "7898568540310",
+      "blingIdCanonico": 16681397642,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568540600",
       "codigo": "diodoro.pimentasiria.01",
-      "reason": "Código já pertence ao produto Bling 16681397647."
+      "gtin": "7898568540600",
+      "blingIdAnterior": 16678772208,
+      "codigoAnteriorNoBling": "7898568540600",
+      "blingIdCanonico": 16681397647,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568540617",
       "codigo": "diodoro.chimichurri",
-      "reason": "Código já pertence ao produto Bling 16681397655."
+      "gtin": "7898568540617",
+      "blingIdAnterior": 16678772209,
+      "codigoAnteriorNoBling": "7898568540617",
+      "blingIdCanonico": 16681397655,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568545094",
       "codigo": "diodoro.papricadoce.01",
-      "reason": "Código já pertence ao produto Bling 16681397666."
+      "gtin": "7898568545094",
+      "blingIdAnterior": 16678772210,
+      "codigoAnteriorNoBling": "7898568545094",
+      "blingIdCanonico": 16681397666,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
     },
     {
       "firebaseKey": "7898568545162",
       "codigo": "diodoro.cebolinha.01",
-      "reason": "Código já pertence ao produto Bling 16681397676."
+      "gtin": "7898568545162",
+      "blingIdAnterior": 16678772213,
+      "codigoAnteriorNoBling": "7898568545162",
+      "blingIdCanonico": 16681397676,
+      "motivo": "O código atual já pertence a outro ID; a sincronização foi remapeada para o ID do código atual sem excluir o registro antigo."
+    }
+  ],
+  "conflicts": [
+    {
+      "firebaseKey": "1776338125363",
+      "codigo": "76858834",
+      "blingIds": [
+        16604569986,
+        16604585446
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
+    },
+    {
+      "firebaseKey": "1776338126280",
+      "codigo": "77034754",
+      "blingIds": [
+        16604569985,
+        16604585445
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
+    },
+    {
+      "firebaseKey": "1776338127135",
+      "codigo": "P574",
+      "blingIds": [
+        16605701618,
+        16604584588
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
+    },
+    {
+      "firebaseKey": "1776338127451",
+      "codigo": "76685539",
+      "blingIds": [
+        16604585447,
+        16604569988
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
+    },
+    {
+      "firebaseKey": "1776338127994",
+      "codigo": "65435141",
+      "blingIds": [
+        16604585450,
+        16604569991
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
+    },
+    {
+      "firebaseKey": "1776338128634",
+      "codigo": "76409162",
+      "blingIds": [
+        16604585448,
+        16604569989
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
+    },
+    {
+      "firebaseKey": "1776338131018",
+      "codigo": "P575",
+      "blingIds": [
+        16605701619,
+        16604584589
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
+    },
+    {
+      "firebaseKey": "1776338132294",
+      "codigo": "69880233",
+      "blingIds": [
+        16604585449,
+        16604569990
+      ],
+      "reason": "Há mais de um produto no Bling com o mesmo código."
     }
   ],
   "errors": [],
-  "finishedAt": "2026-08-04T17:41:11.566Z"
+  "finishedAt": "2026-08-04T17:49:17.054Z"
 }
