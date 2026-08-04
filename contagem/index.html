@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#8b6418">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Contagem de Produtos · Dona Antônia</title>
+  <link rel="stylesheet" href="./contagem.css?v=20260803-1">
+</head>
+<body>
+<header class="top">
+  <div class="topin">
+    <div class="brand"><div class="logo">DA</div><div><b>Contagem de produtos</b><small>Rápido, direto no Firebase</small></div></div>
+    <div class="count"><strong id="sessionCount">0</strong><span>contados</span></div>
+  </div>
+</header>
+
+<main>
+  <div id="status" class="status warn">Pronto. Leia o EAN, digite o código ou pesquise pelo nome.</div>
+
+  <section class="card searches">
+    <div>
+      <div class="searchgrid">
+        <input id="codeInput" class="input" inputmode="numeric" autocomplete="off" placeholder="EAN ou código">
+        <button id="cameraBtn" class="btn gold" type="button">📷 Câmera</button>
+      </div>
+      <button id="findCodeBtn" class="btn soft full mt8" type="button">Buscar pelo EAN</button>
+    </div>
+
+    <div>
+      <div class="searchgrid">
+        <input id="nameInput" class="input" autocomplete="off" placeholder="Nome do produto">
+        <button id="findNameBtn" class="btn soft" type="button">Buscar</button>
+      </div>
+      <div id="nameResults" class="nameResults"></div>
+    </div>
+
+    <div id="cameraBox" class="cameraBox">
+      <div class="videoWrap">
+        <video id="video" class="video" playsinline muted autoplay></video>
+        <div class="scanline"></div>
+      </div>
+      <div class="cameraActions">
+        <button id="closeCameraBtn" class="btn red" type="button">Fechar câmera</button>
+        <button id="photoCameraBtn" class="btn soft" type="button">Usar câmera do celular</button>
+      </div>
+      <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
+    </div>
+  </section>
+
+  <section id="recentCard" class="card hidden">
+    <div class="eyebrow">Últimos produtos</div>
+    <div id="recent" class="recent"></div>
+  </section>
+
+  <section id="productCard" class="card">
+    <div id="empty" class="empty">Nenhum produto carregado.</div>
+
+    <div id="product" class="product">
+      <div class="head">
+        <img id="photo" class="photo" alt="Produto">
+        <div>
+          <h1 id="displayName" class="pname"></h1>
+          <div id="displayMeta" class="meta"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field span"><label>Nome</label><input id="f_nome" class="input" data-field="nome"></div>
+        <div class="field"><label>Validade</label><input id="f_validade" class="input" inputmode="numeric" maxlength="10" placeholder="dd/mm/aaaa" data-field="validade"></div>
+        <div class="field"><label>Estoque contado</label><input id="f_estoque" class="input" inputmode="decimal" data-field="estoque"></div>
+        <div class="field"><label>Preço de custo</label><input id="f_preco_custo" class="input money" inputmode="decimal" data-field="preco_custo"></div>
+        <div class="field"><label>Preço de venda</label><input id="f_preco" class="input money" inputmode="decimal" data-field="preco"></div>
+        <div class="field"><label>Gôndola</label><input id="f_gondola" class="input" list="gondolas" data-field="gondola"></div>
+        <div class="field"><label>Prateleira</label><input id="f_prateleira" class="input" list="prateleiras" data-field="prateleira"></div>
+        <div class="field"><label>Marca</label><input id="f_marca" class="input" list="marcas" data-field="marca"></div>
+        <div class="field"><label>Categoria</label><input id="f_categoria" class="input" list="categorias" data-field="categoria"></div>
+        <div class="field"><label>Subcategoria</label><input id="f_subcategoria" class="input" list="subcategorias" data-field="subcategoria"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<datalist id="gondolas"></datalist>
+<datalist id="prateleiras"></datalist>
+<datalist id="marcas"></datalist>
+<datalist id="categorias"></datalist>
+<datalist id="subcategorias"></datalist>
+
+<div id="savebar" class="savebar hidden">
+  <div class="savein">
+    <button id="nextBtn" class="btn soft" type="button">Próximo</button>
+    <button id="saveBtn" class="btn green" type="button">Salvar contagem</button>
+  </div>
+</div>
+
+<div id="busy" class="busy"><div id="busyText">Carregando...</div></div>
+
+<script src="./contagem.js?v=20260803-1"></script>
+</body>
+</html>
