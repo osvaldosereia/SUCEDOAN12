@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-04T16:10:14.674Z",
+  "ultima_execucao": "2026-08-04T16:56:51.615Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -954,6 +954,20 @@
       "inicio": "2026-08-04",
       "fim": "2026-08-11T23:59:59-04:00",
       "historico_id": "oferta-1775971741064-1785205333450-rwoo7"
+    },
+    {
+      "produto_key": "1775971741066",
+      "codigo": "976162K",
+      "nome": "Skala Creme para Pentear Ceramidas G3 1kg",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 14.9,
+      "preco_oferta": 13.41,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-04",
+      "fim": "2026-08-11T23:59:59-04:00",
+      "historico_id": "oferta-1775971741066-1785862611615-fbfyg"
     },
     {
       "produto_key": "1775971741067",
@@ -14984,6 +14998,20 @@
       "historico_id": "oferta-1785856050566b7f2-1785858259261-pkohr"
     },
     {
+      "produto_key": "1785859511468_355d",
+      "codigo": "7896404600181",
+      "nome": "Amaciante de Roupas Girando Sol Rosas e Lavanda 2L",
+      "categoria": "LAVANDERIA",
+      "regra_id": "regra-1785205096285",
+      "origem": "campanha_automatica",
+      "preco_normal": 11.9,
+      "preco_oferta": 11.07,
+      "desconto_percentual": 6.97,
+      "inicio": "2026-08-04",
+      "fim": "2026-08-07T23:59:59-04:00",
+      "historico_id": "oferta-1785859511468355d-1785862611615-lr0tr"
+    },
+    {
       "produto_key": "6194017200509",
       "codigo": "allegro.azeite.500",
       "nome": "Azeite de Oliva Extra Virgem Allegro 500ml",
@@ -15854,7 +15882,7 @@
     {
       "produto_key": "produto_1784812997208",
       "codigo": "d'italia.espaguete.400",
-      "nome": "Macarrão D'Itália Espaguete 400g",
+      "nome": "Macarrão D'Itália Pappardelle 400g",
       "categoria": "MACARRÃO E MOLHOS",
       "regra_id": "regra-1785205113340",
       "origem": "campanha_automatica",
@@ -20802,7 +20830,7 @@
       "regra_id": "regra-1785205164829"
     },
     "1775971741066": {
-      "ultima_oferta_em": "2026-07-28T02:52:32.128Z",
+      "ultima_oferta_em": "2026-08-04T16:56:51.615Z",
       "regra_id": "regra-1785202557027"
     },
     "1776952537694": {
@@ -21280,26 +21308,13 @@
     "1785855652000_c7b2": {
       "ultima_oferta_em": "2026-08-04T15:49:08.144Z",
       "regra_id": "regra-1785202557027"
+    },
+    "1785859511468_355d": {
+      "ultima_oferta_em": "2026-08-04T16:56:51.615Z",
+      "regra_id": "regra-1785205096285"
     }
   },
   "execucoes": [
-    {
-      "id": "make-20260801071122989",
-      "executado_em": "2026-08-01T10:12:35.836Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 16,
-        "ofertas_nao_criadas": 7,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1785581389889",
       "executado_em": "2026-08-01T10:49:50.431Z",
@@ -24676,6 +24691,23 @@
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
         "ofertas_encerradas": 1,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1785862611213",
+      "executado_em": "2026-08-04T16:56:51.615Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 2,
+        "ofertas_nao_criadas": 21,
+        "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
         "reativacoes_com_falha": 0,
