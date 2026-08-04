@@ -179,19 +179,6 @@
         if(data&&Object.keys(data).length)return Object.values(data)[0];
       }catch{}
     }
-    try{
-      const all=await request(dbUrl(state.settings.productsNode,`aliases=${Date.now()}`),{},40000);
-      for(const product of Object.values(all||{})){
-        if(!product||typeof product!=='object')continue;
-        const aliases=[];
-        for(const source of [product.eans_alternativos,product.ean_aliases]){
-          if(Array.isArray(source))aliases.push(...source);
-          else if(source&&typeof source==='object')aliases.push(...Object.values(source));
-          else if(source)aliases.push(...String(source).split(/[,;|\s]+/));
-        }
-        if(aliases.map(digits).includes(ean))return product;
-      }
-    }catch{}
     return null;
   }
 
