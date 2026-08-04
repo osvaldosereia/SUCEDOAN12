@@ -1,7 +1,6 @@
 name: Sincronizar Firebase para Bling
-run-name: Bling seguro · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
+run-name: Bling V3 · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
 
-# V4: identidade por blingId histórico, PUT completo e situação por PATCH específico.
 on:
   workflow_dispatch:
     inputs:
@@ -29,8 +28,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "scripts/sincronizar-bling-v2.mjs"
-      - "scripts/patch-bling-sync-v3.mjs"
+      - "scripts/sincronizar-bling-v3.mjs"
       - ".github/workflows/sincronizar-bling.yml"
 
 permissions:
@@ -60,38 +58,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Aplicar correções validadas na documentação oficial
-        if: github.event_name == 'push'
-        run: node scripts/patch-bling-sync-v3.mjs
-
-      - name: Validar sincronizador e catálogo
+      - name: Validar sincronizador V3
         run: |
-          node --check scripts/sincronizar-bling-v2.mjs
-          node --check scripts/processar-ofertas.mjs
-          node --check producao-v2/js/product-delete-filter.js
-          grep -q "method: 'PUT'" scripts/sincronizar-bling-v2.mjs
-          grep -q "/situacoes" scripts/sincronizar-bling-v2.mjs
-          grep -q "codeConflictRow" scripts/sincronizar-bling-v2.mjs
-          grep -q "SOFT_DELETE_STATUS = 'I'" scripts/sincronizar-bling-v2.mjs
-          grep -q "productEligible(product, new Date())" scripts/processar-ofertas.mjs
-
-      - name: Publicar correções estruturais
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/sincronizar-bling-v2.mjs scripts/processar-ofertas.mjs producao-v2/js/product-delete-filter.js
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Corrige integração Bling conforme documentação oficial"
-          for tentativa in 1 2 3 4 5; do
-            if git push origin HEAD:main; then exit 0; fi
-            git fetch origin main
-            git rebase origin/main
-            sleep $((tentativa * 2))
-          done
-          exit 1
+          node --check scripts/sincronizar-bling-v3.mjs
+          grep -q "method: 'PUT'" scripts/sincronizar-bling-v3.mjs
+          grep -q "/situacoes" scripts/sincronizar-bling-v3.mjs
+          grep -q "codigo_ocupado" scripts/sincronizar-bling-v3.mjs
+          grep -q "setStatus(row.id, 'I'" scripts/sincronizar-bling-v3.mjs
 
       - name: Sincronizar produtos com segurança
         id: sync
@@ -103,9 +76,9 @@ jobs:
         run: |
           set -o pipefail
           if [ "$SYNC_MODE" = "production" ]; then
-            node scripts/sincronizar-bling-v2.mjs --apply --state .automation/bling-sync-state.json 2>&1 | tee bling-sync.log
+            node scripts/sincronizar-bling-v3.mjs --apply --state .automation/bling-sync-state.json 2>&1 | tee bling-sync.log
           else
-            node scripts/sincronizar-bling-v2.mjs --state .automation/bling-sync-state.json 2>&1 | tee bling-sync.log
+            node scripts/sincronizar-bling-v3.mjs --state .automation/bling-sync-state.json 2>&1 | tee bling-sync.log
           fi
 
       - name: Guardar refresh token renovado
@@ -131,7 +104,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .automation/bling-sync-state.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "chore: atualiza estado seguro da sincronização Bling"
+          git commit -m "chore: atualiza estado da sincronização Bling V3"
           for tentativa in 1 2 3 4 5; do
             if git push origin HEAD:main; then exit 0; fi
             git fetch origin main
@@ -144,14 +117,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: relatorio-bling-${{ github.run_id }}
+          name: relatorio-bling-v3-${{ github.run_id }}
           path: |
             bling-sync-report.json
             bling-sync.log
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Registrar validação no repositório
+      - name: Registrar última validação
         if: always() && github.event_name != 'schedule' && hashFiles('bling-sync-report.json') != ''
         shell: bash
         run: |
@@ -162,7 +135,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .automation/bling-last-run.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m "chore: registra validação da sincronização Bling"
+          git commit -m "chore: registra validação Bling V3"
           for tentativa in 1 2 3 4 5; do
             if git push origin HEAD:main; then exit 0; fi
             git fetch origin main
@@ -176,7 +149,7 @@ jobs:
         shell: bash
         run: |
           if [ -f bling-sync-report.json ]; then
-            echo '## Sincronização Firebase → Bling' >> "$GITHUB_STEP_SUMMARY"
+            echo '## Sincronização Firebase → Bling V3' >> "$GITHUB_STEP_SUMMARY"
             echo '```json' >> "$GITHUB_STEP_SUMMARY"
             cat bling-sync-report.json >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
