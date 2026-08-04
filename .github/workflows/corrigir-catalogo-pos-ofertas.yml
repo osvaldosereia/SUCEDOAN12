@@ -1,0 +1,58 @@
+name: Corrigir catálogo público após ofertas
+run-name: Catálogo filtrado após ofertas
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/ofertas-automaticas-estado.json"
+      - "site/ofertas-execucao-status.json"
+      - "scripts/filtrar-produtos-home-publicos.mjs"
+      - ".github/workflows/corrigir-catalogo-pos-ofertas.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: corrigir-catalogo-pos-ofertas
+  cancel-in-progress: true
+
+jobs:
+  filtrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Manter somente produtos públicos disponíveis
+        run: node scripts/filtrar-produtos-home-publicos.mjs
+      - name: Validar resultado
+        run: |
+          node -e "const p=require('./site/produtos-home.json'); const v=require('./catalog-version.json'); if(Object.keys(p).length!==Number(v.productCount)) process.exit(1)"
+      - name: Publicar catálogo filtrado
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/produtos-home.json catalog-version.json
+          if git diff --cached --quiet; then
+            echo "Catálogo já está filtrado."
+            exit 0
+          fi
+          git commit -m "Filtra catálogo público após ofertas"
+          for tentativa in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+            node scripts/filtrar-produtos-home-publicos.mjs
+            git add site/produtos-home.json catalog-version.json
+            git commit --amend --no-edit
+            sleep $((tentativa * 2))
+          done
+          exit 1
