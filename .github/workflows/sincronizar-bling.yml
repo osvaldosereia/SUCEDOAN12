@@ -1,7 +1,7 @@
 name: Sincronizar Firebase para Bling
 run-name: Bling seguro · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
 
-# Validação final v3: baseline do estado e duplicidades resolvidas somente por ID histórico ou GTIN único.
+# V4: identidade por blingId histórico, PUT completo e situação por PATCH específico.
 on:
   workflow_dispatch:
     inputs:
@@ -30,6 +30,7 @@ on:
     branches: [main]
     paths:
       - "scripts/sincronizar-bling-v2.mjs"
+      - "scripts/patch-bling-sync-v3.mjs"
       - ".github/workflows/sincronizar-bling.yml"
 
 permissions:
@@ -59,8 +60,38 @@ jobs:
         with:
           node-version: 22
 
-      - name: Validar sincronizador
-        run: node --check scripts/sincronizar-bling-v2.mjs
+      - name: Aplicar correções validadas na documentação oficial
+        if: github.event_name == 'push'
+        run: node scripts/patch-bling-sync-v3.mjs
+
+      - name: Validar sincronizador e catálogo
+        run: |
+          node --check scripts/sincronizar-bling-v2.mjs
+          node --check scripts/processar-ofertas.mjs
+          node --check producao-v2/js/product-delete-filter.js
+          grep -q "method: 'PUT'" scripts/sincronizar-bling-v2.mjs
+          grep -q "/situacoes" scripts/sincronizar-bling-v2.mjs
+          grep -q "codeConflictRow" scripts/sincronizar-bling-v2.mjs
+          grep -q "SOFT_DELETE_STATUS = 'I'" scripts/sincronizar-bling-v2.mjs
+          grep -q "productEligible(product, new Date())" scripts/processar-ofertas.mjs
+
+      - name: Publicar correções estruturais
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/sincronizar-bling-v2.mjs scripts/processar-ofertas.mjs producao-v2/js/product-delete-filter.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Corrige integração Bling conforme documentação oficial"
+          for tentativa in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+            sleep $((tentativa * 2))
+          done
+          exit 1
 
       - name: Sincronizar produtos com segurança
         id: sync
