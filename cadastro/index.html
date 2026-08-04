@@ -21,7 +21,7 @@
     window.__DA_CADASTRO_WEBHOOK__=webhook;
   })();
   </script>
-  <script defer src="./cadastro-v6.js?v=20260804-webhook-ly4"></script>
+  <script defer src="./cadastro-v7.js?v=20260804-opcional-1"></script>
 </head>
 <body>
 <header class="top">
@@ -29,44 +29,51 @@
   <div><button class="icon" id="resetButton" type="button" title="Limpar">↻</button> <button class="icon" id="settingsButton" type="button" title="Configurar">⚙</button></div>
 </header>
 <main>
-  <section class="hero"><h1>Fotografe. A IA cadastra.</h1><p>Frente, EAN e verso opcional. Categoria, subcategorias e marca são escolhidas no sistema.</p></section>
+  <section class="hero"><h1>Fotografe. A IA cadastra.</h1><p>Todos os campos são opcionais. Preencha somente o que existir no produto.</p></section>
   <div id="message" class="message"></div>
   <div class="layout">
     <section class="panel">
-      <div class="panel-head"><h2>Fotos do produto</h2><p>Somente frente e EAN são obrigatórias. O verso ou informações é opcional.</p></div>
+      <div class="panel-head"><h2>Fotos do produto</h2><p>Nenhuma posição específica é obrigatória. Envie pelo menos uma foto para a IA trabalhar.</p></div>
       <div class="panel-body">
         <div class="photos">
-          <article class="photo-card" data-card="frente"><h3>1. Frente</h3><p>Produto inteiro, reto e com boa luz.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
-          <article class="photo-card" data-card="ean"><h3>2. Código EAN</h3><p>Barras e números nítidos.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article>
-          <article class="photo-card" data-card="informacoes"><h3>3. Verso / informações</h3><p>Ingredientes, fabricante, peso e volume. Opcional.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="informacoes"></label><img class="preview" data-preview="informacoes" hidden alt="Informações adicionais"></article>
+          <article class="photo-card" data-card="frente"><h3>1. Frente</h3><p>Opcional. Produto inteiro, reto e com boa luz.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
+          <article class="photo-card" data-card="ean"><h3>2. Código EAN</h3><p>Opcional. Barras e números nítidos.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article>
+          <article class="photo-card" data-card="informacoes"><h3>3. Verso / informações</h3><p>Opcional. Ingredientes, fabricante, peso e volume.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="informacoes"></label><img class="preview" data-preview="informacoes" hidden alt="Informações adicionais"></article>
         </div>
+
         <div class="form-grid">
-          <div class="field"><label for="eanInput">EAN digitado</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Opcional"></div>
-          <div class="field"><label for="stockInput">Estoque inicial</label><input class="input" id="stockInput" type="number" min="0" value="0"></div>
-          <div class="field"><label for="costInput">Preço de custo</label><input class="input" id="costInput" type="number" min="0" step="0.01" placeholder="Opcional"></div>
-          <div class="field"><label for="supplierInput">Fornecedor</label><input class="input" id="supplierInput"></div>
-          <div class="field"><label for="validityInput">Validade manual</label><input class="input" id="validityInput" type="date"></div>
-          <div class="field"><label for="batchInput">Lote manual</label><input class="input" id="batchInput" placeholder="Opcional"></div>
-          <div class="field"><label for="gondolaInput">Gôndola</label><input class="input" id="gondolaInput"></div>
-          <div class="field"><label for="shelfInput">Prateleira</label><input class="input" id="shelfInput"></div>
-          <div class="field"><label for="categorySelect">Categoria</label><select class="select" id="categorySelect"><option value="">Carregando...</option></select></div>
-          <div class="field"><label for="subcategorySelect">Subcategoria</label><select class="select" id="subcategorySelect"><option value="">Selecione a categoria</option></select></div>
-          <div class="field"><label for="subsubcategorySelect">Subsubcategoria</label><select class="select" id="subsubcategorySelect"><option value="">Selecione a subcategoria</option></select></div>
-          <div class="field"><label for="locationInput">Localização</label><input class="input" id="locationInput"></div>
+          <div class="field"><label for="eanInput">EAN digitado · opcional</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Deixe vazio se não possuir"></div>
+          <div class="field"><label for="stockInput">Estoque inicial · opcional</label><input class="input" id="stockInput" type="number" min="0" value="0"></div>
+          <div class="field"><label for="costInput">Preço de custo · opcional</label><input class="input" id="costInput" type="number" min="0" step="0.01" placeholder="Opcional"></div>
+          <div class="field"><label for="supplierInput">Fornecedor · opcional</label><input class="input" id="supplierInput"></div>
+
+          <div class="field"><label for="validityInput">Validade · opcional</label><input class="input" id="validityInput" type="date"></div>
+          <div class="field"><label for="batchInput">Lote · opcional</label><input class="input" id="batchInput" placeholder="Opcional"></div>
+          <div class="field"><label for="gondolaInput">Gôndola · opcional</label><input class="input" id="gondolaInput"></div>
+          <div class="field"><label for="shelfInput">Prateleira · opcional</label><input class="input" id="shelfInput"></div>
+
+          <div class="field"><label for="categorySelect">Categoria · opcional</label><select class="select" id="categorySelect"><option value="">Carregando...</option></select></div>
+          <div class="field"><label for="subcategorySelect">Subcategoria · opcional</label><select class="select" id="subcategorySelect"><option value="">Sem subcategoria / opcional</option></select></div>
+          <div class="field"><label for="subsubcategorySelect">Subsubcategoria · opcional</label><select class="select" id="subsubcategorySelect"><option value="">Sem subsubcategoria / opcional</option></select></div>
+          <div class="field"><label for="locationInput">Localização · opcional</label><input class="input" id="locationInput"></div>
+
           <div class="field span">
-            <label>Marca</label>
+            <label>Marca · opcional</label>
             <div class="brand-box">
               <select class="select" id="brandSelect"><option value="">Carregando marcas...</option></select>
               <div class="inline-actions"><button class="btn" type="button" id="genericBrandButton">Sem marca (genérico)</button><button class="btn" type="button" id="newBrandButton">Cadastrar nova marca</button></div>
-              <input class="input hidden" id="newBrandInput" placeholder="Digite a nova marca">
+              <input class="input hidden" id="newBrandInput" placeholder="Digite a nova marca ou deixe vazio">
             </div>
           </div>
-          <div class="field span"><label for="notesInput">Observações</label><textarea class="textarea" id="notesInput"></textarea></div>
+
+          <div class="field span"><label for="notesInput">Observações · opcional</label><textarea class="textarea" id="notesInput"></textarea></div>
         </div>
-        <div class="note">A IA não define categoria, subcategoria, subsubcategoria nem marca. Os seletores são montados a partir dos produtos do Firebase usados pelo Admin. O produto será salvo como inativo.</div>
+
+        <div class="note">Categoria, subcategoria, subsubcategoria e marca podem ficar vazias. A automação envia somente os dados preenchidos e salva o produto como inativo.</div>
         <button class="btn primary submit" id="submitButton" type="button">Cadastrar automaticamente</button>
       </div>
     </section>
+
     <aside class="sidebar">
       <section class="panel">
         <div class="panel-head"><h2>Progresso</h2><p id="progressText">Aguardando as fotos.</p></div>
@@ -79,6 +86,7 @@
           <div class="step" data-step="concluido">6. Concluir inativo</div>
         </div>
       </section>
+
       <section class="panel result" id="resultPanel">
         <div class="panel-head"><h2>Produto cadastrado</h2><p>Salvo inativo.</p></div>
         <div class="panel-body"><img id="resultImage" alt="Imagem gerada"><h3 id="resultName"></h3><p id="resultKey"></p><div class="kv"><span>Preço médio</span><b id="resultPrice">—</b></div><div class="kv"><span>NCM</span><b id="resultNcm">—</b></div><div class="kv"><span>EAN</span><b id="resultEan">—</b></div><button class="btn primary" id="againButton" type="button" style="width:100%;margin-top:10px">Cadastrar outro</button></div>
@@ -86,6 +94,7 @@
     </aside>
   </div>
 </main>
+
 <dialog id="settingsDialog">
   <div class="dialog-head"><h2>Configuração</h2><button class="icon" id="closeSettingsButton" type="button">×</button></div>
   <div class="dialog-body">
