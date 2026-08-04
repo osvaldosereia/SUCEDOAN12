@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260804-product-delete-v2';
+      const BUILD = '20260804-product-delete-v3-bling-safe';
       try {
         const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
@@ -53,7 +53,7 @@
         // As tags são montadas em partes para não encerrar este script carregador antes da hora.
         const openScript = '<scr' + 'ipt';
         const closeScript = '</scr' + 'ipt>';
-        const deleteFilterScript = `${openScript} src="./js/product-delete-filter.js?admin_build=${BUILD}">${closeScript}`;
+        const deleteFilterScript = `${openScript} src="./js/product-delete-filter-v2.js?admin_build=${BUILD}">${closeScript}`;
         const statusScript = `${openScript} src="./js/manual-status-save.js?admin_build=${BUILD}">${closeScript}`;
         const nfeImageScript = `${openScript} type="module" src="./js/nfe-image-make-fix.js?admin_build=${BUILD}">${closeScript}`;
         const nfeImportScript = `${openScript} type="module" src="./js/nfe-import-save-fix.js?admin_build=${BUILD}">${closeScript}`;
