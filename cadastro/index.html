@@ -1,1 +1,102 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#956814"><meta name="robots" content="noindex,nofollow"><title>Cadastro com IA · Dona Antônia</title><link rel="stylesheet" href="./cadastro-v6.css?v=20260803-1"><script defer src="./cadastro-v6.js?v=20260803-1"></script></head><body><header class="top"><div class="brand"><div class="logo">DA</div><div><b>Cadastro rápido com IA</b><small>Firebase · Make · OpenAI</small></div></div><div><button class="icon" id="resetButton" type="button" title="Limpar">↻</button> <button class="icon" id="settingsButton" type="button" title="Configurar">⚙</button></div></header><main><section class="hero"><h1>Fotografe. A IA cadastra.</h1><p>Frente, EAN e verso opcional. Categoria, subcategorias e marca são escolhidas no sistema.</p></section><div id="message" class="message"></div><div class="layout"><section class="panel"><div class="panel-head"><h2>Fotos do produto</h2><p>Somente frente e EAN são obrigatórias. O verso ou informações é opcional.</p></div><div class="panel-body"><div class="photos"><article class="photo-card" data-card="frente"><h3>1. Frente</h3><p>Produto inteiro, reto e com boa luz.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article><article class="photo-card" data-card="ean"><h3>2. Código EAN</h3><p>Barras e números nítidos.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article><article class="photo-card" data-card="informacoes"><h3>3. Verso / informações</h3><p>Ingredientes, fabricante, peso e volume. Opcional.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="informacoes"></label><img class="preview" data-preview="informacoes" hidden alt="Informações adicionais"></article></div><div class="form-grid"><div class="field"><label for="eanInput">EAN digitado</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Opcional"></div><div class="field"><label for="stockInput">Estoque inicial</label><input class="input" id="stockInput" type="number" min="0" value="0"></div><div class="field"><label for="costInput">Preço de custo</label><input class="input" id="costInput" type="number" min="0" step="0.01" placeholder="Opcional"></div><div class="field"><label for="supplierInput">Fornecedor</label><input class="input" id="supplierInput"></div><div class="field"><label for="validityInput">Validade manual</label><input class="input" id="validityInput" type="date"></div><div class="field"><label for="batchInput">Lote manual</label><input class="input" id="batchInput" placeholder="Opcional"></div><div class="field"><label for="gondolaInput">Gôndola</label><input class="input" id="gondolaInput"></div><div class="field"><label for="shelfInput">Prateleira</label><input class="input" id="shelfInput"></div><div class="field"><label for="categorySelect">Categoria</label><select class="select" id="categorySelect"><option value="">Carregando...</option></select></div><div class="field"><label for="subcategorySelect">Subcategoria</label><select class="select" id="subcategorySelect"><option value="">Selecione a categoria</option></select></div><div class="field"><label for="subsubcategorySelect">Subsubcategoria</label><select class="select" id="subsubcategorySelect"><option value="">Selecione a subcategoria</option></select></div><div class="field"><label for="locationInput">Localização</label><input class="input" id="locationInput"></div><div class="field span"><label>Marca</label><div class="brand-box"><select class="select" id="brandSelect"><option value="">Carregando marcas...</option></select><div class="inline-actions"><button class="btn" type="button" id="genericBrandButton">Sem marca (genérico)</button><button class="btn" type="button" id="newBrandButton">Cadastrar nova marca</button></div><input class="input hidden" id="newBrandInput" placeholder="Digite a nova marca"></div></div><div class="field span"><label for="notesInput">Observações</label><textarea class="textarea" id="notesInput"></textarea></div></div><div class="note">A IA não define categoria, subcategoria, subsubcategoria nem marca. Os seletores são montados a partir dos produtos do Firebase usados pelo Admin. O produto será salvo como inativo.</div><button class="btn primary submit" id="submitButton" type="button">Cadastrar automaticamente</button></div></section><aside class="sidebar"><section class="panel"><div class="panel-head"><h2>Progresso</h2><p id="progressText">Aguardando as fotos.</p></div><div class="panel-body steps"><div class="step active" data-step="recebido">1. Receber fotos e dados</div><div class="step" data-step="identificando">2. Ler produto e EAN</div><div class="step" data-step="pesquisando">3. Pesquisar NCM e preço médio</div><div class="step" data-step="gerando_imagem">4. Gerar fotografia de catálogo</div><div class="step" data-step="salvando">5. Salvar GitHub e Firebase</div><div class="step" data-step="concluido">6. Concluir inativo</div></div></section><section class="panel result" id="resultPanel"><div class="panel-head"><h2>Produto cadastrado</h2><p>Salvo inativo.</p></div><div class="panel-body"><img id="resultImage" alt="Imagem gerada"><h3 id="resultName"></h3><p id="resultKey"></p><div class="kv"><span>Preço médio</span><b id="resultPrice">—</b></div><div class="kv"><span>NCM</span><b id="resultNcm">—</b></div><div class="kv"><span>EAN</span><b id="resultEan">—</b></div><button class="btn primary" id="againButton" type="button" style="width:100%;margin-top:10px">Cadastrar outro</button></div></section></aside></div></main><dialog id="settingsDialog"><div class="dialog-head"><h2>Configuração</h2><button class="icon" id="closeSettingsButton" type="button">×</button></div><div class="dialog-body"><div class="field"><label for="webhookInput">Webhook do Make</label><input class="input" id="webhookInput" type="url"></div><div class="field"><label for="firebaseInput">Firebase URL</label><input class="input" id="firebaseInput"></div><div class="field"><label for="productsNodeInput">Nó de produtos</label><input class="input" id="productsNodeInput"></div><div class="field"><label for="jobsNodeInput">Nó dos jobs</label><input class="input" id="jobsNodeInput"></div><div class="field"><label for="authInput">Token Firebase opcional</label><input class="input" id="authInput" type="password"></div><button class="btn primary" id="saveSettingsButton" type="button">Salvar neste aparelho</button></div></dialog><div id="offline" class="offline">Sem internet</div></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#956814">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Cadastro com IA · Dona Antônia</title>
+  <link rel="stylesheet" href="./cadastro-v6.css?v=20260803-1">
+  <script>
+  (function(){
+    var key='da_cadastro_ia_v6_settings';
+    var webhook='https://hook.eu1.make.com/nc3k6i1t24d2ivywdrpphrhm3ij5871e';
+    try{
+      var saved=JSON.parse(localStorage.getItem(key)||'{}');
+      saved.webhook=webhook;
+      localStorage.setItem(key,JSON.stringify(saved));
+    }catch(error){
+      try{localStorage.setItem(key,JSON.stringify({webhook:webhook}));}catch(ignore){}
+    }
+    window.__DA_CADASTRO_WEBHOOK__=webhook;
+  })();
+  </script>
+  <script defer src="./cadastro-v6.js?v=20260804-webhook-nc3"></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">DA</div><div><b>Cadastro rápido com IA</b><small>Firebase · Make · OpenAI</small></div></div>
+  <div><button class="icon" id="resetButton" type="button" title="Limpar">↻</button> <button class="icon" id="settingsButton" type="button" title="Configurar">⚙</button></div>
+</header>
+<main>
+  <section class="hero"><h1>Fotografe. A IA cadastra.</h1><p>Frente, EAN e verso opcional. Categoria, subcategorias e marca são escolhidas no sistema.</p></section>
+  <div id="message" class="message"></div>
+  <div class="layout">
+    <section class="panel">
+      <div class="panel-head"><h2>Fotos do produto</h2><p>Somente frente e EAN são obrigatórias. O verso ou informações é opcional.</p></div>
+      <div class="panel-body">
+        <div class="photos">
+          <article class="photo-card" data-card="frente"><h3>1. Frente</h3><p>Produto inteiro, reto e com boa luz.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
+          <article class="photo-card" data-card="ean"><h3>2. Código EAN</h3><p>Barras e números nítidos.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article>
+          <article class="photo-card" data-card="informacoes"><h3>3. Verso / informações</h3><p>Ingredientes, fabricante, peso e volume. Opcional.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="informacoes"></label><img class="preview" data-preview="informacoes" hidden alt="Informações adicionais"></article>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label for="eanInput">EAN digitado</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Opcional"></div>
+          <div class="field"><label for="stockInput">Estoque inicial</label><input class="input" id="stockInput" type="number" min="0" value="0"></div>
+          <div class="field"><label for="costInput">Preço de custo</label><input class="input" id="costInput" type="number" min="0" step="0.01" placeholder="Opcional"></div>
+          <div class="field"><label for="supplierInput">Fornecedor</label><input class="input" id="supplierInput"></div>
+          <div class="field"><label for="validityInput">Validade manual</label><input class="input" id="validityInput" type="date"></div>
+          <div class="field"><label for="batchInput">Lote manual</label><input class="input" id="batchInput" placeholder="Opcional"></div>
+          <div class="field"><label for="gondolaInput">Gôndola</label><input class="input" id="gondolaInput"></div>
+          <div class="field"><label for="shelfInput">Prateleira</label><input class="input" id="shelfInput"></div>
+          <div class="field"><label for="categorySelect">Categoria</label><select class="select" id="categorySelect"><option value="">Carregando...</option></select></div>
+          <div class="field"><label for="subcategorySelect">Subcategoria</label><select class="select" id="subcategorySelect"><option value="">Selecione a categoria</option></select></div>
+          <div class="field"><label for="subsubcategorySelect">Subsubcategoria</label><select class="select" id="subsubcategorySelect"><option value="">Selecione a subcategoria</option></select></div>
+          <div class="field"><label for="locationInput">Localização</label><input class="input" id="locationInput"></div>
+          <div class="field span">
+            <label>Marca</label>
+            <div class="brand-box">
+              <select class="select" id="brandSelect"><option value="">Carregando marcas...</option></select>
+              <div class="inline-actions"><button class="btn" type="button" id="genericBrandButton">Sem marca (genérico)</button><button class="btn" type="button" id="newBrandButton">Cadastrar nova marca</button></div>
+              <input class="input hidden" id="newBrandInput" placeholder="Digite a nova marca">
+            </div>
+          </div>
+          <div class="field span"><label for="notesInput">Observações</label><textarea class="textarea" id="notesInput"></textarea></div>
+        </div>
+        <div class="note">A IA não define categoria, subcategoria, subsubcategoria nem marca. Os seletores são montados a partir dos produtos do Firebase usados pelo Admin. O produto será salvo como inativo.</div>
+        <button class="btn primary submit" id="submitButton" type="button">Cadastrar automaticamente</button>
+      </div>
+    </section>
+    <aside class="sidebar">
+      <section class="panel">
+        <div class="panel-head"><h2>Progresso</h2><p id="progressText">Aguardando as fotos.</p></div>
+        <div class="panel-body steps">
+          <div class="step active" data-step="recebido">1. Receber fotos e dados</div>
+          <div class="step" data-step="identificando">2. Ler produto e EAN</div>
+          <div class="step" data-step="pesquisando">3. Pesquisar NCM e preço médio</div>
+          <div class="step" data-step="gerando_imagem">4. Gerar fotografia de catálogo</div>
+          <div class="step" data-step="salvando">5. Salvar GitHub e Firebase</div>
+          <div class="step" data-step="concluido">6. Concluir inativo</div>
+        </div>
+      </section>
+      <section class="panel result" id="resultPanel">
+        <div class="panel-head"><h2>Produto cadastrado</h2><p>Salvo inativo.</p></div>
+        <div class="panel-body"><img id="resultImage" alt="Imagem gerada"><h3 id="resultName"></h3><p id="resultKey"></p><div class="kv"><span>Preço médio</span><b id="resultPrice">—</b></div><div class="kv"><span>NCM</span><b id="resultNcm">—</b></div><div class="kv"><span>EAN</span><b id="resultEan">—</b></div><button class="btn primary" id="againButton" type="button" style="width:100%;margin-top:10px">Cadastrar outro</button></div>
+      </section>
+    </aside>
+  </div>
+</main>
+<dialog id="settingsDialog">
+  <div class="dialog-head"><h2>Configuração</h2><button class="icon" id="closeSettingsButton" type="button">×</button></div>
+  <div class="dialog-body">
+    <div class="field"><label for="webhookInput">Webhook do Make</label><input class="input" id="webhookInput" type="url"></div>
+    <div class="field"><label for="firebaseInput">Firebase URL</label><input class="input" id="firebaseInput"></div>
+    <div class="field"><label for="productsNodeInput">Nó de produtos</label><input class="input" id="productsNodeInput"></div>
+    <div class="field"><label for="jobsNodeInput">Nó dos jobs</label><input class="input" id="jobsNodeInput"></div>
+    <div class="field"><label for="authInput">Token Firebase opcional</label><input class="input" id="authInput" type="password"></div>
+    <button class="btn primary" id="saveSettingsButton" type="button">Salvar neste aparelho</button>
+  </div>
+</dialog>
+<div id="offline" class="offline">Sem internet</div>
+</body>
+</html>
