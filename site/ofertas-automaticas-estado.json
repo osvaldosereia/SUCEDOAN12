@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-04T18:59:58.820Z",
+  "ultima_execucao": "2026-08-04T19:54:47.254Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -5112,6 +5112,20 @@
       "inicio": "2026-08-01",
       "fim": "2026-08-04T23:59:59-04:00",
       "historico_id": "oferta-1776338128020-1785575287933-tpuhy"
+    },
+    {
+      "produto_key": "1776338128021",
+      "codigo": "85195351",
+      "nome": "Apti Gelatina Framboesa 20g",
+      "categoria": "CONFEITARIA",
+      "regra_id": "regra-1785205052179",
+      "origem": "campanha_automatica",
+      "preco_normal": 1.69,
+      "preco_oferta": 1.57,
+      "desconto_percentual": 7.1,
+      "inicio": "2026-08-04",
+      "fim": "2026-08-07T23:59:59-04:00",
+      "historico_id": "oferta-1776338128021-1785873287254-r52ky"
     },
     {
       "produto_key": "1776338128024",
@@ -12354,7 +12368,7 @@
     {
       "produto_key": "177887980126862634",
       "codigo": "8012680537",
-      "nome": "Cif Limpador Multiuso Limpador Espum Amilagrosa Extermina Unidade",
+      "nome": "LIMPADOR MULTIUSO Cif Espuma Milagrosa Extermina 500ml",
       "categoria": "LIMPEZA",
       "regra_id": "regra-1785205105033",
       "origem": "campanha_automatica",
@@ -15124,6 +15138,34 @@
       "historico_id": "oferta-17858694323662926-1785869998820-80o8l"
     },
     {
+      "produto_key": "1785871661859_5a78",
+      "codigo": "7898964012169",
+      "nome": "Essência Solúvel Citronela Baby 140ml - Remmus",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 6.9,
+      "preco_oferta": 6.49,
+      "desconto_percentual": 5.94,
+      "inicio": "2026-08-04",
+      "fim": "2026-08-07T23:59:59-04:00",
+      "historico_id": "oferta-17858716618595a78-1785873287254-499yi"
+    },
+    {
+      "produto_key": "1785872584163_a34b",
+      "codigo": "7898095272869",
+      "nome": "Protetor Solar Corpo & Rosto FPS 50 100 ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 29.9,
+      "preco_oferta": 26.91,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-04",
+      "fim": "2026-08-11T23:59:59-04:00",
+      "historico_id": "oferta-1785872584163a34b-1785873287254-qxzbs"
+    },
+    {
       "produto_key": "6194017200509",
       "codigo": "allegro.azeite.500",
       "nome": "Azeite de Oliva Extra Virgem Allegro 500ml",
@@ -15564,9 +15606,9 @@
       "categoria": "BELEZA",
       "regra_id": "regra-1785202557027",
       "origem": "campanha_automatica",
-      "preco_normal": 13.9,
+      "preco_normal": 22.9,
       "preco_oferta": 12.51,
-      "desconto_percentual": 10,
+      "desconto_percentual": 45.37,
       "inicio": "2026-07-30",
       "fim": "2026-08-06T23:59:59-04:00",
       "historico_id": "oferta-p21qa-1785416526790-5bz5c"
@@ -15648,9 +15690,9 @@
       "categoria": "BELEZA",
       "regra_id": "regra-1785202557027",
       "origem": "campanha_automatica",
-      "preco_normal": 9.9,
+      "preco_normal": 23.9,
       "preco_oferta": 8.91,
-      "desconto_percentual": 10,
+      "desconto_percentual": 62.72,
       "inicio": "2026-07-30",
       "fim": "2026-08-06T23:59:59-04:00",
       "historico_id": "oferta-pi7wj-1785418987073-lkf89"
@@ -21452,26 +21494,21 @@
     "1785869432366_2926": {
       "ultima_oferta_em": "2026-08-04T18:59:58.820Z",
       "regra_id": "regra-1785202557027"
+    },
+    "1785872584163_a34b": {
+      "ultima_oferta_em": "2026-08-04T19:54:47.254Z",
+      "regra_id": "regra-1785202557027"
+    },
+    "1776338128021": {
+      "ultima_oferta_em": "2026-08-04T19:54:47.254Z",
+      "regra_id": "regra-1785205052179"
+    },
+    "1785871661859_5a78": {
+      "ultima_oferta_em": "2026-08-04T19:54:47.254Z",
+      "regra_id": "regra-1785205105033"
     }
   },
   "execucoes": [
-    {
-      "id": "2026-08-01T13:21:55Z",
-      "executado_em": "2026-08-01T13:22:51.155Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 15,
-        "ofertas_nao_criadas": 8,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1785592298252",
       "executado_em": "2026-08-01T13:51:38.816Z",
@@ -24847,6 +24884,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1785873286683",
+      "executado_em": "2026-08-04T19:54:47.254Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
