@@ -21,7 +21,7 @@
     window.__DA_CADASTRO_WEBHOOK__=webhook;
   })();
   </script>
-  <script defer src="./cadastro-v7.js?v=20260804-opcional-1"></script>
+  <script defer src="./cadastro-v8.js?v=20260804-1foto-1"></script>
 </head>
 <body>
 <header class="top">
@@ -33,20 +33,19 @@
   </div>
 </header>
 <main>
-  <section class="hero"><h1>Fotografe. A IA cadastra.</h1><p>Todos os campos são opcionais. Preencha somente o que existir no produto.</p></section>
+  <section class="hero"><h1>Uma foto enviada. Cadastro completo.</h1><p>A foto da frente vai para a IA. A foto do EAN é lida somente neste aparelho e não é enviada ao Make.</p></section>
   <div id="message" class="message"></div>
   <div class="layout">
     <section class="panel">
-      <div class="panel-head"><h2>Fotos do produto</h2><p>Nenhuma posição específica é obrigatória. Envie pelo menos uma foto para a IA trabalhar.</p></div>
+      <div class="panel-head"><h2>Fotos do produto</h2><p>A foto da frente é obrigatória. A foto do EAN é opcional e serve apenas para preencher o código automaticamente.</p></div>
       <div class="panel-body">
         <div class="photos">
-          <article class="photo-card" data-card="frente"><h3>1. Frente</h3><p>Opcional. Produto inteiro, reto e com boa luz.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
-          <article class="photo-card" data-card="ean"><h3>2. Código EAN</h3><p>Opcional. Barras e números nítidos.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article>
-          <article class="photo-card" data-card="informacoes"><h3>3. Verso / informações</h3><p>Opcional. Ingredientes, fabricante, peso e volume.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="informacoes"></label><img class="preview" data-preview="informacoes" hidden alt="Informações adicionais"></article>
+          <article class="photo-card" data-card="frente"><h3>1. Frente do produto</h3><p>Obrigatória. Produto inteiro, reto e com boa luz. Esta é a única foto enviada.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
+          <article class="photo-card" data-card="ean"><h3>2. Ler código EAN</h3><p>Opcional. A leitura acontece no navegador; a imagem não vai para o Make nem para a OpenAI.</p><label class="capture">📷 Fotografar código<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article>
         </div>
 
         <div class="form-grid">
-          <div class="field"><label for="eanInput">EAN digitado · opcional</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Deixe vazio se não possuir"></div>
+          <div class="field"><label for="eanInput">EAN · opcional</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Fotografe o código ou digite"></div>
           <div class="field"><label for="stockInput">Estoque inicial · opcional</label><input class="input" id="stockInput" type="number" min="0" value="0"></div>
           <div class="field"><label for="costInput">Preço de custo · opcional</label><input class="input" id="costInput" type="number" min="0" step="0.01" placeholder="Opcional"></div>
           <div class="field"><label for="supplierInput">Fornecedor · opcional</label><input class="input" id="supplierInput"></div>
@@ -56,34 +55,27 @@
           <div class="field"><label for="gondolaInput">Gôndola · opcional</label><input class="input" id="gondolaInput"></div>
           <div class="field"><label for="shelfInput">Prateleira · opcional</label><input class="input" id="shelfInput"></div>
 
-          <div class="field"><label for="categorySelect">Categoria · opcional</label><select class="select" id="categorySelect"><option value="">Carregando...</option></select></div>
-          <div class="field"><label for="subcategorySelect">Subcategoria · opcional</label><select class="select" id="subcategorySelect"><option value="">Sem subcategoria / opcional</option></select></div>
-          <div class="field"><label for="subsubcategorySelect">Subsubcategoria · opcional</label><select class="select" id="subsubcategorySelect"><option value="">Sem subsubcategoria / opcional</option></select></div>
           <div class="field"><label for="locationInput">Localização · opcional</label><input class="input" id="locationInput"></div>
-
+          <div class="field"><label for="brandInput">Marca · opcional</label><input class="input" id="brandInput" placeholder="Deixe vazio para a IA identificar"></div>
           <div class="field span">
-            <label>Marca · opcional</label>
-            <div class="brand-box">
-              <select class="select" id="brandSelect"><option value="">Carregando marcas...</option></select>
-              <div class="inline-actions"><button class="btn" type="button" id="genericBrandButton">Sem marca (genérico)</button><button class="btn" type="button" id="newBrandButton">Cadastrar nova marca</button></div>
-              <input class="input hidden" id="newBrandInput" placeholder="Digite a nova marca ou deixe vazio">
-            </div>
+            <label>Produto sem marca</label>
+            <button class="btn" type="button" id="genericBrandButton">Marcar como genérico</button>
           </div>
 
-          <div class="field span"><label for="notesInput">Observações · opcional</label><textarea class="textarea" id="notesInput"></textarea></div>
+          <div class="field span"><label for="notesInput">Comentário para orientar a IA · opcional</label><textarea class="textarea" id="notesInput" placeholder="Ex.: é a versão sem açúcar; o nome correto é...; atenção ao sabor..."></textarea></div>
         </div>
 
-        <div class="note">Categoria, subcategoria, subsubcategoria e marca podem ficar vazias. A automação envia somente os dados preenchidos e salva o produto como inativo.</div>
+        <div class="note">Não cadastramos categoria, subcategoria ou subsubcategoria neste fluxo. Somente a foto da frente é enviada, e o produto continua sendo salvo como inativo para revisão.</div>
         <button class="btn primary submit" id="submitButton" type="button">Cadastrar automaticamente</button>
       </div>
     </section>
 
     <aside class="sidebar">
       <section class="panel">
-        <div class="panel-head"><h2>Progresso</h2><p id="progressText">Aguardando as fotos.</p></div>
+        <div class="panel-head"><h2>Progresso</h2><p id="progressText">Aguardando a foto da frente.</p></div>
         <div class="panel-body steps">
-          <div class="step active" data-step="recebido">1. Receber fotos e dados</div>
-          <div class="step" data-step="identificando">2. Ler produto e EAN</div>
+          <div class="step active" data-step="recebido">1. Receber foto e dados</div>
+          <div class="step" data-step="identificando">2. Ler produto com uma foto</div>
           <div class="step" data-step="pesquisando">3. Pesquisar NCM e preço médio</div>
           <div class="step" data-step="gerando_imagem">4. Gerar fotografia de catálogo</div>
           <div class="step" data-step="salvando">5. Salvar GitHub e Firebase</div>
