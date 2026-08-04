@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-04T15:45:15.841Z",
+  "checkedAt": "2026-08-04T15:50:13.544Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1567 produto(s)"
+      "detail": "1578 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
-      "ok": false,
-      "detail": "1566 produto(s) administrativos · 1567 público(s) · campos OK"
+      "ok": true,
+      "detail": "1578 produto(s) administrativos · 1578 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1566 produto(s) em 190 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1578 produto(s) em 134 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 196 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 100 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1785856405181 · público 1567 · admin 1566"
+      "detail": "catalog-1785858549879 · público 1578 · admin 1578"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "3517 oferta(s) no histórico"
+      "detail": "3519 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,19 +119,14 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Índice administrativo possui todos os produtos",
-      "ok": false,
-      "detail": "1566 produto(s) administrativos · 1567 público(s) · campos OK"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "30925350182",
+    "runId": "30925685664",
     "attempt": "1",
-    "sourceSha": "145e0aea99da8aa67ee4f28661192edf42684254",
-    "publishedAt": "2026-08-04T15:45:52.446Z"
+    "sourceSha": "1ed0361668d131bf273bedecbb81ae9fb95c8d2b",
+    "publishedAt": "2026-08-04T15:50:48.245Z"
   }
 }
