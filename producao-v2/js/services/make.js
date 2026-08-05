@@ -87,7 +87,7 @@ export function compactKitForMake(kit, products = []) {
   const financials = {
     moeda: 'BRL', preco_original: original, preco_sem_desconto: original, preco_anterior: original,
     preco_promocional: promotional, preco_com_desconto: promotional, preco_novo: promotional, preco_final: promotional,
-    economia, valor_economia: economy, desconto_percentual: discount, percentual_desconto: discount,
+    economia: economy, valor_economia: economy, desconto_percentual: discount, percentual_desconto: discount,
     preco_original_formatado: brl(original), preco_sem_desconto_formatado: brl(original), preco_anterior_formatado: brl(original),
     preco_promocional_formatado: brl(promotional), preco_com_desconto_formatado: brl(promotional), preco_novo_formatado: brl(promotional),
     economia_formatada: brl(economy), valor_economia_formatado: brl(economy), desconto_formatado: `${discount}%`,
@@ -100,7 +100,7 @@ export function compactKitForMake(kit, products = []) {
   return {
     id: text(kit?.id), codigo: text(kit?.codigo), nome: text(kit?.nome), descricao: text(kit?.descricao), preco: promotional,
     preco_original: original, preco_sem_desconto: original, preco_anterior: original, preco_promocional: promotional, preco_com_desconto: promotional,
-    preco_novo: promotional, preco_final: promotional, economia, valor_economia: economy, desconto_percentual: discount, desconto_percentual_aplicado: discount,
+    preco_novo: promotional, preco_final: promotional, economia: economy, valor_economia: economy, desconto_percentual: discount, desconto_percentual_aplicado: discount,
     preco_original_formatado: financials.preco_original_formatado, preco_anterior_formatado: financials.preco_anterior_formatado,
     preco_promocional_formatado: financials.preco_promocional_formatado, preco_novo_formatado: financials.preco_novo_formatado,
     economia_formatada: financials.economia_formatada, desconto_formatado: financials.desconto_formatado, dados_financeiros: financials,
