@@ -7,7 +7,14 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Dona Antônia — Criador Mobile de Kits</title>
   <link rel="stylesheet" href="../operacoes-mobile.css?v=20260805-suite-v1">
-  <link rel="stylesheet" href="./kit-mobile-v2.css?v=20260805-financeiro-v2">
+  <link rel="stylesheet" href="./kit-mobile-v2.css?v=20260805-financeiro-v3">
+  <script type="importmap">
+  {
+    "imports": {
+      "../producao-v2/js/services/make.js?build=20260805-kit-financeiro-v2": "../producao-v2/js/services/make.js?build=20260805-kit-financeiro-v3"
+    }
+  }
+  </script>
 </head>
 <body class="ops-suite ops-kits">
 <div class="app">
@@ -52,7 +59,7 @@
     <section class="card">
       <div class="cardhead"><span class="step">3</span><div><strong>Escolha o desconto</strong><small>O preço original, o preço promocional e a economia são fechados aqui antes de chamar a IA.</small></div></div>
       <div class="cardbody">
-        <div class="discounts" id="discounts"><button class="discount" type="button" data-discount="15">15%</button><button class="discount active" type="button" data-discount="20">20%</button><button class="discount" type="button" data-discount="25">25%</button></div>
+        <div class="discounts" id="discounts"><button class="discount" type="button" data-discount="15">15%</button><button class="discount active" type="button" data-discount="20">20%</button><button class="discount" type="button" data-discount="25">25%</button><button class="discount" type="button" data-discount="30">30%</button><button class="discount" type="button" data-discount="35">35%</button></div>
         <div class="summary" id="summary"></div>
         <div class="financial-check"><strong>Valores protegidos contra alteração da IA</strong><p id="financialCheck">Adicione produtos para calcular os valores.</p></div>
       </div>
@@ -86,6 +93,6 @@
 </div></div></div>
 <div class="toast" id="toast"></div>
 <div class="busy" id="busy"><div class="busybox"><div class="spinner"></div><strong id="busyTitle">Processando…</strong><small id="busyText">Não feche esta tela.</small></div></div>
-<script type="module" src="./kit-app-v2.js?v=20260805-financeiro-v2"></script>
+<script type="module" src="./kit-app-v2.js?v=20260805-financeiro-v3"></script>
 </body>
 </html>
