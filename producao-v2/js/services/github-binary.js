@@ -1,5 +1,10 @@
 import { text } from '../core/utils.js';
 
+if (typeof window !== 'undefined' && window.location.pathname.includes('/kit-mobile/')) {
+  void import('../../../kit-mobile/nav-suite.js?build=20260805-suite-v1')
+    .catch(error => console.error('Falha ao carregar a navegação das aplicações operacionais.', error));
+}
+
 function requireConfig(config) {
   const missing = [];
   if (!text(config.githubToken)) missing.push('token GitHub');
