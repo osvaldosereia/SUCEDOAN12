@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#173f2a">
+  <title>Dona Antônia — Criador Mobile de Kits</title>
+  <style>
+    :root{--green:#173f2a;--green2:#245d3d;--cream:#f6f2e8;--gold:#b8953f;--line:#dfe5dd;--muted:#68736b;--danger:#a73939;--warn:#8b6211;--ok:#25623c;--shadow:0 14px 34px rgba(23,63,42,.12)}
+    *{box-sizing:border-box}html{background:#edf1ec}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172019;background:linear-gradient(180deg,#edf1ec 0,#f8faf7 45%,#edf1ec 100%);min-height:100vh}
+    button,input,textarea{font:inherit}button{cursor:pointer}.app{width:min(760px,100%);margin:0 auto;min-height:100vh;background:#fff;box-shadow:0 0 40px rgba(28,48,35,.08)}
+    header{position:sticky;top:0;z-index:30;padding:calc(13px + env(safe-area-inset-top)) 16px 13px;background:rgba(23,63,42,.97);color:#fff;backdrop-filter:blur(14px)}
+    .headrow{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{display:flex;align-items:center;gap:11px}.brandmark{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#fff;color:var(--green);font-weight:950}.brand strong,.brand small{display:block}.brand strong{font-size:15px}.brand small{margin-top:2px;font-size:11px;color:#d8e5dc}.iconbtn{border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(255,255,255,.08);color:#fff;min-width:42px;height:42px}
+    main{padding:16px 14px calc(108px + env(safe-area-inset-bottom))}.statusbar{display:flex;gap:8px;overflow:auto;padding:0 0 12px}.chip{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:#eef3ef;color:#3d5143;font-size:11px;font-weight:800}.chip.ok{background:#e6f4ea;color:var(--ok)}.chip.warn{background:#fff4db;color:var(--warn)}.chip.danger{background:#fae8e8;color:var(--danger)}
+    .card{margin-bottom:14px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(31,54,38,.05);overflow:hidden}.cardhead{display:flex;align-items:flex-start;gap:10px;padding:14px 14px 12px;border-bottom:1px solid var(--line);background:#fafbf9}.step{display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:950}.cardhead strong,.cardhead small{display:block}.cardhead strong{font-size:14px}.cardhead small{margin-top:3px;color:var(--muted);font-size:11px;line-height:1.4}.cardbody{padding:14px}
+    .scanarea{display:grid;grid-template-columns:1fr 1fr;gap:9px}.btn{border:0;border-radius:13px;min-height:48px;padding:11px 13px;font-weight:900}.btn.primary{background:var(--green);color:#fff}.btn.secondary{border:1px solid #bdd0c1;background:#f4f8f5;color:var(--green)}.btn.gold{background:var(--gold);color:#fff}.btn.ghost{background:#f3f4f2;color:#3a463d}.btn.danger{background:#fae8e8;color:var(--danger)}.btn:disabled{opacity:.52;cursor:not-allowed}.wide{width:100%}.hidden{display:none!important}
+    .searchrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}.field{width:100%;border:1px solid #cad4cb;border-radius:13px;background:#fff;padding:13px;color:#182019;outline:none}.field:focus{border-color:#5c8a69;box-shadow:0 0 0 3px rgba(68,118,82,.12)}.smallbtn{border:0;border-radius:12px;padding:0 15px;background:#e9efe9;color:var(--green);font-weight:900}
+    .hint{margin:9px 0 0;color:var(--muted);font-size:10px;line-height:1.45}.results{display:grid;gap:7px;margin-top:9px}.result{display:grid;grid-template-columns:44px 1fr auto;gap:9px;align-items:center;width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;padding:8px;text-align:left}.result img{width:44px;height:44px;border-radius:9px;object-fit:contain;background:#f4f5f3}.result strong,.result small{display:block}.result strong{font-size:11px}.result small{margin-top:3px;color:var(--muted);font-size:9px}.result span{font-size:10px;font-weight:900;color:var(--green)}
+    .items{display:grid;gap:10px}.empty{padding:24px 12px;text-align:center;border:1px dashed #cfd7d0;border-radius:14px;background:#fafbf9;color:var(--muted);font-size:12px}.item{display:grid;grid-template-columns:72px 1fr;gap:11px;padding:10px;border:1px solid var(--line);border-radius:15px;background:#fff}.item.low{border-color:#e5c879;background:#fffaf0}.item.zero{border-color:#e2aaaa;background:#fff5f5}.item img{width:72px;height:72px;border-radius:12px;object-fit:contain;background:#f2f4f1}.itemtop{display:flex;gap:8px;justify-content:space-between}.item strong{font-size:12px;line-height:1.35}.itemmeta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.tag{padding:4px 7px;border-radius:999px;background:#eef2ee;color:#4d5c50;font-size:9px;font-weight:800}.tag.warn{background:#fff1cf;color:#855e0b}.tag.danger{background:#fae5e5;color:#9d3030}.itemcontrols{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px}.qty{display:grid;grid-template-columns:38px 44px 38px;align-items:center}.qty button{height:36px;border:0;background:#edf2ed;color:var(--green);font-size:19px;font-weight:900}.qty button:first-child{border-radius:10px 0 0 10px}.qty button:last-child{border-radius:0 10px 10px 0}.qty input{width:44px;height:36px;border:1px solid #d3dbd4;text-align:center;font-weight:900}.remove{border:0;background:transparent;color:var(--danger);font-size:11px;font-weight:900}
+    .discounts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.discount{border:1px solid #cbd5cc;border-radius:14px;background:#fff;padding:13px 8px;color:#314238;font-weight:950}.discount.active{border-color:var(--gold);background:#fff8e5;color:#7c5a0d;box-shadow:inset 0 0 0 1px var(--gold)}
+    .summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{padding:12px;border:1px solid var(--line);border-radius:13px;background:#fafbf9}.metric strong,.metric span{display:block}.metric strong{font-size:15px}.metric span{margin-top:4px;color:var(--muted);font-size:9px}.metric.highlight{background:#edf6ef;border-color:#bcd6c2}.metric.highlight strong{color:var(--ok)}
+    .preview{display:grid;grid-template-columns:105px 1fr;gap:12px}.cover{width:105px;height:105px;border-radius:15px;object-fit:contain;background:#f2f4f1;border:1px solid var(--line)}.preview h3{margin:0 0 5px;font-size:15px}.preview p{margin:0;color:var(--muted);font-size:10px;line-height:1.45;white-space:pre-line}.preview .placeholder{color:#8b958e;font-style:italic}.aiactions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.aiactions .wide{grid-column:1/-1}
+    .lifecycle{display:flex;gap:9px;align-items:flex-start;padding:11px;border-radius:13px;background:#edf6ef;color:#275d39;font-size:10px;line-height:1.45}.lifecycle b{font-size:16px}.notice{margin-top:10px;padding:10px;border-radius:12px;background:#fff4db;color:#79580e;font-size:10px;line-height:1.45}.notice.danger{background:#fae8e8;color:#8f3030}
+    .bottom{position:fixed;left:50%;bottom:0;z-index:35;width:min(760px,100%);transform:translateX(-50%);padding:10px 14px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(255,255,255,.96);backdrop-filter:blur(14px)}.bottom .btn{min-height:54px;font-size:14px;box-shadow:var(--shadow)}
+    .drawer{position:fixed;inset:0;z-index:60;display:none;background:rgba(11,24,15,.5)}.drawer.open{display:block}.panel{position:absolute;right:0;top:0;width:min(430px,100%);height:100%;overflow:auto;background:#fff;padding:calc(18px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));box-shadow:-18px 0 45px rgba(0,0,0,.15)}.panelhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.panelhead h2{margin:0;font-size:18px}.close{border:0;border-radius:10px;background:#eef1ee;width:40px;height:40px}.settingsgrid{display:grid;gap:11px}.settingsgrid label{display:grid;gap:5px;color:#425047;font-size:10px;font-weight:900}.settingsgrid small{font-weight:500;color:var(--muted)}.settings-note{padding:11px;border-radius:12px;background:#f4f6f3;color:#566158;font-size:10px;line-height:1.45}
+    .toast{position:fixed;left:50%;top:82px;z-index:90;width:min(680px,calc(100% - 28px));transform:translate(-50%,-14px);opacity:0;pointer-events:none;transition:.2s;padding:12px 14px;border-radius:13px;background:#172019;color:#fff;font-size:11px;font-weight:800;box-shadow:var(--shadow)}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{background:#8d3030}.toast.success{background:#23603b}
+    .busy{position:fixed;inset:0;z-index:80;display:none;place-items:center;background:rgba(247,250,247,.86);backdrop-filter:blur(5px)}.busy.show{display:grid}.busybox{width:min(320px,calc(100% - 40px));padding:24px;border-radius:18px;background:#fff;text-align:center;box-shadow:var(--shadow)}.spinner{width:42px;height:42px;margin:0 auto 13px;border:4px solid #dce6de;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}.busybox strong,.busybox small{display:block}.busybox small{margin-top:6px;color:var(--muted);line-height:1.4}@keyframes spin{to{transform:rotate(360deg)}}
+    @media(min-width:620px){main{padding-left:22px;padding-right:22px}.scanarea{grid-template-columns:1fr 1fr}.summary{grid-template-columns:repeat(4,1fr)}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="headrow">
+      <div class="brand"><div class="brandmark">DA</div><div><strong>Criador Mobile de Kits</strong><small>Dona Antônia · Admin V2</small></div></div>
+      <button class="iconbtn" id="settingsOpen" type="button" aria-label="Configurações">⚙</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="statusbar">
+      <span class="chip warn" id="connectionChip">Carregando dados…</span>
+      <span class="chip" id="productsChip">0 produtos</span>
+      <span class="chip" id="kitsChip">0 kits</span>
+      <span class="chip" id="cameraChip">Câmera verificando…</span>
+    </div>
+
+    <section class="card">
+      <div class="cardhead"><span class="step">1</span><div><strong>Fotografe ou informe o EAN</strong><small>Leia o código de cada produto e ajuste a quantidade usada no kit.</small></div></div>
+      <div class="cardbody">
+        <div class="scanarea">
+          <button class="btn primary" id="photoButton" type="button">📷 Fotografar EAN</button>
+          <button class="btn secondary" id="reloadButton" type="button">↻ Atualizar produtos</button>
+        </div>
+        <input class="hidden" id="photoInput" type="file" accept="image/*" capture="environment">
+        <div class="searchrow">
+          <input class="field" id="productSearch" inputmode="search" autocomplete="off" placeholder="EAN, código ou nome do produto">
+          <button class="smallbtn" id="addTyped" type="button">Adicionar</button>
+        </div>
+        <div class="results" id="searchResults"></div>
+        <p class="hint">No Android/Chrome a foto pode ser lida automaticamente. Quando o aparelho não oferecer leitura de código, digite o EAN ou pesquise pelo nome.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardhead"><span class="step">2</span><div><strong>Composição do kit</strong><small>Produtos repetidos aumentam a quantidade automaticamente.</small></div></div>
+      <div class="cardbody"><div class="items" id="items"><div class="empty">Nenhum produto adicionado.</div></div></div>
+    </section>
+
+    <section class="card">
+      <div class="cardhead"><span class="step">3</span><div><strong>Escolha o desconto</strong><small>O preço final é calculado sobre a soma atual dos produtos.</small></div></div>
+      <div class="cardbody">
+        <div class="discounts" id="discounts">
+          <button class="discount" type="button" data-discount="15">15%</button>
+          <button class="discount active" type="button" data-discount="20">20%</button>
+          <button class="discount" type="button" data-discount="25">25%</button>
+        </div>
+        <div class="summary" id="summary"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardhead"><span class="step">4</span><div><strong>Nome, descrição e capa</strong><small>Reaproveita exatamente os webhooks da IA já configurados no Admin V2.</small></div></div>
+      <div class="cardbody">
+        <div class="preview">
+          <img class="cover" id="coverPreview" alt="Capa do kit">
+          <div><h3 id="namePreview">Kit ainda não gerado</h3><p id="descriptionPreview" class="placeholder">A IA criará o nome, a descrição comercial e a capa usando os produtos selecionados.</p></div>
+        </div>
+        <div class="aiactions">
+          <button class="btn secondary" id="generateText" type="button">Gerar nome e descrição</button>
+          <button class="btn secondary" id="generateCover" type="button">Gerar capa</button>
+          <button class="btn gold wide" id="generateAll" type="button">✨ Gerar tudo com IA</button>
+        </div>
+        <div class="notice hidden" id="staleNotice">A composição ou o desconto mudou depois da geração. Gere novamente para atualizar texto e capa.</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="cardhead"><span class="step">5</span><div><strong>Publicação e estoque</strong><small>O kit será salvo no mesmo arquivo usado pelo site.</small></div></div>
+      <div class="cardbody">
+        <div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit usa somente os itens principais e sai do ar quando qualquer produto não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div>
+        <div class="notice" id="publishNotice">Adicione pelo menos um produto para liberar a publicação.</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="bottom"><button class="btn primary wide" id="publishButton" type="button" disabled>Criar kit completo e publicar</button></div>
+</div>
+
+<div class="drawer" id="settingsDrawer" aria-hidden="true">
+  <div class="panel">
+    <div class="panelhead"><h2>Configurações</h2><button class="close" id="settingsClose" type="button">✕</button></div>
+    <div class="settingsgrid">
+      <div class="settings-note">Esta tela usa a mesma chave <b>da_admin_v2_config</b> do Admin V2. No mesmo domínio, as configurações existentes são carregadas automaticamente.</div>
+      <label>Token GitHub<input class="field" id="cfgToken" type="password" autocomplete="off"><small>Necessário para salvar o kit e a capa na branch principal.</small></label>
+      <label>Webhook IA de textos<input class="field" id="cfgTextWebhook" type="url" inputmode="url"></label>
+      <label>Webhook IA de imagens<input class="field" id="cfgImageWebhook" type="url" inputmode="url"></label>
+      <label>Owner GitHub<input class="field" id="cfgOwner"></label>
+      <label>Repositório<input class="field" id="cfgRepo"></label>
+      <label>Branch<input class="field" id="cfgBranch"></label>
+      <button class="btn primary wide" id="settingsSave" type="button">Salvar configurações</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="busy" id="busy"><div class="busybox"><div class="spinner"></div><strong id="busyTitle">Processando…</strong><small id="busyText">Não feche esta tela.</small></div></div>
+
+<script type="module">
+  import { auditCollection, normalizeCollectionForPublish } from '../producao-v2/js/core/collections.js';
+  import { money, number, productCode, productImage, productKey, productName, text } from '../producao-v2/js/core/utils.js';
+  import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js';
+  import { callMake, compactKitForMake, extractMakeImage, unwrapMakeResult } from '../producao-v2/js/services/make.js';
+  import { upsertBase64File } from '../producao-v2/js/services/github-binary.js';
+
+  const STORAGE_KEY = 'da_admin_v2_config';
+  const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="100%" height="100%" fill="#f1f3f0"/><text x="50%" y="52%" text-anchor="middle" fill="#879087" font-family="Arial" font-size="16">sem imagem</text></svg>')}`;
+  const DEFAULT_CONFIG = {
+    firebaseUrl:'https://cedar-chemist-310801-default-rtdb.firebaseio.com', productsNode:'produtos', writeMode:true, collectionsWriteMode:true,
+    githubToken:'', githubOwner:'osvaldosereia', githubRepo:'SUCEDOAN12', githubBranch:'main', kitsPath:'site/kits.json', basketsPath:'site/produtos-cesta-basica.json',
+    kitQueuePath:'carrosseis-kits/fila.json', catalogVersionPath:'catalog-version.json', githubKitImagesPath:'site/img/kits', makeTextWebhookUrl:'', makeImageWebhookUrl:'', makeAiWebhookUrl:''
+  };
+
+  const $ = selector => document.querySelector(selector);
+  const state = { config:{}, products:[], kits:[], queue:[], items:[], discount:20, content:{ name:'', description:'', image:'', imagePath:'' }, aiSignature:'', busy:false, detector:null };
+  let toastTimer = null;
+
+  function getConfig(){
+    try { return { ...DEFAULT_CONFIG, ...(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}) }; }
+    catch { return { ...DEFAULT_CONFIG }; }
+  }
+  function saveConfig(next){ state.config={...getConfig(),...next}; localStorage.setItem(STORAGE_KEY,JSON.stringify(state.config)); }
+  function round(value){ return Math.round(number(value)*100)/100; }
+  function localDate(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function slug(value=''){ return text(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)||'kit'; }
+  function uniqueCode(){ const d=new Date(); const stamp=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0'),String(d.getHours()).padStart(2,'0'),String(d.getMinutes()).padStart(2,'0'),String(d.getSeconds()).padStart(2,'0')].join(''); return `kit-mobile-${stamp}-${Math.floor(1000+Math.random()*9000)}`; }
+  function token(value){ return text(value).toUpperCase(); }
+  function digits(value){ return text(value).replace(/\D/g,''); }
+  function productTokens(product){ return [productKey(product),product.id,productCode(product),product.gtin,product.ean,product.sku].flatMap(value=>[token(value),digits(value)]).filter(Boolean); }
+  function currentSignature(){ return JSON.stringify({ discount:state.discount, items:state.items.map(row=>[productCode(row.product)||productKey(row.product),row.qty]) }); }
+  function subtotal(){ return round(state.items.reduce((sum,row)=>sum+number(row.product.preco)*row.qty,0)); }
+  function finalPrice(){ return round(subtotal()*(1-state.discount/100)); }
+  function availableKits(){ if(!state.items.length)return 0; return Math.max(0,Math.min(...state.items.map(row=>Math.floor(Math.max(0,number(row.product.estoque))/Math.max(1,row.qty))))); }
+  function configReady(){ return Boolean(text(state.config.githubToken)&&text(state.config.makeTextWebhookUrl||state.config.makeAiWebhookUrl)&&text(state.config.makeImageWebhookUrl||state.config.makeAiWebhookUrl)); }
+
+  function toast(message,kind=''){
+    const node=$('#toast'); node.textContent=message; node.className=`toast show ${kind}`.trim(); clearTimeout(toastTimer); toastTimer=setTimeout(()=>node.className='toast',3600);
+  }
+  function setBusy(active,title='Processando…',detail='Não feche esta tela.'){
+    state.busy=active; $('#busy').classList.toggle('show',active); $('#busyTitle').textContent=title; $('#busyText').textContent=detail; renderPublish();
+  }
+
+  async function initDetector(){
+    const chip=$('#cameraChip');
+    if(!('BarcodeDetector' in window)){ chip.textContent='EAN manual disponível'; chip.className='chip warn'; return; }
+    try{
+      const supported=await BarcodeDetector.getSupportedFormats();
+      const wanted=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','code_93','itf'].filter(value=>supported.includes(value));
+      if(!wanted.length)throw new Error('EAN não suportado');
+      state.detector=new BarcodeDetector({formats:wanted}); chip.textContent='Leitura por foto ativa'; chip.className='chip ok';
+    }catch(error){ console.warn(error); chip.textContent='EAN manual disponível'; chip.className='chip warn'; }
+  }
+
+  async function loadData(){
+    state.config=getConfig();
+    $('#connectionChip').textContent='Atualizando dados…'; $('#connectionChip').className='chip warn';
+    try{
+      const firebaseBase=text(state.config.firebaseUrl).replace(/\/+$/,'');
+      const productsUrl=`${firebaseBase}/${encodeURIComponent(state.config.productsNode||'produtos')}.json?_=${Date.now()}`;
+      const productResponse=await fetch(productsUrl,{cache:'no-store'});
+      if(!productResponse.ok)throw new Error(`Firebase retornou ${productResponse.status}`);
+      const raw=await productResponse.json();
+      state.products=Object.entries(raw||{}).map(([firebaseKey,value])=>({...(value||{}),firebaseKey,_key:firebaseKey}));
+      if(text(state.config.githubToken)){
+        const collections=await loadCollections(state.config);
+        state.kits=collections.kits||[]; state.queue=collections.queue||[];
+      }else{
+        state.kits=[]; state.queue=[];
+      }
+      $('#connectionChip').textContent='Dados atualizados'; $('#connectionChip').className='chip ok';
+      $('#productsChip').textContent=`${state.products.length} produtos`; $('#kitsChip').textContent=`${state.kits.length} kits`;
+      renderAll();
+      if(!configReady())openSettings();
+    }catch(error){ console.error(error); $('#connectionChip').textContent='Falha ao carregar'; $('#connectionChip').className='chip danger'; toast(error?.message||String(error),'error'); }
+  }
+
+  function findExact(value){
+    const raw=token(value), onlyDigits=digits(value);
+    return state.products.find(product=>{ const values=productTokens(product); return values.includes(raw)||(onlyDigits&&values.includes(onlyDigits)); })||null;
+  }
+  function searchProducts(query){
+    const wanted=token(query), wantedDigits=digits(query); if(!wanted)return [];
+    return state.products.filter(product=>{
+      const hay=token([productName(product),productCode(product),product.gtin,product.ean,product.marca,product.categoria].join(' '));
+      return hay.includes(wanted)||(wantedDigits&&productTokens(product).some(value=>value.includes(wantedDigits)));
+    }).slice(0,8);
+  }
+  function activeProduct(product){ const status=text(product?.situacao??product?.status??'A').toLowerCase(); return !['i','inativo','false','0','excluido','excluído'].includes(status)&&product?.ativo!==false&&product?.visivel!==false; }
+
+  function addProduct(product){
+    if(!product)return;
+    if(!activeProduct(product)){ toast('Este produto está inativo e não pode entrar no kit.','error'); return; }
+    const code=productCode(product)||productKey(product); const existing=state.items.find(row=>(productCode(row.product)||productKey(row.product))===code);
+    if(existing)existing.qty+=1; else state.items.push({product,qty:1});
+    $('#productSearch').value=''; $('#searchResults').innerHTML=''; markContentStale(); renderAll(); toast(existing?'Quantidade aumentada.':'Produto adicionado.','success');
+  }
+  function markContentStale(){ if(state.aiSignature&&state.aiSignature!==currentSignature())$('#staleNotice').classList.remove('hidden'); }
+  function changeQty(index,delta){ const row=state.items[index]; if(!row)return; row.qty=Math.max(1,Math.floor(number(row.qty)+delta)); markContentStale(); renderAll(); }
+  function setQty(index,value){ const row=state.items[index]; if(!row)return; row.qty=Math.max(1,Math.floor(number(value)||1)); markContentStale(); renderAll(); }
+  function removeItem(index){ state.items.splice(index,1); markContentStale(); renderAll(); }
+
+  function renderSearch(){
+    const query=$('#productSearch').value.trim(); const host=$('#searchResults'); if(query.length<2){host.innerHTML='';return;}
+    const rows=searchProducts(query); host.innerHTML=rows.map(product=>`<button class="result" type="button" data-result-key="${escapeHtml(productKey(product))}"><img src="${escapeHtml(productImage(product)||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(productCode(product)||product.gtin||productKey(product))} · estoque ${number(product.estoque)} · ${escapeHtml(money(product.preco))}</small></div><span>Adicionar</span></button>`).join('')||(query.length>2?'<div class="empty">Nenhum produto encontrado.</div>':'');
+  }
+  function escapeHtml(value=''){ return String(value??'').replace(/[&<>"]/g,char=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[char])); }
+
+  function renderItems(){
+    const host=$('#items');
+    if(!state.items.length){ host.innerHTML='<div class="empty">Nenhum produto adicionado.</div>'; return; }
+    host.innerHTML=state.items.map((row,index)=>{
+      const stock=number(row.product.estoque), insufficient=stock<row.qty, cls=stock<=0?'zero':insufficient?'low':'';
+      return `<article class="item ${cls}"><img src="${escapeHtml(productImage(row.product)||PLACEHOLDER)}" onerror="this.src='${PLACEHOLDER}'"><div><div class="itemtop"><strong>${escapeHtml(productName(row.product))}</strong><button class="remove" type="button" data-remove="${index}">Remover</button></div><div class="itemmeta"><span class="tag">${escapeHtml(productCode(row.product)||row.product.gtin||productKey(row.product))}</span><span class="tag ${stock<=0?'danger':stock<row.qty?'warn':''}">Estoque ${stock}</span><span class="tag">${escapeHtml(money(row.product.preco))}</span></div><div class="itemcontrols"><div class="qty"><button type="button" data-minus="${index}">−</button><input type="number" min="1" step="1" value="${row.qty}" data-qty="${index}"><button type="button" data-plus="${index}">+</button></div><strong>${escapeHtml(money(number(row.product.preco)*row.qty))}</strong></div></div></article>`;
+    }).join('');
+  }
+  function renderSummary(){
+    document.querySelectorAll('[data-discount]').forEach(button=>button.classList.toggle('active',number(button.dataset.discount)===state.discount));
+    const total=subtotal(), final=finalPrice(), economy=round(total-final), available=availableKits();
+    $('#summary').innerHTML=`<div class="metric"><strong>${escapeHtml(money(total))}</strong><span>Compra avulsa</span></div><div class="metric"><strong>${state.discount}%</strong><span>Desconto escolhido</span></div><div class="metric highlight"><strong>${escapeHtml(money(final))}</strong><span>Preço final do kit</span></div><div class="metric"><strong>${available}</strong><span>Kits possíveis agora</span></div>`;
+  }
+  function renderPreview(){
+    $('#coverPreview').src=state.content.image||PLACEHOLDER; $('#namePreview').textContent=state.content.name||'Kit ainda não gerado';
+    const desc=$('#descriptionPreview'); desc.textContent=state.content.description||'A IA criará o nome, a descrição comercial e a capa usando os produtos selecionados.'; desc.classList.toggle('placeholder',!state.content.description);
+    const stale=Boolean(state.aiSignature&&state.aiSignature!==currentSignature()); $('#staleNotice').classList.toggle('hidden',!stale);
+  }
+  function publishErrors(){
+    const errors=[]; if(!state.items.length)errors.push('Adicione ao menos um produto');
+    state.items.forEach(row=>{ if(number(row.product.estoque)<row.qty)errors.push(`${productName(row.product)} sem estoque suficiente`); });
+    if(!configReady())errors.push('Configure token GitHub e webhooks do Make');
+    return [...new Set(errors)];
+  }
+  function renderPublish(){
+    const errors=publishErrors(); const button=$('#publishButton'); button.disabled=Boolean(errors.length||state.busy); button.textContent=state.busy?'Processando…':'Criar kit completo e publicar';
+    const notice=$('#publishNotice');
+    if(errors.length){ notice.textContent=errors.join(' · '); notice.className='notice danger'; }
+    else{ notice.textContent=`Pronto para gerar e publicar. Estoque atual permite ${availableKits()} kit(s).`; notice.className='notice'; }
+  }
+  function renderAll(){ renderItems(); renderSummary(); renderPreview(); renderPublish(); }
+
+  function draft(){
+    const code=state.content.code||uniqueCode(); state.content.code=code;
+    return {
+      id:state.content.id||`kit${Date.now()}${Math.floor(100+Math.random()*900)}`,
+      nome:state.content.name||'Novo kit promocional', codigo:code, preco:finalPrice(), imagem:state.content.image||'', imagem_path:state.content.imagePath||'',
+      produtos:state.items.map(row=>({qtd:row.qty,codigo:productCode(row.product)||productKey(row.product),substitutos:[]})), descricao:state.content.description||'',
+      limite_kits:availableKits(), data_inicio:localDate(), data_fim:'', desconto_percentual:state.discount, ativo:true, ativo_ate_estoque_zero:true,
+      origem:'kit_mobile_dona_antonia', criado_em:state.content.createdAt||new Date().toISOString(), atualizado_em:new Date().toISOString()
+    };
+  }
+
+  async function generateText(){
+    const errors=publishErrors().filter(error=>!error.includes('webhooks')&&!error.includes('token GitHub'));
+    if(errors.length)throw new Error(errors.join(' · '));
+    const current=draft(), kit=compactKitForMake(current,state.products);
+    const result=unwrapMakeResult(await callMake(state.config,'text',{acao:'gerar_descricao_kit',kit}));
+    const description=text(result.descricao||result.description||result.texto), name=text(result.nome_sugerido||result.nome_curto||result.nome||result.name);
+    if(!description&&!name)throw new Error('O Make não retornou nome ou descrição para o kit.');
+    if(name)state.content.name=name.slice(0,80); if(description)state.content.description=description; state.aiSignature=currentSignature(); renderAll();
+  }
+  async function generateCover(){
+    const errors=publishErrors().filter(error=>!error.includes('webhooks'));
+    if(errors.length)throw new Error(errors.join(' · '));
+    const current=draft(), kit=compactKitForMake(current,state.products); if(!kit.referencias_imagens.length)throw new Error('Os produtos precisam ter imagens públicas para gerar a capa.');
+    const path=`${text(state.config.githubKitImagesPath||'site/img/kits').replace(/\/+$/,'')}/${slug(current.codigo||current.nome)}.webp`;
+    const result=await callMake(state.config,'image',{ acao:'gerar_capa_kit', quantidade_imagens:1, kit, imagem_path:path, storage_destino:'github', instrucoes:'Criar uma única capa quadrada de e-commerce com as fotos reais dos produtos, nome do kit, preço anterior, preço promocional e economia. Não inventar embalagens.' });
+    let image=extractMakeImage(result); if(!image)throw new Error('O Make não retornou a capa do kit.');
+    if(/^data:image\//i.test(image)){ const uploaded=await upsertBase64File(state.config,path,image,`Cria capa IA do kit ${current.nome} pelo Kit Mobile`); image=uploaded.url; state.content.imagePath=path; }
+    state.content.image=image; state.aiSignature=currentSignature(); renderAll();
+  }
+  async function generateAllContent(){
+    setBusy(true,'Gerando nome e descrição…','Usando a mesma automação do Admin V2.');
+    try{ await generateText(); setBusy(true,'Gerando a capa…','A arte será salva na pasta oficial de imagens dos kits.'); await generateCover(); toast('Nome, descrição e capa gerados.','success'); }
+    finally{ setBusy(false); }
+  }
+
+  async function publish(){
+    const errors=publishErrors(); if(errors.length)throw new Error(errors.join(' · '));
+    setBusy(true,'Preparando o kit…','Gerando conteúdo e capa antes de publicar.');
+    try{
+      await generateText(); setBusy(true,'Gerando a capa…','Aguarde a automação finalizar.'); await generateCover();
+      setBusy(true,'Publicando no site…','Salvando no arquivo oficial de kits e atualizando a versão do catálogo.');
+      const current=draft(); current.nome=state.content.name; current.descricao=state.content.description; current.imagem=state.content.image; current.imagem_path=state.content.imagePath;
+      const normalizedResult=normalizeCollectionForPublish(current,'kit',state.products,state.queue);
+      if(normalizedResult.audit.errors.length)throw new Error(normalizedResult.audit.errors.join(' · '));
+      const normalized=normalizedResult.normalized; const list=state.kits.filter(kit=>text(kit.id)!==text(normalized.id)); list.push(normalized);
+      const saved=await saveCollectionList(state.config,'kit',list,state.products,state.queue,{preserveInvalidExisting:true,changedId:normalized.id,changedFields:Object.keys(normalized)});
+      state.kits=saved.list||list; $('#kitsChip').textContent=`${state.kits.length} kits`;
+      toast(`Kit “${normalized.nome}” publicado com sucesso.`,'success'); reset();
+    }finally{ setBusy(false); }
+  }
+  function reset(){ state.items=[]; state.discount=20; state.content={name:'',description:'',image:'',imagePath:''}; state.aiSignature=''; renderAll(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+  async function detectPhoto(file){
+    if(!file)return; if(!state.detector)throw new Error('Este navegador não lê EAN pela foto. Use a busca manual.');
+    setBusy(true,'Lendo o código EAN…','Centralize o código de barras na foto.');
+    try{
+      const bitmap=await createImageBitmap(file); const codes=await state.detector.detect(bitmap); bitmap.close?.();
+      if(!codes.length)throw new Error('Não consegui localizar um código de barras nessa foto.');
+      const value=text(codes[0].rawValue); const product=findExact(value); if(!product)throw new Error(`EAN ${value} não foi encontrado no Firebase.`); addProduct(product);
+    }finally{ setBusy(false); $('#photoInput').value=''; }
+  }
+
+  function openSettings(){
+    const config=getConfig(); $('#cfgToken').value=config.githubToken||''; $('#cfgTextWebhook').value=config.makeTextWebhookUrl||config.makeAiWebhookUrl||''; $('#cfgImageWebhook').value=config.makeImageWebhookUrl||config.makeAiWebhookUrl||''; $('#cfgOwner').value=config.githubOwner||'osvaldosereia'; $('#cfgRepo').value=config.githubRepo||'SUCEDOAN12'; $('#cfgBranch').value=config.githubBranch||'main'; $('#settingsDrawer').classList.add('open'); $('#settingsDrawer').setAttribute('aria-hidden','false');
+  }
+  function closeSettings(){ $('#settingsDrawer').classList.remove('open'); $('#settingsDrawer').setAttribute('aria-hidden','true'); }
+
+  $('#settingsOpen').addEventListener('click',openSettings); $('#settingsClose').addEventListener('click',closeSettings); $('#settingsDrawer').addEventListener('click',event=>{if(event.target.id==='settingsDrawer')closeSettings();});
+  $('#settingsSave').addEventListener('click',async()=>{ saveConfig({githubToken:$('#cfgToken').value.trim(),makeTextWebhookUrl:$('#cfgTextWebhook').value.trim(),makeImageWebhookUrl:$('#cfgImageWebhook').value.trim(),githubOwner:$('#cfgOwner').value.trim()||'osvaldosereia',githubRepo:$('#cfgRepo').value.trim()||'SUCEDOAN12',githubBranch:$('#cfgBranch').value.trim()||'main',writeMode:true,collectionsWriteMode:true}); closeSettings(); toast('Configurações salvas.','success'); await loadData(); });
+  $('#photoButton').addEventListener('click',()=>$('#photoInput').click()); $('#photoInput').addEventListener('change',event=>detectPhoto(event.target.files?.[0]).catch(error=>toast(error?.message||String(error),'error')));
+  $('#reloadButton').addEventListener('click',loadData); $('#productSearch').addEventListener('input',renderSearch); $('#productSearch').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();$('#addTyped').click();}});
+  $('#addTyped').addEventListener('click',()=>{ const value=$('#productSearch').value.trim(); const product=findExact(value)||searchProducts(value)[0]; if(!product)toast('Produto não encontrado.','error'); else addProduct(product); });
+  $('#searchResults').addEventListener('click',event=>{ const button=event.target.closest('[data-result-key]'); if(!button)return; addProduct(state.products.find(product=>productKey(product)===button.dataset.resultKey)); });
+  $('#items').addEventListener('click',event=>{ const plus=event.target.closest('[data-plus]'),minus=event.target.closest('[data-minus]'),remove=event.target.closest('[data-remove]'); if(plus)changeQty(Number(plus.dataset.plus),1); if(minus)changeQty(Number(minus.dataset.minus),-1); if(remove)removeItem(Number(remove.dataset.remove)); });
+  $('#items').addEventListener('change',event=>{ const input=event.target.closest('[data-qty]'); if(input)setQty(Number(input.dataset.qty),input.value); });
+  $('#discounts').addEventListener('click',event=>{ const button=event.target.closest('[data-discount]'); if(!button)return; state.discount=number(button.dataset.discount); markContentStale(); renderAll(); });
+  $('#generateText').addEventListener('click',async()=>{ setBusy(true,'Gerando nome e descrição…'); try{await generateText();toast('Nome e descrição gerados.','success');}catch(error){toast(error?.message||String(error),'error');}finally{setBusy(false);} });
+  $('#generateCover').addEventListener('click',async()=>{ setBusy(true,'Gerando a capa…'); try{await generateCover();toast('Capa gerada.','success');}catch(error){toast(error?.message||String(error),'error');}finally{setBusy(false);} });
+  $('#generateAll').addEventListener('click',()=>generateAllContent().catch(error=>{setBusy(false);toast(error?.message||String(error),'error');}));
+  $('#publishButton').addEventListener('click',()=>publish().catch(error=>{setBusy(false);toast(error?.message||String(error),'error');}));
+
+  state.config=getConfig(); renderAll(); await initDetector(); await loadData();
+</script>
+</body>
+</html>
