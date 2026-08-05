@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#956814">
+  <meta name="theme-color" content="#173f2a">
   <meta name="robots" content="noindex,nofollow">
   <title>Cadastro com IA · Dona Antônia</title>
   <link rel="stylesheet" href="./cadastro-v6.css?v=20260803-1">
+  <link rel="stylesheet" href="../operacoes-mobile.css?v=20260805-suite-v1">
   <script>
   (function(){
     var key='da_cadastro_ia_v6_settings';
@@ -24,13 +25,24 @@
   <script defer src="./cadastro-taxonomia-v1.js?v=20260804-taxonomia-1"></script>
   <script defer src="./cadastro-v8.js?v=20260804-1foto-1"></script>
 </head>
-<body>
-<header class="top">
-  <div class="brand"><div class="logo">DA</div><div><b>Cadastro rápido com IA</b><small>Firebase · Make · OpenAI</small></div></div>
-  <div style="display:flex;align-items:center;gap:6px">
-    <a href="../contagem/" aria-label="Abrir contagem de produtos" style="display:inline-flex;align-items:center;justify-content:center;min-height:43px;padding:0 12px;border-radius:13px;background:#fff4d6;border:1px solid #e5cf93;color:#67490d;text-decoration:none;font-weight:850;white-space:nowrap">📦 Contagem</a>
-    <button class="icon" id="resetButton" type="button" title="Limpar">↻</button>
-    <button class="icon" id="settingsButton" type="button" title="Configurar">⚙</button>
+<body class="ops-suite ops-cadastro">
+<header class="ops-topbar">
+  <div class="ops-topbar-inner">
+    <div class="ops-topbar-main">
+      <div class="ops-brand">
+        <div class="ops-brand-mark">DA</div>
+        <div class="ops-brand-copy"><strong class="ops-brand-title">Cadastro rápido com IA</strong><small class="ops-brand-subtitle">Firebase · Make · OpenAI</small></div>
+      </div>
+      <div class="ops-actions">
+        <button class="icon ops-icon-button" id="resetButton" type="button" title="Limpar" aria-label="Limpar cadastro">↻</button>
+        <button class="icon ops-icon-button" id="settingsButton" type="button" title="Configurar" aria-label="Configurar cadastro">⚙</button>
+      </div>
+    </div>
+    <nav class="ops-app-nav" aria-label="Trocar aplicação">
+      <a href="../contagem/"><span class="ops-app-nav-icon">📦</span><span>Contagem</span></a>
+      <a class="active" aria-current="page" href="../cadastro/"><span class="ops-app-nav-icon">➕</span><span>Cadastro</span></a>
+      <a href="../kit-mobile/"><span class="ops-app-nav-icon">🎁</span><span>Kits</span></a>
+    </nav>
   </div>
 </header>
 <main>
