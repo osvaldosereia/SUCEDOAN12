@@ -1,137 +1,16 @@
 {
-  "checkedAt": "2026-08-05T19:05:16.536Z",
-  "baseUrl": "https://donaantonia.com.br",
   "ok": false,
-  "checks": [
-    {
-      "name": "Todas as 18 abas passam no teste estrutural",
-      "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 84 arquivos JavaScript, imports e ciclo dos kits confirmados."
-    },
-    {
-      "name": "Entrada /producao aponta para o Admin oficial",
-      "ok": false,
-      "detail": "Conteúdo ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Atalho /admin aponta para o Admin oficial",
-      "ok": false,
-      "detail": "Conteúdo ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Admin oficial carregado",
-      "ok": false,
-      "detail": "Conteúdo ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Módulos sob demanda das 18 abas estão publicados",
-      "ok": false,
-      "detail": "quick-read-bootstrap.js: https://donaantonia.com.br/producao-v2/js/quick-read-bootstrap.js: HTTP 404"
-    },
-    {
-      "name": "Módulo de Estoque publicado com atualização correta",
-      "ok": true,
-      "detail": "OK · /producao-v2/js/modules/stock.js"
-    },
-    {
-      "name": "Bootstrap de Estoque publicado na build correta",
-      "ok": false,
-      "detail": "ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Contingência publicada sem ciclo de renderização",
-      "ok": true,
-      "detail": "OK · /producao-v2/js/order-tools-bootstrap.js"
-    },
-    {
-      "name": "Catálogo público possui produtos",
-      "ok": true,
-      "detail": "1508 produto(s)"
-    },
-    {
-      "name": "Índice administrativo possui todos os produtos",
-      "ok": true,
-      "detail": "1630 produto(s) administrativos · 1508 público(s) · campos OK"
-    },
-    {
-      "name": "Runtime do Admin carrega lista e cadastro completo",
-      "ok": true,
-      "detail": "1630 produto(s) em 144 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
-    },
-    {
-      "name": "Pedidos usam consulta limitada no Firebase",
-      "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 104 ms · limite solicitado 12 · chaves OK"
-    },
-    {
-      "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1785956169762 · público 0 · admin 0"
-    },
-    {
-      "name": "Banners permanecem removidos",
-      "ok": true,
-      "detail": "disabled=true · 0 banner(s)"
-    },
-    {
-      "name": "Arquivo de cupons válido",
-      "ok": true,
-      "detail": "3 cupom(ns)"
-    },
-    {
-      "name": "Compra Rápida válida",
-      "ok": true,
-      "detail": "6 seção(ões)"
-    },
-    {
-      "name": "Histórico de ofertas válido",
-      "ok": true,
-      "detail": "4061 oferta(s) no histórico"
-    },
-    {
-      "name": "Rotina horária de ofertas atualizada",
-      "ok": true,
-      "detail": "0.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
-    }
-  ],
   "errors": [
     {
-      "name": "Entrada /producao aponta para o Admin oficial",
-      "ok": false,
-      "detail": "Conteúdo ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Atalho /admin aponta para o Admin oficial",
-      "ok": false,
-      "detail": "Conteúdo ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Admin oficial carregado",
-      "ok": false,
-      "detail": "Conteúdo ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Módulos sob demanda das 18 abas estão publicados",
-      "ok": false,
-      "detail": "quick-read-bootstrap.js: https://donaantonia.com.br/producao-v2/js/quick-read-bootstrap.js: HTTP 404"
-    },
-    {
-      "name": "Bootstrap de Estoque publicado na build correta",
-      "ok": false,
-      "detail": "ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1785956169762 · público 0 · admin 0"
+      "name": "healthcheck",
+      "detail": "Relatório não foi gerado"
     }
   ],
-  "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "31037085651",
+    "event": "push",
+    "runId": "31037858154",
     "attempt": "1",
-    "sourceSha": "766f254d150c2ae7cbcf6362eb261053553aaa0d",
-    "publishedAt": "2026-08-05T19:05:50.777Z"
+    "sourceSha": "448e40d257834c7fef51eb90b0fb2f15b838466a",
+    "publishedAt": "2026-08-05T19:09:46.567Z"
   }
 }
