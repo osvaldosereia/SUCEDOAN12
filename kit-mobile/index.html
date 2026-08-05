@@ -74,8 +74,17 @@
     </section>
 
     <section class="card">
-      <div class="cardhead"><span class="step">5</span><div><strong>Publicação e estoque</strong><small>O botão publica exatamente os textos editados e a imagem criada pela IA.</small></div></div>
-      <div class="cardbody"><div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit sai do ar quando qualquer item não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div><div class="notice" id="publishNotice">Adicione pelo menos um produto para iniciar.</div></div>
+      <div class="cardhead"><span class="step">5</span><div><strong>Publicação e divulgação</strong><small>Primeiro publique o kit. Depois gere as artes e coloque o carrossel na fila do Instagram.</small></div></div>
+      <div class="cardbody">
+        <div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit sai do ar quando qualquer item não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div>
+        <div class="notice" id="publishNotice">Adicione pelo menos um produto para iniciar.</div>
+        <div class="instagram-publish-box">
+          <span class="badge neutral" id="instagramQueueBadge">Aguardando publicação</span>
+          <strong>Preparar publicação no Instagram</strong>
+          <small id="instagramQueueStatus">Publique o kit primeiro. Depois este botão prepara as artes e envia o carrossel para a fila do Instagram.</small>
+          <button class="btn gold wide" id="instagramQueueButton" type="button" disabled>Gerar carrossel e colocar na fila</button>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -87,11 +96,13 @@
   <label>Token GitHub<input class="field" id="cfgToken" type="password" autocomplete="off"><small>Necessário para salvar o kit e, quando preciso, a imagem na branch principal.</small></label>
   <label>Webhook IA de textos<input class="field" id="cfgTextWebhook" type="url" inputmode="url"></label>
   <label>Webhook IA de imagens<input class="field" id="cfgImageWebhook" type="url" inputmode="url"></label>
+  <label>Webhook carrossel do Instagram<input class="field" id="cfgInstagramWebhook" type="url" inputmode="url"><small>É o mesmo webhook “Instagram de kits” usado no Admin Produção V2.</small></label>
   <label>Owner GitHub<input class="field" id="cfgOwner"></label><label>Repositório<input class="field" id="cfgRepo"></label><label>Branch<input class="field" id="cfgBranch"></label>
   <button class="btn primary wide" id="settingsSave" type="button">Salvar configurações</button>
 </div></div></div>
 <div class="toast" id="toast"></div>
 <div class="busy" id="busy"><div class="busybox"><div class="spinner"></div><strong id="busyTitle">Processando…</strong><small id="busyText">Não feche esta tela.</small></div></div>
 <script type="module" src="./kit-app-v3.js?v=20260805-editor-v4"></script>
+<script type="module" src="./kit-instagram-queue.js?v=20260805-instagram-v1"></script>
 </body>
 </html>
