@@ -7,14 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Dona Antônia — Criador Mobile de Kits</title>
   <link rel="stylesheet" href="../operacoes-mobile.css?v=20260805-suite-v1">
-  <link rel="stylesheet" href="./kit-mobile-v2.css?v=20260805-financeiro-v3">
-  <script type="importmap">
-  {
-    "imports": {
-      "../producao-v2/js/services/make.js?build=20260805-kit-financeiro-v2": "../producao-v2/js/services/make.js?build=20260805-kit-financeiro-v3"
-    }
-  }
-  </script>
+  <link rel="stylesheet" href="./kit-mobile-v3.css?v=20260805-editor-v4">
 </head>
 <body class="ops-suite ops-kits">
 <div class="app">
@@ -57,35 +50,41 @@
     </section>
 
     <section class="card">
-      <div class="cardhead"><span class="step">3</span><div><strong>Escolha o desconto</strong><small>O preço original, o preço promocional e a economia são fechados aqui antes de chamar a IA.</small></div></div>
+      <div class="cardhead"><span class="step">3</span><div><strong>Escolha o desconto</strong><small>O preço original, o preço promocional e a economia são calculados antes de chamar a IA.</small></div></div>
       <div class="cardbody">
         <div class="discounts" id="discounts"><button class="discount" type="button" data-discount="15">15%</button><button class="discount active" type="button" data-discount="20">20%</button><button class="discount" type="button" data-discount="25">25%</button><button class="discount" type="button" data-discount="30">30%</button><button class="discount" type="button" data-discount="35">35%</button></div>
         <div class="summary" id="summary"></div>
-        <div class="financial-check"><strong>Valores protegidos contra alteração da IA</strong><p id="financialCheck">Adicione produtos para calcular os valores.</p></div>
+        <div class="financial-check"><strong>Valores enviados para a IA</strong><p id="financialCheck">Adicione produtos para calcular os valores.</p></div>
       </div>
     </section>
 
     <section class="card">
-      <div class="cardhead"><span class="step">4</span><div><strong>Nome, descrição e capa</strong><small>A IA cria o conceito; o sistema aplica os valores corretos e monta a arte final.</small></div></div>
+      <div class="cardhead"><span class="step">4</span><div><strong>Gerar e revisar os textos</strong><small>Primeiro gere o título e a descrição. Depois edite livremente antes de criar a capa.</small></div></div>
       <div class="cardbody">
-        <div class="preview"><img class="cover" id="coverPreview" alt="Capa do kit"><div><h3 id="namePreview">Kit ainda não gerado</h3><p id="descriptionPreview" class="placeholder">A IA criará um nome curto e comercial. A descrição e a capa receberão os valores calculados pelo sistema.</p></div></div>
-        <div class="aiactions"><button class="btn secondary" id="generateText" type="button">Gerar nome e descrição</button><button class="btn secondary" id="generateCover" type="button">Gerar capa</button><button class="btn gold wide" id="generateAll" type="button">✨ Gerar tudo com IA</button></div>
-        <div class="notice hidden" id="staleNotice">A composição ou o desconto mudou. Gere novamente para atualizar nome, descrição e capa.</div>
+        <button class="btn secondary wide" id="generateText" type="button">✨ Gerar título e descrição com IA</button>
+        <div class="content-editor">
+          <label class="editor-field">Título do kit<input class="field" id="kitTitleInput" maxlength="60" placeholder="Gere com IA ou escreva o título"></label>
+          <label class="editor-field">Descrição do kit<textarea class="field editor-textarea" id="kitDescriptionInput" maxlength="1600" placeholder="Gere com IA e ajuste antes de criar a capa"></textarea></label>
+        </div>
+        <div class="flow-note">A capa será criada usando exatamente o título e a descrição que estiverem nesses campos.</div>
+        <button class="btn gold wide" id="generateCover" type="button" disabled>Gerar capa com os textos atuais</button>
+        <div class="cover-stage"><img class="cover" id="coverPreview" alt="Capa do kit"><p id="coverStatus">Gere o título e a descrição, revise os textos e depois crie a capa.</p></div>
+        <div class="notice hidden" id="staleNotice">Os dados mudaram. Gere novamente o conteúdo necessário.</div>
       </div>
     </section>
 
     <section class="card">
-      <div class="cardhead"><span class="step">5</span><div><strong>Publicação e estoque</strong><small>O kit será salvo no mesmo arquivo usado pelo site.</small></div></div>
-      <div class="cardbody"><div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit sai do ar quando qualquer item não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div><div class="notice" id="publishNotice">Adicione pelo menos um produto para liberar a publicação.</div></div>
+      <div class="cardhead"><span class="step">5</span><div><strong>Publicação e estoque</strong><small>O botão publica exatamente os textos editados e a imagem criada pela IA.</small></div></div>
+      <div class="cardbody"><div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit sai do ar quando qualquer item não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div><div class="notice" id="publishNotice">Adicione pelo menos um produto para iniciar.</div></div>
     </section>
   </main>
 
-  <div class="bottom"><button class="btn primary wide" id="publishButton" type="button" disabled>Criar kit completo e publicar</button></div>
+  <div class="bottom"><button class="btn primary wide" id="publishButton" type="button" disabled>Publicar kit pronto</button></div>
 </div>
 
 <div class="drawer" id="settingsDrawer" aria-hidden="true"><div class="panel"><div class="panelhead"><h2>Configurações</h2><button class="close" id="settingsClose" type="button">✕</button></div><div class="settingsgrid">
   <div class="settings-note">Esta tela usa a mesma chave <b>da_admin_v2_config</b> do Admin V2. No mesmo domínio, as configurações existentes são carregadas automaticamente.</div>
-  <label>Token GitHub<input class="field" id="cfgToken" type="password" autocomplete="off"><small>Necessário para salvar o kit e a capa na branch principal.</small></label>
+  <label>Token GitHub<input class="field" id="cfgToken" type="password" autocomplete="off"><small>Necessário para salvar o kit e, quando preciso, a imagem na branch principal.</small></label>
   <label>Webhook IA de textos<input class="field" id="cfgTextWebhook" type="url" inputmode="url"></label>
   <label>Webhook IA de imagens<input class="field" id="cfgImageWebhook" type="url" inputmode="url"></label>
   <label>Owner GitHub<input class="field" id="cfgOwner"></label><label>Repositório<input class="field" id="cfgRepo"></label><label>Branch<input class="field" id="cfgBranch"></label>
@@ -93,6 +92,6 @@
 </div></div></div>
 <div class="toast" id="toast"></div>
 <div class="busy" id="busy"><div class="busybox"><div class="spinner"></div><strong id="busyTitle">Processando…</strong><small id="busyText">Não feche esta tela.</small></div></div>
-<script type="module" src="./kit-app-v2.js?v=20260805-financeiro-v3"></script>
+<script type="module" src="./kit-app-v3.js?v=20260805-editor-v4"></script>
 </body>
 </html>
