@@ -8,6 +8,9 @@
   <title>Dona Antônia — Criador Mobile de Kits</title>
   <link rel="stylesheet" href="../operacoes-mobile.css?v=20260805-suite-v1">
   <link rel="stylesheet" href="./kit-mobile-v3.css?v=20260805-editor-v4">
+  <link rel="stylesheet" href="../producao-v2/assets/collections.css?mobile_build=20260805-kit-manager-v1">
+  <link rel="stylesheet" href="../producao-v2/assets/kit-lifecycle.css?mobile_build=20260805-kit-manager-v1" data-admin-kit-lifecycle="1">
+  <link rel="stylesheet" href="./kit-manager-v1.css?v=20260805-kit-manager-v1">
 </head>
 <body class="ops-suite ops-kits">
 <div class="app">
@@ -33,59 +36,68 @@
       <span class="chip" id="cameraChip">Câmera verificando…</span>
     </div>
 
-    <section class="card">
-      <div class="cardhead"><span class="step">1</span><div><strong>Fotografe ou informe o EAN</strong><small>Leia o código de cada produto e ajuste a quantidade usada no kit.</small></div></div>
-      <div class="cardbody">
-        <div class="scanarea"><button class="btn primary" id="photoButton" type="button">📷 Fotografar EAN</button><button class="btn secondary" id="reloadButton" type="button">↻ Atualizar produtos</button></div>
-        <input class="hidden" id="photoInput" type="file" accept="image/*" capture="environment">
-        <div class="searchrow"><input class="field" id="productSearch" inputmode="search" autocomplete="off" placeholder="EAN, código ou nome do produto"><button class="smallbtn" id="addTyped" type="button">Adicionar</button></div>
-        <div class="results" id="searchResults"></div>
-        <p class="hint">No Android/Chrome a foto pode ser lida automaticamente. Quando o aparelho não oferecer leitura de código, digite o EAN ou pesquise pelo nome.</p>
-      </div>
-    </section>
+    <nav class="kit-workspace-tabs" role="tablist" aria-label="Área de kits">
+      <button class="active" type="button" role="tab" aria-selected="true" data-kit-workspace="create">Criar kit</button>
+      <button type="button" role="tab" aria-selected="false" data-kit-workspace="manage">Todos os kits <span id="managerKitsCount">0</span></button>
+    </nav>
 
-    <section class="card">
-      <div class="cardhead"><span class="step">2</span><div><strong>Composição do kit</strong><small>Produtos repetidos aumentam a quantidade automaticamente.</small></div></div>
-      <div class="cardbody"><div class="items" id="items"><div class="empty">Nenhum produto adicionado.</div></div></div>
-    </section>
-
-    <section class="card">
-      <div class="cardhead"><span class="step">3</span><div><strong>Escolha o desconto</strong><small>O preço original, o preço promocional e a economia são calculados antes de chamar a IA.</small></div></div>
-      <div class="cardbody">
-        <div class="discounts" id="discounts"><button class="discount" type="button" data-discount="15">15%</button><button class="discount active" type="button" data-discount="20">20%</button><button class="discount" type="button" data-discount="25">25%</button><button class="discount" type="button" data-discount="30">30%</button><button class="discount" type="button" data-discount="35">35%</button></div>
-        <div class="summary" id="summary"></div>
-        <div class="financial-check"><strong>Valores enviados para a IA</strong><p id="financialCheck">Adicione produtos para calcular os valores.</p></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="cardhead"><span class="step">4</span><div><strong>Gerar e revisar os textos</strong><small>Primeiro gere o título e a descrição. Depois edite livremente antes de criar a capa.</small></div></div>
-      <div class="cardbody">
-        <button class="btn secondary wide" id="generateText" type="button">✨ Gerar título e descrição com IA</button>
-        <div class="content-editor">
-          <label class="editor-field">Título do kit<input class="field" id="kitTitleInput" maxlength="60" placeholder="Gere com IA ou escreva o título"></label>
-          <label class="editor-field">Descrição do kit<textarea class="field editor-textarea" id="kitDescriptionInput" maxlength="1600" placeholder="Gere com IA e ajuste antes de criar a capa"></textarea></label>
+    <div id="kitCreateWorkspace">
+      <section class="card">
+        <div class="cardhead"><span class="step">1</span><div><strong>Fotografe ou informe o EAN</strong><small>Leia o código de cada produto e ajuste a quantidade usada no kit.</small></div></div>
+        <div class="cardbody">
+          <div class="scanarea"><button class="btn primary" id="photoButton" type="button">📷 Fotografar EAN</button><button class="btn secondary" id="reloadButton" type="button">↻ Atualizar produtos</button></div>
+          <input class="hidden" id="photoInput" type="file" accept="image/*" capture="environment">
+          <div class="searchrow"><input class="field" id="productSearch" inputmode="search" autocomplete="off" placeholder="EAN, código ou nome do produto"><button class="smallbtn" id="addTyped" type="button">Adicionar</button></div>
+          <div class="results" id="searchResults"></div>
+          <p class="hint">No Android/Chrome a foto pode ser lida automaticamente. Quando o aparelho não oferecer leitura de código, digite o EAN ou pesquise pelo nome.</p>
         </div>
-        <div class="flow-note">A capa será criada usando exatamente o título e a descrição que estiverem nesses campos.</div>
-        <button class="btn gold wide" id="generateCover" type="button" disabled>Gerar capa com os textos atuais</button>
-        <div class="cover-stage"><img class="cover" id="coverPreview" alt="Capa do kit"><p id="coverStatus">Gere o título e a descrição, revise os textos e depois crie a capa.</p></div>
-        <div class="notice hidden" id="staleNotice">Os dados mudaram. Gere novamente o conteúdo necessário.</div>
-      </div>
-    </section>
+      </section>
 
-    <section class="card">
-      <div class="cardhead"><span class="step">5</span><div><strong>Publicação e divulgação</strong><small>Primeiro publique o kit. Depois gere as artes e coloque o carrossel na fila do Instagram.</small></div></div>
-      <div class="cardbody">
-        <div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit sai do ar quando qualquer item não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div>
-        <div class="notice" id="publishNotice">Adicione pelo menos um produto para iniciar.</div>
-        <div class="instagram-publish-box">
-          <span class="badge neutral" id="instagramQueueBadge">Aguardando publicação</span>
-          <strong>Preparar publicação no Instagram</strong>
-          <small id="instagramQueueStatus">Publique o kit primeiro. Depois este botão prepara as artes e envia o carrossel para a fila do Instagram.</small>
-          <button class="btn gold wide" id="instagramQueueButton" type="button" disabled>Gerar carrossel e colocar na fila</button>
+      <section class="card">
+        <div class="cardhead"><span class="step">2</span><div><strong>Composição do kit</strong><small>Produtos repetidos aumentam a quantidade automaticamente.</small></div></div>
+        <div class="cardbody"><div class="items" id="items"><div class="empty">Nenhum produto adicionado.</div></div></div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead"><span class="step">3</span><div><strong>Escolha o desconto</strong><small>O preço original, o preço promocional e a economia são calculados antes de chamar a IA.</small></div></div>
+        <div class="cardbody">
+          <div class="discounts" id="discounts"><button class="discount" type="button" data-discount="15">15%</button><button class="discount active" type="button" data-discount="20">20%</button><button class="discount" type="button" data-discount="25">25%</button><button class="discount" type="button" data-discount="30">30%</button><button class="discount" type="button" data-discount="35">35%</button></div>
+          <div class="summary" id="summary"></div>
+          <div class="financial-check"><strong>Valores enviados para a IA</strong><p id="financialCheck">Adicione produtos para calcular os valores.</p></div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section class="card">
+        <div class="cardhead"><span class="step">4</span><div><strong>Gerar e revisar os textos</strong><small>Primeiro gere o título e a descrição. Depois edite livremente antes de criar a capa.</small></div></div>
+        <div class="cardbody">
+          <button class="btn secondary wide" id="generateText" type="button">✨ Gerar título e descrição com IA</button>
+          <div class="content-editor">
+            <label class="editor-field">Título do kit<input class="field" id="kitTitleInput" maxlength="60" placeholder="Gere com IA ou escreva o título"></label>
+            <label class="editor-field">Descrição do kit<textarea class="field editor-textarea" id="kitDescriptionInput" maxlength="1600" placeholder="Gere com IA e ajuste antes de criar a capa"></textarea></label>
+          </div>
+          <div class="flow-note">A capa será criada usando exatamente o título e a descrição que estiverem nesses campos.</div>
+          <button class="btn gold wide" id="generateCover" type="button" disabled>Gerar capa com os textos atuais</button>
+          <div class="cover-stage"><img class="cover" id="coverPreview" alt="Capa do kit"><p id="coverStatus">Gere o título e a descrição, revise os textos e depois crie a capa.</p></div>
+          <div class="notice hidden" id="staleNotice">Os dados mudaram. Gere novamente o conteúdo necessário.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="cardhead"><span class="step">5</span><div><strong>Publicação e divulgação</strong><small>Primeiro publique o kit. Depois gere as artes e coloque o carrossel na fila do Instagram.</small></div></div>
+        <div class="cardbody">
+          <div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit sai do ar quando qualquer item não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div>
+          <div class="notice" id="publishNotice">Adicione pelo menos um produto para iniciar.</div>
+          <div class="instagram-publish-box">
+            <span class="badge neutral" id="instagramQueueBadge">Aguardando publicação</span>
+            <strong>Preparar publicação no Instagram</strong>
+            <small id="instagramQueueStatus">Publique o kit primeiro. Depois este botão prepara as artes e envia o carrossel para a fila do Instagram.</small>
+            <button class="btn gold wide" id="instagramQueueButton" type="button" disabled>Gerar carrossel e colocar na fila</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section id="kitManageWorkspace" hidden aria-label="Todos os kits promocionais"></section>
   </main>
 
   <div class="bottom"><button class="btn primary wide" id="publishButton" type="button" disabled>Publicar kit pronto</button></div>
@@ -104,5 +116,6 @@
 <div class="busy" id="busy"><div class="busybox"><div class="spinner"></div><strong id="busyTitle">Processando…</strong><small id="busyText">Não feche esta tela.</small></div></div>
 <script type="module" src="./kit-app-v3.js?v=20260805-editor-v4"></script>
 <script type="module" src="./kit-instagram-queue.js?v=20260805-instagram-v1"></script>
+<script type="module" src="./kit-manager-v1.js?v=20260805-kit-manager-v1"></script>
 </body>
 </html>
