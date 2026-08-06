@@ -274,7 +274,10 @@ function patchSaveAutomation() {
     const previous = module.currentList().find(kit => text(kit.id) === text(module.originalId || snapshot.id)) || null;
     const previousVersion = previous ? visualVersion(previous, module.store.state.products) : '';
     const nextVersion = visualVersion(snapshot, module.store.state.products);
-    const shouldGenerate = !previous || previousVersion !== nextVersion || ['erro_envio', 'erro_geracao', 'erro_geracao_automatica'].includes(normalizeStatus(snapshot.instagram_status));
+    const existingQueue = latestQueueEntry(module, snapshot.codigo);
+    const generationMissing = !text(previous?.instagram_versao_conteudo) && !existingQueue;
+    const shouldGenerate = !previous || previousVersion !== nextVersion || generationMissing
+      || ['erro_envio', 'erro_geracao', 'erro_geracao_automatica'].includes(normalizeStatus(snapshot.instagram_status));
     await originalSave();
     const savedSuccessfully = module.draft === null;
     if (savedSuccessfully && shouldGenerate) {
