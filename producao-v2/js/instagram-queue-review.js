@@ -1,6 +1,6 @@
 import { auditCollection } from './core/collections.js';
 import { escapeHtml, text } from './core/utils.js';
-import { callMake, compactKitForMake, unwrapMakeResult } from './services/make.js';
+import { callMake, compactKitForMake, unwrapMakeResult } from './services/make.js?admin_build=20260805-instagram-resend-v2';
 
 const ACTIVE_QUEUE_STATUSES = new Set(['novo', 'pendente', 'processando', 'aguardando', 'pronto', 'agendado']);
 let patched = false;
@@ -97,9 +97,12 @@ function patchAutomation() {
       data_inicio: kit.data_inicio, data_fim: kit.data_fim,
       produtos: kit.produtos.map(item => ({ codigo: item.codigo, qtd: item.qtd, imagem_url: item.imagem_url })),
     });
-    const idempotencyKey = `kit:${kit.codigo}:${contentVersion}`;
+    const requestId = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 10)}`;
+    const idempotencyKey = `kit:${kit.codigo}:${contentVersion}:${requestId}`;
     module.makeBusy = true;
     module.draft.instagram_status = 'enviando';
+    delete module.draft.instagram_erro;
+    delete module.draft.instagram_erro_em;
     module.elements.collectionForm.innerHTML = module.formHtml();
     renderDiagnostics();
     module.onToast('Make: enviando kit para geração do carrossel…');
@@ -109,6 +112,9 @@ function patchAutomation() {
         modo_publicacao: 'fila_github',
         origem: 'admin_v2_dona_antonia',
         criado_em: new Date().toISOString(),
+        solicitacao_id: requestId,
+        forcar_regeneracao: true,
+        ignorar_idempotencia_anterior: true,
         chave_idempotencia: idempotencyKey,
         versao_conteudo: contentVersion,
         formato: 'instagram_carrossel_4_5',
@@ -148,6 +154,12 @@ function patchAutomation() {
       } else {
         module.onToast('O Make recebeu o kit, mas a entrada ainda não apareceu na fila. Use “Atualizar status” antes de gerar novamente.', 'error');
       }
+    } catch (error) {
+      module.draft.instagram_status = 'erro_envio';
+      module.draft.instagram_erro = text(error?.message || error);
+      module.draft.instagram_erro_em = new Date().toISOString();
+      module.onToast(`Falha ao enviar para o Make: ${module.draft.instagram_erro}`, 'error');
+      throw error;
     } finally {
       module.makeBusy = false;
       if (module.draft) {

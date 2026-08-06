@@ -1,6 +1,6 @@
 import './offer-manager.js';
 import './commerce-enhancements.js';
-import './instagram-queue-review.js';
+import './instagram-queue-review.js?admin_build=20260805-instagram-resend-v2';
 import './basket-context.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
