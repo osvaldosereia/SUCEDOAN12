@@ -1,0 +1,115 @@
+name: Corrigir reenvio de carrossel dos kits
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-admin-kit-instagram-resend.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-admin-kit-instagram-resend
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Atualizar branch
+        run: git pull --rebase origin main
+
+      - name: Corrigir reenvio manual e limpar estados presos
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          review_path = Path('producao-v2/js/instagram-queue-review.js')
+          review = review_path.read_text(encoding='utf-8')
+
+          replacements = [
+            (
+              "import { callMake, compactKitForMake, unwrapMakeResult } from './services/make.js';",
+              "import { callMake, compactKitForMake, unwrapMakeResult } from './services/make.js?admin_build=20260805-instagram-resend-v2';"
+            ),
+            (
+              "    const idempotencyKey = `kit:${kit.codigo}:${contentVersion}`;",
+              "    const requestId = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 10)}`;\n    const idempotencyKey = `kit:${kit.codigo}:${contentVersion}:${requestId}`;"
+            ),
+            (
+              "    module.draft.instagram_status = 'enviando';",
+              "    module.draft.instagram_status = 'enviando';\n    delete module.draft.instagram_erro;\n    delete module.draft.instagram_erro_em;"
+            ),
+            (
+              "        criado_em: new Date().toISOString(),\n        chave_idempotencia: idempotencyKey,",
+              "        criado_em: new Date().toISOString(),\n        solicitacao_id: requestId,\n        forcar_regeneracao: true,\n        ignorar_idempotencia_anterior: true,\n        chave_idempotencia: idempotencyKey,"
+            ),
+            (
+              "      } else {\n        module.onToast('O Make recebeu o kit, mas a entrada ainda não apareceu na fila. Use “Atualizar status” antes de gerar novamente.', 'error');\n      }\n    } finally {",
+              "      } else {\n        module.onToast('O Make recebeu o kit, mas a entrada ainda não apareceu na fila. Use “Atualizar status” antes de gerar novamente.', 'error');\n      }\n    } catch (error) {\n      module.draft.instagram_status = 'erro_envio';\n      module.draft.instagram_erro = text(error?.message || error);\n      module.draft.instagram_erro_em = new Date().toISOString();\n      module.onToast(`Falha ao enviar para o Make: ${module.draft.instagram_erro}`, 'error');\n      throw error;\n    } finally {"
+            ),
+          ]
+
+          for old, new in replacements:
+            if old not in review:
+              raise SystemExit(f'Trecho esperado não encontrado em instagram-queue-review.js: {old[:90]}')
+            review = review.replace(old, new, 1)
+          review_path.write_text(review, encoding='utf-8')
+
+          bootstrap_path = Path('producao-v2/js/collections-bootstrap.js')
+          bootstrap = bootstrap_path.read_text(encoding='utf-8')
+          old_import = "import './instagram-queue-review.js';"
+          new_import = "import './instagram-queue-review.js?admin_build=20260805-instagram-resend-v2';"
+          if old_import not in bootstrap:
+            raise SystemExit('Import antigo do instagram-queue-review não encontrado.')
+          bootstrap_path.write_text(bootstrap.replace(old_import, new_import, 1), encoding='utf-8')
+
+          productive_path = Path('producao-v2/admin-produtivo.html')
+          productive = productive_path.read_text(encoding='utf-8')
+          old_build = "const BUILD = '20260804-product-delete-v3-bling-safe';"
+          new_build = "const BUILD = '20260805-instagram-resend-v2';"
+          if old_build not in productive:
+            raise SystemExit('BUILD esperado do Admin produtivo não encontrado.')
+          productive_path.write_text(productive.replace(old_build, new_build, 1), encoding='utf-8')
+
+          kits_path = Path('site/kits.json')
+          kits = json.loads(kits_path.read_text(encoding='utf-8'))
+          target_codes = {
+            'kit-mobile-20260805150637-1920',
+            'kit-mobile-20260805145432-1521',
+            'kit-mobile-20260805150135-6763',
+          }
+          found = set()
+          for kit in kits:
+            code = str(kit.get('codigo') or '')
+            if code not in target_codes:
+              continue
+            found.add(code)
+            kit['instagram_status'] = ''
+            kit['instagram_enviado_em'] = ''
+            kit['instagram_post_id'] = ''
+            kit['instagram_carrossel_id'] = ''
+            kit['instagram_imagens'] = []
+            kit['instagram_dados_json'] = ''
+            kit['instagram_fila_json'] = ''
+            for key in (
+              'instagram_chave_idempotencia', 'instagram_versao_conteudo',
+              'instagram_erro', 'instagram_erro_em'
+            ):
+              kit.pop(key, None)
+          if found != target_codes:
+            raise SystemExit(f'Kits esperados não encontrados: {sorted(target_codes - found)}')
+          kits_path.write_text(json.dumps(kits, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+      - name: Publicar correção
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add producao-v2/js/instagram-queue-review.js producao-v2/js/collections-bootstrap.js producao-v2/admin-produtivo.html site/kits.json
+          git commit -m "Corrige reenvio dos carrosséis de kits ao Make"
+          git push origin HEAD:main
