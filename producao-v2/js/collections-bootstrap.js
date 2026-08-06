@@ -1,6 +1,6 @@
 import './offer-manager.js';
 import './commerce-enhancements.js';
-import './instagram-queue-review.js?admin_build=20260805-instagram-resend-v2';
+import './instagram-queue-review.js?admin_build=20260805-kit-auto-carousel-v1';
 import './basket-context.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
@@ -10,7 +10,7 @@ import './collection-concurrency.js';
 import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
 
-const BUILD = '20260729-save-merge-v1';
+const BUILD = '20260805-kit-auto-carousel-v1';
 
 function loadConfig() {
   try {
