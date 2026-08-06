@@ -1,0 +1,86 @@
+name: Limpar três últimos carrosséis de kits
+
+on:
+  push:
+    paths:
+      - .github/workflows/cleanup-three-latest-kit-carousels.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleanup-three-latest-kit-carousels
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Atualizar branch principal
+        run: git pull --rebase origin main
+
+      - name: Remover os três registros mais recentes de hoje
+        id: cleanup
+        shell: python
+        run: |
+          import json
+          from datetime import datetime
+          from pathlib import Path
+
+          path = Path('carrosseis-kits/fila.json')
+          target_date = '2026-08-05'
+          data = json.loads(path.read_text(encoding='utf-8'))
+
+          def created_at(entry):
+              raw = str(entry.get('criado_em') or '')
+              try:
+                  return datetime.fromisoformat(raw)
+              except ValueError:
+                  return datetime.min
+
+          candidates = [
+              entry for entry in data
+              if str(entry.get('criado_em') or '').startswith(target_date)
+          ]
+          candidates.sort(key=lambda entry: (created_at(entry), str(entry.get('id_carrossel') or '')))
+
+          if len(candidates) < 3:
+              raise SystemExit(f'Foram encontrados somente {len(candidates)} registros em {target_date}; nenhuma alteração foi feita.')
+
+          removed = candidates[-3:]
+          removed_ids = {str(entry.get('id_carrossel') or '') for entry in removed}
+          expected_ids = {
+              '20260805-153037-kit-kit-mobile-20260805150637-1920',
+              '20260805-153731-kit-kit-mobile-20260805145432-1521',
+              '20260805-154038-kit-kit-mobile-20260805150135-6763',
+          }
+
+          if removed_ids != expected_ids:
+              raise SystemExit(
+                  'Os três registros mais recentes mudaram desde a conferência. '
+                  f'Esperados: {sorted(expected_ids)}; encontrados: {sorted(removed_ids)}. Nenhuma alteração foi feita.'
+              )
+
+          cleaned = [entry for entry in data if str(entry.get('id_carrossel') or '') not in removed_ids]
+          path.write_text(json.dumps(cleaned, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          print('Registros removidos:')
+          for entry in removed:
+              print(f"- {entry.get('id_carrossel')} | {entry.get('kit_nome')} | {entry.get('criado_em')}")
+
+      - name: Publicar limpeza
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add carrosseis-kits/fila.json
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração encontrada."
+            exit 1
+          fi
+          git commit -m "Remove os 3 últimos carrosséis de kits de 2026-08-05"
+          git push origin HEAD:main
