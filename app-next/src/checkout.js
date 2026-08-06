@@ -322,15 +322,26 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
     try {
       const makePayload = buildOrderPayload(state, form);
       const message = buildWhatsAppMessage(makePayload, validation.pricing, state);
-      enqueueOrder(makePayload);
+
+      // O WhatsApp é o canal prioritário: nenhuma falha da fila local,
+      // Firebase ou Make pode impedir a abertura do pedido.
       openWhatsApp(message);
+
+      let queued = false;
+      try {
+        enqueueOrder(makePayload);
+        queued = true;
+      } catch (queueError) {
+        console.warn('Pedido aberto no WhatsApp, mas não entrou na fila de integrações:', queueError);
+      }
+
       events.emit('order:opened-whatsapp', {
         order: makePayload,
         items: validation.pricing.items.filter(item => !item.product.isFee)
       });
       ui.closeDrawers();
       ui.showToast('Pedido pronto no WhatsApp.');
-      setTimeout(() => processOrderQueue(), 80);
+      if (queued) setTimeout(() => processOrderQueue(), 80);
     } finally {
       button.disabled = false;
       button.textContent = 'Pedir no WhatsApp';
