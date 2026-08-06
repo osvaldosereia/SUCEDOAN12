@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-06T09:44:01.517Z",
+  "ultima_execucao": "2026-08-06T09:50:11.239Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -4160,6 +4160,20 @@
       "inicio": "2026-08-04",
       "fim": "2026-08-07T23:59:59-04:00",
       "historico_id": "oferta-1776338127140-1785823069402-h3pcg"
+    },
+    {
+      "produto_key": "1776338127148",
+      "codigo": "70023105",
+      "nome": "Reforçadão Saco para Lixo Reforçado 50 litros com 10 unidades",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 8.9,
+      "preco_oferta": 8.37,
+      "desconto_percentual": 5.96,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-09T23:59:59-04:00",
+      "historico_id": "oferta-1776338127148-1786009811239-wbnln"
     },
     {
       "produto_key": "1776338127216",
@@ -12310,6 +12324,20 @@
       "historico_id": "oferta-177973106236854517-1786009021667-1olil"
     },
     {
+      "produto_key": "177973137327994863",
+      "codigo": "3732790940",
+      "nome": "Seda Kit Shampoo e Condicionador Glicol + Vitamina C 300ml + 190ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 24.9,
+      "preco_oferta": 23.16,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-09T23:59:59-04:00",
+      "historico_id": "oferta-177973137327994863-1786009811239-w102l"
+    },
+    {
       "produto_key": "177973182996505803",
       "codigo": "P-7OI3",
       "nome": "Lola Cosmetics Shampoo Xapadinha Antiquebra 250ml",
@@ -15108,6 +15136,20 @@
       "inicio": "2026-08-05",
       "fim": "2026-08-08T23:59:59-04:00",
       "historico_id": "oferta-produto1784832997860-1785940970413-6ox2r"
+    },
+    {
+      "produto_key": "produto_1784833635390",
+      "codigo": "neutrogena.antissinais.100",
+      "nome": "Hidratante Facial Neutrogena Antissinais Reparador 100g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 44.9,
+      "preco_oferta": 40.41,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-13T23:59:59-04:00",
+      "historico_id": "oferta-produto1784833635390-1786009811239-4xm6c"
     },
     {
       "produto_key": "produto_1784833989400",
@@ -18354,7 +18396,7 @@
       "regra_id": "regra-1785205192100"
     },
     "177973137327994863": {
-      "ultima_oferta_em": "2026-08-02T10:50:42.387Z",
+      "ultima_oferta_em": "2026-08-06T09:50:11.239Z",
       "regra_id": "regra-1785205192100"
     },
     "177973124442423563": {
@@ -18486,7 +18528,7 @@
       "regra_id": "regra-1785205192100"
     },
     "produto_1784833635390": {
-      "ultima_oferta_em": "2026-07-29T10:15:42.493Z",
+      "ultima_oferta_em": "2026-08-06T09:50:11.239Z",
       "regra_id": "regra-1785202557027"
     },
     "produto_1784834856061": {
@@ -18530,7 +18572,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1776338127148": {
-      "ultima_oferta_em": "2026-08-02T10:50:42.387Z",
+      "ultima_oferta_em": "2026-08-06T09:50:11.239Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338125770": {
@@ -20331,23 +20373,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1785742171575",
-      "executado_em": "2026-08-03T07:29:31.967Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 0,
-        "ofertas_nao_criadas": 23,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-03T08:11:27Z",
       "executado_em": "2026-08-03T08:12:27.793Z",
@@ -23717,6 +23742,23 @@
     {
       "id": "2026-08-06T09:42:55Z",
       "executado_em": "2026-08-06T09:44:01.517Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "2026-08-06T09:49:16Z",
+      "executado_em": "2026-08-06T09:50:11.239Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
