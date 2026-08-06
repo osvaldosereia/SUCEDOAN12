@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-06T15:02:23.853Z",
+  "ultima_execucao": "2026-08-06T23:33:08.301Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -1710,6 +1710,20 @@
       "inicio": "2026-08-05",
       "fim": "2026-08-12T23:59:59-04:00",
       "historico_id": "oferta-1776338123172-1785977339954-5due0"
+    },
+    {
+      "produto_key": "1776338123177",
+      "codigo": "965620J",
+      "nome": "Shampoo TRESemmé Hidratação Profunda 650ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 34.9,
+      "preco_oferta": 32.46,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-09T23:59:59-04:00",
+      "historico_id": "oferta-1776338123177-1786059188301-brh60"
     },
     {
       "produto_key": "1776338123180",
@@ -4664,6 +4678,20 @@
       "inicio": "2026-08-05",
       "fim": "2026-08-08T23:59:59-04:00",
       "historico_id": "oferta-1776338127753-1785970028109-r49gz"
+    },
+    {
+      "produto_key": "1776338127758",
+      "codigo": "P484",
+      "nome": "Vinagre de Alcool Neval 750ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 2.7,
+      "preco_oferta": 2.54,
+      "desconto_percentual": 5.93,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-09T23:59:59-04:00",
+      "historico_id": "oferta-1776338127758-1786059188301-a99kq"
     },
     {
       "produto_key": "1776338127769",
@@ -8402,6 +8430,20 @@
       "inicio": "2026-08-06",
       "fim": "2026-08-13T23:59:59-04:00",
       "historico_id": "oferta-1776433414375-1786020811464-h326h"
+    },
+    {
+      "produto_key": "1776433436424",
+      "codigo": "33436424",
+      "nome": "Hidratante Labial Carmed Fini Beijos 10g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 18.9,
+      "preco_oferta": 17.01,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-13T23:59:59-04:00",
+      "historico_id": "oferta-1776433436424-1786059188301-w6fui"
     },
     {
       "produto_key": "1776433441431",
@@ -19350,7 +19392,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776338123177": {
-      "ultima_oferta_em": "2026-08-02T16:15:08.030Z",
+      "ultima_oferta_em": "2026-08-06T23:33:08.301Z",
       "regra_id": "regra-1785205192100"
     },
     "1776442232584": {
@@ -19538,7 +19580,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1776338127758": {
-      "ultima_oferta_em": "2026-08-02T16:15:08.030Z",
+      "ultima_oferta_em": "2026-08-06T23:33:08.301Z",
       "regra_id": "regra-1785205105033"
     },
     "17788714422673640": {
@@ -19578,7 +19620,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776433436424": {
-      "ultima_oferta_em": "2026-07-29T16:01:22.528Z",
+      "ultima_oferta_em": "2026-08-06T23:33:08.301Z",
       "regra_id": "regra-1785202557027"
     },
     "1776446235840": {
@@ -21003,23 +21045,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "2026-08-03T14:42:10Z",
-      "executado_em": "2026-08-03T14:43:06.370Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 0,
-        "ofertas_nao_criadas": 23,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-03T14:49:06Z",
       "executado_em": "2026-08-03T14:50:06.521Z",
@@ -24389,6 +24414,23 @@
     {
       "id": "github-1786028543378",
       "executado_em": "2026-08-06T15:02:23.853Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "make-20260806203122711",
+      "executado_em": "2026-08-06T23:33:08.301Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
