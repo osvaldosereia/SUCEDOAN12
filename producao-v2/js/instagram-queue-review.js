@@ -1,11 +1,11 @@
 import { auditCollection } from './core/collections.js';
 import { escapeHtml, text } from './core/utils.js';
 import { loadCollections, saveCollectionList } from './services/collections.js';
-import { callMake, compactKitForMake, unwrapMakeResult } from './services/make.js?admin_build=20260805-kit-auto-carousel-v1';
+import { callMake, compactKitForMake, unwrapMakeResult } from './services/make.js?admin_build=20260805-kit-auto-carousel-v2';
 
 const ACTIVE_QUEUE_STATUSES = new Set(['novo', 'pendente', 'processando', 'aguardando', 'pronto', 'agendado', 'postado']);
 const AUTO_RETRY_DELAYS = [700, 1200, 2000, 3200, 5000, 7500, 10000, 12000];
-const QUEUE_RETRY_DELAYS = [900, 1500, 2500, 4000, 6000, 8500];
+const QUEUE_RETRY_DELAYS = [1200, 2000, 3200, 5000, 7500, 10000, 14000, 18000, 24000, 30000];
 let patched = false;
 let savePatched = false;
 const automaticJobs = new Set();
@@ -101,7 +101,7 @@ function renderDiagnostics() {
   const signature = JSON.stringify({ status, queuedAt, carouselId, queuePath, images, code: module.draft.codigo });
   if (previous?.dataset.signature === signature) return;
   previous?.remove();
-  form.insertAdjacentHTML('beforeend', `<section class="instagram-queue-review" data-signature="${escapeHtml(signature)}"><div class="instagram-queue-head"><div><h4>Fila do Instagram</h4><p>Ao salvar um kit novo ou alterar conteúdo visual, o Admin aguarda o commit no GitHub e envia automaticamente ao Make.</p></div><span class="badge ${duplicateWarning ? 'warning' : status === 'postado' ? 'success' : status === 'não enviado' ? 'neutral' : 'info'}">${escapeHtml(status)}</span></div><div class="instagram-queue-grid"><div><strong>${escapeHtml(module.draft.codigo || '—')}</strong><span>Código do kit</span></div><div><strong>${escapeHtml(carouselId)}</strong><span>ID do carrossel</span></div><div><strong>${escapeHtml(queuedAt)}</strong><span>Última atualização</span></div><div><strong>${escapeHtml(queuePath)}</strong><span>Registro da fila</span></div></div>${images.length ? `<div class="instagram-queue-images">${images.map(url => `<img src="${escapeHtml(url)}" onerror="this.remove()" alt="Página do carrossel">`).join('')}</div>` : ''}${duplicateWarning ? '<div class="instagram-queue-warning">Já existe uma entrada para este kit. O botão manual continua disponível apenas para reprocessamento.</div>' : ''}<div class="instagram-queue-actions"><button class="button secondary compact" type="button" data-instagram-queue-refresh>Atualizar status</button></div></section>`);
+  form.insertAdjacentHTML('beforeend', `<section class="instagram-queue-review" data-signature="${escapeHtml(signature)}"><div class="instagram-queue-head"><div><h4>Fila do Instagram</h4><p>Ao salvar um kit novo ou alterar conteúdo visual, o Admin confirma a versão publicada no GitHub, chama o Make e só registra sucesso quando a nova entrada aparece na fila.</p></div><span class="badge ${duplicateWarning ? 'warning' : status === 'postado' ? 'success' : status === 'não enviado' ? 'neutral' : 'info'}">${escapeHtml(status)}</span></div><div class="instagram-queue-grid"><div><strong>${escapeHtml(module.draft.codigo || '—')}</strong><span>Código do kit</span></div><div><strong>${escapeHtml(carouselId)}</strong><span>ID do carrossel</span></div><div><strong>${escapeHtml(queuedAt)}</strong><span>Última atualização</span></div><div><strong>${escapeHtml(queuePath)}</strong><span>Registro da fila</span></div></div>${images.length ? `<div class="instagram-queue-images">${images.map(url => `<img src="${escapeHtml(url)}" onerror="this.remove()" alt="Página do carrossel">`).join('')}</div>` : ''}${duplicateWarning ? '<div class="instagram-queue-warning">Já existe uma entrada real para este kit. O botão manual continua disponível apenas para reprocessamento.</div>' : ''}<div class="instagram-queue-actions"><button class="button secondary compact" type="button" data-instagram-queue-refresh>Atualizar status</button></div></section>`);
 }
 
 async function reloadCollections(module) {
@@ -115,18 +115,19 @@ async function reloadCollections(module) {
 
 async function waitForPersistedKit(module, snapshot) {
   let lastError = null;
+  const expectedVersion = visualVersion(snapshot, module.store.state.products);
   for (let index = 0; index < AUTO_RETRY_DELAYS.length; index += 1) {
     try {
       const data = await reloadCollections(module);
       const kit = (data.kits || []).find(item => text(item.id) === text(snapshot.id))
         || (data.kits || []).find(item => text(item.codigo) === text(snapshot.codigo));
-      if (kit) return { kit, data };
+      if (kit && visualVersion(kit, module.store.state.products) === expectedVersion) return { kit, data };
     } catch (error) {
       lastError = error;
     }
     await sleep(AUTO_RETRY_DELAYS[index]);
   }
-  throw lastError || new Error('O commit do kit ainda não ficou disponível no GitHub. Use o botão manual depois de atualizar os dados.');
+  throw lastError || new Error('A versão recém-salva do kit ainda não ficou disponível no GitHub. Atualize os dados e use o botão manual como contingência.');
 }
 
 async function waitForQueue(module, code, contentVersion, sentAt) {
@@ -219,30 +220,37 @@ async function sendCarousel(module, sourceKit, { automatic = false, forceRegener
   }, { timeout: 180000 }));
 
   const queueEntry = await waitForQueue(module, kit.codigo, contentVersion, sentAt);
+  if (!queueEntry) {
+    let host = 'webhook configurado';
+    try { host = new URL(text(config.makeInstagramKitWebhookUrl)).hostname || host; } catch {}
+    throw new Error(`O endereço ${host} respondeu, mas nenhuma execução criou uma entrada nova em carrosseis-kits/fila.json. Confira se este é o webhook exato do cenário que gera as imagens e se o cenário está ativo no Make.`);
+  }
+
   const patch = {
-    instagram_status: text(queueEntry?.fila_status || queueEntry?.status || response.fila_status || response.status || 'enviado_aguardando_fila'),
+    instagram_status: text(queueEntry.fila_status || queueEntry.status || 'registrado'),
     instagram_automatico: automatic,
     instagram_chave_idempotencia: idempotencyKey,
     instagram_versao_conteudo: contentVersion,
     instagram_enviado_em: sentAt,
     instagram_post_id: text(response.instagram_id || response.instagram_post_id || response.id),
-    instagram_carrossel_id: text(queueEntry?.id_carrossel || queueEntry?.carrossel_id || response.id_carrossel || response.carrossel_id),
+    instagram_carrossel_id: text(queueEntry.id_carrossel || queueEntry.carrossel_id || response.id_carrossel || response.carrossel_id),
     instagram_imagens: queueImages(queueEntry, response),
-    instagram_dados_json: text(queueEntry?.dados_json || response.dados_json),
-    instagram_fila_json: text(queueEntry?.fila_json || response.fila_json || config.kitQueuePath || 'carrosseis-kits/fila.json'),
+    instagram_dados_json: text(queueEntry.dados_json || response.dados_json),
+    instagram_fila_json: text(queueEntry.fila_json || response.fila_json || config.kitQueuePath || 'carrosseis-kits/fila.json'),
+    instagram_erro: '',
+    instagram_erro_em: '',
     atualizado_em: new Date().toISOString(),
   };
   await persistKitAutomationState(module, sourceKit.id, patch);
-  if (queueEntry) module.onToast(`Carrossel do kit “${kit.nome}” gerado automaticamente e confirmado na fila.`, 'success');
-  else module.onToast(`O Make recebeu o kit “${kit.nome}”. A fila ainda está sendo finalizada.`, 'success');
-  return queueEntry || response;
+  module.onToast(`Carrossel do kit “${kit.nome}” confirmado na fila do GitHub.`, 'success');
+  return queueEntry;
 }
 
 async function autoGenerateAfterSave(module, snapshot) {
   const jobKey = text(snapshot.id || snapshot.codigo);
   if (!jobKey || automaticJobs.has(jobKey)) return;
   automaticJobs.add(jobKey);
-  module.onToast(`Kit “${snapshot.nome}” publicado. Confirmando o commit antes de chamar o Make…`);
+  module.onToast(`Kit “${snapshot.nome}” publicado. Confirmando a versão do commit antes de chamar o Make…`);
   try {
     const { kit } = await waitForPersistedKit(module, snapshot);
     await sendCarousel(module, kit, { automatic: true, forceRegeneration: false });
@@ -275,9 +283,9 @@ function patchSaveAutomation() {
     const previousVersion = previous ? visualVersion(previous, module.store.state.products) : '';
     const nextVersion = visualVersion(snapshot, module.store.state.products);
     const existingQueue = latestQueueEntry(module, snapshot.codigo);
-    const generationMissing = !text(previous?.instagram_versao_conteudo) && !existingQueue;
+    const generationMissing = !existingQueue;
     const shouldGenerate = !previous || previousVersion !== nextVersion || generationMissing
-      || ['erro_envio', 'erro_geracao', 'erro_geracao_automatica'].includes(normalizeStatus(snapshot.instagram_status));
+      || ['erro_envio', 'erro_geracao', 'erro_geracao_automatica', 'enviado_aguardando_fila'].includes(normalizeStatus(snapshot.instagram_status));
     await originalSave();
     const savedSuccessfully = module.draft === null;
     if (savedSuccessfully && shouldGenerate) {
@@ -313,10 +321,20 @@ function patchAutomation() {
       const refreshed = (module.store.state.kits || []).find(kit => text(kit.id) === text(module.draft.id));
       if (refreshed) module.draft = { ...module.draft, ...refreshed };
     } catch (error) {
+      const message = text(error?.message || error);
       module.draft.instagram_status = 'erro_envio';
-      module.draft.instagram_erro = text(error?.message || error);
+      module.draft.instagram_erro = message;
       module.draft.instagram_erro_em = new Date().toISOString();
-      module.onToast(`Falha ao enviar para o Make: ${module.draft.instagram_erro}`, 'error');
+      try {
+        const persisted = await persistKitAutomationState(module, module.draft.id, {
+          instagram_status: 'erro_envio',
+          instagram_erro: message,
+          instagram_erro_em: module.draft.instagram_erro_em,
+          atualizado_em: new Date().toISOString(),
+        });
+        if (persisted) module.draft = { ...module.draft, ...persisted };
+      } catch {}
+      module.onToast(`Falha ao enviar para o Make: ${message}`, 'error');
       throw error;
     } finally {
       module.makeBusy = false;
