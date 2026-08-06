@@ -1,8 +1,26 @@
 import { number, productCode, productImage, productKey, productName, text } from '../core/utils.js';
 
+function legacyMakeConfig() {
+  try { return JSON.parse(localStorage.getItem('da_admin_settings_v4') || '{}') || {}; }
+  catch { return {}; }
+}
+
+function isMakeWebhookUrl(value) {
+  try {
+    const url = new URL(text(value));
+    return url.protocol === 'https:' && (url.hostname === 'hook.make.com' || (url.hostname.startsWith('hook.') && url.hostname.endsWith('.make.com')));
+  } catch {
+    return false;
+  }
+}
+
 function webhookUrl(config, channel) {
   if (channel === 'image') return text(config.makeImageWebhookUrl || config.makeAiWebhookUrl);
-  if (channel === 'instagram-kit') return text(config.makeInstagramKitWebhookUrl);
+  if (channel === 'instagram-kit') {
+    const legacy = legacyMakeConfig();
+    const candidates = [config.makeInstagramKitWebhookUrl, legacy.makeInstagramKitWebhookUrl].map(text).filter(Boolean);
+    return candidates.find(isMakeWebhookUrl) || candidates[0] || '';
+  }
   return text(config.makeTextWebhookUrl || config.makeAiWebhookUrl);
 }
 
@@ -11,6 +29,11 @@ export async function callMake(config, channel, payload, { timeout = 120000 } = 
   if (!url) {
     const label = channel === 'image' ? 'IA de imagens' : channel === 'instagram-kit' ? 'Instagram de kits' : 'IA de textos';
     throw new Error(`Configure o webhook ${label} nas Configurações da V2.`);
+  }
+  if (channel === 'instagram-kit' && !isMakeWebhookUrl(url)) {
+    let host = 'endereço inválido';
+    try { host = new URL(url).hostname || host; } catch {}
+    throw new Error(`O webhook do carrossel não é um Custom Webhook válido do Make (${host}). Abra Integrações e cole a URL iniciada por https://hook...make.com/.`);
   }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
