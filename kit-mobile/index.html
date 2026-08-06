@@ -83,15 +83,15 @@
       </section>
 
       <section class="card">
-        <div class="cardhead"><span class="step">5</span><div><strong>Publicação e divulgação</strong><small>Primeiro publique o kit. Depois gere as artes e coloque o carrossel na fila do Instagram.</small></div></div>
+        <div class="cardhead"><span class="step">5</span><div><strong>Publicação e divulgação</strong><small>Publique o kit. O sistema confirma o commit no GitHub e inicia automaticamente as imagens do carrossel.</small></div></div>
         <div class="cardbody">
           <div class="lifecycle"><b>✓</b><div><strong>Ativo até um produto acabar.</strong><br>O kit sai do ar quando qualquer item não tiver estoque para a quantidade informada. Após reposição, volta automaticamente enquanto permanecer ativo.</div></div>
           <div class="notice" id="publishNotice">Adicione pelo menos um produto para iniciar.</div>
           <div class="instagram-publish-box">
-            <span class="badge neutral" id="instagramQueueBadge">Aguardando publicação</span>
-            <strong>Preparar publicação no Instagram</strong>
-            <small id="instagramQueueStatus">Publique o kit primeiro. Depois este botão prepara as artes e envia o carrossel para a fila do Instagram.</small>
-            <button class="btn gold wide" id="instagramQueueButton" type="button" disabled>Gerar carrossel e colocar na fila</button>
+            <span class="badge neutral" id="instagramQueueBadge">Geração automática ativa</span>
+            <strong>Carrossel automático do Instagram</strong>
+            <small id="instagramQueueStatus">Ao publicar o kit, o sistema aguardará a confirmação do GitHub e iniciará o carrossel automaticamente.</small>
+            <button class="btn gold wide" id="instagramQueueButton" type="button" disabled>Reprocessar carrossel manualmente</button>
           </div>
         </div>
       </section>
@@ -115,7 +115,7 @@
 <div class="toast" id="toast"></div>
 <div class="busy" id="busy"><div class="busybox"><div class="spinner"></div><strong id="busyTitle">Processando…</strong><small id="busyText">Não feche esta tela.</small></div></div>
 <script type="module" src="./kit-app-v3.js?v=20260805-editor-v4"></script>
-<script type="module" src="./kit-instagram-queue.js?v=20260805-instagram-v1"></script>
+<script type="module" src="./kit-instagram-queue.js?v=20260805-kit-auto-carousel-v1"></script>
 <script type="module" src="./kit-manager-v1.js?v=20260805-kit-manager-v1"></script>
 </body>
 </html>
