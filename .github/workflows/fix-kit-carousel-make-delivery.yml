@@ -1,0 +1,199 @@
+name: Corrigir entrega dos carrosseis de kits ao Make
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-kit-carousel-make-delivery.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-kit-carousel-make-delivery
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Atualizar branch
+        run: git pull --rebase origin main
+
+      - name: Corrigir validacao, fila e reenvio
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              text = path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'Trecho nao encontrado em {path}: {old[:120]!r}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          make = Path('producao-v2/js/services/make.js')
+          replace_once(make, """function webhookUrl(config, channel) {
+            if (channel === 'image') return text(config.makeImageWebhookUrl || config.makeAiWebhookUrl);
+            if (channel === 'instagram-kit') return text(config.makeInstagramKitWebhookUrl);
+            return text(config.makeTextWebhookUrl || config.makeAiWebhookUrl);
+          }
+          """, """function legacyMakeConfig() {
+            try { return JSON.parse(localStorage.getItem('da_admin_settings_v4') || '{}') || {}; }
+            catch { return {}; }
+          }
+
+          function isMakeWebhookUrl(value) {
+            try {
+              const url = new URL(text(value));
+              return url.protocol === 'https:' && (url.hostname === 'hook.make.com' || (url.hostname.startsWith('hook.') && url.hostname.endsWith('.make.com')));
+            } catch { return false; }
+          }
+
+          function webhookUrl(config, channel) {
+            if (channel === 'image') return text(config.makeImageWebhookUrl || config.makeAiWebhookUrl);
+            if (channel === 'instagram-kit') {
+              const legacy = legacyMakeConfig();
+              const candidates = [config.makeInstagramKitWebhookUrl, legacy.makeInstagramKitWebhookUrl].map(text).filter(Boolean);
+              return candidates.find(isMakeWebhookUrl) || candidates[0] || '';
+            }
+            return text(config.makeTextWebhookUrl || config.makeAiWebhookUrl);
+          }
+          """)
+          replace_once(make, """  if (!url) {
+            const label = channel === 'image' ? 'IA de imagens' : channel === 'instagram-kit' ? 'Instagram de kits' : 'IA de textos';
+            throw new Error(`Configure o webhook ${label} nas Configurações da V2.`);
+          }
+          const controller = new AbortController();
+          """, """  if (!url) {
+            const label = channel === 'image' ? 'IA de imagens' : channel === 'instagram-kit' ? 'Instagram de kits' : 'IA de textos';
+            throw new Error(`Configure o webhook ${label} nas Configurações da V2.`);
+          }
+          if (channel === 'instagram-kit' && !isMakeWebhookUrl(url)) {
+            let host = 'endereço inválido';
+            try { host = new URL(url).hostname || host; } catch {}
+            throw new Error(`O webhook do carrossel não é um Custom Webhook válido do Make (${host}). Abra Integrações e cole a URL iniciada por https://hook...make.com/.`);
+          }
+          const controller = new AbortController();
+          """)
+
+          admin = Path('producao-v2/js/instagram-queue-review.js')
+          replace_once(admin,
+            "./services/make.js?admin_build=20260805-kit-auto-carousel-v1",
+            "./services/make.js?admin_build=20260805-kit-auto-carousel-v2")
+          replace_once(admin,
+            "const QUEUE_RETRY_DELAYS = [900, 1500, 2500, 4000, 6000, 8500];",
+            "const QUEUE_RETRY_DELAYS = [1200, 2000, 3200, 5000, 7500, 10000, 14000, 18000, 24000, 30000];")
+          replace_once(admin,
+            """  const queueEntry = await waitForQueue(module, kit.codigo, contentVersion, sentAt);
+            const patch = {
+          """,
+            """  const queueEntry = await waitForQueue(module, kit.codigo, contentVersion, sentAt);
+            if (!queueEntry) {
+              let host = 'webhook configurado';
+              try { host = new URL(text(config.makeInstagramKitWebhookUrl)).hostname || host; } catch {}
+              throw new Error(`O endereço ${host} respondeu, mas nenhuma execução criou uma entrada nova em carrosseis-kits/fila.json. Confira se este é o webhook exato do cenário que gera as imagens e se o cenário está ativo no Make.`);
+            }
+            const patch = {
+          """)
+          replace_once(admin,
+            "const generationMissing = !text(previous?.instagram_versao_conteudo) && !existingQueue;",
+            "const generationMissing = !existingQueue;")
+          replace_once(admin,
+            "if (queueEntry) module.onToast(`Carrossel do kit “${kit.nome}” gerado automaticamente e confirmado na fila.`, 'success');\n  else module.onToast(`O Make recebeu o kit “${kit.nome}”. A fila ainda está sendo finalizada.`, 'success');\n  return queueEntry || response;",
+            "module.onToast(`Carrossel do kit “${kit.nome}” confirmado na fila do GitHub.`, 'success');\n  return queueEntry;")
+
+          mobile = Path('kit-mobile/kit-instagram-queue.js')
+          replace_once(mobile,
+            "../producao-v2/js/services/make.js?build=20260805-kit-auto-carousel-v1",
+            "../producao-v2/js/services/make.js?build=20260805-kit-auto-carousel-v2")
+          replace_once(mobile,
+            "const COMMIT_RETRY_DELAYS = [700, 1200, 2000, 3200, 5000, 7500, 10000, 12000];",
+            "const COMMIT_RETRY_DELAYS = [700, 1200, 2000, 3200, 5000, 7500, 10000, 12000];\nconst QUEUE_RETRY_DELAYS = [1200, 2000, 3200, 5000, 7500, 10000, 14000, 18000, 24000, 30000];")
+          marker = """async function saveAutomationResult(config, updated) {
+          """
+          helper = """async function waitForQueue(code, version, sentAt) {
+            for (let index = 0; index < QUEUE_RETRY_DELAYS.length; index += 1) {
+              try {
+                const collections = await loadCollections(getConfig());
+                state.queue = collections.queue || [];
+                const entry = latestQueueEntry(code);
+                const entryTime = Date.parse(text(entry?.atualizado_em || entry?.criado_em));
+                const sentTime = Date.parse(text(sentAt));
+                const sameVersion = text(entry?.versao_conteudo) === text(version);
+                const recentWithoutVersion = entry && !text(entry.versao_conteudo) && Number.isFinite(entryTime) && Number.isFinite(sentTime) && entryTime >= sentTime - 5000;
+                if (entry && (sameVersion || recentWithoutVersion)) return entry;
+              } catch {}
+              await sleep(QUEUE_RETRY_DELAYS[index]);
+            }
+            return null;
+          }
+
+          async function saveAutomationResult(config, updated) {
+          """
+          replace_once(mobile, marker, helper)
+          replace_once(mobile,
+            """    const updated = {
+              ...state.kit,
+              instagram_status: text(result.status || result.fila_status || 'enviado_aguardando_fila'),
+          """,
+            """    const queueEntry = await waitForQueue(compact.codigo, version, sentAt);
+            if (!queueEntry) {
+              let host = 'webhook configurado';
+              try { host = new URL(text(config.makeInstagramKitWebhookUrl)).hostname || host; } catch {}
+              throw new Error(`O endereço ${host} respondeu, mas nenhuma entrada nova apareceu em carrosseis-kits/fila.json. Confira o webhook e se o cenário está ativo no Make.`);
+            }
+            const updated = {
+              ...state.kit,
+              instagram_status: text(queueEntry.fila_status || queueEntry.status || 'registrado'),
+          """)
+          replace_once(mobile,
+            "instagram_carrossel_id: text(result.id_carrossel || result.carrossel_id),",
+            "instagram_carrossel_id: text(queueEntry.id_carrossel || queueEntry.carrossel_id || result.id_carrossel || result.carrossel_id),")
+          replace_once(mobile,
+            "instagram_imagens: result.imagens || result.urls_imagens || [],",
+            "instagram_imagens: queueEntry.imagens || queueEntry.urls_imagens || result.imagens || result.urls_imagens || [],")
+          replace_once(mobile,
+            "instagram_dados_json: text(result.dados_json),",
+            "instagram_dados_json: text(queueEntry.dados_json || result.dados_json),")
+          replace_once(mobile,
+            "instagram_fila_json: text(result.fila_json || config.kitQueuePath || 'carrosseis-kits/fila.json'),",
+            "instagram_fila_json: text(queueEntry.fila_json || result.fila_json || config.kitQueuePath || 'carrosseis-kits/fila.json'),")
+          replace_once(mobile,
+            "? 'Carrossel enviado automaticamente ao Make após a confirmação do commit.'\n      : 'Carrossel criado e enviado para a fila do Instagram.'",
+            "? 'Carrossel automático confirmado na fila do GitHub.'\n      : 'Carrossel manual confirmado na fila do GitHub.'")
+
+          bootstrap = Path('producao-v2/js/collections-bootstrap.js')
+          replace_once(bootstrap,
+            "instagram-queue-review.js?admin_build=20260805-kit-auto-carousel-v1",
+            "instagram-queue-review.js?admin_build=20260805-kit-auto-carousel-v2")
+          replace_once(bootstrap,
+            "const BUILD = '20260805-kit-auto-carousel-v1';",
+            "const BUILD = '20260805-kit-auto-carousel-v2';")
+
+          productive = Path('producao-v2/admin-produtivo.html')
+          replace_once(productive,
+            "const BUILD = '20260805-kit-auto-carousel-v1';",
+            "const BUILD = '20260805-kit-auto-carousel-v2';")
+
+          mobile_index = Path('kit-mobile/index.html')
+          replace_once(mobile_index,
+            "kit-instagram-queue.js?v=20260805-kit-auto-carousel-v1",
+            "kit-instagram-queue.js?v=20260805-kit-auto-carousel-v2")
+
+      - name: Validar JavaScript
+        run: |
+          node --check producao-v2/js/services/make.js
+          node --check producao-v2/js/instagram-queue-review.js
+          node --check kit-mobile/kit-instagram-queue.js
+
+      - name: Publicar correção e remover rotina temporaria
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/fix-kit-carousel-make-delivery.yml
+          git add producao-v2/js/services/make.js producao-v2/js/instagram-queue-review.js producao-v2/js/collections-bootstrap.js producao-v2/admin-produtivo.html kit-mobile/kit-instagram-queue.js kit-mobile/index.html
+          git commit -m "Corrige entrega e confirmacao dos carrosseis de kits no Make"
+          git push origin HEAD:main
