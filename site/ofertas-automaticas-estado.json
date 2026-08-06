@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-06T12:53:31.464Z",
+  "ultima_execucao": "2026-08-06T12:57:43.681Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -6990,6 +6990,20 @@
       "historico_id": "oferta-1776338131215-1785831181419-k0grv"
     },
     {
+      "produto_key": "1776338131226",
+      "codigo": "930618H",
+      "nome": "Shampoo Neutrox Clássico 300ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 14.9,
+      "preco_oferta": 13.86,
+      "desconto_percentual": 6.98,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-09T23:59:59-04:00",
+      "historico_id": "oferta-1776338131226-1786021063681-qcan9"
+    },
+    {
       "produto_key": "1776338131248",
       "codigo": "P0227",
       "nome": "Skala Loo Proteinas de Leite 400ml",
@@ -8248,6 +8262,20 @@
       "inicio": "2026-08-06",
       "fim": "2026-08-13T23:59:59-04:00",
       "historico_id": "oferta-1776433414375-1786020811464-h326h"
+    },
+    {
+      "produto_key": "1776433443545",
+      "codigo": "33443545",
+      "nome": "Hidratante Labial Carmed Coca-Cola Incolor 10g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 18.9,
+      "preco_oferta": 17.01,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-13T23:59:59-04:00",
+      "historico_id": "oferta-1776433443545-1786021063681-ncitf"
     },
     {
       "produto_key": "1776433444996",
@@ -11090,6 +11118,20 @@
       "inicio": "2026-08-05",
       "fim": "2026-08-08T23:59:59-04:00",
       "historico_id": "oferta-177886794428389050-1785916203901-2pxxy"
+    },
+    {
+      "produto_key": "177887105016512788",
+      "codigo": "0501650491",
+      "nome": "Secar Desumidificador Original Floral 180g",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 11.9,
+      "preco_oferta": 11.19,
+      "desconto_percentual": 5.97,
+      "inicio": "2026-08-06",
+      "fim": "2026-08-09T23:59:59-04:00",
+      "historico_id": "oferta-177887105016512788-1786021063681-kdker"
     },
     {
       "produto_key": "177887122383668785",
@@ -18998,7 +19040,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776338131226": {
-      "ultima_oferta_em": "2026-08-02T14:02:47.240Z",
+      "ultima_oferta_em": "2026-08-06T12:57:43.681Z",
       "regra_id": "regra-1785205192100"
     },
     "1776338129538": {
@@ -19182,7 +19224,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776433443545": {
-      "ultima_oferta_em": "2026-07-29T14:09:17.195Z",
+      "ultima_oferta_em": "2026-08-06T12:57:43.681Z",
       "regra_id": "regra-1785202557027"
     },
     "1776338130205": {
@@ -19206,7 +19248,7 @@
       "regra_id": "regra-1785205105033"
     },
     "177887105016512788": {
-      "ultima_oferta_em": "2026-08-02T14:02:47.240Z",
+      "ultima_oferta_em": "2026-08-06T12:57:43.681Z",
       "regra_id": "regra-1785205105033"
     },
     "177887094073418397": {
@@ -20751,23 +20793,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "2026-08-03T13:24:25Z",
-      "executado_em": "2026-08-03T13:25:30.245Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 0,
-        "ofertas_nao_criadas": 23,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-03T13:41:39Z",
       "executado_em": "2026-08-03T13:42:42.790Z",
@@ -24137,6 +24162,23 @@
     {
       "id": "2026-08-06T12:52:21Z",
       "executado_em": "2026-08-06T12:53:31.464Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1786021063358",
+      "executado_em": "2026-08-06T12:57:43.681Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
