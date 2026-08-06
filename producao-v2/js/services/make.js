@@ -94,16 +94,45 @@ export function compactKitForMake(kit, products = []) {
   };
   const factor = original > 0 ? promotional / original : 1;
   const pricedItems = normalizedItems.map(item => {
-    const newUnit = round(item.preco_unitario * factor); const newTotal = round(newUnit * item.qtd); const itemEconomy = round(item.preco_total - newTotal);
-    return { ...item, preco_antigo_unitario: item.preco_unitario, preco_antigo_total: item.preco_total, preco_novo_unitario_kit: newUnit, preco_novo_total_kit: newTotal, economia_total_kit: itemEconomy, desconto_percentual_kit: discount };
+    const newUnit = round(item.preco_unitario * factor);
+    const newTotal = round(newUnit * item.qtd);
+    const itemEconomyUnit = round(item.preco_unitario - newUnit);
+    const itemEconomyTotal = round(item.preco_total - newTotal);
+    const itemEconomyUnitFormatted = brl(itemEconomyUnit);
+    const itemEconomyTotalFormatted = brl(itemEconomyTotal);
+    return {
+      ...item,
+      preco_antigo_unitario: item.preco_unitario,
+      preco_antigo_total: item.preco_total,
+      preco_novo_unitario_kit: newUnit,
+      preco_novo_total_kit: newTotal,
+      economia_unitaria_kit: itemEconomyUnit,
+      economia_total_kit: itemEconomyTotal,
+      economia_unitaria: itemEconomyUnit,
+      economia_total: itemEconomyTotal,
+      desconto_percentual_kit: discount,
+      preco_antigo_unitario_formatado: brl(item.preco_unitario),
+      preco_antigo_total_formatado: brl(item.preco_total),
+      preco_novo_unitario_kit_formatado: brl(newUnit),
+      preco_novo_total_kit_formatado: brl(newTotal),
+      economia_unitaria_kit_formatada: itemEconomyUnitFormatted,
+      economia_unitaria_kit_formatado: itemEconomyUnitFormatted,
+      economia_total_kit_formatada: itemEconomyTotalFormatted,
+      economia_total_kit_formatado: itemEconomyTotalFormatted,
+      economia_unitaria_formatada: itemEconomyUnitFormatted,
+      economia_total_formatada: itemEconomyTotalFormatted,
+    };
   });
   return {
     id: text(kit?.id), codigo: text(kit?.codigo), nome: text(kit?.nome), descricao: text(kit?.descricao), preco: promotional,
     preco_original: original, preco_sem_desconto: original, preco_anterior: original, preco_promocional: promotional, preco_com_desconto: promotional,
-    preco_novo: promotional, preco_final: promotional, economia: economy, valor_economia: economy, desconto_percentual: discount, desconto_percentual_aplicado: discount,
+    preco_novo: promotional, preco_final: promotional, economia: economy, valor_economia: economy, economia_kit: economy,
+    economia_total: economy, economia_total_kit: economy, desconto_percentual: discount, desconto_percentual_aplicado: discount,
     preco_original_formatado: financials.preco_original_formatado, preco_anterior_formatado: financials.preco_anterior_formatado,
     preco_promocional_formatado: financials.preco_promocional_formatado, preco_novo_formatado: financials.preco_novo_formatado,
-    economia_formatada: financials.economia_formatada, desconto_formatado: financials.desconto_formatado, dados_financeiros: financials,
+    economia_formatada: financials.economia_formatada, valor_economia_formatado: financials.valor_economia_formatado,
+    economia_kit_formatada: financials.economia_formatada, economia_total_formatada: financials.economia_formatada,
+    economia_total_kit_formatada: financials.economia_formatada, desconto_formatado: financials.desconto_formatado, dados_financeiros: financials,
     imagem: text(kit?.imagem), data_inicio: text(kit?.data_inicio), data_fim: text(kit?.data_fim), limite_kits: number(kit?.limite_kits),
     produtos: pricedItems, referencias_imagens: pricedItems.map(item => item.imagem_url).filter(Boolean),
     resumo_financeiro: `DE ${financials.preco_original_formatado} | POR ${financials.preco_promocional_formatado} | ECONOMIA ${financials.economia_formatada} | ${financials.desconto_formatado} OFF`,
