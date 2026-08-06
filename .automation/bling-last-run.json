@@ -1,23 +1,23 @@
 {
-  "startedAt": "2026-08-05T04:39:58.996Z",
+  "startedAt": "2026-08-06T04:40:11.960Z",
   "mode": "production",
   "stockSync": true,
-  "firebaseProducts": 1617,
-  "blingProducts": 2043,
-  "selected": 1621,
-  "created": 87,
+  "firebaseProducts": 1630,
+  "blingProducts": 2130,
+  "selected": 1630,
+  "created": 13,
   "updated": 0,
-  "unchanged": 0,
+  "unchanged": 85,
   "statusUpdated": 0,
-  "inactivatedRemoved": 4,
+  "inactivatedRemoved": 0,
   "restored": 0,
   "codeChanges": 2,
-  "matchedByStateId": 1414,
+  "matchedByStateId": 1501,
   "matchedByCode": 83,
   "matchedByGtin": 0,
-  "stockChecked": 86,
-  "stockUpdated": 85,
-  "stockUnchanged": 1,
+  "stockChecked": 95,
+  "stockUpdated": 10,
+  "stockUnchanged": 85,
   "deferred": 0,
   "invalid": [],
   "conflicts": [
@@ -7179,6 +7179,16 @@
       "reason": "POST produto 204873055: HTTP 400 {\"error\":{\"type\":\"VALIDATION_ERROR\",\"message\":\"N\\u00e3o foi poss\\u00edvel salvar o produto\",\"description\":\"O produto n\\u00e3o pode ser salvo, pois ocorreram problemas em sua valida\\u00e7\\u00e3o.\",\"fields\":[{\"code\":10,\"msg\":\"GTIN\\/EAN inv\\u00e1lido, motivo: Tipo de GTIN n\\u00e3o suportado\",\"element\":\"gtin\",\"namespace\":\"PRODUTOS\"}]}}"
     },
     {
+      "firebaseKey": "1785876834710_eb2f",
+      "codigo": "7908228801986",
+      "reason": "PUT produto 7908228801986: HTTP 400 {\"error\":{\"type\":\"VALIDATION_ERROR\",\"message\":\"N\\u00e3o foi poss\\u00edvel atualizar o produto\",\"description\":\"O produto n\\u00e3o pode ser atualizado, pois ocorreram problemas em sua valida\\u00e7\\u00e3o.\",\"fields\":[{\"code\":8,\"msg\":\"Situa\\u00e7\\u00e3o inv\\u00e1lida. Valores aceitos \\\"A\\\"(ativo) ou \\\"I\\\"(Inativo)\",\"element\":\"situacao\",\"namespace\":\"PRODUTOS\"}]}}"
+    },
+    {
+      "firebaseKey": "1785877084125_ac9f",
+      "codigo": "7898976041256",
+      "reason": "PUT produto 7898976041256: HTTP 400 {\"error\":{\"type\":\"VALIDATION_ERROR\",\"message\":\"N\\u00e3o foi poss\\u00edvel atualizar o produto\",\"description\":\"O produto n\\u00e3o pode ser atualizado, pois ocorreram problemas em sua valida\\u00e7\\u00e3o.\",\"fields\":[{\"code\":8,\"msg\":\"Situa\\u00e7\\u00e3o inv\\u00e1lida. Valores aceitos \\\"A\\\"(ativo) ou \\\"I\\\"(Inativo)\",\"element\":\"situacao\",\"namespace\":\"PRODUTOS\"}]}}"
+    },
+    {
       "firebaseKey": "77891150025102",
       "codigo": "77891150025102",
       "reason": "PUT produto 77891150025102: HTTP 400 {\"error\":{\"type\":\"VALIDATION_ERROR\",\"message\":\"N\\u00e3o foi poss\\u00edvel atualizar o produto\",\"description\":\"O produto n\\u00e3o pode ser atualizado, pois ocorreram problemas em sua valida\\u00e7\\u00e3o.\",\"fields\":[{\"code\":8,\"msg\":\"Situa\\u00e7\\u00e3o inv\\u00e1lida. Valores aceitos \\\"A\\\"(ativo) ou \\\"I\\\"(Inativo)\",\"element\":\"situacao\",\"namespace\":\"PRODUTOS\"}]}}"
@@ -7764,5 +7774,5 @@
       "reason": "PUT produto 003999: HTTP 400 {\"error\":{\"type\":\"VALIDATION_ERROR\",\"message\":\"N\\u00e3o foi poss\\u00edvel atualizar o produto\",\"description\":\"O produto n\\u00e3o pode ser atualizado, pois ocorreram problemas em sua valida\\u00e7\\u00e3o.\",\"fields\":[{\"code\":8,\"msg\":\"Situa\\u00e7\\u00e3o inv\\u00e1lida. Valores aceitos \\\"A\\\"(ativo) ou \\\"I\\\"(Inativo)\",\"element\":\"situacao\",\"namespace\":\"PRODUTOS\"}]}}"
     }
   ],
-  "finishedAt": "2026-08-05T05:04:40.434Z"
+  "finishedAt": "2026-08-06T05:01:35.544Z"
 }
