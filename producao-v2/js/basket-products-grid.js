@@ -80,23 +80,23 @@
   }
 
   function resolveItem(module, item = {}) {
-    const codes = [item.codigo, ...(Array.isArray(item.substitutos) ? item.substitutos : [])].map(text).filter(Boolean);
-    const candidates = codes.map(code => ({ code, product: findIndexed(module, code) })).filter(row => row.product);
-    const valid = candidates.find(row => isActive(row.product) && number(row.product.preco) > 0 && number(row.product.estoque) > 0);
-    const selected = valid || candidates[0] || null;
+    const product = findIndexed(module, item.codigo);
     return {
-      product: selected?.product || null,
-      selectedCode: selected?.code || '',
-      usedSubstitute: Boolean(selected && selected.code !== text(item.codigo)),
+      product,
+      selectedCode: product ? text(item.codigo) : '',
+      usedSubstitute: false,
     };
   }
 
-  function substituteChips(module, item = {}) {
-    return (Array.isArray(item.substitutos) ? item.substitutos : []).slice(0, 2).map((code, slot) => {
+  function allowedSwapChips(module, item = {}, index) {
+    const codes = Array.isArray(item.trocas_permitidas) ? item.trocas_permitidas : [];
+    if (!codes.length) return '<small class="basket-swap-empty">Nenhuma troca configurada</small>';
+    return codes.map(code => {
       const product = findIndexed(module, code);
       const stock = number(product?.estoque);
       const kind = product && stock > 0 ? (stock < 30 ? 'warning' : 'success') : 'danger';
-      return `<span class="basket-substitute-chip ${kind}" title="${escapeHtml(product ? productName(product) : code)}">S${slot + 1}: ${stock}</span>`;
+      const label = product ? productName(product) : code;
+      return `<span class="basket-swap-chip ${kind}" title="${escapeHtml(label)}"><span>${escapeHtml(label)}</span><button type="button" aria-label="Remover ${escapeHtml(label)}" data-collection-remove-swap="${index}" data-code="${escapeHtml(code)}">×</button></span>`;
     }).join('');
   }
 
@@ -107,26 +107,25 @@
     const stock = number(active?.estoque);
     const lowStock = !active || stock < 30;
     const code = text(item.codigo || productCode(main));
-    const statusText = resolved.usedSubstitute ? 'Substituto em uso' : 'Produto principal';
-    const image = productImage(active || main || {});
+    const image = productImage(main || {});
 
     return `<article class="collection-item basket-product-card ${lowStock ? 'low-stock' : ''}" data-collection-item="${index}">
       <div class="basket-product-image"><img loading="lazy" decoding="async" src="${escapeHtml(image)}" onerror="this.src='${PLACEHOLDER}'" alt=""></div>
       <div class="basket-product-info">
-        <span>${escapeHtml(statusText)}</span>
+        <span>Produto principal</span>
         <strong title="${escapeHtml(main ? productName(main) : code || 'Produto não encontrado')}">${escapeHtml(main ? productName(main) : code || 'Produto não encontrado')}</strong>
         <small>${escapeHtml(code || 'sem código')}</small>
       </div>
-      <div class="basket-product-stock"><span class="badge ${stock >= 30 ? 'success' : stock > 0 ? 'warning' : 'danger'}">Estoque ${stock}</span>${substituteChips(module, item)}</div>
-      <label class="basket-product-quantity">Quantidade<input type="number" min="1" step="1" value="${escapeHtml(item.qtd || 1)}" data-collection-item-qty="${index}"></label>
+      <div class="basket-product-meta">
+        <span class="badge ${stock >= 30 ? 'success' : stock > 0 ? 'warning' : 'danger'}">Estoque ${stock}</span>
+        <label class="basket-product-quantity">Quantidade<input type="number" min="1" step="1" value="${escapeHtml(item.qtd || 1)}" data-collection-item-qty="${index}"></label>
+      </div>
+      <div class="basket-swap-section"><strong>Trocas permitidas</strong><div class="basket-swap-chips">${allowedSwapChips(module, item, index)}</div></div>
       <div class="collection-item-actions basket-product-actions">
-        <button class="button secondary compact" type="button" data-collection-open-product="${index}" ${active ? '' : 'disabled'}>Abrir</button>
-        <button class="button secondary compact" type="button" data-collection-replace-main="${index}">Trocar</button>
-        <button class="button secondary compact" type="button" data-collection-set-substitute="${index}" data-slot="0">Subst. 1</button>
-        <button class="button secondary compact" type="button" data-collection-set-substitute="${index}" data-slot="1">Subst. 2</button>
-        <button class="button ghost compact" type="button" data-collection-clear-substitute="${index}" data-slot="0" ${(item.substitutos || [])[0] ? '' : 'disabled'}>Limpar 1</button>
-        <button class="button ghost compact" type="button" data-collection-clear-substitute="${index}" data-slot="1" ${(item.substitutos || [])[1] ? '' : 'disabled'}>Limpar 2</button>
-        <button class="button ghost compact danger-text" type="button" data-collection-remove-item="${index}">Remover</button>
+        <button class="button secondary compact" type="button" data-collection-open-product="${index}" ${main ? '' : 'disabled'}>Ajustar produto</button>
+        <button class="button secondary compact" type="button" data-collection-replace-main="${index}">Trocar principal</button>
+        <button class="button primary compact basket-manage-swaps" type="button" data-collection-manage-swaps="${index}">Pesquisar e marcar trocas</button>
+        <button class="button ghost compact danger-text" type="button" data-collection-remove-item="${index}">Remover da cesta</button>
       </div>
     </article>`;
   }
@@ -136,28 +135,35 @@
     const style = document.createElement('style');
     style.id = 'basketProductsVerticalGridStyles';
     style.textContent = `
-      #collectionEditor .collection-composition #collectionItems.basket-products-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;align-items:stretch;margin-top:10px}
-      #collectionEditor .basket-product-card{display:flex;min-width:0;flex-direction:column;gap:8px;margin:0;padding:8px;border-radius:11px;background:#fff;content-visibility:auto;contain-intrinsic-size:330px}
+      #collectionEditor .collection-composition #collectionItems.basket-products-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin-top:10px}
+      #collectionEditor .basket-product-card{display:flex;min-width:0;flex-direction:column;gap:9px;margin:0;padding:10px;border-radius:12px;background:#fff;content-visibility:auto;contain-intrinsic-size:390px}
       #collectionEditor .basket-product-card.low-stock{border-color:#e4bc67;background:#fffaf0;box-shadow:inset 0 4px 0 #d39b2f}
       #collectionEditor .basket-product-image{aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line);border-radius:9px;background:#f8f9f7}
       #collectionEditor .basket-product-image img{width:100%;height:100%;object-fit:contain;padding:5px}
-      #collectionEditor .basket-product-info{min-width:0;min-height:70px}
+      #collectionEditor .basket-product-info{min-width:0;min-height:62px}
       #collectionEditor .basket-product-info>span,#collectionEditor .basket-product-info>strong,#collectionEditor .basket-product-info>small{display:block}
-      #collectionEditor .basket-product-info>span{color:var(--muted);font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
-      #collectionEditor .basket-product-info>strong{display:-webkit-box;min-height:34px;margin-top:4px;overflow:hidden;font-size:10px;line-height:1.35;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+      #collectionEditor .basket-product-info>span{color:var(--muted);font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+      #collectionEditor .basket-product-info>strong{display:-webkit-box;min-height:36px;margin-top:4px;overflow:hidden;font-size:11px;line-height:1.4;-webkit-box-orient:vertical;-webkit-line-clamp:2}
       #collectionEditor .basket-product-info>small{margin-top:3px;overflow:hidden;color:var(--muted);font-size:8px;text-overflow:ellipsis;white-space:nowrap}
-      #collectionEditor .basket-product-stock{display:flex;min-height:23px;flex-wrap:wrap;gap:4px;align-items:center}
-      #collectionEditor .basket-substitute-chip{display:inline-flex;align-items:center;min-height:20px;padding:0 5px;border-radius:999px;font-size:7px;font-weight:900}
-      #collectionEditor .basket-substitute-chip.success{background:var(--success-soft);color:var(--success)}
-      #collectionEditor .basket-substitute-chip.warning{background:var(--warning-soft);color:var(--warning)}
-      #collectionEditor .basket-substitute-chip.danger{background:var(--danger-soft);color:var(--danger)}
-      #collectionEditor .basket-product-quantity{display:grid;grid-template-columns:1fr 52px;align-items:center;gap:6px;color:var(--muted);font-size:8px;font-weight:900}
+      #collectionEditor .basket-product-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+      #collectionEditor .basket-product-quantity{display:grid;grid-template-columns:auto 52px;align-items:center;gap:6px;color:var(--muted);font-size:8px;font-weight:900}
+      #collectionEditor .basket-swap-section{display:grid;gap:5px;padding:8px;border:1px solid var(--line);border-radius:9px;background:#fafbf9}
+      #collectionEditor .basket-swap-section>strong{font-size:8px;text-transform:uppercase;color:var(--muted)}
+      #collectionEditor .basket-swap-chips{display:flex;max-height:82px;overflow:auto;flex-wrap:wrap;gap:4px}
+      #collectionEditor .basket-swap-chip{display:inline-flex;max-width:100%;align-items:center;gap:4px;min-height:23px;padding:2px 3px 2px 7px;border-radius:999px;font-size:7px;font-weight:850}
+      #collectionEditor .basket-swap-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      #collectionEditor .basket-swap-chip button{display:grid;width:18px;height:18px;flex:0 0 18px;place-items:center;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.75);color:currentColor;font:700 12px/1 Arial;cursor:pointer}
+      #collectionEditor .basket-swap-chip.success{background:var(--success-soft);color:var(--success)}
+      #collectionEditor .basket-swap-chip.warning{background:var(--warning-soft);color:var(--warning)}
+      #collectionEditor .basket-swap-chip.danger{background:var(--danger-soft);color:var(--danger)}
+      #collectionEditor .basket-swap-empty{color:var(--muted);font-size:8px}
       #collectionEditor .basket-product-quantity input{min-height:32px;padding:5px;text-align:center}
       #collectionEditor .basket-product-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:auto}
       #collectionEditor .basket-product-actions .button{min-width:0;min-height:30px;padding:0 5px;font-size:7px}
-      #collectionEditor .basket-product-actions .danger-text{grid-column:1/-1}
+      #collectionEditor .basket-product-actions .basket-manage-swaps,#collectionEditor .basket-product-actions .danger-text{grid-column:1/-1}
       #collectionEditor .basket-products-grid .collection-items-empty{grid-column:1/-1}
-      @media(max-width:1050px){#collectionEditor .collection-composition #collectionItems.basket-products-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+      #collectionEditor .collection-product-search button[data-collection-add-product].selected{border-color:var(--success);background:var(--success-soft);box-shadow:inset 3px 0 0 var(--success)}
+      @media(max-width:1050px){#collectionEditor .collection-composition #collectionItems.basket-products-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(max-width:820px){#collectionEditor .collection-composition #collectionItems.basket-products-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
       @media(max-width:610px){#collectionEditor .collection-composition #collectionItems.basket-products-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
       @media(max-width:390px){#collectionEditor .collection-composition #collectionItems.basket-products-grid{grid-template-columns:1fr}}
@@ -223,12 +229,18 @@
       }
       const rows = ensureIndexes(this).searchable.filter(row => row.search.includes(query)).slice(0, 20);
       const label = this.replaceTarget
-        ? (this.replaceTarget.mode === 'main' ? 'Usar como principal' : `Usar como subst. ${this.replaceTarget.slot + 1}`)
+        ? (this.replaceTarget.mode === 'main' ? 'Usar como principal' : this.replaceTarget.mode === 'allowed' ? 'Marcar para troca' : 'Selecionar')
         : 'Adicionar';
-      this.elements.collectionSearchResults.innerHTML = rows.length ? rows.map(({ product }) => {
-        const stock = number(product.estoque);
-        return `<button class="${stock < 30 ? 'low-stock' : ''}" type="button" data-collection-add-product="${escapeHtml(productKey(product))}"><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(productCode(product) || productKey(product))} · estoque ${stock} · ${money(product.preco)}</small><span>${escapeHtml(label)}</span></button>`;
-      }).join('') : (query.length > 1 ? '<small>Nenhum produto encontrado.</small>' : '');
+      const mainCode = text(this.replaceTarget?.mode === 'allowed' ? this.draft?.produtos?.[this.replaceTarget.index]?.codigo : '');
+      this.elements.collectionSearchResults.innerHTML = rows.length ? rows
+        .filter(({ product }) => this.replaceTarget?.mode !== 'allowed' || text(productCode(product) || productKey(product)) !== mainCode)
+        .map(({ product }) => {
+          const stock = number(product.estoque);
+          const code = productCode(product) || productKey(product);
+          const selected = this.replaceTarget?.mode === 'allowed'
+            && (this.draft?.produtos?.[this.replaceTarget.index]?.trocas_permitidas || []).some(value => text(value) === text(code));
+          return `<button class="${stock < 30 ? 'low-stock' : ''} ${selected ? 'selected' : ''}" type="button" data-collection-add-product="${escapeHtml(productKey(product))}"><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(code)} · estoque ${stock} · ${money(product.preco)}</small><span>${escapeHtml(selected ? 'Desmarcar' : label)}</span></button>`;
+        }).join('') : (query.length > 1 ? '<small>Nenhum produto encontrado.</small>' : '');
     };
 
     if (module.draft) {
