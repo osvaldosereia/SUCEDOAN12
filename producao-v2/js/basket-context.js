@@ -128,7 +128,7 @@ function enhanceCollectionButtons(root = document) {
     button.title = 'Abre o cadastro em uma aba sobre a cesta, sem perder sua posição.';
   });
   const help = document.querySelector('#collectionEditor .collection-section-head p');
-  if (help) help.textContent = 'Troque itens ou ajuste o cadastro em abas, mantendo a cesta aberta e na mesma posição.';
+  if (help) help.textContent = 'Ajuste o produto principal e marque as opções que o cliente poderá escolher, sem substituição automática.';
 }
 
 function resetProductFilters() {
@@ -260,7 +260,7 @@ function productFromCollectionButton(button) {
   const index = Number(button.dataset.collectionOpenProduct);
   const item = module?.draft?.produtos?.[index];
   if (!item) return null;
-  const resolved = resolveCollectionItem(item, module.store?.state?.products || []);
+  const resolved = resolveCollectionItem(item, module.store?.state?.products || [], { allowSubstitutes: false });
   return resolved.product || module.findProduct?.(item.codigo) || null;
 }
 
@@ -277,7 +277,7 @@ function installInteractionBridge() {
     }
 
     const host = collectionScrollHost();
-    const replace = event.target.closest('[data-collection-replace-main], [data-collection-set-substitute]');
+    const replace = event.target.closest('[data-collection-replace-main], [data-collection-set-substitute], [data-collection-manage-swaps]');
     if (replace) {
       context.replaceScroll = host?.scrollTop || 0;
       setTimeout(() => setFlow('search'), 0);
@@ -286,6 +286,10 @@ function installInteractionBridge() {
 
     const selection = event.target.closest('[data-collection-add-product]');
     const cancel = event.target.closest('[data-collection-cancel-replace]');
+    if (selection && collectionModule()?.replaceTarget?.mode === 'allowed') {
+      setFlow('search');
+      return;
+    }
     if (selection || cancel) {
       const restore = context.replaceScroll;
       setTimeout(() => {
