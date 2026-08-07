@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-07T14:44:26.598Z",
+  "ultima_execucao": "2026-08-07T15:06:31.400Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -6010,20 +6010,6 @@
       "historico_id": "oferta-1776338129797-1785912305863-b5day"
     },
     {
-      "produto_key": "1776338129831",
-      "codigo": "P430",
-      "nome": "Sabão em Pó OMO Lavagem Perfeita 700g",
-      "categoria": "LAVANDERIA",
-      "regra_id": "regra-1785205096285",
-      "origem": "campanha_automatica",
-      "preco_normal": 16.58,
-      "preco_oferta": 15.42,
-      "desconto_percentual": 7,
-      "inicio": "2026-08-05",
-      "fim": "2026-08-08T23:59:59-04:00",
-      "historico_id": "oferta-1776338129831-1785973403617-6u3iw"
-    },
-    {
       "produto_key": "1776338129835",
       "codigo": "P0036",
       "nome": "Naturale Barra Cereais Bri/Ave/Choc 25g",
@@ -9648,6 +9634,20 @@
       "inicio": "2026-08-05",
       "fim": "2026-08-08T23:59:59-04:00",
       "historico_id": "oferta-1777265003367-1785962393929-5ae9x"
+    },
+    {
+      "produto_key": "1777266067198",
+      "codigo": "851429Y",
+      "nome": "Lola Cosmetics Milagre Creme para Pentear 450g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 32.9,
+      "preco_oferta": 29.61,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-07",
+      "fim": "2026-08-14T23:59:59-04:00",
+      "historico_id": "oferta-1777266067198-1786115191400-ij4oy"
     },
     {
       "produto_key": "1777266658930",
@@ -19984,7 +19984,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1777266067198": {
-      "ultima_oferta_em": "2026-07-30T07:45:04.256Z",
+      "ultima_oferta_em": "2026-08-07T15:06:31.400Z",
       "regra_id": "regra-1785202557027"
     },
     "1777265539718": {
@@ -21141,23 +21141,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1785813980504",
-      "executado_em": "2026-08-04T03:26:21.197Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 0,
-        "ofertas_nao_criadas": 23,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-04T03:33:44Z",
       "executado_em": "2026-08-04T03:34:36.759Z",
@@ -24534,6 +24517,23 @@
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
         "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "2026-08-07T15:05:18Z",
+      "executado_em": "2026-08-07T15:06:31.400Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 1,
         "vencidos": 0,
         "ofertas_reativadas": 0,
         "reativacoes_com_falha": 0,
