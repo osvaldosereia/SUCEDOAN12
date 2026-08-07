@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const ROOT = process.cwd();
 const BUILD = '20260728-customers-fallback-v1';
@@ -188,6 +189,49 @@ for (const marker of ['data-kit-quick-expiry', 'data-kit-quick-stock-mode', 'sav
 const collectionCore = read('producao-v2/js/core/collections.js');
 for (const marker of ['ativo_ate_estoque_zero', 'allowSubstitutes: !stockControlled', 'o kit ficar']) {
   if (!collectionCore.includes(marker)) fail(`Regra de estoque dos kits incompleta: ${marker}.`);
+}
+
+const collectionModule = read('producao-v2/js/modules/collections.js');
+const basketGrid = read('producao-v2/js/basket-products-grid.js');
+const basketContext = read('producao-v2/js/basket-context.js');
+for (const [source, marker] of [
+  [collectionCore, 'trocas_permitidas'],
+  [collectionModule, 'Pesquisar e marcar trocas'],
+  [basketGrid, 'data-collection-manage-swaps'],
+  [basketGrid, 'basket-swap-chip'],
+  [basketContext, "mode === 'allowed'"],
+]) {
+  if (!source.includes(marker)) fail(`Trocas permitidas das cestas incompletas: ${marker}.`);
+}
+for (const legacyMarker of ['data-collection-set-substitute', 'data-collection-clear-substitute', 'Subst. 1', 'Subst. 2']) {
+  if (basketGrid.includes(legacyMarker)) fail(`O card produtivo das cestas ainda contém o controle automático antigo: ${legacyMarker}.`);
+}
+
+try {
+  const collectionsApi = await import(pathToFileURL(path.join(ROOT, 'producao-v2/js/core/collections.js')).href);
+  const products = [
+    { firebaseKey: 'principal', codigo: 'P1', nome: 'Principal', preco: 10, estoque: 0, situacao: 'A' },
+    { firebaseKey: 'troca', codigo: 'T1', nome: 'Troca permitida', preco: 11, estoque: 10, situacao: 'A' },
+  ];
+  const basket = {
+    id: 'teste-cesta', codigo: 'TESTE', nome: 'Cesta de teste', preco: 20, imagem: 'teste.webp',
+    produtos: [{ codigo: 'P1', qtd: 1, substitutos: ['T1'], trocas_permitidas: ['T1'] }],
+  };
+  const audit = collectionsApi.auditCollection(basket, 'basket', products, []);
+  const item = audit.items[0];
+  if (item.resolved.usedSubstitute || item.resolved.selectedCode !== 'P1') {
+    fail('A cesta ainda substitui automaticamente o produto principal sem estoque.');
+  }
+  if (audit.errors.some(message => /sem estoque/i.test(message))) {
+    fail('A cesta com troca manual válida continua bloqueada para salvamento.');
+  }
+  const normalized = collectionsApi.normalizeCollectionForPublish(basket, 'basket', products, []).normalized.produtos[0];
+  if (!Array.isArray(normalized.trocas_permitidas) || normalized.trocas_permitidas[0] !== 'T1') {
+    fail('As trocas permitidas não foram preservadas na publicação.');
+  }
+  if ('substitutos' in normalized) fail('O campo automático antigo ainda é publicado nas cestas.');
+} catch (error) {
+  fail(`Não foi possível testar o fluxo de trocas permitidas: ${error.message}`);
 }
 
 const stockModule = read('producao-v2/js/modules/stock.js');
