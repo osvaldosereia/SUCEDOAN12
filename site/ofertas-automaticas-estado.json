@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-07T13:23:05.372Z",
+  "ultima_execucao": "2026-08-07T13:45:08.118Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -7354,6 +7354,20 @@
       "historico_id": "oferta-1776338131596-1785932980533-6c6rc"
     },
     {
+      "produto_key": "1776338131599",
+      "codigo": "362902G",
+      "nome": "Creme Dental Colgate Clareador Carvão Ativado 90g",
+      "categoria": "HIGIENE",
+      "regra_id": "regra-1785205082552",
+      "origem": "campanha_automatica",
+      "preco_normal": 9.5,
+      "preco_oferta": 8.74,
+      "desconto_percentual": 8,
+      "inicio": "2026-08-07",
+      "fim": "2026-08-10T23:59:59-04:00",
+      "historico_id": "oferta-1776338131599-1786110308118-isjtr"
+    },
+    {
       "produto_key": "1776338131629",
       "codigo": "455881A",
       "nome": "Shampoo TRESemmé Detox Capilar 650ml",
@@ -9312,6 +9326,20 @@
       "inicio": "2026-08-07",
       "fim": "2026-08-14T23:59:59-04:00",
       "historico_id": "oferta-1776710463033-1786108985372-fqe4l"
+    },
+    {
+      "produto_key": "1776714267621",
+      "codigo": "14267621",
+      "nome": "Lola Cosmetics Máscara Disciplinante Xapadinha 450g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 36.9,
+      "preco_oferta": 33.21,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-07",
+      "fim": "2026-08-14T23:59:59-04:00",
+      "historico_id": "oferta-1776714267621-1786110308118-oe417"
     },
     {
       "produto_key": "1776715398817",
@@ -14620,6 +14648,20 @@
       "historico_id": "oferta-1785948577625512d-1785951508057-3jfwy"
     },
     {
+      "produto_key": "1785951214362_43f4",
+      "codigo": "7899674045881",
+      "nome": "Desodorante Antitranspirante Aerossol Above Men Extreme Invisible Black 72H 250 ml",
+      "categoria": "DESODORANTE",
+      "regra_id": "regra-1785205065492",
+      "origem": "campanha_automatica",
+      "preco_normal": 12.9,
+      "preco_oferta": 12.13,
+      "desconto_percentual": 5.97,
+      "inicio": "2026-08-07",
+      "fim": "2026-08-10T23:59:59-04:00",
+      "historico_id": "oferta-178595121436243f4-1786110308118-157b8"
+    },
+    {
       "produto_key": "6194017200509",
       "codigo": "allegro.azeite.500",
       "nome": "Azeite de Oliva Extra Virgem Allegro 500ml",
@@ -17920,7 +17962,7 @@
       "regra_id": "regra-1785205082552"
     },
     "1776338131599": {
-      "ultima_oferta_em": "2026-08-05T12:57:05.822Z",
+      "ultima_oferta_em": "2026-08-07T13:45:08.118Z",
       "regra_id": "regra-1785205082552"
     },
     "7896102504293": {
@@ -19856,7 +19898,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776714267621": {
-      "ultima_oferta_em": "2026-07-30T05:51:48.695Z",
+      "ultima_oferta_em": "2026-08-07T13:45:08.118Z",
       "regra_id": "regra-1785202557027"
     },
     "1776712981450": {
@@ -21014,26 +21056,13 @@
     "1785948577625_512d": {
       "ultima_oferta_em": "2026-08-05T17:38:28.057Z",
       "regra_id": "regra-1785205065492"
+    },
+    "1785951214362_43f4": {
+      "ultima_oferta_em": "2026-08-07T13:45:08.118Z",
+      "regra_id": "regra-1785205065492"
     }
   },
   "execucoes": [
-    {
-      "id": "2026-08-03T23:46:35Z",
-      "executado_em": "2026-08-03T23:47:33.838Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 0,
-        "ofertas_nao_criadas": 23,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-04T00:16:18Z",
       "executado_em": "2026-08-04T00:18:46.564Z",
@@ -24409,6 +24438,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1786110307638",
+      "executado_em": "2026-08-07T13:45:08.118Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
