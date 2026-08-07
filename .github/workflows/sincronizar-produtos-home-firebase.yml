@@ -6,7 +6,7 @@ on:
   repository_dispatch:
     types: [sincronizar_produtos_home]
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "17 */3 * * *"
   push:
     branches: [main]
     paths:
@@ -74,11 +74,15 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/produtos-home.json site/produtos-admin.json catalog-version.json
+          # O arquivo de versão recebe um timestamp novo em toda execução. Primeiro
+          # confira os catálogos reais para não criar commits vazios a cada agenda.
+          git add site/produtos-home.json site/produtos-admin.json
           if git diff --cached --quiet; then
-            echo "Catálogos já estão sincronizados e a versão pública foi preservada."
+            git restore catalog-version.json
+            echo "Catálogos já estão sincronizados; nenhum commit necessário."
             exit 0
           fi
+          git add catalog-version.json
           git commit -m "Sincroniza catálogos diretamente do Firebase"
           for tentativa in 1 2 3 4 5; do
             if git push origin "HEAD:${GITHUB_REF_NAME}"; then
