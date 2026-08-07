@@ -103,6 +103,14 @@ export function auditCollection(collection, type, products = [], queue = [], { t
     const rowErrors = [];
     const rowWarnings = [];
     const prefix = `Item ${indexPosition + 1} (${text(item?.codigo) || 'sem código'})`;
+    const allowedSwapCodes = type === 'basket'
+      ? [...new Set((Array.isArray(item?.trocas_permitidas) ? item.trocas_permitidas : []).map(text).filter(Boolean))]
+          .filter(code => code !== text(item?.codigo))
+      : [];
+    const allowedSwapProducts = allowedSwapCodes
+      .map(code => ({ code, product: findProduct(index, code) }));
+    const availableManualSwaps = allowedSwapProducts.filter(({ product }) => product
+      && isActiveProduct(product) && number(product.preco) > 0 && number(product.estoque) > 0);
 
     if (quantity <= 0) rowErrors.push('Quantidade inválida');
     if (!text(item?.codigo)) rowErrors.push('Código ausente');
@@ -128,8 +136,21 @@ export function auditCollection(collection, type, products = [], queue = [], { t
       regularTotal += round(number(resolved.product.preco) * quantity);
     }
 
+    if (type === 'basket') {
+      allowedSwapProducts.forEach(({ code, product }) => {
+        if (!product) warnings.push(`${prefix}: opção de troca ${code} não encontrada`);
+        else if (!isActiveProduct(product) || number(product.preco) <= 0) warnings.push(`${prefix}: opção de troca ${code} indisponível`);
+      });
+    }
     rowErrors.forEach(message => errors.push(`${prefix}: ${message}`));
-    rowWarnings.forEach(message => availabilityIssue(type, warnings, errors, `${prefix}: ${message}`));
+    rowWarnings.forEach(message => {
+      const mainUnavailable = ['Produto inativo', 'Produto sem estoque', 'Estoque insuficiente para a quantidade configurada'].includes(message);
+      if (type === 'basket' && mainUnavailable && availableManualSwaps.length) {
+        warnings.push(`${prefix}: ${message}; ${availableManualSwaps.length} troca(s) manual(is) disponível(is)`);
+      } else {
+        availabilityIssue(type, warnings, errors, `${prefix}: ${message}`);
+      }
+    });
     if (resolved.usedSubstitute) warnings.push(`Item ${indexPosition + 1}: usando substituto ${resolved.selectedCode}`);
     if (stockControlled && Array.isArray(item?.substitutos) && item.substitutos.some(value => text(value))) {
       warnings.push(`Item ${indexPosition + 1}: substitutos serão ignorados no modo “ativo até zerar estoque”`);
