@@ -133,6 +133,19 @@ export class CollectionsModule {
       nome: '', codigo: '', preco: 0, imagem: '', produtos: [], descricao: '', ativo: true,
       ...(this.type === 'kit' ? { data_inicio: '', data_fim: '', limite_kits: 0 } : {}),
     };
+    if (this.type === 'basket') {
+      this.draft.produtos = (Array.isArray(this.draft.produtos) ? this.draft.produtos : []).map(item => {
+        const migrated = {
+          ...item,
+          trocas_permitidas: [...new Set([
+            ...(Array.isArray(item.trocas_permitidas) ? item.trocas_permitidas : []),
+            ...(Array.isArray(item.substitutos) ? item.substitutos : []),
+          ].map(text).filter(Boolean))].filter(code => code !== text(item.codigo)),
+        };
+        delete migrated.substitutos;
+        return migrated;
+      });
+    }
     this.elements.collectionEditorType.textContent = this.type === 'kit' ? 'Kit promocional' : 'Cesta básica';
     this.elements.collectionEditorTitle.textContent = existing ? this.draft.nome : (this.type === 'kit' ? 'Novo kit' : 'Nova cesta');
     this.elements.collectionForm.innerHTML = this.formHtml();
@@ -202,19 +215,34 @@ export class CollectionsModule {
     }).join('');
   }
 
+  allowedSwapBadges(item, index) {
+    const codes = Array.isArray(item.trocas_permitidas) ? item.trocas_permitidas : [];
+    return codes.map(code => {
+      const product = this.findProduct(code);
+      const stock = number(product?.estoque);
+      return `<span class="badge ${product && stock > 0 ? stock < LOW_STOCK_LIMIT ? 'warning' : 'success' : 'danger'}">${escapeHtml(product ? productName(product) : code)} · estoque ${stock}<button type="button" aria-label="Remover opção de troca" data-collection-remove-swap="${index}" data-code="${escapeHtml(code)}">×</button></span>`;
+    }).join('');
+  }
+
   renderItems() {
     const items = Array.isArray(this.draft?.produtos) ? this.draft.produtos : [];
+    const isBasket = this.type === 'basket';
     this.elements.collectionItems.innerHTML = items.length ? items.map((item, index) => {
       const main = this.findProduct(item.codigo);
-      const resolved = resolveCollectionItem(item, this.store.state.products);
+      const resolved = resolveCollectionItem(item, this.store.state.products, { allowSubstitutes: !isBasket });
       const active = resolved.product || main;
-      const stock = number(active?.estoque);
-      const lowStock = !active || stock < LOW_STOCK_LIMIT;
-      const activeText = resolved.usedSubstitute ? `Usando substituto: ${productName(active)}` : 'Produto principal ativo';
+      const stock = number(main?.estoque);
+      const lowStock = !main || stock < LOW_STOCK_LIMIT;
+      const badges = isBasket
+        ? this.allowedSwapBadges(item, index)
+        : this.substituteBadges(item);
+      const actions = isBasket
+        ? `<button class="button secondary compact" type="button" data-collection-open-product="${index}" ${main ? '' : 'disabled'}>Abrir produto</button><button class="button secondary compact" type="button" data-collection-replace-main="${index}">Trocar principal</button><button class="button primary compact" type="button" data-collection-manage-swaps="${index}">Pesquisar e marcar trocas</button><button class="button ghost compact danger-text" type="button" data-collection-remove-item="${index}">Remover</button>`
+        : `<button class="button secondary compact" type="button" data-collection-open-product="${index}" ${active ? '' : 'disabled'}>Abrir produto</button><button class="button secondary compact" type="button" data-collection-replace-main="${index}">Trocar principal</button><button class="button secondary compact" type="button" data-collection-set-substitute="${index}" data-slot="0">Subst. 1</button><button class="button secondary compact" type="button" data-collection-set-substitute="${index}" data-slot="1">Subst. 2</button><button class="button ghost compact" type="button" data-collection-clear-substitute="${index}" data-slot="0" ${(item.substitutos || [])[0] ? '' : 'disabled'}>Limpar 1</button><button class="button ghost compact" type="button" data-collection-clear-substitute="${index}" data-slot="1" ${(item.substitutos || [])[1] ? '' : 'disabled'}>Limpar 2</button><button class="button ghost compact danger-text" type="button" data-collection-remove-item="${index}">Remover</button>`;
       return `<div class="collection-item ${lowStock ? 'low-stock' : ''}" data-collection-item="${index}">
-        <div class="collection-item-product"><span>Produto da composição</span><strong>${escapeHtml(main ? productName(main) : item.codigo || 'Não encontrado')}</strong><small>${escapeHtml(item.codigo || 'sem código')} · ${escapeHtml(activeText)}</small><div class="collection-item-badges"><span class="badge ${stock >= LOW_STOCK_LIMIT ? 'success' : stock > 0 ? 'warning' : 'danger'}">Estoque ativo: ${stock}</span>${this.substituteBadges(item)}</div></div>
+        <div class="collection-item-product"><span>Produto da composição</span><strong>${escapeHtml(main ? productName(main) : item.codigo || 'Não encontrado')}</strong><small>${escapeHtml(item.codigo || 'sem código')} · Produto principal da cesta</small><div class="collection-item-badges"><span class="badge ${stock >= LOW_STOCK_LIMIT ? 'success' : stock > 0 ? 'warning' : 'danger'}">Estoque: ${stock}</span>${badges}</div>${isBasket ? '<small>As opções marcadas serão oferecidas ao cliente; nunca serão aplicadas automaticamente.</small>' : ''}</div>
         <label>Qtd.<input type="number" min="1" step="1" value="${escapeHtml(item.qtd || 1)}" data-collection-item-qty="${index}"></label>
-        <div class="collection-item-actions"><button class="button secondary compact" type="button" data-collection-open-product="${index}" ${active ? '' : 'disabled'}>Abrir produto</button><button class="button secondary compact" type="button" data-collection-replace-main="${index}">Trocar principal</button><button class="button secondary compact" type="button" data-collection-set-substitute="${index}" data-slot="0">Subst. 1</button><button class="button secondary compact" type="button" data-collection-set-substitute="${index}" data-slot="1">Subst. 2</button><button class="button ghost compact" type="button" data-collection-clear-substitute="${index}" data-slot="0" ${(item.substitutos || [])[0] ? '' : 'disabled'}>Limpar 1</button><button class="button ghost compact" type="button" data-collection-clear-substitute="${index}" data-slot="1" ${(item.substitutos || [])[1] ? '' : 'disabled'}>Limpar 2</button><button class="button ghost compact danger-text" type="button" data-collection-remove-item="${index}">Remover</button></div>
+        <div class="collection-item-actions">${actions}</div>
       </div>`;
     }).join('') : '<div class="empty-state collection-items-empty">Adicione produtos à composição.</div>';
     this.renderSearchMode();
@@ -247,7 +275,12 @@ export class CollectionsModule {
       mode.className = 'collection-replace-mode';
       host.insertBefore(mode, this.elements.collectionSearchResults);
     }
-    mode.innerHTML = `<strong>Modo substituição ativo</strong><span>${this.replaceTarget.mode === 'main' ? 'Escolha o novo produto principal.' : `Escolha o substituto ${this.replaceTarget.slot + 1}.`}</span><button class="button ghost compact" type="button" data-collection-cancel-replace>Cancelar</button>`;
+    const instruction = this.replaceTarget.mode === 'main'
+      ? 'Escolha o novo produto principal.'
+      : this.replaceTarget.mode === 'allowed'
+        ? 'Pesquise e marque todos os produtos que o cliente poderá escolher no lugar deste item.'
+        : `Escolha o substituto ${this.replaceTarget.slot + 1}.`;
+    mode.innerHTML = `<strong>${this.replaceTarget.mode === 'allowed' ? 'Opções de troca permitidas' : 'Modo substituição ativo'}</strong><span>${instruction}</span><button class="button ghost compact" type="button" data-collection-cancel-replace>Concluir</button>`;
   }
 
   handleItemClick(event) {
@@ -256,6 +289,8 @@ export class CollectionsModule {
     const replace = event.target.closest('[data-collection-replace-main]');
     const substitute = event.target.closest('[data-collection-set-substitute]');
     const clear = event.target.closest('[data-collection-clear-substitute]');
+    const manageSwaps = event.target.closest('[data-collection-manage-swaps]');
+    const removeSwap = event.target.closest('[data-collection-remove-swap]');
     const open = event.target.closest('[data-collection-open-product]');
     const cancel = event.target.closest('[data-collection-cancel-replace]');
     if (remove) {
@@ -266,6 +301,16 @@ export class CollectionsModule {
     }
     if (replace) this.startReplacement(replace.dataset.collectionReplaceMain, 'main');
     if (substitute) this.startReplacement(substitute.dataset.collectionSetSubstitute, 'substitute', substitute.dataset.slot);
+    if (manageSwaps) this.startReplacement(manageSwaps.dataset.collectionManageSwaps, 'allowed');
+    if (removeSwap) {
+      const item = this.draft.produtos[Number(removeSwap.dataset.collectionRemoveSwap)];
+      if (item) {
+        item.trocas_permitidas = (Array.isArray(item.trocas_permitidas) ? item.trocas_permitidas : [])
+          .filter(code => text(code) !== text(removeSwap.dataset.code));
+        this.renderItems();
+        this.renderAudit();
+      }
+    }
     if (clear) {
       const item = this.draft.produtos[Number(clear.dataset.collectionClearSubstitute)];
       if (item) {
@@ -296,10 +341,15 @@ export class CollectionsModule {
   renderSearchResults() {
     const query = this.elements.collectionProductSearch.value;
     const results = collectionSearch(this.store.state.products, query, 20);
-    const label = this.replaceTarget ? (this.replaceTarget.mode === 'main' ? 'Usar como principal' : `Usar como subst. ${this.replaceTarget.slot + 1}`) : 'Adicionar';
+    const label = this.replaceTarget
+      ? (this.replaceTarget.mode === 'main' ? 'Usar como principal' : this.replaceTarget.mode === 'allowed' ? 'Marcar para troca' : `Usar como subst. ${this.replaceTarget.slot + 1}`)
+      : 'Adicionar';
     this.elements.collectionSearchResults.innerHTML = results.length ? results.map(product => {
       const stock = number(product.estoque);
-      return `<button class="${stock < LOW_STOCK_LIMIT ? 'low-stock' : ''}" type="button" data-collection-add-product="${escapeHtml(productKey(product))}"><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(productCode(product) || productKey(product))} · estoque ${stock} · ${money(product.preco)}</small><span>${label}</span></button>`;
+      const code = productCode(product) || productKey(product);
+      const selected = this.replaceTarget?.mode === 'allowed'
+        && (this.draft?.produtos?.[this.replaceTarget.index]?.trocas_permitidas || []).some(value => text(value) === text(code));
+      return `<button class="${stock < LOW_STOCK_LIMIT ? 'low-stock' : ''} ${selected ? 'selected' : ''}" type="button" data-collection-add-product="${escapeHtml(productKey(product))}"><strong>${escapeHtml(productName(product))}</strong><small>${escapeHtml(code)} · estoque ${stock} · ${money(product.preco)}</small><span>${selected ? 'Desmarcar' : label}</span></button>`;
     }).join('') : (query.trim().length > 1 ? '<small>Nenhum produto encontrado.</small>' : '');
   }
 
@@ -314,6 +364,18 @@ export class CollectionsModule {
       if (this.replaceTarget.mode === 'main') {
         item.codigo = code;
         item.substitutos = (Array.isArray(item.substitutos) ? item.substitutos : []).filter(value => text(value) !== code);
+        item.trocas_permitidas = (Array.isArray(item.trocas_permitidas) ? item.trocas_permitidas : []).filter(value => text(value) !== code);
+      } else if (this.replaceTarget.mode === 'allowed') {
+        item.trocas_permitidas = Array.isArray(item.trocas_permitidas) ? item.trocas_permitidas : [];
+        const selected = item.trocas_permitidas.some(value => text(value) === code);
+        item.trocas_permitidas = selected
+          ? item.trocas_permitidas.filter(value => text(value) !== code)
+          : [...item.trocas_permitidas, code].filter(value => text(value) !== text(item.codigo));
+        this.elements.collectionSearchResults.innerHTML = '';
+        this.renderItems();
+        this.renderAudit();
+        this.renderSearchResults();
+        return;
       } else {
         item.substitutos = Array.isArray(item.substitutos) ? item.substitutos : [];
         item.substitutos[this.replaceTarget.slot] = code;
@@ -323,7 +385,9 @@ export class CollectionsModule {
     } else {
       const existing = this.draft.produtos.find(item => text(item.codigo) === code);
       if (existing) existing.qtd = Math.max(1, number(existing.qtd) + 1);
-      else this.draft.produtos.push({ qtd: 1, codigo: code, substitutos: [] });
+      else this.draft.produtos.push(this.type === 'basket'
+        ? { qtd: 1, codigo: code, trocas_permitidas: [] }
+        : { qtd: 1, codigo: code, substitutos: [] });
     }
     this.elements.collectionProductSearch.value = '';
     this.elements.collectionSearchResults.innerHTML = '';
