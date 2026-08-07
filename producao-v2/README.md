@@ -29,7 +29,7 @@ O painel em `producao-v2/` é o sistema administrativo oficial da Dona Antônia.
 
 ## Catálogo público
 
-Qualquer gravação em `/produtos` solicita uma sincronização imediata pelo GitHub. Como contingência, um workflow também sincroniza a cada cinco minutos.
+Qualquer gravação em `/produtos` solicita uma sincronização imediata pelo GitHub. Como contingência, um workflow também sincroniza a cada três horas.
 
 A sincronização atualiza em conjunto:
 
@@ -67,7 +67,9 @@ A importação exige a simulação e a confirmação da nota dentro da própria 
 
 - criação, edição, exclusão e publicação de cestas e kits;
 - validação dos itens contra o Firebase;
-- estoque, substitutos, economia e limite disponível;
+- estoque, economia e limite disponível;
+- nas cestas, opções de troca permitidas são pesquisadas e marcadas por item;
+- produtos permitidos para troca nunca substituem automaticamente o item sem estoque;
 - fila de carrossel do Instagram por `kit_codigo`;
 - editor da Compra Rápida dentro da V2;
 - seções e itens personalizáveis;
