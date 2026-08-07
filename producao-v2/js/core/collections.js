@@ -99,7 +99,7 @@ export function auditCollection(collection, type, products = [], queue = [], { t
   let available = Infinity;
   const resolvedItems = items.map((item, indexPosition) => {
     const quantity = Math.max(0, Math.floor(number(item?.qtd)));
-    const resolved = resolveCollectionItem(item, index, { allowSubstitutes: !stockControlled });
+    const resolved = resolveCollectionItem(item, index, { allowSubstitutes: type === 'kit' && !stockControlled });
     const rowErrors = [];
     const rowWarnings = [];
     const prefix = `Item ${indexPosition + 1} (${text(item?.codigo) || 'sem código'})`;
@@ -206,8 +206,12 @@ export function normalizeCollectionForPublish(collection, type, products = [], q
     ...item,
     qtd: Math.max(1, Math.floor(number(item.qtd) || 1)),
     codigo: text(item.codigo),
-    substitutos: [...new Set((Array.isArray(item.substitutos) ? item.substitutos : []).map(text).filter(Boolean))],
+    ...(type === 'kit'
+      ? { substitutos: [...new Set((Array.isArray(item.substitutos) ? item.substitutos : []).map(text).filter(Boolean))] }
+      : { trocas_permitidas: [...new Set((Array.isArray(item.trocas_permitidas) ? item.trocas_permitidas : []).map(text).filter(Boolean))]
+          .filter(code => code !== text(item.codigo)) }),
   }));
+  if (type === 'basket') normalized.produtos.forEach(item => { delete item.substitutos; });
 
   if (type === 'kit') {
     const stockControlled = normalized.ativo_ate_estoque_zero === true;
