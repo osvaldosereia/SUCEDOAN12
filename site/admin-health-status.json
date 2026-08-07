@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-07T03:26:25.008Z",
+  "checkedAt": "2026-08-07T04:19:09.355Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -66,7 +66,7 @@
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-0351f97556d0ba69 · público 1505 · admin 1631"
+      "detail": "catalog-050cd4b51639cc7c · público 1505 · admin 1631"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "4369 oferta(s) no histórico"
+      "detail": "4371 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "ok": false,
+      "detail": "0.9h desde a execução · status sucesso · 64 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,14 +119,19 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "0.9h desde a execução · status sucesso · 64 expirada(s) ainda ativa(s)"
     }
   ],
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "31144179343",
+    "runId": "31146856482",
     "attempt": "1",
-    "sourceSha": "c4a0d8572409cff90bc1472b2236447e25c1788b",
-    "publishedAt": "2026-08-07T03:26:59.680Z"
+    "sourceSha": "74cb7145f8130e77da7c7bfdcba909d993b95f8d",
+    "publishedAt": "2026-08-07T04:19:43.656Z"
   }
 }
