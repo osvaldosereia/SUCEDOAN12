@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-08T15:37:05.179Z",
+  "ultima_execucao": "2026-08-08T16:03:08.044Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -10110,6 +10110,20 @@
       "inicio": "2026-08-01",
       "fim": "2026-08-08T23:59:59-04:00",
       "historico_id": "oferta-1777420696484-1785562067203-67azx"
+    },
+    {
+      "produto_key": "1777422774787",
+      "codigo": "22774787",
+      "nome": "Esmalte Risqué - Pó de Arroz Cremoso 8ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 6.49,
+      "preco_oferta": 5.84,
+      "desconto_percentual": 10.02,
+      "inicio": "2026-08-08",
+      "fim": "2026-08-15T23:59:59-04:00",
+      "historico_id": "oferta-1777422774787-1786204988044-cp9jq"
     },
     {
       "produto_key": "1777423231061",
@@ -20586,7 +20600,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1777422774787": {
-      "ultima_oferta_em": "2026-07-31T17:59:32.376Z",
+      "ultima_oferta_em": "2026-08-08T16:03:08.044Z",
       "regra_id": "regra-1785202557027"
     },
     "1777420035942": {
@@ -21435,23 +21449,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1785931095073",
-      "executado_em": "2026-08-05T11:58:15.606Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 17,
-        "ofertas_nao_criadas": 6,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-05T12:28:36Z",
       "executado_em": "2026-08-05T12:29:40.533Z",
@@ -24828,6 +24825,23 @@
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
         "ofertas_encerradas": 1,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "2026-08-08T16:02:06Z",
+      "executado_em": "2026-08-08T16:03:08.044Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
         "reativacoes_com_falha": 0,
