@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-08T15:32:32.542Z",
+  "ultima_execucao": "2026-08-08T15:37:05.179Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -954,20 +954,6 @@
       "inicio": "2026-08-05",
       "fim": "2026-08-12T23:59:59-04:00",
       "historico_id": "oferta-1775971741062-1785912305863-9e2tq"
-    },
-    {
-      "produto_key": "1775971741063",
-      "codigo": "572665P",
-      "nome": "Skala Creme para Pentear Potão Desmaiado 1kg",
-      "categoria": "BELEZA",
-      "regra_id": "regra-1785202557027",
-      "origem": "campanha_automatica",
-      "preco_normal": 14.9,
-      "preco_oferta": 13.41,
-      "desconto_percentual": 10,
-      "inicio": "2026-08-05",
-      "fim": "2026-08-12T23:59:59-04:00",
-      "historico_id": "oferta-1775971741063-1785916203901-o95jc"
     },
     {
       "produto_key": "1775971741064",
@@ -5924,6 +5910,20 @@
       "inicio": "2026-08-07",
       "fim": "2026-08-14T23:59:59-04:00",
       "historico_id": "oferta-1776338129191-1786095491983-9ce4u"
+    },
+    {
+      "produto_key": "1776338129197",
+      "codigo": "P0273",
+      "nome": "Removedor Esmalte Farmax Perf Uva Unidade",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 4.99,
+      "preco_oferta": 4.49,
+      "desconto_percentual": 10.02,
+      "inicio": "2026-08-08",
+      "fim": "2026-08-15T23:59:59-04:00",
+      "historico_id": "oferta-1776338129197-1786203425179-cb48t"
     },
     {
       "produto_key": "1776338129201",
@@ -20582,7 +20582,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776338129197": {
-      "ultima_oferta_em": "2026-07-31T17:51:42.534Z",
+      "ultima_oferta_em": "2026-08-08T15:37:05.179Z",
       "regra_id": "regra-1785202557027"
     },
     "1777422774787": {
@@ -21435,23 +21435,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "2026-08-05T11:37:28Z",
-      "executado_em": "2026-08-05T11:38:44.399Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 17,
-        "ofertas_nao_criadas": 6,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1785931095073",
       "executado_em": "2026-08-05T11:58:15.606Z",
@@ -24828,6 +24811,23 @@
         "ofertas_criadas": 1,
         "ofertas_nao_criadas": 22,
         "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "2026-08-08T15:36:01Z",
+      "executado_em": "2026-08-08T15:37:05.179Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 1,
+        "ofertas_nao_criadas": 22,
+        "ofertas_encerradas": 1,
         "vencidos": 0,
         "ofertas_reativadas": 0,
         "reativacoes_com_falha": 0,
