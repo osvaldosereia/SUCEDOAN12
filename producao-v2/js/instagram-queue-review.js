@@ -2,20 +2,21 @@ import { auditCollection } from './core/collections.js';
 import { escapeHtml, text } from './core/utils.js';
 import { loadCollections, saveCollectionList } from './services/collections.js';
 import { callMake, compactKitForMake, unwrapMakeResult } from './services/make.js?admin_build=20260805-kit-auto-carousel-v2';
+import {
+  kitInstagramOperationalState,
+  latestKitQueueEntry,
+  shouldAutoGenerateKitCarousel,
+} from './services/kit-instagram-flow.js?admin_build=20260808-kit-instagram-unified-v1';
 
-const ACTIVE_QUEUE_STATUSES = new Set(['novo', 'pendente', 'processando', 'aguardando', 'pronto', 'agendado', 'postado']);
 const AUTO_RETRY_DELAYS = [700, 1200, 2000, 3200, 5000, 7500, 10000, 12000];
 const QUEUE_RETRY_DELAYS = [1200, 2000, 3200, 5000, 7500, 10000, 14000, 18000, 24000, 30000];
 let patched = false;
 let savePatched = false;
+let presentationPatched = false;
 const automaticJobs = new Set();
 
 function moduleInstance() {
   return window.__adminV2CollectionsModule || null;
-}
-
-function normalizeStatus(value) {
-  return text(value).toLocaleLowerCase('pt-BR');
 }
 
 function sleep(ms) {
@@ -27,9 +28,7 @@ function clone(value) {
 }
 
 function latestQueueEntry(module, code) {
-  return [...(module?.store?.state?.queue || [])]
-    .filter(entry => text(entry?.kit_codigo) === text(code))
-    .sort((a, b) => String(b?.atualizado_em || b?.criado_em || '').localeCompare(String(a?.atualizado_em || a?.criado_em || '')))[0] || null;
+  return latestKitQueueEntry(module?.store?.state?.queue || [], code);
 }
 
 function fingerprint(value) {
@@ -69,10 +68,11 @@ function queueImages(entry, draft) {
   const candidates = [
     ...(Array.isArray(entry?.imagens) ? entry.imagens : []),
     ...(Array.isArray(entry?.urls_imagens) ? entry.urls_imagens : []),
+    ...(Array.isArray(entry?.files) ? entry.files : []),
     ...(Array.isArray(draft?.instagram_imagens) ? draft.instagram_imagens : []),
     ...(Array.isArray(draft?.imagens) ? draft.imagens : []),
     ...(Array.isArray(draft?.urls_imagens) ? draft.urls_imagens : []),
-  ].map(item => typeof item === 'string' ? item : item?.url || item?.src || item?.imagem).filter(Boolean);
+  ].map(item => typeof item === 'string' ? item : item?.url || item?.src || item?.imagem || item?.image_url).filter(Boolean);
   return [...new Set(candidates)].slice(0, 8);
 }
 
@@ -81,9 +81,27 @@ function installStyles() {
   const style = document.createElement('style');
   style.id = 'instagramQueueReviewStyles';
   style.textContent = `
-    .instagram-queue-review{grid-column:1/-1;padding:11px;border:1px solid #c7d9ec;border-radius:11px;background:#f3f8fd}.instagram-queue-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.instagram-queue-head h4{margin:0;font-size:12px}.instagram-queue-head p{margin:4px 0 0;color:var(--muted);font-size:8px;line-height:1.45}.instagram-queue-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px}.instagram-queue-grid>div{padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}.instagram-queue-grid strong,.instagram-queue-grid span{display:block}.instagram-queue-grid strong{font-size:10px}.instagram-queue-grid span{margin-top:3px;color:var(--muted);font-size:8px}.instagram-queue-images{display:flex;gap:5px;overflow:auto;margin-top:8px}.instagram-queue-images img{width:58px;height:72px;object-fit:contain;flex:0 0 58px;border:1px solid var(--line);border-radius:8px;background:#fff}.instagram-queue-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:9px}.instagram-queue-warning{margin-top:8px;padding:7px 8px;border-radius:8px;background:var(--warning-soft);color:var(--warning);font-size:8px;line-height:1.45}@media(max-width:760px){.instagram-queue-grid{grid-template-columns:1fr 1fr}.instagram-queue-head{flex-direction:column}}
+    .instagram-queue-review{grid-column:1/-1;padding:11px;border:1px solid #c7d9ec;border-radius:11px;background:#f3f8fd}.instagram-queue-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.instagram-queue-head h4{margin:0;font-size:12px}.instagram-queue-head p{margin:4px 0 0;color:var(--muted);font-size:8px;line-height:1.45}.instagram-queue-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px}.instagram-queue-grid>div{padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}.instagram-queue-grid strong,.instagram-queue-grid span{display:block}.instagram-queue-grid strong{font-size:10px}.instagram-queue-grid span{margin-top:3px;color:var(--muted);font-size:8px}.instagram-queue-images{display:flex;gap:5px;overflow:auto;margin-top:8px}.instagram-queue-images img{width:58px;height:72px;object-fit:contain;flex:0 0 58px;border:1px solid var(--line);border-radius:8px;background:#fff}.instagram-queue-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:9px}.instagram-queue-warning,.instagram-queue-error{margin-top:8px;padding:7px 8px;border-radius:8px;font-size:8px;line-height:1.45}.instagram-queue-warning{background:var(--warning-soft);color:var(--warning)}.instagram-queue-error{background:#fff0f0;color:#a12626}@media(max-width:760px){.instagram-queue-grid{grid-template-columns:1fr 1fr}.instagram-queue-head{flex-direction:column}}
   `;
   document.head.appendChild(style);
+}
+
+function patchPresentation() {
+  const module = moduleInstance();
+  if (!module || presentationPatched) return false;
+  presentationPatched = true;
+  const originalCard = module.card.bind(module);
+  module.card = audit => {
+    let html = originalCard(audit);
+    if (module.type !== 'kit') return html;
+    const operational = kitInstagramOperationalState(audit.queueEntry, audit.source);
+    html = html.replace(
+      /<span class="badge [^"]+">Instagram:[\s\S]*?<\/span>/,
+      `<span class="badge ${operational.kind}">Instagram: ${escapeHtml(operational.label)}</span>`,
+    );
+    return html;
+  };
+  return true;
 }
 
 function renderDiagnostics() {
@@ -92,16 +110,49 @@ function renderDiagnostics() {
   if (!module?.draft || module.type !== 'kit' || !form) return;
   const previous = form.querySelector('.instagram-queue-review');
   const entry = latestQueueEntry(module, module.draft.codigo);
-  const status = text(entry?.fila_status || entry?.status || module.draft.instagram_status || 'não enviado');
+  const baseOperational = kitInstagramOperationalState(entry, module.draft);
+  const operational = module.makeBusy
+    ? { key: 'gerando', label: 'Gerando', kind: 'info', raw: baseOperational.raw }
+    : baseOperational;
   const images = queueImages(entry, module.draft);
   const queuedAt = text(entry?.atualizado_em || entry?.criado_em || module.draft.instagram_enviado_em || '—');
   const carouselId = text(entry?.id_carrossel || entry?.carrossel_id || module.draft.instagram_carrossel_id || '—');
   const queuePath = text(entry?.fila_json || module.draft.instagram_fila_json || 'carrosseis-kits/fila.json');
-  const duplicateWarning = entry && ACTIVE_QUEUE_STATUSES.has(normalizeStatus(status));
-  const signature = JSON.stringify({ status, queuedAt, carouselId, queuePath, images, code: module.draft.codigo });
+  const signature = JSON.stringify({
+    status: operational.key, queuedAt, carouselId, queuePath, images, code: module.draft.codigo,
+    busy: Boolean(module.makeBusy), error: text(module.draft.instagram_erro),
+  });
+
+  const toolsBadge = form.querySelector('.collection-make-tools .badge');
+  if (toolsBadge) {
+    toolsBadge.className = `badge ${operational.kind}`;
+    toolsBadge.textContent = `Instagram: ${operational.label}`;
+  }
+  const manualButton = form.querySelector('[data-collection-make="instagram"]');
+  if (manualButton) {
+    if (!module.originalId) {
+      manualButton.disabled = true;
+      manualButton.textContent = 'Automático ao salvar';
+      manualButton.title = 'Todo kit novo gera o carrossel automaticamente depois da publicação no GitHub.';
+    } else {
+      manualButton.disabled = Boolean(module.makeBusy);
+      manualButton.textContent = entry ? 'Reprocessar carrossel' : 'Gerar carrossel manualmente';
+      manualButton.title = entry
+        ? 'Use somente se quiser gerar uma nova versão do carrossel.'
+        : 'Contingência para kit salvo que ainda não possui carrossel.';
+    }
+  }
+
   if (previous?.dataset.signature === signature) return;
   previous?.remove();
-  form.insertAdjacentHTML('beforeend', `<section class="instagram-queue-review" data-signature="${escapeHtml(signature)}"><div class="instagram-queue-head"><div><h4>Fila do Instagram</h4><p>Ao salvar um kit novo ou alterar conteúdo visual, o Admin confirma a versão publicada no GitHub, chama o Make e só registra sucesso quando a nova entrada aparece na fila.</p></div><span class="badge ${duplicateWarning ? 'warning' : status === 'postado' ? 'success' : status === 'não enviado' ? 'neutral' : 'info'}">${escapeHtml(status)}</span></div><div class="instagram-queue-grid"><div><strong>${escapeHtml(module.draft.codigo || '—')}</strong><span>Código do kit</span></div><div><strong>${escapeHtml(carouselId)}</strong><span>ID do carrossel</span></div><div><strong>${escapeHtml(queuedAt)}</strong><span>Última atualização</span></div><div><strong>${escapeHtml(queuePath)}</strong><span>Registro da fila</span></div></div>${images.length ? `<div class="instagram-queue-images">${images.map(url => `<img src="${escapeHtml(url)}" onerror="this.remove()" alt="Página do carrossel">`).join('')}</div>` : ''}${duplicateWarning ? '<div class="instagram-queue-warning">Já existe uma entrada real para este kit. O botão manual continua disponível apenas para reprocessamento.</div>' : ''}<div class="instagram-queue-actions"><button class="button secondary compact" type="button" data-instagram-queue-refresh>Atualizar status</button></div></section>`);
+  const notice = entry
+    ? `<div class="instagram-queue-warning">Este kit já possui carrossel. Alterações posteriores no kit não criam outra postagem automaticamente. Use “Reprocessar carrossel” somente quando quiser gerar uma nova versão.</div>`
+    : `<div class="instagram-queue-warning">Kit novo: ao salvar e publicar, o carrossel será gerado automaticamente. Depois disso, edições no kit não geram nova postagem sozinhas.</div>`;
+  const error = operational.key === 'erro' && text(module.draft.instagram_erro)
+    ? `<div class="instagram-queue-error">${escapeHtml(module.draft.instagram_erro)}</div>`
+    : '';
+
+  form.insertAdjacentHTML('beforeend', `<section class="instagram-queue-review" data-signature="${escapeHtml(signature)}"><div class="instagram-queue-head"><div><h4>Instagram do kit</h4><p>A fila do GitHub é a fonte oficial. O Admin mostra apenas o estado operacional necessário: Gerando, Aguardando postagem, Postado ou Erro.</p></div><span class="badge ${operational.kind}">${escapeHtml(operational.label)}</span></div><div class="instagram-queue-grid"><div><strong>${escapeHtml(module.draft.codigo || '—')}</strong><span>Código do kit</span></div><div><strong>${escapeHtml(carouselId)}</strong><span>ID do carrossel</span></div><div><strong>${escapeHtml(queuedAt)}</strong><span>Última atualização</span></div><div><strong>${escapeHtml(queuePath)}</strong><span>Fonte oficial do status</span></div></div>${images.length ? `<div class="instagram-queue-images">${images.map(url => `<img src="${escapeHtml(url)}" onerror="this.remove()" alt="Página do carrossel">`).join('')}</div>` : ''}${notice}${error}<div class="instagram-queue-actions"><button class="button secondary compact" type="button" data-instagram-queue-refresh>Atualizar status</button></div></section>`);
 }
 
 async function reloadCollections(module) {
@@ -127,19 +178,22 @@ async function waitForPersistedKit(module, snapshot) {
     }
     await sleep(AUTO_RETRY_DELAYS[index]);
   }
-  throw lastError || new Error('A versão recém-salva do kit ainda não ficou disponível no GitHub. Atualize os dados e use o botão manual como contingência.');
+  throw lastError || new Error('A versão recém-salva do kit ainda não ficou disponível no GitHub. Atualize os dados e use o reprocessamento manual como contingência.');
 }
 
-async function waitForQueue(module, code, contentVersion, sentAt) {
+async function waitForQueue(module, code, contentVersion, sentAt, previousCarouselId = '') {
   for (let index = 0; index < QUEUE_RETRY_DELAYS.length; index += 1) {
     try {
       await reloadCollections(module);
       const entry = latestQueueEntry(module, code);
       const entryTime = Date.parse(text(entry?.atualizado_em || entry?.criado_em));
       const sentTime = Date.parse(text(sentAt));
+      const entryId = text(entry?.id_carrossel || entry?.carrossel_id);
+      const newCarousel = Boolean(entryId && entryId !== text(previousCarouselId));
+      const recent = entry && Number.isFinite(entryTime) && Number.isFinite(sentTime) && entryTime >= sentTime - 5000;
       const sameVersion = text(entry?.versao_conteudo) === text(contentVersion);
-      const recentWithoutVersion = entry && !text(entry.versao_conteudo) && Number.isFinite(entryTime) && Number.isFinite(sentTime) && entryTime >= sentTime - 5000;
-      if (entry && (sameVersion || recentWithoutVersion)) return entry;
+      const versionCompatible = sameVersion || !text(entry?.versao_conteudo);
+      if (entry && (newCarousel || (recent && versionCompatible))) return entry;
     } catch {}
     await sleep(QUEUE_RETRY_DELAYS[index]);
   }
@@ -167,21 +221,19 @@ async function sendCarousel(module, sourceKit, { automatic = false, forceRegener
     throw new Error('Configure o webhook Instagram de kits nas configurações do Admin.');
   }
   const audit = auditCollection(sourceKit, 'kit', module.store.state.products, module.store.state.queue);
-  if (audit.errors.length) throw new Error(`Revise o kit antes de gerar a fila: ${audit.errors.join(' · ')}.`);
+  if (audit.errors.length) throw new Error(`Revise o kit antes de gerar o carrossel: ${audit.errors.join(' · ')}.`);
   const kit = compactKitForMake(sourceKit, module.store.state.products);
-  if (!text(kit.codigo)) throw new Error('O kit precisa ter código antes de gerar a fila.');
+  if (!text(kit.codigo)) throw new Error('O kit precisa ter código antes de gerar o carrossel.');
   if (!kit.produtos.length) throw new Error('O kit não possui produtos válidos para o carrossel.');
 
   const contentVersion = visualVersion(sourceKit, module.store.state.products);
   const existing = latestQueueEntry(module, kit.codigo);
-  const existingStatus = normalizeStatus(existing?.fila_status || existing?.status);
-  const sameSavedVersion = text(sourceKit.instagram_versao_conteudo) === contentVersion;
-  const sameQueueVersion = text(existing?.versao_conteudo) === contentVersion;
-  if (automatic && !forceRegeneration && (sameSavedVersion || sameQueueVersion) && existing && ACTIVE_QUEUE_STATUSES.has(existingStatus)) {
-    module.onToast(`O carrossel do kit “${kit.nome}” já corresponde à versão publicada.`, 'success');
+  if (automatic && !forceRegeneration && existing) {
+    module.onToast(`O kit “${kit.nome}” já possui carrossel. A edição foi salva sem criar outra postagem.`, 'success');
     return existing;
   }
 
+  const previousCarouselId = text(existing?.id_carrossel || existing?.carrossel_id);
   const requestId = automatic
     ? `auto-${kit.codigo}-${contentVersion}`
     : `manual-${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 10)}`;
@@ -219,11 +271,11 @@ async function sendCarousel(module, sourceKit, { automatic = false, forceRegener
     referencias_imagens: kit.referencias_imagens,
   }, { timeout: 180000 }));
 
-  const queueEntry = await waitForQueue(module, kit.codigo, contentVersion, sentAt);
+  const queueEntry = await waitForQueue(module, kit.codigo, contentVersion, sentAt, previousCarouselId);
   if (!queueEntry) {
     let host = 'webhook configurado';
     try { host = new URL(text(config.makeInstagramKitWebhookUrl)).hostname || host; } catch {}
-    throw new Error(`O endereço ${host} respondeu, mas nenhuma execução criou uma entrada nova em carrosseis-kits/fila.json. Confira se este é o webhook exato do cenário que gera as imagens e se o cenário está ativo no Make.`);
+    throw new Error(`O endereço ${host} respondeu, mas nenhuma geração nova foi confirmada em carrosseis-kits/fila.json. Confira se o cenário de imagens está ativo no Make.`);
   }
 
   const patch = {
@@ -250,7 +302,7 @@ async function autoGenerateAfterSave(module, snapshot) {
   const jobKey = text(snapshot.id || snapshot.codigo);
   if (!jobKey || automaticJobs.has(jobKey)) return;
   automaticJobs.add(jobKey);
-  module.onToast(`Kit “${snapshot.nome}” publicado. Confirmando a versão do commit antes de chamar o Make…`);
+  module.onToast(`Kit “${snapshot.nome}” publicado. Gerando o carrossel automaticamente…`);
   try {
     const { kit } = await waitForPersistedKit(module, snapshot);
     await sendCarousel(module, kit, { automatic: true, forceRegeneration: false });
@@ -280,12 +332,11 @@ function patchSaveAutomation() {
     if (!module.draft || module.type !== 'kit') return originalSave();
     const snapshot = clone(module.draft);
     const previous = module.currentList().find(kit => text(kit.id) === text(module.originalId || snapshot.id)) || null;
-    const previousVersion = previous ? visualVersion(previous, module.store.state.products) : '';
-    const nextVersion = visualVersion(snapshot, module.store.state.products);
     const existingQueue = latestQueueEntry(module, snapshot.codigo);
-    const generationMissing = !existingQueue;
-    const shouldGenerate = !previous || previousVersion !== nextVersion || generationMissing
-      || ['erro_envio', 'erro_geracao', 'erro_geracao_automatica', 'enviado_aguardando_fila'].includes(normalizeStatus(snapshot.instagram_status));
+    const shouldGenerate = shouldAutoGenerateKitCarousel({
+      hadPrevious: Boolean(previous),
+      existingQueue,
+    });
     await originalSave();
     const savedSuccessfully = module.draft === null;
     if (savedSuccessfully && shouldGenerate) {
@@ -303,19 +354,19 @@ function patchAutomation() {
   module.runKitAutomation = async action => {
     if (action !== 'instagram') return original(action);
     if (!module.draft || module.type !== 'kit' || module.makeBusy) return;
-    if (!module.originalId) throw new Error('Salve o kit primeiro. Depois o botão manual pode ser usado como contingência.');
+    if (!module.originalId) throw new Error('Salve o kit primeiro. O carrossel do kit novo será gerado automaticamente.');
     const existing = latestQueueEntry(module, module.draft.codigo);
-    const existingStatus = normalizeStatus(existing?.fila_status || existing?.status);
-    const question = existing && ACTIVE_QUEUE_STATUSES.has(existingStatus)
-      ? `Já existe uma entrada “${existingStatus}” para o kit “${module.draft.nome}”. Deseja forçar uma nova geração?`
-      : `Gerar novamente o carrossel do kit “${module.draft.nome}”?`;
+    const operational = kitInstagramOperationalState(existing, module.draft);
+    const question = existing
+      ? `Este kit está com Instagram “${operational.label}”. Deseja reprocessar e gerar uma nova versão do carrossel?`
+      : `Este kit salvo ainda não possui carrossel. Deseja gerar agora?`;
     if (!confirm(question)) return;
 
     module.makeBusy = true;
     module.draft.instagram_status = 'enviando_manual';
     module.elements.collectionForm.innerHTML = module.formHtml();
     renderDiagnostics();
-    module.onToast('Make: enviando reprocessamento manual do carrossel…');
+    module.onToast('Make: reprocessando o carrossel do kit…');
     try {
       await sendCarousel(module, module.draft, { automatic: false, forceRegeneration: true });
       const refreshed = (module.store.state.kits || []).find(kit => text(kit.id) === text(module.draft.id));
@@ -334,7 +385,7 @@ function patchAutomation() {
         });
         if (persisted) module.draft = { ...module.draft, ...persisted };
       } catch {}
-      module.onToast(`Falha ao enviar para o Make: ${message}`, 'error');
+      module.onToast(`Falha ao reprocessar o carrossel: ${message}`, 'error');
       throw error;
     } finally {
       module.makeBusy = false;
@@ -363,10 +414,10 @@ function bindRefresh() {
     reloadCollections(module).then(() => {
       const entry = latestQueueEntry(module, module.draft.codigo);
       if (entry) {
-        module.draft.instagram_status = text(entry.fila_status || entry.status || 'registrado');
         module.draft.instagram_carrossel_id = text(entry.id_carrossel || entry.carrossel_id || module.draft.instagram_carrossel_id);
         module.draft.instagram_fila_json = text(entry.fila_json || module.draft.instagram_fila_json);
       }
+      module.render();
       renderDiagnostics();
     }).catch(error => module.onToast(error?.message || String(error), 'error'));
   });
@@ -380,6 +431,7 @@ function run() {
     scheduled = false;
     installStyles();
     bindRefresh();
+    patchPresentation();
     patchAutomation();
     patchSaveAutomation();
     renderDiagnostics();
