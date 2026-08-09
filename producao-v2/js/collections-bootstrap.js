@@ -1,6 +1,6 @@
 import './offer-manager.js';
 import './commerce-enhancements.js';
-import './instagram-queue-review.js?admin_build=20260805-kit-auto-carousel-v2';
+import './instagram-queue-review.js?admin_build=20260808-kit-instagram-unified-v1';
 import './basket-context.js?admin_build=20260807-basket-swaps-v2';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
@@ -10,7 +10,7 @@ import './collection-concurrency.js';
 import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
 
-const BUILD = '20260805-kit-auto-carousel-v2';
+const BUILD = '20260808-kit-instagram-unified-v1';
 
 function loadConfig() {
   try {
