@@ -2,6 +2,10 @@ import { auditCollection } from '../producao-v2/js/core/collections.js';
 import { text } from '../producao-v2/js/core/utils.js';
 import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js';
 import { callMake, compactKitForMake, unwrapMakeResult } from '../producao-v2/js/services/make.js?build=20260805-kit-auto-carousel-v2';
+import {
+  kitInstagramOperationalState,
+  latestKitQueueEntry,
+} from '../producao-v2/js/services/kit-instagram-flow.js?build=20260808-kit-instagram-unified-v1';
 
 const STORAGE_KEY = 'da_admin_v2_config';
 const LEGACY_STORAGE_KEY = 'da_admin_settings_v4';
@@ -106,14 +110,15 @@ async function loadProducts(config) {
   return Object.entries(raw || {}).map(([firebaseKey, value]) => ({ ...(value || {}), firebaseKey, _key: firebaseKey }));
 }
 
-function statusText(kit) {
-  return text(kit?.instagram_status || kit?.fila_status || 'ainda não enviado');
+function latestQueueEntry(code) {
+  return latestKitQueueEntry(state.queue, code);
 }
 
-function latestQueueEntry(code) {
-  return [...state.queue]
-    .filter(entry => text(entry?.kit_codigo) === text(code))
-    .sort((a, b) => String(b?.atualizado_em || b?.criado_em || '').localeCompare(String(a?.atualizado_em || a?.criado_em || '')))[0] || null;
+function operationalState() {
+  const entry = latestQueueEntry(state.kit?.codigo);
+  const base = kitInstagramOperationalState(entry, state.kit);
+  if (state.busy) return { ...base, key: 'gerando', label: 'Gerando', kind: 'warning' };
+  return { ...base, kind: base.kind === 'info' ? 'warning' : base.kind };
 }
 
 function contentVersion(compact) {
@@ -146,32 +151,43 @@ function render() {
   const config = getConfig();
   const webhookReady = Boolean(instagramWebhookValue(config));
   const kitReady = Boolean(state.kit?.id);
-  const queueStatus = statusText(state.kit);
+  const entry = latestQueueEntry(state.kit?.codigo);
+  const operational = operationalState();
 
   button.disabled = state.busy || !kitReady || !webhookReady;
   button.textContent = state.busy
     ? 'Gerando e confirmando carrossel…'
-    : queueStatus !== 'ainda não enviado'
-      ? 'Gerar novamente e confirmar a fila'
-      : 'Gerar carrossel e confirmar a fila';
+    : entry
+      ? 'Reprocessar carrossel'
+      : 'Gerar carrossel manualmente';
 
   if (!kitReady) {
-    status.textContent = 'Ao publicar o kit, o sistema aguardará a confirmação do GitHub e iniciará o carrossel automaticamente.';
-    badge.textContent = 'Geração automática ativa';
+    status.textContent = 'Ao publicar um kit novo, o carrossel será gerado automaticamente depois que o GitHub confirmar a publicação.';
+    badge.textContent = 'Automático para kit novo';
     badge.className = 'badge neutral';
     return;
   }
 
   if (!webhookReady) {
-    status.textContent = `Kit publicado: ${state.kit.nome}. Configure o Custom Webhook do Make para ativar o envio automático.`;
+    status.textContent = `Kit publicado: ${state.kit.nome}. Configure o Custom Webhook do Make para ativar a geração automática.`;
     badge.textContent = 'Webhook não configurado';
     badge.className = 'badge warning';
     return;
   }
 
-  status.textContent = `Kit: ${state.kit.nome}. O sucesso só será mostrado depois que uma entrada nova aparecer em carrosseis-kits/fila.json.`;
-  badge.textContent = `Fila: ${queueStatus}`;
-  badge.className = `badge ${['postado', 'publicado', 'novo', 'pendente', 'pronto'].includes(queueStatus) ? 'success' : queueStatus === 'ainda não enviado' ? 'neutral' : 'warning'}`;
+  if (operational.key === 'postado') {
+    status.textContent = `Kit: ${state.kit.nome}. O carrossel já foi postado. Alterações no kit não criam outra postagem automaticamente.`;
+  } else if (operational.key === 'aguardando') {
+    status.textContent = `Kit: ${state.kit.nome}. O carrossel já foi criado e está aguardando postagem.`;
+  } else if (operational.key === 'gerando') {
+    status.textContent = `Kit: ${state.kit.nome}. O carrossel está sendo gerado e confirmado na fila do GitHub.`;
+  } else if (operational.key === 'erro') {
+    status.textContent = `Kit: ${state.kit.nome}. Houve erro na geração. Use o botão de reprocessamento como contingência.`;
+  } else {
+    status.textContent = `Kit: ${state.kit.nome}. Este kit salvo ainda não possui carrossel confirmado.`;
+  }
+  badge.textContent = `Instagram: ${operational.label}`;
+  badge.className = `badge ${operational.kind}`;
 }
 
 async function refreshCollections(snapshot = null) {
@@ -219,10 +235,10 @@ async function waitForPublishedKit(snapshot) {
     }
     await sleep(COMMIT_RETRY_DELAYS[index]);
   }
-  throw lastError || new Error('O kit ainda não apareceu no GitHub após a publicação. Use o botão manual como contingência.');
+  throw lastError || new Error('O kit ainda não apareceu no GitHub após a publicação. Use o reprocessamento manual como contingência.');
 }
 
-async function waitForQueue(code, version, sentAt) {
+async function waitForQueue(code, version, sentAt, previousCarouselId = '') {
   for (let index = 0; index < QUEUE_RETRY_DELAYS.length; index += 1) {
     try {
       const collections = await loadCollections(getConfig());
@@ -230,9 +246,12 @@ async function waitForQueue(code, version, sentAt) {
       const entry = latestQueueEntry(code);
       const entryTime = Date.parse(text(entry?.atualizado_em || entry?.criado_em));
       const sentTime = Date.parse(text(sentAt));
+      const entryId = text(entry?.id_carrossel || entry?.carrossel_id);
+      const newCarousel = Boolean(entryId && entryId !== text(previousCarouselId));
+      const recent = entry && Number.isFinite(entryTime) && Number.isFinite(sentTime) && entryTime >= sentTime - 5000;
       const sameVersion = text(entry?.versao_conteudo) === text(version);
-      const recentWithoutVersion = entry && !text(entry.versao_conteudo) && Number.isFinite(entryTime) && Number.isFinite(sentTime) && entryTime >= sentTime - 5000;
-      if (entry && (sameVersion || recentWithoutVersion)) return entry;
+      const versionCompatible = sameVersion || !text(entry?.versao_conteudo);
+      if (entry && (newCarousel || (recent && versionCompatible))) return entry;
     } catch {}
     await sleep(QUEUE_RETRY_DELAYS[index]);
   }
@@ -274,26 +293,27 @@ async function queueInstagram({ automatic = false, forceRegeneration = false } =
   if (!compact.produtos.length) throw new Error('O kit não possui produtos válidos para o carrossel.');
   const version = contentVersion(compact);
   const existing = latestQueueEntry(compact.codigo);
-  const sameVersion = text(state.kit.instagram_versao_conteudo) === version || text(existing?.versao_conteudo) === version;
-  if (automatic && !forceRegeneration && sameVersion && existing) {
-    showToast(`O carrossel do kit “${state.kit.nome}” já está registrado na fila.`, 'success');
+  if (automatic && !forceRegeneration && existing) {
+    showToast(`O kit “${state.kit.nome}” já possui carrossel. A edição foi salva sem criar outra postagem.`, 'success');
+    render();
     return existing;
   }
 
   if (!automatic) {
-    const existingStatus = statusText(state.kit);
+    const operational = kitInstagramOperationalState(existing, state.kit);
     const question = existing
-      ? `Já existe uma entrada para “${state.kit.nome}”. Deseja forçar uma nova geração?`
-      : `Gerar novamente o carrossel do kit “${state.kit.nome}”?`;
+      ? `Este kit está com Instagram “${operational.label}”. Deseja reprocessar e gerar uma nova versão do carrossel?`
+      : `Este kit salvo ainda não possui carrossel. Deseja gerar agora?`;
     if (!window.confirm(question)) return;
   }
 
   state.busy = true;
   render();
   showToast(automatic
-    ? 'Commit confirmado. Enviando automaticamente o kit ao Make…'
-    : 'Make: enviando e aguardando a confirmação da fila…');
+    ? 'Kit novo confirmado no GitHub. Gerando carrossel automaticamente…'
+    : 'Make: reprocessando e aguardando a confirmação da nova fila…');
 
+  const previousCarouselId = text(existing?.id_carrossel || existing?.carrossel_id);
   const requestId = automatic
     ? `auto-${compact.codigo}-${version}`
     : `manual-${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 10)}`;
@@ -328,11 +348,11 @@ async function queueInstagram({ automatic = false, forceRegeneration = false } =
       referencias_imagens: compact.referencias_imagens,
     }, { timeout: 180000 }));
 
-    const queueEntry = await waitForQueue(compact.codigo, version, sentAt);
+    const queueEntry = await waitForQueue(compact.codigo, version, sentAt, previousCarouselId);
     if (!queueEntry) {
       let host = 'webhook configurado';
       try { host = new URL(instagramWebhookValue(config)).hostname || host; } catch {}
-      throw new Error(`O endereço ${host} respondeu, mas nenhuma entrada nova apareceu em carrosseis-kits/fila.json. Confira se este é o webhook exato do cenário de imagens e se o cenário está ativo no Make.`);
+      throw new Error(`O endereço ${host} respondeu, mas nenhuma geração nova foi confirmada em carrosseis-kits/fila.json. Confira se o cenário está ativo no Make.`);
     }
 
     const updated = {
@@ -354,7 +374,7 @@ async function queueInstagram({ automatic = false, forceRegeneration = false } =
     await saveAutomationResult(config, updated);
     showToast(automatic
       ? 'Carrossel automático confirmado na fila do GitHub.'
-      : 'Carrossel manual confirmado na fila do GitHub.', 'success');
+      : 'Nova versão do carrossel confirmada na fila do GitHub.', 'success');
     return queueEntry;
   } catch (error) {
     const message = text(error?.message || error);
@@ -411,7 +431,7 @@ function installPublicationWatcher() {
     const snapshot = state.pendingPublication;
     state.pendingPublication = null;
     window.setTimeout(() => {
-      showToast('Kit publicado. Confirmando o commit no GitHub…');
+      showToast('Kit publicado. Confirmando a versão no GitHub…');
       waitForPublishedKit(snapshot)
         .then(kit => {
           if (!kit) throw new Error('O kit publicado não foi localizado.');
@@ -435,7 +455,7 @@ $('#instagramQueueButton')?.addEventListener('click', () => {
 });
 render();
 window.setTimeout(() => {
-  if (text(localStorage.getItem(LAST_KIT_KEY))) {
+  if (text(getConfig().githubToken)) {
     refreshCollections().catch(error => console.warn('Não foi possível recuperar o último kit publicado:', error));
   }
 }, 1200);
