@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260810-admin-loader-clean-v1';
+      const BUILD = '20260810-status-unified-v2';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -75,7 +75,6 @@
 
         const enhancements = [
           ['./js/product-delete-filter-v2.js', false],
-          ['./js/manual-status-save.js', false],
           ['./js/nfe-image-make-fix.js', true],
           ['./js/nfe-import-save-fix.js', true],
           ['./js/alternate-ean-support.js', true],
