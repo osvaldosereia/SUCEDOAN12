@@ -17,50 +17,78 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260808-kit-instagram-unified-v1';
+      const BUILD = '20260810-admin-loader-clean-v1';
+
+      function replaceRequired(source, pattern, replacement, label) {
+        if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
+        return source.replace(pattern, replacement);
+      }
+
+      function scriptTag(src, { module = false } = {}) {
+        const open = '<scr' + 'ipt';
+        const close = '</scr' + 'ipt>';
+        return `${open}${module ? ' type="module"' : ''} src="${src}">${close}`;
+      }
+
       try {
         const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
         let html = await response.text();
 
-        const oldFirebase = '"/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase.js?admin_build=20260726-admin-v13-xml-editor-parity",';
         const productiveImports = [
-          `"/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase-productive.js?admin_build=${BUILD}",`,
+          `      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase-productive.js?admin_build=${BUILD}",`,
           `      "/producao-v2/js/services/collections.js": "/producao-v2/js/services/collections.js?admin_build=${BUILD}",`,
           `      "/producao-v2/js/collections-bootstrap.js?admin_build=20260728-customers-fallback-v1": "/producao-v2/js/collections-bootstrap.js?admin_build=${BUILD}",`,
         ].join('\n');
 
-        const oldProductsModule = '"/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=20260727-products-inline-v1",';
-        const productiveProductsModule = `"/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=${BUILD}",`;
-        const oldStockModule = '"/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=20260726-admin-v13-xml-editor-parity"';
-        const productiveStockModule = `"/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=${BUILD}"`;
-        const oldAppScript = './js/app.js?admin_build=20260727-official-ux-v1';
-        const productiveAppScript = `./js/app.js?admin_build=${BUILD}`;
+        html = replaceRequired(
+          html,
+          /\s*"\/producao-v2\/js\/services\/firebase\.js"\s*:\s*"\/producao-v2\/js\/services\/firebase(?:-productive)?\.js\?[^\"]*"\s*,?/,
+          `\n${productiveImports}`,
+          'o mapa de importação do Firebase',
+        );
 
-        if (!html.includes(oldFirebase)) throw new Error('Não foi possível localizar o mapa de importação do Firebase.');
-        if (!html.includes(oldProductsModule)) throw new Error('Não foi possível localizar o módulo da lista de produtos.');
-        if (!html.includes(oldStockModule)) throw new Error('Não foi possível localizar o módulo de estoque.');
-        if (!html.includes(oldAppScript)) throw new Error('Não foi possível localizar o aplicativo principal.');
+        html = replaceRequired(
+          html,
+          /"\/producao-v2\/js\/modules\/products\.js"\s*:\s*"\/producao-v2\/js\/modules\/products\.js\?[^\"]*"\s*,?/,
+          `"/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=${BUILD}",`,
+          'o módulo da lista de produtos',
+        );
 
-        html = html.replace(oldFirebase, productiveImports);
-        html = html.replace(oldProductsModule, productiveProductsModule);
-        html = html.replace(oldStockModule, productiveStockModule);
-        html = html.replace(oldAppScript, productiveAppScript);
+        html = replaceRequired(
+          html,
+          /"\/producao-v2\/js\/modules\/stock\.js"\s*:\s*"\/producao-v2\/js\/modules\/stock\.js\?[^\"]*"\s*,?/,
+          `"/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=${BUILD}"`,
+          'o módulo de estoque',
+        );
+
+        html = replaceRequired(
+          html,
+          /\.\/js\/app\.js\?admin_build=[^\"'<>\s]+/,
+          `./js/app.js?admin_build=${BUILD}`,
+          'o aplicativo principal',
+        );
+
         html = html.replace('<th>Preço</th>', '<th>Preço de venda</th>');
         html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · edição e exclusão segura de produtos, XML, imagens e EANs alternativos.</strong>');
         html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
 
-        // As tags são montadas em partes para não encerrar este script carregador antes da hora.
-        const openScript = '<scr' + 'ipt';
-        const closeScript = '</scr' + 'ipt>';
-        const deleteFilterScript = `${openScript} src="./js/product-delete-filter-v2.js?admin_build=${BUILD}">${closeScript}`;
-        const statusScript = `${openScript} src="./js/manual-status-save.js?admin_build=${BUILD}">${closeScript}`;
-        const nfeImageScript = `${openScript} type="module" src="./js/nfe-image-make-fix.js?admin_build=${BUILD}">${closeScript}`;
-        const nfeImportScript = `${openScript} type="module" src="./js/nfe-import-save-fix.js?admin_build=${BUILD}">${closeScript}`;
-        const alternateEanScript = `${openScript} type="module" src="./js/alternate-ean-support.js?admin_build=${BUILD}">${closeScript}`;
-        const inlineSalePriceScript = `${openScript} src="./js/inline-sale-price-label.js?admin_build=${BUILD}">${closeScript}`;
-        const productDeleteScript = `${openScript} src="./js/product-delete-tools.js?admin_build=${BUILD}">${closeScript}`;
-        html = html.replace('</body>', `${deleteFilterScript}${statusScript}${nfeImageScript}${nfeImportScript}${alternateEanScript}${inlineSalePriceScript}${productDeleteScript}</body>`);
+        const enhancements = [
+          ['./js/product-delete-filter-v2.js', false],
+          ['./js/manual-status-save.js', false],
+          ['./js/nfe-image-make-fix.js', true],
+          ['./js/nfe-import-save-fix.js', true],
+          ['./js/alternate-ean-support.js', true],
+          ['./js/inline-sale-price-label.js', false],
+          ['./js/product-delete-tools.js', false],
+        ];
+
+        const extraScripts = enhancements
+          .filter(([src]) => !html.includes(`src="${src}`))
+          .map(([src, module]) => scriptTag(`${src}?admin_build=${BUILD}`, { module }))
+          .join('');
+
+        html = html.replace('</body>', `${extraScripts}</body>`);
 
         document.open();
         document.write(html);
