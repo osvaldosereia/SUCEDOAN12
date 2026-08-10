@@ -1,9 +1,12 @@
 import { loadCatalog, searchProducts, findProductByReference } from '../app-next/src/catalog.js';
 import { applyProductOffer, isAvailable } from '../app-next/src/commerce.js';
 import { prepareProductOffer } from '../app-next/src/offer-engine.js';
-import { escapeHtml, fmt, formatDateBR, norm } from '../app-next/src/core.js';
+import { cleanCpf, escapeHtml, fmt, formatCpf, formatDateBR, norm } from '../app-next/src/core.js';
+import {
+  enqueueOrder, lookupClientByCpf, openWhatsApp, processOrderQueue
+} from '../app-next/src/integrations.js?v=20260810-2';
+import { buildComplementPayload, buildComplementWhatsAppMessage } from './order-integration.js?v=20260810-2';
 
-const WHATSAPP_NUMBER = '5565998150975';
 const CART_KEY = 'da_complemente_cart_v2';
 const CART_MAX_AGE = 24 * 60 * 60 * 1000;
 const CAMPAIGNS_ENDPOINT = '../site/mini-catalogo-links.json';
@@ -22,7 +25,9 @@ const state = {
   route: { name: 'home', values: [], query: new URLSearchParams() },
   progressiveOffers: [],
   progressiveVisible: 0,
-  progressiveObserver: null
+  progressiveObserver: null,
+  cpf: '',
+  submitting: false
 };
 
 const app = document.getElementById('app');
@@ -508,10 +513,10 @@ function updateShell() {
   document.querySelectorAll('[data-cart-total]').forEach(element => { element.textContent = fmt(pricing.total); });
   document.querySelectorAll('[data-direct-whatsapp]').forEach(button => {
     button.disabled = count <= 0;
-    button.setAttribute('aria-label', count > 0 ? `Enviar ${count} item(ns), total ${fmt(pricing.total)}, no WhatsApp` : 'Adicione produtos para enviar no WhatsApp');
+    button.setAttribute('aria-label', count > 0 ? `Revisar ${count} item(ns), total ${fmt(pricing.total)}` : 'Adicione produtos para finalizar');
   });
   const label = document.querySelector('[data-direct-label]');
-  if (label) label.textContent = count > 0 ? 'Enviar no WhatsApp' : 'Adicione produtos';
+  if (label) label.textContent = count > 0 ? 'Finalizar complemento' : 'Adicione produtos';
 }
 
 function openCheckout() {
@@ -537,27 +542,74 @@ function renderCheckout() {
   }
   const discountedItems = pricing.items.filter(item => item.discountPercent > 0).length;
   const codes = [...new Set(pricing.items.map(item => item.discountCode).filter(Boolean))];
-  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}${item.discountPercent ? ` · ${escapeHtml(item.discountCode)}: ${item.discountPercent}% OFF` : ''}</small></div>${quantityControl(item.product)}</div>`).join('')}</div><div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${pricing.discount > 0 ? `<div class="checkout-summary-row discount"><span>Desconto ${escapeHtml(codes.join(', '))} em ${discountedItems} item(ns)</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div><div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp">Enviar complemento no WhatsApp</button><button class="clear-complement" data-action="clear-cart">Limpar seleção</button></div><p class="checkout-help">A campanha e os valores serão conferidos pela equipe antes da inclusão no pedido.</p>`;
+  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}${item.discountPercent ? ` · ${escapeHtml(item.discountCode)}: ${item.discountPercent}% OFF` : ''}</small></div>${quantityControl(item.product)}</div>`).join('')}</div><div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${pricing.discount > 0 ? `<div class="checkout-summary-row discount"><span>Desconto ${escapeHtml(codes.join(', '))} em ${discountedItems} item(ns)</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div><section class="complement-cpf-card"><label for="complement-cpf"><strong>Informe somente seu CPF</strong><span>Usaremos o CPF para localizar o cadastro que você já possui.</span></label><input id="complement-cpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" value="${escapeHtml(formatCpf(state.cpf))}" aria-describedby="complement-status"><div id="complement-status" class="complement-status" role="status" aria-live="polite"></div></section><div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp" ${state.submitting ? 'disabled' : ''}>${state.submitting ? 'Processando complemento...' : 'Enviar complemento no WhatsApp'}</button><button class="clear-complement" data-action="clear-cart" ${state.submitting ? 'disabled' : ''}>Limpar seleção</button></div><p class="checkout-help">Após localizar o CPF, abriremos o WhatsApp imediatamente. Firebase, Make, Bling e estoque continuarão em segundo plano.</p>`;
 }
 
-function whatsappMessage() {
-  const pricing = cartPricing();
-  const lines = pricing.items.map(item => `• ${item.qty}x ${item.product.name} — ${fmt(item.total)}${item.discountPercent ? ` (${item.discountCode}: ${item.discountPercent}% OFF)` : ''}`);
-  const campaigns = [...new Set(pricing.items.filter(item => item.campaignId).map(item => `${item.discountCode} [${item.campaignId}]`))];
-  const message = [
-    'Olá! Quero acrescentar estes produtos ao pedido que já fiz:', '', ...lines, '',
-    `Subtotal: ${fmt(pricing.subtotal)}`,
-    ...(pricing.discount > 0 ? [`Desconto da campanha: -${fmt(pricing.discount)}`] : []),
-    `Total do complemento: ${fmt(pricing.total)}`,
-    ...(campaigns.length ? [`Campanhas: ${campaigns.join(', ')}`] : []),
-    '', 'Por favor, confirme a inclusão no meu pedido.', `Link usado: ${location.href}`
-  ].join('\n');
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+function updateComplementStatus(message, type = '') {
+  const status = document.getElementById('complement-status');
+  if (!status) return;
+  status.textContent = message;
+  status.className = `complement-status ${type}`.trim();
 }
 
-function sendWhatsapp() {
+async function sendComplement(button) {
+  if (state.submitting) return;
   const pricing = cartPricing();
-  if (pricing.items.length) window.open(whatsappMessage(), '_blank', 'noopener');
+  const cpf = cleanCpf(state.cpf);
+  if (!pricing.items.length) {
+    showToast('Adicione pelo menos um produto.');
+    return;
+  }
+  if (cpf.length !== 11) {
+    updateComplementStatus('Digite os 11 números do CPF.', 'error');
+    document.getElementById('complement-cpf')?.focus();
+    return;
+  }
+
+  const pendingWhatsApp = window.open('about:blank', '_blank');
+  let whatsAppOpened = false;
+  state.submitting = true;
+  button.disabled = true;
+  button.textContent = 'Consultando CPF...';
+  updateComplementStatus('Consultando seu cadastro...', 'warning');
+
+  try {
+    const result = await lookupClientByCpf(cpf);
+    if (!result?.encontrado || !result?.cliente) {
+      throw new Error('CPF não encontrado. Use o CPF informado no pedido anterior.');
+    }
+
+    button.textContent = 'Registrando complemento...';
+    updateComplementStatus('Cadastro encontrado. Registrando seu complemento...', 'ok');
+    const payload = buildComplementPayload({
+      pricing, cpf, customer: result.cliente,
+      campaignReference: state.campaignRef,
+      sourceUrl: location.href
+    });
+    openWhatsApp(buildComplementWhatsAppMessage(payload), pendingWhatsApp);
+    whatsAppOpened = true;
+
+    try {
+      enqueueOrder(payload);
+      void processOrderQueue();
+    } catch (queueError) {
+      console.warn('Complemento aberto no WhatsApp, mas não entrou na fila de integrações:', queueError);
+    }
+
+    state.cpf = '';
+    clearCart();
+    closeCheckout();
+    showToast(`Complemento ${payload.pedido.numero} pronto no WhatsApp.`);
+  } catch (error) {
+    if (!whatsAppOpened && pendingWhatsApp && !pendingWhatsApp.closed) pendingWhatsApp.close();
+    updateComplementStatus(error?.name === 'AbortError' ? 'A consulta demorou demais. Tente novamente.' : error.message || 'Não foi possível enviar o complemento.', 'error');
+  } finally {
+    state.submitting = false;
+    if (button.isConnected) {
+      button.disabled = false;
+      button.textContent = 'Enviar complemento no WhatsApp';
+    }
+  }
 }
 
 function showToast(message) {
@@ -580,7 +632,7 @@ function clearCart() {
 
 function bindEvents() {
   window.addEventListener('hashchange', renderRoute);
-  document.addEventListener('click', event => {
+  document.addEventListener('click', async event => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
     event.preventDefault();
@@ -589,7 +641,7 @@ function bindEvents() {
     else if (button.dataset.action === 'inc') setQty(id, Number(state.cart[String(id)] || 0) + 1);
     else if (button.dataset.action === 'dec') setQty(id, Number(state.cart[String(id)] || 0) - 1);
     else if (button.dataset.action === 'clear-cart') clearCart();
-    else if (button.dataset.action === 'send-whatsapp') sendWhatsapp();
+    else if (button.dataset.action === 'send-whatsapp') await sendComplement(button);
     else if (button.dataset.action === 'open-checkout') openCheckout();
     else if (button.dataset.action === 'load-more-offers') loadNextOfferBatch();
   });
@@ -601,6 +653,12 @@ function bindEvents() {
     image.dataset.fallback = fallbacks.join('|');
     image.src = next || '../img/logoantonia5.png';
   }, true);
+  checkoutContent.addEventListener('input', event => {
+    if (event.target.id !== 'complement-cpf') return;
+    state.cpf = cleanCpf(event.target.value);
+    event.target.value = formatCpf(state.cpf);
+    updateComplementStatus('', '');
+  });
   document.getElementById('open-cart').addEventListener('click', openCheckout);
   document.getElementById('bottom-cart')?.addEventListener('click', openCheckout);
   document.getElementById('open-menu').addEventListener('click', () => navigate('#/categorias'));

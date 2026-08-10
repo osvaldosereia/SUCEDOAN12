@@ -158,6 +158,8 @@ export function buildOrderPayload(state, form, { timestamp = Date.now(), random 
 export function buildFirebaseOrder(makePayload) {
   const order = makePayload?.pedido || {};
   const customer = order.cliente || {};
+  const origin = String(order.origem || 'site');
+  const orderType = String(order.tipo || 'pedido_normal');
   const nowIso = new Date().toISOString();
   const items = (order.itens || []).map(item => ({
     produtoId: String(item.produtoId || item.identificadores?.id || ''),
@@ -189,7 +191,8 @@ export function buildFirebaseOrder(makePayload) {
     id: String(order.id || ''),
     numero_pedido: String(order.numero || order.id || ''),
     idempotency_key: String(order.idempotencyKey || order.id || ''),
-    origem: 'site',
+    origem: origin,
+    tipo: orderType,
     metadados: order.metadados || {},
     status: 'recebido',
     status_separacao: 'pendente',
@@ -228,10 +231,23 @@ export function buildFirebaseOrder(makePayload) {
     validadeQuantidade: order.validadeQuantidade || null,
     observacoes: String(order.observacoes || ''),
     itens: items,
+    estoque: {
+      status: 'pendente',
+      baixado_em: '',
+      idempotency_key: String(order.idempotencyKey || order.id || '')
+    },
     envio: { status: 'aguardando_separacao', entregador: '', saiu_em: '', entregue_em: '', tentativas: [], observacoes: '' },
-    historico: [{ data: nowIso, acao: 'pedido_recebido_site', usuario: 'site-next', observacao: 'Pedido salvo pela versão modular de testes.' }],
+    historico: [{
+      data: nowIso,
+      acao: origin === 'complemente' ? 'pedido_complementar_recebido' : 'pedido_recebido_site',
+      usuario: origin === 'complemente' ? 'complemente' : 'site-next',
+      observacao: origin === 'complemente'
+        ? 'Pedido complementar independente salvo pelo mini catálogo.'
+        : 'Pedido salvo pela versão modular de testes.'
+    }],
     controle: {
-      pedido_original_site: true,
+      pedido_original_site: origin === 'site',
+      pedido_complementar: origin === 'complemente',
       bloquear_alteracao_por_whatsapp: true,
       aguardando_processamento_make: true,
       preview_modular: true,
@@ -355,6 +371,15 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
 }
 
 let orderQueueProcessing = false;
+let orderQueueRetryTimer = null;
+
+function scheduleOrderQueueCheck(delayMs = 30000) {
+  if (typeof document === 'undefined' || orderQueueRetryTimer) return;
+  orderQueueRetryTimer = setTimeout(() => {
+    orderQueueRetryTimer = null;
+    void processOrderQueue();
+  }, delayMs);
+}
 
 function readQueue() {
   const queue = readStorage(CONFIG.STORAGE.ORDER_QUEUE, []);
@@ -362,7 +387,13 @@ function readQueue() {
 }
 
 function writeQueue(queue) {
-  writeStorage(CONFIG.STORAGE.ORDER_QUEUE, (queue || []).filter(entry => entry?.id && entry.makePayload).slice(-CONFIG.ORDER_QUEUE_MAX));
+  const normalized = (queue || []).filter(entry => entry?.id && entry.makePayload);
+  if (normalized.length > CONFIG.ORDER_QUEUE_MAX) {
+    throw new Error('A fila local de pedidos atingiu o limite de segurança.');
+  }
+  if (!writeStorage(CONFIG.STORAGE.ORDER_QUEUE, normalized)) {
+    throw new Error('O navegador não permitiu salvar a fila local do pedido.');
+  }
 }
 
 export function enqueueOrder(makePayload) {
@@ -409,8 +440,18 @@ async function readFirebaseOrder(orderId) {
   }
 }
 
-function firebaseOrderHasBling(order) {
-  return Boolean(order?.bling?.id_pedido_venda || order?.bling?.numero_pedido_bling);
+export function firebaseOrderWasProcessed(order) {
+  const hasBlingOrder = Boolean(order?.bling?.id_pedido_venda || order?.bling?.numero_pedido_bling);
+  return hasBlingOrder && order?.controle?.processado_make === true;
+}
+
+export function canDispatchOrderToMake(entry) {
+  return Boolean(entry && entry.firebaseStatus === 'sent' && entry.makeStatus !== 'sent');
+}
+
+export async function confirmFirebaseOrder(orderId) {
+  const order = await readFirebaseOrder(orderId);
+  return order && String(order.id || '') === String(orderId || '') ? order : null;
 }
 
 export async function processOrderQueue() {
@@ -435,6 +476,10 @@ export async function processOrderQueue() {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.firebaseOrder), keepalive: true
           }, 8000);
           if (!response.ok) throw new Error(`Firebase respondeu ${response.status}`);
+          const savedOrder = await response.json().catch(() => null);
+          if (!savedOrder || String(savedOrder.id || '') !== String(entry.id)) {
+            throw new Error('Firebase não confirmou o identificador do pedido');
+          }
           entry = updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
         } catch (error) {
           updateQueueEntry(entry.id, { firebaseStatus: 'pending', lastError: error.message || 'Falha no Firebase' });
@@ -442,15 +487,18 @@ export async function processOrderQueue() {
       }
 
       entry = readQueue().find(item => item.id === snapshot.id);
+      if (entry && entry.firebaseStatus !== 'sent') continue;
       if (!entry || entry.makeStatus === 'sent') {
         if (entry?.firebaseStatus === 'sent' && entry?.makeStatus === 'sent') writeQueue(readQueue().filter(item => item.id !== entry.id));
         continue;
       }
 
+      if (!canDispatchOrderToMake(entry)) continue;
+
       const now = Date.now();
       if (Number(entry.makeAttempts || 0) > 0) {
         const existingOrder = await readFirebaseOrder(entry.id);
-        if (firebaseOrderHasBling(existingOrder)) {
+        if (firebaseOrderWasProcessed(existingOrder)) {
           updateQueueEntry(entry.id, { firebaseStatus: 'sent', makeStatus: 'sent', lastError: '' });
           writeQueue(readQueue().filter(item => item.id !== entry.id));
           continue;
@@ -464,25 +512,34 @@ export async function processOrderQueue() {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.makePayload), keepalive: true
         }, 12000);
         if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
-        updateQueueEntry(entry.id, { makeStatus: 'sent', lastError: '' });
+        // HTTP 2xx confirma apenas que o webhook aceitou o pedido. A fila permanece
+        // salva até o Firebase registrar que o cenário terminou no Bling e estoque.
+        updateQueueEntry(entry.id, { makeStatus: 'accepted', lastError: '' });
       } catch (error) {
         updateQueueEntry(entry.id, { makeStatus: 'pending', lastError: error.message || 'Falha no Make' });
       }
       entry = readQueue().find(item => item.id === snapshot.id);
       if (entry?.firebaseStatus === 'sent' && entry?.makeStatus === 'sent') writeQueue(readQueue().filter(item => item.id !== entry.id));
     }
+  } catch (error) {
+    console.error('Falha ao processar a fila segura de pedidos:', error);
   } finally {
     orderQueueProcessing = false;
+    if (readQueue().length) scheduleOrderQueueCheck();
   }
 }
 
-export function openWhatsApp(message) {
+export function openWhatsApp(message, targetWindow = null) {
   const text = encodeURIComponent(message);
   const mobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const url = mobile
     ? `https://api.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}&text=${text}&type=phone_number&app_absent=0`
     : `https://web.whatsapp.com/send?phone=${CONFIG.WHATSAPP_NUMBER}&text=${text}`;
   if (typeof document === 'undefined') return url;
+  if (targetWindow && !targetWindow.closed) {
+    targetWindow.location.href = url;
+    return url;
+  }
   const link = document.createElement('a');
   link.href = url;
   link.target = '_blank';

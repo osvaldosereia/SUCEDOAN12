@@ -24,9 +24,14 @@
 .complement-catalog .complement-cart-copy{min-width:0}.complement-catalog .complement-cart-copy strong,.complement-catalog .complement-cart-copy small{display:block}.complement-catalog .complement-cart-copy strong{font-size:14px}.complement-catalog .complement-cart-copy small{margin-top:4px;color:#687068;font-size:12px}
 .complement-catalog .checkout-summary-card{display:grid;gap:10px;margin-top:18px;padding:18px;border-radius:18px;background:#f7f7f7}
 .complement-catalog .checkout-summary-row{display:flex;justify-content:space-between;gap:20px}.complement-catalog .checkout-summary-row.discount{color:var(--wa-dark)}.complement-catalog .checkout-summary-row.total{padding-top:12px;border-top:1px solid #ddd;font-size:18px}
+.complement-catalog .complement-cpf-card{display:grid;gap:10px;margin-top:18px;padding:16px;border:1px solid #d7e7dc;border-radius:18px;background:#f5fbf7}
+.complement-catalog .complement-cpf-card label strong,.complement-catalog .complement-cpf-card label span{display:block}.complement-catalog .complement-cpf-card label strong{font-size:15px}.complement-catalog .complement-cpf-card label span{margin-top:4px;color:#5f6d63;font-size:12px;line-height:1.4}
+.complement-catalog .complement-cpf-card input{width:100%;min-height:50px;padding:0 14px;border:1px solid #b7c9bd;border-radius:13px;background:#fff;color:#17231b;font-size:18px;font-weight:850;letter-spacing:.03em;outline:none}.complement-catalog .complement-cpf-card input:focus{border-color:var(--wa);box-shadow:0 0 0 3px rgba(18,140,74,.12)}
+.complement-catalog .complement-status{min-height:18px;font-size:12px;font-weight:750}.complement-catalog .complement-status.error{color:#b42318}.complement-catalog .complement-status.warning{color:#9a6700}.complement-catalog .complement-status.ok{color:#087a3d}
 .complement-catalog .complement-checkout-actions{display:grid;gap:10px;margin-top:18px}
 .complement-catalog .whatsapp-button{min-height:52px;border:0;border-radius:14px;background:var(--wa);color:#fff;font-weight:900;font-size:16px;cursor:pointer}
 .complement-catalog .whatsapp-button:hover{background:var(--wa-dark)}
+.complement-catalog .whatsapp-button:disabled,.complement-catalog .clear-complement:disabled{opacity:.62;cursor:wait}
 .complement-catalog .clear-complement{min-height:44px;border:1px solid #ddd;border-radius:12px;background:#fff;font-weight:700;cursor:pointer}
 .complement-catalog .checkout-help{color:#6b716b;font-size:12px;line-height:1.45}
 .complement-catalog .complement-bottom-nav{align-items:stretch}
