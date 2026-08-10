@@ -63,7 +63,7 @@
   }
 
   function setupTopNavigation() {
-    document.querySelectorAll('[data-route="stock"], [data-route="quick-purchase"]').forEach(button => button.remove());
+    document.querySelectorAll('[data-route="quick-purchase"]').forEach(button => button.remove());
     document.querySelectorAll('[data-view="quick-purchase"]').forEach(section => section.remove());
 
     document.querySelectorAll('#mainNav .nav-group').forEach(group => {
