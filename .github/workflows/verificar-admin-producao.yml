@@ -4,7 +4,7 @@ run-name: Saúde do Admin · ${{ github.event_name }}
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23,53 * * * *"
+    - cron: "23 * * * *"
   push:
     branches: [main]
     paths:
@@ -25,7 +25,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 concurrency:
   group: verificar-admin-producao
@@ -34,7 +33,7 @@ concurrency:
 jobs:
   verificar:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 8
     steps:
       - name: Baixar o repositório
         uses: actions/checkout@v5
@@ -50,8 +49,8 @@ jobs:
         if: github.event_name == 'push'
         run: sleep 45
 
-      - name: Primeira verificação
-        id: first_check
+      - name: Verificar produção
+        id: health_check
         continue-on-error: true
         env:
           ADMIN_BASE_URL: https://donaantonia.com.br
@@ -59,51 +58,10 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          node scripts/check-admin-production.mjs 2>&1 | tee admin-production-first.log
-          cp admin-production-report.json admin-production-report-inicial.json
-
-      - name: Solicitar autocorreção
-        if: steps.first_check.outcome == 'failure'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/dispatches"
-          headers=(
-            -H "Accept: application/vnd.github+json"
-            -H "Authorization: Bearer ${GH_TOKEN}"
-            -H "X-GitHub-Api-Version: 2022-11-28"
-            -H "Content-Type: application/json"
-          )
-          curl --fail-with-body --silent --show-error -X POST "${headers[@]}" "$api" \
-            -d "{\"event_type\":\"sincronizar_produtos_home\",\"client_payload\":{\"origem\":\"healthcheck-admin\",\"solicitado_em\":\"$(date -u +%FT%TZ)\"}}"
-          curl --fail-with-body --silent --show-error -X POST "${headers[@]}" "$api" \
-            -d "{\"event_type\":\"processar_ofertas\",\"client_payload\":{\"origem\":\"healthcheck-admin\",\"solicitado_em\":\"$(date -u +%FT%TZ)\"}}"
-          echo "Sincronização do catálogo e processamento de ofertas solicitados."
-
-      - name: Aguardar autocorreção
-        if: always() && steps.first_check.outcome == 'failure'
-        run: sleep 120
-
-      - name: Verificação final
-        id: final_check
-        if: always() && steps.first_check.outcome == 'failure'
-        continue-on-error: true
-        env:
-          ADMIN_BASE_URL: https://donaantonia.com.br
-          OFFER_MAX_AGE_HOURS: 3
-        shell: bash
-        run: |
-          set -o pipefail
-          node scripts/check-admin-production.mjs 2>&1 | tee admin-production-final.log
-
-      - name: Preservar relatório aprovado na primeira tentativa
-        if: steps.first_check.outcome == 'success'
-        run: cp admin-production-report-inicial.json admin-production-report.json
+          node scripts/check-admin-production.mjs 2>&1 | tee admin-production.log
 
       - name: Preparar status versionado
-        if: always() && steps.first_check.outcome != 'skipped'
+        if: always() && steps.health_check.outcome != 'skipped'
         env:
           HEALTH_EVENT: ${{ github.event_name }}
           HEALTH_RUN_ID: ${{ github.run_id }}
@@ -112,14 +70,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          source_file="admin-production-report.json"
-          if [ ! -f "$source_file" ] && [ -f admin-production-report-inicial.json ]; then
-            source_file="admin-production-report-inicial.json"
+          if [ ! -f admin-production-report.json ]; then
+            printf '{"ok":false,"errors":[{"name":"healthcheck","detail":"Relatório não foi gerado"}],"warnings":[]}' > admin-production-report.json
           fi
-          if [ ! -f "$source_file" ]; then
-            printf '{"ok":false,"errors":[{"name":"healthcheck","detail":"Relatório não foi gerado"}]}' > "$source_file"
-          fi
-          SOURCE_FILE="$source_file" node --input-type=module <<'NODE'
+          SOURCE_FILE="admin-production-report.json" node --input-type=module <<'NODE'
           import { readFile, writeFile } from 'node:fs/promises';
           const report = JSON.parse(await readFile(process.env.SOURCE_FILE, 'utf8'));
           report.workflow = {
@@ -132,24 +86,44 @@ jobs:
           await writeFile(process.env.RUNNER_TEMP + '/admin-health-status.json', JSON.stringify(report, null, 2) + '\n');
           NODE
 
-      - name: Publicar status da produção
-        if: always() && steps.first_check.outcome != 'skipped'
+      - name: Publicar mudança real de estado
+        if: always() && steps.health_check.outcome != 'skipped'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           branch="${GITHUB_REF_NAME:-main}"
+
           for tentativa in 1 2 3 4 5; do
             git fetch origin "$branch"
             git reset --hard "origin/$branch"
             mkdir -p site
+
+            if [ -f site/admin-health-status.json ]; then
+              if CURRENT_FILE="site/admin-health-status.json" NEXT_FILE="$RUNNER_TEMP/admin-health-status.json" node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const current = JSON.parse(await readFile(process.env.CURRENT_FILE, 'utf8'));
+          const next = JSON.parse(await readFile(process.env.NEXT_FILE, 'utf8'));
+          const signature = value => JSON.stringify({
+            ok: Boolean(value?.ok),
+            errors: (value?.errors || []).map(item => item?.name || '').filter(Boolean).sort(),
+            warnings: (value?.warnings || []).map(item => item?.name || '').filter(Boolean).sort(),
+          });
+          process.exit(signature(current) === signature(next) ? 0 : 1);
+          NODE
+              then
+                echo "Estado de saúde sem mudança; nenhum commit será criado."
+                exit 0
+              fi
+            fi
+
             cp "$RUNNER_TEMP/admin-health-status.json" site/admin-health-status.json
             git add site/admin-health-status.json
             if git diff --cached --quiet; then
               exit 0
             fi
-            git commit -m "Atualiza diagnóstico automático do Admin"
+            git commit -m "Atualiza estado de saúde do Admin"
             if git push origin "HEAD:${branch}"; then
               exit 0
             fi
@@ -157,17 +131,17 @@ jobs:
           done
           exit 1
 
-      - name: Anexar relatórios
-        if: always() && steps.first_check.outcome != 'skipped'
+      - name: Anexar relatório
+        if: always() && steps.health_check.outcome != 'skipped'
         uses: actions/upload-artifact@v4
         with:
           name: admin-production-health
           path: |
-            admin-production-report*.json
-            admin-production-*.log
+            admin-production-report.json
+            admin-production.log
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Confirmar falha persistente
-        if: always() && steps.first_check.outcome == 'failure' && steps.final_check.outcome == 'failure'
+      - name: Confirmar falha
+        if: always() && steps.health_check.outcome == 'failure'
         run: exit 1
