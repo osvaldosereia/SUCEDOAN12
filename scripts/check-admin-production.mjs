@@ -2,7 +2,6 @@ import { execFileSync } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
 
 const BASE_URL = String(process.env.ADMIN_BASE_URL || 'https://donaantonia.com.br').replace(/\/+$/, '');
-const BUILD = '20260725-admin-v12-fix-abas2';
 const OFFER_MAX_AGE_HOURS = Math.max(2, Number(process.env.OFFER_MAX_AGE_HOURS || 3));
 const ATTEMPTS = Math.max(1, Number(process.env.CHECK_ATTEMPTS || 4));
 const RETRY_DELAY_MS = Math.max(1000, Number(process.env.CHECK_RETRY_DELAY_MS || 5000));
@@ -122,11 +121,10 @@ async function checkJson(pathname, name, validator) {
 
 async function checkRouteModulesPublished() {
   const modules = [
-    'catalog-auto-sync.js', 'product-lifecycle-bootstrap.js', 'quick-read-bootstrap.js',
-    'nfe-bootstrap.js', 'orders-bootstrap.js', 'order-tools-bootstrap.js',
+    'catalog-auto-sync.js', 'product-lifecycle-bootstrap.js',
+    'nfe-bootstrap.js', 'orders-bootstrap.js', 'customers-bootstrap.js', 'order-tools-bootstrap.js',
     'collections-bootstrap.js', 'offers-bootstrap.js', 'coupons-bootstrap.js',
-    'quick-purchase-bootstrap.js', 'registries-bootstrap.js', 'diagnostics-bootstrap.js',
-    'backup-bootstrap.js',
+    'registries-bootstrap.js', 'diagnostics-bootstrap.js', 'backup-bootstrap.js',
   ];
   const results = await Promise.all(modules.map(async moduleFile => {
     try {
@@ -138,7 +136,7 @@ async function checkRouteModulesPublished() {
   }));
   const failed = results.filter(result => !result.ok);
   record(
-    'Módulos sob demanda das 18 abas estão publicados',
+    'Módulos ativos do Admin estão publicados',
     failed.length === 0,
     failed.length ? failed.map(result => `${result.moduleFile}: ${result.detail}`).join(' · ') : `${results.length} módulos acessíveis`,
   );
@@ -190,16 +188,17 @@ async function checkOrdersRuntime() {
 
 checkStructuralAdmin();
 
-await checkHtml('/producao/', ['producao-v2', BUILD], 'Entrada /producao aponta para o Admin oficial');
-await checkHtml('/admin/', ['producao-v2', BUILD], 'Atalho /admin aponta para o Admin oficial');
-await checkHtml('/producao-v2/', ['Admin oficial', BUILD, './js/app.js', './js/stock-bootstrap.js', 'data-route="order-tools"'], 'Admin oficial carregado');
+await checkHtml('/producao/', ['producao-v2', 'admin-produtivo.html'], 'Entrada /producao aponta para o Admin oficial');
+await checkHtml('/admin/', ['producao-v2', 'admin-produtivo.html'], 'Atalho /admin aponta para o Admin oficial');
+await checkHtml('/producao-v2/', ['Admin oficial', './js/app.js', './js/stock-bootstrap.js', 'data-route="stock"', 'data-route="order-tools"'], 'Admin oficial carregado');
 await checkRouteModulesPublished();
 await checkSource('/producao-v2/js/modules/stock.js', {
   required: ['refresh()', 'this.render();', 'loading="lazy"'],
 }, 'Módulo de Estoque publicado com atualização correta');
 await checkSource('/producao-v2/js/stock-bootstrap.js', {
-  required: [BUILD, 'module?.refresh()'],
-}, 'Bootstrap de Estoque publicado na build correta');
+  required: ['module?.refresh()', "route === 'products'", "route === 'stock'"],
+  forbidden: ['quick-read-bootstrap.js'],
+}, 'Bootstrap de rotas publicado sem dependências removidas');
 await checkSource('/producao-v2/js/order-tools-bootstrap.js', {
   required: ['const CONTINGENCY_LIMIT = 60', 'const VISIBLE_LIMIT = 30', 'loadRecentOrders'],
   forbidden: ['MutationObserver', 'loadOrders('],
@@ -243,7 +242,7 @@ await checkJson('/site/cuponsativos.json', 'Arquivo de cupons válido', value =>
   detail: `${Array.isArray(value) ? value.length : objectCount(value)} cupom(ns)`,
 }));
 
-await checkJson('/site/compra-rapida.json', 'Compra Rápida válida', value => ({
+await checkJson('/site/compra-rapida.json', 'Arquivo de Compra Rápida permanece válido para integrações legadas', value => ({
   ok: Boolean(value && typeof value === 'object' && Array.isArray(value.secoes)),
   detail: `${Array.isArray(value?.secoes) ? value.secoes.length : 0} seção(ões)`,
 }));
