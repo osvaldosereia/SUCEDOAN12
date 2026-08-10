@@ -24,7 +24,7 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-07-27-product-cards-spacing-v11',
+  '2026-08-10-complement-order-v1',
   '/app-next/styles/storefront-base.css?v=20260727-8',
   '/app-next/styles/storefront-components.css?v=20260727-10',
   '/app-next/styles/storefront-responsive.css?v=20260727-10',
@@ -32,7 +32,7 @@ for (const marker of [
   '/app-next/styles/bundle-confirmation.css?v=20260727-5',
   '/app-next/src/image-performance.js?v=20260727-8',
   '/app-next/src/home-carousels.js?v=20260727-8',
-  '/app-next/src/main.js?v=20260727-9',
+  '/app-next/src/main.js?v=20260810-1',
   'da_v16_product_cards_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
@@ -81,7 +81,7 @@ for (const marker of [
   'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog', 'load-more-offers',
   'overlay.setAttribute(\'inert\'', 'router.navigate(target)',
   "router.navigate('#/ofertas')", 'warmOfferImages',
-  "createCheckout } from './checkout.js?v=20260727-9'", 'query.length < 3'
+  "createCheckout } from './checkout.js?v=20260810-1'", 'query.length < 3'
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
 
 const checkout = read('src/checkout.js');
