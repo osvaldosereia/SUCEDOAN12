@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-10T20:34:49.491Z",
+  "checkedAt": "2026-08-10T20:40:19.451Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1651 produto(s)"
+      "detail": "1522 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1653 produto(s) administrativos · 1651 público(s) · campos OK"
+      "detail": "1653 produto(s) administrativos · 1522 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1653 produto(s) em 153 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1653 produto(s) em 119 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 187 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 99 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1786393787541 · público 0 · admin 0"
+      "ok": true,
+      "detail": "catalog-1786394049426 · público 1522 · admin 1653"
     },
     {
       "name": "Banners permanecem removidos",
@@ -91,7 +91,7 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.4h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -119,19 +119,14 @@
       "name": "Bootstrap de Estoque publicado na build correta",
       "ok": false,
       "detail": "ausente: 20260725-admin-v12-fix-abas2"
-    },
-    {
-      "name": "Versão do catálogo válida",
-      "ok": false,
-      "detail": "catalog-1786393787541 · público 0 · admin 0"
     }
   ],
   "warnings": [],
   "workflow": {
-    "event": "push",
-    "runId": "31429310605",
+    "event": "schedule",
+    "runId": "31429865288",
     "attempt": "1",
-    "sourceSha": "f84fa4f948ce48b04b95cd1c2beac548bb854819",
-    "publishedAt": "2026-08-10T20:35:26.998Z"
+    "sourceSha": "47ccbe6f43fc1b4b380e929de53afa4add0f5231",
+    "publishedAt": "2026-08-10T20:40:54.672Z"
   }
 }
