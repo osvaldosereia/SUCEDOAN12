@@ -77,13 +77,21 @@ function cloneValue(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function canonicalProduct(product) {
+function canonicalProduct(product, snapshot = null) {
   const next = cloneValue(product || {});
   const active = isActive(next);
   next.situacao = active ? 'A' : 'I';
   next.status = active ? 'A' : 'I';
   next.ativo = active;
   next.visivel = active;
+
+  if (snapshot && isActive(snapshot) !== active) {
+    const timestamp = new Date().toISOString();
+    next.situacao_manual_override = active ? 'A' : 'I';
+    next.situacao_manual_em = timestamp;
+    next.situacao_manual_origem = 'admin-oficial';
+  }
+
   return next;
 }
 
@@ -104,8 +112,8 @@ async function saveFromProductsModule(module, product, { silent = false } = {}) 
   }
 
   try {
-    const prepared = canonicalProduct(product);
     const snapshot = module.store.state.remoteSnapshots.get(String(key));
+    const prepared = canonicalProduct(product, snapshot);
     const saved = await saveProduct(module.store.state.config, prepared, snapshot);
     module.store.markProductSaved(key, saved, { emit: true });
     module.renderDirty();
