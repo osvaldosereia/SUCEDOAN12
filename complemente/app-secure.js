@@ -3,9 +3,9 @@ import { applyProductOffer, isAvailable } from '../app-next/src/commerce.js';
 import { prepareProductOffer } from '../app-next/src/offer-engine.js';
 import { cleanCpf, escapeHtml, fmt, formatCpf, formatDateBR, norm } from '../app-next/src/core.js';
 import {
-  confirmFirebaseOrder, enqueueOrder, lookupClientByCpf, openWhatsApp, processOrderQueue
-} from '../app-next/src/integrations.js?v=20260810-1';
-import { buildComplementPayload, buildComplementWhatsAppMessage } from './order-integration.js?v=20260810-1';
+  enqueueOrder, lookupClientByCpf, openWhatsApp, processOrderQueue
+} from '../app-next/src/integrations.js?v=20260810-2';
+import { buildComplementPayload, buildComplementWhatsAppMessage } from './order-integration.js?v=20260810-2';
 
 const CART_KEY = 'da_complemente_cart_v2';
 const CART_MAX_AGE = 24 * 60 * 60 * 1000;
@@ -542,7 +542,7 @@ function renderCheckout() {
   }
   const discountedItems = pricing.items.filter(item => item.discountPercent > 0).length;
   const codes = [...new Set(pricing.items.map(item => item.discountCode).filter(Boolean))];
-  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}${item.discountPercent ? ` · ${escapeHtml(item.discountCode)}: ${item.discountPercent}% OFF` : ''}</small></div>${quantityControl(item.product)}</div>`).join('')}</div><div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${pricing.discount > 0 ? `<div class="checkout-summary-row discount"><span>Desconto ${escapeHtml(codes.join(', '))} em ${discountedItems} item(ns)</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div><section class="complement-cpf-card"><label for="complement-cpf"><strong>Informe somente seu CPF</strong><span>Usaremos o CPF para localizar o cadastro que você já possui.</span></label><input id="complement-cpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" value="${escapeHtml(formatCpf(state.cpf))}" aria-describedby="complement-status"><div id="complement-status" class="complement-status" role="status" aria-live="polite"></div></section><div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp" ${state.submitting ? 'disabled' : ''}>${state.submitting ? 'Processando complemento...' : 'Enviar complemento no WhatsApp'}</button><button class="clear-complement" data-action="clear-cart" ${state.submitting ? 'disabled' : ''}>Limpar seleção</button></div><p class="checkout-help">O complemento será registrado antes de abrir o WhatsApp. Se o CPF não estiver cadastrado, nenhum pedido será criado.</p>`;
+  checkoutContent.innerHTML = `<div class="complement-cart-list">${pricing.items.map(item => `<div class="complement-cart-row"><img src="${escapeHtml(item.product.img)}" alt=""><div class="complement-cart-copy"><strong>${escapeHtml(item.product.name)}</strong><small>${fmt(item.unit)} cada · ${fmt(item.total)}${item.discountPercent ? ` · ${escapeHtml(item.discountCode)}: ${item.discountPercent}% OFF` : ''}</small></div>${quantityControl(item.product)}</div>`).join('')}</div><div class="checkout-summary-card"><div class="checkout-summary-row"><span>Subtotal</span><strong>${fmt(pricing.subtotal)}</strong></div>${pricing.discount > 0 ? `<div class="checkout-summary-row discount"><span>Desconto ${escapeHtml(codes.join(', '))} em ${discountedItems} item(ns)</span><strong>− ${fmt(pricing.discount)}</strong></div>` : ''}<div class="checkout-summary-row total"><span>Total do complemento</span><strong>${fmt(pricing.total)}</strong></div></div><section class="complement-cpf-card"><label for="complement-cpf"><strong>Informe somente seu CPF</strong><span>Usaremos o CPF para localizar o cadastro que você já possui.</span></label><input id="complement-cpf" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="000.000.000-00" value="${escapeHtml(formatCpf(state.cpf))}" aria-describedby="complement-status"><div id="complement-status" class="complement-status" role="status" aria-live="polite"></div></section><div class="complement-checkout-actions"><button class="whatsapp-button" data-action="send-whatsapp" ${state.submitting ? 'disabled' : ''}>${state.submitting ? 'Processando complemento...' : 'Enviar complemento no WhatsApp'}</button><button class="clear-complement" data-action="clear-cart" ${state.submitting ? 'disabled' : ''}>Limpar seleção</button></div><p class="checkout-help">Após localizar o CPF, abriremos o WhatsApp imediatamente. Firebase, Make, Bling e estoque continuarão em segundo plano.</p>`;
 }
 
 function updateComplementStatus(message, type = '') {
@@ -567,6 +567,7 @@ async function sendComplement(button) {
   }
 
   const pendingWhatsApp = window.open('about:blank', '_blank');
+  let whatsAppOpened = false;
   state.submitting = true;
   button.disabled = true;
   button.textContent = 'Consultando CPF...';
@@ -585,18 +586,22 @@ async function sendComplement(button) {
       campaignReference: state.campaignRef,
       sourceUrl: location.href
     });
-    enqueueOrder(payload);
-    await processOrderQueue();
-    const savedOrder = await confirmFirebaseOrder(payload.pedido.id);
-    if (!savedOrder) throw new Error('Não foi possível confirmar o complemento. Tente novamente.');
-
     openWhatsApp(buildComplementWhatsAppMessage(payload), pendingWhatsApp);
+    whatsAppOpened = true;
+
+    try {
+      enqueueOrder(payload);
+      void processOrderQueue();
+    } catch (queueError) {
+      console.warn('Complemento aberto no WhatsApp, mas não entrou na fila de integrações:', queueError);
+    }
+
     state.cpf = '';
     clearCart();
     closeCheckout();
-    showToast(`Complemento ${payload.pedido.numero} registrado.`);
+    showToast(`Complemento ${payload.pedido.numero} pronto no WhatsApp.`);
   } catch (error) {
-    if (pendingWhatsApp && !pendingWhatsApp.closed) pendingWhatsApp.close();
+    if (!whatsAppOpened && pendingWhatsApp && !pendingWhatsApp.closed) pendingWhatsApp.close();
     updateComplementStatus(error?.name === 'AbortError' ? 'A consulta demorou demais. Tente novamente.' : error.message || 'Não foi possível enviar o complemento.', 'error');
   } finally {
     state.submitting = false;
