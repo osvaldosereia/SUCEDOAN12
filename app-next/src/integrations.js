@@ -371,6 +371,15 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
 }
 
 let orderQueueProcessing = false;
+let orderQueueRetryTimer = null;
+
+function scheduleOrderQueueCheck(delayMs = 30000) {
+  if (typeof document === 'undefined' || orderQueueRetryTimer) return;
+  orderQueueRetryTimer = setTimeout(() => {
+    orderQueueRetryTimer = null;
+    void processOrderQueue();
+  }, delayMs);
+}
 
 function readQueue() {
   const queue = readStorage(CONFIG.STORAGE.ORDER_QUEUE, []);
@@ -378,7 +387,13 @@ function readQueue() {
 }
 
 function writeQueue(queue) {
-  writeStorage(CONFIG.STORAGE.ORDER_QUEUE, (queue || []).filter(entry => entry?.id && entry.makePayload).slice(-CONFIG.ORDER_QUEUE_MAX));
+  const normalized = (queue || []).filter(entry => entry?.id && entry.makePayload);
+  if (normalized.length > CONFIG.ORDER_QUEUE_MAX) {
+    throw new Error('A fila local de pedidos atingiu o limite de segurança.');
+  }
+  if (!writeStorage(CONFIG.STORAGE.ORDER_QUEUE, normalized)) {
+    throw new Error('O navegador não permitiu salvar a fila local do pedido.');
+  }
 }
 
 export function enqueueOrder(makePayload) {
@@ -425,8 +440,9 @@ async function readFirebaseOrder(orderId) {
   }
 }
 
-function firebaseOrderHasBling(order) {
-  return Boolean(order?.bling?.id_pedido_venda || order?.bling?.numero_pedido_bling);
+export function firebaseOrderWasProcessed(order) {
+  const hasBlingOrder = Boolean(order?.bling?.id_pedido_venda || order?.bling?.numero_pedido_bling);
+  return hasBlingOrder && order?.controle?.processado_make === true;
 }
 
 export function canDispatchOrderToMake(entry) {
@@ -482,7 +498,7 @@ export async function processOrderQueue() {
       const now = Date.now();
       if (Number(entry.makeAttempts || 0) > 0) {
         const existingOrder = await readFirebaseOrder(entry.id);
-        if (firebaseOrderHasBling(existingOrder)) {
+        if (firebaseOrderWasProcessed(existingOrder)) {
           updateQueueEntry(entry.id, { firebaseStatus: 'sent', makeStatus: 'sent', lastError: '' });
           writeQueue(readQueue().filter(item => item.id !== entry.id));
           continue;
@@ -496,15 +512,20 @@ export async function processOrderQueue() {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.makePayload), keepalive: true
         }, 12000);
         if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
-        updateQueueEntry(entry.id, { makeStatus: 'sent', lastError: '' });
+        // HTTP 2xx confirma apenas que o webhook aceitou o pedido. A fila permanece
+        // salva até o Firebase registrar que o cenário terminou no Bling e estoque.
+        updateQueueEntry(entry.id, { makeStatus: 'accepted', lastError: '' });
       } catch (error) {
         updateQueueEntry(entry.id, { makeStatus: 'pending', lastError: error.message || 'Falha no Make' });
       }
       entry = readQueue().find(item => item.id === snapshot.id);
       if (entry?.firebaseStatus === 'sent' && entry?.makeStatus === 'sent') writeQueue(readQueue().filter(item => item.id !== entry.id));
     }
+  } catch (error) {
+    console.error('Falha ao processar a fila segura de pedidos:', error);
   } finally {
     orderQueueProcessing = false;
+    if (readQueue().length) scheduleOrderQueueCheck();
   }
 }
 
