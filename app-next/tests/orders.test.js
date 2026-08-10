@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildBundleMessageContext, buildFirebaseOrder, buildOrderPayload, buildWhatsAppMessage, validateCheckoutData } from '../src/integrations.js';
+import {
+  buildBundleMessageContext, buildFirebaseOrder, buildOrderPayload, buildWhatsAppMessage,
+  canDispatchOrderToMake, validateCheckoutData
+} from '../src/integrations.js';
 
 function sampleState() {
   const product = {
@@ -35,7 +38,14 @@ test('monta payload compatível com Make e Firebase', () => {
   const firebase = buildFirebaseOrder(payload);
   assert.equal(firebase.numero_pedido, payload.pedido.numero);
   assert.equal(firebase.itens[0].status_separacao, 'pendente');
+  assert.equal(firebase.estoque.status, 'pendente');
   assert.equal(firebase.controle.preview_modular, true);
+});
+
+test('Make só pode receber pedido confirmado no Firebase', () => {
+  assert.equal(canDispatchOrderToMake({ firebaseStatus: 'pending', makeStatus: 'pending' }), false);
+  assert.equal(canDispatchOrderToMake({ firebaseStatus: 'sent', makeStatus: 'pending' }), true);
+  assert.equal(canDispatchOrderToMake({ firebaseStatus: 'sent', makeStatus: 'sent' }), false);
 });
 
 test('mensagem do WhatsApp contém número, itens e total', () => {
