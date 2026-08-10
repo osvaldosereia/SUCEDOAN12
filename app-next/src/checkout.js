@@ -7,7 +7,7 @@ import { calculateCartPricing } from './commerce.js?v=20260727-5';
 import {
   buildOrderPayload, buildWhatsAppMessage, enqueueOrder, lookupClientByCpf,
   openWhatsApp, processOrderQueue, validateCheckoutData
-} from './integrations.js?v=20260810-1';
+} from './integrations.js?v=20260810-2';
 
 function addDays(date, days) {
   const copy = new Date(date);
@@ -323,14 +323,17 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
       const makePayload = buildOrderPayload(state, form);
       const message = buildWhatsAppMessage(makePayload, validation.pricing, state);
 
-      // O WhatsApp é o canal prioritário: nenhuma falha da fila local,
-      // Firebase ou Make pode impedir a abertura do pedido.
+      // Prioridade absoluta: abre o pedido no WhatsApp antes de qualquer
+      // tentativa de Firebase, Make ou armazenamento local.
       openWhatsApp(message);
 
       let queued = false;
       try {
         enqueueOrder(makePayload);
         queued = true;
+        // Inicia a gravação no Firebase ainda dentro da ação do cliente. Não
+        // aguardamos a rede para não atrasar nem bloquear o WhatsApp.
+        void processOrderQueue();
       } catch (queueError) {
         console.warn('Pedido aberto no WhatsApp, mas não entrou na fila de integrações:', queueError);
       }
@@ -341,7 +344,7 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
       });
       ui.closeDrawers();
       ui.showToast('Pedido pronto no WhatsApp.');
-      if (queued) setTimeout(() => processOrderQueue(), 80);
+      if (!queued) console.warn('A confirmação no WhatsApp permanece como registro prioritário do pedido.');
     } finally {
       button.disabled = false;
       button.textContent = 'Pedir no WhatsApp';
