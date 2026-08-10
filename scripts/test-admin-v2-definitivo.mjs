@@ -109,7 +109,10 @@ for (const removed of [
   'producao-v2/js/visual-stability.js', 'producao-v2/assets/boot.css',
   'producao-v2/js/admin-suite-bootstrap.js', 'producao-v2/js/quick-read-bootstrap.js',
   'producao-v2/js/modules/quick-read.js', 'producao-v2/js/core/quick-read.js',
-  'producao-v2/assets/quick-read.css',
+  'producao-v2/assets/quick-read.css', 'producao-v2/js/quick-purchase-bootstrap.js',
+  'producao-v2/js/product-delete-filter.js', 'producao-v2/js/official-copy-fixes.js',
+  'producao-v2/js/campaign-offers-fixes.js', 'producao-v2/js/modules/nfe.js',
+  'producao-v2/js/manual-status-save.js',
 ]) {
   if (existsSync(path.join(ROOT, removed))) fail(`Arquivo legado ainda presente: ${removed}`);
 }
