@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildBundleMessageContext, buildFirebaseOrder, buildOrderPayload, buildWhatsAppMessage,
-  canDispatchOrderToMake, validateCheckoutData
+  canDispatchOrderToMake, enqueueOrder, firebaseOrderWasProcessed, validateCheckoutData
 } from '../src/integrations.js';
 
 function sampleState() {
@@ -46,6 +46,25 @@ test('Make só pode receber pedido confirmado no Firebase', () => {
   assert.equal(canDispatchOrderToMake({ firebaseStatus: 'pending', makeStatus: 'pending' }), false);
   assert.equal(canDispatchOrderToMake({ firebaseStatus: 'sent', makeStatus: 'pending' }), true);
   assert.equal(canDispatchOrderToMake({ firebaseStatus: 'sent', makeStatus: 'sent' }), false);
+});
+
+test('fila só considera o Make concluído após confirmação final no Firebase', () => {
+  assert.equal(firebaseOrderWasProcessed({
+    bling: { id_pedido_venda: '123' },
+    controle: { processado_make: false }
+  }), false);
+  assert.equal(firebaseOrderWasProcessed({
+    bling: { id_pedido_venda: '123' },
+    controle: { processado_make: true }
+  }), true);
+  assert.equal(firebaseOrderWasProcessed({
+    controle: { processado_make: true }
+  }), false);
+});
+
+test('fila acusa falha quando o navegador não consegue persistir o pedido', () => {
+  const payload = buildOrderPayload(sampleState(), form, { timestamp: 1760000000000, random: 9 });
+  assert.throws(() => enqueueOrder(payload), /não permitiu salvar a fila local/i);
 });
 
 test('mensagem do WhatsApp contém número, itens e total', () => {
