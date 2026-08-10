@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-10T13:47:26.249Z",
+  "ultima_execucao": "2026-08-10T13:48:42.099Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -3348,6 +3348,20 @@
       "inicio": "2026-08-09",
       "fim": "2026-08-12T23:59:59-04:00",
       "historico_id": "oferta-1776338125410-1786289863698-2vvtl"
+    },
+    {
+      "produto_key": "1776338125414",
+      "codigo": "77476395",
+      "nome": "Urca Desinfetante 2 litros",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 6.5,
+      "preco_oferta": 6.11,
+      "desconto_percentual": 6,
+      "inicio": "2026-08-10",
+      "fim": "2026-08-13T23:59:59-04:00",
+      "historico_id": "oferta-1776338125414-1786369722099-tj3il"
     },
     {
       "produto_key": "1776338125423",
@@ -7478,6 +7492,20 @@
       "inicio": "2026-08-07",
       "fim": "2026-08-10T23:59:59-04:00",
       "historico_id": "oferta-1776338131599-1786110308118-isjtr"
+    },
+    {
+      "produto_key": "1776338131629",
+      "codigo": "455881A",
+      "nome": "Shampoo TRESemmé Detox Capilar 650ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 34.9,
+      "preco_oferta": 32.46,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-08-10",
+      "fim": "2026-08-13T23:59:59-04:00",
+      "historico_id": "oferta-1776338131629-1786369722099-remkk"
     },
     {
       "produto_key": "1776338131645",
@@ -15194,6 +15222,20 @@
       "historico_id": "oferta-17860221963315515-1786369646249-7fxyw"
     },
     {
+      "produto_key": "1786109037486_5f2f",
+      "codigo": "7899706170819",
+      "nome": "Shampoo Elseve Longo dos Sonhos Salvador 400ml",
+      "categoria": "HIGIENE",
+      "regra_id": "regra-1785205082552",
+      "origem": "campanha_automatica",
+      "preco_normal": 28.9,
+      "preco_oferta": 26.59,
+      "desconto_percentual": 7.99,
+      "inicio": "2026-08-10",
+      "fim": "2026-08-13T23:59:59-04:00",
+      "historico_id": "oferta-17861090374865f2f-1786369722099-x55jy"
+    },
+    {
       "produto_key": "1786109099138_692b",
       "codigo": "7908615060644",
       "nome": "Creme Milagroso 3 em 1 Óleo Extraordinário 500 ml",
@@ -19976,7 +20018,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776338131629": {
-      "ultima_oferta_em": "2026-08-06T15:02:23.853Z",
+      "ultima_oferta_em": "2026-08-10T13:48:42.099Z",
       "regra_id": "regra-1785205192100"
     },
     "1776338123177": {
@@ -20164,7 +20206,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1776338125414": {
-      "ultima_oferta_em": "2026-08-06T15:02:23.853Z",
+      "ultima_oferta_em": "2026-08-10T13:48:42.099Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338127758": {
@@ -21654,26 +21696,13 @@
     "1786022196331_5515": {
       "ultima_oferta_em": "2026-08-10T13:47:26.249Z",
       "regra_id": "regra-1785205122760"
+    },
+    "1786109037486_5f2f": {
+      "ultima_oferta_em": "2026-08-10T13:48:42.099Z",
+      "regra_id": "regra-1785205082552"
     }
   },
   "execucoes": [
-    {
-      "id": "github-1786124096453",
-      "executado_em": "2026-08-07T17:34:56.861Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 1,
-        "ofertas_nao_criadas": 22,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-07T17:39:32Z",
       "executado_em": "2026-08-07T17:40:32.819Z",
@@ -25049,6 +25078,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 5,
         "ofertas_nao_criadas": 18,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1786369721683",
+      "executado_em": "2026-08-10T13:48:42.099Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
