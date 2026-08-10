@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-10T19:46:21.309Z",
+  "checkedAt": "2026-08-10T20:10:31.646Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1524 produto(s)"
+      "detail": "1522 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1653 produto(s) administrativos · 1524 público(s) · campos OK"
+      "detail": "1653 produto(s) administrativos · 1522 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1653 produto(s) em 173 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1653 produto(s) em 149 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 185 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 125 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-439bd1e686d17d33 · público 1524 · admin 1653"
+      "detail": "catalog-1786391144955 · público 1522 · admin 1653"
     },
     {
       "name": "Banners permanecem removidos",
@@ -91,7 +91,7 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.4h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
   "errors": [
@@ -124,9 +124,9 @@
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "31425436777",
+    "runId": "31427428614",
     "attempt": "1",
-    "sourceSha": "21c460d5651f2ead8029ef2112632bcd074cb0ae",
-    "publishedAt": "2026-08-10T19:46:56.023Z"
+    "sourceSha": "ffaa17792e8460a1e7fc0334a641f740e2d7fe50",
+    "publishedAt": "2026-08-10T20:11:06.098Z"
   }
 }
