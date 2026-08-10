@@ -7,7 +7,7 @@ import { calculateCartPricing } from './commerce.js?v=20260727-5';
 import {
   buildOrderPayload, buildWhatsAppMessage, enqueueOrder, lookupClientByCpf,
   openWhatsApp, processOrderQueue, validateCheckoutData
-} from './integrations.js?v=20260727-5';
+} from './integrations.js?v=20260810-1';
 
 function addDays(date, days) {
   const copy = new Date(date);
