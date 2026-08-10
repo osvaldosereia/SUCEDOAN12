@@ -70,6 +70,26 @@ function ensureStyles() {
     .offer-list-value .inline-product-input { min-width: 112px; }
     .offer-list-expiration .inline-product-input { min-width: 132px; }
     .offer-list-value small { display: block; margin-top: 3px; color: var(--muted, #747474); }
+    .product-panel .data-table th:last-child,
+    .product-panel .data-table td:last-child {
+      position: sticky;
+      right: 0;
+      min-width: 235px;
+      background: var(--surface, #fff);
+      box-shadow: -10px 0 16px -16px rgba(24,32,25,.55);
+    }
+    .product-panel .data-table th:last-child {
+      z-index: 5;
+      background: #f6f7f5;
+    }
+    .product-panel .data-table td:last-child { z-index: 2; }
+    .product-panel .data-table tr:hover td:last-child { background: #fafbf9; }
+    .product-panel .data-table tr.dirty-row td:last-child { background: #fffaf0; }
+    .product-panel .row-actions {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      min-width: 215px;
+    }
   `;
   document.head.appendChild(style);
 }
