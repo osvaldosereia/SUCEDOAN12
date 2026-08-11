@@ -5,9 +5,9 @@ import {
 } from './core.js?v=20260727-5';
 import { calculateCartPricing } from './commerce.js?v=20260727-5';
 import {
-  buildOrderPayload, buildWhatsAppMessage, enqueueOrder, lookupClientByCpf,
-  openWhatsApp, processOrderQueue, validateCheckoutData
-} from './integrations.js?v=20260810-2';
+  buildOrderPayload, buildWhatsAppMessage, dispatchQueuedOrderToMake, enqueueOrder,
+  lookupClientByCpf, openWhatsApp, persistQueuedOrder, processOrderQueue, validateCheckoutData
+} from './integrations.js?v=20260811-1';
 
 function addDays(date, days) {
   const copy = new Date(date);
@@ -323,20 +323,21 @@ export function createCheckout({ store, cart, events, ui, personalization }) {
       const makePayload = buildOrderPayload(state, form);
       const message = buildWhatsAppMessage(makePayload, validation.pricing, state);
 
-      // Prioridade absoluta: abre o pedido no WhatsApp antes de qualquer
-      // tentativa de Firebase, Make ou armazenamento local.
-      openWhatsApp(message);
-
       let queued = false;
       try {
         enqueueOrder(makePayload);
         queued = true;
-        // Inicia a gravação no Firebase ainda dentro da ação do cliente. Não
-        // aguardamos a rede para não atrasar nem bloquear o WhatsApp.
-        void processOrderQueue();
+        // As duas requisições com keepalive são iniciadas ainda dentro da ação
+        // do cliente. Não aguardamos a rede e o WhatsApp continua imediato.
+        // O cenário normal do Make finaliza depois e substitui o estado pendente.
+        void persistQueuedOrder(makePayload.pedido.id);
+        void dispatchQueuedOrderToMake(makePayload.pedido.id, { allowNormalBeforeFirebase: true });
       } catch (queueError) {
-        console.warn('Pedido aberto no WhatsApp, mas não entrou na fila de integrações:', queueError);
+        console.warn('Pedido não entrou na fila de integrações antes do WhatsApp:', queueError);
       }
+
+      // O WhatsApp permanece como canal prioritário e não espera Firebase/Make.
+      openWhatsApp(message);
 
       events.emit('order:opened-whatsapp', {
         order: makePayload,
