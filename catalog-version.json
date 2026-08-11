@@ -1,14 +1,15 @@
 {
-  "version": "catalog-1786459199003",
-  "updatedAt": "2026-08-11T14:39:59.003Z",
+  "version": "catalog-bcfc89a74153690b",
+  "adminVersion": "admin-315c3b5e74badd0b",
+  "updatedAt": "2026-08-11T14:41:28.881Z",
   "products": "site/produtos-home.json",
+  "adminProducts": "site/produtos-admin.json",
   "changed": [
     "products",
-    "offers"
+    "admin-products"
   ],
-  "source": "automatic-offers",
-  "instructions": "Catálogo atualizado após o processamento automático de ofertas.",
-  "adminProducts": "site/produtos-admin.json",
-  "productCount": 1523,
-  "adminProductCount": 1653
+  "productCount": 1525,
+  "adminProductCount": 1653,
+  "source": "firebase-official-sync",
+  "instructions": "Catálogo público compacto; versão pública alterada somente quando os dados públicos mudam."
 }
