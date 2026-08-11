@@ -150,7 +150,13 @@ function placeRouteContent(route) {
 
 async function loadRouteModules(route) {
   let task = Promise.resolve();
-  if (route === 'products') task = importOnce('product-enhancements', ['./catalog-auto-sync.js', './product-lifecycle-bootstrap.js', './products-offer-columns.js']);
+  if (route === 'products') task = importOnce('product-enhancements', [
+    './catalog-auto-sync.js',
+    './product-lifecycle-bootstrap.js',
+    './products-offer-columns.js',
+    './duplicate-product.js',
+    './product-delete-tools.js',
+  ]);
   if (route === 'nfe') task = importOnce('nfe', ['./nfe-bootstrap.js']);
   if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);
   if (route === 'customers') task = importOnce('customers', ['./customers-bootstrap.js']);
