@@ -8,8 +8,12 @@ import './collection-concurrency.js';
 import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
 
-const BUILD = '20260810-collections-route-v1';
+const BUILD = document.querySelector('meta[name="admin-save-build"]')?.content || '20260810-route-architecture-v1';
 let instagramEnhancementPromise = null;
+
+function withBuild(path) {
+  return `${path}?admin_build=${encodeURIComponent(BUILD)}`;
+}
 
 function loadConfig() {
   try {
@@ -29,7 +33,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-collections]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = `./assets/collections.css?admin_build=${BUILD}`;
+  link.href = withBuild('./assets/collections.css');
   link.dataset.adminV2Collections = '1';
   document.head.appendChild(link);
 }
@@ -94,21 +98,24 @@ function installErrorGuard() {
 
 async function loadEditorEnhancements() {
   const modules = [
-    './basket-context.js?admin_build=20260810-collections-route-v1',
-    './basket-products-grid.js?admin_build=20260810-collections-route-v1',
-    './basket-editor-polish.js?admin_build=20260810-collections-route-v1',
-    './kit-editor-flow-v2.js?admin_build=20260728-kit-editor-flow-v2',
-    './kit-editor-order-v3.js?admin_build=20260810-collections-route-v1',
+    './basket-context.js',
+    './basket-products-grid.js',
+    './basket-editor-polish.js',
   ];
-  const results = await Promise.allSettled(modules.map(path => import(path)));
+  const fallbackKitFlow = document.querySelector('script[src*="kit-editor-flow-v2.js"]');
+  if (!fallbackKitFlow) modules.push('./kit-editor-flow-v2.js');
+  modules.push('./kit-editor-order-v3.js');
+
+  const urls = modules.map(withBuild);
+  const results = await Promise.allSettled(urls.map(path => import(path)));
   results.forEach((result, index) => {
-    if (result.status === 'rejected') console.error(`Falha ao carregar complemento de coleções: ${modules[index]}`, result.reason);
+    if (result.status === 'rejected') console.error(`Falha ao carregar complemento de coleções: ${urls[index]}`, result.reason);
   });
 }
 
 function loadInstagramEnhancement() {
   if (instagramEnhancementPromise) return instagramEnhancementPromise;
-  instagramEnhancementPromise = import('./instagram-queue-review.js?admin_build=20260808-kit-instagram-unified-v1')
+  instagramEnhancementPromise = import(withBuild('./instagram-queue-review.js'))
     .catch(error => {
       instagramEnhancementPromise = null;
       console.error('Falha ao carregar a revisão da fila do Instagram para kits.', error);
