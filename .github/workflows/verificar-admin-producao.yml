@@ -76,6 +76,7 @@ jobs:
           HEALTH_RUN_ID: ${{ github.run_id }}
           HEALTH_RUN_ATTEMPT: ${{ github.run_attempt }}
           HEALTH_SHA: ${{ github.sha }}
+          ARCHITECTURE_OUTCOME: ${{ steps.architecture_check.outcome }}
         shell: bash
         run: |
           set -euo pipefail
@@ -85,11 +86,22 @@ jobs:
           SOURCE_FILE="admin-production-report.json" node --input-type=module <<'NODE'
           import { readFile, writeFile } from 'node:fs/promises';
           const report = JSON.parse(await readFile(process.env.SOURCE_FILE, 'utf8'));
+          report.errors = Array.isArray(report.errors) ? report.errors : [];
+          report.warnings = Array.isArray(report.warnings) ? report.warnings : [];
+          report.checks = Array.isArray(report.checks) ? report.checks : [];
+          if (process.env.ARCHITECTURE_OUTCOME === 'failure') {
+            const detail = 'O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow.';
+            const error = { name: 'Arquitetura por rota do Admin', ok: false, detail };
+            report.errors.push(error);
+            report.checks.push(error);
+            report.ok = false;
+          }
           report.workflow = {
             event: process.env.HEALTH_EVENT,
             runId: process.env.HEALTH_RUN_ID,
             attempt: process.env.HEALTH_RUN_ATTEMPT,
             sourceSha: process.env.HEALTH_SHA,
+            architecture: process.env.ARCHITECTURE_OUTCOME,
             publishedAt: new Date().toISOString()
           };
           await writeFile(process.env.RUNNER_TEMP + '/admin-health-status.json', JSON.stringify(report, null, 2) + '\n');
