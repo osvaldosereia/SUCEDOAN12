@@ -21,6 +21,7 @@ on:
       - "catalog-version.json"
       - "scripts/check-admin-production.mjs"
       - "scripts/test-admin-v2-definitivo.mjs"
+      - "scripts/test-admin-v2-route-architecture.mjs"
       - ".github/workflows/verificar-admin-producao.yml"
 
 permissions:
@@ -44,6 +45,14 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+
+      - name: Validar arquitetura por rota
+        id: architecture_check
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/test-admin-v2-route-architecture.mjs 2>&1 | tee admin-architecture.log
 
       - name: Aguardar publicação estática
         if: github.event_name == 'push'
@@ -139,9 +148,10 @@ jobs:
           path: |
             admin-production-report.json
             admin-production.log
+            admin-architecture.log
           if-no-files-found: warn
           retention-days: 14
 
       - name: Confirmar falha
-        if: always() && steps.health_check.outcome == 'failure'
+        if: always() && (steps.architecture_check.outcome == 'failure' || steps.health_check.outcome == 'failure')
         run: exit 1
