@@ -1,6 +1,5 @@
 import './offer-manager.js';
 import './commerce-enhancements.js';
-import './instagram-queue-review.js?admin_build=20260808-kit-instagram-unified-v1';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
 import { CollectionsModule } from './modules/collections.js';
@@ -10,6 +9,7 @@ import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
 
 const BUILD = '20260810-collections-route-v1';
+let instagramEnhancementPromise = null;
 
 function loadConfig() {
   try {
@@ -106,6 +106,20 @@ async function loadEditorEnhancements() {
   });
 }
 
+function loadInstagramEnhancement() {
+  if (instagramEnhancementPromise) return instagramEnhancementPromise;
+  instagramEnhancementPromise = import('./instagram-queue-review.js?admin_build=20260808-kit-instagram-unified-v1')
+    .catch(error => {
+      instagramEnhancementPromise = null;
+      console.error('Falha ao carregar a revisão da fila do Instagram para kits.', error);
+    });
+  return instagramEnhancementPromise;
+}
+
+function currentRoute() {
+  return window.adminV2CurrentRoute?.() || document.querySelector('.view.active')?.dataset.view || '';
+}
+
 function start() {
   const view = document.querySelector('[data-view="promotions"]');
   if (!view || document.getElementById('collectionsWorkspace')) return;
@@ -151,6 +165,10 @@ function start() {
   module = new CollectionsModule({ store, elements, onToast: toast, onReload: reload, reloadConfig: loadConfig });
   window.__adminV2CollectionsModule = module;
   void loadEditorEnhancements();
+  if (currentRoute() === 'kits') void loadInstagramEnhancement();
+  window.addEventListener('admin-v2-route-ready', event => {
+    if (event.detail?.route === 'kits') void loadInstagramEnhancement();
+  });
   elements.collectionProductSearch.closest('.collection-product-search')?.addEventListener('click', event => {
     const button = event.target.closest('[data-collection-cancel-replace]');
     if (!button) return;
