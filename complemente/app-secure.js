@@ -3,8 +3,9 @@ import { applyProductOffer, isAvailable } from '../app-next/src/commerce.js';
 import { prepareProductOffer } from '../app-next/src/offer-engine.js';
 import { cleanCpf, escapeHtml, fmt, formatCpf, formatDateBR, norm } from '../app-next/src/core.js';
 import {
-  enqueueOrder, lookupClientByCpf, openWhatsApp, processOrderQueue
-} from '../app-next/src/integrations.js?v=20260810-2';
+  dispatchQueuedOrderToMake, enqueueOrder, lookupClientByCpf, openWhatsApp,
+  persistQueuedOrder, processOrderQueue
+} from '../app-next/src/integrations.js?v=20260811-1';
 import { buildComplementPayload, buildComplementWhatsAppMessage } from './order-integration.js?v=20260810-2';
 
 const CART_KEY = 'da_complemente_cart_v2';
@@ -586,15 +587,19 @@ async function sendComplement(button) {
       campaignReference: state.campaignRef,
       sourceUrl: location.href
     });
-    openWhatsApp(buildComplementWhatsAppMessage(payload), pendingWhatsApp);
-    whatsAppOpened = true;
-
     try {
       enqueueOrder(payload);
-      void processOrderQueue();
+      // A rota complementar do Make exige que o pedido já exista no Firebase.
+      // O WhatsApp foi pré-aberto pelo clique, então podemos confirmar a gravação
+      // e iniciar o webhook sem risco de o navegador suspender a segunda etapa.
+      await persistQueuedOrder(payload.pedido.id);
+      void dispatchQueuedOrderToMake(payload.pedido.id);
     } catch (queueError) {
-      console.warn('Complemento aberto no WhatsApp, mas não entrou na fila de integrações:', queueError);
+      console.warn('Complemento não entrou na fila de integrações antes do WhatsApp:', queueError);
     }
+
+    openWhatsApp(buildComplementWhatsAppMessage(payload), pendingWhatsApp);
+    whatsAppOpened = true;
 
     state.cpf = '';
     clearCart();
