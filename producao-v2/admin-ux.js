@@ -333,9 +333,10 @@
   }, true);
   document.addEventListener('input', () => scheduleRefresh(200), true);
   document.addEventListener('change', () => scheduleRefresh(200), true);
+  window.addEventListener('admin-v2-route-ready', () => scheduleRefresh(60));
+  window.addEventListener('admin-v2-open-product', () => scheduleRefresh(20));
   window.addEventListener('hashchange', () => scheduleRefresh(120));
   window.addEventListener('resize', positionOpenDropdowns);
   window.addEventListener('scroll', positionOpenDropdowns, true);
-  new MutationObserver(() => scheduleRefresh()).observe(document.documentElement, { childList: true, subtree: true });
   scheduleRefresh(0);
 })();
