@@ -10,7 +10,7 @@ import './collection-concurrency.js';
 import { loadProducts } from './services/firebase.js';
 import { loadCollections } from './services/collections.js';
 
-const BUILD = '20260808-kit-instagram-unified-v1';
+const BUILD = '20260810-collections-route-v1';
 
 function loadConfig() {
   try {
@@ -93,6 +93,19 @@ function installErrorGuard() {
   });
 }
 
+async function loadEditorEnhancements() {
+  const modules = [
+    './basket-products-grid.js?admin_build=20260810-collections-route-v1',
+    './basket-editor-polish.js?admin_build=20260810-collections-route-v1',
+    './kit-editor-flow-v2.js?admin_build=20260810-collections-route-v1',
+    './kit-editor-order-v3.js?admin_build=20260810-collections-route-v1',
+  ];
+  const results = await Promise.allSettled(modules.map(path => import(path)));
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') console.error(`Falha ao carregar complemento de coleções: ${modules[index]}`, result.reason);
+  });
+}
+
 function start() {
   const view = document.querySelector('[data-view="promotions"]');
   if (!view || document.getElementById('collectionsWorkspace')) return;
@@ -136,6 +149,7 @@ function start() {
   const elements = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
   module = new CollectionsModule({ store, elements, onToast: toast, onReload: reload, reloadConfig: loadConfig });
   window.__adminV2CollectionsModule = module;
+  void loadEditorEnhancements();
   elements.collectionProductSearch.closest('.collection-product-search')?.addEventListener('click', event => {
     const button = event.target.closest('[data-collection-cancel-replace]');
     if (!button) return;
