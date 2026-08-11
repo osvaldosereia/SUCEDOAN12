@@ -97,11 +97,13 @@ for (const removed of ['producao-v2/js/offer-store-bridge.js', 'producao-v2/js/i
 
 const productiveLoader = read('producao-v2/admin-produtivo.html');
 forbidText(productiveLoader, 'inline-sale-price-label.js', 'O carregador produtivo voltou a injetar o patch separado de preço.');
+requireText(productiveLoader, "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')", 'O carregador produtivo voltou a carregar o editor de Kits no boot global.');
+requireText(productiveLoader, "stripGlobalRouteScript(html, 'campaign-rules-section.js')", 'O carregador produtivo voltou a carregar regras de oferta no boot global.');
 
 const adminIndex = read('producao-v2/index.html');
 for (const marker of ['kit-editor-flow-v2.js', 'campaign-rules-section.js']) {
   if (adminIndex.includes(`<script`) && adminIndex.includes(marker)) {
-    warnings.push(`${marker} ainda possui entrada global no index.html; já existe carregamento por rota para permitir remoção futura segura.`);
+    warnings.push(`${marker} ainda possui entrada global no index.html de fallback; o carregador produtivo remove essa entrada antes de abrir o Admin oficial.`);
   }
 }
 
