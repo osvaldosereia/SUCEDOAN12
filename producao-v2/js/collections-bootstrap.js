@@ -1,7 +1,6 @@
 import './offer-manager.js';
 import './commerce-enhancements.js';
 import './instagram-queue-review.js?admin_build=20260808-kit-instagram-unified-v1';
-import './basket-context.js?admin_build=20260807-basket-swaps-v2';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
 import { CollectionsModule } from './modules/collections.js';
@@ -95,6 +94,7 @@ function installErrorGuard() {
 
 async function loadEditorEnhancements() {
   const modules = [
+    './basket-context.js?admin_build=20260810-collections-route-v1',
     './basket-products-grid.js?admin_build=20260810-collections-route-v1',
     './basket-editor-polish.js?admin_build=20260810-collections-route-v1',
     './kit-editor-flow-v2.js?admin_build=20260728-kit-editor-flow-v2',
