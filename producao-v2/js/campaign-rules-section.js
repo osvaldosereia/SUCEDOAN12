@@ -1,13 +1,23 @@
 (() => {
   'use strict';
 
-  import('./campaign-execution-history.js?admin_build=20260803-offers-history-v1').catch(error => {
-    console.error('Falha ao carregar o histórico das ofertas por regra.', error);
-  });
+  if (window.__adminV2CampaignRulesSectionInstalled) return;
+  window.__adminV2CampaignRulesSectionInstalled = true;
 
   let refreshTimer = null;
   let panelObserver = null;
   let observedPanel = null;
+  let historyLoadPromise = null;
+
+  function ensureHistoryLoaded() {
+    if (historyLoadPromise) return historyLoadPromise;
+    historyLoadPromise = import('./campaign-execution-history.js?admin_build=20260803-offers-history-v1')
+      .catch(error => {
+        historyLoadPromise = null;
+        console.error('Falha ao carregar o histórico das ofertas por regra.', error);
+      });
+    return historyLoadPromise;
+  }
 
   function installStyle() {
     if (document.getElementById('campaignRulesSectionStyle')) return;
@@ -201,19 +211,24 @@
     return window.adminV2CurrentRoute?.() || document.querySelector('.view.active')?.dataset.view || '';
   }
 
+  function activateRulesRoute(delay = 0) {
+    void ensureHistoryLoaded();
+    scheduleRefresh(delay);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
-    if (currentRoute() === 'offers-rules') scheduleRefresh(0);
+    if (currentRoute() === 'offers-rules') activateRulesRoute(0);
   }, { once: true });
 
   window.addEventListener('admin-v2-route-ready', event => {
-    if (event.detail?.route === 'offers-rules') scheduleRefresh(0);
+    if (event.detail?.route === 'offers-rules') activateRulesRoute(0);
     else disconnectCampaignObserver();
   });
 
   window.addEventListener('hashchange', () => {
-    if (currentRoute() === 'offers-rules') scheduleRefresh(80);
+    if (currentRoute() === 'offers-rules') activateRulesRoute(80);
     else disconnectCampaignObserver();
   });
 
-  if (currentRoute() === 'offers-rules') scheduleRefresh(0);
+  if (currentRoute() === 'offers-rules') activateRulesRoute(0);
 })();
