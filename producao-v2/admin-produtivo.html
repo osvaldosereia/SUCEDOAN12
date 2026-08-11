@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260810-route-clean-v4';
+      const BUILD = '20260810-route-clean-v5';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -28,6 +28,12 @@
         const open = '<scr' + 'ipt';
         const close = '</scr' + 'ipt>';
         return `${open}${module ? ' type="module"' : ''} src="${src}">${close}`;
+      }
+
+      function stripGlobalRouteScript(source, filename) {
+        const escaped = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(`<script\\b[^>]*\\bsrc=["']\\.\\/js\\/${escaped}(?:\\?[^"']*)?["'][^>]*><\\/script>\\s*`, 'i');
+        return source.replace(pattern, '');
       }
 
       try {
@@ -69,6 +75,8 @@
           'o aplicativo principal',
         );
 
+        html = stripGlobalRouteScript(html, 'kit-editor-flow-v2.js');
+        html = stripGlobalRouteScript(html, 'campaign-rules-section.js');
         html = html.replace('<th>Preço</th>', '<th>Preço de venda</th>');
         html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · edição e exclusão segura de produtos, XML, imagens e EANs alternativos.</strong>');
         html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
