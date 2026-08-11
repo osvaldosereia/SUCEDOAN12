@@ -185,7 +185,17 @@
   window.addEventListener('admin-v2-route-ready', event => {
     if (event.detail?.route === 'baskets') setTimeout(schedule, 40);
   });
-  new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+
+  const editor = document.getElementById('collectionEditor');
+  if (editor) {
+    new MutationObserver(schedule).observe(editor, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
   else schedule();
 })();
