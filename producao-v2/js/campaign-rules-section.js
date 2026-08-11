@@ -27,6 +27,8 @@
   });
 
   let refreshTimer = null;
+  let panelObserver = null;
+  let observedPanel = null;
 
   function installStyle() {
     if (document.getElementById('campaignRulesSectionStyle')) return;
@@ -186,31 +188,53 @@
     });
   }
 
+  function observeCampaignPanel(panel) {
+    if (observedPanel === panel && panelObserver) return;
+    panelObserver?.disconnect();
+    observedPanel = panel;
+    panelObserver = new MutationObserver(() => scheduleRefresh(40));
+    panelObserver.observe(panel, { childList: true, subtree: true });
+  }
+
+  function disconnectCampaignObserver() {
+    panelObserver?.disconnect();
+    panelObserver = null;
+    observedPanel = null;
+  }
+
   function refreshRulesSection() {
     installStyle();
     const panel = document.getElementById('campaignOffersPanel');
     if (!panel) return;
+    observeCampaignPanel(panel);
     enhanceCampaignPanel(panel);
   }
 
   function scheduleRefresh(delay = 120) {
-    if (refreshTimer) return;
+    if (refreshTimer) clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => {
       refreshTimer = null;
       refreshRulesSection();
-      setTimeout(refreshRulesSection, 500);
     }, delay);
   }
 
-  document.addEventListener('DOMContentLoaded', () => scheduleRefresh(0), { once: true });
-  document.addEventListener('click', event => {
-    if (event.target.closest?.('[data-route="offers-rules"], [data-view="offers-rules"]')) {
-      scheduleRefresh(150);
-    }
-  }, true);
-  window.addEventListener('hashchange', () => scheduleRefresh(150));
+  function currentRoute() {
+    return window.adminV2CurrentRoute?.() || document.querySelector('.view.active')?.dataset.view || '';
+  }
 
-  new MutationObserver(() => scheduleRefresh()).observe(document.documentElement, { childList: true, subtree: true });
-  setInterval(refreshRulesSection, 1500);
-  scheduleRefresh(0);
+  document.addEventListener('DOMContentLoaded', () => {
+    if (currentRoute() === 'offers-rules') scheduleRefresh(0);
+  }, { once: true });
+
+  window.addEventListener('admin-v2-route-ready', event => {
+    if (event.detail?.route === 'offers-rules') scheduleRefresh(0);
+    else disconnectCampaignObserver();
+  });
+
+  window.addEventListener('hashchange', () => {
+    if (currentRoute() === 'offers-rules') scheduleRefresh(80);
+    else disconnectCampaignObserver();
+  });
+
+  if (currentRoute() === 'offers-rules') scheduleRefresh(0);
 })();
