@@ -25,13 +25,27 @@ function forbidText(source, marker, message) {
 const config = read('producao-v2/js/config.js');
 forbidText(config, "import('./basket-products-grid.js", 'config.js voltou a carregar a grade de cestas no boot global.');
 forbidText(config, "import('./basket-editor-polish.js", 'config.js voltou a carregar o acabamento de cestas no boot global.');
+forbidText(config, "import('./duplicate-product.js", 'config.js voltou a carregar Duplicar produto no boot global.');
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
-requireText(stockBootstrap, "'./products-offer-columns.js'", 'Produtos não carrega mais as colunas de oferta pela própria rota.');
+for (const marker of [
+  './products-offer-columns.js',
+  './duplicate-product.js',
+  './product-delete-tools.js',
+]) {
+  requireText(stockBootstrap, marker, `Produtos não carrega mais o complemento pela própria rota: ${marker}`);
+}
 requireText(stockBootstrap, 'refreshProductsTableAfterEnhancements', 'Produtos não atualiza a tabela após carregar os complementos da rota.');
 requireText(stockBootstrap, "if (route === 'products') refreshProductsTableAfterEnhancements();", 'O refresh da tabela não está vinculado à conclusão dos complementos de Produtos.');
 requireText(stockBootstrap, "if (route === 'baskets' || route === 'kits')", 'Cestas/Kits não estão vinculados ao carregamento sob demanda.');
 requireText(stockBootstrap, "if (route === 'offers' || route === 'offers-rules')", 'Ofertas não estão vinculadas ao carregamento sob demanda.');
+
+const duplicateProduct = read('producao-v2/js/duplicate-product.js');
+for (const marker of ['createProduct', 'loadProduct', 'loadProducts']) {
+  requireText(duplicateProduct, marker, `Duplicar produto não usa mais o serviço Firebase oficial: ${marker}`);
+}
+forbidText(duplicateProduct, 'firebaseRequest(', 'Duplicar produto voltou a manter uma pilha Firebase paralela.');
+forbidText(duplicateProduct, 'setInterval(', 'Duplicar produto voltou a usar setInterval para localizar a cópia.');
 
 const productsOfferColumns = read('producao-v2/js/products-offer-columns.js');
 requireText(productsOfferColumns, 'inline-sale-price-caption', 'O rótulo de preço de venda não está mais consolidado na tabela de Produtos.');
@@ -97,6 +111,7 @@ for (const removed of ['producao-v2/js/offer-store-bridge.js', 'producao-v2/js/i
 
 const productiveLoader = read('producao-v2/admin-produtivo.html');
 forbidText(productiveLoader, 'inline-sale-price-label.js', 'O carregador produtivo voltou a injetar o patch separado de preço.');
+forbidText(productiveLoader, "['./js/product-delete-tools.js'", 'O carregador produtivo voltou a injetar ações da rota Produtos no boot global.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')", 'O carregador produtivo voltou a carregar o editor de Kits no boot global.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'campaign-rules-section.js')", 'O carregador produtivo voltou a carregar regras de oferta no boot global.');
 
