@@ -28,6 +28,8 @@ forbidText(config, "import('./basket-editor-polish.js", 'config.js voltou a carr
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 requireText(stockBootstrap, "'./products-offer-columns.js'", 'Produtos não carrega mais as colunas de oferta pela própria rota.');
+requireText(stockBootstrap, 'refreshProductsTableAfterEnhancements', 'Produtos não atualiza a tabela após carregar os complementos da rota.');
+requireText(stockBootstrap, "if (route === 'products') refreshProductsTableAfterEnhancements();", 'O refresh da tabela não está vinculado à conclusão dos complementos de Produtos.');
 requireText(stockBootstrap, "if (route === 'baskets' || route === 'kits')", 'Cestas/Kits não estão vinculados ao carregamento sob demanda.');
 requireText(stockBootstrap, "if (route === 'offers' || route === 'offers-rules')", 'Ofertas não estão vinculadas ao carregamento sob demanda.');
 
