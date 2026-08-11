@@ -1,6 +1,9 @@
 (() => {
   'use strict';
 
+  if (window.__adminV2CampaignHistoryInstalled) return;
+  window.__adminV2CampaignHistoryInstalled = true;
+
   const TIME_ZONE = 'America/Cuiaba';
   const HISTORY_ID = 'campaignExecutionHistoryDetailed';
   const STATE_PATH = '../site/ofertas-automaticas-estado.json';
@@ -67,7 +70,7 @@
     return value ? String(value) : 'Automação de ofertas';
   }
 
-  function executionCard(execution, index) {
+  function executionCard(execution) {
     const counts = executionCounts(execution);
     const { day, time } = dateParts(execution.executado_em);
     const kind = counts.changed > 0 ? 'success' : 'neutral';
@@ -130,9 +133,13 @@
     return JSON.stringify(executions.slice(-30).map(item => [item.id, item.executado_em, item.resumo]));
   }
 
+  function routeActive() {
+    return (window.adminV2CurrentRoute?.() || document.querySelector('.view.active')?.dataset.view) === 'offers-rules';
+  }
+
   async function renderHistory() {
     const panel = document.getElementById('campaignOffersPanel');
-    if (!panel || panel.hidden || loading) return;
+    if (!routeActive() || !panel || panel.hidden || loading) return;
     loading = true;
     try {
       installStyle();
@@ -169,16 +176,18 @@
       scheduleRefresh(event.target.closest?.('[data-campaign-run]') ? 3500 : 250);
     }
   }, true);
+
   window.addEventListener('admin-v2-route-ready', event => {
     if (event.detail?.route === 'offers-rules') scheduleRefresh(200);
   });
-  new MutationObserver(() => {
-    const panel = document.getElementById('campaignOffersPanel');
-    if (panel && !panel.hidden) scheduleRefresh(160);
-  }).observe(document.documentElement, { childList: true, subtree: true });
-  setInterval(() => {
-    const panel = document.getElementById('campaignOffersPanel');
-    if (panel && !panel.hidden) scheduleRefresh(0);
-  }, 30000);
-  scheduleRefresh(600);
+
+  window.addEventListener('focus', () => {
+    if (routeActive()) scheduleRefresh(120);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && routeActive()) scheduleRefresh(120);
+  });
+
+  if (routeActive()) scheduleRefresh(300);
 })();
