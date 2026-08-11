@@ -108,6 +108,12 @@ function selectRegistryRoute(route) {
   if (button && !button.classList.contains('active')) button.click();
 }
 
+function refreshProductsTableAfterEnhancements() {
+  const search = document.getElementById('productSearch');
+  if (!search) return;
+  search.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function placeRouteContent(route) {
   if (route === 'stock') {
     moveToRoute('stockWorkspace', route);
@@ -160,6 +166,7 @@ async function loadRouteModules(route) {
   ]);
   try {
     await task;
+    if (route === 'products') refreshProductsTableAfterEnhancements();
     placeRouteContent(route);
     if (route === 'offers-rules') setTimeout(() => placeRouteContent(route), 160);
   } catch (error) {
