@@ -131,16 +131,23 @@
     document.head.appendChild(style);
   }
 
+  function setText(node, value) {
+    if (node && node.textContent !== value) node.textContent = value;
+  }
+
+  function setTitle(node, value) {
+    if (node && node.title !== value) node.title = value;
+  }
+
   function renameButton(root, selector, label) {
-    const button = root.querySelector(selector);
-    if (button) button.textContent = label;
+    setText(root.querySelector(selector), label);
   }
 
   function enhanceCampaignPanel(panel) {
     panel.classList.add('rules-section-page');
     const routeHost = document.querySelector('.view[data-view="offers-rules"]');
     if (routeHost && panel.parentElement !== routeHost) routeHost.appendChild(panel);
-    panel.hidden = false;
+    if (panel.hidden) panel.hidden = false;
 
     const toolbar = panel.querySelector('.campaign-toolbar');
     if (!toolbar) return;
@@ -148,11 +155,9 @@
     const eyebrow = toolbar.querySelector('.eyebrow');
     const title = toolbar.querySelector('h3');
     const description = toolbar.querySelector('p');
-    if (eyebrow) eyebrow.textContent = 'Campanhas por categoria';
-    if (title) title.textContent = 'Ofertas por regra';
-    if (description) {
-      description.textContent = 'Crie regras, simule e processe. Cancelar remove a regra da lista e encerra as ofertas criadas por ela.';
-    }
+    setText(eyebrow, 'Campanhas por categoria');
+    setText(title, 'Ofertas por regra');
+    setText(description, 'Crie regras, simule e processe. Cancelar remove a regra da lista e encerra as ofertas criadas por ela.');
 
     renameButton(toolbar, '[data-campaign-reload]', 'Atualizar');
     renameButton(toolbar, '[data-campaign-simulate]', 'Simular');
@@ -166,14 +171,13 @@
       ['[data-campaign-run]', 'Executa as regras e remove ofertas de regras canceladas.'],
       ['[data-campaign-save-settings]', 'Salva as regras.'],
     ];
-    actionHelp.forEach(([selector, title]) => {
-      const button = panel.querySelector(selector);
-      if (button) button.title = title;
+    actionHelp.forEach(([selector, help]) => {
+      setTitle(panel.querySelector(selector), help);
     });
     panel.querySelectorAll('[data-campaign-cancel]').forEach(button => {
-      button.textContent = 'Cancelar regra e ofertas';
+      setText(button, 'Cancelar regra e ofertas');
       button.classList.add('danger-action');
-      button.title = 'Remove a regra da lista e inicia o encerramento das ofertas criadas por ela.';
+      setTitle(button, 'Remove a regra da lista e inicia o encerramento das ofertas criadas por ela.');
     });
   }
 
