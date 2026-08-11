@@ -26,6 +26,8 @@ const config = read('producao-v2/js/config.js');
 forbidText(config, "import('./basket-products-grid.js", 'config.js voltou a carregar a grade de cestas no boot global.');
 forbidText(config, "import('./basket-editor-polish.js", 'config.js voltou a carregar o acabamento de cestas no boot global.');
 forbidText(config, "import('./duplicate-product.js", 'config.js voltou a carregar Duplicar produto no boot global.');
+requireText(config, 'meta[name="admin-save-build"]', 'config.js não herda a build produtiva atual.');
+requireText(config, 'encodeURIComponent(ACTIVE_BUILD)', 'O fluxo crítico de Produtos não recebe a build produtiva atual.');
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 for (const marker of [
@@ -35,6 +37,8 @@ for (const marker of [
 ]) {
   requireText(stockBootstrap, marker, `Produtos não carrega mais o complemento pela própria rota: ${marker}`);
 }
+requireText(stockBootstrap, 'meta[name="admin-save-build"]', 'O carregador das rotas não herda a build produtiva atual.');
+requireText(stockBootstrap, 'encodeURIComponent(BUILD)', 'O carregador das rotas não aplica a build atual aos imports dinâmicos.');
 requireText(stockBootstrap, 'refreshProductsTableAfterEnhancements', 'Produtos não atualiza a tabela após carregar os complementos da rota.');
 requireText(stockBootstrap, "if (route === 'products') refreshProductsTableAfterEnhancements();", 'O refresh da tabela não está vinculado à conclusão dos complementos de Produtos.');
 requireText(stockBootstrap, "if (route === 'baskets' || route === 'kits')", 'Cestas/Kits não estão vinculados ao carregamento sob demanda.');
@@ -53,14 +57,16 @@ requireText(productsOfferColumns, "headerRow.cells[2].textContent = 'Preço de v
 
 const collections = read('producao-v2/js/collections-bootstrap.js');
 for (const marker of [
-  './basket-context.js?',
-  './basket-products-grid.js?',
-  './basket-editor-polish.js?',
-  './kit-editor-flow-v2.js?',
-  './kit-editor-order-v3.js?',
+  './basket-context.js',
+  './basket-products-grid.js',
+  './basket-editor-polish.js',
+  './kit-editor-flow-v2.js',
+  './kit-editor-order-v3.js',
 ]) {
   requireText(collections, marker, `Collections não carrega o complemento esperado: ${marker}`);
 }
+requireText(collections, 'meta[name="admin-save-build"]', 'Collections não herda a build produtiva atual.');
+requireText(collections, 'function withBuild(path)', 'Collections não centraliza o cache-busting dos complementos.');
 requireText(collections, 'window.__adminV2CollectionsModule = module', 'Collections não publica o módulo antes dos complementos.');
 requireText(collections, 'installCollectionImageResolver(workspace)', 'O resolvedor de imagens não está limitado ao workspace de coleções.');
 forbidText(collections, 'installCollectionImageResolver(document)', 'Collections voltou a observar imagens no documento inteiro.');
@@ -69,7 +75,9 @@ requireText(collections, 'loadInstagramEnhancement', 'Collections perdeu o carre
 requireText(collections, "event.detail?.route === 'kits'", 'A revisão do Instagram não está mais vinculada somente à rota Kits.');
 
 const offers = read('producao-v2/js/offers-bootstrap.js');
-requireText(offers, "import './campaign-rules-section.js", 'Offers não é mais responsável por carregar as regras de campanha.');
+requireText(offers, 'meta[name="admin-save-build"]', 'Offers não herda a build produtiva atual.');
+requireText(offers, "'./campaign-rules-section.js'", 'Offers não é mais responsável por carregar as regras de campanha.');
+requireText(offers, 'loadOfferEnhancements', 'Offers não centraliza o carregamento dos complementos.');
 requireText(offers, 'window.__adminV2OffersStore = store', 'Offers não publica mais o store diretamente.');
 requireText(offers, 'window.__adminV2OffersModule = module', 'Offers não publica mais o módulo diretamente.');
 
@@ -81,6 +89,8 @@ forbidText(campaignRules, 'setInterval(', 'Regras de oferta voltou a usar pollin
 forbidText(campaignRules, 'observe(document.documentElement', 'Regras de oferta voltou a observar o documento inteiro.');
 requireText(campaignRules, '__adminV2CampaignRulesSectionInstalled', 'Regras de oferta perdeu a trava contra execução duplicada.');
 requireText(campaignRules, 'ensureHistoryLoaded', 'Histórico de ofertas voltou a ser carregado sem demanda.');
+requireText(campaignRules, 'meta[name="admin-save-build"]', 'Regras de oferta não herda a build produtiva atual.');
+requireText(campaignRules, 'campaign-execution-history.js?admin_build=${encodeURIComponent(BUILD)}', 'Histórico de ofertas não recebe a build produtiva atual.');
 
 const campaignHistory = read('producao-v2/js/campaign-execution-history.js');
 forbidText(campaignHistory, 'setInterval(', 'Histórico de ofertas voltou a usar polling periódico.');
@@ -112,12 +122,19 @@ for (const removed of ['producao-v2/js/offer-store-bridge.js', 'producao-v2/js/i
 const productiveLoader = read('producao-v2/admin-produtivo.html');
 forbidText(productiveLoader, 'inline-sale-price-label.js', 'O carregador produtivo voltou a injetar o patch separado de preço.');
 forbidText(productiveLoader, "['./js/product-delete-tools.js'", 'O carregador produtivo voltou a injetar ações da rota Produtos no boot global.');
+requireText(productiveLoader, '20260810-route-architecture-v2', 'O carregador produtivo não está na build consolidada atual.');
+requireText(productiveLoader, 'normalizeProductiveBuild', 'O carregador produtivo não normaliza o cache-busting da base.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')", 'O carregador produtivo voltou a carregar o editor de Kits no boot global.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'campaign-rules-section.js')", 'O carregador produtivo voltou a carregar regras de oferta no boot global.');
 
+for (const redirect of ['producao/index.html', 'admin/index.html']) {
+  const source = read(redirect);
+  requireText(source, '20260810-route-architecture-v2', `${redirect} ainda aponta para uma build antiga do carregador.`);
+}
+
 const adminIndex = read('producao-v2/index.html');
 for (const marker of ['kit-editor-flow-v2.js', 'campaign-rules-section.js']) {
-  if (adminIndex.includes(`<script`) && adminIndex.includes(marker)) {
+  if (adminIndex.includes('<script') && adminIndex.includes(marker)) {
     warnings.push(`${marker} ainda possui entrada global no index.html de fallback; o carregador produtivo remove essa entrada antes de abrir o Admin oficial.`);
   }
 }
