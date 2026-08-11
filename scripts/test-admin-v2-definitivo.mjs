@@ -4,7 +4,6 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const ROOT = process.cwd();
-const BUILD = '20260728-customers-fallback-v1';
 const failures = [];
 const checked = [];
 
@@ -99,7 +98,7 @@ const required = [
   'producao-v2/js/product-lifecycle-bootstrap.js', 'producao-v2/js/product-editor-enhancements.js',
   'site/produtos-admin.json', 'site/produtos-home.json', 'site/ofertas-historico.json',
   'site/cuponsativos.json', 'site/compra-rapida.json', 'scripts/check-admin-production.mjs',
-  '.github/workflows/verificar-admin-producao.yml',
+  'scripts/test-admin-v2-route-architecture.mjs', '.github/workflows/verificar-admin-producao.yml',
 ];
 required.forEach(file => { if (!existsSync(path.join(ROOT, file))) fail(`Arquivo obrigatório ausente: ${file}`); });
 
@@ -113,6 +112,7 @@ for (const removed of [
   'producao-v2/js/product-delete-filter.js', 'producao-v2/js/official-copy-fixes.js',
   'producao-v2/js/campaign-offers-fixes.js', 'producao-v2/js/modules/nfe.js',
   'producao-v2/js/manual-status-save.js', 'producao-v2/js/offer-store-bridge.js',
+  'producao-v2/js/inline-sale-price-label.js',
 ]) {
   if (existsSync(path.join(ROOT, removed))) fail(`Arquivo legado ainda presente: ${removed}`);
 }
@@ -121,6 +121,7 @@ const adminJavascript = walk('producao-v2/js', '.js');
 adminJavascript.forEach(checkSyntax);
 adminJavascript.forEach(checkStaticImports);
 checkSyntax('scripts/test-admin-v2-definitivo.mjs');
+checkSyntax('scripts/test-admin-v2-route-architecture.mjs');
 checkSyntax('scripts/check-admin-production.mjs');
 
 for (const jsonFile of [
@@ -133,12 +134,11 @@ for (const jsonFile of [
 
 for (const [name, source] of [['/producao', read('producao/index.html')], ['/admin', read('admin/index.html')]]) {
   if (!source.includes('../producao-v2/')) fail(`${name} não aponta para o Admin oficial.`);
-  if (!source.includes(BUILD)) fail(`${name} não aponta para a build ${BUILD}.`);
+  if (!source.includes('admin_build=')) fail(`${name} não informa uma build para evitar cache do carregador.`);
   if (!source.includes('no-store') || !source.includes('window.location.replace')) fail(`${name} precisa redirecionar sem cache.`);
 }
 
 const adminIndex = read('producao-v2/index.html');
-if (!adminIndex.includes(BUILD)) fail(`O HTML oficial não está na build ${BUILD}.`);
 for (const entry of ['js/app.js', 'js/navigation-v12.js', 'js/stock-bootstrap.js', 'assets/navigation.css']) {
   if (!adminIndex.includes(entry)) fail(`Entrada do Admin ausente: ${entry}`);
 }
@@ -177,7 +177,8 @@ if (adminUx.includes('new MutationObserver')) fail('admin-ux.js voltou a observa
 if (!adminUx.includes("addEventListener('admin-v2-route-ready'")) fail('admin-ux.js não reage ao evento determinístico de rota pronta.');
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
-if (!stockBootstrap.includes(BUILD)) fail('O carregador das abas está com uma build diferente do HTML.');
+if (!stockBootstrap.includes('meta[name="admin-save-build"]')) fail('O carregador das abas não herda a build produtiva atual.');
+if (!stockBootstrap.includes('encodeURIComponent(BUILD)')) fail('O carregador das abas não aplica a build atual aos módulos sob demanda.');
 for (const [route, modules] of Object.entries(ROUTE_MODULES)) {
   for (const moduleFile of modules) {
     if (!stockBootstrap.includes(`./${moduleFile}`)) fail(`A rota ${route} não carrega ${moduleFile}.`);
