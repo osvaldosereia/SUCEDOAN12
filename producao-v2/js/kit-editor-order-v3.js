@@ -112,8 +112,18 @@ function schedule() {
 
 window.addEventListener('admin-v2-route', schedule);
 window.addEventListener('admin-v2-route-ready', schedule);
-new MutationObserver(() => {
-  if (currentContext()) schedule();
-}).observe(document.documentElement, { childList: true, subtree: true });
+
+const editor = document.getElementById('collectionEditor');
+if (editor) {
+  new MutationObserver(() => {
+    if (currentContext()) schedule();
+  }).observe(editor, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+}
+
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule, { once: true });
 else schedule();
