@@ -1,5 +1,6 @@
 import './campaign-offers-recovery.js?admin_build=20260727-products-inline-v1';
 import './campaign-offers-production-guard.js?admin_build=20260727-products-inline-v1';
+import './campaign-rules-section.js?admin_build=20260727-products-inline-v1';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { OffersModule } from './modules/offers.js';
 import { loadProducts } from './services/firebase.js';
