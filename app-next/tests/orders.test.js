@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildBundleMessageContext, buildFirebaseOrder, buildOrderPayload, buildWhatsAppMessage,
-  canDispatchOrderToMake, enqueueOrder, firebaseOrderWasProcessed, validateCheckoutData
+  canDispatchOrderToMake, enqueueOrder, firebaseOrderWasProcessed, isComplementOrderEntry,
+  validateCheckoutData
 } from '../src/integrations.js';
 
 function sampleState() {
@@ -42,10 +43,19 @@ test('monta payload compatível com Make e Firebase', () => {
   assert.equal(firebase.controle.preview_modular, true);
 });
 
-test('Make só pode receber pedido confirmado no Firebase', () => {
+test('pedido normal pode iniciar Make junto com Firebase sem liberar complementar', () => {
   assert.equal(canDispatchOrderToMake({ firebaseStatus: 'pending', makeStatus: 'pending' }), false);
-  assert.equal(canDispatchOrderToMake({ firebaseStatus: 'sent', makeStatus: 'pending' }), true);
+  assert.equal(canDispatchOrderToMake({
+    firebaseStatus: 'pending', makeStatus: 'pending', makePayload: { pedido: { tipo: 'pedido_normal' } }
+  }, { allowNormalBeforeFirebase: true }), true);
+  const complement = {
+    firebaseStatus: 'pending', makeStatus: 'pending', makePayload: { pedido: { tipo: 'pedido_complementar' } }
+  };
+  assert.equal(isComplementOrderEntry(complement), true);
+  assert.equal(canDispatchOrderToMake(complement, { allowNormalBeforeFirebase: true }), false);
+  assert.equal(canDispatchOrderToMake({ ...complement, firebaseStatus: 'sent' }), true);
   assert.equal(canDispatchOrderToMake({ firebaseStatus: 'sent', makeStatus: 'sent' }), false);
+  assert.equal(canDispatchOrderToMake({ firebaseStatus: 'sent', makeStatus: 'sending' }), false);
 });
 
 test('fila só considera o Make concluído após confirmação final no Firebase', () => {
