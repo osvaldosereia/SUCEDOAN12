@@ -1,3 +1,5 @@
+import { createProduct, loadProduct, loadProducts } from './services/firebase.js';
+
 const DEFAULT_FIREBASE_URL = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const CONFIG_KEY = 'da_admin_v2_config';
 
@@ -18,46 +20,17 @@ function readConfig() {
   }
 }
 
-function firebaseBase() {
-  return text(readConfig().firebaseUrl || DEFAULT_FIREBASE_URL).replace(/\/+$/, '');
-}
-
-function productsNode() {
-  return text(readConfig().productsNode || 'produtos').replace(/^\/+|\/+$/g, '').replace(/\.json$/i, '');
-}
-
-function productUrl(key = '') {
-  const suffix = key ? `/${encodeURIComponent(key)}` : '';
-  return `${firebaseBase()}/${productsNode()}${suffix}.json`;
-}
-
 function toast(message, type = '') {
   const region = document.getElementById('toastRegion');
   if (!region) return;
+  const normalized = text(message);
+  if (!normalized) return;
+  if ([...region.querySelectorAll('.toast')].some(node => node.textContent === normalized)) return;
   const node = document.createElement('div');
   node.className = `toast ${type}`.trim();
-  node.textContent = message;
+  node.textContent = normalized;
   region.appendChild(node);
   setTimeout(() => node.remove(), type === 'error' ? 7000 : 4200);
-}
-
-async function firebaseRequest(url, options = {}, timeout = 25000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await globalThis.fetch(url, { cache: 'no-store', ...options, signal: controller.signal });
-    if (!response.ok) {
-      const detail = await response.text().catch(() => '');
-      throw new Error(`Firebase retornou ${response.status}${detail ? `: ${detail.slice(0, 180)}` : ''}`);
-    }
-    if (response.status === 204) return null;
-    return response.json().catch(() => null);
-  } catch (error) {
-    if (error?.name === 'AbortError') throw new Error('Tempo esgotado ao duplicar o produto.');
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 function cloneValue(value) {
@@ -87,7 +60,8 @@ function buildDuplicate(source, sourceKey, newKey, nome, codigo) {
     'estoque_lotes', 'preco_oferta', 'precoOferta', 'data_inicio_oferta', 'inicio_oferta',
     'validade_oferta', 'validadeOferta', 'oferta_origem', 'oferta_regra_id', 'desconto_validade',
     'campanha_id', 'promocao_id', 'arquivado_em', 'arquivado_motivo', 'arquivado_origem',
-    'restaurado_em', 'situacao_anterior',
+    'restaurado_em', 'situacao_anterior', 'situacao_manual_override', 'situacao_manual_em',
+    'situacao_manual_origem', 'situacao_manual_restaurada_em', 'situacao_manual_restaurada_origem',
   ].forEach(field => delete copy[field]);
 
   const now = new Date().toISOString();
@@ -99,8 +73,8 @@ function buildDuplicate(source, sourceKey, newKey, nome, codigo) {
   copy.slug = `${slug(nome) || 'produto'}-${newKey.slice(-6)}`;
   copy.situacao = 'I';
   copy.status = 'I';
-  delete copy.ativo;
-  delete copy.visivel;
+  copy.ativo = false;
+  copy.visivel = false;
   copy.estoque = 0;
   copy.destaque = false;
   delete copy.ordem;
@@ -118,11 +92,10 @@ function buildDuplicate(source, sourceKey, newKey, nome, codigo) {
   return copy;
 }
 
-async function ensureUniqueCode(code) {
-  const collection = await firebaseRequest(`${productUrl()}?_duplicate_check=${Date.now()}`);
-  if (!collection || typeof collection !== 'object') return;
+async function ensureUniqueCode(config, code) {
+  const products = await loadProducts(config, { force: true });
   const normalized = text(code).toLocaleLowerCase('pt-BR');
-  const exists = Object.values(collection).some(product => text(product?.codigo || product?.sku).toLocaleLowerCase('pt-BR') === normalized);
+  const exists = products.some(product => text(product?.codigo || product?.sku).toLocaleLowerCase('pt-BR') === normalized);
   if (exists) throw new Error('Já existe um produto com esse código comercial. Informe outro código.');
 }
 
@@ -153,7 +126,7 @@ function revealDuplicate(key, code) {
   if (reload && !reload.disabled) reload.click();
 
   let attempts = 0;
-  const timer = setInterval(() => {
+  const locateCopy = () => {
     attempts += 1;
     const search = document.getElementById('productSearch');
     if (search) {
@@ -162,14 +135,17 @@ function revealDuplicate(key, code) {
     }
     const open = document.querySelector(`[data-product-key="${CSS.escape(key)}"]`);
     if (open) {
-      clearInterval(timer);
       open.click();
       toast('Cópia criada como inativa. Revise EAN, estoque e validade antes de ativar.', 'success');
-    } else if (attempts >= 12) {
-      clearInterval(timer);
-      toast(`Produto duplicado com o código ${code}. Use a busca para abrir a cópia.`, 'success');
+      return;
     }
-  }, 350);
+    if (attempts >= 12) {
+      toast(`Produto duplicado com o código ${code}. Use a busca para abrir a cópia.`, 'success');
+      return;
+    }
+    setTimeout(locateCopy, 350);
+  };
+  setTimeout(locateCopy, 150);
 }
 
 async function duplicateProduct(sourceKey, button = null) {
@@ -181,8 +157,8 @@ async function duplicateProduct(sourceKey, button = null) {
   duplicating = true;
   setBusy(button, true);
   try {
-    const source = await firebaseRequest(`${productUrl(sourceKey)}?_duplicate=${Date.now()}`);
-    if (!source || typeof source !== 'object') throw new Error('Produto original não encontrado no Firebase.');
+    const source = await loadProduct(config, sourceKey);
+    if (!source) throw new Error('Produto original não encontrado no Firebase.');
 
     const defaultName = `${text(source.nome || source.titulo || 'Produto')} - Cópia`;
     const nome = prompt('Nome do novo produto:', defaultName);
@@ -192,17 +168,13 @@ async function duplicateProduct(sourceKey, button = null) {
     const codigo = prompt('Código comercial do novo produto:', suggestedCode(source));
     if (codigo === null) return;
     if (!text(codigo)) throw new Error('Informe o código comercial do novo produto.');
-    await ensureUniqueCode(codigo);
+    await ensureUniqueCode(config, codigo);
 
     const newKey = uniqueKey();
     const copy = buildDuplicate(source, sourceKey, newKey, text(nome), text(codigo));
-    await firebaseRequest(productUrl(newKey), {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(copy),
-    });
+    await createProduct(config, copy, newKey);
 
-    const verified = await firebaseRequest(`${productUrl(newKey)}?_verify_duplicate=${Date.now()}`);
+    const verified = await loadProduct(config, newKey);
     if (!verified || text(verified.codigo) !== text(codigo) || text(verified.nome) !== text(nome)) {
       throw new Error('O Firebase não confirmou a criação da cópia.');
     }
