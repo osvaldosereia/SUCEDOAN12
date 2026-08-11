@@ -112,9 +112,10 @@ function start() {
   installCss();
   installSettings();
   installErrorGuard();
-  installCollectionImageResolver(document);
   view.insertAdjacentHTML('afterbegin', panelMarkup());
   document.body.insertAdjacentHTML('beforeend', editorMarkup());
+  const workspace = document.getElementById('collectionsWorkspace');
+  if (workspace) installCollectionImageResolver(workspace);
 
   const store = { state: { products: [], baskets: [], kits: [], queue: [] } };
   let module;
