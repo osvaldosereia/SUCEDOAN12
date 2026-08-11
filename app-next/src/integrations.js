@@ -445,13 +445,84 @@ export function firebaseOrderWasProcessed(order) {
   return hasBlingOrder && order?.controle?.processado_make === true;
 }
 
-export function canDispatchOrderToMake(entry) {
-  return Boolean(entry && entry.firebaseStatus === 'sent' && entry.makeStatus !== 'sent');
+export function isComplementOrderEntry(entry) {
+  return String(entry?.makePayload?.pedido?.tipo || '') === 'pedido_complementar';
+}
+
+export function canDispatchOrderToMake(entry, { allowNormalBeforeFirebase = false } = {}) {
+  if (!entry || entry.makeStatus === 'sent' || entry.makeStatus === 'sending') return false;
+  if (entry.firebaseStatus === 'sent') return true;
+  return allowNormalBeforeFirebase && !isComplementOrderEntry(entry);
 }
 
 export async function confirmFirebaseOrder(orderId) {
   const order = await readFirebaseOrder(orderId);
   return order && String(order.id || '') === String(orderId || '') ? order : null;
+}
+
+export async function persistQueuedOrder(orderId) {
+  let entry = readQueue().find(item => item.id === String(orderId));
+  if (!entry || entry.firebaseStatus === 'sent') return entry || null;
+
+  const existingOrder = await confirmFirebaseOrder(entry.id);
+  if (existingOrder) return updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
+
+  entry = updateQueueEntry(entry.id, { firebaseStatus: 'sending', lastError: '' }) || entry;
+  try {
+    const response = await fetchWithTimeout(`${CONFIG.ENDPOINTS.FIREBASE_ORDERS}/${encodeURIComponent(entry.id)}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'If-Match': 'null_etag' },
+      body: JSON.stringify(entry.firebaseOrder),
+      keepalive: true
+    }, 8000);
+    if (response.status === 412) {
+      const confirmed = await confirmFirebaseOrder(entry.id);
+      if (!confirmed) throw new Error('Firebase encontrou um registro concorrente, mas não confirmou o pedido');
+      return updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
+    }
+    if (!response.ok) throw new Error(`Firebase respondeu ${response.status}`);
+    const savedOrder = await response.json().catch(() => null);
+    if (!savedOrder || String(savedOrder.id || '') !== String(entry.id)) {
+      throw new Error('Firebase não confirmou o identificador do pedido');
+    }
+    return updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
+  } catch (error) {
+    return updateQueueEntry(entry.id, { firebaseStatus: 'pending', lastError: error.message || 'Falha no Firebase' });
+  }
+}
+
+export async function dispatchQueuedOrderToMake(orderId, { allowNormalBeforeFirebase = false } = {}) {
+  let entry = readQueue().find(item => item.id === String(orderId));
+  if (!entry || !canDispatchOrderToMake(entry, { allowNormalBeforeFirebase })) return entry || null;
+
+  const now = Date.now();
+  if (Number(entry.makeAttempts || 0) > 0) {
+    const existingOrder = await readFirebaseOrder(entry.id);
+    if (firebaseOrderWasProcessed(existingOrder)) {
+      updateQueueEntry(entry.id, { firebaseStatus: 'sent', makeStatus: 'sent', lastError: '' });
+      writeQueue(readQueue().filter(item => item.id !== entry.id));
+      return null;
+    }
+    if (now - Number(entry.lastMakeAttemptAt || 0) < CONFIG.ORDER_RETRY_MS) return entry;
+  }
+
+  entry = updateQueueEntry(entry.id, {
+    makeStatus: 'sending',
+    makeAttempts: Number(entry.makeAttempts || 0) + 1,
+    lastMakeAttemptAt: now,
+    lastError: ''
+  }) || entry;
+  try {
+    const response = await fetchWithTimeout(CONFIG.ENDPOINTS.MAKE_ORDER, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.makePayload), keepalive: true
+    }, 12000);
+    if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
+    // HTTP 2xx confirma apenas que o webhook aceitou o pedido. A fila permanece
+    // salva até o Firebase registrar que o cenário terminou no Bling e estoque.
+    return updateQueueEntry(entry.id, { makeStatus: 'accepted', lastError: '' });
+  } catch (error) {
+    return updateQueueEntry(entry.id, { makeStatus: 'pending', lastError: error.message || 'Falha no Make' });
+  }
 }
 
 export async function processOrderQueue() {
@@ -468,23 +539,7 @@ export async function processOrderQueue() {
         if (existingOrder) entry = updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
       }
 
-      entry = readQueue().find(item => item.id === snapshot.id);
-      if (!entry) continue;
-      if (entry.firebaseStatus !== 'sent' && entry.makeStatus !== 'sent') {
-        try {
-          const response = await fetchWithTimeout(`${CONFIG.ENDPOINTS.FIREBASE_ORDERS}/${encodeURIComponent(entry.id)}.json`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.firebaseOrder), keepalive: true
-          }, 8000);
-          if (!response.ok) throw new Error(`Firebase respondeu ${response.status}`);
-          const savedOrder = await response.json().catch(() => null);
-          if (!savedOrder || String(savedOrder.id || '') !== String(entry.id)) {
-            throw new Error('Firebase não confirmou o identificador do pedido');
-          }
-          entry = updateQueueEntry(entry.id, { firebaseStatus: 'sent', lastError: '' });
-        } catch (error) {
-          updateQueueEntry(entry.id, { firebaseStatus: 'pending', lastError: error.message || 'Falha no Firebase' });
-        }
-      }
+      entry = await persistQueuedOrder(snapshot.id);
 
       entry = readQueue().find(item => item.id === snapshot.id);
       if (entry && entry.firebaseStatus !== 'sent') continue;
@@ -495,29 +550,7 @@ export async function processOrderQueue() {
 
       if (!canDispatchOrderToMake(entry)) continue;
 
-      const now = Date.now();
-      if (Number(entry.makeAttempts || 0) > 0) {
-        const existingOrder = await readFirebaseOrder(entry.id);
-        if (firebaseOrderWasProcessed(existingOrder)) {
-          updateQueueEntry(entry.id, { firebaseStatus: 'sent', makeStatus: 'sent', lastError: '' });
-          writeQueue(readQueue().filter(item => item.id !== entry.id));
-          continue;
-        }
-        if (now - Number(entry.lastMakeAttemptAt || 0) < CONFIG.ORDER_RETRY_MS) continue;
-      }
-
-      updateQueueEntry(entry.id, { makeStatus: 'sending', makeAttempts: Number(entry.makeAttempts || 0) + 1, lastMakeAttemptAt: now, lastError: '' });
-      try {
-        const response = await fetchWithTimeout(CONFIG.ENDPOINTS.MAKE_ORDER, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(entry.makePayload), keepalive: true
-        }, 12000);
-        if (!response.ok) throw new Error(`Make respondeu ${response.status}`);
-        // HTTP 2xx confirma apenas que o webhook aceitou o pedido. A fila permanece
-        // salva até o Firebase registrar que o cenário terminou no Bling e estoque.
-        updateQueueEntry(entry.id, { makeStatus: 'accepted', lastError: '' });
-      } catch (error) {
-        updateQueueEntry(entry.id, { makeStatus: 'pending', lastError: error.message || 'Falha no Make' });
-      }
+      await dispatchQueuedOrderToMake(entry.id);
       entry = readQueue().find(item => item.id === snapshot.id);
       if (entry?.firebaseStatus === 'sent' && entry?.makeStatus === 'sent') writeQueue(readQueue().filter(item => item.id !== entry.id));
     }
