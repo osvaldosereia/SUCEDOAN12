@@ -5,27 +5,6 @@
     console.error('Falha ao carregar o histórico das ofertas por regra.', error);
   });
 
-  import('./products-offer-columns.js?admin_build=20260731-product-offer-columns-v2')
-    .then(() => {
-      const refreshProductsTable = () => {
-        const search = document.getElementById('productSearch');
-        if (search) search.dispatchEvent(new Event('input', { bubbles: true }));
-      };
-      refreshProductsTable();
-      setTimeout(refreshProductsTable, 500);
-      setTimeout(refreshProductsTable, 1500);
-    })
-    .catch(error => {
-      console.error('Falha ao carregar as colunas de oferta dos produtos.', error);
-    });
-
-  import('./kit-editor-flow-v2.js?admin_build=20260728-kit-editor-flow-v2').catch(error => {
-    console.error('Falha ao carregar o fluxo organizado de kits.', error);
-  });
-  import('./kit-editor-order-v3.js?admin_build=20260728-kit-editor-order-v4').catch(error => {
-    console.error('Falha ao ordenar as etapas do editor de kits.', error);
-  });
-
   let refreshTimer = null;
   let panelObserver = null;
   let observedPanel = null;
