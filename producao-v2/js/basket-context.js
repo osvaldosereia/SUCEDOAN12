@@ -333,7 +333,39 @@ function scheduleEnhance() {
   });
 }
 
-installInteractionBridge();
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scheduleEnhance, { once: true });
-else scheduleEnhance();
-new MutationObserver(scheduleEnhance).observe(document.documentElement, { childList: true, subtree: true });
+function installScopedObservers() {
+  const collectionEditor = document.getElementById('collectionEditor');
+  if (collectionEditor && collectionEditor.dataset.basketContextObserved !== '1') {
+    collectionEditor.dataset.basketContextObserved = '1';
+    new MutationObserver(scheduleEnhance).observe(collectionEditor, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
+
+  const productEditor = document.getElementById('productEditor');
+  if (productEditor && productEditor.dataset.basketContextObserved !== '1') {
+    productEditor.dataset.basketContextObserved = '1';
+    new MutationObserver(scheduleEnhance).observe(productEditor, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
+}
+
+function start() {
+  installInteractionBridge();
+  installScopedObservers();
+  scheduleEnhance();
+}
+
+window.addEventListener('admin-v2-route-ready', event => {
+  if (['baskets', 'kits'].includes(event.detail?.route)) scheduleEnhance();
+});
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+else start();
