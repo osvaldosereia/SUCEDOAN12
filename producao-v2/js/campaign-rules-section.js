@@ -4,6 +4,7 @@
   if (window.__adminV2CampaignRulesSectionInstalled) return;
   window.__adminV2CampaignRulesSectionInstalled = true;
 
+  const BUILD = document.querySelector('meta[name="admin-save-build"]')?.content || '20260810-route-architecture-v1';
   let refreshTimer = null;
   let panelObserver = null;
   let observedPanel = null;
@@ -11,7 +12,7 @@
 
   function ensureHistoryLoaded() {
     if (historyLoadPromise) return historyLoadPromise;
-    historyLoadPromise = import('./campaign-execution-history.js?admin_build=20260803-offers-history-v1')
+    historyLoadPromise = import(`./campaign-execution-history.js?admin_build=${encodeURIComponent(BUILD)}`)
       .catch(error => {
         historyLoadPromise = null;
         console.error('Falha ao carregar o histórico das ofertas por regra.', error);
