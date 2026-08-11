@@ -6,8 +6,8 @@ import { prepareProductOffer } from './offer-engine.js?v=20260727-4';
 import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import { createPersonalization } from './personalization.js?v=20260727-4';
 import { createUI } from './ui.js?v=20260727-7';
-import { createCheckout } from './checkout.js?v=20260810-2';
-import { processOrderQueue } from './integrations.js?v=20260810-2';
+import { createCheckout } from './checkout.js?v=20260811-1';
+import { processOrderQueue } from './integrations.js?v=20260811-1';
 
 const events = createEventBus();
 const store = createStore(createInitialState());
