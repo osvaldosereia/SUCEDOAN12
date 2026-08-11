@@ -65,6 +65,27 @@ function ensureStyles() {
   style.id = 'productsOfferColumnsStyles';
   style.textContent = `
     .product-panel .data-table { min-width: 1380px; }
+    .inline-price-cell .inline-sale-price-caption{
+      display:block;
+      margin-bottom:3px;
+      color:#72500b;
+      font-size:9px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.035em;
+    }
+    .inline-product-input.inline-preco{
+      min-width:108px;
+      border-color:#d2b461;
+      background:#fffdf5;
+      color:#181a18;
+      font-size:12px;
+      font-weight:900;
+    }
+    .inline-product-input.inline-preco:focus{
+      border-color:#956814;
+      box-shadow:0 0 0 3px rgba(149,104,20,.15);
+    }
     .offer-list-value,
     .offer-list-expiration { white-space: nowrap; }
     .offer-list-value .inline-product-input { min-width: 112px; }
@@ -99,6 +120,8 @@ function ensureHeaders(module) {
   const headerRow = table?.tHead?.rows?.[0];
   if (!headerRow) return;
 
+  if (headerRow.cells[2]) headerRow.cells[2].textContent = 'Preço de venda';
+
   if (!headerRow.querySelector('[data-offer-price-column]')) {
     const header = document.createElement('th');
     header.dataset.offerPriceColumn = '';
@@ -113,6 +136,21 @@ function ensureHeaders(module) {
     header.dataset.offerExpirationColumn = '';
     header.textContent = 'Validade da oferta';
     validityHeader?.after(header);
+  }
+}
+
+function enhanceSalePriceCell(row) {
+  const input = row.querySelector('input[data-inline-field="preco"]');
+  if (!input) return;
+  input.setAttribute('aria-label', 'Preço de venda');
+  input.setAttribute('title', 'Edite o preço de venda e clique em Salvar');
+  input.setAttribute('placeholder', '0,00');
+  const cell = input.closest('.inline-price-cell');
+  if (cell && !cell.querySelector('.inline-sale-price-caption')) {
+    const caption = document.createElement('small');
+    caption.className = 'inline-sale-price-caption';
+    caption.textContent = 'Venda (R$)';
+    cell.insertBefore(caption, input);
   }
 }
 
@@ -137,6 +175,8 @@ function renderOfferColumns(module) {
   rows.forEach((row, index) => {
     const product = visible[index];
     if (!product || row.querySelector('.empty-state')) return;
+
+    enhanceSalePriceCell(row);
 
     const key = String(product.firebaseKey || product.id || product.codigo || '');
     const offerPrice = getOfferPrice(product);
