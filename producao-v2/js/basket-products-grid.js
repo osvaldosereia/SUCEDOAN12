@@ -3,7 +3,6 @@
 
   const INSTALL_FLAG = '__basketVerticalGridV1';
   const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><rect width="100%" height="100%" fill="#f1f2ef"/><text x="50%" y="53%" text-anchor="middle" fill="#899087" font-family="Arial" font-size="13">sem imagem</text></svg>')}`;
-  let installTimer = null;
 
   const text = value => String(value ?? '').trim();
   const number = value => {
@@ -251,11 +250,7 @@
   }
 
   function tryInstall() {
-    const module = window.__adminV2CollectionsModule;
-    if (patchModule(module)) {
-      clearInterval(installTimer);
-      installTimer = null;
-    }
+    patchModule(window.__adminV2CollectionsModule);
   }
 
   window.addEventListener('admin-v2-route-ready', event => {
@@ -264,12 +259,5 @@
   document.addEventListener('click', event => {
     if (event.target.closest?.('[data-route="baskets"], [data-route="kits"]')) setTimeout(tryInstall, 100);
   }, true);
-  installTimer = setInterval(tryInstall, 250);
-  setTimeout(() => {
-    if (installTimer) {
-      clearInterval(installTimer);
-      installTimer = null;
-    }
-  }, 30000);
   tryInstall();
 })();
