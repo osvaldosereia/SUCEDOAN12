@@ -10,13 +10,9 @@ async function loadCriticalEnhancement(path, label) {
 // mas uma falha nele não pode impedir o restante do Admin de inicializar.
 await loadCriticalEnhancement('./direct-product-save.js?admin_build=20260803-product-flow-v3', 'o fluxo unificado de produtos');
 
-// Complementos visuais e operacionais são carregados sem bloquear a tela inicial.
+// Complementos diretamente ligados à lista de produtos continuam no boot.
 void import('./duplicate-product.js?admin_build=20260803-duplicate-product-v2')
   .catch(error => console.error('Falha ao carregar a duplicação de produtos.', error));
-void import('./basket-products-grid.js?admin_build=20260807-basket-swaps-v2')
-  .catch(error => console.error('Falha ao carregar a grade rápida das cestas.', error));
-void import('./basket-editor-polish.js?admin_build=20260803-basket-editor-polish-v1')
-  .catch(error => console.error('Falha ao ajustar o editor das cestas.', error));
 
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
