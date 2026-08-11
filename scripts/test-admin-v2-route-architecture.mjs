@@ -31,6 +31,10 @@ requireText(stockBootstrap, "'./products-offer-columns.js'", 'Produtos não carr
 requireText(stockBootstrap, "if (route === 'baskets' || route === 'kits')", 'Cestas/Kits não estão vinculados ao carregamento sob demanda.');
 requireText(stockBootstrap, "if (route === 'offers' || route === 'offers-rules')", 'Ofertas não estão vinculadas ao carregamento sob demanda.');
 
+const productsOfferColumns = read('producao-v2/js/products-offer-columns.js');
+requireText(productsOfferColumns, 'inline-sale-price-caption', 'O rótulo de preço de venda não está mais consolidado na tabela de Produtos.');
+requireText(productsOfferColumns, "headerRow.cells[2].textContent = 'Preço de venda'", 'A coluna de preço de venda não é nomeada pelo módulo da tabela.');
+
 const collections = read('producao-v2/js/collections-bootstrap.js');
 for (const marker of [
   './basket-products-grid.js?',
@@ -79,9 +83,12 @@ forbidText(basketPolish, 'observe(document.documentElement', 'Acabamento de cest
 const kitOrder = read('producao-v2/js/kit-editor-order-v3.js');
 forbidText(kitOrder, 'observe(document.documentElement', 'Ordenação do editor de kits voltou a observar o documento inteiro.');
 
-if (existsSync(path.join(ROOT, 'producao-v2/js/offer-store-bridge.js'))) {
-  failures.push('offer-store-bridge.js reapareceu apesar do store de Ofertas já ser publicado diretamente.');
+for (const removed of ['producao-v2/js/offer-store-bridge.js', 'producao-v2/js/inline-sale-price-label.js']) {
+  if (existsSync(path.join(ROOT, removed))) failures.push(`Arquivo consolidado reapareceu: ${removed}`);
 }
+
+const productiveLoader = read('producao-v2/admin-produtivo.html');
+forbidText(productiveLoader, 'inline-sale-price-label.js', 'O carregador produtivo voltou a injetar o patch separado de preço.');
 
 const adminIndex = read('producao-v2/index.html');
 for (const marker of ['kit-editor-flow-v2.js', 'campaign-rules-section.js']) {
