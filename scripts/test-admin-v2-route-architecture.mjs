@@ -37,6 +37,7 @@ requireText(productsOfferColumns, "headerRow.cells[2].textContent = 'Preço de v
 
 const collections = read('producao-v2/js/collections-bootstrap.js');
 for (const marker of [
+  './basket-context.js?',
   './basket-products-grid.js?',
   './basket-editor-polish.js?',
   './kit-editor-flow-v2.js?',
@@ -45,6 +46,11 @@ for (const marker of [
   requireText(collections, marker, `Collections não carrega o complemento esperado: ${marker}`);
 }
 requireText(collections, 'window.__adminV2CollectionsModule = module', 'Collections não publica o módulo antes dos complementos.');
+requireText(collections, 'installCollectionImageResolver(workspace)', 'O resolvedor de imagens não está limitado ao workspace de coleções.');
+forbidText(collections, 'installCollectionImageResolver(document)', 'Collections voltou a observar imagens no documento inteiro.');
+forbidText(collections, "import './instagram-queue-review.js", 'A revisão do Instagram voltou a carregar junto com qualquer coleção.');
+requireText(collections, 'loadInstagramEnhancement', 'Collections perdeu o carregamento sob demanda da revisão do Instagram.');
+requireText(collections, "event.detail?.route === 'kits'", 'A revisão do Instagram não está mais vinculada somente à rota Kits.');
 
 const offers = read('producao-v2/js/offers-bootstrap.js');
 requireText(offers, "import './campaign-rules-section.js", 'Offers não é mais responsável por carregar as regras de campanha.');
