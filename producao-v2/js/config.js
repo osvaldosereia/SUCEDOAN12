@@ -1,3 +1,5 @@
+const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content || '20260810-route-architecture-v1';
+
 async function loadCriticalEnhancement(path, label) {
   try {
     await import(path);
@@ -8,7 +10,7 @@ async function loadCriticalEnhancement(path, label) {
 
 // O salvamento unificado precisa ser instalado antes da criação do módulo de produtos,
 // mas uma falha nele não pode impedir o restante do Admin de inicializar.
-await loadCriticalEnhancement('./direct-product-save.js?admin_build=20260803-product-flow-v3', 'o fluxo unificado de produtos');
+await loadCriticalEnhancement(`./direct-product-save.js?admin_build=${encodeURIComponent(ACTIVE_BUILD)}`, 'o fluxo unificado de produtos');
 
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
