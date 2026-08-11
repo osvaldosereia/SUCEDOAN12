@@ -1,4 +1,3 @@
-import './offer-store-bridge.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { RegistriesModule } from './modules/registries.js';
 import { loadProducts } from './services/firebase.js';
