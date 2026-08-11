@@ -3,7 +3,7 @@ import { productKey } from './core/utils.js';
 import { StockModule } from './modules/stock.js';
 import { loadProducts } from './services/firebase.js';
 
-const BUILD = '20260728-customers-fallback-v1';
+const BUILD = document.querySelector('meta[name="admin-save-build"]')?.content || '20260810-route-architecture-v1';
 const imports = new Map();
 
 function loadConfig() {
@@ -80,7 +80,7 @@ function toast(message, type = '') {
 
 function importOnce(key, paths) {
   if (imports.has(key)) return imports.get(key);
-  const task = Promise.all(paths.map(path => import(`${path}?admin_build=${BUILD}`))).catch(error => {
+  const task = Promise.all(paths.map(path => import(`${path}?admin_build=${encodeURIComponent(BUILD)}`))).catch(error => {
     imports.delete(key);
     throw error;
   });
