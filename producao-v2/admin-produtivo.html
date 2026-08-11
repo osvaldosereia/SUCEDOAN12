@@ -17,7 +17,7 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260810-delete-unified-v3';
+      const BUILD = '20260810-route-clean-v4';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -78,7 +78,6 @@
           ['./js/nfe-image-make-fix.js', true],
           ['./js/nfe-import-save-fix.js', true],
           ['./js/alternate-ean-support.js', true],
-          ['./js/inline-sale-price-label.js', false],
           ['./js/product-delete-tools.js', true],
         ];
 
