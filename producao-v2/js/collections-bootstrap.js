@@ -97,7 +97,7 @@ async function loadEditorEnhancements() {
   const modules = [
     './basket-products-grid.js?admin_build=20260810-collections-route-v1',
     './basket-editor-polish.js?admin_build=20260810-collections-route-v1',
-    './kit-editor-flow-v2.js?admin_build=20260810-collections-route-v1',
+    './kit-editor-flow-v2.js?admin_build=20260728-kit-editor-flow-v2',
     './kit-editor-order-v3.js?admin_build=20260810-collections-route-v1',
   ];
   const results = await Promise.allSettled(modules.map(path => import(path)));
