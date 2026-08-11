@@ -10,10 +10,6 @@ async function loadCriticalEnhancement(path, label) {
 // mas uma falha nele não pode impedir o restante do Admin de inicializar.
 await loadCriticalEnhancement('./direct-product-save.js?admin_build=20260803-product-flow-v3', 'o fluxo unificado de produtos');
 
-// Complementos diretamente ligados à lista de produtos continuam no boot.
-void import('./duplicate-product.js?admin_build=20260803-duplicate-product-v2')
-  .catch(error => console.error('Falha ao carregar a duplicação de produtos.', error));
-
 export const DEFAULT_CONFIG = Object.freeze({
   firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
   productsNode: 'produtos',
