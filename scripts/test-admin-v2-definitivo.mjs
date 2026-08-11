@@ -112,7 +112,7 @@ for (const removed of [
   'producao-v2/assets/quick-read.css', 'producao-v2/js/quick-purchase-bootstrap.js',
   'producao-v2/js/product-delete-filter.js', 'producao-v2/js/official-copy-fixes.js',
   'producao-v2/js/campaign-offers-fixes.js', 'producao-v2/js/modules/nfe.js',
-  'producao-v2/js/manual-status-save.js',
+  'producao-v2/js/manual-status-save.js', 'producao-v2/js/offer-store-bridge.js',
 ]) {
   if (existsSync(path.join(ROOT, removed))) fail(`Arquivo legado ainda presente: ${removed}`);
 }
@@ -172,6 +172,10 @@ const app = read('producao-v2/js/app.js');
 if (!app.includes('function quickAudit')) fail('A auditoria leve de abertura não foi encontrada.');
 if (!app.includes('requestAnimationFrame(renderDashboard)')) fail('O dashboard não foi desacoplado da primeira pintura.');
 
+const adminUx = read('producao-v2/admin-ux.js');
+if (adminUx.includes('new MutationObserver')) fail('admin-ux.js voltou a observar o DOM inteiro em vez de usar eventos do Admin.');
+if (!adminUx.includes("addEventListener('admin-v2-route-ready'")) fail('admin-ux.js não reage ao evento determinístico de rota pronta.');
+
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 if (!stockBootstrap.includes(BUILD)) fail('O carregador das abas está com uma build diferente do HTML.');
 for (const [route, modules] of Object.entries(ROUTE_MODULES)) {
@@ -209,6 +213,13 @@ for (const [source, marker] of [
 for (const legacyMarker of ['data-collection-set-substitute', 'data-collection-clear-substitute', 'Subst. 1', 'Subst. 2']) {
   if (basketGrid.includes(legacyMarker)) fail(`O card produtivo das cestas ainda contém o controle automático antigo: ${legacyMarker}.`);
 }
+if (basketGrid.includes('setInterval(tryInstall')) fail('O editor de cestas voltou a usar polling para esperar o módulo.');
+if (!basketGrid.includes("addEventListener('admin-v2-route-ready'")) fail('O editor de cestas não usa o evento determinístico de rota pronta.');
+
+const campaignRules = read('producao-v2/js/campaign-rules-section.js');
+if (campaignRules.includes('setInterval(refreshRulesSection')) fail('Ofertas por regra voltou a atualizar por polling permanente.');
+if (campaignRules.includes('observe(document.documentElement')) fail('Ofertas por regra voltou a observar o documento inteiro.');
+if (!campaignRules.includes("addEventListener('admin-v2-route-ready'")) fail('Ofertas por regra não usa o evento determinístico de rota pronta.');
 
 try {
   const collectionsApi = await import(pathToFileURL(path.join(ROOT, 'producao-v2/js/core/collections.js')).href);
