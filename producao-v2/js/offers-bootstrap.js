@@ -1,9 +1,27 @@
-import './campaign-offers-recovery.js?admin_build=20260727-products-inline-v1';
-import './campaign-offers-production-guard.js?admin_build=20260727-products-inline-v1';
-import './campaign-rules-section.js?admin_build=20260727-products-inline-v1';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { OffersModule } from './modules/offers.js';
 import { loadProducts } from './services/firebase.js';
+
+const BUILD = document.querySelector('meta[name="admin-save-build"]')?.content || '20260810-route-architecture-v1';
+
+function withBuild(path) {
+  return `${path}?admin_build=${encodeURIComponent(BUILD)}`;
+}
+
+async function loadOfferEnhancements() {
+  const modules = [
+    './campaign-offers-recovery.js',
+    './campaign-offers-production-guard.js',
+    './campaign-rules-section.js',
+  ];
+  const urls = modules.map(withBuild);
+  const results = await Promise.allSettled(urls.map(path => import(path)));
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') console.error(`Falha ao carregar complemento de ofertas: ${urls[index]}`, result.reason);
+  });
+}
+
+await loadOfferEnhancements();
 
 function loadConfig() {
   try {
@@ -25,7 +43,7 @@ function installCss() {
   if (document.querySelector('link[data-admin-v2-offers]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = './assets/offers.css';
+  link.href = withBuild('./assets/offers.css');
   link.dataset.adminV2Offers = '1';
   document.head.appendChild(link);
 }
