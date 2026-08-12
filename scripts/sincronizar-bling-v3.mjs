@@ -1,6 +1,13 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import {
+  buildCompleteProductPayload,
+  digits,
+  isValidGtin,
+  normalizeDate,
+  resolveProduct
+} from './bling-sync-core.mjs';
 
 const APPLY = process.argv.includes('--apply');
 const stateIndex = process.argv.indexOf('--state');
@@ -16,7 +23,6 @@ let lastRequestAt = 0;
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const text = value => String(value ?? '').trim();
 const normalized = value => text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').toLowerCase();
-const digits = value => text(value).replace(/\D/g, '');
 const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const number = value => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -99,9 +105,13 @@ function productFromFirebase(firebaseKey, source) {
   const codigo = text(source.codigo || source.sku || source.id);
   const nome = text(source.nome || source.name || source.descricao);
   if (!codigo || !nome) throw new Error('Produto sem código ou nome.');
-  const gtin = digits(source.gtin || source.ean);
-  const ncm = digits(source.ncm);
-  if (ncm && ncm.length !== 8) throw new Error(`NCM inválido: ${source.ncm}`);
+  const warnings = [];
+  const rawGtin = digits(source.gtin || source.ean);
+  const gtin = rawGtin && isValidGtin(rawGtin) ? rawGtin : '';
+  if (rawGtin && !gtin) warnings.push({ field: 'gtin', value: rawGtin, reason: 'GTIN inválido; campo omitido no Bling.' });
+  const rawNcm = digits(source.ncm);
+  const ncm = rawNcm.length === 8 ? rawNcm : '';
+  if (rawNcm && !ncm) warnings.push({ field: 'ncm', value: rawNcm, reason: 'NCM inválido; campo omitido no Bling.' });
   const payload = {
     codigo, nome, preco: number(source.preco), unidade: text(source.unidade) || 'UN'
   };
@@ -111,13 +121,27 @@ function productFromFirebase(firebaseKey, source) {
   };
   copyText('descricaoCurta', 'descricaoCurta', 'descricao_curta');
   copyText('descricaoComplementar', 'descricaoComplementar', 'descricao_complementar', 'descricao');
-  copyText('dataValidade', 'dataValidade', 'data_validade');
   copyText('marca', 'marca');
   copyText('observacoes', 'observacoes');
   copyText('linkExterno', 'linkExterno', 'link_externo');
+  const rawValidade = text(source.dataValidade || source.data_validade || source.validade);
+  const dataValidade = normalizeDate(rawValidade);
+  if (dataValidade) payload.dataValidade = dataValidade;
+  else if (rawValidade) warnings.push({ field: 'dataValidade', value: rawValidade, reason: 'Data de validade inválida; campo omitido no Bling.' });
   if (gtin) payload.gtin = gtin;
-  const gtinEmbalagem = digits(source.gtinEmbalagem || source.gtin_embalagem || source.ean_embalagem);
+  const rawGtinEmbalagem = digits(source.gtinEmbalagem || source.gtin_embalagem || source.ean_embalagem);
+  const gtinEmbalagem = rawGtinEmbalagem && isValidGtin(rawGtinEmbalagem) ? rawGtinEmbalagem : '';
+  if (rawGtinEmbalagem && !gtinEmbalagem) warnings.push({ field: 'gtinEmbalagem', value: rawGtinEmbalagem, reason: 'GTIN da embalagem inválido; campo omitido no Bling.' });
   if (gtinEmbalagem) payload.gtinEmbalagem = gtinEmbalagem;
+  for (const [target, names] of Object.entries({
+    pesoLiquido: ['pesoLiquido', 'peso_liquido'],
+    pesoBruto: ['pesoBruto', 'peso_bruto'],
+    volumes: ['volumes'],
+    itensPorCaixa: ['itensPorCaixa', 'itens_por_caixa', 'quantidade_caixa']
+  })) {
+    const key = names.find(name => source[name] !== undefined && text(source[name]) !== '');
+    if (key) payload[target] = number(source[key]);
+  }
   if (ncm) payload.tributacao = { ...(payload.tributacao || {}), ncm };
   if (text(source.cest)) payload.tributacao = { ...(payload.tributacao || {}), cest: text(source.cest) };
   if (source.origem !== undefined || source.origem_tributaria !== undefined) payload.tributacao = { ...(payload.tributacao || {}), origem: number(source.origem ?? source.origem_tributaria) };
@@ -144,7 +168,7 @@ function productFromFirebase(firebaseKey, source) {
   if (stock < 0) throw new Error('Estoque negativo não é permitido.');
   const changedAt = Math.max(timestamp(source.updated_at), timestamp(source.last_update), timestamp(source.stock_updated_at));
   return {
-    firebaseKey, codigo, nome, gtin, payload, status: productStatus(source), categoryPath, supplier,
+    firebaseKey, codigo, nome, gtin, payload, status: productStatus(source), categoryPath, supplier, warnings,
     stockPresent, stock, changedAt,
     fingerprint: hash({ payload, status: productStatus(source), categoryPath, supplier })
   };
@@ -179,42 +203,15 @@ function indexes(rows) {
   const unique = buckets => new Map([...buckets].filter(([, values]) => values.length === 1).map(([key, values]) => [key, values[0]]));
   return { byId, byCode: unique(codeBuckets), byGtin: unique(gtinBuckets), duplicateCodes: new Map([...codeBuckets].filter(([, values]) => values.length > 1)) };
 }
-function resolve(product, previous, maps) {
-  const stateRow = previous?.blingId ? maps.byId.get(String(previous.blingId)) : null;
-  const codeRow = maps.byCode.get(product.codigo) || null;
-  if (stateRow) {
-    if (codeRow && String(codeRow.id) !== String(stateRow.id)) return { conflict: 'codigo_ocupado', stateRow, codeRow };
-    return { row: stateRow, matchedBy: 'state-id' };
-  }
-  if (maps.duplicateCodes.has(product.codigo)) {
-    const rows = maps.duplicateCodes.get(product.codigo);
-    const gtinMatches = product.gtin ? rows.filter(row => digits(row.gtin || row.ean) === product.gtin) : [];
-    if (gtinMatches.length === 1) return { row: gtinMatches[0], matchedBy: 'gtin-entre-duplicados' };
-    return { conflict: 'codigo_duplicado', rows };
-  }
-  if (codeRow) return { row: codeRow, matchedBy: 'codigo' };
-  if (product.gtin && maps.byGtin.has(product.gtin)) return { row: maps.byGtin.get(product.gtin), matchedBy: 'gtin' };
-  return { row: null, matchedBy: '' };
-}
 async function detail(id) {
   const response = await api(`/produtos/${encodeURIComponent(id)}`, { headers: headers() }, { label: `Detalhe produto ${id}` });
   return (await response.json())?.data || {};
 }
-function completePayload(current, desired, summary) {
-  const allowed = ['nome','codigo','preco','tipo','formato','descricaoCurta','descricaoComplementar','dataValidade','unidade','pesoLiquido','pesoBruto','volumes','itensPorCaixa','gtin','gtinEmbalagem','tipoProducao','condicao','freteGratis','marca','observacoes','linkExterno','estoque','dimensoes','tributacao','midia','categoria'];
-  const payload = {};
-  for (const key of allowed) if (current[key] !== undefined && current[key] !== null) payload[key] = current[key];
-  Object.assign(payload, desired);
-  payload.tipo = text(payload.tipo || summary.tipo || 'P');
-  payload.formato = text(payload.formato || summary.formato || 'S');
-  delete payload.situacao;
-  return payload;
-}
-async function updateProduct(id, desired, summary) {
-  const payload = completePayload(await detail(id), desired, summary);
+async function updateProduct(id, product, summary) {
+  const payload = buildCompleteProductPayload(await detail(id), product.payload, summary, product.status);
   await api(`/produtos/${encodeURIComponent(id)}`, {
     method: 'PUT', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload)
-  }, { label: `PUT produto ${desired.codigo}` });
+  }, { label: `PUT produto ${product.codigo}` });
 }
 async function createProduct(product) {
   const payload = { ...product.payload, tipo: 'P', formato: 'S', situacao: product.status };
@@ -263,6 +260,7 @@ const report = {
   firebaseProducts: 0, blingProducts: 0, selected: 0, created: 0, updated: 0, unchanged: 0,
   statusUpdated: 0, inactivatedRemoved: 0, restored: 0, codeChanges: 0,
   matchedByStateId: 0, matchedByCode: 0, matchedByGtin: 0,
+  relinked: 0, staleLinks: [], warnings: [], stateChanged: false,
   stockChecked: 0, stockUpdated: 0, stockUnchanged: 0,
   deferred: 0, invalid: [], conflicts: [], errors: []
 };
@@ -272,7 +270,13 @@ try {
   const raw = await firebaseProducts();
   const products = [];
   for (const [key, source] of Object.entries(raw)) {
-    try { if (source && typeof source === 'object' && !Array.isArray(source)) products.push(productFromFirebase(key, source)); }
+    try {
+      if (source && typeof source === 'object' && !Array.isArray(source)) {
+        const product = productFromFirebase(key, source);
+        report.warnings.push(...product.warnings.map(warning => ({ firebaseKey: key, codigo: product.codigo, ...warning })));
+        products.push(product);
+      }
+    }
     catch (error) { report.invalid.push({ firebaseKey: key, reason: error.message }); }
   }
   report.firebaseProducts = products.length;
@@ -287,51 +291,82 @@ try {
   report.selected = selected.length;
   report.deferred = work.length - selected.length;
   const stockWork = [];
+  let stateChanged = false;
 
   for (const item of selected) {
     if (item.kind === 'removed') {
-      const row = maps.byId.get(String(item.entry.blingId));
-      if (!row) { report.conflicts.push({ firebaseKey: item.key, reason: 'blingId histórico removido não existe mais no Bling.' }); continue; }
-      if (APPLY && text(row.situacao).toUpperCase() !== 'I') await setStatus(row.id, 'I', item.entry.codigo || item.key);
-      if (APPLY) state.products[item.key] = { ...item.entry, localStatus: 'removed', blingStatus: 'I', deletedAt: new Date().toISOString(), syncedAt: new Date().toISOString() };
-      report.inactivatedRemoved++;
+      try {
+        const row = maps.byId.get(String(item.entry.blingId));
+        if (!row) { report.conflicts.push({ firebaseKey: item.key, reason: 'blingId histórico removido não existe mais no Bling.' }); continue; }
+        if (APPLY && text(row.situacao).toUpperCase() !== 'I') await setStatus(row.id, 'I', item.entry.codigo || item.key);
+        if (APPLY) {
+          state.products[item.key] = { ...item.entry, localStatus: 'removed', blingStatus: 'I', deletedAt: new Date().toISOString(), syncedAt: new Date().toISOString() };
+          stateChanged = true;
+        }
+        report.inactivatedRemoved++;
+      } catch (error) {
+        report.errors.push({ firebaseKey: item.key, codigo: item.entry.codigo, reason: error.message });
+      }
       continue;
     }
     const product = item.product;
     const previous = state.products[product.firebaseKey] || {};
     try {
-      const resolved = resolve(product, previous, maps);
+      const resolved = resolveProduct(product, previous, maps);
       if (resolved.conflict) {
-        report.conflicts.push({ firebaseKey: product.firebaseKey, codigo: product.codigo, gtin: product.gtin, reason: resolved.conflict, blingIdHistorico: resolved.stateRow?.id, blingIdDoCodigo: resolved.codeRow?.id, idsDuplicados: resolved.rows?.map(row => row.id) });
+        report.conflicts.push({ firebaseKey: product.firebaseKey, codigo: product.codigo, gtin: product.gtin, reason: resolved.conflict, idsDuplicados: resolved.rows?.map(row => row.id) });
         continue;
       }
       const existing = resolved.row;
-      if (resolved.matchedBy === 'state-id') report.matchedByStateId++;
-      else if (resolved.matchedBy === 'codigo') report.matchedByCode++;
+      if (resolved.matchedBy?.includes('state-id')) report.matchedByStateId++;
+      else if (resolved.matchedBy?.includes('codigo')) report.matchedByCode++;
       else if (resolved.matchedBy?.includes('gtin')) report.matchedByGtin++;
+      if (resolved.staleStateRow) {
+        report.relinked++;
+        report.staleLinks.push({
+          firebaseKey: product.firebaseKey,
+          codigo: product.codigo,
+          blingIdAnterior: resolved.staleStateRow.id,
+          blingIdCanonico: existing?.id
+        });
+      }
       const desiredStatus = product.status;
       const currentStatus = text(existing?.situacao).toUpperCase();
       const codeChanged = Boolean(existing && text(existing.codigo) !== product.codigo);
       const dataChanged = !existing || previous.fingerprint !== product.fingerprint || codeChanged;
       const statusChanged = Boolean(existing && currentStatus !== desiredStatus);
       let id = existing?.id || null;
+      let changedInBling = false;
+      let statusAppliedByPut = false;
       if (!id) {
         if (APPLY) id = await createProduct(product); else id = `novo:${product.firebaseKey}`;
         report.created++;
+        changedInBling = true;
+        statusAppliedByPut = true;
       } else if (dataChanged) {
         if (codeChanged) report.codeChanges++;
-        if (APPLY) await updateProduct(id, product.payload, existing);
+        if (APPLY) await updateProduct(id, product, existing);
         report.updated++;
+        changedInBling = true;
+        statusAppliedByPut = true;
       } else report.unchanged++;
       if (statusChanged) {
-        if (APPLY) await setStatus(id, desiredStatus, product.codigo);
+        if (APPLY && !statusAppliedByPut) await setStatus(id, desiredStatus, product.codigo);
         report.statusUpdated++;
+        changedInBling = true;
       }
       if (previous.localStatus === 'removed' && desiredStatus === 'A') report.restored++;
-      if (APPLY && !String(id).startsWith('novo:')) state.products[product.firebaseKey] = {
-        ...previous, version: 3, fingerprint: product.fingerprint, blingId: id, codigo: product.codigo,
-        localStatus: 'present', blingStatus: desiredStatus, syncedAt: new Date().toISOString(), deletedAt: null
-      };
+      const identityChanged = String(previous.blingId || '') !== String(id) || previous.codigo !== product.codigo;
+      const stateNeedsUpdate = changedInBling || identityChanged || previous.version !== 3 || previous.localStatus !== 'present' || previous.blingStatus !== desiredStatus || previous.fingerprint !== product.fingerprint;
+      if (APPLY && !String(id).startsWith('novo:') && stateNeedsUpdate) {
+        state.products[product.firebaseKey] = {
+          ...previous, version: 3, fingerprint: product.fingerprint, blingId: id, codigo: product.codigo,
+          localStatus: 'present', blingStatus: desiredStatus,
+          syncedAt: changedInBling ? new Date().toISOString() : previous.syncedAt,
+          deletedAt: null
+        };
+        stateChanged = true;
+      }
       if (product.stockPresent && SYNC_STOCK && desiredStatus !== 'I' && !String(id).startsWith('novo:')) stockWork.push({ product, id });
     } catch (error) {
       report.errors.push({ firebaseKey: product.firebaseKey, codigo: product.codigo, reason: error.message });
@@ -352,10 +387,11 @@ try {
   }
 
   report.finishedAt = new Date().toISOString();
-  if (APPLY) writeJson(STATE_FILE, state);
+  report.stateChanged = stateChanged;
+  if (APPLY && stateChanged) writeJson(STATE_FILE, state);
   writeJson(REPORT_FILE, report);
   console.log(JSON.stringify(report, null, 2));
-  if (report.errors.length || report.conflicts.length) process.exitCode = 1;
+  if (report.errors.length || report.conflicts.length || report.invalid.length) process.exitCode = 1;
 } catch (error) {
   report.finishedAt = new Date().toISOString();
   report.errors.push({ reason: error.message });

@@ -1,5 +1,5 @@
 name: Sincronizar Firebase para Bling
-run-name: Bling V3 · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event_name == 'schedule' && 'production' || github.event.client_payload.mode || 'dry-run' }}
+run-name: Bling V3 · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event_name == 'schedule' && 'production' || github.event_name == 'push' && 'production' || github.event.client_payload.mode || 'dry-run' }}
 
 on:
   workflow_dispatch:
@@ -29,6 +29,8 @@ on:
     branches: [main]
     paths:
       - "scripts/sincronizar-bling-v3.mjs"
+      - "scripts/bling-sync-core.mjs"
+      - "scripts/bling-sync-core.test.mjs"
       - ".github/workflows/sincronizar-bling.yml"
 
 permissions:
@@ -47,7 +49,9 @@ jobs:
       BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
       BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
       BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
-      SYNC_MODE: ${{ github.event_name == 'schedule' && 'production' || github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
+      # Push usa production somente nesta correção para validar a API real imediatamente.
+      # Após a execução confirmada, este trecho volta para dry-run em push.
+      SYNC_MODE: ${{ github.event_name == 'schedule' && 'production' || github.event_name == 'push' && 'production' || github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
       MAX_PRODUCTS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_products || github.event.client_payload.max_products || '0' }}
       SYNC_STOCK: ${{ github.event_name == 'schedule' && 'yes' || github.event_name == 'workflow_dispatch' && inputs.sync_stock || github.event.client_payload.sync_stock || 'no' }}
     steps:
@@ -61,9 +65,13 @@ jobs:
       - name: Validar sincronizador V3
         run: |
           node --check scripts/sincronizar-bling-v3.mjs
+          node --check scripts/bling-sync-core.mjs
+          node --test scripts/bling-sync-core.test.mjs
           grep -q "method: 'PUT'" scripts/sincronizar-bling-v3.mjs
           grep -q "/situacoes" scripts/sincronizar-bling-v3.mjs
-          grep -q "codigo_ocupado" scripts/sincronizar-bling-v3.mjs
+          grep -q "payload.situacao" scripts/bling-sync-core.mjs
+          grep -q "codigo-remapeado" scripts/bling-sync-core.mjs
+          grep -q "isValidGtin" scripts/sincronizar-bling-v3.mjs
           grep -q "setStatus(row.id, 'I'" scripts/sincronizar-bling-v3.mjs
 
       - name: Sincronizar produtos com segurança
