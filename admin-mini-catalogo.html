@@ -5,22 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#111827">
-  <title>Admin de Links | Mini Catálogo Dona Antônia</title>
+  <title>Admin de Links | Dona Antônia</title>
   <link rel="icon" href="img/logoantonia5.png">
-  <link rel="stylesheet" href="admin-mini-catalogo.css?v=20260812-1">
+  <link rel="stylesheet" href="admin-mini-catalogo.css?v=20260812-2">
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand"><img src="img/logoantonia5.png" alt="Dona Antônia"><div><strong>Admin de links</strong><span>Mini catálogo de ofertas</span></div></div>
-      <div class="top-actions"><a class="btn secondary hide-mobile" href="complemente/#/" target="_blank" rel="noopener">Abrir mini site</a><button class="btn primary" id="new-campaign" type="button">Novo link</button></div>
+      <div class="brand"><img src="img/logoantonia5.png" alt="Dona Antônia"><div><strong>Admin de links</strong><span>Mini catálogo e site principal</span></div></div>
+      <div class="top-actions"><a class="btn secondary hide-mobile" href="./#/" target="_blank" rel="noopener">Abrir site</a><a class="btn secondary hide-mobile" href="complemente/#/" target="_blank" rel="noopener">Abrir mini site</a><button class="btn primary" id="new-campaign" type="button">Novo link</button></div>
     </div>
   </header>
 
   <div class="shell">
     <section class="intro">
-      <h1>Links curtos para ofertas e campanhas</h1>
-      <p>Crie links confiáveis usando o próprio domínio Dona Antônia. O endereço curto apenas localiza a campanha; desconto, validade e produtos permitidos continuam protegidos no arquivo oficial do GitHub.</p>
+      <h1>Links curtos para os dois catálogos</h1>
+      <p>Administre separadamente os links do mini catálogo e do site principal, sempre usando o domínio Dona Antônia e sem alterar os endereços que já foram enviados aos clientes.</p>
     </section>
 
     <div id="notice" class="notice info"></div>
@@ -33,15 +33,17 @@
 
     <main class="layout">
       <section class="card" id="editor-card">
-        <div class="card-header"><h2 id="form-title">Criar campanha</h2><p>Os links públicos ficam no formato <strong>donaantonia.com.br/c/#BELEZA10</strong>.</p></div>
+        <div class="card-header"><h2 id="form-title">Criar link</h2><p>Escolha primeiro onde o link deve abrir. O formato público continua <strong>donaantonia.com.br/c/#BELEZA10</strong>.</p></div>
         <div class="card-body">
           <form id="campaign-form">
             <input id="campaign-id" type="hidden">
             <input id="campaign-token" type="hidden">
             <div class="form-grid">
+              <div class="field wide"><label for="campaign-target-site">Este link abre em</label><select id="campaign-target-site"><option value="mini" selected>Mini catálogo — pedido complementar</option><option value="main">Site principal — pedido completo</option></select><span class="help">Os dois tipos ficam separados no admin. Links antigos continuam classificados automaticamente como mini catálogo.</span></div>
               <div class="field wide"><label for="campaign-name">Nome interno da campanha</label><input id="campaign-name" required maxlength="80" placeholder="Ex.: Ofertas pós-pedido 10%"></div>
               <div class="field"><label for="campaign-code">Código exibido ao cliente</label><input id="campaign-code" maxlength="24" placeholder="OFERTAS10"></div>
-              <div class="field"><label for="campaign-discount">Desconto</label><select id="campaign-discount"><option value="0">Sem desconto</option><option value="3">3%</option><option value="5">5%</option><option value="7">7%</option><option value="10" selected>10%</option><option value="12">12%</option><option value="15">15%</option><option value="20">20%</option><option value="25">25%</option><option value="30">30%</option></select></div>
+              <div class="field" id="mini-discount-field"><label for="campaign-discount">Desconto do mini catálogo</label><select id="campaign-discount"><option value="0">Sem desconto</option><option value="3">3%</option><option value="5">5%</option><option value="7">7%</option><option value="10" selected>10%</option><option value="12">12%</option><option value="15">15%</option><option value="20">20%</option><option value="25">25%</option><option value="30">30%</option></select></div>
+              <div class="field" id="main-coupon-field" hidden><label for="campaign-coupon-code">Cupom do site principal (opcional)</label><input id="campaign-coupon-code" list="coupon-options" maxlength="30" placeholder="Ex.: CLIENTE10"><datalist id="coupon-options"></datalist><span class="help">O link apenas ativa um cupom já cadastrado. O valor do desconto continua sendo validado pelo site principal.</span></div>
               <div class="field"><label for="destination-type">Direcionar para</label><select id="destination-type"><option value="offers">Todas as ofertas</option><option value="category">Categoria</option><option value="search">Termo de busca</option><option value="product">Produto específico</option><option value="home">Página inicial de ofertas</option><option value="categories">Lista de categorias</option></select></div>
               <div class="field"><label for="destination-value">Categoria, busca ou produto</label><input id="destination-value" list="destination-options" placeholder="Ex.: BELEZA ou shampoo"><datalist id="destination-options"></datalist></div>
               <div class="field wide"><label for="campaign-scope">Onde o desconto vale</label><select id="campaign-scope"><option value="destination" selected>Somente nos produtos do direcionamento</option><option value="all">Em todos os produtos do mini catálogo</option></select><span class="help">Mantenha a primeira opção para impedir que o cliente navegue para outros produtos usando o mesmo desconto.</span></div>
@@ -54,13 +56,14 @@
               <div class="form-actions"><button class="btn primary" type="submit">Salvar no GitHub</button><button class="btn secondary" id="duplicate-campaign" type="button">Duplicar</button><button class="btn danger" id="delete-campaign" type="button" disabled>Excluir</button></div>
             </div>
           </form>
-          <div class="security"><strong>Como o link curto funciona</strong><p>O cliente recebe somente um código curto. A página <strong>/c/</strong> consulta a campanha no GitHub e abre o destino correto. O mini catálogo confere novamente ID, token, período, status e escopo antes de alterar qualquer preço.</p></div>
+          <div class="security"><strong>Como o link curto funciona</strong><p>A página <strong>/c/</strong> identifica se o endereço pertence ao mini catálogo ou ao site principal. No mini catálogo, campanha e desconto continuam validados pelo próprio módulo. No site principal, o link pode ativar somente um cupom que já exista no cadastro oficial de cupons.</p></div>
         </div>
       </section>
 
       <section class="card">
         <div class="card-header"><h2>Campanhas e links</h2><p>Edite, copie, compartilhe, desative ou exclua links já criados.</p></div>
         <div class="card-body">
+          <div class="link-tabs" role="group" aria-label="Filtrar links por site"><button class="active" type="button" data-site-filter="all">Todos</button><button type="button" data-site-filter="mini">Mini catálogo</button><button type="button" data-site-filter="main">Site principal</button></div>
           <div class="stats"><div class="stat"><span>Total</span><strong id="stat-total">0</strong></div><div class="stat"><span>Ativas</span><strong id="stat-active">0</strong></div><div class="stat"><span>Agendadas</span><strong id="stat-scheduled">0</strong></div><div class="stat"><span>Encerradas</span><strong id="stat-expired">0</strong></div></div>
           <div class="list-tools"><input id="campaign-search" type="search" placeholder="Buscar campanha, código ou destino"><button class="btn secondary" id="refresh-list" type="button">Atualizar</button></div>
           <div id="campaign-list" class="campaign-list"></div>
@@ -70,6 +73,6 @@
   </div>
 
   <div class="sticky-save"><button class="btn primary" id="mobile-save" type="button">Salvar campanha no GitHub</button></div>
-  <script src="admin-mini-catalogo.js?v=20260812-1"></script>
+  <script src="admin-mini-catalogo.js?v=20260812-2"></script>
 </body>
 </html>

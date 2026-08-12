@@ -5,8 +5,23 @@
   const CONFIG_PATH = 'site/mini-catalogo-links.json';
   const SHORT_BASE = 'https://donaantonia.com.br/c/';
   const PRODUCTS_URL = 'site/produtos-home.json';
+  const COUPONS_URL = 'site/cuponsativos.json';
+  const BASKETS_URL = 'site/produtos-cesta-basica.json';
+  const KITS_URL = 'site/kits.json';
   const SHORT_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const state = { campaigns: [], sha: '', editingId: '', catalog: [], loaded: false };
+  const DESTINATIONS = {
+    mini: [
+      ['offers','Todas as ofertas'], ['category','Categoria'], ['search','Termo de busca'],
+      ['product','Produto específico'], ['home','Página inicial de ofertas'], ['categories','Lista de categorias']
+    ],
+    main: [
+      ['home','Página inicial'], ['offers','Ofertas'], ['categories','Lista de categorias'],
+      ['category','Categoria'], ['subcategory','Subcategoria'], ['brand','Marca'],
+      ['search','Termo de busca'], ['product','Produto específico'], ['baskets','Cestas básicas'],
+      ['basket','Cesta específica'], ['kits','Kits promocionais'], ['kit','Kit específico']
+    ]
+  };
+  const state = { campaigns: [], sha: '', editingId: '', catalog: [], coupons: [], baskets: [], kits: [], loaded: false, siteFilter: 'all' };
   const $ = selector => document.querySelector(selector);
   const notice = $('#notice');
 
@@ -91,8 +106,10 @@
       aliases,
       name: String(raw.name || 'Campanha').trim(),
       code: String(raw.code || raw.id || '').trim().toUpperCase(),
+      targetSite: raw.targetSite === 'main' || raw.site === 'main' ? 'main' : 'mini',
       active: raw.active !== false,
       discountPercent: Math.max(0, Math.min(30, Number(raw.discountPercent || 0) || 0)),
+      couponCode: String(raw.couponCode || raw.cupom || '').trim().toUpperCase(),
       scope: raw.scope === 'all' ? 'all' : 'destination',
       destination: { type: String(raw.destination?.type || 'offers').trim(), value: String(raw.destination?.value || '').trim() },
       startsAt: String(raw.startsAt || '').trim(),
@@ -107,10 +124,16 @@
     const type = campaign.destination.type;
     const value = campaign.destination.value.trim();
     if (type === 'offers') return '#/ofertas';
+    if (type === 'categories') return '#/categorias';
     if (type === 'category') return `#/categoria/${encodeURIComponent(value)}`;
+    if (type === 'subcategory') return `#/subcategoria/${encodeURIComponent(value)}`;
+    if (type === 'brand') return `#/marca/${encodeURIComponent(value)}`;
     if (type === 'search') return `#/busca/${encodeURIComponent(value)}`;
     if (type === 'product') return `#/produto/${encodeURIComponent(value)}`;
-    if (type === 'categories') return '#/categorias';
+    if (type === 'baskets') return '#/cestas';
+    if (type === 'basket') return `#/cesta/${encodeURIComponent(value)}`;
+    if (type === 'kits') return '#/kits';
+    if (type === 'kit') return `#/kit/${encodeURIComponent(value)}`;
     return '#/';
   }
 
@@ -121,6 +144,10 @@
 
   function directUrl(campaign) {
     if (!campaign?.id || !campaign?.token) return '';
+    if (campaign.targetSite === 'main') {
+      const coupon = campaign.couponCode ? `?cupom=${encodeURIComponent(campaign.couponCode)}` : '';
+      return `https://donaantonia.com.br/${destinationHash(campaign)}${coupon}`;
+    }
     return `https://donaantonia.com.br/complemente/${destinationHash(campaign)}?c=${encodeURIComponent(`${campaign.id}.${campaign.token}`)}`;
   }
 
@@ -130,15 +157,18 @@
     const existingToken = $('#campaign-token').value.trim();
     const id = existingId || `${slug(name || $('#campaign-code').value || 'campanha')}-${randomToken(3).slice(0, 5)}`;
     const shortCode = normalizeShortCode($('#campaign-short-code').value);
+    const targetSite = $('#campaign-target-site').value === 'main' ? 'main' : 'mini';
     return normalizeCampaign({
       id,
       token: existingToken || randomToken(),
       shortCode,
       name,
       code: ($('#campaign-code').value.trim() || name).toUpperCase().replace(/\s+/g, '').slice(0, 24),
+      targetSite,
       active: $('#campaign-active').checked,
-      discountPercent: Number($('#campaign-discount').value || 0),
-      scope: $('#campaign-scope').value,
+      discountPercent: targetSite === 'mini' ? Number($('#campaign-discount').value || 0) : 0,
+      couponCode: targetSite === 'main' ? $('#campaign-coupon-code').value.trim() : '',
+      scope: targetSite === 'mini' ? $('#campaign-scope').value : 'all',
       destination: { type: $('#destination-type').value, value: $('#destination-value').value.trim() },
       startsAt: $('#campaign-start').value,
       expiresAt: $('#campaign-end').value,
@@ -151,7 +181,13 @@
     if (!campaign.id || !campaign.token || !campaign.shortCode) return 'Não foi possível gerar a segurança do link.';
     if (campaign.shortCode.length < 3) return 'O nome do link curto precisa ter pelo menos 3 caracteres.';
     if (shortCodeInUse(campaign.shortCode, campaign.id)) return 'Este nome de link curto já está sendo usado por outra campanha.';
-    if (['category','search','product'].includes(campaign.destination.type) && !campaign.destination.value) return 'Informe a categoria, busca ou produto de destino.';
+    const needsValue = ['category','subcategory','brand','search','product','basket','kit'].includes(campaign.destination.type);
+    if (needsValue && !campaign.destination.value) return 'Informe o destino específico deste link.';
+    const allowed = (DESTINATIONS[campaign.targetSite] || []).map(([value]) => value);
+    if (!allowed.includes(campaign.destination.type)) return 'O destino escolhido não pertence ao tipo de site selecionado.';
+    if (campaign.targetSite === 'main' && campaign.couponCode && state.coupons.length && !state.coupons.some(item => String(item.codigo || '').toUpperCase() === campaign.couponCode)) {
+      return 'Este cupom não existe no cadastro atual do site principal.';
+    }
     if (campaign.expiresAt && campaign.startsAt && campaign.expiresAt < campaign.startsAt) return 'A data final não pode ser anterior à data inicial.';
     return '';
   }
@@ -167,7 +203,7 @@
   }
 
   function typeLabel(type) {
-    return ({offers:'Ofertas',category:'Categoria',search:'Busca',product:'Produto',home:'Início de ofertas',categories:'Categorias'})[type] || type;
+    return ({offers:'Ofertas',category:'Categoria',subcategory:'Subcategoria',brand:'Marca',search:'Busca',product:'Produto',home:'Início',categories:'Categorias',baskets:'Cestas básicas',basket:'Cesta',kits:'Kits promocionais',kit:'Kit'})[type] || type;
   }
 
   function formatDate(value) {
@@ -177,21 +213,31 @@
   }
 
   function updateDestinationInput() {
-    const type = $('#destination-type').value;
-    const needsValue = ['category','search','product'].includes(type);
+    const targetSite = $('#campaign-target-site').value === 'main' ? 'main' : 'mini';
+    const select = $('#destination-type');
+    const options = DESTINATIONS[targetSite];
+    const previous = select.value;
+    select.innerHTML = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+    select.value = options.some(([value]) => value === previous) ? previous : options[0][0];
+    const type = select.value;
+    const needsValue = ['category','subcategory','brand','search','product','basket','kit'].includes(type);
     const input = $('#destination-value');
     input.disabled = !needsValue;
     if (!needsValue) input.value = '';
-    input.placeholder = type === 'category' ? 'Ex.: BELEZA' : type === 'search' ? 'Ex.: shampoo' : type === 'product' ? 'Código, ID ou nome do produto' : 'Não necessário';
+    const placeholders = {category:'Ex.: BELEZA',subcategory:'Ex.: SHAMPOO',brand:'Ex.: OMO',search:'Ex.: arroz integral',product:'Código, ID ou nome do produto',basket:'Código ou ID da cesta',kit:'Código ou ID do kit'};
+    input.placeholder = placeholders[type] || 'Não necessário';
+    $('#mini-discount-field').hidden = targetSite !== 'mini';
+    $('#main-coupon-field').hidden = targetSite !== 'main';
+    $('#campaign-scope').closest('.field').hidden = targetSite !== 'mini';
     fillDatalist(type);
   }
 
   function updatePreview() {
+    updateDestinationInput();
     const campaign = formCampaign();
     const url = publicUrl(campaign);
     $('#link-preview').textContent = url || 'Preencha os campos para gerar o link.';
     $('#open-preview').href = url || '#';
-    updateDestinationInput();
   }
 
   function resetForm() {
@@ -200,11 +246,14 @@
     $('#campaign-active').checked = true;
     $('#campaign-discount').value = '10';
     $('#campaign-scope').value = 'destination';
+    $('#campaign-target-site').value = 'mini';
+    $('#campaign-coupon-code').value = '';
+    updateDestinationInput();
     $('#destination-type').value = 'offers';
     $('#campaign-id').value = '';
     $('#campaign-token').value = '';
     $('#campaign-short-code').value = uniqueShortCode();
-    $('#form-title').textContent = 'Criar campanha';
+    $('#form-title').textContent = 'Criar link';
     $('#delete-campaign').disabled = true;
     updatePreview();
     if (window.innerWidth < 980) $('#editor-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -219,15 +268,19 @@
     $('#campaign-short-code').value = campaign.shortCode;
     $('#campaign-name').value = campaign.name;
     $('#campaign-code').value = campaign.code;
+    $('#campaign-target-site').value = campaign.targetSite;
     $('#campaign-discount').value = String(campaign.discountPercent);
+    $('#campaign-coupon-code').value = campaign.couponCode;
     $('#campaign-scope').value = campaign.scope;
+    updateDestinationInput();
     $('#destination-type').value = campaign.destination.type;
+    updateDestinationInput();
     $('#destination-value').value = campaign.destination.value;
     $('#campaign-start').value = campaign.startsAt;
     $('#campaign-end').value = campaign.expiresAt;
     $('#campaign-note').value = campaign.note;
     $('#campaign-active').checked = campaign.active;
-    $('#form-title').textContent = 'Editar campanha';
+    $('#form-title').textContent = campaign.targetSite === 'main' ? 'Editar link do site principal' : 'Editar link do mini catálogo';
     $('#delete-campaign').disabled = false;
     updatePreview();
     $('#editor-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -237,7 +290,8 @@
     const query = $('#campaign-search').value.trim().toLowerCase();
     const campaigns = [...state.campaigns]
       .sort((a,b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
-      .filter(campaign => !query || [campaign.name,campaign.code,campaign.shortCode,...(campaign.aliases || []),campaign.destination.type,campaign.destination.value].join(' ').toLowerCase().includes(query));
+      .filter(campaign => state.siteFilter === 'all' || campaign.targetSite === state.siteFilter)
+      .filter(campaign => !query || [campaign.name,campaign.code,campaign.shortCode,...(campaign.aliases || []),campaign.targetSite,campaign.couponCode,campaign.destination.type,campaign.destination.value].join(' ').toLowerCase().includes(query));
     const counts = state.campaigns.reduce((map, campaign) => { const status = campaignStatus(campaign); map[status] = (map[status] || 0) + 1; return map; }, {});
     $('#stat-total').textContent = state.campaigns.length;
     $('#stat-active').textContent = counts.active || 0;
@@ -247,27 +301,50 @@
     $('#campaign-list').innerHTML = campaigns.length ? campaigns.map(campaign => {
       const status = campaignStatus(campaign);
       const url = publicUrl(campaign);
-      return `<article class="campaign ${status === 'active' ? '' : 'inactive'}"><div class="campaign-title"><strong>${escapeHtml(campaign.name)}</strong><span class="pill ${status}">${labels[status]}</span>${campaign.discountPercent ? `<span class="pill active">${campaign.discountPercent}% OFF</span>` : ''}</div><div class="campaign-meta"><span>${escapeHtml(typeLabel(campaign.destination.type))}${campaign.destination.value ? `: ${escapeHtml(campaign.destination.value)}` : ''}</span><span>•</span><span>${campaign.scope === 'all' ? 'todos os produtos' : 'escopo protegido'}</span><span>•</span><span>até ${escapeHtml(formatDate(campaign.expiresAt))}</span></div><div class="campaign-link">${escapeHtml(url)}</div><div class="campaign-actions"><button data-action="edit" data-id="${escapeHtml(campaign.id)}">Editar</button><button data-action="copy" data-id="${escapeHtml(campaign.id)}">Copiar</button><button data-action="share" data-id="${escapeHtml(campaign.id)}">Enviar</button><button data-action="toggle" data-id="${escapeHtml(campaign.id)}">${campaign.active ? 'Desativar' : 'Ativar'}</button><button data-action="delete-list" data-id="${escapeHtml(campaign.id)}">Excluir</button></div></article>`;
+      const targetLabel = campaign.targetSite === 'main' ? 'Site principal' : 'Mini catálogo';
+      const benefit = campaign.targetSite === 'main'
+        ? (campaign.couponCode ? `cupom ${escapeHtml(campaign.couponCode)}` : 'sem cupom')
+        : (campaign.discountPercent ? `${campaign.discountPercent}% OFF` : 'sem desconto');
+      return `<article class="campaign ${status === 'active' ? '' : 'inactive'}"><div class="campaign-title"><strong>${escapeHtml(campaign.name)}</strong><span class="pill ${campaign.targetSite}">${targetLabel}</span><span class="pill ${status}">${labels[status]}</span><span class="pill benefit">${benefit}</span></div><div class="campaign-meta"><span>${escapeHtml(typeLabel(campaign.destination.type))}${campaign.destination.value ? `: ${escapeHtml(campaign.destination.value)}` : ''}</span><span>•</span><span>${campaign.targetSite === 'mini' ? (campaign.scope === 'all' ? 'todos os produtos' : 'escopo protegido') : 'pedido completo'}</span><span>•</span><span>até ${escapeHtml(formatDate(campaign.expiresAt))}</span></div><div class="campaign-link">${escapeHtml(url)}</div><div class="campaign-actions"><button data-action="edit" data-id="${escapeHtml(campaign.id)}">Editar</button><button data-action="copy" data-id="${escapeHtml(campaign.id)}">Copiar</button><button data-action="share" data-id="${escapeHtml(campaign.id)}">Enviar</button><button data-action="toggle" data-id="${escapeHtml(campaign.id)}">${campaign.active ? 'Desativar' : 'Ativar'}</button><button data-action="delete-list" data-id="${escapeHtml(campaign.id)}">Excluir</button></div></article>`;
     }).join('') : '<div class="empty">Nenhuma campanha encontrada.</div>';
   }
 
   function fillDatalist(type = $('#destination-type').value) {
     const list = $('#destination-options');
-    if (!state.catalog.length || !['category','product'].includes(type)) { list.innerHTML = ''; return; }
     let values = [];
-    if (type === 'category') values = [...new Set(state.catalog.map(item => item.categoria).filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
-    if (type === 'product') values = state.catalog.slice(0, 1800).map(item => item.codigo || item.id || item.nome).filter(Boolean);
+    if (type === 'category') values = state.catalog.map(item => item.categoria);
+    if (type === 'subcategory') values = state.catalog.map(item => item.subcategoria);
+    if (type === 'brand') values = state.catalog.map(item => item.marca);
+    if (type === 'product') values = state.catalog.slice(0, 1800).map(item => item.codigo || item.id || item.nome);
+    if (type === 'basket') values = state.baskets.map(item => item.id || item.codigo || item.nome);
+    if (type === 'kit') values = state.kits.map(item => item.id || item.codigo || item.nome);
+    values = [...new Set(values.filter(Boolean))].sort((a,b) => String(a).localeCompare(String(b),'pt-BR'));
     list.innerHTML = values.slice(0, 1800).map(value => `<option value="${escapeHtml(value)}"></option>`).join('');
   }
 
+  function fillCouponDatalist() {
+    $('#coupon-options').innerHTML = state.coupons
+      .map(item => String(item.codigo || '').trim().toUpperCase())
+      .filter(Boolean)
+      .map(value => `<option value="${escapeHtml(value)}"></option>`).join('');
+  }
+
   async function loadCatalogOptions() {
-    try {
-      const response = await fetch(`${PRODUCTS_URL}?t=${Date.now()}`, { cache: 'no-store' });
-      if (!response.ok) return;
+    const read = async url => {
+      const response = await fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      state.catalog = (Array.isArray(data) ? data : Object.values(data || {})).filter(Boolean);
-      fillDatalist();
-    } catch {}
+      return (Array.isArray(data) ? data : Object.values(data || {})).filter(Boolean);
+    };
+    const [products, coupons, baskets, kits] = await Promise.allSettled([
+      read(PRODUCTS_URL), read(COUPONS_URL), read(BASKETS_URL), read(KITS_URL)
+    ]);
+    if (products.status === 'fulfilled') state.catalog = products.value;
+    if (coupons.status === 'fulfilled') state.coupons = coupons.value;
+    if (baskets.status === 'fulfilled') state.baskets = baskets.value;
+    if (kits.status === 'fulfilled') state.kits = kits.value;
+    fillDatalist();
+    fillCouponDatalist();
   }
 
   async function copyText(text) {
@@ -277,7 +354,8 @@
 
   async function shareCampaign(campaign) {
     const url = publicUrl(campaign);
-    if (navigator.share) await navigator.share({ title: campaign.name, text: 'Veja estas ofertas para complementar seu pedido:', url });
+    const text = campaign.targetSite === 'main' ? 'Veja estas ofertas no site Dona Antônia:' : 'Veja estas ofertas para complementar seu pedido:';
+    if (navigator.share) await navigator.share({ title: campaign.name, text, url });
     else await copyText(url);
   }
 
@@ -315,8 +393,8 @@
     const token = $('#github-token').value.trim();
     const branch = $('#github-branch').value.trim() || 'main';
     if (!token) throw new Error('Informe um token do GitHub com permissão de escrita no repositório.');
-    const payload = { version: 4, updatedAt: new Date().toISOString(), campaigns: state.campaigns };
-    const body = { message: 'Atualiza links curtos do mini catálogo', content: encodeBase64(`${JSON.stringify(payload, null, 2)}\n`), branch };
+    const payload = { version: 5, updatedAt: new Date().toISOString(), campaigns: state.campaigns };
+    const body = { message: 'Atualiza links curtos dos catálogos', content: encodeBase64(`${JSON.stringify(payload, null, 2)}\n`), branch };
     if (state.sha) body.sha = state.sha;
     const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${CONFIG_PATH}`;
     const response = await fetch(url, { method: 'PUT', headers: { ...authHeaders(token), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -326,7 +404,7 @@
     }
     const data = await response.json();
     state.sha = data.content?.sha || '';
-    showNotice('Campanhas e links curtos salvos no GitHub.', 'ok');
+    showNotice('Links do mini catálogo e do site principal salvos no GitHub.', 'ok');
   }
 
   async function saveForm(event) {
@@ -375,7 +453,7 @@
     $('#campaign-name').value = `${source.name} - cópia`;
     $('#campaign-code').value = `${source.code}C`.slice(0,24);
     state.editingId = '';
-    $('#form-title').textContent = 'Criar campanha duplicada';
+    $('#form-title').textContent = 'Criar link duplicado';
     $('#delete-campaign').disabled = true;
     updatePreview();
   }
@@ -389,7 +467,15 @@
   $('#refresh-list').addEventListener('click', () => fetchGitHubFile().catch(error => showNotice(error.message, 'error')));
   $('#campaign-search').addEventListener('input', renderList);
   $('#destination-type').addEventListener('change', updatePreview);
+  $('#campaign-target-site').addEventListener('change', updatePreview);
   $('#campaign-form').addEventListener('input', updatePreview);
+  document.querySelector('.link-tabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-site-filter]');
+    if (!button) return;
+    state.siteFilter = button.dataset.siteFilter;
+    document.querySelectorAll('[data-site-filter]').forEach(item => item.classList.toggle('active', item === button));
+    renderList();
+  });
   $('#campaign-short-code').addEventListener('blur', event => {
     event.target.value = normalizeShortCode(event.target.value);
     updatePreview();

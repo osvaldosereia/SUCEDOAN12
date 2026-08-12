@@ -16,8 +16,21 @@ cart.load();
 const personalization = createPersonalization(store, events);
 const ui = createUI({ store, cart, events, personalization });
 const checkout = createCheckout({ store, cart, events, ui, personalization });
+const handledLinkCoupons = new Set();
+
+function applyLinkCoupon(route) {
+  const code = String(route?.query?.get('cupom') || '').trim().toUpperCase();
+  if (!code) return;
+  const key = `${route.hash}|${code}`;
+  if (handledLinkCoupons.has(key)) return;
+  handledLinkCoupons.add(key);
+  const result = cart.activateCoupon(code);
+  queueMicrotask(() => ui.showToast(result.ok ? `Cupom ${code} aplicado.` : result.message));
+}
+
 const router = createRouter(route => {
   if (!store.getState().isReady) return;
+  applyLinkCoupon(route);
   ui.renderRoute(route);
 });
 
