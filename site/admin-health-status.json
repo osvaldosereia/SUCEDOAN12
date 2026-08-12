@@ -1,7 +1,7 @@
 {
-  "checkedAt": "2026-08-12T05:01:40.847Z",
+  "checkedAt": "2026-08-12T14:13:46.649Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
+  "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
@@ -11,17 +11,17 @@
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1786510902961"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1786544028514"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1786510903660"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1786544029014"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1786510903685"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1786544029121"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1533 produto(s)"
+      "detail": "1660 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1660 produto(s) administrativos · 1533 público(s) · campos OK"
+      "detail": "1660 produto(s) administrativos · 1660 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1660 produto(s) em 396 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1660 produto(s) em 268 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 180 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 204 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
-      "ok": true,
-      "detail": "catalog-111f5a9e2a2531ff · público 1533 · admin 1660"
+      "ok": false,
+      "detail": "catalog-1786543854091 · público 0 · admin 0"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,22 +86,28 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "5498 oferta(s) no histórico"
+      "detail": "5678 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.4h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "Versão do catálogo válida",
+      "ok": false,
+      "detail": "catalog-1786543854091 · público 0 · admin 0"
+    }
+  ],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "31565104466",
+    "event": "push",
+    "runId": "31605381216",
     "attempt": "1",
-    "sourceSha": "8f23d5e0111c760058bbc90f8bd998f64dc888fa",
+    "sourceSha": "dc3f813b5e3524daea2d4fe4435aee8b73508d63",
     "architecture": "success",
-    "publishedAt": "2026-08-12T05:01:46.024Z"
+    "publishedAt": "2026-08-12T14:13:52.376Z"
   }
 }
