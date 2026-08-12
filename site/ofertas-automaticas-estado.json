@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-12T15:36:45.147Z",
+  "ultima_execucao": "2026-08-12T16:36:12.505Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -5854,6 +5854,20 @@
       "inicio": "2026-08-09",
       "fim": "2026-08-12T23:59:59-04:00",
       "historico_id": "oferta-1776338129208-1786268318225-6c0gt"
+    },
+    {
+      "produto_key": "1776338129300",
+      "codigo": "16109433",
+      "nome": "Bucha de Lavar Louça Unidade",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 0.99,
+      "preco_oferta": 0.93,
+      "desconto_percentual": 6.06,
+      "inicio": "2026-08-12",
+      "fim": "2026-08-15T23:59:59-04:00",
+      "historico_id": "oferta-1776338129300-1786552572505-2fs24"
     },
     {
       "produto_key": "1776338129356",
@@ -14900,6 +14914,20 @@
       "historico_id": "oferta-1785874714165127f-1786538053172-yftto"
     },
     {
+      "produto_key": "1785876587588_b819",
+      "codigo": "7898591450648",
+      "nome": "Fini Balas Amorás Sabor Amora 15g",
+      "categoria": "BALAS E CHICLETES",
+      "regra_id": "regra-1785202804573",
+      "origem": "campanha_automatica",
+      "preco_normal": 1.79,
+      "preco_oferta": 1.61,
+      "desconto_percentual": 10.06,
+      "inicio": "2026-08-12",
+      "fim": "2026-08-15T23:59:59-04:00",
+      "historico_id": "oferta-1785876587588b819-1786552572505-gv7ls"
+    },
+    {
       "produto_key": "1785876666674500",
       "codigo": "547849-COPIA-60152",
       "nome": "Bala de Gelatina Fini Azedinhos Morango e Laranja 15g",
@@ -16440,6 +16468,20 @@
       "historico_id": "oferta-produto1784833635390-1786009811239-4xm6c"
     },
     {
+      "produto_key": "produto_1784833989400",
+      "codigo": "dove.serumcorporal.380",
+      "nome": "Sérum Hidratante Corporal Dove Niacinamida Uniformizador 380ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 45.9,
+      "preco_oferta": 41.31,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-12",
+      "fim": "2026-08-19T23:59:59-04:00",
+      "historico_id": "oferta-produto1784833989400-1786552572505-dj9fa"
+    },
+    {
       "produto_key": "produto_1784834856061",
       "codigo": "hidramais.ameixanegra.500",
       "nome": "Hidratante Hidramais Ameixa Negra 500ml",
@@ -17060,7 +17102,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1776338129300": {
-      "ultima_oferta_em": "2026-08-08T14:28:23.629Z",
+      "ultima_oferta_em": "2026-08-12T16:36:12.505Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338123554": {
@@ -21056,7 +21098,7 @@
       "regra_id": "regra-1785202557027"
     },
     "produto_1784833989400": {
-      "ultima_oferta_em": "2026-08-04T11:13:30.896Z",
+      "ultima_oferta_em": "2026-08-12T16:36:12.505Z",
       "regra_id": "regra-1785202557027"
     },
     "7899572812042": {
@@ -21696,7 +21738,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1785876587588_b819": {
-      "ultima_oferta_em": "2026-08-08T08:29:30.025Z",
+      "ultima_oferta_em": "2026-08-12T16:36:12.505Z",
       "regra_id": "regra-1785202804573"
     },
     "1785870726801682": {
@@ -21853,23 +21895,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "2026-08-08T18:37:26Z",
-      "executado_em": "2026-08-08T18:39:49.233Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 1,
-        "ofertas_nao_criadas": 22,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-08T19:08:26Z",
       "executado_em": "2026-08-08T19:09:46.115Z",
@@ -25245,6 +25270,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 5,
         "ofertas_nao_criadas": 18,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1786552572041",
+      "executado_em": "2026-08-12T16:36:12.505Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
