@@ -1,5 +1,5 @@
 name: Sincronizar Firebase para Bling
-run-name: Bling V3 · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event_name == 'schedule' && 'production' || github.event_name == 'push' && 'production' || github.event.client_payload.mode || 'dry-run' }}
+run-name: Bling V3 · ${{ github.event_name }} · ${{ github.event_name == 'workflow_dispatch' && inputs.mode || github.event_name == 'schedule' && 'production' || github.event.client_payload.mode || 'dry-run' }}
 
 on:
   workflow_dispatch:
@@ -49,12 +49,9 @@ jobs:
       BLING_CLIENT_ID: ${{ secrets.BLING_CLIENT_ID }}
       BLING_CLIENT_SECRET: ${{ secrets.BLING_CLIENT_SECRET }}
       BLING_REFRESH_TOKEN: ${{ secrets.BLING_REFRESH_TOKEN }}
-      # Push usa production somente nesta correção para validar a API real imediatamente.
-      # Após a execução confirmada, este trecho volta para dry-run em push.
-      SYNC_MODE: ${{ github.event_name == 'schedule' && 'production' || github.event_name == 'push' && 'production' || github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
+      SYNC_MODE: ${{ github.event_name == 'schedule' && 'production' || github.event_name == 'workflow_dispatch' && inputs.mode || github.event.client_payload.mode || 'dry-run' }}
       MAX_PRODUCTS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_products || github.event.client_payload.max_products || '0' }}
-      # Push usa estoque somente nesta segunda validação real da correção.
-      SYNC_STOCK: ${{ github.event_name == 'schedule' && 'yes' || github.event_name == 'push' && 'yes' || github.event_name == 'workflow_dispatch' && inputs.sync_stock || github.event.client_payload.sync_stock || 'no' }}
+      SYNC_STOCK: ${{ github.event_name == 'schedule' && 'yes' || github.event_name == 'workflow_dispatch' && inputs.sync_stock || github.event.client_payload.sync_stock || 'no' }}
     steps:
       - uses: actions/checkout@v5
         with:
