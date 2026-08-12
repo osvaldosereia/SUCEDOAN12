@@ -41,11 +41,32 @@
     return String(token || '').replace(/[^a-z0-9]/gi, '').slice(0, 7).toUpperCase();
   }
 
+  function normalizeShortCode(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 32)
+      .replace(/-+$/g, '');
+  }
+
+  function shortCodeInUse(code, exceptId = '') {
+    const candidate = normalizeShortCode(code);
+    if (!candidate) return false;
+    return state.campaigns.some(item => {
+      if (item.id === exceptId) return false;
+      const codes = [item.shortCode, ...(Array.isArray(item.aliases) ? item.aliases : [])];
+      return codes.some(value => normalizeShortCode(value) === candidate);
+    });
+  }
+
   function uniqueShortCode(preferred = '', exceptId = '') {
-    let candidate = String(preferred || '').replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 10);
-    const used = code => state.campaigns.some(item => item.id !== exceptId && item.shortCode === code);
-    if (candidate && !used(candidate)) return candidate;
-    do { candidate = rawShortCode(); } while (used(candidate));
+    let candidate = normalizeShortCode(preferred);
+    if (candidate && !shortCodeInUse(candidate, exceptId)) return candidate;
+    do { candidate = rawShortCode(); } while (shortCodeInUse(candidate, exceptId));
     return candidate;
   }
 
@@ -59,10 +80,15 @@
   function normalizeCampaign(raw = {}) {
     const token = String(raw.token || '').trim();
     const id = String(raw.id || '').trim();
+    const shortCode = normalizeShortCode(raw.shortCode || raw.short_code || fallbackShortCode(token));
+    const aliases = [...new Set((Array.isArray(raw.aliases) ? raw.aliases : [])
+      .map(normalizeShortCode)
+      .filter(value => value && value !== shortCode))];
     return {
       id,
       token,
-      shortCode: uniqueShortCode(raw.shortCode || raw.short_code || fallbackShortCode(token), id),
+      shortCode,
+      aliases,
       name: String(raw.name || 'Campanha').trim(),
       code: String(raw.code || raw.id || '').trim().toUpperCase(),
       active: raw.active !== false,
@@ -103,7 +129,7 @@
     const existingId = $('#campaign-id').value.trim();
     const existingToken = $('#campaign-token').value.trim();
     const id = existingId || `${slug(name || $('#campaign-code').value || 'campanha')}-${randomToken(3).slice(0, 5)}`;
-    const shortCode = uniqueShortCode($('#campaign-short-code').value, id);
+    const shortCode = normalizeShortCode($('#campaign-short-code').value);
     return normalizeCampaign({
       id,
       token: existingToken || randomToken(),
@@ -123,6 +149,8 @@
   function validateCampaign(campaign) {
     if (!campaign.name) return 'Informe o nome da campanha.';
     if (!campaign.id || !campaign.token || !campaign.shortCode) return 'Não foi possível gerar a segurança do link.';
+    if (campaign.shortCode.length < 3) return 'O nome do link curto precisa ter pelo menos 3 caracteres.';
+    if (shortCodeInUse(campaign.shortCode, campaign.id)) return 'Este nome de link curto já está sendo usado por outra campanha.';
     if (['category','search','product'].includes(campaign.destination.type) && !campaign.destination.value) return 'Informe a categoria, busca ou produto de destino.';
     if (campaign.expiresAt && campaign.startsAt && campaign.expiresAt < campaign.startsAt) return 'A data final não pode ser anterior à data inicial.';
     return '';
@@ -159,7 +187,6 @@
   }
 
   function updatePreview() {
-    if (!$('#campaign-short-code').value) $('#campaign-short-code').value = uniqueShortCode();
     const campaign = formCampaign();
     const url = publicUrl(campaign);
     $('#link-preview').textContent = url || 'Preencha os campos para gerar o link.';
@@ -210,7 +237,7 @@
     const query = $('#campaign-search').value.trim().toLowerCase();
     const campaigns = [...state.campaigns]
       .sort((a,b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
-      .filter(campaign => !query || [campaign.name,campaign.code,campaign.shortCode,campaign.destination.type,campaign.destination.value].join(' ').toLowerCase().includes(query));
+      .filter(campaign => !query || [campaign.name,campaign.code,campaign.shortCode,...(campaign.aliases || []),campaign.destination.type,campaign.destination.value].join(' ').toLowerCase().includes(query));
     const counts = state.campaigns.reduce((map, campaign) => { const status = campaignStatus(campaign); map[status] = (map[status] || 0) + 1; return map; }, {});
     $('#stat-total').textContent = state.campaigns.length;
     $('#stat-active').textContent = counts.active || 0;
@@ -288,7 +315,7 @@
     const token = $('#github-token').value.trim();
     const branch = $('#github-branch').value.trim() || 'main';
     if (!token) throw new Error('Informe um token do GitHub com permissão de escrita no repositório.');
-    const payload = { version: 3, updatedAt: new Date().toISOString(), campaigns: state.campaigns };
+    const payload = { version: 4, updatedAt: new Date().toISOString(), campaigns: state.campaigns };
     const body = { message: 'Atualiza links curtos do mini catálogo', content: encodeBase64(`${JSON.stringify(payload, null, 2)}\n`), branch };
     if (state.sha) body.sha = state.sha;
     const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${CONFIG_PATH}`;
@@ -310,6 +337,10 @@
       if (error) throw new Error(error);
       const now = new Date().toISOString();
       const current = state.campaigns.find(item => item.id === campaign.id);
+      const previousCodes = current ? [current.shortCode, ...(current.aliases || [])] : [];
+      campaign.aliases = [...new Set(previousCodes.map(normalizeShortCode))]
+        .filter(code => code && code !== campaign.shortCode)
+        .slice(0, 20);
       campaign.createdAt = current?.createdAt || now;
       campaign.updatedAt = now;
       const index = state.campaigns.findIndex(item => item.id === campaign.id);
@@ -358,9 +389,13 @@
   $('#refresh-list').addEventListener('click', () => fetchGitHubFile().catch(error => showNotice(error.message, 'error')));
   $('#campaign-search').addEventListener('input', renderList);
   $('#destination-type').addEventListener('change', updatePreview);
-  $('#campaign-form').addEventListener('input', event => { if (event.target.id !== 'campaign-short-code') updatePreview(); });
+  $('#campaign-form').addEventListener('input', updatePreview);
+  $('#campaign-short-code').addEventListener('blur', event => {
+    event.target.value = normalizeShortCode(event.target.value);
+    updatePreview();
+  });
   $('#regenerate-short-code').addEventListener('click', () => {
-    if ($('#campaign-id').value && !confirm('Trocar o código curto? O link anterior deixará de funcionar depois de salvar.')) return;
+    if ($('#campaign-id').value && !confirm('Gerar outro nome para o link curto? O endereço anterior continuará funcionando.')) return;
     $('#campaign-short-code').value = uniqueShortCode('', $('#campaign-id').value);
     updatePreview();
   });

@@ -29,6 +29,18 @@
       return String(token || '').replace(/[^a-z0-9]/gi, '').slice(0, 7).toUpperCase();
     }
 
+    function normalizeShortCode(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 32)
+        .replace(/-+$/g, '');
+    }
+
     function destinationHash(campaign) {
       const destination = campaign.destination || {};
       const type = String(destination.type || campaign.tipo || 'home').toLowerCase();
@@ -57,8 +69,8 @@
         const data = await response.json();
         const campaigns = Array.isArray(data) ? data : Array.isArray(data.campaigns) ? data.campaigns : [];
         const campaign = campaigns.find(item => {
-          const shortCode = String(item.shortCode || item.short_code || fallbackShortCode(item.token)).trim().toUpperCase();
-          return shortCode === code;
+          const codes = [item.shortCode || item.short_code || fallbackShortCode(item.token), ...(Array.isArray(item.aliases) ? item.aliases : [])];
+          return codes.some(value => normalizeShortCode(value) === normalizeShortCode(code));
         });
         if (!campaign?.id || !campaign?.token) {
           showError('O endereço pode ter sido digitado incorretamente ou a campanha foi removida.');

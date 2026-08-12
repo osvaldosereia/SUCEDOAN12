@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#111827">
   <title>Admin de Links | Mini Catálogo Dona Antônia</title>
   <link rel="icon" href="img/logoantonia5.png">
-  <link rel="stylesheet" href="admin-mini-catalogo.css?v=20260726-1">
+  <link rel="stylesheet" href="admin-mini-catalogo.css?v=20260812-1">
 </head>
 <body>
   <header class="topbar">
@@ -33,7 +33,7 @@
 
     <main class="layout">
       <section class="card" id="editor-card">
-        <div class="card-header"><h2 id="form-title">Criar campanha</h2><p>Os links públicos ficam no formato <strong>donaantonia.com.br/c/#AB7K2M9</strong>.</p></div>
+        <div class="card-header"><h2 id="form-title">Criar campanha</h2><p>Os links públicos ficam no formato <strong>donaantonia.com.br/c/#BELEZA10</strong>.</p></div>
         <div class="card-body">
           <form id="campaign-form">
             <input id="campaign-id" type="hidden">
@@ -48,7 +48,7 @@
               <div class="field"><label for="campaign-start">Começa em</label><input id="campaign-start" type="date"></div>
               <div class="field"><label for="campaign-end">Termina em</label><input id="campaign-end" type="date"></div>
               <div class="field wide"><label for="campaign-note">Observação mostrada ao cliente</label><textarea id="campaign-note" maxlength="180" placeholder="Ex.: Válido somente para acrescentar itens ao pedido atual."></textarea></div>
-              <div class="field wide"><label for="campaign-short-code">Código do link curto</label><div class="short-code-row"><input id="campaign-short-code" readonly placeholder="Gerado automaticamente"><button class="btn secondary" id="regenerate-short-code" type="button">Trocar</button></div><span class="help">Trocar este código invalida o link curto antigo depois que a campanha for salva.</span></div>
+              <div class="field wide"><label for="campaign-short-code">Nome do link curto</label><div class="short-code-row"><input id="campaign-short-code" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Ex.: BELEZA10"><button class="btn secondary" id="regenerate-short-code" type="button">Gerar outro</button></div><span class="help">Use de 3 a 32 letras, números ou hífens. Ao renomear, os links anteriores continuam funcionando.</span></div>
               <div class="toggle-row"><div><strong>Campanha ativa</strong><span class="help">Desative para o link parar de conceder desconto imediatamente.</span></div><input id="campaign-active" type="checkbox" checked></div>
               <div class="link-preview"><strong>Link curto para enviar no WhatsApp</strong><code id="link-preview">Preencha os campos para gerar o link.</code><div class="preview-actions"><button class="btn secondary" id="copy-preview" type="button">Copiar</button><button class="btn secondary" id="share-preview" type="button">Compartilhar</button><a class="btn secondary" id="open-preview" href="#" target="_blank" rel="noopener">Testar</a></div></div>
               <div class="form-actions"><button class="btn primary" type="submit">Salvar no GitHub</button><button class="btn secondary" id="duplicate-campaign" type="button">Duplicar</button><button class="btn danger" id="delete-campaign" type="button" disabled>Excluir</button></div>
@@ -70,6 +70,6 @@
   </div>
 
   <div class="sticky-save"><button class="btn primary" id="mobile-save" type="button">Salvar campanha no GitHub</button></div>
-  <script src="admin-mini-catalogo.js?v=20260726-1"></script>
+  <script src="admin-mini-catalogo.js?v=20260812-1"></script>
 </body>
 </html>
