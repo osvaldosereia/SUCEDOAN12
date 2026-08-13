@@ -13,6 +13,9 @@
     var visible=document.getElementById('visibleCount');
     if(visible)visible.textContent=rows.length;
 
+    var empty=document.getElementById('emptyState');
+    if(empty)empty.hidden=rows.length!==0;
+
     var today=0;
     Array.prototype.forEach.call(rows,function(row){
       var note=row.querySelector('.validity-note');
