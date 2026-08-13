@@ -1,3 +1,12 @@
+if (typeof window !== 'undefined' && /\/kit-mobile\//.test(window.location.pathname)) {
+  window.setTimeout(() => {
+    const nav = document.querySelector('.ops-app-nav');
+    if (!nav) return;
+    nav.style.gridTemplateColumns = 'repeat(4,minmax(0,1fr))';
+    nav.innerHTML = '<a href="../contagem/"><span class="ops-app-nav-icon">📦</span><span>Contagem</span></a><a href="../cadastro/"><span class="ops-app-nav-icon">➕</span><span>Cadastro</span></a><a href="../validades/"><span class="ops-app-nav-icon">📅</span><span>Validades</span></a><a class="active" aria-current="page" href="../kit-mobile/"><span class="ops-app-nav-icon">🎁</span><span>Kits</span></a>';
+  }, 0);
+}
+
 const GENERATING_STATUSES = new Set([
   'novo', 'pendente', 'processando', 'aguardando', 'enviando', 'enviando_manual',
   'registrado', 'gerando', 'enviado_aguardando_fila',
