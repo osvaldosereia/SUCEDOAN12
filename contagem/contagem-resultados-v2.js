@@ -245,6 +245,12 @@
     if(product)setImage(photo,product);
     selectedProduct=null;
   }
+  function installOpsNavigation(){
+    var nav=document.querySelector('.ops-app-nav');
+    if(!nav)return;
+    nav.style.gridTemplateColumns='repeat(4,minmax(0,1fr))';
+    nav.innerHTML='<a class="active" aria-current="page" href="../contagem/"><span class="ops-app-nav-icon">📦</span><span>Contagem</span></a><a href="../cadastro/"><span class="ops-app-nav-icon">➕</span><span>Cadastro</span></a><a href="../validades/"><span class="ops-app-nav-icon">📅</span><span>Validades</span></a><a href="../kit-mobile/"><span class="ops-app-nav-icon">🎁</span><span>Kits</span></a>';
+  }
 
   document.addEventListener('click',function(event){
     var button=event.target&&event.target.closest?event.target.closest('#findNameBtn'):null;
@@ -277,7 +283,9 @@
     new MutationObserver(function(){setTimeout(refreshMainImage,50);}).observe(display,{childList:true,characterData:true,subtree:true});
   }
 
+  installOpsNavigation();
   window.addEventListener('load',function(){
+    installOpsNavigation();
     var input=$('nameInput');
     var button=$('findNameBtn');
     if(input)input.placeholder='Nome, marca ou categoria; vazio mostra todos';
