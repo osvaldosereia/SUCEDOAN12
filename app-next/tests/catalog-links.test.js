@@ -13,8 +13,15 @@ test('admin separa links do mini catálogo e do site principal', () => {
   assert.match(html, /id="campaign-target-site"/);
   assert.match(html, /data-site-filter="mini"/);
   assert.match(html, /data-site-filter="main"/);
+  assert.match(html, /data-new-site="mini"/);
+  assert.match(html, /data-new-site="main"/);
+  assert.match(html, /Novo link do mini catálogo/);
+  assert.match(html, /Novo link do site principal/);
   assert.match(script, /targetSite: raw\.targetSite === 'main'.*\? 'main' : 'mini'/);
   assert.match(script, /COUPONS_URL = 'site\/cuponsativos\.json'/);
+  assert.match(script, /function resetForm\(targetSite = ''\)/);
+  assert.match(script, /resetForm\(button\.dataset\.newSite\)/);
+  assert.match(script, /Salvar link do site principal/);
 });
 
 test('redirecionador mantém links antigos no mini catálogo', () => {

@@ -236,24 +236,35 @@
     updateDestinationInput();
     const campaign = formCampaign();
     const url = publicUrl(campaign);
+    const isMain = campaign.targetSite === 'main';
     $('#link-preview').textContent = url || 'Preencha os campos para gerar o link.';
+    $('#link-preview-title').textContent = isMain ? 'Link do site principal para enviar no WhatsApp' : 'Link do mini catálogo para enviar no WhatsApp';
+    $('#direct-preview').textContent = directUrl(campaign);
     $('#open-preview').href = url || '#';
+    $('#save-campaign').textContent = isMain ? 'Salvar link do site principal' : 'Salvar link do mini catálogo';
+    $('#form-subtitle').textContent = isMain
+      ? 'Este endereço abrirá o site principal de pedido completo.'
+      : 'Este endereço abrirá o mini catálogo de pedido complementar.';
+    if (!$('#campaign-id').value) $('#form-title').textContent = isMain ? 'Criar link do site principal' : 'Criar link do mini catálogo';
   }
 
-  function resetForm() {
+  function resetForm(targetSite = '') {
     state.editingId = '';
     $('#campaign-form').reset();
+    const selectedSite = targetSite === 'main' || targetSite === 'mini'
+      ? targetSite
+      : (state.siteFilter === 'main' || state.siteFilter === 'mini' ? state.siteFilter : 'mini');
     $('#campaign-active').checked = true;
     $('#campaign-discount').value = '10';
     $('#campaign-scope').value = 'destination';
-    $('#campaign-target-site').value = 'mini';
+    $('#campaign-target-site').value = selectedSite;
     $('#campaign-coupon-code').value = '';
     updateDestinationInput();
     $('#destination-type').value = 'offers';
     $('#campaign-id').value = '';
     $('#campaign-token').value = '';
     $('#campaign-short-code').value = uniqueShortCode();
-    $('#form-title').textContent = 'Criar link';
+    $('#form-title').textContent = selectedSite === 'main' ? 'Criar link do site principal' : 'Criar link do mini catálogo';
     $('#delete-campaign').disabled = true;
     updatePreview();
     if (window.innerWidth < 980) $('#editor-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -460,7 +471,7 @@
 
   $('#campaign-form').addEventListener('submit', saveForm);
   $('#mobile-save').addEventListener('click', () => $('#campaign-form').requestSubmit());
-  $('#new-campaign').addEventListener('click', resetForm);
+  document.querySelectorAll('[data-new-site]').forEach(button => button.addEventListener('click', () => resetForm(button.dataset.newSite)));
   $('#duplicate-campaign').addEventListener('click', duplicateCampaign);
   $('#delete-campaign').addEventListener('click', () => removeCampaign($('#campaign-id').value.trim()));
   $('#load-github').addEventListener('click', () => fetchGitHubFile().catch(error => showNotice(error.message, 'error')));

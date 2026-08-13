@@ -7,20 +7,25 @@
   <meta name="theme-color" content="#111827">
   <title>Admin de Links | Dona Antônia</title>
   <link rel="icon" href="img/logoantonia5.png">
-  <link rel="stylesheet" href="admin-mini-catalogo.css?v=20260812-2">
+  <link rel="stylesheet" href="admin-mini-catalogo.css?v=20260813-1">
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand"><img src="img/logoantonia5.png" alt="Dona Antônia"><div><strong>Admin de links</strong><span>Mini catálogo e site principal</span></div></div>
-      <div class="top-actions"><a class="btn secondary hide-mobile" href="./#/" target="_blank" rel="noopener">Abrir site</a><a class="btn secondary hide-mobile" href="complemente/#/" target="_blank" rel="noopener">Abrir mini site</a><button class="btn primary" id="new-campaign" type="button">Novo link</button></div>
+      <div class="top-actions"><button class="btn secondary hide-mobile" data-new-site="mini" type="button">+ Link do mini catálogo</button><button class="btn primary" data-new-site="main" type="button">+ Link do site principal</button></div>
     </div>
   </header>
 
   <div class="shell">
     <section class="intro">
       <h1>Links curtos para os dois catálogos</h1>
-      <p>Administre separadamente os links do mini catálogo e do site principal, sempre usando o domínio Dona Antônia e sem alterar os endereços que já foram enviados aos clientes.</p>
+      <p>Crie separadamente links para o mini catálogo de pedidos complementares e para o site principal de pedidos completos.</p>
+    </section>
+
+    <section class="create-links" aria-label="Criar novo link">
+      <button class="create-link-option mini" data-new-site="mini" type="button"><span class="create-link-icon">M</span><span><strong>Novo link do mini catálogo</strong><small>Abre o pedido complementar e pode aplicar o desconto da campanha.</small></span></button>
+      <button class="create-link-option main" data-new-site="main" type="button"><span class="create-link-icon">S</span><span><strong>Novo link do site principal</strong><small>Abre o catálogo completo e pode ativar um cupom já cadastrado.</small></span></button>
     </section>
 
     <div id="notice" class="notice info"></div>
@@ -33,13 +38,13 @@
 
     <main class="layout">
       <section class="card" id="editor-card">
-        <div class="card-header"><h2 id="form-title">Criar link</h2><p>Escolha primeiro onde o link deve abrir. O formato público continua <strong>donaantonia.com.br/c/#BELEZA10</strong>.</p></div>
+        <div class="card-header"><h2 id="form-title">Criar link do mini catálogo</h2><p id="form-subtitle">Este endereço abrirá o mini catálogo de pedido complementar.</p></div>
         <div class="card-body">
           <form id="campaign-form">
             <input id="campaign-id" type="hidden">
             <input id="campaign-token" type="hidden">
             <div class="form-grid">
-              <div class="field wide"><label for="campaign-target-site">Este link abre em</label><select id="campaign-target-site"><option value="mini" selected>Mini catálogo — pedido complementar</option><option value="main">Site principal — pedido completo</option></select><span class="help">Os dois tipos ficam separados no admin. Links antigos continuam classificados automaticamente como mini catálogo.</span></div>
+              <div class="field wide"><label for="campaign-target-site">Destino deste link</label><select id="campaign-target-site"><option value="mini" selected>MINI CATÁLOGO — pedido complementar</option><option value="main">SITE PRINCIPAL — pedido completo</option></select><span class="help">A escolha define em qual catálogo o cliente entrará. Você também pode usar os dois botões “Novo link” acima.</span></div>
               <div class="field wide"><label for="campaign-name">Nome interno da campanha</label><input id="campaign-name" required maxlength="80" placeholder="Ex.: Ofertas pós-pedido 10%"></div>
               <div class="field"><label for="campaign-code">Código exibido ao cliente</label><input id="campaign-code" maxlength="24" placeholder="OFERTAS10"></div>
               <div class="field" id="mini-discount-field"><label for="campaign-discount">Desconto do mini catálogo</label><select id="campaign-discount"><option value="0">Sem desconto</option><option value="3">3%</option><option value="5">5%</option><option value="7">7%</option><option value="10" selected>10%</option><option value="12">12%</option><option value="15">15%</option><option value="20">20%</option><option value="25">25%</option><option value="30">30%</option></select></div>
@@ -52,8 +57,8 @@
               <div class="field wide"><label for="campaign-note">Observação mostrada ao cliente</label><textarea id="campaign-note" maxlength="180" placeholder="Ex.: Válido somente para acrescentar itens ao pedido atual."></textarea></div>
               <div class="field wide"><label for="campaign-short-code">Nome do link curto</label><div class="short-code-row"><input id="campaign-short-code" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Ex.: BELEZA10"><button class="btn secondary" id="regenerate-short-code" type="button">Gerar outro</button></div><span class="help">Use de 3 a 32 letras, números ou hífens. Ao renomear, os links anteriores continuam funcionando.</span></div>
               <div class="toggle-row"><div><strong>Campanha ativa</strong><span class="help">Desative para o link parar de conceder desconto imediatamente.</span></div><input id="campaign-active" type="checkbox" checked></div>
-              <div class="link-preview"><strong>Link curto para enviar no WhatsApp</strong><code id="link-preview">Preencha os campos para gerar o link.</code><div class="preview-actions"><button class="btn secondary" id="copy-preview" type="button">Copiar</button><button class="btn secondary" id="share-preview" type="button">Compartilhar</button><a class="btn secondary" id="open-preview" href="#" target="_blank" rel="noopener">Testar</a></div></div>
-              <div class="form-actions"><button class="btn primary" type="submit">Salvar no GitHub</button><button class="btn secondary" id="duplicate-campaign" type="button">Duplicar</button><button class="btn danger" id="delete-campaign" type="button" disabled>Excluir</button></div>
+              <div class="link-preview"><strong id="link-preview-title">Link do mini catálogo para enviar no WhatsApp</strong><code id="link-preview">Preencha os campos para gerar o link.</code><div class="direct-preview"><span>Este link abrirá:</span><code id="direct-preview"></code></div><div class="preview-actions"><button class="btn secondary" id="copy-preview" type="button">Copiar</button><button class="btn secondary" id="share-preview" type="button">Compartilhar</button><a class="btn secondary" id="open-preview" href="#" target="_blank" rel="noopener">Testar</a></div></div>
+              <div class="form-actions"><button class="btn primary" id="save-campaign" type="submit">Salvar link do mini catálogo</button><button class="btn secondary" id="duplicate-campaign" type="button">Duplicar</button><button class="btn danger" id="delete-campaign" type="button" disabled>Excluir</button></div>
             </div>
           </form>
           <div class="security"><strong>Como o link curto funciona</strong><p>A página <strong>/c/</strong> identifica se o endereço pertence ao mini catálogo ou ao site principal. No mini catálogo, campanha e desconto continuam validados pelo próprio módulo. No site principal, o link pode ativar somente um cupom que já exista no cadastro oficial de cupons.</p></div>
@@ -73,6 +78,6 @@
   </div>
 
   <div class="sticky-save"><button class="btn primary" id="mobile-save" type="button">Salvar campanha no GitHub</button></div>
-  <script src="admin-mini-catalogo.js?v=20260812-2"></script>
+  <script src="admin-mini-catalogo.js?v=20260813-1"></script>
 </body>
 </html>
