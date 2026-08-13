@@ -82,22 +82,31 @@ function ensureStyles() {
   document.head.appendChild(style);
 }
 
+function statusMarkup(info) {
+  return `<div><strong>Instagram da cesta</strong><small>${info.detail}</small></div><span class="badge ${info.kind}">${info.label}</span>`;
+}
+
 function decorateCards() {
   const module = moduleInstance();
   if (!module || module.type !== 'basket') return;
   const rows = module.audits?.().baskets || [];
   const cards = [...document.querySelectorAll('#collectionCards .collection-card')];
   cards.forEach((card, index) => {
-    card.querySelector('.basket-instagram-row')?.remove();
     const basket = rows[index]?.source;
     if (!basket) return;
     const info = statusInfo(basket);
+    const statusKey = `${text(basket.codigo || basket.id)}|${info.kind}|${info.label}|${info.detail}`;
+    let row = card.querySelector('.basket-instagram-row');
+    if (row?.dataset.statusKey === statusKey) return;
     const target = card.querySelector('.collection-card-actions');
     if (!target) return;
-    const row = document.createElement('div');
-    row.className = 'basket-instagram-row';
-    row.innerHTML = `<div><strong>Instagram da cesta</strong><small>${info.detail}</small></div><span class="badge ${info.kind}">${info.label}</span>`;
-    target.before(row);
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'basket-instagram-row';
+      target.before(row);
+    }
+    row.dataset.statusKey = statusKey;
+    row.innerHTML = statusMarkup(info);
   });
 }
 
@@ -127,20 +136,30 @@ function decorateSummary() {
     else if (['Na fila', 'Publicando', 'Gerando'].includes(info.label)) queued += 1;
     else pending += 1;
   });
-  host.querySelector('small').textContent = `Instagram: ${posted} postadas · ${queued} em andamento · ${pending} pendentes`;
+  const value = `Instagram: ${posted} postadas · ${queued} em andamento · ${pending} pendentes`;
+  const label = host.querySelector('small');
+  if (label && label.textContent !== value) label.textContent = value;
 }
 
 function decorateEditor() {
   const module = moduleInstance();
   const form = document.getElementById('collectionForm');
   if (!form) return;
-  form.querySelector('.basket-instagram-editor')?.remove();
-  if (!module || module.type !== 'basket' || !module.draft) return;
+  let panel = form.querySelector('.basket-instagram-editor');
+  if (!module || module.type !== 'basket' || !module.draft) {
+    panel?.remove();
+    return;
+  }
   const info = statusInfo(module.draft);
-  const panel = document.createElement('section');
-  panel.className = 'basket-instagram-editor';
-  panel.innerHTML = `<div><strong>Instagram da cesta</strong><small>${info.detail}</small></div><span class="badge ${info.kind}">${info.label}</span>`;
-  form.prepend(panel);
+  const statusKey = `${text(module.draft.codigo || module.draft.id)}|${info.kind}|${info.label}|${info.detail}`;
+  if (panel?.dataset.statusKey === statusKey) return;
+  if (!panel) {
+    panel = document.createElement('section');
+    panel.className = 'basket-instagram-editor';
+    form.prepend(panel);
+  }
+  panel.dataset.statusKey = statusKey;
+  panel.innerHTML = statusMarkup(info);
 }
 
 function renderStatus() {
