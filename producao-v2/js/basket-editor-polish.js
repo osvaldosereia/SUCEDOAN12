@@ -1,3 +1,5 @@
+import './basket-instagram-admin.js';
+
 (() => {
   'use strict';
 
