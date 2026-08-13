@@ -21,7 +21,7 @@
         <div class="ops-brand-mark">DA</div>
         <div class="ops-brand-copy">
           <strong class="ops-brand-title">Validades e estoque</strong>
-          <small class="ops-brand-subtitle">Produtos que vencem primeiro · Firebase</small>
+          <small class="ops-brand-subtitle">Produtos que vão vencer · Firebase</small>
         </div>
       </div>
       <div class="ops-actions">
@@ -50,29 +50,28 @@
       <label>
         <span>Mostrar vencimentos</span>
         <select id="horizonSelect" class="input">
-          <option value="30">Até 30 dias</option>
+          <option value="5">Até 5 dias</option>
+          <option value="15">Até 15 dias</option>
+          <option value="30" selected>Até 30 dias</option>
           <option value="60">Até 60 dias</option>
-          <option value="90" selected>Até 90 dias</option>
-          <option value="180">Até 180 dias</option>
-          <option value="all">Todos com validade</option>
         </select>
       </label>
     </div>
     <div class="filter-options">
       <label class="check"><input id="showZeroInput" type="checkbox"><span>Mostrar estoque zerado</span></label>
-      <div class="legend"><span class="dot expired"></span> vencido <span class="dot urgent"></span> até 7 dias <span class="dot attention"></span> até 30 dias</div>
+      <div class="legend"><span class="dot urgent"></span> até 7 dias <span class="dot attention"></span> até 30 dias</div>
     </div>
   </section>
 
   <section class="summary-strip" aria-label="Resumo de validades">
-    <div><strong id="expiredCount">0</strong><span>vencidos</span></div>
+    <div><strong id="expiredCount">0</strong><span>vence hoje</span></div>
     <div><strong id="sevenCount">0</strong><span>até 7 dias</span></div>
     <div><strong id="thirtyCount">0</strong><span>até 30 dias</span></div>
     <div><strong id="changedCount">0</strong><span>alterados</span></div>
   </section>
 
   <section id="productsList" class="products-list" aria-live="polite"></section>
-  <div id="emptyState" class="empty-state" hidden>Nenhum produto encontrado com os filtros atuais.</div>
+  <div id="emptyState" class="empty-state" hidden>Nenhum produto vai vencer no período selecionado.</div>
 </main>
 
 <div id="savebar" class="savebar hidden">
@@ -83,6 +82,7 @@
 </div>
 
 <div id="busy" class="busy"><div id="busyText">Carregando…</div></div>
-<script src="./validades.js?v=20260813-v1"></script>
+<script src="./validades.js?v=20260813-v2"></script>
+<script src="./upcoming-only.js?v=20260813-v1"></script>
 </body>
 </html>
