@@ -104,6 +104,12 @@
   function originalValues(item){return{validade:toInputDate(validityOf(item.product)),estoque:num(item.product.estoque)};}
   function sameValues(a,b){return trim(a.validade)===trim(b.validade)&&num(a.estoque)===num(b.estoque);}
   function searchHay(item){var p=item.product||{};return [nameOf(p),p.marca,p.categoria,p.subcategoria,p.subsubcategoria,p.gtin,p.ean,p.codigo,p.sku,item.key].join(' ').toLowerCase();}
+  function configureHorizonOptions(){
+    var select=$('horizonSelect');
+    if(!select)return;
+    select.innerHTML='<option value="5">Até 5 dias</option><option value="15">Até 15 dias</option><option value="30">Até 30 dias</option><option value="60">Até 60 dias</option>';
+    select.value='30';
+  }
 
   function loadProducts(force){
     if(state.loading)return;
@@ -234,5 +240,6 @@
     else if(event.target&&event.target.id==='saveAllButton')saveAll();
   });
 
+  configureHorizonOptions();
   loadProducts(false);
 })();
