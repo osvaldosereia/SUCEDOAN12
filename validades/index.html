@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#173f2a">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Validades · Dona Antônia</title>
+  <link rel="stylesheet" href="../operacoes-mobile.css?v=20260813-suite-v2">
+  <link rel="stylesheet" href="./validades.css?v=20260813-v1">
+</head>
+<body class="ops-suite ops-validades">
+<header class="ops-topbar">
+  <div class="ops-topbar-inner">
+    <div class="ops-topbar-main">
+      <div class="ops-brand">
+        <div class="ops-brand-mark">DA</div>
+        <div class="ops-brand-copy">
+          <strong class="ops-brand-title">Validades e estoque</strong>
+          <small class="ops-brand-subtitle">Produtos que vencem primeiro · Firebase</small>
+        </div>
+      </div>
+      <div class="ops-actions">
+        <div class="ops-counter"><strong id="visibleCount">0</strong><span>na lista</span></div>
+        <button class="ops-icon-button" id="reloadButton" type="button" title="Atualizar" aria-label="Atualizar produtos">↻</button>
+      </div>
+    </div>
+    <nav class="ops-app-nav" aria-label="Trocar aplicação">
+      <a href="../contagem/"><span class="ops-app-nav-icon">📦</span><span>Contagem</span></a>
+      <a href="../cadastro/"><span class="ops-app-nav-icon">➕</span><span>Cadastro</span></a>
+      <a class="active" aria-current="page" href="../validades/"><span class="ops-app-nav-icon">📅</span><span>Validades</span></a>
+      <a href="../kit-mobile/"><span class="ops-app-nav-icon">🎁</span><span>Kits</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="validity-main">
+  <div id="status" class="status warn">Carregando produtos diretamente do Firebase…</div>
+
+  <section class="card filters-card">
+    <div class="filters-grid">
+      <label class="search-field">
+        <span>Buscar produto</span>
+        <input id="searchInput" class="input" type="search" autocomplete="off" placeholder="Nome, EAN, código ou marca">
+      </label>
+      <label>
+        <span>Mostrar vencimentos</span>
+        <select id="horizonSelect" class="input">
+          <option value="30">Até 30 dias</option>
+          <option value="60">Até 60 dias</option>
+          <option value="90" selected>Até 90 dias</option>
+          <option value="180">Até 180 dias</option>
+          <option value="all">Todos com validade</option>
+        </select>
+      </label>
+    </div>
+    <div class="filter-options">
+      <label class="check"><input id="showZeroInput" type="checkbox"><span>Mostrar estoque zerado</span></label>
+      <div class="legend"><span class="dot expired"></span> vencido <span class="dot urgent"></span> até 7 dias <span class="dot attention"></span> até 30 dias</div>
+    </div>
+  </section>
+
+  <section class="summary-strip" aria-label="Resumo de validades">
+    <div><strong id="expiredCount">0</strong><span>vencidos</span></div>
+    <div><strong id="sevenCount">0</strong><span>até 7 dias</span></div>
+    <div><strong id="thirtyCount">0</strong><span>até 30 dias</span></div>
+    <div><strong id="changedCount">0</strong><span>alterados</span></div>
+  </section>
+
+  <section id="productsList" class="products-list" aria-live="polite"></section>
+  <div id="emptyState" class="empty-state" hidden>Nenhum produto encontrado com os filtros atuais.</div>
+</main>
+
+<div id="savebar" class="savebar hidden">
+  <div class="savein">
+    <span><strong id="saveCount">0</strong> produto(s) alterado(s)</span>
+    <button id="saveAllButton" class="btn green" type="button">Salvar alterações</button>
+  </div>
+</div>
+
+<div id="busy" class="busy"><div id="busyText">Carregando…</div></div>
+<script src="./validades.js?v=20260813-v1"></script>
+</body>
+</html>
