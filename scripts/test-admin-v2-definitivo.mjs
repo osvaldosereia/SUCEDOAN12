@@ -144,6 +144,15 @@ for (const entry of ['js/app.js', 'js/navigation-v12.js', 'js/stock-bootstrap.js
 }
 if (adminIndex.includes('data-route="quick-read"') || adminIndex.includes('data-view="quick-read"')) fail('A função Leitura rápida reapareceu no HTML oficial.');
 if (!adminIndex.includes('makeOrderWebhookSetting')) fail('O campo do webhook de pedidos não está no HTML oficial.');
+if (!adminIndex.includes('data-editor-section="baskets"')) fail('O editor individual não contém a área de Cestas básicas.');
+
+const productsModule = read('producao-v2/js/modules/products.js');
+for (const feature of ['saveProductBasketMemberships', 'data-product-basket=', 'cestas_basicas', "saveCollectionList("]) {
+  if (!productsModule.includes(feature)) fail(`Integração Produto → Cestas incompleta: ${feature}`);
+}
+
+const directProductSave = read('producao-v2/js/direct-product-save.js');
+if (!directProductSave.includes('saveProductBasketMemberships?.()')) fail('Salvar produto não publica as cestas selecionadas.');
 
 const routeButtons = [...adminIndex.matchAll(/data-route="([^"]+)"/g)].map(match => match[1]);
 const routeViews = [...adminIndex.matchAll(/data-view="([^"]+)"/g)].map(match => match[1]);
@@ -175,6 +184,7 @@ if (!app.includes('requestAnimationFrame(renderDashboard)')) fail('O dashboard n
 const adminUx = read('producao-v2/admin-ux.js');
 if (adminUx.includes('new MutationObserver')) fail('admin-ux.js voltou a observar o DOM inteiro em vez de usar eventos do Admin.');
 if (!adminUx.includes("addEventListener('admin-v2-route-ready'")) fail('admin-ux.js não reage ao evento determinístico de rota pronta.');
+if (!adminUx.includes('data-ux-product-mode="baskets"')) fail('A aba Cestas básicas não foi instalada no editor individual.');
 
 const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 if (!stockBootstrap.includes('meta[name="admin-save-build"]')) fail('O carregador das abas não herda a build produtiva atual.');

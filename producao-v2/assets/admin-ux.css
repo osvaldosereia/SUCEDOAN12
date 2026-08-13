@@ -250,8 +250,39 @@ body{
   grid-template-rows:auto auto 1fr auto;
 }
 
+.editor-drawer.ux-single-editor{
+  grid-template-rows:auto auto auto 1fr auto;
+}
+
 .editor-drawer.ux-single-editor .editor-tabs{
   display:none!important;
+}
+
+.ux-product-main-tabs{
+  display:flex;
+  gap:8px;
+  padding:10px 24px;
+  border-bottom:1px solid var(--line);
+  background:#fafbf9;
+}
+
+.ux-product-main-tabs button{
+  min-height:40px;
+  padding:0 16px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fff;
+  color:var(--muted);
+  font:inherit;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.ux-product-main-tabs button.active{
+  border-color:#d2ad3d;
+  background:#fff8dc;
+  color:#40330c;
 }
 
 .editor-drawer.ux-single-editor .editor-header{
@@ -290,6 +321,106 @@ body{
   padding:0 0 18px;
   border-bottom:1px solid var(--line);
 }
+
+.editor-drawer.ux-single-editor.ux-product-mode-details [data-editor-section="baskets"],
+.editor-drawer.ux-single-editor.ux-product-mode-baskets [data-editor-section]:not([data-editor-section="baskets"]){
+  display:none!important;
+}
+
+.editor-drawer.ux-single-editor.ux-product-mode-baskets .editor-validation{
+  display:none;
+}
+
+.product-baskets-toolbar{
+  display:grid;
+  grid-template-columns:minmax(280px,620px) auto;
+  gap:16px;
+  align-items:end;
+  margin-bottom:14px;
+}
+
+.product-baskets-toolbar label,
+.product-baskets-toolbar label span,
+.product-baskets-toolbar>div strong,
+.product-baskets-toolbar>div span{
+  display:block;
+}
+
+.product-baskets-toolbar label span{
+  margin-bottom:6px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:850;
+}
+
+.product-baskets-toolbar input{
+  width:100%;
+  min-height:46px;
+  padding:0 13px;
+  border:1px solid var(--line-strong);
+  border-radius:9px;
+  background:#fff;
+  font:inherit;
+}
+
+.product-baskets-toolbar>div{
+  min-width:180px;
+  padding:10px 13px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#fafbf9;
+}
+
+.product-baskets-toolbar>div strong{font-size:20px}
+.product-baskets-toolbar>div span{margin-top:2px;color:var(--muted);font-size:12px}
+
+.product-baskets-list{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.product-basket-option{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  min-height:78px;
+  padding:13px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:#fff;
+  cursor:pointer;
+}
+
+.product-basket-option.selected{
+  border-color:#d2ad3d;
+  background:#fffaf0;
+  box-shadow:inset 4px 0 0 #d2ad3d;
+}
+
+.product-basket-option input{width:20px;height:20px;accent-color:#9a7614}
+.product-basket-option span strong,.product-basket-option span small{display:block}
+.product-basket-option span strong{font-size:14px}
+.product-basket-option span small{margin-top:4px;color:var(--muted);font-size:11px}
+.product-basket-option em{color:var(--muted);font-size:11px;font-style:normal;font-weight:850}
+.product-basket-option.selected em{color:#765b0f}
+
+.product-baskets-note,
+.product-baskets-status,
+.product-baskets-empty{
+  margin-top:14px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fafbf9;
+}
+
+.product-baskets-note strong,.product-baskets-note span,
+.product-baskets-status strong,.product-baskets-status small{display:block}
+.product-baskets-note span,.product-baskets-status small{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.5}
+.product-baskets-status.danger{border-color:#efc9c5;background:var(--danger-soft);color:var(--danger)}
+.product-baskets-status .button{margin-top:10px}
 
 .editor-drawer.ux-single-editor .form-grid{
   grid-template-columns:repeat(12,minmax(0,1fr));
@@ -690,5 +821,37 @@ body{
 
   .main-nav{
     flex-wrap:wrap;
+  }
+
+  .product-baskets-list{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:760px){
+  .ux-product-main-tabs{
+    padding:9px 13px;
+  }
+
+  .ux-product-main-tabs button{
+    flex:1;
+    padding:0 10px;
+    font-size:12px;
+  }
+
+  .product-baskets-toolbar{
+    grid-template-columns:1fr;
+  }
+
+  .product-baskets-toolbar>div{
+    min-width:0;
+  }
+
+  .product-basket-option{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+
+  .product-basket-option em{
+    grid-column:2;
   }
 }

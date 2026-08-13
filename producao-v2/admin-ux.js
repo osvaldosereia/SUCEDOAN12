@@ -36,6 +36,7 @@
     classification: ['Classificacao comercial', 'Categoria, subcategorias, marca, fornecedor e tags.'],
     content: ['Imagem e conteudo', 'Foto principal, descricao, video e informacoes de exibicao.'],
     logistics: ['Fiscal e logistica', 'NCM, embalagem, unidade, localizacao e dados de separacao.'],
+    baskets: ['Cestas básicas', 'Marque as cestas em que este produto deve aparecer.'],
   };
 
   const makeActionsToHide = new Set(['name', 'description', 'packaging', 'tags']);
@@ -206,6 +207,24 @@
     editor.classList.add('ux-single-editor');
     document.getElementById('editorTabs')?.setAttribute('aria-hidden', 'true');
 
+    if (!editor.querySelector(':scope > .ux-product-main-tabs')) {
+      const tabs = document.createElement('div');
+      tabs.className = 'ux-product-main-tabs';
+      tabs.setAttribute('role', 'tablist');
+      tabs.setAttribute('aria-label', 'Áreas do cadastro do produto');
+      tabs.innerHTML = '<button class="active" type="button" role="tab" data-ux-product-mode="details">Informações do produto</button><button type="button" role="tab" data-ux-product-mode="baskets">Cestas básicas</button>';
+      editor.insertBefore(tabs, editor.querySelector('.editor-validation'));
+    }
+
+    const mode = editor.dataset.uxProductMode === 'baskets' ? 'baskets' : 'details';
+    editor.classList.toggle('ux-product-mode-details', mode === 'details');
+    editor.classList.toggle('ux-product-mode-baskets', mode === 'baskets');
+    editor.querySelectorAll('[data-ux-product-mode]').forEach(button => {
+      const active = button.dataset.uxProductMode === mode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+
     form.querySelectorAll('[data-editor-section]').forEach(section => {
       const meta = productSectionTitles[section.dataset.editorSection] || ['Secao', ''];
       section.classList.add('active', 'ux-editor-block');
@@ -314,6 +333,11 @@
 
   document.addEventListener('click', captureProductContext, true);
   document.addEventListener('click', event => {
+    const productMode = event.target.closest?.('[data-ux-product-mode]');
+    if (productMode) {
+      const editor = productMode.closest('#productEditor');
+      if (editor) editor.dataset.uxProductMode = productMode.dataset.uxProductMode;
+    }
     const label = event.target.closest?.('#mainNav .nav-group-label');
     document.querySelectorAll('#mainNav .nav-group.ux-open').forEach(group => {
       if (!label || group !== label.closest('.nav-group')) group.classList.remove('ux-open');

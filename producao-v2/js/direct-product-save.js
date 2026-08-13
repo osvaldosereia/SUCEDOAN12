@@ -340,12 +340,18 @@ function installProductsFixes() {
     if (!key) return;
     const product = this.store.getProduct(key);
     if (!product) return;
-    if (!this.store.state.dirtyProducts.has(key)) return toast(this, 'Este produto não possui alterações pendentes.', 'success');
+    const hasProductChanges = this.store.state.dirtyProducts.has(key);
+    const hasBasketChanges = Boolean(this.basketChangesPending?.());
+    if (!hasProductChanges && !hasBasketChanges) return toast(this, 'Este produto não possui alterações pendentes.', 'success');
     try {
-      const saved = await this.onSave(product);
+      const basketResult = await this.saveProductBasketMemberships?.();
+      const saved = hasProductChanges ? await this.onSave(product) : product;
       this.renderEditor(saved);
       this.renderTable();
-      toast(this, `${productName(saved)} salvo no Firebase.`, 'success');
+      const basketMessage = basketResult?.changed
+        ? ` e ${basketResult.changed} cesta${basketResult.changed === 1 ? '' : 's'} atualizada${basketResult.changed === 1 ? '' : 's'}`
+        : '';
+      toast(this, `${productName(saved)} salvo no Firebase${basketMessage}.`, 'success');
     } catch (error) {
       toast(this, error?.message || String(error), 'error');
     }

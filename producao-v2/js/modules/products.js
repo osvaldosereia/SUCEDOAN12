@@ -3,11 +3,31 @@ import {
   debounce, escapeHtml, formatDate, isActive, money, normalizeSearch, number,
   productCode, productImage, productKey, productName, text,
 } from '../core/utils.js';
+import { saveCollectionList } from '../services/collections.js';
+import { readJsonFile } from '../services/github.js';
 
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" fill="#f1f2ef"/><text x="50%" y="53%" text-anchor="middle" fill="#899087" font-family="Arial" font-size="12">sem foto</text></svg>')}`;
 
 function unique(values) {
   return [...new Set(values.map(value => text(value)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+function sameValues(first, second) {
+  const left = [...first].map(text).filter(Boolean).sort();
+  const right = [...second].map(text).filter(Boolean).sort();
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function productCodes(product = {}) {
+  return new Set([
+    productKey(product), productCode(product), product.codigo, product.sku, product.gtin, product.ean,
+  ].map(text).filter(Boolean));
+}
+
+function basketContainsProduct(basket, product) {
+  const codes = productCodes(product);
+  return (Array.isArray(basket?.produtos) ? basket.produtos : [])
+    .some(item => codes.has(text(item?.codigo)));
 }
 
 function maskBrDate(value) {
@@ -68,7 +88,15 @@ export class ProductsModule {
     this.pendingImages = new Map();
     this.imageZoom = new Map();
     this.bulkPriceElements = null;
+    this.basketState = this.emptyBasketState();
     this.bind();
+  }
+
+  emptyBasketState(key = '') {
+    return {
+      key: text(key), loading: false, loaded: false, error: '', list: [],
+      originalIds: new Set(), selectedIds: new Set(), search: '', saving: false,
+    };
   }
 
   bind() {
@@ -365,10 +393,13 @@ export class ProductsModule {
     if (!product) return;
     this.store.state.selectedProductKey = String(key);
     this.editorTab = 'essential';
+    this.basketState = this.emptyBasketState(key);
+    this.elements.productEditor.dataset.uxProductMode = 'details';
     this.renderEditor(product);
     this.elements.productEditor.classList.add('open');
     this.elements.productEditor.setAttribute('aria-hidden', 'false');
     this.elements.mobileOverlay.hidden = false;
+    this.loadProductBaskets(key);
   }
 
   closeEditor() {
@@ -461,11 +492,99 @@ export class ProductsModule {
       ${this.selectField('prateleira', 'Prateleira', product.prateleira, this.values('prateleira', product))}
       ${this.field('localizacao', 'Localização', product.localizacao)}
     </div>`;
+    this.renderBasketSection(product, sections.baskets);
     this.renderValidation(product);
     this.renderEditorTabs();
   }
 
+  async loadProductBaskets(key, { force = false } = {}) {
+    const normalizedKey = text(key);
+    if (!normalizedKey || this.store.state.selectedProductKey !== normalizedKey) return;
+    if (!force && (this.basketState.loading || this.basketState.loaded)) return;
+    this.basketState = { ...this.emptyBasketState(normalizedKey), loading: true };
+    this.renderBasketSection(this.store.getProduct(normalizedKey));
+    try {
+      const config = this.store.state.config;
+      const file = await readJsonFile(config, config.basketsPath || 'site/produtos-cesta-basica.json');
+      if (this.store.state.selectedProductKey !== normalizedKey) return;
+      const list = Array.isArray(file?.data) ? file.data : [];
+      const product = this.store.getProduct(normalizedKey);
+      const selected = new Set(list.filter(basket => basketContainsProduct(basket, product)).map(basket => text(basket.id)).filter(Boolean));
+      this.basketState = {
+        ...this.emptyBasketState(normalizedKey), loaded: true, list,
+        originalIds: new Set(selected), selectedIds: new Set(selected),
+      };
+    } catch (error) {
+      if (this.store.state.selectedProductKey !== normalizedKey) return;
+      this.basketState = {
+        ...this.emptyBasketState(normalizedKey),
+        error: error?.message || String(error),
+      };
+    }
+    this.renderBasketSection(this.store.getProduct(normalizedKey));
+  }
+
+  basketChangesPending() {
+    return this.basketState.loaded
+      && !sameValues(this.basketState.originalIds, this.basketState.selectedIds);
+  }
+
+  renderBasketSection(product, section = this.elements.productForm.querySelector('[data-editor-section="baskets"]')) {
+    if (!section || !product) return;
+    const state = this.basketState;
+    const heading = '<div class="ux-editor-section-head"><div><strong>Cestas básicas</strong><span>Marque as cestas em que este produto deve aparecer.</span></div></div>';
+    if (state.key !== productKey(product) || state.loading) {
+      section.innerHTML = `${heading}<div class="product-baskets-status"><strong>Carregando cestas…</strong><small>Consultando a composição oficial no GitHub.</small></div>`;
+      return;
+    }
+    if (state.error) {
+      section.innerHTML = `${heading}<div class="product-baskets-status danger"><strong>Não foi possível carregar as cestas</strong><small>${escapeHtml(state.error)}</small><button class="button secondary compact" type="button" data-product-baskets-retry>Carregar novamente</button></div>`;
+      return;
+    }
+    if (!state.loaded) {
+      section.innerHTML = `${heading}<div class="product-baskets-status"><strong>Preparando a lista…</strong></div>`;
+      return;
+    }
+    const query = normalizeSearch(state.search);
+    const visible = state.list.filter(basket => !query || normalizeSearch(`${basket.nome || ''} ${basket.codigo || ''} ${basket.id || ''}`).includes(query));
+    const cards = visible.map(basket => {
+      const id = text(basket.id);
+      const checked = state.selectedIds.has(id);
+      const count = Array.isArray(basket.produtos) ? basket.produtos.length : 0;
+      return `<label class="product-basket-option${checked ? ' selected' : ''}">
+        <input type="checkbox" data-product-basket="${escapeHtml(id)}" ${checked ? 'checked' : ''}>
+        <span><strong>${escapeHtml(basket.nome || basket.codigo || id)}</strong><small>${escapeHtml(basket.codigo || id)} · ${count} produto${count === 1 ? '' : 's'} na composição</small></span>
+        <em>${checked ? 'Selecionada' : 'Não selecionada'}</em>
+      </label>`;
+    }).join('');
+    section.innerHTML = `${heading}
+      <div class="product-baskets-toolbar">
+        <label><span>Pesquisar cesta</span><input type="search" data-product-baskets-search value="${escapeHtml(state.search)}" placeholder="Nome ou código da cesta"></label>
+        <div><strong>${state.selectedIds.size}</strong><span> cesta${state.selectedIds.size === 1 ? '' : 's'} selecionada${state.selectedIds.size === 1 ? '' : 's'}</span></div>
+      </div>
+      <div class="product-baskets-list">${cards || '<div class="product-baskets-empty">Nenhuma cesta encontrada.</div>'}</div>
+      <div class="product-baskets-note"><strong>Como funciona ao salvar</strong><span>Ao marcar, o produto entra na cesta com quantidade 1. Ao desmarcar, somente este produto é retirado. A quantidade poderá ser ajustada depois na tela Cestas básicas.</span></div>`;
+  }
+
   handleEditorInput(event) {
+    const basketId = event.target.dataset.productBasket;
+    if (basketId !== undefined) {
+      const key = this.store.state.selectedProductKey;
+      if (!key || !this.basketState.loaded || this.basketState.key !== key) return;
+      if (event.target.checked) this.basketState.selectedIds.add(text(basketId));
+      else this.basketState.selectedIds.delete(text(basketId));
+      this.store.updateProduct(key, { cestas_basicas: [...this.basketState.selectedIds].sort() });
+      this.renderBasketSection(this.store.getProduct(key));
+      this.renderValidation(this.store.getProduct(key));
+      this.renderDirty();
+      return;
+    }
+    if (event.target.matches('[data-product-baskets-search]')) {
+      this.basketState.search = event.target.value;
+      this.renderBasketSection(this.store.getProduct(this.store.state.selectedProductKey));
+      this.elements.productForm.querySelector('[data-product-baskets-search]')?.focus();
+      return;
+    }
     const field = event.target.dataset.field;
     const key = this.store.state.selectedProductKey;
     if (!field || !key) {
@@ -503,6 +622,12 @@ export class ProductsModule {
   }
 
   async handleEditorClick(event) {
+    const retryBaskets = event.target.closest('[data-product-baskets-retry]');
+    if (retryBaskets) {
+      event.preventDefault();
+      await this.loadProductBaskets(this.store.state.selectedProductKey, { force: true });
+      return;
+    }
     const makeButton = event.target.closest('[data-make-product]');
     if (makeButton) {
       event.preventDefault();
@@ -604,11 +729,58 @@ export class ProductsModule {
     this.store.discardProduct(key);
     this.pendingImages.delete(key);
     this.imageZoom.delete(key);
+    this.basketState.selectedIds = new Set(this.basketState.originalIds);
+    this.basketState.search = '';
     const product = this.store.getProduct(key);
     if (product) this.renderEditor(product);
     this.renderTable();
     this.renderDirty();
     this.onToast('Alterações deste produto foram descartadas.', 'success');
+  }
+
+  async saveProductBasketMemberships() {
+    const key = text(this.store.state.selectedProductKey);
+    const state = this.basketState;
+    if (!key || state.key !== key || !this.basketChangesPending()) return { changed: 0 };
+    if (state.saving) throw new Error('As cestas já estão sendo atualizadas. Aguarde.');
+    const product = this.store.getProduct(key);
+    if (!product) throw new Error('Produto não encontrado para atualizar as cestas.');
+    const code = productCode(product) || productKey(product);
+    if (!code) throw new Error('O produto precisa de código para entrar em uma cesta.');
+
+    const changedIds = [...new Set([...state.originalIds, ...state.selectedIds])]
+      .filter(id => state.originalIds.has(id) !== state.selectedIds.has(id));
+    let workingList = JSON.parse(JSON.stringify(state.list));
+    state.saving = true;
+    this.renderBasketSection(product);
+    try {
+      for (const id of changedIds) {
+        const index = workingList.findIndex(basket => text(basket.id) === id);
+        if (index < 0) throw new Error(`A cesta ${id} não foi encontrada.`);
+        const originalCollection = JSON.parse(JSON.stringify(workingList[index]));
+        const basket = workingList[index];
+        const items = Array.isArray(basket.produtos) ? basket.produtos : [];
+        if (state.selectedIds.has(id)) {
+          if (!basketContainsProduct(basket, product)) {
+            basket.produtos = [...items, { codigo: code, qtd: 1, trocas_permitidas: [] }];
+          }
+        } else {
+          const codes = productCodes(product);
+          basket.produtos = items.filter(item => !codes.has(text(item?.codigo)));
+        }
+        const saved = await saveCollectionList(
+          this.store.state.config, 'basket', workingList, this.store.state.products, [],
+          { changedId: id, previousId: id, originalCollection },
+        );
+        workingList = saved.list;
+      }
+      state.list = workingList;
+      state.originalIds = new Set(state.selectedIds);
+      return { changed: changedIds.length };
+    } finally {
+      state.saving = false;
+      this.renderBasketSection(this.store.getProduct(key));
+    }
   }
 
   async saveCurrent() {

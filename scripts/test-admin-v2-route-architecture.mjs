@@ -122,14 +122,14 @@ for (const removed of ['producao-v2/js/offer-store-bridge.js', 'producao-v2/js/i
 const productiveLoader = read('producao-v2/admin-produtivo.html');
 forbidText(productiveLoader, 'inline-sale-price-label.js', 'O carregador produtivo voltou a injetar o patch separado de preço.');
 forbidText(productiveLoader, "['./js/product-delete-tools.js'", 'O carregador produtivo voltou a injetar ações da rota Produtos no boot global.');
-requireText(productiveLoader, '20260810-route-architecture-v2', 'O carregador produtivo não está na build consolidada atual.');
+requireText(productiveLoader, '20260813-product-baskets-v1', 'O carregador produtivo não está na build consolidada atual.');
 requireText(productiveLoader, 'normalizeProductiveBuild', 'O carregador produtivo não normaliza o cache-busting da base.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')", 'O carregador produtivo voltou a carregar o editor de Kits no boot global.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'campaign-rules-section.js')", 'O carregador produtivo voltou a carregar regras de oferta no boot global.');
 
 for (const redirect of ['producao/index.html', 'admin/index.html']) {
   const source = read(redirect);
-  requireText(source, '20260810-route-architecture-v2', `${redirect} ainda aponta para uma build antiga do carregador.`);
+  requireText(source, '20260813-product-baskets-v1', `${redirect} ainda aponta para uma build antiga do carregador.`);
 }
 
 const adminIndex = read('producao-v2/index.html');
