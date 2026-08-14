@@ -3,7 +3,7 @@ import {
   cleanCpf, escapeHtml, fmt, formatCep, formatCpf, formatPhone,
   readStorage, writeStorage
 } from './core.js?v=20260727-5';
-import { calculateCartPricing } from './commerce.js?v=20260727-5';
+import { calculateCartPricing } from './commerce.js?v=20260814-cestas-v1';
 import {
   buildOrderPayload, buildWhatsAppMessage, dispatchQueuedOrderToMake, enqueueOrder,
   lookupClientByCpf, openWhatsApp, persistQueuedOrder, processOrderQueue, validateCheckoutData

@@ -2,11 +2,11 @@ import './offer-manager.js';
 import './commerce-enhancements.js';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { installCollectionImageResolver } from './collection-image-resolver.js';
-import { CollectionsModule } from './modules/collections.js';
-import './kit-lifecycle-admin.js';
-import './collection-concurrency.js';
+import { CollectionsModule } from './modules/collections.js?admin_build=20260814-cestas-limites-v1';
+import './kit-lifecycle-admin.js?admin_build=20260814-cestas-limites-v1';
+import './collection-concurrency.js?admin_build=20260814-cestas-limites-v1';
 import { loadProducts } from './services/firebase.js';
-import { loadCollections } from './services/collections.js';
+import { loadCollections } from './services/collections.js?admin_build=20260814-cestas-limites-v1';
 
 const BUILD = document.querySelector('meta[name="admin-save-build"]')?.content || '20260810-route-architecture-v1';
 let instagramEnhancementPromise = null;
@@ -39,7 +39,7 @@ function installCss() {
 }
 
 function panelMarkup() {
-  return `<section class="panel collections-workspace" id="collectionsWorkspace"><div class="panel-header"><div><span class="eyebrow">Coleções comerciais</span><h2>Cestas e kits</h2><p>Composição visual com troca rápida, estoque, substitutos e automações protegidas.</p></div><span class="badge info" id="collectionDataStatus">Carregando…</span></div><div class="collection-tabs" id="collectionTabs"><button class="active" type="button" data-collection-type="basket">Cestas básicas</button><button type="button" data-collection-type="kit">Kits promocionais</button></div><div class="attention-grid collection-summary" id="collectionSummary"></div><div class="collection-toolbar"><button class="button primary" id="collectionCreate" type="button">Nova cesta</button></div><div class="collection-cards" id="collectionCards"></div></section>`;
+  return `<section class="panel collections-workspace" id="collectionsWorkspace"><div class="panel-header"><div><span class="eyebrow">Coleções comerciais</span><h2>Cestas e kits</h2><p>Composição visual com troca rápida, estoque, substitutos e automações protegidas.</p></div><div class="suite-actions"><a class="button secondary" href="../cesta-mobile/">Abrir criador rápido</a><span class="badge info" id="collectionDataStatus">Carregando…</span></div></div><div class="collection-tabs" id="collectionTabs"><button class="active" type="button" data-collection-type="basket">Cestas básicas</button><button type="button" data-collection-type="kit">Kits promocionais</button></div><div class="attention-grid collection-summary" id="collectionSummary"></div><div class="collection-toolbar"><button class="button primary" id="collectionCreate" type="button">Nova cesta</button></div><div class="collection-cards" id="collectionCards"></div></section>`;
 }
 
 function editorMarkup() {

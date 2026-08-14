@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateCartPricing, couponIsValid, kitIsVisible } from '../src/commerce.js';
+import { basketIsVisible, basketStockCapacity, calculateCartPricing, couponIsValid, kitIsVisible } from '../src/commerce.js';
 
 function stateWith(product, coupon = null, qty = 1) {
   return {
@@ -121,4 +121,24 @@ test('mantém o ajuste oculto para cada unidade da mesma cesta', async () => {
   assert.equal(pricing.productsSubtotalBefore, 40);
   assert.equal(pricing.basketAdjustment, 10);
   assert.equal(pricing.total, 50);
+});
+
+test('respeita status e limite manual da cesta', async () => {
+  const { CartService } = await import('../src/commerce.js');
+  const product = { id: 'a', codigo: 'A', name: 'Produto A', price: 10, oldPrice: 10, stock: 20, situacao: '' };
+  const state = {
+    products: [product], productMap: new Map([[product.id, product]]),
+    productCodeMap: new Map([['a', product]]), productExactMap: new Map([['a', product]]),
+    virtualFees: {}, cart: {}, cartOrder: [], basketCustomizations: {}, basketDrafts: {},
+    favorites: new Set(), coupons: [], activeCouponCode: '', customerLookupStatus: 'new'
+  };
+  const basket = { id: 'limitada', nome: 'Cesta limitada', preco: 12, produtos: [{ codigo: 'A', qtd: 1 }], ativo: true, limiteIlimitado: false, limiteCestas: 1 };
+  assert.equal(basketStockCapacity(state, basket), 1);
+  assert.equal(basketIsVisible(state, basket), true);
+  assert.equal(basketIsVisible(state, { ...basket, ativo: false }), false);
+
+  const cart = new CartService({ getState: () => state, mutate(fn) { fn(state); } }, { emit() {} });
+  assert.equal(cart.addBasket(basket).ok, true);
+  assert.equal(cart.addBasket(basket).ok, false);
+  assert.equal(state.basketCustomizations['basket:limitada'].units, 1);
 });

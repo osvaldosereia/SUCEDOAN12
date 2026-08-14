@@ -3,7 +3,7 @@ import {
   codeVariants, norm, parseDate, parseMoney, readStorage, removeStorage,
   roundMoney, writeStorage
 } from './core.js?v=20260727-5';
-import { findProductByReference } from './catalog.js?v=20260727-5';
+import { findProductByReference } from './catalog.js?v=20260814-cestas-v1';
 import { basketFixedAdjustment } from './basket-pricing.js?v=20260727-4';
 
 export function applyProductOffer(product, now = new Date()) {
@@ -181,6 +181,25 @@ export function resolveBundleRows(state, bundle) {
     const product = references.map(reference => findProductByCode(state, reference)).find(candidate => candidate && isAvailable(candidate));
     return product ? { product, qty: parsed.qty } : null;
   }).filter(Boolean);
+}
+
+export function basketStockCapacity(state, basket) {
+  if (!basket || !basket.produtos?.length) return 0;
+  const rows = resolveBundleRows(state, basket);
+  if (rows.length !== basket.produtos.length) return 0;
+  const productCapacity = Math.min(...rows.map(row => Math.floor(Math.max(0, Number(row.product.stock || 0)) / Math.max(1, Number(row.qty || 1)))));
+  const manualLimit = basket.limiteIlimitado === false
+    ? Math.max(0, Math.floor(Number(basket.limiteCestas || 0)))
+    : 0;
+  if (basket.limiteIlimitado === false && manualLimit <= 0) return 0;
+  const publishedStock = Math.max(0, Math.floor(Number(basket.estoqueDisponivel || 0)));
+  const limited = manualLimit > 0 ? Math.min(productCapacity, manualLimit) : productCapacity;
+  return publishedStock > 0 ? Math.min(limited, publishedStock) : limited;
+}
+
+export function basketIsVisible(state, basket) {
+  if (!basket || basket.ativo === false || !Number(basket.preco || 0) || !basket.produtos?.length) return false;
+  return basketStockCapacity(state, basket) > 0;
 }
 
 export function kitDateIsActive(kit, now = new Date()) {
@@ -513,6 +532,7 @@ getProduct(id) {
 
   addBasket(basket, quantities = null) {
     const state = this.store.getState();
+    if (!basketIsVisible(state, basket)) return { ok: false, message: 'Esta cesta não está disponível.' };
     const rows = resolveBundleRows(state, basket);
     if (!rows.length) return { ok: false, message: 'Os produtos da cesta não estão disponíveis.' };
     const selected = quantities || Object.fromEntries(rows.map(row => [row.product.id, row.qty]));
@@ -526,6 +546,10 @@ getProduct(id) {
     const selectedItems = normalizeQuantityMap(selected);
     const fixedAdjustment = basketFixedAdjustment(basket, rows);
     const bundleKey = `basket:${basket.id}`;
+    const unitsInCart = Math.max(0, Math.floor(Number(state.basketCustomizations?.[bundleKey]?.units || 0)));
+    if (unitsInCart >= basketStockCapacity(state, basket)) {
+      return { ok: false, message: 'Você atingiu a quantidade disponível desta cesta.' };
+    }
     this.store.mutate(current => {
       Object.entries(selected).forEach(([id, qty]) => {
         const next = Number(current.cart[id] || 0) + Number(qty);
@@ -538,6 +562,7 @@ getProduct(id) {
         originalItems,
         selectedItems,
         fee: fixedAdjustment,
+        units: Number(current.basketCustomizations?.[bundleKey]?.units || 0) + 1,
         changed: quantityMapsDiffer(originalItems, selectedItems)
       };
       const feeId = `fee_${bundleKey}`;

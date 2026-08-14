@@ -1,7 +1,7 @@
-import { normalizeCollectionForPublish } from './core/collections.js';
+import { normalizeCollectionForPublish } from './core/collections.js?admin_build=20260814-cestas-limites-v1';
 import { clone, text } from './core/utils.js';
-import { CollectionsModule } from './modules/collections.js';
-import { saveCollectionList } from './services/collections.js';
+import { CollectionsModule } from './modules/collections.js?admin_build=20260814-cestas-limites-v1';
+import { saveCollectionList } from './services/collections.js?admin_build=20260814-cestas-limites-v1';
 
 if (!CollectionsModule.prototype.__productiveCollectionSaveInstalled) {
   Object.defineProperty(CollectionsModule.prototype, '__productiveCollectionSaveInstalled', { value: true });

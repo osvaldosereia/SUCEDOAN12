@@ -1,8 +1,8 @@
 import {
   auditCollection, auditCollections, collectionSearch, normalizeCollectionForPublish, resolveCollectionItem,
-} from '../core/collections.js';
+} from '../core/collections.js?admin_build=20260814-cestas-limites-v1';
 import { clone, debounce, escapeHtml, money, number, productCode, productKey, productName, text } from '../core/utils.js';
-import { saveCollectionList } from '../services/collections.js';
+import { saveCollectionList } from '../services/collections.js?admin_build=20260814-cestas-limites-v1';
 import { upsertBase64File } from '../services/github-binary.js';
 import { callMake, compactKitForMake, extractMakeImage, unwrapMakeResult } from '../services/make.js';
 
@@ -62,8 +62,10 @@ export class CollectionsModule {
     this.elements.collectionCards.addEventListener('click', event => {
       const edit = event.target.closest('[data-collection-edit]');
       const remove = event.target.closest('[data-collection-delete]');
+      const toggle = event.target.closest('[data-collection-toggle-active]');
       if (edit) this.openEditor(edit.dataset.collectionEdit);
       if (remove) this.deleteCollection(remove.dataset.collectionDelete);
+      if (toggle) this.toggleCollection(toggle.dataset.collectionToggleActive);
     });
     this.elements.collectionClose.addEventListener('click', () => this.closeEditor());
     this.elements.collectionCancel.addEventListener('click', () => this.closeEditor());
@@ -120,7 +122,7 @@ export class CollectionsModule {
       <div class="collection-card-metrics"><span><strong>${money(source.preco)}</strong>Preço definido</span><span><strong>${audit.items.length}</strong>Itens</span><span><strong>${audit.available}</strong>Disponíveis</span><span><strong>${money(audit.regularTotal)}</strong>Compra avulsa</span></div>
       ${this.type === 'kit' ? `<div class="collection-kit-row"><span>Economia <strong>${money(audit.economy)} · ${audit.discount}%</strong></span><span class="badge ${queueKind}">Instagram: ${escapeHtml(queueStatus)}</span></div>` : '<p class="collection-price-note">O valor da cesta permanece predefinido; a soma dos itens aparece apenas para conferência.</p>'}
       ${audit.errors.length ? `<div class="collection-errors">${audit.errors.slice(0, 3).map(error => `<div>${escapeHtml(error)}</div>`).join('')}</div>` : ''}
-      <div class="collection-card-actions"><button class="button secondary" type="button" data-collection-edit="${escapeHtml(source.id)}">Editar</button><button class="button ghost" type="button" data-collection-delete="${escapeHtml(source.id)}">Excluir</button></div></div>
+      <div class="collection-card-actions"><button class="button secondary" type="button" data-collection-edit="${escapeHtml(source.id)}">Editar</button>${this.type === 'basket' ? `<button class="button ghost" type="button" data-collection-toggle-active="${escapeHtml(source.id)}">${source.ativo === false ? 'Ativar' : 'Desativar'}</button>` : ''}<button class="button ghost" type="button" data-collection-delete="${escapeHtml(source.id)}">Excluir</button></div></div>
     </article>`;
   }
 
@@ -131,6 +133,7 @@ export class CollectionsModule {
     this.draft = existing ? clone(existing) : {
       id: `${this.type === 'kit' ? 'kit' : 'cesta'}${Date.now()}`,
       nome: '', codigo: '', preco: 0, imagem: '', produtos: [], descricao: '', ativo: true,
+      ...(this.type === 'basket' ? { limite_ilimitado: true, limite_cestas: 0 } : {}),
       ...(this.type === 'kit' ? { data_inicio: '', data_fim: '', limite_kits: 0 } : {}),
     };
     if (this.type === 'basket') {
@@ -175,6 +178,7 @@ export class CollectionsModule {
       <label>ID<input data-collection-field="id" value="${escapeHtml(draft.id || '')}"></label>
       <label class="span-2">URL/caminho da imagem<input data-collection-field="imagem" value="${escapeHtml(draft.imagem || '')}"></label>
       ${this.type === 'kit' ? `<label>Início<input type="date" data-collection-field="data_inicio" value="${escapeHtml(draft.data_inicio || '')}"></label><label>Fim<input type="date" data-collection-field="data_fim" value="${escapeHtml(draft.data_fim || '')}"></label><label>Limite de kits<input type="number" min="0" step="1" data-collection-field="limite_kits" value="${escapeHtml(draft.limite_kits || 0)}"></label><label class="switch-row"><span><strong>Kit ativo</strong><small>Período e estoque também são validados.</small></span><input type="checkbox" data-collection-field="ativo" ${draft.ativo !== false ? 'checked' : ''}></label>` : ''}
+      ${this.type === 'basket' ? `<label>Limite de cestas<input type="number" min="1" step="1" data-collection-field="limite_cestas" value="${escapeHtml(draft.limite_cestas || '')}" ${draft.limite_ilimitado !== false ? 'disabled' : ''}></label><label class="switch-row"><span><strong>Quantidade ilimitada</strong><small>Quando ativo, somente o estoque dos produtos limita a venda.</small></span><input type="checkbox" data-collection-field="limite_ilimitado" ${draft.limite_ilimitado !== false ? 'checked' : ''}></label><label class="switch-row span-2"><span><strong>Cesta ativa</strong><small>Desative para retirar do site sem excluir o cadastro.</small></span><input type="checkbox" data-collection-field="ativo" ${draft.ativo !== false ? 'checked' : ''}></label>` : ''}
       <label class="span-2">Descrição<textarea data-collection-field="descricao">${escapeHtml(draft.descricao || '')}</textarea></label>
     </div>`;
   }
@@ -192,8 +196,12 @@ export class CollectionsModule {
     const field = event.target.dataset.collectionField;
     if (!field || !this.draft) return;
     let value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-    if (['preco', 'limite_kits'].includes(field)) value = number(value);
+    if (['preco', 'limite_kits', 'limite_cestas'].includes(field)) value = number(value);
     this.draft[field] = value;
+    if (field === 'limite_ilimitado') {
+      const limitInput = this.elements.collectionForm.querySelector('[data-collection-field="limite_cestas"]');
+      if (limitInput) limitInput.disabled = Boolean(value);
+    }
     if (field === 'imagem') {
       const cover = this.elements.collectionForm.querySelector('.ux-collection-cover img');
       if (cover) cover.src = value || PLACEHOLDER;
@@ -400,7 +408,7 @@ export class CollectionsModule {
     const audit = auditCollection(this.draft, this.type, this.store.state.products, this.store.state.queue);
     const issues = [...audit.errors.map(message => ['danger', message]), ...audit.warnings.map(message => ['warning', message])];
     const belowThirty = audit.items.filter(item => number(item.resolved?.product?.estoque) < LOW_STOCK_LIMIT).length;
-    this.elements.collectionAudit.innerHTML = `<div class="collection-audit-metrics"><div><strong>${money(audit.configuredPrice)}</strong><span>Preço definido</span></div><div><strong>${money(audit.regularTotal)}</strong><span>Soma dos itens</span></div><div><strong>${audit.available}</strong><span>Disponíveis</span></div><div><strong>${belowThirty}</strong><span>Itens abaixo de 30</span></div></div>${issues.length ? `<div class="collection-audit-issues">${issues.map(([kind, message]) => `<div class="${kind}">${escapeHtml(message)}</div>`).join('')}</div>` : '<div class="collection-audit-ready">Cadastro válido para publicação.</div>'}`;
+    this.elements.collectionAudit.innerHTML = `<div class="collection-audit-metrics"><div><strong>${money(audit.configuredPrice)}</strong><span>Preço definido</span></div><div><strong>${money(audit.regularTotal)}</strong><span>Soma dos itens</span></div><div><strong>${audit.available}</strong><span>Disponíveis</span></div><div><strong>${this.type === 'basket' ? money(audit.hiddenAdjustment) : belowThirty}</strong><span>${this.type === 'basket' ? 'Ajuste oculto' : 'Itens abaixo de 30'}</span></div></div>${issues.length ? `<div class="collection-audit-issues">${issues.map(([kind, message]) => `<div class="${kind}">${escapeHtml(message)}</div>`).join('')}</div>` : '<div class="collection-audit-ready">Cadastro válido para publicação.</div>'}`;
     const config = this.reloadConfig();
     this.elements.collectionSave.disabled = !(audit.errors.length === 0 && config.writeMode && config.collectionsWriteMode);
     this.elements.collectionSafety.textContent = config.writeMode && config.collectionsWriteMode
@@ -524,9 +532,35 @@ export class CollectionsModule {
     const config = this.reloadConfig();
     const list = this.currentList().filter(collection => text(collection.id) !== String(id));
     try {
-      const saved = await saveCollectionList(config, this.type, list, this.store.state.products, this.store.state.queue);
+      const saved = await saveCollectionList(config, this.type, list, this.store.state.products, this.store.state.queue, {
+        deletedId: text(id),
+        preserveInvalidExisting: true,
+      });
       this.setCurrentList(saved.list);
       this.onToast('Cadastro removido e arquivo atualizado.', 'success');
+      await this.onReload();
+    } catch (error) {
+      this.onToast(error?.message || String(error), 'error');
+    }
+  }
+
+  async toggleCollection(id) {
+    if (this.type !== 'basket') return;
+    const target = this.currentList().find(collection => text(collection.id) === String(id));
+    if (!target) return;
+    const nextActive = target.ativo === false;
+    const list = clone(this.currentList());
+    const index = list.findIndex(collection => text(collection.id) === String(id));
+    list[index] = { ...list[index], ativo: nextActive, atualizado_em: new Date().toISOString() };
+    try {
+      const saved = await saveCollectionList(this.reloadConfig(), this.type, list, this.store.state.products, this.store.state.queue, {
+        changedId: text(id),
+        previousId: text(id),
+        originalCollection: target,
+        preserveInvalidExisting: true,
+      });
+      this.setCurrentList(saved.list);
+      this.onToast(`Cesta ${nextActive ? 'ativada' : 'desativada'} e publicada.`, 'success');
       await this.onReload();
     } catch (error) {
       this.onToast(error?.message || String(error), 'error');

@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js?v=20260727-5';
-import { loadCatalog } from './catalog.js?v=20260727-5';
-import { kitIsVisible, kitOriginalPrice, kitStockCapacity, resolveBundleRows } from './commerce.js?v=20260727-5';
+import { loadCatalog } from './catalog.js?v=20260814-cestas-v1';
+import { basketIsVisible, basketStockCapacity, kitIsVisible, kitOriginalPrice, kitStockCapacity } from './commerce.js?v=20260814-cestas-v1';
 import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js?v=20260727-4';
 
 const CLEAN_SECTION_PATHS = Object.freeze({ baskets: '/cestas/', kits: '/kits/' });
@@ -134,15 +134,9 @@ function homeMeta(section = '') {
   setJsonLd(null);
 }
 
-function basketCapacity(data, bundle) {
-  const rows = resolveBundleRows(data, bundle);
-  if (!bundle?.produtos?.length || rows.length !== bundle.produtos.length) return 0;
-  return Math.min(...rows.map(row => Math.floor(Math.max(0, Number(row.product.stock || 0)) / Math.max(1, Number(row.qty || 1)))));
-}
-
 function comboAvailability(data, bundle, type) {
   if (type === 'kit') return kitIsVisible(data, bundle) && kitStockCapacity(data, bundle) > 0;
-  return basketCapacity(data, bundle) > 0;
+  return basketIsVisible(data, bundle) && basketStockCapacity(data, bundle) > 0;
 }
 
 function comboMeta(data, bundle, type) {

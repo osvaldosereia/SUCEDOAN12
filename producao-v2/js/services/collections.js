@@ -1,5 +1,5 @@
 import { catalogVersionPayload } from '../core/catalog.js';
-import { COLLECTION_PATHS, normalizeCollectionForPublish } from '../core/collections.js';
+import { COLLECTION_PATHS, normalizeCollectionForPublish } from '../core/collections.js?admin_build=20260814-cestas-limites-v1';
 import { clone, text } from '../core/utils.js';
 import { readJsonFile, upsertText } from './github.js';
 

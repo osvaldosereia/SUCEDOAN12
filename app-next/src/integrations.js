@@ -3,7 +3,7 @@ import {
   cleanCep, cleanCpf, cleanPhone, fmt, formatCep, formatPhone,
   parseDate, readStorage, roundMoney, validEmail, validPhone, writeStorage
 } from './core.js?v=20260727-5';
-import { calculateCartPricing, isAvailable } from './commerce.js?v=20260727-5';
+import { calculateCartPricing, isAvailable } from './commerce.js?v=20260814-cestas-v1';
 
 export function normalizePayment(code) {
   const key = String(code || '').trim().toUpperCase();

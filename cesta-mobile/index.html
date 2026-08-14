@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#173f2a">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>Criador rápido de cestas · Dona Antônia</title>
+  <link rel="stylesheet" href="../operacoes-mobile.css?v=20260814-suite-cestas-v1">
+  <link rel="stylesheet" href="./cesta-mobile.css?v=20260814-cestas-v1">
+</head>
+<body class="ops-suite ops-cestas">
+<header class="ops-topbar">
+  <div class="ops-topbar-inner">
+    <div class="ops-topbar-main">
+      <div class="ops-brand">
+        <div class="ops-brand-mark">DA</div>
+        <div class="ops-brand-copy"><strong class="ops-brand-title">Criador rápido de cestas</strong><small class="ops-brand-subtitle">Produtos Firebase · Cestas Admin Produção</small></div>
+      </div>
+      <div class="ops-actions">
+        <button class="ops-icon-button" id="reloadButton" type="button" aria-label="Atualizar dados">↻</button>
+        <button class="ops-icon-button" id="settingsButton" type="button" aria-label="Configurações">⚙</button>
+      </div>
+    </div>
+    <nav class="ops-app-nav" aria-label="Trocar aplicação">
+      <a href="../contagem/"><span class="ops-app-nav-icon">📦</span><span>Contagem</span></a>
+      <a href="../cadastro/"><span class="ops-app-nav-icon">➕</span><span>Cadastro</span></a>
+      <a href="../validades/"><span class="ops-app-nav-icon">📅</span><span>Validades</span></a>
+      <a class="active" aria-current="page" href="../cesta-mobile/"><span class="ops-app-nav-icon">🧺</span><span>Cestas</span></a>
+      <a href="../kit-mobile/"><span class="ops-app-nav-icon">🎁</span><span>Kits</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="basket-main">
+  <div class="status-strip" aria-live="polite">
+    <span class="status-chip warn" id="connectionStatus">Carregando dados…</span>
+    <span class="status-chip" id="productsStatus">0 produtos</span>
+    <span class="status-chip" id="basketsStatus">0 cestas</span>
+  </div>
+
+  <nav class="workspace-tabs" aria-label="Área de cestas">
+    <button class="active" type="button" data-workspace="editor">Criar cesta</button>
+    <button type="button" data-workspace="list">Todas as cestas <span id="basketCount">0</span></button>
+  </nav>
+
+  <section id="editorWorkspace" class="basket-workspace">
+    <section class="card step-card">
+      <div class="card-head"><span class="step-number">1</span><div><strong>Leia o EAN ou procure pelo nome</strong><small>O leitor de código de barras pode digitar diretamente no campo. Também é possível fotografar o EAN.</small></div></div>
+      <div class="card-body">
+        <div class="scan-grid">
+          <input id="productSearch" class="field" autocomplete="off" inputmode="search" placeholder="EAN, código ou nome do produto">
+          <button id="addTypedButton" class="btn primary" type="button">Adicionar</button>
+          <button id="photoButton" class="btn secondary" type="button">📷 Fotografar EAN</button>
+          <input id="photoInput" type="file" accept="image/*" capture="environment" hidden>
+        </div>
+        <div id="searchResults" class="search-results"></div>
+      </div>
+    </section>
+
+    <section class="card step-card">
+      <div class="card-head"><span class="step-number">2</span><div><strong>Produtos da cesta</strong><small>Ajuste a quantidade de cada produto. Itens repetidos são somados automaticamente.</small></div></div>
+      <div class="card-body"><div id="basketItems" class="basket-items"><div class="empty-state">Nenhum produto adicionado.</div></div></div>
+    </section>
+
+    <section class="card step-card">
+      <div class="card-head"><span class="step-number">3</span><div><strong>Nome, valor e disponibilidade</strong><small>A diferença entre a soma dos produtos e o valor final será mantida como ajuste oculto no pedido.</small></div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <label class="span-2">Nome da cesta<input id="basketName" class="field" maxlength="80" placeholder="Ex.: Cesta Econômica Bonini"></label>
+          <label>Código<input id="basketCode" class="field" maxlength="80" placeholder="Gerado pelo nome"></label>
+          <label>Valor final da cesta<input id="basketPrice" class="field" type="number" min="0" step="0.01" inputmode="decimal"></label>
+          <label class="toggle-card"><input id="basketActive" type="checkbox" checked><span><strong>Cesta ativa</strong><small>Aparece no site quando os produtos estiverem disponíveis.</small></span></label>
+          <label class="toggle-card"><input id="unlimitedLimit" type="checkbox" checked><span><strong>Quantidade ilimitada</strong><small>O estoque dos produtos ainda é respeitado.</small></span></label>
+          <label id="limitField">Quantidade máxima de cestas<input id="basketLimit" class="field" type="number" min="1" step="1" inputmode="numeric" disabled></label>
+          <label class="span-2">Descrição opcional<textarea id="basketDescription" class="field" maxlength="240" placeholder="Descrição curta para o site"></textarea></label>
+        </div>
+        <div class="financial-summary">
+          <div><span>Soma dos produtos</span><strong id="productsTotal">R$ 0,00</strong></div>
+          <div><span>Valor final</span><strong id="finalTotal">R$ 0,00</strong></div>
+          <div class="hidden-adjustment"><span>Ajuste oculto</span><strong id="hiddenAdjustment">R$ 0,00</strong></div>
+          <div><span>Disponíveis agora</span><strong id="availableTotal">0</strong></div>
+        </div>
+        <div id="editorMessage" class="editor-message"></div>
+        <div class="editor-actions">
+          <button id="resetButton" class="btn secondary" type="button">Limpar</button>
+          <button id="saveButton" class="btn primary" type="button">Salvar e publicar cesta</button>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <section id="listWorkspace" class="basket-workspace" hidden>
+    <section class="card list-card">
+      <div class="list-toolbar">
+        <div><strong>Todas as cestas</strong><small>Ativas e inativas do mesmo arquivo usado pelo Produção Admin.</small></div>
+        <input id="basketFilter" class="field" type="search" placeholder="Pesquisar cesta">
+      </div>
+      <div id="basketList" class="basket-list"></div>
+    </section>
+  </section>
+</main>
+
+<div id="settingsBackdrop" class="drawer-backdrop" hidden></div>
+<aside id="settingsDrawer" class="settings-drawer" aria-hidden="true">
+  <header><div><strong>Configurações</strong><small>Compartilhadas com o Produção Admin e o Criador de Kits.</small></div><button id="closeSettingsButton" type="button" aria-label="Fechar">×</button></header>
+  <div class="settings-body">
+    <label>Token GitHub<input id="githubToken" class="field" type="password" autocomplete="off"></label>
+    <label>Firebase URL<input id="firebaseUrl" class="field" type="url"></label>
+    <label>Nó de produtos<input id="productsNode" class="field"></label>
+    <label>Arquivo oficial das cestas<input id="basketsPath" class="field"></label>
+    <button id="saveSettingsButton" class="btn primary" type="button">Salvar configurações</button>
+  </div>
+</aside>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="busy" class="busy" hidden><div><strong id="busyTitle">Processando…</strong><span id="busyText">Aguarde.</span></div></div>
+
+<script type="module" src="./cesta-mobile.js?v=20260814-cestas-v1"></script>
+</body>
+</html>

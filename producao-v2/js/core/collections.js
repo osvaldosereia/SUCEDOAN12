@@ -86,6 +86,8 @@ export function auditCollection(collection, type, products = [], queue = [], { t
   const index = collectionProductIndex(products);
   const items = Array.isArray(source.produtos) ? source.produtos : [];
   const stockControlled = type === 'kit' && source.ativo_ate_estoque_zero === true;
+  const basketUnlimited = type === 'basket' && source.limite_ilimitado !== false;
+  const basketLimit = type === 'basket' ? Math.max(0, Math.floor(number(source.limite_cestas))) : 0;
 
   if (!text(source.id)) errors.push('ID ausente');
   if (!text(source.nome)) errors.push('Nome ausente');
@@ -94,6 +96,7 @@ export function auditCollection(collection, type, products = [], queue = [], { t
   if (!items.length) errors.push('Composição vazia');
   if (/^data:image\//i.test(text(source.imagem))) errors.push('Imagem base64 precisa ser publicada no GitHub');
   if (!text(source.imagem)) warnings.push('Imagem ausente');
+  if (type === 'basket' && !basketUnlimited && basketLimit <= 0) errors.push('Informe o limite de cestas ou marque como ilimitado');
 
   let regularTotal = 0;
   let available = Infinity;
@@ -159,7 +162,9 @@ export function auditCollection(collection, type, products = [], queue = [], { t
   });
 
   if (!Number.isFinite(available)) available = 0;
+  if (type === 'basket' && !basketUnlimited) available = Math.min(available, basketLimit);
   const price = round(source.preco);
+  const hiddenAdjustment = round(price - regularTotal);
   const economy = round(Math.max(0, regularTotal - price));
   const discount = regularTotal > 0 ? round((economy / regularTotal) * 100) : 0;
   let active = source.ativo !== false;
@@ -202,9 +207,10 @@ export function auditCollection(collection, type, products = [], queue = [], { t
     items: resolvedItems,
     regularTotal: round(regularTotal),
     configuredPrice: price,
+    hiddenAdjustment,
     economy,
     discount,
-    available: Math.max(0, Math.min(available, Number(source.limite_kits || available || 0) || available)),
+    available: Math.max(0, Math.min(available, Number(type === 'kit' ? source.limite_kits : available) || available)),
     active,
     periodStatus,
     queueEntry,
@@ -233,6 +239,14 @@ export function normalizeCollectionForPublish(collection, type, products = [], q
           .filter(code => code !== text(item.codigo)) }),
   }));
   if (type === 'basket') normalized.produtos.forEach(item => { delete item.substitutos; });
+
+  if (type === 'basket') {
+    normalized.ativo = normalized.ativo !== false;
+    normalized.limite_ilimitado = normalized.limite_ilimitado !== false;
+    normalized.limite_cestas = normalized.limite_ilimitado
+      ? 0
+      : Math.max(1, Math.floor(number(normalized.limite_cestas)));
+  }
 
   if (type === 'kit') {
     const stockControlled = normalized.ativo_ate_estoque_zero === true;

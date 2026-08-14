@@ -1,12 +1,12 @@
 import { CONFIG, ROUTINES } from './config.js?v=20260727-7';
 import { escapeHtml, fmt, formatDateBR, norm, slug } from './core.js?v=20260727-7';
-import { findProductByReference, searchProducts } from './catalog.js?v=20260727-7';
+import { findProductByReference, searchProducts } from './catalog.js?v=20260814-cestas-v1';
 import { comboSeoPath, findBasketByReference, findKitByReference } from './bundle-routes.js?v=20260727-4';
 import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import {
-  applyProductOffer, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
+  applyProductOffer, basketIsVisible, basketStockCapacity, calculateCartPricing, hasExpiryBulkDiscount, isAvailable,
   kitDiscountPercent, kitIsVisible, kitOriginalPrice, productDisplayPricing, resolveBundleRows
-} from './commerce.js?v=20260727-5';
+} from './commerce.js?v=20260814-cestas-v1';
 
 const FALLBACK_IMAGE = '/img/logoantonia5.png';
 const HOME_BUNDLE_LIMIT = 100;
@@ -135,9 +135,11 @@ function categoryCards(state) {
   return `<div class="category-grid">${categoryData(state).map(([name, data], index) => `<a class="category-card" href="#/categoria/${encodeURIComponent(name)}"><img ${index < 8 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" src="${escapeHtml(data.image || FALLBACK_IMAGE)}" alt=""><span><strong>${escapeHtml(name)}</strong><small>${data.count} produtos</small></span></a>`).join('')}</div>`;
 }
 
-function basketCard(basket, index = 0) {
+function basketCard(state, basket, index = 0) {
   const href = comboSeoPath(basket, 'basket');
-  return `<article class="bundle-card"><a class="bundle-media" href="${href}"><img ${index < 4 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}"></a><div class="bundle-card-copy"><a class="bundle-name" href="${href}">${escapeHtml(basket.nome)}</a><p>${escapeHtml(truncate(basket.descricao, 90))}</p><div class="bundle-price">${basket.precoOriginal > basket.preco ? `<s>${fmt(basket.precoOriginal)}</s>` : ''}<strong>${basket.preco ? fmt(basket.preco) : 'Ver itens'}</strong></div><a class="secondary-button" href="${href}">Ver produtos</a></div></article>`;
+  const available = basketStockCapacity(state, basket);
+  const limited = basket.limiteIlimitado === false;
+  return `<article class="bundle-card"><a class="bundle-media" href="${href}"><img ${index < 4 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async" src="${escapeHtml(basket.imagem)}" alt="${escapeHtml(basket.nome)}"></a><div class="bundle-card-copy"><a class="bundle-name" href="${href}">${escapeHtml(basket.nome)}</a><p>${escapeHtml(truncate(basket.descricao, 90))}</p>${limited ? `<small class="bundle-availability">Somente ${available} disponível${available === 1 ? '' : 'is'}</small>` : ''}<div class="bundle-price">${basket.precoOriginal > basket.preco ? `<s>${fmt(basket.precoOriginal)}</s>` : ''}<strong>${basket.preco ? fmt(basket.preco) : 'Ver itens'}</strong></div><a class="secondary-button" href="${href}">Ver produtos</a></div></article>`;
 }
 
 function kitCard(state, kit, index = 0) {
@@ -174,7 +176,7 @@ function publicFooterHtml() {
 function homePage(context) {
   const { state, personalization } = context;
   const activeKits = state.kits.filter(kit => kitIsVisible(state, kit)).slice(0, HOME_BUNDLE_LIMIT);
-  const baskets = state.baskets.slice(0, HOME_BUNDLE_LIMIT);
+  const baskets = state.baskets.filter(basket => basketIsVisible(state, basket)).slice(0, HOME_BUNDLE_LIMIT);
   const selected = personalization.recommendations(8);
   const recent = personalization.recentProducts(8);
   const buyAgain = personalization.buyAgain(6);
@@ -182,7 +184,7 @@ function homePage(context) {
     <h1 class="sr-only">Cestas básicas com delivery em Cuiabá e Várzea Grande</h1>
     ${paymentNoticesHtml()}
     ${basketSeoIntro()}
-    ${section('Cestas básicas', 'Confira a composição completa antes de escolher.', baskets.length ? `<div class="bundle-grid">${baskets.map((basket, index) => basketCard(basket, index)).join('')}</div>` : '', '/cestas/')}
+    ${section('Cestas básicas', 'Confira a composição completa antes de escolher.', baskets.length ? `<div class="bundle-grid">${baskets.map((basket, index) => basketCard(state, basket, index)).join('')}</div>` : '', '/cestas/')}
     ${section('Kits promocionais', 'Combos ativos e com quantidades fixas.', activeKits.length ? `<div class="bundle-grid">${activeKits.map((kit, index) => kitCard(state, kit, index)).join('')}</div>` : '', '/kits/')}
     ${offersBannerHtml()}
     ${section('Categorias', 'Escolha um setor.', categoryCards(state), '#/categorias')}
@@ -256,13 +258,13 @@ function productPage(context, reference) {
 }
 
 function basketsPage(context) {
-  const baskets = context.state.baskets.slice(0, HOME_BUNDLE_LIMIT);
-  return `<div class="page-container">${pageHeader('Cestas básicas', 'Compare tamanhos, preços e todos os produtos.')}${basketSeoIntro()}${baskets.length ? `<div class="bundle-grid">${baskets.map((basket, index) => basketCard(basket, index)).join('')}</div>` : empty('Nenhuma cesta disponível', 'O catálogo de cestas ainda não possui itens.')}</div>`;
+  const baskets = context.state.baskets.filter(basket => basketIsVisible(context.state, basket)).slice(0, HOME_BUNDLE_LIMIT);
+  return `<div class="page-container">${pageHeader('Cestas básicas', 'Compare tamanhos, preços e todos os produtos.')}${basketSeoIntro()}${baskets.length ? `<div class="bundle-grid">${baskets.map((basket, index) => basketCard(context.state, basket, index)).join('')}</div>` : empty('Nenhuma cesta disponível', 'O catálogo de cestas ainda não possui itens.')}</div>`;
 }
 
 function basketPage(context, id) {
   const basket = findBasketByReference(context.state, id);
-  if (!basket) return `<div class="page-container">${pageHeader('Cesta não encontrada', '', '/cestas/')}${empty('Cesta indisponível', 'Escolha outra cesta.')}</div>`;
+  if (!basket || !basketIsVisible(context.state, basket)) return `<div class="page-container">${pageHeader('Cesta não encontrada', '', '/cestas/')}${empty('Cesta indisponível', 'Escolha outra cesta.')}</div>`;
   const rows = resolveBundleRows(context.state, basket);
   const draft = context.state.basketDrafts[`basket:${basket.id}`] || Object.fromEntries(rows.map(row => [row.product.id, row.qty]));
   const total = basketDraftTotal(context.state.productMap, basket, rows, draft);

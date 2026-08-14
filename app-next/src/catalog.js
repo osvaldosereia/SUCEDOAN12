@@ -154,7 +154,11 @@ export function normalizeBaskets(data) {
     preco: parseMoney(item.preco || item.price || 0),
     precoOriginal: parseMoney(item.precoOriginal || item.preco_original || 0),
     produtos: item.produtos || [],
-    validade: item.validade || ''
+    validade: item.validade || '',
+    limiteIlimitado: item.limite_ilimitado !== false && item.limiteIlimitado !== false,
+    limiteCestas: Math.max(0, Math.floor(parseMoney(item.limite_cestas || item.limiteCestas || 0))),
+    estoqueDisponivel: Math.max(0, Math.floor(parseMoney(item.estoque_disponivel || item.estoqueDisponivel || 0))),
+    ativo: item.ativo !== false
   }));
 }
 

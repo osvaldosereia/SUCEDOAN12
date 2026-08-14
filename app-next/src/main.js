@@ -1,13 +1,13 @@
 import { CONFIG } from './config.js?v=20260727-7';
 import { createEventBus, createInitialState, createRouter, createStore, escapeHtml, fmt } from './core.js?v=20260727-7';
-import { indexProducts, loadCatalog } from './catalog.js?v=20260727-7';
-import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js?v=20260727-5';
+import { indexProducts, loadCatalog } from './catalog.js?v=20260814-cestas-v1';
+import { applyProductOffer, calculateCartPricing, CartService, resolveBundleRows } from './commerce.js?v=20260814-cestas-v1';
 import { prepareProductOffer } from './offer-engine.js?v=20260727-4';
 import { basketDraftTotal } from './basket-pricing.js?v=20260727-4';
 import { createPersonalization } from './personalization.js?v=20260727-4';
-import { createUI } from './ui.js?v=20260727-7';
-import { createCheckout } from './checkout.js?v=20260811-1';
-import { processOrderQueue } from './integrations.js?v=20260811-1';
+import { createUI } from './ui.js?v=20260814-cestas-v1';
+import { createCheckout } from './checkout.js?v=20260814-cestas-v1';
+import { processOrderQueue } from './integrations.js?v=20260814-cestas-v1';
 
 const events = createEventBus();
 const store = createStore(createInitialState());

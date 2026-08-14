@@ -1,6 +1,6 @@
-import { CollectionsModule } from './modules/collections.js';
+import { CollectionsModule } from './modules/collections.js?admin_build=20260814-cestas-limites-v1';
 import { clone, escapeHtml, text } from './core/utils.js';
-import { saveCollectionList } from './services/collections.js';
+import { saveCollectionList } from './services/collections.js?admin_build=20260814-cestas-limites-v1';
 
 const BUILD = '20260729-save-merge-v1';
 
