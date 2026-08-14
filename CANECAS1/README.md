@@ -57,3 +57,7 @@ https://estudio-canecas-dona-antonia.juniorsereia.chatgpt.site
 ## Isolamento
 
 Todo o código deste projeto fica dentro de `CANECAS1/`. Nenhum arquivo da pasta antiga `canecas/` deve ser alterado por este projeto.
+
+## Administrador
+
+A rota `/admin` contém a primeira versão interativa da central de gestão, com dashboard, usuários, moderação, modelos, categorias, fila de automações, créditos, premiações, pedidos, relatórios e configurações. Nesta etapa os dados são demonstrativos; Firebase e Make serão conectados na fase funcional.
