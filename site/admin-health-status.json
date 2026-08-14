@@ -1,19 +1,143 @@
 {
+  "checkedAt": "2026-08-14T13:58:57.424Z",
+  "baseUrl": "https://donaantonia.com.br",
   "ok": false,
+  "checks": [
+    {
+      "name": "Todas as 18 abas passam no teste estrutural",
+      "ok": false,
+      "detail": "Admin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\nCommand failed: /opt/hostedtoolcache/node/22.23.2/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\n"
+    },
+    {
+      "name": "Entrada /producao aponta para o Admin oficial",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1786715939339"
+    },
+    {
+      "name": "Atalho /admin aponta para o Admin oficial",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1786715939865"
+    },
+    {
+      "name": "Admin oficial carregado",
+      "ok": true,
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1786715940002"
+    },
+    {
+      "name": "Módulos ativos do Admin estão publicados",
+      "ok": true,
+      "detail": "12 módulos acessíveis"
+    },
+    {
+      "name": "Módulo de Estoque publicado com atualização correta",
+      "ok": true,
+      "detail": "OK · /producao-v2/js/modules/stock.js"
+    },
+    {
+      "name": "Bootstrap de rotas publicado sem dependências removidas",
+      "ok": true,
+      "detail": "OK · /producao-v2/js/stock-bootstrap.js"
+    },
+    {
+      "name": "Contingência publicada sem ciclo de renderização",
+      "ok": true,
+      "detail": "OK · /producao-v2/js/order-tools-bootstrap.js"
+    },
+    {
+      "name": "Catálogo público possui produtos",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/produtos-home.json: Unexpected token 'm', \"m�\u001e�\"��鮇n�\"... is not valid JSON"
+    },
+    {
+      "name": "Índice administrativo possui todos os produtos",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/produtos-admin.json: Unexpected token 'm', \"m�\u001e�\"��鮇n�\"... is not valid JSON"
+    },
+    {
+      "name": "Runtime do Admin carrega lista e cadastro completo",
+      "ok": false,
+      "detail": "1673 produto(s) em 1031 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+    },
+    {
+      "name": "Pedidos usam consulta limitada no Firebase",
+      "ok": true,
+      "detail": "12 pedido(s) retornado(s) em 64 ms · limite solicitado 12 · chaves OK"
+    },
+    {
+      "name": "Versão do catálogo válida",
+      "ok": false,
+      "detail": "catalog-5996b8b29223fae6 · público 1535 · admin 1668"
+    },
+    {
+      "name": "Banners permanecem removidos",
+      "ok": true,
+      "detail": "disabled=true · 0 banner(s)"
+    },
+    {
+      "name": "Arquivo de cupons válido",
+      "ok": true,
+      "detail": "3 cupom(ns)"
+    },
+    {
+      "name": "Arquivo de Compra Rápida permanece válido para integrações legadas",
+      "ok": true,
+      "detail": "6 seção(ões)"
+    },
+    {
+      "name": "Histórico de ofertas válido",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/ofertas-historico.json: Unexpected token 'm', \"m�\u001e�\"���}�\"... is not valid JSON"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/ofertas-automaticas-estado.json: Unexpected token 'm', \"m�\u001e�\"���}�\"... is not valid JSON"
+    }
+  ],
   "errors": [
     {
-      "name": "healthcheck",
-      "detail": "Relatório não foi gerado"
+      "name": "Todas as 18 abas passam no teste estrutural",
+      "ok": false,
+      "detail": "Admin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\nCommand failed: /opt/hostedtoolcache/node/22.23.2/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\n"
+    },
+    {
+      "name": "Catálogo público possui produtos",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/produtos-home.json: Unexpected token 'm', \"m�\u001e�\"��鮇n�\"... is not valid JSON"
+    },
+    {
+      "name": "Índice administrativo possui todos os produtos",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/produtos-admin.json: Unexpected token 'm', \"m�\u001e�\"��鮇n�\"... is not valid JSON"
+    },
+    {
+      "name": "Runtime do Admin carrega lista e cadastro completo",
+      "ok": false,
+      "detail": "1673 produto(s) em 1031 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+    },
+    {
+      "name": "Versão do catálogo válida",
+      "ok": false,
+      "detail": "catalog-5996b8b29223fae6 · público 1535 · admin 1668"
+    },
+    {
+      "name": "Histórico de ofertas válido",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/ofertas-historico.json: Unexpected token 'm', \"m�\u001e�\"���}�\"... is not valid JSON"
+    },
+    {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "https://donaantonia.com.br/site/ofertas-automaticas-estado.json: Unexpected token 'm', \"m�\u001e�\"���}�\"... is not valid JSON"
     }
   ],
   "warnings": [],
-  "checks": [],
   "workflow": {
     "event": "push",
-    "runId": "31806876585",
+    "runId": "31807085808",
     "attempt": "1",
-    "sourceSha": "52c2a2d0c18b960ec49cb7e951ed52eed636cedb",
+    "sourceSha": "947bcded61cd397a8a5d14e58bc95d8dd2b55654",
     "architecture": "success",
-    "publishedAt": "2026-08-14T13:56:52.995Z"
+    "publishedAt": "2026-08-14T14:01:06.956Z"
   }
 }
