@@ -1,107 +1,19 @@
 {
-  "checkedAt": "2026-08-14T05:01:11.546Z",
-  "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
-  "checks": [
+  "ok": false,
+  "errors": [
     {
-      "name": "Todas as 18 abas passam no teste estrutural",
-      "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 79 arquivos JavaScript, imports e ciclo dos kits confirmados."
-    },
-    {
-      "name": "Entrada /producao aponta para o Admin oficial",
-      "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1786683673580"
-    },
-    {
-      "name": "Atalho /admin aponta para o Admin oficial",
-      "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1786683674194"
-    },
-    {
-      "name": "Admin oficial carregado",
-      "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1786683674278"
-    },
-    {
-      "name": "Módulos ativos do Admin estão publicados",
-      "ok": true,
-      "detail": "12 módulos acessíveis"
-    },
-    {
-      "name": "Módulo de Estoque publicado com atualização correta",
-      "ok": true,
-      "detail": "OK · /producao-v2/js/modules/stock.js"
-    },
-    {
-      "name": "Bootstrap de rotas publicado sem dependências removidas",
-      "ok": true,
-      "detail": "OK · /producao-v2/js/stock-bootstrap.js"
-    },
-    {
-      "name": "Contingência publicada sem ciclo de renderização",
-      "ok": true,
-      "detail": "OK · /producao-v2/js/order-tools-bootstrap.js"
-    },
-    {
-      "name": "Catálogo público possui produtos",
-      "ok": true,
-      "detail": "1536 produto(s)"
-    },
-    {
-      "name": "Índice administrativo possui todos os produtos",
-      "ok": true,
-      "detail": "1664 produto(s) administrativos · 1536 público(s) · campos OK"
-    },
-    {
-      "name": "Runtime do Admin carrega lista e cadastro completo",
-      "ok": true,
-      "detail": "1664 produto(s) em 322 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
-    },
-    {
-      "name": "Pedidos usam consulta limitada no Firebase",
-      "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 269 ms · limite solicitado 12 · chaves OK"
-    },
-    {
-      "name": "Versão do catálogo válida",
-      "ok": true,
-      "detail": "catalog-948e6d997ca7eb6f · público 1536 · admin 1664"
-    },
-    {
-      "name": "Banners permanecem removidos",
-      "ok": true,
-      "detail": "disabled=true · 0 banner(s)"
-    },
-    {
-      "name": "Arquivo de cupons válido",
-      "ok": true,
-      "detail": "3 cupom(ns)"
-    },
-    {
-      "name": "Arquivo de Compra Rápida permanece válido para integrações legadas",
-      "ok": true,
-      "detail": "6 seção(ões)"
-    },
-    {
-      "name": "Histórico de ofertas válido",
-      "ok": true,
-      "detail": "6140 oferta(s) no histórico"
-    },
-    {
-      "name": "Rotina horária de ofertas atualizada",
-      "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "name": "healthcheck",
+      "detail": "Relatório não foi gerado"
     }
   ],
-  "errors": [],
   "warnings": [],
+  "checks": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "31771600999",
+    "event": "push",
+    "runId": "31806876585",
     "attempt": "1",
-    "sourceSha": "3655096885af69659d45e471aad3be797fca50ac",
+    "sourceSha": "52c2a2d0c18b960ec49cb7e951ed52eed636cedb",
     "architecture": "success",
-    "publishedAt": "2026-08-14T05:01:17.239Z"
+    "publishedAt": "2026-08-14T13:56:52.995Z"
   }
 }
