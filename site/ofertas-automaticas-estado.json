@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-15T20:52:48.072Z",
+  "ultima_execucao": "2026-08-15T21:27:06.249Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -1458,6 +1458,20 @@
       "inicio": "2026-08-14",
       "fim": "2026-08-17T23:59:59-04:00",
       "historico_id": "oferta-1776338123167-1786707169385-btnqh"
+    },
+    {
+      "produto_key": "1776338123172",
+      "codigo": "P355",
+      "nome": "Escova de Cabelo Pata-Pata Oval Preta Unidade",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 3.5,
+      "preco_oferta": 3.15,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-15",
+      "fim": "2026-08-22T23:59:59-04:00",
+      "historico_id": "oferta-1776338123172-1786829226249-l2tpo"
     },
     {
       "produto_key": "1776338123180",
@@ -10126,6 +10140,20 @@
       "historico_id": "oferta-177887962991723666-1786825632593-akb6y"
     },
     {
+      "produto_key": "177887966550122879",
+      "codigo": "6655010592",
+      "nome": "Pato Limpeza Profunda Gel Pinho 500ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 15.9,
+      "preco_oferta": 14.95,
+      "desconto_percentual": 5.97,
+      "inicio": "2026-08-15",
+      "fim": "2026-08-18T23:59:59-04:00",
+      "historico_id": "oferta-177887966550122879-1786829226249-c0eqd"
+    },
+    {
       "produto_key": "177887980126862634",
       "codigo": "8012680537",
       "nome": "LIMPADOR MULTIUSO Cif Espuma Milagrosa Extermina 500ml",
@@ -11356,6 +11384,20 @@
       "inicio": "2026-08-15",
       "fim": "2026-08-18T23:59:59-04:00",
       "historico_id": "oferta-177973106236854517-1786822018912-ykdso"
+    },
+    {
+      "produto_key": "177973124442423563",
+      "codigo": "2444240814",
+      "nome": "Seda Kit Shampoo e Condicionador Liso Perfeito 300ml + 190ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 24.9,
+      "preco_oferta": 23.16,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-08-15",
+      "fim": "2026-08-18T23:59:59-04:00",
+      "historico_id": "oferta-177973124442423563-1786829226249-yffhr"
     },
     {
       "produto_key": "177973137327994863",
@@ -17056,7 +17098,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776338123172": {
-      "ultima_oferta_em": "2026-08-06T00:48:59.954Z",
+      "ultima_oferta_em": "2026-08-15T21:27:06.249Z",
       "regra_id": "regra-1785202557027"
     },
     "17801568876744077": {
@@ -17756,7 +17798,7 @@
       "regra_id": "regra-1785205192100"
     },
     "177973124442423563": {
-      "ultima_oferta_em": "2026-08-10T08:56:40.633Z",
+      "ultima_oferta_em": "2026-08-15T21:27:06.249Z",
       "regra_id": "regra-1785205192100"
     },
     "1776032632364": {
@@ -17824,7 +17866,7 @@
       "regra_id": "regra-1785205105033"
     },
     "177887966550122879": {
-      "ultima_oferta_em": "2026-08-10T06:56:08.040Z",
+      "ultima_oferta_em": "2026-08-15T21:27:06.249Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338129686": {
@@ -19921,23 +19963,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "2026-08-09T21:36:32Z",
-      "executado_em": "2026-08-09T21:37:36.240Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 4,
-        "ofertas_nao_criadas": 19,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "2026-08-09T22:02:43Z",
       "executado_em": "2026-08-09T22:03:45.881Z",
@@ -23307,6 +23332,23 @@
     {
       "id": "make-20260815175124019",
       "executado_em": "2026-08-15T20:52:48.072Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1786829225738",
+      "executado_em": "2026-08-15T21:27:06.249Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
