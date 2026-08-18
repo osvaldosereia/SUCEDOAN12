@@ -1,18 +1,18 @@
 {
-  "startedAt": "2026-08-17T04:40:40.985Z",
+  "startedAt": "2026-08-18T04:40:10.206Z",
   "mode": "production",
   "stockSync": true,
   "firebaseProducts": 1700,
-  "blingProducts": 2218,
-  "selected": 1700,
+  "blingProducts": 0,
+  "selected": 0,
   "created": 0,
   "updated": 0,
-  "unchanged": 1700,
+  "unchanged": 0,
   "statusUpdated": 0,
   "inactivatedRemoved": 0,
   "restored": 0,
   "codeChanges": 0,
-  "matchedByStateId": 1700,
+  "matchedByStateId": 0,
   "matchedByCode": 0,
   "matchedByGtin": 0,
   "relinked": 0,
@@ -111,12 +111,16 @@
     }
   ],
   "stateChanged": false,
-  "stockChecked": 1649,
+  "stockChecked": 0,
   "stockUpdated": 0,
-  "stockUnchanged": 1649,
+  "stockUnchanged": 0,
   "deferred": 0,
   "invalid": [],
   "conflicts": [],
-  "errors": [],
-  "finishedAt": "2026-08-17T04:40:59.495Z"
+  "errors": [
+    {
+      "reason": "OAuth do Bling: HTTP 400 {\"error\":{\"type\":\"invalid_grant\",\"message\":\"invalid_grant\",\"description\":\"Invalid refresh token\"}}"
+    }
+  ],
+  "finishedAt": "2026-08-18T04:40:11.252Z"
 }
