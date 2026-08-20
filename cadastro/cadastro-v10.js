@@ -188,7 +188,7 @@
     let lastError=null;
     const candidates=[code];
     const numeric=Number(code);
-    if(Number.isSafeInteger(numeric)&&String(numeric)!==code)candidates.push(numeric);
+    if(Number.isSafeInteger(numeric))candidates.push(numeric);
     for(const field of ['gtin','ean','codigo']){
       for(const candidate of candidates){
         const query='orderBy='+encodeURIComponent(JSON.stringify(field))+'&equalTo='+encodeURIComponent(JSON.stringify(candidate));
@@ -538,6 +538,12 @@
       }
       if(/github\.com$/i.test(url.hostname)&&parts.length>=5&&['blob','raw'].includes(parts[2])){
         return decodeURIComponent(parts.slice(4).join('/'));
+      }
+      if(url.hostname===state.settings.githubOwner.toLowerCase()+'.github.io'&&parts[0]===state.settings.githubRepo){
+        return decodeURIComponent(parts.slice(1).join('/'));
+      }
+      if(url.hostname==='cdn.jsdelivr.net'&&parts[0]==='gh'&&parts.length>=4){
+        return decodeURIComponent(parts.slice(3).join('/'));
       }
     }catch{}
     return '';
