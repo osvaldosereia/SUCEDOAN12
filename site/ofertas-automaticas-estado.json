@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-20T18:29:04.426Z",
+  "ultima_execucao": "2026-08-20T19:28:20.919Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -5142,6 +5142,20 @@
       "historico_id": "oferta-1776338129099-1787164151106-gyd5f"
     },
     {
+      "produto_key": "1776338129122",
+      "codigo": "69567182",
+      "nome": "Saco Forte Saco para Lixo 100 litros com 5 unidades",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 7.9,
+      "preco_oferta": 7.43,
+      "desconto_percentual": 5.95,
+      "inicio": "2026-08-20",
+      "fim": "2026-08-23T23:59:59-04:00",
+      "historico_id": "oferta-1776338129122-1787254100919-qicmj"
+    },
+    {
       "produto_key": "1776338129124",
       "codigo": "P0286",
       "nome": "NIVEA Sabonete Aveia 85g",
@@ -6484,6 +6498,20 @@
       "inicio": "2026-08-17",
       "fim": "2026-08-20T23:59:59-04:00",
       "historico_id": "oferta-1776338131215-1786944585537-fgwtf"
+    },
+    {
+      "produto_key": "1776338131226",
+      "codigo": "930618H",
+      "nome": "Shampoo Neutrox Clássico 300ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 14.9,
+      "preco_oferta": 13.86,
+      "desconto_percentual": 6.98,
+      "inicio": "2026-08-20",
+      "fim": "2026-08-23T23:59:59-04:00",
+      "historico_id": "oferta-1776338131226-1787254100919-2a1jh"
     },
     {
       "produto_key": "1776338131248",
@@ -8626,6 +8654,20 @@
       "inicio": "2026-08-17",
       "fim": "2026-08-20T23:59:59-04:00",
       "historico_id": "oferta-1776715681163-1786955480079-tdz0e"
+    },
+    {
+      "produto_key": "1776716997295",
+      "codigo": "16997295",
+      "nome": "NIVEA Protetor Solar Sun Protect & Hidrata FPS 50 200ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 48,
+      "preco_oferta": 43.2,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-20",
+      "fim": "2026-08-27T23:59:59-04:00",
+      "historico_id": "oferta-1776716997295-1787254100919-2ke23"
     },
     {
       "produto_key": "1776717621838",
@@ -18788,7 +18830,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776338131226": {
-      "ultima_oferta_em": "2026-08-16T06:29:39.967Z",
+      "ultima_oferta_em": "2026-08-20T19:28:20.919Z",
       "regra_id": "regra-1785205192100"
     },
     "1776338129538": {
@@ -18836,7 +18878,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1776338129122": {
-      "ultima_oferta_em": "2026-08-16T05:28:28.059Z",
+      "ultima_oferta_em": "2026-08-20T19:28:20.919Z",
       "regra_id": "regra-1785205105033"
     },
     "produto_1784838743954": {
@@ -19592,7 +19634,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776716997295": {
-      "ultima_oferta_em": "2026-08-08T07:16:15.969Z",
+      "ultima_oferta_em": "2026-08-20T19:28:20.919Z",
       "regra_id": "regra-1785202557027"
     },
     "1776032632366": {
@@ -20877,23 +20919,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1786581672703",
-      "executado_em": "2026-08-13T00:41:13.339Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 1,
-        "ofertas_nao_criadas": 22,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1786586269785",
       "executado_em": "2026-08-13T01:57:50.069Z",
@@ -24269,6 +24294,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 4,
         "ofertas_nao_criadas": 19,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1787254100524",
+      "executado_em": "2026-08-20T19:28:20.919Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
