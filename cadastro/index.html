@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#173f2a">
   <meta name="robots" content="noindex,nofollow">
   <title>Cadastro com IA · Dona Antônia</title>
-  <link rel="stylesheet" href="./cadastro-v6.css?v=20260803-1">
+  <link rel="stylesheet" href="./cadastro-v6.css?v=20260820-barcode-first-v1">
   <link rel="stylesheet" href="../operacoes-mobile.css?v=20260814-suite-cestas-v1">
   <script>
   (function(){
@@ -23,7 +23,7 @@
   })();
   </script>
   <script defer src="./cadastro-taxonomia-v1.js?v=20260804-taxonomia-1"></script>
-  <script defer src="./cadastro-v8.js?v=20260804-1foto-1"></script>
+  <script defer src="./cadastro-v10.js?v=20260820-barcode-first-v1"></script>
 </head>
 <body class="ops-suite ops-cadastro">
 <header class="ops-topbar">
@@ -48,39 +48,63 @@
   </div>
 </header>
 <main>
-  <section class="hero"><h1>Uma foto enviada. Cadastro completo.</h1><p>A foto da frente vai para a IA. A foto do EAN é lida somente neste aparelho e não é enviada ao Make.</p></section>
+  <section class="hero"><h1>Leia o código antes de cadastrar.</h1><p>A câmera consulta o Firebase primeiro. Produto existente atualiza somente o estoque; produto novo segue para a foto da frente e cadastro com IA.</p></section>
   <div id="message" class="message"></div>
-  <div class="layout">
+
+  <section class="panel lookup-panel" id="lookupPanel">
+    <div class="panel-head"><h2>1. Consultar código de barras</h2><p>Aponte a câmera para o EAN. Você também pode fotografar o código ou digitá-lo.</p></div>
+    <div class="panel-body">
+      <div class="lookup-actions">
+        <div class="field lookup-code"><label for="eanInput">Código EAN</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Leia com a câmera ou digite"></div>
+        <button class="btn primary" id="openScannerButton" type="button">📷 Ler com a câmera</button>
+        <button class="btn" id="checkEanButton" type="button">Consultar no Firebase</button>
+        <label class="btn photo-fallback">Fotografar código<input id="barcodePhotoInput" type="file" accept="image/*" capture="environment"></label>
+      </div>
+      <div class="camera-box" id="cameraBox" hidden>
+        <video id="scannerVideo" playsinline muted></video>
+        <div class="camera-guide" aria-hidden="true"></div>
+        <button class="btn camera-close" id="closeScannerButton" type="button">Fechar câmera</button>
+      </div>
+      <p class="lookup-hint" id="lookupHint">Primeiro leia ou digite o código. A foto da frente só será solicitada se o produto não existir.</p>
+    </div>
+  </section>
+
+  <section class="panel existing-product" id="existingProductPanel" hidden>
+    <div class="panel-head"><h2>Produto já cadastrado</h2><p>Atualize o estoque total sem abrir um novo cadastro.</p></div>
+    <div class="panel-body existing-product-body">
+      <img id="existingProductImage" alt="Imagem do produto cadastrado">
+      <div class="existing-product-info"><h3 id="existingProductName"></h3><p id="existingProductMeta"></p><div class="kv"><span>Estoque atual</span><b id="existingCurrentStock">0</b></div></div>
+      <div class="existing-stock-actions">
+        <div class="field"><label for="existingStockInput">Novo estoque total</label><input class="input" id="existingStockInput" type="number" min="0" step="1" inputmode="numeric"></div>
+        <button class="btn primary" id="updateStockButton" type="button">Atualizar estoque</button>
+        <button class="btn" id="existingAnotherButton" type="button">Consultar outro produto</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="layout registration-flow" id="newProductPanel" hidden>
     <section class="panel">
-      <div class="panel-head"><h2>Fotos do produto</h2><p>A foto da frente é obrigatória. A foto do EAN é opcional e serve apenas para preencher o código automaticamente.</p></div>
+      <div class="panel-head"><h2>2. Produto novo — foto e dados</h2><p>O código não foi encontrado. Tire a foto da frente e continue o procedimento atual.</p></div>
       <div class="panel-body">
-        <div class="photos">
-          <article class="photo-card" data-card="frente"><h3>1. Frente do produto</h3><p>Obrigatória. Produto inteiro, reto e com boa luz. Esta é a única foto enviada.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
-          <article class="photo-card" data-card="ean"><h3>2. Ler código EAN</h3><p>Opcional. A leitura acontece no navegador; a imagem não vai para o Make nem para a OpenAI.</p><label class="capture">📷 Fotografar código<input type="file" accept="image/*" capture="environment" data-photo="ean"></label><img class="preview" data-preview="ean" hidden alt="Código EAN"></article>
+        <div class="photos single-photo">
+          <article class="photo-card" data-card="frente"><h3>Frente do produto</h3><p>Obrigatória. Produto inteiro, reto e com boa luz. Esta é a única foto enviada.</p><label class="capture">📷 Tirar foto ou escolher<input type="file" accept="image/*" capture="environment" data-photo="frente"></label><img class="preview" data-preview="frente" hidden alt="Frente do produto"></article>
         </div>
 
         <div class="form-grid">
-          <div class="field"><label for="eanInput">EAN · opcional</label><input class="input" id="eanInput" inputmode="numeric" maxlength="14" placeholder="Fotografe o código ou digite"></div>
           <div class="field"><label for="stockInput">Estoque inicial · opcional</label><input class="input" id="stockInput" type="number" min="0" value="0"></div>
           <div class="field"><label for="costInput">Preço de custo · opcional</label><input class="input" id="costInput" type="number" min="0" step="0.01" placeholder="Opcional"></div>
           <div class="field"><label for="supplierInput">Fornecedor · opcional</label><input class="input" id="supplierInput"></div>
-
           <div class="field"><label for="validityInput">Validade · opcional</label><input class="input" id="validityInput" type="date"></div>
           <div class="field"><label for="batchInput">Lote · opcional</label><input class="input" id="batchInput" placeholder="Opcional"></div>
           <div class="field"><label for="gondolaInput">Gôndola · opcional</label><input class="input" id="gondolaInput"></div>
           <div class="field"><label for="shelfInput">Prateleira · opcional</label><input class="input" id="shelfInput"></div>
-
           <div class="field"><label for="locationInput">Localização · opcional</label><input class="input" id="locationInput"></div>
           <div class="field"><label for="brandInput">Marca · opcional</label><input class="input" id="brandInput" placeholder="Deixe vazio para a IA identificar"></div>
-          <div class="field span">
-            <label>Produto sem marca</label>
-            <button class="btn" type="button" id="genericBrandButton">Marcar como genérico</button>
-          </div>
-
+          <div class="field span"><label>Produto sem marca</label><button class="btn" type="button" id="genericBrandButton">Marcar como genérico</button></div>
           <div class="field span"><label for="notesInput">Comentário para orientar a IA · opcional</label><textarea class="textarea" id="notesInput" placeholder="Ex.: é a versão sem açúcar; o nome correto é...; atenção ao sabor..."></textarea></div>
         </div>
 
-        <div class="note">Não cadastramos categoria, subcategoria ou subsubcategoria neste fluxo. Somente a foto da frente é enviada, e o produto continua sendo salvo como inativo para revisão.</div>
+        <div class="note">A IA usa as classificações existentes no Firebase. Somente a foto da frente é enviada, e o produto continua sendo salvo como inativo para revisão.</div>
         <button class="btn primary submit" id="submitButton" type="button">Cadastrar automaticamente</button>
       </div>
     </section>
@@ -99,8 +123,8 @@
       </section>
 
       <section class="panel result" id="resultPanel">
-        <div class="panel-head"><h2>Produto cadastrado</h2><p>Salvo inativo.</p></div>
-        <div class="panel-body"><img id="resultImage" alt="Imagem gerada"><h3 id="resultName"></h3><p id="resultKey"></p><div class="kv"><span>Preço médio</span><b id="resultPrice">—</b></div><div class="kv"><span>NCM</span><b id="resultNcm">—</b></div><div class="kv"><span>EAN</span><b id="resultEan">—</b></div><button class="btn primary" id="againButton" type="button" style="width:100%;margin-top:10px">Cadastrar outro</button></div>
+        <div class="panel-head"><h2>Produto cadastrado</h2><p>Salvo inativo para revisão.</p></div>
+        <div class="panel-body"><img id="resultImage" alt="Imagem gerada"><h3 id="resultName"></h3><p id="resultKey"></p><div class="kv"><span>Preço médio</span><b id="resultPrice">—</b></div><div class="kv"><span>NCM</span><b id="resultNcm">—</b></div><div class="kv"><span>EAN</span><b id="resultEan">—</b></div><button class="btn danger" id="deleteRegistrationButton" type="button" style="width:100%;margin-top:10px">Apagar cadastro e foto</button><button class="btn primary" id="againButton" type="button" style="width:100%;margin-top:10px">Cadastrar outro</button></div>
       </section>
     </aside>
   </div>
@@ -114,6 +138,7 @@
     <div class="field"><label for="productsNodeInput">Nó de produtos</label><input class="input" id="productsNodeInput"></div>
     <div class="field"><label for="jobsNodeInput">Nó dos jobs</label><input class="input" id="jobsNodeInput"></div>
     <div class="field"><label for="authInput">Token Firebase opcional</label><input class="input" id="authInput" type="password"></div>
+    <div class="field"><label for="githubTokenInput">Token GitHub para exclusão da foto</label><input class="input" id="githubTokenInput" type="password" autocomplete="off"><small>Necessário somente para o botão “Apagar cadastro e foto”. Fica salvo neste aparelho.</small></div>
     <button class="btn primary" id="saveSettingsButton" type="button">Salvar neste aparelho</button>
   </div>
 </dialog>
