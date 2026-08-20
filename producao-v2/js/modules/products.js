@@ -434,6 +434,12 @@ export class ProductsModule {
     return `<label${full ? ' class="span-2"' : ''}>${escapeHtml(label)}<select data-field="${escapeHtml(name)}"><option value="">Selecione…</option>${options.map(option => `<option value="${escapeHtml(option)}" ${text(value) === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></label>`;
   }
 
+  creatableField(name, label, value, values, full = false) {
+    const options = unique([value, ...values]);
+    const listId = `product-registry-${name}`;
+    return `<label${full ? ' class="span-2"' : ''}>${escapeHtml(label)}<input class="creatable-registry-input" data-field="${escapeHtml(name)}" list="${escapeHtml(listId)}" autocomplete="off" placeholder="Selecione ou digite uma nova opção" value="${escapeHtml(value ?? '')}"><datalist id="${escapeHtml(listId)}">${options.map(option => `<option value="${escapeHtml(option)}"></option>`).join('')}</datalist><small>Selecione uma opção existente ou digite uma nova. O novo cadastro será incluído ao salvar o produto.</small></label>`;
+  }
+
   field(name, label, value = '', type = 'text', full = false, attrs = '') {
     return `<label${full ? ' class="span-2"' : ''}>${escapeHtml(label)}<input data-field="${escapeHtml(name)}" type="${escapeHtml(type)}" ${type === 'number' ? 'step="0.01"' : ''} ${attrs} value="${escapeHtml(value ?? '')}"></label>`;
   }
@@ -465,11 +471,11 @@ export class ProductsModule {
     const category = text(product.categoria);
     const subcategory = text(product.subcategoria);
     sections.classification.innerHTML = `<div class="form-grid">
-      ${this.selectField('categoria', 'Categoria', category, this.values('categoria', product))}
-      ${this.selectField('subcategoria', 'Subcategoria', subcategory, this.values('subcategoria', product, item => !category || text(item.categoria) === category))}
+      ${this.creatableField('categoria', 'Categoria', category, this.values('categoria', product))}
+      ${this.creatableField('subcategoria', 'Subcategoria', subcategory, this.values('subcategoria', product, item => !category || text(item.categoria) === category))}
       ${this.selectField('subsubcategoria', 'Subsubcategoria', product.subsubcategoria, this.values('subsubcategoria', product, item => (!category || text(item.categoria) === category) && (!subcategory || text(item.subcategoria) === subcategory)))}
-      ${this.selectField('marca', 'Marca', product.marca, this.values('marca', product))}
-      ${this.selectField('fornecedor', 'Fornecedor', product.fornecedor, this.values('fornecedor', product))}
+      ${this.creatableField('marca', 'Marca', product.marca, this.values('marca', product))}
+      ${this.creatableField('fornecedor', 'Fornecedor', product.fornecedor, this.values('fornecedor', product))}
       ${this.field('tags', 'Tags', Array.isArray(product.tags) ? product.tags.join(', ') : product.tags, 'text', true)}
     </div>`;
     const pending = this.pendingImages.get(key);
@@ -592,6 +598,11 @@ export class ProductsModule {
       return;
     }
     let value = event.target.value;
+    const creatableRegistryFields = ['categoria', 'subcategoria', 'marca', 'fornecedor'];
+    if (creatableRegistryFields.includes(field) && event.type === 'change') {
+      value = text(value).replace(/\s+/g, ' ');
+      event.target.value = value;
+    }
     if (field === 'validade') {
       const masked = maskBrDate(value);
       event.target.value = masked;
@@ -618,7 +629,7 @@ export class ProductsModule {
     this.elements.editorSubtitle.textContent = `${productCode(updated) || key} · alteração pendente`;
     this.renderValidation(updated);
     this.renderDirty();
-    if (['categoria', 'subcategoria'].includes(field)) this.renderEditor(updated);
+    if (event.type === 'change' && ['categoria', 'subcategoria'].includes(field)) this.renderEditor(updated);
   }
 
   async handleEditorClick(event) {
