@@ -213,7 +213,7 @@
       const wrapper=JSON.parse(String(init.body||'{}'));
       const payload=JSON.parse(String(wrapper.payload||'{}'));
       payload.catalogo_opcoes_json=JSON.stringify(compact(current));
-      payload.versao='2026-08-04-v9-taxonomia-existente';
+      payload.versao='2026-08-20-v10-barcode-first-taxonomia';
       const manualBrand=text(payload?.contexto?.marca);
       if(manualBrand&&payload?.contexto&&!payload.contexto.marca_generica){
         payload.contexto.marca=existingBrand(manualBrand);
