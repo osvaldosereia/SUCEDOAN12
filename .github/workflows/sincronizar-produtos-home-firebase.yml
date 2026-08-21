@@ -29,7 +29,8 @@ jobs:
       - name: Baixar catálogo e sincronizadores
         uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          ref: main
+          fetch-depth: 0
           show-progress: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
@@ -70,6 +71,13 @@ jobs:
 
       - name: Publicar catálogos e versão
         shell: bash
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          PRODUCTS_HOME_PATH: site/produtos-home.json
+          PRODUCTS_ADMIN_PATH: site/produtos-admin.json
+          CATALOG_VERSION_PATH: catalog-version.json
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -85,11 +93,26 @@ jobs:
           git add catalog-version.json
           git commit -m "Sincroniza catálogos diretamente do Firebase"
           for tentativa in 1 2 3 4 5; do
-            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            if git push origin HEAD:main; then
               exit 0
             fi
-            git fetch origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}"
+
+            echo "O catálogo mudou no main; regenerando sobre a versão mais recente."
+            git fetch origin main
+            git reset --hard origin/main
+            node scripts/sincronizar-produtos-home-firebase.mjs
+            node scripts/estabilizar-catalogo-publico.mjs
+            node -e "const v=require('./catalog-version.json'); if(!v.version || !v.productCount || v.productCount > v.adminProductCount) process.exit(1)"
+            test -s site/produtos-home.json
+            test -s site/produtos-admin.json
+            git add site/produtos-home.json site/produtos-admin.json
+            if git diff --cached --quiet; then
+              git restore catalog-version.json
+              echo "Outro processo já publicou o mesmo catálogo."
+              exit 0
+            fi
+            git add catalog-version.json
+            git commit -m "Sincroniza catálogos diretamente do Firebase"
             sleep $((tentativa * 2))
           done
           echo "Não foi possível publicar os catálogos após cinco tentativas." >&2

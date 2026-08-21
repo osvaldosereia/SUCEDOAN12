@@ -21,6 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: main
           fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
@@ -44,6 +45,13 @@ jobs:
           node -e "const v=require('./catalog-version.json'); if(!v.version || !v.productCount || v.productCount > v.adminProductCount) process.exit(1)"
       - name: Publicar catálogo corrigido
         shell: bash
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          PRODUCTS_HOME_PATH: site/produtos-home.json
+          PRODUCTS_ADMIN_PATH: site/produtos-admin.json
+          CATALOG_VERSION_PATH: catalog-version.json
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -53,8 +61,21 @@ jobs:
           git commit -m "Repara catálogo público após processamento de ofertas"
           for tentativa in 1 2 3 4 5; do
             if git push origin HEAD:main; then exit 0; fi
+
+            echo "O catálogo mudou no main; regenerando sobre a versão mais recente."
             git fetch origin main
-            git rebase origin/main
+            git reset --hard origin/main
+            node scripts/sincronizar-produtos-home-firebase.mjs
+            node scripts/estabilizar-catalogo-publico.mjs
+            node -e "const v=require('./catalog-version.json'); if(!v.version || !v.productCount || v.productCount > v.adminProductCount) process.exit(1)"
+            git add site/produtos-home.json site/produtos-admin.json
+            if git diff --cached --quiet; then
+              git restore catalog-version.json
+              echo "Outro processo já publicou o mesmo catálogo."
+              exit 0
+            fi
+            git add catalog-version.json
+            git commit -m "Repara catálogo público após processamento de ofertas"
             sleep $((tentativa * 2))
           done
           exit 1
