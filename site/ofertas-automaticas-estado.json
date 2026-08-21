@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-21T00:30:36.617Z",
+  "ultima_execucao": "2026-08-21T01:54:03.657Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -1668,6 +1668,20 @@
       "inicio": "2026-08-15",
       "fim": "2026-08-22T23:59:59-04:00",
       "historico_id": "oferta-1776338123172-1786829226249-l2tpo"
+    },
+    {
+      "produto_key": "1776338123177",
+      "codigo": "965620J",
+      "nome": "Shampoo TRESemmé Hidratação Profunda 650ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 34.9,
+      "preco_oferta": 32.46,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-08-20",
+      "fim": "2026-08-23T23:59:59-04:00",
+      "historico_id": "oferta-1776338123177-1787277243657-7gstr"
     },
     {
       "produto_key": "1776338123180",
@@ -10616,6 +10630,20 @@
       "historico_id": "oferta-177886794428389050-1786984101709-s8awd"
     },
     {
+      "produto_key": "177887105016512788",
+      "codigo": "0501650491",
+      "nome": "Secar Desumidificador Original Floral 180g",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 11.9,
+      "preco_oferta": 11.19,
+      "desconto_percentual": 5.97,
+      "inicio": "2026-08-20",
+      "fim": "2026-08-23T23:59:59-04:00",
+      "historico_id": "oferta-177887105016512788-1787277243657-n6w4a"
+    },
+    {
       "produto_key": "177887122383668785",
       "codigo": "2238360907",
       "nome": "Assim Sabão em Pó Bicarbonato - Lava Roupas 2,2kg",
@@ -15474,6 +15502,20 @@
       "historico_id": "oferta-produto1784822980422-1786991406652-yd978"
     },
     {
+      "produto_key": "produto_1784829815814",
+      "codigo": "xapadinha.oleo.50",
+      "nome": "Óleo Capilar Lola Cosmetics Disciplinante Antifrizz Goiaba Frasco de 50ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 25.9,
+      "preco_oferta": 23.31,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-20",
+      "fim": "2026-08-27T23:59:59-04:00",
+      "historico_id": "oferta-produto1784829815814-1787277243657-us6wh"
+    },
+    {
       "produto_key": "produto_1784830354927",
       "codigo": "hellmanns.molhochuchar.335",
       "nome": "Molho para Chuchar Cebola, Salsa e Limão Hellmann's 335g",
@@ -19140,7 +19182,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776338123177": {
-      "ultima_oferta_em": "2026-08-16T11:27:29.497Z",
+      "ultima_oferta_em": "2026-08-21T01:54:03.657Z",
       "regra_id": "regra-1785205192100"
     },
     "1776442232584": {
@@ -19248,7 +19290,7 @@
       "regra_id": "regra-1785205105033"
     },
     "177887105016512788": {
-      "ultima_oferta_em": "2026-08-16T10:27:20.198Z",
+      "ultima_oferta_em": "2026-08-21T01:54:03.657Z",
       "regra_id": "regra-1785205105033"
     },
     "177887094073418397": {
@@ -19868,7 +19910,7 @@
       "regra_id": "regra-1785202557027"
     },
     "produto_1784829815814": {
-      "ultima_oferta_em": "2026-08-08T09:10:09.963Z",
+      "ultima_oferta_em": "2026-08-21T01:54:03.657Z",
       "regra_id": "regra-1785202557027"
     },
     "1776338125014": {
@@ -21129,23 +21171,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1786600197927",
-      "executado_em": "2026-08-13T05:49:58.337Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 20,
-        "ofertas_nao_criadas": 3,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1786603729179",
       "executado_em": "2026-08-13T06:48:49.748Z",
@@ -24515,6 +24540,23 @@
     {
       "id": "github-1787272236043",
       "executado_em": "2026-08-21T00:30:36.617Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1787277243054",
+      "executado_em": "2026-08-21T01:54:03.657Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
