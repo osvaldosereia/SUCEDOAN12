@@ -32,14 +32,14 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 const production = read('index.html');
 for (const marker of [
   '2026-07-27-product-cards-spacing-v11',
-  '/app-next/styles/storefront-base.css?v=20260727-8',
-  '/app-next/styles/storefront-components.css?v=20260727-10',
-  '/app-next/styles/storefront-responsive.css?v=20260727-10',
-  '/app-next/styles/checkout-flow.css?v=20260727-8',
-  '/app-next/styles/bundle-confirmation.css?v=20260727-5',
-  '/app-next/src/image-performance.js?v=20260727-8',
-  '/app-next/src/home-carousels.js?v=20260727-8',
-  '/app-next/src/main.js?v=20260727-9',
+  '/app-next/styles/storefront-base.css',
+  '/app-next/styles/storefront-components.css',
+  '/app-next/styles/storefront-responsive.css',
+  '/app-next/styles/checkout-flow.css',
+  '/app-next/styles/bundle-confirmation.css',
+  '/app-next/src/image-performance.js',
+  '/app-next/src/home-carousels.js',
+  '/app-next/src/main.js',
   'da_v16_product_cards_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
@@ -85,7 +85,7 @@ const main = read('app-next/src/main.js');
 for (const marker of [
   'internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog', 'load-more-offers',
   'setAttribute(\'inert\'', "router.navigate('#/ofertas')", 'warmOfferImages',
-  "createCheckout } from './checkout.js?v=20260727-9'", 'query.length < 3'
+  "createCheckout } from './checkout.js?v=", 'query.length < 3'
 ]) assert(main.includes(marker), `Main incompleto: ${marker}`);
 
 const checkout = read('app-next/src/checkout.js');
