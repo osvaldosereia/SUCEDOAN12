@@ -1,0 +1,220 @@
+{
+  "name": "CANECAS - Studio IA - Arte 2.3x1 + Mockups - V2",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 0,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": -600,
+          "y": 0,
+          "name": "Webhook Admin Produção"
+        },
+        "interface": [
+          {
+            "name": "payload",
+            "type": "text",
+            "label": "Payload JSON"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "parameters": {
+        "type": ""
+      },
+      "mapper": {
+        "json": "{{1.payload}}"
+      },
+      "metadata": {
+        "designer": {
+          "x": -350,
+          "y": 0,
+          "name": "Interpretar pedido"
+        },
+        "interface": [
+          { "name": "action", "type": "text" },
+          { "name": "request_id", "type": "text" },
+          { "name": "reference_image_url", "type": "text" },
+          { "name": "art_url", "type": "text" },
+          { "name": "prompt_art", "type": "text" },
+          { "name": "prompt_mockup", "type": "text" },
+          { "name": "side", "type": "number" },
+          { "name": "quality", "type": "text" }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "module": "util:SetVariables",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "scope": "roundtrip",
+        "variables": [
+          { "name": "GITHUB_TOKEN", "value": "COLE_UM_NOVO_TOKEN_GITHUB_AQUI" },
+          { "name": "GITHUB_OWNER", "value": "osvaldosereia" },
+          { "name": "GITHUB_REPO", "value": "SUCEDOAN12" },
+          { "name": "GITHUB_BRANCH", "value": "main" },
+          { "name": "INPUT_URL", "value": "{{if(2.action = \"generate_mug_art\"; 2.reference_image_url; 2.art_url)}}" },
+          { "name": "OUTPUT_PATH", "value": "canecas/imagens/{{if(2.action = \"generate_mug_art\"; \"artes-fonte\"; \"mockups\")}}/{{formatDate(now; \"YYYY-MM-DD\"; \"America/Cuiaba\")}}/{{2.request_id}}-{{if(2.action = \"generate_mug_art\"; \"fonte\"; 2.side)}}.webp" }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": -100,
+          "y": 0,
+          "name": "Configuração segura"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "module": "http:GetFile",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "url": "{{3.INPUT_URL}}",
+        "shareCookies": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 170,
+          "y": 0,
+          "name": "Baixar imagem-base"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "module": "openai-gpt-3:EditImage",
+      "version": 1,
+      "parameters": {
+        "__IMTCONN__": 0
+      },
+      "mapper": {
+        "model": "gpt-image-1.5",
+        "prompt": "{{if(2.action = \"generate_mug_art\"; 2.prompt_art; 2.prompt_mockup)}}",
+        "images": [
+          {
+            "fileName": "{{4.fileName}}",
+            "fileData": "{{4.data}}"
+          }
+        ],
+        "n": "1",
+        "size": "{{if(2.action = \"generate_mug_art\"; \"1536x1024\"; \"1024x1024\")}}",
+        "quality": "{{ifempty(2.quality; \"medium\")}}",
+        "background": "opaque",
+        "moderation": "auto",
+        "output_format": "webp"
+      },
+      "metadata": {
+        "designer": {
+          "x": 450,
+          "y": 0,
+          "name": "OpenAI - Editar imagem"
+        },
+        "restore": {
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "openai-gpt-3"
+              },
+              "label": "RECONecte sua conta OpenAI"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {
+        "tlsType": "",
+        "authenticationType": "noAuth"
+      },
+      "mapper": {
+        "url": "https://api.github.com/repos/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/contents/{{3.OUTPUT_PATH}}",
+        "method": "put",
+        "headers": [
+          { "name": "Authorization", "value": "Bearer {{3.GITHUB_TOKEN}}" },
+          { "name": "Accept", "value": "application/vnd.github+json" },
+          { "name": "Content-Type", "value": "application/json" },
+          { "name": "X-GitHub-Api-Version", "value": "2022-11-28" },
+          { "name": "User-Agent", "value": "Make-Canecas-Studio-V2" }
+        ],
+        "timeout": 300,
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\n  \"message\": \"canecas: {{2.action}} {{2.request_id}}\",\n  \"content\": \"{{base64(5.resImgData)}}\",\n  \"branch\": \"{{3.GITHUB_BRANCH}}\"\n}",
+        "requestCompressedContent": true
+      },
+      "metadata": {
+        "designer": {
+          "x": 730,
+          "y": 0,
+          "name": "Salvar resultado no GitHub"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "status": "200",
+        "body": "{\n  \"ok\": true,\n  \"action\": \"{{2.action}}\",\n  \"request_id\": \"{{2.request_id}}\",\n  \"side\": {{ifempty(2.side; 0)}},\n  \"result_url\": \"https://raw.githubusercontent.com/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/{{3.GITHUB_BRANCH}}/{{3.OUTPUT_PATH}}\",\n  \"art_source_url\": \"https://raw.githubusercontent.com/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/{{3.GITHUB_BRANCH}}/{{3.OUTPUT_PATH}}\",\n  \"mockup_url\": \"https://raw.githubusercontent.com/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/{{3.GITHUB_BRANCH}}/{{3.OUTPUT_PATH}}\"\n}",
+        "headers": [
+          { "key": "Content-Type", "value": "application/json; charset=utf-8" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" },
+          { "key": "Cache-Control", "value": "no-store" }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 1010,
+          "y": 0,
+          "name": "Responder Admin"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": true,
+      "slots": null,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": { "orphans": [] },
+    "zone": "eu1.make.com",
+    "notes": [
+      "Após importar: reconecte OpenAI no módulo 5, crie/selecione o webhook no módulo 1 e substitua o token GitHub no módulo 3. O token antigo do blueprint de referência não foi reutilizado.",
+      "O módulo OpenAI usa GPT Image 1.5 porque o Make confirma suporte atual em Edit images. Se sua conexão oferecer GPT Image 2, você pode trocar depois do primeiro teste."
+    ]
+  }
+}
