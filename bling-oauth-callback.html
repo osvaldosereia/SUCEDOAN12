@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Autorização do Bling · Dona Antônia</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d0f12; color: #f5f7fa; }
+    main { width: min(620px, calc(100% - 32px)); box-sizing: border-box; padding: 30px; border: 1px solid #2b3038; border-radius: 20px; background: #171a20; box-shadow: 0 24px 70px #0008; }
+    h1 { margin: 0 0 12px; font-size: clamp(1.5rem, 5vw, 2.1rem); }
+    p { color: #b9c0ca; line-height: 1.55; }
+    label { display: grid; gap: 8px; margin-top: 22px; font-weight: 700; }
+    input { width: 100%; box-sizing: border-box; padding: 14px; border: 1px solid #343a44; border-radius: 12px; background: #0d0f12; color: #fff; font: inherit; }
+    button { margin-top: 12px; width: 100%; padding: 14px; border: 0; border-radius: 12px; background: #31b565; color: #06140b; font: inherit; font-weight: 800; cursor: pointer; }
+    .error { color: #ff9c9c; }
+    small { display: block; margin-top: 18px; color: #858e9a; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Autorização recebida</h1>
+    <p id="status">Validando o retorno do Bling…</p>
+    <div id="result" hidden>
+      <label>Código temporário de autorização
+        <input id="code" type="text" readonly autocomplete="off">
+      </label>
+      <button id="copy" type="button">Copiar código</button>
+      <small>Esse código é temporário e deve ser guardado como segredo. Não o envie por mensagem, captura de tela ou e-mail.</small>
+    </div>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    const error = params.get('error');
+    const status = document.querySelector('#status');
+    const result = document.querySelector('#result');
+    const input = document.querySelector('#code');
+    const copy = document.querySelector('#copy');
+    if (code) {
+      status.textContent = 'O Bling autorizou o aplicativo. Copie o código abaixo e siga as orientações no GitHub.';
+      input.value = code;
+      result.hidden = false;
+    } else {
+      status.className = 'error';
+      status.textContent = error ? `O Bling recusou a autorização: ${error}.` : 'O retorno não contém um código de autorização.';
+    }
+    copy.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(input.value);
+      copy.textContent = 'Código copiado';
+    });
+  </script>
+</body>
+</html>
