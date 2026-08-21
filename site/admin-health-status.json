@@ -1,27 +1,27 @@
 {
-  "checkedAt": "2026-08-14T14:42:40.881Z",
+  "checkedAt": "2026-08-21T18:57:42.702Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": false,
+  "ok": true,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
-      "ok": false,
-      "detail": "Admin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\nCommand failed: /opt/hostedtoolcache/node/22.23.2/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\n"
+      "ok": true,
+      "detail": "Admin V2 v13.1 validado: 18 abas, 79 arquivos JavaScript, imports e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1786718562195"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787338664815"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1786718562935"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787338665136"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1786718563165"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787338665152"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1537 produto(s)"
+      "detail": "1569 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1678 produto(s) administrativos · 1537 público(s) · campos OK"
+      "detail": "1765 produto(s) administrativos · 1569 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1678 produto(s) em 268 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1765 produto(s) em 165 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 202 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 102 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-b2f3defefcb94ab5 · público 1537 · admin 1678"
+      "detail": "catalog-1ef65f7c906b10de · público 1569 · admin 1765"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,28 +86,22 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "6257 oferta(s) no histórico"
+      "detail": "8042 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     }
   ],
-  "errors": [
-    {
-      "name": "Todas as 18 abas passam no teste estrutural",
-      "ok": false,
-      "detail": "Admin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\nCommand failed: /opt/hostedtoolcache/node/22.23.2/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 1 falha(s).\n1. O editor de ciclo de vida dos kits não é carregado.\n"
-    }
-  ],
+  "errors": [],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "31810764829",
+    "event": "push",
+    "runId": "32515859241",
     "attempt": "1",
-    "sourceSha": "b94e5b371f3074fb824783fac4ed941c926c226a",
+    "sourceSha": "c2169b94aa70e8cee3818fc018860e9f3bbb7857",
     "architecture": "success",
-    "publishedAt": "2026-08-14T14:42:48.569Z"
+    "publishedAt": "2026-08-21T18:57:47.616Z"
   }
 }
