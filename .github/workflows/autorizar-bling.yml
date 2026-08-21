@@ -1,0 +1,53 @@
+name: Autorizar aplicativo Bling no GitHub
+run-name: Autorizar Bling V3 · troca segura do código
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bling-oauth-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Validar procedimento OAuth
+        run: node --check scripts/autorizar-bling-v3.mjs
+
+      - name: Trocar código e validar permissões
+        env:
+          BLING_NEW_CLIENT_ID: ${{ secrets.BLING_NEW_CLIENT_ID }}
+          BLING_NEW_CLIENT_SECRET: ${{ secrets.BLING_NEW_CLIENT_SECRET }}
+          BLING_AUTHORIZATION_CODE: ${{ secrets.BLING_AUTHORIZATION_CODE }}
+          BLING_REDIRECT_URI: https://donaantonia.com.br/bling-oauth-callback.html
+          BLING_REFRESH_TOKEN_FILE: ${{ runner.temp }}/bling-refresh-token
+        run: node scripts/autorizar-bling-v3.mjs
+
+      - name: Ativar novas credenciais no sincronizador
+        env:
+          GH_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
+          BLING_NEW_CLIENT_ID: ${{ secrets.BLING_NEW_CLIENT_ID }}
+          BLING_NEW_CLIENT_SECRET: ${{ secrets.BLING_NEW_CLIENT_SECRET }}
+          BLING_REFRESH_TOKEN_FILE: ${{ runner.temp }}/bling-refresh-token
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          test -s "$BLING_REFRESH_TOKEN_FILE"
+          gh secret set BLING_CLIENT_ID --repo "$GITHUB_REPOSITORY" --body "$BLING_NEW_CLIENT_ID"
+          gh secret set BLING_CLIENT_SECRET --repo "$GITHUB_REPOSITORY" --body "$BLING_NEW_CLIENT_SECRET"
+          gh secret set BLING_REFRESH_TOKEN --repo "$GITHUB_REPOSITORY" --body "$(cat "$BLING_REFRESH_TOKEN_FILE")"
+          gh secret delete BLING_AUTHORIZATION_CODE --repo "$GITHUB_REPOSITORY" || true
+
+      - name: Resumo
+        run: echo '### Aplicativo Bling autorizado e credenciais de produção atualizadas com segurança.' >> "$GITHUB_STEP_SUMMARY"
