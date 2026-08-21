@@ -261,7 +261,7 @@ const report = {
   statusUpdated: 0, inactivatedRemoved: 0, restored: 0, codeChanges: 0,
   matchedByStateId: 0, matchedByCode: 0, matchedByGtin: 0,
   relinked: 0, staleLinks: [], warnings: [], stateChanged: false,
-  stockChecked: 0, stockUpdated: 0, stockUnchanged: 0,
+  stockChecked: 0, stockUpdated: 0, stockUnchanged: 0, stockDifferences: [],
   deferred: 0, invalid: [], conflicts: [], errors: []
 };
 
@@ -380,8 +380,19 @@ try {
       report.stockChecked++;
       try {
         const value = current.get(String(id)) ?? 0;
-        if (APPLY ? await moveStock(id, deposit.id, product.stock, value, product.codigo) : Math.abs(product.stock - value) > 1e-6) report.stockUpdated++;
-        else report.stockUnchanged++;
+        const difference = Math.round((product.stock - value) * 1e6) / 1e6;
+        if (Math.abs(difference) > 1e-6) {
+          report.stockDifferences.push({
+            firebaseKey: product.firebaseKey,
+            codigo: product.codigo,
+            blingId: id,
+            currentBling: value,
+            desiredFirebase: product.stock,
+            difference
+          });
+          if (APPLY) await moveStock(id, deposit.id, product.stock, value, product.codigo);
+          report.stockUpdated++;
+        } else report.stockUnchanged++;
       } catch (error) { report.errors.push({ firebaseKey: product.firebaseKey, codigo: product.codigo, reason: error.message }); }
     }
   }
