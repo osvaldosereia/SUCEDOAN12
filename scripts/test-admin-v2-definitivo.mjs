@@ -199,7 +199,7 @@ if (!stockBootstrap.includes("if (route === 'orders') task = importOnce('orders'
 if (!stockBootstrap.includes('module?.refresh()')) fail('O bootstrap de Estoque não atualiza o módulo após carregar os produtos.');
 
 const collectionsBootstrap = read('producao-v2/js/collections-bootstrap.js');
-if (!collectionsBootstrap.includes("import './kit-lifecycle-admin.js';")) fail('O editor de ciclo de vida dos kits não é carregado.');
+if (!collectionsBootstrap.includes("import './kit-lifecycle-admin.js")) fail('O editor de ciclo de vida dos kits não é carregado.');
 const kitLifecycle = read('producao-v2/js/kit-lifecycle-admin.js');
 for (const marker of ['data-kit-quick-expiry', 'data-kit-quick-stock-mode', 'saveKitQuick', 'deleteCollectionFixed']) {
   if (!kitLifecycle.includes(marker)) fail(`Controle de kits incompleto: ${marker}.`);
