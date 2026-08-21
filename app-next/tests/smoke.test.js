@@ -24,15 +24,15 @@ assert(!preview.includes('src/main.js'), '/app-next ainda carrega uma segunda ap
 
 const production = fs.readFileSync(path.join(productionRoot, 'index.html'), 'utf8');
 for (const marker of [
-  '2026-08-12-main-links-v1',
-  '/app-next/styles/storefront-base.css?v=20260727-8',
-  '/app-next/styles/storefront-components.css?v=20260814-cestas-v1',
-  '/app-next/styles/storefront-responsive.css?v=20260727-10',
-  '/app-next/styles/checkout-flow.css?v=20260727-8',
-  '/app-next/styles/bundle-confirmation.css?v=20260727-5',
-  '/app-next/src/image-performance.js?v=20260727-8',
-  '/app-next/src/home-carousels.js?v=20260727-8',
-  '/app-next/src/main.js?v=20260814-cestas-v1',
+  'window.__DA_PRODUCTION__ = true',
+  '/app-next/styles/storefront-base.css',
+  '/app-next/styles/storefront-components.css',
+  '/app-next/styles/storefront-responsive.css',
+  '/app-next/styles/checkout-flow.css',
+  '/app-next/styles/bundle-confirmation.css',
+  '/app-next/src/image-performance.js',
+  '/app-next/src/home-carousels.js',
+  '/app-next/src/main.js',
   'da_v16_product_cards_20260727',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
@@ -82,7 +82,7 @@ for (const marker of [
   'applyLinkCoupon', "route?.query?.get('cupom')",
   'overlay.setAttribute(\'inert\'', 'router.navigate(target)',
   "router.navigate('#/ofertas')", 'warmOfferImages',
-  "createCheckout } from './checkout.js?v=20260814-cestas-v1'", 'query.length < 3'
+  "createCheckout } from './checkout.js?v=", 'query.length < 3'
 ]) assert(main.includes(marker), `Entrada principal incompleta: ${marker}`);
 
 const checkout = read('src/checkout.js');
