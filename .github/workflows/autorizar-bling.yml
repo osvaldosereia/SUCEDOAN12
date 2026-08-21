@@ -17,6 +17,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v5
+        with:
+          filter: blob:none
+          sparse-checkout: scripts/autorizar-bling-v3.mjs
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v5
         with:
           node-version: 22
