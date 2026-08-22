@@ -73,7 +73,7 @@
         "parseResponse": true,
         "allowRedirects": true,
         "stopOnHttpError": true,
-        "jsonStringBodyContent": "{\n  \"model\": \"gpt-5\",\n  \"input\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        { \"type\": \"input_text\", \"text\": {{toJSON(3.PROMPT)}} },\n        { \"type\": \"input_image\", \"image_url\": {{toJSON(3.INPUT_URL)}}, \"detail\": \"auto\" }\n      ]\n    }\n  ],\n  \"tools\": [\n    {\n      \"type\": \"image_generation\",\n      \"quality\": \"{{ifempty(2.quality; \"medium\")}}\",\n      \"size\": \"{{3.IMAGE_SIZE}}\",\n      \"background\": \"opaque\"\n    }\n  ]\n}",
+        "jsonStringBodyContent": "{\n  \"model\": \"gpt-5\",\n  \"input\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        { \"type\": \"input_text\", \"text\": \"{{escapeJSON(3.PROMPT)}}\" },\n        { \"type\": \"input_image\", \"image_url\": \"{{escapeJSON(3.INPUT_URL)}}\", \"detail\": \"auto\" }\n      ]\n    }\n  ],\n  \"tools\": [\n    {\n      \"type\": \"image_generation\",\n      \"quality\": \"{{ifempty(2.quality; \"medium\")}}\",\n      \"size\": \"{{3.IMAGE_SIZE}}\",\n      \"background\": \"opaque\"\n    }\n  ]\n}",
         "requestCompressedContent": true
       },
       "metadata": {"designer": {"x": 170, "y": 0, "name": "OpenAI - Gerar/editar imagem via API"}}
