@@ -79,7 +79,7 @@ function bindYoutube(raw) {
   const section = document.createElement('section');
   section.className = 'product-youtube-section';
   section.dataset.productYoutube = '1';
-  section.innerHTML = `<div class="product-youtube-heading"><strong>Vídeo do produto</strong><span>Veja a caneca em mais detalhes</span></div><div class="product-youtube-frame"><iframe loading="lazy" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}" title="Vídeo do produto no YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
+  section.innerHTML = `<div class="product-youtube-heading"><strong>Vídeo do produto</strong><span>Veja o produto em mais detalhes</span></div><div class="product-youtube-frame"><iframe loading="lazy" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}" title="Vídeo do produto no YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
   detail.insertAdjacentElement('afterend', section);
 }
 
