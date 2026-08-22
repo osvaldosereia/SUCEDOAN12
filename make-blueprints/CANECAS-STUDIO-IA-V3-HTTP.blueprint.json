@@ -1,0 +1,149 @@
+{
+  "name": "CANECAS - Studio IA - Arte 2.3x1 + Mockups - V3 HTTP",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {},
+      "mapper": {},
+      "metadata": {
+        "designer": {"x": -650, "y": 0, "name": "Webhook Admin Produção"},
+        "interface": [{"name": "payload", "type": "text", "label": "Payload JSON"}]
+      }
+    },
+    {
+      "id": 2,
+      "module": "json:ParseJSON",
+      "version": 1,
+      "parameters": {"type": ""},
+      "mapper": {"json": "{{1.payload}}"},
+      "metadata": {
+        "designer": {"x": -400, "y": 0, "name": "Interpretar pedido"},
+        "interface": [
+          {"name": "action", "type": "text"},
+          {"name": "request_id", "type": "text"},
+          {"name": "reference_image_url", "type": "text"},
+          {"name": "art_url", "type": "text"},
+          {"name": "prompt_art", "type": "text"},
+          {"name": "prompt_mockup", "type": "text"},
+          {"name": "side", "type": "number"},
+          {"name": "quality", "type": "text"}
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "module": "util:SetVariables",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "scope": "roundtrip",
+        "variables": [
+          {"name": "OPENAI_API_KEY", "value": "COLE_SUA_CHAVE_OPENAI_AQUI"},
+          {"name": "GITHUB_TOKEN", "value": "COLE_UM_NOVO_TOKEN_GITHUB_AQUI"},
+          {"name": "GITHUB_OWNER", "value": "osvaldosereia"},
+          {"name": "GITHUB_REPO", "value": "SUCEDOAN12"},
+          {"name": "GITHUB_BRANCH", "value": "main"},
+          {"name": "INPUT_URL", "value": "{{if(2.action = \"generate_mug_art\"; 2.reference_image_url; 2.art_url)}}"},
+          {"name": "PROMPT", "value": "{{if(2.action = \"generate_mug_art\"; 2.prompt_art; 2.prompt_mockup)}}"},
+          {"name": "IMAGE_SIZE", "value": "{{if(2.action = \"generate_mug_art\"; \"1536x1024\"; \"1024x1024\")}}"},
+          {"name": "OUTPUT_PATH", "value": "canecas/imagens/{{if(2.action = \"generate_mug_art\"; \"artes-fonte\"; \"mockups\")}}/{{formatDate(now; \"YYYY-MM-DD\"; \"America/Cuiaba\")}}/{{2.request_id}}-{{if(2.action = \"generate_mug_art\"; \"fonte\"; 2.side)}}.png"}
+        ]
+      },
+      "metadata": {"designer": {"x": -130, "y": 0, "name": "Configuração segura"}}
+    },
+    {
+      "id": 4,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {"tlsType": "", "authenticationType": "noAuth"},
+      "mapper": {
+        "url": "https://api.openai.com/v1/responses",
+        "method": "post",
+        "headers": [
+          {"name": "Authorization", "value": "Bearer {{3.OPENAI_API_KEY}}"},
+          {"name": "Content-Type", "value": "application/json"},
+          {"name": "Accept", "value": "application/json"}
+        ],
+        "timeout": 300,
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\n  \"model\": \"gpt-5\",\n  \"input\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        { \"type\": \"input_text\", \"text\": {{toJSON(3.PROMPT)}} },\n        { \"type\": \"input_image\", \"image_url\": {{toJSON(3.INPUT_URL)}}, \"detail\": \"auto\" }\n      ]\n    }\n  ],\n  \"tools\": [\n    {\n      \"type\": \"image_generation\",\n      \"quality\": \"{{ifempty(2.quality; \"medium\")}}\",\n      \"size\": \"{{3.IMAGE_SIZE}}\",\n      \"background\": \"opaque\"\n    }\n  ]\n}",
+        "requestCompressedContent": true
+      },
+      "metadata": {"designer": {"x": 170, "y": 0, "name": "OpenAI - Gerar/editar imagem via API"}}
+    },
+    {
+      "id": 5,
+      "module": "http:MakeRequest",
+      "version": 4,
+      "parameters": {"tlsType": "", "authenticationType": "noAuth"},
+      "mapper": {
+        "url": "https://api.github.com/repos/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/contents/{{3.OUTPUT_PATH}}",
+        "method": "put",
+        "headers": [
+          {"name": "Authorization", "value": "Bearer {{3.GITHUB_TOKEN}}"},
+          {"name": "Accept", "value": "application/vnd.github+json"},
+          {"name": "Content-Type", "value": "application/json"},
+          {"name": "X-GitHub-Api-Version", "value": "2022-11-28"},
+          {"name": "User-Agent", "value": "Make-Canecas-Studio-V3"}
+        ],
+        "timeout": 300,
+        "contentType": "json",
+        "inputMethod": "jsonString",
+        "shareCookies": false,
+        "parseResponse": true,
+        "allowRedirects": true,
+        "stopOnHttpError": true,
+        "jsonStringBodyContent": "{\n  \"message\": \"canecas: {{2.action}} {{2.request_id}}\",\n  \"content\": \"{{first(map(4.data.output; result; type; image_generation_call))}}\",\n  \"branch\": \"{{3.GITHUB_BRANCH}}\"\n}",
+        "requestCompressedContent": true
+      },
+      "metadata": {"designer": {"x": 480, "y": 0, "name": "Salvar resultado no GitHub"}}
+    },
+    {
+      "id": 6,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "status": "200",
+        "body": "{\n  \"ok\": true,\n  \"action\": \"{{2.action}}\",\n  \"request_id\": \"{{2.request_id}}\",\n  \"side\": {{ifempty(2.side; 0)}},\n  \"result_url\": \"https://raw.githubusercontent.com/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/{{3.GITHUB_BRANCH}}/{{3.OUTPUT_PATH}}\",\n  \"art_source_url\": \"https://raw.githubusercontent.com/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/{{3.GITHUB_BRANCH}}/{{3.OUTPUT_PATH}}\",\n  \"mockup_url\": \"https://raw.githubusercontent.com/{{3.GITHUB_OWNER}}/{{3.GITHUB_REPO}}/{{3.GITHUB_BRANCH}}/{{3.OUTPUT_PATH}}\"\n}",
+        "headers": [
+          {"key": "Content-Type", "value": "application/json; charset=utf-8"},
+          {"key": "Access-Control-Allow-Origin", "value": "*"},
+          {"key": "Cache-Control", "value": "no-store"}
+        ]
+      },
+      "metadata": {"designer": {"x": 790, "y": 0, "name": "Responder Admin"}}
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": true,
+      "slots": null,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {"orphans": []},
+    "zone": "eu1.make.com",
+    "notes": [
+      "V3 corrige os módulos Module Not Found da V2. Usa apenas Webhooks, JSON, Tools e HTTP.",
+      "No módulo 3, preencha OPENAI_API_KEY e um NOVO GITHUB_TOKEN. Não reutilize o token exposto no blueprint antigo.",
+      "O módulo 4 chama a Responses API com input_image por URL e a ferramenta image_generation. Não precisa de Download a file nem de Edit Image nativo do Make.",
+      "O Admin continua fazendo o recorte final exato da arte em 2300x1000 (2.3:1) antes de solicitar os dois mockups quadrados."
+    ]
+  }
+}
