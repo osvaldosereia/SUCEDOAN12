@@ -1,3 +1,5 @@
+import './mug-studio-gallery.js?admin_build=20260821-mug-studio-gallery-v1';
+
 const BUILD = '20260821-canecas-openai-native-v4';
 const INSTALLED = '__daMugNativeOpenAiBridgeV4';
 
