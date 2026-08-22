@@ -4,6 +4,7 @@ const CONFIG_STORAGE_KEY = 'da_admin_v2_config';
 const ROUTES = Object.freeze({
   dashboard: ['Visão geral', 'Indicadores, prioridades e estado do sistema.'],
   products: ['Produtos', 'Consulta, cadastro e edição do catálogo.'],
+  'mug-studio': ['Criador de canecas', 'Criação de artes e mockups de canecas com Make + OpenAI.'],
   stock: ['Estoque e validade', 'Estoque baixo, vencimentos, lotes e localização.'],
   nfe: ['Entrada de NF-e', 'Leitura, conferência, cadastro completo e importação real do XML.'],
   orders: ['Pedidos', 'Lista paginada, separação, conferência e entrega.'],
@@ -24,6 +25,7 @@ const ROUTES = Object.freeze({
 
 let currentRoute = 'dashboard';
 let dispatching = false;
+let mugStudioPromise = null;
 
 function routeFromLocation() {
   try {
@@ -33,6 +35,71 @@ function routeFromLocation() {
     if (ROUTES[saved]) return saved;
   } catch {}
   return 'dashboard';
+}
+
+function installMugStudioShell() {
+  const nav = document.getElementById('mainNav');
+  if (nav && !nav.querySelector('[data-route="mug-studio"]')) {
+    const productsButton = nav.querySelector('[data-route="products"]');
+    if (productsButton) {
+      productsButton.insertAdjacentHTML('afterend', '<button class="nav-item" data-route="mug-studio" type="button"><span class="nav-icon">CN</span><span>Criador de canecas</span></button>');
+    }
+  }
+
+  const main = document.getElementById('mainContent');
+  if (main && !main.querySelector('.view[data-view="mug-studio"]')) {
+    const productsView = main.querySelector('.view[data-view="products"]');
+    const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Arte horizontal 2,3:1, dois mockups quadrados e cadastro inativo para revisão.</small></div></div></section>';
+    if (productsView) productsView.insertAdjacentHTML('afterend', html);
+    else main.insertAdjacentHTML('beforeend', html);
+  }
+
+  if (!document.getElementById('mugStudioRouteStyle')) {
+    const style = document.createElement('style');
+    style.id = 'mugStudioRouteStyle';
+    style.textContent = '.view[data-view="products"] #mugAutomationPanel{display:none!important}.view[data-view="mug-studio"] #mugAutomationPanel{display:grid!important}';
+    document.head.appendChild(style);
+  }
+}
+
+function prepareMugStudioPanel() {
+  const view = document.querySelector('.view[data-view="mug-studio"]');
+  const panel = document.getElementById('mugAutomationPanel');
+  if (!view || !panel) return false;
+  if (panel.parentElement !== view) view.appendChild(panel);
+
+  const youtube = panel.querySelector('#mugYoutube');
+  if (youtube) {
+    youtube.value = '';
+    const label = youtube.closest('label');
+    if (label) label.hidden = true;
+  }
+
+  const mediaDetails = [...panel.querySelectorAll('.mug-section')].find(section => section.querySelector('#mugReference'));
+  const summary = mediaDetails?.querySelector('summary');
+  if (summary) summary.textContent = '3. Imagem de referência';
+  const helper = panel.querySelector('.mug-reference-field small');
+  if (helper) helper.textContent = 'Imagem opcional usada como referência visual na criação da arte. Vídeos são adicionados depois, no cadastro normal do produto.';
+
+  const placeholder = view.querySelector(':scope > [data-route-placeholder]');
+  if (placeholder) placeholder.hidden = true;
+  return true;
+}
+
+function loadMugStudio() {
+  if (mugStudioPromise) return mugStudioPromise;
+  mugStudioPromise = Promise.all([
+    import('./mug-products-enhancement.js?admin_build=20260821-canecas-studio-v2'),
+    import('./mug-make-native-openai-bridge.js?admin_build=20260821-canecas-openai-native-v4'),
+  ]).then(() => {
+    prepareMugStudioPanel();
+    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'mug-studio', source: 'mug-studio-loader' } }));
+  }).catch(error => {
+    mugStudioPromise = null;
+    console.error('Não foi possível abrir o Criador de Canecas:', error);
+    throw error;
+  });
+  return mugStudioPromise;
 }
 
 function bindOrderWebhookSetting() {
@@ -104,6 +171,12 @@ function activate(route, { persist = true, emit = true } = {}) {
   }
 
   syncAllPlaceholders();
+  if (route === 'mug-studio') {
+    loadMugStudio().catch(error => {
+      const placeholder = document.querySelector('.view[data-view="mug-studio"] [data-route-placeholder] small');
+      if (placeholder) placeholder.textContent = `Falha ao carregar: ${error?.message || error}`;
+    });
+  }
   if (emit) {
     dispatching = true;
     window.dispatchEvent(new CustomEvent('admin-v2-route', { detail: { route, source: 'navigation-v12' } }));
@@ -112,6 +185,7 @@ function activate(route, { persist = true, emit = true } = {}) {
 }
 
 function start() {
+  installMugStudioShell();
   bindOrderWebhookSetting();
   const nav = document.getElementById('mainNav');
   nav?.addEventListener('click', event => {
@@ -128,7 +202,10 @@ function start() {
     if (dispatching || event.detail?.source === 'navigation-v12' || !ROUTES[route]) return;
     activate(route, { persist: true, emit: false });
   });
-  window.addEventListener('admin-v2-route-ready', syncAllPlaceholders);
+  window.addEventListener('admin-v2-route-ready', () => {
+    prepareMugStudioPanel();
+    syncAllPlaceholders();
+  });
   window.addEventListener('admin-v2-open-product', () => activate('products'));
 
   window.adminV2Navigate = activate;

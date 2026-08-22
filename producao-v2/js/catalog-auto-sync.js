@@ -1,5 +1,6 @@
 import './product-editor-enhancements.js?admin_build=20260727-products-inline-v1';
 import './mug-products-enhancement.js?admin_build=20260821-canecas-studio-v2';
+import './product-media-generalizer.js?admin_build=20260821-product-media-general-v1';
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 
 const ORIGINAL_FETCH_KEY = '__daAdminV2OriginalFetch';
