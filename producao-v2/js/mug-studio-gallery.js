@@ -1,4 +1,6 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
+import { ProductsModule } from './modules/products.js';
+import { loadProduct } from './services/firebase.js';
 
 const BUILD = '20260821-mug-studio-gallery-v1';
 let loading = false;
@@ -82,6 +84,31 @@ async function fetchCanecas() {
   response = await fetch(`${base}/${node}.json?_=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`Firebase retornou ${response.status}.`);
   return normalizeCollection(await response.json());
+}
+
+function installEditorFallback() {
+  const prototype = ProductsModule.prototype;
+  if (prototype.__mugStudioDirectEditBuild === BUILD) return;
+  prototype.__mugStudioDirectEditBuild = BUILD;
+  const originalOpenEditor = prototype.openEditor;
+
+  prototype.openEditor = function openEditorIncludingFreshMug(key) {
+    const normalizedKey = text(key);
+    if (!normalizedKey || this.store.getProduct(normalizedKey)) return originalOpenEditor.call(this, key);
+
+    this.onToast?.('Carregando a caneca recém-criada…');
+    return loadProduct(this.store.state.config, normalizedKey)
+      .then(product => {
+        if (!product) throw new Error('Caneca não encontrada no Firebase.');
+        this.store.markProductSaved(normalizedKey, product, { emit: false });
+        this.render();
+        return originalOpenEditor.call(this, normalizedKey);
+      })
+      .catch(error => {
+        console.error('Não foi possível abrir a caneca pelo Criador:', error);
+        this.onToast?.(error?.message || String(error), 'error');
+      });
+  };
 }
 
 function ensureShell() {
@@ -189,6 +216,7 @@ function activate() {
   refresh(true);
 }
 
+installEditorFallback();
 installStyle();
 window.addEventListener('admin-v2-route-ready', event => {
   if (event.detail?.route === 'mug-studio') activate();
