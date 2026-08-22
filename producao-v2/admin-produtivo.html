@@ -17,7 +17,8 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
   <script>
     (async function () {
-      const BUILD = '20260813-product-baskets-v1';
+      // Build anterior mantida somente como referência de compatibilidade: 20260813-product-baskets-v1
+      const BUILD = '20260821-canecas-media-v5';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -83,7 +84,7 @@
         html = stripGlobalRouteScript(html, 'campaign-rules-section.js');
         html = html.replace('<th>Preço</th>', '<th>Preço de venda</th>');
         html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · edição e exclusão segura de produtos, XML, imagens e EANs alternativos.</strong>');
-        html = html.replace('</head>', `<meta name="admin-save-build" content="${BUILD}"></head>`);
+        html = html.replace(/<meta\s+name=["']admin-save-build["'][^>]*>/i, `<meta name="admin-save-build" content="${BUILD}">`);
 
         const enhancements = [
           ['./js/product-delete-filter-v2.js', false],
