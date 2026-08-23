@@ -17,8 +17,8 @@
   <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
   <script>
     (async function () {
-      // Build anterior mantida somente como referência de compatibilidade: 20260813-product-baskets-v1
-      const BUILD = '20260823-canecas-command-layout-v3-v12';
+      const params = new URLSearchParams(window.location.search);
+      const BUILD = params.get('admin_build') || '20260823-canecas-command-layout-v4-force-entry';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
