@@ -1,10 +1,18 @@
 const ROUTE_STORAGE_KEY = 'da_admin_v2_route_v12';
 const CONFIG_STORAGE_KEY = 'da_admin_v2_config';
+const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
+  || new URLSearchParams(window.location.search).get('admin_build')
+  || '20260823-mug-studio-unified-v1';
+
+function withBuild(path) {
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}admin_build=${encodeURIComponent(ACTIVE_BUILD)}`;
+}
 
 const ROUTES = Object.freeze({
   dashboard: ['Visão geral', 'Indicadores, prioridades e estado do sistema.'],
   products: ['Produtos', 'Consulta, cadastro e edição do catálogo.'],
-  'mug-studio': ['Criador de canecas', 'Envie uma imagem de inspiração e gere automaticamente a arte e os dois mockups.'],
+  'mug-studio': ['Criador de canecas', 'Envie uma imagem de inspiração, combine comandos salvos e gere a arte e os dois mockups.'],
   stock: ['Estoque e validade', 'Estoque baixo, vencimentos, lotes e localização.'],
   nfe: ['Entrada de NF-e', 'Leitura, conferência, cadastro completo e importação real do XML.'],
   orders: ['Pedidos', 'Lista paginada, separação, conferência e entrega.'],
@@ -49,7 +57,7 @@ function installMugStudioShell() {
   const main = document.getElementById('mainContent');
   if (main && !main.querySelector('.view[data-view="mug-studio"]')) {
     const productsView = main.querySelector('.view[data-view="products"]');
-    const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Imagem de inspiração → arte horizontal → dois mockups → cadastro inativo.</small></div></div></section>';
+    const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Imagem de inspiração → comandos → arte horizontal → dois mockups → cadastro inativo.</small></div></div></section>';
     if (productsView) productsView.insertAdjacentHTML('afterend', html);
     else main.insertAdjacentHTML('beforeend', html);
   }
@@ -75,11 +83,13 @@ function prepareMugStudioPanel() {
 function loadMugStudio() {
   if (mugStudioPromise) return mugStudioPromise;
   mugStudioPromise = Promise.all([
-    import('./mug-products-enhancement.js?admin_build=20260821-canecas-studio-v2'),
-    import('./mug-make-native-openai-bridge.js?admin_build=20260823-canecas-command-layout-v3-direct-entry-v1'),
+    import(withBuild('./mug-products-enhancement.js')),
+    import(withBuild('./mug-make-native-openai-bridge.js')),
   ]).then(() => {
     prepareMugStudioPanel();
-    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'mug-studio', source: 'mug-studio-loader-v7-3' } }));
+    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', {
+      detail: { route: 'mug-studio', source: 'mug-studio-loader-unified', build: ACTIVE_BUILD },
+    }));
   }).catch(error => {
     mugStudioPromise = null;
     console.error('Não foi possível abrir o Criador de Canecas:', error);
@@ -196,10 +206,11 @@ function start() {
 
   window.adminV2Navigate = activate;
   window.adminV2CurrentRoute = () => currentRoute;
+  window.__adminV2ActiveBuild = ACTIVE_BUILD;
   activate(routeFromLocation(), { persist: false });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
 else start();
 
-export { ROUTES, activate };
+export { ROUTES, activate, withBuild };
