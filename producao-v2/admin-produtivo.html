@@ -18,7 +18,7 @@
   <script>
     (async function () {
       // Build anterior mantida somente como referência de compatibilidade: 20260813-product-baskets-v1
-      const BUILD = '20260821-canecas-v5-finalizacao-v7';
+      const BUILD = '20260822-canecas-v5-base64-fix-v8';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -91,6 +91,7 @@
           ['./js/nfe-image-make-fix.js', true],
           ['./js/nfe-import-save-fix.js', true],
           ['./js/alternate-ean-support.js', true],
+          ['./js/mug-studio-v5-base64-source-fix.js', true],
           ['./js/mug-studio-v5-controller.js', true],
         ];
 
