@@ -1,7 +1,7 @@
 import './mug-studio-gallery.js?admin_build=20260823-mug-v7-gallery';
-import './mug-personalizer-v7.js?admin_build=20260823-canecas-studio-v7';
+import './mug-personalizer-v7.js?admin_build=20260823-canecas-studio-v7-2';
 
-const BUILD = '20260823-canecas-studio-v7-loader';
+const BUILD = '20260823-canecas-studio-v7-2-loader';
 
 function install() {
   window.__daMugStudioV7Loader = BUILD;
