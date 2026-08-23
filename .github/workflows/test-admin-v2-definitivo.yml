@@ -8,6 +8,7 @@ on:
       - "producao-v2/**"
       - "app-next/**"
       - "scripts/test-admin-v2-definitivo.mjs"
+      - "scripts/test-mug-studio-loader.mjs"
       - "scripts/check-admin-production.mjs"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/processar-ofertas.mjs"
@@ -29,6 +30,7 @@ on:
       - "producao-v2/**"
       - "app-next/**"
       - "scripts/test-admin-v2-definitivo.mjs"
+      - "scripts/test-mug-studio-loader.mjs"
       - "scripts/check-admin-production.mjs"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/processar-ofertas.mjs"
@@ -64,16 +66,26 @@ jobs:
         run: |
           set -o pipefail
           node scripts/test-admin-v2-definitivo.mjs 2>&1 | tee admin-v2-test-report.txt
+      - name: Validar carregamento do Criador de Canecas
+        id: mug_validation
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/test-mug-studio-loader.mjs 2>&1 | tee mug-studio-test-report.txt
       - name: Anexar relatório de validação
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: admin-v2-test-report
-          path: admin-v2-test-report.txt
+          path: |
+            admin-v2-test-report.txt
+            mug-studio-test-report.txt
           if-no-files-found: error
           retention-days: 7
       - name: Confirmar resultado
-        if: steps.validation.outcome == 'failure'
+        if: steps.validation.outcome == 'failure' || steps.mug_validation.outcome == 'failure'
         run: |
-          cat admin-v2-test-report.txt
+          cat admin-v2-test-report.txt || true
+          cat mug-studio-test-report.txt || true
           exit 1
