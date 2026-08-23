@@ -1,10 +1,10 @@
-import './mug-studio-gallery.js?admin_build=20260822-mug-v6-gallery';
-import './mug-personalizer-v6.js?admin_build=20260822-canecas-personalizador-v6';
+import './mug-studio-gallery.js?admin_build=20260823-mug-v7-gallery';
+import './mug-personalizer-v7.js?admin_build=20260823-canecas-studio-v7';
 
-const BUILD = '20260822-canecas-personalizador-v6-loader';
+const BUILD = '20260823-canecas-studio-v7-loader';
 
 function install() {
-  window.__daMugPersonalizerV6Loader = BUILD;
+  window.__daMugStudioV7Loader = BUILD;
 }
 
 install();

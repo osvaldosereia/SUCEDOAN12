@@ -4,7 +4,7 @@ const CONFIG_STORAGE_KEY = 'da_admin_v2_config';
 const ROUTES = Object.freeze({
   dashboard: ['Visão geral', 'Indicadores, prioridades e estado do sistema.'],
   products: ['Produtos', 'Consulta, cadastro e edição do catálogo.'],
-  'mug-studio': ['Criador de canecas', 'Criação de artes e mockups de canecas com Make + OpenAI.'],
+  'mug-studio': ['Criador de canecas', 'Envie uma imagem de inspiração e gere automaticamente a arte e os dois mockups.'],
   stock: ['Estoque e validade', 'Estoque baixo, vencimentos, lotes e localização.'],
   nfe: ['Entrada de NF-e', 'Leitura, conferência, cadastro completo e importação real do XML.'],
   orders: ['Pedidos', 'Lista paginada, separação, conferência e entrega.'],
@@ -49,7 +49,7 @@ function installMugStudioShell() {
   const main = document.getElementById('mainContent');
   if (main && !main.querySelector('.view[data-view="mug-studio"]')) {
     const productsView = main.querySelector('.view[data-view="products"]');
-    const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Arte horizontal 2,3:1, dois mockups quadrados e cadastro inativo para revisão.</small></div></div></section>';
+    const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Imagem de inspiração → arte horizontal → dois mockups → cadastro inativo.</small></div></div></section>';
     if (productsView) productsView.insertAdjacentHTML('afterend', html);
     else main.insertAdjacentHTML('beforeend', html);
   }
@@ -67,20 +67,6 @@ function prepareMugStudioPanel() {
   const panel = document.getElementById('mugAutomationPanel');
   if (!view || !panel) return false;
   if (panel.parentElement !== view) view.appendChild(panel);
-
-  const youtube = panel.querySelector('#mugYoutube');
-  if (youtube) {
-    youtube.value = '';
-    const label = youtube.closest('label');
-    if (label) label.hidden = true;
-  }
-
-  const mediaDetails = [...panel.querySelectorAll('.mug-section')].find(section => section.querySelector('#mugReference'));
-  const summary = mediaDetails?.querySelector('summary');
-  if (summary) summary.textContent = '3. Imagem de referência';
-  const helper = panel.querySelector('.mug-reference-field small');
-  if (helper) helper.textContent = 'Imagem opcional usada como referência visual na criação da arte. Vídeos são adicionados depois, no cadastro normal do produto.';
-
   const placeholder = view.querySelector(':scope > [data-route-placeholder]');
   if (placeholder) placeholder.hidden = true;
   return true;
@@ -90,10 +76,10 @@ function loadMugStudio() {
   if (mugStudioPromise) return mugStudioPromise;
   mugStudioPromise = Promise.all([
     import('./mug-products-enhancement.js?admin_build=20260821-canecas-studio-v2'),
-    import('./mug-make-native-openai-bridge.js?admin_build=20260821-canecas-openai-native-v4'),
+    import('./mug-make-native-openai-bridge.js?admin_build=20260823-canecas-studio-v7'),
   ]).then(() => {
     prepareMugStudioPanel();
-    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'mug-studio', source: 'mug-studio-loader' } }));
+    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'mug-studio', source: 'mug-studio-loader-v7' } }));
   }).catch(error => {
     mugStudioPromise = null;
     console.error('Não foi possível abrir o Criador de Canecas:', error);
@@ -215,3 +201,5 @@ function start() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
 else start();
+
+export { ROUTES, activate };
