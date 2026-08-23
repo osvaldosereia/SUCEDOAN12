@@ -76,10 +76,10 @@ function loadMugStudio() {
   if (mugStudioPromise) return mugStudioPromise;
   mugStudioPromise = Promise.all([
     import('./mug-products-enhancement.js?admin_build=20260821-canecas-studio-v2'),
-    import('./mug-make-native-openai-bridge.js?admin_build=20260823-canecas-studio-v7'),
+    import('./mug-make-native-openai-bridge.js?admin_build=20260823-canecas-command-layout-v3-direct-entry-v1'),
   ]).then(() => {
     prepareMugStudioPanel();
-    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'mug-studio', source: 'mug-studio-loader-v7' } }));
+    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', { detail: { route: 'mug-studio', source: 'mug-studio-loader-v7-3' } }));
   }).catch(error => {
     mugStudioPromise = null;
     console.error('Não foi possível abrir o Criador de Canecas:', error);
