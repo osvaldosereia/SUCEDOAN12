@@ -1,0 +1,161 @@
+import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
+import { text } from './core/utils.js';
+import './mug-studio-gallery.js?admin_build=20260822-mug-v6-gallery';
+import {
+  IMAGE_TYPES, PHRASE_STYLES, ART_DIRECTIONS, COLOR_PRESETS, MUG_V6,
+  treatmentNeedsAi, buildSubjectPrompt, buildMockupPrompt, normalizeUpload, composeMasterArt,
+} from '../../shared/mug-personalizer-v6-core.js';
+
+const BUILD = '20260822-canecas-personalizador-v6';
+const WEBHOOK_KEY = 'da_admin_v2_mug_make_webhook';
+const PLACEHOLDER_ART = '__MUG_ART__';
+const PLACEHOLDER_MOCKUP_1 = '__MUG_MOCKUP_1__';
+const PLACEHOLDER_MOCKUP_2 = '__MUG_MOCKUP_2__';
+
+function loadConfig() {
+  try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') }; }
+  catch { return { ...DEFAULT_CONFIG }; }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function escapeAttr(value) {
+  return String(value ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function optionCards(items, name, selected = '') {
+  return items.map(([value, label, description]) => `<label class="mugv6-choice"><input type="radio" name="${name}" value="${escapeAttr(value)}" ${selected === value ? 'checked' : ''}><span><strong>${escapeHtml(label)}</strong>${description ? `<small>${escapeHtml(description)}</small>` : ''}</span></label>`).join('');
+}
+
+function chips(items, name, selected = '') {
+  return items.map(([value,label]) => `<label class="mugv6-chip"><input type="radio" name="${name}" value="${escapeAttr(value)}" ${selected === value ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`).join('');
+}
+
+function callMake(hook, payload) {
+  return fetch(hook, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payload: JSON.stringify(payload) }),
+  }).then(async response => {
+    const raw = await response.text();
+    let result = {};
+    try { result = raw ? JSON.parse(raw) : {}; }
+    catch { throw new Error(`Make respondeu algo que não é JSON (${response.status}).`); }
+    if (!response.ok || result.ok === false) throw new Error(result.error || result.message || `Make respondeu HTTP ${response.status}.`);
+    return result;
+  });
+}
+
+function requestId() { return `mug-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; }
+
+function productName(phrase, imageType) {
+  const prefix = IMAGE_TYPES[imageType]?.label || 'Personalizada';
+  const excerpt = text(phrase).replace(/\s+/g,' ').slice(0,48);
+  return `Caneca ${prefix} - ${excerpt || 'Personalizada'}`;
+}
+
+function collect(panel) {
+  const imageType = panel.querySelector('input[name="mugv6_image_type"]:checked')?.value || '';
+  const treatment = panel.querySelector('input[name="mugv6_treatment"]:checked')?.value || '';
+  return {
+    request_id: requestId(), image_type: imageType, image_treatment: treatment,
+    phrase: text(panel.querySelector('#mugv6Phrase')?.value),
+    phrase_style: panel.querySelector('input[name="mugv6_phrase_style"]:checked')?.value || 'modern',
+    decoration: panel.querySelector('input[name="mugv6_decoration"]:checked')?.value || 'none',
+    art_direction: panel.querySelector('input[name="mugv6_art_direction"]:checked')?.value || 'clean',
+    color: panel.querySelector('input[name="mugv6_color"]:checked')?.value || 'auto',
+    notes: text(panel.querySelector('#mugv6Notes')?.value), quality: panel.querySelector('#mugv6Quality')?.value || 'high',
+  };
+}
+
+function firebaseTemplate(data) {
+  const now = new Date().toISOString();
+  const name = productName(data.phrase, data.image_type);
+  const code = data.request_id.replace(/^mug-/,'CAN-').replace(/-/g,'').slice(0,20).toUpperCase();
+  return JSON.stringify({
+    id: data.request_id, firebaseKey: data.request_id, codigo: code, nome: name,
+    categoria: 'Canecas', subcategoria: 'Personalizadas', subsubcategoria: IMAGE_TYPES[data.image_type]?.label || 'Personalizadas',
+    preco_custo: 10, preco: 19.90, estoque: 0, situacao: 'I', ativo: false,
+    material: 'Cerâmica', capacidade: '325 ml', embalagem: 'Caneca de cerâmica 325 ml', unidade: 'UN',
+    descricao: `Caneca personalizada com frase à esquerda e ${IMAGE_TYPES[data.image_type]?.label?.toLowerCase() || 'imagem'} à direita. Cadastro automático para revisão.`,
+    url_imagem: PLACEHOLDER_MOCKUP_1, imagem: PLACEHOLDER_MOCKUP_1, imagem_url: PLACEHOLDER_MOCKUP_1,
+    imagens: [PLACEHOLDER_MOCKUP_1, PLACEHOLDER_MOCKUP_2], imagens_site: [PLACEHOLDER_MOCKUP_1, PLACEHOLDER_MOCKUP_2],
+    mockup_1: PLACEHOLDER_MOCKUP_1, mockup_2: PLACEHOLDER_MOCKUP_2,
+    arte_personalizacao: PLACEHOLDER_ART, arte_horizontal: PLACEHOLDER_ART,
+    arte_impressao: { url: PLACEHOLDER_ART, ratio: '2.3:1', width: MUG_V6.width, height: MUG_V6.height, formato: 'webp', layout: 'frase_esquerda_imagem_direita' },
+    midias_admin: [PLACEHOLDER_MOCKUP_1, PLACEHOLDER_MOCKUP_2, PLACEHOLDER_ART], video_youtube: '',
+    origem_cadastro: 'make_canecas_personalizador_v6', tipo_produto: 'caneca_personalizavel', frase_caneca: data.phrase,
+    configuracao_personalizacao: {
+      image_type: data.image_type, image_treatment: data.image_treatment, phrase_style: data.phrase_style,
+      decoration: data.decoration, art_direction: data.art_direction, color: data.color, notes: data.notes,
+      layout: 'frase_esquerda_imagem_direita', version: 'v6',
+    },
+    geracao_status: 'concluido', geracao_etapa: 'firebase_salvo', geracao_versao: 'v6',
+    criado_em: now, updated_at: now, last_update: Date.now(),
+  });
+}
+
+function installStyles() {
+  if (document.getElementById('mugV6Styles')) return;
+  const style = document.createElement('style'); style.id = 'mugV6Styles';
+  style.textContent = `#mugAutomationPanel.mugv6{display:grid;gap:18px;padding:18px}.mugv6-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.mugv6-head h2{margin:3px 0 5px}.mugv6-head p{margin:0;color:#62655f}.mugv6-step{border:1px solid #e4e5e0;border-radius:18px;padding:16px;background:#fff}.mugv6-step h3{margin:0 0 5px}.mugv6-step>p{margin:0 0 13px;color:#666}.mugv6-file{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center}.mugv6-file img{width:130px;height:130px;object-fit:cover;border-radius:16px;border:1px solid #ddd;background:#fafafa}.mugv6-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}.mugv6-choice,.mugv6-chip{cursor:pointer}.mugv6-choice input,.mugv6-chip input{position:absolute;opacity:0;pointer-events:none}.mugv6-choice span{display:flex;min-height:88px;flex-direction:column;justify-content:center;padding:10px;border:1px solid #dfe1dc;border-radius:14px;background:#fafafa}.mugv6-choice small{margin-top:4px;color:#6b6d68;line-height:1.25}.mugv6-choice input:checked+span,.mugv6-chip input:checked+span{border-color:#161616;background:#161616;color:#fff}.mugv6-choice input:checked+span small{color:#ddd}.mugv6-chips{display:flex;flex-wrap:wrap;gap:8px}.mugv6-chip span{display:block;border:1px solid #dfe1dc;border-radius:999px;padding:9px 13px;background:#fafafa;font-weight:700}.mugv6-field{display:grid;gap:6px}.mugv6-field input,.mugv6-field textarea,.mugv6-field select{width:100%;box-sizing:border-box;border:1px solid #ccd0c8;border-radius:12px;padding:12px;background:#fff;font:inherit}.mugv6-field textarea{min-height:74px;resize:vertical}.mugv6-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mugv6-preview{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}.mugv6-preview figure{margin:0}.mugv6-preview img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;border:1px solid #ddd}.mugv6-preview .master img{aspect-ratio:2.3/1}.mugv6-preview figcaption{font-size:12px;margin-top:4px;color:#666}.mugv6-footer{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.mugv6-status{font-weight:700}@media(max-width:760px){#mugAutomationPanel.mugv6{padding:10px;gap:12px}.mugv6-step{padding:12px}.mugv6-grid{grid-template-columns:1fr 1fr}.mugv6-two{grid-template-columns:1fr}.mugv6-file{grid-template-columns:94px 1fr}.mugv6-file img{width:94px;height:94px}.mugv6-preview{grid-template-columns:1fr 1fr}.mugv6-preview .master{grid-column:1/-1}.mugv6-choice span{min-height:76px}}`;
+  document.head.appendChild(style);
+}
+
+function renderTreatment(panel, type) {
+  const config = IMAGE_TYPES[type];
+  panel.querySelector('#mugv6TreatmentBox').innerHTML = config ? optionCards(config.treatments,'mugv6_treatment',config.treatments[0][0]) : '<span class="muted">Escolha primeiro o tipo da imagem.</span>';
+  const decorations = config?.decorations || [['none','Sem decoração']];
+  panel.querySelector('#mugv6DecorationBox').innerHTML = chips(decorations,'mugv6_decoration',decorations[0][0]);
+}
+
+function renderPanel(panel) {
+  installStyles(); panel.className = 'mug-automation-panel mugv6';
+  panel.innerHTML = `<div class="mugv6-head"><div><span class="eyebrow">Personalizador de Canecas V6</span><h2>Crie uma caneca personalizada</h2><p>Frase à esquerda + imagem à direita. O mesmo modelo será reutilizável no site.</p></div><span class="badge warning">Cadastro inativo</span></div>
+  <section class="mugv6-step"><h3>1. Envie a imagem</h3><p>A imagem será usada no lado direito da caneca.</p><div class="mugv6-file"><img id="mugv6ImagePreview" alt="Prévia da imagem" hidden><div class="mugv6-field"><input id="mugv6Image" type="file" accept="image/*"><small>PNG, JPG ou WEBP. Para logomarca, prefira arquivo nítido.</small></div></div></section>
+  <section class="mugv6-step"><h3>2. O que aparece na imagem?</h3><p>As próximas opções mudam conforme sua escolha.</p><div class="mugv6-grid" id="mugv6ImageTypes">${optionCards(Object.entries(IMAGE_TYPES).map(([v,i])=>[v,`${i.icon} ${i.label}`]),'mugv6_image_type')}</div></section>
+  <section class="mugv6-step"><h3>3. Como você imagina a imagem?</h3><div class="mugv6-grid" id="mugv6TreatmentBox"><span class="muted">Escolha primeiro o tipo da imagem.</span></div></section>
+  <section class="mugv6-step"><h3>4. Escreva a frase</h3><p>A frase é montada pelo sistema, sem a IA reescrever o texto.</p><div class="mugv6-field"><textarea id="mugv6Phrase" maxlength="100" placeholder="Ex.: Pai, nosso herói para sempre"></textarea><small>Até 100 caracteres.</small></div></section>
+  <section class="mugv6-step"><h3>5. Como você quer a frase?</h3><div class="mugv6-chips">${chips(PHRASE_STYLES,'mugv6_phrase_style','modern')}</div></section>
+  <section class="mugv6-step"><h3>6. Decoração da frase</h3><div class="mugv6-chips" id="mugv6DecorationBox">${chips([['none','Sem decoração']],'mugv6_decoration','none')}</div></section>
+  <section class="mugv6-step"><h3>7. Qual o clima da caneca?</h3><div class="mugv6-chips">${chips(ART_DIRECTIONS,'mugv6_art_direction','clean')}</div></section>
+  <section class="mugv6-step"><h3>8. Cor principal</h3><div class="mugv6-chips">${chips(COLOR_PRESETS,'mugv6_color','auto')}</div></section>
+  <section class="mugv6-step"><h3>9. Algo importante?</h3><p>Opcional. Informe algo que não pode ser alterado.</p><div class="mugv6-field"><textarea id="mugv6Notes" maxlength="220" placeholder="Ex.: não corte o chapéu; preserve a mancha branca; não altere a logomarca"></textarea></div></section>
+  <section class="mugv6-step"><h3>Integração</h3><div class="mugv6-two"><label class="mugv6-field">Webhook Make<input id="mugv6Webhook" type="url" placeholder="https://hook.eu1.make.com/..."></label><label class="mugv6-field">Qualidade<select id="mugv6Quality"><option value="high" selected>Alta</option><option value="medium">Média</option></select></label></div></section>
+  <div class="mugv6-footer"><button class="button primary" id="mugv6Generate" type="button">Gerar minha caneca</button><button class="button secondary" id="mugv6Reset" type="button">Limpar</button><span class="mugv6-status" id="mugv6Status"></span></div><div id="mugv6Result" class="mug-result" hidden></div>`;
+  panel.querySelector('#mugv6Webhook').value = localStorage.getItem(WEBHOOK_KEY) || '';
+  panel.querySelector('#mugv6Webhook').addEventListener('change',e=>localStorage.setItem(WEBHOOK_KEY,text(e.target.value)));
+  panel.querySelector('#mugv6Image').addEventListener('change',e=>{const file=e.target.files?.[0],img=panel.querySelector('#mugv6ImagePreview');if(!file){img.hidden=true;img.removeAttribute('src');return}if(!file.type.startsWith('image/')){e.target.value='';return}img.src=URL.createObjectURL(file);img.hidden=false});
+  panel.querySelector('#mugv6ImageTypes').addEventListener('change',e=>{if(e.target.name==='mugv6_image_type')renderTreatment(panel,e.target.value)});
+  panel.querySelector('#mugv6Reset').addEventListener('click',()=>renderPanel(panel));
+  panel.querySelector('#mugv6Generate').addEventListener('click',()=>generate(panel));
+}
+
+async function generate(panel) {
+  const status=panel.querySelector('#mugv6Status'),button=panel.querySelector('#mugv6Generate'),result=panel.querySelector('#mugv6Result');
+  const file=panel.querySelector('#mugv6Image')?.files?.[0],hook=text(panel.querySelector('#mugv6Webhook')?.value),data=collect(panel),config=loadConfig();
+  if(!file)return void(status.textContent='Envie uma imagem.'); if(!data.image_type)return void(status.textContent='Informe o que aparece na imagem.');
+  if(!data.image_treatment)return void(status.textContent='Escolha como deseja tratar a imagem.'); if(!data.phrase)return void(status.textContent='Escreva a frase da caneca.');
+  if(!hook)return void(status.textContent='Configure o webhook do Make.'); if(!text(config.firebaseUrl))return void(status.textContent='Firebase não está configurado.');
+  button.disabled=true;result.hidden=true;
+  try{
+    status.textContent='1/3 · Preparando a imagem...'; let subject=await normalizeUpload(file,1200);
+    if(treatmentNeedsAi(data.image_type,data.image_treatment)){
+      status.textContent='1/3 · OpenAI está tratando a imagem...';
+      const prepared=await callMake(hook,{action:'prepare_subject',request_id:data.request_id,image_base64:subject,prompt_subject:buildSubjectPrompt(data),quality:data.quality});
+      subject=text(prepared.subject_data_url||prepared.image_base64||prepared.image_url); if(!subject)throw new Error('O Make não retornou subject_data_url.');
+    }
+    status.textContent='2/3 · Montando a arte 2300×1000...'; const master=await composeMasterArt(data,subject);
+    status.textContent='3/3 · Gerando lado da frase, lado da imagem e cadastrando...';
+    const node=text(config.productsNode||DEFAULT_CONFIG.productsNode||'produtos').replace(/^\/+|\/+$/g,'').replace(/\.json$/i,'');
+    const finalized=await callMake(hook,{action:'finalize_mug_product',request_id:data.request_id,image_base64:master,prompt_mockup_1:buildMockupPrompt(data,1),prompt_mockup_2:buildMockupPrompt(data,2),quality:'high',firebase_url:text(config.firebaseUrl).replace(/\/+$/,''),products_node:node,firebase_template_json:firebaseTemplate(data)});
+    const art=text(finalized.arte_horizontal_url||finalized.art_url),m1=text(finalized.mockup_1_url||finalized.mockup1_url),m2=text(finalized.mockup_2_url||finalized.mockup2_url);
+    if(!art||!m1||!m2||finalized.product_saved!==true)throw new Error('O Make não confirmou arte, dois mockups e produto no Firebase.');
+    result.hidden=false;result.innerHTML=`<strong>${escapeHtml(productName(data.phrase,data.image_type))}</strong><span>cadastrado como INATIVO</span><div class="mugv6-preview"><figure class="master"><img src="${escapeAttr(art)}" alt="Arte horizontal"><figcaption>Arte 2300×1000 · frase à esquerda / imagem à direita</figcaption></figure><figure><img src="${escapeAttr(m1)}" alt="Lado da frase"><figcaption>Mockup · lado da frase</figcaption></figure><figure><img src="${escapeAttr(m2)}" alt="Lado da imagem"><figcaption>Mockup · lado da imagem</figcaption></figure></div>`;
+    status.textContent='Concluído. Arte, dois mockups e produto salvos.'; window.dispatchEvent(new CustomEvent('admin-v2-products-invalidated',{detail:{key:data.request_id,source:BUILD}}));
+  }catch(error){console.error('Personalizador V6:',error);status.textContent=`Erro: ${error?.message||error}`;}finally{button.disabled=false;}
+}
+
+export function mountMugPersonalizerV6(){const panel=document.getElementById('mugAutomationPanel');if(!panel)return false;if(panel.dataset.mugV6===BUILD)return true;panel.dataset.mugV6=BUILD;renderPanel(panel);return true;}
+function install(){const tryMount=()=>mountMugPersonalizerV6();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tryMount,{once:true});else tryMount();window.addEventListener('admin-v2-route-ready',e=>{if(e.detail?.route==='mug-studio')setTimeout(tryMount,0)});}install();
