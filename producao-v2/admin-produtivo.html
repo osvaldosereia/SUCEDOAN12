@@ -18,7 +18,7 @@
   <script>
     (async function () {
       const params = new URLSearchParams(window.location.search);
-      const BUILD = params.get('admin_build') || '20260823-canecas-command-layout-v4-force-entry';
+      const BUILD = `${params.get('admin_build') || 'direct'}-${Date.now()}`;
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
