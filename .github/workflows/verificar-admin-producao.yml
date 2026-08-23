@@ -20,6 +20,7 @@ on:
       - "site/ofertas-historico.json"
       - "catalog-version.json"
       - "scripts/check-admin-production.mjs"
+      - "scripts/check-mug-studio-production.mjs"
       - "scripts/test-admin-v2-definitivo.mjs"
       - "scripts/test-admin-v2-route-architecture.mjs"
       - ".github/workflows/verificar-admin-producao.yml"
@@ -69,6 +70,16 @@ jobs:
           set -o pipefail
           node scripts/check-admin-production.mjs 2>&1 | tee admin-production.log
 
+      - name: Verificar Criador de Canecas publicado
+        id: mug_health_check
+        continue-on-error: true
+        env:
+          ADMIN_BASE_URL: https://donaantonia.com.br
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/check-mug-studio-production.mjs 2>&1 | tee mug-studio-production.log
+
       - name: Preparar status versionado
         if: always() && steps.health_check.outcome != 'skipped'
         env:
@@ -77,6 +88,7 @@ jobs:
           HEALTH_RUN_ATTEMPT: ${{ github.run_attempt }}
           HEALTH_SHA: ${{ github.sha }}
           ARCHITECTURE_OUTCOME: ${{ steps.architecture_check.outcome }}
+          MUG_HEALTH_OUTCOME: ${{ steps.mug_health_check.outcome }}
         shell: bash
         run: |
           set -euo pipefail
@@ -96,12 +108,22 @@ jobs:
             report.checks.push(error);
             report.ok = false;
           }
+          if (process.env.MUG_HEALTH_OUTCOME === 'failure') {
+            const detail = 'O Criador de Canecas publicado no domínio não corresponde à cadeia atual. Consulte mug-studio-production.log.';
+            const error = { name: 'Criador de Canecas publicado', ok: false, detail };
+            report.errors.push(error);
+            report.checks.push(error);
+            report.ok = false;
+          } else if (process.env.MUG_HEALTH_OUTCOME === 'success') {
+            report.checks.push({ name: 'Criador de Canecas publicado', ok: true, detail: 'Entrada dinâmica, navegação, bridge, layout 20/80, 3 colunas e Configuração Make confirmados no domínio.' });
+          }
           report.workflow = {
             event: process.env.HEALTH_EVENT,
             runId: process.env.HEALTH_RUN_ID,
             attempt: process.env.HEALTH_RUN_ATTEMPT,
             sourceSha: process.env.HEALTH_SHA,
             architecture: process.env.ARCHITECTURE_OUTCOME,
+            mugStudio: process.env.MUG_HEALTH_OUTCOME,
             publishedAt: new Date().toISOString()
           };
           await writeFile(process.env.RUNNER_TEMP + '/admin-health-status.json', JSON.stringify(report, null, 2) + '\n');
@@ -161,9 +183,10 @@ jobs:
             admin-production-report.json
             admin-production.log
             admin-architecture.log
+            mug-studio-production.log
           if-no-files-found: warn
           retention-days: 14
 
       - name: Confirmar falha
-        if: always() && (steps.architecture_check.outcome == 'failure' || steps.health_check.outcome == 'failure')
+        if: always() && (steps.architecture_check.outcome == 'failure' || steps.health_check.outcome == 'failure' || steps.mug_health_check.outcome == 'failure')
         run: exit 1
