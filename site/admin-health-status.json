@@ -1,27 +1,27 @@
 {
-  "checkedAt": "2026-08-21T18:57:42.702Z",
+  "checkedAt": "2026-08-23T21:44:58.339Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
+  "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 79 arquivos JavaScript, imports e ciclo dos kits confirmados."
+      "detail": "Admin V2 v13.1 validado: 18 abas, 91 arquivos JavaScript, imports e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787338664815"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787521499916"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787338665136"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787521500588"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787338665152"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787521500740"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1569 produto(s)"
+      "detail": "1591 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1765 produto(s) administrativos · 1569 público(s) · campos OK"
+      "detail": "1786 produto(s) administrativos · 1591 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1765 produto(s) em 165 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1786 produto(s) em 188 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 102 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 187 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1ef65f7c906b10de · público 1569 · admin 1765"
+      "detail": "catalog-8f9e1188d016a66f · público 1591 · admin 1786"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,22 +86,33 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "8042 oferta(s) no histórico"
+      "detail": "8573 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.3h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+    },
+    {
+      "name": "Arquitetura por rota do Admin",
+      "ok": false,
+      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "Arquitetura por rota do Admin",
+      "ok": false,
+      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
+    }
+  ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "32515859241",
+    "runId": "32668383809",
     "attempt": "1",
-    "sourceSha": "c2169b94aa70e8cee3818fc018860e9f3bbb7857",
-    "architecture": "success",
-    "publishedAt": "2026-08-21T18:57:47.616Z"
+    "sourceSha": "4fae3651990fb7ec05d9b161ad7d49071509d9f9",
+    "architecture": "failure",
+    "publishedAt": "2026-08-23T21:45:05.767Z"
   }
 }
