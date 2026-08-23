@@ -18,7 +18,7 @@
   <script>
     (async function () {
       // Build anterior mantida somente como referência de compatibilidade: 20260813-product-baskets-v1
-      const BUILD = '20260823-canecas-studio-v7-2-v10';
+      const BUILD = '20260823-canecas-command-library-v2-v11';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -91,6 +91,7 @@
           ['./js/nfe-image-make-fix.js', true],
           ['./js/nfe-import-save-fix.js', true],
           ['./js/alternate-ean-support.js', true],
+          ['./js/mug-make-native-openai-bridge.js', true],
         ];
 
         const extraScripts = enhancements
