@@ -42,7 +42,7 @@ requireText(stockBootstrap, 'encodeURIComponent(BUILD)', 'O carregador das rotas
 requireText(stockBootstrap, 'refreshProductsTableAfterEnhancements', 'Produtos não atualiza a tabela após carregar os complementos da rota.');
 requireText(stockBootstrap, "if (route === 'products') refreshProductsTableAfterEnhancements();", 'O refresh da tabela não está vinculado à conclusão dos complementos de Produtos.');
 requireText(stockBootstrap, "if (route === 'baskets' || route === 'kits')", 'Cestas/Kits não estão vinculados ao carregamento sob demanda.');
-requireText(stockBootstrap, "if (route === 'offers' || route === 'offers-rules')", 'Ofertas não estão vinculadas ao carregamento sob demanda.');
+requireText(stockBootstrap, "if (route === 'offers' || route === 'offers-rules')", 'Ofertas não estão vinculados ao carregamento sob demanda.');
 
 const duplicateProduct = read('producao-v2/js/duplicate-product.js');
 for (const marker of ['createProduct', 'loadProduct', 'loadProducts']) {
@@ -122,15 +122,29 @@ for (const removed of ['producao-v2/js/offer-store-bridge.js', 'producao-v2/js/i
 const productiveLoader = read('producao-v2/admin-produtivo.html');
 forbidText(productiveLoader, 'inline-sale-price-label.js', 'O carregador produtivo voltou a injetar o patch separado de preço.');
 forbidText(productiveLoader, "['./js/product-delete-tools.js'", 'O carregador produtivo voltou a injetar ações da rota Produtos no boot global.');
-requireText(productiveLoader, '20260813-product-baskets-v1', 'O carregador produtivo não está na build consolidada atual.');
+requireText(productiveLoader, "params.get('admin_build')", 'O carregador produtivo não recebe a build dinâmica da URL.');
 requireText(productiveLoader, 'normalizeProductiveBuild', 'O carregador produtivo não normaliza o cache-busting da base.');
+requireText(productiveLoader, 'admin-save-build', 'O carregador produtivo não publica a build ativa no documento final.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')", 'O carregador produtivo voltou a carregar o editor de Kits no boot global.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'campaign-rules-section.js')", 'O carregador produtivo voltou a carregar regras de oferta no boot global.');
 
 for (const redirect of ['producao/index.html', 'admin/index.html']) {
   const source = read(redirect);
-  requireText(source, '20260813-product-baskets-v1', `${redirect} ainda aponta para uma build antiga do carregador.`);
+  requireText(source, 'var build = String(Date.now());', `${redirect} não gera uma build nova a cada abertura.`);
+  requireText(source, "destination.searchParams.set('admin_build', build)", `${redirect} não envia a build dinâmica ao carregador.`);
+  requireText(source, "destination.searchParams.set('save_build', build)", `${redirect} não mantém admin_build e save_build sincronizados.`);
+  forbidText(source, "destination.searchParams.set('admin_build', '2026", `${redirect} voltou a usar uma build fixa.`);
 }
+
+const mugNavigation = read('producao-v2/js/navigation-v12.js');
+requireText(mugNavigation, 'meta[name="admin-save-build"]', 'A navegação do Criador não herda a build ativa.');
+requireText(mugNavigation, "import(withBuild('./mug-make-native-openai-bridge.js'))", 'A navegação do Criador não aplica a build ativa ao bridge.');
+forbidText(mugNavigation, 'mug-make-native-openai-bridge.js?admin_build=', 'A navegação do Criador voltou a fixar uma versão do bridge.');
+
+const mugBridge = read('producao-v2/js/mug-make-native-openai-bridge.js');
+requireText(mugBridge, 'meta[name="admin-save-build"]', 'O bridge do Criador não herda a build ativa.');
+requireText(mugBridge, 'for (const path of MODULES) await import(withBuild(path));', 'O bridge do Criador não usa a mesma build para todos os módulos.');
+forbidText(mugBridge, "import './mug-", 'O bridge do Criador voltou a usar imports estáticos com versões independentes.');
 
 const adminIndex = read('producao-v2/index.html');
 for (const marker of ['kit-editor-flow-v2.js', 'campaign-rules-section.js']) {
