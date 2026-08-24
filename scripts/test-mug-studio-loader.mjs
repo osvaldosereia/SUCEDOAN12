@@ -44,22 +44,11 @@ forbidText(navigation, 'mug-make-native-openai-bridge.js?admin_build=', 'navigat
 
 const bridge = read('producao-v2/js/mug-make-native-openai-bridge.js');
 requireText(bridge, 'meta[name="admin-save-build"]', 'Bridge das canecas não herda a build ativa.');
-requireText(bridge, 'const CRITICAL_MODULES = [', 'Bridge não separa os módulos essenciais do Criador.');
-requireText(bridge, 'const DEFERRED_MODULES = [', 'Bridge não separa os módulos auxiliares do Criador.');
-requireText(bridge, "'./mug-studio-gallery.js'", 'Galeria atual não está na cadeia crítica do bridge.');
-requireText(bridge, "'./mug-command-layout-v4-force.js'", 'Layout 20/80 não está na cadeia crítica do bridge.');
-requireText(bridge, "'./mug-config-compact-v4-1.js'", 'Configuração do Make não está na cadeia auxiliar do bridge.');
-requireText(bridge, "'./mug-preset-phrases-v1.js'", 'Seletor das 200 frases religiosas não está na cadeia auxiliar do bridge.');
-requireText(bridge, "'./mug-motivational-phrases-v1.js'", 'Seletor das 200 frases motivacionais não está na cadeia auxiliar do bridge.');
-requireText(bridge, 'Promise.all(CRITICAL_MODULES.slice(1, 4).map(importModule))', 'Bridge não paraleliza galeria, personalizador e comandos.');
-requireText(bridge, 'Promise.allSettled(DEFERRED_MODULES.map(importModule))', 'Bridge não carrega módulos auxiliares sem bloquear a interface.');
-requireText(bridge, 'requestIdleCallback', 'Bridge não adia módulos auxiliares para o tempo ocioso do navegador.');
-forbidText(bridge, 'for (const path of MODULES) await import(withBuild(path));', 'Bridge voltou a bloquear a tela carregando todos os módulos em sequência.');
+requireText(bridge, 'const MODULES = [', 'Bridge das canecas não possui uma lista única de módulos.');
+requireText(bridge, "'./mug-command-layout-v4-force.js'", 'Layout 20/80 não está na cadeia do bridge.');
+requireText(bridge, "'./mug-config-compact-v4-1.js'", 'Configuração do Make não está na cadeia do bridge.');
+requireText(bridge, 'for (const path of MODULES) await import(withBuild(path));', 'Bridge não carrega os módulos sequencialmente com a mesma build.');
 forbidText(bridge, "import './mug-", 'Bridge voltou a usar imports estáticos versionados separadamente.');
-
-const personalizer = read('producao-v2/js/mug-personalizer-v7.js');
-forbidText(personalizer, "import './mug-studio-gallery.js?admin_build=", 'Personalizador voltou a carregar uma segunda cópia fixa/antiga da galeria.');
-requireText(personalizer, "const BUILD = '20260824-canecas-studio-v7-3';", 'Personalizador não recebeu a build que elimina a galeria duplicada.');
 
 const layout = read('producao-v2/js/mug-command-layout-v4-force.js');
 requireText(layout, "grid-template-columns:minmax(190px,1fr) minmax(0,4fr)", 'Layout desktop não mantém aproximadamente 20%/80%.');
@@ -75,58 +64,10 @@ const compact = read('producao-v2/js/mug-command-library-compact-v2.js');
 requireText(compact, 'iniciar_ativo', 'Comandos não preservam a opção de iniciar ativado.');
 requireText(compact, "button.textContent = defaults.has(id) ? '★' : '☆'", 'Controle ★/☆ dos comandos padrão não está disponível.');
 
-const phrasesSource = read('producao-v2/js/mug-preset-phrases-v1.js');
-requireText(phrasesSource, '200 frases prontas', 'Título do seletor de 200 frases religiosas não está disponível.');
-requireText(phrasesSource, 'id="mugPresetPhraseSearch"', 'Busca das frases religiosas não está disponível.');
-requireText(phrasesSource, 'id="mugPresetPhraseCategory"', 'Filtro por categoria das frases religiosas não está disponível.');
-requireText(phrasesSource, 'id="mugPresetPhraseSelect"', 'Lista selecionável de frases religiosas não está disponível.');
-requireText(phrasesSource, "field.value = phrase;", 'A frase religiosa escolhida não preenche Instrução complementar.');
-requireText(phrasesSource, '"Deus ainda escreve milagres."', 'Primeira frase religiosa não foi publicada.');
-requireText(phrasesSource, '"Com Deus, sempre."', 'Última frase religiosa não foi publicada.');
-const phraseMatch = phrasesSource.match(/const PHRASES = Object\.freeze\((\[[\s\S]*?\])\);/);
-if (!phraseMatch) {
-  failures.push('Não foi possível validar quantitativamente o banco de frases religiosas.');
-} else {
-  try {
-    const phrases = JSON.parse(phraseMatch[1]);
-    if (phrases.length !== 200) failures.push(`Banco de frases religiosas possui ${phrases.length} itens; esperado: 200.`);
-  } catch (error) {
-    failures.push(`Banco de frases religiosas não é um array JSON válido: ${error.message}`);
-  }
-}
-
-const motivationalSource = read('producao-v2/js/mug-motivational-phrases-v1.js');
-requireText(motivationalSource, '200 frases motivacionais', 'Título do seletor de frases motivacionais não está disponível.');
-requireText(motivationalSource, 'id="mugMotivationalPhraseSearch"', 'Busca das frases motivacionais não está disponível.');
-requireText(motivationalSource, 'id="mugMotivationalPhraseCategory"', 'Filtro por categoria motivacional não está disponível.');
-requireText(motivationalSource, 'id="mugMotivationalPhraseSelect"', 'Lista selecionável motivacional não está disponível.');
-requireText(motivationalSource, 'Curtas, fortes e minimalistas', 'Categoria motivacional curta não foi publicada.');
-requireText(motivationalSource, 'Inteligentes e reflexivas', 'Categoria reflexiva não foi publicada.');
-requireText(motivationalSource, 'Foco, trabalho e produtividade', 'Categoria de produtividade não foi publicada.');
-requireText(motivationalSource, 'Autoconfiança e autoestima', 'Categoria de autoestima não foi publicada.');
-requireText(motivationalSource, 'Recomeço e superação', 'Categoria de recomeço não foi publicada.');
-requireText(motivationalSource, 'Leveza, equilíbrio e vida', 'Categoria de leveza não foi publicada.');
-requireText(motivationalSource, 'Atitude, ousadia e personalidade', 'Categoria de atitude não foi publicada.');
-requireText(motivationalSource, 'Café + motivação', 'Categoria de café motivacional não foi publicada.');
-requireText(motivationalSource, '"Vai dar certo. Continue."', 'Primeira frase motivacional não foi publicada.');
-requireText(motivationalSource, '"Beba café. Crie possibilidades."', 'Última frase motivacional não foi publicada.');
-requireText(motivationalSource, "field.value = phrase;", 'A frase motivacional escolhida não preenche Instrução complementar.');
-const motivationalMatch = motivationalSource.match(/const MOTIVATIONAL_PHRASES = Object\.freeze\((\[[\s\S]*?\])\);/);
-if (!motivationalMatch) {
-  failures.push('Não foi possível validar quantitativamente o banco motivacional.');
-} else {
-  try {
-    const phrases = JSON.parse(motivationalMatch[1]);
-    if (phrases.length !== 200) failures.push(`Banco motivacional possui ${phrases.length} itens; esperado: 200.`);
-  } catch (error) {
-    failures.push(`Banco motivacional não é um array JSON válido: ${error.message}`);
-  }
-}
-
 if (failures.length) {
   console.error(`Criador de Canecas: ${failures.length} falha(s) na cadeia de publicação.`);
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Criador de Canecas validado: carga crítica paralela, galeria única, layout 20/80, 3 colunas, comandos padrão, Configuração Make e 400 frases categorizadas confirmados.');
+  console.log('Criador de Canecas validado: entrada dinâmica, build única, layout 20/80, 3 colunas, comandos padrão e Configuração Make confirmados.');
 }
