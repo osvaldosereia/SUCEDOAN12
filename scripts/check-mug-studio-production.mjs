@@ -78,25 +78,12 @@ await check('/producao-v2/js/navigation-v12.js', 'Navegação publicada do Criad
 await check('/producao-v2/js/mug-make-native-openai-bridge.js', 'Bridge publicado do Criador', {
   required: [
     'meta[name="admin-save-build"]',
-    'const CRITICAL_MODULES = [',
-    'const DEFERRED_MODULES = [',
-    "'./mug-studio-gallery.js'",
+    'const MODULES = [',
     "'./mug-command-layout-v4-force.js'",
     "'./mug-config-compact-v4-1.js'",
-    "'./mug-preset-phrases-v1.js'",
-    "'./mug-motivational-phrases-v1.js'",
-    'Promise.all(CRITICAL_MODULES.slice(1, 4).map(importModule))',
-    'Promise.allSettled(DEFERRED_MODULES.map(importModule))',
-  ],
-  forbidden: [
-    "import './mug-",
     'for (const path of MODULES) await import(withBuild(path));',
   ],
-});
-
-await check('/producao-v2/js/mug-personalizer-v7.js', 'Personalizador publicado sem galeria duplicada', {
-  required: ["const BUILD = '20260824-canecas-studio-v7-3';"],
-  forbidden: ["import './mug-studio-gallery.js?admin_build="],
+  forbidden: ["import './mug-"],
 });
 
 await check('/producao-v2/js/mug-command-layout-v4-force.js', 'Layout publicado do Criador', {
@@ -115,38 +102,6 @@ await check('/producao-v2/js/mug-config-compact-v4-1.js', 'Configuração Make p
   ],
 });
 
-await check('/producao-v2/js/mug-preset-phrases-v1.js', '200 frases religiosas publicadas', {
-  required: [
-    '200 frases prontas',
-    'id="mugPresetPhraseSearch"',
-    'id="mugPresetPhraseCategory"',
-    'id="mugPresetPhraseSelect"',
-    'field.value = phrase;',
-    '"Deus ainda escreve milagres."',
-    '"Com Deus, sempre."',
-  ],
-});
-
-await check('/producao-v2/js/mug-motivational-phrases-v1.js', '200 frases motivacionais publicadas', {
-  required: [
-    '200 frases motivacionais',
-    'id="mugMotivationalPhraseSearch"',
-    'id="mugMotivationalPhraseCategory"',
-    'id="mugMotivationalPhraseSelect"',
-    'Curtas, fortes e minimalistas',
-    'Inteligentes e reflexivas',
-    'Foco, trabalho e produtividade',
-    'Autoconfiança e autoestima',
-    'Recomeço e superação',
-    'Leveza, equilíbrio e vida',
-    'Atitude, ousadia e personalidade',
-    'Café + motivação',
-    'field.value = phrase;',
-    '"Vai dar certo. Continue."',
-    '"Beba café. Crie possibilidades."',
-  ],
-});
-
 for (const row of checks) console.log(`${row.ok ? 'OK' : 'FALHA'} · ${row.name}: ${row.detail}`);
 
 if (failures.length) {
@@ -154,5 +109,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log(`Criador de Canecas em produção validado no domínio ${BASE_URL}: carga crítica paralela, galeria única e 400 frases categorizadas.`);
+  console.log(`Criador de Canecas em produção validado no domínio ${BASE_URL}.`);
 }

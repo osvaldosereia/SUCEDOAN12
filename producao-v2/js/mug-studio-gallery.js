@@ -2,19 +2,10 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { ProductsModule } from './modules/products.js';
 import { loadProduct } from './services/firebase.js';
 
-const BUILD = '20260824-mug-studio-gallery-perf-v2';
-const PAGE_SIZE = 6;
-const MAX_REMOTE = 120;
-const CACHE_KEY = 'da_admin_v2_mug_gallery_cache_v2';
-const CACHE_LIMIT = 60;
-const NETWORK_TTL_MS = 60_000;
-
+const BUILD = '20260821-mug-studio-gallery-v1';
 let loading = false;
 let refreshTimer = null;
 let observedStatus = null;
-let productsState = [];
-let visibleCount = PAGE_SIZE;
-let lastNetworkAt = 0;
 
 function text(value) {
   return String(value ?? '').trim();
@@ -68,60 +59,12 @@ function timestamp(product = {}) {
 }
 
 function normalizeCollection(data) {
-  const entries = Array.isArray(data)
-    ? data.map((value, index) => [productKey(value, String(index)), value])
-    : (data && typeof data === 'object' ? Object.entries(data) : []);
-  return entries
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
+  return Object.entries(data)
     .filter(([, value]) => value && typeof value === 'object' && !Array.isArray(value))
     .map(([key, value]) => ({ firebaseKey: productKey(value, key), ...value }))
     .filter(isMug)
     .sort((a, b) => timestamp(b) - timestamp(a) || text(a.nome).localeCompare(text(b.nome), 'pt-BR'));
-}
-
-function cacheProduct(product = {}) {
-  return {
-    firebaseKey: productKey(product),
-    id: product.id,
-    codigo: product.codigo,
-    nome: product.nome,
-    subcategoria: product.subcategoria,
-    categoria: product.categoria || 'Canecas',
-    tipo_produto: product.tipo_produto,
-    origem_cadastro: product.origem_cadastro,
-    situacao: product.situacao,
-    ativo: product.ativo,
-    mockup_1: product.mockup_1,
-    url_imagem: product.url_imagem,
-    imagem_url: product.imagem_url,
-    imagem: product.imagem,
-    imagens_site: Array.isArray(product.imagens_site) ? product.imagens_site.slice(0, 3) : [],
-    imagens: Array.isArray(product.imagens) ? product.imagens.slice(0, 3) : [],
-    last_update: product.last_update,
-    timestamp: product.timestamp,
-    updated_at: product.updated_at,
-    criado_em: product.criado_em,
-    created_at: product.created_at,
-  };
-}
-
-function readCache() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-    return normalizeCollection(Array.isArray(parsed.products) ? parsed.products : []);
-  } catch {
-    return [];
-  }
-}
-
-function writeCache(products) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      savedAt: Date.now(),
-      products: products.slice(0, CACHE_LIMIT).map(cacheProduct),
-    }));
-  } catch (error) {
-    console.warn('Não foi possível atualizar o cache local das canecas:', error);
-  }
 }
 
 async function fetchCanecas() {
@@ -130,13 +73,17 @@ async function fetchCanecas() {
   const node = text(config.productsNode || DEFAULT_CONFIG.productsNode || 'produtos').replace(/^\/+|\/+$/g, '').replace(/\.json$/i, '');
   const order = encodeURIComponent('"categoria"');
   const equal = encodeURIComponent('"Canecas"');
-  const queryUrl = `${base}/${node}.json?orderBy=${order}&equalTo=${equal}&limitToLast=${MAX_REMOTE}`;
-  const response = await fetch(queryUrl, { cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(`Firebase retornou ${response.status} ao carregar Canecas.`);
-  const result = normalizeCollection(await response.json());
-  writeCache(result);
-  lastNetworkAt = Date.now();
-  return result;
+  const queryUrl = `${base}/${node}.json?orderBy=${order}&equalTo=${equal}&_=${Date.now()}`;
+
+  let response = await fetch(queryUrl, { cache: 'no-store', headers: { Accept: 'application/json' } });
+  if (response.ok) {
+    const result = normalizeCollection(await response.json());
+    if (result.length) return result;
+  }
+
+  response = await fetch(`${base}/${node}.json?_=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+  if (!response.ok) throw new Error(`Firebase retornou ${response.status}.`);
+  return normalizeCollection(await response.json());
 }
 
 function installEditorFallback() {
@@ -148,6 +95,7 @@ function installEditorFallback() {
   prototype.openEditor = function openEditorIncludingFreshMug(key) {
     const normalizedKey = text(key);
     if (!normalizedKey || this.store.getProduct(normalizedKey)) return originalOpenEditor.call(this, key);
+
     this.onToast?.('Carregando a caneca recém-criada…');
     return loadProduct(this.store.state.config, normalizedKey)
       .then(product => {
@@ -173,21 +121,13 @@ function ensureShell() {
     section.className = 'panel mug-created-section';
     section.innerHTML = `
       <div class="mug-created-head">
-        <div><span class="eyebrow">Cadastro de canecas</span><h2>Canecas criadas</h2><p>Carregamento leve: 6 canecas por vez.</p></div>
+        <div><span class="eyebrow">Cadastro de canecas</span><h2>Canecas criadas</h2><p>Abra qualquer caneca diretamente no editor normal de produtos.</p></div>
         <div class="mug-created-actions"><span class="badge neutral" id="mugCreatedCount">0</span><button class="button secondary compact" id="mugCreatedRefresh" type="button">Atualizar</button></div>
       </div>
       <div class="mug-created-status muted" id="mugCreatedStatus">Carregando canecas…</div>
-      <div class="mug-created-grid" id="mugCreatedCards"></div>
-      <div class="mug-created-more"><button class="button secondary" id="mugCreatedLoadMore" type="button" hidden>Carregar mais 6</button></div>`;
+      <div class="mug-created-grid" id="mugCreatedCards"></div>`;
     view.appendChild(section);
-    section.querySelector('#mugCreatedRefresh')?.addEventListener('click', () => {
-      visibleCount = PAGE_SIZE;
-      refresh(true);
-    });
-    section.querySelector('#mugCreatedLoadMore')?.addEventListener('click', () => {
-      visibleCount = Math.min(productsState.length, visibleCount + PAGE_SIZE);
-      render();
-    });
+    section.querySelector('#mugCreatedRefresh')?.addEventListener('click', () => refresh(true));
     section.querySelector('#mugCreatedCards')?.addEventListener('click', event => {
       const button = event.target.closest('[data-edit-mug]');
       if (!button) return;
@@ -202,28 +142,16 @@ function ensureShell() {
   return section;
 }
 
-function render(products = productsState) {
-  productsState = Array.isArray(products) ? products : [];
+function render(products) {
   const section = ensureShell();
   if (!section) return;
   const cards = section.querySelector('#mugCreatedCards');
   const count = section.querySelector('#mugCreatedCount');
   const status = section.querySelector('#mugCreatedStatus');
-  const more = section.querySelector('#mugCreatedLoadMore');
-  const visible = productsState.slice(0, visibleCount);
-
-  if (count) count.textContent = `${visible.length}/${productsState.length}`;
-  if (status) {
-    status.textContent = productsState.length
-      ? `Exibindo ${visible.length} de ${productsState.length} caneca${productsState.length === 1 ? '' : 's'}.`
-      : 'Nenhuma caneca cadastrada ainda.';
-  }
-  if (more) {
-    more.hidden = visible.length >= productsState.length;
-    more.textContent = `Carregar mais ${Math.min(PAGE_SIZE, Math.max(0, productsState.length - visible.length)) || PAGE_SIZE}`;
-  }
+  if (count) count.textContent = String(products.length);
+  if (status) status.textContent = products.length ? `${products.length} caneca${products.length === 1 ? '' : 's'} cadastrada${products.length === 1 ? '' : 's'}.` : 'Nenhuma caneca cadastrada ainda.';
   if (!cards) return;
-  cards.innerHTML = visible.length ? visible.map(product => {
+  cards.innerHTML = products.length ? products.map(product => {
     const key = productKey(product);
     const active = text(product.situacao).toUpperCase() !== 'I' && product.ativo !== false;
     return `<article class="mug-created-card">
@@ -234,41 +162,20 @@ function render(products = productsState) {
   }).join('') : '<div class="mug-created-empty">As canecas criadas aparecerão aqui automaticamente.</div>';
 }
 
-function hydrateFromCache() {
-  if (productsState.length) return false;
-  const cached = readCache();
-  if (!cached.length) return false;
-  productsState = cached;
-  visibleCount = PAGE_SIZE;
-  render();
-  const status = document.querySelector('#mugStudioCreatedGrid #mugCreatedStatus');
-  if (status) status.textContent = `Mostrando ${Math.min(PAGE_SIZE, cached.length)} canecas do cache enquanto sincroniza…`;
-  return true;
-}
-
 async function refresh(force = false) {
   if (loading) return;
   if (!force && window.adminV2CurrentRoute?.() !== 'mug-studio') return;
   const section = ensureShell();
   if (!section) return;
-  hydrateFromCache();
-  if (!force && lastNetworkAt && Date.now() - lastNetworkAt < NETWORK_TTL_MS) return;
-
   loading = true;
   const status = section.querySelector('#mugCreatedStatus');
   const button = section.querySelector('#mugCreatedRefresh');
-  if (status && !productsState.length) status.textContent = 'Sincronizando canecas…';
+  if (status) status.textContent = 'Atualizando canecas…';
   if (button) button.disabled = true;
   try {
-    productsState = await fetchCanecas();
-    visibleCount = Math.min(Math.max(PAGE_SIZE, visibleCount), Math.max(PAGE_SIZE, productsState.length));
-    render();
+    render(await fetchCanecas());
   } catch (error) {
-    if (productsState.length) {
-      if (status) status.textContent = `Internet lenta/offline: exibindo cache local. ${error?.message || error}`;
-    } else if (status) {
-      status.textContent = `Não foi possível carregar as canecas: ${error?.message || error}`;
-    }
+    if (status) status.textContent = `Não foi possível carregar as canecas: ${error?.message || error}`;
   } finally {
     loading = false;
     if (button) button.disabled = false;
@@ -295,9 +202,9 @@ function installStyle() {
   const style = document.createElement('style');
   style.id = 'mugStudioGalleryStyle';
   style.textContent = `
-    .mug-created-section{margin-top:16px}.mug-created-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.mug-created-head h2{margin:3px 0 4px}.mug-created-head p{margin:0;color:#747970}.mug-created-actions{display:flex;align-items:center;gap:8px}.mug-created-grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:12px;margin-top:12px}.mug-created-card{min-width:0;border:1px solid #e3e5df;border-radius:14px;padding:8px;background:#fff;display:grid;gap:7px}.mug-created-image{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#f6f6f3}.mug-created-image img{width:100%;height:100%;object-fit:contain;display:block}.mug-created-state{position:absolute;right:6px;top:6px;width:9px;height:9px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}.mug-created-state.active{background:#2c9b54}.mug-created-state.inactive{background:#b9bdb5}.mug-created-info{min-width:0;display:grid;gap:2px}.mug-created-info strong,.mug-created-info small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mug-created-info strong{font-size:12px}.mug-created-info small{font-size:10px;color:#777}.mug-created-edit{width:100%}.mug-created-empty{grid-column:1/-1;padding:22px;text-align:center;color:#767a73;border:1px dashed #d8dbd3;border-radius:12px}.mug-created-more{display:flex;justify-content:center;padding-top:12px}.mug-created-more button{min-width:180px}
+    .mug-created-section{margin-top:16px}.mug-created-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.mug-created-head h2{margin:3px 0 4px}.mug-created-head p{margin:0;color:#747970}.mug-created-actions{display:flex;align-items:center;gap:8px}.mug-created-grid{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:12px;margin-top:12px}.mug-created-card{min-width:0;border:1px solid #e3e5df;border-radius:14px;padding:8px;background:#fff;display:grid;gap:7px}.mug-created-image{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#f6f6f3}.mug-created-image img{width:100%;height:100%;object-fit:contain;display:block}.mug-created-state{position:absolute;right:6px;top:6px;width:9px;height:9px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}.mug-created-state.active{background:#2c9b54}.mug-created-state.inactive{background:#b9bdb5}.mug-created-info{min-width:0;display:grid;gap:2px}.mug-created-info strong,.mug-created-info small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mug-created-info strong{font-size:12px}.mug-created-info small{font-size:10px;color:#777}.mug-created-edit{width:100%}.mug-created-empty{grid-column:1/-1;padding:22px;text-align:center;color:#767a73;border:1px dashed #d8dbd3;border-radius:12px}
     @media(max-width:980px){.mug-created-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}}
-    @media(max-width:600px){.mug-created-section{padding:10px}.mug-created-head{align-items:center}.mug-created-head p,.mug-created-head .eyebrow{display:none}.mug-created-head h2{font-size:15px;margin:0}.mug-created-actions .button{padding:5px 7px;font-size:9px}.mug-created-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.mug-created-card{padding:4px;border-radius:8px;gap:4px}.mug-created-image{border-radius:6px}.mug-created-state{width:7px;height:7px;right:3px;top:3px;border-width:1px}.mug-created-info strong{font-size:8px;line-height:1.15}.mug-created-info small{display:none}.mug-created-edit{min-height:24px;padding:3px 2px!important;font-size:8px!important;border-radius:6px!important}.mug-created-status{font-size:9px}.mug-created-more button{min-width:150px;font-size:10px}}
+    @media(max-width:600px){.mug-created-section{padding:10px}.mug-created-head{align-items:center}.mug-created-head p,.mug-created-head .eyebrow{display:none}.mug-created-head h2{font-size:15px;margin:0}.mug-created-actions .button{padding:5px 7px;font-size:9px}.mug-created-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.mug-created-card{padding:4px;border-radius:8px;gap:4px}.mug-created-image{border-radius:6px}.mug-created-state{width:7px;height:7px;right:3px;top:3px;border-width:1px}.mug-created-info strong{font-size:8px;line-height:1.15}.mug-created-info small{display:none}.mug-created-edit{min-height:24px;padding:3px 2px!important;font-size:8px!important;border-radius:6px!important}.mug-created-status{font-size:9px}}
   `;
   document.head.appendChild(style);
 }
@@ -306,8 +213,7 @@ function activate() {
   if (window.adminV2CurrentRoute?.() !== 'mug-studio') return;
   ensureShell();
   observeGeneratorCompletion();
-  hydrateFromCache();
-  refresh(false);
+  refresh(true);
 }
 
 installEditorFallback();

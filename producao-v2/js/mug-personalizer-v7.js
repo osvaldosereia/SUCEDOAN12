@@ -1,7 +1,8 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { text } from './core/utils.js';
+import './mug-studio-gallery.js?admin_build=20260823-mug-v7-gallery';
 
-const BUILD = '20260824-canecas-studio-v7-3';
+const BUILD = '20260823-canecas-studio-v7-2';
 const WEBHOOK_KEY = 'da_admin_v2_mug_make_webhook';
 const MASTER_WIDTH = 2400;
 const MASTER_HEIGHT = 960;
