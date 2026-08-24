@@ -95,7 +95,7 @@ function decorate(panel) {
     const nextTitle = active ? 'Inicia ativado. Clique para desativar o padrão.' : 'Clique para sempre iniciar ativado.';
     if (button.title !== nextTitle) button.title = nextTitle;
     const nextText = active ? '★' : '☆';
-    if (button.textContent !== nextText) button.textContent = nextText;
+    if (button.textContent !== nextText) button.textContent = defaults.has(id) ? '★' : '☆';
   });
 }
 
