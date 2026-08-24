@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-24T18:12:35.791Z",
+  "ultima_execucao": "2026-08-24T18:29:30.663Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -7788,6 +7788,20 @@
       "historico_id": "oferta-1776694144998-1787585416994-tkzfd"
     },
     {
+      "produto_key": "1776694359333",
+      "codigo": "94359333",
+      "nome": "Palmolive Shampoo Nutrio Extraordinria 650ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 18.9,
+      "preco_oferta": 17.58,
+      "desconto_percentual": 6.98,
+      "inicio": "2026-08-24",
+      "fim": "2026-08-27T23:59:59-04:00",
+      "historico_id": "oferta-1776694359333-1787596170663-jw1et"
+    },
+    {
       "produto_key": "1776694529692",
       "codigo": "7509546687759",
       "nome": "Palmolive Shampoo Force com Colágeno e Biotina 650ml",
@@ -10770,6 +10784,20 @@
       "historico_id": "oferta-177945514639228712-1787592655205-w44e1"
     },
     {
+      "produto_key": "177945517054489505",
+      "codigo": "1705440266",
+      "nome": "Oeste Detergente Lava Louça - Marine 500ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 2.69,
+      "preco_oferta": 2.53,
+      "desconto_percentual": 5.95,
+      "inicio": "2026-08-24",
+      "fim": "2026-08-27T23:59:59-04:00",
+      "historico_id": "oferta-177945517054489505-1787596170663-fsmpt"
+    },
+    {
       "produto_key": "177945533732768449",
       "codigo": "3373270825",
       "nome": "Girando Sol Detergente Lava Louça - Neutro 500ml",
@@ -12868,6 +12896,20 @@
       "inicio": "2026-08-24",
       "fim": "2026-08-31T23:59:59-04:00",
       "historico_id": "oferta-17858694323662926-1787585416994-rsvgc"
+    },
+    {
+      "produto_key": "1785870667207_4deb",
+      "codigo": "7891350040517",
+      "nome": "RISQUÉ NOVA COR! ANTES SOL QUE MAL ILUMINADA 8ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 6.49,
+      "preco_oferta": 5.84,
+      "desconto_percentual": 10.02,
+      "inicio": "2026-08-24",
+      "fim": "2026-08-31T23:59:59-04:00",
+      "historico_id": "oferta-17858706672074deb-1787596170663-8ezgt"
     },
     {
       "produto_key": "1785870726801682",
@@ -18644,7 +18686,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776694359333": {
-      "ultima_oferta_em": "2026-08-20T04:29:25.528Z",
+      "ultima_oferta_em": "2026-08-24T18:29:30.663Z",
       "regra_id": "regra-1785205192100"
     },
     "177956387066412150": {
@@ -18720,7 +18762,7 @@
       "regra_id": "regra-1785205096285"
     },
     "177945517054489505": {
-      "ultima_oferta_em": "2026-08-20T03:32:58.070Z",
+      "ultima_oferta_em": "2026-08-24T18:29:30.663Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338123834": {
@@ -20724,7 +20766,7 @@
       "regra_id": "regra-1785205164829"
     },
     "1785870667207_4deb": {
-      "ultima_oferta_em": "2026-08-13T17:38:05.286Z",
+      "ultima_oferta_em": "2026-08-24T18:29:30.663Z",
       "regra_id": "regra-1785202557027"
     },
     "1785876666674500": {
@@ -21225,23 +21267,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "make-20260816203122319",
-      "executado_em": "2026-08-16T23:32:50.673Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 3,
-        "ofertas_nao_criadas": 20,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1786926641601",
       "executado_em": "2026-08-17T00:30:42.125Z",
@@ -24618,6 +24643,23 @@
         "ofertas_criadas": 3,
         "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 4,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1787596170149",
+      "executado_em": "2026-08-24T18:29:30.663Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
         "reativacoes_com_falha": 0,
