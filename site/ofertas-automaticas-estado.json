@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-08-24T01:54:41.724Z",
+  "ultima_execucao": "2026-08-24T02:43:36.918Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -12016,6 +12016,20 @@
       "historico_id": "oferta-177973137327994863-1787218123205-64mbe"
     },
     {
+      "produto_key": "177973182996505803",
+      "codigo": "P-7OI3",
+      "nome": "Lola Cosmetics Shampoo Xapadinha Antiquebra 250ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 24.9,
+      "preco_oferta": 23.16,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-08-23",
+      "fim": "2026-08-26T23:59:59-04:00",
+      "historico_id": "oferta-177973182996505803-1787539416918-eatsg"
+    },
+    {
       "produto_key": "17797319512497261",
       "codigo": "9512490977",
       "nome": "Seda Creme para Pentear Liso Perfeito 300ml",
@@ -13148,6 +13162,20 @@
       "inicio": "2026-08-23",
       "fim": "2026-08-30T23:59:59-04:00",
       "historico_id": "oferta-17858507715968d8c-1787524029985-9t3xw"
+    },
+    {
+      "produto_key": "1785850928942_3f7a",
+      "codigo": "7897947601864",
+      "nome": "Hidratante Labial Carmed Fini Dentaduras 10g Caixa",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 17.9,
+      "preco_oferta": 16.11,
+      "desconto_percentual": 10,
+      "inicio": "2026-08-23",
+      "fim": "2026-08-30T23:59:59-04:00",
+      "historico_id": "oferta-17858509289423f7a-1787539416918-esp1w"
     },
     {
       "produto_key": "1785854742919_b9c8",
@@ -14954,6 +14982,20 @@
       "inicio": "2026-08-23",
       "fim": "2026-08-26T23:59:59-04:00",
       "historico_id": "oferta-7891035051333-1787484412749-6oenc"
+    },
+    {
+      "produto_key": "7894650015674",
+      "codigo": "7894650015674",
+      "nome": "Limpador Perfumado Glade Gotas Perfumadas com Oleos Essenciais Eucalipto Frasco de 120ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 12.8,
+      "preco_oferta": 12.03,
+      "desconto_percentual": 6.02,
+      "inicio": "2026-08-23",
+      "fim": "2026-08-26T23:59:59-04:00",
+      "historico_id": "oferta-7894650015674-1787539416918-ng6yk"
     },
     {
       "produto_key": "7896007554096",
@@ -18386,7 +18428,7 @@
       "regra_id": "regra-1785205096285"
     },
     "7894650015674": {
-      "ultima_oferta_em": "2026-08-19T10:28:08.786Z",
+      "ultima_oferta_em": "2026-08-24T02:43:36.918Z",
       "regra_id": "regra-1785205105033"
     },
     "7896222721303": {
@@ -18454,7 +18496,7 @@
       "regra_id": "regra-1785205192100"
     },
     "177973182996505803": {
-      "ultima_oferta_em": "2026-08-19T11:27:28.943Z",
+      "ultima_oferta_em": "2026-08-24T02:43:36.918Z",
       "regra_id": "regra-1785205192100"
     },
     "1776693836655": {
@@ -20998,7 +21040,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1785850928942_3f7a": {
-      "ultima_oferta_em": "2026-08-13T01:57:50.069Z",
+      "ultima_oferta_em": "2026-08-24T02:43:36.918Z",
       "regra_id": "regra-1785202557027"
     },
     "7899572806485": {
@@ -21603,23 +21645,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1786865322027",
-      "executado_em": "2026-08-16T07:28:42.525Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 23,
-        "ofertas_nao_criadas": 0,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1786868895322",
       "executado_em": "2026-08-16T08:28:15.737Z",
@@ -24995,6 +25020,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 4,
         "ofertas_nao_criadas": 19,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1787539416446",
+      "executado_em": "2026-08-24T02:43:36.918Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
