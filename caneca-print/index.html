@@ -15,8 +15,8 @@
       html,body{width:98mm!important;height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
       body>*:not(.print-sheet){display:none!important}
       .print-sheet{display:block!important;position:fixed!important;inset:0!important;width:98mm!important;height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
-      .print-art-box{position:absolute!important;left:49mm!important;top:123.5mm!important;width:230mm!important;height:92mm!important;transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important;transform-origin:center center!important;display:grid!important;place-items:center!important;overflow:hidden!important;background:#fff!important}
-      .print-art-box img{width:100%!important;height:100%!important;object-fit:contain!important;display:block!important}
+      .print-art-box{position:absolute!important;left:49mm!important;top:123.5mm!important;width:235mm!important;height:100mm!important;transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important;transform-origin:center center!important;display:grid!important;place-items:center!important;overflow:hidden!important;background:#fff!important}
+      .print-art-box img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center center!important;display:block!important}
     }
   </style>
 </head>
@@ -34,13 +34,13 @@
       </div>
     </section>
 
-    <div class="summary"><span id="summaryText">Carregando canecas…</span><span>Impressão segura: 230 × 92 mm</span></div>
+    <div class="summary"><span id="summaryText">Carregando canecas…</span><span>Sangria: 235 × 100 mm · centralizada</span></div>
     <section class="grid" id="grid"><div class="empty">Carregando catálogo de impressão…</div></section>
 
     <details class="setup">
       <summary>Configuração fixa da Epson L1250</summary>
       <div class="inside">
-        <strong>Faça uma única vez no Windows:</strong> defina a Epson L1250 como impressora padrão e crie o papel personalizado <strong>98,0 × 247,0 mm</strong>, orientação retrato. No driver, deixe <strong>Mirror Image desativado</strong>, porque este sistema já espelha a arte. Para máxima qualidade, use qualidade alta e, se disponível, desative impressão bidirecional/High Speed. O tipo de mídia e a correção de cor devem seguir o papel/tinta sublimática e o perfil ICC usados na sua máquina; como ponto de partida sem ICC, teste <strong>Premium Presentation Paper Matte</strong> e faça uma prova de cor antes de fixar o preset.
+        <strong>Faça uma única vez no Windows:</strong> defina a Epson L1250 como impressora padrão e crie o papel personalizado <strong>98,0 × 247,0 mm</strong>, orientação retrato. No driver, deixe <strong>Mirror Image desativado</strong>, porque este sistema já espelha a arte. A impressão usa uma área de <strong>235 × 100 mm centralizada</strong>; os 100 mm criam sangria de aproximadamente 1 mm em cada borda da largura de 98 mm do papel. Para máxima qualidade, use qualidade alta e, se disponível, desative impressão bidirecional/High Speed. O tipo de mídia e a correção de cor devem seguir o papel/tinta sublimática e o perfil ICC usados na sua máquina; como ponto de partida sem ICC, teste <strong>Premium Presentation Paper Matte</strong> e faça uma prova de cor antes de fixar o preset.
         <br><br><strong>Impressão sem painel:</strong> abra esta ferramenta pelo arquivo <code>abrir-caneca-print.bat</code>. Ele inicia o Chrome com <code>--kiosk-printing</code>. No navegador aberto normalmente, o botão continua funcionando, mas o painel de impressão aparecerá.
         <br><br><strong>Alimentação:</strong> coloque o papel com a borda estreita de 98 mm entrando primeiro no alimentador traseiro.
       </div>
@@ -97,7 +97,7 @@
             mockup_1:firstUrl(value.mockup_1,value.url_imagem,value.imagem_url,value.imagem,site[0],images[0],admin[0]),
             mockup_2:firstUrl(value.mockup_2,site[1],images[1],admin[1]),
             arte_horizontal:art,
-            dimensao_impressao:text(value.dimensao_impressao||value?.arte_impressao?.dimensao_real||'24 × 9,5 cm'),
+            dimensao_impressao:text(value.dimensao_impressao||value?.arte_impressao?.dimensao_real||'23,5 × 10 cm'),
             last_update:timestampOf(value),
             updated_at:text(value.updated_at||value.criado_em||value.created_at),
             pronto_impressao:Boolean(art),
