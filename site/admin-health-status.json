@@ -1,27 +1,27 @@
 {
-  "checkedAt": "2026-08-24T16:22:55.528Z",
+  "checkedAt": "2026-08-24T16:30:34.661Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 95 arquivos JavaScript, imports e ciclo dos kits confirmados."
+      "detail": "Admin V2 v13.1 validado: 18 abas, 92 arquivos JavaScript, imports e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787588577792"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787589037028"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787588578424"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787589037492"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787588578666"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787589037583"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -56,12 +56,12 @@
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1876 produto(s) em 257 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1876 produto(s) em 217 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 230 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 152 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
@@ -91,12 +91,7 @@
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.9h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
-    },
-    {
-      "name": "Arquitetura por rota do Admin",
-      "ok": false,
-      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
+      "detail": "1.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     },
     {
       "name": "Criador de Canecas publicado",
@@ -106,11 +101,6 @@
   ],
   "errors": [
     {
-      "name": "Arquitetura por rota do Admin",
-      "ok": false,
-      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
-    },
-    {
       "name": "Criador de Canecas publicado",
       "ok": false,
       "detail": "O Criador de Canecas publicado no domínio não corresponde à cadeia atual. Consulte mug-studio-production.log."
@@ -119,11 +109,11 @@
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "32750243497",
+    "runId": "32751063690",
     "attempt": "1",
-    "sourceSha": "b1c84cfe405467d627ae8216d2752e2a9e6d1e93",
-    "architecture": "failure",
+    "sourceSha": "fb1ebff487b3bd363d688b30df7b915fbbe13fda",
+    "architecture": "success",
     "mugStudio": "failure",
-    "publishedAt": "2026-08-24T16:23:05.677Z"
+    "publishedAt": "2026-08-24T16:30:41.678Z"
   }
 }
