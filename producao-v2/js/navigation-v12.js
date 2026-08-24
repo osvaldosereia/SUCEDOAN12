@@ -34,6 +34,7 @@ const ROUTES = Object.freeze({
 let currentRoute = 'dashboard';
 let dispatching = false;
 let mugStudioPromise = null;
+let mugPhrasesAddonPromise = null;
 
 function routeFromLocation() {
   try {
@@ -80,6 +81,19 @@ function prepareMugStudioPanel() {
   return true;
 }
 
+function scheduleMugPhrasesAddon() {
+  if (mugPhrasesAddonPromise) return;
+  const load = () => {
+    if (mugPhrasesAddonPromise) return;
+    mugPhrasesAddonPromise = import(withBuild('./mug-phrase-picker-v2.js')).catch(error => {
+      mugPhrasesAddonPromise = null;
+      console.warn('Biblioteca opcional de frases não foi carregada:', error);
+    });
+  };
+  if ('requestIdleCallback' in window) window.requestIdleCallback(load, { timeout: 1500 });
+  else setTimeout(load, 250);
+}
+
 function loadMugStudio() {
   if (mugStudioPromise) return mugStudioPromise;
   mugStudioPromise = Promise.all([
@@ -90,6 +104,7 @@ function loadMugStudio() {
     window.dispatchEvent(new CustomEvent('admin-v2-route-ready', {
       detail: { route: 'mug-studio', source: 'mug-studio-loader-unified', build: ACTIVE_BUILD },
     }));
+    scheduleMugPhrasesAddon();
   }).catch(error => {
     mugStudioPromise = null;
     console.error('Não foi possível abrir o Criador de Canecas:', error);
