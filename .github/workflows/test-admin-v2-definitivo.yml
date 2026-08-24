@@ -9,6 +9,7 @@ on:
       - "app-next/**"
       - "scripts/test-admin-v2-definitivo.mjs"
       - "scripts/test-mug-studio-loader.mjs"
+      - "scripts/test-mug-phrase-catalogs.mjs"
       - "scripts/check-admin-production.mjs"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/processar-ofertas.mjs"
@@ -31,6 +32,7 @@ on:
       - "app-next/**"
       - "scripts/test-admin-v2-definitivo.mjs"
       - "scripts/test-mug-studio-loader.mjs"
+      - "scripts/test-mug-phrase-catalogs.mjs"
       - "scripts/check-admin-production.mjs"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/processar-ofertas.mjs"
@@ -73,6 +75,13 @@ jobs:
         run: |
           set -o pipefail
           node scripts/test-mug-studio-loader.mjs 2>&1 | tee mug-studio-test-report.txt
+      - name: Validar catálogos de frases
+        id: phrase_catalog_validation
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/test-mug-phrase-catalogs.mjs 2>&1 | tee mug-phrase-catalog-test-report.txt
       - name: Anexar relatório de validação
         if: always()
         uses: actions/upload-artifact@v4
@@ -81,11 +90,13 @@ jobs:
           path: |
             admin-v2-test-report.txt
             mug-studio-test-report.txt
+            mug-phrase-catalog-test-report.txt
           if-no-files-found: error
           retention-days: 7
       - name: Confirmar resultado
-        if: steps.validation.outcome == 'failure' || steps.mug_validation.outcome == 'failure'
+        if: steps.validation.outcome == 'failure' || steps.mug_validation.outcome == 'failure' || steps.phrase_catalog_validation.outcome == 'failure'
         run: |
           cat admin-v2-test-report.txt || true
           cat mug-studio-test-report.txt || true
+          cat mug-phrase-catalog-test-report.txt || true
           exit 1
