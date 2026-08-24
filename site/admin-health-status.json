@@ -1,27 +1,27 @@
 {
-  "checkedAt": "2026-08-24T04:38:37.713Z",
+  "checkedAt": "2026-08-24T04:54:03.646Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 93 arquivos JavaScript, imports e ciclo dos kits confirmados."
+      "detail": "Admin V2 v13.1 validado: 18 abas, 94 arquivos JavaScript, imports e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787546319987"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787547245803"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787546320770"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787547247049"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787546320877"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787547247117"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -51,22 +51,22 @@
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1816 produto(s) administrativos · 1591 público(s) · campos OK"
+      "detail": "1832 produto(s) administrativos · 1591 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1816 produto(s) em 263 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1832 produto(s) em 250 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 259 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 178 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-09e40ef105cefab6 · público 1591 · admin 1816"
+      "detail": "catalog-7c1d2265295e6339 · público 1591 · admin 1832"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,34 +86,34 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "8596 oferta(s) no histórico"
+      "detail": "8599 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "1.0h desde a execução · status sucesso · 235 expirada(s) ainda ativa(s)"
+      "ok": true,
+      "detail": "0.4h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     },
     {
       "name": "Criador de Canecas publicado",
-      "ok": true,
-      "detail": "Entrada dinâmica, navegação, bridge, layout 20/80, 3 colunas e Configuração Make confirmados no domínio."
+      "ok": false,
+      "detail": "O Criador de Canecas publicado no domínio não corresponde à cadeia atual. Consulte mug-studio-production.log."
     }
   ],
   "errors": [
     {
-      "name": "Rotina horária de ofertas atualizada",
+      "name": "Criador de Canecas publicado",
       "ok": false,
-      "detail": "1.0h desde a execução · status sucesso · 235 expirada(s) ainda ativa(s)"
+      "detail": "O Criador de Canecas publicado no domínio não corresponde à cadeia atual. Consulte mug-studio-production.log."
     }
   ],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "32690708623",
+    "event": "push",
+    "runId": "32691572741",
     "attempt": "1",
-    "sourceSha": "cbd6570165ef57797aeac58462ea1e247ff608c0",
+    "sourceSha": "4d36736c15c6f82062d14ce7f51353fc86be6320",
     "architecture": "success",
-    "mugStudio": "success",
-    "publishedAt": "2026-08-24T04:38:45.925Z"
+    "mugStudio": "failure",
+    "publishedAt": "2026-08-24T04:54:35.771Z"
   }
 }
