@@ -1,11 +1,12 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { text } from './core/utils.js';
 
-const BUILD = '20260824-canecas-command-compact-perf-v3';
+const BUILD = '20260824-canecas-command-compact-perf-v4';
 const NODE = 'canecas/comandos_criacao';
 const SELECTED_KEY = 'da_admin_v2_mug_saved_commands_selected';
 const CACHE_KEY = 'da_admin_v2_mug_commands_cache_v2';
 let defaults = new Set();
+let decorateFrame = 0;
 
 function config() {
   try { return { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem(STORAGE_KEYS.config) || '{}') }; }
@@ -88,9 +89,21 @@ function decorate(panel) {
       button.dataset.commandDefaultToggle = id;
       actions.prepend(button);
     }
-    button.classList.toggle('active', defaults.has(id));
-    button.title = defaults.has(id) ? 'Inicia ativado. Clique para desativar o padrão.' : 'Clique para sempre iniciar ativado.';
-    button.textContent = defaults.has(id) ? '★' : '☆';
+
+    const active = defaults.has(id);
+    if (button.classList.contains('active') !== active) button.classList.toggle('active', active);
+    const nextTitle = active ? 'Inicia ativado. Clique para desativar o padrão.' : 'Clique para sempre iniciar ativado.';
+    if (button.title !== nextTitle) button.title = nextTitle;
+    const nextText = active ? '★' : '☆';
+    if (button.textContent !== nextText) button.textContent = nextText;
+  });
+}
+
+function scheduleDecorate(panel) {
+  if (decorateFrame) return;
+  decorateFrame = requestAnimationFrame(() => {
+    decorateFrame = 0;
+    decorate(panel);
   });
 }
 
@@ -109,7 +122,7 @@ function applyDefaults(panel) {
 function refreshFromSnapshot(panel, commands = cachedCommands()) {
   defaults = defaultsFrom(commands);
   applyDefaults(panel);
-  decorate(panel);
+  scheduleDecorate(panel);
 }
 
 async function toggle(panel, id) {
@@ -134,7 +147,7 @@ async function toggle(panel, id) {
     }
     panel.dataset.commandDefaultsApplied = '';
     applyDefaults(panel);
-    decorate(panel);
+    scheduleDecorate(panel);
     if (status) status.textContent = active ? 'Iniciará ativado.' : 'Padrão removido.';
     setTimeout(() => { if (status) status.textContent = ''; }, 1000);
   } catch (error) {
@@ -153,12 +166,12 @@ function install(panel) {
   panel.dataset.commandCompactBuild = BUILD;
   library.dataset.compactBound = BUILD;
   styles();
-  decorate(panel);
+  scheduleDecorate(panel);
   library.addEventListener('click', event => {
     const button = event.target.closest('[data-command-default-toggle]');
     if (button) { event.preventDefault(); event.stopPropagation(); toggle(panel, text(button.dataset.commandDefaultToggle)); }
   }, true);
-  const observer = new MutationObserver(() => decorate(panel));
+  const observer = new MutationObserver(() => scheduleDecorate(panel));
   observer.observe(library, { childList: true, subtree: true });
   refreshFromSnapshot(panel);
 }
