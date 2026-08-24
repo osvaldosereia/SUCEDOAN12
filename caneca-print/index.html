@@ -52,6 +52,7 @@
   <script>
     (()=>{
       const DATA_URL='../site/canecas-print.json';
+      const FIREBASE_BASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
       const state={rows:[],query:'',readyOnly:true,printing:null};
       const $=s=>document.querySelector(s);
       const text=v=>String(v??'').trim();
@@ -60,6 +61,56 @@
       const kiosk=new URLSearchParams(location.search).get('kiosk')==='1';
       $('#modeBadge').textContent=kiosk?'1 clique ativo · Chrome kiosk':'Modo normal · painel do navegador';
       if(!kiosk)$('#modeBadge').classList.remove('good');
+
+      function firstUrl(...values){
+        for(const value of values.flat(Infinity)){
+          const url=text(value);
+          if(/^https?:\/\//i.test(url))return url;
+        }
+        return '';
+      }
+
+      function horizontalUrl(value){
+        const print=value?.arte_impressao;
+        return firstUrl(value?.arte_horizontal,value?.arte_personalizacao,print&&typeof print==='object'?print.url:print,Array.isArray(value?.midias_admin)?value.midias_admin[2]:'');
+      }
+
+      function timestampOf(value){return Number(value?.last_update||value?.timestamp||Date.parse(value?.updated_at||value?.criado_em||value?.created_at||'')||0);}
+
+      function normalizeFirebase(data){
+        if(!data||typeof data!=='object'||Array.isArray(data))return [];
+        return Object.entries(data).filter(([,value])=>value&&typeof value==='object'&&!Array.isArray(value)).map(([key,value])=>{
+          const site=Array.isArray(value.imagens_site)?value.imagens_site:[];
+          const images=Array.isArray(value.imagens)?value.imagens:[];
+          const admin=Array.isArray(value.midias_admin)?value.midias_admin:[];
+          const firebaseKey=text(value.firebaseKey||value.id||value.codigo||key);
+          const art=horizontalUrl(value);
+          return {
+            firebaseKey,
+            id:text(value.id||firebaseKey),
+            codigo:text(value.codigo||value.sku||value.id||firebaseKey),
+            nome:text(value.nome||value.titulo||'Caneca'),
+            categoria:text(value.categoria||'Canecas'),
+            subcategoria:text(value.subcategoria),
+            situacao:text(value.situacao||value.status||'I'),
+            ativo:value.ativo,
+            mockup_1:firstUrl(value.mockup_1,value.url_imagem,value.imagem_url,value.imagem,site[0],images[0],admin[0]),
+            mockup_2:firstUrl(value.mockup_2,site[1],images[1],admin[1]),
+            arte_horizontal:art,
+            dimensao_impressao:text(value.dimensao_impressao||value?.arte_impressao?.dimensao_real||'24 × 9,5 cm'),
+            last_update:timestampOf(value),
+            updated_at:text(value.updated_at||value.criado_em||value.created_at),
+            pronto_impressao:Boolean(art),
+          };
+        }).sort((a,b)=>Number(b.last_update||0)-Number(a.last_update||0));
+      }
+
+      function liveUrl(){
+        const live=new URL(`${FIREBASE_BASE}/produtos.json`);
+        live.searchParams.set('orderBy',JSON.stringify('categoria'));
+        live.searchParams.set('equalTo',JSON.stringify('Canecas'));
+        return live.href;
+      }
 
       function image(url,label,cls=''){
         return `<figure class="${cls}">${url?`<img loading="lazy" src="${esc(url)}" alt="${esc(label)}">`:`<div class="missing">${esc(label)} indisponível</div>`}</figure>`;
@@ -77,18 +128,37 @@
         </article>`).join(''):'<div class="empty">Nenhuma caneca encontrada com este filtro.</div>';
       }
 
+      async function fetchSnapshot(){
+        const response=await fetch(DATA_URL,{cache:'no-cache',headers:{Accept:'application/json'}});
+        if(!response.ok)throw new Error(`Cache HTTP ${response.status}`);
+        const data=await response.json();
+        return Object.values(data||{}).filter(x=>x&&typeof x==='object').sort((a,b)=>Number(b.last_update||0)-Number(a.last_update||0));
+      }
+
       async function load(){
-        $('#cacheBadge').textContent='Atualizando catálogo…';
+        $('#cacheBadge').textContent='Consultando Firebase…';
+        let liveError=null;
         try{
-          const response=await fetch(DATA_URL,{cache:'no-cache',headers:{Accept:'application/json'}});
-          if(!response.ok)throw new Error(`HTTP ${response.status}`);
-          const data=await response.json();
-          state.rows=Object.values(data||{}).filter(x=>x&&typeof x==='object').sort((a,b)=>Number(b.last_update||0)-Number(a.last_update||0));
-          $('#cacheBadge').textContent=`${state.rows.length} canecas no cache`;
+          const response=await fetch(liveUrl(),{cache:'no-store',headers:{Accept:'application/json'}});
+          if(!response.ok)throw new Error(`Firebase HTTP ${response.status}`);
+          const rows=normalizeFirebase(await response.json());
+          if(rows.length){
+            state.rows=rows;
+            $('#cacheBadge').textContent=`${rows.length} canecas · Firebase ao vivo`;
+            render();
+            return;
+          }
+          throw new Error('Firebase retornou a categoria Canecas vazia.');
+        }catch(error){liveError=error;}
+
+        $('#cacheBadge').textContent='Usando cache do GitHub…';
+        try{
+          state.rows=await fetchSnapshot();
+          $('#cacheBadge').textContent=`${state.rows.length} canecas · cache`;
           render();
-        }catch(error){
+        }catch(cacheError){
           $('#cacheBadge').textContent='Falha ao carregar';
-          $('#grid').innerHTML=`<div class="empty">Não foi possível carregar o catálogo de impressão.<br>${esc(error.message||error)}</div>`;
+          $('#grid').innerHTML=`<div class="empty">Não foi possível carregar as canecas.<br>Firebase: ${esc(liveError?.message||liveError)}<br>Cache: ${esc(cacheError.message||cacheError)}</div>`;
         }
       }
 
