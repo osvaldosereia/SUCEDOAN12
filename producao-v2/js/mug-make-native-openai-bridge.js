@@ -3,6 +3,7 @@ const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.co
   || '20260823-mug-studio-unified-v1';
 
 const MODULES = [
+  './mug-network-resilience-v1.js',
   './mug-studio-gallery.js',
   './mug-personalizer-v7.js',
   './mug-command-library-v1.js',
