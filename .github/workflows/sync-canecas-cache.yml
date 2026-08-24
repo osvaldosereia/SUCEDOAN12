@@ -8,6 +8,7 @@ on:
       - '.github/workflows/sync-canecas-cache.yml'
       - 'producao-v2/js/mug-network-resilience-v1.js'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
+      - 'caneca-print/**'
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
@@ -34,12 +35,12 @@ jobs:
       - name: Publicar snapshots se houver mudança
         shell: bash
         run: |
-          if git diff --quiet -- site/canecas-comandos.json site/canecas-galeria.json; then
+          if git diff --quiet -- site/canecas-comandos.json site/canecas-galeria.json site/canecas-print.json; then
             echo 'Snapshots já estão atualizados.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add site/canecas-comandos.json site/canecas-galeria.json
+          git add site/canecas-comandos.json site/canecas-galeria.json site/canecas-print.json
           git commit -m 'Atualiza cache do Criador de Canecas'
           git push

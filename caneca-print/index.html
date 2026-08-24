@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101214">
+  <title>Caneca Print — Dona Antônia</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#eef2ed;background:#101214;color-scheme:dark}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#101214}.app{max-width:1500px;margin:auto;padding:18px}.top{position:sticky;top:0;z-index:20;background:rgba(16,18,20,.94);backdrop-filter:blur(14px);padding:8px 0 14px;border-bottom:1px solid #272b2d}.brandrow{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.brand h1{margin:0;font-size:25px;letter-spacing:-.03em}.brand p{margin:5px 0 0;color:#9ba39c;font-size:13px}.status{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.badge{padding:7px 10px;border:1px solid #343a3c;border-radius:999px;font-size:11px;color:#b9c0ba;background:#181b1d}.badge.good{border-color:#2d6645;color:#8fe2ae;background:#13251a}.toolbar{display:grid;grid-template-columns:minmax(240px,1fr) auto auto;gap:9px;margin-top:14px}.toolbar input,.toolbar button{height:42px;border:1px solid #343a3c;border-radius:11px;background:#181b1d;color:#f2f4f1;padding:0 13px;font:inherit}.toolbar button{cursor:pointer;font-weight:700}.toolbar button:hover{background:#222729}.summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 10px;color:#aeb5af;font-size:12px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{border:1px solid #2b3032;background:#171a1c;border-radius:16px;overflow:hidden}.card-head{padding:12px 13px 9px;display:flex;justify-content:space-between;gap:10px}.card-title{min-width:0}.card-title strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}.card-title small{color:#8e9690}.state{font-size:10px;color:#8e9690;white-space:nowrap}.media{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#303537}.media figure{margin:0;background:#f5f5f3;min-height:150px;display:grid;place-items:center;overflow:hidden}.media figure img{width:100%;height:100%;max-height:230px;object-fit:contain;display:block}.media .art{grid-column:1/-1;min-height:122px}.media .art img{aspect-ratio:2.5/1;max-height:190px}.media .missing{color:#737973;font-size:11px;text-align:center;padding:12px}.actions{display:grid;grid-template-columns:1fr auto;gap:8px;padding:11px}.print{height:44px;border:0;border-radius:11px;background:#eff5ee;color:#111614;font-weight:900;font-size:14px;cursor:pointer}.print:hover{background:#fff}.print:disabled{opacity:.35;cursor:not-allowed}.open{height:44px;border:1px solid #343a3c;border-radius:11px;background:#202426;color:#d6dbd7;padding:0 13px;cursor:pointer}.empty{padding:60px 20px;text-align:center;border:1px dashed #343a3c;border-radius:16px;color:#9ba29d;grid-column:1/-1}.setup{margin-top:18px;border:1px solid #2b3032;border-radius:14px;background:#15181a}.setup summary{cursor:pointer;padding:13px 15px;font-weight:800}.setup .inside{padding:0 15px 15px;color:#aeb5af;font-size:12px;line-height:1.55}.setup strong{color:#eef2ed}.setup code{background:#222628;padding:2px 5px;border-radius:5px;color:#dfe6df}.print-sheet{display:none}
+    @media(max-width:1050px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:680px){.app{padding:10px}.brandrow{display:block}.status{justify-content:flex-start;margin-top:10px}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}.grid{grid-template-columns:1fr}.media figure{min-height:130px}}
+    @page{size:98mm 247mm;margin:0}
+    @media print{
+      html,body{width:98mm!important;height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
+      body>*:not(.print-sheet){display:none!important}
+      .print-sheet{display:block!important;position:fixed!important;inset:0!important;width:98mm!important;height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
+      .print-art-box{position:absolute!important;left:49mm!important;top:123.5mm!important;width:230mm!important;height:92mm!important;transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important;transform-origin:center center!important;display:grid!important;place-items:center!important;overflow:hidden!important;background:#fff!important}
+      .print-art-box img{width:100%!important;height:100%!important;object-fit:contain!important;display:block!important}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="top">
+      <div class="brandrow">
+        <div class="brand"><h1>Caneca Print</h1><p>Epson L1250 · papel 98 × 247 mm · arte espelhada automaticamente</p></div>
+        <div class="status"><span class="badge good" id="modeBadge">Modo de impressão</span><span class="badge" id="cacheBadge">Carregando…</span></div>
+      </div>
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Buscar por nome ou código…" autocomplete="off">
+        <button id="readyOnly" type="button">Somente prontas</button>
+        <button id="reload" type="button">Atualizar</button>
+      </div>
+    </section>
+
+    <div class="summary"><span id="summaryText">Carregando canecas…</span><span>Impressão segura: 230 × 92 mm</span></div>
+    <section class="grid" id="grid"><div class="empty">Carregando catálogo de impressão…</div></section>
+
+    <details class="setup">
+      <summary>Configuração fixa da Epson L1250</summary>
+      <div class="inside">
+        <strong>Faça uma única vez no Windows:</strong> defina a Epson L1250 como impressora padrão e crie o papel personalizado <strong>98,0 × 247,0 mm</strong>, orientação retrato. No driver, deixe <strong>Mirror Image desativado</strong>, porque este sistema já espelha a arte. Para máxima qualidade, use qualidade alta e, se disponível, desative impressão bidirecional/High Speed. O tipo de mídia e a correção de cor devem seguir o papel/tinta sublimática e o perfil ICC usados na sua máquina; como ponto de partida sem ICC, teste <strong>Premium Presentation Paper Matte</strong> e faça uma prova de cor antes de fixar o preset.
+        <br><br><strong>Impressão sem painel:</strong> abra esta ferramenta pelo arquivo <code>abrir-caneca-print.bat</code>. Ele inicia o Chrome com <code>--kiosk-printing</code>. No navegador aberto normalmente, o botão continua funcionando, mas o painel de impressão aparecerá.
+        <br><br><strong>Alimentação:</strong> coloque o papel com a borda estreita de 98 mm entrando primeiro no alimentador traseiro.
+      </div>
+    </details>
+  </main>
+
+  <section class="print-sheet" id="printSheet" aria-hidden="true"><div class="print-art-box"><img id="printArtwork" alt=""></div></section>
+
+  <script>
+    (()=>{
+      const DATA_URL='../site/canecas-print.json';
+      const state={rows:[],query:'',readyOnly:true,printing:null};
+      const $=s=>document.querySelector(s);
+      const text=v=>String(v??'').trim();
+      const norm=v=>text(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+      const esc=v=>text(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+      const kiosk=new URLSearchParams(location.search).get('kiosk')==='1';
+      $('#modeBadge').textContent=kiosk?'1 clique ativo · Chrome kiosk':'Modo normal · painel do navegador';
+      if(!kiosk)$('#modeBadge').classList.remove('good');
+
+      function image(url,label,cls=''){
+        return `<figure class="${cls}">${url?`<img loading="lazy" src="${esc(url)}" alt="${esc(label)}">`:`<div class="missing">${esc(label)} indisponível</div>`}</figure>`;
+      }
+
+      function render(){
+        const q=norm(state.query);
+        const visible=state.rows.filter(r=>(!state.readyOnly||r.pronto_impressao)&&(!q||norm(`${r.nome} ${r.codigo}`).includes(q)));
+        $('#summaryText').textContent=`${visible.length} de ${state.rows.length} caneca(s) · ${state.rows.filter(r=>r.pronto_impressao).length} prontas para imprimir`;
+        $('#readyOnly').textContent=state.readyOnly?'Mostrar todas':'Somente prontas';
+        $('#grid').innerHTML=visible.length?visible.map(r=>`<article class="card">
+          <div class="card-head"><div class="card-title"><strong title="${esc(r.nome)}">${esc(r.nome)}</strong><small>${esc(r.codigo||r.id)}</small></div><span class="state">${r.ativo===true||String(r.situacao).toUpperCase()==='A'?'ATIVA':'INATIVA'}</span></div>
+          <div class="media">${image(r.mockup_1,'Mockup 1')}${image(r.mockup_2,'Mockup 2')}${image(r.arte_horizontal,'Arte horizontal','art')}</div>
+          <div class="actions"><button class="print" type="button" data-print="${esc(r.firebaseKey)}" ${r.pronto_impressao?'':'disabled'}>${r.pronto_impressao?'IMPRIMIR ARTE':'SEM ARTE HORIZONTAL'}</button><button class="open" type="button" data-open="${esc(r.arte_horizontal)}" ${r.arte_horizontal?'':'disabled'}>Abrir arte</button></div>
+        </article>`).join(''):'<div class="empty">Nenhuma caneca encontrada com este filtro.</div>';
+      }
+
+      async function load(){
+        $('#cacheBadge').textContent='Atualizando catálogo…';
+        try{
+          const response=await fetch(DATA_URL,{cache:'no-cache',headers:{Accept:'application/json'}});
+          if(!response.ok)throw new Error(`HTTP ${response.status}`);
+          const data=await response.json();
+          state.rows=Object.values(data||{}).filter(x=>x&&typeof x==='object').sort((a,b)=>Number(b.last_update||0)-Number(a.last_update||0));
+          $('#cacheBadge').textContent=`${state.rows.length} canecas no cache`;
+          render();
+        }catch(error){
+          $('#cacheBadge').textContent='Falha ao carregar';
+          $('#grid').innerHTML=`<div class="empty">Não foi possível carregar o catálogo de impressão.<br>${esc(error.message||error)}</div>`;
+        }
+      }
+
+      function preload(url){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve();img.onerror=()=>reject(new Error('A arte horizontal não pôde ser carregada.'));img.src=url;});}
+
+      async function printMug(row){
+        if(!row?.arte_horizontal||state.printing)return;
+        state.printing=row.firebaseKey;
+        const button=document.querySelector(`[data-print="${CSS.escape(row.firebaseKey)}"]`);
+        const old=button?.textContent;
+        if(button){button.disabled=true;button.textContent='PREPARANDO…';}
+        try{
+          const art=$('#printArtwork');
+          art.src=row.arte_horizontal;
+          await preload(row.arte_horizontal);
+          document.title=`${row.codigo||row.id} — Caneca Print`;
+          await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+          window.print();
+        }catch(error){alert(error.message||error);}
+        finally{
+          state.printing=null;
+          if(button){button.disabled=false;button.textContent=old||'IMPRIMIR ARTE';}
+          setTimeout(()=>{document.title='Caneca Print — Dona Antônia';},300);
+        }
+      }
+
+      $('#search').addEventListener('input',e=>{state.query=e.target.value;render();});
+      $('#readyOnly').addEventListener('click',()=>{state.readyOnly=!state.readyOnly;render();});
+      $('#reload').addEventListener('click',load);
+      $('#grid').addEventListener('click',e=>{
+        const print=e.target.closest('[data-print]');
+        if(print){printMug(state.rows.find(r=>r.firebaseKey===print.dataset.print));return;}
+        const open=e.target.closest('[data-open]');
+        if(open?.dataset.open)window.open(open.dataset.open,'_blank','noopener');
+      });
+      window.addEventListener('afterprint',()=>{$('#printArtwork').removeAttribute('src');});
+      load();
+    })();
+  </script>
+</body>
+</html>
