@@ -1,27 +1,27 @@
 {
-  "checkedAt": "2026-08-24T05:37:28.331Z",
+  "checkedAt": "2026-08-24T16:22:55.528Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
+  "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 94 arquivos JavaScript, imports e ciclo dos kits confirmados."
+      "detail": "Admin V2 v13.1 validado: 18 abas, 95 arquivos JavaScript, imports e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787549850284"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787588577792"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787549851354"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787588578424"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787549851424"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787588578666"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1590 produto(s)"
+      "detail": "1588 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1842 produto(s) administrativos · 1590 público(s) · campos OK"
+      "detail": "1876 produto(s) administrativos · 1588 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1842 produto(s) em 191 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1876 produto(s) em 257 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 144 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 230 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-7af99b70eb465105 · público 1590 · admin 1842"
+      "detail": "catalog-423c3cc75c0a5e3d · público 1588 · admin 1876"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,28 +86,44 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "8645 oferta(s) no histórico"
+      "detail": "8789 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.9h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+    },
+    {
+      "name": "Arquitetura por rota do Admin",
+      "ok": false,
+      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
     },
     {
       "name": "Criador de Canecas publicado",
-      "ok": true,
-      "detail": "Entrada dinâmica, navegação, bridge, layout 20/80, 3 colunas e Configuração Make confirmados no domínio."
+      "ok": false,
+      "detail": "O Criador de Canecas publicado no domínio não corresponde à cadeia atual. Consulte mug-studio-production.log."
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "Arquitetura por rota do Admin",
+      "ok": false,
+      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
+    },
+    {
+      "name": "Criador de Canecas publicado",
+      "ok": false,
+      "detail": "O Criador de Canecas publicado no domínio não corresponde à cadeia atual. Consulte mug-studio-production.log."
+    }
+  ],
   "warnings": [],
   "workflow": {
-    "event": "schedule",
-    "runId": "32694134991",
+    "event": "push",
+    "runId": "32750243497",
     "attempt": "1",
-    "sourceSha": "1d89bd6894df8a34080d23d8274c0e84c9789ea5",
-    "architecture": "success",
-    "mugStudio": "success",
-    "publishedAt": "2026-08-24T05:37:35.711Z"
+    "sourceSha": "b1c84cfe405467d627ae8216d2752e2a9e6d1e93",
+    "architecture": "failure",
+    "mugStudio": "failure",
+    "publishedAt": "2026-08-24T16:23:05.677Z"
   }
 }
