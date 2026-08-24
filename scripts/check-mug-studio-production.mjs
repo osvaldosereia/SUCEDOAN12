@@ -81,6 +81,7 @@ await check('/producao-v2/js/mug-make-native-openai-bridge.js', 'Bridge publicad
     'const MODULES = [',
     "'./mug-command-layout-v4-force.js'",
     "'./mug-config-compact-v4-1.js'",
+    "'./mug-preset-phrases-v1.js'",
     'for (const path of MODULES) await import(withBuild(path));',
   ],
   forbidden: ["import './mug-"],
@@ -102,6 +103,18 @@ await check('/producao-v2/js/mug-config-compact-v4-1.js', 'Configuração Make p
   ],
 });
 
+await check('/producao-v2/js/mug-preset-phrases-v1.js', '200 frases prontas publicadas', {
+  required: [
+    '200 frases prontas',
+    'id="mugPresetPhraseSearch"',
+    'id="mugPresetPhraseCategory"',
+    'id="mugPresetPhraseSelect"',
+    'field.value = phrase;',
+    '"Deus ainda escreve milagres."',
+    '"Com Deus, sempre."',
+  ],
+});
+
 for (const row of checks) console.log(`${row.ok ? 'OK' : 'FALHA'} · ${row.name}: ${row.detail}`);
 
 if (failures.length) {
@@ -109,5 +122,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log(`Criador de Canecas em produção validado no domínio ${BASE_URL}.`);
+  console.log(`Criador de Canecas em produção validado no domínio ${BASE_URL}, incluindo as 200 frases prontas.`);
 }
