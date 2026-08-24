@@ -27,12 +27,14 @@ requireText(html, "live.searchParams.set('equalTo',JSON.stringify('Canecas'))", 
 requireText(html, "fetch(liveUrl(),{cache:'no-store'", 'Fonte ao vivo não força dados frescos.');
 requireText(html, 'state.rows=await fetchSnapshot()', 'Snapshot do GitHub não funciona como fallback.');
 requireText(html, '@page{size:98mm 247mm;margin:0}', 'Folha de impressão não está fixada em 98 × 247 mm.');
-requireText(html, 'width:230mm!important;height:92mm!important', 'Arte não está limitada à área segura 230 × 92 mm.');
+requireText(html, 'left:49mm!important;top:123.5mm!important;width:235mm!important;height:100mm!important', 'Arte não está em 235 × 100 mm e centralizada na folha 98 × 247 mm.');
+requireText(html, 'object-fit:cover!important;object-position:center center!important', 'Arte não preenche a sangria de 235 × 100 mm preservando o centro.');
 requireText(html, 'rotate(90deg) scaleX(-1)', 'Arte não é rotacionada e espelhada para sublimação.');
 requireText(html, 'window.print();', 'Botão de impressão não dispara a impressão do navegador.');
 requireText(html, 'r.mockup_1', 'Interface não mostra mockup 1.');
 requireText(html, 'r.mockup_2', 'Interface não mostra mockup 2.');
 requireText(html, 'r.arte_horizontal', 'Interface não mostra a arte horizontal.');
+forbidText(html, 'width:230mm!important;height:92mm!important', 'Caneca Print ainda contém a antiga área segura 230 × 92 mm.');
 forbidText(html, "fetch(`${FIREBASE_BASE}/produtos.json`", 'Caneca Print baixa o nó inteiro de produtos em vez da categoria Canecas.');
 forbidText(html, 'Date.now()', 'Caneca Print invalida o cache a cada abertura.');
 
@@ -54,5 +56,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Caneca Print validado: Firebase ao vivo filtrado por Canecas + snapshot fallback, 3 imagens, impressão 98×247 mm, arte 230×92 mm, rotação/espelhamento e Chrome kiosk-printing.');
+  console.log('Caneca Print validado: Firebase ao vivo + fallback, papel 98×247 mm, arte 235×100 mm centralizada, sangria, rotação/espelhamento e Chrome kiosk-printing.');
 }
