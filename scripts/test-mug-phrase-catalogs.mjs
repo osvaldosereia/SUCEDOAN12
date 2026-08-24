@@ -34,12 +34,12 @@ if(data){
   }
 }
 for(const [marker,msg] of [
- ["const PAGE_SIZE=20;","DOM não está limitado a 20 frases."],
+ ["const PAGE_SIZE = 20;","DOM não está limitado a 20 frases."],
  ["catalogos/catalogos-frases-v1.json","Seletor não aponta para o JSON compacto."],
- ["cache:'force-cache'","Cache do navegador não está preservado."],
- ["b.textContent='Frases para a arte · 5.200'","Botão não informa 5.200 frases."],
- ["const LEGACY_URL=new URL('../data/canecas/frases-canecas-v1.json',import.meta.url).href;","As 400 frases originais não foram preservadas."],
- ["current=s.filtered.slice(start,start+PAGE_SIZE)","Resultados não estão paginados."],
+ ["cache: 'force-cache'","Cache do navegador não está preservado."],
+ ["openButton.textContent='Frases para a arte · 5.200'","Botão não informa 5.200 frases."],
+ ["const LEGACY_URL = new URL('../data/canecas/frases-canecas-v1.json', import.meta.url).href;","As 400 frases originais não foram preservadas."],
+ ["current=s.filtered.slice(start, start + PAGE_SIZE)","Resultados não estão paginados."],
  ["if(meta.compact)return expand(meta);","Novos catálogos não são expandidos sob demanda."],
 ])if(!picker.includes(marker))failures.push(msg);
 for(const marker of ['Date.now()','picker.open = true','Promise.all('])if(picker.includes(marker))failures.push(`Padrão proibido voltou ao seletor: ${marker}`);
