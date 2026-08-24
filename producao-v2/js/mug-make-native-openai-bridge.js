@@ -10,6 +10,7 @@ const MODULES = [
   './mug-command-layout-v4-force.js',
   './mug-config-compact-v4-1.js',
   './mug-preset-phrases-v1.js',
+  './mug-motivational-phrases-v1.js',
 ];
 
 let installPromise = null;
