@@ -10,14 +10,14 @@
     *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#101214}.app{max-width:1500px;margin:auto;padding:18px}.top{position:sticky;top:0;z-index:20;background:rgba(16,18,20,.94);backdrop-filter:blur(14px);padding:8px 0 14px;border-bottom:1px solid #272b2d}.brandrow{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.brand h1{margin:0;font-size:25px;letter-spacing:-.03em}.brand p{margin:5px 0 0;color:#9ba39c;font-size:13px}.status{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.badge{padding:7px 10px;border:1px solid #343a3c;border-radius:999px;font-size:11px;color:#b9c0ba;background:#181b1d}.badge.good{border-color:#2d6645;color:#8fe2ae;background:#13251a}.toolbar{display:grid;grid-template-columns:minmax(240px,1fr) auto auto;gap:9px;margin-top:14px}.toolbar input,.toolbar button{height:42px;border:1px solid #343a3c;border-radius:11px;background:#181b1d;color:#f2f4f1;padding:0 13px;font:inherit}.toolbar button{cursor:pointer;font-weight:700}.toolbar button:hover{background:#222729}.summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 10px;color:#aeb5af;font-size:12px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{border:1px solid #2b3032;background:#171a1c;border-radius:16px;overflow:hidden}.card-head{padding:12px 13px 9px;display:flex;justify-content:space-between;gap:10px}.card-title{min-width:0}.card-title strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}.card-title small{color:#8e9690}.state{font-size:10px;color:#8e9690;white-space:nowrap}.media{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#303537}.media figure{margin:0;background:#f5f5f3;min-height:150px;display:grid;place-items:center;overflow:hidden}.media figure img{width:100%;height:100%;max-height:230px;object-fit:contain;display:block}.media .art{grid-column:1/-1;min-height:122px}.media .art img{aspect-ratio:2.5/1;max-height:190px}.media .missing{color:#737973;font-size:11px;text-align:center;padding:12px}.actions{display:grid;grid-template-columns:1fr auto;gap:8px;padding:11px}.print{height:44px;border:0;border-radius:11px;background:#eff5ee;color:#111614;font-weight:900;font-size:14px;cursor:pointer}.print:hover{background:#fff}.print:disabled{opacity:.35;cursor:not-allowed}.open{height:44px;border:1px solid #343a3c;border-radius:11px;background:#202426;color:#d6dbd7;padding:0 13px;cursor:pointer}.empty{padding:60px 20px;text-align:center;border:1px dashed #343a3c;border-radius:16px;color:#9ba29d;grid-column:1/-1}.setup{margin-top:18px;border:1px solid #2b3032;border-radius:14px;background:#15181a}.setup summary{cursor:pointer;padding:13px 15px;font-weight:800}.setup .inside{padding:0 15px 15px;color:#aeb5af;font-size:12px;line-height:1.55}.setup strong{color:#eef2ed}.setup code{background:#222628;padding:2px 5px;border-radius:5px;color:#dfe6df}.print-sheet{display:none}
     @media(max-width:1050px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:680px){.app{padding:10px}.brandrow{display:block}.status{justify-content:flex-start;margin-top:10px}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}.grid{grid-template-columns:1fr}.media figure{min-height:130px}}
-    @page{size:98mm 247mm;margin:0}
+    @page{size:106mm 247mm;margin:0}
     @media print{
-      html,body{width:98mm!important;height:247mm!important;max-width:98mm!important;max-height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
+      html,body{width:106mm!important;height:247mm!important;max-width:106mm!important;max-height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important}
       body{break-after:avoid!important;page-break-after:avoid!important}
       body>*:not(.print-sheet){display:none!important}
-      .print-sheet{display:block!important;position:fixed!important;left:0!important;top:0!important;width:98mm!important;height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;break-after:avoid!important;page-break-after:avoid!important;contain:strict!important}
-      .print-viewport{position:absolute!important;left:0!important;top:6mm!important;width:98mm!important;height:235mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;contain:strict!important;break-inside:avoid!important;page-break-inside:avoid!important}
-      .print-art-box{position:absolute!important;left:49mm!important;top:117.5mm!important;width:235mm!important;height:100mm!important;transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important;transform-origin:center center!important;display:grid!important;place-items:center!important;overflow:hidden!important;background:#fff!important}
+      .print-sheet{display:block!important;position:fixed!important;left:0!important;top:0!important;width:106mm!important;height:247mm!important;margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;break-after:avoid!important;page-break-after:avoid!important;contain:strict!important}
+      .print-viewport{position:absolute!important;left:0!important;top:6mm!important;width:106mm!important;height:235mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;contain:strict!important;break-inside:avoid!important;page-break-inside:avoid!important}
+      .print-art-box{position:absolute!important;left:53mm!important;top:117.5mm!important;width:235mm!important;height:106mm!important;transform:translate(-50%,-50%) rotate(90deg) scaleX(-1)!important;transform-origin:center center!important;display:grid!important;place-items:center!important;overflow:hidden!important;background:#fff!important}
       .print-art-box img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center center!important;display:block!important}
     }
   </style>
@@ -26,7 +26,7 @@
   <main class="app">
     <section class="top">
       <div class="brandrow">
-        <div class="brand"><h1>Caneca Print</h1><p>Epson L1250 · papel 98 × 247 mm · arte espelhada automaticamente</p></div>
+        <div class="brand"><h1>Caneca Print</h1><p>Epson L1250 · papel 106 × 247 mm · arte espelhada automaticamente</p></div>
         <div class="status"><span class="badge good" id="modeBadge">Modo de impressão</span><span class="badge" id="cacheBadge">Carregando…</span></div>
       </div>
       <div class="toolbar">
@@ -36,15 +36,15 @@
       </div>
     </section>
 
-    <div class="summary"><span id="summaryText">Carregando canecas…</span><span>Sangria: 235 × 100 mm · centralizada</span></div>
+    <div class="summary"><span id="summaryText">Carregando canecas…</span><span>Impressão: 235 × 106 mm · centralizada</span></div>
     <section class="grid" id="grid"><div class="empty">Carregando catálogo de impressão…</div></section>
 
     <details class="setup">
       <summary>Configuração fixa da Epson L1250</summary>
       <div class="inside">
-        <strong>Faça uma única vez no Windows:</strong> defina a Epson L1250 como impressora padrão e crie o papel personalizado <strong>98,0 × 247,0 mm</strong>, orientação retrato. No driver, deixe <strong>Mirror Image desativado</strong>, porque este sistema já espelha a arte. A impressão usa uma área de <strong>235 × 100 mm centralizada</strong>; os 100 mm criam sangria de aproximadamente 1 mm em cada borda da largura de 98 mm do papel. Para máxima qualidade, use qualidade alta e, se disponível, desative impressão bidirecional/High Speed. O tipo de mídia e a correção de cor devem seguir o papel/tinta sublimática e o perfil ICC usados na sua máquina; como ponto de partida sem ICC, teste <strong>Premium Presentation Paper Matte</strong> e faça uma prova de cor antes de fixar o preset.
+        <strong>Faça uma única vez no Windows:</strong> defina a Epson L1250 como impressora padrão e crie o papel personalizado <strong>106,0 × 247,0 mm</strong>, orientação retrato. No driver, deixe <strong>Mirror Image desativado</strong>, porque este sistema já espelha a arte. A impressão usa uma área de <strong>235 × 106 mm centralizada</strong>, ocupando toda a altura de 106 mm do papel. Para máxima qualidade, use qualidade alta e, se disponível, desative impressão bidirecional/High Speed. O tipo de mídia e a correção de cor devem seguir o papel/tinta sublimática e o perfil ICC usados na sua máquina; como ponto de partida sem ICC, teste <strong>Premium Presentation Paper Matte</strong> e faça uma prova de cor antes de fixar o preset.
         <br><br><strong>Impressão sem painel:</strong> abra esta ferramenta pelo arquivo <code>abrir-caneca-print.bat</code>. Ele inicia o Chrome com <code>--kiosk-printing</code>. No navegador aberto normalmente, o botão continua funcionando, mas o painel de impressão aparecerá.
-        <br><br><strong>Alimentação:</strong> coloque o papel com a borda estreita de 98 mm entrando primeiro no alimentador traseiro.
+        <br><br><strong>Alimentação:</strong> coloque o papel com a borda estreita de 106 mm entrando primeiro no alimentador traseiro.
       </div>
     </details>
   </main>
@@ -99,7 +99,7 @@
             mockup_1:firstUrl(value.mockup_1,value.url_imagem,value.imagem_url,value.imagem,site[0],images[0],admin[0]),
             mockup_2:firstUrl(value.mockup_2,site[1],images[1],admin[1]),
             arte_horizontal:art,
-            dimensao_impressao:text(value.dimensao_impressao||value?.arte_impressao?.dimensao_real||'23,5 × 10 cm'),
+            dimensao_impressao:text(value.dimensao_impressao||value?.arte_impressao?.dimensao_real||'23,5 × 10,6 cm'),
             last_update:timestampOf(value),
             updated_at:text(value.updated_at||value.criado_em||value.created_at),
             pronto_impressao:Boolean(art),

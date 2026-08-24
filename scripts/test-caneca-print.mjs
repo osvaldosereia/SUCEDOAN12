@@ -26,10 +26,10 @@ requireText(html, "live.searchParams.set('orderBy',JSON.stringify('categoria'))"
 requireText(html, "live.searchParams.set('equalTo',JSON.stringify('Canecas'))", 'Consulta ao vivo não está limitada à categoria Canecas.');
 requireText(html, "fetch(liveUrl(),{cache:'no-store'", 'Fonte ao vivo não força dados frescos.');
 requireText(html, 'state.rows=await fetchSnapshot()', 'Snapshot do GitHub não funciona como fallback.');
-requireText(html, '@page{size:98mm 247mm;margin:0}', 'Folha de impressão não está fixada em 98 × 247 mm.');
-requireText(html, '.print-viewport{position:absolute!important;left:0!important;top:6mm!important;width:98mm!important;height:235mm!important', 'Viewport físico não está contido em uma única folha 98 × 247 mm.');
-requireText(html, 'left:49mm!important;top:117.5mm!important;width:235mm!important;height:100mm!important', 'Arte não está em 235 × 100 mm e centralizada dentro do viewport de impressão.');
-requireText(html, 'object-fit:cover!important;object-position:center center!important', 'Arte não preenche a sangria de 235 × 100 mm preservando o centro.');
+requireText(html, '@page{size:106mm 247mm;margin:0}', 'Folha de impressão não está fixada em 106 × 247 mm.');
+requireText(html, '.print-viewport{position:absolute!important;left:0!important;top:6mm!important;width:106mm!important;height:235mm!important', 'Viewport físico não está contido em uma única folha 106 × 247 mm.');
+requireText(html, 'left:53mm!important;top:117.5mm!important;width:235mm!important;height:106mm!important', 'Arte não está em 235 × 106 mm e centralizada dentro do viewport de impressão.');
+requireText(html, 'object-fit:cover!important;object-position:center center!important', 'Arte não preenche a área de 235 × 106 mm preservando o centro.');
 requireText(html, 'contain:strict!important', 'Layout de impressão não isola o conteúdo para impedir paginação extra.');
 requireText(html, 'break-after:avoid!important;page-break-after:avoid!important', 'Layout não bloqueia quebra de página após a folha de impressão.');
 requireText(html, 'rotate(90deg) scaleX(-1)', 'Arte não é rotacionada e espelhada para sublimação.');
@@ -38,7 +38,9 @@ requireText(html, 'window.print();', 'Botão de impressão não dispara a impres
 requireText(html, 'r.mockup_1', 'Interface não mostra mockup 1.');
 requireText(html, 'r.mockup_2', 'Interface não mostra mockup 2.');
 requireText(html, 'r.arte_horizontal', 'Interface não mostra a arte horizontal.');
-forbidText(html, 'left:49mm!important;top:123.5mm!important;width:235mm!important;height:100mm!important', 'Caneca Print ainda usa o bloco rotacionado diretamente no centro da página, podendo gerar página extra.');
+forbidText(html, '@page{size:98mm 247mm;margin:0}', 'Caneca Print ainda contém o tamanho antigo de papel 98 × 247 mm.');
+forbidText(html, 'width:98mm!important;height:235mm!important', 'Caneca Print ainda contém viewport de 98 mm.');
+forbidText(html, 'width:235mm!important;height:100mm!important', 'Caneca Print ainda contém a antiga arte 235 × 100 mm.');
 forbidText(html, 'width:230mm!important;height:92mm!important', 'Caneca Print ainda contém a antiga área segura 230 × 92 mm.');
 forbidText(html, "fetch(`${FIREBASE_BASE}/produtos.json`", 'Caneca Print baixa o nó inteiro de produtos em vez da categoria Canecas.');
 forbidText(html, 'Date.now()', 'Caneca Print invalida o cache a cada abertura.');
@@ -61,5 +63,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Caneca Print validado: Firebase ao vivo + fallback, papel 98×247 mm, arte 235×100 mm centralizada, sangria e impressão contida em uma única página.');
+  console.log('Caneca Print validado: Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão contida em uma única página.');
 }
