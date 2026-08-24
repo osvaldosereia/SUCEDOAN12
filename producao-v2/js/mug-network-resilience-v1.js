@@ -1,4 +1,4 @@
-const BUILD = '20260824-mug-network-resilience-v1';
+const BUILD = '20260824-mug-network-resilience-v1-1';
 const originalFetch = window.fetch.bind(window);
 const FALLBACK_DELAY_MS = 900;
 const HARD_TIMEOUT_MS = 10000;
@@ -110,6 +110,8 @@ function resilientRead(input, init, fallbackFactory) {
       signal = AbortSignal.any([upstreamSignal, controller.signal]);
     }
 
+    let fallbackTimer = 0;
+    let hardTimer = 0;
     const finish = response => {
       if (done || !response) return;
       done = true;
@@ -127,11 +129,11 @@ function resilientRead(input, init, fallbackFactory) {
         if (error?.name !== 'AbortError') console.warn('Firebase lento/indisponível no Criador:', error);
       });
 
-    const fallbackTimer = setTimeout(() => {
+    fallbackTimer = setTimeout(() => {
       fallbackFactory().then(response => finish(response)).catch(() => {});
     }, FALLBACK_DELAY_MS);
 
-    const hardTimer = setTimeout(() => {
+    hardTimer = setTimeout(() => {
       fallbackFactory()
         .then(response => finish(response))
         .catch(() => finish(jsonResponse({}, 504)));
