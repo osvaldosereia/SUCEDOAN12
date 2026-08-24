@@ -44,13 +44,22 @@ forbidText(navigation, 'mug-make-native-openai-bridge.js?admin_build=', 'navigat
 
 const bridge = read('producao-v2/js/mug-make-native-openai-bridge.js');
 requireText(bridge, 'meta[name="admin-save-build"]', 'Bridge das canecas não herda a build ativa.');
-requireText(bridge, 'const MODULES = [', 'Bridge das canecas não possui uma lista única de módulos.');
-requireText(bridge, "'./mug-command-layout-v4-force.js'", 'Layout 20/80 não está na cadeia do bridge.');
-requireText(bridge, "'./mug-config-compact-v4-1.js'", 'Configuração do Make não está na cadeia do bridge.');
-requireText(bridge, "'./mug-preset-phrases-v1.js'", 'Seletor das 200 frases religiosas não está na cadeia do bridge.');
-requireText(bridge, "'./mug-motivational-phrases-v1.js'", 'Seletor das 200 frases motivacionais não está na cadeia do bridge.');
-requireText(bridge, 'for (const path of MODULES) await import(withBuild(path));', 'Bridge não carrega os módulos sequencialmente com a mesma build.');
+requireText(bridge, 'const CRITICAL_MODULES = [', 'Bridge não separa os módulos essenciais do Criador.');
+requireText(bridge, 'const DEFERRED_MODULES = [', 'Bridge não separa os módulos auxiliares do Criador.');
+requireText(bridge, "'./mug-studio-gallery.js'", 'Galeria atual não está na cadeia crítica do bridge.');
+requireText(bridge, "'./mug-command-layout-v4-force.js'", 'Layout 20/80 não está na cadeia crítica do bridge.');
+requireText(bridge, "'./mug-config-compact-v4-1.js'", 'Configuração do Make não está na cadeia auxiliar do bridge.');
+requireText(bridge, "'./mug-preset-phrases-v1.js'", 'Seletor das 200 frases religiosas não está na cadeia auxiliar do bridge.');
+requireText(bridge, "'./mug-motivational-phrases-v1.js'", 'Seletor das 200 frases motivacionais não está na cadeia auxiliar do bridge.');
+requireText(bridge, 'Promise.all(CRITICAL_MODULES.slice(1, 4).map(importModule))', 'Bridge não paraleliza galeria, personalizador e comandos.');
+requireText(bridge, 'Promise.allSettled(DEFERRED_MODULES.map(importModule))', 'Bridge não carrega módulos auxiliares sem bloquear a interface.');
+requireText(bridge, 'requestIdleCallback', 'Bridge não adia módulos auxiliares para o tempo ocioso do navegador.');
+forbidText(bridge, 'for (const path of MODULES) await import(withBuild(path));', 'Bridge voltou a bloquear a tela carregando todos os módulos em sequência.');
 forbidText(bridge, "import './mug-", 'Bridge voltou a usar imports estáticos versionados separadamente.');
+
+const personalizer = read('producao-v2/js/mug-personalizer-v7.js');
+forbidText(personalizer, "import './mug-studio-gallery.js?admin_build=", 'Personalizador voltou a carregar uma segunda cópia fixa/antiga da galeria.');
+requireText(personalizer, "const BUILD = '20260824-canecas-studio-v7-3';", 'Personalizador não recebeu a build que elimina a galeria duplicada.');
 
 const layout = read('producao-v2/js/mug-command-layout-v4-force.js');
 requireText(layout, "grid-template-columns:minmax(190px,1fr) minmax(0,4fr)", 'Layout desktop não mantém aproximadamente 20%/80%.');
@@ -119,5 +128,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Criador de Canecas validado: entrada dinâmica, build única, layout 20/80, 3 colunas, comandos padrão, Configuração Make e 400 frases categorizadas confirmados.');
+  console.log('Criador de Canecas validado: carga crítica paralela, galeria única, layout 20/80, 3 colunas, comandos padrão, Configuração Make e 400 frases categorizadas confirmados.');
 }
