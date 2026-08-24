@@ -2,7 +2,7 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { text } from './core/utils.js';
 import './mug-studio-gallery.js?admin_build=20260823-mug-v7-gallery';
 
-const BUILD = '20260823-canecas-studio-v7-2';
+const BUILD = '20260824-canecas-studio-v7-3';
 const WEBHOOK_KEY = 'da_admin_v2_mug_make_webhook';
 const MASTER_WIDTH = 2400;
 const MASTER_HEIGHT = 960;
@@ -112,9 +112,19 @@ async function callMake(hook, payload) {
   return result;
 }
 
+function buildOperatorInstructionBlock(instruction = '') {
+  const extra = text(instruction);
+  if (!extra) {
+    return `INSTRUÇÃO COMPLEMENTAR DO OPERADOR: nenhuma.\nUse seu julgamento artístico profissional dentro das regras abaixo.`;
+  }
+  return `PRIORIDADE MÁXIMA — INSTRUÇÃO COMPLEMENTAR DO OPERADOR:\n${extra}\n\nREGRAS OBRIGATÓRIAS PARA A INSTRUÇÃO DO OPERADOR:\n- esta instrução prevalece sobre qualquer orientação genérica abaixo que possa entrar em conflito com ela;\n- cumpra todos os detalhes solicitados pelo operador, não apenas o tema geral;\n- se o operador pedir uma frase, nome, palavra, data ou qualquer outro texto, esse texto é OBRIGATÓRIO na arte;\n- reproduza o texto solicitado exatamente como foi digitado, preservando palavras, acentos, pontuação, maiúsculas e minúsculas;\n- não resuma, não traduza, não corrija, não substitua e não parafraseie o texto solicitado;\n- texto fornecido pelo operador NÃO é texto inventado e deve ser tratado como conteúdo autorizado;\n- posicione o texto solicitado de forma legível, bonita e integrada à composição;\n- antes de concluir, confira visualmente que a instrução foi realmente cumprida.`;
+}
+
 function buildArtPrompt(instruction = '') {
   const extra = text(instruction);
   return `Analise cuidadosamente a imagem enviada como REFERÊNCIA E INSPIRAÇÃO e crie uma NOVA ARTE COMERCIAL PARA CANECA.
+
+${buildOperatorInstructionBlock(extra)}
 
 OBJETIVO:
 - produza somente a arte plana de impressão, nunca um mockup;
@@ -128,16 +138,21 @@ OBJETIVO:
 - mantenha boa continuidade entre esquerda, centro e direita para envolver a caneca.
 
 TEXTO:
-- se houver texto essencial e perfeitamente legível na referência, preserve apenas o que fizer sentido;
-- se houver dúvida, prefira não usar texto;
-- nunca invente letras ou palavras aleatórias.
+- se a instrução complementar pedir texto, frase, nome, palavra ou data, inclua esse conteúdo literalmente e trate-o como requisito obrigatório;
+- a regra de evitar texto só vale quando o operador NÃO pediu texto;
+- se o operador não pediu texto e houver texto essencial e perfeitamente legível na referência, preserve apenas o que fizer sentido;
+- quando não houver texto solicitado nem texto essencial confiável na referência, prefira não adicionar texto;
+- nunca invente palavras extras além do que foi fornecido pelo operador ou estiver claramente legível na referência.
 
 RESTRIÇÕES:
 - não mostrar caneca, mãos, mesa, cenário, embalagem ou fotografia de produto;
 - não criar marca-d'água, assinatura ou elementos de interface;
 - não cortar rostos ou elementos centrais importantes.
 
-${extra ? `INSTRUÇÃO COMPLEMENTAR DO OPERADOR: ${extra}` : 'INSTRUÇÃO COMPLEMENTAR: nenhuma. Use seu julgamento artístico profissional.'}
+CHECKLIST FINAL ANTES DE GERAR:
+- a instrução complementar foi atendida integralmente? ${extra ? 'SIM, ela é obrigatória.' : 'Não há instrução adicional.'}
+- se a instrução pediu texto, ele aparece completo, correto, legível e exatamente como digitado?;
+- não omita a frase apenas porque ela não existe na imagem de referência.
 
 ENTREGA:
 Uma arte horizontal única, sofisticada, harmoniosa e pronta para sublimação.`;
@@ -191,12 +206,12 @@ function firebaseTemplate(id, instruction = '') {
     arte_impressao: { url: PLACEHOLDER_ART, ratio: `${MASTER_WIDTH}:${MASTER_HEIGHT}`, width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, formato: 'webp' },
     midias_admin: [PLACEHOLDER_MOCKUP_1, PLACEHOLDER_MOCKUP_2, PLACEHOLDER_ART],
     video_youtube: '',
-    origem_cadastro: 'make_canecas_studio_v7_2',
+    origem_cadastro: 'make_canecas_studio_v7_3',
     tipo_produto: 'caneca_decorativa',
     geracao_status: 'concluido',
     geracao_etapa: 'firebase_salvo',
-    geracao_versao: 'v7.2',
-    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v7_2' },
+    geracao_versao: 'v7.3',
+    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), instruction_priority: Boolean(text(instruction)), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v7_3' },
     criado_em: now,
     updated_at: now,
     last_update: Date.now(),
@@ -239,7 +254,9 @@ async function generate(panel) {
   try {
     status.textContent = '1/4 · Preparando imagem de inspiração...';
     const reference = await normalizeReference(file);
-    status.textContent = '2/4 · OpenAI criando a nova arte...';
+    status.textContent = instruction
+      ? '2/4 · OpenAI criando a arte e aplicando sua instrução obrigatória...'
+      : '2/4 · OpenAI criando a nova arte...';
     const artResult = await callMake(hook, {
       action: 'generate_mug_art',
       request_id: id,
@@ -278,7 +295,7 @@ async function generate(panel) {
     status.textContent = 'Concluído · produto salvo como inativo.';
     window.dispatchEvent(new CustomEvent('admin-v2-products-invalidated', { detail: { source: BUILD, key: finalResult.firebase_key || id } }));
   } catch (error) {
-    console.error('Falha no Criador de Canecas V7.2:', error);
+    console.error('Falha no Criador de Canecas V7.3:', error);
     status.textContent = `Erro: ${error?.message || error}`;
   } finally {
     button.disabled = false;
@@ -289,10 +306,10 @@ function renderPanel(panel) {
   installStyles();
   panel.className = 'mug-automation-panel mugv7';
   panel.innerHTML = `
-    <div class="mugv7-head"><div><span class="eyebrow">Criador de Canecas V7.2</span><h2>Crie uma nova arte a partir de uma inspiração</h2><p>Envie uma imagem e, se quiser, escreva uma instrução complementar. A IA cria a arte final e dois mockups realmente diferentes.</p></div><span class="badge warning">Cadastro inativo</span></div>
+    <div class="mugv7-head"><div><span class="eyebrow">Criador de Canecas V7.3</span><h2>Crie uma nova arte a partir de uma inspiração</h2><p>Envie uma imagem e, se quiser, escreva uma instrução complementar. Quando você pedir uma frase, nome ou outro texto, essa instrução passa a ser obrigatória na arte.</p></div><span class="badge warning">Cadastro inativo</span></div>
     <div class="mugv7-main">
-      <section class="mugv7-upload"><label class="mugv7-drop" for="mugv7Image"><div id="mugv7Empty"><strong>Escolher imagem</strong><small>PNG, JPG ou WEBP · use uma referência do estilo desejado</small></div><img id="mugv7Preview" alt="Imagem de inspiração" hidden></label><input id="mugv7Image" type="file" accept="image/*" hidden><label class="mugv7-instruction"><strong>Instrução complementar <span class="muted">(opcional)</span></strong><textarea id="mugv7Instruction" maxlength="500" placeholder="Ex.: use tons de azul; não use texto; deixe as flores maiores; estilo mais sofisticado..."></textarea><small>Se ficar vazio, a IA decide a direção artística a partir da imagem.</small></label><div class="mugv7-actions"><button class="button primary" id="mugv7Generate" type="button">Gerar caneca</button><button class="button secondary" id="mugv7Clear" type="button">Trocar imagem</button><span id="mugAutomationStatus" class="mugv7-status"></span></div></section>
-      <section class="mugv7-info"><h3>O que a automação fará</h3><ul><li>interpretará a imagem e a instrução complementar;</li><li>criará uma nova arte comercial para ${PRINT_LABEL};</li><li>fechará a arte em ${MASTER_WIDTH}×${MASTER_HEIGHT}px sem esticar;</li><li>usará um recorte específico da esquerda para o primeiro mockup;</li><li>usará um recorte específico da direita para o segundo mockup;</li><li>cadastrará a caneca no Firebase como inativa.</li></ul><details class="mugv7-settings"><summary>Configuração</summary><div class="mugv7-settings-grid"><label>Webhook Make<input id="mugv7Webhook" type="url" placeholder="https://hook.eu1.make.com/..."></label><label>Qualidade<select id="mugv7Quality"><option value="high" selected>Alta</option><option value="medium">Média</option><option value="low">Teste</option></select></label></div></details></section>
+      <section class="mugv7-upload"><label class="mugv7-drop" for="mugv7Image"><div id="mugv7Empty"><strong>Escolher imagem</strong><small>PNG, JPG ou WEBP · use uma referência do estilo desejado</small></div><img id="mugv7Preview" alt="Imagem de inspiração" hidden></label><input id="mugv7Image" type="file" accept="image/*" hidden><label class="mugv7-instruction"><strong>Instrução complementar <span class="muted">(opcional)</span></strong><textarea id="mugv7Instruction" maxlength="500" placeholder="Ex.: escreva exatamente ‘Eis-me aqui Senhor.’; use tons de azul; deixe as flores maiores..."></textarea><small>Se pedir uma frase, nome ou palavra, digite exatamente como deve aparecer na arte. A instrução complementar terá prioridade sobre as regras genéricas do gerador.</small></label><div class="mugv7-actions"><button class="button primary" id="mugv7Generate" type="button">Gerar caneca</button><button class="button secondary" id="mugv7Clear" type="button">Trocar imagem</button><span id="mugAutomationStatus" class="mugv7-status"></span></div></section>
+      <section class="mugv7-info"><h3>O que a automação fará</h3><ul><li>interpretará a imagem e aplicará a instrução complementar como prioridade;</li><li>se houver frase ou nome solicitado, tentará reproduzi-lo exatamente;</li><li>criará uma nova arte comercial para ${PRINT_LABEL};</li><li>fechará a arte em ${MASTER_WIDTH}×${MASTER_HEIGHT}px sem esticar;</li><li>usará um recorte específico da esquerda para o primeiro mockup;</li><li>usará um recorte específico da direita para o segundo mockup;</li><li>cadastrará a caneca no Firebase como inativa.</li></ul><details class="mugv7-settings"><summary>Configuração</summary><div class="mugv7-settings-grid"><label>Webhook Make<input id="mugv7Webhook" type="url" placeholder="https://hook.eu1.make.com/..."></label><label>Qualidade<select id="mugv7Quality"><option value="high" selected>Alta</option><option value="medium">Média</option><option value="low">Teste</option></select></label></div></details></section>
     </div>
     <div id="mugv7Result" hidden></div>`;
 
