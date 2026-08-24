@@ -71,7 +71,7 @@ requireText(config, 'id="mugv7Webhook"', 'Campo Webhook Make não está disponí
 requireText(config, 'localStorage.setItem(WEBHOOK_KEY', 'Webhook Make não é persistido localmente.');
 
 const personalizer = read('producao-v2/js/mug-personalizer-v7.js');
-requireText(personalizer, "const BUILD = '20260824-canecas-studio-v7-3'", 'Criador não foi versionado para V7.3 após corrigir instruções complementares.');
+requireText(personalizer, "const BUILD = '20260824-canecas-studio-v7-4'", 'Criador não foi versionado para V7.4.');
 requireText(personalizer, 'PRIORIDADE MÁXIMA — INSTRUÇÃO COMPLEMENTAR DO OPERADOR', 'Prompt não dá prioridade máxima à instrução complementar.');
 requireText(personalizer, 'se o operador pedir uma frase, nome, palavra, data ou qualquer outro texto, esse texto é OBRIGATÓRIO na arte', 'Prompt não torna texto solicitado pelo operador obrigatório.');
 requireText(personalizer, 'reproduza o texto solicitado exatamente como foi digitado', 'Prompt não exige reprodução literal do texto solicitado.');
@@ -80,6 +80,29 @@ requireText(personalizer, 'a regra de evitar texto só vale quando o operador N�
 requireText(personalizer, 'prompt_art: buildArtPrompt(instruction)', 'Instrução complementar não chega ao prompt_art enviado ao Make.');
 requireText(personalizer, "const instruction = text(panel.querySelector('#mugv7Instruction')?.value)", 'Campo Instrução complementar não é lido antes da geração.');
 forbidText(personalizer, 'se houver dúvida, prefira não usar texto;', 'Prompt antigo ainda desencoraja texto mesmo quando o operador pede uma frase.');
+
+requireText(personalizer, "action: 'generate_mug_name'", 'Criador não solicita ao Make um nome gerado por IA.');
+requireText(personalizer, 'prompt_name: buildNamePrompt(instruction)', 'Criador não envia o prompt de nome ao Make.');
+requireText(personalizer, 'Caneca de Porcelana ${middle} - 350ml', 'Nome gerado não é normalizado no padrão obrigatório.');
+requireText(personalizer, "const MUG_CATEGORY = 'Canecas de Porcelana'", 'Categoria padrão das novas canecas não foi atualizada.');
+requireText(personalizer, "const MUG_CAPACITY = '350 ml'", 'Capacidade padrão não foi atualizada para 350 ml.');
+requireText(personalizer, "const MUG_NCM = '69111090'", 'NCM padrão da caneca de porcelana não está configurado.');
+requireText(personalizer, 'const MUG_PRICE = 24.90;', 'Preço padrão das canecas não está em R$ 24,90.');
+requireText(personalizer, "gtin: ''", 'GTIN deveria permanecer vazio até receber código oficial.');
+requireText(personalizer, "ean: ''", 'EAN deveria permanecer vazio até receber código oficial.');
+requireText(personalizer, "subcategoria: ''", 'Subcategoria das novas canecas deve iniciar vazia para cadastro manual.');
+requireText(personalizer, "material: 'Porcelana'", 'Material das novas canecas não está como porcelana.');
+requireText(personalizer, "tipo_produto: 'caneca_porcelana'", 'Tipo de produto não foi atualizado para caneca de porcelana.');
+
+const gallery = read('producao-v2/js/mug-studio-gallery.js');
+requireText(gallery, 'const PAGE_SIZE = 6;', 'Galeria do Criador não limita a exibição a 6 canecas por página.');
+requireText(gallery, "const CATEGORY_NAMES = ['Canecas de Porcelana', 'Canecas'];", 'Galeria não consulta a categoria nova e a legada.');
+requireText(gallery, 'galleryProducts.slice(start, start + PAGE_SIZE)', 'Galeria não pagina o DOM em blocos de 6.');
+requireText(gallery, 'data-mug-page="prev"', 'Galeria não oferece página anterior.');
+requireText(gallery, 'data-mug-page="next"', 'Galeria não oferece próxima página.');
+requireText(gallery, 'data-delete-mug=', 'Cards das canecas não possuem botão Apagar.');
+requireText(gallery, 'archiveProduct(loadConfig(), key', 'Botão Apagar não usa a rotina segura de arquivamento do Produção.');
+requireText(gallery, "reason: 'Apagada pelo Criador de Canecas'", 'Exclusão da caneca não registra a origem corretamente.');
 
 const compact = read('producao-v2/js/mug-command-library-compact-v2.js');
 requireText(compact, 'iniciar_ativo', 'Comandos não preservam a opção de iniciar ativado.');
@@ -153,5 +176,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Criador de Canecas validado: V7.3 prioriza instrução complementar e texto obrigatório + 400 frases em JSON lazy-load.');
+  console.log('Criador de Canecas validado: V7.4 com nome por IA, porcelana 350 ml, R$ 24,90, NCM 69111090, GTIN vazio e galeria 6 por página com exclusão segura.');
 }

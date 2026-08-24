@@ -1,13 +1,17 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { text } from './core/utils.js';
-import './mug-studio-gallery.js?admin_build=20260823-mug-v7-gallery';
+import './mug-studio-gallery.js?admin_build=20260824-mug-gallery-v2';
 
-const BUILD = '20260824-canecas-studio-v7-3';
+const BUILD = '20260824-canecas-studio-v7-4';
 const WEBHOOK_KEY = 'da_admin_v2_mug_make_webhook';
 const MASTER_WIDTH = 2400;
 const MASTER_HEIGHT = 960;
 const PRINT_LABEL = '24 × 9,5 cm';
 const SIDE_WIDTH = 1344;
+const MUG_CATEGORY = 'Canecas de Porcelana';
+const MUG_CAPACITY = '350 ml';
+const MUG_NCM = '69111090';
+const MUG_PRICE = 24.90;
 const PLACEHOLDER_ART = '__MUG_ART__';
 const PLACEHOLDER_MOCKUP_1 = '__MUG_MOCKUP_1__';
 const PLACEHOLDER_MOCKUP_2 = '__MUG_MOCKUP_2__';
@@ -158,12 +162,45 @@ ENTREGA:
 Uma arte horizontal única, sofisticada, harmoniosa e pronta para sublimação.`;
 }
 
+function buildNamePrompt(instruction = '') {
+  const extra = text(instruction);
+  return `Analise visualmente a arte final da caneca enviada e crie um nome comercial em português, claro, específico e bom para catálogo/SEO.
+
+FORMATO OBRIGATÓRIO:
+Caneca de Porcelana [tema principal da arte] - 350ml
+
+REGRAS:
+- responda somente com o nome final, sem explicações, aspas ou lista;
+- identifique o assunto real da arte: personagem, santo, profissão, frase, estilo, ocasião ou elemento principal;
+- prefira termos que uma pessoa realmente pesquisaria para comprar essa caneca;
+- seja específico, mas curto;
+- não use códigos aleatórios;
+- não use “Arte Exclusiva”, “Decorativa” ou palavras genéricas se a imagem permitir um tema melhor;
+- não invente marca registrada que não esteja claramente presente;
+- mantenha exatamente o prefixo “Caneca de Porcelana” e o sufixo “- 350ml”.
+${extra ? `\nINSTRUÇÃO QUE ORIGINOU A ARTE:\n${extra}` : ''}`;
+}
+
+function normalizeGeneratedName(value = '') {
+  let middle = text(value)
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/^['"“”‘’]+|['"“”‘’]+$/g, '')
+    .replace(/^caneca\s+de\s+porcelana\s*/i, '')
+    .replace(/\s*[-–—]\s*350\s*ml\s*$/i, '')
+    .replace(/^[-–—:\s]+|[-–—:\s]+$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!middle) middle = 'Arte Exclusiva';
+  if (middle.length > 78) middle = middle.slice(0, 78).replace(/\s+\S*$/, '').trim();
+  return `Caneca de Porcelana ${middle} - 350ml`;
+}
+
 function buildMockupPrompt(side) {
   const orientation = side === 1
     ? 'Mostre a PRIMEIRA METADE / LADO ESQUERDO da arte centralizada na face visível da caneca. A alça deve aparecer preferencialmente à direita.'
     : 'Mostre a SEGUNDA METADE / LADO DIREITO da arte centralizada na face visível da caneca. A alça deve aparecer preferencialmente à esquerda.';
   return `Use a arte fornecida como ARTE-MESTRE IMUTÁVEL. ${orientation}
-Crie uma fotografia quadrada 1:1 ultra realista de uma caneca branca de cerâmica 325 ml já sublimada com essa arte.
+Crie uma fotografia quadrada 1:1 ultra realista de uma caneca branca de porcelana 350 ml já sublimada com essa arte.
 A impressão corresponde aproximadamente a ${PRINT_LABEL} e deve ocupar praticamente toda a altura útil da caneca, perto da borda superior e da borda inferior.
 Não comprima a estampa numa faixa baixa no centro.
 Preserve a proporção da arte: não estique e não achate verticalmente o desenho.
@@ -172,28 +209,33 @@ Não redesenhe, não reescreva, não altere cores, não invente símbolos e não
 Fundo claro e simples. Caneca inteira visível. Sem mãos, café, caixas, plantas, flores, livros ou objetos extras. Resultado comercial 1024×1024.`;
 }
 
-function firebaseTemplate(id, instruction = '') {
+function firebaseTemplate(id, instruction = '', generatedName = '', nameGeneratedByAi = false) {
   const now = new Date().toISOString();
   const suffix = id.slice(-6).toUpperCase();
+  const productName = normalizeGeneratedName(generatedName);
   return JSON.stringify({
     id,
     firebaseKey: id,
-    codigo: `CAN-${suffix}`,
-    nome: `Caneca Decorativa Exclusiva ${suffix}`,
-    categoria: 'Canecas',
-    subcategoria: 'Decorativas',
-    subsubcategoria: 'Artes exclusivas',
+    codigo: `CANP-${suffix}`,
+    gtin: '',
+    ean: '',
+    codigo_barras: '',
+    nome: productName,
+    categoria: MUG_CATEGORY,
+    subcategoria: '',
+    subsubcategoria: '',
+    ncm: MUG_NCM,
     preco_custo: 10,
-    preco: 19.90,
+    preco: MUG_PRICE,
     estoque: 0,
     situacao: 'I',
     ativo: false,
-    material: 'Cerâmica',
-    capacidade: '325 ml',
-    embalagem: 'Caneca de cerâmica 325 ml',
+    material: 'Porcelana',
+    capacidade: MUG_CAPACITY,
+    embalagem: `Caneca de porcelana ${MUG_CAPACITY}`,
     unidade: 'UN',
     dimensao_impressao: PRINT_LABEL,
-    descricao: `Caneca branca de cerâmica 325 ml com arte exclusiva criada a partir de uma referência visual. Área de impressão aproximada: ${PRINT_LABEL}.`,
+    descricao: `${productName}. Caneca branca de porcelana ${MUG_CAPACITY} com arte exclusiva para sublimação. Área de impressão aproximada: ${PRINT_LABEL}.`,
     url_imagem: PLACEHOLDER_MOCKUP_1,
     imagem: PLACEHOLDER_MOCKUP_1,
     imagem_url: PLACEHOLDER_MOCKUP_1,
@@ -206,12 +248,13 @@ function firebaseTemplate(id, instruction = '') {
     arte_impressao: { url: PLACEHOLDER_ART, ratio: `${MASTER_WIDTH}:${MASTER_HEIGHT}`, width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, formato: 'webp' },
     midias_admin: [PLACEHOLDER_MOCKUP_1, PLACEHOLDER_MOCKUP_2, PLACEHOLDER_ART],
     video_youtube: '',
-    origem_cadastro: 'make_canecas_studio_v7_3',
-    tipo_produto: 'caneca_decorativa',
+    origem_cadastro: 'make_canecas_studio_v7_4',
+    tipo_produto: 'caneca_porcelana',
     geracao_status: 'concluido',
     geracao_etapa: 'firebase_salvo',
-    geracao_versao: 'v7.3',
-    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), instruction_priority: Boolean(text(instruction)), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v7_3' },
+    geracao_versao: 'v7.4',
+    nome_gerado_ia: Boolean(nameGeneratedByAi),
+    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), instruction_priority: Boolean(text(instruction)), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v7_4' },
     criado_em: now,
     updated_at: now,
     last_update: Date.now(),
@@ -227,9 +270,9 @@ function installStyles() {
   document.head.appendChild(style);
 }
 
-function renderResult(container, master, finalResult) {
+function renderResult(container, master, finalResult, productName) {
   container.innerHTML = `<div class="mugv7-result">
-    <figure class="art"><img src="${escapeHtml(master)}" alt="Arte horizontal"><figcaption>Arte de impressão · ${MASTER_WIDTH}×${MASTER_HEIGHT}px · ${PRINT_LABEL}</figcaption></figure>
+    <figure class="art"><img src="${escapeHtml(master)}" alt="Arte horizontal"><figcaption>${escapeHtml(productName)} · ${MASTER_WIDTH}×${MASTER_HEIGHT}px · ${PRINT_LABEL}</figcaption></figure>
     <figure class="mock"><img src="${escapeHtml(finalResult.mockup_1_url || '')}" alt="Mockup lado esquerdo"><figcaption>Mockup · lado esquerdo</figcaption></figure>
     <figure class="mock"><img src="${escapeHtml(finalResult.mockup_2_url || '')}" alt="Mockup lado direito"><figcaption>Mockup · lado direito</figcaption></figure>
   </div>`;
@@ -252,11 +295,11 @@ async function generate(panel) {
   resultBox.hidden = true;
   const id = requestId();
   try {
-    status.textContent = '1/4 · Preparando imagem de inspiração...';
+    status.textContent = '1/5 · Preparando imagem de inspiração...';
     const reference = await normalizeReference(file);
     status.textContent = instruction
-      ? '2/4 · OpenAI criando a arte e aplicando sua instrução obrigatória...'
-      : '2/4 · OpenAI criando a nova arte...';
+      ? '2/5 · OpenAI criando a arte e aplicando sua instrução obrigatória...'
+      : '2/5 · OpenAI criando a nova arte...';
     const artResult = await callMake(hook, {
       action: 'generate_mug_art',
       request_id: id,
@@ -267,13 +310,29 @@ async function generate(panel) {
     });
     const artSource = text(artResult.art_source_url || artResult.result_url);
     if (!artSource) throw new Error('O Make não devolveu a arte gerada.');
-    status.textContent = `3/4 · Preparando arte final ${MASTER_WIDTH}×${MASTER_HEIGHT}...`;
+
+    status.textContent = `3/5 · Preparando arte final ${MASTER_WIDTH}×${MASTER_HEIGHT} e criando nome...`;
     const master = await cropMaster(artSource);
+    let aiName = '';
+    try {
+      const nameResult = await callMake(hook, {
+        action: 'generate_mug_name',
+        request_id: id,
+        image_base64: master,
+        instruction,
+        prompt_name: buildNamePrompt(instruction),
+      });
+      aiName = text(nameResult.product_name || nameResult.name || nameResult.result);
+    } catch (nameError) {
+      console.warn('A IA não gerou o nome da caneca; usando fallback seguro.', nameError);
+    }
+    const productName = normalizeGeneratedName(aiName);
     const leftReference = await buildSideReference(master, 1);
     const rightReference = await buildSideReference(master, 2);
     const base = text(config.firebaseUrl || DEFAULT_CONFIG.firebaseUrl).replace(/\/+$/, '');
     const node = text(config.productsNode || DEFAULT_CONFIG.productsNode || 'produtos').replace(/^\/+|\/+$/g, '').replace(/\.json$/i, '') || 'produtos';
-    status.textContent = '4/4 · Gerando os dois lados e cadastrando produto...';
+
+    status.textContent = '4/5 · Gerando os dois mockups em porcelana 350 ml...';
     const finalResult = await callMake(hook, {
       action: 'finalize_mug_product',
       request_id: id,
@@ -281,21 +340,23 @@ async function generate(panel) {
       mockup_left_base64: leftReference,
       mockup_right_base64: rightReference,
       instruction,
+      product_name: productName,
       prompt_mockup_1: buildMockupPrompt(1),
       prompt_mockup_2: buildMockupPrompt(2),
       quality: 'high',
       firebase_url: base,
       products_node: node,
-      firebase_template_json: firebaseTemplate(id, instruction),
+      firebase_template_json: firebaseTemplate(id, instruction, productName, Boolean(aiName)),
     });
+    status.textContent = '5/5 · Confirmando cadastro da caneca...';
     if (finalResult.product_saved !== true || !text(finalResult.mockup_1_url) || !text(finalResult.mockup_2_url)) {
       throw new Error('O Make terminou sem confirmar o cadastro completo da caneca.');
     }
-    renderResult(resultBox, master, finalResult);
-    status.textContent = 'Concluído · produto salvo como inativo.';
+    renderResult(resultBox, master, finalResult, productName);
+    status.textContent = `Concluído · ${productName} cadastrada por R$ 24,90 como inativa.`;
     window.dispatchEvent(new CustomEvent('admin-v2-products-invalidated', { detail: { source: BUILD, key: finalResult.firebase_key || id } }));
   } catch (error) {
-    console.error('Falha no Criador de Canecas V7.3:', error);
+    console.error('Falha no Criador de Canecas V7.4:', error);
     status.textContent = `Erro: ${error?.message || error}`;
   } finally {
     button.disabled = false;
@@ -306,10 +367,10 @@ function renderPanel(panel) {
   installStyles();
   panel.className = 'mug-automation-panel mugv7';
   panel.innerHTML = `
-    <div class="mugv7-head"><div><span class="eyebrow">Criador de Canecas V7.3</span><h2>Crie uma nova arte a partir de uma inspiração</h2><p>Envie uma imagem e, se quiser, escreva uma instrução complementar. Quando você pedir uma frase, nome ou outro texto, essa instrução passa a ser obrigatória na arte.</p></div><span class="badge warning">Cadastro inativo</span></div>
+    <div class="mugv7-head"><div><span class="eyebrow">Criador de Canecas V7.4</span><h2>Crie uma nova arte a partir de uma inspiração</h2><p>A IA cria a arte, gera um nome comercial baseado no resultado e cadastra como ${MUG_CATEGORY}, ${MUG_CAPACITY}, por R$ 24,90.</p></div><span class="badge warning">Cadastro inativo</span></div>
     <div class="mugv7-main">
       <section class="mugv7-upload"><label class="mugv7-drop" for="mugv7Image"><div id="mugv7Empty"><strong>Escolher imagem</strong><small>PNG, JPG ou WEBP · use uma referência do estilo desejado</small></div><img id="mugv7Preview" alt="Imagem de inspiração" hidden></label><input id="mugv7Image" type="file" accept="image/*" hidden><label class="mugv7-instruction"><strong>Instrução complementar <span class="muted">(opcional)</span></strong><textarea id="mugv7Instruction" maxlength="500" placeholder="Ex.: escreva exatamente ‘Eis-me aqui Senhor.’; use tons de azul; deixe as flores maiores..."></textarea><small>Se pedir uma frase, nome ou palavra, digite exatamente como deve aparecer na arte. A instrução complementar terá prioridade sobre as regras genéricas do gerador.</small></label><div class="mugv7-actions"><button class="button primary" id="mugv7Generate" type="button">Gerar caneca</button><button class="button secondary" id="mugv7Clear" type="button">Trocar imagem</button><span id="mugAutomationStatus" class="mugv7-status"></span></div></section>
-      <section class="mugv7-info"><h3>O que a automação fará</h3><ul><li>interpretará a imagem e aplicará a instrução complementar como prioridade;</li><li>se houver frase ou nome solicitado, tentará reproduzi-lo exatamente;</li><li>criará uma nova arte comercial para ${PRINT_LABEL};</li><li>fechará a arte em ${MASTER_WIDTH}×${MASTER_HEIGHT}px sem esticar;</li><li>usará um recorte específico da esquerda para o primeiro mockup;</li><li>usará um recorte específico da direita para o segundo mockup;</li><li>cadastrará a caneca no Firebase como inativa.</li></ul><details class="mugv7-settings"><summary>Configuração</summary><div class="mugv7-settings-grid"><label>Webhook Make<input id="mugv7Webhook" type="url" placeholder="https://hook.eu1.make.com/..."></label><label>Qualidade<select id="mugv7Quality"><option value="high" selected>Alta</option><option value="medium">Média</option><option value="low">Teste</option></select></label></div></details></section>
+      <section class="mugv7-info"><h3>O que a automação fará</h3><ul><li>interpretará a imagem e aplicará a instrução complementar como prioridade;</li><li>criará uma nova arte comercial para ${PRINT_LABEL};</li><li>gerará um nome comercial por IA no padrão “Caneca de Porcelana ... - 350ml”;</li><li>gerará dois mockups de caneca de porcelana 350 ml;</li><li>cadastrará por R$ 24,90 na categoria ${MUG_CATEGORY};</li><li>usará NCM ${MUG_NCM} e deixará EAN/GTIN vazio;</li><li>cadastrará a caneca no Firebase como inativa.</li></ul><details class="mugv7-settings"><summary>Configuração</summary><div class="mugv7-settings-grid"><label>Webhook Make<input id="mugv7Webhook" type="url" placeholder="https://hook.eu1.make.com/..."></label><label>Qualidade<select id="mugv7Quality"><option value="high" selected>Alta</option><option value="medium">Média</option><option value="low">Teste</option></select></label></div></details></section>
     </div>
     <div id="mugv7Result" hidden></div>`;
 
