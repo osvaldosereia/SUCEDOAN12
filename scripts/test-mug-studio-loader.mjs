@@ -70,6 +70,17 @@ requireText(config, '<summary>Configuração</summary>', 'Botão Configuração 
 requireText(config, 'id="mugv7Webhook"', 'Campo Webhook Make não está disponível no Criador.');
 requireText(config, 'localStorage.setItem(WEBHOOK_KEY', 'Webhook Make não é persistido localmente.');
 
+const personalizer = read('producao-v2/js/mug-personalizer-v7.js');
+requireText(personalizer, "const BUILD = '20260824-canecas-studio-v7-3'", 'Criador não foi versionado para V7.3 após corrigir instruções complementares.');
+requireText(personalizer, 'PRIORIDADE MÁXIMA — INSTRUÇÃO COMPLEMENTAR DO OPERADOR', 'Prompt não dá prioridade máxima à instrução complementar.');
+requireText(personalizer, 'se o operador pedir uma frase, nome, palavra, data ou qualquer outro texto, esse texto é OBRIGATÓRIO na arte', 'Prompt não torna texto solicitado pelo operador obrigatório.');
+requireText(personalizer, 'reproduza o texto solicitado exatamente como foi digitado', 'Prompt não exige reprodução literal do texto solicitado.');
+requireText(personalizer, 'texto fornecido pelo operador NÃO é texto inventado', 'Prompt ainda pode confundir texto solicitado com texto inventado.');
+requireText(personalizer, 'a regra de evitar texto só vale quando o operador NÃO pediu texto', 'Prompt ainda deixa a regra genérica de evitar texto conflitar com a instrução do operador.');
+requireText(personalizer, 'prompt_art: buildArtPrompt(instruction)', 'Instrução complementar não chega ao prompt_art enviado ao Make.');
+requireText(personalizer, "const instruction = text(panel.querySelector('#mugv7Instruction')?.value)", 'Campo Instrução complementar não é lido antes da geração.');
+forbidText(personalizer, 'se houver dúvida, prefira não usar texto;', 'Prompt antigo ainda desencoraja texto mesmo quando o operador pede uma frase.');
+
 const compact = read('producao-v2/js/mug-command-library-compact-v2.js');
 requireText(compact, 'iniciar_ativo', 'Comandos não preservam a opção de iniciar ativado.');
 requireText(compact, "button.textContent = defaults.has(id) ? '★' : '☆'", 'Controle ★/☆ dos comandos padrão não está disponível.');
@@ -142,5 +153,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Criador de Canecas validado: núcleo estável + 400 frases em JSON lazy-load, 20 resultados por página e cache preservado.');
+  console.log('Criador de Canecas validado: V7.3 prioriza instrução complementar e texto obrigatório + 400 frases em JSON lazy-load.');
 }
