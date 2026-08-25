@@ -22,13 +22,14 @@ const snapshot = read('site/canecas-print.json');
 
 requireText(html, "DATA_URL='../site/canecas-print.json'", 'Caneca Print não mantém snapshot de fallback.');
 requireText(html, "const FIREBASE_BASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com'", 'Caneca Print não possui fonte ao vivo do Firebase.');
-requireText(html, "const CATEGORY='Canecas de Porcelana'", 'Caneca Print não fixa a categoria Canecas de Porcelana.');
-requireText(html, "function isCanecasCategory(value){return norm(value?.categoria)===norm(CATEGORY);}", 'Filtro de categoria não exige exatamente Canecas de Porcelana.');
+requireText(html, "const CATEGORY='Caneca de Porcelana'", 'Caneca Print não fixa a categoria oficial Caneca de Porcelana.');
+requireText(html, "const CATEGORY_LEGACY='Canecas de Porcelana'", 'Caneca Print não preserva leitura da categoria legada.');
+requireText(html, "function isCanecasCategory(value){return CATEGORIES.some(category=>norm(value?.categoria)===norm(category));}", 'Filtro não aceita categoria oficial e legada.');
 requireText(html, 'function isActive(value)', 'Caneca Print não valida o status ativo.');
 requireText(html, 'function allowed(value){return isCanecasCategory(value)&&isActive(value);}', 'Categoria e status não são aplicados juntos.');
 requireText(html, "live.searchParams.set('orderBy',JSON.stringify('categoria'))", 'Consulta ao vivo não está ordenada por categoria.');
-requireText(html, "live.searchParams.set('equalTo',JSON.stringify(CATEGORY))", 'Consulta ao vivo não está limitada à categoria Canecas de Porcelana.');
-requireText(html, "fetch(liveUrl(),{cache:'no-store'", 'Fonte ao vivo não força dados frescos da categoria Canecas de Porcelana.');
+requireText(html, "live.searchParams.set('equalTo',JSON.stringify(category))", 'Consulta ao vivo não recebe a categoria individualmente.');
+requireText(html, "Promise.all(CATEGORIES.map(async category=>", 'Caneca Print não consulta categoria oficial e legada em paralelo.');
 requireText(html, ".filter(value=>value&&typeof value==='object'&&allowed(value))", 'Fallback do GitHub não elimina canecas inativas ou de outra categoria.');
 requireText(html, 'state.rows=await fetchSnapshot()', 'Snapshot do GitHub não funciona como fallback.');
 requireText(html, '@page{size:106mm 247mm;margin:0}', 'Folha de impressão não está fixada em 106 × 247 mm.');
@@ -66,7 +67,7 @@ requireText(bat, '--kiosk-printing', 'Atalho do Windows não habilita impressão
 requireText(bat, 'https://donaantonia.com.br/caneca-print/?kiosk=1', 'Atalho não abre a rota oficial do Caneca Print.');
 
 requireText(sync, "writeFile('site/canecas-print.json'", 'Sincronização não gera o snapshot de impressão.');
-requireText(sync, "normalized(value.categoria) === 'canecas de porcelana'", 'Snapshot de impressão não exige categoria Canecas de Porcelana.');
+requireText(sync, "PRINT_CATEGORY_NAMES.some(category => normalized(value.categoria) === normalized(category))", 'Snapshot não aceita categoria oficial e legada de porcelana.');
 requireText(sync, '&& isActive(value);', 'Snapshot de impressão não exige produto ativo.');
 requireText(sync, '.filter(([, value]) => isPrintableMug(value))', 'Filtro de impressão não é aplicado ao snapshot.');
 requireText(sync, 'arte_horizontal: horizontal', 'Snapshot não contém a arte horizontal.');
@@ -84,5 +85,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Caneca Print validado: somente Canecas de Porcelana ativas, botão dos 3 mockups ativo quando completo, downloads individuais, Firebase ao vivo + fallback e impressão em uma única página.');
+  console.log('Caneca Print validado: categoria Caneca de Porcelana + legado, botão dos 3 mockups ativo quando completo, downloads individuais, Firebase ao vivo + fallback e impressão em uma única página.');
 }

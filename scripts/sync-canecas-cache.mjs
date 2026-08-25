@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 
 const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
+const PRINT_CATEGORY_NAMES = ['Caneca de Porcelana', 'Canecas de Porcelana'];
 
 async function fetchJson(url, timeout = 20000) {
   const controller = new AbortController();
@@ -38,7 +39,7 @@ function isActive(value) {
 
 function isPrintableMug(value) {
   return value && typeof value === 'object' && !Array.isArray(value)
-    && normalized(value.categoria) === 'canecas de porcelana'
+    && PRINT_CATEGORY_NAMES.some(category => normalized(value.categoria) === normalized(category))
     && isActive(value);
 }
 
@@ -99,7 +100,7 @@ function normalizeMugs(data) {
       id: text(value.id || firebaseKey),
       codigo: text(value.codigo || value.sku || value.id || firebaseKey),
       nome: text(value.nome || value.titulo || 'Caneca'),
-      categoria: text(value.categoria || 'Canecas'),
+      categoria: text(value.categoria || 'Caneca de Porcelana'),
       subcategoria: text(value.subcategoria),
       tipo_produto: text(value.tipo_produto),
       origem_cadastro: text(value.origem_cadastro),
@@ -161,7 +162,7 @@ const commands = normalizeCommands(await fetchJson(`${FIREBASE}/canecas/comandos
 
 async function fetchMugCategories() {
   const merged = {};
-  for (const category of ['Canecas de Porcelana', 'Canecas']) {
+  for (const category of ['Caneca de Porcelana', 'Canecas de Porcelana', 'Canecas']) {
     const mugUrl = new URL(`${FIREBASE}/produtos.json`);
     mugUrl.searchParams.set('orderBy', JSON.stringify('categoria'));
     mugUrl.searchParams.set('equalTo', JSON.stringify(category));
@@ -186,4 +187,4 @@ await writeFile('site/canecas-comandos.json', `${JSON.stringify(commands, null, 
 await writeFile('site/canecas-galeria.json', `${JSON.stringify(mugs, null, 2)}\n`, 'utf8');
 await writeFile('site/canecas-print.json', `${JSON.stringify(printMugs, null, 2)}\n`, 'utf8');
 
-console.log(`Snapshots atualizados: ${Object.keys(commands).length} comando(s), ${Object.keys(mugs).length} caneca(s) na galeria e ${Object.keys(printMugs).length} caneca(s) ativa(s) da categoria Canecas de Porcelana para impressão.`);
+console.log(`Snapshots atualizados: ${Object.keys(commands).length} comando(s), ${Object.keys(mugs).length} caneca(s) na galeria e ${Object.keys(printMugs).length} caneca(s) ativa(s) da categoria Caneca de Porcelana (com compatibilidade legada) para impressão.`);

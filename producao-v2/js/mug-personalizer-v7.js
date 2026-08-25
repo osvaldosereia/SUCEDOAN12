@@ -2,14 +2,14 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { text } from './core/utils.js';
 import './mug-studio-gallery.js?admin_build=20260824-mug-gallery-v3';
 
-const BUILD = '20260824-canecas-studio-v7-5';
+const BUILD = '20260825-canecas-studio-v9-cadastro';
 const WEBHOOK_KEY = 'da_admin_v2_mug_make_webhook';
 const MASTER_WIDTH = 2400;
 const MASTER_HEIGHT = 960;
 const PRINT_LABEL = '24 × 9,5 cm';
 const SIDE_WIDTH = 1344;
-const MUG_CATEGORY = 'Canecas de Porcelana';
-const MUG_CAPACITY = '350 ml';
+const MUG_CATEGORY = 'Caneca de Porcelana';
+const MUG_CAPACITY = '350ml';
 const MUG_NCM = '69111090';
 const MUG_PRICE = 24.90;
 const PLACEHOLDER_ART = '__MUG_ART__';
@@ -178,24 +178,26 @@ Uma arte horizontal única, sofisticada, harmoniosa e pronta para sublimação.`
 
 function buildNamePrompt(instruction = '') {
   const extra = text(instruction);
-  return `Analise visualmente a arte final da caneca enviada e crie um nome comercial em português, claro, específico e bom para catálogo/SEO.
+  return `Analise visualmente a ARTE FINAL da caneca e identifique com precisão o TEMA CENTRAL para criar um nome comercial em português, específico, pesquisável e útil para catálogo/SEO.
 
-FORMATO OBRIGATÓRIO:
-Caneca de Porcelana [tema principal da arte] - 350ml
+FORMATO EXATO E OBRIGATÓRIO:
+Caneca de Porcelana [tema específico da arte] - 350ml
 
-REGRAS:
-- responda somente com o nome final, sem explicações, aspas ou lista;
-- identifique o assunto real da arte: personagem, santo, profissão, frase, estilo, ocasião ou elemento principal;
-- prefira termos que uma pessoa realmente pesquisaria para comprar essa caneca;
-- seja específico, mas curto;
-- não use códigos aleatórios;
-- não use “Arte Exclusiva”, “Decorativa” ou palavras genéricas se a imagem permitir um tema melhor;
-- não invente marca registrada que não esteja claramente presente;
+REGRAS PARA O TEMA:
+- a parte entre “Caneca de Porcelana” e “- 350ml” deve explicar claramente o assunto real da arte;
+- identifique santo, devoção, profissão, hobby, ocasião, personagem, animal, estilo, frase/ideia central ou outro assunto dominante realmente visível;
+- se houver uma frase, use no nome o tema/assunto que ela comunica, sem copiar uma frase longa inteira;
+- prefira palavras que um cliente realmente usaria para procurar essa caneca;
+- seja específico e objetivo; normalmente use de 2 a 8 palavras para o tema;
+- nunca use apenas “Arte Exclusiva”, “Decorativa”, “Personalizada”, “Tema”, “Design” ou “Estampa” como tema;
+- não invente marca, personagem, santo, profissão ou assunto que não esteja sustentado pela imagem;
 - mantenha exatamente o prefixo “Caneca de Porcelana” e o sufixo “- 350ml”.
-${extra ? `\nINSTRUÇÃO QUE ORIGINOU A ARTE:\n${extra}` : ''}`;
+
+RESPONDA SOMENTE COM O NOME FINAL, sem explicações, aspas, JSON ou lista.
+${extra ? `\nINSTRUÇÃO QUE ORIGINOU A ARTE E AJUDA A IDENTIFICAR O TEMA:\n${extra}` : ''}`;
 }
 
-function normalizeGeneratedName(value = '') {
+function normalizeGeneratedName(value = '', instruction = '') {
   let middle = text(value)
     .replace(/[\r\n]+/g, ' ')
     .replace(/^['"“”‘’]+|['"“”‘’]+$/g, '')
@@ -204,9 +206,33 @@ function normalizeGeneratedName(value = '') {
     .replace(/^[-–—:\s]+|[-–—:\s]+$/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-  if (!middle) middle = 'Arte Exclusiva';
+
+  if (!middle) {
+    middle = text(instruction)
+      .replace(/^(crie|faça|faca|gere|quero|usar|use)\s+/i, '')
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+  if (!middle) throw new Error('A IA não conseguiu identificar o tema da caneca. Gere novamente para evitar cadastro genérico.');
   if (middle.length > 78) middle = middle.slice(0, 78).replace(/\s+\S*$/, '').trim();
   return `Caneca de Porcelana ${middle} - 350ml`;
+}
+
+function productThemeFromName(productName = '') {
+  const theme = text(productName)
+    .replace(/^caneca\s+de\s+porcelana\s*/i, '')
+    .replace(/\s*[-–—]\s*350\s*ml\s*$/i, '')
+    .replace(/^[-–—:\s]+|[-–—:\s]+$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!theme) throw new Error('Não foi possível extrair o tema para a subcategoria da caneca.');
+  return theme;
+}
+
+function buildProductDescription(productName = '') {
+  const theme = productThemeFromName(productName);
+  return `${productName}. Caneca de porcelana branca, com capacidade de 350ml, com arte temática de ${theme}. Ideal para quem se identifica com esse tema e também como opção de presente.`;
 }
 
 function buildMockupPrompt(side) {
@@ -228,7 +254,9 @@ Fundo claro e simples. Caneca inteira visível. Sem mãos, café, caixas, planta
 function firebaseTemplate(id, instruction = '', generatedName = '', nameGeneratedByAi = false) {
   const now = new Date().toISOString();
   const suffix = id.slice(-6).toUpperCase();
-  const productName = normalizeGeneratedName(generatedName);
+  const productName = normalizeGeneratedName(generatedName, instruction);
+  const productTheme = productThemeFromName(productName);
+  const productDescription = buildProductDescription(productName);
   return JSON.stringify({
     id,
     firebaseKey: id,
@@ -238,7 +266,8 @@ function firebaseTemplate(id, instruction = '', generatedName = '', nameGenerate
     codigo_barras: '',
     nome: productName,
     categoria: MUG_CATEGORY,
-    subcategoria: '',
+    subcategoria: productTheme,
+    tema: productTheme,
     subsubcategoria: '',
     ncm: MUG_NCM,
     preco_custo: 10,
@@ -251,7 +280,7 @@ function firebaseTemplate(id, instruction = '', generatedName = '', nameGenerate
     embalagem: `Caneca de porcelana ${MUG_CAPACITY}`,
     unidade: 'UN',
     dimensao_impressao: PRINT_LABEL,
-    descricao: `${productName}. Caneca branca de porcelana ${MUG_CAPACITY} com arte exclusiva para sublimação. Área de impressão aproximada: ${PRINT_LABEL}.`,
+    descricao: productDescription,
     url_imagem: PLACEHOLDER_MOCKUP_1,
     imagem: PLACEHOLDER_MOCKUP_1,
     imagem_url: PLACEHOLDER_MOCKUP_1,
@@ -265,13 +294,13 @@ function firebaseTemplate(id, instruction = '', generatedName = '', nameGenerate
     arte_impressao: { url: PLACEHOLDER_ART, ratio: `${MASTER_WIDTH}:${MASTER_HEIGHT}`, width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, formato: 'webp' },
     midias_admin: [PLACEHOLDER_MOCKUP_1, PLACEHOLDER_MOCKUP_2, PLACEHOLDER_MOCKUP_3, PLACEHOLDER_ART],
     video_youtube: '',
-    origem_cadastro: 'make_canecas_studio_v7_5',
+    origem_cadastro: 'make_canecas_studio_v9_cadastro',
     tipo_produto: 'caneca_porcelana',
     geracao_status: 'concluido',
     geracao_etapa: 'firebase_salvo',
-    geracao_versao: 'v7.5',
+    geracao_versao: 'v9-cadastro',
     nome_gerado_ia: Boolean(nameGeneratedByAi),
-    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), instruction_priority: Boolean(text(instruction)), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v7_5' },
+    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), instruction_priority: Boolean(text(instruction)), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v9_cadastro' },
     criado_em: now,
     updated_at: now,
     last_update: Date.now(),
@@ -344,7 +373,8 @@ async function generate(panel) {
     } catch (nameError) {
       console.warn('A IA não gerou o nome da caneca; usando fallback seguro.', nameError);
     }
-    const productName = normalizeGeneratedName(aiName);
+    if (!aiName) throw new Error('A IA não conseguiu identificar o tema da caneca. Gere novamente antes do cadastro.');
+    const productName = normalizeGeneratedName(aiName, instruction);
     const leftReference = await buildSideReference(master, 1);
     const rightReference = await buildSideReference(master, 2);
     const centerReference = await buildCenterReference(master);

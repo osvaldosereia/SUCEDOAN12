@@ -1,6 +1,6 @@
 const BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260825-mug-v8';
+  || '20260825-mug-v9-cadastro';
 
 let galleryPromise = null;
 let timer = null;

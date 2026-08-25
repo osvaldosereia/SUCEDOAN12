@@ -26,7 +26,7 @@
   <main class="app">
     <section class="top">
       <div class="brandrow">
-        <div class="brand"><h1>Caneca Print</h1><p>Epson L1250 · somente Canecas de Porcelana ativas · papel 106 × 247 mm · arte espelhada automaticamente</p></div>
+        <div class="brand"><h1>Caneca Print</h1><p>Epson L1250 · somente canecas de porcelana ativas · papel 106 × 247 mm · arte espelhada automaticamente</p></div>
         <div class="status"><span class="badge good" id="modeBadge">Modo de impressão</span><span class="badge" id="cacheBadge">Carregando…</span></div>
       </div>
       <div class="toolbar">
@@ -55,7 +55,9 @@
     (()=>{
       const DATA_URL='../site/canecas-print.json';
       const FIREBASE_BASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
-      const CATEGORY='Canecas de Porcelana';
+      const CATEGORY='Caneca de Porcelana';
+      const CATEGORY_LEGACY='Canecas de Porcelana';
+      const CATEGORIES=[CATEGORY,CATEGORY_LEGACY];
       const state={rows:[],query:'',readyOnly:true,printing:null,downloading:null};
       const $=s=>document.querySelector(s);
       const text=v=>String(v??'').trim();
@@ -65,7 +67,7 @@
       $('#modeBadge').textContent=kiosk?'1 clique ativo · Chrome kiosk':'Modo normal · painel do navegador';
       if(!kiosk)$('#modeBadge').classList.remove('good');
 
-      function isCanecasCategory(value){return norm(value?.categoria)===norm(CATEGORY);}
+      function isCanecasCategory(value){return CATEGORIES.some(category=>norm(value?.categoria)===norm(category));}
       function isActive(value){
         if(value?.ativo===true)return true;
         if(value?.ativo===false)return false;
@@ -122,11 +124,22 @@
           .sort((a,b)=>Number(b.last_update||0)-Number(a.last_update||0));
       }
 
-      function liveUrl(){
+      function liveUrl(category=CATEGORY){
         const live=new URL(`${FIREBASE_BASE}/produtos.json`);
         live.searchParams.set('orderBy',JSON.stringify('categoria'));
-        live.searchParams.set('equalTo',JSON.stringify(CATEGORY));
+        live.searchParams.set('equalTo',JSON.stringify(category));
         return live.href;
+      }
+
+      async function fetchLiveRows(){
+        const batches=await Promise.all(CATEGORIES.map(async category=>{
+          const response=await fetch(liveUrl(category),{cache:'no-store',headers:{Accept:'application/json'}});
+          if(!response.ok)throw new Error(`Firebase HTTP ${response.status} ao consultar ${category}`);
+          return normalizeFirebase(await response.json());
+        }));
+        const merged=new Map();
+        batches.flat().forEach(row=>merged.set(row.firebaseKey,row));
+        return [...merged.values()].sort((a,b)=>Number(b.last_update||0)-Number(a.last_update||0));
       }
 
       function image(url,label,cls=''){
@@ -147,7 +160,7 @@
           <div class="media">${image(r.mockup_1,'Mockup 1')}${image(r.mockup_2,'Mockup 2')}${image(r.mockup_3,'Mockup 3 · centro')}${image(r.arte_horizontal,'Arte horizontal','art')}</div>
           <div class="actions"><button class="download" type="button" data-download-mockups="${esc(r.firebaseKey)}" ${hasAllMockups?'':'disabled'}>${hasAllMockups?'BAIXAR 3 IMAGENS':'MOCKUPS INCOMPLETOS'}</button><button class="print" type="button" data-print="${esc(r.firebaseKey)}" ${r.pronto_impressao?'':'disabled'}>${r.pronto_impressao?'IMPRIMIR ARTE':'SEM ARTE HORIZONTAL'}</button><button class="open" type="button" data-open="${esc(r.arte_horizontal)}" ${r.arte_horizontal?'':'disabled'}>Abrir arte</button></div>
         </article>`;
-        }).join(''):'<div class="empty">Nenhuma caneca ativa da categoria Canecas de Porcelana encontrada com este filtro.</div>';
+        }).join(''):'<div class="empty">Nenhuma caneca de porcelana ativa encontrada com este filtro.</div>';
       }
 
       async function fetchSnapshot(){
@@ -164,9 +177,7 @@
         $('#cacheBadge').textContent='Consultando Firebase…';
         let liveError=null;
         try{
-          const response=await fetch(liveUrl(),{cache:'no-store',headers:{Accept:'application/json'}});
-          if(!response.ok)throw new Error(`Firebase HTTP ${response.status}`);
-          const rows=normalizeFirebase(await response.json());
+          const rows=await fetchLiveRows();
           state.rows=rows;
           $('#cacheBadge').textContent=`${rows.length} canecas de porcelana ativas · Firebase ao vivo`;
           render();

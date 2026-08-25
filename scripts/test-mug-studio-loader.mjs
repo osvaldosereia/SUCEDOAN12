@@ -54,13 +54,19 @@ requireText(personalizer, 'prompt_mockup_3: buildMockupPrompt(3)', 'Criador não
 requireText(personalizer, '!text(finalResult.mockup_3_url)', 'Criador não exige confirmação do terceiro mockup.');
 requireText(personalizer, "action: 'generate_mug_name'", 'Criador não solicita nome comercial por IA.');
 requireText(personalizer, 'Caneca de Porcelana ${middle} - 350ml', 'Nome não é normalizado no padrão comercial.');
-requireText(personalizer, "const MUG_CAPACITY = '350 ml'", 'Capacidade padrão não está em 350 ml.');
+requireText(personalizer, "const MUG_CATEGORY = 'Caneca de Porcelana'", 'Categoria oficial das novas canecas não está no singular.');
+requireText(personalizer, 'subcategoria: productTheme', 'Subcategoria não é criada a partir do tema.');
+requireText(personalizer, 'tema: productTheme', 'Tema identificado não é persistido no cadastro.');
+requireText(personalizer, 'Caneca de porcelana branca, com capacidade de 350ml', 'Descrição não informa porcelana branca e 350ml.');
+requireText(personalizer, 'A IA não conseguiu identificar o tema da caneca', 'Criador ainda permite cadastro com tema genérico.');
+requireText(personalizer, "const MUG_CAPACITY = '350ml'", 'Capacidade padrão não está em 350ml.');
 requireText(personalizer, 'const MUG_PRICE = 24.90;', 'Preço padrão não está em R$ 24,90.');
 requireText(personalizer, "material: 'Porcelana'", 'Material padrão não está como porcelana.');
 
 const gallery = read('producao-v2/js/mug-studio-gallery.js');
 requireText(gallery, "const BUILD = '20260825-mug-studio-gallery-v8'", 'Galeria não está na versão V8.');
 requireText(gallery, 'const RECENT_LIMIT = 6;', 'Histórico rápido não está limitado a 6 canecas.');
+requireText(gallery, "const CATEGORY_NAMES = ['Caneca de Porcelana', 'Canecas de Porcelana', 'Canecas'];", 'Galeria não lê a categoria oficial e as categorias legadas.');
 requireText(gallery, "params.set('limitToLast', String(CATEGORY_QUERY_LIMIT))", 'Consulta das canecas não limita o volume lido do Firebase.');
 requireText(gallery, '.slice(0, RECENT_LIMIT)', 'Galeria não corta o resultado final nas 6 últimas canecas.');
 requireText(gallery, '<h2>Últimas 6 canecas</h2>', 'Título do histórico rápido não deixa claro o limite de 6.');
@@ -107,5 +113,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Criador de Canecas V8 validado: desktop 20/80, últimas 6, modelos rápidos, receitas de comandos e sem observers globais contínuos.');
+  console.log('Criador de Canecas V9 validado: desktop 20/80, últimas 6, modelos rápidos, receitas de comandos e sem observers globais contínuos.');
 }

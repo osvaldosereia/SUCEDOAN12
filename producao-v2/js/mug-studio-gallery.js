@@ -5,7 +5,7 @@ import { archiveProduct, loadProduct } from './services/firebase.js';
 const BUILD = '20260825-mug-studio-gallery-v8';
 const RECENT_LIMIT = 6;
 const CATEGORY_QUERY_LIMIT = 12;
-const CATEGORY_NAMES = ['Canecas de Porcelana', 'Canecas'];
+const CATEGORY_NAMES = ['Caneca de Porcelana', 'Canecas de Porcelana', 'Canecas'];
 const MODELS_NODE = 'canecas/modelos_criacao';
 const COMMANDS_NODE = 'canecas/comandos_criacao';
 const SELECTED_KEY = 'da_admin_v2_mug_saved_commands_selected';
