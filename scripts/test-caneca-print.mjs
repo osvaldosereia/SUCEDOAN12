@@ -22,9 +22,14 @@ const snapshot = read('site/canecas-print.json');
 
 requireText(html, "DATA_URL='../site/canecas-print.json'", 'Caneca Print não mantém snapshot de fallback.');
 requireText(html, "const FIREBASE_BASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com'", 'Caneca Print não possui fonte ao vivo do Firebase.');
+requireText(html, "const CATEGORY='Canecas'", 'Caneca Print não fixa a categoria exclusiva Canecas.');
+requireText(html, "function isCanecasCategory(value){return norm(value?.categoria)===norm(CATEGORY);}", 'Filtro de categoria não exige exatamente Canecas.');
+requireText(html, 'function isActive(value)', 'Caneca Print não valida o status ativo.');
+requireText(html, 'function allowed(value){return isCanecasCategory(value)&&isActive(value);}', 'Categoria e status não são aplicados juntos.');
 requireText(html, "live.searchParams.set('orderBy',JSON.stringify('categoria'))", 'Consulta ao vivo não está ordenada por categoria.');
-requireText(html, "['Canecas de Porcelana','Canecas']", 'Consulta ao vivo não cobre categorias nova e legada de canecas.');
-requireText(html, "liveUrls().map(url=>fetch(url,{cache:'no-store'", 'Fonte ao vivo não força dados frescos nas categorias de canecas.');
+requireText(html, "live.searchParams.set('equalTo',JSON.stringify(CATEGORY))", 'Consulta ao vivo não está limitada à categoria Canecas.');
+requireText(html, "fetch(liveUrl(),{cache:'no-store'", 'Fonte ao vivo não força dados frescos da categoria Canecas.');
+requireText(html, ".filter(value=>value&&typeof value==='object'&&allowed(value))", 'Fallback do GitHub não elimina canecas inativas ou de outra categoria.');
 requireText(html, 'state.rows=await fetchSnapshot()', 'Snapshot do GitHub não funciona como fallback.');
 requireText(html, '@page{size:106mm 247mm;margin:0}', 'Folha de impressão não está fixada em 106 × 247 mm.');
 requireText(html, '.print-viewport{position:absolute!important;left:0!important;top:6mm!important;width:106mm!important;height:235mm!important', 'Viewport físico não está contido em uma única folha 106 × 247 mm.');
@@ -39,6 +44,7 @@ requireText(html, 'r.mockup_1', 'Interface não mostra mockup 1.');
 requireText(html, 'r.mockup_2', 'Interface não mostra mockup 2.');
 requireText(html, 'r.mockup_3', 'Interface não mostra mockup 3 central.');
 requireText(html, 'r.arte_horizontal', 'Interface não mostra a arte horizontal.');
+forbidText(html, "['Canecas de Porcelana','Canecas']", 'Caneca Print ainda consulta a categoria legada Canecas de Porcelana.');
 forbidText(html, '@page{size:98mm 247mm;margin:0}', 'Caneca Print ainda contém o tamanho antigo de papel 98 × 247 mm.');
 forbidText(html, 'width:98mm!important;height:235mm!important', 'Caneca Print ainda contém viewport de 98 mm.');
 forbidText(html, 'width:235mm!important;height:100mm!important', 'Caneca Print ainda contém a antiga arte 235 × 100 mm.');
@@ -50,6 +56,9 @@ requireText(bat, '--kiosk-printing', 'Atalho do Windows não habilita impressão
 requireText(bat, 'https://donaantonia.com.br/caneca-print/?kiosk=1', 'Atalho não abre a rota oficial do Caneca Print.');
 
 requireText(sync, "writeFile('site/canecas-print.json'", 'Sincronização não gera o snapshot de impressão.');
+requireText(sync, "normalized(value.categoria) === 'canecas'", 'Snapshot de impressão não exige categoria Canecas.');
+requireText(sync, '&& isActive(value);', 'Snapshot de impressão não exige produto ativo.');
+requireText(sync, '.filter(([, value]) => isPrintableMug(value))', 'Filtro de impressão não é aplicado ao snapshot.');
 requireText(sync, 'arte_horizontal: horizontal', 'Snapshot não contém a arte horizontal.');
 requireText(sync, 'mockup_1: mockup1', 'Snapshot não contém mockup 1.');
 requireText(sync, 'mockup_2: mockup2', 'Snapshot não contém mockup 2.');
@@ -65,5 +74,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Caneca Print validado: 3 mockups + Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão contida em uma única página.');
+  console.log('Caneca Print validado: somente categoria Canecas ativa, 3 mockups + Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão contida em uma única página.');
 }
