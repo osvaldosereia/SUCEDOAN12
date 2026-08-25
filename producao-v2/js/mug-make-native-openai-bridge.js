@@ -1,14 +1,15 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260823-mug-studio-unified-v1';
+  || '20260825-mug-v8';
 
 const MODULES = [
-  './mug-studio-gallery.js',
   './mug-personalizer-v7.js',
+  './mug-studio-gallery.js',
   './mug-command-library-v1.js',
   './mug-command-library-compact-v2.js',
   './mug-command-layout-v4-force.js',
   './mug-config-compact-v4-1.js',
+  './mug-studio-v8-finalizer.js',
 ];
 
 let installPromise = null;
