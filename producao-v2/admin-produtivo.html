@@ -18,7 +18,9 @@
   <script>
     (async function () {
       const params = new URLSearchParams(window.location.search);
-      const BUILD = `${params.get('admin_build') || 'direct'}-${Date.now()}`;
+      // /producao cria uma build nova a cada nova entrada. Em F5, reutilizamos a build
+      // existente para permitir cache real dos JS/assets sem servir uma versão antiga.
+      const BUILD = params.get('admin_build') || String(Date.now());
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -50,7 +52,7 @@
       }
 
       try {
-        const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
+        const response = await fetch(`./index.html?admin_base=${encodeURIComponent(BUILD)}`, { cache: 'default' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
         let html = normalizeProductiveBuild(await response.text());
 
