@@ -29,6 +29,19 @@ function isMug(value) {
       || normalized(value.origem_cadastro).includes('caneca'));
 }
 
+function isActive(value) {
+  if (value?.ativo === true) return true;
+  if (value?.ativo === false) return false;
+  const raw = normalized(value?.situacao || value?.status || value?.ativo);
+  return ['a', 'ativo', 'ativa', 'active', '1', 'true'].includes(raw);
+}
+
+function isPrintableMug(value) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    && normalized(value.categoria) === 'canecas'
+    && isActive(value);
+}
+
 function firstUrl(...values) {
   for (const value of values.flat(Infinity)) {
     const url = text(value);
@@ -111,34 +124,36 @@ function normalizeMugs(data) {
 }
 
 function normalizePrintMugs(data) {
-  const rows = mugRows(data).map(([key, value]) => {
-    const firebaseKey = text(value.firebaseKey || value.id || value.codigo || key);
-    const siteImages = Array.isArray(value.imagens_site) ? value.imagens_site : [];
-    const images = Array.isArray(value.imagens) ? value.imagens : [];
-    const adminMedia = Array.isArray(value.midias_admin) ? value.midias_admin : [];
-    const mockup1 = firstUrl(value.mockup_1, value.url_imagem, value.imagem_url, value.imagem, siteImages[0], images[0], adminMedia[0]);
-    const mockup2 = firstUrl(value.mockup_2, siteImages[1], images[1], adminMedia[1]);
-    const mockup3 = firstUrl(value.mockup_3, siteImages[2], images[2], adminMedia.length >= 4 ? adminMedia[2] : '');
-    const horizontal = artUrl(value);
-    return [firebaseKey, {
-      firebaseKey,
-      id: text(value.id || firebaseKey),
-      codigo: text(value.codigo || value.sku || value.id || firebaseKey),
-      nome: text(value.nome || value.titulo || 'Caneca'),
-      categoria: text(value.categoria || 'Canecas'),
-      subcategoria: text(value.subcategoria),
-      situacao: text(value.situacao || value.status || 'I'),
-      ativo: value.ativo,
-      mockup_1: mockup1,
-      mockup_2: mockup2,
-      mockup_3: mockup3,
-      arte_horizontal: horizontal,
-      dimensao_impressao: text(value.dimensao_impressao || value?.arte_impressao?.dimensao_real || '24 × 9,5 cm'),
-      last_update: timestampOf(value),
-      updated_at: text(value.updated_at || value.criado_em || value.created_at),
-      pronto_impressao: Boolean(horizontal),
-    }];
-  });
+  const rows = mugRows(data)
+    .filter(([, value]) => isPrintableMug(value))
+    .map(([key, value]) => {
+      const firebaseKey = text(value.firebaseKey || value.id || value.codigo || key);
+      const siteImages = Array.isArray(value.imagens_site) ? value.imagens_site : [];
+      const images = Array.isArray(value.imagens) ? value.imagens : [];
+      const adminMedia = Array.isArray(value.midias_admin) ? value.midias_admin : [];
+      const mockup1 = firstUrl(value.mockup_1, value.url_imagem, value.imagem_url, value.imagem, siteImages[0], images[0], adminMedia[0]);
+      const mockup2 = firstUrl(value.mockup_2, siteImages[1], images[1], adminMedia[1]);
+      const mockup3 = firstUrl(value.mockup_3, siteImages[2], images[2], adminMedia.length >= 4 ? adminMedia[2] : '');
+      const horizontal = artUrl(value);
+      return [firebaseKey, {
+        firebaseKey,
+        id: text(value.id || firebaseKey),
+        codigo: text(value.codigo || value.sku || value.id || firebaseKey),
+        nome: text(value.nome || value.titulo || 'Caneca'),
+        categoria: text(value.categoria),
+        subcategoria: text(value.subcategoria),
+        situacao: text(value.situacao || value.status),
+        ativo: true,
+        mockup_1: mockup1,
+        mockup_2: mockup2,
+        mockup_3: mockup3,
+        arte_horizontal: horizontal,
+        dimensao_impressao: text(value.dimensao_impressao || value?.arte_impressao?.dimensao_real || '24 × 9,5 cm'),
+        last_update: timestampOf(value),
+        updated_at: text(value.updated_at || value.criado_em || value.created_at),
+        pronto_impressao: Boolean(horizontal),
+      }];
+    });
   return Object.fromEntries(rows);
 }
 
@@ -171,4 +186,4 @@ await writeFile('site/canecas-comandos.json', `${JSON.stringify(commands, null, 
 await writeFile('site/canecas-galeria.json', `${JSON.stringify(mugs, null, 2)}\n`, 'utf8');
 await writeFile('site/canecas-print.json', `${JSON.stringify(printMugs, null, 2)}\n`, 'utf8');
 
-console.log(`Snapshots atualizados: ${Object.keys(commands).length} comando(s), ${Object.keys(mugs).length} caneca(s) na galeria e ${Object.keys(printMugs).length} caneca(s) para impressão.`);
+console.log(`Snapshots atualizados: ${Object.keys(commands).length} comando(s), ${Object.keys(mugs).length} caneca(s) na galeria e ${Object.keys(printMugs).length} caneca(s) ativa(s) da categoria Canecas para impressão.`);
