@@ -4,9 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
+  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
   <title>Dona Antônia — Abrindo Admin produtivo</title>
   <style>
     body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f6f4ef;color:#20211f;font:16px system-ui,-apple-system,Segoe UI,sans-serif}
@@ -18,7 +16,7 @@
   <script>
     (async function () {
       const params = new URLSearchParams(window.location.search);
-      const BUILD = `${params.get('admin_build') || 'direct'}-${Date.now()}`;
+      const BUILD = params.get('admin_build') || '20260825-perf1';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -50,7 +48,7 @@
       }
 
       try {
-        const response = await fetch(`./index.html?admin_base=${Date.now()}`, { cache: 'no-store' });
+        const response = await fetch(`./index.html?admin_base=${BUILD}`, { cache: 'default' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
         let html = normalizeProductiveBuild(await response.text());
 
@@ -83,12 +81,12 @@
         html = stripGlobalRouteScript(html, 'kit-editor-flow-v2.js');
         html = stripGlobalRouteScript(html, 'campaign-rules-section.js');
         html = html.replace('<th>Preço</th>', '<th>Preço de venda</th>');
-        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · edição e exclusão segura de produtos, XML, imagens e EANs alternativos.</strong>');
+        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · carregamento otimizado, edição e exclusão segura de produtos.</strong>');
         html = html.replace(/<meta\s+name=["']admin-save-build["'][^>]*>/i, `<meta name="admin-save-build" content="${BUILD}">`);
 
         const enhancements = [
           ['./js/product-delete-filter-v2.js', false],
-          ['./js/product-delete-tools.js', true],
+          ['./js/product-delete-tools-v2.js', true],
           ['./js/nfe-image-make-fix.js', true],
           ['./js/nfe-import-save-fix.js', true],
           ['./js/alternate-ean-support.js', true],
@@ -108,7 +106,7 @@
       } catch (error) {
         console.error(error);
         const message = String(error?.message || error);
-        document.body.innerHTML = `<main><strong>Não foi possível abrir o Admin</strong><small>${message}</small><p><a href="./index.html?admin_fallback=${Date.now()}">Abrir versão padrão</a></p></main>`;
+        document.body.innerHTML = `<main><strong>Não foi possível abrir o Admin</strong><small>${message}</small><p><a href="./index.html?admin_fallback=${BUILD}">Abrir versão padrão</a></p></main>`;
       }
     }());
   </script>
