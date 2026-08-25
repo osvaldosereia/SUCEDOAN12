@@ -86,6 +86,7 @@ const required = [
   'producao-v2/assets/admin.css', 'producao-v2/assets/navigation.css',
   'producao-v2/assets/kit-lifecycle.css',
   'producao-v2/js/app.js', 'producao-v2/js/navigation-v12.js', 'producao-v2/js/stock-bootstrap.js',
+  'producao-v2/js/product-delete-tools-v2.js',
   'producao-v2/js/modules/stock.js', 'producao-v2/js/services/orders.js',
   'producao-v2/js/orders-bootstrap.js', 'producao-v2/js/customers-bootstrap.js',
   'producao-v2/js/services/customers.js', 'producao-v2/js/order-tools-bootstrap.js',
@@ -109,7 +110,8 @@ for (const removed of [
   'producao-v2/js/admin-suite-bootstrap.js', 'producao-v2/js/quick-read-bootstrap.js',
   'producao-v2/js/modules/quick-read.js', 'producao-v2/js/core/quick-read.js',
   'producao-v2/assets/quick-read.css', 'producao-v2/js/quick-purchase-bootstrap.js',
-  'producao-v2/js/product-delete-filter.js', 'producao-v2/js/official-copy-fixes.js',
+  'producao-v2/js/product-delete-filter.js', 'producao-v2/js/product-delete-tools.js',
+  'producao-v2/js/official-copy-fixes.js',
   'producao-v2/js/campaign-offers-fixes.js', 'producao-v2/js/modules/nfe.js',
   'producao-v2/js/manual-status-save.js', 'producao-v2/js/offer-store-bridge.js',
   'producao-v2/js/inline-sale-price-label.js',
@@ -134,8 +136,11 @@ for (const jsonFile of [
 
 for (const [name, source] of [['/producao', read('producao/index.html')], ['/admin', read('admin/index.html')]]) {
   if (!source.includes('../producao-v2/')) fail(`${name} não aponta para o Admin oficial.`);
-  if (!source.includes('admin_build=')) fail(`${name} não informa uma build para evitar cache do carregador.`);
-  if (!source.includes('no-store') || !source.includes('window.location.replace')) fail(`${name} precisa redirecionar sem cache.`);
+  if (!source.includes('var RELEASE = ')) fail(`${name} não declara uma release estável.`);
+  if (!source.includes("destination.searchParams.set('admin_build', RELEASE)")) fail(`${name} não envia a release ao carregador.`);
+  if (!source.includes("destination.searchParams.set('save_build', RELEASE)")) fail(`${name} não sincroniza save_build com admin_build.`);
+  if (!source.includes('no-cache, must-revalidate') || !source.includes('window.location.replace')) fail(`${name} precisa revalidar somente a entrada do Admin.`);
+  if (source.includes('var build = String(Date.now());') || source.includes('no-store')) fail(`${name} voltou a invalidar o cache em toda abertura.`);
 }
 
 const adminIndex = read('producao-v2/index.html');
@@ -194,9 +199,18 @@ for (const [route, modules] of Object.entries(ROUTE_MODULES)) {
     if (!stockBootstrap.includes(`./${moduleFile}`)) fail(`A rota ${route} não carrega ${moduleFile}.`);
   }
 }
+if (!stockBootstrap.includes("'./product-delete-tools-v2.js'")) fail('Produtos não carrega o módulo otimizado de exclusão pela própria rota.');
+if (stockBootstrap.includes("'./product-delete-tools.js'")) fail('Produtos voltou a carregar o módulo legado de exclusão.');
 if (stockBootstrap.includes('quick-read-bootstrap.js')) fail('O carregador ainda referencia a Leitura rápida removida.');
 if (!stockBootstrap.includes("if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);")) fail('Pedidos ainda carrega a contingência junto.');
 if (!stockBootstrap.includes('module?.refresh()')) fail('O bootstrap de Estoque não atualiza o módulo após carregar os produtos.');
+
+const productDelete = read('producao-v2/js/product-delete-tools-v2.js');
+for (const marker of ['function scheduleEnhance()', 'requestAnimationFrame(() => {', 'mutation.target === table', ".observe(table, { childList: true });", 'mapLimit(keys, 4', 'deleteGithubImage']) {
+  if (!productDelete.includes(marker)) fail(`Exclusão otimizada de Produtos incompleta: ${marker}`);
+}
+if (productDelete.includes('subtree: true')) fail('Exclusão de Produtos voltou a observar toda a subárvore da tabela.');
+if (productDelete.includes('new MutationObserver(enhanceRows)')) fail('Exclusão de Produtos voltou a criar loop direto entre observer e renderização.');
 
 const collectionsBootstrap = read('producao-v2/js/collections-bootstrap.js');
 if (!collectionsBootstrap.includes("import './kit-lifecycle-admin.js")) fail('O editor de ciclo de vida dos kits não é carregado.');
@@ -283,5 +297,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log(`Admin V2 v13.1 validado: ${ROUTES.length} abas, ${checked.length} arquivos JavaScript, imports e ciclo dos kits confirmados.`);
+  console.log(`Admin V2 v13.1 validado: ${ROUTES.length} abas, ${checked.length} arquivos JavaScript, imports, desempenho de Produtos e ciclo dos kits confirmados.`);
 }

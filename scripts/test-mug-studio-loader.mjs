@@ -24,16 +24,20 @@ function forbidText(source, marker, message) {
 const productionEntry = read('producao/index.html');
 const adminEntry = read('admin/index.html');
 for (const [name, source] of [['producao/index.html', productionEntry], ['admin/index.html', adminEntry]]) {
-  requireText(source, 'var build = String(Date.now());', `${name} não gera uma build nova a cada abertura.`);
-  requireText(source, "destination.searchParams.set('admin_build', build)", `${name} não envia a build dinâmica ao Admin produtivo.`);
-  requireText(source, "destination.searchParams.set('save_build', build)", `${name} não sincroniza save_build com admin_build.`);
-  forbidText(source, "destination.searchParams.set('admin_build', '2026", `${name} voltou a fixar manualmente uma build.`);
+  requireText(source, 'var RELEASE = ', `${name} não declara uma release estável do Admin.`);
+  requireText(source, "destination.searchParams.set('admin_build', RELEASE)", `${name} não envia a release estável ao Admin produtivo.`);
+  requireText(source, "destination.searchParams.set('save_build', RELEASE)", `${name} não sincroniza save_build com admin_build.`);
+  requireText(source, 'no-cache, must-revalidate', `${name} não revalida a entrada sem invalidar todos os módulos.`);
+  forbidText(source, 'var build = String(Date.now());', `${name} voltou a gerar uma build nova em toda abertura e inutilizar o cache.`);
+  forbidText(source, 'no-store', `${name} voltou a impedir cache do navegador.`);
 }
 
 const productive = read('producao-v2/admin-produtivo.html');
 requireText(productive, "params.get('admin_build')", 'admin-produtivo.html não recebe a build da URL.');
 requireText(productive, 'normalizeProductiveBuild', 'admin-produtivo.html não normaliza os assets para a build recebida.');
 requireText(productive, 'meta name="admin-save-build"', 'admin-produtivo.html não publica a build ativa no meta do documento final.');
+requireText(productive, "cache: 'default'", 'admin-produtivo.html não aproveita o cache da release ativa.');
+forbidText(productive, "cache: 'no-store'", 'admin-produtivo.html voltou a baixar os módulos integralmente em toda abertura.');
 
 const navigation = read('producao-v2/js/navigation-v12.js');
 requireText(navigation, 'meta[name="admin-save-build"]', 'navigation-v12.js não herda a build ativa do Produção.');

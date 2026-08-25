@@ -155,7 +155,7 @@ async function loadRouteModules(route) {
     './product-lifecycle-bootstrap.js',
     './products-offer-columns.js',
     './duplicate-product.js',
-    './product-delete-tools.js',
+    './product-delete-tools-v2.js',
   ]);
   if (route === 'nfe') task = importOnce('nfe', ['./nfe-bootstrap.js']);
   if (route === 'orders') task = importOnce('orders', ['./orders-bootstrap.js']);
