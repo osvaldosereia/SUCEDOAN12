@@ -69,7 +69,7 @@ forbidText(gallery, 'data-mug-page="next"', 'Paginação antiga voltou para o hi
 requireText(gallery, "const MODELS_NODE = 'canecas/modelos_criacao';", 'Modelos não possuem armazenamento dedicado no Firebase.');
 requireText(gallery, 'data-toggle-mug-model=', 'Cards recentes não permitem marcar/desmarcar Modelo.');
 requireText(gallery, 'data-use-mug-model=', 'Card de modelo recente não permite reutilização rápida.');
-requireText(gallery, 'id="mugQuickModels"', 'Biblioteca de comandos não recebe a área Modelos rápidos.');
+requireText(gallery, "shelf.id = 'mugQuickModels';", 'Biblioteca de comandos não recebe a área Modelos rápidos.');
 requireText(gallery, 'data-quick-model-use=', 'Modelos rápidos não possuem ação Usar.');
 requireText(gallery, "localStorage.setItem(SELECTED_KEY, JSON.stringify([...ids]))", 'Aplicação do modelo não restaura a seleção persistida de comandos.');
 requireText(gallery, "panel.__mugCommandState.selected = new Set(ids)", 'Aplicação do modelo não atualiza o estado vivo da biblioteca de comandos.');
