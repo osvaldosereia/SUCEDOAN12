@@ -1,6 +1,6 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260825-mug-v9-cadastro';
+  || '20260825-mug-model-carousel-v10';
 
 const MODULES = [
   './mug-personalizer-v7.js',
@@ -10,6 +10,7 @@ const MODULES = [
   './mug-command-layout-v4-force.js',
   './mug-config-compact-v4-1.js',
   './mug-studio-v8-finalizer.js',
+  './mug-model-carousel-v10.js',
 ];
 
 let installPromise = null;
