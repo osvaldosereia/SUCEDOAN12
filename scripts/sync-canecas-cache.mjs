@@ -38,7 +38,7 @@ function isActive(value) {
 
 function isPrintableMug(value) {
   return value && typeof value === 'object' && !Array.isArray(value)
-    && normalized(value.categoria) === 'canecas'
+    && normalized(value.categoria) === 'canecas de porcelana'
     && isActive(value);
 }
 
@@ -186,4 +186,4 @@ await writeFile('site/canecas-comandos.json', `${JSON.stringify(commands, null, 
 await writeFile('site/canecas-galeria.json', `${JSON.stringify(mugs, null, 2)}\n`, 'utf8');
 await writeFile('site/canecas-print.json', `${JSON.stringify(printMugs, null, 2)}\n`, 'utf8');
 
-console.log(`Snapshots atualizados: ${Object.keys(commands).length} comando(s), ${Object.keys(mugs).length} caneca(s) na galeria e ${Object.keys(printMugs).length} caneca(s) ativa(s) da categoria Canecas para impressão.`);
+console.log(`Snapshots atualizados: ${Object.keys(commands).length} comando(s), ${Object.keys(mugs).length} caneca(s) na galeria e ${Object.keys(printMugs).length} caneca(s) ativa(s) da categoria Canecas de Porcelana para impressão.`);
