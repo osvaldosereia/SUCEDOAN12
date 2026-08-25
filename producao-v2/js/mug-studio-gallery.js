@@ -2,7 +2,7 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { ProductsModule } from './modules/products.js';
 import { archiveProduct, loadProduct } from './services/firebase.js';
 
-const BUILD = '20260824-mug-studio-gallery-v2';
+const BUILD = '20260824-mug-studio-gallery-v3';
 const PAGE_SIZE = 6;
 const CATEGORY_NAMES = ['Canecas de Porcelana', 'Canecas'];
 let loading = false;
@@ -276,10 +276,10 @@ async function refresh(force = false) {
   }
 }
 
-function scheduleRefresh(delay = 250) {
+function scheduleRefresh(delay = 250, { resetPage = false } = {}) {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(() => {
-    currentPage = 0;
+    if (resetPage) currentPage = 0;
     refresh(true);
   }, delay);
 }
@@ -289,7 +289,7 @@ function observeGeneratorCompletion() {
   if (!status || status === observedStatus) return;
   observedStatus = status;
   const observer = new MutationObserver(() => {
-    if (/conclu[ií]do|produto salvo como inativo/i.test(status.textContent || '')) scheduleRefresh(350);
+    if (/conclu[ií]do|produto salvo como inativo/i.test(status.textContent || '')) scheduleRefresh(350, { resetPage: true });
   });
   observer.observe(status, { childList: true, characterData: true, subtree: true });
 }

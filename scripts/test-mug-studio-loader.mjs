@@ -71,13 +71,23 @@ requireText(config, 'id="mugv7Webhook"', 'Campo Webhook Make não está disponí
 requireText(config, 'localStorage.setItem(WEBHOOK_KEY', 'Webhook Make não é persistido localmente.');
 
 const personalizer = read('producao-v2/js/mug-personalizer-v7.js');
-requireText(personalizer, "const BUILD = '20260824-canecas-studio-v7-4'", 'Criador não foi versionado para V7.4.');
+requireText(personalizer, "const BUILD = '20260824-canecas-studio-v7-5'", 'Criador não foi versionado para V7.4.');
 requireText(personalizer, 'PRIORIDADE MÁXIMA — INSTRUÇÃO COMPLEMENTAR DO OPERADOR', 'Prompt não dá prioridade máxima à instrução complementar.');
 requireText(personalizer, 'se o operador pedir uma frase, nome, palavra, data ou qualquer outro texto, esse texto é OBRIGATÓRIO na arte', 'Prompt não torna texto solicitado pelo operador obrigatório.');
 requireText(personalizer, 'reproduza o texto solicitado exatamente como foi digitado', 'Prompt não exige reprodução literal do texto solicitado.');
 requireText(personalizer, 'texto fornecido pelo operador NÃO é texto inventado', 'Prompt ainda pode confundir texto solicitado com texto inventado.');
 requireText(personalizer, 'a regra de evitar texto só vale quando o operador NÃO pediu texto', 'Prompt ainda deixa a regra genérica de evitar texto conflitar com a instrução do operador.');
 requireText(personalizer, 'prompt_art: buildArtPrompt(instruction)', 'Instrução complementar não chega ao prompt_art enviado ao Make.');
+requireText(personalizer, "const PLACEHOLDER_MOCKUP_3 = '__MUG_MOCKUP_3__'", 'Criador não declara placeholder do terceiro mockup.');
+requireText(personalizer, 'mockup_center_base64: centerReference', 'Criador não envia referência central ao Make.');
+requireText(personalizer, 'prompt_mockup_3: buildMockupPrompt(3)', 'Criador não envia prompt do terceiro mockup.');
+requireText(personalizer, 'mockup_3: PLACEHOLDER_MOCKUP_3', 'Firebase não recebe terceiro mockup.');
+requireText(personalizer, '!text(finalResult.mockup_3_url)', 'Criador não exige confirmação do terceiro mockup.');
+const mugGallery = read('producao-v2/js/mug-studio-gallery.js');
+requireText(mugGallery, "const BUILD = '20260824-mug-studio-gallery-v3'", 'Galeria não foi versionada após preservar paginação.');
+requireText(mugGallery, 'function scheduleRefresh(delay = 250, { resetPage = false } = {})', 'Galeria ainda reseta a página em qualquer atualização.');
+requireText(mugGallery, 'scheduleRefresh(350, { resetPage: true })', 'Nova caneca não direciona explicitamente para a página inicial.');
+
 requireText(personalizer, "const instruction = text(panel.querySelector('#mugv7Instruction')?.value)", 'Campo Instrução complementar não é lido antes da geração.');
 forbidText(personalizer, 'se houver dúvida, prefira não usar texto;', 'Prompt antigo ainda desencoraja texto mesmo quando o operador pede uma frase.');
 
@@ -176,5 +186,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Criador de Canecas validado: V7.4 com nome por IA, porcelana 350 ml, R$ 24,90, NCM 69111090, GTIN vazio e galeria 6 por página com exclusão segura.');
+  console.log('Criador de Canecas validado: V7.5 com nome por IA, porcelana 350 ml, R$ 24,90, NCM 69111090, GTIN vazio e galeria 6 por página com exclusão segura.');
 }
