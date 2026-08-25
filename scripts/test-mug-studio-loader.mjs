@@ -60,7 +60,10 @@ requireText(personalizer, "const MUG_CATEGORY = 'Caneca de Porcelana'", 'Categor
 requireText(personalizer, 'subcategoria: productTheme', 'Subcategoria não é criada a partir do tema.');
 requireText(personalizer, 'tema: productTheme', 'Tema identificado não é persistido no cadastro.');
 requireText(personalizer, 'Caneca de porcelana branca, com capacidade de 350ml', 'Descrição não informa porcelana branca e 350ml.');
-requireText(personalizer, 'A IA não conseguiu identificar o tema da caneca', 'Criador ainda permite cadastro com tema genérico.');
+requireText(personalizer, "if (!middle) middle = 'Tema Visual da Arte';", 'Criador não possui fallback final para nome quando o Make falha.');
+requireText(personalizer, 'nome_revisao_pendente: !nameGeneratedByAi', 'Cadastro não sinaliza revisão quando o nome vem de fallback.');
+requireText(personalizer, "nome_origem: nameGeneratedByAi ? 'ia_make'", 'Cadastro não registra a origem do nome.');
+if (personalizer.includes("if (!aiName) throw new Error('A IA não conseguiu identificar o tema da caneca. Gere novamente antes do cadastro.')")) failures.push('Criador ainda bloqueia toda a caneca quando o Make não devolve nome.');
 requireText(personalizer, "const MUG_CAPACITY = '350ml'", 'Capacidade padrão não está em 350ml.');
 requireText(personalizer, 'const MUG_PRICE = 24.90;', 'Preço padrão não está em R$ 24,90.');
 requireText(personalizer, "material: 'Porcelana'", 'Material padrão não está como porcelana.');

@@ -2,7 +2,7 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 import { text } from './core/utils.js';
 import './mug-studio-gallery.js?admin_build=20260824-mug-gallery-v3';
 
-const BUILD = '20260825-canecas-studio-v9-cadastro';
+const BUILD = '20260825-canecas-studio-v11-make-name-fallback';
 const WEBHOOK_KEY = 'da_admin_v2_mug_make_webhook';
 const MASTER_WIDTH = 2400;
 const MASTER_HEIGHT = 960;
@@ -214,7 +214,7 @@ function normalizeGeneratedName(value = '', instruction = '') {
       .replace(/\s{2,}/g, ' ')
       .trim();
   }
-  if (!middle) throw new Error('A IA não conseguiu identificar o tema da caneca. Gere novamente para evitar cadastro genérico.');
+  if (!middle) middle = 'Tema Visual da Arte';
   if (middle.length > 78) middle = middle.slice(0, 78).replace(/\s+\S*$/, '').trim();
   return `Caneca de Porcelana ${middle} - 350ml`;
 }
@@ -294,13 +294,15 @@ function firebaseTemplate(id, instruction = '', generatedName = '', nameGenerate
     arte_impressao: { url: PLACEHOLDER_ART, ratio: `${MASTER_WIDTH}:${MASTER_HEIGHT}`, width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, formato: 'webp' },
     midias_admin: [PLACEHOLDER_MOCKUP_1, PLACEHOLDER_MOCKUP_2, PLACEHOLDER_MOCKUP_3, PLACEHOLDER_ART],
     video_youtube: '',
-    origem_cadastro: 'make_canecas_studio_v9_cadastro',
+    origem_cadastro: 'make_canecas_studio_v11_make_name_fallback',
     tipo_produto: 'caneca_porcelana',
     geracao_status: 'concluido',
     geracao_etapa: 'firebase_salvo',
-    geracao_versao: 'v9-cadastro',
+    geracao_versao: 'v11-make-name-fallback',
     nome_gerado_ia: Boolean(nameGeneratedByAi),
-    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), instruction_priority: Boolean(text(instruction)), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v9_cadastro' },
+    nome_revisao_pendente: !nameGeneratedByAi,
+    nome_origem: nameGeneratedByAi ? 'ia_make' : (text(instruction) ? 'fallback_instrucao' : 'fallback_visual'),
+    configuracao_arte: { modo: 'imagem_inspiracao', instrucao_complementar: text(instruction), instruction_priority: Boolean(text(instruction)), width: MASTER_WIDTH, height: MASTER_HEIGHT, dimensao_real: PRINT_LABEL, gerador: 'openai_make_v11_make_name_fallback' },
     criado_em: now,
     updated_at: now,
     last_update: Date.now(),
@@ -373,8 +375,9 @@ async function generate(panel) {
     } catch (nameError) {
       console.warn('A IA não gerou o nome da caneca; usando fallback seguro.', nameError);
     }
-    if (!aiName) throw new Error('A IA não conseguiu identificar o tema da caneca. Gere novamente antes do cadastro.');
     const productName = normalizeGeneratedName(aiName, instruction);
+    const nameGeneratedByAi = Boolean(aiName);
+    if (!nameGeneratedByAi) console.warn('Make não devolveu nome; cadastro seguirá com fallback seguro para revisão.');
     const leftReference = await buildSideReference(master, 1);
     const rightReference = await buildSideReference(master, 2);
     const centerReference = await buildCenterReference(master);
@@ -397,7 +400,7 @@ async function generate(panel) {
       quality: 'high',
       firebase_url: base,
       products_node: node,
-      firebase_template_json: firebaseTemplate(id, instruction, productName, Boolean(aiName)),
+      firebase_template_json: firebaseTemplate(id, instruction, productName, nameGeneratedByAi),
     });
     status.textContent = '5/5 · Confirmando cadastro da caneca...';
     if (finalResult.product_saved !== true || !text(finalResult.mockup_1_url) || !text(finalResult.mockup_2_url) || !text(finalResult.mockup_3_url)) {
