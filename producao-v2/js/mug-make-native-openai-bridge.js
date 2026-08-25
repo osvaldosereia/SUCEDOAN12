@@ -1,6 +1,6 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260825-mug-v12-catalogador-visual';
+  || '20260825-mug-v13-no-block';
 
 const MODULES = [
   './mug-personalizer-v7.js',
@@ -12,6 +12,7 @@ const MODULES = [
   './mug-studio-v8-finalizer.js',
   './mug-model-carousel-v10.js',
   './mug-personalizer-v12.js',
+  './mug-catalog-no-block-v13.js',
 ];
 
 let installPromise = null;
