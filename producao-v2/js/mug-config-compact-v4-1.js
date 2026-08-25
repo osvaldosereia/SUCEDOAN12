@@ -1,4 +1,4 @@
-const BUILD = '20260823-canecas-config-v4-1';
+const BUILD = '20260825-canecas-config-v8';
 const WEBHOOK_KEY = 'da_admin_v2_mug_make_webhook';
 
 function installStyles() {
@@ -17,7 +17,7 @@ function installStyles() {
       cursor:pointer!important;
       list-style:none!important;
       padding:7px 9px!important;
-      font-size:11px!important;
+      font-size:10.5px!important;
       font-weight:800!important;
       line-height:1.2!important;
       user-select:none!important;
@@ -35,7 +35,7 @@ function installStyles() {
     #mugAutomationPanel.mugv7 .mugv7-settings-compact label{
       display:grid!important;
       gap:4px!important;
-      font-size:10px!important;
+      font-size:9.5px!important;
       font-weight:700!important;
     }
     #mugAutomationPanel.mugv7 .mugv7-settings-compact input,
@@ -72,7 +72,7 @@ function ensureConfig() {
   details = document.createElement('details');
   details.className = 'mugv7-settings mugv7-settings-compact';
   details.innerHTML = `
-    <summary>Configuração</summary>
+    <summary>Configuração do Make</summary>
     <div class="mugv7-settings-grid">
       <label>Webhook Make
         <input id="mugv7Webhook" type="url" placeholder="https://hook.eu1.make.com/..." autocomplete="off">
@@ -95,12 +95,9 @@ function ensureConfig() {
   webhook.value = originalWebhook || localStorage.getItem(WEBHOOK_KEY) || '';
   quality.value = ['high', 'medium', 'low'].includes(originalQuality) ? originalQuality : 'high';
 
-  webhook.addEventListener('change', () => {
-    localStorage.setItem(WEBHOOK_KEY, String(webhook.value || '').trim());
-  });
-  webhook.addEventListener('blur', () => {
-    localStorage.setItem(WEBHOOK_KEY, String(webhook.value || '').trim());
-  });
+  const persist = () => localStorage.setItem(WEBHOOK_KEY, String(webhook.value || '').trim());
+  webhook.addEventListener('change', persist);
+  webhook.addEventListener('blur', persist);
 
   panel.dataset.mugConfigCompact = BUILD;
   return true;
@@ -108,22 +105,22 @@ function ensureConfig() {
 
 function applyUntilReady(attempt = 0) {
   if (ensureConfig()) return;
-  if (attempt < 80) setTimeout(() => applyUntilReady(attempt + 1), 100);
+  if (attempt < 40) setTimeout(() => applyUntilReady(attempt + 1), 100);
+}
+
+function activate() {
+  setTimeout(() => applyUntilReady(), 0);
 }
 
 window.addEventListener('admin-v2-route-ready', event => {
-  if (event.detail?.route === 'mug-studio') setTimeout(() => applyUntilReady(), 0);
+  if (event.detail?.route === 'mug-studio') activate();
 });
 window.addEventListener('admin-v2-route', event => {
-  if (event.detail?.route === 'mug-studio') setTimeout(() => applyUntilReady(), 0);
+  if (event.detail?.route === 'mug-studio') activate();
 });
+window.addEventListener('mug-studio-model-applied', () => ensureConfig());
 
-const observer = new MutationObserver(() => {
-  if (window.adminV2CurrentRoute?.() === 'mug-studio') ensureConfig();
-});
-observer.observe(document.documentElement, { childList:true, subtree:true });
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(() => applyUntilReady(), 0), { once:true });
-else setTimeout(() => applyUntilReady(), 0);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', activate, { once: true });
+else activate();
 
 export { ensureConfig };
