@@ -1,15 +1,19 @@
 const BUILD = '20260825-mug-v13-catalog-no-block';
 const FALLBACK_THEME = 'Arte Criativa';
+const BAD_WORDS = ['comando salvo', 'i.a. criativa', 'sequência', 'sequencia', 'prompt', 'firebase', 'webhook', 'use sua criatividade'];
 
 function text(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
 
+function hasBadWords(value) {
+  const source = text(value).toLowerCase();
+  return BAD_WORDS.some(word => source.includes(word));
+}
+
 function fallbackCatalog(reason = '') {
   const manual = text(document.querySelector('#mugv7Instruction')?.value);
-  const theme = manual && !/(comando\s+salvo|i\.?\s*a\.?\s+criativa|sequ[eê]ncia|prompt|make|firebase|webhook|use\s+(a\s+)?sua\s+criatividade)/i.test(manual)
-    ? 'Arte Personalizada'
-    : FALLBACK_THEME;
+  const theme = manual && !hasBadWords(manual) ? 'Arte Personalizada' : FALLBACK_THEME;
   const name = `Caneca de Porcelana ${theme} - 350ml`;
   return {
     tema: theme,
@@ -18,7 +22,7 @@ function fallbackCatalog(reason = '') {
     descricao: `${name}. Caneca de porcelana branca 350ml com arte exclusiva, ideal para uso pessoal ou presente.`,
     tags: ['caneca de porcelana', 'caneca 350ml', 'arte criativa', 'presente'],
     seo_title: name,
-    seo_description: `Caneca de porcelana branca 350ml com arte exclusiva, ideal para presente e uso pessoal.`,
+    seo_description: 'Caneca de porcelana branca 350ml com arte exclusiva, ideal para presente e uso pessoal.',
     texto_identificado: '',
     confianca_tema: 0.1,
     catalogacao_fallback: true,
@@ -42,7 +46,10 @@ function catalogLooksUsable(parsed) {
     let raw = parsed.catalog || parsed.catalog_json || parsed.metadata || parsed.metadata_json || parsed.result;
     if (typeof raw === 'string') raw = JSON.parse(raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim());
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
-    return Boolean(text(raw.tema) || text(raw.nome));
+    const theme = text(raw.tema);
+    if (theme.length < 3) return false;
+    if (hasBadWords([theme, raw.subcategoria, raw.nome, raw.descricao].map(text).join(' '))) return false;
+    return true;
   } catch {
     return false;
   }
@@ -80,13 +87,13 @@ function install() {
 
       if (response.ok && catalogLooksUsable(parsed)) return response;
 
-      console.warn('Catalogador visual indisponível; a caneca seguirá até o final com cadastro automático de fallback.', {
+      console.warn('Catalogador visual falhou ou devolveu conteúdo inadequado; usando cadastro automático e continuando até o final.', {
         status: response.status,
         body: raw.slice(0, 300),
       });
       return syntheticResponse(`HTTP ${response.status}${raw ? `: ${raw.slice(0, 100)}` : ''}`);
     } catch (error) {
-      console.warn('Falha de rede no catalogador visual; usando fallback automático e continuando a geração.', error);
+      console.warn('Falha de rede no catalogador visual; usando cadastro automático e continuando até o final.', error);
       return syntheticResponse(error?.message || String(error));
     }
   };
