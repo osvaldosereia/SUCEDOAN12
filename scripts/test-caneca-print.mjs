@@ -44,7 +44,14 @@ requireText(html, 'r.mockup_1', 'Interface não mostra mockup 1.');
 requireText(html, 'r.mockup_2', 'Interface não mostra mockup 2.');
 requireText(html, 'r.mockup_3', 'Interface não mostra mockup 3 central.');
 requireText(html, 'r.arte_horizontal', 'Interface não mostra a arte horizontal.');
+requireText(html, 'data-download-mockups', 'Cada card não possui o botão para baixar os três mockups.');
+requireText(html, 'BAIXAR 3 IMAGENS', 'Botão de download dos mockups não está identificado corretamente.');
+requireText(html, 'files.forEach((file,index)=>setTimeout(()=>saveBlob(file.blob,file.name),index*180))', 'Os três mockups não são baixados como arquivos individuais.');
+requireText(html, '${base}-mockup-${index+1}', 'Arquivos individuais não recebem nomes distintos por mockup.');
 forbidText(html, "['Canecas de Porcelana','Canecas']", 'Caneca Print ainda consulta a categoria legada Canecas de Porcelana.');
+forbidText(html, 'application/zip', 'Caneca Print voltou a compactar os mockups em ZIP.');
+forbidText(html, 'buildZip(', 'Caneca Print ainda contém gerador de ZIP para os mockups.');
+forbidText(html, 'PREPARANDO ZIP', 'Interface ainda indica criação de ZIP.');
 forbidText(html, '@page{size:98mm 247mm;margin:0}', 'Caneca Print ainda contém o tamanho antigo de papel 98 × 247 mm.');
 forbidText(html, 'width:98mm!important;height:235mm!important', 'Caneca Print ainda contém viewport de 98 mm.');
 forbidText(html, 'width:235mm!important;height:100mm!important', 'Caneca Print ainda contém a antiga arte 235 × 100 mm.');
@@ -74,5 +81,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Caneca Print validado: somente categoria Canecas ativa, 3 mockups + Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão contida em uma única página.');
+  console.log('Caneca Print validado: somente categoria Canecas ativa, 3 mockups com download individual, Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão em uma única página.');
 }
