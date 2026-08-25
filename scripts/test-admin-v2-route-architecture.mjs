@@ -33,16 +33,27 @@ const stockBootstrap = read('producao-v2/js/stock-bootstrap.js');
 for (const marker of [
   './products-offer-columns.js',
   './duplicate-product.js',
-  './product-delete-tools.js',
+  './product-delete-tools-v2.js',
 ]) {
   requireText(stockBootstrap, marker, `Produtos não carrega mais o complemento pela própria rota: ${marker}`);
 }
+forbidText(stockBootstrap, "'./product-delete-tools.js'", 'Produtos voltou a carregar o módulo legado de exclusão.');
 requireText(stockBootstrap, 'meta[name="admin-save-build"]', 'O carregador das rotas não herda a build produtiva atual.');
 requireText(stockBootstrap, 'encodeURIComponent(BUILD)', 'O carregador das rotas não aplica a build atual aos imports dinâmicos.');
 requireText(stockBootstrap, 'refreshProductsTableAfterEnhancements', 'Produtos não atualiza a tabela após carregar os complementos da rota.');
 requireText(stockBootstrap, "if (route === 'products') refreshProductsTableAfterEnhancements();", 'O refresh da tabela não está vinculado à conclusão dos complementos de Produtos.');
 requireText(stockBootstrap, "if (route === 'baskets' || route === 'kits')", 'Cestas/Kits não estão vinculados ao carregamento sob demanda.');
 requireText(stockBootstrap, "if (route === 'offers' || route === 'offers-rules')", 'Ofertas não estão vinculados ao carregamento sob demanda.');
+
+const productDelete = read('producao-v2/js/product-delete-tools-v2.js');
+requireText(productDelete, 'function scheduleEnhance()', 'Exclusão de Produtos perdeu o agendador de atualização da tabela.');
+requireText(productDelete, 'requestAnimationFrame(() => {', 'Exclusão de Produtos voltou a reprocessar a tabela fora do frame do navegador.');
+requireText(productDelete, 'mutation.target === table', 'Observer da exclusão não está mais limitado ao tbody de Produtos.');
+requireText(productDelete, ".observe(table, { childList: true });", 'Observer da exclusão voltou a observar mais DOM do que o necessário.');
+requireText(productDelete, 'mapLimit(keys, 4', 'Exclusão múltipla perdeu o limite de concorrência das leituras.');
+requireText(productDelete, 'deleteGithubImage', 'Exclusão de Produtos deixou de remover imagens vinculadas.');
+forbidText(productDelete, 'subtree: true', 'Observer da exclusão voltou a observar toda a subárvore e pode criar loop de renderização.');
+forbidText(productDelete, 'new MutationObserver(enhanceRows)', 'Observer da exclusão voltou a chamar diretamente a rotina que altera a própria tabela.');
 
 const duplicateProduct = read('producao-v2/js/duplicate-product.js');
 for (const marker of ['createProduct', 'loadProduct', 'loadProducts']) {
@@ -115,25 +126,34 @@ forbidText(basketPolish, 'observe(document.documentElement', 'Acabamento de cest
 const kitOrder = read('producao-v2/js/kit-editor-order-v3.js');
 forbidText(kitOrder, 'observe(document.documentElement', 'Ordenação do editor de kits voltou a observar o documento inteiro.');
 
-for (const removed of ['producao-v2/js/offer-store-bridge.js', 'producao-v2/js/inline-sale-price-label.js']) {
-  if (existsSync(path.join(ROOT, removed))) failures.push(`Arquivo consolidado reapareceu: ${removed}`);
+for (const removed of [
+  'producao-v2/js/offer-store-bridge.js',
+  'producao-v2/js/inline-sale-price-label.js',
+  'producao-v2/js/product-delete-tools.js',
+]) {
+  if (existsSync(path.join(ROOT, removed))) failures.push(`Arquivo consolidado/legado ainda presente: ${removed}`);
 }
 
 const productiveLoader = read('producao-v2/admin-produtivo.html');
 forbidText(productiveLoader, 'inline-sale-price-label.js', 'O carregador produtivo voltou a injetar o patch separado de preço.');
-forbidText(productiveLoader, "['./js/product-delete-tools.js'", 'O carregador produtivo voltou a injetar ações da rota Produtos no boot global.');
-requireText(productiveLoader, "params.get('admin_build')", 'O carregador produtivo não recebe a build dinâmica da URL.');
-requireText(productiveLoader, 'normalizeProductiveBuild', 'O carregador produtivo não normaliza o cache-busting da base.');
+forbidText(productiveLoader, "['./js/product-delete-tools.js'", 'O carregador produtivo voltou a injetar a exclusão legada no boot global.');
+forbidText(productiveLoader, "['./js/product-delete-tools-v2.js'", 'O carregador produtivo voltou a injetar ações da rota Produtos no boot global.');
+requireText(productiveLoader, "params.get('admin_build')", 'O carregador produtivo não recebe a build da URL.');
+requireText(productiveLoader, 'normalizeProductiveBuild', 'O carregador produtivo não normaliza os assets para a release ativa.');
 requireText(productiveLoader, 'admin-save-build', 'O carregador produtivo não publica a build ativa no documento final.');
+requireText(productiveLoader, "cache: 'default'", 'O carregador produtivo voltou a impedir o cache normal dos módulos.');
+forbidText(productiveLoader, "cache: 'no-store'", 'O carregador produtivo voltou a forçar download integral em toda abertura.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')", 'O carregador produtivo voltou a carregar o editor de Kits no boot global.');
 requireText(productiveLoader, "stripGlobalRouteScript(html, 'campaign-rules-section.js')", 'O carregador produtivo voltou a carregar regras de oferta no boot global.');
 
 for (const redirect of ['producao/index.html', 'admin/index.html']) {
   const source = read(redirect);
-  requireText(source, 'var build = String(Date.now());', `${redirect} não gera uma build nova a cada abertura.`);
-  requireText(source, "destination.searchParams.set('admin_build', build)", `${redirect} não envia a build dinâmica ao carregador.`);
-  requireText(source, "destination.searchParams.set('save_build', build)", `${redirect} não mantém admin_build e save_build sincronizados.`);
-  forbidText(source, "destination.searchParams.set('admin_build', '2026", `${redirect} voltou a usar uma build fixa.`);
+  requireText(source, 'var RELEASE = ', `${redirect} não declara uma release estável do Admin.`);
+  requireText(source, "destination.searchParams.set('admin_build', RELEASE)", `${redirect} não envia a release estável ao carregador.`);
+  requireText(source, "destination.searchParams.set('save_build', RELEASE)", `${redirect} não mantém admin_build e save_build sincronizados.`);
+  requireText(source, 'no-cache, must-revalidate', `${redirect} não revalida a entrada sem invalidar todos os assets.`);
+  forbidText(source, 'var build = String(Date.now());', `${redirect} voltou a gerar uma build diferente em toda abertura e inutilizar o cache.`);
+  forbidText(source, 'no-store', `${redirect} voltou a impedir cache do navegador.`);
 }
 
 const mugNavigation = read('producao-v2/js/navigation-v12.js');
