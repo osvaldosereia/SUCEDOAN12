@@ -72,6 +72,7 @@ function productImageRoots(cfg) {
     'site/img/produtos',
     'site/img/produtos_2',
     'site/img/produtos_3',
+    'canecas/imagens',
   ].filter(Boolean))];
 }
 
@@ -103,6 +104,8 @@ function pathFromGithubUrl(value, cfg) {
     if (pathAllowedForProductImage(`site/${pathname}`, cfg)) return `site/${pathname}`;
     const siteMarker = pathname.indexOf('site/img/produtos');
     if (siteMarker >= 0) return pathname.slice(siteMarker);
+    const mugMarker = pathname.indexOf('canecas/imagens/');
+    if (mugMarker >= 0) return pathname.slice(mugMarker);
   } catch {}
   return '';
 }
@@ -124,11 +127,18 @@ function imagePaths(product, cfg) {
     product?.capa,
     product?.capa_url,
     product?.imagens,
+    product?.imagens_site,
     product?.images,
     product?.fotos,
     product?.galeria,
     product?.gallery,
     product?.imagens_historico,
+    product?.mockup_1,
+    product?.mockup_2,
+    product?.mockup_3,
+    product?.arte_horizontal,
+    product?.arte_url,
+    product?.arte,
   ]);
 
   const paths = [];
