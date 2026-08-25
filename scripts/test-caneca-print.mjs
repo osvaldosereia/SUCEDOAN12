@@ -22,13 +22,13 @@ const snapshot = read('site/canecas-print.json');
 
 requireText(html, "DATA_URL='../site/canecas-print.json'", 'Caneca Print não mantém snapshot de fallback.');
 requireText(html, "const FIREBASE_BASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com'", 'Caneca Print não possui fonte ao vivo do Firebase.');
-requireText(html, "const CATEGORY='Canecas'", 'Caneca Print não fixa a categoria exclusiva Canecas.');
-requireText(html, "function isCanecasCategory(value){return norm(value?.categoria)===norm(CATEGORY);}", 'Filtro de categoria não exige exatamente Canecas.');
+requireText(html, "const CATEGORY='Canecas de Porcelana'", 'Caneca Print não fixa a categoria Canecas de Porcelana.');
+requireText(html, "function isCanecasCategory(value){return norm(value?.categoria)===norm(CATEGORY);}", 'Filtro de categoria não exige exatamente Canecas de Porcelana.');
 requireText(html, 'function isActive(value)', 'Caneca Print não valida o status ativo.');
 requireText(html, 'function allowed(value){return isCanecasCategory(value)&&isActive(value);}', 'Categoria e status não são aplicados juntos.');
 requireText(html, "live.searchParams.set('orderBy',JSON.stringify('categoria'))", 'Consulta ao vivo não está ordenada por categoria.');
-requireText(html, "live.searchParams.set('equalTo',JSON.stringify(CATEGORY))", 'Consulta ao vivo não está limitada à categoria Canecas.');
-requireText(html, "fetch(liveUrl(),{cache:'no-store'", 'Fonte ao vivo não força dados frescos da categoria Canecas.');
+requireText(html, "live.searchParams.set('equalTo',JSON.stringify(CATEGORY))", 'Consulta ao vivo não está limitada à categoria Canecas de Porcelana.');
+requireText(html, "fetch(liveUrl(),{cache:'no-store'", 'Fonte ao vivo não força dados frescos da categoria Canecas de Porcelana.');
 requireText(html, ".filter(value=>value&&typeof value==='object'&&allowed(value))", 'Fallback do GitHub não elimina canecas inativas ou de outra categoria.');
 requireText(html, 'state.rows=await fetchSnapshot()', 'Snapshot do GitHub não funciona como fallback.');
 requireText(html, '@page{size:106mm 247mm;margin:0}', 'Folha de impressão não está fixada em 106 × 247 mm.');
@@ -46,9 +46,12 @@ requireText(html, 'r.mockup_3', 'Interface não mostra mockup 3 central.');
 requireText(html, 'r.arte_horizontal', 'Interface não mostra a arte horizontal.');
 requireText(html, 'data-download-mockups', 'Cada card não possui o botão para baixar os três mockups.');
 requireText(html, 'BAIXAR 3 IMAGENS', 'Botão de download dos mockups não está identificado corretamente.');
+requireText(html, 'const hasAllMockups=mockupUrls(r).length===3;', 'Botão de download não valida a presença dos três mockups.');
+requireText(html, "${hasAllMockups?'':'disabled'}", 'Botão não fica ativo automaticamente quando os três mockups existem.');
+requireText(html, "if(download){downloadMockups(state.rows.find(r=>r.firebaseKey===download.dataset.downloadMockups),download);return;}", 'Clique do botão não chama a rotina de download dos três mockups.');
 requireText(html, 'files.forEach((file,index)=>setTimeout(()=>saveBlob(file.blob,file.name),index*180))', 'Os três mockups não são baixados como arquivos individuais.');
 requireText(html, '${base}-mockup-${index+1}', 'Arquivos individuais não recebem nomes distintos por mockup.');
-forbidText(html, "['Canecas de Porcelana','Canecas']", 'Caneca Print ainda consulta a categoria legada Canecas de Porcelana.');
+forbidText(html, "const CATEGORY='Canecas';", 'Caneca Print ainda usa a categoria antiga Canecas.');
 forbidText(html, 'application/zip', 'Caneca Print voltou a compactar os mockups em ZIP.');
 forbidText(html, 'buildZip(', 'Caneca Print ainda contém gerador de ZIP para os mockups.');
 forbidText(html, 'PREPARANDO ZIP', 'Interface ainda indica criação de ZIP.');
@@ -56,14 +59,14 @@ forbidText(html, '@page{size:98mm 247mm;margin:0}', 'Caneca Print ainda contém 
 forbidText(html, 'width:98mm!important;height:235mm!important', 'Caneca Print ainda contém viewport de 98 mm.');
 forbidText(html, 'width:235mm!important;height:100mm!important', 'Caneca Print ainda contém a antiga arte 235 × 100 mm.');
 forbidText(html, 'width:230mm!important;height:92mm!important', 'Caneca Print ainda contém a antiga área segura 230 × 92 mm.');
-forbidText(html, "fetch(`${FIREBASE_BASE}/produtos.json`", 'Caneca Print baixa o nó inteiro de produtos em vez da categoria Canecas.');
+forbidText(html, "fetch(`${FIREBASE_BASE}/produtos.json`", 'Caneca Print baixa o nó inteiro de produtos em vez da categoria filtrada.');
 forbidText(html, 'Date.now()', 'Caneca Print invalida o cache a cada abertura.');
 
 requireText(bat, '--kiosk-printing', 'Atalho do Windows não habilita impressão silenciosa do Chrome.');
 requireText(bat, 'https://donaantonia.com.br/caneca-print/?kiosk=1', 'Atalho não abre a rota oficial do Caneca Print.');
 
 requireText(sync, "writeFile('site/canecas-print.json'", 'Sincronização não gera o snapshot de impressão.');
-requireText(sync, "normalized(value.categoria) === 'canecas'", 'Snapshot de impressão não exige categoria Canecas.');
+requireText(sync, "normalized(value.categoria) === 'canecas de porcelana'", 'Snapshot de impressão não exige categoria Canecas de Porcelana.');
 requireText(sync, '&& isActive(value);', 'Snapshot de impressão não exige produto ativo.');
 requireText(sync, '.filter(([, value]) => isPrintableMug(value))', 'Filtro de impressão não é aplicado ao snapshot.');
 requireText(sync, 'arte_horizontal: horizontal', 'Snapshot não contém a arte horizontal.');
@@ -81,5 +84,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Caneca Print validado: somente categoria Canecas ativa, 3 mockups com download individual, Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão em uma única página.');
+  console.log('Caneca Print validado: somente Canecas de Porcelana ativas, botão dos 3 mockups ativo quando completo, downloads individuais, Firebase ao vivo + fallback e impressão em uma única página.');
 }
