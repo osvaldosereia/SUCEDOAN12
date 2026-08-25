@@ -24,7 +24,7 @@ function normalized(value) {
 
 function isMug(value) {
   return value && typeof value === 'object' && !Array.isArray(value)
-    && (normalized(value.categoria) === 'canecas'
+    && (normalized(value.categoria).includes('caneca')
       || normalized(value.tipo_produto).includes('caneca')
       || normalized(value.origem_cadastro).includes('caneca'));
 }
@@ -43,6 +43,7 @@ function artUrl(value) {
     value?.arte_horizontal,
     value?.arte_personalizacao,
     print && typeof print === 'object' ? print.url : print,
+    Array.isArray(value?.midias_admin) ? value.midias_admin[3] : '',
     Array.isArray(value?.midias_admin) ? value.midias_admin[2] : '',
   );
 }
@@ -92,6 +93,8 @@ function normalizeMugs(data) {
       situacao: text(value.situacao || value.status || 'I'),
       ativo: value.ativo,
       mockup_1: text(value.mockup_1),
+      mockup_2: text(value.mockup_2),
+      mockup_3: text(value.mockup_3),
       url_imagem: text(value.url_imagem),
       imagem_url: text(value.imagem_url),
       imagem: text(value.imagem),
@@ -115,6 +118,7 @@ function normalizePrintMugs(data) {
     const adminMedia = Array.isArray(value.midias_admin) ? value.midias_admin : [];
     const mockup1 = firstUrl(value.mockup_1, value.url_imagem, value.imagem_url, value.imagem, siteImages[0], images[0], adminMedia[0]);
     const mockup2 = firstUrl(value.mockup_2, siteImages[1], images[1], adminMedia[1]);
+    const mockup3 = firstUrl(value.mockup_3, siteImages[2], images[2], adminMedia.length >= 4 ? adminMedia[2] : '');
     const horizontal = artUrl(value);
     return [firebaseKey, {
       firebaseKey,
@@ -127,6 +131,7 @@ function normalizePrintMugs(data) {
       ativo: value.ativo,
       mockup_1: mockup1,
       mockup_2: mockup2,
+      mockup_3: mockup3,
       arte_horizontal: horizontal,
       dimensao_impressao: text(value.dimensao_impressao || value?.arte_impressao?.dimensao_real || '24 × 9,5 cm'),
       last_update: timestampOf(value),
@@ -139,13 +144,21 @@ function normalizePrintMugs(data) {
 
 const commands = normalizeCommands(await fetchJson(`${FIREBASE}/canecas/comandos_criacao.json`));
 
-const mugUrl = new URL(`${FIREBASE}/produtos.json`);
-mugUrl.searchParams.set('orderBy', JSON.stringify('categoria'));
-mugUrl.searchParams.set('equalTo', JSON.stringify('Canecas'));
+async function fetchMugCategories() {
+  const merged = {};
+  for (const category of ['Canecas de Porcelana', 'Canecas']) {
+    const mugUrl = new URL(`${FIREBASE}/produtos.json`);
+    mugUrl.searchParams.set('orderBy', JSON.stringify('categoria'));
+    mugUrl.searchParams.set('equalTo', JSON.stringify(category));
+    const data = await fetchJson(mugUrl.href, 30000);
+    if (data && typeof data === 'object') Object.assign(merged, data);
+  }
+  return merged;
+}
 
 let mugSource;
 try {
-  mugSource = await fetchJson(mugUrl.href, 30000);
+  mugSource = await fetchMugCategories();
 } catch (error) {
   console.warn('Consulta indexada de canecas falhou; usando leitura completa somente no GitHub Actions.', error.message);
   mugSource = await fetchJson(`${FIREBASE}/produtos.json`, 30000);

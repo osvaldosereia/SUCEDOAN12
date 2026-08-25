@@ -23,8 +23,8 @@ const snapshot = read('site/canecas-print.json');
 requireText(html, "DATA_URL='../site/canecas-print.json'", 'Caneca Print não mantém snapshot de fallback.');
 requireText(html, "const FIREBASE_BASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com'", 'Caneca Print não possui fonte ao vivo do Firebase.');
 requireText(html, "live.searchParams.set('orderBy',JSON.stringify('categoria'))", 'Consulta ao vivo não está ordenada por categoria.');
-requireText(html, "live.searchParams.set('equalTo',JSON.stringify('Canecas'))", 'Consulta ao vivo não está limitada à categoria Canecas.');
-requireText(html, "fetch(liveUrl(),{cache:'no-store'", 'Fonte ao vivo não força dados frescos.');
+requireText(html, "['Canecas de Porcelana','Canecas']", 'Consulta ao vivo não cobre categorias nova e legada de canecas.');
+requireText(html, "liveUrls().map(url=>fetch(url,{cache:'no-store'", 'Fonte ao vivo não força dados frescos nas categorias de canecas.');
 requireText(html, 'state.rows=await fetchSnapshot()', 'Snapshot do GitHub não funciona como fallback.');
 requireText(html, '@page{size:106mm 247mm;margin:0}', 'Folha de impressão não está fixada em 106 × 247 mm.');
 requireText(html, '.print-viewport{position:absolute!important;left:0!important;top:6mm!important;width:106mm!important;height:235mm!important', 'Viewport físico não está contido em uma única folha 106 × 247 mm.');
@@ -37,6 +37,7 @@ requireText(html, '<div class="print-viewport"><div class="print-art-box">', 'Ar
 requireText(html, 'window.print();', 'Botão de impressão não dispara a impressão do navegador.');
 requireText(html, 'r.mockup_1', 'Interface não mostra mockup 1.');
 requireText(html, 'r.mockup_2', 'Interface não mostra mockup 2.');
+requireText(html, 'r.mockup_3', 'Interface não mostra mockup 3 central.');
 requireText(html, 'r.arte_horizontal', 'Interface não mostra a arte horizontal.');
 forbidText(html, '@page{size:98mm 247mm;margin:0}', 'Caneca Print ainda contém o tamanho antigo de papel 98 × 247 mm.');
 forbidText(html, 'width:98mm!important;height:235mm!important', 'Caneca Print ainda contém viewport de 98 mm.');
@@ -52,6 +53,7 @@ requireText(sync, "writeFile('site/canecas-print.json'", 'Sincronização não g
 requireText(sync, 'arte_horizontal: horizontal', 'Snapshot não contém a arte horizontal.');
 requireText(sync, 'mockup_1: mockup1', 'Snapshot não contém mockup 1.');
 requireText(sync, 'mockup_2: mockup2', 'Snapshot não contém mockup 2.');
+requireText(sync, 'mockup_3: mockup3', 'Snapshot não contém mockup 3 central.');
 requireText(sync, 'return Object.fromEntries(rows);', 'Snapshot de impressão ainda parece limitado por paginação artificial.');
 requireText(workflow, 'site/canecas-print.json', 'Workflow não publica o snapshot de impressão.');
 
@@ -63,5 +65,5 @@ if (failures.length) {
   failures.forEach((failure, index) => console.error(`${index + 1}. ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('Caneca Print validado: Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão contida em uma única página.');
+  console.log('Caneca Print validado: 3 mockups + Firebase ao vivo + fallback, papel 106×247 mm, arte 235×106 mm centralizada e impressão contida em uma única página.');
 }
