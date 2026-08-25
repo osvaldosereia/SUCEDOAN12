@@ -16,7 +16,7 @@
   <script>
     (async function () {
       const params = new URLSearchParams(window.location.search);
-      const BUILD = params.get('admin_build') || '20260825-perf1';
+      const BUILD = params.get('admin_build') || '20260825-perf2';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -48,7 +48,7 @@
       }
 
       try {
-        const response = await fetch(`./index.html?admin_base=${BUILD}`, { cache: 'default' });
+        const response = await fetch(`./index.html?admin_base=${encodeURIComponent(BUILD)}`, { cache: 'default' });
         if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
         let html = normalizeProductiveBuild(await response.text());
 
@@ -86,7 +86,6 @@
 
         const enhancements = [
           ['./js/product-delete-filter-v2.js', false],
-          ['./js/product-delete-tools-v2.js', true],
           ['./js/nfe-image-make-fix.js', true],
           ['./js/nfe-import-save-fix.js', true],
           ['./js/alternate-ean-support.js', true],
