@@ -3,6 +3,8 @@ import { archiveProduct, loadProduct } from './services/firebase.js';
 import { productName, text } from './core/utils.js';
 
 let deleting = false;
+let tableObserver = null;
+let enhanceFrame = 0;
 const selectedKeys = new Set();
 
 function config() {
@@ -35,13 +37,14 @@ function hasPendingChanges() {
 }
 
 function productInfoFromRow(key) {
+  const normalizedKey = text(key);
   const row = [...document.querySelectorAll('#productsTableBody tr')]
-    .find(item => text(item.dataset.bulkProductKey) === text(key)
-      || text(item.querySelector('[data-product-key]')?.dataset.productKey) === text(key));
+    .find(item => text(item.dataset.bulkProductKey) === normalizedKey
+      || text(item.querySelector('[data-product-key]')?.dataset.productKey) === normalizedKey);
   return {
     row,
     name: text(row?.querySelector('.product-cell strong')?.textContent) || 'Produto',
-    code: text(row?.querySelector('.cell-stack strong')?.textContent) || text(key),
+    code: text(row?.querySelector('.cell-stack strong')?.textContent) || normalizedKey,
   };
 }
 
@@ -276,8 +279,8 @@ function confirmDeletion(targets) {
 
 function setDeletingState(active, label = '') {
   deleting = active;
-  document.querySelectorAll('[data-safe-delete-product],[data-bulk-delete-selected],[data-product-select],[data-select-visible-products]').forEach(button => {
-    button.disabled = active || (!config().writeMode && button.matches('[data-safe-delete-product],[data-bulk-delete-selected]'));
+  document.querySelectorAll('[data-safe-delete-product],[data-bulk-delete-selected],[data-product-select],[data-select-visible-products]').forEach(control => {
+    control.disabled = active || (!config().writeMode && control.matches('[data-safe-delete-product],[data-bulk-delete-selected]'));
   });
   const status = document.querySelector('[data-bulk-delete-status]');
   if (status) status.textContent = label;
@@ -417,44 +420,92 @@ function installHeaderCheckbox() {
   row.insertBefore(cell, row.firstElementChild);
 }
 
+function ensureSelectionControl(row, key) {
+  let selectCell = row.querySelector('[data-product-select-cell]');
+  if (!selectCell) {
+    selectCell = document.createElement('td');
+    selectCell.className = 'product-select-column';
+    selectCell.dataset.productSelectCell = '1';
+    row.insertBefore(selectCell, row.firstElementChild);
+  }
+
+  let checkbox = selectCell.querySelector('[data-product-select]');
+  if (!checkbox) {
+    checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.setAttribute('aria-label', 'Selecionar produto');
+    selectCell.appendChild(checkbox);
+  }
+  checkbox.dataset.productSelect = key;
+  const selected = selectedKeys.has(key);
+  if (checkbox.checked !== selected) checkbox.checked = selected;
+  row.classList.toggle('bulk-selected-row', selected);
+}
+
+function ensureDeleteAction(actions, key, enabled) {
+  let button = actions.querySelector('[data-safe-delete-product]');
+  if (!button) {
+    button = document.createElement('button');
+    button.className = 'row-action safe-delete-action';
+    button.type = 'button';
+    button.textContent = 'Excluir';
+    actions.appendChild(button);
+  }
+  button.dataset.safeDeleteProduct = key;
+  button.title = 'Enviar o produto para a Lixeira e apagar as imagens vinculadas no GitHub';
+  if (!deleting) button.disabled = !enabled;
+}
+
 function enhanceRows() {
   installToolbar();
   installHeaderCheckbox();
   const enabled = config().writeMode !== false;
+
   document.querySelectorAll('#productsTableBody tr').forEach(row => {
     const editButton = row.querySelector('[data-product-key]');
     const actions = row.querySelector('.row-actions');
     if (!editButton || !actions) return;
 
     const key = text(editButton.dataset.productKey);
+    if (!key) return;
     row.dataset.bulkProductKey = key;
-
-    let selectCell = row.querySelector('[data-product-select-cell]');
-    if (!selectCell) {
-      selectCell = document.createElement('td');
-      selectCell.className = 'product-select-column';
-      selectCell.dataset.productSelectCell = '1';
-      row.insertBefore(selectCell, row.firstElementChild);
-    }
-    selectCell.innerHTML = `<input type="checkbox" data-product-select="${key.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" aria-label="Selecionar produto" ${selectedKeys.has(key) ? 'checked' : ''}>`;
-    row.classList.toggle('bulk-selected-row', selectedKeys.has(key));
-
-    let button = actions.querySelector('[data-safe-delete-product]');
-    if (!button) {
-      button = document.createElement('button');
-      button.className = 'row-action safe-delete-action';
-      button.type = 'button';
-      button.dataset.safeDeleteProduct = key;
-      button.textContent = 'Excluir';
-      button.title = 'Enviar o produto para a Lixeira e apagar as imagens vinculadas no GitHub';
-      actions.appendChild(button);
-    }
-    if (!deleting) button.disabled = !enabled;
+    ensureSelectionControl(row, key);
+    ensureDeleteAction(actions, key, enabled);
   });
 
   const empty = document.querySelector('#productsTableBody .empty-state');
-  if (empty) empty.colSpan = 9;
+  if (empty && empty.colSpan !== 9) empty.colSpan = 9;
   updateBulkToolbar();
+}
+
+function syncVisibleSelection() {
+  visibleRows().forEach(row => {
+    const key = text(row.dataset.bulkProductKey);
+    const selected = selectedKeys.has(key);
+    const checkbox = row.querySelector('[data-product-select]');
+    if (checkbox && checkbox.checked !== selected) checkbox.checked = selected;
+    row.classList.toggle('bulk-selected-row', selected);
+  });
+  updateBulkToolbar();
+}
+
+function observeProductTable() {
+  const table = document.getElementById('productsTableBody');
+  if (!table || !tableObserver) return;
+  tableObserver.observe(table, { childList: true, subtree: true });
+}
+
+function scheduleEnhanceRows() {
+  if (enhanceFrame) return;
+  enhanceFrame = requestAnimationFrame(() => {
+    enhanceFrame = 0;
+    tableObserver?.disconnect();
+    try {
+      enhanceRows();
+    } finally {
+      observeProductTable();
+    }
+  });
 }
 
 function installStyle() {
@@ -505,7 +556,7 @@ document.addEventListener('change', event => {
       if (checked) selectedKeys.add(key);
       else selectedKeys.delete(key);
     });
-    enhanceRows();
+    syncVisibleSelection();
   }
 });
 
@@ -536,22 +587,26 @@ document.addEventListener('click', event => {
   if (clear) {
     event.preventDefault();
     selectedKeys.clear();
-    enhanceRows();
+    syncVisibleSelection();
   }
 });
 
-document.getElementById('writeModeSetting')?.addEventListener('change', enhanceRows);
+document.getElementById('writeModeSetting')?.addEventListener('change', scheduleEnhanceRows);
 window.addEventListener('admin-v2-route', event => {
-  if (event.detail?.route === 'products') queueMicrotask(enhanceRows);
+  if (event.detail?.route === 'products') scheduleEnhanceRows();
 });
 
 function start() {
   installStyle();
   installToolbar();
   installHeaderCheckbox();
-  enhanceRows();
+
   const table = document.getElementById('productsTableBody');
-  if (table) new MutationObserver(enhanceRows).observe(table, { childList: true, subtree: true });
+  if (table) {
+    tableObserver = new MutationObserver(() => scheduleEnhanceRows());
+    observeProductTable();
+  }
+  scheduleEnhanceRows();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
