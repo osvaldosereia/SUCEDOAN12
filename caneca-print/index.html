@@ -26,7 +26,7 @@
   <main class="app">
     <section class="top">
       <div class="brandrow">
-        <div class="brand"><h1>Caneca Print</h1><p>Epson L1250 · somente Canecas ativas · papel 106 × 247 mm · arte espelhada automaticamente</p></div>
+        <div class="brand"><h1>Caneca Print</h1><p>Epson L1250 · somente Canecas de Porcelana ativas · papel 106 × 247 mm · arte espelhada automaticamente</p></div>
         <div class="status"><span class="badge good" id="modeBadge">Modo de impressão</span><span class="badge" id="cacheBadge">Carregando…</span></div>
       </div>
       <div class="toolbar">
@@ -36,7 +36,7 @@
       </div>
     </section>
 
-    <div class="summary"><span id="summaryText">Carregando canecas ativas…</span><span>Impressão: 235 × 106 mm · centralizada</span></div>
+    <div class="summary"><span id="summaryText">Carregando canecas de porcelana ativas…</span><span>Impressão: 235 × 106 mm · centralizada</span></div>
     <section class="grid" id="grid"><div class="empty">Carregando catálogo de impressão…</div></section>
 
     <details class="setup">
@@ -55,7 +55,7 @@
     (()=>{
       const DATA_URL='../site/canecas-print.json';
       const FIREBASE_BASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
-      const CATEGORY='Canecas';
+      const CATEGORY='Canecas de Porcelana';
       const state={rows:[],query:'',readyOnly:true,printing:null,downloading:null};
       const $=s=>document.querySelector(s);
       const text=v=>String(v??'').trim();
@@ -113,7 +113,7 @@
               mockup_2:firstUrl(value.mockup_2,site[1],images[1],admin[1]),
               mockup_3:firstUrl(value.mockup_3,site[2],images[2],admin.length>=4?admin[2]:''),
               arte_horizontal:art,
-              dimensao_impressao:text(value.dimensao_impressao||value?.arte_impressao?.dimensao_real||'23,5 × 10,6 cm'),
+              dimensao_impressao:text(value.dimensao_impressao||value?.arte_impressao?.dimensao_real||'24 × 9,5 cm'),
               last_update:timestampOf(value),
               updated_at:text(value.updated_at||value.criado_em||value.created_at),
               pronto_impressao:Boolean(art),
@@ -138,7 +138,7 @@
       function render(){
         const q=norm(state.query);
         const visible=state.rows.filter(r=>(!state.readyOnly||r.pronto_impressao)&&(!q||norm(`${r.nome} ${r.codigo}`).includes(q)));
-        $('#summaryText').textContent=`${visible.length} de ${state.rows.length} caneca(s) ativa(s) · ${state.rows.filter(r=>r.pronto_impressao).length} prontas para imprimir`;
+        $('#summaryText').textContent=`${visible.length} de ${state.rows.length} caneca(s) de porcelana ativa(s) · ${state.rows.filter(r=>r.pronto_impressao).length} prontas para imprimir`;
         $('#readyOnly').textContent=state.readyOnly?'Mostrar todas':'Somente prontas';
         $('#grid').innerHTML=visible.length?visible.map(r=>{
           const hasAllMockups=mockupUrls(r).length===3;
@@ -147,7 +147,7 @@
           <div class="media">${image(r.mockup_1,'Mockup 1')}${image(r.mockup_2,'Mockup 2')}${image(r.mockup_3,'Mockup 3 · centro')}${image(r.arte_horizontal,'Arte horizontal','art')}</div>
           <div class="actions"><button class="download" type="button" data-download-mockups="${esc(r.firebaseKey)}" ${hasAllMockups?'':'disabled'}>${hasAllMockups?'BAIXAR 3 IMAGENS':'MOCKUPS INCOMPLETOS'}</button><button class="print" type="button" data-print="${esc(r.firebaseKey)}" ${r.pronto_impressao?'':'disabled'}>${r.pronto_impressao?'IMPRIMIR ARTE':'SEM ARTE HORIZONTAL'}</button><button class="open" type="button" data-open="${esc(r.arte_horizontal)}" ${r.arte_horizontal?'':'disabled'}>Abrir arte</button></div>
         </article>`;
-        }).join(''):'<div class="empty">Nenhuma caneca ativa da categoria Canecas encontrada com este filtro.</div>';
+        }).join(''):'<div class="empty">Nenhuma caneca ativa da categoria Canecas de Porcelana encontrada com este filtro.</div>';
       }
 
       async function fetchSnapshot(){
@@ -168,7 +168,7 @@
           if(!response.ok)throw new Error(`Firebase HTTP ${response.status}`);
           const rows=normalizeFirebase(await response.json());
           state.rows=rows;
-          $('#cacheBadge').textContent=`${rows.length} canecas ativas · Firebase ao vivo`;
+          $('#cacheBadge').textContent=`${rows.length} canecas de porcelana ativas · Firebase ao vivo`;
           render();
           return;
         }catch(error){liveError=error;}
@@ -176,7 +176,7 @@
         $('#cacheBadge').textContent='Usando cache do GitHub…';
         try{
           state.rows=await fetchSnapshot();
-          $('#cacheBadge').textContent=`${state.rows.length} canecas ativas · cache`;
+          $('#cacheBadge').textContent=`${state.rows.length} canecas de porcelana ativas · cache`;
           render();
         }catch(cacheError){
           $('#cacheBadge').textContent='Falha ao carregar';
