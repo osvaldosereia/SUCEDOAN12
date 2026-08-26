@@ -59,11 +59,23 @@ async function check(pathname, name, rules) {
 
 await check('/producao/', 'Entrada pública do Produção', {
   required: [
-    'var build = String(Date.now());',
-    "destination.searchParams.set('admin_build', build)",
-    "destination.searchParams.set('save_build', build)",
+    'var RELEASE = ',
+    '20260825-mug-model-carousel-v10',
+    "destination.searchParams.set('admin_build', RELEASE)",
+    "destination.searchParams.set('save_build', RELEASE)",
   ],
-  forbidden: ["destination.searchParams.set('admin_build', '2026"],
+  forbidden: ['var build = String(Date.now());'],
+});
+
+await check('/producao-v2/admin-produtivo.html', 'Carregador produtivo', {
+  required: [
+    "cache:'default'",
+    "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')",
+    "stripGlobalRouteScript(html, 'campaign-rules-section.js')",
+    'mug-public-template-admin-v2.js',
+    'data-editor-tab="mug-personalizacao"',
+  ],
+  forbidden: ["cache:'no-store'"],
 });
 
 await check('/producao-v2/js/navigation-v12.js', 'Navegação publicada do Criador', {
@@ -88,7 +100,7 @@ await check('/producao-v2/js/mug-make-native-openai-bridge.js', 'Bridge publicad
 
 await check('/producao-v2/js/mug-command-layout-v4-force.js', 'Layout publicado do Criador', {
   required: [
-    'grid-template-columns:minmax(190px,1fr) minmax(0,4fr)',
+    'grid-template-columns:minmax(210px,1fr) minmax(0,4fr)',
     'repeat(3,minmax(0,1fr))',
     '.mugv7-info{display:none!important}',
   ],
@@ -96,9 +108,18 @@ await check('/producao-v2/js/mug-command-layout-v4-force.js', 'Layout publicado 
 
 await check('/producao-v2/js/mug-config-compact-v4-1.js', 'Configuração Make publicada', {
   required: [
-    '<summary>Configuração</summary>',
+    '<summary>Configuração do Make</summary>',
     'id="mugv7Webhook"',
     'localStorage.setItem(WEBHOOK_KEY',
+  ],
+});
+
+await check('/producao-v2/js/mug-public-template-admin-v2.js', 'Campos personalizáveis publicados', {
+  required: [
+    'Campos personalizáveis',
+    'canecas/modelos_privados',
+    'personalizacao_config_publica',
+    'mugTplEngineV9V2',
   ],
 });
 
