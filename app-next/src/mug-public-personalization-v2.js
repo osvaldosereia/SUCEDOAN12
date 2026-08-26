@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js?v=20260826-mug-public-v2';
 
-const BUILD = '20260826-site-mug-public-v2-simple';
+const BUILD = '20260826-site-mug-public-v3-base64-stable';
 const FB = String(CONFIG.ENDPOINTS?.FIREBASE_ORDERS || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/pedidos').replace(/\/pedidos\/?$/, '');
 const MAKE = String(CONFIG.ENDPOINTS?.MUG_PERSONALIZATION || '').trim();
 const N = { products:'produtos', public:'canecas/personalizadas_publicas', private:'canecas/personalizadas', models:'canecas/modelos_criacao' };
@@ -14,7 +14,8 @@ const STATE = { key:'', product:null, config:null, id:'', busy:false, mounted:fa
 
 const text = value => String(value ?? '').trim();
 const escapeHtml = value => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-const isUrl = value => /^https?:\/\//i.test(text(value));
+const isHttpUrl = value => /^https?:\/\//i.test(text(value));
+const isImageSource = value => isHttpUrl(value) || /^data:image\/(?:png|jpe?g|webp);base64,/i.test(text(value));
 const digits = value => text(value).replace(/\D+/g, '');
 const readLocal = (key, fallback) => { try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); } catch { return fallback; } };
 const writeLocal = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } };
@@ -313,7 +314,7 @@ async function cropReference(master, mode) {
 }
 
 async function callMake(payload, timeout=180000) {
-  if (!isUrl(MAKE)) throw new Error('A automação de personalização não está configurada.');
+  if (!isHttpUrl(MAKE)) throw new Error('A automação de personalização não está configurada.');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
@@ -477,7 +478,7 @@ async function generate() {
       images_json:JSON.stringify(photos), quality:'high', origin:'site_publico'
     });
     const generatedUrl = text(generated.art_source_url || generated.art_url || generated.result_url);
-    if (!isUrl(generatedUrl)) throw new Error('A automação não devolveu a nova arte.');
+    if (!isImageSource(generatedUrl)) throw new Error('A automação não devolveu a nova arte.');
     progress(40, 'Preparando a arte final…');
     const master = await cropMaster(generatedUrl);
     const [left,right,center] = await Promise.all([cropReference(master,1),cropReference(master,2),cropReference(master,3)]);
@@ -491,10 +492,10 @@ async function generate() {
       firebase_url:FB, products_node:N.products, firebase_template_json:template
     });
     const urls = {
-      art:text(final.art_url || final.arte_horizontal_url || final.arte_url || generatedUrl),
+      art:text(final.art_url || final.arte_horizontal_url || final.arte_url),
       m1:text(final.mockup_1_url), m2:text(final.mockup_2_url), m3:text(final.mockup_3_url)
     };
-    if (!isUrl(urls.art) || !isUrl(urls.m1) || !isUrl(urls.m2) || !isUrl(urls.m3)) throw new Error('A automação não devolveu as quatro imagens finais.');
+    if (!isHttpUrl(urls.art) || !isHttpUrl(urls.m1) || !isHttpUrl(urls.m2) || !isHttpUrl(urls.m3)) throw new Error('A automação ainda não publicou as quatro imagens finais.');
     progress(84, 'Salvando sua criação…');
     const product = await saveCreation(id, result, urls, publicUrl, final.product_saved === true);
     const cartAdded = addToCart(product, urls, result);
@@ -504,7 +505,7 @@ async function generate() {
     renderResult(id, urls, result, cartAdded);
     updateLimitUi();
   } catch (error) {
-    console.error('[Canecas públicas V2]', error);
+    console.error('[Canecas públicas V3]', error);
     setError(error?.name === 'AbortError' ? 'A geração demorou mais do que o esperado. Tente novamente.' : (error?.message || String(error)));
     const progressBox = document.querySelector('#mugPublicProgress'); if (progressBox) progressBox.hidden = true;
   } finally {
@@ -535,7 +536,7 @@ async function syncRoute() {
       if (++attempts < 30) setTimeout(mount, 100);
     };
     mount();
-  } catch (error) { console.error('[Canecas públicas V2] Falha ao carregar modelo:', error); }
+  } catch (error) { console.error('[Canecas públicas V3] Falha ao carregar modelo:', error); }
 }
 
 let syncTimer;
