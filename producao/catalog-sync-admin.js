@@ -17,6 +17,10 @@
     return String(value == null ? '' : value).trim();
   }
 
+  function truthy(value){
+    return value === true || value === 1 || ['1','true','sim','yes'].includes(text(value).toLowerCase());
+  }
+
   function numberValue(value){
     if(typeof value === 'number' && Number.isFinite(value)) return value;
     let source = String(value == null ? '' : value).trim().replace(/[^\d,.-]/g, '');
@@ -41,8 +45,28 @@
     return !['I','INATIVO','INACTIVE','0','FALSE','EXCLUIDO','EXCLUÍDO'].includes(situation) && product?.ativo !== false && product?.visivel !== false;
   }
 
+  function publicMugModel(product){
+    const category = text(product && (product.categoria || product.category)).toLowerCase();
+    return truthy(product && product.modelo_publico)
+      && (truthy(product && product.modelo_caneca) || category.includes('caneca'));
+  }
+
+  function publicMedia(product){
+    const media = [];
+    const push = function(value){
+      const item = text(value);
+      if(!item || /^data:/i.test(item) || media.includes(item)) return;
+      media.push(item);
+    };
+    [product.url_imagem, product.imagem_url, product.imagem, product.image, product.img, product.foto, product.foto_url, product.imagem_path, product.mockup_1, product.mockup_2, product.mockup_3].forEach(push);
+    if(Array.isArray(product.imagens)) product.imagens.forEach(push);
+    if(Array.isArray(product.imagens_site)) product.imagens_site.forEach(push);
+    return media;
+  }
+
   function compactProduct(key, product){
     product = product && typeof product === 'object' ? product : {};
+    const media = publicMedia(product);
     const item = {
       firebaseKey: key,
       id: text(product.id || key),
@@ -57,7 +81,16 @@
       preco_oferta: money(product.preco_oferta != null ? product.preco_oferta : product.precoOferta),
       estoque: Math.max(0, Math.floor(numberValue(product.estoque))),
       situacao: activeProduct(product) ? 'A' : 'I',
-      url_imagem: text(product.url_imagem || product.imagem_url || product.imagem || product.image || product.img || product.foto || product.foto_url || product.imagem_path),
+      modelo_caneca: truthy(product.modelo_caneca),
+      modelo_publico: truthy(product.modelo_publico),
+      personalizacao_publica: truthy(product.personalizacao_publica),
+      produto_sob_encomenda: publicMugModel(product),
+      url_imagem: media[0] || '',
+      imagens: media,
+      mockup_1: text(product.mockup_1),
+      mockup_2: text(product.mockup_2),
+      mockup_3: text(product.mockup_3),
+      arte_horizontal: text(product.arte_horizontal || product.arte_personalizacao || (product.arte_impressao && product.arte_impressao.url)),
       descricao_curta: text(product.descricao_curta || product.descricao).slice(0, 180),
       validade: text(product.validade || product.data_validade),
       validade_oferta: text(product.validade_oferta || product.validadeOferta),
@@ -65,6 +98,8 @@
     };
     return Object.fromEntries(Object.entries(item).filter(function(entry){
       const value = entry[1];
+      if(Array.isArray(value)) return value.length > 0;
+      if(typeof value === 'boolean') return value;
       return value !== '' && value !== null && value !== undefined;
     }));
   }
@@ -343,6 +378,9 @@
     if(shouldSync && response.ok) scheduleCatalogSync();
     return response;
   };
+
+  window.addEventListener('admin-v2-products-invalidated', scheduleCatalogSync);
+  window.addEventListener('da:mug-public-template-saved', scheduleCatalogSync);
 
   document.addEventListener('click', function(event){
     const button = event.target && event.target.closest && event.target.closest('[data-action]');
