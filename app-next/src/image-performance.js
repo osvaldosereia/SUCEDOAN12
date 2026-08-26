@@ -12,12 +12,21 @@ function localRepositoryAsset(value) {
   const raw = String(value || '').trim();
   if (!raw) return raw;
 
-  let match = raw.match(/^https?:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/[^/]+\/(.+)$/i);
-  if (!match) match = raw.match(/^https?:\/\/github\.com\/osvaldosereia\/SUCEDOAN12\/(?:raw|blob)\/[^/]+\/(.+)$/i);
-  if (!match) return raw;
+  let match = raw.match(/^https?:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/([^/]+)\/(.+)$/i);
+  if (match) {
+    const branch = decodeURIComponent(String(match[1] || ''));
+    const path = String(match[2] || '').replace(/^\/+/, '');
+    return branch === 'main' && path ? `/${path}` : raw;
+  }
 
-  const path = String(match[1] || '').replace(/^\/+/, '');
-  return path ? `/${path}` : raw;
+  match = raw.match(/^https?:\/\/github\.com\/osvaldosereia\/SUCEDOAN12\/(?:raw|blob)\/([^/]+)\/(.+)$/i);
+  if (match) {
+    const branch = decodeURIComponent(String(match[1] || ''));
+    const path = String(match[2] || '').replace(/^\/+/, '');
+    return branch === 'main' && path ? `/${path}` : raw;
+  }
+
+  return raw;
 }
 
 function rewriteCandidateList(value) {
@@ -235,4 +244,4 @@ window.addEventListener('da:route-rendered', () => {
 
 scheduleScan();
 document.documentElement.dataset.performanceProfile = 'container-aware';
-document.documentElement.dataset.imageSourceMode = 'same-origin';
+document.documentElement.dataset.imageSourceMode = 'branch-aware';
