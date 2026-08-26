@@ -12,30 +12,29 @@ Fluxo operacional para criar canecas a partir de imagem, comandos salvos e instr
 
 Versão de teste voltada ao cliente final.
 
-1. O cliente escolhe um dos modelos marcados no Produção em `canecas/modelos_criacao`.
-2. Envia uma foto pela câmera ou galeria.
-3. Digita uma frase opcional.
-4. Informa nome e WhatsApp e autoriza o envio do link dessa criação.
-5. A aplicação combina o modelo visual com a foto e envia ao mesmo cenário Make de canecas.
-6. São geradas quatro imagens: arte horizontal + três mockups.
-7. A caneca é cadastrada em `/produtos/{id}` como inativa, `tipo_produto: caneca_personalizada` e `origem_cadastro: ceneca10_cliente_teste`.
-8. A criação pública sem telefone é salva em `canecas/personalizadas_publicas/{id}`.
-9. Os dados operacionais da solicitação são salvos em `canecas/personalizadas/{id}`.
-10. É criada uma fila em `canecas/whatsapp_fila/{id}` e o site tenta chamar a ação Make `send_mug_customer_whatsapp`.
-11. Se o envio automático ainda não estiver configurado no Make, a criação não trava: o cliente recebe um botão para abrir o próprio WhatsApp com o link pronto.
-12. O botão de encomenda abre o WhatsApp oficial da Dona Antônia: `(65) 99815-0975`.
+1. O cliente escolhe um modelo. A página une os registros de `canecas/modelos_criacao` com as canecas já existentes em `/produtos`, sem excluir produtos inativos.
+2. Todas as canecas criadas que possuem arte ou imagem podem ser escolhidas como modelo.
+3. Ao selecionar um modelo, a página mostra a frase usada nele quando essa informação estiver salva e oferece **Usar esta mesma frase**.
+4. O cliente envia uma foto pela câmera ou galeria.
+5. Informa seu nome para atendimento, um **nome para destacar na caneca** e a frase.
+6. O prompt orienta a IA a manter **foto + nome em destaque** no mesmo lado/polo da composição e a **frase no lado oposto da caneca**.
+7. Antes da geração, o cliente precisa abrir o WhatsApp oficial da Dona Antônia e enviar a mensagem pronta com o código da criação. Ao voltar, confirma o envio para liberar o botão de gerar.
+8. São geradas quatro imagens: arte horizontal + três mockups.
+9. A caneca é cadastrada em `/produtos/{id}` como inativa, `tipo_produto: caneca_personalizada`, `modelo_caneca: true` e `origem_cadastro: ceneca10_cliente_teste`.
+10. Toda nova criação também é salva automaticamente em `canecas/modelos_criacao/{id}`, portanto passa a servir de modelo para as próximas personalizações mesmo continuando inativa.
+11. A criação pública é salva em `canecas/personalizadas_publicas/{id}` e os dados operacionais em `canecas/personalizadas/{id}`.
+12. Depois que o link público existe, o botão final abre o WhatsApp oficial da Dona Antônia com o código e o link das quatro imagens.
 
 ## Página pública de resultado
 
-`resultado.html?id=<id-da-criacao>` mostra somente:
+`resultado.html?id=<id-da-criacao>` mostra:
 
 - arte horizontal;
 - três mockups;
 - modelo escolhido;
+- nome em destaque;
 - frase;
 - botão para encomendar pelo WhatsApp oficial.
-
-O telefone do cliente não é exibido nessa página pública.
 
 ## Configuração do teste
 
@@ -47,6 +46,6 @@ A engrenagem permite salvar o webhook localmente e, opcionalmente, publicá-lo t
 
 **Importante:** a publicação do webhook no Firebase é apenas para esta fase de teste. Antes de levar o recurso ao site principal, o ideal é trocar por um endpoint/proxy protegido para evitar exposição e abuso do webhook do Make.
 
-## WhatsApp automático
+## WhatsApp
 
-O front-end já grava a fila e tenta a ação `send_mug_customer_whatsapp`. Para envio realmente automático, o cenário Make precisa ter uma rota com essa ação conectada a uma API oficial de WhatsApp/WhatsApp Business. Até essa rota existir, o fallback por link mantém o fluxo funcional até o final.
+Não existe fila de envio automático nem rota `send_mug_customer_whatsapp`. O próprio navegador abre `wa.me` apontando para o WhatsApp oficial da Dona Antônia. A mensagem inicial é obrigatória para liberar a criação e serve para captar o contato real do cliente. Após a geração, outro link `wa.me` envia o endereço da página temporária com as quatro imagens.
