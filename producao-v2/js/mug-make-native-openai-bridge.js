@@ -1,8 +1,9 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260825-mug-model-carousel-v10-v13-1-no-block';
+  || '20260826-mug-v14-stable-make';
 
 const MODULES = [
+  './mug-make-client-guard-v14.js',
   './mug-personalizer-v7.js',
   './mug-studio-gallery.js',
   './mug-command-library-v1.js',
