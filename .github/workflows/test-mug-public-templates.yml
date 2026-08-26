@@ -1,0 +1,44 @@
+name: Testar templates públicos de canecas
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'producao-v2/js/mug-public-template-admin-v1.js'
+      - 'producao-v2/admin-produtivo.html'
+      - 'producao/index.html'
+      - 'app-next/src/mug-public-personalization.js'
+      - 'app-next/src/config.js'
+      - '.github/workflows/test-mug-public-templates.yml'
+  workflow_dispatch:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Validar JavaScript
+        run: |
+          node --check producao-v2/js/mug-public-template-admin-v1.js
+          node --check app-next/src/mug-public-personalization.js
+          node --check app-next/src/config.js
+      - name: Validar regras dos templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "canecas/modelos_privados" producao-v2/js/mug-public-template-admin-v1.js
+          grep -q "personalizacao_config_publica" producao-v2/js/mug-public-template-admin-v1.js
+          grep -q "instrucao_ia" producao-v2/js/mug-public-template-admin-v1.js
+          grep -q "modelo_publico" app-next/src/mug-public-personalization.js
+          grep -q "personalizacao_publica" app-next/src/mug-public-personalization.js
+          grep -q "personalize_mug_model" app-next/src/mug-public-personalization.js
+          grep -q "generate_mug_art" app-next/src/mug-public-personalization.js
+          grep -q "situacao:'I'" app-next/src/mug-public-personalization.js
+          grep -q "ativo:false" app-next/src/mug-public-personalization.js
+          grep -q "modelo_publico:false" app-next/src/mug-public-personalization.js
+          grep -q "mugPublicWhatsapp" app-next/src/mug-public-personalization.js
+          grep -q "mug-public-personalization.js" app-next/src/config.js
+          ! grep -q "prompt_privado.*personalizacao_config_publica" producao-v2/js/mug-public-template-admin-v1.js
