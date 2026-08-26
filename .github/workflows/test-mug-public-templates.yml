@@ -4,9 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'producao-v2/js/mug-public-template-admin-v1.js'
+      - 'producao-v2/js/mug-public-template-admin-v2.js'
       - 'producao-v2/admin-produtivo.html'
       - 'producao/index.html'
+      - 'admin/index.html'
       - 'app-next/src/mug-public-personalization.js'
       - 'app-next/src/config.js'
       - '.github/workflows/test-mug-public-templates.yml'
@@ -22,21 +23,25 @@ jobs:
           node-version: '22'
       - name: Validar JavaScript
         run: |
-          node --check producao-v2/js/mug-public-template-admin-v1.js
+          node --check producao-v2/js/mug-public-template-admin-v2.js
           node --check app-next/src/mug-public-personalization.js
           node --check app-next/src/config.js
-      - name: Validar regras dos templates
+      - name: Validar integração do Produção
         shell: bash
         run: |
           set -euo pipefail
-          ADMIN='producao-v2/js/mug-public-template-admin-v1.js'
+          ADMIN='producao-v2/js/mug-public-template-admin-v2.js'
+          LOADER='producao-v2/admin-produtivo.html'
           SITE='app-next/src/mug-public-personalization.js'
+          grep -q "Campos personalizáveis" "$ADMIN"
+          grep -q "data-editor-tab" "$ADMIN"
+          grep -q "editor-section" "$ADMIN"
           grep -q "canecas/modelos_privados" "$ADMIN"
           grep -q "personalizacao_config_publica" "$ADMIN"
-          grep -q "const publicCfg=" "$ADMIN"
-          grep -q "const privatePayload=" "$ADMIN"
-          grep -q "campos:fields.filter(f=>f.publico).map(publicField)" "$ADMIN"
-          grep -q "campos:fields.map(f=>({id:f.id,instrucao_ia:f.instrucao_ia}))" "$ADMIN"
+          grep -q "mugTplEngineV9V2" "$ADMIN"
+          grep -q "mug-public-template-admin-v2.js" "$LOADER"
+          grep -q "20260826-mug-template-visible-v2" producao/index.html
+          grep -q "20260826-mug-template-visible-v2" admin/index.html
           grep -q "modelo_publico" "$SITE"
           grep -q "personalizacao_publica" "$SITE"
           grep -q "personalize_mug_model" "$SITE"
