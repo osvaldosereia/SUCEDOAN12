@@ -3,7 +3,7 @@ const IS_PRODUCTION = !RUNTIME_PATH.includes('/app-next/');
 
 export const CONFIG = Object.freeze({
   APP_NAME: 'Dona Antônia',
-  APP_VERSION: IS_PRODUCTION ? '2026-08-26-mug-public-templates-v1' : '2026-08-26-mug-public-templates-v1-preview',
+  APP_VERSION: IS_PRODUCTION ? '2026-08-26-mug-public-personalization-v2' : '2026-08-26-mug-public-personalization-v2-preview',
   ENVIRONMENT: IS_PRODUCTION ? 'production' : 'preview',
   IS_PRODUCTION,
   SITE_BASE_URL: 'https://donaantonia.com.br',
@@ -16,6 +16,7 @@ export const CONFIG = Object.freeze({
     CATALOG_VERSION: '../catalog-version.json',
     APP_VERSION: '../site/app-version.json',
     MAKE_ORDER: 'https://hook.eu1.make.com/cmjv3cc829ocf26vo1h8fs61n5lkt6hc',
+    MUG_PERSONALIZATION: 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4',
     CLIENT_LOOKUP: 'https://hook.eu1.make.com/1wfehhacklarj1h4c78xrh4f7yjdlp9v',
     FIREBASE_ORDERS: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com/pedidos'
   }),
@@ -65,7 +66,7 @@ export const ROUTINES = Object.freeze({
 
 if (typeof window !== 'undefined') {
   queueMicrotask(() => {
-    import('./mug-public-personalization.js?v=20260826-1')
+    import('./mug-public-personalization-v2.js?v=20260826-2')
       .catch(error => console.error('Falha ao carregar o personalizador público de canecas:', error));
   });
 }
