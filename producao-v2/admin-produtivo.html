@@ -12,11 +12,11 @@
   </style>
 </head>
 <body>
-  <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e exclusão segura.</small></main>
+  <main><strong>Abrindo o Admin oficial…</strong><small>Carregando produtos, preço de venda, estoque e personalização de canecas.</small></main>
   <script>
     (async function () {
       const params = new URLSearchParams(window.location.search);
-      const BUILD = params.get('admin_build') || '20260825-perf2';
+      const BUILD = params.get('admin_build') || '20260826-mug-public-templates-v1';
 
       function replaceRequired(source, pattern, replacement, label) {
         if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
@@ -63,14 +63,12 @@
           `\n${productiveImports}`,
           'o mapa de importação do Firebase',
         );
-
         html = replaceRequired(
           html,
           /"\/producao-v2\/js\/modules\/products\.js"\s*:\s*"\/producao-v2\/js\/modules\/products\.js\?[^\"]*"\s*,?/,
           `"/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=${BUILD}",`,
           'o módulo da lista de produtos',
         );
-
         html = replaceRequired(
           html,
           /"\/producao-v2\/js\/modules\/stock\.js"\s*:\s*"\/producao-v2\/js\/modules\/stock\.js\?[^\"]*"\s*,?/,
@@ -81,7 +79,7 @@
         html = stripGlobalRouteScript(html, 'kit-editor-flow-v2.js');
         html = stripGlobalRouteScript(html, 'campaign-rules-section.js');
         html = html.replace('<th>Preço</th>', '<th>Preço de venda</th>');
-        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · carregamento otimizado, edição e exclusão segura de produtos.</strong>');
+        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · carregamento otimizado, edição, exclusão segura e templates de canecas.</strong>');
         html = html.replace(/<meta\s+name=["']admin-save-build["'][^>]*>/i, `<meta name="admin-save-build" content="${BUILD}">`);
 
         const enhancements = [
@@ -90,13 +88,13 @@
           ['./js/nfe-import-save-fix.js', true],
           ['./js/alternate-ean-support.js', true],
           ['./js/mug-make-native-openai-bridge.js', true],
+          ['./js/mug-public-template-admin-v1.js', true],
         ];
 
         const extraScripts = enhancements
           .filter(([src]) => !html.includes(`src="${src}`))
           .map(([src, module]) => scriptTag(`${src}?admin_build=${BUILD}`, { module }))
           .join('');
-
         html = html.replace('</body>', `${extraScripts}</body>`);
 
         document.open();
