@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#0b0b0d">
   <meta name="robots" content="noindex,nofollow">
   <title>Caneca 10 · Personalize a sua</title>
-  <link rel="stylesheet" href="./tabs.css?v=20260826-3">
-  <link rel="stylesheet" href="./personalizar.css?v=20260826-3">
-  <link rel="stylesheet" href="./personalizar-v2.css?v=20260826-3">
+  <link rel="stylesheet" href="./tabs.css?v=20260826-4">
+  <link rel="stylesheet" href="./personalizar.css?v=20260826-4">
+  <link rel="stylesheet" href="./personalizar-v2.css?v=20260826-4">
+  <link rel="stylesheet" href="./personalizar-v3.css?v=20260826-4">
 </head>
 <body>
   <div class="app-shell">
@@ -29,12 +30,20 @@
       <section class="hero">
         <span class="pill">Personalizada por você</span>
         <h1>Transforme sua foto em uma caneca única.</h1>
-        <p>Escolha um modelo, envie sua foto e frase e fale com a gente no WhatsApp para liberar sua criação.</p>
+        <p>Escolha qualquer caneca já criada como modelo, envie sua foto, destaque um nome e mantenha a frase no outro lado da caneca.</p>
       </section>
 
       <section class="step-card" id="modelsStep">
-        <div class="step-head"><span class="step-number">1</span><div><strong>Escolha um modelo</strong><small>Deslize para ver os modelos disponíveis.</small></div></div>
+        <div class="step-head"><span class="step-number">1</span><div><strong>Escolha um modelo</strong><small>Modelos salvos e todas as canecas criadas aparecem aqui, mesmo inativas.</small></div></div>
         <div class="models-track" id="modelsTrack"><div class="loading-card">Carregando modelos…</div></div>
+
+        <div class="created-head"><div><strong>Canecas criadas</strong><small>Todas também podem ser usadas como modelo.</small></div></div>
+        <div class="models-track created-track" id="createdTrack"><div class="loading-card">Carregando canecas criadas…</div></div>
+
+        <article class="selected-model-info" id="selectedModelInfo" hidden>
+          <div class="selected-model-top"><div><span>Modelo selecionado</span><strong id="selectedModelName">—</strong></div><small id="selectedModelStatus"></small></div>
+          <div class="model-phrase-box"><span>Frase usada neste modelo</span><p id="selectedModelPhrase">—</p><button type="button" id="useModelPhraseButton">Usar esta mesma frase</button></div>
+        </article>
       </section>
 
       <section class="step-card">
@@ -48,9 +57,10 @@
       </section>
 
       <section class="step-card">
-        <div class="step-head"><span class="step-number">3</span><div><strong>Seu nome e sua frase</strong><small>A frase será usada exatamente na criação.</small></div></div>
-        <label class="field">Seu nome<input id="customerNameInput" autocomplete="name" maxlength="80" placeholder="Seu nome"></label>
-        <label class="field">Frase<textarea id="phraseInput" maxlength="160" placeholder="Ex.: Mãe, seu amor faz tudo florescer."></textarea></label>
+        <div class="step-head"><span class="step-number">3</span><div><strong>Nome e frase da caneca</strong><small>O nome ficará destacado junto da imagem. A frase ficará no lado oposto da caneca.</small></div></div>
+        <label class="field">Seu nome<input id="customerNameInput" autocomplete="name" maxlength="80" placeholder="Seu nome para o atendimento"></label>
+        <label class="field emphasis-field">Nome para destacar na caneca<input id="highlightNameInput" maxlength="60" placeholder="Ex.: Maria, Vovó Lúcia, João Pedro"><small>Será escrito próximo da foto, com destaque e de forma harmoniosa.</small></label>
+        <label class="field">Frase<textarea id="phraseInput" maxlength="160" placeholder="Ex.: Mãe, seu amor faz tudo florescer."></textarea><small>A frase será mantida no outro lado da caneca, separada da foto e do nome.</small></label>
         <div class="char-count"><span id="phraseCount">0</span>/160</div>
       </section>
 
@@ -101,6 +111,6 @@
   </dialog>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./personalizar-v2.js?v=20260826-3" defer></script>
+  <script src="./personalizar-v3.js?v=20260826-4" defer></script>
 </body>
 </html>
