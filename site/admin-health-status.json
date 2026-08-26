@@ -1,27 +1,27 @@
 {
-  "checkedAt": "2026-08-26T14:17:04.107Z",
+  "checkedAt": "2026-08-26T23:43:02.220Z",
   "baseUrl": "https://donaantonia.com.br",
-  "ok": true,
+  "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 101 arquivos JavaScript, imports, desempenho de Produtos e ciclo dos kits confirmados."
+      "detail": "Admin V2 v13.1 validado: 18 abas, 104 arquivos JavaScript, imports, desempenho de Produtos e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787753826559"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787787784494"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787753827038"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787787785151"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787753827116"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787787785230"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -46,17 +46,17 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1581 produto(s)"
+      "detail": "1577 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1792 produto(s) administrativos · 1581 público(s) · campos OK"
+      "detail": "1801 produto(s) administrativos · 1577 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1792 produto(s) em 243 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1801 produto(s) em 266 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
@@ -66,7 +66,7 @@
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-35da0b628dedc717 · público 1581 · admin 1792"
+      "detail": "catalog-1787787167106 · público 1577 · admin 1801"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,17 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "9381 oferta(s) no histórico"
+      "detail": "9469 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
       "ok": true,
-      "detail": "0.6h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "detail": "0.2h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+    },
+    {
+      "name": "Arquitetura por rota do Admin",
+      "ok": false,
+      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
     },
     {
       "name": "Criador de Canecas publicado",
@@ -99,15 +104,21 @@
       "detail": "Entrada dinâmica, navegação, bridge, layout 20/80, 3 colunas e Configuração Make confirmados no domínio."
     }
   ],
-  "errors": [],
+  "errors": [
+    {
+      "name": "Arquitetura por rota do Admin",
+      "ok": false,
+      "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
+    }
+  ],
   "warnings": [],
   "workflow": {
     "event": "push",
-    "runId": "32978725218",
+    "runId": "33024235110",
     "attempt": "1",
-    "sourceSha": "df41f971e7041c13e99227e13cded9f774b43de3",
-    "architecture": "success",
+    "sourceSha": "e78a0438e4e63e871703da56617c6f86c80bdc3c",
+    "architecture": "failure",
     "mugStudio": "success",
-    "publishedAt": "2026-08-26T14:17:12.116Z"
+    "publishedAt": "2026-08-26T23:43:08.526Z"
   }
 }
