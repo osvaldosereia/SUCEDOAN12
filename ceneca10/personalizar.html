@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0d">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Caneca 10 · Personalize a sua</title>
+  <link rel="stylesheet" href="./tabs.css?v=20260826-2">
+  <link rel="stylesheet" href="./personalizar.css?v=20260826-2">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./personalizar.html" aria-label="Caneca 10">
+        <img src="../site/img/logoantonia5.png" alt="Dona Antônia">
+        <div><span>Dona Antônia</span><strong>Caneca 10</strong></div>
+      </a>
+      <button class="icon-button" id="adminSettingsButton" type="button" hidden aria-label="Configurar teste">⚙</button>
+    </header>
+
+    <nav class="app-tabs" aria-label="Áreas do Caneca 10">
+      <a class="app-tab" href="./index.html">Gerador interno</a>
+      <a class="app-tab is-active" href="./personalizar.html">Personalize a sua <span class="beta">TESTE</span></a>
+    </nav>
+
+    <main>
+      <section class="hero">
+        <span class="pill">Personalizada por você</span>
+        <h1>Transforme sua foto em uma caneca única.</h1>
+        <p>Escolha um modelo, envie sua foto e escreva uma frase. Nós criamos a arte e três prévias da sua caneca.</p>
+      </section>
+
+      <section class="step-card" id="modelsStep">
+        <div class="step-head"><span class="step-number">1</span><div><strong>Escolha um modelo</strong><small>Deslize para ver os modelos disponíveis.</small></div></div>
+        <div class="models-track" id="modelsTrack"><div class="loading-card">Carregando modelos…</div></div>
+      </section>
+
+      <section class="step-card">
+        <div class="step-head"><span class="step-number">2</span><div><strong>Envie sua foto</strong><small>Use a câmera ou escolha uma imagem da galeria.</small></div></div>
+        <label class="photo-box" for="customerPhotoInput">
+          <div id="photoEmpty"><span class="photo-plus">＋</span><strong>Câmera ou galeria</strong><small>Prefira uma foto nítida e bem iluminada.</small></div>
+          <img id="customerPhotoPreview" alt="Sua foto" hidden>
+        </label>
+        <input id="customerPhotoInput" type="file" accept="image/*" capture="environment" hidden>
+        <button class="mini-button" id="changePhotoButton" type="button" hidden>Trocar foto</button>
+      </section>
+
+      <section class="step-card">
+        <div class="step-head"><span class="step-number">3</span><div><strong>Escreva a frase</strong><small>Pode ser um nome, data ou mensagem curta.</small></div></div>
+        <textarea id="phraseInput" maxlength="160" placeholder="Ex.: Mãe, seu amor faz tudo florescer."></textarea>
+        <div class="char-count"><span id="phraseCount">0</span>/160</div>
+      </section>
+
+      <section class="step-card">
+        <div class="step-head"><span class="step-number">4</span><div><strong>Para receber sua criação</strong><small>Usamos seu WhatsApp somente para enviar o link desta caneca.</small></div></div>
+        <label class="field">Seu nome<input id="customerNameInput" autocomplete="name" maxlength="80" placeholder="Seu nome"></label>
+        <label class="field">WhatsApp<input id="customerPhoneInput" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(65) 99999-9999"></label>
+        <label class="consent"><input id="whatsappConsentInput" type="checkbox"><span>Autorizo o envio do link desta criação para o WhatsApp informado.</span></label>
+      </section>
+
+      <section class="progress-card" id="progressCard" hidden aria-live="polite">
+        <div class="progress-head"><div><span>Criando sua caneca</span><strong id="progressTitle">Preparando…</strong></div><b id="progressPercent">0%</b></div>
+        <div class="progress-track"><div id="progressBar"></div></div>
+        <p id="progressDetail">A geração pode levar alguns instantes. Mantenha esta página aberta.</p>
+      </section>
+
+      <section class="done-card" id="doneCard" hidden>
+        <span class="done-pill">Pronta ✨</span>
+        <h2>Sua caneca foi criada.</h2>
+        <p id="doneMessage">Preparamos quatro imagens para você conferir.</p>
+        <img id="donePreview" alt="Prévia da caneca">
+        <a class="primary-link" id="viewResultButton" href="#">Ver minhas 4 imagens</a>
+        <a class="whatsapp-link" id="selfWhatsappButton" href="#" target="_blank" rel="noopener">Receber link no meu WhatsApp</a>
+        <a class="order-link" id="orderButton" href="#" target="_blank" rel="noopener">Quero encomendar esta caneca</a>
+        <button class="text-action" id="createAnotherButton" type="button">Criar outra</button>
+      </section>
+
+      <div class="bottom-spacer"></div>
+    </main>
+
+    <footer class="bottom-action" id="bottomAction">
+      <button id="generateButton" class="generate-button" type="button">Criar minha caneca</button>
+      <small>Você verá a prévia antes de encomendar.</small>
+    </footer>
+  </div>
+
+  <dialog id="adminSettingsDialog">
+    <form method="dialog" class="settings-sheet">
+      <div class="sheet-head"><div><span>Modo de teste</span><strong>Automação</strong></div><button value="cancel" aria-label="Fechar">×</button></div>
+      <label class="field">Webhook Make<input id="webhookInput" type="url" inputmode="url" placeholder="https://hook.eu1.make.com/..."></label>
+      <label class="field">Qualidade<select id="qualityInput"><option value="high">Alta</option><option value="medium">Média</option><option value="low">Teste</option></select></label>
+      <label class="consent"><input id="publishWebhookInput" type="checkbox"><span>Disponibilizar este webhook para os clientes desta página de teste.</span></label>
+      <button id="saveAdminSettingsButton" class="settings-save" type="button">Salvar</button>
+      <p class="settings-note">Teste interno: publicar o webhook no Firebase permite que outros celulares usem o gerador. Na implantação final, trocaremos isso por um endpoint protegido.</p>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="./personalizar.js?v=20260826-2" defer></script>
+</body>
+</html>
