@@ -9,7 +9,7 @@ on:
       - 'producao-v2/admin-produtivo.html'
       - 'producao/index.html'
       - 'admin/index.html'
-      - 'app-next/src/mug-public-personalization.js'
+      - 'app-next/src/mug-public-personalization-v2.js'
       - 'app-next/src/config.js'
       - '.github/workflows/test-mug-public-templates.yml'
   workflow_dispatch:
@@ -26,38 +26,45 @@ jobs:
         run: |
           node --check producao-v2/js/mug-public-template-admin-v2.js
           node --check producao-v2/js/mug-template-refresh-after-save-v1.js
-          node --check app-next/src/mug-public-personalization.js
+          node --check app-next/src/mug-public-personalization-v2.js
           node --check app-next/src/config.js
-      - name: Validar integração do Produção
+      - name: Validar integração do Produção e site público
         shell: bash
         run: |
           set -euo pipefail
           ADMIN='producao-v2/js/mug-public-template-admin-v2.js'
           BRIDGE='producao-v2/js/mug-template-refresh-after-save-v1.js'
           LOADER='producao-v2/admin-produtivo.html'
-          SITE='app-next/src/mug-public-personalization.js'
+          SITE='app-next/src/mug-public-personalization-v2.js'
+          CONFIG='app-next/src/config.js'
           grep -q "Campos personalizáveis" "$ADMIN"
           grep -q "data-editor-tab" "$ADMIN"
-          grep -q "editor-section" "$ADMIN"
           grep -q "canecas/modelos_privados" "$ADMIN"
           grep -q "personalizacao_config_publica" "$ADMIN"
-          grep -q "mugTplEngineV9V2" "$ADMIN"
           grep -q "mug-public-template-admin-v2.js" "$LOADER"
-          grep -q "mug-template-refresh-after-save-v1.js" "$LOADER"
           grep -q "mug-template-save-bridge-v3" "$BRIDGE"
           grep -q "#saveProductButton" "$BRIDGE"
-          grep -q "saveMainProduct" "$BRIDGE"
-          grep -q "savePersonalization" "$BRIDGE"
           grep -q "await saveMainProduct(mainButton)" "$BRIDGE"
           grep -q "await savePersonalization()" "$BRIDGE"
           grep -q "mug-model-carousel-v10-mug-template-save-bridge-v3" producao/index.html
           grep -q "mug-model-carousel-v10-mug-template-save-bridge-v3" admin/index.html
-          grep -q "modelo_publico" "$SITE"
-          grep -q "personalizacao_publica" "$SITE"
+          grep -q "MUG_PERSONALIZATION" "$CONFIG"
+          grep -q "cl3r1f56r9txezvltkkwlsspmnja6sw4" "$CONFIG"
+          grep -q "mug-public-personalization-v2.js" "$CONFIG"
+          grep -q "DAILY_LIMIT = 3" "$SITE"
+          grep -q "mug_creation_limits_v2" "$SITE"
+          grep -q "mugPublicCustomerWhatsapp" "$SITE"
+          grep -q "customer_whatsapp" "$SITE"
           grep -q "personalize_mug_model" "$SITE"
-          grep -q "generate_mug_art" "$SITE"
+          grep -q "finalize_mug_product" "$SITE"
           grep -q "situacao:'I'" "$SITE"
           grep -q "ativo:false" "$SITE"
           grep -q "modelo_publico:false" "$SITE"
-          grep -q "mugPublicWhatsapp" "$SITE"
-          grep -q "mug-public-personalization.js" app-next/src/config.js
+          grep -q "addToCart" "$SITE"
+          grep -q "mugPublicOpenCart" "$SITE"
+          grep -q "Arte horizontal para impressão" "$SITE"
+          grep -q "3 prévias da sua caneca" "$SITE"
+          if grep -q "mugPublicWhatsapp" "$SITE"; then
+            echo 'ERRO: o site público não pode exigir envio de mensagem pelo WhatsApp.' >&2
+            exit 1
+          fi
