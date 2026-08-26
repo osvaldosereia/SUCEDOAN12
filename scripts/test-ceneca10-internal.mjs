@@ -7,26 +7,29 @@ const htmlPath = path.join(root, 'ceneca10', 'index.html');
 const appPath = path.join(root, 'ceneca10', 'app-v2.js');
 const galleryPath = path.join(root, 'ceneca10', 'gallery-v4.js');
 const compatPath = path.join(root, 'ceneca10', 'make-response-compat-v3.js');
+const guardPath = path.join(root, 'ceneca10', 'make-client-guard-v5.js');
 const lightPath = path.join(root, 'ceneca10', 'light-v4.css');
 const html = fs.readFileSync(htmlPath, 'utf8');
 const app = fs.readFileSync(appPath, 'utf8');
 const gallery = fs.readFileSync(galleryPath, 'utf8');
 const compat = fs.readFileSync(compatPath, 'utf8');
+const guard = fs.readFileSync(guardPath, 'utf8');
 const light = fs.readFileSync(lightPath, 'utf8');
 const failures = [];
 const requireText = (source, needle, message) => { if (!source.includes(needle)) failures.push(message); };
 const forbidText = (source, needle, message) => { if (source.includes(needle)) failures.push(message); };
 
-for (const file of [appPath, galleryPath, compatPath]) {
+for (const file of [appPath, galleryPath, compatPath, guardPath]) {
   const syntax = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
   if (syntax.status !== 0) failures.push(`${path.basename(file)} possui erro de sintaxe:\n${syntax.stderr || syntax.stdout}`);
 }
 
 requireText(html, 'Gerador interno de canecas', 'A tela não está identificada como gerador interno.');
-requireText(html, 'app-v2.js?v=20260826-4', 'index.html não carrega o controlador interno.');
-requireText(html, 'gallery-v4.js?v=20260826-4', 'index.html não carrega a galeria leve V4.');
-requireText(html, 'light-v4.css?v=20260826-4', 'index.html não carrega o tema claro V4.');
-requireText(html, 'make-response-compat-v3.js?v=20260826-4', 'index.html não carrega a compatibilidade do retorno do Make.');
+requireText(html, 'make-client-guard-v5.js?v=20260826-5', 'index.html não carrega a proteção V5 do Make.');
+requireText(html, 'app-v2.js?v=20260826-5', 'index.html não carrega o controlador interno.');
+requireText(html, 'gallery-v4.js?v=20260826-5', 'index.html não carrega a galeria leve V4.');
+requireText(html, 'light-v4.css?v=20260826-5', 'index.html não carrega o tema claro V4.');
+requireText(html, 'make-response-compat-v3.js?v=20260826-5', 'index.html não carrega a compatibilidade do retorno do Make.');
 requireText(html, 'id="modelsTrack"', 'Caneca10 não mostra os modelos salvos.');
 requireText(html, 'id="createdList"', 'Caneca10 não mostra as canecas criadas.');
 requireText(html, 'id="createdLoadMore"', 'Histórico não possui botão Carregar mais.');
@@ -40,6 +43,9 @@ requireText(light, 'color-scheme:light', 'Caneca10 não está forçando a versã
 requireText(light, '--bg:#f6f4ee', 'Tema claro não possui o fundo definido.');
 requireText(light, '.generate-button{background:#1d6a43', 'Botão principal do tema claro não foi configurado.');
 
+requireText(guard, 'personalize_mug_model', 'Proteção não normaliza a personalização pública.');
+requireText(guard, 'payload.image_base64', 'Proteção não promove a foto do cliente para image_base64.');
+requireText(guard, 'Automação Make falhou', 'Proteção não transforma falhas não-JSON em erro legível.');
 requireText(app, "const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4'", 'Webhook fixo da automação não está configurado.');
 requireText(app, "action: 'generate_mug_art'", 'Gerador não chama generate_mug_art.');
 requireText(app, "mode: 'create_model'", 'Gerador interno não identifica criação de modelo.');
@@ -59,7 +65,7 @@ requireText(gallery, 'const PAGE_SIZE = 4', 'Galeria não inicia com 4 canecas.'
 requireText(gallery, "params.set('limitToLast', String(limit))", 'Consulta não limita o volume lido do Firebase.');
 requireText(gallery, 'async function loadMore()', 'Galeria não possui carregamento progressivo.');
 requireText(gallery, 'state.queryLimit + PAGE_SIZE', 'Carregar mais não avança em lotes de 4.');
-requireText(gallery, "const ARCHIVE_NODE = 'produtos_excluidos'", 'Exclusão não utiliza o arquivo seguro do Produção.');
+requireText(gallery, "const ARCHIVE_NODE = 'produtos_excluidos'", 'Exclusão não utiliza o mesmo arquivo seguro do Produção.');
 requireText(gallery, 'function isInactive(product = {})', 'Galeria não reconhece produtos inativos.');
 requireText(gallery, 'data-delete-created', 'Caneca criada não possui ação de apagar.');
 requireText(gallery, 'async function archiveMug', 'Exclusão segura da caneca não está implementada.');
@@ -87,4 +93,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Caneca10 V4 validado: tema claro, 4 canecas por vez, carregar mais, modelos, inativas e exclusão segura.');
+console.log('Caneca10 V5 validado: tema claro, 4 por vez, Make protegido, modelos, inativas e exclusão segura.');
