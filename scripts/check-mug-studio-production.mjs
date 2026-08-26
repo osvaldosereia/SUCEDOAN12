@@ -69,13 +69,13 @@ await check('/producao/', 'Entrada pública do Produção', {
 
 await check('/producao-v2/admin-produtivo.html', 'Carregador produtivo', {
   required: [
-    "cache:'default'",
+    "cache: 'default'",
     "stripGlobalRouteScript(html, 'kit-editor-flow-v2.js')",
     "stripGlobalRouteScript(html, 'campaign-rules-section.js')",
     'mug-public-template-admin-v2.js',
     'data-editor-tab="mug-personalizacao"',
   ],
-  forbidden: ["cache:'no-store'"],
+  forbidden: ["cache: 'no-store'"],
 });
 
 await check('/producao-v2/js/navigation-v12.js', 'Navegação publicada do Criador', {
