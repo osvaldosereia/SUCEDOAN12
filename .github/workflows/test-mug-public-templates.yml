@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'producao-v2/js/mug-public-template-admin-v2.js'
+      - 'producao-v2/js/mug-template-refresh-after-save-v1.js'
       - 'producao-v2/admin-produtivo.html'
       - 'producao/index.html'
       - 'admin/index.html'
@@ -24,6 +25,7 @@ jobs:
       - name: Validar JavaScript
         run: |
           node --check producao-v2/js/mug-public-template-admin-v2.js
+          node --check producao-v2/js/mug-template-refresh-after-save-v1.js
           node --check app-next/src/mug-public-personalization.js
           node --check app-next/src/config.js
       - name: Validar integração do Produção
@@ -40,6 +42,7 @@ jobs:
           grep -q "personalizacao_config_publica" "$ADMIN"
           grep -q "mugTplEngineV9V2" "$ADMIN"
           grep -q "mug-public-template-admin-v2.js" "$LOADER"
+          grep -q "mug-template-refresh-after-save-v1.js" "$LOADER"
           grep -q "20260826-mug-template-visible-v2" producao/index.html
           grep -q "20260826-mug-template-visible-v2" admin/index.html
           grep -q "modelo_publico" "$SITE"
