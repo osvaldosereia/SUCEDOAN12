@@ -1,0 +1,29 @@
+name: Testar Caneca 10 Interno
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ceneca10/**'
+      - 'scripts/test-ceneca10-internal.mjs'
+      - '.github/workflows/test-ceneca10-internal.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ceneca10-interno-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Validar Caneca 10 interno
+        run: node scripts/test-ceneca10-internal.mjs
