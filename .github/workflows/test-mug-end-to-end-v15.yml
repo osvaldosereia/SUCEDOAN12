@@ -1,17 +1,21 @@
-name: Testar canecas end-to-end V15
+name: Testar canecas CLEAN V16
 
 on:
   push:
     branches: [main]
     paths:
-      - 'app-next/src/mug-public-personalization-v2.js'
+      - 'index.html'
+      - 'app-next/src/mug-public-personalization-v5.js'
+      - 'app-next/src/image-performance.js'
       - 'app-next/src/catalog.js'
       - 'app-next/src/config.js'
-      - 'ceneca10/app-v3.js'
+      - 'ceneca10/app-v4-clean.js'
       - 'ceneca10/index.html'
       - 'ceneca10/gallery-v4.js'
       - 'ceneca10/gallery-refresh-v5.js'
-      - 'producao-v2/js/mug-make-client-guard-v14.js'
+      - 'producao-v2/admin-produtivo.html'
+      - 'producao-v2/js/mug-personalizer-v15-clean.js'
+      - 'producao-v2/js/mug-make-native-openai-bridge.js'
       - 'producao/catalog-sync-admin.js'
       - 'scripts/sincronizar-produtos-home-firebase.mjs'
       - 'scripts/estabilizar-catalogo-publico.mjs'
@@ -24,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: mug-end-to-end-v15-${{ github.ref }}
+  group: mug-clean-v16-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -36,5 +40,5 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Simular geradores e catálogo público
+      - name: Validar stack única de canecas
         run: node scripts/test-mug-end-to-end-v15.mjs
