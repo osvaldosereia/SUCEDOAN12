@@ -8,10 +8,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Caneca 10">
   <meta name="robots" content="noindex,nofollow">
-  <title>Caneca 10 · Gerador Mobile</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=20260826-1">
-  <link rel="stylesheet" href="./tabs.css?v=20260826-2">
+  <title>Caneca 10 · Gerador Interno</title>
+  <link rel="manifest" href="./manifest.webmanifest?v=20260826-2">
+  <link rel="stylesheet" href="./styles.css?v=20260826-2">
 </head>
 <body>
   <div class="app-shell">
@@ -19,24 +18,18 @@
       <div class="brand">
         <img src="../site/img/logoantonia5.png" alt="Dona Antônia">
         <div>
-          <span class="eyebrow">Dona Antônia</span>
+          <span class="eyebrow">Dona Antônia · uso interno</span>
           <h1>Caneca 10</h1>
         </div>
       </div>
-      <button class="icon-button" id="settingsButton" type="button" aria-label="Configurações" title="Configurações">⚙</button>
     </header>
-
-    <nav class="app-tabs" aria-label="Áreas do Caneca 10">
-      <a class="app-tab is-active" href="./index.html">Gerador interno</a>
-      <a class="app-tab" href="./personalizar.html">Personalize a sua <span class="beta">TESTE</span></a>
-    </nav>
 
     <main>
       <section class="hero-card">
         <div>
-          <span class="status-pill">Mobile</span>
-          <h2>Gerador rápido de canecas</h2>
-          <p>Foto → arte horizontal → cadastro → 3 mockups.</p>
+          <span class="status-pill">Mobile · automação conectada</span>
+          <h2>Gerador interno de canecas</h2>
+          <p>O mesmo fluxo do Produção em uma tela simples para celular: referência → arte horizontal → 3 mockups → produto inativo.</p>
         </div>
       </section>
 
@@ -52,7 +45,7 @@
           <div id="cameraEmpty" class="camera-empty">
             <span class="camera-icon">＋</span>
             <strong>Câmera ou galeria</strong>
-            <small>PNG, JPG ou WEBP</small>
+            <small>PNG, JPG ou WEBP · até 25 MB</small>
           </div>
           <img id="imagePreview" alt="Prévia da imagem" hidden>
         </label>
@@ -85,7 +78,7 @@
           </div>
           <span class="optional">opcional</span>
         </div>
-        <textarea id="instructionInput" maxlength="500" placeholder="Ex.: escreva exatamente ‘Eis-me aqui Senhor.’ e use tons de azul."></textarea>
+        <textarea id="instructionInput" maxlength="800" placeholder="Ex.: escreva exatamente ‘Eis-me aqui Senhor.’ e use tons de azul."></textarea>
       </section>
 
       <section class="progress-card" id="progressCard" hidden aria-live="polite">
@@ -140,29 +133,7 @@
     </footer>
   </div>
 
-  <dialog id="settingsDialog" class="settings-dialog">
-    <form method="dialog" class="settings-sheet">
-      <div class="sheet-handle"></div>
-      <div class="sheet-head">
-        <div><span class="eyebrow">Caneca 10</span><h2>Configuração</h2></div>
-        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
-      </div>
-      <label class="field-label">Webhook do Make
-        <input id="webhookInput" type="url" inputmode="url" placeholder="https://hook.eu1.make.com/...">
-      </label>
-      <label class="field-label">Qualidade da arte
-        <select id="qualityInput">
-          <option value="high" selected>Alta</option>
-          <option value="medium">Média</option>
-          <option value="low">Teste</option>
-        </select>
-      </label>
-      <p class="settings-help">O webhook é salvo somente neste navegador. Se você já configurou o Criador de Canecas neste mesmo celular, ele será reaproveitado automaticamente.</p>
-      <button class="primary-sheet-button" id="saveSettingsButton" value="cancel" type="button">Salvar configuração</button>
-    </form>
-  </dialog>
-
   <div class="toast" id="toast" hidden></div>
-  <script src="./app.js?v=20260826-1" defer></script>
+  <script src="./app-v2.js?v=20260826-2" defer></script>
 </body>
 </html>
