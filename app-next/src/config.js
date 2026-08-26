@@ -3,7 +3,7 @@ const IS_PRODUCTION = !RUNTIME_PATH.includes('/app-next/');
 
 export const CONFIG = Object.freeze({
   APP_NAME: 'Dona Antônia',
-  APP_VERSION: IS_PRODUCTION ? '2026-08-26-canecas-clean-v16' : '2026-08-26-canecas-clean-v16-preview',
+  APP_VERSION: IS_PRODUCTION ? '2026-08-26-canecas-clean-v17' : '2026-08-26-canecas-clean-v17-preview',
   ENVIRONMENT: IS_PRODUCTION ? 'production' : 'preview',
   IS_PRODUCTION,
   SITE_BASE_URL: 'https://donaantonia.com.br',
