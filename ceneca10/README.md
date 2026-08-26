@@ -2,36 +2,37 @@
 
 Gerador interno mobile de canecas da Dona Antônia.
 
-## Uso
+## Objetivo
 
-A entrada operacional é apenas `index.html`.
+O `ceneca10/index.html` é a versão para celular do Criador de Canecas do Produção. Ele usa o mesmo Firebase, os mesmos comandos salvos e o mesmo webhook Make.
 
-Fluxo:
+## Recursos
 
-1. escolher uma imagem de inspiração pela câmera ou galeria;
-2. selecionar os mesmos comandos salvos usados pelo Produção em `canecas/comandos_criacao`;
-3. informar uma instrução complementar, se necessário;
-4. gerar a arte horizontal 2400×960;
-5. executar a catalogação visual sem bloquear a criação caso ela falhe;
-6. gerar três mockups: esquerda, direita e centro;
-7. salvar a caneca em `/produtos/{id}` como inativa;
-8. marcar a criação como `modelo_caneca: true`, mas `modelo_publico: false` e `personalizacao_publica: false`;
-9. registrar também o modelo interno em `canecas/modelos_criacao/{id}`.
+- modelos salvos em `canecas/modelos_criacao`;
+- restauração dos comandos e da instrução usados no modelo;
+- câmera ou galeria para a imagem de inspiração;
+- comandos salvos do Produção;
+- instrução complementar;
+- `generate_mug_art`;
+- catalogação visual opcional e sem trava;
+- arte horizontal 2400 × 960;
+- três mockups;
+- produto salvo inicialmente como inativo;
+- histórico mobile das canecas cadastradas, incluindo ativas e inativas;
+- busca e filtro por situação;
+- botão **Usar modelo** nas canecas existentes;
+- botão **Apagar**, com o mesmo princípio seguro do Produção: arquiva primeiro em `produtos_excluidos`, depois remove de `/produtos` e de `canecas/modelos_criacao`.
 
 ## Automação
 
-O webhook Make está definido diretamente em `app-v2.js` para facilitar o uso no celular. Não existe configuração de webhook na interface.
+Webhook fixo no aplicativo:
 
-Ações utilizadas:
+`https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4`
 
-- `generate_mug_art`
-- `analyze_mug_product` — opcional / sem trava
-- `finalize_mug_product`
+Não existe tela de configuração do webhook no celular.
 
-A qualidade é sempre `high`.
+## Observação sobre exclusão
 
-## Página de resultado público
+O botão **Apagar** remove o cadastro da caneca e seus registros de modelo/personalização no Firebase, preservando uma cópia de segurança em `produtos_excluidos`. Os arquivos de imagem que já foram gravados fisicamente no repositório GitHub não são apagados pelo navegador mobile, pois isso exigiria expor uma credencial de escrita do GitHub no site. Essa é deliberadamente mantida fora do código público.
 
-`resultado.html` e `resultado.js` permanecem nesta pasta apenas por compatibilidade com links já gerados pelo personalizador do site principal. Eles não aparecem na navegação do Caneca 10 e não fazem parte do gerador interno.
-
-A antiga aba de teste `personalizar.html` e seus controladores foram removidos.
+A antiga aba pública de teste foi removida do Caneca10. A personalização de clientes pertence ao site principal da Dona Antônia.
