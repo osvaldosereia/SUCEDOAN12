@@ -54,7 +54,7 @@ async function firebaseHeaders() {
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion })
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth-type:jwt-bearer", assertion })
   });
   if (!response.ok) throw new Error(`Google OAuth para Firebase: ${response.status} ${await response.text()}`);
 
@@ -83,9 +83,15 @@ function isActive(product) {
     && product?.ativo !== false && product?.visivel !== false;
 }
 
+function isPublicMugModel(product) {
+  const category = text(product?.categoria ?? product?.category).toLowerCase();
+  return bool(product?.modelo_publico)
+    && (bool(product?.modelo_caneca) || category.includes("caneca"));
+}
+
 function publicImageValue(value) {
   const source = text(value);
-  if (!source) return "";
+  if (!source || /^data:/i.test(source)) return "";
 
   const rawMatch = source.match(/^https:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/(?:main|master)\/(.+)$/i);
   if (rawMatch) return rawMatch[1];
@@ -114,10 +120,26 @@ function publicStock(product) {
 }
 
 function isPubliclyAvailable(product) {
-  return isActive(product) && publicStock(product) > 0 && publicPrice(product) > 0;
+  if (publicPrice(product) <= 0) return false;
+  if (isPublicMugModel(product)) return true;
+  return isActive(product) && publicStock(product) > 0;
+}
+
+function mediaList(product = {}) {
+  const list = [];
+  const push = value => {
+    const normalized = publicImageValue(value);
+    if (normalized && !list.includes(normalized)) list.push(normalized);
+  };
+  [product.url_imagem, product.imagem_url, product.imagem, product.image, product.img, product.foto, product.foto_url, product.imagem_path, product.mockup_1, product.mockup_2, product.mockup_3]
+    .forEach(push);
+  if (Array.isArray(product.imagens)) product.imagens.forEach(push);
+  if (Array.isArray(product.imagens_site)) product.imagens_site.forEach(push);
+  return list;
 }
 
 function compactProduct(key, product = {}) {
+  const media = mediaList(product);
   const compact = {
     firebaseKey: key,
     id: text(product.id || key),
@@ -142,8 +164,16 @@ function compactProduct(key, product = {}) {
     multiplo_venda: integer(product.multiplo_venda, 1),
     quantidade_caixa: integer(product.quantidade_caixa),
     situacao: isActive(product) ? "A" : "I",
-    url_imagem: publicImageValue(product.url_imagem || product.imagem_url || product.imagem || product.image || product.img || product.foto || product.foto_url || product.imagem_path),
-    imagens: Array.isArray(product.imagens) ? product.imagens.map(publicImageValue).filter(Boolean) : [],
+    modelo_caneca: bool(product.modelo_caneca),
+    modelo_publico: bool(product.modelo_publico),
+    personalizacao_publica: bool(product.personalizacao_publica),
+    produto_sob_encomenda: isPublicMugModel(product),
+    url_imagem: media[0] || "",
+    imagens: media,
+    mockup_1: publicImageValue(product.mockup_1),
+    mockup_2: publicImageValue(product.mockup_2),
+    mockup_3: publicImageValue(product.mockup_3),
+    arte_horizontal: publicImageValue(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url),
     descricao: text(product.descricao),
     descricao_curta: text(product.descricao_curta || product.descricao).slice(0, 220),
     descricao_status: text(product.descricao_status),
@@ -198,7 +228,6 @@ function adminProduct(key, product = {}) {
   const compact = compactProduct(key, product);
   delete compact.descricao;
   delete compact.seo_descricao;
-  delete compact.imagens;
   return compact;
 }
 
@@ -226,7 +255,7 @@ async function run() {
     productCount: Object.keys(publicCatalog).length,
     adminProductCount: Object.keys(adminCatalog).length,
     source: "firebase-official-sync",
-    instructions: "Catálogos público e administrativo atualizados automaticamente a partir do Firebase."
+    instructions: "Catálogos atualizados do Firebase; modelos públicos de canecas são tratados como produtos sob encomenda e não dependem de estoque físico."
   };
 
   await Promise.all([
