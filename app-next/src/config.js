@@ -3,7 +3,7 @@ const IS_PRODUCTION = !RUNTIME_PATH.includes('/app-next/');
 
 export const CONFIG = Object.freeze({
   APP_NAME: 'Dona Antônia',
-  APP_VERSION: IS_PRODUCTION ? '2026-08-26-mug-public-personalization-v4-base64-catalog' : '2026-08-26-mug-public-personalization-v4-base64-catalog-preview',
+  APP_VERSION: IS_PRODUCTION ? '2026-08-26-canecas-clean-v16' : '2026-08-26-canecas-clean-v16-preview',
   ENVIRONMENT: IS_PRODUCTION ? 'production' : 'preview',
   IS_PRODUCTION,
   SITE_BASE_URL: 'https://donaantonia.com.br',
@@ -63,14 +63,3 @@ export const ROUTINES = Object.freeze({
     terms: ['sabonete', 'shampoo', 'condicionador', 'creme dental', 'desodorante', 'absorvente', 'hidratante', 'escova']
   }
 });
-
-if (typeof window !== 'undefined') {
-  queueMicrotask(async () => {
-    try {
-      await import('./mug-make-client-guard-v3.js?v=20260826-4');
-      await import('./mug-public-personalization-v2.js?v=20260826-4');
-    } catch (error) {
-      console.error('Falha ao carregar o personalizador público de canecas:', error);
-    }
-  });
-}
