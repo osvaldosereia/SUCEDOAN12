@@ -1,0 +1,34 @@
+name: Testar Caneca 10 Personalizadas
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ceneca10/**"
+      - "scripts/test-ceneca10-personalizadas.mjs"
+      - ".github/workflows/test-ceneca10-personalizadas.yml"
+  pull_request:
+    paths:
+      - "ceneca10/**"
+      - "scripts/test-ceneca10-personalizadas.mjs"
+      - ".github/workflows/test-ceneca10-personalizadas.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ceneca10-personalizadas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Validar fluxo WhatsApp e geração
+        run: node scripts/test-ceneca10-personalizadas.mjs
