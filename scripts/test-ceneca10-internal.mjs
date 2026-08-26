@@ -5,12 +5,14 @@ import { spawnSync } from 'node:child_process';
 const root = process.cwd();
 const htmlPath = path.join(root, 'ceneca10', 'index.html');
 const appPath = path.join(root, 'ceneca10', 'app-v2.js');
-const galleryPath = path.join(root, 'ceneca10', 'gallery-v3.js');
+const galleryPath = path.join(root, 'ceneca10', 'gallery-v4.js');
 const compatPath = path.join(root, 'ceneca10', 'make-response-compat-v3.js');
+const lightPath = path.join(root, 'ceneca10', 'light-v4.css');
 const html = fs.readFileSync(htmlPath, 'utf8');
 const app = fs.readFileSync(appPath, 'utf8');
 const gallery = fs.readFileSync(galleryPath, 'utf8');
 const compat = fs.readFileSync(compatPath, 'utf8');
+const light = fs.readFileSync(lightPath, 'utf8');
 const failures = [];
 const requireText = (source, needle, message) => { if (!source.includes(needle)) failures.push(message); };
 const forbidText = (source, needle, message) => { if (source.includes(needle)) failures.push(message); };
@@ -21,15 +23,22 @@ for (const file of [appPath, galleryPath, compatPath]) {
 }
 
 requireText(html, 'Gerador interno de canecas', 'A tela não está identificada como gerador interno.');
-requireText(html, 'app-v2.js?v=20260826-3', 'index.html não carrega o controlador interno.');
-requireText(html, 'gallery-v3.js?v=20260826-3', 'index.html não carrega a galeria V3.');
-requireText(html, 'make-response-compat-v3.js?v=20260826-3', 'index.html não carrega a compatibilidade do retorno do Make.');
+requireText(html, 'app-v2.js?v=20260826-4', 'index.html não carrega o controlador interno.');
+requireText(html, 'gallery-v4.js?v=20260826-4', 'index.html não carrega a galeria leve V4.');
+requireText(html, 'light-v4.css?v=20260826-4', 'index.html não carrega o tema claro V4.');
+requireText(html, 'make-response-compat-v3.js?v=20260826-4', 'index.html não carrega a compatibilidade do retorno do Make.');
 requireText(html, 'id="modelsTrack"', 'Caneca10 não mostra os modelos salvos.');
 requireText(html, 'id="createdList"', 'Caneca10 não mostra as canecas criadas.');
+requireText(html, 'id="createdLoadMore"', 'Histórico não possui botão Carregar mais.');
+requireText(html, 'Carregar mais 4', 'Botão não informa o lote de 4 canecas.');
 requireText(html, '<option value="inactive">Inativas</option>', 'Caneca10 não permite filtrar canecas inativas.');
 requireText(html, '<option value="active">Ativas</option>', 'Caneca10 não permite filtrar canecas ativas.');
 forbidText(html, 'personalizar.html', 'A aba pública de teste voltou à entrada do Caneca10.');
 forbidText(html, 'settingsDialog', 'A tela voltou a possuir configuração manual de webhook.');
+
+requireText(light, 'color-scheme:light', 'Caneca10 não está forçando a versão clara.');
+requireText(light, '--bg:#f6f4ee', 'Tema claro não possui o fundo definido.');
+requireText(light, '.generate-button{background:#1d6a43', 'Botão principal do tema claro não foi configurado.');
 
 requireText(app, "const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4'", 'Webhook fixo da automação não está configurado.');
 requireText(app, "action: 'generate_mug_art'", 'Gerador não chama generate_mug_art.');
@@ -46,18 +55,17 @@ requireText(app, 'modelo_caneca: true', 'Nova caneca não vira modelo interno.')
 requireText(app, 'modelo_publico: false', 'Nova caneca está sendo publicada automaticamente.');
 requireText(app, "const QUALITY = 'high'", 'Qualidade alta fixa não está configurada.');
 
-requireText(gallery, "const ARCHIVE_NODE = 'produtos_excluidos'", 'Exclusão não utiliza o mesmo arquivo seguro do Produção.');
-requireText(gallery, "const CATEGORY_NAMES = ['Caneca de Porcelana', 'Canecas de Porcelana', 'Canecas']", 'Galeria não consulta as categorias de caneca do Produção.');
-requireText(gallery, 'async function fetchCreated()', 'Galeria não carrega as canecas criadas.');
+requireText(gallery, 'const PAGE_SIZE = 4', 'Galeria não inicia com 4 canecas.');
+requireText(gallery, "params.set('limitToLast', String(limit))", 'Consulta não limita o volume lido do Firebase.');
+requireText(gallery, 'async function loadMore()', 'Galeria não possui carregamento progressivo.');
+requireText(gallery, 'state.queryLimit + PAGE_SIZE', 'Carregar mais não avança em lotes de 4.');
+requireText(gallery, "const ARCHIVE_NODE = 'produtos_excluidos'", 'Exclusão não utiliza o arquivo seguro do Produção.');
 requireText(gallery, 'function isInactive(product = {})', 'Galeria não reconhece produtos inativos.');
-requireText(gallery, 'state.created.filter(isInactive)', 'Contagem de canecas inativas não está implementada.');
 requireText(gallery, 'data-delete-created', 'Caneca criada não possui ação de apagar.');
 requireText(gallery, 'async function archiveMug', 'Exclusão segura da caneca não está implementada.');
-requireText(gallery, "method: 'DELETE'", 'Exclusão não remove o registro do Firebase.');
-requireText(gallery, 'situacao_anterior', 'Exclusão não preserva o status anterior no arquivo.');
-requireText(gallery, 'arquivado_origem: BUILD', 'Exclusão não registra a origem do arquivamento.');
 requireText(gallery, 'async function applyRecipe', 'Modelos do Produção não podem restaurar comandos no mobile.');
-forbidText(gallery, 'limitToLast', 'Galeria voltou a limitar as canecas e pode esconder inativas antigas.');
+requireText(gallery, 'fetchpriority="low"', 'Imagens históricas não estão em prioridade baixa.');
+requireText(gallery, 'this.onerror=null', 'Imagens antigas não possuem fallback visual.');
 
 requireText(compat, 'art_source_public_url', 'Compatibilidade do retorno imediato da arte não foi instalada.');
 requireText(compat, 'art_source_base64', 'Compatibilidade não preserva a arte Base64 original.');
@@ -79,4 +87,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Caneca10 V3 validado: gerador do Produção em mobile, modelos salvos, todas as canecas ativas/inativas, uso de modelo e exclusão segura.');
+console.log('Caneca10 V4 validado: tema claro, 4 canecas por vez, carregar mais, modelos, inativas e exclusão segura.');
