@@ -59,11 +59,15 @@ async function check(pathname, name, rules) {
 
 await check('/producao/', 'Entrada pública do Produção', {
   required: [
-    'var build = String(Date.now());',
-    "destination.searchParams.set('admin_build', build)",
-    "destination.searchParams.set('save_build', build)",
+    'var RELEASE = ',
+    "destination.searchParams.set('admin_build', RELEASE)",
+    "destination.searchParams.set('save_build', RELEASE)",
+    'no-cache, must-revalidate',
   ],
-  forbidden: ["destination.searchParams.set('admin_build', '2026"],
+  forbidden: [
+    'var build = String(Date.now());',
+    'no-store',
+  ],
 });
 
 await check('/producao-v2/js/navigation-v12.js', 'Navegação publicada do Criador', {
