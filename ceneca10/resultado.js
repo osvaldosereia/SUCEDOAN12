@@ -8,7 +8,7 @@
   const text = value => String(value ?? '').trim();
   const orderUrl = data => {
     const url = location.href;
-    const msg = `Olá! Quero encomendar esta caneca personalizada.\nCódigo: ${data.id || id}\n${data.nome_publico ? `Nome da criação: ${data.nome_publico}\n` : ''}Link: ${url}`;
+    const msg = `Olá! Quero encomendar esta caneca personalizada.\nCódigo: ${data.id || id}\n${data.nome_publico ? `Nome da criação: ${data.nome_publico}\n` : ''}${data.nome_destaque ? `Nome em destaque: ${data.nome_destaque}\n` : ''}Link: ${url}`;
     return `https://wa.me/${BUSINESS_WHATSAPP}?text=${encodeURIComponent(msg)}`;
   };
   async function load() {
@@ -25,6 +25,7 @@
     $('publicMockup2').src = urls[2];
     $('publicMockup3').src = urls[3];
     $('publicModel').textContent = data.modelo_nome || 'Modelo personalizado';
+    $('publicHighlightName').textContent = data.nome_destaque || 'Sem nome destacado';
     $('publicPhrase').textContent = data.frase || 'Sem frase';
     $('publicOrderButton').href = orderUrl(data);
     $('resultLoading').hidden = true;
