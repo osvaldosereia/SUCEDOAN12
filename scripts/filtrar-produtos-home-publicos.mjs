@@ -7,6 +7,7 @@ const number = value => {
   const parsed = Number(String(value ?? '').replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : 0;
 };
+const bool = value => value === true || value === 1 || ['1', 'true', 'sim', 'yes'].includes(text(value).toLowerCase());
 
 function active(product) {
   const situation = text(product?.situacao ?? product?.status ?? 'A').toUpperCase();
@@ -14,8 +15,17 @@ function active(product) {
     && product?.ativo !== false && product?.visivel !== false;
 }
 
+function publicMugModel(product) {
+  const category = text(product?.categoria ?? product?.category).toLowerCase();
+  return bool(product?.modelo_publico)
+    && (bool(product?.modelo_caneca) || category.includes('caneca'));
+}
+
 function available(product) {
-  return active(product) && number(product?.estoque) > 0 && number(product?.preco ?? product?.price ?? product?.valor) > 0;
+  const priceOk = number(product?.preco ?? product?.price ?? product?.valor) > 0;
+  if (!priceOk) return false;
+  if (publicMugModel(product)) return true;
+  return active(product) && number(product?.estoque) > 0;
 }
 
 const raw = JSON.parse(await readFile(path, 'utf8'));
@@ -33,7 +43,7 @@ try {
     updatedAt: new Date().toISOString(),
     productCount: count,
     source: 'automatic-offers-filtered',
-    instructions: 'Ofertas processadas e catálogo público filtrado para produtos ativos, com estoque e preço.'
+    instructions: 'Ofertas processadas; produtos comuns exigem estoque, enquanto modelos públicos de caneca permanecem disponíveis sob encomenda.'
   };
   await writeFile(versionPath, `${JSON.stringify(updated, null, 2)}\n`, 'utf8');
 } catch (error) {
