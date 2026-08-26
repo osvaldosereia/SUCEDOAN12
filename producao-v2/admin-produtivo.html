@@ -17,94 +17,21 @@
     (async function () {
       const params = new URLSearchParams(window.location.search);
       const BUILD = params.get('admin_build') || '20260826-mug-public-templates-v1';
-
-      function replaceRequired(source, pattern, replacement, label) {
-        if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`);
-        return source.replace(pattern, replacement);
-      }
-
-      function scriptTag(src, { module = false } = {}) {
-        const open = '<scr' + 'ipt';
-        const close = '</scr' + 'ipt>';
-        return `${open}${module ? ' type="module"' : ''} src="${src}">${close}`;
-      }
-
-      function stripGlobalRouteScript(source, filename) {
-        const escaped = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const pattern = new RegExp(`<script\\b[^>]*\\bsrc=["']\\.\\/js\\/${escaped}(?:\\?[^"']*)?["'][^>]*><\\/script>\\s*`, 'i');
-        return source.replace(pattern, '');
-      }
-
-      function normalizeProductiveBuild(source) {
-        let next = source.replace(
-          /(:\s*")((?:\/producao-v2\/js\/)[^"?]+\.js)(?:\?admin_build=[^"]*)?"/g,
-          (_match, prefix, target) => `${prefix}${target}?admin_build=${BUILD}"`,
-        );
-        next = next.replace(
-          /(src|href)="(\.\/(?:js|assets)\/[^"?]+|\.\/admin-ux\.js)(?:\?admin_build=[^"]*)?"/g,
-          (_match, attribute, target) => `${attribute}="${target}?admin_build=${BUILD}"`,
-        );
-        return next;
-      }
-
+      function replaceRequired(source, pattern, replacement, label) { if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`); return source.replace(pattern, replacement); }
+      function scriptTag(src, { module = false } = {}) { const open='<scr'+'ipt',close='</scr'+'ipt>'; return `${open}${module?' type="module"':''} src="${src}">${close}`; }
+      function stripGlobalRouteScript(source, filename) { const escaped=filename.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); const pattern=new RegExp(`<script\\b[^>]*\\bsrc=["']\\.\\/js\\/${escaped}(?:\\?[^"']*)?["'][^>]*><\\/script>\\s*`,'i'); return source.replace(pattern,''); }
+      function normalizeProductiveBuild(source) { let next=source.replace(/(:\s*")((?:\/producao-v2\/js\/)[^"?]+\.js)(?:\?admin_build=[^"]*)?"/g,(_m,p,t)=>`${p}${t}?admin_build=${BUILD}"`); next=next.replace(/(src|href)="(\.\/(?:js|assets)\/[^"?]+|\.\/admin-ux\.js)(?:\?admin_build=[^"]*)?"/g,(_m,a,t)=>`${a}="${t}?admin_build=${BUILD}"`); return next; }
       try {
-        const response = await fetch(`./index.html?admin_base=${encodeURIComponent(BUILD)}`, { cache: 'default' });
-        if (!response.ok) throw new Error(`Admin base retornou ${response.status}`);
-        let html = normalizeProductiveBuild(await response.text());
-
-        const productiveImports = [
-          `      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase-productive.js?admin_build=${BUILD}",`,
-          `      "/producao-v2/js/services/collections.js": "/producao-v2/js/services/collections.js?admin_build=${BUILD}",`,
-        ].join('\n');
-
-        html = replaceRequired(
-          html,
-          /\s*"\/producao-v2\/js\/services\/firebase\.js"\s*:\s*"\/producao-v2\/js\/services\/firebase(?:-productive)?\.js\?[^\"]*"\s*,?/,
-          `\n${productiveImports}`,
-          'o mapa de importação do Firebase',
-        );
-        html = replaceRequired(
-          html,
-          /"\/producao-v2\/js\/modules\/products\.js"\s*:\s*"\/producao-v2\/js\/modules\/products\.js\?[^\"]*"\s*,?/,
-          `"/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=${BUILD}",`,
-          'o módulo da lista de produtos',
-        );
-        html = replaceRequired(
-          html,
-          /"\/producao-v2\/js\/modules\/stock\.js"\s*:\s*"\/producao-v2\/js\/modules\/stock\.js\?[^\"]*"\s*,?/,
-          `"/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=${BUILD}"`,
-          'o módulo de estoque',
-        );
-
-        html = stripGlobalRouteScript(html, 'kit-editor-flow-v2.js');
-        html = stripGlobalRouteScript(html, 'campaign-rules-section.js');
-        html = html.replace('<th>Preço</th>', '<th>Preço de venda</th>');
-        html = html.replace('Sistema oficial v13.1.</strong>', 'Sistema oficial v13.1 · carregamento otimizado, edição, exclusão segura e templates de canecas.</strong>');
-        html = html.replace(/<meta\s+name=["']admin-save-build["'][^>]*>/i, `<meta name="admin-save-build" content="${BUILD}">`);
-
-        const enhancements = [
-          ['./js/product-delete-filter-v2.js', false],
-          ['./js/nfe-image-make-fix.js', true],
-          ['./js/nfe-import-save-fix.js', true],
-          ['./js/alternate-ean-support.js', true],
-          ['./js/mug-make-native-openai-bridge.js', true],
-          ['./js/mug-public-template-admin-v1.js', true],
-        ];
-
-        const extraScripts = enhancements
-          .filter(([src]) => !html.includes(`src="${src}`))
-          .map(([src, module]) => scriptTag(`${src}?admin_build=${BUILD}`, { module }))
-          .join('');
-        html = html.replace('</body>', `${extraScripts}</body>`);
-
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (error) {
-        console.error(error);
-        const message = String(error?.message || error);
-        document.body.innerHTML = `<main><strong>Não foi possível abrir o Admin</strong><small>${message}</small><p><a href="./index.html?admin_fallback=${BUILD}">Abrir versão padrão</a></p></main>`;
-      }
+        const response=await fetch(`./index.html?admin_base=${encodeURIComponent(BUILD)}`,{cache:'default'}); if(!response.ok)throw new Error(`Admin base retornou ${response.status}`); let html=normalizeProductiveBuild(await response.text());
+        const productiveImports=[`      "/producao-v2/js/services/firebase.js": "/producao-v2/js/services/firebase-productive.js?admin_build=${BUILD}",`,`      "/producao-v2/js/services/collections.js": "/producao-v2/js/services/collections.js?admin_build=${BUILD}",`].join('\n');
+        html=replaceRequired(html,/\s*"\/producao-v2\/js\/services\/firebase\.js"\s*:\s*"\/producao-v2\/js\/services\/firebase(?:-productive)?\.js\?[^\"]*"\s*,?/,`\n${productiveImports}`,'o mapa de importação do Firebase');
+        html=replaceRequired(html,/"\/producao-v2\/js\/modules\/products\.js"\s*:\s*"\/producao-v2\/js\/modules\/products\.js\?[^\"]*"\s*,?/,`"/producao-v2/js/modules/products.js": "/producao-v2/js/modules/products.js?admin_build=${BUILD}",`,'o módulo da lista de produtos');
+        html=replaceRequired(html,/"\/producao-v2\/js\/modules\/stock\.js"\s*:\s*"\/producao-v2\/js\/modules\/stock\.js\?[^\"]*"\s*,?/,`"/producao-v2/js/modules/stock.js": "/producao-v2/js/modules/stock.js?admin_build=${BUILD}"`,'o módulo de estoque');
+        html=stripGlobalRouteScript(html,'kit-editor-flow-v2.js'); html=stripGlobalRouteScript(html,'campaign-rules-section.js'); html=html.replace('<th>Preço</th>','<th>Preço de venda</th>'); html=html.replace('Sistema oficial v13.1.</strong>','Sistema oficial v13.1 · carregamento otimizado, edição, exclusão segura e templates de canecas.</strong>'); html=html.replace(/<meta\s+name=["']admin-save-build["'][^>]*>/i,`<meta name="admin-save-build" content="${BUILD}">`);
+        const enhancements=[['./js/product-delete-filter-v2.js',false],['./js/nfe-image-make-fix.js',true],['./js/nfe-import-save-fix.js',true],['./js/alternate-ean-support.js',true],['./js/mug-make-native-openai-bridge.js',true],['./js/mug-public-template-admin-v1.js',true],['./js/mug-template-engine-control-v1.js',true]];
+        const extraScripts=enhancements.filter(([src])=>!html.includes(`src="${src}`)).map(([src,module])=>scriptTag(`${src}?admin_build=${BUILD}`,{module})).join(''); html=html.replace('</body>',`${extraScripts}</body>`);
+        document.open(); document.write(html); document.close();
+      } catch(error) { console.error(error); const message=String(error?.message||error); document.body.innerHTML=`<main><strong>Não foi possível abrir o Admin</strong><small>${message}</small><p><a href="./index.html?admin_fallback=${BUILD}">Abrir versão padrão</a></p></main>`; }
     }());
   </script>
 </body>
