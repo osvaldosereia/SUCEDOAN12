@@ -10,9 +10,22 @@ function escapeHtml(value) {
 function localAsset(value) {
   const raw = text(value);
   if (!raw) return '';
-  let match = raw.match(/^https?:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/[^/]+\/(.+)$/i);
-  if (!match) match = raw.match(/^https?:\/\/github\.com\/osvaldosereia\/SUCEDOAN12\/(?:raw|blob)\/[^/]+\/(.+)$/i);
-  return match?.[1] ? `/${match[1].replace(/^\/+/, '')}` : raw;
+
+  let match = raw.match(/^https?:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/([^/]+)\/(.+)$/i);
+  if (match) {
+    const branch = decodeURIComponent(String(match[1] || ''));
+    const path = String(match[2] || '').replace(/^\/+/, '');
+    return branch === 'main' && path ? `/${path}` : raw;
+  }
+
+  match = raw.match(/^https?:\/\/github\.com\/osvaldosereia\/SUCEDOAN12\/(?:raw|blob)\/([^/]+)\/(.+)$/i);
+  if (match) {
+    const branch = decodeURIComponent(String(match[1] || ''));
+    const path = String(match[2] || '').replace(/^\/+/, '');
+    return branch === 'main' && path ? `/${path}` : raw;
+  }
+
+  return raw;
 }
 
 function productImages(raw = {}) {
@@ -20,7 +33,7 @@ function productImages(raw = {}) {
     ? raw.imagens_site
     : Array.isArray(raw.imagens) && raw.imagens.length
       ? raw.imagens
-      : [raw.url_imagem, raw.imagem_url, raw.imagem];
+      : [raw.mockup_1, raw.mockup_2, raw.mockup_3, raw.url_imagem, raw.imagem_url, raw.imagem];
   return [...new Set(preferred.map(localAsset).filter(Boolean))].slice(0, MAX_SITE_IMAGES);
 }
 
@@ -88,7 +101,7 @@ async function enhanceCurrentProduct() {
   if (!reference) return;
   const request = ++activeRequest;
   try {
-    const response = await fetch(`${FIREBASE_PRODUCTS_URL}/${encodeURIComponent(reference)}.json`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+    const response = await fetch(`${FIREBASE_PRODUCTS_URL}/${encodeURIComponent(reference)}.json?_=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
     if (!response.ok) return;
     const raw = await response.json();
     if (!raw || request !== activeRequest || reference !== routeReference()) return;
@@ -113,3 +126,5 @@ window.addEventListener('da:route-rendered', enhanceCurrentProduct);
 window.addEventListener('hashchange', () => setTimeout(enhanceCurrentProduct, 0));
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enhanceCurrentProduct, { once: true });
 else enhanceCurrentProduct();
+
+export { localAsset, productImages, enhanceCurrentProduct };
