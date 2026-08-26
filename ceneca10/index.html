@@ -3,15 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b0b0d">
+  <meta name="theme-color" content="#f6f4ee">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Caneca 10">
   <meta name="robots" content="noindex,nofollow">
   <title>Caneca 10 · Gerador Interno</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=20260826-3">
-  <link rel="stylesheet" href="./styles.css?v=20260826-3">
-  <link rel="stylesheet" href="./gallery-v3.css?v=20260826-3">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260826-4">
+  <link rel="stylesheet" href="./styles.css?v=20260826-4">
+  <link rel="stylesheet" href="./gallery-v3.css?v=20260826-4">
+  <link rel="stylesheet" href="./light-v4.css?v=20260826-4">
 </head>
 <body>
   <div class="app-shell">
@@ -30,7 +31,7 @@
         <div>
           <span class="status-pill">Mobile · mesmo fluxo do Produção</span>
           <h2>Gerador interno de canecas</h2>
-          <p>Modelos salvos, imagem de inspiração, comandos, arte horizontal, 3 mockups e histórico das canecas criadas.</p>
+          <p>Modelos salvos, imagem de inspiração, comandos, arte horizontal, 3 mockups e histórico leve das canecas.</p>
         </div>
       </section>
 
@@ -146,7 +147,7 @@
           <div>
             <span class="eyebrow">Histórico</span>
             <h2>Canecas criadas</h2>
-            <small>Ativas e inativas do mesmo Firebase do Produção.</small>
+            <small>Carrega somente 4 por vez, incluindo as inativas.</small>
           </div>
           <div class="library-actions">
             <span class="library-count" id="createdCount">0</span>
@@ -154,16 +155,19 @@
           </div>
         </div>
         <div class="history-controls">
-          <input id="createdSearch" type="search" placeholder="Buscar caneca..." autocomplete="off">
+          <input id="createdSearch" type="search" placeholder="Buscar nas carregadas..." autocomplete="off">
           <select id="createdFilter" aria-label="Filtrar canecas">
             <option value="all">Todas</option>
             <option value="inactive">Inativas</option>
             <option value="active">Ativas</option>
           </select>
         </div>
-        <p class="history-status" id="createdStatus">Carregando canecas, inclusive inativas…</p>
+        <p class="history-status" id="createdStatus">Carregando 4 canecas…</p>
         <div class="created-mobile-list" id="createdList">
           <div class="history-empty">Carregando histórico do Produção…</div>
+        </div>
+        <div class="load-more-wrap">
+          <button class="load-more-button" id="createdLoadMore" type="button" hidden>Carregar mais 4</button>
         </div>
       </section>
 
@@ -178,8 +182,8 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./make-response-compat-v3.js?v=20260826-3"></script>
-  <script src="./app-v2.js?v=20260826-3" defer></script>
-  <script src="./gallery-v3.js?v=20260826-3" defer></script>
+  <script src="./make-response-compat-v3.js?v=20260826-4"></script>
+  <script src="./app-v2.js?v=20260826-4" defer></script>
+  <script src="./gallery-v4.js?v=20260826-4" defer></script>
 </body>
 </html>
