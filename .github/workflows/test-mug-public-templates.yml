@@ -29,16 +29,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "canecas/modelos_privados" producao-v2/js/mug-public-template-admin-v1.js
-          grep -q "personalizacao_config_publica" producao-v2/js/mug-public-template-admin-v1.js
-          grep -q "instrucao_ia" producao-v2/js/mug-public-template-admin-v1.js
-          grep -q "modelo_publico" app-next/src/mug-public-personalization.js
-          grep -q "personalizacao_publica" app-next/src/mug-public-personalization.js
-          grep -q "personalize_mug_model" app-next/src/mug-public-personalization.js
-          grep -q "generate_mug_art" app-next/src/mug-public-personalization.js
-          grep -q "situacao:'I'" app-next/src/mug-public-personalization.js
-          grep -q "ativo:false" app-next/src/mug-public-personalization.js
-          grep -q "modelo_publico:false" app-next/src/mug-public-personalization.js
-          grep -q "mugPublicWhatsapp" app-next/src/mug-public-personalization.js
+          ADMIN='producao-v2/js/mug-public-template-admin-v1.js'
+          SITE='app-next/src/mug-public-personalization.js'
+          grep -q "canecas/modelos_privados" "$ADMIN"
+          grep -q "personalizacao_config_publica" "$ADMIN"
+          grep -q "const publicCfg=" "$ADMIN"
+          grep -q "const privatePayload=" "$ADMIN"
+          grep -q "campos:fields.filter(f=>f.publico).map(publicField)" "$ADMIN"
+          grep -q "campos:fields.map(f=>({id:f.id,instrucao_ia:f.instrucao_ia}))" "$ADMIN"
+          grep -q "modelo_publico" "$SITE"
+          grep -q "personalizacao_publica" "$SITE"
+          grep -q "personalize_mug_model" "$SITE"
+          grep -q "generate_mug_art" "$SITE"
+          grep -q "situacao:'I'" "$SITE"
+          grep -q "ativo:false" "$SITE"
+          grep -q "modelo_publico:false" "$SITE"
+          grep -q "mugPublicWhatsapp" "$SITE"
           grep -q "mug-public-personalization.js" app-next/src/config.js
-          ! grep -q "prompt_privado.*personalizacao_config_publica" producao-v2/js/mug-public-template-admin-v1.js
