@@ -43,20 +43,35 @@ function productExpiry(raw) {
   return candidates.find(value => String(value ?? '').trim()) || '';
 }
 
+function truthy(value) {
+  return value === true || value === 1 || ['1', 'true', 'sim', 'yes'].includes(String(value ?? '').trim().toLowerCase());
+}
+
+function isPublicMugModel(raw = {}) {
+  const category = String(raw.categoria || raw.category || '').toLowerCase();
+  return truthy(raw.modelo_publico) && (truthy(raw.modelo_caneca) || truthy(raw.produto_sob_encomenda) || category.includes('caneca'));
+}
+
 function productImages(raw, product) {
   const images = [];
   const push = value => {
     const path = String(value ?? '').trim();
-    if (!path || /site\/tmp\/ia-referencias\//i.test(path)) return;
+    if (!path || /site\/tmp\/ia-referencias\//i.test(path) || /^data:/i.test(path)) return;
     const url = assetUrl(path);
     if (url && !images.includes(url)) images.push(url);
   };
   push(raw.url_imagem);
   push(raw.imagem_url || raw.urlImagem);
   push(raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url);
+  push(raw.mockup_1);
+  push(raw.mockup_2);
+  push(raw.mockup_3);
   if (Array.isArray(raw.imagens)) raw.imagens.forEach(push);
+  if (Array.isArray(raw.imagens_site)) raw.imagens_site.forEach(push);
   if (Array.isArray(raw.images)) raw.images.forEach(push);
+  if (Array.isArray(raw.midias_admin)) raw.midias_admin.forEach(push);
   if (!images.length && raw.imagem_path) push(raw.imagem_path);
+  if (!images.length) push(raw.arte_horizontal || raw.arte_personalizacao || raw.arte_impressao?.url);
   const code = String(product.codigo || product.id || '').trim();
   if (!images.length && code) {
     push(`img/produtos_2/${encodeURIComponent(code)}.webp`);
@@ -122,7 +137,7 @@ export function normalizeProducts(raw) {
     : Object.entries(raw || {});
   return entries
     .map(([key, value], index) => normalizeProduct(value || {}, key, index))
-    .filter(product => String(product.situacao).toUpperCase() !== 'I')
+    .filter(product => String(product.situacao).toUpperCase() !== 'I' || isPublicMugModel(product.raw))
     .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
