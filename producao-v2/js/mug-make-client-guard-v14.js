@@ -1,10 +1,21 @@
-const BUILD = '20260826-mug-make-client-guard-v14';
+const BUILD = '20260826-mug-make-client-guard-v14-accepted-poll';
 const TARGET = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const STORAGE_KEY = 'da_admin_v2_mug_make_webhook';
+const FALLBACK_FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
+const FINAL_TIMEOUT_MS = 150000;
+const POLL_MS = 1800;
 
 function text(value){ return String(value ?? '').trim(); }
-function cleanSnippet(raw=''){
-  return text(raw).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,180);
+function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
+function cleanSnippet(raw=''){ return text(raw).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').slice(0,180); }
+function isUrl(value){ return /^https?:\/\//i.test(text(value)) && !text(value).startsWith('__MUG_'); }
+function payloadFrom(init={}){
+  if (typeof init?.body !== 'string') return null;
+  try {
+    const outer = JSON.parse(init.body || '{}');
+    const payload = typeof outer.payload === 'string' ? JSON.parse(outer.payload) : outer.payload;
+    return payload && typeof payload === 'object' ? payload : null;
+  } catch { return null; }
 }
 function normalizeRequest(init={}){
   if (typeof init?.body !== 'string') return init;
@@ -21,6 +32,52 @@ function normalizeRequest(init={}){
     return { ...init, body: JSON.stringify({ ...outer, payload: JSON.stringify(payload) }) };
   } catch { return init; }
 }
+function urlsFromProduct(product={}){
+  const art = text(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url || product.art_url || product.arte_url);
+  const m1 = text(product.mockup_1 || product.url_imagem || product.imagem || product.imagens?.[0]);
+  const m2 = text(product.mockup_2 || product.imagens?.[1]);
+  const m3 = text(product.mockup_3 || product.imagens?.[2]);
+  return { art, m1, m2, m3 };
+}
+async function waitFinalProduct(payload, fetcher){
+  const id = text(payload?.request_id);
+  if (!id) return null;
+  const base = text(payload.firebase_url || FALLBACK_FIREBASE).replace(/\/+$/,'');
+  const node = text(payload.products_node || 'produtos').replace(/^\/+|\/+$/g,'').replace(/\.json$/i,'') || 'produtos';
+  const deadline = Date.now() + FINAL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    try {
+      const url = `${base}/${node}/${encodeURIComponent(id)}.json?_=${Date.now()}`;
+      const response = await fetcher(url, { cache:'no-store', headers:{ Accept:'application/json' } });
+      if (response.ok) {
+        const product = await response.json().catch(() => null);
+        const urls = urlsFromProduct(product || {});
+        if ([urls.art, urls.m1, urls.m2, urls.m3].every(isUrl)) {
+          return {
+            ok:true,
+            action:'finalize_mug_product',
+            request_id:id,
+            product_saved:true,
+            firebase_key:id,
+            arte_horizontal_url:urls.art,
+            mockup_1_url:urls.m1,
+            mockup_2_url:urls.m2,
+            mockup_3_url:urls.m3,
+            async_recovered:true,
+            client_contract:BUILD
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('[Canecas Produção] aguardando Firebase após Accepted:', error);
+    }
+    await sleep(POLL_MS);
+  }
+  return null;
+}
+function jsonResponse(body, status=200){
+  return new Response(JSON.stringify(body), { status, headers:{ 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store' } });
+}
 function install(){
   if (window.__daMugMakeClientGuard === BUILD) return;
   window.__daMugMakeClientGuard = BUILD;
@@ -29,19 +86,22 @@ function install(){
   window.fetch = async function guardedMugMakeFetch(input, init){
     const url = typeof input === 'string' ? input : text(input?.url);
     if (url !== TARGET) return previousFetch(input, init);
-    const response = await previousFetch(input, normalizeRequest(init || {}));
+    const normalized = normalizeRequest(init || {});
+    const payload = payloadFrom(normalized);
+    const response = await previousFetch(input, normalized);
     const raw = await response.clone().text();
     if (raw) { try { JSON.parse(raw); return response; } catch {} }
+    if (response.ok && /^accepted\.?$/i.test(text(raw)) && payload?.action === 'finalize_mug_product') {
+      console.info('[Canecas Produção] Make respondeu Accepted; aguardando produto final no Firebase.', payload.request_id);
+      const recovered = await waitFinalProduct(payload, previousFetch);
+      if (recovered) return jsonResponse(recovered, 200);
+      return jsonResponse({ ok:false, error:'A automação aceitou a finalização, mas o produto final ainda não apareceu no Firebase. Atualize a galeria em alguns instantes.', upstream_status:response.status, accepted:true, request_id:payload.request_id, client_contract:BUILD }, 504);
+    }
     const hint = cleanSnippet(raw);
     const status = response.status || 502;
-    const error = hint
-      ? `Automação Make falhou (HTTP ${status}): ${hint}`
-      : `Automação Make falhou antes de devolver JSON (HTTP ${status}). Verifique a execução do cenário.`;
-    return new Response(JSON.stringify({ ok:false, error, upstream_status:status, client_contract:BUILD }), {
-      status: response.ok ? 502 : status,
-      headers: { 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store' }
-    });
+    const error = hint ? `Automação Make falhou (HTTP ${status}): ${hint}` : `Automação Make falhou antes de devolver JSON (HTTP ${status}). Verifique a execução do cenário.`;
+    return jsonResponse({ ok:false, error, upstream_status:status, client_contract:BUILD }, response.ok ? 502 : status);
   };
 }
 install();
-export { install, BUILD, TARGET };
+export { install, BUILD, TARGET, waitFinalProduct };
