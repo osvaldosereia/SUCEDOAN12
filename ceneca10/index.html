@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Caneca 10">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Caneca 10 · Gerador Mobile</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css?v=20260826-1">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="../site/img/logoantonia5.png" alt="Dona Antônia">
+        <div>
+          <span class="eyebrow">Dona Antônia</span>
+          <h1>Caneca 10</h1>
+        </div>
+      </div>
+      <button class="icon-button" id="settingsButton" type="button" aria-label="Configurações" title="Configurações">⚙</button>
+    </header>
+
+    <main>
+      <section class="hero-card">
+        <div>
+          <span class="status-pill">Mobile</span>
+          <h2>Gerador rápido de canecas</h2>
+          <p>Foto → arte horizontal → cadastro → 3 mockups.</p>
+        </div>
+      </section>
+
+      <section class="card upload-card" id="uploadCard">
+        <div class="section-head">
+          <div>
+            <span class="step-label">1</span>
+            <strong>Imagem de inspiração</strong>
+          </div>
+          <button class="text-button" id="clearImageButton" type="button" hidden>Trocar</button>
+        </div>
+        <label class="camera-box" for="imageInput">
+          <div id="cameraEmpty" class="camera-empty">
+            <span class="camera-icon">＋</span>
+            <strong>Câmera ou galeria</strong>
+            <small>PNG, JPG ou WEBP</small>
+          </div>
+          <img id="imagePreview" alt="Prévia da imagem" hidden>
+        </label>
+        <input id="imageInput" type="file" accept="image/*" hidden>
+      </section>
+
+      <section class="card commands-card">
+        <div class="section-head">
+          <div>
+            <span class="step-label">2</span>
+            <strong>Comandos salvos</strong>
+          </div>
+          <button class="text-button" id="refreshCommandsButton" type="button">Atualizar</button>
+        </div>
+        <div class="command-summary">
+          <span id="selectedCommandsCount">0 selecionados</span>
+          <button class="text-button" id="clearCommandsButton" type="button">Limpar</button>
+        </div>
+        <div class="commands-list" id="commandsList">
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+      </section>
+
+      <section class="card instruction-card">
+        <div class="section-head">
+          <div>
+            <span class="step-label">3</span>
+            <strong>Instrução extra</strong>
+          </div>
+          <span class="optional">opcional</span>
+        </div>
+        <textarea id="instructionInput" maxlength="500" placeholder="Ex.: escreva exatamente ‘Eis-me aqui Senhor.’ e use tons de azul."></textarea>
+      </section>
+
+      <section class="progress-card" id="progressCard" hidden aria-live="polite">
+        <div class="progress-top">
+          <div>
+            <span class="eyebrow">Gerando</span>
+            <strong id="progressTitle">Preparando...</strong>
+          </div>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-track"><div id="progressBar"></div></div>
+        <p id="progressDetail">Não feche esta tela durante a criação.</p>
+      </section>
+
+      <section class="result-section" id="resultSection" hidden>
+        <div class="result-head">
+          <div>
+            <span class="success-pill">Concluído</span>
+            <h2 id="resultName">Caneca criada</h2>
+            <p id="resultMeta"></p>
+          </div>
+        </div>
+
+        <article class="art-result card">
+          <span class="asset-label">Arte horizontal 2400 × 960</span>
+          <img id="artResult" alt="Arte horizontal criada">
+        </article>
+
+        <div class="mockups-title">
+          <strong>3 mockups</strong>
+          <small>deslize para o lado</small>
+        </div>
+        <div class="mockup-carousel" id="mockupCarousel">
+          <figure class="mockup-card"><img id="mockup1" alt="Mockup 1"><figcaption>Lado esquerdo</figcaption></figure>
+          <figure class="mockup-card"><img id="mockup2" alt="Mockup 2"><figcaption>Lado direito</figcaption></figure>
+          <figure class="mockup-card"><img id="mockup3" alt="Mockup 3"><figcaption>Centro</figcaption></figure>
+        </div>
+
+        <div class="result-actions">
+          <button class="secondary-button" id="newMugButton" type="button">Nova caneca</button>
+          <a class="secondary-button link-button" href="../producao/">Abrir Produção</a>
+        </div>
+      </section>
+
+      <div class="bottom-space"></div>
+    </main>
+
+    <footer class="bottom-action">
+      <button class="generate-button" id="generateButton" type="button">
+        <span id="generateButtonText">Gerar caneca</span>
+      </button>
+    </footer>
+  </div>
+
+  <dialog id="settingsDialog" class="settings-dialog">
+    <form method="dialog" class="settings-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <div><span class="eyebrow">Caneca 10</span><h2>Configuração</h2></div>
+        <button class="icon-button" value="cancel" aria-label="Fechar">×</button>
+      </div>
+      <label class="field-label">Webhook do Make
+        <input id="webhookInput" type="url" inputmode="url" placeholder="https://hook.eu1.make.com/...">
+      </label>
+      <label class="field-label">Qualidade da arte
+        <select id="qualityInput">
+          <option value="high" selected>Alta</option>
+          <option value="medium">Média</option>
+          <option value="low">Teste</option>
+        </select>
+      </label>
+      <p class="settings-help">O webhook é salvo somente neste navegador. Se você já configurou o Criador de Canecas neste mesmo celular, ele será reaproveitado automaticamente.</p>
+      <button class="primary-sheet-button" id="saveSettingsButton" value="cancel" type="button">Salvar configuração</button>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="./app.js?v=20260826-1" defer></script>
+</body>
+</html>
