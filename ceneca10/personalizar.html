@@ -6,8 +6,9 @@
   <meta name="theme-color" content="#0b0b0d">
   <meta name="robots" content="noindex,nofollow">
   <title>Caneca 10 · Personalize a sua</title>
-  <link rel="stylesheet" href="./tabs.css?v=20260826-2">
-  <link rel="stylesheet" href="./personalizar.css?v=20260826-2">
+  <link rel="stylesheet" href="./tabs.css?v=20260826-3">
+  <link rel="stylesheet" href="./personalizar.css?v=20260826-3">
+  <link rel="stylesheet" href="./personalizar-v2.css?v=20260826-3">
 </head>
 <body>
   <div class="app-shell">
@@ -28,7 +29,7 @@
       <section class="hero">
         <span class="pill">Personalizada por você</span>
         <h1>Transforme sua foto em uma caneca única.</h1>
-        <p>Escolha um modelo, envie sua foto e escreva uma frase. Nós criamos a arte e três prévias da sua caneca.</p>
+        <p>Escolha um modelo, envie sua foto e frase e fale com a gente no WhatsApp para liberar sua criação.</p>
       </section>
 
       <section class="step-card" id="modelsStep">
@@ -47,32 +48,35 @@
       </section>
 
       <section class="step-card">
-        <div class="step-head"><span class="step-number">3</span><div><strong>Escreva a frase</strong><small>Pode ser um nome, data ou mensagem curta.</small></div></div>
-        <textarea id="phraseInput" maxlength="160" placeholder="Ex.: Mãe, seu amor faz tudo florescer."></textarea>
+        <div class="step-head"><span class="step-number">3</span><div><strong>Seu nome e sua frase</strong><small>A frase será usada exatamente na criação.</small></div></div>
+        <label class="field">Seu nome<input id="customerNameInput" autocomplete="name" maxlength="80" placeholder="Seu nome"></label>
+        <label class="field">Frase<textarea id="phraseInput" maxlength="160" placeholder="Ex.: Mãe, seu amor faz tudo florescer."></textarea></label>
         <div class="char-count"><span id="phraseCount">0</span>/160</div>
       </section>
 
-      <section class="step-card">
-        <div class="step-head"><span class="step-number">4</span><div><strong>Para receber sua criação</strong><small>Usamos seu WhatsApp somente para enviar o link desta caneca.</small></div></div>
-        <label class="field">Seu nome<input id="customerNameInput" autocomplete="name" maxlength="80" placeholder="Seu nome"></label>
-        <label class="field">WhatsApp<input id="customerPhoneInput" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(65) 99999-9999"></label>
-        <label class="consent"><input id="whatsappConsentInput" type="checkbox"><span>Autorizo o envio do link desta criação para o WhatsApp informado.</span></label>
+      <section class="step-card whatsapp-gate-card" id="whatsappGateCard">
+        <div class="step-head"><span class="step-number">4</span><div><strong>Fale com a Dona Antônia</strong><small>Esta etapa é obrigatória para liberar a geração.</small></div></div>
+        <p class="gate-copy">Ao tocar no botão abaixo, abriremos nosso WhatsApp com uma mensagem pronta e um código da sua criação. Envie a mensagem para que possamos identificar seu contato.</p>
+        <button class="whatsapp-unlock-button" id="whatsappUnlockButton" type="button">Abrir WhatsApp e enviar mensagem</button>
+        <div class="whatsapp-confirm" id="whatsappConfirmBox" hidden>
+          <label class="consent"><input id="whatsappSentConfirm" type="checkbox"><span>Já enviei a mensagem para a Dona Antônia.</span></label>
+          <small id="whatsappGateStatus">Depois de enviar, marque acima para liberar o botão de criação.</small>
+        </div>
       </section>
 
       <section class="progress-card" id="progressCard" hidden aria-live="polite">
         <div class="progress-head"><div><span>Criando sua caneca</span><strong id="progressTitle">Preparando…</strong></div><b id="progressPercent">0%</b></div>
         <div class="progress-track"><div id="progressBar"></div></div>
-        <p id="progressDetail">A geração pode levar alguns instantes. Mantenha esta página aberta.</p>
+        <p id="progressDetail">Mantenha esta página aberta durante a criação.</p>
       </section>
 
       <section class="done-card" id="doneCard" hidden>
         <span class="done-pill">Pronta ✨</span>
         <h2>Sua caneca foi criada.</h2>
-        <p id="doneMessage">Preparamos quatro imagens para você conferir.</p>
+        <p id="doneMessage">Seu link foi criado. Veja as quatro imagens e envie a criação para nossa equipe pelo WhatsApp.</p>
         <img id="donePreview" alt="Prévia da caneca">
         <a class="primary-link" id="viewResultButton" href="#">Ver minhas 4 imagens</a>
-        <a class="whatsapp-link" id="selfWhatsappButton" href="#" target="_blank" rel="noopener">Receber link no meu WhatsApp</a>
-        <a class="order-link" id="orderButton" href="#" target="_blank" rel="noopener">Quero encomendar esta caneca</a>
+        <a class="whatsapp-link result-whatsapp" id="sendResultWhatsappButton" href="#" target="_blank" rel="noopener">Enviar esta criação para a Dona Antônia</a>
         <button class="text-action" id="createAnotherButton" type="button">Criar outra</button>
       </section>
 
@@ -80,8 +84,8 @@
     </main>
 
     <footer class="bottom-action" id="bottomAction">
-      <button id="generateButton" class="generate-button" type="button">Criar minha caneca</button>
-      <small>Você verá a prévia antes de encomendar.</small>
+      <button id="generateButton" class="generate-button" type="button" disabled>Criar minha caneca</button>
+      <small id="generateHelp">Envie primeiro a mensagem pelo WhatsApp para liberar.</small>
     </footer>
   </div>
 
@@ -92,11 +96,11 @@
       <label class="field">Qualidade<select id="qualityInput"><option value="high">Alta</option><option value="medium">Média</option><option value="low">Teste</option></select></label>
       <label class="consent"><input id="publishWebhookInput" type="checkbox"><span>Disponibilizar este webhook para os clientes desta página de teste.</span></label>
       <button id="saveAdminSettingsButton" class="settings-save" type="button">Salvar</button>
-      <p class="settings-note">Teste interno: publicar o webhook no Firebase permite que outros celulares usem o gerador. Na implantação final, trocaremos isso por um endpoint protegido.</p>
+      <p class="settings-note">Configuração temporária da página de teste. Na implantação final o webhook deve ficar protegido no backend.</p>
     </form>
   </dialog>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="./personalizar.js?v=20260826-2" defer></script>
+  <script src="./personalizar-v2.js?v=20260826-3" defer></script>
 </body>
 </html>
