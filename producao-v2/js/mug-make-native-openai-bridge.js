@@ -1,10 +1,9 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260826-mug-v14-stable-make';
+  || '20260826-canecas-clean-v16';
 
 const MODULES = [
-  './mug-make-client-guard-v14.js',
-  './mug-personalizer-v7.js',
+  './mug-personalizer-v15-clean.js',
   './mug-studio-gallery.js',
   './mug-command-library-v1.js',
   './mug-command-library-compact-v2.js',
@@ -12,8 +11,6 @@ const MODULES = [
   './mug-config-compact-v4-1.js',
   './mug-studio-v8-finalizer.js',
   './mug-model-carousel-v10.js',
-  './mug-personalizer-v12.js',
-  './mug-catalog-no-block-v13.js',
 ];
 
 let installPromise = null;
@@ -27,7 +24,7 @@ function install() {
   if (installPromise) return installPromise;
   installPromise = (async () => {
     for (const path of MODULES) await import(withBuild(path));
-    window.__daMugStudioV7Loader = ACTIVE_BUILD;
+    window.__daMugStudioLoader = ACTIVE_BUILD;
     window.__daMugStudioModules = [...MODULES];
     return ACTIVE_BUILD;
   })().catch(error => {
