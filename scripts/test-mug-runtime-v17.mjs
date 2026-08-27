@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(path, 'utf8');
-const [index, productMedia, publicRuntime, publicController, checkoutPhone, admin, prodLoader, caneca10, canecaRecovery, stabilizer, printCache, transport, forceLow] = await Promise.all([
+const [index, productMedia, publicRuntime, publicContract, publicController, checkoutPhone, admin, prodLoader, caneca10, canecaRecovery, stabilizer, printCache, transport, forceLow] = await Promise.all([
   read('index.html'),
   read('app-next/src/product-media.js'),
   read('app-next/src/mug-public-runtime-v6.js'),
+  read('app-next/src/mug-public-personalization-contract-v25.js'),
   read('app-next/src/mug-public-personalization-v5.js'),
   read('app-next/src/checkout-phone-fix.js'),
   read('producao-v2/admin-produtivo.html'),
@@ -24,12 +25,22 @@ assert.equal((index.match(/mug-public-runtime-v6\.js/g) || []).length, 2, 'runti
 assert.doesNotMatch(index, /<script[^>]+mug-public-personalization-v[0-9]+\.js/i, 'index não deve carregar controlador público diretamente');
 
 assert.match(publicRuntime, /mug-make-fast-ack-v1\.js/);
+assert.match(publicRuntime, /mug-public-personalization-contract-v25\.js/);
 assert.match(publicRuntime, /mug-public-personalization-v5\.js/);
+assert.ok(publicRuntime.indexOf('mug-public-personalization-contract-v25.js') < publicRuntime.indexOf('mug-public-personalization-v5.js'), 'contrato público deve carregar antes do controlador');
 assert.match(publicRuntime, /isProductRoute/);
 assert.match(publicRuntime, /featurePromise/);
 assert.doesNotMatch(publicRuntime, /mug-public-route-guard-v6\.js/);
 assert.doesNotMatch(publicRuntime, /dispatchEvent\(new Event\('hashchange'\)\)/, 'runtime não pode provocar hashchange sintético');
 assert.doesNotMatch(publicRuntime, /setInterval\(/, 'runtime não deve usar polling contínuo de rota');
+
+assert.match(publicContract, /personalize_mug_model/);
+assert.match(publicContract, /payload\.image_base64 = firstCustomerPhoto\(payload\)/);
+assert.match(publicContract, /fallbackModelImage/);
+assert.match(publicContract, /payload\.quality = 'low'/);
+assert.match(publicContract, /canecas\/geracoes/);
+assert.match(publicContract, /waitForPersonalizedArt/);
+assert.match(publicContract, /Failed to fetch/);
 assert.doesNotMatch(publicController, /personalizacao_cliente:\{[^}]*\bfrase\s*,/s, 'não pode existir shorthand `frase` sem variável declarada');
 assert.match(publicController, /frase:phraseValue/);
 
@@ -68,4 +79,4 @@ assert.match(forceLow, /finalize_mug_product/);
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Runtime público V18 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');
+console.log('OK · Runtime público V19 + contrato público V25 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');
