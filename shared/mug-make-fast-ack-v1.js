@@ -1,33 +1,43 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260826-mug-make-fast-ack-v1';
+  const BUILD = '20260827-mug-make-low-transport-v2';
   const ACK_AFTER_MS = 10000;
+  const MUG_ACTIONS = new Set(['generate_mug_art', 'finalize_mug_product', 'personalize_mug_model']);
   if (window.__DA_MUG_MAKE_FAST_ACK__ === BUILD) return;
   window.__DA_MUG_MAKE_FAST_ACK__ = BUILD;
 
   const nativeFetch = window.fetch.bind(window);
 
-  function finalizePayload(input, init) {
+  function parseMugRequest(input, init) {
     const method = String(init?.method || (input && typeof input === 'object' ? input.method : '') || 'GET').toUpperCase();
     if (method !== 'POST') return null;
     const body = init?.body;
-    if (typeof body !== 'string' || !body.includes('finalize_mug_product')) return null;
+    if (typeof body !== 'string') return null;
     try {
       const outer = JSON.parse(body);
       const inner = typeof outer?.payload === 'string' ? JSON.parse(outer.payload) : outer?.payload;
-      return inner?.action === 'finalize_mug_product' && inner?.request_id ? inner : null;
+      if (!inner || !MUG_ACTIONS.has(String(inner.action || '')) || !inner.request_id) return null;
+      inner.quality = 'low';
+      const nextOuter = { ...outer, payload: typeof outer?.payload === 'string' ? JSON.stringify(inner) : inner };
+      return {
+        payload: inner,
+        init: { ...init, body: JSON.stringify(nextOuter) },
+      };
     } catch {
       return null;
     }
   }
 
   window.fetch = function(input, init) {
-    const payload = finalizePayload(input, init);
-    if (!payload) return nativeFetch(input, init);
+    const mug = parseMugRequest(input, init);
+    if (!mug) return nativeFetch(input, init);
+
+    const { payload, init: lowInit } = mug;
+    if (payload.action !== 'finalize_mug_product') return nativeFetch(input, lowInit);
 
     let settled = false;
-    const request = nativeFetch(input, init).then(response => {
+    const request = nativeFetch(input, lowInit).then(response => {
       settled = true;
       return response;
     }).catch(error => {
@@ -52,4 +62,5 @@
   };
 
   document.documentElement.dataset.mugMakeTransport = BUILD;
+  document.documentElement.dataset.mugImageQuality = 'low';
 })();
