@@ -6,6 +6,7 @@ const low = read('producao-v2/js/mug-force-low-quality-v23.js');
 const admin = read('producao-v2/admin-produtivo.html');
 const shared = read('shared/mug-make-fast-ack-v1.js');
 const publicRuntime = read('app-next/src/mug-public-runtime-v6.js');
+const publicContract = read('app-next/src/mug-public-personalization-contract-v25.js');
 const failures = [];
 
 if (!loader.includes('./mug-force-low-quality-v23.js')) failures.push('Loader do Produção não carrega a trava Low.');
@@ -17,11 +18,15 @@ if (!low.includes('select.disabled = true')) failures.push('Seletor de qualidade
 if (!shared.includes("inner.quality = 'low'")) failures.push('Transporte compartilhado não força low para site/Caneca10.');
 if (!shared.includes("'generate_mug_art', 'finalize_mug_product', 'personalize_mug_model'")) failures.push('Transporte compartilhado não cobre todas as ações de imagem.');
 if (!shared.includes("dataset.mugImageQuality = 'low'")) failures.push('Transporte compartilhado não declara qualidade Low ativa.');
-if (!publicRuntime.includes('20260827-site-mug-runtime-v8-low')) failures.push('Runtime público não invalida o transporte Low atualizado.');
+if (!publicRuntime.includes('20260827-site-mug-runtime-v9-public-contract')) failures.push('Runtime público não invalida o contrato de personalização atualizado.');
+if (!publicRuntime.includes('mug-public-personalization-contract-v25.js')) failures.push('Runtime público não carrega o contrato V25 antes do controlador.');
+if (!publicContract.includes("payload.quality = 'low'")) failures.push('Contrato público não fixa LOW na personalização.');
+if (!publicContract.includes('payload.image_base64 = firstCustomerPhoto(payload)')) failures.push('Contrato público não envia a primeira foto como image_base64.');
+if (!publicContract.includes('fallbackModelImage')) failures.push('Contrato público não possui fallback da arte oficial quando não há foto.');
 
 if (failures.length) {
-  console.error(`Canecas V24 LOW FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);
+  console.error(`Canecas V25 LOW FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
 
-console.log('Canecas V24 LOW OK: Produção, site público e Caneca10 forçam qualidade Low antes do Make.');
+console.log('Canecas V25 LOW OK: Produção, site público e Caneca10 forçam LOW; personalização pública envia image_base64 válido.');
