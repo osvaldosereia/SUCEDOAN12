@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(path, 'utf8');
-const [index, productMedia, publicRuntime, publicContract, publicController, checkoutPhone, admin, prodLoader, caneca10, canecaRecovery, stabilizer, printCache, transport, forceLow] = await Promise.all([
+const [index, productMedia, publicRuntime, publicContract, publicController, publicResultLink, publicResultPage, checkoutPhone, admin, prodLoader, caneca10, canecaRecovery, stabilizer, printCache, transport, forceLow] = await Promise.all([
   read('index.html'),
   read('app-next/src/product-media.js'),
   read('app-next/src/mug-public-runtime-v6.js'),
   read('app-next/src/mug-public-personalization-contract-v25.js'),
   read('app-next/src/mug-public-personalization-v5.js'),
+  read('app-next/src/mug-public-result-link-v26.js'),
+  read('caneca10/resultado.html'),
   read('app-next/src/checkout-phone-fix.js'),
   read('producao-v2/admin-produtivo.html'),
   read('producao-v2/js/mug-make-native-openai-bridge.js'),
@@ -19,7 +21,7 @@ const [index, productMedia, publicRuntime, publicContract, publicController, che
   read('producao-v2/js/mug-force-low-quality-v23.js')
 ]);
 
-assert.match(index, /public-stability-v18/);
+assert.match(index, /public-mug-contract-v19/);
 assert.match(index, /mug-public-runtime-v6\.js/);
 assert.equal((index.match(/mug-public-runtime-v6\.js/g) || []).length, 2, 'runtime público deve aparecer apenas no preload e no script');
 assert.doesNotMatch(index, /<script[^>]+mug-public-personalization-v[0-9]+\.js/i, 'index não deve carregar controlador público diretamente');
@@ -27,7 +29,9 @@ assert.doesNotMatch(index, /<script[^>]+mug-public-personalization-v[0-9]+\.js/i
 assert.match(publicRuntime, /mug-make-fast-ack-v1\.js/);
 assert.match(publicRuntime, /mug-public-personalization-contract-v25\.js/);
 assert.match(publicRuntime, /mug-public-personalization-v5\.js/);
+assert.match(publicRuntime, /mug-public-result-link-v26\.js/);
 assert.ok(publicRuntime.indexOf('mug-public-personalization-contract-v25.js') < publicRuntime.indexOf('mug-public-personalization-v5.js'), 'contrato público deve carregar antes do controlador');
+assert.ok(publicRuntime.indexOf('mug-public-personalization-v5.js') < publicRuntime.indexOf('mug-public-result-link-v26.js'), 'correção do resultado deve carregar depois do controlador');
 assert.match(publicRuntime, /isProductRoute/);
 assert.match(publicRuntime, /featurePromise/);
 assert.doesNotMatch(publicRuntime, /mug-public-route-guard-v6\.js/);
@@ -43,6 +47,12 @@ assert.match(publicContract, /waitForPersonalizedArt/);
 assert.match(publicContract, /Failed to fetch/);
 assert.doesNotMatch(publicController, /personalizacao_cliente:\{[^}]*\bfrase\s*,/s, 'não pode existir shorthand `frase` sem variável declarada');
 assert.match(publicController, /frase:phraseValue/);
+
+assert.match(publicResultLink, /\/ceneca10\/resultado\.html/);
+assert.match(publicResultLink, /\/caneca10\/resultado\.html/);
+assert.match(publicResultPage, /cedar-chemist-310801-default-rtdb\.firebaseio\.com/);
+assert.match(publicResultPage, /mockup_3/);
+assert.match(publicResultPage, /arte_horizontal/);
 
 assert.match(checkoutPhone, /getElementById\('checkout-content'\)/);
 assert.doesNotMatch(checkoutPhone, /observer\.observe\(document\.documentElement/, 'observer do checkout não deve observar o site inteiro');
@@ -79,4 +89,4 @@ assert.match(forceLow, /finalize_mug_product/);
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Runtime público V19 + contrato público V25 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');
+console.log('OK · Runtime público V20 + contrato V25 + resultado V26 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');
