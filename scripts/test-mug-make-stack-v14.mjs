@@ -41,6 +41,10 @@ reject('productionMedia', 'installMugPanel', 'Módulo de mídia não pode montar
 reject('productionMedia', 'generate_mug_mockup', 'Módulo de mídia não pode chamar geração de mockup.');
 
 need('productionBridge', './mug-personalizer-v15-clean.js', 'Produção não carrega o controlador atual de canecas.');
+need('productionBridge', 'function ensureStudioPanelShell()', 'Loader não cria a estrutura do painel do Criador.');
+need('productionBridge', "document.getElementById('mugAutomationPanel')", 'Loader não procura/reutiliza o painel do Criador.');
+need('productionBridge', 'view.appendChild(panel);', 'Loader não anexa o painel à rota de canecas.');
+need('productionBridge', "window.addEventListener('admin-v2-route', handleStudioRoute)", 'Loader não restaura o painel ao entrar na rota de canecas.');
 reject('productionBridge', 'mug-make-fast-ack-v1.js', 'Produção voltou a instalar o Accepted sintético de 10 s.');
 if (count('productionBridge', 'mug-personalizer-') !== 1) failures.push('Produção deve carregar exatamente um controlador mug-personalizer.');
 need('productionClient', hook, 'Produção não usa o webhook oficial configurado.');
@@ -69,7 +73,7 @@ const mobileTransportPos = src.mobileIndex.indexOf('../shared/mug-make-fast-ack-
 const mobileAppPos = src.mobileIndex.indexOf('./app-v4-clean.js');
 if (mobileTransportPos < 0 || mobileAppPos <= mobileTransportPos) failures.push('Caneca10 deve carregar o transporte compartilhado antes do app atual.');
 need('mobileClient', "action:'finalize_mug_product'", 'Caneca10 não finaliza canecas.');
-need('mobileClient', 'waitFinalProduct', 'Caneca10 não recupera finalização Accepted pelo Firebase.');
+need('mobileClient', 'waitFinalProduct', 'Caneca10 não recupera finalização Accepted no Firebase.');
 
 need('sharedTransport', 'ACK_AFTER_MS = 10000', 'Transporte compartilhado perdeu o Accepted rápido de 10 s.');
 need('sharedTransport', "inner?.action === 'finalize_mug_product'", 'Transporte compartilhado não restringe a interceptação à finalização.');
@@ -79,4 +83,4 @@ if (failures.length) {
   console.error(`Stack atual de canecas FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log('Stack atual OK: Produção com um gerador, mídia 2400×960, resposta real do Make, 4 imagens e galeria sem F5.');
+console.log('Stack atual OK: painel autossuficiente, um gerador, mídia 2400×960, resposta real do Make, 4 imagens e galeria sem F5.');
