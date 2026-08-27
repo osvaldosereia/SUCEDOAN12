@@ -38,7 +38,7 @@ assert.match(productMedia, /const branch = decodeURIComponent/);
 assert.match(productMedia, /branch === 'main' && path \? `\/\$\{path\}` : raw/);
 assert.match(stabilizer, /\(\?:main\|master\)/, 'compactador só deve converter main/master para caminho local');
 
-assert.match(admin, /20260826-canecas-clean-v19/);
+assert.match(admin, /20260826-canecas-clean-v20/);
 assert.match(prodLoader, /mug-personalizer-v15-clean\.js/);
 assert.doesNotMatch(prodLoader, /mug-make-fast-ack-v1\.js/, 'Produção deve aguardar a resposta real do Make e usar polling apenas se o próprio Make responder Accepted');
 
