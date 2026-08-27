@@ -1,11 +1,24 @@
-const BUILD = '20260827-site-mug-runtime-v11-public-recovery-cache';
+const BUILD = '20260827-site-mug-runtime-v12-customer-library';
+let libraryPromise = null;
 let featurePromise = null;
 
 function isProductRoute() {
   return /^#\/produto\/[^/?#]+/i.test(String(location.hash || ''));
 }
 
+async function loadCustomerLibrary() {
+  if (!libraryPromise) {
+    libraryPromise = import(`./customer-favorites-v27.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
+      libraryPromise = null;
+      console.error('[Favoritos + Minhas canecas] Falha ao carregar biblioteca:', error);
+      throw error;
+    });
+  }
+  return libraryPromise;
+}
+
 async function loadMugFeatures() {
+  await loadCustomerLibrary().catch(() => null);
   if (!isProductRoute()) return;
   if (!featurePromise) {
     featurePromise = (async () => {
@@ -29,4 +42,4 @@ window.addEventListener('da:catalog-ready', loadMugFeatures);
 
 loadMugFeatures();
 
-export { BUILD, loadMugFeatures };
+export { BUILD, loadMugFeatures, loadCustomerLibrary };
