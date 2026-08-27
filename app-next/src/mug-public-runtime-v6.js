@@ -1,4 +1,4 @@
-const BUILD = '20260826-site-mug-runtime-v7';
+const BUILD = '20260827-site-mug-runtime-v8-low';
 let featurePromise = null;
 
 function isProductRoute() {
