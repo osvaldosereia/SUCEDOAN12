@@ -38,10 +38,9 @@ assert.match(productMedia, /const branch = decodeURIComponent/);
 assert.match(productMedia, /branch === 'main' && path \? `\/\$\{path\}` : raw/);
 assert.match(stabilizer, /\(\?:main\|master\)/, 'compactador só deve converter main/master para caminho local');
 
-assert.match(admin, /20260826-canecas-clean-v18/);
-const sharedPos = prodLoader.indexOf("../../shared/mug-make-fast-ack-v1.js");
-const controllerPos = prodLoader.indexOf("./mug-personalizer-v15-clean.js");
-assert.ok(sharedPos >= 0 && controllerPos > sharedPos, 'Produção deve carregar transporte compartilhado antes do controlador');
+assert.match(admin, /20260826-canecas-clean-v19/);
+assert.match(prodLoader, /mug-personalizer-v15-clean\.js/);
+assert.doesNotMatch(prodLoader, /mug-make-fast-ack-v1\.js/, 'Produção deve aguardar a resposta real do Make e usar polling apenas se o próprio Make responder Accepted');
 
 const canecaSharedPos = caneca10.indexOf('../shared/mug-make-fast-ack-v1.js');
 const canecaAppPos = caneca10.indexOf('./app-v4-clean.js');
@@ -55,4 +54,4 @@ assert.match(transport, /Promise\.race\(\[request, earlyAck\]\)/);
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Runtime público V18: rota sem polling, checkout isolado, cache e transporte validados.');
+console.log('OK · Runtime público V18 e Produção direto: transporte e cache validados.');

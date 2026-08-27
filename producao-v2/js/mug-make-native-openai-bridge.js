@@ -1,9 +1,8 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260826-canecas-clean-v17';
+  || '20260826-canecas-clean-v19-direct';
 
 const MODULES = [
-  '../../shared/mug-make-fast-ack-v1.js',
   './mug-personalizer-v15-clean.js',
   './mug-studio-gallery.js',
   './mug-command-library-v1.js',
