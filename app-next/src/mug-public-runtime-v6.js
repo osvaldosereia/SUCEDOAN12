@@ -1,14 +1,31 @@
-const BUILD = '20260827-site-mug-runtime-v12-customer-library';
+const BUILD = '20260827-site-mug-runtime-v13-customer-library-sync';
 let libraryPromise = null;
 let featurePromise = null;
+let customerSyncBound = false;
 
 function isProductRoute() {
   return /^#\/produto\/[^/?#]+/i.test(String(location.hash || ''));
 }
 
+function bindCustomerLibrarySync() {
+  if (customerSyncBound) return;
+  customerSyncBound = true;
+  window.addEventListener('da:mug-personalized-added', () => {
+    window.setTimeout(async () => {
+      try {
+        const library = window.__DA_CUSTOMER_LIBRARY__;
+        if (library && typeof library.sync === 'function') await library.sync();
+      } catch {}
+    }, 500);
+  });
+}
+
 async function loadCustomerLibrary() {
   if (!libraryPromise) {
-    libraryPromise = import(`./customer-favorites-v27.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
+    libraryPromise = import(`./customer-favorites-v27.js?v=${encodeURIComponent(BUILD)}`).then(module => {
+      bindCustomerLibrarySync();
+      return module;
+    }).catch(error => {
       libraryPromise = null;
       console.error('[Favoritos + Minhas canecas] Falha ao carregar biblioteca:', error);
       throw error;
