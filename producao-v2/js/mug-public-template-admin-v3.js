@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 
-const BUILD = '20260826-mug-template-admin-v3-stable';
+const BUILD = '20260826-mug-template-admin-v3-stable2';
 const TAB = 'mug-personalizacao';
 const FALLBACK_FB = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const PRODUCTS_NODE = 'produtos';
@@ -66,16 +66,16 @@ function ensureUi(){
 }
 function setTabVisible(visible){ const button=$(`[data-editor-tab="${TAB}"]`); if(button)button.hidden=!visible; }
 function toast(message,error=false){ let node=$('#mugTemplateToastV3'); if(!node){node=document.createElement('div');node.id='mugTemplateToastV3';document.body.appendChild(node);} node.textContent=message;node.className=`mug-v3-toast${error?' error':''}`;node.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>node.hidden=true,error?5200:3000); }
-function status(message,error=false){ ensureUi(); const section=$(`[data-editor-section="${TAB}"]`); if(section)section.innerHTML=`<div class="mug-v3-status${error?' error':''}">${esc(message)}</div>`; }
+function status(message,error=false){ ensureUi(); const section=$(`[data-editor-section="${TAB}"]`); if(section){section.dataset.mugV3RenderedKey='';section.innerHTML=`<div class="mug-v3-status${error?' error':''}">${esc(message)}</div>`;} }
 
 function recoverKey(){
-  if(state.key) return state.key;
-  const editor=$('#productEditor'); if(!editor?.classList.contains('open')) return '';
+  const editor=$('#productEditor'); if(!editor?.classList.contains('open')) return state.key;
   const title=norm($('#editorTitle')?.textContent); const subtitle=text($('#editorSubtitle')?.textContent); const code=norm(subtitle.split('·')[0]);
   const candidates=$$('[data-product-key]');
   let match=candidates.find(node=>{const row=norm(node.closest('tr')?.textContent||node.parentElement?.textContent);return code&&row.includes(code);});
   if(!match&&title) match=candidates.find(node=>norm(node.closest('tr')?.textContent||node.parentElement?.textContent).includes(title));
-  if(match?.dataset.productKey) state.key=text(match.dataset.productKey);
+  const recovered=text(match?.dataset.productKey);
+  if(recovered&&recovered!==state.key){state.key=recovered;state.loadedKey='';state.product=null;}
   return state.key;
 }
 
@@ -91,11 +91,13 @@ function render(){
   const mug=isMug(state.product); setTabVisible(mug); if(!mug){status('Este cadastro não foi identificado como caneca.');return;}
   const cfg=state.product.personalizacao_config_publica||{};
   section.innerHTML=`<div class="mug-v3"><section class="mug-v3-box"><div class="mug-v3-head"><div><strong>Personalização desta caneca</strong><small>O formulário aparece no site assim que você salvar e publicar o modelo.</small></div><span class="mug-v3-badge">CANECAS V3</span></div><div class="mug-v3-switches"><label class="mug-v3-switch"><input id="mugV3Enabled" type="checkbox" ${state.product.modelo_caneca===true?'checked':''}><span><strong>Usar como modelo</strong><small>Reutiliza esta arte.</small></span></label><label class="mug-v3-switch"><input id="mugV3Public" type="checkbox" ${state.product.modelo_publico===true?'checked':''}><span><strong>Modelo público</strong><small>Disponibiliza no site.</small></span></label><label class="mug-v3-switch"><input id="mugV3Customization" type="checkbox" ${state.product.personalizacao_publica===true?'checked':''}><span><strong>Campos personalizáveis no site</strong><small>Ativa o formulário para o cliente.</small></span></label><label class="mug-v3-switch"><input id="mugV3Whatsapp" type="checkbox" ${cfg.whatsapp_obrigatorio!==false?'checked':''}><span><strong>WhatsApp obrigatório</strong><small>Identifica cada criação.</small></span></label></div><div class="mug-v3-art"><strong>Arte:</strong> ${esc(art(state.product)||'não encontrada')}</div></section><section class="mug-v3-box"><div class="mug-v3-head"><div><strong>Campos personalizáveis</strong><small>Adicione, remova ou reordene os campos.</small></div><span class="mug-v3-badge">${state.fields.length} campo${state.fields.length===1?'':'s'}</span></div><div class="mug-v3-fields">${state.fields.map(fieldCard).join('')||'<div class="mug-v3-status">Nenhum campo.</div>'}</div><div class="mug-v3-add">${Object.entries(TYPES).map(([v,l])=>`<button type="button" data-v3-add="${v}">+ ${l}</button>`).join('')}</div></section><section class="mug-v3-box private"><div class="mug-v3-head"><div><strong>Regras privadas da IA</strong><small>O cliente não vê estas instruções.</small></div></div><div class="mug-v3-grid"><label class="mug-v3-span">Regra geral<textarea id="mugV3PrivatePrompt">${esc(state.privateCfg.prompt_privado||'')}</textarea></label><label class="mug-v3-span">Observação interna<input id="mugV3PrivateNote" value="${esc(state.privateCfg.observacao||'')}"></label></div></section><button class="mug-v3-save" id="mugV3Save" type="button">Salvar personalização desta caneca</button></div>`;
+  section.dataset.mugV3RenderedKey=state.key;
 }
 
 async function loadProduct(key,{force=false}={}){
   const normalized=text(key||recoverKey()); if(!normalized)return;
-  if(!force&&state.loadedKey===normalized&&state.product){render();return;}
+  const section=$(`[data-editor-section="${TAB}"]`);
+  if(!force&&state.loadedKey===normalized&&state.product){if(section?.dataset.mugV3RenderedKey!==normalized||!section.querySelector('.mug-v3'))render();return;}
   state.key=normalized; state.loading=true; state.product=null; state.fields=[]; state.privateCfg={}; const token=++state.loadToken; render();
   try{
     const [product,privateCfg]=await Promise.all([firebase(`${productsNode()}/${encodeURIComponent(normalized)}`),firebase(`${PRIVATE_NODE}/${encodeURIComponent(normalized)}`).catch(()=>null)]);
@@ -125,8 +127,10 @@ async function save(){
 }
 
 let syncTimer=0;
-function scheduleSync(delay=0,force=false){ clearTimeout(syncTimer); syncTimer=setTimeout(()=>{ensureUi();const editor=$('#productEditor');if(!editor?.classList.contains('open'))return;const key=recoverKey();if(key)loadProduct(key,{force});else status('Identificando a caneca aberta…');},delay); }
-function rememberFromTarget(target){const node=target?.closest?.('[data-product-key]');if(!node?.dataset.productKey)return false;state.key=text(node.dataset.productKey);return true;}
+function scheduleSync(delay=0,force=false){
+  clearTimeout(syncTimer); syncTimer=setTimeout(()=>{ensureUi();const editor=$('#productEditor');if(!editor?.classList.contains('open'))return;const key=recoverKey();if(!key){status('Identificando a caneca aberta…');return;}const section=$(`[data-editor-section="${TAB}"]`);if(!force&&state.loadedKey===key&&state.product&&section?.dataset.mugV3RenderedKey===key&&section.querySelector('.mug-v3'))return;loadProduct(key,{force});},delay);
+}
+function rememberFromTarget(target){const node=target?.closest?.('[data-product-key]');if(!node?.dataset.productKey)return false;const next=text(node.dataset.productKey);if(next!==state.key){state.key=next;state.loadedKey='';state.product=null;}return true;}
 
 function bind(){
   document.addEventListener('pointerdown',event=>{if(rememberFromTarget(event.target)){state.loadedKey='';scheduleSync(0,true);}},true);
@@ -138,7 +142,8 @@ function bind(){
     if(event.target.closest('#mugV3Save'))save().catch(error=>{console.error('[Canecas V3] save',error);toast(error?.message||String(error),true);});
   },true);
   document.addEventListener('change',event=>{const select=event.target.closest('[data-v3-x="tipo"]');if(!select)return;const options=$('[data-v3-options]',select.closest('[data-mug-v3-field]'));if(options)options.hidden=select.value!=='select';});
-  const observer=new MutationObserver(()=>scheduleSync(30)); observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','aria-hidden']});
+  const observer=new MutationObserver(records=>{const external=records.some(record=>{const target=record.target instanceof Element?record.target:record.target?.parentElement;return !target?.closest?.(`[data-editor-section="${TAB}"]`);});if(external)scheduleSync(30);});
+  observer.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['class','aria-hidden']});
   window.addEventListener('admin-v2-products-invalidated',()=>scheduleSync(120,true));
   window.addEventListener('mug-template-saved',()=>scheduleSync(120,true));
   [0,120,400,1000].forEach(ms=>setTimeout(()=>scheduleSync(0),ms));
