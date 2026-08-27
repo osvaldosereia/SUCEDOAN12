@@ -60,7 +60,7 @@ need('productionGallery', "window.addEventListener('admin-v2-products-invalidate
 need('productionGallery', 'scheduleRefresh(400)', 'Galeria do Produção não agenda atualização após criação.');
 need('productionFinalizer', "window.addEventListener('admin-v2-products-invalidated'", 'Finalizador não força atualização da galeria após criação.');
 
-// SITE PÚBLICO: Accepted rápido permanece isolado fora do Produção.
+// SITE PÚBLICO: transporte compartilhado força low em toda geração, mas ACK rápido só na finalização.
 const publicTransportPos = src.publicRuntime.indexOf('../../shared/mug-make-fast-ack-v1.js');
 const publicControllerPos = src.publicRuntime.indexOf('./mug-public-personalization-v5.js');
 if (publicTransportPos < 0 || publicControllerPos <= publicTransportPos) failures.push('Site público deve carregar o transporte compartilhado antes do personalizador.');
@@ -76,11 +76,13 @@ need('mobileClient', "action:'finalize_mug_product'", 'Caneca10 não finaliza ca
 need('mobileClient', 'waitFinalProduct', 'Caneca10 não recupera finalização Accepted no Firebase.');
 
 need('sharedTransport', 'ACK_AFTER_MS = 10000', 'Transporte compartilhado perdeu o Accepted rápido de 10 s.');
-need('sharedTransport', "inner?.action === 'finalize_mug_product'", 'Transporte compartilhado não restringe a interceptação à finalização.');
+need('sharedTransport', "'generate_mug_art', 'finalize_mug_product', 'personalize_mug_model'", 'Transporte compartilhado não cobre todas as ações de imagem.');
+need('sharedTransport', "inner.quality = 'low'", 'Transporte compartilhado não força qualidade low.');
+need('sharedTransport', "if (payload.action !== 'finalize_mug_product') return nativeFetch(input, lowInit);", 'ACK rápido deve continuar restrito à finalização.');
 need('sharedTransport', 'Promise.race([request, earlyAck])', 'Transporte compartilhado não preserva a requisição real em paralelo.');
 
 if (failures.length) {
   console.error(`Stack atual de canecas FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log('Stack atual OK: painel autossuficiente, um gerador, mídia 2400×960, resposta real do Make, 4 imagens e galeria sem F5.');
+console.log('Stack atual OK: painel autossuficiente, Low em todas as imagens, finalização assíncrona, 4 imagens e galeria sem F5.');
