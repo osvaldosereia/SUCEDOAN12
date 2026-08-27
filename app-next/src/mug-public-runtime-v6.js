@@ -1,4 +1,4 @@
-const BUILD = '20260827-site-mug-runtime-v10-public-contract-result';
+const BUILD = '20260827-site-mug-runtime-v11-public-recovery-cache';
 let featurePromise = null;
 
 function isProductRoute() {
