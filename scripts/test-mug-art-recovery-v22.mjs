@@ -29,10 +29,10 @@ need('recovery', 'art_source_url', 'Recuperação não aceita a arte por URL.');
 need('recovery', "cache: 'no-store'", 'Polling da arte pode ler cache antigo.');
 need('recovery', "if (error?.name === 'AbortError') throw error", 'Recuperação não preserva cancelamento explícito do controlador.');
 reject('recovery', 'finalize_mug_product', 'Recuperação da etapa 2 não pode interceptar a finalização 5/6.');
-need('admin', '20260827-canecas-clean-v22-art-recovery', 'Admin não invalida cache para a V22.');
+need('admin', '20260827-canecas-clean-v23-low-async', 'Admin não invalida cache para a build V23 atual.');
 
 if (failures.length) {
   console.error(`Recuperação de arte V22 FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log('Recuperação de arte V22 OK: generate_mug_art pode sobreviver ao limite síncrono do Make usando Firebase, sem interferir na finalização.');
+console.log('Recuperação de arte V22 OK: generate_mug_art sobrevive ao limite síncrono do Make usando Firebase, integrada à build V23 sem interferir na finalização.');
