@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(path, 'utf8');
-const [index, productMedia, publicRuntime, publicController, routeGuard, admin, prodLoader, caneca10, stabilizer, printCache, transport] = await Promise.all([
+const [index, productMedia, publicRuntime, publicController, checkoutPhone, admin, prodLoader, caneca10, stabilizer, printCache, transport] = await Promise.all([
   read('index.html'),
   read('app-next/src/product-media.js'),
   read('app-next/src/mug-public-runtime-v6.js'),
   read('app-next/src/mug-public-personalization-v5.js'),
-  read('app-next/src/mug-public-route-guard-v6.js'),
+  read('app-next/src/checkout-phone-fix.js'),
   read('producao-v2/admin-produtivo.html'),
   read('producao-v2/js/mug-make-native-openai-bridge.js'),
   read('ceneca10/index.html'),
@@ -16,18 +16,23 @@ const [index, productMedia, publicRuntime, publicController, routeGuard, admin, 
   read('shared/mug-make-fast-ack-v1.js')
 ]);
 
-assert.match(index, /canecas-clean-v17/);
+assert.match(index, /public-stability-v18/);
 assert.match(index, /mug-public-runtime-v6\.js/);
 assert.equal((index.match(/mug-public-runtime-v6\.js/g) || []).length, 2, 'runtime público deve aparecer apenas no preload e no script');
-assert.doesNotMatch(index, /<script[^>]+mug-public-personalization-v[0-9]+\.js/i, 'index não deve carregar controlador público antigo diretamente');
+assert.doesNotMatch(index, /<script[^>]+mug-public-personalization-v[0-9]+\.js/i, 'index não deve carregar controlador público diretamente');
 
 assert.match(publicRuntime, /mug-make-fast-ack-v1\.js/);
 assert.match(publicRuntime, /mug-public-personalization-v5\.js/);
-assert.match(publicRuntime, /mug-public-route-guard-v6\.js/);
-assert.match(routeGuard, /MutationObserver/);
-assert.match(routeGuard, /dispatchEvent\(new Event\('hashchange'\)\)/);
+assert.match(publicRuntime, /isProductRoute/);
+assert.match(publicRuntime, /featurePromise/);
+assert.doesNotMatch(publicRuntime, /mug-public-route-guard-v6\.js/);
+assert.doesNotMatch(publicRuntime, /dispatchEvent\(new Event\('hashchange'\)\)/, 'runtime não pode provocar hashchange sintético');
+assert.doesNotMatch(publicRuntime, /setInterval\(/, 'runtime não deve usar polling contínuo de rota');
 assert.doesNotMatch(publicController, /personalizacao_cliente:\{[^}]*\bfrase\s*,/s, 'não pode existir shorthand `frase` sem variável declarada');
 assert.match(publicController, /frase:phraseValue/);
+
+assert.match(checkoutPhone, /getElementById\('checkout-content'\)/);
+assert.doesNotMatch(checkoutPhone, /observer\.observe\(document\.documentElement/, 'observer do checkout não deve observar o site inteiro');
 
 assert.match(productMedia, /const branch = decodeURIComponent/);
 assert.match(productMedia, /branch === 'main' && path \? `\/\$\{path\}` : raw/);
@@ -50,4 +55,4 @@ assert.match(transport, /Promise\.race\(\[request, earlyAck\]\)/);
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Canecas runtime V17: branch media, cache, rota, frase e transporte validados.');
+console.log('OK · Runtime público V18: rota sem polling, checkout isolado, cache e transporte validados.');

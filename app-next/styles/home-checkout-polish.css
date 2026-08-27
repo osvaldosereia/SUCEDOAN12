@@ -27,3 +27,13 @@
   font-weight:500;
   line-height:1.35;
 }
+
+/* Página de produto: evita reativação de layout/paint nos relacionados ao entrar no viewport. */
+.page-container>.product-detail~.content-section{
+  content-visibility:visible;
+  contain-intrinsic-size:auto;
+}
+.page-container>.product-detail~.content-section .product-card{
+  content-visibility:visible;
+  contain-intrinsic-size:auto;
+}

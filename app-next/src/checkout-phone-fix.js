@@ -15,6 +15,7 @@ const EMPTY_CLIENT_FIELDS = [
 ];
 
 let lastClearedCpf = '';
+let resetScheduled = false;
 
 function digitsOnly(value) {
   return String(value ?? '').replace(/\D/g, '');
@@ -119,6 +120,15 @@ function applyNewClientReset() {
   clearNewClientFields(cpf);
 }
 
+function scheduleClientReset() {
+  if (resetScheduled) return;
+  resetScheduled = true;
+  requestAnimationFrame(() => {
+    resetScheduled = false;
+    applyNewClientReset();
+  });
+}
+
 function showPhoneError(input) {
   const box = document.getElementById('checkout-errors');
   if (box) {
@@ -160,7 +170,10 @@ document.addEventListener('click', event => {
   showPhoneError(input);
 }, true);
 
-const observer = new MutationObserver(() => applyNewClientReset());
-observer.observe(document.documentElement, { childList: true, subtree: true });
+const checkoutContent = document.getElementById('checkout-content');
+if (checkoutContent) {
+  const observer = new MutationObserver(scheduleClientReset);
+  observer.observe(checkoutContent, { childList: true, subtree: true });
+}
 
 applyNewClientReset();
