@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(path, 'utf8');
-const [index, productMedia, publicRuntime, publicController, checkoutPhone, admin, prodLoader, caneca10, stabilizer, printCache, transport, forceLow] = await Promise.all([
+const [index, productMedia, publicRuntime, publicController, checkoutPhone, admin, prodLoader, caneca10, canecaRecovery, stabilizer, printCache, transport, forceLow] = await Promise.all([
   read('index.html'),
   read('app-next/src/product-media.js'),
   read('app-next/src/mug-public-runtime-v6.js'),
@@ -10,7 +10,8 @@ const [index, productMedia, publicRuntime, publicController, checkoutPhone, admi
   read('app-next/src/checkout-phone-fix.js'),
   read('producao-v2/admin-produtivo.html'),
   read('producao-v2/js/mug-make-native-openai-bridge.js'),
-  read('ceneca10/index.html'),
+  read('caneca10/index.html'),
+  read('caneca10/art-recovery-v1.js'),
   read('scripts/estabilizar-catalogo-publico.mjs'),
   read('site/canecas-print.json'),
   read('shared/mug-make-fast-ack-v1.js'),
@@ -45,10 +46,16 @@ assert.match(prodLoader, /mug-make-art-recovery-v22\.js/);
 assert.match(prodLoader, /mug-force-low-quality-v23\.js/);
 assert.doesNotMatch(prodLoader, /mug-make-fast-ack-v1\.js/, 'Produção não deve usar o ACK sintético compartilhado; usa recuperação de arte + acompanhamento Firebase');
 
-const canecaSharedPos = caneca10.indexOf('../shared/mug-make-fast-ack-v1.js');
+const canecaTransportPos = caneca10.indexOf('../shared/mug-make-fast-ack-v1.js');
+const canecaRecoveryPos = caneca10.indexOf('./art-recovery-v1.js');
 const canecaAppPos = caneca10.indexOf('./app-v4-clean.js');
-assert.ok(canecaSharedPos >= 0 && canecaAppPos > canecaSharedPos, 'Caneca10 deve carregar transporte compartilhado antes do app');
-assert.match(caneca10, /20260827-low-v6/);
+assert.ok(canecaTransportPos >= 0 && canecaRecoveryPos > canecaTransportPos && canecaAppPos > canecaRecoveryPos, 'Caneca10 deve carregar transporte LOW, recovery e então o app');
+assert.match(caneca10, /20260827-caneca10-v7/);
+assert.doesNotMatch(caneca10, /gallery-refresh-v5\.js/);
+assert.match(canecaRecovery, /canecas\/geracoes/);
+assert.match(canecaRecovery, /generate_mug_art/);
+assert.match(canecaRecovery, /waitForArt/);
+assert.match(canecaRecovery, /progressDetail/);
 
 assert.match(transport, /finalize_mug_product/);
 assert.match(transport, /ACK_AFTER_MS = 10000/);
@@ -61,4 +68,4 @@ assert.match(forceLow, /finalize_mug_product/);
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Runtime público V18 + Canecas V24 LOW assíncronas validados.');
+console.log('OK · Runtime público V18 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');

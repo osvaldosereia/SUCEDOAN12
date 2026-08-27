@@ -14,9 +14,9 @@ const syntaxFiles = [
   'app-next/src/mug-public-personalization-v5.js',
   'app-next/src/image-performance.js',
   'app-next/src/config.js',
-  'ceneca10/app-v4-clean.js',
-  'ceneca10/gallery-v4.js',
-  'ceneca10/gallery-refresh-v5.js',
+  'caneca10/app-v4-clean.js',
+  'caneca10/gallery-v4.js',
+  'caneca10/art-recovery-v1.js',
   'producao-v2/js/mug-personalizer-v15-clean.js',
   'producao-v2/js/mug-make-native-openai-bridge.js',
   'producao/catalog-sync-admin.js',
@@ -42,7 +42,7 @@ reject(rootIndex, 'mug-public-personalization-v2.js', 'Raiz ainda carrega o pers
 reject(config, 'queueMicrotask', 'config.js ainda executa carregamento lateral de canecas.');
 reject(config, 'mug-public-personalization', 'config.js ainda importa controlador de canecas por efeito colateral.');
 need(publicClient, 'isImageSource', 'Site público não aceita arte intermediária URL/Base64.');
-need(publicClient, 'data:image', 'Site público não aceita Base64 intermediário da V9.5.');
+need(publicClient, 'data:image', 'Site público não aceita Base64 intermediário da automação.');
 need(publicClient, "action:'personalize_mug_model'", 'Site público não chama personalize_mug_model.');
 need(publicClient, "action:'finalize_mug_product'", 'Site público não finaliza a caneca.');
 need(publicClient, "window.addEventListener('da:route-rendered'", 'Personalizador não acompanha a renderização real da SPA.');
@@ -64,10 +64,12 @@ const simulatedLocalAsset = raw => {
 if (simulatedLocalAsset(mediaExample) !== mediaExample) failures.push('Simulação: canecas-media foi convertida incorretamente para caminho local.');
 if (simulatedLocalAsset(mainExample) !== '/site/img/produtos/m1.webp') failures.push('Simulação: asset da main deixou de ser convertido para caminho local.');
 
-// PRODUÇÃO: exatamente um controlador completo, sem guards globais concorrentes.
+// PRODUÇÃO: exatamente um controlador completo, com recovery e trava LOW.
 const productionLoader = read('producao-v2/js/mug-make-native-openai-bridge.js');
 const productionClient = read('producao-v2/js/mug-personalizer-v15-clean.js');
 need(productionLoader, './mug-personalizer-v15-clean.js', 'Produção não carrega o controlador único V15 limpo.');
+need(productionLoader, './mug-make-art-recovery-v22.js', 'Produção não carrega recuperação assíncrona da arte.');
+need(productionLoader, './mug-force-low-quality-v23.js', 'Produção não carrega a trava de qualidade LOW.');
 reject(productionLoader, './mug-personalizer-v7.js', 'Produção ainda carrega V7 concorrente.');
 reject(productionLoader, './mug-personalizer-v12.js', 'Produção ainda carrega V12 concorrente.');
 reject(productionLoader, './mug-catalog-no-block-v13.js', 'Produção ainda carrega patch V13 concorrente.');
@@ -82,20 +84,42 @@ need(productionClient, 'renderResult(resultBox,urls,catalog);', 'Produção não
 need(productionClient, 'button.disabled=false', 'Produção não libera o botão no finally.');
 reject(productionClient, 'window.fetch =', 'Controlador limpo do Produção ainda monkey-patcha window.fetch.');
 
-// CANECA10: app único, sem guard/compat substituindo fetch.
-const mobileIndex = read('ceneca10/index.html');
-const mobile = read('ceneca10/app-v4-clean.js');
+// CANECA10: caminho correto, app único, recovery da arte, transporte LOW e galeria sem refresh paralelo.
+if (fs.existsSync(path.join(root, 'ceneca10'))) failures.push('A pasta antiga ceneca10 ainda existe.');
+const mobileIndex = read('caneca10/index.html');
+const mobile = read('caneca10/app-v4-clean.js');
+const mobileRecovery = read('caneca10/art-recovery-v1.js');
+const mobileGallery = read('caneca10/gallery-v4.js');
+const sharedTransport = read('shared/mug-make-fast-ack-v1.js');
 need(mobileIndex, './app-v4-clean.js', 'Caneca10 não carrega app V4 limpo.');
+need(mobileIndex, './art-recovery-v1.js', 'Caneca10 não carrega recovery da arte.');
+need(mobileIndex, '../shared/mug-make-fast-ack-v1.js', 'Caneca10 não carrega transporte LOW compartilhado.');
+reject(mobileIndex, 'gallery-refresh-v5.js', 'Caneca10 ainda carrega refresh duplicado.');
 reject(mobileIndex, 'make-client-guard', 'Caneca10 ainda carrega Make guard duplicado.');
 reject(mobileIndex, 'make-response-compat', 'Caneca10 ainda carrega compatibilizador fetch duplicado.');
 reject(mobileIndex, 'app-v3.js', 'Caneca10 ainda carrega app V3 antigo.');
+const transportPos = mobileIndex.indexOf('../shared/mug-make-fast-ack-v1.js');
+const recoveryPos = mobileIndex.indexOf('./art-recovery-v1.js');
+const appPos = mobileIndex.indexOf('./app-v4-clean.js');
+const galleryPos = mobileIndex.indexOf('./gallery-v4.js');
+if (!(transportPos >= 0 && recoveryPos > transportPos && appPos > recoveryPos && galleryPos > appPos)) failures.push('Caneca10 não respeita ordem transporte -> recovery -> app -> galeria.');
 need(mobile, 'isImageSource', 'Caneca10 não aceita Base64 intermediário.');
 need(mobile, 'waitFinalProduct', 'Caneca10 não acompanha Accepted no Firebase.');
 need(mobile, 'FINAL_WAIT_MS = 180000', 'Caneca10 não possui limite explícito de 3 minutos.');
+need(mobile, "action:'generate_mug_art'", 'Caneca10 não gera a arte inicial.');
+need(mobile, "action:'analyze_mug_product'", 'Caneca10 não faz catalogação visual.');
 need(mobile, "action:'finalize_mug_product'", 'Caneca10 não finaliza os 3 mockups.');
-need(mobile, "ceneca10:mug-created", 'Caneca10 não avisa a galeria após criar.');
-reject(mobile, 'window.fetch =', 'Caneca10 limpo ainda monkey-patcha window.fetch.');
-need(read('ceneca10/gallery-refresh-v5.js'), '#createdRefresh', 'Histórico do Caneca10 não atualiza após geração.');
+need(mobile, 'mockup_left_base64', 'Caneca10 não envia mockup esquerdo.');
+need(mobile, 'mockup_right_base64', 'Caneca10 não envia mockup direito.');
+need(mobile, 'mockup_center_base64', 'Caneca10 não envia mockup central.');
+reject(mobile, 'window.fetch =', 'Caneca10 limpo ainda monkey-patcha window.fetch diretamente.');
+need(mobileRecovery, "const RESULT_NODE = 'canecas/geracoes'", 'Caneca10 não usa nó temporário da arte.');
+need(mobileRecovery, 'waitForArt', 'Caneca10 não recupera a arte assíncrona pelo Firebase.');
+need(mobileRecovery, 'progressDetail', 'Recovery não informa andamento na interface mobile.');
+need(sharedTransport, "inner.quality = 'low'", 'Transporte compartilhado não força LOW.');
+need(sharedTransport, 'ACK_AFTER_MS = 10000', 'Transporte compartilhado não possui ACK de finalização.');
+need(mobileGallery, 'new MutationObserver', 'Galeria ativa não reage ao resultado concluído.');
+need(mobileGallery, 'setTimeout(() => refresh(true, false), 700)', 'Galeria não agenda refresh único após conclusão.');
 
 // CATÁLOGO: modelo público sob encomenda e suas 4 mídias precisam sobreviver ao pipeline.
 const catalog = read('app-next/src/catalog.js');
@@ -160,4 +184,4 @@ if (failures.length) {
   console.error(`\nCanecas CLEAN V16 FALHOU (${failures.length}):\n- ${failures.join('\n- ')}\n`);
   process.exit(1);
 }
-console.log('Canecas CLEAN V16 OK: runtime público atual, Produção direto ao Make, SPA sem F5, Base64 intermediário, Accepted com timeout, branch canecas-media, 4 URLs finais e catálogo sob encomenda validados.');
+console.log('Canecas CLEAN V16 OK: site público, Produção e Caneca10 canônico com LOW, recovery Firebase, finalização assíncrona, 4 URLs e catálogo sob encomenda validados.');

@@ -14,7 +14,8 @@ on:
       - 'shared/mug-make-fast-ack-v1.js'
       - 'producao-v2/admin-produtivo.html'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
-      - 'ceneca10/index.html'
+      - 'caneca10/index.html'
+      - 'caneca10/art-recovery-v1.js'
       - 'scripts/estabilizar-catalogo-publico.mjs'
       - 'site/canecas-print.json'
       - 'scripts/test-mug-runtime-v17.mjs'
@@ -28,8 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Validar runtime público

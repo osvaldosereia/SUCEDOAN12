@@ -11,8 +11,9 @@ const files = {
   productionFinalizer: 'producao-v2/js/mug-studio-v8-finalizer.js',
   publicRuntime: 'app-next/src/mug-public-runtime-v6.js',
   publicClient: 'app-next/src/mug-public-personalization-v5.js',
-  mobileIndex: 'ceneca10/index.html',
-  mobileClient: 'ceneca10/app-v4-clean.js',
+  mobileIndex: 'caneca10/index.html',
+  mobileClient: 'caneca10/app-v4-clean.js',
+  mobileRecovery: 'caneca10/art-recovery-v1.js',
   sharedTransport: 'shared/mug-make-fast-ack-v1.js',
 };
 
@@ -41,6 +42,8 @@ reject('productionMedia', 'installMugPanel', 'Módulo de mídia não pode montar
 reject('productionMedia', 'generate_mug_mockup', 'Módulo de mídia não pode chamar geração de mockup.');
 
 need('productionBridge', './mug-personalizer-v15-clean.js', 'Produção não carrega o controlador atual de canecas.');
+need('productionBridge', './mug-make-art-recovery-v22.js', 'Produção não carrega recuperação da arte.');
+need('productionBridge', './mug-force-low-quality-v23.js', 'Produção não carrega trava LOW.');
 need('productionBridge', 'function ensureStudioPanelShell()', 'Loader não cria a estrutura do painel do Criador.');
 need('productionBridge', "document.getElementById('mugAutomationPanel')", 'Loader não procura/reutiliza o painel do Criador.');
 need('productionBridge', 'view.appendChild(panel);', 'Loader não anexa o painel à rota de canecas.');
@@ -68,12 +71,27 @@ need('publicClient', "action:'finalize_mug_product'", 'Site público não finali
 need('publicClient', 'waitFinalProduct', 'Site público não recupera finalização Accepted pelo Firebase.');
 reject('publicClient', 'window.fetch =', 'Controlador público não deve monkey-patchar window.fetch diretamente.');
 
-// CANECA10: mantém o transporte rápido antes do app móvel.
+// CANECA10: mesma sequência operacional do Produção, adaptada ao mobile.
 const mobileTransportPos = src.mobileIndex.indexOf('../shared/mug-make-fast-ack-v1.js');
+const mobileRecoveryPos = src.mobileIndex.indexOf('./art-recovery-v1.js');
 const mobileAppPos = src.mobileIndex.indexOf('./app-v4-clean.js');
-if (mobileTransportPos < 0 || mobileAppPos <= mobileTransportPos) failures.push('Caneca10 deve carregar o transporte compartilhado antes do app atual.');
+const mobileGalleryPos = src.mobileIndex.indexOf('./gallery-v4.js');
+if (!(mobileTransportPos >= 0 && mobileRecoveryPos > mobileTransportPos && mobileAppPos > mobileRecoveryPos && mobileGalleryPos > mobileAppPos)) {
+  failures.push('Caneca10 deve carregar transporte LOW -> recovery -> app -> galeria.');
+}
+reject('mobileIndex', 'gallery-refresh-v5.js', 'Caneca10 ainda carrega refresh paralelo da galeria.');
+need('mobileClient', hook, 'Caneca10 não usa o mesmo webhook oficial do Produção.');
+need('mobileClient', "action:'generate_mug_art'", 'Caneca10 não gera a arte inicial.');
+need('mobileClient', "action:'analyze_mug_product'", 'Caneca10 não cataloga a arte.');
 need('mobileClient', "action:'finalize_mug_product'", 'Caneca10 não finaliza canecas.');
 need('mobileClient', 'waitFinalProduct', 'Caneca10 não recupera finalização Accepted no Firebase.');
+need('mobileClient', 'mockup_left_base64', 'Caneca10 não envia a vista esquerda.');
+need('mobileClient', 'mockup_right_base64', 'Caneca10 não envia a vista direita.');
+need('mobileClient', 'mockup_center_base64', 'Caneca10 não envia a vista central.');
+need('mobileRecovery', "const RESULT_NODE = 'canecas/geracoes'", 'Caneca10 não usa o nó de recuperação de arte.');
+need('mobileRecovery', "inner?.action === 'generate_mug_art'", 'Recovery mobile não intercepta a geração de arte.');
+need('mobileRecovery', 'waitForArt', 'Recovery mobile não acompanha o Firebase.');
+need('mobileRecovery', 'progressDetail', 'Recovery mobile não informa o progresso.');
 
 need('sharedTransport', 'ACK_AFTER_MS = 10000', 'Transporte compartilhado perdeu o Accepted rápido de 10 s.');
 need('sharedTransport', "'generate_mug_art', 'finalize_mug_product', 'personalize_mug_model'", 'Transporte compartilhado não cobre todas as ações de imagem.');
@@ -81,8 +99,10 @@ need('sharedTransport', "inner.quality = 'low'", 'Transporte compartilhado não 
 need('sharedTransport', "if (payload.action !== 'finalize_mug_product') return nativeFetch(input, lowInit);", 'ACK rápido deve continuar restrito à finalização.');
 need('sharedTransport', 'Promise.race([request, earlyAck])', 'Transporte compartilhado não preserva a requisição real em paralelo.');
 
+if (fs.existsSync('ceneca10')) failures.push('A pasta ceneca10 antiga ainda existe; o caminho oficial deve ser caneca10.');
+
 if (failures.length) {
   console.error(`Stack atual de canecas FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log('Stack atual OK: painel autossuficiente, Low em todas as imagens, finalização assíncrona, 4 imagens e galeria sem F5.');
+console.log('Stack atual OK: Produção e Caneca10 usam fluxo LOW assíncrono, recovery Firebase, 4 imagens e galeria sem F5.');
