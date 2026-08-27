@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <title>Resultado da caneca · Dona Antônia</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f221e;background:#f5f6f2}*{box-sizing:border-box}body{margin:0}.wrap{width:min(960px,100%);margin:0 auto;padding:18px}.card{background:#fff;border:1px solid #e1e4dc;border-radius:20px;padding:18px;box-shadow:0 12px 36px rgba(25,30,22,.07)}h1{margin:0 0 6px;font-size:24px}p{color:#62685e;margin:0 0 16px;line-height:1.45}.art{width:100%;aspect-ratio:2.5/1;object-fit:contain;background:#f2f4ef;border-radius:14px;border:1px solid #e1e4dc}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.grid img{width:100%;aspect-ratio:1;object-fit:contain;background:#f2f4ef;border-radius:14px;border:1px solid #e1e4dc}.actions{display:grid;gap:10px;margin-top:16px}.actions a{min-height:48px;border-radius:12px;text-decoration:none;font-weight:800;display:flex;align-items:center;justify-content:center;background:#20231f;color:#fff}.status{padding:14px;border-radius:12px;background:#f1f3ee;color:#5c6358}.error{background:#fff0ef;color:#842d29}@media(max-width:620px){.wrap{padding:10px}.card{border-radius:15px;padding:12px}.grid{gap:5px}h1{font-size:21px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Sua caneca personalizada</h1>
+      <p>Confira a arte horizontal e as três prévias geradas.</p>
+      <div id="status" class="status">Carregando sua criação…</div>
+      <div id="result" hidden>
+        <img id="art" class="art" alt="Arte horizontal da caneca">
+        <div class="grid">
+          <img id="m1" alt="Prévia 1 da caneca">
+          <img id="m2" alt="Prévia 2 da caneca">
+          <img id="m3" alt="Prévia 3 da caneca">
+        </div>
+      </div>
+      <div class="actions"><a href="/">Voltar para Dona Antônia</a></div>
+    </section>
+  </main>
+  <script>
+  (()=>{
+    'use strict';
+    const FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
+    const id=String(new URLSearchParams(location.search).get('id')||'').trim();
+    const status=document.getElementById('status');
+    const result=document.getElementById('result');
+    const text=v=>String(v??'').trim();
+    const isUrl=v=>/^https?:\/\//i.test(text(v));
+    function urls(p={}){return{
+      art:text(p.arte_horizontal||p.arte_personalizacao||p.arte_impressao?.url||p.art_url||p.arte_url),
+      m1:text(p.mockup_1||p.url_imagem||p.imagem||p.imagens?.[0]),
+      m2:text(p.mockup_2||p.imagens?.[1]),
+      m3:text(p.mockup_3||p.imagens?.[2])
+    }}
+    async function load(){
+      if(!id){status.textContent='Código da criação não informado.';status.classList.add('error');return}
+      try{
+        const r=await fetch(`${FIREBASE}/produtos/${encodeURIComponent(id)}.json?_=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});
+        if(!r.ok) throw new Error(`Firebase ${r.status}`);
+        const product=await r.json();
+        const u=urls(product||{});
+        if(![u.art,u.m1,u.m2,u.m3].every(isUrl)) throw new Error('As quatro imagens ainda não estão disponíveis.');
+        document.getElementById('art').src=u.art;document.getElementById('m1').src=u.m1;document.getElementById('m2').src=u.m2;document.getElementById('m3').src=u.m3;
+        status.hidden=true;result.hidden=false;
+      }catch(e){status.textContent=e?.message||'Não foi possível carregar esta criação.';status.classList.add('error')}
+    }
+    load();
+  })();
+  </script>
+</body>
+</html>
