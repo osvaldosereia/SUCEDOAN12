@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(path, 'utf8');
-const [index, productMedia, publicRuntime, publicContract, publicController, publicResultLink, publicResultPage, checkoutPhone, admin, prodLoader, caneca10, canecaRecovery, stabilizer, printCache, transport, forceLow] = await Promise.all([
+const [index, productMedia, publicRuntime, customerLibrary, publicContract, publicController, publicResultLink, publicResultPage, checkoutPhone, admin, prodLoader, caneca10, canecaRecovery, stabilizer, printCache, transport, forceLow] = await Promise.all([
   read('index.html'),
   read('app-next/src/product-media.js'),
   read('app-next/src/mug-public-runtime-v6.js'),
+  read('app-next/src/customer-favorites-v27.js'),
   read('app-next/src/mug-public-personalization-contract-v25.js'),
   read('app-next/src/mug-public-personalization-v5.js'),
   read('app-next/src/mug-public-result-link-v26.js'),
@@ -21,11 +22,16 @@ const [index, productMedia, publicRuntime, publicContract, publicController, pub
   read('producao-v2/js/mug-force-low-quality-v23.js')
 ]);
 
-assert.match(index, /public-mug-contract-v19/);
+assert.match(index, /public-mug-recovery-v21|customer-library-v27/);
 assert.match(index, /mug-public-runtime-v6\.js/);
 assert.equal((index.match(/mug-public-runtime-v6\.js/g) || []).length, 2, 'runtime público deve aparecer apenas no preload e no script');
 assert.doesNotMatch(index, /<script[^>]+mug-public-personalization-v[0-9]+\.js/i, 'index não deve carregar controlador público diretamente');
 
+assert.match(publicRuntime, /customer-favorites-v27\.js/);
+assert.match(publicRuntime, /loadCustomerLibrary/);
+assert.ok(publicRuntime.indexOf('loadCustomerLibrary') < publicRuntime.indexOf('if (!isProductRoute()) return'), 'biblioteca do cliente deve carregar também fora da rota de produto');
+assert.match(publicRuntime, /da:mug-personalized-added/);
+assert.match(publicRuntime, /__DA_CUSTOMER_LIBRARY__/);
 assert.match(publicRuntime, /mug-make-fast-ack-v1\.js/);
 assert.match(publicRuntime, /mug-public-personalization-contract-v25\.js/);
 assert.match(publicRuntime, /mug-public-personalization-v5\.js/);
@@ -37,6 +43,21 @@ assert.match(publicRuntime, /featurePromise/);
 assert.doesNotMatch(publicRuntime, /mug-public-route-guard-v6\.js/);
 assert.doesNotMatch(publicRuntime, /dispatchEvent\(new Event\('hashchange'\)\)/, 'runtime não pode provocar hashchange sintético');
 assert.doesNotMatch(publicRuntime, /setInterval\(/, 'runtime não deve usar polling contínuo de rota');
+
+assert.match(customerLibrary, /const CUSTOMER_ROOT = 'canecas\/clientes'/);
+assert.match(customerLibrary, /crypto\.subtle\.digest\('SHA-256'/);
+assert.match(customerLibrary, /Minhas canecas/);
+assert.match(customerLibrary, /Recuperar minhas canecas/);
+assert.match(customerLibrary, /status: 'rascunho'/);
+assert.match(customerLibrary, /status: 'arquivada'/);
+assert.match(customerLibrary, /da:mug-personalized-added/);
+assert.match(customerLibrary, /syncFavorites/);
+assert.match(customerLibrary, /captureMug/);
+assert.match(customerLibrary, /migrateKnownMugs/);
+assert.match(customerLibrary, /mockup_3/);
+assert.match(customerLibrary, /arte_horizontal/);
+assert.doesNotMatch(customerLibrary, /setInterval\(/, 'biblioteca não deve usar polling contínuo');
+assert.doesNotMatch(customerLibrary, /dispatchEvent\(new Event\(['"]hashchange/, 'biblioteca não deve provocar hashchange sintético');
 
 assert.match(publicContract, /personalize_mug_model/);
 assert.match(publicContract, /payload\.image_base64 = firstCustomerPhoto\(payload\)/);
@@ -89,4 +110,4 @@ assert.match(forceLow, /finalize_mug_product/);
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Runtime público V20 + contrato V25 + resultado V26 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');
+console.log('OK · Runtime público + biblioteca V27 + contrato V25 + resultado V26 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');
