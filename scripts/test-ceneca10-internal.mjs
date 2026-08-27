@@ -55,11 +55,12 @@ requireText(app, "situacao:'I'", 'Produto não é salvo inativo.');
 requireText(app, 'ativo:false', 'Produto não possui ativo=false.');
 requireText(app, 'modelo_caneca:true', 'Nova caneca não vira modelo interno.');
 requireText(app, 'modelo_publico:false', 'Nova caneca está sendo publicada automaticamente.');
-requireText(app, "quality:'low'", 'Caneca10 deve solicitar imagens sempre em LOW.');
-forbidText(app, "quality:'high'", 'Caneca10 não pode solicitar geração de imagem em HIGH.');
 
-requireText(transport, "inner.quality = 'low'", 'Transporte compartilhado não força LOW.');
+requireText(transport, "const MUG_ACTIONS = new Set(['generate_mug_art', 'finalize_mug_product', 'personalize_mug_model'])", 'Transporte não cobre todas as ações de geração de imagem.');
+requireText(transport, "inner.quality = 'low'", 'Transporte compartilhado não força LOW antes do envio ao Make.');
 requireText(transport, "payload.action !== 'finalize_mug_product'", 'Transporte não separa geração normal da finalização assíncrona.');
+requireText(transport, 'return nativeFetch(input, lowInit)', 'Requisições de arte/personalização não usam o payload já convertido para LOW.');
+requireText(transport, 'nativeFetch(input, lowInit)', 'Finalização não usa o payload já convertido para LOW.');
 requireText(transport, 'ACK_AFTER_MS = 10000', 'Finalização não possui ACK de contingência.');
 requireText(transport, "dataset.mugImageQuality = 'low'", 'Transporte não sinaliza qualidade LOW.');
 
@@ -81,4 +82,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Caneca10 V6 validado: fluxo atual, LOW fixo, 4 por vez, modelos, inativas e exclusão segura.');
+console.log('Caneca10 V6 validado: transporte força LOW em toda geração, histórico leve e fluxo atual íntegro.');
