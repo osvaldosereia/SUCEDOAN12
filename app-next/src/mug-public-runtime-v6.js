@@ -1,4 +1,4 @@
-const BUILD = '20260827-site-mug-runtime-v8-low';
+const BUILD = '20260827-site-mug-runtime-v9-public-contract';
 let featurePromise = null;
 
 function isProductRoute() {
@@ -10,6 +10,7 @@ async function loadMugFeatures() {
   if (!featurePromise) {
     featurePromise = (async () => {
       await import(`../../shared/mug-make-fast-ack-v1.js?v=${encodeURIComponent(BUILD)}`);
+      await import(`./mug-public-personalization-contract-v25.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-v5.js?v=${encodeURIComponent(BUILD)}`);
       document.documentElement.dataset.mugPublicRuntime = BUILD;
       console.info(`Canecas públicas runtime · ${BUILD}`);
