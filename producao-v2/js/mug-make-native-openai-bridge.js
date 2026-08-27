@@ -1,6 +1,6 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260826-canecas-clean-v19-direct';
+  || '20260827-canecas-clean-v21-shell';
 
 const MODULES = [
   './mug-personalizer-v15-clean.js',
@@ -20,10 +20,40 @@ function withBuild(path) {
   return `${path}${separator}admin_build=${encodeURIComponent(ACTIVE_BUILD)}`;
 }
 
+function ensureStudioPanelShell() {
+  const view = document.querySelector('.view[data-view="mug-studio"]');
+  if (!view) return null;
+  let panel = document.getElementById('mugAutomationPanel');
+  if (!panel) {
+    panel = document.createElement('section');
+    panel.id = 'mugAutomationPanel';
+    panel.className = 'mug-automation-panel';
+    panel.setAttribute('aria-live', 'polite');
+    view.appendChild(panel);
+  } else if (panel.parentElement !== view) {
+    view.appendChild(panel);
+  }
+  return panel;
+}
+
+function handleStudioRoute(event) {
+  if (event?.detail?.route === 'mug-studio') ensureStudioPanelShell();
+}
+
+window.addEventListener('admin-v2-route', handleStudioRoute);
+window.addEventListener('admin-v2-route-ready', handleStudioRoute);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', ensureStudioPanelShell, { once: true });
+} else {
+  ensureStudioPanelShell();
+}
+
 function install() {
   if (installPromise) return installPromise;
   installPromise = (async () => {
+    ensureStudioPanelShell();
     for (const path of MODULES) await import(withBuild(path));
+    ensureStudioPanelShell();
     window.__daMugStudioLoader = ACTIVE_BUILD;
     window.__daMugStudioModules = [...MODULES];
     return ACTIVE_BUILD;
@@ -37,4 +67,4 @@ function install() {
 
 await install();
 
-export { install, withBuild, ACTIVE_BUILD };
+export { install, withBuild, ACTIVE_BUILD, ensureStudioPanelShell };
