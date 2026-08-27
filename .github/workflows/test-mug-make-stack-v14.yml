@@ -1,17 +1,18 @@
-name: Testar stack de canecas V14
+name: Testar stack atual de canecas
 
 on:
   push:
     branches: [main]
     paths:
-      - 'producao-v2/js/mug-make-client-guard-v14.js'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
-      - 'app-next/src/mug-make-client-guard-v3.js'
-      - 'app-next/src/config.js'
-      - 'app-next/src/mug-public-personalization-v2.js'
-      - 'ceneca10/make-client-guard-v5.js'
+      - 'producao-v2/js/mug-personalizer-v15-clean.js'
+      - 'producao-v2/js/mug-studio-gallery.js'
+      - 'producao-v2/js/mug-studio-v8-finalizer.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-personalization-v5.js'
       - 'ceneca10/index.html'
-      - 'ceneca10/app-v2.js'
+      - 'ceneca10/app-v4-clean.js'
+      - 'shared/mug-make-fast-ack-v1.js'
       - 'scripts/test-mug-make-stack-v14.mjs'
       - '.github/workflows/test-mug-make-stack-v14.yml'
   workflow_dispatch:
@@ -20,7 +21,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: mug-make-stack-v14-${{ github.ref }}
+  group: mug-stack-current-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -32,5 +33,5 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Validar Produção Caneca10 e site público
+      - name: Validar Produção, Caneca10 e site público
         run: node scripts/test-mug-make-stack-v14.mjs
