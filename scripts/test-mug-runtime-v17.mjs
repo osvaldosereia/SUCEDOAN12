@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(path, 'utf8');
-const [index, productMedia, publicRuntime, publicController, checkoutPhone, admin, prodLoader, caneca10, stabilizer, printCache, transport] = await Promise.all([
+const [index, productMedia, publicRuntime, publicController, checkoutPhone, admin, prodLoader, caneca10, stabilizer, printCache, transport, forceLow] = await Promise.all([
   read('index.html'),
   read('app-next/src/product-media.js'),
   read('app-next/src/mug-public-runtime-v6.js'),
@@ -13,7 +13,8 @@ const [index, productMedia, publicRuntime, publicController, checkoutPhone, admi
   read('ceneca10/index.html'),
   read('scripts/estabilizar-catalogo-publico.mjs'),
   read('site/canecas-print.json'),
-  read('shared/mug-make-fast-ack-v1.js')
+  read('shared/mug-make-fast-ack-v1.js'),
+  read('producao-v2/js/mug-force-low-quality-v23.js')
 ]);
 
 assert.match(index, /public-stability-v18/);
@@ -38,20 +39,26 @@ assert.match(productMedia, /const branch = decodeURIComponent/);
 assert.match(productMedia, /branch === 'main' && path \? `\/\$\{path\}` : raw/);
 assert.match(stabilizer, /\(\?:main\|master\)/, 'compactador só deve converter main/master para caminho local');
 
-assert.match(admin, /20260826-canecas-clean-v20/);
+assert.match(admin, /20260827-canecas-clean-v24-low-async/);
 assert.match(prodLoader, /mug-personalizer-v15-clean\.js/);
-assert.doesNotMatch(prodLoader, /mug-make-fast-ack-v1\.js/, 'Produção deve aguardar a resposta real do Make e usar polling apenas se o próprio Make responder Accepted');
+assert.match(prodLoader, /mug-make-art-recovery-v22\.js/);
+assert.match(prodLoader, /mug-force-low-quality-v23\.js/);
+assert.doesNotMatch(prodLoader, /mug-make-fast-ack-v1\.js/, 'Produção não deve usar o ACK sintético compartilhado; usa recuperação de arte + acompanhamento Firebase');
 
 const canecaSharedPos = caneca10.indexOf('../shared/mug-make-fast-ack-v1.js');
 const canecaAppPos = caneca10.indexOf('./app-v4-clean.js');
 assert.ok(canecaSharedPos >= 0 && canecaAppPos > canecaSharedPos, 'Caneca10 deve carregar transporte compartilhado antes do app');
-assert.match(caneca10, /20260826-clean-v5/);
+assert.match(caneca10, /20260827-low-v6/);
 
 assert.match(transport, /finalize_mug_product/);
 assert.match(transport, /ACK_AFTER_MS = 10000/);
+assert.match(transport, /inner\.quality = 'low'/);
 assert.match(transport, /Promise\.race\(\[request, earlyAck\]\)/);
+assert.match(forceLow, /inner\.quality = 'low'/);
+assert.match(forceLow, /generate_mug_art/);
+assert.match(forceLow, /finalize_mug_product/);
 
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Runtime público V18 e Produção direto: transporte e cache validados.');
+console.log('OK · Runtime público V18 + Canecas V24 LOW assíncronas validados.');
