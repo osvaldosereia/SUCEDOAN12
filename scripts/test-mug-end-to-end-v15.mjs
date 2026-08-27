@@ -31,10 +31,13 @@ for (const file of syntaxFiles) {
 
 // SITE PÚBLICO: um único controlador, montagem SPA e respostas Make explícitas.
 const rootIndex = read('index.html');
+const publicRuntime = read('app-next/src/mug-public-runtime-v6.js');
 const config = read('app-next/src/config.js');
 const publicClient = read('app-next/src/mug-public-personalization-v5.js');
 const imagePerformance = read('app-next/src/image-performance.js');
-need(rootIndex, 'mug-public-personalization-v5.js?v=20260826-canecas-clean-v16', 'Raiz não carrega o personalizador público V5 limpo.');
+need(rootIndex, 'mug-public-runtime-v6.js', 'Raiz não carrega o runtime público atual de canecas.');
+need(publicRuntime, './mug-public-personalization-v5.js', 'Runtime público não carrega o personalizador V5 atual.');
+reject(rootIndex, '<script src="./app-next/src/mug-public-personalization-v5.js', 'Raiz não deve carregar o personalizador V5 diretamente fora do runtime.');
 reject(rootIndex, 'mug-public-personalization-v2.js', 'Raiz ainda carrega o personalizador público V2 antigo.');
 reject(config, 'queueMicrotask', 'config.js ainda executa carregamento lateral de canecas.');
 reject(config, 'mug-public-personalization', 'config.js ainda importa controlador de canecas por efeito colateral.');
@@ -69,18 +72,20 @@ reject(productionLoader, './mug-personalizer-v7.js', 'Produção ainda carrega V
 reject(productionLoader, './mug-personalizer-v12.js', 'Produção ainda carrega V12 concorrente.');
 reject(productionLoader, './mug-catalog-no-block-v13.js', 'Produção ainda carrega patch V13 concorrente.');
 reject(productionLoader, './mug-make-client-guard-v14.js', 'Produção ainda carrega guard global V14.');
+reject(productionLoader, 'mug-make-fast-ack-v1.js', 'Produção ainda instala Accepted sintético antes da resposta real do Make.');
 if (count(productionLoader, 'mug-personalizer-') !== 1) failures.push('Produção deve carregar exatamente um mug-personalizer.');
 need(productionClient, 'waitFinalProduct', 'Produção não acompanha finalização Accepted no Firebase.');
 need(productionClient, 'FINAL_WAIT_MS = 180000', 'Produção não possui limite explícito de 3 minutos.');
 need(productionClient, 'analyzeCatalogSoft', 'Catalogação do Produção voltou a ser bloqueante.');
 need(productionClient, "[urls.art,urls.m1,urls.m2,urls.m3].every(isHttpUrl)", 'Produção não valida as quatro URLs finais.');
+need(productionClient, 'renderResult(resultBox,urls,catalog);', 'Produção não renderiza as quatro imagens quando a finalização retorna.');
 need(productionClient, 'button.disabled=false', 'Produção não libera o botão no finally.');
 reject(productionClient, 'window.fetch =', 'Controlador limpo do Produção ainda monkey-patcha window.fetch.');
 
 // CANECA10: app único, sem guard/compat substituindo fetch.
 const mobileIndex = read('ceneca10/index.html');
 const mobile = read('ceneca10/app-v4-clean.js');
-need(mobileIndex, 'app-v4-clean.js?v=20260826-clean-v4', 'Caneca10 não carrega app V4 limpo.');
+need(mobileIndex, './app-v4-clean.js', 'Caneca10 não carrega app V4 limpo.');
 reject(mobileIndex, 'make-client-guard', 'Caneca10 ainda carrega Make guard duplicado.');
 reject(mobileIndex, 'make-response-compat', 'Caneca10 ainda carrega compatibilizador fetch duplicado.');
 reject(mobileIndex, 'app-v3.js', 'Caneca10 ainda carrega app V3 antigo.');
@@ -155,4 +160,4 @@ if (failures.length) {
   console.error(`\nCanecas CLEAN V16 FALHOU (${failures.length}):\n- ${failures.join('\n- ')}\n`);
   process.exit(1);
 }
-console.log('Canecas CLEAN V16 OK: stack única, SPA sem F5, Base64 intermediário, Accepted com timeout, branch canecas-media, 4 URLs finais e catálogo sob encomenda validados.');
+console.log('Canecas CLEAN V16 OK: runtime público atual, Produção direto ao Make, SPA sem F5, Base64 intermediário, Accepted com timeout, branch canecas-media, 4 URLs finais e catálogo sob encomenda validados.');
