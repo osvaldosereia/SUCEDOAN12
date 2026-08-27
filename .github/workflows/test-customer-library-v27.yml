@@ -1,0 +1,28 @@
+name: Testar Favoritos + Minhas canecas V27
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app-next/src/customer-favorites-v27.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'scripts/test-customer-library-v27.mjs'
+      - '.github/workflows/test-customer-library-v27.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Validar sintaxe da biblioteca
+        run: node --check app-next/src/customer-favorites-v27.js
+      - name: Validar Favoritos e Minhas canecas
+        run: node scripts/test-customer-library-v27.mjs
