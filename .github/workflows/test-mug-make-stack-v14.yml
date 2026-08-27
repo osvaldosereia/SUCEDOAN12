@@ -9,6 +9,7 @@ on:
       - 'producao-v2/js/mug-product-media-enhancement-v19.js'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
       - 'producao-v2/js/mug-make-art-recovery-v22.js'
+      - 'producao-v2/js/mug-force-low-quality-v23.js'
       - 'producao-v2/js/mug-personalizer-v15-clean.js'
       - 'producao-v2/js/mug-studio-gallery.js'
       - 'producao-v2/js/mug-studio-v8-finalizer.js'
@@ -20,6 +21,7 @@ on:
       - 'shared/mug-make-fast-ack-v1.js'
       - 'scripts/test-mug-make-stack-v14.mjs'
       - 'scripts/test-mug-art-recovery-v22.mjs'
+      - 'scripts/test-mug-low-quality-v23.mjs'
       - '.github/workflows/test-mug-make-stack-v14.yml'
   workflow_dispatch:
 
@@ -43,3 +45,5 @@ jobs:
         run: node scripts/test-mug-make-stack-v14.mjs
       - name: Validar recuperação assíncrona da arte
         run: node scripts/test-mug-art-recovery-v22.mjs
+      - name: Validar qualidade fixa Low
+        run: node scripts/test-mug-low-quality-v23.mjs
