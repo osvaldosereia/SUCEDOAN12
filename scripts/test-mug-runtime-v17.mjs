@@ -38,7 +38,7 @@ assert.match(productMedia, /const branch = decodeURIComponent/);
 assert.match(productMedia, /branch === 'main' && path \? `\/\$\{path\}` : raw/);
 assert.match(stabilizer, /\(\?:main\|master\)/, 'compactador só deve converter main/master para caminho local');
 
-assert.match(admin, /20260826-canecas-clean-v17/);
+assert.match(admin, /20260826-canecas-clean-v18/);
 const sharedPos = prodLoader.indexOf("../../shared/mug-make-fast-ack-v1.js");
 const controllerPos = prodLoader.indexOf("./mug-personalizer-v15-clean.js");
 assert.ok(sharedPos >= 0 && controllerPos > sharedPos, 'Produção deve carregar transporte compartilhado antes do controlador');
