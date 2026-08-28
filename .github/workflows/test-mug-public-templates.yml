@@ -7,8 +7,17 @@ on:
       - 'producao-v2/js/mug-public-template-admin-v3.js'
       - 'producao-v2/js/mug-template-refresh-after-save-v1.js'
       - 'producao-v2/admin-produtivo.html'
-      - 'app-next/src/mug-public-personalization-v5.js'
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-3d-v2.js'
       - 'app-next/src/config.js'
+      - '.github/workflows/test-mug-public-templates.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'producao-v2/js/mug-public-template-admin-v3.js'
+      - 'producao-v2/js/mug-template-refresh-after-save-v1.js'
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-3d-v2.js'
       - '.github/workflows/test-mug-public-templates.yml'
   workflow_dispatch:
 
@@ -16,15 +25,16 @@ jobs:
   validar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Validar JavaScript
         run: |
           node --check producao-v2/js/mug-public-template-admin-v3.js
           node --check producao-v2/js/mug-template-refresh-after-save-v1.js
-          node --check app-next/src/mug-public-personalization-v5.js
+          node --check app-next/src/mug-public-personalization-v6.js
+          node --check app-next/src/mug-public-3d-v2.js
           node --check app-next/src/config.js
       - name: Validar integração do Produção e site público
         shell: bash
@@ -33,7 +43,8 @@ jobs:
           ADMIN='producao-v2/js/mug-public-template-admin-v3.js'
           BRIDGE='producao-v2/js/mug-template-refresh-after-save-v1.js'
           LOADER='producao-v2/admin-produtivo.html'
-          SITE='app-next/src/mug-public-personalization-v5.js'
+          SITE='app-next/src/mug-public-personalization-v6.js'
+          VIEWER='app-next/src/mug-public-3d-v2.js'
           CONFIG='app-next/src/config.js'
 
           grep -q "CANECAS V3" "$ADMIN"
@@ -42,18 +53,20 @@ jobs:
           grep -q "canecas/modelos_privados" "$ADMIN"
           grep -q "personalizacao_config_publica" "$ADMIN"
           grep -q "mug-public-template-admin-v3.js" "$LOADER"
-          if grep -q "mug-public-template-admin-v2.js" "$LOADER"; then
-            echo 'ERRO: o Admin produtivo ainda carrega o controlador V2.' >&2
-            exit 1
-          fi
-
+          ! grep -q "mug-public-template-admin-v2.js" "$LOADER"
           grep -q "mug-template-save-bridge-v3" "$BRIDGE"
           grep -q "MUG_PERSONALIZATION" "$CONFIG"
-          grep -q "DAILY_LIMIT = 3" "$SITE"
+          grep -q "DAILY_LIMIT=3" "$SITE"
           grep -q "mugPublicCustomerWhatsapp" "$SITE"
           grep -q "personalize_mug_model" "$SITE"
           grep -q "finalize_mug_product" "$SITE"
           grep -q "waitFinalProduct" "$SITE"
-          grep -q "phraseValue" "$SITE"
+          grep -q "arte_horizontal" "$SITE"
+          grep -q "preview_esquerda" "$SITE"
+          grep -q "preview_direita" "$SITE"
+          ! grep -q "mockup_left_base64" "$SITE"
+          ! grep -q "prompt_mockup_1" "$SITE"
+          grep -q "Ver caneca em 360°" "$VIEWER"
+          grep -q "generatePreviews" "$VIEWER"
 
-          echo 'Templates de caneca V3 validados.'
+          echo 'Templates de caneca art-only + 3D V2 validados.'
