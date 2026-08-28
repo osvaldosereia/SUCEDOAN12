@@ -1,22 +1,22 @@
-name: Testar canecas públicas 3D V2
+name: Testar UX pública de canecas
 
 on:
   push:
     paths:
       - 'index.html'
-      - 'caneca10/resultado.html'
-      - 'app-next/src/mug-public-3d-v2.js'
+      - 'app-next/src/product-media.js'
       - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-ux-v1.js'
       - 'scripts/test-mug-public-3d-v2.mjs'
       - '.github/workflows/test-mug-public-3d-v2.yml'
   pull_request:
     paths:
       - 'index.html'
-      - 'caneca10/resultado.html'
-      - 'app-next/src/mug-public-3d-v2.js'
+      - 'app-next/src/product-media.js'
       - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-ux-v1.js'
       - 'scripts/test-mug-public-3d-v2.mjs'
       - '.github/workflows/test-mug-public-3d-v2.yml'
 
@@ -28,5 +28,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validar runtime público de canecas 3D V2
+      - name: Validar UX pública de canecas
         run: node scripts/test-mug-public-3d-v2.mjs
