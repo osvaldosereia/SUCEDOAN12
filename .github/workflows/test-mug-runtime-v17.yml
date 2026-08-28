@@ -11,6 +11,7 @@ on:
       - 'app-next/styles/home-checkout-polish.css'
       - 'app-next/src/mug-public-runtime-v6.js'
       - 'app-next/src/mug-public-3d-v1.js'
+      - 'app-next/src/mug-public-thumbnails-v1.js'
       - 'app-next/src/customer-favorites-v27.js'
       - 'app-next/src/mug-public-personalization-contract-v25.js'
       - 'app-next/src/mug-public-personalization-v5.js'
@@ -24,6 +25,14 @@ on:
       - 'scripts/estabilizar-catalogo-publico.mjs'
       - 'site/canecas-print.json'
       - 'scripts/test-mug-runtime-v17.mjs'
+      - 'scripts/test-mug-3d-v1.mjs'
+      - '.github/workflows/test-mug-runtime-v17.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-3d-v1.js'
+      - 'app-next/src/mug-public-thumbnails-v1.js'
       - 'scripts/test-mug-3d-v1.mjs'
       - '.github/workflows/test-mug-runtime-v17.yml'
 
