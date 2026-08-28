@@ -85,8 +85,8 @@ function isActive(product) {
 
 function isPublicMugModel(product) {
   const category = text(product?.categoria ?? product?.category).toLowerCase();
-  return bool(product?.modelo_publico)
-    && (bool(product?.modelo_caneca) || category.includes("caneca"));
+  const isMug = bool(product?.modelo_caneca) || bool(product?.produto_sob_encomenda) || category.includes("caneca");
+  return isMug && isActive(product);
 }
 
 function publicImageValue(value) {
@@ -147,6 +147,7 @@ function mediaList(product = {}) {
 
 function compactProduct(key, product = {}) {
   const media = mediaList(product);
+  const publicMug = isPublicMugModel(product);
   const compact = {
     firebaseKey: key,
     id: text(product.id || key),
@@ -172,9 +173,9 @@ function compactProduct(key, product = {}) {
     quantidade_caixa: integer(product.quantidade_caixa),
     situacao: isActive(product) ? "A" : "I",
     modelo_caneca: bool(product.modelo_caneca),
-    modelo_publico: bool(product.modelo_publico),
+    modelo_publico: publicMug || bool(product.modelo_publico),
     personalizacao_publica: bool(product.personalizacao_publica),
-    produto_sob_encomenda: isPublicMugModel(product),
+    produto_sob_encomenda: publicMug,
     thumbnail: publicImageValue(product.thumbnail || product.mug_thumbnail || product.thumb || product.miniatura),
     preview_esquerda: publicImageValue(product.preview_esquerda || product.preview_left || product.mug_preview_left),
     preview_direita: publicImageValue(product.preview_direita || product.preview_right || product.mug_preview_right),
@@ -186,6 +187,7 @@ function compactProduct(key, product = {}) {
     mockup_2: publicImageValue(product.mockup_2),
     mockup_3: publicImageValue(product.mockup_3),
     arte_horizontal: publicImageValue(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url),
+    video_youtube: text(product.video_youtube || product.youtube_url || product.video_url || product.short_youtube),
     descricao: text(product.descricao),
     descricao_curta: text(product.descricao_curta || product.descricao).slice(0, 220),
     descricao_status: text(product.descricao_status),
@@ -267,7 +269,7 @@ async function run() {
     productCount: Object.keys(publicCatalog).length,
     adminProductCount: Object.keys(adminCatalog).length,
     source: "firebase-official-sync",
-    instructions: "Catálogos atualizados do Firebase; modelos públicos de canecas preservam arte horizontal, thumbnail e duas prévias quando disponíveis."
+    instructions: "Catálogos atualizados do Firebase; canecas ativas ficam públicas sob encomenda, mesmo sem estoque, preservando arte horizontal, dois mockups e YouTube/Shorts quando disponíveis."
   };
 
   await Promise.all([
