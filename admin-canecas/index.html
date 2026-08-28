@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#111315">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <title>Admin Canecas — Dona Antônia</title>
+  <link rel="stylesheet" href="./styles.css?v=20260828-1">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="mark">CA</div><div><strong>Admin Canecas</strong><span>Dona Antônia · CanecaFácil</span></div></div>
+      <nav id="nav">
+        <button data-route="dashboard" class="active"><b>IN</b>Início</button>
+        <button data-route="orders"><b>PD</b>Pedidos</button>
+        <button data-route="creations"><b>CR</b>Criações</button>
+        <button data-route="mugs"><b>CN</b>Canecas</button>
+        <button data-route="print"><b>IP</b>Impressão</button>
+        <button data-route="settings"><b>CF</b>Configurações</button>
+      </nav>
+      <div class="side-status"><i id="firebaseDot"></i><div><strong id="firebaseTitle">Firebase</strong><span id="firebaseStatus">Conectando…</span></div></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <button class="menu" id="menuButton" aria-label="Abrir menu">☰</button>
+        <div><h1 id="pageTitle">Início</h1><p id="pageSubtitle">Operação completa das canecas.</p></div>
+        <div class="top-actions"><button class="secondary" id="reloadButton">Atualizar</button><a class="primary" href="../caneca-print/" target="_blank">Abrir Caneca Print</a></div>
+      </header>
+      <main id="main">
+        <section class="view active" data-view="dashboard"><div id="dashboard"></div></section>
+        <section class="view" data-view="orders"><div id="orders"></div></section>
+        <section class="view" data-view="creations"><div id="creations"></div></section>
+        <section class="view" data-view="mugs"><div id="mugs"></div></section>
+        <section class="view" data-view="print"><div id="print"></div></section>
+        <section class="view" data-view="settings"><div id="settings"></div></section>
+      </main>
+    </div>
+  </div>
+  <div class="overlay" id="overlay" hidden></div>
+  <aside class="drawer" id="drawer" aria-hidden="true"><button class="drawer-close" id="drawerClose">×</button><div id="drawerContent"></div></aside>
+  <div class="toast" id="toast" hidden></div>
+  <script type="module" src="./app.js?v=20260828-1"></script>
+</body>
+</html>
