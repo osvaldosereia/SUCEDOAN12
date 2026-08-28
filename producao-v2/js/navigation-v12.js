@@ -219,6 +219,8 @@ function start() {
   });
   window.addEventListener('admin-v2-open-product', () => activate('products'));
   window.adminV2CurrentRoute = () => currentRoute;
+  // Alias compatível para integrações administrativas antigas que ainda navegam por função global.
+  window.adminV2Navigate = route => activate(route);
   activate(routeFromLocation(), { persist: false });
 }
 
