@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v25-professional-ux';
+const BUILD = '20260828-site-mug-runtime-v26-direct-personalize';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
@@ -70,7 +70,6 @@ async function loadMugFeatures() {
     featurePromise = (async () => {
       await import(`../../shared/mug-make-fast-ack-v1.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-contract-v25.js?v=${encodeURIComponent(BUILD)}`);
-      await import(`./mug-public-personalization-make-bridge-v1.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-active-template-bridge-v1.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-v7.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-result-link-v26.js?v=${encodeURIComponent(BUILD)}`);
