@@ -17,14 +17,15 @@ reject('root','three@','index.html ainda carrega Three.js.');
 reject('root','type="importmap"','index.html ainda possui importmap legado do 3D.');
 reject('root','Preparando visualização da caneca','index.html ainda esconde a galeria aguardando 3D.');
 
-// Runtime: biblioteca/favoritos + thumbnails + UX + personalização, sem 3D.
-need('runtime',"const BUILD = '20260828-site-mug-runtime-v25-professional-ux'",'Runtime público não está na release de UX profissional.');
+// Runtime: biblioteca/favoritos + thumbnails + UX + personalização direta, sem 3D e sem bridge que desviava para generate_mug_art.
+need('runtime',"const BUILD = '20260828-site-mug-runtime-v26-direct-personalize'",'Runtime público não está na release de personalização direta.');
 need('runtime','customer-favorites-v27.js','Runtime perdeu Favoritos/Minhas canecas.');
 need('runtime','customer-mug-media-v28.js','Runtime perdeu capa das criações.');
 need('runtime','mug-public-thumbnails-v2.js','Runtime perdeu miniaturas leves.');
 need('runtime','mug-public-ux-v1.js','Runtime não carrega a camada visual profissional.');
 need('runtime','mug-public-personalization-contract-v25.js','Runtime perdeu contrato/recovery.');
 need('runtime','mug-public-personalization-v7.js','Runtime não carrega personalização de 2 mockups.');
+reject('runtime','mug-public-personalization-make-bridge-v1.js','Runtime ainda desvia personalize_mug_model para generate_mug_art.');
 reject('runtime','mug-public-3d-v2.js','Runtime ainda carrega visualizador 3D.');
 
 // UX profissional: cards, galeria responsiva e formulário com hierarquia clara.
@@ -53,6 +54,8 @@ need('performance','product-media.js?v=20260828-2mockups-shorts-v2-final','image
 // Personalização: arte + exatamente dois mockups, LOW e recovery.
 need('client',"action:'personalize_mug_model'",'Personalização não envia modelo + dados ao Make.');
 need('client',"action:'finalize_mug_product'",'Personalização não finaliza os dois mockups.');
+need('client','images_json:JSON.stringify(photos)','Personalização não envia as fotos escolhidas pelo cliente.');
+need('client',"image_base64:photos[0]?.image_base64||''",'Personalização não envia a primeira foto como image_base64.');
 need('client','mockup_left_base64','Personalização não envia recorte esquerdo.');
 need('client','mockup_right_base64','Personalização não envia recorte direito.');
 need('client','mockup_1_url','Personalização não recebe mockup 1.');
@@ -64,7 +67,8 @@ need('contract',"payload.quality = 'low'",'Contrato não força LOW.');
 need('contract','firstCustomerPhoto','Contrato não repassa a foto do cliente.');
 need('contract','fallbackModelImage','Contrato não usa arte horizontal do modelo como fallback.');
 need('contract',"RESULT_NODE = 'canecas/geracoes'",'Contrato perdeu recuperação assíncrona pelo Firebase.');
-need('contract','waitForPersonalizedArt','Contrato não aguarda arte após timeout.');
+need('contract','waitForPersonalizedArt','Contrato não aguarda arte após timeout/falha de rede.');
+need('contract',"payload.action === 'generate_mug_art' && payload.personalization_action === 'personalize_mug_model'",'Contrato não protege abas antigas que ainda converteram a personalização.');
 
 need('result','mockup_1','Página da criação não mostra mockup 1.');
 need('result','mockup_2','Página da criação não mostra mockup 2.');
@@ -73,4 +77,4 @@ reject('result','mockup_3','Página da criação ainda depende de terceiro mocku
 reject('result','360°','Página da criação ainda oferece 3D/360.');
 
 if(failures.length){console.error(`Runtime público de canecas FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);process.exit(1)}
-console.log('Runtime público OK: 2 mockups + arte horizontal + Short manual + UX profissional; personalização LOW com recovery e sem 3D.');
+console.log('Runtime público OK: personalização direta do modelo + foto do cliente, recovery Firebase, 2 mockups + arte horizontal + Short manual; sem desvio para generate_mug_art.');
