@@ -6,10 +6,15 @@ const bridgeFile='app-next/src/mug-public-personalization-make-bridge-v1.js';
 const runtimeFile='app-next/src/mug-public-runtime-v6.js';
 const clientFile='app-next/src/mug-public-personalization-v7.js';
 const contractFile='app-next/src/mug-public-personalization-contract-v25.js';
-const [bridge,runtime,client,contract]=await Promise.all([
-  readFile(bridgeFile,'utf8'),readFile(runtimeFile,'utf8'),readFile(clientFile,'utf8'),readFile(contractFile,'utf8')
+const adminFile='producao-v2/js/mug-public-template-admin-v2.js';
+const [bridge,runtime,client,contract,admin]=await Promise.all([
+  readFile(bridgeFile,'utf8'),
+  readFile(runtimeFile,'utf8'),
+  readFile(clientFile,'utf8'),
+  readFile(contractFile,'utf8'),
+  readFile(adminFile,'utf8')
 ]);
-for(const file of [bridgeFile,runtimeFile,clientFile,contractFile]){
+for(const file of [bridgeFile,runtimeFile,clientFile,contractFile,adminFile]){
   const result=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
   assert.equal(result.status,0,result.stderr||result.stdout||`Erro de sintaxe em ${file}`);
 }
@@ -36,6 +41,12 @@ assert.match(client,/images_json:JSON\.stringify\(photos\)/,'cliente não envia 
 assert.match(client,/image_base64:photos\[0\]\?\.image_base64\|\|''/,'cliente não envia a primeira foto em image_base64');
 assert.match(client,/photos\.push\(\{id:photo\.id,image_base64:/,'fotos perderam o id do campo de origem');
 
+// Contrato do Admin: cada instrução privada precisa permanecer ligada ao mesmo ID do campo.
+assert.match(admin,/instrucao_ia:\s*text\(value\.instrucao_ia\)/,'Admin deixou de normalizar instrucao_ia');
+assert.match(admin,/\{\s*id:\s*item\.id,\s*instrucao_ia:\s*item\.instrucao_ia\s*\}/,'Admin deixou de salvar id + instrucao_ia juntos');
+assert.match(admin,/PRIVATE_NODE\}\/\$\{encodeURIComponent\(state\.key\)\}/,'Admin deixou de gravar regras no nó privado do modelo');
+assert.match(admin,/privateFields\.find\(candidate\s*=>\s*text\(candidate\.id\)\s*===\s*text\(item\.id\)\)\?\.instrucao_ia/,'Admin deixou de recompor a instrução privada pelo mesmo id');
+
 assert.match(bridge,/direct-pass-through/,'bridge legado não está neutralizado');
 assert.match(bridge,/nativeFetch\(input,init\)/,'bridge legado não está em pass-through');
 assert.doesNotMatch(bridge,/action:'generate_mug_art'/,'bridge voltou a converter personalização para generate_mug_art');
@@ -45,4 +56,4 @@ assert.match(contract,/payload\.action === 'personalize_mug_model'/,'contrato n�
 assert.match(contract,/payload\.action === 'generate_mug_art' && payload\.personalization_action === 'personalize_mug_model'/,'contrato não protege chamadas antigas convertidas');
 assert.match(contract,/waitForPersonalizedArt/,'contrato perdeu recovery Firebase');
 
-console.log('OK · Site público envia todos os campos personalizados por id em fields_json, preserva fotos e mantém personalize_mug_model + recovery.');
+console.log('OK · Admin preserva instrucao_ia por id; site envia todos os campos em fields_json, preserva fotos e mantém personalize_mug_model + recovery.');
