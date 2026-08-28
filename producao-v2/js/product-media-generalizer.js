@@ -3,7 +3,7 @@ import { ProductsModule } from './modules/products.js';
 import { text } from './core/utils.js';
 import { upsertBase64File } from './services/github-binary.js';
 
-const BUILD = '20260821-product-media-general-v1';
+const BUILD = '20260828-product-media-general-v2-shorts';
 const MAX_IMAGES = 3;
 
 function loadConfig() {
@@ -25,6 +25,7 @@ function productImages(product = {}) {
 function isMug(product = {}) {
   const category = text(product.categoria).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   return category === 'canecas'
+    || /caneca/.test(category)
     || Boolean(text(product.arte_personalizacao || product.arte_horizontal || product.arte_impressao?.url));
 }
 
@@ -129,7 +130,9 @@ function generalizeEditor(instance, product) {
     const strong = head.querySelector('strong');
     const small = head.querySelector('small');
     if (strong) strong.textContent = 'Galeria e mídia do produto';
-    if (small) small.textContent = 'Até 3 fotos podem ser exibidas na página de qualquer produto. A Foto 1 é a capa.';
+    if (small) small.textContent = isMug(product)
+      ? 'Canecas usam os 2 mockups gerados como galeria; a arte horizontal fica separada para impressão e o vídeo é cadastrado manualmente.'
+      : 'Até 3 fotos podem ser cadastradas. A Foto 1 é a capa; produtos simples podem usar somente ela.';
   }
 
   for (const slot of [2, 3]) {
@@ -147,7 +150,9 @@ function generalizeEditor(instance, product) {
     const status = document.createElement('small');
     status.className = 'muted product-media-status';
     status.dataset.productMediaStatus = '1';
-    status.textContent = 'Fotos 2 e 3 também podem ser enviadas diretamente para o GitHub.';
+    status.textContent = isMug(product)
+      ? 'Os mockups podem ser substituídos por fotos reais depois. O site da caneca exibirá somente as duas primeiras vistas.'
+      : 'Fotos adicionais também podem ser enviadas diretamente para o GitHub.';
     block.appendChild(status);
   }
 
@@ -155,11 +160,13 @@ function generalizeEditor(instance, product) {
   const videoLabel = video?.closest('label');
   if (videoLabel) {
     const firstText = [...videoLabel.childNodes].find(node => node.nodeType === Node.TEXT_NODE);
-    if (firstText) firstText.nodeValue = 'Vídeo do YouTube';
+    if (firstText) firstText.nodeValue = 'Vídeo do YouTube / Shorts';
     if (!videoLabel.querySelector('[data-product-video-help]')) {
       const help = document.createElement('small');
       help.dataset.productVideoHelp = '1';
-      help.textContent = 'Opcional. Este vídeo aparece na página do produto, independentemente da categoria.';
+      help.textContent = isMug(product)
+        ? 'Opcional. Cole aqui o link do Short que você filmou; o vídeo aparecerá abaixo da arte horizontal na página da caneca.'
+        : 'Opcional. Cole uma URL do YouTube para exibir o vídeo na página do produto.';
       videoLabel.appendChild(help);
     }
   }
