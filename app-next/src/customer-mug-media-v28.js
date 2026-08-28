@@ -1,4 +1,4 @@
-const BUILD='20260828-customer-mug-media-v28';
+const BUILD='20260828-customer-mug-media-v29-2mockups';
 const FIREBASE_PRODUCTS='https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos';
 const cache=new Map();
 let observer=null;
@@ -10,10 +10,10 @@ function favoritesRoute(){return /^#\/(?:favoritos|favorites)(?:[/?#]|$)/i.test(
 function mediaFromProduct(product={}){
  const print=product.arte_impressao;
  return [
+  product.mockup_1,product.mockup_2,
   product.thumbnail,product.mug_thumbnail,product.thumb,product.miniatura,
   product.preview_esquerda,product.preview_left,product.mug_preview_left,
   product.preview_direita,product.preview_right,product.mug_preview_right,
-  product.mockup_1,
   product.arte_horizontal,product.arte_personalizacao,print&&typeof print==='object'?print.url:print,
   product.url_imagem,product.imagem_url,product.imagem
  ].map(text).find(value=>isUrl(value))||'';
