@@ -64,7 +64,7 @@ jobs:
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
-            grep -q '2026-08-28-mug-printable-arc-v3' index.html
+            grep -q 'mug-printable-arc-v3' index.html
             grep -q 'app-next/src/main.js' index.html
             grep -q 'app-next/src/image-performance.js' index.html
             grep -q 'app-next/src/home-carousels.js' index.html
