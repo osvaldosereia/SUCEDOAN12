@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-27T19:03:24.727Z",
+  "checkedAt": "2026-08-28T02:06:04.747Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -11,17 +11,17 @@
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787857407249"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787882767098"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787857407843"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787882767483"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787857407959"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787882767520"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -51,22 +51,22 @@
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1828 produto(s) administrativos · 1585 público(s) · campos OK"
+      "detail": "1847 produto(s) administrativos · 1585 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1828 produto(s) em 334 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1847 produto(s) em 243 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 156 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 144 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-8a69fc4475cab381 · público 1585 · admin 1828"
+      "detail": "catalog-7699818641798225 · público 1585 · admin 1847"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "9526 oferta(s) no histórico"
+      "detail": "9547 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "4.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "ok": true,
+      "detail": "0.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     },
     {
       "name": "Arquitetura por rota do Admin",
@@ -111,11 +111,6 @@
       "detail": "Admin V2 v13.1: 1 falha(s).\n1. Navegação v12 incompleta: adminV2Navigate\nCommand failed: /opt/hostedtoolcache/node/22.23.2/x64/bin/node scripts/test-admin-v2-definitivo.mjs\n\nAdmin V2 v13.1: 1 falha(s).\n1. Navegação v12 incompleta: adminV2Navigate\n"
     },
     {
-      "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "4.1h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
-    },
-    {
       "name": "Arquitetura por rota do Admin",
       "ok": false,
       "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
@@ -129,11 +124,11 @@
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "33106468551",
+    "runId": "33134823576",
     "attempt": "1",
-    "sourceSha": "59ce5f9fcf3fbe59a5277a302f501a54e436c417",
+    "sourceSha": "becf1820a210a5aace23256ca086bc960c7aafd8",
     "architecture": "failure",
     "mugStudio": "failure",
-    "publishedAt": "2026-08-27T19:03:31.073Z"
+    "publishedAt": "2026-08-28T02:06:10.404Z"
   }
 }
