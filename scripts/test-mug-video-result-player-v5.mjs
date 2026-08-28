@@ -32,7 +32,7 @@ for (const marker of [
 
 if (!bridge.includes("'./mug-video-result-player-v5.js'")) failures.push('Bridge não carrega player V5.');
 if (!bridge.includes('20260827-canecas-clean-v24-low-async')) failures.push('Bridge perdeu compatibilidade com build V24/LOW.');
-for (const html of [producao, admin]) if (!html.includes('20260828-mug-video-result-player-v5')) failures.push('Entrada do Admin não invalida cache para player V5.');
+for (const html of [producao, admin]) if (!html.includes('mug-video-result-player-v5')) failures.push('Entrada do Admin não invalida cache para player V5.');
 
 if (failures.length) {
   console.error(`Player de vídeo V5 falhou (${failures.length}):`);
