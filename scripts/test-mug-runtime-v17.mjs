@@ -8,11 +8,11 @@ const need=(key,token,message)=>{if(!src[key].includes(token))failures.push(mess
 const reject=(key,token,message)=>{if(src[key].includes(token))failures.push(message)};
 for(const file of Object.values(files).filter(file=>file.endsWith('.js'))){const r=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});if(r.status!==0)failures.push(`${file}: ${r.stderr||r.stdout}`)}
 
-// Shell público atual: personalização ativa e nenhum loader/placeholder Three.js.
-need('root','2026-08-28-mug-active-personalization-v2','index.html não declara a release ativa de personalização.');
+// Shell público atual: personalização direta ativa e nenhum loader/placeholder Three.js.
+need('root','2026-08-28-mug-direct-personalization-v3','index.html não declara a release de personalização direta.');
 need('root','image-performance.js?v=20260828-2mockups-shorts-v2-final','index.html não força cache da mídia atual.');
-need('root','mug-public-runtime-v6.js?v=20260828-active-personalization-v24','index.html não carrega o runtime público atual.');
-need('root','da_mug_active_personalization_v2_20260828','Migração de cache da personalização ativa não está configurada.');
+need('root','mug-public-runtime-v6.js?v=20260828-direct-personalization-v26','index.html não força o runtime corrigido da personalização.');
+need('root','da_mug_direct_personalization_v3_20260828','Migração de cache da personalização direta não está configurada.');
 reject('root','three@','index.html ainda carrega Three.js.');
 reject('root','type="importmap"','index.html ainda possui importmap legado do 3D.');
 reject('root','Preparando visualização da caneca','index.html ainda esconde a galeria aguardando 3D.');
