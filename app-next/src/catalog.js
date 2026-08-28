@@ -52,26 +52,52 @@ function isPublicMugModel(raw = {}) {
   return truthy(raw.modelo_publico) && (truthy(raw.modelo_caneca) || truthy(raw.produto_sob_encomenda) || category.includes('caneca'));
 }
 
+function mediaUrl(value) {
+  const path = String(value ?? '').trim();
+  if (!path || /^data:/i.test(path) || /site\/tmp\/ia-referencias\//i.test(path)) return '';
+  return assetUrl(path) || '';
+}
+
+function mugMedia(raw = {}) {
+  const print = raw.arte_impressao;
+  return {
+    thumbnail: mediaUrl(raw.thumbnail || raw.thumb || raw.miniatura || raw.mug_thumbnail),
+    previewLeft: mediaUrl(raw.preview_esquerda || raw.preview_left || raw.mug_preview_left),
+    previewRight: mediaUrl(raw.preview_direita || raw.preview_right || raw.mug_preview_right),
+    art: mediaUrl(raw.arte_horizontal || raw.arte_personalizacao || (print && typeof print === 'object' ? print.url : print) || raw.art_url || raw.arte_url),
+    model3d: mediaUrl(raw.modelo_3d_url || raw.model_3d_url || raw.glb_url),
+    renderVersion: String(raw.render_3d_version || raw.render_version || '').trim(),
+    renderStatus: String(raw.render_status || '').trim()
+  };
+}
+
 function productImages(raw, product) {
   const images = [];
   const push = value => {
-    const path = String(value ?? '').trim();
-    if (!path || /site\/tmp\/ia-referencias\//i.test(path) || /^data:/i.test(path)) return;
-    const url = assetUrl(path);
+    const url = mediaUrl(value);
     if (url && !images.includes(url)) images.push(url);
   };
+  const mug = isPublicMugModel(raw) || truthy(raw.modelo_caneca) || String(raw.categoria || '').toLowerCase().includes('caneca');
+  const media = mugMedia(raw);
+  if (mug) {
+    push(media.thumbnail);
+    push(media.previewLeft);
+    push(media.previewRight);
+  }
   push(raw.url_imagem);
   push(raw.imagem_url || raw.urlImagem);
   push(raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url);
-  push(raw.mockup_1);
-  push(raw.mockup_2);
-  push(raw.mockup_3);
+  if (!mug) {
+    push(raw.mockup_1);
+    push(raw.mockup_2);
+    push(raw.mockup_3);
+  }
   if (Array.isArray(raw.imagens)) raw.imagens.forEach(push);
   if (Array.isArray(raw.imagens_site)) raw.imagens_site.forEach(push);
   if (Array.isArray(raw.images)) raw.images.forEach(push);
   if (Array.isArray(raw.midias_admin)) raw.midias_admin.forEach(push);
   if (!images.length && raw.imagem_path) push(raw.imagem_path);
-  if (!images.length) push(raw.arte_horizontal || raw.arte_personalizacao || raw.arte_impressao?.url);
+  if (!images.length && mug) push(media.art);
   const code = String(product.codigo || product.id || '').trim();
   if (!images.length && code) {
     push(`img/produtos_2/${encodeURIComponent(code)}.webp`);
@@ -124,6 +150,7 @@ export function normalizeProduct(raw = {}, key = '', index = 0) {
     validade: productExpiry(raw),
     raw
   };
+  product.mugMedia = mugMedia(raw);
   product.images = productImages(raw, product);
   product.img = product.images[0];
   product.url_imagem = product.img;
