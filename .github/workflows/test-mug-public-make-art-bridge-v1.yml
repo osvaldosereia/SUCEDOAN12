@@ -1,0 +1,31 @@
+name: Testar bridge público Make art-only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app-next/src/mug-public-personalization-make-bridge-v1.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'scripts/test-mug-public-make-art-bridge-v1.mjs'
+      - '.github/workflows/test-mug-public-make-art-bridge-v1.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app-next/src/mug-public-personalization-make-bridge-v1.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'scripts/test-mug-public-make-art-bridge-v1.mjs'
+      - '.github/workflows/test-mug-public-make-art-bridge-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-mug-public-make-art-bridge-v1.mjs
