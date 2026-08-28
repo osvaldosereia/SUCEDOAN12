@@ -1,6 +1,6 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260828-mug-gallery-video-v4';
+  || '20260827-canecas-clean-v24-low-async-mug-gallery-video-v4';
 
 const MODULES = [
   './mug-make-art-recovery-v22.js',
