@@ -9,6 +9,7 @@ const MODULES = [
   './mug-studio-gallery.js',
   './mug-command-library-v1.js',
   './mug-command-library-compact-v2.js',
+  './mug-command-library-restore-v3.js',
   './mug-command-layout-v4-force.js',
   './mug-config-compact-v4-1.js',
   './mug-studio-v8-finalizer.js',
