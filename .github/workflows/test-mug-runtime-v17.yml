@@ -1,15 +1,17 @@
-name: Testar runtime público V18
+name: Testar runtime público V19
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, site-canecas-3d-v1]
     paths:
       - 'index.html'
       - 'app-next/src/product-media.js'
       - 'app-next/src/checkout-phone-fix.js'
       - 'app-next/styles/home-checkout-polish.css'
       - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-3d-v1.js'
+      - 'app-next/src/mug-public-thumbnails-v1.js'
       - 'app-next/src/customer-favorites-v27.js'
       - 'app-next/src/mug-public-personalization-contract-v25.js'
       - 'app-next/src/mug-public-personalization-v5.js'
@@ -23,6 +25,15 @@ on:
       - 'scripts/estabilizar-catalogo-publico.mjs'
       - 'site/canecas-print.json'
       - 'scripts/test-mug-runtime-v17.mjs'
+      - 'scripts/test-mug-3d-v1.mjs'
+      - '.github/workflows/test-mug-runtime-v17.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-3d-v1.js'
+      - 'app-next/src/mug-public-thumbnails-v1.js'
+      - 'scripts/test-mug-3d-v1.mjs'
       - '.github/workflows/test-mug-runtime-v17.yml'
 
 permissions:
@@ -37,5 +48,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Validar runtime público
+      - name: Validar runtime público existente
         run: node scripts/test-mug-runtime-v17.mjs
+      - name: Validar visualizador 3D das canecas
+        run: node scripts/test-mug-3d-v1.mjs

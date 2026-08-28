@@ -36,6 +36,8 @@ assert.match(publicRuntime, /mug-make-fast-ack-v1\.js/);
 assert.match(publicRuntime, /mug-public-personalization-contract-v25\.js/);
 assert.match(publicRuntime, /mug-public-personalization-v5\.js/);
 assert.match(publicRuntime, /mug-public-result-link-v26\.js/);
+assert.match(publicRuntime, /mug-public-thumbnails-v1\.js/);
+assert.match(publicRuntime, /mug-public-3d-v1\.js/);
 assert.ok(publicRuntime.indexOf('mug-public-personalization-contract-v25.js') < publicRuntime.indexOf('mug-public-personalization-v5.js'), 'contrato público deve carregar antes do controlador');
 assert.ok(publicRuntime.indexOf('mug-public-personalization-v5.js') < publicRuntime.indexOf('mug-public-result-link-v26.js'), 'correção do resultado deve carregar depois do controlador');
 assert.match(publicRuntime, /isProductRoute/);
@@ -92,7 +94,8 @@ const canecaTransportPos = caneca10.indexOf('../shared/mug-make-fast-ack-v1.js')
 const canecaRecoveryPos = caneca10.indexOf('./art-recovery-v1.js');
 const canecaAppPos = caneca10.indexOf('./app-v4-clean.js');
 assert.ok(canecaTransportPos >= 0 && canecaRecoveryPos > canecaTransportPos && canecaAppPos > canecaRecoveryPos, 'Caneca10 deve carregar transporte LOW, recovery e então o app');
-assert.match(caneca10, /20260827-caneca10-v7/);
+assert.match(caneca10, /20260828-caneca10-art-only-v1/);
+assert.doesNotMatch(caneca10, /3 mockups|mockupCarousel|mockup1|mockup2|mockup3/);
 assert.doesNotMatch(caneca10, /gallery-refresh-v5\.js/);
 assert.match(canecaRecovery, /canecas\/geracoes/);
 assert.match(canecaRecovery, /generate_mug_art/);
@@ -110,4 +113,4 @@ assert.match(forceLow, /finalize_mug_product/);
 assert.match(printCache, /mug-1787777190767-nmn7zk/);
 assert.match(printCache, /SUCEDOAN12\/canecas-media\/canecas\/imagens\/mockups/);
 
-console.log('OK · Runtime público + biblioteca V27 + contrato V25 + resultado V26 + Produção V24 + Caneca10 V7 LOW assíncrono validados.');
+console.log('OK · Runtime público + biblioteca V27 + previews/3D + Produção + Caneca10 arte horizontal validados.');
