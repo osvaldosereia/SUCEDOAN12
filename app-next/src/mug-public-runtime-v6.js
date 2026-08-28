@@ -1,7 +1,8 @@
-const BUILD = '20260828-site-mug-runtime-v24-active-personalization';
+const BUILD = '20260828-site-mug-runtime-v25-professional-ux';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
+let uxPromise = null;
 let customerSyncBound = false;
 
 function isProductRoute() {
@@ -48,8 +49,22 @@ async function loadMugThumbnails() {
   return thumbPromise;
 }
 
+async function loadPublicUx() {
+  if (!uxPromise) {
+    uxPromise = import(`./mug-public-ux-v1.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
+      uxPromise = null;
+      console.warn('[Canecas públicas] Camada visual indisponível:', error);
+    });
+  }
+  return uxPromise;
+}
+
 async function loadMugFeatures() {
-  await Promise.all([loadCustomerLibrary().catch(() => null), loadMugThumbnails().catch(() => null)]);
+  await Promise.all([
+    loadCustomerLibrary().catch(() => null),
+    loadMugThumbnails().catch(() => null),
+    loadPublicUx().catch(() => null),
+  ]);
   if (!isProductRoute()) return;
   if (!featurePromise) {
     featurePromise = (async () => {
@@ -59,6 +74,8 @@ async function loadMugFeatures() {
       await import(`./mug-public-active-template-bridge-v1.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-v7.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-result-link-v26.js?v=${encodeURIComponent(BUILD)}`);
+      const ux = await loadPublicUx().catch(() => null);
+      if (ux && typeof ux.scan === 'function') ux.scan(document);
       document.documentElement.dataset.mugPublicRuntime = BUILD;
       console.info(`Canecas públicas runtime · ${BUILD}`);
     })().catch(error => {
@@ -76,4 +93,4 @@ window.addEventListener('da:catalog-refreshed', loadMugFeatures);
 
 loadMugFeatures();
 
-export { BUILD, loadMugFeatures, loadCustomerLibrary, loadMugThumbnails };
+export { BUILD, loadMugFeatures, loadCustomerLibrary, loadMugThumbnails, loadPublicUx };
