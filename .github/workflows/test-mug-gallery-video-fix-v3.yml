@@ -1,0 +1,22 @@
+name: Testar cards de canecas com vídeo
+
+on:
+  pull_request:
+    paths:
+      - 'producao-v2/js/mug-gallery-video-fix-v3.js'
+      - 'producao-v2/js/mug-video-button-dedupe-v4.js'
+      - 'producao-v2/js/mug-make-native-openai-bridge.js'
+      - 'scripts/test-mug-gallery-video-fix-v3.mjs'
+      - '.github/workflows/test-mug-gallery-video-fix-v3.yml'
+  workflow_dispatch:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Validar cards e botão de vídeo
+        run: node scripts/test-mug-gallery-video-fix-v3.mjs
