@@ -1,0 +1,40 @@
+name: CanecaFácil · imagens leves e SEO
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */3 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build-canecafacil-assets.mjs'
+      - '.github/workflows/canecafacil-assets.yml'
+permissions:
+  contents: write
+concurrency:
+  group: canecafacil-assets
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save sharp@0.34.3
+      - name: Gerar WebP até 20 KB, páginas e sitemap
+        env:
+          CANECAFACIL_BASE_URL: https://donaantonia.com.br/canecafacil/
+        run: node scripts/build-canecafacil-assets.mjs
+      - name: Publicar arquivos gerados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add canecafacil/media canecafacil/image-manifest.json canecafacil/caneca canecafacil/sitemap.xml
+          if git diff --cached --quiet; then
+            echo "Sem alterações"
+            exit 0
+          fi
+          git commit -m "Atualiza imagens leves e SEO do CanecaFácil"
+          git pull --rebase origin main
+          git push origin main
