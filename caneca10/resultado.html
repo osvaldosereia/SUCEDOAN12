@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#ffffff">
   <title>Resultado da caneca · Dona Antônia</title>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
   <style>
     :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f221e;background:#f5f6f2}*{box-sizing:border-box}body{margin:0}.wrap{width:min(960px,100%);margin:0 auto;padding:18px}.card{background:#fff;border:1px solid #e1e4dc;border-radius:20px;padding:18px;box-shadow:0 12px 36px rgba(25,30,22,.07)}h1{margin:0 0 6px;font-size:24px}p{color:#62685e;margin:0 0 16px;line-height:1.45}.art{width:100%;aspect-ratio:2.5/1;object-fit:contain;background:#f2f4ef;border-radius:14px;border:1px solid #e1e4dc}.label{display:block;margin:16px 0 7px;font-size:12px;font-weight:850;color:#5d645a}.previews{display:grid;grid-template-columns:1fr 1fr;gap:10px}.preview{margin:0;position:relative;aspect-ratio:1;border-radius:15px;overflow:hidden;background:#f2f4ef;border:1px solid #e1e4dc;display:grid;place-items:center}.preview img{width:100%;height:100%;object-fit:cover}.preview figcaption{position:absolute;left:9px;bottom:9px;padding:5px 8px;border-radius:999px;background:rgba(25,28,24,.78);color:#fff;font-size:10px;font-weight:800}.preview-loading{font-size:12px;color:#70776d}.actions{display:grid;gap:10px;margin-top:16px}.actions a{min-height:48px;border-radius:12px;text-decoration:none;font-weight:800;display:flex;align-items:center;justify-content:center;background:#20231f;color:#fff}.status{padding:14px;border-radius:12px;background:#f1f3ee;color:#5c6358}.error{background:#fff0ef;color:#842d29}.da-mug-showcase{margin-top:12px}.da-mug-showcase>.da-mug-previews{display:none!important}.da-mug-print-note{text-align:center;font-size:10px;color:#858980;margin:-7px 0 0}@media(max-width:620px){.wrap{padding:10px}.card{border-radius:15px;padding:12px}.previews{gap:6px}h1{font-size:21px}}
   </style>
@@ -36,7 +37,7 @@
     </section>
   </main>
   <script type="module">
-    import { generatePreviews, startViewer } from '../app-next/src/mug-public-3d-v2.js?v=20260828-printable-arc-v3';
+    import { generatePreviews, startViewer } from '../app-next/src/mug-public-3d-v2.js?v=20260828-printable-arc-v3-mug-3d-loader-v5';
     const FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
     const id=String(new URLSearchParams(location.search).get('id')||'').trim();
     const status=document.getElementById('status');
