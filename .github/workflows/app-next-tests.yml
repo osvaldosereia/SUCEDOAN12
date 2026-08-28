@@ -64,16 +64,18 @@ jobs:
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
-            grep -q '2026-07-27-product-cards-spacing-v11' index.html
+            grep -q 'mug-printable-arc-v3' index.html
             grep -q 'app-next/src/main.js' index.html
             grep -q 'app-next/src/image-performance.js' index.html
             grep -q 'app-next/src/home-carousels.js' index.html
+            grep -q 'app-next/src/mug-public-runtime-v6.js' index.html
             grep -q 'storefront-base.css' index.html
             grep -q 'storefront-components.css' index.html
             grep -q 'storefront-responsive.css' index.html
             grep -q 'checkout-flow.css' index.html
             grep -q 'bundle-confirmation.css' index.html
-            grep -q 'da_v16_product_cards_20260727' index.html
+            ! grep -q 'da_v16_product_cards_20260727' index.html
+            ! grep -q '2026-07-27-product-cards-spacing-v11' index.html
             ! grep -q 'app-next/src/fast-offers-v9.js' index.html
             ! grep -q 'app-next/src/seo-combos.js' index.html
             ! grep -q 'app-next/src/live-polish.js' index.html
@@ -139,6 +141,8 @@ jobs:
             node --check app-next/src/main.js
             node --check app-next/src/image-performance.js
             node --check app-next/src/home-carousels.js
+            node --check app-next/src/mug-public-runtime-v6.js
+            node --check app-next/src/mug-public-3d-v2.js
           } 2>&1 | tee -a public-site-test-report.txt
 
       - name: Anexar relatório

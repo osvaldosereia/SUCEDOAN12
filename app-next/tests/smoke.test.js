@@ -13,7 +13,7 @@ const required = [
   'styles/storefront-responsive.css', 'styles/checkout-flow.css', 'styles/bundle-confirmation.css',
   'src/main.js', 'src/ui.js', 'src/catalog.js', 'src/checkout.js',
   'src/core.js', 'src/image-performance.js', 'src/home-carousels.js',
-  'src/bundle-routes.js'
+  'src/bundle-routes.js', 'src/mug-public-runtime-v6.js', 'src/mug-public-3d-v2.js'
 ];
 required.forEach(file => assert(fs.existsSync(path.join(root, file)), `Arquivo ausente: ${file}`));
 
@@ -33,7 +33,8 @@ for (const marker of [
   '/app-next/src/image-performance.js',
   '/app-next/src/home-carousels.js',
   '/app-next/src/main.js',
-  'da_v16_product_cards_20260727',
+  '/app-next/src/mug-public-runtime-v6.js',
+  'mug-printable-arc-v3',
   'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
   'id="menu-drawer"', 'inert'
 ]) assert(production.includes(marker), `Produção incompleta: ${marker}`);
@@ -119,6 +120,13 @@ for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refres
   assert(catalog.includes(marker), `Carregamento de catálogo incompleto: ${marker}`);
 }
 
+const mugRuntime = read('src/mug-public-runtime-v6.js');
+const mug3d = read('src/mug-public-3d-v2.js');
+assert(mugRuntime.includes('v21-printable-arc'), 'Runtime de canecas não está na build do arco imprimível');
+assert(mugRuntime.includes('mug-public-3d-v2.js'), 'Runtime de canecas não carrega o visualizador 3D');
+assert(mug3d.includes('PRINT_WIDTH_MM=235'), 'Visualizador 3D não usa a largura operacional de impressão');
+assert(mug3d.includes('HANDLE_GAP_RAD'), 'Visualizador 3D não preserva a faixa branca próxima à alça');
+
 const jsFiles = fs.readdirSync(path.join(root, 'src')).filter(file => file.endsWith('.js'));
 for (const file of jsFiles) {
   const result = spawnSync(process.execPath, ['--check', path.join(root, 'src', file)], { encoding: 'utf8' });
@@ -128,4 +136,4 @@ for (const file of jsFiles) {
 await import('../src/ui.js');
 await import('../src/checkout.js');
 await import('../src/offer-engine.js');
-console.log(`Smoke test concluído: cards verticais completos, resumo da cesta no fluxo e ${jsFiles.length} módulos válidos.`);
+console.log(`Smoke test concluído: storefront atual, canecas 3D com arco imprimível e ${jsFiles.length} módulos válidos.`);
