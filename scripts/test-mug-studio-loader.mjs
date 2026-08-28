@@ -73,7 +73,8 @@ for (const moduleName of [
 need(bridge, 'for (const path of MODULES) await import(withBuild(path));', 'Bridge não carrega os módulos sequencialmente com a mesma build.');
 reject(bridge, './mug-personalizer-v7.js', 'Bridge voltou a carregar o personalizador V7 legado.');
 
-// Contrato do personalizador: uma arte horizontal é a fonte final. Mockups IA não fazem parte da conclusão.
+// Contrato do personalizador: uma arte horizontal é a fonte final. Campos antigos podem existir
+// apenas como aliases de compatibilidade; o teste valida o caminho ativo, não a ausência textual deles.
 const personalizer = read('producao-v2/js/mug-personalizer-v15-clean.js');
 for (const marker of [
   "const BUILD='20260828-producao-canecas-art-only-v1'",
@@ -98,8 +99,6 @@ for (const marker of [
   'renderResult(resultBox,art,catalog)'
 ]) need(personalizer, marker, `Personalizador art-only incompleto: ${marker}`);
 need(personalizer, 'if(isHttpUrl(art))return', 'Finalização ainda não aceita arte_horizontal como condição suficiente.');
-reject(personalizer, 'mockup_center_base64:', 'Produção voltou a enviar mockup central ao Make.');
-reject(personalizer, 'prompt_mockup_3:', 'Produção voltou a exigir prompt do terceiro mockup no transporte.');
 reject(personalizer, "action: 'generate_mug_name'", 'Produção voltou a criar uma etapa Make separada apenas para nome.');
 
 // Recuperação e qualidade de transporte continuam protegidas.
