@@ -1,0 +1,23 @@
+name: Testar player do vídeo das canecas
+
+on:
+  pull_request:
+    paths:
+      - 'producao-v2/js/mug-video-result-player-v5.js'
+      - 'producao-v2/js/mug-make-native-openai-bridge.js'
+      - 'producao/index.html'
+      - 'admin/index.html'
+      - 'scripts/test-mug-video-result-player-v5.mjs'
+      - '.github/workflows/test-mug-video-result-player-v5.yml'
+  workflow_dispatch:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Validar player MP4 no Produção
+        run: node scripts/test-mug-video-result-player-v5.mjs

@@ -1,6 +1,6 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260827-canecas-clean-v24-low-async-mug-gallery-video-v4';
+  || '20260827-canecas-clean-v24-low-async-mug-video-result-v5';
 
 const MODULES = [
   './mug-make-art-recovery-v22.js',
@@ -11,6 +11,7 @@ const MODULES = [
   './mug-video-generator-v1.js',
   './mug-gallery-video-fix-v3.js',
   './mug-video-button-dedupe-v4.js',
+  './mug-video-result-player-v5.js',
   './mug-command-library-v1.js',
   './mug-command-library-compact-v2.js',
   './mug-command-library-restore-v3.js',
