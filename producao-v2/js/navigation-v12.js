@@ -12,7 +12,7 @@ function withBuild(path) {
 const ROUTES = Object.freeze({
   dashboard: ['Visão geral', 'Indicadores, prioridades e estado do sistema.'],
   products: ['Produtos', 'Consulta, cadastro e edição do catálogo.'],
-  'mug-studio': ['Criador de canecas', 'Envie uma imagem de inspiração, combine comandos salvos e gere a arte e os três mockups.'],
+  'mug-studio': ['Criador de canecas', 'Envie uma imagem de inspiração, combine comandos salvos e gere somente a arte horizontal pronta para impressão.'],
   stock: ['Estoque e validade', 'Estoque baixo, vencimentos, lotes e localização.'],
   nfe: ['Entrada de NF-e', 'Leitura, conferência, cadastro completo e importação real do XML.'],
   orders: ['Pedidos', 'Lista paginada, separação, conferência e entrega.'],
@@ -58,7 +58,7 @@ function installMugStudioShell() {
   const main = document.getElementById('mainContent');
   if (main && !main.querySelector('.view[data-view="mug-studio"]')) {
     const productsView = main.querySelector('.view[data-view="products"]');
-    const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Imagem de inspiração → comandos → arte horizontal → três mockups → cadastro inativo.</small></div></div></section>';
+    const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Imagem de inspiração → comandos → arte horizontal → cadastro inativo.</small></div></div></section>';
     if (productsView) productsView.insertAdjacentHTML('afterend', html);
     else main.insertAdjacentHTML('beforeend', html);
   }
