@@ -16,7 +16,7 @@
   <script>
     (async function () {
       const params = new URLSearchParams(window.location.search);
-      const RELEASE = '20260828-canecas-2mockups-v25-final';
+      const RELEASE = '20260828-canecas-charlimit-v26';
       const BUILD = `${RELEASE}-${params.get('admin_build') || 'default'}`;
       function replaceRequired(source, pattern, replacement, label) { if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`); return source.replace(pattern, replacement); }
       function scriptTag(src, { module = false } = {}) { const open='<scr'+'ipt',close='</scr'+'ipt>'; return `${open}${module?' type="module"':''} src="${src}">${close}`; }
@@ -36,7 +36,7 @@
         if(!html.includes('data-editor-tab="mug-personalizacao"')) html=html.replace('<button data-editor-tab="logistics" type="button">Fiscal e logística</button>','<button data-editor-tab="logistics" type="button">Fiscal e logística</button><button data-editor-tab="mug-personalizacao" type="button" title="Campos personalizáveis da caneca">Personalização</button>');
         if(!html.includes('data-editor-section="mug-personalizacao"')) html=html.replace('<section class="editor-section" data-editor-section="baskets"></section>','<section class="editor-section" data-editor-section="baskets"></section><section class="editor-section" data-editor-section="mug-personalizacao"><div style="padding:12px">Preparando personalização da caneca…</div></section>');
         if(!html.includes('mug-public-template-admin-v3.js')) html=html.replace('</head>',`${scriptTag(`./js/mug-public-template-admin-v3.js?admin_build=${BUILD}`)}</head>`);
-        const enhancements=[['./js/product-delete-filter-v2.js',false],['./js/nfe-image-make-fix.js',true],['./js/nfe-import-save-fix.js',true],['./js/alternate-ean-support.js',true],['./js/mug-make-native-openai-bridge.js',true],['./js/mug-template-refresh-after-save-v1.js',false]];
+        const enhancements=[['./js/product-delete-filter-v2.js',false],['./js/nfe-image-make-fix.js',true],['./js/nfe-import-save-fix.js',true],['./js/alternate-ean-support.js',true],['./js/mug-make-native-openai-bridge.js',true],['./js/mug-template-refresh-after-save-v1.js',false],['./js/mug-text-limit-v1.js',false]];
         const extraScripts=enhancements.filter(([src])=>!html.includes(`src="${src}`)).map(([src,module])=>scriptTag(`${src}?admin_build=${BUILD}`,{module})).join(''); html=html.replace('</body>',`${extraScripts}</body>`);
         document.open(); document.write(html); document.close();
       } catch(error) { console.error(error); const message=String(error?.message||error); document.body.innerHTML=`<main><strong>Não foi possível abrir o Admin</strong><small>${message}</small><p><a href="./index.html?admin_fallback=${BUILD}">Abrir versão padrão</a></p></main>`; }
