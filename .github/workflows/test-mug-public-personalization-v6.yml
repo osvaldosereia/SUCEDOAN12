@@ -1,0 +1,28 @@
+name: Testar personalização pública de canecas V6
+
+on:
+  push:
+    paths:
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'caneca10/resultado.html'
+      - 'scripts/test-mug-public-personalization-v6.mjs'
+      - '.github/workflows/test-mug-public-personalization-v6.yml'
+  pull_request:
+    paths:
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'caneca10/resultado.html'
+      - 'scripts/test-mug-public-personalization-v6.mjs'
+      - '.github/workflows/test-mug-public-personalization-v6.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar personalização pública art-only
+        run: node scripts/test-mug-public-personalization-v6.mjs
