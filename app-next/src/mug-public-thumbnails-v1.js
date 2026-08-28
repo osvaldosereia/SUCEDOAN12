@@ -1,11 +1,13 @@
-const BUILD='20260828-mug-thumbnails-v1';
+const BUILD='20260828-mug-thumbnails-v2-media-contract';
 const FIREBASE_PRODUCTS='https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos';
 const checked=new Set();
 let observer=null;
 const text=v=>String(v??'').trim();
 const truthy=v=>v===true||v===1||['1','true','sim','yes'].includes(text(v).toLowerCase());
 const isMug=raw=>truthy(raw?.modelo_caneca)||truthy(raw?.produto_sob_encomenda)||text(raw?.categoria).toLowerCase().includes('caneca');
-const artUrl=raw=>{const p=raw?.arte_impressao;return [raw?.arte_horizontal,raw?.arte_personalizacao,p&&typeof p==='object'?p.url:p,raw?.art_url,raw?.arte_url].map(text).find(v=>/^https?:\/\//i.test(v))||'';};
+const http=v=>/^https?:\/\//i.test(text(v));
+const artUrl=raw=>{const p=raw?.arte_impressao;return [raw?.arte_horizontal,raw?.arte_personalizacao,p&&typeof p==='object'?p.url:p,raw?.art_url,raw?.arte_url].map(text).find(http)||'';};
+const thumbUrl=raw=>[raw?.thumbnail,raw?.thumb,raw?.miniatura,raw?.mug_thumbnail].map(text).find(http)||'';
 
 function image(url){return new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=url;});}
 function rounded(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
@@ -24,13 +26,16 @@ async function makeThumb(url){
 }
 
 async function processCard(card){
- const id=text(card.dataset.productCard);if(!id||checked.has(id))return;const img=card.querySelector('.product-card-media img');if(!img)return;
- if(!img.complete){img.addEventListener('load',()=>processCard(card),{once:true});return;}
- const ratio=(img.naturalWidth||1)/(img.naturalHeight||1);if(ratio<1.65)return;checked.add(id);
- try{const r=await fetch(`${FIREBASE_PRODUCTS}/${encodeURIComponent(id)}.json`,{cache:'force-cache',headers:{Accept:'application/json'}});if(!r.ok)return;const raw=await r.json();if(!isMug(raw))return;const art=artUrl(raw);if(!art)return;img.src=await makeThumb(art);img.dataset.mugThumb=BUILD;img.style.objectFit='cover';}catch(err){console.debug('[Mug thumb] mantendo imagem original:',err?.message||err);}
+ const id=text(card.dataset.productCard);if(!id||checked.has(id))return;const img=card.querySelector('.product-card-media img');if(!img)return;checked.add(id);
+ try{
+  const r=await fetch(`${FIREBASE_PRODUCTS}/${encodeURIComponent(id)}.json`,{cache:'force-cache',headers:{Accept:'application/json'}});if(!r.ok)return;
+  const raw=await r.json();if(!isMug(raw))return;
+  const saved=thumbUrl(raw);if(saved){img.src=saved;img.dataset.mugThumb='persisted';img.style.objectFit='cover';return;}
+  const art=artUrl(raw);if(!art)return;img.src=await makeThumb(art);img.dataset.mugThumb=BUILD;img.style.objectFit='cover';
+ }catch(err){checked.delete(id);console.debug('[Mug thumb] mantendo imagem original:',err?.message||err);}
 }
 function scan(){document.querySelectorAll('[data-product-card]').forEach(card=>{if(card.dataset.mugThumbObserved)return;card.dataset.mugThumbObserved='1';observer?.observe(card);});}
 function init(){observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){observer.unobserve(e.target);processCard(e.target);}}),{rootMargin:'250px'});scan();window.addEventListener('da:route-rendered',()=>setTimeout(scan,0));window.addEventListener('da:catalog-ready',()=>setTimeout(scan,0));}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 document.documentElement.dataset.mugThumbs=BUILD;
-export{BUILD,makeThumb,scan};
+export{BUILD,makeThumb,scan,processCard};
