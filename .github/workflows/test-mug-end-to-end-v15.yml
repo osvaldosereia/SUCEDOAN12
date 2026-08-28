@@ -1,4 +1,4 @@
-name: Testar canecas art-only + 3D V2
+name: Testar canecas · 2 mockups + arte + Shorts
 
 on:
   push:
@@ -6,13 +6,14 @@ on:
     paths:
       - 'index.html'
       - 'app-next/src/mug-public-runtime-v6.js'
-      - 'app-next/src/mug-public-personalization-v6.js'
-      - 'app-next/src/mug-public-3d-v2.js'
+      - 'app-next/src/mug-public-personalization-v7.js'
+      - 'app-next/src/mug-public-personalization-contract-v25.js'
+      - 'app-next/src/product-media.js'
       - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'app-next/src/image-performance.js'
       - 'app-next/src/catalog.js'
       - 'app-next/src/config.js'
-      - 'caneca10/app-v4-clean.js'
+      - 'caneca10/app-v5-2mockups.js'
       - 'caneca10/index.html'
       - 'caneca10/resultado.html'
       - 'caneca10/gallery-v4.js'
@@ -20,7 +21,7 @@ on:
       - 'caneca-print/index.html'
       - 'shared/mug-make-fast-ack-v1.js'
       - 'producao-v2/admin-produtivo.html'
-      - 'producao-v2/js/mug-personalizer-v15-clean.js'
+      - 'producao-v2/js/mug-personalizer-v16-2mockups.js'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
       - 'scripts/sincronizar-produtos-home-firebase.mjs'
       - 'scripts/estabilizar-catalogo-publico.mjs'
@@ -30,12 +31,12 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'index.html'
       - 'app-next/src/mug-public-runtime-v6.js'
-      - 'app-next/src/mug-public-personalization-v6.js'
-      - 'app-next/src/mug-public-3d-v2.js'
-      - 'app-next/src/mug-public-thumbnails-v2.js'
+      - 'app-next/src/mug-public-personalization-v7.js'
+      - 'app-next/src/product-media.js'
       - 'caneca10/resultado.html'
-      - 'producao-v2/js/mug-personalizer-v15-clean.js'
+      - 'producao-v2/js/mug-personalizer-v16-2mockups.js'
       - 'scripts/test-mug-end-to-end-v15.mjs'
       - '.github/workflows/test-mug-end-to-end-v15.yml'
   workflow_dispatch:
@@ -44,7 +45,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: mug-art-only-v2-${{ github.ref }}
+  group: mug-2mockups-shorts-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
