@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v21-printable-arc-v23-cylindrical-thumbnails';
+const BUILD = '20260828-site-mug-runtime-v22-2mockups-shorts';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
@@ -42,7 +42,7 @@ async function loadMugThumbnails() {
   if (!thumbPromise) {
     thumbPromise = import(`./mug-public-thumbnails-v2.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
       thumbPromise = null;
-      console.warn('[Canecas públicas] Miniaturas próprias indisponíveis:', error);
+      console.warn('[Canecas públicas] Miniaturas auxiliares indisponíveis:', error);
     });
   }
   return thumbPromise;
@@ -56,9 +56,8 @@ async function loadMugFeatures() {
       await import(`../../shared/mug-make-fast-ack-v1.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-contract-v25.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-make-bridge-v1.js?v=${encodeURIComponent(BUILD)}`);
-      await import(`./mug-public-personalization-v6.js?v=${encodeURIComponent(BUILD)}`);
+      await import(`./mug-public-personalization-v7.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-result-link-v26.js?v=${encodeURIComponent(BUILD)}`);
-      await import(`./mug-public-3d-v2.js?v=${encodeURIComponent(BUILD)}`);
       document.documentElement.dataset.mugPublicRuntime = BUILD;
       console.info(`Canecas públicas runtime · ${BUILD}`);
     })().catch(error => {
