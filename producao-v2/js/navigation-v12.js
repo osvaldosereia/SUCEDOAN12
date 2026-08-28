@@ -13,6 +13,7 @@ const ROUTES = Object.freeze({
   dashboard: ['Visão geral', 'Indicadores, prioridades e estado do sistema.'],
   products: ['Produtos', 'Consulta, cadastro e edição do catálogo.'],
   'mug-studio': ['Criador de canecas', 'Envie uma imagem de inspiração, combine comandos salvos e gere somente a arte horizontal pronta para impressão.'],
+  'mug-customers': ['Canecas de clientes', 'Criações feitas no site, WhatsApp do cliente e acompanhamento comercial.'],
   stock: ['Estoque e validade', 'Estoque baixo, vencimentos, lotes e localização.'],
   nfe: ['Entrada de NF-e', 'Leitura, conferência, cadastro completo e importação real do XML.'],
   orders: ['Pedidos', 'Lista paginada, separação, conferência e entrega.'],
@@ -35,6 +36,7 @@ let currentRoute = 'dashboard';
 let dispatching = false;
 let mugStudioPromise = null;
 let mugPhrasesAddonPromise = null;
+let mugCustomerLeadsPromise = null;
 
 function routeFromLocation() {
   try {
@@ -54,12 +56,22 @@ function installMugStudioShell() {
       productsButton.insertAdjacentHTML('afterend', '<button class="nav-item" data-route="mug-studio" type="button"><span class="nav-icon">CN</span><span>Criador de canecas</span></button>');
     }
   }
+  if (nav && !nav.querySelector('[data-route="mug-customers"]')) {
+    const studioButton = nav.querySelector('[data-route="mug-studio"]') || nav.querySelector('[data-route="products"]');
+    if (studioButton) studioButton.insertAdjacentHTML('afterend', '<button class="nav-item" data-route="mug-customers" type="button"><span class="nav-icon">CC</span><span>Canecas de clientes</span></button>');
+  }
 
   const main = document.getElementById('mainContent');
   if (main && !main.querySelector('.view[data-view="mug-studio"]')) {
     const productsView = main.querySelector('.view[data-view="products"]');
     const html = '<section class="view route-view" data-view="mug-studio" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CN</span><strong>Preparando Criador de Canecas</strong><small>Imagem de inspiração → comandos → arte horizontal → cadastro inativo.</small></div></div></section>';
     if (productsView) productsView.insertAdjacentHTML('afterend', html);
+    else main.insertAdjacentHTML('beforeend', html);
+  }
+  if (main && !main.querySelector('.view[data-view="mug-customers"]')) {
+    const studioView = main.querySelector('.view[data-view="mug-studio"]');
+    const html = '<section class="view route-view" data-view="mug-customers" aria-labelledby="pageTitle"><div class="route-placeholder" data-route-placeholder><div><span class="route-placeholder-icon">CC</span><strong>Preparando canecas de clientes</strong><small>Criações do site, contato do cliente e acompanhamento de conversão.</small></div></div></section>';
+    if (studioView) studioView.insertAdjacentHTML('afterend', html);
     else main.insertAdjacentHTML('beforeend', html);
   }
 
@@ -111,6 +123,22 @@ function loadMugStudio() {
     throw error;
   });
   return mugStudioPromise;
+}
+
+function loadMugCustomerLeads() {
+  if (mugCustomerLeadsPromise) return mugCustomerLeadsPromise;
+  mugCustomerLeadsPromise = import(withBuild('./mug-customer-leads-v1.js')).then(module => {
+    window.dispatchEvent(new CustomEvent('admin-v2-route-ready', {
+      detail: { route: 'mug-customers', source: 'mug-customer-leads-loader', build: ACTIVE_BUILD },
+    }));
+    if (typeof module.load === 'function') return module.load();
+    return module;
+  }).catch(error => {
+    mugCustomerLeadsPromise = null;
+    console.error('Não foi possível abrir Canecas de clientes:', error);
+    throw error;
+  });
+  return mugCustomerLeadsPromise;
 }
 
 function bindOrderWebhookSetting() {
@@ -188,6 +216,12 @@ function activate(route, { persist = true, emit = true } = {}) {
       if (placeholder) placeholder.textContent = `Falha ao carregar: ${error?.message || error}`;
     });
   }
+  if (route === 'mug-customers') {
+    loadMugCustomerLeads().catch(error => {
+      const placeholder = document.querySelector('.view[data-view="mug-customers"] [data-route-placeholder] small');
+      if (placeholder) placeholder.textContent = `Falha ao carregar: ${error?.message || error}`;
+    });
+  }
   if (emit) {
     dispatching = true;
     window.dispatchEvent(new CustomEvent('admin-v2-route', { detail: { route, source: 'navigation-v12' } }));
@@ -219,7 +253,6 @@ function start() {
   });
   window.addEventListener('admin-v2-open-product', () => activate('products'));
   window.adminV2CurrentRoute = () => currentRoute;
-  // Alias compatível para integrações administrativas antigas que ainda navegam por função global.
   window.adminV2Navigate = route => activate(route);
   activate(routeFromLocation(), { persist: false });
 }
