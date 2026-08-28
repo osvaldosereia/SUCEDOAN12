@@ -9,6 +9,7 @@ const [viewer,thumbs,runtime]=await Promise.all([readFile(viewerFile,'utf8'),rea
 for(const file of [viewerFile,thumbFile,runtimeFile]){const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});assert.equal(syntax.status,0,syntax.stderr||syntax.stdout||`Erro de sintaxe em ${file}`);}
 assert.match(runtime,/mug-public-3d-v2\.js/,'runtime não carrega o 3D v2');
 assert.match(runtime,/mug-public-thumbnails-v2\.js/,'runtime não carrega miniaturas v2');
+assert.match(runtime,/v21-printable-arc/,'runtime não renovou o cache do render com arco imprimível');
 assert.match(viewer,/RoomEnvironment/,'3D v2 não usa ambiente de estúdio');
 assert.match(viewer,/PMREMGenerator/,'3D v2 não prepara reflexos de ambiente');
 assert.match(viewer,/MeshPhysicalMaterial/,'caneca não usa material físico');
@@ -21,8 +22,19 @@ assert.match(viewer,/pointers=new Map/,'pinch zoom não foi implementado');
 assert.match(viewer,/Math\.max\(6\.05,Math\.min\(11/,'limites de zoom ausentes');
 assert.match(viewer,/requestAnimationFrame/,'render sob demanda ausente');
 assert.doesNotMatch(viewer,/setInterval\(/,'viewer não deve manter loop contínuo');
+
+assert.match(viewer,/PRINT_WIDTH_MM=235/,'largura operacional de impressão não foi usada na calibração visual');
+assert.match(viewer,/MUG_CIRCUMFERENCE_MM=260/,'circunferência de referência não foi declarada');
+assert.match(viewer,/PRINT_ARC_RAD=Math\.PI\*2\*\(PRINT_WIDTH_MM\/MUG_CIRCUMFERENCE_MM\)/,'arco imprimível não é calculado pela proporção física');
+assert.match(viewer,/HANDLE_GAP_RAD=Math\.PI\*2-PRINT_ARC_RAD/,'faixa branca da alça não é derivada do arco imprimível');
+assert.match(viewer,/ART_SHELL_THETA_START/,'posição da faixa próxima à alça não foi declarada');
+assert.match(viewer,/ART_SHELL_THETA_START,\s*PRINT_ARC_RAD/,'geometria da arte ainda não usa o arco parcial');
+assert.match(viewer,/ClampToEdgeWrapping/,'textura pode vazar pela borda da faixa sem impressão');
+assert.match(viewer,/pequena faixa sem impressão próxima à alça/,'interface não explica a simulação da faixa sem impressão');
+assert.doesNotMatch(viewer,/new THREE\.CylinderGeometry\(1\.525,1\.49,2\.82,128,1,true\)/,'arte voltou a cobrir 360 graus completos');
+
 assert.match(thumbs,/thumbnail/,'miniaturas não leem campo thumbnail');
 assert.match(thumbs,/IntersectionObserver/,'miniaturas não são lazy');
 assert.match(thumbs,/arte_horizontal/,'fallback de miniatura não usa arte horizontal');
 assert.doesNotMatch(thumbs,/three\.module|THREE_URL/,'grade não deve carregar Three.js');
-console.log('OK · Site público: thumbnail persistido/fallback, previews persistidos/fallback e 360° PBR v2.');
+console.log('OK · Site público: 3D PBR com arco sublimável, faixa branca na alça, duas vistas e 360°.');
