@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v19-make-art-bridge';
+const BUILD = '20260828-site-mug-runtime-v20-library-media';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
@@ -23,9 +23,12 @@ function bindCustomerLibrarySync() {
 
 async function loadCustomerLibrary() {
   if (!libraryPromise) {
-    libraryPromise = import(`./customer-favorites-v27.js?v=${encodeURIComponent(BUILD)}`).then(module => {
+    libraryPromise = Promise.all([
+      import(`./customer-favorites-v27.js?v=${encodeURIComponent(BUILD)}`),
+      import(`./customer-mug-media-v28.js?v=${encodeURIComponent(BUILD)}`),
+    ]).then(([library]) => {
       bindCustomerLibrarySync();
-      return module;
+      return library;
     }).catch(error => {
       libraryPromise = null;
       console.error('[Favoritos + Minhas canecas] Falha ao carregar biblioteca:', error);
