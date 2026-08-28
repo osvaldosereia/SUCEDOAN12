@@ -5,6 +5,7 @@ const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.co
 const MODULES = [
   './mug-make-art-recovery-v22.js',
   './mug-personalizer-v15-clean.js',
+  './mug-art-command-compat-v2.js',
   './mug-force-low-quality-v23.js',
   './mug-studio-gallery.js',
   './mug-command-library-v1.js',
