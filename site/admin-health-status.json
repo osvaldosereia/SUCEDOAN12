@@ -1,27 +1,27 @@
 {
-  "checkedAt": "2026-08-28T16:05:26.406Z",
+  "checkedAt": "2026-08-28T21:07:00.187Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
     {
       "name": "Todas as 18 abas passam no teste estrutural",
       "ok": true,
-      "detail": "Admin V2 v13.1 validado: 18 abas, 111 arquivos JavaScript, imports, desempenho de Produtos e ciclo dos kits confirmados."
+      "detail": "Admin V2 v13.1 validado: 18 abas, 113 arquivos JavaScript, imports, desempenho de Produtos e ciclo dos kits confirmados."
     },
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787933128737"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1787951222812"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787933129294"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1787951223572"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787933129371"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1787951223818"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1581 produto(s)"
+      "detail": "1590 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1853 produto(s) administrativos · 1581 público(s) · campos OK"
+      "detail": "1804 produto(s) administrativos · 1590 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1853 produto(s) em 229 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1804 produto(s) em 238 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 228 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 244 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-1787931245479 · público 1581 · admin 1853"
+      "detail": "catalog-00aae63697f416f8 · público 1590 · admin 1804"
     },
     {
       "name": "Banners permanecem removidos",
@@ -86,12 +86,12 @@
     {
       "name": "Histórico de ofertas válido",
       "ok": true,
-      "detail": "9630 oferta(s) no histórico"
+      "detail": "9653 oferta(s) no histórico"
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": true,
-      "detail": "0.5h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+      "ok": false,
+      "detail": "4.7h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     },
     {
       "name": "Arquitetura por rota do Admin",
@@ -106,6 +106,11 @@
   ],
   "errors": [
     {
+      "name": "Rotina horária de ofertas atualizada",
+      "ok": false,
+      "detail": "4.7h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
+    },
+    {
       "name": "Arquitetura por rota do Admin",
       "ok": false,
       "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
@@ -118,12 +123,12 @@
   ],
   "warnings": [],
   "workflow": {
-    "event": "push",
-    "runId": "33188144097",
+    "event": "schedule",
+    "runId": "33211064601",
     "attempt": "1",
-    "sourceSha": "70dd84a818bff04b388886ff3b19407e5b6e28e5",
+    "sourceSha": "56e5e676a66cd1685e1a03ac40559704eb25ae94",
     "architecture": "failure",
     "mugStudio": "failure",
-    "publishedAt": "2026-08-28T16:05:32.709Z"
+    "publishedAt": "2026-08-28T21:07:09.883Z"
   }
 }
