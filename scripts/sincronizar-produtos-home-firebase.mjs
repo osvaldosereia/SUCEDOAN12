@@ -54,7 +54,7 @@ async function firebaseHeaders() {
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion })
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth2:grant-type:jwt-bearer", assertion })
   });
   if (!response.ok) throw new Error(`Google OAuth para Firebase: ${response.status} ${await response.text()}`);
 
@@ -91,7 +91,7 @@ function isPublicMugModel(product) {
 
 function publicImageValue(value) {
   const source = text(value);
-  if (!source || /^data:/i.test(source)) return "";
+  if (!source || /^data:/i.test(source) || source.startsWith("__MUG_")) return "";
 
   const rawMatch = source.match(/^https:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/(?:main|master)\/(.+)$/i);
   if (rawMatch) return rawMatch[1];
@@ -131,10 +131,17 @@ function mediaList(product = {}) {
     const normalized = publicImageValue(value);
     if (normalized && !list.includes(normalized)) list.push(normalized);
   };
-  [product.url_imagem, product.imagem_url, product.imagem, product.image, product.img, product.foto, product.foto_url, product.imagem_path, product.mockup_1, product.mockup_2, product.mockup_3]
-    .forEach(push);
+  [
+    product.thumbnail, product.mug_thumbnail, product.thumb, product.miniatura,
+    product.preview_esquerda, product.preview_left, product.mug_preview_left,
+    product.preview_direita, product.preview_right, product.mug_preview_right,
+    product.url_imagem, product.imagem_url, product.imagem, product.image, product.img,
+    product.foto, product.foto_url, product.imagem_path,
+    product.mockup_1, product.mockup_2, product.mockup_3
+  ].forEach(push);
   if (Array.isArray(product.imagens)) product.imagens.forEach(push);
   if (Array.isArray(product.imagens_site)) product.imagens_site.forEach(push);
+  if (!list.length) push(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url);
   return list;
 }
 
@@ -168,6 +175,11 @@ function compactProduct(key, product = {}) {
     modelo_publico: bool(product.modelo_publico),
     personalizacao_publica: bool(product.personalizacao_publica),
     produto_sob_encomenda: isPublicMugModel(product),
+    thumbnail: publicImageValue(product.thumbnail || product.mug_thumbnail || product.thumb || product.miniatura),
+    preview_esquerda: publicImageValue(product.preview_esquerda || product.preview_left || product.mug_preview_left),
+    preview_direita: publicImageValue(product.preview_direita || product.preview_right || product.mug_preview_right),
+    render_3d_version: text(product.render_3d_version || product.render_version),
+    render_status: text(product.render_status),
     url_imagem: media[0] || "",
     imagens: media,
     mockup_1: publicImageValue(product.mockup_1),
@@ -255,7 +267,7 @@ async function run() {
     productCount: Object.keys(publicCatalog).length,
     adminProductCount: Object.keys(adminCatalog).length,
     source: "firebase-official-sync",
-    instructions: "Catálogos atualizados do Firebase; modelos públicos de canecas são tratados como produtos sob encomenda e não dependem de estoque físico."
+    instructions: "Catálogos atualizados do Firebase; modelos públicos de canecas preservam arte horizontal, thumbnail e duas prévias quando disponíveis."
   };
 
   await Promise.all([

@@ -22,7 +22,7 @@ function previousFile(pathname) {
 
 function publicImageValue(value) {
   const source = text(value);
-  if (!source || /^data:/i.test(source)) return '';
+  if (!source || /^data:/i.test(source) || source.startsWith('__MUG_')) return '';
   const rawMatch = source.match(/^https:\/\/raw\.githubusercontent\.com\/osvaldosereia\/SUCEDOAN12\/(?:main|master)\/(.+)$/i);
   if (rawMatch) return rawMatch[1];
   if (/^https?:\/\//i.test(source)) {
@@ -49,9 +49,17 @@ function mediaList(product = {}) {
     const media = publicImageValue(value);
     if (media && !list.includes(media)) list.push(media);
   };
-  [product.url_imagem, product.imagem_url, product.imagem, product.image, product.img, product.foto, product.foto_url, product.imagem_path, product.mockup_1, product.mockup_2, product.mockup_3].forEach(push);
+  [
+    product.thumbnail, product.mug_thumbnail, product.thumb, product.miniatura,
+    product.preview_esquerda, product.preview_left, product.mug_preview_left,
+    product.preview_direita, product.preview_right, product.mug_preview_right,
+    product.url_imagem, product.imagem_url, product.imagem, product.image, product.img,
+    product.foto, product.foto_url, product.imagem_path,
+    product.mockup_1, product.mockup_2, product.mockup_3
+  ].forEach(push);
   if (Array.isArray(product.imagens)) product.imagens.forEach(push);
   if (Array.isArray(product.imagens_site)) product.imagens_site.forEach(push);
+  if (!list.length) push(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url);
   return list;
 }
 
@@ -77,6 +85,11 @@ function compactProduct(key, product = {}) {
     modelo_publico: bool(product.modelo_publico),
     personalizacao_publica: bool(product.personalizacao_publica),
     produto_sob_encomenda: madeToOrder,
+    thumbnail: publicImageValue(product.thumbnail || product.mug_thumbnail || product.thumb || product.miniatura),
+    preview_esquerda: publicImageValue(product.preview_esquerda || product.preview_left || product.mug_preview_left),
+    preview_direita: publicImageValue(product.preview_direita || product.preview_right || product.mug_preview_right),
+    render_3d_version: text(product.render_3d_version || product.render_version),
+    render_status: text(product.render_status),
     url_imagem: media[0] || '',
     imagens: media.slice(0, 3),
     mockup_1: publicImageValue(product.mockup_1),
@@ -130,7 +143,7 @@ const version = {
   productCount: Object.keys(compactPublic).length,
   adminProductCount: Object.keys(parseJson(generatedAdminText)).length,
   source: 'firebase-official-sync',
-  instructions: 'Catálogo público compacto; modelos públicos de canecas permanecem disponíveis sob encomenda e preservam as três imagens e a arte horizontal.'
+  instructions: 'Catálogo público compacto; modelos públicos de canecas permanecem sob encomenda e preservam arte horizontal, thumbnail e duas prévias quando disponíveis.'
 };
 
 await Promise.all([

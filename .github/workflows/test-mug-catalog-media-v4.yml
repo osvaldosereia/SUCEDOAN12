@@ -1,0 +1,33 @@
+name: Testar mídias de canecas no catálogo público
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app-next/src/catalog.js'
+      - 'scripts/sincronizar-produtos-home-firebase.mjs'
+      - 'scripts/estabilizar-catalogo-publico.mjs'
+      - 'scripts/test-mug-catalog-media-v4.mjs'
+      - '.github/workflows/test-mug-catalog-media-v4.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app-next/src/catalog.js'
+      - 'scripts/sincronizar-produtos-home-firebase.mjs'
+      - 'scripts/estabilizar-catalogo-publico.mjs'
+      - 'scripts/test-mug-catalog-media-v4.mjs'
+      - '.github/workflows/test-mug-catalog-media-v4.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-mug-catalog-media-v4.mjs
