@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v20-library-media';
+const BUILD = '20260828-site-mug-runtime-v21-printable-arc';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;

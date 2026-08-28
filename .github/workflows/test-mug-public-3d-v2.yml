@@ -3,6 +3,8 @@ name: Testar canecas públicas 3D V2
 on:
   push:
     paths:
+      - 'index.html'
+      - 'caneca10/resultado.html'
       - 'app-next/src/mug-public-3d-v2.js'
       - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'app-next/src/mug-public-runtime-v6.js'
@@ -10,6 +12,8 @@ on:
       - '.github/workflows/test-mug-public-3d-v2.yml'
   pull_request:
     paths:
+      - 'index.html'
+      - 'caneca10/resultado.html'
       - 'app-next/src/mug-public-3d-v2.js'
       - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'app-next/src/mug-public-runtime-v6.js'
