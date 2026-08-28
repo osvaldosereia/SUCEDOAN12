@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v21-printable-arc';
+const BUILD = '20260828-site-mug-runtime-v21-printable-arc-v22-studio-realism';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
