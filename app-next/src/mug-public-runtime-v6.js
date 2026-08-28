@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v15-3d-thumbs';
+const BUILD = '20260828-site-mug-runtime-v16-art-only-3d';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
