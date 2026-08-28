@@ -20,7 +20,8 @@ const required = [
   'app-next/styles/checkout-flow.css', 'app-next/styles/bundle-confirmation.css',
   'app-next/src/checkout.js', 'app-next/src/ui.js', 'app-next/src/main.js',
   'app-next/src/home-carousels.js', 'app-next/src/image-performance.js',
-  'app-next/src/bundle-routes.js',
+  'app-next/src/bundle-routes.js', 'app-next/src/mug-public-runtime-v6.js',
+  'app-next/src/mug-public-3d-v2.js', 'app-next/src/mug-public-thumbnails-v2.js',
   'app-next/src/config.js', 'app-next/src/catalog.js', 'app-next/src/core.js',
   'scripts/catalogos-combos-lib.js', 'scripts/gerar-merchant.js',
   'scripts/gerar-meta-combos.js', 'scripts/gerar-paginas-seo-combos.js',
@@ -31,7 +32,7 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 
 const production = read('index.html');
 for (const marker of [
-  '2026-07-27-product-cards-spacing-v11',
+  '2026-08-28-mug-printable-arc-v3',
   '/app-next/styles/storefront-base.css',
   '/app-next/styles/storefront-components.css',
   '/app-next/styles/storefront-responsive.css',
@@ -40,8 +41,7 @@ for (const marker of [
   '/app-next/src/image-performance.js',
   '/app-next/src/home-carousels.js',
   '/app-next/src/main.js',
-  'da_v16_product_cards_20260727',
-  'href="/#/"', 'href="/#/categorias"', 'href="/#/ofertas"',
+  '/app-next/src/mug-public-runtime-v6.js',
   'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"',
   '"@type":"WebSite"', 'Cestas Básicas em Cuiabá e Várzea Grande',
   'id="menu-drawer"', 'aria-hidden="true"', 'inert'
@@ -51,8 +51,9 @@ for (const removed of [
   '/app-next/styles/visual-parity.css', '/app-next/styles/home-parity.css',
   '/app-next/styles/live-polish.css', '/app-next/src/live-polish.js',
   '/app-next/src/seo-combos.js', 'html.booting #app{opacity:0',
-  'requestIdleCallback', 'raw.githubusercontent.com'
-]) assert(!production.includes(removed), `Index ainda carrega camada conflitante: ${removed}`);
+  'requestIdleCallback', 'raw.githubusercontent.com', 'da_v16_product_cards_20260727',
+  '2026-07-27-product-cards-spacing-v11'
+]) assert(!production.includes(removed), `Index ainda carrega camada ou marcador legado: ${removed}`);
 
 const css = [
   read('app-next/styles/storefront-base.css'),
@@ -99,7 +100,7 @@ for (const marker of ['HOME_BUNDLE_LIMIT = 100', 'OFFER_BATCH_SIZE = 16', 'loadM
   assert(ui.includes(marker), `UI incompleta: ${marker}`);
 }
 const catalog = read('app-next/src/catalog.js');
-for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed']) {
+for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed', 'thumbnail', 'preview_esquerda', 'preview_direita']) {
   assert(catalog.includes(marker), `Catálogo incompleto: ${marker}`);
 }
 const imagePerformance = read('app-next/src/image-performance.js');
@@ -112,10 +113,25 @@ for (const marker of ['scrollBy', 'ResizeObserver', 'da:route-rendered', 'bundle
 }
 assert(!carousel.includes('bundle-navigation.js'), 'Carrossel ainda carrega navegação paralela');
 
+const mugRuntime = read('app-next/src/mug-public-runtime-v6.js');
+const mug3d = read('app-next/src/mug-public-3d-v2.js');
+const mugThumbs = read('app-next/src/mug-public-thumbnails-v2.js');
+for (const marker of ['mug-public-personalization-v6.js', 'mug-public-3d-v2.js', 'mug-public-thumbnails-v2.js', 'v21-printable-arc']) {
+  assert(mugRuntime.includes(marker), `Runtime público de canecas incompleto: ${marker}`);
+}
+for (const marker of ['PRINT_WIDTH_MM=235', 'MUG_CIRCUMFERENCE_MM=260', 'PRINT_ARC_RAD', 'HANDLE_GAP_RAD', 'Ver caneca em 360°']) {
+  assert(mug3d.includes(marker), `Render 3D de canecas incompleto: ${marker}`);
+}
+assert(mugThumbs.includes('IntersectionObserver'), 'Miniaturas de caneca não usam carregamento lazy');
+assert(!mugThumbs.includes('THREE_URL'), 'Grade pública não deve carregar Three.js');
+
 const stabilizer = read('scripts/estabilizar-catalogo-publico.mjs');
 assert(stabilizer.includes('contentHash'), 'Estabilizador não usa versão por conteúdo');
 assert(stabilizer.includes('versão ${version.version} preservada'), 'Estabilizador não preserva versão sem mudança');
 assert(!stabilizer.includes('catalog-${Date.now()}'), 'Estabilizador ainda invalida cache por horário');
+assert(stabilizer.includes('thumbnail'), 'Estabilizador não preserva thumbnail de caneca');
+assert(stabilizer.includes('preview_esquerda'), 'Estabilizador não preserva preview esquerdo de caneca');
+assert(stabilizer.includes('preview_direita'), 'Estabilizador não preserva preview direito de caneca');
 
 const baskets = JSON.parse(read('site/produtos-cesta-basica.json'));
 assert(Array.isArray(baskets) && baskets.length > 0, 'Catálogo de cestas vazio');
@@ -180,4 +196,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, cards de produtos completos e layout responsivo consistente.`);
+console.log(`Site validado: ${baskets.length} cestas, storefront atual e canecas com mídia art-only + 3D calibrado.`);
