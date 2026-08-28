@@ -1,4 +1,4 @@
-name: Testar stack atual de canecas
+name: Testar stack atual de canecas art-only
 
 on:
   push:
@@ -12,12 +12,13 @@ on:
       - 'producao-v2/js/mug-force-low-quality-v23.js'
       - 'producao-v2/js/mug-personalizer-v15-clean.js'
       - 'producao-v2/js/mug-studio-gallery.js'
-      - 'producao-v2/js/mug-studio-v8-finalizer.js'
       - 'producao-v2/admin-produtivo.html'
       - 'app-next/src/mug-public-runtime-v6.js'
       - 'app-next/src/customer-favorites-v27.js'
       - 'app-next/src/mug-public-personalization-contract-v25.js'
-      - 'app-next/src/mug-public-personalization-v5.js'
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-3d-v2.js'
+      - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'caneca10/index.html'
       - 'caneca10/app-v4-clean.js'
       - 'caneca10/art-recovery-v1.js'
@@ -25,6 +26,17 @@ on:
       - 'scripts/test-mug-make-stack-v14.mjs'
       - 'scripts/test-mug-art-recovery-v22.mjs'
       - 'scripts/test-mug-low-quality-v23.mjs'
+      - '.github/workflows/test-mug-make-stack-v14.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'producao-v2/js/mug-personalizer-v15-clean.js'
+      - 'producao-v2/js/mug-make-native-openai-bridge.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-3d-v2.js'
+      - 'caneca10/app-v4-clean.js'
+      - 'scripts/test-mug-make-stack-v14.mjs'
       - '.github/workflows/test-mug-make-stack-v14.yml'
   workflow_dispatch:
 
@@ -38,12 +50,12 @@ concurrency:
 jobs:
   validar:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
       - name: Validar Produção, Caneca10 e site público
         run: node scripts/test-mug-make-stack-v14.mjs
       - name: Validar recuperação assíncrona da arte

@@ -1,26 +1,41 @@
-name: Testar canecas CLEAN V16
+name: Testar canecas art-only + 3D V2
 
 on:
   push:
     branches: [main]
     paths:
       - 'index.html'
-      - 'app-next/src/mug-public-personalization-v5.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-3d-v2.js'
+      - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'app-next/src/image-performance.js'
       - 'app-next/src/catalog.js'
       - 'app-next/src/config.js'
       - 'caneca10/app-v4-clean.js'
       - 'caneca10/index.html'
+      - 'caneca10/resultado.html'
       - 'caneca10/gallery-v4.js'
       - 'caneca10/art-recovery-v1.js'
+      - 'caneca-print/index.html'
       - 'shared/mug-make-fast-ack-v1.js'
       - 'producao-v2/admin-produtivo.html'
       - 'producao-v2/js/mug-personalizer-v15-clean.js'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
-      - 'producao/catalog-sync-admin.js'
       - 'scripts/sincronizar-produtos-home-firebase.mjs'
       - 'scripts/estabilizar-catalogo-publico.mjs'
       - 'scripts/filtrar-produtos-home-publicos.mjs'
+      - 'scripts/test-mug-end-to-end-v15.mjs'
+      - '.github/workflows/test-mug-end-to-end-v15.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'app-next/src/mug-public-personalization-v6.js'
+      - 'app-next/src/mug-public-3d-v2.js'
+      - 'app-next/src/mug-public-thumbnails-v2.js'
+      - 'caneca10/resultado.html'
+      - 'producao-v2/js/mug-personalizer-v15-clean.js'
       - 'scripts/test-mug-end-to-end-v15.mjs'
       - '.github/workflows/test-mug-end-to-end-v15.yml'
   workflow_dispatch:
@@ -29,7 +44,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: mug-clean-v16-${{ github.ref }}
+  group: mug-art-only-v2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -37,9 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - name: Validar stack única de canecas
+          node-version: '22'
+      - name: Validar stack ponta a ponta atual
         run: node scripts/test-mug-end-to-end-v15.mjs
