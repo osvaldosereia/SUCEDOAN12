@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v27-char-limit';
+const BUILD = '20260828-site-mug-runtime-v28-personalizable-badge';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
@@ -51,7 +51,10 @@ async function loadMugThumbnails() {
 
 async function loadPublicUx() {
   if (!uxPromise) {
-    uxPromise = import(`./mug-public-ux-v1.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
+    uxPromise = Promise.all([
+      import(`./mug-public-ux-v1.js?v=${encodeURIComponent(BUILD)}`),
+      import(`./mug-public-personalizable-badge-v1.js?v=${encodeURIComponent(BUILD)}`),
+    ]).then(([ux]) => ux).catch(error => {
       uxPromise = null;
       console.warn('[Canecas públicas] Camada visual indisponível:', error);
     });
