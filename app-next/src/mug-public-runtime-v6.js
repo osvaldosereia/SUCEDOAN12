@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v22-2mockups-shorts';
+const BUILD = '20260828-site-mug-runtime-v23-2mockups-shorts-final';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
