@@ -1,6 +1,7 @@
-const BUILD = '20260828-site-mug-runtime-v14-3d';
+const BUILD = '20260828-site-mug-runtime-v15-3d-thumbs';
 let libraryPromise = null;
 let featurePromise = null;
+let thumbPromise = null;
 let customerSyncBound = false;
 
 function isProductRoute() {
@@ -34,8 +35,18 @@ async function loadCustomerLibrary() {
   return libraryPromise;
 }
 
+async function loadMugThumbnails() {
+  if (!thumbPromise) {
+    thumbPromise = import(`./mug-public-thumbnails-v1.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
+      thumbPromise = null;
+      console.warn('[Canecas públicas] Miniaturas próprias indisponíveis:', error);
+    });
+  }
+  return thumbPromise;
+}
+
 async function loadMugFeatures() {
-  await loadCustomerLibrary().catch(() => null);
+  await Promise.all([loadCustomerLibrary().catch(() => null), loadMugThumbnails().catch(() => null)]);
   if (!isProductRoute()) return;
   if (!featurePromise) {
     featurePromise = (async () => {
@@ -60,4 +71,4 @@ window.addEventListener('da:catalog-ready', loadMugFeatures);
 
 loadMugFeatures();
 
-export { BUILD, loadMugFeatures, loadCustomerLibrary };
+export { BUILD, loadMugFeatures, loadCustomerLibrary, loadMugThumbnails };
