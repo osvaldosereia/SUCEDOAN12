@@ -115,6 +115,24 @@ body:has(.product-page) .cf-seo-copy{display:none}
   clear:both;
 }
 
+/* Grid cards: keep them visually light and product-first. */
+.product-card .product-name{
+  font-weight:600;
+  letter-spacing:-.01em;
+}
+.product-card .product-category{
+  display:none!important;
+}
+.product-card .product-meta{
+  justify-content:flex-start;
+}
+.product-card .cf-card-engagement{
+  justify-content:flex-start;
+}
+.product-card .cf-card-engagement [data-cf-rating-summary]{
+  display:none!important;
+}
+
 @media (max-width:1100px){
   .cf-product-gallery .cf-thumbs button{
     flex-basis:72px;
