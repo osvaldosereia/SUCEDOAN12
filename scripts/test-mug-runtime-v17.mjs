@@ -48,7 +48,7 @@ const [
   read('producao-v2/js/mug-force-low-quality-v23.js')
 ]);
 
-assert.match(index, /public-mug-recovery-v21|customer-library-v27/);
+assert.match(index, /public-mug-recovery-v21|customer-library-v27|mug-printable-arc-v3/);
 assert.match(index, /mug-public-runtime-v6\.js/);
 assert.equal((index.match(/mug-public-runtime-v6\.js/g) || []).length, 2, 'runtime público deve aparecer apenas no preload e no script');
 assert.doesNotMatch(index, /<script[^>]+mug-public-personalization-v[0-9]+\.js/i, 'index não deve carregar controlador público diretamente');
@@ -65,6 +65,7 @@ assert.doesNotMatch(publicRuntime, /mug-public-personalization-v5\.js/);
 assert.match(publicRuntime, /mug-public-result-link-v26\.js/);
 assert.match(publicRuntime, /mug-public-thumbnails-v2\.js/);
 assert.match(publicRuntime, /mug-public-3d-v2\.js/);
+assert.match(publicRuntime, /v21-printable-arc/);
 assert.ok(publicRuntime.indexOf('mug-public-personalization-contract-v25.js') < publicRuntime.indexOf('mug-public-personalization-v6.js'), 'contrato público deve carregar antes do controlador');
 assert.ok(publicRuntime.indexOf('mug-public-personalization-v6.js') < publicRuntime.indexOf('mug-public-result-link-v26.js'), 'correção de links deve carregar depois do controlador');
 assert.ok(publicRuntime.indexOf('mug-public-result-link-v26.js') < publicRuntime.indexOf('mug-public-3d-v2.js'), '3D deve carregar depois do controlador e do ajuste de links');
@@ -91,6 +92,11 @@ assert.match(public3d, /preview_esquerda/);
 assert.match(public3d, /preview_direita/);
 assert.match(public3d, /Ver caneca em 360°/);
 assert.match(public3d, /pointers=new Map/);
+assert.match(public3d, /PRINT_WIDTH_MM=235/);
+assert.match(public3d, /MUG_CIRCUMFERENCE_MM=260/);
+assert.match(public3d, /PRINT_ARC_RAD/);
+assert.match(public3d, /HANDLE_GAP_RAD/);
+assert.match(public3d, /ART_SHELL_THETA_START/);
 assert.doesNotMatch(public3d, /setInterval\(/);
 assert.match(publicThumbs, /thumbnail/);
 assert.match(publicThumbs, /IntersectionObserver/);
@@ -125,6 +131,7 @@ assert.match(publicResultPage, /arte_horizontal/);
 assert.match(publicResultPage, /mug-public-3d-v2\.js/);
 assert.match(publicResultPage, /generatePreviews/);
 assert.match(publicResultPage, /Ver caneca em 360°/);
+assert.match(publicResultPage, /printable-arc-v3/);
 assert.doesNotMatch(publicResultPage, /mockup_1|mockup_2|mockup_3|três prévias|quatro imagens/i);
 
 assert.match(checkoutPhone, /getElementById\('checkout-content'\)/);
@@ -161,4 +168,4 @@ const printable=Object.values(printData||{}).filter(item=>item&&item.arte_horizo
 assert.ok(printable.length>0,'cache do Caneca Print deve conter ao menos uma arte horizontal');
 assert.ok(printable.every(item=>typeof item.arte_horizontal==='string'&&item.arte_horizontal.length>0),'todas as canecas imprimíveis precisam da arte horizontal');
 
-console.log('OK · Runtime público art-only + 3D V2 + Produção + Caneca10 validados.');
+console.log('OK · Runtime público art-only + 3D com arco sublimável + Produção + Caneca10 validados.');
