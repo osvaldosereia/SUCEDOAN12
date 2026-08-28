@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set "URL=https://donaantonia.com.br/caneca-print/?kiosk=1"
+set "URL=https://donaantonia.com.br/caneca-print/?kiosk=1&mode=queue"
 set "CHROME=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
 if exist "%CHROME%" goto abrir
 set "CHROME=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
