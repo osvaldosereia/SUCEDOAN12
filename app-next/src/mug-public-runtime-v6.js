@@ -1,4 +1,4 @@
-const BUILD = '20260827-site-mug-runtime-v13-customer-library-sync';
+const BUILD = '20260828-site-mug-runtime-v14-3d';
 let libraryPromise = null;
 let featurePromise = null;
 let customerSyncBound = false;
@@ -43,6 +43,7 @@ async function loadMugFeatures() {
       await import(`./mug-public-personalization-contract-v25.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-v5.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-result-link-v26.js?v=${encodeURIComponent(BUILD)}`);
+      await import(`./mug-public-3d-v1.js?v=${encodeURIComponent(BUILD)}`);
       document.documentElement.dataset.mugPublicRuntime = BUILD;
       console.info(`Canecas públicas runtime · ${BUILD}`);
     })().catch(error => {
