@@ -1,4 +1,4 @@
-const BUILD = '20260828-site-mug-runtime-v16-art-only-3d';
+const BUILD = '20260828-site-mug-runtime-v17-media-fields-3d-v2';
 let libraryPromise = null;
 let featurePromise = null;
 let thumbPromise = null;
@@ -37,7 +37,7 @@ async function loadCustomerLibrary() {
 
 async function loadMugThumbnails() {
   if (!thumbPromise) {
-    thumbPromise = import(`./mug-public-thumbnails-v1.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
+    thumbPromise = import(`./mug-public-thumbnails-v2.js?v=${encodeURIComponent(BUILD)}`).catch(error => {
       thumbPromise = null;
       console.warn('[Canecas públicas] Miniaturas próprias indisponíveis:', error);
     });
@@ -54,7 +54,7 @@ async function loadMugFeatures() {
       await import(`./mug-public-personalization-contract-v25.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-personalization-v5.js?v=${encodeURIComponent(BUILD)}`);
       await import(`./mug-public-result-link-v26.js?v=${encodeURIComponent(BUILD)}`);
-      await import(`./mug-public-3d-v1.js?v=${encodeURIComponent(BUILD)}`);
+      await import(`./mug-public-3d-v2.js?v=${encodeURIComponent(BUILD)}`);
       document.documentElement.dataset.mugPublicRuntime = BUILD;
       console.info(`Canecas públicas runtime · ${BUILD}`);
     })().catch(error => {
@@ -68,6 +68,7 @@ async function loadMugFeatures() {
 window.addEventListener('hashchange', loadMugFeatures);
 window.addEventListener('da:route-rendered', loadMugFeatures);
 window.addEventListener('da:catalog-ready', loadMugFeatures);
+window.addEventListener('da:catalog-refreshed', loadMugFeatures);
 
 loadMugFeatures();
 
