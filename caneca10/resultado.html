@@ -6,68 +6,35 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#ffffff">
   <title>Resultado da caneca · Dona Antônia</title>
-  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
   <style>
-    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f221e;background:#f5f6f2}*{box-sizing:border-box}body{margin:0}.wrap{width:min(960px,100%);margin:0 auto;padding:18px}.card{background:#fff;border:1px solid #e1e4dc;border-radius:20px;padding:18px;box-shadow:0 12px 36px rgba(25,30,22,.07)}h1{margin:0 0 6px;font-size:24px}p{color:#62685e;margin:0 0 16px;line-height:1.45}.art{width:100%;aspect-ratio:2.5/1;object-fit:contain;background:#f2f4ef;border-radius:14px;border:1px solid #e1e4dc}.label{display:block;margin:16px 0 7px;font-size:12px;font-weight:850;color:#5d645a}.previews{display:grid;grid-template-columns:1fr 1fr;gap:10px}.preview{margin:0;position:relative;aspect-ratio:1;border-radius:15px;overflow:hidden;background:#f2f4ef;border:1px solid #e1e4dc;display:grid;place-items:center}.preview img{width:100%;height:100%;object-fit:cover}.preview figcaption{position:absolute;left:9px;bottom:9px;padding:5px 8px;border-radius:999px;background:rgba(25,28,24,.78);color:#fff;font-size:10px;font-weight:800}.preview-loading{font-size:12px;color:#70776d}.actions{display:grid;gap:10px;margin-top:16px}.actions a{min-height:48px;border-radius:12px;text-decoration:none;font-weight:800;display:flex;align-items:center;justify-content:center;background:#20231f;color:#fff}.status{padding:14px;border-radius:12px;background:#f1f3ee;color:#5c6358}.error{background:#fff0ef;color:#842d29}.da-mug-showcase{margin-top:12px}.da-mug-showcase>.da-mug-previews{display:none!important}.da-mug-print-note{text-align:center;font-size:10px;color:#858980;margin:-7px 0 0}@media(max-width:620px){.wrap{padding:10px}.card{border-radius:15px;padding:12px}.previews{gap:6px}h1{font-size:21px}}
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1f221e;background:#f5f6f2}
+    *{box-sizing:border-box}body{margin:0}.wrap{width:min(960px,100%);margin:0 auto;padding:18px}.card{background:#fff;border:1px solid #e1e4dc;border-radius:20px;padding:18px;box-shadow:0 12px 36px rgba(25,30,22,.07)}
+    h1{margin:0 0 6px;font-size:24px}p{color:#62685e;margin:0 0 16px;line-height:1.45}.label{display:block;margin:16px 0 7px;font-size:12px;font-weight:850;color:#5d645a}
+    .mockups{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mockup{margin:0;border:1px solid #e1e4dc;border-radius:15px;overflow:hidden;background:#f2f4ef}.mockup img{display:block;width:100%;aspect-ratio:1;object-fit:contain}.mockup figcaption{padding:8px 10px;font-size:11px;font-weight:800;color:#62685e}
+    .art{width:100%;aspect-ratio:2.5/1;object-fit:contain;background:#f2f4ef;border-radius:14px;border:1px solid #e1e4dc}.actions{display:grid;gap:10px;margin-top:16px}.actions a{min-height:48px;border-radius:12px;text-decoration:none;font-weight:800;display:flex;align-items:center;justify-content:center;background:#20231f;color:#fff}.status{padding:14px;border-radius:12px;background:#f1f3ee;color:#5c6358}.error{background:#fff0ef;color:#842d29}
+    @media(max-width:620px){.wrap{padding:10px}.card{border-radius:15px;padding:12px}.mockups{gap:6px}h1{font-size:21px}}
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="card">
-      <h1>Sua caneca personalizada</h1>
-      <p>Confira a arte horizontal, as duas vistas da caneca e a visualização em 360°.</p>
-      <div id="status" class="status">Carregando sua criação…</div>
-      <div id="result" hidden>
-        <span class="label">Arte horizontal para impressão</span>
-        <img id="art" class="art" alt="Arte horizontal da caneca">
-        <span class="label">Prévia da caneca</span>
-        <div class="previews">
-          <figure class="preview"><div id="leftLoading" class="preview-loading">Preparando lado esquerdo…</div><img id="left" alt="Caneca vista pelo lado esquerdo" hidden><figcaption>Lado esquerdo</figcaption></figure>
-          <figure class="preview"><div id="rightLoading" class="preview-loading">Preparando lado direito…</div><img id="right" alt="Caneca vista pelo lado direito" hidden><figcaption>Lado direito</figcaption></figure>
-        </div>
-        <div id="viewerHost" class="da-mug-showcase" data-da-mug-showcase="1">
-          <div class="da-mug-previews"></div>
-          <button class="da-mug-360-button" type="button" data-open-360>↻ Ver caneca em 360°</button>
-          <p class="da-mug-360-hint">Arraste para girar · use dois dedos ou a roda para aproximar</p>
-          <p class="da-mug-print-note">A prévia considera a pequena faixa sem impressão próxima à alça.</p>
-          <div class="da-mug-viewer" data-mug-viewer><span class="da-mug-viewer-badge">360°</span><button class="da-mug-viewer-reset" type="button" data-reset-360>Centralizar</button></div>
-        </div>
+  <main class="wrap"><section class="card">
+    <h1>Sua caneca personalizada</h1>
+    <p>Confira os dois mockups e a arte horizontal que será usada na impressão.</p>
+    <div id="status" class="status">Carregando sua criação…</div>
+    <div id="result" hidden>
+      <span class="label">Prévia da caneca</span>
+      <div class="mockups">
+        <figure class="mockup"><img id="mockup1" alt="Primeiro mockup da caneca"><figcaption>Mockup 1</figcaption></figure>
+        <figure class="mockup"><img id="mockup2" alt="Segundo mockup da caneca"><figcaption>Mockup 2</figcaption></figure>
       </div>
-      <div class="actions"><a href="/">Voltar para Dona Antônia</a></div>
-    </section>
-  </main>
-  <script type="module">
-    import { generatePreviews, startViewer } from '../app-next/src/mug-public-3d-v2.js?v=20260828-printable-arc-v3-mug-3d-loader-v5';
-    const FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
-    const id=String(new URLSearchParams(location.search).get('id')||'').trim();
-    const status=document.getElementById('status');
-    const result=document.getElementById('result');
-    const text=v=>String(v??'').trim();
-    const isUrl=v=>/^https?:\/\//i.test(text(v));
-    const artUrl=p=>text(p?.arte_horizontal||p?.arte_personalizacao||p?.arte_impressao?.url||p?.art_url||p?.arte_url);
-    const savedPreview=(p,side)=>side==='left'
-      ?[p?.preview_esquerda,p?.preview_left,p?.mug_preview_left].map(text).find(isUrl)||''
-      :[p?.preview_direita,p?.preview_right,p?.mug_preview_right].map(text).find(isUrl)||'';
-    function showPreview(side,url){const img=document.getElementById(side),loading=document.getElementById(`${side}Loading`);if(!url)return;img.src=url;img.hidden=false;if(loading)loading.remove();}
-    async function load(){
-      if(!id){status.textContent='Código da criação não informado.';status.classList.add('error');return;}
-      try{
-        const r=await fetch(`${FIREBASE}/produtos/${encodeURIComponent(id)}.json?_=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});
-        if(!r.ok)throw new Error(`Firebase ${r.status}`);
-        const product=await r.json();
-        const art=artUrl(product||{});
-        if(!isUrl(art))throw new Error('A arte horizontal ainda não está disponível.');
-        document.getElementById('art').src=art;
-        const leftSaved=savedPreview(product,'left'),rightSaved=savedPreview(product,'right');
-        if(leftSaved)showPreview('left',leftSaved);
-        if(rightSaved)showPreview('right',rightSaved);
-        if(!leftSaved||!rightSaved){const previews=await generatePreviews(art);if(!leftSaved)showPreview('left',previews.left);if(!rightSaved)showPreview('right',previews.right);}
-        const host=document.getElementById('viewerHost');
-        host.querySelector('[data-open-360]')?.addEventListener('click',()=>startViewer(host,art));
-        status.hidden=true;result.hidden=false;
-      }catch(e){status.textContent=e?.message||'Não foi possível carregar esta criação.';status.classList.add('error');}
-    }
-    load();
+      <span class="label">Arte horizontal para impressão</span>
+      <img id="art" class="art" alt="Arte horizontal da caneca">
+    </div>
+    <div class="actions"><a href="/">Voltar para Dona Antônia</a></div>
+  </section></main>
+  <script>
+    (()=>{const FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com',id=String(new URLSearchParams(location.search).get('id')||'').trim(),status=document.getElementById('status'),result=document.getElementById('result'),text=v=>String(v??'').trim(),isUrl=v=>/^https?:\/\//i.test(text(v));
+    function urls(p={}){return{art:text(p.arte_horizontal||p.arte_personalizacao||p.arte_impressao?.url||p.art_url||p.arte_url),m1:text(p.mockup_1||p.url_imagem||p.imagem||p.imagens_site?.[0]||p.imagens?.[0]),m2:text(p.mockup_2||p.imagens_site?.[1]||p.imagens?.[1])}}
+    async function load(){if(!id){status.textContent='Código da criação não informado.';status.classList.add('error');return}try{const r=await fetch(`${FIREBASE}/produtos/${encodeURIComponent(id)}.json?_=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});if(!r.ok)throw new Error(`Firebase ${r.status}`);const u=urls(await r.json()||{});if(!isUrl(u.art))throw new Error('A arte horizontal ainda não está disponível.');if(!isUrl(u.m1)||!isUrl(u.m2))throw new Error('Os dois mockups ainda estão sendo preparados.');document.getElementById('art').src=u.art;document.getElementById('mockup1').src=u.m1;document.getElementById('mockup2').src=u.m2;status.hidden=true;result.hidden=false}catch(e){status.textContent=e?.message||'Não foi possível carregar esta criação.';status.classList.add('error')}}load()})();
   </script>
 </body>
 </html>
