@@ -250,6 +250,31 @@ function adminProduct(key, product = {}) {
 async function run() {
   const products = await loadFirebaseProducts();
   const entries = Object.entries(products).filter(([, product]) => product && typeof product === "object" && !Array.isArray(product));
+  const diagnostic = entries.find(([key, product]) => [key, product.codigo, product.sku, product.id].map(text).includes("CANP-WGCPM5"));
+  if (diagnostic) {
+    const [key, product] = diagnostic;
+    console.log("DIAG CANP-WGCPM5", JSON.stringify({
+      key,
+      codigo: text(product.codigo),
+      sku: text(product.sku),
+      id: text(product.id),
+      nome: text(product.nome),
+      categoria: text(product.categoria),
+      situacao: text(product.situacao),
+      status: text(product.status),
+      ativo: product.ativo,
+      visivel: product.visivel,
+      modelo_caneca: product.modelo_caneca,
+      modelo_publico: product.modelo_publico,
+      produto_sob_encomenda: product.produto_sob_encomenda,
+      preco: product.preco,
+      estoque: product.estoque,
+      publicMug: isPublicMugModel(product),
+      publicAvailable: isPubliclyAvailable(product)
+    }));
+  } else {
+    console.log("DIAG CANP-WGCPM5 não encontrada no Firebase /produtos");
+  }
   const visibleEntries = entries.filter(([, product]) => isPubliclyAvailable(product));
   const publicCatalog = Object.fromEntries(visibleEntries.map(([key, product]) => [key, compactProduct(key, product)]));
   const adminCatalog = Object.fromEntries(entries.map(([key, product]) => [key, adminProduct(key, product)]));
