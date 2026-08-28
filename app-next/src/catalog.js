@@ -52,14 +52,30 @@ function isPublicMugModel(raw = {}) {
   return truthy(raw.modelo_publico) && (truthy(raw.modelo_caneca) || truthy(raw.produto_sob_encomenda) || category.includes('caneca'));
 }
 
+function mediaValue(...values) {
+  for (const value of values) {
+    const path = String(value ?? '').trim();
+    if (!path || /^data:/i.test(path) || path.startsWith('__MUG_')) continue;
+    return assetUrl(path);
+  }
+  return '';
+}
+
 function productImages(raw, product) {
   const images = [];
   const push = value => {
     const path = String(value ?? '').trim();
-    if (!path || /site\/tmp\/ia-referencias\//i.test(path) || /^data:/i.test(path)) return;
+    if (!path || /site\/tmp\/ia-referencias\//i.test(path) || /^data:/i.test(path) || path.startsWith('__MUG_')) return;
     const url = assetUrl(path);
     if (url && !images.includes(url)) images.push(url);
   };
+
+  // Canecas novas: thumbnail comercial primeiro; depois as duas vistas persistidas.
+  push(raw.thumbnail || raw.mug_thumbnail || raw.thumb || raw.miniatura);
+  push(raw.preview_esquerda || raw.preview_left || raw.mug_preview_left);
+  push(raw.preview_direita || raw.preview_right || raw.mug_preview_right);
+
+  // Catálogo geral + compatibilidade com produtos antigos.
   push(raw.url_imagem);
   push(raw.imagem_url || raw.urlImagem);
   push(raw.imagem || raw.image || raw.img || raw.foto || raw.foto_url);
@@ -122,6 +138,12 @@ export function normalizeProduct(raw = {}, key = '', index = 0) {
     preco_oferta: parseMoney(raw.preco_oferta || raw.precoOferta || 0),
     validade_oferta: raw.validade_oferta || raw.validadeOferta || '',
     validade: productExpiry(raw),
+    thumbnail: mediaValue(raw.thumbnail, raw.mug_thumbnail, raw.thumb, raw.miniatura),
+    preview_esquerda: mediaValue(raw.preview_esquerda, raw.preview_left, raw.mug_preview_left),
+    preview_direita: mediaValue(raw.preview_direita, raw.preview_right, raw.mug_preview_right),
+    arte_horizontal: mediaValue(raw.arte_horizontal, raw.arte_personalizacao, raw.arte_impressao?.url),
+    render_3d_version: String(raw.render_3d_version || raw.render_version || '').trim(),
+    render_status: String(raw.render_status || '').trim(),
     raw
   };
   product.images = productImages(raw, product);
