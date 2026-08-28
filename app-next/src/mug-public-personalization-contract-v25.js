@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260827-mug-public-contract-v25';
+  const BUILD = '20260828-mug-public-contract-v26-direct-personalize';
   const FIREBASE_URL = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const RESULT_NODE = 'canecas/geracoes';
   const WAIT_MS = 180000;
@@ -22,8 +22,11 @@
     try {
       const outer = JSON.parse(init.body);
       const payload = typeof outer?.payload === 'string' ? JSON.parse(outer.payload) : outer?.payload;
-      if (!payload || payload.action !== 'personalize_mug_model' || !payload.request_id) return null;
-      return { outer, payload };
+      if (!payload || !payload.request_id) return null;
+      const directPersonalization = payload.action === 'personalize_mug_model';
+      const legacyConverted = payload.action === 'generate_mug_art' && payload.personalization_action === 'personalize_mug_model';
+      if (!directPersonalization && !legacyConverted) return null;
+      return { outer, payload, directPersonalization, legacyConverted };
     } catch {
       return null;
     }
@@ -171,13 +174,15 @@
     const parsed = parseRequest(init);
     if (!parsed) return transportFetch(input, init);
 
-    const { outer, payload } = parsed;
+    const { outer, payload, directPersonalization, legacyConverted } = parsed;
     payload.quality = 'low';
 
-    if (!/^data:image\//i.test(text(payload.image_base64))) {
+    // Na rota direta, image_base64 deve ser a foto do cliente.
+    // Em chamadas antigas convertidas pelo bridge, image_base64 já é o quadro de referência e não deve ser substituído.
+    if (directPersonalization && !/^data:image\//i.test(text(payload.image_base64))) {
       payload.image_base64 = firstCustomerPhoto(payload);
     }
-    if (!payload.image_base64) {
+    if (directPersonalization && !payload.image_base64) {
       payload.image_base64 = await fallbackModelImage(payload.model_id).catch(() => '');
     }
     if (!payload.image_base64) {
@@ -200,7 +205,8 @@
       return response;
     } catch (error) {
       if (error?.name === 'AbortError') throw error;
-      console.info(`[Canecas públicas] conexão síncrona encerrou em personalize_mug_model (${error?.message || error}); acompanhando ${payload.request_id}.`);
+      const mode = legacyConverted ? 'chamada legada convertida' : 'personalize_mug_model';
+      console.info(`[Canecas públicas] conexão síncrona encerrou em ${mode} (${error?.message || error}); acompanhando ${payload.request_id}.`);
       return waitForPersonalizedArt(payload);
     }
   };
