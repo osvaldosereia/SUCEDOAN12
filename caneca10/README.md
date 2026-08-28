@@ -8,31 +8,34 @@ O caminho canônico é `caneca10/index.html`.
 
 A grafia antiga `ceneca10` foi removida do runtime e dos testes do GitHub para evitar duplicidade, referências divergentes e manutenção em dois lugares.
 
-## Arquitetura
+## Arquitetura atual
 
-O Caneca10 usa o mesmo núcleo funcional do Criador de Canecas do Produção:
+O Caneca10 trabalha internamente somente com a arte horizontal final:
 
 1. imagem de inspiração;
 2. comandos salvos + instrução complementar;
 3. `generate_mug_art`;
-4. recuperação da arte intermediária em `canecas/geracoes/{request_id}` quando o Make responde `Accepted` ou a conexão síncrona cai;
+4. recuperação da arte intermediária quando necessário;
 5. catalogação visual opcional e não bloqueante;
 6. fechamento da arte em 2400 × 960;
-7. geração de três referências (esquerda, direita e centro);
-8. `finalize_mug_product`;
-9. qualidade efetiva LOW forçada pelo transporte compartilhado;
-10. finalização assíncrona com acompanhamento pelo Firebase;
-11. produto salvo inicialmente como inativo e como modelo interno;
-12. arte horizontal + 3 mockups exibidos sem necessidade de F5.
+7. publicação da arte horizontal;
+8. produto salvo inicialmente como inativo e como modelo interno;
+9. exibição somente da arte horizontal final.
+
+Mockups não fazem parte da interface nem do cadastro interno final do Caneca10.
+
+## Compatibilidade temporária com o Make
+
+Até o cenário do Make ser atualizado para o novo contrato de arte única, o frontend ainda envia as três referências exigidas pelo fluxo legado de `finalize_mug_product`. Os mockups eventualmente gerados pelo cenário atual não são exibidos pelo Caneca10 e são removidos do cadastro interno final.
+
+Quando o cenário do Make for atualizado, essa camada de compatibilidade poderá ser removida sem alterar a interface do Caneca10.
 
 ## Runtime ativo
 
-- `../shared/mug-make-fast-ack-v1.js`: força `quality = low` e libera a finalização com ACK de contingência;
-- `art-recovery-v1.js`: recupera a arte intermediária pelo Firebase;
+- `../shared/mug-make-fast-ack-v1.js`: transporte compartilhado;
+- `art-recovery-v1.js`: recuperação da arte intermediária pelo Firebase;
 - `app-v4-clean.js`: controlador único do gerador mobile;
 - `gallery-v4.js`: modelos, histórico, filtros, reutilização e exclusão segura.
-
-Não são necessários guards antigos, compatibilizadores de resposta nem refreshes paralelos de galeria.
 
 ## Dados compartilhados
 
