@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+
+const file='app-next/src/mug-public-3d-v1.js';
+const [viewer,runtime]=await Promise.all([readFile(file,'utf8'),readFile('app-next/src/mug-public-runtime-v6.js','utf8')]);
+const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
+assert.equal(syntax.status,0,syntax.stderr||syntax.stdout||'Erro de sintaxe no módulo 3D');
+assert.match(runtime,/mug-public-3d-v1\.js/,'runtime público não carrega o módulo 3D');
+assert.match(viewer,/THREE_URL/);
+assert.match(viewer,/MeshPhysicalMaterial/,'caneca não usa material físico PBR');
+assert.match(viewer,/ACESFilmicToneMapping/,'render não usa tone mapping cinematográfico');
+assert.match(viewer,/PCFSoftShadowMap/,'render não usa sombra suave');
+assert.match(viewer,/generatePreviews/,'não gera as duas vistas estáticas');
+assert.match(viewer,/Ver caneca em 360°/,'botão 360 não existe');
+assert.match(viewer,/pointermove/,'giro por arraste não existe');
+assert.match(viewer,/wheel/,'zoom não existe');
+assert.match(viewer,/Math\.max\(6\.1,Math\.min\(11/,'zoom não está limitado');
+assert.match(viewer,/rotation\+=/,'rotação horizontal não está implementada');
+assert.doesNotMatch(viewer,/setInterval\(/,'viewer não deve manter loop/polling contínuo');
+assert.match(viewer,/requestAnimationFrame/,'viewer deve renderizar sob demanda');
+assert.match(viewer,/\.mug-result-mockups\{display:none!important\}/,'mockups antigos do resultado público não foram ocultados');
+console.log('OK · Canecas públicas: 2 previews do próprio render + 360° PBR sob demanda.');
