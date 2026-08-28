@@ -8,76 +8,33 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Caneca 10">
   <meta name="robots" content="noindex,nofollow">
-  <meta name="caneca10-build" content="20260827-caneca10-v7">
+  <meta name="caneca10-build" content="20260828-caneca10-art-only-v1">
   <title>Caneca 10 · Gerador Interno</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=20260827-caneca10-v7">
-  <link rel="stylesheet" href="./styles.css?v=20260827-caneca10-v7">
-  <link rel="stylesheet" href="./gallery-v3.css?v=20260827-caneca10-v7">
-  <link rel="stylesheet" href="./light-v4.css?v=20260827-caneca10-v7">
+  <link rel="manifest" href="./manifest.webmanifest?v=20260828-caneca10-art-only-v1">
+  <link rel="stylesheet" href="./styles.css?v=20260828-caneca10-art-only-v1">
+  <link rel="stylesheet" href="./gallery-v3.css?v=20260828-caneca10-art-only-v1">
+  <link rel="stylesheet" href="./light-v4.css?v=20260828-caneca10-art-only-v1">
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
-      <div class="brand">
-        <img src="../site/img/logoantonia5.png" alt="Dona Antônia">
-        <div><span class="eyebrow">Dona Antônia · uso interno</span><h1>Caneca 10</h1></div>
-      </div>
-    </header>
-
+    <header class="topbar"><div class="brand"><img src="../site/img/logoantonia5.png" alt="Dona Antônia"><div><span class="eyebrow">Dona Antônia · uso interno</span><h1>Caneca 10</h1></div></div></header>
     <main>
-      <section class="hero-card"><div><span class="status-pill">Mobile · fluxo LOW assíncrono do Produção</span><h2>Gerador interno de canecas</h2><p>Modelos salvos, imagem de inspiração, comandos, arte horizontal, 3 mockups e histórico leve das canecas.</p></div></section>
-
-      <section class="card mug-library-card" id="modelsSection">
-        <div class="library-head"><div><span class="eyebrow">Produção</span><h2>Modelos salvos</h2><small id="modelsStatus">Carregando modelos…</small></div><div class="library-actions"><span class="library-count" id="modelsCount">0</span><button class="compact-refresh" id="modelsRefresh" type="button">Atualizar</button></div></div>
-        <div class="model-mobile-track" id="modelsTrack"><div class="history-empty">Carregando modelos do Produção…</div></div>
-      </section>
-
-      <section class="card upload-card" id="uploadCard">
-        <div class="section-head"><div><span class="step-label">1</span><strong>Imagem de inspiração</strong></div><button class="text-button" id="clearImageButton" type="button" hidden>Trocar</button></div>
-        <label class="camera-box" for="imageInput"><div id="cameraEmpty" class="camera-empty"><span class="camera-icon">＋</span><strong>Câmera ou galeria</strong><small>PNG, JPG ou WEBP · até 25 MB</small></div><img id="imagePreview" alt="Prévia da imagem" hidden></label>
-        <input id="imageInput" type="file" accept="image/*" hidden>
-      </section>
-
-      <section class="card commands-card">
-        <div class="section-head"><div><span class="step-label">2</span><strong>Comandos salvos</strong></div><button class="text-button" id="refreshCommandsButton" type="button">Atualizar</button></div>
-        <div class="command-summary"><span id="selectedCommandsCount">0 selecionados</span><button class="text-button" id="clearCommandsButton" type="button">Limpar</button></div>
-        <div class="commands-list" id="commandsList"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
-      </section>
-
-      <section class="card instruction-card">
-        <div class="section-head"><div><span class="step-label">3</span><strong>Instrução extra</strong></div><span class="optional">opcional</span></div>
-        <textarea id="instructionInput" maxlength="800" placeholder="Ex.: escreva exatamente ‘Eis-me aqui Senhor.’ e use tons de azul."></textarea>
-      </section>
-
-      <section class="progress-card" id="progressCard" hidden aria-live="polite">
-        <div class="progress-top"><div><span class="eyebrow">Gerando</span><strong id="progressTitle">Preparando...</strong></div><span id="progressPercent">0%</span></div>
-        <div class="progress-track"><div id="progressBar"></div></div><p id="progressDetail">Não feche esta tela durante a criação.</p>
-      </section>
-
-      <section class="result-section" id="resultSection" hidden>
-        <div class="result-head"><div><span class="success-pill">Concluído</span><h2 id="resultName">Caneca criada</h2><p id="resultMeta"></p></div></div>
-        <article class="art-result card"><span class="asset-label">Arte horizontal 2400 × 960</span><img id="artResult" alt="Arte horizontal criada"></article>
-        <div class="mockups-title"><strong>3 mockups</strong><small>deslize para o lado</small></div>
-        <div class="mockup-carousel" id="mockupCarousel"><figure class="mockup-card"><img id="mockup1" alt="Mockup 1"><figcaption>Lado esquerdo</figcaption></figure><figure class="mockup-card"><img id="mockup2" alt="Mockup 2"><figcaption>Lado direito</figcaption></figure><figure class="mockup-card"><img id="mockup3" alt="Mockup 3"><figcaption>Centro</figcaption></figure></div>
-        <div class="result-actions"><button class="secondary-button" id="newMugButton" type="button">Nova caneca</button><a class="secondary-button link-button" href="../producao/">Abrir Produção</a></div>
-      </section>
-
-      <section class="card history-card" id="createdSection">
-        <div class="library-head"><div><span class="eyebrow">Histórico</span><h2>Canecas criadas</h2><small>Carrega somente 4 por vez, incluindo as inativas.</small></div><div class="library-actions"><span class="library-count" id="createdCount">0</span><button class="compact-refresh" id="createdRefresh" type="button">Atualizar</button></div></div>
-        <div class="history-controls"><input id="createdSearch" type="search" placeholder="Buscar nas carregadas..." autocomplete="off"><select id="createdFilter" aria-label="Filtrar canecas"><option value="all">Todas</option><option value="inactive">Inativas</option><option value="active">Ativas</option></select></div>
-        <p class="history-status" id="createdStatus">Carregando 4 canecas…</p>
-        <div class="created-mobile-list" id="createdList"><div class="history-empty">Carregando histórico do Produção…</div></div>
-        <div class="load-more-wrap"><button class="load-more-button" id="createdLoadMore" type="button" hidden>Carregar mais 4</button></div>
-      </section>
+      <section class="hero-card"><div><span class="status-pill">Mobile · arte horizontal</span><h2>Gerador interno de canecas</h2><p>Modelos salvos, imagem de inspiração, comandos e arte horizontal pronta para produção.</p></div></section>
+      <section class="card mug-library-card" id="modelsSection"><div class="library-head"><div><span class="eyebrow">Produção</span><h2>Modelos salvos</h2><small id="modelsStatus">Carregando modelos…</small></div><div class="library-actions"><span class="library-count" id="modelsCount">0</span><button class="compact-refresh" id="modelsRefresh" type="button">Atualizar</button></div></div><div class="model-mobile-track" id="modelsTrack"><div class="history-empty">Carregando modelos do Produção…</div></div></section>
+      <section class="card upload-card" id="uploadCard"><div class="section-head"><div><span class="step-label">1</span><strong>Imagem de inspiração</strong></div><button class="text-button" id="clearImageButton" type="button" hidden>Trocar</button></div><label class="camera-box" for="imageInput"><div id="cameraEmpty" class="camera-empty"><span class="camera-icon">＋</span><strong>Câmera ou galeria</strong><small>PNG, JPG ou WEBP · até 25 MB</small></div><img id="imagePreview" alt="Prévia da imagem" hidden></label><input id="imageInput" type="file" accept="image/*" hidden></section>
+      <section class="card commands-card"><div class="section-head"><div><span class="step-label">2</span><strong>Comandos salvos</strong></div><button class="text-button" id="refreshCommandsButton" type="button">Atualizar</button></div><div class="command-summary"><span id="selectedCommandsCount">0 selecionados</span><button class="text-button" id="clearCommandsButton" type="button">Limpar</button></div><div class="commands-list" id="commandsList"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></section>
+      <section class="card instruction-card"><div class="section-head"><div><span class="step-label">3</span><strong>Instrução extra</strong></div><span class="optional">opcional</span></div><textarea id="instructionInput" maxlength="800" placeholder="Ex.: escreva exatamente ‘Eis-me aqui Senhor.’ e use tons de azul."></textarea></section>
+      <section class="progress-card" id="progressCard" hidden aria-live="polite"><div class="progress-top"><div><span class="eyebrow">Gerando</span><strong id="progressTitle">Preparando...</strong></div><span id="progressPercent">0%</span></div><div class="progress-track"><div id="progressBar"></div></div><p id="progressDetail">Não feche esta tela durante a criação.</p></section>
+      <section class="result-section" id="resultSection" hidden><div class="result-head"><div><span class="success-pill">Concluído</span><h2 id="resultName">Caneca criada</h2><p id="resultMeta"></p></div></div><article class="art-result card"><span class="asset-label">Arte horizontal 2400 × 960</span><img id="artResult" alt="Arte horizontal criada"></article><div class="result-actions"><button class="secondary-button" id="newMugButton" type="button">Nova caneca</button><a class="secondary-button link-button" href="../producao/">Abrir Produção</a></div></section>
+      <section class="card history-card" id="createdSection"><div class="library-head"><div><span class="eyebrow">Histórico</span><h2>Canecas criadas</h2><small>Carrega somente 4 por vez, incluindo as inativas.</small></div><div class="library-actions"><span class="library-count" id="createdCount">0</span><button class="compact-refresh" id="createdRefresh" type="button">Atualizar</button></div></div><div class="history-controls"><input id="createdSearch" type="search" placeholder="Buscar nas carregadas..." autocomplete="off"><select id="createdFilter" aria-label="Filtrar canecas"><option value="all">Todas</option><option value="inactive">Inativas</option><option value="active">Ativas</option></select></div><p class="history-status" id="createdStatus">Carregando 4 canecas…</p><div class="created-mobile-list" id="createdList"><div class="history-empty">Carregando histórico do Produção…</div></div><div class="load-more-wrap"><button class="load-more-button" id="createdLoadMore" type="button" hidden>Carregar mais 4</button></div></section>
       <div class="bottom-space"></div>
     </main>
-
     <footer class="bottom-action"><button class="generate-button" id="generateButton" type="button"><span id="generateButtonText">Gerar caneca</span></button></footer>
   </div>
   <div class="toast" id="toast" hidden></div>
-  <script src="../shared/mug-make-fast-ack-v1.js?v=20260827-caneca10-v7"></script>
-  <script src="./art-recovery-v1.js?v=20260827-caneca10-v7"></script>
-  <script src="./app-v4-clean.js?v=20260827-caneca10-v7" defer></script>
-  <script src="./gallery-v4.js?v=20260827-caneca10-v7" defer></script>
+  <script src="../shared/mug-make-fast-ack-v1.js?v=20260828-caneca10-art-only-v1"></script>
+  <script src="./art-recovery-v1.js?v=20260828-caneca10-art-only-v1"></script>
+  <script src="./app-v4-clean.js?v=20260828-caneca10-art-only-v1" defer></script>
+  <script src="./gallery-v4.js?v=20260828-caneca10-art-only-v1" defer></script>
 </body>
 </html>
