@@ -1,4 +1,4 @@
-import './product-media.js?v=20260826-canecas-clean-v17';
+import './product-media.js?v=20260828-2mockups-shorts-v2-final';
 
 const TRANSPARENT_PIXEL = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22/%3E';
 const PRELOAD_MARGIN = 1100;
