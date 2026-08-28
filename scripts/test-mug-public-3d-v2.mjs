@@ -47,7 +47,7 @@ for(const [name,html] of [[indexFile,indexHtml],[resultFile,resultHtml]]){
   assert.match(html,/"three":"https:\/\/cdn\.jsdelivr\.net\/npm\/three@0\.180\.0\/build\/three\.module\.js"/,`${name} não resolve o specifier bare three usado pelo RoomEnvironment`);
 }
 assert.match(indexHtml,/mug-product-route/,'site não possui proteção anti-flash para rotas de canecas');
-assert.match(indexHtml,/^mug-/m,'site não identifica IDs públicos de caneca antes do primeiro render');
+assert.match(indexHtml,/\^mug-/,'site não identifica IDs públicos de caneca antes do primeiro render');
 assert.match(indexHtml,/product-detail-media>img/,'site não oculta a mídia legada enquanto o 3D monta a caneca');
 assert.match(resultHtml,/mug-3d-loader-v5/,'página de resultado não renovou a versão do loader 3D');
 
