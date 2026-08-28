@@ -1,4 +1,4 @@
-const BUILD='20260828-mug-thumbnails-v4-real-mockups';
+const BUILD='20260828-mug-thumbnails-v5-personalizable-flag';
 const FIREBASE_PRODUCTS='https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos';
 const checked=new Set();
 const rawCache=new Map();
@@ -24,6 +24,12 @@ function mockupUrl(raw={}){
     raw.miniatura
   ]);
 }
+function hasPublicCustomization(raw={}){
+  const cfg=raw.personalizacao_config_publica&&typeof raw.personalizacao_config_publica==='object'?raw.personalizacao_config_publica:{};
+  const fields=Array.isArray(cfg.campos)?cfg.campos:[];
+  const hasActiveField=fields.some(field=>field&&field.publico!==false);
+  return truthy(raw.personalizacao_publica)&&cfg.ativo!==false&&hasActiveField;
+}
 
 async function fetchRaw(id){
   if(rawCache.has(id))return rawCache.get(id);
@@ -44,6 +50,7 @@ async function processCard(card){
   try{
     const raw=await fetchRaw(id);
     if(!raw||!isMug(raw))return;
+    card.dataset.mugPersonalizable=hasPublicCustomization(raw)?'1':'0';
     const source=mockupUrl(raw);
     if(!source)return;
     img.src=source;
@@ -66,7 +73,10 @@ function scan(){
 function resetAndScan(){
   checked.clear();
   rawCache.clear();
-  document.querySelectorAll('[data-product-card]').forEach(card=>delete card.dataset.mugThumbObserved);
+  document.querySelectorAll('[data-product-card]').forEach(card=>{
+    delete card.dataset.mugThumbObserved;
+    delete card.dataset.mugPersonalizable;
+  });
   scan();
 }
 
@@ -86,4 +96,4 @@ function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 document.documentElement.dataset.mugThumbs=BUILD;
 
-export{BUILD,scan,mockupUrl};
+export{BUILD,scan,mockupUrl,hasPublicCustomization};
