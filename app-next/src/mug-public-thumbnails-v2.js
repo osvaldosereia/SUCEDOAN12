@@ -1,0 +1,23 @@
+const BUILD='20260828-mug-thumbnails-v2';
+const FIREBASE_PRODUCTS='https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos';
+const checked=new Set();
+const rawCache=new Map();
+let observer=null;
+const text=v=>String(v??'').trim();
+const truthy=v=>v===true||v===1||['1','true','sim','yes'].includes(text(v).toLowerCase());
+const isUrl=v=>/^https?:\/\//i.test(text(v));
+const isMug=raw=>truthy(raw?.modelo_caneca)||truthy(raw?.produto_sob_encomenda)||text(raw?.categoria).toLowerCase().includes('caneca');
+const artUrl=raw=>{const p=raw?.arte_impressao;return [raw?.arte_horizontal,raw?.arte_personalizacao,p&&typeof p==='object'?p.url:p,raw?.art_url,raw?.arte_url].map(text).find(isUrl)||'';};
+const thumbUrl=raw=>[raw?.thumbnail,raw?.mug_thumbnail,raw?.thumb,raw?.miniatura].map(text).find(isUrl)||'';
+
+function image(url){return new Promise((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=reject;img.src=url;});}
+function rounded(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+async function fetchRaw(id){if(rawCache.has(id))return rawCache.get(id);const p=fetch(`${FIREBASE_PRODUCTS}/${encodeURIComponent(id)}.json`,{cache:'force-cache',headers:{Accept:'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);rawCache.set(id,p);return p;}
+
+async function makeThumb(url){const art=await image(url);const c=document.createElement('canvas');c.width=520;c.height=520;const x=c.getContext('2d');const bg=x.createRadialGradient(230,145,18,260,260,365);bg.addColorStop(0,'#ffffff');bg.addColorStop(1,'#ebe8e0');x.fillStyle=bg;x.fillRect(0,0,520,520);x.save();x.filter='blur(14px)';x.globalAlpha=.2;x.fillStyle='#292b28';x.beginPath();x.ellipse(260,423,148,27,0,0,Math.PI*2);x.fill();x.restore();x.lineWidth=28;x.strokeStyle='#f7f7f4';x.beginPath();x.ellipse(390,270,70,92,0,0,Math.PI*2);x.stroke();x.lineWidth=5;x.strokeStyle='rgba(70,72,68,.12)';x.stroke();rounded(x,115,94,285,326,42);x.save();x.clip();x.fillStyle='#fbfbf8';x.fillRect(100,80,320,360);const targetW=302,targetH=122,dy=188;const scale=Math.max(targetW/art.naturalWidth,targetH/art.naturalHeight);const sw=targetW/scale,sh=targetH/scale,sx=(art.naturalWidth-sw)/2,sy=(art.naturalHeight-sh)/2;x.drawImage(art,sx,sy,sw,sh,107,dy,targetW,targetH);const shade=x.createLinearGradient(107,0,409,0);shade.addColorStop(0,'rgba(28,30,28,.25)');shade.addColorStop(.18,'rgba(255,255,255,.10)');shade.addColorStop(.55,'rgba(255,255,255,0)');shade.addColorStop(.86,'rgba(255,255,255,.20)');shade.addColorStop(1,'rgba(30,32,30,.28)');x.fillStyle=shade;x.fillRect(107,92,302,333);x.restore();const gloss=x.createLinearGradient(0,100,0,420);gloss.addColorStop(0,'rgba(255,255,255,.9)');gloss.addColorStop(.13,'rgba(255,255,255,.06)');gloss.addColorStop(.9,'rgba(20,20,20,.04)');x.fillStyle=gloss;rounded(x,115,94,285,326,42);x.fill();x.lineWidth=5;x.strokeStyle='rgba(72,74,70,.12)';rounded(x,115,94,285,326,42);x.stroke();x.fillStyle='#fbfbf9';x.beginPath();x.ellipse(257,102,135,20,0,0,Math.PI*2);x.fill();x.lineWidth=4;x.strokeStyle='rgba(80,82,78,.12)';x.stroke();return c.toDataURL('image/webp',.86);}
+
+async function processCard(card){const id=text(card.dataset.productCard);if(!id||checked.has(id))return;const img=card.querySelector('.product-card-media img');if(!img)return;checked.add(id);try{const raw=await fetchRaw(id);if(!raw||!isMug(raw))return;const persisted=thumbUrl(raw);if(persisted){img.src=persisted;img.dataset.mugThumb=BUILD;img.style.objectFit='cover';return;}const art=artUrl(raw);if(!art)return;img.src=await makeThumb(art);img.dataset.mugThumb=BUILD;img.style.objectFit='cover';}catch(err){checked.delete(id);console.debug('[Mug thumb] mantendo imagem original:',err?.message||err);}}
+function scan(){document.querySelectorAll('[data-product-card]').forEach(card=>{if(card.dataset.mugThumbObserved)return;card.dataset.mugThumbObserved='1';observer?.observe(card);});}
+function init(){observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){observer.unobserve(e.target);processCard(e.target);}}),{rootMargin:'220px'});scan();window.addEventListener('da:route-rendered',()=>setTimeout(scan,0));window.addEventListener('da:catalog-ready',()=>setTimeout(scan,0));window.addEventListener('da:catalog-refreshed',()=>setTimeout(scan,0));}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();document.documentElement.dataset.mugThumbs=BUILD;
+export{BUILD,makeThumb,scan,thumbUrl};
