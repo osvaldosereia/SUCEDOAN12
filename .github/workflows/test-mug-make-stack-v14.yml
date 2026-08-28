@@ -1,4 +1,4 @@
-name: Testar stack atual de canecas art-only
+name: Testar stack atual · 2 mockups + arte + Shorts
 
 on:
   push:
@@ -10,18 +10,21 @@ on:
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
       - 'producao-v2/js/mug-make-art-recovery-v22.js'
       - 'producao-v2/js/mug-force-low-quality-v23.js'
-      - 'producao-v2/js/mug-personalizer-v15-clean.js'
+      - 'producao-v2/js/mug-personalizer-v16-2mockups.js'
       - 'producao-v2/js/mug-studio-gallery.js'
       - 'producao-v2/admin-produtivo.html'
+      - 'app-next/src/image-performance.js'
+      - 'app-next/src/product-media.js'
       - 'app-next/src/mug-public-runtime-v6.js'
       - 'app-next/src/customer-favorites-v27.js'
+      - 'app-next/src/customer-mug-media-v28.js'
       - 'app-next/src/mug-public-personalization-contract-v25.js'
-      - 'app-next/src/mug-public-personalization-v6.js'
-      - 'app-next/src/mug-public-3d-v2.js'
+      - 'app-next/src/mug-public-personalization-v7.js'
       - 'app-next/src/mug-public-thumbnails-v2.js'
       - 'caneca10/index.html'
-      - 'caneca10/app-v4-clean.js'
+      - 'caneca10/app-v5-2mockups.js'
       - 'caneca10/art-recovery-v1.js'
+      - 'caneca-print/index.html'
       - 'shared/mug-make-fast-ack-v1.js'
       - 'scripts/test-mug-make-stack-v14.mjs'
       - 'scripts/test-mug-art-recovery-v22.mjs'
@@ -30,12 +33,13 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'producao-v2/js/mug-personalizer-v15-clean.js'
+      - 'producao-v2/js/mug-personalizer-v16-2mockups.js'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
+      - 'app-next/src/product-media.js'
       - 'app-next/src/mug-public-runtime-v6.js'
-      - 'app-next/src/mug-public-personalization-v6.js'
-      - 'app-next/src/mug-public-3d-v2.js'
-      - 'caneca10/app-v4-clean.js'
+      - 'app-next/src/mug-public-personalization-v7.js'
+      - 'caneca10/app-v5-2mockups.js'
+      - 'caneca-print/index.html'
       - 'scripts/test-mug-make-stack-v14.mjs'
       - '.github/workflows/test-mug-make-stack-v14.yml'
   workflow_dispatch:
