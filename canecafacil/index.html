@@ -4,12 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="CanecaFácil: escolha, personalize e encomende canecas da Dona Antônia pelo WhatsApp.">
+  <meta name="description" content="CanecaFácil: canecas de porcelana personalizadas, com foto, nome e frase. Escolha, personalize, calcule o frete e encomende para todo o Brasil.">
   <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta property="og:site_name" content="CanecaFácil">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CanecaFácil — Canecas de porcelana personalizadas">
+  <meta property="og:description" content="Canecas personalizadas e presentes em porcelana. Crie sua arte e encomende de forma simples pelo WhatsApp.">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://donaantonia.com.br/canecafacil/">
-  <title>CanecaFácil — Canecas da Dona Antônia</title>
+  <link rel="sitemap" type="application/xml" href="./sitemap.xml">
+  <title>CanecaFácil — Canecas de porcelana personalizadas</title>
   <link rel="preconnect" href="https://cedar-chemist-310801-default-rtdb.firebaseio.com">
   <link rel="stylesheet" href="./styles.css?v=20260828-1">
+  <link rel="stylesheet" href="./enhancements-v2.css?v=20260828-2">
 </head>
 <body>
   <div class="announcement">Crie sua caneca em poucos minutos <span>•</span> Produção e envio pela Dona Antônia</div>
@@ -17,18 +24,23 @@
     <div class="header-inner">
       <button class="icon-btn menu-btn" id="menuBtn" aria-label="Abrir menu">☰</button>
       <a class="brand" href="#/" aria-label="CanecaFácil"><span>Caneca</span><b>Fácil</b></a>
-      <nav class="desktop-nav">
-        <a href="#/novidades">Novidades</a><a href="#/personalizadas">Personalizadas</a><a href="#/presentes">Presentes</a><a href="#/temas">Temas</a>
+      <nav class="desktop-nav" aria-label="Navegação principal">
+        <a href="#/novidades">Novidades</a><a href="#/ofertas">Ofertas</a><a href="#/personalizadas">Personalizadas</a><a href="#/presentes">Presentes</a><a href="#/temas">Temas</a>
       </nav>
       <div class="header-actions">
         <button class="icon-btn" id="searchBtn" aria-label="Buscar">⌕</button>
         <button class="text-btn" id="myMugsBtn">Minhas canecas</button>
       </div>
     </div>
-    <div class="searchbar" id="searchbar" hidden><input id="globalSearch" type="search" placeholder="Busque uma caneca, tema ou presente…" autocomplete="off"><button id="closeSearch">×</button></div>
+    <div class="searchbar" id="searchbar" hidden><input id="globalSearch" type="search" placeholder="Busque caneca personalizada, tema ou presente…" autocomplete="off"><button id="closeSearch" aria-label="Fechar busca">×</button></div>
   </header>
 
   <main id="app" tabindex="-1"><section class="loading-page"><div class="loader"></div><p>Carregando canecas…</p></section></main>
+
+  <section class="cf-seo-copy" aria-label="Sobre o CanecaFácil">
+    <h2>Canecas de porcelana personalizadas para todo o Brasil</h2>
+    <p>No CanecaFácil você encontra caneca personalizada com foto, nome e frase, canecas para presente, canecas religiosas, profissionais e modelos prontos em porcelana. A vitrine é operada pela Dona Antônia, que finaliza o atendimento, pagamento, nota fiscal e envio.</p>
+  </section>
 
   <footer class="footer">
     <div><a class="brand small" href="#/"><span>Caneca</span><b>Fácil</b></a><p>Uma vitrine especializada da Dona Antônia.</p></div>
@@ -36,14 +48,15 @@
     <div><strong>Venda e entrega</strong><p>Pagamento, nota fiscal e envio são realizados pela Dona Antônia.</p></div>
   </footer>
 
-  <div class="mobile-drawer" id="mobileDrawer" hidden><div class="drawer-head"><span class="brand small"><span>Caneca</span><b>Fácil</b></span><button id="closeMenu">×</button></div><a href="#/">Início</a><a href="#/novidades">Novidades</a><a href="#/personalizadas">Personalizadas</a><a href="#/presentes">Presentes</a><button id="drawerMyMugs">Minhas canecas</button></div>
+  <div class="mobile-drawer" id="mobileDrawer" hidden><div class="drawer-head"><span class="brand small"><span>Caneca</span><b>Fácil</b></span><button id="closeMenu" aria-label="Fechar menu">×</button></div><a href="#/">Início</a><a href="#/novidades">Novidades</a><a href="#/ofertas">Ofertas</a><a href="#/personalizadas">Personalizadas</a><a href="#/presentes">Presentes</a><a href="#/temas">Temas</a><button id="drawerMyMugs">Minhas canecas</button></div>
   <div class="backdrop" id="backdrop" hidden></div>
-  <div class="modal" id="modal" hidden><div class="modal-card"><button class="modal-close" id="modalClose">×</button><div id="modalContent"></div></div></div>
+  <div class="modal" id="modal" hidden><div class="modal-card"><button class="modal-close" id="modalClose" aria-label="Fechar">×</button><div id="modalContent"></div></div></div>
   <div class="toast" id="toast" hidden></div>
 
   <script>
     (()=>{const nativeOpen=window.open.bind(window);window.open=(url,target,features)=>{if(/^https:\/\/wa\.me\//i.test(String(url||''))){window.location.href=String(url);return window}return nativeOpen(url,target,features)}})();
   </script>
+  <script type="module" src="./enhancements-v2.js?v=20260828-2"></script>
   <script type="module" src="./app.js?v=20260828-1"></script>
 </body>
 </html>
