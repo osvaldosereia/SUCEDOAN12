@@ -1,0 +1,26 @@
+name: Testar limite de caracteres das canecas
+
+on:
+  push:
+    paths:
+      - 'producao-v2/admin-produtivo.html'
+      - 'producao-v2/js/mug-text-limit-v1.js'
+      - 'app-next/src/mug-public-char-limit-v1.js'
+      - 'app-next/src/mug-public-runtime-v6.js'
+      - 'scripts/test-mug-char-limit-v1.mjs'
+      - '.github/workflows/test-mug-char-limit-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar limite de caracteres por campo
+        run: node scripts/test-mug-char-limit-v1.mjs
