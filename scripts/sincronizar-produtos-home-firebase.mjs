@@ -86,7 +86,9 @@ function isActive(product) {
 function isPublicMugModel(product) {
   const category = text(product?.categoria ?? product?.category).toLowerCase();
   const isMug = bool(product?.modelo_caneca) || bool(product?.produto_sob_encomenda) || category.includes("caneca");
-  return isMug && isActive(product);
+  const situation = text(product?.situacao ?? product?.status ?? "A").toUpperCase();
+  const statusActive = !["I", "INATIVO", "INACTIVE", "0", "FALSE", "EXCLUIDO", "EXCLUÍDO"].includes(situation);
+  return isMug && statusActive;
 }
 
 function publicImageValue(value) {
@@ -171,7 +173,7 @@ function compactProduct(key, product = {}) {
     estoque_minimo: integer(product.estoque_minimo),
     multiplo_venda: integer(product.multiplo_venda, 1),
     quantidade_caixa: integer(product.quantidade_caixa),
-    situacao: isActive(product) ? "A" : "I",
+    situacao: publicMug || isActive(product) ? "A" : "I",
     modelo_caneca: bool(product.modelo_caneca),
     modelo_publico: publicMug || bool(product.modelo_publico),
     personalizacao_publica: bool(product.personalizacao_publica),
@@ -269,7 +271,7 @@ async function run() {
     productCount: Object.keys(publicCatalog).length,
     adminProductCount: Object.keys(adminCatalog).length,
     source: "firebase-official-sync",
-    instructions: "Catálogos atualizados do Firebase; canecas ativas ficam públicas sob encomenda, mesmo sem estoque, preservando arte horizontal, dois mockups e YouTube/Shorts quando disponíveis."
+    instructions: "Catálogos atualizados do Firebase; o status Ativo é a autoridade de publicação para canecas sob encomenda, preservando arte horizontal, dois mockups e YouTube/Shorts quando disponíveis."
   };
 
   await Promise.all([
