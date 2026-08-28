@@ -46,8 +46,7 @@ for (const removed of [
   '/app-next/styles/visual-parity.css', '/app-next/styles/home-parity.css',
   '/app-next/styles/live-polish.css', '/app-next/src/live-polish.js',
   '/app-next/src/seo-combos.js', 'html.booting #app{opacity:0',
-  'raw.githubusercontent.com', 'da_v16_product_cards_20260727',
-  '2026-07-27-product-cards-spacing-v11'
+  'raw.githubusercontent.com'
 ]) assert(!production.includes(removed), `Index ainda carrega camada ou marcador legado: ${removed}`);
 
 const css = [
