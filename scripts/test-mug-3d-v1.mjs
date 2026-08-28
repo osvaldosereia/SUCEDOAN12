@@ -4,8 +4,10 @@ import { spawnSync } from 'node:child_process';
 
 const viewerFile='app-next/src/mug-public-3d-v1.js';
 const thumbFile='app-next/src/mug-public-thumbnails-v1.js';
-const [viewer,thumbs,runtime]=await Promise.all([readFile(viewerFile,'utf8'),readFile(thumbFile,'utf8'),readFile('app-next/src/mug-public-runtime-v6.js','utf8')]);
-for(const file of [viewerFile,thumbFile]){const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});assert.equal(syntax.status,0,syntax.stderr||syntax.stdout||`Erro de sintaxe em ${file}`);}
+const catalogFile='app-next/src/catalog.js';
+const runtimeFile='app-next/src/mug-public-runtime-v6.js';
+const [viewer,thumbs,catalog,runtime]=await Promise.all([viewerFile,thumbFile,catalogFile,runtimeFile].map(file=>readFile(file,'utf8')));
+for(const file of [viewerFile,thumbFile,catalogFile,runtimeFile]){const syntax=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});assert.equal(syntax.status,0,syntax.stderr||syntax.stdout||`Erro de sintaxe em ${file}`);}
 assert.match(runtime,/mug-public-3d-v1\.js/,'runtime público não carrega o módulo 3D');
 assert.match(runtime,/mug-public-thumbnails-v1\.js/,'runtime público não carrega miniaturas de caneca');
 assert.match(viewer,/THREE_URL/);
@@ -13,9 +15,12 @@ assert.match(viewer,/MeshPhysicalMaterial/,'caneca não usa material físico PBR
 assert.match(viewer,/ACESFilmicToneMapping/,'render não usa tone mapping cinematográfico');
 assert.match(viewer,/PCFSoftShadowMap/,'render não usa sombra suave');
 assert.match(viewer,/generatePreviews/,'não gera as duas vistas estáticas');
+assert.match(viewer,/preview_esquerda/,'viewer não reconhece preview_esquerda persistida');
+assert.match(viewer,/preview_direita/,'viewer não reconhece preview_direita persistida');
 assert.match(viewer,/Ver caneca em 360°/,'botão 360 não existe');
 assert.match(viewer,/pointermove/,'giro por arraste não existe');
-assert.match(viewer,/wheel/,'zoom não existe');
+assert.match(viewer,/pinchDistance/,'zoom por gesto de pinça não existe');
+assert.match(viewer,/wheel/,'zoom por roda não existe');
 assert.match(viewer,/Math\.max\(6\.1,Math\.min\(11/,'zoom não está limitado');
 assert.match(viewer,/rotation\+=/,'rotação horizontal não está implementada');
 assert.doesNotMatch(viewer,/setInterval\(/,'viewer não deve manter loop/polling contínuo');
@@ -23,6 +28,11 @@ assert.match(viewer,/requestAnimationFrame/,'viewer deve renderizar sob demanda'
 assert.match(viewer,/\.mug-result-mockups\{display:none!important\}/,'mockups antigos do resultado público não foram ocultados');
 assert.match(thumbs,/IntersectionObserver/,'miniaturas não são processadas de forma lazy');
 assert.match(thumbs,/toDataURL\('image\/webp'/,'miniatura não é gerada em WebP pelo próprio site');
-assert.match(thumbs,/arte_horizontal/,'miniatura não parte da arte horizontal');
+assert.match(thumbs,/thumbnail/,'miniaturas persistidas não são reconhecidas');
+assert.match(thumbs,/arte_horizontal/,'miniatura não parte da arte horizontal quando não houver thumbnail');
 assert.doesNotMatch(thumbs,/THREE_URL|three\.module/,'grade de produtos não deve carregar Three.js');
-console.log('OK · Canecas públicas: miniatura leve + 2 previews do render + 360° PBR sob demanda.');
+assert.match(catalog,/thumbnail/,'catálogo não reconhece thumbnail de caneca');
+assert.match(catalog,/preview_esquerda/,'catálogo não reconhece preview esquerda');
+assert.match(catalog,/preview_direita/,'catálogo não reconhece preview direita');
+assert.match(catalog,/mugMedia/,'catálogo não expõe contrato de mídia da caneca');
+console.log('OK · Canecas públicas: thumbnail persistida/fallback leve + 2 previews + 360° PBR com zoom mobile.');
