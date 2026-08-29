@@ -1,11 +1,10 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260829-admin-canecas-catalog-bridge-v1';
+  const BUILD = '20260829-admin-canecas-catalog-bridge-v1.1';
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   let recoverTimer = 0;
-  let exportKickTimer = 0;
 
   function onMugsRoute() {
     return location.hash.includes('mugs');
@@ -16,16 +15,6 @@
     recoverTimer = window.setTimeout(() => {
       recoverTimer = 0;
       // O catalog-manager-v4 escuta hashchange e recompõe a tela completa.
-      window.dispatchEvent(new Event('hashchange'));
-    }, 0);
-  }
-
-  function kickExporter() {
-    if (exportKickTimer) return;
-    exportKickTimer = window.setTimeout(() => {
-      exportKickTimer = 0;
-      // O exportador legado também escuta hashchange. Depois de expor data-mug,
-      // ele consegue acrescentar seleção e exportação .xlsx à tabela V4.
       window.dispatchEvent(new Event('hashchange'));
     }, 0);
   }
@@ -44,12 +33,10 @@
     }
 
     // Compatibilidade com o exportador de planilha criado antes do V4.
-    let addedAlias = false;
+    // O próprio exportador observa as mutações da tabela; aqui só expomos o
+    // atributo legado que ele espera, sem fazer nova leitura do Firebase.
     $$('tr[data-cf-mug]', root).forEach(row => {
-      if (!row.dataset.mug) {
-        row.dataset.mug = row.dataset.cfMug || '';
-        addedAlias = true;
-      }
+      if (!row.dataset.mug) row.dataset.mug = row.dataset.cfMug || '';
     });
 
     const exportHeader = $('[data-li-status-head]', root);
@@ -60,8 +47,6 @@
       const subtitle = $('.li-export-title small', exportBar);
       if (subtitle) subtitle.textContent = 'Exportação .xlsx oficial como alternativa e contingência à sincronização por API/Make.';
     }
-
-    if (addedAlias) kickExporter();
   }
 
   function boot() {
