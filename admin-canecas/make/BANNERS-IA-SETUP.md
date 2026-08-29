@@ -19,7 +19,7 @@ Os JPEGs finais passam por compressão progressiva para tentar ficar abaixo de 5
 2. Use **Import Blueprint** e importe `CANECA-FACIL-BANNERS-IA.blueprint.json`.
 3. Abra o módulo **Admin Canecas - Receber pedido de banner** e crie um novo Custom Webhook chamado `Caneca Facil - Banners IA`.
 4. Abra os dois módulos OpenAI e selecione/crie sua conexão OpenAI.
-5. No módulo de texto mantenha `gpt-5.6-luna` ou escolha outro modelo compatível com Chat Completions/JSON Object.
+5. No módulo de texto mantenha `gpt-4o-mini` (modelo usado no exemplo oficial atual de blueprint do Make) ou escolha outro modelo compatível com Chat Completions/JSON Object.
 6. No módulo de imagem mantenha `GPT Image 2`, tamanho `1536x1024`, formato JPEG e retorno Base64. Se sua conta não tiver GPT Image 2, use GPT Image 1.5.
 7. Salve o cenário e deixe-o ativo (webhook instantâneo; não precisa agendamento).
 8. Copie a URL do Custom Webhook.
