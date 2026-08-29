@@ -1,4 +1,4 @@
-const BUILD = '20260829-caneca-facil-product-policy-v1';
+const BUILD = '20260829-caneca-facil-product-policy-v1.1';
 
 const POLICY = Object.freeze({
   brand: 'Caneca Fácil',
@@ -24,9 +24,20 @@ function setValue(id, value, { readOnly = true } = {}) {
   if (readOnly && el.tagName === 'SELECT') el.disabled = true;
 }
 
+function neutralizeSharedTimestampConflict() {
+  const root = $('#drawerContent');
+  if (!root || !root.dataset.productKey) return;
+  // last_update é compartilhado por Admin, Make, Caneca10, Produção e Loja Integrada.
+  // Portanto não pode ser usado como trava de concorrência de edição humana.
+  root.dataset.loadedStamp = '0';
+  root.dataset.conflictGuard = 'shared-last-update-ignored';
+}
+
 function applyDrawerPolicy() {
   const root = $('#drawerContent');
   if (!root || !root.dataset.productKey) return;
+
+  neutralizeSharedTimestampConflict();
 
   setValue('cfBrandName', POLICY.brand);
   setValue('cfStockManaged', '1');
@@ -63,10 +74,11 @@ window.addEventListener('admin-canecas:drawer', event => {
 
 document.addEventListener('click', event => {
   if (!event.target.closest?.('#cfSaveOnly,#cfSaveSync,#cfSyncNow')) return;
+  neutralizeSharedTimestampConflict();
   applyDrawerPolicy();
 }, true);
 
 document.documentElement.dataset.cfProductPolicy = BUILD;
 window.__CANECA_FACIL_PRODUCT_POLICY__ = POLICY;
 
-export { POLICY, applyDrawerPolicy };
+export { POLICY, applyDrawerPolicy, neutralizeSharedTimestampConflict };
