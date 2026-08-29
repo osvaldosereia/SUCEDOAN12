@@ -1,10 +1,12 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260829-li-admin-runtime-v1';
+  const BUILD = '20260829-li-admin-runtime-v2';
   const WEBHOOK = window.__CANECAS_ADMIN_CONFIG__?.makeWebhook || 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
+  const FIREBASE_PRODUCTS = 'cedar-chemist-310801-default-rtdb.firebaseio.com/produtos/';
   const nativeFetch = window.fetch.bind(window);
   const text = value => String(value ?? '').trim();
+  const isCommercialBrand = value => text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === 'caneca facil';
 
   function decodeBase64Json(value) {
     const raw = text(value);
@@ -19,19 +21,40 @@
     }
   }
 
+  function requestPayload(init = {}) {
+    if (typeof init?.body !== 'string') return null;
+    try { return JSON.parse(init.body); } catch { return null; }
+  }
+
   function requestAction(input, init = {}) {
     const url = typeof input === 'string' ? input : text(input?.url);
-    if (url !== WEBHOOK || typeof init?.body !== 'string') return '';
+    if (url !== WEBHOOK) return '';
     try {
-      const outer = JSON.parse(init.body);
+      const outer = requestPayload(init);
       const payload = typeof outer?.payload === 'string' ? JSON.parse(outer.payload) : outer?.payload;
       return text(payload?.action);
     } catch { return ''; }
   }
 
+  function sanitizeFirebaseProductWrite(input, init = {}) {
+    const url = typeof input === 'string' ? input : text(input?.url);
+    if (!url.includes(FIREBASE_PRODUCTS) || !['PATCH','PUT'].includes(String(init?.method || '').toUpperCase())) return init;
+    const payload = requestPayload(init);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return init;
+    let changed = false;
+    const clean = { ...payload };
+    if (isCommercialBrand(clean.fabricante)) { clean.fabricante = ''; changed = true; }
+    if (clean.loja_integrada && typeof clean.loja_integrada === 'object' && isCommercialBrand(clean.loja_integrada.fabricante)) {
+      clean.loja_integrada = { ...clean.loja_integrada, fabricante: '' };
+      changed = true;
+    }
+    return changed ? { ...init, body: JSON.stringify(clean) } : init;
+  }
+
   window.fetch = async function liAdminFetch(input, init) {
-    const action = requestAction(input, init || {});
-    const response = await nativeFetch(input, init);
+    let nextInit = sanitizeFirebaseProductWrite(input, init || {});
+    const action = requestAction(input, nextInit);
+    const response = await nativeFetch(input, nextInit);
     if (action !== 'loja_integrada_catalog_refs') return response;
     try {
       const data = await response.clone().json();
@@ -60,7 +83,7 @@
     if (!event.target.closest('[data-cf-mug]')) return;
     window.setTimeout(() => {
       const manufacturer = document.querySelector('#cfManufacturer');
-      if (manufacturer && text(manufacturer.value).toLowerCase() === 'caneca fácil') manufacturer.value = '';
+      if (manufacturer && isCommercialBrand(manufacturer.value)) manufacturer.value = '';
       if (manufacturer) manufacturer.placeholder = 'Fabricante real da caneca, se conhecido';
       const label = manufacturer?.closest('label');
       if (label && !label.querySelector('[data-li-manufacturer-note]')) {
