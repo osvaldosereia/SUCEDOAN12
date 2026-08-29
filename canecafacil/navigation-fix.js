@@ -1,8 +1,6 @@
 // CanecaFácil — deterministic scroll position for SPA product navigation.
-// Hash navigation normally preserves the storefront scroll position. Product
-// pages must always start at the top, regardless of image/layout timing.
 (() => {
-  const BUILD = '20260828-canecafacil-navigation-v1';
+  const BUILD = '20260828-canecafacil-navigation-v2';
   const isProductRoute = () => /^#\/produto\//.test(location.hash || '');
 
   try { history.scrollRestoration = 'manual'; } catch {}
@@ -25,13 +23,14 @@
       topNow();
       requestAnimationFrame(topNow);
     });
-    // Covers the render/enhancement pass that runs after the hash change.
     setTimeout(topNow, 60);
     setTimeout(topNow, 180);
   }
 
-  // Reset immediately when the customer clicks a product in any grid.
+  // Reset only when the product itself is being opened. Carousel arrows,
+  // dots, favorite and other controls inside the card must never move the page.
   document.addEventListener('click', event => {
+    if (event.target.closest?.('.cf-arrow,.cf-dots,button,a,input,select,textarea,[data-thumb],[data-cf-fav]')) return;
     const target = event.target.closest?.('[data-open-product],[data-cf-open]');
     if (!target) return;
     window.scrollTo(0, 0);
