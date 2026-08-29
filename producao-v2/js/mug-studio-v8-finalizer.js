@@ -31,18 +31,16 @@ async function applyOperationalPolicy(key) {
     altura_embalada_cm: 11,
     largura_embalada_cm: 11,
     comprimento_embalado_cm: 11,
+    'loja_integrada/marca_nome': 'Caneca Fácil',
+    'loja_integrada/tipo_producao': 'revenda',
+    'loja_integrada/origem_mercadoria': '0',
+    'loja_integrada/estoque_gerenciado': true,
+    'loja_integrada/estoque_quantidade': 100,
+    'loja_integrada/situacao_em_estoque': 1,
+    'loja_integrada/situacao_sem_estoque': 0,
     politica_caneca_facil_versao: POLICY_BUILD,
     updated_at: new Date().toISOString(),
-    last_update: Date.now(),
-    loja_integrada: {
-      marca_nome: 'Caneca Fácil',
-      tipo_producao: 'revenda',
-      origem_mercadoria: '0',
-      estoque_gerenciado: true,
-      estoque_quantidade: 100,
-      situacao_em_estoque: 1,
-      situacao_sem_estoque: 0
-    }
+    last_update: Date.now()
   };
 
   const response = await fetch(`${firebaseUrl}/${productsNode}/${encodeURIComponent(id)}.json`, {
