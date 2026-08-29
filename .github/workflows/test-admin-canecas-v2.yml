@@ -6,11 +6,13 @@ on:
     paths:
       - 'admin-canecas/**'
       - 'scripts/test-admin-canecas-v2.mjs'
+      - 'scripts/smoke-admin-canecas-firebase.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
   pull_request:
     paths:
       - 'admin-canecas/**'
       - 'scripts/test-admin-canecas-v2.mjs'
+      - 'scripts/smoke-admin-canecas-firebase.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
 
 permissions:
@@ -26,3 +28,5 @@ jobs:
           node-version: '22'
       - name: Validate Admin Canecas V2
         run: node scripts/test-admin-canecas-v2.mjs
+      - name: Smoke test Firebase and mug image
+        run: node scripts/smoke-admin-canecas-firebase.mjs
