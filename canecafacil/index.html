@@ -26,7 +26,7 @@
       <button class="icon-btn menu-btn" id="menuBtn" aria-label="Abrir menu">☰</button>
       <a class="brand" href="#/" aria-label="CanecaFácil"><span>Caneca</span><b>Fácil</b></a>
       <nav class="desktop-nav" aria-label="Navegação principal">
-        <a href="#/novidades">Novidades</a><a href="#/ofertas">Ofertas</a><a href="#/personalizadas">Personalizadas</a><a href="#/presentes">Presentes</a><a href="#/temas">Temas</a>
+        <a href="#/novidades">Novidades</a><a href="#/ofertas">Ofertas</a><a href="#/personalizadas">Personalizáveis</a><a href="#/padronizadas">Padronizada</a>
       </nav>
       <div class="header-actions">
         <button class="icon-btn" id="searchBtn" aria-label="Buscar">⌕</button>
@@ -49,7 +49,7 @@
     <div><strong>Venda e entrega</strong><p>Pagamento, nota fiscal e envio são realizados pela Dona Antônia.</p></div>
   </footer>
 
-  <div class="mobile-drawer" id="mobileDrawer" hidden><div class="drawer-head"><span class="brand small"><span>Caneca</span><b>Fácil</b></span><button id="closeMenu" aria-label="Fechar menu">×</button></div><a href="#/">Início</a><a href="#/novidades">Novidades</a><a href="#/ofertas">Ofertas</a><a href="#/personalizadas">Personalizadas</a><a href="#/presentes">Presentes</a><a href="#/temas">Temas</a><button id="drawerMyMugs">Minhas canecas</button></div>
+  <div class="mobile-drawer" id="mobileDrawer" hidden><div class="drawer-head"><span class="brand small"><span>Caneca</span><b>Fácil</b></span><button id="closeMenu" aria-label="Fechar menu">×</button></div><a href="#/">Início</a><a href="#/novidades">Novidades</a><a href="#/ofertas">Ofertas</a><a href="#/personalizadas">Personalizáveis</a><a href="#/padronizadas">Padronizada</a><button id="drawerMyMugs">Minhas canecas</button></div>
   <div class="backdrop" id="backdrop" hidden></div>
   <div class="modal" id="modal" hidden><div class="modal-card"><button class="modal-close" id="modalClose" aria-label="Fechar">×</button><div id="modalContent"></div></div></div>
   <div class="toast" id="toast" hidden></div>
@@ -58,8 +58,9 @@
     (()=>{const nativeOpen=window.open.bind(window);window.open=(url,target,features)=>{if(/^https:\/\/wa\.me\//i.test(String(url||''))){window.location.href=String(url);return window}return nativeOpen(url,target,features)}})();
   </script>
   <script type="module" src="./enhancements-v2.js?v=20260828-2"></script>
-  <script src="./runtime-v3.js?v=20260828-3"></script>
-  <script src="./navigation-fix.js?v=20260828-1"></script>
+  <script src="./runtime-v3.js?v=20260828-4"></script>
+  <script src="./navigation-fix.js?v=20260828-2"></script>
   <script type="module" src="./app.js?v=20260828-1"></script>
+  <script type="module" src="./catalog-modes-v1.js?v=20260828-1"></script>
 </body>
 </html>
