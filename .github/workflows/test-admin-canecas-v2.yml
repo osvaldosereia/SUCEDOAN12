@@ -1,0 +1,28 @@
+name: Test Admin Canecas V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin-canecas/**'
+      - 'scripts/test-admin-canecas-v2.mjs'
+      - '.github/workflows/test-admin-canecas-v2.yml'
+  pull_request:
+    paths:
+      - 'admin-canecas/**'
+      - 'scripts/test-admin-canecas-v2.mjs'
+      - '.github/workflows/test-admin-canecas-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  structural-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Admin Canecas V2
+        run: node scripts/test-admin-canecas-v2.mjs
