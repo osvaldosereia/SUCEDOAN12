@@ -99,9 +99,9 @@ O Admin V2 não deve:
 - carregar `/produtos` inteiro;
 - reintroduzir arquivos V1/V3/V4 removidos.
 
-## Teste automático
+## Testes automáticos
 
-`scripts/test-admin-canecas-v2.mjs` valida:
+`scripts/test-admin-canecas-v2.mjs` valida estruturalmente:
 - módulos ativos do `index.html`;
 - ausência de arquivos legados;
 - ausência de `MutationObserver` e monkey-patch de `window.fetch`;
@@ -112,6 +112,13 @@ O Admin V2 não deve:
 - ações da Loja Integrada;
 - Banners IA usando a store compartilhada;
 - exatamente 49 colunas no exportador Loja Integrada.
+
+`scripts/smoke-admin-canecas-firebase.mjs` executa um teste real pela internet:
+- chama o Firebase com a mesma query indexada usada pelo Admin;
+- exige HTTP 200;
+- confirma que os itens retornados pertencem ao escopo `Caneca...`;
+- pega uma imagem real de uma caneca retornada;
+- baixa a imagem e valida HTTP, `Content-Type: image/*` e tamanho mínimo do arquivo.
 
 Workflow: `.github/workflows/test-admin-canecas-v2.yml`.
 
