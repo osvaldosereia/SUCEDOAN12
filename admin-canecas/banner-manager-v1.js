@@ -29,6 +29,7 @@ async function init(){
   const nav=$('#bannerNavButton');
   if(!nav)return;
   nav.addEventListener('click',openView);
+  $$('#nav [data-route]').forEach(b=>b.addEventListener('click',()=>nav.classList.remove('active')));
   renderSkeleton();
   await Promise.all([loadProducts(),loadHistory()]);
   render();
