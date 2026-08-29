@@ -16,6 +16,23 @@ Admin operacional separado do Produção para toda a jornada das canecas. Ele **
 - **Impressão**: incorpora o Caneca Print, cuja fila fica em `canecas/print_jobs`.
 - **Configurações**: URLs de webhooks operacionais. Tokens e segredos não devem ser colocados no frontend.
 
+## Exportação para Loja Integrada
+
+A área **Canecas** possui exportação em massa para a planilha oficial da Loja Integrada:
+
+- seleção individual ou de todas as canecas visíveis;
+- botão **Baixar selecionadas**;
+- botão **Baixar todas ativas**;
+- arquivo `.xlsx` gerado no navegador, sem dependência de biblioteca externa;
+- exatamente as 49 colunas do modelo oficial, na mesma ordem;
+- mapeamento de SKU, status, NCM, GTIN, SEO, descrição, estoque, preço, marca, peso, dimensões, categorias e até cinco imagens;
+- validação de campos críticos antes da geração;
+- avisos para segunda imagem, peso/dimensões e SEO;
+- registro em `/produtos/{id}/lojaintegrada` da data, arquivo, fingerprint e versão do template da última planilha gerada;
+- indicação visual de **Não gerada**, **Planilha gerada** ou **Alterada depois**.
+
+O status salvo significa apenas que uma planilha foi gerada. Ele **não confirma que o produto foi importado pela Loja Integrada**.
+
 ## Nós Firebase
 
 Contrato compartilhado em `../shared/mug-commerce-v1.js`:
