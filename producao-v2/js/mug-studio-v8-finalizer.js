@@ -81,7 +81,11 @@ window.addEventListener('admin-v2-route', event => {
 });
 window.addEventListener('admin-v2-products-invalidated', event => {
   const key = event.detail?.key;
-  if (key) applyOperationalPolicy(key).catch(error => console.error('Falha ao aplicar política Caneca Fácil:', error));
+  const source = String(event.detail?.source || '');
+  const isMugStudioEvent = /mug|caneca/i.test(source) || window.adminV2CurrentRoute?.() === 'mug-studio';
+  if (key && isMugStudioEvent) {
+    applyOperationalPolicy(key).catch(error => console.error('Falha ao aplicar política Caneca Fácil:', error));
+  }
   schedule(850);
 });
 
