@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260829-admin-canecas-inline-category-v1';
+  const BUILD = '20260829-admin-canecas-inline-category-v1.1';
   const FIREBASE_BASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const REF_PATH = 'canecas/integracoes/loja_integrada/catalog_refs';
   const CATEGORY_NAMES = Object.freeze({
@@ -91,20 +91,34 @@
     </select></label>`;
   }
 
+  function bindSelect(key, select) {
+    if (!select || select.dataset.categoryBound === '1') return;
+    select.dataset.categoryBound = '1';
+    select.addEventListener('click', event => event.stopPropagation());
+    select.addEventListener('change', () => saveCategory(key, select));
+  }
+
   async function installCard(card) {
-    if (!card || card.dataset.inlineCategoryReady === '1') return;
+    if (!card || ['1', 'loading'].includes(card.dataset.inlineCategoryReady)) return;
     const key = text(card.dataset.gridMug);
     if (!key) return;
     card.dataset.inlineCategoryReady = 'loading';
     try {
+      const existing = $$('.cf-mug-inline-category', card);
+      if (existing.length) {
+        existing.slice(1).forEach(node => node.remove());
+        bindSelect(key, $('[data-grid-category]', existing[0]));
+        card.dataset.inlineCategoryReady = '1';
+        return;
+      }
+
       const product = await getProduct(key);
       if (!product) throw new Error('Caneca não encontrada.');
       const actions = $('.cf-mug-card-actions', card);
       if (!actions) throw new Error('Card ainda não está pronto.');
       actions.insertAdjacentHTML('beforebegin', selectHtml(categoryType(product)));
       const select = $('[data-grid-category]', card);
-      select.addEventListener('click', event => event.stopPropagation());
-      select.addEventListener('change', () => saveCategory(key, select));
+      bindSelect(key, select);
       card.dataset.inlineCategoryReady = '1';
     } catch (error) {
       card.dataset.inlineCategoryReady = '';
@@ -162,7 +176,7 @@
     if (!location.hash.includes('mugs')) return;
     installAll();
     const cards = $$('[data-grid-mug]', $('#mugs'));
-    const pending = cards.length === 0 || cards.some(card => card.dataset.inlineCategoryReady !== '1');
+    const pending = cards.length === 0 || cards.some(card => !['1', 'loading'].includes(card.dataset.inlineCategoryReady));
     if (pending && attempt < 35) setTimeout(() => scheduleInstall(attempt + 1), 140);
   }
 
