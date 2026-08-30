@@ -13,6 +13,7 @@ const catalog = read('catalog-manager-v5.js');
 const banners = read('banner-manager-v2.js');
 const store = read('mug-store-v2.js');
 const generator = read('generator-v1.js');
+const bulk = read('bulk-actions-v1.js');
 
 const activeModules = [...index.matchAll(/<script\s+type="module"\s+src="\.\/([^"?]+)/g)].map(m => m[1]);
 assert.deepEqual(activeModules, [
@@ -20,6 +21,7 @@ assert.deepEqual(activeModules, [
   'catalog-manager-v5.js',
   'product-images-v1.js',
   'banner-manager-v2.js',
+  'bulk-actions-v1.js',
   'app-v2.js',
   'generator-v1.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
@@ -32,7 +34,7 @@ for (const legacy of [
 
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v2.js', banners],
-  ['mug-store-v2.js', store], ['generator-v1.js', generator]
+  ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk]
 ]) {
   assert.equal(code.includes('MutationObserver'), false, `${name} não deve usar MutationObserver global`);
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
@@ -77,6 +79,17 @@ assert.match(generator, /origem_mercadoria:\s*['"]0['"]/, 'gerador deve cadastra
 assert.match(generator, /COMMANDS_NODE\s*=\s*['"]canecas\/comandos_criacao['"]/, 'gerador deve compartilhar a biblioteca de comandos');
 assert.match(generator, /SELECTED_KEY\s*=\s*['"]da_admin_v2_mug_saved_commands_selected['"]/, 'seleção de comandos deve ser compartilhada com Produção');
 
+assert.ok(index.includes('bulk-actions-v1.js?v=20260829-1'), 'index deve carregar ações em lote antes do core');
+assert.match(bulk, /Ativar Dona Antônia/, 'lista deve permitir ativar Dona Antônia em lote');
+assert.match(bulk, /Ativar Caneca Fácil \+ sincronizar/, 'lista deve permitir ativar Caneca Fácil em lote');
+assert.match(bulk, /Ativar nos dois \+ sincronizar/, 'lista deve permitir ativar os dois canais');
+assert.match(bulk, /Sincronizar Caneca Fácil/, 'lista deve permitir sincronizar selecionadas sem abrir cadastro');
+assert.match(bulk, /loja_integrada_create_product/, 'ação em lote deve criar produto na Loja Integrada quando ainda não vinculado');
+assert.match(bulk, /loja_integrada_update_product/, 'ação em lote deve atualizar produto já vinculado');
+assert.match(bulk, /await sleep\(450\)/, 'sincronização em lote deve ser sequencial com intervalo de proteção');
+assert.match(bulk, /POLICY\.stock/, 'ação em lote deve aplicar a política operacional compartilhada');
+assert.match(bulk, /input\[data-select-mug\]:checked/, 'ação em lote deve usar os checkboxes existentes da lista');
+
 const headerBlock = catalog.match(/const HEADERS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\);/);
 assert.ok(headerBlock, 'cabeçalho da planilha Loja Integrada não encontrado');
 const headers = [...headerBlock[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
@@ -88,4 +101,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas v2: arquitetura, gerador simplificado em paridade com Produção, store, Loja Integrada e ausência de conflitos legados validadas.');
+console.log('OK admin-canecas v2: arquitetura, gerador, ações em lote, store, Loja Integrada e ausência de conflitos legados validadas.');
