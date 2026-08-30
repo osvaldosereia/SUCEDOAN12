@@ -1,0 +1,107 @@
+{
+  "name": "CANECA FACIL - BANNERS IA - V4 FIDELIDADE + LIBERDADE",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {"hook": 3633719, "maxResults": 1},
+      "mapper": {},
+      "metadata": {
+        "designer": {"x":0,"y":0,"name":"Admin Canecas - Receber briefing do banner"},
+        "parameters": [
+          {"name":"hook","type":"hook:gateway-webhook","label":"Webhook","required":true},
+          {"name":"maxResults","type":"number","label":"Maximum number of results"}
+        ],
+        "interface": [
+          {"name":"action","type":"text"},
+          {"name":"request_id","type":"text"},
+          {"name":"build","type":"text"},
+          {"name":"banner","type":"collection","spec":[{"name":"type","type":"text"},{"name":"label","type":"text"},{"name":"desktop","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"}]},{"name":"mobile","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"}]},{"name":"mobile_upload","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"}]},{"name":"ai_desktop_size","type":"text"},{"name":"ai_mobile_size","type":"text"}]},
+          {"name":"campaign","type":"collection","spec":[{"name":"name","type":"text"},{"name":"objective","type":"text"},{"name":"headline","type":"text"},{"name":"cta","type":"text"},{"name":"link","type":"text"},{"name":"style","type":"text"},{"name":"variation","type":"text"},{"name":"notes","type":"text"},{"name":"start","type":"text"},{"name":"end","type":"text"},{"name":"price","type":"number"},{"name":"old_price","type":"number"}]},
+          {"name":"products_summary","type":"text"},
+          {"name":"custom_instructions","type":"text"},
+          {"name":"products","type":"array","spec":{"type":"collection","name":"value","spec":[{"name":"firebase_key","type":"text"},{"name":"sku","type":"text"},{"name":"name","type":"text"},{"name":"image_url","type":"text"},{"name":"price","type":"number"},{"name":"category","type":"text"},{"name":"subcategory","type":"text"}]}},
+          {"name":"brand","type":"collection","spec":[{"name":"name","type":"text"},{"name":"language","type":"text"},{"name":"country","type":"text"}]},
+          {"name":"rules","type":"collection","spec":[{"name":"two_independent_images","type":"boolean"},{"name":"professional_ad_design","type":"boolean"},{"name":"max_products","type":"number"},{"name":"no_text_in_ai_image","type":"boolean"},{"name":"no_logos_in_ai_image","type":"boolean"},{"name":"no_prices_in_ai_image","type":"boolean"},{"name":"empty_space_for_copy","type":"boolean"},{"name":"final_text_rendered_by_browser","type":"boolean"},{"name":"lojaintegrada_max_kb","type":"number"}]}
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "openai-gpt-3:CreateCompletion",
+      "version": 1,
+      "parameters": {"__IMTCONN__":7933914},
+      "mapper": {
+        "select":"chat",
+        "temperature":"0.78",
+        "top_p":"1",
+        "n_completions":"1",
+        "model":"gpt-4o-mini",
+        "max_tokens":"2400",
+        "messages":[
+          {
+            "role":"system",
+            "content":"Você é um Diretor Criativo Sênior de publicidade e e-commerce. Sua função é transformar um briefing simples em uma campanha de alto nível, com repertório visual de agência, forte senso de composição, tipografia, cor, CRO e comportamento de compra. REGRA CENTRAL: FIDELIDADE PRIMEIRO, LIBERDADE DEPOIS. As informações fornecidas pelo usuário são a fonte de verdade e nunca devem ser julgadas, corrigidas, substituídas ou ignoradas. Você tem ampla liberdade criativa SOMENTE nos pontos que o usuário deixou em aberto. HIERARQUIA DE OBRIGAÇÕES: 1) qualquer headline fornecida pelo usuário é TEXTO OBRIGATÓRIO e deve ser devolvida EXATAMENTE como recebida, caractere por caractere; não reescreva nem melhore. 2) qualquer CTA fornecido é TEXTO OBRIGATÓRIO e deve ser devolvido exatamente. 3) objetivo/oferta é o centro estratégico da peça e deve orientar copy e visual. 4) preço, preço anterior, condição, datas, benefícios e números só podem existir se vierem do briefing; jamais invente valores, descontos, frete, urgência ou prazos. 5) observações e INSTRUÇÕES REUTILIZÁVEIS são REGRAS CRIATIVAS OBRIGATÓRIAS, não sugestões. Aplique todas as que forem compatíveis. Se uma instrução disser que a frase é o destaque, trate a headline fornecida como elemento principal. Se disser que os produtos são decorativos, a direção deve deixá-los secundários. Se disser criativo e colorido, isso deve aparecer claramente na paleta e atmosfera. 6) use somente os produtos selecionados como referência de campanha; não invente outros produtos. NÃO DESCARTE uma frase porque pareça informal, genérica, popular ou incomum: se o usuário escreveu, respeite. Responda SOMENTE JSON válido com: eyebrow, headline, subtitle, cta, alt, visual_prompt_desktop, visual_prompt_mobile, text_color, accent_color, overlay, layout_style, product_treatment. eyebrow pode ser criado livremente se não contradizer o briefing. subtitle pode ser criado livremente para complementar, sem repetir a headline. layout_style pode ser premium-editorial, bold-commerce, clean-lifestyle, gift-luxury, festive-modern, artistic-campaign ou minimal-impact. product_treatment deve traduzir literalmente as instruções do usuário sobre destaque, quantidade, escala e posição dos produtos. DIREÇÃO VISUAL: gere uma ideia original, marcante e adequada ao objetivo. Evite cair automaticamente em fundo marrom, degradê escuro, parede doméstica, vaso, planta, mesa genérica ou template corporativo. Escolha paleta, materiais, formas, luz, textura, atmosfera e ritmo visual a partir do briefing. visual_prompt_desktop e visual_prompt_mobile devem descrever APENAS O CENÁRIO/FUNDO, sem qualquer texto ou produto. Não mencione canecas, xícaras, copos, recipientes cilíndricos ou produtos nesses prompts para reduzir objetos inventados pelo gerador de imagem. O desktop e o mobile são duas composições próprias da mesma identidade, não simples recortes."
+          },
+          {
+            "role":"user",
+            "content":"BRIEFING AUTORITATIVO DO USUÁRIO — use tudo o que estiver preenchido. Formato: {{1.banner.label}}. Desktop: {{1.banner.desktop.width}}x{{1.banner.desktop.height}}. Mobile: {{1.banner.mobile.width}}x{{1.banner.mobile.height}}. Campanha: {{1.campaign.name}}. Objetivo/oferta: {{1.campaign.objective}}. HEADLINE OBRIGATÓRIA SE PREENCHIDA: {{1.campaign.headline}}. CTA OBRIGATÓRIO SE PREENCHIDO: {{1.campaign.cta}}. Estilo escolhido: {{1.campaign.style}}. Variação escolhida: {{1.campaign.variation}}. Observações do usuário: {{1.campaign.notes}}. Produtos selecionados: {{1.products_summary}}. INSTRUÇÕES REUTILIZÁVEIS OBRIGATÓRIAS: {{1.custom_instructions}}. Preço atual: {{1.campaign.price}}. Preço anterior: {{1.campaign.old_price}}. Crie uma campanha excepcional respeitando integralmente esses dados. Onde houver informação, obedeça. Onde estiver vazio, use seu melhor julgamento de designer sênior."
+          }
+        ],
+        "response_format":"json_object",
+        "parseJSONResponse":false
+      },
+      "metadata":{"designer":{"x":330,"y":0,"name":"OpenAI - Diretor Criativo com fidelidade"},"parameters":[{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]}
+    },
+    {
+      "id":3,
+      "module":"openai-gpt-3:GenerateImage",
+      "version":1,
+      "parameters":{"__IMTCONN__":7933914},
+      "mapper":{
+        "model":"gpt-image-2",
+        "prompt":"Crie um FUNDO PUBLICITÁRIO DESKTOP premium e original seguindo estritamente a direção criativa JSON: {{2.result}}. Instruções obrigatórias do usuário: {{1.custom_instructions}}. Gere apenas ambiente, luz, cor, textura, superfícies, formas gráficas e elementos abstratos coerentes. NÃO desenhe texto, letras, números, logotipos, preços, produtos, canecas, xícaras, copos, vasos, potes, recipientes cilíndricos, embalagens ou mockups. Não use por padrão parede doméstica, sala, cozinha, planta ou vaso. Dê liberdade à composição para ser editorial, artística, vibrante, minimalista ou sofisticada conforme o briefing. Reserve respiro inteligente nas áreas indicadas pela direção criativa. Tamanho final alvo: {{1.banner.desktop.width}}x{{1.banner.desktop.height}}. Tamanho de geração: {{1.banner.ai_desktop_size}}. Priorize visual_prompt_desktop e preserve identidade de campanha, contraste e acabamento de agência.",
+        "size":"{{1.banner.ai_desktop_size}}",
+        "quality":"high",
+        "background":"opaque",
+        "output_format":"jpeg",
+        "n":"1",
+        "moderation":"auto",
+        "output_compression":"40"
+      },
+      "metadata":{"designer":{"x":660,"y":-120,"name":"GPT Image - Fundo DESKTOP livre"},"parameters":[{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]}
+    },
+    {
+      "id":4,
+      "module":"openai-gpt-3:GenerateImage",
+      "version":1,
+      "parameters":{"__IMTCONN__":7933914},
+      "mapper":{
+        "model":"gpt-image-2",
+        "prompt":"Crie um FUNDO PUBLICITÁRIO MOBILE premium e original, como uma NOVA COMPOSIÇÃO para celular, seguindo estritamente a direção criativa JSON: {{2.result}}. Instruções obrigatórias do usuário: {{1.custom_instructions}}. Gere somente ambiente, luz, cor, textura, superfícies, formas gráficas e elementos abstratos coerentes. NÃO desenhe texto, letras, números, logotipos, preços, produtos, canecas, xícaras, copos, vasos, potes, recipientes cilíndricos, embalagens ou mockups. Não use por padrão parede doméstica, sala, cozinha, planta ou vaso. Não recorte mentalmente o desktop: reorganize a composição para a leitura vertical e para o respiro necessário. Tamanho final alvo: {{1.banner.mobile.width}}x{{1.banner.mobile.height}}. Tamanho de geração: {{1.banner.ai_mobile_size}}. Priorize visual_prompt_mobile e preserve a mesma identidade de campanha do desktop.",
+        "size":"{{1.banner.ai_mobile_size}}",
+        "quality":"high",
+        "background":"opaque",
+        "output_format":"jpeg",
+        "n":"1",
+        "moderation":"auto",
+        "output_compression":"40"
+      },
+      "metadata":{"designer":{"x":660,"y":120,"name":"GPT Image - Fundo MOBILE livre"},"parameters":[{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]}
+    },
+    {
+      "id":5,
+      "module":"gateway:WebhookRespond",
+      "version":1,
+      "parameters":{},
+      "mapper":{
+        "status":"200",
+        "body":"{\"ok\":true,\"request_id\":\"{{1.request_id}}\",\"creative_json\":{{2.result}},\"images\":{\"desktop\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(3.resImgData)}}\"},\"mobile\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(4.resImgData)}}\"}}}",
+        "headers":[{"key":"Content-Type","value":"application/json; charset=utf-8"},{"key":"Access-Control-Allow-Origin","value":"*"}]
+      },
+      "metadata":{"designer":{"x":1030,"y":0,"name":"Responder ao Admin"}}
+    }
+  ],
+  "metadata":{"instant":true,"version":1,"scenario":{"roundtrips":1,"maxErrors":3,"autoCommit":true,"autoCommitTriggerLast":true,"sequential":false,"slots":null,"confidential":false,"dataloss":false,"dlq":false,"freshVariables":false},"designer":{"orphans":[]},"zone":"eu1.make.com","notes":[]}
+}
