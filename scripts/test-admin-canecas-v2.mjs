@@ -14,6 +14,7 @@ const banners = read('banner-manager-v2.js');
 const store = read('mug-store-v2.js');
 const generator = read('generator-v1.js');
 const bulk = read('bulk-actions-v1.js');
+const grid = read('mug-grid-v1.js');
 
 const activeModules = [...index.matchAll(/<script\s+type="module"\s+src="\.\/([^"?]+)/g)].map(m => m[1]);
 assert.deepEqual(activeModules, [
@@ -22,6 +23,7 @@ assert.deepEqual(activeModules, [
   'product-images-v1.js',
   'banner-manager-v2.js',
   'bulk-actions-v1.js',
+  'mug-grid-v1.js',
   'app-v2.js',
   'generator-v1.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
@@ -34,7 +36,7 @@ for (const legacy of [
 
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v2.js', banners],
-  ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk]
+  ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid]
 ]) {
   assert.equal(code.includes('MutationObserver'), false, `${name} não deve usar MutationObserver global`);
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
@@ -90,6 +92,22 @@ assert.match(bulk, /await sleep\(450\)/, 'sincronização em lote deve ser seque
 assert.match(bulk, /POLICY\.stock/, 'ação em lote deve aplicar a política operacional compartilhada');
 assert.match(bulk, /input\[data-select-mug\]:checked/, 'ação em lote deve usar os checkboxes existentes da lista');
 
+assert.ok(index.includes('mug-grid-v1.js?v=20260829-1'), 'index deve carregar a grade visual de canecas');
+assert.match(grid, /mugArt\(product\)/, 'grade deve priorizar a arte horizontal');
+assert.match(grid, /class=\"cf-mug-grid\"/, 'canecas devem ser exibidas em grade');
+assert.match(grid, /Dona Antônia/, 'card deve mostrar status Dona Antônia');
+assert.match(grid, /Caneca Fácil/, 'card deve mostrar status Caneca Fácil');
+assert.match(grid, /data-grid-edit/, 'card deve possuir botão Editar');
+assert.match(grid, /data-grid-delete/, 'card deve possuir botão Apagar');
+assert.match(grid, /Apagar selecionadas/, 'grade deve permitir exclusão em lote');
+assert.match(grid, /Apagar caneca/, 'drawer deve permitir apagar dentro do cadastro');
+assert.match(grid, /productBody\.removido\s*=\s*true/, 'exclusão vinculada deve mover produto para lixeira da Loja Integrada');
+assert.match(grid, /productBody\.ativo\s*=\s*false/, 'exclusão vinculada deve desativar produto na Loja Integrada');
+assert.match(grid, /action\s*=\s*['"]loja_integrada_update_product['"]/, 'exclusão deve reutilizar a rota segura de atualização da Loja Integrada');
+assert.match(grid, /method:\s*['"]DELETE['"]/, 'exclusão deve apagar o registro do Firebase após Loja Integrada');
+assert.match(grid, /hasLiEvidenceWithoutId/, 'exclusão deve bloquear vínculo Loja Integrada sem ID para evitar órfãos');
+assert.match(grid, /arquivos físicos das imagens não são apagados automaticamente/, 'interface deve avisar que exclusão do produto não apaga mídia física');
+
 const headerBlock = catalog.match(/const HEADERS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\);/);
 assert.ok(headerBlock, 'cabeçalho da planilha Loja Integrada não encontrado');
 const headers = [...headerBlock[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
@@ -101,4 +119,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas v2: arquitetura, gerador, ações em lote, store, Loja Integrada e ausência de conflitos legados validadas.');
+console.log('OK admin-canecas v2: arquitetura, gerador, grade horizontal, exclusão segura, ações em lote, store e Loja Integrada validados.');
