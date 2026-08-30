@@ -51,11 +51,21 @@ assert.match(catalog, /loja_integrada_update_product/, 'catálogo deve preservar
 assert.match(catalog, /loja_integrada_catalog_refs/, 'catálogo deve preservar consulta de marca/categorias');
 assert.match(banners, /loadMugs/, 'Banners IA deve reutilizar a store de canecas');
 
-assert.ok(index.includes('generator-v1.css'), 'index deve carregar CSS do gerador');
+assert.ok(index.includes('generator-v1.css?v=20260829-2'), 'index deve carregar CSS atual do gerador');
+assert.ok(index.includes('generator-v1.js?v=20260829-2'), 'index deve carregar JS atual do gerador');
 assert.ok(index.includes('mugGeneratorWebhook'), 'webhook do gerador deve estar configurado no index');
 assert.match(generator, /hook\.eu1\.make\.com\/cl3r1f56r9txezvltkkwlsspmnja6sw4/, 'gerador deve preservar o webhook oficial');
 assert.match(generator, /action:\s*['"]generate_mug_art['"]/, 'gerador deve usar generate_mug_art');
+assert.match(generator, /action:\s*['"]analyze_mug_product['"]/, 'gerador deve catalogar automaticamente como o Produção');
 assert.match(generator, /action:\s*['"]finalize_mug_product['"]/, 'gerador deve usar finalize_mug_product');
+assert.match(generator, /MASTER_WIDTH\s*=\s*2400/, 'arte deve usar largura atual do Produção');
+assert.match(generator, /MASTER_HEIGHT\s*=\s*960/, 'arte deve usar altura atual do Produção');
+assert.match(generator, /quality:\s*['"]low['"]/, 'qualidade deve ser LOW fixa como no Produção');
+assert.equal(generator.includes('mugTheme'), false, 'gerador não deve pedir tema manual');
+assert.equal(generator.includes('mugName'), false, 'gerador não deve pedir nome manual');
+assert.equal(generator.includes('mugPrice'), false, 'gerador não deve pedir preço manual');
+assert.equal(generator.includes('Informe o tema principal'), false, 'geração não deve bloquear por tema obrigatório');
+assert.match(generator, /Nenhum campo de texto é obrigatório/, 'interface deve deixar claro que os campos são opcionais');
 assert.match(generator, /estoque:\s*100/, 'gerador deve cadastrar estoque padrão 100');
 assert.match(generator, /estoque_situacao_em_estoque:\s*1/, 'gerador deve cadastrar preparação de 1 dia');
 assert.match(generator, /peso_embalado_kg:\s*0\.3/, 'gerador deve cadastrar peso 0,3 kg');
@@ -65,6 +75,7 @@ assert.match(generator, /comprimento_embalado_cm:\s*11/, 'gerador deve cadastrar
 assert.match(generator, /tipo_producao:\s*['"]revenda['"]/, 'gerador deve cadastrar produção como revenda');
 assert.match(generator, /origem_mercadoria:\s*['"]0['"]/, 'gerador deve cadastrar origem nacional');
 assert.match(generator, /COMMANDS_NODE\s*=\s*['"]canecas\/comandos_criacao['"]/, 'gerador deve compartilhar a biblioteca de comandos');
+assert.match(generator, /SELECTED_KEY\s*=\s*['"]da_admin_v2_mug_saved_commands_selected['"]/, 'seleção de comandos deve ser compartilhada com Produção');
 
 const headerBlock = catalog.match(/const HEADERS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\);/);
 assert.ok(headerBlock, 'cabeçalho da planilha Loja Integrada não encontrado');
@@ -77,4 +88,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas v2: arquitetura, gerador, store, Loja Integrada e ausência de conflitos legados validadas.');
+console.log('OK admin-canecas v2: arquitetura, gerador simplificado em paridade com Produção, store, Loja Integrada e ausência de conflitos legados validadas.');
