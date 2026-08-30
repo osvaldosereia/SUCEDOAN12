@@ -1,9 +1,16 @@
 (() => {
   'use strict';
-  const BUILD = '20260829-li-personalizador-embed-v1';
+  const BUILD = '20260830-li-personalizador-embed-v2';
   if (window.__CF_LI_PERSONALIZER_EMBED__ === BUILD) return;
   window.__CF_LI_PERSONALIZER_EMBED__ = BUILD;
 
+  function safeStoreUrl(value) {
+    try {
+      const url = new URL(String(value || ''), 'https://canecafacil.com.br/');
+      const host = url.hostname.toLowerCase().replace(/^www\./, '');
+      return host === 'canecafacil.com.br' ? url.href : 'https://canecafacil.com.br/';
+    } catch { return 'https://canecafacil.com.br/'; }
+  }
   function close() {
     document.querySelector('#cfLiPersonalizerOverlay')?.remove();
     document.documentElement.style.overflow = '';
@@ -27,6 +34,13 @@
     event.preventDefault();
     open(link.href);
   });
-  window.addEventListener('message', event => { if (event?.data?.type === 'canecafacil:close-personalizer') close(); });
+  window.addEventListener('message', event => {
+    if (event?.data?.type === 'canecafacil:close-personalizer') return close();
+    if (event?.data?.type === 'canecafacil:return-to-store') {
+      const url = safeStoreUrl(event.data.url);
+      close();
+      location.href = url;
+    }
+  });
   console.info(`CanecaFácil · personalizador Loja Integrada ${BUILD}`);
 })();
