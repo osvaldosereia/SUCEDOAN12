@@ -1,6 +1,7 @@
-const BUILD = '20260829-loja-integrada-personalizador-v1';
+const BUILD = '20260830-loja-integrada-personalizador-v2';
 const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
+const STOREFRONT = 'https://canecafacil.com.br/';
 const RESULT_NODE = 'canecas/geracoes';
 const CREATIONS_NODE = 'canecas/personalizadas';
 const WAIT_MS = 180000;
@@ -25,7 +26,25 @@ function productImage(p = {}) {
   return values.map(v => typeof v === 'object' ? (v?.url || v?.src || '') : v).map(text).find(v => /^https?:\/\//i.test(v)) || '';
 }
 function modelArt(p = {}) { return text(p.arte_horizontal || p.arte_personalizacao || p.arte_impressao?.url || p.arte_final_url); }
-function returnUrl() { return explicitReturn || text(product?.loja_integrada?.url) || 'https://donaantonia.com.br/'; }
+function safeStoreUrl(value) {
+  const raw = text(value);
+  if (!raw) return '';
+  try {
+    const url = new URL(raw, STOREFRONT);
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    if (host !== 'canecafacil.com.br') return '';
+    return url.href;
+  } catch {
+    return '';
+  }
+}
+function productStoreUrl(p = {}) {
+  const direct = safeStoreUrl(p?.loja_integrada?.url) || safeStoreUrl(p?.canecafacil_url);
+  if (direct) return direct;
+  const alias = text(p?.loja_integrada_alias || p?.loja_integrada?.alias);
+  return alias ? new URL(alias.replace(/^\/+/, ''), STOREFRONT).href : STOREFRONT;
+}
+function returnUrl() { return safeStoreUrl(explicitReturn) || productStoreUrl(product || {}) || STOREFRONT; }
 function showError(message) {
   $('#progressBox').hidden = true;
   $('#errorText').textContent = message;
@@ -143,6 +162,8 @@ async function persistCreation(source, fields, instruction) {
   const record = {
     id: code,
     origem: 'loja_integrada',
+    loja_dominio: 'canecafacil.com.br',
+    return_url: returnUrl(),
     modelo_key: modelId,
     modelo_nome: text(product?.nome),
     produto_key: modelId,
@@ -185,6 +206,8 @@ async function generate(event) {
       model_id: modelId,
       mode: 'loja_integrada',
       origin: 'loja_integrada',
+      store_domain: 'canecafacil.com.br',
+      return_url: returnUrl(),
       customer_name: text($('#customerName').value),
       customer_whatsapp: text($('#customerWhatsapp').value),
       customer_email: text($('#customerEmail').value),
