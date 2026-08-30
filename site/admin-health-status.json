@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-08-30T04:32:40.045Z",
+  "checkedAt": "2026-08-30T05:29:57.136Z",
   "baseUrl": "https://donaantonia.com.br",
   "ok": false,
   "checks": [
@@ -11,17 +11,17 @@
     {
       "name": "Entrada /producao aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao/?_health=1788064362684"
+      "detail": "OK · https://donaantonia.com.br/producao/?_health=1788067800132"
     },
     {
       "name": "Atalho /admin aponta para o Admin oficial",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/admin/?_health=1788064363402"
+      "detail": "OK · https://donaantonia.com.br/admin/?_health=1788067800798"
     },
     {
       "name": "Admin oficial carregado",
       "ok": true,
-      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1788064363463"
+      "detail": "OK · https://donaantonia.com.br/producao-v2/?_health=1788067800884"
     },
     {
       "name": "Módulos ativos do Admin estão publicados",
@@ -46,27 +46,27 @@
     {
       "name": "Catálogo público possui produtos",
       "ok": true,
-      "detail": "1631 produto(s)"
+      "detail": "1628 produto(s)"
     },
     {
       "name": "Índice administrativo possui todos os produtos",
       "ok": true,
-      "detail": "1846 produto(s) administrativos · 1631 público(s) · campos OK"
+      "detail": "1853 produto(s) administrativos · 1628 público(s) · campos OK"
     },
     {
       "name": "Runtime do Admin carrega lista e cadastro completo",
       "ok": true,
-      "detail": "1846 produto(s) em 261 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
+      "detail": "1853 produto(s) em 290 ms · cadastro Leite Piracanjuba Semidesnatado Zero Lactose 1 Litro"
     },
     {
       "name": "Pedidos usam consulta limitada no Firebase",
       "ok": true,
-      "detail": "12 pedido(s) retornado(s) em 159 ms · limite solicitado 12 · chaves OK"
+      "detail": "12 pedido(s) retornado(s) em 213 ms · limite solicitado 12 · chaves OK"
     },
     {
       "name": "Versão do catálogo válida",
       "ok": true,
-      "detail": "catalog-4515a07d5d32090b · público 1631 · admin 1846"
+      "detail": "catalog-6bd94ef09ae2f7f3 · público 1628 · admin 1853"
     },
     {
       "name": "Banners permanecem removidos",
@@ -90,8 +90,8 @@
     },
     {
       "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "1.0h desde a execução · status sucesso · 235 expirada(s) ainda ativa(s)"
+      "ok": true,
+      "detail": "1.0h desde a execução · status sucesso · 0 expirada(s) ainda ativa(s)"
     },
     {
       "name": "Arquitetura por rota do Admin",
@@ -106,11 +106,6 @@
   ],
   "errors": [
     {
-      "name": "Rotina horária de ofertas atualizada",
-      "ok": false,
-      "detail": "1.0h desde a execução · status sucesso · 235 expirada(s) ainda ativa(s)"
-    },
-    {
       "name": "Arquitetura por rota do Admin",
       "ok": false,
       "detail": "O teste local da arquitetura por rota falhou. Consulte admin-architecture.log no artefato do workflow."
@@ -124,11 +119,11 @@
   "warnings": [],
   "workflow": {
     "event": "schedule",
-    "runId": "33292678033",
+    "runId": "33294751155",
     "attempt": "1",
-    "sourceSha": "1a361711e1f9020096736ad8fd8886d64e1f4880",
+    "sourceSha": "32d3ac035e8a5e22f8973edbc001d98dcfca5346",
     "architecture": "failure",
     "mugStudio": "failure",
-    "publishedAt": "2026-08-30T04:32:48.816Z"
+    "publishedAt": "2026-08-30T05:30:06.216Z"
   }
 }
