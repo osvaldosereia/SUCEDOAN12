@@ -1,0 +1,103 @@
+{
+  "name": "CANECA FACIL - BANNERS IA - V3 DESIGN PROFISSIONAL",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 3633719,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "Admin Canecas - Receber pedido de par de banners"
+        },
+        "restore": {
+          "parameters": {
+            "hook": {
+              "label": "banner",
+              "data": {
+                "editable": "true"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "hook",
+            "type": "hook:gateway-webhook",
+            "label": "Webhook",
+            "required": true
+          },
+          {
+            "name": "maxResults",
+            "type": "number",
+            "label": "Maximum number of results"
+          }
+        ],
+        "interface": [
+          {"name":"action","type":"text"},
+          {"name":"request_id","type":"text"},
+          {"name":"build","type":"text"},
+          {"name":"banner","type":"collection","spec":[{"name":"type","type":"text"},{"name":"label","type":"text"},{"name":"desktop","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"}]},{"name":"mobile","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"}]},{"name":"mobile_upload","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"}]},{"name":"ai_desktop_size","type":"text"},{"name":"ai_mobile_size","type":"text"}]},
+          {"name":"campaign","type":"collection","spec":[{"name":"name","type":"text"},{"name":"objective","type":"text"},{"name":"headline","type":"text"},{"name":"cta","type":"text"},{"name":"link","type":"text"},{"name":"style","type":"text"},{"name":"variation","type":"text"},{"name":"notes","type":"text"},{"name":"start","type":"text"},{"name":"end","type":"text"},{"name":"price","type":"number"},{"name":"old_price","type":"number"}]},
+          {"name":"products_summary","type":"text"},
+          {"name":"custom_instructions","type":"text"},
+          {"name":"products","type":"array","spec":{"type":"collection","name":"value","spec":[{"name":"firebase_key","type":"text"},{"name":"sku","type":"text"},{"name":"name","type":"text"},{"name":"image_url","type":"text"},{"name":"price","type":"number"},{"name":"category","type":"text"},{"name":"subcategory","type":"text"}]}},
+          {"name":"brand","type":"collection","spec":[{"name":"name","type":"text"},{"name":"language","type":"text"},{"name":"country","type":"text"}]},
+          {"name":"rules","type":"collection","spec":[{"name":"two_independent_images","type":"boolean"},{"name":"professional_ad_design","type":"boolean"},{"name":"max_products","type":"number"},{"name":"no_text_in_ai_image","type":"boolean"},{"name":"no_logos_in_ai_image","type":"boolean"},{"name":"no_prices_in_ai_image","type":"boolean"},{"name":"empty_space_for_copy","type":"boolean"},{"name":"final_text_rendered_by_browser","type":"boolean"},{"name":"lojaintegrada_max_kb","type":"number"}]}
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "openai-gpt-3:CreateCompletion",
+      "version": 1,
+      "parameters": {"__IMTCONN__":7933914},
+      "mapper": {
+        "select":"chat",
+        "temperature":"0.65",
+        "top_p":"1",
+        "n_completions":"1",
+        "model":"gpt-4o-mini",
+        "max_tokens":"2200",
+        "messages":[
+          {"role":"system","content":"Você é Diretor Criativo Sênior, diretor de arte e especialista em CRO para e-commerce brasileiro, com experiência em campanhas de alta conversão para empresas de canecas, presentes personalizados e produtos afetivos. Seu padrão visual deve parecer trabalho de uma agência premium, nunca template genérico, nunca arte amadora, nunca cartaz simples. Responda SOMENTE um objeto JSON válido, sem markdown, com os campos: eyebrow, headline, subtitle, cta, alt, visual_prompt_desktop, visual_prompt_mobile, text_color, accent_color, overlay, layout_style, product_treatment. OBJETIVO: criar uma campanha bonita, contemporânea, vendável e coerente com a oferta. A copy deve ser curta, humana, específica e orientada a benefício. Evite frases artificiais, infantis, trocadilhos ruins, excesso de exclamações e chamadas genéricas como 'alô canqueiros'. Não repita a mesma informação na headline e no subtítulo. HIERARQUIA: eyebrow: chamada curta de apoio, promoção ou contexto, até 34 caracteres. headline: ideia principal forte, de 2 a 7 palavras, idealmente até 42 caracteres. subtitle: benefício/complemento, até 88 caracteres. cta: ação clara, 2 a 4 palavras, até 22 caracteres. alt: descrição SEO natural em pt-BR. text_color e accent_color: hexadecimal com alto contraste. overlay: número entre 0.20 e 0.55. layout_style: premium-editorial, bold-commerce, clean-lifestyle, gift-luxury ou festive-modern. product_treatment: explique como as canecas reais devem ser agrupadas pelo navegador. DIREÇÃO VISUAL: visual_prompt_desktop e visual_prompt_mobile devem descrever DOIS FUNDOS PUBLICITÁRIOS INDEPENDENTES da mesma campanha. O GPT Image NÃO deve desenhar canecas, produtos, textos, letras, números, logotipos, etiquetas, preços ou marcas; as fotos reais e a tipografia serão aplicadas pelo Admin depois. Crie cenários de publicidade comercial sofisticados: direção de luz, profundidade, materiais, textura, cor, atmosfera, props abstratos e elementos gráficos discretos. A composição deve ter intenção de campanha, não aparência de banco de imagens. Reserve espaço negativo inteligente para copy e para o agrupamento de até 6 canecas reais. Desktop: composição horizontal de e-commerce, leitura imediata, foco visual forte, sem elementos essenciais nas bordas. Mobile: recomponha a cena especificamente para tela pequena; não faça simples recorte da versão desktop. Preserve hierarquia, respiro e área real para produto. Se houver oferta, frete, preço, data ou condição informada pelo usuário, use somente o que foi fornecido. Nunca invente desconto, urgência, prazo ou benefício."},
+          {"role":"user","content":"Crie a direção criativa da campanha. Tipo: {{1.banner.label}}. Desktop final: {{1.banner.desktop.width}}x{{1.banner.desktop.height}}. Mobile final: {{1.banner.mobile.width}}x{{1.banner.mobile.height}}. Campanha: {{1.campaign.name}}. Objetivo/oferta: {{1.campaign.objective}}. Headline fornecida: {{1.campaign.headline}}. CTA fornecido: {{1.campaign.cta}}. Estilo escolhido: {{1.campaign.style}}. Variação: {{1.campaign.variation}}. Observações: {{1.campaign.notes}}. Canecas selecionadas: {{1.products_summary}}. Instruções reutilizáveis do usuário: {{1.custom_instructions}}. Preço atual informado: {{1.campaign.price}}. Preço anterior informado: {{1.campaign.old_price}}. A campanha deve parecer criada por um designer sênior especializado em anúncios de canecas personalizadas. Pense em conversão, legibilidade, desejo, composição, contraste, sofisticação e coerência entre Desktop e Mobile.","imageDetail":"auto"}
+        ],
+        "response_format":"json_object",
+        "parseJSONResponse":false
+      },
+      "metadata": {"designer":{"x":330,"y":0,"name":"OpenAI - Diretor Criativo profissional"},"parameters":[{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]}
+    },
+    {
+      "id":3,
+      "module":"openai-gpt-3:GenerateImage",
+      "version":1,
+      "parameters":{"__IMTCONN__":7933914},
+      "mapper":{"model":"gpt-image-2","prompt":"Atue como diretor de arte publicitária sênior. Gere SOMENTE O FUNDO DESKTOP de uma campanha premium de e-commerce para canecas personalizadas. O resultado precisa parecer peça de agência: sofisticado, contemporâneo, comercial, com direção de luz profissional, profundidade, materiais e composição intencional. PROIBIDO: texto, letras, números, logotipo, preço, embalagem, caneca, xícara, copo ou qualquer produto. As fotos reais das canecas e toda a tipografia serão sobrepostas depois pelo Admin. Tamanho final alvo: {{1.banner.desktop.width}}x{{1.banner.desktop.height}}. Tamanho de geração: {{1.banner.ai_desktop_size}}. Direção criativa JSON: {{2.result}}. Canecas reais que serão adicionadas depois: {{1.products_summary}}. Instruções extras do usuário: {{1.custom_instructions}}. Priorize visual_prompt_desktop. Crie área negativa planejada para headline/copy e uma área nobre para até 6 recortes de canecas reais. Não use uma parede branca genérica ou cenário doméstico vazio como solução padrão. Use composição editorial, formas, superfícies, luz, sombra, cor e props abstratos coerentes com a campanha. Nada essencial próximo às bordas. O fundo deve continuar bonito mesmo sem produto, mas claramente preparado para receber os produtos.","size":"{{1.banner.ai_desktop_size}}","quality":"high","background":"opaque","output_format":"jpeg","n":"1","moderation":"auto","output_compression":"40"},
+      "metadata":{"designer":{"x":660,"y":-120,"name":"OpenAI GPT Image - DESKTOP HIGH"},"parameters":[{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]}
+    },
+    {
+      "id":4,
+      "module":"openai-gpt-3:GenerateImage",
+      "version":1,
+      "parameters":{"__IMTCONN__":7933914},
+      "mapper":{"model":"gpt-image-2","prompt":"Atue como diretor de arte publicitária sênior. Gere SOMENTE O FUNDO MOBILE de uma campanha premium de e-commerce para canecas personalizadas. Esta é uma SEGUNDA COMPOSIÇÃO INDEPENDENTE, criada especificamente para celular; não é recorte do desktop. O resultado precisa parecer peça de agência: sofisticado, contemporâneo, comercial e com hierarquia visual clara em tela pequena. PROIBIDO: texto, letras, números, logotipo, preço, embalagem, caneca, xícara, copo ou qualquer produto. As fotos reais das canecas e a tipografia serão sobrepostas depois pelo Admin. Tamanho final alvo: {{1.banner.mobile.width}}x{{1.banner.mobile.height}}. Tamanho de geração: {{1.banner.ai_mobile_size}}. Direção criativa JSON: {{2.result}}. Canecas reais que serão adicionadas depois: {{1.products_summary}}. Instruções extras do usuário: {{1.custom_instructions}}. Priorize visual_prompt_mobile. Planeje área limpa para a copy e uma área nobre para até 6 recortes reais de canecas, com boa leitura em celular. Evite parede branca genérica, cenário doméstico vazio, excesso de objetos e detalhes pequenos. Use luz comercial, profundidade, superfícies, formas e cor com intenção. Preserve respiro e contraste.","size":"{{1.banner.ai_mobile_size}}","quality":"high","background":"opaque","output_format":"jpeg","n":"1","moderation":"auto","output_compression":"40"},
+      "metadata":{"designer":{"x":660,"y":120,"name":"OpenAI GPT Image - MOBILE HIGH"},"parameters":[{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]}
+    },
+    {
+      "id":5,
+      "module":"gateway:WebhookRespond",
+      "version":1,
+      "parameters":{},
+      "mapper":{"status":"200","body":"{\"ok\":true,\"request_id\":\"{{1.request_id}}\",\"creative_json\":{{2.result}},\"images\":{\"desktop\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(3.resImgData)}}\"},\"mobile\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(4.resImgData)}}\"}}}","headers":[{"key":"Content-Type","value":"application/json; charset=utf-8"},{"key":"Access-Control-Allow-Origin","value":"*"}]},
+      "metadata":{"designer":{"x":1030,"y":0,"name":"Responder ao Admin com copy + 2 imagens"}}
+    }
+  ],
+  "metadata":{"instant":true,"version":1,"scenario":{"roundtrips":1,"maxErrors":3,"autoCommit":true,"autoCommitTriggerLast":true,"sequential":false,"slots":null,"confidential":false,"dataloss":false,"dlq":false,"freshVariables":false},"designer":{"orphans":[]},"zone":"eu1.make.com","notes":[]}
+}
