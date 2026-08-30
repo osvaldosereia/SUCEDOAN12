@@ -2,7 +2,7 @@ import { FIREBASE_BASE, text, norm, mugArt, mugImage, audit, nowIso } from '../s
 import { loadMugs, getMug, invalidateMugs } from './mug-store-v2.js?v=20260829-1';
 import { liPayload } from './bulk-actions-v1.js?v=20260829-1';
 
-const BUILD = '20260829-admin-canecas-mug-grid-v1';
+const BUILD = '20260829-admin-canecas-mug-grid-v1.1';
 const MAKE_WEBHOOK = window.__CANECAS_ADMIN_CONFIG__?.makeWebhook || 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const state = { rendering: false, deleting: false };
 
@@ -92,6 +92,14 @@ function ensureBulkDeleteButton() {
   if (clear) clear.insertAdjacentElement('beforebegin', button);
   else buttons.appendChild(button);
 }
+function ensureGridOrder() {
+  const root = $('#mugs');
+  if (!root) return;
+  ensureBulkDeleteButton();
+  const bulk = $('#cfBulkActions', root);
+  const wrap = $('#cfMugGridWrap', root);
+  if (bulk && wrap && bulk.nextElementSibling !== wrap) bulk.insertAdjacentElement('afterend', wrap);
+}
 
 function cardHtml(product = {}) {
   const key = productKey(product);
@@ -145,6 +153,9 @@ async function renderGrid() {
     bindGrid();
     syncGridVisibility();
     syncGridSelection();
+    ensureGridOrder();
+    setTimeout(ensureGridOrder, 180);
+    setTimeout(ensureGridOrder, 650);
   } finally {
     state.rendering = false;
   }
@@ -377,6 +388,7 @@ function refreshCatalog() {
   if (reload) reload.click();
   else window.dispatchEvent(new CustomEvent('admin-canecas:route', { detail: { route: 'mugs', force: true, source: BUILD } }));
   setTimeout(() => renderGrid(), 450);
+  setTimeout(ensureGridOrder, 800);
 }
 function scheduleRender(attempt = 0) {
   if (!location.hash.includes('mugs')) return;
@@ -386,7 +398,10 @@ function scheduleRender(attempt = 0) {
 }
 
 window.addEventListener('admin-canecas:route', event => {
-  if (event.detail?.route === 'mugs') setTimeout(() => scheduleRender(), 0);
+  if (event.detail?.route === 'mugs') {
+    setTimeout(() => scheduleRender(), 0);
+    setTimeout(ensureGridOrder, 700);
+  }
 });
 window.addEventListener('admin-canecas:drawer', event => {
   if (event.detail?.kind === 'mug') queueMicrotask(installDrawerDelete);
@@ -399,7 +414,10 @@ document.addEventListener('change', event => {
   if (event.target.matches?.('input[data-select-mug],#cfSelectAll')) queueMicrotask(syncGridSelection);
 });
 document.addEventListener('click', event => {
-  if (event.target.closest?.('#cfMugReload')) setTimeout(() => scheduleRender(), 350);
+  if (event.target.closest?.('#cfMugReload')) {
+    setTimeout(() => scheduleRender(), 350);
+    setTimeout(ensureGridOrder, 850);
+  }
 }, true);
 
 if (location.hash.includes('mugs')) scheduleRender();
