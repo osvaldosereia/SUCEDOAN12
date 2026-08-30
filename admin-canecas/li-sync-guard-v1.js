@@ -1,6 +1,6 @@
 import { FIREBASE_BASE, text, norm, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260830-admin-canecas-li-sync-guard-v1';
+const BUILD = '20260830-admin-canecas-li-sync-guard-v1.1';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const replaying = new WeakSet();
@@ -101,11 +101,6 @@ async function prepareDrawerAlias() {
 }
 
 async function intercept(button, mode) {
-  if (replaying.has(button)) {
-    replaying.delete(button);
-    return false;
-  }
-
   button.disabled = true;
   const oldText = button.textContent;
   try {
@@ -138,7 +133,11 @@ document.addEventListener('click', event => {
   const bulk = event.target.closest?.('#cfBulkActivateCf,#cfBulkActivateBoth,#cfBulkSync');
   const drawer = event.target.closest?.('#cfSaveSync,#cfSyncNow');
   const button = bulk || drawer;
-  if (!button || replaying.has(button)) return;
+  if (!button) return;
+  if (replaying.has(button)) {
+    replaying.delete(button);
+    return;
+  }
   event.preventDefault();
   event.stopImmediatePropagation();
   void intercept(button, bulk ? 'bulk' : 'drawer');
