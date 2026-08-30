@@ -1,7 +1,7 @@
-import { FIREBASE_BASE, MUG_NODES, text, norm, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
+import { FIREBASE_BASE, text, norm, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 import { loadMugs, patchMug, invalidateMugs } from './mug-store-v2.js?v=20260829-1';
 
-const BUILD = '20260830-admin-canecas-li-recovery-v2';
+const BUILD = '20260830-admin-canecas-li-recovery-v2.1';
 const MAKE_WEBHOOK = window.__CANECAS_ADMIN_CONFIG__?.makeWebhook || 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const $ = (selector, root = document) => root.querySelector(selector);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -57,14 +57,16 @@ function decodeB64Json(value) {
     return null;
   }
 }
-async function makeLookup(sku) {
+async function lookupBySku(sku) {
+  const cleanSku = text(sku).trim();
+  if (!cleanSku) throw new Error('SKU vazio: não é possível consultar a Loja Integrada.');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
   try {
     const payload = {
       action: 'loja_integrada_find_product_by_sku',
       request_id: `LI-REC-${Date.now().toString(36).toUpperCase()}`,
-      sku,
+      sku: cleanSku,
       source: BUILD,
     };
     const response = await fetch(MAKE_WEBHOOK, {
@@ -79,9 +81,9 @@ async function makeLookup(sku) {
     if (!response.ok || data.ok === false) throw new Error(data.error || data.error_message || `Make HTTP ${response.status}`);
     const catalog = decodeB64Json(data.produto_b64) || data.catalog || data;
     const objects = Array.isArray(catalog?.objects) ? catalog.objects : [];
-    return objects.filter(item => norm(item?.sku) === norm(sku));
+    return objects.filter(item => norm(item?.sku) === norm(cleanSku));
   } catch (error) {
-    if (error?.name === 'AbortError') throw new Error('O Make não respondeu à consulta de SKU em 30 segundos. Importe/ative o blueprint V11.1 corrigido.');
+    if (error?.name === 'AbortError') throw new Error('O Make não respondeu à consulta de SKU em 30 segundos. Confirme que o cenário V11.1 está salvo e ativo.');
     throw error;
   } finally {
     clearTimeout(timer);
@@ -97,14 +99,15 @@ function duplicateSkuGroups(products) {
   }
   return new Map([...groups].filter(([, items]) => items.length > 1));
 }
-async function recoverOne(product) {
+async function recoverOne(product, options = {}) {
   const key = keyOf(product);
-  const sku = skuOf(product);
-  const matches = await makeLookup(sku);
+  const sku = text(options.sku || skuOf(product)).trim();
+  const li = liMeta(product);
+  if (li.produto_id) return { key, sku, status: 'already_linked', productId: li.produto_id };
+  const matches = await lookupBySku(sku);
   if (!matches.length) return { key, sku, status: 'not_found' };
   if (matches.length > 1) return { key, sku, status: 'ambiguous', count: matches.length };
   const found = matches[0];
-  const li = liMeta(product);
   const productId = text(found.id);
   if (!productId) return { key, sku, status: 'invalid' };
   const seoId = parseSeoId(found.seo);
@@ -126,7 +129,7 @@ async function recoverOne(product) {
     updated_at: nowIso(),
     last_update: Date.now(),
   });
-  return { key, sku, status: 'recovered', productId };
+  return { key, sku, status: 'recovered', productId, found };
 }
 function setStatus(message, tone = '') {
   const el = $('#cfLiRecoveryStatus');
@@ -138,7 +141,7 @@ async function repairAll() {
   if (running) return;
   running = true;
   const button = $('#cfLiRepair');
-  if (button) { button.disabled = true; button.textContent = 'Reparando…'; }
+  if (button) { button.disabled = true; button.textContent = 'Reconciliando…'; }
   try {
     const products = await loadMugs({ force: true });
     const duplicates = duplicateSkuGroups(products);
@@ -146,7 +149,7 @@ async function repairAll() {
     const targets = products.filter(product => needsRecovery(product) && !blockedKeys.has(keyOf(product)));
     if (!targets.length && !duplicates.size) {
       setStatus('Nenhum vínculo quebrado ou SKU duplicado encontrado no Firebase.', 'good');
-      toast('Loja Integrada: cadastros locais sem vínculos quebrados.');
+      toast('Loja Integrada: vínculos locais estão consistentes.');
       return;
     }
     let recovered = 0, notFound = 0, failed = 0, ambiguous = 0;
@@ -158,18 +161,18 @@ async function repairAll() {
         if (result.status === 'recovered') recovered += 1;
         else if (result.status === 'not_found') notFound += 1;
         else if (result.status === 'ambiguous') ambiguous += 1;
-        else failed += 1;
+        else if (!['already_linked'].includes(result.status)) failed += 1;
       } catch (error) {
         failed += 1;
-        console.warn('[Admin Canecas] falha ao recuperar vínculo LI', keyOf(product), error);
+        console.warn('[Admin Canecas] falha ao reconciliar vínculo LI', keyOf(product), error);
       }
       await sleep(250);
     }
     invalidateMugs('reconciliação Loja Integrada');
     const duplicateCount = [...duplicates.values()].reduce((sum, items) => sum + items.length, 0);
     const parts = [`${recovered} vínculo(s) recuperado(s)`];
-    if (notFound) parts.push(`${notFound} ainda não existe(m) na Loja Integrada`);
-    if (duplicateCount) parts.push(`${duplicateCount} cadastro(s) com SKU repetido no Firebase bloqueado(s) para revisão`);
+    if (notFound) parts.push(`${notFound} produto(s) realmente novo(s)`);
+    if (duplicateCount) parts.push(`${duplicateCount} cadastro(s) com SKU repetido no Firebase bloqueado(s)`);
     if (ambiguous) parts.push(`${ambiguous} SKU(s) ambíguo(s) na Loja Integrada`);
     if (failed) parts.push(`${failed} falha(s)`);
     const hasProblems = duplicateCount || ambiguous || failed;
@@ -178,10 +181,10 @@ async function repairAll() {
     $('#cfMugReload')?.click();
   } catch (error) {
     setStatus(error?.message || String(error), 'error');
-    toast(`Reparo Loja Integrada: ${error?.message || error}`, true);
+    toast(`Reconciliação Loja Integrada: ${error?.message || error}`, true);
   } finally {
     running = false;
-    if (button) { button.disabled = false; button.textContent = 'Reparar vínculos LI'; }
+    if (button) { button.disabled = false; button.textContent = 'Reconciliar Loja Integrada'; }
   }
 }
 function install() {
@@ -193,8 +196,8 @@ function install() {
   button.id = 'cfLiRepair';
   button.type = 'button';
   button.className = 'secondary';
-  button.textContent = 'Reparar vínculos LI';
-  button.title = 'Consulta a Loja Integrada pelo SKU e recupera IDs perdidos no Firebase.';
+  button.textContent = 'Reconciliar Loja Integrada';
+  button.title = 'Procura por SKU os produtos que já existem na Loja Integrada e recupera IDs perdidos no Firebase. Não cria produtos.';
   button.onclick = repairAll;
   toolbar.appendChild(button);
   const status = document.createElement('div');
@@ -210,4 +213,4 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(install, 150));
 setTimeout(install, 300);
 
 document.documentElement.dataset.cfLiRecovery = BUILD;
-export { BUILD, repairAll, recoverOne, duplicateSkuGroups };
+export { BUILD, repairAll, recoverOne, lookupBySku, duplicateSkuGroups, liMeta, skuOf, keyOf };
