@@ -1,6 +1,6 @@
 import { FIREBASE_BASE, text, norm, safeKey, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260830-admin-canecas-li-payload-hardening-v1';
+const BUILD = '20260830-admin-canecas-li-payload-hardening-v1.1';
 const MAKE_WEBHOOK = window.__CANECAS_ADMIN_CONFIG__?.makeWebhook || 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const REF_PATH = 'canecas/integracoes/loja_integrada/catalog_refs';
 const BRAND_NAME = 'Caneca Fácil';
@@ -119,7 +119,8 @@ async function harden(payload) {
   productBody.categorias = [categoryUri];
   productBody.descricao_completa = fixPersonalizerDescription(productBody.descricao_completa, payload, returnUrl);
   const art = artOf(product);
-  const alreadySyncedArt = text(product?.loja_integrada?.synced_art_horizontal);
+  const alreadySyncedArt = text(product?.loja_integrada?.synced_arte_horizontal || product?.loja_integrada?.synced_art_horizontal);
+  const sendHorizontal = Boolean(art && art !== alreadySyncedArt);
   const seoBase = slug(product.nome || productBody.nome || payload.sku || payload.product_key);
   if (payload.product_key) {
     await firebasePatch(`produtos/${safeKey(payload.product_key)}/loja_integrada`, {
@@ -147,7 +148,8 @@ async function harden(payload) {
     tipo_producao: 'revenda',
     origem_mercadoria: '0',
     produto_nacional: true,
-    arte_horizontal: art && art !== alreadySyncedArt ? art : '',
+    arte_horizontal: art,
+    enviar_arte_horizontal: sendHorizontal,
     image_seo_base: seoBase,
     return_url: returnUrl,
     source_hardening: BUILD,
