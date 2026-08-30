@@ -2,11 +2,12 @@ import { text, norm, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 import { loadMugs, getMug, patchMug } from './mug-store-v2.js?v=20260829-1';
 import { recoverOne, duplicateSkuGroups, liMeta, skuOf, keyOf } from './li-recovery-v2.js?v=20260830-2';
 
-const BUILD = '20260830-admin-canecas-li-sync-coordinator-v3';
+const BUILD = '20260830-admin-canecas-li-sync-coordinator-v3.1';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const replaying = new WeakSet();
 const preparing = new Set();
+let uiScheduled = false;
 
 function toast(message, error = false) {
   const el = $('#toast');
@@ -21,6 +22,10 @@ function slug(value) {
   return norm(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 145) || 'caneca';
 }
 function linked(product = {}) { return Boolean(text(liMeta(product).produto_id)); }
+function synced(product = {}) {
+  const li = liMeta(product);
+  return li.sync_status === 'sincronizado' && linked(product);
+}
 function uniqueAlias(product = {}) {
   const li = liMeta(product);
   const current = slug(text(product.loja_integrada_alias || li.alias));
@@ -71,11 +76,15 @@ async function prepareDrawer() {
     const sku = currentDrawerSku(product);
     const products = await loadMugs({ force: true });
     const duplicates = localDuplicateForSku(products, key, sku);
-    if (duplicates.length) throw new Error(`O SKU ${sku} também está em ${duplicates.length} outro(s) cadastro(s) no Firebase. Corrija o SKU antes de sincronizar.`);
+    if (duplicates.length) {
+      throw new Error(`O SKU ${sku} também está em ${duplicates.length} outro(s) cadastro(s) no Firebase. Corrija o SKU antes de sincronizar.`);
+    }
     await ensureAlias(key, product);
     product = await getMug(key) || product;
     const result = await reconcileBeforeWrite(product, { sku });
-    if (result.status === 'recovered') toast(`Produto existente localizado pelo SKU ${sku}. A ação será ATUALIZAR, não criar.`);
+    if (result.status === 'recovered') {
+      toast(`Produto existente localizado pelo SKU ${sku}. A ação será ATUALIZAR, não criar.`);
+    }
   } finally {
     preparing.delete(key);
   }
@@ -89,7 +98,9 @@ async function prepareBulk() {
   const products = await loadMugs({ force: true });
   const duplicates = duplicateSkuGroups(products);
   const blocked = [];
-  for (const [, items] of duplicates) if (items.some(item => keys.includes(keyOf(item)))) blocked.push(skuOf(items[0]));
+  for (const [, items] of duplicates) {
+    if (items.some(item => keys.includes(keyOf(item)))) blocked.push(skuOf(items[0]));
+  }
   if (blocked.length) throw new Error(`Existem SKUs repetidos no Firebase (${blocked.slice(0, 5).join(', ')}${blocked.length > 5 ? '…' : ''}). Corrija antes da sincronização em lote.`);
   for (let index = 0; index < keys.length; index += 1) {
     const key = keys[index];
@@ -126,28 +137,33 @@ async function enhanceDrawer() {
   const saveSync = $('#cfSaveSync');
   const syncNow = $('#cfSyncNow');
   if (saveOnly) {
-    saveOnly.textContent = 'Salvar somente no Admin';
-    saveOnly.title = 'Salva as alterações no Firebase. Não envia nada para a Loja Integrada.';
+    if (saveOnly.textContent !== 'Salvar somente no Admin') saveOnly.textContent = 'Salvar somente no Admin';
+    const title = 'Salva as alterações no Firebase. Não envia nada para a Loja Integrada.';
+    if (saveOnly.title !== title) saveOnly.title = title;
   }
   if (syncNow) syncNow.remove();
   const box = ensureDrawerInfoBox();
   if (saveSync) {
     if (linked(product)) {
-      saveSync.textContent = 'Salvar e atualizar Loja Integrada';
-      saveSync.title = `Atualiza o produto já vinculado na Loja Integrada (ID ${li.produto_id}). Não cria outro produto.`;
+      if (saveSync.textContent !== 'Salvar e atualizar Loja Integrada') saveSync.textContent = 'Salvar e atualizar Loja Integrada';
+      const title = `Atualiza o produto já vinculado na Loja Integrada (ID ${li.produto_id}). Não cria outro produto.`;
+      if (saveSync.title !== title) saveSync.title = title;
     } else {
-      saveSync.textContent = 'Salvar e publicar na Loja Integrada';
-      saveSync.title = 'Antes de criar, o sistema procura este SKU na Loja Integrada. Se já existir, recupera o ID e atualiza; só cria se o SKU realmente não existir.';
+      if (saveSync.textContent !== 'Salvar e publicar na Loja Integrada') saveSync.textContent = 'Salvar e publicar na Loja Integrada';
+      const title = 'Antes de criar, o sistema procura este SKU na Loja Integrada. Se já existir, recupera o ID e atualiza; só cria se o SKU realmente não existir.';
+      if (saveSync.title !== title) saveSync.title = title;
     }
   }
   if (box) {
     if (linked(product)) {
-      box.className = 'notice';
-      box.innerHTML = `<b>Loja Integrada vinculada · ID ${li.produto_id}</b><br>As alterações desta tela serão enviadas por atualização do produto existente. Nenhum novo cadastro será criado.`;
+      const html = `<b>Loja Integrada vinculada · ID ${li.produto_id}</b><br>As alterações desta tela serão enviadas por atualização do produto existente. Nenhum novo cadastro será criado.`;
+      if (box.className !== 'notice') box.className = 'notice';
+      if (box.innerHTML !== html) box.innerHTML = html;
     } else {
       const duplicateHint = norm(li.sync_error).includes('duplic') ? '<br><b>Foi detectado erro anterior de SKU duplicado.</b>' : '';
-      box.className = 'notice warn';
-      box.innerHTML = `<b>Sem ID da Loja Integrada salvo no Firebase.</b><br>Ao publicar, o Admin primeiro procura o SKU <b>${skuOf(product) || '—'}</b> na Loja Integrada. Se encontrar, recupera o vínculo e atualiza. Só cria um produto novo se o SKU não existir.${duplicateHint}`;
+      const html = `<b>Sem ID da Loja Integrada salvo no Firebase.</b><br>Ao publicar, o Admin primeiro procura o SKU <b>${skuOf(product) || '—'}</b> na Loja Integrada. Se encontrar, recupera o vínculo e atualiza. Só cria um produto novo se o SKU não existir.${duplicateHint}`;
+      if (box.className !== 'notice warn') box.className = 'notice warn';
+      if (box.innerHTML !== html) box.innerHTML = html;
     }
   }
 }
@@ -158,16 +174,19 @@ function enhanceBulkBar() {
   const both = $('#cfBulkActivateBoth', bar);
   const sync = $('#cfBulkSync', bar);
   if (cf) {
-    cf.textContent = 'Ativar na Loja Integrada + publicar/atualizar';
-    cf.title = 'Ativa o canal e, para cada SKU, atualiza o produto existente ou cria somente se ainda não existir.';
+    if (cf.textContent !== 'Ativar na Loja Integrada + publicar/atualizar') cf.textContent = 'Ativar na Loja Integrada + publicar/atualizar';
+    const title = 'Ativa o canal e, para cada SKU, atualiza o produto existente ou cria somente se ainda não existir.';
+    if (cf.title !== title) cf.title = title;
   }
   if (both) {
-    both.textContent = 'Ativar nos dois + publicar/atualizar';
-    both.title = 'Ativa Dona Antônia e Loja Integrada e faz publicação/atualização segura por SKU.';
+    if (both.textContent !== 'Ativar nos dois + publicar/atualizar') both.textContent = 'Ativar nos dois + publicar/atualizar';
+    const title = 'Ativa Dona Antônia e Loja Integrada e faz publicação/atualização segura por SKU.';
+    if (both.title !== title) both.title = title;
   }
   if (sync) {
-    sync.textContent = 'Publicar/atualizar Loja Integrada';
-    sync.title = 'Com ID salvo: atualiza. Sem ID: procura pelo SKU antes de decidir criar.';
+    if (sync.textContent !== 'Publicar/atualizar Loja Integrada') sync.textContent = 'Publicar/atualizar Loja Integrada';
+    const title = 'Com ID salvo: atualiza. Sem ID: procura pelo SKU antes de decidir criar.';
+    if (sync.title !== title) sync.title = title;
   }
   const status = $('#cfBulkStatus', bar);
   if (status && !status.dataset.cfCoordinatorHelp) {
@@ -214,10 +233,16 @@ document.addEventListener('click', event => {
 window.addEventListener('admin-canecas:drawer', event => {
   if (event.detail?.kind === 'mug') setTimeout(() => enhanceDrawer().catch(() => {}), 0);
 });
-const observer = new MutationObserver(() => {
-  enhanceBulkBar();
-  if ($('#drawer')?.classList.contains('open')) enhanceDrawer().catch(() => {});
-});
+function scheduleUiEnhance() {
+  if (uiScheduled) return;
+  uiScheduled = true;
+  setTimeout(() => {
+    uiScheduled = false;
+    enhanceBulkBar();
+    if ($('#drawer')?.classList.contains('open')) enhanceDrawer().catch(() => {});
+  }, 60);
+}
+const observer = new MutationObserver(scheduleUiEnhance);
 observer.observe(document.documentElement, { childList: true, subtree: true });
 window.addEventListener('hashchange', () => setTimeout(enhanceBulkBar, 100));
 document.addEventListener('DOMContentLoaded', () => setTimeout(enhanceBulkBar, 200));
