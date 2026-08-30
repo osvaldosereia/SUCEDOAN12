@@ -1,4 +1,4 @@
-const BUILD = '20260830-admin-canecas-generator-category-v1';
+const BUILD = '20260830-admin-canecas-generator-category-v1.1';
 const OPTIONS = Object.freeze({
   padronizadas: 'Canecas Padronizadas',
   personalizaveis: 'Canecas Personalizáveis',
@@ -17,12 +17,14 @@ function toast(message, error = false) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => { el.hidden = true; }, error ? 6000 : 3200);
 }
-
+function seoSlug(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 110) || 'caneca-personalizada';
+}
 function selectedCategory() {
   const type = String($('#mugStoreCategory')?.value || '').trim();
   return type && OPTIONS[type] ? { type, name: OPTIONS[type] } : null;
 }
-
 function installStyles() {
   if ($('#cfGeneratorCategoryStyles')) return;
   const style = document.createElement('style');
@@ -35,7 +37,6 @@ function installStyles() {
   `;
   document.head.appendChild(style);
 }
-
 function installSelector() {
   const root = $('#generator');
   const create = $('.mug-prod-create', root);
@@ -52,11 +53,10 @@ function installSelector() {
       <option value="personalizaveis">Canecas Personalizáveis</option>
       <option value="empresas">Canecas para Empresas</option>
     </select>
-    <small>Essa escolha já será gravada no cadastro do Admin e usada depois para vincular a categoria correta na Loja Integrada.</small>`;
+    <small>Essa escolha nasce com o produto no Firebase e será usada para vincular a categoria correta na Loja Integrada.</small>`;
   instruction.insertAdjacentElement('beforebegin', box);
   return true;
 }
-
 function patchTemplate(payload) {
   const category = activeCategory || selectedCategory();
   if (!category || payload?.action !== 'finalize_mug_product') return payload;
@@ -88,10 +88,10 @@ function patchTemplate(payload) {
     ...payload,
     generator_category_type: category.type,
     generator_category_name: category.name,
+    seo_slug: seoSlug(payload.product_name || template.nome || payload.request_id),
     firebase_template_json: JSON.stringify(template),
   };
 }
-
 const originalFetch = window.fetch.bind(window);
 window.fetch = async function cfGeneratorCategoryFetch(input, init = {}) {
   try {
@@ -110,11 +110,10 @@ window.fetch = async function cfGeneratorCategoryFetch(input, init = {}) {
       }
     }
   } catch (error) {
-    console.warn('[Admin Canecas] categoria do gerador: não foi possível enriquecer o payload.', error);
+    console.warn('[Admin Canecas] categoria/SEO do gerador: não foi possível enriquecer o payload.', error);
   }
   return originalFetch(input, init);
 };
-
 document.addEventListener('click', event => {
   const generate = event.target.closest?.('#mugArtGenerate');
   if (generate) {
@@ -134,11 +133,9 @@ document.addEventListener('click', event => {
     if (select) select.value = '';
   }
 }, true);
-
 const observer = new MutationObserver(() => installSelector());
 observer.observe(document.documentElement, { childList: true, subtree: true });
 document.addEventListener('DOMContentLoaded', () => setTimeout(installSelector, 120));
 setTimeout(installSelector, 250);
-
 document.documentElement.dataset.cfGeneratorCategory = BUILD;
-export { BUILD, OPTIONS, selectedCategory };
+export { BUILD, OPTIONS, selectedCategory, seoSlug };
