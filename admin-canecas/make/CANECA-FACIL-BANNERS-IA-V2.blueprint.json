@@ -1,0 +1,127 @@
+{
+  "name": "CANECA FACIL - BANNERS IA - V2 DESKTOP + MOBILE",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {},
+      "mapper": {},
+      "metadata": {
+        "designer": {"x": 0, "y": 0, "name": "Admin Canecas - Receber pedido de par de banners"}
+      }
+    },
+    {
+      "id": 2,
+      "module": "openai-gpt-3:CreateCompletion",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "model": "gpt-4o-mini",
+        "top_p": "1",
+        "select": "chat",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Você é diretor de arte e copywriter de e-commerce brasileiro especializado em banners para canecas personalizadas. Responda SOMENTE um objeto JSON válido, sem markdown. Campos obrigatórios: headline, subtitle, cta, alt, visual_prompt_desktop, visual_prompt_mobile, text_color, accent_color, overlay. headline: curta e forte, preferencialmente até 48 caracteres. subtitle: até 95 caracteres. cta: até 24 caracteres. alt: texto SEO natural em pt-BR. visual_prompt_desktop e visual_prompt_mobile devem descrever DOIS FUNDOS PUBLICITÁRIOS INDEPENDENTES da mesma campanha, sem letras, sem números, sem logotipos, sem preços, sem marcas e sem canecas/produtos. O desktop deve respeitar composição horizontal e o mobile deve ser recomposto para tela pequena, nunca apenas recortado do desktop. Deixe área limpa para texto e para a foto real do produto que será sobreposta depois. text_color e accent_color devem ser hexadecimal. overlay deve ser número entre 0.25 e 0.65. Se headline ou cta vierem preenchidos pelo usuário, preserve exatamente. Não invente preço, desconto, prazo, frete ou condição comercial."
+          },
+          {
+            "role": "user",
+            "content": "Crie o JSON da campanha. Tipo: {{1.banner.label}}. Desktop alvo: {{1.banner.desktop.width}}x{{1.banner.desktop.height}}. Mobile alvo: {{1.banner.mobile.width}}x{{1.banner.mobile.height}}. Nome: {{1.campaign.name}}. Objetivo/oferta: {{1.campaign.objective}}. Headline fornecida: {{1.campaign.headline}}. CTA fornecido: {{1.campaign.cta}}. Estilo: {{1.campaign.style}}. Variação: {{1.campaign.variation}}. Observações: {{1.campaign.notes}}. Produto: {{1.product.name}}. Categoria: {{1.product.category}}. Preço atual informado: {{1.campaign.price}}. Preço anterior informado: {{1.campaign.old_price}}. As duas artes devem pertencer à mesma campanha, mas serem compostas especificamente para cada dispositivo."
+          }
+        ],
+        "max_tokens": "1600",
+        "temperature": "0.45",
+        "n_completions": "1",
+        "response_format": "json_object",
+        "parseJSONResponse": false
+      },
+      "metadata": {
+        "designer": {"x": 330, "y": 0, "name": "OpenAI - Conceito + copy + direcao desktop/mobile"},
+        "parameters": [
+          {"name": "__IMTCONN__", "type": "account:openai-gpt-3", "label": "Connection", "required": true}
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "module": "openai-gpt-3:GenerateImage",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "model": "gpt-image-2",
+        "prompt": "Crie SOMENTE o FUNDO DESKTOP de um banner premium para e-commerce de canecas. Não inclua texto, letras, números, logotipo, preço, marca, embalagem, caneca ou produto. O produto real e todos os textos serão adicionados depois pelo navegador. Tamanho final alvo informado pelo Admin: {{1.banner.desktop.width}}x{{1.banner.desktop.height}}. Use a direção criativa JSON: {{2.result}}. Priorize especificamente visual_prompt_desktop. Faça uma composição horizontal ampla, com área limpa no lado esquerdo para copy e espaço visual no lado direito para receber a foto real da caneca. Evite elementos essenciais perto das bordas e mantenha iluminação comercial moderna e textura realista.",
+        "size": "1536x1024",
+        "quality": "medium",
+        "background": "opaque",
+        "output_format": "jpeg",
+        "output_compression": "40",
+        "n": "1",
+        "moderation": "auto"
+      },
+      "metadata": {
+        "designer": {"x": 660, "y": -120, "name": "OpenAI GPT Image - Fundo DESKTOP"},
+        "parameters": [
+          {"name": "__IMTCONN__", "type": "account:openai-gpt-3", "label": "Connection", "required": true}
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "module": "openai-gpt-3:GenerateImage",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "model": "gpt-image-2",
+        "prompt": "Crie SOMENTE o FUNDO MOBILE de um banner premium para e-commerce de canecas. Esta deve ser uma SEGUNDA ARTE INDEPENDENTE da versão desktop, recomposta para celular e não um simples recorte. Não inclua texto, letras, números, logotipo, preço, marca, embalagem, caneca ou produto. O produto real e todos os textos serão adicionados depois pelo navegador. Tamanho final alvo informado pelo Admin: {{1.banner.mobile.width}}x{{1.banner.mobile.height}}. Use a direção criativa JSON: {{2.result}}. Priorize especificamente visual_prompt_mobile. Preserve áreas limpas para copy e produto, com leitura clara em tela pequena. Para formatos muito horizontais como Tarja ou Vitrine, mantenha textura e iluminação uniformes para suportar o recorte final sem perder elementos essenciais.",
+        "size": "1024x1024",
+        "quality": "medium",
+        "background": "opaque",
+        "output_format": "jpeg",
+        "output_compression": "40",
+        "n": "1",
+        "moderation": "auto"
+      },
+      "metadata": {
+        "designer": {"x": 660, "y": 120, "name": "OpenAI GPT Image - Fundo MOBILE independente"},
+        "parameters": [
+          {"name": "__IMTCONN__", "type": "account:openai-gpt-3", "label": "Connection", "required": true}
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "status": "200",
+        "body": "{\"ok\":true,\"request_id\":\"{{1.request_id}}\",\"creative_json\":{{2.result}},\"images\":{\"desktop\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(3.resImgData)}}\"},\"mobile\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(4.resImgData)}}\"}}}",
+        "headers": [
+          {"key": "Content-Type", "value": "application/json; charset=utf-8"},
+          {"key": "Access-Control-Allow-Origin", "value": "*"}
+        ]
+      },
+      "metadata": {
+        "designer": {"x": 1030, "y": 0, "name": "Responder ao Admin com copy + 2 imagens Base64"}
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "designer": {"orphans": []},
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": true,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "zone": "eu1.make.com"
+  }
+}
