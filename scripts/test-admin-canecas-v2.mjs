@@ -92,7 +92,7 @@ assert.match(bulk, /await sleep\(450\)/, 'sincronização em lote deve ser seque
 assert.match(bulk, /POLICY\.stock/, 'ação em lote deve aplicar a política operacional compartilhada');
 assert.match(bulk, /input\[data-select-mug\]:checked/, 'ação em lote deve usar os checkboxes existentes da lista');
 
-assert.ok(index.includes('mug-grid-v1.js?v=20260829-1'), 'index deve carregar a grade visual de canecas');
+assert.ok(index.includes('mug-grid-v1.js?v=20260829-2'), 'index deve carregar a grade visual de canecas');
 assert.match(grid, /mugArt\(product\)/, 'grade deve priorizar a arte horizontal');
 assert.match(grid, /class=\"cf-mug-grid\"/, 'canecas devem ser exibidas em grade');
 assert.match(grid, /Dona Antônia/, 'card deve mostrar status Dona Antônia');
@@ -107,6 +107,7 @@ assert.match(grid, /action\s*=\s*['"]loja_integrada_update_product['"]/, 'exclus
 assert.match(grid, /method:\s*['"]DELETE['"]/, 'exclusão deve apagar o registro do Firebase após Loja Integrada');
 assert.match(grid, /hasLiEvidenceWithoutId/, 'exclusão deve bloquear vínculo Loja Integrada sem ID para evitar órfãos');
 assert.match(grid, /arquivos físicos das imagens não são apagados automaticamente/, 'interface deve avisar que exclusão do produto não apaga mídia física');
+assert.match(grid, /ensureGridOrder/, 'grade deve estabilizar a ordem em relação à barra de ações em lote');
 
 const headerBlock = catalog.match(/const HEADERS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\);/);
 assert.ok(headerBlock, 'cabeçalho da planilha Loja Integrada não encontrado');
