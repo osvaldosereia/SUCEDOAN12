@@ -34,6 +34,8 @@ jobs:
         run: node --check admin-canecas/bulk-actions-v1.js
       - name: Check mug grid syntax
         run: node --check admin-canecas/mug-grid-v1.js
+      - name: Check mug list stability syntax
+        run: node --check admin-canecas/mugs-stability-v1.js
       - name: Check inline category syntax
         run: node --check admin-canecas/mug-inline-category-v1.js
       - name: Check legacy GitHub queue syntax
