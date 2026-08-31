@@ -57,3 +57,10 @@ jobs:
           FORCE: ${{ github.event.inputs.force || 'false' }}
           LIMIT: ${{ github.event.inputs.limit || '10' }}
         run: node scripts/sincronizar-loja-integrada.mjs
+      - name: Auditar cadastros confirmados
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          VERIFY_LIMIT: '10'
+          VERIFY_TTL_MINUTES: '360'
+        run: node scripts/verificar-cadastros-canecafacil.mjs
