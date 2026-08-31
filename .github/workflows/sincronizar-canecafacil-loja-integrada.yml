@@ -53,6 +53,13 @@ jobs:
             echo "ERRO: configure o secret LOJA_INTEGRADA_APP_KEY."
             exit 1
           fi
+
+          API_LEN=${#LI_API_KEY}
+          APP_LEN=${#LI_APP_KEY}
+          if printf '%s' "$LI_API_KEY" | grep -Eq '^[A-Za-z0-9]{20}$'; then API_FMT=ok; else API_FMT=fora_do_padrao; fi
+          if printf '%s' "$LI_APP_KEY" | grep -Eq '^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$'; then APP_FMT=uuid; else APP_FMT=nao_uuid; fi
+          echo "Diagnóstico seguro: chave_api comprimento=${API_LEN}, formato=${API_FMT}; personal_token comprimento=${APP_LEN}, formato=${APP_FMT}."
+
           printf 'LOJA_INTEGRADA_AUTHORIZATION=chave_api %s aplicacao %s\n' "$LI_API_KEY" "$LI_APP_KEY" >> "$GITHUB_ENV"
           echo "Credenciais da Loja Integrada carregadas no formato oficial."
       - name: Processar fila Firebase → Loja Integrada
