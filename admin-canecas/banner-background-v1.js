@@ -1,9 +1,11 @@
 import { fbGet, fbWrite, nowIso, safeKey } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD='20260830-banner-background-v1';
+const BUILD='20260830-banner-background-v2';
 const JOB_NODE='canecas/banner_jobs';
 const BANNER_NODE='canecas/banners_ia';
+const ASSET_NODE='canecas/banners_ia_assets';
 const STORAGE_KEY='cf_banner_jobs_v1';
+const MAX_KB=500;
 const nativeFetch=window.fetch.bind(window);
 const jobs=new Map();
 
@@ -13,6 +15,7 @@ const safePayload=req=>({
   request_id:text(req?.request_id),
   action:text(req?.action),
   build:text(req?.build),
+  fit_build:text(req?.fit_build),
   banner:req?.banner||{},
   prompt:text(req?.prompt),
   instruction_ids:Array.isArray(req?.instruction_ids)?req.instruction_ids:[],
@@ -36,7 +39,7 @@ function setJob(id,patch={}){
   const next={...current,...patch,id,updated_at:nowIso(),updated_ms:now()};
   jobs.set(id,next);saveLocal();renderIndicator();return next;
 }
-function activeJobs(){return [...jobs.values()].filter(j=>['preparando','gerando','finalizando'].includes(j.status))}
+function activeJobs(){return [...jobs.values()].filter(j=>['preparando','gerando','finalizando','salvando'].includes(j.status))}
 function latestActive(){return activeJobs().sort((a,b)=>(b.created_ms||0)-(a.created_ms||0))[0]}
 
 function ensureStyles(){
@@ -55,28 +58,13 @@ function renderIndicator(){
   const el=ensureIndicator(),active=activeJobs(),last=latestActive();
   if(!active.length){el.classList.remove('show');return}
   el.classList.add('show');
-  el.innerHTML=`<b><i></i>${active.length===1?'Banner sendo gerado':'Banners sendo gerados'} em segundo plano</b><small>${last?.status==='finalizando'?'Finalizando e salvando no Admin…':'Você pode navegar pelo Admin. O resultado será salvo automaticamente.'}</small>`;
+  const saving=['finalizando','salvando'].includes(last?.status);
+  el.innerHTML=`<b><i></i>${active.length===1?'Banner sendo gerado':'Banners sendo gerados'} em segundo plano</b><small>${saving?'Recebendo as artes e salvando no Admin…':'Você pode navegar pelo Admin. O resultado será salvo automaticamente.'}</small>`;
 }
 
 async function persistJob(id,patch){
   const local=setJob(id,patch);
   try{await fbWrite(`${JOB_NODE}/${safeKey(id)}`,local,'PUT')}catch(e){console.warn('[Banner background] status Firebase:',e)}
-}
-async function waitUntilSaved(id){
-  for(let i=0;i<40;i++){
-    await new Promise(r=>setTimeout(r,i<8?500:1000));
-    try{
-      const saved=await fbGet(`${BANNER_NODE}/${safeKey(id)}`);
-      if(saved?.status==='salvo'||saved?.tem_desktop||saved?.tem_mobile){
-        await persistJob(id,{status:'concluido',finished_at:nowIso(),error:''});
-        jobs.delete(id);saveLocal();renderIndicator();
-        if(location.hash.includes('banners'))setTimeout(()=>document.getElementById('refreshBannerHistory')?.click(),80);
-        return true;
-      }
-    }catch{}
-  }
-  await persistJob(id,{status:'aguardando_confirmacao'});
-  return false;
 }
 
 function parseBannerRequest(input,init={}){
@@ -89,6 +77,87 @@ function parseBannerRequest(input,init={}){
     if(req?.action!=='generate_final_banner_from_reference_mugs'||!req?.request_id)return null;
     return req;
   }catch{return null}
+}
+
+function outputDataUri(out,kind){
+  const item=out?.images?.[kind]||out?.[kind]||{};
+  const mime=text(item.mime||'image/jpeg');
+  const b64=text(item.b64||item.base64||item.data).replace(/^data:[^;]+;base64,/i,'');
+  if(b64)return `data:${mime};base64,${b64}`;
+  return text(item.url||item.image_url);
+}
+function loadImage(src){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error('Não foi possível carregar a imagem devolvida pelo Make.'));img.src=src})}
+function coverCrop(ctx,img,w,h){
+  const sourceRatio=img.width/img.height,targetRatio=w/h;
+  let sx=0,sy=0,sw=img.width,sh=img.height;
+  if(sourceRatio>targetRatio){sw=img.height*targetRatio;sx=(img.width-sw)/2}else{sh=img.width/targetRatio;sy=(img.height-sh)/2}
+  ctx.drawImage(img,sx,sy,sw,sh,0,0,w,h);
+}
+async function finalCanvas(src,width,height,type){
+  const img=await loadImage(src),canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
+  if(['full','mini'].includes(type))ctx.drawImage(img,0,0,width,height);
+  else coverCrop(ctx,img,width,height);
+  return canvas;
+}
+async function jpegUnderLimit(canvas,maxKb=MAX_KB){
+  const max=maxKb*1024;let last=null;
+  for(const q of [.92,.86,.80,.74,.68,.62,.56,.50,.44,.38,.32]){
+    last=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Falha ao exportar banner.')),'image/jpeg',q));
+    if(last.size<=max)return last;
+  }
+  if(!last||last.size>max)throw new Error(`Banner passou de ${maxKb} KB após compressão.`);
+  return last;
+}
+function blobToDataUri(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=reject;r.readAsDataURL(blob)})}
+
+async function persistResponse(id,req,out){
+  const desktopSrc=outputDataUri(out,'desktop'),mobileSrc=outputDataUri(out,'mobile');
+  if(!desktopSrc||!mobileSrc)throw new Error('O Make terminou, mas não devolveu Desktop e Celular na resposta do webhook.');
+
+  const type=text(req?.banner?.type||'full');
+  const dw=Number(req?.banner?.desktop?.width||1270),dh=Number(req?.banner?.desktop?.height||444);
+  const mw=Number(req?.banner?.mobile?.width||722),mh=Number(req?.banner?.mobile?.height||888);
+  const [desktopCanvas,mobileCanvas]=await Promise.all([
+    finalCanvas(desktopSrc,dw,dh,type),finalCanvas(mobileSrc,mw,mh,type)
+  ]);
+  const [desktopBlob,mobileBlob]=await Promise.all([jpegUnderLimit(desktopCanvas),jpegUnderLimit(mobileCanvas)]);
+  const [desktopUri,mobileUri]=await Promise.all([blobToDataUri(desktopBlob),blobToDataUri(mobileBlob)]);
+
+  const thumbCanvas=document.createElement('canvas');thumbCanvas.width=280;thumbCanvas.height=Math.max(60,Math.round(280*dh/dw));
+  thumbCanvas.getContext('2d').drawImage(desktopCanvas,0,0,thumbCanvas.width,thumbCanvas.height);
+  const thumb=thumbCanvas.toDataURL('image/jpeg',.62);
+  const payload=safePayload(req);
+  const created=nowIso();
+
+  await persistJob(id,{status:'salvando',response_received_at:created});
+  await fbWrite(`${ASSET_NODE}/${safeKey(id)}`,{
+    desktop:{mime:'image/jpeg',data:desktopUri,bytes:desktopBlob.size,width:dw,height:dh},
+    mobile:{mime:'image/jpeg',data:mobileUri,bytes:mobileBlob.size,width:mw,height:mh},
+    criado_em:created,background_build:BUILD
+  },'PUT');
+  await fbWrite(`${BANNER_NODE}/${safeKey(id)}`,{
+    nome:`${text(req?.banner?.label)||'Banner'} · ${new Date().toLocaleString('pt-BR')}`,
+    tipo:type,status:'salvo',payload,
+    produtos_count:payload.images.length,instrucoes_count:payload.instruction_ids.length,
+    thumb,tem_desktop:true,tem_mobile:true,
+    criado_em:created,atualizado_em:created,background_build:BUILD
+  },'PUT');
+
+  await persistJob(id,{status:'concluido',finished_at:nowIso(),error:''});
+  jobs.delete(id);saveLocal();renderIndicator();
+  refreshBannerView();
+}
+
+function refreshBannerView(){
+  if(!location.hash.includes('banners'))return;
+  let attempts=0;
+  const tryRefresh=()=>{
+    const btn=document.getElementById('refreshBannerHistory');
+    if(btn){btn.click();return}
+    if(++attempts<20)setTimeout(tryRefresh,120);
+  };
+  setTimeout(tryRefresh,50);
 }
 
 window.fetch=async function(input,init){
@@ -105,9 +174,12 @@ window.fetch=async function(input,init){
         const out=JSON.parse(raw);
         if(out?.ok===false){await persistJob(id,{status:'erro',error:text(out.error)||'Falha informada pelo Make.'});return}
         await persistJob(id,{status:'finalizando',response_received_at:nowIso()});
-        void waitUntilSaved(id);
-      }catch(e){await persistJob(id,{status:'erro',error:'O Make não respondeu JSON válido.'})}
-    }).catch(()=>{});
+        await persistResponse(id,req,out);
+      }catch(e){
+        console.error('[Banner background] falha ao salvar resposta:',e);
+        await persistJob(id,{status:'erro',error:text(e?.message||e)||'Falha ao processar a resposta do Make.'});
+      }
+    }).catch(async e=>{await persistJob(id,{status:'erro',error:text(e?.message||e)})});
     return response;
   }catch(e){
     await persistJob(id,{status:'erro',error:text(e?.message||e)});throw e;
@@ -120,10 +192,10 @@ async function reconcile(){
     if(!j?.id)continue;
     try{
       const saved=await fbGet(`${BANNER_NODE}/${safeKey(j.id)}`);
-      if(saved?.status==='salvo'||saved?.tem_desktop||saved?.tem_mobile){jobs.delete(j.id);continue}
+      if(saved?.status==='salvo'&&saved?.tem_desktop&&saved?.tem_mobile){jobs.delete(j.id);continue}
     }catch{}
     const age=now()-(j.created_ms||j.updated_ms||0);
-    if(age>30*60*1000&&['preparando','gerando','finalizando','aguardando_confirmacao'].includes(j.status))setJob(j.id,{status:'interrompido',error:'A geração não foi confirmada. Verifique a execução no Make.'});
+    if(age>30*60*1000&&['preparando','gerando','finalizando','salvando','aguardando_confirmacao'].includes(j.status))setJob(j.id,{status:'interrompido',error:'A geração não foi confirmada. Verifique a execução no Make.'});
   }
   saveLocal();renderIndicator();
 }
@@ -133,9 +205,7 @@ window.addEventListener('beforeunload',e=>{
   e.preventDefault();e.returnValue='';
 });
 window.addEventListener('admin-canecas:route',e=>{
-  if(e.detail?.route==='banners'){
-    void reconcile().then(()=>setTimeout(()=>document.getElementById('refreshBannerHistory')?.click(),100));
-  }
+  if(e.detail?.route==='banners')void reconcile().then(refreshBannerView);
 });
 
 loadLocal();renderIndicator();void reconcile();
