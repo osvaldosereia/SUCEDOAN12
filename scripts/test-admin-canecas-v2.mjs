@@ -15,7 +15,9 @@ const store = read('mug-store-v2.js');
 const generator = read('generator-v1.js');
 const bulk = read('bulk-actions-v1.js');
 const grid = read('mug-grid-v1.js');
-const queue = read('li-github-queue-v1.js');
+const dual = read('li-dual-sync-v1.js');
+const recovery = read('li-recovery-v2.js');
+const coordinator = read('li-sync-coordinator-v3.js');
 const crops = read('storefront-crops-github-v1.js');
 const audit = read('archive-audit-v3.js');
 
@@ -27,15 +29,18 @@ assert.deepEqual(activeModules, [
   'product-images-v1.js',
   'banner-manager-v7.js',
   'banner-background-v1.js',
+  'li-recovery-v2.js',
+  'li-sync-coordinator-v3.js',
   'bulk-actions-v1.js',
-  'li-github-queue-v1.js',
   'mug-grid-v1.js',
   'app-v2.js',
   'generator-category-v1.js',
   'storefront-crops-github-v1.js',
   'archive-audit-v3.js',
   'generator-v1.js',
-  'generator-library-v1.js'
+  'generator-library-v1.js',
+  'make-webhook-settings-v1.js',
+  'li-dual-sync-v1.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
 
 for (const legacy of [
@@ -46,7 +51,8 @@ for (const legacy of [
 
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
-  ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid]
+  ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
+  ['li-dual-sync-v1.js', dual]
 ]) {
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
@@ -57,22 +63,26 @@ assert.match(store, /CACHE_MS\s*=\s*120000/, 'store deve compartilhar cache de 2
 assert.match(app, /admin-canecas:route/, 'core deve publicar eventos de rota');
 assert.equal(app.includes('function renderMugs'), false, 'core não deve competir com o catálogo pela aba Canecas');
 
-// Arquitetura nova: o Admin não usa mais Make para decidir criar/atualizar Loja Integrada.
-assert.ok(index.includes('li-github-queue-v1.js?v=20260830-1'), 'index deve carregar a fila GitHub Actions');
-assert.equal(index.includes('li-sync-coordinator-v3.js'), false, 'coordenador antigo Make não deve estar ativo');
-assert.equal(index.includes('li-recovery-v2.js'), false, 'recuperação antiga Make não deve estar ativa');
-assert.match(queue, /QUEUE_NODE\s*=\s*['"]canecas\/integracoes\/loja_integrada\/fila['"]/, 'fila Loja Integrada deve ficar no Firebase');
-assert.match(queue, /status:\s*['"]pendente['"]/, 'fila deve marcar itens pendentes');
-assert.match(queue, /Enviar selecionadas/, 'UI deve permitir envio individual/lote selecionado');
-assert.match(queue, /Enviar todas ativas/, 'UI deve permitir enviar todas as canecas ativas');
-assert.match(queue, /Reenviar erros/, 'UI deve permitir reprocessar falhas');
-assert.match(queue, /Salvar e atualizar CanecaFácil/, 'drawer deve deixar claro quando atualiza');
-assert.match(queue, /Salvar e publicar no CanecaFácil/, 'drawer deve deixar claro quando publica');
-assert.match(queue, /SKU repetido no Firebase/, 'fila deve bloquear SKUs locais duplicados');
-assert.equal(queue.includes('hook.eu1.make.com'), false, 'fila Loja Integrada não pode depender do Make');
+// Arquitetura dual: GitHub Actions é principal e Make permanece como contingência explícita.
+assert.ok(index.includes('li-dual-sync-v1.js?v=20260831-1'), 'index deve carregar controle dual GitHub/Make');
+assert.ok(index.includes('li-sync-coordinator-v3.js?v=20260831-1'), 'coordenador Make deve permanecer ativo como contingência');
+assert.ok(index.includes('li-recovery-v2.js?v=20260831-1'), 'recuperação por SKU do Make deve permanecer ativa');
+assert.match(dual, /QUEUE_NODE\s*=\s*['"]canecas\/integracoes\/loja_integrada\/fila['"]/, 'fila GitHub deve ficar no Firebase');
+assert.match(dual, /status:\s*['"]pendente['"]/, 'fila GitHub deve marcar itens pendentes');
+assert.match(dual, /GitHub · selecionadas/, 'UI deve permitir envio em massa pelo GitHub');
+assert.match(dual, /GitHub · todas ativas/, 'UI deve permitir envio de todas as ativas pelo GitHub');
+assert.match(dual, /GitHub · reenviar erros/, 'UI deve permitir reprocessar erros pelo GitHub');
+assert.match(dual, /Salvar \+ atualizar via GitHub/, 'drawer deve distinguir atualização pelo GitHub');
+assert.match(dual, /Salvar \+ publicar via GitHub/, 'drawer deve distinguir publicação pelo GitHub');
+assert.match(dual, /Salvar \+ sincronizar via Make/, 'drawer deve manter contingência pelo Make');
+assert.match(dual, /Sincronizar selecionadas via Make/, 'lote deve manter contingência pelo Make');
+assert.match(dual, /SKU repetido no Firebase/, 'fila GitHub deve bloquear SKUs locais duplicados');
+assert.equal(dual.includes('hook.eu1.make.com'), false, 'fila GitHub não pode depender do webhook Make');
+assert.match(recovery, /loja_integrada_find_product_by_sku/, 'contingência Make deve reconciliar produto por SKU');
+assert.match(coordinator, /recoverOne/, 'coordenador Make deve executar recuperação antes de criar');
 
 // Recortes são exclusivamente GitHub Actions + Sharp.
-assert.ok(index.includes('storefront-crops-github-v1.js?v=20260830-1'), 'index deve usar monitor de recortes do GitHub');
+assert.ok(index.includes('storefront-crops-github-v1.js?v=20260831-1'), 'index deve usar monitor de recortes do GitHub');
 assert.equal(index.includes('storefront-crops-v2.js'), false, 'recortes Base64/Make não devem estar ativos');
 assert.match(crops, /GitHub Actions/, 'monitor deve explicar que os recortes são processados no GitHub');
 assert.match(audit, /GitHub Actions/, 'auditoria deve refletir processamento GitHub');
@@ -108,4 +118,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: IA no Make, recortes e sincronização Loja Integrada via GitHub Actions, fila individual/em massa e UI validadas.');
+console.log('OK admin-canecas: GitHub principal, Make contingência, recortes GitHub, fila individual/em massa e UI dual validadas.');
