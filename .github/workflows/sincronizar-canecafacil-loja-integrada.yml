@@ -1,4 +1,4 @@
-name: CanecaFácil · sincronizar Loja Integrada
+name: CanecaFácil · sincronizar Loja Integrada (arquivado)
 
 on:
   workflow_dispatch:
@@ -16,19 +16,12 @@ on:
         description: 'Máximo de produtos nesta execução'
         required: false
         default: '100'
-  schedule:
-    - cron: '*/5 * * * *'
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/sincronizar-loja-integrada.mjs'
-      - '.github/workflows/sincronizar-canecafacil-loja-integrada.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: canecafacil-loja-integrada
+  group: canecafacil-loja-integrada-arquivado
   cancel-in-progress: false
 
 jobs:
@@ -40,22 +33,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Aviso
+        run: echo 'Fluxo arquivado. A sincronização ativa da Loja Integrada voltou para o Make. Use este workflow apenas para diagnóstico manual.'
       - name: Validar credenciais protegidas da Loja Integrada
         env:
           LI_API_KEY: ${{ secrets.LOJA_INTEGRADA_API_KEY }}
           LI_APP_KEY: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
         run: |
-          if [ -z "$LI_API_KEY" ]; then
-            echo "ERRO: configure o secret LOJA_INTEGRADA_API_KEY."
-            exit 1
-          fi
-          if [ -z "$LI_APP_KEY" ]; then
-            echo "ERRO: configure o secret LOJA_INTEGRADA_APP_KEY."
-            exit 1
+          if [ -z "$LI_API_KEY" ] || [ -z "$LI_APP_KEY" ]; then
+            echo "Credenciais do fluxo GitHub não configuradas ou não utilizadas."
+            exit 0
           fi
           printf 'LOJA_INTEGRADA_AUTHORIZATION=chave_api %s aplicacao %s\n' "$LI_API_KEY" "$LI_APP_KEY" >> "$GITHUB_ENV"
-          echo "Credenciais protegidas carregadas."
-      - name: Processar fila Firebase → Loja Integrada
+      - name: Processar manualmente, se solicitado
+        if: ${{ env.LOJA_INTEGRADA_AUTHORIZATION != '' }}
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
