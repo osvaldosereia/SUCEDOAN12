@@ -15,7 +15,7 @@ const store = read('mug-store-v2.js');
 const generator = read('generator-v1.js');
 const bulk = read('bulk-actions-v1.js');
 const grid = read('mug-grid-v1.js');
-const dual = read('li-dual-sync-v1.js');
+const dual = read('li-dual-sync-v2.js');
 const recovery = read('li-recovery-v2.js');
 const coordinator = read('li-sync-coordinator-v3.js');
 const crops = read('storefront-crops-github-v1.js');
@@ -40,7 +40,7 @@ assert.deepEqual(activeModules, [
   'generator-v1.js',
   'generator-library-v1.js',
   'make-webhook-settings-v1.js',
-  'li-dual-sync-v1.js'
+  'li-dual-sync-v2.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
 
 for (const legacy of [
@@ -52,7 +52,7 @@ for (const legacy of [
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
   ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
-  ['li-dual-sync-v1.js', dual]
+  ['li-dual-sync-v2.js', dual]
 ]) {
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
@@ -64,7 +64,8 @@ assert.match(app, /admin-canecas:route/, 'core deve publicar eventos de rota');
 assert.equal(app.includes('function renderMugs'), false, 'core não deve competir com o catálogo pela aba Canecas');
 
 // Arquitetura dual: GitHub Actions é principal e Make permanece como contingência explícita.
-assert.ok(index.includes('li-dual-sync-v1.js?v=20260831-1'), 'index deve carregar controle dual GitHub/Make');
+assert.ok(index.includes('li-dual-sync-v2.js?v=20260831-2'), 'index deve carregar controle dual GitHub/Make estável');
+assert.equal(index.includes('li-dual-sync-v1.js'), false, 'versão dual antiga com observer global não deve estar ativa');
 assert.ok(index.includes('li-sync-coordinator-v3.js?v=20260831-1'), 'coordenador Make deve permanecer ativo como contingência');
 assert.ok(index.includes('li-recovery-v2.js?v=20260831-1'), 'recuperação por SKU do Make deve permanecer ativa');
 assert.match(dual, /QUEUE_NODE\s*=\s*['"]canecas\/integracoes\/loja_integrada\/fila['"]/, 'fila GitHub deve ficar no Firebase');
@@ -78,6 +79,8 @@ assert.match(dual, /Salvar \+ sincronizar via Make/, 'drawer deve manter conting
 assert.match(dual, /Sincronizar selecionadas via Make/, 'lote deve manter contingência pelo Make');
 assert.match(dual, /SKU repetido no Firebase/, 'fila GitHub deve bloquear SKUs locais duplicados');
 assert.equal(dual.includes('hook.eu1.make.com'), false, 'fila GitHub não pode depender do webhook Make');
+assert.equal(/new\s+MutationObserver/.test(dual), false, 'sincronização dual não pode usar MutationObserver global e causar loop visual');
+assert.match(dual, /setInterval\([^]*4000\)/, 'sincronização dual deve usar checagem leve e espaçada');
 assert.match(recovery, /loja_integrada_find_product_by_sku/, 'contingência Make deve reconciliar produto por SKU');
 assert.match(coordinator, /recoverOne/, 'coordenador Make deve executar recuperação antes de criar');
 
@@ -118,4 +121,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: GitHub principal, Make contingência, recortes GitHub, fila individual/em massa e UI dual validadas.');
+console.log('OK admin-canecas: lista estável sem MutationObserver global, GitHub principal, Make contingência e UI dual validadas.');
