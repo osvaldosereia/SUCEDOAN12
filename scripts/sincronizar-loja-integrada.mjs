@@ -12,7 +12,6 @@ const REFS = 'canecas/integracoes/loja_integrada/catalog_refs';
 const REQUEST_SPACING_MS = 800;
 const STALE_PROCESSING_MS = 20 * 60 * 1000;
 const DEFAULTS = Object.freeze({
-  brandName: 'Caneca Fácil',
   categoryPersonal: 'Canecas Personalizáveis',
   categoryStandard: 'Canecas Padronizadas',
   categoryBusiness: 'Canecas para Empresas',
@@ -195,7 +194,6 @@ function productBody(p, key, refs, alias = aliasOf(p, key)) {
     tipo: 'normal',
     usado: p.usado === true,
     categorias: [refs.categoryUri],
-    marca: refs.brandUri,
     removido: false,
     url_video_youtube: text(p.url_video_youtube || p.video_youtube || p.youtube_url) || null,
   };
@@ -257,21 +255,16 @@ async function listAll(endpoint) {
 let cachedRefs = null;
 async function resolveRefs(p) {
   if (!cachedRefs) {
-    const brands = await listAll('/marca');
     const categories = await listAll('/categoria');
-    cachedRefs = { brands, categories };
-    const brandMap = {};
+    cachedRefs = { categories };
     const categoryMap = {};
-    for (const item of brands) if (item?.nome && item?.resource_uri) brandMap[item.nome] = item.resource_uri;
     for (const item of categories) if (item?.nome && item?.resource_uri) categoryMap[item.nome] = item.resource_uri;
-    await fbPut(REFS, { marcas: brandMap, categorias: categoryMap, atualizado_em: now(), via: 'github_actions' });
+    await fbPut(REFS, { marcas: {}, categorias: categoryMap, atualizado_em: now(), via: 'github_actions' });
   }
   const cName = categoryName(categoryType(p));
-  const brand = cachedRefs.brands.find(item => norm(item?.nome) === norm(DEFAULTS.brandName));
   const category = cachedRefs.categories.find(item => norm(item?.nome) === norm(cName));
-  if (!brand?.resource_uri) throw new Error(`Marca "${DEFAULTS.brandName}" não encontrada na Loja Integrada.`);
-  if (!category?.resource_uri) throw new Error(`Categoria "${cName}" não encontrada na Loja Integrada.`);
-  return { brandUri: brand.resource_uri, categoryUri: category.resource_uri, brandName: DEFAULTS.brandName, categoryName: cName };
+  if (!category?.resource_uri) throw new Error(`Categoria \"${cName}\" não encontrada na Loja Integrada.`);
+  return { brandUri: '', categoryUri: category.resource_uri, brandName: '', categoryName: cName };
 }
 async function findBySku(skuValue) {
   const sku = text(skuValue);
@@ -370,7 +363,7 @@ function classifyError(error) {
   if (retryableHttp(error)) return { kind: 'temporario', retriable: true, system: false };
   if ([404, 409].includes(status)) return { kind: 'conflito', retriable: true, system: false, delayMinutes: 15 };
   if ([400, 405, 422].includes(status)) return { kind: 'dados', retriable: false, system: false };
-  if (!status && /marca .*não encontrada|categoria .*não encontrada/i.test(message)) return { kind: 'catalogo', retriable: true, system: false, delayMinutes: 60 };
+  if (!status && /categoria .*não encontrada/i.test(message)) return { kind: 'catalogo', retriable: true, system: false, delayMinutes: 60 };
   if (!status) return { kind: 'temporario', retriable: true, system: false };
   return { kind: 'dados', retriable: false, system: false };
 }
