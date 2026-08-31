@@ -6,6 +6,8 @@ const root=process.cwd();
 const read=(...parts)=>fs.readFileSync(path.join(root,...parts),'utf8');
 const index=read('admin-canecas','index.html');
 const personalization=read('admin-canecas','personalization-config-v1.js');
+const personalizationBadge=read('admin-canecas','mug-personalization-badge-v1.js');
+const personalizationTestLink=read('admin-canecas','personalization-test-link-v1.js');
 const stability=read('admin-canecas','mugs-stability-v2.js');
 const dual=read('admin-canecas','li-dual-sync-v3.js');
 const recovery=read('admin-canecas','li-recovery-v3.js');
@@ -20,6 +22,8 @@ const cropWorker=read('scripts','processar-vitrine-canecas.mjs');
 const activeModules=[...index.matchAll(/<script\s+type="module"\s+src="\.\/([^"?]+)/g)].map(m=>m[1]);
 assert.ok(index.includes('personalization-config-v1.js?v=20260831-1'),'Admin deve carregar configurador de personalização');
 assert.equal((index.match(/personalization-config-v1\.js/g)||[]).length,1,'Admin deve carregar configurador uma única vez');
+assert.ok(activeModules.includes('mug-personalization-badge-v1.js'),'grade deve mostrar resumo da personalização');
+assert.ok(activeModules.includes('personalization-test-link-v1.js'),'drawer deve oferecer atalho de homologação');
 assert.equal(new Set(activeModules).size,activeModules.length,'Admin não pode carregar módulo src duplicado');
 
 assert.match(personalization,/\['nome',\s*'Nome',\s*'text'\]/,'campo Nome deve existir');
@@ -32,8 +36,12 @@ assert.match(personalization,/permitir_observacao:\s*false/,'instrução livre d
 assert.match(personalization,/prompt_base_texto/,'produto deve guardar snapshot do prompt-base');
 assert.match(personalization,/config_version/,'configuração deve ser versionada');
 assert.match(personalization,/Prompts de personalização/,'Admin deve possuir biblioteca de prompts');
-assert.equal(/new\s+MutationObserver/.test(personalization),false,'configurador não pode observar DOM globalmente');
-assert.equal(/setInterval\s*\(/.test(personalization),false,'configurador não pode atualizar UI periodicamente');
+assert.match(personalizationTestLink,/index-v4\.html/,'atalho deve abrir homologação V4');
+assert.match(personalizationBadge,/Personaliza:/,'grade deve identificar os campos permitidos');
+for(const [name,code] of [['personalization',personalization],['personalizationBadge',personalizationBadge],['personalizationTestLink',personalizationTestLink]]){
+  assert.equal(/new\s+MutationObserver/.test(code),false,`${name} não pode usar MutationObserver`);
+  assert.equal(/setInterval\s*\(/.test(code),false,`${name} não pode atualizar UI periodicamente`);
+}
 
 for(const [name,code] of [['dual',dual],['recovery',recovery],['coordinator',coordinator],['registration',registration]]){
   assert.equal(/new\s+MutationObserver/.test(code),false,`${name} não pode usar MutationObserver`);
@@ -48,6 +56,7 @@ assert.match(contract,/buildPersonalizationPrompt/,'contrato deve montar prompt 
 assert.match(contract,/Campo não autorizado/,'contrato deve bloquear campos não autorizados');
 assert.match(contract,/Upload não autorizado/,'contrato deve bloquear uploads não autorizados');
 assert.match(contract,/alterar SOMENTE/,'prompt deve restringir alterações');
+assert.match(contract,/typeof raw\.ativa === 'boolean'/,'configuração nova deve prevalecer sobre flags legados');
 
 assert.match(appV4,/normalizePersonalizationConfig/,'V4 deve ler configuração do modelo');
 assert.match(appV4,/validatePersonalizationInput/,'V4 deve validar entrada antes da IA');
@@ -62,4 +71,4 @@ assert.match(indexV4,/Não é possível solicitar alterações fora dos campos l
 assert.match(liWorker,/p\.mockup_2,\s*p\.mockup_1/,'worker LI deve iniciar galeria por mockup 2 e mockup 1');
 assert.match(cropWorker,/imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/,'recortes devem manter ordem oficial');
 
-console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados, V4 de homologação e UI sem observers globais.');
+console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados, V4 de homologação, resumo na grade e UI sem observers globais.');
