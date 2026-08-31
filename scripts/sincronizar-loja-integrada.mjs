@@ -66,13 +66,17 @@ function liActive(p = {}) { if (p.loja_integrada_ativo === true) return true; if
 function liMeta(p = {}) { return p.loja_integrada && typeof p.loja_integrada === 'object' ? p.loja_integrada : {}; }
 function categoryType(p = {}) { return text(p.loja_integrada_categoria_tipo || liMeta(p).categoria_tipo || p.canecafacil_categoria_tipo) || (isPersonalizable(p) ? 'personalizaveis' : 'padronizadas'); }
 function categoryName(type) { if (type === 'empresas') return DEFAULTS.categoryBusiness; if (type === 'personalizaveis') return DEFAULTS.categoryPersonal; return DEFAULTS.categoryStandard; }
-function storefrontImages(p = {}) { return [p.mockup_1, p.mockup_2, p.vitrine_recorte_esquerda || p.vitrine_recortes?.esquerda, p.vitrine_recorte_centro || p.vitrine_recortes?.centro, p.vitrine_recorte_direita || p.vitrine_recortes?.direita].map(text); }
+function storefrontImages(p = {}) { return [p.mockup_2, p.mockup_1, p.vitrine_recorte_esquerda || p.vitrine_recortes?.esquerda, p.vitrine_recorte_direita || p.vitrine_recortes?.direita, p.vitrine_recorte_centro || p.vitrine_recortes?.centro].map(text); }
 function baseDescription(p = {}) { return text(p.descricao_completa || p.descricao || '').replace(/<div[^>]*class=["'][^"']*cf-personalizer-box[^"']*["'][\s\S]*?<\/div>/gi, '').replace(/<a[^>]*>PERSONALIZAR ESTA CANECA<\/a>/gi, '').trim(); }
 function description(p, key) {
   const base = baseDescription(p);
   if (!isPersonalizable(p)) return base;
   const link = `${DEFAULTS.personalizerBase}?model=${encodeURIComponent(key)}&return=${encodeURIComponent('https://canecafacil.com.br/')}`;
-  return `${base}\n<div class="cf-personalizer-box" style="margin:18px 0;padding:16px;border:1px solid #e8e8e3;border-radius:12px;text-align:center">\n<strong style="display:block;margin-bottom:8px">Personalize esta caneca</strong>\n<a class="cf-personalize-link" href="${esc(link)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;border-radius:9px;font-weight:700">PERSONALIZAR ESTA CANECA</a>\n</div>`.trim();
+  return `${base}\
+<div class="cf-personalizer-box" style="margin:18px 0;padding:16px;border:1px solid #e8e8e3;border-radius:12px;text-align:center">\
+<strong style="display:block;margin-bottom:8px">Personalize esta caneca</strong>\
+<a class="cf-personalize-link" href="${esc(link)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;border-radius:9px;font-weight:700">PERSONALIZAR ESTA CANECA</a>\
+</div>`.trim();
 }
 function aliasOf(p = {}, key = '') { const li = liMeta(p); const current = slug(p.loja_integrada_alias || li.alias); if (current) return current; const base = slug(p.nome || 'caneca'); const suffix = slug(p.codigo || p.sku || key).slice(-30); return slug(`${base}-${suffix}`); }
 function productBody(p, key, refs) { return { id_externo: null, sku: text(p.codigo || p.sku), mpn: text(p.mpn) || null, ncm: digits(p.ncm || DEFAULTS.ncm) || null, gtin: digits(p.gtin || p.ean || p.codigo_barras) || null, nome: text(p.nome), apelido: aliasOf(p, key), descricao_completa: description(p, key), ativo: liActive(p), destaque: p.destaque === true, peso: num(p.peso_embalado_kg || p.peso) || null, altura: Math.ceil(num(p.altura_embalada_cm || p.altura)) || null, largura: Math.ceil(num(p.largura_embalada_cm || p.largura)) || null, profundidade: Math.ceil(num(p.comprimento_embalado_cm || p.comprimento)) || null, tipo: 'normal', usado: p.usado === true, categorias: [refs.categoryUri], marca: refs.brandUri, removido: false, url_video_youtube: text(p.url_video_youtube || p.video_youtube || p.youtube_url) || null }; }
