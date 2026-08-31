@@ -12,6 +12,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'admin-canecas/product-content-manager-v1.js'
       - 'scripts/sincronizar-conteudo-canecafacil.mjs'
       - '.github/workflows/sincronizar-conteudo-canecafacil.yml'
 
@@ -31,11 +32,28 @@ jobs:
         with:
           sparse-checkout: |
             scripts
+            admin-canecas
           sparse-checkout-cone-mode: true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validar instalação sem publicar
+        if: github.event_name == 'push'
+        run: |
+          node --check scripts/sincronizar-conteudo-canecafacil.mjs
+          node --check admin-canecas/product-content-manager-v1.js
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const src = fs.readFileSync('admin-canecas/product-content-manager-v1.js', 'utf8');
+          const ids = [...src.matchAll(/id=\\?"cfContentEnabled\\?"/g)];
+          if (ids.length !== 1) {
+            console.error(`ERRO: esperado 1 controle cfContentEnabled; encontrados ${ids.length}.`);
+            process.exit(1);
+          }
+          console.log('Editor de conteúdo validado: sintaxe OK e controle Ativo único.');
+          NODE
       - name: Validar Personal Token Loja Integrada
+        if: github.event_name != 'push'
         env:
           LI_APP_TOKEN: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
         run: |
@@ -45,6 +63,7 @@ jobs:
           fi
           printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
       - name: Sincronizar conteúdo central
+        if: github.event_name != 'push'
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
