@@ -1,0 +1,93 @@
+name: CanecaFácil · recortes da vitrine
+
+on:
+  workflow_dispatch:
+    inputs:
+      product_key:
+        description: 'Firebase key de uma caneca (vazio = todas pendentes)'
+        required: false
+        default: ''
+      force:
+        description: 'Refazer recortes mesmo se já estiverem prontos'
+        required: false
+        type: boolean
+        default: false
+      limit:
+        description: 'Limite de canecas por execução (0 = sem limite)'
+        required: false
+        default: '0'
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  push:
+    branches: [canecas-media]
+    paths:
+      - 'canecas/imagens/**'
+      - 'scripts/processar-vitrine-canecas.mjs'
+      - '.github/workflows/processar-vitrine-canecas.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canecafacil-vitrine-crops
+  cancel-in-progress: false
+
+jobs:
+  recortes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout da branch de mídia
+        uses: actions/checkout@v4
+        with:
+          ref: canecas-media
+          fetch-depth: 0
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar Sharp
+        run: npm install --no-save sharp@0.34.3
+
+      - name: Gerar somente os recortes pendentes
+        env:
+          MODE: build
+          RAW_BRANCH: canecas-media
+          PRODUCT_KEY: ${{ github.event.inputs.product_key || '' }}
+          FORCE: ${{ github.event.inputs.force || 'false' }}
+          LIMIT: ${{ github.event.inputs.limit || '0' }}
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-vitrine-canecas.mjs
+
+      - name: Publicar imagens geradas
+        id: publish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add canecas/vitrine
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nenhuma imagem nova para publicar."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git commit -m "CanecaFácil: gera recortes da vitrine"
+            git pull --rebase origin canecas-media
+            git push origin HEAD:canecas-media
+          fi
+
+      - name: Confirmar URLs no Firebase após publicação
+        env:
+          MODE: apply
+          RAW_BRANCH: canecas-media
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-vitrine-canecas.mjs
+
+      - name: Resumo
+        if: always()
+        run: |
+          echo "## CanecaFácil · recortes da vitrine" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Branch de mídia: canecas-media" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Processador: Sharp" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Firebase confirmado somente após o push das imagens" >> "$GITHUB_STEP_SUMMARY"
