@@ -18,8 +18,9 @@ const liWorker=read('scripts','sincronizar-loja-integrada.mjs');
 const cropWorker=read('scripts','processar-vitrine-canecas.mjs');
 
 const activeModules=[...index.matchAll(/<script\s+type="module"\s+src="\.\/([^"?]+)/g)].map(m=>m[1]);
-assert.ok(activeModules.includes('personalization-config-v1.js'),'Admin deve carregar configurador de personalização');
-assert.equal(new Set(activeModules).size,activeModules.length,'Admin não pode carregar módulo duplicado');
+assert.ok(index.includes('personalization-config-v1.js?v=20260831-1'),'Admin deve carregar configurador de personalização');
+assert.equal((index.match(/personalization-config-v1\.js/g)||[]).length,1,'Admin deve carregar configurador uma única vez');
+assert.equal(new Set(activeModules).size,activeModules.length,'Admin não pode carregar módulo src duplicado');
 
 assert.match(personalization,/\['nome',\s*'Nome',\s*'text'\]/,'campo Nome deve existir');
 assert.match(personalization,/\['foto',\s*'Foto',\s*'image'\]/,'campo Foto deve existir');
