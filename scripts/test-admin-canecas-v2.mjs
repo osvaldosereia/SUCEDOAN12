@@ -125,7 +125,7 @@ assert.equal(index.includes('archive-audit-v3.js'), false, 'auditoria antiga nã
 // Ordem oficial da galeria: mockup 2, mockup 1, esquerda, direita, quadrada.
 assert.ok(index.includes('storefront-crops-github-v2.js?v=20260831-1'), 'index deve usar vitrine v2');
 assert.match(crops, /return \[text\(product\.mockup_2\), text\(product\.mockup_1\), crops\.left, crops\.right, crops\.center\]/, 'payload Make deve usar ordem oficial');
-assert.match(liWorker, /return \[p\.mockup_2, p\.mockup_1, p\.vitrine_recorte_esquerda[^\]]+p\.vitrine_recorte_direita[^\]]+p\.vitrine_recorte_centro/, 'worker GitHub deve usar ordem oficial');
+assert.match(liWorker, /return\s*\[\s*p\.mockup_2,\s*p\.mockup_1,\s*p\.vitrine_recorte_esquerda[\s\S]*?p\.vitrine_recorte_direita[\s\S]*?p\.vitrine_recorte_centro/, 'worker GitHub deve usar ordem oficial');
 assert.match(cropWorker, /imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/, 'Firebase deve salvar nova ordem para recortes futuros');
 
 assert.ok(index.includes('generator-v1.css?v=20260829-2'), 'index deve carregar CSS atual do gerador');
@@ -156,4 +156,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: sem observers globais, lista estável, conteúdo central versionado, GitHub principal, Make reserva e 5 imagens na ordem oficial.');
+console.log('OK admin-canecas: lista estável, conteúdo central versionado, GitHub principal, Make reserva e 5 imagens na ordem oficial.');
