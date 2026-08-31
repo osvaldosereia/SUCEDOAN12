@@ -1,0 +1,168 @@
+{
+  "name": "CANECA FACIL - BANNERS IA - V5 EDITIMAGE CANECAS REAIS",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "Admin Canecas V7 - formato + prompt + canecas"
+        },
+        "parameters": [
+          {
+            "name": "hook",
+            "type": "hook:gateway-webhook",
+            "label": "Webhook",
+            "required": true
+          },
+          {
+            "name": "maxResults",
+            "type": "number",
+            "label": "Maximum number of results"
+          }
+        ],
+        "interface": [
+          {"name":"action","type":"text"},
+          {"name":"request_id","type":"text"},
+          {"name":"build","type":"text"},
+          {"name":"prompt","type":"text"},
+          {"name":"reference_image_base64","type":"text"},
+          {"name":"instruction_ids","type":"array","spec":{"name":"value","type":"text"}},
+          {"name":"images","type":"array","spec":{"type":"collection","name":"value","spec":[{"name":"image_url","type":"text"},{"name":"name","type":"text"},{"name":"sku","type":"text"}]}},
+          {"name":"banner","type":"collection","spec":[{"name":"type","type":"text"},{"name":"label","type":"text"},{"name":"desktop","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"},{"name":"ai_size","type":"text"}]},{"name":"mobile","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"},{"name":"ai_size","type":"text"}]}]}
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "openai-gpt-3:editImage",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "n": 1,
+        "mask": {},
+        "size": "{{1.banner.desktop.ai_size}}",
+        "image": [
+          {
+            "fileData": "{{toBinary(replace(replace(replace(1.reference_image_base64; \"data:image/webp;base64,\"; emptystring); \"data:image/png;base64,\"; emptystring); \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}",
+            "fileName": "canecas-referencia.jpg"
+          }
+        ],
+        "model": "gpt-image-2",
+        "prompt": "{{1.prompt}}\n\nINSTRUÇÕES TÉCNICAS DO GERADOR — NÃO SUBSTITUEM O BRIEFING ACIMA:\n- A imagem fornecida é uma PRANCHA DE REFERÊNCIA contendo as canecas reais selecionadas pelo usuário.\n- Use as canecas dessa prancha como referências visuais reais na criação. Preserve com alta fidelidade as estampas, cores e aparência das canecas.\n- Crie um BANNER PUBLICITÁRIO FINAL COMPLETO, pronto para uso no site; não devolva a prancha, não faça uma grade de cartões e não coloque as canecas dentro de quadrados brancos.\n- Integre as canecas naturalmente na composição, como um designer publicitário sênior faria.\n- Não aplique nenhuma camada posterior: texto, CTA, oferta, elementos visuais e produtos que o briefing pedir devem sair prontos nesta imagem.\n- Não invente outra marca nem substitua as artes das canecas por desenhos parecidos.\n- Evite duplicar a mesma caneca sem necessidade.\n- Formato solicitado: {{1.banner.label}} DESKTOP.\n- Dimensão final após exportação: {{1.banner.desktop.width}} x {{1.banner.desktop.height}} px.\n- A imagem gerada será recortada proporcionalmente para essa dimensão final. Mantenha todo texto, CTA, rostos, produtos e elementos importantes dentro da faixa central compatível com essa proporção, deixando sangria visual segura acima e abaixo quando necessário.\n- Priorize hierarquia visual, legibilidade, composição comercial, acabamento premium e aparência de campanha profissional de e-commerce.\n",
+        "quality": "high",
+        "background": "opaque",
+        "output_format": "jpeg",
+        "output_compression": 92,
+        "moderation": "auto"
+      },
+      "metadata": {
+        "designer": {
+          "x": 350,
+          "y": -120,
+          "name": "GPT Image 2 - BANNER FINAL DESKTOP"
+        },
+        "parameters": [
+          {
+            "name": "__IMTCONN__",
+            "type": "account:openai-gpt-3",
+            "label": "Connection",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "module": "openai-gpt-3:editImage",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "n": 1,
+        "mask": {},
+        "size": "{{1.banner.mobile.ai_size}}",
+        "image": [
+          {
+            "fileData": "{{toBinary(replace(replace(replace(1.reference_image_base64; \"data:image/webp;base64,\"; emptystring); \"data:image/png;base64,\"; emptystring); \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}",
+            "fileName": "canecas-referencia.jpg"
+          }
+        ],
+        "model": "gpt-image-2",
+        "prompt": "{{1.prompt}}\n\nINSTRUÇÕES TÉCNICAS DO GERADOR — NÃO SUBSTITUEM O BRIEFING ACIMA:\n- A imagem fornecida é uma PRANCHA DE REFERÊNCIA contendo as canecas reais selecionadas pelo usuário.\n- Use as canecas dessa prancha como referências visuais reais na criação. Preserve com alta fidelidade as estampas, cores e aparência das canecas.\n- Crie um BANNER PUBLICITÁRIO FINAL COMPLETO, pronto para uso no site; não devolva a prancha, não faça uma grade de cartões e não coloque as canecas dentro de quadrados brancos.\n- Integre as canecas naturalmente na composição, como um designer publicitário sênior faria.\n- Não aplique nenhuma camada posterior: texto, CTA, oferta, elementos visuais e produtos que o briefing pedir devem sair prontos nesta imagem.\n- Não invente outra marca nem substitua as artes das canecas por desenhos parecidos.\n- Evite duplicar a mesma caneca sem necessidade.\n- Formato solicitado: {{1.banner.label}} MOBILE.\n- Dimensão final após exportação: {{1.banner.mobile.width}} x {{1.banner.mobile.height}} px.\n- Esta versão deve ser RECOMPOSTA para celular, e não simplesmente copiar o layout desktop.\n- A imagem gerada será recortada proporcionalmente para a dimensão final. Mantenha texto, CTA, produtos e elementos importantes dentro da área central segura compatível com essa proporção.\n- Priorize leitura imediata em tela pequena, hierarquia visual, acabamento premium e aparência de campanha profissional de e-commerce.\n",
+        "quality": "high",
+        "background": "opaque",
+        "output_format": "jpeg",
+        "output_compression": 92,
+        "moderation": "auto"
+      },
+      "metadata": {
+        "designer": {
+          "x": 350,
+          "y": 120,
+          "name": "GPT Image 2 - BANNER FINAL MOBILE"
+        },
+        "parameters": [
+          {
+            "name": "__IMTCONN__",
+            "type": "account:openai-gpt-3",
+            "label": "Connection",
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "status": 200,
+        "body": "{\"ok\":true,\"request_id\":\"{{1.request_id}}\",\"images\":{\"desktop\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(2.resImgData)}}\"},\"mobile\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(3.resImgData)}}\"}}}",
+        "headers": [
+          {"key":"Content-Type","value":"application/json; charset=utf-8"},
+          {"key":"Access-Control-Allow-Origin","value":"*"},
+          {"key":"Cache-Control","value":"no-store"}
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 760,
+          "y": 0,
+          "name": "Responder banner final Desktop + Mobile"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {"orphans": []},
+    "zone": "eu1.make.com",
+    "notes": [
+      "Mesmo princípio do Studio IA: referência visual + editImage.",
+      "Sem módulo de texto intermediário.",
+      "As canecas selecionadas chegam numa prancha Base64 preparada pelo Admin V7.",
+      "Desktop e Mobile são gerados como banners finais completos.",
+      "O Admin apenas redimensiona/comprime para os tamanhos da Loja Integrada; não desenha texto nem produtos por cima."
+    ]
+  }
+}
