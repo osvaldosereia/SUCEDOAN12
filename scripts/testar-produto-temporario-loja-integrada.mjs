@@ -12,7 +12,7 @@ if(!AUTH) throw new Error('LOJA_INTEGRADA_AUTHORIZATION ausente.');
 let last=0;
 async function li(path,{method='GET',body,allow404=false}={}){
   const wait=Math.max(0,900-(Date.now()-last)); if(wait) await sleep(wait); last=Date.now();
-  const r=await fetch(`${LI_BASE}${path}`,{method,headers:{Authorization:AUTH,Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'}),'User-Agent':'CanecaFacil-Temporary-Product-Test/1.1'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const r=await fetch(`${LI_BASE}${path}`,{method,headers:{Authorization:AUTH,Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'}),'User-Agent':'CanecaFacil-Temporary-Product-Test/1.2'},...(body===undefined?{}:{body:JSON.stringify(body)})});
   const raw=await r.text(); let data=null; try{data=raw?JSON.parse(raw):null}catch{data={raw}};
   if(allow404&&r.status===404) return null;
   if(!r.ok){const e=new Error(`${r.status} ${data?.error_message||data?.detail||data?.message||data?.error||raw}`);e.status=r.status;e.data=data;throw e;}
@@ -23,12 +23,11 @@ async function fbPut(value){const r=await fetch(`${FIREBASE}/canecas/integracoes
 const reference=await findExactSku(REFERENCE_SKU);
 if(!reference) throw new Error(`Produto de referência ${REFERENCE_SKU} não encontrado.`);
 const referenceFull=await li(`/produto/${reference.id}?descricao_completa=1`);
-const brandUri=text(referenceFull?.marca||reference?.marca);
 const categoryUris=Array.isArray(referenceFull?.categorias)&&referenceFull.categorias.length?referenceFull.categorias:(Array.isArray(reference?.categorias)?reference.categorias:[]);
-if(!brandUri||!categoryUris.length) throw new Error('Produto de referência não retornou marca/categoria utilizáveis.');
-console.log(`REFERÊNCIA OK · SKU ${REFERENCE_SKU} · marca/categoria reutilizadas com segurança.`);
+if(!categoryUris.length) throw new Error('Produto de referência não retornou categoria utilizável.');
+console.log(`REFERÊNCIA OK · SKU ${REFERENCE_SKU} · categoria reutilizada · sem marca.`);
 function body({ativo=false,visivelMarker=false}={}){
-  const b={id_externo:null,sku:SKU,mpn:null,ncm:'69111090',gtin:null,nome:NAME,apelido:ALIAS,descricao_completa:'Produto técnico temporário para validar privacidade, carrinho e recursos nativos da Loja Integrada. NÃO COMPRAR.',ativo,destaque:false,peso:0.45,altura:14,largura:14,profundidade:14,tipo:'normal',usado:false,categorias:categoryUris,marca:brandUri,removido:false,url_video_youtube:null};
+  const b={id_externo:null,sku:SKU,mpn:null,ncm:'69111090',gtin:null,nome:NAME,apelido:ALIAS,descricao_completa:'Produto técnico temporário para validar privacidade, carrinho e recursos nativos da Loja Integrada. NÃO COMPRAR.',ativo,destaque:false,peso:0.45,altura:14,largura:14,profundidade:14,tipo:'normal',usado:false,categorias:categoryUris,removido:false,url_video_youtube:null};
   if(visivelMarker)b.visivel=false;
   return b;
 }
