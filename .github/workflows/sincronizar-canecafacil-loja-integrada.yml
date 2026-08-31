@@ -32,6 +32,7 @@ jobs:
           if [ -z "$LI_API_KEY" ]; then echo 'ERRO: LOJA_INTEGRADA_API_KEY ausente'; exit 1; fi
           if [ -z "$LI_APP_KEY" ]; then echo 'ERRO: LOJA_INTEGRADA_APP_KEY ausente'; exit 1; fi
           printf 'LOJA_INTEGRADA_AUTHORIZATION=chave_api %s aplicacao %s\n' "$LI_API_KEY" "$LI_APP_KEY" >> "$GITHUB_ENV"
+          printf 'LI_APP_TOKEN=%s\n' "$LI_APP_KEY" >> "$GITHUB_ENV"
           echo 'Credenciais carregadas sem exibição dos valores.'
       - name: Testar API Loja Integrada somente leitura
         env:
