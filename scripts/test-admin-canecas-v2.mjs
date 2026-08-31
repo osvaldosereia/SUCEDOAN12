@@ -21,6 +21,8 @@ const inlineCategory = read('mug-inline-category-v2.js');
 const recovery = read('li-recovery-v3.js');
 const coordinator = read('li-sync-coordinator-v4.js');
 const crops = read('storefront-crops-github-v2.js');
+const contentManager = read('product-content-manager-v1.js');
+const registrationStatus = read('li-registration-status-v1.js');
 const liWorker = fs.readFileSync(path.join(root, 'scripts', 'sincronizar-loja-integrada.mjs'), 'utf8');
 const cropWorker = fs.readFileSync(path.join(root, 'scripts', 'processar-vitrine-canecas.mjs'), 'utf8');
 
@@ -42,9 +44,11 @@ assert.deepEqual(activeModules, [
   'generator-v1.js',
   'generator-library-v1.js',
   'make-webhook-settings-v1.js',
+  'product-content-manager-v1.js',
   'li-dual-sync-v3.js',
   'mugs-stability-v2.js',
-  'mug-inline-category-v2.js'
+  'mug-inline-category-v2.js',
+  'li-registration-status-v1.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
 
 for (const legacy of [
@@ -57,7 +61,8 @@ for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
   ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
   ['li-dual-sync-v3.js', dual], ['mugs-stability-v2.js', stability], ['mug-inline-category-v2.js', inlineCategory],
-  ['li-recovery-v3.js', recovery], ['li-sync-coordinator-v4.js', coordinator]
+  ['li-recovery-v3.js', recovery], ['li-sync-coordinator-v4.js', coordinator],
+  ['product-content-manager-v1.js', contentManager], ['li-registration-status-v1.js', registrationStatus]
 ]) {
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
 }
@@ -105,6 +110,14 @@ assert.match(recovery, /loja_integrada_find_product_by_sku/, 'Make deve reconcil
 assert.match(coordinator, /recoverOne/, 'coordenador Make deve recuperar produto existente');
 assert.match(coordinator, /stopImmediatePropagation/, 'coordenador deve interceptar somente a ação explícita do usuário');
 
+// Editor central de conteúdo e status de cadastro devem permanecer ativos.
+assert.ok(index.includes('product-content-manager-v1.js?v=20260831-2'), 'index deve carregar editor central de conteúdo atualizado');
+assert.match(contentManager, /Conteúdo do Produto/, 'editor central deve existir em Configurações');
+assert.equal((contentManager.match(/id=\\?"cfContentEnabled\\?"/g) || []).length, 1, 'editor deve possuir somente um controle Ativo');
+assert.match(contentManager, /Testar em 1 caneca/, 'editor deve oferecer teste individual antes da publicação em massa');
+assert.match(contentManager, /Publicar em todas as cadastradas/, 'editor deve oferecer publicação em massa explícita');
+assert.ok(index.includes('li-registration-status-v1.js?v=20260831-1'), 'status de cadastro Loja Integrada deve permanecer ativo');
+
 // Auditoria técnica não deve ocupar a lista diária.
 assert.equal(index.includes('archive-audit-v4.js'), false, 'auditoria técnica não deve carregar na aba Canecas');
 assert.equal(index.includes('archive-audit-v3.js'), false, 'auditoria antiga não deve carregar');
@@ -143,4 +156,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: sem observers globais, lista estável, UI simples, GitHub principal, Make reserva e 5 imagens na ordem oficial.');
+console.log('OK admin-canecas: sem observers globais, lista estável, conteúdo central versionado, GitHub principal, Make reserva e 5 imagens na ordem oficial.');
