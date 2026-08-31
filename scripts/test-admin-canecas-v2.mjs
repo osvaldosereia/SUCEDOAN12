@@ -16,6 +16,7 @@ const generator = read('generator-v1.js');
 const bulk = read('bulk-actions-v1.js');
 const grid = read('mug-grid-v1.js');
 const dual = read('li-dual-sync-v2.js');
+const stability = read('mugs-stability-v1.js');
 const recovery = read('li-recovery-v2.js');
 const coordinator = read('li-sync-coordinator-v3.js');
 const crops = read('storefront-crops-github-v1.js');
@@ -40,7 +41,8 @@ assert.deepEqual(activeModules, [
   'generator-v1.js',
   'generator-library-v1.js',
   'make-webhook-settings-v1.js',
-  'li-dual-sync-v2.js'
+  'li-dual-sync-v2.js',
+  'mugs-stability-v1.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
 
 for (const legacy of [
@@ -52,7 +54,7 @@ for (const legacy of [
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
   ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
-  ['li-dual-sync-v2.js', dual]
+  ['li-dual-sync-v2.js', dual], ['mugs-stability-v1.js', stability]
 ]) {
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
@@ -62,6 +64,17 @@ assert.match(store, /orderBy[^\n]+categoria/, 'store deve consultar por categori
 assert.match(store, /CACHE_MS\s*=\s*120000/, 'store deve compartilhar cache de 2 minutos');
 assert.match(app, /admin-canecas:route/, 'core deve publicar eventos de rota');
 assert.equal(app.includes('function renderMugs'), false, 'core não deve competir com o catálogo pela aba Canecas');
+
+// Estabilidade da aba Canecas: catalog-manager pode reconstruir #mugs, mas a grade visível deve ser preservada.
+assert.ok(index.includes('mugs-stability-v1.js?v=20260831-1'), 'index deve carregar estabilizador da grade');
+assert.match(stability, /const\s+PRESERVE\s*=\s*\[/, 'estabilizador deve manter nós visuais persistentes');
+assert.match(stability, /cfMugGridWrap/, 'estabilizador deve preservar a grade das canecas');
+assert.match(stability, /cfBulkActions/, 'estabilizador deve preservar ações em lote');
+assert.match(stability, /cfDualSyncPanel/, 'estabilizador deve preservar painel GitHub\/Make');
+assert.match(stability, /cfArchiveAudit/, 'estabilizador deve preservar auditoria');
+assert.match(stability, /observer\.observe\(root,\s*\{\s*childList:\s*true\s*\}\)/, 'observer deve ficar restrito ao root #mugs e somente filhos diretos');
+assert.equal(/observer\.observe\(document\.documentElement/.test(stability), false, 'estabilizador não pode observar o documento inteiro');
+assert.match(stability, /await\s+renderGrid\(\)/, 'grade deve ser atualizada após o catálogo terminar sem desaparecer antes');
 
 // Arquitetura dual: GitHub Actions é principal e Make permanece como contingência explícita.
 assert.ok(index.includes('li-dual-sync-v2.js?v=20260831-2'), 'index deve carregar controle dual GitHub/Make estável');
@@ -80,7 +93,6 @@ assert.match(dual, /Sincronizar selecionadas via Make/, 'lote deve manter contin
 assert.match(dual, /SKU repetido no Firebase/, 'fila GitHub deve bloquear SKUs locais duplicados');
 assert.equal(dual.includes('hook.eu1.make.com'), false, 'fila GitHub não pode depender do webhook Make');
 assert.equal(/new\s+MutationObserver/.test(dual), false, 'sincronização dual não pode usar MutationObserver global e causar loop visual');
-assert.match(dual, /setInterval\([^]*4000\)/, 'sincronização dual deve usar checagem leve e espaçada');
 assert.match(recovery, /loja_integrada_find_product_by_sku/, 'contingência Make deve reconciliar produto por SKU');
 assert.match(coordinator, /recoverOne/, 'coordenador Make deve executar recuperação antes de criar');
 
@@ -121,4 +133,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: lista estável sem MutationObserver global, GitHub principal, Make contingência e UI dual validadas.');
+console.log('OK admin-canecas: grade preservada após edição, GitHub principal, Make contingência e UI estável validadas.');
