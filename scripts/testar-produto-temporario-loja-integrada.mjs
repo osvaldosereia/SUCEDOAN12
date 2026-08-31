@@ -2,6 +2,7 @@ const LI_BASE=(process.env.LOJA_INTEGRADA_BASE_URL||'https://api.awsli.com.br/v1
 const AUTH=String(process.env.LOJA_INTEGRADA_AUTHORIZATION||'').trim();
 const FIREBASE=(process.env.FIREBASE_BASE_URL||'https://cedar-chemist-310801-default-rtdb.firebaseio.com').replace(/\/$/,'');
 const SKU='CF-TEMP-UX-001';
+const REFERENCE_SKU='CANP-DL6WVV';
 const NAME='[TESTE INTERNO] Caneca Personalizada Temporária';
 const ALIAS='teste-interno-caneca-personalizada-temporaria-cf-temp-ux-001';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -11,26 +12,27 @@ if(!AUTH) throw new Error('LOJA_INTEGRADA_AUTHORIZATION ausente.');
 let last=0;
 async function li(path,{method='GET',body,allow404=false}={}){
   const wait=Math.max(0,900-(Date.now()-last)); if(wait) await sleep(wait); last=Date.now();
-  const r=await fetch(`${LI_BASE}${path}`,{method,headers:{Authorization:AUTH,Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'}),'User-Agent':'CanecaFacil-Temporary-Product-Test/1.0'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const r=await fetch(`${LI_BASE}${path}`,{method,headers:{Authorization:AUTH,Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'}),'User-Agent':'CanecaFacil-Temporary-Product-Test/1.1'},...(body===undefined?{}:{body:JSON.stringify(body)})});
   const raw=await r.text(); let data=null; try{data=raw?JSON.parse(raw):null}catch{data={raw}};
   if(allow404&&r.status===404) return null;
   if(!r.ok){const e=new Error(`${r.status} ${data?.error_message||data?.detail||data?.message||data?.error||raw}`);e.status=r.status;e.data=data;throw e;}
   return data;
 }
-async function listAll(endpoint){let out=[];for(let offset=0;offset<1000;offset+=100){const d=await li(`${endpoint}?limit=100&offset=${offset}`);const b=Array.isArray(d?.objects)?d.objects:[];out.push(...b);if(b.length<100)break;}return out;}
-async function findBySku(){const d=await li(`/produto?sku=${encodeURIComponent(SKU)}&limit=5`);return (d?.objects||[]).find(x=>norm(x?.sku)===norm(SKU))||null;}
+async function findExactSku(sku){const d=await li(`/produto?sku=${encodeURIComponent(sku)}&limit=5`);return (d?.objects||[]).find(x=>norm(x?.sku)===norm(sku))||null;}
 async function fbPut(value){const r=await fetch(`${FIREBASE}/canecas/integracoes/loja_integrada/teste_produto_temporario.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!r.ok)throw new Error(`Firebase ${r.status}`);}
-const brands=await listAll('/marca');
-const categories=await listAll('/categoria');
-const brand=brands.find(x=>norm(x?.nome)===norm('Caneca Fácil'));
-const category=categories.find(x=>norm(x?.nome)===norm('Canecas Personalizáveis'));
-if(!brand?.resource_uri||!category?.resource_uri) throw new Error('Marca/categoria padrão não encontrada.');
+const reference=await findExactSku(REFERENCE_SKU);
+if(!reference) throw new Error(`Produto de referência ${REFERENCE_SKU} não encontrado.`);
+const referenceFull=await li(`/produto/${reference.id}?descricao_completa=1`);
+const brandUri=text(referenceFull?.marca||reference?.marca);
+const categoryUris=Array.isArray(referenceFull?.categorias)&&referenceFull.categorias.length?referenceFull.categorias:(Array.isArray(reference?.categorias)?reference.categorias:[]);
+if(!brandUri||!categoryUris.length) throw new Error('Produto de referência não retornou marca/categoria utilizáveis.');
+console.log(`REFERÊNCIA OK · SKU ${REFERENCE_SKU} · marca/categoria reutilizadas com segurança.`);
 function body({ativo=false,visivelMarker=false}={}){
-  const b={id_externo:null,sku:SKU,mpn:null,ncm:'69111090',gtin:null,nome:NAME,apelido:ALIAS,descricao_completa:'Produto técnico temporário para validar privacidade, carrinho e recursos nativos da Loja Integrada. NÃO COMPRAR.',ativo,destaque:false,peso:0.45,altura:14,largura:14,profundidade:14,tipo:'normal',usado:false,categorias:[category.resource_uri],marca:brand.resource_uri,removido:false,url_video_youtube:null};
+  const b={id_externo:null,sku:SKU,mpn:null,ncm:'69111090',gtin:null,nome:NAME,apelido:ALIAS,descricao_completa:'Produto técnico temporário para validar privacidade, carrinho e recursos nativos da Loja Integrada. NÃO COMPRAR.',ativo,destaque:false,peso:0.45,altura:14,largura:14,profundidade:14,tipo:'normal',usado:false,categorias:categoryUris,marca:brandUri,removido:false,url_video_youtube:null};
   if(visivelMarker)b.visivel=false;
   return b;
 }
-let remote=await findBySku();
+let remote=await findExactSku(SKU);
 let id='';
 if(!remote){
   const created=await li('/produto',{method:'POST',body:body({ativo:false})}); id=String(created?.id||''); if(!id)throw new Error('Criação não retornou ID.'); console.log(`CRIADO INATIVO · ID ${id} · SKU ${SKU}`);
