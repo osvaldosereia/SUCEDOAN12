@@ -1,0 +1,72 @@
+name: CanecaFácil · migrar worker LI sem marca
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/migrar-loja-integrada-sem-marca.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Remover dependência de marcas do worker
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/sincronizar-loja-integrada.mjs')
+          s=p.read_text()
+          old="""    const brands = await listAll('/marca');
+    const categories = await listAll('/categoria');
+    cachedRefs = { brands, categories };
+    const brandMap = {};
+    const categoryMap = {};
+    for (const item of brands) if (item?.nome && item?.resource_uri) brandMap[item.nome] = item.resource_uri;
+    for (const item of categories) if (item?.nome && item?.resource_uri) categoryMap[item.nome] = item.resource_uri;
+    await fbPut(REFS, { marcas: brandMap, categorias: categoryMap, atualizado_em: now(), via: 'github_actions' });
+"""
+          new="""    const categories = await listAll('/categoria');
+    cachedRefs = { categories };
+    const categoryMap = {};
+    for (const item of categories) if (item?.nome && item?.resource_uri) categoryMap[item.nome] = item.resource_uri;
+    await fbPut(REFS, { marcas: {}, categorias: categoryMap, atualizado_em: now(), via: 'github_actions' });
+"""
+          if old not in s: raise SystemExit('Bloco de catálogo esperado não encontrado')
+          s=s.replace(old,new,1)
+          old2="""  const brand = cachedRefs.brands.find(item => norm(item?.nome) === norm(DEFAULTS.brandName));
+  const category = cachedRefs.categories.find(item => norm(item?.nome) === norm(cName));
+  if (!brand?.resource_uri) throw new Error(`Marca \"${DEFAULTS.brandName}\" não encontrada na Loja Integrada.`);
+  if (!category?.resource_uri) throw new Error(`Categoria \"${cName}\" não encontrada na Loja Integrada.`);
+  return { brandUri: brand.resource_uri, categoryUri: category.resource_uri, brandName: DEFAULTS.brandName, categoryName: cName };
+"""
+          new2="""  const category = cachedRefs.categories.find(item => norm(item?.nome) === norm(cName));
+  if (!category?.resource_uri) throw new Error(`Categoria \"${cName}\" não encontrada na Loja Integrada.`);
+  return { brandUri: '', categoryUri: category.resource_uri, brandName: '', categoryName: cName };
+"""
+          if old2 not in s: raise SystemExit('Bloco de resolução de marca esperado não encontrado')
+          s=s.replace(old2,new2,1)
+          old3="    marca: refs.brandUri,\n"
+          if old3 not in s: raise SystemExit('Campo marca esperado não encontrado')
+          s=s.replace(old3,'',1)
+          p.write_text(s)
+          PY
+          node --check scripts/sincronizar-loja-integrada.mjs
+          git diff --check
+      - name: Gravar migração
+        run: |
+          if git diff --quiet; then
+            echo 'Worker já estava sem marca.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/sincronizar-loja-integrada.mjs
+          git commit -m 'CanecaFácil: Loja Integrada sem marcas'
+          git push
