@@ -37,7 +37,9 @@ jobs:
       - name: Check mug list stability syntax
         run: node --check admin-canecas/mugs-stability-v1.js
       - name: Check inline category syntax
-        run: node --check admin-canecas/mug-inline-category-v1.js
+        run: node --check admin-canecas/mug-inline-category-v2.js
+      - name: Check archive audit syntax
+        run: node --check admin-canecas/archive-audit-v4.js
       - name: Check legacy GitHub queue syntax
         run: node --check admin-canecas/li-github-queue-v1.js
       - name: Check dual GitHub Make sync syntax
