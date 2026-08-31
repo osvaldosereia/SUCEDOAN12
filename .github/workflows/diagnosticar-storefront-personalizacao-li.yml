@@ -1,0 +1,36 @@
+name: CanecaFácil · diagnosticar storefront personalização LI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnosticar-storefront-personalizacao-li.mjs'
+      - '.github/workflows/diagnosticar-storefront-personalizacao-li.yml'
+  workflow_dispatch:
+    inputs:
+      product_key:
+        description: 'Produto publicado para diagnóstico GET-only'
+        required: false
+        default: 'mug-1788112886597-dl6wvv'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnosticar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/diagnosticar-storefront-personalizacao-li.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Diagnosticar sem alterar loja
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          PRODUCT_KEY: ${{ github.event.inputs.product_key || 'mug-1788112886597-dl6wvv' }}
+        run: node scripts/diagnosticar-storefront-personalizacao-li.mjs
