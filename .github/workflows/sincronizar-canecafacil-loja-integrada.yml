@@ -54,7 +54,12 @@ jobs:
           AUTH="${AUTH#\'}"
           AUTH="${AUTH%\'}"
           case "$AUTH" in
-            Basic\ *|basic\ *) ;;
+            Basic\ *|basic\ *)
+              ;;
+            *:*)
+              ENCODED=$(printf '%s' "$AUTH" | base64 -w0)
+              AUTH="Basic $ENCODED"
+              ;;
             *)
               if printf '%s' "$AUTH" | grep -Eq '^[A-Za-z0-9+/=]+$'; then
                 AUTH="Basic $AUTH"
