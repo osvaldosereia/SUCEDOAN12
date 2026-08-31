@@ -1,0 +1,36 @@
+name: CanecaFácil · diagnosticar estrutura pedido LI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/diagnosticar-pedido-li-estrutura.mjs'
+      - '.github/workflows/diagnosticar-pedido-li-estrutura.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnosticar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/diagnosticar-pedido-li-estrutura.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Carregar Personal Token
+        env:
+          LI_APP_TOKEN: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+        run: |
+          test -n "$LI_APP_TOKEN" || { echo 'Token ausente'; exit 1; }
+          printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
+      - name: Ler estrutura sanitizada do pedido
+        env:
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+        run: node scripts/diagnosticar-pedido-li-estrutura.mjs
