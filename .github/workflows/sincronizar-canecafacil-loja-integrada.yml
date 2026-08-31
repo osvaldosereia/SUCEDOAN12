@@ -58,6 +58,29 @@ jobs:
           if printf '%s' "$LI_API_KEY" | grep -Eq '^[A-Za-z0-9]{20}$'; then API_FMT=ok; else API_FMT=fora_do_padrao; fi
           echo "Diagnóstico seguro: chave_api comprimento=${API_LEN}, formato=${API_FMT}; personal_token comprimento=${APP_LEN}."
           printf 'LOJA_INTEGRADA_AUTHORIZATION=chave_api %s aplicacao %s\n' "$LI_API_KEY" "$LI_APP_KEY" >> "$GITHUB_ENV"
+      - name: Inspecionar estrutura do Personal Token sem revelar conteúdo
+        env:
+          LI_APP_KEY: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+        run: |
+          node - <<'NODE'
+          const t = process.env.LI_APP_KEY || '';
+          const parts = t.split('.');
+          const result = {
+            length: t.length,
+            dot_count: (t.match(/\./g) || []).length,
+            dash_count: (t.match(/-/g) || []).length,
+            underscore_count: (t.match(/_/g) || []).length,
+            jwt_shape: parts.length === 3 && parts.every(p => /^[A-Za-z0-9_-]+$/.test(p)),
+          };
+          if (result.jwt_shape) {
+            try {
+              const decode = p => JSON.parse(Buffer.from(p.replace(/-/g,'+').replace(/_/g,'/'), 'base64').toString('utf8'));
+              result.jwt_header_keys = Object.keys(decode(parts[0])).sort();
+              result.jwt_payload_keys = Object.keys(decode(parts[1])).sort();
+            } catch { result.jwt_decode = 'falhou'; }
+          }
+          console.log('TOKEN_STRUCTURE', JSON.stringify(result));
+          NODE
       - name: Detectar formato aceito pela API (somente leitura)
         env:
           LI_API_KEY: ${{ secrets.LOJA_INTEGRADA_API_KEY }}
