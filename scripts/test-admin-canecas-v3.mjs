@@ -15,6 +15,7 @@ const recovery=read('admin-canecas','li-recovery-v3.js');
 const coordinator=read('admin-canecas','li-sync-coordinator-v4.js');
 const registration=read('admin-canecas','li-registration-status-v1.js');
 const contract=read('loja-integrada','personalizar','personalization-contract-v1.js');
+const makeContractV4=read('loja-integrada','personalizar','v4-make-contract-v1.js');
 const appV4=read('loja-integrada','personalizar','app-v4.js');
 const indexV4=read('loja-integrada','personalizar','index-v4.html');
 const liWorker=read('scripts','sincronizar-loja-integrada.mjs');
@@ -65,14 +66,17 @@ assert.match(contract,/typeof raw\.ativa === 'boolean'/,'configuração nova dev
 assert.match(appV4,/normalizePersonalizationConfig/,'V4 deve ler configuração do modelo');
 assert.match(appV4,/validatePersonalizationInput/,'V4 deve validar entrada antes da IA');
 assert.match(appV4,/buildPersonalizationPrompt/,'V4 deve montar prompt restrito');
-assert.match(appV4,/image_base64:baseArt/,'arte-base deve continuar referência principal');
+assert.match(appV4,/image_base64:baseArt/,'V4 deve fornecer arte-base ao contrato de transporte');
 assert.match(appV4,/images_json:JSON\.stringify\(makeUploadDescriptors/,'foto/logo devem entrar como anexos auxiliares');
 assert.equal(appV4.includes('freeInstruction'),false,'V4 não deve possuir instrução livre');
 assert.match(appV4,/aprovada:false/,'arte V4 não pode ser aprovada automaticamente');
+assert.match(makeContractV4,/model_art_base64:officialArt/,'contrato Make deve preservar arte oficial explicitamente');
+assert.match(makeContractV4,/image_base64:firstCustomerImage\|\|officialArt/,'contrato deve manter compatibilidade com foto do cliente no image_base64');
+assert.ok(indexV4.indexOf('v4-make-contract-v1.js')<indexV4.indexOf('app-v4.js'),'contrato Make deve carregar antes da V4');
 assert.match(indexV4,/HOMOLOGAÇÃO V4/,'V4 deve estar claramente marcada como homologação');
 assert.match(indexV4,/Não é possível solicitar alterações fora dos campos liberados/,'UX deve deixar limites claros');
 
 assert.match(liWorker,/p\.mockup_2,\s*p\.mockup_1/,'worker LI deve iniciar galeria por mockup 2 e mockup 1');
 assert.match(cropWorker,/imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/,'recortes devem manter ordem oficial');
 
-console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados/sugeridos, V4 de homologação, resumo na grade e UI sem observers globais.');
+console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados/sugeridos, V4 compatível com Make e UI sem observers globais.');
