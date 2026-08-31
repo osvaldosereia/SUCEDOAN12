@@ -17,6 +17,7 @@ const bulk = read('bulk-actions-v1.js');
 const grid = read('mug-grid-v1.js');
 const dual = read('li-dual-sync-v2.js');
 const stability = read('mugs-stability-v1.js');
+const inlineCategory = read('mug-inline-category-v2.js');
 const recovery = read('li-recovery-v2.js');
 const coordinator = read('li-sync-coordinator-v3.js');
 const crops = read('storefront-crops-github-v1.js');
@@ -42,7 +43,8 @@ assert.deepEqual(activeModules, [
   'generator-library-v1.js',
   'make-webhook-settings-v1.js',
   'li-dual-sync-v2.js',
-  'mugs-stability-v1.js'
+  'mugs-stability-v1.js',
+  'mug-inline-category-v2.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
 
 for (const legacy of [
@@ -54,7 +56,7 @@ for (const legacy of [
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
   ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
-  ['li-dual-sync-v2.js', dual], ['mugs-stability-v1.js', stability], ['archive-audit-v4.js', audit]
+  ['li-dual-sync-v2.js', dual], ['mugs-stability-v1.js', stability], ['mug-inline-category-v2.js', inlineCategory], ['archive-audit-v4.js', audit]
 ]) {
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
@@ -65,7 +67,7 @@ assert.match(store, /CACHE_MS\s*=\s*120000/, 'store deve compartilhar cache de 2
 assert.match(app, /admin-canecas:route/, 'core deve publicar eventos de rota');
 assert.equal(app.includes('function renderMugs'), false, 'core não deve competir com o catálogo pela aba Canecas');
 
-assert.ok(index.includes('mugs-stability-v1.js?v=20260831-1'), 'index deve carregar estabilizador da grade');
+assert.ok(index.includes('mugs-stability-v1.js?v=20260831-2'), 'index deve carregar estabilizador atualizado da grade');
 assert.match(stability, /const\s+PRESERVE\s*=\s*\[/, 'estabilizador deve manter nós visuais persistentes');
 assert.match(stability, /cfMugGridWrap/, 'estabilizador deve preservar a grade das canecas');
 assert.match(stability, /cfBulkActions/, 'estabilizador deve preservar ações em lote');
@@ -74,6 +76,14 @@ assert.match(stability, /cfArchiveAudit/, 'estabilizador deve preservar auditori
 assert.match(stability, /observer\.observe\(root,\s*\{\s*childList:\s*true\s*\}\)/, 'observer deve ficar restrito ao root #mugs e somente filhos diretos');
 assert.equal(/observer\.observe\(document\.documentElement/.test(stability), false, 'estabilizador não pode observar o documento inteiro');
 assert.match(stability, /await\s+renderGrid\(\)/, 'grade deve ser atualizada após o catálogo terminar sem desaparecer antes');
+assert.match(stability, /admin-canecas:mugs-stable-rendered/, 'estabilizador deve avisar quando a grade terminou');
+
+assert.ok(index.includes('mug-inline-category-v2.js?v=20260831-1'), 'index deve usar categoria rápida em lote');
+assert.equal(index.includes('mug-inline-category-v1.js'), false, 'categoria rápida antiga com retries progressivos não deve estar ativa');
+assert.match(inlineCategory, /await\s+loadMugs\(\)/, 'categoria rápida deve reaproveitar cache das canecas');
+assert.match(inlineCategory, /admin-canecas:mugs-stable-rendered/, 'categoria rápida deve instalar somente após grade estável');
+assert.equal(/attempt\s*<\s*35/.test(inlineCategory), false, 'categoria rápida não pode usar 35 tentativas em cascata');
+assert.equal(/setTimeout\([^]*140/.test(inlineCategory), false, 'categoria rápida não pode reprocessar cards a cada 140 ms');
 
 assert.ok(index.includes('li-dual-sync-v2.js?v=20260831-2'), 'index deve carregar controle dual GitHub/Make estável');
 assert.equal(index.includes('li-dual-sync-v1.js'), false, 'versão dual antiga com observer global não deve estar ativa');
@@ -132,4 +142,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: grade preservada após edição, sem observers globais auxiliares, GitHub principal e Make contingência.');
+console.log('OK admin-canecas: grade preservada, categoria rápida em lote, sem observers globais auxiliares, GitHub principal e Make contingência.');
