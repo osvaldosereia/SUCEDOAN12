@@ -36,8 +36,10 @@ jobs:
         run: node --check admin-canecas/mug-grid-v1.js
       - name: Check inline category syntax
         run: node --check admin-canecas/mug-inline-category-v1.js
-      - name: Check GitHub queue syntax
+      - name: Check legacy GitHub queue syntax
         run: node --check admin-canecas/li-github-queue-v1.js
+      - name: Check dual GitHub Make sync syntax
+        run: node --check admin-canecas/li-dual-sync-v1.js
       - name: Check GitHub crops UI syntax
         run: node --check admin-canecas/storefront-crops-github-v1.js
       - name: Check GitHub LI worker syntax
