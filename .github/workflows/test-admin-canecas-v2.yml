@@ -40,6 +40,10 @@ jobs:
         run: node --check admin-canecas/mugs-stability-v2.js
       - name: Check inline category syntax
         run: node --check admin-canecas/mug-inline-category-v2.js
+      - name: Check LI recovery syntax
+        run: node --check admin-canecas/li-recovery-v3.js
+      - name: Check LI coordinator syntax
+        run: node --check admin-canecas/li-sync-coordinator-v4.js
       - name: Check dual GitHub Make sync syntax
         run: node --check admin-canecas/li-dual-sync-v3.js
       - name: Check GitHub crops UI syntax
