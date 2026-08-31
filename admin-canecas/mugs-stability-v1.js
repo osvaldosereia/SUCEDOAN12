@@ -1,6 +1,6 @@
 import { renderGrid } from './mug-grid-v1.js?v=20260829-2';
 
-const BUILD = '20260831-admin-canecas-mugs-stability-v1';
+const BUILD = '20260831-admin-canecas-mugs-stability-v1.1';
 const $ = (s, r = document) => r.querySelector(s);
 
 const state = {
@@ -41,7 +41,6 @@ function restoreNodes() {
   if (!root || state.restoring) return;
   state.restoring = true;
   try {
-    // Ordem fixa evita que os módulos disputem posição e façam a tela "pular".
     for (const id of PRESERVE) {
       const node = state.nodes.get(id);
       if (node && !node.isConnected) insertBeforeCatalog(node, root);
@@ -49,6 +48,12 @@ function restoreNodes() {
   } finally {
     state.restoring = false;
   }
+}
+
+function announceStable() {
+  window.dispatchEvent(new CustomEvent('admin-canecas:mugs-stable-rendered', {
+    detail: { source: BUILD, at: Date.now() }
+  }));
 }
 
 function scheduleGridRefresh() {
@@ -61,6 +66,7 @@ function scheduleGridRefresh() {
       await renderGrid();
       rememberVisibleNodes();
       restoreNodes();
+      announceStable();
     } catch (error) {
       console.warn('[CanecaFácil] atualização estável da grade:', error);
     }
@@ -73,13 +79,8 @@ function onCatalogMutation(mutations) {
   if (!structural) return;
 
   rememberVisibleNodes();
-
-  // Quando catalog-manager usa root.innerHTML, os nós preservados ficam desconectados.
-  // Recolocamos no mesmo microciclo, antes do próximo paint do navegador.
   const lost = [...state.nodes.values()].some(node => node && !node.isConnected);
   if (lost) restoreNodes();
-
-  // Se uma nova tabela foi renderizada, atualiza os cards sem apagar a grade antiga primeiro.
   if (state.root?.querySelector('table.table')) scheduleGridRefresh();
 }
 
