@@ -1,40 +1,55 @@
-name: CanecaFácil · diagnóstico autenticação Loja Integrada
+name: CanecaFácil · sincronizar Loja Integrada
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/testar-auth-loja-integrada.mjs'
-      - '.github/workflows/sincronizar-canecafacil-loja-integrada.yml'
+    inputs:
+      product_key:
+        description: 'Chave Firebase de uma caneca específica (opcional)'
+        required: false
+        default: ''
+      force:
+        description: 'Forçar reprocessamento'
+        required: false
+        type: boolean
+        default: false
+      limit:
+        description: 'Máximo de produtos nesta execução'
+        required: false
+        default: '100'
+  schedule:
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: read
 
 concurrency:
-  group: canecafacil-li-auth-diagnostic
-  cancel-in-progress: true
+  group: canecafacil-loja-integrada-sync
+  cancel-in-progress: false
 
 jobs:
-  diagnostico:
+  sincronizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validar credenciais protegidas
+      - name: Validar Personal Token Loja Integrada
         env:
-          LI_API_KEY: ${{ secrets.LOJA_INTEGRADA_API_KEY }}
-          LI_APP_KEY: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          LI_APP_TOKEN: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
         run: |
-          if [ -z "$LI_API_KEY" ]; then echo 'ERRO: LOJA_INTEGRADA_API_KEY ausente'; exit 1; fi
-          if [ -z "$LI_APP_KEY" ]; then echo 'ERRO: LOJA_INTEGRADA_APP_KEY ausente'; exit 1; fi
-          printf 'LOJA_INTEGRADA_AUTHORIZATION=chave_api %s aplicacao %s\n' "$LI_API_KEY" "$LI_APP_KEY" >> "$GITHUB_ENV"
-          printf 'LI_APP_TOKEN=%s\n' "$LI_APP_KEY" >> "$GITHUB_ENV"
-          echo 'Credenciais carregadas sem exibição dos valores.'
-      - name: Testar API Loja Integrada somente leitura
+          if [ -z "$LI_APP_TOKEN" ]; then
+            echo 'ERRO: secret LOJA_INTEGRADA_APP_KEY ausente.'
+            exit 1
+          fi
+          printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
+          echo 'Personal Token carregado com segurança.'
+      - name: Sincronizar fila CanecaFácil
         env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
-        run: node scripts/testar-auth-loja-integrada.mjs
+          PRODUCT_KEY: ${{ github.event.inputs.product_key || '' }}
+          FORCE: ${{ github.event.inputs.force || 'false' }}
+          LIMIT: ${{ github.event.inputs.limit || '100' }}
+        run: node scripts/sincronizar-loja-integrada.mjs
