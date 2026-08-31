@@ -1,7 +1,7 @@
 import { text, norm } from '../shared/mug-commerce-v1.js?v=20260828-1';
 import { loadMugs, getMug } from './mug-store-v2.js?v=20260829-1';
 
-const BUILD = '20260831-admin-canecas-li-registration-status-v1';
+const BUILD = '20260831-admin-canecas-li-registration-status-v1.1';
 const REFRESH_MS = 20000;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -24,15 +24,38 @@ function registrationState(product = {}) {
   const id = text(li.produto_id);
   const status = norm(li.sync_status);
   const confirmedAt = text(li.sync_at);
-  const error = text(li.sync_error);
+  const auditedAt = text(li.cadastro_confirmado_em);
+  const audited = li.cadastro_confirmado === true;
+  const auditRejected = li.cadastro_confirmado === false;
+  const error = text(li.sync_error || li.verificacao_erro);
   const nextRetry = text(li.proxima_tentativa_em);
 
+  if (id && audited) {
+    const verified = formatDate(auditedAt) || auditedAt;
+    return {
+      code: 'confirmed',
+      label: 'CADASTRADA ✓',
+      short: `ID ${id}${verified ? ` · verificada ${verified}` : ''}`,
+      detail: `Cadastro conferido diretamente na API da Loja Integrada${verified ? ` em ${verified}` : ''}.`,
+      id,
+      confirmedAt: auditedAt || confirmedAt,
+    };
+  }
+  if (auditRejected && !['pendente', 'enviando', 'processando', 'erro_sistema'].includes(status)) {
+    return {
+      code: 'review',
+      label: 'NÃO CONFIRMADA',
+      short: id ? `ID ${id} · auditoria falhou` : 'cadastro remoto não confirmado',
+      detail: error || 'A auditoria da Loja Integrada não confirmou este cadastro.',
+      id,
+    };
+  }
   if (id && status === 'sincronizado' && confirmedAt) {
     return {
       code: 'confirmed',
       label: 'CADASTRADA ✓',
-      short: `ID ${id}`,
-      detail: `Confirmada pela API da Loja Integrada em ${formatDate(confirmedAt) || confirmedAt}.`,
+      short: `ID ${id} · confirmada ${formatDate(confirmedAt) || confirmedAt}`,
+      detail: `Confirmada pela API ao final da sincronização em ${formatDate(confirmedAt) || confirmedAt}. A auditoria periódica reforçará esta confirmação.`,
       id,
       confirmedAt,
     };
@@ -90,7 +113,7 @@ function installStyles() {
     .cf-li-registration{align-items:flex-start!important;min-height:48px}
     .cf-li-registration>span{display:grid;gap:2px;min-width:0}
     .cf-li-registration b{font-size:10px;line-height:1.1}
-    .cf-li-registration small{font-size:9px;line-height:1.2;font-weight:800;opacity:.82;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+    .cf-li-registration small{font-size:9px;line-height:1.2;font-weight:800;opacity:.82;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:165px}
     .cf-li-registration i{margin-top:4px;flex:0 0 auto}
     .cf-li-registration.confirmed{background:#edf8f0!important;color:#176b36!important;box-shadow:inset 0 0 0 1px #bfe3c8}
     .cf-li-registration.confirmed i{background:#208742!important;box-shadow:0 0 0 3px rgba(32,135,66,.12)}
