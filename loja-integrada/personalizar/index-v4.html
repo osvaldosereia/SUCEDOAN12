@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <title>Teste Personalizador V4 — CanecaFácil</title>
+  <link rel="stylesheet" href="./styles.css?v=20260830-2">
+  <style>
+    .staging-note{margin:0 0 16px;padding:10px 12px;border:1px solid #f0d9b9;border-radius:10px;background:#fff8ed;color:#7b5526;font-size:12px;line-height:1.45}
+    .cf-v4-field span{display:block;margin-bottom:6px;font-weight:700}
+    .cf-v4-field small{display:block;margin-top:6px;color:#777}
+    #configSummary{margin:0 0 16px;padding:10px 12px;border:1px solid #e7e7e2;border-radius:10px;background:#fafaf8;font-size:12px;line-height:1.5}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="https://canecafacil.com.br/" aria-label="CanecaFácil"><img src="../assets/canecafacil-logo.webp" alt="CanecaFácil"></a>
+    <button type="button" class="ghost" id="backButton">Voltar</button>
+  </header>
+  <main class="page">
+    <div class="staging-note"><b>HOMOLOGAÇÃO V4</b><br>Esta página não substitui o personalizador atual. Ela serve para validar os campos e prompts configurados no Admin.</div>
+    <section class="intro"><p class="eyebrow">PERSONALIZAÇÃO</p><h1>Personalize este modelo</h1><p>Você pode alterar somente os dados liberados para esta caneca.</p></section>
+    <section class="product" id="productBox" aria-live="polite"><div class="skeleton media"></div><div class="product-copy"><div class="skeleton line"></div><div class="skeleton line short"></div></div></section>
+    <form class="form-card" id="personalizerForm" hidden>
+      <div id="configSummary"></div>
+      <div class="section-title"><div><p class="eyebrow">SALVAR CRIAÇÃO</p><h2>Seu e-mail</h2></div><span>1</span></div>
+      <div class="grid"><label class="wide">E-mail<input id="customerEmail" type="email" autocomplete="email" required placeholder="voce@exemplo.com"></label></div>
+      <div class="section-title"><div><p class="eyebrow">PERSONALIZAÇÃO</p><h2>Dados permitidos neste modelo</h2></div><span>2</span></div>
+      <div class="grid" id="dynamicFields"></div>
+      <button class="primary" id="generateButton" type="submit">GERAR MINHA ARTE</button>
+      <p class="privacy">Não é possível solicitar alterações fora dos campos liberados para este modelo.</p>
+    </form>
+    <section class="progress-card" id="progressBox" hidden><div class="spinner"></div><div><strong>Preparando sua arte…</strong><p id="progressText">Isso normalmente leva alguns instantes.</p></div></section>
+    <section class="result-card" id="resultBox" hidden>
+      <p class="eyebrow">ARTE PRONTA · TESTE</p><h2>Confira o resultado</h2><img id="resultImage" alt="Arte personalizada da caneca">
+      <div class="code-box"><span>Código da personalização</span><strong id="resultCode"></strong><button type="button" id="copyCode">Copiar</button></div>
+      <p class="hint">Nesta V4 de homologação a arte é salva como gerada, nunca como aprovada automaticamente.</p>
+      <div class="actions"><button type="button" class="secondary" id="redoButton">Alterar dados</button></div>
+    </section>
+    <section class="error-card" id="errorBox" hidden><strong>Não foi possível concluir</strong><p id="errorText"></p><button type="button" class="secondary" id="tryAgain">Tentar novamente</button></section>
+  </main>
+  <script type="module" src="./app-v4.js?v=20260831-1"></script>
+</body>
+</html>
