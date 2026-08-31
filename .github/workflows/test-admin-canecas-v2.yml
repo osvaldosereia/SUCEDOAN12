@@ -8,6 +8,7 @@ on:
       - 'scripts/test-admin-canecas-v2.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
       - 'scripts/sincronizar-loja-integrada.mjs'
+      - 'scripts/processar-vitrine-canecas.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'scripts/test-admin-canecas-v2.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
       - 'scripts/sincronizar-loja-integrada.mjs'
+      - 'scripts/processar-vitrine-canecas.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
 
 permissions:
@@ -35,19 +37,17 @@ jobs:
       - name: Check mug grid syntax
         run: node --check admin-canecas/mug-grid-v1.js
       - name: Check mug list stability syntax
-        run: node --check admin-canecas/mugs-stability-v1.js
+        run: node --check admin-canecas/mugs-stability-v2.js
       - name: Check inline category syntax
         run: node --check admin-canecas/mug-inline-category-v2.js
-      - name: Check archive audit syntax
-        run: node --check admin-canecas/archive-audit-v4.js
-      - name: Check legacy GitHub queue syntax
-        run: node --check admin-canecas/li-github-queue-v1.js
       - name: Check dual GitHub Make sync syntax
-        run: node --check admin-canecas/li-dual-sync-v2.js
+        run: node --check admin-canecas/li-dual-sync-v3.js
       - name: Check GitHub crops UI syntax
-        run: node --check admin-canecas/storefront-crops-github-v1.js
+        run: node --check admin-canecas/storefront-crops-github-v2.js
       - name: Check GitHub LI worker syntax
         run: node --check scripts/sincronizar-loja-integrada.mjs
+      - name: Check crop worker syntax
+        run: node --check scripts/processar-vitrine-canecas.mjs
       - name: Validate Admin Canecas V2
         run: node scripts/test-admin-canecas-v2.mjs
       - name: Smoke test Firebase and mug image
