@@ -1,0 +1,127 @@
+{
+  "name": "CANECA FACIL - BANNERS IA - V5.1 EDITIMAGE ENQUADRAMENTO",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {"maxResults": 1},
+      "mapper": {},
+      "metadata": {
+        "designer": {"x": 0,"y": 0,"name": "Admin Canecas - formato + prompt + canecas + enquadramento"},
+        "parameters": [
+          {"name":"hook","type":"hook:gateway-webhook","label":"Webhook","required":true},
+          {"name":"maxResults","type":"number","label":"Maximum number of results"}
+        ],
+        "interface": [
+          {"name":"action","type":"text"},
+          {"name":"request_id","type":"text"},
+          {"name":"build","type":"text"},
+          {"name":"fit_build","type":"text"},
+          {"name":"prompt","type":"text"},
+          {"name":"reference_image_base64","type":"text"},
+          {"name":"instruction_ids","type":"array","spec":{"name":"value","type":"text"}},
+          {"name":"images","type":"array","spec":{"type":"collection","name":"value","spec":[{"name":"image_url","type":"text"},{"name":"name","type":"text"},{"name":"sku","type":"text"}]}},
+          {"name":"banner","type":"collection","spec":[
+            {"name":"type","type":"text"},
+            {"name":"label","type":"text"},
+            {"name":"desktop","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"},{"name":"ai_size","type":"text"},{"name":"fit_mode","type":"text"},{"name":"safe_zone","type":"text"}]},
+            {"name":"mobile","type":"collection","spec":[{"name":"width","type":"number"},{"name":"height","type":"number"},{"name":"ai_size","type":"text"},{"name":"fit_mode","type":"text"},{"name":"safe_zone","type":"text"}]}
+          ]}
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "module": "openai-gpt-3:editImage",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "n": 1,
+        "mask": {},
+        "size": "{{1.banner.desktop.ai_size}}",
+        "image": [{
+          "fileData": "{{toBinary(replace(replace(replace(1.reference_image_base64; \"data:image/webp;base64,\"; emptystring); \"data:image/png;base64,\"; emptystring); \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}",
+          "fileName": "canecas-referencia.jpg"
+        }],
+        "model": "gpt-image-2",
+        "prompt": "{{1.prompt}}\n\nREGRAS TÉCNICAS DE PRODUÇÃO DO BANNER:\n- A imagem fornecida contém as CANECAS REAIS selecionadas pelo usuário. Use essas canecas como referências visuais reais, preservando com alta fidelidade suas estampas, cores e identidade.\n- Crie o BANNER FINAL COMPLETO. Não devolva a prancha, não faça uma grade de cartões e não coloque as canecas em quadrados brancos. Integre os produtos naturalmente na cena e no layout.\n- Texto, oferta, CTA e demais elementos pedidos pelo briefing devem fazer parte da própria arte final. O Admin não adicionará nada por cima depois.\n- Não invente outra marca, não troque as estampas por desenhos parecidos e não duplique canecas sem necessidade.\n- Formato: {{1.banner.label}} DESKTOP.\n- Canvas de geração: {{1.banner.desktop.ai_size}}.\n- Arquivo final: {{1.banner.desktop.width}} x {{1.banner.desktop.height}} px.\n- MODO DE ENQUADRAMENTO: {{1.banner.desktop.fit_mode}}.\n- ÁREA SEGURA: {{1.banner.desktop.safe_zone}}\n- Se o modo for resize-no-crop, componha usando TODO o canvas e mantenha tudo importante dentro das margens, pois a arte será apenas redimensionada para o tamanho final, sem corte.\n- Se o modo for central-safe-crop, mantenha TODO texto, preços, CTA, rostos e produtos essenciais dentro da faixa segura central descrita acima; somente fundo e decoração podem ficar fora dela.\n- Atue com liberdade criativa de designer sênior: hierarquia forte, tipografia bem integrada, contraste, profundidade, equilíbrio, acabamento premium e aparência de campanha profissional de e-commerce.\n",
+        "quality": "high",
+        "background": "opaque",
+        "output_format": "jpeg",
+        "output_compression": 92,
+        "moderation": "auto"
+      },
+      "metadata": {
+        "designer": {"x": 350,"y": -120,"name": "GPT Image 2 - BANNER FINAL DESKTOP"},
+        "parameters": [{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]
+      }
+    },
+    {
+      "id": 3,
+      "module": "openai-gpt-3:editImage",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "n": 1,
+        "mask": {},
+        "size": "{{1.banner.mobile.ai_size}}",
+        "image": [{
+          "fileData": "{{toBinary(replace(replace(replace(1.reference_image_base64; \"data:image/webp;base64,\"; emptystring); \"data:image/png;base64,\"; emptystring); \"data:image/jpeg;base64,\"; emptystring); \"base64\")}}",
+          "fileName": "canecas-referencia.jpg"
+        }],
+        "model": "gpt-image-2",
+        "prompt": "{{1.prompt}}\n\nREGRAS TÉCNICAS DE PRODUÇÃO DO BANNER:\n- A imagem fornecida contém as CANECAS REAIS selecionadas pelo usuário. Use essas canecas como referências visuais reais, preservando com alta fidelidade suas estampas, cores e identidade.\n- Crie o BANNER FINAL COMPLETO. Não devolva a prancha, não faça uma grade de cartões e não coloque as canecas em quadrados brancos. Integre os produtos naturalmente na cena e no layout.\n- Texto, oferta, CTA e demais elementos pedidos pelo briefing devem fazer parte da própria arte final. O Admin não adicionará nada por cima depois.\n- Não invente outra marca, não troque as estampas por desenhos parecidos e não duplique canecas sem necessidade.\n- Formato: {{1.banner.label}} MOBILE.\n- Canvas de geração: {{1.banner.mobile.ai_size}}.\n- Arquivo final: {{1.banner.mobile.width}} x {{1.banner.mobile.height}} px.\n- MODO DE ENQUADRAMENTO: {{1.banner.mobile.fit_mode}}.\n- ÁREA SEGURA: {{1.banner.mobile.safe_zone}}\n- Esta versão deve ser RECOMPOSTA para celular; não copie simplesmente o layout desktop.\n- Se o modo for resize-no-crop, componha usando TODO o canvas e mantenha tudo importante dentro das margens, pois a arte será apenas redimensionada para o tamanho final, sem corte.\n- Se o modo for central-safe-crop, mantenha TODO texto, preços, CTA, rostos e produtos essenciais dentro da faixa segura central descrita acima; somente fundo e decoração podem ficar fora dela.\n- Atue com liberdade criativa de designer sênior e priorize leitura imediata em tela pequena, hierarquia, contraste, acabamento premium e composição profissional.\n",
+        "quality": "high",
+        "background": "opaque",
+        "output_format": "jpeg",
+        "output_compression": 92,
+        "moderation": "auto"
+      },
+      "metadata": {
+        "designer": {"x": 350,"y": 120,"name": "GPT Image 2 - BANNER FINAL MOBILE"},
+        "parameters": [{"name":"__IMTCONN__","type":"account:openai-gpt-3","label":"Connection","required":true}]
+      }
+    },
+    {
+      "id": 4,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "status": 200,
+        "body": "{\"ok\":true,\"request_id\":\"{{1.request_id}}\",\"images\":{\"desktop\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(2.resImgData)}}\"},\"mobile\":{\"mime\":\"image/jpeg\",\"b64\":\"{{base64(3.resImgData)}}\"}}}",
+        "headers": [
+          {"key":"Content-Type","value":"application/json; charset=utf-8"},
+          {"key":"Access-Control-Allow-Origin","value":"*"},
+          {"key":"Cache-Control","value":"no-store"}
+        ]
+      },
+      "metadata": {"designer":{"x":760,"y":0,"name":"Responder banner final Desktop + Mobile"}}
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {"orphans": []},
+    "zone": "eu1.make.com",
+    "notes": [
+      "V5.1 mantém o fluxo simples Webhook -> EditImage Desktop -> EditImage Mobile -> Response.",
+      "Full e Mini usam dimensões GPT Image muito próximas/exatas da proporção final e exportação sem crop.",
+      "Tarja e Vitrine usam central-safe-crop porque as proporções finais ultrapassam ou se aproximam das limitações de proporção do modelo.",
+      "As canecas reais continuam sendo usadas como referência visual no editImage.",
+      "O Admin não desenha texto nem produtos por cima do resultado."
+    ]
+  }
+}
