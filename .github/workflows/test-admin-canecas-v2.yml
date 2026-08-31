@@ -40,6 +40,8 @@ jobs:
         run: node --check admin-canecas/mugs-stability-v2.js
       - name: Check inline category syntax
         run: node --check admin-canecas/mug-inline-category-v2.js
+      - name: Check personalization config syntax
+        run: node --check admin-canecas/personalization-config-v1.js
       - name: Check LI recovery syntax
         run: node --check admin-canecas/li-recovery-v3.js
       - name: Check LI coordinator syntax
