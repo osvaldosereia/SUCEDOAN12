@@ -1,4 +1,4 @@
-export const PERSONALIZATION_CONTRACT_BUILD = '20260831-personalization-contract-v1';
+export const PERSONALIZATION_CONTRACT_BUILD = '20260831-personalization-contract-v1.1';
 
 export const ALLOWED_FIELDS = Object.freeze({
   nome: Object.freeze({ id: 'nome', label: 'Nome', type: 'text', max: 60 }),
@@ -32,7 +32,8 @@ function legacyFields(product = {}) {
 export function normalizePersonalizationConfig(product = {}) {
   const raw = product.personalizacao && typeof product.personalizacao === 'object' ? product.personalizacao : {};
   const legacy = legacyFields(product);
-  const active = raw.ativa === true || product.loja_integrada_personalizavel === true || product.canecafacil_personalizavel === true || product.personalizavel === true || product.personalizacao_publica === true;
+  const legacyActive = product.loja_integrada_personalizavel === true || product.canecafacil_personalizavel === true || product.personalizavel === true || product.personalizacao_publica === true;
+  const active = typeof raw.ativa === 'boolean' ? raw.ativa : legacyActive;
   const fields = [];
   for (const def of Object.values(ALLOWED_FIELDS)) {
     const item = raw.campos?.[def.id] || legacy[def.id] || {};
