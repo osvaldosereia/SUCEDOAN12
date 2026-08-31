@@ -61,16 +61,23 @@
     return `<div class="banner-selected-head"><div><b>Canecas selecionadas</b><small>${items.length} selecionada${items.length===1?'':'s'}</small></div><div class="banner-selected-nav"><button type="button" data-selected-scroll="left" aria-label="Anterior">‹</button><button type="button" data-selected-scroll="right" aria-label="Próximas">›</button></div></div><div class="banner-selected-track">${items.length?items.map(item=>`<article class="banner-selected-item" data-selected-key="${esc(item.key)}">${item.img?`<img src="${esc(item.img)}" alt="${esc(item.name)}">`:'<div class="no-img">Sem foto</div>'}<button type="button" class="banner-selected-remove" data-selected-remove="${esc(item.key)}" title="Remover esta caneca" aria-label="Remover ${esc(item.name)}">×</button><b title="${esc(item.name)}">${esc(item.name)}</b><small>${esc(item.sku)}</small></article>`).join(''):'<div class="banner-selected-empty">As canecas escolhidas aparecerão aqui para você conferir e remover rapidamente.</div>'}</div>`;
   }
 
+  function bindCarousel(box){
+    const track=box.querySelector('.banner-selected-track');
+    box.querySelectorAll('[data-selected-scroll]').forEach(btn=>btn.onclick=()=>track?.scrollBy({left:btn.dataset.selectedScroll==='left'?-310:310,behavior:'smooth'}));
+    box.querySelectorAll('[data-selected-remove]').forEach(btn=>btn.onclick=e=>{e.preventDefault();e.stopPropagation();removeSelected(btn.dataset.selectedRemove)});
+  }
+
   function ensureCarousel(){
     const picker=root()?.querySelector('.banner-product-picker');
     const tools=picker?.querySelector('.banner-product-tools');
     if(!picker||!tools)return;
     let box=picker.querySelector('.banner-selected-carousel');
     if(!box){box=document.createElement('div');box.className='banner-selected-carousel';picker.insertBefore(box,tools)}
+    const signature=[...selectedCache.values()].map(item=>`${item.key}|${item.img}|${item.name}|${item.sku}`).join('||')||'__empty__';
+    if(box.dataset.signature===signature)return;
+    box.dataset.signature=signature;
     box.innerHTML=selectedCarouselHtml();
-    const track=box.querySelector('.banner-selected-track');
-    box.querySelectorAll('[data-selected-scroll]').forEach(btn=>btn.onclick=()=>track?.scrollBy({left:btn.dataset.selectedScroll==='left'?-310:310,behavior:'smooth'}));
-    box.querySelectorAll('[data-selected-remove]').forEach(btn=>btn.onclick=e=>{e.preventDefault();e.stopPropagation();removeSelected(btn.dataset.selectedRemove)});
+    bindCarousel(box);
   }
 
   function restoreListPosition(scrollTop,scrollLeft,pageX,pageY){
