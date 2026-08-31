@@ -54,11 +54,17 @@
   <div class="toast" id="toast" hidden></div>
 
   <script>
-    window.__CANECAS_ADMIN_CONFIG__ = Object.freeze({
-      makeWebhook: 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4',
-      mugGeneratorWebhook: 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4',
-      bannerWebhook: ''
-    });
+    (() => {
+      const fallback = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
+      let saved = '';
+      try { saved = String(localStorage.getItem('canecafacil_make_webhook') || '').trim(); } catch {}
+      const makeWebhook = /^https:\/\/hook\.[a-z0-9-]+\.make\.com\/[A-Za-z0-9_-]+$/i.test(saved) ? saved : fallback;
+      window.__CANECAS_ADMIN_CONFIG__ = Object.freeze({
+        makeWebhook,
+        mugGeneratorWebhook: makeWebhook,
+        bannerWebhook: ''
+      });
+    })();
   </script>
   <script src="./mug-inline-category-v1.js?v=20260829-2"></script>
   <script type="module" src="./product-policy-v1.js?v=20260829-2"></script>
@@ -79,5 +85,6 @@
   <script type="module" src="./archive-audit-v3.js?v=20260830-1"></script>
   <script type="module" src="./generator-v1.js?v=20260829-2"></script>
   <script type="module" src="./generator-library-v1.js?v=20260830-2"></script>
+  <script type="module" src="./make-webhook-settings-v1.js?v=20260831-1"></script>
 </body>
 </html>
