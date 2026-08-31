@@ -105,7 +105,7 @@ async function apply() {
         vitrine_recorte_esquerda:item.urls.left,
         vitrine_recorte_centro:item.urls.center,
         vitrine_recorte_direita:item.urls.right,
-        imagens_canecafacil:[item.mockup_1,item.mockup_2,item.urls.left,item.urls.center,item.urls.right],
+        imagens_canecafacil:[item.mockup_2,item.mockup_1,item.urls.left,item.urls.right,item.urls.center],
         vitrine_recortes_status:'pronto',vitrine_recortes_erro:'',vitrine_recortes_processador:VERSION,vitrine_recortes_atualizado_em:now,
         vitrine_recortes:{versao:VERSION,status:'pronto',source_art:item.art,esquerda:item.urls.left,centro:item.urls.center,direita:item.urls.right,source_width:item.meta.width,source_height:item.meta.height,left_width:item.meta.leftW,center_width:item.meta.square,right_width:item.meta.rightW,atualizado_em:now},
         updated_at:now,last_update:Date.now()
