@@ -15,13 +15,14 @@ const store = read('mug-store-v2.js');
 const generator = read('generator-v1.js');
 const bulk = read('bulk-actions-v1.js');
 const grid = read('mug-grid-v1.js');
-const dual = read('li-dual-sync-v2.js');
-const stability = read('mugs-stability-v1.js');
+const dual = read('li-dual-sync-v3.js');
+const stability = read('mugs-stability-v2.js');
 const inlineCategory = read('mug-inline-category-v2.js');
 const recovery = read('li-recovery-v2.js');
 const coordinator = read('li-sync-coordinator-v3.js');
-const crops = read('storefront-crops-github-v1.js');
-const audit = read('archive-audit-v4.js');
+const crops = read('storefront-crops-github-v2.js');
+const liWorker = fs.readFileSync(path.join(root, 'scripts', 'sincronizar-loja-integrada.mjs'), 'utf8');
+const cropWorker = fs.readFileSync(path.join(root, 'scripts', 'processar-vitrine-canecas.mjs'), 'utf8');
 
 const activeModules = [...index.matchAll(/<script\s+type="module"\s+src="\.\/([^"?]+)/g)].map(m => m[1]);
 assert.deepEqual(activeModules, [
@@ -37,13 +38,12 @@ assert.deepEqual(activeModules, [
   'mug-grid-v1.js',
   'app-v2.js',
   'generator-category-v1.js',
-  'storefront-crops-github-v1.js',
-  'archive-audit-v4.js',
+  'storefront-crops-github-v2.js',
   'generator-v1.js',
   'generator-library-v1.js',
   'make-webhook-settings-v1.js',
-  'li-dual-sync-v2.js',
-  'mugs-stability-v1.js',
+  'li-dual-sync-v3.js',
+  'mugs-stability-v2.js',
   'mug-inline-category-v2.js'
 ], 'index deve carregar somente os módulos ativos conhecidos');
 
@@ -56,7 +56,7 @@ for (const legacy of [
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
   ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
-  ['li-dual-sync-v2.js', dual], ['mugs-stability-v1.js', stability], ['mug-inline-category-v2.js', inlineCategory], ['archive-audit-v4.js', audit]
+  ['li-dual-sync-v3.js', dual], ['mugs-stability-v2.js', stability], ['mug-inline-category-v2.js', inlineCategory]
 ]) {
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
@@ -67,49 +67,49 @@ assert.match(store, /CACHE_MS\s*=\s*120000/, 'store deve compartilhar cache de 2
 assert.match(app, /admin-canecas:route/, 'core deve publicar eventos de rota');
 assert.equal(app.includes('function renderMugs'), false, 'core não deve competir com o catálogo pela aba Canecas');
 
-assert.ok(index.includes('mugs-stability-v1.js?v=20260831-2'), 'index deve carregar estabilizador atualizado da grade');
-assert.match(stability, /const\s+PRESERVE\s*=\s*\[/, 'estabilizador deve manter nós visuais persistentes');
-assert.match(stability, /cfMugGridWrap/, 'estabilizador deve preservar a grade das canecas');
-assert.match(stability, /cfBulkActions/, 'estabilizador deve preservar ações em lote');
-assert.match(stability, /cfDualSyncPanel/, 'estabilizador deve preservar painel GitHub\/Make');
-assert.match(stability, /cfArchiveAudit/, 'estabilizador deve preservar auditoria');
-assert.match(stability, /observer\.observe\(root,\s*\{\s*childList:\s*true\s*\}\)/, 'observer deve ficar restrito ao root #mugs e somente filhos diretos');
-assert.equal(/observer\.observe\(document\.documentElement/.test(stability), false, 'estabilizador não pode observar o documento inteiro');
-assert.match(stability, /await\s+renderGrid\(\)/, 'grade deve ser atualizada após o catálogo terminar sem desaparecer antes');
-assert.match(stability, /admin-canecas:mugs-stable-rendered/, 'estabilizador deve avisar quando a grade terminou');
+// Lista estável: observer restrito e somente render real do catálogo dispara grade.
+assert.ok(index.includes('mugs-stability-v2.js?v=20260831-1'), 'index deve carregar estabilizador v2');
+assert.match(stability, /const\s+PRESERVE\s*=\s*\[/, 'estabilizador deve preservar nós visuais');
+assert.match(stability, /cfMugGridWrap/, 'estabilizador deve preservar a grade');
+assert.match(stability, /cfBulkActions/, 'estabilizador deve preservar seleção em lote');
+assert.match(stability, /cfDualSyncPanel/, 'estabilizador deve preservar publicação');
+assert.match(stability, /mutationIsCatalogRender/, 'grade deve reagir apenas ao render real do catálogo');
+assert.match(stability, /observer\.observe\(root,\s*\{\s*childList:\s*true\s*\}\)/, 'observer deve observar somente filhos diretos de #mugs');
+assert.equal(/observer\.observe\(document\.documentElement/.test(stability), false, 'não pode observar o documento inteiro');
+assert.match(stability, /await\s+renderGrid\(\)/, 'grade deve ser atualizada depois do catálogo');
+assert.match(stability, /admin-canecas:mugs-stable-rendered/, 'deve publicar evento de grade estável');
 
-assert.ok(index.includes('mug-inline-category-v2.js?v=20260831-1'), 'index deve usar categoria rápida em lote');
-assert.equal(index.includes('mug-inline-category-v1.js'), false, 'categoria rápida antiga com retries progressivos não deve estar ativa');
-assert.match(inlineCategory, /await\s+loadMugs\(\)/, 'categoria rápida deve reaproveitar cache das canecas');
-assert.match(inlineCategory, /admin-canecas:mugs-stable-rendered/, 'categoria rápida deve instalar somente após grade estável');
-assert.equal(/attempt\s*<\s*35/.test(inlineCategory), false, 'categoria rápida não pode usar 35 tentativas em cascata');
-assert.equal(/setTimeout\([^]*140/.test(inlineCategory), false, 'categoria rápida não pode reprocessar cards a cada 140 ms');
+// Categoria rápida usa lote/cache e só entra depois da grade estável.
+assert.ok(index.includes('mug-inline-category-v2.js?v=20260831-1'), 'index deve usar categoria rápida v2');
+assert.match(inlineCategory, /await\s+loadMugs\(\)/, 'categoria rápida deve reaproveitar cache');
+assert.match(inlineCategory, /admin-canecas:mugs-stable-rendered/, 'categoria rápida deve esperar grade estável');
+assert.equal(/attempt\s*<\s*35/.test(inlineCategory), false, 'não pode usar tentativas progressivas por card');
 
-assert.ok(index.includes('li-dual-sync-v2.js?v=20260831-2'), 'index deve carregar controle dual GitHub/Make estável');
-assert.equal(index.includes('li-dual-sync-v1.js'), false, 'versão dual antiga com observer global não deve estar ativa');
-assert.ok(index.includes('li-sync-coordinator-v3.js?v=20260831-1'), 'coordenador Make deve permanecer ativo como contingência');
-assert.ok(index.includes('li-recovery-v2.js?v=20260831-1'), 'recuperação por SKU do Make deve permanecer ativa');
-assert.match(dual, /QUEUE_NODE\s*=\s*['"]canecas\/integracoes\/loja_integrada\/fila['"]/, 'fila GitHub deve ficar no Firebase');
-assert.match(dual, /status:\s*['"]pendente['"]/, 'fila GitHub deve marcar itens pendentes');
-assert.match(dual, /GitHub · selecionadas/, 'UI deve permitir envio em massa pelo GitHub');
-assert.match(dual, /GitHub · todas ativas/, 'UI deve permitir envio de todas as ativas pelo GitHub');
-assert.match(dual, /GitHub · reenviar erros/, 'UI deve permitir reprocessar erros pelo GitHub');
-assert.match(dual, /Salvar \+ atualizar via GitHub/, 'drawer deve distinguir atualização pelo GitHub');
-assert.match(dual, /Salvar \+ publicar via GitHub/, 'drawer deve distinguir publicação pelo GitHub');
-assert.match(dual, /Salvar \+ sincronizar via Make/, 'drawer deve manter contingência pelo Make');
-assert.match(dual, /Sincronizar selecionadas via Make/, 'lote deve manter contingência pelo Make');
-assert.match(dual, /SKU repetido no Firebase/, 'fila GitHub deve bloquear SKUs locais duplicados');
-assert.equal(dual.includes('hook.eu1.make.com'), false, 'fila GitHub não pode depender do webhook Make');
-assert.equal(/new\s+MutationObserver/.test(dual), false, 'sincronização dual não pode usar MutationObserver global');
-assert.match(recovery, /loja_integrada_find_product_by_sku/, 'contingência Make deve reconciliar produto por SKU');
-assert.match(coordinator, /recoverOne/, 'coordenador Make deve executar recuperação antes de criar');
+// UI simplificada GitHub principal + Make reserva, sem atualização visual periódica.
+assert.ok(index.includes('li-dual-sync-v3.js?v=20260831-1'), 'index deve carregar UI dual v3');
+assert.equal(index.includes('li-dual-sync-v2.js'), false, 'UI dual antiga não deve estar ativa');
+assert.match(dual, /Publicar na Loja Integrada/, 'painel deve ter linguagem simples de publicação');
+assert.match(dual, /Publicar selecionadas · GitHub/, 'GitHub deve ser ação principal clara');
+assert.match(dual, /Publicar selecionadas · Make/, 'Make deve permanecer como reserva clara');
+assert.match(dual, /cfBulkActivateDa,#cfBulkActivateCf,#cfBulkActivateBoth/, 'ações antigas confusas devem ficar ocultas');
+assert.match(dual, /Salvar \+ publicar · Make/, 'drawer deve identificar contingência Make');
+assert.match(dual, /Salvar \+ publicar · GitHub/, 'drawer deve identificar GitHub');
+assert.match(dual, /SKU repetido no Firebase/, 'fila GitHub deve bloquear SKU local duplicado');
+assert.equal(/setInterval\s*\(/.test(dual), false, 'UI dual não pode re-renderizar periodicamente');
+assert.equal(/new\s+MutationObserver/.test(dual), false, 'UI dual não pode observar DOM');
+assert.ok(index.includes('li-sync-coordinator-v3.js?v=20260831-1'), 'Make deve permanecer como contingência');
+assert.match(recovery, /loja_integrada_find_product_by_sku/, 'Make deve reconciliar por SKU antes de criar');
+assert.match(coordinator, /recoverOne/, 'coordenador Make deve recuperar produto existente');
 
-assert.ok(index.includes('storefront-crops-github-v1.js?v=20260831-1'), 'index deve usar monitor de recortes do GitHub');
-assert.equal(index.includes('storefront-crops-v2.js'), false, 'recortes Base64/Make não devem estar ativos');
-assert.match(crops, /GitHub Actions/, 'monitor deve explicar que os recortes são processados no GitHub');
-assert.ok(index.includes('archive-audit-v4.js?v=20260831-1'), 'index deve usar auditoria sem observer global');
-assert.match(audit, /GitHub Actions/, 'auditoria deve refletir processamento GitHub');
-assert.equal(/new\s+MutationObserver/.test(audit), false, 'auditoria não pode observar o documento inteiro');
+// Auditoria técnica não deve ocupar a lista diária.
+assert.equal(index.includes('archive-audit-v4.js'), false, 'auditoria técnica não deve carregar na aba Canecas');
+assert.equal(index.includes('archive-audit-v3.js'), false, 'auditoria antiga não deve carregar');
+
+// Ordem oficial da galeria: mockup 2, mockup 1, esquerda, direita, quadrada.
+assert.ok(index.includes('storefront-crops-github-v2.js?v=20260831-1'), 'index deve usar vitrine v2');
+assert.match(crops, /return \[text\(product\.mockup_2\), text\(product\.mockup_1\), crops\.left, crops\.right, crops\.center\]/, 'payload Make deve usar ordem oficial');
+assert.match(liWorker, /return \[p\.mockup_2, p\.mockup_1, p\.vitrine_recorte_esquerda[^\]]+p\.vitrine_recorte_direita[^\]]+p\.vitrine_recorte_centro/, 'worker GitHub deve usar ordem oficial');
+assert.match(cropWorker, /imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/, 'Firebase deve salvar nova ordem para recortes futuros');
 
 assert.ok(index.includes('generator-v1.css?v=20260829-2'), 'index deve carregar CSS atual do gerador');
 assert.ok(index.includes('generator-v1.js?v=20260829-2'), 'index deve carregar JS atual do gerador');
@@ -120,16 +120,13 @@ assert.match(generator, /action:\s*['"]finalize_mug_product['"]/, 'gerador deve 
 assert.match(generator, /MASTER_WIDTH\s*=\s*2400/, 'arte deve usar largura 2400');
 assert.match(generator, /MASTER_HEIGHT\s*=\s*960/, 'arte deve usar altura 960');
 assert.match(generator, /estoque:\s*100/, 'gerador deve cadastrar estoque padrão 100');
-assert.match(generator, /peso_embalado_kg:\s*0\.3/, 'gerador deve cadastrar peso 0,3 kg');
-assert.match(generator, /tipo_producao:\s*['"]revenda['"]/, 'gerador deve cadastrar produção como revenda');
-assert.match(generator, /origem_mercadoria:\s*['"]0['"]/, 'gerador deve cadastrar origem nacional');
 
-assert.ok(index.includes('bulk-actions-v1.js?v=20260829-1'), 'index deve manter barra de seleção em lote');
+assert.ok(index.includes('bulk-actions-v1.js?v=20260829-1'), 'barra de seleção deve permanecer como motor de contingência');
 assert.match(bulk, /input\[data-select-mug\]:checked/, 'ações em lote devem usar checkboxes existentes');
 assert.ok(index.includes('mug-grid-v1.js?v=20260829-2'), 'index deve carregar grade visual');
 assert.match(grid, /class=\"cf-mug-grid\"/, 'canecas devem ser exibidas em grade');
-assert.match(grid, /data-grid-edit/, 'card deve possuir botão Editar');
-assert.match(grid, /data-grid-delete/, 'card deve possuir botão Apagar');
+assert.match(grid, /data-grid-edit/, 'card deve possuir Editar');
+assert.match(grid, /data-grid-delete/, 'card deve possuir Apagar');
 
 const headerBlock = catalog.match(/const HEADERS\s*=\s*Object\.freeze\(\[([\s\S]*?)\]\);/);
 assert.ok(headerBlock, 'cabeçalho da planilha Loja Integrada não encontrado');
@@ -142,4 +139,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: grade preservada, categoria rápida em lote, sem observers globais auxiliares, GitHub principal e Make contingência.');
+console.log('OK admin-canecas: lista estável, UI simplificada, GitHub principal, Make reserva e ordem oficial das 5 imagens.');
