@@ -19,4 +19,7 @@ assert.deepEqual(companyCfg.fields.map(f=>f.id),['logo','endereco','telefone','s
 assert.deepEqual(validatePersonalizationInput(companyCfg,{endereco:'Rua A',telefone:'123',site:'empresa.com'},{logo:image}),[]);
 assert.match(validatePersonalizationInput(companyCfg,{nome:'X'},{logo:image}).join(' '),/Campo não autorizado/);
 
-console.log('OK personalization-contract: campos permitidos e bloqueio de campos não autorizados.');
+const explicitlyDisabled=normalizePersonalizationConfig({personalizavel:true,loja_integrada_personalizavel:true,personalizacao:{ativa:false,campos:{nome:{ativo:true}}}});
+assert.equal(explicitlyDisabled.active,false,'personalizacao.ativa=false deve vencer flags legados');
+
+console.log('OK personalization-contract: campos permitidos, bloqueio e precedência da configuração nova.');
