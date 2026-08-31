@@ -68,7 +68,9 @@ jobs:
           S2=$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: application/json' -H "chave_api: ${LI_API_KEY}" -H "aplicacao: ${LI_APP_KEY}" "$URL" || true)
           S3=$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: application/json' -H "chave_api: ${LI_API_KEY}" -H "Authorization: ${LI_APP_KEY}" "$URL" || true)
           S4=$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: application/json' -H "chave_api: ${LI_API_KEY}" -H "Authorization: Bearer ${LI_APP_KEY}" "$URL" || true)
-          echo "AUTH_PROBE combined=${S1} separate=${S2} personal_direct=${S3} bearer=${S4}"
+          S5=$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: application/json' -H "Authorization: ${LI_APP_KEY}" "$URL" || true)
+          S6=$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: application/json' -H "Authorization: Bearer ${LI_APP_KEY}" "$URL" || true)
+          echo "AUTH_PROBE combined=${S1} separate=${S2} api_plus_direct=${S3} api_plus_bearer=${S4} token_direct=${S5} token_bearer=${S6}"
       - name: Processar fila Firebase → Loja Integrada
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
