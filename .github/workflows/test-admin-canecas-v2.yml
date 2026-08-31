@@ -7,12 +7,14 @@ on:
       - 'admin-canecas/**'
       - 'scripts/test-admin-canecas-v2.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
+      - 'scripts/sincronizar-loja-integrada.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
   pull_request:
     paths:
       - 'admin-canecas/**'
       - 'scripts/test-admin-canecas-v2.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
+      - 'scripts/sincronizar-loja-integrada.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
 
 permissions:
@@ -34,6 +36,12 @@ jobs:
         run: node --check admin-canecas/mug-grid-v1.js
       - name: Check inline category syntax
         run: node --check admin-canecas/mug-inline-category-v1.js
+      - name: Check GitHub queue syntax
+        run: node --check admin-canecas/li-github-queue-v1.js
+      - name: Check GitHub crops UI syntax
+        run: node --check admin-canecas/storefront-crops-github-v1.js
+      - name: Check GitHub LI worker syntax
+        run: node --check scripts/sincronizar-loja-integrada.mjs
       - name: Validate Admin Canecas V2
         run: node scripts/test-admin-canecas-v2.mjs
       - name: Smoke test Firebase and mug image
