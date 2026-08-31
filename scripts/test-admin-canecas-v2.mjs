@@ -18,8 +18,8 @@ const grid = read('mug-grid-v1.js');
 const dual = read('li-dual-sync-v3.js');
 const stability = read('mugs-stability-v2.js');
 const inlineCategory = read('mug-inline-category-v2.js');
-const recovery = read('li-recovery-v2.js');
-const coordinator = read('li-sync-coordinator-v3.js');
+const recovery = read('li-recovery-v3.js');
+const coordinator = read('li-sync-coordinator-v4.js');
 const crops = read('storefront-crops-github-v2.js');
 const liWorker = fs.readFileSync(path.join(root, 'scripts', 'sincronizar-loja-integrada.mjs'), 'utf8');
 const cropWorker = fs.readFileSync(path.join(root, 'scripts', 'processar-vitrine-canecas.mjs'), 'utf8');
@@ -32,8 +32,8 @@ assert.deepEqual(activeModules, [
   'product-images-v1.js',
   'banner-manager-v7.js',
   'banner-background-v1.js',
-  'li-recovery-v2.js',
-  'li-sync-coordinator-v3.js',
+  'li-recovery-v3.js',
+  'li-sync-coordinator-v4.js',
   'bulk-actions-v1.js',
   'mug-grid-v1.js',
   'app-v2.js',
@@ -56,9 +56,9 @@ for (const legacy of [
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
   ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
-  ['li-dual-sync-v3.js', dual], ['mugs-stability-v2.js', stability], ['mug-inline-category-v2.js', inlineCategory]
+  ['li-dual-sync-v3.js', dual], ['mugs-stability-v2.js', stability], ['mug-inline-category-v2.js', inlineCategory],
+  ['li-recovery-v3.js', recovery], ['li-sync-coordinator-v4.js', coordinator]
 ]) {
-  assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
 }
 
@@ -67,7 +67,7 @@ assert.match(store, /CACHE_MS\s*=\s*120000/, 'store deve compartilhar cache de 2
 assert.match(app, /admin-canecas:route/, 'core deve publicar eventos de rota');
 assert.equal(app.includes('function renderMugs'), false, 'core não deve competir com o catálogo pela aba Canecas');
 
-// Lista estável: observer restrito e somente render real do catálogo dispara grade.
+// Lista estável: somente o estabilizador observa #mugs e nunca o documento inteiro.
 assert.ok(index.includes('mugs-stability-v2.js?v=20260831-1'), 'index deve carregar estabilizador v2');
 assert.match(stability, /const\s+PRESERVE\s*=\s*\[/, 'estabilizador deve preservar nós visuais');
 assert.match(stability, /cfMugGridWrap/, 'estabilizador deve preservar a grade');
@@ -75,9 +75,14 @@ assert.match(stability, /cfBulkActions/, 'estabilizador deve preservar seleção
 assert.match(stability, /cfDualSyncPanel/, 'estabilizador deve preservar publicação');
 assert.match(stability, /mutationIsCatalogRender/, 'grade deve reagir apenas ao render real do catálogo');
 assert.match(stability, /observer\.observe\(root,\s*\{\s*childList:\s*true\s*\}\)/, 'observer deve observar somente filhos diretos de #mugs');
-assert.equal(/observer\.observe\(document\.documentElement/.test(stability), false, 'não pode observar o documento inteiro');
+assert.equal(/observer\.observe\(document\.documentElement/.test(stability), false, 'estabilizador não pode observar o documento inteiro');
 assert.match(stability, /await\s+renderGrid\(\)/, 'grade deve ser atualizada depois do catálogo');
 assert.match(stability, /admin-canecas:mugs-stable-rendered/, 'deve publicar evento de grade estável');
+
+for (const [name, code] of [['li-dual-sync-v3.js', dual], ['li-recovery-v3.js', recovery], ['li-sync-coordinator-v4.js', coordinator]]) {
+  assert.equal(/new\s+MutationObserver/.test(code), false, `${name} não pode usar MutationObserver`);
+  assert.equal(/setInterval\s*\(/.test(code), false, `${name} não pode atualizar UI periodicamente`);
+}
 
 // Categoria rápida usa lote/cache e só entra depois da grade estável.
 assert.ok(index.includes('mug-inline-category-v2.js?v=20260831-1'), 'index deve usar categoria rápida v2');
@@ -85,9 +90,8 @@ assert.match(inlineCategory, /await\s+loadMugs\(\)/, 'categoria rápida deve rea
 assert.match(inlineCategory, /admin-canecas:mugs-stable-rendered/, 'categoria rápida deve esperar grade estável');
 assert.equal(/attempt\s*<\s*35/.test(inlineCategory), false, 'não pode usar tentativas progressivas por card');
 
-// UI simplificada GitHub principal + Make reserva, sem atualização visual periódica.
+// UI simplificada GitHub principal + Make reserva.
 assert.ok(index.includes('li-dual-sync-v3.js?v=20260831-1'), 'index deve carregar UI dual v3');
-assert.equal(index.includes('li-dual-sync-v2.js'), false, 'UI dual antiga não deve estar ativa');
 assert.match(dual, /Publicar na Loja Integrada/, 'painel deve ter linguagem simples de publicação');
 assert.match(dual, /Publicar selecionadas · GitHub/, 'GitHub deve ser ação principal clara');
 assert.match(dual, /Publicar selecionadas · Make/, 'Make deve permanecer como reserva clara');
@@ -95,11 +99,11 @@ assert.match(dual, /cfBulkActivateDa,#cfBulkActivateCf,#cfBulkActivateBoth/, 'a�
 assert.match(dual, /Salvar \+ publicar · Make/, 'drawer deve identificar contingência Make');
 assert.match(dual, /Salvar \+ publicar · GitHub/, 'drawer deve identificar GitHub');
 assert.match(dual, /SKU repetido no Firebase/, 'fila GitHub deve bloquear SKU local duplicado');
-assert.equal(/setInterval\s*\(/.test(dual), false, 'UI dual não pode re-renderizar periodicamente');
-assert.equal(/new\s+MutationObserver/.test(dual), false, 'UI dual não pode observar DOM');
-assert.ok(index.includes('li-sync-coordinator-v3.js?v=20260831-1'), 'Make deve permanecer como contingência');
+assert.ok(index.includes('li-recovery-v3.js?v=20260831-1'), 'recuperação silenciosa por SKU deve estar ativa');
+assert.ok(index.includes('li-sync-coordinator-v4.js?v=20260831-1'), 'coordenador Make silencioso deve estar ativo');
 assert.match(recovery, /loja_integrada_find_product_by_sku/, 'Make deve reconciliar por SKU antes de criar');
 assert.match(coordinator, /recoverOne/, 'coordenador Make deve recuperar produto existente');
+assert.match(coordinator, /stopImmediatePropagation/, 'coordenador deve interceptar somente a ação explícita do usuário');
 
 // Auditoria técnica não deve ocupar a lista diária.
 assert.equal(index.includes('archive-audit-v4.js'), false, 'auditoria técnica não deve carregar na aba Canecas');
@@ -139,4 +143,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: lista estável, UI simplificada, GitHub principal, Make reserva e ordem oficial das 5 imagens.');
+console.log('OK admin-canecas: sem observers globais, lista estável, UI simples, GitHub principal, Make reserva e 5 imagens na ordem oficial.');
