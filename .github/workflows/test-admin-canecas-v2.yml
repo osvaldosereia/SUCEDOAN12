@@ -1,11 +1,12 @@
-name: Test Admin Canecas V2
+name: Test Admin Canecas V3
 
 on:
   push:
     branches: [main]
     paths:
       - 'admin-canecas/**'
-      - 'scripts/test-admin-canecas-v2.mjs'
+      - 'loja-integrada/personalizar/**'
+      - 'scripts/test-admin-canecas-v3.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
       - 'scripts/sincronizar-loja-integrada.mjs'
       - 'scripts/processar-vitrine-canecas.mjs'
@@ -13,7 +14,8 @@ on:
   pull_request:
     paths:
       - 'admin-canecas/**'
-      - 'scripts/test-admin-canecas-v2.mjs'
+      - 'loja-integrada/personalizar/**'
+      - 'scripts/test-admin-canecas-v3.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
       - 'scripts/sincronizar-loja-integrada.mjs'
       - 'scripts/processar-vitrine-canecas.mjs'
@@ -42,6 +44,10 @@ jobs:
         run: node --check admin-canecas/mug-inline-category-v2.js
       - name: Check personalization config syntax
         run: node --check admin-canecas/personalization-config-v1.js
+      - name: Check personalization contract syntax
+        run: node --check loja-integrada/personalizar/personalization-contract-v1.js
+      - name: Check personalizer V4 syntax
+        run: node --check loja-integrada/personalizar/app-v4.js
       - name: Check LI recovery syntax
         run: node --check admin-canecas/li-recovery-v3.js
       - name: Check LI coordinator syntax
@@ -54,7 +60,7 @@ jobs:
         run: node --check scripts/sincronizar-loja-integrada.mjs
       - name: Check crop worker syntax
         run: node --check scripts/processar-vitrine-canecas.mjs
-      - name: Validate Admin Canecas V2
-        run: node scripts/test-admin-canecas-v2.mjs
+      - name: Validate Admin Canecas V3
+        run: node scripts/test-admin-canecas-v3.mjs
       - name: Smoke test Firebase and mug image
         run: node scripts/smoke-admin-canecas-firebase.mjs
