@@ -50,6 +50,8 @@ jobs:
         run: node --check admin-canecas/mug-personalization-badge-v1.js
       - name: Check personalization test link syntax
         run: node --check admin-canecas/personalization-test-link-v1.js
+      - name: Check personalization prompt suggestion syntax
+        run: node --check admin-canecas/personalization-prompt-suggest-v1.js
       - name: Check personalization contract syntax
         run: node --check loja-integrada/personalizar/personalization-contract-v1.js
       - name: Check personalizer V4 syntax
