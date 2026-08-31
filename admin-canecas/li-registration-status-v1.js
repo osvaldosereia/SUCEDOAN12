@@ -1,12 +1,12 @@
 import { text, norm } from '../shared/mug-commerce-v1.js?v=20260828-1';
 import { loadMugs, getMug } from './mug-store-v2.js?v=20260829-1';
 
-const BUILD = '20260831-admin-canecas-li-registration-status-v1.1';
-const REFRESH_MS = 20000;
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const BUILD = '20260831-admin-canecas-li-registration-status-v1.2';
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 let refreshing = false;
 let lastRefresh = 0;
+let refreshTimer = 0;
 
 function liMeta(product = {}) {
   return product.loja_integrada && typeof product.loja_integrada === 'object' ? product.loja_integrada : {};
@@ -15,10 +15,16 @@ function productKey(product = {}) {
   return text(product.__key || product.firebaseKey || product.id);
 }
 function formatDate(value) {
-  const d = new Date(value || '');
-  if (!Number.isFinite(d.getTime())) return '';
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(d);
+  const date = new Date(value || '');
+  if (!Number.isFinite(date.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 }
+
 function registrationState(product = {}) {
   const li = liMeta(product);
   const id = text(li.produto_id);
@@ -60,7 +66,7 @@ function registrationState(product = {}) {
       confirmedAt,
     };
   }
-  if (['erro_sistema'].includes(status) || (status === 'pendente' && (error || nextRetry))) {
+  if (status === 'erro_sistema' || (status === 'pendente' && (error || nextRetry))) {
     return {
       code: 'retry',
       label: 'TENTANDO NOVAMENTE',
@@ -192,7 +198,7 @@ async function refresh({ force = false } = {}) {
   try {
     installStyles();
     const products = await loadMugs({ force });
-    const byKey = new Map(products.map(p => [productKey(p), p]));
+    const byKey = new Map(products.map(product => [productKey(product), product]));
     $$('[data-grid-mug]', $('#mugs')).forEach(card => {
       const product = byKey.get(text(card.dataset.gridMug));
       if (product) applyCardState(card, registrationState(product));
@@ -206,24 +212,33 @@ async function refresh({ force = false } = {}) {
 }
 
 function schedule(force = false, delay = 80) {
-  setTimeout(() => void refresh({ force }), delay);
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => void refresh({ force }), delay);
+}
+
+function refreshWhenVisible() {
+  if (document.hidden || !location.hash.includes('mugs')) return;
+  schedule(true, 120);
 }
 
 window.addEventListener('hashchange', () => schedule(true, 180));
-window.addEventListener('admin-canecas:route', event => { if (event.detail?.route === 'mugs') schedule(true, 180); });
-window.addEventListener('admin-canecas:mugs-stable-rendered', () => schedule(false, 100));
-window.addEventListener('admin-canecas:drawer', event => { if (event.detail?.kind === 'mug') schedule(false, 160); });
-document.addEventListener('DOMContentLoaded', () => schedule(true, 500));
-
-const observer = new MutationObserver(() => {
-  if (location.hash.includes('mugs')) schedule(false, 120);
+window.addEventListener('admin-canecas:route', event => {
+  if (event.detail?.route === 'mugs') schedule(true, 180);
 });
-observer.observe(document.documentElement, { childList: true, subtree: true });
-setInterval(() => {
-  if (location.hash.includes('mugs') && !document.hidden) void refresh({ force: true });
-}, REFRESH_MS);
+window.addEventListener('admin-canecas:mugs-stable-rendered', () => schedule(false, 100));
+window.addEventListener('admin-canecas:drawer', event => {
+  if (event.detail?.kind === 'mug') schedule(false, 160);
+});
+window.addEventListener('focus', refreshWhenVisible);
+document.addEventListener('visibilitychange', refreshWhenVisible);
+document.addEventListener('DOMContentLoaded', () => schedule(true, 500));
+$('#reloadButton')?.addEventListener('click', () => schedule(true, 700));
 
 document.documentElement.dataset.cfLiRegistrationStatus = BUILD;
-window.__CANECAS_LI_REGISTRATION_STATUS__ = Object.freeze({ BUILD, registrationState, refresh: () => refresh({ force: true }) });
+window.__CANECAS_LI_REGISTRATION_STATUS__ = Object.freeze({
+  BUILD,
+  registrationState,
+  refresh: () => refresh({ force: true }),
+});
 
 export { BUILD, registrationState, refresh };
