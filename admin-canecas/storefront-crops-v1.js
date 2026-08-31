@@ -1,15 +1,16 @@
 import { FIREBASE_BASE, text, norm, safeKey, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260830-admin-canecas-storefront-crops-v1';
+const BUILD = '20260830-admin-canecas-storefront-crops-v1.1';
 const MAKE_WEBHOOK = window.__CANECAS_ADMIN_CONFIG__?.makeWebhook || window.__CANECAS_ADMIN_CONFIG__?.mugGeneratorWebhook || '';
 const PRODUCTS_NODE = 'produtos';
-const MASTER_WIDTH = 2400;
-const MASTER_HEIGHT = 960;
 const WEBP_QUALITY = 0.9;
+const FINAL_WAIT_MS = 180000;
+const POLL_MS = 1600;
 const innerFetch = window.fetch.bind(window);
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const isHttpUrl = value => /^https?:\/\//i.test(text(value));
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const slug = value => norm(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120) || 'caneca';
 
 function toast(message, error = false) {
@@ -143,6 +144,8 @@ async function saveCrops(productKey, product, crops) {
     source_art: artOf(product),
     source_width: crops.meta.source_width,
     source_height: crops.meta.source_height,
+    mockup_1: text(product.mockup_1),
+    mockup_2: text(product.mockup_2),
     firebase_url: FIREBASE_BASE,
     products_node: PRODUCTS_NODE,
     crop_version: BUILD,
@@ -170,42 +173,22 @@ async function ensureCrops(productKey, product = null) {
   return current;
 }
 
-function patchFinalizePayload(payload) {
-  return generateCrops(payload.image_base64).then(crops => {
-    let template = {};
-    try { template = JSON.parse(payload.firebase_template_json || '{}') || {}; } catch { template = {}; }
-    template.vitrine_recorte_esquerda = '__MUG_CROP_LEFT__';
-    template.vitrine_recorte_centro = '__MUG_CROP_CENTER__';
-    template.vitrine_recorte_direita = '__MUG_CROP_RIGHT__';
-    template.imagens_canecafacil = ['__MUG_MOCKUP_1__', '__MUG_MOCKUP_2__', '__MUG_CROP_LEFT__', '__MUG_CROP_CENTER__', '__MUG_CROP_RIGHT__'];
-    template.vitrine_recortes = {
-      versao: BUILD,
-      source_art: '__MUG_ART__',
-      esquerda: '__MUG_CROP_LEFT__',
-      centro: '__MUG_CROP_CENTER__',
-      direita: '__MUG_CROP_RIGHT__',
-      source_width: crops.meta.source_width,
-      source_height: crops.meta.source_height,
-      left_width: crops.meta.left_width,
-      left_height: crops.meta.left_height,
-      center_width: crops.meta.center_width,
-      center_height: crops.meta.center_height,
-      center_x: crops.meta.center_x,
-      right_width: crops.meta.right_width,
-      right_height: crops.meta.right_height,
-      atualizado_em: nowIso(),
-    };
-    return {
-      ...payload,
-      crop_left_base64: crops.left,
-      crop_center_base64: crops.center,
-      crop_right_base64: crops.right,
-      crop_source_width: crops.meta.source_width,
-      crop_source_height: crops.meta.source_height,
-      crop_version: BUILD,
-      firebase_template_json: JSON.stringify(template),
-    };
-  });
+async function persistFinalizationCrops(payload) {
+  const productKey = text(payload.request_id || payload.product_key);
+  if (!productKey || !payload.image_base64) return;
+  const cropsPromise = generateCrops(payload.image_base64);
+  const deadline = Date.now() + FINAL_WAIT_MS;
+  let product = null;
+  while (Date.now() < deadline) {
+    product = await fbGet(`${PRODUCTS_NODE}/${safeKey(productKey)}`).catch(() => null);
+    if (product && isHttpUrl(artOf(product)) && isHttpUrl(product.mockup_1) && isHttpUrl(product.mockup_2)) break;
+    await sleep(POLL_MS);
+  }
+  if (!product || !isHttpUrl(artOf(product))) throw new Error('A caneca foi gerada, mas não ficou pronta no Firebase a tempo de criar os recortes da vitrine.');
+  if (cropSetReady(product)) return;
+  const crops = await cropsPromise;
+  await saveCrops(productKey, product, crops);
+  console.info(`[Admin Canecas] recortes da vitrine salvos para ${productKey}.`);
 }
 
 function imageIdsFrom(product = {}) {
@@ -224,9 +207,7 @@ async function ensureLiImageIds(productKey, product, payload) {
     const result = await callMake({ action: 'loja_integrada_get_product', request_id: `LI-IMG-${Date.now().toString(36).toUpperCase()}`, loja_integrada_product_id: productId });
     const remote = decodeB64Json(result.produto_b64) || result.produto || {};
     ids = (Array.isArray(remote.imagens) ? remote.imagens : []).map(item => text(item?.id)).filter(Boolean).slice(0, 5);
-    if (ids.length) {
-      await fbPatch(`${PRODUCTS_NODE}/${safeKey(productKey)}/loja_integrada`, { image_ids: ids, image_ids_at: nowIso() });
-    }
+    if (ids.length) await fbPatch(`${PRODUCTS_NODE}/${safeKey(productKey)}/loja_integrada`, { image_ids: ids, image_ids_at: nowIso() });
   } catch (error) {
     console.warn('[Admin Canecas] não foi possível recuperar IDs antigos das imagens LI:', error);
   }
@@ -263,12 +244,16 @@ window.fetch = async function cfStorefrontCropsFetch(input, init = {}) {
   let payload;
   try { payload = JSON.parse(wrapper.payload); } catch { return innerFetch(input, init); }
   if (payload?.action === 'finalize_mug_product' && payload.image_base64) {
-    payload = await patchFinalizePayload(payload);
-  } else if (['loja_integrada_create_product', 'loja_integrada_update_product'].includes(payload?.action)) {
-    payload = await enrichLiPayload(payload);
+    const response = await innerFetch(input, init);
+    void persistFinalizationCrops(payload).catch(error => console.warn('[Admin Canecas] recortes automáticos pós-geração:', error));
+    return response;
   }
-  wrapper.payload = JSON.stringify(payload);
-  return innerFetch(input, { ...init, body: JSON.stringify(wrapper) });
+  if (['loja_integrada_create_product', 'loja_integrada_update_product'].includes(payload?.action)) {
+    payload = await enrichLiPayload(payload);
+    wrapper.payload = JSON.stringify(payload);
+    return innerFetch(input, { ...init, body: JSON.stringify(wrapper) });
+  }
+  return innerFetch(input, init);
 };
 
 async function renderDrawerCrops() {
@@ -290,8 +275,16 @@ async function renderDrawerCrops() {
     const button = event.currentTarget;
     button.disabled = true;
     button.textContent = 'Gerando…';
-    try { await ensureCrops(key, product); section.remove(); await renderDrawerCrops(); toast('Recortes da vitrine gerados.'); }
-    catch (error) { toast(error?.message || error, true); button.disabled = false; button.textContent = 'Gerar recortes agora'; }
+    try {
+      await ensureCrops(key, product);
+      section.remove();
+      await renderDrawerCrops();
+      toast('Recortes da vitrine gerados.');
+    } catch (error) {
+      toast(error?.message || error, true);
+      button.disabled = false;
+      button.textContent = 'Gerar recortes agora';
+    }
   });
 }
 
