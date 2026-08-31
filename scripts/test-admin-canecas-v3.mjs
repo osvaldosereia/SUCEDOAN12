@@ -8,6 +8,7 @@ const index=read('admin-canecas','index.html');
 const personalization=read('admin-canecas','personalization-config-v1.js');
 const personalizationBadge=read('admin-canecas','mug-personalization-badge-v1.js');
 const personalizationTestLink=read('admin-canecas','personalization-test-link-v1.js');
+const personalizationSuggest=read('admin-canecas','personalization-prompt-suggest-v1.js');
 const stability=read('admin-canecas','mugs-stability-v2.js');
 const dual=read('admin-canecas','li-dual-sync-v3.js');
 const recovery=read('admin-canecas','li-recovery-v3.js');
@@ -24,6 +25,7 @@ assert.ok(index.includes('personalization-config-v1.js?v=20260831-1'),'Admin dev
 assert.equal((index.match(/personalization-config-v1\.js/g)||[]).length,1,'Admin deve carregar configurador uma única vez');
 assert.ok(activeModules.includes('mug-personalization-badge-v1.js'),'grade deve mostrar resumo da personalização');
 assert.ok(activeModules.includes('personalization-test-link-v1.js'),'drawer deve oferecer atalho de homologação');
+assert.ok(activeModules.includes('personalization-prompt-suggest-v1.js'),'Admin deve sugerir prompt-base conforme campos');
 assert.equal(new Set(activeModules).size,activeModules.length,'Admin não pode carregar módulo src duplicado');
 
 assert.match(personalization,/\['nome',\s*'Nome',\s*'text'\]/,'campo Nome deve existir');
@@ -38,7 +40,9 @@ assert.match(personalization,/config_version/,'configuração deve ser versionad
 assert.match(personalization,/Prompts de personalização/,'Admin deve possuir biblioteca de prompts');
 assert.match(personalizationTestLink,/index-v4\.html/,'atalho deve abrir homologação V4');
 assert.match(personalizationBadge,/Personaliza:/,'grade deve identificar os campos permitidos');
-for(const [name,code] of [['personalization',personalization],['personalizationBadge',personalizationBadge],['personalizationTestLink',personalizationTestLink]]){
+assert.match(personalizationSuggest,/return'nome_foto'/,'Nome + Foto deve sugerir preset correto');
+assert.match(personalizationSuggest,/return'empresa'/,'Logo + dados deve sugerir preset Empresa');
+for(const [name,code] of [['personalization',personalization],['personalizationBadge',personalizationBadge],['personalizationTestLink',personalizationTestLink],['personalizationSuggest',personalizationSuggest]]){
   assert.equal(/new\s+MutationObserver/.test(code),false,`${name} não pode usar MutationObserver`);
   assert.equal(/setInterval\s*\(/.test(code),false,`${name} não pode atualizar UI periodicamente`);
 }
@@ -71,4 +75,4 @@ assert.match(indexV4,/Não é possível solicitar alterações fora dos campos l
 assert.match(liWorker,/p\.mockup_2,\s*p\.mockup_1/,'worker LI deve iniciar galeria por mockup 2 e mockup 1');
 assert.match(cropWorker,/imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/,'recortes devem manter ordem oficial');
 
-console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados, V4 de homologação, resumo na grade e UI sem observers globais.');
+console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados/sugeridos, V4 de homologação, resumo na grade e UI sem observers globais.');
