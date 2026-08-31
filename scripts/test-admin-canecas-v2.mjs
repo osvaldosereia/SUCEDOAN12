@@ -20,7 +20,7 @@ const stability = read('mugs-stability-v1.js');
 const recovery = read('li-recovery-v2.js');
 const coordinator = read('li-sync-coordinator-v3.js');
 const crops = read('storefront-crops-github-v1.js');
-const audit = read('archive-audit-v3.js');
+const audit = read('archive-audit-v4.js');
 
 const activeModules = [...index.matchAll(/<script\s+type="module"\s+src="\.\/([^"?]+)/g)].map(m => m[1]);
 assert.deepEqual(activeModules, [
@@ -37,7 +37,7 @@ assert.deepEqual(activeModules, [
   'app-v2.js',
   'generator-category-v1.js',
   'storefront-crops-github-v1.js',
-  'archive-audit-v3.js',
+  'archive-audit-v4.js',
   'generator-v1.js',
   'generator-library-v1.js',
   'make-webhook-settings-v1.js',
@@ -54,7 +54,7 @@ for (const legacy of [
 for (const [name, code] of [
   ['app-v2.js', app], ['catalog-manager-v5.js', catalog], ['banner-manager-v7.js', banners],
   ['mug-store-v2.js', store], ['generator-v1.js', generator], ['bulk-actions-v1.js', bulk], ['mug-grid-v1.js', grid],
-  ['li-dual-sync-v2.js', dual], ['mugs-stability-v1.js', stability]
+  ['li-dual-sync-v2.js', dual], ['mugs-stability-v1.js', stability], ['archive-audit-v4.js', audit]
 ]) {
   assert.equal(/window\.fetch\s*=/.test(code), false, `${name} não deve sobrescrever window.fetch`);
   assert.equal(/fbGet\(\s*['"]produtos['"]\s*\)/.test(code), false, `${name} não deve ler /produtos inteiro diretamente`);
@@ -65,7 +65,6 @@ assert.match(store, /CACHE_MS\s*=\s*120000/, 'store deve compartilhar cache de 2
 assert.match(app, /admin-canecas:route/, 'core deve publicar eventos de rota');
 assert.equal(app.includes('function renderMugs'), false, 'core não deve competir com o catálogo pela aba Canecas');
 
-// Estabilidade da aba Canecas: catalog-manager pode reconstruir #mugs, mas a grade visível deve ser preservada.
 assert.ok(index.includes('mugs-stability-v1.js?v=20260831-1'), 'index deve carregar estabilizador da grade');
 assert.match(stability, /const\s+PRESERVE\s*=\s*\[/, 'estabilizador deve manter nós visuais persistentes');
 assert.match(stability, /cfMugGridWrap/, 'estabilizador deve preservar a grade das canecas');
@@ -76,7 +75,6 @@ assert.match(stability, /observer\.observe\(root,\s*\{\s*childList:\s*true\s*\}\
 assert.equal(/observer\.observe\(document\.documentElement/.test(stability), false, 'estabilizador não pode observar o documento inteiro');
 assert.match(stability, /await\s+renderGrid\(\)/, 'grade deve ser atualizada após o catálogo terminar sem desaparecer antes');
 
-// Arquitetura dual: GitHub Actions é principal e Make permanece como contingência explícita.
 assert.ok(index.includes('li-dual-sync-v2.js?v=20260831-2'), 'index deve carregar controle dual GitHub/Make estável');
 assert.equal(index.includes('li-dual-sync-v1.js'), false, 'versão dual antiga com observer global não deve estar ativa');
 assert.ok(index.includes('li-sync-coordinator-v3.js?v=20260831-1'), 'coordenador Make deve permanecer ativo como contingência');
@@ -92,15 +90,16 @@ assert.match(dual, /Salvar \+ sincronizar via Make/, 'drawer deve manter conting
 assert.match(dual, /Sincronizar selecionadas via Make/, 'lote deve manter contingência pelo Make');
 assert.match(dual, /SKU repetido no Firebase/, 'fila GitHub deve bloquear SKUs locais duplicados');
 assert.equal(dual.includes('hook.eu1.make.com'), false, 'fila GitHub não pode depender do webhook Make');
-assert.equal(/new\s+MutationObserver/.test(dual), false, 'sincronização dual não pode usar MutationObserver global e causar loop visual');
+assert.equal(/new\s+MutationObserver/.test(dual), false, 'sincronização dual não pode usar MutationObserver global');
 assert.match(recovery, /loja_integrada_find_product_by_sku/, 'contingência Make deve reconciliar produto por SKU');
 assert.match(coordinator, /recoverOne/, 'coordenador Make deve executar recuperação antes de criar');
 
-// Recortes são exclusivamente GitHub Actions + Sharp.
 assert.ok(index.includes('storefront-crops-github-v1.js?v=20260831-1'), 'index deve usar monitor de recortes do GitHub');
 assert.equal(index.includes('storefront-crops-v2.js'), false, 'recortes Base64/Make não devem estar ativos');
 assert.match(crops, /GitHub Actions/, 'monitor deve explicar que os recortes são processados no GitHub');
+assert.ok(index.includes('archive-audit-v4.js?v=20260831-1'), 'index deve usar auditoria sem observer global');
 assert.match(audit, /GitHub Actions/, 'auditoria deve refletir processamento GitHub');
+assert.equal(/new\s+MutationObserver/.test(audit), false, 'auditoria não pode observar o documento inteiro');
 
 assert.ok(index.includes('generator-v1.css?v=20260829-2'), 'index deve carregar CSS atual do gerador');
 assert.ok(index.includes('generator-v1.js?v=20260829-2'), 'index deve carregar JS atual do gerador');
@@ -133,4 +132,4 @@ for (const route of ['dashboard','orders','creations','mugs','banners','print','
   assert.ok(index.includes(`data-view="${route}"`), `view ausente: ${route}`);
 }
 
-console.log('OK admin-canecas: grade preservada após edição, GitHub principal, Make contingência e UI estável validadas.');
+console.log('OK admin-canecas: grade preservada após edição, sem observers globais auxiliares, GitHub principal e Make contingência.');
