@@ -1,0 +1,42 @@
+name: Ativar CanecaFácil V13 em produção
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ativar-v13-producao-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ativar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Aplicar V13
+        run: node scripts/ativar-v13-producao-once.mjs
+      - name: Validar sintaxe
+        run: |
+          node --check scripts/sincronizar-loja-integrada.mjs
+          node --check admin-canecas/bulk-actions-v1.js
+          node --check admin-canecas/storefront-crops-github-v3.js
+          node --check loja-integrada/personalizar/app-v13.js
+          grep -q 'storefront-crops-github-v3.js?v=20260901-1' admin-canecas/index.html
+          grep -q 'loading="eager"' scripts/sincronizar-loja-integrada.mjs
+          ! grep -q '<details id="cfPersonalizadorInline"' scripts/sincronizar-loja-integrada.mjs
+      - name: Publicar alterações
+        run: |
+          rm -f scripts/ativar-v13-producao-once.mjs
+          rm -f .github/workflows/ativar-v13-producao-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin-canecas/index.html admin-canecas/bulk-actions-v1.js scripts/sincronizar-loja-integrada.mjs scripts/ativar-v13-producao-once.mjs .github/workflows/ativar-v13-producao-once.yml
+          git commit -m "Ativa personalizador V13 aberto e vitrine com 2 recortes"
+          git pull --rebase origin main
+          git push origin main
