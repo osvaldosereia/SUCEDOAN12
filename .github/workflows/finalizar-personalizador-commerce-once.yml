@@ -11,11 +11,23 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: finalizar-personalizador-comercial
+  cancel-in-progress: true
+
 jobs:
   finalizar:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/finalizar-personalizador-commerce-once.mjs
+            loja-integrada/personalizar/app.js
+            loja-integrada/personalizar/index.html
+            .github/workflows/gerenciar-produtos-personalizados-temporarios-li.yml
+            .github/workflows/finalizar-personalizador-commerce-once.yml
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
