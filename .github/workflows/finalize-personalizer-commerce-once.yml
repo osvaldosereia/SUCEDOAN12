@@ -1,0 +1,114 @@
+name: CanecaFácil · finalizar compra personalizada
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/finalize-personalizer-commerce-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ligar aprovação ao produto temporário e carrinho
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path('loja-integrada/personalizar/app.js')
+          s = app.read_text(encoding='utf-8')
+          s = s.replace("const BUILD = '20260830-loja-integrada-personalizador-v2';", "const BUILD = '20260901-loja-integrada-personalizador-v3-commerce';")
+          s = s.replace("    arte_aprovada: { url: source, versao:'v1' },\n    arte_versao: 'v1',\n    arte_versao_aprovada: 'v1',", "    arte_aprovada: null,\n    arte_versao: 'v1',\n    arte_versao_aprovada: '',\n    aprovada: false,")
+
+          marker = "async function init() {"
+          block = r'''async function approveAndBuy() {
+  if (!currentCode || !currentSource) return;
+  const button = $('#returnButton');
+  button.disabled = true;
+  const original = button.textContent;
+  $('#progressBox').hidden = false;
+  $('#progressText').textContent = 'Aprovando sua arte e preparando o item personalizado…';
+  try {
+    const at = new Date().toISOString();
+    await writeJson(`${CREATIONS_NODE}/${safeKey(currentCode)}`, {
+      aprovada: true,
+      arte_aprovada: { url: currentSource, versao:'v1', aprovado_em: at },
+      arte_versao_aprovada: 'v1',
+      status: 'pronta_para_compra',
+      atualizado_em: at,
+      loja_integrada_temporario: {
+        status: 'solicitado',
+        solicitado_em: at,
+        atualizado_em: at,
+        origem: 'personalizador_web'
+      }
+    }, 'PATCH');
+
+    const started = Date.now();
+    const timeout = 6 * 60 * 1000;
+    while (Date.now() - started < timeout) {
+      const elapsed = Math.max(1, Math.round((Date.now() - started) / 1000));
+      $('#progressText').textContent = `Preparando seu item personalizado para o carrinho · ${elapsed}s`;
+      const creation = await fetchJson(`${CREATIONS_NODE}/${safeKey(currentCode)}`);
+      const temp = creation?.loja_integrada_temporario || {};
+      if (temp.status === 'ativo' && temp.produto_id) {
+        const cart = new URL(`/carrinho/produto/${encodeURIComponent(temp.produto_id)}/adicionar`, STOREFRONT);
+        cart.searchParams.set('utm_source', 'canecafacil');
+        cart.searchParams.set('utm_medium', 'personalizador');
+        cart.searchParams.set('utm_content', currentCode);
+        location.href = cart.href;
+        return;
+      }
+      if (temp.status === 'revisar') throw new Error(temp.erro || 'A criação precisa de revisão antes da compra.');
+      await sleep(2500);
+    }
+    throw new Error('Sua arte foi aprovada, mas o item ainda está sendo preparado. Aguarde alguns minutos e tente novamente pelo mesmo código.');
+  } catch (error) {
+    $('#progressBox').hidden = true;
+    showError(error?.message || String(error));
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
+
+'''
+          if 'async function approveAndBuy()' not in s:
+              s = s.replace(marker, block + marker)
+          s = s.replace("  $('#returnButton').addEventListener('click', () => { location.href = returnUrl(); });", "  $('#returnButton').addEventListener('click', approveAndBuy);")
+          app.write_text(s, encoding='utf-8')
+
+          html = Path('loja-integrada/personalizar/index.html')
+          h = html.read_text(encoding='utf-8')
+          h = h.replace('Guarde este código. Ele identifica exatamente a arte que será usada na produção.', 'Confira a arte com atenção. Ao aprovar, criaremos um item reservado desta personalização e enviaremos você ao carrinho.')
+          h = h.replace('id="returnButton">VOLTAR PARA COMPRAR</button>', 'id="returnButton">APROVAR E COMPRAR</button>')
+          h = h.replace('./app.js?v=20260830-3', './app.js?v=20260901-1')
+          html.write_text(h, encoding='utf-8')
+
+          wf = Path('.github/workflows/gerenciar-produtos-personalizados-temporarios-li.yml')
+          w = wf.read_text(encoding='utf-8').replace("cron: '*/10 * * * *'", "cron: '*/5 * * * *'")
+          wf.write_text(w, encoding='utf-8')
+          PY
+      - name: Validar JavaScript
+        run: node --check loja-integrada/personalizar/app.js
+      - name: Validar integração comercial
+        run: |
+          grep -q "async function approveAndBuy" loja-integrada/personalizar/app.js
+          grep -q "status: 'solicitado'" loja-integrada/personalizar/app.js
+          grep -q "APROVAR E COMPRAR" loja-integrada/personalizar/index.html
+          grep -q "cron: '\*/5 \* \* \* \*'" .github/workflows/gerenciar-produtos-personalizados-temporarios-li.yml
+      - name: Publicar e remover workflow temporário
+        run: |
+          rm -f .github/workflows/finalize-personalizer-commerce-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loja-integrada/personalizar/app.js loja-integrada/personalizar/index.html .github/workflows/gerenciar-produtos-personalizados-temporarios-li.yml .github/workflows/finalize-personalizer-commerce-once.yml
+          git commit -m "Finaliza aprovação e compra da caneca personalizada"
+          git pull --rebase origin main
+          git push origin main
