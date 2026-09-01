@@ -1,5 +1,5 @@
 name: Canecas · gerar vídeo 360 no Mug3D
-run-name: Vídeo 360 · ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || 'fila pendente' }}
+run-name: Vídeo 360 YouTube · ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || 'fila pendente' }}
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ on:
     - cron: '*/5 * * * *'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: canecas-mug3d-video-360
@@ -27,16 +27,16 @@ jobs:
       PRODUCTS_NODE: produtos
       PRODUCT_KEY: ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || '' }}
       FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+      MAKE_YOUTUBE_WEBHOOK_URL: ${{ secrets.MAKE_YOUTUBE_WEBHOOK_URL }}
       MUG3D_URL: https://mug3d.com/?model=1
-      VIDEO_OUTPUT_DIR: site/videos/canecas
+      VIDEO_OUTPUT_DIR: .tmp-mug3d
       MUG3D_SPEED: '8'
       MUG3D_MAX_LOOP_MS: '35000'
+      MAKE_YOUTUBE_MAX_BYTES: '4800000'
 
     steps:
       - name: Baixar repositório
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Preparar Node.js
         uses: actions/setup-node@v4
@@ -67,55 +67,68 @@ jobs:
           })().catch(error => { console.error(error); process.exit(1); });
           NODE
 
-      - name: Instalar navegador e conversor de imagem
+      - name: Validar publicação no YouTube
+        if: steps.queue.outputs.run == 'true'
+        shell: bash
+        run: |
+          if [ -z "$MAKE_YOUTUBE_WEBHOOK_URL" ]; then
+            echo '::error::Secret MAKE_YOUTUBE_WEBHOOK_URL ausente. Importe o cenário CANECA FACIL - Mug3D YouTube Shorts V1 no Make e salve a URL do Custom Webhook neste secret.'
+            exit 1
+          fi
+
+      - name: Instalar navegador e conversores
         if: steps.queue.outputs.run == 'true'
         run: |
           npm install --no-save playwright@1.55.0 sharp@0.34.3
           npx playwright install --with-deps chromium
+          command -v ffmpeg >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y ffmpeg; }
 
-      - name: Gerar WEBM no Mug3D
+      - name: Gerar WEBM temporário no Mug3D
         if: steps.queue.outputs.run == 'true'
         run: xvfb-run -a node scripts/mug3d-video-automation.mjs
 
-      - name: Verificar se houve vídeo novo
+      - name: Converter para MP4 vertical leve
         if: steps.queue.outputs.run == 'true'
-        id: result
+        id: convert
         shell: bash
         run: |
-          STATUS="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.status||'')")"
-          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
-          if [ "$STATUS" = "generated" ]; then
-            VIDEO_PATH="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.video_path||'')")"
-            echo "video_path=$VIDEO_PATH" >> "$GITHUB_OUTPUT"
+          WEBM="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.video_path||'')")"
+          PRODUCT_KEY="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.product_key||'caneca')")"
+          SAFE_KEY="$(printf '%s' "$PRODUCT_KEY" | sed -E 's/[^a-zA-Z0-9._-]+/-/g;s/^-+//;s/-+$//' | cut -c1-110)"
+          MP4=".tmp-mug3d/${SAFE_KEY:-caneca}-360-short.mp4"
+          mkdir -p .tmp-mug3d
+          ffmpeg -hide_banner -loglevel warning -y -i "$WEBM" \
+            -vf "scale=720:720:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=white,fps=30" \
+            -an -c:v libx264 -preset medium -crf 29 -pix_fmt yuv420p -movflags +faststart "$MP4"
+          SIZE="$(stat -c%s "$MP4")"
+          if [ "$SIZE" -gt 4600000 ]; then
+            echo "MP4 com $SIZE bytes; recomprimindo para reduzir o upload."
+            ffmpeg -hide_banner -loglevel warning -y -i "$MP4" \
+              -vf "scale=576:1024:force_original_aspect_ratio=decrease,pad=576:1024:(ow-iw)/2:(oh-ih)/2:color=white,fps=24" \
+              -an -c:v libx264 -preset medium -crf 33 -pix_fmt yuv420p -movflags +faststart "${MP4}.small.mp4"
+            mv "${MP4}.small.mp4" "$MP4"
+            SIZE="$(stat -c%s "$MP4")"
           fi
-
-      - name: Salvar vídeo no GitHub
-        if: steps.result.outputs.status == 'generated'
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- "${{ steps.result.outputs.video_path }}"
-          if git diff --cached --quiet; then
-            echo "O vídeo não mudou; nada para commitar."
-          else
-            PRODUCT_KEY="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.product_key||'caneca')")"
-            git commit -m "feat(canecas): atualizar vídeo 360 ${PRODUCT_KEY}"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
+          if [ "$SIZE" -gt 4800000 ]; then
+            echo "::error::MP4 ainda ficou grande demais para o bridge do Make: $SIZE bytes."
+            exit 1
           fi
+          echo "youtube_path=$MP4" >> "$GITHUB_OUTPUT"
+          echo "MP4 temporário pronto: $MP4 · $SIZE bytes."
 
-      - name: Publicar URL no card do produto
-        if: steps.result.outputs.status == 'generated'
+      - name: Publicar YouTube Short e salvar link no produto
+        if: steps.queue.outputs.run == 'true'
+        env:
+          YOUTUBE_VIDEO_PATH: ${{ steps.convert.outputs.youtube_path }}
         run: node scripts/mug3d-publish-result.mjs
 
-      - name: Guardar diagnóstico quando falhar
+      - name: Guardar diagnóstico somente quando falhar
         if: failure() && steps.queue.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: mug3d-video-diagnostico-${{ github.run_id }}
+          name: mug3d-youtube-diagnostico-${{ github.run_id }}
           path: |
             .mug3d-result.json
             .tmp-mug3d/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 2
