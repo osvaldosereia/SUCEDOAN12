@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-native-cart-v2.1-original-product';
+  const BUILD = '20260901-native-cart-v2.2-direct-original-product';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const STOREFRONT = 'https://www.canecafacil.com.br/';
   const CREATIONS_NODE = 'canecas/personalizadas';
@@ -63,12 +63,12 @@
     const node = document.getElementById('errorText'); if (node) node.textContent = message;
   }
 
-  function handoffUrl(code, productId, modelKey) {
-    const url = new URL(STOREFRONT);
-    url.searchParams.set('cf_add_personalizada', '1');
-    url.searchParams.set('cf_criacao', code);
-    url.searchParams.set('cf_produto', productId);
-    if (modelKey) url.searchParams.set('cf_modelo', modelKey);
+  function cartUrl(code, productId) {
+    const url = new URL(`/carrinho/produto/${encodeURIComponent(productId)}/adicionar`, STOREFRONT);
+    url.searchParams.set('utm_source', 'canecafacil');
+    url.searchParams.set('utm_medium', 'personalizacao');
+    url.searchParams.set('utm_campaign', code);
+    url.searchParams.set('utm_content', 'personalizada');
     return url.href;
   }
 
@@ -130,7 +130,15 @@
         writeJson(`${PENDING_NODE}/${safeKey(code)}`, pending, 'PUT')
       ]);
 
-      const url = handoffUrl(code, productId, modelKey);
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type:'canecafacil:carrinho-personalizado', code, productId, modelKey, build:BUILD
+          }, '*');
+        }
+      } catch {}
+
+      const url = cartUrl(code, productId);
       const fallback = document.getElementById('cartFallback'); if (fallback) fallback.href = url;
       if (window.top && window.top !== window) window.top.location.href = url;
       else location.href = url;
