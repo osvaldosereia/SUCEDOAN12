@@ -1,4 +1,4 @@
-const BUILD = '20260901-loja-integrada-personalizador-v3-commerce';
+const BUILD = '20260901-loja-integrada-personalizador-v4-native-cart';
 const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const STOREFRONT = 'https://canecafacil.com.br/';
@@ -6,21 +6,26 @@ const RESULT_NODE = 'canecas/geracoes';
 const CREATIONS_NODE = 'canecas/personalizadas';
 const WAIT_MS = 180000;
 const POLL_MS = 1800;
+const TEMP_DAYS = 8;
 
-const $ = s => document.querySelector(s);
-const text = v => String(v ?? '').trim();
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+const text = value => String(value ?? '').trim();
 const params = new URLSearchParams(location.search);
 const modelId = text(params.get('model'));
 const explicitReturn = text(params.get('return'));
+const embedded = params.get('embed') === '1';
 let product = null;
-let photoDataUrl = '';
-let currentCode = '';
-let currentSource = '';
+let config = null;
 
-function safeKey(v) { return text(v).replace(/[.#$\[\]/]/g, '_'); }
-function esc(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
-function money(v) { return Number(v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function safeKey(value) { return text(value).replace(/[.#$\[\]/]/g, '_'); }
+function esc(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function money(value) { return Number(value || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+function num(value) { const n = Number(String(value ?? '').replace(',', '.')); return Number.isFinite(n) ? n : 0; }
+function digits(value) { return text(value).replace(/\D+/g, ''); }
+function slug(value) { return text(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,130) || `cf-${Date.now()}`; }
+function isoAfterDays(days) { return new Date(Date.now() + days * 86400000).toISOString(); }
 function productImage(p = {}) {
   const values = [p.mockup_1, p.mockup_2, p.url_imagem, p.imagem_url, p.imagem, ...(Array.isArray(p.imagens_site) ? p.imagens_site : []), ...(Array.isArray(p.imagens) ? p.imagens : [])];
   return values.map(v => typeof v === 'object' ? (v?.url || v?.src || '') : v).map(text).find(v => /^https?:\/\//i.test(v)) || '';
@@ -32,11 +37,8 @@ function safeStoreUrl(value) {
   try {
     const url = new URL(raw, STOREFRONT);
     const host = url.hostname.toLowerCase().replace(/^www\./, '');
-    if (host !== 'canecafacil.com.br') return '';
-    return url.href;
-  } catch {
-    return '';
-  }
+    return host === 'canecafacil.com.br' ? url.href : '';
+  } catch { return ''; }
 }
 function productStoreUrl(p = {}) {
   const direct = safeStoreUrl(p?.loja_integrada?.url) || safeStoreUrl(p?.canecafacil_url);
@@ -47,75 +49,97 @@ function productStoreUrl(p = {}) {
 function returnUrl() { return safeStoreUrl(explicitReturn) || productStoreUrl(product || {}) || STOREFRONT; }
 function showError(message) {
   $('#progressBox').hidden = true;
+  $('#successBox').hidden = true;
   $('#errorText').textContent = message;
   $('#errorBox').hidden = false;
 }
+function setProgress(title, message) {
+  $('#errorBox').hidden = true;
+  $('#successBox').hidden = true;
+  $('#progressTitle').textContent = title;
+  $('#progressText').textContent = message;
+  $('#progressBox').hidden = false;
+}
 async function fetchJson(path) {
-  const r = await fetch(`${FIREBASE}/${path}.json?_=${Date.now()}`, { cache:'no-store', headers:{ Accept:'application/json' } });
-  if (!r.ok) throw new Error(`Firebase ${r.status}`);
-  return r.json();
+  const response = await fetch(`${FIREBASE}/${path}.json?_=${Date.now()}`, { cache:'no-store', headers:{ Accept:'application/json' } });
+  if (!response.ok) throw new Error(`Firebase ${response.status}`);
+  return response.json();
 }
 async function writeJson(path, data, method = 'PUT') {
-  const r = await fetch(`${FIREBASE}/${path}.json`, { method, headers:{ 'Content-Type':'application/json', Accept:'application/json' }, body:JSON.stringify(data) });
-  if (!r.ok) throw new Error(`Firebase ${r.status}`);
-  return r.json().catch(() => null);
+  const response = await fetch(`${FIREBASE}/${path}.json`, { method, headers:{ 'Content-Type':'application/json', Accept:'application/json' }, body:JSON.stringify(data) });
+  if (!response.ok) throw new Error(`Firebase ${response.status}`);
+  return response.json().catch(() => null);
 }
-function normalizeFields(p = {}) {
-  const raw = p.personalizacao_campos || p.campos_personalizacao || p.campos_publicos || p.canecafacil_campos || p.personalizacao?.campos || [];
-  let list = [];
-  if (Array.isArray(raw)) list = raw;
-  else if (raw && typeof raw === 'object') list = Object.entries(raw).map(([id, v]) => ({ id, ...(typeof v === 'object' ? v : { label:v }) }));
-  return list.map((field, index) => {
-    const id = text(field.id || field.key || field.nome || `campo_${index + 1}`);
-    const type = text(field.tipo || field.type || 'text').toLowerCase();
-    const options = Array.isArray(field.opcoes || field.options) ? (field.opcoes || field.options) : text(field.opcoes || field.options).split('|').map(text).filter(Boolean);
+function normalizeConfig(p = {}) {
+  const raw = p.personalizacao && typeof p.personalizacao === 'object' ? p.personalizacao : {};
+  let fieldsRaw = raw.campos || p.personalizacao_campos || p.campos_personalizacao || p.campos_publicos || p.canecafacil_campos || {};
+  const fromPrivateConfig = Boolean(raw.campos && typeof raw.campos === 'object');
+  let entries = [];
+  if (Array.isArray(fieldsRaw)) entries = fieldsRaw.map((value, index) => [text(value?.id || value?.key || value?.nome || `campo_${index + 1}`), value]);
+  else if (fieldsRaw && typeof fieldsRaw === 'object') entries = Object.entries(fieldsRaw);
+
+  const fields = entries.map(([key, value], index) => {
+    const item = value && typeof value === 'object' ? value : { rotulo:value };
+    if (fromPrivateConfig && item.ativo !== true) return null;
+    if (!fromPrivateConfig && item.ativo === false) return null;
+    const id = text(item.id || item.key || key || `campo_${index + 1}`);
+    const rawType = text(item.tipo || item.type).toLowerCase();
+    const isImage = ['foto','logo'].includes(id.toLowerCase()) || ['image','imagem','foto','file'].includes(rawType);
+    const type = isImage ? 'image' : (rawType || 'text');
+    const options = Array.isArray(item.opcoes || item.options)
+      ? (item.opcoes || item.options).map(text).filter(Boolean)
+      : text(item.opcoes || item.options).split('|').map(text).filter(Boolean);
     return {
       id,
-      label: text(field.rotulo || field.label || field.nome || id),
+      label: text(item.rotulo || item.label || item.nome || id),
       type,
-      required: field.obrigatorio === true || field.required === true,
-      placeholder: text(field.placeholder || field.exemplo),
-      help: text(field.ajuda || field.help || field.descricao),
+      required: item.obrigatorio === true || item.required === true,
+      placeholder: text(item.placeholder || item.exemplo),
+      help: text(item.ajuda || item.help || item.descricao),
       options,
+      max: Number(item.maxlength || item.max || 0) || ({ nome:80, endereco:180, telefone:40, site:120 }[id] || 180),
     };
-  }).filter(f => f.id && f.type !== 'foto' && f.type !== 'image');
+  }).filter(Boolean);
+
+  return {
+    active: raw.ativa !== false,
+    required: raw.ativa === true && raw.obrigatoria === true,
+    fields,
+    version: Number(raw.config_version || 0) || 0,
+  };
 }
-function renderFields() {
-  const fields = normalizeFields(product || {});
-  const root = $('#dynamicFields');
-  if (!fields.length) {
-    root.innerHTML = '<div class="wide-block" style="grid-column:1/-1;color:#71766f;font-size:12px">Este modelo não possui campos públicos específicos. Use a instrução complementar abaixo para dizer o que deseja alterar.</div>';
-    return;
+function fieldHtml(field) {
+  const required = field.required ? 'required' : '';
+  const star = field.required ? ' *' : '';
+  const help = field.help ? `<small>${esc(field.help)}</small>` : '';
+  if (field.type === 'image') {
+    return `<label class="cf-field cf-file">${esc(field.label)}${star}<input data-field-id="${esc(field.id)}" data-kind="image" type="file" accept="image/png,image/jpeg,image/webp" ${required}><small>${esc(field.help || 'JPG, PNG ou WebP')}</small></label>`;
   }
-  root.innerHTML = fields.map(field => {
-    const req = field.required ? 'required' : '';
-    const help = field.help ? `<small style="font-weight:500;color:#777">${esc(field.help)}</small>` : '';
-    if (field.type === 'select' || field.type === 'opcao' || field.type === 'option') {
-      return `<label data-dynamic-field="${esc(field.id)}">${esc(field.label)}<select data-field-id="${esc(field.id)}" ${req}><option value="">Selecione…</option>${field.options.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>${help}</label>`;
-    }
-    if (field.type === 'textarea' || field.type === 'frase_longa') {
-      return `<label class="wide" data-dynamic-field="${esc(field.id)}">${esc(field.label)}<textarea data-field-id="${esc(field.id)}" rows="3" placeholder="${esc(field.placeholder)}" ${req}></textarea>${help}</label>`;
-    }
-    return `<label data-dynamic-field="${esc(field.id)}">${esc(field.label)}<input data-field-id="${esc(field.id)}" placeholder="${esc(field.placeholder)}" ${req}>${help}</label>`;
-  }).join('');
+  if (['select','opcao','option'].includes(field.type)) {
+    return `<label class="cf-field">${esc(field.label)}${star}<select data-field-id="${esc(field.id)}" ${required}><option value="">Selecione…</option>${field.options.map(option => `<option value="${esc(option)}">${esc(option)}</option>`).join('')}</select>${help}</label>`;
+  }
+  if (['textarea','frase_longa'].includes(field.type)) {
+    return `<label class="cf-field cf-wide">${esc(field.label)}${star}<textarea data-field-id="${esc(field.id)}" rows="2" maxlength="${field.max}" placeholder="${esc(field.placeholder)}" ${required}></textarea>${help}</label>`;
+  }
+  const inputType = field.id === 'telefone' ? 'tel' : field.id === 'site' ? 'url' : 'text';
+  return `<label class="cf-field">${esc(field.label)}${star}<input data-field-id="${esc(field.id)}" type="${inputType}" maxlength="${field.max}" placeholder="${esc(field.placeholder)}" ${required}>${help}</label>`;
 }
-function renderProduct() {
+function render() {
   const image = productImage(product || {});
-  $('#productBox').innerHTML = `${image ? `<img src="${esc(image)}" alt="${esc(product?.nome || 'Caneca')}">` : '<div class="skeleton media"></div>'}<div class="product-copy"><h2>${esc(product?.nome || 'Caneca personalizada')}</h2><p>${esc(product?.tema_caneca || product?.subcategoria || 'Personalize este modelo')}</p><strong>${money(product?.preco)}</strong></div>`;
-  renderFields();
+  const label = config.fields.map(field => field.label).join(', ');
+  $('#productBox').innerHTML = `${image ? `<img src="${esc(image)}" alt="${esc(product?.nome || 'Caneca')}">` : ''}<div class="product-copy"><h2>${esc(product?.nome || 'Caneca personalizada')}</h2><strong>${money(product?.preco)}</strong>${label ? `<p>Personalize: ${esc(label)}.</p>` : ''}</div>`;
+  const root = $('#dynamicFields');
+  root.innerHTML = config.fields.length
+    ? config.fields.map(fieldHtml).join('')
+    : '<div class="empty-fields">Este modelo ainda não possui campos de personalização liberados.</div>';
+  $('#generateButton').disabled = !config.fields.length;
   $('#personalizerForm').hidden = false;
 }
-function collectFields() {
-  const out = {};
-  $$('[data-field-id]').forEach(input => { const value = text(input.value); if (value) out[input.dataset.fieldId] = value; });
-  return out;
-}
-function $$(s) { return [...document.querySelectorAll(s)]; }
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(text(reader.result));
-    reader.onerror = () => reject(new Error('Não foi possível ler a foto selecionada.'));
+    reader.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'));
     reader.readAsDataURL(file);
   });
 }
@@ -125,6 +149,21 @@ async function urlToDataUrl(url) {
   const response = await fetch(url, { cache:'no-store' });
   if (!response.ok) throw new Error('Não foi possível carregar a arte-base do modelo.');
   return fileToDataUrl(await response.blob());
+}
+async function collectCustomerValues() {
+  const fields = {};
+  const images = [];
+  for (const input of $$('[data-field-id]')) {
+    const id = text(input.dataset.fieldId);
+    if (input.dataset.kind === 'image') {
+      const file = input.files?.[0];
+      if (file) images.push({ field_id:id, role:id, image_base64:await fileToDataUrl(file) });
+    } else {
+      const value = text(input.value);
+      if (value) fields[id] = value;
+    }
+  }
+  return { fields, images };
 }
 function imageSource(record) {
   if (!record || typeof record !== 'object') return '';
@@ -138,7 +177,7 @@ async function waitResult(requestId) {
   const started = Date.now();
   while (Date.now() - started < WAIT_MS) {
     const elapsed = Math.max(1, Math.round((Date.now() - started) / 1000));
-    $('#progressText').textContent = `Gerando a personalização · ${elapsed}s`;
+    $('#progressText').textContent = `Gerando sua arte · ${elapsed}s`;
     try {
       const record = await fetchJson(`${RESULT_NODE}/${safeKey(requestId)}`);
       if (record?.ok === false || record?.error || record?.erro) throw new Error(record.error || record.erro || 'A automação não conseguiu gerar a arte.');
@@ -152,13 +191,16 @@ async function waitResult(requestId) {
   throw new Error('A personalização demorou mais de 3 minutos. Tente novamente.');
 }
 function creationCode() {
-  const d = new Date();
-  const date = `${String(d.getFullYear()).slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  return `CF-${date}-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+  const date = new Date();
+  const prefix = `${String(date.getFullYear()).slice(-2)}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}`;
+  return `CF-${prefix}-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 }
-async function persistCreation(source, fields, instruction) {
-  const code = creationCode();
-  const now = new Date().toISOString();
+function tempSku(code) {
+  const clean = text(code).toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(-20);
+  return `CFP-${clean}`.slice(0,30);
+}
+async function persistCreation(code, source, fields, images) {
+  const at = new Date().toISOString();
   const record = {
     id: code,
     origem: 'loja_integrada',
@@ -167,62 +209,190 @@ async function persistCreation(source, fields, instruction) {
     modelo_key: modelId,
     modelo_nome: text(product?.nome),
     produto_key: modelId,
-    cliente_nome: text($('#customerName').value),
-    cliente_whatsapp: text($('#customerWhatsapp').value),
-    cliente_email: text($('#customerEmail').value),
     campos: fields,
-    instrucao: instruction,
+    imagens_cliente_campos: images.map(item => item.field_id),
     arte_horizontal: source,
     arte_personalizacao: source,
-    arte_aprovada: null,
+    arte_aprovada: { url:source, versao:'v1', aprovado_em:at },
     arte_versao: 'v1',
-    arte_versao_aprovada: '',
-    aprovada: false,
-    versoes: [{ versao:'v1', url:source, criado_em:now }],
-    status: 'arte_pronta',
+    arte_versao_aprovada: 'v1',
+    aprovada: true,
+    versoes: [{ versao:'v1', url:source, criado_em:at, status:'aprovada_automaticamente' }],
+    personalizacao_snapshot: {
+      config_version: config.version,
+      campos_liberados: config.fields.map(field => ({ id:field.id, rotulo:field.label, tipo:field.type, obrigatorio:field.required }))
+    },
+    status: 'pronta_para_compra',
     atendimento_status: 'novo',
-    criado_em: now,
-    atualizado_em: now,
+    criado_em: at,
+    atualizado_em: at,
   };
   await writeJson(`${CREATIONS_NODE}/${safeKey(code)}`, record, 'PUT');
-  return code;
 }
-async function generate(event) {
+function temporaryProductPayload(code) {
+  const sku = tempSku(code);
+  const alias = slug(`caneca-personalizada-${code}`);
+  const li = product?.loja_integrada && typeof product.loja_integrada === 'object' ? product.loja_integrada : {};
+  const mockup1 = text(product?.mockup_1) || productImage(product || {});
+  const mockup2 = text(product?.mockup_2) || mockup1;
+  if (!mockup1) throw new Error('O produto-base não possui imagem para o carrinho.');
+
+  const productBody = {
+    id_externo: null,
+    sku,
+    mpn: null,
+    ncm: digits(product?.ncm || '69111090') || '69111090',
+    gtin: null,
+    nome: `Caneca personalizada · ${text(product?.nome || 'Caneca Fácil')}`.slice(0,140),
+    apelido: alias,
+    descricao_completa: `Caneca personalizada reservada. Código técnico: ${code}. A arte permanece protegida no sistema CanecaFácil.`,
+    ativo: true,
+    bloqueado: false,
+    destaque: false,
+    peso: num(product?.peso_embalado_kg || product?.peso) || 0.45,
+    altura: Math.ceil(num(product?.altura_embalada_cm || product?.altura)) || 14,
+    largura: Math.ceil(num(product?.largura_embalada_cm || product?.largura)) || 14,
+    profundidade: Math.ceil(num(product?.comprimento_embalado_cm || product?.comprimento)) || 14,
+    tipo: 'normal',
+    usado: false,
+    categorias: text(li.categoria_uri) ? [text(li.categoria_uri)] : [],
+    marca: text(li.marca_uri) || null,
+    removido: false,
+    url_video_youtube: null,
+  };
+  const priceBody = {
+    cheio: num(product?.preco) || 19.9,
+    custo: num(product?.preco_custo || product?.custo) || 0,
+    sob_consulta: false,
+    promocional: num(product?.preco_oferta || product?.preco_promocional) || 0,
+  };
+  const stockBody = { gerenciado:false, quantidade:0, situacao_em_estoque:0, situacao_sem_estoque:0 };
+  const seoBody = {
+    title: 'Caneca personalizada | Caneca Fácil',
+    keyword: '',
+    description: 'Item personalizado reservado para conclusão da compra na Caneca Fácil.'
+  };
+  return {
+    action: 'loja_integrada_create_product',
+    request_id: `LI-TEMP-${Date.now().toString(36).toUpperCase()}`,
+    product_key: safeKey(code),
+    model_id: modelId,
+    firebase_url: FIREBASE,
+    products_node: CREATIONS_NODE,
+    produto_json: JSON.stringify(productBody),
+    preco_json: JSON.stringify(priceBody),
+    estoque_json: JSON.stringify(stockBody),
+    seo_json: JSON.stringify(seoBody),
+    alias_json: JSON.stringify({ absolute_path:`/${alias}` }),
+    mockup_1: mockup1,
+    mockup_2: mockup2,
+    mockup_3: '',
+    personalizavel: false,
+    ativo_loja: true,
+    sku,
+    source: BUILD,
+  };
+}
+async function createTemporaryProduct(code) {
+  setProgress('Arte pronta', 'Preparando sua caneca no carrinho…');
+  const payload = temporaryProductPayload(code);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 100000);
+  try {
+    const response = await fetch(MAKE_WEBHOOK, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Accept:'application/json' },
+      body:JSON.stringify({ payload:JSON.stringify(payload) }),
+      signal:controller.signal,
+    });
+    const raw = await response.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch { data = { raw }; }
+    if (!response.ok || data.ok === false) throw new Error(data.error || data.error_message || `Loja Integrada respondeu ${response.status}.`);
+    const productId = text(data.produto_id || data.product_id);
+    if (!productId) throw new Error('A Loja Integrada não retornou o item reservado.');
+    const at = new Date().toISOString();
+    await writeJson(`${CREATIONS_NODE}/${safeKey(code)}`, {
+      loja_integrada_temporario: {
+        status:'ativo',
+        sku:payload.sku,
+        produto_id:productId,
+        alias:JSON.parse(payload.alias_json).absolute_path.replace(/^\//,''),
+        url:text(data.url),
+        produto_base_key:modelId,
+        criado_em:at,
+        ativado_em:at,
+        atualizado_em:at,
+        expira_em:isoAfterDays(TEMP_DAYS),
+        dias_sem_compra:TEMP_DAYS,
+        dias_pos_compra:30,
+        privacidade:'sem_arte_ou_dados_pessoais_na_loja_integrada',
+        origem:'personalizador_web_sincrono',
+        erro:''
+      }
+    }, 'PATCH');
+    return productId;
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('A preparação do carrinho demorou mais que o esperado. Tente novamente.');
+    throw error;
+  } finally { clearTimeout(timer); }
+}
+function cartUrl(productId, code) {
+  const url = new URL(`/carrinho/produto/${encodeURIComponent(productId)}/adicionar`, STOREFRONT);
+  url.searchParams.set('utm_source', 'canecafacil');
+  url.searchParams.set('utm_medium', 'personalizador');
+  url.searchParams.set('utm_content', code);
+  return url.href;
+}
+function goToCart(productId, code) {
+  const url = cartUrl(productId, code);
+  $('#progressBox').hidden = true;
+  $('#successText').textContent = 'Sua arte foi criada e sua caneca está pronta para continuar a compra.';
+  $('#cartFallback').href = url;
+  $('#successBox').hidden = false;
+  try {
+    if (window.top && window.top !== window) window.top.location.href = url;
+    else location.href = url;
+  } catch {
+    try { window.open(url, '_top'); } catch { /* fallback visível */ }
+  }
+}
+async function generateAndCart(event) {
   event.preventDefault();
-  $('#errorBox').hidden = true;
-  $('#resultBox').hidden = true;
+  if (!config?.fields?.length) return;
+  const form = $('#personalizerForm');
+  if (!form.reportValidity()) return;
   const button = $('#generateButton');
   button.disabled = true;
-  $('#progressBox').hidden = false;
+  setProgress('Gerando sua arte', 'Aguarde alguns instantes. Você irá direto para o carrinho.');
   try {
-    const fields = collectFields();
-    const instruction = text($('#freeInstruction').value);
-    let reference = photoDataUrl;
-    if (!reference) reference = await urlToDataUrl(modelArt(product || {}));
-    if (!reference) throw new Error('Este modelo não possui arte-base disponível para personalização.');
+    const { fields, images } = await collectCustomerValues();
+    const officialArt = await urlToDataUrl(modelArt(product || {}));
+    if (!officialArt) throw new Error('Este modelo não possui arte-base disponível para personalização.');
+    const customerImage = text(images[0]?.image_base64) || officialArt;
     const requestId = `LI-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-    const payload = {
-      action: 'personalize_mug_model',
-      request_id: requestId,
-      model_id: modelId,
-      mode: 'loja_integrada',
-      origin: 'loja_integrada',
-      store_domain: 'canecafacil.com.br',
-      return_url: returnUrl(),
-      customer_name: text($('#customerName').value),
-      customer_whatsapp: text($('#customerWhatsapp').value),
-      customer_email: text($('#customerEmail').value),
-      fields_json: JSON.stringify(fields),
-      images_json: JSON.stringify(photoDataUrl ? [{ image_base64:photoDataUrl }] : []),
-      image_base64: reference,
-      instruction,
-      prompt_art: 'Personalize fielmente a arte oficial do modelo conforme os campos e a instrução do cliente. Preserve todo o restante da composição.',
-      firebase_url: FIREBASE,
-      products_node: 'produtos',
-      quality: 'low',
-      client_contract: BUILD,
+    const personalizationPayload = {
+      action:'personalize_mug_model',
+      request_id:requestId,
+      model_id:modelId,
+      mode:'loja_integrada',
+      origin:'loja_integrada',
+      store_domain:'canecafacil.com.br',
+      return_url:returnUrl(),
+      customer_name:'',
+      customer_whatsapp:'',
+      customer_email:'',
+      fields_json:JSON.stringify(fields),
+      images_json:JSON.stringify(images),
+      image_base64:customerImage,
+      instruction:'',
+      prompt_art:'Personalize fielmente a arte oficial do modelo usando somente os campos liberados no cadastro privado. Preserve integralmente o restante da composição.',
+      firebase_url:FIREBASE,
+      products_node:'produtos',
+      quality:'low',
+      client_contract:BUILD,
     };
-    const response = await fetch(MAKE_WEBHOOK, { method:'POST', headers:{ 'Content-Type':'application/json', Accept:'application/json' }, body:JSON.stringify({ payload:JSON.stringify(payload) }) });
+    const response = await fetch(MAKE_WEBHOOK, { method:'POST', headers:{ 'Content-Type':'application/json', Accept:'application/json' }, body:JSON.stringify({ payload:JSON.stringify(personalizationPayload) }) });
     const raw = await response.text();
     let source = '';
     if (raw && !/^accepted\.?$/i.test(text(raw))) {
@@ -231,99 +401,36 @@ async function generate(event) {
         if (data.ok === false) throw new Error(data.error || 'A automação recusou a personalização.');
         source = imageSource(data);
       } catch (error) {
-        if (error instanceof SyntaxError) console.debug('Resposta síncrona não JSON; seguindo pelo Firebase.'); else throw error;
+        if (!(error instanceof SyntaxError)) throw error;
       }
     }
     if (!response.ok) throw new Error(`Automação respondeu HTTP ${response.status}.`);
     if (!source) source = await waitResult(requestId);
-    const code = await persistCreation(source, fields, instruction);
-    currentCode = code;
-    currentSource = source;
-    $('#progressBox').hidden = true;
-    $('#resultImage').src = source;
-    $('#resultCode').textContent = code;
-    $('#resultBox').hidden = false;
-    $('#resultBox').scrollIntoView({ behavior:'smooth', block:'start' });
-  } catch (error) {
-    showError(error?.message || String(error));
-  } finally {
-    button.disabled = false;
-  }
-}
-async function approveAndBuy() {
-  if (!currentCode || !currentSource) return;
-  const button = $('#returnButton');
-  if (button.disabled) return;
-  button.disabled = true;
-  $('#errorBox').hidden = true;
-  $('#progressBox').hidden = false;
-  $('#progressText').textContent = 'Aprovando sua arte e preparando o item personalizado…';
-  try {
-    const at = new Date().toISOString();
-    await writeJson(`${CREATIONS_NODE}/${safeKey(currentCode)}`, {
-      aprovada: true,
-      arte_aprovada: { url: currentSource, versao:'v1', aprovado_em:at },
-      arte_versao_aprovada: 'v1',
-      status: 'pronta_para_compra',
-      atualizado_em: at,
-      loja_integrada_temporario: {
-        status: 'solicitado',
-        solicitado_em: at,
-        atualizado_em: at,
-        origem: 'personalizador_web'
-      }
-    }, 'PATCH');
 
-    const started = Date.now();
-    const timeout = 6 * 60 * 1000;
-    while (Date.now() - started < timeout) {
-      const elapsed = Math.max(1, Math.round((Date.now() - started) / 1000));
-      $('#progressText').textContent = `Preparando seu item personalizado para o carrinho · ${elapsed}s`;
-      const creation = await fetchJson(`${CREATIONS_NODE}/${safeKey(currentCode)}`);
-      const temp = creation?.loja_integrada_temporario || {};
-      if (temp.status === 'ativo' && temp.produto_id) {
-        const cart = new URL(`/carrinho/produto/${encodeURIComponent(temp.produto_id)}/adicionar`, STOREFRONT);
-        cart.searchParams.set('utm_source', 'canecafacil');
-        cart.searchParams.set('utm_medium', 'personalizador');
-        cart.searchParams.set('utm_content', currentCode);
-        location.href = cart.href;
-        return;
-      }
-      if (temp.status === 'revisar') throw new Error(temp.erro || 'A criação precisa de revisão antes da compra.');
-      if (temp.status === 'pendente_retry' && temp.erro) $('#progressText').textContent = 'Ainda preparando seu item. Nova tentativa automática em instantes…';
-      await sleep(2500);
-    }
-    throw new Error('Sua arte foi aprovada, mas o item ainda está sendo preparado. Tente novamente em alguns minutos.');
+    const code = creationCode();
+    await persistCreation(code, source, fields, images);
+    const tempProductId = await createTemporaryProduct(code);
+    goToCart(tempProductId, code);
   } catch (error) {
-    $('#progressBox').hidden = true;
     showError(error?.message || String(error));
     button.disabled = false;
   }
 }
-
 async function init() {
   document.documentElement.dataset.cfLiPersonalizer = BUILD;
-  if (!modelId) return showError('O link de personalização não informou qual modelo de caneca deve ser usado.');
+  document.body.classList.toggle('is-embed', embedded);
+  if (!modelId) return showError('Não foi informado qual modelo deve ser personalizado.');
   try {
     product = await fetchJson(`produtos/${safeKey(modelId)}`);
     if (!product) throw new Error('A caneca escolhida não foi encontrada.');
     if (product.loja_integrada_personalizavel === false || product.canecafacil_personalizavel === false) throw new Error('Este modelo não está disponível para personalização.');
-    renderProduct();
-  } catch (error) {
-    showError(error?.message || String(error));
-  }
-  $('#personalizerForm').addEventListener('submit', generate);
-  $('#customerPhoto').addEventListener('change', async e => {
-    const file = e.target.files?.[0];
-    photoDataUrl = file ? await fileToDataUrl(file) : '';
-    const box = $('#photoPreview');
-    box.hidden = !photoDataUrl;
-    box.innerHTML = photoDataUrl ? `<img src="${esc(photoDataUrl)}" alt="Prévia da foto">` : '';
-  });
+    config = normalizeConfig(product);
+    if (!config.active) throw new Error('A personalização deste modelo está desativada.');
+    render();
+  } catch (error) { return showError(error?.message || String(error)); }
+
+  $('#personalizerForm').addEventListener('submit', generateAndCart);
   $('#backButton').addEventListener('click', () => { location.href = returnUrl(); });
-  $('#returnButton').addEventListener('click', approveAndBuy);
-  $('#redoButton').addEventListener('click', () => { $('#resultBox').hidden = true; $('#personalizerForm').hidden = false; $('#personalizerForm').scrollIntoView({ behavior:'smooth' }); });
-  $('#copyCode').addEventListener('click', async () => { if (currentCode) { await navigator.clipboard?.writeText(currentCode).catch(() => null); $('#copyCode').textContent = 'Copiado'; setTimeout(() => $('#copyCode').textContent = 'Copiar', 1500); } });
   $('#tryAgain').addEventListener('click', () => { $('#errorBox').hidden = true; $('#personalizerForm').hidden = false; });
 }
 
