@@ -1,0 +1,67 @@
+name: CanecaFácil · publicar animação no YouTube
+run-name: Animação 5s · ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || 'próxima pendente' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      product_key:
+        description: 'Chave Firebase da caneca (opcional)'
+        required: false
+        default: ''
+        type: string
+  schedule:
+    - cron: '17 */4 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/publicar-animacao-canecas-youtube.mjs'
+      - '.github/workflows/publicar-animacao-canecas-youtube.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canecafacil-panorama-youtube
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+      REQUESTED_PRODUCT_KEY: ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || '' }}
+      MAKE_YOUTUBE_WEBHOOK_URL: ${{ secrets.MAKE_YOUTUBE_WEBHOOK_URL }}
+      MAKE_YOUTUBE_MAX_BYTES: '4800000'
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Garantir FFmpeg
+        run: |
+          if command -v ffmpeg >/dev/null 2>&1; then
+            ffmpeg -version | head -n 1
+          else
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+
+      - name: Validar ponte YouTube
+        run: |
+          if [ -z "$MAKE_YOUTUBE_WEBHOOK_URL" ]; then
+            echo '::error::Secret MAKE_YOUTUBE_WEBHOOK_URL ausente.'
+            exit 1
+          fi
+
+      - name: Publicar próxima animação e enfileirar Loja Integrada
+        run: node scripts/publicar-animacao-canecas-youtube.mjs
