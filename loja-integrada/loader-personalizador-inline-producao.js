@@ -1,15 +1,27 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-cf-inline-loader-prod-v1';
+  const BUILD = '20260901-cf-inline-loader-prod-v2-privacy';
   const PARAM = 'cf_personalizador';
   const ACTIVE_VALUE = 'teste';
   const INLINE_URL = 'https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-4';
+  const PRIVACY_URL = 'https://donaantonia.com.br/loja-integrada/temporary-product-privacy-v1.js?v=20260901-1';
 
   if (window.__CF_INLINE_PROD_LOADER__ === BUILD) return;
   window.__CF_INLINE_PROD_LOADER__ = BUILD;
 
   let loading = false;
+
+  function loadPrivacyGuard() {
+    if (window.__CF_TEMP_PRODUCT_PRIVACY__) return;
+    if ([...document.scripts].some(s => /temporary-product-privacy-v1\.js/i.test(s.src || ''))) return;
+    const script = document.createElement('script');
+    script.src = PRIVACY_URL;
+    script.async = true;
+    script.dataset.cfTemporaryPrivacy = BUILD;
+    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar proteção de produtos temporários.');
+    document.head.appendChild(script);
+  }
 
   function isProductPage() {
     return document.body?.classList?.contains('pagina-produto')
@@ -71,6 +83,8 @@
     };
     document.head.appendChild(script);
   }
+
+  loadPrivacyGuard();
 
   document.addEventListener('click', event => {
     const link = event.target.closest?.('.cf-personalize-link');
