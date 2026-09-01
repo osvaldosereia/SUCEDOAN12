@@ -18,6 +18,7 @@ const contract=read('loja-integrada','personalizar','personalization-contract-v1
 const makeContractV4=read('loja-integrada','personalizar','v4-make-contract-v1.js');
 const appV4=read('loja-integrada','personalizar','app-v4.js');
 const indexV4=read('loja-integrada','personalizar','index-v4.html');
+const inline=read('loja-integrada','personalizador-inline-v1.js');
 const liWorker=read('scripts','sincronizar-loja-integrada.mjs');
 const cropWorker=read('scripts','processar-vitrine-canecas.mjs');
 
@@ -81,7 +82,23 @@ assert.ok(indexV4.indexOf('v4-make-contract-v1.js')<indexV4.indexOf('app-v4.js')
 assert.match(indexV4,/HOMOLOGAÇÃO V4/,'V4 deve estar claramente marcada como homologação');
 assert.match(indexV4,/Não é possível solicitar alterações fora dos campos liberados/,'UX deve deixar limites claros');
 
+assert.match(inline,/TEST_PARAM\s*=\s*'cf_personalizador'/,'inline deve exigir parâmetro de homologação');
+assert.match(inline,/TEST_VALUE\s*=\s*'teste'/,'inline deve usar valor explícito de homologação');
+assert.match(inline,/params\.get\(TEST_PARAM\)\s*!==\s*TEST_VALUE/,'inline não pode iniciar fora do modo de teste');
+for(const id of ['nome','foto','logo','endereco','telefone','site'])assert.match(inline,new RegExp(`${id}: \\[`),`inline deve reconhecer ${id}`);
+assert.match(inline,/action:\s*'personalize_mug_model'/,'inline deve usar a mesma ação Make da V4');
+assert.match(inline,/prompt_art:\s*prompt/,'inline deve enviar o prompt restrito montado pelo modelo');
+assert.match(inline,/orderBy[\s\S]*JSON\.stringify\('codigo'\)/,'inline deve localizar a caneca por SKU indexado, sem varrer catálogo inteiro');
+assert.match(inline,/equalTo[\s\S]*JSON\.stringify\(sku\)/,'inline deve exigir correspondência exata do SKU');
+assert.equal(inline.includes('freeInstruction'),false,'inline não pode oferecer instrução livre');
+assert.equal(inline.includes('/canecas/personalizadas/'),false,'inline de homologação não pode gravar criação/aprovação no navegador');
+assert.equal(/method:\s*['"](?:PUT|PATCH|DELETE)['"]/.test(inline),false,'inline de homologação deve ser somente leitura no Firebase');
+assert.equal(/new\s+MutationObserver/.test(inline),false,'inline não deve observar o documento inteiro');
+assert.equal(/setInterval\s*\(/.test(inline),false,'inline não deve manter atualização periódica');
+assert.match(inline,/APROVAR E COMPRAR · EM BREVE/,'compra deve permanecer bloqueada durante homologação');
+assert.match(inline,/\.acoes-produto \.comprar/,'inline deve ocupar a área nativa de ações do produto');
+
 assert.match(liWorker,/p\.mockup_2,\s*p\.mockup_1/,'worker LI deve iniciar galeria por mockup 2 e mockup 1');
 assert.match(cropWorker,/imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/,'recortes devem manter ordem oficial');
 
-console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados/sugeridos, V4 compatível com Make e UI sem observers globais.');
+console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados/sugeridos, V4 e inline compatíveis com Make, homologação protegida e UI sem observers globais.');
