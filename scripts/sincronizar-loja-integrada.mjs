@@ -152,7 +152,7 @@ function baseDescription(p = {}) {
 function description(p, key) {
   const base = baseDescription(p);
   if (!isPersonalizable(p)) return base;
-  const link = `${DEFAULTS.personalizerBase}?model=${encodeURIComponent(key)}&return=${encodeURIComponent('https://canecafacil.com.br/')}`;
+  const link = '?cf_personalizador=teste#cfInlinePersonalizer';
   return `${base}\n<div class="cf-personalizer-box" style="margin:18px 0;padding:16px;border:1px solid #e8e8e3;border-radius:12px;text-align:center">\n<strong style="display:block;margin-bottom:8px">Personalize esta caneca</strong>\n<a class="cf-personalize-link" href="${esc(link)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;border-radius:9px;font-weight:700">PERSONALIZAR ESTA CANECA</a>\n</div>`.trim();
 }
 function stableAlias(p = {}, key = '') {

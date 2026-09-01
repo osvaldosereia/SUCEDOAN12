@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-li-personalizador-inline-v1';
+  const BUILD = '20260901-li-personalizador-inline-v1.2-commerce';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
   const WAIT_MS = 180000;
@@ -26,6 +26,7 @@
   let config = null;
   let productKey = '';
   let generatedSource = '';
+  let generatedCode = '';
   const files = {};
 
   function style() {
@@ -98,6 +99,16 @@
     const response = await fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
+  }
+
+  async function writeJson(url, data, method = 'PUT') {
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json().catch(() => null);
   }
 
   async function findProduct() {
@@ -228,7 +239,6 @@
     panel.id = 'cfInlinePersonalizer';
     panel.innerHTML = `
       <div class="cfip-head">
-        <span class="cfip-test">HOMOLOGAÇÃO · SOMENTE VOCÊ VÊ COM ?cf_personalizador=teste</span>
         <strong>Personalize esta caneca</strong>
         <span>${allowedText ? `Neste modelo você pode alterar: ${esc(allowedText)}.` : 'Este modelo ainda não possui campos liberados.'}</span>
       </div>
@@ -241,18 +251,19 @@
           <div class="cfip-actions">
             <button class="cfip-primary" id="cfipGenerate" type="submit">GERAR MINHA ARTE</button>
           </div>
-          <div class="cfip-status" id="cfipStatus">Teste seguro: a geração funciona aqui, mas a compra personalizada ainda está desativada nesta homologação.</div>
+          <div class="cfip-status" id="cfipStatus">Preencha os campos liberados para este modelo e gere sua arte.</div>
         </form>
         <div class="cfip-result" id="cfipResult" hidden>
           <img id="cfipResultImage" alt="Arte personalizada gerada">
           <strong>Sua arte ficou pronta</strong>
-          <p>Confira com atenção. Nesta etapa de homologação ainda não enviaremos a caneca personalizada ao carrinho.</p>
+          <p>Confira a arte com atenção. Se estiver correta, aprove para continuar a compra.</p>
+          <div class="cfip-status" id="cfipResultStatus">Sua arte ainda não foi aprovada.</div>
           <div class="cfip-actions">
             <button class="cfip-secondary" id="cfipAgain" type="button">ALTERAR / GERAR NOVAMENTE</button>
-            <button class="cfip-primary" type="button" disabled>APROVAR E COMPRAR · EM BREVE</button>
+            <button class="cfip-primary" id="cfipApprove" type="button">APROVAR E COMPRAR</button>
           </div>
         </div>
-        <div class="cfip-buy-note">${config.obrigatoria ? 'Neste modelo a personalização será obrigatória quando entrarmos em produção.' : 'Neste modelo a personalização é opcional; a compra sem alterações continuará disponível.'}</div>
+        <div class="cfip-buy-note">${config.obrigatoria ? 'A personalização deste modelo é obrigatória antes da compra.' : 'A personalização é opcional; você também pode comprar o modelo sem alterações.'}</div>
       </div>`;
     placePanel(panel);
 
@@ -260,7 +271,7 @@
       const buy = document.querySelector('.acoes-produto .comprar, a[href*="/carrinho/produto/"][href*="/adicionar"]')?.closest('.comprar')
         || document.querySelector('a[href*="/carrinho/produto/"][href*="/adicionar"]');
       if (buy) {
-        buy.dataset.cfHomologacaoOriginalDisplay = buy.style.display || '';
+        buy.dataset.cfOriginalDisplay = buy.style.display || '';
         buy.style.display = 'none';
       }
     }
@@ -269,8 +280,10 @@
       input.addEventListener('change', () => { files[input.dataset.cfField] = input.files?.[0] || null; });
     });
     panel.querySelector('#cfipForm').addEventListener('submit', generate);
+    panel.querySelector('#cfipApprove').addEventListener('click', approveAndBuy);
     panel.querySelector('#cfipAgain').addEventListener('click', () => {
       generatedSource = '';
+      generatedCode = '';
       panel.querySelector('#cfipResult').hidden = true;
       panel.querySelector('#cfipForm').hidden = false;
       panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -325,6 +338,106 @@
     if (!node) return;
     node.textContent = message;
     node.className = `cfip-status${error ? ' error' : ''}`;
+  }
+
+  function setResultStatus(message, error = false) {
+    const node = document.getElementById('cfipResultStatus');
+    if (!node) return;
+    node.textContent = message;
+    node.className = `cfip-status${error ? ' error' : ''}`;
+  }
+
+  function creationCode() {
+    const d = new Date();
+    const date = `${String(d.getFullYear()).slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    return `CF-${date}-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+  }
+
+  async function persistCreation(source, values, prompt, email) {
+    const code = creationCode();
+    const at = new Date().toISOString();
+    const record = {
+      id: code,
+      origem: 'loja_integrada_inline',
+      loja_dominio: location.hostname,
+      modelo_key: productKey,
+      modelo_nome: text(product?.nome),
+      produto_key: productKey,
+      cliente_email: email,
+      campos: values,
+      arte_horizontal: source,
+      arte_personalizacao: source,
+      arte_aprovada: null,
+      arte_versao: 'v1',
+      arte_versao_aprovada: '',
+      aprovada: false,
+      versoes: [{ versao:'v1', url:source, criado_em:at, status:'gerada' }],
+      personalizacao_snapshot: {
+        config_version: config.config_version,
+        prompt_base_id: config.prompt_base_id,
+        prompt_base_versao: config.prompt_base_versao,
+        prompt_final: prompt,
+        campos_liberados: config.campos.map(f => ({ id:f.id, rotulo:f.rotulo, tipo:f.tipo, obrigatorio:f.obrigatorio }))
+      },
+      status: 'arte_pronta',
+      atendimento_status: 'novo',
+      criado_em: at,
+      atualizado_em: at
+    };
+    await writeJson(`${FIREBASE}/canecas/personalizadas/${safeKey(code)}.json`, record, 'PUT');
+    return code;
+  }
+
+  async function approveAndBuy() {
+    if (!generatedSource || !generatedCode) return setResultStatus('Gere a arte antes de aprovar.', true);
+    const button = document.getElementById('cfipApprove');
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    const original = button.textContent;
+    button.textContent = 'PREPARANDO CARRINHO…';
+    try {
+      const at = new Date().toISOString();
+      await writeJson(`${FIREBASE}/canecas/personalizadas/${safeKey(generatedCode)}.json`, {
+        aprovada: true,
+        arte_aprovada: { url: generatedSource, versao:'v1', aprovado_em:at },
+        arte_versao_aprovada: 'v1',
+        status: 'pronta_para_compra',
+        atualizado_em: at,
+        loja_integrada_temporario: {
+          status: 'solicitado',
+          solicitado_em: at,
+          atualizado_em: at,
+          origem: 'personalizador_inline'
+        }
+      }, 'PATCH');
+
+      const started = Date.now();
+      const timeout = 6 * 60 * 1000;
+      while (Date.now() - started < timeout) {
+        const elapsed = Math.max(1, Math.round((Date.now() - started) / 1000));
+        setResultStatus(`Arte aprovada. Preparando seu item personalizado para o carrinho · ${elapsed}s`);
+        const creation = await fetchJson(`${FIREBASE}/canecas/personalizadas/${safeKey(generatedCode)}.json?_${Date.now()}`).catch(() => null);
+        const temp = creation?.loja_integrada_temporario || {};
+        if (temp.status === 'ativo' && temp.produto_id) {
+          setResultStatus('Item pronto. Abrindo o carrinho…');
+          const cart = new URL(`/carrinho/produto/${encodeURIComponent(temp.produto_id)}/adicionar`, location.origin);
+          cart.searchParams.set('utm_source','canecafacil');
+          cart.searchParams.set('utm_medium','personalizador_inline');
+          cart.searchParams.set('utm_content',generatedCode);
+          location.href = cart.href;
+          return;
+        }
+        if (temp.status === 'revisar') throw new Error(temp.erro || 'A criação precisa de revisão antes da compra.');
+        if (temp.status === 'pendente_retry') setResultStatus('Arte aprovada. A loja está preparando o item; nova tentativa automática em instantes…');
+        await sleep(2500);
+      }
+      throw new Error('Sua arte foi aprovada, mas o item ainda está sendo preparado. Tente novamente em alguns minutos.');
+    } catch (error) {
+      console.error('[CanecaFácil inline compra]', error);
+      setResultStatus(error?.message || String(error), true);
+      button.disabled = false;
+      button.textContent = original;
+    }
   }
 
   async function generate(event) {
@@ -392,10 +505,12 @@
       }
       if (!source) source = await waitResult(requestId);
       generatedSource = source;
+      generatedCode = await persistCreation(source, values, prompt, email);
       document.getElementById('cfipResultImage').src = source;
       document.getElementById('cfipForm').hidden = true;
       document.getElementById('cfipResult').hidden = false;
       setStatus('Arte gerada com sucesso.');
+      setResultStatus(`Confira a arte. Código da personalização: ${generatedCode}`);
       document.getElementById('cfInlinePersonalizer').scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (error) {
       console.error('[CanecaFácil inline]', error);
@@ -418,7 +533,7 @@
       render();
       console.info(`CanecaFácil · personalizador inline ${BUILD} · modelo ${productKey}`);
     } catch (error) {
-      console.warn('[CanecaFácil inline] homologação não iniciada:', error?.message || error);
+      console.warn('[CanecaFácil inline] não iniciado:', error?.message || error);
     }
   }
 

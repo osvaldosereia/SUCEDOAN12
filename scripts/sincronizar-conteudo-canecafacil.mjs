@@ -94,7 +94,7 @@ function sanitizeHtml(value) {
 }
 function variables(p, key, t) {
   const base = t.personalizer_base; const ret = t.return_url;
-  const url = `${base}${base.includes('?') ? '&' : '?'}model=${encodeURIComponent(key)}&return=${encodeURIComponent(ret)}`;
+  const url = '?cf_personalizador=teste#cfInlinePersonalizer';
   return {
     '{{nome}}': text(p.nome || 'Caneca Personalizável'), '{{sku}}': text(p.codigo || p.sku), '{{modelo_id}}': key,
     '{{preco}}': num(p.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), '{{url_personalizador}}': url,

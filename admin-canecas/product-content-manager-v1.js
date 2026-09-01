@@ -119,7 +119,7 @@ function sampleVars(product = {}, template = DEFAULT_TEMPLATE) {
   const key = keyOf(product) || 'modelo-exemplo';
   const base = template.personalizer_base || DEFAULT_TEMPLATE.personalizer_base;
   const returnUrl = template.return_url || DEFAULT_TEMPLATE.return_url;
-  const personalizerUrl = `${base}${base.includes('?') ? '&' : '?'}model=${encodeURIComponent(key)}&return=${encodeURIComponent(returnUrl)}`;
+  const personalizerUrl = '?cf_personalizador=teste#cfInlinePersonalizer';
   return {
     '{{nome}}': text(product.nome || 'Caneca Personalizável'),
     '{{sku}}': text(product.codigo || product.sku || 'CANP-EXEMPLO'),
