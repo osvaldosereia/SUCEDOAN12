@@ -1,6 +1,6 @@
 import { DEFAULT_CONFIG, STORAGE_KEYS } from './config.js';
 
-const BUILD = '20260831-mug-github-video-queue-v1';
+const BUILD = '20260831-mug-github-video-queue-v1-youtube';
 const WORKFLOW_FILE = 'gerar-video-360-mug3d.yml';
 const POLL_INTERVAL = 3000;
 const POLL_TIMEOUT = 12 * 60 * 1000;
@@ -30,7 +30,17 @@ function horizontalArt(product = {}) {
 }
 
 function productVideoUrl(product = {}) {
-  return text(product.video_url || product.video_webm_url || product.video_mp4_url || product.video_ia_url || product.video);
+  return text(
+    product.url_video_youtube
+    || product.video_youtube
+    || product.youtube_url
+    || product.youtube_short_url
+    || product.video_url
+    || product.video_webm_url
+    || product.video_mp4_url
+    || product.video_ia_url
+    || product.video
+  );
 }
 
 async function fetchProduct(key) {
@@ -92,7 +102,7 @@ function ensureButton(card, key, product = null) {
   button.className = 'button primary compact mug-github-video-button';
   button.dataset.githubMugVideo = key;
   button.textContent = productVideoUrl(product || {}) ? '🎥 Gerar novo 360°' : '🎥 Gerar vídeo 360°';
-  button.title = 'Gerar o giro 360° no Mug3D usando GitHub Actions';
+  button.title = 'Gerar o giro 360° no Mug3D e publicar no YouTube via GitHub Actions';
   actions.prepend(button);
 }
 
@@ -143,7 +153,7 @@ async function pollProduct(key, card, button) {
       updateButtonState(card, product);
       const state = text(product.video_360_status).toLowerCase();
       if (state === 'ready' && productVideoUrl(product)) {
-        setStatus(button, 'Vídeo 360° pronto e salvo no produto · clique em “Ver vídeo”.');
+        setStatus(button, 'Short 360° publicado no YouTube e vinculado à caneca · clique em “Ver Short 360°”.');
         window.dispatchEvent(new CustomEvent('admin-v2-products-invalidated', { detail: { source: BUILD, key } }));
         return product;
       }
@@ -152,7 +162,7 @@ async function pollProduct(key, card, button) {
         return product;
       }
     }
-    setStatus(button, 'O GitHub continua processando o vídeo. Você pode sair desta tela; o card será atualizado quando retornar.');
+    setStatus(button, 'O GitHub continua processando/publicando o Short. Você pode sair desta tela; o card será atualizado quando retornar.');
     return null;
   })().finally(() => pollers.delete(key));
   pollers.set(key, task);
@@ -173,17 +183,17 @@ async function queueVideo(key, button) {
       video_360_status: 'pending',
       video_360_requested_at: new Date().toISOString(),
       video_360_error: null,
-      video_360_engine: 'mug3d-playwright-github-actions-v1',
+      video_360_engine: 'mug3d-playwright-github-actions-make-youtube-v2',
     });
     button.textContent = 'Vídeo 360° na fila…';
-    setStatus(button, 'Vídeo 360° · enviado para a fila do GitHub Actions…');
+    setStatus(button, 'Vídeo 360° · enviado ao GitHub Actions; depois será publicado no YouTube…');
     let dispatch = { dispatched: false };
     try { dispatch = await dispatchWorkflow(key); }
     catch (error) { console.warn('[Canecas] dispatch imediato falhou; o cron assumirá a fila.', error); }
     if (dispatch.dispatched) {
       await patchProduct(key, { video_360_status: 'queued', video_360_dispatched_at: new Date().toISOString() });
       button.textContent = 'Vídeo 360° na fila…';
-      setStatus(button, 'GitHub Actions iniciado · abrindo Mug3D e preparando o giro 360°…');
+      setStatus(button, 'GitHub Actions iniciado · Mug3D → MP4 temporário → YouTube…');
     } else {
       setStatus(button, 'Vídeo ficou na fila. O GitHub Actions automático buscará a solicitação em até alguns minutos.');
     }
