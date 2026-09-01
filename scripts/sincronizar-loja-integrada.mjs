@@ -161,7 +161,7 @@ function description(p, key) {
   const returnUrl = encodeURIComponent('https://www.canecafacil.com.br/');
   const frameUrl = `https://donaantonia.com.br/loja-integrada/personalizar/?model=${model}&embed=1&return=${returnUrl}`;
   const fields = Object.values(p.personalizacao?.campos || {}).filter(item => item?.ativo === true).length;
-  const frameHeight = Math.min(520, Math.max(235, 190 + fields * 48));
+  const frameHeight = Math.min(620, Math.max(320, 235 + (fields + 1) * 48));
   return `${base}
 <div class="cf-personalizer-box" style="margin:14px 0 18px;padding:0;border:1px solid #ece8e4;border-radius:12px;overflow:hidden;background:#fff;text-align:left">
 <iframe title="Personalizar esta caneca" src="${esc(frameUrl)}" loading="eager" style="display:block;width:100%;height:${frameHeight}px;margin:0;border:0;background:#fff" allow="clipboard-write"></iframe>
