@@ -1,4 +1,4 @@
-const BUILD = '20260830-loja-integrada-personalizador-v2';
+const BUILD = '20260901-loja-integrada-personalizador-v3-commerce';
 const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const STOREFRONT = 'https://canecafacil.com.br/';
@@ -174,9 +174,10 @@ async function persistCreation(source, fields, instruction) {
     instrucao: instruction,
     arte_horizontal: source,
     arte_personalizacao: source,
-    arte_aprovada: { url: source, versao:'v1' },
+    arte_aprovada: null,
     arte_versao: 'v1',
-    arte_versao_aprovada: 'v1',
+    arte_versao_aprovada: '',
+    aprovada: false,
     versoes: [{ versao:'v1', url:source, criado_em:now }],
     status: 'arte_pronta',
     atendimento_status: 'novo',
@@ -249,6 +250,57 @@ async function generate(event) {
     button.disabled = false;
   }
 }
+async function approveAndBuy() {
+  if (!currentCode || !currentSource) return;
+  const button = $('#returnButton');
+  if (button.disabled) return;
+  button.disabled = true;
+  $('#errorBox').hidden = true;
+  $('#progressBox').hidden = false;
+  $('#progressText').textContent = 'Aprovando sua arte e preparando o item personalizado…';
+  try {
+    const at = new Date().toISOString();
+    await writeJson(`${CREATIONS_NODE}/${safeKey(currentCode)}`, {
+      aprovada: true,
+      arte_aprovada: { url: currentSource, versao:'v1', aprovado_em:at },
+      arte_versao_aprovada: 'v1',
+      status: 'pronta_para_compra',
+      atualizado_em: at,
+      loja_integrada_temporario: {
+        status: 'solicitado',
+        solicitado_em: at,
+        atualizado_em: at,
+        origem: 'personalizador_web'
+      }
+    }, 'PATCH');
+
+    const started = Date.now();
+    const timeout = 6 * 60 * 1000;
+    while (Date.now() - started < timeout) {
+      const elapsed = Math.max(1, Math.round((Date.now() - started) / 1000));
+      $('#progressText').textContent = `Preparando seu item personalizado para o carrinho · ${elapsed}s`;
+      const creation = await fetchJson(`${CREATIONS_NODE}/${safeKey(currentCode)}`);
+      const temp = creation?.loja_integrada_temporario || {};
+      if (temp.status === 'ativo' && temp.produto_id) {
+        const cart = new URL(`/carrinho/produto/${encodeURIComponent(temp.produto_id)}/adicionar`, STOREFRONT);
+        cart.searchParams.set('utm_source', 'canecafacil');
+        cart.searchParams.set('utm_medium', 'personalizador');
+        cart.searchParams.set('utm_content', currentCode);
+        location.href = cart.href;
+        return;
+      }
+      if (temp.status === 'revisar') throw new Error(temp.erro || 'A criação precisa de revisão antes da compra.');
+      if (temp.status === 'pendente_retry' && temp.erro) $('#progressText').textContent = 'Ainda preparando seu item. Nova tentativa automática em instantes…';
+      await sleep(2500);
+    }
+    throw new Error('Sua arte foi aprovada, mas o item ainda está sendo preparado. Tente novamente em alguns minutos.');
+  } catch (error) {
+    $('#progressBox').hidden = true;
+    showError(error?.message || String(error));
+    button.disabled = false;
+  }
+}
+
 async function init() {
   document.documentElement.dataset.cfLiPersonalizer = BUILD;
   if (!modelId) return showError('O link de personalização não informou qual modelo de caneca deve ser usado.');
@@ -269,7 +321,7 @@ async function init() {
     box.innerHTML = photoDataUrl ? `<img src="${esc(photoDataUrl)}" alt="Prévia da foto">` : '';
   });
   $('#backButton').addEventListener('click', () => { location.href = returnUrl(); });
-  $('#returnButton').addEventListener('click', () => { location.href = returnUrl(); });
+  $('#returnButton').addEventListener('click', approveAndBuy);
   $('#redoButton').addEventListener('click', () => { $('#resultBox').hidden = true; $('#personalizerForm').hidden = false; $('#personalizerForm').scrollIntoView({ behavior:'smooth' }); });
   $('#copyCode').addEventListener('click', async () => { if (currentCode) { await navigator.clipboard?.writeText(currentCode).catch(() => null); $('#copyCode').textContent = 'Copiado'; setTimeout(() => $('#copyCode').textContent = 'Copiar', 1500); } });
   $('#tryAgain').addEventListener('click', () => { $('#errorBox').hidden = true; $('#personalizerForm').hidden = false; });
