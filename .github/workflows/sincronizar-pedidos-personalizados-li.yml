@@ -1,0 +1,47 @@
+name: CanecaFácil · pedidos personalizados Loja Integrada
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Quantidade de pedidos recentes para revisar'
+        required: false
+        default: '60'
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canecafacil-pedidos-personalizados-li
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Carregar token Loja Integrada
+        env:
+          LI_APP_TOKEN: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+        run: |
+          if [ -z "$LI_APP_TOKEN" ]; then
+            echo 'ERRO: secret LOJA_INTEGRADA_APP_KEY ausente.'
+            exit 1
+          fi
+          printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
+      - name: Vincular CF-ID aos pedidos e fila de impressão
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LI_ORDER_LIMIT: ${{ github.event.inputs.limit || '60' }}
+        run: node scripts/sincronizar-pedidos-personalizados-li.mjs
