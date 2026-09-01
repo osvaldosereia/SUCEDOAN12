@@ -247,7 +247,7 @@ function validateForLi(product = {}) {
   if (!text(product.nome)) issues.push('nome');
   if (!text(product.codigo || product.sku)) issues.push('SKU');
   if (!(numberValue(product.preco) > 0) && product.preco_sob_consulta !== true) issues.push('preço');
-  if (!text(product.mockup_1)) issues.push('imagem 1');
+  if (!text(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url || product.arte_final_url)) issues.push('arte horizontal');
   if (digits(product.ncm).length !== 8) issues.push('NCM');
   if (!(numberValue(product.peso_embalado_kg) > 0)) issues.push('peso');
   if (!(numberValue(product.altura_embalada_cm) > 0) || !(numberValue(product.largura_embalada_cm) > 0) || !(numberValue(product.comprimento_embalado_cm) > 0)) issues.push('dimensões');
@@ -261,7 +261,9 @@ function liDescription(product = {}) {
   if (!isPersonalizable(product)) return base;
   const model = encodeURIComponent(productKey(product));
   const frameUrl = `${PERSONALIZER_BASE}?model=${model}&embed=1&return=${encodeURIComponent('https://canecafacil.com.br/')}`;
-  return `${base}\n<div class="cf-personalizer-box" style="margin:18px 0;padding:0;border:0;text-align:left"><details id="cfPersonalizadorInline" style="width:100%;margin:0;padding:0"><summary class="cf-personalize-link" style="display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;box-sizing:border-box;padding:10px 14px;background:#fff;border:1px solid #f47621;border-radius:9px;color:#f47621;font-size:13px;font-weight:800;text-decoration:none;cursor:pointer;list-style:none">PERSONALIZAR ESTA CANECA</summary><div style="width:100%;margin:10px 0 0;padding:0;overflow:hidden;border:1px solid #ece8e4;border-radius:11px;background:#fff"><iframe title="Personalizar esta caneca" src="${esc(frameUrl)}" loading="lazy" style="display:block;width:100%;height:520px;margin:0;border:0;background:#fff" allow="clipboard-write"></iframe></div></details></div>`.trim();
+  const fields = Object.values(product.personalizacao?.campos || {}).filter(item => item?.ativo === true).length;
+  const frameHeight = Math.min(520, Math.max(235, 190 + fields * 48));
+  return `${base}\n<div class="cf-personalizer-box" style="margin:14px 0 18px;padding:0;border:1px solid #ece8e4;border-radius:12px;overflow:hidden;background:#fff;text-align:left"><iframe title="Personalizar esta caneca" src="${esc(frameUrl)}" loading="eager" style="display:block;width:100%;height:${frameHeight}px;margin:0;border:0;background:#fff" allow="clipboard-write"></iframe></div>`.trim();
 }
 function liPayload(product = {}) {
   const li = liMeta(product);
