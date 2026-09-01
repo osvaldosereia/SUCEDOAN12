@@ -7,6 +7,7 @@ on:
       - 'admin-canecas/**'
       - 'loja-integrada/personalizar/**'
       - 'loja-integrada/personalizador-inline-v1.js'
+      - 'loja-integrada/personalizador-inline-v2.js'
       - 'loja-integrada/loader-personalizador-inline-homologacao.js'
       - 'scripts/test-admin-canecas-v3.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
@@ -20,6 +21,7 @@ on:
       - 'admin-canecas/**'
       - 'loja-integrada/personalizar/**'
       - 'loja-integrada/personalizador-inline-v1.js'
+      - 'loja-integrada/personalizador-inline-v2.js'
       - 'loja-integrada/loader-personalizador-inline-homologacao.js'
       - 'scripts/test-admin-canecas-v3.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
@@ -64,8 +66,10 @@ jobs:
         run: node --check loja-integrada/personalizar/v4-make-contract-v1.js
       - name: Check personalizer V4 syntax
         run: node --check loja-integrada/personalizar/app-v4.js
-      - name: Check inline storefront personalizer syntax
+      - name: Check inline storefront personalizer V1 syntax
         run: node --check loja-integrada/personalizador-inline-v1.js
+      - name: Check inline storefront personalizer V2 syntax
+        run: node --check loja-integrada/personalizador-inline-v2.js
       - name: Check inline storefront loader syntax
         run: node --check loja-integrada/loader-personalizador-inline-homologacao.js
       - name: Test personalization contract behavior
