@@ -1,4 +1,4 @@
-name: CanecaFácil · recortes da vitrine
+name: CanecaFácil · recortes da vitrine V13
 
 on:
   workflow_dispatch:
@@ -22,14 +22,14 @@ on:
     branches: [canecas-media]
     paths:
       - 'canecas/imagens/**'
-      - 'scripts/processar-vitrine-canecas.mjs'
+      - 'scripts/processar-vitrine-canecas-v13.mjs'
       - '.github/workflows/processar-vitrine-canecas.yml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: canecafacil-vitrine-crops
+  group: canecafacil-vitrine-crops-v13
   cancel-in-progress: false
 
 jobs:
@@ -51,7 +51,7 @@ jobs:
       - name: Instalar Sharp
         run: npm install --no-save sharp@0.34.3
 
-      - name: Gerar somente os recortes pendentes
+      - name: Gerar somente esquerda e direita
         env:
           MODE: build
           RAW_BRANCH: canecas-media
@@ -59,35 +59,32 @@ jobs:
           FORCE: ${{ github.event.inputs.force || 'false' }}
           LIMIT: ${{ github.event.inputs.limit || '0' }}
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
-        run: node scripts/processar-vitrine-canecas.mjs
+        run: node scripts/processar-vitrine-canecas-v13.mjs
 
       - name: Publicar imagens geradas
-        id: publish
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add canecas/vitrine
           if git diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Nenhuma imagem nova para publicar."
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            git commit -m "CanecaFácil: gera recortes da vitrine"
+            git commit -m "CanecaFácil V13: gera 2 recortes da vitrine"
             git pull --rebase origin canecas-media
             git push origin HEAD:canecas-media
           fi
 
-      - name: Confirmar URLs no Firebase após publicação
+      - name: Confirmar URLs no Firebase
         env:
           MODE: apply
           RAW_BRANCH: canecas-media
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
-        run: node scripts/processar-vitrine-canecas.mjs
+        run: node scripts/processar-vitrine-canecas-v13.mjs
 
       - name: Resumo
         if: always()
         run: |
-          echo "## CanecaFácil · recortes da vitrine" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Branch de mídia: canecas-media" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Processador: Sharp" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Firebase confirmado somente após o push das imagens" >> "$GITHUB_STEP_SUMMARY"
+          echo "## CanecaFácil · V13" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Arquivo mestre: arte horizontal" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Vitrine: recorte esquerdo + recorte direito" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mockups IA: desativados" >> "$GITHUB_STEP_SUMMARY"
