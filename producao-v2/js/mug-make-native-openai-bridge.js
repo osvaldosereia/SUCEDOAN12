@@ -1,6 +1,6 @@
 const ACTIVE_BUILD = document.querySelector('meta[name="admin-save-build"]')?.content
   || new URLSearchParams(window.location.search).get('admin_build')
-  || '20260831-mug3d-youtube-shorts-v2';
+  || '20260828-canecas-2mockups-v25';
 
 const MODULES = [
   './mug-make-art-recovery-v22.js',
@@ -8,8 +8,6 @@ const MODULES = [
   './mug-art-command-compat-v2.js',
   './mug-force-low-quality-v23.js',
   './mug-studio-gallery.js',
-  './mug-github-video-queue-v1.js',
-  './mug-video-result-player-v5.js',
   './mug-command-library-v1.js',
   './mug-command-library-compact-v2.js',
   './mug-command-library-restore-v3.js',
