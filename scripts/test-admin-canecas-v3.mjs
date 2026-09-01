@@ -22,12 +22,17 @@ const liWorker=read('scripts','sincronizar-loja-integrada.mjs');
 const cropWorker=read('scripts','processar-vitrine-canecas.mjs');
 
 const activeModules=[...index.matchAll(/<script\s+type="module"\s+src="\.\/([^"?]+)/g)].map(m=>m[1]);
-assert.ok(index.includes('personalization-config-v1.js?v=20260831-1'),'Admin deve carregar configurador de personalização');
-assert.equal((index.match(/personalization-config-v1\.js/g)||[]).length,1,'Admin deve carregar configurador uma única vez');
-assert.ok(activeModules.includes('mug-personalization-badge-v1.js'),'grade deve mostrar resumo da personalização');
-assert.ok(activeModules.includes('personalization-test-link-v1.js'),'drawer deve oferecer atalho de homologação');
-assert.ok(activeModules.includes('personalization-prompt-suggest-v1.js'),'Admin deve sugerir prompt-base conforme campos');
+const isolatedModules=[...index.matchAll(/import\(['"]\.\/([^'"?]+)/g)].map(m=>m[1]);
+const loadedModules=[...activeModules,...isolatedModules];
+assert.ok(isolatedModules.includes('personalization-config-v1.js'),'Admin deve carregar configurador de personalização de forma isolada');
+assert.ok(isolatedModules.includes('mug-personalization-badge-v1.js'),'grade deve carregar resumo da personalização de forma isolada');
+assert.ok(isolatedModules.includes('personalization-test-link-v1.js'),'drawer deve carregar atalho de homologação de forma isolada');
+assert.ok(isolatedModules.includes('personalization-prompt-suggest-v1.js'),'Admin deve carregar sugestão de prompt-base de forma isolada');
+for(const name of ['personalization-config-v1.js','mug-personalization-badge-v1.js','personalization-test-link-v1.js','personalization-prompt-suggest-v1.js']){
+  assert.equal(loadedModules.filter(x=>x===name).length,1,`${name} deve ser carregado uma única vez`);
+}
 assert.equal(new Set(activeModules).size,activeModules.length,'Admin não pode carregar módulo src duplicado');
+assert.equal(new Set(loadedModules).size,loadedModules.length,'Admin não pode carregar módulos duplicados entre src e imports isolados');
 
 assert.match(personalization,/\['nome',\s*'Nome',\s*'text'\]/,'campo Nome deve existir');
 assert.match(personalization,/\['foto',\s*'Foto',\s*'image'\]/,'campo Foto deve existir');
