@@ -24,7 +24,7 @@ const DEFAULT_TEMPLATE = Object.freeze({
   button_radius: 10,
   padding: 16,
   button_full_mobile: true,
-  personalizer_base: 'https://canecafacil.com.br/personalizar/',
+  personalizer_base: 'https://donaantonia.com.br/loja-integrada/personalizar/',
   return_url: 'https://canecafacil.com.br/',
   open_new_tab: false,
   custom_html: '',

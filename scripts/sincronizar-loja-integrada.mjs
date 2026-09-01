@@ -16,7 +16,7 @@ const DEFAULTS = Object.freeze({
   categoryStandard: 'Canecas Padronizadas',
   categoryBusiness: 'Canecas para Empresas',
   ncm: '69111090',
-  personalizerBase: 'https://canecafacil.com.br/personalizar/',
+  personalizerBase: 'https://donaantonia.com.br/loja-integrada/personalizar/',
 });
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));

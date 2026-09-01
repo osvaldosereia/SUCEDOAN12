@@ -73,7 +73,7 @@ function normalizeTemplate(raw = {}) {
     align: ['left','center','right'].includes(raw.align) ? raw.align : 'center',
     background: /^#[0-9a-f]{6}$/i.test(text(raw.background)) ? text(raw.background) : '#ffffff', border_color: /^#[0-9a-f]{6}$/i.test(text(raw.border_color)) ? text(raw.border_color) : '#e8e8e3', text_color: /^#[0-9a-f]{6}$/i.test(text(raw.text_color)) ? text(raw.text_color) : '#252821', button_background: /^#[0-9a-f]{6}$/i.test(text(raw.button_background)) ? text(raw.button_background) : '#111111', button_color: /^#[0-9a-f]{6}$/i.test(text(raw.button_color)) ? text(raw.button_color) : '#ffffff',
     border_radius: Math.min(32, Math.max(0, num(raw.border_radius || 14))), button_radius: Math.min(32, Math.max(0, num(raw.button_radius || 10))), padding: Math.min(32, Math.max(8, num(raw.padding || 16))), button_full_mobile: raw.button_full_mobile !== false,
-    personalizer_base: /^https:\/\//i.test(text(raw.personalizer_base)) ? text(raw.personalizer_base) : 'https://canecafacil.com.br/personalizar/', return_url: /^https:\/\//i.test(text(raw.return_url)) ? text(raw.return_url) : 'https://canecafacil.com.br/', open_new_tab: raw.open_new_tab === true, custom_html: String(raw.custom_html || '').slice(0,15000),
+    personalizer_base: /^https:\/\//i.test(text(raw.personalizer_base)) ? text(raw.personalizer_base) : 'https://donaantonia.com.br/loja-integrada/personalizar/', return_url: /^https:\/\//i.test(text(raw.return_url)) ? text(raw.return_url) : 'https://canecafacil.com.br/', open_new_tab: raw.open_new_tab === true, custom_html: String(raw.custom_html || '').slice(0,15000),
     draft_revision: Number(raw.draft_revision || 0), published_at: text(raw.published_at),
   };
 }
