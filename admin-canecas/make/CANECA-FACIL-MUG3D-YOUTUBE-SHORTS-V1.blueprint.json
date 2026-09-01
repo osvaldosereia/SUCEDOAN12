@@ -1,0 +1,342 @@
+{
+  "name": "CANECA FACIL - Mug3D YouTube Shorts V1",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": 1,
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": {
+          "x": 0,
+          "y": 0,
+          "name": "GitHub Actions - receber MP4 temporário"
+        },
+        "restore": {
+          "parameters": {
+            "hook": {
+              "data": {
+                "editable": "true"
+              },
+              "label": "Crie um webhook: Caneca Facil - Mug3D YouTube"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "hook",
+            "type": "hook:gateway-webhook",
+            "label": "Webhook",
+            "required": true
+          },
+          {
+            "name": "maxResults",
+            "type": "number",
+            "label": "Maximum number of results"
+          }
+        ],
+        "interface": [
+          {
+            "name": "product_key",
+            "type": "text",
+            "label": "Product key"
+          },
+          {
+            "name": "title",
+            "type": "text",
+            "label": "YouTube title"
+          },
+          {
+            "name": "description",
+            "type": "text",
+            "label": "YouTube description"
+          },
+          {
+            "name": "privacy_status",
+            "type": "text",
+            "label": "Privacy status"
+          },
+          {
+            "name": "embeddable",
+            "type": "text",
+            "label": "Embeddable"
+          },
+          {
+            "name": "notify_subscribers",
+            "type": "text",
+            "label": "Notify subscribers"
+          },
+          {
+            "name": "video",
+            "type": "collection",
+            "label": "Video file",
+            "spec": [
+              {
+                "name": "name",
+                "type": "text",
+                "label": "File name",
+                "semantic": "file:name"
+              },
+              {
+                "name": "mime",
+                "type": "text",
+                "label": "MIME type"
+              },
+              {
+                "name": "data",
+                "type": "buffer",
+                "label": "File data",
+                "semantic": "file:data"
+              }
+            ]
+          }
+        ],
+        "advanced": true,
+        "notes": "Recebe multipart/form-data do GitHub Action. O campo video precisa ser collection com name, mime e data, conforme o formato oficial de arquivos em Custom Webhooks do Make."
+      }
+    },
+    {
+      "id": 2,
+      "module": "youtube:uploadVideo",
+      "version": 4,
+      "parameters": {
+        "__IMTCONN__": 7661307
+      },
+      "mapper": {
+        "data": "{{1.video.data}}",
+        "title": "{{1.title}}",
+        "license": "youtube",
+        "fileName": "{{1.video.name}}",
+        "categoryId": "22",
+        "embeddable": true,
+        "description": "{{1.description}}",
+        "privacyStatus": "public",
+        "notifySubscribers": false,
+        "containsSyntheticMedia": false,
+        "selfDeclaredMadeForKids": false
+      },
+      "metadata": {
+        "designer": {
+          "x": 340,
+          "y": 0,
+          "name": "Publicar como vídeo vertical / Short"
+        },
+        "restore": {
+          "parameters": {
+            "__IMTCONN__": {
+              "data": {
+                "scoped": "true",
+                "connection": "youtube"
+              },
+              "label": "My YouTube connection (Super Cestas - Cesta Básica Dona Antônia <juniorsereia@gmail.com>)"
+            }
+          },
+          "expect": {
+            "license": {
+              "mode": "chose",
+              "label": "Standard YouTube License"
+            },
+            "categoryId": {
+              "mode": "chose",
+              "label": "People & Blogs"
+            },
+            "embeddable": {
+              "mode": "chose"
+            },
+            "privacyStatus": {
+              "mode": "chose",
+              "label": "Public"
+            },
+            "notifySubscribers": {
+              "mode": "chose"
+            },
+            "containsSyntheticMedia": {
+              "mode": "chose"
+            },
+            "selfDeclaredMadeForKids": {
+              "mode": "chose"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "__IMTCONN__",
+            "type": "account:youtube",
+            "label": "Connection",
+            "required": true
+          }
+        ],
+        "expect": [
+          {
+            "type": "hidden"
+          },
+          {
+            "name": "title",
+            "type": "text",
+            "label": "Title",
+            "required": true,
+            "validate": {
+              "max": 100
+            }
+          },
+          {
+            "name": "fileName",
+            "type": "filename",
+            "label": "File Name",
+            "required": true
+          },
+          {
+            "name": "data",
+            "type": "buffer",
+            "label": "Data",
+            "required": true
+          },
+          {
+            "name": "categoryId",
+            "type": "select",
+            "label": "Video Category",
+            "required": true
+          },
+          {
+            "name": "privacyStatus",
+            "type": "select",
+            "label": "Privacy Status and Scheduling",
+            "required": true,
+            "validate": {
+              "enum": [
+                "private",
+                "unlisted",
+                "public"
+              ]
+            }
+          },
+          {
+            "name": "description",
+            "type": "text",
+            "label": "Description",
+            "validate": {
+              "max": 5000
+            }
+          },
+          {
+            "name": "selfDeclaredMadeForKids",
+            "type": "boolean",
+            "label": "The video is made for kids",
+            "required": true
+          },
+          {
+            "name": "containsSyntheticMedia",
+            "type": "boolean",
+            "label": "The video contains altered/synthetic media",
+            "required": true
+          },
+          {
+            "name": "license",
+            "type": "select",
+            "label": "License",
+            "validate": {
+              "enum": [
+                "youtube",
+                "creativeCommon"
+              ]
+            }
+          },
+          {
+            "name": "embeddable",
+            "type": "boolean",
+            "label": "Allow Embedding"
+          },
+          {
+            "name": "notifySubscribers",
+            "type": "boolean",
+            "label": "Notify Subscribers"
+          }
+        ],
+        "advanced": true
+      }
+    },
+    {
+      "id": 3,
+      "module": "gateway:WebhookRespond",
+      "version": 1,
+      "parameters": {},
+      "mapper": {
+        "status": "200",
+        "body": "{\"ok\":true,\"product_key\":\"{{1.product_key}}\",\"youtube_id\":\"{{2.id}}\",\"url_video_youtube\":\"https://www.youtube.com/watch?v={{2.id}}\",\"short_url\":\"https://www.youtube.com/shorts/{{2.id}}\"}",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json; charset=utf-8"
+          }
+        ]
+      },
+      "metadata": {
+        "designer": {
+          "x": 680,
+          "y": 0,
+          "name": "Devolver ID e links ao GitHub Action"
+        },
+        "expect": [
+          {
+            "name": "status",
+            "type": "uinteger",
+            "label": "Status"
+          },
+          {
+            "name": "body",
+            "type": "text",
+            "label": "Body"
+          },
+          {
+            "name": "headers",
+            "type": "array",
+            "label": "Custom headers",
+            "spec": {
+              "type": "collection",
+              "spec": [
+                {
+                  "name": "key",
+                  "type": "text",
+                  "label": "Key"
+                },
+                {
+                  "name": "value",
+                  "type": "text",
+                  "label": "Value"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": true,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": {
+      "orphans": []
+    },
+    "zone": "eu1.make.com",
+    "notes": [
+      "Após importar, selecione/crie o Custom Webhook no módulo 1 e confirme a conexão existente do YouTube no módulo 2.",
+      "O GitHub Action envia MP4 vertical temporário; nenhum vídeo é salvo no repositório.",
+      "Embedding fica habilitado e notificações aos inscritos ficam desabilitadas."
+    ]
+  }
+}
