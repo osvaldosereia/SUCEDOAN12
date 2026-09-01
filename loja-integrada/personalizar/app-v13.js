@@ -1,4 +1,4 @@
-const BUILD = '20260901-loja-integrada-personalizador-v5.1-horizontal-2-crops';
+const BUILD = '20260901-loja-integrada-personalizador-v5.2-horizontal-2-crops';
 const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const STOREFRONT = 'https://canecafacil.com.br/';
@@ -345,7 +345,13 @@ async function createTemporaryProduct(code, crops) {
     const raw = await response.text();
     let data = {};
     try { data = raw ? JSON.parse(raw) : {}; } catch { data = { raw }; }
-    if (!response.ok || data.ok === false) throw new Error(data.error || data.error_message || `Loja Integrada respondeu ${response.status}.`);
+    if (!response.ok || data.ok === false) {
+      const technical = text(data.error || data.error_message || data.message || raw).slice(0, 420);
+      const failure = new Error('Não foi possível preparar sua caneca no carrinho. Tente novamente em instantes.');
+      failure.technical = `Make HTTP ${response.status}${technical ? ` · ${technical}` : ''}`;
+      failure.httpStatus = response.status;
+      throw failure;
+    }
     const productId = text(data.produto_id || data.product_id);
     if (!productId) throw new Error('A Loja Integrada não retornou o item reservado.');
     const at = new Date().toISOString();
@@ -370,6 +376,19 @@ async function createTemporaryProduct(code, crops) {
     }, 'PATCH');
     return productId;
   } catch (error) {
+    const at = new Date().toISOString();
+    const technical = error?.name === 'AbortError'
+      ? 'timeout_make_100s'
+      : text(error?.technical || error?.message || error).slice(0, 500);
+    await writeJson(`${CREATIONS_NODE}/${safeKey(code)}`, {
+      loja_integrada_temporario: {
+        status:'erro',
+        etapa:'make_v13_produto_temporario',
+        atualizado_em:at,
+        erro_tecnico:technical,
+        http_status:Number(error?.httpStatus || 0) || 0
+      }
+    }, 'PATCH').catch(() => null);
     if (error?.name === 'AbortError') throw new Error('A preparação do carrinho demorou mais que o esperado. Tente novamente.');
     throw error;
   } finally { clearTimeout(timer); }
