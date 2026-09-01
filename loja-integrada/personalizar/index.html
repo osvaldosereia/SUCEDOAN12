@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#ffffff">
   <title>Personalize sua caneca — CanecaFácil</title>
-  <link rel="stylesheet" href="./styles.css?v=20260901-4">
+  <link rel="stylesheet" href="./styles.css?v=20260901-5">
 </head>
 <body>
   <header class="topbar">
@@ -18,7 +18,7 @@
     <section class="intro">
       <p class="eyebrow">PERSONALIZAÇÃO</p>
       <h1>Personalize sua caneca</h1>
-      <p>Preencha somente o que este modelo permite alterar. Depois de gerar, sua caneca será adicionada ao carrinho.</p>
+      <p>Altere somente o que este modelo permite. Ao gerar, sua caneca vai direto para o carrinho.</p>
     </section>
 
     <section class="product" id="productBox" aria-live="polite">
@@ -28,12 +28,11 @@
 
     <form class="form-card" id="personalizerForm" hidden>
       <div class="form-head">
-        <div><p class="eyebrow">PERSONALIZE</p><h2>Complete os campos</h2></div>
-        <span class="secure">Compra segura</span>
+        <div><p class="eyebrow">PERSONALIZE</p><h2>O que deseja alterar?</h2></div>
       </div>
       <div class="grid" id="dynamicFields"></div>
-      <button class="primary" id="generateButton" type="submit">GERAR E ADICIONAR AO CARRINHO</button>
-      <p class="native-note">Seu e-mail será informado no checkout da própria Loja Integrada, permitindo recuperar sua compra caso você não conclua agora.</p>
+      <button class="primary" id="generateButton" type="submit">GERAR E IR PARA O CARRINHO</button>
+      <p class="native-note">No próximo passo, seu e-mail é informado no checkout seguro da própria Loja Integrada.</p>
     </form>
 
     <section class="progress-card" id="progressBox" hidden>
@@ -42,7 +41,7 @@
     </section>
 
     <section class="success-card" id="successBox" hidden>
-      <strong>Personalização pronta</strong>
+      <strong>Pronto</strong>
       <p id="successText">Abrindo o carrinho…</p>
       <a class="primary" id="cartFallback" href="https://canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a>
     </section>
