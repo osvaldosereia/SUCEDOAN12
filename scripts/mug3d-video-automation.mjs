@@ -11,9 +11,10 @@ const REQUESTED_KEY = String(process.env.PRODUCT_KEY || '').trim();
 const MUG3D_URL = String(process.env.MUG3D_URL || 'https://mug3d.com/?model=1').trim();
 const OUTPUT_DIR = String(process.env.VIDEO_OUTPUT_DIR || 'site/videos/canecas').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
 const RESULT_FILE = String(process.env.MUG3D_RESULT_FILE || '.mug3d-result.json');
-const MAX_LOOP_MS = Math.max(8000, Number(process.env.MUG3D_MAX_LOOP_MS || 35000));
-const MIN_LOOP_MS = Math.max(1500, Number(process.env.MUG3D_MIN_LOOP_MS || 2600));
+const MAX_LOOP_MS = Math.max(90000, Number(process.env.MUG3D_MAX_LOOP_MS || 190000));
+const MIN_LOOP_MS = Math.max(30000, Number(process.env.MUG3D_MIN_LOOP_MS || 80000));
 const SPEED = Math.max(1, Math.min(100, Number(process.env.MUG3D_SPEED || 8)));
+const LOOP_RETURN_THRESHOLD = Math.max(0.015, Math.min(0.09, Number(process.env.MUG3D_LOOP_RETURN_THRESHOLD || 0.055)));
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const text = value => String(value ?? '').trim();
@@ -71,23 +72,14 @@ async function fabricState(page) {
   return page.evaluate(() => {
     const isFabricCanvas = value => {
       try {
-        return Boolean(
-          value
-          && typeof value === 'object'
-          && typeof value.getObjects === 'function'
-          && typeof value.renderAll === 'function'
-          && value.lowerCanvasEl?.id === 'c'
-        );
-      } catch {
-        return false;
-      }
+        return Boolean(value && typeof value === 'object' && typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c');
+      } catch { return false; }
     };
     for (const key of Object.getOwnPropertyNames(window)) {
       let value;
       try { value = window[key]; } catch { continue; }
       if (!isFabricCanvas(value)) continue;
-      try { return { found: true, count: value.getObjects().length, key }; }
-      catch { continue; }
+      try { return { found: true, count: value.getObjects().length, key }; } catch { continue; }
     }
     return { found: false, count: 0, key: '' };
   });
@@ -98,17 +90,8 @@ async function injectFabricImage(page, filePath) {
   const dataUrl = `data:image/png;base64,${png.toString('base64')}`;
   return page.evaluate(async source => {
     const isFabricCanvas = value => {
-      try {
-        return Boolean(
-          value
-          && typeof value === 'object'
-          && typeof value.getObjects === 'function'
-          && typeof value.renderAll === 'function'
-          && value.lowerCanvasEl?.id === 'c'
-        );
-      } catch {
-        return false;
-      }
+      try { return Boolean(value && typeof value === 'object' && typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c'); }
+      catch { return false; }
     };
     let canvas = null;
     for (const key of Object.getOwnPropertyNames(window)) {
@@ -134,17 +117,8 @@ async function injectFabricImage(page, filePath) {
 async function fitActiveArt(page) {
   return page.evaluate(() => {
     const isFabricCanvas = value => {
-      try {
-        return Boolean(
-          value
-          && typeof value === 'object'
-          && typeof value.getObjects === 'function'
-          && typeof value.renderAll === 'function'
-          && value.lowerCanvasEl?.id === 'c'
-        );
-      } catch {
-        return false;
-      }
+      try { return Boolean(value && typeof value === 'object' && typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c'); }
+      catch { return false; }
     };
     let found = null;
     for (const key of Object.getOwnPropertyNames(window)) {
@@ -179,16 +153,8 @@ async function uploadArt(page, filePath) {
     await page.locator('#uploadForm input[type="submit"]').click({ force: true });
     await page.waitForFunction(previous => {
       const isFabricCanvas = value => {
-        try {
-          return Boolean(
-            value
-            && typeof value === 'object'
-            && typeof value.getObjects === 'function'
-            && value.lowerCanvasEl?.id === 'c'
-          );
-        } catch {
-          return false;
-        }
+        try { return Boolean(value && typeof value === 'object' && typeof value.getObjects === 'function' && value.lowerCanvasEl?.id === 'c'); }
+        catch { return false; }
       };
       for (const key of Object.getOwnPropertyNames(window)) {
         let value;
@@ -215,26 +181,58 @@ async function setAnimation(page, enabled) {
   }, enabled);
 }
 
+async function forceMugWhite(page) {
+  return page.evaluate(() => {
+    const white = '#ffffff';
+    const changed = [];
+    const ignored = [];
+    const inputs = [...document.querySelectorAll('input[type="color"]')];
+    for (const input of inputs) {
+      const label = input.id ? document.querySelector(`label[for="${CSS.escape(input.id)}"]`) : null;
+      const context = [input.id, input.name, input.getAttribute('aria-label'), label?.textContent, input.parentElement?.textContent]
+        .filter(Boolean).join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
+      const isSceneBackground = /scene\s*background/.test(context);
+      if (isSceneBackground) {
+        ignored.push({ id: input.id || '', context: context.slice(0, 120), value: input.value });
+        continue;
+      }
+      input.value = white;
+      input.setAttribute('value', white);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      changed.push({ id: input.id || '', name: input.name || '', context: context.slice(0, 120) });
+    }
+    return { changed, ignored, totalColorInputs: inputs.length };
+  });
+}
+
 async function configureScene(page) {
   await setAnimation(page, false);
-  await page.evaluate(speed => {
+  const colors = await forceMugWhite(page);
+  const animation = await page.evaluate(speed => {
     const range = document.querySelector('#speed');
+    let speedMeta = null;
     if (range) {
       range.value = String(speed);
       range.dispatchEvent(new Event('input', { bubbles: true }));
       range.dispatchEvent(new Event('change', { bubbles: true }));
+      speedMeta = { requested: speed, actual: range.value, min: range.min || '', max: range.max || '', step: range.step || '' };
     }
     const reverse = document.querySelector('#reverse_animate');
     if (reverse?.checked) reverse.click();
     const grid = document.querySelector('#show_grid');
     if (grid?.checked) grid.click();
+    return { speed: speedMeta, reverse: Boolean(reverse?.checked), grid: Boolean(grid?.checked) };
   }, SPEED);
+  let angleApplied = false;
   try {
     await page.locator('#controlShowAngle').click({ timeout: 5000 });
     await page.locator('#controlCustomAngle_text').fill('0');
     await page.locator('#controlSetCustomAngle').click();
+    angleApplied = true;
   } catch {}
-  await sleep(900);
+  await sleep(1200);
+  return { colors, animation, angleApplied };
 }
 
 async function signature(buffer) {
@@ -256,32 +254,36 @@ async function waitForOneLoop(page, preview, baseline) {
   let maxDiff = 0;
   let bestDiff = 1;
   let bestAt = 0;
+  const samples = [];
   while (Date.now() - start < MAX_LOOP_MS) {
-    await sleep(300);
+    await sleep(450);
     const current = await signature(await preview.screenshot());
     const diff = frameDiff(baseline, current);
     const elapsed = Date.now() - start;
     maxDiff = Math.max(maxDiff, diff);
-    if (diff > 0.07) diverged = true;
+    if (diff > 0.075) diverged = true;
     if (elapsed > MIN_LOOP_MS && diff < bestDiff) { bestDiff = diff; bestAt = elapsed; }
-    if (diverged && elapsed > MIN_LOOP_MS && diff < 0.028) return { detected: true, elapsedMs: elapsed, diff, maxDiff };
+    if (samples.length < 24 && elapsed % 5000 < 700) samples.push({ elapsedMs: elapsed, diff });
+    if (diverged && elapsed > MIN_LOOP_MS && diff < LOOP_RETURN_THRESHOLD) {
+      return { detected: true, elapsedMs: elapsed, diff, maxDiff, bestDiff: Math.min(bestDiff, diff), bestAt: elapsed, threshold: LOOP_RETURN_THRESHOLD, samples };
+    }
   }
-  return { detected: false, elapsedMs: Date.now() - start, diff: bestDiff, maxDiff, bestAt };
+  return { detected: false, elapsedMs: Date.now() - start, diff: bestDiff, maxDiff, bestDiff, bestAt, threshold: LOOP_RETURN_THRESHOLD, samples };
 }
 
 async function recordVideo(page, outputPath) {
   const preview = page.locator('#preview3d canvas').first();
   await preview.waitFor({ state: 'visible', timeout: 30000 });
-  await configureScene(page);
+  const scene = await configureScene(page);
   const baseline = await signature(await preview.screenshot());
   const startButton = page.locator('#controlStartVideo');
   await startButton.waitFor({ state: 'visible', timeout: 15000 });
   await startButton.click();
-  await sleep(350);
+  await sleep(500);
   await setAnimation(page, true);
   const loop = await waitForOneLoop(page, preview, baseline);
   await setAnimation(page, false);
-  await sleep(200);
+  await sleep(300);
   const stopButton = page.locator('#controlStopVideo');
   await stopButton.waitFor({ state: 'visible', timeout: 10000 });
   const downloadPromise = page.waitForEvent('download', { timeout: 120000 });
@@ -290,7 +292,8 @@ async function recordVideo(page, outputPath) {
   await download.saveAs(outputPath);
   const stat = await fs.stat(outputPath);
   if (stat.size < 10_000) throw new Error(`O WEBM exportado ficou pequeno demais (${stat.size} bytes).`);
-  return { ...loop, bytes: stat.size, suggestedFilename: download.suggestedFilename() };
+  if (!loop.detected) throw new Error(`O vídeo foi exportado, mas o detector não confirmou o retorno visual após 360° em ${Math.round(loop.elapsedMs / 1000)} s de render.`);
+  return { ...loop, bytes: stat.size, suggestedFilename: download.suggestedFilename(), scene };
 }
 
 async function main() {
@@ -303,7 +306,7 @@ async function main() {
     await patchProduct(key, { video_360_status: 'error', video_360_error: 'Produto sem arte_horizontal pública.', video_360_finished_at: new Date().toISOString() }).catch(() => {});
     throw new Error(`Produto ${key} não possui arte_horizontal pública.`);
   }
-  await patchProduct(key, { video_360_status: 'processing', video_360_started_at: new Date().toISOString(), video_360_error: null, video_360_engine: 'mug3d-playwright-github-actions-v1' });
+  await patchProduct(key, { video_360_status: 'processing', video_360_started_at: new Date().toISOString(), video_360_error: null, video_360_engine: 'mug3d-playwright-github-actions-v3-white-10s' });
   const workDir = path.resolve('.tmp-mug3d');
   await fs.mkdir(workDir, { recursive: true });
   await fs.mkdir(path.resolve(OUTPUT_DIR), { recursive: true });
@@ -315,14 +318,7 @@ async function main() {
     await downloadArt(artUrl, artPath);
     browser = await chromium.launch({
       headless: false,
-      args: [
-        '--use-gl=swiftshader',
-        '--enable-unsafe-swiftshader',
-        '--enable-webgl',
-        '--ignore-gpu-blocklist',
-        '--disable-dev-shm-usage',
-        '--no-sandbox',
-      ],
+      args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--disable-dev-shm-usage', '--no-sandbox'],
     });
     const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 1440, height: 1100 }, locale: 'en-US' });
     const page = await context.newPage();
