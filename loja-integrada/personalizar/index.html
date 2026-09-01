@@ -11,7 +11,7 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="https://canecafacil.com.br/" aria-label="CanecaFácil"><img src="../assets/canecafacil-logo.webp" alt="CanecaFácil"></a>
+    <a class="brand" href="https://www.canecafacil.com.br/" aria-label="CanecaFácil"><img src="../assets/canecafacil-logo.webp" alt="CanecaFácil"></a>
     <button type="button" class="ghost" id="backButton">Voltar à loja</button>
   </header>
 
@@ -42,7 +42,6 @@
       <p class="native-note">Usaremos seu e-mail somente para avisar sobre esta personalização. Promoções exigem autorização separada.</p>
     </form>
 
-
     <section class="preview-card" id="previewBox" hidden aria-live="polite">
       <div class="preview-head">
         <div><strong>Sua arte ficou pronta ✨</strong><p>Confira os dois lados antes de aprovar.</p></div>
@@ -56,7 +55,7 @@
       <div class="preview-meta"><span id="previewCounter">1 de 2</span><span>Prévia da arte real</span></div>
       <button class="primary" id="approveButton" type="button">APROVAR E COMPRAR</button>
       <button class="secondary preview-edit" id="editCreation" type="button">ALTERAR DADOS</button>
-      <p class="native-note">O produto só será preparado no carrinho depois da sua aprovação.</p>
+      <p class="native-note">Ao aprovar, compraremos o modelo original da loja e vincularemos este código à sua arte. Não criamos um produto público novo.</p>
     </section>
 
     <section class="pending-card" id="pendingBox" hidden aria-live="polite">
@@ -91,7 +90,7 @@
     <section class="success-card" id="successBox" hidden>
       <strong>Compra preparada</strong>
       <p id="successText">Abrindo o carrinho…</p>
-      <a class="primary" id="cartFallback" href="https://canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a>
+      <a class="primary" id="cartFallback" href="https://www.canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a>
     </section>
 
     <section class="error-card" id="errorBox" hidden>
@@ -102,6 +101,8 @@
   </main>
 
   <script src="./navigation-v1.js?v=20260830-1"></script>
-  <script type="module" src="./app-v14.js?v=20260901-1"></script>
+  <script src="./creation-device-bridge-v1.js?v=20260901-1"></script>
+  <script src="./native-cart-v2.js?v=20260901-1"></script>
+  <script type="module" src="./app-v14.js?v=20260901-2"></script>
 </body>
 </html>
