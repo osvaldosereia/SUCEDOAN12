@@ -25,6 +25,7 @@ jobs:
             scripts/finalizar-personalizador-commerce-once.mjs
             loja-integrada/personalizar/app.js
             loja-integrada/personalizar/index.html
+            .github/workflows/gerenciar-produtos-personalizados-temporarios-li.yml
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
