@@ -1,26 +1,46 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-native-cart-v2.2-direct-original-product';
+  const BUILD = '20260901-native-cart-v2.3-original-product-only';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const STOREFRONT = 'https://www.canecafacil.com.br/';
   const CREATIONS_NODE = 'canecas/personalizadas';
   const PENDING_NODE = 'canecas/encomendas_pendentes';
+  const MAKE_WEBHOOK_HOST = 'hook.eu1.make.com';
+  const innerFetch = window.fetch.bind(window);
 
   if (window.__CF_NATIVE_CART_V2__ === BUILD) return;
   window.__CF_NATIVE_CART_V2__ = BUILD;
+  window.__CF_PERSONALIZED_PRODUCT_MODE__ = 'original-product-only';
 
   const text = value => String(value ?? '').trim();
   const safeKey = value => text(value).replace(/[.#$\[\]/]/g, '_');
 
+  /* Proteção definitiva: o fluxo público não pode voltar a criar produto temporário. */
+  window.fetch = async function cfNoTemporaryProductFetch(input, init = {}) {
+    try {
+      const url = new URL(String(input), location.href);
+      if (url.hostname === MAKE_WEBHOOK_HOST && typeof init?.body === 'string') {
+        const wrapper = JSON.parse(init.body);
+        const payload = wrapper && typeof wrapper.payload === 'string' ? JSON.parse(wrapper.payload) : null;
+        if (payload?.action === 'loja_integrada_create_personalized_product') {
+          throw new Error('Fluxo antigo bloqueado: personalizações compram somente o produto original da Loja Integrada.');
+        }
+      }
+    } catch (error) {
+      if (/Fluxo antigo bloqueado/i.test(error?.message || '')) return Promise.reject(error);
+    }
+    return innerFetch(input, init);
+  };
+
   async function fetchJson(path) {
-    const response = await fetch(`${FIREBASE}/${path}.json?_=${Date.now()}`, { cache:'no-store', headers:{ Accept:'application/json' } });
+    const response = await innerFetch(`${FIREBASE}/${path}.json?_=${Date.now()}`, { cache:'no-store', headers:{ Accept:'application/json' } });
     if (!response.ok) throw new Error(`Firebase ${response.status}`);
     return response.json();
   }
 
   async function writeJson(path, data, method = 'PATCH') {
-    const response = await fetch(`${FIREBASE}/${path}.json`, {
+    const response = await innerFetch(`${FIREBASE}/${path}.json`, {
       method,
       headers:{ 'Content-Type':'application/json', Accept:'application/json' },
       body:JSON.stringify(data)
@@ -63,12 +83,12 @@
     const node = document.getElementById('errorText'); if (node) node.textContent = message;
   }
 
-  function cartUrl(code, productId) {
-    const url = new URL(`/carrinho/produto/${encodeURIComponent(productId)}/adicionar`, STOREFRONT);
-    url.searchParams.set('utm_source', 'canecafacil');
-    url.searchParams.set('utm_medium', 'personalizacao');
-    url.searchParams.set('utm_campaign', code);
-    url.searchParams.set('utm_content', 'personalizada');
+  function handoffUrl(code, productId, modelKey) {
+    const url = new URL('/', STOREFRONT);
+    url.searchParams.set('cf_add_personalizada', '1');
+    url.searchParams.set('cf_criacao', code);
+    url.searchParams.set('cf_produto', productId);
+    if (modelKey) url.searchParams.set('cf_modelo', modelKey);
     return url.href;
   }
 
@@ -132,13 +152,11 @@
 
       try {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({
-            type:'canecafacil:carrinho-personalizado', code, productId, modelKey, build:BUILD
-          }, '*');
+          window.parent.postMessage({ type:'canecafacil:carrinho-personalizado', code, productId, modelKey, build:BUILD }, '*');
         }
       } catch {}
 
-      const url = cartUrl(code, productId);
+      const url = handoffUrl(code, productId, modelKey);
       const fallback = document.getElementById('cartFallback'); if (fallback) fallback.href = url;
       if (window.top && window.top !== window) window.top.location.href = url;
       else location.href = url;
