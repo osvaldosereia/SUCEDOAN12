@@ -1,6 +1,6 @@
 import { FIREBASE_BASE, text } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260831-admin-canecas-cleanup-v1.1';
+const BUILD = '20260831-admin-canecas-cleanup-v1.2';
 const QUEUE_NODE = 'canecas/integracoes/loja_integrada/fila';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -117,6 +117,17 @@ function cleanDrawer() {
 
   const info = $('#cfDualDrawerInfo', root);
   if (info) info.textContent = 'Publicação e atualização são feitas pelo GitHub Actions. O Admin acompanha o resultado e avisa quando a Loja Integrada confirmar.';
+
+  const saveOnly = $('#cfSaveOnly', root);
+  if (saveOnly && !saveOnly.dataset.cfCleanupBound) {
+    saveOnly.dataset.cfCleanupBound = '1';
+    saveOnly.addEventListener('click', () => {
+      const original = saveOnly.textContent;
+      saveOnly.textContent = 'Salvando…';
+      feedbackState('busy', 'Salvando cadastro…', 'O Admin está gravando as alterações no Firebase.');
+      setTimeout(() => { if (saveOnly?.isConnected) saveOnly.textContent = original; }, 1200);
+    }, true);
+  }
 
   const github = $('#cfSaveGithub', root);
   if (github) {
