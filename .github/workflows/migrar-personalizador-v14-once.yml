@@ -19,6 +19,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Corrigir escape do migrador
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/migrar-personalizador-v14.py')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('a = re.sub(pattern, new_generate, a, count=1)', 'a = re.sub(pattern, lambda _m: new_generate, a, count=1)')
+          s=s.replace('a = re.sub(pattern, new_init, a, count=1)', 'a = re.sub(pattern, lambda _m: new_init, a, count=1)')
+          p.write_text(s, encoding='utf-8')
+          PY
       - name: Aplicar V14
         run: python scripts/migrar-personalizador-v14.py
       - name: Validar sintaxe e contrato
