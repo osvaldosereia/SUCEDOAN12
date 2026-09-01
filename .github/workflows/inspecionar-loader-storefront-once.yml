@@ -1,0 +1,46 @@
+name: Inspecionar loader storefront
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspecionar-loader-storefront-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspecionar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspecionar HTML publico do produto
+        run: |
+          node - <<'NODE'
+          const fb='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
+          const key='mug-1788189915488-38vzvo';
+          const p=await (await fetch(`${fb}/produtos/${key}.json`)).json();
+          const raw=String(p?.loja_integrada?.url||'');
+          const url=new URL(raw||'/', 'https://canecafacil.com.br').href;
+          const target=new URL(url);
+          target.searchParams.set('cf_personalizador','teste');
+          const r=await fetch(target,{headers:{'User-Agent':'CanecaFacil-Diagnostic/1.0',Accept:'text/html'}});
+          const html=await r.text();
+          const scripts=[...html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map(m=>m[1]);
+          const result={
+            url:target.href,
+            status:r.status,
+            bytes:html.length,
+            has_loader_name:/loader-personalizador-inline-homologacao/i.test(html),
+            has_inline_v1:/personalizador-inline-v1/i.test(html),
+            has_inline_v2:/personalizador-inline-v2/i.test(html),
+            has_cf_inline_loader:/__CF_INLINE_LOADER__/i.test(html),
+            has_cf_param:/cf_personalizador/i.test(html),
+            has_personalizer_box:/cf-personalizer-box/i.test(html),
+            has_button_text:/PERSONALIZAR ESTA CANECA/i.test(html),
+            scripts:scripts.filter(x=>/caneca|donaantonia|personal|custom|tema/i.test(x)).slice(0,30)
+          };
+          console.log('STOREFRONT_INSPECAO='+JSON.stringify(result));
+          NODE
