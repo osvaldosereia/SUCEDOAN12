@@ -175,12 +175,14 @@ async function queueVideo(key, button) {
       video_360_error: null,
       video_360_engine: 'mug3d-playwright-github-actions-v1',
     });
+    button.textContent = 'Vídeo 360° na fila…';
     setStatus(button, 'Vídeo 360° · enviado para a fila do GitHub Actions…');
     let dispatch = { dispatched: false };
     try { dispatch = await dispatchWorkflow(key); }
     catch (error) { console.warn('[Canecas] dispatch imediato falhou; o cron assumirá a fila.', error); }
     if (dispatch.dispatched) {
       await patchProduct(key, { video_360_status: 'queued', video_360_dispatched_at: new Date().toISOString() });
+      button.textContent = 'Vídeo 360° na fila…';
       setStatus(button, 'GitHub Actions iniciado · abrindo Mug3D e preparando o giro 360°…');
     } else {
       setStatus(button, 'Vídeo ficou na fila. O GitHub Actions automático buscará a solicitação em até alguns minutos.');
