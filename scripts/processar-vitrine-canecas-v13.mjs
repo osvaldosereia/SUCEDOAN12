@@ -10,7 +10,7 @@ const PRODUCT_KEY = String(process.env.PRODUCT_KEY || '').trim();
 const FORCE = /^(1|true|yes)$/i.test(String(process.env.FORCE || ''));
 const LIMIT = Math.max(0, Number(process.env.LIMIT || 0) || 0);
 const MODE = String(process.env.MODE || 'build').toLowerCase();
-const VERSION = 'github-sharp-v3-two-crops';
+const VERSION = 'github-sharp-v4-two-crops-keep-mockups';
 const PENDING = path.join(ROOT, '.canecafacil-vitrine-pending.json');
 
 const text = v => String(v ?? '').trim();
@@ -22,6 +22,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function isMug(p = {}) { return norm(`${p.tipo_produto || ''} ${p.categoria || ''} ${p.subcategoria || ''} ${p.nome || ''}`).includes('caneca'); }
 function artOf(p = {}) { return text(p.arte_horizontal || p.arte_personalizacao || p.arte_impressao?.url || p.arte_final_url); }
+function mocksOf(p = {}) { return { m1:text(p.mockup_1 || p.imagens_site?.[0] || p.imagens?.[0]), m2:text(p.mockup_2 || p.imagens_site?.[1] || p.imagens?.[1]) }; }
 function cropsOf(p = {}) { return { left:text(p.vitrine_recorte_esquerda || p.vitrine_recortes?.esquerda), right:text(p.vitrine_recorte_direita || p.vitrine_recortes?.direita) }; }
 function cropReady(p = {}) { const c=cropsOf(p), art=artOf(p), source=text(p.vitrine_recortes?.source_art || p.vitrine_recortes?.arte_origem); return Boolean(art && source===art && isHttp(c.left) && isHttp(c.right)); }
 function sourceReady(p = {}) { return isHttp(artOf(p)); }
@@ -62,7 +63,7 @@ async function build() {
   console.log(`CanecaFácil GitHub crops · candidatos=${rows.length} · force=${FORCE} · product=${PRODUCT_KEY||'todos'}`);
   const pending=[]; let ok=0,errors=0;
   for(const [key,p] of rows){
-    const art=artOf(p), nameSlug=slug(p.seo_slug||p.canecafacil_slug||p.nome||p.codigo||key), keySlug=slug(key).slice(0,36);
+    const art=artOf(p), mocks=mocksOf(p), nameSlug=slug(p.seo_slug||p.canecafacil_slug||p.nome||p.codigo||key), keySlug=slug(key).slice(0,36);
     const dirRel=path.posix.join('canecas','vitrine',`${nameSlug}-${keySlug}`), dirAbs=path.join(ROOT,...dirRel.split('/'));
     const files={left:`${nameSlug}-vista-esquerda.webp`,right:`${nameSlug}-vista-direita.webp`};
     const urls=Object.fromEntries(Object.entries(files).map(([k,f])=>[k,`${RAW_BASE}/${dirRel}/${f}`]));
@@ -71,7 +72,7 @@ async function build() {
       const crops=await makeCrops(await fetchBuffer(art));
       await fs.mkdir(dirAbs,{recursive:true});
       await Promise.all([fs.writeFile(path.join(dirAbs,files.left),crops.left),fs.writeFile(path.join(dirAbs,files.right),crops.right)]);
-      pending.push({key,art,urls,meta:crops.meta,nome:text(p.nome)});
+      pending.push({key,art,urls,meta:crops.meta,nome:text(p.nome),mockup1:mocks.m1,mockup2:mocks.m2});
       ok++; console.log(`GERADO ${key} · ${p.nome||''} · ${crops.meta.width}x${crops.meta.height}`);
     }catch(error){
       errors++; console.error(`ERRO ${key} · ${p.nome||''} · ${error?.message||error}`);
@@ -100,15 +101,16 @@ async function apply() {
       const checks=await Promise.all([urlExists(item.urls.left),urlExists(item.urls.right)]);
       if(!checks.every(Boolean)) throw new Error('arquivos ainda não estão públicos no GitHub');
       const now=new Date().toISOString();
+      const storefront=[item.mockup1,item.mockup2,item.urls.left,item.urls.right].filter(isHttp);
       await patchProduct(item.key,{
         vitrine_recorte_esquerda:item.urls.left,
         vitrine_recorte_direita:item.urls.right,
-        imagens_canecafacil:[item.urls.left,item.urls.right],
+        imagens_canecafacil:storefront,
         vitrine_recortes_status:'pronto',vitrine_recortes_erro:'',vitrine_recortes_processador:VERSION,vitrine_recortes_atualizado_em:now,
         vitrine_recortes:{versao:VERSION,status:'pronto',source_art:item.art,esquerda:item.urls.left,direita:item.urls.right,source_width:item.meta.width,source_height:item.meta.height,left_width:item.meta.leftW,right_width:item.meta.rightW,atualizado_em:now},
         updated_at:now,last_update:Date.now()
       });
-      ok++; console.log(`FIREBASE OK ${item.key} · ${item.nome}`);
+      ok++; console.log(`FIREBASE OK ${item.key} · ${item.nome} · vitrine=${storefront.length} imagens`);
     }catch(error){errors++;console.error(`FIREBASE ERRO ${item.key} · ${error?.message||error}`);}
   }
   await fs.rm(PENDING,{force:true});
