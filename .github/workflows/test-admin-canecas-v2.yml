@@ -8,6 +8,7 @@ on:
       - 'loja-integrada/personalizar/**'
       - 'scripts/test-admin-canecas-v3.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
+      - 'scripts/test-personalizer-v4-make-contract-v1.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
       - 'scripts/sincronizar-loja-integrada.mjs'
       - 'scripts/processar-vitrine-canecas.mjs'
@@ -18,6 +19,7 @@ on:
       - 'loja-integrada/personalizar/**'
       - 'scripts/test-admin-canecas-v3.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
+      - 'scripts/test-personalizer-v4-make-contract-v1.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
       - 'scripts/sincronizar-loja-integrada.mjs'
       - 'scripts/processar-vitrine-canecas.mjs'
@@ -60,6 +62,8 @@ jobs:
         run: node --check loja-integrada/personalizar/app-v4.js
       - name: Test personalization contract behavior
         run: node scripts/test-personalization-contract-v1.mjs
+      - name: Test V4 Make contract behavior
+        run: node scripts/test-personalizer-v4-make-contract-v1.mjs
       - name: Check LI recovery syntax
         run: node --check admin-canecas/li-recovery-v3.js
       - name: Check LI coordinator syntax
