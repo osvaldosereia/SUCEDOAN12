@@ -1,0 +1,44 @@
+name: CanecaFácil · desativar produtos personalizados legados
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/desativar-produtos-personalizados-legados.mjs'
+      - '.github/workflows/desativar-produtos-personalizados-legados.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canecafacil-cleanup-personalizados-legados
+  cancel-in-progress: false
+
+jobs:
+  limpar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Carregar token Loja Integrada
+        env:
+          LI_APP_TOKEN: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+        run: |
+          if [ -z "$LI_APP_TOKEN" ]; then
+            echo 'ERRO: secret LOJA_INTEGRADA_APP_KEY ausente.'
+            exit 1
+          fi
+          printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
+      - name: Desativar produtos temporários legados
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+        run: node scripts/desativar-produtos-personalizados-legados.mjs
