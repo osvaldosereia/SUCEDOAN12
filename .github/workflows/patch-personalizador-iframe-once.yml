@@ -1,6 +1,7 @@
 name: Personalizador embutido no produto
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
