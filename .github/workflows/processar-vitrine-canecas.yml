@@ -1,4 +1,4 @@
-name: CanecaFácil · recortes da vitrine V13
+name: CanecaFácil · recortes da vitrine V14
 
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: canecafacil-vitrine-crops-v13
+  group: canecafacil-vitrine-crops-v14
   cancel-in-progress: false
 
 jobs:
@@ -51,7 +51,7 @@ jobs:
       - name: Instalar Sharp
         run: npm install --no-save sharp@0.34.3
 
-      - name: Gerar somente esquerda e direita
+      - name: Gerar recorte esquerdo e direito
         env:
           MODE: build
           RAW_BRANCH: canecas-media
@@ -69,7 +69,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nenhuma imagem nova para publicar."
           else
-            git commit -m "CanecaFácil V13: gera 2 recortes da vitrine"
+            git commit -m "CanecaFácil V14: gera 2 recortes preservando mockups"
             git pull --rebase origin canecas-media
             git push origin HEAD:canecas-media
           fi
@@ -84,7 +84,7 @@ jobs:
       - name: Resumo
         if: always()
         run: |
-          echo "## CanecaFácil · V13" >> "$GITHUB_STEP_SUMMARY"
+          echo "## CanecaFácil · vitrine V14" >> "$GITHUB_STEP_SUMMARY"
           echo "- Arquivo mestre: arte horizontal" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Vitrine: recorte esquerdo + recorte direito" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Mockups IA: desativados" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Produto normal: Mockup 1 + Mockup 2 + recorte esquerdo + recorte direito" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Esta rotina gera somente os 2 recortes e preserva os mockups já cadastrados" >> "$GITHUB_STEP_SUMMARY"
