@@ -54,6 +54,8 @@ jobs:
         run: node --check admin-canecas/personalization-prompt-suggest-v1.js
       - name: Check personalization contract syntax
         run: node --check loja-integrada/personalizar/personalization-contract-v1.js
+      - name: Check V4 Make compatibility syntax
+        run: node --check loja-integrada/personalizar/v4-make-contract-v1.js
       - name: Check personalizer V4 syntax
         run: node --check loja-integrada/personalizar/app-v4.js
       - name: Test personalization contract behavior
