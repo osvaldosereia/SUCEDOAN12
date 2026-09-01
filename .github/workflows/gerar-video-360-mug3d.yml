@@ -25,7 +25,7 @@ jobs:
     env:
       FIREBASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
       PRODUCTS_NODE: produtos
-      PRODUCT_KEY: ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || '' }}
+      REQUESTED_PRODUCT_KEY: ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || '' }}
       FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
       MAKE_YOUTUBE_WEBHOOK_URL: ${{ secrets.MAKE_YOUTUBE_WEBHOOK_URL }}
       MUG3D_URL: https://mug3d.com/?model=1
@@ -51,27 +51,48 @@ jobs:
           const fs = require('fs');
           const base = String(process.env.FIREBASE_URL || '').replace(/\/+$/, '');
           const node = String(process.env.PRODUCTS_NODE || 'produtos').replace(/^\/+|\/+$/g, '');
-          const requested = String(process.env.PRODUCT_KEY || '').trim();
+          const requested = String(process.env.REQUESTED_PRODUCT_KEY || '').trim();
           const auth = String(process.env.FIREBASE_AUTH_TOKEN || '').trim();
           const query = auth ? `?auth=${encodeURIComponent(auth)}` : '';
           (async () => {
-            let shouldRun = Boolean(requested);
-            if (!shouldRun) {
+            let selected = requested;
+            if (!selected) {
               const response = await fetch(`${base}/${node}.json${query}`, { headers: { Accept: 'application/json' } });
               if (!response.ok) throw new Error(`Firebase fila: HTTP ${response.status}`);
               const data = await response.json();
-              shouldRun = Object.values(data || {}).some(product => product && typeof product === 'object' && ['pending', 'queued'].includes(String(product.video_360_status || '').trim().toLowerCase()));
+              const candidates = Object.entries(data || {})
+                .filter(([, product]) => product && typeof product === 'object' && ['pending', 'queued'].includes(String(product.video_360_status || '').trim().toLowerCase()))
+                .sort((a, b) => Date.parse(a[1].video_360_requested_at || 0) - Date.parse(b[1].video_360_requested_at || 0));
+              selected = candidates[0]?.[0] || '';
             }
-            fs.appendFileSync(process.env.GITHUB_OUTPUT, `run=${shouldRun ? 'true' : 'false'}\n`);
-            console.log(shouldRun ? 'Há vídeo 360 para processar.' : 'Fila de vídeo 360 vazia; encerrando sem instalar Chromium.');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `run=${selected ? 'true' : 'false'}\nproduct_key=${selected}\n`);
+            console.log(selected ? `Há vídeo 360 para processar: ${selected}` : 'Fila de vídeo 360 vazia; encerrando sem instalar Chromium.');
           })().catch(error => { console.error(error); process.exit(1); });
           NODE
 
       - name: Validar publicação no YouTube
         if: steps.queue.outputs.run == 'true'
+        env:
+          PRODUCT_KEY: ${{ steps.queue.outputs.product_key }}
         shell: bash
         run: |
           if [ -z "$MAKE_YOUTUBE_WEBHOOK_URL" ]; then
+            node <<'NODE'
+            const base = String(process.env.FIREBASE_URL || '').replace(/\/+$/, '');
+            const node = String(process.env.PRODUCTS_NODE || 'produtos').replace(/^\/+|\/+$/g, '');
+            const key = String(process.env.PRODUCT_KEY || '').trim();
+            const auth = String(process.env.FIREBASE_AUTH_TOKEN || '').trim();
+            const query = auth ? `?auth=${encodeURIComponent(auth)}` : '';
+            const patch = {
+              video_360_status: 'error',
+              video_360_error: 'Configuração pendente: secret MAKE_YOUTUBE_WEBHOOK_URL ausente no GitHub Actions.',
+              video_360_finished_at: new Date().toISOString(),
+              video_360_engine: 'mug3d-playwright-github-actions-make-youtube-v2'
+            };
+            fetch(`${base}/${node}/${encodeURIComponent(key)}.json${query}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })
+              .then(async response => { if (!response.ok) throw new Error(`Firebase retornou ${response.status}: ${await response.text()}`); })
+              .catch(error => { console.error(error); process.exitCode = 1; });
+            NODE
             echo '::error::Secret MAKE_YOUTUBE_WEBHOOK_URL ausente. Importe o cenário CANECA FACIL - Mug3D YouTube Shorts V1 no Make e salve a URL do Custom Webhook neste secret.'
             exit 1
           fi
@@ -85,6 +106,8 @@ jobs:
 
       - name: Gerar WEBM temporário no Mug3D
         if: steps.queue.outputs.run == 'true'
+        env:
+          PRODUCT_KEY: ${{ steps.queue.outputs.product_key }}
         run: xvfb-run -a node scripts/mug3d-video-automation.mjs
 
       - name: Converter para MP4 vertical leve
@@ -119,6 +142,7 @@ jobs:
       - name: Publicar YouTube Short e salvar link no produto
         if: steps.queue.outputs.run == 'true'
         env:
+          PRODUCT_KEY: ${{ steps.queue.outputs.product_key }}
           YOUTUBE_VIDEO_PATH: ${{ steps.convert.outputs.youtube_path }}
         run: node scripts/mug3d-publish-result.mjs
 
