@@ -132,30 +132,38 @@ jobs:
           echo "youtube_path=$MP4" >> "$GITHUB_OUTPUT"
           echo "MP4 temporário pronto: $MP4 · $SIZE bytes."
 
-      - name: Validar publicação no YouTube
+      - name: Validar arquivo de vídeo gerado
         if: steps.queue.outputs.run == 'true'
         env:
-          PRODUCT_KEY: ${{ steps.queue.outputs.product_key }}
+          MP4_PATH: ${{ steps.convert.outputs.youtube_path }}
+        shell: bash
+        run: |
+          echo 'Metadados do MP4:'
+          ffprobe -v error -select_streams v:0 \
+            -show_entries stream=codec_name,width,height,r_frame_rate,avg_frame_rate,nb_frames \
+            -show_entries format=duration,size,bit_rate \
+            -of json "$MP4_PATH"
+          echo 'Teste de movimento (freezedetect):'
+          ffmpeg -hide_banner -i "$MP4_PATH" -vf "freezedetect=n=0.003:d=2" -an -f null - 2>&1 | grep -E 'freeze_(start|end|duration)' || echo 'Nenhum congelamento longo detectado pelo filtro.'
+
+      - name: Guardar vídeo gerado no teste
+        if: steps.queue.outputs.run == 'true' && env.TEST_MODE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mug3d-video-teste-${{ github.run_id }}
+          path: |
+            .mug3d-result.json
+            ${{ steps.convert.outputs.youtube_path }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Validar publicação no YouTube
+        if: steps.queue.outputs.run == 'true'
         shell: bash
         run: |
           if [ -z "$MAKE_YOUTUBE_WEBHOOK_URL" ]; then
-            node <<'NODE'
-            const base = String(process.env.FIREBASE_URL || '').replace(/\/+$/, '');
-            const node = String(process.env.PRODUCTS_NODE || 'produtos').replace(/^\/+|\/+$/g, '');
-            const key = String(process.env.PRODUCT_KEY || '').trim();
-            const auth = String(process.env.FIREBASE_AUTH_TOKEN || '').trim();
-            const query = auth ? `?auth=${encodeURIComponent(auth)}` : '';
-            const patch = {
-              video_360_status: 'error',
-              video_360_error: 'Vídeo 360 gerado no teste, mas falta configurar o secret MAKE_YOUTUBE_WEBHOOK_URL para publicar no YouTube.',
-              video_360_finished_at: new Date().toISOString(),
-              video_360_engine: 'mug3d-playwright-github-actions-make-youtube-v2'
-            };
-            fetch(`${base}/${node}/${encodeURIComponent(key)}.json${query}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })
-              .then(async response => { if (!response.ok) throw new Error(`Firebase retornou ${response.status}: ${await response.text()}`); })
-              .catch(error => { console.error(error); process.exitCode = 1; });
-            NODE
-            echo '::error::Vídeo foi gerado, porém o secret MAKE_YOUTUBE_WEBHOOK_URL está ausente. O diagnóstico preservará o MP4 por 2 dias.'
+            echo '::error::Vídeo 360 foi gerado e validado, mas falta o secret MAKE_YOUTUBE_WEBHOOK_URL para publicar no YouTube.'
             exit 1
           fi
 
@@ -174,5 +182,6 @@ jobs:
           path: |
             .mug3d-result.json
             .tmp-mug3d/
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 2
