@@ -1,0 +1,50 @@
+name: Migrar personalizador inline para produção
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/migrar-personalizador-inline-producao-once.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Aplicar migração inline
+        run: node scripts/migrar-personalizador-inline-producao.mjs
+      - name: Validar arquivos
+        run: |
+          node --check loja-integrada/personalizador-inline-v1.js
+          node --check scripts/sincronizar-loja-integrada.mjs
+          node --check scripts/sincronizar-conteudo-canecafacil.mjs
+          node --check admin-canecas/product-content-manager-v1.js
+          grep -q "APROVAR E COMPRAR" loja-integrada/personalizador-inline-v1.js
+          grep -q "cf_personalizador=teste#cfInlinePersonalizer" scripts/sincronizar-loja-integrada.mjs
+      - name: Ressincronizar produto do teste
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          PRODUCT_KEY: mug-1788189915488-38vzvo
+          FORCE: 'true'
+          LIMIT: '1'
+        run: node scripts/sincronizar-loja-integrada.mjs
+      - name: Publicar alterações
+        run: |
+          rm -f scripts/migrar-personalizador-inline-producao.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add loja-integrada/personalizador-inline-v1.js scripts/sincronizar-loja-integrada.mjs scripts/sincronizar-conteudo-canecafacil.mjs admin-canecas/product-content-manager-v1.js scripts/migrar-personalizador-inline-producao.mjs
+          git commit -m "Leva personalizador inline da homologação para compra"
+          git pull --rebase origin main
+          git push origin main
