@@ -6,18 +6,19 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#ffffff">
   <title>Personalize sua caneca — CanecaFácil</title>
-  <link rel="stylesheet" href="./styles.css?v=20260830-2">
+  <link rel="stylesheet" href="./styles.css?v=20260901-4">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="https://canecafacil.com.br/" aria-label="CanecaFácil"><img src="../assets/canecafacil-logo.webp" alt="CanecaFácil"></a>
     <button type="button" class="ghost" id="backButton">Voltar à loja</button>
   </header>
+
   <main class="page">
     <section class="intro">
       <p class="eyebrow">PERSONALIZAÇÃO</p>
-      <h1>Crie a sua caneca</h1>
-      <p>Preencha os dados pedidos pelo modelo. A arte é preparada automaticamente e você confere o resultado antes de voltar à compra.</p>
+      <h1>Personalize sua caneca</h1>
+      <p>Preencha somente o que este modelo permite alterar. Depois de gerar, sua caneca será adicionada ao carrinho.</p>
     </section>
 
     <section class="product" id="productBox" aria-live="polite">
@@ -26,43 +27,34 @@
     </section>
 
     <form class="form-card" id="personalizerForm" hidden>
-      <div class="section-title"><div><p class="eyebrow">SEUS DADOS</p><h2>Quem está personalizando?</h2></div><span>1</span></div>
-      <div class="grid">
-        <label>Nome completo<input id="customerName" autocomplete="name" required></label>
-        <label>WhatsApp<input id="customerWhatsapp" inputmode="tel" autocomplete="tel" required placeholder="(65) 99999-9999"></label>
-        <label class="wide">E-mail<input id="customerEmail" type="email" autocomplete="email" required></label>
+      <div class="form-head">
+        <div><p class="eyebrow">PERSONALIZE</p><h2>Complete os campos</h2></div>
+        <span class="secure">Compra segura</span>
       </div>
-
-      <div class="section-title"><div><p class="eyebrow">PERSONALIZAÇÃO</p><h2>Como você quer a arte?</h2></div><span>2</span></div>
       <div class="grid" id="dynamicFields"></div>
-      <label class="wide-block">Instrução complementar<textarea id="freeInstruction" rows="3" placeholder="Ex.: colocar o nome Maria, trocar a frase, usar a foto no centro…"></textarea></label>
-      <label class="upload">
-        <span><b>Foto para personalizar</b><small>Envie somente quando o modelo usar foto. JPG, PNG ou WEBP.</small></span>
-        <input id="customerPhoto" type="file" accept="image/png,image/jpeg,image/webp">
-      </label>
-      <div id="photoPreview" class="photo-preview" hidden></div>
-
-      <button class="primary" id="generateButton" type="submit">GERAR MINHA ARTE</button>
-      <p class="privacy">Sua foto é utilizada somente para produzir a personalização solicitada.</p>
+      <button class="primary" id="generateButton" type="submit">GERAR E ADICIONAR AO CARRINHO</button>
+      <p class="native-note">Seu e-mail será informado no checkout da própria Loja Integrada, permitindo recuperar sua compra caso você não conclua agora.</p>
     </form>
 
     <section class="progress-card" id="progressBox" hidden>
       <div class="spinner"></div>
-      <div><strong>Preparando sua arte…</strong><p id="progressText">Isso normalmente leva alguns instantes.</p></div>
+      <div><strong id="progressTitle">Gerando sua arte</strong><p id="progressText">Aguarde alguns instantes.</p></div>
     </section>
 
-    <section class="result-card" id="resultBox" hidden>
-      <p class="eyebrow">ARTE PRONTA</p>
-      <h2>Confira sua personalização</h2>
-      <img id="resultImage" alt="Arte personalizada da caneca">
-      <div class="code-box"><span>Código da personalização</span><strong id="resultCode"></strong><button type="button" id="copyCode">Copiar</button></div>
-      <p class="hint">Confira a arte com atenção. Ao aprovar, vamos preparar este item personalizado e enviar você ao carrinho.</p>
-      <div class="actions"><button type="button" class="secondary" id="redoButton">Alterar dados</button><button type="button" class="primary" id="returnButton">APROVAR E COMPRAR</button></div>
+    <section class="success-card" id="successBox" hidden>
+      <strong>Personalização pronta</strong>
+      <p id="successText">Abrindo o carrinho…</p>
+      <a class="primary" id="cartFallback" href="https://canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a>
     </section>
 
-    <section class="error-card" id="errorBox" hidden><strong>Não foi possível concluir</strong><p id="errorText"></p><button type="button" class="secondary" id="tryAgain">Tentar novamente</button></section>
+    <section class="error-card" id="errorBox" hidden>
+      <strong>Não foi possível concluir</strong>
+      <p id="errorText"></p>
+      <button type="button" class="secondary" id="tryAgain">Tentar novamente</button>
+    </section>
   </main>
+
   <script src="./navigation-v1.js?v=20260830-1"></script>
-  <script type="module" src="./app.js?v=20260901-1"></script>
+  <script type="module" src="./app.js?v=20260901-4"></script>
 </body>
 </html>
