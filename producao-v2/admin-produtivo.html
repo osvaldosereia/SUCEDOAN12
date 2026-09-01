@@ -16,7 +16,7 @@
   <script>
     (async function () {
       const params = new URLSearchParams(window.location.search);
-      const RELEASE = '20260831-mug3d-github-video-v1';
+      const RELEASE = '20260831-mug3d-youtube-shorts-v2';
       const BUILD = `${RELEASE}-${params.get('admin_build') || 'default'}`;
       function replaceRequired(source, pattern, replacement, label) { if (!pattern.test(source)) throw new Error(`Não foi possível localizar ${label} no Admin base.`); return source.replace(pattern, replacement); }
       function scriptTag(src, { module = false } = {}) { const open='<scr'+'ipt',close='</scr'+'ipt>'; return `${open}${module?' type="module"':''} src="${src}">${close}`; }
