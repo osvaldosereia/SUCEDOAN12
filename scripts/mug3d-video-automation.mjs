@@ -71,9 +71,8 @@ async function downloadArt(url, destination) {
 async function fabricState(page) {
   return page.evaluate(() => {
     const isFabricCanvas = value => {
-      try {
-        return Boolean(value && typeof value === 'object' && typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c');
-      } catch { return false; }
+      try { return Boolean(value && typeof value === 'object' && typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c'); }
+      catch { return false; }
     };
     for (const key of Object.getOwnPropertyNames(window)) {
       let value;
@@ -182,28 +181,66 @@ async function setAnimation(page, enabled) {
 }
 
 async function forceMugWhite(page) {
-  return page.evaluate(() => {
-    const white = '#ffffff';
+  await page.waitForFunction(() => {
+    const ids = ['colorfor_ring', 'colorfor_inner', 'colorfor_handle', 'colorfor_print', 'colorfor_base'];
+    return ids.every(id => document.getElementById(id)) && typeof window.jscolor !== 'undefined';
+  }, { timeout: 15000 }).catch(() => {});
+
+  const result = await page.evaluate(() => {
+    const white = '#FFFFFF';
+    const parts = [
+      { part: 'ring', pickerId: 'colorfor_ring', inputId: 'controlObjectColor_ring', globalName: 'rim_color' },
+      { part: 'inner', pickerId: 'colorfor_inner', inputId: 'controlObjectColor_inner', globalName: 'inner_color' },
+      { part: 'handle', pickerId: 'colorfor_handle', inputId: 'controlObjectColor_handle', globalName: 'handle_color' },
+      { part: 'print', pickerId: 'colorfor_print', inputId: 'controlObjectColor_print', globalName: 'print_color' },
+      { part: 'base', pickerId: 'colorfor_base', inputId: 'controlObjectColor_base', globalName: 'base_color' },
+    ];
     const changed = [];
-    const ignored = [];
-    const inputs = [...document.querySelectorAll('input[type="color"]')];
-    for (const input of inputs) {
-      const label = input.id ? document.querySelector(`label[for="${CSS.escape(input.id)}"]`) : null;
-      const context = [input.id, input.name, input.getAttribute('aria-label'), label?.textContent, input.parentElement?.textContent]
-        .filter(Boolean).join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
-      const isSceneBackground = /scene\s*background/.test(context);
-      if (isSceneBackground) {
-        ignored.push({ id: input.id || '', context: context.slice(0, 120), value: input.value });
-        continue;
+    for (const item of parts) {
+      const picker = document.getElementById(item.pickerId);
+      const input = document.getElementById(item.inputId);
+      const before = {
+        input: input?.value || '',
+        data: picker?.getAttribute('data-current-color') || '',
+        picker: (() => { try { return picker?.jscolor?.toHEXString?.() || ''; } catch { return ''; } })(),
+      };
+      let apiApplied = false;
+      if (picker?.jscolor?.fromString) {
+        try {
+          apiApplied = picker.jscolor.fromString(white) !== false;
+          picker.jscolor.trigger?.('input change');
+        } catch {}
       }
-      input.value = white;
-      input.setAttribute('value', white);
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      changed.push({ id: input.id || '', name: input.name || '', context: context.slice(0, 120) });
+      if (input) {
+        input.value = 'FFFFFF';
+        input.setAttribute('value', 'FFFFFF');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter', code: 'Enter' }));
+      }
+      if (picker) {
+        picker.setAttribute('data-current-color', white);
+        picker.style.backgroundColor = 'rgb(255, 255, 255)';
+      }
+      try { window[item.globalName] = 'FFFFFF'; } catch {}
+      try {
+        if (window.jQuery && input) {
+          window.jQuery(input).trigger('input').trigger('change').trigger('keyup');
+        }
+      } catch {}
+      const after = {
+        input: input?.value || '',
+        data: picker?.getAttribute('data-current-color') || '',
+        picker: (() => { try { return picker?.jscolor?.toHEXString?.() || ''; } catch { return ''; } })(),
+      };
+      changed.push({ ...item, apiApplied, before, after });
     }
-    return { changed, ignored, totalColorInputs: inputs.length };
+    try { window.jscolor?.trigger?.('input change'); } catch {}
+    return { changed, jscolorReady: typeof window.jscolor !== 'undefined' };
   });
+
+  await sleep(1200);
+  return result;
 }
 
 async function configureScene(page) {
@@ -227,12 +264,12 @@ async function configureScene(page) {
   let angleApplied = false;
   try {
     await page.locator('#controlShowAngle').click({ timeout: 5000 });
-    await page.locator('#controlCustomAngle_text').fill('0');
+    await page.locator('#controlCustomAngle_text').fill('90');
     await page.locator('#controlSetCustomAngle').click();
     angleApplied = true;
   } catch {}
   await sleep(1200);
-  return { colors, animation, angleApplied };
+  return { colors, animation, angleApplied, startAngle: 90 };
 }
 
 async function signature(buffer) {
@@ -306,7 +343,7 @@ async function main() {
     await patchProduct(key, { video_360_status: 'error', video_360_error: 'Produto sem arte_horizontal pública.', video_360_finished_at: new Date().toISOString() }).catch(() => {});
     throw new Error(`Produto ${key} não possui arte_horizontal pública.`);
   }
-  await patchProduct(key, { video_360_status: 'processing', video_360_started_at: new Date().toISOString(), video_360_error: null, video_360_engine: 'mug3d-playwright-github-actions-v3-white-10s' });
+  await patchProduct(key, { video_360_status: 'processing', video_360_started_at: new Date().toISOString(), video_360_error: null, video_360_engine: 'mug3d-playwright-github-actions-v4-white-jscolor-10s' });
   const workDir = path.resolve('.tmp-mug3d');
   await fs.mkdir(workDir, { recursive: true });
   await fs.mkdir(path.resolve(OUTPUT_DIR), { recursive: true });
