@@ -1,0 +1,46 @@
+name: Corrigir clique do personalizador
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/corrigir-clique-personalizador-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  corrigir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Aplicar correção direta do clique
+        run: node scripts/patch-personalizador-click-direto-once.mjs
+      - name: Validar JavaScript
+        run: |
+          node --check scripts/sincronizar-loja-integrada.mjs
+          node --check scripts/sincronizar-conteudo-canecafacil.mjs
+          node --check admin-canecas/product-content-manager-v1.js
+          grep -q "personalizador-inline-v2.js?v=20260901-5" scripts/sincronizar-loja-integrada.mjs
+      - name: Ressincronizar caneca de teste
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          PRODUCT_KEY: mug-1788189915488-38vzvo
+          FORCE: 'true'
+          LIMIT: '1'
+        run: node scripts/sincronizar-loja-integrada.mjs
+      - name: Publicar correção
+        run: |
+          rm -f scripts/patch-personalizador-click-direto-once.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/sincronizar-loja-integrada.mjs scripts/sincronizar-conteudo-canecafacil.mjs admin-canecas/product-content-manager-v1.js scripts/patch-personalizador-click-direto-once.mjs
+          git commit -m "Faz o botão abrir o personalizador na própria página"
+          git pull --rebase origin main
+          git push origin main
