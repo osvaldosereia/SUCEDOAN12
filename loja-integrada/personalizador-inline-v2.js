@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const BUILD='20260901-li-personalizador-inline-v2.2';
+  const BUILD='20260901-li-personalizador-inline-v2.3';
   const TEST_PARAM='cf_personalizador';
   const TEST_VALUE='teste';
-  const INLINE_V1='https://donaantonia.com.br/loja-integrada/personalizador-inline-v1.js?v=20260901-5';
+  const INLINE_V1='https://donaantonia.com.br/loja-integrada/personalizador-inline-v1.js?v=20260901-6';
   const CONTRACT='20260831-personalizador-v4-make-contract-v1';
   const text=value=>String(value??'').trim();
 
