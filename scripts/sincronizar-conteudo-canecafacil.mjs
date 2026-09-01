@@ -94,7 +94,7 @@ function sanitizeHtml(value) {
 }
 function variables(p, key, t) {
   const base = t.personalizer_base; const ret = t.return_url;
-  const url = '?cf_personalizador=teste#cfInlinePersonalizer';
+  const url = "javascript:(function(){try{var u=new URL(location.href);u.searchParams.set('cf_personalizador','teste');u.hash='cfInlinePersonalizer';history.replaceState(history.state,'',u.href);var p=document.getElementById('cfInlinePersonalizer');if(p){p.scrollIntoView({behavior:'smooth',block:'center'});return;}if(window.__CF_INLINE_CLICK_LOADING__)return;window.__CF_INLINE_CLICK_LOADING__=1;var s=document.createElement('script');s.src='https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-5';s.async=true;s.onload=function(){window.__CF_INLINE_CLICK_LOADING__=0};s.onerror=function(){window.__CF_INLINE_CLICK_LOADING__=0;alert('Não foi possível abrir a personalização. Atualize a página e tente novamente.')};document.head.appendChild(s)}catch(e){console.error(e);alert('Não foi possível abrir a personalização.')}})();";
   return {
     '{{nome}}': text(p.nome || 'Caneca Personalizável'), '{{sku}}': text(p.codigo || p.sku), '{{modelo_id}}': key,
     '{{preco}}': num(p.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), '{{url_personalizador}}': url,
