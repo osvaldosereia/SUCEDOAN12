@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const BUILD='20260901-li-personalizador-inline-v2';
+  const BUILD='20260901-li-personalizador-inline-v2.1';
   const TEST_PARAM='cf_personalizador';
   const TEST_VALUE='teste';
-  const INLINE_V1='https://donaantonia.com.br/loja-integrada/personalizador-inline-v1.js?v=20260901-2';
+  const INLINE_V1='https://donaantonia.com.br/loja-integrada/personalizador-inline-v1.js?v=20260901-3';
   const CONTRACT='20260831-personalizador-v4-make-contract-v1';
   const text=value=>String(value??'').trim();
 
@@ -61,7 +61,6 @@
   const script=document.createElement('script');
   script.src=INLINE_V1;
   script.async=true;
-  script.crossOrigin='anonymous';
   script.onerror=()=>console.error('[CanecaFácil] Falha ao carregar interface inline V1.');
   document.head.appendChild(script);
 
