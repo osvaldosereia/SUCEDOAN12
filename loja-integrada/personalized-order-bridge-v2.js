@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-personalized-order-bridge-v2';
+  const BUILD = '20260901-personalized-order-bridge-v2.1';
   const STORAGE_KEY = 'cf_personalized_cart_v2';
   const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -105,6 +105,17 @@
       anchor.insertAdjacentElement('afterend', tag);
     }
   }
+
+  window.addEventListener('message', event => {
+    if (event.origin !== 'https://donaantonia.com.br') return;
+    const data = event.data || {};
+    if (data.type !== 'canecafacil:carrinho-personalizado') return;
+    const code = text(data.code);
+    const productId = text(data.productId);
+    if (!/^CF-/i.test(code) || !/^\d+$/.test(productId)) return;
+    upsert({ code, productId, modelKey:text(data.modelKey), addedAt:Date.now(), status:'carrinho' });
+    annotateCart();
+  });
 
   if (startHandoff()) return;
   let runs = 0;
