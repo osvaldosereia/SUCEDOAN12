@@ -1,4 +1,4 @@
-const BUILD = '20260901-loja-integrada-personalizador-v5-horizontal-2-crops';
+const BUILD = '20260901-loja-integrada-personalizador-v5.1-horizontal-2-crops';
 const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const STOREFRONT = 'https://canecafacil.com.br/';
@@ -293,8 +293,8 @@ function temporaryProductPayload(code, crops) {
     profundidade: Math.ceil(num(product?.comprimento_embalado_cm || product?.comprimento)) || 14,
     tipo: 'normal',
     usado: false,
-    categorias: text(li.categoria_uri) ? [text(li.categoria_uri)] : [],
-    marca: text(li.marca_uri) || null,
+    categorias: [],
+    marca: null,
     removido: false,
     url_video_youtube: null,
   };

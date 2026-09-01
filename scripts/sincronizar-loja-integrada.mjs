@@ -230,7 +230,7 @@ function validation(p = {}) {
   if (!(num(p.altura_embalada_cm || p.altura) > 0)) missing.push('altura');
   if (!(num(p.largura_embalada_cm || p.largura) > 0)) missing.push('largura');
   if (!(num(p.comprimento_embalado_cm || p.comprimento) > 0)) missing.push('comprimento');
-  if (storefrontImages(p).some(url => !/^https?:\/\//i.test(url))) missing.push('5 imagens da vitrine');
+  if (storefrontImages(p).some(url => !/^https?:\/\//i.test(url))) missing.push('2 recortes da vitrine');
   return missing;
 }
 function validationError(message) {
