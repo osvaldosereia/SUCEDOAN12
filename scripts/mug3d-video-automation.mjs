@@ -69,18 +69,27 @@ async function downloadArt(url, destination) {
 
 async function fabricState(page) {
   return page.evaluate(() => {
-    const pick = () => {
-      for (const key of Object.getOwnPropertyNames(window)) {
-        let value;
-        try { value = window[key]; } catch { continue; }
-        if (!value || typeof value !== 'object') continue;
-        if (typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c') return { key, value };
+    const isFabricCanvas = value => {
+      try {
+        return Boolean(
+          value
+          && typeof value === 'object'
+          && typeof value.getObjects === 'function'
+          && typeof value.renderAll === 'function'
+          && value.lowerCanvasEl?.id === 'c'
+        );
+      } catch {
+        return false;
       }
-      return null;
     };
-    const found = pick();
-    if (!found) return { found: false, count: 0, key: '' };
-    return { found: true, count: found.value.getObjects().length, key: found.key };
+    for (const key of Object.getOwnPropertyNames(window)) {
+      let value;
+      try { value = window[key]; } catch { continue; }
+      if (!isFabricCanvas(value)) continue;
+      try { return { found: true, count: value.getObjects().length, key }; }
+      catch { continue; }
+    }
+    return { found: false, count: 0, key: '' };
   });
 }
 
@@ -88,19 +97,30 @@ async function injectFabricImage(page, filePath) {
   const png = await fs.readFile(filePath);
   const dataUrl = `data:image/png;base64,${png.toString('base64')}`;
   return page.evaluate(async source => {
-    const pickCanvas = () => {
-      for (const key of Object.getOwnPropertyNames(window)) {
-        let value;
-        try { value = window[key]; } catch { continue; }
-        if (!value || typeof value !== 'object') continue;
-        if (typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c') return value;
+    const isFabricCanvas = value => {
+      try {
+        return Boolean(
+          value
+          && typeof value === 'object'
+          && typeof value.getObjects === 'function'
+          && typeof value.renderAll === 'function'
+          && value.lowerCanvasEl?.id === 'c'
+        );
+      } catch {
+        return false;
       }
-      return null;
     };
-    const canvas = pickCanvas();
-    if (!canvas || !window.fabric?.Image?.fromURL) return { ok: false, reason: 'fabric_canvas_not_found' };
+    let canvas = null;
+    for (const key of Object.getOwnPropertyNames(window)) {
+      let value;
+      try { value = window[key]; } catch { continue; }
+      if (isFabricCanvas(value)) { canvas = value; break; }
+    }
+    let fabricImage = null;
+    try { fabricImage = window.fabric?.Image; } catch {}
+    if (!canvas || !fabricImage?.fromURL) return { ok: false, reason: 'fabric_canvas_not_found' };
     const image = await new Promise((resolve, reject) => {
-      window.fabric.Image.fromURL(source, img => img ? resolve(img) : reject(new Error('fabric_image_failed')), { crossOrigin: 'anonymous' });
+      fabricImage.fromURL(source, img => img ? resolve(img) : reject(new Error('fabric_image_failed')), { crossOrigin: 'anonymous' });
     });
     canvas.add(image);
     canvas.setActiveObject(image);
@@ -113,16 +133,25 @@ async function injectFabricImage(page, filePath) {
 
 async function fitActiveArt(page) {
   return page.evaluate(() => {
-    const pickCanvas = () => {
-      for (const key of Object.getOwnPropertyNames(window)) {
-        let value;
-        try { value = window[key]; } catch { continue; }
-        if (!value || typeof value !== 'object') continue;
-        if (typeof value.getObjects === 'function' && typeof value.renderAll === 'function' && value.lowerCanvasEl?.id === 'c') return { key, value };
+    const isFabricCanvas = value => {
+      try {
+        return Boolean(
+          value
+          && typeof value === 'object'
+          && typeof value.getObjects === 'function'
+          && typeof value.renderAll === 'function'
+          && value.lowerCanvasEl?.id === 'c'
+        );
+      } catch {
+        return false;
       }
-      return null;
     };
-    const found = pickCanvas();
+    let found = null;
+    for (const key of Object.getOwnPropertyNames(window)) {
+      let value;
+      try { value = window[key]; } catch { continue; }
+      if (isFabricCanvas(value)) { found = { key, value }; break; }
+    }
     if (!found) return { ok: false, reason: 'fabric_canvas_not_found' };
     const canvas = found.value;
     const objects = canvas.getObjects();
@@ -149,11 +178,23 @@ async function uploadArt(page, filePath) {
     await page.locator('#file').setInputFiles(filePath);
     await page.locator('#uploadForm input[type="submit"]').click({ force: true });
     await page.waitForFunction(previous => {
+      const isFabricCanvas = value => {
+        try {
+          return Boolean(
+            value
+            && typeof value === 'object'
+            && typeof value.getObjects === 'function'
+            && value.lowerCanvasEl?.id === 'c'
+          );
+        } catch {
+          return false;
+        }
+      };
       for (const key of Object.getOwnPropertyNames(window)) {
         let value;
         try { value = window[key]; } catch { continue; }
-        if (!value || typeof value !== 'object') continue;
-        if (typeof value.getObjects === 'function' && value.lowerCanvasEl?.id === 'c' && value.getObjects().length > previous) return true;
+        if (!isFabricCanvas(value)) continue;
+        try { if (value.getObjects().length > previous) return true; } catch {}
       }
       return false;
     }, before.count, { timeout: 20000 });
@@ -272,7 +313,17 @@ async function main() {
   let browser;
   try {
     await downloadArt(artUrl, artPath);
-    browser = await chromium.launch({ headless: false, args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist', '--disable-dev-shm-usage', '--no-sandbox'] });
+    browser = await chromium.launch({
+      headless: false,
+      args: [
+        '--use-gl=swiftshader',
+        '--enable-unsafe-swiftshader',
+        '--enable-webgl',
+        '--ignore-gpu-blocklist',
+        '--disable-dev-shm-usage',
+        '--no-sandbox',
+      ],
+    });
     const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 1440, height: 1100 }, locale: 'en-US' });
     const page = await context.newPage();
     page.on('console', message => console.log(`[mug3d:${message.type()}] ${message.text()}`));
