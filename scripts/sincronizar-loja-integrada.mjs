@@ -152,8 +152,20 @@ function baseDescription(p = {}) {
 function description(p, key) {
   const base = baseDescription(p);
   if (!isPersonalizable(p)) return base;
-  const link = "javascript:(function(){try{var u=new URL(location.href);u.searchParams.set('cf_personalizador','teste');u.hash='cfInlinePersonalizer';history.replaceState(history.state,'',u.href);var p=document.getElementById('cfInlinePersonalizer');if(p){p.scrollIntoView({behavior:'smooth',block:'center'});return;}if(window.__CF_INLINE_CLICK_LOADING__)return;window.__CF_INLINE_CLICK_LOADING__=1;var s=document.createElement('script');s.src='https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-5';s.async=true;s.onload=function(){window.__CF_INLINE_CLICK_LOADING__=0};s.onerror=function(){window.__CF_INLINE_CLICK_LOADING__=0;alert('Não foi possível abrir a personalização. Atualize a página e tente novamente.')};document.head.appendChild(s)}catch(e){console.error(e);alert('Não foi possível abrir a personalização.')}})();";
-  return `${base}\n<div class="cf-personalizer-box" style="margin:18px 0;padding:16px;border:1px solid #e8e8e3;border-radius:12px;text-align:center">\n<strong style="display:block;margin-bottom:8px">Personalize esta caneca</strong>\n<a class="cf-personalize-link" href="${esc(link)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;border-radius:9px;font-weight:700">PERSONALIZAR ESTA CANECA</a>\n</div>`.trim();
+
+  const model = encodeURIComponent(key);
+  const returnUrl = encodeURIComponent('https://www.canecafacil.com.br/');
+  const frameUrl = `https://donaantonia.com.br/loja-integrada/personalizar/?model=${model}&embed=1&return=${returnUrl}`;
+
+  return `${base}
+<div class="cf-personalizer-box" style="margin:18px 0;padding:0;border:0;text-align:left">
+<details id="cfPersonalizadorInline" style="width:100%;margin:0;padding:0">
+<summary class="cf-personalize-link" style="display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;box-sizing:border-box;padding:10px 14px;background:#fff;border:1px solid #f47621;border-radius:9px;color:#f47621;font-size:13px;font-weight:800;text-decoration:none;cursor:pointer;list-style:none">PERSONALIZAR ESTA CANECA</summary>
+<div style="width:100%;margin:12px 0 0;padding:0;overflow:hidden;border:1px solid #ece8e4;border-radius:12px;background:#fff">
+<iframe title="Personalizar esta caneca" src="${esc(frameUrl)}" loading="lazy" style="display:block;width:100%;height:920px;margin:0;border:0;background:#fff" allow="clipboard-write"></iframe>
+</div>
+</details>
+</div>`.trim();
 }
 function stableAlias(p = {}, key = '') {
   const base = slug(p.nome || 'caneca').slice(0, 82);
