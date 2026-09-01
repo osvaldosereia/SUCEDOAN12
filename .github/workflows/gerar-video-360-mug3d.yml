@@ -1,0 +1,94 @@
+name: Canecas · gerar vídeo 360 no Mug3D
+run-name: Vídeo 360 · ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || 'fila pendente' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      product_key:
+        description: 'Chave Firebase da caneca'
+        required: false
+        type: string
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canecas-mug3d-video-360
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FIREBASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+      PRODUCTS_NODE: produtos
+      PRODUCT_KEY: ${{ github.event_name == 'workflow_dispatch' && inputs.product_key || '' }}
+      FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+      MUG3D_URL: https://mug3d.com/?model=1
+      VIDEO_OUTPUT_DIR: site/videos/canecas
+      MUG3D_SPEED: '8'
+      MUG3D_MAX_LOOP_MS: '35000'
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar navegador e conversor de imagem
+        run: |
+          npm install --no-save playwright@1.55.0 sharp@0.34.3
+          npx playwright install --with-deps chromium
+
+      - name: Gerar WEBM no Mug3D
+        run: xvfb-run -a node scripts/mug3d-video-automation.mjs
+
+      - name: Verificar se houve vídeo novo
+        id: result
+        shell: bash
+        run: |
+          STATUS="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.status||'')")"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" = "generated" ]; then
+            VIDEO_PATH="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.video_path||'')")"
+            echo "video_path=$VIDEO_PATH" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Salvar vídeo no GitHub
+        if: steps.result.outputs.status == 'generated'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${{ steps.result.outputs.video_path }}"
+          if git diff --cached --quiet; then
+            echo "O vídeo não mudou; nada para commitar."
+          else
+            PRODUCT_KEY="$(node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('.mug3d-result.json','utf8')); process.stdout.write(r.product_key||'caneca')")"
+            git commit -m "feat(canecas): atualizar vídeo 360 ${PRODUCT_KEY}"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Publicar URL no card do produto
+        if: steps.result.outputs.status == 'generated'
+        run: node scripts/mug3d-publish-result.mjs
+
+      - name: Guardar diagnóstico quando falhar
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mug3d-video-diagnostico-${{ github.run_id }}
+          path: |
+            .mug3d-result.json
+            .tmp-mug3d/
+          if-no-files-found: ignore
+          retention-days: 7
