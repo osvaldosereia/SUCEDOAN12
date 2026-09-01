@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-native-cart-v2-original-product';
+  const BUILD = '20260901-native-cart-v2.1-original-product';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const STOREFRONT = 'https://www.canecafacil.com.br/';
   const CREATIONS_NODE = 'canecas/personalizadas';
@@ -27,6 +27,14 @@
     });
     if (!response.ok) throw new Error(`Firebase ${response.status}`);
     return response.json().catch(() => null);
+  }
+
+  async function sha256(value) {
+    const raw = text(value).toLowerCase();
+    if (!raw || !globalThis.crypto?.subtle) return '';
+    const bytes = new TextEncoder().encode(raw);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
   function liProductId(product = {}) {
@@ -87,6 +95,8 @@
       if (!source) throw new Error('A arte personalizada ainda não está pronta.');
 
       const now = new Date().toISOString();
+      const fallbackEmail = text(document.getElementById('customerEmail')?.value || sessionStorage.getItem('cf_personalizer_email_v1'));
+      const emailHash = text(creation.cliente_email_hash) || await sha256(fallbackEmail);
       const pending = {
         id:code,
         criacao_id:code,
@@ -95,7 +105,7 @@
         modelo_nome:text(creation.modelo_nome || product.nome),
         loja_integrada_produto_id:productId,
         sku:sku(product),
-        cliente_email_hash:text(creation.cliente_email_hash),
+        cliente_email_hash:emailHash,
         aprovado_em:now,
         atualizado_em:now,
         origem:'produto_original_loja_integrada',
@@ -107,6 +117,7 @@
           aprovada:true,
           arte_aprovada:{ url:source, versao:text(creation.arte_versao || 'v1') || 'v1', aprovado_em:now },
           arte_versao_aprovada:text(creation.arte_versao || 'v1') || 'v1',
+          cliente_email_hash:emailHash || null,
           status:'aguardando_pedido',
           atendimento_status:'encomendando',
           encomenda:{
