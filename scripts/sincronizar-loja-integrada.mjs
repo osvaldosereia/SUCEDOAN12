@@ -136,6 +136,14 @@ function categoryName(type) {
 }
 function storefrontImages(p = {}) {
   return [
+    p.mockup_1,
+    p.mockup_2,
+    p.vitrine_recorte_esquerda || p.vitrine_recortes?.esquerda,
+    p.vitrine_recorte_direita || p.vitrine_recortes?.direita,
+  ].map(text).filter(Boolean);
+}
+function storefrontCrops(p = {}) {
+  return [
     p.vitrine_recorte_esquerda || p.vitrine_recortes?.esquerda,
     p.vitrine_recorte_direita || p.vitrine_recortes?.direita,
   ].map(text);
@@ -230,7 +238,7 @@ function validation(p = {}) {
   if (!(num(p.altura_embalada_cm || p.altura) > 0)) missing.push('altura');
   if (!(num(p.largura_embalada_cm || p.largura) > 0)) missing.push('largura');
   if (!(num(p.comprimento_embalado_cm || p.comprimento) > 0)) missing.push('comprimento');
-  if (storefrontImages(p).some(url => !/^https?:\/\//i.test(url))) missing.push('2 recortes da vitrine');
+  if (storefrontCrops(p).some(url => !/^https?:\/\//i.test(url))) missing.push('2 recortes da vitrine');
   return missing;
 }
 function validationError(message) {

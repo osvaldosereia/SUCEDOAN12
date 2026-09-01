@@ -1,4 +1,4 @@
-const BUILD = '20260901-loja-integrada-personalizador-v5.2-horizontal-2-crops';
+const BUILD = '20260901-loja-integrada-personalizador-v5.3-horizontal-2-crops-async-cart';
 const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const STOREFRONT = 'https://canecafacil.com.br/';
@@ -330,6 +330,32 @@ function temporaryProductPayload(code, crops) {
     source: BUILD,
   };
 }
+async function waitTemporaryProduct(code, initial = {}) {
+  const immediateId = text(initial?.produto_id || initial?.product_id || initial?.id);
+  if (immediateId) return immediateId;
+
+  const started = Date.now();
+  const timeout = 180000;
+  while (Date.now() - started < timeout) {
+    const elapsed = Math.max(1, Math.round((Date.now() - started) / 1000));
+    setProgress('Arte pronta', `Preparando sua caneca no carrinho · ${elapsed}s`);
+    try {
+      const creation = await fetchJson(`${CREATIONS_NODE}/${safeKey(code)}`);
+      const liSync = creation?.loja_integrada && typeof creation.loja_integrada === 'object' ? creation.loja_integrada : {};
+      const temp = creation?.loja_integrada_temporario && typeof creation.loja_integrada_temporario === 'object' ? creation.loja_integrada_temporario : {};
+      const productId = text(temp.produto_id || liSync.produto_id || liSync.product_id);
+      const status = text(temp.status || liSync.sync_status).toLowerCase();
+      const syncError = text(temp.erro || temp.erro_tecnico || liSync.sync_error || liSync.erro);
+      if (syncError && ['erro','revisar','falhou','failed'].some(flag => status.includes(flag))) throw new Error(syncError);
+      if (productId && ['ativo','sincronizado','concluido','concluído','pronto'].some(flag => status.includes(flag))) return productId;
+    } catch (error) {
+      if (!/Firebase 404/i.test(error?.message || '')) console.debug('Aguardando produto temporário:', error?.message || error);
+    }
+    await sleep(POLL_MS);
+  }
+  throw new Error('Sua arte ficou pronta, mas a loja demorou para preparar o carrinho. Tente novamente em alguns instantes.');
+}
+
 async function createTemporaryProduct(code, crops) {
   setProgress('Arte pronta', 'Preparando sua caneca no carrinho…');
   const payload = temporaryProductPayload(code, crops);
@@ -352,47 +378,45 @@ async function createTemporaryProduct(code, crops) {
       failure.httpStatus = response.status;
       throw failure;
     }
-    const productId = text(data.produto_id || data.product_id);
-    if (!productId) throw new Error('A Loja Integrada não retornou o item reservado.');
+
+    const productId = await waitTemporaryProduct(code, data);
     const at = new Date().toISOString();
-    await writeJson(`${CREATIONS_NODE}/${safeKey(code)}`, {
-      loja_integrada_temporario: {
-        status:'ativo',
-        sku:payload.sku,
-        produto_id:productId,
-        alias:JSON.parse(payload.alias_json).absolute_path.replace(/^\//,''),
-        url:text(data.url),
-        produto_base_key:modelId,
-        criado_em:at,
-        ativado_em:at,
-        atualizado_em:at,
-        expira_em:isoAfterDays(TEMP_DAYS),
-        dias_sem_compra:TEMP_DAYS,
-        dias_pos_compra:30,
-        privacidade:'sem_arte_ou_dados_pessoais_na_loja_integrada',
-        origem:'personalizador_web_sincrono',
-        erro:''
-      }
+    await writeJson(`${CREATIONS_NODE}/${safeKey(code)}/loja_integrada_temporario`, {
+      status:'ativo',
+      sku:payload.sku,
+      produto_id:productId,
+      alias:JSON.parse(payload.alias_json).absolute_path.replace(/^\//,''),
+      produto_base_key:modelId,
+      criado_em:at,
+      ativado_em:at,
+      atualizado_em:at,
+      expira_em:isoAfterDays(TEMP_DAYS),
+      dias_sem_compra:TEMP_DAYS,
+      dias_pos_compra:30,
+      privacidade:'sem_arte_ou_dados_pessoais_na_loja_integrada',
+      origem:'personalizador_web_assincrono',
+      erro:'',
+      erro_tecnico:''
     }, 'PATCH');
     return productId;
   } catch (error) {
-    const at = new Date().toISOString();
     const technical = error?.name === 'AbortError'
       ? 'timeout_make_100s'
       : text(error?.technical || error?.message || error).slice(0, 500);
-    await writeJson(`${CREATIONS_NODE}/${safeKey(code)}`, {
-      loja_integrada_temporario: {
+    try {
+      await writeJson(`${CREATIONS_NODE}/${safeKey(code)}/loja_integrada_temporario`, {
         status:'erro',
         etapa:'make_v13_produto_temporario',
-        atualizado_em:at,
+        atualizado_em:new Date().toISOString(),
         erro_tecnico:technical,
         http_status:Number(error?.httpStatus || 0) || 0
-      }
-    }, 'PATCH').catch(() => null);
+      }, 'PATCH');
+    } catch {}
     if (error?.name === 'AbortError') throw new Error('A preparação do carrinho demorou mais que o esperado. Tente novamente.');
     throw error;
   } finally { clearTimeout(timer); }
 }
+
 function cartUrl(productId, code) {
   const url = new URL(`/carrinho/produto/${encodeURIComponent(productId)}/adicionar`, STOREFRONT);
   url.searchParams.set('utm_source', 'canecafacil');
