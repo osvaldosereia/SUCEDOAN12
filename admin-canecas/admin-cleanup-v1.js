@@ -1,6 +1,6 @@
 import { FIREBASE_BASE, text } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260831-admin-canecas-cleanup-v1';
+const BUILD = '20260831-admin-canecas-cleanup-v1.1';
 const QUEUE_NODE = 'canecas/integracoes/loja_integrada/fila';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -166,26 +166,33 @@ function cleanSettings() {
   }
 }
 
-async function pollQueue(productKey, button, startedAt) {
+async function pollQueue(productKey, startedAt) {
   const qKey = queueKey(productKey);
   const deadline = Date.now() + 150000;
-  let seen = false;
+  let seenCurrentRun = false;
   while (Date.now() < deadline) {
-    await new Promise(resolve => setTimeout(resolve, seen ? 2500 : 900));
+    await new Promise(resolve => setTimeout(resolve, seenCurrentRun ? 2500 : 900));
     let item;
     try { item = await fbGet(`${QUEUE_NODE}/${qKey}`); }
     catch { continue; }
     if (!item) {
-      if (!seen && Date.now() - startedAt > 15000) {
+      if (!seenCurrentRun && Date.now() - startedAt > 15000) {
         feedbackState('bad', 'Envio não confirmado', 'O cadastro não apareceu na fila do GitHub. Tente novamente; se houver erro, o Admin mostrará a mensagem.');
         return;
       }
       continue;
     }
-    seen = true;
-    const status = text(item.status).toLowerCase();
+
     const updated = Date.parse(item.atualizado_em || item.concluido_em || item.solicitado_em || '') || 0;
-    if (updated && updated + 3000 < startedAt) continue;
+    if (updated && updated + 3000 < startedAt) {
+      if (!seenCurrentRun && Date.now() - startedAt > 15000) {
+        feedbackState('bad', 'Envio não confirmado', 'A fila ainda mostra apenas uma execução antiga. Tente salvar e publicar novamente.');
+        return;
+      }
+      continue;
+    }
+    seenCurrentRun = true;
+    const status = text(item.status).toLowerCase();
 
     if (status === 'aguardando_imagens') {
       feedbackState('busy', 'Preparando as imagens da vitrine…', text(item.erro) || 'O GitHub concluirá os recortes e tentará a publicação automaticamente.');
@@ -212,8 +219,8 @@ async function pollQueue(productKey, button, startedAt) {
     }
   }
 
-  feedbackState('busy', 'Atualização enviada ao GitHub', 'A confirmação ainda não chegou. O processamento continuará e o status da caneca será atualizado automaticamente.');
-  toast('Atualização enviada. A confirmação da Loja Integrada ainda está em processamento.', false, 6500);
+  feedbackState('busy', 'Atualização continua em processamento', 'A fila foi confirmada, mas a Loja Integrada ainda não concluiu. O status da caneca continuará sendo atualizado pelo GitHub.');
+  toast('A atualização continua em processamento no GitHub.', false, 6500);
 }
 
 function beginGithubFeedback(productKey, button) {
@@ -227,7 +234,7 @@ function beginGithubFeedback(productKey, button) {
   setTimeout(() => {
     if (button?.isConnected) button.textContent = original;
     button.dataset.cfFeedbackBusy = '';
-    void pollQueue(productKey, button, startedAt);
+    void pollQueue(productKey, startedAt);
   }, 1200);
 }
 
