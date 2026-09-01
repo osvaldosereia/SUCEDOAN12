@@ -43,15 +43,42 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Verificar fila antes de instalar o navegador
+        id: queue
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const base = String(process.env.FIREBASE_URL || '').replace(/\/+$/, '');
+          const node = String(process.env.PRODUCTS_NODE || 'produtos').replace(/^\/+|\/+$/g, '');
+          const requested = String(process.env.PRODUCT_KEY || '').trim();
+          const auth = String(process.env.FIREBASE_AUTH_TOKEN || '').trim();
+          const query = auth ? `?auth=${encodeURIComponent(auth)}` : '';
+          (async () => {
+            let shouldRun = Boolean(requested);
+            if (!shouldRun) {
+              const response = await fetch(`${base}/${node}.json${query}`, { headers: { Accept: 'application/json' } });
+              if (!response.ok) throw new Error(`Firebase fila: HTTP ${response.status}`);
+              const data = await response.json();
+              shouldRun = Object.values(data || {}).some(product => product && typeof product === 'object' && ['pending', 'queued'].includes(String(product.video_360_status || '').trim().toLowerCase()));
+            }
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `run=${shouldRun ? 'true' : 'false'}\n`);
+            console.log(shouldRun ? 'Há vídeo 360 para processar.' : 'Fila de vídeo 360 vazia; encerrando sem instalar Chromium.');
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
+
       - name: Instalar navegador e conversor de imagem
+        if: steps.queue.outputs.run == 'true'
         run: |
           npm install --no-save playwright@1.55.0 sharp@0.34.3
           npx playwright install --with-deps chromium
 
       - name: Gerar WEBM no Mug3D
+        if: steps.queue.outputs.run == 'true'
         run: xvfb-run -a node scripts/mug3d-video-automation.mjs
 
       - name: Verificar se houve vídeo novo
+        if: steps.queue.outputs.run == 'true'
         id: result
         shell: bash
         run: |
@@ -83,7 +110,7 @@ jobs:
         run: node scripts/mug3d-publish-result.mjs
 
       - name: Guardar diagnóstico quando falhar
-        if: failure()
+        if: failure() && steps.queue.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: mug3d-video-diagnostico-${{ github.run_id }}
