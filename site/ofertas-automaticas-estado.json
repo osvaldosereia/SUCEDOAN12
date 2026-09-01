@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-01T17:24:53.261Z",
+  "ultima_execucao": "2026-09-01T18:33:17.570Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -1626,6 +1626,20 @@
       "inicio": "2026-08-30",
       "fim": "2026-09-02T23:59:59-04:00",
       "historico_id": "oferta-1776338123521-1788064172308-bct2c"
+    },
+    {
+      "produto_key": "1776338123554",
+      "codigo": "P343",
+      "nome": "Bucha Vegetal Natural da Roça Unidade",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 3.9,
+      "preco_oferta": 3.67,
+      "desconto_percentual": 5.9,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-04T23:59:59-04:00",
+      "historico_id": "oferta-1776338123554-1788287597570-qptcj"
     },
     {
       "produto_key": "1776338123569",
@@ -7620,6 +7634,20 @@
       "historico_id": "oferta-1776438905302-1788272966247-wokwm"
     },
     {
+      "produto_key": "1776438910181",
+      "codigo": "38910181",
+      "nome": "NIVEA Hidratante Labial Morango 4,8g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 24.9,
+      "preco_oferta": 22.41,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776438910181-1788287597570-ouemx"
+    },
+    {
       "produto_key": "1776438912098",
       "codigo": "38912098",
       "nome": "NIVEA Hidratante Labial Cupcake de Baunilha",
@@ -12450,6 +12478,20 @@
       "historico_id": "oferta-1785865954902f7d6-1788283493261-xlk5n"
     },
     {
+      "produto_key": "1785866465284_5d5b",
+      "codigo": "7898587774338",
+      "nome": "Elseve Óleo Extraordinário Nutrição Shampoo 400ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 28.9,
+      "preco_oferta": 26.88,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-04T23:59:59-04:00",
+      "historico_id": "oferta-17858664652845d5b-1787796110362-ooq4j"
+    },
+    {
       "produto_key": "1785868544688_1937",
       "codigo": "7896116910202",
       "nome": "Feijão Carioca Bulnez Tipo 1 1kg",
@@ -15622,7 +15664,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1776338123554": {
-      "ultima_oferta_em": "2026-08-26T19:58:17.417Z",
+      "ultima_oferta_em": "2026-09-01T18:33:17.570Z",
       "regra_id": "regra-1785205105033"
     },
     "1776699685770": {
@@ -19302,7 +19344,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776438910181": {
-      "ultima_oferta_em": "2026-08-20T12:29:22.771Z",
+      "ultima_oferta_em": "2026-09-01T18:33:17.570Z",
       "regra_id": "regra-1785202557027"
     },
     "1776029960763": {
@@ -20174,7 +20216,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1785866465284_5d5b": {
-      "ultima_oferta_em": "2026-08-27T02:01:50.362Z",
+      "ultima_oferta_em": "2026-09-01T18:33:17.570Z",
       "regra_id": "regra-1785205192100"
     },
     "1785868928380596": {
@@ -20771,23 +20813,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787502448402",
-      "executado_em": "2026-08-23T16:27:28.888Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 6,
-        "ofertas_nao_criadas": 17,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1787505983165",
       "executado_em": "2026-08-23T17:26:23.607Z",
@@ -24157,6 +24182,23 @@
     {
       "id": "github-1788283492913",
       "executado_em": "2026-09-01T17:24:53.261Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1788287597019",
+      "executado_em": "2026-09-01T18:33:17.570Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
