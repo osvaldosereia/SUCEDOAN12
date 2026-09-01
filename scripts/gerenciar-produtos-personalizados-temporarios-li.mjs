@@ -6,7 +6,7 @@ const AUTH=String(process.env.LOJA_INTEGRADA_AUTHORIZATION||'').trim();
 const CREATIONS='canecas/personalizadas';
 const LIMIT=Math.max(1,Math.min(30,Number(process.env.LIMIT||10)||10));
 const REQUEST_MS=900;
-const UNBOUGHT_DAYS=7;
+const UNBOUGHT_DAYS=8;
 const BOUGHT_DAYS=30;
 const text=v=>String(v??'').trim();
 const num=v=>{const n=Number(String(v??'').replace(',','.'));return Number.isFinite(n)?n:0;};

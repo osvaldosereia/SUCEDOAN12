@@ -162,7 +162,7 @@ function description(p, key) {
 <details id="cfPersonalizadorInline" style="width:100%;margin:0;padding:0">
 <summary class="cf-personalize-link" style="display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;box-sizing:border-box;padding:10px 14px;background:#fff;border:1px solid #f47621;border-radius:9px;color:#f47621;font-size:13px;font-weight:800;text-decoration:none;cursor:pointer;list-style:none">PERSONALIZAR ESTA CANECA</summary>
 <div style="width:100%;margin:12px 0 0;padding:0;overflow:hidden;border:1px solid #ece8e4;border-radius:12px;background:#fff">
-<iframe title="Personalizar esta caneca" src="${esc(frameUrl)}" loading="lazy" style="display:block;width:100%;height:920px;margin:0;border:0;background:#fff" allow="clipboard-write"></iframe>
+<iframe title="Personalizar esta caneca" src="${esc(frameUrl)}" loading="lazy" style="display:block;width:100%;height:520px;margin:0;border:0;background:#fff" allow="clipboard-write"></iframe>
 </div>
 </details>
 </div>`.trim();
