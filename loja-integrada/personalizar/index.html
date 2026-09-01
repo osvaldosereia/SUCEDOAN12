@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#ffffff">
   <title>Personalize sua caneca — CanecaFácil</title>
-  <link rel="stylesheet" href="./styles.css?v=20260901-5">
+  <link rel="stylesheet" href="./styles.css?v=20260901-6">
 </head>
 <body>
   <header class="topbar">
@@ -35,9 +35,27 @@
       <p class="native-note">Seu e-mail será informado no checkout seguro da própria Loja Integrada.</p>
     </form>
 
-    <section class="progress-card" id="progressBox" hidden>
-      <div class="spinner"></div>
-      <div><strong id="progressTitle">Gerando sua arte</strong><p id="progressText">Aguarde alguns instantes.</p></div>
+    <section class="progress-card" id="progressBox" hidden aria-live="polite">
+      <div class="cf-mug-maker" aria-hidden="true">
+        <i class="cf-spark cf-spark-a"></i>
+        <i class="cf-spark cf-spark-b"></i>
+        <i class="cf-spark cf-spark-c"></i>
+        <div class="cf-mug-loader">
+          <span class="cf-mug-art"></span>
+          <span class="cf-mug-handle"></span>
+        </div>
+        <span class="cf-mug-shadow"></span>
+      </div>
+      <div class="cf-progress-copy">
+        <strong id="progressTitle">Gerando sua arte</strong>
+        <p id="progressText">Aguarde alguns instantes.</p>
+        <div class="cf-wait-messages" aria-hidden="true">
+          <span>Preparando a tinta digital…</span>
+          <span>Caprichando nos detalhes…</span>
+          <span>A caneca está ensaiando seu melhor lado…</span>
+          <span>Quase pronta para sair do ateliê…</span>
+        </div>
+      </div>
     </section>
 
     <section class="success-card" id="successBox" hidden>
