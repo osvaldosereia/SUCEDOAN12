@@ -19,6 +19,8 @@ const makeContractV4=read('loja-integrada','personalizar','v4-make-contract-v1.j
 const appV4=read('loja-integrada','personalizar','app-v4.js');
 const indexV4=read('loja-integrada','personalizar','index-v4.html');
 const inline=read('loja-integrada','personalizador-inline-v1.js');
+const inlineV2=read('loja-integrada','personalizador-inline-v2.js');
+const inlineLoader=read('loja-integrada','loader-personalizador-inline-homologacao.js');
 const liWorker=read('scripts','sincronizar-loja-integrada.mjs');
 const cropWorker=read('scripts','processar-vitrine-canecas.mjs');
 
@@ -98,7 +100,24 @@ assert.equal(/setInterval\s*\(/.test(inline),false,'inline não deve manter atua
 assert.match(inline,/APROVAR E COMPRAR · EM BREVE/,'compra deve permanecer bloqueada durante homologação');
 assert.match(inline,/\.acoes-produto \.comprar/,'inline deve ocupar a área nativa de ações do produto');
 
+assert.match(inlineV2,/TEST_PARAM='cf_personalizador'/,'V2 também deve exigir parâmetro de homologação');
+assert.match(inlineV2,/TEST_VALUE='teste'/,'V2 deve usar valor explícito de homologação');
+assert.match(inlineV2,/payload\?\.action!=='personalize_mug_model'/,'V2 só pode interceptar a ação de personalização');
+assert.match(inlineV2,/payload\?\.mode!=='loja_integrada_inline'/,'V2 só pode transformar o transporte do inline');
+assert.match(inlineV2,/model_art_base64:officialArt/,'V2 deve preservar arte-base oficial separadamente');
+assert.match(inlineV2,/reference_image_base64:officialArt/,'V2 deve enviar referência oficial explícita');
+assert.match(inlineV2,/official_model_art_base64:officialArt/,'V2 deve identificar arte oficial para o Make');
+assert.match(inlineV2,/image_base64:firstCustomerImage\|\|officialArt/,'V2 deve manter compatibilidade de foto/logo com o cenário Make');
+assert.match(inlineV2,/mode:'loja_integrada_v4_staging'/,'V2 deve reutilizar o contrato já homologado da V4');
+assert.equal(/new\s+MutationObserver/.test(inlineV2),false,'V2 não pode observar o documento inteiro');
+assert.equal(/setInterval\s*\(/.test(inlineV2),false,'V2 não pode manter atualização periódica');
+
+assert.match(inlineLoader,/cf_personalizador/,'loader deve ser restrito à homologação');
+assert.match(inlineLoader,/!== 'teste'/,'loader deve abortar fora do modo de teste');
+assert.match(inlineLoader,/personalizador-inline-v2\.js/,'loader deve carregar a camada V2');
+assert.equal(inlineLoader.includes('personalizador-inline-v1.js'),false,'loader não deve pular a camada V2');
+
 assert.match(liWorker,/p\.mockup_2,\s*p\.mockup_1/,'worker LI deve iniciar galeria por mockup 2 e mockup 1');
 assert.match(cropWorker,/imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/,'recortes devem manter ordem oficial');
 
-console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados/sugeridos, V4 e inline compatíveis com Make, homologação protegida e UI sem observers globais.');
+console.log('OK admin-canecas v3: personalização restrita por modelo, prompts versionados/sugeridos, V4 e inline V2 compatíveis com Make, homologação protegida e UI sem observers globais.');
