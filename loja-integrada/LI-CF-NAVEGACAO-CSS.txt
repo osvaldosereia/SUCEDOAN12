@@ -1,4 +1,4 @@
-/* CANECAFÁCIL · NAVEGAÇÃO v3 · sticky estável + app mobile */
+/* CANECAFÁCIL · NAVEGAÇÃO v4 · sticky estável + app mobile equilibrado */
 
 /* CABEÇALHO E CHIPS FICAM FIXOS SEM ALTERAR ALTURA NA ROLAGEM */
 #cabecalho{
@@ -55,7 +55,7 @@
     bottom:0;
     z-index:9998;
     display:flex;
-    align-items:flex-end;
+    align-items:center;
     justify-content:space-around;
     height:62px;
     padding:5px 6px;
@@ -75,16 +75,20 @@
     background:transparent;
     border:0;
     color:#555;
-    font-size:9px;
+    font-size:8.5px;
     font-weight:700;
     line-height:1;
     text-decoration:none!important;
     cursor:pointer
   }
+  .cf-mobile-nav-item>span:last-child{
+    display:block;
+    white-space:nowrap
+  }
   .cf-mobile-nav-item svg{
     width:20px;
     height:20px;
-    margin-bottom:3px;
+    margin-bottom:4px;
     fill:none;
     stroke:currentColor;
     stroke-width:1.8;
@@ -92,20 +96,6 @@
     stroke-linejoin:round
   }
   .cf-mobile-nav-item.cf-active{color:#111}
-  .cf-mobile-nav-create{position:relative;top:-8px}
-  .cf-mobile-nav-create .cf-create-icon{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:43px;
-    height:43px;
-    margin:0 auto 2px;
-    background:#ff7420;
-    border-radius:50%;
-    box-shadow:0 5px 13px rgba(255,116,32,.24);
-    color:#fff
-  }
-  .cf-mobile-nav-create .cf-create-icon svg{width:21px;height:21px;margin:0}
 
   #cfCategorySheet{
     position:fixed;
