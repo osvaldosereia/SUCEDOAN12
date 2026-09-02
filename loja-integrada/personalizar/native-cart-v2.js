@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-native-cart-v2.3-original-product-only';
+  const BUILD = '20260902-native-cart-v2.4-quantity';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const STOREFRONT = 'https://www.canecafacil.com.br/';
   const CREATIONS_NODE = 'canecas/personalizadas';
@@ -15,8 +15,9 @@
 
   const text = value => String(value ?? '').trim();
   const safeKey = value => text(value).replace(/[.#$\[\]/]/g, '_');
+  const quantity = value => Math.max(1, Math.min(20, Number.parseInt(value, 10) || 1));
 
-  /* Proteção definitiva: o fluxo público não pode voltar a criar produto temporário. */
+  /* Proteção definitiva: o fluxo público nunca cria produto temporário. */
   window.fetch = async function cfNoTemporaryProductFetch(input, init = {}) {
     try {
       const url = new URL(String(input), location.href);
@@ -65,6 +66,7 @@
   function sku(product = {}) { return text(product.codigo || product.sku || product.codigo_produto || product.referencia); }
   function art(creation = {}) { return text(creation?.arte_aprovada?.url || creation.arte_aprovada_url || creation.arte_horizontal || creation.arte_personalizacao || creation.arte_impressao?.url || creation.arte_final_url); }
   function codeFromPage() { return text(document.getElementById('previewCode')?.textContent) || text(new URLSearchParams(location.search).get('creation')); }
+  function quantityFromPage() { return quantity(document.getElementById('personalizedQuantity')?.value || 1); }
 
   function setProgress(title, message) {
     for (const id of ['previewBox','errorBox','successBox','pendingBox']) { const node = document.getElementById(id); if (node) node.hidden = true; }
@@ -83,11 +85,12 @@
     const node = document.getElementById('errorText'); if (node) node.textContent = message;
   }
 
-  function handoffUrl(code, productId, modelKey) {
+  function handoffUrl(code, productId, modelKey, qty) {
     const url = new URL('/', STOREFRONT);
     url.searchParams.set('cf_add_personalizada', '1');
     url.searchParams.set('cf_criacao', code);
     url.searchParams.set('cf_produto', productId);
+    url.searchParams.set('cf_qtd', String(quantity(qty)));
     if (modelKey) url.searchParams.set('cf_modelo', modelKey);
     return url.href;
   }
@@ -96,7 +99,8 @@
     if (button.dataset.cfNativeBusy === '1') return;
     button.dataset.cfNativeBusy = '1';
     button.disabled = true;
-    setProgress('Abrindo o carrinho', 'Ligando sua arte ao modelo original da Caneca Fácil…');
+    const qty = quantityFromPage();
+    setProgress('Abrindo o carrinho', `Ligando sua arte ao modelo original · ${qty} ${qty === 1 ? 'unidade' : 'unidades'}…`);
 
     try {
       const code = codeFromPage();
@@ -121,6 +125,7 @@
         id:code,
         criacao_id:code,
         status:'carrinho',
+        quantidade:qty,
         produto_key:modelKey,
         modelo_nome:text(creation.modelo_nome || product.nome),
         loja_integrada_produto_id:productId,
@@ -138,10 +143,11 @@
           arte_aprovada:{ url:source, versao:text(creation.arte_versao || 'v1') || 'v1', aprovado_em:now },
           arte_versao_aprovada:text(creation.arte_versao || 'v1') || 'v1',
           cliente_email_hash:emailHash || null,
+          quantidade_encomendada:qty,
           status:'aguardando_pedido',
           atendimento_status:'encomendando',
           encomenda:{
-            status:'carrinho', codigo_arte:code, produto_key:modelKey,
+            status:'carrinho', codigo_arte:code, produto_key:modelKey, quantidade:qty,
             loja_integrada_produto_id:productId, sku:sku(product),
             iniciado_em:now, atualizado_em:now, origem:'produto_original_loja_integrada'
           },
@@ -152,11 +158,11 @@
 
       try {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type:'canecafacil:carrinho-personalizado', code, productId, modelKey, build:BUILD }, '*');
+          window.parent.postMessage({ type:'canecafacil:carrinho-personalizado', code, productId, modelKey, quantity:qty, build:BUILD }, '*');
         }
       } catch {}
 
-      const url = handoffUrl(code, productId, modelKey);
+      const url = handoffUrl(code, productId, modelKey, qty);
       const fallback = document.getElementById('cartFallback'); if (fallback) fallback.href = url;
       if (window.top && window.top !== window) window.top.location.href = url;
       else location.href = url;
