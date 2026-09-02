@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-02T02:12:48.978Z",
+  "ultima_execucao": "2026-09-02T02:51:59.029Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -2774,6 +2774,20 @@
       "inicio": "2026-08-31",
       "fim": "2026-09-03T23:59:59-04:00",
       "historico_id": "oferta-1776338125248-1788215177903-ta2zp"
+    },
+    {
+      "produto_key": "1776338125268",
+      "codigo": "277065F",
+      "nome": "Novex Tratamento Capilar Ultraprofundo Embelleze Creme 1kg",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 26.9,
+      "preco_oferta": 24.21,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776338125268-1788317519029-2oocq"
     },
     {
       "produto_key": "1776338125289",
@@ -9230,6 +9244,20 @@
       "historico_id": "oferta-1778004950739-1787882322144-f983e"
     },
     {
+      "produto_key": "1778005077667",
+      "codigo": "05077667",
+      "nome": "Elseve Kit Shampoo e Condicionador Reparação Total 5 375ml + 170ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 34.9,
+      "preco_oferta": 32.46,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-04T23:59:59-04:00",
+      "historico_id": "oferta-1778005077667-1787883179965-hre82"
+    },
+    {
       "produto_key": "1778005164882",
       "codigo": "05164882",
       "nome": "Elseve Kit Shampoo e Condicionador Glycolic Gloss 375ml + 170ml",
@@ -14382,6 +14410,20 @@
       "historico_id": "oferta-1787319035410524a-1788093212160-b6ex3"
     },
     {
+      "produto_key": "1787320337012_4eda",
+      "codigo": "7898101350109",
+      "nome": "Desodorizante Sanitário Catarina Peso Líquido 25g",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 1.89,
+      "preco_oferta": 1.78,
+      "desconto_percentual": 5.82,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-04T23:59:59-04:00",
+      "historico_id": "oferta-17873203370124eda-1788317519029-ew6t8"
+    },
+    {
       "produto_key": "1787404129365_86a7",
       "codigo": "7896533700608",
       "nome": "Mistura para Bolo Emegê Sabor Cenoura 400g",
@@ -16756,7 +16798,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1778005077667": {
-      "ultima_oferta_em": "2026-08-28T02:12:59.965Z",
+      "ultima_oferta_em": "2026-09-02T02:51:59.029Z",
       "regra_id": "regra-1785205192100"
     },
     "17798455359692878": {
@@ -19712,7 +19754,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776338125268": {
-      "ultima_oferta_em": "2026-08-20T20:52:40.450Z",
+      "ultima_oferta_em": "2026-09-02T02:51:59.029Z",
       "regra_id": "regra-1785202557027"
     },
     "1775922855199": {
@@ -21140,7 +21182,7 @@
       "regra_id": "regra-1785205096285"
     },
     "1787320337012_4eda": {
-      "ultima_oferta_em": "2026-08-27T12:52:52.214Z",
+      "ultima_oferta_em": "2026-09-02T02:51:59.029Z",
       "regra_id": "regra-1785205105033"
     },
     "1787405634897_e11d": {
@@ -21149,23 +21191,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787536481255",
-      "executado_em": "2026-08-24T01:54:41.724Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 4,
-        "ofertas_nao_criadas": 19,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1787539416446",
       "executado_em": "2026-08-24T02:43:36.918Z",
@@ -24535,6 +24560,23 @@
     {
       "id": "make-20260901231122957",
       "executado_em": "2026-09-02T02:12:48.978Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1788317518560",
+      "executado_em": "2026-09-02T02:51:59.029Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
