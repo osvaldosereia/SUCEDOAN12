@@ -69,32 +69,22 @@
     <section class="progress-card" id="progressBox" hidden aria-live="polite">
       <div class="cf-mug-maker" aria-hidden="true">
         <i class="cf-spark cf-spark-a"></i><i class="cf-spark cf-spark-b"></i><i class="cf-spark cf-spark-c"></i>
-        <div class="cf-mug-loader"><span class="cf-mug-art"></span><span class="cf-mug-handle"></span></div>
-        <span class="cf-mug-shadow"></span>
+        <div class="cf-mug-loader"><span class="cf-mug-art"></span><span class="cf-mug-handle"></span></div><span class="cf-mug-shadow"></span>
       </div>
       <div class="cf-progress-copy">
-        <strong id="progressTitle">Gerando sua arte</strong>
-        <p id="progressText">Aguarde alguns instantes.</p>
-        <div class="cf-wait-messages" aria-hidden="true">
-          <span>Preparando a tinta digital…</span><span>Caprichando nos detalhes…</span><span>A caneca está ensaiando seu melhor lado…</span><span>Quase pronta para sair do ateliê…</span>
-        </div>
+        <strong id="progressTitle">Gerando sua arte</strong><p id="progressText">Aguarde alguns instantes.</p>
+        <div class="cf-wait-messages" aria-hidden="true"><span>Preparando a tinta digital…</span><span>Caprichando nos detalhes…</span><span>A caneca está ensaiando seu melhor lado…</span><span>Quase pronta para sair do ateliê…</span></div>
       </div>
     </section>
 
-    <section class="success-card" id="successBox" hidden>
-      <strong>Compra preparada</strong>
-      <p id="successText">Abrindo o carrinho com o produto original…</p>
-      <a class="primary" id="cartFallback" href="https://www.canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a>
-    </section>
-
-    <section class="error-card" id="errorBox" hidden>
-      <strong>Não foi possível concluir</strong><p id="errorText"></p><button type="button" class="secondary" id="tryAgain">Tentar novamente</button>
-    </section>
+    <section class="success-card" id="successBox" hidden><strong>Compra preparada</strong><p id="successText">Abrindo o carrinho com o produto original…</p><a class="primary" id="cartFallback" href="https://www.canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a></section>
+    <section class="error-card" id="errorBox" hidden><strong>Não foi possível concluir</strong><p id="errorText"></p><button type="button" class="secondary" id="tryAgain">Tentar novamente</button></section>
   </main>
 
   <script src="./navigation-v1.js?v=20260830-1"></script>
   <script src="./creation-device-bridge-v1.js?v=20260901-3"></script>
   <script src="./native-cart-v2.js?v=20260902-1"></script>
+  <script src="./generation-guard-v1.js?v=20260902-1"></script>
   <script type="module" src="./app-v15.js?v=20260901-1"></script>
 </body>
 </html>
