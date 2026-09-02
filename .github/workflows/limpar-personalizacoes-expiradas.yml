@@ -1,0 +1,30 @@
+name: Limpar personalizacoes expiradas
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Apenas listar sem excluir
+        required: false
+        default: 'true'
+  schedule:
+    - cron: '20 07 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Limpar artes abandonadas com mais de 30 dias
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          CF_CREATION_DAYS: '30'
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: node scripts/limpar-personalizacoes-expiradas.mjs
