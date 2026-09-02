@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-02T01:01:38.844Z",
+  "ultima_execucao": "2026-09-02T01:40:29.608Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -8516,6 +8516,20 @@
       "historico_id": "oferta-1776715681163-1788009748649-4ww6n"
     },
     {
+      "produto_key": "1776716997295",
+      "codigo": "16997295",
+      "nome": "NIVEA Protetor Solar Sun Protect & Hidrata FPS 50 200ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 48,
+      "preco_oferta": 43.2,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776716997295-1788313229608-pmmmb"
+    },
+    {
       "produto_key": "1776717621838",
       "codigo": "17621838",
       "nome": "Lola Cosmetics Leo Pré e Ps Sol Pinga na Máscara 50ml",
@@ -9214,6 +9228,20 @@
       "inicio": "2026-09-01",
       "fim": "2026-09-04T23:59:59-04:00",
       "historico_id": "oferta-1778005297538-1787857140746-45zle"
+    },
+    {
+      "produto_key": "1778005422689",
+      "codigo": "05422689",
+      "nome": "Elseve Kit Shampoo e Condicionador Longo dos Sonhos 375ml + 170ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 34.9,
+      "preco_oferta": 32.46,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-04T23:59:59-04:00",
+      "historico_id": "oferta-1778005422689-1787870196396-kb2ts"
     },
     {
       "produto_key": "1778005460738",
@@ -13388,6 +13416,20 @@
       "historico_id": "oferta-17864686519908ad0-1787979169901-3858i"
     },
     {
+      "produto_key": "1786473531918_ab57",
+      "codigo": "7896098904664",
+      "nome": "Água Sanitária Ypê Cloro Ativo 5L",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 20.9,
+      "preco_oferta": 19.65,
+      "desconto_percentual": 5.98,
+      "inicio": "2026-09-01",
+      "fim": "2026-09-04T23:59:59-04:00",
+      "historico_id": "oferta-1786473531918ab57-1788313229608-ytnfe"
+    },
+    {
       "produto_key": "1786626680721_835f",
       "codigo": "7509546673301",
       "nome": "Sabão Líquido Ola Bebê para Roupas Finas e Delicadas 3,8L",
@@ -16664,7 +16706,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1778005422689": {
-      "ultima_oferta_em": "2026-08-27T22:36:36.396Z",
+      "ultima_oferta_em": "2026-09-02T01:40:29.608Z",
       "regra_id": "regra-1785205192100"
     },
     "1778004950739": {
@@ -19620,7 +19662,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776716997295": {
-      "ultima_oferta_em": "2026-08-20T19:28:20.919Z",
+      "ultima_oferta_em": "2026-09-02T01:40:29.608Z",
       "regra_id": "regra-1785202557027"
     },
     "1776032632366": {
@@ -20712,7 +20754,7 @@
       "regra_id": "regra-1785205096285"
     },
     "1786473531918_ab57": {
-      "ultima_oferta_em": "2026-08-27T06:28:38.215Z",
+      "ultima_oferta_em": "2026-09-02T01:40:29.608Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338132780": {
@@ -21065,23 +21107,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787527601281",
-      "executado_em": "2026-08-23T23:26:41.722Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 4,
-        "ofertas_nao_criadas": 19,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1787531422552",
       "executado_em": "2026-08-24T00:30:22.969Z",
@@ -24451,6 +24476,23 @@
     {
       "id": "github-1788310898336",
       "executado_em": "2026-09-02T01:01:38.844Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1788313229083",
+      "executado_em": "2026-09-02T01:40:29.608Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
