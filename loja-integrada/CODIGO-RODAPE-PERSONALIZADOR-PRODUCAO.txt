@@ -1,12 +1,13 @@
-// CANECAFÁCIL · PERSONALIZADOR / MINHAS ARTES · PRODUÇÃO
-// Loja Integrada > JavaScript do Rodapé > Todas as páginas exceto checkout
-// Não use <script>.
-(function(){
-  if(window.__CF_INLINE_PROD_BOOT__)return;
-  window.__CF_INLINE_PROD_BOOT__='20260902-7';
-  var s=document.createElement('script');
-  s.src='https://donaantonia.com.br/loja-integrada/loader-personalizador-inline-producao.js?v=20260902-7';
-  s.async=true;
-  s.onerror=function(){console.error('[CanecaFácil] Falha ao carregar personalização/Minhas Artes.');};
-  document.head.appendChild(s);
-})();
+// LEGADO / NÃO INSTALAR
+//
+// Este arquivo foi usado antes da consolidação da CanecaFácil na Loja Integrada.
+// O personalizador de produção agora é carregado automaticamente pelo runtime central.
+//
+// Instalação atual:
+//   Loja Integrada > JavaScript do Rodapé > Todas as páginas exceto checkout
+//   usar SOMENTE o conteúdo de: CODIGO-BASE-UX-REMOTO.txt
+//
+// O runtime canecafacil-site-runtime-v1.js carrega
+// loader-personalizador-inline-producao-v10.js apenas em página de produto.
+//
+// Não copie este arquivo para o painel.
