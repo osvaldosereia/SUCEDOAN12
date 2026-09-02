@@ -16,7 +16,8 @@ const deviceBridge=read('loja-integrada','personalizar','creation-device-bridge-
 const generationGuard=read('loja-integrada','personalizar','generation-guard-v1.js');
 const commerce=read('loja-integrada','canecafacil-commerce-runtime-v1.js');
 const cartBridge=read('loja-integrada','personalized-order-bridge-v2.js');
-const prodLoader=read('loja-integrada','loader-personalizador-inline-producao.js');
+const siteRuntime=read('loja-integrada','canecafacil-site-runtime-v1.js');
+const prodLoader=read('loja-integrada','loader-personalizador-inline-producao-v10.js');
 const inlineV1=read('loja-integrada','personalizador-inline-v1.js');
 const cropWorker=read('scripts','processar-vitrine-canecas-v13.mjs');
 const orderWorker=read('scripts','sincronizar-pedidos-personalizados-li.mjs');
@@ -25,7 +26,6 @@ for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.matc
 assert.match(personalization,/prompt_base_texto/,'Admin deve persistir prompt-base');
 assert.match(personalization,/prompt_especifico/,'Admin deve persistir instrução específica');
 assert.match(adminIndex,/storefront-crops-github-v3\.js\?v=20260901-2/,'Admin deve carregar vitrine completa sem cache antigo');
-
 assert.match(storefront,/return\[m\.m1,m\.m2,c\.left,c\.right\]/,'ordem pública deve ser mockup1, mockup2, esquerda, direita');
 assert.match(storefront,/Vitrine incompleta: o modelo precisa de Mockup 1 \+ Mockup 2 \+ recorte esquerdo \+ recorte direito/,'sincronização deve exigir as 4 imagens');
 assert.match(storefront,/mockup_1:images\[0\]/,'mockup 1 deve ser enviado à Loja Integrada');
@@ -38,7 +38,7 @@ assert.equal(app.includes('createTemporaryProduct'),false,'V15 não pode criar p
 assert.equal(app.includes('loja_integrada_create_personalized_product'),false,'V15 não pode chamar ação de produto temporário');
 assert.match(app,/CREATION_DAYS\s*=\s*30/,'criação deve permanecer recuperável por 30 dias');
 assert.match(app,/action:'personalize_mug_model'/,'cliente deve gerar somente a personalização');
-assert.match(app,/createTwoCrops/,'prévia deve ser dividida em esquerda e direita no navegador');
+assert.match(app,/createTwoCrops/,'prévia deve ter dois lados');
 assert.match(app,/creationCode\(\)/,'cada arte deve receber CF-ID');
 assert.match(app,/creationParam/,'V15 deve reabrir criação existente');
 assert.match(personalizerIndex,/id="personalizedQuantity"/,'prévia deve permitir definir quantidade da mesma arte');
@@ -64,18 +64,23 @@ assert.match(cartBridge,/location\.replace\(CART_URL\)/,'após adicionar deve ab
 
 assert.match(deviceBridge,/payload\?\.action !== 'personalize_mug_model'/,'bridge deve observar somente geração de personalização');
 assert.match(deviceBridge,/creation_code/,'bridge deve capturar CF-ID no início da geração');
-assert.match(commerce,/ART_STORAGE = 'cf_minhas_artes_v1'/,'Minhas Artes deve persistir no aparelho');
-assert.match(commerce,/MAX_DAYS = 30/,'Minhas Artes deve guardar criações por 30 dias');
-assert.match(commerce,/cf_arte/,'link de e-mail deve conseguir reimportar a criação');
-assert.match(prodLoader,/canecafacil-commerce-runtime-v1\.js/,'loader de produção deve carregar Minhas Artes e bridge');
-assert.match(prodLoader,/skuFromPage/,'loader deve extrair o SKU da página do produto');
-assert.match(prodLoader,/catalogProductBySku/,'loader V6 deve resolver canecas antigas pelo catálogo publicado');
-assert.match(prodLoader,/firebaseProductBySku/,'loader deve continuar consultando o cadastro individual no Firebase');
-assert.match(prodLoader,/oldPersonalizeButton/,'botão legado deve servir como confirmação de caneca personalizável');
-assert.match(prodLoader,/modelFromOldButton/,'loader deve reaproveitar model já existente no botão quando disponível');
-assert.match(prodLoader,/isPersonalizable/,'loader deve respeitar a configuração de personalização do produto');
-assert.match(prodLoader,/injectPersonalizer/,'loader deve abrir automaticamente o V15 nas canecas personalizáveis');
-assert.match(prodLoader,/data-cf-auto-personalizer|cfAutoPersonalizer/,'loader deve evitar duplicação do formulário automático');
+assert.match(commerce,/const STORE='cf_minhas_artes_v1'/,'Minhas Artes deve persistir no aparelho');
+assert.match(commerce,/const DAYS=30/,'Minhas Artes deve guardar criações por 30 dias');
+assert.match(commerce,/cf_arte/,'link deve conseguir reimportar a criação');
+assert.match(commerce,/wa\.me/,'Minhas Artes deve compartilhar criação pelo WhatsApp');
+assert.match(commerce,/method:'DELETE'/,'criação abandonada deve poder ser excluída');
+assert.match(commerce,/protectedArt/,'criação ligada a pedido deve ser protegida contra exclusão remota');
+assert.match(siteRuntime,/canecafacil-commerce-runtime-v1\.js/,'Site Runtime deve carregar Minhas Artes V2');
+assert.match(siteRuntime,/loader-personalizador-inline-producao-v10\.js/,'Site Runtime deve carregar o loader V10');
+assert.match(siteRuntime,/compactMobile/,'Site Runtime deve corrigir espaços no mobile');
+assert.match(prodLoader,/function sku\(/,'loader deve extrair o SKU da página do produto');
+assert.match(prodLoader,/function byCatalog\(/,'loader V10 deve resolver canecas antigas pelo catálogo publicado');
+assert.match(prodLoader,/function byFirebase\(/,'loader deve consultar o cadastro individual no Firebase');
+assert.match(prodLoader,/function oldButton\(/,'botão legado deve confirmar caneca personalizável');
+assert.match(prodLoader,/function buttonModel\(/,'loader deve reaproveitar model já existente no botão quando disponível');
+assert.match(prodLoader,/function personalizable\(/,'loader deve respeitar a configuração individual');
+assert.match(prodLoader,/function inject\(/,'loader deve abrir automaticamente o V15');
+assert.match(prodLoader,/data-cf-auto-personalizer|cfAutoPersonalizer|cfAutoPersonalizer/,'loader deve evitar duplicação do formulário');
 assert.equal(prodLoader.includes('temporary-product-privacy-v1.js'),false,'produção não deve depender de produto temporário');
 
 assert.match(inlineV1,/TEST_PARAM = 'cf_personalizador'/,'inline V1 deve continuar restrito a homologação');
@@ -95,4 +100,4 @@ assert.match(orderWorker,/quantidade_personalizada_total/,'pedido deve registrar
 assert.match(creationStatus,/Arte criada · ainda não encomendada/,'Admin deve distinguir arte sem compra');
 assert.match(creationStatus,/PAGO · LIBERADO PARA PRODUÇÃO/,'Admin deve distinguir pedido pago e liberado');
 
-console.log('OK CanecaFácil V15: Admin completo, personalizador automático por SKU/catálogo/configuração, cliente sem produto temporário, limite pré-submit, quantidade por CF-ID, Minhas Artes, produto original no carrinho e produção somente após pagamento.');
+console.log('OK CanecaFácil V15: Admin completo, Site Runtime remoto, personalizador V10, Minhas Artes V2, WhatsApp/exclusão segura, carrinho original e produção somente após pagamento.');
