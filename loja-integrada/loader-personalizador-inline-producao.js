@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-cf-inline-loader-prod-v6-catalog-fallback';
+  const BUILD = '20260902-cf-inline-loader-prod-v7-cart-art';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CATALOG = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/canecas-galeria.json';
   const PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/personalizar/';
+  const CART_BRIDGE_URL = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260902-4';
   const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-2';
   const PARAM = 'cf_personalizador';
   const ACTIVE_VALUE = 'teste';
@@ -19,6 +20,16 @@
 
   function isProductPage() {
     return document.body?.classList?.contains('pagina-produto') || Boolean(document.querySelector('.produto, .acoes-produto, [itemprop="sku"]'));
+  }
+
+  function loadCartBridge() {
+    if ([...document.scripts].some(s => /personalized-order-bridge-v2\.js/i.test(s.src || ''))) return;
+    const script = document.createElement('script');
+    script.src = CART_BRIDGE_URL;
+    script.async = false;
+    script.dataset.cfCartBridge = BUILD;
+    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar visual/vínculo do carrinho personalizado.');
+    document.head.appendChild(script);
   }
 
   function loadCommerceRuntime() {
@@ -173,8 +184,6 @@
     const old = oldPersonalizeButton();
     const sku = skuFromPage();
 
-    // Canecas antigas: o botão existente é uma confirmação de que o produto é personalizável.
-    // Primeiro aproveita o model já contido no link; se não houver, resolve pelo catálogo publicado.
     if (old) {
       const buttonModel = modelFromOldButton(old);
       if (buttonModel) return { product:await fullProduct(buttonModel, { codigo:sku }), old, force:true };
@@ -216,6 +225,7 @@
   }
 
   function init() {
+    loadCartBridge();
     loadCommerceRuntime();
     ensurePersonalizer();
     if (new URLSearchParams(location.search).get(PARAM) === ACTIVE_VALUE) loadDiagnostic();
