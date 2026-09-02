@@ -45,7 +45,9 @@ assert.match(personalizerIndex,/id="personalizedQuantity"/,'prévia deve permiti
 assert.match(personalizerIndex,/generation-guard-v1\.js/,'personalizador deve carregar proteção de gerações');
 assert.match(generationGuard,/PER_MODEL = 2/,'deve limitar duas gerações por modelo/dia/aparelho');
 assert.match(generationGuard,/PER_DEVICE = 6/,'deve existir teto diário global por aparelho');
-assert.match(generationGuard,/payload\?\.action !== 'personalize_mug_model'/,'limite deve contar somente geração personalizada');
+assert.match(generationGuard,/event\.target\?\.id !== 'personalizerForm'/,'limite deve bloquear no submit antes de criar registro pendente');
+assert.match(generationGuard,/event\.stopImmediatePropagation\(\)/,'bloqueio deve impedir o app V15 de persistir CF-ID órfão');
+assert.match(generationGuard,/payload\?\.action !== 'personalize_mug_model'/,'segunda barreira deve contar somente geração personalizada');
 assert.match(generationGuard,/if \(response\.ok\)/,'geração só deve ser contabilizada se o Make aceitar a chamada');
 
 assert.match(nativeCart,/const productId = liProductId\(product\)/,'carrinho deve usar produto original sincronizado');
@@ -85,4 +87,4 @@ assert.match(orderWorker,/quantidade_personalizada_total/,'pedido deve registrar
 assert.match(creationStatus,/Arte criada · ainda não encomendada/,'Admin deve distinguir arte sem compra');
 assert.match(creationStatus,/Paga · pronta para produção/,'Admin deve distinguir encomenda paga');
 
-console.log('OK CanecaFácil V15: Admin completo, cliente sem produto temporário, limite de geração, quantidade por CF-ID, Minhas Artes, produto original no carrinho e CF-ID ligado à produção.');
+console.log('OK CanecaFácil V15: Admin completo, cliente sem produto temporário, limite pré-submit, quantidade por CF-ID, Minhas Artes, produto original no carrinho e CF-ID ligado à produção.');
