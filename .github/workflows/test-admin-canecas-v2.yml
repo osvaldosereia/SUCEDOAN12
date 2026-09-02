@@ -37,6 +37,7 @@ jobs:
       - name: Check Admin generator syntax
         run: |
           node --check admin-canecas/generator-v1.js
+          node --check admin-canecas/generator-recovery-v1.js
           node --check admin-canecas/storefront-crops-github-v3.js
           node --check admin-canecas/personalization-config-v1.js
           node --check admin-canecas/creation-order-status-v1.js
