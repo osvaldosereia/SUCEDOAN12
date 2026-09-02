@@ -1,25 +1,25 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-cf-inline-loader-prod-v2-privacy';
+  const BUILD = '20260901-cf-inline-loader-prod-v3-commerce';
   const PARAM = 'cf_personalizador';
   const ACTIVE_VALUE = 'teste';
   const INLINE_URL = 'https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-4';
-  const PRIVACY_URL = 'https://donaantonia.com.br/loja-integrada/temporary-product-privacy-v1.js?v=20260901-1';
+  const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260901-2';
 
   if (window.__CF_INLINE_PROD_LOADER__ === BUILD) return;
   window.__CF_INLINE_PROD_LOADER__ = BUILD;
 
   let loading = false;
 
-  function loadPrivacyGuard() {
-    if (window.__CF_TEMP_PRODUCT_PRIVACY__) return;
-    if ([...document.scripts].some(s => /temporary-product-privacy-v1\.js/i.test(s.src || ''))) return;
+  function loadCommerceRuntime() {
+    if (window.__CF_COMMERCE_RUNTIME__) return;
+    if ([...document.scripts].some(s => /canecafacil-commerce-runtime-v1\.js/i.test(s.src || ''))) return;
     const script = document.createElement('script');
-    script.src = PRIVACY_URL;
+    script.src = COMMERCE_URL;
     script.async = true;
-    script.dataset.cfTemporaryPrivacy = BUILD;
-    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar proteção de produtos temporários.');
+    script.dataset.cfCommerceRuntime = BUILD;
+    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar Minhas Artes/carrinho personalizado.');
     document.head.appendChild(script);
   }
 
@@ -44,63 +44,50 @@
       const panel = document.getElementById('cfInlinePersonalizer');
       if (panel) {
         clearInterval(timer);
-        panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        panel.scrollIntoView({ behavior:'smooth', block:'center' });
       } else if (tries >= 80) {
         clearInterval(timer);
       }
     }, 150);
   }
 
-  function loadInline() {
+  // Mantido apenas para homologação/diagnóstico por URL ?cf_personalizador=teste.
+  function loadLegacyInlineDiagnostic() {
     if (!isProductPage() || loading || document.getElementById('cfInlinePersonalizer')) {
       if (document.getElementById('cfInlinePersonalizer')) scrollWhenReady();
       return;
     }
-
     activateUrl();
     loading = true;
-
     const existing = [...document.scripts].find(s => /personalizador-inline-v2\.js/i.test(s.src || ''));
     if (existing) {
       loading = false;
       scrollWhenReady();
       return;
     }
-
     const script = document.createElement('script');
     script.src = INLINE_URL;
     script.async = true;
     script.dataset.cfInlinePersonalizer = BUILD;
-    script.onload = () => {
-      loading = false;
-      scrollWhenReady();
-    };
+    script.onload = () => { loading = false; scrollWhenReady(); };
     script.onerror = () => {
       loading = false;
-      console.error('[CanecaFácil] Não foi possível carregar o personalizador inline.');
-      const link = document.querySelector('.cf-personalize-link');
-      if (link) link.textContent = 'TENTAR PERSONALIZAR NOVAMENTE';
+      console.error('[CanecaFácil] Não foi possível carregar o personalizador inline de diagnóstico.');
     };
     document.head.appendChild(script);
   }
 
-  loadPrivacyGuard();
-
-  document.addEventListener('click', event => {
-    const link = event.target.closest?.('.cf-personalize-link');
-    if (!link || !isProductPage()) return;
-    event.preventDefault();
-    event.stopPropagation();
-    loadInline();
-  }, true);
+  // Produção atual: o formulário vem aberto dentro da descrição do produto.
+  // Este loader cuida apenas da camada transversal da loja: Minhas Artes e vínculo do carrinho.
+  loadCommerceRuntime();
 
   if (new URLSearchParams(location.search).get(PARAM) === ACTIVE_VALUE) {
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', loadInline, { once: true });
+      document.addEventListener('DOMContentLoaded', loadLegacyInlineDiagnostic, { once:true });
     } else {
-      loadInline();
+      loadLegacyInlineDiagnostic();
     }
   }
 
-  console.info(`CanecaFácil · loader inline ${BUILD}`);
+  console.info(`CanecaFácil · loader produção ${BUILD}`);
 })();
