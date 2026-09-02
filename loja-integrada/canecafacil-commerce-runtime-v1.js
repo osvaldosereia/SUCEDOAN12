@@ -1,13 +1,13 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-canecafacil-commerce-runtime-v1.1';
+  const BUILD = '20260902-canecafacil-commerce-runtime-v1.2';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CREATIONS_NODE = 'canecas/personalizadas';
   const ART_STORAGE = 'cf_minhas_artes_v1';
   const MAX_DAYS = 30;
   const PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/personalizar/';
-  const BRIDGE = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260901-2';
+  const BRIDGE = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260902-4';
 
   if (window.__CF_COMMERCE_RUNTIME__ === BUILD) return;
   window.__CF_COMMERCE_RUNTIME__ = BUILD;
@@ -15,6 +15,7 @@
   const text = value => String(value ?? '').trim();
   const safeKey = value => text(value).replace(/[.#$\[\]/]/g, '_');
   const esc = value => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  const validImage = value => /^(?:https?:\/\/|data:image\/)/i.test(text(value));
 
   function loadBridge() {
     if ([...document.scripts].some(script => /personalized-order-bridge-v2\.js/i.test(script.src || ''))) return;
@@ -58,11 +59,24 @@
     return text(creation?.arte_aprovada?.url || creation.arte_horizontal || creation.arte_personalizacao || creation.arte_final_url || creation.arte_impressao?.url);
   }
 
+  function cropUrls(creation = {}) {
+    const left = text(
+      creation?.preview_recortes?.esquerda || creation?.recortes?.esquerda || creation?.vitrine_recorte_esquerda ||
+      creation?.vitrine_recortes?.esquerda || creation?.recorte_esquerdo || creation?.recorte_1 || creation?.crop_left_url
+    );
+    const right = text(
+      creation?.preview_recortes?.direita || creation?.recortes?.direita || creation?.vitrine_recorte_direita ||
+      creation?.vitrine_recortes?.direita || creation?.recorte_direito || creation?.recorte_2 || creation?.crop_right_url
+    );
+    return { left:validImage(left) ? left : '', right:validImage(right) ? right : '' };
+  }
+
   function statusInfo(creation = {}) {
     const raw = text(creation.atendimento_status || creation.status || creation?.encomenda?.status).toLowerCase();
     if (/enviad/.test(raw)) return ['ENVIADA','good'];
     if (/produc|impress|pago/.test(raw)) return ['EM PRODUÇÃO','good'];
-    if (/encomend|pedido|carrinho/.test(raw)) return ['ENCOMENDADA','good'];
+    if (/carrinho/.test(raw)) return ['NO CARRINHO','cart'];
+    if (/encomend|pedido/.test(raw)) return ['ENCOMENDADA','good'];
     if (/gerando|aguard/.test(raw)) return ['GERANDO','wait'];
     return ['ARTE PRONTA','ready'];
   }
@@ -76,11 +90,15 @@
       #cfMyArtsTrigger .cf-count{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#ff7420;color:#fff;font-size:10px}
       #cfMyArtsTrigger.cf-floating{position:fixed;right:14px;top:92px}
       #cfMyArtsOverlay[hidden]{display:none!important}#cfMyArtsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:999999;display:flex;justify-content:flex-end}
-      .cf-arts-drawer{width:min(430px,100%);height:100%;background:#fff;display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.16)}
-      .cf-arts-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px;border-bottom:1px solid #eee}.cf-arts-head h2{margin:0;font:900 22px/1.1 Arial,sans-serif;color:#171717}.cf-arts-head p{margin:4px 0 0;color:#737373;font:12px/1.35 Arial,sans-serif}.cf-arts-close{border:0;background:#f2f2f2;width:38px;height:38px;border-radius:50%;font-size:25px;cursor:pointer}
-      .cf-arts-list{padding:14px;overflow:auto;display:grid;gap:12px}.cf-art-card{border:1px solid #e8e8e8;border-radius:14px;overflow:hidden;background:#fff}.cf-art-media{aspect-ratio:1/1;background:#f4f4f4 center/200% 100% no-repeat}.cf-art-body{padding:12px}.cf-art-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.cf-art-status{font:900 10px/1 Arial,sans-serif;padding:5px 7px;border-radius:999px;background:#eef7ee;color:#256a32}.cf-art-status.wait{background:#fff4e6;color:#a65400}.cf-art-code{color:#777;font:700 10px/1 Arial,sans-serif}.cf-art-body strong{display:block;margin:8px 0 3px;font:900 14px/1.25 Arial,sans-serif;color:#171717}.cf-art-body small{display:block;color:#777;font:11px/1.35 Arial,sans-serif}.cf-art-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}.cf-art-actions button{min-height:40px;border-radius:9px;border:1px solid #ddd;background:#fff;font:900 11px Arial,sans-serif;cursor:pointer}.cf-art-actions .primary{border-color:#ff7420;background:#ff7420;color:#fff}
+      .cf-arts-drawer{width:min(460px,100%);height:100%;background:#fff;display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.16)}
+      .cf-arts-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px;border-bottom:1px solid #eee;flex:0 0 auto}.cf-arts-head h2{margin:0;font:900 22px/1.1 Arial,sans-serif;color:#171717}.cf-arts-head p{margin:4px 0 0;color:#737373;font:12px/1.35 Arial,sans-serif}.cf-arts-close{border:0;background:#f2f2f2;width:38px;height:38px;border-radius:50%;font-size:25px;cursor:pointer}
+      .cf-arts-list{padding:14px;overflow:auto;display:grid;gap:14px;align-content:start}.cf-art-card{border:1px solid #e4e4e4;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.035)}
+      .cf-art-media{position:relative;width:100%;height:190px;border:0;padding:0;margin:0;background:#f3f3f1;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+      .cf-art-media img{display:block;width:100%;height:100%;object-fit:contain;background:#f3f3f1}.cf-art-media:hover .cf-art-open{opacity:1}.cf-art-open{position:absolute;right:10px;bottom:10px;background:rgba(20,20,20,.82);color:#fff;border-radius:999px;padding:6px 9px;font:800 9px/1 Arial,sans-serif;opacity:.9}
+      .cf-art-side-strip{display:flex;gap:4px;padding:4px;background:#eceeed}.cf-art-side-strip img{width:50%;height:62px;object-fit:contain;background:#fff;border-radius:7px}
+      .cf-art-body{padding:12px}.cf-art-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.cf-art-status{font:900 10px/1 Arial,sans-serif;padding:5px 7px;border-radius:999px;background:#eef7ee;color:#256a32}.cf-art-status.wait{background:#fff4e6;color:#a65400}.cf-art-status.cart{background:#fff0e7;color:#b04f0d}.cf-art-code{color:#777;font:700 9px/1 Arial,sans-serif;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cf-art-body strong{display:block;margin:8px 0 3px;font:900 14px/1.25 Arial,sans-serif;color:#171717}.cf-art-body small{display:block;color:#777;font:11px/1.35 Arial,sans-serif}.cf-art-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}.cf-art-actions button{min-height:42px;border-radius:10px;border:1px solid #d8d8d8;background:#fff;color:#171717;font:900 11px Arial,sans-serif;cursor:pointer}.cf-art-actions .primary{border-color:#ff7420;background:#ff7420;color:#fff}.cf-art-actions button:hover{filter:brightness(.97)}
       .cf-arts-empty{padding:30px 16px;text-align:center;color:#777;font:13px/1.45 Arial,sans-serif}.cf-art-frame-wrap[hidden]{display:none!important}.cf-art-frame-wrap{position:fixed;inset:0;z-index:1000001;background:#fff}.cf-art-frame-bar{height:48px;display:flex;justify-content:space-between;align-items:center;padding:0 12px;border-bottom:1px solid #eee;font:800 12px Arial,sans-serif}.cf-art-frame-bar button{border:0;background:#f1f1f1;border-radius:8px;padding:8px 11px;font-weight:800;cursor:pointer}.cf-art-frame{width:100%;height:calc(100% - 48px);border:0;background:#fff}
-      @media(max-width:720px){#cfMyArtsTrigger.cf-floating{top:auto;bottom:76px;right:12px}.cf-arts-drawer{width:100%}}
+      @media(max-width:720px){#cfMyArtsTrigger.cf-floating{top:auto;bottom:76px;right:12px}.cf-arts-drawer{width:100%}.cf-art-media{height:175px}.cf-art-side-strip img{height:54px}}
     `;
     document.head.appendChild(style);
   }
@@ -133,14 +151,26 @@
         const creation = await fetchCreation(row.code);
         if (!creation) continue;
         const image = artUrl(creation);
+        const crops = cropUrls(creation);
         const [status, statusClass] = statusInfo(creation);
         const name = text(creation.modelo_nome || 'Caneca personalizada');
         const when = creation.criado_em ? new Date(creation.criado_em).toLocaleDateString('pt-BR') : '';
-        cards.push(`<article class="cf-art-card" data-code="${esc(row.code)}"><div class="cf-art-media"${image ? ` style="background-image:url('${esc(image)}')"` : ''}></div><div class="cf-art-body"><div class="cf-art-top"><span class="cf-art-status ${esc(statusClass)}">${esc(status)}</span><span class="cf-art-code">${esc(row.code)}</span></div><strong>${esc(name)}</strong><small>${esc(when)}</small><div class="cf-art-actions"><button type="button" data-cf-view="${esc(row.code)}">VER ARTE</button><button type="button" class="primary" data-cf-buy="${esc(row.code)}">${/encomend|produ|enviad/.test(status.toLowerCase()) ? 'ACOMPANHAR' : 'COMPRAR'}</button></div></div></article>`);
+        const media = validImage(image)
+          ? `<button type="button" class="cf-art-media" data-cf-view="${esc(row.code)}" aria-label="Abrir arte ${esc(row.code)}"><img src="${esc(image)}" alt="Arte horizontal completa ${esc(row.code)}"><span class="cf-art-open">ABRIR ARTE</span></button>`
+          : `<button type="button" class="cf-art-media" data-cf-view="${esc(row.code)}" aria-label="Abrir arte ${esc(row.code)}"><span class="cf-art-open">ABRIR ARTE</span></button>`;
+        const sides = crops.left && crops.right
+          ? `<div class="cf-art-side-strip" aria-label="Dois lados da arte"><img src="${esc(crops.left)}" alt="Lado 1"><img src="${esc(crops.right)}" alt="Lado 2"></div>`
+          : '';
+        const action = /encomend|produ|enviad|pago/.test(status.toLowerCase()) ? 'ACOMPANHAR' : 'COMPRAR';
+        cards.push(`<article class="cf-art-card" data-code="${esc(row.code)}">${media}${sides}<div class="cf-art-body"><div class="cf-art-top"><span class="cf-art-status ${esc(statusClass)}">${esc(status)}</span><span class="cf-art-code">${esc(row.code)}</span></div><strong>${esc(name)}</strong><small>${esc(when)}</small><div class="cf-art-actions"><button type="button" data-cf-view="${esc(row.code)}">VER ARTE</button><button type="button" class="primary" data-cf-buy="${esc(row.code)}">${action}</button></div></div></article>`);
       } catch {}
     }
     root.innerHTML = cards.join('') || '<div class="cf-arts-empty">As artes salvas neste aparelho não estão mais disponíveis.</div>';
-    root.querySelectorAll('[data-cf-view],[data-cf-buy]').forEach(button => button.addEventListener('click', () => openCreation(button.dataset.cfView || button.dataset.cfBuy)));
+    root.querySelectorAll('[data-cf-view],[data-cf-buy]').forEach(button => button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      openCreation(button.dataset.cfView || button.dataset.cfBuy);
+    }));
   }
 
   function openDrawer() {
@@ -151,6 +181,8 @@
   function closeDrawer() { const node = document.getElementById('cfMyArtsOverlay'); if (node) node.hidden = true; }
 
   function openCreation(code) {
+    code = text(code).toUpperCase();
+    if (!/^CF-/i.test(code)) return;
     rememberArt(code);
     ensureUi(); closeDrawer();
     const wrap = document.getElementById('cfArtFrameWrap');
@@ -158,6 +190,7 @@
     const url = new URL(PERSONALIZER);
     url.searchParams.set('creation', code);
     url.searchParams.set('embed', '1');
+    url.searchParams.set('ui', 'minhas-artes');
     url.searchParams.set('return', location.href.split('#')[0]);
     frame.src = url.href;
     wrap.hidden = false;
