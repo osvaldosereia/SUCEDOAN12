@@ -1,8 +1,8 @@
 (function(){
 "use strict";
-if(window.CFSOCIAL10BOOT==="20260902-4")return;
-window.CFSOCIAL10BOOT="20260902-4";
-var v="20260902-4";
+if(window.CFSOCIAL10BOOT==="20260902-5")return;
+window.CFSOCIAL10BOOT="20260902-5";
+var v="20260902-5";
 var l=document.createElement("link");
 l.rel="stylesheet";
 l.href="https://donaantonia.com.br/loja-integrada/social-feed-v10.css?v="+v;
