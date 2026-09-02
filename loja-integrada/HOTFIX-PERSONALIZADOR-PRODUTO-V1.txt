@@ -1,94 +1,13 @@
-<!-- CANECAFÁCIL · HOTFIX PERSONALIZADOR INLINE · 2026-09-01 -->
-<script>
-(function(){
-  'use strict';
+<!-- LEGADO / NÃO INSTALAR
 
-  var BUILD='20260901-hotfix-inline-prod-v1';
-  var SRC='https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-6';
+Este hotfix foi usado durante a homologação inicial do personalizador inline.
+Ele NÃO faz parte da arquitetura atual da CanecaFácil e não deve ser colado na Loja Integrada.
 
-  if(window.__CF_PERSONALIZER_HOTFIX__===BUILD)return;
-  window.__CF_PERSONALIZER_HOTFIX__=BUILD;
+Instalação atual:
+- manter somente `BASE UX V1.js` no rodapé, em todas as páginas exceto checkout;
+- copiar o conteúdo de `CODIGO-BASE-UX-REMOTO.txt`;
+- o runtime central carrega o personalizador V10 automaticamente somente em páginas de produto.
 
-  function scrollPanel(){
-    var tries=0;
-    var timer=setInterval(function(){
-      tries++;
-      var panel=document.getElementById('cfInlinePersonalizer');
-      if(panel){
-        clearInterval(timer);
-        panel.scrollIntoView({behavior:'smooth',block:'center'});
-      }else if(tries>=80){
-        clearInterval(timer);
-      }
-    },150);
-  }
-
-  function activateUrl(){
-    try{
-      var u=new URL(location.href);
-      u.searchParams.set('cf_personalizador','teste');
-      u.hash='cfInlinePersonalizer';
-      history.replaceState(history.state,'',u.href);
-    }catch(e){}
-  }
-
-  function loadPersonalizer(){
-    activateUrl();
-
-    if(document.getElementById('cfInlinePersonalizer')){
-      scrollPanel();
-      return;
-    }
-
-    if(window.__CF_PERSONALIZER_SCRIPT_LOADING__)return;
-    window.__CF_PERSONALIZER_SCRIPT_LOADING__=1;
-
-    var existing=[].slice.call(document.scripts).filter(function(s){
-      return /personalizador-inline-v2\.js/i.test(s.src||'');
-    })[0];
-
-    if(existing){
-      window.__CF_PERSONALIZER_SCRIPT_LOADING__=0;
-      scrollPanel();
-      return;
-    }
-
-    var s=document.createElement('script');
-    s.src=SRC;
-    s.async=true;
-    s.onload=function(){
-      window.__CF_PERSONALIZER_SCRIPT_LOADING__=0;
-      scrollPanel();
-    };
-    s.onerror=function(){
-      window.__CF_PERSONALIZER_SCRIPT_LOADING__=0;
-      alert('Não foi possível abrir a personalização. Atualize a página e tente novamente.');
-    };
-    document.head.appendChild(s);
-  }
-
-  document.addEventListener('click',function(e){
-    var t=e.target;
-    while(t&&t!==document&&!t.classList.contains('cf-personalize-link'))t=t.parentNode;
-    if(!t||t===document)return;
-    e.preventDefault();
-    e.stopPropagation();
-    if(e.stopImmediatePropagation)e.stopImmediatePropagation();
-    loadPersonalizer();
-  },true);
-
-  function autoStart(){
-    try{
-      if(new URLSearchParams(location.search).get('cf_personalizador')==='teste'){
-        loadPersonalizer();
-      }
-    }catch(e){}
-  }
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',autoStart,{once:true});
-  }else{
-    autoStart();
-  }
-})();
-</script>
+Histórico preservado no branch de rollback:
+`backup/canecafacil-pre-storefront-v3-20260902`
+-->
