@@ -1,5 +1,6 @@
-/* CANECAFÁCIL · LI BASE CSS v2 · native-first */
-html,body{max-width:100%;overflow-x:hidden;background:#fff;color:#181818}
+/* CANECAFÁCIL · LI BASE CSS v3 · estabilização */
+html{max-width:100%;overflow-x:hidden;background:#fff}
+body{max-width:100%;background:#fff;color:#181818}
 body,input,button,select,textarea{font-family:Arial,Helvetica,sans-serif!important}
 a{transition:color .15s ease,opacity .15s ease}
 #corpo{background:#fff!important}
@@ -8,85 +9,89 @@ a{transition:color .15s ease,opacity .15s ease}
 .botao.principal:hover,a.botao.principal:hover,button.botao.principal:hover{background:#e96514!important;border-color:#e96514!important}
 
 /* HEADER */
-#cabecalho{background:#fff!important;border-bottom:1px solid #ededed!important;box-shadow:none!important;margin:0!important;padding:0!important}
-#cabecalho .barra-inicial,#cabecalho .superior,#cabecalho .rastreio-btn,#cabecalho .contato-top{display:none!important}
-#cabecalho>.conteiner{width:96%!important;max-width:1280px!important;margin:0 auto!important;padding:13px 0 10px!important}
-#cabecalho>.conteiner>.row-fluid{display:flex!important;align-items:center!important;margin:0!important}
-#cabecalho>.conteiner>.row-fluid>.span3{width:190px!important;min-width:190px!important;margin:0 22px 0 0!important;float:none!important}
+#cabecalho{background:#fff!important;border-bottom:1px solid #ededed!important;margin:0!important;padding:0!important}
+#cabecalho .barra-inicial,#cabecalho .superior,#cabecalho .rastreio-btn,#cabecalho .contato-top,#cabecalho .menu.superior{display:none!important}
+#cabecalho>.conteiner{width:96%!important;max-width:1280px!important;margin:0 auto!important;padding:11px 0 9px!important;box-sizing:border-box!important}
+#cabecalho>.conteiner>.row-fluid{display:flex!important;align-items:center!important;width:100%!important;margin:0!important;padding:0!important}
+#cabecalho>.conteiner>.row-fluid>.span3{width:180px!important;min-width:180px!important;margin:0 20px 0 0!important;float:none!important}
 #cabecalho .logo{height:auto!important;margin:0!important;padding:0!important;text-align:left!important}
-#cabecalho .logo a{display:block!important}
-#cabecalho .logo img{display:block!important;width:auto!important;height:auto!important;max-width:180px!important;max-height:52px!important;margin:0!important}
-#cabecalho .conteudo-topo{width:auto!important;min-width:0!important;flex:1!important;float:none!important;margin:0!important}
-#cabecalho .inferior{display:flex!important;align-items:center!important;margin:0!important}
-#cabecalho .busca-mobile{width:auto!important;min-width:0!important;flex:1!important;float:none!important;margin:0 14px 0 0!important}
+#cabecalho .logo a{display:flex!important;align-items:center!important;min-height:46px!important}
+#cabecalho .logo img{display:block!important;width:auto!important;height:auto!important;max-width:170px!important;max-height:48px!important;margin:0!important}
+#cabecalho .conteudo-topo{width:auto!important;min-width:0!important;flex:1 1 auto!important;float:none!important;margin:0!important;padding:0!important}
+#cabecalho .inferior{display:flex!important;align-items:center!important;width:100%!important;margin:0!important;padding:0!important}
+
+/* BUSCA */
+#cabecalho .busca-mobile{width:auto!important;min-width:0!important;flex:1 1 auto!important;float:none!important;margin:0 14px 0 0!important}
 #cabecalho .busca{height:44px!important;margin:0!important;background:#fff!important;border:1px solid #dedede!important;border-radius:22px!important;box-shadow:none!important;overflow:hidden!important}
 #cabecalho .busca form{height:44px!important;margin:0!important;position:relative!important}
 #cabecalho .busca input{width:100%!important;height:42px!important;box-sizing:border-box!important;margin:0!important;padding:0 48px 0 16px!important;background:#fff!important;border:0!important;box-shadow:none!important;color:#222!important;font-size:13px!important}
-#cabecalho .busca .botao-busca{position:absolute!important;right:4px!important;top:4px!important;width:34px!important;height:34px!important;padding:0!important;background:#fff!important;background-image:none!important;border:0!important;border-radius:17px!important;box-shadow:none!important;color:#222!important}
-#cabecalho .inferior>.span4.hidden-phone{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:8px!important;width:98px!important;min-width:98px!important;float:none!important;margin:0!important}
-#cabecalho .carrinho,#cabecalho .minha-conta{display:block!important;float:none!important;margin:0!important;position:relative!important}
-#cabecalho .carrinho>a,#cabecalho .minha-conta .dropdown-toggle{display:block!important;width:42px!important;height:42px!important;line-height:42px!important;box-sizing:border-box!important;margin:0!important;padding:0!important;background:#fff!important;border:1px solid #e7e7e7!important;border-radius:21px!important;box-shadow:none!important;color:#222!important;text-align:center!important}
-#cabecalho .carrinho>a>i,#cabecalho .minha-conta .dropdown-toggle>i{display:block!important;width:40px!important;height:40px!important;line-height:40px!important;margin:0!important;background:none!important;color:#222!important;text-align:center!important;font-size:18px!important}
+#cabecalho .busca .botao-busca{position:absolute!important;right:4px!important;top:4px!important;display:flex!important;align-items:center!important;justify-content:center!important;width:34px!important;height:34px!important;margin:0!important;padding:0!important;background:#fff!important;background-image:none!important;border:0!important;border-radius:17px!important;box-shadow:none!important;color:#222!important}
+
+/* CONTA + CARRINHO */
+#cabecalho .inferior>.span4.hidden-phone{display:flex!important;align-items:center!important;justify-content:flex-end!important;width:96px!important;min-width:96px!important;float:none!important;margin:0!important;padding:0!important}
+#cabecalho .carrinho,#cabecalho .minha-conta{display:block!important;float:none!important;margin:0 0 0 8px!important;position:relative!important}
+#cabecalho .carrinho>a,#cabecalho .minha-conta .dropdown-toggle{display:flex!important;align-items:center!important;justify-content:center!important;width:40px!important;height:40px!important;line-height:1!important;box-sizing:border-box!important;margin:0!important;padding:0!important;background:#fff!important;border:1px solid #e5e5e5!important;border-radius:50%!important;box-shadow:none!important;color:#222!important;text-align:center!important}
+#cabecalho .carrinho>a:hover,#cabecalho .minha-conta .dropdown-toggle:hover{border-color:#cfcfca!important;color:#ff7420!important}
+#cabecalho .carrinho>a>i,#cabecalho .minha-conta .dropdown-toggle>i,#cabecalho .atalho-menu>i,#cabecalho .busca .botao-busca>i{display:none!important}
+#cabecalho .cf-head-svg{display:flex!important;align-items:center!important;justify-content:center!important;width:22px!important;height:22px!important;line-height:1!important;margin:0!important;padding:0!important}
+#cabecalho .cf-head-svg svg{display:block!important;width:21px!important;height:21px!important;margin:0!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 #cabecalho .carrinho>a>span,#cabecalho .minha-conta .icon-chevron-down{display:none!important}
-#cabecalho .qtd-carrinho{position:absolute!important;right:-4px!important;top:-5px!important;min-width:18px!important;height:18px!important;line-height:14px!important;padding:0 4px!important;background:#ff7420!important;border:2px solid #fff!important;border-radius:10px!important;color:#fff!important;font-size:9px!important;text-align:center!important;box-sizing:border-box!important}
+#cabecalho .qtd-carrinho{position:absolute!important;right:-5px!important;top:-6px!important;min-width:18px!important;height:18px!important;line-height:14px!important;padding:0 4px!important;background:#ff7420!important;border:2px solid #fff!important;border-radius:10px!important;color:#fff!important;font-size:9px!important;text-align:center!important;box-sizing:border-box!important}
 #cabecalho .carrinho-interno-ajax{display:none!important}
 
-/* CATEGORIAS */
-#cabecalho .menu.superior{display:block!important;height:auto!important;margin:10px 0 0!important;padding:0!important;background:#fff!important;border:0!important;box-shadow:none!important}
-#cabecalho .menu.superior>.nivel-um{display:flex!important;align-items:center!important;gap:7px!important;overflow-x:auto!important;margin:0!important;padding:0 0 2px!important;white-space:nowrap!important}
-#cabecalho .menu.superior>.nivel-um>li{display:block!important;float:none!important;margin:0!important;background:#fff!important;border:0!important}
-#cabecalho .menu.superior>.nivel-um>li>a{display:block!important;min-height:30px!important;line-height:30px!important;padding:0 12px!important;background:#fff!important;border:1px solid #e6e6e6!important;border-radius:15px!important;color:#444!important;font-size:10.5px!important;font-weight:700!important;text-decoration:none!important}
-#cabecalho .menu.superior>.nivel-um>li>a:hover{border-color:#ffc39e!important;color:#ff7420!important}
-#cabecalho .menu.superior .nivel-dois{display:none!important}
-
-/* MINHAS ARTES: só aparece quando realmente existir arte */
+/* MINHAS ARTES */
 #cfMyArtsTrigger[hidden]{display:none!important}
-#cfMyArtsTrigger.cf-floating{position:fixed!important;right:18px!important;top:auto!important;bottom:18px!important;min-height:38px!important;z-index:9997!important}
-.scrollToTop{display:none!important}
+#cfMyArtsTrigger.cf-floating{position:fixed!important;right:18px!important;top:auto!important;bottom:18px!important;min-height:36px!important;z-index:9988!important;border-radius:18px!important}
+.scrollToTop,#barraTopo{display:none!important}
 
 /* ESTRUTURA */
 #corpo>.conteiner,.secao-banners>.conteiner{max-width:1280px!important}
 .breadcrumbs{margin:10px 0 14px!important;padding:0!important;border:0!important}.breadcrumbs ul{margin:0!important;padding:0!important}.breadcrumbs a,.breadcrumbs strong{color:#888!important;font-size:10px!important;text-decoration:none!important}.breadcrumbs i{display:none!important}.titulo{letter-spacing:0!important}
 
-/* NEWSLETTER MAIS LEVE */
-#barraNewsletter{background:#fff!important;border-top:1px solid #ededed!important;border-bottom:1px solid #ededed!important;padding:18px 0!important}
+/* NEWSLETTER */
+#barraNewsletter{background:#fff!important;border-top:1px solid #ededed!important;border-bottom:1px solid #ededed!important;padding:20px 0!important}
 #barraNewsletter .componente.newsletter{background:#fff!important;border:0!important;box-shadow:none!important}
-#barraNewsletter .newsletter .interno{display:flex!important;align-items:center!important;justify-content:center!important;gap:18px!important;padding:0!important}
+#barraNewsletter .newsletter .interno{display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
 #barraNewsletter .newsletter .titulo{display:none!important}
-#barraNewsletter .texto-newsletter{margin:0!important;color:#222!important;font-size:12px!important;font-weight:800!important;text-transform:none!important}
-#barraNewsletter .input-conteiner{display:flex!important;align-items:center!important;width:320px!important;margin:0!important}
-#barraNewsletter .input-conteiner input{flex:1!important;height:38px!important;box-sizing:border-box!important;margin:0!important;padding:0 12px!important;background:#fff!important;border:1px solid #ddd!important;border-radius:8px 0 0 8px!important;box-shadow:none!important;font-size:11px!important}
-#barraNewsletter .newsletter-assinar{width:48px!important;height:38px!important;margin:0!important;background:#ff7420!important;border:1px solid #ff7420!important;border-radius:0 8px 8px 0!important}
+#barraNewsletter .texto-newsletter{margin:0 18px 0 0!important;color:#222!important;font-size:12px!important;font-weight:800!important;text-transform:none!important}
+#barraNewsletter .input-conteiner{display:flex!important;align-items:stretch!important;width:330px!important;height:38px!important;margin:0!important;padding:0!important}
+#barraNewsletter .input-conteiner input{flex:1 1 auto!important;height:38px!important;box-sizing:border-box!important;margin:0!important;padding:0 12px!important;background:#fff!important;border:1px solid #ddd!important;border-radius:8px 0 0 8px!important;box-shadow:none!important;font-size:11px!important}
+#barraNewsletter .newsletter-assinar{display:flex!important;align-items:center!important;justify-content:center!important;width:64px!important;height:38px!important;line-height:1!important;box-sizing:border-box!important;margin:0!important;padding:0!important;background:#ff7420!important;background-image:none!important;border:1px solid #ff7420!important;border-radius:0 8px 8px 0!important;box-shadow:none!important;color:#fff!important;font-size:10px!important;font-weight:800!important;text-align:center!important;text-shadow:none!important}
+#barraNewsletter .newsletter-assinar i{display:none!important}
 
 /* RODAPÉ */
 #rodape{margin-top:0!important;background:#fff!important;border-top:0!important}
 #rodape .institucional{background:#fff!important}
 #rodape .institucional>.conteiner{max-width:1280px!important;padding-top:30px!important;padding-bottom:26px!important}
 #rodape .titulo{color:#222!important;font-size:12px!important;font-weight:800!important;text-transform:none!important}
-#rodape a,#rodape p,#rodape li{color:#777!important;font-size:11px!important;line-height:1.7!important}#rodape a:hover{color:#ff7420!important}#rodape .pagamento-selos{border:0!important}#barraTopo{display:none!important}
+#rodape a,#rodape p,#rodape li{color:#777!important;font-size:11px!important;line-height:1.7!important}#rodape a:hover{color:#ff7420!important}#rodape .pagamento-selos{border:0!important}
 
 /* CARRINHO */
 body.pagina-carrinho #corpo>.conteiner{padding-top:18px!important}body.pagina-carrinho .caixa-sombreada{background:#fff!important;border:1px solid #e7e7e7!important;border-radius:12px!important;box-shadow:none!important}body.pagina-carrinho .tabela-carrinho td{vertical-align:middle!important}body.pagina-carrinho .tabela-carrinho .conteiner-imagem .imagem{overflow:hidden!important;background:#f7f7f7!important;border-radius:10px!important}body.pagina-carrinho .tabela-carrinho .conteiner-imagem img{max-width:100%!important;height:auto!important}body.pagina-carrinho .quantidade{border-radius:8px!important}
 
 @media(max-width:767px){
- body{padding-top:0!important}
- #cabecalho>.conteiner{width:auto!important;margin:0!important;padding:7px 10px 7px!important}
+ #cabecalho>.conteiner{width:auto!important;max-width:none!important;margin:0!important;padding:7px 10px 7px!important}
  #cabecalho>.conteiner>.row-fluid{display:block!important;position:relative!important}
- #cabecalho>.conteiner>.row-fluid>.span3{display:block!important;width:auto!important;min-width:0!important;height:40px!important;margin:0 48px 6px 44px!important;float:none!important}
- #cabecalho .logo{height:40px!important;display:flex!important;align-items:center!important}
+ #cabecalho>.conteiner>.row-fluid>.span3{display:block!important;width:auto!important;min-width:0!important;height:40px!important;margin:0 47px 7px 43px!important;float:none!important}
+ #cabecalho .logo{height:40px!important;display:flex!important;align-items:center!important;justify-content:center!important}
+ #cabecalho .logo a{min-height:40px!important;justify-content:center!important}
  #cabecalho .logo img{max-width:145px!important;max-height:38px!important}
  #cabecalho .conteudo-topo{width:100%!important;margin:0!important}
  #cabecalho .inferior{display:block!important;position:static!important}
  #cabecalho .busca-mobile{display:block!important;width:100%!important;margin:0!important}
  #cabecalho .busca{height:40px!important;border-radius:20px!important}
  #cabecalho .busca form{height:40px!important}#cabecalho .busca input{height:38px!important;font-size:12px!important;padding-left:14px!important}#cabecalho .busca .botao-busca{top:3px!important}
- #cabecalho .atalho-menu{display:block!important;position:absolute!important;left:0!important;top:0!important;width:38px!important;height:38px!important;line-height:38px!important;margin:0!important;padding:0!important;background:#fff!important;background-image:none!important;border:1px solid #e7e7e7!important;border-radius:9px!important;box-shadow:none!important;color:#222!important;text-align:center!important;font-size:17px!important}
- #cabecalho .inferior>.span4.hidden-phone{display:flex!important;position:absolute!important;right:0!important;top:0!important;width:40px!important;min-width:40px!important}
+ #cabecalho .atalho-menu{display:flex!important;align-items:center!important;justify-content:center!important;position:absolute!important;left:0!important;top:0!important;width:38px!important;height:38px!important;line-height:1!important;margin:0!important;padding:0!important;background:#fff!important;background-image:none!important;border:1px solid #e5e5e5!important;border-radius:9px!important;box-shadow:none!important;color:#222!important;text-align:center!important}
+ #cabecalho .inferior>.span4.hidden-phone{display:flex!important;position:absolute!important;right:0!important;top:0!important;width:38px!important;min-width:38px!important;margin:0!important}
  #cabecalho .minha-conta{display:none!important}
- #cabecalho .carrinho>a{width:38px!important;height:38px!important;border-radius:9px!important}#cabecalho .carrinho>a>i{width:36px!important;height:36px!important;line-height:36px!important}
+ #cabecalho .carrinho{margin:0!important}#cabecalho .carrinho>a{width:38px!important;height:38px!important;border-radius:9px!important}
+ #cabecalho .cf-head-svg{width:20px!important;height:20px!important}#cabecalho .cf-head-svg svg{width:20px!important;height:20px!important}
  #cabecalho .menu.superior,.atalhos-mobile{display:none!important}
  #corpo>.conteiner{width:auto!important;margin:0!important;padding-left:10px!important;padding-right:10px!important}.breadcrumbs{display:none!important}
- #barraNewsletter{display:none!important}
+ #barraNewsletter{padding:20px 12px!important}
+ #barraNewsletter .newsletter .interno{display:block!important;text-align:center!important}
+ #barraNewsletter .texto-newsletter{display:block!important;margin:0 0 10px!important;font-size:11px!important;text-align:center!important}
+ #barraNewsletter .input-conteiner{width:100%!important;max-width:330px!important;margin:0 auto!important}
  #rodape .institucional>.conteiner{padding:24px 16px!important}#rodape .row-fluid>[class*="span"]{width:100%!important;float:none!important;margin:0 0 18px!important}
- #cfMyArtsTrigger.cf-floating{right:10px!important;bottom:12px!important;min-height:34px!important;font-size:10px!important;padding:7px 10px!important}
+ #cfMyArtsTrigger.cf-floating{right:10px!important;bottom:82px!important;min-height:34px!important;font-size:10px!important;padding:7px 10px!important}
 }
