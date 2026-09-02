@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-generation-guard-v1';
+  const BUILD = '20260902-generation-guard-v1.1-pre-submit';
   const STORAGE = 'cf_generation_guard_v1';
   const PER_MODEL = 2;
   const PER_DEVICE = 6;
@@ -16,6 +16,7 @@
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   };
+  const currentModel = () => text(new URLSearchParams(location.search).get('model')) || 'sem-modelo';
 
   function read() {
     try {
@@ -25,6 +26,19 @@
     } catch { return { day:dayKey(), total:0, models:{} }; }
   }
   function save(state) { try { localStorage.setItem(STORAGE, JSON.stringify(state)); } catch {} }
+
+  function limitMessage(model = currentModel()) {
+    const state = read(), modelCount = Number(state.models[model] || 0);
+    if (modelCount >= PER_MODEL) return `Você já criou ${PER_MODEL} artes deste modelo hoje. Elas continuam salvas em Minhas Artes para você ver e comprar. Tente uma nova criação amanhã.`;
+    if (state.total >= PER_DEVICE) return `Este aparelho já utilizou as ${PER_DEVICE} gerações gratuitas de hoje. Suas artes continuam disponíveis em Minhas Artes.`;
+    return '';
+  }
+
+  function showGuardError(message) {
+    const progress = document.getElementById('progressBox'); if (progress) progress.hidden = true;
+    const error = document.getElementById('errorBox'); if (error) error.hidden = false;
+    const errorText = document.getElementById('errorText'); if (errorText) errorText.textContent = message;
+  }
 
   function inspect(input, init = {}) {
     try {
@@ -37,18 +51,22 @@
     } catch { return null; }
   }
 
+  // Bloqueia antes do app-v15 criar canecas/personalizadas/{CF-ID}.
+  document.addEventListener('submit', event => {
+    if (event.target?.id !== 'personalizerForm') return;
+    const message = limitMessage(currentModel());
+    if (!message) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    showGuardError(message);
+  }, true);
+
+  // Segunda barreira: mesmo que outro código tente chamar o Make diretamente, o custo continua protegido.
   window.fetch = async function cfGenerationGuard(input, init = {}) {
     const generation = inspect(input, init);
     if (!generation) return innerFetch(input, init);
-
-    const state = read();
-    const modelCount = Number(state.models[generation.model] || 0);
-    if (modelCount >= PER_MODEL) {
-      throw new Error(`Você já criou ${PER_MODEL} artes deste modelo hoje. Elas continuam salvas em Minhas Artes para você ver e comprar. Tente uma nova criação amanhã.`);
-    }
-    if (state.total >= PER_DEVICE) {
-      throw new Error(`Este aparelho já utilizou as ${PER_DEVICE} gerações gratuitas de hoje. Suas artes continuam disponíveis em Minhas Artes.`);
-    }
+    const message = limitMessage(generation.model);
+    if (message) throw new Error(message);
 
     const response = await innerFetch(input, init);
     if (response.ok) {
@@ -60,6 +78,12 @@
     return response;
   };
 
-  window.CFGenerationGuard = { perModel:PER_MODEL, perDevice:PER_DEVICE, status:read };
+  window.CFGenerationGuard = {
+    perModel:PER_MODEL,
+    perDevice:PER_DEVICE,
+    status:read,
+    canGenerate:model => !limitMessage(text(model) || currentModel()),
+    reason:model => limitMessage(text(model) || currentModel())
+  };
   console.info(`CanecaFácil · limite de geração ${BUILD}`);
 })();
