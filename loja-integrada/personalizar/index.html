@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#ffffff">
   <title>Personalize sua caneca — CanecaFácil</title>
-  <link rel="stylesheet" href="./styles.css?v=20260901-7">
+  <link rel="stylesheet" href="./styles.css?v=20260902-8">
   <link rel="stylesheet" href="./fun-loader-v1.css?v=20260901-1">
 </head>
 <body>
@@ -28,36 +28,38 @@
     </section>
 
     <form class="form-card" id="personalizerForm" hidden>
-      <div class="form-head"><div><p class="eyebrow">PERSONALIZE</p><h2>O que deseja alterar?</h2></div></div>
+      <div class="form-head"><div><p class="eyebrow">PERSONALIZE</p><h2>Personalize esta Caneca</h2><p class="form-subtitle">Preencha os dados abaixo para criar sua versão.</p></div></div>
       <div class="grid">
         <label class="cf-field cf-wide">Seu e-mail *
           <input id="customerEmail" type="email" autocomplete="email" maxlength="160" placeholder="voce@email.com" required>
-          <small>Se você sair da página, avisaremos quando sua arte estiver pronta.</small>
         </label>
       </div>
       <div class="grid" id="dynamicFields"></div>
-      <button class="primary" id="generateButton" type="submit">GERAR MINHA ARTE</button>
-      <p class="native-note">Usaremos seu e-mail somente para avisar sobre esta personalização. Promoções exigem autorização separada.</p>
+      <button class="primary generate-cta" id="generateButton" type="submit">GERAR MINHA ARTE</button>
+      <p class="native-note">Seu e-mail será usado apenas para esta personalização. Promoções exigem autorização separada.</p>
     </form>
 
     <section class="preview-card" id="previewBox" hidden aria-live="polite">
       <div class="preview-head">
-        <div><strong>Sua arte ficou pronta ✨</strong><p>Confira os dois lados antes de aprovar.</p></div>
+        <div><strong>Sua arte ficou pronta ✨</strong><p>Deslize pelos dois lados e confira antes de aprovar.</p></div>
         <small id="previewCode"></small>
       </div>
       <div class="preview-stage">
-        <button type="button" class="preview-arrow" id="prevPreview" aria-label="Imagem anterior">‹</button>
         <img id="previewImage" alt="Prévia da arte personalizada">
+      </div>
+      <div class="preview-controls" aria-label="Controles da prévia">
+        <button type="button" class="preview-arrow" id="prevPreview" aria-label="Imagem anterior">‹</button>
+        <div class="preview-dots" id="previewDots" aria-hidden="true"><span class="active"></span><span></span></div>
         <button type="button" class="preview-arrow" id="nextPreview" aria-label="Próxima imagem">›</button>
       </div>
       <div class="preview-meta"><span id="previewCounter">1 de 2</span><span>Prévia da arte real</span></div>
-      <label class="cf-field cf-wide">Quantidade desta mesma arte
+      <label class="cf-field cf-wide quantity-art">Quantidade desta mesma arte
         <input id="personalizedQuantity" type="number" inputmode="numeric" min="1" max="20" step="1" value="1" aria-label="Quantidade desta arte personalizada">
         <small>Ex.: quantidade 3 = três canecas idênticas com esta mesma arte. Para nomes ou artes diferentes, gere outra personalização.</small>
       </label>
-      <button class="primary" id="approveButton" type="button">APROVAR E COMPRAR</button>
+      <button class="primary approve-cta" id="approveButton" type="button">APROVAR E COMPRAR</button>
       <button class="secondary preview-edit" id="editCreation" type="button">ALTERAR DADOS</button>
-      <p class="native-note">Ao aprovar, adicionaremos ao carrinho o modelo original da loja e vincularemos este código à sua arte para produção. Nenhum produto público novo será criado.</p>
+      <p class="native-note">Ao aprovar, o modelo original será adicionado ao carrinho e este código ficará ligado à sua arte para produção.</p>
     </section>
 
     <section class="pending-card" id="pendingBox" hidden aria-live="polite">
@@ -77,14 +79,15 @@
       </div>
     </section>
 
-    <section class="success-card" id="successBox" hidden><strong>Compra preparada</strong><p id="successText">Abrindo o carrinho com o produto original…</p><a class="primary" id="cartFallback" href="https://www.canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a></section>
+    <section class="success-card" id="successBox" hidden><strong>Compra preparada</strong><p id="successText">Abrindo o carrinho com o produto original…</p><a class="primary approve-cta" id="cartFallback" href="https://www.canecafacil.com.br/carrinho/index" target="_top">IR PARA O CARRINHO</a></section>
     <section class="error-card" id="errorBox" hidden><strong>Não foi possível concluir</strong><p id="errorText"></p><button type="button" class="secondary" id="tryAgain">Tentar novamente</button></section>
   </main>
 
   <script src="./navigation-v1.js?v=20260830-1"></script>
   <script src="./creation-device-bridge-v1.js?v=20260901-3"></script>
-  <script src="./native-cart-v2.js?v=20260902-1"></script>
+  <script src="./native-cart-v2.js?v=20260902-5"></script>
   <script src="./generation-guard-v1.js?v=20260902-1"></script>
+  <script src="./embed-resize-v1.js?v=20260902-1"></script>
   <script type="module" src="./app-v15.js?v=20260901-1"></script>
 </body>
 </html>
