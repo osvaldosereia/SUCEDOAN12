@@ -1,4 +1,4 @@
-export const MUG_COMMERCE_BUILD = '20260828-mug-commerce-v1';
+export const MUG_COMMERCE_BUILD = '20260902-mug-commerce-v1.1-payment-gate';
 export const FIREBASE_BASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
 export const MUG_NODES = Object.freeze({
   products: 'produtos',
@@ -30,7 +30,7 @@ export const PAYMENT_STATES = Object.freeze([
 ]);
 
 export const PRINT_STATES = Object.freeze([
-  ['aguardando', 'Aguardando'], ['imprimindo', 'Imprimindo'], ['impresso', 'Impresso'], ['reimpressao', 'Reimpressão'], ['cancelado', 'Cancelado']
+  ['aguardando', 'Aguardando'], ['imprimindo', 'Imprimindo'], ['impresso', 'Impresso'], ['reimpressao', 'Reimpressão'], ['bloqueado_pagamento', 'Bloqueado por pagamento'], ['cancelado', 'Cancelado']
 ]);
 
 export function text(value) { return String(value ?? '').trim(); }
@@ -100,8 +100,14 @@ export async function audit(action, data={}, base=FIREBASE_BASE) {
 }
 
 export function buildPrintJob(order, item={}, index=0) {
+  const payment = norm(order?.pagamento?.status || order.pagamento_status || 'pendente');
+  if (payment !== 'pago') {
+    throw new Error(`Produção bloqueada: pedido ${text(order?.id || 'sem-id')} ainda não possui pagamento aprovado.`);
+  }
   const id = printJobId(order.id, item.id || item.firebaseKey || item.codigo || index+1);
   const art = text(item.arte_aprovada?.url || item.arte_aprovada_url || item.arte_horizontal || item.arte_personalizacao || item.arte_impressao?.url || order.arte_aprovada?.url || order.arte_horizontal);
+  if (!art) throw new Error(`Produção bloqueada: pedido ${text(order?.id || 'sem-id')} não possui arte aprovada.`);
+  const releasedAt = text(order.liberado_producao_em) || nowIso();
   return {
     id,
     pedido_id: order.id,
@@ -115,7 +121,10 @@ export function buildPrintJob(order, item={}, index=0) {
     quantidade: Math.max(1, Number(item.quantidade || item.qtd || 1)),
     arte_aprovada: { url: art, versao: text(item.arte_versao || order.arte_versao || 'v1') || 'v1' },
     status: 'aguardando',
-    pagamento_status: text(order.pagamento?.status || order.pagamento_status || 'pago'),
+    pagamento_status: 'pago',
+    liberado_producao: true,
+    liberado_producao_em: releasedAt,
+    origem_liberacao: 'pagamento_aprovado',
     criado_em: nowIso(), atualizado_em: nowIso(), tentativas_impressao: 0
   };
 }
