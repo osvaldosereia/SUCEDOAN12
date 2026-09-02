@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 
-var BUILD='20260902-7';
+var BUILD='20260902-8';
 if(window.CFSITERUNTIME1===BUILD)return;
 window.CFSITERUNTIME1=BUILD;
 
@@ -9,8 +9,8 @@ var BASE='https://donaantonia.com.br/loja-integrada/';
 var CORE_CSS=BASE+'canecafacil-core-v1.css?v=20260902-1';
 var PERSONALIZER=BASE+'loader-personalizador-inline-producao-v10.js?v=20260902-1';
 var COMMERCE=BASE+'canecafacil-commerce-runtime-v1.js?v=20260902-7';
-var STOREFRONT=BASE+'canecafacil-storefront-v1.js?v=20260902-3';
-var PRODUCT=BASE+'canecafacil-product-v1.js?v=20260902-1';
+var STOREFRONT=BASE+'canecafacil-storefront-v1.js?v=20260902-4';
+var PRODUCT=BASE+'canecafacil-product-v1.js?v=20260902-2';
 
 function q(s,r){return (r||document).querySelector(s)}
 function qa(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
@@ -29,8 +29,8 @@ function productBack(){var old=q('.cf-product-back'),active=is('pagina-produto')
 function loadScript(url,marker,onerror){if(marker&&hasScript(marker))return;var s=document.createElement('script');s.src=url;s.async=true;s.onerror=function(){console.error(onerror)};document.head.appendChild(s)}
 function loadCommerce(){if(window.__CF_COMMERCE_RUNTIME__==='20260902-canecafacil-commerce-runtime-v2')return;loadScript(COMMERCE,/canecafacil-commerce-runtime-v1\.js/i,'[CanecaFácil] Falha ao carregar recursos comerciais.')}
 function loadPersonalizer(){if(!is('pagina-produto'))return;if(window.__CF_INLINE_PROD_LOADER__==='20260902-cf-inline-loader-v10'||window.__CF_INLINE_PROD_BOOT__==='20260902-v10')return;loadScript(PERSONALIZER,/loader-personalizador-inline-producao-v10\.js/i,'[CanecaFácil] Falha ao carregar personalização.')}
-function loadStorefront(){if(!(is('pagina-inicial')||is('pagina-categoria')||is('pagina-busca')))return;if(window.__CF_STOREFRONT__==='20260902-storefront-v3')return;loadScript(STOREFRONT,/canecafacil-storefront-v1\.js/i,'[CanecaFácil] Falha ao carregar vitrine.')}
-function loadProduct(){if(!is('pagina-produto'))return;if(window.__CF_PRODUCT_RUNTIME__==='20260902-product-v1')return;loadScript(PRODUCT,/canecafacil-product-v1\.js/i,'[CanecaFácil] Falha ao carregar página de produto.')}
+function loadStorefront(){if(!(is('pagina-inicial')||is('pagina-categoria')||is('pagina-busca')))return;if(window.__CF_STOREFRONT__==='20260902-storefront-v4')return;loadScript(STOREFRONT,/canecafacil-storefront-v1\.js/i,'[CanecaFácil] Falha ao carregar vitrine.')}
+function loadProduct(){if(!is('pagina-produto'))return;if(window.__CF_PRODUCT_RUNTIME__==='20260902-product-v2')return;loadScript(PRODUCT,/canecafacil-product-v1\.js/i,'[CanecaFácil] Falha ao carregar página de produto.')}
 function init(){if(!document.body)return;loadCss(CORE_CSS,/canecafacil-core-v1\.css/i);baseCss();drawer();mobileCart();syncCount();emptyCookie();compactMobile();productBack();loadCommerce();loadPersonalizer();loadStorefront();loadProduct()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();bindMenu();window.addEventListener('resize',init,{passive:true});setTimeout(init,250);setTimeout(init,900);console.info('CanecaFácil · Site Runtime '+BUILD);
 })();
