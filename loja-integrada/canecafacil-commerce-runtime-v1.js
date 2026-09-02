@@ -1,13 +1,13 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-canecafacil-commerce-runtime-v1';
+  const BUILD = '20260901-canecafacil-commerce-runtime-v1.1';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CREATIONS_NODE = 'canecas/personalizadas';
   const ART_STORAGE = 'cf_minhas_artes_v1';
   const MAX_DAYS = 30;
   const PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/personalizar/';
-  const BRIDGE = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260901-1';
+  const BRIDGE = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260901-2';
 
   if (window.__CF_COMMERCE_RUNTIME__ === BUILD) return;
   window.__CF_COMMERCE_RUNTIME__ = BUILD;
