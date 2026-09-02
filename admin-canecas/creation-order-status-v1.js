@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-admin-creation-order-status-v1';
+  const BUILD = '20260902-admin-creation-order-status-v1.1';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CREATIONS = 'canecas/personalizadas';
 
@@ -9,6 +9,7 @@
   window.__CF_CREATION_ORDER_STATUS__ = BUILD;
 
   const text = value => String(value ?? '').trim();
+  const norm = value => text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const safeKey = value => text(value).replace(/[.#$\[\]/]/g, '_');
   const esc = value => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 
@@ -18,10 +19,18 @@
     return response.json();
   }
 
+  function released(creation = {}) {
+    const payment = norm(creation.pagamento_status || creation?.encomenda?.pagamento_status);
+    return payment === 'pago' && creation.liberado_producao === true;
+  }
+
   function statusLabel(creation = {}) {
-    const status = text(creation?.encomenda?.status || creation.atendimento_status || creation.status || 'arte_pronta').toLowerCase();
-    if (/paga/.test(status)) return 'Paga · pronta para produção';
-    if (/pedido_criado|vinculad|encomend/.test(status)) return 'Encomendada';
+    const status = norm(creation?.encomenda?.status || creation.atendimento_status || creation.status || 'arte_pronta');
+    const payment = norm(creation.pagamento_status || creation?.encomenda?.pagamento_status);
+    if (released(creation)) return 'PAGO · LIBERADO PARA PRODUÇÃO';
+    if (payment === 'pago') return 'Pagamento confirmado · aguardando liberação técnica';
+    if (/paga/.test(status) && !released(creation)) return 'Pagamento registrado · PRODUÇÃO BLOQUEADA';
+    if (/pedido_criado|vinculad|encomend/.test(status)) return 'Encomendada · aguardando pagamento';
     if (/carrinho|aguardando_pedido|encomendando/.test(status)) return 'No carrinho / aguardando pedido';
     if (/cancel/.test(status)) return 'Pedido cancelado';
     if (/gerando/.test(status)) return 'Gerando arte';
@@ -35,10 +44,11 @@
       const creation = await fetchCreation(id);
       if (!creation || drawer.querySelector('[data-cf-encomenda-status]')) return;
       const orderId = text(creation.pedido_id || creation.pedido_loja_integrada_id || creation?.encomenda?.pedido_id);
+      const isReleased = released(creation);
       const block = document.createElement('div');
       block.className = 'form-section';
       block.dataset.cfEncomendaStatus = BUILD;
-      block.innerHTML = `<h3>Encomenda</h3><div class="notice"><b>${esc(statusLabel(creation))}</b><br>Código da arte: <b>${esc(id)}</b>${orderId ? `<br>Pedido Loja Integrada: <b>${esc(orderId)}</b>` : '<br>Esta criação permanece em Minhas Artes até o cliente comprar.'}</div>${orderId ? '<div class="mini-actions" style="margin-top:8px"><button class="secondary" type="button" data-cf-open-order>Ver em Pedidos</button></div>' : ''}`;
+      block.innerHTML = `<h3>Encomenda</h3><div class="notice"><b>${esc(statusLabel(creation))}</b><br>Código da arte: <b>${esc(id)}</b>${orderId ? `<br>Pedido Loja Integrada: <b>${esc(orderId)}</b>` : '<br>Esta criação permanece em Minhas Artes até o cliente comprar.'}${isReleased ? '<br><br>✓ Pagamento confirmado pela Loja Integrada. Esta caneca está autorizada a entrar na fila de produção.' : orderId ? '<br><br>⛔ Não produzir enquanto o pagamento não estiver confirmado e liberado.' : ''}</div>${orderId ? '<div class="mini-actions" style="margin-top:8px"><button class="secondary" type="button" data-cf-open-order>Ver em Pedidos</button></div>' : ''}`;
       const actions = drawer.querySelector('.drawer-actions');
       if (actions) drawer.insertBefore(block, actions);
       else drawer.appendChild(block);
