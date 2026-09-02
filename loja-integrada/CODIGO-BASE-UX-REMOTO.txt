@@ -1,12 +1,12 @@
-// CANECAFÁCIL · BASE UX REMOTO
+// CANECAFÁCIL · BASE UX REMOTO V2
 // Loja Integrada > JavaScript do Rodapé > Todas as páginas exceto checkout
 // Cole somente este código. Não use <script>.
 (function(){
-  if(window.CFSITEBOOT)return;
-  window.CFSITEBOOT='20260902-4';
+  if(window.CFSITEBOOTV2)return;
+  window.CFSITEBOOTV2='20260902-5';
   var s=document.createElement('script');
-  s.src='https://donaantonia.com.br/loja-integrada/canecafacil-site-runtime-v1.js?v=20260902-4';
+  s.src='https://donaantonia.com.br/loja-integrada/canecafacil-bootstrap-v2.js?v=20260902-1';
   s.async=true;
-  s.onerror=function(){console.error('[CanecaFácil] Falha ao carregar Base UX remoto.');};
+  s.onerror=function(){console.error('[CanecaFácil] Falha ao carregar Bootstrap V2.');};
   document.head.appendChild(s);
 })();
