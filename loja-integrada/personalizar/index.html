@@ -7,6 +7,7 @@
   <meta name="theme-color" content="#ffffff">
   <title>Personalize sua caneca — CanecaFácil</title>
   <link rel="stylesheet" href="./styles.css?v=20260902-9">
+  <link rel="stylesheet" href="./preview-polish-v1.css?v=20260902-1">
   <link rel="stylesheet" href="./fun-loader-v1.css?v=20260901-1">
 </head>
 <body>
@@ -41,7 +42,7 @@
 
     <section class="preview-card" id="previewBox" hidden aria-live="polite">
       <div class="preview-head">
-        <div><strong>Sua arte ficou pronta ✨</strong><p>Deslize pelos dois lados e confira antes de aprovar.</p></div>
+        <div><strong>Sua arte ficou pronta ✨</strong><p>Confira os dois lados antes de aprovar.</p></div>
         <small id="previewCode"></small>
       </div>
       <div class="preview-stage">
@@ -55,11 +56,11 @@
       <div class="preview-meta"><span id="previewCounter">1 de 2</span><span>Prévia da arte real</span></div>
       <label class="cf-field cf-wide quantity-art">Quantidade desta mesma arte
         <input id="personalizedQuantity" type="number" inputmode="numeric" min="1" max="20" step="1" value="1" aria-label="Quantidade desta arte personalizada">
-        <small>Ex.: quantidade 3 = três canecas idênticas com esta mesma arte. Para nomes ou artes diferentes, gere outra personalização.</small>
+        <small>Para nomes ou artes diferentes, gere outra personalização.</small>
       </label>
       <button class="primary approve-cta" id="approveButton" type="button">APROVAR E COMPRAR</button>
       <button class="secondary preview-edit" id="editCreation" type="button" hidden>CORRIGIR DADOS</button>
-      <p class="native-note">Ao aprovar, o modelo original será adicionado ao carrinho e este código ficará ligado à sua arte para produção.</p>
+      <p class="native-note">Ao aprovar, sua arte ficará vinculada ao pedido desta caneca.</p>
     </section>
 
     <section class="pending-card" id="pendingBox" hidden aria-live="polite">
