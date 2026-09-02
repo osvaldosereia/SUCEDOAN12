@@ -68,7 +68,11 @@ assert.match(commerce,/ART_STORAGE = 'cf_minhas_artes_v1'/,'Minhas Artes deve pe
 assert.match(commerce,/MAX_DAYS = 30/,'Minhas Artes deve guardar criações por 30 dias');
 assert.match(commerce,/cf_arte/,'link de e-mail deve conseguir reimportar a criação');
 assert.match(prodLoader,/canecafacil-commerce-runtime-v1\.js/,'loader de produção deve carregar Minhas Artes e bridge');
-assert.match(prodLoader,/findProductBySku/,'loader deve localizar o cadastro individual pelo SKU');
+assert.match(prodLoader,/skuFromPage/,'loader deve extrair o SKU da página do produto');
+assert.match(prodLoader,/catalogProductBySku/,'loader V6 deve resolver canecas antigas pelo catálogo publicado');
+assert.match(prodLoader,/firebaseProductBySku/,'loader deve continuar consultando o cadastro individual no Firebase');
+assert.match(prodLoader,/oldPersonalizeButton/,'botão legado deve servir como confirmação de caneca personalizável');
+assert.match(prodLoader,/modelFromOldButton/,'loader deve reaproveitar model já existente no botão quando disponível');
 assert.match(prodLoader,/isPersonalizable/,'loader deve respeitar a configuração de personalização do produto');
 assert.match(prodLoader,/injectPersonalizer/,'loader deve abrir automaticamente o V15 nas canecas personalizáveis');
 assert.match(prodLoader,/data-cf-auto-personalizer|cfAutoPersonalizer/,'loader deve evitar duplicação do formulário automático');
@@ -91,4 +95,4 @@ assert.match(orderWorker,/quantidade_personalizada_total/,'pedido deve registrar
 assert.match(creationStatus,/Arte criada · ainda não encomendada/,'Admin deve distinguir arte sem compra');
 assert.match(creationStatus,/PAGO · LIBERADO PARA PRODUÇÃO/,'Admin deve distinguir pedido pago e liberado');
 
-console.log('OK CanecaFácil V15: Admin completo, personalizador automático por SKU/configuração, cliente sem produto temporário, limite pré-submit, quantidade por CF-ID, Minhas Artes, produto original no carrinho e produção somente após pagamento.');
+console.log('OK CanecaFácil V15: Admin completo, personalizador automático por SKU/catálogo/configuração, cliente sem produto temporário, limite pré-submit, quantidade por CF-ID, Minhas Artes, produto original no carrinho e produção somente após pagamento.');
