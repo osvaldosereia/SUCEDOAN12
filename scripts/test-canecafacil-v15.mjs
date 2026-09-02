@@ -13,6 +13,7 @@ const app=read('loja-integrada','personalizar','app-v15.js');
 const personalizerIndex=read('loja-integrada','personalizar','index.html');
 const nativeCart=read('loja-integrada','personalizar','native-cart-v2.js');
 const deviceBridge=read('loja-integrada','personalizar','creation-device-bridge-v1.js');
+const generationGuard=read('loja-integrada','personalizar','generation-guard-v1.js');
 const commerce=read('loja-integrada','canecafacil-commerce-runtime-v1.js');
 const cartBridge=read('loja-integrada','personalized-order-bridge-v2.js');
 const prodLoader=read('loja-integrada','loader-personalizador-inline-producao.js');
@@ -41,6 +42,11 @@ assert.match(app,/createTwoCrops/,'prévia deve ser dividida em esquerda e direi
 assert.match(app,/creationCode\(\)/,'cada arte deve receber CF-ID');
 assert.match(app,/creationParam/,'V15 deve reabrir criação existente');
 assert.match(personalizerIndex,/id="personalizedQuantity"/,'prévia deve permitir definir quantidade da mesma arte');
+assert.match(personalizerIndex,/generation-guard-v1\.js/,'personalizador deve carregar proteção de gerações');
+assert.match(generationGuard,/PER_MODEL = 2/,'deve limitar duas gerações por modelo/dia/aparelho');
+assert.match(generationGuard,/PER_DEVICE = 6/,'deve existir teto diário global por aparelho');
+assert.match(generationGuard,/payload\?\.action !== 'personalize_mug_model'/,'limite deve contar somente geração personalizada');
+assert.match(generationGuard,/if \(response\.ok\)/,'geração só deve ser contabilizada se o Make aceitar a chamada');
 
 assert.match(nativeCart,/const productId = liProductId\(product\)/,'carrinho deve usar produto original sincronizado');
 assert.match(nativeCart,/PENDING_NODE = 'canecas\/encomendas_pendentes'/,'aprovação deve criar vínculo pendente');
@@ -79,4 +85,4 @@ assert.match(orderWorker,/quantidade_personalizada_total/,'pedido deve registrar
 assert.match(creationStatus,/Arte criada · ainda não encomendada/,'Admin deve distinguir arte sem compra');
 assert.match(creationStatus,/Paga · pronta para produção/,'Admin deve distinguir encomenda paga');
 
-console.log('OK CanecaFácil V15: Admin completo, cliente sem produto temporário, quantidade por CF-ID, Minhas Artes, produto original no carrinho e CF-ID ligado à produção.');
+console.log('OK CanecaFácil V15: Admin completo, cliente sem produto temporário, limite de geração, quantidade por CF-ID, Minhas Artes, produto original no carrinho e CF-ID ligado à produção.');
