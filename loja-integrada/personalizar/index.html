@@ -28,9 +28,7 @@
     </section>
 
     <form class="form-card" id="personalizerForm" hidden>
-      <div class="form-head">
-        <div><p class="eyebrow">PERSONALIZE</p><h2>O que deseja alterar?</h2></div>
-      </div>
+      <div class="form-head"><div><p class="eyebrow">PERSONALIZE</p><h2>O que deseja alterar?</h2></div></div>
       <div class="grid">
         <label class="cf-field cf-wide">Seu e-mail *
           <input id="customerEmail" type="email" autocomplete="email" maxlength="160" placeholder="voce@email.com" required>
@@ -53,6 +51,10 @@
         <button type="button" class="preview-arrow" id="nextPreview" aria-label="Próxima imagem">›</button>
       </div>
       <div class="preview-meta"><span id="previewCounter">1 de 2</span><span>Prévia da arte real</span></div>
+      <label class="cf-field cf-wide">Quantidade desta mesma arte
+        <input id="personalizedQuantity" type="number" inputmode="numeric" min="1" max="20" step="1" value="1" aria-label="Quantidade desta arte personalizada">
+        <small>Ex.: quantidade 3 = três canecas idênticas com esta mesma arte. Para nomes ou artes diferentes, gere outra personalização.</small>
+      </label>
       <button class="primary" id="approveButton" type="button">APROVAR E COMPRAR</button>
       <button class="secondary preview-edit" id="editCreation" type="button">ALTERAR DADOS</button>
       <p class="native-note">Ao aprovar, adicionaremos ao carrinho o modelo original da loja e vincularemos este código à sua arte para produção. Nenhum produto público novo será criado.</p>
@@ -66,23 +68,15 @@
 
     <section class="progress-card" id="progressBox" hidden aria-live="polite">
       <div class="cf-mug-maker" aria-hidden="true">
-        <i class="cf-spark cf-spark-a"></i>
-        <i class="cf-spark cf-spark-b"></i>
-        <i class="cf-spark cf-spark-c"></i>
-        <div class="cf-mug-loader">
-          <span class="cf-mug-art"></span>
-          <span class="cf-mug-handle"></span>
-        </div>
+        <i class="cf-spark cf-spark-a"></i><i class="cf-spark cf-spark-b"></i><i class="cf-spark cf-spark-c"></i>
+        <div class="cf-mug-loader"><span class="cf-mug-art"></span><span class="cf-mug-handle"></span></div>
         <span class="cf-mug-shadow"></span>
       </div>
       <div class="cf-progress-copy">
         <strong id="progressTitle">Gerando sua arte</strong>
         <p id="progressText">Aguarde alguns instantes.</p>
         <div class="cf-wait-messages" aria-hidden="true">
-          <span>Preparando a tinta digital…</span>
-          <span>Caprichando nos detalhes…</span>
-          <span>A caneca está ensaiando seu melhor lado…</span>
-          <span>Quase pronta para sair do ateliê…</span>
+          <span>Preparando a tinta digital…</span><span>Caprichando nos detalhes…</span><span>A caneca está ensaiando seu melhor lado…</span><span>Quase pronta para sair do ateliê…</span>
         </div>
       </div>
     </section>
@@ -94,15 +88,13 @@
     </section>
 
     <section class="error-card" id="errorBox" hidden>
-      <strong>Não foi possível concluir</strong>
-      <p id="errorText"></p>
-      <button type="button" class="secondary" id="tryAgain">Tentar novamente</button>
+      <strong>Não foi possível concluir</strong><p id="errorText"></p><button type="button" class="secondary" id="tryAgain">Tentar novamente</button>
     </section>
   </main>
 
   <script src="./navigation-v1.js?v=20260830-1"></script>
   <script src="./creation-device-bridge-v1.js?v=20260901-3"></script>
-  <script src="./native-cart-v2.js?v=20260901-4"></script>
+  <script src="./native-cart-v2.js?v=20260902-1"></script>
   <script type="module" src="./app-v15.js?v=20260901-1"></script>
 </body>
 </html>
