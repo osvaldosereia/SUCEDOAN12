@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-native-cart-v2.4-quantity';
+  const BUILD = '20260902-native-cart-v2.5-cart-status';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const STOREFRONT = 'https://www.canecafacil.com.br/';
   const CREATIONS_NODE = 'canecas/personalizadas';
@@ -145,7 +145,7 @@
           cliente_email_hash:emailHash || null,
           quantidade_encomendada:qty,
           status:'aguardando_pedido',
-          atendimento_status:'encomendando',
+          atendimento_status:'carrinho',
           encomenda:{
             status:'carrinho', codigo_arte:code, produto_key:modelKey, quantidade:qty,
             loja_integrada_produto_id:productId, sku:sku(product),
