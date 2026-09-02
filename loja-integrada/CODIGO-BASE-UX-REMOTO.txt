@@ -3,9 +3,9 @@
 // Cole somente este código. Não use <script>.
 (function(){
   if(window.CFSITEBOOT)return;
-  window.CFSITEBOOT='20260902-2';
+  window.CFSITEBOOT='20260902-3';
   var s=document.createElement('script');
-  s.src='https://donaantonia.com.br/loja-integrada/canecafacil-site-runtime-v1.js?v=20260902-2';
+  s.src='https://donaantonia.com.br/loja-integrada/canecafacil-site-runtime-v1.js?v=20260902-3';
   s.async=true;
   s.onerror=function(){console.error('[CanecaFácil] Falha ao carregar Base UX remoto.');};
   document.head.appendChild(s);
