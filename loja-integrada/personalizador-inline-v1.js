@@ -1,542 +1,142 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-li-personalizador-inline-v1.2-commerce';
-  const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
-  const MAKE_WEBHOOK = 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
-  const WAIT_MS = 180000;
-  const POLL_MS = 1800;
+  const BUILD='20260902-li-personalizador-inline-v1-readonly';
+  const FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
+  const MAKE_WEBHOOK='https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
   const TEST_PARAM = 'cf_personalizador';
   const TEST_VALUE = 'teste';
 
-  if (window.__CF_LI_PERSONALIZADOR_INLINE__ === BUILD) return;
-  window.__CF_LI_PERSONALIZADOR_INLINE__ = BUILD;
+  if(window.__CF_LI_PERSONALIZADOR_INLINE__===BUILD)return;
+  window.__CF_LI_PERSONALIZADOR_INLINE__=BUILD;
+  const params=new URLSearchParams(location.search);
+  if(params.get(TEST_PARAM)!==TEST_VALUE)return;
 
-  const params = new URLSearchParams(location.search);
-  if (params.get(TEST_PARAM) !== TEST_VALUE) return;
+  const text=v=>String(v??'').trim();
+  const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  const defs={
+    nome: ['text','Nome',80],
+    foto: ['image','Foto',0],
+    logo: ['image','Logo',0],
+    endereco: ['text','Endereço',180],
+    telefone: ['text','Telefone',40],
+    site: ['text','Site',120]
+  };
+  let product=null,config=null;
 
-  const text = value => String(value ?? '').trim();
-  const esc = value => String(value ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-  const safeKey = value => text(value).replace(/[.#$\[\]/]/g, '_');
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-  let product = null;
-  let config = null;
-  let productKey = '';
-  let generatedSource = '';
-  let generatedCode = '';
-  const files = {};
-
-  function style() {
-    if (document.getElementById('cfInlinePersonalizerStyles')) return;
-    const node = document.createElement('style');
-    node.id = 'cfInlinePersonalizerStyles';
-    node.textContent = `
-      #cfInlinePersonalizer{margin:16px 0;border:1px solid #e4e6df;border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 8px 28px rgba(20,24,20,.05)}
-      #cfInlinePersonalizer *{box-sizing:border-box}
-      .cfip-head{padding:15px 16px 13px;background:#fafbf8;border-bottom:1px solid #eceee8}
-      .cfip-head strong{display:block;font-size:17px;line-height:1.2;color:#20231f}
-      .cfip-head span{display:block;margin-top:5px;font-size:13px;line-height:1.45;color:#697068}
-      .cfip-test{display:inline-flex!important;width:auto!important;margin:0 0 8px!important;padding:4px 8px!important;border-radius:99px;background:#fff3cd;color:#785b00!important;font-weight:700;font-size:10px!important;letter-spacing:.04em}
-      .cfip-body{padding:15px 16px}
-      .cfip-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-      .cfip-field{display:block;margin:0;color:#30352f;font-size:12px;font-weight:700}
-      .cfip-field.wide{grid-column:1/-1}
-      .cfip-field input{display:block;width:100%;height:44px;margin-top:5px;padding:9px 11px;border:1px solid #d8dcd4;border-radius:9px;background:#fff;color:#20231f;font:inherit;font-size:14px;font-weight:500;outline:none}
-      .cfip-field input:focus{border-color:#747d70;box-shadow:0 0 0 3px rgba(90,104,88,.1)}
-      .cfip-field input[type=file]{height:auto;min-height:44px;padding:8px;background:#fafbf8}
-      .cfip-field small{display:block;margin-top:4px;color:#858b84;font-size:10px;font-weight:500}
-      .cfip-actions{display:flex;gap:8px;margin-top:14px;align-items:center}
-      .cfip-primary,.cfip-secondary{border:0;border-radius:9px;padding:12px 14px;min-height:44px;font-weight:800;cursor:pointer}
-      .cfip-primary{flex:1;background:#191c19;color:#fff}
-      .cfip-secondary{background:#f0f2ed;color:#343934}
-      .cfip-primary[disabled],.cfip-secondary[disabled]{opacity:.55;cursor:not-allowed}
-      .cfip-status{margin-top:12px;padding:10px 11px;border-radius:9px;background:#f6f7f4;color:#5f665f;font-size:12px;line-height:1.45}
-      .cfip-status.error{background:#fff0f0;color:#8a2424}
-      .cfip-result{margin-top:14px;border-top:1px solid #eceee8;padding-top:14px}
-      .cfip-result img{display:block;width:100%;height:auto;border-radius:10px;background:#f5f5f2}
-      .cfip-result strong{display:block;margin:10px 0 2px;color:#20231f}
-      .cfip-result p{margin:0;color:#6b716a;font-size:12px;line-height:1.45}
-      .cfip-buy-note{margin:11px 0 0;padding:9px 10px;border:1px dashed #d7d9d3;border-radius:9px;color:#71776f;font-size:11px;line-height:1.4}
-      @media(max-width:680px){
-        #cfInlinePersonalizer{margin:12px 0;border-radius:12px}
-        .cfip-head{padding:13px 14px 11px}.cfip-body{padding:13px 14px}
-        .cfip-grid{grid-template-columns:1fr;gap:9px}.cfip-field.wide{grid-column:auto}
-        .cfip-actions{display:grid;grid-template-columns:1fr}.cfip-primary,.cfip-secondary{width:100%}
-      }
-    `;
-    document.head.appendChild(node);
-  }
-
-  function productIdFromPage() {
-    const buy = document.querySelector('a[href*="/carrinho/produto/"][href*="/adicionar"]');
-    const match = buy?.getAttribute('href')?.match(/\/carrinho\/produto\/(\d+)\/adicionar/i);
-    if (match) return match[1];
-    const html = document.documentElement.innerHTML;
-    return html.match(/PRODUTO_ID\s*[=:]\s*["']?(\d+)/i)?.[1] || '';
-  }
-
-  function skuFromPage() {
-    const selectors = [
-      '[itemprop="sku"]', '[data-sku]', '.codigo-produto', '.produto-codigo', '.sku', '[class*="codigo"]'
-    ];
-    for (const selector of selectors) {
-      const el = document.querySelector(selector);
-      const raw = text(el?.getAttribute?.('content') || el?.dataset?.sku || el?.textContent);
-      const cleaned = raw.replace(/^.*?(?:c[oó]digo|sku)\s*[:#-]?\s*/i, '').trim();
-      if (/^[A-Za-z0-9._-]{3,40}$/.test(cleaned)) return cleaned;
+  function skuFromPage(){
+    for(const selector of ['[itemprop="sku"]','[data-sku]','.codigo-produto','.produto-codigo','.sku','[class*="codigo"]']){
+      const el=document.querySelector(selector);
+      const raw=text(el?.getAttribute?.('content')||el?.dataset?.sku||el?.textContent);
+      const cleaned=raw.replace(/^.*?(?:c[oó]digo|sku)\s*[:#-]?\s*/i,'').trim();
+      if(/^[A-Za-z0-9._-]{3,40}$/.test(cleaned))return cleaned;
     }
-    const html = document.documentElement.innerHTML;
-    return text(
-      html.match(/["']sku["']\s*:\s*["']([^"']+)["']/i)?.[1]
-      || html.match(/SKU\s*[=:]\s*["']([^"']+)["']/i)?.[1]
-    );
-  }
-
-  async function fetchJson(url) {
-    const response = await fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
-  }
-
-  async function writeJson(url, data, method = 'PUT') {
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json().catch(() => null);
-  }
-
-  async function findProduct() {
-    const sku = skuFromPage();
-    const liId = productIdFromPage();
-    if (!sku) throw new Error('Não consegui identificar o SKU desta página.');
-    const url = new URL(`${FIREBASE}/produtos.json`);
-    url.searchParams.set('orderBy', JSON.stringify('codigo'));
-    url.searchParams.set('equalTo', JSON.stringify(sku));
-    const data = await fetchJson(url);
-    const rows = Object.entries(data || {}).map(([key, value]) => ({ __key: key, ...(value || {}) }));
-    if (!rows.length) throw new Error(`SKU ${sku} não foi localizado no CanecaFácil.`);
-    if (rows.length > 1) throw new Error(`SKU ${sku} está duplicado no cadastro.`);
-    const row = rows[0];
-    const savedId = text(row?.loja_integrada?.produto_id || row?.loja_integrada_produto_id);
-    if (liId && savedId && liId !== savedId) throw new Error(`A página e o cadastro apontam para produtos diferentes (${liId} / ${savedId}).`);
-    return row;
-  }
-
-  function normalizeConfig(p = {}) {
-    const raw = p.personalizacao && typeof p.personalizacao === 'object' ? p.personalizacao : {};
-    const defs = {
-      nome: ['text', 'Nome', 80],
-      foto: ['image', 'Foto', 0],
-      logo: ['image', 'Logo', 0],
-      endereco: ['text', 'Endereço', 180],
-      telefone: ['text', 'Telefone', 40],
-      site: ['text', 'Site', 120]
-    };
-    const fields = [];
-    for (const [id, [type, defaultLabel, max]] of Object.entries(defs)) {
-      const item = raw.campos?.[id] || {};
-      if (item.ativo !== true) continue;
-      fields.push({
-        id,
-        tipo: type,
-        rotulo: text(item.rotulo) || defaultLabel,
-        obrigatorio: item.obrigatorio === true,
-        max
-      });
-    }
-    return {
-      ativa: raw.ativa === true,
-      obrigatoria: raw.ativa === true && raw.obrigatoria === true,
-      campos: fields,
-      prompt_base_id: text(raw.prompt_base_id),
-      prompt_base_nome: text(raw.prompt_base_nome),
-      prompt_base_texto: text(raw.prompt_base_texto),
-      prompt_base_versao: Number(raw.prompt_base_versao || 0) || 0,
-      prompt_especifico: text(raw.prompt_especifico),
-      config_version: Number(raw.config_version || 0) || 0
-    };
-  }
-
-  function buildPrompt(values = {}, fileFlags = {}) {
-    const allowed = [];
-    const data = [];
-    for (const field of config.campos) {
-      allowed.push(`${field.id} (${field.rotulo})`);
-      if (field.tipo === 'image') {
-        if (fileFlags[field.id]) data.push(`${field.rotulo}: arquivo enviado pelo cliente.`);
-      } else if (text(values[field.id])) {
-        data.push(`${field.rotulo}: ${text(values[field.id])}`);
-      }
-    }
-    return [
-      'REGRA OBRIGATÓRIA: altere exclusivamente os elementos autorizados abaixo.',
-      'Preserve integralmente todos os elementos que não foram autorizados para alteração.',
-      'Não acrescente elementos, textos, personagens, cores ou instruções não autorizadas.',
-      `ELEMENTOS AUTORIZADOS: ${allowed.join(', ')}.`,
-      config.prompt_base_texto ? `INSTRUÇÃO PADRÃO:\n${config.prompt_base_texto}` : '',
-      config.prompt_especifico ? `INSTRUÇÃO ESPECÍFICA DESTE MODELO:\n${config.prompt_especifico}` : '',
-      data.length ? `DADOS DO CLIENTE:\n${data.join('\n')}` : ''
-    ].filter(Boolean).join('\n\n');
-  }
-
-  function modelArt(p = {}) {
-    return text(p.arte_horizontal || p.arte_personalizacao || p.arte_impressao?.url || p.arte_final_url);
-  }
-
-  function fileToDataUrl(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(text(reader.result));
-      reader.onerror = () => reject(new Error('Não foi possível ler o arquivo selecionado.'));
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function urlToDataUrl(url) {
-    if (/^data:image\//i.test(url)) return url;
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error('Não foi possível carregar a arte-base.');
-    return fileToDataUrl(await response.blob());
-  }
-
-  function userEmail() {
-    const match = document.cookie.match(/(?:^|;\s*)user_email=([^;]+)/i);
-    if (!match) return '';
-    try { return decodeURIComponent(match[1]); } catch { return match[1]; }
-  }
-
-  function fieldHtml(field) {
-    const required = field.obrigatorio ? 'required' : '';
-    const star = field.obrigatorio ? ' *' : '';
-    if (field.tipo === 'image') {
-      return `<label class="cfip-field">${esc(field.rotulo)}${star}<input data-cf-field="${esc(field.id)}" type="file" accept="image/png,image/jpeg,image/webp" ${required}><small>PNG, JPG ou WebP</small></label>`;
-    }
-    return `<label class="cfip-field">${esc(field.rotulo)}${star}<input data-cf-field="${esc(field.id)}" type="text" maxlength="${field.max || 180}" ${required}></label>`;
-  }
-
-  function placePanel(panel) {
-    document.querySelectorAll('.cf-personalizer-box').forEach(el => { el.style.display = 'none'; });
-    const buy = document.querySelector('.acoes-produto .comprar, .acoes-produto [class*="comprar"], a[href*="/carrinho/produto/"][href*="/adicionar"]');
-    const anchor = buy?.closest('.comprar') || buy;
-    if (anchor?.parentNode) anchor.parentNode.insertBefore(panel, anchor);
-    else {
-      const details = document.querySelector('.produto .principal, .produto-detalhes, .info-principal-produto, main');
-      (details || document.body).appendChild(panel);
-    }
-  }
-
-  function render() {
-    style();
-    const fields = config.campos.map(fieldHtml).join('');
-    const allowedText = config.campos.map(f => f.rotulo.toLowerCase()).join(', ');
-    const panel = document.createElement('section');
-    panel.id = 'cfInlinePersonalizer';
-    panel.innerHTML = `
-      <div class="cfip-head">
-        <strong>Personalize esta caneca</strong>
-        <span>${allowedText ? `Neste modelo você pode alterar: ${esc(allowedText)}.` : 'Este modelo ainda não possui campos liberados.'}</span>
-      </div>
-      <div class="cfip-body">
-        <form id="cfipForm">
-          <div class="cfip-grid">
-            <label class="cfip-field wide">Seu e-mail *<input id="cfipEmail" type="email" autocomplete="email" value="${esc(userEmail())}" required><small>Usamos o e-mail para identificar e recuperar sua criação.</small></label>
-            ${fields}
-          </div>
-          <div class="cfip-actions">
-            <button class="cfip-primary" id="cfipGenerate" type="submit">GERAR MINHA ARTE</button>
-          </div>
-          <div class="cfip-status" id="cfipStatus">Preencha os campos liberados para este modelo e gere sua arte.</div>
-        </form>
-        <div class="cfip-result" id="cfipResult" hidden>
-          <img id="cfipResultImage" alt="Arte personalizada gerada">
-          <strong>Sua arte ficou pronta</strong>
-          <p>Confira a arte com atenção. Se estiver correta, aprove para continuar a compra.</p>
-          <div class="cfip-status" id="cfipResultStatus">Sua arte ainda não foi aprovada.</div>
-          <div class="cfip-actions">
-            <button class="cfip-secondary" id="cfipAgain" type="button">ALTERAR / GERAR NOVAMENTE</button>
-            <button class="cfip-primary" id="cfipApprove" type="button">APROVAR E COMPRAR</button>
-          </div>
-        </div>
-        <div class="cfip-buy-note">${config.obrigatoria ? 'A personalização deste modelo é obrigatória antes da compra.' : 'A personalização é opcional; você também pode comprar o modelo sem alterações.'}</div>
-      </div>`;
-    placePanel(panel);
-
-    if (config.obrigatoria) {
-      const buy = document.querySelector('.acoes-produto .comprar, a[href*="/carrinho/produto/"][href*="/adicionar"]')?.closest('.comprar')
-        || document.querySelector('a[href*="/carrinho/produto/"][href*="/adicionar"]');
-      if (buy) {
-        buy.dataset.cfOriginalDisplay = buy.style.display || '';
-        buy.style.display = 'none';
-      }
-    }
-
-    panel.querySelectorAll('input[type=file][data-cf-field]').forEach(input => {
-      input.addEventListener('change', () => { files[input.dataset.cfField] = input.files?.[0] || null; });
-    });
-    panel.querySelector('#cfipForm').addEventListener('submit', generate);
-    panel.querySelector('#cfipApprove').addEventListener('click', approveAndBuy);
-    panel.querySelector('#cfipAgain').addEventListener('click', () => {
-      generatedSource = '';
-      generatedCode = '';
-      panel.querySelector('#cfipResult').hidden = true;
-      panel.querySelector('#cfipForm').hidden = false;
-      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-  }
-
-  function collectValues() {
-    const values = {};
-    const fileFlags = {};
-    for (const field of config.campos) {
-      const input = document.querySelector(`[data-cf-field="${CSS.escape(field.id)}"]`);
-      if (field.tipo === 'image') fileFlags[field.id] = Boolean(files[field.id]);
-      else values[field.id] = text(input?.value);
-    }
-    return { values, fileFlags };
-  }
-
-  function validate(values, fileFlags) {
-    const errors = [];
-    for (const field of config.campos) {
-      if (!field.obrigatorio) continue;
-      if (field.tipo === 'image' && !fileFlags[field.id]) errors.push(`${field.rotulo} é obrigatório.`);
-      if (field.tipo !== 'image' && !text(values[field.id])) errors.push(`${field.rotulo} é obrigatório.`);
-    }
-    return errors;
-  }
-
-  function imageSource(record) {
-    if (!record || typeof record !== 'object') return '';
-    const nested = record.result && typeof record.result === 'object' ? record.result : {};
-    const value = text(record.art_source_url || record.art_url || record.result_url || record.arte_horizontal_url || record.arte_horizontal || record.art_source_base64 || record.image_base64 || nested.art_source_url || nested.art_source_base64);
-    if (/^https?:\/\//i.test(value) || /^data:image\//i.test(value)) return value;
-    if (/^[A-Za-z0-9+/=\r\n]+$/.test(value) && value.length > 1000) return `data:image/webp;base64,${value.replace(/\s+/g, '')}`;
     return '';
   }
 
-  async function waitResult(requestId) {
-    const started = Date.now();
-    while (Date.now() - started < WAIT_MS) {
-      setStatus(`Gerando sua arte… ${Math.max(1, Math.round((Date.now() - started) / 1000))}s`);
-      const record = await fetchJson(`${FIREBASE}/canecas/geracoes/${safeKey(requestId)}.json?_=${Date.now()}`).catch(() => null);
-      if (record?.ok === false || record?.error || record?.erro) throw new Error(record.error || record.erro || 'A geração falhou.');
-      const source = imageSource(record);
-      if (source) return source;
-      await sleep(POLL_MS);
+  async function fetchJson(url){
+    const response=await fetch(url,{cache:'no-store',headers:{Accept:'application/json'}});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async function findProduct(){
+    const sku=skuFromPage();
+    if(!sku)throw new Error('Não consegui identificar o SKU desta página.');
+    const url=new URL(`${FIREBASE}/produtos.json`);
+    url.searchParams.set('orderBy',JSON.stringify('codigo'));
+    url.searchParams.set('equalTo',JSON.stringify(sku));
+    const data=await fetchJson(url);
+    const rows=Object.entries(data||{}).map(([key,value])=>({__key:key,...(value||{})}));
+    if(rows.length!==1)throw new Error(rows.length?'SKU duplicado no cadastro.':`SKU ${sku} não localizado.`);
+    return rows[0];
+  }
+
+  function normalizeConfig(p={}){
+    const raw=p.personalizacao&&typeof p.personalizacao==='object'?p.personalizacao:{};
+    const campos=[];
+    for(const [id,[tipo,rotulo,max]] of Object.entries(defs)){
+      const item=raw.campos?.[id]||{};
+      if(item.ativo!==true)continue;
+      campos.push({id,tipo,rotulo:text(item.rotulo)||rotulo,max,obrigatorio:item.obrigatorio===true});
     }
-    throw new Error('A geração demorou mais de 3 minutos. Tente novamente.');
+    return {ativa:raw.ativa===true,campos,prompt_base_texto:text(raw.prompt_base_texto),prompt_especifico:text(raw.prompt_especifico)};
   }
 
-  function setStatus(message, error = false) {
-    const node = document.getElementById('cfipStatus');
-    if (!node) return;
-    node.textContent = message;
-    node.className = `cfip-status${error ? ' error' : ''}`;
-  }
+  function modelArt(p={}){return text(p.arte_horizontal||p.arte_personalizacao||p.arte_impressao?.url||p.arte_final_url);}
+  function fileToDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(text(r.result));r.onerror=()=>reject(new Error('Não foi possível ler a imagem.'));r.readAsDataURL(file);});}
+  async function urlToDataUrl(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('Não foi possível carregar a arte-base.');return fileToDataUrl(await r.blob());}
 
-  function setResultStatus(message, error = false) {
-    const node = document.getElementById('cfipResultStatus');
-    if (!node) return;
-    node.textContent = message;
-    node.className = `cfip-status${error ? ' error' : ''}`;
-  }
-
-  function creationCode() {
-    const d = new Date();
-    const date = `${String(d.getFullYear()).slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-    return `CF-${date}-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-  }
-
-  async function persistCreation(source, values, prompt, email) {
-    const code = creationCode();
-    const at = new Date().toISOString();
-    const record = {
-      id: code,
-      origem: 'loja_integrada_inline',
-      loja_dominio: location.hostname,
-      modelo_key: productKey,
-      modelo_nome: text(product?.nome),
-      produto_key: productKey,
-      cliente_email: email,
-      campos: values,
-      arte_horizontal: source,
-      arte_personalizacao: source,
-      arte_aprovada: null,
-      arte_versao: 'v1',
-      arte_versao_aprovada: '',
-      aprovada: false,
-      versoes: [{ versao:'v1', url:source, criado_em:at, status:'gerada' }],
-      personalizacao_snapshot: {
-        config_version: config.config_version,
-        prompt_base_id: config.prompt_base_id,
-        prompt_base_versao: config.prompt_base_versao,
-        prompt_final: prompt,
-        campos_liberados: config.campos.map(f => ({ id:f.id, rotulo:f.rotulo, tipo:f.tipo, obrigatorio:f.obrigatorio }))
-      },
-      status: 'arte_pronta',
-      atendimento_status: 'novo',
-      criado_em: at,
-      atualizado_em: at
-    };
-    await writeJson(`${FIREBASE}/canecas/personalizadas/${safeKey(code)}.json`, record, 'PUT');
-    return code;
-  }
-
-  async function approveAndBuy() {
-    if (!generatedSource || !generatedCode) return setResultStatus('Gere a arte antes de aprovar.', true);
-    const button = document.getElementById('cfipApprove');
-    if (!button || button.disabled) return;
-    button.disabled = true;
-    const original = button.textContent;
-    button.textContent = 'PREPARANDO CARRINHO…';
-    try {
-      const at = new Date().toISOString();
-      await writeJson(`${FIREBASE}/canecas/personalizadas/${safeKey(generatedCode)}.json`, {
-        aprovada: true,
-        arte_aprovada: { url: generatedSource, versao:'v1', aprovado_em:at },
-        arte_versao_aprovada: 'v1',
-        status: 'pronta_para_compra',
-        atualizado_em: at,
-        loja_integrada_temporario: {
-          status: 'solicitado',
-          solicitado_em: at,
-          atualizado_em: at,
-          origem: 'personalizador_inline'
-        }
-      }, 'PATCH');
-
-      const started = Date.now();
-      const timeout = 6 * 60 * 1000;
-      while (Date.now() - started < timeout) {
-        const elapsed = Math.max(1, Math.round((Date.now() - started) / 1000));
-        setResultStatus(`Arte aprovada. Preparando seu item personalizado para o carrinho · ${elapsed}s`);
-        const creation = await fetchJson(`${FIREBASE}/canecas/personalizadas/${safeKey(generatedCode)}.json?_${Date.now()}`).catch(() => null);
-        const temp = creation?.loja_integrada_temporario || {};
-        if (temp.status === 'ativo' && temp.produto_id) {
-          setResultStatus('Item pronto. Abrindo o carrinho…');
-          const cart = new URL(`/carrinho/produto/${encodeURIComponent(temp.produto_id)}/adicionar`, location.origin);
-          cart.searchParams.set('utm_source','canecafacil');
-          cart.searchParams.set('utm_medium','personalizador_inline');
-          cart.searchParams.set('utm_content',generatedCode);
-          location.href = cart.href;
-          return;
-        }
-        if (temp.status === 'revisar') throw new Error(temp.erro || 'A criação precisa de revisão antes da compra.');
-        if (temp.status === 'pendente_retry') setResultStatus('Arte aprovada. A loja está preparando o item; nova tentativa automática em instantes…');
-        await sleep(2500);
-      }
-      throw new Error('Sua arte foi aprovada, mas o item ainda está sendo preparado. Tente novamente em alguns minutos.');
-    } catch (error) {
-      console.error('[CanecaFácil inline compra]', error);
-      setResultStatus(error?.message || String(error), true);
-      button.disabled = false;
-      button.textContent = original;
+  function buildPrompt(values={},files={}){
+    const allowed=config.campos.map(f=>`${f.id} (${f.rotulo})`);
+    const data=[];
+    for(const field of config.campos){
+      if(field.tipo==='image'&&files[field.id])data.push(`${field.rotulo}: arquivo enviado pelo cliente.`);
+      else if(text(values[field.id]))data.push(`${field.rotulo}: ${text(values[field.id])}`);
     }
+    return [
+      'REGRA OBRIGATÓRIA: altere exclusivamente os elementos autorizados abaixo.',
+      'Preserve integralmente todos os elementos não autorizados.',
+      `ELEMENTOS AUTORIZADOS: ${allowed.join(', ')}.`,
+      config.prompt_base_texto?`INSTRUÇÃO PADRÃO:\n${config.prompt_base_texto}`:'',
+      config.prompt_especifico?`INSTRUÇÃO ESPECÍFICA:\n${config.prompt_especifico}`:'',
+      data.length?`DADOS DO CLIENTE:\n${data.join('\n')}`:''
+    ].filter(Boolean).join('\n\n');
   }
 
-  async function generate(event) {
+  function style(){
+    if(document.getElementById('cfInlinePersonalizerStyles'))return;
+    const node=document.createElement('style');node.id='cfInlinePersonalizerStyles';node.textContent=`
+      #cfInlinePersonalizer{margin:16px 0;border:1px solid #e4e6df;border-radius:14px;background:#fff;overflow:hidden;font-family:Arial,sans-serif}
+      #cfInlinePersonalizer *{box-sizing:border-box}.cfip-head,.cfip-body{padding:14px 16px}.cfip-head{background:#fafbf8;border-bottom:1px solid #eceee8}
+      .cfip-test{display:inline-block;margin-bottom:7px;padding:4px 8px;border-radius:999px;background:#fff3cd;color:#785b00;font-size:10px;font-weight:800}.cfip-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .cfip-field{font-size:12px;font-weight:700}.cfip-field input{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #ddd;border-radius:8px}.cfip-field.wide{grid-column:1/-1}
+      .cfip-actions{display:flex;gap:8px;margin-top:12px}.cfip-primary,.cfip-secondary{min-height:42px;padding:10px 13px;border:0;border-radius:8px;font-weight:800}.cfip-primary{background:#191c19;color:#fff;flex:1}.cfip-secondary{background:#eee}
+      .cfip-status{margin-top:10px;padding:9px;background:#f6f7f4;border-radius:8px;font-size:12px}.cfip-result{margin-top:12px}.cfip-result img{width:100%;border-radius:10px}
+      @media(max-width:680px){.cfip-grid{grid-template-columns:1fr}.cfip-field.wide{grid-column:auto}}
+    `;document.head.appendChild(node);
+  }
+
+  function fieldHtml(field){
+    const required=field.obrigatorio?'required':'';
+    if(field.tipo==='image')return `<label class="cfip-field">${esc(field.rotulo)}<input data-cf-field="${esc(field.id)}" type="file" accept="image/png,image/jpeg,image/webp" ${required}></label>`;
+    return `<label class="cfip-field">${esc(field.rotulo)}<input data-cf-field="${esc(field.id)}" type="text" maxlength="${field.max||180}" ${required}></label>`;
+  }
+
+  function render(){
+    style();
+    const panel=document.createElement('section');panel.id='cfInlinePersonalizer';
+    panel.innerHTML=`<div class="cfip-head"><span class="cfip-test">HOMOLOGAÇÃO · SOMENTE COM ?cf_personalizador=teste</span><strong>Personalize esta caneca</strong></div><div class="cfip-body"><form id="cfipForm"><div class="cfip-grid">${config.campos.map(fieldHtml).join('')}</div><div class="cfip-actions"><button class="cfip-primary" type="submit">GERAR MINHA ARTE</button></div><div class="cfip-status" id="cfipStatus">Homologação segura: nenhuma criação ou compra é gravada.</div></form><div class="cfip-result" id="cfipResult" hidden><img id="cfipResultImage" alt="Arte gerada"><strong>Sua arte ficou pronta</strong><div class="cfip-actions"><button class="cfip-secondary" id="cfipAgain" type="button">ALTERAR / GERAR NOVAMENTE</button><button class="cfip-primary" type="button" disabled>APROVAR E COMPRAR · EM BREVE</button></div></div></div>`;
+    const buy=document.querySelector('.acoes-produto .comprar, .acoes-produto [class*="comprar"]');
+    const anchor=buy?.closest('.comprar')||buy;
+    if(anchor?.parentNode)anchor.parentNode.insertBefore(panel,anchor);else(document.querySelector('main')||document.body).appendChild(panel);
+    panel.querySelector('#cfipForm').addEventListener('submit',generate);
+    panel.querySelector('#cfipAgain').addEventListener('click',()=>{panel.querySelector('#cfipResult').hidden=true;panel.querySelector('#cfipForm').hidden=false;});
+  }
+
+  async function generate(event){
     event.preventDefault();
-    const button = document.getElementById('cfipGenerate');
-    if (button.disabled) return;
-    button.disabled = true;
-    try {
-      const email = text(document.getElementById('cfipEmail')?.value).toLowerCase();
-      if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Digite um e-mail válido.');
-      const { values, fileFlags } = collectValues();
-      const errors = validate(values, fileFlags);
-      if (errors.length) throw new Error(errors[0]);
-      const art = modelArt(product);
-      if (!art) throw new Error('Este modelo não possui arte-base disponível.');
-      setStatus('Preparando a arte-base…');
-      const base64 = await urlToDataUrl(art);
-      const images = [];
-      for (const field of config.campos.filter(f => f.tipo === 'image')) {
-        if (!files[field.id]) continue;
-        images.push({ field_id: field.id, label: field.rotulo, image_base64: await fileToDataUrl(files[field.id]) });
-      }
-      const requestId = `INLINE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-      const prompt = buildPrompt(values, fileFlags);
-      const payload = {
-        action: 'personalize_mug_model',
-        request_id: requestId,
-        model_id: productKey,
-        mode: 'loja_integrada_inline',
-        origin: 'loja_integrada',
-        store_domain: location.hostname,
-        customer_email: email,
-        customer_name: '',
-        customer_whatsapp: '',
-        fields_json: JSON.stringify(values),
-        images_json: JSON.stringify(images),
-        image_base64: base64,
-        instruction: '',
-        prompt_art: prompt,
-        personalizacao_config_version: config.config_version,
-        prompt_base_id: config.prompt_base_id,
-        prompt_base_versao: config.prompt_base_versao,
-        firebase_url: FIREBASE,
-        products_node: 'produtos',
-        quality: 'low',
-        client_contract: BUILD
-      };
-      setStatus('Enviando sua personalização…');
-      const response = await fetch(MAKE_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ payload: JSON.stringify(payload) })
-      });
-      const raw = await response.text();
-      if (!response.ok) throw new Error(`Automação respondeu HTTP ${response.status}.`);
-      let source = '';
-      if (raw && !/^accepted\.?$/i.test(text(raw))) {
-        try {
-          const parsed = JSON.parse(raw);
-          if (parsed?.ok === false) throw new Error(parsed.error || 'A automação recusou a geração.');
-          source = imageSource(parsed);
-        } catch (error) {
-          if (!(error instanceof SyntaxError)) throw error;
-        }
-      }
-      if (!source) source = await waitResult(requestId);
-      generatedSource = source;
-      generatedCode = await persistCreation(source, values, prompt, email);
-      document.getElementById('cfipResultImage').src = source;
-      document.getElementById('cfipForm').hidden = true;
-      document.getElementById('cfipResult').hidden = false;
-      setStatus('Arte gerada com sucesso.');
-      setResultStatus(`Confira a arte. Código da personalização: ${generatedCode}`);
-      document.getElementById('cfInlinePersonalizer').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } catch (error) {
-      console.error('[CanecaFácil inline]', error);
-      setStatus(error?.message || String(error), true);
-    } finally {
-      button.disabled = false;
+    const form=event.currentTarget;if(!form.reportValidity())return;
+    const values={},files={},attachments=[];
+    for(const input of form.querySelectorAll('[data-cf-field]')){
+      const id=input.dataset.cfField;
+      if(input.type==='file'){
+        const file=input.files?.[0];if(file){files[id]=true;attachments.push({field_id:id,image_base64:await fileToDataUrl(file)});}
+      }else if(text(input.value))values[id]=text(input.value);
     }
+    const officialArt=await urlToDataUrl(modelArt(product));
+    const prompt=buildPrompt(values,files);
+    const status=form.querySelector('#cfipStatus');status.textContent='Gerando prévia de homologação…';
+    const response=await fetch(MAKE_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({payload:JSON.stringify({action:'personalize_mug_model',mode:'loja_integrada_inline',model_id:product.__key,fields_json:JSON.stringify(values),images_json:JSON.stringify(attachments),image_base64:attachments[0]?.image_base64||officialArt,prompt_art:prompt})})});
+    const raw=await response.text();let data={};try{data=raw?JSON.parse(raw):{};}catch{}
+    const source=text(data.art_source_url||data.art_url||data.result_url||data.arte_horizontal_url);
+    if(!response.ok||!/^https?:\/\//i.test(source))throw new Error('A homologação não recebeu uma arte válida.');
+    document.querySelector('#cfipResultImage').src=source;document.querySelector('#cfipResult').hidden=false;form.hidden=true;
   }
 
-  async function init() {
-    try {
-      product = await findProduct();
-      productKey = product.__key;
-      config = normalizeConfig(product);
-      if (!config.ativa) {
-        console.info(`[CanecaFácil] ${productKey}: personalização desativada.`);
-        return;
-      }
-      if (!config.campos.length) throw new Error('A personalização está ativa, mas nenhum campo foi liberado no Admin.');
-      render();
-      console.info(`CanecaFácil · personalizador inline ${BUILD} · modelo ${productKey}`);
-    } catch (error) {
-      console.warn('[CanecaFácil inline] não iniciado:', error?.message || error);
-    }
+  async function init(){
+    try{product=await findProduct();config=normalizeConfig(product);if(!config.ativa||!config.campos.length)return;render();}
+    catch(error){console.error('[CanecaFácil homologação inline]',error);}
   }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
-  else init();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
