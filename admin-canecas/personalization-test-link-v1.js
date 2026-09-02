@@ -1,7 +1,8 @@
 import { text } from '../shared/mug-commerce-v1.js?v=20260828-1';
 import { getMug } from './mug-store-v2.js?v=20260829-1';
+import './personalization-correction-admin-v1.js?v=20260902-1';
 
-const BUILD='20260901-admin-canecas-personalization-test-link-v1.2';
+const BUILD='20260902-admin-canecas-personalization-test-link-v1.3';
 const STOREFRONT='https://canecafacil.com.br/';
 const $=(s,r=document)=>r.querySelector(s);
 
