@@ -43,13 +43,20 @@ jobs:
           node --check admin-canecas/personalization-config-v1.js
           node --check admin-canecas/creation-order-status-v1.js
 
-      - name: Check customer V15 syntax
+      - name: Check active storefront syntax
+        run: |
+          node --check loja-integrada/canecafacil-site-runtime-v1.js
+          node --check loja-integrada/canecafacil-storefront-v1.js
+          node --check loja-integrada/canecafacil-product-v1.js
+          node --check loja-integrada/canecafacil-commerce-runtime-v1.js
+          node --check loja-integrada/loader-personalizador-inline-producao-v10.js
+          node --check loja-integrada/personalized-order-bridge-v2.js
+
+      - name: Check legacy compatibility syntax
         run: |
           node --check loja-integrada/personalizar/app-v15.js
           node --check loja-integrada/personalizar/native-cart-v2.js
           node --check loja-integrada/personalizar/creation-device-bridge-v1.js
-          node --check loja-integrada/canecafacil-commerce-runtime-v1.js
-          node --check loja-integrada/personalized-order-bridge-v2.js
           node --check loja-integrada/loader-personalizador-inline-producao.js
           node --check loja-integrada/personalizador-inline-v1.js
           node --check loja-integrada/personalizador-inline-v2.js
