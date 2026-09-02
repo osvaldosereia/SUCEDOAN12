@@ -1,76 +1,43 @@
-# CanecaFácil · Personalizador Inline na Loja Integrada
+# CanecaFácil · Personalizador Inline
 
-## Homologação
+> **Documento atualizado para a arquitetura consolidada.**
 
-A instalação inicial usa **uma única entrada de código** no tema da Loja Integrada.
+## Instalação atual
 
-Configuração:
+O personalizador não possui mais um código próprio para ser instalado no painel da Loja Integrada.
 
-- **Descrição:** `CanecaFácil - Personalizador Inline (Homologação)`
-- **Local publicação:** `Rodapé`
-- **Página publicação:** `Página do produto`
-- **Tipo:** `JavaScript`
+Manter somente uma entrada global:
 
-Cole o conteúdo de `loader-personalizador-inline-homologacao.js` no campo de código.
+- **Descrição:** `BASE UX V1.js`
+- **Local:** Rodapé
+- **Página:** Todas as páginas exceto checkout
+- **Tipo:** JavaScript
+- **Código:** conteúdo de `CODIGO-BASE-UX-REMOTO.txt`
 
-### Segurança da homologação
+O `canecafacil-site-runtime-v1.js` detecta páginas de produto e carrega automaticamente:
 
-O loader não faz nada para visitantes normais. Ele somente carrega o personalizador quando a URL da página do produto contém:
+`loader-personalizador-inline-producao-v10.js`
 
-`?cf_personalizador=teste`
+## Comportamento
 
-Se a URL já possuir parâmetros, use `&cf_personalizador=teste`.
-
-Enquanto a homologação estiver ativa:
-
-- o personalizador aparece dentro da própria página do produto;
-- o botão antigo de personalização é escondido somente no modo de teste;
-- modelos com personalização obrigatória escondem o Comprar normal somente no modo de teste;
-- a geração usa `personalize_mug_model` no Make;
-- o formulário mostra somente os campos liberados no Admin Canecas;
-- não existe instrução livre para o cliente;
-- não existe gravação de aprovação ou criação comercial pelo navegador;
-- `APROVAR E COMPRAR` permanece bloqueado;
-- nenhuma compra/pedido é alterado nesta fase.
-
-## Configuração por modelo no Admin Canecas
-
-Campos disponíveis, individualmente por caneca:
-
-- Nome
-- Foto
-- Logo
-- Endereço
-- Telefone
-- Site
-
-Cada campo pode ser ligado/desligado, receber um rótulo próprio e ser obrigatório ou opcional. O modelo também possui:
-
-- personalização obrigatória ou opcional;
-- prompt-base reutilizável;
-- instrução específica do modelo;
-- versão da configuração.
+- o personalizador aparece na própria página do produto;
+- somente produtos/configurações compatíveis devem ativar a experiência de personalização;
+- os campos disponíveis continuam sendo definidos no Admin Canecas;
+- a arte-base oficial permanece separada dos dados enviados pelo cliente;
+- carrinho, pedido, login, checkout e frete permanecem sob responsabilidade da Loja Integrada;
+- recursos comerciais complementares são tratados pelos módulos centrais do GitHub.
 
 ## Arquitetura
 
-`Loja Integrada (loader curto)` → `personalizador-inline-v2.js` → `personalizador-inline-v1.js` → `Make/OpenAI`
+`BASE UX V1.js` → `canecafacil-site-runtime-v1.js` → `loader-personalizador-inline-producao-v10.js` → módulos do personalizador / backend
 
-A camada V2 adapta Foto/Logo para o mesmo contrato de transporte já usado pela homologação V4, mantendo separadas:
+Não instalar loaders paralelos, hotfixes antigos ou scripts `personalizador-inline-v2.js` diretamente no painel.
 
-- arte-base oficial do modelo;
-- foto/logo enviada pelo cliente.
+## Arquivos legados
 
-## Produção
+Os arquivos abaixo existem apenas para histórico e estão marcados como **NÃO INSTALAR**:
 
-Não remover a trava `cf_personalizador=teste` até concluir os testes de:
+- `CODIGO-RODAPE-PERSONALIZADOR-PRODUCAO.txt`
+- `HOTFIX-PERSONALIZADOR-PRODUTO-V1.txt`
 
-1. identificação correta do SKU/modelo;
-2. posição do formulário no desktop e mobile;
-3. todos os seis tipos de campo;
-4. geração apenas do elemento autorizado;
-5. foto/logo sem alterar indevidamente a arte-base;
-6. aprovação segura no backend;
-7. vínculo da criação ao item/pedido da Loja Integrada;
-8. recuperação automática em caso de falha.
-
-Somente após essa homologação será criada a versão de produção do loader.
+Para visão completa da arquitetura e códigos antigos que devem sair do painel, consulte `ARQUITETURA-CANECA-FACIL-V3.md`.
