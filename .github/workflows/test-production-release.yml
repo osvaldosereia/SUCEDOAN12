@@ -1,0 +1,37 @@
+name: Test produção após pagamento
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin-canecas/production-release-status-v1.js'
+      - 'admin-canecas/creation-order-status-v1.js'
+      - 'shared/mug-commerce-v1.js'
+      - 'scripts/garantir-liberacao-producao.mjs'
+      - '.github/workflows/sincronizar-pedidos-personalizados-li.yml'
+      - '.github/workflows/test-production-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe
+        run: |
+          node --check admin-canecas/production-release-status-v1.js
+          node --check admin-canecas/creation-order-status-v1.js
+          node --check shared/mug-commerce-v1.js
+          node --check scripts/garantir-liberacao-producao.mjs
+      - name: Verificar contrato de segurança
+        run: |
+          grep -q "payment !== 'pago'" shared/mug-commerce-v1.js
+          grep -q "liberado_producao: true" shared/mug-commerce-v1.js
+          grep -q "status:'bloqueado_pagamento'" scripts/garantir-liberacao-producao.mjs
+          grep -q "PAGO · LIBERADO PARA PRODUÇÃO" admin-canecas/production-release-status-v1.js
