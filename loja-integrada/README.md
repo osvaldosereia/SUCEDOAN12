@@ -8,15 +8,22 @@ A **Loja Integrada é a fonte de verdade comercial** para catálogo publicado, p
 
 O código próprio existe apenas para melhorar apresentação, navegação e personalização.
 
-### Único código global no painel
+### Entradas próprias no painel
 
-Manter somente:
+Manter somente duas entradas fixas:
 
-- **Descrição:** `BASE UX V1.js`
-- **Tipo:** JavaScript
-- **Posição:** Rodapé
-- **Página:** Todas as páginas exceto checkout
-- **Fonte:** `CODIGO-BASE-UX-REMOTO.txt`
+1. **CSS crítico** em `Personalize sua loja > Editar CSS`
+   - fonte: `CODIGO-CSS-CRITICO-V1.txt`
+   - colar no final do CSS existente
+   - não usar `<style>`
+
+2. **BASE UX V1.js**
+   - tipo: JavaScript
+   - posição: Rodapé
+   - página: Todas as páginas exceto checkout
+   - fonte: `CODIGO-BASE-UX-REMOTO.txt`
+
+O CSS crítico evita o flash do tema original no primeiro paint. O loader JavaScript carrega os módulos completos do GitHub.
 
 Não instalar loaders adicionais do personalizador, storefront, produto, carrinho, header ou footer no painel.
 
@@ -34,7 +41,7 @@ Não usar bootstrap intermediário.
 
 ## Personalizador
 
-O personalizador de produção é carregado automaticamente pelo runtime central apenas nas páginas de produto. Ele deve funcionar dentro da própria página do produto, sem loader separado no painel.
+O personalizador de produção é carregado automaticamente pelo runtime central apenas nas páginas de produto. Ele funciona dentro da própria página do produto, sem loader separado no painel.
 
 Arquivos antigos de homologação, hotfix e loader de rodapé permanecem apenas como histórico e estão marcados como **LEGADO / NÃO INSTALAR**.
 
@@ -55,7 +62,7 @@ Com a arquitetura consolidada ativa, remover/desativar:
 - qualquer `Caneca Fácil - Teste Visual Home`
 - loaders antigos do personalizador instalados separadamente
 
-Consulte `ARQUITETURA-CANECA-FACIL-V3.md` para detalhes e rollback.
+Consulte `ARQUITETURA-CANECA-FACIL-V3.md` e `LIMPEZA-PAINEL-LOJA-INTEGRADA.md` para detalhes e rollback.
 
 ## Integrações e dados
 
