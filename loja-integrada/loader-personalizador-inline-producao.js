@@ -1,12 +1,12 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-cf-inline-loader-prod-v8-fluid-cart-art';
+  const BUILD = '20260902-cf-inline-loader-prod-v9-minhas-artes-fix';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CATALOG = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/canecas-galeria.json';
   const PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/personalizar/';
   const CART_BRIDGE_URL = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260902-4';
-  const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-3';
+  const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-6';
   const PARAM = 'cf_personalizador';
   const ACTIVE_VALUE = 'teste';
   const DIAGNOSTIC_URL = 'https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-4';
@@ -33,8 +33,8 @@
   }
 
   function loadCommerceRuntime() {
-    if (window.__CF_COMMERCE_RUNTIME__) return;
-    if ([...document.scripts].some(s => /canecafacil-commerce-runtime-v1\.js/i.test(s.src || ''))) return;
+    if (window.__CF_COMMERCE_RUNTIME__ && /20260902-canecafacil-commerce-runtime-v1\.2/.test(String(window.__CF_COMMERCE_RUNTIME__))) return;
+    if ([...document.scripts].some(s => /canecafacil-commerce-runtime-v1\.js\?v=20260902-6/i.test(s.src || ''))) return;
     const script = document.createElement('script');
     script.src = COMMERCE_URL;
     script.async = true;
@@ -165,7 +165,7 @@
     const frameUrl = new URL(PERSONALIZER);
     frameUrl.searchParams.set('model', modelKey);
     frameUrl.searchParams.set('embed', '1');
-    frameUrl.searchParams.set('ui', '20260902-5');
+    frameUrl.searchParams.set('ui', '20260902-6');
     frameUrl.searchParams.set('return', returnUrl.href);
 
     const box = document.createElement('div');
