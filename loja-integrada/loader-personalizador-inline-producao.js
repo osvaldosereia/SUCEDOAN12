@@ -1,12 +1,12 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-cf-inline-loader-prod-v7-cart-art';
+  const BUILD = '20260902-cf-inline-loader-prod-v8-fluid-cart-art';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CATALOG = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/canecas-galeria.json';
   const PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/personalizar/';
   const CART_BRIDGE_URL = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260902-4';
-  const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-2';
+  const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-3';
   const PARAM = 'cf_personalizador';
   const ACTIVE_VALUE = 'teste';
   const DIAGNOSTIC_URL = 'https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-4';
@@ -43,10 +43,24 @@
     document.head.appendChild(script);
   }
 
+  function bindFluidEmbed() {
+    if (window.__CF_PERSONALIZER_FLUID_EMBED__) return;
+    window.__CF_PERSONALIZER_FLUID_EMBED__ = BUILD;
+    window.addEventListener('message', event => {
+      if (event.origin !== 'https://donaantonia.com.br') return;
+      const data = event.data || {};
+      if (data.type !== 'canecafacil:personalizer-height') return;
+      const frames = [...document.querySelectorAll('iframe[src*="donaantonia.com.br/loja-integrada/personalizar/"]')];
+      const frame = frames.find(node => node.contentWindow === event.source);
+      if (!frame) return;
+      const height = Math.max(220, Math.min(1600, Math.ceil(Number(data.height) || 0)));
+      frame.style.height = `${height}px`;
+      frame.dataset.cfFluidHeight = String(height);
+    });
+  }
+
   function skuFromPage() {
-    const sources = [
-      ...document.querySelectorAll('[itemprop="sku"],[data-sku],.codigo-produto,.produto-codigo,.sku,[class*="codigo"]')
-    ];
+    const sources = [...document.querySelectorAll('[itemprop="sku"],[data-sku],.codigo-produto,.produto-codigo,.sku,[class*="codigo"]')];
     for (const el of sources) {
       const raw = text(el.getAttribute?.('content') || el.dataset?.sku || el.textContent).toUpperCase();
       const cf = raw.match(/CANP-[A-Z0-9]{3,24}/);
@@ -139,13 +153,6 @@
     return actions ? { node:actions, mode:'append', old:null } : null;
   }
 
-  function fieldCount(product = {}) {
-    const raw = product.personalizacao?.campos || product.personalizacao_campos || product.campos_personalizacao || product.campos_publicos || product.canecafacil_campos || {};
-    return Array.isArray(raw)
-      ? raw.filter(item => item && item.ativo !== false).length
-      : Object.values(raw || {}).filter(item => item && item.ativo === true).length;
-  }
-
   function injectPersonalizer(product, old = null, force = false) {
     if (existingProductionForm() || document.querySelector('[data-cf-auto-personalizer]')) return true;
     const modelKey = text(product?.__key || product?.firebaseKey || product?.id);
@@ -154,24 +161,23 @@
     const anchor = insertionAnchor(old);
     if (!anchor) return false;
 
-    const count = fieldCount(product);
-    const height = Math.min(680, Math.max(345, 250 + ((count || 1) + 1) * 52));
     const returnUrl = new URL(location.href); returnUrl.search = ''; returnUrl.hash = '';
     const frameUrl = new URL(PERSONALIZER);
     frameUrl.searchParams.set('model', modelKey);
     frameUrl.searchParams.set('embed', '1');
+    frameUrl.searchParams.set('ui', '20260902-5');
     frameUrl.searchParams.set('return', returnUrl.href);
 
     const box = document.createElement('div');
     box.className = 'cf-personalizer-box';
     box.dataset.cfAutoPersonalizer = BUILD;
-    box.style.cssText = 'margin:12px 0 18px;padding:0;border:1px solid #ece8e4;border-radius:12px;overflow:hidden;background:#fff;text-align:left';
+    box.style.cssText = 'margin:14px 0 20px;padding:0;border:0;background:transparent;text-align:left;overflow:visible';
     const iframe = document.createElement('iframe');
     iframe.title = 'Personalizar esta caneca';
     iframe.src = frameUrl.href;
     iframe.loading = 'eager';
     iframe.setAttribute('allow','clipboard-write');
-    iframe.style.cssText = `display:block;width:100%;height:${height}px;margin:0;border:0;background:#fff`;
+    iframe.style.cssText = 'display:block;width:100%;height:320px;margin:0;border:0;background:#fff;overflow:hidden;transition:height .18s ease';
     box.appendChild(iframe);
 
     if (anchor.mode === 'append') anchor.node.appendChild(box);
@@ -183,7 +189,6 @@
   async function resolveProduct() {
     const old = oldPersonalizeButton();
     const sku = skuFromPage();
-
     if (old) {
       const buttonModel = modelFromOldButton(old);
       if (buttonModel) return { product:await fullProduct(buttonModel, { codigo:sku }), old, force:true };
@@ -192,7 +197,6 @@
         if (catalog?.__key) return { product:await fullProduct(catalog.__key, catalog), old, force:true };
       }
     }
-
     if (!sku) return { product:null, old, force:false };
     const firebase = await firebaseProductBySku(sku).catch(() => null);
     if (firebase) return { product:firebase, old, force:false };
@@ -225,6 +229,7 @@
   }
 
   function init() {
+    bindFluidEmbed();
     loadCartBridge();
     loadCommerceRuntime();
     ensurePersonalizer();
