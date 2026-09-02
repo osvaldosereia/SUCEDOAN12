@@ -1,34 +1,25 @@
-name: Test Admin Canecas V3
+name: Test CanecaFácil V15
 
 on:
   push:
     branches: [main]
     paths:
       - 'admin-canecas/**'
-      - 'loja-integrada/personalizar/**'
-      - 'loja-integrada/personalizador-inline-v1.js'
-      - 'loja-integrada/personalizador-inline-v2.js'
-      - 'loja-integrada/loader-personalizador-inline-homologacao.js'
-      - 'scripts/test-admin-canecas-v3.mjs'
+      - 'loja-integrada/**'
+      - 'scripts/test-canecafacil-v15.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
       - 'scripts/test-personalizer-v4-make-contract-v1.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
-      - 'scripts/sincronizar-loja-integrada.mjs'
-      - 'scripts/processar-vitrine-canecas.mjs'
+      - 'scripts/processar-vitrine-canecas-v13.mjs'
+      - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
   pull_request:
     paths:
       - 'admin-canecas/**'
-      - 'loja-integrada/personalizar/**'
-      - 'loja-integrada/personalizador-inline-v1.js'
-      - 'loja-integrada/personalizador-inline-v2.js'
-      - 'loja-integrada/loader-personalizador-inline-homologacao.js'
-      - 'scripts/test-admin-canecas-v3.mjs'
-      - 'scripts/test-personalization-contract-v1.mjs'
-      - 'scripts/test-personalizer-v4-make-contract-v1.mjs'
-      - 'scripts/smoke-admin-canecas-firebase.mjs'
-      - 'scripts/sincronizar-loja-integrada.mjs'
-      - 'scripts/processar-vitrine-canecas.mjs'
+      - 'loja-integrada/**'
+      - 'scripts/test-canecafacil-v15.mjs'
+      - 'scripts/processar-vitrine-canecas-v13.mjs'
+      - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
 
 permissions:
@@ -42,53 +33,38 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check generator syntax
-        run: node --check admin-canecas/generator-v1.js
-      - name: Check bulk actions syntax
-        run: node --check admin-canecas/bulk-actions-v1.js
-      - name: Check mug grid syntax
-        run: node --check admin-canecas/mug-grid-v1.js
-      - name: Check mug list stability syntax
-        run: node --check admin-canecas/mugs-stability-v2.js
-      - name: Check inline category syntax
-        run: node --check admin-canecas/mug-inline-category-v2.js
-      - name: Check personalization config syntax
-        run: node --check admin-canecas/personalization-config-v1.js
-      - name: Check personalization badge syntax
-        run: node --check admin-canecas/mug-personalization-badge-v1.js
-      - name: Check personalization test link syntax
-        run: node --check admin-canecas/personalization-test-link-v1.js
-      - name: Check personalization prompt suggestion syntax
-        run: node --check admin-canecas/personalization-prompt-suggest-v1.js
-      - name: Check personalization contract syntax
-        run: node --check loja-integrada/personalizar/personalization-contract-v1.js
-      - name: Check V4 Make compatibility syntax
-        run: node --check loja-integrada/personalizar/v4-make-contract-v1.js
-      - name: Check personalizer V4 syntax
-        run: node --check loja-integrada/personalizar/app-v4.js
-      - name: Check inline storefront personalizer V1 syntax
-        run: node --check loja-integrada/personalizador-inline-v1.js
-      - name: Check inline storefront personalizer V2 syntax
-        run: node --check loja-integrada/personalizador-inline-v2.js
-      - name: Check inline storefront loader syntax
-        run: node --check loja-integrada/loader-personalizador-inline-homologacao.js
+
+      - name: Check Admin generator syntax
+        run: |
+          node --check admin-canecas/generator-v1.js
+          node --check admin-canecas/storefront-crops-github-v3.js
+          node --check admin-canecas/personalization-config-v1.js
+          node --check admin-canecas/creation-order-status-v1.js
+
+      - name: Check customer V15 syntax
+        run: |
+          node --check loja-integrada/personalizar/app-v15.js
+          node --check loja-integrada/personalizar/native-cart-v2.js
+          node --check loja-integrada/personalizar/creation-device-bridge-v1.js
+          node --check loja-integrada/canecafacil-commerce-runtime-v1.js
+          node --check loja-integrada/personalized-order-bridge-v2.js
+          node --check loja-integrada/loader-personalizador-inline-producao.js
+          node --check loja-integrada/personalizador-inline-v1.js
+          node --check loja-integrada/personalizador-inline-v2.js
+
+      - name: Check workers syntax
+        run: |
+          node --check scripts/processar-vitrine-canecas-v13.mjs
+          node --check scripts/sincronizar-pedidos-personalizados-li.mjs
+
+      - name: Validate current CanecaFácil architecture
+        run: node scripts/test-canecafacil-v15.mjs
+
       - name: Test personalization contract behavior
         run: node scripts/test-personalization-contract-v1.mjs
-      - name: Test V4 Make contract behavior
+
+      - name: Test legacy V4 Make contract behavior
         run: node scripts/test-personalizer-v4-make-contract-v1.mjs
-      - name: Check LI recovery syntax
-        run: node --check admin-canecas/li-recovery-v3.js
-      - name: Check LI coordinator syntax
-        run: node --check admin-canecas/li-sync-coordinator-v4.js
-      - name: Check dual GitHub Make sync syntax
-        run: node --check admin-canecas/li-dual-sync-v3.js
-      - name: Check GitHub crops UI syntax
-        run: node --check admin-canecas/storefront-crops-github-v2.js
-      - name: Check GitHub LI worker syntax
-        run: node --check scripts/sincronizar-loja-integrada.mjs
-      - name: Check crop worker syntax
-        run: node --check scripts/processar-vitrine-canecas.mjs
-      - name: Validate Admin Canecas V3
-        run: node scripts/test-admin-canecas-v3.mjs
+
       - name: Smoke test Firebase and mug image
         run: node scripts/smoke-admin-canecas-firebase.mjs
