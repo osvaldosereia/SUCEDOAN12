@@ -1,119 +1,68 @@
-/* CANECAFÁCIL · LI FUNÇÕES v3 · native-first */
+/* CANECAFÁCIL · LI FUNÇÕES v4 · native-first estável */
 (function(){
 'use strict';
-if(window.CF_NATIVE_V3)return;
-window.CF_NATIVE_V3=1;
-
+if(window.CF_NATIVE_V4)return;window.CF_NATIVE_V4=1;
 var ROWS_STEP=3,loading=false,seen={},nextPage='';
-function q(s,r){return (r||document).querySelector(s)}
+function q(s,r){return(r||document).querySelector(s)}
 function qa(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
 function text(n){return n?String(n.textContent||'').replace(/\s+/g,' ').trim():''}
 function listingPage(){return document.body&&(document.body.classList.contains('pagina-inicial')||document.body.classList.contains('pagina-categoria')||document.body.classList.contains('pagina-busca'))}
 function productPage(){return document.body&&document.body.classList.contains('pagina-produto')}
 function cleanName(v){return String(v||'').replace(/^Caneca\s+de\s+Porcelana\s+/i,'Caneca ').replace(/\s*-\s*350\s*ml\s*$/i,'').replace(/\s*-\s*350ml\s*$/i,'').trim()}
-function heart(){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>'}
+
+function icon(type){
+ var x={
+  cart:'<svg viewBox="0 0 24 24"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20 8H7"/><circle cx="10" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>',
+  user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>',
+  menu:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>',
+  home:'<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5"/></svg>',
+  grid:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  heart:'<svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>'
+ };return x[type]||'';
+}
+function headIcon(host,type){if(!host||q('.cf-head-svg',host))return;var s=document.createElement('span');s.className='cf-head-svg';s.innerHTML=icon(type);host.appendChild(s)}
+function upgradeHeader(){headIcon(q('#cabecalho .carrinho>a'),'cart');headIcon(q('#cabecalho .minha-conta .dropdown-toggle'),'user');headIcon(q('#cabecalho .atalho-menu'),'menu');headIcon(q('#cabecalho .busca .botao-busca'),'search')}
+
+function heart(){return icon('heart')}
 function cardUrl(card){var a=q('a.nome-produto',card)||q('a.produto-sobrepor',card);return a?(a.getAttribute('href')||a.href||''):''}
 function cardKey(card){var id=String(card.getAttribute('data-id')||'').trim();if(id)return'id:'+id;var u=cardUrl(card);try{u=new URL(u,location.href).pathname.replace(/\/+$/,'')}catch(e){}return'url:'+String(u||'').toLowerCase()}
 function markExisting(){seen={};qa('#listagemProdutos .listagem-item').forEach(function(card){seen[cardKey(card)]=1})}
 function decorateCard(card){
-  if(!card)return;
-  var name=q('.nome-produto',card);
-  if(name){var full=text(name);if(full){name.setAttribute('title',full);name.textContent=cleanName(full)}}
-  qa('.cf-share,.cf-gallery-arrow,.cf-gallery-dots',card).forEach(function(n){if(n.parentNode)n.parentNode.removeChild(n)});
-  var img=q('.imagem-produto',card),id=String(card.getAttribute('data-id')||'').trim(),fav=q('.lista-favoritos,.cf-favorite',card);
-  if(!fav&&img&&id){fav=document.createElement('a');fav.className='cf-favorite lista-favoritos adicionar-favorito';fav.href='/conta/favorito/'+encodeURIComponent(id)+'/adicionar';fav.rel='nofollow';fav.title='Adicionar aos favoritos';fav.setAttribute('aria-label','Adicionar aos favoritos');fav.innerHTML=heart();img.appendChild(fav)}
-  else if(fav){fav.classList.add('cf-favorite');if(!q('svg',fav))fav.innerHTML=heart()}
-  card.setAttribute('data-cf-native','3');
+ if(!card)return;var name=q('.nome-produto',card);
+ if(name){var full=text(name);if(full){name.setAttribute('title',full);name.textContent=cleanName(full)}}
+ qa('.cf-share,.cf-gallery-arrow,.cf-gallery-dots',card).forEach(function(n){if(n.parentNode)n.parentNode.removeChild(n)});
+ var img=q('.imagem-produto',card),id=String(card.getAttribute('data-id')||'').trim(),fav=q('.lista-favoritos,.cf-favorite',card);
+ if(!fav&&img&&id){fav=document.createElement('a');fav.className='cf-favorite lista-favoritos adicionar-favorito';fav.href='/conta/favorito/'+encodeURIComponent(id)+'/adicionar';fav.rel='nofollow';fav.title='Adicionar aos favoritos';fav.setAttribute('aria-label','Adicionar aos favoritos');fav.innerHTML=heart();img.appendChild(fav)}
+ else if(fav){fav.classList.add('cf-favorite');if(!q('svg',fav))fav.innerHTML=heart()}
+ card.setAttribute('data-cf-native','4');
 }
 function decorateAll(root){qa('.listagem-item',root||document).forEach(decorateCard)}
 function directRoot(doc){var list=(doc||document).querySelector('#listagemProdutos');if(!list)return null;for(var i=0;i<list.children.length;i++)if(list.children[i].tagName==='UL')return list.children[i];return null}
 function nativeLines(root){var out=[];if(!root)return out;for(var i=0;i<root.children.length;i++){var n=root.children[i];if(n.tagName==='LI'&&String(n.className||'').indexOf('listagem-linha')>=0)out.push(n)}return out}
 function hiddenLines(root){return nativeLines(root).filter(function(n){return n.classList.contains('cf-native-line-hidden')})}
 function pageNumber(url){try{var u=new URL(url,location.href),p=parseInt(u.searchParams.get('pagina')||u.searchParams.get('page')||'0',10);return isNaN(p)?0:p}catch(e){return 0}}
-function nextUrl(doc,baseUrl){
-  doc=doc||document;baseUrl=baseUrl||location.href;
-  var c=['link[rel="next"]','a[rel="next"]','.paginacao .proximo a','.pagination .next a','a[title*="Próxima"]','a[title*="próxima"]','a[aria-label*="Próxima"]'];
-  for(var i=0;i<c.length;i++){var a=doc.querySelector(c[i]);if(a){var h=a.getAttribute('href');if(h)return new URL(h,baseUrl).href}}
-  var current=pageNumber(baseUrl)||1,best='',bestNum=999999;
-  qa('a[href*="pagina="],a[href*="page="]',doc).forEach(function(a){var h=a.getAttribute('href')||'',n=pageNumber(h);if(n>current&&n<bestNum){bestNum=n;best=h}});
-  return best?new URL(best,baseUrl).href:'';
-}
+function nextUrl(doc,baseUrl){doc=doc||document;baseUrl=baseUrl||location.href;var c=['link[rel="next"]','a[rel="next"]','.paginacao .proximo a','.pagination .next a','a[title*="Próxima"]','a[title*="próxima"]'];for(var i=0;i<c.length;i++){var a=doc.querySelector(c[i]);if(a){var h=a.getAttribute('href');if(h)return new URL(h,baseUrl).href}}var current=pageNumber(baseUrl)||1,best='',bestNum=999999;qa('a[href*="pagina="],a[href*="page="]',doc).forEach(function(a){var h=a.getAttribute('href')||'',n=pageNumber(h);if(n>current&&n<bestNum){bestNum=n;best=h}});return best?new URL(best,baseUrl).href:''}
 function hideNativePagination(){qa('.paginacao,.pagination').forEach(function(n){n.classList.add('cf-native-pagination-hidden')})}
 function buttonWrap(){var list=q('#listagemProdutos');if(!list)return null;var wrap=q('.cf-more-wrap');if(!wrap){wrap=document.createElement('div');wrap.className='cf-more-wrap';var b=document.createElement('button');b.type='button';b.id='cfLoadMoreNative';b.textContent='Ver mais canecas';b.addEventListener('click',showMore);wrap.appendChild(b);list.parentNode.insertBefore(wrap,list.nextSibling)}return wrap}
 function updateButton(){var root=directRoot(document),wrap=buttonWrap(),b=q('#cfLoadMoreNative');if(!wrap||!b)return;var more=hiddenLines(root).length>0||!!nextPage;wrap.style.display=more?'block':'none';b.disabled=loading;b.textContent=loading?'Carregando...':'Ver mais canecas'}
 function reveal(root,count){hiddenLines(root).slice(0,count||ROWS_STEP).forEach(function(n){n.classList.remove('cf-native-line-hidden')})}
-function appendPage(url){
-  if(!url||loading)return Promise.resolve(false);loading=true;updateButton();
-  return fetch(url,{credentials:'same-origin'}).then(function(r){if(!r.ok)throw new Error();return r.text()}).then(function(html){
-    var doc=new DOMParser().parseFromString(html,'text/html'),src=directRoot(doc),dest=directRoot(document);if(!src||!dest)return false;var added=0;
-    nativeLines(src).forEach(function(line){var clone=line.cloneNode(true),keep=false;qa('.listagem-item',clone).forEach(function(card){var key=cardKey(card);if(seen[key]){var li=card.parentElement;if(li&&li.parentNode)li.parentNode.removeChild(li)}else{seen[key]=1;keep=true}});if(keep&&qa('.listagem-item',clone).length){clone.classList.add('cf-native-line-hidden');dest.appendChild(clone);decorateAll(clone);added++}});
-    nextPage=nextUrl(doc,url);return added>0;
-  }).catch(function(){return false}).then(function(ok){loading=false;updateButton();return ok});
-}
+function appendPage(url){if(!url||loading)return Promise.resolve(false);loading=true;updateButton();return fetch(url,{credentials:'same-origin'}).then(function(r){if(!r.ok)throw new Error();return r.text()}).then(function(html){var doc=new DOMParser().parseFromString(html,'text/html'),src=directRoot(doc),dest=directRoot(document);if(!src||!dest)return false;var added=0;nativeLines(src).forEach(function(line){var clone=line.cloneNode(true),keep=false;qa('.listagem-item',clone).forEach(function(card){var key=cardKey(card);if(seen[key]){var li=card.parentElement;if(li&&li.parentNode)li.parentNode.removeChild(li)}else{seen[key]=1;keep=true}});if(keep&&qa('.listagem-item',clone).length){clone.classList.add('cf-native-line-hidden');dest.appendChild(clone);decorateAll(clone);added++}});nextPage=nextUrl(doc,url);return added>0}).catch(function(){return false}).then(function(ok){loading=false;updateButton();return ok})}
 function showMore(){var root=directRoot(document);if(!root||loading)return;if(hiddenLines(root).length){reveal(root,ROWS_STEP);updateButton();return}if(nextPage)appendPage(nextPage).then(function(ok){if(ok)reveal(root,ROWS_STEP);updateButton()})}
 function initListing(){var root=directRoot(document);if(!root)return;markExisting();decorateAll(root);nativeLines(root).forEach(function(line,i){line.classList.toggle('cf-native-line-hidden',i>=ROWS_STEP)});nextPage=nextUrl(document,location.href);hideNativePagination();updateButton()}
 
-function cleanPersonalizerLabel(){var box=q('.cf-personalizer-box');if(!box)return;var p=box.previousElementSibling;if(p&&/^personalize (esta|sua) caneca:?$/i.test(text(p))){p.parentNode.removeChild(p)}}
-function cleanRelated(){
-  var sections=qa('.aproveite-tambem');if(!sections.length)return;var first=sections[0];
-  sections.slice(1).forEach(function(s){if(s.parentNode)s.parentNode.removeChild(s)});
-  Array.prototype.slice.call(first.childNodes).forEach(function(n){if(n.nodeType===3&&/mais como esse/i.test(String(n.nodeValue||'')))n.nodeValue=''});
-  var heads=[];for(var i=0;i<first.children.length;i++)if(first.children[i].tagName==='H4')heads.push(first.children[i]);
-  if(heads.length){heads[0].textContent='Mais como esse';heads.slice(1).forEach(function(h){if(h.parentNode)h.parentNode.removeChild(h)})}
-  else{var h=document.createElement('h4');h.className='titulo cor-secundaria';h.textContent='Mais como esse';first.insertBefore(h,first.firstChild)}
-  qa('.nome-produto',first).forEach(function(n){n.textContent=cleanName(text(n))});
-}
-function initProduct(){var h=q('h1.nome-produto');if(h){var full=text(h);h.setAttribute('title',full);h.textContent=cleanName(full).replace(/^Caneca\s+/i,'')}cleanPersonalizerLabel();cleanRelated();setTimeout(function(){cleanPersonalizerLabel();cleanRelated()},500)}
+function cleanPersonalizerLabel(){var box=q('.cf-personalizer-box');if(!box)return;var p=box.previousElementSibling;if(p&&/^personalize (esta|sua) caneca:?$/i.test(text(p))&&p.parentNode)p.parentNode.removeChild(p)}
+function cleanRelated(){var sections=qa('.aproveite-tambem');if(!sections.length)return;var first=sections[0];sections.slice(1).forEach(function(s){if(s.parentNode)s.parentNode.removeChild(s)});Array.prototype.slice.call(first.childNodes).forEach(function(n){if(n.nodeType===3&&/mais como esse/i.test(String(n.nodeValue||'')))n.nodeValue=''});var heads=qa(':scope>h4',first);if(heads.length){heads[0].textContent='Mais como esse';heads.slice(1).forEach(function(h){if(h.parentNode)h.parentNode.removeChild(h)})}else{var h=document.createElement('h4');h.className='titulo cor-secundaria';h.textContent='Mais como esse';first.insertBefore(h,first.firstChild)}qa('.nome-produto',first).forEach(function(n){n.textContent=cleanName(text(n))})}
+function initProduct(){var h=q('h1.nome-produto');if(h){var full=text(h);h.setAttribute('title',full);h.textContent=cleanName(full).replace(/^Caneca\s+/i,'')}cleanPersonalizerLabel();cleanRelated();[500,1500,3500,7000].forEach(function(ms){setTimeout(function(){cleanPersonalizerLabel();cleanRelated()},ms)})}
 
-/* NAVEGAÇÃO */
-function categories(){
-  var out=[];
-  qa('.links-rodape-categorias a').forEach(function(a){var label=text(a),href=a.getAttribute('href')||a.href||'';if(label&&href)out.push({label:label.replace(/^Canecas?\s+/i,''),href:href})});
-  if(!out.length)out=[
-    {label:'Padronizadas',href:'/canecas-padronizadas'},
-    {label:'Para empresas',href:'/canecas-para-empresas'},
-    {label:'Personalizáveis',href:'/canecas-personalizaveis'}
-  ];
-  return out;
-}
-function navIcon(type){
-  var icons={
-    home:'<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V21h13V10.5"/></svg>',
-    grid:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>',
-    plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
-    heart:'<svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
-    user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>'
-  };return icons[type]||'';
-}
-function buildChips(){
-  if(q('#cfChipNav'))return;var host=q('#cabecalho>.conteiner');if(!host)return;
-  var nav=document.createElement('nav');nav.id='cfChipNav';nav.setAttribute('aria-label','Categorias');
-  var home=document.createElement('a');home.href='/';home.textContent='Todos';if(location.pathname==='/'||location.pathname==='')home.className='cf-active';nav.appendChild(home);
-  categories().forEach(function(c){var a=document.createElement('a');a.href=c.href;a.textContent=c.label;try{if(new URL(c.href,location.href).pathname.replace(/\/$/,'')===location.pathname.replace(/\/$/,''))a.className='cf-active'}catch(e){}nav.appendChild(a)});
-  host.appendChild(nav);
-}
-function buildMobileNav(){
-  if(q('#cfMobileNav'))return;var cats=categories(),createUrl='/canecas-personalizaveis';
-  cats.forEach(function(c){if(/personaliz/i.test(c.label))createUrl=c.href});
-  var sheet=document.createElement('div');sheet.id='cfCategorySheet';sheet.innerHTML='<div class="cf-sheet-title"><span>Categorias</span><button type="button" class="cf-sheet-close" aria-label="Fechar">×</button></div><div class="cf-sheet-links"></div>';
-  var links=q('.cf-sheet-links',sheet);var all=document.createElement('a');all.href='/';all.textContent='Todas as canecas';links.appendChild(all);
-  cats.forEach(function(c){var a=document.createElement('a');a.href=c.href;a.textContent=c.label;links.appendChild(a)});document.body.appendChild(sheet);
-  var nav=document.createElement('nav');nav.id='cfMobileNav';nav.setAttribute('aria-label','Navegação principal');
-  function item(label,icon,href,cls){var a=document.createElement(href?'a':'button');if(href)a.href=href;else a.type='button';a.className='cf-mobile-nav-item '+(cls||'');a.innerHTML=(cls==='cf-mobile-nav-create'?'<span class="cf-create-icon">'+navIcon(icon)+'</span>':navIcon(icon))+'<span>'+label+'</span>';nav.appendChild(a);return a}
-  var home=item('Início','home','/');var cat=item('Categorias','grid','');var create=item('Criar','plus',createUrl,'cf-mobile-nav-create');var fav=item('Favoritos','heart','/conta/favorito/listar');var account=item('Conta','user','/conta/index');
-  if(location.pathname==='/'||location.pathname==='')home.classList.add('cf-active');if(/favorito/.test(location.pathname))fav.classList.add('cf-active');if(/conta/.test(location.pathname)&&!/favorito/.test(location.pathname))account.classList.add('cf-active');
-  cat.addEventListener('click',function(){sheet.classList.toggle('cf-open')});q('.cf-sheet-close',sheet).addEventListener('click',function(){sheet.classList.remove('cf-open')});
-  document.addEventListener('click',function(e){if(sheet.classList.contains('cf-open')&&!sheet.contains(e.target)&&!cat.contains(e.target))sheet.classList.remove('cf-open')});
-  document.body.appendChild(nav);
-}
-function initSticky(){
-  var ticking=false;function apply(){document.body.classList.toggle('cf-scrolled',(window.pageYOffset||document.documentElement.scrollTop||0)>24);ticking=false}
-  window.addEventListener('scroll',function(){if(!ticking){ticking=true;window.requestAnimationFrame(apply)}},{passive:true});apply();
-}
+function categories(){var out=[];qa('.links-rodape-categorias a').forEach(function(a){var label=text(a),href=a.getAttribute('href')||a.href||'';if(label&&href)out.push({label:label.replace(/^Canecas?\s+/i,''),href:href})});if(!out.length)out=[{label:'Padronizadas',href:'/canecas-padronizadas'},{label:'Para empresas',href:'/canecas-para-empresas'},{label:'Personalizáveis',href:'/canecas-personalizaveis'}];return out}
+function buildChips(){if(q('#cfChipNav'))return;var host=q('#cabecalho>.conteiner');if(!host)return;var nav=document.createElement('nav');nav.id='cfChipNav';nav.setAttribute('aria-label','Categorias');var home=document.createElement('a');home.href='/';home.textContent='Todos';if(location.pathname==='/'||location.pathname==='')home.className='cf-active';nav.appendChild(home);categories().forEach(function(c){var a=document.createElement('a');a.href=c.href;a.textContent=c.label;try{if(new URL(c.href,location.href).pathname.replace(/\/$/,'')===location.pathname.replace(/\/$/,''))a.className='cf-active'}catch(e){}nav.appendChild(a)});host.appendChild(nav)}
+function buildMobileNav(){if(q('#cfMobileNav'))return;var cats=categories(),createUrl='/canecas-personalizaveis';cats.forEach(function(c){if(/personaliz/i.test(c.label))createUrl=c.href});var sheet=document.createElement('div');sheet.id='cfCategorySheet';sheet.innerHTML='<div class="cf-sheet-title"><span>Categorias</span><button type="button" class="cf-sheet-close" aria-label="Fechar">×</button></div><div class="cf-sheet-links"></div>';var links=q('.cf-sheet-links',sheet),all=document.createElement('a');all.href='/';all.textContent='Todas as canecas';links.appendChild(all);cats.forEach(function(c){var a=document.createElement('a');a.href=c.href;a.textContent=c.label;links.appendChild(a)});document.body.appendChild(sheet);var nav=document.createElement('nav');nav.id='cfMobileNav';nav.setAttribute('aria-label','Navegação principal');function item(label,ic,href,cls){var a=document.createElement(href?'a':'button');if(href)a.href=href;else a.type='button';a.className='cf-mobile-nav-item '+(cls||'');a.innerHTML=(cls==='cf-mobile-nav-create'?'<span class="cf-create-icon">'+icon(ic)+'</span>':icon(ic))+'<span>'+label+'</span>';nav.appendChild(a);return a}var home=item('Início','home','/'),cat=item('Categorias','grid',''),create=item('Criar','plus',createUrl,'cf-mobile-nav-create'),fav=item('Favoritos','heart','/conta/favorito/listar'),account=item('Conta','user','/conta/index');if(location.pathname==='/'||location.pathname==='')home.classList.add('cf-active');if(/favorito/.test(location.pathname))fav.classList.add('cf-active');if(/conta/.test(location.pathname)&&!/favorito/.test(location.pathname))account.classList.add('cf-active');cat.addEventListener('click',function(){sheet.classList.toggle('cf-open')});q('.cf-sheet-close',sheet).addEventListener('click',function(){sheet.classList.remove('cf-open')});document.addEventListener('click',function(e){if(sheet.classList.contains('cf-open')&&!sheet.contains(e.target)&&!cat.contains(e.target))sheet.classList.remove('cf-open')});document.body.appendChild(nav)}
 
 function loadRemote(src,id){if(document.getElementById(id))return;var s=document.createElement('script');s.id=id;s.src=src;s.async=true;document.body.appendChild(s)}
 function optionalModules(){loadRemote('https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-7','cfCommerceRemote');if(productPage())loadRemote('https://donaantonia.com.br/loja-integrada/loader-personalizador-inline-producao-v10.js?v=20260902-1','cfPersonalizerRemote')}
-function cleanupOld(){qa('#cfHeaderActions,#cf-chip-nav,#cfBenefitsMobile,#cfMobileBottomNav,.cf-benefits-slot,#cf-social-root').forEach(function(n){if(n.parentNode)n.parentNode.removeChild(n)});document.body.classList.remove('cf-storefront','cf-product-page')}
-function init(){cleanupOld();buildChips();buildMobileNav();initSticky();if(listingPage())initListing();if(productPage())initProduct();optionalModules()}
+function cleanupOld(){qa('#cfHeaderActions,#cf-chip-nav,#cfBenefitsMobile,#cfMobileBottomNav,.cf-benefits-slot,#cf-social-root').forEach(function(n){if(n.parentNode)n.parentNode.removeChild(n)});document.body.classList.remove('cf-storefront','cf-product-page','cf-scrolled')}
+function init(){cleanupOld();upgradeHeader();buildChips();buildMobileNav();if(listingPage())initListing();if(productPage())initProduct();optionalModules();setTimeout(upgradeHeader,800);setTimeout(upgradeHeader,2500)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
