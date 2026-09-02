@@ -1,15 +1,20 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-personalized-order-bridge-v2.3-quantity';
+  const BUILD = '20260902-personalized-order-bridge-v2.4-art-thumb';
+  const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
+  const CREATIONS_NODE = 'canecas/personalizadas';
   const STORAGE_KEY = 'cf_personalized_cart_v2';
   const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
   const CART_URL = '/carrinho/index';
+  const creationCache = new Map();
+  let annotateBusy = false;
 
   if (window.__CF_PERSONALIZED_ORDER_BRIDGE_V2__ === BUILD) return;
   window.__CF_PERSONALIZED_ORDER_BRIDGE_V2__ = BUILD;
 
   const text = value => String(value ?? '').trim();
+  const safeKey = value => text(value).replace(/[.#$\[\]/]/g, '_');
   const quantity = value => Math.max(1, Math.min(20, Number.parseInt(value, 10) || 1));
 
   function readQueue() {
@@ -27,15 +32,37 @@
     saveQueue(rows);
   }
 
+  async function fetchCreation(code) {
+    const key = text(code).toUpperCase();
+    if (!key) return null;
+    if (creationCache.has(key)) return creationCache.get(key);
+    try {
+      const response = await fetch(`${FIREBASE}/${CREATIONS_NODE}/${safeKey(key)}.json?_=${Date.now()}`, {
+        cache:'no-store', headers:{ Accept:'application/json' }
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (data) creationCache.set(key, data);
+      return data || null;
+    } catch { return null; }
+  }
+
+  function creationArt(creation = {}) {
+    return text(creation?.arte_aprovada?.url || creation.arte_aprovada_url || creation.arte_horizontal || creation.arte_personalizacao || creation.arte_impressao?.url || creation.arte_final_url);
+  }
+
   function installStyle() {
     if (document.getElementById('cfPersonalizedOrderStyleV2')) return;
     const style = document.createElement('style');
     style.id = 'cfPersonalizedOrderStyleV2';
     style.textContent = `
-      .cf-personalized-tag{display:block;width:max-content;max-width:100%;margin:5px 0 0;padding:4px 8px;border-radius:999px;background:#fff3e8;color:#a94c0d;font-size:10px;font-weight:900;line-height:1.25;letter-spacing:.045em}
-      .cf-personalized-tag span{font-weight:700;letter-spacing:0;color:#6e6259}.cf-personalized-note{display:block;margin-top:5px;color:#846f61;font:700 10px/1.35 Arial,sans-serif}
+      .cf-personalized-meta{display:block;margin:6px 0 0;max-width:420px}
+      .cf-personalized-tag{display:inline-flex;align-items:center;gap:3px;max-width:100%;margin:0;padding:5px 9px;border-radius:999px;background:#fff3e8;color:#a94c0d;font-size:10px;font-weight:900;line-height:1.2;letter-spacing:.035em;white-space:normal}
+      .cf-personalized-tag span{font-weight:700;letter-spacing:0;color:#6e6259}.cf-personalized-art-link{display:inline-block;margin:5px 0 0 6px;color:#d45d12!important;font:800 10px/1.2 Arial,sans-serif;text-decoration:underline!important}
+      img.cf-personalized-thumb{width:112px!important;height:112px!important;max-width:112px!important;object-fit:cover!important;object-position:left center!important;border:1px solid #ece7e2!important;border-radius:10px!important;background:#fff!important;box-shadow:0 2px 9px rgba(0,0,0,.05)}
       .cf-cart-handoff{position:fixed;inset:0;z-index:9999999;background:rgba(255,255,255,.96);display:grid;place-items:center;text-align:center;padding:22px;font-family:Arial,sans-serif;color:#171717}
       .cf-cart-handoff strong{display:block;font-size:18px;margin-bottom:6px}.cf-cart-handoff span{font-size:12px;color:#777}
+      @media(max-width:767px){img.cf-personalized-thumb{width:88px!important;height:88px!important;max-width:88px!important}.cf-personalized-meta{max-width:100%}}
     `;
     document.head.appendChild(style);
   }
@@ -121,26 +148,79 @@
     return rows;
   }
 
-  function nameAnchor(row) { return row.querySelector('.nome-produto,.produto-nome,[class*="nome-produto"],[class*="produto-nome"],strong,h3,h4,a[href]'); }
-
-  function annotateCart() {
-    installStyle();
-    const queue = readQueue(); if (!queue.length) return;
-    const rows = cartRows();
-    for (const entry of queue) {
-      const row = rows.find(item => item.id === text(entry.productId)); if (!row) continue;
-      if (row.el.querySelector(`.cf-personalized-tag[data-code="${CSS.escape(entry.code)}"]`)) continue;
-      const anchor = nameAnchor(row.el); if (!anchor) continue;
-      const tag = document.createElement('div');
-      tag.className = 'cf-personalized-tag'; tag.dataset.code = entry.code;
-      tag.innerHTML = `PERSONALIZADA <span>· ${entry.code} · ×${quantity(entry.quantity)}</span>`;
-      anchor.insertAdjacentElement('afterend', tag);
-      if (!row.el.querySelector('.cf-personalized-note')) {
-        const note = document.createElement('small'); note.className = 'cf-personalized-note';
-        note.textContent = 'A quantidade de cada arte é definida no personalizador. Artes diferentes recebem códigos CF diferentes.';
-        tag.insertAdjacentElement('afterend', note);
-      }
+  function nameAnchor(row) {
+    const directSelectors = ['.nome-produto','.produto-nome','[class*="nome-produto"]','[class*="produto-nome"]'];
+    for (const selector of directSelectors) {
+      const node = row.querySelector(selector);
+      if (node && text(node.textContent).length > 2) return node;
     }
+    const links = [...row.querySelectorAll('a[href]')].filter(link => !link.querySelector('img') && text(link.textContent).length > 2);
+    const mugLink = links.find(link => /caneca/i.test(text(link.textContent)));
+    return mugLink || links[0] || row.querySelector('strong,h3,h4');
+  }
+
+  function productImage(row) {
+    const selectors = ['.imagem-produto img','.produto-imagem img','[class*="imagem-produto"] img','[class*="produto-imagem"] img','a[href] img','img'];
+    for (const selector of selectors) {
+      const img = row.querySelector(selector);
+      if (img) return img;
+    }
+    return null;
+  }
+
+  function decorateImage(row, art, code) {
+    if (!art || row.querySelector('[data-cf-personalized-thumb]')) return;
+    const img = productImage(row); if (!img) return;
+    const picture = img.closest('picture');
+    picture?.querySelectorAll('source').forEach(source => source.removeAttribute('srcset'));
+    img.removeAttribute('srcset');
+    img.removeAttribute('data-src');
+    img.src = art;
+    img.alt = `Arte personalizada ${code}`;
+    img.classList.add('cf-personalized-thumb');
+    img.dataset.cfPersonalizedThumb = code;
+    img.title = 'Prévia de um lado da sua arte personalizada';
+  }
+
+  function metaHost(row, anchor) {
+    let host = row.querySelector('.cf-personalized-meta');
+    if (host) return host;
+    host = document.createElement('div');
+    host.className = 'cf-personalized-meta';
+    anchor.insertAdjacentElement('afterend', host);
+    return host;
+  }
+
+  async function annotateCart() {
+    if (annotateBusy) return;
+    annotateBusy = true;
+    try {
+      installStyle();
+      const queue = readQueue(); if (!queue.length) return;
+      const rows = cartRows();
+      for (const entry of queue) {
+        const row = rows.find(item => item.id === text(entry.productId)); if (!row) continue;
+        const anchor = nameAnchor(row.el); if (!anchor) continue;
+        const creation = await fetchCreation(entry.code);
+        const art = creationArt(creation || {});
+        decorateImage(row.el, art, entry.code);
+
+        const host = metaHost(row.el, anchor);
+        if (!host.querySelector(`.cf-personalized-tag[data-code="${CSS.escape(entry.code)}"]`)) {
+          const tag = document.createElement('div');
+          tag.className = 'cf-personalized-tag'; tag.dataset.code = entry.code;
+          tag.innerHTML = `PERSONALIZADA <span>· ${entry.code} · ×${quantity(entry.quantity)}</span>`;
+          host.appendChild(tag);
+          if (art) {
+            const link = document.createElement('a');
+            link.className = 'cf-personalized-art-link';
+            link.href = art; link.target = '_blank'; link.rel = 'noopener';
+            link.textContent = 'Ver arte completa';
+            host.appendChild(link);
+          }
+        }
+      }
+    } finally { annotateBusy = false; }
   }
 
   window.addEventListener('message', event => {
