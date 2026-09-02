@@ -1,28 +1,23 @@
-/* CANECAFÁCIL · NAVEGAÇÃO v2 · compatível com validador antigo da Loja Integrada */
+/* CANECAFÁCIL · NAVEGAÇÃO v3 · sticky estável + app mobile */
 
-/* HEADER FIXO */
+/* CABEÇALHO E CHIPS FICAM FIXOS SEM ALTERAR ALTURA NA ROLAGEM */
 #cabecalho{
   position:sticky!important;
   top:0!important;
   z-index:9990!important;
   background:#fff!important;
-  transition:box-shadow .18s ease!important
-}
-body.cf-scrolled #cabecalho{
-  box-shadow:0 5px 22px rgba(0,0,0,.07)!important
+  box-shadow:0 3px 16px rgba(0,0,0,.045)!important
 }
 
-/* CHIPS DESKTOP */
 #cfChipNav{
   display:flex;
   align-items:center;
-  max-height:38px;
-  margin:9px 0 0;
+  min-height:31px;
+  margin:8px 0 0;
   padding:0 0 1px;
   overflow-x:auto;
   overflow-y:hidden;
-  white-space:nowrap;
-  transition:max-height .18s ease,opacity .18s ease,margin .18s ease
+  white-space:nowrap
 }
 #cfChipNav a{
   display:inline-flex;
@@ -42,44 +37,17 @@ body.cf-scrolled #cabecalho{
   text-decoration:none;
   flex:0 0 auto
 }
-#cfChipNav a:hover,
-#cfChipNav a.cf-active{
+#cfChipNav a:hover,#cfChipNav a.cf-active{
   border-color:#ffb98f;
   color:#ff7420
 }
 
-@media (min-width:768px){
-  body.cf-scrolled #cfChipNav{
-    max-height:0;
-    margin-top:0;
-    padding:0;
-    opacity:0;
-    pointer-events:none
-  }
-}
+#cfMobileNav,#cfCategorySheet{display:none}
 
-/* MOBILE */
-#cfMobileNav,
-#cfCategorySheet{
-  display:none
-}
+@media(max-width:767px){
+  body{padding-bottom:72px!important}
+  #cfChipNav{display:none!important}
 
-@media (max-width:767px){
-
-  body{
-    padding-bottom:72px!important
-  }
-
-  #cabecalho{
-    position:sticky!important;
-    top:0!important
-  }
-
-  #cfChipNav{
-    display:none!important
-  }
-
-  /* BARRA INFERIOR */
   #cfMobileNav{
     position:fixed;
     left:0;
@@ -96,7 +64,6 @@ body.cf-scrolled #cabecalho{
     border-top:1px solid #e9e9e9;
     box-shadow:0 -7px 24px rgba(0,0,0,.055)
   }
-
   .cf-mobile-nav-item{
     display:flex;
     width:20%;
@@ -114,7 +81,6 @@ body.cf-scrolled #cabecalho{
     text-decoration:none!important;
     cursor:pointer
   }
-
   .cf-mobile-nav-item svg{
     width:20px;
     height:20px;
@@ -125,16 +91,8 @@ body.cf-scrolled #cabecalho{
     stroke-linecap:round;
     stroke-linejoin:round
   }
-
-  .cf-mobile-nav-item.cf-active{
-    color:#111
-  }
-
-  .cf-mobile-nav-create{
-    position:relative;
-    top:-8px
-  }
-
+  .cf-mobile-nav-item.cf-active{color:#111}
+  .cf-mobile-nav-create{position:relative;top:-8px}
   .cf-mobile-nav-create .cf-create-icon{
     display:flex;
     align-items:center;
@@ -147,14 +105,8 @@ body.cf-scrolled #cabecalho{
     box-shadow:0 5px 13px rgba(255,116,32,.24);
     color:#fff
   }
+  .cf-mobile-nav-create .cf-create-icon svg{width:21px;height:21px;margin:0}
 
-  .cf-mobile-nav-create .cf-create-icon svg{
-    width:21px;
-    height:21px;
-    margin:0
-  }
-
-  /* PAINEL DE CATEGORIAS */
   #cfCategorySheet{
     position:fixed;
     left:10px;
@@ -173,14 +125,12 @@ body.cf-scrolled #cabecalho{
     pointer-events:none;
     transition:opacity .16s ease,transform .16s ease,visibility .16s ease
   }
-
   #cfCategorySheet.cf-open{
     transform:translateY(0);
     opacity:1;
     visibility:visible;
     pointer-events:auto
   }
-
   #cfCategorySheet .cf-sheet-title{
     display:flex;
     align-items:center;
@@ -190,7 +140,6 @@ body.cf-scrolled #cabecalho{
     font-size:13px;
     font-weight:800
   }
-
   #cfCategorySheet .cf-sheet-close{
     width:30px;
     height:30px;
@@ -202,13 +151,7 @@ body.cf-scrolled #cabecalho{
     font-size:19px;
     line-height:30px
   }
-
-  #cfCategorySheet .cf-sheet-links{
-    display:flex;
-    flex-wrap:wrap;
-    padding:3px
-  }
-
+  #cfCategorySheet .cf-sheet-links{display:flex;flex-wrap:wrap;padding:3px}
   #cfCategorySheet .cf-sheet-links a{
     display:flex;
     align-items:center;
@@ -225,14 +168,6 @@ body.cf-scrolled #cabecalho{
     font-weight:700;
     text-decoration:none
   }
-
-  #cfCategorySheet .cf-sheet-links a:first-child{
-    border-color:#ffd2b5;
-    color:#e96514
-  }
-
-  #cfMyArtsTrigger.cf-floating{
-    right:10px!important;
-    bottom:82px!important
-  }
+  #cfCategorySheet .cf-sheet-links a:first-child{border-color:#ffd2b5;color:#e96514}
+  #cfMyArtsTrigger.cf-floating{right:10px!important;bottom:82px!important}
 }
