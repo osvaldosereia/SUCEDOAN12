@@ -1,9 +1,10 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260901-personalized-order-bridge-v2.1';
+  const BUILD = '20260901-personalized-order-bridge-v2.2-same-origin-cart';
   const STORAGE_KEY = 'cf_personalized_cart_v2';
   const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+  const CART_URL = '/carrinho/index';
 
   if (window.__CF_PERSONALIZED_ORDER_BRIDGE_V2__ === BUILD) return;
   window.__CF_PERSONALIZED_ORDER_BRIDGE_V2__ = BUILD;
@@ -35,26 +36,71 @@
     style.textContent = `
       .cf-personalized-tag{display:block;width:max-content;max-width:100%;margin:5px 0 0;padding:4px 8px;border-radius:999px;background:#fff3e8;color:#a94c0d;font-size:10px;font-weight:900;line-height:1.25;letter-spacing:.045em}
       .cf-personalized-tag span{font-weight:700;letter-spacing:0;color:#6e6259}
+      .cf-cart-handoff{position:fixed;inset:0;z-index:9999999;background:rgba(255,255,255,.96);display:grid;place-items:center;text-align:center;padding:22px;font-family:Arial,sans-serif;color:#171717}
+      .cf-cart-handoff strong{display:block;font-size:18px;margin-bottom:6px}.cf-cart-handoff span{font-size:12px;color:#777}
     `;
     document.head.appendChild(style);
   }
 
-  function startHandoff() {
-    const params = new URLSearchParams(location.search);
-    if (params.get('cf_add_personalizada') !== '1') return false;
-    const code = text(params.get('cf_criacao'));
-    const productId = text(params.get('cf_produto'));
-    const modelKey = text(params.get('cf_modelo'));
-    if (!/^CF-/i.test(code) || !/^\d+$/.test(productId)) return false;
+  function showHandoff() {
+    installStyle();
+    if (document.getElementById('cfCartHandoff')) return;
+    const node = document.createElement('div');
+    node.id = 'cfCartHandoff';
+    node.className = 'cf-cart-handoff';
+    node.innerHTML = '<div><strong>Adicionando sua caneca personalizada…</strong><span>Estamos usando o produto original e preservando o código da sua arte.</span></div>';
+    document.body.appendChild(node);
+  }
 
-    upsert({ code, productId, modelKey, addedAt:Date.now(), status:'carrinho' });
+  function clearHandoffParams() {
+    try {
+      const url = new URL(location.href);
+      ['cf_add_personalizada','cf_criacao','cf_produto','cf_modelo'].forEach(key => url.searchParams.delete(key));
+      history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    } catch {}
+  }
 
+  async function addOriginalProduct(productId, code) {
     const add = new URL(`/carrinho/produto/${encodeURIComponent(productId)}/adicionar`, location.origin);
     add.searchParams.set('utm_source', 'canecafacil');
     add.searchParams.set('utm_medium', 'personalizacao');
     add.searchParams.set('utm_campaign', code);
     add.searchParams.set('utm_content', 'personalizada');
-    location.replace(add.href);
+
+    const response = await fetch(add.href, {
+      method:'GET',
+      credentials:'same-origin',
+      cache:'no-store',
+      redirect:'follow',
+      headers:{ 'X-Requested-With':'XMLHttpRequest' }
+    });
+    if (!response.ok) throw new Error(`Carrinho respondeu ${response.status}`);
+    return true;
+  }
+
+  function startHandoff() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('cf_add_personalizada') !== '1') return false;
+    const code = text(params.get('cf_criacao')).toUpperCase();
+    const productId = text(params.get('cf_produto'));
+    const modelKey = text(params.get('cf_modelo'));
+    if (!/^CF-/i.test(code) || !/^\d+$/.test(productId)) return false;
+
+    upsert({ code, productId, modelKey, addedAt:Date.now(), status:'carrinho' });
+    showHandoff();
+    clearHandoffParams();
+
+    addOriginalProduct(productId, code)
+      .then(() => location.replace(CART_URL))
+      .catch(error => {
+        console.error('[CanecaFácil] falha ao adicionar produto original:', error);
+        // Fallback: abre a rota nativa apenas depois de já estarmos no domínio/sessão da loja.
+        const add = new URL(`/carrinho/produto/${encodeURIComponent(productId)}/adicionar`, location.origin);
+        add.searchParams.set('utm_source', 'canecafacil');
+        add.searchParams.set('utm_medium', 'personalizacao-fallback');
+        add.searchParams.set('utm_campaign', code);
+        location.replace(add.href);
+      });
     return true;
   }
 
