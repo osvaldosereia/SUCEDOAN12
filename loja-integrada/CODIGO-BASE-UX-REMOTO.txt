@@ -1,13 +1,13 @@
-// CANECAFÁCIL · BASE UX REMOTO
-// Loja Integrada > JavaScript do Rodapé > Todas as páginas exceto checkout
-// Cole somente este código. Não use <script>.
-(function(){
-  if(window.CFSITEBOOT)return;
-  window.CFSITEBOOT='20260902-9';
-  var s=document.createElement('script');
-  s.src='https://donaantonia.com.br/loja-integrada/canecafacil-site-runtime-v1.js?v=20260902-8';
-  s.async=false;
-  try{s.fetchPriority='high';}catch(e){}
-  s.onerror=function(){console.error('[CanecaFácil] Falha ao carregar Base UX remoto.');};
-  document.head.appendChild(s);
-})();
+// LEGADO / NÃO INSTALAR
+//
+// A CanecaFácil não usa mais este loader remoto para montar o visual da loja.
+// Motivo: evitar FOUC/piscada e reconstrução tardia do layout.
+//
+// Instalação atual na Loja Integrada:
+// 1. LI-CF-BASE-CSS.txt      -> CSS / Cabeçalho / todas as páginas exceto checkout
+// 2. LI-CF-VITRINE-CSS.txt  -> CSS / Cabeçalho / todas as páginas exceto checkout
+// 3. LI-CF-PRODUTO-CSS.txt  -> CSS / Cabeçalho / todas as páginas exceto checkout
+// 4. LI-CF-FUNCOES-JS.txt   -> JavaScript / Rodapé / todas as páginas exceto checkout
+//
+// O GitHub continua como fonte mestre e backup, mas o CSS principal é executado
+// diretamente pela Loja Integrada no primeiro carregamento.
