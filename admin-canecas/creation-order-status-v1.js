@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-admin-creation-order-status-v1.1';
+  const BUILD = '20260902-admin-creation-order-status-v1.2';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CREATIONS = 'canecas/personalizadas';
 
@@ -24,17 +24,30 @@
     return payment === 'pago' && creation.liberado_producao === true;
   }
 
+  function normalizedStatus(creation = {}) {
+    return norm(creation?.encomenda?.status || creation.atendimento_status || creation.status || 'arte_pronta');
+  }
+
   function statusLabel(creation = {}) {
-    const status = norm(creation?.encomenda?.status || creation.atendimento_status || creation.status || 'arte_pronta');
+    const status = normalizedStatus(creation);
     const payment = norm(creation.pagamento_status || creation?.encomenda?.pagamento_status);
     if (released(creation)) return 'PAGO · LIBERADO PARA PRODUÇÃO';
     if (payment === 'pago') return 'Pagamento confirmado · aguardando liberação técnica';
     if (/paga/.test(status) && !released(creation)) return 'Pagamento registrado · PRODUÇÃO BLOQUEADA';
-    if (/pedido_criado|vinculad|encomend/.test(status)) return 'Encomendada · aguardando pagamento';
-    if (/carrinho|aguardando_pedido|encomendando/.test(status)) return 'No carrinho / aguardando pedido';
+    if (/pedido_criado|vinculad|encomend/.test(status) && !/encomendando/.test(status)) return 'Encomendada · aguardando pagamento';
+    if (/carrinho|aguardando_pedido|encomendando/.test(status)) return 'NO CARRINHO · AGUARDANDO FINALIZAÇÃO';
     if (/cancel/.test(status)) return 'Pedido cancelado';
     if (/gerando/.test(status)) return 'Gerando arte';
     return 'Arte criada · ainda não encomendada';
+  }
+
+  function statusHelp(creation = {}, orderId = '') {
+    const status = normalizedStatus(creation);
+    if (orderId) return `Pedido Loja Integrada: <b>${esc(orderId)}</b>`;
+    if (/carrinho|aguardando_pedido|encomendando/.test(status)) {
+      return 'O cliente aprovou a arte e colocou o produto no carrinho. Ainda não existe pedido na Loja Integrada.';
+    }
+    return 'Esta criação permanece em Minhas Artes até o cliente iniciar a compra.';
   }
 
   async function enhance(id) {
@@ -48,7 +61,7 @@
       const block = document.createElement('div');
       block.className = 'form-section';
       block.dataset.cfEncomendaStatus = BUILD;
-      block.innerHTML = `<h3>Encomenda</h3><div class="notice"><b>${esc(statusLabel(creation))}</b><br>Código da arte: <b>${esc(id)}</b>${orderId ? `<br>Pedido Loja Integrada: <b>${esc(orderId)}</b>` : '<br>Esta criação permanece em Minhas Artes até o cliente comprar.'}${isReleased ? '<br><br>✓ Pagamento confirmado pela Loja Integrada. Esta caneca está autorizada a entrar na fila de produção.' : orderId ? '<br><br>⛔ Não produzir enquanto o pagamento não estiver confirmado e liberado.' : ''}</div>${orderId ? '<div class="mini-actions" style="margin-top:8px"><button class="secondary" type="button" data-cf-open-order>Ver em Pedidos</button></div>' : ''}`;
+      block.innerHTML = `<h3>Encomenda</h3><div class="notice"><b>${esc(statusLabel(creation))}</b><br>Código da arte: <b>${esc(id)}</b><br>${statusHelp(creation, orderId)}${isReleased ? '<br><br>✓ Pagamento confirmado pela Loja Integrada. Esta caneca está autorizada a entrar na fila de produção.' : orderId ? '<br><br>⛔ Não produzir enquanto o pagamento não estiver confirmado e liberado.' : ''}</div>${orderId ? '<div class="mini-actions" style="margin-top:8px"><button class="secondary" type="button" data-cf-open-order>Ver em Pedidos</button></div>' : ''}`;
       const actions = drawer.querySelector('.drawer-actions');
       if (actions) drawer.insertBefore(block, actions);
       else drawer.appendChild(block);
