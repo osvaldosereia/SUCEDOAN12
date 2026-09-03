@@ -1,0 +1,30 @@
+name: Testar orientação dos mockups CanecaFácil
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'admin-canecas/generator-v1.js'
+      - 'admin-canecas/generator-finalize-recovery-v2.js'
+      - 'admin-canecas/index.html'
+      - 'scripts/test-mockup-orientation-contract-v1.mjs'
+      - '.github/workflows/test-mockup-orientation-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            admin-canecas
+            scripts/test-mockup-orientation-contract-v1.mjs
+          sparse-checkout-cone-mode: false
+          fetch-depth: 1
+      - name: Validar sintaxe do contrato
+        run: node --check admin-canecas/generator-finalize-recovery-v2.js
+      - name: Validar orientação alça ↔ arte
+        run: node scripts/test-mockup-orientation-contract-v1.mjs
