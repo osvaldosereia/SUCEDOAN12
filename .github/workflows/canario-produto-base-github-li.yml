@@ -1,11 +1,6 @@
 name: CanecaFácil · canário produto-base GitHub LI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/canario-produto-base-github-li.yml'
-      - 'scripts/canario-produto-base-loja-integrada-v1.mjs'
   workflow_dispatch:
     inputs:
       sku:
@@ -45,6 +40,6 @@ jobs:
         env:
           LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
-          CANARY_SKU: ${{ inputs.sku || 'CANP-QZ11RD' }}
-          CANARY_CONFIRM: WRITE_SAME_PRODUCT:${{ inputs.sku || 'CANP-QZ11RD' }}
+          CANARY_SKU: ${{ inputs.sku }}
+          CANARY_CONFIRM: WRITE_SAME_PRODUCT:${{ inputs.sku }}
         run: node scripts/canario-produto-base-loja-integrada-v1.mjs
