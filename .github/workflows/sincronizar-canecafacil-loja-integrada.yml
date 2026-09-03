@@ -18,6 +18,12 @@ on:
         default: '10'
   schedule:
     - cron: '*/5 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
+      - 'scripts/sincronizar-loja-integrada-v3.mjs'
+      - '.github/workflows/sincronizar-canecafacil-loja-integrada.yml'
 
 permissions:
   contents: read
@@ -49,6 +55,11 @@ jobs:
           fi
           printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
           echo 'Personal Token carregado com segurança.'
+      - name: Atualizar catálogo de categorias · GitHub direto
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+        run: node scripts/atualizar-catalogo-loja-integrada-v1.mjs
       - name: Sincronizar fila CanecaFácil · galeria oficial de 3 imagens
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
