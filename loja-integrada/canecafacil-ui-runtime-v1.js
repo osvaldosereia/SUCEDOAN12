@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-canecafacil-ui-runtime-v3-native-menu-preserved';
+  const BUILD = '20260903-canecafacil-ui-runtime-v3.1-mobile-share-thumbs';
   if (window.__CF_UI_RUNTIME__ === BUILD) return;
   window.__CF_UI_RUNTIME__ = BUILD;
 
@@ -148,11 +148,17 @@ body.pagina-produto .cf-native-personalizer .form-head h2{font-weight:500!import
     });
   }
 
+  function mobileThumbsHost() {
+    return document.querySelector('.produto-thumbs.thumbs-horizontal')
+      || document.querySelector('.produto-thumbs #carouselImagem.visible-phone')?.closest('.produto-thumbs')
+      || document.querySelector('#carouselImagem.visible-phone')?.closest('.produto-thumbs');
+  }
+
   function positionShareButton() {
     if (!isProductPage()) return;
     const button = shareButton();
     if (MOBILE.matches) {
-      const anchor = document.querySelector('.produto-compartilhar') || document.querySelector('.produto-thumbs');
+      const anchor = mobileThumbsHost();
       if (anchor && button.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', button);
     } else {
       const cep = document.querySelector('#formCalcularCep')?.closest('.cep') || document.querySelector('.cep');
