@@ -1,12 +1,12 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-cf-inline-loader-prod-v11-image-stable';
+  const BUILD = '20260903-cf-inline-loader-prod-v12-native';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CATALOG = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/canecas-galeria.json';
-  const PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/personalizar/';
+  const NATIVE_PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/native-personalizer-inline-v1.js?v=20260903-1';
   const CART_BRIDGE_URL = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260902-4';
-  const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-6';
+  const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-9';
   const PARAM = 'cf_personalizador';
   const ACTIVE_VALUE = 'teste';
   const DIAGNOSTIC_URL = 'https://donaantonia.com.br/loja-integrada/personalizador-inline-v2.js?v=20260901-4';
@@ -33,29 +33,33 @@
   }
 
   function loadCommerceRuntime() {
-    if (window.__CF_COMMERCE_RUNTIME__ && /20260902-canecafacil-commerce-runtime-v1\.2/.test(String(window.__CF_COMMERCE_RUNTIME__))) return;
-    if ([...document.scripts].some(s => /canecafacil-commerce-runtime-v1\.js\?v=20260902-6/i.test(s.src || ''))) return;
+    if (window.__CF_COMMERCE_RUNTIME__ && /20260902-canecafacil-commerce-runtime-v3-retention/.test(String(window.__CF_COMMERCE_RUNTIME__))) return;
+    if ([...document.scripts].some(s => /canecafacil-commerce-runtime-v1\.js/i.test(s.src || ''))) return;
     const script = document.createElement('script');
     script.src = COMMERCE_URL;
     script.async = true;
     script.dataset.cfCommerceRuntime = BUILD;
-    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar Minhas Artes/carrinho personalizado.');
+    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar Minhas Canecas/carrinho personalizado.');
     document.head.appendChild(script);
   }
 
-  function bindFluidEmbed() {
-    if (window.__CF_PERSONALIZER_FLUID_EMBED__) return;
-    window.__CF_PERSONALIZER_FLUID_EMBED__ = BUILD;
-    window.addEventListener('message', event => {
-      if (event.origin !== 'https://donaantonia.com.br') return;
-      const data = event.data || {};
-      if (data.type !== 'canecafacil:personalizer-height') return;
-      const frames = [...document.querySelectorAll('iframe[src*="donaantonia.com.br/loja-integrada/personalizar/"]')];
-      const frame = frames.find(node => node.contentWindow === event.source);
-      if (!frame) return;
-      const height = Math.max(220, Math.min(1600, Math.ceil(Number(data.height) || 0)));
-      frame.style.height = `${height}px`;
-      frame.dataset.cfFluidHeight = String(height);
+  function loadNativeRuntime() {
+    if (window.CanecaFacilNativePersonalizer?.mount) return Promise.resolve(window.CanecaFacilNativePersonalizer);
+    const existing = [...document.scripts].find(s => /native-personalizer-inline-v1\.js/i.test(s.src || ''));
+    if (existing) {
+      return new Promise(resolve => {
+        if (window.CanecaFacilNativePersonalizer?.mount) return resolve(window.CanecaFacilNativePersonalizer);
+        document.addEventListener('canecafacil:native-personalizer-ready', () => resolve(window.CanecaFacilNativePersonalizer), { once:true });
+      });
+    }
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = NATIVE_PERSONALIZER;
+      script.async = false;
+      script.dataset.cfNativePersonalizerLoader = BUILD;
+      script.onload = () => resolve(window.CanecaFacilNativePersonalizer);
+      script.onerror = () => reject(new Error('Falha ao carregar o personalizador nativo.'));
+      document.head.appendChild(script);
     });
   }
 
@@ -139,8 +143,20 @@
     } catch { return ''; }
   }
 
-  function existingProductionForm() {
+  function nativeProductionForm() {
+    return document.querySelector('[data-cf-native-personalizer="1"], .cf-native-personalizer');
+  }
+
+  function legacyProductionFrame() {
     return document.querySelector('.cf-personalizer-box iframe[src*="/loja-integrada/personalizar/"], iframe[title="Personalizar esta caneca"][src*="/loja-integrada/personalizar/"]');
+  }
+
+  function removeLegacyFrame() {
+    const frame = legacyProductionFrame();
+    if (!frame) return;
+    const box = frame.closest('.cf-personalizer-box');
+    if (box) box.remove();
+    else frame.remove();
   }
 
   function insertionAnchor(old) {
@@ -154,35 +170,37 @@
   }
 
   function injectPersonalizer(product, old = null, force = false) {
-    if (existingProductionForm() || document.querySelector('[data-cf-auto-personalizer]')) return true;
+    if (nativeProductionForm() || document.querySelector('[data-cf-auto-personalizer]')) return true;
+    removeLegacyFrame();
+
     const modelKey = text(product?.__key || product?.firebaseKey || product?.id);
     if (!modelKey) return false;
     if (!force && !isPersonalizable(product)) return false;
     const anchor = insertionAnchor(old);
     if (!anchor) return false;
 
-    const returnUrl = new URL(location.href); returnUrl.search = ''; returnUrl.hash = '';
-    const frameUrl = new URL(PERSONALIZER);
-    frameUrl.searchParams.set('model', modelKey);
-    frameUrl.searchParams.set('embed', '1');
-    frameUrl.searchParams.set('ui', '20260902-8-image-stable');
-    frameUrl.searchParams.set('return', returnUrl.href);
+    const returnUrl = new URL(location.href);
+    returnUrl.searchParams.delete('model');
+    returnUrl.searchParams.delete('creation');
+    returnUrl.searchParams.delete('return');
+    returnUrl.hash = '';
 
     const box = document.createElement('div');
-    box.className = 'cf-personalizer-box';
+    box.className = 'cf-personalizer-box cf-native-personalizer-host';
     box.dataset.cfAutoPersonalizer = BUILD;
-    box.style.cssText = 'margin:14px 0 20px;padding:0;border:0;background:transparent;text-align:left;overflow:visible';
-    const iframe = document.createElement('iframe');
-    iframe.title = 'Personalizar esta caneca';
-    iframe.src = frameUrl.href;
-    iframe.loading = 'eager';
-    iframe.setAttribute('allow','clipboard-write');
-    iframe.style.cssText = 'display:block;width:100%;height:320px;margin:0;border:0;background:#fff;overflow:hidden;transition:height .18s ease';
-    box.appendChild(iframe);
+    box.dataset.modelId = modelKey;
+    box.style.cssText = 'display:block;width:100%;margin:14px 0 20px;padding:0;border:0;background:transparent;text-align:left;overflow:visible';
 
     if (anchor.mode === 'append') anchor.node.appendChild(box);
     else anchor.node.parentNode?.insertBefore(box, anchor.node);
     if (anchor.old) anchor.old.style.setProperty('display','none','important');
+
+    loadNativeRuntime()
+      .then(api => api?.mount?.(box, { modelId:modelKey, returnUrl:returnUrl.href, product }))
+      .catch(error => {
+        box.innerHTML = '<div style="padding:16px;background:#fff5f2;border:1px solid #f0d5cd;border-radius:10px;color:#8c3b2f">Não foi possível carregar o personalizador. Atualize a página e tente novamente.</div>';
+        console.error('[CanecaFácil] personalizador nativo:', error);
+      });
     return true;
   }
 
@@ -206,9 +224,10 @@
   }
 
   async function ensurePersonalizer() {
-    if (!isProductPage() || autoLoading || existingProductionForm() || document.querySelector('[data-cf-auto-personalizer]')) return;
+    if (!isProductPage() || autoLoading || nativeProductionForm()) return;
     autoLoading = true;
     try {
+      removeLegacyFrame();
       const resolved = await resolveProduct();
       if (!resolved.product) return;
       injectPersonalizer(resolved.product, resolved.old, resolved.force);
@@ -229,7 +248,6 @@
   }
 
   function init() {
-    bindFluidEmbed();
     loadCartBridge();
     loadCommerceRuntime();
     ensurePersonalizer();
