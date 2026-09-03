@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-personalizacao-only-v1.2-retention';
+  const BUILD = '20260902-personalizacao-only-v1.3-image-stable';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
-  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260902-13`;
+  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260902-14`;
   const COMMERCE_RUNTIME = `${BASE}canecafacil-commerce-runtime-v1.js?v=20260902-9`;
 
   if (window.__CF_PERSONALIZACAO_ONLY__ === BUILD) return;
