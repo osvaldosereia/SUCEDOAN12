@@ -7,6 +7,7 @@ const read=(...parts)=>fs.readFileSync(path.join(root,...parts),'utf8');
 
 const adminIndex=read('admin-canecas','index.html');
 const mediaAdmin=read('admin-canecas','storefront-media-v4.js');
+const mediaQueue=read('scripts','fila-midia-loja-integrada-v1.mjs');
 const finalRecovery=read('admin-canecas','generator-finalize-recovery-v2.js');
 const personalization=read('admin-canecas','personalization-config-v1.js');
 const adminLinks=read('admin-canecas','personalization-test-link-v1.js');
@@ -22,16 +23,23 @@ const prodLoader=read('loja-integrada','loader-personalizador-inline-producao-v1
 const orderWorker=read('scripts','sincronizar-pedidos-personalizados-li.mjs');
 
 for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.match(personalization,new RegExp(`\\['${id}'`),`campo ${id} deve existir no cadastro`);
-assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-1/,'Admin deve carregar mídia LI V16');
+assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-2/,'Admin deve carregar mídia LI V16 com fila GitHub direta');
 assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-1/,'Admin deve carregar recuperação V2 sem legado de recortes');
 assert.doesNotMatch(adminIndex,/storefront-crops-github-v3\.js/,'Admin não deve carregar módulo ativo de recortes');
 assert.doesNotMatch(adminIndex,/generator-finalize-recovery-v1\.js/,'Admin não deve carregar recuperação antiga de recortes');
 
 assert.match(mediaAdmin,/return\[m\.m1,m\.m2,mediaOf\(p\)\]/,'ordem oficial deve ser mockup 1, mockup 2 e horizontal quadrada');
-assert.match(mediaAdmin,/prepare_mug_storefront_media/,'Admin deve conseguir solicitar a nova mídia ao Make');
-assert.match(mediaAdmin,/vitrine_horizontal_quadrada:images\[2\]/,'payload Make deve usar a horizontal quadrada');
-assert.match(mediaAdmin,/for\(let i=0;i<5;i\+\+\)/,'update deve carregar até 5 IDs antigos para limpeza');
+assert.match(mediaAdmin,/midia_fila/,'Admin deve solicitar mídia pela fila Firebase/GitHub');
+assert.match(mediaAdmin,/solicitado_por:'admin_github_direct'/,'solicitação de mídia deve registrar origem GitHub direta');
+assert.doesNotMatch(mediaAdmin,/action:'prepare_mug_storefront_media'/,'Admin não deve mais usar Make como ponte para preparar mídia');
+assert.match(mediaAdmin,/vitrine_horizontal_quadrada:images\[2\]/,'payload de contingência deve usar a horizontal quadrada');
+assert.match(mediaAdmin,/for\(let i=0;i<5;i\+\+\)/,'update de contingência deve carregar até 5 IDs antigos para limpeza');
 assert.doesNotMatch(mediaAdmin,/vitrine_recorte_esquerda:images\[2\]/,'Admin não pode enviar recorte esquerdo como imagem oficial');
+
+assert.match(mediaQueue,/const QUEUE = 'canecas\/integracoes\/loja_integrada\/midia_fila'/,'worker da fila deve usar o mesmo nó Firebase do Admin');
+assert.match(mediaQueue,/status: 'processando'/,'fila deve possuir etapa processando');
+assert.match(mediaQueue,/status: 'concluido'/,'fila deve possuir etapa concluído');
+assert.match(mediaQueue,/via: 'github_actions'/,'fila deve registrar GitHub Actions como executor');
 
 assert.match(finalRecovery,/vitrine_loja_integrada_status = 'pendente_github'/,'finalização deve solicitar mídia LI sem criar recortes');
 assert.match(finalRecovery,/cleanLegacyMedia/,'recuperação deve eliminar campos antigos de recorte');
@@ -64,4 +72,4 @@ assert.match(cartBridge,/credentials:'same-origin'/,'adição ao carrinho deve p
 assert.match(prodLoader,/function personalizable\(/,'loader deve respeitar a configuração individual');
 assert.match(orderWorker,/canecas\/print_jobs/,'pedido pago deve gerar fila de impressão');
 
-console.log('OK CanecaFácil V16: arte mestre preservada, dois mockups, derivada quadrada compactada para LI, galeria de 3 imagens e recortes legados removidos.');
+console.log('OK CanecaFácil V16: mídia pela fila GitHub sem ponte Make, arte mestre preservada, dois mockups, derivada quadrada compactada para LI e galeria de 3 imagens.');
