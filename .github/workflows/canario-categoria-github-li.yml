@@ -1,11 +1,6 @@
 name: CanecaFácil · canário categoria GitHub LI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/canario-categoria-github-li.yml'
-      - 'scripts/canario-categoria-loja-integrada-v1.mjs'
   workflow_dispatch:
     inputs:
       sku:
@@ -46,6 +41,6 @@ jobs:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
           LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
-          CANARY_SKU: ${{ inputs.sku || 'CANP-QZ11RD' }}
-          CANARY_CONFIRM: SET_RESOLVED_CATEGORY:${{ inputs.sku || 'CANP-QZ11RD' }}
+          CANARY_SKU: ${{ inputs.sku }}
+          CANARY_CONFIRM: SET_RESOLVED_CATEGORY:${{ inputs.sku }}
         run: node scripts/canario-categoria-loja-integrada-v1.mjs
