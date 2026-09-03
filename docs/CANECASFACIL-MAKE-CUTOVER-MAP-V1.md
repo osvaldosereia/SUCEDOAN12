@@ -12,11 +12,14 @@
 ## Evidências de prontidão
 
 - Sincronização real V4: produto criado/atualizado pelo GitHub, categoria específica preservada, preço/estoque/SEO/alias e auditoria concluídos.
-- Produto canário: `CANP-WTM83S` → Loja Integrada `403584796`.
-- Galeria canário: 3/3 imagens oficiais confirmadas e IDs Firebase ↔ Loja Integrada correspondentes.
+- Produto canário operacional: `CANP-WTM83S` → Loja Integrada `403584796`.
+- Galeria canário operacional: 3/3 imagens oficiais confirmadas e IDs Firebase ↔ Loja Integrada correspondentes.
+- E2E específico da mídia sem Make: `CANP-4J4SCE` / Firebase `mug-1788067216093-4j4sce` / Loja Integrada `403584611`.
+- Nesse E2E, a arte mestre `2400×960` gerou a derivada `1200×1200`, o Firebase confirmou vitrine com 3 imagens e a Loja Integrada removeu 3 imagens antigas e criou 3 novas, com 0 erros.
+- Fila de mídia validada nos estados `pendente → processando → concluido` e `via=github_actions`.
 - Busca por SKU e leitura por ID: canários somente leitura concluídos com sucesso.
-- Check objetivo: 11/11 funções do núcleo GitHub prontas, 0 bloqueios de núcleo.
-- Make não participou desses testes.
+- Check objetivo do núcleo GitHub: 11/11 funções prontas, 0 bloqueios de núcleo.
+- Make não participou desses testes operacionais.
 
 ## Grupo A — Loja Integrada operacional — PRONTO PARA CORTE CONTROLADO
 
@@ -73,23 +76,53 @@ Cobertura comprovada:
 - ler produto por ID;
 - reconciliar categoria por ID, aceitando `/v1/...` e `/api/v1/...` como o mesmo recurso.
 
-## Grupo C — Ponte Make → GitHub para mídia — PODE SER ELIMINADO NO CUTOVER
+## Grupo C — Ponte Make → GitHub para mídia — SUBSTITUTO E2E ATIVO E VALIDADO
 
 Módulos candidatos:
 
 `120, 121, 122`
 
-Motivo:
+### Estado atual
 
-O trabalho real já é executado diretamente por GitHub Actions. Não há benefício em manter a sequência `Admin/Firebase → Make → GitHub`.
+O Admin **não precisa mais do Make para solicitar a preparação da mídia**. A rota normal agora é:
 
-Substitutos:
+`Admin → Firebase midia_fila → GitHub Actions → Sharp → canecas-media → Firebase → Loja Integrada → finalize da fila`
 
-- `.github/workflows/processar-midia-loja-integrada-canecas.yml`
-- `scripts/processar-midia-loja-integrada-v16.mjs`
-- `scripts/migrar-imagens-loja-integrada-v1.mjs`
+Substitutos ativos:
 
-A mídia roda automaticamente em horários escalonados e a galeria oficial foi validada com 3 imagens.
+- `admin-canecas/storefront-media-v4.js` — grava diretamente `canecas/integracoes/loja_integrada/midia_fila`;
+- `scripts/fila-midia-loja-integrada-v1.mjs` — enqueue, claim e finalize;
+- `.github/workflows/processar-fila-midia-loja-integrada.yml` — worker automático a cada 5 minutos;
+- `scripts/processar-midia-loja-integrada-v16.mjs` — gera a horizontal quadrada;
+- `scripts/migrar-imagens-loja-integrada-v1.mjs` — substitui a galeria da Loja Integrada pelas 3 imagens oficiais.
+
+### E2E confirmado
+
+Canário: `CANP-4J4SCE` / produto LI `403584611`.
+
+Resultado:
+
+- enqueue Firebase: OK;
+- claim GitHub: OK;
+- Sharp: OK;
+- origem `2400×960` → derivada LI `1200×1200`: OK;
+- Firebase: `vitrine=3 imagens`: OK;
+- Loja Integrada: `removidas=3 · novas=3`: OK;
+- finalize: OK;
+- erros: 0;
+- Make: não utilizado.
+
+O canário E2E ficou **manual-only** após a validação para nunca regravar uma galeria por acidente.
+
+### Desempenho
+
+O primeiro E2E mostrou que o processamento real é rápido, mas o checkout antigo com `fetch-depth: 0` desperdiçava quase 3 minutos buscando todas as branches do repositório. Os workflows de mídia foram alterados para checkout **raso + sparse**, mantendo apenas `scripts` no checkout inicial e adicionando a mídia gerada com `git add --sparse`.
+
+O workflow legado de mídia perdeu o schedule periódico. Ele permanece como fallback/manual e reação a alterações da branch `canecas-media`.
+
+### Critério para desligar 120/121/122 no Make
+
+O substituto GitHub está tecnicamente pronto e já passou por E2E real. O cenário Make ainda permanece intacto por decisão de cutover. Quando o corte formal for feito, os módulos 120/121/122 podem ser desativados como um único grupo, mantendo o blueprint original disponível para rollback.
 
 ## Grupo D — E-mail Resend — AINDA NÃO CORTAR
 
@@ -155,7 +188,7 @@ O Admin lê esse estado e deve mostrar:
 ## Ordem recomendada do futuro cutover
 
 1. **Grupo B** — consultas e catálogo.
-2. **Grupo C** — pontes Make → GitHub de mídia.
+2. **Grupo C** — pontes Make → GitHub de mídia; substituto já validado E2E.
 3. **Grupo A** — escrita operacional da Loja Integrada.
 4. Observar operações reais e manter fallback Make disponível.
 5. **Grupo D** somente depois do canário Resend.
