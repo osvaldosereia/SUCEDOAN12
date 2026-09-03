@@ -8,6 +8,15 @@ on:
         required: false
         type: boolean
         default: true
+      shadow_audit:
+        description: 'Comparar produtos reais Firebase x Loja Integrada em modo somente leitura'
+        required: false
+        type: boolean
+        default: true
+      shadow_limit:
+        description: 'Quantidade de produtos na auditoria shadow (1 a 25)'
+        required: false
+        default: '5'
 
 permissions:
   contents: read
@@ -24,6 +33,7 @@ jobs:
         run: |
           node --check scripts/canecafacil-github-ops-core-v1.mjs
           node --check scripts/processar-operacoes-github-canecas-v1.mjs
+          node --check scripts/auditar-shadow-github-vs-make-v1.mjs
           node --check scripts/test-canecafacil-github-ops-v1.mjs
       - name: Testes unitários sem Make
         run: node scripts/test-canecafacil-github-ops-v1.mjs
@@ -54,3 +64,20 @@ jobs:
           LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: node scripts/processar-operacoes-github-canecas-v1.mjs
+
+  shadow-produtos:
+    if: ${{ inputs.shadow_audit }}
+    needs: validar-codigo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Auditoria shadow · Firebase x Loja Integrada · somente leitura
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          SHADOW_LIMIT: ${{ inputs.shadow_limit || '5' }}
+        run: node scripts/auditar-shadow-github-vs-make-v1.mjs
