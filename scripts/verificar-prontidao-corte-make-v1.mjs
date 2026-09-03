@@ -3,6 +3,8 @@ const LI_BASE = (process.env.LOJA_INTEGRADA_BASE_URL || 'https://api.awsli.com.b
 const AUTH = String(process.env.LOJA_INTEGRADA_AUTHORIZATION || '').trim();
 const HAS_RESEND = Boolean(String(process.env.RESEND_API_KEY || '').trim());
 const SKU = String(process.env.READINESS_SKU || 'CANP-WTM83S').trim();
+const PUBLISH = /^(1|true|yes)$/i.test(String(process.env.PUBLISH_READINESS || 'true'));
+const STATUS_PATH = 'canecas/integracoes/github_ops/prontidao_corte_make';
 const EXPECTED_IMAGES = 3;
 const SPACING_MS = 650;
 if (!AUTH) throw new Error('LOJA_INTEGRADA_AUTHORIZATION ausente.');
@@ -24,22 +26,19 @@ async function jsonFetch(url, options = {}) {
   return data;
 }
 async function fbGet(path) { return jsonFetch(`${FIREBASE}/${path}.json`, { headers: { Accept: 'application/json' } }); }
+async function fbPut(path, value) {
+  return jsonFetch(`${FIREBASE}/${path}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(value) });
+}
 async function li(path) {
   const wait = Math.max(0, SPACING_MS - (Date.now() - lastLi));
   if (wait) await sleep(wait);
   lastLi = Date.now();
-  return jsonFetch(`${LI_BASE}${path}`, { headers: { Authorization: AUTH, Accept: 'application/json', 'User-Agent': 'CanecaFacil-Cutover-Readiness/1.0' } });
+  return jsonFetch(`${LI_BASE}${path}`, { headers: { Authorization: AUTH, Accept: 'application/json', 'User-Agent': 'CanecaFacil-Cutover-Readiness/1.1' } });
 }
 function expectedImages(p = {}) {
-  return [
-    p.mockup_1,
-    p.mockup_2,
-    p.vitrine_horizontal_quadrada || p.vitrine_loja_integrada?.url || p.loja_integrada_horizontal_quadrada || liMeta(p).horizontal_quadrada,
-  ].map(text).filter(Boolean);
+  return [p.mockup_1, p.mockup_2, p.vitrine_horizontal_quadrada || p.vitrine_loja_integrada?.url || p.loja_integrada_horizontal_quadrada || liMeta(p).horizontal_quadrada].map(text).filter(Boolean);
 }
-function exactSku(objects = [], sku = '') {
-  return objects.filter(item => norm(item?.sku) === norm(sku));
-}
+function exactSku(objects = [], sku = '') { return objects.filter(item => norm(item?.sku) === norm(sku)); }
 function almost(a, b) { return Math.abs(num(a) - num(b)) < 0.011; }
 
 const started = Date.now();
@@ -52,8 +51,8 @@ const matches = Object.entries(products || {}).filter(([, p]) => p && norm(p.cod
 if (matches.length !== 1) throw new Error(`Produto canário ${SKU}: esperado 1 registro no Firebase, encontrado(s) ${matches.length}.`);
 const [firebaseKey, local] = matches[0];
 const localLi = liMeta(local);
-
 const catalogCount = Number(catalog?.total_categorias || Object.keys(catalog?.categorias_lista || {}).length || 0);
+
 const searchStart = Date.now();
 const search = await li(`/produto?sku=${encodeURIComponent(SKU)}&limit=5`);
 const exact = exactSku(Array.isArray(search?.objects) ? search.objects : [], SKU);
@@ -77,7 +76,7 @@ const genericPending = genericQueueRows.filter(item => ['pendente','erro',''].in
 
 const checks = [
   ['catalogo_categorias', catalogCount > 0 && catalog?.via === 'github_actions', `${catalogCount} categorias · via=${text(catalog?.via) || '?'}`],
-  ['buscar_produto_por_sku', exact.length === 1 && productId, `ID ${productId} · ${searchMs}ms`],
+  ['buscar_produto_por_sku', Boolean(exact.length === 1 && productId), `ID ${productId} · ${searchMs}ms`],
   ['ler_produto_por_id', norm(remote?.sku) === norm(SKU), `${getMs}ms`],
   ['vinculo_firebase_li', localProductId === productId, `Firebase=${localProductId || '?'} · LI=${productId}`],
   ['sincronizacao_produto_v4', text(localLi.sync_via) === 'github_actions' && text(localLi.sync_status) === 'sincronizado', `via=${text(localLi.sync_via) || '?'} · status=${text(localLi.sync_status) || '?'}`],
@@ -90,13 +89,33 @@ const checks = [
 ];
 
 let coreFailed = 0;
-console.log('CUTOVER READINESS · GitHub → Loja Integrada · somente leitura');
+const checkObject = {};
+console.log('CUTOVER READINESS · GitHub → Loja Integrada');
 for (const [name, ok, detail] of checks) {
   if (!ok) coreFailed += 1;
+  checkObject[name] = { pronto: Boolean(ok), detalhe: detail };
   console.log(`${ok ? 'PRONTA' : 'BLOQUEADA'} · ${name} · ${detail}`);
 }
-console.log(`${HAS_RESEND ? 'PRONTA' : 'BLOQUEADA'} · email_resend · ${HAS_RESEND ? 'secret RESEND_API_KEY configurado; falta apenas canário de envio controlado' : 'secret RESEND_API_KEY ausente; NÃO cortar e-mail do Make'}`);
+const elapsedMs = Date.now() - started;
+const report = {
+  atualizado_em: new Date().toISOString(),
+  via: 'github_actions',
+  sku_canario: SKU,
+  firebase_key: firebaseKey,
+  produto_id_li: productId,
+  nucleo: { total: checks.length, prontas: checks.length - coreFailed, bloqueadas: coreFailed, status: coreFailed ? 'bloqueado' : 'pronto' },
+  email_resend: { status: HAS_RESEND ? 'pronto_para_canario' : 'bloqueado_secret_ausente', secret_configurado: HAS_RESEND },
+  openai: { status: 'manter_make' },
+  make_cenario: { status: 'nao_alterado' },
+  desempenho_ms: { buscar_sku: searchMs, ler_produto: getMs, verificacao_total: elapsedMs },
+  checks: checkObject,
+};
+if (PUBLISH) {
+  await fbPut(STATUS_PATH, report);
+  console.log(`STATUS · publicado no Firebase · ${STATUS_PATH}`);
+}
+console.log(`${HAS_RESEND ? 'PRONTA_PARA_CANARIO' : 'BLOQUEADA'} · email_resend · ${HAS_RESEND ? 'secret configurado; falta canário de envio controlado' : 'RESEND_API_KEY ausente; NÃO cortar e-mail do Make'}`);
 console.log('NAO_CORTAR_AINDA · make_openai · geração/personalização por OpenAI permanece no Make');
 console.log('NAO_ALTERADO · make_cenario · nenhum módulo Make foi removido nesta fase');
-console.log(`CUTOVER READINESS · SKU=${SKU} · firebase=${firebaseKey} · core_bloqueios=${coreFailed} · ${Date.now() - started}ms`);
+console.log(`CUTOVER READINESS · SKU=${SKU} · core_bloqueios=${coreFailed} · ${elapsedMs}ms`);
 if (coreFailed) process.exitCode = 2;
