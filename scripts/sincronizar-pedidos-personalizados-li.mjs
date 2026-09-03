@@ -12,11 +12,30 @@ const norm = value => text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '
 const nowIso = () => new Date().toISOString();
 const resourceId = value => text(typeof value === 'object' ? value?.resource_uri || value?.id : value).match(/\/(\d+)\/?$/)?.[1] || text(typeof value === 'object' ? value?.id : '').replace(/\D+/g, '');
 const pendingQty = row => Math.max(1, Math.min(50, Number.parseInt(row?.quantidade_match ?? row?.quantidade ?? 1, 10) || 1));
+const present = value => value !== undefined && value !== null && (typeof value !== 'string' || text(value) !== '');
+
+function mergeNonBlank(current = {}, incoming = {}) {
+  const out = { ...(current || {}) };
+  for (const [key, value] of Object.entries(incoming || {})) {
+    if (!present(value)) continue;
+    if (typeof value === 'number' && !Number.isFinite(value)) continue;
+    out[key] = value;
+  }
+  return out;
+}
+function firstNumber(...values) {
+  for (const value of values) {
+    if (value === '' || value === null || value === undefined) continue;
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
 
 async function li(path) {
   const url = /^https?:\/\//i.test(path) ? path : `${LI_BASE}${path.startsWith('/') ? path : `/${path}`}`;
   const response = await fetch(url, {
-    headers: { Authorization: AUTH, Accept: 'application/json', 'User-Agent': 'CanecaFacil-Personalized-Orders/1.1' },
+    headers: { Authorization: AUTH, Accept: 'application/json', 'User-Agent': 'CanecaFacil-Personalized-Orders/1.2' },
     signal: AbortSignal.timeout(20000)
   });
   const raw = await response.text();
@@ -107,12 +126,22 @@ function customer(order = {}) {
 function shipping(order = {}) {
   const envio = (Array.isArray(order.envios) ? order.envios[0] : order.envio) || {};
   return {
-    servico: text(envio.forma_envio_nome || envio.nome || order.forma_envio_nome), valor: Number(envio.valor || order.valor_envio || order.frete_valor || 0) || 0,
-    prazo: Number(envio.prazo || order.prazo_envio || 0) || 0, endereco: text(order.endereco_entrega || order.entrega_endereco || order?.endereco?.endereco),
+    servico: text(envio.forma_envio_nome || envio.nome || order.forma_envio_nome),
+    valor: firstNumber(envio.valor, order.valor_envio, order.frete_valor),
+    prazo: firstNumber(envio.prazo, order.prazo_envio),
+    endereco: text(order.endereco_entrega || order.entrega_endereco || order?.endereco?.endereco),
     numero: text(order.numero_entrega || order.entrega_numero || order?.endereco?.numero), complemento: text(order.complemento_entrega || order.entrega_complemento || order?.endereco?.complemento),
     bairro: text(order.bairro_entrega || order.entrega_bairro || order?.endereco?.bairro), cidade: text(order.cidade_entrega || order.entrega_cidade || order?.endereco?.cidade),
     uf: text(order.estado_entrega || order.entrega_estado || order?.endereco?.estado), cep: text(order.cep_entrega || order.entrega_cep || order?.endereco?.cep)
   };
+}
+function totals(order = {}, items = []) {
+  const subtotalItems = items.reduce((sum, item) => sum + (Number(item.preco || 0) * Math.max(1, Number(item.quantidade || 1))), 0);
+  const subtotal = firstNumber(order.subtotal, order.valor_subtotal, order.total_produtos, order.valor_produtos, subtotalItems);
+  const frete = firstNumber(order.valor_envio, order.frete_valor, order?.envio?.valor, Array.isArray(order.envios) ? order.envios[0]?.valor : null, 0);
+  const desconto = firstNumber(order.valor_desconto, order.desconto, order.total_desconto, 0);
+  const total = firstNumber(order.valor_total, order.total, order.valor_pedido, order.valor_final, subtotal !== null ? subtotal + (frete || 0) - (desconto || 0) : null);
+  return { subtotal, frete, desconto, total };
 }
 function creationArt(creation = {}) { return text(creation?.arte_aprovada?.url || creation.arte_aprovada_url || creation.arte_horizontal || creation.arte_personalizacao || creation.arte_impressao?.url); }
 function pendingRows(raw = {}) {
@@ -154,7 +183,7 @@ async function matchByEmailProduct(order, rows) {
     const key = text(row.loja_integrada_produto_id) || `sku:${text(row.sku)}`;
     const left = capacity.get(key) || 0; if (left <= 0) continue;
     const take = Math.min(pendingQty(row), left); if (take <= 0) continue;
-    selected.push({ ...row, quantidade_match:take }); capacity.set(key, left - take);
+    selected.push({ ...row, quantidade_match:take, match_via:'email_produto_fallback' }); capacity.set(key, left - take);
   }
   return selected;
 }
@@ -167,6 +196,7 @@ function sourceItem(order, pending) {
 async function syncMatchedOrder(order, matched, situation) {
   const id = orderId(order); if (!id || !matched.length) return { id, matched:0, units:0, payment:'pendente' };
   const payment = paymentState(situation), status = commercialState(payment, situation), now = nowIso(), items = [];
+  const released = payment === 'pago';
 
   for (const pending of matched) {
     const code = pendingCode(pending);
@@ -186,15 +216,24 @@ async function syncMatchedOrder(order, matched, situation) {
   if (!items.length) return { id, matched:0, units:0, payment };
 
   const existing = await fb(`canecas/pedidos/${safeKey(id)}`).catch(() => null);
+  const advancedStatus = value => present(value) && !['novo','aguardando_pagamento','pago'].includes(norm(value));
+  const financial = totals(order, items);
   const payload = {
     id, origem:'canecafacil', canal:'loja_integrada',
-    status: existing?.status && !['novo','aguardando_pagamento','pago'].includes(existing.status) ? existing.status : status,
-    status_comercial: existing?.status_comercial && !['novo','aguardando_pagamento','pago'].includes(existing.status_comercial) ? existing.status_comercial : status,
-    cliente:{ ...(existing?.cliente || {}), ...customer(order) }, entrega:{ ...(existing?.entrega || {}), ...shipping(order) },
+    status: advancedStatus(existing?.status) ? existing.status : status,
+    status_comercial: advancedStatus(existing?.status_comercial) ? existing.status_comercial : status,
+    cliente:mergeNonBlank(existing?.cliente || {}, customer(order)),
+    entrega:mergeNonBlank(existing?.entrega || {}, shipping(order)),
     pagamento:{ ...(existing?.pagamento || {}), status:payment, situacao_nome:text(situation.nome), situacao_codigo:text(situation.codigo), atualizado_em:now },
-    pagamento_status:payment, itens, criacoes_ids:items.map(item => item.criacao_id), criacao_id:items.length === 1 ? items[0].criacao_id : '',
+    pagamento_status:payment,
+    pagamento_confirmado:released,
+    liberado_producao:released,
+    producao_status:released ? 'liberado' : (payment === 'cancelado' ? 'cancelado' : 'bloqueado_pagamento'),
+    liberado_producao_em:released ? (text(existing?.liberado_producao_em) || now) : null,
+    itens, criacoes_ids:items.map(item => item.criacao_id), criacao_id:items.length === 1 ? items[0].criacao_id : '',
     quantidade_personalizada_total:items.reduce((sum,item) => sum + item.quantidade, 0), comentario_loja_integrada:orderComment(order),
-    loja_integrada:{ ...(existing?.loja_integrada || {}), pedido_id:id, resource_uri:text(order.resource_uri), situacao:situation, sincronizado_em:now },
+    subtotal:financial.subtotal, frete_valor:financial.frete, desconto:financial.desconto, total:financial.total,
+    loja_integrada:{ ...(existing?.loja_integrada || {}), pedido_id:id, resource_uri:text(order.resource_uri), situacao:situation, sincronizado_em:now, pagamento_autoritativo:true },
     criado_em:existing?.criado_em || orderDate(order) || now, atualizado_em:now
   };
   await fb(`canecas/pedidos/${safeKey(id)}`, { method:'PUT', body:payload });
@@ -205,27 +244,34 @@ async function syncMatchedOrder(order, matched, situation) {
       fb(`canecas/personalizadas/${safeKey(code)}`, { method:'PATCH', body:{
         status:payment === 'cancelado' ? 'pedido_cancelado' : 'encomendada', atendimento_status:payment === 'cancelado' ? 'novo' : 'encomendou',
         pedido_id:id, pedido_loja_integrada_id:id, quantidade_encomendada:item.quantidade,
-        encomenda:{ status:payment === 'pago' ? 'paga' : payment === 'cancelado' ? 'cancelada' : 'pedido_criado', codigo_arte:code, pedido_id:id,
+        pagamento_status:payment, pagamento_confirmado:released, liberado_producao:released,
+        producao_status:released ? 'liberado' : (payment === 'cancelado' ? 'cancelado' : 'bloqueado_pagamento'),
+        liberado_producao_em:released ? (text(existing?.liberado_producao_em) || now) : null,
+        encomenda:{ status:released ? 'paga' : payment === 'cancelado' ? 'cancelada' : 'pedido_criado', codigo_arte:code, pedido_id:id,
           quantidade:item.quantidade, loja_integrada_produto_id:item.loja_integrada_produto_id, pagamento_status:payment, atualizado_em:now, origem:'produto_original_loja_integrada' },
         atualizado_em:now
       }}),
       fb(`canecas/encomendas_pendentes/${safeKey(code)}`, { method:'PATCH', body:{
-        status:payment === 'pago' ? 'paga' : payment === 'cancelado' ? 'cancelada' : 'vinculada', pedido_id:id, quantidade:item.quantidade,
+        status:released ? 'paga' : payment === 'cancelado' ? 'cancelada' : 'vinculada', pedido_id:id, quantidade:item.quantidade,
         pagamento_status:payment, atualizado_em:now
       }})
     ]);
 
-    if (payment === 'pago' && item.arte_horizontal) {
+    if (released && item.arte_horizontal) {
       const jobId = safeKey(`PJ-${id}-${code}`), existingJob = await fb(`canecas/print_jobs/${jobId}`).catch(() => null);
+      const releasePatch = {
+        pagamento_status:'pago', liberado_producao:true,
+        liberado_producao_em:text(existing?.liberado_producao_em) || now, origem_liberacao:'loja_integrada_pagamento_aprovado', atualizado_em:now
+      };
       if (!existingJob) {
         await fb(`canecas/print_jobs/${jobId}`, { method:'PUT', body:{
           id:jobId, pedido_id:id, origem:'canecafacil', origem_label:'CANECAFÁCIL', cliente_nome:payload.cliente.nome,
           cliente_telefone:payload.cliente.telefone || payload.cliente.whatsapp, produto_key:item.produto_key, produto_codigo:item.codigo,
           produto_nome:item.nome, quantidade:item.quantidade, criacao_id:code, codigo_criacao:code, arte_aprovada:item.arte_aprovada,
-          status:'aguardando', pagamento_status:'pago', criado_em:now, atualizado_em:now, tentativas_impressao:0
+          status:'aguardando', criado_em:now, tentativas_impressao:0, ...releasePatch
         }});
-      } else if (Number(existingJob.quantidade || 1) !== item.quantidade) {
-        await fb(`canecas/print_jobs/${jobId}`, { method:'PATCH', body:{ quantidade:item.quantidade, atualizado_em:now } });
+      } else {
+        await fb(`canecas/print_jobs/${jobId}`, { method:'PATCH', body:{ quantidade:item.quantidade, ...releasePatch } });
       }
     }
   }
@@ -240,14 +286,17 @@ const search = await li(`/pedido/search?limit=${LIMIT}`);
 const summaries = Array.isArray(search?.objects) ? search.objects : Array.isArray(search) ? search : [];
 console.log(`PENDENTES ${pending.length} · PEDIDOS_RECENTES ${summaries.length}`);
 
-let linked = 0, linkedUnits = 0, queued = 0;
+let linked = 0, linkedUnits = 0, queued = 0, fallbackMatches = 0;
 const handledOrders = new Set();
 for (const summary of summaries) {
   const id = orderId(summary); if (!id) continue;
   let matched = matchByHint(summary, pending), order = summary;
   if (!matched.length) { order = await li(`/pedido/${encodeURIComponent(id)}`).catch(() => summary); matched = matchByHint(order, pending); }
   if (!matched.length) matched = matchByCodes(order, pending);
-  if (!matched.length) matched = await matchByEmailProduct(order, pending);
+  if (!matched.length) {
+    matched = await matchByEmailProduct(order, pending);
+    if (matched.length) { fallbackMatches += matched.length; console.warn(`FALLBACK_EMAIL_PRODUTO pedido=${id} artes=${matched.map(pendingCode).join(',')}`); }
+  }
   if (!matched.length) continue;
   const situation = await resolveSituation(order), result = await syncMatchedOrder(order, matched, situation);
   linked += result.matched; linkedUnits += result.units; if (result.payment === 'pago') queued += result.matched; handledOrders.add(id);
@@ -263,4 +312,4 @@ for (const row of linkedPending.slice(0, 40)) {
   console.log(`REVALIDADO ${id} · artes=${result.matched} · unidades=${result.units} · pagamento=${result.payment}`);
 }
 
-console.log(`RESUMO artes_vinculadas=${linked} · unidades=${linkedUnits} · filas_pagas=${queued}`);
+console.log(`RESUMO artes_vinculadas=${linked} · unidades=${linkedUnits} · filas_pagas=${queued} · fallback_email_produto=${fallbackMatches}`);
