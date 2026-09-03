@@ -1,6 +1,6 @@
 import { FIREBASE_BASE } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260903-admin-canecas-generator-category-v1.2';
+const BUILD = '20260903-admin-canecas-generator-category-v1.3';
 const SETTINGS_PATH = 'canecas/configuracoes/cadastro_produto_v2';
 const OPTIONS = Object.freeze({
   padronizadas: 'Canecas Padronizadas',
@@ -151,6 +151,7 @@ window.fetch = async function cfGeneratorCategoryFetch(input, init = {}) {
       if (wrapper && typeof wrapper.payload === 'string') {
         const payload = JSON.parse(wrapper.payload);
         if (payload?.action === 'finalize_mug_product') {
+          await refreshProductDefaults();
           const patched = patchTemplate(payload);
           wrapper.payload = JSON.stringify(patched);
           init = { ...init, body: JSON.stringify(wrapper) };
