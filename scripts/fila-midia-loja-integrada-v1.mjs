@@ -123,14 +123,22 @@ async function finalize() {
   const at = now();
   const productStatus = text(product.vitrine_loja_integrada_status || product.vitrine_loja_integrada?.status);
   if (mediaReady(product)) {
-    await fbPatch(`${QUEUE}/${safe(key)}`, {
-      status: 'concluido',
-      atualizado_em: at,
-      concluido_em: at,
-      erro: '',
-      via: 'github_actions',
-      media_url: squareOf(product),
-    });
+    await Promise.all([
+      fbPatch(`${QUEUE}/${safe(key)}`, {
+        status: 'concluido',
+        atualizado_em: at,
+        concluido_em: at,
+        erro: '',
+        via: 'github_actions',
+        media_url: squareOf(product),
+      }),
+      fbPatch(`produtos/${safe(productKey)}`, {
+        vitrine_loja_integrada_status: 'pronto',
+        vitrine_loja_integrada_erro: '',
+        vitrine_loja_integrada_atualizado_em: at,
+        vitrine_loja_integrada_via: 'github_actions',
+      }).catch(() => {}),
+    ]);
     console.log(`MEDIA QUEUE · FINALIZE OK · ${productKey} · ${squareOf(product)}`);
     return;
   }
