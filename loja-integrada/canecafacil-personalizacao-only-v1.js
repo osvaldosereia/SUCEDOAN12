@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-personalizacao-only-v1.0';
+  const BUILD = '20260902-personalizacao-only-v1.1';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
   const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260902-12`;
@@ -11,6 +11,7 @@
   window.__CF_DEFAULT_LI_THEME_MODE__ = true;
 
   const text = value => String(value ?? '').trim();
+  const myMugsIntro = 'Suas canecas criadas neste aparelho. Reabra, use de novo ou acompanhe seus pedidos.';
   let personalizationRequired = false;
   let guardReady = false;
   let relabelObserver = null;
@@ -142,10 +143,10 @@
     if (title && title.textContent !== 'Minhas Canecas') title.textContent = 'Minhas Canecas';
 
     const intro = document.querySelector('#cfMyArtsOverlay .cf-arts-head p');
-    if (intro) intro.textContent = 'Suas canecas criadas neste aparelho. Reabra, use de novo ou acompanhe seus pedidos.';
+    if (intro && intro.textContent !== myMugsIntro) intro.textContent = myMugsIntro;
 
     const frameTitle = document.querySelector('#cfArtFrameWrap .cf-art-frame-bar span');
-    if (frameTitle) frameTitle.textContent = 'Sua caneca personalizada';
+    if (frameTitle && frameTitle.textContent !== 'Sua caneca personalizada') frameTitle.textContent = 'Sua caneca personalizada';
 
     document.querySelectorAll('#cfMyArtsOverlay [data-buy]').forEach(button => {
       if (/^COMPRAR$/i.test(text(button.textContent))) button.textContent = 'USAR DE NOVO';
