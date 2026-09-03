@@ -43,6 +43,7 @@ jobs:
           node --check admin-canecas/generator-finalize-recovery-v1.js
           node --check admin-canecas/storefront-crops-github-v3.js
           node --check admin-canecas/personalization-config-v1.js
+          node --check admin-canecas/personalization-resilience-v1.js
           node --check admin-canecas/creation-order-status-v1.js
 
       - name: Check active storefront syntax
