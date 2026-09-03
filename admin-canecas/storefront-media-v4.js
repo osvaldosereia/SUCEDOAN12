@@ -1,9 +1,10 @@
 import { FIREBASE_BASE, text, safeKey, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD='20260903-admin-canecas-storefront-li-v5-three-images';
+const BUILD='20260903-admin-canecas-storefront-li-v6-github-queue';
 const MAKE_WEBHOOK=window.__CANECAS_ADMIN_CONFIG__?.makeWebhook||window.__CANECAS_ADMIN_CONFIG__?.mugGeneratorWebhook||'';
 const PRODUCTS_NODE='produtos';
-const WAIT_MS=180000;
+const MEDIA_QUEUE='canecas/integracoes/loja_integrada/midia_fila';
+const WAIT_MS=360000;
 const POLL_MS=2500;
 const innerFetch=window.fetch.bind(window);
 const $=(s,r=document)=>r.querySelector(s);
@@ -13,6 +14,8 @@ const isHttp=v=>/^https?:\/\//i.test(text(v));
 function toast(message,error=false){const el=$('#toast');if(!el)return;el.textContent=message;el.className=`toast${error?' error':''}`;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true;},error?8000:4200);}
 async function fbGet(path){const r=await innerFetch(`${FIREBASE_BASE}/${path}.json?_=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});if(!r.ok)throw new Error(`Firebase ${r.status}`);return r.json();}
 async function fbPatch(path,data){const r=await innerFetch(`${FIREBASE_BASE}/${path}.json`,{method:'PATCH',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(data)});if(!r.ok)throw new Error(`Firebase ${r.status}`);return r.json().catch(()=>null);}
+async function fbPut(path,data){const r=await innerFetch(`${FIREBASE_BASE}/${path}.json`,{method:'PUT',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(data)});if(!r.ok)throw new Error(`Firebase ${r.status}`);return r.json().catch(()=>null);}
+function queueKey(value){const bytes=new TextEncoder().encode(text(value));let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');}
 function artOf(p={}){return text(p.arte_horizontal||p.arte_personalizacao||p.arte_impressao?.url||p.arte_final_url);}
 function mediaOf(p={}){return text(p.vitrine_horizontal_quadrada||p.vitrine_loja_integrada?.url||p.loja_integrada?.horizontal_quadrada||p.loja_integrada_horizontal_quadrada);}
 function mocksOf(p={}){return{m1:text(p.mockup_1||p.imagens_site?.[0]||p.imagens?.[0]),m2:text(p.mockup_2||p.imagens_site?.[1]||p.imagens?.[1])};}
@@ -27,13 +30,20 @@ async function callMake(payload){
   return data;
 }
 async function requestMedia(key){
-  try{
-    await callMake({action:'prepare_mug_storefront_media',request_id:`LI-MEDIA-${Date.now().toString(36).toUpperCase()}`,product_key:key});
-    return true;
-  }catch(error){
-    console.warn('[CanecaFácil] não foi possível disparar mídia LI pelo Make:',error);
-    return false;
-  }
+  const at=nowIso(),qKey=queueKey(key);
+  await fbPut(`${MEDIA_QUEUE}/${qKey}`,{
+    product_key:key,
+    status:'pendente',
+    force:false,
+    solicitado_em:at,
+    atualizado_em:at,
+    solicitado_por:'admin_github_direct',
+    tentativas:0,
+    erro:'',
+    via:'github_actions'
+  });
+  console.info('[CanecaFácil] mídia LI enfileirada diretamente no GitHub:',key);
+  return true;
 }
 async function waitForMedia(key,source){
   const deadline=Date.now()+WAIT_MS;
@@ -45,7 +55,7 @@ async function waitForMedia(key,source){
     if(p&&artOf(p)&&artOf(p)!==source)throw new Error('A arte horizontal mudou durante o processamento.');
     await sleep(POLL_MS);
   }
-  throw new Error('A horizontal quadrada da Loja Integrada ainda está sendo preparada. Tente novamente em instantes.');
+  throw new Error('A mídia foi enviada à fila GitHub, mas ainda não terminou. Ela continuará processando automaticamente.');
 }
 async function ensureMedia(key,product=null){
   let p=product||await fbGet(`${PRODUCTS_NODE}/${safeKey(key)}`);
@@ -53,9 +63,10 @@ async function ensureMedia(key,product=null){
   if(ready(p))return p;
   if(!isHttp(artOf(p)))throw new Error('A caneca precisa da arte horizontal mestre para preparar a imagem da loja.');
   const m=mocksOf(p);if(!isHttp(m.m1)||!isHttp(m.m2))throw new Error('A caneca precisa dos dois mockups antes de sincronizar a Loja Integrada.');
-  await fbPatch(`${PRODUCTS_NODE}/${safeKey(key)}`,{vitrine_loja_integrada_status:'pendente_github',vitrine_loja_integrada_erro:'',vitrine_loja_integrada_solicitado_em:nowIso()}).catch(()=>{});
-  toast('Preparando a horizontal quadrada compactada para a Loja Integrada…');
+  const at=nowIso();
+  await fbPatch(`${PRODUCTS_NODE}/${safeKey(key)}`,{vitrine_loja_integrada_status:'pendente_github',vitrine_loja_integrada_erro:'',vitrine_loja_integrada_solicitado_em:at,vitrine_loja_integrada_via:'github_actions'}).catch(()=>{});
   await requestMedia(key);
+  toast('Mídia enviada diretamente para a fila GitHub. Make não utilizado.');
   return waitForMedia(key,artOf(p));
 }
 
@@ -105,9 +116,9 @@ async function renderDrawer(){
   const images=storefrontOrder(p),isReady=ready(p)&&images.length===3&&images.every(isHttp),status=text(p.vitrine_loja_integrada_status||p.vitrine_loja_integrada?.status||'pendente'),anchor=$('.drawer-actions',content);if(!anchor)return;
   const labels=['Mockup 1','Mockup 2','Arte horizontal · versão quadrada da loja'];
   const section=document.createElement('div');section.id='cfStorefrontCropsPreview';section.className='form-section';
-  section.innerHTML=`<h3>Imagens da Loja Integrada</h3><div class="notice ${isReady?'':'warn'}" style="margin-bottom:10px"><b>${isReady?'Galeria pronta: 3 imagens':`Mídia da loja: ${status}`}</b><br>Enviamos 2 mockups + 1 versão quadrada compactada da arte horizontal. A arte mestre de impressão permanece intacta e não é enviada para a galeria.</div>${isReady?`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">${images.map((url,i)=>`<figure style="margin:0"><img src="${url}" alt="${labels[i]}" style="width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:8px"><figcaption style="font-size:11px">${labels[i]}</figcaption></figure>`).join('')}</div>`:'<button type="button" class="secondary" id="cfRefreshCropsV13">Preparar/verificar novamente</button>'}`;
+  section.innerHTML=`<h3>Imagens da Loja Integrada</h3><div class="notice ${isReady?'':'warn'}" style="margin-bottom:10px"><b>${isReady?'Galeria pronta: 3 imagens':`Mídia da loja: ${status}`}</b><br>Enviamos 2 mockups + 1 versão quadrada compactada da arte horizontal. Processamento: Firebase → GitHub Actions; Make não participa.</div>${isReady?`<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">${images.map((url,i)=>`<figure style="margin:0"><img src="${url}" alt="${labels[i]}" style="width:100%;aspect-ratio:1/1;object-fit:contain;background:#fff;border:1px solid #eee;border-radius:8px"><figcaption style="font-size:11px">${labels[i]}</figcaption></figure>`).join('')}</div>`:'<button type="button" class="secondary" id="cfRefreshCropsV13">Preparar/verificar novamente · GitHub</button>'}`;
   anchor.insertAdjacentElement('beforebegin',section);
-  $('#cfRefreshCropsV13',section)?.addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Preparando…';try{const fresh=await ensureMedia(key);section.remove();if(ready(fresh)&&storefrontOrder(fresh).every(isHttp))toast('As 3 imagens da Loja Integrada estão prontas.');await renderDrawer();}catch(err){toast(err?.message||err,true);b.disabled=false;b.textContent='Preparar/verificar novamente';}});
+  $('#cfRefreshCropsV13',section)?.addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Enviado ao GitHub…';try{const fresh=await ensureMedia(key);section.remove();if(ready(fresh)&&storefrontOrder(fresh).every(isHttp))toast('As 3 imagens da Loja Integrada estão prontas.');await renderDrawer();}catch(err){toast(err?.message||err,true);b.disabled=false;b.textContent='Preparar/verificar novamente · GitHub';}});
 }
 window.addEventListener('admin-canecas:drawer',e=>{if(e.detail?.kind==='mug')setTimeout(()=>renderDrawer().catch(()=>{}),80);});
 document.documentElement.dataset.cfStorefrontCrops=BUILD;
