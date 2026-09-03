@@ -27,7 +27,7 @@ const orderWorker=read('scripts','sincronizar-pedidos-personalizados-li.mjs');
 for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.match(personalization,new RegExp(`\\['${id}'`),`campo ${id} deve existir no cadastro`);
 assert.match(adminIndex,/li-payload-hardening-v1\.js\?v=20260903-1/,'Admin deve carregar hardening com catálogo GitHub/Firebase');
 assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-3/,'Admin deve carregar mídia LI cache-first + fila GitHub direta');
-assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-2/,'Admin deve carregar finalização que enfileira mídia direto no GitHub');
+assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-3/,'Admin deve carregar finalização que enfileira mídia direto no GitHub');
 assert.match(adminIndex,/make-webhook-settings-v1\.js\?v=20260903-1/,'Admin deve carregar configuração Make como IA/contingência');
 assert.doesNotMatch(adminIndex,/storefront-crops-github-v3\.js/,'Admin não deve carregar módulo ativo de recortes');
 assert.doesNotMatch(adminIndex,/generator-finalize-recovery-v1\.js/,'Admin não deve carregar recuperação antiga de recortes');
