@@ -1,0 +1,29 @@
+name: CanecaFácil · auditar tipos de categorias
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/auditar-tipos-categorias-canecafacil.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Auditar produtos e categorias · somente leitura
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/auditar-tipos-categorias-canecafacil-v1.mjs
