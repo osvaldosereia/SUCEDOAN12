@@ -2,11 +2,56 @@ import { text, norm, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 import { loadMugs, getMug, patchMug } from './mug-store-v2.js?v=20260829-1';
 import { recoverOne, duplicateSkuGroups, liMeta, skuOf, keyOf } from './li-recovery-v3.js?v=20260831-1';
 
-const BUILD = '20260903-admin-canecas-li-sync-coordinator-v4.1';
+const BUILD = '20260903-admin-canecas-li-sync-coordinator-v4.2-no-legacy-personalizer';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const replaying = new WeakSet();
 const preparing = new Set();
+const nativeFetch = window.fetch.bind(window);
+
+function stripLegacyPersonalizer(value = '') {
+  return String(value || '')
+    .replace(/<div[^>]*class=["'][^"']*cf-personalizer-box[^"']*["'][\s\S]*?<\/div>/gi, '')
+    .replace(/<a[^>]*class=["'][^"']*cf-personalize-link[^"']*["'][^>]*>[\s\S]*?<\/a>/gi, '')
+    .replace(/<iframe[^>]*\/loja-integrada\/personalizar\/[^>]*>[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<a[^>]*>\s*PERSONALIZAR ESTA CANECA\s*<\/a>/gi, '')
+    .replace(/(?:\r?\n\s*){3,}/g, '\n\n')
+    .trim();
+}
+
+function sanitizeMakePayload(input, init = {}) {
+  try {
+    const rawUrl = typeof input === 'string' ? input : input?.url || '';
+    const url = new URL(rawUrl, location.href);
+    if (!/^hook\.[a-z0-9-]+\.make\.com$/i.test(url.hostname)) return init;
+    if (String(init.method || 'GET').toUpperCase() !== 'POST' || typeof init.body !== 'string') return init;
+
+    const outer = JSON.parse(init.body);
+    if (!outer || typeof outer.payload !== 'string') return init;
+    const payload = JSON.parse(outer.payload);
+    if (!payload || typeof payload.produto_json !== 'string') return init;
+
+    const product = JSON.parse(payload.produto_json);
+    if (!product || typeof product !== 'object' || typeof product.descricao_completa !== 'string') return init;
+    const before = product.descricao_completa;
+    const after = stripLegacyPersonalizer(before);
+    if (after === before) return init;
+
+    product.descricao_completa = after;
+    payload.produto_json = JSON.stringify(product);
+    payload.personalizador_descricao = 'nativo_inline';
+    payload.personalizador_legado_removido = true;
+    outer.payload = JSON.stringify(payload);
+    console.info('[CanecaFácil] Personalizador legado removido do payload de contingência Make.');
+    return { ...init, body:JSON.stringify(outer) };
+  } catch {
+    return init;
+  }
+}
+
+window.fetch = function cfAdminNoLegacyPersonalizerFetch(input, init = {}) {
+  return nativeFetch(input, sanitizeMakePayload(input, init));
+};
 
 function toast(message, error = false) {
   const el = $('#toast');
