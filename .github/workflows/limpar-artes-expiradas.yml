@@ -1,0 +1,31 @@
+name: CanecaFácil · retenção das artes
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canecafacil-retencao-artes
+  cancel-in-progress: false
+
+jobs:
+  limpar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/limpar-artes-expiradas.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Aplicar política 15/90 dias
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/limpar-artes-expiradas.mjs
