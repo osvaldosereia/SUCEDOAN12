@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-admin-canecas-finalize-recovery-v2.1-github-media-queue';
+  const BUILD = '20260903-admin-canecas-finalize-recovery-v2.2-mockup-orientation';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const REPO = 'osvaldosereia/SUCEDOAN12';
   const MEDIA_BRANCH = 'canecas-media';
@@ -13,6 +13,24 @@
     personalizaveis: 'Canecas Personalizáveis',
     empresas: 'Canecas para Empresas',
   });
+  const MOCKUP_PROMPT_HANDLE_LEFT = [
+    'Use a arte fornecida como ARTE-MESTRE IMUTÁVEL.',
+    'Crie UMA fotografia quadrada 1:1 de e-commerce de uma caneca branca de porcelana 350ml, em ângulo de 3/4, fundo claro e simples.',
+    'REGRA DE ORIENTAÇÃO OBRIGATÓRIA: a ALÇA da caneca deve aparecer claramente À ESQUERDA da imagem.',
+    'Com a alça à esquerda, a FACE VISÍVEL da caneca deve mostrar o INÍCIO DA PERSONALIZAÇÃO: o LADO ESQUERDO / PRIMEIRA METADE da arte horizontal, mantendo a leitura original da esquerda para a direita.',
+    'Não mostre o final/lado direito como face principal nesta vista.',
+    'NÃO espelhe, NÃO inverta horizontalmente, NÃO troque os lados, NÃO redesenhe, NÃO reescreva textos, NÃO altere cores e NÃO invente elementos.',
+    'Aplique somente a curvatura natural da caneca, preservando exatamente a identidade e a continuidade da arte original.',
+  ].join(' ');
+  const MOCKUP_PROMPT_HANDLE_RIGHT = [
+    'Use a arte fornecida como ARTE-MESTRE IMUTÁVEL.',
+    'Crie UMA fotografia quadrada 1:1 de e-commerce de uma caneca branca de porcelana 350ml, em ângulo de 3/4, fundo claro e simples.',
+    'REGRA DE ORIENTAÇÃO OBRIGATÓRIA: a ALÇA da caneca deve aparecer claramente À DIREITA da imagem.',
+    'Com a alça à direita, a FACE VISÍVEL da caneca deve mostrar o FINAL DA PERSONALIZAÇÃO: o LADO DIREITO / SEGUNDA METADE da arte horizontal, mantendo a leitura original da esquerda para a direita.',
+    'Não mostre o início/lado esquerdo como face principal nesta vista.',
+    'NÃO espelhe, NÃO inverta horizontalmente, NÃO troque os lados, NÃO redesenhe, NÃO reescreva textos, NÃO altere cores e NÃO invente elementos.',
+    'Aplique somente a curvatura natural da caneca, preservando exatamente a identidade e a continuidade da arte original.',
+  ].join(' ');
 
   if (window.__CF_ADMIN_MUG_FINAL_RECOVERY__ === BUILD) return;
 
@@ -37,6 +55,27 @@
       const payload = typeof outer?.payload === 'string' ? JSON.parse(outer.payload) : outer?.payload;
       return payload?.action === 'finalize_mug_product' && payload?.request_id ? payload : null;
     } catch { return null; }
+  }
+
+  function enforceMockupOrientation(payload) {
+    return {
+      ...payload,
+      prompt_mockup_1: MOCKUP_PROMPT_HANDLE_LEFT,
+      prompt_mockup_2: MOCKUP_PROMPT_HANDLE_RIGHT,
+      mockup_orientation_contract: 'handle_left=art_start|handle_right=art_end',
+      mockup_orientation_version: BUILD,
+    };
+  }
+
+  function rewriteFinalizeRequest(init, payload) {
+    try {
+      const outer = JSON.parse(init.body);
+      const next = { ...outer };
+      next.payload = typeof outer?.payload === 'string' ? JSON.stringify(payload) : payload;
+      return { ...init, body: JSON.stringify(next) };
+    } catch {
+      return init;
+    }
   }
 
   function cleanLegacyMedia(template) {
@@ -75,11 +114,11 @@
     }
     template.vitrine_loja_integrada_status = 'pendente_github';
     template.vitrine_loja_integrada_erro = '';
-    return {
+    return enforceMockupOrientation({
       ...payload,
       seo_slug: text(payload.seo_slug) || slug(payload.product_name || template.nome || payload.request_id),
       firebase_template_json: JSON.stringify(template),
-    };
+    });
   }
 
   function urlsOf(product = {}) {
@@ -245,8 +284,9 @@
       const original = parseFinalize(init);
       if (!original) return innerFetch(input, init);
       const payload = enrich(original);
+      const forwardedInit = rewriteFinalizeRequest(init, payload);
       try {
-        const response = await innerFetch(input, init);
+        const response = await innerFetch(input, forwardedInit);
         if (!response.ok) return response;
         const raw = text(await response.clone().text().catch(() => ''));
         if (/^accepted\.?$/i.test(raw)) return recover(innerFetch, payload);
