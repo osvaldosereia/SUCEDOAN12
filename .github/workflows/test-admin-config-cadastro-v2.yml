@@ -6,6 +6,7 @@ on:
     paths:
       - 'admin-canecas/product-admin-config-v2.js'
       - 'admin-canecas/personalization-settings-v2.js'
+      - 'admin-canecas/generator-category-v1.js'
       - 'admin-canecas/index.html'
       - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/test-admin-config-cadastro-v2.mjs'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'admin-canecas/product-admin-config-v2.js'
       - 'admin-canecas/personalization-settings-v2.js'
+      - 'admin-canecas/generator-category-v1.js'
       - 'admin-canecas/index.html'
       - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/test-admin-config-cadastro-v2.mjs'
@@ -41,6 +43,7 @@ jobs:
         run: |
           node --check admin-canecas/product-admin-config-v2.js
           node --check admin-canecas/personalization-settings-v2.js
+          node --check admin-canecas/generator-category-v1.js
           node --check scripts/test-admin-config-cadastro-v2.mjs
       - name: Validar contrato das configurações V2
         run: node scripts/test-admin-config-cadastro-v2.mjs
