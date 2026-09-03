@@ -6,6 +6,7 @@ const root=process.cwd();
 const read=(...parts)=>fs.readFileSync(path.join(root,...parts),'utf8');
 
 const adminIndex=read('admin-canecas','index.html');
+const liHardening=read('admin-canecas','li-payload-hardening-v1.js');
 const mediaAdmin=read('admin-canecas','storefront-media-v4.js');
 const mediaQueue=read('scripts','fila-midia-loja-integrada-v1.mjs');
 const finalRecovery=read('admin-canecas','generator-finalize-recovery-v2.js');
@@ -23,10 +24,17 @@ const prodLoader=read('loja-integrada','loader-personalizador-inline-producao-v1
 const orderWorker=read('scripts','sincronizar-pedidos-personalizados-li.mjs');
 
 for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.match(personalization,new RegExp(`\\['${id}'`),`campo ${id} deve existir no cadastro`);
+assert.match(adminIndex,/li-payload-hardening-v1\.js\?v=20260903-1/,'Admin deve carregar hardening com catálogo GitHub/Firebase');
 assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-3/,'Admin deve carregar mídia LI cache-first + fila GitHub direta');
 assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-1/,'Admin deve carregar recuperação V2 sem legado de recortes');
 assert.doesNotMatch(adminIndex,/storefront-crops-github-v3\.js/,'Admin não deve carregar módulo ativo de recortes');
 assert.doesNotMatch(adminIndex,/generator-finalize-recovery-v1\.js/,'Admin não deve carregar recuperação antiga de recortes');
+
+assert.match(liHardening,/github_actions_catalog/,'hardening deve registrar catálogo proveniente do GitHub');
+assert.match(liHardening,/const REF_PATH = 'canecas\/integracoes\/loja_integrada\/catalog_refs'/,'hardening deve usar o cache Firebase oficial');
+assert.doesNotMatch(liHardening,/loja_integrada_catalog_refs/,'hardening não pode chamar Make para atualizar catálogo');
+assert.doesNotMatch(liHardening,/baseFetch\(MAKE_WEBHOOK/,'hardening não pode consultar Make diretamente');
+assert.match(liHardening,/productBody\.marca = brandUri \|\| null/,'marca deve ser opcional quando a Loja Integrada não possui marcas cadastradas');
 
 assert.match(mediaAdmin,/return\[m\.m1,m\.m2,mediaOf\(p\)\]/,'ordem oficial deve ser mockup 1, mockup 2 e horizontal quadrada');
 assert.match(mediaAdmin,/midia_fila/,'Admin deve solicitar mídia pela fila Firebase/GitHub');
@@ -78,4 +86,4 @@ assert.match(cartBridge,/credentials:'same-origin'/,'adição ao carrinho deve p
 assert.match(prodLoader,/function personalizable\(/,'loader deve respeitar a configuração individual');
 assert.match(orderWorker,/canecas\/print_jobs/,'pedido pago deve gerar fila de impressão');
 
-console.log('OK CanecaFácil V16: mídia pela fila GitHub sem ponte Make, cache Firebase antes da contingência Make, arte mestre preservada e galeria LI de 3 imagens.');
+console.log('OK CanecaFácil V16: catálogo Firebase/GitHub sem Make, mídia pela fila GitHub, cache antes da contingência e galeria LI de 3 imagens.');
