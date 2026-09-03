@@ -22,6 +22,7 @@ on:
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-loja-integrada-v4.mjs'
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
+      - 'scripts/sincronizar-pedidos-personalizados-li-v2.mjs'
       - 'scripts/sincronizar-pedidos-canecas-li-v2.mjs'
       - 'scripts/canecafacil-github-ops-core-v1.mjs'
       - 'scripts/processar-operacoes-github-canecas-v1.mjs'
@@ -50,6 +51,7 @@ on:
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-loja-integrada-v4.mjs'
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
+      - 'scripts/sincronizar-pedidos-personalizados-li-v2.mjs'
       - 'scripts/sincronizar-pedidos-canecas-li-v2.mjs'
       - 'scripts/canecafacil-github-ops-core-v1.mjs'
       - 'scripts/processar-operacoes-github-canecas-v1.mjs'
@@ -131,6 +133,7 @@ jobs:
           node --check scripts/sincronizar-loja-integrada-v3.mjs
           node --check scripts/sincronizar-loja-integrada-v4.mjs
           node --check scripts/sincronizar-pedidos-personalizados-li.mjs
+          node --check scripts/sincronizar-pedidos-personalizados-li-v2.mjs
           node --check scripts/sincronizar-pedidos-canecas-li-v2.mjs
           node --check scripts/canecafacil-github-ops-core-v1.mjs
           node --check scripts/processar-operacoes-github-canecas-v1.mjs
