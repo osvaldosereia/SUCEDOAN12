@@ -20,6 +20,7 @@ on:
       - 'scripts/processar-operacoes-github-canecas-v1.mjs'
       - 'scripts/auditar-shadow-github-vs-make-v1.mjs'
       - 'scripts/auditar-shadow-profundo-github-vs-make-v1.mjs'
+      - 'scripts/reconciliar-categorias-produtos-li-v1.mjs'
       - 'scripts/test-canecafacil-github-ops-v1.mjs'
       - '.github/workflows/testar-substitutos-make-canecafacil.yml'
       - '.github/workflows/test-admin-canecas-v2.yml'
@@ -38,6 +39,7 @@ on:
       - 'scripts/processar-operacoes-github-canecas-v1.mjs'
       - 'scripts/auditar-shadow-github-vs-make-v1.mjs'
       - 'scripts/auditar-shadow-profundo-github-vs-make-v1.mjs'
+      - 'scripts/reconciliar-categorias-produtos-li-v1.mjs'
       - 'scripts/test-canecafacil-github-ops-v1.mjs'
       - '.github/workflows/testar-substitutos-make-canecafacil.yml'
       - '.github/workflows/test-admin-canecas-v2.yml'
@@ -104,6 +106,7 @@ jobs:
           node --check scripts/processar-operacoes-github-canecas-v1.mjs
           node --check scripts/auditar-shadow-github-vs-make-v1.mjs
           node --check scripts/auditar-shadow-profundo-github-vs-make-v1.mjs
+          node --check scripts/reconciliar-categorias-produtos-li-v1.mjs
           node --check scripts/test-canecafacil-github-ops-v1.mjs
 
       - name: Test GitHub Ops replacements without Make
