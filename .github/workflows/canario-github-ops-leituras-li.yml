@@ -43,3 +43,5 @@ jobs:
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
           LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
         run: node scripts/processar-operacoes-github-canecas-v1.mjs
+
+# Alteração intencional deste arquivo dispara o canário no push; nenhuma escrita é feita na Loja Integrada.
