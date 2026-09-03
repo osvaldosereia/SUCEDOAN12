@@ -35,7 +35,8 @@ jobs:
         with:
           node-version: '22'
       - name: Corrigir compatibilidade do limpador v1
-        run: sed -i 's/^    categorias,$/    categorias: categories,/' scripts/limpar-personalizador-legado-li-v1.mjs
+        run: |
+          sed -i 's/^    categorias,$/    categorias: categories,/' scripts/limpar-personalizador-legado-li-v1.mjs
       - name: Validar script
         run: node --check scripts/limpar-personalizador-legado-li-v1.mjs
       - name: Validar Personal Token Loja Integrada
