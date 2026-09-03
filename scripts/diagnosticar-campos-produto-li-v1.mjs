@@ -1,0 +1,14 @@
+const BASE=(process.env.LOJA_INTEGRADA_BASE_URL||'https://api.awsli.com.br/v1').replace(/\/$/,'');
+const AUTH=String(process.env.LOJA_INTEGRADA_AUTHORIZATION||'').trim();
+const PRODUCT_ID=String(process.env.PRODUCT_ID||'403493809').trim();
+if(!AUTH) throw new Error('LOJA_INTEGRADA_AUTHORIZATION ausente.');
+const r=await fetch(`${BASE}/produto/${encodeURIComponent(PRODUCT_ID)}`,{headers:{Authorization:AUTH,Accept:'application/json','User-Agent':'CanecaFacil-GitHub-Diagnostico/1.0'}});
+const raw=await r.text();
+if(!r.ok) throw new Error(`LI ${r.status}: ${raw.slice(0,300)}`);
+const p=JSON.parse(raw||'{}');
+const keys=Object.keys(p).sort();
+const interesting=Object.fromEntries(keys.filter(k=>/(ativ|vis|vend|produ|orig|fisc|ncm|usad|bloq|remov)/i.test(k)).map(k=>[k,p[k]]));
+console.log(`PRODUTO ${PRODUCT_ID} · campos=${keys.length}`);
+console.log('CHAVES='+JSON.stringify(keys));
+console.log('CAMPOS_RELEVANTES='+JSON.stringify(interesting));
+console.log('Diagnóstico somente leitura; nenhuma escrita foi realizada.');
