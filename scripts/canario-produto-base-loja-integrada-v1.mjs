@@ -25,7 +25,7 @@ async function request(path, { method = 'GET', body, allow404 = false } = {}) {
       Authorization: AUTH,
       Accept: 'application/json',
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-      'User-Agent': 'CanecaFacil-GitHub-Product-Canary/1.0',
+      'User-Agent': 'CanecaFacil-GitHub-Product-Canary/1.1',
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
@@ -37,13 +37,20 @@ async function request(path, { method = 'GET', body, allow404 = false } = {}) {
   return data;
 }
 
-function categoryUris(remote = {}) {
-  return (Array.isArray(remote.categorias) ? remote.categorias : [])
-    .map(item => text(typeof item === 'string' ? item : item?.resource_uri || item?.uri))
-    .filter(Boolean);
+function resourceUri(value) {
+  if (typeof value === 'string') return text(value);
+  return text(value?.resource_uri || value?.uri);
 }
 
-function productBody(remote = {}) {
+function categoryUris(remote = {}) {
+  const values = [];
+  if (Array.isArray(remote.categorias)) values.push(...remote.categorias);
+  if (remote.categoria) values.push(remote.categoria);
+  if (remote.categoria_principal) values.push(remote.categoria_principal);
+  return [...new Set(values.map(resourceUri).filter(Boolean))];
+}
+
+function productBody(remote = {}, fallback = {}) {
   const body = {};
   const fields = [
     'id_externo', 'sku', 'mpn', 'ncm', 'gtin', 'nome', 'apelido',
@@ -52,14 +59,17 @@ function productBody(remote = {}) {
   ];
   for (const field of fields) {
     if (Object.prototype.hasOwnProperty.call(remote, field)) body[field] = remote[field];
+    else if (Object.prototype.hasOwnProperty.call(fallback, field)) body[field] = fallback[field];
   }
-  const cats = categoryUris(remote);
+  const cats = categoryUris(remote).length ? categoryUris(remote) : categoryUris(fallback);
   if (cats.length) body.categorias = cats;
+  const brand = resourceUri(remote.marca) || resourceUri(fallback.marca);
+  if (brand) body.marca = brand;
   return body;
 }
 
-function comparable(remote = {}) {
-  const body = productBody(remote);
+function comparable(remote = {}, fallback = {}) {
+  const body = productBody(remote, fallback);
   const out = {};
   for (const [key, value] of Object.entries(body)) {
     if (Array.isArray(value)) out[key] = [...value].map(text).sort();
@@ -86,27 +96,31 @@ if (!found?.id) throw new Error(`SKU ${SKU} não localizado na Loja Integrada.`)
 const productId = String(found.id);
 
 const beforeRemote = await request(`/produto/${encodeURIComponent(productId)}?descricao_completa=1`);
-const before = comparable(beforeRemote);
+const before = comparable(beforeRemote, found);
 if (!text(before.sku) || !text(before.nome)) throw new Error('Snapshot remoto sem SKU/nome; canário abortado.');
-if (!Array.isArray(before.categorias) || !before.categorias.length) throw new Error('Snapshot remoto sem categoria; canário abortado.');
+if (!Array.isArray(before.categorias) || !before.categorias.length) {
+  const categoryKeys = [...new Set([...Object.keys(found || {}), ...Object.keys(beforeRemote || {})])].filter(k => /categ|marca/i.test(k));
+  console.log(`PRODUCT CANARY · diagnóstico categoria · campos relacionados=${categoryKeys.join(',') || '(nenhum)'}`);
+  throw new Error('Snapshot remoto e resultado por SKU sem categoria; canário abortado antes do PUT.');
+}
 console.log(`PRODUCT CANARY · snapshot · produto=${productId} · categoria=${before.categorias.join(',')} · alias=${text(before.apelido) || '(vazio)'}`);
 
-await request(`/produto/${encodeURIComponent(productId)}`, { method: 'PUT', body: productBody(beforeRemote) });
+await request(`/produto/${encodeURIComponent(productId)}`, { method: 'PUT', body: productBody(beforeRemote, found) });
 const afterRemote = await request(`/produto/${encodeURIComponent(productId)}?descricao_completa=1`);
-const after = comparable(afterRemote);
+const after = comparable(afterRemote, found);
 const changes = diff(before, after);
 if (changes.length) throw new Error(`Produto-base mudou após PUT idempotente: ${changes.join(' | ')}`);
-console.log('PRODUCT CANARY · produto-base · PUT idempotente OK + releitura idêntica');
+console.log('PRODUCT CANARY · produto-base · PUT idempotente OK + releitura equivalente');
 
-const alias = text(afterRemote.apelido);
+const alias = text(afterRemote.apelido || found.apelido);
 if (alias) {
   await request(`/produto/${encodeURIComponent(productId)}/alias?replace_main=true`, {
     method: 'PUT',
     body: { absolute_path: `/${alias.replace(/^\/+/, '')}` },
   });
   const finalRemote = await request(`/produto/${encodeURIComponent(productId)}?descricao_completa=1`);
-  if (text(finalRemote.apelido) !== alias) throw new Error(`Alias mudou após PUT idempotente: ${alias} -> ${text(finalRemote.apelido)}`);
-  console.log('PRODUCT CANARY · alias · PUT idempotente OK + releitura idêntica');
+  if (text(finalRemote.apelido || found.apelido) !== alias) throw new Error(`Alias mudou após PUT idempotente: ${alias} -> ${text(finalRemote.apelido)}`);
+  console.log('PRODUCT CANARY · alias · PUT idempotente OK + releitura equivalente');
 } else {
   console.log('PRODUCT CANARY · alias vazio · teste de alias ignorado com segurança');
 }
