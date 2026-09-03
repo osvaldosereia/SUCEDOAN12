@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/verificar-prontidao-corte-make-v1.mjs'
+      - 'admin-canecas/github-cutover-readiness-v1.js'
       - '.github/workflows/verificar-prontidao-corte-make.yml'
   schedule:
     - cron: '17 * * * *'
@@ -26,10 +27,13 @@ jobs:
         with:
           sparse-checkout: |
             scripts
+            admin-canecas
           sparse-checkout-cone-mode: true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validar sintaxe do painel de prontidão
+        run: node --check admin-canecas/github-cutover-readiness-v1.js
       - name: Verificar substitutos GitHub sem alterar Make
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
