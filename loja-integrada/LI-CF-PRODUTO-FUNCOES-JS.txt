@@ -1,36 +1,21 @@
-/* CANECAFÁCIL · PRODUTO FUNÇÕES v1.3 · personalizador robusto */
-(function(){
-'use strict';
-if(window.CF_PRODUCT_FLOW_V13)return;window.CF_PRODUCT_FLOW_V13=1;
+/* CANECAFÁCIL · PRODUTO FUNÇÕES v1.4 · leve e sem observer contínuo */
+(function(){'use strict';if(window.CF_PRODUCT_FLOW_V14)return;window.CF_PRODUCT_FLOW_V14=1;
 if(!document.body||!document.body.classList.contains('pagina-produto'))return;
-
-var FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
-var required=false,configLoaded=false,moved=false;
-function q(s,r){return(r||document).querySelector(s)}
-function qa(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
-function text(n){return n?String(n.textContent||'').replace(/\s+/g,' ').trim():''}
-function main(){return q('.principal')}
-function personalizer(){return q('.cf-personalizer-box')}
-function iframe(){var b=personalizer();return b?q('iframe[src*="/loja-integrada/personalizar/"]',b):null}
-function actions(){var m=main();return m&&(q('.acoes-produto',m)||m)}
-function buyWrap(){var m=main();return m&&q('.comprar',m)}
-function buyButton(){var b=buyWrap();return b&&(q('.botao-comprar',b)||q('.botao',b)||q('button',b)||q('a',b))}
-function modelKey(){var f=iframe();if(!f)return'';try{return new URL(f.src,location.href).searchParams.get('model')||''}catch(e){return''}}
-function movePersonalizer(){var box=personalizer(),buy=buyWrap();if(!box||!buy||!buy.parentNode)return false;if(box!==buy.previousElementSibling)buy.parentNode.insertBefore(box,buy);box.setAttribute('data-cf-product-position','before-buy');moved=true;return true}
-function note(){var a=actions();if(!a)return;var n=q('.cf-required-buy-note',a);if(!required){if(n&&n.parentNode)n.parentNode.removeChild(n);return}if(!n){n=document.createElement('div');n.className='cf-required-buy-note';n.textContent='Personalização obrigatória neste modelo. Gere e aprove sua arte para continuar a compra.';var buy=buyWrap();if(buy&&buy.parentNode)buy.parentNode.insertBefore(n,buy);else a.appendChild(n)}}
-function lockBuy(){var buy=buyButton();if(!buy||!required)return;buy.setAttribute('aria-disabled','true');buy.setAttribute('data-cf-required-lock','1');if(!buy.dataset.cfOriginalLabel)buy.dataset.cfOriginalLabel=text(buy)||'Comprar';buy.textContent='Personalize para comprar'}
-function applyRequired(p){var cfg=p&&p.personalizacao&&typeof p.personalizacao==='object'?p.personalizacao:{};required=cfg.ativa===true&&cfg.obrigatoria===true;document.body.classList.toggle('cf-required-personalization',required);var box=personalizer();if(box)box.setAttribute('data-cf-personalization-required',required?'1':'0');note();lockBuy()}
-async function loadConfig(){var key=modelKey();if(!key||configLoaded)return;try{var r=await fetch(FIREBASE+'/produtos/'+encodeURIComponent(key)+'.json?_='+Date.now(),{cache:'no-store'});if(!r.ok)return;var p=await r.json();configLoaded=true;if(p)applyRequired(p)}catch(e){}}
-function scrollPersonalizer(){var b=personalizer();if(!b)return;b.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){var f=iframe();try{f&&f.contentWindow&&f.contentWindow.focus()}catch(e){}},400)}
-function guardClick(e){if(!required)return;var t=e.target&&e.target.closest?e.target.closest('.botao-comprar,.comprar button,.comprar a'):null;if(!t)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();scrollPersonalizer()}
-function guardSubmit(e){if(!required)return;var b=buyWrap();if(b&&b.contains(e.target)){e.preventDefault();e.stopPropagation();scrollPersonalizer()}}
-document.addEventListener('click',guardClick,true);document.addEventListener('submit',guardSubmit,true);
-function markGallery(){qa('.produto-thumbs li').forEach(function(li,i){li.setAttribute('data-cf-photo-index',String(i+1));var img=q('img',li);if(img){img.loading='lazy';img.setAttribute('data-cf-photo-index',String(i+1))}})}
-function cleanLabels(){var b=personalizer();if(!b)return;var p=b.previousElementSibling;if(p&&/^personalize (esta|sua) caneca:?$/i.test(text(p))&&p.parentNode)p.parentNode.removeChild(p)}
-function cleanRelated(){var sections=qa('.aproveite-tambem');if(!sections.length)return;var first=sections[0];sections.slice(1).forEach(function(s){if(s.parentNode)s.parentNode.removeChild(s)});Array.prototype.slice.call(first.childNodes).forEach(function(n){if(n.nodeType===3&&/mais como esse/i.test(String(n.nodeValue||'')))n.nodeValue=''});var heads=[];for(var i=0;i<first.children.length;i++)if(first.children[i].tagName==='H4')heads.push(first.children[i]);if(heads.length){heads[0].textContent='Mais como esse';heads.slice(1).forEach(function(h){if(h.parentNode)h.parentNode.removeChild(h)})}}
-function refresh(){movePersonalizer();cleanLabels();markGallery();cleanRelated();if(modelKey()&&!configLoaded)loadConfig();if(required){note();lockBuy()}}
-refresh();
-var tries=0,timer=setInterval(function(){refresh();tries++;if(tries>=80||(moved&&configLoaded&&tries>=20))clearInterval(timer)},250);
-var observer=new MutationObserver(refresh);observer.observe(document.body,{childList:true,subtree:true});
-setTimeout(function(){observer.disconnect();clearInterval(timer);refresh()},22000);
+var FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com',required=false,configTried=false,configLoading=false;
+function q(s,r){return(r||document).querySelector(s)}function qa(s,r){return[].slice.call((r||document).querySelectorAll(s))}function tx(n){return n?String(n.textContent||'').replace(/\s+/g,' ').trim():''}
+function main(){return q('.principal')}function box(){return q('.cf-personalizer-box')}function frame(){var b=box();return b?q('iframe[src*="/loja-integrada/personalizar/"]',b):null}function buyWrap(){var m=main();return m&&q('.comprar',m)}function buyBtn(){var b=buyWrap();return b&&(q('.botao-comprar',b)||q('.botao',b)||q('button',b)||q('a',b))}
+function key(){var f=frame();if(!f)return'';try{return new URL(f.src,location.href).searchParams.get('model')||''}catch(e){return''}}
+function move(){var b=box(),w=buyWrap();if(!b||!w||!w.parentNode)return false;if(b!==w.previousElementSibling)w.parentNode.insertBefore(b,w);b.setAttribute('data-cf-product-position','before-buy');return true}
+function note(){var m=main();if(!m)return;var n=q('.cf-required-buy-note',m);if(!required){if(n)n.remove();return}if(!n){n=document.createElement('div');n.className='cf-required-buy-note';n.textContent='Personalização obrigatória neste modelo. Gere e aprove sua arte para continuar a compra.';var w=buyWrap();if(w&&w.parentNode)w.parentNode.insertBefore(n,w);else m.appendChild(n)}}
+function lock(){var b=buyBtn();if(!b||!required)return;b.setAttribute('aria-disabled','true');b.setAttribute('data-cf-required-lock','1');if(!b.dataset.cfOriginalLabel)b.dataset.cfOriginalLabel=tx(b)||'Comprar';b.textContent='Personalize para comprar'}
+function apply(p){var c=p&&p.personalizacao&&typeof p.personalizacao==='object'?p.personalizacao:{};required=c.ativa===true&&c.obrigatoria===true;document.body.classList.toggle('cf-required-personalization',required);var b=box();if(b)b.setAttribute('data-cf-personalization-required',required?'1':'0');note();lock()}
+function loadConfig(){var k=key();if(!k||configTried||configLoading)return;configTried=true;configLoading=true;fetch(FIREBASE+'/produtos/'+encodeURIComponent(k)+'.json?_='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(p){if(p)apply(p)}).catch(function(){}).then(function(){configLoading=false})}
+function scrollBox(){var b=box();if(b)b.scrollIntoView({behavior:'smooth',block:'center'})}
+document.addEventListener('click',function(e){if(!required)return;var t=e.target&&e.target.closest?e.target.closest('.botao-comprar,.comprar button,.comprar a'):null;if(!t)return;e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();scrollBox()},true);
+document.addEventListener('submit',function(e){if(!required)return;var w=buyWrap();if(w&&w.contains(e.target)){e.preventDefault();e.stopPropagation();scrollBox()}},true);
+function gallery(){qa('.produto-thumbs li').forEach(function(li,i){li.setAttribute('data-cf-photo-index',String(i+1));var im=q('img',li);if(im){im.loading='lazy';im.setAttribute('data-cf-photo-index',String(i+1))}})}
+function labels(){var b=box();if(!b)return;var p=b.previousElementSibling;if(p&&/^personalize (esta|sua) caneca:?$/i.test(tx(p)))p.remove()}
+function related(){var s=qa('.aproveite-tambem');if(!s.length)return;var f=s[0];s.slice(1).forEach(function(x){x.remove()});[].slice.call(f.childNodes).forEach(function(n){if(n.nodeType===3&&/mais como esse/i.test(String(n.nodeValue||'')))n.nodeValue=''});var hs=[];for(var i=0;i<f.children.length;i++)if(f.children[i].tagName==='H4')hs.push(f.children[i]);if(hs.length){hs[0].textContent='Mais como esse';hs.slice(1).forEach(function(h){h.remove()})}}
+function run(){move();labels();gallery();related();loadConfig();if(required){note();lock()}}
+run();var tries=0,t=setInterval(function(){run();tries++;if((box()&&buyWrap()&&configTried&&tries>=8)||tries>=40)clearInterval(t)},300);[1500,3500,7000].forEach(function(ms){setTimeout(run,ms)});
 })();
