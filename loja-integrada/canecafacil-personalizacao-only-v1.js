@@ -1,33 +1,37 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-personalizacao-only-v1.1';
+  const BUILD = '20260902-personalizacao-only-v1.2-retention';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
-  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260902-12`;
+  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260902-13`;
+  const COMMERCE_RUNTIME = `${BASE}canecafacil-commerce-runtime-v1.js?v=20260902-9`;
 
   if (window.__CF_PERSONALIZACAO_ONLY__ === BUILD) return;
   window.__CF_PERSONALIZACAO_ONLY__ = BUILD;
   window.__CF_DEFAULT_LI_THEME_MODE__ = true;
 
   const text = value => String(value ?? '').trim();
-  const myMugsIntro = 'Suas canecas criadas neste aparelho. Reabra, use de novo ou acompanhe seus pedidos.';
   let personalizationRequired = false;
   let guardReady = false;
-  let relabelObserver = null;
 
-  function hasScript(rx) {
-    return [...document.scripts].some(script => rx.test(script.src || ''));
+  function hasScript(rx) { return [...document.scripts].some(script => rx.test(script.src || '')); }
+
+  function loadScript(url, rx, marker) {
+    if (hasScript(rx)) return;
+    const script = document.createElement('script');
+    script.src = url;
+    script.async = false;
+    script.dataset.cfModule = marker;
+    script.onerror = () => console.error(`[CanecaFácil] Falha ao carregar ${marker}.`);
+    document.head.appendChild(script);
   }
 
-  function loadPersonalizationRuntime() {
-    if (hasScript(/loader-personalizador-inline-producao\.js/i)) return;
-    const script = document.createElement('script');
-    script.src = PERSONALIZATION_RUNTIME;
-    script.async = false;
-    script.dataset.cfPersonalizationOnly = BUILD;
-    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar o módulo de personalização.');
-    document.head.appendChild(script);
+  function loadRuntimes() {
+    loadScript(PERSONALIZATION_RUNTIME, /loader-personalizador-inline-producao\.js/i, 'personalização');
+    if (window.__CF_COMMERCE_RUNTIME__ !== '20260902-canecafacil-commerce-runtime-v3-retention') {
+      loadScript(COMMERCE_RUNTIME, /canecafacil-commerce-runtime-v1\.js\?v=20260902-9/i, 'Minhas Canecas');
+    }
   }
 
   function isProductPage() {
@@ -58,18 +62,12 @@
       const data = await response.json();
       const row = Object.entries(data || {})[0];
       return row ? { __key:row[0], ...(row[1] || {}) } : null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
 
   function requiresPersonalization(product = {}) {
     const cfg = product.personalizacao && typeof product.personalizacao === 'object' ? product.personalizacao : {};
-    const active = cfg.ativa === true
-      || product.personalizavel === true
-      || product.loja_integrada_personalizavel === true
-      || product.canecafacil_personalizavel === true
-      || product.personalizacao_publica === true;
+    const active = cfg.ativa === true || product.personalizavel === true || product.loja_integrada_personalizavel === true || product.canecafacil_personalizavel === true || product.personalizacao_publica === true;
     return active && cfg.obrigatoria === true;
   }
 
@@ -84,7 +82,6 @@
   function relabelNativeBuyButtons() {
     if (!personalizationRequired) return;
     document.querySelectorAll('a.botao-comprar[href*="/carrinho/produto/"][href*="/adicionar"], .acoes-produto a.botao-comprar').forEach(button => {
-      if (button.dataset.cfPersonalizationRequired === '1') return;
       button.dataset.cfPersonalizationRequired = '1';
       button.title = 'Personalize esta caneca antes de comprar';
       button.setAttribute('aria-label', 'Personalize esta caneca antes de comprar');
@@ -100,10 +97,7 @@
       try { frame.contentWindow?.focus(); } catch {}
       return true;
     }
-    setTimeout(() => {
-      const retry = personalizerFrame();
-      if (retry) retry.scrollIntoView({ behavior:'smooth', block:'center' });
-    }, 450);
+    setTimeout(() => personalizerFrame()?.scrollIntoView({ behavior:'smooth', block:'center' }), 450);
     return false;
   }
 
@@ -125,8 +119,7 @@
     if (!isProductPage()) return;
     const sku = skuFromPage();
     if (!sku) return;
-    const product = await productBySku(sku);
-    personalizationRequired = requiresPersonalization(product || {});
+    personalizationRequired = requiresPersonalization(await productBySku(sku) || {});
     if (personalizationRequired) {
       document.documentElement.dataset.cfPersonalizacaoObrigatoria = '1';
       relabelNativeBuyButtons();
@@ -135,48 +128,11 @@
     }
   }
 
-  function relabelMyMugs() {
-    const trigger = document.querySelector('#cfMyArtsTrigger span:not(.cf-count)');
-    if (trigger && trigger.textContent !== 'Minhas Canecas') trigger.textContent = 'Minhas Canecas';
-
-    const title = document.querySelector('#cfMyArtsOverlay .cf-arts-head h2');
-    if (title && title.textContent !== 'Minhas Canecas') title.textContent = 'Minhas Canecas';
-
-    const intro = document.querySelector('#cfMyArtsOverlay .cf-arts-head p');
-    if (intro && intro.textContent !== myMugsIntro) intro.textContent = myMugsIntro;
-
-    const frameTitle = document.querySelector('#cfArtFrameWrap .cf-art-frame-bar span');
-    if (frameTitle && frameTitle.textContent !== 'Sua caneca personalizada') frameTitle.textContent = 'Sua caneca personalizada';
-
-    document.querySelectorAll('#cfMyArtsOverlay [data-buy]').forEach(button => {
-      if (/^COMPRAR$/i.test(text(button.textContent))) button.textContent = 'USAR DE NOVO';
-    });
-
-    document.querySelectorAll('#cfMyArtsOverlay .cf-arts-empty').forEach(node => {
-      if (/Você ainda não possui artes salvas/i.test(node.textContent || '')) {
-        node.textContent = 'Você ainda não possui canecas criadas neste aparelho.';
-      } else if (/As artes salvas neste aparelho/i.test(node.textContent || '')) {
-        node.textContent = 'As canecas salvas neste aparelho não estão mais disponíveis.';
-      } else if (/Carregando suas artes/i.test(node.textContent || '')) {
-        node.textContent = 'Carregando suas canecas…';
-      }
-    });
-
-    if (window.CFMinhasArtes && !window.CFMinhasCanecas) window.CFMinhasCanecas = window.CFMinhasArtes;
-  }
-
-  function observeMyMugs() {
-    if (relabelObserver || !document.documentElement) return;
-    relabelObserver = new MutationObserver(() => relabelMyMugs());
-    relabelObserver.observe(document.documentElement, { subtree:true, childList:true });
-    [100, 450, 1000, 2200].forEach(delay => setTimeout(relabelMyMugs, delay));
-  }
-
   function init() {
-    loadPersonalizationRuntime();
+    loadRuntimes();
     installPurchaseGuard();
-    observeMyMugs();
     resolvePurchaseRule();
+    setTimeout(loadRuntimes, 500);
     setTimeout(resolvePurchaseRule, 700);
   }
 
