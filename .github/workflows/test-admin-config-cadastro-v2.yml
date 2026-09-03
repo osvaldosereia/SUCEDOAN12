@@ -1,0 +1,46 @@
+name: Test Admin Canecas · cadastro e personalização V2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'admin-canecas/product-admin-config-v2.js'
+      - 'admin-canecas/personalization-settings-v2.js'
+      - 'admin-canecas/index.html'
+      - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
+      - 'scripts/test-admin-config-cadastro-v2.mjs'
+      - '.github/workflows/test-admin-config-cadastro-v2.yml'
+  pull_request:
+    paths:
+      - 'admin-canecas/product-admin-config-v2.js'
+      - 'admin-canecas/personalization-settings-v2.js'
+      - 'admin-canecas/index.html'
+      - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
+      - 'scripts/test-admin-config-cadastro-v2.mjs'
+      - '.github/workflows/test-admin-config-cadastro-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            admin-canecas
+            scripts
+          sparse-checkout-cone-mode: true
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe dos módulos V2
+        run: |
+          node --check admin-canecas/product-admin-config-v2.js
+          node --check admin-canecas/personalization-settings-v2.js
+          node --check scripts/test-admin-config-cadastro-v2.mjs
+      - name: Validar contrato das configurações V2
+        run: node scripts/test-admin-config-cadastro-v2.mjs
