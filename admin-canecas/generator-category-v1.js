@@ -1,12 +1,48 @@
-const BUILD = '20260830-admin-canecas-generator-category-v1.1';
+import { FIREBASE_BASE } from '../shared/mug-commerce-v1.js?v=20260828-1';
+
+const BUILD = '20260903-admin-canecas-generator-category-v1.2';
+const SETTINGS_PATH = 'canecas/configuracoes/cadastro_produto_v2';
 const OPTIONS = Object.freeze({
   padronizadas: 'Canecas Padronizadas',
   personalizaveis: 'Canecas Personalizáveis',
   empresas: 'Canecas para Empresas',
 });
+const DEFAULT_PRODUCT_CONFIG = Object.freeze({
+  fiscal: Object.freeze({ tipo_producao: 'revenda', origem_mercadoria: '0', ncm: '69111090' }),
+  publicacao: Object.freeze({ ativo: true, visivel: true, a_venda: true })
+});
 
 const $ = (selector, root = document) => root.querySelector(selector);
 let activeCategory = null;
+let productDefaults = { fiscal: { ...DEFAULT_PRODUCT_CONFIG.fiscal }, publicacao: { ...DEFAULT_PRODUCT_CONFIG.publicacao } };
+
+function normalizeDefaults(raw = {}) {
+  const fiscal = raw?.fiscal && typeof raw.fiscal === 'object' ? raw.fiscal : {};
+  const pub = raw?.publicacao && typeof raw.publicacao === 'object' ? raw.publicacao : {};
+  return {
+    fiscal: {
+      tipo_producao: String(fiscal.tipo_producao || DEFAULT_PRODUCT_CONFIG.fiscal.tipo_producao),
+      origem_mercadoria: String(fiscal.origem_mercadoria || DEFAULT_PRODUCT_CONFIG.fiscal.origem_mercadoria),
+      ncm: String(fiscal.ncm || DEFAULT_PRODUCT_CONFIG.fiscal.ncm).replace(/\D/g, '') || DEFAULT_PRODUCT_CONFIG.fiscal.ncm
+    },
+    publicacao: {
+      ativo: typeof pub.ativo === 'boolean' ? pub.ativo : DEFAULT_PRODUCT_CONFIG.publicacao.ativo,
+      visivel: typeof pub.visivel === 'boolean' ? pub.visivel : DEFAULT_PRODUCT_CONFIG.publicacao.visivel,
+      a_venda: typeof pub.a_venda === 'boolean' ? pub.a_venda : DEFAULT_PRODUCT_CONFIG.publicacao.a_venda
+    }
+  };
+}
+async function refreshProductDefaults() {
+  try {
+    const response = await fetch(`${FIREBASE_BASE}/${SETTINGS_PATH}.json?_=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+    if (response.ok) productDefaults = normalizeDefaults((await response.json()) || {});
+  } catch (error) {
+    console.warn('[Admin Canecas] padrões de cadastro: usando defaults seguros.', error);
+  }
+  return productDefaults;
+}
+void refreshProductDefaults();
+window.addEventListener('cf-product-admin-defaults-updated', event => { productDefaults = normalizeDefaults(event.detail || {}); });
 
 function toast(message, error = false) {
   const el = $('#toast');
@@ -65,8 +101,14 @@ function patchTemplate(payload) {
   catch { template = {}; }
   const personalizable = category.type === 'personalizaveis';
   const li = template.loja_integrada && typeof template.loja_integrada === 'object' ? template.loja_integrada : {};
+  const cfg = productDefaults || DEFAULT_PRODUCT_CONFIG;
+  const ativo = cfg.publicacao.ativo !== false;
+  const visivel = cfg.publicacao.visivel !== false;
+  const aVenda = cfg.publicacao.a_venda !== false;
+  const ncm = String(template.ncm || cfg.fiscal.ncm || '69111090').replace(/\D/g, '') || '69111090';
   template = {
     ...template,
+    ncm,
     loja_integrada_categoria_tipo: category.type,
     loja_integrada_categoria_nome: category.name,
     canecafacil_categoria_tipo: category.type,
@@ -74,13 +116,22 @@ function patchTemplate(payload) {
     personalizavel: personalizable,
     loja_integrada_personalizavel: personalizable,
     canecafacil_personalizavel: personalizable,
+    loja_integrada_ativo: ativo,
+    canecafacil_ativo: ativo,
+    loja_integrada_visivel: visivel,
+    loja_integrada_a_venda: aVenda,
+    loja_integrada_tipo_producao: cfg.fiscal.tipo_producao,
+    loja_integrada_origem_mercadoria: cfg.fiscal.origem_mercadoria,
     loja_integrada: {
       ...li,
       categoria_tipo: category.type,
       categoria_nome: category.name,
       marca_nome: 'Caneca Fácil',
-      tipo_producao: 'revenda',
-      origem_mercadoria: '0',
+      tipo_producao: cfg.fiscal.tipo_producao,
+      origem_mercadoria: cfg.fiscal.origem_mercadoria,
+      ativo,
+      visivel,
+      a_venda: aVenda,
       personalizavel: personalizable,
     },
   };
@@ -126,6 +177,7 @@ document.addEventListener('click', event => {
       return;
     }
     activeCategory = category;
+    void refreshProductDefaults();
   }
   if (event.target.closest?.('#mugArtClear')) {
     activeCategory = null;
