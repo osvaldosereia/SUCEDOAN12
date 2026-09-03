@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-personalized-order-bridge-v2.4-art-thumb';
+  const BUILD = '20260903-personalized-order-bridge-v2.5-cart-only';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CREATIONS_NODE = 'canecas/personalizadas';
   const STORAGE_KEY = 'cf_personalized_cart_v2';
@@ -16,6 +16,7 @@
   const text = value => String(value ?? '').trim();
   const safeKey = value => text(value).replace(/[.#$\[\]/]/g, '_');
   const quantity = value => Math.max(1, Math.min(20, Number.parseInt(value, 10) || 1));
+  const isCartPage = () => /^\/carrinho(?:\/|$)/i.test(location.pathname) || document.body?.classList?.contains('pagina-carrinho');
 
   function readQueue() {
     try {
@@ -56,9 +57,9 @@
     const style = document.createElement('style');
     style.id = 'cfPersonalizedOrderStyleV2';
     style.textContent = `
-      .cf-personalized-meta{display:block;margin:6px 0 0;max-width:420px}
-      .cf-personalized-tag{display:inline-flex;align-items:center;gap:3px;max-width:100%;margin:0;padding:5px 9px;border-radius:999px;background:#fff3e8;color:#a94c0d;font-size:10px;font-weight:900;line-height:1.2;letter-spacing:.035em;white-space:normal}
-      .cf-personalized-tag span{font-weight:700;letter-spacing:0;color:#6e6259}.cf-personalized-art-link{display:inline-block;margin:5px 0 0 6px;color:#d45d12!important;font:800 10px/1.2 Arial,sans-serif;text-decoration:underline!important}
+      .cf-personalized-meta{display:block;margin:7px 0 0;max-width:430px}
+      .cf-personalized-tag{display:inline-flex;align-items:center;gap:3px;max-width:100%;margin:0;padding:6px 9px;border-radius:9px;background:#fff8f2;border:1px solid #f0dfd2;color:#61402d;font-size:10px;font-weight:700;line-height:1.2;white-space:normal}
+      .cf-personalized-tag span{font-weight:500;color:#765b4a}.cf-personalized-art-link{display:inline-block;margin:5px 0 0 7px;color:#c45410!important;font:600 10px/1.2 Arial,sans-serif;text-decoration:underline!important}
       img.cf-personalized-thumb{width:112px!important;height:112px!important;max-width:112px!important;object-fit:cover!important;object-position:left center!important;border:1px solid #ece7e2!important;border-radius:10px!important;background:#fff!important;box-shadow:0 2px 9px rgba(0,0,0,.05)}
       .cf-cart-handoff{position:fixed;inset:0;z-index:9999999;background:rgba(255,255,255,.96);display:grid;place-items:center;text-align:center;padding:22px;font-family:Arial,sans-serif;color:#171717}
       .cf-cart-handoff strong{display:block;font-size:18px;margin-bottom:6px}.cf-cart-handoff span{font-size:12px;color:#777}
@@ -72,7 +73,7 @@
     if (document.getElementById('cfCartHandoff')) return;
     const node = document.createElement('div');
     node.id = 'cfCartHandoff'; node.className = 'cf-cart-handoff';
-    node.innerHTML = `<div><strong>Adicionando sua caneca personalizada…</strong><span>${qty} ${qty === 1 ? 'unidade' : 'unidades'} · usando o produto original e preservando o código da arte.</span></div>`;
+    node.innerHTML = `<div><strong>Adicionando sua caneca personalizada…</strong><span>${qty} ${qty === 1 ? 'unidade' : 'unidades'} · preparando seu carrinho.</span></div>`;
     document.body.appendChild(node);
   }
 
@@ -140,6 +141,7 @@
   }
 
   function cartRows() {
+    if (!isCartPage()) return [];
     const selectors = ['.carrinho .item', '.item-produto', '.produto-carrinho', '[data-produto-id]', '[data-product-id]', 'tr'];
     const seen = new Set(), rows = [];
     for (const selector of selectors) document.querySelectorAll(selector).forEach(el => {
@@ -179,7 +181,7 @@
     img.alt = `Arte personalizada ${code}`;
     img.classList.add('cf-personalized-thumb');
     img.dataset.cfPersonalizedThumb = code;
-    img.title = 'Prévia de um lado da sua arte personalizada';
+    img.title = 'Prévia da sua arte personalizada';
   }
 
   function metaHost(row, anchor) {
@@ -192,7 +194,7 @@
   }
 
   async function annotateCart() {
-    if (annotateBusy) return;
+    if (!isCartPage() || annotateBusy) return;
     annotateBusy = true;
     try {
       installStyle();
@@ -209,13 +211,13 @@
         if (!host.querySelector(`.cf-personalized-tag[data-code="${CSS.escape(entry.code)}"]`)) {
           const tag = document.createElement('div');
           tag.className = 'cf-personalized-tag'; tag.dataset.code = entry.code;
-          tag.innerHTML = `PERSONALIZADA <span>· ${entry.code} · ×${quantity(entry.quantity)}</span>`;
+          tag.innerHTML = `☕ Arte personalizada pronta <span>· ${quantity(entry.quantity)} ${quantity(entry.quantity) === 1 ? 'unidade' : 'unidades'}</span>`;
           host.appendChild(tag);
           if (art) {
             const link = document.createElement('a');
             link.className = 'cf-personalized-art-link';
             link.href = art; link.target = '_blank'; link.rel = 'noopener';
-            link.textContent = 'Ver arte completa';
+            link.textContent = 'Ver minha arte';
             host.appendChild(link);
           }
         }
@@ -233,9 +235,11 @@
   });
 
   if (startHandoff()) return;
-  let runs = 0;
-  const timer = setInterval(() => { runs += 1; annotateCart(); if (runs >= 80) clearInterval(timer); }, 500);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', annotateCart, { once:true }); else annotateCart();
+  if (isCartPage()) {
+    let runs = 0;
+    const timer = setInterval(() => { runs += 1; annotateCart(); if (runs >= 18) clearInterval(timer); }, 500);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', annotateCart, { once:true }); else annotateCart();
+  }
 
   console.info(`CanecaFácil · item personalizado no carrinho ${BUILD}`);
 })();
