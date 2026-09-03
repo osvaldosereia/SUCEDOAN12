@@ -1,10 +1,6 @@
 name: CanecaFácil · canário E2E mídia GitHub
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/canario-e2e-fila-midia-github.yml'
   workflow_dispatch:
 
 permissions:
