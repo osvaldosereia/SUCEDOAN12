@@ -1,22 +1,12 @@
 import { FIREBASE_BASE, text, norm, safeKey, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260830-admin-canecas-li-payload-hardening-v1.1';
-const MAKE_WEBHOOK = window.__CANECAS_ADMIN_CONFIG__?.makeWebhook || 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
+const BUILD = '20260903-admin-canecas-li-payload-hardening-v2-github-catalog';
 const REF_PATH = 'canecas/integracoes/loja_integrada/catalog_refs';
 const BRAND_NAME = 'Caneca Fácil';
 const baseFetch = window.fetch.bind(window);
 let refsCache = null;
 let refsAt = 0;
-let refreshPromise = null;
 
-function decodeB64Json(value) {
-  try {
-    if (!value) return null;
-    const bin = atob(value);
-    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-    return JSON.parse(new TextDecoder('utf-8').decode(bytes));
-  } catch { return null; }
-}
 function slug(value) {
   return norm(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 120) || 'caneca';
 }
@@ -40,48 +30,26 @@ async function firebasePatch(path, patch) {
   return r.json().catch(() => null);
 }
 async function loadRefs(force = false) {
-  if (!force && refsCache && Date.now() - refsAt < 5 * 60 * 1000) return refsCache;
+  if (!force && refsCache && Date.now() - refsAt < 2 * 60 * 1000) return refsCache;
   refsCache = (await firebaseGet(REF_PATH)) || {};
   refsAt = Date.now();
   return refsCache;
 }
-async function refreshRefs() {
-  if (refreshPromise) return refreshPromise;
-  refreshPromise = (async () => {
-    const response = await baseFetch(MAKE_WEBHOOK, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ payload: JSON.stringify({ action: 'loja_integrada_catalog_refs', request_id: `LI-REF-${Date.now().toString(36).toUpperCase()}`, source: BUILD }) })
-    });
-    const raw = await response.text();
-    let data = raw ? JSON.parse(raw) : {};
-    if (!response.ok || data.ok === false) throw new Error(data.error || `Make HTTP ${response.status} ao consultar marca/categorias.`);
-    const brandsRaw = decodeB64Json(data.marcas_b64);
-    const catsRaw = decodeB64Json(data.categorias_b64);
-    const brands = Array.isArray(data.marcas) ? data.marcas : (Array.isArray(brandsRaw?.objects) ? brandsRaw.objects : []);
-    const cats = Array.isArray(data.categorias) ? data.categorias : (Array.isArray(catsRaw?.objects) ? catsRaw.objects : []);
-    const marcas = {}, categorias = {};
-    for (const item of brands) if (item?.nome && item?.resource_uri) marcas[item.nome] = item.resource_uri;
-    for (const item of cats) if (item?.nome && item?.resource_uri) categorias[item.nome] = item.resource_uri;
-    refsCache = { marcas, categorias, atualizado_em: nowIso() };
-    refsAt = Date.now();
-    await firebasePatch(REF_PATH, refsCache);
-    return refsCache;
-  })();
-  try { return await refreshPromise; }
-  finally { refreshPromise = null; }
+function typeMapping(refs = {}, categoryName = '') {
+  const target = norm(categoryName);
+  const mappings = Object.values(refs?.tipos || {}).filter(Boolean);
+  return mappings.find(item => norm(item?.nome) === target && item?.resolvido !== false) || null;
 }
 async function requiredRefs(categoryName) {
-  let refs = await loadRefs();
-  let brandUri = byName(refs.marcas, BRAND_NAME);
+  const refs = await loadRefs(true);
   let categoryUri = byName(refs.categorias, categoryName);
-  if (!brandUri || !categoryUri) {
-    refs = await refreshRefs();
-    brandUri = byName(refs.marcas, BRAND_NAME);
-    categoryUri = byName(refs.categorias, categoryName);
+  if (!categoryUri) categoryUri = text(typeMapping(refs, categoryName)?.resource_uri);
+  const brandUri = byName(refs.marcas, BRAND_NAME);
+
+  if (!categoryUri) {
+    throw new Error(`A categoria "${categoryName}" ainda não está disponível no catálogo GitHub. Aguarde a próxima sincronização automática de categorias e tente novamente.`);
   }
-  if (!brandUri) throw new Error(`A marca "${BRAND_NAME}" não foi localizada na Loja Integrada. A publicação foi bloqueada para não cadastrar sem marca.`);
-  if (!categoryUri) throw new Error(`A categoria "${categoryName}" não foi localizada na Loja Integrada. A publicação foi bloqueada para não cadastrar sem categoria.`);
-  return { brandUri, categoryUri };
+  return { brandUri, categoryUri, via: 'github_actions' };
 }
 function artOf(product = {}) {
   return text(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url || product.arte_final_url);
@@ -115,7 +83,7 @@ async function harden(payload) {
   catch { throw new Error('produto_json inválido antes da sincronização com a Loja Integrada.'); }
   const product = payload.product_key ? ((await firebaseGet(`produtos/${safeKey(payload.product_key)}`)) || {}) : {};
   const returnUrl = canonicalStoreUrl(product, productBody);
-  productBody.marca = brandUri;
+  productBody.marca = brandUri || null;
   productBody.categorias = [categoryUri];
   productBody.descricao_completa = fixPersonalizerDescription(productBody.descricao_completa, payload, returnUrl);
   const art = artOf(product);
@@ -124,13 +92,14 @@ async function harden(payload) {
   const seoBase = slug(product.nome || productBody.nome || payload.sku || payload.product_key);
   if (payload.product_key) {
     await firebasePatch(`produtos/${safeKey(payload.product_key)}/loja_integrada`, {
-      marca_nome: BRAND_NAME,
+      marca_nome: brandUri ? BRAND_NAME : '',
       marca_uri: brandUri,
       categoria_nome: categoryName,
       categoria_uri: categoryUri,
       tipo_producao: 'revenda',
       origem_mercadoria: '0',
       preflight_at: nowIso(),
+      preflight_via: 'github_actions_catalog',
     });
     await firebasePatch(`produtos/${safeKey(payload.product_key)}`, {
       loja_integrada_marca_uri: brandUri,
@@ -141,7 +110,7 @@ async function harden(payload) {
   return {
     ...payload,
     produto_json: JSON.stringify(productBody),
-    marca_nome: BRAND_NAME,
+    marca_nome: brandUri ? BRAND_NAME : '',
     marca_uri: brandUri,
     categoria_nome: categoryName,
     categoria_uri: categoryUri,
@@ -152,12 +121,13 @@ async function harden(payload) {
     enviar_arte_horizontal: sendHorizontal,
     image_seo_base: seoBase,
     return_url: returnUrl,
+    catalog_via: 'github_actions',
     source_hardening: BUILD,
   };
 }
 
 window.fetch = async function cfLiPayloadHardening(input, init = {}) {
-  if (typeof init?.body !== 'string' || !/hook\.eu1\.make\.com/i.test(String(input))) return baseFetch(input, init);
+  if (typeof init?.body !== 'string' || !/hook\.[a-z0-9-]+\.make\.com/i.test(String(input))) return baseFetch(input, init);
   let wrapper;
   try { wrapper = JSON.parse(init.body); }
   catch { return baseFetch(input, init); }
