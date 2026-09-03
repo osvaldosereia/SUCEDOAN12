@@ -1,11 +1,6 @@
 name: CanecaFácil · teste fila mídia GitHub
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/fila-midia-loja-integrada-v1.mjs'
-      - '.github/workflows/test-fila-midia-github.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,6 +16,7 @@ jobs:
           sparse-checkout: |
             scripts
           sparse-checkout-cone-mode: true
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
