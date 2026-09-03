@@ -26,7 +26,7 @@ const orderWorker=read('scripts','sincronizar-pedidos-personalizados-li.mjs');
 for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.match(personalization,new RegExp(`\\['${id}'`),`campo ${id} deve existir no cadastro`);
 assert.match(adminIndex,/li-payload-hardening-v1\.js\?v=20260903-1/,'Admin deve carregar hardening com catálogo GitHub/Firebase');
 assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-3/,'Admin deve carregar mídia LI cache-first + fila GitHub direta');
-assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-1/,'Admin deve carregar recuperação V2 sem legado de recortes');
+assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-2/,'Admin deve carregar finalização que enfileira mídia direto no GitHub');
 assert.doesNotMatch(adminIndex,/storefront-crops-github-v3\.js/,'Admin não deve carregar módulo ativo de recortes');
 assert.doesNotMatch(adminIndex,/generator-finalize-recovery-v1\.js/,'Admin não deve carregar recuperação antiga de recortes');
 
@@ -55,6 +55,9 @@ assert.match(mediaQueue,/status: 'processando'/,'fila deve possuir etapa process
 assert.match(mediaQueue,/status: 'concluido'/,'fila deve possuir etapa concluído');
 assert.match(mediaQueue,/via: 'github_actions'/,'fila deve registrar GitHub Actions como executor');
 
+assert.match(finalRecovery,/const MEDIA_QUEUE = 'canecas\/integracoes\/loja_integrada\/midia_fila'/,'finalização deve usar a mesma fila de mídia do GitHub');
+assert.match(finalRecovery,/solicitado_por: 'admin_finalize_github_direct'/,'nova caneca deve entrar diretamente na fila GitHub depois da finalização');
+assert.match(finalRecovery,/await enqueueMedia\(fetchFn, payload\.request_id\)/,'finalização confirmada deve enfileirar mídia automaticamente');
 assert.match(finalRecovery,/vitrine_loja_integrada_status = 'pendente_github'/,'finalização deve solicitar mídia LI sem criar recortes');
 assert.match(finalRecovery,/cleanLegacyMedia/,'recuperação deve eliminar campos antigos de recorte');
 
@@ -86,4 +89,4 @@ assert.match(cartBridge,/credentials:'same-origin'/,'adição ao carrinho deve p
 assert.match(prodLoader,/function personalizable\(/,'loader deve respeitar a configuração individual');
 assert.match(orderWorker,/canecas\/print_jobs/,'pedido pago deve gerar fila de impressão');
 
-console.log('OK CanecaFácil V16: catálogo Firebase/GitHub sem Make, mídia pela fila GitHub, cache antes da contingência e galeria LI de 3 imagens.');
+console.log('OK CanecaFácil V16: catálogo e pós-finalização via Firebase/GitHub sem ponte Make, mídia cache-first e galeria LI de 3 imagens.');
