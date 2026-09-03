@@ -14,6 +14,7 @@ on:
       - 'scripts/processar-midia-loja-integrada-v16.mjs'
       - 'scripts/migrar-imagens-loja-integrada-v1.mjs'
       - 'scripts/fila-midia-loja-integrada-v1.mjs'
+      - 'scripts/test-fila-midia-github-v1.mjs'
       - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-loja-integrada-v4.mjs'
@@ -36,6 +37,7 @@ on:
       - 'scripts/processar-midia-loja-integrada-v16.mjs'
       - 'scripts/migrar-imagens-loja-integrada-v1.mjs'
       - 'scripts/fila-midia-loja-integrada-v1.mjs'
+      - 'scripts/test-fila-midia-github-v1.mjs'
       - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-loja-integrada-v4.mjs'
@@ -106,6 +108,7 @@ jobs:
           node --check scripts/processar-midia-loja-integrada-v16.mjs
           node --check scripts/migrar-imagens-loja-integrada-v1.mjs
           node --check scripts/fila-midia-loja-integrada-v1.mjs
+          node --check scripts/test-fila-midia-github-v1.mjs
           node --check scripts/atualizar-catalogo-loja-integrada-v1.mjs
           node --check scripts/sincronizar-loja-integrada-v3.mjs
           node --check scripts/sincronizar-loja-integrada-v4.mjs
@@ -116,6 +119,9 @@ jobs:
           node --check scripts/auditar-shadow-profundo-github-vs-make-v1.mjs
           node --check scripts/reconciliar-categorias-produtos-li-v1.mjs
           node --check scripts/test-canecafacil-github-ops-v1.mjs
+
+      - name: Test media queue state machine without external writes
+        run: node scripts/test-fila-midia-github-v1.mjs
 
       - name: Test GitHub Ops replacements without Make
         run: node scripts/test-canecafacil-github-ops-v1.mjs
