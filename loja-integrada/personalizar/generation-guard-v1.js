@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-generation-guard-v1.1-pre-submit';
+  const BUILD = '20260902-generation-guard-v1.2-formdata';
   const STORAGE = 'cf_generation_guard_v1';
   const PER_MODEL = 2;
   const PER_DEVICE = 6;
@@ -40,18 +40,31 @@
     const errorText = document.getElementById('errorText'); if (errorText) errorText.textContent = message;
   }
 
+  function payloadText(body) {
+    if (typeof body === 'string') {
+      try {
+        const wrapper = JSON.parse(body);
+        return typeof wrapper?.payload === 'string' ? wrapper.payload : '';
+      } catch { return ''; }
+    }
+    if (typeof FormData !== 'undefined' && body instanceof FormData) {
+      return text(body.get('payload'));
+    }
+    return '';
+  }
+
   function inspect(input, init = {}) {
     try {
-      const url = new URL(String(input), location.href);
-      if (!MAKE_HOST_RE.test(url.hostname) || typeof init?.body !== 'string') return null;
-      const wrapper = JSON.parse(init.body);
-      const payload = wrapper && typeof wrapper.payload === 'string' ? JSON.parse(wrapper.payload) : null;
+      const url = new URL(typeof input === 'string' ? input : (input?.url || ''), location.href);
+      if (!MAKE_HOST_RE.test(url.hostname)) return null;
+      const raw = payloadText(init?.body);
+      if (!raw) return null;
+      const payload = JSON.parse(raw);
       if (payload?.action !== 'personalize_mug_model') return null;
       return { model:text(payload.model_id) || 'sem-modelo', code:text(payload.creation_code) };
     } catch { return null; }
   }
 
-  // Bloqueia antes do app-v15 criar canecas/personalizadas/{CF-ID}.
   document.addEventListener('submit', event => {
     if (event.target?.id !== 'personalizerForm') return;
     const message = limitMessage(currentModel());
@@ -61,7 +74,6 @@
     showGuardError(message);
   }, true);
 
-  // Segunda barreira: mesmo que outro código tente chamar o Make diretamente, o custo continua protegido.
   window.fetch = async function cfGenerationGuard(input, init = {}) {
     const generation = inspect(input, init);
     if (!generation) return innerFetch(input, init);
