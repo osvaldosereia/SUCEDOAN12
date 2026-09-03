@@ -1,11 +1,12 @@
 import { FIREBASE_BASE, text, safeKey } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD = '20260829-admin-canecas-generator-v2-producao-parity';
+const BUILD = '20260903-admin-canecas-generator-v3-async-core';
 const MAKE_WEBHOOK = window.__CANECAS_ADMIN_CONFIG__?.mugGeneratorWebhook
   || window.__CANECAS_ADMIN_CONFIG__?.makeWebhook
   || 'https://hook.eu1.make.com/cl3r1f56r9txezvltkkwlsspmnja6sw4';
 const PRODUCTS_NODE = 'produtos';
 const COMMANDS_NODE = 'canecas/comandos_criacao';
+const GENERATIONS_NODE = 'canecas/geracoes';
 const SELECTED_KEY = 'da_admin_v2_mug_saved_commands_selected';
 const MASTER_WIDTH = 2400;
 const MASTER_HEIGHT = 960;
@@ -132,7 +133,29 @@ function fallbackCatalog(reason = '') { return { tema: 'Arte Criativa', nome: 'C
 function normalizeCatalog(input) { const base = fallbackCatalog(); if (!input || typeof input !== 'object' || Array.isArray(input)) return base; const clean = (v, max = 180) => text(v).replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').slice(0, max).trim(); const tema = clean(input.tema || input.theme || 'Arte Criativa', 90) || 'Arte Criativa'; let nome = clean(input.nome || input.product_name || input.name, 160) || `Caneca de Porcelana ${tema} - 350ml`; if (!/^Caneca de Porcelana\s+/i.test(nome)) nome = `Caneca de Porcelana ${nome.replace(/\s*-\s*350ml$/i, '')} - 350ml`; if (!/\s-\s350ml$/i.test(nome)) nome = `${nome.replace(/\s*-?\s*350ml$/i, '').trim()} - 350ml`; const descricao = clean(input.descricao || input.description, 800) || `Caneca de porcelana branca 350ml com arte temática de ${tema}, ideal para uso pessoal ou presente.`; const tags = (Array.isArray(input.tags) ? input.tags : base.tags).map(v => clean(v, 60)).filter(Boolean).slice(0, 10); return { tema, nome, subcategoria: clean(input.subcategoria || tema, 90) || tema, descricao, tags: tags.length ? tags : base.tags, seo_title: clean(input.seo_title || nome, 120), seo_description: clean(input.seo_description || descricao, 155), texto_identificado: clean(input.texto_identificado, 260), source: 'ia_visual' }; }
 function parseCatalog(result) { let raw = result?.catalog ?? result?.catalog_json ?? result?.metadata ?? result?.metadata_json ?? result?.result ?? result?.product_name ?? result?.name; if (raw && typeof raw === 'object') return normalizeCatalog(raw); raw = text(raw).replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim(); if (!raw) return fallbackCatalog('retorno vazio'); try { return normalizeCatalog(JSON.parse(raw)); } catch { return raw.length <= 160 ? normalizeCatalog({ nome: raw }) : fallbackCatalog('retorno não JSON'); } }
 
-async function callMake(payload, { timeout = 180000, status = null } = {}) { const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), timeout); try { const response = await fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ payload: JSON.stringify({ ...payload, quality: 'low', origin: BUILD, client_contract: BUILD }) }), signal: ctl.signal }); const raw = await response.text(); let data = null; if (raw) { try { data = JSON.parse(raw); } catch {} } if (data) { if (!response.ok || data.ok === false) throw new Error(text(data.error || data.message) || `Make HTTP ${response.status}`); return data; } if (response.ok && /^accepted\.?$/i.test(text(raw)) && payload.action === 'finalize_mug_product') { clearTimeout(timer); return waitFinalProduct(payload.request_id, status); } throw new Error(`Make não devolveu JSON (${response.status}).`); } catch (error) { if (error?.name === 'AbortError') throw new Error('A automação ultrapassou 3 minutos.'); throw error; } finally { clearTimeout(timer); } }
+function artFromGeneration(record = {}) {
+  const value = text(record.art_source_url || record.art_url || record.arte_url || record.art_source_base64 || record.art_base64 || record.image_base64);
+  if (isImageSource(value)) return value;
+  if (/^[A-Za-z0-9+/=\r\n]+$/.test(value) && value.length > 1000) return `data:image/webp;base64,${value.replace(/\s+/g, '')}`;
+  return '';
+}
+async function waitGeneratedArt(id, status) {
+  const deadline = Date.now() + FINAL_WAIT_MS, started = Date.now();
+  while (Date.now() < deadline) {
+    const seconds = Math.max(1, Math.round((Date.now() - started) / 1000));
+    if (status) status.textContent = `O Make aceitou a criação. Aguardando a arte… ${seconds}s`;
+    const record = await fbGet(`${GENERATIONS_NODE}/${safeKey(id)}`).catch(() => null);
+    if (record?.ok === false) throw new Error(text(record.error || record.message) || 'A geração da arte falhou no Make.');
+    const source = artFromGeneration(record || {});
+    if (source) {
+      setTimeout(() => fbDelete(`${GENERATIONS_NODE}/${safeKey(id)}`).catch(() => {}), 10000);
+      return { ok: true, action: 'generate_mug_art', request_id: id, art_source_url: source, async_recovered: true };
+    }
+    await sleep(POLL_MS);
+  }
+  throw new Error(`A arte não apareceu em até 3 minutos. Código da tentativa: ${id}.`);
+}
+async function callMake(payload, { timeout = 180000, status = null } = {}) { const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), timeout); try { const response = await fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ payload: JSON.stringify({ ...payload, quality: 'low', origin: BUILD, client_contract: BUILD }) }), signal: ctl.signal }); const raw = await response.text(); let data = null; if (raw) { try { data = JSON.parse(raw); } catch {} } if (data) { if (!response.ok || data.ok === false) throw new Error(text(data.error || data.message) || `Make HTTP ${response.status}`); return data; } if (response.ok && /^accepted\.?$/i.test(text(raw))) { clearTimeout(timer); if (payload.action === 'generate_mug_art') return waitGeneratedArt(payload.request_id, status); if (payload.action === 'finalize_mug_product') return waitFinalProduct(payload.request_id, status); } const snippet = text(raw).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 160); throw new Error(snippet ? `Make respondeu conteúdo inválido (${response.status}): ${snippet}` : `Make não devolveu JSON (${response.status}).`); } catch (error) { if (error?.name === 'AbortError') throw new Error(`A automação ultrapassou 3 minutos. Código da tentativa: ${payload.request_id || 'sem código'}.`); throw error; } finally { clearTimeout(timer); } }
 async function analyzeCatalogSoft(id, master) { try { return parseCatalog(await callMake({ action: 'analyze_mug_product', request_id: id, image_base64: master, prompt_catalog: 'Analise somente a arte final. Retorne JSON com tema, nome comercial natural, subcategoria, descrição, tags, seo_title, seo_description e texto_identificado. Não use comandos técnicos como nome do produto.' }, { timeout: 90000 })); } catch (error) { console.warn('[Admin Canecas] catalogação visual falhou:', error); return fallbackCatalog(error.message || error); } }
 function urlsFromProduct(product = {}) { return { art: text(product.arte_horizontal || product.arte_personalizacao || product.arte_impressao?.url), m1: text(product.mockup_1 || product.url_imagem || product.imagens_site?.[0] || product.imagens?.[0]), m2: text(product.mockup_2 || product.imagens_site?.[1] || product.imagens?.[1]) }; }
 async function waitFinalProduct(id, status) { const deadline = Date.now() + FINAL_WAIT_MS, started = Date.now(); while (Date.now() < deadline) { if (status) status.textContent = `Gerando 2 mockups e cadastrando… ${Math.max(1, Math.round((Date.now() - started) / 1000))}s`; const product = await fbGet(`${PRODUCTS_NODE}/${safeKey(id)}`).catch(() => null), urls = urlsFromProduct(product || {}); if ([urls.art, urls.m1, urls.m2].every(isHttpUrl)) return { ok: true, request_id: id, product_saved: true, firebase_key: id, arte_horizontal_url: urls.art, mockup_1_url: urls.m1, mockup_2_url: urls.m2 }; await sleep(POLL_MS); } throw new Error('A automação não publicou a arte e os 2 mockups em até 3 minutos.'); }
@@ -156,7 +179,7 @@ async function generate() {
     setProgress(1, 'Preparando', file ? 'Preparando imagem e comandos…' : 'Gerando sem imagem de referência…');
     const reference = await normalizeReference(file);
     setProgress(2, 'Criando arte horizontal', 'OpenAI está criando a arte pelo mesmo cenário do Produção.');
-    const artResult = await callMake({ action: 'generate_mug_art', mode: 'create_model', request_id: id, image_base64: reference, instruction, prompt_art: buildArtPrompt(instruction, Boolean(file)) });
+    const artResult = await callMake({ action: 'generate_mug_art', mode: 'create_model', request_id: id, image_base64: reference, instruction, prompt_art: buildArtPrompt(instruction, Boolean(file)) }, { status });
     const artSource = text(artResult.art_source_url || artResult.arte_url || artResult.art_url || artResult.image_url || artResult.url || artResult.art_source_base64);
     if (!isImageSource(artSource)) throw new Error('O Make não devolveu a arte gerada.');
     setProgress(3, 'Finalizando e catalogando', `Fechando ${MASTER_WIDTH}×${MASTER_HEIGHT}px e criando nome/SEO automaticamente.`);
