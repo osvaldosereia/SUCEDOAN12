@@ -70,8 +70,9 @@ assert.match(cartBridge,/location\.replace\(CART_URL\)/,'após adicionar deve ab
 
 assert.match(deviceBridge,/payload\?\.action !== 'personalize_mug_model'/,'bridge deve observar somente geração de personalização');
 assert.match(deviceBridge,/creation_code/,'bridge deve capturar CF-ID no início da geração');
-assert.match(commerce,/const STORE='cf_minhas_artes_v1'/,'Minhas Artes deve persistir no aparelho');
-assert.match(commerce,/const DAYS=30/,'Minhas Artes deve guardar criações por 30 dias');
+assert.match(commerce,/const STORE\s*=\s*'cf_minhas_artes_v1'/,'Minhas Artes deve persistir no aparelho');
+assert.match(commerce,/const DAYS_WITHOUT_ORDER\s*=\s*15/,'arte sem pedido deve seguir retenção de 15 dias');
+assert.match(commerce,/const DAYS_ORDERED\s*=\s*90/,'arte encomendada deve seguir retenção de 90 dias');
 assert.match(commerce,/cf_arte/,'link deve conseguir reimportar a criação');
 assert.match(commerce,/wa\.me/,'Minhas Artes deve compartilhar criação pelo WhatsApp');
 assert.match(commerce,/method:'DELETE'/,'criação abandonada deve poder ser excluída');
@@ -106,4 +107,4 @@ assert.match(orderWorker,/quantidade_personalizada_total/,'pedido deve registrar
 assert.match(creationStatus,/Arte criada · ainda não encomendada/,'Admin deve distinguir arte sem compra');
 assert.match(creationStatus,/PAGO · LIBERADO PARA PRODUÇÃO/,'Admin deve distinguir pedido pago e liberado');
 
-console.log('OK CanecaFácil V15: Admin completo, Site Runtime remoto, personalizador V10, links públicos canônicos, Minhas Artes V2, WhatsApp/exclusão segura, carrinho original e produção somente após pagamento.');
+console.log('OK CanecaFácil V15: Admin completo, Site Runtime remoto, personalizador V10, links públicos canônicos, Minhas Artes com retenção 15/90 dias, WhatsApp/exclusão segura, carrinho original e produção somente após pagamento.');
