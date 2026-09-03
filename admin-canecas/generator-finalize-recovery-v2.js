@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-admin-canecas-finalize-recovery-v2-three-images';
+  const BUILD = '20260903-admin-canecas-finalize-recovery-v2.1-github-media-queue';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const REPO = 'osvaldosereia/SUCEDOAN12';
   const MEDIA_BRANCH = 'canecas-media';
+  const MEDIA_QUEUE = 'canecas/integracoes/loja_integrada/midia_fila';
   const WAIT_MS = 90000;
   const POLL_MS = 1800;
   const CATEGORIES = Object.freeze({
@@ -20,6 +21,13 @@
   const isHttp = v => /^https?:\/\//i.test(text(v));
   const slug = v => text(v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 110) || 'caneca-personalizada';
+
+  function queueKey(value) {
+    const bytes = new TextEncoder().encode(text(value));
+    let binary = '';
+    for (const b of bytes) binary += String.fromCharCode(b);
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
 
   function parseFinalize(init) {
     if (String(init?.method || 'GET').toUpperCase() !== 'POST' || typeof init?.body !== 'string') return null;
@@ -107,6 +115,41 @@
     return json(fetchFn, `${FIREBASE}/produtos/${encodeURIComponent(id)}.json?_=${Date.now()}`, { headers: { Accept: 'application/json' } });
   }
 
+  async function enqueueMedia(fetchFn, productKey) {
+    const key = text(productKey);
+    if (!key) return false;
+    const at = new Date().toISOString();
+    const qKey = queueKey(key);
+    const queueResponse = await fetchFn(`${FIREBASE}/${MEDIA_QUEUE}/${encodeURIComponent(qKey)}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        product_key: key,
+        status: 'pendente',
+        force: false,
+        solicitado_em: at,
+        atualizado_em: at,
+        solicitado_por: 'admin_finalize_github_direct',
+        tentativas: 0,
+        erro: '',
+        via: 'github_actions',
+      }),
+    });
+    if (!queueResponse.ok) throw new Error(`Firebase ${queueResponse.status} ao enfileirar mídia da nova caneca.`);
+    await fetchFn(`${FIREBASE}/produtos/${encodeURIComponent(key)}.json`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        vitrine_loja_integrada_status: 'pendente_github',
+        vitrine_loja_integrada_erro: '',
+        vitrine_loja_integrada_solicitado_em: at,
+        vitrine_loja_integrada_via: 'github_actions',
+      }),
+    }).catch(() => null);
+    console.info('[Admin Canecas] nova caneca enviada diretamente à fila de mídia GitHub:', key);
+    return true;
+  }
+
   async function listDir(fetchFn, path) {
     const encoded = path.split('/').map(encodeURIComponent).join('/');
     const url = `https://api.github.com/repos/${REPO}/contents/${encoded}?ref=${MEDIA_BRANCH}&_=${Date.now()}`;
@@ -162,7 +205,7 @@
       ok: true, action: 'finalize_mug_product', request_id: payload.request_id,
       firebase_key: payload.request_id, product_saved: true,
       arte_horizontal_url: urls.art, mockup_1_url: urls.m1, mockup_2_url: urls.m2,
-      storefront_media_status: 'pendente_github', recovered_by: source,
+      storefront_media_status: 'pendente_github', storefront_media_via: 'github_actions', recovered_by: source,
     }), { status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-CanecaFacil-Final-Recovered': '1' } });
   }
 
@@ -174,14 +217,18 @@
       try {
         const product = await readProduct(fetchFn, payload.request_id);
         const urls = urlsOf(product || {});
-        if ([urls.art, urls.m1, urls.m2].every(isHttp)) return recoveredResponse(payload, urls, 'firebase');
-      } catch {}
+        if ([urls.art, urls.m1, urls.m2].every(isHttp)) {
+          await enqueueMedia(fetchFn, payload.request_id);
+          return recoveredResponse(payload, urls, 'firebase');
+        }
+      } catch (error) { console.warn('[Admin Canecas] produto pronto, mas mídia ainda não pôde ser enfileirada:', error); }
       if (Date.now() - lastGitHub > 7000) {
         lastGitHub = Date.now();
         try {
           const urls = await findMedia(fetchFn, payload);
           if (urls) {
             await saveProduct(fetchFn, payload, urls);
+            await enqueueMedia(fetchFn, payload.request_id);
             return recoveredResponse(payload, urls, 'github-media');
           }
         } catch (error) { console.warn('[Admin Canecas] arquivos finais ainda não disponíveis:', error); }
