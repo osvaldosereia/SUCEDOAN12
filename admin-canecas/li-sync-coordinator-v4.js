@@ -2,7 +2,7 @@ import { text, norm, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 import { loadMugs, getMug, patchMug } from './mug-store-v2.js?v=20260829-1';
 import { recoverOne, duplicateSkuGroups, liMeta, skuOf, keyOf } from './li-recovery-v3.js?v=20260831-1';
 
-const BUILD = '20260831-admin-canecas-li-sync-coordinator-v4';
+const BUILD = '20260903-admin-canecas-li-sync-coordinator-v4.1';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const replaying = new WeakSet();
@@ -96,7 +96,7 @@ async function prepareBulk() {
   for (let index = 0; index < keys.length; index += 1) {
     const key = keys[index];
     const buttonStatus = $('#cfBulkStatus');
-    if (buttonStatus) buttonStatus.textContent = `Make: verificando SKU ${index + 1}/${keys.length}…`;
+    if (buttonStatus) buttonStatus.textContent = `MAKE (reserva): verificando SKU ${index + 1}/${keys.length}…`;
     let product = await getMug(key);
     if (!product) throw new Error(`Caneca ${key} não encontrada.`);
     await ensureAlias(key, product);
@@ -108,7 +108,7 @@ async function intercept(button, mode) {
   button.disabled = true;
   const oldText = button.textContent;
   try {
-    button.textContent = mode === 'bulk' ? 'Verificando SKUs…' : 'Verificando SKU…';
+    button.textContent = mode === 'bulk' ? 'MAKE · Verificando SKUs…' : 'MAKE · Verificando SKU…';
     if (mode === 'bulk') await prepareBulk();
     else await prepareDrawer();
     replaying.add(button);
@@ -117,7 +117,7 @@ async function intercept(button, mode) {
     button.click();
     return true;
   } catch (error) {
-    toast(`Loja Integrada: ${error?.message || error}`, true);
+    toast(`Loja Integrada · MAKE (reserva): ${error?.message || error}`, true);
     return true;
   } finally {
     if (!replaying.has(button)) {
@@ -125,6 +125,15 @@ async function intercept(button, mode) {
       button.textContent = oldText;
     }
   }
+}
+
+function confirmMakeUse() {
+  return confirm(
+    'ATENÇÃO: este comando atualiza a Loja Integrada pelo MAKE.\n\n' +
+    'O caminho padrão do CanecaFácil é GITHUB ACTIONS.\n' +
+    'Use o Make somente como RESERVA/CONTINGÊNCIA.\n\n' +
+    'Deseja realmente continuar pelo Make?'
+  );
 }
 
 document.addEventListener('click', event => {
@@ -138,6 +147,10 @@ document.addEventListener('click', event => {
   }
   event.preventDefault();
   event.stopImmediatePropagation();
+  if (!confirmMakeUse()) {
+    toast('Envio pelo Make cancelado. Use o comando GITHUB para a atualização normal.');
+    return;
+  }
   void intercept(button, bulk ? 'bulk' : 'drawer');
 }, true);
 
