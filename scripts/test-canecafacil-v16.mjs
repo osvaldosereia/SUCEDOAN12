@@ -23,7 +23,7 @@ const prodLoader=read('loja-integrada','loader-personalizador-inline-producao-v1
 const orderWorker=read('scripts','sincronizar-pedidos-personalizados-li.mjs');
 
 for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.match(personalization,new RegExp(`\\['${id}'`),`campo ${id} deve existir no cadastro`);
-assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-2/,'Admin deve carregar mídia LI V16 com fila GitHub direta');
+assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-3/,'Admin deve carregar mídia LI cache-first + fila GitHub direta');
 assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-1/,'Admin deve carregar recuperação V2 sem legado de recortes');
 assert.doesNotMatch(adminIndex,/storefront-crops-github-v3\.js/,'Admin não deve carregar módulo ativo de recortes');
 assert.doesNotMatch(adminIndex,/generator-finalize-recovery-v1\.js/,'Admin não deve carregar recuperação antiga de recortes');
@@ -35,6 +35,12 @@ assert.doesNotMatch(mediaAdmin,/action:'prepare_mug_storefront_media'/,'Admin n�
 assert.match(mediaAdmin,/vitrine_horizontal_quadrada:images\[2\]/,'payload de contingência deve usar a horizontal quadrada');
 assert.match(mediaAdmin,/for\(let i=0;i<5;i\+\+\)/,'update de contingência deve carregar até 5 IDs antigos para limpeza');
 assert.doesNotMatch(mediaAdmin,/vitrine_recorte_esquerda:images\[2\]/,'Admin não pode enviar recorte esquerdo como imagem oficial');
+const cacheFirst=mediaAdmin.indexOf('if(ids.length){');
+const makeImageLookup=mediaAdmin.indexOf("callMake({action:'loja_integrada_get_product'");
+assert.ok(cacheFirst>=0,'fallback deve verificar IDs de imagem já salvos no Firebase');
+assert.ok(makeImageLookup>cacheFirst,'consulta Make de produto deve ocorrer somente depois da tentativa pelo cache Firebase');
+assert.match(mediaAdmin,/Make não consultado/,'Admin deve registrar quando o cache evita uma operação Make');
+assert.match(mediaAdmin,/image_ids_via:'make_contingencia'/,'consulta Make remanescente deve ser marcada explicitamente como contingência');
 
 assert.match(mediaQueue,/const QUEUE = 'canecas\/integracoes\/loja_integrada\/midia_fila'/,'worker da fila deve usar o mesmo nó Firebase do Admin');
 assert.match(mediaQueue,/status: 'processando'/,'fila deve possuir etapa processando');
@@ -72,4 +78,4 @@ assert.match(cartBridge,/credentials:'same-origin'/,'adição ao carrinho deve p
 assert.match(prodLoader,/function personalizable\(/,'loader deve respeitar a configuração individual');
 assert.match(orderWorker,/canecas\/print_jobs/,'pedido pago deve gerar fila de impressão');
 
-console.log('OK CanecaFácil V16: mídia pela fila GitHub sem ponte Make, arte mestre preservada, dois mockups, derivada quadrada compactada para LI e galeria de 3 imagens.');
+console.log('OK CanecaFácil V16: mídia pela fila GitHub sem ponte Make, cache Firebase antes da contingência Make, arte mestre preservada e galeria LI de 3 imagens.');
