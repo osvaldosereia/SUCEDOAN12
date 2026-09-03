@@ -1,0 +1,49 @@
+name: CanecaFácil · canário produto-base GitHub LI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/canario-produto-base-github-li.yml'
+  workflow_dispatch:
+    inputs:
+      sku:
+        description: 'SKU já existente para canário idempotente do produto-base'
+        required: true
+        default: 'CANP-QZ11RD'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canecafacil-li-product-canary
+  cancel-in-progress: false
+
+jobs:
+  canario-produto-base:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar token Loja Integrada
+        env:
+          LI_APP_TOKEN: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+        run: |
+          if [ -z "$LI_APP_TOKEN" ]; then
+            echo 'ERRO: secret LOJA_INTEGRADA_APP_KEY ausente.'
+            exit 1
+          fi
+      - name: Canário produto-base e alias · mesmos valores atuais · sem Make
+        env:
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          CANARY_SKU: ${{ inputs.sku || 'CANP-QZ11RD' }}
+          CANARY_CONFIRM: WRITE_SAME_PRODUCT:${{ inputs.sku || 'CANP-QZ11RD' }}
+        run: node scripts/canario-produto-base-loja-integrada-v1.mjs
