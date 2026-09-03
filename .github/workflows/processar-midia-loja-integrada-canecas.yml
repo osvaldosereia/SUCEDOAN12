@@ -1,0 +1,98 @@
+name: CanecaFácil · mídia Loja Integrada V16 · 3 imagens
+
+on:
+  workflow_dispatch:
+    inputs:
+      product_key:
+        description: 'Firebase key de uma caneca (vazio = todas pendentes)'
+        required: false
+        default: ''
+      force:
+        description: 'Regerar a horizontal quadrada e reenviar as 3 imagens'
+        required: false
+        type: boolean
+        default: false
+      cleanup_old:
+        description: 'Remover arquivos/campos antigos de recortes'
+        required: false
+        type: boolean
+        default: true
+      limit:
+        description: 'Limite por execução (0 = sem limite)'
+        required: false
+        default: '0'
+  push:
+    branches: [canecas-media]
+    paths:
+      - 'canecas/imagens/**'
+      - 'canecas/vitrine/**'
+      - 'scripts/processar-midia-loja-integrada-v16.mjs'
+      - 'scripts/migrar-imagens-loja-integrada-v1.mjs'
+      - '.github/workflows/processar-midia-loja-integrada-canecas.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canecafacil-li-media-v16
+  cancel-in-progress: false
+
+jobs:
+  midia-loja-integrada:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout da branch de mídia
+        uses: actions/checkout@v4
+        with:
+          ref: canecas-media
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Sharp
+        run: npm install --no-save sharp@0.34.3
+      - name: Gerar horizontal quadrada compactada para a Loja Integrada
+        env:
+          MODE: build
+          RAW_BRANCH: canecas-media
+          PRODUCT_KEY: ${{ github.event.inputs.product_key || '' }}
+          FORCE: ${{ github.event.inputs.force || 'false' }}
+          CLEANUP_OLD: ${{ github.event.inputs.cleanup_old || 'true' }}
+          LIMIT: ${{ github.event.inputs.limit || '0' }}
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
+      - name: Publicar nova mídia e remover recortes antigos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A canecas/vitrine canecas/imagens/loja-integrada 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração de mídia para publicar."
+          else
+            git commit -m "CanecaFácil V16: galeria LI com 2 mockups + horizontal quadrada"
+            git pull --rebase origin canecas-media
+            git push origin HEAD:canecas-media
+          fi
+      - name: Atualizar Firebase e apagar campos antigos de recortes
+        env:
+          MODE: apply
+          RAW_BRANCH: canecas-media
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
+      - name: Migrar galeria dos produtos existentes na Loja Integrada
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          PRODUCT_KEY: ${{ github.event.inputs.product_key || '' }}
+          FORCE: ${{ github.event.inputs.force || 'false' }}
+          LIMIT: ${{ github.event.inputs.limit || '0' }}
+        run: node scripts/migrar-imagens-loja-integrada-v1.mjs
+      - name: Resumo
+        if: always()
+        run: |
+          echo "## CanecaFácil · mídia Loja Integrada V16" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Galeria: Mockup 1 + Mockup 2 + horizontal quadrada compactada" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Arte mestre: preservada" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Recortes antigos: removidos" >> "$GITHUB_STEP_SUMMARY"
