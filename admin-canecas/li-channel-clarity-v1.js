@@ -1,4 +1,4 @@
-const BUILD = '20260903-admin-canecas-li-channel-clarity-v1';
+const BUILD = '20260903-admin-canecas-li-channel-clarity-v1.1';
 const $ = (selector, root = document) => root.querySelector(selector);
 
 const GITHUB_BUTTONS = Object.freeze({
@@ -44,47 +44,32 @@ function clarifyTopPanel() {
   if (!panel) return;
   const intro = panel.querySelector('.cf-dual-head p');
   if (intro) intro.innerHTML = '<strong>PADRÃO: GitHub Actions.</strong> O Make é somente reserva/contingência.';
-
   let banner = $('#cfLiRouteBanner', panel);
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'cfLiRouteBanner';
     banner.className = 'cf-li-route-banner';
     banner.innerHTML = '<span class="cf-li-route-chip github">✓ GITHUB · padrão</span><span class="cf-li-route-chip make">⚠ MAKE · reserva</span><span>Para atualizar produtos normalmente, escolha sempre os comandos GITHUB.</span>';
-    const head = panel.querySelector('.cf-dual-head');
-    head?.insertAdjacentElement('afterend', banner);
+    panel.querySelector('.cf-dual-head')?.insertAdjacentElement('afterend', banner);
   }
 }
 
 function clarifyButtons() {
-  for (const [id, label] of Object.entries(GITHUB_BUTTONS)) {
-    markButton($(`#${id}`), 'github', label, 'Canal: GitHub Actions — caminho padrão para publicar/atualizar produtos na Loja Integrada.');
-  }
-
+  for (const [id, label] of Object.entries(GITHUB_BUTTONS)) markButton($(`#${id}`), 'github', label, 'Canal: GitHub Actions — caminho padrão para publicar/atualizar produtos na Loja Integrada.');
   const saveGithub = $('#cfSaveGithub');
   if (saveGithub) {
     const updating = /atualizar/i.test(saveGithub.textContent || '');
-    markButton(
-      saveGithub,
-      'github',
-      updating ? 'Salvar + atualizar · GITHUB' : 'Salvar + publicar · GITHUB',
-      'Canal: GitHub Actions — caminho padrão.'
-    );
+    markButton(saveGithub, 'github', updating ? 'Salvar + atualizar · GITHUB' : 'Salvar + publicar · GITHUB', 'Canal: GitHub Actions — caminho padrão.');
   }
-
-  for (const [id, label] of Object.entries(MAKE_BUTTONS)) {
-    markButton($(`#${id}`), 'make', label, 'Canal: Make — RESERVA. Use somente se o fluxo GitHub estiver indisponível.');
-  }
+  for (const [id, label] of Object.entries(MAKE_BUTTONS)) markButton($(`#${id}`), 'make', label, 'Canal: Make — RESERVA. Use somente se o fluxo GitHub estiver indisponível.');
 }
 
 function clarifyDrawer() {
   const content = $('#drawerContent');
   const actions = content?.querySelector('.drawer-actions');
   if (!content || !actions) return;
-
   const oldInfo = $('#cfDualDrawerInfo', content);
   if (oldInfo) oldInfo.textContent = 'PADRÃO: GitHub Actions. MAKE = reserva/contingência.';
-
   let info = $('#cfLiDrawerRoute', content);
   if (!info) {
     info = document.createElement('div');
@@ -98,9 +83,7 @@ function clarifyDrawer() {
 function clarifyBulkStatus() {
   const status = $('#cfBulkStatus');
   if (!status) return;
-  if (!status.textContent || /selecione|make = reserva|seleção limpa/i.test(status.textContent)) {
-    status.textContent = 'Padrão: GITHUB. MAKE = reserva e só deve ser usado em contingência.';
-  }
+  if (!status.textContent || /selecione|make = reserva|seleção limpa/i.test(status.textContent)) status.textContent = 'Padrão: GITHUB. MAKE = reserva e só deve ser usado em contingência.';
 }
 
 function apply() {
@@ -111,17 +94,16 @@ function apply() {
   clarifyDrawer();
   clarifyBulkStatus();
 }
-
-function schedule(delays = [0, 80, 220]) {
-  for (const delay of delays) setTimeout(apply, delay);
-}
-
+function schedule(delays = [0, 80, 220]) { for (const delay of delays) setTimeout(apply, delay); }
 window.addEventListener('hashchange', () => schedule());
 window.addEventListener('admin-canecas:route', event => { if (event.detail?.route === 'mugs') schedule(); });
 window.addEventListener('admin-canecas:mugs-stable-rendered', () => schedule([0, 100]));
 window.addEventListener('admin-canecas:drawer', event => { if (event.detail?.kind === 'mug') schedule([40, 180, 400]); });
 document.addEventListener('DOMContentLoaded', () => schedule());
 setTimeout(apply, 500);
+
+// O módulo de prontidão é carregado daqui para evitar depender de alteração adicional no index.html.
+import('./github-cutover-readiness-v1.js?v=20260903-1').then(module => module.apply?.()).catch(error => console.warn('Prontidão GitHub indisponível:', error?.message || error));
 
 document.documentElement.dataset.cfLiChannelClarity = BUILD;
 export { BUILD, apply };
