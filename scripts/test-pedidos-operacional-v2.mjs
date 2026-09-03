@@ -8,6 +8,7 @@ const print = read('caneca-print/index.html');
 const link = read('loja-integrada/personalized-order-link-hardening-v1.js');
 const loader = read('loja-integrada/loader-personalizador-inline-producao.js');
 const personalized = read('scripts/sincronizar-pedidos-personalizados-li.mjs');
+const personalizedV2 = read('scripts/sincronizar-pedidos-personalizados-li-v2.mjs');
 const allMugs = read('scripts/sincronizar-pedidos-canecas-li-v2.mjs');
 const workflow = read('.github/workflows/sincronizar-pedidos-personalizados-li.yml');
 
@@ -36,6 +37,8 @@ assert.match(personalized,/pagamento_autoritativo:true/,'Pedido LI deve marcar p
 assert.match(personalized,/liberado_producao:released/,'Worker personalizado deve liberar produção na mesma passagem');
 assert.match(personalized,/origem_liberacao:'loja_integrada_pagamento_aprovado'/,'Print job personalizado deve nascer com origem de liberação');
 assert.match(personalized,/FALLBACK_EMAIL_PRODUTO/,'Fallback ambíguo deve ficar visível no log');
+assert.match(personalizedV2,/Math\.min\(50,/,'Wrapper operacional deve limitar qualquer busca a no máximo 50');
+assert.match(personalizedV2,/LI_ORDER_LIMIT\s*=\s*String\(safeLimit\)/,'Wrapper deve aplicar o limite antes de importar o worker');
 
 assert.match(allMugs,/CATALOGO_CANECAS/,'Worker geral deve mapear catálogo de canecas');
 assert.match(allMugs,/tipo_pedido:personalized\.length \? \(standard\.length\?'misto':'personalizado'\) : 'padronizado'/,'Worker deve classificar pedido padronizado/personalizado/misto');
@@ -46,8 +49,10 @@ assert.match(allMugs,/ensureStandardJobs/,'Caneca padronizada paga deve alimenta
 assert.match(allMugs,/pagamento_autoritativo:true/,'Pedido geral da LI deve manter autoridade de pagamento');
 assert.match(allMugs,/mergeNonBlank/,'Worker geral deve preservar dados locais válidos');
 
+assert.match(workflow,/default: '50'/,'Workflow deve usar 50 como limite operacional padrão');
+assert.match(workflow,/sincronizar-pedidos-personalizados-li-v2\.mjs/,'Workflow deve passar pelo wrapper que aplica o limite seguro');
 assert.match(workflow,/sincronizar-pedidos-canecas-li-v2\.mjs/,'Workflow deve sincronizar todo pedido com caneca');
 assert.match(workflow,/Garantir pagamento e liberação antes da produção/,'Reconciliação de liberação deve permanecer como reparo');
 assert.match(workflow,/if: always\(\)/,'Reconciliação deve executar mesmo se worker anterior falhar');
 
-console.log('OK Pedidos V2: pagamento LI autoritativo, impressão bloqueada, CF-ID forte, pedidos padronizados e ciclo produção→envio protegidos.');
+console.log('OK Pedidos V2: pagamento LI autoritativo, impressão bloqueada, CF-ID forte, limite LI seguro, pedidos padronizados e ciclo produção→envio protegidos.');
