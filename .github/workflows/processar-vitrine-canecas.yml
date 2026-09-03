@@ -1,39 +1,31 @@
-name: CanecaFácil · recortes quadrados da vitrine V15
+name: CanecaFácil · compatibilidade mídia V16
 
 on:
   workflow_dispatch:
     inputs:
       product_key:
-        description: 'Firebase key de uma caneca (vazio = todas pendentes)'
+        description: 'Firebase key de uma caneca'
         required: false
         default: ''
       force:
-        description: 'Refazer recortes mesmo se já estiverem prontos'
+        description: 'Regerar horizontal quadrada'
         required: false
         type: boolean
         default: false
       limit:
-        description: 'Limite de canecas por execução (0 = sem limite)'
+        description: 'Limite de canecas por execução'
         required: false
-        default: '0'
-  schedule:
-    - cron: '7,22,37,52 * * * *'
-  push:
-    branches: [canecas-media]
-    paths:
-      - 'canecas/imagens/**'
-      - 'scripts/processar-vitrine-canecas-v13.mjs'
-      - '.github/workflows/processar-vitrine-canecas.yml'
+        default: '1'
 
 permissions:
   contents: write
 
 concurrency:
-  group: canecafacil-vitrine-square-v15
+  group: canecafacil-vitrine-compat-v16
   cancel-in-progress: false
 
 jobs:
-  recortes:
+  compatibilidade:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -42,51 +34,36 @@ jobs:
         with:
           ref: canecas-media
           fetch-depth: 0
-
-      - name: Node 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-
       - name: Instalar Sharp
         run: npm install --no-save sharp@0.34.3
-
-      - name: Gerar recortes quadrados sem cortar a arte
+      - name: Gerar nova mídia V16
         env:
           MODE: build
           RAW_BRANCH: canecas-media
           PRODUCT_KEY: ${{ github.event.inputs.product_key || '' }}
           FORCE: ${{ github.event.inputs.force || 'false' }}
-          LIMIT: ${{ github.event.inputs.limit || '0' }}
+          CLEANUP_OLD: 'true'
+          LIMIT: ${{ github.event.inputs.limit || '1' }}
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
-        run: node scripts/processar-vitrine-canecas-v13.mjs
-
-      - name: Publicar imagens geradas
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
+      - name: Publicar horizontal quadrada e remover recortes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add canecas/vitrine
+          git add -A canecas/vitrine canecas/imagens/loja-integrada 2>/dev/null || true
           if git diff --cached --quiet; then
-            echo "Nenhuma imagem nova para publicar."
+            echo "Nenhuma alteração de mídia para publicar."
           else
-            git commit -m "CanecaFácil V15: recortes quadrados sem cortar a arte"
+            git commit -m "CanecaFácil V16: mídia de compatibilidade"
             git pull --rebase origin canecas-media
             git push origin HEAD:canecas-media
           fi
-
-      - name: Confirmar URLs no Firebase
+      - name: Aplicar Firebase V16
         env:
           MODE: apply
           RAW_BRANCH: canecas-media
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
-        run: node scripts/processar-vitrine-canecas-v13.mjs
-
-      - name: Resumo
-        if: always()
-        run: |
-          echo "## CanecaFácil · vitrine V15" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Mockups originais preservados" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Recorte esquerdo e direito em canvas quadrado" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Conteúdo centralizado com fit contain, sem esticar e sem cortar" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Fundo branco para completar o quadrado" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Produtos antigos são migrados automaticamente pela versão do processador" >> "$GITHUB_STEP_SUMMARY"
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
