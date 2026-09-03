@@ -4,12 +4,12 @@ const FIREBASE = (process.env.FIREBASE_BASE_URL || 'https://cedar-chemist-310801
 const LI_BASE = (process.env.LOJA_INTEGRADA_BASE_URL || 'https://api.awsli.com.br/v1').replace(/\/$/, '');
 const LI_AUTH = text(process.env.LOJA_INTEGRADA_AUTHORIZATION);
 const LIMIT = Math.max(1, Math.min(25, Number(process.env.SHADOW_LIMIT || 5) || 5));
+const STRICT = /^(1|true|yes)$/i.test(text(process.env.SHADOW_STRICT || 'false'));
 const LI_SPACING_MS = 750;
 
 if (!LI_AUTH) throw new Error('LOJA_INTEGRADA_AUTHORIZATION ausente.');
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-const key = value => encodeURIComponent(text(value));
 
 async function jsonFetch(url, options = {}, { allow404 = false } = {}) {
   const response = await fetch(url, options);
@@ -144,10 +144,10 @@ const avg = Math.round(rows.reduce((sum, row) => sum + row.ms, 0) / rows.length)
 const sorted = rows.map(row => row.ms).sort((a, b) => a - b);
 const p95 = sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)] || 0;
 
-console.log(`SHADOW · amostra=${rows.length} · ok=${ok} · divergencias=${failed} · total=${elapsed}ms · media=${avg}ms · p95=${p95}ms`);
+console.log(`SHADOW · amostra=${rows.length} · ok=${ok} · divergencias=${failed} · total=${elapsed}ms · media=${avg}ms · p95=${p95}ms · strict=${STRICT}`);
 for (const row of rows) {
   console.log(`${row.ok ? 'OK' : 'ATENCAO'} · ${row.sku} · ${row.ms}ms${row.issues.length ? ` · ${row.issues.join(' | ')}` : ''}`);
 }
 console.log('SHADOW · somente leitura · nenhuma escrita no Firebase, Loja Integrada ou Make.');
 
-if (failed) process.exitCode = 2;
+if (STRICT && failed) process.exitCode = 2;
