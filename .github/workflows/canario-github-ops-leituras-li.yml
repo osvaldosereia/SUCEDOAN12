@@ -1,0 +1,45 @@
+name: CanecaFácil · canário GitHub Ops · leituras LI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/canario-github-ops-leituras-li.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  leituras:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Buscar produto por SKU · substitui consulta Make
+        env:
+          MODE: action
+          ACTION: loja_integrada_find_product_by_sku
+          PAYLOAD_JSON: '{"sku":"CANP-WTM83S"}'
+          DRY_RUN: 'true'
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+        run: node scripts/processar-operacoes-github-canecas-v1.mjs
+      - name: Ler produto por ID · substitui consulta Make
+        env:
+          MODE: action
+          ACTION: loja_integrada_get_product
+          PAYLOAD_JSON: '{"product_id":"403584796"}'
+          DRY_RUN: 'true'
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+        run: node scripts/processar-operacoes-github-canecas-v1.mjs
