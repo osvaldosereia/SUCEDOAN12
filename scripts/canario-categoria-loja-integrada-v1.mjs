@@ -36,7 +36,7 @@ async function li(path, { method = 'GET', body } = {}) {
   lastLi = Date.now();
   return jsonFetch(`${LI_BASE}${path}`, {
     method,
-    headers: { Authorization: AUTH, Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), 'User-Agent': 'CanecaFacil-GitHub-Category-Canary/1.0' },
+    headers: { Authorization: AUTH, Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), 'User-Agent': 'CanecaFacil-GitHub-Category-Canary/1.1' },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 }
@@ -49,6 +49,15 @@ function categoryType(p = {}) {
 }
 function resourceUri(value) { return typeof value === 'string' ? text(value) : text(value?.resource_uri || value?.uri); }
 function categoryUris(remote = {}) { return (Array.isArray(remote.categorias) ? remote.categorias : []).map(resourceUri).filter(Boolean); }
+function categoryId(uri) {
+  const match = text(uri).match(/\/categoria\/(\d+)/i);
+  return match?.[1] || '';
+}
+function sameCategory(a, b) {
+  const aid = categoryId(a);
+  const bid = categoryId(b);
+  return Boolean(aid && bid && aid === bid);
+}
 function productBody(remote = {}, categoryUri = '') {
   const body = {};
   for (const field of ['id_externo','sku','mpn','ncm','gtin','nome','apelido','descricao_completa','ativo','destaque','peso','altura','largura','profundidade','tipo','usado','removido','url_video_youtube']) {
@@ -73,6 +82,8 @@ const mapping = refs?.tipos?.[type];
 if (!mapping || mapping.resolvido === false || !text(mapping.resource_uri) || !text(mapping.nome)) throw new Error(`Categoria ${type} não resolvida no catalog_refs.`);
 const desiredUri = text(mapping.resource_uri).replace(/\/$/, '');
 const desiredName = text(mapping.nome);
+const desiredId = categoryId(desiredUri);
+if (!desiredId) throw new Error(`URI de categoria sem ID utilizável: ${desiredUri}`);
 
 const search = await li(`/produto?sku=${encodeURIComponent(SKU)}&limit=5`);
 const found = exactSku(Array.isArray(search?.objects) ? search.objects : [], SKU);
@@ -84,14 +95,16 @@ const before = await li(`/produto/${encodeURIComponent(productId)}?descricao_com
 const beforeCats = categoryUris(before).map(uri => uri.replace(/\/$/, ''));
 console.log(`CATEGORY CANARY · SKU=${SKU} · produto=${productId} · tipo=${type} · antes=${JSON.stringify(beforeCats)} · desejada=${desiredName} ${desiredUri}`);
 
-if (beforeCats.length === 1 && beforeCats[0] === desiredUri) {
-  console.log('CATEGORY CANARY · categoria já correta; nenhum PUT necessário.');
+let confirmedUri = beforeCats.find(uri => sameCategory(uri, desiredUri)) || '';
+if (beforeCats.length === 1 && confirmedUri) {
+  console.log(`CATEGORY CANARY · categoria já correta por ID ${desiredId}; nenhum PUT necessário.`);
 } else {
   await li(`/produto/${encodeURIComponent(productId)}`, { method: 'PUT', body: productBody(before, desiredUri) });
   const after = await li(`/produto/${encodeURIComponent(productId)}?descricao_completa=1`);
   const afterCats = categoryUris(after).map(uri => uri.replace(/\/$/, ''));
-  if (afterCats.length !== 1 || afterCats[0] !== desiredUri) throw new Error(`Categoria não confirmou após PUT. Esperado=${desiredUri}, recebido=${JSON.stringify(afterCats)}`);
-  console.log(`CATEGORY CANARY · PUT OK · depois=${JSON.stringify(afterCats)}`);
+  confirmedUri = afterCats.find(uri => sameCategory(uri, desiredUri)) || '';
+  if (afterCats.length !== 1 || !confirmedUri) throw new Error(`Categoria não confirmou após PUT. ID esperado=${desiredId}, recebido=${JSON.stringify(afterCats)}`);
+  console.log(`CATEGORY CANARY · PUT OK · depois=${JSON.stringify(afterCats)} · ID confirmado=${desiredId}`);
 }
 
 const liCurrent = liMeta(local);
@@ -104,9 +117,11 @@ await fbPatch(`produtos/${pathKey(firebaseKey)}`, {
     categoria_tipo: type,
     categoria_nome: desiredName,
     categoria_uri: desiredUri,
+    categoria_id: desiredId,
+    categoria_uri_confirmada_li: confirmedUri || desiredUri,
     categoria_atualizada_via: 'github_actions',
   },
   updated_at: new Date().toISOString(),
 });
-console.log('CATEGORY CANARY · Firebase atualizado com URI/nome confirmados da categoria.');
+console.log(`CATEGORY CANARY · Firebase atualizado · ${desiredName} · id=${desiredId} · uri_catalogo=${desiredUri} · uri_confirmada_li=${confirmedUri || desiredUri}`);
 console.log(`CATEGORY CANARY · SUCESSO · ${Date.now() - started}ms · Make não utilizado · demais áreas do produto não alteradas.`);
