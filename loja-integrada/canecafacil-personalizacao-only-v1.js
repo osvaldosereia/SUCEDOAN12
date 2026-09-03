@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-personalizacao-only-v1.8-direct-header-css';
+  const BUILD = '20260903-personalizacao-only-v1.9-native-personalizer';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
-  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260902-14`;
+  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260903-1`;
   const COMMERCE_RUNTIME = `${BASE}canecafacil-commerce-runtime-v1.js?v=20260902-9`;
   const DRAWER_SCROLL_FIX = `${BASE}minhas-canecas-scroll-fix-v1.js?v=20260902-1`;
   const PRODUCT_WHATSAPP = `${BASE}product-whatsapp-share-v1.js?v=20260902-1`;
@@ -75,8 +75,8 @@
     return active && cfg.obrigatoria === true;
   }
 
-  function personalizerFrame() {
-    return document.querySelector('.cf-personalizer-box iframe, iframe[title="Personalizar esta caneca"], iframe[src*="/loja-integrada/personalizar/"]');
+  function personalizerHost() {
+    return document.querySelector('[data-cf-native-personalizer="1"], .cf-native-personalizer, .cf-native-personalizer-host, .cf-personalizer-box iframe, iframe[title="Personalizar esta caneca"]');
   }
 
   function nativeBuyButton(node) {
@@ -95,13 +95,14 @@
   }
 
   function focusPersonalizer() {
-    const frame = personalizerFrame();
-    if (frame) {
-      frame.scrollIntoView({ behavior:'smooth', block:'center' });
-      try { frame.contentWindow?.focus(); } catch {}
+    const host = personalizerHost();
+    if (host) {
+      host.scrollIntoView({ behavior:'smooth', block:'center' });
+      const firstInput = host.querySelector?.('input:not([type="hidden"]),textarea,select');
+      setTimeout(() => { try { firstInput?.focus?.({ preventScroll:true }); } catch {} }, 450);
       return true;
     }
-    setTimeout(() => personalizerFrame()?.scrollIntoView({ behavior:'smooth', block:'center' }), 450);
+    setTimeout(() => personalizerHost()?.scrollIntoView({ behavior:'smooth', block:'center' }), 450);
     return false;
   }
 
