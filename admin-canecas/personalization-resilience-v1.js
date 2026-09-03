@@ -1,4 +1,4 @@
-const BUILD = '20260903-admin-canecas-personalization-resilience-v1';
+const BUILD = '20260903-admin-canecas-personalization-resilience-v1.1';
 const MIN_OPEN_AGE = 900;
 const REPAIR_COOLDOWN = 1400;
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -33,9 +33,8 @@ function section() {
 }
 
 function readSnapshot(key = currentKey()) {
-  const node = root();
   const box = section();
-  if (!node || !box || !key) return null;
+  if (!box || !key) return null;
   const fields = {};
   for (const row of box.querySelectorAll('[data-cf-personal-field]')) {
     const id = text(row.dataset.cfPersonalField);
@@ -76,7 +75,8 @@ function restoreSnapshot() {
   setValue('#cfPersonalizationAllowCorrection', snap.correction);
 
   for (const [id, saved] of Object.entries(snap.fields || {})) {
-    const row = box.querySelector(`[data-cf-personal-field="${CSS.escape(id)}"]`);
+    const row = [...box.querySelectorAll('[data-cf-personal-field]')]
+      .find(item => text(item.dataset.cfPersonalField) === id);
     if (!row) continue;
     const enabled = row.querySelector('[data-enabled]');
     const required = row.querySelector('[data-required]');
@@ -86,24 +86,23 @@ function restoreSnapshot() {
     if (label && saved.label) label.value = saved.label;
   }
 
-  const active = $('#cfPersonalizationActive', box);
-  if (active) active.dispatchEvent(new Event('change', { bubbles: true }));
+  $('#cfPersonalizationActive', box)?.dispatchEvent(new Event('change', { bubbles: true }));
   for (const row of box.querySelectorAll('[data-cf-personal-field]')) {
     row.querySelector('[data-enabled]')?.dispatchEvent(new Event('change', { bubbles: true }));
   }
 }
 
-function emitRepair(key, reason) {
+function dispatchDrawerRepair(key, reason, clearStaleMarker = false) {
   const node = root();
-  if (!node || node.dataset.productKey !== key || !drawerOpen()) return;
-  if (!document.documentElement.dataset.cfPersonalizationConfig) return;
+  if (!node || node.dataset.productKey !== key || !drawerOpen()) return false;
+  if (!document.documentElement.dataset.cfPersonalizationConfig) return false;
 
   const now = Date.now();
-  if (state.repairing || now - state.lastRepairAt < REPAIR_COOLDOWN) return;
+  if (state.repairing || now - state.lastRepairAt < REPAIR_COOLDOWN) return false;
   state.repairing = true;
   state.lastRepairAt = now;
 
-  if (node.dataset.cfPersonalizationInjected === key && !$('#cfPersonalizationConfig', node)) {
+  if (clearStaleMarker && node.dataset.cfPersonalizationInjected === key && !$('#cfPersonalizationConfig', node)) {
     delete node.dataset.cfPersonalizationInjected;
   }
 
@@ -118,9 +117,10 @@ function emitRepair(key, reason) {
       restoreSnapshot();
       setTimeout(restoreSnapshot, 260);
     } else {
-      schedule('retry', 80);
+      schedule('retry', 100);
     }
   }, REPAIR_COOLDOWN);
+  return true;
 }
 
 function check(reason = 'check') {
@@ -130,18 +130,24 @@ function check(reason = 'check') {
   const key = currentKey();
   if (!node || !key || node.dataset.productKey !== key || !drawerOpen()) return;
 
-  if (section()) {
-    if (node.dataset.cfPersonalizationInjected !== key) node.dataset.cfPersonalizationInjected = key;
-    restoreSnapshot();
-    return;
-  }
-
   const age = Date.now() - state.openedAt;
   if (age < MIN_OPEN_AGE) {
     schedule(reason, MIN_OPEN_AGE - age + 40);
     return;
   }
-  emitRepair(key, reason);
+
+  const box = section();
+  if (box) {
+    if (node.dataset.cfPersonalizationInjected !== key) node.dataset.cfPersonalizationInjected = key;
+    restoreSnapshot();
+    const correctionLoaded = Boolean(document.documentElement.dataset.cfPersonalizationCorrection);
+    if (correctionLoaded && !$('#cfPersonalizationAllowCorrection', box)) {
+      dispatchDrawerRepair(key, 'correction-field-missing', false);
+    }
+    return;
+  }
+
+  dispatchDrawerRepair(key, reason, true);
 }
 
 function schedule(reason = 'mutation', delay = 180) {
@@ -152,41 +158,17 @@ function schedule(reason = 'mutation', delay = 180) {
 function observeDrawer() {
   const node = root();
   if (!node || state.observer) return;
-  state.observer = new MutationObserver(records => {
-    const key = currentKey();
-    if (!key) return;
-    for (const record of records) {
-      for (const removed of record.removedNodes || []) {
-        if (!(removed instanceof Element)) continue;
-        const removedSection = removed.id === 'cfPersonalizationConfig'
-          ? removed
-          : removed.querySelector?.('#cfPersonalizationConfig');
-        if (removedSection && state.snapshot?.key !== key) {
-          const oldRoot = root();
-          if (oldRoot) {
-            const fakeCurrent = oldRoot.querySelector('#cfPersonalizationConfig');
-            if (!fakeCurrent) {
-              const previous = state.snapshot;
-              state.snapshot = previous?.key === key ? previous : null;
-            }
-          }
-        }
-      }
-    }
-    schedule('drawer-mutation', 220);
-  });
+
+  state.observer = new MutationObserver(() => schedule('drawer-mutation', 220));
   state.observer.observe(node, { childList: true, subtree: false });
 
-  node.addEventListener('input', event => {
+  const remember = event => {
     if (!event.target?.closest?.('#cfPersonalizationConfig')) return;
     const snap = readSnapshot();
     if (snap) state.snapshot = snap;
-  }, true);
-  node.addEventListener('change', event => {
-    if (!event.target?.closest?.('#cfPersonalizationConfig')) return;
-    const snap = readSnapshot();
-    if (snap) state.snapshot = snap;
-  }, true);
+  };
+  node.addEventListener('input', remember, true);
+  node.addEventListener('change', remember, true);
 }
 
 window.addEventListener('admin-canecas:drawer', event => {
