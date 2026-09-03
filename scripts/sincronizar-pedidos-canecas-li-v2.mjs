@@ -33,7 +33,7 @@ function firstNumber(...values) {
 async function li(path, attempt = 1) {
   const url = /^https?:\/\//i.test(path) ? path : `${LI_BASE}${path.startsWith('/') ? path : `/${path}`}`;
   const response = await fetch(url, {
-    headers:{ Authorization:AUTH, Accept:'application/json', 'User-Agent':'CanecaFacil-All-Mug-Orders/2.0' },
+    headers:{ Authorization:AUTH, Accept:'application/json', 'User-Agent':'CanecaFacil-All-Mug-Orders/2.1' },
     signal:AbortSignal.timeout(20000)
   });
   const raw = await response.text();
@@ -58,6 +58,10 @@ async function fb(path, { method='GET', body } = {}) {
   try { data = raw ? JSON.parse(raw) : null; } catch { data = raw; }
   if (!response.ok) throw new Error(`Firebase ${response.status}: ${text(raw).slice(0,220)}`);
   return data;
+}
+async function sha256(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text(value).toLowerCase()));
+  return [...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
 }
 
 function isMug(product = {}) {
@@ -84,6 +88,8 @@ function itemName(item = {}) { return text(item.nome || item.nome_produto || ite
 function orderId(order = {}) { return text(order.id || order.numero || resourceId(order.resource_uri)); }
 function orderDate(order = {}) { return text(order.data_criacao || order.criado_em || order.created_at || order.data || order.data_modificacao); }
 function orderEmail(order = {}) { return text(order.cliente_email || order?.cliente?.email).toLowerCase(); }
+function orderComment(order = {}) { return text([order.cliente_obs,order.comentario,order.observacao,order.observacoes,order.obs,order?.cliente?.obs,order.utm_campaign,order.campanha,order.tracking_campaign,order.origem_campanha].filter(Boolean).join(' ')); }
+function extractCodes(value) { return [...new Set((text(value).toUpperCase().match(/CF-\d{6}-[A-Z0-9]{4,24}/g)||[]))]; }
 
 async function resolveSituation(order = {}) {
   let situation = order.situacao || order.status || order.status_pedido || null;
@@ -137,16 +143,25 @@ function totals(order = {}, items = []) {
 }
 function advancedStatus(value) { return present(value) && !['novo','aguardando_pagamento','pago'].includes(norm(value)); }
 
-const productsRaw = await fb('produtos').catch(() => ({}));
+const [productsRaw,pendingRaw] = await Promise.all([fb('produtos').catch(()=>({})),fb('canecas/encomendas_pendentes').catch(()=>({}))]);
 const mugProducts = Object.entries(productsRaw || {}).map(([key,value])=>({ key,...(value || {}) })).filter(isMug);
+const pendingPersonalizations = Object.entries(pendingRaw || {}).map(([key,value])=>({ key,...(value || {}) })).filter(row=>!['cancelada','cancelado','paga'].includes(norm(row.status)));
 const byId = new Map(), bySku = new Map();
 for (const product of mugProducts) {
   const id = productLiId(product), sku = productSku(product);
   if (id) byId.set(id,product); if (sku) bySku.set(sku,product);
 }
-console.log(`CATALOGO_CANECAS ${mugProducts.length} · ids_li=${byId.size} · skus=${bySku.size}`);
+console.log(`CATALOGO_CANECAS ${mugProducts.length} · ids_li=${byId.size} · skus=${bySku.size} · personalizacoes_pendentes=${pendingPersonalizations.length}`);
 
 function matchedProduct(item = {}) { return byId.get(itemProductId(item)) || bySku.get(itemSku(item)) || null; }
+function pendingCode(row={}) { return text(row.criacao_id || row.id || row.key).toUpperCase(); }
+async function personalizedOrderLikely(order={}) {
+  const id=orderId(order),codes=new Set(extractCodes(orderComment(order)));
+  if(pendingPersonalizations.some(row=>text(row.pedido_id_hint)===id||text(row.pedido_id)===id||codes.has(pendingCode(row)))) return true;
+  const email=orderEmail(order);if(!email)return false;const hash=await sha256(email);
+  const ids=new Set(orderItems(order).map(itemProductId).filter(Boolean)),skus=new Set(orderItems(order).map(itemSku).filter(Boolean));
+  return pendingPersonalizations.some(row=>text(row.cliente_email_hash)===hash && ((text(row.loja_integrada_produto_id)&&ids.has(text(row.loja_integrada_produto_id))) || (text(row.sku)&&skus.has(text(row.sku).toUpperCase()))));
+}
 function personalizedQty(existing = {}, productId, sku) {
   return (Array.isArray(existing.itens) ? existing.itens : []).filter(item => item.personalizada === true && (text(item.loja_integrada_produto_id) === productId || (sku && text(item.sku || item.codigo).toUpperCase() === sku)))
     .reduce((sum,item)=>sum + Math.max(1,Number(item.quantidade || 1) || 1),0);
@@ -178,10 +193,7 @@ async function ensureStandardJobs(payload, standardItems, released, now) {
       }
       continue;
     }
-    if (!item.arte_horizontal) {
-      console.warn(`ARTE_PADRAO_AUSENTE pedido=${payload.id} produto=${item.produto_key}`);
-      continue;
-    }
+    if (!item.arte_horizontal) { console.warn(`ARTE_PADRAO_AUSENTE pedido=${payload.id} produto=${item.produto_key}`); continue; }
     const body = {
       id:jobId,pedido_id:payload.id,origem:'canecafacil',origem_label:'CANECAFÁCIL',cliente_nome:payload.cliente?.nome,
       cliente_telefone:payload.cliente?.telefone || payload.cliente?.whatsapp,produto_key:item.produto_key,produto_codigo:item.codigo,
@@ -196,7 +208,7 @@ async function ensureStandardJobs(payload, standardItems, released, now) {
 
 const search = await li(`/pedido/search?limit=${LIMIT}`);
 const summaries = Array.isArray(search?.objects) ? search.objects : Array.isArray(search) ? search : [];
-let scanned=0,mugOrders=0,created=0,updated=0,standardJobs=0,mixed=0,errors=0;
+let scanned=0,mugOrders=0,created=0,updated=0,standardJobs=0,mixed=0,protectedPersonalized=0,errors=0;
 for (const summary of summaries) {
   const id = orderId(summary); if (!id) continue;
   scanned += 1;
@@ -207,7 +219,11 @@ for (const summary of summaries) {
     if (!mugSources.length) continue;
     mugOrders += 1;
     const existing = await fb(`canecas/pedidos/${safeKey(id)}`).catch(()=>null);
-    const personalized = preservedPersonalized(existing || {}), standard = buildStandardItems(order,existing || {});
+    const personalized = preservedPersonalized(existing || {});
+    if(!personalized.length && await personalizedOrderLikely(order)) {
+      protectedPersonalized += 1;console.warn(`PROTEGIDO_PERSONALIZACAO_PENDENTE pedido=${id} · aguardando vínculo CF-ID`);continue;
+    }
+    const standard = buildStandardItems(order,existing || {});
     if (personalized.length && standard.length) mixed += 1;
     const items = [...personalized,...standard];
     const situation = await resolveSituation(order), payment = paymentState(situation), status = commercialState(payment,situation), released = payment === 'pago', now = nowIso();
@@ -228,12 +244,10 @@ for (const summary of summaries) {
     if (existing?.criacoes_ids) payload.criacoes_ids=existing.criacoes_ids;
     if (existing?.criacao_id) payload.criacao_id=existing.criacao_id;
     await fb(`canecas/pedidos/${safeKey(id)}`, { method:'PUT',body:payload });
-    await ensureStandardJobs(payload,standard,released,now); standardJobs += released ? standard.filter(item=>item.arte_horizontal).length : 0;
+    await ensureStandardJobs(payload,standard,released,now);standardJobs += released ? standard.filter(item=>item.arte_horizontal).length : 0;
     if (existing) updated += 1; else created += 1;
     console.log(`PEDIDO_CANECAS ${id} · tipo=${payload.tipo_pedido} · itens=${items.length} · pago=${released?'sim':'nao'} · total=${financial.total ?? 'n/d'}`);
-  } catch (error) {
-    errors += 1; console.error(`ERRO_PEDIDO ${id}: ${error.message || error}`);
-  }
+  } catch (error) { errors += 1;console.error(`ERRO_PEDIDO ${id}: ${error.message || error}`); }
 }
-console.log(`RESUMO_CANECAS verificados=${scanned} · pedidos_canecas=${mugOrders} · novos=${created} · atualizados=${updated} · mistos=${mixed} · jobs_padrao=${standardJobs} · erros=${errors}`);
+console.log(`RESUMO_CANECAS verificados=${scanned} · pedidos_canecas=${mugOrders} · novos=${created} · atualizados=${updated} · mistos=${mixed} · protegidos_personalizados=${protectedPersonalized} · jobs_padrao=${standardJobs} · erros=${errors}`);
 if (errors) process.exitCode=1;
