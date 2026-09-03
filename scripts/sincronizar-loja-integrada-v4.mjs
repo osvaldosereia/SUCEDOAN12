@@ -154,9 +154,5 @@ globalThis.fetch = async (input, init = {}) => {
   return originalFetch(input, init);
 };
 
-for (const [type, legacyName] of Object.entries(LEGACY_CATEGORY_NAMES ?? {})) {
-  const mapping = mappedTypeByLegacyName?.(legacyName);
-  console.log(`LI V3 · categoria ${type}: ${mapping ? `${mapping.nome} -> ${mapping.resource_uri}` : 'sem mapeamento automático'}`);
-}
 console.log(`CanecaFácil LI Sync V4 · categoria específica > fallback lógico · catálogo=${categories().length} · personalizador legado bloqueado · Make não utilizado`);
 await import('./sincronizar-loja-integrada-v3.mjs');
