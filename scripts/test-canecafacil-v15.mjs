@@ -7,6 +7,7 @@ const read=(...parts)=>fs.readFileSync(path.join(root,...parts),'utf8');
 
 const adminIndex=read('admin-canecas','index.html');
 const personalization=read('admin-canecas','personalization-config-v1.js');
+const adminLinks=read('admin-canecas','personalization-test-link-v1.js');
 const storefront=read('admin-canecas','storefront-crops-github-v3.js');
 const creationStatus=read('admin-canecas','creation-order-status-v1.js');
 const app=read('loja-integrada','personalizar','app-v15.js');
@@ -26,12 +27,17 @@ for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.matc
 assert.match(personalization,/prompt_base_texto/,'Admin deve persistir prompt-base');
 assert.match(personalization,/prompt_especifico/,'Admin deve persistir instrução específica');
 assert.match(adminIndex,/storefront-crops-github-v3\.js\?v=20260901-2/,'Admin deve carregar vitrine completa sem cache antigo');
+assert.match(adminIndex,/personalization-test-link-v1\.js\?v=20260903-1/,'Admin deve carregar correção atual dos links públicos sem cache antigo');
+assert.match(adminLinks,/new URL\(`produto\/\$\{encodeURIComponent\(alias\)\}\.html`,STOREFRONT\)/,'links do Admin devem usar a rota pública /produto/alias.html');
+assert.match(adminLinks,/syncStoreLink\(actions,store\)/,'Testar no site e Ver na loja devem compartilhar a mesma URL canônica');
+assert.match(adminLinks,/url\.searchParams\.set\('cf_personalizador','teste'\)/,'Testar no site deve apenas acrescentar o modo de teste à URL pública');
+assert.match(adminLinks,/const published=Boolean\(text\(li\.produto_id\)\|\|raw\)/,'Admin não deve apontar para produto público sem evidência de publicação');
 assert.match(storefront,/return\[m\.m1,m\.m2,c\.left,c\.right\]/,'ordem pública deve ser mockup1, mockup2, esquerda, direita');
 assert.match(storefront,/Vitrine incompleta: o modelo precisa de Mockup 1 \+ Mockup 2 \+ recorte esquerdo \+ recorte direito/,'sincronização deve exigir as 4 imagens');
 assert.match(storefront,/mockup_1:images\[0\]/,'mockup 1 deve ser enviado à Loja Integrada');
 assert.match(storefront,/mockup_2:images\[1\]/,'mockup 2 deve ser enviado à Loja Integrada');
-assert.match(cropWorker,/pending\.push\(\{key,art,urls,meta:crops\.meta,nome:text\(p\.nome\),mockup1:mocks\.m1,mockup2:mocks\.m2\}\)/,'worker de recortes deve preservar mockups');
-assert.match(cropWorker,/const storefront=\[item\.mockup1,item\.mockup2,item\.urls\.left,item\.urls\.right\]/,'worker deve gravar somente as 4 imagens oficiais');
+assert.match(cropWorker,/pending\.push\(\{\s*key,\s*art,\s*urls,\s*meta:crops\.meta,\s*nome:text\(p\.nome\),\s*mockup1:mocks\.m1,\s*mockup2:mocks\.m2,?\s*\}\)/,'worker de recortes deve preservar mockups');
+assert.match(cropWorker,/const storefront\s*=\s*\[\s*item\.mockup1,\s*item\.mockup2,\s*item\.urls\.left,\s*item\.urls\.right\s*\]/,'worker deve gravar somente as 4 imagens oficiais');
 
 assert.match(personalizerIndex,/app-v15\.js/,'personalizador público deve usar V15');
 assert.equal(app.includes('createTemporaryProduct'),false,'V15 não pode criar produto temporário');
@@ -100,4 +106,4 @@ assert.match(orderWorker,/quantidade_personalizada_total/,'pedido deve registrar
 assert.match(creationStatus,/Arte criada · ainda não encomendada/,'Admin deve distinguir arte sem compra');
 assert.match(creationStatus,/PAGO · LIBERADO PARA PRODUÇÃO/,'Admin deve distinguir pedido pago e liberado');
 
-console.log('OK CanecaFácil V15: Admin completo, Site Runtime remoto, personalizador V10, Minhas Artes V2, WhatsApp/exclusão segura, carrinho original e produção somente após pagamento.');
+console.log('OK CanecaFácil V15: Admin completo, Site Runtime remoto, personalizador V10, links públicos canônicos, Minhas Artes V2, WhatsApp/exclusão segura, carrinho original e produção somente após pagamento.');
