@@ -1,0 +1,132 @@
+name: CanecaFácil · canário E2E mídia GitHub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/canario-e2e-fila-midia-github.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canecafacil-li-media-v16
+  cancel-in-progress: false
+
+jobs:
+  canario:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout controle
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: control
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Enfileirar canário com force=true · sem Make
+        working-directory: control
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: enqueue
+          PRODUCT_KEY: mug-1788067216093-4j4sce
+          FORCE: 'true'
+          SOURCE: github_actions_e2e_canary
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Claim do canário
+        id: claim
+        working-directory: control
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: claim
+          PRODUCT_KEY: mug-1788067216093-4j4sce
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Validar claim
+        run: |
+          test "${{ steps.claim.outputs.has_work }}" = "true"
+          test "${{ steps.claim.outputs.force }}" = "true"
+
+      - name: Checkout branch canecas-media
+        uses: actions/checkout@v4
+        with:
+          ref: canecas-media
+          path: media
+          fetch-depth: 0
+
+      - name: Instalar Sharp
+        working-directory: media
+        run: npm install --no-save sharp@0.34.3
+
+      - name: Regenerar horizontal quadrada do canário
+        working-directory: media
+        env:
+          MODE: build
+          RAW_BRANCH: canecas-media
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          FORCE: 'true'
+          CLEANUP_OLD: 'true'
+          LIMIT: '1'
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
+
+      - name: Publicar arquivo da mídia
+        working-directory: media
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A canecas/vitrine canecas/imagens/loja-integrada 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'Arquivo regenerado é idêntico; nenhum commit necessário.'
+          else
+            git commit -m "CanecaFácil: canário mídia E2E via GitHub"
+            git pull --rebase origin canecas-media
+            git push origin HEAD:canecas-media
+          fi
+
+      - name: Aplicar mídia no Firebase
+        working-directory: media
+        env:
+          MODE: apply
+          RAW_BRANCH: canecas-media
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
+
+      - name: Reaplicar galeria 3 imagens na Loja Integrada
+        working-directory: media
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          FORCE: 'true'
+          LIMIT: '1'
+        run: node scripts/migrar-imagens-loja-integrada-v1.mjs
+
+      - name: Finalizar fila
+        if: always()
+        working-directory: control
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: finalize
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          QUEUE_KEY: ${{ steps.claim.outputs.queue_key }}
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Resumo
+        if: always()
+        run: |
+          echo '## Canário E2E mídia' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Produto: mug-1788067216093-4j4sce / CANP-4J4SCE' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Caminho: Firebase → GitHub Actions → Sharp → Loja Integrada' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Galeria esperada: 3 imagens' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Make: não utilizado' >> "$GITHUB_STEP_SUMMARY"
