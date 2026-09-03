@@ -7,6 +7,7 @@ const read=(...parts)=>fs.readFileSync(path.join(root,...parts),'utf8');
 
 const adminIndex=read('admin-canecas','index.html');
 const liHardening=read('admin-canecas','li-payload-hardening-v1.js');
+const makeSettings=read('admin-canecas','make-webhook-settings-v1.js');
 const mediaAdmin=read('admin-canecas','storefront-media-v4.js');
 const mediaQueue=read('scripts','fila-midia-loja-integrada-v1.mjs');
 const finalRecovery=read('admin-canecas','generator-finalize-recovery-v2.js');
@@ -27,8 +28,14 @@ for(const id of ['nome','foto','logo','endereco','telefone','site']) assert.matc
 assert.match(adminIndex,/li-payload-hardening-v1\.js\?v=20260903-1/,'Admin deve carregar hardening com catálogo GitHub/Firebase');
 assert.match(adminIndex,/storefront-media-v4\.js\?v=20260903-3/,'Admin deve carregar mídia LI cache-first + fila GitHub direta');
 assert.match(adminIndex,/generator-finalize-recovery-v2\.js\?v=20260903-2/,'Admin deve carregar finalização que enfileira mídia direto no GitHub');
+assert.match(adminIndex,/make-webhook-settings-v1\.js\?v=20260903-1/,'Admin deve carregar configuração Make como IA/contingência');
 assert.doesNotMatch(adminIndex,/storefront-crops-github-v3\.js/,'Admin não deve carregar módulo ativo de recortes');
 assert.doesNotMatch(adminIndex,/generator-finalize-recovery-v1\.js/,'Admin não deve carregar recuperação antiga de recortes');
+
+assert.match(makeSettings,/action: 'healthcheck'/,'teste do webhook Make deve ser healthcheck sem rota funcional');
+assert.doesNotMatch(makeSettings,/loja_integrada_catalog_refs/,'teste do webhook não pode consumir rota de catálogo da Loja Integrada');
+assert.match(makeSettings,/sem OpenAI e sem Loja Integrada/,'interface deve avisar que o teste não consome IA nem Loja Integrada');
+assert.match(makeSettings,/Make · IA e contingência/,'configuração deve descrever o papel atual do Make');
 
 assert.match(liHardening,/github_actions_catalog/,'hardening deve registrar catálogo proveniente do GitHub');
 assert.match(liHardening,/const REF_PATH = 'canecas\/integracoes\/loja_integrada\/catalog_refs'/,'hardening deve usar o cache Firebase oficial');
@@ -89,4 +96,4 @@ assert.match(cartBridge,/credentials:'same-origin'/,'adição ao carrinho deve p
 assert.match(prodLoader,/function personalizable\(/,'loader deve respeitar a configuração individual');
 assert.match(orderWorker,/canecas\/print_jobs/,'pedido pago deve gerar fila de impressão');
 
-console.log('OK CanecaFácil V16: catálogo e pós-finalização via Firebase/GitHub sem ponte Make, mídia cache-first e galeria LI de 3 imagens.');
+console.log('OK CanecaFácil V16: Make restrito a IA/contingência, catálogo e pós-finalização via GitHub, healthcheck sem IA e galeria LI de 3 imagens.');
