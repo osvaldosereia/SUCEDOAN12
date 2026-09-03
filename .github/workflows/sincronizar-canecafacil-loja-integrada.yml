@@ -49,14 +49,14 @@ jobs:
           fi
           printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
           echo 'Personal Token carregado com segurança.'
-      - name: Sincronizar fila CanecaFácil
+      - name: Sincronizar fila CanecaFácil · galeria oficial de 3 imagens
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
           PRODUCT_KEY: ${{ github.event.inputs.product_key || '' }}
           FORCE: ${{ github.event.inputs.force || 'false' }}
           LIMIT: ${{ github.event.inputs.limit || '10' }}
-        run: node scripts/sincronizar-loja-integrada.mjs
+        run: node scripts/sincronizar-loja-integrada-v3.mjs
       - name: Auditar cadastros confirmados
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
