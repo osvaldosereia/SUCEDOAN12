@@ -1,0 +1,130 @@
+name: CanecaFácil · fila mídia LI · GitHub direto
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fila-midia-loja-integrada-v1.mjs'
+      - '.github/workflows/processar-fila-midia-loja-integrada.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canecafacil-li-media-v16
+  cancel-in-progress: false
+
+jobs:
+  processar-fila:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout controle · main · somente scripts
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: control
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Claim da próxima mídia pendente · Firebase → GitHub
+        id: claim
+        working-directory: control
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: claim
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Sem trabalho pendente
+        if: steps.claim.outputs.has_work != 'true'
+        run: echo 'Fila de mídia vazia. Make não utilizado.'
+
+      - name: Checkout branch de mídia
+        if: steps.claim.outputs.has_work == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: canecas-media
+          path: media
+          fetch-depth: 0
+
+      - name: Instalar Sharp somente quando há trabalho
+        if: steps.claim.outputs.has_work == 'true'
+        working-directory: media
+        run: npm install --no-save sharp@0.34.3
+
+      - name: Gerar horizontal quadrada · produto da fila
+        if: steps.claim.outputs.has_work == 'true'
+        working-directory: media
+        env:
+          MODE: build
+          RAW_BRANCH: canecas-media
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          FORCE: ${{ steps.claim.outputs.force }}
+          CLEANUP_OLD: 'true'
+          LIMIT: '1'
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
+
+      - name: Publicar mídia gerada na branch canecas-media
+        if: steps.claim.outputs.has_work == 'true'
+        working-directory: media
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A canecas/vitrine canecas/imagens/loja-integrada 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'Nenhuma alteração de arquivo necessária.'
+          else
+            git commit -m "CanecaFácil: processar mídia LI pela fila GitHub"
+            git pull --rebase origin canecas-media
+            git push origin HEAD:canecas-media
+          fi
+
+      - name: Aplicar URLs e estado no Firebase
+        if: steps.claim.outputs.has_work == 'true'
+        working-directory: media
+        env:
+          MODE: apply
+          RAW_BRANCH: canecas-media
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/processar-midia-loja-integrada-v16.mjs
+
+      - name: Atualizar galeria na Loja Integrada
+        if: steps.claim.outputs.has_work == 'true'
+        working-directory: media
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          FORCE: ${{ steps.claim.outputs.force }}
+          LIMIT: '1'
+        run: node scripts/migrar-imagens-loja-integrada-v1.mjs
+
+      - name: Finalizar estado da fila
+        if: always() && steps.claim.outputs.has_work == 'true'
+        working-directory: control
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: finalize
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          QUEUE_KEY: ${{ steps.claim.outputs.queue_key }}
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Resumo
+        if: always()
+        run: |
+          echo '## CanecaFácil · fila mídia Loja Integrada' >> "$GITHUB_STEP_SUMMARY"
+          echo "- Trabalho encontrado: ${{ steps.claim.outputs.has_work || 'false' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Produto: ${{ steps.claim.outputs.product_key || 'nenhum' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Origem: Firebase → GitHub Actions' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Make: não utilizado' >> "$GITHUB_STEP_SUMMARY"
