@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-cf-inline-loader-prod-v10-mobile-fetch';
+  const BUILD = '20260902-cf-inline-loader-prod-v11-image-stable';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CATALOG = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/canecas-galeria.json';
   const PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/personalizar/';
@@ -165,7 +165,7 @@
     const frameUrl = new URL(PERSONALIZER);
     frameUrl.searchParams.set('model', modelKey);
     frameUrl.searchParams.set('embed', '1');
-    frameUrl.searchParams.set('ui', '20260902-7');
+    frameUrl.searchParams.set('ui', '20260902-8-image-stable');
     frameUrl.searchParams.set('return', returnUrl.href);
 
     const box = document.createElement('div');
