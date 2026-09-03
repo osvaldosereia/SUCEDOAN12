@@ -27,7 +27,9 @@ assert.match(commerce, /cf_arte/, 'biblioteca deve conseguir reabrir/reutilizar 
 assert.match(commerce, /protectedArt/, 'criações ligadas a pedido devem ser protegidas');
 assert.match(commerce, /method:'DELETE'/, 'criações abandonadas devem poder ser removidas');
 assert.match(cart, /credentials:'same-origin'/, 'carrinho deve usar a sessão original da Loja Integrada');
-assert.match(cart, /PERSONALIZADA <span>/, 'carrinho deve identificar o CF-ID');
+assert.match(cart, /upsert\(\{ code, productId/, 'carrinho deve persistir o CF-ID no vínculo do item personalizado');
+assert.match(cart, /tag\.dataset\.code = entry\.code/, 'carrinho deve manter o CF-ID no item visual personalizado');
+assert.match(cart, /CSS\.escape\(entry\.code\)/, 'carrinho deve localizar o item pelo CF-ID sem colisão');
 assert.match(nativeCart, /PENDING_NODE = 'canecas\/encomendas_pendentes'/, 'aprovação deve persistir vínculo antes do checkout');
 assert.match(nativeCart, /cf_add_personalizada/, 'aprovação deve fazer handoff para a loja');
 assert.match(orderWorker, /canecas\/pedidos/, 'pedido nativo deve ser sincronizado ao Admin Canecas');
