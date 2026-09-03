@@ -1,16 +1,16 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-personalizacao-only-v2.3-product-page-adjustments';
+  const BUILD = '20260903-personalizacao-only-v3-stable-clean';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
-  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260903-1`;
+
+  const UI_RUNTIME = `${BASE}canecafacil-ui-runtime-v1.js?v=20260903-1`;
   const COMMERCE_RUNTIME = `${BASE}canecafacil-commerce-runtime-v1.js?v=20260902-9`;
   const DRAWER_SCROLL_FIX = `${BASE}minhas-canecas-scroll-fix-v1.js?v=20260902-1`;
-  const PRODUCT_WHATSAPP = `${BASE}product-whatsapp-share-v1.js?v=20260903-2`;
   const FULL_ART_VIEWER = `${BASE}minhas-canecas-art-viewer-v1.js?v=20260903-1`;
-  const MOBILE_THEME_FIXES = `${BASE}mobile-theme-fixes-v1.js?v=20260903-1`;
-  const PRODUCT_PAGE_ADJUSTMENTS = `${BASE}product-page-adjustments-v1.js?v=20260903-1`;
+  const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260903-1`;
+  const FULLWIDTH_RUNTIME = `${BASE}personalizer-fullwidth-native-v1.js?v=20260903-3`;
 
   if (window.__CF_PERSONALIZACAO_ONLY__ === BUILD) return;
   window.__CF_PERSONALIZACAO_ONLY__ = BUILD;
@@ -20,10 +20,12 @@
   let personalizationRequired = false;
   let guardReady = false;
 
-  function hasScript(rx) { return [...document.scripts].some(script => rx.test(script.src || '')); }
+  function hasScript(part) {
+    return [...document.scripts].some(script => String(script.src || '').includes(part));
+  }
 
-  function loadScript(url, rx, marker) {
-    if (hasScript(rx)) return;
+  function loadScript(url, part, marker) {
+    if (hasScript(part)) return;
     const script = document.createElement('script');
     script.src = url;
     script.async = false;
@@ -32,20 +34,21 @@
     document.head.appendChild(script);
   }
 
-  function loadRuntimes() {
-    loadScript(PERSONALIZATION_RUNTIME, /loader-personalizador-inline-producao\.js/i, 'personalização');
-    if (window.__CF_COMMERCE_RUNTIME__ !== '20260902-canecafacil-commerce-runtime-v3-retention') {
-      loadScript(COMMERCE_RUNTIME, /canecafacil-commerce-runtime-v1\.js\?v=20260902-9/i, 'Minhas Canecas');
-    }
-    loadScript(DRAWER_SCROLL_FIX, /minhas-canecas-scroll-fix-v1\.js/i, 'rolagem de Minhas Canecas');
-    loadScript(PRODUCT_WHATSAPP, /product-whatsapp-share-v1\.js/i, 'compartilhamento por WhatsApp');
-    loadScript(FULL_ART_VIEWER, /minhas-canecas-art-viewer-v1\.js/i, 'visualização da arte completa');
-    loadScript(MOBILE_THEME_FIXES, /mobile-theme-fixes-v1\.js/i, 'ajustes visuais mobile');
-    loadScript(PRODUCT_PAGE_ADJUSTMENTS, /product-page-adjustments-v1\.js/i, 'ajustes da página de produto');
-  }
-
   function isProductPage() {
     return document.body?.classList?.contains('pagina-produto') || Boolean(document.querySelector('.produto, .acoes-produto, [itemprop="sku"]'));
+  }
+
+  function loadBaseRuntimes() {
+    loadScript(UI_RUNTIME, 'canecafacil-ui-runtime-v1.js', 'interface estável');
+    loadScript(COMMERCE_RUNTIME, 'canecafacil-commerce-runtime-v1.js', 'Minhas Canecas');
+    loadScript(DRAWER_SCROLL_FIX, 'minhas-canecas-scroll-fix-v1.js', 'rolagem de Minhas Canecas');
+    loadScript(FULL_ART_VIEWER, 'minhas-canecas-art-viewer-v1.js', 'visualização da arte completa');
+  }
+
+  function loadProductRuntimes() {
+    if (!isProductPage()) return;
+    loadScript(PERSONALIZATION_RUNTIME, 'loader-personalizador-inline-producao.js', 'personalização');
+    loadScript(FULLWIDTH_RUNTIME, 'personalizer-fullwidth-native-v1.js', 'personalizador em largura total');
   }
 
   function skuFromPage() {
@@ -72,21 +75,27 @@
       const data = await response.json();
       const row = Object.entries(data || {})[0];
       return row ? { __key:row[0], ...(row[1] || {}) } : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   function requiresPersonalization(product = {}) {
     const cfg = product.personalizacao && typeof product.personalizacao === 'object' ? product.personalizacao : {};
-    const active = cfg.ativa === true || product.personalizavel === true || product.loja_integrada_personalizavel === true || product.canecafacil_personalizavel === true || product.personalizacao_publica === true;
+    const active = cfg.ativa === true
+      || product.personalizavel === true
+      || product.loja_integrada_personalizavel === true
+      || product.canecafacil_personalizavel === true
+      || product.personalizacao_publica === true;
     return active && cfg.obrigatoria === true;
   }
 
   function personalizerHost() {
-    return document.querySelector('[data-cf-native-personalizer="1"], .cf-native-personalizer, .cf-native-personalizer-host, .cf-personalizer-box iframe, iframe[title="Personalizar esta caneca"]');
+    return document.querySelector('[data-cf-native-personalizer="1"], .cf-native-personalizer, .cf-native-personalizer-host');
   }
 
   function nativeBuyButton(node) {
-    return node?.closest?.('a.botao-comprar[href*="/carrinho/produto/"][href*="/adicionar"], a[href*="/carrinho/produto/"][href*="/adicionar"].principal, .acoes-produto a.botao-comprar');
+    return node?.closest?.('a.botao-comprar[href*="/carrinho/produto/"][href*="/adicionar"], .acoes-produto a.botao-comprar');
   }
 
   function relabelNativeBuyButtons() {
@@ -96,20 +105,19 @@
       button.title = 'Personalize esta caneca antes de comprar';
       button.setAttribute('aria-label', 'Personalize esta caneca antes de comprar');
       const textNode = [...button.childNodes].find(node => node.nodeType === Node.TEXT_NODE && /comprar/i.test(node.nodeValue || ''));
-      if (textNode) textNode.nodeValue = ' Personalize para comprar';
+      if (textNode && !/personalize/i.test(textNode.nodeValue || '')) textNode.nodeValue = ' Personalize para comprar';
     });
   }
 
   function focusPersonalizer() {
     const host = personalizerHost();
-    if (host) {
-      host.scrollIntoView({ behavior:'smooth', block:'center' });
-      const firstInput = host.querySelector?.('input:not([type="hidden"]),textarea,select');
-      setTimeout(() => { try { firstInput?.focus?.({ preventScroll:true }); } catch {} }, 450);
-      return true;
-    }
-    setTimeout(() => personalizerHost()?.scrollIntoView({ behavior:'smooth', block:'center' }), 450);
-    return false;
+    if (!host) return false;
+    host.scrollIntoView({ behavior:'smooth', block:'center' });
+    const firstInput = host.querySelector?.('input:not([type="hidden"]),textarea,select');
+    setTimeout(() => {
+      try { firstInput?.focus?.({ preventScroll:true }); } catch {}
+    }, 350);
+    return true;
   }
 
   function installPurchaseGuard() {
@@ -131,24 +139,22 @@
     const sku = skuFromPage();
     if (!sku) return;
     personalizationRequired = requiresPersonalization(await productBySku(sku) || {});
-    if (personalizationRequired) {
-      document.documentElement.dataset.cfPersonalizacaoObrigatoria = '1';
-      relabelNativeBuyButtons();
-      setTimeout(relabelNativeBuyButtons, 700);
-      setTimeout(relabelNativeBuyButtons, 1800);
-    }
+    if (!personalizationRequired) return;
+    document.documentElement.dataset.cfPersonalizacaoObrigatoria = '1';
+    relabelNativeBuyButtons();
+    setTimeout(relabelNativeBuyButtons, 900);
   }
 
   function init() {
-    loadRuntimes();
+    loadBaseRuntimes();
+    if (!isProductPage()) return;
+    loadProductRuntimes();
     installPurchaseGuard();
     resolvePurchaseRule();
-    setTimeout(loadRuntimes, 500);
-    setTimeout(resolvePurchaseRule, 700);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once:true });
   else init();
 
-  console.info(`CanecaFácil · somente personalização · ${BUILD}`);
+  console.info(`CanecaFácil · personalização estável · ${BUILD}`);
 })();
