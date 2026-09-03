@@ -1,0 +1,68 @@
+name: CanecaFácil · teste fila mídia GitHub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fila-midia-loja-integrada-v1.mjs'
+      - '.github/workflows/test-fila-midia-github.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canario-fila:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validar sintaxe
+        run: node --check scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Enfileirar canário já pronto · sem Make
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: enqueue
+          PRODUCT_KEY: mug-1788067216093-4j4sce
+          FORCE: 'false'
+          SOURCE: github_actions_canary
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Claim da fila · sem Make
+        id: claim
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: claim
+          PRODUCT_KEY: mug-1788067216093-4j4sce
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Validar claim
+        run: |
+          test "${{ steps.claim.outputs.has_work }}" = "true"
+          test -n "${{ steps.claim.outputs.queue_key }}"
+          test "${{ steps.claim.outputs.product_key }}" = "mug-1788067216093-4j4sce"
+
+      - name: Finalizar canário já pronto · sem Make
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: finalize
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          QUEUE_KEY: ${{ steps.claim.outputs.queue_key }}
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Resumo
+        run: |
+          echo '## Fila mídia GitHub' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Enqueue Firebase: OK' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Claim GitHub: OK' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Finalize: OK' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Make: não utilizado' >> "$GITHUB_STEP_SUMMARY"
