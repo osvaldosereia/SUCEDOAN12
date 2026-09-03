@@ -4,11 +4,18 @@ on:
   push:
     branches: [main]
     paths:
+      - 'scripts/verificar-prontidao-corte-make-v1.mjs'
       - '.github/workflows/verificar-prontidao-corte-make.yml'
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: canecafacil-cutover-readiness
+  cancel-in-progress: true
 
 jobs:
   prontidao:
@@ -30,4 +37,5 @@ jobs:
           LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           READINESS_SKU: CANP-WTM83S
+          PUBLISH_READINESS: 'true'
         run: node scripts/verificar-prontidao-corte-make-v1.mjs
