@@ -1,6 +1,6 @@
 import { FIREBASE_BASE, text, safeKey, nowIso } from '../shared/mug-commerce-v1.js?v=20260828-1';
 
-const BUILD='20260903-admin-canecas-storefront-li-v6-github-queue';
+const BUILD='20260903-admin-canecas-storefront-li-v7-cache-first';
 const MAKE_WEBHOOK=window.__CANECAS_ADMIN_CONFIG__?.makeWebhook||window.__CANECAS_ADMIN_CONFIG__?.mugGeneratorWebhook||'';
 const PRODUCTS_NODE='produtos';
 const MEDIA_QUEUE='canecas/integracoes/loja_integrada/midia_fila';
@@ -80,14 +80,19 @@ function decodeB64Json(value){try{if(!value)return null;const binary=atob(value)
 async function ensureImageIds(key,product,payload){
   let ids=imageIdsFrom(product);
   if(payload.action!=='loja_integrada_update_product')return ids;
+  if(ids.length){
+    console.info(`[CanecaFácil] IDs de imagem LI vindos do Firebase (${ids.length}); Make não consultado.`);
+    return ids;
+  }
   const productId=text(payload.loja_integrada_product_id||product.loja_integrada?.produto_id);
   if(!productId)return ids;
+  console.warn('[CanecaFácil] IDs de imagem LI ausentes no Firebase; usando consulta Make somente como contingência.');
   try{
     const result=await callMake({action:'loja_integrada_get_product',request_id:`LI-IMG-${Date.now().toString(36).toUpperCase()}`,loja_integrada_product_id:productId});
     const remote=decodeB64Json(result.produto_b64)||result.produto||{};
     ids=(Array.isArray(remote.imagens)?remote.imagens:[]).map(i=>text(i?.id)).filter(Boolean).slice(0,5);
-    await fbPatch(`${PRODUCTS_NODE}/${safeKey(key)}/loja_integrada`,{image_ids:ids,image_ids_at:nowIso()}).catch(()=>{});
-  }catch(error){console.warn('[CanecaFácil] não foi possível recuperar IDs antigos:',error);}
+    await fbPatch(`${PRODUCTS_NODE}/${safeKey(key)}/loja_integrada`,{image_ids:ids,image_ids_at:nowIso(),image_ids_via:'make_contingencia'}).catch(()=>{});
+  }catch(error){console.warn('[CanecaFácil] contingência Make não conseguiu recuperar IDs antigos:',error);}
   return ids;
 }
 async function enrich(payload){
