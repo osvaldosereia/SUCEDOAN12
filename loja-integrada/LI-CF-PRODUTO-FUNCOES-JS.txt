@@ -1,7 +1,7 @@
-/* CANECAFÁCIL · PRODUTO FUNÇÕES v1.2 · personalizador robusto */
+/* CANECAFÁCIL · PRODUTO FUNÇÕES v1.3 · personalizador robusto */
 (function(){
 'use strict';
-if(window.CF_PRODUCT_FLOW_V12)return;window.CF_PRODUCT_FLOW_V12=1;
+if(window.CF_PRODUCT_FLOW_V13)return;window.CF_PRODUCT_FLOW_V13=1;
 if(!document.body||!document.body.classList.contains('pagina-produto'))return;
 
 var FIREBASE='https://cedar-chemist-310801-default-rtdb.firebaseio.com';
@@ -16,39 +16,21 @@ function actions(){var m=main();return m&&(q('.acoes-produto',m)||m)}
 function buyWrap(){var m=main();return m&&q('.comprar',m)}
 function buyButton(){var b=buyWrap();return b&&(q('.botao-comprar',b)||q('.botao',b)||q('button',b)||q('a',b))}
 function modelKey(){var f=iframe();if(!f)return'';try{return new URL(f.src,location.href).searchParams.get('model')||''}catch(e){return''}}
-
-/* Move o bloco inteiro para imediatamente antes da quantidade/comprar. */
-function movePersonalizer(){
- var box=personalizer(),buy=buyWrap();
- if(!box||!buy||!buy.parentNode)return false;
- if(box!==buy.previousElementSibling)buy.parentNode.insertBefore(box,buy);
- box.setAttribute('data-cf-product-position','before-buy');
- moved=true;
- return true;
-}
-
-function note(){
- var a=actions();if(!a)return;var n=q('.cf-required-buy-note',a);
- if(!required){if(n&&n.parentNode)n.parentNode.removeChild(n);return}
- if(!n){n=document.createElement('div');n.className='cf-required-buy-note';n.textContent='Personalização obrigatória neste modelo. Gere e aprove sua arte para continuar a compra.';var buy=buyWrap();if(buy&&buy.parentNode)buy.parentNode.insertBefore(n,buy);else a.appendChild(n)}
-}
+function movePersonalizer(){var box=personalizer(),buy=buyWrap();if(!box||!buy||!buy.parentNode)return false;if(box!==buy.previousElementSibling)buy.parentNode.insertBefore(box,buy);box.setAttribute('data-cf-product-position','before-buy');moved=true;return true}
+function note(){var a=actions();if(!a)return;var n=q('.cf-required-buy-note',a);if(!required){if(n&&n.parentNode)n.parentNode.removeChild(n);return}if(!n){n=document.createElement('div');n.className='cf-required-buy-note';n.textContent='Personalização obrigatória neste modelo. Gere e aprove sua arte para continuar a compra.';var buy=buyWrap();if(buy&&buy.parentNode)buy.parentNode.insertBefore(n,buy);else a.appendChild(n)}}
 function lockBuy(){var buy=buyButton();if(!buy||!required)return;buy.setAttribute('aria-disabled','true');buy.setAttribute('data-cf-required-lock','1');if(!buy.dataset.cfOriginalLabel)buy.dataset.cfOriginalLabel=text(buy)||'Comprar';buy.textContent='Personalize para comprar'}
-function applyRequired(p){var cfg=p&&p.personalizacao&&typeof p.personalizacao==='object'?p.personalizacao:{};required=cfg.ativa===true&&cfg.obrigatoria===true;document.body.classList.toggle('cf-required-personalization',required);var box=personalizer();if(box)box.setAttribute('data-cf-personalization-required',required?'1':'0');note();lockBuy();contextMobile()}
+function applyRequired(p){var cfg=p&&p.personalizacao&&typeof p.personalizacao==='object'?p.personalizacao:{};required=cfg.ativa===true&&cfg.obrigatoria===true;document.body.classList.toggle('cf-required-personalization',required);var box=personalizer();if(box)box.setAttribute('data-cf-personalization-required',required?'1':'0');note();lockBuy()}
 async function loadConfig(){var key=modelKey();if(!key||configLoaded)return;try{var r=await fetch(FIREBASE+'/produtos/'+encodeURIComponent(key)+'.json?_='+Date.now(),{cache:'no-store'});if(!r.ok)return;var p=await r.json();configLoaded=true;if(p)applyRequired(p)}catch(e){}}
-
 function scrollPersonalizer(){var b=personalizer();if(!b)return;b.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){var f=iframe();try{f&&f.contentWindow&&f.contentWindow.focus()}catch(e){}},400)}
 function guardClick(e){if(!required)return;var t=e.target&&e.target.closest?e.target.closest('.botao-comprar,.comprar button,.comprar a'):null;if(!t)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();scrollPersonalizer()}
 function guardSubmit(e){if(!required)return;var b=buyWrap();if(b&&b.contains(e.target)){e.preventDefault();e.stopPropagation();scrollPersonalizer()}}
 document.addEventListener('click',guardClick,true);document.addEventListener('submit',guardSubmit,true);
-
-function contextMobile(){var create=q('#cfMobileNav .cf-mobile-nav-create');if(!create)return;var spans=qa('span',create),label=spans.length?spans[spans.length-1]:null;if(label)label.textContent='Personalizar';create.setAttribute('href','#personalizar');if(create.dataset.cfProductBound==='1')return;create.dataset.cfProductBound='1';create.addEventListener('click',function(e){e.preventDefault();scrollPersonalizer()})}
 function markGallery(){qa('.produto-thumbs li').forEach(function(li,i){li.setAttribute('data-cf-photo-index',String(i+1));var img=q('img',li);if(img){img.loading='lazy';img.setAttribute('data-cf-photo-index',String(i+1))}})}
 function cleanLabels(){var b=personalizer();if(!b)return;var p=b.previousElementSibling;if(p&&/^personalize (esta|sua) caneca:?$/i.test(text(p))&&p.parentNode)p.parentNode.removeChild(p)}
 function cleanRelated(){var sections=qa('.aproveite-tambem');if(!sections.length)return;var first=sections[0];sections.slice(1).forEach(function(s){if(s.parentNode)s.parentNode.removeChild(s)});Array.prototype.slice.call(first.childNodes).forEach(function(n){if(n.nodeType===3&&/mais como esse/i.test(String(n.nodeValue||'')))n.nodeValue=''});var heads=[];for(var i=0;i<first.children.length;i++)if(first.children[i].tagName==='H4')heads.push(first.children[i]);if(heads.length){heads[0].textContent='Mais como esse';heads.slice(1).forEach(function(h){if(h.parentNode)h.parentNode.removeChild(h)})}}
-
-function refresh(){movePersonalizer();cleanLabels();markGallery();cleanRelated();contextMobile();if(modelKey()&&!configLoaded)loadConfig();if(required){note();lockBuy()}}
+function refresh(){movePersonalizer();cleanLabels();markGallery();cleanRelated();if(modelKey()&&!configLoaded)loadConfig();if(required){note();lockBuy()}}
 refresh();
 var tries=0,timer=setInterval(function(){refresh();tries++;if(tries>=80||(moved&&configLoaded&&tries>=20))clearInterval(timer)},250);
-var observer=new MutationObserver(function(){refresh()});observer.observe(document.body,{childList:true,subtree:true});
+var observer=new MutationObserver(refresh);observer.observe(document.body,{childList:true,subtree:true});
 setTimeout(function(){observer.disconnect();clearInterval(timer);refresh()},22000);
 })();
