@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-canecafacil-ui-runtime-v2-compact-mobile-menu';
+  const BUILD = '20260903-canecafacil-ui-runtime-v3-native-menu-preserved';
   if (window.__CF_UI_RUNTIME__ === BUILD) return;
   window.__CF_UI_RUNTIME__ = BUILD;
 
@@ -13,13 +13,13 @@
   }
 
   function installStyle() {
-    if (document.getElementById('cfUiRuntimeStyleV2')) return;
     document.getElementById('cfUiRuntimeStyle')?.remove();
+    document.getElementById('cfUiRuntimeStyleV2')?.remove();
+    if (document.getElementById('cfUiRuntimeStyleV3')) return;
 
     const style = document.createElement('style');
-    style.id = 'cfUiRuntimeStyleV2';
+    style.id = 'cfUiRuntimeStyleV3';
     style.textContent = `
-/* compartilhamento / flutuantes */
 .cf-whatsapp-share-product{
   display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
   width:100%!important;min-height:46px!important;box-sizing:border-box!important;margin:12px 0 10px!important;
@@ -35,7 +35,9 @@
 .cf-whatsapp-share-product .cf-wa-share-icon{display:none!important;width:21px!important;height:21px!important;flex:0 0 21px!important}
 .cf-whatsapp-share-product .cf-wa-share-icon svg{display:block!important;width:21px!important;height:21px!important}
 
-@media(min-width:768px){.li-whatsapp a{right:20px!important;bottom:154px!important}}
+@media(min-width:768px){
+  .li-whatsapp a{right:20px!important;bottom:154px!important}
+}
 
 #cfMobileFloatingDock{display:none}
 @media(max-width:767px){
@@ -59,10 +61,11 @@
   .cf-whatsapp-share-product{min-height:47px!important;margin:10px 0 14px!important;padding:10px 14px!important;font-size:13px!important}
 }
 
-/* página de produto */
 body.pagina-produto .principal .preco-produto .preco-promocional,
 body.pagina-produto .acoes-produto .preco-promocional,
-body.pagina-produto .preco-produto .preco-promocional{font-size:32px!important;line-height:1.05!important;font-weight:500!important}
+body.pagina-produto .preco-produto .preco-promocional{
+  font-size:32px!important;line-height:1.05!important;font-weight:500!important;
+}
 body.pagina-produto .cf-native-personalizer .form-head h2{font-weight:500!important}
 @media(max-width:767px){
   body.pagina-produto .principal .preco-produto .preco-promocional,
@@ -70,7 +73,6 @@ body.pagina-produto .cf-native-personalizer .form-head h2{font-weight:500!import
   body.pagina-produto .preco-produto .preco-promocional{font-size:35px!important;line-height:1.04!important}
 }
 
-/* topo mobile */
 @media(max-width:767px){
   #cabecalho .rastreio-content,#cabecalho .contato-content,#cabecalho .minha-conta .dropdown-menu{
     box-sizing:border-box!important;background:#fff!important;color:#262626!important;border:1px solid #e2e2e2!important;
@@ -93,49 +95,6 @@ body.pagina-produto .cf-native-personalizer .form-head h2{font-weight:500!import
     color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:12px!important;font-weight:500!important;
   }
   #cabecalho .contato-content{padding:12px 14px!important;min-width:180px!important;max-width:calc(100vw - 24px)!important}
-
-  /* menu de categorias: uma única faixa horizontal, sem setas e sem espaço vazio */
-  #delimitadorBarra{
-    display:block!important;width:100%!important;height:0!important;min-height:0!important;max-height:0!important;
-    margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;
-  }
-  #delimitadorBarra + .menu.superior,.menu.superior{
-    position:relative!important;display:block!important;float:none!important;clear:both!important;width:100%!important;max-width:100%!important;
-    height:52px!important;min-height:52px!important;max-height:52px!important;margin:0!important;padding:0!important;overflow:hidden!important;
-    background:#fff!important;border:0!important;border-top:1px solid #ededed!important;border-bottom:1px solid #ededed!important;
-    box-shadow:none!important;box-sizing:border-box!important;
-  }
-  .menu.superior:before,.menu.superior:after,
-  .menu.superior>ul.nivel-um:before,.menu.superior>ul.nivel-um:after{content:none!important;display:none!important}
-  .menu.superior>a,.menu.superior>.seta-esquerda,.menu.superior>.seta-direita,
-  .menu.superior>.prev,.menu.superior>.next,.menu.superior>[class*="arrow"],.menu.superior>[class*="seta"]{display:none!important}
-
-  .menu.superior>ul.nivel-um{
-    position:static!important;display:flex!important;flex-flow:row nowrap!important;align-items:center!important;gap:8px!important;
-    width:100%!important;max-width:100%!important;height:50px!important;min-height:50px!important;max-height:50px!important;
-    margin:0!important;padding:6px 10px!important;box-sizing:border-box!important;overflow-x:auto!important;overflow-y:hidden!important;
-    transform:none!important;left:auto!important;right:auto!important;top:auto!important;white-space:nowrap!important;
-    -webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;overscroll-behavior-x:contain!important;
-  }
-  .menu.superior>ul.nivel-um::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
-
-  .menu.superior>ul.nivel-um>li{
-    position:relative!important;display:block!important;flex:0 0 auto!important;float:none!important;width:auto!important;min-width:0!important;
-    height:38px!important;min-height:38px!important;max-height:38px!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important;
-  }
-  .menu.superior>ul.nivel-um>li>ul.nivel-dois{display:none!important;height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
-  .menu.superior>ul.nivel-um>li>a{
-    position:static!important;display:flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:0!important;
-    height:38px!important;min-height:38px!important;max-height:38px!important;margin:0!important;padding:0 14px!important;box-sizing:border-box!important;
-    background:#f7f7f7!important;border:1px solid #e7e7e7!important;border-radius:999px!important;color:#303030!important;text-decoration:none!important;
-    box-shadow:none!important;transform:none!important;
-  }
-  .menu.superior>ul.nivel-um>li>a>strong.titulo{
-    display:block!important;float:none!important;width:auto!important;min-width:0!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;
-    background:transparent!important;border:0!important;color:#303030!important;-webkit-text-fill-color:#303030!important;
-    font-family:"Roboto",Arial,sans-serif!important;font-size:12.5px!important;line-height:1!important;font-weight:400!important;text-transform:none!important;white-space:nowrap!important;
-  }
-  .menu.superior>ul.nivel-um>li>a>i.icon-chevron-down{display:none!important}
 }
 `;
     document.head.appendChild(style);
@@ -184,7 +143,8 @@ body.pagina-produto .cf-native-personalizer .form-head h2{font-weight:500!import
     document.querySelectorAll('.produto-compartilhar a').forEach(link => {
       const href = text(link.getAttribute('href')).toLowerCase();
       if (!href.includes('whatsapp') && !href.includes('wa.me')) return;
-      link.closest('li')?.style.setProperty('display', 'none', 'important');
+      const item = link.closest('li');
+      if (item) item.style.setProperty('display', 'none', 'important');
     });
   }
 
@@ -281,7 +241,9 @@ body.pagina-produto .cf-native-personalizer .form-head h2{font-weight:500!import
     stage.addEventListener('touchstart', event => {
       const touch = event.touches?.[0];
       if (!touch) return;
-      startX = touch.clientX; startY = touch.clientY; startedAt = Date.now();
+      startX = touch.clientX;
+      startY = touch.clientY;
+      startedAt = Date.now();
     }, { passive:true });
     stage.addEventListener('touchend', event => {
       const touch = event.changedTouches?.[0];
