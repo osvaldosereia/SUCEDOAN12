@@ -1,0 +1,29 @@
+name: CanecaFácil · inventariar fila GitHub Ops
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inventariar-fila-github-ops.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventario:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ler fila sem executar tarefas
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+        run: node scripts/inspecionar-fila-github-ops-v1.mjs
