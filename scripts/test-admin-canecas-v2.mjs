@@ -129,11 +129,13 @@ assert.match(liWorker, /return\s*\[\s*p\.mockup_2,\s*p\.mockup_1,\s*p\.vitrine_r
 assert.match(cropWorker, /imagens_canecafacil:\[item\.mockup_2,item\.mockup_1,item\.urls\.left,item\.urls\.right,item\.urls\.center\]/, 'Firebase deve salvar nova ordem para recortes futuros');
 
 assert.ok(index.includes('generator-v1.css?v=20260829-2'), 'index deve carregar CSS atual do gerador');
-assert.ok(index.includes('generator-v1.js?v=20260829-2'), 'index deve carregar JS atual do gerador');
+assert.ok(index.includes('generator-v1.js?v=20260903-1'), 'index deve carregar JS atual do gerador');
 assert.ok(index.includes('mugGeneratorWebhook'), 'webhook do gerador IA deve permanecer configurado');
 assert.match(generator, /action:\s*['"]generate_mug_art['"]/, 'gerador deve usar generate_mug_art');
 assert.match(generator, /action:\s*['"]analyze_mug_product['"]/, 'gerador deve analisar cadastro');
 assert.match(generator, /action:\s*['"]finalize_mug_product['"]/, 'gerador deve finalizar arte');
+assert.match(generator, /function\s+waitGeneratedArt\s*\(/, 'gerador deve recuperar a arte quando o Make responder Accepted');
+assert.match(generator, /payload\.action\s*===\s*['"]generate_mug_art['"]/, 'núcleo do gerador deve tratar Accepted na criação da arte');
 assert.match(generator, /MASTER_WIDTH\s*=\s*2400/, 'arte deve usar largura 2400');
 assert.match(generator, /MASTER_HEIGHT\s*=\s*960/, 'arte deve usar altura 960');
 assert.match(generator, /estoque:\s*100/, 'gerador deve cadastrar estoque padrão 100');
