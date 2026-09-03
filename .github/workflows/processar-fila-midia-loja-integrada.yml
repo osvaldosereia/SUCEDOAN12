@@ -20,7 +20,7 @@ concurrency:
 jobs:
   processar-fila:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - name: Checkout controle · main · somente scripts
         uses: actions/checkout@v4
@@ -30,6 +30,7 @@ jobs:
           sparse-checkout: |
             scripts
           sparse-checkout-cone-mode: true
+          fetch-depth: 1
 
       - name: Node 22
         uses: actions/setup-node@v4
@@ -48,13 +49,16 @@ jobs:
         if: steps.claim.outputs.has_work != 'true'
         run: echo 'Fila de mídia vazia. Make não utilizado.'
 
-      - name: Checkout branch de mídia
+      - name: Checkout raso da branch de mídia · somente scripts
         if: steps.claim.outputs.has_work == 'true'
         uses: actions/checkout@v4
         with:
           ref: canecas-media
           path: media
-          fetch-depth: 0
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+          fetch-depth: 1
 
       - name: Instalar Sharp somente quando há trabalho
         if: steps.claim.outputs.has_work == 'true'
@@ -80,12 +84,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A canecas/vitrine canecas/imagens/loja-integrada 2>/dev/null || true
+          git add --sparse -A canecas/imagens/loja-integrada 2>/dev/null || true
           if git diff --cached --quiet; then
             echo 'Nenhuma alteração de arquivo necessária.'
           else
             git commit -m "CanecaFácil: processar mídia LI pela fila GitHub"
-            git pull --rebase origin canecas-media
             git push origin HEAD:canecas-media
           fi
 
@@ -127,4 +130,5 @@ jobs:
           echo "- Trabalho encontrado: ${{ steps.claim.outputs.has_work || 'false' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Produto: ${{ steps.claim.outputs.product_key || 'nenhum' }}" >> "$GITHUB_STEP_SUMMARY"
           echo '- Origem: Firebase → GitHub Actions' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Checkout de mídia: raso + sparse' >> "$GITHUB_STEP_SUMMARY"
           echo '- Make: não utilizado' >> "$GITHUB_STEP_SUMMARY"
