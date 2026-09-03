@@ -97,6 +97,21 @@ jobs:
       - name: Test GitHub Ops replacements without Make
         run: node scripts/test-canecafacil-github-ops-v1.mjs
 
+      - name: Live readiness Loja Integrada sem Make · somente leitura
+        env:
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          MODE: readiness
+          DRY_RUN: 'true'
+        run: |
+          if [ -z "$LOJA_INTEGRADA_AUTHORIZATION" ]; then
+            echo 'SKIP · secret da Loja Integrada indisponível neste evento.'
+            exit 0
+          fi
+          node scripts/processar-operacoes-github-canecas-v1.mjs
+
       - name: Validate current CanecaFácil architecture
         run: node scripts/test-canecafacil-v16.mjs
 
