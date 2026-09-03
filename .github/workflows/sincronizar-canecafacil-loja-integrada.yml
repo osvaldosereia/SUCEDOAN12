@@ -70,13 +70,13 @@ jobs:
           FORCE: ${{ github.event.inputs.force || 'false' }}
           LIMIT: ${{ github.event.inputs.limit || '10' }}
         run: node scripts/sincronizar-loja-integrada-v4.mjs
-      - name: Reconciliar categorias existentes · GitHub direto · lote seguro
+      - name: Auditar reconciliação de categorias existentes · shadow seguro
         continue-on-error: true
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
           CATEGORY_RECONCILE_LIMIT: '3'
-          DRY_RUN: 'false'
+          DRY_RUN: 'true'
         run: node scripts/reconciliar-categorias-produtos-li-v1.mjs
       - name: Auditar cadastros confirmados
         env:
