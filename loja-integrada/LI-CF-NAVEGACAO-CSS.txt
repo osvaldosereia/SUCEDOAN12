@@ -1,4 +1,4 @@
-/* CANECAFÁCIL · NAVEGAÇÃO v5 · sticky + drawer mobile */
+/* CANECAFÁCIL · NAVEGAÇÃO v5.1 · sticky + drawer mobile */
 .li-whatsapp,body.pagina-produto .produto a[href*="wa.me"],body.pagina-produto .produto a[href*="whatsapp"]{display:none!important}
 #cabecalho{position:sticky!important;top:0!important;z-index:9990!important;background:#fff!important;box-shadow:0 3px 16px rgba(0,0,0,.045)!important}
 #cfChipNav{display:flex;align-items:center;min-height:31px;margin:8px 0 0;padding:0 0 1px;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
@@ -18,8 +18,8 @@ body.cf-drawer-open #cf-mobile-drawer{left:0}
 .cf-drawer-head{display:flex;align-items:center;justify-content:space-between;min-height:72px;box-sizing:border-box;padding:14px 16px;background:#fff;border-bottom:1px solid #ececec}.cf-drawer-head>div{min-width:0}
 .cf-drawer-head strong{display:block;margin:0 0 3px;color:#171717;font-size:18px;line-height:1.1;font-weight:900}.cf-drawer-head span{display:block;color:#8a8a86;font-size:10.5px;line-height:1.25}
 .cf-drawer-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;margin:0;padding:0;background:#f6f6f4;border:1px solid #ecece8;border-radius:50%;color:#333;font-size:22px;line-height:1;cursor:pointer}
-.cf-drawer-body{height:calc(100% - 73px);box-sizing:border-box;padding:15px 14px 28px;overflow-y:auto;background:#fff}
-.cf-drawer-section-title{margin:3px 4px 7px;color:#999;font-size:9px;line-height:1;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.cf-drawer-section-title:not(:first-child){margin-top:22px}
+.cf-drawer-body{position:absolute;top:72px;right:0;bottom:0;left:0;box-sizing:border-box;padding:15px 14px 28px;overflow-y:auto;background:#fff}
+.cf-drawer-section-title{margin:22px 4px 7px;color:#999;font-size:9px;line-height:1;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.cf-drawer-body>.cf-drawer-section-title:first-child{margin-top:3px}
 .cf-drawer-links{display:block;margin:0;padding:0;background:#fff;border:1px solid #ecece8;border-radius:13px;overflow:hidden}
 .cf-drawer-links a,.cf-drawer-links button{position:relative;display:flex;align-items:center;width:100%;min-height:47px;box-sizing:border-box;margin:0;padding:0 38px 0 14px;background:#fff;border:0;border-bottom:1px solid #efefec;color:#292929;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.2;font-weight:700;text-align:left;text-decoration:none;cursor:pointer}
 .cf-drawer-links a:last-child,.cf-drawer-links button:last-child{border-bottom:0}
