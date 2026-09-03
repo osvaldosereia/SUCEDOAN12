@@ -7,6 +7,7 @@ on:
       - 'admin-canecas/**'
       - 'loja-integrada/**'
       - 'scripts/test-canecafacil-v16.mjs'
+      - 'scripts/test-dashboard-operacional-v2.mjs'
       - 'scripts/test-personalizacao-only.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
       - 'scripts/test-personalizer-v4-make-contract-v1.mjs'
@@ -33,6 +34,7 @@ on:
       - 'admin-canecas/**'
       - 'loja-integrada/**'
       - 'scripts/test-canecafacil-v16.mjs'
+      - 'scripts/test-dashboard-operacional-v2.mjs'
       - 'scripts/test-personalizacao-only.mjs'
       - 'scripts/processar-midia-loja-integrada-v16.mjs'
       - 'scripts/migrar-imagens-loja-integrada-v1.mjs'
@@ -79,6 +81,8 @@ jobs:
           node --check admin-canecas/personalization-config-v1.js
           node --check admin-canecas/personalization-resilience-v1.js
           node --check admin-canecas/creation-order-status-v1.js
+          node --check admin-canecas/dashboard-operations-v2.js
+          node --check admin-canecas/production-release-status-v1.js
           node --check admin-canecas/li-sync-coordinator-v4.js
           node --check admin-canecas/li-dual-sync-v3.js
           node --check admin-canecas/li-channel-clarity-v1.js
@@ -109,6 +113,7 @@ jobs:
           node --check scripts/migrar-imagens-loja-integrada-v1.mjs
           node --check scripts/fila-midia-loja-integrada-v1.mjs
           node --check scripts/test-fila-midia-github-v1.mjs
+          node --check scripts/test-dashboard-operacional-v2.mjs
           node --check scripts/atualizar-catalogo-loja-integrada-v1.mjs
           node --check scripts/sincronizar-loja-integrada-v3.mjs
           node --check scripts/sincronizar-loja-integrada-v4.mjs
@@ -119,6 +124,9 @@ jobs:
           node --check scripts/auditar-shadow-profundo-github-vs-make-v1.mjs
           node --check scripts/reconciliar-categorias-produtos-li-v1.mjs
           node --check scripts/test-canecafacil-github-ops-v1.mjs
+
+      - name: Test Dashboard operacional V2
+        run: node scripts/test-dashboard-operacional-v2.mjs
 
       - name: Test media queue state machine without external writes
         run: node scripts/test-fila-midia-github-v1.mjs
