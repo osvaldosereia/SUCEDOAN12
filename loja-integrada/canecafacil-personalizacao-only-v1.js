@@ -1,11 +1,11 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-personalizacao-only-v3.2-native-menu-restored';
+  const BUILD = '20260903-personalizacao-only-v3.3-theme-mobile-share';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
 
-  const UI_RUNTIME = `${BASE}canecafacil-ui-runtime-v1.js?v=20260903-3`;
+  const UI_RUNTIME = `${BASE}canecafacil-ui-runtime-v1.js?v=20260903-4`;
   const COMMERCE_RUNTIME = `${BASE}canecafacil-commerce-runtime-v1.js?v=20260902-9`;
   const DRAWER_SCROLL_FIX = `${BASE}minhas-canecas-scroll-fix-v1.js?v=20260902-1`;
   const FULL_ART_VIEWER = `${BASE}minhas-canecas-art-viewer-v1.js?v=20260903-1`;
