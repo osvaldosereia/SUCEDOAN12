@@ -13,6 +13,7 @@ on:
       - 'scripts/smoke-admin-canecas-firebase.mjs'
       - 'scripts/processar-midia-loja-integrada-v16.mjs'
       - 'scripts/migrar-imagens-loja-integrada-v1.mjs'
+      - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
@@ -24,6 +25,7 @@ on:
       - 'scripts/test-personalizacao-only.mjs'
       - 'scripts/processar-midia-loja-integrada-v16.mjs'
       - 'scripts/migrar-imagens-loja-integrada-v1.mjs'
+      - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
@@ -52,6 +54,7 @@ jobs:
           node --check admin-canecas/li-sync-coordinator-v4.js
           node --check admin-canecas/li-dual-sync-v3.js
           node --check admin-canecas/li-channel-clarity-v1.js
+          node --check admin-canecas/mug-inline-category-v3.js
 
       - name: Check active storefront syntax
         run: |
@@ -76,6 +79,7 @@ jobs:
         run: |
           node --check scripts/processar-midia-loja-integrada-v16.mjs
           node --check scripts/migrar-imagens-loja-integrada-v1.mjs
+          node --check scripts/atualizar-catalogo-loja-integrada-v1.mjs
           node --check scripts/sincronizar-loja-integrada-v3.mjs
           node --check scripts/sincronizar-pedidos-personalizados-li.mjs
 
