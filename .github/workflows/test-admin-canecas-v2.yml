@@ -19,6 +19,7 @@ on:
       - 'scripts/canecafacil-github-ops-core-v1.mjs'
       - 'scripts/processar-operacoes-github-canecas-v1.mjs'
       - 'scripts/auditar-shadow-github-vs-make-v1.mjs'
+      - 'scripts/auditar-shadow-profundo-github-vs-make-v1.mjs'
       - 'scripts/test-canecafacil-github-ops-v1.mjs'
       - '.github/workflows/testar-substitutos-make-canecafacil.yml'
       - '.github/workflows/test-admin-canecas-v2.yml'
@@ -36,6 +37,7 @@ on:
       - 'scripts/canecafacil-github-ops-core-v1.mjs'
       - 'scripts/processar-operacoes-github-canecas-v1.mjs'
       - 'scripts/auditar-shadow-github-vs-make-v1.mjs'
+      - 'scripts/auditar-shadow-profundo-github-vs-make-v1.mjs'
       - 'scripts/test-canecafacil-github-ops-v1.mjs'
       - '.github/workflows/testar-substitutos-make-canecafacil.yml'
       - '.github/workflows/test-admin-canecas-v2.yml'
@@ -95,6 +97,7 @@ jobs:
           node --check scripts/canecafacil-github-ops-core-v1.mjs
           node --check scripts/processar-operacoes-github-canecas-v1.mjs
           node --check scripts/auditar-shadow-github-vs-make-v1.mjs
+          node --check scripts/auditar-shadow-profundo-github-vs-make-v1.mjs
           node --check scripts/test-canecafacil-github-ops-v1.mjs
 
       - name: Test GitHub Ops replacements without Make
@@ -128,6 +131,20 @@ jobs:
             exit 0
           fi
           node scripts/auditar-shadow-github-vs-make-v1.mjs
+
+      - name: Deep shadow · preço estoque SEO · 3 produtos · somente leitura
+        env:
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          SHADOW_DEEP_LIMIT: '3'
+          SHADOW_STRICT: 'false'
+        run: |
+          if [ -z "$LOJA_INTEGRADA_AUTHORIZATION" ]; then
+            echo 'SKIP · secret da Loja Integrada indisponível neste evento.'
+            exit 0
+          fi
+          node scripts/auditar-shadow-profundo-github-vs-make-v1.mjs
 
       - name: Validate current CanecaFácil architecture
         run: node scripts/test-canecafacil-v16.mjs
