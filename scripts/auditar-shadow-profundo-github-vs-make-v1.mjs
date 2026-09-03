@@ -93,12 +93,22 @@ function compareStock(expected, actual = {}) {
   return issues;
 }
 
-function compareSeo(expected, actual = {}) {
+function seoDiff(expected, actual = {}) {
   const issues = [];
-  if (normalizeString(expected.title) !== normalizeString(actual.title)) issues.push('SEO title divergente');
-  if (normalizeString(expected.keyword) !== normalizeString(actual.keyword)) issues.push('SEO keywords divergentes');
-  if (normalizeString(expected.description) !== normalizeString(actual.description)) issues.push('SEO description divergente');
-  return issues;
+  const details = {};
+  if (normalizeString(expected.title) !== normalizeString(actual.title)) {
+    issues.push('SEO title divergente');
+    details.title = { firebase: expected.title, loja_integrada: text(actual.title) };
+  }
+  if (normalizeString(expected.keyword) !== normalizeString(actual.keyword)) {
+    issues.push('SEO keywords divergentes');
+    details.keyword = { firebase: expected.keyword, loja_integrada: text(actual.keyword) };
+  }
+  if (normalizeString(expected.description) !== normalizeString(actual.description)) {
+    issues.push('SEO description divergente');
+    details.description = { firebase: expected.description, loja_integrada: text(actual.description) };
+  }
+  return { issues, details };
 }
 
 const startedAt = Date.now();
@@ -115,6 +125,7 @@ for (const [firebaseKey, local] of candidates) {
   const sku = text(local.codigo || local.sku);
   const issues = [];
   const checks = { produto: false, preco: false, estoque: false, seo: false };
+  let seo_details = {};
   try {
     const search = await li(`/produto?sku=${encodeURIComponent(sku)}&limit=5`);
     const found = exactSku(Array.isArray(search?.objects) ? search.objects : [], sku);
@@ -144,13 +155,15 @@ for (const [firebaseKey, local] of candidates) {
       const remoteSeo = await li(`/seo/${encodeURIComponent(seoId)}`, { allow404: true });
       if (remoteSeo) {
         checks.seo = true;
-        issues.push(...compareSeo(expectedSeo(local), remoteSeo));
+        const diff = seoDiff(expectedSeo(local), remoteSeo);
+        issues.push(...diff.issues);
+        seo_details = diff.details;
       } else issues.push('endpoint SEO não retornou dados');
     } else issues.push('produto sem SEO ID para auditoria');
   } catch (error) {
     issues.push(text(error?.message || error));
   }
-  results.push({ firebaseKey, sku, ms: Date.now() - start, issues, checks, ok: issues.length === 0 });
+  results.push({ firebaseKey, sku, ms: Date.now() - start, issues, checks, seo_details, ok: issues.length === 0 });
 }
 
 const elapsed = Date.now() - startedAt;
@@ -162,6 +175,9 @@ const p95 = sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) -
 console.log(`DEEP SHADOW · amostra=${results.length} · perfeitos=${perfect} · divergencias=${results.length - perfect} · total=${elapsed}ms · media=${avg}ms · p95=${p95}ms · strict=${STRICT}`);
 for (const row of results) {
   console.log(`${row.ok ? 'OK' : 'ATENCAO'} · ${row.sku} · ${row.ms}ms · checks=${JSON.stringify(row.checks)}${row.issues.length ? ` · ${row.issues.join(' | ')}` : ''}`);
+  for (const [field, values] of Object.entries(row.seo_details || {})) {
+    console.log(`SEO DIFF · ${row.sku} · ${field} · Firebase=${JSON.stringify(values.firebase)} · LojaIntegrada=${JSON.stringify(values.loja_integrada)}`);
+  }
 }
 console.log('DEEP SHADOW · somente leitura · nenhum PUT/PATCH/POST/DELETE foi enviado à Loja Integrada.');
 if (STRICT && perfect !== results.length) process.exitCode = 2;
