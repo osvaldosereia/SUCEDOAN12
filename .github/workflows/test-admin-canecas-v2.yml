@@ -7,6 +7,7 @@ on:
       - 'admin-canecas/**'
       - 'loja-integrada/**'
       - 'scripts/test-canecafacil-v15.mjs'
+      - 'scripts/test-personalizacao-only.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
       - 'scripts/test-personalizer-v4-make-contract-v1.mjs'
       - 'scripts/smoke-admin-canecas-firebase.mjs'
@@ -18,6 +19,7 @@ on:
       - 'admin-canecas/**'
       - 'loja-integrada/**'
       - 'scripts/test-canecafacil-v15.mjs'
+      - 'scripts/test-personalizacao-only.mjs'
       - 'scripts/processar-vitrine-canecas-v13.mjs'
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
       - '.github/workflows/test-admin-canecas-v2.yml'
@@ -49,6 +51,7 @@ jobs:
           node --check loja-integrada/canecafacil-storefront-v1.js
           node --check loja-integrada/canecafacil-product-v1.js
           node --check loja-integrada/canecafacil-commerce-runtime-v1.js
+          node --check loja-integrada/canecafacil-personalizacao-only-v1.js
           node --check loja-integrada/loader-personalizador-inline-producao-v10.js
           node --check loja-integrada/personalized-order-bridge-v2.js
 
@@ -68,6 +71,9 @@ jobs:
 
       - name: Validate current CanecaFácil architecture
         run: node scripts/test-canecafacil-v15.mjs
+
+      - name: Validate personalization-only default theme mode
+        run: node scripts/test-personalizacao-only.mjs
 
       - name: Test personalization contract behavior
         run: node scripts/test-personalization-contract-v1.mjs
