@@ -24,7 +24,7 @@ assert.match(catalogRefresh,/stopImmediatePropagation\(\)/,'Recarga GitHub deve 
 assert.doesNotMatch(catalogRefresh,/hook\.[a-z0-9-]+\.make\.com/i,'Recarga normal de categorias não deve chamar Make.');
 
 assert.match(links,/new URL\(`produto\/\$\{encodeURIComponent\(alias\)\}\.html`,STOREFRONT\)/,'Ver/Testar deve usar a página pública real do produto.');
-assert.match(links,/cf_personalizador','Teste público deve ativar o personalizador na página real.');
+assert.match(links,/cf_personalizador/,'Teste público deve ativar o personalizador na página real.');
 
 assert.match(dual,/GitHub é o caminho padrão/,'Publicação normal deve declarar GitHub como padrão.');
 assert.match(dual,/Publicar selecionadas · Make/,'Make deve permanecer explicitamente como reserva.');
