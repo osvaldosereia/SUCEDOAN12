@@ -34,7 +34,7 @@ async function li(path, { allow404 = false } = {}) {
     headers: {
       Authorization: LI_AUTH,
       Accept: 'application/json',
-      'User-Agent': 'CanecaFacil-Shadow-Audit/1.1',
+      'User-Agent': 'CanecaFacil-Shadow-Audit/1.2',
     },
   }, { allow404 });
 }
@@ -66,6 +66,10 @@ function remoteCategoryUris(remote = {}) {
   return raw.map(item => text(typeof item === 'string' ? item : item?.resource_uri || item?.uri)).filter(Boolean);
 }
 
+function categoryId(uri) {
+  return text(uri).match(/\/categoria\/(\d+)/i)?.[1] || '';
+}
+
 function compareProduct(local, remote, foundBySku) {
   const issues = [];
   const sku = text(local.codigo || local.sku);
@@ -76,8 +80,10 @@ function compareProduct(local, remote, foundBySku) {
   if (text(local.nome) && text(remote?.nome) !== text(local.nome)) issues.push('nome divergente');
 
   const categoryUri = localCategoryUri(local).replace(/\/$/, '');
+  const localCategoryId = categoryId(categoryUri);
   const remoteCats = remoteCategoryUris(remote).map(uri => uri.replace(/\/$/, ''));
-  if (categoryUri && !remoteCats.includes(categoryUri)) {
+  const remoteCategoryIds = remoteCats.map(categoryId).filter(Boolean);
+  if (localCategoryId && !remoteCategoryIds.includes(localCategoryId)) {
     issues.push(remoteCats.length ? 'categoria divergente' : 'produto sem categoria na Loja Integrada');
   }
 
@@ -91,7 +97,9 @@ function compareProduct(local, remote, foundBySku) {
     product_id_li: remoteId,
     nome: text(local.nome),
     categoria_uri: categoryUri,
+    categoria_id: localCategoryId,
     categorias_li: remoteCats,
+    categorias_ids_li: remoteCategoryIds,
     imagens_esperadas: expected.length,
     imagens_li: actual.length,
     ok: issues.length === 0,
@@ -131,7 +139,9 @@ for (const [firebaseKey, local] of candidates) {
       product_id_li: '',
       nome: text(local.nome),
       categoria_uri: localCategoryUri(local),
+      categoria_id: categoryId(localCategoryUri(local)),
       categorias_li: [],
+      categorias_ids_li: [],
       imagens_esperadas: expectedImages(local).length,
       imagens_li: 0,
       ok: false,
