@@ -12,6 +12,7 @@ on:
       - 'scripts/test-pedidos-operacional-v2.mjs'
       - 'scripts/test-artes-geradas-v2.mjs'
       - 'scripts/test-canecas-operacional-v2.mjs'
+      - 'scripts/test-gerador-admin-v2.mjs'
       - 'scripts/test-personalizacao-only.mjs'
       - 'scripts/test-personalization-contract-v1.mjs'
       - 'scripts/test-personalizer-v4-make-contract-v1.mjs'
@@ -48,6 +49,7 @@ on:
       - 'scripts/test-pedidos-operacional-v2.mjs'
       - 'scripts/test-artes-geradas-v2.mjs'
       - 'scripts/test-canecas-operacional-v2.mjs'
+      - 'scripts/test-gerador-admin-v2.mjs'
       - 'scripts/test-personalizacao-only.mjs'
       - 'scripts/processar-midia-loja-integrada-v16.mjs'
       - 'scripts/migrar-imagens-loja-integrada-v1.mjs'
@@ -97,6 +99,7 @@ jobs:
           node --check admin-canecas/generator-v1.js
           node --check admin-canecas/generator-recovery-v1.js
           node --check admin-canecas/generator-finalize-recovery-v2.js
+          node --check admin-canecas/generator-workflow-v2.js
           node --check admin-canecas/storefront-media-v4.js
           node --check admin-canecas/personalization-config-v1.js
           node --check admin-canecas/personalization-resilience-v1.js
@@ -142,6 +145,7 @@ jobs:
           node --check scripts/test-pedidos-operacional-v2.mjs
           node --check scripts/test-artes-geradas-v2.mjs
           node --check scripts/test-canecas-operacional-v2.mjs
+          node --check scripts/test-gerador-admin-v2.mjs
           node --check scripts/atualizar-catalogo-loja-integrada-v1.mjs
           node --check scripts/sincronizar-loja-integrada-v3.mjs
           node --check scripts/sincronizar-loja-integrada-v4.mjs
@@ -167,6 +171,9 @@ jobs:
 
       - name: Test Canecas operacional V2
         run: node scripts/test-canecas-operacional-v2.mjs
+
+      - name: Test Gerador Admin V2
+        run: node scripts/test-gerador-admin-v2.mjs
 
       - name: Test media queue state machine without external writes
         run: node scripts/test-fila-midia-github-v1.mjs
