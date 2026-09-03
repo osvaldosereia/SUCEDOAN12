@@ -5,6 +5,8 @@ const PRODUCT_KEY = String(process.env.PRODUCT_KEY || '').trim();
 const QUEUE_KEY = String(process.env.QUEUE_KEY || '').trim();
 const FORCE = /^(1|true|yes)$/i.test(String(process.env.FORCE || 'false'));
 const SOURCE = String(process.env.SOURCE || 'github_actions').trim() || 'github_actions';
+const FAIL_MESSAGE = String(process.env.FAIL_MESSAGE || '').trim();
+const STALE_MS = Math.max(5, Number(process.env.STALE_MINUTES || 20) || 20) * 60_000;
 
 const text = value => String(value ?? '').trim();
 const now = () => new Date().toISOString();
@@ -62,11 +64,14 @@ async function enqueue() {
     product_key: PRODUCT_KEY,
     status: 'pendente',
     force: FORCE,
-    solicitado_em: old.solicitado_em || at,
+    solicitado_em: at,
     atualizado_em: at,
     solicitado_por: SOURCE,
-    tentativas: Number(old.tentativas || 0),
+    tentativas: 0,
     erro: '',
+    concluido_em: '',
+    worker: '',
+    via: 'github_actions',
   };
   await fbPut(`${QUEUE}/${safe(key)}`, body);
   await fbPatch(`produtos/${safe(PRODUCT_KEY)}`, {
@@ -80,8 +85,15 @@ async function enqueue() {
   await output('product_key', PRODUCT_KEY);
 }
 
+function processingStale(item = {}) {
+  if (text(item.status) !== 'processando') return false;
+  const timestamp = Date.parse(text(item.iniciado_em || item.atualizado_em));
+  return !Number.isFinite(timestamp) || Date.now() - timestamp > STALE_MS;
+}
 function eligible(item = {}) {
-  return ['pendente', 'erro', ''].includes(text(item.status));
+  const status = text(item.status);
+  if (['pendente', 'erro', ''].includes(status)) return true;
+  return processingStale(item);
 }
 async function claim() {
   const queue = await fbGet(QUEUE).catch(() => ({})) || {};
@@ -95,6 +107,8 @@ async function claim() {
     return;
   }
   const at = now();
+  const productKey = text(item.product_key);
+  const stale = processingStale(item);
   await fbPatch(`${QUEUE}/${safe(key)}`, {
     status: 'processando',
     atualizado_em: at,
@@ -102,22 +116,37 @@ async function claim() {
     worker: text(process.env.GITHUB_RUN_ID || 'local'),
     tentativas: Number(item.tentativas || 0) + 1,
     erro: '',
+    recuperado_de_processamento_travado: stale || false,
+    via: 'github_actions',
   });
+  if (productKey) {
+    await fbPatch(`produtos/${safe(productKey)}`, {
+      vitrine_loja_integrada_status: 'processando_github',
+      vitrine_loja_integrada_erro: '',
+      vitrine_loja_integrada_atualizado_em: at,
+      vitrine_loja_integrada_via: 'github_actions',
+    }).catch(() => {});
+  }
   await output('has_work', 'true');
   await output('queue_key', key);
-  await output('product_key', text(item.product_key));
+  await output('product_key', productKey);
   await output('force', item.force === true ? 'true' : 'false');
-  console.log(`MEDIA QUEUE · CLAIM · ${text(item.product_key)} · queue=${key} · force=${item.force === true}`);
+  console.log(`MEDIA QUEUE · CLAIM · ${productKey} · queue=${key} · force=${item.force === true}${stale ? ' · RECUPERADO STALE' : ''}`);
 }
 
-async function finalize() {
+async function context() {
   let key = QUEUE_KEY;
   let productKey = PRODUCT_KEY;
   if (!key && productKey) key = b64url(productKey);
-  if (!key) throw new Error('QUEUE_KEY ou PRODUCT_KEY obrigatório em MODE=finalize.');
+  if (!key) throw new Error('QUEUE_KEY ou PRODUCT_KEY obrigatório.');
   const item = await fbGet(`${QUEUE}/${safe(key)}`).catch(() => null);
   if (!productKey) productKey = text(item?.product_key);
   if (!productKey) throw new Error('product_key ausente na solicitação de mídia.');
+  return { key, productKey, item };
+}
+
+async function finalize() {
+  const { key, productKey } = await context();
   const product = await fbGet(`produtos/${safe(productKey)}`).catch(() => null);
   if (!product) throw new Error(`Produto ${productKey} não encontrado no Firebase.`);
   const at = now();
@@ -153,7 +182,30 @@ async function finalize() {
   if (productStatus === 'erro') process.exitCode = 2;
 }
 
+async function fail() {
+  const { key, productKey, item } = await context();
+  const at = now();
+  const error = FAIL_MESSAGE || `GitHub Actions interrompeu o processamento da mídia na tentativa ${Number(item?.tentativas || 1)}.`;
+  await Promise.all([
+    fbPatch(`${QUEUE}/${safe(key)}`, {
+      status: 'erro',
+      atualizado_em: at,
+      erro: error.slice(0, 800),
+      falhou_em: at,
+      via: 'github_actions',
+    }),
+    fbPatch(`produtos/${safe(productKey)}`, {
+      vitrine_loja_integrada_status: 'erro',
+      vitrine_loja_integrada_erro: error.slice(0, 800),
+      vitrine_loja_integrada_atualizado_em: at,
+      vitrine_loja_integrada_via: 'github_actions',
+    }).catch(() => {}),
+  ]);
+  console.error(`MEDIA QUEUE · FAIL · ${productKey} · ${error}`);
+}
+
 if (MODE === 'enqueue') await enqueue();
 else if (MODE === 'finalize') await finalize();
+else if (MODE === 'fail') await fail();
 else if (MODE === 'claim') await claim();
 else throw new Error(`MODE inválido: ${MODE}`);
