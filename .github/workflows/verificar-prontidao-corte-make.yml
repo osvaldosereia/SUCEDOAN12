@@ -1,0 +1,33 @@
+name: CanecaFácil · prontidão corte Make
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verificar-prontidao-corte-make.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prontidao:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar substitutos GitHub sem alterar Make
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          READINESS_SKU: CANP-WTM83S
+        run: node scripts/verificar-prontidao-corte-make-v1.mjs
