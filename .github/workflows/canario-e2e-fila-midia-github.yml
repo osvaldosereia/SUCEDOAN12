@@ -1,10 +1,6 @@
 name: CanecaFácil · canário E2E mídia GitHub
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/canario-e2e-fila-midia-github.yml'
   workflow_dispatch:
 
 permissions:
@@ -17,7 +13,7 @@ concurrency:
 jobs:
   canario:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - name: Checkout controle
         uses: actions/checkout@v4
@@ -27,6 +23,7 @@ jobs:
           sparse-checkout: |
             scripts
           sparse-checkout-cone-mode: true
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
@@ -56,12 +53,15 @@ jobs:
           test "${{ steps.claim.outputs.has_work }}" = "true"
           test "${{ steps.claim.outputs.force }}" = "true"
 
-      - name: Checkout branch canecas-media
+      - name: Checkout raso canecas-media · somente scripts
         uses: actions/checkout@v4
         with:
           ref: canecas-media
           path: media
-          fetch-depth: 0
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
+          fetch-depth: 1
 
       - name: Instalar Sharp
         working-directory: media
@@ -84,12 +84,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A canecas/vitrine canecas/imagens/loja-integrada 2>/dev/null || true
+          git add --sparse -A canecas/imagens/loja-integrada 2>/dev/null || true
           if git diff --cached --quiet; then
             echo 'Arquivo regenerado é idêntico; nenhum commit necessário.'
           else
             git commit -m "CanecaFácil: canário mídia E2E via GitHub"
-            git pull --rebase origin canecas-media
             git push origin HEAD:canecas-media
           fi
 
@@ -128,5 +127,6 @@ jobs:
           echo '## Canário E2E mídia' >> "$GITHUB_STEP_SUMMARY"
           echo '- Produto: mug-1788067216093-4j4sce / CANP-4J4SCE' >> "$GITHUB_STEP_SUMMARY"
           echo '- Caminho: Firebase → GitHub Actions → Sharp → Loja Integrada' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Checkout: raso + sparse' >> "$GITHUB_STEP_SUMMARY"
           echo '- Galeria esperada: 3 imagens' >> "$GITHUB_STEP_SUMMARY"
           echo '- Make: não utilizado' >> "$GITHUB_STEP_SUMMARY"
