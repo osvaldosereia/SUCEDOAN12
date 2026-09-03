@@ -1,11 +1,12 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260902-personalizacao-only-v1.3-image-stable';
+  const BUILD = '20260902-personalizacao-only-v1.4-drawer-scroll';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
   const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260902-14`;
   const COMMERCE_RUNTIME = `${BASE}canecafacil-commerce-runtime-v1.js?v=20260902-9`;
+  const DRAWER_SCROLL_FIX = `${BASE}minhas-canecas-scroll-fix-v1.js?v=20260902-1`;
 
   if (window.__CF_PERSONALIZACAO_ONLY__ === BUILD) return;
   window.__CF_PERSONALIZACAO_ONLY__ = BUILD;
@@ -32,6 +33,7 @@
     if (window.__CF_COMMERCE_RUNTIME__ !== '20260902-canecafacil-commerce-runtime-v3-retention') {
       loadScript(COMMERCE_RUNTIME, /canecafacil-commerce-runtime-v1\.js\?v=20260902-9/i, 'Minhas Canecas');
     }
+    loadScript(DRAWER_SCROLL_FIX, /minhas-canecas-scroll-fix-v1\.js/i, 'rolagem de Minhas Canecas');
   }
 
   function isProductPage() {
