@@ -25,7 +25,7 @@ async function request(path, { method = 'GET', body, allow404 = false } = {}) {
       Authorization: AUTH,
       Accept: 'application/json',
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-      'User-Agent': 'CanecaFacil-GitHub-Product-Canary/1.1',
+      'User-Agent': 'CanecaFacil-GitHub-Product-Canary/1.2',
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
@@ -88,6 +88,15 @@ function diff(before = {}, after = {}) {
   return problems;
 }
 
+function safeShape(label, value) {
+  const type = Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value;
+  let sample = '';
+  if (typeof value === 'string') sample = value.slice(0, 300);
+  else if (Array.isArray(value)) sample = JSON.stringify(value.slice(0, 3)).slice(0, 600);
+  else if (value && typeof value === 'object') sample = JSON.stringify(value).slice(0, 600);
+  console.log(`PRODUCT CANARY · shape ${label} · tipo=${type} · valor=${sample || '(vazio)'}`);
+}
+
 const started = Date.now();
 console.log(`PRODUCT CANARY · início · SKU=${SKU} · PUT do próprio estado remoto`);
 const search = await request(`/produto?sku=${encodeURIComponent(SKU)}&limit=5`);
@@ -101,7 +110,11 @@ if (!text(before.sku) || !text(before.nome)) throw new Error('Snapshot remoto se
 if (!Array.isArray(before.categorias) || !before.categorias.length) {
   const categoryKeys = [...new Set([...Object.keys(found || {}), ...Object.keys(beforeRemote || {})])].filter(k => /categ|marca/i.test(k));
   console.log(`PRODUCT CANARY · diagnóstico categoria · campos relacionados=${categoryKeys.join(',') || '(nenhum)'}`);
-  throw new Error('Snapshot remoto e resultado por SKU sem categoria; canário abortado antes do PUT.');
+  safeShape('busca.categorias', found?.categorias);
+  safeShape('detalhe.categorias', beforeRemote?.categorias);
+  safeShape('busca.marca', found?.marca);
+  safeShape('detalhe.marca', beforeRemote?.marca);
+  throw new Error('Snapshot remoto e resultado por SKU sem categoria utilizável; canário abortado antes do PUT.');
 }
 console.log(`PRODUCT CANARY · snapshot · produto=${productId} · categoria=${before.categorias.join(',')} · alias=${text(before.apelido) || '(vazio)'}`);
 
