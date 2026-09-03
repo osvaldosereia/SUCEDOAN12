@@ -1,5 +1,7 @@
 // V4: mantém toda a compatibilidade do V3, mas dá precedência à categoria real escolhida no produto.
 // O catálogo vem da Loja Integrada via GitHub; Make não participa deste fluxo.
+// Desde 2026-09-03, o personalizador é nativo na página do produto: qualquer bloco legado
+// cf-personalizer-box/iframe é removido do payload antes de gravar na Loja Integrada.
 const FIREBASE_HOST = 'cedar-chemist-310801-default-rtdb.firebaseio.com';
 const LI_HOST = 'api.awsli.com.br';
 const CATALOG_PATH = '/canecas/integracoes/loja_integrada/catalog_refs.json';
@@ -15,6 +17,16 @@ const sameCategory = (a, b) => {
   const x = categoryId(a), y = categoryId(b);
   return x && y ? x === y : Boolean(normUri(typeof a === 'object' ? a?.resource_uri : a) && normUri(typeof a === 'object' ? a?.resource_uri : a) === normUri(typeof b === 'object' ? b?.resource_uri : b));
 };
+
+function stripLegacyPersonalizer(value = '') {
+  return String(value || '')
+    .replace(/<div[^>]*class=["'][^"']*cf-personalizer-box[^"']*["'][\s\S]*?<\/div>/gi, '')
+    .replace(/<a[^>]*class=["'][^"']*cf-personalize-link[^"']*["'][^>]*>[\s\S]*?<\/a>/gi, '')
+    .replace(/<iframe[^>]*\/loja-integrada\/personalizar\/[^>]*>[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<a[^>]*>\s*PERSONALIZAR ESTA CANECA\s*<\/a>/gi, '')
+    .replace(/(?:\r?\n\s*){3,}/g, '\n\n')
+    .trim();
+}
 
 async function loadCatalog() {
   try {
@@ -123,17 +135,28 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.hostname === LI_HOST && method.match(/^(POST|PUT)$/) && (/^\/v1\/produto\/?$/.test(url.pathname) || /^\/v1\/produto\/\d+\/?$/.test(url.pathname)) && typeof init.body === 'string') {
     try {
       const body = JSON.parse(init.body);
+      if (typeof body.descricao_completa === 'string') {
+        const originalDescription = body.descricao_completa;
+        body.descricao_completa = stripLegacyPersonalizer(originalDescription);
+        if (body.descricao_completa !== originalDescription) {
+          console.log(`LI V4 · personalizador legado removido do payload · SKU ${text(body.sku)}`);
+        }
+      }
       const desired = bySku.get(norm(body?.sku));
       if (desired?.resource_uri) {
         body.categorias = [desired.resource_uri];
         console.log(`LI V4 · categoria exata · SKU ${text(body.sku)} · ${desired.nome} -> ${desired.resource_uri} · ${desired.origem}`);
-        return originalFetch(input, { ...init, body: JSON.stringify(body) });
       }
+      return originalFetch(input, { ...init, body: JSON.stringify(body) });
     } catch {}
   }
 
   return originalFetch(input, init);
 };
 
-console.log(`CanecaFácil LI Sync V4 · categoria específica > fallback lógico · catálogo=${categories().length} · Make não utilizado`);
+for (const [type, legacyName] of Object.entries(LEGACY_CATEGORY_NAMES ?? {})) {
+  const mapping = mappedTypeByLegacyName?.(legacyName);
+  console.log(`LI V3 · categoria ${type}: ${mapping ? `${mapping.nome} -> ${mapping.resource_uri}` : 'sem mapeamento automático'}`);
+}
+console.log(`CanecaFácil LI Sync V4 · categoria específica > fallback lógico · catálogo=${categories().length} · personalizador legado bloqueado · Make não utilizado`);
 await import('./sincronizar-loja-integrada-v3.mjs');
