@@ -43,6 +43,7 @@ jobs:
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           MODE: claim
+          STALE_MINUTES: '20'
         run: node scripts/fila-midia-loja-integrada-v1.mjs
 
       - name: Sem trabalho pendente
@@ -89,7 +90,12 @@ jobs:
             echo 'Nenhuma alteração de arquivo necessária.'
           else
             git commit -m "CanecaFácil: processar mídia LI pela fila GitHub"
-            git push origin HEAD:canecas-media
+            if ! git push origin HEAD:canecas-media; then
+              echo 'Branch avançou durante o processamento; sincronizando somente canecas-media e tentando novamente.'
+              git fetch --depth=1 origin canecas-media
+              git rebase origin/canecas-media
+              git push origin HEAD:canecas-media
+            fi
           fi
 
       - name: Aplicar URLs e estado no Firebase
@@ -113,14 +119,25 @@ jobs:
           LIMIT: '1'
         run: node scripts/migrar-imagens-loja-integrada-v1.mjs
 
-      - name: Finalizar estado da fila
-        if: always() && steps.claim.outputs.has_work == 'true'
+      - name: Finalizar fila com sucesso
+        if: success() && steps.claim.outputs.has_work == 'true'
         working-directory: control
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           MODE: finalize
           PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
           QUEUE_KEY: ${{ steps.claim.outputs.queue_key }}
+        run: node scripts/fila-midia-loja-integrada-v1.mjs
+
+      - name: Registrar falha para retry automático
+        if: failure() && steps.claim.outputs.has_work == 'true'
+        working-directory: control
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          MODE: fail
+          PRODUCT_KEY: ${{ steps.claim.outputs.product_key }}
+          QUEUE_KEY: ${{ steps.claim.outputs.queue_key }}
+          FAIL_MESSAGE: 'Falha no worker GitHub de mídia; item mantido para nova tentativa automática.'
         run: node scripts/fila-midia-loja-integrada-v1.mjs
 
       - name: Resumo
@@ -131,4 +148,6 @@ jobs:
           echo "- Produto: ${{ steps.claim.outputs.product_key || 'nenhum' }}" >> "$GITHUB_STEP_SUMMARY"
           echo '- Origem: Firebase → GitHub Actions' >> "$GITHUB_STEP_SUMMARY"
           echo '- Checkout de mídia: raso + sparse' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Processamentos travados: recuperados após 20 min' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Falhas: registradas para retry, nunca finalizadas como sucesso' >> "$GITHUB_STEP_SUMMARY"
           echo '- Make: não utilizado' >> "$GITHUB_STEP_SUMMARY"
