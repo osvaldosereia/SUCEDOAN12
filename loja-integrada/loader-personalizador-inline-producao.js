@@ -1,11 +1,12 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-cf-inline-loader-prod-v12-native';
+  const BUILD = '20260903-cf-inline-loader-prod-v13-order-link';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const CATALOG = 'https://raw.githubusercontent.com/osvaldosereia/SUCEDOAN12/main/site/canecas-galeria.json';
   const NATIVE_PERSONALIZER = 'https://donaantonia.com.br/loja-integrada/native-personalizer-inline-v1.js?v=20260903-1';
   const CART_BRIDGE_URL = 'https://donaantonia.com.br/loja-integrada/personalized-order-bridge-v2.js?v=20260902-4';
+  const ORDER_LINK_URL = 'https://donaantonia.com.br/loja-integrada/personalized-order-link-hardening-v1.js?v=20260903-1';
   const COMMERCE_URL = 'https://donaantonia.com.br/loja-integrada/canecafacil-commerce-runtime-v1.js?v=20260902-9';
   const PARAM = 'cf_personalizador';
   const ACTIVE_VALUE = 'teste';
@@ -29,6 +30,16 @@
     script.async = false;
     script.dataset.cfCartBridge = BUILD;
     script.onerror = () => console.error('[CanecaFácil] Falha ao carregar visual/vínculo do carrinho personalizado.');
+    document.head.appendChild(script);
+  }
+
+  function loadOrderLinkHardening() {
+    if ([...document.scripts].some(s => /personalized-order-link-hardening-v1\.js/i.test(s.src || ''))) return;
+    const script = document.createElement('script');
+    script.src = ORDER_LINK_URL;
+    script.async = false;
+    script.dataset.cfOrderLinkHardening = BUILD;
+    script.onerror = () => console.error('[CanecaFácil] Falha ao carregar vínculo forte CF-ID/pedido.');
     document.head.appendChild(script);
   }
 
@@ -249,6 +260,7 @@
 
   function init() {
     loadCartBridge();
+    loadOrderLinkHardening();
     loadCommerceRuntime();
     ensurePersonalizer();
     if (new URLSearchParams(location.search).get(PARAM) === ACTIVE_VALUE) loadDiagnostic();
