@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const BUILD = '20260903-personalizacao-only-v2.2-mobile-theme-fixes';
+  const BUILD = '20260903-personalizacao-only-v2.3-product-page-adjustments';
   const FIREBASE = 'https://cedar-chemist-310801-default-rtdb.firebaseio.com';
   const BASE = 'https://donaantonia.com.br/loja-integrada/';
   const PERSONALIZATION_RUNTIME = `${BASE}loader-personalizador-inline-producao.js?v=20260903-1`;
@@ -10,6 +10,7 @@
   const PRODUCT_WHATSAPP = `${BASE}product-whatsapp-share-v1.js?v=20260903-2`;
   const FULL_ART_VIEWER = `${BASE}minhas-canecas-art-viewer-v1.js?v=20260903-1`;
   const MOBILE_THEME_FIXES = `${BASE}mobile-theme-fixes-v1.js?v=20260903-1`;
+  const PRODUCT_PAGE_ADJUSTMENTS = `${BASE}product-page-adjustments-v1.js?v=20260903-1`;
 
   if (window.__CF_PERSONALIZACAO_ONLY__ === BUILD) return;
   window.__CF_PERSONALIZACAO_ONLY__ = BUILD;
@@ -40,6 +41,7 @@
     loadScript(PRODUCT_WHATSAPP, /product-whatsapp-share-v1\.js/i, 'compartilhamento por WhatsApp');
     loadScript(FULL_ART_VIEWER, /minhas-canecas-art-viewer-v1\.js/i, 'visualização da arte completa');
     loadScript(MOBILE_THEME_FIXES, /mobile-theme-fixes-v1\.js/i, 'ajustes visuais mobile');
+    loadScript(PRODUCT_PAGE_ADJUSTMENTS, /product-page-adjustments-v1\.js/i, 'ajustes da página de produto');
   }
 
   function isProductPage() {
