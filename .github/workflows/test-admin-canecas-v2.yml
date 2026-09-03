@@ -16,6 +16,10 @@ on:
       - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
+      - 'scripts/canecafacil-github-ops-core-v1.mjs'
+      - 'scripts/processar-operacoes-github-canecas-v1.mjs'
+      - 'scripts/test-canecafacil-github-ops-v1.mjs'
+      - '.github/workflows/testar-substitutos-make-canecafacil.yml'
       - '.github/workflows/test-admin-canecas-v2.yml'
   pull_request:
     paths:
@@ -28,6 +32,10 @@ on:
       - 'scripts/atualizar-catalogo-loja-integrada-v1.mjs'
       - 'scripts/sincronizar-loja-integrada-v3.mjs'
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
+      - 'scripts/canecafacil-github-ops-core-v1.mjs'
+      - 'scripts/processar-operacoes-github-canecas-v1.mjs'
+      - 'scripts/test-canecafacil-github-ops-v1.mjs'
+      - '.github/workflows/testar-substitutos-make-canecafacil.yml'
       - '.github/workflows/test-admin-canecas-v2.yml'
 
 permissions:
@@ -82,6 +90,12 @@ jobs:
           node --check scripts/atualizar-catalogo-loja-integrada-v1.mjs
           node --check scripts/sincronizar-loja-integrada-v3.mjs
           node --check scripts/sincronizar-pedidos-personalizados-li.mjs
+          node --check scripts/canecafacil-github-ops-core-v1.mjs
+          node --check scripts/processar-operacoes-github-canecas-v1.mjs
+          node --check scripts/test-canecafacil-github-ops-v1.mjs
+
+      - name: Test GitHub Ops replacements without Make
+        run: node scripts/test-canecafacil-github-ops-v1.mjs
 
       - name: Validate current CanecaFácil architecture
         run: node scripts/test-canecafacil-v16.mjs
