@@ -34,7 +34,7 @@ async function li(path, { allow404 = false } = {}) {
     headers: {
       Authorization: LI_AUTH,
       Accept: 'application/json',
-      'User-Agent': 'CanecaFacil-Shadow-Audit/1.0',
+      'User-Agent': 'CanecaFacil-Shadow-Audit/1.1',
     },
   }, { allow404 });
 }
@@ -77,7 +77,9 @@ function compareProduct(local, remote, foundBySku) {
 
   const categoryUri = localCategoryUri(local).replace(/\/$/, '');
   const remoteCats = remoteCategoryUris(remote).map(uri => uri.replace(/\/$/, ''));
-  if (categoryUri && remoteCats.length && !remoteCats.includes(categoryUri)) issues.push('categoria divergente');
+  if (categoryUri && !remoteCats.includes(categoryUri)) {
+    issues.push(remoteCats.length ? 'categoria divergente' : 'produto sem categoria na Loja Integrada');
+  }
 
   const expected = expectedImages(local);
   const actual = remoteImages(remote);
@@ -89,6 +91,7 @@ function compareProduct(local, remote, foundBySku) {
     product_id_li: remoteId,
     nome: text(local.nome),
     categoria_uri: categoryUri,
+    categorias_li: remoteCats,
     imagens_esperadas: expected.length,
     imagens_li: actual.length,
     ok: issues.length === 0,
@@ -128,6 +131,7 @@ for (const [firebaseKey, local] of candidates) {
       product_id_li: '',
       nome: text(local.nome),
       categoria_uri: localCategoryUri(local),
+      categorias_li: [],
       imagens_esperadas: expectedImages(local).length,
       imagens_li: 0,
       ok: false,
