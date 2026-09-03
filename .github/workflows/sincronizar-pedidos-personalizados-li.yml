@@ -1,4 +1,4 @@
-name: CanecaFácil · pedidos personalizados Loja Integrada
+name: CanecaFácil · pedidos de canecas Loja Integrada
 
 on:
   workflow_dispatch:
@@ -13,6 +13,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/sincronizar-pedidos-personalizados-li.mjs'
+      - 'scripts/sincronizar-pedidos-canecas-li-v2.mjs'
       - 'scripts/garantir-liberacao-producao.mjs'
       - '.github/workflows/sincronizar-pedidos-personalizados-li.yml'
 
@@ -20,7 +21,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: canecafacil-pedidos-personalizados-li
+  group: canecafacil-pedidos-canecas-li
   cancel-in-progress: false
 
 jobs:
@@ -45,13 +46,21 @@ jobs:
             exit 1
           fi
           printf 'LOJA_INTEGRADA_AUTHORIZATION=%s\n' "$LI_APP_TOKEN" >> "$GITHUB_ENV"
-      - name: Vincular CF-ID aos pedidos e fila de impressão
+      - name: Vincular CF-ID aos pedidos personalizados
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
           LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
           LI_ORDER_LIMIT: ${{ github.event.inputs.limit || '60' }}
         run: node scripts/sincronizar-pedidos-personalizados-li.mjs
+      - name: Sincronizar todos os pedidos que contenham canecas
+        if: always()
+        env:
+          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
+          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
+          LI_ALL_MUG_ORDER_LIMIT: ${{ github.event.inputs.limit || '40' }}
+        run: node scripts/sincronizar-pedidos-canecas-li-v2.mjs
       - name: Garantir pagamento e liberação antes da produção
+        if: always()
         env:
           FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
         run: node scripts/garantir-liberacao-producao.mjs
