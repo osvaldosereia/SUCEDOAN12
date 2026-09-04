@@ -105,6 +105,8 @@ A experiência principal pode ser dinâmica sem sacrificar indexação. `scripts
 
 As páginas de produto incluem canonical, Open Graph, `Product` JSON-LD e `BreadcrumbList`. O workflow `.github/workflows/build-canecafacil-v2-seo.yml` roda a cada 15 minutos ou manualmente e só grava no `main` quando o conteúdo gerado mudou.
 
+Importante: esse workflow só passa a executar após a branch ser incorporada ao `main`; durante o desenvolvimento, a validação é feita pelo CI do PR.
+
 ## Pagamento
 
 Deliberadamente não implementado nesta fase. O futuro módulo Mercado Pago deve ser backend-only para credenciais privadas e desacoplado do storefront.
