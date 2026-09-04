@@ -22,6 +22,10 @@
       <button class="icon-button favorite-header" data-action="favorites" aria-label="Ver favoritas">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 1 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"/></svg>
       </button>
+      <button class="icon-button cart-header" data-action="cart" aria-label="Abrir sacola">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 12H7Z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>
+        <span id="cartBadge" class="cart-badge" hidden>0</span>
+      </button>
     </div>
   </header>
 
@@ -55,6 +59,30 @@
       <div class="overlay-head"><strong>Explorar</strong><button class="icon-button" data-close="exploreOverlay" aria-label="Fechar">×</button></div>
       <div id="categoryFilters" class="chips"></div>
       <div id="exploreGrid" class="explore-grid"></div>
+    </div>
+  </section>
+
+  <section class="overlay detail-overlay" id="descriptionOverlay" hidden>
+    <div class="detail-sheet">
+      <button class="detail-close icon-button" data-close="descriptionOverlay" aria-label="Fechar descrição">×</button>
+      <div class="detail-visual"><img id="descriptionMockup" src="./assets/mockup-demo.svg" alt=""></div>
+      <div class="detail-copy">
+        <small id="descriptionCategory">CanecaFácil</small>
+        <h2 id="descriptionName">Sua caneca</h2>
+        <p id="descriptionText"></p>
+        <div class="detail-price" id="descriptionPrice">R$ 24,90</div>
+        <div class="detail-facts"><span>Porcelana</span><span>Arte exclusiva</span><span>Produzida sob demanda</span></div>
+        <button id="descriptionBuy" class="detail-buy">Comprar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="overlay" id="cartOverlay" hidden>
+    <div class="overlay-card cart-card">
+      <div class="overlay-head"><div><small class="overlay-kicker">CanecaFácil</small><strong>Sua sacola</strong></div><button class="icon-button" data-close="cartOverlay" aria-label="Fechar sacola">×</button></div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="cart-footer"><span>Total dos produtos</span><strong id="cartTotal">R$ 0,00</strong></div>
+      <p class="cart-note">Frete e pagamento pelo Mercado Pago serão conectados na próxima etapa. A sacola já está pronta para receber essa integração.</p>
     </div>
   </section>
 
