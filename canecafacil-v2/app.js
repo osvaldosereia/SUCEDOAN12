@@ -5,6 +5,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const viewer = $('#viewer');
 const toastEl = $('#toast');
 const STORAGE_FAVORITES = 'canecafacil_v2_favoritos';
+const STORAGE_CART = 'canecafacil_v2_carrinho';
 const PERSONALIZER_BASE = 'https://donaantonia.com.br/loja-integrada/personalizar/';
 
 const state = {
@@ -12,6 +13,7 @@ const state = {
   products: [],
   mode: 'home',
   favoriteIds: new Set(loadFavorites()),
+  cart: loadCart(),
   activeId: '',
 };
 
@@ -26,6 +28,24 @@ function loadFavorites() {
   try { return JSON.parse(localStorage.getItem(STORAGE_FAVORITES) || '[]'); } catch { return []; }
 }
 function saveFavorites() { localStorage.setItem(STORAGE_FAVORITES, JSON.stringify([...state.favoriteIds])); }
+function loadCart() {
+  try {
+    const cart = JSON.parse(localStorage.getItem(STORAGE_CART) || '[]');
+    return Array.isArray(cart) ? cart : [];
+  } catch { return []; }
+}
+function saveCart() {
+  localStorage.setItem(STORAGE_CART, JSON.stringify(state.cart));
+  updateCartBadge();
+}
+function cartCount() { return state.cart.reduce((sum, item) => sum + Math.max(1, Number(item.qtd || 1)), 0); }
+function updateCartBadge() {
+  const badge = $('#cartBadge');
+  if (!badge) return;
+  const count = cartCount();
+  badge.textContent = count > 99 ? '99+' : String(count);
+  badge.hidden = count === 0;
+}
 function toast(message) {
   toastEl.textContent = message;
   toastEl.classList.add('show');
@@ -47,6 +67,7 @@ function setTheme(product) {
   document.body.style.color = ink;
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
   $('#personalizerOverlay')?.style.setProperty('--bg', bg);
+  $('#descriptionOverlay')?.style.setProperty('--product-bg', bg);
   state.activeId = product.id;
 }
 
@@ -59,11 +80,13 @@ function productScene(product, index, total) {
       <section class="scene-copy">
         <p class="eyebrow">${escapeHtml([product.categoria, product.subcategoria].filter(Boolean).join(' · '))}</p>
         <h1>${escapeHtml(product.nome)}</h1>
-        ${product.descricao_curta ? `<p class="description">${escapeHtml(product.descricao_curta)}</p>` : ''}
-        <p class="price">${money(product.preco)}</p>
+        <div class="scene-price-row">
+          <p class="price">${money(product.preco)}</p>
+          <button class="info-link" data-description="${escapeAttr(product.id)}" aria-label="Ver detalhes desta caneca">Detalhes</button>
+        </div>
         <div class="cta-row">
-          ${product.personalizavel ? `<button class="cta primary" data-personalize="${escapeAttr(product.id)}">Personalizar</button>` : ''}
-          <button class="cta secondary" data-share="${escapeAttr(product.id)}">Compartilhar</button>
+          <button class="cta primary buy-cta" data-buy="${escapeAttr(product.id)}">Comprar</button>
+          ${product.personalizavel ? `<button class="cta secondary personalize-cta" data-personalize="${escapeAttr(product.id)}">Personalizar</button>` : ''}
         </div>
       </section>
       <div class="mockup-wrap">
@@ -77,9 +100,11 @@ function productScene(product, index, total) {
           <button class="scene-action" data-share="${escapeAttr(product.id)}" aria-label="Compartilhar esta caneca">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.3 10.9 7.4-4.5M8.3 13.1l7.4 4.5"/></svg>
           </button>
+          <button class="scene-action" data-description="${escapeAttr(product.id)}" aria-label="Descrição e detalhes">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>
+          </button>
         </div>
         <span class="scene-index">${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span>
-        ${product.arte_horizontal ? `<a class="art-link" href="${escapeAttr(product.arte_horizontal)}" target="_blank" rel="noopener">ver arte</a>` : ''}
       </aside>
     </article>`;
 }
@@ -103,6 +128,8 @@ function bindSceneActions() {
   $$('[data-favorite]', viewer).forEach(btn => btn.addEventListener('click', () => toggleFavorite(btn.dataset.favorite)));
   $$('[data-share]', viewer).forEach(btn => btn.addEventListener('click', () => shareProduct(btn.dataset.share)));
   $$('[data-personalize]', viewer).forEach(btn => btn.addEventListener('click', () => openPersonalizer(btn.dataset.personalize)));
+  $$('[data-buy]', viewer).forEach(btn => btn.addEventListener('click', () => addToCart(btn.dataset.buy)));
+  $$('[data-description]', viewer).forEach(btn => btn.addEventListener('click', () => openDescription(btn.dataset.description)));
 }
 function observeScenes() {
   window._cfObserver?.disconnect();
@@ -143,6 +170,32 @@ async function shareProduct(id) {
   }
 }
 
+function addToCart(id) {
+  const product = state.products.find(p => p.id === id);
+  if (!product) return;
+  const existing = state.cart.find(item => item.id === id && !item.creationCode);
+  if (existing) existing.qtd = Math.min(20, Number(existing.qtd || 1) + 1);
+  else state.cart.push({ id: product.id, slug: product.slug, nome: product.nome, preco: product.preco, mockup_png: product.mockup_png, fundo: product.fundo, qtd: 1 });
+  saveCart();
+  toast('Caneca adicionada à sacola');
+}
+
+function openDescription(id) {
+  const product = state.products.find(p => p.id === id);
+  const overlay = $('#descriptionOverlay');
+  if (!product || !overlay) return;
+  overlay.style.setProperty('--product-bg', product.fundo || '#FF6B1A');
+  $('#descriptionCategory').textContent = [product.categoria, product.subcategoria].filter(Boolean).join(' · ');
+  $('#descriptionName').textContent = product.nome;
+  $('#descriptionPrice').textContent = money(product.preco);
+  $('#descriptionText').textContent = product.descricao_curta || 'Caneca de porcelana com arte CanecaFácil.';
+  $('#descriptionMockup').src = product.mockup_png || './assets/mockup-demo.svg';
+  $('#descriptionMockup').alt = `Mockup da ${product.nome}`;
+  $('#descriptionBuy').dataset.buySheet = product.id;
+  overlay.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
 function openPersonalizer(id) {
   const product = state.products.find(p => p.id === id);
   if (!product) return;
@@ -151,6 +204,7 @@ function openPersonalizer(id) {
   const url = new URL(PERSONALIZER_BASE);
   url.searchParams.set('model', key);
   url.searchParams.set('embed', '1');
+  url.searchParams.set('store_v2', '1');
   url.searchParams.set('return', location.href);
   $('#personalizerFrame').src = url.toString();
   $('#personalizerOverlay').hidden = false;
@@ -211,7 +265,23 @@ function handleAction(action) {
     state.mode = 'favorites'; setNav('favorites'); renderViewer();
   } else if (action === 'search') openSearch();
   else if (action === 'explore') { setNav('explore'); openExplore(); }
-  else if (action === 'creations') { setNav('creations'); toast('“Minhas canecas” será o próximo módulo'); }
+  else if (action === 'cart') openCartSummary();
+}
+
+function openCartSummary() {
+  const overlay = $('#cartOverlay');
+  if (!overlay) return;
+  const root = $('#cartItems');
+  const total = state.cart.reduce((sum, item) => sum + Number(item.preco || 0) * Math.max(1, Number(item.qtd || 1)), 0);
+  root.innerHTML = state.cart.length ? state.cart.map(item => `<article class="cart-row"><img src="${escapeAttr(item.mockup_png || './assets/mockup-demo.svg')}" alt=""><div><strong>${escapeHtml(item.nome)}</strong><small>${Math.max(1, Number(item.qtd || 1))} × ${money(item.preco)}</small></div><button data-cart-remove="${escapeAttr(item.id)}" aria-label="Remover">×</button></article>`).join('') : '<p class="cart-empty">Sua sacola está vazia.</p>';
+  $('#cartTotal').textContent = money(total);
+  $$('[data-cart-remove]', root).forEach(btn => btn.addEventListener('click', () => {
+    state.cart = state.cart.filter(item => item.id !== btn.dataset.cartRemove);
+    saveCart();
+    openCartSummary();
+  }));
+  overlay.hidden = false;
+  document.body.style.overflow = 'hidden';
 }
 
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c])); }
@@ -227,6 +297,7 @@ async function boot() {
   } catch {
     state.products = demoProducts;
   }
+  updateCartBadge();
   renderViewer();
 }
 
@@ -234,6 +305,7 @@ $$('[data-action]').forEach(btn => btn.addEventListener('click', () => handleAct
 $$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeOverlay(btn.dataset.close)));
 $$('.overlay').forEach(overlay => overlay.addEventListener('click', event => { if (event.target === overlay && overlay.id !== 'personalizerOverlay') closeOverlay(overlay.id); }));
 $('#searchInput').addEventListener('input', event => renderSearch(event.target.value));
+$('#descriptionBuy')?.addEventListener('click', event => { const id = event.currentTarget.dataset.buySheet; if (id) { addToCart(id); closeOverlay('descriptionOverlay'); } });
 window.addEventListener('keydown', event => { if (event.key === 'Escape') $$('.overlay:not([hidden])').forEach(overlay => closeOverlay(overlay.id)); });
 
 boot();
