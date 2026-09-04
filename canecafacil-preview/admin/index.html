@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#111111">
+  <title>CanecaFácil · Admin</title>
+  <link rel="stylesheet" href="./styles.css?v=1">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <a class="brand" href="../" target="_blank" rel="noopener">
+        <span class="brand-mark">☕</span>
+        <span>Caneca<b>Fácil</b><small>admin básico</small></span>
+      </a>
+      <nav class="nav">
+        <button class="nav-item active" data-view="products"><span>▦</span>Produtos</button>
+        <button class="nav-item" data-view="categories"><span>⌗</span>Categorias</button>
+        <button class="nav-item" data-view="generator"><span>✦</span>Gerador</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span id="connectionDot" class="dot"></span>
+        <div><strong>Firebase</strong><small id="connectionText">conectando…</small></div>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="page-head">
+        <div>
+          <p class="kicker">CanecaFácil</p>
+          <h1 id="pageTitle">Produtos</h1>
+          <p id="pageSubtitle">Lista simples do catálogo da nova loja.</p>
+        </div>
+        <div class="head-actions">
+          <button id="reloadBtn" class="button ghost" type="button">Atualizar</button>
+          <button id="newProductBtn" class="button primary" type="button">+ Novo produto</button>
+        </div>
+      </header>
+
+      <section id="productsView" class="view active">
+        <div class="toolbar">
+          <label class="search"><span>⌕</span><input id="productSearch" type="search" placeholder="Buscar produto, categoria ou subcategoria"></label>
+          <select id="productStatus"><option value="all">Todos</option><option value="active">Ativos</option><option value="inactive">Inativos</option></select>
+        </div>
+        <div id="productList" class="product-list"></div>
+      </section>
+
+      <section id="categoriesView" class="view">
+        <div class="section-grid categories-layout">
+          <form id="newCategoryForm" class="panel compact-panel">
+            <div class="panel-head"><div><p class="kicker">Nova categoria</p><h2>Adicionar</h2></div></div>
+            <label>Nome<input name="nome" required placeholder="Ex.: Academia"></label>
+            <label>Ordem<input name="ordem" type="number" step="1" value="0"></label>
+            <button class="button primary full" type="submit">Criar categoria</button>
+          </form>
+          <div>
+            <div class="section-title"><div><p class="kicker">Estrutura</p><h2>Categorias e subcategorias</h2></div><small>Alterações refletem nos seletores do editor e do gerador.</small></div>
+            <div id="categoryList" class="category-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="generatorView" class="view">
+        <div class="generator-layout">
+          <form id="generatorForm" class="panel generator-form">
+            <div class="panel-head">
+              <div><p class="kicker">IA</p><h2>Gerar nova caneca</h2></div>
+              <span class="contract-badge">2 arquivos</span>
+            </div>
+            <p class="hint strong-hint">A automação gera somente a arte horizontal de impressão e o mockup mestre vertical 1200×1600 usado no mobile e desktop.</p>
+            <div class="form-grid">
+              <label class="span-2">Tema / ideia<textarea name="tema" rows="3" required placeholder="Ex.: academia lotada, pessoa esperando o supino vagar, humor adulto e cotidiano"></textarea></label>
+              <label class="span-2">Frase exata<input name="frase" placeholder="Ex.: MEU TREINO DE PEITO: ESPERAR O SUPINO VAGAR."></label>
+              <label class="span-2">Instrução complementar<textarea name="instrucao" rows="3" placeholder="Opcional: detalhes específicos da cena, personagem ou composição"></textarea></label>
+              <label>Nome do produto<input name="nome" placeholder="Se vazio, será criado pelo tema/frase"></label>
+              <label>Cor de fundo da loja<div class="color-field"><input name="fundo" type="color" value="#FF6B1A"><input name="fundo_text" value="#FF6B1A" maxlength="7"></div></label>
+              <label>Categoria<select name="categoria" id="generatorCategory" required></select></label>
+              <label>Subcategoria<select name="subcategoria" id="generatorSubcategory"><option value="">Sem subcategoria</option></select></label>
+              <label class="span-2 file-field">Imagem de referência <span>opcional</span><input id="generatorReference" name="referencia" type="file" accept="image/*"><div id="referencePreview" class="reference-preview"><small>Nenhuma imagem selecionada</small></div></label>
+            </div>
+            <label class="check-row"><input name="personalizavel" type="checkbox" checked><span>Produto poderá usar o personalizador</span></label>
+            <div class="generator-actions"><button id="generateBtn" class="button primary" type="submit">✦ Gerar caneca</button><button id="clearGeneratorBtn" class="button ghost" type="button">Limpar</button></div>
+            <div id="generatorProgress" class="progress" hidden><div><strong id="progressTitle">Preparando…</strong><span id="progressPercent">0%</span></div><div class="progress-track"><i id="progressBar"></i></div><p id="progressText"></p></div>
+          </form>
+          <aside class="panel style-contract">
+            <div class="panel-head"><div><p class="kicker">Regra fixa</p><h2>Estilo visual</h2></div></div>
+            <p>Editorial pop contemporâneo, flat cartoon moderno e line art limpa. Formas simples, arredondadas, levemente caricatas, poses expressivas e rostos minimalistas.</p>
+            <div class="palette-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <ul><li>4 a 6 cores principais</li><li>contornos escuros e consistentes</li><li>sombras mínimas</li><li>adulto, divertido e inteligente</li><li>sem kawaii, anime, 3D ou estética publicitária</li></ul>
+            <div class="mockup-contract"><strong>Mockup padrão</strong><span>1200 × 1600 · PNG transparente · duas vistas da mesma caneca em composição vertical.</span></div>
+          </aside>
+        </div>
+        <section id="generatorResult" class="panel generator-result" hidden></section>
+      </section>
+    </main>
+  </div>
+
+  <section id="editor" class="drawer" hidden>
+    <form id="productForm" class="drawer-card">
+      <header class="drawer-head"><div><p class="kicker">Produto</p><h2 id="editorTitle">Editar produto</h2></div><button id="closeEditorBtn" class="icon-close" type="button" aria-label="Fechar">×</button></header>
+      <input name="id" type="hidden">
+      <div class="editor-preview" id="editorPreview"><img id="editorMockupPreview" src="../assets/mockup-demo.svg" alt=""><div><small id="editorPreviewCategory">CanecaFácil</small><strong id="editorPreviewName">Nova caneca</strong><span id="editorPreviewPrice">R$ 24,90</span></div></div>
+      <div class="form-grid editor-fields">
+        <label class="span-2">Nome<input name="nome" required></label>
+        <label>Slug<input name="slug" placeholder="gerado automaticamente"></label>
+        <label>Ordem<input name="ordem" type="number" step="1" value="0"></label>
+        <label>Categoria<select name="categoria" id="editorCategory" required></select></label>
+        <label>Subcategoria<select name="subcategoria" id="editorSubcategory"><option value="">Sem subcategoria</option></select></label>
+        <label>Preço<input name="preco" type="number" step="0.01" min="0" value="24.90"></label>
+        <label>Cor do fundo<div class="color-field"><input name="fundo" type="color" value="#FF6B1A"><input name="fundo_text" maxlength="7" value="#FF6B1A"></div></label>
+        <label class="span-2">Mockup mestre PNG<input name="mockup_png" type="url" placeholder="https://..."><small>Único mockup do produto. O mesmo arquivo é usado no mobile e desktop.</small></label>
+        <label class="span-2">Arte horizontal<input name="arte_horizontal" type="url" placeholder="https://..."><small>Arquivo de impressão. Não entra como segunda imagem na vitrine.</small></label>
+        <label class="span-2">Descrição curta<textarea name="descricao_curta" rows="3"></textarea></label>
+      </div>
+      <div class="editor-switches"><label class="check-row"><input name="ativo" type="checkbox"><span>Ativo na loja</span></label><label class="check-row"><input name="personalizavel" type="checkbox"><span>Personalizável</span></label></div>
+      <footer class="drawer-actions"><button id="deleteProductBtn" class="button danger" type="button">Excluir</button><div></div><button id="cancelEditorBtn" class="button ghost" type="button">Cancelar</button><button class="button primary" type="submit">Salvar produto</button></footer>
+    </form>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./app.js?v=1"></script>
+</body>
+</html>
