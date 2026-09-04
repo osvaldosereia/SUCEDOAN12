@@ -60,8 +60,8 @@
         <datalist id="categoryList"></datalist><datalist id="subcategoryList"></datalist>
         <label>Preço próprio<input name="preco" type="number" step="0.01" min="0" value="0"><small>0 = preço padrão</small></label>
         <label>Cor de fundo<div class="color-row"><input name="fundo" type="color" value="#FF6B1A"><input name="fundo_text" value="#FF6B1A" maxlength="7"></div></label>
-        <label class="span-2">Mockup PNG transparente<input name="mockup_png" type="url" placeholder="https://.../mockup.png"></label>
-        <label class="span-2">Arte horizontal de impressão<input name="arte_horizontal" type="url" placeholder="https://.../arte-horizontal.png"></label>
+        <label class="span-2">Mockup PNG transparente<input name="mockup_png" type="url" placeholder="https://.../mockup.png"><small>Obrigatório para ativar a caneca na loja.</small></label>
+        <label class="span-2">Arte horizontal de impressão<input name="arte_horizontal" type="url" placeholder="https://.../arte-horizontal.png"><small>Obrigatória para ativar a caneca na loja.</small></label>
         <label class="span-2">Descrição curta<textarea name="descricao_curta" rows="3" placeholder="Uma linha curta para acompanhar a arte."></textarea></label>
       </div>
 
@@ -89,6 +89,7 @@
   </section>
 
   <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="./validation-v1.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
