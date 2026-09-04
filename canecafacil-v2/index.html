@@ -7,6 +7,7 @@
   <title>CanecaFácil</title>
   <meta name="description" content="Canecas com arte, humor e personalidade. Escolha uma criação ou personalize do seu jeito.">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./extensions-v2.css">
 </head>
 <body>
   <header class="floating-pill topbar" aria-label="Navegação principal">
@@ -57,18 +58,33 @@
     </div>
   </section>
 
+  <section class="overlay" id="creationsOverlay" hidden>
+    <div class="overlay-card creations-card">
+      <div class="overlay-head"><div><small class="overlay-kicker">Seu dispositivo</small><strong>Minhas canecas</strong></div><button class="icon-button" data-close-v2="creationsOverlay" aria-label="Fechar">×</button></div>
+      <p class="creations-intro">As criações feitas neste dispositivo ficam aqui para você continuar depois. Quando tivermos login, este módulo passa a sincronizar com sua conta.</p>
+      <div id="creationsGrid" class="creations-grid"></div>
+    </div>
+  </section>
+
   <section class="overlay personalizer-overlay" id="personalizerOverlay" hidden>
-    <div class="personalizer-shell">
+    <div class="personalizer-shell personalizer-shell-v2">
       <div class="personalizer-top floating-pill">
         <strong>Personalizar</strong>
         <button class="icon-button" data-close="personalizerOverlay" aria-label="Fechar personalização">×</button>
       </div>
-      <iframe id="personalizerFrame" title="Personalizador CanecaFácil" allow="clipboard-write"></iframe>
+      <aside id="personalizerContext" class="personalizer-context" aria-hidden="true">
+        <img id="personalizerContextImage" src="./assets/mockup-demo.svg" alt="">
+        <div><small id="personalizerContextCategory">CanecaFácil</small><strong id="personalizerContextName">Sua caneca</strong></div>
+      </aside>
+      <div class="personalizer-stage">
+        <iframe id="personalizerFrame" title="Personalizador CanecaFácil" allow="clipboard-write"></iframe>
+      </div>
     </div>
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./personalization-v2.js"></script>
 </body>
 </html>
