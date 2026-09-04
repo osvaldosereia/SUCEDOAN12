@@ -15,13 +15,14 @@ Para cada caneca finalizada, a automação deve entregar apenas dois arquivos me
 
 2. `mockup_png`
    - PNG com fundo 100% transparente;
-   - composição comercial principal;
-   - **uma única caneca por arquivo e por visor**;
-   - formato vertical para ser reutilizado sem alteração no mobile e no desktop;
-   - sombra da própria caneca permitida dentro do alpha;
-   - pequenos elementos ilustrados podem interagir com a caneca, desde que façam parte apenas da apresentação comercial;
-   - sem cenário fotográfico, mesa, cozinha, parede ou retângulo de fundo;
-   - nenhum segundo mockup ou segunda caneca dentro da composição.
+   - **um único arquivo de mockup por produto**;
+   - o mesmo arquivo é usado no mobile e no desktop;
+   - composição vertical mostrando **duas vistas da mesma caneca**, para revelar os dois lados da estampa na mesma composição;
+   - as duas vistas pertencem ao mesmo produto e devem parecer parte de uma única direção de arte, não dois produtos separados;
+   - uma vista pode mostrar a alça para a esquerda e a outra para a direita;
+   - sombra das canecas permitida dentro do alpha;
+   - pequenos elementos ilustrados podem interagir com as canecas, desde que façam parte apenas da apresentação comercial;
+   - sem cenário fotográfico, mesa, cozinha, parede ou retângulo de fundo.
 
 3. `fundo`
    - hexadecimal `#RRGGBB`;
@@ -36,9 +37,10 @@ Recomendação V1:
 
 - canvas: `1200 × 1600 px` (3:4 vertical);
 - alpha real;
-- uma caneca central, grande e inteira;
-- objeto dentro de uma área segura de aproximadamente 86% do canvas;
-- alça e sombra nunca cortadas;
+- duas vistas da mesma caneca, ambas inteiras;
+- composição central com leve assimetria para não parecer catálogo tradicional;
+- conjunto dentro de uma área segura de aproximadamente 86% do canvas;
+- alças e sombras nunca cortadas;
 - nenhuma sombra encostando na borda do canvas;
 - composição equilibrada para funcionar tanto em viewport 9:16 quanto em tela horizontal.
 
@@ -46,8 +48,9 @@ A loja usa `object-fit: contain`; portanto não existe uma versão desktop e out
 
 ## Direção visual
 
-- uma caneca branca de porcelana com aparência fotográfica limpa;
-- perspectiva padrão consistente entre todos os produtos;
+- caneca branca de porcelana com aparência fotográfica limpa;
+- duas vistas do mesmo produto, mostrando lados complementares da estampa;
+- perspectiva e escala consistentes entre todos os produtos;
 - luz macia;
 - sombra curta e suave;
 - sem reflexos exagerados;
@@ -55,7 +58,7 @@ A loja usa `object-fit: contain`; portanto não existe uma versão desktop e out
 - sem molduras;
 - sem texto comercial fora da arte da caneca;
 - interação de desenho com o produto deve ser discreta e autoral;
-- a caneca é sempre o único produto protagonista do visor.
+- **uma única caneca/produto é protagonista do visor**, mesmo que o mockup mostre duas vistas dela.
 
 ## Derivadas para web
 
