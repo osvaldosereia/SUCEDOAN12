@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./extensions-v2.css">
   <link rel="stylesheet" href="./browser-v2.css">
+  <link rel="stylesheet" href="./public-controls-v2.css">
 </head>
 <body>
   <header class="floating-pill topbar" aria-label="Navegação principal">
@@ -85,14 +86,14 @@
       <div class="overlay-head"><div><small class="overlay-kicker">CanecaFácil</small><strong>Sua sacola</strong></div><button class="icon-button" data-close="cartOverlay" aria-label="Fechar sacola">×</button></div>
       <div id="cartItems" class="cart-items"></div>
       <div class="cart-footer"><span>Total dos produtos</span><strong id="cartTotal">R$ 0,00</strong></div>
-      <p class="cart-note">Frete e pagamento pelo Mercado Pago serão conectados na próxima etapa. A sacola já está pronta para receber essa integração.</p>
+      <p class="cart-note">Frete e pagamento serão conectados em uma etapa posterior.</p>
     </div>
   </section>
 
   <section class="overlay" id="creationsOverlay" hidden>
     <div class="overlay-card creations-card">
       <div class="overlay-head"><div><small class="overlay-kicker">Seu dispositivo</small><strong>Minhas canecas</strong></div><button class="icon-button" data-close-v2="creationsOverlay" aria-label="Fechar">×</button></div>
-      <p class="creations-intro">As criações feitas neste dispositivo ficam aqui para você continuar depois. Quando tivermos login, este módulo passa a sincronizar com sua conta.</p>
+      <p class="creations-intro">As criações feitas neste dispositivo ficam aqui para você continuar depois.</p>
       <div id="creationsGrid" class="creations-grid"></div>
     </div>
   </section>
@@ -118,5 +119,6 @@
   <script type="module" src="./app.js"></script>
   <script type="module" src="./browser-v2.js"></script>
   <script type="module" src="./personalization-v2.js"></script>
+  <script type="module" src="./public-controls-v2.js"></script>
 </body>
 </html>
