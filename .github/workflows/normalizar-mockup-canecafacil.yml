@@ -1,0 +1,100 @@
+name: Normalizar mockup CanecaFácil
+
+on:
+  workflow_dispatch:
+    inputs:
+      mockup_path:
+        description: Caminho do PNG no branch canecas-media
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mídia
+        uses: actions/checkout@v4
+        with:
+          ref: canecas-media
+          fetch-depth: 0
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar Pillow
+        run: python -m pip install --disable-pip-version-check pillow
+
+      - name: Validar caminho
+        env:
+          MOCKUP_PATH: ${{ inputs.mockup_path }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          raw = os.environ['MOCKUP_PATH'].strip().lstrip('/')
+          p = Path(raw)
+          if p.is_absolute() or '..' in p.parts:
+              raise SystemExit('Caminho inválido')
+          if p.suffix.lower() != '.png':
+              raise SystemExit('O mockup mestre precisa ser PNG')
+          if not p.exists():
+              raise SystemExit(f'Arquivo não encontrado: {p}')
+          print(p)
+          PY
+
+      - name: Normalizar PNG transparente 1200x1600
+        env:
+          MOCKUP_PATH: ${{ inputs.mockup_path }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from PIL import Image
+
+          path = Path(os.environ['MOCKUP_PATH'].strip().lstrip('/'))
+          img = Image.open(path).convert('RGBA')
+
+          # Recorta somente margens totalmente transparentes, sem remover sombra semitransparente.
+          alpha = img.getchannel('A')
+          bbox = alpha.getbbox()
+          if bbox:
+              img = img.crop(bbox)
+
+          # Mantém proporção e reserva margem transparente segura.
+          max_w, max_h = 1160, 1540
+          scale = min(max_w / img.width, max_h / img.height)
+          new_size = (max(1, round(img.width * scale)), max(1, round(img.height * scale)))
+          img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+          canvas = Image.new('RGBA', (1200, 1600), (0, 0, 0, 0))
+          x = (1200 - img.width) // 2
+          y = (1600 - img.height) // 2
+          canvas.alpha_composite(img, (x, y))
+          canvas.save(path, 'PNG', optimize=True)
+
+          check = Image.open(path).convert('RGBA')
+          if check.size != (1200, 1600):
+              raise SystemExit(f'Dimensão final incorreta: {check.size}')
+          if check.getchannel('A').getextrema()[0] == 255:
+              raise SystemExit('PNG final perdeu transparência')
+          print(f'OK {path}: {check.size}, alpha preservado')
+          PY
+
+      - name: Commit do mockup normalizado
+        env:
+          MOCKUP_PATH: ${{ inputs.mockup_path }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$MOCKUP_PATH"
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração necessária."
+            exit 0
+          fi
+          git commit -m "CanecaFácil: normalizar mockup mestre 1200x1600"
+          git push origin HEAD:canecas-media
