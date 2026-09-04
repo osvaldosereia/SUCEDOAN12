@@ -34,6 +34,7 @@ jobs:
           node --check canecafacil-v2/personalization-v2.js
           node --check canecafacil-v2/shared/api.js
           node --check canecafacil-v2/admin/app.js
+          node --check canecafacil-v2/admin/validation-v1.js
           node --check loja-integrada/personalizar/native-cart-v3.js
       - name: Validar arquivos essenciais
         run: |
@@ -46,6 +47,7 @@ jobs:
           test -s canecafacil-v2/assets/mockup-demo.svg
           grep -q 'native-cart-v3.js' loja-integrada/personalizar/index.html
           grep -q 'store_v2' loja-integrada/personalizar/native-cart-v3.js
+          grep -q 'validation-v1.js' canecafacil-v2/admin/index.html
       - name: Bloquear segredos óbvios no front
         run: |
           if grep -RniE 'ACCESS_TOKEN|MERCADO_PAGO_ACCESS_TOKEN|LOJA_INTEGRADA_AUTHORIZATION|Bearer [A-Za-z0-9._-]{20,}' canecafacil-v2 --exclude='README.md'; then
