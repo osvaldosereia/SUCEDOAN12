@@ -33,7 +33,7 @@ jobs:
         run: |
           git config user.name "canecafacil-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add canecafacil-v2/p canecafacil-v2/categoria canecafacil-v2/sitemap.xml canecafacil-v2/robots.txt canecafacil-v2/seo-manifest.json
+          git add -A -- canecafacil-v2
           if git diff --cached --quiet; then
             echo "Nenhuma mudança SEO."
             exit 0
