@@ -1,10 +1,19 @@
 const STORAGE = 'canecafacil_v2_criacoes';
 const PERSONALIZER_BASE = 'https://donaantonia.com.br/loja-integrada/personalizar/';
+const PERSONALIZER_ORIGIN = 'https://donaantonia.com.br';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const text = value => String(value ?? '').trim();
 
+function notify(message) {
+  const node = $('#toast');
+  if (!node) return;
+  node.textContent = message;
+  node.classList.add('show');
+  clearTimeout(notify.timer);
+  notify.timer = setTimeout(() => node.classList.remove('show'), 1900);
+}
 function loadCreations() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE) || '[]');
@@ -23,11 +32,13 @@ function upsertCreation(data = {}) {
     ...existing,
     code,
     status: text(data.status || existing.status || 'salva'),
-    modelId: text(data.modelId || existing.modelId),
+    modelId: text(data.modelId || data.modelKey || existing.modelId),
     productId: text(data.productId || existing.productId),
     productName: text(data.productName || existing.productName),
     productCategory: text(data.productCategory || existing.productCategory),
     mockup: text(data.mockup || existing.mockup),
+    artUrl: text(data.artUrl || existing.artUrl),
+    quantity: Number(data.quantity || existing.quantity || 1) || 1,
     updatedAt: new Date().toISOString(),
   };
   const next = [merged, ...list.filter(item => item.code !== code)].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
@@ -53,6 +64,17 @@ function currentProductContext() {
     mockup: text(scene?.querySelector('.mockup')?.src),
   };
 }
+function ensureV2ModeInFrame() {
+  const frame = $('#personalizerFrame');
+  if (!frame?.src || frame.src === 'about:blank') return;
+  try {
+    const url = new URL(frame.src);
+    if (url.origin !== PERSONALIZER_ORIGIN) return;
+    if (url.searchParams.get('store_v2') === '1') return;
+    url.searchParams.set('store_v2', '1');
+    frame.src = url.toString();
+  } catch {}
+}
 function applyContextFromButton(button) {
   const scene = button?.closest('.scene');
   const image = scene?.querySelector('.mockup');
@@ -61,6 +83,7 @@ function applyContextFromButton(button) {
   if ($('#personalizerContextImage') && image?.src) $('#personalizerContextImage').src = image.src;
   if ($('#personalizerContextName')) $('#personalizerContextName').textContent = text(title?.textContent) || 'Sua caneca';
   if ($('#personalizerContextCategory')) $('#personalizerContextCategory').textContent = text(category?.textContent) || 'CanecaFácil';
+  ensureV2ModeInFrame();
 }
 function closePersonalizer() {
   const overlay = $('#personalizerOverlay');
@@ -78,6 +101,7 @@ function openCreation(item) {
   if (item.modelId) url.searchParams.set('model', item.modelId);
   url.searchParams.set('creation', item.code);
   url.searchParams.set('embed', '1');
+  url.searchParams.set('store_v2', '1');
   url.searchParams.set('return', location.href);
   frame.src = url.toString();
   if ($('#personalizerContextImage') && item.mockup) $('#personalizerContextImage').src = item.mockup;
@@ -91,7 +115,7 @@ function statusLabel(status) {
   const key = text(status).toLowerCase();
   if (key === 'gerando') return 'Gerando';
   if (key === 'arte_pronta') return 'Arte pronta';
-  if (key === 'carrinho') return 'Aprovada';
+  if (key === 'aprovada' || key === 'salva_loja_v2' || key === 'carrinho') return 'Salva';
   return 'Salva';
 }
 function escapeHtml(value) {
@@ -106,7 +130,7 @@ function renderCreations() {
       <span class="creation-status">${escapeHtml(statusLabel(item.status))}</span>
       <div>
         <div class="creation-code">${escapeHtml(item.productName || item.code)}</div>
-        <div class="creation-meta">${escapeHtml(item.code)}${item.productCategory ? ` · ${escapeHtml(item.productCategory)}` : ''}</div>
+        <div class="creation-meta">${escapeHtml(item.code)}${item.productCategory ? ` · ${escapeHtml(item.productCategory)}` : ''}${item.quantity > 1 ? ` · ${item.quantity} un.` : ''}</div>
       </div>
       <div class="creation-actions">
         <button class="creation-button" data-open-creation="${escapeHtml(item.code)}">Abrir</button>
@@ -148,6 +172,7 @@ document.addEventListener('click', event => {
 }, true);
 
 window.addEventListener('message', event => {
+  if (event.origin !== PERSONALIZER_ORIGIN) return;
   const data = event.data || {};
   if (!data || typeof data !== 'object') return;
   if (data.type === 'canecafacil:minha-arte') {
@@ -156,9 +181,11 @@ window.addEventListener('message', event => {
     if (!$('#creationsOverlay').hidden) renderCreations();
   }
   if (data.type === 'canecafacil:return-to-store') closePersonalizer();
-  if (data.type === 'canecafacil:carrinho-personalizado') {
+  if (data.type === 'canecafacil:v2-personalization-approved') {
     const context = currentProductContext();
-    if (data.code) upsertCreation({ code: data.code, status: 'carrinho', modelId: data.modelKey, ...context });
+    upsertCreation({ ...data, status:'aprovada', ...context });
+    closePersonalizer();
+    notify('Sua caneca foi salva em Minhas canecas');
   }
 });
 
