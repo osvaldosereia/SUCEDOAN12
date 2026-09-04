@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - 'canecafacil-v2/**'
+      - 'loja-integrada/personalizar/native-cart-v3.js'
+      - 'loja-integrada/personalizar/index.html'
       - '.github/workflows/test-canecafacil-v2.yml'
   push:
     branches: [main]
     paths:
       - 'canecafacil-v2/**'
+      - 'loja-integrada/personalizar/native-cart-v3.js'
+      - 'loja-integrada/personalizar/index.html'
       - '.github/workflows/test-canecafacil-v2.yml'
   workflow_dispatch:
 
@@ -27,15 +31,21 @@ jobs:
       - name: Validar JavaScript
         run: |
           node --check canecafacil-v2/app.js
+          node --check canecafacil-v2/personalization-v2.js
           node --check canecafacil-v2/shared/api.js
           node --check canecafacil-v2/admin/app.js
+          node --check loja-integrada/personalizar/native-cart-v3.js
       - name: Validar arquivos essenciais
         run: |
           test -s canecafacil-v2/index.html
           test -s canecafacil-v2/styles.css
+          test -s canecafacil-v2/extensions-v2.css
+          test -s canecafacil-v2/MOCKUP-CONTRACT-V1.md
           test -s canecafacil-v2/admin/index.html
           test -s canecafacil-v2/admin/styles.css
           test -s canecafacil-v2/assets/mockup-demo.svg
+          grep -q 'native-cart-v3.js' loja-integrada/personalizar/index.html
+          grep -q 'store_v2' loja-integrada/personalizar/native-cart-v3.js
       - name: Bloquear segredos óbvios no front
         run: |
           if grep -RniE 'ACCESS_TOKEN|MERCADO_PAGO_ACCESS_TOKEN|LOJA_INTEGRADA_AUTHORIZATION|Bearer [A-Za-z0-9._-]{20,}' canecafacil-v2 --exclude='README.md'; then
