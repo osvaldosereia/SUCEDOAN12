@@ -10,15 +10,18 @@ Para cada caneca finalizada, a automação deve entregar apenas dois arquivos me
    - arte real de impressão;
    - horizontal;
    - sem elementos exclusivos do mockup;
-   - nunca deve depender da cor de fundo da loja.
+   - nunca deve depender da cor de fundo da loja;
+   - arquivo de produção: não aparece como imagem adicional na vitrine pública.
 
 2. `mockup_png`
    - PNG com fundo 100% transparente;
    - composição comercial principal;
-   - preferencialmente duas vistas da mesma caneca para revelar os dois lados da estampa;
+   - **uma única caneca por arquivo e por visor**;
+   - formato vertical para ser reutilizado sem alteração no mobile e no desktop;
    - sombra da própria caneca permitida dentro do alpha;
    - pequenos elementos ilustrados podem interagir com a caneca, desde que façam parte apenas da apresentação comercial;
-   - sem cenário fotográfico, mesa, cozinha, parede ou retângulo de fundo.
+   - sem cenário fotográfico, mesa, cozinha, parede ou retângulo de fundo;
+   - nenhum segundo mockup ou segunda caneca dentro da composição.
 
 3. `fundo`
    - hexadecimal `#RRGGBB`;
@@ -27,30 +30,32 @@ Para cada caneca finalizada, a automação deve entregar apenas dois arquivos me
 
 ## Canvas mestre recomendado
 
-O PNG mestre não precisa ter proporção de Story. O Story é o **viewport do site**, não o arquivo do produto.
+O mesmo arquivo deve funcionar no celular e no desktop.
 
 Recomendação V1:
 
-- canvas: `1600 × 1800 px`;
+- canvas: `1200 × 1600 px` (3:4 vertical);
 - alpha real;
-- objeto central dentro de uma área segura de aproximadamente 88% do canvas;
-- nenhuma caneca cortada nas extremidades;
+- uma caneca central, grande e inteira;
+- objeto dentro de uma área segura de aproximadamente 86% do canvas;
+- alça e sombra nunca cortadas;
 - nenhuma sombra encostando na borda do canvas;
-- composição legível tanto em tela vertical quanto horizontal.
+- composição equilibrada para funcionar tanto em viewport 9:16 quanto em tela horizontal.
 
-A loja usa `object-fit: contain`; portanto o mesmo arquivo funciona no mobile e no desktop.
+A loja usa `object-fit: contain`; portanto não existe uma versão desktop e outra mobile do mockup.
 
 ## Direção visual
 
-- caneca branca de porcelana com aparência fotográfica limpa;
-- uma vista com alça para a esquerda e outra com alça para a direita quando a composição usar duas canecas;
+- uma caneca branca de porcelana com aparência fotográfica limpa;
+- perspectiva padrão consistente entre todos os produtos;
 - luz macia;
 - sombra curta e suave;
 - sem reflexos exagerados;
 - sem fundo embutido;
 - sem molduras;
 - sem texto comercial fora da arte da caneca;
-- interação de desenho com o produto deve ser discreta e autoral.
+- interação de desenho com o produto deve ser discreta e autoral;
+- a caneca é sempre o único produto protagonista do visor.
 
 ## Derivadas para web
 
@@ -58,9 +63,9 @@ O PNG é o mestre. Uma etapa de GitHub Actions poderá gerar, sem IA adicional:
 
 - WebP com transparência para navegadores;
 - AVIF com transparência quando vantajoso;
-- miniatura para busca/Explorar/Open Graph.
+- miniatura técnica para compartilhamento/SEO quando necessário.
 
-O banco continua apontando para o mestre e pode guardar as derivadas em campos separados posteriormente.
+Essas derivadas não mudam a composição e não criam imagens extras na experiência da loja.
 
 ## Contrato de dados V1
 
