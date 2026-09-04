@@ -14,6 +14,7 @@ Nova base isolada do Admin Canecas antigo e da Loja Integrada.
 - personalização integrada em overlay sem quebrar a linguagem visual;
 - “Minhas canecas” local no dispositivo, reaproveitando os CF-IDs do personalizador atual;
 - admin novo, simples e modular;
+- páginas SEO estáticas geradas automaticamente;
 - sem pagamento nesta fase.
 
 ## Estrutura de dados
@@ -90,6 +91,19 @@ Depois podemos migrar o editor e as criações para módulos nativos V2 sem muda
 ## Cor e contraste
 
 O produto controla `fundo`. O front calcula a luminância e escolhe automaticamente entre texto quase preto e branco conforme o maior contraste. As barras flutuantes continuam brancas.
+
+## SEO
+
+A experiência principal pode ser dinâmica sem sacrificar indexação. `scripts/build-canecafacil-v2-seo.mjs` lê o catálogo V2 no Firebase e gera HTML estático para:
+
+- `/p/{slug}/` por produto;
+- `/categoria/{categoria}/`;
+- `/categoria/{categoria}/{subcategoria}/`;
+- `sitemap.xml`;
+- `robots.txt`;
+- `seo-manifest.json`.
+
+As páginas de produto incluem canonical, Open Graph, `Product` JSON-LD e `BreadcrumbList`. O workflow `.github/workflows/build-canecafacil-v2-seo.yml` roda a cada 15 minutos ou manualmente e só grava no `main` quando o conteúdo gerado mudou.
 
 ## Pagamento
 
