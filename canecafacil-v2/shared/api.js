@@ -43,6 +43,7 @@ export function productArray(map = {}, config = DEFAULT_CONFIG) {
 export function normalizeProduct(id, p = {}, config = DEFAULT_CONFIG) {
   const preco = number(p.preco) || number(config.preco_padrao);
   return {
+    ...p,
     id,
     nome: text(p.nome || 'Caneca sem nome'),
     slug: text(p.slug) || slugify(p.nome || id),
@@ -57,7 +58,6 @@ export function normalizeProduct(id, p = {}, config = DEFAULT_CONFIG) {
     personalizavel: p.personalizavel === true,
     personalizador_modelo_key: text(p.personalizador_modelo_key || p.modelo_origem_key || id),
     ordem: number(p.ordem),
-    ...p,
   };
 }
 
