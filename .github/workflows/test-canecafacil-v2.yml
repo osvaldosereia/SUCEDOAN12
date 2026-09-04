@@ -1,0 +1,44 @@
+name: CanecaFácil V2 · testes básicos
+
+on:
+  pull_request:
+    paths:
+      - 'canecafacil-v2/**'
+      - '.github/workflows/test-canecafacil-v2.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'canecafacil-v2/**'
+      - '.github/workflows/test-canecafacil-v2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar JavaScript
+        run: |
+          node --check canecafacil-v2/app.js
+          node --check canecafacil-v2/shared/api.js
+          node --check canecafacil-v2/admin/app.js
+      - name: Validar arquivos essenciais
+        run: |
+          test -s canecafacil-v2/index.html
+          test -s canecafacil-v2/styles.css
+          test -s canecafacil-v2/admin/index.html
+          test -s canecafacil-v2/admin/styles.css
+          test -s canecafacil-v2/assets/mockup-demo.svg
+      - name: Bloquear segredos óbvios no front
+        run: |
+          if grep -RniE 'ACCESS_TOKEN|MERCADO_PAGO_ACCESS_TOKEN|LOJA_INTEGRADA_AUTHORIZATION|Bearer [A-Za-z0-9._-]{20,}' canecafacil-v2 --exclude='README.md'; then
+            echo 'Possível segredo encontrado no front-end.'
+            exit 1
+          fi
