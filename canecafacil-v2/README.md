@@ -67,6 +67,12 @@ Resumo da automação planejada:
 4. o site pinta o viewport e calcula automaticamente texto preto ou branco;
 5. GitHub Actions pode gerar WebP/AVIF derivados do PNG sem nova chamada de IA.
 
+## Admin
+
+O Admin V2 começa somente com Canecas e Configurações. Os módulos futuros ficam desacoplados.
+
+Uma caneca marcada como ativa precisa ter URLs válidas para `mockup_png` e `arte_horizontal`. Se for personalizável, precisa também de `personalizador_modelo_key`. Isso impede publicação de produto incompleto sem transformar o cadastro em um formulário grande.
+
 ## Personalização
 
 O novo site reutiliza o personalizador existente em um overlay. O Admin possui `personalizador_modelo_key`, ligando a caneca V2 ao modelo já existente sem exigir migração imediata.
