@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-05T23:22:39.555Z",
+  "ultima_execucao": "2026-09-05T23:32:56.224Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -5786,6 +5786,20 @@
       "historico_id": "oferta-1776338130542-1788593178522-tyyuf"
     },
     {
+      "produto_key": "1776338130549",
+      "codigo": "683655Q",
+      "nome": "Darling Shampoo Ceramidas 350ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 10.9,
+      "preco_oferta": 10.14,
+      "desconto_percentual": 6.97,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776338130549-1788651176224-e0nc9"
+    },
+    {
       "produto_key": "1776338130566",
       "codigo": "P0217",
       "nome": "Linha Magna Preta Unidade",
@@ -6554,6 +6568,20 @@
       "inicio": "2026-09-02",
       "fim": "2026-09-05T23:59:59-04:00",
       "historico_id": "oferta-1776338131821-1788331601786-bjajp"
+    },
+    {
+      "produto_key": "1776338131824",
+      "codigo": "P485",
+      "nome": "Vinagre de Alcool Neval Colo 750ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 2.7,
+      "preco_oferta": 2.54,
+      "desconto_percentual": 5.93,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776338131824-1788240519097-g7qiq"
     },
     {
       "produto_key": "1776338131860",
@@ -13010,6 +13038,20 @@
       "historico_id": "oferta-17858694323662926-1788650559555-ax4ek"
     },
     {
+      "produto_key": "1785872584163_a34b",
+      "codigo": "7898095272869",
+      "nome": "Protetor Solar Corpo & Rosto FPS 50 100 ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 29.9,
+      "preco_oferta": 26.91,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-12T23:59:59-04:00",
+      "historico_id": "oferta-1785872584163a34b-1788651176224-vcc2v"
+    },
+    {
       "produto_key": "1785873272152_6696",
       "codigo": "4005900105073",
       "nome": "Desodorante Antitranspirante Aerosol NIVEA Black & White Invisible Clear Feminino 200ml",
@@ -16456,7 +16498,7 @@
       "regra_id": "regra-1785202804573"
     },
     "1776338130549": {
-      "ultima_oferta_em": "2026-09-01T10:31:13.366Z",
+      "ultima_oferta_em": "2026-09-05T23:32:56.224Z",
       "regra_id": "regra-1785205192100"
     },
     "1776338130911": {
@@ -20148,7 +20190,7 @@
       "regra_id": "regra-1785205096285"
     },
     "1776338131824": {
-      "ultima_oferta_em": "2026-09-01T05:28:39.097Z",
+      "ultima_oferta_em": "2026-09-05T23:32:56.224Z",
       "regra_id": "regra-1785205105033"
     },
     "178034684256846467": {
@@ -20712,7 +20754,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1785872584163_a34b": {
-      "ultima_oferta_em": "2026-08-24T16:29:17.278Z",
+      "ultima_oferta_em": "2026-09-05T23:32:56.224Z",
       "regra_id": "regra-1785202557027"
     },
     "1776338128021": {
@@ -21289,23 +21331,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787970639373",
-      "executado_em": "2026-08-29T02:30:40.128Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 8,
-        "ofertas_nao_criadas": 15,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1787974124804",
       "executado_em": "2026-08-29T03:28:45.285Z",
@@ -24675,6 +24700,23 @@
     {
       "id": "github-1788650559044",
       "executado_em": "2026-09-05T23:22:39.555Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "make-20260905203121932",
+      "executado_em": "2026-09-05T23:32:56.224Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
