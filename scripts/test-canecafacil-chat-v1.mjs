@@ -8,6 +8,8 @@ const index=read('loja-integrada','personalizar','index.html');
 const chat=read('loja-integrada','personalizar','chat-v1.js');
 const css=read('loja-integrada','personalizar','chat-v1.css');
 const app=read('loja-integrada','personalizar','app-v15.js');
+const inlineLoader=read('loja-integrada','loader-personalizador-inline-producao-v10.js');
+const modalEmbed=read('loja-integrada','personalizador-embed-v1.js');
 
 assert.match(index,/id="chatCard"/,'personalizador deve expor o chat');
 assert.match(index,/id="chatMic"/,'chat deve permitir resposta por voz quando o navegador suportar');
@@ -22,7 +24,10 @@ assert.match(chat,/form\.requestSubmit/,'chat deve reutilizar o submit oficial d
 assert.match(chat,/sessionStorage\.setItem/,'respostas de texto devem sobreviver a recarregamentos da sessão');
 assert.match(css,/\.cf-chat-mode #personalizerForm/,'formulário deve permanecer acessível ao código mas invisível no modo chat');
 assert.match(app,/action:'personalize_mug_model'/,'geração deve continuar usando o contrato oficial existente');
+assert.match(inlineLoader,/setAttribute\('allow','clipboard-write; microphone'\)/,'iframe inline deve permitir microfone ao personalizador');
+assert.match(inlineLoader,/searchParams\.set\('ui','20260904-chat-v1'\)/,'loader inline deve identificar a interface de chat');
+assert.match(modalEmbed,/allow="clipboard-write; microphone"/,'iframe modal deve permitir microfone ao personalizador');
 assert.equal(chat.includes('OPENAI_API_KEY'),false,'frontend nunca pode conter chave OpenAI');
 assert.equal(chat.includes('sk-'),false,'frontend não pode conter segredo OpenAI');
 
-console.log('OK CanecaFácil Chat V1: conversa progressiva, voz opcional, foto contextual, confirmação de texto exato e geração V15 preservada.');
+console.log('OK CanecaFácil Chat V1: conversa progressiva, voz opcional, foto contextual, confirmação de texto exato, permissão de microfone no embed e geração V15 preservada.');
