@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-05T00:59:01.581Z",
+  "ultima_execucao": "2026-09-05T01:33:34.533Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -3600,6 +3600,20 @@
       "inicio": "2026-09-01",
       "fim": "2026-09-04T23:59:59-04:00",
       "historico_id": "oferta-1776338127006-1788261973828-z1pic"
+    },
+    {
+      "produto_key": "1776338127021",
+      "codigo": "70027257",
+      "nome": "Reforçadão Saco para Lixo Reforçado 50 litros com 5 unidades",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 8.9,
+      "preco_oferta": 8.37,
+      "desconto_percentual": 5.96,
+      "inicio": "2026-09-04",
+      "fim": "2026-09-07T23:59:59-04:00",
+      "historico_id": "oferta-1776338127021-1788572014533-3c6j3"
     },
     {
       "produto_key": "1776338127057",
@@ -7772,6 +7786,20 @@
       "inicio": "2026-09-03",
       "fim": "2026-09-06T23:59:59-04:00",
       "historico_id": "oferta-1776690601226-1788470705447-ulyr4"
+    },
+    {
+      "produto_key": "1776690819394",
+      "codigo": "7897042020140",
+      "nome": "Skala Kit Shampoo e Condicionador 12 em 1 - 325ml + 200ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 19.9,
+      "preco_oferta": 18.51,
+      "desconto_percentual": 6.98,
+      "inicio": "2026-09-04",
+      "fim": "2026-09-07T23:59:59-04:00",
+      "historico_id": "oferta-1776690819394-1788572014533-boyrs"
     },
     {
       "produto_key": "1776691749775",
@@ -15474,6 +15502,20 @@
       "historico_id": "oferta-produto1784833635390-1787934472749-84i64"
     },
     {
+      "produto_key": "produto_1784833989400",
+      "codigo": "dove.serumcorporal.380",
+      "nome": "Sérum Hidratante Corporal Dove Niacinamida Uniformizador 380ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 45.9,
+      "preco_oferta": 41.31,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-04",
+      "fim": "2026-09-11T23:59:59-04:00",
+      "historico_id": "oferta-produto1784833989400-1788572014533-g2rab"
+    },
+    {
       "produto_key": "produto_1784834856061",
       "codigo": "hidramais.ameixanegra.500",
       "nome": "Hidratante Hidramais Ameixa Negra 500ml",
@@ -19006,7 +19048,7 @@
       "regra_id": "regra-1785205082552"
     },
     "1776338127021": {
-      "ultima_oferta_em": "2026-08-31T07:37:09.125Z",
+      "ultima_oferta_em": "2026-09-05T01:33:34.533Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338130687": {
@@ -19130,7 +19172,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776690819394": {
-      "ultima_oferta_em": "2026-08-31T11:26:11.448Z",
+      "ultima_oferta_em": "2026-09-05T01:33:34.533Z",
       "regra_id": "regra-1785205192100"
     },
     "1776692298364": {
@@ -20062,7 +20104,7 @@
       "regra_id": "regra-1785202557027"
     },
     "produto_1784833989400": {
-      "ultima_oferta_em": "2026-08-23T17:26:23.607Z",
+      "ultima_oferta_em": "2026-09-05T01:33:34.533Z",
       "regra_id": "regra-1785202557027"
     },
     "7899572812042": {
@@ -21219,23 +21261,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787782674881",
-      "executado_em": "2026-08-26T22:17:55.356Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 9,
-        "ofertas_nao_criadas": 14,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1787786981799",
       "executado_em": "2026-08-26T23:29:42.353Z",
@@ -24605,6 +24630,23 @@
     {
       "id": "github-1788569940855",
       "executado_em": "2026-09-05T00:59:01.581Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1788572013759",
+      "executado_em": "2026-09-05T01:33:34.533Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
