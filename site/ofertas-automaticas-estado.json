@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-04T23:23:08.601Z",
+  "ultima_execucao": "2026-09-05T00:59:01.581Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -758,6 +758,20 @@
       "inicio": "2026-09-02",
       "fim": "2026-09-05T23:59:59-04:00",
       "historico_id": "oferta-1776029482257-1788363214343-ebxhx"
+    },
+    {
+      "produto_key": "1776029960762",
+      "codigo": "733835P",
+      "nome": "Seda Óleo em Gel Boom Volumao Power 190ml",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 23.9,
+      "preco_oferta": 21.51,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-04",
+      "fim": "2026-09-11T23:59:59-04:00",
+      "historico_id": "oferta-1776029960762-1787502448888-x7q4u"
     },
     {
       "produto_key": "1776029960763",
@@ -5714,6 +5728,20 @@
       "inicio": "2026-09-04",
       "fim": "2026-09-07T23:59:59-04:00",
       "historico_id": "oferta-1776338130721-1788528475446-8fzqt"
+    },
+    {
+      "produto_key": "1776338130740",
+      "codigo": "361862Y",
+      "nome": "Shampoo TRESemmé Reconstrução e Força 650ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 34.9,
+      "preco_oferta": 32.46,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-09-04",
+      "fim": "2026-09-07T23:59:59-04:00",
+      "historico_id": "oferta-1776338130740-1788569941581-0olzx"
     },
     {
       "produto_key": "1776338130782",
@@ -13976,6 +14004,20 @@
       "historico_id": "oferta-1787228645615751e-1788564188601-bycjr"
     },
     {
+      "produto_key": "1787228728990_e5e8",
+      "codigo": "7896098902042",
+      "nome": "Detergente Líquido Ypê Capim-Limão 500ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 2.99,
+      "preco_oferta": 2.81,
+      "desconto_percentual": 6.02,
+      "inicio": "2026-09-04",
+      "fim": "2026-09-07T23:59:59-04:00",
+      "historico_id": "oferta-1787228728990e5e8-1788569941581-5xn09"
+    },
+    {
       "produto_key": "1787229000258_2ce8",
       "codigo": "7896635197412",
       "nome": "Farinha de Milho Amarela Fina Pré-Co zida Mika 1 kg",
@@ -19084,7 +19126,7 @@
       "regra_id": "regra-1785205019989"
     },
     "1776338130740": {
-      "ultima_oferta_em": "2026-08-31T10:28:43.862Z",
+      "ultima_oferta_em": "2026-09-05T00:59:01.581Z",
       "regra_id": "regra-1785205192100"
     },
     "1776690819394": {
@@ -20016,7 +20058,7 @@
       "regra_id": "regra-1785202557027"
     },
     "1776029960762": {
-      "ultima_oferta_em": "2026-08-23T16:27:28.888Z",
+      "ultima_oferta_em": "2026-09-05T00:59:01.581Z",
       "regra_id": "regra-1785202557027"
     },
     "produto_1784833989400": {
@@ -21004,7 +21046,7 @@
       "regra_id": "regra-1785205096285"
     },
     "1787228728990_e5e8": {
-      "ultima_oferta_em": "2026-08-31T06:51:30.670Z",
+      "ultima_oferta_em": "2026-09-05T00:59:01.581Z",
       "regra_id": "regra-1785205105033"
     },
     "1787231793243_7d27": {
@@ -21177,23 +21219,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787778547556",
-      "executado_em": "2026-08-26T21:09:07.982Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 9,
-        "ofertas_nao_criadas": 14,
-        "ofertas_encerradas": 2,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1787782674881",
       "executado_em": "2026-08-26T22:17:55.356Z",
@@ -24569,6 +24594,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 4,
         "ofertas_nao_criadas": 19,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1788569940855",
+      "executado_em": "2026-09-05T00:59:01.581Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
