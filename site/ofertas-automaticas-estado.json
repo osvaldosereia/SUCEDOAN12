@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-05T16:28:18.709Z",
+  "ultima_execucao": "2026-09-05T17:21:52.156Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -4092,6 +4092,20 @@
       "historico_id": "oferta-1776338127753-1788521284893-6vdjt"
     },
     {
+      "produto_key": "1776338127758",
+      "codigo": "P484",
+      "nome": "Vinagre de Alcool Neval 750ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 2.7,
+      "preco_oferta": 2.54,
+      "desconto_percentual": 5.93,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776338127758-1788628912156-97zji"
+    },
+    {
       "produto_key": "1776338127769",
       "codigo": "P327",
       "nome": "Seda Shampoo Liso Perfeito Unidade",
@@ -5028,6 +5042,20 @@
       "inicio": "2026-09-04",
       "fim": "2026-09-07T23:59:59-04:00",
       "historico_id": "oferta-1776338129231-1788504117625-l0jd4"
+    },
+    {
+      "produto_key": "1776338129256",
+      "codigo": "243006E",
+      "nome": "Skala Creme para Pentear Babosa 1kg",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 14.9,
+      "preco_oferta": 13.41,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-12T23:59:59-04:00",
+      "historico_id": "oferta-1776338129256-1788628912156-ml79k"
     },
     {
       "produto_key": "1776338129356",
@@ -7870,6 +7898,20 @@
       "inicio": "2026-09-04",
       "fim": "2026-09-07T23:59:59-04:00",
       "historico_id": "oferta-1776690819394-1788572014533-boyrs"
+    },
+    {
+      "produto_key": "1776691211320",
+      "codigo": "7891150103818",
+      "nome": "Dove Kit Shampoo e Condicionador 350ml + 150ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 33.9,
+      "preco_oferta": 31.53,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776691211320-1788628912156-ev5nr"
     },
     {
       "produto_key": "1776691749775",
@@ -15950,7 +15992,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776691211320": {
-      "ultima_oferta_em": "2026-09-01T03:35:11.618Z",
+      "ultima_oferta_em": "2026-09-05T17:21:52.156Z",
       "regra_id": "regra-1785205192100"
     },
     "1776692808795": {
@@ -19034,7 +19076,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1776338127758": {
-      "ultima_oferta_em": "2026-08-31T23:24:26.701Z",
+      "ultima_oferta_em": "2026-09-05T17:21:52.156Z",
       "regra_id": "regra-1785205105033"
     },
     "17788714422673640": {
@@ -19882,7 +19924,7 @@
       "regra_id": "regra-1785205164829"
     },
     "1776338129256": {
-      "ultima_oferta_em": "2026-08-24T09:32:24.737Z",
+      "ultima_oferta_em": "2026-09-05T17:21:52.156Z",
       "regra_id": "regra-1785202557027"
     },
     "1776338131461": {
@@ -20995,23 +21037,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787934472182",
-      "executado_em": "2026-08-28T16:27:52.749Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 23,
-        "ofertas_nao_criadas": 0,
-        "ofertas_encerradas": 0,
-        "vencidos": 0,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "github-1787950887630",
       "executado_em": "2026-08-28T21:01:28.053Z",
@@ -24387,6 +24412,23 @@
         "ofertas_solicitadas": 23,
         "ofertas_criadas": 5,
         "ofertas_nao_criadas": 18,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1788628911607",
+      "executado_em": "2026-09-05T17:21:52.156Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
         "ofertas_encerradas": 0,
         "vencidos": 0,
         "ofertas_reativadas": 0,
