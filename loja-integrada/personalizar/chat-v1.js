@@ -36,7 +36,7 @@
   let started = false;
   let waiting = false;
   let recognition = null;
-  let lastAssistantText = '';
+  const skipped = new WeakSet();
   const draftKey = () => `cf_chat_v1:${new URLSearchParams(location.search).get('model') || 'model'}`;
 
   function saveDraft(){
@@ -75,19 +75,16 @@
     return row;
   }
 
-  async function assistant(message, {typing=true}={}){
-    lastAssistantText = text(message);
+  async function assistant(message, {typing=true, extra=''}={}){
     if (typing) {
       const t = bubble('assistant', '<span class="chat-typing"><i></i><i></i><i></i></span>', 'is-typing');
       await delay(260);
       t.remove();
     }
-    bubble('assistant', esc(message));
+    return bubble('assistant', esc(message), extra);
   }
 
-  function user(message){
-    bubble('user', esc(message));
-  }
+  function user(message){ bubble('user', esc(message)); }
 
   function setStatus(message=''){
     if (!status) return;
@@ -134,20 +131,17 @@
     return fields.map(el => ({kind:'field', el})).concat(emailInput ? [{kind:'email', el:emailInput}] : []);
   }
 
-  function firstUnanswered(){
-    const pos = steps.findIndex(step => {
-      if (step.kind === 'email') return !text(step.el.value);
-      if (isImage(step.el)) return step.el.required && !step.el.files?.length;
-      return step.el.required && !text(step.el.value);
-    });
-    return pos >= 0 ? pos : 0;
-  }
-
-  function stepAnswered(step){
+  function hasValue(step){
     if (!step) return true;
     if (step.kind === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(step.el.value));
-    if (isImage(step.el)) return Boolean(step.el.files?.length) || !step.el.required;
-    return Boolean(text(step.el.value)) || !step.el.required;
+    if (skipped.has(step.el)) return true;
+    if (isImage(step.el)) return Boolean(step.el.files?.length);
+    return Boolean(text(step.el.value));
+  }
+
+  function firstUnanswered(){
+    const pos = steps.findIndex(step => !hasValue(step));
+    return pos >= 0 ? pos : steps.length;
   }
 
   function updateComposer(step){
@@ -189,17 +183,13 @@
   }
 
   async function ask(step){
+    composer.hidden = false;
     updateComposer(step);
     await assistant(promptFor(step));
   }
 
   function nextIndex(from){
-    for (let i=from; i<steps.length; i++) {
-      const s = steps[i];
-      if (s.kind === 'field' && isOptional(s.el) && ((isImage(s.el) && !s.el.files?.length) || (!isImage(s.el) && !text(s.el.value)))) return i;
-      if (!stepAnswered(s)) return i;
-      if (s.kind === 'field' && (isImage(s.el) ? s.el.files?.length : text(s.el.value))) continue;
-    }
+    for (let i=from; i<steps.length; i++) if (!hasValue(steps[i])) return i;
     return steps.length;
   }
 
@@ -241,6 +231,7 @@
       setStatus('');
       return advance();
     }
+    skipped.delete?.(current.el);
     current.el.value = value;
     current.el.dispatchEvent(new Event('input', {bubbles:true}));
     current.el.dispatchEvent(new Event('change', {bubbles:true}));
@@ -254,6 +245,7 @@
   async function skipCurrent(){
     if (!current || current.kind !== 'field' || current.el.required) return;
     user('Pular');
+    skipped.add(current.el);
     if (!isImage(current.el)) current.el.value = '';
     await advance();
   }
@@ -277,15 +269,17 @@
     current = null;
     updateComposer(null);
     composer.hidden = true;
-    await assistant('Pronto. Já tenho o necessário para criar sua versão. Confira rapidinho:');
+    messages.querySelector('.chat-review-intro')?.remove();
+    messages.querySelector('.chat-review-row')?.remove();
+    await assistant('Pronto. Já tenho o necessário para criar sua versão. Confira rapidinho:', {extra:'chat-review-intro'});
     const rows = summaryRows();
-    bubble('assistant', `<div class="chat-summary">${rows.map(([k,v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join('')}</div><div class="chat-review-actions"><button type="button" id="chatGenerate" class="chat-generate">✨ Criar minha arte</button><button type="button" id="chatEdit" class="chat-edit">Corrigir uma resposta</button></div>`);
-    $('#chatGenerate')?.addEventListener('click', () => {
+    const row = bubble('assistant', `<div class="chat-summary">${rows.map(([k,v]) => `<div><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join('')}</div><div class="chat-review-actions"><button type="button" class="chat-generate">✨ Criar minha arte</button><button type="button" class="chat-edit">Corrigir uma resposta</button></div>`, 'chat-review-row');
+    row.querySelector('.chat-generate')?.addEventListener('click', () => {
       saveDraft();
       card.hidden = true;
       form.requestSubmit ? form.requestSubmit() : generate?.click();
     });
-    $('#chatEdit')?.addEventListener('click', async () => {
+    row.querySelector('.chat-edit')?.addEventListener('click', async () => {
       const answered = steps.map((s,i) => ({s,i})).filter(x => x.s.kind === 'email' ? text(x.s.el.value) : (isImage(x.s.el) ? x.s.el.files?.length : text(x.s.el.value)));
       quick.innerHTML = '';
       composer.hidden = false;
@@ -308,6 +302,7 @@
       el.dataset.cfChatBound = '1';
       el.addEventListener('change', async () => {
         if (current?.el !== el || !el.files?.length) return;
+        skipped.delete?.(el);
         const file = el.files[0];
         user(`📷 ${file.name || 'Foto enviada'}`);
         await advance();
@@ -352,9 +347,10 @@
     card.hidden = false;
     composer.hidden = false;
     const productName = text($('#productBox .product-copy h2')?.textContent) || 'essa caneca';
-    await assistant(`Vamos personalizar ${productName}. Vou perguntar só o necessário e você pode responder do seu jeito.` , {typing:false});
+    await assistant(`Vamos personalizar ${productName}. Vou perguntar só o necessário e você pode responder do seu jeito.`, {typing:false});
     await assistant('Se preferir, responda por voz no microfone. Para nomes e frases eu sempre confirmo antes de gerar.');
     index = firstUnanswered();
+    if (index >= steps.length) return review();
     await ask(steps[index]);
   }
 
@@ -370,12 +366,7 @@
 
   form.addEventListener('submit', () => { card.hidden = true; });
   $('#tryAgain')?.addEventListener('click', () => { card.hidden = false; composer.hidden = true; });
-  $('#editCreation')?.addEventListener('click', async () => {
-    card.hidden = false;
-    composer.hidden = false;
-    index = 0;
-    await review();
-  });
+  $('#editCreation')?.addEventListener('click', async () => { card.hidden = false; await review(); });
 
   const observer = new MutationObserver(() => {
     if (!form.hidden && $$('[data-field-id]', form).length) start();
