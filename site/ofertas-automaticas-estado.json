@@ -1,6 +1,6 @@
 {
   "versao": 2,
-  "ultima_execucao": "2026-09-06T01:08:07.376Z",
+  "ultima_execucao": "2026-09-06T01:37:46.785Z",
   "ultima_execucao_status": "sucesso",
   "ofertas_ativas": [
     {
@@ -6738,6 +6738,20 @@
       "historico_id": "oferta-1776338131976-1788240519097-a22ao"
     },
     {
+      "produto_key": "1776338131991",
+      "codigo": "877092K",
+      "nome": "Dove Shampoo Hidratação + Hialuron-Vit 370ml",
+      "categoria": "SHAMPOO E CONDICIONADOR",
+      "regra_id": "regra-1785205192100",
+      "origem": "campanha_automatica",
+      "preco_normal": 23.9,
+      "preco_oferta": 22.23,
+      "desconto_percentual": 6.99,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-1776338131991-1788658666785-vr7m3"
+    },
+    {
       "produto_key": "1776338132001",
       "codigo": "P0172",
       "nome": "Havaianas Chinelo Color Branco 35/36",
@@ -9944,6 +9958,20 @@
       "historico_id": "oferta-1778508267545707603-1788597030628-irk2b"
     },
     {
+      "produto_key": "17785082675457328812",
+      "codigo": "679766B",
+      "nome": "Álcool Enxaguante Bucal Listerine Cool Mint sem 500ml",
+      "categoria": "LIMPEZA",
+      "regra_id": "regra-1785205105033",
+      "origem": "campanha_automatica",
+      "preco_normal": 18.9,
+      "preco_oferta": 17.77,
+      "desconto_percentual": 5.98,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-08T23:59:59-04:00",
+      "historico_id": "oferta-17785082675457328812-1788658666785-8i4bh"
+    },
+    {
       "produto_key": "177850826754575748",
       "codigo": "P0145",
       "nome": "Esponja de Banho Saboneteira Color Unidade",
@@ -13136,6 +13164,20 @@
       "historico_id": "oferta-178587410367710db-1788359339692-c121q"
     },
     {
+      "produto_key": "1785874188845_ff12",
+      "codigo": "4855892808700",
+      "nome": "Máscara Antifrizz Liso Leve and Solto 230 g",
+      "categoria": "BELEZA",
+      "regra_id": "regra-1785202557027",
+      "origem": "campanha_automatica",
+      "preco_normal": 19.9,
+      "preco_oferta": 17.91,
+      "desconto_percentual": 10,
+      "inicio": "2026-09-05",
+      "fim": "2026-09-12T23:59:59-04:00",
+      "historico_id": "oferta-1785874188845ff12-1788658666785-r5p1i"
+    },
+    {
       "produto_key": "1785874714165_127f",
       "codigo": "7500435172561",
       "nome": "Aparelho de Depilação Gillette Venus Suave Sensitive 3 lâminas 4 unidades",
@@ -16052,7 +16094,7 @@
       "regra_id": "regra-1785205105033"
     },
     "17785082675457328812": {
-      "ultima_oferta_em": "2026-09-01T07:30:35.057Z",
+      "ultima_oferta_em": "2026-09-06T01:37:46.785Z",
       "regra_id": "regra-1785205105033"
     },
     "1776338131994": {
@@ -16548,7 +16590,7 @@
       "regra_id": "regra-1785205192100"
     },
     "1776338131991": {
-      "ultima_oferta_em": "2026-09-01T12:37:59.937Z",
+      "ultima_oferta_em": "2026-09-06T01:37:46.785Z",
       "regra_id": "regra-1785205192100"
     },
     "1776338123512": {
@@ -20820,7 +20862,7 @@
       "regra_id": "regra-1785205105033"
     },
     "1785874188845_ff12": {
-      "ultima_oferta_em": "2026-08-24T18:12:35.791Z",
+      "ultima_oferta_em": "2026-09-06T01:37:46.785Z",
       "regra_id": "regra-1785202557027"
     },
     "1785874714165_127f": {
@@ -21373,23 +21415,6 @@
     }
   },
   "execucoes": [
-    {
-      "id": "github-1787977723148",
-      "executado_em": "2026-08-29T04:28:43.682Z",
-      "origem": "make",
-      "modo": "completo",
-      "resumo": {
-        "ofertas_solicitadas": 23,
-        "ofertas_criadas": 8,
-        "ofertas_nao_criadas": 15,
-        "ofertas_encerradas": 409,
-        "vencidos": 409,
-        "ofertas_reativadas": 0,
-        "reativacoes_com_falha": 0,
-        "banners_reativados": 0,
-        "banners_desativados": 0
-      }
-    },
     {
       "id": "make-20260829015126754",
       "executado_em": "2026-08-29T04:52:49.901Z",
@@ -24759,6 +24784,23 @@
     {
       "id": "github-1788656886613",
       "executado_em": "2026-09-06T01:08:07.376Z",
+      "origem": "make",
+      "modo": "completo",
+      "resumo": {
+        "ofertas_solicitadas": 23,
+        "ofertas_criadas": 3,
+        "ofertas_nao_criadas": 20,
+        "ofertas_encerradas": 0,
+        "vencidos": 0,
+        "ofertas_reativadas": 0,
+        "reativacoes_com_falha": 0,
+        "banners_reativados": 0,
+        "banners_desativados": 0
+      }
+    },
+    {
+      "id": "github-1788658666304",
+      "executado_em": "2026-09-06T01:37:46.785Z",
       "origem": "make",
       "modo": "completo",
       "resumo": {
