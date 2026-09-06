@@ -8,7 +8,26 @@ Projeto **novo** dentro de `SUCEDOAN12/atendimento`. Não usar como base o fluxo
 
 Fluxo-alvo:
 
-PapoAI/WhatsApp → carrossel oficial Meta → site `/atendimento` → cliente escolhe cesta ou seção → monta pedido → envia/finaliza pelo WhatsApp → PapoAI → CPF → Make novo → Bling.
+PapoAI/WhatsApp → automação/template oficial Meta → site `/atendimento` → cliente escolhe cesta ou seção → monta pedido → envia/finaliza pelo WhatsApp → PapoAI → CPF → Make novo → Bling.
+
+O `/atendimento` agora é tratado como o site principal do atendimento. A logo do topo deve voltar para `./`, e não para o site institucional antigo.
+
+## Estratégia PapoAI + templates Meta + Make
+
+O PapoAI é a camada principal de conversa, IA, funil, CRM, templates oficiais da Meta, automações e handoff humano.
+
+Como o PapoAI já consegue usar automações com templates oficiais da Meta, a regra é:
+
+1. **Template/WhatsApp oficial:** usar automações do PapoAI.
+2. **Conversa, dúvidas e condução:** usar IA do PapoAI.
+3. **Montagem visual do pedido:** usar o site `/atendimento`.
+4. **Fechamento operacional:** usar Make somente quando o pedido estiver pronto para validar CPF/cliente/endereço/itens/preço/estoque e criar pedido no Bling.
+
+Não colocar webhook do Make diretamente no frontend público, porque o repositório é público e isso expõe endpoint/segredo. O caminho seguro do MVP é:
+
+Cliente monta pedido no site → site envia mensagem estruturada no WhatsApp → PapoAI identifica `FINALIZAR PEDIDO` ou pedido de cesta → automação do PapoAI chama o Make → Make valida no Bling e devolve a resposta/encaminha para atendimento.
+
+Futuramente, se for necessário finalizar sem depender da leitura da conversa, criar uma camada server-side/proxy segura, por exemplo Cloud Run, para receber o carrinho e chamar Make/Bling sem expor segredo no navegador.
 
 ## Carrossel oficial do PapoAI
 
@@ -50,9 +69,19 @@ Ela mostra as categorias em 2 colunas para navegação dentro do site.
 
 ## UX vigente
 
+### Página inicial / menu
+
+- `/atendimento/` é a tela principal do atendimento;
+- a logo do topo aponta para `./`;
+- a página inicial mostra cards de menu com **ícones** em vez de fotos;
+- cada card de menu tem fundo colorido diferente;
+- categorias oficiais em 2 colunas;
+- chip selecionado usa cor de destaque;
+- busca com texto mais intuitivo: `Buscar cestas, ofertas e produtos`.
+
 ### Cestas Básicas
 
-- primeira tela: grade **sempre com 2 colunas**;
+- primeira tela de cestas: grade **sempre com 2 colunas**;
 - card: foto quadrada, nome e preço da cesta;
 - ao abrir: foto quadrada grande da cesta;
 - abaixo: nome de cada produto + quantidade + botões `−` e `+`;
@@ -83,6 +112,11 @@ Ela mostra as categorias em 2 colunas para navegação dentro do site.
 ## Implementado
 
 - topbar com logo Dona Antônia (`/img/logoantonia5.png`);
+- logo ajustada para voltar ao início do atendimento (`./`);
+- home `/atendimento/` como menu principal;
+- cards de menu com ícones e fundos coloridos diferentes;
+- busca mais intuitiva;
+- chip ativo com cor de destaque;
 - grade de cestas em 2 colunas;
 - grade de categorias em 2 colunas;
 - fotos reais das cestas vindas do cadastro existente;
@@ -112,11 +146,12 @@ Próxima evolução: esses arquivos serão gerados/atualizados pela nova sincron
 
 ## Segurança
 
-O repositório é público. Não colocar tokens, API Keys, PAT, CPF, endereços ou dados de clientes no GitHub.
+O repositório é público. Não colocar tokens, API Keys, PAT, webhooks do Make, CPF, endereços ou dados de clientes no GitHub.
 
 ## Próximos passos
 
 1. Ajustar o Admin para refletir a nova estrutura e os 6 links do carrossel.
 2. Criar sincronização nova Bling → catálogo do atendimento.
 3. Criar sincronização Bling → PapoAI Produtos via `/api/v1/products/sync`.
-4. Criar cenário Make novo e mínimo: CPF → localizar/criar contato → confirmar endereço → revalidar itens/preço/estoque → criar pedido de venda → devolver número do pedido.
+4. Configurar no PapoAI automação para template oficial da Meta quando houver gatilho de catálogo/menu/cestas.
+5. Criar cenário Make novo e mínimo para fechamento: receber payload do PapoAI → CPF → localizar/criar contato → confirmar endereço → revalidar itens/preço/estoque → criar pedido de venda → devolver número do pedido.
