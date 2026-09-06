@@ -19,15 +19,16 @@ Todos os cartões do carrossel devem manter os mesmos componentes:
 - ação `Abrir link`;
 - link para a seção do site.
 
-Usar 7 entradas:
+Usar **6 categorias oficiais**:
 
 1. Cestas Básicas → `/atendimento/?secao=cestas`
 2. Ofertas → `/atendimento/?secao=ofertas`
 3. Mercearia → `/atendimento/?secao=mercearia`
-4. Bebidas → `/atendimento/?secao=bebidas`
-5. Limpeza → `/atendimento/?secao=limpeza`
-6. Higiene → `/atendimento/?secao=higiene`
-7. Utilidades → `/atendimento/?secao=utilidades`
+4. Lavanderia e Limpeza → `/atendimento/?secao=limpeza`
+5. Higiene e Beleza → `/atendimento/?secao=higiene`
+6. Utilidades e Pets → `/atendimento/?secao=utilidades`
+
+Não usar `Bebidas` como categoria separada agora. Os produtos serão reclassificados depois dentro das categorias oficiais, principalmente Mercearia ou outra seção que o usuário definir.
 
 Links completos ficam em `data/papoai-links.json`.
 
@@ -62,7 +63,7 @@ Ela mostra as categorias em 2 colunas para navegação dentro do site.
 
 - existe uma tela `Categorias` em grade **sempre com 2 colunas**;
 - cada categoria abre sua própria grade de produtos;
-- Ofertas, Mercearia, Bebidas, Limpeza, Higiene e Utilidades;
+- categorias oficiais: Cestas Básicas, Ofertas, Mercearia, Lavanderia e Limpeza, Higiene e Beleza, Utilidades e Pets;
 - cards de produtos sempre com os mesmos componentes: foto, nome, preço e botão `Adicionar`;
 - depois de adicionar, controle `− quantidade +`;
 - navegação entre as seções por chips no topo;
@@ -92,7 +93,7 @@ Ela mostra as categorias em 2 colunas para navegação dentro do site.
 - nome + quantidade nos itens sem preço individual;
 - cálculo por preço-base da cesta + diferença das alterações;
 - produtos avulsos em 2 colunas com foto, nome, preço e adicionar;
-- seções Ofertas, Mercearia, Bebidas, Limpeza, Higiene e Utilidades;
+- 6 categorias oficiais: Cestas Básicas, Ofertas, Mercearia, Lavanderia e Limpeza, Higiene e Beleza, Utilidades e Pets;
 - carrinho único em `localStorage`;
 - mensagem do WhatsApp inicia com `Nome da cesta — PADRÃO` ou `Nome da cesta — ALTERADA`;
 - quando houver alteração, a mensagem separa `PRODUTOS ALTERADOS` e `PRODUTOS RETIRADOS`;
@@ -115,7 +116,7 @@ O repositório é público. Não colocar tokens, API Keys, PAT, CPF, endereços 
 
 ## Próximos passos
 
-1. Ajustar o Admin para refletir a nova estrutura e os 7 links do carrossel.
+1. Ajustar o Admin para refletir a nova estrutura e os 6 links do carrossel.
 2. Criar sincronização nova Bling → catálogo do atendimento.
 3. Criar sincronização Bling → PapoAI Produtos via `/api/v1/products/sync`.
 4. Criar cenário Make novo e mínimo: CPF → localizar/criar contato → confirmar endereço → revalidar itens/preço/estoque → criar pedido de venda → devolver número do pedido.
