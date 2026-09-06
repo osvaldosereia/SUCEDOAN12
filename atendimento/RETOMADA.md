@@ -51,11 +51,11 @@ Não usar `Bebidas` como categoria separada agora. Os produtos serão reclassifi
 
 Links completos ficam em `data/papoai-links.json`.
 
-Existe também a página interna de grade de categorias:
+Existe também a página interna de categorias:
 
-`/atendimento/?secao=categorias`
+`/atendimento/` ou `/atendimento/?secao=categorias`
 
-Ela mostra as categorias em 2 colunas para navegação dentro do site.
+Ela mostra as categorias como botões horizontais em coluna única no mobile.
 
 ## Regras comerciais importantes
 
@@ -73,11 +73,29 @@ Ela mostra as categorias em 2 colunas para navegação dentro do site.
 
 - `/atendimento/` é a tela principal do atendimento;
 - a logo do topo aponta para `./`;
-- a página inicial mostra cards de menu com **ícones** em vez de fotos;
-- cada card de menu tem fundo colorido diferente;
-- categorias oficiais em 2 colunas;
-- chip selecionado usa cor de destaque;
-- busca com texto mais intuitivo: `Buscar cestas, ofertas e produtos`.
+- a página inicial mostra menu em **uma coluna no mobile**;
+- os itens do menu são botões horizontais grandes, com cores pastéis diferentes;
+- o nome da seção fica centralizado no botão;
+- o ícone é apenas apoio visual, sem dominar o layout;
+- visual deve ser limpo, leve, adulto e fácil de tocar;
+- busca com texto intuitivo: `Buscar cestas, ofertas e produtos`.
+
+### Navegação
+
+- clicar em menu, cesta ou seção sempre deve iniciar a nova tela no topo;
+- usar `history.scrollRestoration = manual` para evitar que o navegador restaure a rolagem antiga;
+- telas internas possuem botão `Voltar`;
+- `Voltar` de produtos/seções retorna para o início do atendimento;
+- `Voltar` de detalhe de cesta retorna para a lista de cestas;
+- chip selecionado usa cor de destaque.
+
+### Performance / carregamento leve
+
+- produtos e cestas devem carregar inicialmente em lotes de 10;
+- ao rolar a página, carregar mais 10 por vez com `IntersectionObserver`;
+- manter botão `Carregar mais` como fallback;
+- imagens devem usar `loading="lazy"` e `decoding="async"`;
+- não renderizar listas grandes inteiras de uma vez no primeiro carregamento.
 
 ### Cestas Básicas
 
@@ -90,7 +108,6 @@ Ela mostra as categorias em 2 colunas para navegação dentro do site.
 
 ### Categorias e produtos avulsos
 
-- existe uma tela `Categorias` em grade **sempre com 2 colunas**;
 - cada categoria abre sua própria grade de produtos;
 - categorias oficiais: Cestas Básicas, Ofertas, Mercearia, Lavanderia e Limpeza, Higiene e Beleza, Utilidades e Pets;
 - cards de produtos sempre com os mesmos componentes: foto, nome, preço e botão `Adicionar`;
@@ -114,11 +131,15 @@ Ela mostra as categorias em 2 colunas para navegação dentro do site.
 - topbar com logo Dona Antônia (`/img/logoantonia5.png`);
 - logo ajustada para voltar ao início do atendimento (`./`);
 - home `/atendimento/` como menu principal;
-- cards de menu com ícones e fundos coloridos diferentes;
+- menu inicial em botões horizontais pastéis, uma coluna no mobile;
 - busca mais intuitiva;
+- botão `Voltar` nas telas internas;
+- abertura de novas seções sempre no topo;
+- carregamento incremental de listas em lotes de 10;
+- `IntersectionObserver` para carregar mais itens conforme a rolagem;
+- imagens com `loading="lazy"` e `decoding="async"`;
 - chip ativo com cor de destaque;
 - grade de cestas em 2 colunas;
-- grade de categorias em 2 colunas;
 - fotos reais das cestas vindas do cadastro existente;
 - composição real das cestas carregada de `site/produtos-cesta-basica.json`;
 - nomes/preços dos componentes resolvidos usando `site/produtos-home.json` quando disponível;
