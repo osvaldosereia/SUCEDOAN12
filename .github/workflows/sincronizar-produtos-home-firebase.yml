@@ -1,16 +1,16 @@
 name: Sincronizar catálogo com Firebase
 run-name: Catálogo oficial · ${{ github.event_name }}
 
+# EMERGÊNCIA 2026-09-06: removido o cron que baixava o catálogo completo
+# do Firebase a cada 3 horas. Mantidos acionamento manual, repository_dispatch
+# e push dos scripts até a migração para sincronização incremental.
 on:
   workflow_dispatch:
   repository_dispatch:
     types: [sincronizar_produtos_home]
-  schedule:
-    - cron: "17 */3 * * *"
   push:
     branches: [main]
     paths:
-      - ".github/workflows/sincronizar-produtos-home-firebase.yml"
       - "scripts/sincronizar-produtos-home-firebase.mjs"
       - "scripts/estabilizar-catalogo-publico.mjs"
 
