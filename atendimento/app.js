@@ -9,6 +9,7 @@ const basketParam = String(params.get('cesta') || '').trim();
 const PAGE_SIZE = 10;
 const money = value => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const $ = id => document.getElementById(id);
+const n = value => Number(value || 0);
 
 const sections = [
   { key: 'cestas', label: 'Cestas Básicas', icon: '🧺', tone: 'tone-orange' },
@@ -31,13 +32,23 @@ const state = {
   listKey: ''
 };
 let loadObserver = null;
+let toastTimer = null;
 
 function esc(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+  return String(value ?? '').replace(/[&<>'\"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '\"': '&quot;' }[char]));
 }
 
 function clean(value) {
   return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function showToast(message) {
+  const toast = $('toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
 }
 
 function scrollToTop() {
@@ -98,19 +109,51 @@ function hideDetailNav() {
   nav.innerHTML = '';
 }
 
+function basketHasChanges(cart) {
+  return (cart.basket?.items || []).some(item => n(item.qty) !== n(item.baseQty));
+}
+
+function checkoutGroup(title, lines) {
+  if (!lines.length) return '';
+  return `
+    <section class="checkout-group">
+      <h3>${esc(title)}</h3>
+      ${lines.map(line => `<div class="checkout-line"><span>${esc(line)}</span></div>`).join('')}
+    </section>`;
+}
+
 function renderSummary() {
   const host = $('summaryItems');
   host.innerHTML = '';
-  if (state.cart.basket) {
-    host.insertAdjacentHTML('beforeend', `<div class="summary-line"><span>${esc(state.cart.basket.name)}</span><strong>${money(basketTotal(state.cart))}</strong></div>`);
+
+  const units = totalUnits(state.cart);
+  const clearButton = $('clearOrder');
+  if (clearButton) clearButton.disabled = units === 0;
+
+  if (!units) {
+    host.innerHTML = '<div class="checkout-empty">Seu pedido ainda está vazio.</div>';
+  } else {
+    const groups = [];
+
+    if (state.cart.basket) {
+      const status = basketHasChanges(state.cart) ? 'ALTERADA' : 'PADRÃO';
+      const basketItems = (state.cart.basket.items || [])
+        .filter(item => n(item.qty) > 0)
+        .map(item => `${item.qty}x ${item.name}`);
+      groups.push(checkoutGroup(`${state.cart.basket.name} — ${status}`, basketItems));
+    }
+
+    const extras = Object.values(state.cart.extras || {}).filter(item => n(item.qty) > 0);
+    if (extras.length) {
+      groups.push(checkoutGroup('Produtos avulsos', extras.map(item => `${item.qty}x ${item.name}`)));
+    }
+
+    host.innerHTML = groups.join('') || '<div class="checkout-empty">Seu pedido ainda está vazio.</div>';
   }
-  const extras = Object.values(state.cart.extras || {}).filter(item => item.qty > 0);
-  if (extras.length) {
-    host.insertAdjacentHTML('beforeend', `<div class="summary-line"><span>Produtos avulsos (${extras.reduce((s, i) => s + i.qty, 0)})</span><strong>${money(extrasTotal(state.cart))}</strong></div>`);
-  }
+
   $('grandTotal').textContent = money(grandTotal(state.cart));
   $('bottomTotal').textContent = money(grandTotal(state.cart));
-  $('sendWhatsapp').disabled = totalUnits(state.cart) === 0;
+  $('sendWhatsapp').disabled = units === 0;
   $('sendWhatsapp').textContent = basketParam ? 'Enviar cesta' : 'Finalizar pedido';
 }
 
@@ -246,11 +289,20 @@ function addExtra(code, delta) {
   rerender();
 }
 
+function clearWholeOrder(goHome = false) {
+  state.cart = clearCart();
+  if (basketParam || goHome) {
+    sessionStorage.setItem('da_force_top', '1');
+    location.href = './';
+    return;
+  }
+  rerender();
+  showToast('Pedido limpo.');
+}
+
 function bind() {
-  $('resetCart').addEventListener('click', () => {
-    state.cart = clearCart();
-    location.reload();
-  });
+  $('resetCart').addEventListener('click', () => clearWholeOrder(true));
+  $('clearOrder')?.addEventListener('click', () => clearWholeOrder(false));
   $('sendWhatsapp').addEventListener('click', () => {
     location.href = whatsappUrl(state.cart, money, !basketParam);
   });
