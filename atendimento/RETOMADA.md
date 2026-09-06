@@ -8,7 +8,7 @@ Projeto **novo** dentro de `SUCEDOAN12/atendimento`. Não usar como base o fluxo
 
 Fluxo-alvo:
 
-PapoAI/WhatsApp → automação/template oficial Meta → site `/atendimento` → cliente escolhe cesta ou seção → monta pedido → envia/finaliza pelo WhatsApp → PapoAI → CPF → Make novo → Bling.
+PapoAI/WhatsApp → automação/template oficial Meta → site `/atendimento` → cliente escolhe cesta ou seção → monta pedido → checkout rápido no site → envia/finaliza pelo WhatsApp → PapoAI → CPF → Make novo → Bling.
 
 O `/atendimento` agora é tratado como o site principal do atendimento. A logo do topo deve voltar para `./`, e não para o site institucional antigo.
 
@@ -65,7 +65,9 @@ Ela mostra as categorias como botões horizontais em coluna única no mobile.
 - Alterações na composição usam internamente o preço unitário do produto apenas para calcular a diferença sobre o preço-base da cesta.
 - No editor da cesta, mostrar apenas **foto grande da cesta, nome, valor da cesta, nome dos produtos e quantidade**.
 - Não mostrar SKU, código, preço unitário ou subtotal individual nos itens da cesta.
-- Produtos avulsos mostram foto, nome e preço.
+- Produtos avulsos mostram foto, nome e preço nos cards de compra.
+- No checkout rápido, mostrar somente lista de itens com quantidade e **valor total do pedido**.
+- No checkout rápido e na mensagem final de WhatsApp, não mostrar valor individual nem subtotal por produto avulso.
 
 ## UX vigente
 
@@ -96,6 +98,17 @@ Ela mostra as categorias como botões horizontais em coluna única no mobile.
 - manter botão `Carregar mais` como fallback;
 - imagens devem usar `loading="lazy"` e `decoding="async"`;
 - não renderizar listas grandes inteiras de uma vez no primeiro carregamento.
+
+### Checkout rápido
+
+- abaixo do catálogo existe um card `Checkout rápido`;
+- mostra o nome da cesta escolhida e o status `PADRÃO` ou `ALTERADA`;
+- mostra cada item do pedido como `quantidade x nome`;
+- mostra produtos avulsos também apenas com quantidade e nome;
+- não mostra valor individual nem subtotal por item;
+- mostra somente o **Total** do pedido;
+- possui botão `Limpar pedido` para apagar a cesta e todos os produtos avulsos;
+- o botão `Recomeçar` no topo também limpa o pedido e volta para a home do atendimento.
 
 ### Cestas Básicas
 
@@ -139,6 +152,10 @@ Ela mostra as categorias como botões horizontais em coluna única no mobile.
 - `IntersectionObserver` para carregar mais itens conforme a rolagem;
 - imagens com `loading="lazy"` e `decoding="async"`;
 - chip ativo com cor de destaque;
+- checkout rápido com lista de itens e quantidades;
+- botão `Limpar pedido` no checkout;
+- botão `Recomeçar` limpando todo o pedido e voltando para a home;
+- mensagem final do WhatsApp sem subtotais individuais por produto avulso;
 - grade de cestas em 2 colunas;
 - fotos reais das cestas vindas do cadastro existente;
 - composição real das cestas carregada de `site/produtos-cesta-basica.json`;
