@@ -1,297 +1,312 @@
-const STORAGE_KEY = 'dona_antonia_atendimento_cart_v1';
+const STORAGE_KEY = 'dona_antonia_atendimento_cart_v2';
 const PREVIEW_KEY = 'dona_antonia_atendimento_preview_v1';
 const CATALOG_URL = './data/catalogo.json';
 const CONFIG_URL = './data/site-config.json';
 
-const state = {
-  catalog: null,
-  config: null,
-  basket: null,
-  cart: null,
-  activeCategory: null,
-};
-
-const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const state = { catalog:null, config:null, view:'baskets', basket:null, cart:null, category:null };
+const money = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
+const $ = selector => document.querySelector(selector);
 
 const els = {
-  siteEyebrow: document.querySelector('#siteEyebrow'),
-  siteTitle: document.querySelector('#siteTitle'),
-  siteIntro: document.querySelector('#siteIntro'),
-  basketTitle: document.querySelector('#basketTitle'),
-  basketDescription: document.querySelector('#basketDescription'),
-  basketSubtotal: document.querySelector('#basketSubtotal'),
-  basketItemsTitle: document.querySelector('#basketItemsTitle'),
-  basketItemsSubtitle: document.querySelector('#basketItemsSubtitle'),
-  basketItems: document.querySelector('#basketItems'),
-  offersSection: document.querySelector('#offersSection'),
-  offersTitle: document.querySelector('#offersTitle'),
-  offersSubtitle: document.querySelector('#offersSubtitle'),
-  categoryTabs: document.querySelector('#categoryTabs'),
-  offersList: document.querySelector('#offersList'),
-  summaryTitle: document.querySelector('#summaryTitle'),
-  summaryItems: document.querySelector('#summaryItems'),
-  summaryNotice: document.querySelector('#summaryNotice'),
-  orderCode: document.querySelector('#orderCode'),
-  grandTotal: document.querySelector('#grandTotal'),
-  bottomTotal: document.querySelector('#bottomTotal'),
-  sendWhatsapp: document.querySelector('#sendWhatsapp'),
-  resetCart: document.querySelector('#resetCart'),
-  toast: document.querySelector('#toast'),
+  basketGridScreen: $('#basketGridScreen'),
+  basketEditScreen: $('#basketEditScreen'),
+  productsScreen: $('#productsScreen'),
+  basketGrid: $('#basketGrid'),
+  basketImage: $('#basketImage'),
+  basketTitle: $('#basketTitle'),
+  basketPrice: $('#basketPrice'),
+  basketItems: $('#basketItems'),
+  productsTitle: $('#productsTitle'),
+  categoryGrid: $('#categoryGrid'),
+  productGrid: $('#productGrid'),
+  bottomLabel: $('#bottomLabel'),
+  bottomTotal: $('#bottomTotal'),
+  sendWhatsapp: $('#sendWhatsapp'),
+  resetCart: $('#resetCart'),
+  toast: $('#toast')
 };
 
-function uid() {
+const clone = value => JSON.parse(JSON.stringify(value));
+const asNumber = value => Number(value || 0) || 0;
+
+function uid(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const part = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `DA-${part}`;
+  return 'DA-' + Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
 }
 
-function loadStoredCart() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-  } catch {
-    return null;
-  }
+function imageUrl(path){
+  const value = String(path || '').trim();
+  if (!value) return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><rect width="800" height="800" fill="#fff4ea"/><text x="400" y="410" text-anchor="middle" font-family="Arial" font-size="42" fill="#d8680c">Dona Antônia</text></svg>');
+  if (/^https?:\/\//i.test(value) || value.startsWith('/')) return value;
+  return '/' + value.replace(/^\.\//, '');
 }
 
-function saveCart() {
+function loadCart(){
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; }
+}
+
+function saveCart(){
+  if (!state.cart) return;
   state.cart.updatedAt = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cart));
 }
 
-function createCart(basket) {
+function createCart(basket){
   return {
     id: uid(),
-    basketSlug: basket.slug,
-    basketName: basket.name,
+    basketSlug: basket?.slug || null,
+    basketName: basket?.name || '',
+    basketBasePrice: asNumber(basket?.priceBase ?? basket?.price),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    items: basket.items.map(item => ({ ...item, source: 'cesta' })),
+    basketItems: (basket?.items || []).map(item => ({...item, baseQty: asNumber(item.qty), qty: asNumber(item.qty)})),
+    extras: []
   };
 }
 
-function selectBasket(catalog) {
-  const params = new URLSearchParams(location.search);
-  const fallback = state.config?.site?.defaultBasket || catalog.baskets[0]?.slug;
-  const slug = params.get('cesta') || fallback;
-  return catalog.baskets.find(item => item.slug === slug) || catalog.baskets[0];
-}
-
-function hydrateCart(basket) {
-  const stored = loadStoredCart();
-  if (stored && stored.basketSlug === basket.slug && Array.isArray(stored.items)) return stored;
+function ensureCart(basket = null){
+  const stored = loadCart();
+  if (stored && Array.isArray(stored.basketItems) && Array.isArray(stored.extras)) {
+    if (!basket || stored.basketSlug === basket.slug) return stored;
+  }
   return createCart(basket);
 }
 
-function total(items = state.cart.items) {
-  return items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+function basketDelta(){
+  if (!state.cart) return 0;
+  return state.cart.basketItems.reduce((sum, item) => sum + (asNumber(item.qty) - asNumber(item.baseQty)) * asNumber(item.unitPrice ?? item.price), 0);
 }
 
-function basketSubtotal() {
-  return total(state.cart.items.filter(item => item.source === 'cesta'));
+function basketTotal(){
+  if (!state.cart?.basketSlug) return 0;
+  return Math.max(0, asNumber(state.cart.basketBasePrice) + basketDelta());
 }
 
-function findCartItem(sku) {
-  return state.cart.items.find(item => item.sku === sku);
+function extrasTotal(){
+  return (state.cart?.extras || []).reduce((sum, item) => sum + asNumber(item.qty) * asNumber(item.price), 0);
 }
 
-function changeQty(sku, delta, fallbackProduct = null) {
-  let item = findCartItem(sku);
-  if (!item && fallbackProduct && delta > 0) {
-    item = { ...fallbackProduct, qty: 0, source: 'adicional' };
-    state.cart.items.push(item);
-  }
-  if (!item) return;
-  item.qty = Math.max(0, Number(item.qty || 0) + delta);
-  saveCart();
-  render();
-  showToast(item.qty === 0 ? 'Item removido' : 'Pedido atualizado');
+function orderTotal(){ return basketTotal() + extrasTotal(); }
+function itemCount(){
+  const basketCount = (state.cart?.basketItems || []).reduce((sum, item) => sum + asNumber(item.qty), 0);
+  const extrasCount = (state.cart?.extras || []).reduce((sum, item) => sum + asNumber(item.qty), 0);
+  return basketCount + extrasCount;
 }
 
-function showToast(message) {
+function show(view){
+  state.view = view;
+  els.basketGridScreen.hidden = view !== 'baskets';
+  els.basketEditScreen.hidden = view !== 'basket-edit';
+  els.productsScreen.hidden = view !== 'products';
+}
+
+function toast(message){
   els.toast.textContent = message;
   els.toast.classList.add('show');
-  clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => els.toast.classList.remove('show'), 1500);
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => els.toast.classList.remove('show'), 1200);
 }
 
-function productCard(item, options = {}) {
-  const wrap = document.createElement('article');
-  wrap.className = 'product';
+function basketBySlug(slug){ return state.catalog.baskets.find(item => item.slug === slug || item.id === slug || item.codigo === slug); }
 
-  const main = document.createElement('div');
-  main.className = 'product-main';
-  main.innerHTML = `<span class="product-name"></span><div class="product-meta"></div><div class="price"></div>`;
-  main.querySelector('.product-name').textContent = item.name;
-  main.querySelector('.product-meta').textContent = item.sku;
-  main.querySelector('.price').textContent = money.format(item.price);
+function openBasket(slug){
+  const basket = basketBySlug(slug);
+  if (!basket) return;
+  state.basket = basket;
+  state.cart = ensureCart(basket);
+  saveCart();
+  history.replaceState(null, '', `?cesta=${encodeURIComponent(basket.slug)}`);
+  render();
+}
 
-  const controls = document.createElement('div');
-  const current = options.cartItem || item;
+function openProducts(category = null){
+  state.cart = ensureCart();
+  state.category = category;
+  const query = category ? `?secao=produtos&categoria=${encodeURIComponent(category)}` : '?secao=produtos';
+  history.replaceState(null, '', query);
+  render();
+}
 
-  if (options.offer && Number(current?.qty || 0) === 0) {
-    const add = document.createElement('button');
-    add.className = 'offer-add';
-    add.type = 'button';
-    add.textContent = '+ Adicionar';
-    add.addEventListener('click', () => changeQty(item.sku, 1, item));
-    controls.append(add);
-  } else {
-    controls.className = 'qty';
-    const minus = document.createElement('button');
-    minus.type = 'button';
-    minus.setAttribute('aria-label', `Diminuir ${item.name}`);
-    minus.textContent = '−';
-    minus.addEventListener('click', () => changeQty(item.sku, -1, item));
-
-    const amount = document.createElement('span');
-    amount.textContent = Number(current?.qty || 0);
-
-    const plus = document.createElement('button');
-    plus.type = 'button';
-    plus.setAttribute('aria-label', `Aumentar ${item.name}`);
-    plus.textContent = '+';
-    plus.addEventListener('click', () => changeQty(item.sku, 1, item));
-
-    controls.append(minus, amount, plus);
-  }
-
-  wrap.append(main, controls);
+function qtyControl(current, onMinus, onPlus){
+  const wrap = document.createElement('div');
+  wrap.className = 'qty';
+  const minus = document.createElement('button');
+  minus.type = 'button';
+  minus.textContent = '−';
+  minus.addEventListener('click', onMinus);
+  const amount = document.createElement('span');
+  amount.textContent = asNumber(current);
+  const plus = document.createElement('button');
+  plus.type = 'button';
+  plus.textContent = '+';
+  plus.addEventListener('click', onPlus);
+  wrap.append(minus, amount, plus);
   return wrap;
 }
 
-function applyConfig() {
-  const site = state.config?.site || {};
-  const whatsapp = state.config?.whatsapp || {};
-  if (site.eyebrow) els.siteEyebrow.textContent = site.eyebrow;
-  if (site.title) {
-    els.siteTitle.textContent = site.title;
-    document.title = `${site.title} | ${site.eyebrow || 'Dona Antônia'}`;
-  }
-  if (site.intro) els.siteIntro.textContent = site.intro;
-  if (site.basketSectionTitle) els.basketItemsTitle.textContent = site.basketSectionTitle;
-  if (site.basketSectionSubtitle) els.basketItemsSubtitle.textContent = site.basketSectionSubtitle;
-  if (site.offersTitle) els.offersTitle.textContent = site.offersTitle;
-  if (site.offersSubtitle) els.offersSubtitle.textContent = site.offersSubtitle;
-  if (site.summaryTitle) els.summaryTitle.textContent = site.summaryTitle;
-  if (site.notice) els.summaryNotice.textContent = site.notice;
-  els.offersSection.hidden = site.showOffers === false;
-  if (whatsapp.buttonLabel) els.sendWhatsapp.textContent = whatsapp.buttonLabel;
-}
-
-function renderBasket() {
-  els.basketTitle.textContent = state.basket.name;
-  els.basketDescription.textContent = state.basket.description || 'Personalize os itens da cesta.';
-  els.basketSubtotal.textContent = money.format(basketSubtotal());
-  els.basketItems.replaceChildren();
-
-  const basketItems = state.cart.items.filter(item => item.source === 'cesta');
-  basketItems.forEach(item => els.basketItems.append(productCard(item)));
-}
-
-function renderCategories() {
-  const categories = [...new Set(state.catalog.offers.map(item => item.category).filter(Boolean))];
-  if (!state.activeCategory || !categories.includes(state.activeCategory)) state.activeCategory = categories[0] || null;
-
-  els.categoryTabs.replaceChildren();
-  categories.forEach(category => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = `chip${category === state.activeCategory ? ' active' : ''}`;
-    button.textContent = category;
-    button.addEventListener('click', () => {
-      state.activeCategory = category;
-      renderCategories();
-      renderOffers();
-    });
-    els.categoryTabs.append(button);
+function renderBasketGrid(){
+  els.basketGrid.replaceChildren();
+  state.catalog.baskets.forEach(basket => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'select-card';
+    card.innerHTML = `<img src="${imageUrl(basket.image)}" alt=""><div class="card-info"><h2></h2><strong></strong></div>`;
+    card.querySelector('h2').textContent = basket.name;
+    card.querySelector('strong').textContent = money.format(asNumber(basket.priceBase ?? basket.price));
+    card.addEventListener('click', () => openBasket(basket.slug));
+    els.basketGrid.append(card);
   });
 }
 
-function renderOffers() {
-  els.offersList.replaceChildren();
-  const offers = state.catalog.offers.filter(item => !state.activeCategory || item.category === state.activeCategory);
-  if (!offers.length) {
-    els.offersList.innerHTML = '<div class="empty">Nenhuma oferta nesta categoria.</div>';
+function renderBasketEdit(){
+  if (!state.basket) return;
+  els.basketImage.src = imageUrl(state.basket.image);
+  els.basketImage.alt = state.basket.name;
+  els.basketTitle.textContent = state.basket.name;
+  els.basketPrice.textContent = money.format(basketTotal());
+  els.basketItems.replaceChildren();
+  state.cart.basketItems.forEach((item, index) => {
+    const line = document.createElement('article');
+    line.className = 'basket-item';
+    const name = document.createElement('span');
+    name.textContent = item.name;
+    const controls = qtyControl(item.qty, () => changeBasketQty(index, -1), () => changeBasketQty(index, 1));
+    line.append(name, controls);
+    els.basketItems.append(line);
+  });
+}
+
+function changeBasketQty(index, delta){
+  const item = state.cart.basketItems[index];
+  if (!item) return;
+  item.qty = Math.max(0, asNumber(item.qty) + delta);
+  saveCart();
+  render();
+}
+
+function categories(){
+  return [...new Set((state.catalog.offers || []).map(item => item.category).filter(Boolean))];
+}
+
+function renderProducts(){
+  const cats = categories();
+  els.categoryGrid.replaceChildren();
+  els.productGrid.replaceChildren();
+
+  if (!state.category) {
+    els.productsTitle.textContent = 'Categorias';
+    cats.forEach(category => {
+      const sample = state.catalog.offers.find(item => item.category === category);
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'select-card';
+      card.innerHTML = `<img src="${imageUrl(sample?.image)}" alt=""><div class="card-info"><h2></h2></div>`;
+      card.querySelector('h2').textContent = category;
+      card.addEventListener('click', () => openProducts(category));
+      els.categoryGrid.append(card);
+    });
     return;
   }
-  offers.forEach(item => {
-    const cartItem = findCartItem(item.sku);
-    els.offersList.append(productCard(item, { offer: true, cartItem }));
+
+  els.productsTitle.textContent = state.category;
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'select-card';
+  back.innerHTML = '<div class="card-info"><h2>← Categorias</h2></div>';
+  back.addEventListener('click', () => openProducts(null));
+  els.categoryGrid.append(back);
+
+  const offers = state.catalog.offers.filter(item => item.category === state.category);
+  if (!offers.length) {
+    els.productGrid.innerHTML = '<div class="empty">Sem produtos</div>';
+    return;
+  }
+  offers.forEach(offer => {
+    const current = state.cart.extras.find(item => item.sku === offer.sku)?.qty || 0;
+    const card = document.createElement('article');
+    card.className = 'product-card';
+    card.innerHTML = `<img src="${imageUrl(offer.image)}" alt=""><div class="card-info"><h3></h3><strong></strong></div>`;
+    card.querySelector('h3').textContent = offer.name;
+    card.querySelector('strong').textContent = money.format(asNumber(offer.price));
+    card.append(qtyControl(current, () => changeExtra(offer, -1), () => changeExtra(offer, 1)));
+    els.productGrid.append(card);
   });
 }
 
-function renderSummary() {
-  const activeItems = state.cart.items.filter(item => Number(item.qty) > 0);
-  els.summaryItems.replaceChildren();
-
-  if (!activeItems.length) {
-    els.summaryItems.innerHTML = '<div class="empty">Seu pedido está vazio.</div>';
-  } else {
-    activeItems.forEach(item => {
-      const line = document.createElement('div');
-      line.className = 'summary-line';
-      const label = document.createElement('span');
-      label.textContent = `${item.qty}× ${item.name}`;
-      const value = document.createElement('strong');
-      value.textContent = money.format(item.qty * item.price);
-      line.append(label, value);
-      els.summaryItems.append(line);
-    });
+function changeExtra(product, delta){
+  let item = state.cart.extras.find(row => row.sku === product.sku);
+  if (!item && delta > 0) {
+    item = {...product, qty:0};
+    state.cart.extras.push(item);
   }
-
-  const amount = total(activeItems);
-  els.orderCode.textContent = `Código ${state.cart.id}`;
-  els.grandTotal.textContent = money.format(amount);
-  els.bottomTotal.textContent = money.format(amount);
-  els.sendWhatsapp.disabled = activeItems.length === 0;
+  if (!item) return;
+  item.qty = Math.max(0, asNumber(item.qty) + delta);
+  state.cart.extras = state.cart.extras.filter(row => asNumber(row.qty) > 0);
+  saveCart();
+  render();
 }
 
-function buildWhatsappMessage() {
-  const activeItems = state.cart.items.filter(item => Number(item.qty) > 0);
+function renderBottom(){
+  const count = itemCount();
+  els.bottomTotal.textContent = money.format(orderTotal());
+  els.bottomLabel.textContent = count ? `${count} itens` : 'Pedido';
+  els.sendWhatsapp.disabled = state.view === 'baskets' || count === 0;
+  els.sendWhatsapp.textContent = state.view === 'basket-edit' ? 'Enviar cesta' : 'Finalizar pedido';
+}
+
+function buildWhatsappMessage(){
   const wa = state.config?.whatsapp || {};
   const lines = [wa.messageHeader || '🧺 *Meu pedido Dona Antônia*'];
-  if (wa.includeCartCode !== false) lines.push(`Código: *${state.cart.id}*`);
-  lines.push(`Cesta: *${state.basketName}*`, '');
-
-  activeItems.forEach(item => {
-    const sku = wa.includeSku ? ` [${item.sku}]` : '';
-    const subtotal = wa.includeItemSubtotal === false ? '' : ` — ${money.format(item.qty * item.price)}`;
-    lines.push(`${item.qty}x ${item.name}${sku}${subtotal}`);
-  });
-
-  lines.push('', `*Total calculado: ${money.format(total(activeItems))}*`, '', wa.messageFooter || 'Finalizei a montagem e quero continuar meu atendimento por aqui.');
+  lines.push(`Código: *${state.cart.id}*`);
+  if (state.cart.basketSlug) {
+    lines.push('', `*${state.cart.basketName}*`, `Valor da cesta personalizada: *${money.format(basketTotal())}*`);
+    state.cart.basketItems.filter(item => asNumber(item.qty)>0).forEach(item => lines.push(`${item.qty}x ${item.name}`));
+  }
+  const extras = state.cart.extras.filter(item => asNumber(item.qty)>0);
+  if (extras.length) {
+    lines.push('', '*Produtos adicionais*');
+    extras.forEach(item => lines.push(`${item.qty}x ${item.name} — ${money.format(asNumber(item.qty)*asNumber(item.price))}`));
+  }
+  lines.push('', `*Total: ${money.format(orderTotal())}*`, '', wa.messageFooter || 'Quero continuar pelo WhatsApp.');
   return lines.join('\n');
 }
 
-function openWhatsapp() {
+function openWhatsapp(){
   const number = String(state.config?.whatsapp?.number || state.catalog.whatsapp || '').replace(/\D/g, '');
-  if (!number) {
-    showToast('WhatsApp ainda não configurado');
-    return;
-  }
-  const message = buildWhatsappMessage();
-  const url = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-  window.location.href = url;
+  if (!number) return toast('WhatsApp não configurado');
+  window.location.href = `https://wa.me/${number}?text=${encodeURIComponent(buildWhatsappMessage())}`;
 }
 
-function resetCart() {
-  const ok = confirm('Recomeçar esta cesta e apagar as alterações atuais?');
-  if (!ok) return;
-  state.cart = createCart(state.basket);
-  saveCart();
+function resetCart(){
+  localStorage.removeItem(STORAGE_KEY);
+  state.cart = state.basket ? createCart(state.basket) : null;
   render();
-  showToast('Cesta reiniciada');
 }
 
-function render() {
-  applyConfig();
-  renderBasket();
-  renderCategories();
-  renderOffers();
-  renderSummary();
+function render(){
+  const params = new URLSearchParams(location.search);
+  const secao = params.get('secao');
+  const cesta = params.get('cesta');
+  const categoria = params.get('categoria');
+
+  if (secao === 'produtos' || secao === 'ofertas') {
+    state.category = categoria || state.category || null;
+    state.cart = ensureCart();
+    show('products');
+    renderProducts();
+  } else if (cesta) {
+    state.basket = basketBySlug(cesta) || state.catalog.baskets[0];
+    state.cart = ensureCart(state.basket);
+    show('basket-edit');
+    renderBasketEdit();
+  } else {
+    show('baskets');
+    renderBasketGrid();
+  }
+  renderBottom();
 }
 
-async function loadData() {
+async function loadData(){
   const params = new URLSearchParams(location.search);
   if (params.get('preview') === '1') {
     try {
@@ -299,41 +314,25 @@ async function loadData() {
       if (preview?.catalog && preview?.config) return preview;
     } catch {}
   }
-
-  const [catalogResponse, configResponse] = await Promise.all([
-    fetch(CATALOG_URL, { cache: 'no-store' }),
-    fetch(CONFIG_URL, { cache: 'no-store' }),
-  ]);
-  if (!catalogResponse.ok) throw new Error(`Catálogo indisponível (${catalogResponse.status})`);
-  const catalog = await catalogResponse.json();
-  const config = configResponse.ok ? await configResponse.json() : { site: {}, whatsapp: {} };
-  return { catalog, config };
+  const [catalogRes, configRes] = await Promise.all([fetch(CATALOG_URL,{cache:'no-store'}), fetch(CONFIG_URL,{cache:'no-store'})]);
+  if (!catalogRes.ok) throw new Error('Catálogo indisponível');
+  return { catalog: await catalogRes.json(), config: configRes.ok ? await configRes.json() : {} };
 }
 
-async function init() {
+async function init(){
   try {
     const data = await loadData();
     state.catalog = data.catalog;
     state.config = data.config;
-    state.basket = selectBasket(state.catalog);
-    if (!state.basket) throw new Error('Nenhuma cesta cadastrada');
-
-    const params = new URLSearchParams(location.search);
-    state.activeCategory = params.get('categoria') || null;
-    state.cart = hydrateCart(state.basket);
-    saveCart();
     render();
-
-    if (params.get('secao') === 'ofertas' && state.config?.site?.showOffers !== false) {
-      requestAnimationFrame(() => els.offersSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    }
   } catch (error) {
     console.error(error);
-    document.querySelector('main').innerHTML = `<section class="card"><h2>Não foi possível carregar o catálogo</h2><p>Tente novamente em alguns instantes.</p></section>`;
+    document.querySelector('main').innerHTML = '<div class="empty">Catálogo indisponível</div>';
     els.sendWhatsapp.disabled = true;
   }
 }
 
 els.sendWhatsapp.addEventListener('click', openWhatsapp);
 els.resetCart.addEventListener('click', resetCart);
+window.addEventListener('popstate', render);
 init();
