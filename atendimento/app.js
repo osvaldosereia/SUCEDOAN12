@@ -1,19 +1,19 @@
 import { loadCatalog, classify } from './catalog.js';
-import { loadCart, clearCart, saveCart, ensureBasket, basketTotal, extrasTotal, grandTotal, totalUnits, changeBasketQty, changeExtraQty, whatsappUrl } from './cart.js';
+import { loadCart, clearCart, ensureBasket, basketTotal, extrasTotal, grandTotal, totalUnits, changeBasketQty, changeExtraQty, whatsappUrl } from './cart.js';
 
 const params = new URLSearchParams(location.search);
-const section = String(params.get('secao') || '').toLowerCase();
+const section = String(params.get('secao') || 'categorias').toLowerCase();
 const basketParam = String(params.get('cesta') || '').trim();
 const money = value => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const $ = id => document.getElementById(id);
 
 const sections = [
-  { key: 'cestas', label: 'Cestas Básicas', image: '/site/img/produtos/CESTA-MEDIA-BONINI.webp' },
-  { key: 'ofertas', label: 'Ofertas', image: '/site/img/produtos/COMBO-LIMPEZA1.webp' },
-  { key: 'mercearia', label: 'Mercearia', image: '/site/img/produtos/CESTA-PEQUENA-BONINI.webp' },
-  { key: 'limpeza', label: 'Lavanderia e Limpeza', image: '/site/img/produtos/COMBO-LIMPEZA1.webp' },
-  { key: 'higiene', label: 'Higiene e Beleza', image: '/site/img/produtos/COMBO-PARA-ELAS.webp' },
-  { key: 'utilidades', label: 'Utilidades e Pets', image: '/img/logoantonia5.png' }
+  { key: 'cestas', label: 'Cestas Básicas', icon: '🧺', tone: 'tone-orange' },
+  { key: 'ofertas', label: 'Ofertas', icon: '🏷️', tone: 'tone-red' },
+  { key: 'mercearia', label: 'Mercearia', icon: '🛒', tone: 'tone-green' },
+  { key: 'limpeza', label: 'Lavanderia e Limpeza', icon: '🧼', tone: 'tone-blue' },
+  { key: 'higiene', label: 'Higiene e Beleza', icon: '🧴', tone: 'tone-pink' },
+  { key: 'utilidades', label: 'Utilidades e Pets', icon: '🐾', tone: 'tone-purple' }
 ];
 
 const labels = Object.fromEntries(sections.map(item => [item.key, item.label]));
@@ -30,7 +30,7 @@ function clean(value) {
 function matchesSearch(item) {
   const term = clean(state.search);
   if (!term) return true;
-  return clean([item.name, item.label, item.code, item.categoryText].filter(Boolean).join(' ')).includes(term);
+  return clean([item.name, item.label, item.key, item.code, item.categoryText].filter(Boolean).join(' ')).includes(term);
 }
 
 function basketByParam(value) {
@@ -55,31 +55,25 @@ function renderSummary() {
 }
 
 function renderCategoryGrid() {
-  document.title = 'Categorias | Dona Antônia';
+  document.title = 'Atendimento | Dona Antônia';
   $('basketMode').hidden = true;
   $('offersMode').hidden = false;
-  $('categoryTabs').innerHTML = '<strong class="section-name">Categorias</strong>';
+  $('categoryTabs').innerHTML = '<a class="chip active" href="./">Início</a><strong class="section-name">Escolha uma categoria</strong>';
   const list = sections.filter(matchesSearch);
   $('offersList').className = 'offer-grid category-grid';
   $('offersList').innerHTML = list.length ? list.map(item => `
-    <a class="catalog-card category-card" href="?secao=${encodeURIComponent(item.key)}">
-      <div class="catalog-image-wrap"><img class="catalog-image" src="${esc(categoryImage(item))}" alt="${esc(item.label)}" loading="lazy"></div>
-      <div class="catalog-body"><div class="catalog-name">${esc(item.label)}</div></div>
+    <a class="catalog-card category-card ${esc(item.tone)}" href="?secao=${encodeURIComponent(item.key)}" aria-label="Abrir ${esc(item.label)}">
+      <div class="category-icon-wrap"><span class="category-icon" aria-hidden="true">${esc(item.icon)}</span></div>
+      <div class="catalog-body"><div class="catalog-name">${esc(item.label)}</div><div class="category-cta">Ver produtos</div></div>
     </a>`).join('') : '<div class="empty">Nada encontrado.</div>';
   renderSummary();
-}
-
-function categoryImage(item) {
-  if (item.key === 'cestas') return state.baskets[0]?.image || item.image;
-  if (item.key === 'ofertas') return state.products.find(product => product.offer)?.image || item.image;
-  return state.products.find(product => classify(product) === item.key)?.image || item.image;
 }
 
 function renderBasketGrid() {
   document.title = 'Cestas Básicas | Dona Antônia';
   $('basketMode').hidden = true;
   $('offersMode').hidden = false;
-  $('categoryTabs').innerHTML = '<a class="chip" href="?secao=categorias">Categorias</a><strong class="section-name">Cestas Básicas</strong>';
+  $('categoryTabs').innerHTML = '<a class="chip" href="./">Início</a><a class="chip active" href="?secao=cestas">Cestas Básicas</a>';
   const host = $('offersList');
   const list = state.baskets.filter(matchesSearch);
   host.className = 'offer-grid';
@@ -123,8 +117,8 @@ function productList(sectionKey) {
 }
 
 function renderTabs(current) {
-  const categoryLink = '<a class="chip" href="?secao=categorias">Categorias</a>';
-  $('categoryTabs').innerHTML = categoryLink + sections
+  const startLinks = '<a class="chip" href="./">Início</a><a class="chip" href="?secao=cestas">Cestas Básicas</a>';
+  $('categoryTabs').innerHTML = startLinks + sections
     .filter(item => item.key !== 'cestas')
     .map(item => `<a class="chip${item.key === current ? ' active' : ''}" href="?secao=${item.key}">${item.label}</a>`)
     .join('');
@@ -160,8 +154,8 @@ function renderProductSection(sectionKey) {
 
 function rerender() {
   if (basketParam && state.basket) renderBasketDetail(state.basket);
-  else if (section === 'categorias') renderCategoryGrid();
-  else if (!section || section === 'cestas') renderBasketGrid();
+  else if (!section || section === 'categorias') renderCategoryGrid();
+  else if (section === 'cestas') renderBasketGrid();
   else renderProductSection(section);
 }
 
@@ -180,6 +174,7 @@ function bind() {
   $('sendWhatsapp').addEventListener('click', () => {
     location.href = whatsappUrl(state.cart, money, !basketParam);
   });
+  $('searchInput').closest('form')?.addEventListener('submit', event => event.preventDefault());
   $('searchInput').addEventListener('input', event => {
     state.search = event.target.value;
     $('clearSearch').hidden = !state.search;
@@ -213,8 +208,8 @@ async function init() {
       const basket = basketByParam(basketParam);
       if (basket) return renderBasketDetail(basket);
     }
-    if (section === 'categorias') return renderCategoryGrid();
-    if (!section || section === 'cestas') return renderBasketGrid();
+    if (!section || section === 'categorias') return renderCategoryGrid();
+    if (section === 'cestas') return renderBasketGrid();
     renderProductSection(section);
   } catch (error) {
     console.error(error);
