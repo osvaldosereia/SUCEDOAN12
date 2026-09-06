@@ -81,7 +81,6 @@ async function safeJson(url, fallback) {
 
 export function classify(product) {
   const text = `${product.categoryText} ${product.name}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  if (/(bebida|refrigerante|refri|suco|agua mineral|guarana|coca|fanta|sprite|energetico|isotonico)/.test(text)) return 'bebidas';
   if (/(pet|animal|racao|utilidade|utensilio|cozinha|descartavel|pilha|lampada|saco de lixo)/.test(text)) return 'utilidades';
   if (/(higiene|beleza|perfum|sabonete|shampoo|condicionador|desodorante|absorvente|creme dental|escova dental|papel higienico|fralda)/.test(text)) return 'higiene';
   if (/(limpeza|lavanderia|detergente|desinfetante|amaciante|sabao|agua sanitaria|multiuso|esponja|lava roupa|alvejante)/.test(text)) return 'limpeza';
