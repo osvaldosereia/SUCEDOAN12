@@ -3,52 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#f58220" />
-  <title>Atendimento | Dona Antônia</title>
-  <meta name="description" content="Escolha, personalize e envie seu pedido pelo WhatsApp." />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Dona Antônia</title>
+  <link rel="icon" href="/img/logoantonia5.png" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="Dona Antônia">
-      <img src="/img/logoantonia5.png" alt="Dona Antônia" />
-    </a>
+    <a class="brand" href="../" aria-label="Dona Antônia"><img src="/img/logoantonia5.png" alt="Dona Antônia" width="160" height="44" /></a>
     <button id="resetCart" class="ghost" type="button">Recomeçar</button>
   </header>
 
   <main>
-    <section id="basketGridScreen" class="screen">
-      <h1>Cestas</h1>
-      <div id="basketGrid" class="grid-cards"></div>
-    </section>
-
-    <section id="basketEditScreen" class="screen" hidden>
+    <section id="basketMode">
       <article class="basket-hero">
-        <img id="basketImage" alt="" />
-        <div class="hero-info">
-          <h1 id="basketTitle">Cesta</h1>
-          <strong id="basketPrice">R$ 0,00</strong>
-        </div>
+        <div class="basket-image-wrap"><img id="basketImage" class="basket-image" alt="" /></div>
+        <div class="basket-title-row"><h1 id="basketTitle">Cesta</h1><strong id="basketPrice">R$ 0,00</strong></div>
       </article>
-      <div id="basketItems" class="item-list" aria-live="polite"></div>
+      <section class="section"><h2>Itens da cesta</h2><div id="basketItems" class="basket-items"></div></section>
     </section>
 
-    <section id="productsScreen" class="screen" hidden>
-      <h1 id="productsTitle">Produtos</h1>
-      <div id="categoryGrid" class="grid-cards"></div>
-      <div id="productGrid" class="grid-cards products"></div>
+    <section id="offersMode" class="section" hidden>
+      <div id="categoryTabs" class="chips"></div>
+      <div id="offersList" class="offer-grid"></div>
+    </section>
+
+    <section class="summary">
+      <div id="summaryItems" class="summary-items"></div>
+      <div class="total-row"><span>Total</span><strong id="grandTotal">R$ 0,00</strong></div>
     </section>
   </main>
 
-  <div class="bottom-bar">
-    <div>
-      <small id="bottomLabel">Pedido</small>
-      <strong id="bottomTotal">R$ 0,00</strong>
-    </div>
-    <button id="sendWhatsapp" class="whatsapp" type="button">Enviar no WhatsApp</button>
-  </div>
-
+  <div class="bottom-bar"><strong id="bottomTotal">R$ 0,00</strong><button id="sendWhatsapp" class="whatsapp" type="button">Enviar no WhatsApp</button></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="./app.js" defer></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>

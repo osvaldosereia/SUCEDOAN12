@@ -1,338 +1,172 @@
-const STORAGE_KEY = 'dona_antonia_atendimento_cart_v2';
-const PREVIEW_KEY = 'dona_antonia_atendimento_preview_v1';
-const CATALOG_URL = './data/catalogo.json';
-const CONFIG_URL = './data/site-config.json';
+import { loadCatalog, classify } from './catalog.js';
+import { loadCart, clearCart, saveCart, ensureBasket, basketTotal, extrasTotal, grandTotal, totalUnits, changeBasketQty, changeExtraQty, whatsappUrl } from './cart.js';
 
-const state = { catalog:null, config:null, view:'baskets', basket:null, cart:null, category:null };
-const money = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' });
-const $ = selector => document.querySelector(selector);
-
-const els = {
-  basketGridScreen: $('#basketGridScreen'),
-  basketEditScreen: $('#basketEditScreen'),
-  productsScreen: $('#productsScreen'),
-  basketGrid: $('#basketGrid'),
-  basketImage: $('#basketImage'),
-  basketTitle: $('#basketTitle'),
-  basketPrice: $('#basketPrice'),
-  basketItems: $('#basketItems'),
-  productsTitle: $('#productsTitle'),
-  categoryGrid: $('#categoryGrid'),
-  productGrid: $('#productGrid'),
-  bottomLabel: $('#bottomLabel'),
-  bottomTotal: $('#bottomTotal'),
-  sendWhatsapp: $('#sendWhatsapp'),
-  resetCart: $('#resetCart'),
-  toast: $('#toast')
+const params = new URLSearchParams(location.search);
+const section = String(params.get('secao') || '').toLowerCase();
+const basketParam = String(params.get('cesta') || '').trim();
+const money = value => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const $ = id => document.getElementById(id);
+const labels = {
+  ofertas: 'Ofertas',
+  mercearia: 'Mercearia',
+  limpeza: 'Lavanderia e Limpeza',
+  higiene: 'Higiene e Beleza',
+  utilidades: 'Utilidades e Pets'
 };
 
-const clone = value => JSON.parse(JSON.stringify(value));
-const asNumber = value => Number(value || 0) || 0;
+const state = { products: [], baskets: [], productByCode: new Map(), cart: loadCart(), basket: null };
 
-function uid(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return 'DA-' + Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+function esc(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 }
 
-function imageUrl(path){
-  const value = String(path || '').trim();
-  if (!value) return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><rect width="800" height="800" fill="#fff4ea"/><text x="400" y="410" text-anchor="middle" font-family="Arial" font-size="42" fill="#d8680c">Dona Antônia</text></svg>');
-  if (/^https?:\/\//i.test(value) || value.startsWith('/')) return value;
-  return '/' + value.replace(/^\.\//, '');
+function basketByParam(value) {
+  const key = String(value).toLowerCase();
+  return state.baskets.find(item => [item.id, item.code].some(v => String(v).toLowerCase() === key));
 }
 
-function loadCart(){
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; }
-}
-
-function saveCart(){
-  if (!state.cart) return;
-  state.cart.updatedAt = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cart));
-}
-
-function createCart(basket){
-  return {
-    id: uid(),
-    basketSlug: basket?.slug || null,
-    basketName: basket?.name || '',
-    basketBasePrice: asNumber(basket?.priceBase ?? basket?.price),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    basketItems: (basket?.items || []).map(item => ({...item, baseQty: asNumber(item.qty), qty: asNumber(item.qty)})),
-    extras: []
-  };
-}
-
-function ensureCart(basket = null){
-  const stored = loadCart();
-  if (stored && Array.isArray(stored.basketItems) && Array.isArray(stored.extras)) {
-    if (!basket || stored.basketSlug === basket.slug) return stored;
+function renderSummary() {
+  const host = $('summaryItems');
+  host.innerHTML = '';
+  if (state.cart.basket) {
+    host.insertAdjacentHTML('beforeend', `<div class="summary-line"><span>${esc(state.cart.basket.name)}</span><strong>${money(basketTotal(state.cart))}</strong></div>`);
   }
-  return createCart(basket);
-}
-
-function basketDelta(){
-  if (!state.cart) return 0;
-  return state.cart.basketItems.reduce((sum, item) => sum + (asNumber(item.qty) - asNumber(item.baseQty)) * asNumber(item.unitPrice ?? item.price), 0);
-}
-
-function basketTotal(){
-  if (!state.cart?.basketSlug) return 0;
-  return Math.max(0, asNumber(state.cart.basketBasePrice) + basketDelta());
-}
-
-function extrasTotal(){
-  return (state.cart?.extras || []).reduce((sum, item) => sum + asNumber(item.qty) * asNumber(item.price), 0);
-}
-
-function orderTotal(){ return basketTotal() + extrasTotal(); }
-function itemCount(){
-  const basketCount = (state.cart?.basketItems || []).reduce((sum, item) => sum + asNumber(item.qty), 0);
-  const extrasCount = (state.cart?.extras || []).reduce((sum, item) => sum + asNumber(item.qty), 0);
-  return basketCount + extrasCount;
-}
-
-function show(view){
-  state.view = view;
-  els.basketGridScreen.hidden = view !== 'baskets';
-  els.basketEditScreen.hidden = view !== 'basket-edit';
-  els.productsScreen.hidden = view !== 'products';
-}
-
-function toast(message){
-  els.toast.textContent = message;
-  els.toast.classList.add('show');
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => els.toast.classList.remove('show'), 1200);
-}
-
-function basketBySlug(slug){ return state.catalog.baskets.find(item => item.slug === slug || item.id === slug || item.codigo === slug); }
-
-function openBasket(slug){
-  const basket = basketBySlug(slug);
-  if (!basket) return;
-  state.basket = basket;
-  state.cart = ensureCart(basket);
-  saveCart();
-  history.replaceState(null, '', `?cesta=${encodeURIComponent(basket.slug)}`);
-  render();
-}
-
-function openProducts(category = null){
-  state.cart = ensureCart();
-  state.category = category;
-  const query = category ? `?secao=produtos&categoria=${encodeURIComponent(category)}` : '?secao=produtos';
-  history.replaceState(null, '', query);
-  render();
-}
-
-function qtyControl(current, onMinus, onPlus){
-  const wrap = document.createElement('div');
-  wrap.className = 'qty';
-  const minus = document.createElement('button');
-  minus.type = 'button';
-  minus.textContent = '−';
-  minus.addEventListener('click', onMinus);
-  const amount = document.createElement('span');
-  amount.textContent = asNumber(current);
-  const plus = document.createElement('button');
-  plus.type = 'button';
-  plus.textContent = '+';
-  plus.addEventListener('click', onPlus);
-  wrap.append(minus, amount, plus);
-  return wrap;
-}
-
-function renderBasketGrid(){
-  els.basketGrid.replaceChildren();
-  state.catalog.baskets.forEach(basket => {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'select-card';
-    card.innerHTML = `<img src="${imageUrl(basket.image)}" alt=""><div class="card-info"><h2></h2><strong></strong></div>`;
-    card.querySelector('h2').textContent = basket.name;
-    card.querySelector('strong').textContent = money.format(asNumber(basket.priceBase ?? basket.price));
-    card.addEventListener('click', () => openBasket(basket.slug));
-    els.basketGrid.append(card);
-  });
-}
-
-function renderBasketEdit(){
-  if (!state.basket) return;
-  els.basketImage.src = imageUrl(state.basket.image);
-  els.basketImage.alt = state.basket.name;
-  els.basketTitle.textContent = state.basket.name;
-  els.basketPrice.textContent = money.format(basketTotal());
-  els.basketItems.replaceChildren();
-  state.cart.basketItems.forEach((item, index) => {
-    const line = document.createElement('article');
-    line.className = 'basket-item';
-    const name = document.createElement('span');
-    name.textContent = item.name;
-    const controls = qtyControl(item.qty, () => changeBasketQty(index, -1), () => changeBasketQty(index, 1));
-    line.append(name, controls);
-    els.basketItems.append(line);
-  });
-}
-
-function changeBasketQty(index, delta){
-  const item = state.cart.basketItems[index];
-  if (!item) return;
-  item.qty = Math.max(0, asNumber(item.qty) + delta);
-  saveCart();
-  render();
-}
-
-function categories(){
-  return [...new Set((state.catalog.offers || []).map(item => item.category).filter(Boolean))];
-}
-
-function renderProducts(){
-  const cats = categories();
-  els.categoryGrid.replaceChildren();
-  els.productGrid.replaceChildren();
-
-  if (!state.category) {
-    els.productsTitle.textContent = 'Categorias';
-    cats.forEach(category => {
-      const sample = state.catalog.offers.find(item => item.category === category);
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'select-card';
-      card.innerHTML = `<img src="${imageUrl(sample?.image)}" alt=""><div class="card-info"><h2></h2></div>`;
-      card.querySelector('h2').textContent = category;
-      card.addEventListener('click', () => openProducts(category));
-      els.categoryGrid.append(card);
-    });
-    return;
-  }
-
-  els.productsTitle.textContent = state.category;
-  const back = document.createElement('button');
-  back.type = 'button';
-  back.className = 'select-card';
-  back.innerHTML = '<div class="card-info"><h2>← Categorias</h2></div>';
-  back.addEventListener('click', () => openProducts(null));
-  els.categoryGrid.append(back);
-
-  const offers = state.catalog.offers.filter(item => item.category === state.category);
-  if (!offers.length) {
-    els.productGrid.innerHTML = '<div class="empty">Sem produtos</div>';
-    return;
-  }
-  offers.forEach(offer => {
-    const current = state.cart.extras.find(item => item.sku === offer.sku)?.qty || 0;
-    const card = document.createElement('article');
-    card.className = 'product-card';
-    card.innerHTML = `<img src="${imageUrl(offer.image)}" alt=""><div class="card-info"><h3></h3><strong></strong></div>`;
-    card.querySelector('h3').textContent = offer.name;
-    card.querySelector('strong').textContent = money.format(asNumber(offer.price));
-    card.append(qtyControl(current, () => changeExtra(offer, -1), () => changeExtra(offer, 1)));
-    els.productGrid.append(card);
-  });
-}
-
-function changeExtra(product, delta){
-  let item = state.cart.extras.find(row => row.sku === product.sku);
-  if (!item && delta > 0) {
-    item = {...product, qty:0};
-    state.cart.extras.push(item);
-  }
-  if (!item) return;
-  item.qty = Math.max(0, asNumber(item.qty) + delta);
-  state.cart.extras = state.cart.extras.filter(row => asNumber(row.qty) > 0);
-  saveCart();
-  render();
-}
-
-function renderBottom(){
-  const count = itemCount();
-  els.bottomTotal.textContent = money.format(orderTotal());
-  els.bottomLabel.textContent = count ? `${count} itens` : 'Pedido';
-  els.sendWhatsapp.disabled = state.view === 'baskets' || count === 0;
-  els.sendWhatsapp.textContent = state.view === 'basket-edit' ? 'Enviar cesta' : 'Finalizar pedido';
-}
-
-function buildWhatsappMessage(){
-  const wa = state.config?.whatsapp || {};
-  const lines = [wa.messageHeader || '🧺 *Meu pedido Dona Antônia*'];
-  lines.push(`Código: *${state.cart.id}*`);
-  if (state.cart.basketSlug) {
-    lines.push('', `*${state.cart.basketName}*`, `Valor da cesta personalizada: *${money.format(basketTotal())}*`);
-    state.cart.basketItems.filter(item => asNumber(item.qty)>0).forEach(item => lines.push(`${item.qty}x ${item.name}`));
-  }
-  const extras = state.cart.extras.filter(item => asNumber(item.qty)>0);
+  const extras = Object.values(state.cart.extras || {}).filter(item => item.qty > 0);
   if (extras.length) {
-    lines.push('', '*Produtos adicionais*');
-    extras.forEach(item => lines.push(`${item.qty}x ${item.name} — ${money.format(asNumber(item.qty)*asNumber(item.price))}`));
+    host.insertAdjacentHTML('beforeend', `<div class="summary-line"><span>Produtos avulsos (${extras.reduce((s, i) => s + i.qty, 0)})</span><strong>${money(extrasTotal(state.cart))}</strong></div>`);
   }
-  lines.push('', `*Total: ${money.format(orderTotal())}*`, '', wa.messageFooter || 'Quero continuar pelo WhatsApp.');
-  return lines.join('\n');
+  $('grandTotal').textContent = money(grandTotal(state.cart));
+  $('bottomTotal').textContent = money(grandTotal(state.cart));
+  $('sendWhatsapp').disabled = totalUnits(state.cart) === 0;
+  $('sendWhatsapp').textContent = basketParam ? 'Enviar cesta' : 'Finalizar pedido';
 }
 
-function openWhatsapp(){
-  const number = String(state.config?.whatsapp?.number || state.catalog.whatsapp || '').replace(/\D/g, '');
-  if (!number) return toast('WhatsApp não configurado');
-  window.location.href = `https://wa.me/${number}?text=${encodeURIComponent(buildWhatsappMessage())}`;
+function renderBasketGrid() {
+  document.title = 'Cestas Básicas | Dona Antônia';
+  $('basketMode').hidden = true;
+  $('offersMode').hidden = false;
+  $('categoryTabs').innerHTML = '<strong class="section-name">Cestas Básicas</strong>';
+  const host = $('offersList');
+  host.className = 'offer-grid';
+  host.innerHTML = state.baskets.map(basket => `
+    <a class="catalog-card" href="?cesta=${encodeURIComponent(basket.id)}">
+      <div class="catalog-image-wrap"><img class="catalog-image" src="${esc(basket.image)}" alt="${esc(basket.name)}" loading="lazy"></div>
+      <div class="catalog-body"><div class="catalog-name">${esc(basket.name)}</div><div class="catalog-price">${money(basket.price)}</div></div>
+    </a>`).join('');
+  renderSummary();
 }
 
-function resetCart(){
-  localStorage.removeItem(STORAGE_KEY);
-  state.cart = state.basket ? createCart(state.basket) : null;
-  render();
+function renderBasketDetail(basket) {
+  state.basket = basket;
+  ensureBasket(state.cart, basket, state.productByCode);
+  document.title = `${basket.name} | Dona Antônia`;
+  $('basketMode').hidden = false;
+  $('offersMode').hidden = true;
+  $('basketImage').src = basket.image;
+  $('basketImage').alt = basket.name;
+  $('basketTitle').textContent = basket.name;
+  $('basketPrice').textContent = money(basketTotal(state.cart));
+  $('basketItems').innerHTML = state.cart.basket.items.map((item, index) => `
+    <div class="basket-item">
+      <span class="basket-item-name">${esc(item.name)}</span>
+      <div class="qty">
+        <button type="button" data-basket-delta="-1" data-index="${index}" aria-label="Diminuir">−</button>
+        <span>${item.qty}</span>
+        <button type="button" data-basket-delta="1" data-index="${index}" aria-label="Aumentar">+</button>
+      </div>
+    </div>`).join('');
+  renderSummary();
 }
 
-function render(){
-  const params = new URLSearchParams(location.search);
-  const secao = params.get('secao');
-  const cesta = params.get('cesta');
-  const categoria = params.get('categoria');
-
-  if (secao === 'produtos' || secao === 'ofertas') {
-    state.category = categoria || state.category || null;
-    state.cart = ensureCart();
-    show('products');
-    renderProducts();
-  } else if (cesta) {
-    state.basket = basketBySlug(cesta) || state.catalog.baskets[0];
-    state.cart = ensureCart(state.basket);
-    show('basket-edit');
-    renderBasketEdit();
-  } else {
-    show('baskets');
-    renderBasketGrid();
-  }
-  renderBottom();
+function productList(sectionKey) {
+  if (sectionKey === 'ofertas') return state.products.filter(product => product.offer);
+  return state.products.filter(product => classify(product) === sectionKey);
 }
 
-async function loadData(){
-  const params = new URLSearchParams(location.search);
-  if (params.get('preview') === '1') {
-    try {
-      const preview = JSON.parse(localStorage.getItem(PREVIEW_KEY) || 'null');
-      if (preview?.catalog && preview?.config) return preview;
-    } catch {}
-  }
-  const [catalogRes, configRes] = await Promise.all([fetch(CATALOG_URL,{cache:'no-store'}), fetch(CONFIG_URL,{cache:'no-store'})]);
-  if (!catalogRes.ok) throw new Error('Catálogo indisponível');
-  return { catalog: await catalogRes.json(), config: configRes.ok ? await configRes.json() : {} };
+function renderTabs(current) {
+  $('categoryTabs').innerHTML = Object.entries(labels).map(([key, label]) => `<a class="chip${key === current ? ' active' : ''}" href="?secao=${key}">${label}</a>`).join('');
 }
 
-async function init(){
+function productCard(product) {
+  const item = state.cart.extras?.[product.code];
+  const action = item?.qty > 0
+    ? `<div class="qty qty-wide"><button data-extra-delta="-1" data-code="${esc(product.code)}">−</button><span>${item.qty}</span><button data-extra-delta="1" data-code="${esc(product.code)}">+</button></div>`
+    : `<button class="offer-add" type="button" data-add="${esc(product.code)}">Adicionar</button>`;
+  return `
+    <article class="offer-card">
+      <div class="offer-image-wrap"><img class="offer-image" src="${esc(product.image)}" alt="${esc(product.name)}" loading="lazy"></div>
+      <div class="offer-body">
+        <div class="offer-name">${esc(product.name)}</div>
+        <div class="offer-price">${money(product.price)}</div>
+        <div class="offer-actions">${action}</div>
+      </div>
+    </article>`;
+}
+
+function renderProductSection(sectionKey) {
+  const current = labels[sectionKey] ? sectionKey : 'ofertas';
+  document.title = `${labels[current]} | Dona Antônia`;
+  $('basketMode').hidden = true;
+  $('offersMode').hidden = false;
+  renderTabs(current);
+  const list = productList(current);
+  $('offersList').className = 'offer-grid';
+  $('offersList').innerHTML = list.length ? list.map(productCard).join('') : '<div class="empty">Nenhum produto.</div>';
+  renderSummary();
+}
+
+function rerender() {
+  if (basketParam && state.basket) renderBasketDetail(state.basket);
+  else if (!section || section === 'cestas') renderBasketGrid();
+  else renderProductSection(section);
+}
+
+function addExtra(code, delta) {
+  const product = state.productByCode.get(String(code).toLowerCase());
+  if (!product) return;
+  changeExtraQty(state.cart, product, delta);
+  rerender();
+}
+
+function bind() {
+  $('resetCart').addEventListener('click', () => {
+    state.cart = clearCart();
+    location.reload();
+  });
+  $('sendWhatsapp').addEventListener('click', () => {
+    location.href = whatsappUrl(state.cart, money, !basketParam);
+  });
+  document.addEventListener('click', event => {
+    const basket = event.target.closest('[data-basket-delta]');
+    if (basket) {
+      changeBasketQty(state.cart, Number(basket.dataset.index), Number(basket.dataset.basketDelta));
+      return rerender();
+    }
+    const add = event.target.closest('[data-add]');
+    if (add) return addExtra(add.dataset.add, 1);
+    const extra = event.target.closest('[data-extra-delta]');
+    if (extra) return addExtra(extra.dataset.code, Number(extra.dataset.extraDelta));
+  });
+}
+
+async function init() {
+  bind();
   try {
-    const data = await loadData();
-    state.catalog = data.catalog;
-    state.config = data.config;
-    render();
+    const catalog = await loadCatalog();
+    Object.assign(state, catalog);
+    if (basketParam) {
+      const basket = basketByParam(basketParam);
+      if (basket) return renderBasketDetail(basket);
+    }
+    if (!section || section === 'cestas') return renderBasketGrid();
+    renderProductSection(section);
   } catch (error) {
     console.error(error);
-    document.querySelector('main').innerHTML = '<div class="empty">Catálogo indisponível</div>';
-    els.sendWhatsapp.disabled = true;
+    $('basketMode').hidden = true;
+    $('offersMode').hidden = false;
+    $('offersList').innerHTML = '<div class="empty">Catálogo indisponível.</div>';
+    renderSummary();
   }
 }
 
-els.sendWhatsapp.addEventListener('click', openWhatsapp);
-els.resetCart.addEventListener('click', resetCart);
-window.addEventListener('popstate', render);
 init();
