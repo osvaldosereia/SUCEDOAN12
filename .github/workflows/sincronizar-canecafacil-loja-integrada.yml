@@ -1,5 +1,8 @@
 name: CanecaFácil · sincronizar Loja Integrada
 
+# EMERGÊNCIA 2026-09-06: execução agendada removida para interromper
+# leituras repetitivas do Firebase. Mantido apenas acionamento manual ou por
+# alterações dos scripts, até migração para fluxo incremental/event-driven.
 on:
   workflow_dispatch:
     inputs:
@@ -16,8 +19,6 @@ on:
         description: 'Máximo de produtos nesta execução'
         required: false
         default: '10'
-  schedule:
-    - cron: '*/5 * * * *'
   push:
     branches: [main]
     paths:
@@ -26,7 +27,6 @@ on:
       - 'scripts/sincronizar-loja-integrada-v4.mjs'
       - 'scripts/sincronizar-loja-integrada-v5.mjs'
       - 'scripts/reconciliar-categorias-produtos-li-v1.mjs'
-      - '.github/workflows/sincronizar-canecafacil-loja-integrada.yml'
 
 permissions:
   contents: read
