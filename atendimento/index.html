@@ -11,9 +11,9 @@
 <body>
   <header class="topbar">
     <div>
-      <span class="eyebrow">Dona Antônia</span>
-      <h1>Monte sua cesta</h1>
-      <p>Retire, ajuste ou acrescente produtos. No final, envie tudo pronto pelo WhatsApp.</p>
+      <span id="siteEyebrow" class="eyebrow">Dona Antônia</span>
+      <h1 id="siteTitle">Monte sua cesta</h1>
+      <p id="siteIntro">Retire, ajuste ou acrescente produtos. No final, envie tudo pronto pelo WhatsApp.</p>
     </div>
     <button id="resetCart" class="ghost" type="button">Recomeçar</button>
   </header>
@@ -36,20 +36,20 @@
           <span class="step">2</span>
           <div>
             <h2 id="basketItemsTitle">Personalize a cesta</h2>
-            <p>Use + e − para alterar quantidades. Zero remove o item.</p>
+            <p id="basketItemsSubtitle">Use + e − para alterar quantidades. Zero remove o item.</p>
           </div>
         </div>
       </div>
       <div id="basketItems" class="product-list" aria-live="polite"></div>
     </section>
 
-    <section class="section offers" aria-labelledby="offersTitle">
+    <section id="offersSection" class="section offers" aria-labelledby="offersTitle">
       <div class="section-title">
         <div>
           <span class="step">3</span>
           <div>
             <h2 id="offersTitle">Quer acrescentar algo?</h2>
-            <p>Escolha uma categoria e adicione ofertas ao mesmo pedido.</p>
+            <p id="offersSubtitle">Escolha uma categoria e adicione ofertas ao mesmo pedido.</p>
           </div>
         </div>
       </div>
@@ -72,7 +72,7 @@
         <span>Total calculado</span>
         <strong id="grandTotal">R$ 0,00</strong>
       </div>
-      <p class="notice">Antes do fechamento, preço e disponibilidade poderão ser confirmados novamente.</p>
+      <p id="summaryNotice" class="notice">Antes do fechamento, preço e disponibilidade poderão ser confirmados novamente.</p>
     </section>
   </main>
 
