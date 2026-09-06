@@ -1,18 +1,11 @@
 name: Sincronizar catálogo com Firebase
 run-name: Catálogo oficial · ${{ github.event_name }}
 
-# EMERGÊNCIA 2026-09-06: removido o cron que baixava o catálogo completo
-# do Firebase a cada 3 horas. Mantidos acionamento manual, repository_dispatch
-# e push dos scripts até a migração para sincronização incremental.
+# EMERGÊNCIA 2026-09-06: TODOS os acionamentos automáticos foram desativados.
+# Este workflow baixava /produtos completo. Execução somente manual até a
+# migração para sincronização incremental/event-driven.
 on:
   workflow_dispatch:
-  repository_dispatch:
-    types: [sincronizar_produtos_home]
-  push:
-    branches: [main]
-    paths:
-      - "scripts/sincronizar-produtos-home-firebase.mjs"
-      - "scripts/estabilizar-catalogo-publico.mjs"
 
 permissions:
   contents: write
@@ -82,8 +75,6 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # O arquivo de versão recebe um timestamp novo em toda execução. Primeiro
-          # confira os catálogos reais para não criar commits vazios a cada agenda.
           git add site/produtos-home.json site/produtos-admin.json
           if git diff --cached --quiet; then
             git restore catalog-version.json
