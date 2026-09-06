@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111827" />
+  <title>Admin Atendimento | Dona Antônia</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span>DA</span>
+      <div><strong>Dona Antônia</strong><small>Admin do atendimento</small></div>
+    </div>
+    <nav id="nav">
+      <button class="nav-item active" data-view="dashboard">Visão geral</button>
+      <button class="nav-item" data-view="site">Site de apoio</button>
+      <button class="nav-item" data-view="baskets">Cestas</button>
+      <button class="nav-item" data-view="offers">Ofertas</button>
+      <button class="nav-item" data-view="papoai">PapoAI</button>
+      <button class="nav-item" data-view="integrations">Integrações</button>
+      <button class="nav-item" data-view="publish">Publicação</button>
+    </nav>
+    <div class="side-note">Sem Firebase. Nenhuma chave do Bling ou PapoAI fica no navegador.</div>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <span class="eyebrow">Atendimento + WhatsApp</span>
+        <h1 id="viewTitle">Visão geral</h1>
+      </div>
+      <div class="top-actions">
+        <span id="draftState" class="status neutral">Publicado</span>
+        <button id="saveDraft" class="secondary">Salvar rascunho</button>
+        <button id="preview" class="primary">Pré-visualizar</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="view active" id="view-dashboard">
+        <div class="hero-card">
+          <div>
+            <span class="kicker">CENTRAL DE CONTROLE</span>
+            <h2>Site de apoio ao chat</h2>
+            <p>Gerencie cestas, ofertas, links para carrosséis do PapoAI, textos do montador e a preparação das integrações com Bling e Make.</p>
+          </div>
+          <a id="openPublic" class="button-link" href="../" target="_blank" rel="noopener">Abrir site</a>
+        </div>
+        <div id="metrics" class="metrics"></div>
+        <div class="grid two">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Fluxo recomendado</h3><p>Responsabilidade de cada sistema.</p></div></div>
+            <div class="flow">
+              <div><strong>PapoAI</strong><span>conversa, CRM, templates, Flow e automações</span></div>
+              <b>→</b>
+              <div><strong>Site</strong><span>personalização visual e adicionais</span></div>
+              <b>→</b>
+              <div><strong>Make</strong><span>fechamento em tempo real</span></div>
+              <b>→</b>
+              <div><strong>Bling</strong><span>cadastro, preço, estoque e pedido oficial</span></div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Saúde do projeto</h3><p>Validações locais antes de publicar.</p></div></div>
+            <div id="healthList" class="health-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-site">
+        <div class="grid two">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Textos e comportamento</h3><p>O que aparece no montador.</p></div></div>
+            <div id="siteForm" class="form-grid"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>WhatsApp</h3><p>Mensagem que o próprio cliente enviará ao voltar ao chat.</p></div></div>
+            <div id="whatsappForm" class="form-grid"></div>
+            <div class="message-preview" id="messagePreview"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-baskets">
+        <div class="toolbar">
+          <div><h2>Cestas</h2><p>Cadastre a cesta padrão e sua composição visual.</p></div>
+          <button id="addBasket" class="primary">+ Nova cesta</button>
+        </div>
+        <div id="basketEditor" class="stack"></div>
+      </section>
+
+      <section class="view" id="view-offers">
+        <div class="toolbar">
+          <div><h2>Ofertas e adicionais</h2><p>Produtos extras que aparecem depois da personalização da cesta.</p></div>
+          <button id="addOffer" class="primary">+ Novo produto</button>
+        </div>
+        <div class="panel compact"><div id="offerFilters" class="chips"></div></div>
+        <div id="offersEditor" class="product-admin-grid"></div>
+      </section>
+
+      <section class="view" id="view-papoai">
+        <div class="grid two">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Carrossel das cestas</h3><p>Links prontos para usar nos botões dos templates oficiais da Meta dentro do PapoAI.</p></div></div>
+            <div id="basketLinks" class="link-list"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Carrossel de ofertas</h3><p>Links por categoria para levar o cliente direto aos adicionais.</p></div></div>
+            <div id="offerLinks" class="link-list"></div>
+          </article>
+        </div>
+        <div class="grid two">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Regras do agente</h3><p>Configurações que devem ser mantidas no PapoAI.</p></div></div>
+            <div class="checklist">
+              <label><input type="checkbox" checked disabled> Responder em uma única mensagem</label>
+              <label><input type="checkbox" checked disabled> Usar PapoAI como canal principal de conversa</label>
+              <label><input type="checkbox" checked disabled> Deixar cálculo oficial para o sistema, não para a IA</label>
+              <label><input type="checkbox" checked disabled> Solicitar CPF somente no fechamento quando necessário</label>
+              <label><input type="checkbox" checked disabled> Transferência humana disponível</label>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Integração de catálogo PapoAI</h3><p>Preparada para sincronização server-side. Nunca inserir API Key aqui.</p></div></div>
+            <dl class="definition">
+              <div><dt>Uso</dt><dd>busca semântica de produtos pela IA</dd></div>
+              <div><dt>Origem</dt><dd>Bling</dd></div>
+              <div><dt>Atualização</dt><dd>API do PapoAI em lote</dd></div>
+              <div><dt>Segredo</dt><dd>somente backend / GitHub Secrets / Make</dd></div>
+            </dl>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-integrations">
+        <div id="integrationCards" class="integration-grid"></div>
+        <article class="panel">
+          <div class="panel-head"><div><h3>Mapa de dados</h3><p>Quem é responsável por cada informação.</p></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Dado</th><th>Fonte oficial</th><th>Site</th><th>PapoAI</th><th>Fechamento</th></tr></thead>
+              <tbody>
+                <tr><td>Produto / SKU</td><td>Bling</td><td>cópia sincronizada</td><td>catálogo IA</td><td>revalidar</td></tr>
+                <tr><td>Preço</td><td>Bling</td><td>cópia sincronizada</td><td>consulta informativa</td><td>revalidar</td></tr>
+                <tr><td>Estoque</td><td>Bling</td><td>cópia sincronizada</td><td>consulta informativa</td><td>revalidar</td></tr>
+                <tr><td>Cesta / composição</td><td>Bling + regras do site</td><td>editor visual</td><td>explica e recomenda</td><td>itens finais</td></tr>
+                <tr><td>Cliente</td><td>Bling</td><td>não persiste</td><td>CRM/conversa</td><td>CPF → contato</td></tr>
+                <tr><td>Pedido</td><td>Bling</td><td>montagem</td><td>confirmação</td><td>pedido oficial</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="view" id="view-publish">
+        <div class="grid two">
+          <article class="panel">
+            <div class="panel-head"><div><h3>Validar configuração</h3><p>Procure erros antes de gerar os arquivos.</p></div></div>
+            <button id="validate" class="primary wide">Executar validação</button>
+            <div id="validationResults" class="validation-results"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><h3>Publicação segura</h3><p>Hoje o painel não grava diretamente no GitHub para não expor credenciais.</p></div></div>
+            <div class="notice-box">O admin já gerencia rascunho, prévia e exportação. A publicação automática será ligada depois por um backend autenticado. Não coloque PAT, token do Bling ou chave do PapoAI neste painel.</div>
+            <div class="button-row">
+              <button id="exportCatalog" class="secondary">Baixar catalogo.json</button>
+              <button id="exportConfig" class="secondary">Baixar site-config.json</button>
+              <button id="exportBundle" class="primary">Baixar pacote</button>
+            </div>
+            <button id="restorePublished" class="danger-link">Descartar rascunho e restaurar publicado</button>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <input id="importFile" type="file" accept="application/json" hidden />
+  <div id="toast" class="toast"></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>
