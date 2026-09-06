@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "source": "demo-local",
+  "updatedAt": "2026-09-06T00:00:00-04:00",
+  "whatsapp": "556596813588",
+  "baskets": [
+    {
+      "slug": "economica",
+      "name": "Cesta Econômica",
+      "description": "Uma seleção básica para o dia a dia. Ajuste as quantidades como preferir.",
+      "items": [
+        {"sku":"ARROZ-5KG","name":"Arroz 5 kg","price":24.90,"qty":1,"category":"Mercearia"},
+        {"sku":"FEIJAO-1KG","name":"Feijão 1 kg","price":8.90,"qty":2,"category":"Mercearia"},
+        {"sku":"ACUCAR-2KG","name":"Açúcar 2 kg","price":8.50,"qty":1,"category":"Mercearia"},
+        {"sku":"OLEO-900ML","name":"Óleo de soja 900 ml","price":7.20,"qty":2,"category":"Mercearia"},
+        {"sku":"MACARRAO-500G","name":"Macarrão 500 g","price":4.90,"qty":2,"category":"Mercearia"}
+      ]
+    },
+    {
+      "slug": "familia",
+      "name": "Cesta Família",
+      "description": "Cesta mais completa para a compra da família, totalmente ajustável.",
+      "items": [
+        {"sku":"ARROZ-5KG","name":"Arroz 5 kg","price":24.90,"qty":2,"category":"Mercearia"},
+        {"sku":"FEIJAO-1KG","name":"Feijão 1 kg","price":8.90,"qty":3,"category":"Mercearia"},
+        {"sku":"ACUCAR-2KG","name":"Açúcar 2 kg","price":8.50,"qty":2,"category":"Mercearia"},
+        {"sku":"OLEO-900ML","name":"Óleo de soja 900 ml","price":7.20,"qty":3,"category":"Mercearia"},
+        {"sku":"CAFE-500G","name":"Café 500 g","price":18.90,"qty":1,"category":"Café da manhã"},
+        {"sku":"MACARRAO-500G","name":"Macarrão 500 g","price":4.90,"qty":3,"category":"Mercearia"}
+      ]
+    },
+    {
+      "slug": "completa",
+      "name": "Cesta Completa",
+      "description": "Opção ampliada para quem quer levar mais itens em um único pedido.",
+      "items": [
+        {"sku":"ARROZ-5KG","name":"Arroz 5 kg","price":24.90,"qty":2,"category":"Mercearia"},
+        {"sku":"FEIJAO-1KG","name":"Feijão 1 kg","price":8.90,"qty":4,"category":"Mercearia"},
+        {"sku":"ACUCAR-2KG","name":"Açúcar 2 kg","price":8.50,"qty":2,"category":"Mercearia"},
+        {"sku":"OLEO-900ML","name":"Óleo de soja 900 ml","price":7.20,"qty":4,"category":"Mercearia"},
+        {"sku":"CAFE-500G","name":"Café 500 g","price":18.90,"qty":2,"category":"Café da manhã"},
+        {"sku":"MACARRAO-500G","name":"Macarrão 500 g","price":4.90,"qty":4,"category":"Mercearia"}
+      ]
+    }
+  ],
+  "offers": [
+    {"sku":"CAFE-500G","name":"Café 500 g","price":18.90,"category":"Café da manhã"},
+    {"sku":"LEITE-1L","name":"Leite integral 1 L","price":6.49,"category":"Café da manhã"},
+    {"sku":"BISCOITO-400G","name":"Biscoito 400 g","price":6.90,"category":"Café da manhã"},
+    {"sku":"REFRI-2L","name":"Refrigerante 2 L","price":10.90,"category":"Bebidas"},
+    {"sku":"SUCO-1L","name":"Suco 1 L","price":7.49,"category":"Bebidas"},
+    {"sku":"DETERGENTE-500","name":"Detergente 500 ml","price":2.79,"category":"Limpeza"},
+    {"sku":"SABAO-1KG","name":"Sabão em pó 1 kg","price":12.90,"category":"Limpeza"},
+    {"sku":"SABONETE-90G","name":"Sabonete 90 g","price":2.49,"category":"Higiene"},
+    {"sku":"PAPEL-4UN","name":"Papel higiênico 4 rolos","price":7.90,"category":"Higiene"}
+  ]
+}
