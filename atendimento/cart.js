@@ -88,18 +88,49 @@ export function changeExtraQty(cart, product, delta) {
   saveCart(cart);
 }
 
-export function whatsappUrl(cart, money, finalize) {
-  const lines = [finalize ? '*FINALIZAR PEDIDO*' : '*CESTA PERSONALIZADA*', `Pedido ${cart.code}`, ''];
-  if (cart.basket) {
-    lines.push(`*${cart.basket.name}*`);
-    cart.basket.items.filter(item => item.qty > 0).forEach(item => lines.push(`${item.qty}x ${item.name}`));
-    lines.push(`Cesta: ${money(basketTotal(cart))}`);
+function basketChanges(cart) {
+  const items = cart.basket?.items || [];
+  const changed = [];
+  const removed = [];
+
+  for (const item of items) {
+    const qty = n(item.qty);
+    const baseQty = n(item.baseQty);
+    if (qty === baseQty) continue;
+    if (qty <= 0) removed.push(item);
+    else changed.push(item);
   }
+
+  return { changed, removed, hasChanges: changed.length > 0 || removed.length > 0 };
+}
+
+export function whatsappUrl(cart, money, finalize) {
+  const lines = [finalize ? '*FINALIZAR PEDIDO*' : `*${cart.basket?.name || 'CESTA'} — ${basketChanges(cart).hasChanges ? 'ALTERADA' : 'PADRÃO'}*`, `Pedido ${cart.code}`, ''];
+
+  if (cart.basket) {
+    const { changed, removed } = basketChanges(cart);
+    const visibleItems = cart.basket.items.filter(item => n(item.qty) > 0);
+
+    visibleItems.forEach(item => lines.push(`${item.qty}x ${item.name}`));
+    lines.push(`Cesta: ${money(basketTotal(cart))}`);
+
+    if (changed.length) {
+      lines.push('', '*PRODUTOS ALTERADOS*');
+      changed.forEach(item => lines.push(`${item.qty}x ${item.name}`));
+    }
+
+    if (removed.length) {
+      lines.push('', '*PRODUTOS RETIRADOS*');
+      removed.forEach(item => lines.push(item.name));
+    }
+  }
+
   const extras = Object.values(cart.extras || {}).filter(item => item.qty > 0);
   if (extras.length) {
     lines.push('', '*Produtos avulsos*');
     extras.forEach(item => lines.push(`${item.qty}x ${item.name} — ${money(item.price * item.qty)}`));
   }
+
   lines.push('', `*Total: ${money(grandTotal(cart))}*`);
   return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(lines.join('\n'))}`;
 }
