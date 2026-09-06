@@ -6,14 +6,18 @@ const section = String(params.get('secao') || '').toLowerCase();
 const basketParam = String(params.get('cesta') || '').trim();
 const money = value => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const $ = id => document.getElementById(id);
-const labels = {
-  ofertas: 'Ofertas',
-  mercearia: 'Mercearia',
-  limpeza: 'Lavanderia e Limpeza',
-  higiene: 'Higiene e Beleza',
-  utilidades: 'Utilidades e Pets'
-};
 
+const sections = [
+  { key: 'cestas', label: 'Cestas Básicas', image: '/site/img/produtos/CESTA-MEDIA-BONINI.webp' },
+  { key: 'ofertas', label: 'Ofertas', image: '/site/img/produtos/COMBO-LIMPEZA1.webp' },
+  { key: 'mercearia', label: 'Mercearia', image: '/site/img/produtos/CESTA-PEQUENA-BONINI.webp' },
+  { key: 'bebidas', label: 'Bebidas', image: '/site/img/produtos/COMBO-CAFE1.webp' },
+  { key: 'limpeza', label: 'Lavanderia e Limpeza', image: '/site/img/produtos/COMBO-LIMPEZA1.webp' },
+  { key: 'higiene', label: 'Higiene e Beleza', image: '/site/img/produtos/COMBO-PARA-ELAS.webp' },
+  { key: 'utilidades', label: 'Utilidades e Pets', image: '/img/logoantonia5.png' }
+];
+
+const labels = Object.fromEntries(sections.map(item => [item.key, item.label]));
 const state = { products: [], baskets: [], productByCode: new Map(), cart: loadCart(), basket: null };
 
 function esc(value) {
@@ -41,18 +45,38 @@ function renderSummary() {
   $('sendWhatsapp').textContent = basketParam ? 'Enviar cesta' : 'Finalizar pedido';
 }
 
+function renderCategoryGrid() {
+  document.title = 'Categorias | Dona Antônia';
+  $('basketMode').hidden = true;
+  $('offersMode').hidden = false;
+  $('categoryTabs').innerHTML = '<strong class="section-name">Categorias</strong>';
+  $('offersList').className = 'offer-grid category-grid';
+  $('offersList').innerHTML = sections.map(item => `
+    <a class="catalog-card category-card" href="?secao=${encodeURIComponent(item.key)}">
+      <div class="catalog-image-wrap"><img class="catalog-image" src="${esc(categoryImage(item))}" alt="${esc(item.label)}" loading="lazy"></div>
+      <div class="catalog-body"><div class="catalog-name">${esc(item.label)}</div></div>
+    </a>`).join('');
+  renderSummary();
+}
+
+function categoryImage(item) {
+  if (item.key === 'cestas') return state.baskets[0]?.image || item.image;
+  if (item.key === 'ofertas') return state.products.find(product => product.offer)?.image || item.image;
+  return state.products.find(product => classify(product) === item.key)?.image || item.image;
+}
+
 function renderBasketGrid() {
   document.title = 'Cestas Básicas | Dona Antônia';
   $('basketMode').hidden = true;
   $('offersMode').hidden = false;
-  $('categoryTabs').innerHTML = '<strong class="section-name">Cestas Básicas</strong>';
+  $('categoryTabs').innerHTML = '<a class="chip" href="?secao=categorias">Categorias</a><strong class="section-name">Cestas Básicas</strong>';
   const host = $('offersList');
   host.className = 'offer-grid';
-  host.innerHTML = state.baskets.map(basket => `
+  host.innerHTML = state.baskets.length ? state.baskets.map(basket => `
     <a class="catalog-card" href="?cesta=${encodeURIComponent(basket.id)}">
       <div class="catalog-image-wrap"><img class="catalog-image" src="${esc(basket.image)}" alt="${esc(basket.name)}" loading="lazy"></div>
       <div class="catalog-body"><div class="catalog-name">${esc(basket.name)}</div><div class="catalog-price">${money(basket.price)}</div></div>
-    </a>`).join('');
+    </a>`).join('') : '<div class="empty">Nenhuma cesta.</div>';
   renderSummary();
 }
 
@@ -84,7 +108,11 @@ function productList(sectionKey) {
 }
 
 function renderTabs(current) {
-  $('categoryTabs').innerHTML = Object.entries(labels).map(([key, label]) => `<a class="chip${key === current ? ' active' : ''}" href="?secao=${key}">${label}</a>`).join('');
+  const categoryLink = '<a class="chip" href="?secao=categorias">Categorias</a>';
+  $('categoryTabs').innerHTML = categoryLink + sections
+    .filter(item => item.key !== 'cestas')
+    .map(item => `<a class="chip${item.key === current ? ' active' : ''}" href="?secao=${item.key}">${item.label}</a>`)
+    .join('');
 }
 
 function productCard(product) {
@@ -104,7 +132,7 @@ function productCard(product) {
 }
 
 function renderProductSection(sectionKey) {
-  const current = labels[sectionKey] ? sectionKey : 'ofertas';
+  const current = labels[sectionKey] && sectionKey !== 'cestas' ? sectionKey : 'ofertas';
   document.title = `${labels[current]} | Dona Antônia`;
   $('basketMode').hidden = true;
   $('offersMode').hidden = false;
@@ -117,6 +145,7 @@ function renderProductSection(sectionKey) {
 
 function rerender() {
   if (basketParam && state.basket) renderBasketDetail(state.basket);
+  else if (section === 'categorias') renderCategoryGrid();
   else if (!section || section === 'cestas') renderBasketGrid();
   else renderProductSection(section);
 }
@@ -158,6 +187,7 @@ async function init() {
       const basket = basketByParam(basketParam);
       if (basket) return renderBasketDetail(basket);
     }
+    if (section === 'categorias') return renderCategoryGrid();
     if (!section || section === 'cestas') return renderBasketGrid();
     renderProductSection(section);
   } catch (error) {
