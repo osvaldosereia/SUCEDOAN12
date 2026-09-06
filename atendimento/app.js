@@ -17,10 +17,20 @@ const sections = [
 ];
 
 const labels = Object.fromEntries(sections.map(item => [item.key, item.label]));
-const state = { products: [], baskets: [], productByCode: new Map(), cart: loadCart(), basket: null };
+const state = { products: [], baskets: [], productByCode: new Map(), cart: loadCart(), basket: null, search: '' };
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+}
+
+function clean(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function matchesSearch(item) {
+  const term = clean(state.search);
+  if (!term) return true;
+  return clean([item.name, item.label, item.code, item.categoryText].filter(Boolean).join(' ')).includes(term);
 }
 
 function basketByParam(value) {
@@ -49,12 +59,13 @@ function renderCategoryGrid() {
   $('basketMode').hidden = true;
   $('offersMode').hidden = false;
   $('categoryTabs').innerHTML = '<strong class="section-name">Categorias</strong>';
+  const list = sections.filter(matchesSearch);
   $('offersList').className = 'offer-grid category-grid';
-  $('offersList').innerHTML = sections.map(item => `
+  $('offersList').innerHTML = list.length ? list.map(item => `
     <a class="catalog-card category-card" href="?secao=${encodeURIComponent(item.key)}">
       <div class="catalog-image-wrap"><img class="catalog-image" src="${esc(categoryImage(item))}" alt="${esc(item.label)}" loading="lazy"></div>
       <div class="catalog-body"><div class="catalog-name">${esc(item.label)}</div></div>
-    </a>`).join('');
+    </a>`).join('') : '<div class="empty">Nada encontrado.</div>';
   renderSummary();
 }
 
@@ -70,12 +81,13 @@ function renderBasketGrid() {
   $('offersMode').hidden = false;
   $('categoryTabs').innerHTML = '<a class="chip" href="?secao=categorias">Categorias</a><strong class="section-name">Cestas Básicas</strong>';
   const host = $('offersList');
+  const list = state.baskets.filter(matchesSearch);
   host.className = 'offer-grid';
-  host.innerHTML = state.baskets.length ? state.baskets.map(basket => `
+  host.innerHTML = list.length ? list.map(basket => `
     <a class="catalog-card" href="?cesta=${encodeURIComponent(basket.id)}">
       <div class="catalog-image-wrap"><img class="catalog-image" src="${esc(basket.image)}" alt="${esc(basket.name)}" loading="lazy"></div>
       <div class="catalog-body"><div class="catalog-name">${esc(basket.name)}</div><div class="catalog-price">${money(basket.price)}</div></div>
-    </a>`).join('') : '<div class="empty">Nenhuma cesta.</div>';
+    </a>`).join('') : '<div class="empty">Nada encontrado.</div>';
   renderSummary();
 }
 
@@ -89,15 +101,19 @@ function renderBasketDetail(basket) {
   $('basketImage').alt = basket.name;
   $('basketTitle').textContent = basket.name;
   $('basketPrice').textContent = money(basketTotal(state.cart));
-  $('basketItems').innerHTML = state.cart.basket.items.map((item, index) => `
-    <div class="basket-item">
-      <span class="basket-item-name">${esc(item.name)}</span>
-      <div class="qty">
-        <button type="button" data-basket-delta="-1" data-index="${index}" aria-label="Diminuir">−</button>
-        <span>${item.qty}</span>
-        <button type="button" data-basket-delta="1" data-index="${index}" aria-label="Aumentar">+</button>
-      </div>
-    </div>`).join('');
+  const items = state.cart.basket.items.filter(matchesSearch);
+  $('basketItems').innerHTML = items.length ? items.map(item => {
+    const index = state.cart.basket.items.indexOf(item);
+    return `
+      <div class="basket-item">
+        <span class="basket-item-name">${esc(item.name)}</span>
+        <div class="qty">
+          <button type="button" data-basket-delta="-1" data-index="${index}" aria-label="Diminuir">−</button>
+          <span>${item.qty}</span>
+          <button type="button" data-basket-delta="1" data-index="${index}" aria-label="Aumentar">+</button>
+        </div>
+      </div>`;
+  }).join('') : '<div class="empty">Nada encontrado.</div>';
   renderSummary();
 }
 
@@ -136,9 +152,9 @@ function renderProductSection(sectionKey) {
   $('basketMode').hidden = true;
   $('offersMode').hidden = false;
   renderTabs(current);
-  const list = productList(current);
+  const list = productList(current).filter(matchesSearch);
   $('offersList').className = 'offer-grid';
-  $('offersList').innerHTML = list.length ? list.map(productCard).join('') : '<div class="empty">Nenhum produto.</div>';
+  $('offersList').innerHTML = list.length ? list.map(productCard).join('') : '<div class="empty">Nada encontrado.</div>';
   renderSummary();
 }
 
@@ -163,6 +179,17 @@ function bind() {
   });
   $('sendWhatsapp').addEventListener('click', () => {
     location.href = whatsappUrl(state.cart, money, !basketParam);
+  });
+  $('searchInput').addEventListener('input', event => {
+    state.search = event.target.value;
+    $('clearSearch').hidden = !state.search;
+    rerender();
+  });
+  $('clearSearch').addEventListener('click', () => {
+    state.search = '';
+    $('searchInput').value = '';
+    $('clearSearch').hidden = true;
+    rerender();
   });
   document.addEventListener('click', event => {
     const basket = event.target.closest('[data-basket-delta]');
