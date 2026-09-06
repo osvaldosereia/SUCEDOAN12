@@ -128,7 +128,7 @@ export function whatsappUrl(cart, money, finalize) {
   const extras = Object.values(cart.extras || {}).filter(item => item.qty > 0);
   if (extras.length) {
     lines.push('', '*Produtos avulsos*');
-    extras.forEach(item => lines.push(`${item.qty}x ${item.name} — ${money(item.price * item.qty)}`));
+    extras.forEach(item => lines.push(`${item.qty}x ${item.name}`));
   }
 
   lines.push('', `*Total: ${money(grandTotal(cart))}*`);
