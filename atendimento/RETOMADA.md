@@ -12,16 +12,30 @@ PapoAI/WhatsApp → carrossel oficial Meta → site `/atendimento` → cliente e
 
 ## Carrossel oficial do PapoAI
 
-Usar 6 entradas:
+Todos os cartões do carrossel devem manter os mesmos componentes:
+
+- texto do cartão curto;
+- botão 1 com texto `Ver produtos`;
+- ação `Abrir link`;
+- link para a seção do site.
+
+Usar 7 entradas:
 
 1. Cestas Básicas → `/atendimento/?secao=cestas`
 2. Ofertas → `/atendimento/?secao=ofertas`
 3. Mercearia → `/atendimento/?secao=mercearia`
-4. Lavanderia e Limpeza → `/atendimento/?secao=limpeza`
-5. Higiene e Beleza → `/atendimento/?secao=higiene`
-6. Utilidades e Pets → `/atendimento/?secao=utilidades`
+4. Bebidas → `/atendimento/?secao=bebidas`
+5. Limpeza → `/atendimento/?secao=limpeza`
+6. Higiene → `/atendimento/?secao=higiene`
+7. Utilidades → `/atendimento/?secao=utilidades`
 
 Links completos ficam em `data/papoai-links.json`.
+
+Existe também a página interna de grade de categorias:
+
+`/atendimento/?secao=categorias`
+
+Ela mostra as categorias em 2 colunas para navegação dentro do site.
 
 ## Regras comerciais importantes
 
@@ -44,11 +58,12 @@ Links completos ficam em `data/papoai-links.json`.
 - sem foto individual dos itens da cesta;
 - botão final: `Enviar cesta`.
 
-### Produtos avulsos
+### Categorias e produtos avulsos
 
-- Ofertas, Mercearia, Lavanderia e Limpeza, Higiene e Beleza e Utilidades e Pets;
-- grade **sempre com 2 colunas**;
-- card: foto, nome, preço e botão `Adicionar`;
+- existe uma tela `Categorias` em grade **sempre com 2 colunas**;
+- cada categoria abre sua própria grade de produtos;
+- Ofertas, Mercearia, Bebidas, Limpeza, Higiene e Utilidades;
+- cards de produtos sempre com os mesmos componentes: foto, nome, preço e botão `Adicionar`;
 - depois de adicionar, controle `− quantidade +`;
 - navegação entre as seções por chips no topo;
 - cesta personalizada e produtos avulsos permanecem no mesmo carrinho;
@@ -68,16 +83,19 @@ Links completos ficam em `data/papoai-links.json`.
 
 - topbar com logo Dona Antônia (`/img/logoantonia5.png`);
 - grade de cestas em 2 colunas;
+- grade de categorias em 2 colunas;
 - fotos reais das cestas vindas do cadastro existente;
 - composição real das cestas carregada de `site/produtos-cesta-basica.json`;
-- nomes/preços dos componentes resolvidos usando `site/produtos-home.json`;
+- nomes/preços dos componentes resolvidos usando `site/produtos-home.json` quando disponível;
+- carregamento parcial: cestas abrem mesmo se produtos avulsos estiverem indisponíveis;
 - foto grande da cesta no editor;
 - nome + quantidade nos itens sem preço individual;
 - cálculo por preço-base da cesta + diferença das alterações;
 - produtos avulsos em 2 colunas com foto, nome, preço e adicionar;
-- seções Ofertas, Mercearia, Lavanderia e Limpeza, Higiene e Beleza e Utilidades e Pets;
+- seções Ofertas, Mercearia, Bebidas, Limpeza, Higiene e Utilidades;
 - carrinho único em `localStorage`;
-- mensagem `CESTA PERSONALIZADA` ao enviar uma cesta;
+- mensagem do WhatsApp inicia com `Nome da cesta — PADRÃO` ou `Nome da cesta — ALTERADA`;
+- quando houver alteração, a mensagem separa `PRODUTOS ALTERADOS` e `PRODUTOS RETIRADOS`;
 - mensagem `FINALIZAR PEDIDO` ao finalizar pelos catálogos de produtos;
 - nenhuma credencial no frontend;
 - nenhum Firebase.
@@ -97,7 +115,7 @@ O repositório é público. Não colocar tokens, API Keys, PAT, CPF, endereços 
 
 ## Próximos passos
 
-1. Ajustar o Admin para refletir a nova estrutura e os 6 links do carrossel.
+1. Ajustar o Admin para refletir a nova estrutura e os 7 links do carrossel.
 2. Criar sincronização nova Bling → catálogo do atendimento.
 3. Criar sincronização Bling → PapoAI Produtos via `/api/v1/products/sync`.
 4. Criar cenário Make novo e mínimo: CPF → localizar/criar contato → confirmar endereço → revalidar itens/preço/estoque → criar pedido de venda → devolver número do pedido.
