@@ -1,14 +1,14 @@
 name: CanecaFácil · fila mídia LI · GitHub direto
 
+# EMERGÊNCIA 2026-09-06: removido o cron de 5 minutos para zerar o polling
+# periódico do Firebase. O worker permanece disponível manualmente e por
+# alterações do script até ser acionado diretamente pela criação de fila.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *'
   push:
     branches: [main]
     paths:
       - 'scripts/fila-midia-loja-integrada-v1.mjs'
-      - '.github/workflows/processar-fila-midia-loja-integrada.yml'
 
 permissions:
   contents: write
