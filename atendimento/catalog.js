@@ -66,6 +66,19 @@ function normalizeBasket(raw, index) {
   };
 }
 
+async function safeJson(url, fallback) {
+  try {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) return fallback;
+    const text = await response.text();
+    if (!text.trim()) return fallback;
+    return JSON.parse(text);
+  } catch (error) {
+    console.warn(`Catálogo parcial: ${url} indisponível`, error);
+    return fallback;
+  }
+}
+
 export function classify(product) {
   const text = `${product.categoryText} ${product.name}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   if (/(pet|animal|racao|utilidade|utensilio|cozinha|descartavel|pilha|lampada|saco de lixo)/.test(text)) return 'utilidades';
@@ -75,14 +88,17 @@ export function classify(product) {
 }
 
 export async function loadCatalog() {
-  const [productResponse, basketResponse] = await Promise.all([
-    fetch(PRODUCT_URL, { cache: 'no-store' }),
-    fetch(BASKET_URL, { cache: 'no-store' })
-  ]);
-  if (!productResponse.ok || !basketResponse.ok) throw new Error('catalog');
-  const [productRaw, basketRaw] = await Promise.all([productResponse.json(), basketResponse.json()]);
-  const products = (Array.isArray(productRaw) ? productRaw : Object.values(productRaw || {})).map(normalizeProduct).filter(p => p.code && p.name && p.price > 0 && active(p.raw));
-  const baskets = (Array.isArray(basketRaw) ? basketRaw : Object.values(basketRaw || {})).map(normalizeBasket);
+  const basketRaw = await safeJson(BASKET_URL, []);
+  const productRaw = await safeJson(PRODUCT_URL, []);
+
+  const products = (Array.isArray(productRaw) ? productRaw : Object.values(productRaw || {}))
+    .map(normalizeProduct)
+    .filter(p => p.code && p.name && p.price > 0 && active(p.raw));
+
+  const baskets = (Array.isArray(basketRaw) ? basketRaw : Object.values(basketRaw || {}))
+    .map(normalizeBasket)
+    .filter(basket => basket.id && basket.name && basket.price > 0);
+
   const productByCode = new Map(products.map(product => [product.code.toLowerCase(), product]));
   return { products, baskets, productByCode };
 }
