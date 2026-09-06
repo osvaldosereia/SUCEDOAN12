@@ -1,5 +1,8 @@
 name: CanecaFácil · pedidos de canecas Loja Integrada
 
+# EMERGÊNCIA 2026-09-06: removido o cron de 5 minutos para interromper
+# leituras periódicas de pedidos/print_jobs no Firebase. Mantidos acionamento
+# manual e push dos scripts enquanto o fluxo incremental é preparado.
 on:
   workflow_dispatch:
     inputs:
@@ -7,8 +10,6 @@ on:
         description: 'Quantidade de pedidos recentes para revisar (máximo 50)'
         required: false
         default: '50'
-  schedule:
-    - cron: '*/5 * * * *'
   push:
     branches: [main]
     paths:
@@ -16,7 +17,6 @@ on:
       - 'scripts/sincronizar-pedidos-personalizados-li-v2.mjs'
       - 'scripts/sincronizar-pedidos-canecas-li-v2.mjs'
       - 'scripts/garantir-liberacao-producao.mjs'
-      - '.github/workflows/sincronizar-pedidos-personalizados-li.yml'
 
 permissions:
   contents: read
