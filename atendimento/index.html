@@ -6,17 +6,18 @@
   <meta name="theme-color" content="#ffffff" />
   <title>Dona Antônia</title>
   <link rel="icon" href="/img/logoantonia5.png" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=20260906-menu-icons" />
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="../" aria-label="Dona Antônia"><img src="/img/logoantonia5.png" alt="Dona Antônia" width="160" height="44" /></a>
+    <a class="brand" href="./" aria-label="Início do atendimento Dona Antônia"><img src="/img/logoantonia5.png" alt="Dona Antônia" width="160" height="44" /></a>
     <button id="resetCart" class="ghost" type="button">Recomeçar</button>
   </header>
 
   <main>
     <form class="search-bar" role="search">
-      <input id="searchInput" type="search" placeholder="Buscar" autocomplete="off" aria-label="Buscar" />
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input id="searchInput" type="search" placeholder="Buscar cestas, ofertas e produtos" autocomplete="off" aria-label="Buscar cestas, ofertas e produtos" />
       <button id="clearSearch" type="button" aria-label="Limpar busca" hidden>×</button>
     </form>
 
@@ -41,6 +42,6 @@
 
   <div class="bottom-bar"><strong id="bottomTotal">R$ 0,00</strong><button id="sendWhatsapp" class="whatsapp" type="button">Enviar no WhatsApp</button></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=20260906-menu-icons"></script>
 </body>
 </html>
