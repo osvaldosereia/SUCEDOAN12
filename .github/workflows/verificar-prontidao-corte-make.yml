@@ -1,14 +1,14 @@
 name: CanecaFácil · prontidão corte Make
 
+# EMERGÊNCIA 2026-09-06: removido o cron horário porque a auditoria lê
+# /produtos completo no Firebase. Mantidos acionamento manual e push dos
+# scripts enquanto a verificação é convertida para leitura incremental.
 on:
   push:
     branches: [main]
     paths:
       - 'scripts/verificar-prontidao-corte-make-v1.mjs'
       - 'admin-canecas/github-cutover-readiness-v1.js'
-      - '.github/workflows/verificar-prontidao-corte-make.yml'
-  schedule:
-    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
