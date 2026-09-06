@@ -11,7 +11,6 @@ const sections = [
   { key: 'cestas', label: 'Cestas Básicas', image: '/site/img/produtos/CESTA-MEDIA-BONINI.webp' },
   { key: 'ofertas', label: 'Ofertas', image: '/site/img/produtos/COMBO-LIMPEZA1.webp' },
   { key: 'mercearia', label: 'Mercearia', image: '/site/img/produtos/CESTA-PEQUENA-BONINI.webp' },
-  { key: 'bebidas', label: 'Bebidas', image: '/site/img/produtos/COMBO-CAFE1.webp' },
   { key: 'limpeza', label: 'Lavanderia e Limpeza', image: '/site/img/produtos/COMBO-LIMPEZA1.webp' },
   { key: 'higiene', label: 'Higiene e Beleza', image: '/site/img/produtos/COMBO-PARA-ELAS.webp' },
   { key: 'utilidades', label: 'Utilidades e Pets', image: '/img/logoantonia5.png' }
