@@ -1,8 +1,11 @@
 const STORAGE_KEY = 'dona_antonia_atendimento_cart_v1';
+const PREVIEW_KEY = 'dona_antonia_atendimento_preview_v1';
 const CATALOG_URL = './data/catalogo.json';
+const CONFIG_URL = './data/site-config.json';
 
 const state = {
   catalog: null,
+  config: null,
   basket: null,
   cart: null,
   activeCategory: null,
@@ -11,13 +14,23 @@ const state = {
 const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const els = {
+  siteEyebrow: document.querySelector('#siteEyebrow'),
+  siteTitle: document.querySelector('#siteTitle'),
+  siteIntro: document.querySelector('#siteIntro'),
   basketTitle: document.querySelector('#basketTitle'),
   basketDescription: document.querySelector('#basketDescription'),
   basketSubtotal: document.querySelector('#basketSubtotal'),
+  basketItemsTitle: document.querySelector('#basketItemsTitle'),
+  basketItemsSubtitle: document.querySelector('#basketItemsSubtitle'),
   basketItems: document.querySelector('#basketItems'),
+  offersSection: document.querySelector('#offersSection'),
+  offersTitle: document.querySelector('#offersTitle'),
+  offersSubtitle: document.querySelector('#offersSubtitle'),
   categoryTabs: document.querySelector('#categoryTabs'),
   offersList: document.querySelector('#offersList'),
+  summaryTitle: document.querySelector('#summaryTitle'),
   summaryItems: document.querySelector('#summaryItems'),
+  summaryNotice: document.querySelector('#summaryNotice'),
   orderCode: document.querySelector('#orderCode'),
   grandTotal: document.querySelector('#grandTotal'),
   bottomTotal: document.querySelector('#bottomTotal'),
@@ -57,7 +70,9 @@ function createCart(basket) {
 }
 
 function selectBasket(catalog) {
-  const slug = new URLSearchParams(location.search).get('cesta') || catalog.baskets[0]?.slug;
+  const params = new URLSearchParams(location.search);
+  const fallback = state.config?.site?.defaultBasket || catalog.baskets[0]?.slug;
+  const slug = params.get('cesta') || fallback;
   return catalog.baskets.find(item => item.slug === slug) || catalog.baskets[0];
 }
 
@@ -144,6 +159,25 @@ function productCard(item, options = {}) {
   return wrap;
 }
 
+function applyConfig() {
+  const site = state.config?.site || {};
+  const whatsapp = state.config?.whatsapp || {};
+  if (site.eyebrow) els.siteEyebrow.textContent = site.eyebrow;
+  if (site.title) {
+    els.siteTitle.textContent = site.title;
+    document.title = `${site.title} | ${site.eyebrow || 'Dona Antônia'}`;
+  }
+  if (site.intro) els.siteIntro.textContent = site.intro;
+  if (site.basketSectionTitle) els.basketItemsTitle.textContent = site.basketSectionTitle;
+  if (site.basketSectionSubtitle) els.basketItemsSubtitle.textContent = site.basketSectionSubtitle;
+  if (site.offersTitle) els.offersTitle.textContent = site.offersTitle;
+  if (site.offersSubtitle) els.offersSubtitle.textContent = site.offersSubtitle;
+  if (site.summaryTitle) els.summaryTitle.textContent = site.summaryTitle;
+  if (site.notice) els.summaryNotice.textContent = site.notice;
+  els.offersSection.hidden = site.showOffers === false;
+  if (whatsapp.buttonLabel) els.sendWhatsapp.textContent = whatsapp.buttonLabel;
+}
+
 function renderBasket() {
   els.basketTitle.textContent = state.basket.name;
   els.basketDescription.textContent = state.basket.description || 'Personalize os itens da cesta.';
@@ -214,22 +248,23 @@ function renderSummary() {
 
 function buildWhatsappMessage() {
   const activeItems = state.cart.items.filter(item => Number(item.qty) > 0);
-  const lines = [
-    '🧺 *Meu pedido Dona Antônia*',
-    `Código: *${state.cart.id}*`,
-    `Cesta: *${state.basketName}*`,
-    '',
-    ...activeItems.map(item => `${item.qty}x ${item.name} — ${money.format(item.qty * item.price)}`),
-    '',
-    `*Total calculado: ${money.format(total(activeItems))}*`,
-    '',
-    'Finalizei a montagem e quero continuar meu atendimento por aqui.'
-  ];
+  const wa = state.config?.whatsapp || {};
+  const lines = [wa.messageHeader || '🧺 *Meu pedido Dona Antônia*'];
+  if (wa.includeCartCode !== false) lines.push(`Código: *${state.cart.id}*`);
+  lines.push(`Cesta: *${state.basketName}*`, '');
+
+  activeItems.forEach(item => {
+    const sku = wa.includeSku ? ` [${item.sku}]` : '';
+    const subtotal = wa.includeItemSubtotal === false ? '' : ` — ${money.format(item.qty * item.price)}`;
+    lines.push(`${item.qty}x ${item.name}${sku}${subtotal}`);
+  });
+
+  lines.push('', `*Total calculado: ${money.format(total(activeItems))}*`, '', wa.messageFooter || 'Finalizei a montagem e quero continuar meu atendimento por aqui.');
   return lines.join('\n');
 }
 
 function openWhatsapp() {
-  const number = String(state.catalog.whatsapp || '').replace(/\D/g, '');
+  const number = String(state.config?.whatsapp?.number || state.catalog.whatsapp || '').replace(/\D/g, '');
   if (!number) {
     showToast('WhatsApp ainda não configurado');
     return;
@@ -249,22 +284,49 @@ function resetCart() {
 }
 
 function render() {
+  applyConfig();
   renderBasket();
   renderCategories();
   renderOffers();
   renderSummary();
 }
 
+async function loadData() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('preview') === '1') {
+    try {
+      const preview = JSON.parse(localStorage.getItem(PREVIEW_KEY) || 'null');
+      if (preview?.catalog && preview?.config) return preview;
+    } catch {}
+  }
+
+  const [catalogResponse, configResponse] = await Promise.all([
+    fetch(CATALOG_URL, { cache: 'no-store' }),
+    fetch(CONFIG_URL, { cache: 'no-store' }),
+  ]);
+  if (!catalogResponse.ok) throw new Error(`Catálogo indisponível (${catalogResponse.status})`);
+  const catalog = await catalogResponse.json();
+  const config = configResponse.ok ? await configResponse.json() : { site: {}, whatsapp: {} };
+  return { catalog, config };
+}
+
 async function init() {
   try {
-    const response = await fetch(CATALOG_URL, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`Catálogo indisponível (${response.status})`);
-    state.catalog = await response.json();
+    const data = await loadData();
+    state.catalog = data.catalog;
+    state.config = data.config;
     state.basket = selectBasket(state.catalog);
     if (!state.basket) throw new Error('Nenhuma cesta cadastrada');
+
+    const params = new URLSearchParams(location.search);
+    state.activeCategory = params.get('categoria') || null;
     state.cart = hydrateCart(state.basket);
     saveCart();
     render();
+
+    if (params.get('secao') === 'ofertas' && state.config?.site?.showOffers !== false) {
+      requestAnimationFrame(() => els.offersSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
   } catch (error) {
     console.error(error);
     document.querySelector('main').innerHTML = `<section class="card"><h2>Não foi possível carregar o catálogo</h2><p>Tente novamente em alguns instantes.</p></section>`;
