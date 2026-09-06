@@ -1,16 +1,16 @@
 name: Sincronizar cache do Criador de Canecas
 
+# EMERGÊNCIA 2026-09-06: execução agendada removida para interromper
+# polling periódico do Firebase. Mantido manual/push de scripts até o fluxo
+# incremental substituir a varredura atual.
 on:
   push:
     branches: [main]
     paths:
       - 'scripts/sync-canecas-cache.mjs'
-      - '.github/workflows/sync-canecas-cache.yml'
       - 'producao-v2/js/mug-network-resilience-v1.js'
       - 'producao-v2/js/mug-make-native-openai-bridge.js'
       - 'caneca-print/**'
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:
