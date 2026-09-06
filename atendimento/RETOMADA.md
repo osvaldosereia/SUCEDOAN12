@@ -8,65 +8,96 @@ Projeto **novo** dentro de `SUCEDOAN12/atendimento`. Não usar como base o fluxo
 
 Fluxo-alvo:
 
-PapoAI/WhatsApp → carrossel da cesta → `/atendimento` → cliente escolhe em grade → edita itens → envia pelo WhatsApp → PapoAI envia categorias/produtos → cliente adiciona avulsos no mesmo pedido → finaliza → CPF → Make novo → Bling.
+PapoAI/WhatsApp → carrossel oficial Meta → site `/atendimento` → cliente escolhe cesta ou seção → monta pedido → envia/finaliza pelo WhatsApp → PapoAI → CPF → Make novo → Bling.
+
+## Carrossel oficial do PapoAI
+
+Usar 6 entradas:
+
+1. Cestas Básicas → `/atendimento/?secao=cestas`
+2. Ofertas → `/atendimento/?secao=ofertas`
+3. Mercearia → `/atendimento/?secao=mercearia`
+4. Lavanderia e Limpeza → `/atendimento/?secao=limpeza`
+5. Higiene e Beleza → `/atendimento/?secao=higiene`
+6. Utilidades e Pets → `/atendimento/?secao=utilidades`
+
+Links completos ficam em `data/papoai-links.json`.
 
 ## Regras comerciais importantes
 
 - Cesta básica tem **preço fixo/predefinido**.
 - O preço da cesta **não é a soma pública dos itens individuais**.
 - A diferença é custo/margem operacional e deve ficar oculta.
+- Alterações na composição usam internamente o preço unitário do produto apenas para calcular a diferença sobre o preço-base da cesta.
 - No editor da cesta, mostrar apenas **foto grande da cesta, nome, valor da cesta, nome dos produtos e quantidade**.
 - Não mostrar SKU, código, preço unitário ou subtotal individual nos itens da cesta.
-- Produtos avulsos podem mostrar foto, nome e preço.
+- Produtos avulsos mostram foto, nome e preço.
+
+## UX vigente
+
+### Cestas Básicas
+
+- primeira tela: grade **sempre com 2 colunas**;
+- card: foto quadrada, nome e preço da cesta;
+- ao abrir: foto quadrada grande da cesta;
+- abaixo: nome de cada produto + quantidade + botões `−` e `+`;
+- sem foto individual dos itens da cesta;
+- botão final: `Enviar cesta`.
+
+### Produtos avulsos
+
+- Ofertas, Mercearia, Lavanderia e Limpeza, Higiene e Beleza e Utilidades e Pets;
+- grade **sempre com 2 colunas**;
+- card: foto, nome, preço e botão `Adicionar`;
+- depois de adicionar, controle `− quantidade +`;
+- navegação entre as seções por chips no topo;
+- cesta personalizada e produtos avulsos permanecem no mesmo carrinho;
+- botão final: `Finalizar pedido`.
 
 ## Arquitetura
 
 - **PapoAI:** conversa, IA, CRM, funil, templates oficiais, WhatsApp Flow, automações e handoff.
-- **Site `/atendimento`:** grade de cestas, editor de cesta e catálogo visual de produtos avulsos.
-- **Admin `/atendimento/admin`:** gestão do site montador, cestas, ofertas, links dos carrosséis e validações.
+- **Site `/atendimento`:** escolha visual, personalização de cesta e produtos avulsos.
+- **Admin `/atendimento/admin`:** gestão do site, links para PapoAI, regras comerciais e integrações.
 - **Bling:** fonte oficial de produtos, SKU, preços, estoque, contatos/clientes e pedidos.
-- **Make:** somente ponte em tempo real para o fechamento do pedido.
+- **GitHub Actions:** sincronização barata Bling → site + PapoAI Produtos.
+- **Make:** ponte em tempo real somente para fechamento do pedido e operações que exigem Bling na hora.
 - **Firebase:** não usar neste projeto.
 
 ## Implementado
 
-### Site público
+- topbar com logo Dona Antônia (`/img/logoantonia5.png`);
+- grade de cestas em 2 colunas;
+- fotos reais das cestas vindas do cadastro existente;
+- composição real das cestas carregada de `site/produtos-cesta-basica.json`;
+- nomes/preços dos componentes resolvidos usando `site/produtos-home.json`;
+- foto grande da cesta no editor;
+- nome + quantidade nos itens sem preço individual;
+- cálculo por preço-base da cesta + diferença das alterações;
+- produtos avulsos em 2 colunas com foto, nome, preço e adicionar;
+- seções Ofertas, Mercearia, Lavanderia e Limpeza, Higiene e Beleza e Utilidades e Pets;
+- carrinho único em `localStorage`;
+- mensagem `CESTA PERSONALIZADA` ao enviar uma cesta;
+- mensagem `FINALIZAR PEDIDO` ao finalizar pelos catálogos de produtos;
+- nenhuma credencial no frontend;
+- nenhum Firebase.
 
-- topbar com logo da Dona Antônia (`/img/logoantonia5.png`);
-- tela inicial em grade de 2 colunas com as cestas;
-- cards de cesta com foto quadrada grande, nome e valor;
-- tela de edição com foto grande quadrada da cesta;
-- lista de produtos da cesta com nome e quantidade;
-- botões `−` e `+` para aumentar/diminuir/remover;
-- preço unitário da cesta oculto por item;
-- cálculo interno usando preço-base da cesta + variações por alteração;
-- tela de categorias/produtos avulsos em grade;
-- produtos avulsos com foto, nome, preço e controle de quantidade;
-- carrinho único no `localStorage`;
-- botão fixo no rodapé para enviar/finalizar pelo WhatsApp;
-- mensagem final com cesta, itens, adicionais e total;
-- nenhum Firebase;
-- nenhuma credencial no frontend.
+## Dados atuais
 
-### Catálogo atual
+O runtime novo usa **somente os dados** existentes do SUCEDOAN12, não a lógica antiga:
 
-`data/catalogo.json` foi ajustado para versão 2 com:
+- `site/produtos-cesta-basica.json` → cestas, preços-base, imagens e composição;
+- `site/produtos-home.json` → produtos, nomes, preços, imagens, categorias e ofertas.
 
-- cestas reais encontradas em `dados-loja.json`;
-- imagens de cesta já usadas no projeto;
-- `priceBase` para preço fixo da cesta;
-- `unitPrice` interno para recalcular variações, sem exibir ao cliente;
-- ofertas demonstrativas para validar o fluxo de produtos avulsos.
-
-Ainda existem alguns nomes genéricos em itens das cestas. Próxima etapa: resolver nomes reais a partir do catálogo/produtos do Bling ou dados existentes do repositório.
+Próxima evolução: esses arquivos serão gerados/atualizados pela nova sincronização Bling → GitHub Actions. Depois a mesma rotina também atualizará o catálogo de Produtos do PapoAI.
 
 ## Segurança
 
 O repositório é público. Não colocar tokens, API Keys, PAT, CPF, endereços ou dados de clientes no GitHub.
 
-## Próximo passo recomendado
+## Próximos passos
 
-1. Resolver nomes reais dos SKUs das cestas.
-2. Ajustar o Admin para `priceBase`, `image`, `unitPrice` interno e ocultação de preços da cesta.
-3. Criar sincronização nova Bling → catálogo do site + PapoAI Produtos.
-4. Criar cenário Make novo e mínimo somente para fechamento: CPF → localizar/criar contato → revalidar itens/preço/estoque → criar pedido de venda → devolver número do pedido.
+1. Ajustar o Admin para refletir a nova estrutura e os 6 links do carrossel.
+2. Criar sincronização nova Bling → catálogo do atendimento.
+3. Criar sincronização Bling → PapoAI Produtos via `/api/v1/products/sync`.
+4. Criar cenário Make novo e mínimo: CPF → localizar/criar contato → confirmar endereço → revalidar itens/preço/estoque → criar pedido de venda → devolver número do pedido.
