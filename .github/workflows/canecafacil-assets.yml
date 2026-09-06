@@ -1,13 +1,11 @@
 name: CanecaFácil · imagens leves e SEO
 
-# EMERGÊNCIA 2026-09-06: removido o cron que relia /produtos no Firebase
-# a cada 3 horas. Mantidos acionamento manual e push do script.
+# EMERGÊNCIA 2026-09-06: TODOS os acionamentos automáticos foram desativados.
+# Este workflow relê /produtos no Firebase. Execução somente manual até a
+# migração para geração incremental.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/build-canecafacil-assets.mjs'
+
 permissions:
   contents: write
 concurrency:
