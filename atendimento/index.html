@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" />
   <title>Dona Antônia</title>
   <link rel="icon" href="/img/logoantonia5.png" />
-  <link rel="stylesheet" href="./styles.css?v=20260906-menu-icons" />
+  <link rel="stylesheet" href="./styles.css?v=20260906-navlazy" />
 </head>
 <body>
   <header class="topbar">
@@ -22,8 +22,9 @@
     </form>
 
     <section id="basketMode">
+      <div id="detailNav" class="detail-nav" hidden></div>
       <article class="basket-hero">
-        <div class="basket-image-wrap"><img id="basketImage" class="basket-image" alt="" /></div>
+        <div class="basket-image-wrap"><img id="basketImage" class="basket-image" alt="" decoding="async" /></div>
         <div class="basket-title-row"><h1 id="basketTitle">Cesta</h1><strong id="basketPrice">R$ 0,00</strong></div>
       </article>
       <section class="section"><h2>Itens da cesta</h2><div id="basketItems" class="basket-items"></div></section>
@@ -42,6 +43,6 @@
 
   <div class="bottom-bar"><strong id="bottomTotal">R$ 0,00</strong><button id="sendWhatsapp" class="whatsapp" type="button">Enviar no WhatsApp</button></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=20260906-menu-icons"></script>
+  <script type="module" src="./app.js?v=20260906-navlazy"></script>
 </body>
 </html>
