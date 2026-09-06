@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-06T00:00:00-04:00",
+  "site": {
+    "publicBaseUrl": "https://donaantonia.com.br/atendimento/",
+    "eyebrow": "Dona Antônia",
+    "title": "Monte sua cesta",
+    "intro": "Retire, ajuste ou acrescente produtos. No final, envie tudo pronto pelo WhatsApp.",
+    "basketSectionTitle": "Personalize a cesta",
+    "basketSectionSubtitle": "Use + e − para alterar quantidades. Zero remove o item.",
+    "offersTitle": "Quer acrescentar algo?",
+    "offersSubtitle": "Escolha uma categoria e adicione ofertas ao mesmo pedido.",
+    "summaryTitle": "Resumo do pedido",
+    "notice": "Antes do fechamento, preço e disponibilidade poderão ser confirmados novamente.",
+    "showOffers": true,
+    "defaultBasket": "economica"
+  },
+  "whatsapp": {
+    "number": "556596813588",
+    "buttonLabel": "Enviar no WhatsApp",
+    "messageHeader": "🧺 *Meu pedido Dona Antônia*",
+    "messageFooter": "Finalizei a montagem e quero continuar meu atendimento por aqui.",
+    "includeSku": false,
+    "includeItemSubtotal": true,
+    "includeCartCode": true
+  },
+  "order": {
+    "requireCpfAtClose": true,
+    "paymentAtDelivery": true,
+    "source": "PapoAI/WhatsApp",
+    "revalidateBeforeBling": true
+  },
+  "integrations": {
+    "bling": {
+      "role": "source-of-truth",
+      "enabled": false,
+      "syncProducts": true,
+      "syncPrices": true,
+      "syncStock": true,
+      "syncCompositions": true,
+      "useWebhooksLater": true,
+      "finalOrderValidation": true
+    },
+    "papoai": {
+      "role": "conversation-crm",
+      "enabled": true,
+      "singleMessageResponses": true,
+      "productCatalogSyncPlanned": true,
+      "carouselLinksManagedHere": true
+    },
+    "make": {
+      "role": "real-time-order-bridge",
+      "enabled": false
+    }
+  }
+}
