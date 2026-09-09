@@ -3,83 +3,87 @@
   "data_api_version": "3.0",
   "routing_model": {
     "CESTAS": [
-      "PERSONALIZAR_1"
+      "PERSONALIZAR_A"
     ],
-    "PERSONALIZAR_1": [
-      "AJUSTAR_ITEM_1",
-      "SECOES_1"
+    "PERSONALIZAR_A": [
+      "AJUSTAR_ITEM_A",
+      "SECOES_A"
     ],
-    "AJUSTAR_ITEM_1": [
-      "PERSONALIZAR_2",
-      "SECOES_1"
+    "AJUSTAR_ITEM_A": [
+      "PERSONALIZAR_B",
+      "SECOES_A"
     ],
-    "PERSONALIZAR_2": [
-      "AJUSTAR_ITEM_2",
-      "SECOES_1"
+    "PERSONALIZAR_B": [
+      "AJUSTAR_ITEM_B",
+      "SECOES_A"
     ],
-    "AJUSTAR_ITEM_2": [
-      "PERSONALIZAR_3",
-      "SECOES_1"
+    "AJUSTAR_ITEM_B": [
+      "PERSONALIZAR_C",
+      "SECOES_A"
     ],
-    "PERSONALIZAR_3": [
-      "AJUSTAR_ITEM_3",
-      "SECOES_1"
+    "PERSONALIZAR_C": [
+      "AJUSTAR_ITEM_C",
+      "SECOES_A"
     ],
-    "AJUSTAR_ITEM_3": [
-      "SECOES_1"
+    "AJUSTAR_ITEM_C": [
+      "SECOES_A"
     ],
-    "SECOES_1": [
-      "TERMOS_1",
-      "PRODUTOS_1",
+    "SECOES_A": [
+      "TERMOS_A",
+      "PRODUTOS_A",
       "UPSELL"
     ],
-    "TERMOS_1": [
-      "PRODUTOS_1"
+    "TERMOS_A": [
+      "PRODUTOS_A"
     ],
-    "PRODUTOS_1": [
-      "PRODUTO_1"
+    "PRODUTOS_A": [
+      "PRODUTO_A"
     ],
-    "PRODUTO_1": [
-      "SECOES_2"
+    "PRODUTO_A": [
+      "SECOES_B"
     ],
-    "SECOES_2": [
-      "TERMOS_2",
-      "PRODUTOS_2",
+    "SECOES_B": [
+      "TERMOS_B",
+      "PRODUTOS_B",
       "UPSELL"
     ],
-    "TERMOS_2": [
-      "PRODUTOS_2"
+    "TERMOS_B": [
+      "PRODUTOS_B"
     ],
-    "PRODUTOS_2": [
-      "PRODUTO_2"
+    "PRODUTOS_B": [
+      "PRODUTO_B"
     ],
-    "PRODUTO_2": [
-      "SECOES_3"
+    "PRODUTO_B": [
+      "SECOES_C"
     ],
-    "SECOES_3": [
-      "TERMOS_3",
-      "PRODUTOS_3",
+    "SECOES_C": [
+      "TERMOS_C",
+      "PRODUTOS_C",
       "UPSELL"
     ],
-    "TERMOS_3": [
-      "PRODUTOS_3"
+    "TERMOS_C": [
+      "PRODUTOS_C"
     ],
-    "PRODUTOS_3": [
-      "PRODUTO_3"
+    "PRODUTOS_C": [
+      "PRODUTO_C"
     ],
-    "PRODUTO_3": [
+    "PRODUTO_C": [
       "UPSELL"
     ],
     "UPSELL": [
       "REVISAO"
     ],
     "REVISAO": [
-      "CLIENTE"
+      "CLIENTE_EXISTENTE",
+      "CLIENTE_NOVO"
     ],
-    "CLIENTE": [
+    "FINALIZAR": [],
+    "CLIENTE_EXISTENTE": [
       "FINALIZAR"
     ],
-    "FINALIZAR": []
+    "CLIENTE_NOVO": [
+      "FINALIZAR"
+    ]
   },
   "screens": [
     {
@@ -163,7 +167,7 @@
       }
     },
     {
-      "id": "PERSONALIZAR_1",
+      "id": "PERSONALIZAR_A",
       "title": "Sua cesta",
       "data": {
         "basket_name": {
@@ -283,7 +287,7 @@
           },
           {
             "type": "Form",
-            "name": "customize_form_1",
+            "name": "customize_form_A",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -318,7 +322,7 @@
       }
     },
     {
-      "id": "AJUSTAR_ITEM_1",
+      "id": "AJUSTAR_ITEM_A",
       "title": "Quantidade do item",
       "data": {
         "product_name": {
@@ -379,7 +383,7 @@
           },
           {
             "type": "Form",
-            "name": "adjust_form_1",
+            "name": "adjust_form_A",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -405,7 +409,7 @@
       }
     },
     {
-      "id": "PERSONALIZAR_2",
+      "id": "PERSONALIZAR_B",
       "title": "Sua cesta",
       "data": {
         "basket_name": {
@@ -525,7 +529,7 @@
           },
           {
             "type": "Form",
-            "name": "customize_form_2",
+            "name": "customize_form_B",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -560,7 +564,7 @@
       }
     },
     {
-      "id": "AJUSTAR_ITEM_2",
+      "id": "AJUSTAR_ITEM_B",
       "title": "Quantidade do item",
       "data": {
         "product_name": {
@@ -621,7 +625,7 @@
           },
           {
             "type": "Form",
-            "name": "adjust_form_2",
+            "name": "adjust_form_B",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -647,7 +651,7 @@
       }
     },
     {
-      "id": "PERSONALIZAR_3",
+      "id": "PERSONALIZAR_C",
       "title": "Sua cesta",
       "data": {
         "basket_name": {
@@ -767,7 +771,7 @@
           },
           {
             "type": "Form",
-            "name": "customize_form_3",
+            "name": "customize_form_C",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -802,7 +806,7 @@
       }
     },
     {
-      "id": "AJUSTAR_ITEM_3",
+      "id": "AJUSTAR_ITEM_C",
       "title": "Quantidade do item",
       "data": {
         "product_name": {
@@ -863,7 +867,7 @@
           },
           {
             "type": "Form",
-            "name": "adjust_form_3",
+            "name": "adjust_form_C",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -889,7 +893,7 @@
       }
     },
     {
-      "id": "SECOES_1",
+      "id": "SECOES_A",
       "title": "Adicionar produtos",
       "data": {
         "message": {
@@ -966,7 +970,7 @@
           },
           {
             "type": "Form",
-            "name": "extras_form_1",
+            "name": "extras_form_A",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1013,7 +1017,7 @@
       }
     },
     {
-      "id": "TERMOS_1",
+      "id": "TERMOS_A",
       "title": "O que procura?",
       "data": {
         "section_title": {
@@ -1054,7 +1058,7 @@
           },
           {
             "type": "Form",
-            "name": "term_form_1",
+            "name": "term_form_A",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1081,7 +1085,7 @@
       }
     },
     {
-      "id": "PRODUTOS_1",
+      "id": "PRODUTOS_A",
       "title": "Produtos encontrados",
       "data": {
         "query_title": {
@@ -1138,7 +1142,7 @@
           },
           {
             "type": "Form",
-            "name": "products_form_1",
+            "name": "products_form_A",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1166,7 +1170,7 @@
       }
     },
     {
-      "id": "PRODUTO_1",
+      "id": "PRODUTO_A",
       "title": "Produto",
       "data": {
         "product_name": {
@@ -1238,7 +1242,7 @@
           },
           {
             "type": "Form",
-            "name": "product_form_1",
+            "name": "product_form_A",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1266,7 +1270,7 @@
       }
     },
     {
-      "id": "SECOES_2",
+      "id": "SECOES_B",
       "title": "Adicionar produtos",
       "data": {
         "message": {
@@ -1343,7 +1347,7 @@
           },
           {
             "type": "Form",
-            "name": "extras_form_2",
+            "name": "extras_form_B",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1390,7 +1394,7 @@
       }
     },
     {
-      "id": "TERMOS_2",
+      "id": "TERMOS_B",
       "title": "O que procura?",
       "data": {
         "section_title": {
@@ -1431,7 +1435,7 @@
           },
           {
             "type": "Form",
-            "name": "term_form_2",
+            "name": "term_form_B",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1458,7 +1462,7 @@
       }
     },
     {
-      "id": "PRODUTOS_2",
+      "id": "PRODUTOS_B",
       "title": "Produtos encontrados",
       "data": {
         "query_title": {
@@ -1515,7 +1519,7 @@
           },
           {
             "type": "Form",
-            "name": "products_form_2",
+            "name": "products_form_B",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1543,7 +1547,7 @@
       }
     },
     {
-      "id": "PRODUTO_2",
+      "id": "PRODUTO_B",
       "title": "Produto",
       "data": {
         "product_name": {
@@ -1615,7 +1619,7 @@
           },
           {
             "type": "Form",
-            "name": "product_form_2",
+            "name": "product_form_B",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1643,7 +1647,7 @@
       }
     },
     {
-      "id": "SECOES_3",
+      "id": "SECOES_C",
       "title": "Adicionar produtos",
       "data": {
         "message": {
@@ -1720,7 +1724,7 @@
           },
           {
             "type": "Form",
-            "name": "extras_form_3",
+            "name": "extras_form_C",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1767,7 +1771,7 @@
       }
     },
     {
-      "id": "TERMOS_3",
+      "id": "TERMOS_C",
       "title": "O que procura?",
       "data": {
         "section_title": {
@@ -1808,7 +1812,7 @@
           },
           {
             "type": "Form",
-            "name": "term_form_3",
+            "name": "term_form_C",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1835,7 +1839,7 @@
       }
     },
     {
-      "id": "PRODUTOS_3",
+      "id": "PRODUTOS_C",
       "title": "Produtos encontrados",
       "data": {
         "query_title": {
@@ -1892,7 +1896,7 @@
           },
           {
             "type": "Form",
-            "name": "products_form_3",
+            "name": "products_form_C",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -1920,7 +1924,7 @@
       }
     },
     {
-      "id": "PRODUTO_3",
+      "id": "PRODUTO_C",
       "title": "Produto",
       "data": {
         "product_name": {
@@ -1992,7 +1996,7 @@
           },
           {
             "type": "Form",
-            "name": "product_form_3",
+            "name": "product_form_C",
             "children": [
               {
                 "type": "RadioButtonsGroup",
@@ -2149,7 +2153,7 @@
       }
     },
     {
-      "id": "CLIENTE",
+      "id": "CLIENTE_EXISTENTE",
       "title": "Entrega e pagamento",
       "data": {
         "customer_name": {
@@ -2226,136 +2230,211 @@
           },
           {
             "type": "TextBody",
+            "text": "${data.customer_name}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Entrega: ${data.address_summary}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "Se estiver correto, escolha apenas como deseja pagar na entrega."
+          },
+          {
+            "type": "Form",
+            "name": "known_customer_form",
+            "children": [
+              {
+                "type": "Dropdown",
+                "label": "Forma de pagamento",
+                "name": "payment_method",
+                "data-source": "${data.payment_options}",
+                "required": true
+              },
+              {
+                "type": "TextArea",
+                "label": "Observação (opcional)",
+                "name": "notes",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Confirmar pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "checkout_confirm",
+                    "payment_method": "${form.payment_method}",
+                    "notes": "${form.notes}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CLIENTE_NOVO",
+      "title": "Entrega e pagamento",
+      "data": {
+        "customer_name": {
+          "type": "string",
+          "__example__": "Maria Silva"
+        },
+        "address_summary": {
+          "type": "string",
+          "__example__": "Rua A, 123, Centro"
+        },
+        "customer_registered": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "error_text": {
+          "type": "string",
+          "__example__": ""
+        },
+        "payment_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "pix",
+              "title": "PIX na entrega"
+            }
+          ]
+        },
+        "name_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "street_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "number_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "complement_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "neighborhood_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "city_value": {
+          "type": "string",
+          "__example__": "Cuiabá"
+        },
+        "locator_value": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Onde vamos entregar?"
+          },
+          {
+            "type": "TextBody",
+            "text": "Preencha somente os dados necessários para a entrega."
+          },
+          {
+            "type": "TextBody",
             "text": "${data.error_text}"
           },
           {
-            "type": "If",
-            "condition": "${data.customer_registered}",
-            "then": [
+            "type": "Form",
+            "name": "new_customer_form",
+            "children": [
               {
-                "type": "TextBody",
-                "text": "Já encontramos seus dados: ${data.customer_name}"
+                "type": "TextInput",
+                "label": "Nome",
+                "name": "name",
+                "required": true
               },
               {
-                "type": "TextBody",
-                "text": "Entrega: ${data.address_summary}"
+                "type": "TextInput",
+                "label": "Rua",
+                "name": "street",
+                "required": true
               },
               {
-                "type": "Form",
-                "name": "known_customer_form",
-                "children": [
-                  {
-                    "type": "Dropdown",
-                    "label": "Forma de pagamento",
-                    "name": "payment_method",
-                    "data-source": "${data.payment_options}",
-                    "required": true
-                  },
-                  {
-                    "type": "TextArea",
-                    "label": "Observação (opcional)",
-                    "name": "notes",
-                    "required": false
-                  },
-                  {
-                    "type": "Footer",
-                    "label": "Confirmar pedido",
-                    "on-click-action": {
-                      "name": "data_exchange",
-                      "payload": {
-                        "trigger": "checkout_confirm",
-                        "payment_method": "${form.payment_method}",
-                        "notes": "${form.notes}"
-                      }
-                    }
+                "type": "TextInput",
+                "label": "Número",
+                "name": "number",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Complemento",
+                "name": "complement",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "label": "Bairro",
+                "name": "neighborhood",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Cidade",
+                "name": "city",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Referência",
+                "name": "locator",
+                "required": false
+              },
+              {
+                "type": "Dropdown",
+                "label": "Forma de pagamento",
+                "name": "payment_method",
+                "data-source": "${data.payment_options}",
+                "required": true
+              },
+              {
+                "type": "TextArea",
+                "label": "Observação (opcional)",
+                "name": "notes",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Confirmar pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "checkout_confirm",
+                    "name": "${form.name}",
+                    "street": "${form.street}",
+                    "number": "${form.number}",
+                    "complement": "${form.complement}",
+                    "neighborhood": "${form.neighborhood}",
+                    "city": "${form.city}",
+                    "locator": "${form.locator}",
+                    "payment_method": "${form.payment_method}",
+                    "notes": "${form.notes}"
                   }
-                ]
-              }
-            ],
-            "else": [
-              {
-                "type": "TextBody",
-                "text": "Preencha somente os dados necessários para a entrega."
-              },
-              {
-                "type": "Form",
-                "name": "new_customer_form",
-                "children": [
-                  {
-                    "type": "TextInput",
-                    "label": "Nome",
-                    "name": "name",
-                    "required": true
-                  },
-                  {
-                    "type": "TextInput",
-                    "label": "Rua",
-                    "name": "street",
-                    "required": true
-                  },
-                  {
-                    "type": "TextInput",
-                    "label": "Número",
-                    "name": "number",
-                    "required": true
-                  },
-                  {
-                    "type": "TextInput",
-                    "label": "Complemento",
-                    "name": "complement",
-                    "required": false
-                  },
-                  {
-                    "type": "TextInput",
-                    "label": "Bairro",
-                    "name": "neighborhood",
-                    "required": true
-                  },
-                  {
-                    "type": "TextInput",
-                    "label": "Cidade",
-                    "name": "city",
-                    "required": true
-                  },
-                  {
-                    "type": "TextInput",
-                    "label": "Referência",
-                    "name": "locator",
-                    "required": false
-                  },
-                  {
-                    "type": "Dropdown",
-                    "label": "Forma de pagamento",
-                    "name": "payment_method",
-                    "data-source": "${data.payment_options}",
-                    "required": true
-                  },
-                  {
-                    "type": "TextArea",
-                    "label": "Observação (opcional)",
-                    "name": "notes",
-                    "required": false
-                  },
-                  {
-                    "type": "Footer",
-                    "label": "Confirmar pedido",
-                    "on-click-action": {
-                      "name": "data_exchange",
-                      "payload": {
-                        "trigger": "checkout_confirm",
-                        "name": "${form.name}",
-                        "street": "${form.street}",
-                        "number": "${form.number}",
-                        "complement": "${form.complement}",
-                        "neighborhood": "${form.neighborhood}",
-                        "city": "${form.city}",
-                        "locator": "${form.locator}",
-                        "payment_method": "${form.payment_method}",
-                        "notes": "${form.notes}"
-                      }
-                    }
-                  }
-                ]
+                }
               }
             ]
           }
