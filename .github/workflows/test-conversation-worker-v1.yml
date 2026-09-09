@@ -34,4 +34,4 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno check supabase/functions/conversation-worker-v2/index.ts supabase/functions/admin-whatsapp-ops-v1/index.ts supabase/functions/admin-experience-orchestrator-v1/index.ts supabase/functions/admin-whatsapp-flow-v1/index.ts supabase/functions/whatsapp-flow-data-exchange-v1/index.ts supabase/functions/whatsapp-ingest/index.ts supabase/functions/whatsapp-ingest-make-v1/index.ts supabase/functions/whatsapp-outbound-v1/index.ts supabase/functions/shopping-room-v1/index.ts supabase/functions/shopping-room-sales-v1/index.ts supabase/functions/admin-ops-v1/index.ts
-      - run: deno test supabase/functions/whatsapp-flow-data-exchange-v1/crypto.test.ts
+      - run: deno test --allow-read supabase/functions/whatsapp-flow-data-exchange-v1/crypto.test.ts supabase/functions/whatsapp-flow-data-exchange-v1/image.test.ts
