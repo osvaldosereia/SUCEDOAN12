@@ -1,0 +1,36 @@
+name: Generate WhatsApp Flow V6
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/generate-whatsapp-flow-v6.py
+      - .github/workflows/generate-whatsapp-flow-v6.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Generate Flow V6
+        run: python scripts/generate-whatsapp-flow-v6.py
+      - name: Validate JSON
+        run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v6.json > /dev/null
+      - name: Commit generated Flow
+        shell: bash
+        run: |
+          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v6.json; then
+            echo "Flow V6 already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add whatsapp/flows/flow-cestas-comercial-v6.json
+          git commit -m "build(flow): generate professional Flow v6"
+          git push
