@@ -69,4 +69,12 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add whatsapp/flows/flow-cestas-comercial-v27.json
           git commit -m 'chore(flow): refresh V27 premium UX candidate'
-          git push
+          for attempt in 1 2 3; do
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push race on attempt ${attempt}; retrying..."
+            sleep $((attempt * 2))
+          done
+          echo 'Unable to persist generated V27 after retries.' >&2
+          exit 1
