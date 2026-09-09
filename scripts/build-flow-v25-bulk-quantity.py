@@ -153,23 +153,7 @@ for i in range(1, 28):
     if len(example) > 20:
         raise SystemExit(f"Dropdown label example too long: {q}")
 
-flow["x-dona-antonia"] = {
-    "generation": "v25-bulk-quantity",
-    "personalization": {
-        "single_screen": True,
-        "food_slots": 16,
-        "hygiene_cleaning_slots": 11,
-        "max_items": 27,
-        "quantity_zero_removes_when_allowed": True,
-        "component_prices_visible": False,
-        "individual_product_images": False,
-        "basket_image_only": True,
-        "recalculation": "single_footer_data_exchange",
-    },
-}
-
+# Do not add custom top-level keys: Meta Flow JSON rejects unknown properties.
 dst.write_text(json.dumps(flow, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print(dst)
 print(f"PERSONALIZAR_A components={nested_count}")
-
-# Triggered by the V25 build workflow after the workflow file exists.
