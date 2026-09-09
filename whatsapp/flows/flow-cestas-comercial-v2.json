@@ -3,7 +3,7 @@
   "data_api_version": "3.0",
   "routing_model": {
     "CESTAS": ["PERSONALIZAR"],
-    "PERSONALIZAR": ["PERSONALIZAR", "SECOES"],
+    "PERSONALIZAR": ["SECOES"],
     "SECOES": ["TERMOS", "PRODUTOS", "UPSELL"],
     "TERMOS": ["PRODUTOS"],
     "PRODUTOS": ["PRODUTO"],
