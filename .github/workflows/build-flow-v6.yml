@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/build-flow-v6.py'
+      - 'scripts/fix-flow-v6-meta.py'
       - 'whatsapp/flows/flow-cestas-comercial-v5.json'
       - '.github/workflows/build-flow-v6.yml'
   workflow_dispatch:
@@ -21,7 +22,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Generate Flow V6
-        run: python scripts/build-flow-v6.py
+        run: |
+          python scripts/build-flow-v6.py
+          python scripts/fix-flow-v6-meta.py
       - name: Validate JSON and commercial invariants
         run: |
           python - <<'PY'
@@ -30,13 +33,15 @@ jobs:
           p=Path('whatsapp/flows/flow-cestas-comercial-v6.json')
           f=json.loads(p.read_text())
           ids={s['id'] for s in f['screens']}
-          assert len(ids)==23
-          assert f['routing_model']['CESTAS']==['PERSONALIZAR_1']
+          assert len(ids)==24
+          assert all(x.replace('_','').isalpha() for x in ids)
+          assert f['routing_model']['CESTAS']==['PERSONALIZAR_A']
+          assert set(f['routing_model']['REVISAO'])=={'CLIENTE_EXISTENTE','CLIENTE_NOVO'}
           raw=p.read_text()
           assert 'RadioButtonsGroup' in raw and 'CheckboxGroup' in raw
           assert 'image' in raw and 'alt-text' in raw
           assert 'extras_continue_v2' in raw and 'term_selected_v2' in raw
-          assert 'catalog' not in raw.lower() or True
+          assert '"type": "If"' not in raw
           print('Flow V6 JSON OK:', len(ids), 'screens')
           PY
       - name: Commit generated Flow V6
@@ -48,5 +53,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add whatsapp/flows/flow-cestas-comercial-v6.json
-          git commit -m 'build(flow): generate visual commercial v6'
+          git commit -m 'build(flow): generate Meta-safe visual commercial v6'
           git push
