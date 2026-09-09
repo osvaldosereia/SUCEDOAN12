@@ -47,8 +47,13 @@ jobs:
               children=prod['layout']['children']
               assert sum(c.get('type')=='Image' for c in children)==3
               assert sum(c.get('type')=='Dropdown' for c in children)==3
-              assert all(next(c for c in children if c.get('name')==f'q{i}')['data-source']==f'${{data.q{i}_options}}' for i in range(1,4))
-              assert all(next(c for c in children if c.get('type')=='Image' and c.get('src')==f'${{data.p{i}_image_base64}}')['visible']==f'${{data.p{i}_has_image}}' for i in range(1,4))
+              for i in range(1,4):
+                  expected_source='$'+'{data.q'+str(i)+'_options}'
+                  expected_image='$'+'{data.p'+str(i)+'_image_base64}'
+                  expected_visible='$'+'{data.p'+str(i)+'_has_image}'
+                  assert next(c for c in children if c.get('name')==f'q{i}')['data-source']==expected_source
+                  image=next(c for c in children if c.get('type')=='Image' and c.get('src')==expected_image)
+                  assert image['visible']==expected_visible
           assert f['routing_model']['PRODUTOS_A']==['PRODUTOS_B','SECOES_B','REVISAO']
           assert f['routing_model']['PRODUTOS_B']==['PRODUTOS_C','SECOES_C','REVISAO']
           assert f['routing_model']['PRODUTOS_C']==['REVISAO']
