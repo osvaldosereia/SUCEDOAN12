@@ -393,9 +393,9 @@ $$;
 revoke all on function public.get_whatsapp_basket_component_readiness_v3(uuid) from public,anon,authenticated;
 grant execute on function public.get_whatsapp_basket_component_readiness_v3(uuid) to service_role;
 
--- O Flow foi validado e publicado na Meta antes desta migration.
+-- A Meta usa PUBLISHED; internamente a definição fica READY até a abertura dos gates.
 update public.experience_definitions
-set status='published',
+set status='ready',
     config=coalesce(config,'{}'::jsonb)||jsonb_build_object(
       'handler_version','v7',
       'flow_json_version','v6',
