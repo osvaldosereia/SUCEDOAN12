@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dona Antônia · Chave WhatsApp Flow</title>
+  <script src="config.js"></script>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f5f7fb;color:#1f2937}.wrap{max-width:900px;margin:36px auto;padding:0 16px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:22px;box-shadow:0 8px 24px rgba(0,0,0,.05)}h1{margin:0 0 8px;font-size:24px}.muted{color:#6b7280}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0}button{border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}.primary{background:#166534;color:#fff}.secondary{background:#e5e7eb;color:#111827}.danger{background:#991b1b;color:#fff}button:disabled{opacity:.5;cursor:not-allowed}pre{white-space:pre-wrap;word-break:break-all;background:#111827;color:#f9fafb;padding:16px;border-radius:12px;min-height:80px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef2ff}.ok{background:#dcfce7;color:#166534}.warn{background:#fef3c7;color:#92400e}.err{color:#b91c1c;font-weight:700}.note{padding:12px 14px;background:#eff6ff;border-radius:10px}.hidden{display:none}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Chave do WhatsApp Flow</h1>
+    <p class="muted">Controle exclusivo do proprietário. A chave privada nunca é exibida no navegador; ela é instalada diretamente no Vault do Supabase.</p>
+    <div id="status" class="note">Carregando…</div>
+    <div class="row">
+      <button id="generate" class="primary" disabled>Gerar par RSA</button>
+      <button id="copy" class="secondary" disabled>Copiar chave pública</button>
+      <button id="refresh" class="secondary">Atualizar</button>
+    </div>
+    <p class="muted">Cole somente a chave pública abaixo na etapa “Assinar chave pública” da Meta.</p>
+    <pre id="publicKey">—</pre>
+    <p id="message" class="muted"></p>
+  </div>
+</div>
+<script>
+(function(){
+  'use strict';
+  const C=window.DA_ADMIN_V3_CONFIG||{};
+  const AUTH_KEY='da_admin_v3_auth';
+  const status=document.getElementById('status'), keyBox=document.getElementById('publicKey'), msg=document.getElementById('message');
+  const generate=document.getElementById('generate'), copy=document.getElementById('copy'), refresh=document.getElementById('refresh');
+  let publicKey='';
+  function auth(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch{return null}}
+  async function refreshToken(a){
+    if(!a?.refresh_token)throw new Error('Sessão expirada. Faça login novamente no Admin.');
+    const r=await fetch(`${C.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:C.supabasePublishableKey,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:a.refresh_token})});
+    const d=await r.json(); if(!r.ok||!d.access_token)throw new Error('Sessão expirada. Faça login novamente no Admin.');
+    localStorage.setItem(AUTH_KEY,JSON.stringify(d)); return d;
+  }
+  async function call(action,payload={},retry=true){
+    let a=auth(); if(!a?.access_token)throw new Error('Faça login no Admin primeiro.');
+    const r=await fetch(`${C.supabaseUrl}/functions/v1/${C.whatsappFlowAdminEdgeFunction||'admin-whatsapp-flow-v1'}`,{method:'POST',headers:{apikey:C.supabasePublishableKey,Authorization:`Bearer ${a.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
+    const d=await r.json().catch(()=>({}));
+    if(r.status===401&&retry){a=await refreshToken(a);return call(action,payload,false)}
+    if(!r.ok||d.ok===false)throw new Error(d.detail||d.error||`Erro ${r.status}`); return d;
+  }
+  function render(d){
+    const r=d.readiness||{}, c=d.config||{}; publicKey=String(c.public_key_pem||'').trim();
+    keyBox.textContent=publicKey||'Ainda não configurada.'; copy.disabled=!publicKey;
+    const owner=String(d.user?.role||'')==='owner';
+    const transportOff=!r.data_exchange_enabled&&!r.send_enabled;
+    generate.disabled=!(owner&&transportOff);
+    generate.textContent=r.private_key_configured?'Rotacionar chave':'Gerar par RSA';
+    status.className='note';
+    status.innerHTML=`Perfil: <strong>${d.user?.role||'—'}</strong> · chave privada: <span class="badge ${r.private_key_configured?'ok':'warn'}">${r.private_key_configured?'Vault':'não configurada'}</span> · chave pública: <span class="badge ${r.public_key_configured?'ok':'warn'}">${r.public_key_configured?'configurada':'não configurada'}</span> · assinatura Meta: <span class="badge">${r.meta_signature_status||'unknown'}</span>`;
+  }
+  async function load(){msg.textContent=''; try{render(await call('dashboard'))}catch(e){status.innerHTML=`<span class="err">${e.message}</span>`;generate.disabled=true;copy.disabled=true}}
+  generate.onclick=async()=>{
+    if(!confirm('Gerar/rotacionar a chave do WhatsApp Flow agora? O transporte deve permanecer desligado.'))return;
+    generate.disabled=true; msg.textContent='Gerando chave com segurança…';
+    try{const d=await call('generate_keypair',{confirmation:'GERAR_CHAVE_FLOW'}); publicKey=String(d.public_key_pem||'').trim(); keyBox.textContent=publicKey||'Chave gerada, atualize a tela.'; copy.disabled=!publicKey; msg.textContent='Chave gerada. A private key foi enviada diretamente ao Vault e não foi retornada ao navegador.'; await load()}catch(e){msg.innerHTML=`<span class="err">${e.message}</span>`; await load()}
+  };
+  copy.onclick=async()=>{if(!publicKey)return; await navigator.clipboard.writeText(publicKey); msg.textContent='Chave pública copiada.'};
+  refresh.onclick=load; load();
+})();
+</script>
+</body>
+</html>
