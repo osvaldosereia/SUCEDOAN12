@@ -1,10 +1,10 @@
 const SOURCE_IMAGE_MAX_BYTES=2_000_000;
-const FLOW_IMAGE_MAX_BYTES=300_000;
-const FLOW_SELECTOR_IMAGE_MAX_BYTES=95_000;
-const FLOW_IMAGE_TARGET_EDGE=420;
-const FLOW_SELECTOR_TARGET_EDGE=320;
-const FLOW_IMAGE_JPEG_QUALITY=78;
-const FLOW_SELECTOR_JPEG_QUALITY=68;
+const FLOW_IMAGE_MAX_BYTES=80_000;
+const FLOW_SELECTOR_IMAGE_MAX_BYTES=45_000;
+const FLOW_IMAGE_TARGET_EDGE=360;
+const FLOW_SELECTOR_TARGET_EDGE=260;
+const FLOW_IMAGE_JPEG_QUALITY=66;
+const FLOW_SELECTOR_JPEG_QUALITY=58;
 const MAGICK_SPECIFIER="npm:@imagemagick/magick-wasm@0.0.43";
 const MAGICK_WASM_SPECIFIER="npm:@imagemagick/magick-wasm@0.0.43/magick.wasm";
 const FALLBACK_IMAGE_BASE64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
@@ -93,8 +93,8 @@ async function transcodeJpeg(bytes:Uint8Array,targetEdge:number,quality:number,m
     const magick=await getMagick();
     const attempts=[
       {edge:targetEdge,q:quality},
-      {edge:Math.max(220,Math.floor(targetEdge*0.82)),q:Math.max(54,quality-10)},
-      {edge:220,q:50},
+      {edge:Math.max(200,Math.floor(targetEdge*0.80)),q:Math.max(48,quality-10)},
+      {edge:200,q:46},
     ];
     for(const attempt of attempts){
       const result=await magick.ImageMagick.read(bytes,async(image:any):Promise<Uint8Array>=>{
