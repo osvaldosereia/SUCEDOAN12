@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/build-flow-v28-product-detail.py'
       - 'whatsapp/flows/flow-cestas-comercial-v27.json'
+      - '.github/workflows/build-flow-v28.yml'
   workflow_dispatch:
 
 permissions:
@@ -50,7 +51,7 @@ jobs:
           PY
       - name: Commit generated V28
         run: |
-          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v28.json; then
+          if [ -z "$(git status --porcelain -- whatsapp/flows/flow-cestas-comercial-v28.json)" ]; then
             echo 'No generated changes'
             exit 0
           fi
