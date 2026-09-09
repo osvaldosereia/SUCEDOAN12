@@ -15,13 +15,11 @@ Deno.serve(async(req:Request)=>{
   let form:FormData;
   try{form=await req.formData()}catch{return json({ok:false,error:"invalid_form"},400)}
 
-  // O cenário Make atual envia campos genéricos (media_id/caption/interactive_id),
-  // enquanto blueprints antigos enviavam campos separados por tipo. Mantemos ambos
-  // para que uma alteração de blueprint não apague metadados de mídia ou botões.
   const genericCaption=clean(form.get("caption"),4000);
   const genericMediaId=clean(form.get("media_id"),240);
   const genericInteractiveId=clean(form.get("interactive_id"),4000);
   const genericInteractiveTitle=clean(form.get("interactive_title"),4000);
+  const interactiveResponseJson=clean(form.get("interactive_response_json"),12000);
 
   const raw={
     waba_id:clean(form.get("waba_id"),100),
@@ -42,6 +40,7 @@ Deno.serve(async(req:Request)=>{
     interactive_type:clean(form.get("interactive_type"),40),
     interactive_id:firstNonEmpty(genericInteractiveId,form.get("button_reply_id"),form.get("list_reply_id")),
     interactive_title:firstNonEmpty(genericInteractiveTitle,form.get("button_reply_title"),form.get("list_reply_title")),
+    interactive_response_json:interactiveResponseJson,
   };
   if(!raw.phone_number_id||!raw.from||!raw.message_id)return json({ok:false,error:"not_inbound_message",should_reply:false},200);
 
