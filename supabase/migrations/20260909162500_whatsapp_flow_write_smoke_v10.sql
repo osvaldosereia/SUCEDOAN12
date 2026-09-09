@@ -16,6 +16,7 @@ declare
   v_result jsonb;
   v_order jsonb;
   v_gates_off boolean;
+  v_total numeric;
 begin
   begin
     update public.automation_config
@@ -42,7 +43,8 @@ begin
     v_result:=public.apply_whatsapp_flow_commercial_write_v1(
       v_session,0,'smoke_start_'||replace(v_session::text,'-',''),'start_basket',jsonb_build_object('basket_id',v_basket)
     );
-    if coalesce((v_result->>'commercial_total')::numeric,0)<=0 then raise exception 'smoke_start_failed:%',v_result; end if;
+    v_total:=coalesce((v_result->>'commercial_total')::numeric,(v_result->>'total')::numeric,0);
+    if v_total<=0 then raise exception 'smoke_start_failed:%',v_result; end if;
 
     v_selection:=public.get_whatsapp_flow_basket_editor_v1(v_basket)->'selection';
     select bi.product_id,bi.quantity into v_product,v_qty
@@ -58,7 +60,8 @@ begin
     v_result:=public.apply_whatsapp_flow_commercial_write_v1(
       v_session,0,'smoke_selection_'||replace(v_session::text,'-',''),'apply_basket_selection',jsonb_build_object('selection',v_patched->'selection')
     );
-    if coalesce((v_result->>'commercial_total')::numeric,0)<=0 then raise exception 'smoke_selection_failed:%',v_result; end if;
+    v_total:=coalesce((v_result->>'total')::numeric,(v_result->>'commercial_total')::numeric,0);
+    if v_total<=0 then raise exception 'smoke_selection_failed:%',v_result; end if;
 
     select p.id into v_addon
       from public.products p
@@ -70,6 +73,8 @@ begin
     v_result:=public.apply_whatsapp_flow_commercial_write_v1(
       v_session,0,'smoke_addon_'||replace(v_session::text,'-',''),'set_addon',jsonb_build_object('product_id',v_addon,'quantity',1)
     );
+    v_total:=coalesce((v_result->>'total')::numeric,(v_result->>'commercial_total')::numeric,0);
+    if v_total<=0 then raise exception 'smoke_addon_failed:%',v_result; end if;
 
     v_order:=public.finalize_whatsapp_flow_commercial_order_v1(
       v_session,0,'smoke_order_'||replace(v_session::text,'-',''),'pix','transactional smoke'
@@ -78,7 +83,6 @@ begin
     if v_order->>'next_step'<>'send_location_in_chat' then raise exception 'smoke_next_step_failed:%',v_order; end if;
     if not exists(select 1 from public.orders where conversation_id=v_conv and status='confirmed') then raise exception 'smoke_order_missing'; end if;
 
-    -- Intencional: desfaz todos os writes acima, inclusive o ON temporário dos gates.
     raise exception 'SMOKE_ROLLBACK_SENTINEL';
   exception when raise_exception then
     if sqlerrm<>'SMOKE_ROLLBACK_SENTINEL' then raise; end if;
