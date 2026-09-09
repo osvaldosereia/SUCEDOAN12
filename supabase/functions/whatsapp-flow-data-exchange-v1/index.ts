@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2";
 import {decryptFlowRequest,encryptFlowResponse,FlowCryptoError,sha256Hex,type EncryptedFlowEnvelope} from "./crypto.ts";
-import {hydrateProductImage} from "./image.ts";
+import {hydrateExperienceImages} from "./image.ts";
 
 const text=(value:unknown,max=200)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const plain=(body:string,status=200)=>new Response(body,{status,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store"}});
@@ -71,7 +71,7 @@ Deno.serve(async(req:Request)=>{
       if(!flowToken)throw new FlowCryptoError(400,"flow_token_required","Flow token is required.");
       let handled:any=null,handleError:any=null;
       if(resolved?.definition_slug==="flow-cestas-comercial-v1"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v4",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v5",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
       }else{
         const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
@@ -81,7 +81,7 @@ Deno.serve(async(req:Request)=>{
       sessionId=handled?.session_id||sessionId;
       if(!handled?.ok){eventStatus="rejected";errorCode=text(handled?.reason,120)||"flow_rejected";response={data:{error:true,error_code:errorCode,replayed:isReplay}}}
       else{
-        response=await hydrateProductImage(handled.response,url);
+        response=await hydrateExperienceImages(handled.response,url);
         if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});
       }
       if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"unknown"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
