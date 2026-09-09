@@ -42,8 +42,6 @@ Deno.serve(async(req:Request)=>{
     const flowToken=text(body.flow_token,200);
     const data=isObject(body.data)?body.data:{};
 
-    // Meta precisa alcançar o healthcheck criptografado mesmo com o Flow dormente.
-    // Todo tráfego comercial continua fail-closed enquanto o gate de Data Exchange estiver OFF.
     if(action!=="ping"&&!readiness?.data_exchange_enabled)return plain("flow_endpoint_disabled",503);
 
     let response:unknown;
@@ -71,7 +69,7 @@ Deno.serve(async(req:Request)=>{
       if(!flowToken)throw new FlowCryptoError(400,"flow_token_required","Flow token is required.");
       let handled:any=null,handleError:any=null;
       if(resolved?.definition_slug==="flow-cestas-comercial-v1"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v5",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v6",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
       }else{
         const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
