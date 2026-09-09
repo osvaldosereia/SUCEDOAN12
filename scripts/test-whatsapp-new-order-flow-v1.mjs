@@ -19,7 +19,7 @@ assert.match(resetFlow,/'flow_action',t->>'flow_action'/);
 assert.match(resetFlow,/novo pedido\|pedido novo/);
 assert.match(resetFlow,/trg_00_whatsapp_flow_entry_v1/);
 assert.match(resetFlow,/new\.status:='done'/,'Flow router must short-circuit the legacy AI router');
-assert.doesNotMatch(resetFlow,/basket_catalog_link/,'new Flow entry must not use the legacy basket URL action');
+assert.match(resetFlow,/'legacy_basket_catalog_link_superseded',true/,'legacy basket URL path must be explicitly superseded');
 
 assert.match(orderEpoch,/order_context_reset_at/);
 assert.match(orderEpoch,/created_at>coalesce\(v_reset_at,'-infinity'::timestamptz\)/);
