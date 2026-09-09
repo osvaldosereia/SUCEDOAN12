@@ -163,6 +163,20 @@ async function mapLimited<T,R>(values:T[],limit:number,fn:(value:T,index:number)
   return output;
 }
 
+async function hydrateSelectorItems(items:unknown[],supabaseUrl:string,maxItems:number):Promise<unknown[]>{
+  return await mapLimited(items.slice(0,maxItems),3,async(item)=>{
+    if(!item||typeof item!=="object"||Array.isArray(item))return item;
+    const option={...(item as Record<string,unknown>)};
+    const imageUrl=String(option.image_url||"").trim().slice(0,2000);
+    delete option.image_url;
+    if(imageUrl){
+      const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl);
+      if(image)option.image=image;
+    }
+    return option;
+  });
+}
+
 export async function hydrateExperienceImages(response:unknown,supabaseUrl:string):Promise<unknown>{
   if(!response||typeof response!=="object"||Array.isArray(response))return response;
   const obj=response as Record<string,unknown>;
@@ -171,27 +185,28 @@ export async function hydrateExperienceImages(response:unknown,supabaseUrl:strin
   const screen=String(obj.screen||"");
 
   if(screen==="CESTAS"&&Array.isArray(data.baskets)){
-    const baskets=(data.baskets as unknown[]).slice(0,9);
-    data.baskets=await mapLimited(baskets,3,async(item)=>{
-      if(!item||typeof item!=="object"||Array.isArray(item))return item;
-      const option={...(item as Record<string,unknown>)};
-      const imageUrl=String(option.image_url||"").trim().slice(0,2000);
-      delete option.image_url;
-      if(imageUrl){
-        const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl);
-        if(image)option.image=image;
-      }
-      return option;
-    });
-    return response;
+    data.baskets=await hydrateSelectorItems(data.baskets as unknown[],supabaseUrl,9);
   }
 
   if(/^PERSONALIZAR_[123]$/.test(screen)){
+    if(Array.isArray(data.items)){
+      data.items=await hydrateSelectorItems(data.items as unknown[],supabaseUrl,20);
+    }
     const imageUrl=String(data.basket_image_url||"").trim().slice(0,2000);
     const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl):null;
     data.basket_image_base64=image||FALLBACK_IMAGE_BASE64;
     data.has_basket_image=Boolean(image);
     delete data.basket_image_url;
+    return response;
+  }
+
+  if(/^PRODUTOS_[123]$/.test(screen)&&Array.isArray(data.products)){
+    data.products=await hydrateSelectorItems(data.products as unknown[],supabaseUrl,12);
+    return response;
+  }
+
+  if(screen==="UPSELL"&&Array.isArray(data.products)){
+    data.products=await hydrateSelectorItems(data.products as unknown[],supabaseUrl,6);
     return response;
   }
 
