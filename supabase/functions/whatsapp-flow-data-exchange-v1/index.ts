@@ -10,7 +10,7 @@ const safeScreen=(value:string|null)=>value&&/^[A-Za-z0-9_:-]{1,120}$/.test(valu
 const bytesToBase64=(bytes:Uint8Array)=>{let out="";for(let i=0;i<bytes.length;i+=0x8000)out+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));return btoa(out)};
 
 async function hydrateProductImage(response:unknown):Promise<unknown>{
-  if(!isObject(response)||response.screen!=="PRODUTO"||!isObject(response.data))return response;
+  if(!isObject(response)||!/^PRODUTO(?:_[123])?$/.test(String(response.screen||""))||!isObject(response.data))return response;
   const data=response.data as Record<string,unknown>;
   const imageUrl=text(data.product_image_url,2000);
   if(!imageUrl||!/^https:\/\//i.test(imageUrl))return response;
@@ -91,7 +91,7 @@ Deno.serve(async(req:Request)=>{
       if(!flowToken)throw new FlowCryptoError(400,"flow_token_required","Flow token is required.");
       let handled:any=null,handleError:any=null;
       if(resolved?.definition_slug==="flow-cestas-comercial-v1"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v3",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v4",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
       }else{
         const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
