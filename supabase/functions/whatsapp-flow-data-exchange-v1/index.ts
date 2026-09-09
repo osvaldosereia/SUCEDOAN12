@@ -77,6 +77,11 @@ Deno.serve(async(req:Request)=>{
       }else if(resolved?.definition_slug==="flow-cestas-comercial-v3"){
         const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v12",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
+      }else if(resolved?.definition_slug==="flow-cestas-comercial-v4"){
+        // V4/V13 is a dormant candidate until it is explicitly promoted. Keeping the
+        // route in source lets CI/type-check the integration without changing live V3.
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v13",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+        handled=result.data;handleError=result.error;
       }else{
         const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
         handled=result.data;handleError=result.error;
