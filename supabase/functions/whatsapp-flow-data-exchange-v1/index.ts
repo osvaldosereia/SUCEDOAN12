@@ -88,7 +88,7 @@ Deno.serve(async(req:Request)=>{
       if(!flowToken)throw new FlowCryptoError(400,"flow_token_required","Flow token is required.");
       let handled:any=null,handleError:any=null;
       if(resolved?.definition_slug==="flow-cestas-comercial-v1"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v2",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v3",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
       }else{
         const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
