@@ -1,4 +1,4 @@
-import {hydrateExperienceImages,loadFlowSelectorImageBase64} from "./image.ts";
+import {hydrateExperienceImages,loadFlowCompatibleImageBase64,loadFlowSelectorImageBase64} from "./image.ts";
 
 const COMPACT_LIST_MAX_BASE64_CHARS=32_000;
 
@@ -74,6 +74,18 @@ export async function hydrateExperienceImagesWithCards(response:unknown,supabase
   // V28: NavigationList product rows. Each list can contain up to 20 small photos.
   if(/^PRODUTOS_[A-L]$/.test(screen)&&Array.isArray(data.product_items)){
     data.product_items=await hydrateNavigationProductItems(data.product_items as unknown[],supabaseUrl);
+    return hydrated;
+  }
+
+  // V28: selected product opens as one larger image/detail card.
+  if(/^PRODUTO_[A-L]$/.test(screen)){
+    const imageUrl=String(data.product_image_url||"").trim().slice(0,2000);
+    const productId=String(data.product_id||data.id||"").trim();
+    const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
+    const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,assetKey):null;
+    data.product_image_base64=image||"";
+    data.has_product_image=Boolean(image);
+    delete data.product_image_url;
     return hydrated;
   }
 
