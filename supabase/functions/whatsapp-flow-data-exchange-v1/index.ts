@@ -40,7 +40,6 @@ Deno.serve(async(req:Request)=>{
 
   const {data:readiness,error:readinessError}=await sb.rpc("get_whatsapp_flow_transport_readiness_v1");
   if(readinessError)return plain("readiness_failed",500);
-  if(!readiness?.data_exchange_enabled)return plain("flow_endpoint_disabled",503);
   if(!readiness?.private_key_configured||!readiness?.public_key_configured)return plain("flow_key_not_configured",503);
 
   let envelope:EncryptedFlowEnvelope;
@@ -62,6 +61,10 @@ Deno.serve(async(req:Request)=>{
     const screen=safeScreen(text(body.screen,120)||null);
     const flowToken=text(body.flow_token,200);
     const data=isObject(body.data)?body.data:{};
+
+    // Meta health checks must remain available so a dormant Flow can be homologated.
+    // Every non-ping exchange remains fail-closed while the commercial Data Exchange gate is OFF.
+    if(action!=="ping"&&!readiness?.data_exchange_enabled)return plain("flow_endpoint_disabled",503);
 
     let response:unknown;
     let sessionId:string|null=null;
