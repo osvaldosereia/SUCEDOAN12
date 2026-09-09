@@ -23,9 +23,13 @@
   function openWhatsapp(intent,button){
     const message=messageFor(intent);
     const encoded=encodeURIComponent(message);
-    const deep=`whatsapp://send?phone=${WHATSAPP_PHONE}&text=${encoded}`;
-    const fallback=`https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encoded}`;
-    let appOpened=false;
+
+    // Link HTTPS universal/app-link primeiro: funciona melhor dentro do navegador
+    // embutido do WhatsApp e do WhatsApp Business e não força um pacote específico.
+    const primary=`https://wa.me/${WHATSAPP_PHONE}?text=${encoded}`;
+    const native=`whatsapp://send?phone=${WHATSAPP_PHONE}&text=${encoded}`;
+    const webFallback=`https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encoded}`;
+    let leftPage=false;
 
     registerReturn(intent);
 
@@ -34,28 +38,32 @@
       button.textContent="Abrindo WhatsApp…";
     }
 
-    const markOpened=()=>{appOpened=true};
+    const markLeft=()=>{leftPage=true};
     document.addEventListener("visibilitychange",()=>{
-      if(document.visibilityState==="hidden")markOpened();
+      if(document.visibilityState==="hidden")markLeft();
     },{once:true});
-    window.addEventListener("pagehide",markOpened,{once:true});
+    window.addEventListener("pagehide",markLeft,{once:true});
 
-    // Precisa ocorrer diretamente dentro do clique do usuário. Em navegadores
-    // internos do WhatsApp, aguardar um fetch antes do deep link pode fazer o
-    // navegador bloquear a abertura do próprio app.
-    location.href=deep;
+    // A navegação precisa acontecer sincronamente no clique do usuário. Evita
+    // bloqueio de deep-link em webviews do WhatsApp/WhatsApp Business.
+    location.assign(primary);
 
-    // Se o esquema nativo não for atendido pelo aparelho, usa a URL web oficial.
+    // Se o navegador impedir a navegação HTTPS, tenta o esquema nativo.
     setTimeout(()=>{
-      if(!appOpened&&document.visibilityState==="visible")location.href=fallback;
+      if(!leftPage&&document.visibilityState==="visible")location.href=native;
     },1200);
 
+    // Último fallback oficial para navegadores que não tratam o esquema nativo.
     setTimeout(()=>{
-      if(!appOpened&&document.visibilityState==="visible"&&button){
+      if(!leftPage&&document.visibilityState==="visible")location.href=webFallback;
+    },2400);
+
+    setTimeout(()=>{
+      if(!leftPage&&document.visibilityState==="visible"&&button){
         button.disabled=false;
         button.textContent="Abrir WhatsApp";
       }
-    },2600);
+    },3600);
   }
 
   document.addEventListener("click",event=>{
