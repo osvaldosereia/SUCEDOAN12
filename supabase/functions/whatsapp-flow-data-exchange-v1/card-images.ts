@@ -50,13 +50,15 @@ async function hydrateNavigationProductItems(items:unknown[],supabaseUrl:string)
     if(!startRaw||typeof startRaw!=="object"||Array.isArray(startRaw))return row;
     const start={...(startRaw as Record<string,unknown>)};
     const imageUrl=String(start.image_url||"").trim().slice(0,2000);
-    const existing=String(start.image||"").trim();
+    const existing=String(start.src||start.image||"").trim();
     delete start.image_url;
-    if(existing&&existing.length>COMPACT_LIST_MAX_BASE64_CHARS)delete start.image;
-    if(!existing&&imageUrl){
+    delete start.image;
+    if(existing&&existing.length<=COMPACT_LIST_MAX_BASE64_CHARS)start.src=existing;
+    else delete start.src;
+    if(!start.src&&imageUrl){
       const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
       const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,assetKey);
-      if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS)start.image=image;
+      if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS)start.src=image;
     }
     row.start=start;
     return row;
@@ -71,7 +73,8 @@ export async function hydrateExperienceImagesWithCards(response:unknown,supabase
   const data=obj.data as Record<string,unknown>;
   const screen=String(obj.screen||"");
 
-  // V28: NavigationList product rows. Each list can contain up to 20 small photos.
+  // V28: NavigationList product rows. Meta Flow JSON v7.3 requires
+  // NavigationList.start = {src, alt-text}. Keep at most 20 small photos.
   if(/^PRODUTOS_[A-L]$/.test(screen)&&Array.isArray(data.product_items)){
     data.product_items=await hydrateNavigationProductItems(data.product_items as unknown[],supabaseUrl);
     return hydrated;
