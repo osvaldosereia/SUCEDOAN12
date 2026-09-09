@@ -1,0 +1,38 @@
+name: Build WhatsApp Flow V25
+
+on:
+  push:
+    paths:
+      - scripts/build-flow-v25-bulk-quantity.py
+      - whatsapp/flows/flow-cestas-comercial-v6.json
+      - .github/workflows/build-flow-v25.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate Flow V25
+        run: python scripts/build-flow-v25-bulk-quantity.py
+      - name: Validate JSON
+        run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v25.json >/dev/null
+      - name: Commit generated Flow
+        run: |
+          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v25.json && git ls-files --error-unmatch whatsapp/flows/flow-cestas-comercial-v25.json >/dev/null 2>&1; then
+            echo 'Flow V25 already current'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add whatsapp/flows/flow-cestas-comercial-v25.json
+          git commit -m 'build(flow): generate V25 bulk quantity personalizer'
+          git push
