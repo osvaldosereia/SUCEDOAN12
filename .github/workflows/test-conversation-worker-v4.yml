@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
@@ -32,11 +34,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base="${{ github.event.pull_request.base.sha || github.event.before }}"
-          if [[ -z "$base" || "$base" == "0000000000000000000000000000000000000000" ]]; then
-            exit 0
-          fi
-          git diff --name-only "$base" "${{ github.sha }}" > /tmp/changed.txt
+          git fetch origin main --quiet
+          base="$(git merge-base origin/main HEAD)"
+          git diff --name-only "$base" HEAD > /tmp/changed.txt
+          echo "Branch-only changes:"
+          cat /tmp/changed.txt
           if grep -E '^(whatsapp/flows/|supabase/functions/whatsapp-flow-data-exchange-v1/|scripts/build-flow-)' /tmp/changed.txt; then
             echo 'ERROR: AI Flow-boundary branch must not modify Flow implementation files.' >&2
             exit 1
