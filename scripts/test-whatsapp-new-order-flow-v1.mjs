@@ -6,6 +6,7 @@ const resetFlow=read('supabase/migrations/20260909165800_whatsapp_new_order_rese
 const orderEpoch=read('supabase/migrations/20260909165900_whatsapp_sales_context_order_epoch_v20.sql');
 const reconcile=read('supabase/migrations/20260909170300_whatsapp_flow_outbound_response_reconcile_v21.sql');
 const basketEditor=read('supabase/migrations/20260909171200_whatsapp_flow_basket_editor_option_title_limit_v22.sql');
+const quantityContract=read('supabase/migrations/20260909171800_whatsapp_flow_integral_quantity_validation_v22.sql');
 
 assert.match(resetFlow,/reset_whatsapp_order_context_v1/);
 assert.match(resetFlow,/status='abandoned'.*status='draft'/s,'new order must abandon only draft carts');
@@ -35,4 +36,11 @@ assert.match(reconcile,/finish_outbound_job/);
 assert.match(basketEditor,/'title',left\(p\.name,30\)/,'dynamic basket item titles must stay within the Meta component limit');
 assert.match(basketEditor,/string_agg\(.*p\.name/s,'full product names must remain in the basket summary');
 
-console.log('whatsapp new-order reset + Flow routing + component limits contract: ok');
+assert.match(quantityContract,/\^\[0-9\]\+\(\[\.\]0\+\)\?\$/,'integral numeric quantities such as 1.000 must be accepted');
+assert.match(quantityContract,/trunc\(v_qty\)<>v_qty/,'fractional basket quantities must remain rejected');
+assert.match(quantityContract,/whatsapp_live_canary_percent=1/,'homologation canary must remain pinned at 1%');
+assert.match(quantityContract,/whatsapp_flow_data_exchange_enabled=false/,'Data Exchange must remain disabled after migration');
+assert.match(quantityContract,/whatsapp_flow_send_enabled=false/,'Flow sending must remain disabled after migration');
+assert.match(quantityContract,/bling_order_sync_enabled=false/,'Bling sync must remain disabled during homologation');
+
+console.log('whatsapp new-order reset + Flow routing + component/quantity limits contract: ok');
