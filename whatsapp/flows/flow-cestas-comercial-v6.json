@@ -1,0 +1,2425 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "CESTAS": [
+      "PERSONALIZAR_1"
+    ],
+    "PERSONALIZAR_1": [
+      "AJUSTAR_ITEM_1",
+      "SECOES_1"
+    ],
+    "AJUSTAR_ITEM_1": [
+      "PERSONALIZAR_2",
+      "SECOES_1"
+    ],
+    "PERSONALIZAR_2": [
+      "AJUSTAR_ITEM_2",
+      "SECOES_1"
+    ],
+    "AJUSTAR_ITEM_2": [
+      "PERSONALIZAR_3",
+      "SECOES_1"
+    ],
+    "PERSONALIZAR_3": [
+      "AJUSTAR_ITEM_3",
+      "SECOES_1"
+    ],
+    "AJUSTAR_ITEM_3": [
+      "SECOES_1"
+    ],
+    "SECOES_1": [
+      "TERMOS_1",
+      "PRODUTOS_1",
+      "UPSELL"
+    ],
+    "TERMOS_1": [
+      "PRODUTOS_1"
+    ],
+    "PRODUTOS_1": [
+      "PRODUTO_1"
+    ],
+    "PRODUTO_1": [
+      "SECOES_2"
+    ],
+    "SECOES_2": [
+      "TERMOS_2",
+      "PRODUTOS_2",
+      "UPSELL"
+    ],
+    "TERMOS_2": [
+      "PRODUTOS_2"
+    ],
+    "PRODUTOS_2": [
+      "PRODUTO_2"
+    ],
+    "PRODUTO_2": [
+      "SECOES_3"
+    ],
+    "SECOES_3": [
+      "TERMOS_3",
+      "PRODUTOS_3",
+      "UPSELL"
+    ],
+    "TERMOS_3": [
+      "PRODUTOS_3"
+    ],
+    "PRODUTOS_3": [
+      "PRODUTO_3"
+    ],
+    "PRODUTO_3": [
+      "UPSELL"
+    ],
+    "UPSELL": [
+      "REVISAO"
+    ],
+    "REVISAO": [
+      "CLIENTE"
+    ],
+    "CLIENTE": [
+      "FINALIZAR"
+    ],
+    "FINALIZAR": []
+  },
+  "screens": [
+    {
+      "id": "CESTAS",
+      "title": "Escolha sua cesta",
+      "data": {
+        "intro": {
+          "type": "string",
+          "__example__": "Escolha uma cesta básica para começar."
+        },
+        "baskets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "basket-1",
+              "title": "Cesta Econômica · R$ 199,90",
+              "description": "Toque para personalizar",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Cesta Econômica · R$ 199,90"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Cestas Básicas Dona Antônia"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.intro}"
+          },
+          {
+            "type": "Form",
+            "name": "basket_form",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Escolha sua cesta",
+                "name": "basket_id",
+                "data-source": "${data.baskets}",
+                "required": true,
+                "media-size": "large"
+              },
+              {
+                "type": "Footer",
+                "label": "Ver e personalizar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_selected",
+                    "basket_id": "${form.basket_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PERSONALIZAR_1",
+      "title": "Sua cesta",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Cesta Econômica"
+        },
+        "basket_price": {
+          "type": "string",
+          "__example__": "R$ 199,90"
+        },
+        "basket_note": {
+          "type": "string",
+          "__example__": "Os componentes da cesta não exibem preço individual."
+        },
+        "items_summary": {
+          "type": "string",
+          "__example__": "2 × Arroz\n2 × Feijão\n1 × Café"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "edit",
+              "title": "Alterar um item"
+            },
+            {
+              "id": "continue",
+              "title": "Concluir personalização"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "product-1",
+              "title": "Arroz 5 kg",
+              "description": "Atual: 2",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Arroz 5 kg"
+            }
+          ]
+        },
+        "error_text": {
+          "type": "string",
+          "__example__": ""
+        },
+        "basket_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "has_basket_image": {
+          "type": "boolean",
+          "__example__": true
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Image",
+            "src": "${data.basket_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.basket_name}"
+          },
+          {
+            "type": "TextHeading",
+            "text": "${data.basket_name}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.basket_price}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.items_summary}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.basket_note}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_text}"
+          },
+          {
+            "type": "Form",
+            "name": "customize_form_1",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "O que deseja fazer?",
+                "name": "customize_action",
+                "data-source": "${data.actions}",
+                "required": true
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Item para alterar (só se quiser personalizar)",
+                "name": "product_id",
+                "data-source": "${data.items}",
+                "required": false,
+                "media-size": "regular"
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_customize_v3",
+                    "customize_action": "${form.customize_action}",
+                    "product_id": "${form.product_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AJUSTAR_ITEM_1",
+      "title": "Quantidade do item",
+      "data": {
+        "product_name": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "current_quantity": {
+          "type": "string",
+          "__example__": "2"
+        },
+        "allowed_quantities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "Retirar da cesta"
+            },
+            {
+              "id": "1",
+              "title": "1"
+            },
+            {
+              "id": "2",
+              "title": "2 · quantidade atual"
+            }
+          ]
+        },
+        "policy_note": {
+          "type": "string",
+          "__example__": "Escolha uma das quantidades permitidas para este item."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.product_name}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Quantidade atual: ${data.current_quantity}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.policy_note}"
+          },
+          {
+            "type": "Form",
+            "name": "adjust_form_1",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Nova quantidade",
+                "name": "quantity",
+                "data-source": "${data.allowed_quantities}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Salvar alteração",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_item_apply",
+                    "quantity": "${form.quantity}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PERSONALIZAR_2",
+      "title": "Sua cesta",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Cesta Econômica"
+        },
+        "basket_price": {
+          "type": "string",
+          "__example__": "R$ 199,90"
+        },
+        "basket_note": {
+          "type": "string",
+          "__example__": "Os componentes da cesta não exibem preço individual."
+        },
+        "items_summary": {
+          "type": "string",
+          "__example__": "2 × Arroz\n2 × Feijão\n1 × Café"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "edit",
+              "title": "Alterar um item"
+            },
+            {
+              "id": "continue",
+              "title": "Concluir personalização"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "product-1",
+              "title": "Arroz 5 kg",
+              "description": "Atual: 2",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Arroz 5 kg"
+            }
+          ]
+        },
+        "error_text": {
+          "type": "string",
+          "__example__": ""
+        },
+        "basket_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "has_basket_image": {
+          "type": "boolean",
+          "__example__": true
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Image",
+            "src": "${data.basket_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.basket_name}"
+          },
+          {
+            "type": "TextHeading",
+            "text": "${data.basket_name}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.basket_price}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.items_summary}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.basket_note}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_text}"
+          },
+          {
+            "type": "Form",
+            "name": "customize_form_2",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "O que deseja fazer?",
+                "name": "customize_action",
+                "data-source": "${data.actions}",
+                "required": true
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Item para alterar (só se quiser personalizar)",
+                "name": "product_id",
+                "data-source": "${data.items}",
+                "required": false,
+                "media-size": "regular"
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_customize_v3",
+                    "customize_action": "${form.customize_action}",
+                    "product_id": "${form.product_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AJUSTAR_ITEM_2",
+      "title": "Quantidade do item",
+      "data": {
+        "product_name": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "current_quantity": {
+          "type": "string",
+          "__example__": "2"
+        },
+        "allowed_quantities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "Retirar da cesta"
+            },
+            {
+              "id": "1",
+              "title": "1"
+            },
+            {
+              "id": "2",
+              "title": "2 · quantidade atual"
+            }
+          ]
+        },
+        "policy_note": {
+          "type": "string",
+          "__example__": "Escolha uma das quantidades permitidas para este item."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.product_name}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Quantidade atual: ${data.current_quantity}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.policy_note}"
+          },
+          {
+            "type": "Form",
+            "name": "adjust_form_2",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Nova quantidade",
+                "name": "quantity",
+                "data-source": "${data.allowed_quantities}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Salvar alteração",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_item_apply",
+                    "quantity": "${form.quantity}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PERSONALIZAR_3",
+      "title": "Sua cesta",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Cesta Econômica"
+        },
+        "basket_price": {
+          "type": "string",
+          "__example__": "R$ 199,90"
+        },
+        "basket_note": {
+          "type": "string",
+          "__example__": "Os componentes da cesta não exibem preço individual."
+        },
+        "items_summary": {
+          "type": "string",
+          "__example__": "2 × Arroz\n2 × Feijão\n1 × Café"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "edit",
+              "title": "Alterar um item"
+            },
+            {
+              "id": "continue",
+              "title": "Concluir personalização"
+            }
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "product-1",
+              "title": "Arroz 5 kg",
+              "description": "Atual: 2",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Arroz 5 kg"
+            }
+          ]
+        },
+        "error_text": {
+          "type": "string",
+          "__example__": ""
+        },
+        "basket_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "has_basket_image": {
+          "type": "boolean",
+          "__example__": true
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Image",
+            "src": "${data.basket_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.basket_name}"
+          },
+          {
+            "type": "TextHeading",
+            "text": "${data.basket_name}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.basket_price}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.items_summary}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.basket_note}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_text}"
+          },
+          {
+            "type": "Form",
+            "name": "customize_form_3",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "O que deseja fazer?",
+                "name": "customize_action",
+                "data-source": "${data.actions}",
+                "required": true
+              },
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Item para alterar (só se quiser personalizar)",
+                "name": "product_id",
+                "data-source": "${data.items}",
+                "required": false,
+                "media-size": "regular"
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_customize_v3",
+                    "customize_action": "${form.customize_action}",
+                    "product_id": "${form.product_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "AJUSTAR_ITEM_3",
+      "title": "Quantidade do item",
+      "data": {
+        "product_name": {
+          "type": "string",
+          "__example__": "Arroz 5 kg"
+        },
+        "current_quantity": {
+          "type": "string",
+          "__example__": "2"
+        },
+        "allowed_quantities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "Retirar da cesta"
+            },
+            {
+              "id": "1",
+              "title": "1"
+            },
+            {
+              "id": "2",
+              "title": "2 · quantidade atual"
+            }
+          ]
+        },
+        "policy_note": {
+          "type": "string",
+          "__example__": "Escolha uma das quantidades permitidas para este item."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.product_name}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Quantidade atual: ${data.current_quantity}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.policy_note}"
+          },
+          {
+            "type": "Form",
+            "name": "adjust_form_3",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Nova quantidade",
+                "name": "quantity",
+                "data-source": "${data.allowed_quantities}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Salvar alteração",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_item_apply",
+                    "quantity": "${form.quantity}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SECOES_1",
+      "title": "Adicionar produtos",
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Escolha uma seção, faça uma busca ou avance quando terminar."
+        },
+        "extras_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "browse",
+              "title": "Escolher por seção"
+            },
+            {
+              "id": "direct_search",
+              "title": "Buscar produto"
+            },
+            {
+              "id": "finish",
+              "title": "Terminei de adicionar"
+            }
+          ]
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "higiene",
+              "title": "Higiene e beleza"
+            }
+          ]
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Pedido em montagem"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Adicionar mais produtos"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "Etapa 1 de 3 · carregamos somente produtos relevantes à sua busca."
+          },
+          {
+            "type": "Form",
+            "name": "extras_form_1",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Escolha uma opção",
+                "name": "extras_action",
+                "data-source": "${data.extras_actions}",
+                "required": true
+              },
+              {
+                "type": "CheckboxGroup",
+                "label": "Categorias (até 3)",
+                "name": "section_keys",
+                "data-source": "${data.sections}",
+                "required": false,
+                "max-selected-items": 3
+              },
+              {
+                "type": "TextInput",
+                "label": "Buscar produto (opcional)",
+                "name": "direct_query",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "extras_continue_v2",
+                    "extras_action": "${form.extras_action}",
+                    "section_keys": "${form.section_keys}",
+                    "direct_query": "${form.direct_query}",
+                    "round": "1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.cart_total}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TERMOS_1",
+      "title": "O que procura?",
+      "data": {
+        "section_title": {
+          "type": "string",
+          "__example__": "Higiene e beleza"
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "sabonete",
+              "title": "Sabonetes"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.section_title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Escolha uma busca segmentada. Só os produtos relacionados serão consultados."
+          },
+          {
+            "type": "Form",
+            "name": "term_form_1",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "O que você procura?",
+                "name": "term_id",
+                "data-source": "${data.terms}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Mostrar produtos",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "term_selected_v2",
+                    "term_id": "${form.term_id}",
+                    "round": "1"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTOS_1",
+      "title": "Produtos encontrados",
+      "data": {
+        "query_title": {
+          "type": "string",
+          "__example__": "Sabonetes"
+        },
+        "result_note": {
+          "type": "string",
+          "__example__": "10 opções disponíveis"
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "product-1",
+              "title": "Sabonete Dove · R$ 4,99",
+              "description": "90 g",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Sabonete Dove · R$ 4,99"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.query_title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.result_note}"
+          },
+          {
+            "type": "Form",
+            "name": "products_form_1",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Produtos",
+                "name": "product_id",
+                "data-source": "${data.products}",
+                "required": true,
+                "media-size": "regular"
+              },
+              {
+                "type": "Footer",
+                "label": "Ver produto",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "product_selected",
+                    "product_id": "${form.product_id}",
+                    "round": "1"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTO_1",
+      "title": "Produto",
+      "data": {
+        "product_name": {
+          "type": "string",
+          "__example__": "Sabonete Dove 90 g"
+        },
+        "product_price": {
+          "type": "string",
+          "__example__": "R$ 4,99"
+        },
+        "product_description": {
+          "type": "string",
+          "__example__": "Disponível para entrega"
+        },
+        "product_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "product_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "quantities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "1"
+            }
+          ]
+        },
+        "has_product_image": {
+          "type": "boolean",
+          "__example__": true
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Image",
+            "src": "${data.product_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.product_name}"
+          },
+          {
+            "type": "TextHeading",
+            "text": "${data.product_name}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.product_price}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.product_description}"
+          },
+          {
+            "type": "Form",
+            "name": "product_form_1",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Quantidade",
+                "name": "quantity",
+                "data-source": "${data.quantities}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Adicionar ao pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "add_product",
+                    "product_id": "${data.product_id}",
+                    "quantity": "${form.quantity}",
+                    "round": "1"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SECOES_2",
+      "title": "Adicionar produtos",
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Escolha uma seção, faça uma busca ou avance quando terminar."
+        },
+        "extras_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "browse",
+              "title": "Escolher por seção"
+            },
+            {
+              "id": "direct_search",
+              "title": "Buscar produto"
+            },
+            {
+              "id": "finish",
+              "title": "Terminei de adicionar"
+            }
+          ]
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "higiene",
+              "title": "Higiene e beleza"
+            }
+          ]
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Pedido em montagem"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Adicionar mais produtos"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "Etapa 2 de 3 · você pode concluir os adicionais a qualquer momento."
+          },
+          {
+            "type": "Form",
+            "name": "extras_form_2",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Escolha uma opção",
+                "name": "extras_action",
+                "data-source": "${data.extras_actions}",
+                "required": true
+              },
+              {
+                "type": "CheckboxGroup",
+                "label": "Categorias (até 3)",
+                "name": "section_keys",
+                "data-source": "${data.sections}",
+                "required": false,
+                "max-selected-items": 3
+              },
+              {
+                "type": "TextInput",
+                "label": "Buscar produto (opcional)",
+                "name": "direct_query",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "extras_continue_v2",
+                    "extras_action": "${form.extras_action}",
+                    "section_keys": "${form.section_keys}",
+                    "direct_query": "${form.direct_query}",
+                    "round": "2"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.cart_total}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TERMOS_2",
+      "title": "O que procura?",
+      "data": {
+        "section_title": {
+          "type": "string",
+          "__example__": "Higiene e beleza"
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "sabonete",
+              "title": "Sabonetes"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.section_title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Escolha uma busca segmentada. Só os produtos relacionados serão consultados."
+          },
+          {
+            "type": "Form",
+            "name": "term_form_2",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "O que você procura?",
+                "name": "term_id",
+                "data-source": "${data.terms}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Mostrar produtos",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "term_selected_v2",
+                    "term_id": "${form.term_id}",
+                    "round": "2"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTOS_2",
+      "title": "Produtos encontrados",
+      "data": {
+        "query_title": {
+          "type": "string",
+          "__example__": "Sabonetes"
+        },
+        "result_note": {
+          "type": "string",
+          "__example__": "10 opções disponíveis"
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "product-1",
+              "title": "Sabonete Dove · R$ 4,99",
+              "description": "90 g",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Sabonete Dove · R$ 4,99"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.query_title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.result_note}"
+          },
+          {
+            "type": "Form",
+            "name": "products_form_2",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Produtos",
+                "name": "product_id",
+                "data-source": "${data.products}",
+                "required": true,
+                "media-size": "regular"
+              },
+              {
+                "type": "Footer",
+                "label": "Ver produto",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "product_selected",
+                    "product_id": "${form.product_id}",
+                    "round": "2"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTO_2",
+      "title": "Produto",
+      "data": {
+        "product_name": {
+          "type": "string",
+          "__example__": "Sabonete Dove 90 g"
+        },
+        "product_price": {
+          "type": "string",
+          "__example__": "R$ 4,99"
+        },
+        "product_description": {
+          "type": "string",
+          "__example__": "Disponível para entrega"
+        },
+        "product_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "product_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "quantities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "1"
+            }
+          ]
+        },
+        "has_product_image": {
+          "type": "boolean",
+          "__example__": true
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Image",
+            "src": "${data.product_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.product_name}"
+          },
+          {
+            "type": "TextHeading",
+            "text": "${data.product_name}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.product_price}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.product_description}"
+          },
+          {
+            "type": "Form",
+            "name": "product_form_2",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Quantidade",
+                "name": "quantity",
+                "data-source": "${data.quantities}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Adicionar ao pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "add_product",
+                    "product_id": "${data.product_id}",
+                    "quantity": "${form.quantity}",
+                    "round": "2"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SECOES_3",
+      "title": "Adicionar produtos",
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Escolha uma seção, faça uma busca ou avance quando terminar."
+        },
+        "extras_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "browse",
+              "title": "Escolher por seção"
+            },
+            {
+              "id": "direct_search",
+              "title": "Buscar produto"
+            },
+            {
+              "id": "finish",
+              "title": "Terminei de adicionar"
+            }
+          ]
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "higiene",
+              "title": "Higiene e beleza"
+            }
+          ]
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Pedido em montagem"
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Adicionar mais produtos"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "Última etapa de adicionais antes da revisão."
+          },
+          {
+            "type": "Form",
+            "name": "extras_form_3",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Escolha uma opção",
+                "name": "extras_action",
+                "data-source": "${data.extras_actions}",
+                "required": true
+              },
+              {
+                "type": "CheckboxGroup",
+                "label": "Categorias (até 3)",
+                "name": "section_keys",
+                "data-source": "${data.sections}",
+                "required": false,
+                "max-selected-items": 3
+              },
+              {
+                "type": "TextInput",
+                "label": "Buscar produto (opcional)",
+                "name": "direct_query",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "extras_continue_v2",
+                    "extras_action": "${form.extras_action}",
+                    "section_keys": "${form.section_keys}",
+                    "direct_query": "${form.direct_query}",
+                    "round": "3"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.cart_total}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TERMOS_3",
+      "title": "O que procura?",
+      "data": {
+        "section_title": {
+          "type": "string",
+          "__example__": "Higiene e beleza"
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "sabonete",
+              "title": "Sabonetes"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.section_title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Escolha uma busca segmentada. Só os produtos relacionados serão consultados."
+          },
+          {
+            "type": "Form",
+            "name": "term_form_3",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "O que você procura?",
+                "name": "term_id",
+                "data-source": "${data.terms}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Mostrar produtos",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "term_selected_v2",
+                    "term_id": "${form.term_id}",
+                    "round": "3"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTOS_3",
+      "title": "Produtos encontrados",
+      "data": {
+        "query_title": {
+          "type": "string",
+          "__example__": "Sabonetes"
+        },
+        "result_note": {
+          "type": "string",
+          "__example__": "10 opções disponíveis"
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "product-1",
+              "title": "Sabonete Dove · R$ 4,99",
+              "description": "90 g",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Sabonete Dove · R$ 4,99"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.query_title}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.result_note}"
+          },
+          {
+            "type": "Form",
+            "name": "products_form_3",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Produtos",
+                "name": "product_id",
+                "data-source": "${data.products}",
+                "required": true,
+                "media-size": "regular"
+              },
+              {
+                "type": "Footer",
+                "label": "Ver produto",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "product_selected",
+                    "product_id": "${form.product_id}",
+                    "round": "3"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTO_3",
+      "title": "Produto",
+      "data": {
+        "product_name": {
+          "type": "string",
+          "__example__": "Sabonete Dove 90 g"
+        },
+        "product_price": {
+          "type": "string",
+          "__example__": "R$ 4,99"
+        },
+        "product_description": {
+          "type": "string",
+          "__example__": "Disponível para entrega"
+        },
+        "product_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "product_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "quantities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "1"
+            }
+          ]
+        },
+        "has_product_image": {
+          "type": "boolean",
+          "__example__": true
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Image",
+            "src": "${data.product_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.product_name}"
+          },
+          {
+            "type": "TextHeading",
+            "text": "${data.product_name}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.product_price}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.product_description}"
+          },
+          {
+            "type": "Form",
+            "name": "product_form_3",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Quantidade",
+                "name": "quantity",
+                "data-source": "${data.quantities}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Adicionar ao pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "add_product",
+                    "product_id": "${data.product_id}",
+                    "quantity": "${form.quantity}",
+                    "round": "3"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "UPSELL",
+      "title": "Complete seu pedido",
+      "data": {
+        "upsell_note": {
+          "type": "string",
+          "__example__": "Sugestões opcionais baseadas no pedido."
+        },
+        "products": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "product-2",
+              "title": "Filtro de café · R$ 5,99",
+              "description": "Sugestão opcional",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Filtro de café · R$ 5,99"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Talvez você também precise"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.upsell_note}"
+          },
+          {
+            "type": "Form",
+            "name": "upsell_form",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Sugestão opcional",
+                "name": "product_id",
+                "data-source": "${data.products}",
+                "required": false,
+                "media-size": "regular"
+              },
+              {
+                "type": "Footer",
+                "label": "Revisar pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "upsell_continue",
+                    "product_id": "${form.product_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "REVISAO",
+      "title": "Revise seu pedido",
+      "data": {
+        "summary": {
+          "type": "string",
+          "__example__": "Cesta Econômica\n2 × Sabonete"
+        },
+        "total": {
+          "type": "string",
+          "__example__": "R$ 259,70"
+        },
+        "pricing_note": {
+          "type": "string",
+          "__example__": "A cesta possui preço comercial próprio."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Seu pedido"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.summary}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Total: ${data.total}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.pricing_note}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar para entrega",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "review_confirm"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CLIENTE",
+      "title": "Entrega e pagamento",
+      "data": {
+        "customer_name": {
+          "type": "string",
+          "__example__": "Maria Silva"
+        },
+        "address_summary": {
+          "type": "string",
+          "__example__": "Rua A, 123, Centro"
+        },
+        "customer_registered": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "error_text": {
+          "type": "string",
+          "__example__": ""
+        },
+        "payment_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "pix",
+              "title": "PIX na entrega"
+            }
+          ]
+        },
+        "name_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "street_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "number_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "complement_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "neighborhood_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "city_value": {
+          "type": "string",
+          "__example__": "Cuiabá"
+        },
+        "locator_value": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Entrega e pagamento"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_text}"
+          },
+          {
+            "type": "If",
+            "condition": "${data.customer_registered}",
+            "then": [
+              {
+                "type": "TextBody",
+                "text": "Já encontramos seus dados: ${data.customer_name}"
+              },
+              {
+                "type": "TextBody",
+                "text": "Entrega: ${data.address_summary}"
+              },
+              {
+                "type": "Form",
+                "name": "known_customer_form",
+                "children": [
+                  {
+                    "type": "Dropdown",
+                    "label": "Forma de pagamento",
+                    "name": "payment_method",
+                    "data-source": "${data.payment_options}",
+                    "required": true
+                  },
+                  {
+                    "type": "TextArea",
+                    "label": "Observação (opcional)",
+                    "name": "notes",
+                    "required": false
+                  },
+                  {
+                    "type": "Footer",
+                    "label": "Confirmar pedido",
+                    "on-click-action": {
+                      "name": "data_exchange",
+                      "payload": {
+                        "trigger": "checkout_confirm",
+                        "payment_method": "${form.payment_method}",
+                        "notes": "${form.notes}"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "else": [
+              {
+                "type": "TextBody",
+                "text": "Preencha somente os dados necessários para a entrega."
+              },
+              {
+                "type": "Form",
+                "name": "new_customer_form",
+                "children": [
+                  {
+                    "type": "TextInput",
+                    "label": "Nome",
+                    "name": "name",
+                    "required": true
+                  },
+                  {
+                    "type": "TextInput",
+                    "label": "Rua",
+                    "name": "street",
+                    "required": true
+                  },
+                  {
+                    "type": "TextInput",
+                    "label": "Número",
+                    "name": "number",
+                    "required": true
+                  },
+                  {
+                    "type": "TextInput",
+                    "label": "Complemento",
+                    "name": "complement",
+                    "required": false
+                  },
+                  {
+                    "type": "TextInput",
+                    "label": "Bairro",
+                    "name": "neighborhood",
+                    "required": true
+                  },
+                  {
+                    "type": "TextInput",
+                    "label": "Cidade",
+                    "name": "city",
+                    "required": true
+                  },
+                  {
+                    "type": "TextInput",
+                    "label": "Referência",
+                    "name": "locator",
+                    "required": false
+                  },
+                  {
+                    "type": "Dropdown",
+                    "label": "Forma de pagamento",
+                    "name": "payment_method",
+                    "data-source": "${data.payment_options}",
+                    "required": true
+                  },
+                  {
+                    "type": "TextArea",
+                    "label": "Observação (opcional)",
+                    "name": "notes",
+                    "required": false
+                  },
+                  {
+                    "type": "Footer",
+                    "label": "Confirmar pedido",
+                    "on-click-action": {
+                      "name": "data_exchange",
+                      "payload": {
+                        "trigger": "checkout_confirm",
+                        "name": "${form.name}",
+                        "street": "${form.street}",
+                        "number": "${form.number}",
+                        "complement": "${form.complement}",
+                        "neighborhood": "${form.neighborhood}",
+                        "city": "${form.city}",
+                        "locator": "${form.locator}",
+                        "payment_method": "${form.payment_method}",
+                        "notes": "${form.notes}"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FINALIZAR",
+      "title": "Pedido reservado",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "confirmation": {
+          "type": "string",
+          "__example__": "Pedido confirmado com sucesso."
+        },
+        "final_summary": {
+          "type": "string",
+          "__example__": "Cesta Econômica"
+        },
+        "final_total": {
+          "type": "string",
+          "__example__": "R$ 259,70"
+        },
+        "next_step": {
+          "type": "string",
+          "__example__": "Envie sua localização no chat."
+        },
+        "write_enabled": {
+          "type": "boolean",
+          "__example__": false
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.confirmation}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.final_summary}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.final_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.next_step}"
+          },
+          {
+            "type": "Footer",
+            "label": "Voltar ao WhatsApp",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "action": "completed"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
