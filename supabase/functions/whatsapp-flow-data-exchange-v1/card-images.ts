@@ -50,15 +50,14 @@ async function hydrateNavigationProductItems(items:unknown[],supabaseUrl:string)
     if(!startRaw||typeof startRaw!=="object"||Array.isArray(startRaw))return row;
     const start={...(startRaw as Record<string,unknown>)};
     const imageUrl=String(start.image_url||"").trim().slice(0,2000);
-    const existing=String(start.src||start.image||"").trim();
+    const existing=String(start.image||"").trim();
     delete start.image_url;
-    delete start.image;
-    if(existing&&existing.length<=COMPACT_LIST_MAX_BASE64_CHARS)start.src=existing;
-    else delete start.src;
-    if(!start.src&&imageUrl){
+    delete start.src;
+    if(existing&&existing.length>COMPACT_LIST_MAX_BASE64_CHARS)delete start.image;
+    if(!start.image&&imageUrl){
       const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
       const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,assetKey);
-      if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS)start.src=image;
+      if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS)start.image=image;
     }
     row.start=start;
     return row;
@@ -73,15 +72,21 @@ export async function hydrateExperienceImagesWithCards(response:unknown,supabase
   const data=obj.data as Record<string,unknown>;
   const screen=String(obj.screen||"");
 
-  // V28: NavigationList product rows. Meta Flow JSON v7.3 requires
-  // NavigationList.start = {src, alt-text}. Keep at most 20 small photos.
+  // V28 NavigationList contract: start.image contains compact Base64 media.
   if(/^PRODUTOS_[A-L]$/.test(screen)&&Array.isArray(data.product_items)){
     data.product_items=await hydrateNavigationProductItems(data.product_items as unknown[],supabaseUrl);
     return hydrated;
   }
 
-  // V28: selected product opens as one larger image/detail card.
+  // V28 detail: preserve an image already hydrated by image.ts (A-C) and only
+  // hydrate here for the additional unrolled detail screens D-L.
   if(/^PRODUTO_[A-L]$/.test(screen)){
+    const existing=String(data.product_image_base64||"").trim();
+    if(existing){
+      data.has_product_image=true;
+      delete data.product_image_url;
+      return hydrated;
+    }
     const imageUrl=String(data.product_image_url||"").trim().slice(0,2000);
     const productId=String(data.product_id||data.id||"").trim();
     const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
@@ -92,13 +97,11 @@ export async function hydrateExperienceImagesWithCards(response:unknown,supabase
     return hydrated;
   }
 
-  // V27 premium compatibility.
   if(/^PRODUTOS_[ABC]$/.test(screen)&&Array.isArray(data.product_options)){
     data.product_options=await hydratePremiumProductOptions(data.product_options as unknown[],supabaseUrl);
     return hydrated;
   }
 
-  // V26 compatibility: three standalone product cards remain untouched.
   if(!/^PRODUTOS_[ABC]$/.test(screen)||Array.isArray(data.products))return hydrated;
 
   await Promise.all([1,2,3].map(async(index)=>{
