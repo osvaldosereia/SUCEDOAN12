@@ -24,14 +24,22 @@ async function hydratePremiumProductOptions(items:unknown[],supabaseUrl:string):
   return await mapLimited(items.slice(0,20),4,async(item)=>{
     if(!item||typeof item!=="object"||Array.isArray(item))return item;
     const option={...(item as Record<string,unknown>)};
+    const alreadyHydrated=String(option.image||"").trim();
     const imageUrl=String(option.image_url||"").trim().slice(0,2000);
     const productId=String(option.id||"").trim();
     delete option.image_url;
+
+    // hydrateExperienceImages may already have converted image_url to base64.
+    // Enforce the per-row budget after that conversion, otherwise 20 rows could
+    // exceed the Flow Data Channel payload ceiling even when every image is valid.
+    if(alreadyHydrated){
+      if(alreadyHydrated.length>COMPACT_LIST_MAX_BASE64_CHARS)delete option.image;
+      return option;
+    }
+
     if(imageUrl){
       const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
       const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,assetKey);
-      // 20 visual rows must stay safely below the Flow Data Channel payload ceiling.
-      // If a source cannot be compacted enough, keep the row but omit only its image.
       if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS)option.image=image;
     }
     return option;
