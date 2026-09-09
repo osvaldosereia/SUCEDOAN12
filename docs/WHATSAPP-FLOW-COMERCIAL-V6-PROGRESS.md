@@ -14,33 +14,35 @@ Atualizado em 2026-09-09.
 - Resultados de produtos e upsell usam opções visuais com mídia, preço e quantidade.
 - Upsell/cross-sell permanece opcional.
 - Checkout separado em `CLIENTE_EXISTENTE` e `CLIENTE_NOVO`, preservando cadastro/endereço já conhecido.
-- Handler V7 traduz IDs alfabéticos da Meta para as rodadas internas 1/2/3.
+- Handler V8 encapsula a navegação alfabética A/B/C e filtra termos sem produto vendável.
 
-## Rodada de endurecimento — termos de busca viáveis (V15 / handler V8)
+## Rodada atual — Edge V11 + regressão V8
 
-Auditoria real do Supabase confirmou:
+A Edge Function `whatsapp-flow-data-exchange-v1` foi implantada no Supabase como **versão 11** e o código em execução foi conferido após o deploy. O endpoint comercial agora chama `handle_whatsapp_flow_commercial_exchange_v8`.
 
-- 9/9 cestas oficiais com composição resolvida e `cart_write_ready=true`;
-- 9/9 cestas com URL de imagem cadastrada;
-- catálogo de adicionais continua consultado sob demanda, com limite de 12 resultados por busca;
-- existem termos configurados que hoje retornam zero produto vendável (por exemplo `creme dental`, `desodorante`, `absorvente`, `esponja`, `saco lixo`, `papel toalha`, `guardanapo` e `refrigerante`).
+Foram executados smokes transacionais com fixtures sintéticas e rollback, sem deixar cliente, conversa, carrinho ou pedido de teste persistido:
 
-Para impedir caminhos mortos no Flow foi implantada no Supabase a migration `whatsapp_flow_viable_search_terms_v15`:
+- `INIT -> CESTAS`: 9 cestas reais retornadas;
+- `CESTAS -> PERSONALIZAR_A`: composição real carregada;
+- `PERSONALIZAR_A -> SECOES_A`: categorias retornadas sem carregar catálogo completo;
+- `SECOES_A -> TERMOS_A`: somente termos com resultado vendável permanecem;
+- `TERMOS_A -> PRODUTOS_A`: subconjunto entre 1 e 12 produtos;
+- `PRODUTOS_A -> PRODUTO_A`: detalhe real com preço comercial do adicional;
+- caminho `SECOES_A -> UPSELL -> REVISAO -> CLIENTE_EXISTENTE` validado com escrita comercial temporariamente habilitada apenas dentro de subtransação revertida integralmente ao final.
 
-- `filter_whatsapp_flow_viable_terms_v1(jsonb)` valida cada termo contra `get_whatsapp_flow_product_results_v1(...,1)`;
-- termos sem produto real vendável são ocultados naquele momento;
-- se uma seleção de categorias ficar sem nenhum termo viável, o cliente volta para a tela de seções com orientação para escolher outra seção ou usar busca direta;
-- nenhuma IA decide disponibilidade, produto, preço ou estoque;
-- `handle_whatsapp_flow_commercial_exchange_v8` encapsula o V7 e aplica o filtro somente na resposta visual de `TERMOS_A/B/C`;
-- permissões permanecem `service_role` apenas para os novos RPCs.
+A regressão encontrou um defeito real antes da homologação: `basket_template_items.quantity` é `numeric` e o JSON do editor preserva escala (`1.000`). O validador aceitava somente texto `1`, portanto a seleção oficial de uma cesta era recusada como `basket_selection_invalid` quando a escrita comercial estava ligada.
 
-Teste direto do filtro confirmou que `higiene::sabonete` e `limpeza::detergente` permanecem, enquanto `higiene::creme_dental` é removido quando não há produto vendável correspondente.
+A migration `20260909171800_whatsapp_flow_integral_quantity_validation_v22.sql` corrige o contrato para aceitar representações numéricas integrais (`1`, `1.0`, `1.000`) e continuar rejeitando frações. Após a correção:
 
-O repositório foi atualizado para que `supabase/functions/whatsapp-flow-data-exchange-v1/index.ts` use `handle_whatsapp_flow_commercial_exchange_v8`. O deploy da Edge Function deve acompanhar essa versão antes do próximo teste Data Exchange real.
+- a seleção padrão da cesta passou de `valid=false` com vários `invalid_quantity` para `valid=true` e `issues=[]`;
+- o smoke com escrita percorreu cesta, revisão e cliente conhecido com total preenchido;
+- os gates foram verificados novamente após o rollback.
+
+O contrato foi acrescentado ao teste `scripts/test-whatsapp-new-order-flow-v1.mjs`, incluindo as garantias de quantidade integral, canary 1%, Data Exchange OFF, Flow Send OFF e Bling OFF.
 
 ## Segurança preservada
 
-Auditoria posterior à migration confirmou como baseline obrigatório:
+Durante a auditoria desta rodada foi detectado que uma alteração concorrente havia deixado os gates comerciais ligados. Eles foram imediatamente restaurados e confirmados novamente após todos os smokes:
 
 - `whatsapp_live_canary_percent=1`
 - `experience_orchestrator_enabled=false`
@@ -49,29 +51,40 @@ Auditoria posterior à migration confirmou como baseline obrigatório:
 - `whatsapp_flow_commercial_write_enabled=false`
 - `bling_order_sync_enabled=false`
 
-O handler V8 e o filtro de termos não são executáveis por `anon`/`authenticated`; somente `service_role` possui execução.
+A habilitação usada no smoke de checkout ocorreu somente dentro de uma subtransação deliberadamente revertida; o estado persistente permaneceu fechado.
+
+## Catálogo e busca
+
+- 9/9 cestas oficiais têm composição resolvida e `cart_write_ready=true`;
+- 9/9 cestas têm URL de imagem cadastrada;
+- adicionais continuam consultados sob demanda, com limite de 12 resultados por busca;
+- `filter_whatsapp_flow_viable_terms_v1(jsonb)` consulta `get_whatsapp_flow_product_results_v1(...,1)` e remove caminhos sem produto vendável;
+- nenhuma IA decide disponibilidade, produto, preço ou estoque.
 
 ## Make — observação da auditoria
 
-Foram encontrados ativos os cenários autorizados de WhatsApp Inbound, WhatsApp Outbound e `consultar no cpf`. Também existem cenários ativos adicionais (`Cadastro 1 Foto...` e `Dona Antônia - CTA URL Cesta (configurável)`). Nenhum cenário adicional foi ativado nesta rodada e nenhum deles foi alterado automaticamente, porque não são necessários para o novo Data Exchange e podem pertencer a outros fluxos operacionais do Admin.
+Foram relidos os cenários do time. Continuam ativos os cenários operacionais já existentes de WhatsApp Inbound/Outbound e outros cenários previamente ativos; os cenários temporários de publicação/validação/preview de Flow permanecem inativos. Nenhum cenário foi ativado ou alterado nesta rodada.
 
 ## Arquivos principais
 
 - `whatsapp/flows/flow-cestas-comercial-v6.json`
 - `scripts/build-flow-v6.py`
 - `scripts/fix-flow-v6-meta.py`
+- `scripts/test-whatsapp-new-order-flow-v1.mjs`
 - `.github/workflows/build-flow-v6.yml`
 - `supabase/migrations/20260909151900_whatsapp_flow_commercial_visual_v6.sql`
 - `supabase/migrations/20260909153200_whatsapp_flow_commercial_meta_screen_ids_v7.sql`
 - `supabase/migrations/20260909162146_whatsapp_flow_viable_search_terms_v15.sql`
+- `supabase/migrations/20260909171800_whatsapp_flow_integral_quantity_validation_v22.sql`
 - `supabase/functions/whatsapp-flow-data-exchange-v1/index.ts`
 - `supabase/functions/whatsapp-flow-data-exchange-v1/image.ts`
 
 ## Próximo bloco seguro
 
-1. implantar a Edge Function `whatsapp-flow-data-exchange-v1` com o handler V8 já versionado no GitHub;
-2. executar Data Exchange ponta a ponta com sessão sintética/homologação sem liberar o gate geral;
-3. medir/homologar a conversão real das 9 imagens de cesta e imagens de produtos para os limites do Flow;
-4. executar regressão completa de personalização A/B/C, busca segmentada, busca direta, produto extra, upsell e checkout conhecido/novo;
-5. gerar novo preview visual da Meta e revisar em aparelho;
-6. somente depois preparar `interactive.type=flow` para o número de homologação autorizado, mantendo canary 1% e Bling OFF.
+1. executar regressão da alteração A/B/C de quantidade, incluindo retirar/aumentar/diminuir conforme política;
+2. testar busca direta e adição real de adicional em subtransação com rollback;
+3. testar upsell com produto escolhido e checkout de cliente novo;
+4. validar finalização completa e retorno `nfm_reply`/`send_location_in_chat` sem Bling;
+5. medir as 9 imagens de cesta e imagens de produto através da hidratação real da Edge;
+6. gerar novo preview visual da Meta e revisar em aparelho;
+7. somente depois preparar teste no número de homologação autorizado, sem aumentar canary nem expor clientes.
