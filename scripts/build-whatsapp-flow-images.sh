@@ -9,6 +9,7 @@ mkdir -p "$OUT_DIR"
 
 # Basket images used by the WhatsApp Flow. These are precompiled to small JPEGs so
 # the Edge Function does not need to transcode WebP/AVIF during a customer session.
+# Keep this list deterministic: these are the nine canonical basket images.
 sources=(
   "img/cesta-basica-cuiaba-varzea-grande-economica.avif"
   "img/CESTA-MINI-BONINI.webp"
