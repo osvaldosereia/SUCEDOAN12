@@ -11,7 +11,13 @@ assert.match(js,/extras_done/,'fluxo de adicionais deve continuar sinalizando ex
 assert.match(js,/Quero encomendar a cesta que escolhi\./,'mensagem de encomenda deve manter contrato do roteador');
 assert.match(js,/Terminei de escolher os produtos adicionais da minha cesta/,'mensagem de adicionais deve manter contrato do roteador');
 assert.match(js,/voltar\\s\+para\\s\+cesta/i,'helper não pode interceptar retorno da vitrine de substituição');
-assert.match(html,/whatsapp-return\.js\?v=1/,'helper deve estar carregado na página da cesta');
-assert.doesNotMatch(js,/whatsapp:\/\//,'não deve depender de custom scheme bloqueável pelo navegador interno');
+assert.match(html,/whatsapp-return\.js\?v=\d+/,'helper versionado deve estar carregado na página da cesta');
+assert.match(js,/whatsapp:\/\/send\?phone=/,'custom scheme pode existir apenas como fallback nativo');
+assert.match(js,/https:\/\/api\.whatsapp\.com\/send\?phone=/,'fallback web oficial deve continuar disponível');
+
+const primaryIndex=js.indexOf('location.assign(primary)');
+const nativeIndex=js.indexOf('location.href=native');
+assert.ok(primaryIndex>=0,'link HTTPS primário deve ser acionado no clique');
+assert.ok(nativeIndex>primaryIndex,'custom scheme não pode preceder o link HTTPS universal');
 
 console.log('PASS: retorno direto da vitrine para WhatsApp validado.');
