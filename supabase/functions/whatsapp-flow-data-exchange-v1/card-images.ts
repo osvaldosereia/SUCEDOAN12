@@ -28,21 +28,38 @@ async function hydratePremiumProductOptions(items:unknown[],supabaseUrl:string):
     const imageUrl=String(option.image_url||"").trim().slice(0,2000);
     const productId=String(option.id||"").trim();
     delete option.image_url;
-
-    // hydrateExperienceImages may already have converted image_url to base64.
-    // Enforce the per-row budget after that conversion, otherwise 20 rows could
-    // exceed the Flow Data Channel payload ceiling even when every image is valid.
     if(alreadyHydrated){
       if(alreadyHydrated.length>COMPACT_LIST_MAX_BASE64_CHARS)delete option.image;
       return option;
     }
-
     if(imageUrl){
       const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
       const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,assetKey);
       if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS)option.image=image;
     }
     return option;
+  });
+}
+
+async function hydrateNavigationProductItems(items:unknown[],supabaseUrl:string):Promise<unknown[]>{
+  return await mapLimited(items.slice(0,20),4,async(item)=>{
+    if(!item||typeof item!=="object"||Array.isArray(item))return item;
+    const row={...(item as Record<string,unknown>)};
+    const productId=String(row.id||"").trim();
+    const startRaw=row.start;
+    if(!startRaw||typeof startRaw!=="object"||Array.isArray(startRaw))return row;
+    const start={...(startRaw as Record<string,unknown>)};
+    const imageUrl=String(start.image_url||"").trim().slice(0,2000);
+    const existing=String(start.image||"").trim();
+    delete start.image_url;
+    if(existing&&existing.length>COMPACT_LIST_MAX_BASE64_CHARS)delete start.image;
+    if(!existing&&imageUrl){
+      const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
+      const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,assetKey);
+      if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS)start.image=image;
+    }
+    row.start=start;
+    return row;
   });
 }
 
@@ -54,8 +71,13 @@ export async function hydrateExperienceImagesWithCards(response:unknown,supabase
   const data=obj.data as Record<string,unknown>;
   const screen=String(obj.screen||"");
 
-  // V27 premium list: one CheckboxGroup can render up to 20 compact horizontal
-  // media rows. Images are hydrated server-side and individually budgeted.
+  // V28: NavigationList product rows. Each list can contain up to 20 small photos.
+  if(/^PRODUTOS_[A-L]$/.test(screen)&&Array.isArray(data.product_items)){
+    data.product_items=await hydrateNavigationProductItems(data.product_items as unknown[],supabaseUrl);
+    return hydrated;
+  }
+
+  // V27 premium compatibility.
   if(/^PRODUTOS_[ABC]$/.test(screen)&&Array.isArray(data.product_options)){
     data.product_options=await hydratePremiumProductOptions(data.product_options as unknown[],supabaseUrl);
     return hydrated;
