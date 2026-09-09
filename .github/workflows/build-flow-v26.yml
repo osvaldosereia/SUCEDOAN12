@@ -1,0 +1,59 @@
+name: Build Flow V26 Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'whatsapp/flows/flow-cestas-comercial-v25.json'
+      - 'scripts/build-flow-v26-simple-products.py'
+      - '.github/workflows/build-flow-v26.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-flow-v26
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate V26
+        run: python scripts/build-flow-v26-simple-products.py
+      - name: Validate JSON
+        run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v26.json >/dev/null
+      - name: Static UX checks
+        run: |
+          python - <<'PY'
+          import json
+          p='whatsapp/flows/flow-cestas-comercial-v26.json'
+          f=json.load(open(p,encoding='utf-8'))
+          personal=next(s for s in f['screens'] if s['id']=='PERSONALIZAR_A')
+          assert any(c.get('type')=='Image' and c.get('visible')=='${data.has_basket_image}' for c in personal['layout']['children'])
+          for suffix in 'ABC':
+              prod=next(s for s in f['screens'] if s['id']==f'PRODUTO_{suffix}')
+              image=next(c for c in prod['layout']['children'] if c.get('type')=='Image')
+              assert image.get('visible')=='${data.has_product_image}'
+              form=next(c for c in prod['layout']['children'] if c.get('type')=='Form')
+              qty=next(c for c in form['children'] if c.get('name')=='quantity')
+              assert qty['type']=='Dropdown'
+          print('V26 UX static checks passed')
+          PY
+      - name: Commit generated candidate
+        run: |
+          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v26.json && git ls-files --error-unmatch whatsapp/flows/flow-cestas-comercial-v26.json >/dev/null 2>&1; then
+            echo 'Flow V26 already current'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add whatsapp/flows/flow-cestas-comercial-v26.json
+          git commit -m 'chore(flow): refresh V26 candidate'
+          git push
