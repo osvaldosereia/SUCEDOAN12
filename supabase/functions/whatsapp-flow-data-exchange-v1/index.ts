@@ -63,36 +63,43 @@ Deno.serve(async(req:Request)=>{
       response={data:{status:"active"}};
       await sb.from("whatsapp_flow_exchange_events").insert({request_id:requestId,action:"ping",screen:null,status:"accepted",is_replay:isReplay});
     }else if(isObject(data)&&data.error){
-      response={data:{acknowledged:true,replayed:isReplay}};eventStatus="acknowledged";errorCode=text(data.error,120)||"client_error";
+      response={data:{acknowledged:true,replayed:isReplay}};
+      eventStatus="acknowledged";
+      errorCode=text(data.error,120)||"client_error";
       if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"client_error"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
     }else{
       if(!flowToken)throw new FlowCryptoError(400,"flow_token_required","Flow token is required.");
       let handled:any=null,handleError:any=null;
-      if(resolved?.definition_slug==="flow-cestas-comercial-v1"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v8",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+      const definitionSlug=text(resolved?.definition_slug,120)||null;
+
+      if(definitionSlug==="flow-cestas-comercial-v1"){
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v8",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
-      }else if(resolved?.definition_slug==="flow-cestas-comercial-v2"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v9",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+      }else if(definitionSlug==="flow-cestas-comercial-v2"){
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v9",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
-      }else if(resolved?.definition_slug==="flow-cestas-comercial-v3"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v12",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+      }else if(definitionSlug==="flow-cestas-comercial-v3"){
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v12",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
-      }else if(resolved?.definition_slug==="flow-cestas-comercial-v4"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v15",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+      }else if(definitionSlug==="flow-cestas-comercial-v4"){
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v15",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
-      }else if(resolved?.definition_slug==="flow-cestas-comercial-v5"){
-        // V5/V16 is the tap-to-detail V28 candidate. It remains non-default until homologated.
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v16",{p_session_id:sessionId,p_conversation_id:resolved.conversation_id,p_action:action,p_screen:screen,p_data:data});
+      }else if(definitionSlug==="flow-cestas-comercial-v5"){
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v16",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
       }else{
         const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
         handled=result.data;handleError=result.error;
       }
+
       if(handleError)throw new FlowCryptoError(500,"flow_handler_failed","Flow handler failed.");
       sessionId=handled?.session_id||sessionId;
-      if(!handled?.ok){eventStatus="rejected";errorCode=text(handled?.reason,120)||"flow_rejected";response={data:{error:true,error_code:errorCode,replayed:isReplay}}}
-      else{
-        response=await hydrateExperienceImagesWithCards(handled.response,url);
+      if(!handled?.ok){
+        eventStatus="rejected";
+        errorCode=text(handled?.reason,120)||"flow_rejected";
+        response={data:{error:true,error_code:errorCode,replayed:isReplay}};
+      }else{
+        response=await hydrateExperienceImagesWithCards(handled.response,url,definitionSlug);
         if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});
       }
       if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"unknown"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
