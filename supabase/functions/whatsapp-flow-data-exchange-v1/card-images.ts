@@ -72,28 +72,27 @@ export async function hydrateExperienceImagesWithCards(response:unknown,supabase
   const data=obj.data as Record<string,unknown>;
   const screen=String(obj.screen||"");
 
-  // V28 NavigationList contract: start.image contains compact Base64 media.
   if(/^PRODUTOS_[A-L]$/.test(screen)&&Array.isArray(data.product_items)){
     data.product_items=await hydrateNavigationProductItems(data.product_items as unknown[],supabaseUrl);
     return hydrated;
   }
 
-  // V28 detail: preserve an image already hydrated by image.ts (A-C) and only
-  // hydrate here for the additional unrolled detail screens D-L.
   if(/^PRODUTO_[A-L]$/.test(screen)){
+    const productId=String(data.product_id||data.id||"").trim();
     const existing=String(data.product_image_base64||"").trim();
     if(existing){
       data.has_product_image=true;
       delete data.product_image_url;
+      delete data.product_id;
       return hydrated;
     }
     const imageUrl=String(data.product_image_url||"").trim().slice(0,2000);
-    const productId=String(data.product_id||data.id||"").trim();
     const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
     const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,assetKey):null;
     data.product_image_base64=image||"";
     data.has_product_image=Boolean(image);
     delete data.product_image_url;
+    delete data.product_id;
     return hydrated;
   }
 
