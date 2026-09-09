@@ -5,6 +5,7 @@ const read=(p)=>readFileSync(p,'utf8');
 const resetFlow=read('supabase/migrations/20260909165800_whatsapp_new_order_reset_and_flow_entry_v19.sql');
 const orderEpoch=read('supabase/migrations/20260909165900_whatsapp_sales_context_order_epoch_v20.sql');
 const reconcile=read('supabase/migrations/20260909170300_whatsapp_flow_outbound_response_reconcile_v21.sql');
+const basketEditor=read('supabase/migrations/20260909171200_whatsapp_flow_basket_editor_option_title_limit_v22.sql');
 
 assert.match(resetFlow,/reset_whatsapp_order_context_v1/);
 assert.match(resetFlow,/status='abandoned'.*status='draft'/s,'new order must abandon only draft carts');
@@ -31,4 +32,7 @@ assert.match(reconcile,/v_mode not in \('text','audio','image','interactive'\)/)
 assert.match(reconcile,/v_expected_interactive_type='flow'/);
 assert.match(reconcile,/finish_outbound_job/);
 
-console.log('whatsapp new-order reset + Flow routing contract: ok');
+assert.match(basketEditor,/'title',left\(p\.name,30\)/,'dynamic basket item titles must stay within the Meta component limit');
+assert.match(basketEditor,/string_agg\(.*p\.name/s,'full product names must remain in the basket summary');
+
+console.log('whatsapp new-order reset + Flow routing + component limits contract: ok');
