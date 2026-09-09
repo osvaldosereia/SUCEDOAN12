@@ -3,6 +3,7 @@ const FLOW_IMAGE_MAX_BYTES=300_000;
 const FLOW_IMAGE_TARGET_EDGE=420;
 const FLOW_IMAGE_JPEG_QUALITY=78;
 const MAGICK_SPECIFIER="npm:@imagemagick/magick-wasm@0.0.43";
+const MAGICK_WASM_SPECIFIER="npm:@imagemagick/magick-wasm@0.0.43/magick.wasm";
 
 let magickModulePromise:Promise<any>|null=null;
 let magickInitPromise:Promise<void>|null=null;
@@ -68,7 +69,8 @@ async function getMagick():Promise<any>{
   const magick=await magickModulePromise;
   if(!magickInitPromise){
     magickInitPromise=(async()=>{
-      const wasmBytes=await Deno.readFile(new URL("magick.wasm",import.meta.resolve(MAGICK_SPECIFIER)));
+      const wasmUrl=new URL(import.meta.resolve(MAGICK_WASM_SPECIFIER));
+      const wasmBytes=await Deno.readFile(wasmUrl);
       await magick.initializeImageMagick(wasmBytes);
     })();
   }
