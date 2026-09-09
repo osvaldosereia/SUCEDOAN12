@@ -12,6 +12,7 @@ assert.deepEqual(flow.routing_model.PRODUTO,['SECOES']);
 assert.ok(flow.routing_model.SECOES.includes('TERMOS'));
 assert.ok(flow.routing_model.SECOES.includes('PRODUTOS'));
 assert.ok(flow.routing_model.SECOES.includes('UPSELL'));
+assert.doesNotMatch(JSON.stringify(flow),/"init-value"/,'Meta Flow schema must not include unsupported TextInput init-value');
 
 const sections=flow.screens.find(s=>s.id==='SECOES');
 assert.ok(sections);
