@@ -8,6 +8,7 @@ const reconcile=read('supabase/migrations/20260909170300_whatsapp_flow_outbound_
 const basketEditor=read('supabase/migrations/20260909171200_whatsapp_flow_basket_editor_option_title_limit_v22.sql');
 const quantityContract=read('supabase/migrations/20260909171800_whatsapp_flow_integral_quantity_validation_v22.sql');
 const productionRestore=read('supabase/migrations/20260909173300_whatsapp_flow_authorized_production_restore_after_v22_v23.sql');
+const strictPersonalization=read('supabase/migrations/20260909174500_whatsapp_flow_personalization_payload_strict_v24.sql');
 
 assert.match(resetFlow,/reset_whatsapp_order_context_v1/);
 assert.match(resetFlow,/status='abandoned'.*status='draft'/s,'new order must abandon only draft carts');
@@ -51,4 +52,10 @@ assert.match(productionRestore,/whatsapp_flow_commercial_write_enabled=true/);
 assert.match(productionRestore,/bling_order_sync_enabled=false/,'Bling remains intentionally disabled in production');
 assert.match(productionRestore,/'v22_safety_reset_superseded',true/);
 
-console.log('whatsapp new-order reset + Flow routing + component/quantity limits + authorized production restore contract: ok');
+assert.match(strictPersonalization,/bi\.quantity_editable=true/,'personalization selector must contain only editable components');
+assert.match(strictPersonalization,/'title',left\(p\.name,30\)/,'personalization selector titles remain Meta-safe');
+assert.match(strictPersonalization,/jsonb_build_object\(\s*'id'.*'title'.*'description'/s,'selector options must be reduced to the published screen schema');
+assert.doesNotMatch(strictPersonalization,/v_response:=jsonb_set\(v_response,'\{data\}'.*'quantities'/s,'strict personalization response must not leak legacy quantities into the published screen payload');
+assert.match(strictPersonalization,/'personalization_item_media_disabled',true/,'per-item media stays disabled on the personalization screen to keep Data Exchange light');
+
+console.log('whatsapp new-order reset + Flow routing + component/quantity limits + strict personalization + authorized production restore contract: ok');
