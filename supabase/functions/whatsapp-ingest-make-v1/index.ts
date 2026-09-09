@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const HEADERS={"Content-Type":"application/json","Cache-Control":"no-store"};
 const clean=(v:unknown,max=4000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").trim().slice(0,max);
@@ -8,7 +9,8 @@ const firstNonEmpty=(...values:unknown[])=>{for(const v of values){const c=clean
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   const base=Deno.env.get("SUPABASE_URL");
-  if(!base)return json({ok:false,error:"server_config"},500);
+  const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if(!base||!serviceKey)return json({ok:false,error:"server_config"},500);
   const bridgeKey=req.headers.get("x-da-ingest-key")||"";
   if(!bridgeKey)return json({ok:false,error:"unauthorized"},401);
 
@@ -50,5 +52,24 @@ Deno.serve(async(req:Request)=>{
     upstream=await fetch(target,{method:"POST",headers:{"Content-Type":"application/json","x-da-ingest-key":bridgeKey},body:JSON.stringify(raw),signal:AbortSignal.timeout(20000),redirect:"error"});
   }catch{return json({ok:false,error:"ingest_unavailable"},502)}
   const text=await upstream.text();
-  return new Response(text,{status:upstream.status,headers:HEADERS});
+  let result:any;
+  try{result=JSON.parse(text)}catch{return new Response(text,{status:upstream.status,headers:HEADERS})}
+
+  if(upstream.ok&&interactiveResponseJson&&raw.interactive_type==="nfm_reply"&&result?.conversation_id&&result?.message_row_id){
+    let response:any;
+    try{response=JSON.parse(interactiveResponseJson)}catch{return json({...result,flow_reply:{ok:false,reason:"invalid_response_json"},should_reply:false,reply_type:"none"},200)}
+    const supabase=createClient(base,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+    const {data:flowReply,error:flowError}=await supabase.rpc("process_whatsapp_flow_nfm_reply_v1",{
+      p_conversation_id:result.conversation_id,
+      p_message_id:result.message_row_id,
+      p_response:response,
+    });
+    if(flowError)return json({...result,flow_reply:{ok:false,reason:"flow_reply_processing_failed"},should_reply:false,reply_type:"none"},200);
+    if(flowReply?.ok===true&&flowReply?.return_to_chat===true){
+      return json({...result,flow_reply:flowReply,should_reply:true,reply_type:"text",reply_body:flowReply.reply_text||"Recebi suas escolhas. Vamos continuar por aqui.",action:"flow_nfm_reply",ai_job:null},200);
+    }
+    return json({...result,flow_reply:flowReply,should_reply:false,reply_type:"none",action:"flow_nfm_reply",ai_job:null},200);
+  }
+
+  return json(result,upstream.status);
 });
