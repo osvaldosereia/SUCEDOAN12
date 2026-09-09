@@ -243,7 +243,6 @@ def product_detail_screen(suffix: str):
         },
     }
 
-# Keep fixed, already-validated basket/editor/checkout screens from V27.
 cestas = base['CESTAS']
 personal = base['PERSONALIZAR_A']
 review = base['REVISAO']
@@ -280,3 +279,4 @@ flow['routing_model'] = routing
 
 dst.write_text(json.dumps(flow, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 print(f'wrote {dst} with {len(flow["screens"])} screens')
+# build trigger
