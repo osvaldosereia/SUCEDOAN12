@@ -1,33 +1,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2";
 import {decryptFlowRequest,encryptFlowResponse,FlowCryptoError,sha256Hex,type EncryptedFlowEnvelope} from "./crypto.ts";
+import {hydrateProductImage} from "./image.ts";
 
 const text=(value:unknown,max=200)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const plain=(body:string,status=200)=>new Response(body,{status,headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store"}});
 const isObject=(value:unknown):value is Record<string,unknown>=>Boolean(value)&&typeof value==="object"&&!Array.isArray(value);
 const safeAction=(value:string)=>/^[A-Za-z0-9_:-]{1,80}$/.test(value)?value:"invalid_action";
 const safeScreen=(value:string|null)=>value&&/^[A-Za-z0-9_:-]{1,120}$/.test(value)?value:null;
-const bytesToBase64=(bytes:Uint8Array)=>{let out="";for(let i=0;i<bytes.length;i+=0x8000)out+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));return btoa(out)};
-
-async function hydrateProductImage(response:unknown):Promise<unknown>{
-  if(!isObject(response)||!/^PRODUTO(?:_[123])?$/.test(String(response.screen||""))||!isObject(response.data))return response;
-  const data=response.data as Record<string,unknown>;
-  const imageUrl=text(data.product_image_url,2000);
-  if(!imageUrl||!/^https:\/\//i.test(imageUrl))return response;
-  try{
-    const r=await fetch(imageUrl,{method:"GET",redirect:"error",signal:AbortSignal.timeout(3500)});
-    if(!r.ok)return response;
-    const contentType=(r.headers.get("content-type")||"").split(";")[0].toLowerCase();
-    if(contentType!=="image/jpeg"&&contentType!=="image/png")return response;
-    const declared=Number(r.headers.get("content-length")||0);
-    if(declared>300_000)return response;
-    const bytes=new Uint8Array(await r.arrayBuffer());
-    if(bytes.length===0||bytes.length>300_000)return response;
-    data.product_image_base64=bytesToBase64(bytes);
-    delete data.product_image_url;
-  }catch{/* image is optional; text/product selection remains usable */}
-  return response;
-}
 
 Deno.serve(async(req:Request)=>{
   const requestId=crypto.randomUUID();
@@ -100,7 +80,10 @@ Deno.serve(async(req:Request)=>{
       if(handleError)throw new FlowCryptoError(500,"flow_handler_failed","Flow handler failed.");
       sessionId=handled?.session_id||sessionId;
       if(!handled?.ok){eventStatus="rejected";errorCode=text(handled?.reason,120)||"flow_rejected";response={data:{error:true,error_code:errorCode,replayed:isReplay}}}
-      else{response=await hydrateProductImage(handled.response);if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null})}
+      else{
+        response=await hydrateProductImage(handled.response,url);
+        if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});
+      }
       if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"unknown"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
     }
 
