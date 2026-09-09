@@ -1,0 +1,3408 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "CESTAS": [
+      "PERSONALIZAR_A"
+    ],
+    "PERSONALIZAR_A": [
+      "SECOES_A"
+    ],
+    "SECOES_A": [
+      "PRODUTOS_A",
+      "REVISAO"
+    ],
+    "PRODUTOS_A": [
+      "PRODUTOS_B",
+      "SECOES_B",
+      "REVISAO"
+    ],
+    "SECOES_B": [
+      "PRODUTOS_B",
+      "REVISAO"
+    ],
+    "PRODUTOS_B": [
+      "PRODUTOS_C",
+      "SECOES_C",
+      "REVISAO"
+    ],
+    "SECOES_C": [
+      "PRODUTOS_C",
+      "REVISAO"
+    ],
+    "PRODUTOS_C": [
+      "REVISAO"
+    ],
+    "REVISAO": [
+      "CLIENTE_EXISTENTE",
+      "CLIENTE_NOVO"
+    ],
+    "CLIENTE_EXISTENTE": [
+      "FINALIZAR"
+    ],
+    "CLIENTE_NOVO": [
+      "FINALIZAR"
+    ],
+    "FINALIZAR": []
+  },
+  "screens": [
+    {
+      "id": "CESTAS",
+      "title": "Escolha sua cesta",
+      "data": {
+        "intro": {
+          "type": "string",
+          "__example__": "Escolha uma cesta básica para começar."
+        },
+        "baskets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string"
+              },
+              "alt-text": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "basket-1",
+              "title": "Cesta Econômica · R$ 199,90",
+              "description": "Toque para personalizar",
+              "image": "iVBORw0KGgoAAA...",
+              "alt-text": "Cesta Econômica · R$ 199,90"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Cestas Básicas Dona Antônia"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.intro}"
+          },
+          {
+            "type": "Form",
+            "name": "basket_form",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Escolha sua cesta",
+                "name": "basket_id",
+                "data-source": "${data.baskets}",
+                "required": true,
+                "media-size": "large"
+              },
+              {
+                "type": "Footer",
+                "label": "Ver e personalizar",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_selected",
+                    "basket_id": "${form.basket_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "PERSONALIZAR_A",
+      "title": "Personalize sua cesta",
+      "data": {
+        "basket_name": {
+          "type": "string",
+          "__example__": "Mini Koblenz"
+        },
+        "basket_price": {
+          "type": "string",
+          "__example__": "R$ 180,00"
+        },
+        "basket_note": {
+          "type": "string",
+          "__example__": "A quantidade já vem selecionada. Máximo de 6 unidades e sempre respeitando o estoque."
+        },
+        "basket_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "has_basket_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "has_hygiene": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "init_values": {
+          "type": "object",
+          "properties": {
+            "q01": {
+              "type": "string"
+            },
+            "q02": {
+              "type": "string"
+            },
+            "q03": {
+              "type": "string"
+            },
+            "q04": {
+              "type": "string"
+            },
+            "q05": {
+              "type": "string"
+            },
+            "q06": {
+              "type": "string"
+            },
+            "q07": {
+              "type": "string"
+            },
+            "q08": {
+              "type": "string"
+            },
+            "q09": {
+              "type": "string"
+            },
+            "q10": {
+              "type": "string"
+            },
+            "q11": {
+              "type": "string"
+            },
+            "q12": {
+              "type": "string"
+            },
+            "q13": {
+              "type": "string"
+            },
+            "q14": {
+              "type": "string"
+            },
+            "q15": {
+              "type": "string"
+            },
+            "q16": {
+              "type": "string"
+            },
+            "q17": {
+              "type": "string"
+            },
+            "q18": {
+              "type": "string"
+            },
+            "q19": {
+              "type": "string"
+            },
+            "q20": {
+              "type": "string"
+            },
+            "q21": {
+              "type": "string"
+            },
+            "q22": {
+              "type": "string"
+            },
+            "q23": {
+              "type": "string"
+            },
+            "q24": {
+              "type": "string"
+            },
+            "q25": {
+              "type": "string"
+            },
+            "q26": {
+              "type": "string"
+            },
+            "q27": {
+              "type": "string"
+            }
+          },
+          "__example__": {
+            "q01": "1",
+            "q02": "1",
+            "q03": "1",
+            "q04": "1",
+            "q05": "1",
+            "q06": "1",
+            "q07": "1",
+            "q08": "1",
+            "q09": "1",
+            "q10": "1",
+            "q11": "1",
+            "q12": "1",
+            "q13": "1",
+            "q14": "1",
+            "q15": "1",
+            "q16": "1",
+            "q17": "1",
+            "q18": "1",
+            "q19": "1",
+            "q20": "1",
+            "q21": "1",
+            "q22": "1",
+            "q23": "1",
+            "q24": "1",
+            "q25": "1",
+            "q26": "1",
+            "q27": "1"
+          }
+        },
+        "q01_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q01_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q01_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q01_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q02_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q02_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q02_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q02_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q03_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q03_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q03_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q03_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q04_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q04_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q04_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q04_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q05_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q05_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q05_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q05_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q06_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q06_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q06_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q06_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q07_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q07_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q07_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q07_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q08_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q08_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q08_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q08_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q09_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q09_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q09_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q09_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q10_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q10_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q10_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q10_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q11_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q11_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q11_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q11_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q12_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q12_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q12_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q12_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q13_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q13_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q13_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q13_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q14_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q14_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q14_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q14_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q15_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q15_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q15_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q15_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q16_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q16_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q16_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q16_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q17_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q17_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q17_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q17_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q18_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q18_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q18_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q18_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q19_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q19_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q19_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q19_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q20_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q20_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q20_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q20_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q21_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q21_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q21_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q21_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q22_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q22_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q22_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q22_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q23_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q23_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q23_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q23_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q24_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q24_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q24_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q24_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q25_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q25_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q25_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q25_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q26_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q26_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q26_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q26_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "q27_label": {
+          "type": "string",
+          "__example__": "Arroz 5kg"
+        },
+        "q27_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q27_enabled": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q27_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Retirar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Image",
+            "src": "${data.basket_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.basket_name}",
+            "visible": "${data.has_basket_image}"
+          },
+          {
+            "type": "TextHeading",
+            "text": "${data.basket_name}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.basket_price}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.basket_note}"
+          },
+          {
+            "type": "Form",
+            "name": "bulk_quantity_form",
+            "init-values": {
+              "q01": "${data.init_values.q01}",
+              "q02": "${data.init_values.q02}",
+              "q03": "${data.init_values.q03}",
+              "q04": "${data.init_values.q04}",
+              "q05": "${data.init_values.q05}",
+              "q06": "${data.init_values.q06}",
+              "q07": "${data.init_values.q07}",
+              "q08": "${data.init_values.q08}",
+              "q09": "${data.init_values.q09}",
+              "q10": "${data.init_values.q10}",
+              "q11": "${data.init_values.q11}",
+              "q12": "${data.init_values.q12}",
+              "q13": "${data.init_values.q13}",
+              "q14": "${data.init_values.q14}",
+              "q15": "${data.init_values.q15}",
+              "q16": "${data.init_values.q16}",
+              "q17": "${data.init_values.q17}",
+              "q18": "${data.init_values.q18}",
+              "q19": "${data.init_values.q19}",
+              "q20": "${data.init_values.q20}",
+              "q21": "${data.init_values.q21}",
+              "q22": "${data.init_values.q22}",
+              "q23": "${data.init_values.q23}",
+              "q24": "${data.init_values.q24}",
+              "q25": "${data.init_values.q25}",
+              "q26": "${data.init_values.q26}",
+              "q27": "${data.init_values.q27}"
+            },
+            "children": [
+              {
+                "type": "TextSubheading",
+                "text": "Alimentos"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q01",
+                "label": "${data.q01_label}",
+                "data-source": "${data.q01_options}",
+                "required": false,
+                "visible": "${data.q01_visible}",
+                "enabled": "${data.q01_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q02",
+                "label": "${data.q02_label}",
+                "data-source": "${data.q02_options}",
+                "required": false,
+                "visible": "${data.q02_visible}",
+                "enabled": "${data.q02_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q03",
+                "label": "${data.q03_label}",
+                "data-source": "${data.q03_options}",
+                "required": false,
+                "visible": "${data.q03_visible}",
+                "enabled": "${data.q03_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q04",
+                "label": "${data.q04_label}",
+                "data-source": "${data.q04_options}",
+                "required": false,
+                "visible": "${data.q04_visible}",
+                "enabled": "${data.q04_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q05",
+                "label": "${data.q05_label}",
+                "data-source": "${data.q05_options}",
+                "required": false,
+                "visible": "${data.q05_visible}",
+                "enabled": "${data.q05_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q06",
+                "label": "${data.q06_label}",
+                "data-source": "${data.q06_options}",
+                "required": false,
+                "visible": "${data.q06_visible}",
+                "enabled": "${data.q06_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q07",
+                "label": "${data.q07_label}",
+                "data-source": "${data.q07_options}",
+                "required": false,
+                "visible": "${data.q07_visible}",
+                "enabled": "${data.q07_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q08",
+                "label": "${data.q08_label}",
+                "data-source": "${data.q08_options}",
+                "required": false,
+                "visible": "${data.q08_visible}",
+                "enabled": "${data.q08_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q09",
+                "label": "${data.q09_label}",
+                "data-source": "${data.q09_options}",
+                "required": false,
+                "visible": "${data.q09_visible}",
+                "enabled": "${data.q09_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q10",
+                "label": "${data.q10_label}",
+                "data-source": "${data.q10_options}",
+                "required": false,
+                "visible": "${data.q10_visible}",
+                "enabled": "${data.q10_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q11",
+                "label": "${data.q11_label}",
+                "data-source": "${data.q11_options}",
+                "required": false,
+                "visible": "${data.q11_visible}",
+                "enabled": "${data.q11_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q12",
+                "label": "${data.q12_label}",
+                "data-source": "${data.q12_options}",
+                "required": false,
+                "visible": "${data.q12_visible}",
+                "enabled": "${data.q12_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q13",
+                "label": "${data.q13_label}",
+                "data-source": "${data.q13_options}",
+                "required": false,
+                "visible": "${data.q13_visible}",
+                "enabled": "${data.q13_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q14",
+                "label": "${data.q14_label}",
+                "data-source": "${data.q14_options}",
+                "required": false,
+                "visible": "${data.q14_visible}",
+                "enabled": "${data.q14_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q15",
+                "label": "${data.q15_label}",
+                "data-source": "${data.q15_options}",
+                "required": false,
+                "visible": "${data.q15_visible}",
+                "enabled": "${data.q15_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q16",
+                "label": "${data.q16_label}",
+                "data-source": "${data.q16_options}",
+                "required": false,
+                "visible": "${data.q16_visible}",
+                "enabled": "${data.q16_enabled}"
+              },
+              {
+                "type": "TextSubheading",
+                "text": "Higiene e Limpeza",
+                "visible": "${data.has_hygiene}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q17",
+                "label": "${data.q17_label}",
+                "data-source": "${data.q17_options}",
+                "required": false,
+                "visible": "${data.q17_visible}",
+                "enabled": "${data.q17_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q18",
+                "label": "${data.q18_label}",
+                "data-source": "${data.q18_options}",
+                "required": false,
+                "visible": "${data.q18_visible}",
+                "enabled": "${data.q18_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q19",
+                "label": "${data.q19_label}",
+                "data-source": "${data.q19_options}",
+                "required": false,
+                "visible": "${data.q19_visible}",
+                "enabled": "${data.q19_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q20",
+                "label": "${data.q20_label}",
+                "data-source": "${data.q20_options}",
+                "required": false,
+                "visible": "${data.q20_visible}",
+                "enabled": "${data.q20_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q21",
+                "label": "${data.q21_label}",
+                "data-source": "${data.q21_options}",
+                "required": false,
+                "visible": "${data.q21_visible}",
+                "enabled": "${data.q21_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q22",
+                "label": "${data.q22_label}",
+                "data-source": "${data.q22_options}",
+                "required": false,
+                "visible": "${data.q22_visible}",
+                "enabled": "${data.q22_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q23",
+                "label": "${data.q23_label}",
+                "data-source": "${data.q23_options}",
+                "required": false,
+                "visible": "${data.q23_visible}",
+                "enabled": "${data.q23_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q24",
+                "label": "${data.q24_label}",
+                "data-source": "${data.q24_options}",
+                "required": false,
+                "visible": "${data.q24_visible}",
+                "enabled": "${data.q24_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q25",
+                "label": "${data.q25_label}",
+                "data-source": "${data.q25_options}",
+                "required": false,
+                "visible": "${data.q25_visible}",
+                "enabled": "${data.q25_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q26",
+                "label": "${data.q26_label}",
+                "data-source": "${data.q26_options}",
+                "required": false,
+                "visible": "${data.q26_visible}",
+                "enabled": "${data.q26_enabled}"
+              },
+              {
+                "type": "Dropdown",
+                "name": "q27",
+                "label": "${data.q27_label}",
+                "data-source": "${data.q27_options}",
+                "required": false,
+                "visible": "${data.q27_visible}",
+                "enabled": "${data.q27_enabled}"
+              },
+              {
+                "type": "Footer",
+                "label": "Atualizar cesta",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_bulk_update_v1",
+                    "q01": "${form.q01}",
+                    "q02": "${form.q02}",
+                    "q03": "${form.q03}",
+                    "q04": "${form.q04}",
+                    "q05": "${form.q05}",
+                    "q06": "${form.q06}",
+                    "q07": "${form.q07}",
+                    "q08": "${form.q08}",
+                    "q09": "${form.q09}",
+                    "q10": "${form.q10}",
+                    "q11": "${form.q11}",
+                    "q12": "${form.q12}",
+                    "q13": "${form.q13}",
+                    "q14": "${form.q14}",
+                    "q15": "${form.q15}",
+                    "q16": "${form.q16}",
+                    "q17": "${form.q17}",
+                    "q18": "${form.q18}",
+                    "q19": "${form.q19}",
+                    "q20": "${form.q20}",
+                    "q21": "${form.q21}",
+                    "q22": "${form.q22}",
+                    "q23": "${form.q23}",
+                    "q24": "${form.q24}",
+                    "q25": "${form.q25}",
+                    "q26": "${form.q26}",
+                    "q27": "${form.q27}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "SECOES_A",
+      "title": "Adicionar produtos",
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Escolha uma categoria ou busque pelo nome."
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Total atual: R$ 180,00"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "mercearia",
+              "title": "Mercearia"
+            },
+            {
+              "id": "limpeza",
+              "title": "Limpeza e lavanderia"
+            },
+            {
+              "id": "higiene",
+              "title": "Higiene e beleza"
+            },
+            {
+              "id": "buscar",
+              "title": "Buscar pelo nome"
+            },
+            {
+              "id": "revisar",
+              "title": "Revisar pedido"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Adicionar mais produtos"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.cart_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "choice",
+            "label": "O que deseja ver?",
+            "data-source": "${data.choices}",
+            "required": true
+          },
+          {
+            "type": "TextInput",
+            "name": "direct_query",
+            "label": "Nome do produto (opcional)",
+            "required": false,
+            "helper-text": "Preencha somente se escolher Buscar pelo nome."
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "simple_extras_continue_v1",
+                "choice": "${form.choice}",
+                "direct_query": "${form.direct_query}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTOS_A",
+      "title": "Adicionar produtos",
+      "data": {
+        "query_title": {
+          "type": "string",
+          "__example__": "Limpeza e lavanderia"
+        },
+        "result_note": {
+          "type": "string",
+          "__example__": "Escolha a quantidade. Mostrando 3 de 12"
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Total atual: R$ 180,00"
+        },
+        "next_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "mais",
+              "title": "Ver mais produtos"
+            },
+            {
+              "id": "buscar",
+              "title": "Outra categoria ou busca"
+            },
+            {
+              "id": "revisar",
+              "title": "Revisar pedido"
+            }
+          ]
+        },
+        "p1_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p1_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p1_name": {
+          "type": "string",
+          "__example__": "Produto 1"
+        },
+        "p1_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p1_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p1_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p1_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q1_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "p2_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p2_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p2_name": {
+          "type": "string",
+          "__example__": "Produto 2"
+        },
+        "p2_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p2_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p2_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p2_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q2_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "p3_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p3_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p3_name": {
+          "type": "string",
+          "__example__": "Produto 3"
+        },
+        "p3_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p3_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p3_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p3_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q3_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.query_title}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.cart_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.result_note}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p1_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p1_name}",
+            "visible": "${data.p1_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p1_name}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p1_price}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p1_description}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q1",
+            "label": "Quantidade",
+            "data-source": "${data.q1_options}",
+            "required": false,
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p2_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p2_name}",
+            "visible": "${data.p2_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p2_name}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p2_price}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p2_description}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q2",
+            "label": "Quantidade",
+            "data-source": "${data.q2_options}",
+            "required": false,
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p3_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p3_name}",
+            "visible": "${data.p3_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p3_name}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p3_price}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p3_description}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q3",
+            "label": "Quantidade",
+            "data-source": "${data.q3_options}",
+            "required": false,
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "next_action",
+            "label": "Depois disso",
+            "data-source": "${data.next_actions}",
+            "required": true
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "simple_products_continue_v1",
+                "q1": "${form.q1}",
+                "q2": "${form.q2}",
+                "q3": "${form.q3}",
+                "next_action": "${form.next_action}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "SECOES_B",
+      "title": "Adicionar produtos",
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Escolha uma categoria ou busque pelo nome."
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Total atual: R$ 180,00"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "mercearia",
+              "title": "Mercearia"
+            },
+            {
+              "id": "limpeza",
+              "title": "Limpeza e lavanderia"
+            },
+            {
+              "id": "higiene",
+              "title": "Higiene e beleza"
+            },
+            {
+              "id": "buscar",
+              "title": "Buscar pelo nome"
+            },
+            {
+              "id": "revisar",
+              "title": "Revisar pedido"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Adicionar mais produtos"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.cart_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "choice",
+            "label": "O que deseja ver?",
+            "data-source": "${data.choices}",
+            "required": true
+          },
+          {
+            "type": "TextInput",
+            "name": "direct_query",
+            "label": "Nome do produto (opcional)",
+            "required": false,
+            "helper-text": "Preencha somente se escolher Buscar pelo nome."
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "simple_extras_continue_v1",
+                "choice": "${form.choice}",
+                "direct_query": "${form.direct_query}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTOS_B",
+      "title": "Adicionar produtos",
+      "data": {
+        "query_title": {
+          "type": "string",
+          "__example__": "Limpeza e lavanderia"
+        },
+        "result_note": {
+          "type": "string",
+          "__example__": "Escolha a quantidade. Mostrando 3 de 12"
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Total atual: R$ 180,00"
+        },
+        "next_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "mais",
+              "title": "Ver mais produtos"
+            },
+            {
+              "id": "buscar",
+              "title": "Outra categoria ou busca"
+            },
+            {
+              "id": "revisar",
+              "title": "Revisar pedido"
+            }
+          ]
+        },
+        "p1_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p1_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p1_name": {
+          "type": "string",
+          "__example__": "Produto 1"
+        },
+        "p1_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p1_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p1_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p1_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q1_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "p2_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p2_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p2_name": {
+          "type": "string",
+          "__example__": "Produto 2"
+        },
+        "p2_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p2_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p2_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p2_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q2_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "p3_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p3_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p3_name": {
+          "type": "string",
+          "__example__": "Produto 3"
+        },
+        "p3_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p3_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p3_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p3_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q3_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.query_title}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.cart_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.result_note}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p1_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p1_name}",
+            "visible": "${data.p1_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p1_name}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p1_price}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p1_description}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q1",
+            "label": "Quantidade",
+            "data-source": "${data.q1_options}",
+            "required": false,
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p2_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p2_name}",
+            "visible": "${data.p2_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p2_name}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p2_price}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p2_description}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q2",
+            "label": "Quantidade",
+            "data-source": "${data.q2_options}",
+            "required": false,
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p3_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p3_name}",
+            "visible": "${data.p3_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p3_name}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p3_price}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p3_description}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q3",
+            "label": "Quantidade",
+            "data-source": "${data.q3_options}",
+            "required": false,
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "next_action",
+            "label": "Depois disso",
+            "data-source": "${data.next_actions}",
+            "required": true
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "simple_products_continue_v1",
+                "q1": "${form.q1}",
+                "q2": "${form.q2}",
+                "q3": "${form.q3}",
+                "next_action": "${form.next_action}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "SECOES_C",
+      "title": "Adicionar produtos",
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Escolha uma categoria ou busque pelo nome."
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Total atual: R$ 180,00"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "mercearia",
+              "title": "Mercearia"
+            },
+            {
+              "id": "limpeza",
+              "title": "Limpeza e lavanderia"
+            },
+            {
+              "id": "higiene",
+              "title": "Higiene e beleza"
+            },
+            {
+              "id": "buscar",
+              "title": "Buscar pelo nome"
+            },
+            {
+              "id": "revisar",
+              "title": "Revisar pedido"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Adicionar mais produtos"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.cart_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.message}"
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "choice",
+            "label": "O que deseja ver?",
+            "data-source": "${data.choices}",
+            "required": true
+          },
+          {
+            "type": "TextInput",
+            "name": "direct_query",
+            "label": "Nome do produto (opcional)",
+            "required": false,
+            "helper-text": "Preencha somente se escolher Buscar pelo nome."
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "simple_extras_continue_v1",
+                "choice": "${form.choice}",
+                "direct_query": "${form.direct_query}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "PRODUTOS_C",
+      "title": "Adicionar produtos",
+      "data": {
+        "query_title": {
+          "type": "string",
+          "__example__": "Limpeza e lavanderia"
+        },
+        "result_note": {
+          "type": "string",
+          "__example__": "Escolha a quantidade. Mostrando 3 de 12"
+        },
+        "cart_total": {
+          "type": "string",
+          "__example__": "Total atual: R$ 180,00"
+        },
+        "next_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "mais",
+              "title": "Ver mais produtos"
+            },
+            {
+              "id": "buscar",
+              "title": "Outra categoria ou busca"
+            },
+            {
+              "id": "revisar",
+              "title": "Revisar pedido"
+            }
+          ]
+        },
+        "p1_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p1_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p1_name": {
+          "type": "string",
+          "__example__": "Produto 1"
+        },
+        "p1_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p1_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p1_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p1_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q1_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "p2_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p2_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p2_name": {
+          "type": "string",
+          "__example__": "Produto 2"
+        },
+        "p2_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p2_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p2_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p2_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q2_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        },
+        "p3_visible": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "p3_id": {
+          "type": "string",
+          "__example__": "00000000-0000-0000-0000-000000000000"
+        },
+        "p3_name": {
+          "type": "string",
+          "__example__": "Produto 3"
+        },
+        "p3_price": {
+          "type": "string",
+          "__example__": "R$ 9,90"
+        },
+        "p3_description": {
+          "type": "string",
+          "__example__": "Marca · embalagem"
+        },
+        "p3_image_base64": {
+          "type": "string",
+          "__example__": "iVBORw0KGgoAAA..."
+        },
+        "p3_has_image": {
+          "type": "boolean",
+          "__example__": true
+        },
+        "q3_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "0",
+              "title": "0 · Não adicionar"
+            },
+            {
+              "id": "1",
+              "title": "1 unidade"
+            },
+            {
+              "id": "2",
+              "title": "2 unidades"
+            }
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.query_title}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.cart_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.result_note}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p1_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p1_name}",
+            "visible": "${data.p1_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p1_name}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p1_price}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p1_description}",
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q1",
+            "label": "Quantidade",
+            "data-source": "${data.q1_options}",
+            "required": false,
+            "visible": "${data.p1_visible}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p2_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p2_name}",
+            "visible": "${data.p2_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p2_name}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p2_price}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p2_description}",
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q2",
+            "label": "Quantidade",
+            "data-source": "${data.q2_options}",
+            "required": false,
+            "visible": "${data.p2_visible}"
+          },
+          {
+            "type": "Image",
+            "src": "${data.p3_image_base64}",
+            "scale-type": "contain",
+            "aspect-ratio": 1,
+            "alt-text": "${data.p3_name}",
+            "visible": "${data.p3_has_image}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.p3_name}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.p3_price}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.p3_description}",
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "Dropdown",
+            "name": "q3",
+            "label": "Quantidade",
+            "data-source": "${data.q3_options}",
+            "required": false,
+            "visible": "${data.p3_visible}"
+          },
+          {
+            "type": "Footer",
+            "label": "Revisar pedido",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "simple_products_continue_v1",
+                "q1": "${form.q1}",
+                "q2": "${form.q2}",
+                "q3": "${form.q3}",
+                "next_action": "revisar"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "REVISAO",
+      "title": "Revise seu pedido",
+      "data": {
+        "summary": {
+          "type": "string",
+          "__example__": "Cesta Econômica\n2 × Sabonete"
+        },
+        "total": {
+          "type": "string",
+          "__example__": "R$ 259,70"
+        },
+        "pricing_note": {
+          "type": "string",
+          "__example__": "A cesta possui preço comercial próprio."
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Seu pedido"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.summary}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "Total: ${data.total}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "${data.pricing_note}"
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar para entrega",
+            "on-click-action": {
+              "name": "data_exchange",
+              "payload": {
+                "trigger": "review_confirm"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CLIENTE_EXISTENTE",
+      "title": "Entrega e pagamento",
+      "data": {
+        "customer_name": {
+          "type": "string",
+          "__example__": "Maria Silva"
+        },
+        "address_summary": {
+          "type": "string",
+          "__example__": "Rua A, 123, Centro"
+        },
+        "customer_registered": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "error_text": {
+          "type": "string",
+          "__example__": ""
+        },
+        "payment_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "pix",
+              "title": "PIX na entrega"
+            }
+          ]
+        },
+        "name_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "street_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "number_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "complement_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "neighborhood_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "city_value": {
+          "type": "string",
+          "__example__": "Cuiabá"
+        },
+        "locator_value": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Entrega e pagamento"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.customer_name}"
+          },
+          {
+            "type": "TextBody",
+            "text": "Entrega: ${data.address_summary}"
+          },
+          {
+            "type": "TextCaption",
+            "text": "Se estiver correto, escolha apenas como deseja pagar na entrega."
+          },
+          {
+            "type": "Form",
+            "name": "known_customer_form",
+            "children": [
+              {
+                "type": "Dropdown",
+                "label": "Forma de pagamento",
+                "name": "payment_method",
+                "data-source": "${data.payment_options}",
+                "required": true
+              },
+              {
+                "type": "TextArea",
+                "label": "Observação (opcional)",
+                "name": "notes",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Confirmar pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "checkout_confirm",
+                    "payment_method": "${form.payment_method}",
+                    "notes": "${form.notes}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CLIENTE_NOVO",
+      "title": "Entrega e pagamento",
+      "data": {
+        "customer_name": {
+          "type": "string",
+          "__example__": "Maria Silva"
+        },
+        "address_summary": {
+          "type": "string",
+          "__example__": "Rua A, 123, Centro"
+        },
+        "customer_registered": {
+          "type": "boolean",
+          "__example__": false
+        },
+        "error_text": {
+          "type": "string",
+          "__example__": ""
+        },
+        "payment_options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "pix",
+              "title": "PIX na entrega"
+            }
+          ]
+        },
+        "name_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "street_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "number_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "complement_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "neighborhood_value": {
+          "type": "string",
+          "__example__": ""
+        },
+        "city_value": {
+          "type": "string",
+          "__example__": "Cuiabá"
+        },
+        "locator_value": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Onde vamos entregar?"
+          },
+          {
+            "type": "TextBody",
+            "text": "Preencha somente os dados necessários para a entrega."
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.error_text}"
+          },
+          {
+            "type": "Form",
+            "name": "new_customer_form",
+            "children": [
+              {
+                "type": "TextInput",
+                "label": "Nome",
+                "name": "name",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Rua",
+                "name": "street",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Número",
+                "name": "number",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Complemento",
+                "name": "complement",
+                "required": false
+              },
+              {
+                "type": "TextInput",
+                "label": "Bairro",
+                "name": "neighborhood",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Cidade",
+                "name": "city",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "label": "Referência",
+                "name": "locator",
+                "required": false
+              },
+              {
+                "type": "Dropdown",
+                "label": "Forma de pagamento",
+                "name": "payment_method",
+                "data-source": "${data.payment_options}",
+                "required": true
+              },
+              {
+                "type": "TextArea",
+                "label": "Observação (opcional)",
+                "name": "notes",
+                "required": false
+              },
+              {
+                "type": "Footer",
+                "label": "Confirmar pedido",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "checkout_confirm",
+                    "name": "${form.name}",
+                    "street": "${form.street}",
+                    "number": "${form.number}",
+                    "complement": "${form.complement}",
+                    "neighborhood": "${form.neighborhood}",
+                    "city": "${form.city}",
+                    "locator": "${form.locator}",
+                    "payment_method": "${form.payment_method}",
+                    "notes": "${form.notes}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "FINALIZAR",
+      "title": "Pedido reservado",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "confirmation": {
+          "type": "string",
+          "__example__": "Pedido confirmado com sucesso."
+        },
+        "final_summary": {
+          "type": "string",
+          "__example__": "Cesta Econômica"
+        },
+        "final_total": {
+          "type": "string",
+          "__example__": "R$ 259,70"
+        },
+        "next_step": {
+          "type": "string",
+          "__example__": "Envie sua localização no chat."
+        },
+        "write_enabled": {
+          "type": "boolean",
+          "__example__": false
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "${data.confirmation}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.final_summary}"
+          },
+          {
+            "type": "TextSubheading",
+            "text": "${data.final_total}"
+          },
+          {
+            "type": "TextBody",
+            "text": "${data.next_step}"
+          },
+          {
+            "type": "Footer",
+            "label": "Voltar ao WhatsApp",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "action": "completed"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
