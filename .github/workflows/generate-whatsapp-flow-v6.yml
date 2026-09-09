@@ -25,7 +25,7 @@ jobs:
       - name: Commit generated Flow
         shell: bash
         run: |
-          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v6.json; then
+          if [ -z "$(git status --porcelain -- whatsapp/flows/flow-cestas-comercial-v6.json)" ]; then
             echo "Flow V6 already current"
             exit 0
           fi
