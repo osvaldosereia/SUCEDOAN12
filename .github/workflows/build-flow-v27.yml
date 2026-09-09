@@ -1,0 +1,72 @@
+name: Build Flow V27 Premium UX
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'whatsapp/flows/flow-cestas-comercial-v26.json'
+      - 'scripts/build-flow-v27-premium-ux.py'
+      - '.github/workflows/build-flow-v27.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-flow-v27
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate V27
+        run: python scripts/build-flow-v27-premium-ux.py
+      - name: Validate JSON
+        run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v27.json >/dev/null
+      - name: Premium UX static checks
+        run: |
+          python - <<'PY'
+          import json
+          p='whatsapp/flows/flow-cestas-comercial-v27.json'
+          f=json.load(open(p,encoding='utf-8'))
+          ids=[s['id'] for s in f['screens']]
+          assert len(ids)==16, ids
+          assert 'FALHA_FINALIZACAO' in ids
+          assert all(f'QUANTIDADES_{x}' in ids for x in 'ABC')
+          for suffix in 'ABC':
+              sec=next(s for s in f['screens'] if s['id']==f'SECOES_{suffix}')
+              form=next(c for c in sec['layout']['children'] if c.get('type')=='Form')
+              chips=next(c for c in form['children'] if c.get('type')=='ChipsSelector')
+              assert chips['max-selected-items']==1
+              assert chips['on-select-action']['name']=='data_exchange'
+              prod=next(s for s in f['screens'] if s['id']==f'PRODUTOS_{suffix}')
+              pform=next(c for c in prod['layout']['children'] if c.get('type')=='Form')
+              group=next(c for c in pform['children'] if c.get('type')=='CheckboxGroup')
+              assert group['max-selected-items']==20
+              assert group['media-size']=='regular'
+              qty=next(s for s in f['screens'] if s['id']==f'QUANTIDADES_{suffix}')
+              qform=next(c for c in qty['layout']['children'] if c.get('type')=='Form')
+              assert sum(c.get('type')=='Dropdown' for c in qform['children'])==20
+          review=next(s for s in f['screens'] if s['id']=='REVISAO')
+          assert any(c.get('text')=='${data.total_label}' for c in review['layout']['children'])
+          text=json.dumps(f,ensure_ascii=False)
+          assert 'Total: ${data.total}' not in text
+          print('V27 premium UX static checks passed')
+          PY
+      - name: Commit generated candidate
+        run: |
+          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v27.json && git ls-files --error-unmatch whatsapp/flows/flow-cestas-comercial-v27.json >/dev/null 2>&1; then
+            echo 'Flow V27 already current'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add whatsapp/flows/flow-cestas-comercial-v27.json
+          git commit -m 'chore(flow): refresh V27 premium UX candidate'
+          git push
