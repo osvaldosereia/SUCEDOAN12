@@ -1,0 +1,65 @@
+name: Build WhatsApp Flow V28
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build-flow-v28-product-detail.py'
+      - 'whatsapp/flows/flow-cestas-comercial-v27.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build V28
+        run: python scripts/build-flow-v28-product-detail.py
+      - name: Static validation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('whatsapp/flows/flow-cestas-comercial-v28.json')
+          f=json.loads(p.read_text())
+          ids=[s['id'] for s in f['screens']]
+          assert f['version']=='7.3'
+          assert f['data_api_version']=='3.0'
+          assert len(ids)==55, len(ids)
+          assert 'MENU_A' in ids and 'PRODUTOS_A' in ids and 'PRODUTO_A' in ids
+          assert 'MENU_L' in ids and 'PRODUTOS_L' in ids and 'PRODUTO_L' in ids
+          for r in 'ABCDEFGHIJKL':
+              s=next(x for x in f['screens'] if x['id']==f'PRODUTOS_{r}')
+              nav=[c for c in s['layout']['children'] if c['type']=='NavigationList']
+              assert len(nav)==2
+              d=next(x for x in f['screens'] if x['id']==f'PRODUTO_{r}')
+              raw=json.dumps(d,ensure_ascii=False)
+              assert 'Adicionar ao pedido' in raw
+              assert 'CheckboxGroup' not in raw
+          raw=json.dumps(f,ensure_ascii=False)
+          assert 'selected_products' not in raw
+          print('V28 static validation OK:',len(ids),'screens')
+          PY
+      - name: Commit generated V28
+        run: |
+          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v28.json; then
+            echo 'No generated changes'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add whatsapp/flows/flow-cestas-comercial-v28.json
+          git commit -m 'build(flow): generate v28 tap-to-detail UX'
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 2
+          done
+          exit 1
