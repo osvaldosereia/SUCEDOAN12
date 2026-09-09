@@ -171,3 +171,5 @@ flow["x-dona-antonia"] = {
 dst.write_text(json.dumps(flow, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print(dst)
 print(f"PERSONALIZAR_A components={nested_count}")
+
+# Triggered by the V25 build workflow after the workflow file exists.
