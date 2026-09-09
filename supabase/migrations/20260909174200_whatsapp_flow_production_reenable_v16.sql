@@ -1,0 +1,25 @@
+begin;
+
+update public.automation_config
+set whatsapp_live_canary_percent=100,
+    experience_orchestrator_enabled=true,
+    whatsapp_flow_data_exchange_enabled=true,
+    whatsapp_flow_send_enabled=true,
+    whatsapp_flow_commercial_write_enabled=true,
+    bling_order_sync_enabled=false,
+    updated_at=now()
+where id=1;
+
+update public.experience_definitions
+set status='active',
+    metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+      'production_enabled',true,
+      'live_percent',100,
+      'customer_checkout_constraint_fixed',true,
+      'implementation_stage','production_reenabled_v16',
+      'production_reenabled_at',now()
+    ),
+    updated_at=now()
+where slug='flow-cestas-comercial-v1';
+
+commit;
