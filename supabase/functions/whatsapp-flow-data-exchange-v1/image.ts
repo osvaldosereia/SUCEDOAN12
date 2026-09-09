@@ -188,7 +188,7 @@ export async function hydrateExperienceImages(response:unknown,supabaseUrl:strin
     data.baskets=await hydrateSelectorItems(data.baskets as unknown[],supabaseUrl,9);
   }
 
-  if(/^PERSONALIZAR_[123]$/.test(screen)){
+  if(/^PERSONALIZAR_[ABC]$/.test(screen)){
     if(Array.isArray(data.items)){
       data.items=await hydrateSelectorItems(data.items as unknown[],supabaseUrl,20);
     }
@@ -200,7 +200,7 @@ export async function hydrateExperienceImages(response:unknown,supabaseUrl:strin
     return response;
   }
 
-  if(/^PRODUTOS_[123]$/.test(screen)&&Array.isArray(data.products)){
+  if(/^PRODUTOS_[ABC]$/.test(screen)&&Array.isArray(data.products)){
     data.products=await hydrateSelectorItems(data.products as unknown[],supabaseUrl,12);
     return response;
   }
@@ -210,7 +210,7 @@ export async function hydrateExperienceImages(response:unknown,supabaseUrl:strin
     return response;
   }
 
-  if(/^PRODUTO_[123]$/.test(screen)){
+  if(/^PRODUTO_[ABC]$/.test(screen)){
     const imageUrl=String(data.product_image_url||"").trim().slice(0,2000);
     const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl):null;
     data.product_image_base64=image||FALLBACK_IMAGE_BASE64;
