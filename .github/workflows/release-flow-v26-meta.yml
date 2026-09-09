@@ -26,11 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Require Meta token
-        shell: bash
-        run: |
-          test -n "$META_ACCESS_TOKEN" || { echo 'META_ACCESS_TOKEN GitHub secret is missing' >&2; exit 2; }
-
       - name: Validate local candidate
         shell: bash
         run: |
@@ -49,6 +44,11 @@ jobs:
               assert sum(c.get('type')=='Dropdown' for c in s['layout']['children'])==3
           print('local_candidate_ok')
           PY
+
+      - name: Require Meta token
+        shell: bash
+        run: |
+          test -n "$META_ACCESS_TOKEN" || { echo 'META_ACCESS_TOKEN GitHub secret is missing' >&2; exit 2; }
 
       - name: Resolve or create Meta draft
         id: flow
@@ -87,6 +87,7 @@ jobs:
           RESPONSE=$(curl -sS --fail-with-body -X POST \
             -H "Authorization: Bearer $META_ACCESS_TOKEN" \
             -F 'asset_type=FLOW_JSON' \
+            -F 'name=flow.json' \
             -F 'file=@whatsapp/flows/flow-cestas-comercial-v26.json;type=application/json' \
             "https://graph.facebook.com/$GRAPH_VERSION/$FLOW_ID/assets")
           echo "$RESPONSE" | jq .
@@ -105,10 +106,11 @@ jobs:
           FLOW_ID='${{ steps.flow.outputs.flow_id }}'
           META=$(curl -sS --fail-with-body \
             -H "Authorization: Bearer $META_ACCESS_TOKEN" \
-            "https://graph.facebook.com/$GRAPH_VERSION/$FLOW_ID?fields=id,name,status,validation_errors,json_version,data_api_version,endpoint_uri")
+            "https://graph.facebook.com/$GRAPH_VERSION/$FLOW_ID?fields=id,name,status,validation_errors,json_version,data_api_version,data_channel_uri")
           echo "$META" | jq .
           ERRORS=$(printf '%s' "$META" | jq -c '.validation_errors // []')
           test "$ERRORS" = '[]'
+          test "$(printf '%s' "$META" | jq -r '.data_channel_uri // empty')" = "$ENDPOINT_URI"
 
       - name: Publish validated V3
         if: steps.flow.outputs.status != 'PUBLISHED'
@@ -129,9 +131,10 @@ jobs:
           FLOW_ID='${{ steps.flow.outputs.flow_id }}'
           META=$(curl -sS --fail-with-body \
             -H "Authorization: Bearer $META_ACCESS_TOKEN" \
-            "https://graph.facebook.com/$GRAPH_VERSION/$FLOW_ID?fields=id,name,status,validation_errors,json_version,data_api_version,endpoint_uri,health_status")
+            "https://graph.facebook.com/$GRAPH_VERSION/$FLOW_ID?fields=id,name,status,validation_errors,json_version,data_api_version,data_channel_uri,health_status")
           echo "$META" | jq .
           test "$(printf '%s' "$META" | jq -r '.status')" = 'PUBLISHED'
           test "$(printf '%s' "$META" | jq -c '.validation_errors // []')" = '[]'
+          test "$(printf '%s' "$META" | jq -r '.data_channel_uri // empty')" = "$ENDPOINT_URI"
           echo "META_FLOW_ID=$FLOW_ID"
           echo 'META_RELEASE_READY=true'
