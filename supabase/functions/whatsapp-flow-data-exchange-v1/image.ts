@@ -234,6 +234,14 @@ export async function hydrateExperienceImages(response:unknown,supabaseUrl:strin
     return response;
   }
 
+  // V27 premium lists: a CheckboxGroup may carry up to 20 media options. We
+  // hydrate from the precompressed product cache, keeping photos small and
+  // avoiding the three-standalone-image limit used by the older V26 layout.
+  if(/^PRODUTOS_[ABC]$/.test(screen)&&Array.isArray(data.product_options)){
+    data.product_options=await hydrateSelectorItems(data.product_options as unknown[],supabaseUrl,20,"product");
+    return response;
+  }
+
   if(/^PRODUTOS_[ABC]$/.test(screen)&&Array.isArray(data.products)){
     data.products=await hydrateSelectorItems(data.products as unknown[],supabaseUrl,12,"product");
     return response;
@@ -268,5 +276,6 @@ export const FLOW_IMAGE_LIMITS={
   selectorJpegQuality:FLOW_SELECTOR_JPEG_QUALITY,
   assetBucket:FLOW_ASSET_BUCKET,
   precompressedPreferred:true,
+  premiumProductOptionsMax:20,
   magickVersion:"0.0.43",
 } as const;
