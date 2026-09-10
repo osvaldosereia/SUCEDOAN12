@@ -11,7 +11,7 @@ export function asset(value) {
 }
 
 function imageOf(raw) {
-  const candidates = [raw.thumbnail, raw.url_imagem, raw.imagem_url, raw.urlImagem, raw.imagem, raw.image, raw.img, raw.foto, raw.foto_url];
+  const candidates = [raw.thumbnail, raw.thumb, raw.imagem_thumb, raw.url_imagem_thumb, raw.url_imagem, raw.imagem_url, raw.urlImagem, raw.imagem, raw.image, raw.img, raw.foto, raw.foto_url];
   if (Array.isArray(raw.imagens)) candidates.push(raw.imagens[0]);
   if (Array.isArray(raw.images)) candidates.push(raw.images[0]);
   return asset(candidates.find(Boolean));
@@ -55,7 +55,7 @@ function normalizeBasket(raw, index) {
     code: String(raw.codigo || raw.id || `cesta${index + 1}`),
     name: String(raw.nome || raw.name || 'Cesta básica'),
     price: number(raw.preco ?? raw.price),
-    image: asset(raw.imagem || raw.image || raw.img),
+    image: asset(raw.thumbnail || raw.imagem_thumb || raw.imagem || raw.image || raw.img),
     items: (Array.isArray(raw.produtos) ? raw.produtos : []).map(item => {
       if (typeof item === 'string') {
         const match = item.match(/^\s*(\d+)\s*x\s*(.+)$/i);
@@ -88,8 +88,10 @@ export function classify(product) {
 }
 
 export async function loadCatalog() {
-  const basketRaw = await safeJson(BASKET_URL, []);
-  const productRaw = await safeJson(PRODUCT_URL, []);
+  const [basketRaw, productRaw] = await Promise.all([
+    safeJson(BASKET_URL, []),
+    safeJson(PRODUCT_URL, [])
+  ]);
 
   const products = (Array.isArray(productRaw) ? productRaw : Object.values(productRaw || {}))
     .map(normalizeProduct)
