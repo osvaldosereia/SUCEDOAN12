@@ -90,7 +90,9 @@ O primeiro CI desta rodada chegou até a validação completa do JSON e do contr
 - `flow-cestas-comercial-v6.json` blob `71e87f02dcec2401e9e2625d59014e9361bb925d`;
 - `build-flow-v31-stable-text-products.py` blob `38e38716f6a28177665e07dd7f76814d2cef8068`.
 
-O CI foi corrigido para fixar a identidade desses dois inputs canônicos e gerar/validar o V31 deterministicamente, em vez de depender do hash incorreto do arquivo temporário gerado. O commit da correção é `fad8e0f0442e53c4471bcb4848a5a6f8771d2ef2`. O rerun foi disparado automaticamente e estava enfileirado no fechamento deste checkpoint.
+O CI foi corrigido para fixar a identidade desses dois inputs canônicos e gerar/validar o V31 deterministicamente, em vez de depender do hash incorreto do arquivo temporário gerado. A correção está no commit `fad8e0f0442e53c4471bcb4848a5a6f8771d2ef2`.
+
+O workflow específico **Test WhatsApp Flow V31 Runtime** (run `34495844116`, check `contract`) terminou com **success**. Passaram construção do V31, JSON, contrato comercial e contrato de runtime/owner-only/terminal. Checks `build/deploy/report-build-status` cancelados no mesmo SHA pertencem a outro workflow geral e não invalidam o contrato específico do Flow.
 
 ## Homologação owner-only
 
@@ -118,11 +120,11 @@ Por isso o preflight retorna `ok=false` somente nos checks `owner_conversation_a
 
 ## Próximo ponto exato
 
-1. confirmar CI verde do contrato V31 atualizado;
-2. continuar regressões offline/determinísticas enquanto o alvo homologado estiver sob controle humano;
-3. quando a conversa homologada estiver naturalmente em IA e sem handoff, executar exclusivamente `queue_and_dispatch_whatsapp_flow_owner_homologation_v6`;
-4. validar ponta a ponta: cesta → personalização → seção/termo → extras → upsell → revisão → cadastro/endereço → pagamento → confirmação → `nfm_reply` → solicitação de localização;
-5. não abrir gates globais, não aumentar canary e não ativar Bling antes da homologação final.
+1. continuar regressões offline/determinísticas enquanto o alvo homologado estiver sob controle humano;
+2. quando a conversa homologada estiver naturalmente em IA e sem handoff, executar exclusivamente `queue_and_dispatch_whatsapp_flow_owner_homologation_v6`;
+3. validar ponta a ponta: cesta → personalização → seção/termo → extras → upsell → revisão → cadastro/endereço → pagamento → confirmação → `nfm_reply` → solicitação de localização;
+4. corrigir qualquer regressão encontrada sem abrir gates globais;
+5. não aumentar canary e não ativar Bling antes da homologação final.
 
 ## Ação manual
 
