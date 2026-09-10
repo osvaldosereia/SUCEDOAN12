@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const C=window.DA_ADMIN_V3_CONFIG||{},AUTH_KEY='da_admin_v3_auth';let root=null,role='',data={assets:[],jobs:[],calendar:[]};
-const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmt=v=>v?new Date(v).toLocaleString('pt-BR'):'—';
 function auth(){try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch{return null}}
 async function call(action,payload={}){const s=auth();if(!s?.access_token)throw new Error('Faça login.');const r=await fetch(`${C.supabaseUrl}/functions/v1/${C.marketingWorkflowEdgeFunction||'admin-marketing-workflow-v1'}`,{method:'POST',headers:{apikey:C.supabasePublishableKey,Authorization:`Bearer ${s.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});const b=await r.json().catch(()=>({}));if(!r.ok||b.ok===false)throw new Error(b.detail||b.error||`Erro ${r.status}`);return b}
