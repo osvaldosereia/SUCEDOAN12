@@ -6,8 +6,14 @@ const parity=fs.readFileSync('supabase/migrations/20260910161028_dona_antonia_ag
 const recovery=fs.readFileSync('supabase/migrations/20260910161803_dona_antonia_agent_core_round4_worker_recovery_v3_v1.sql','utf8');
 const parityV2=fs.readFileSync('supabase/migrations/20260910162313_dona_antonia_agent_core_round4_parity_gate_v2.sql','utf8');
 const policy=fs.readFileSync('supabase/migrations/20260910163217_dona_antonia_agent_core_round4_shadow_policy_normalizer_v1.sql','utf8');
-const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy).toLowerCase();
+const basketTools=fs.readFileSync('supabase/migrations/20260910163906_dona_antonia_agent_core_round4_basket_checkout_tools_v1.sql','utf8');
+const compactTools=fs.readFileSync('supabase/migrations/20260910164127_dona_antonia_agent_core_round4_compact_basket_tool_outputs_v1.sql','utf8');
+const compactFix=fs.readFileSync('supabase/migrations/20260910164209_dona_antonia_agent_core_round4_compact_basket_tool_outputs_fix_v1.sql','utf8');
+const edge=fs.readFileSync('supabase/functions/dona-antonia-agent-core-v1/index.ts','utf8');
+const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy+'\n'+basketTools+'\n'+compactTools+'\n'+compactFix).toLowerCase();
+const edgeLower=edge.toLowerCase();
 const must=(text,label)=>{if(!body.includes(text.toLowerCase()))throw new Error(`missing:${label}`)};
+const mustEdge=(text,label)=>{if(!edgeLower.includes(text.toLowerCase()))throw new Error(`missing_edge:${label}`)};
 const forbid=(text,label)=>{if(body.includes(text.toLowerCase()))throw new Error(`forbidden:${label}`)};
 
 must('agent_core_router_inventory','router_inventory');
@@ -59,6 +65,33 @@ must('if not p_replay and exists','authorized_replay_can_replace_shadow_plan');
 must("'authorized_replay'",'replay_reason');
 must('get_agent_core_round4_policy_guard_readiness_v1','policy_guard_readiness');
 
+const newTools=[
+  'wa_select_basket','wa_get_basket_state','wa_get_checkout_contact','wa_get_basket_customer_status',
+  'wa_start_basket_checkout','wa_create_basket_replacement','wa_add_more_products',
+  'wa_request_basket_payment','wa_prepare_basket_confirmation','wa_finalize_basket_order'
+];
+for(const tool of newTools){must(`'${tool}'`,`registry_${tool}`);mustEdge(`"${tool}"`,`edge_${tool}`)}
+must("'wa_finalize_basket_order',1",'basket_finalize_registered');
+must("'commitment'",'basket_finalize_commitment');
+must("'explicit_customer_confirmation'",'basket_finalize_explicit_confirmation');
+must('get_agent_core_round4_basket_tool_readiness_v1','basket_tool_readiness');
+must('get_agent_core_basket_state_compact_v1','compact_basket_state');
+must('get_agent_core_checkout_contact_compact_v1','compact_checkout_contact');
+must('get_agent_core_basket_customer_status_compact_v1','compact_customer_status');
+must("'internal_token_excluded':true",'basket_token_excluded');
+must("'pii_excluded':true",'compact_pii_excluded');
+must('missing_conversation_fail_safe','compact_missing_state_fail_safe');
+
+mustEdge('get_agent_core_basket_state_compact_v1','edge_compact_basket_executor');
+mustEdge('get_agent_core_checkout_contact_compact_v1','edge_compact_contact_executor');
+mustEdge('get_agent_core_basket_customer_status_compact_v1','edge_compact_customer_executor');
+mustEdge('allowedset=new set(allowednames)','topic_schema_filter');
+mustEdge('toolset.filter','send_only_allowed_tool_schemas');
+mustEdge('observe_no_side_effects','writes_simulated_in_observe');
+mustEdge('allowed_tool_count','allowed_tool_telemetry');
+if(edgeLower.includes('if(name==="wa_finalize_basket_order")return await sb.rpc')) throw new Error('commitment_tool_must_not_have_direct_executor_in_shadow');
+if(edgeLower.includes('if(name==="wa_select_basket")return await sb.rpc')) throw new Error('basket_write_tool_must_not_have_direct_executor_in_shadow');
+
 for(const guard of [
   'release gate; deve permanecer fora do modelo',
   'handoff humano por erro/held',
@@ -76,4 +109,4 @@ for(const unsafe of [
   'bling_order_sync_enabled=true'
 ]) forbid(unsafe,unsafe);
 
-console.log('Agent Core Rodada 4: inventário, worker v3, paridade v2, normalização shadow auditável, replay autorizado e guardrails de rollout OK.');
+console.log(`Agent Core Rodada 4 OK: ${newTools.length} novas tools de cesta/checkout, outputs compactos, schemas filtrados por tópico e writes apenas simulados em observe.`);
