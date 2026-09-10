@@ -6,6 +6,7 @@ on:
       - 'admin/config.js'
       - 'admin-v3/marketing-center.*'
       - 'admin-v3/marketing-workflow-v1.js'
+      - 'admin-v3/marketing-editor-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
@@ -14,6 +15,7 @@ on:
       - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
       - 'supabase/migrations/20260910074400_marketing_render_worker_hardening_v3.sql'
       - 'supabase/migrations/20260910085000_marketing_review_calendar_v4.sql'
+      - 'supabase/migrations/20260910093500_marketing_asset_editor_v5.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -23,6 +25,7 @@ on:
       - 'scripts/test-marketing-worker-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
       - 'scripts/test-marketing-workflow-v1.mjs'
+      - 'scripts/test-marketing-editor-v1.mjs'
       - '.github/workflows/marketing-center-v1.yml'
   push:
     branches: [main]
@@ -30,6 +33,7 @@ on:
       - 'admin/config.js'
       - 'admin-v3/marketing-center.*'
       - 'admin-v3/marketing-workflow-v1.js'
+      - 'admin-v3/marketing-editor-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
@@ -38,6 +42,7 @@ on:
       - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
       - 'supabase/migrations/20260910074400_marketing_render_worker_hardening_v3.sql'
       - 'supabase/migrations/20260910085000_marketing_review_calendar_v4.sql'
+      - 'supabase/migrations/20260910093500_marketing_asset_editor_v5.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -47,6 +52,7 @@ on:
       - 'scripts/test-marketing-worker-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
       - 'scripts/test-marketing-workflow-v1.mjs'
+      - 'scripts/test-marketing-editor-v1.mjs'
 
 permissions:
   contents: read
@@ -72,6 +78,7 @@ jobs:
         run: |
           node --check admin-v3/marketing-center.js
           node --check admin-v3/marketing-workflow-v1.js
+          node --check admin-v3/marketing-editor-v1.js
           node --check admin/config.js
       - name: Check worker JavaScript syntax
         run: node --check scripts/marketing-render-worker-v1.mjs
@@ -79,6 +86,8 @@ jobs:
         run: node scripts/test-marketing-center-v1.mjs
       - name: Validate approval/calendar safety contract
         run: node scripts/test-marketing-workflow-v1.mjs
+      - name: Validate quick editor safety contract
+        run: node scripts/test-marketing-editor-v1.mjs
       - name: Validate deterministic WebP renderer
         run: node scripts/test-marketing-render-v1.mjs
       - name: Validate economical MP4 renderer
