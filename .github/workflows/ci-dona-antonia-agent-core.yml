@@ -1,0 +1,31 @@
+name: CI Dona Antonia Agent Core
+
+on:
+  push:
+    paths:
+      - 'supabase/migrations/20260910134400_dona_antonia_agent_core_foundation_v1.sql'
+      - 'docs/ROADMAP-AGENT-CORE-DONA-ANTONIA-6-RODADAS.md'
+      - 'scripts/test-dona-antonia-agent-core-contract-v1.mjs'
+      - 'supabase/functions/conversation-worker-v3/**'
+      - '.github/workflows/ci-dona-antonia-agent-core.yml'
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260910134400_dona_antonia_agent_core_foundation_v1.sql'
+      - 'docs/ROADMAP-AGENT-CORE-DONA-ANTONIA-6-RODADAS.md'
+      - 'scripts/test-dona-antonia-agent-core-contract-v1.mjs'
+      - 'supabase/functions/conversation-worker-v3/**'
+      - '.github/workflows/ci-dona-antonia-agent-core.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Agent Core contract
+        run: node scripts/test-dona-antonia-agent-core-contract-v1.mjs
