@@ -117,7 +117,7 @@
   function loadDetailFixes() {
     if (document.querySelector('script[data-detail-fixes]')) return;
     const script = document.createElement('script');
-    script.src = './detail-fixes-v1.js?v=20260910-01';
+    script.src = './detail-fixes-v1.js?v=20260910-02';
     script.dataset.detailFixes = '1';
     document.body.appendChild(script);
   }
