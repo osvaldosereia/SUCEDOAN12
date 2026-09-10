@@ -1,4 +1,4 @@
-/* Dona Antônia — vitrine leve v7.
+/* Dona Antônia — vitrine leve v8.
    Hierarquia por espaço, tipografia e foto. Sem sombras, blur ou animações. */
 *,*::before,*::after{
   box-shadow:none!important;
@@ -75,36 +75,70 @@ body{background:#fff!important}
 .basket-row-name{font-size:15px!important;line-height:1.25!important;font-weight:750!important}
 .basket-row-qty,.product-quantity{font-size:13px!important}
 
+/* Produtos extras: foto à esquerda; nome completo e seletor abaixo, sem botão Adicionar. */
 #extrasView:not(.replacement-view) .product-grid{grid-template-columns:1fr!important;gap:0!important}
 #extrasView:not(.replacement-view) .product-card{
   display:grid!important;
-  grid-template-columns:minmax(0,1fr) auto!important;
-  gap:10px!important;
-  align-items:center!important;
-  min-height:132px!important;
-  padding:8px 0!important;
+  grid-template-columns:124px minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;
+  column-gap:12px!important;
+  row-gap:8px!important;
+  align-items:start!important;
+  min-height:140px!important;
+  padding:9px 0!important;
   border:0!important;
   border-bottom:1px solid #ededed!important;
   border-radius:0!important;
   background:#fff!important;
+  overflow:visible!important;
 }
 #extrasView:not(.replacement-view) .product-open{
+  grid-column:1 / -1!important;
+  grid-row:1!important;
   display:grid!important;
-  grid-template-columns:118px minmax(0,1fr)!important;
+  grid-template-columns:124px minmax(0,1fr)!important;
   gap:12px!important;
-  align-items:center!important;
+  align-items:start!important;
+  width:100%!important;
+  min-width:0!important;
 }
 #extrasView:not(.replacement-view) .product-image-wrap{
-  width:118px!important;
-  height:118px!important;
+  width:124px!important;
+  height:124px!important;
   padding:3px!important;
   border:1px solid #eee!important;
   border-radius:6px!important;
   background:#fafafa!important;
 }
 #extrasView:not(.replacement-view) .product-image{object-fit:contain!important}
-#extrasView:not(.replacement-view) .product-name{font-size:15px!important;line-height:1.25!important;font-weight:750!important}
+#extrasView:not(.replacement-view) .product-copy{
+  min-width:0!important;
+  width:100%!important;
+  min-height:0!important;
+  padding:2px 0 0!important;
+}
+#extrasView:not(.replacement-view) .product-name{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+  -webkit-line-clamp:unset!important;
+  -webkit-box-orient:initial!important;
+  white-space:normal!important;
+  text-overflow:clip!important;
+  font-size:15px!important;
+  line-height:1.28!important;
+  font-weight:750!important;
+}
 #extrasView:not(.replacement-view) .product-price{font-size:16px!important;margin-top:6px!important}
+#extrasView:not(.replacement-view) .product-card>.stepper{
+  grid-column:2!important;
+  grid-row:2!important;
+  justify-self:start!important;
+  margin:0!important;
+}
+#extrasView:not(.replacement-view) .product-add-button{display:none!important}
 
 .stepper{gap:5px!important;height:38px!important;background:transparent!important}
 .stepper button{
@@ -117,11 +151,7 @@ body{background:#fff!important}
   font-size:22px!important;
 }
 .stepper button[data-step="1"]{background:#f36b21!important;border-color:#f36b21!important;color:#fff!important}
-.remove-button,.product-add-button,.choose-replacement{
-  box-shadow:none!important;
-  border-radius:6px!important;
-}
-.product-add-button{background:#f36b21!important;color:#fff!important}
+.remove-button,.choose-replacement{box-shadow:none!important;border-radius:6px!important}
 
 .search-box{
   border:1px solid #ddd!important;
@@ -153,8 +183,12 @@ body{background:#fff!important}
   }
   .basket-row-image{width:108px!important;height:112px!important;grid-row:1 / span 2!important}
   .basket-row-actions{grid-column:2!important;justify-items:start!important;gap:7px!important}
-  #extrasView:not(.replacement-view) .product-card{min-height:124px!important}
-  #extrasView:not(.replacement-view) .product-open{grid-template-columns:108px minmax(0,1fr)!important;gap:10px!important}
-  #extrasView:not(.replacement-view) .product-image-wrap{width:108px!important;height:112px!important}
+  #extrasView:not(.replacement-view) .product-card{
+    grid-template-columns:112px minmax(0,1fr)!important;
+    min-height:132px!important;
+    column-gap:10px!important;
+  }
+  #extrasView:not(.replacement-view) .product-open{grid-template-columns:112px minmax(0,1fr)!important;gap:10px!important}
+  #extrasView:not(.replacement-view) .product-image-wrap{width:112px!important;height:118px!important}
   #extrasView:not(.replacement-view) .product-name{font-size:14.5px!important}
 }
