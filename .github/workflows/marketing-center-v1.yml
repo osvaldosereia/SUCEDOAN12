@@ -25,9 +25,11 @@ on:
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
+      - 'scripts/marketing-private-media-adapter-v1.mjs'
       - 'scripts/test-marketing-render-v1.mjs'
       - 'scripts/test-marketing-video-v1.mjs'
       - 'scripts/test-marketing-worker-v1.mjs'
+      - 'scripts/test-marketing-private-media-adapter-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
       - 'scripts/test-marketing-workflow-v1.mjs'
       - 'scripts/test-marketing-editor-v1.mjs'
@@ -59,9 +61,11 @@ on:
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
+      - 'scripts/marketing-private-media-adapter-v1.mjs'
       - 'scripts/test-marketing-render-v1.mjs'
       - 'scripts/test-marketing-video-v1.mjs'
       - 'scripts/test-marketing-worker-v1.mjs'
+      - 'scripts/test-marketing-private-media-adapter-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
       - 'scripts/test-marketing-workflow-v1.mjs'
       - 'scripts/test-marketing-editor-v1.mjs'
@@ -95,7 +99,9 @@ jobs:
           node --check admin-v3/marketing-editor-v1.js
           node --check admin/config.js
       - name: Check worker JavaScript syntax
-        run: node --check scripts/marketing-render-worker-v1.mjs
+        run: |
+          node --check scripts/marketing-render-worker-v1.mjs
+          node --check scripts/marketing-private-media-adapter-v1.mjs
       - name: Validate Marketing Center safety contract
         run: node scripts/test-marketing-center-v1.mjs
       - name: Validate approval/calendar safety contract
@@ -112,3 +118,5 @@ jobs:
         run: node scripts/test-marketing-video-v1.mjs
       - name: Validate deterministic queue worker
         run: node scripts/test-marketing-worker-v1.mjs
+      - name: Validate private media persistence adapter
+        run: node scripts/test-marketing-private-media-adapter-v1.mjs
