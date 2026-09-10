@@ -76,12 +76,11 @@ def make_before_sheet(products: list[dict[str, Any]], root: Path, out_path: Path
 
 
 def select_main_component(alpha: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
-    """Keep the dominant centered foreground component.
+    """Keep only the dominant centered foreground component.
 
-    Background-removal models may also mark nearby props as foreground. We score components
-    by area plus centrality, then keep the best component. This is deterministic and never
-    invents pixels. A small set of nearby components is retained only when they sit inside
-    the dominant component's expanded bounding box (useful for detached package edges).
+    Scene props are deliberately discarded even when the segmentation model considers
+    them foreground. The selected component is chosen deterministically by area plus
+    centrality. No RGB pixels are generated or altered by this decision.
     """
     binary = (alpha >= 18).astype(np.uint8)
     count, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, 8)
@@ -100,29 +99,15 @@ def select_main_component(alpha: np.ndarray) -> tuple[np.ndarray, dict[str, Any]
         distance = math.hypot(mx - cx, my - cy) / max(diag, 1.0)
         contains_center = x <= cx <= x + bw and y <= cy <= y + bh
         central_bonus = 1.8 if contains_center else max(0.35, 1.0 - 1.8 * distance)
-        score = float(area) * central_bonus
-        candidates.append((score, label))
+        candidates.append((float(area) * central_bonus, label))
 
     if not candidates:
         raise RuntimeError("segmentation foreground components were too small")
 
     candidates.sort(reverse=True)
     main_label = candidates[0][1]
-    x, y, bw, bh, main_area = stats[main_label]
-    pad_x = int(bw * 0.12)
-    pad_y = int(bh * 0.12)
-    ex1, ey1 = max(0, x - pad_x), max(0, y - pad_y)
-    ex2, ey2 = min(w, x + bw + pad_x), min(h, y + bh + pad_y)
-
-    keep_labels = {main_label}
-    for _, label in candidates[1:]:
-        lx, ly, lbw, lbh, area = stats[label]
-        mx, my = centroids[label]
-        inside_expanded = ex1 <= mx <= ex2 and ey1 <= my <= ey2
-        if inside_expanded and area >= max(48, int(main_area * 0.004)):
-            keep_labels.add(label)
-
-    keep = np.isin(labels, list(keep_labels))
+    main_area = int(stats[main_label][cv2.CC_STAT_AREA])
+    keep = labels == main_label
     cleaned = np.where(keep, alpha, 0).astype(np.uint8)
     ys, xs = np.where(cleaned >= 12)
     if len(xs) == 0:
@@ -130,8 +115,8 @@ def select_main_component(alpha: np.ndarray) -> tuple[np.ndarray, dict[str, Any]
 
     info = {
         "component_count": int(count - 1),
-        "kept_component_count": len(keep_labels),
-        "main_component_area": int(main_area),
+        "kept_component_count": 1,
+        "main_component_area": main_area,
         "foreground_bbox_source": [int(xs.min()), int(ys.min()), int(xs.max() + 1), int(ys.max() + 1)],
     }
     return cleaned, info
@@ -141,8 +126,6 @@ def isolate_real_product(source: Path, session: Any) -> tuple[Image.Image, dict[
     original = open_rgb(source)
     rgba_input = original.convert("RGBA")
 
-    # rembg modifies only the alpha/mask result. RGB for the kept foreground comes from
-    # the original source image. No generative model is called.
     cut = remove(
         rgba_input,
         session=session,
@@ -161,7 +144,7 @@ def isolate_real_product(source: Path, session: Any) -> tuple[Image.Image, dict[
     alpha, component_info = select_main_component(alpha)
     alpha_img = Image.fromarray(alpha, mode="L").filter(ImageFilter.GaussianBlur(0.45))
 
-    # Explicitly restore RGB from the real source after mask creation.
+    # Restore RGB from the real source after segmentation; only alpha is synthetic.
     real_rgba = original.convert("RGBA")
     real_rgba.putalpha(alpha_img)
 
@@ -194,8 +177,6 @@ def make_studio_cell(product_rgba: Image.Image, background: str) -> Image.Image:
     x = (DEFAULT_CELL - product.width) // 2
     y = (DEFAULT_CELL - product.height) // 2
 
-    # Shadow is derived only from the alpha silhouette and is painted on the background,
-    # never onto the product's RGB pixels.
     shadow_alpha = Image.new("L", (DEFAULT_CELL, DEFAULT_CELL), 0)
     shadow_alpha.paste(alpha, (x, y + 5))
     shadow_alpha = shadow_alpha.filter(ImageFilter.GaussianBlur(7))
@@ -260,7 +241,6 @@ def main() -> int:
 
     make_before_sheet(products, repo_root, out_dir / "00-before-real-sources.jpg", background)
 
-    # One local segmentation session is reused for all 9 images.
     session = new_session("u2net")
     cells: list[Image.Image] = []
     for idx, product in enumerate(products):
@@ -276,16 +256,13 @@ def main() -> int:
         })
         segmentation_report.append(info)
 
-    # Build the requested exact 3x3 image first.
     board = Image.new("RGB", (DEFAULT_CANVAS, DEFAULT_CANVAS), hex_to_rgb(background))
     for idx, cell in enumerate(cells):
         board.paste(cell, ((idx % 3) * DEFAULT_CELL, (idx // 3) * DEFAULT_CELL))
 
-    board_png = out_dir / "01-studio-grid-lossless.png"
-    board.save(board_png, format="PNG", optimize=True)
+    board.save(out_dir / "01-studio-grid-lossless.png", format="PNG", optimize=True)
     board.save(out_dir / "02-studio-grid-preview.jpg", format="JPEG", quality=84, optimize=True, progressive=True)
 
-    # Re-cut from the final 3x3 board, exactly as production will do.
     for idx, product in enumerate(products):
         col, row = idx % 3, idx // 3
         box = (col * DEFAULT_CELL, row * DEFAULT_CELL, (col + 1) * DEFAULT_CELL, (row + 1) * DEFAULT_CELL)
@@ -328,6 +305,7 @@ def main() -> int:
         "notes": [
             "The product RGB content comes from each original repository image; no product is redrawn.",
             "A local segmentation model is used only to create an alpha mask for background removal.",
+            "Only the dominant centered foreground component is retained; detached scene props are discarded.",
             "No OpenAI image API call is made and OpenAI image cost is zero for this pipeline.",
             "No Supabase product row, image_url, GitHub production image, or live asset is modified.",
             "Human visual approval is required before a write-back stage is implemented/enabled.",
