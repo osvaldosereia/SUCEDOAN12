@@ -14,7 +14,6 @@ must('handle_whatsapp_checkout_customer_data_agent_v2','customer_data_backend_wr
 must("address_change_is_separate_tool",'address_customer_data_separation');
 must("public.is_whatsapp_address_change_request_v1(new.conversation_id,m.id)",'basket_swap_address_exclusion');
 must("public.is_whatsapp_customer_data_change_request_v1(new.conversation_id,m.id)",'basket_swap_customer_data_exclusion');
-must("execution_mode",'registry_keeps_governed_tool_contract');
 must("'pii_returned',false",'no_pii_report');
 
 mustNot('whatsapp_live_canary_percent=', 'canary_change');
@@ -23,5 +22,7 @@ mustNot('whatsapp_flow_send_enabled=', 'flow_send_activation');
 mustNot('whatsapp_flow_data_exchange_enabled=', 'flow_exchange_activation');
 mustNot('whatsapp_flow_commercial_write_enabled=', 'flow_write_activation');
 mustNot('bling_order_sync_enabled=', 'bling_activation');
+mustNot("execution_mode='live'",'agent_core_live_activation');
+mustNot("legacy_router_policy='retired'",'router_retirement');
 
 console.log('OK Agent Core Round 4 V32 customer-data/address semantics contract');
