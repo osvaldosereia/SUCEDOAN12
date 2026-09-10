@@ -45,8 +45,8 @@ must(v19,"'display_name_available'",'identity_no_name_value');
 mustNot(v19,"'person_name',v_ident->>",'identity_must_not_return_name');
 mustNot(v19,"'phone',v_ident->>",'identity_must_not_return_phone');
 mustNot(v19,"'address',v_ident->>",'identity_must_not_return_address');
-must(v19,"'session_token_hidden_from_model':true",'storefront_token_hidden');
-must(v19,"'max_showcases_per_call':1",'single_extra_showcase');
+must(v19,'"session_token_hidden_from_model":true','storefront_token_hidden');
+must(v19,'"max_showcases_per_call":1','single_extra_showcase');
 must(v19,"true,'observe',true",'observe_only_registry_entries');
 must(v19,"'reversible_write',false",'new_tools_are_non_autorun_reversible_writes');
 
