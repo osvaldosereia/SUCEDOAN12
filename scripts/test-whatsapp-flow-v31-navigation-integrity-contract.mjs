@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const migration = fs.readFileSync('supabase/migrations/20260910223500_whatsapp_flow_v31_runtime_v24_preview_dedupe.sql', 'utf8');
 const readiness = fs.readFileSync('supabase/migrations/20260910223700_whatsapp_flow_v31_full_release_readiness_v5.sql', 'utf8');
 const ownerV24 = fs.readFileSync('supabase/migrations/20260910224000_whatsapp_flow_v31_owner_preflight_v4_dispatch_v7_runtime_v24.sql', 'utf8');
+const fullV24 = fs.readFileSync('supabase/migrations/20260910224200_whatsapp_flow_v31_full_release_readiness_v6_runtime_v24.sql', 'utf8');
 const edge = fs.readFileSync('supabase/functions/whatsapp-flow-data-exchange-v1/index.ts', 'utf8');
 
 assert.match(migration, /normalize_whatsapp_flow_pending_addons_v1/);
@@ -31,9 +32,17 @@ assert.match(ownerV24, /queue_and_dispatch_whatsapp_flow_owner_homologation_v7/)
 assert.match(ownerV24, /runtime_v24_present/);
 assert.match(ownerV24, /candidate_metadata_v24/);
 assert.match(ownerV24, /data_exchange_edge_v45/);
-assert.match(ownerV24, /controlled_live_homologation|renew_whatsapp_flow_owner_homologation_lease_v1/);
+assert.match(ownerV24, /renew_whatsapp_flow_owner_homologation_lease_v1/);
 assert.match(ownerV24, /queue_and_dispatch_whatsapp_flow_owner_homologation_v2/);
 assert.doesNotMatch(ownerV24.match(/create or replace function public\.queue_and_dispatch_whatsapp_flow_owner_homologation_v7[\s\S]*?\$function\$;/i)?.[0] ?? '', /queue_and_dispatch_whatsapp_flow_owner_homologation_v[35]\(/);
+
+assert.match(fullV24, /get_whatsapp_flow_v31_full_release_readiness_v6/);
+assert.match(fullV24, /owner_runtime_v24_preflight/);
+assert.match(fullV24, /get_whatsapp_flow_v31_homologation_preflight_v4/);
+assert.match(fullV24, /runtime_handler','v24/);
+assert.match(fullV24, /edge_version',45/);
+assert.match(fullV24, /writes_executed',false/);
+assert.match(fullV24, /orders_created',false/);
 
 const stableBlock = edge.match(/if\(definitionSlug==="flow-cestas-comercial-v8-stable"\)\{([\s\S]*?)\}\s*else if/);
 assert.ok(stableBlock, 'stable V31 candidate routing block must exist');
