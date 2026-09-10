@@ -36,7 +36,35 @@ A função é `SECURITY DEFINER`, mas EXECUTE foi removido de `PUBLIC`, `anon` e
 
 A allowlist operacional foi habilitada para o número de homologação já autorizado, com expiração automática. O número não foi gravado nesta migration/documentação.
 
-### Teste realizado
+### Dispatcher exclusivo de homologação
+
+Foi criada também `dispatch_whatsapp_flow_owner_homologation_job_v1(uuid)`. Ela somente despacha um job Flow quando:
+
+- os seis gates globais continuam travados nos valores de homologação;
+- destinatário e conversa coincidem;
+- o destinatário está na allowlist específica V31;
+- a sessão é owner-only e ainda válida;
+- a definição é exatamente a V31 `flow-cestas-comercial-v8-stable`, `ready`, `DRAFT`, não-live e sem exposição;
+- `flow_id` coincide com o `provider_id` da definição;
+- o SHA-256 do `flow_token` enviado coincide com `experience_sessions.flow_token_hash` da sessão.
+
+Também é `service_role`-only.
+
+Migration persistida:
+
+`supabase/migrations/20260910072700_whatsapp_flow_v31_owner_homologation_dispatch.sql`
+
+### Smoke real outbound
+
+Foi criada uma sessão/token owner-only da V31 com todos os gates globais desligados e um job foi encaminhado pelo dispatcher exclusivo ao cenário Make `Dona Antônia - WhatsApp Outbound Event-Driven v3`.
+
+Na primeira tentativa, a Meta respondeu erro `131009`: um Flow em estado DRAFT exige explicitamente `mode: "draft"` no payload de envio. O módulo Flow do Make foi corrigido apenas na rota de homologação para acrescentar `mode: "draft"`.
+
+Após a correção, o mesmo smoke controlado recebeu **HTTP 200 da Graph API** e retornou um `wamid`, confirmando que o Meta Flow DRAFT V31 foi aceito para entrega ao número autorizado de homologação. O Make voltou a operar com `stopOnHttpError=true` após o diagnóstico, mantendo falha explícita para novos erros HTTP.
+
+O job de homologação foi finalizado como sucesso usando o `provider_message_id` retornado pela Meta.
+
+### Teste do emissor
 
 O emissor foi executado com os seis gates globais nos valores obrigatórios e criou com sucesso uma sessão `offered` da V31, vinculada ao Meta Flow DRAFT `2579927222524475`. A sessão foi marcada como homologação do proprietário e não altera rollout nem exposição a clientes.
 
@@ -52,10 +80,10 @@ A definição `flow-cestas-comercial-v8-stable` foi atualizada com `implementati
 - Handler determinístico: V22.
 - Edge: V41.
 - Catálogo: somente consultas segmentadas/dinâmicas; nunca carregar catálogo completo.
-- Make Flow outbound: somente número de homologação autorizado.
+- Make Flow outbound: somente número de homologação autorizado e `mode=draft`.
 - Bling: desligado.
 - Escrita comercial: desligada.
 
 ## Próximo bloco
 
-Usar a sessão/token de homologação pelo caminho outbound já protegido, realizar o smoke real no DRAFT e inspecionar os eventos criptografados de Data Exchange/`nfm_reply`. Corrigir eventuais divergências visuais ou contratuais sem publicar nem alterar os gates globais.
+Inspecionar a abertura/interação real do DRAFT através dos eventos de Data Exchange e inbound do número de homologação. Validar `INIT`, escolha das 9 cestas, personalização, busca segmentada, detalhe/quantidade, repetição/estoque, upsell, revisão, cliente/endereço e `nfm_reply`. Corrigir eventuais divergências sem publicar nem alterar os gates globais.
