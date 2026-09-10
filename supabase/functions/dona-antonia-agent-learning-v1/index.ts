@@ -55,6 +55,7 @@ Deno.serve(async(req:Request)=>{
   if(!openaiKey){const {data:vaultKey}=await sb.rpc("get_conversation_worker_provider_secret_v1");if(typeof vaultKey==="string")openaiKey=vaultKey}
   const [{data:cfg,error:cfgError},{data:ready}]=await Promise.all([sb.from("agent_core_runtime_config").select("enabled,execution_mode,planner_model,learning_write_enabled,global_candidate_autopublish_enabled").eq("id",1).maybeSingle(),sb.rpc("get_agent_core_round3_readiness_v1")]);
   if(cfgError||!cfg)return json({ok:false,error:"config_unavailable"},500);
+  const runtimeCfg=cfg;
   if(body?.event==="healthcheck")return json({ok:true,event:"healthcheck",provider_configured:Boolean(openaiKey),readiness:ready},200);
   if(!openaiKey)return json({ok:false,error:"openai_key_missing"},500);
 
@@ -62,11 +63,11 @@ Deno.serve(async(req:Request)=>{
     if(!isUuid(conversationId)||!isUuid(messageId))throw new Error("invalid_learning_ids");
     const {data:packet,error:packetError}=await sb.rpc("build_agent_core_learning_packet_v1",{p_conversation_id:conversationId,p_last_message_id:messageId});if(packetError||!packet?.eligible)throw new Error("learning_packet_failed");
     if(!arr(packet.recent_messages).length)return {ok:true,skipped:true,reason:"no_new_messages"};
-    const learned=await extract(openaiKey,clean(cfg.planner_model,80)||"gpt-5.6-luna",packet);
+    const learned=await extract(openaiKey,clean(runtimeCfg.planner_model,80)||"gpt-5.6-luna",packet);
     const e=learned.extraction;
     const {data:applied,error:applyError}=await sb.rpc("apply_agent_core_learning_result_v1",{p_conversation_id:conversationId,p_last_message_id:messageId,p_summary:e.summary,p_salient_facts:e.salient_facts,p_memories:e.memories,p_candidates:e.global_candidates,p_dry_run:dryRun});if(applyError)throw new Error("learning_apply_failed");
     if(!dryRun&&applied?.ok)await sb.from("whatsapp_ops_events").insert({event_type:"agent_core_learning_applied",severity:"info",conversation_id:conversationId,details:{input_tokens:learned.usage.input_tokens,cached_tokens:learned.usage.cached_tokens,output_tokens:learned.usage.output_tokens,memory_candidates:e.memories.length,global_candidates:e.global_candidates.length,prompt_stored:false}});
-    return {ok:Boolean(applied?.ok),dry_run:dryRun,apply:applied,usage:learned.usage,model:clean(cfg.planner_model,80),response_id:learned.response_id,extraction:dryRun?e:undefined};
+    return {ok:Boolean(applied?.ok),dry_run:dryRun,apply:applied,usage:learned.usage,model:clean(runtimeCfg.planner_model,80),response_id:learned.response_id,extraction:dryRun?e:undefined};
   }
 
   if(body?.event==="dry_run"){
@@ -74,8 +75,8 @@ Deno.serve(async(req:Request)=>{
   }
 
   if(body?.event!=="drain")return json({ok:false,error:"unknown_event"},400);
-  if(!cfg.learning_write_enabled)return json({ok:true,skipped:true,reason:"learning_write_disabled",readiness:ready},200);
-  if(cfg.global_candidate_autopublish_enabled)return json({ok:false,error:"unsafe_autopublish_configuration"},409);
+  if(!runtimeCfg.learning_write_enabled)return json({ok:true,skipped:true,reason:"learning_write_disabled",readiness:ready},200);
+  if(runtimeCfg.global_candidate_autopublish_enabled)return json({ok:false,error:"unsafe_autopublish_configuration"},409);
   const limit=Math.max(1,Math.min(8,Number(body?.limit||4))),{data:jobs,error:claimError}=await sb.rpc("claim_agent_core_learning_jobs_v1",{p_limit:limit});if(claimError)return json({ok:false,error:"queue_claim_failed"},500);
   const results:any[]=[];
   for(const j of arr(jobs)){
