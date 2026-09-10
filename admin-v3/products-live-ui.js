@@ -17,6 +17,12 @@
     const view=productView();
     if(!view)return;
 
+    const nav=document.querySelector('.nav[data-route="products"]');
+    if(nav)nav.innerHTML='<span>PR</span>Produtos e conferência';
+    const sort=$('productSort');
+    const defaultSort=sort?.querySelector('option[value=""]');
+    if(defaultSort)defaultSort.textContent='Mais recentes';
+
     const status=$('productStatus');
     if(status){
       const first=status.querySelector('option[value=""]');
@@ -72,6 +78,7 @@
     if(p?.source_system==='ai_ean_research'&&!p?.is_active)return{label:'REVISÃO IA',kind:'ai',help:'Cadastro automático · ativação somente humana'};
     if(p?.physically_verified)return{label:'CONFERIDO',kind:'verified',help:'Conferência física concluída'};
     if(p?.source_system==='inventory_fast_discovered')return{label:'EM CONTAGEM',kind:'counting',help:'EAN já salvo no checkpoint · aguardando fechamento'};
+    if(p?.source_system==='ai_ean_research'&&p?.is_active)return{label:'ATIVADO',kind:'verified',help:'Cadastro da IA revisado e ativado manualmente'};
     return{label:'PENDENTE',kind:'pending',help:'Aguardando conferência'};
   }
 
