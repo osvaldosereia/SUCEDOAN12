@@ -27,7 +27,25 @@ Deno.serve(async(req:Request)=>{
     const to=new Date(),from=new Date(to.getTime()-days*86400000);
     const {data,error}=await sb.rpc("marketing_metrics_read_model_v1",{p_from:from.toISOString(),p_to:to.toISOString()});
     if(error)return fail("metrics_failed",error.message,500);
-    return json({ok:true,days,from:from.toISOString(),to:to.toISOString(),metrics:data||{},attribution_mode:"foundation_only",external_side_effect:false});
+    const raw=(data&&typeof data==="object")?data as Record<string,any>:{};
+    const metrics={
+      counts:{
+        assets_created:Number(raw?.assets?.total||0),
+        assets_approved:Number(raw?.assets?.approved||0),
+        publication_jobs:Number(raw?.publication_jobs?.total||0),
+        scheduled_jobs:Number(raw?.publication_jobs?.scheduled||0),
+        review_required:Number(raw?.publication_jobs?.review_required||0),
+        actual_cost_cents:Number(raw?.assets?.actual_cost_cents||0),
+        estimated_cost_cents:Number(raw?.assets?.estimated_cost_cents||0),
+        external_side_effects:Number(raw?.events?.external_side_effects||0)
+      },
+      by_mode:raw?.assets?.by_mode||{},
+      by_status:raw?.publication_jobs?.by_status||{},
+      by_channel:raw?.publication_jobs?.by_channel||{},
+      attribution:raw?.attribution||{status:"foundation_only"},
+      raw
+    };
+    return json({ok:true,days,from:from.toISOString(),to:to.toISOString(),metrics,attribution_mode:"foundation_only",external_side_effect:false});
   }
   if(action==="overview"){
     const [{data:assets,error:e1},{data:media,error:e2},{data:runtime,error:e3}]=await Promise.all([
