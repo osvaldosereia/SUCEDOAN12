@@ -84,6 +84,7 @@ Deno.serve(async (req: Request) => {
 
   if (status === "verified") query = query.eq("physically_verified", true);
   else if (status === "counting") query = query.eq("source_system", "inventory_fast_discovered").eq("physically_verified", false);
+  else if (status === "ai-created") query = query.eq("source_system", "ai_ean_research");
   else if (status === "ai-review") query = query.eq("source_system", "ai_ean_research").eq("is_active", false);
   else if (status === "whatsapp") query = query.eq("is_whatsapp_active", true);
   else if (status === "offer") query = query.eq("is_offer", true);
@@ -94,11 +95,12 @@ Deno.serve(async (req: Request) => {
   const orderColumn = ({ name: "name", expiry: "validity_date", stock: "stock", price: "price" } as Record<string, string>)[sort] || "updated_at";
   query = query.order(orderColumn, { ascending: orderColumn !== "updated_at", nullsFirst: false }).order("id");
 
-  const [listResult, verified, counting, aiReview] = await Promise.all([
+  const [listResult, verified, counting, aiReview, aiCreated] = await Promise.all([
     query,
     sb.from("products").select("id", { count: "exact", head: true }).eq("physically_verified", true),
     sb.from("products").select("id", { count: "exact", head: true }).eq("source_system", "inventory_fast_discovered").eq("physically_verified", false),
     sb.from("products").select("id", { count: "exact", head: true }).eq("source_system", "ai_ean_research").eq("is_active", false),
+    sb.from("products").select("id", { count: "exact", head: true }).eq("source_system", "ai_ean_research"),
   ]);
 
   if (listResult.error) return json({ ok: false, error: "products_failed", detail: listResult.error.message }, 400);
@@ -113,6 +115,7 @@ Deno.serve(async (req: Request) => {
       verified: verified.count || 0,
       counting: counting.count || 0,
       ai_review: aiReview.count || 0,
+      ai_created: aiCreated.count || 0,
     },
   });
 });
