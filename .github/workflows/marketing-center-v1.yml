@@ -10,6 +10,8 @@ on:
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
       - 'supabase/config.toml'
+      - 'scripts/marketing-render-deterministic-v1.mjs'
+      - 'scripts/test-marketing-render-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
       - '.github/workflows/marketing-center-v1.yml'
   push:
@@ -22,6 +24,8 @@ on:
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
       - 'supabase/config.toml'
+      - 'scripts/marketing-render-deterministic-v1.mjs'
+      - 'scripts/test-marketing-render-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
 
 permissions:
@@ -30,13 +34,17 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install deterministic renderer dependency
+        run: npm install --no-save sharp@0.34.3
       - name: Check admin JavaScript syntax
         run: node --check admin-v3/marketing-center.js
       - name: Validate Marketing Center safety contract
         run: node scripts/test-marketing-center-v1.mjs
+      - name: Validate deterministic WebP renderer
+        run: node scripts/test-marketing-render-v1.mjs
