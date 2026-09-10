@@ -33,6 +33,7 @@ on:
       - 'scripts/test-agent-core-round4-customer-data-address-v32.mjs'
       - 'scripts/test-agent-core-round4-canonical-capabilities-v33.mjs'
       - 'scripts/test-agent-core-round4-capability-pii-v34.mjs'
+      - 'scripts/test-agent-core-round4-delivery-semantic-surface-v35.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
@@ -67,6 +68,7 @@ on:
       - 'scripts/test-agent-core-round4-customer-data-address-v32.mjs'
       - 'scripts/test-agent-core-round4-canonical-capabilities-v33.mjs'
       - 'scripts/test-agent-core-round4-capability-pii-v34.mjs'
+      - 'scripts/test-agent-core-round4-delivery-semantic-surface-v35.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
@@ -121,6 +123,8 @@ jobs:
         run: node scripts/test-agent-core-round4-canonical-capabilities-v33.mjs
       - name: Contract · Round 4 capability PII V34
         run: node scripts/test-agent-core-round4-capability-pii-v34.mjs
+      - name: Contract · Round 4 delivery semantic surface V35
+        run: node scripts/test-agent-core-round4-delivery-semantic-surface-v35.mjs
       - name: Contract · Worker V2 retirement guard
         run: node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
       - name: Syntax · Admin learning
