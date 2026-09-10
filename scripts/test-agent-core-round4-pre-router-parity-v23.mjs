@@ -29,8 +29,8 @@ must(v23,"'minimum_alignment_rate',0.95",'alignment_threshold');
 must(v23,"'historical_backfill_allowed',false",'no_historical_backfill');
 must(v23,"'execution_authorized',false",'execution_not_authorized');
 must(v23,"'retirement_authorized',false",'retirement_not_authorized');
-must(v23,"'edge_allowlist_pending':true",'v23_edge_pending');
-must(v23,"'executor_mapping_pending':true",'v23_executor_pending');
+must(v23,'"edge_allowlist_pending":true','v23_edge_pending');
+must(v23,'"executor_mapping_pending":true','v23_executor_pending');
 const mapped=(v23.match(/\('\w[^\n]*?,'route_|\('ab_whatsapp_checkout_flow_v1'|\('aa_whatsapp_sales_greeting_fastpath'|\('trg_/g)||[]).length;
 if(mapped<38)throw new Error(`missing:expected_38_action_contracts_found_${mapped}`);
 
