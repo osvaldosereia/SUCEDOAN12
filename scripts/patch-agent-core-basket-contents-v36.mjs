@@ -9,6 +9,7 @@ const kernelNeedle='Perguntas sobre lista, preço comercial, tamanho, comparaç�
 const kernelV42='Quando o cliente perguntar quais cestas contêm um ou mais itens, use wa_find_baskets_by_items em uma única consulta; não percorra as cestas uma a uma e não aumente chamadas de ferramenta desnecessariamente.\n';
 const behaviorNeedle='Para checkout de produtos avulsos, use wa_start_order_checkout; para cesta selecionada, use wa_start_basket_checkout. Em shadow ambas as ações permanecem simuladas.\n';
 const behaviorAddition='Quando o cliente disser que quer finalizar, fechar ou prosseguir e já houver carrinho, não peça uma autorização redundante para iniciar o checkout: consulte o estado necessário e use a ferramenta de checkout correta. A confirmação final do pedido continua sendo uma etapa separada e explícita.\nSe o cliente quiser trocar, retirar, aumentar ou personalizar itens de uma cesta, conduza a alteração pela jornada/Flow governado; não transforme o chat em formulário de substituições quando o Flow estiver disponível.\nPedidos de mudança de endereço durante carrinho ou checkout devem usar wa_request_address_flow quando a intenção estiver clara, mesmo que o cliente use palavras diferentes de "mudar endereço"; o backend continua validando elegibilidade.\nSe a decisão for needs_human=true ou next_action=handoff, chame wa_handoff_human no mesmo turno, salvo se a evidência indicar handoff já aberto. Nunca diga que encaminhou sem acionar a ferramenta governada.\n';
+const finalConfirmationRule='sales_state.awaiting tem precedência sobre inferência de etapas anteriores. Se awaiting=basket_final_confirmation e o cliente confirmar explicitamente o pedido, mantenha intent checkout e use wa_finalize_basket_order; não volte a perguntar pagamento, endereço ou cadastro. Se o cliente negar ou pedir alteração, não finalize.\n';
 
 function once(src,from,to,label){const count=src.split(from).length-1;if(count!==1)throw new Error(`${label}: expected exactly one match, got ${count}`);return src.replace(from,to);}
 
@@ -16,6 +17,7 @@ for(const path of files){
   let src=fs.readFileSync(path,'utf8');
   if(!src.includes(kernelV42)) src=once(src,kernelNeedle,kernelNeedle+kernelV42,`${path} kernelV42`);
   if(!src.includes(behaviorAddition)) src=once(src,behaviorNeedle,behaviorNeedle+behaviorAddition,`${path} behavior`);
+  if(!src.includes(finalConfirmationRule)) src=once(src,behaviorAddition,behaviorAddition+finalConfirmationRule,`${path} finalConfirmation`);
 
   const basketCurrent='const basketCommerce=["wa_list_baskets","wa_get_basket_contents",';
   const basketDesired='const basketCommerce=["wa_list_baskets","wa_get_basket_contents","wa_find_baskets_by_items",';
@@ -40,4 +42,4 @@ for(const path of files){
   fs.writeFileSync(path,src);
 }
 
-console.log('Patched Agent Core and Eval V42 one-query basket item search');
+console.log('Patched Agent Core and Eval V44 one-query basket item search + final confirmation precedence');
