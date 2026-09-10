@@ -70,6 +70,10 @@ Deno.serve(async(req:Request)=>{
       const result=await sb.rpc("resolve_whatsapp_flow_token_v1",{p_flow_token:flowToken});
       if(result.data?.ok){resolved=result.data;sessionId=result.data.session_id}
     }
+    const resolvedDefinitionSlug=text(resolved?.definition_slug,120);
+    if(action!=="ping"&&resolvedDefinitionSlug==="flow-cestas-comercial-v8-stable"){
+      if(!await ownerHomologationAllowed(sb,resolved))return plain("flow_candidate_homologation_only",403);
+    }
     if(action!=="ping"&&!readiness?.data_exchange_enabled){
       if(!await ownerHomologationAllowed(sb,resolved))return plain("flow_endpoint_disabled",503);
     }
