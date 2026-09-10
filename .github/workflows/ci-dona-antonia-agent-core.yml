@@ -23,6 +23,7 @@ on:
       - 'scripts/test-agent-core-round4-router-contracts-v19.mjs'
       - 'scripts/test-agent-core-round4-pre-router-parity-v23.mjs'
       - 'scripts/test-agent-core-round4-runtime-surface-v24.mjs'
+      - 'scripts/test-agent-core-round4-evidence-preflight-v25.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
@@ -47,6 +48,7 @@ on:
       - 'scripts/test-agent-core-round4-router-contracts-v19.mjs'
       - 'scripts/test-agent-core-round4-pre-router-parity-v23.mjs'
       - 'scripts/test-agent-core-round4-runtime-surface-v24.mjs'
+      - 'scripts/test-agent-core-round4-evidence-preflight-v25.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
@@ -73,6 +75,7 @@ jobs:
           node scripts/test-agent-core-round4-router-contracts-v19.mjs
           node scripts/test-agent-core-round4-pre-router-parity-v23.mjs
           node scripts/test-agent-core-round4-runtime-surface-v24.mjs
+          node scripts/test-agent-core-round4-evidence-preflight-v25.mjs
           node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
           node --check admin-v3/agent-learning.js
       - uses: denoland/setup-deno@v2
