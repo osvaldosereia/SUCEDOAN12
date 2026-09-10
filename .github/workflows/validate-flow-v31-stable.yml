@@ -36,6 +36,9 @@ jobs:
           f=json.load(open(p,encoding='utf-8'))
           assert f['version']=='7.3'
           assert f['data_api_version']=='3.0'
+          allowed_root={'version','data_api_version','routing_model','screens'}
+          assert set(f)<=allowed_root, f"unsupported Meta root keys: {set(f)-allowed_root}"
+          assert not any(str(k).startswith('_') for k in f), 'internal root metadata forbidden'
           screens={s['id']:s for s in f['screens']}
           assert 'CESTAS' in screens
           basket_props=screens['CESTAS']['data']['baskets']['items']['properties']
