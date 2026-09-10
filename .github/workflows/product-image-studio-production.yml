@@ -1,0 +1,97 @@
+name: Product Image Studio — Production
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/20 * * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - .automation/product-image-studio-production-run-once
+
+permissions:
+  contents: write
+
+concurrency:
+  group: product-image-studio-production
+  cancel-in-progress: false
+
+jobs:
+  process-next-nine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache background-removal model
+        uses: actions/cache@v4
+        with:
+          path: ~/.u2net
+          key: product-studio-u2net-v1
+
+      - name: Install deterministic image dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            pillow==11.3.0 \
+            opencv-python-headless==4.11.0.86 \
+            'rembg[cpu]>=2.0.65,<3'
+
+      - name: Process next unprocessed images
+        run: |
+          python automation/product-image-studio/run_production.py \
+            --state automation/product-image-studio/state.json \
+            --report artifacts/product-image-studio-production/result.json
+
+      - name: Show non-sensitive result summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/product-image-studio-production/result.json ]; then
+            python - <<'PY'
+          import json
+          p = json.load(open('artifacts/product-image-studio-production/result.json', encoding='utf-8'))
+          print(json.dumps({
+            'status': p.get('status'),
+            'pipeline_version': p.get('pipeline_version'),
+            'background': p.get('background'),
+            'batch_limit': p.get('batch_limit'),
+            'openai_used': p.get('openai_used'),
+            'openai_cost_usd': p.get('openai_cost_usd'),
+            'discovery': p.get('discovery'),
+            'processed_count': p.get('processed_count', len(p.get('processed') or [])),
+            'error_count': p.get('error_count', len(p.get('errors') or [])),
+          }, ensure_ascii=False, indent=2))
+          PY
+          fi
+
+      - name: Commit processed images and dedupe ledger
+        if: success()
+        shell: bash
+        run: |
+          git add site/img/produtos_3 automation/product-image-studio/state.json
+          if git diff --cached --quiet; then
+            echo 'No product images changed; nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: process product studio image batch [skip ci]'
+          git push origin HEAD:main
+
+      - name: Upload production report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-image-studio-production-report
+          path: artifacts/product-image-studio-production/
+          if-no-files-found: warn
+          retention-days: 7
