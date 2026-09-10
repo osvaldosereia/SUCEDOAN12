@@ -19,7 +19,8 @@ must(foundation,"legacy_router_policy text not null default 'shadow'",'legacy_sh
 must(foundation,"prompt_cache_ttl text not null default '30m'",'prompt_cache_ttl');
 must(foundation,'get_service_intelligence_compact_v3','intelligence_v3');
 must(foundation,'build_whatsapp_agent_core_packet_v1','agent_packet');
-must(foundation,'preview_whatsapp_agent_action_v1','tool_policy_preview');
+// V1 continua sendo a policy-base no banco; a Edge moderna chama V2, que adiciona preconditions stateful e delega a V1.
+must(foundation,'preview_whatsapp_agent_action_v1','tool_policy_preview_base');
 must(foundation,'human_handoff_precedence','handoff_precedence');
 must(foundation,'explicit_confirmation_for_commitments','commitment_confirmation');
 must(foundation,'counter_verified','catalog_truth');
@@ -60,7 +61,8 @@ must(edge,'risk==="read_only"','read_only_execution_only');
 must(edge,'observe_no_side_effects','write_simulation_in_observe');
 must(edge,'secondary_intents','multi_intent_support');
 must(edge,'reused_same_turn','same_turn_tool_reuse');
-must(edge,'preview_whatsapp_agent_action_v1','policy_before_tool');
+must(edge,'preview_whatsapp_agent_action_v2','policy_before_tool');
+must(edge,'p_message_id:job.message_id','policy_uses_current_message');
 must(edge,'gpt-5.6-luna','luna_default');
 must(edge,'gpt-5.6-terra','terra_critic');
 must(edge,'Handoff humano tem precedência absoluta','kernel_handoff_precedence');
@@ -91,4 +93,4 @@ mustLower(allSql,'revoke all on public.agent_core_tool_calls from public,anon,au
 for(let i=1;i<=6;i++) mustLower(roadmapLower,`## Rodada ${i}`,`round${i}`);
 mustLower(roadmapLower,'não aumentar canary acima de 1%','rollout_guard');
 
-console.log(`Agent Core contract OK: ${tools.length} governed WhatsApp tools; Round 2 Responses API shadow, cache, Luna/Terra critic, read-only tool execution, no-side-effect writes and rollout guards verified.`);
+console.log(`Agent Core contract OK: ${tools.length} governed WhatsApp tools; Responses API shadow, cache, Luna/Terra critic, preview V2 state guard, read-only execution, no-side-effect writes and rollout guards verified.`);
