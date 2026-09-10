@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import sharp from 'sharp';
 import { processJob } from './marketing-render-worker-v1.mjs';
 
@@ -26,6 +27,42 @@ try{
   const privateRendered=await processJob(privateJob,{workspace:dir,outputDir:path.join(dir,'private-out'),sourceResolution:async (spec,ctx)=>{resolverCalls++;const target=path.join(ctx.tempDir,'source.png');await fs.mkdir(ctx.tempDir,{recursive:true});await fs.copyFile(source,target);const cloned=structuredClone(spec);cloned.layers[0].src=path.relative(dir,target);delete cloned.layers[0].source_refs;return {spec:cloned,resolved:[{media_id:'22222222-2222-4222-8222-222222222222',sha256:'test',mime_type:'image/png'}],external_side_effect:false}}});
   if(resolverCalls!==1||privateRendered.resolved_sources.length!==1||privateRendered.external_side_effect!==false) throw new Error('worker private source contract invalid');
   if((await fs.stat(privateRendered.output.path)).size<500) throw new Error('private source render invalid');
+
+  // End-to-end homologation of the canonical carousel path:
+  // private media_id -> authenticated private download mock -> temp file -> crop -> WebP -> temp cleanup.
+  const cropSource=path.join(dir,'carousel-source.png');
+  const left=Buffer.from('<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="400" fill="#d63f3f"/><rect x="400" width="400" height="400" fill="#2e63c7"/></svg>');
+  await sharp(left).png().toFile(cropSource);
+  const privateBytes=await fs.readFile(cropSource);
+  const privateSha=crypto.createHash('sha256').update(privateBytes).digest('hex');
+  const mediaId='33333333-3333-4333-8333-333333333333';
+  const assetId=imageJob.asset_id;
+  const objectPath=`${assetId}/v2/source/carousel-source.png`;
+  let rpcCalls=0,storageCalls=0;
+  const fetchImpl=async (url,options={})=>{
+    if(options.redirect!=='error') throw new Error('private resolver must block redirects');
+    if(String(url).includes('/rest/v1/rpc/marketing_media_signable_v1')){
+      rpcCalls++;
+      return new Response(JSON.stringify({media_id:mediaId,asset_id:assetId,version:2,bucket_name:'marketing-private',object_path:objectPath,mime_type:'image/png',byte_size:privateBytes.length,sha256:privateSha}),{status:200,headers:{'content-type':'application/json'}});
+    }
+    if(String(url).includes('/storage/v1/object/authenticated/marketing-private/')){
+      storageCalls++;
+      return new Response(privateBytes,{status:200,headers:{'content-type':'image/png'}});
+    }
+    throw new Error(`unexpected fetch: ${url}`);
+  };
+  const sourceResolution={supabaseUrl:'https://project.supabase.co',serviceRoleKey:'service-role-test-key-00000000000000000000',fetchImpl};
+  const canonicalSpec=x=>({schema:'marketing.carousel.render.v1',width:1080,height:1350,background:'#f7f4ee',quality:84,effort:5,layers:[{type:'image',x:0,y:0,width:1080,height:820,source_ref:{kind:'private_media',media_id:mediaId},crop:{fit:'cover',x,y:50,scale:1.25}},{type:'rect',x:0,y:820,width:1080,height:530,fill:'#ffffff'},{type:'text',text:'Cesta Dona Antônia',x:72,y:865,width:936,fontSize:62,fontWeight:'700',color:'#173f2a',align:'left'}],metadata:{asset_id:assetId,asset_version:2,slide_no:1,ai_used:false,external_side_effect:false}});
+  const leftCrop=await processJob({...imageJob,id:'carousel-real-left',input_spec:canonicalSpec(10)},{workspace:dir,outputDir:path.join(dir,'carousel-real'),sourceResolution});
+  const rightCrop=await processJob({...imageJob,id:'carousel-real-right',input_spec:canonicalSpec(90)},{workspace:dir,outputDir:path.join(dir,'carousel-real'),sourceResolution});
+  if(!leftCrop.ok||!rightCrop.ok||leftCrop.external_side_effect!==false||rightCrop.external_side_effect!==false) throw new Error('canonical carousel pipeline contract invalid');
+  if(leftCrop.resolved_sources[0]?.media_id!==mediaId||rightCrop.resolved_sources[0]?.sha256!==privateSha) throw new Error('canonical carousel private source evidence invalid');
+  const leftHash=crypto.createHash('sha256').update(await fs.readFile(leftCrop.output.path)).digest('hex');
+  const rightHash=crypto.createHash('sha256').update(await fs.readFile(rightCrop.output.path)).digest('hex');
+  if(leftHash===rightHash) throw new Error('canonical carousel crop position did not affect rendered pixels');
+  if(rpcCalls!==2||storageCalls!==2) throw new Error('canonical carousel resolver call count invalid');
+  const leftovers=(await fs.readdir(dir)).filter(name=>name.startsWith('.marketing-src-carousel-real-'));
+  if(leftovers.length) throw new Error('private source temp directory was not cleaned');
 
   const videoJob={id:'vid-1',asset_id:'11111111-1111-4111-8111-111111111111',asset_version:2,status:'processing',render_kind:'economical_video',input_spec:{width:360,height:640,fps:12,slides:[{src:'product.png',duration:0.8},{src:'product.png',duration:0.8}],crf:30}};
   const video=await processJob(videoJob,{workspace:dir,outputDir:path.join(dir,'out')});
