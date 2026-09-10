@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'supabase/migrations/*dona_antonia_agent_core*'
+      - 'supabase/migrations/*dona_antonia_whatsapp_delivery_promise*'
       - 'supabase/functions/dona-antonia-agent-core-v1/**'
       - 'supabase/functions/dona-antonia-agent-learning-v1/**'
       - 'supabase/functions/admin-agent-learning-v1/**'
@@ -19,11 +20,13 @@ on:
       - 'scripts/test-agent-core-round4-parity-v3.mjs'
       - 'scripts/test-agent-core-round4-semantic-v5.mjs'
       - 'scripts/test-agent-core-round4-stateful-v10.mjs'
+      - 'scripts/test-agent-core-round4-router-contracts-v19.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
     paths:
       - 'supabase/migrations/*dona_antonia_agent_core*'
+      - 'supabase/migrations/*dona_antonia_whatsapp_delivery_promise*'
       - 'supabase/functions/dona-antonia-agent-core-v1/**'
       - 'supabase/functions/dona-antonia-agent-learning-v1/**'
       - 'supabase/functions/admin-agent-learning-v1/**'
@@ -39,6 +42,7 @@ on:
       - 'scripts/test-agent-core-round4-parity-v3.mjs'
       - 'scripts/test-agent-core-round4-semantic-v5.mjs'
       - 'scripts/test-agent-core-round4-stateful-v10.mjs'
+      - 'scripts/test-agent-core-round4-router-contracts-v19.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
@@ -62,6 +66,7 @@ jobs:
           node scripts/test-agent-core-round4-parity-v3.mjs
           node scripts/test-agent-core-round4-semantic-v5.mjs
           node scripts/test-agent-core-round4-stateful-v10.mjs
+          node scripts/test-agent-core-round4-router-contracts-v19.mjs
           node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
           node --check admin-v3/agent-learning.js
       - uses: denoland/setup-deno@v2
