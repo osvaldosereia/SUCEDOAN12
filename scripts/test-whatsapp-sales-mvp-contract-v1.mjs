@@ -60,10 +60,13 @@ must(searchRanking,'order by r.score desc,r.term_position','ranking usa score e 
 must(searchRanking,'p.physically_verified=true','ranking mantém conferência física obrigatória');
 must(searchRanking,'coalesce(p.stock,0)>0','ranking mantém estoque positivo obrigatório');
 
-must(blingWorkflow,"cron: '*/10 11-21 * * *'",'agenda cobre 07:00–17:50 Cuiabá');
-must(blingWorkflow,"cron: '0 22 * * *'",'agenda inclui 18:00 Cuiabá');
-must(blingWorkflow,'TZ=America/Cuiaba date +%H%M','workflow valida hora local');
-must(blingWorkflow,"github.event_name == 'schedule' && 'apply'",'agenda automática usa apply');
+// Estado autorizado atual: Bling sem agenda automática. A janela 07–18 continua modelada no banco,
+// mas o writer só pode ser acionado manualmente até nova autorização explícita do proprietário.
+must(blingWorkflow,'BLING OFF: execução exclusivamente manual','workflow declara Bling OFF');
+must(blingWorkflow,'workflow_dispatch:','workflow preserva execução manual');
+mustNot(blingWorkflow,'schedule:','workflow não possui agenda automática');
+must(blingWorkflow,"default: dry-run",'modo manual nasce dry-run');
+must(blingWorkflow,"if [ \"$EFFECTIVE_MODE\" = \"apply\" ]",'apply é explícito');
 must(blingWorkflow,'cancel-in-progress: false','lotes não se atropelam');
 
 must(support,'resolver corretamente a necessidade','objetivo comercial correto');
@@ -111,4 +114,4 @@ must(writer,"d.catalog_source!=='counter_verified'",'writer valida fonte própri
 mustNot(writer,"if(!Number(i.bling_product_id))throw",'writer não exige vínculo prévio');
 
 for(const s of [core,exec,support,state,interactive,binding,confirmFirst,dispatchTarget,searchRanking]) must(s,'revoke all on function','RPCs revogadas do público');
-console.log('PASS: WhatsApp Sales MVP contract — catálogo próprio, IA/admin simples, dispatcher v3, confirmação antes do Bling e lote de 10 min 07–18 Cuiabá.');
+console.log('PASS: WhatsApp Sales MVP contract — catálogo próprio, IA/admin simples, dispatcher v3, confirmação protegida e Bling manual/off.');
