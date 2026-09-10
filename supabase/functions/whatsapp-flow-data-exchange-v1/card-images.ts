@@ -1,46 +1,52 @@
-import {hydrateExperienceImages,loadFlowCompatibleImageBase64,loadFlowSelectorImageBase64} from "./image.ts";
+import {hydrateExperienceImages,loadFlowCompatibleImageBase64} from "./image.ts";
 
-const COMPACT_LIST_MAX_BASE64_CHARS=18_000;
-const COMPACT_LIST_TOTAL_BASE64_CHARS=180_000;
 const FALLBACK_IMAGE_BASE64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC";
 
-function isUuid(value:string):boolean{return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);}
-async function mapLimited<T,R>(values:T[],limit:number,fn:(value:T,index:number)=>Promise<R>):Promise<R[]>{const output=new Array<R>(values.length);let cursor=0;const workers=Array.from({length:Math.min(limit,values.length)},async()=>{while(true){const index=cursor++;if(index>=values.length)return;output[index]=await fn(values[index],index);}});await Promise.all(workers);return output;}
-async function hydrateNavigationProductItems(items:unknown[],supabaseUrl:string):Promise<unknown[]>{let budget=COMPACT_LIST_TOTAL_BASE64_CHARS;return await mapLimited(items.slice(0,20),2,async(item)=>{if(!item||typeof item!=="object"||Array.isArray(item))return item;const row={...(item as Record<string,unknown>)};const productId=String(row.id||"").trim();const startRaw=row.start;if(!startRaw||typeof startRaw!=="object"||Array.isArray(startRaw))return row;const start={...(startRaw as Record<string,unknown>)};const imageUrl=String(start.image_url||"").trim().slice(0,2000);const existing=String(start.src||"").trim();delete start.image_url;delete start.image;if(existing&&(existing.length>COMPACT_LIST_MAX_BASE64_CHARS||existing.length>budget))delete start.src;if(!start.src&&imageUrl&&budget>0){const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,assetKey);if(image&&image.length<=COMPACT_LIST_MAX_BASE64_CHARS&&image.length<=budget){start.src=image;budget-=image.length;}}else if(start.src){budget-=String(start.src).length;}row.start=start;return row;});}
+function stripNavigationProductImages(items:unknown[]):unknown[]{
+  return items.slice(0,20).map((item)=>{
+    if(!item||typeof item!=="object"||Array.isArray(item))return item;
+    const row={...(item as Record<string,unknown>)};
+    const startRaw=row.start;
+    if(startRaw&&typeof startRaw==="object"&&!Array.isArray(startRaw)){
+      const start={...(startRaw as Record<string,unknown>)};
+      delete start.src;
+      delete start.image;
+      delete start.image_url;
+      if(Object.keys(start).length===0)delete row.start; else row.start=start;
+    }
+    delete row.image;
+    delete row.image_url;
+    return row;
+  });
+}
 
 export async function hydrateExperienceImagesWithCards(response:unknown,supabaseUrl:string,definitionSlug:string|null=null):Promise<unknown>{
   if(!response||typeof response!=="object"||Array.isArray(response))return response;
-  const raw=response as Record<string,unknown>;
-  const screen=String(raw.screen||"");
-  const isFastCandidate=definitionSlug==="flow-cestas-comercial-v5"||definitionSlug==="flow-cestas-comercial-v6";
-
-  // The initial CESTAS screen uses a media RadioButtonsGroup. Do not inject 1x1
-  // placeholders here: WhatsApp may keep the Flow renderer waiting even though
-  // INIT was accepted. Hydrate the real selector images through the standard
-  // image pipeline (precompressed asset cache preferred, safe fallback allowed).
   const hydrated=await hydrateExperienceImages(response,supabaseUrl);
   if(!hydrated||typeof hydrated!=="object"||Array.isArray(hydrated))return hydrated;
   const obj=hydrated as Record<string,unknown>;
   if(!obj.data||typeof obj.data!=="object"||Array.isArray(obj.data))return hydrated;
   const data=obj.data as Record<string,unknown>;
   const current=String(obj.screen||"");
+  const candidate=definitionSlug==="flow-cestas-comercial-v5"||definitionSlug==="flow-cestas-comercial-v6";
 
-  if(isFastCandidate&&/^PRODUTOS_[A-L]$/.test(current)&&Array.isArray(data.product_items)){
-    data.product_items=await hydrateNavigationProductItems(data.product_items as unknown[],supabaseUrl);
+  // Homologation isolation test: product lists render as text-only rows.
+  // This deliberately removes every media field from NavigationList items.
+  if(candidate&&/^PRODUTOS_[A-L]$/.test(current)&&Array.isArray(data.product_items)){
+    data.product_items=stripNavigationProductImages(data.product_items as unknown[]);
     return hydrated;
   }
-  if(isFastCandidate&&/^PRODUTO_[A-L]$/.test(current)){
-    const productId=String(data.product_id||data.id||"").trim();
+
+  // Product detail may still show one large image; list media is the variable under test.
+  if(candidate&&/^PRODUTO_[A-L]$/.test(current)){
     const existing=String(data.product_image_base64||"").trim();
     if(existing){data.has_product_image=true;delete data.product_image_url;delete data.product_id;return hydrated;}
     const imageUrl=String(data.product_image_url||"").trim().slice(0,2000);
-    const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
-    const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,assetKey):null;
+    const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,null):null;
     data.product_image_base64=image||FALLBACK_IMAGE_BASE64;
     data.has_product_image=Boolean(image);
     delete data.product_image_url;
     delete data.product_id;
-    return hydrated;
   }
   return hydrated;
 }
