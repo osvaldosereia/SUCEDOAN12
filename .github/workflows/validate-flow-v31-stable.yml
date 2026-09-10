@@ -66,12 +66,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json; then
+          TARGET='whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json'
+          if [ -z "$(git status --porcelain -- "$TARGET")" ]; then
             echo 'validated_candidate_already_current=true'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json
+          git add "$TARGET"
           git commit -m 'Flow V31: persist validated stable candidate [skip ci]'
           git push origin HEAD:flow-v29-fast-owner-test
