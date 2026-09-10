@@ -5,6 +5,9 @@ const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"au
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=1000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80));
+const jsonObject=(v:unknown)=>v&&typeof v==="object"&&!Array.isArray(v)?v:{};
+const jsonArray=(v:unknown)=>Array.isArray(v)?v:[];
+const payloadSizeOk=(v:unknown,max=120000)=>{try{return JSON.stringify(v??null).length<=max}catch{return false}};
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -21,6 +24,7 @@ Deno.serve(async(req:Request)=>{
   if(adminError)return json({ok:false,error:"admin_lookup_failed"},500);
   if(!admin?.is_active||!["owner","operator"].includes(admin.role))return json({ok:false,error:"admin_not_authorized"},403);
   let body:Record<string,unknown>={}; try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
+  if(!payloadSizeOk(body))return json({ok:false,error:"payload_too_large"},413);
   const action=clean(body.action||"calendar",80).toLowerCase();
 
   if(action==="workflow_overview"){
@@ -32,6 +36,35 @@ Deno.serve(async(req:Request)=>{
     if(assetsError||jobsError||calendarError)return json({ok:false,error:"workflow_overview_failed",detail:assetsError?.message||jobsError?.message||calendarError?.message},500);
     const normalizedJobs=(jobs||[]).map((j:any)=>({...j,title:j.marketing_assets?.title||null,marketing_assets:undefined}));
     return json({ok:true,user:{role:admin.role,display_name:admin.display_name},assets:assets||[],jobs:normalizedJobs,calendar:calendar||[],external_side_effect:false});
+  }
+  if(action==="editor_overview"){
+    const [{data:assets,error:assetsError},{data:revisions,error:revisionsError},{data:runtime,error:runtimeError}]=await Promise.all([
+      sb.from("marketing_assets").select("id,campaign_id,parent_asset_id,version,title,media_kind,generation_mode,status,source_refs,edit_spec,render_spec,output_spec,editable,updated_at,review_requested_at,reviewed_at").neq("status","archived").order("updated_at",{ascending:false}).limit(100),
+      sb.from("marketing_asset_revisions").select("id,asset_id,revision_no,title,generation_mode,status_at_revision,edit_spec,render_spec,change_note,created_at").order("created_at",{ascending:false}).limit(300),
+      sb.from("marketing_runtime_config").select("enabled,execution_mode,kill_switch,generation_enabled,deterministic_render_enabled,ai_image_enabled,ai_video_enabled,publishing_enabled").eq("id",1).maybeSingle()
+    ]);
+    if(assetsError||revisionsError||runtimeError)return json({ok:false,error:"editor_overview_failed",detail:assetsError?.message||revisionsError?.message||runtimeError?.message},500);
+    return json({ok:true,user:{role:admin.role,display_name:admin.display_name},runtime:runtime||{},assets:assets||[],revisions:revisions||[],external_side_effect:false});
+  }
+  if(action==="editor_save"){
+    const id=clean(body.asset_id,80); if(!uuid(id))return json({ok:false,error:"invalid_asset_id"},400);
+    const mode=clean(body.generation_mode,20); if(!["no_ai","ai","hybrid","manual"].includes(mode))return json({ok:false,error:"invalid_generation_mode"},400);
+    const editSpec=jsonObject(body.edit_spec),renderSpec=jsonObject(body.render_spec),sourceRefs=jsonArray(body.source_refs);
+    if(!payloadSizeOk({editSpec,renderSpec,sourceRefs},90000))return json({ok:false,error:"editor_spec_too_large"},413);
+    const {data,error}=await sb.rpc("marketing_save_asset_edit_v1",{
+      p_asset_id:id,p_title:clean(body.title,180),p_generation_mode:mode,p_source_refs:sourceRefs,
+      p_edit_spec:editSpec,p_render_spec:renderSpec,p_change_note:clean(body.change_note,1000)||null,p_actor:user.id
+    });
+    if(error)return json({ok:false,error:"editor_save_failed",detail:error.message},400);
+    if(!data?.ok)return json(data,409);
+    return json({ok:true,result:data,external_side_effect:false});
+  }
+  if(action==="editor_fork"){
+    const id=clean(body.asset_id,80); if(!uuid(id))return json({ok:false,error:"invalid_asset_id"},400);
+    const {data,error}=await sb.rpc("marketing_fork_asset_version_v1",{p_asset_id:id,p_change_note:clean(body.change_note,1000)||null,p_actor:user.id});
+    if(error)return json({ok:false,error:"editor_fork_failed",detail:error.message},400);
+    if(!data?.ok)return json(data,409);
+    return json({ok:true,result:data,external_side_effect:false});
   }
   if(action==="calendar"){
     const now=new Date(),to=new Date(now.getTime()+31*86400000);
