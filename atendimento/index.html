@@ -10,35 +10,15 @@
   <link rel="stylesheet" href="./styles.css?v=20260909-light2">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="Início"><img src="/img/logoantonia5.png" alt="Dona Antônia" width="132" height="38" fetchpriority="high"></a>
-  </header>
+  <header class="topbar"><a class="brand" href="./" aria-label="Início"><img src="/img/logoantonia5.png" alt="Dona Antônia" width="132" height="38" fetchpriority="high"></a></header>
   <main>
-    <form class="search-bar" role="search" onsubmit="return false">
-      <span class="search-icon" aria-hidden="true">⌕</span>
-      <input id="searchInput" type="search" placeholder="Buscar produto" autocomplete="off" enterkeyhint="search" aria-label="Buscar produto">
-      <button id="clearSearch" type="button" aria-label="Limpar busca" hidden>×</button>
-    </form>
-    <section id="basketMode" hidden>
-      <div id="detailNav" class="detail-nav" hidden></div>
-      <article class="basket-hero">
-        <div class="basket-image-wrap"><img id="basketImage" class="basket-image" alt="" decoding="async"></div>
-        <div class="basket-title-row"><h1 id="basketTitle">Cesta</h1><strong id="basketPrice">R$ 0,00</strong></div>
-      </article>
-      <section class="section"><h2>Personalize sua cesta</h2><div id="basketItems" class="basket-items"></div></section>
-    </section>
-    <section id="offersMode" class="section" hidden>
-      <div id="categoryTabs" class="chips"></div>
-      <div id="offersList"></div>
-    </section>
-    <section class="checkout-card" aria-labelledby="checkoutTitle">
-      <div class="checkout-head"><h2 id="checkoutTitle">Sua compra</h2></div>
-      <div id="summaryItems" class="checkout-items"></div>
-      <div class="total-row"><span>Total</span><strong id="grandTotal">R$ 0,00</strong></div>
-    </section>
+    <form class="search-bar" role="search" onsubmit="return false"><span class="search-icon" aria-hidden="true">⌕</span><input id="searchInput" type="search" placeholder="Buscar produto" autocomplete="off" enterkeyhint="search" aria-label="Buscar produto"><button id="clearSearch" type="button" aria-label="Limpar busca" hidden>×</button></form>
+    <section id="basketMode" hidden><div id="detailNav" class="detail-nav" hidden></div><article class="basket-hero"><div class="basket-image-wrap"><img id="basketImage" class="basket-image" alt="" decoding="async"></div><div class="basket-title-row"><h1 id="basketTitle">Cesta</h1><strong id="basketPrice">R$ 0,00</strong></div></article><section class="section"><h2>Personalize sua cesta</h2><div id="basketItems" class="basket-items"></div></section></section>
+    <section id="offersMode" class="section" hidden><div id="categoryTabs" class="chips"></div><div id="offersList"></div></section>
+    <section class="checkout-card" aria-labelledby="checkoutTitle"><div class="checkout-head"><h2 id="checkoutTitle">Sua compra</h2></div><div id="summaryItems" class="checkout-items"></div><div class="total-row"><span>Total</span><strong id="grandTotal">R$ 0,00</strong></div></section>
   </main>
   <div class="bottom-bar"><strong id="bottomTotal">R$ 0,00</strong><button id="sendWhatsapp" class="whatsapp" type="button">Adicionar à compra</button></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=20260909-light2"></script>
+  <script type="module" src="./app.js?v=20260909-whatsapp-fix1"></script>
 </body>
 </html>
