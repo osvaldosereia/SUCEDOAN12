@@ -100,6 +100,21 @@ Novo `scripts/test-marketing-attribution-v1.mjs` verifica:
 
 O workflow `Marketing Center V1` foi ampliado para executar esse contrato e observar as duas novas migrations.
 
+### 6. Métricas de atribuição no Admin
+
+O read model novo foi ligado ao caminho já existente de insights, sem habilitar gravação:
+
+- `admin-marketing-insights-v1` atualizado e implantado como v3 com `verify_jwt=true`;
+- RBAC continua restrito a `owner|operator`;
+- resposta agora normaliza `attribution_clicks`, `attribution_conversations` e `attribution_orders`;
+- `attribution_mode` vem do próprio read model e retorna `deterministic_evidence_only`;
+- overview expõe `attribution_recording_enabled` apenas para observabilidade;
+- Admin mostra cards de cliques, conversas e pedidos atribuídos;
+- texto da interface deixa explícito que não há inferência por IA ou proximidade temporal;
+- nenhuma ação de escrita de atribuição foi adicionada ao navegador/Admin.
+
+Validação SQL de 30 dias retornou `0` cliques, `0` conversas e `0` pedidos, com `inferred_attribution=false` e `external_side_effect=false`.
+
 ## Estado pós-run que deve permanecer
 
 ```text
@@ -129,9 +144,9 @@ Nenhum Make, Meta, Pinterest, Google ou provider de IA foi chamado; nenhuma publ
 
 ## Próximo bloco seguro
 
-1. transformar o contrato salvo dos slides em `render_spec` determinístico explícito e testável;
-2. homologar `media_id -> temporário -> crop -> WebP` com fixture/asset descartável, mantendo renderer global OFF;
-3. expor o novo read model de atribuição no Admin sem habilitar gravação;
+1. confirmar o CI mais recente desta Run 15;
+2. transformar o contrato salvo dos slides em `render_spec` determinístico explícito e testável;
+3. homologar `media_id -> temporário -> crop -> WebP` com fixture/asset descartável, mantendo renderer global OFF;
 4. preparar geradores de links/códigos internos de atribuição sem tracking externo e sem dispatcher;
 5. manter todos os publicadores oficiais exclusivamente em dry-run até autorização explícita.
 
