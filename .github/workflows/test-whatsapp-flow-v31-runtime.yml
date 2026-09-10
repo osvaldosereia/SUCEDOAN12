@@ -1,0 +1,34 @@
+name: Test WhatsApp Flow V31 Runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20260910124500_whatsapp_flow_v31_targeted_homologation_guard_v5.sql'
+      - 'supabase/migrations/20260910125000_whatsapp_flow_v31_runtime_v18_v22_backfill.sql'
+      - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
+      - 'scripts/test-whatsapp-flow-v31-runtime-contract.mjs'
+      - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260910124500_whatsapp_flow_v31_targeted_homologation_guard_v5.sql'
+      - 'supabase/migrations/20260910125000_whatsapp_flow_v31_runtime_v18_v22_backfill.sql'
+      - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
+      - 'scripts/test-whatsapp-flow-v31-runtime-contract.mjs'
+      - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate V31 runtime and owner-only homologation contract
+        run: node scripts/test-whatsapp-flow-v31-runtime-contract.mjs
