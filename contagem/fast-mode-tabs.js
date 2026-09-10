@@ -88,8 +88,6 @@
 
     sessionStorage.setItem(STOCK_OPERATION_KEY, next);
 
-    // Uma mudança de interpretação precisa gerar um novo checkpoint no Supabase.
-    // As leituras são preservadas; somente o modo do lote muda.
     if (current !== next && reads > 0) {
       sessionStorage.setItem(AUTOSAVE_LAST_TOTAL_KEY, '0');
       sessionStorage.removeItem(AUTOSAVE_FINALIZED_KEY);
@@ -111,18 +109,22 @@
     const next = target.dataset.fastStockMode;
     if (next !== 'add' && next !== 'balance') return;
 
-    // O handler legado bloqueava a troca quando havia leituras. Interceptamos antes dele
-    // para manter as leituras e permitir a mudança solicitada pelo operador.
     event.preventDefault();
     event.stopImmediatePropagation();
     setStockModeUnlocked(next);
   }
 
+  function loadDetailFixes() {
+    if (document.querySelector('script[data-detail-fixes]')) return;
+    const script = document.createElement('script');
+    script.src = './detail-fixes-v1.js?v=20260910-01';
+    script.dataset.detailFixes = '1';
+    document.body.appendChild(script);
+  }
+
   function bind() {
     $('detailModeTab')?.addEventListener('click', () => select(false));
     $('fastModeTab')?.addEventListener('click', () => select(true));
-
-    // Captura antes do listener legado presente em fast-stock-operation.js.
     document.addEventListener('click', interceptStockMode, true);
 
     const app = $('app');
@@ -132,6 +134,7 @@
     if (toggle) new MutationObserver(render).observe(toggle, { attributes: true, attributeFilter: ['class'] });
 
     render();
+    loadDetailFixes();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
