@@ -71,8 +71,16 @@ async function imageFrameBuffer(source,width,height,layer){
   const resized=await input.resize({width:resizedWidth,height:resizedHeight,fit:'fill'}).png().toBuffer();
   const left=Math.round((width-resizedWidth)*(crop.x/100));
   const top=Math.round((height-resizedHeight)*(crop.y/100));
+  const sourceLeft=Math.max(0,-left),sourceTop=Math.max(0,-top);
+  const targetLeft=Math.max(0,left),targetTop=Math.max(0,top);
+  const copyWidth=Math.min(resizedWidth-sourceLeft,width-targetLeft);
+  const copyHeight=Math.min(resizedHeight-sourceTop,height-targetTop);
+  if(copyWidth<=0||copyHeight<=0) return sharp({create:{width,height,channels:4,background:{r:0,g:0,b:0,alpha:0}}}).png().toBuffer();
+  const clipped=sourceLeft||sourceTop||copyWidth!==resizedWidth||copyHeight!==resizedHeight
+    ?await sharp(resized).extract({left:sourceLeft,top:sourceTop,width:copyWidth,height:copyHeight}).png().toBuffer()
+    :resized;
   return sharp({create:{width,height,channels:4,background:{r:0,g:0,b:0,alpha:0}}})
-    .composite([{input:resized,left,top,blend:'over'}])
+    .composite([{input:clipped,left:targetLeft,top:targetTop,blend:'over'}])
     .png().toBuffer();
 }
 async function render(specInput,{baseDir=process.cwd(),outputPath}={}){
