@@ -98,16 +98,17 @@ O cenário 7290488 permanece `active`, `incompleteExecutions=0`, sem espera por 
 
 ## CI
 
-O primeiro CI após a promoção V24 falhou em um contrato histórico que ainda esperava V23 na Edge. O runtime real, o Supabase e o envio Meta não falharam. O teste `scripts/test-whatsapp-flow-v31-runtime-contract.mjs` foi atualizado para exigir V24, manter V23 como camada histórica e negar regressão do bloco estável para V23/V22. O novo CI deve ser confirmado antes de declarar a trilha verde.
+O primeiro CI após a promoção V24 falhou somente porque o contrato histórico `test-whatsapp-flow-v31-runtime-contract.mjs` ainda exigia V23 na Edge. O contrato foi atualizado para exigir V24, manter V23 apenas como camada histórica e negar regressão do bloco estável para V23/V22.
+
+O workflow **Test WhatsApp Flow V31 Runtime**, run `34538882141` / run number 27, concluiu com **success** no commit `73559049666843b453b1401c5013b20e15cbbf28`. Portanto a trilha V24 ficou verde.
 
 ## Próximo ponto exato
 
-1. Confirmar CI do commit que alinhou o contrato V24.
-2. Aguardar/observar `INIT` da sessão real owner-only.
-3. Quando o Flow for aberto, auditar a sequência real: `CESTAS -> PERSONALIZAR -> SECOES -> TERMOS -> PRODUTOS -> PRODUTO -> UPSELL -> REVISAO -> CLIENTE_EXISTENTE/NOVO -> PAGAMENTO -> FINALIZAR`.
-4. Confirmar que voltar/editar não duplica extras e que total de revisão permanece igual ao cálculo do carrinho.
-5. Completar a jornada real somente no owner, validar `nfm_reply` e depois o pedido de localização no WhatsApp.
-6. Não ativar gates globais nem Bling até a homologação integral estar concluída e houver autorização explícita.
+1. Aguardar/observar `INIT` da sessão real owner-only.
+2. Quando o Flow for aberto, auditar a sequência real: `CESTAS -> PERSONALIZAR -> SECOES -> TERMOS -> PRODUTOS -> PRODUTO -> UPSELL -> REVISAO -> CLIENTE_EXISTENTE/NOVO -> PAGAMENTO -> FINALIZAR`.
+3. Confirmar que voltar/editar não duplica extras e que total de revisão permanece igual ao cálculo do carrinho.
+4. Completar a jornada real somente no owner, validar `nfm_reply` e depois o pedido de localização no WhatsApp.
+5. Não ativar gates globais nem Bling até a homologação integral estar concluída e houver autorização explícita.
 
 ## Ação manual realmente necessária
 
