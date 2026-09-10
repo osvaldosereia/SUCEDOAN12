@@ -19,6 +19,8 @@ on:
       - 'supabase/migrations/20260910192340_whatsapp_flow_v31_full_release_readiness_v2.sql'
       - 'supabase/migrations/20260910201745_whatsapp_flow_v31_deep_readonly_regression_v4.sql'
       - 'supabase/migrations/20260910201806_whatsapp_flow_v31_full_release_readiness_v3.sql'
+      - 'supabase/migrations/20260910212000_whatsapp_flow_v31_nfm_replay_readiness_v4.sql'
+      - 'supabase/migrations/20260910212400_whatsapp_flow_v31_nfm_replay_readiness_v4_fix.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
       - 'supabase/functions/whatsapp-ingest-make-v1/**'
       - 'scripts/build-flow-v31-stable-text-products.py'
@@ -28,6 +30,7 @@ on:
       - 'scripts/test-whatsapp-flow-v31-behavioral-catalog-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-transactional-readonly-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-deep-readonly-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v31-nfm-replay-contract.mjs'
       - 'whatsapp/flows/flow-cestas-comercial-v6.json'
       - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
   pull_request:
@@ -47,6 +50,8 @@ on:
       - 'supabase/migrations/20260910192340_whatsapp_flow_v31_full_release_readiness_v2.sql'
       - 'supabase/migrations/20260910201745_whatsapp_flow_v31_deep_readonly_regression_v4.sql'
       - 'supabase/migrations/20260910201806_whatsapp_flow_v31_full_release_readiness_v3.sql'
+      - 'supabase/migrations/20260910212000_whatsapp_flow_v31_nfm_replay_readiness_v4.sql'
+      - 'supabase/migrations/20260910212400_whatsapp_flow_v31_nfm_replay_readiness_v4_fix.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
       - 'supabase/functions/whatsapp-ingest-make-v1/**'
       - 'scripts/build-flow-v31-stable-text-products.py'
@@ -56,6 +61,7 @@ on:
       - 'scripts/test-whatsapp-flow-v31-behavioral-catalog-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-transactional-readonly-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-deep-readonly-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v31-nfm-replay-contract.mjs'
       - 'whatsapp/flows/flow-cestas-comercial-v6.json'
       - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
   workflow_dispatch:
@@ -110,3 +116,5 @@ jobs:
         run: node scripts/test-whatsapp-flow-v31-transactional-readonly-contract.mjs
       - name: Validate deep read-only regression contract
         run: node scripts/test-whatsapp-flow-v31-deep-readonly-contract.mjs
+      - name: Validate silent nfm replay contract
+        run: node scripts/test-whatsapp-flow-v31-nfm-replay-contract.mjs
