@@ -61,6 +61,9 @@ verify_jwt = true
 [functions.admin-marketing-dry-run-v1]
 verify_jwt = true
 
+[functions.admin-marketing-insights-v1]
+verify_jwt = true
+
 # Etapa 12: operação de armazém/fulfillment. JWT obrigatório + warehouse_staff no handler.
 [functions.warehouse-ops-v1]
 verify_jwt = true
