@@ -66,7 +66,10 @@ Deno.serve(async(req:Request)=>{
     });
     if(flowError)return json({...result,flow_reply:{ok:false,reason:"flow_reply_processing_failed"},should_reply:false,reply_type:"none"},200);
     if(flowReply?.ok===true&&flowReply?.return_to_chat===true){
-      return json({...result,flow_reply:flowReply,should_reply:true,reply_type:"text",reply_body:flowReply.reply_text||"Recebi suas escolhas. Vamos continuar por aqui.",action:"flow_nfm_reply",ai_job:null},200);
+      if(flowReply?.duplicate===true||!clean(flowReply?.reply_text,4096)){
+        return json({...result,flow_reply:flowReply,should_reply:false,reply_type:"none",reply_body:null,action:"flow_nfm_reply",ai_job:null},200);
+      }
+      return json({...result,flow_reply:flowReply,should_reply:true,reply_type:"text",reply_body:clean(flowReply.reply_text,4096),action:"flow_nfm_reply",ai_job:null},200);
     }
     return json({...result,flow_reply:flowReply,should_reply:false,reply_type:"none",action:"flow_nfm_reply",ai_job:null},200);
   }
