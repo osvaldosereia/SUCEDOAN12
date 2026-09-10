@@ -33,6 +33,15 @@ assert.match(guard, /queue_and_dispatch_whatsapp_flow_owner_homologation_v5/);
 assert.match(guard, /get_whatsapp_flow_v31_homologation_preflight_v2\(null,p_conversation_id\)/);
 assert.match(guard, /get_whatsapp_flow_v31_homologation_preflight_v2\(v_session_id,p_conversation_id\)/);
 
+// Owner-only outbound must carry a dedicated homologation session marker and the exact Flow identity issued by the token helper.
+assert.match(guard, /queue_and_dispatch_whatsapp_flow_owner_homologation_v1/);
+assert.match(guard, /v_flow_id:=v_issue->>'flow_id'/);
+assert.match(guard, /'homologation_session_id',v_session_id::text/);
+assert.match(guard, /'type','flow'/);
+assert.match(guard, /'flow_id',v_flow_id/);
+assert.match(guard, /'flow_action',v_action/);
+assert.match(guard, /dispatch_whatsapp_flow_owner_homologation_job_v1\(v_job_id\)/);
+
 // Homologation helpers are server-only.
 for (const fn of [
   'renew_whatsapp_flow_owner_homologation_lease_v1',
