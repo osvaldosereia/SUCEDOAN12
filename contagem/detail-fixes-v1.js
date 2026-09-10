@@ -11,14 +11,15 @@
   window.fetch=async function(input,init){
     const url=typeof input==='string'?input:(input?.url||'');
     let nextInit=init;
+    const restore=[];
     try{
       if(url.includes('/functions/v1/inventory-count-v2')&&typeof init?.body==='string'){
         const body=JSON.parse(init.body);
         if(body?.action==='save'&&body?.product){
-          const priceRaw=txt($('priceInput')?.value);
-          const costRaw=txt($('costInput')?.value);
-          if(!priceRaw)delete body.product.preco;
-          if(!costRaw)delete body.product.preco_custo;
+          const price=$('priceInput'),cost=$('costInput');
+          const priceBlank=!txt(price?.value),costBlank=!txt(cost?.value);
+          if(priceBlank){delete body.product.preco;if(price){restore.push([price,price.value]);price.value='-'}}
+          if(costBlank){delete body.product.preco_custo;if(cost){restore.push([cost,cost.value]);cost.value='-'}}
 
           if(touched.gondola&&txt($('gondolaInput')?.value)==='')body.clear_gondola=true;
           if(touched.shelf&&txt($('shelfInput')?.value)==='')body.clear_shelf=true;
@@ -27,7 +28,11 @@
         }
       }
     }catch{}
-    return nativeFetch(input,nextInit);
+
+    let pending;
+    try{pending=nativeFetch(input,nextInit)}
+    finally{for(const [el,value] of restore){if(el.value==='-')el.value=value}}
+    return pending;
   };
 
   function bind(){
