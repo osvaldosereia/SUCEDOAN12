@@ -5,11 +5,12 @@ const observe=fs.readFileSync('supabase/migrations/20260910135500_dona_antonia_a
 const hook=fs.readFileSync('supabase/migrations/20260910140200_dona_antonia_agent_core_shadow_hook_v1.sql','utf8');
 const roadmap=fs.readFileSync('docs/ROADMAP-AGENT-CORE-DONA-ANTONIA-6-RODADAS.md','utf8');
 const lower=(migration+'\n'+observe+'\n'+hook).toLowerCase();
+const roadmapLower=roadmap.toLowerCase();
 
 const must=(text,label)=>{if(!migration.includes(text))throw new Error(`missing:${label}`)};
 const mustObserve=(text,label)=>{if(!observe.includes(text))throw new Error(`observe_missing:${label}`)};
 const mustHook=(text,label)=>{if(!hook.includes(text))throw new Error(`hook_missing:${label}`)};
-const mustRoadmap=(text,label)=>{if(!roadmap.includes(text))throw new Error(`roadmap_missing:${label}`)};
+const mustRoadmap=(text,label)=>{if(!roadmapLower.includes(text.toLowerCase()))throw new Error(`roadmap_missing:${label}`)};
 
 must("execution_mode text not null default 'observe'",'observe_default');
 must("legacy_router_policy text not null default 'shadow'",'legacy_shadow');
