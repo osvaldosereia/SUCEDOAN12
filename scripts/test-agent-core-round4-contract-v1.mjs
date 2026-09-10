@@ -3,7 +3,8 @@ import fs from 'node:fs';
 const inventory=fs.readFileSync('supabase/migrations/20260910160252_dona_antonia_agent_core_round4_router_inventory_v1.sql','utf8');
 const dispatch=fs.readFileSync('supabase/migrations/20260910160512_dona_antonia_agent_core_round4_worker_dispatch_v3_v1.sql','utf8');
 const parity=fs.readFileSync('supabase/migrations/20260910161028_dona_antonia_agent_core_round4_parity_gate_v1.sql','utf8');
-const body=(inventory+'\n'+dispatch+'\n'+parity).toLowerCase();
+const recovery=fs.readFileSync('supabase/migrations/20260910161803_dona_antonia_agent_core_round4_worker_recovery_v3_v1.sql','utf8');
+const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery).toLowerCase();
 const must=(text,label)=>{if(!body.includes(text.toLowerCase()))throw new Error(`missing:${label}`)};
 const forbid=(text,label)=>{if(body.includes(text.toLowerCase()))throw new Error(`forbidden:${label}`)};
 
@@ -26,6 +27,10 @@ must("functions/v1/conversation-worker-v3",'worker_v3_endpoint');
 must('ai_job_event_dispatch_v3','worker_v3_trigger');
 must('select public.dispatch_conversation_worker_job_v3(p_job_id)','v2_compat_wrapper');
 must('drop function if exists public.ai_job_dispatch_trigger_v2()','retire_v2_trigger_function');
+must('recover_conversation_worker_dispatch_v3','canonical_worker_v3_recovery');
+must("'dona-antonia-conversation-worker-recovery-v3'",'worker_v3_recovery_cron');
+must('select public.recover_conversation_worker_dispatch_v3()','v2_recovery_compat_wrapper');
+must("where jobname='dona-antonia-conversation-worker-recovery-v2'",'retire_v2_recovery_cron');
 
 must('get_agent_core_round4_parity_report_v1','parity_report');
 must('get_agent_core_round4_mismatch_sample_v1','mismatch_sample');
@@ -53,4 +58,4 @@ for(const unsafe of [
   'bling_order_sync_enabled=true'
 ]) forbid(unsafe,unsafe);
 
-console.log('Agent Core Rodada 4: inventário/classificação, pós-processamento shadow único, dispatcher v3 explícito, gate de paridade e guardrails de rollout OK.');
+console.log('Agent Core Rodada 4: inventário/classificação, pós-processamento shadow único, dispatcher/recovery v3 explícitos, gate de paridade e guardrails de rollout OK.');
