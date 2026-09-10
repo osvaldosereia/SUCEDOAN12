@@ -5,6 +5,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   productsEdgeFunction: 'admin-products-live-v1',
   categoryEdgeFunction: 'admin-product-categories-v1',
   whatsappOpsEdgeFunction: 'admin-whatsapp-ops-v1',
+  trustedBrowserSession: true,
   humanServiceCenterUiEnabled: false,
   humanCopilotEnabled: false,
   humanCopilotEdgeFunction: 'admin-human-copilot-v1',
@@ -20,8 +21,29 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   commercialTruthUiEnabled: false,
   driverAppUrl: '../driver-app/',
   countAppUrl: '../contagem/',
-  build: '20260910-products-live-02'
+  build: '20260910-products-console-03'
 });
+
+(function prepareTrustedBrowserSession(cfg){
+  if(!cfg?.trustedBrowserSession)return;
+  const adminKey='da_admin_v3_auth';
+  const countKey='da_count_v2_auth';
+  try{
+    const parse=key=>{try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}};
+    const admin=parse(adminKey);
+    const count=parse(countKey);
+    const usable=value=>value&&(value.access_token||value.refresh_token);
+    const score=value=>Number(value?.expires_at||0);
+    if(usable(count)&&(!usable(admin)||score(count)>score(admin))){
+      localStorage.setItem(adminKey,JSON.stringify(count));
+    }
+    const selected=parse(adminKey);
+    if(selected?.access_token){
+      document.documentElement.classList.add('da-trusted-admin-session');
+      document.getElementById('loginView')?.classList.add('hidden');
+    }
+  }catch{}
+})(window.DA_ADMIN_V3_CONFIG);
 
 (function loadHumanServiceCenter(cfg){
   if(!cfg?.humanServiceCenterUiEnabled)return;
@@ -98,5 +120,17 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   if(!document.querySelector('script[data-products-live-ui]')){
     const script=document.createElement('script');
     script.src='../admin-v3/products-live-ui.js?v=20260910-02';script.dataset.productsLiveUi='1';document.body.appendChild(script);
+  }
+})(window.DA_ADMIN_V3_CONFIG);
+
+(function loadProductsConsoleV3(cfg){
+  if(!cfg?.productsEdgeFunction)return;
+  if(!document.querySelector('link[data-products-console-v3]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';link.href='../admin-v3/products-console-v3.css?v=20260910-01';link.dataset.productsConsoleV3='1';document.head.appendChild(link);
+  }
+  if(!document.querySelector('script[data-products-console-v3]')){
+    const script=document.createElement('script');
+    script.src='../admin-v3/products-console-v3.js?v=20260910-01';script.dataset.productsConsoleV3='1';document.body.appendChild(script);
   }
 })(window.DA_ADMIN_V3_CONFIG);
