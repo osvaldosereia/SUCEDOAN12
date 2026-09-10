@@ -17,9 +17,11 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   logisticsUiEnabled: false,
   commercialTruthEdgeFunction: 'admin-commercial-truth-v1',
   commercialTruthUiEnabled: false,
+  marketingEdgeFunction: 'admin-marketing-v1',
+  marketingUiEnabled: true,
   driverAppUrl: '../driver-app/',
   countAppUrl: '../contagem/',
-  build: '20260908-basket-showcase-admin-02'
+  build: '20260910-marketing-center-v1'
 });
 
 (function loadHumanServiceCenter(cfg){
@@ -75,6 +77,33 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   if(!document.querySelector('script[data-financial-admin]')){
     const script=document.createElement('script');script.src='../admin-v3/financial-admin.js?v=20260908-01';script.dataset.financialAdmin='1';script.onload=()=>window.DAFinancialAdmin?.mount(mount);document.body.appendChild(script);
   }
+})(window.DA_ADMIN_V3_CONFIG);
+
+(function loadMarketingCenter(cfg){
+  if(!cfg?.marketingUiEnabled)return;
+  const nav=document.getElementById('nav');
+  const main=document.querySelector('.workspace main');
+  if(!nav||!main)return;
+  let button=document.querySelector('.nav[data-route="marketing"]');
+  if(!button){
+    button=document.createElement('button');
+    button.className='nav';button.type='button';button.dataset.route='marketing';button.innerHTML='<span>MK</span>Marketing';
+    const queue=document.querySelector('.nav[data-route="queue"]');
+    nav.insertBefore(button,queue||nav.lastElementChild);
+  }
+  let mount=document.getElementById('marketingCenterMount');
+  if(!mount){mount=document.createElement('section');mount.id='marketingCenterMount';mount.className='view';mount.dataset.view='marketing';main.appendChild(mount)}
+  button.addEventListener('click',()=>setTimeout(()=>{
+    const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSubtitle');
+    if(title)title.textContent='Marketing';
+    if(sub)sub.textContent='Conteúdo, campanhas, canais e automações sem Make.';
+  },0));
+  if(!document.querySelector('link[data-marketing-center]')){
+    const link=document.createElement('link');link.rel='stylesheet';link.href='../admin-v3/marketing-center.css?v=20260910-01';link.dataset.marketingCenter='1';document.head.appendChild(link);
+  }
+  if(!document.querySelector('script[data-marketing-center]')){
+    const script=document.createElement('script');script.src='../admin-v3/marketing-center.js?v=20260910-01';script.dataset.marketingCenter='1';script.onload=()=>window.DAMarketingCenter?.mount(mount);document.body.appendChild(script);
+  }else window.DAMarketingCenter?.mount(mount);
 })(window.DA_ADMIN_V3_CONFIG);
 
 (function loadProductCategoriesInline(cfg){
