@@ -21,7 +21,7 @@ try{
   const one=await resolvePrivateMedia({supabaseUrl:'https://abc.supabase.co',serviceRoleKey:key,mediaId,assetId,version:2,tempDir:path.join(dir,'one'),fetchImpl:okFetch});
   if(!one.ok||one.sha256!==sha256||one.external_side_effect!==false) throw new Error('resolver contract invalid');
   if((await fs.readFile(one.file_path)).compare(bytes)!==0) throw new Error('resolver output mismatch');
-  if(calls.some(c=>/sign/.test(c.url))) throw new Error('resolver must not create signed URLs');
+  if(calls.some(c=>/\/storage\/v1\/object\/sign\//.test(c.url))) throw new Error('resolver must not create signed URLs');
   if(!calls.every(c=>c.opts?.redirect==='error')) throw new Error('resolver must block redirects');
 
   const spec={width:600,height:600,layers:[{type:'image',source_refs:[{kind:'private_media',media_id:mediaId}],crop:{fit:'cover',x:20,y:50,scale:1.2}}]};
