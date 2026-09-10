@@ -7,7 +7,7 @@
   const $=id=>document.getElementById(id);
   const nativeFetch=window.fetch.bind(window);
   let latestProducts=[];
-  let latestMetrics={verified:0,counting:0,ai_review:0};
+  let latestMetrics={verified:0,counting:0,ai_review:0,ai_created:0};
   let refreshTimer=null;
 
   function productView(){return document.querySelector('.view[data-view="products"]')}
@@ -30,6 +30,7 @@
       const options=[
         ['verified','Conferidos'],
         ['counting','Em contagem agora'],
+        ['ai-created','Cadastrados pela IA'],
         ['ai-review','Revisão IA'],
       ];
       for(const [value,label] of options){
