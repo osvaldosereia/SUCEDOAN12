@@ -127,7 +127,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   if(!cfg?.productsEdgeFunction)return;
   if(!document.querySelector('link[data-products-console-v3]')){
     const link=document.createElement('link');
-    link.rel='stylesheet';link.href='../admin-v3/products-console-v3.css?v=20260910-01';link.datasetProductsConsoleV3='1';document.head.appendChild(link);
+    link.rel='stylesheet';link.href='../admin-v3/products-console-v3.css?v=20260910-01';link.dataset.productsConsoleV3='1';document.head.appendChild(link);
   }
   if(!document.querySelector('script[data-products-console-v3]')){
     const script=document.createElement('script');
