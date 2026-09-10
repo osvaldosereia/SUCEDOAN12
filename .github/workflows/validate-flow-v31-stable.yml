@@ -6,7 +6,9 @@ on:
       - flow-v29-fast-owner-test
     paths:
       - 'scripts/build-flow-v31-stable-text-products.py'
+      - 'scripts/validate-flow-v31-commercial-contract.py'
       - 'whatsapp/flows/flow-cestas-comercial-v6.json'
+      - 'whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json'
       - '.github/workflows/validate-flow-v31-stable.yml'
   workflow_dispatch:
 
@@ -26,6 +28,9 @@ jobs:
 
       - name: Validate JSON
         run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json >/dev/null
+
+      - name: Validate full commercial contract
+        run: python scripts/validate-flow-v31-commercial-contract.py
 
       - name: Guard stable UX contract
         shell: bash
