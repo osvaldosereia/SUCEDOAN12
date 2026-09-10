@@ -29,7 +29,13 @@ export function clearCart() {
 export function ensureBasket(cart, basket, productByCode) {
   const details = basket.items.map(base => {
     const product = productByCode.get(base.code.toLowerCase());
-    return { code: base.code, name: product?.name || base.code, unitPrice: product?.price || 0, baseQty: base.qty };
+    return {
+      code: base.code,
+      name: product?.name || base.code,
+      unitPrice: product?.price || 0,
+      image: product?.image || '/img/logoantonia5.png',
+      baseQty: base.qty
+    };
   });
 
   if (!cart.basket || cart.basket.id !== basket.id) {
@@ -61,9 +67,7 @@ export function extrasTotal(cart) {
   return Object.values(cart.extras || {}).reduce((sum, item) => sum + n(item.price) * n(item.qty), 0);
 }
 
-export function grandTotal(cart) {
-  return basketTotal(cart) + extrasTotal(cart);
-}
+export function grandTotal(cart) { return basketTotal(cart) + extrasTotal(cart); }
 
 export function totalUnits(cart) {
   const basket = cart.basket?.items?.reduce((sum, item) => sum + n(item.qty), 0) || 0;
@@ -79,9 +83,10 @@ export function changeBasketQty(cart, index, delta) {
 }
 
 export function changeExtraQty(cart, product, delta) {
-  const current = cart.extras[product.code] || { code: product.code, name: product.name, price: product.price, qty: 0 };
+  const current = cart.extras[product.code] || { code: product.code, name: product.name, price: product.price, image: product.image, qty: 0 };
   current.name = product.name;
   current.price = product.price;
+  current.image = product.image;
   current.qty = Math.max(0, n(current.qty) + delta);
   if (current.qty <= 0) delete cart.extras[product.code];
   else cart.extras[product.code] = current;
@@ -89,48 +94,26 @@ export function changeExtraQty(cart, product, delta) {
 }
 
 function basketChanges(cart) {
-  const items = cart.basket?.items || [];
-  const changed = [];
-  const removed = [];
-
-  for (const item of items) {
-    const qty = n(item.qty);
-    const baseQty = n(item.baseQty);
+  const changed = [], removed = [];
+  for (const item of cart.basket?.items || []) {
+    const qty = n(item.qty), baseQty = n(item.baseQty);
     if (qty === baseQty) continue;
-    if (qty <= 0) removed.push(item);
-    else changed.push(item);
+    if (qty <= 0) removed.push(item); else changed.push(item);
   }
-
   return { changed, removed, hasChanges: changed.length > 0 || removed.length > 0 };
 }
 
 export function whatsappUrl(cart, money, finalize) {
   const lines = [finalize ? '*FINALIZAR PEDIDO*' : `*${cart.basket?.name || 'CESTA'} — ${basketChanges(cart).hasChanges ? 'ALTERADA' : 'PADRÃO'}*`, `Pedido ${cart.code}`, ''];
-
   if (cart.basket) {
     const { changed, removed } = basketChanges(cart);
-    const visibleItems = cart.basket.items.filter(item => n(item.qty) > 0);
-
-    visibleItems.forEach(item => lines.push(`${item.qty}x ${item.name}`));
+    cart.basket.items.filter(item => n(item.qty) > 0).forEach(item => lines.push(`${item.qty}x ${item.name}`));
     lines.push(`Cesta: ${money(basketTotal(cart))}`);
-
-    if (changed.length) {
-      lines.push('', '*PRODUTOS ALTERADOS*');
-      changed.forEach(item => lines.push(`${item.qty}x ${item.name}`));
-    }
-
-    if (removed.length) {
-      lines.push('', '*PRODUTOS RETIRADOS*');
-      removed.forEach(item => lines.push(item.name));
-    }
+    if (changed.length) { lines.push('', '*PRODUTOS ALTERADOS*'); changed.forEach(item => lines.push(`${item.qty}x ${item.name}`)); }
+    if (removed.length) { lines.push('', '*PRODUTOS RETIRADOS*'); removed.forEach(item => lines.push(item.name)); }
   }
-
   const extras = Object.values(cart.extras || {}).filter(item => item.qty > 0);
-  if (extras.length) {
-    lines.push('', '*Produtos avulsos*');
-    extras.forEach(item => lines.push(`${item.qty}x ${item.name}`));
-  }
-
+  if (extras.length) { lines.push('', '*Produtos avulsos*'); extras.forEach(item => lines.push(`${item.qty}x ${item.name}`)); }
   lines.push('', `*Total: ${money(grandTotal(cart))}*`);
   return `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(lines.join('\n'))}`;
 }
