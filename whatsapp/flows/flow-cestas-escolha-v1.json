@@ -1,0 +1,92 @@
+{
+  "version": "7.1",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "CESTAS": ["ESCOLHIDA"],
+    "ESCOLHIDA": []
+  },
+  "screens": [
+    {
+      "id": "CESTAS",
+      "title": "Escolha sua cesta",
+      "data": {
+        "intro": {
+          "type": "string",
+          "__example__": "Escolha uma das nossas cestas básicas."
+        },
+        "baskets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "title": {"type": "string"},
+              "description": {"type": "string"}
+            }
+          },
+          "__example__": [
+            {"id": "00000000-0000-4000-8000-000000000001", "title": "Cesta Econômica · R$ 99,90", "description": "Toque para escolher"}
+          ]
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {"type": "TextHeading", "text": "Cestas Básicas Dona Antônia"},
+          {"type": "TextBody", "text": "${data.intro}"},
+          {
+            "type": "Form",
+            "name": "basket_form",
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Escolha uma cesta",
+                "name": "basket_id",
+                "data-source": "${data.baskets}",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Escolher esta cesta",
+                "on-click-action": {
+                  "name": "data_exchange",
+                  "payload": {
+                    "trigger": "basket_selected",
+                    "basket_id": "${form.basket_id}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ESCOLHIDA",
+      "title": "Cesta escolhida",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "basket_name": {"type": "string", "__example__": "Cesta Econômica"},
+        "basket_price": {"type": "string", "__example__": "R$ 99,90"},
+        "message": {"type": "string", "__example__": "Cesta selecionada. Agora vamos decidir se você quer receber assim ou personalizar."}
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {"type": "TextHeading", "text": "${data.basket_name}"},
+          {"type": "TextSubheading", "text": "${data.basket_price}"},
+          {"type": "TextBody", "text": "${data.message}"},
+          {
+            "type": "Footer",
+            "label": "Continuar no WhatsApp",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {"action": "basket_selected"}
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
