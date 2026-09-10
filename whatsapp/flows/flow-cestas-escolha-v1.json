@@ -23,7 +23,7 @@
               "on-click-action": {"type":"object","properties":{"name":{"type":"string"},"payload":{"type":"object","properties":{"trigger":{"type":"string"},"basket_id":{"type":"string"}}}}}
             }
           },
-          "__example__": [{"id":"00000000-0000-4000-8000-000000000001","main-content":{"title":"Cesta Econômica","description":"Toque para ver os produtos","metadata":""},"start":{"image":"iVBORw0KGgoAAA...","alt-text":"Cesta Econômica"},"end":{"title":"R$ 92,00"},"on-click-action":{"name":"data_exchange","payload":{"trigger":"basket_open","basket_id":"00000000-0000-4000-8000-000000000001"}}}]
+          "__example__": [{"id":"00000000-0000-4000-8000-000000000001","main-content":{"title":"Cesta Econômica","description":"Ver produtos","metadata":""},"start":{"image":"iVBORw0KGgoAAA...","alt-text":"Cesta Econômica"},"end":{"title":"R$ 92,00"},"on-click-action":{"name":"data_exchange","payload":{"trigger":"basket_open","basket_id":"00000000-0000-4000-8000-000000000001"}}}]
         }
       },
       "layout": {"type":"SingleColumnLayout","children":[{"type":"NavigationList","name":"basket_list","list-items":"${data.baskets}"}]}
