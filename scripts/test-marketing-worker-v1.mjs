@@ -18,6 +18,15 @@ try{
   const persisted=await processJob(imageJob,{workspace:dir,outputDir:path.join(dir,'out2'),persistence:async input=>{persistCalls++;if(input.assetId!==imageJob.asset_id||input.version!==2||input.mimeType!=='image/webp')throw new Error('persistence input invalid');return {ok:true,media_id:'media-test',external_side_effect:false}}});
   if(persistCalls!==1||persisted.storage_side_effect!==true||persisted.external_side_effect!==false||persisted.persisted?.media_id!=='media-test') throw new Error('worker persistence contract invalid');
 
+  const privateJob={...imageJob,id:'img-private',input_spec:{width:600,height:600,layers:[{type:'image',source_refs:[{kind:'private_media',media_id:'22222222-2222-4222-8222-222222222222'}],width:500,height:500,crop:{fit:'cover',x:25,y:50,scale:1.1}}]}};
+  let resolverRequired=false;
+  try{await processJob(privateJob,{workspace:dir,outputDir:path.join(dir,'private-no-resolver')})}catch(e){resolverRequired=/private_source_resolution_required/.test(e.message)}
+  if(!resolverRequired) throw new Error('private source must fail closed without resolver');
+  let resolverCalls=0;
+  const privateRendered=await processJob(privateJob,{workspace:dir,outputDir:path.join(dir,'private-out'),sourceResolution:async (spec,ctx)=>{resolverCalls++;const target=path.join(ctx.tempDir,'source.png');await fs.mkdir(ctx.tempDir,{recursive:true});await fs.copyFile(source,target);const cloned=structuredClone(spec);cloned.layers[0].src=path.relative(dir,target);delete cloned.layers[0].source_refs;return {spec:cloned,resolved:[{media_id:'22222222-2222-4222-8222-222222222222',sha256:'test',mime_type:'image/png'}],external_side_effect:false}}});
+  if(resolverCalls!==1||privateRendered.resolved_sources.length!==1||privateRendered.external_side_effect!==false) throw new Error('worker private source contract invalid');
+  if((await fs.stat(privateRendered.output.path)).size<500) throw new Error('private source render invalid');
+
   const videoJob={id:'vid-1',asset_id:'11111111-1111-4111-8111-111111111111',asset_version:2,status:'processing',render_kind:'economical_video',input_spec:{width:360,height:640,fps:12,slides:[{src:'product.png',duration:0.8},{src:'product.png',duration:0.8}],crf:30}};
   const video=await processJob(videoJob,{workspace:dir,outputDir:path.join(dir,'out')});
   if(!video.ok||video.ai_used!==false||video.external_side_effect!==false||video.output.mime_type!=='video/mp4') throw new Error('video worker contract invalid');
