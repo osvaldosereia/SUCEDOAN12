@@ -28,6 +28,7 @@ Deno.serve(async(req:Request)=>{
     const {data,error}=await sb.rpc("marketing_metrics_read_model_v1",{p_from:from.toISOString(),p_to:to.toISOString()});
     if(error)return fail("metrics_failed",error.message,500);
     const raw=(data&&typeof data==="object")?data as Record<string,any>:{};
+    const attribution=(raw?.attribution&&typeof raw.attribution==="object")?raw.attribution:{status:"unavailable",touchpoints:{}};
     const metrics={
       counts:{
         assets_created:Number(raw?.assets?.total||0),
@@ -37,21 +38,24 @@ Deno.serve(async(req:Request)=>{
         review_required:Number(raw?.publication_jobs?.review_required||0),
         actual_cost_cents:Number(raw?.assets?.actual_cost_cents||0),
         estimated_cost_cents:Number(raw?.assets?.estimated_cost_cents||0),
-        external_side_effects:Number(raw?.events?.external_side_effects||0)
+        external_side_effects:Number(raw?.events?.external_side_effects||0),
+        attribution_clicks:Number(attribution?.touchpoints?.clicks||0),
+        attribution_conversations:Number(attribution?.touchpoints?.conversations||0),
+        attribution_orders:Number(attribution?.touchpoints?.orders||0)
       },
       by_mode:raw?.assets?.by_mode||{},
       by_status:raw?.publication_jobs?.by_status||{},
       by_channel:raw?.publication_jobs?.by_channel||{},
-      attribution:raw?.attribution||{status:"foundation_only"},
+      attribution,
       raw
     };
-    return json({ok:true,days,from:from.toISOString(),to:to.toISOString(),metrics,attribution_mode:"foundation_only",external_side_effect:false});
+    return json({ok:true,days,from:from.toISOString(),to:to.toISOString(),metrics,attribution_mode:clean(attribution?.status,80)||"unavailable",external_side_effect:false});
   }
   if(action==="overview"){
     const [{data:assets,error:e1},{data:media,error:e2},{data:runtime,error:e3}]=await Promise.all([
       sb.from("marketing_assets").select("id,title,media_kind,generation_mode,status,version,updated_at").neq("status","archived").order("updated_at",{ascending:false}).limit(100),
       sb.from("marketing_media_objects").select("id,asset_id,version,role,mime_type,width,height,duration_ms,byte_size,created_at").order("created_at",{ascending:false}).limit(300),
-      sb.from("marketing_runtime_config").select("enabled,execution_mode,canary_percent,kill_switch,generation_enabled,deterministic_render_enabled,ai_image_enabled,ai_video_enabled,publishing_enabled,whatsapp_status_publish_enabled,instagram_story_publish_enabled,facebook_story_publish_enabled,instagram_carousel_publish_enabled,pinterest_publish_enabled,google_business_publish_enabled").eq("id",1).maybeSingle()
+      sb.from("marketing_runtime_config").select("enabled,execution_mode,canary_percent,kill_switch,generation_enabled,deterministic_render_enabled,ai_image_enabled,ai_video_enabled,publishing_enabled,attribution_recording_enabled,whatsapp_status_publish_enabled,instagram_story_publish_enabled,facebook_story_publish_enabled,instagram_carousel_publish_enabled,pinterest_publish_enabled,google_business_publish_enabled").eq("id",1).maybeSingle()
     ]);
     if(e1||e2||e3)return fail("overview_failed",e1?.message||e2?.message||e3?.message||"Falha de leitura",500);
     return json({ok:true,user:{role:admin.role,display_name:admin.display_name},assets:assets||[],media:media||[],runtime:runtime||{},external_side_effect:false});
