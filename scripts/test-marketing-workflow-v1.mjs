@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/migrations/20260910085000_marketing_review_calendar_v4.sql','utf8');
+const edge=fs.readFileSync('supabase/functions/admin-marketing-workflow-v1/index.ts','utf8');
+const ui=fs.readFileSync('admin-v3/marketing-workflow-v1.js','utf8');
+for(const fn of ['submit_marketing_asset_review_v1','approve_marketing_asset_v1','schedule_marketing_publication_v1','unschedule_marketing_publication_v1','marketing_calendar_v1']) assert.match(sql,new RegExp(fn));
+assert.match(sql,/security invoker/gi);
+assert.match(sql,/revoke all on function public\.schedule_marketing_publication_v1[\s\S]*from public,anon,authenticated/i);
+assert.match(sql,/grant execute on function public\.schedule_marketing_publication_v1[\s\S]*to service_role/i);
+assert.match(edge,/owner_required/);
+assert.match(edge,/unknown_or_not_allowed_action/);
+assert.doesNotMatch(edge,/graph\.facebook\.com|pinterest\.com\/v5|mybusinessbusinessinformation\.googleapis\.com|openai\.com\/v1/i);
+assert.doesNotMatch(ui,/publish\s*\(/i);
+assert.match(ui,/Calendário e aprovação/);
+assert.match(ui,/Nenhuma publicação foi feita/);
+console.log('marketing workflow safety contract: ok');
