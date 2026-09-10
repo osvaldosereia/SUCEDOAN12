@@ -1,0 +1,40 @@
+name: Test Agent Eval Harness V1
+
+on:
+  push:
+    paths:
+      - 'supabase/functions/dona-antonia-agent-eval-v1/**'
+      - 'supabase/functions/dona-antonia-agent-core-v1/**'
+      - 'supabase/migrations/20260910231800_dona_antonia_agent_eval_harness_v1.sql'
+      - 'tests/agent-eval/**'
+      - 'scripts/test-agent-eval-harness-v1.mjs'
+      - '.github/workflows/test-agent-eval-harness-v1.yml'
+  pull_request:
+    paths:
+      - 'supabase/functions/dona-antonia-agent-eval-v1/**'
+      - 'supabase/functions/dona-antonia-agent-core-v1/**'
+      - 'supabase/migrations/20260910231800_dona_antonia_agent_eval_harness_v1.sql'
+      - 'tests/agent-eval/**'
+      - 'scripts/test-agent-eval-harness-v1.mjs'
+      - '.github/workflows/test-agent-eval-harness-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eval-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate eval isolation and Agent Core parity
+        run: node scripts/test-agent-eval-harness-v1.mjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Deno check evaluator
+        run: deno check supabase/functions/dona-antonia-agent-eval-v1/index.ts
