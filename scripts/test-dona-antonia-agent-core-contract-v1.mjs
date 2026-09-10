@@ -2,11 +2,13 @@ import fs from 'node:fs';
 
 const migration=fs.readFileSync('supabase/migrations/20260910134400_dona_antonia_agent_core_foundation_v1.sql','utf8');
 const observe=fs.readFileSync('supabase/migrations/20260910135500_dona_antonia_agent_core_observe_v1.sql','utf8');
+const hook=fs.readFileSync('supabase/migrations/20260910140200_dona_antonia_agent_core_shadow_hook_v1.sql','utf8');
 const roadmap=fs.readFileSync('docs/ROADMAP-AGENT-CORE-DONA-ANTONIA-6-RODADAS.md','utf8');
-const lower=(migration+'\n'+observe).toLowerCase();
+const lower=(migration+'\n'+observe+'\n'+hook).toLowerCase();
 
 const must=(text,label)=>{if(!migration.includes(text))throw new Error(`missing:${label}`)};
 const mustObserve=(text,label)=>{if(!observe.includes(text))throw new Error(`observe_missing:${label}`)};
+const mustHook=(text,label)=>{if(!hook.includes(text))throw new Error(`hook_missing:${label}`)};
 const mustRoadmap=(text,label)=>{if(!roadmap.includes(text))throw new Error(`roadmap_missing:${label}`)};
 
 must("execution_mode text not null default 'observe'",'observe_default');
@@ -22,6 +24,9 @@ mustObserve('observe_whatsapp_agent_core_turn_v1','shadow_observer');
 mustObserve('get_whatsapp_agent_core_readiness_v1','readiness');
 mustObserve("'prompt_stored',false",'no_prompt_storage');
 mustObserve('legacy_before_insert_router_count','router_inventory');
+mustHook('trg_agent_core_shadow_observe_ai_job_v1','shadow_hook');
+mustHook('exception when others','shadow_hook_fail_open_for_telemetry');
+mustHook("when (new.status='done')",'done_only');
 
 const tools=[
  'wa_search_products','wa_get_product','wa_get_cart','wa_list_baskets','wa_get_policy',
@@ -48,4 +53,4 @@ mustRoadmap('## Rodada 5','round5');
 mustRoadmap('## Rodada 6','round6');
 mustRoadmap('não aumentar canary acima de 1%','rollout_guard');
 
-console.log(`Agent Core contract OK: ${tools.length} governed WhatsApp tools, observe/shadow defaults, readiness trace and rollout guards present.`);
+console.log(`Agent Core contract OK: ${tools.length} governed WhatsApp tools, observe/shadow defaults, readiness trace, non-blocking telemetry and rollout guards present.`);
