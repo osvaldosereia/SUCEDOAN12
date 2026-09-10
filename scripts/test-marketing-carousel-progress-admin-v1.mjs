@@ -1,0 +1,13 @@
+import fs from 'node:fs/promises';
+const ui=await fs.readFile(new URL('../admin-v3/marketing-carousel-progress-v1.js',import.meta.url),'utf8');
+const edge=await fs.readFile(new URL('../supabase/functions/admin-marketing-carousel-v1/index.ts',import.meta.url),'utf8');
+const must=(ok,msg)=>{if(!ok)throw new Error(msg)};
+must(ui.includes("action:'progress'")&&ui.includes('asset_id:assetId'),'progress Admin must call read-only progress action for selected asset');
+must(ui.includes("d.external_side_effect!==false"),'progress Admin must fail closed on external side effect contract');
+must(ui.includes("slide_status==='rendered'")&&ui.includes("job_status==='processing'")&&ui.includes("'review_required'")&&ui.includes("'queued'"),'progress Admin status mapping incomplete');
+must(ui.includes('data-mcm-render-status')&&ui.includes('Atualizar progresso'),'per-slide status badge/refresh control missing');
+must(!ui.includes("action:'request_render'")&&!ui.includes("action:'publish'")&&!ui.includes('graph.facebook.com')&&!ui.includes('api.pinterest.com')&&!ui.includes('mybusiness.googleapis.com'),'progress module must be read-only and provider-free');
+must(edge.includes('if(action==="progress")')&&edge.includes('marketing_carousel_render_progress_v1'),'carousel Edge progress RPC missing');
+must(edge.includes('["owner","operator"].includes(admin.role)'),'carousel Edge RBAC missing');
+must(edge.includes('external_side_effect:false'),'carousel progress must declare no external side effect');
+console.log('marketing carousel progress Admin safety: ok');
