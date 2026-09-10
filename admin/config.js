@@ -21,7 +21,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   commercialTruthUiEnabled: false,
   driverAppUrl: '../driver-app/',
   countAppUrl: '../contagem/',
-  build: '20260910-products-console-03'
+  build: '20260910-products-console-04'
 });
 
 (function prepareTrustedBrowserSession(cfg){
@@ -119,7 +119,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   }
   if(!document.querySelector('script[data-products-live-ui]')){
     const script=document.createElement('script');
-    script.src='../admin-v3/products-live-ui.js?v=20260910-02';script.dataset.productsLiveUi='1';document.body.appendChild(script);
+    script.src='../admin-v3/products-live-ui.js?v=20260910-03';script.dataset.productsLiveUi='1';document.body.appendChild(script);
   }
 })(window.DA_ADMIN_V3_CONFIG);
 
@@ -127,7 +127,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   if(!cfg?.productsEdgeFunction)return;
   if(!document.querySelector('link[data-products-console-v3]')){
     const link=document.createElement('link');
-    link.rel='stylesheet';link.href='../admin-v3/products-console-v3.css?v=20260910-01';link.dataset.productsConsoleV3='1';document.head.appendChild(link);
+    link.rel='stylesheet';link.href='../admin-v3/products-console-v3.css?v=20260910-01';link.datasetProductsConsoleV3='1';document.head.appendChild(link);
   }
   if(!document.querySelector('script[data-products-console-v3]')){
     const script=document.createElement('script');
