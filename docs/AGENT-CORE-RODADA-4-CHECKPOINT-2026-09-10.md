@@ -4,7 +4,7 @@ Data: 2026-09-10
 
 ## Estado
 
-Rodada 4 em andamento, com a fundação de consolidação já protegida por gates fail-closed. O Agent Core continua em `observe`; nenhum router comercial foi desligado e nenhum gate de rollout foi ampliado.
+Rodada 4 em andamento, com a fundação de consolidação protegida por gates fail-closed. O Agent Core continua em `observe`; nenhum router comercial foi desligado e nenhum gate de rollout foi ampliado.
 
 ## Implementado nesta rodada
 
@@ -28,7 +28,11 @@ Rodada 4 em andamento, com a fundação de consolidação já protegida por gate
 - captura estrutural pré-router criada em `agent_core_pre_router_snapshots`, somente para homologação, sem corpo da mensagem, transcrição, `customer_id` ou PII de payload;
 - trigger `a0z_agent_core_pre_router_state_v1` roda depois do release gate e antes do primeiro router comercial, permitindo futura comparação stateful a partir do estado correto anterior à ação;
 - snapshot é fail-open e não interfere no atendimento se a telemetria falhar;
-- migrations V6–V13 e contratos correspondentes reproduzidos no GitHub/CI.
+- `get_agent_core_round4_stateful_evidence_report_v1`: relatório stateful V14 que cruza somente novos snapshots pré-router com a ação efetivamente tomada pelo legado;
+- a V14 proíbe backfill histórico stateful, não carrega PII de payload e exige pelo menos 3 amostras por núcleo crítico antes de marcar `evidence_ready=true`;
+- núcleos críticos iniciais: `basket_customer_data_processed`, `confirm_order`, `basket_ready_for_human` e `change_basket_delivery_address`;
+- `get_agent_core_round4_consolidated_readiness_v10` inclui explicitamente `stateful_evidence_ready`, mas mantém execução e aposentadoria forçadas a `false`;
+- migrations V6–V14 e contratos correspondentes reproduzidos no GitHub/CI.
 
 ## Paridade observada atual
 
@@ -66,6 +70,8 @@ Por isso foi criado `agent_core_pre_router_snapshots`. Ele grava apenas estado e
 
 No momento da criação havia `snapshot_rows=0`, o que é esperado: a captura não faz backfill artificial e passa a registrar somente novos jobs de homologação. Isso evita fabricar evidência histórica falsa.
 
+A V14 transforma esses novos snapshots em um relatório de cobertura por ação e estado. Enquanto qualquer núcleo crítico tiver menos de 3 amostras, `stateful_evidence_ready=false`. Mesmo quando a cobertura atingir o mínimo, V14 não autoriza automaticamente execução ou aposentadoria; ambas continuam exigindo gate posterior e autorização explícita.
+
 ## Worker V2
 
 O banco, dispatcher e recovery canônicos usam V3. A auditoria dos três cenários Make ativos confirmou que nenhum deles aponta para `conversation-worker-v2`:
@@ -100,17 +106,18 @@ Make continua sendo transporte/integração temporária; a inteligência comerci
 - `stateful_execution_permitted_now=false`;
 - `retirement_execution_permitted=false`;
 - `global_retirement_ready=false`;
+- `stateful_evidence_ready=false` enquanto não houver cobertura mínima de novos snapshots;
 - aprendizagem automática/global continua sem autopublicação;
 - nenhum pedido foi enviado ao Bling por este trabalho;
 - nenhum Flow foi publicado ou exposto por este trabalho.
 
 ## Rollback
 
-A Edge v6 pode ser revertida para a versão anterior do código do Agent Core sem alteração de schema; o preview V2 apenas adiciona validações e delega a policy-base V1. O snapshot pré-router é telemetria fail-open: em rollback, basta remover `a0z_agent_core_pre_router_state_v1`; nenhum dado transacional depende da tabela de snapshots. Dispatcher/recovery V2 continuam disponíveis como wrappers históricos para V3.
+A Edge v6 pode ser revertida para a versão anterior do código do Agent Core sem alteração de schema; o preview V2 apenas adiciona validações e delega a policy-base V1. O snapshot pré-router é telemetria fail-open: em rollback, basta remover `a0z_agent_core_pre_router_state_v1`; nenhum dado transacional depende da tabela de snapshots. O relatório V14 é somente leitura e pode ser removido sem afetar estado comercial. Dispatcher/recovery V2 continuam disponíveis como wrappers históricos para V3.
 
 ## Próximo ponto programável
 
-1. coletar novos snapshots estruturais em homologação e criar eval stateful por ação/estado, sem replay de estado inventado;
+1. coletar novos snapshots estruturais em homologação e usar V14 para medir cobertura stateful real, sem replay de estado inventado;
 2. decompor os routers bloqueados usando as tools/preconditions já registradas;
 3. atualizar referências históricas/testes do `conversation-worker-v2` e preparar sua retirada definitiva sem apagar evidência documental;
 4. manter cada retirada individual sob gate por router;
