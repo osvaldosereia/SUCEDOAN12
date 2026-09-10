@@ -213,6 +213,31 @@ async function hydrateSelectorItems(items:unknown[],supabaseUrl:string,maxItems:
   });
 }
 
+// NavigationList uses a nested `start.src` image instead of the top-level
+// media field used by RadioButtonsGroup/CheckboxGroup. Keep both contracts so
+// already-published legacy Flows continue to work while the new basket Flow
+// gets one lightweight photo at the left of every row.
+async function hydrateBasketNavigationItems(items:unknown[],supabaseUrl:string):Promise<unknown[]>{
+  return await mapLimited(items.slice(0,9),3,async(item)=>{
+    if(!item||typeof item!=="object"||Array.isArray(item))return item;
+    const option={...(item as Record<string,unknown>)};
+    const imageUrl=String(option.image_url||"").trim().slice(0,2000);
+    delete option.image_url;
+    if(!imageUrl)return option;
+    const stem=imageStem(imageUrl);
+    const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,stem?`baskets/${stem}.jpg`:null);
+    if(!image)return option;
+    const main=(option["main-content"]&&typeof option["main-content"]==="object"&&!Array.isArray(option["main-content"]))
+      ? option["main-content"] as Record<string,unknown>
+      : {};
+    option.start={
+      src:image,
+      "alt-text":String(main.title||"Cesta básica").slice(0,80),
+    };
+    return option;
+  });
+}
+
 export async function hydrateExperienceImages(response:unknown,supabaseUrl:string):Promise<unknown>{
   if(!response||typeof response!=="object"||Array.isArray(response))return response;
   const obj=response as Record<string,unknown>;
@@ -221,7 +246,11 @@ export async function hydrateExperienceImages(response:unknown,supabaseUrl:strin
   const screen=String(obj.screen||"");
 
   if(screen==="CESTAS"&&Array.isArray(data.baskets)){
-    data.baskets=await hydrateSelectorItems(data.baskets as unknown[],supabaseUrl,9,"basket");
+    const first=(data.baskets as unknown[])[0];
+    const isNavigation=Boolean(first&&typeof first==="object"&&!Array.isArray(first)&&("main-content" in (first as Record<string,unknown>)||"on-click-action" in (first as Record<string,unknown>)));
+    data.baskets=isNavigation
+      ?await hydrateBasketNavigationItems(data.baskets as unknown[],supabaseUrl)
+      :await hydrateSelectorItems(data.baskets as unknown[],supabaseUrl,9,"basket");
   }
 
   if(/^PERSONALIZAR_[ABC]$/.test(screen)){
