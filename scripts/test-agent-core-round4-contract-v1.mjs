@@ -73,7 +73,7 @@ const newTools=[
 for(const tool of newTools){must(`'${tool}'`,`registry_${tool}`);mustEdge(`"${tool}"`,`edge_${tool}`)}
 must("'wa_finalize_basket_order',1",'basket_finalize_registered');
 must("'commitment'",'basket_finalize_commitment');
-must("'explicit_customer_confirmation'",'basket_finalize_explicit_confirmation');
+must('explicit_customer_confirmation','basket_finalize_explicit_confirmation');
 must('get_agent_core_round4_basket_tool_readiness_v1','basket_tool_readiness');
 must('get_agent_core_basket_state_compact_v1','compact_basket_state');
 must('get_agent_core_checkout_contact_compact_v1','compact_checkout_contact');
