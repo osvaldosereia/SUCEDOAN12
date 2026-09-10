@@ -8,10 +8,12 @@ on:
       - 'admin-v3/marketing-workflow-v1.js'
       - 'admin-v3/marketing-editor-v1.js'
       - 'admin-v3/marketing-carousel-media-v1.js'
+      - 'admin-v3/marketing-insights-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/functions/admin-marketing-media-v1/**'
       - 'supabase/functions/admin-marketing-dry-run-v1/**'
+      - 'supabase/functions/admin-marketing-insights-v1/**'
       - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
@@ -40,10 +42,12 @@ on:
       - 'admin-v3/marketing-workflow-v1.js'
       - 'admin-v3/marketing-editor-v1.js'
       - 'admin-v3/marketing-carousel-media-v1.js'
+      - 'admin-v3/marketing-insights-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/functions/admin-marketing-media-v1/**'
       - 'supabase/functions/admin-marketing-dry-run-v1/**'
+      - 'supabase/functions/admin-marketing-insights-v1/**'
       - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
@@ -90,6 +94,7 @@ jobs:
           node --check admin-v3/marketing-workflow-v1.js
           node --check admin-v3/marketing-editor-v1.js
           node --check admin-v3/marketing-carousel-media-v1.js
+          node --check admin-v3/marketing-insights-v1.js
           node --check admin/config.js
       - name: Check worker JavaScript syntax
         run: |
@@ -108,6 +113,8 @@ jobs:
         run: node scripts/test-marketing-carousel-v1.mjs
       - name: Validate carousel/media Admin safety contract
         run: node scripts/test-marketing-carousel-media-admin-v1.mjs
+      - name: Validate metrics/dry-run Admin and framing safety
+        run: node scripts/test-marketing-insights-admin-v1.mjs
       - name: Validate deterministic WebP renderer
         run: node scripts/test-marketing-render-v1.mjs
       - name: Validate economical MP4 renderer
