@@ -9,8 +9,9 @@ const policy=fs.readFileSync('supabase/migrations/20260910163217_dona_antonia_ag
 const basketTools=fs.readFileSync('supabase/migrations/20260910163906_dona_antonia_agent_core_round4_basket_checkout_tools_v1.sql','utf8');
 const compactTools=fs.readFileSync('supabase/migrations/20260910164127_dona_antonia_agent_core_round4_compact_basket_tool_outputs_v1.sql','utf8');
 const compactFix=fs.readFileSync('supabase/migrations/20260910164209_dona_antonia_agent_core_round4_compact_basket_tool_outputs_fix_v1.sql','utf8');
+const routerObservability=fs.readFileSync('supabase/migrations/20260910165937_dona_antonia_agent_core_round4_router_observability_v1.sql','utf8');
 const edge=fs.readFileSync('supabase/functions/dona-antonia-agent-core-v1/index.ts','utf8');
-const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy+'\n'+basketTools+'\n'+compactTools+'\n'+compactFix).toLowerCase();
+const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy+'\n'+basketTools+'\n'+compactTools+'\n'+compactFix+'\n'+routerObservability).toLowerCase();
 const edgeLower=edge.toLowerCase();
 const must=(text,label)=>{if(!body.includes(text.toLowerCase()))throw new Error(`missing:${label}`)};
 const mustEdge=(text,label)=>{if(!edgeLower.includes(text.toLowerCase()))throw new Error(`missing_edge:${label}`)};
@@ -92,6 +93,16 @@ mustEdge('allowed_tool_count','allowed_tool_telemetry');
 if(edgeLower.includes('if(name==="wa_finalize_basket_order")return await sb.rpc')) throw new Error('commitment_tool_must_not_have_direct_executor_in_shadow');
 if(edgeLower.includes('if(name==="wa_select_basket")return await sb.rpc')) throw new Error('basket_write_tool_must_not_have_direct_executor_in_shadow');
 
+must('agent_core_legacy_router_observations','legacy_router_observations');
+must('trg_agent_core_legacy_router_observe_v1','legacy_router_observer_trigger');
+must('agent_core_router_family_for_action_v1','legacy_router_family_classifier');
+must('get_agent_core_round4_router_observability_v1','legacy_router_observability_report');
+must("match_source in ('interactive','text','unknown')",'legacy_router_source_guard');
+must("'message_body_stored',false",'legacy_router_no_message_body');
+must("'pii_payload_stored',false",'legacy_router_no_pii_payload');
+must('enable row level security','legacy_router_rls');
+must('revoke all on table public.agent_core_legacy_router_observations from public, anon, authenticated','legacy_router_private_table');
+
 for(const guard of [
   'release gate; deve permanecer fora do modelo',
   'handoff humano por erro/held',
@@ -109,4 +120,4 @@ for(const unsafe of [
   'bling_order_sync_enabled=true'
 ]) forbid(unsafe,unsafe);
 
-console.log(`Agent Core Rodada 4 OK: ${newTools.length} novas tools de cesta/checkout, outputs compactos, schemas filtrados por tópico e writes apenas simulados em observe.`);
+console.log(`Agent Core Rodada 4 OK: ${newTools.length} tools de cesta/checkout, outputs compactos, schemas filtrados, observabilidade de routers sem texto/PII e writes apenas simulados em observe.`);
