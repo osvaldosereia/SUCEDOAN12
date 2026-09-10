@@ -8,6 +8,7 @@ on:
       - 'admin-v3/marketing-workflow-v1.js'
       - 'admin-v3/marketing-editor-v1.js'
       - 'admin-v3/marketing-carousel-media-v1.js'
+      - 'admin-v3/marketing-carousel-progress-v1.js'
       - 'admin-v3/marketing-insights-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
@@ -35,6 +36,7 @@ on:
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
+      - 'scripts/marketing-render-completion-adapter-v1.mjs'
       - 'scripts/marketing-private-media-adapter-v1.mjs'
       - 'scripts/marketing-private-media-resolver-v1.mjs'
       - 'scripts/marketing-channel-dry-run-v1.mjs'
@@ -48,6 +50,7 @@ on:
       - 'admin-v3/marketing-workflow-v1.js'
       - 'admin-v3/marketing-editor-v1.js'
       - 'admin-v3/marketing-carousel-media-v1.js'
+      - 'admin-v3/marketing-carousel-progress-v1.js'
       - 'admin-v3/marketing-insights-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
@@ -75,6 +78,7 @@ on:
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
+      - 'scripts/marketing-render-completion-adapter-v1.mjs'
       - 'scripts/marketing-private-media-adapter-v1.mjs'
       - 'scripts/marketing-private-media-resolver-v1.mjs'
       - 'scripts/marketing-channel-dry-run-v1.mjs'
@@ -106,11 +110,13 @@ jobs:
           node --check admin-v3/marketing-workflow-v1.js
           node --check admin-v3/marketing-editor-v1.js
           node --check admin-v3/marketing-carousel-media-v1.js
+          node --check admin-v3/marketing-carousel-progress-v1.js
           node --check admin-v3/marketing-insights-v1.js
           node --check admin/config.js
       - name: Check worker JavaScript syntax
         run: |
           node --check scripts/marketing-render-worker-v1.mjs
+          node --check scripts/marketing-render-completion-adapter-v1.mjs
           node --check scripts/marketing-private-media-adapter-v1.mjs
           node --check scripts/marketing-private-media-resolver-v1.mjs
           node --check scripts/marketing-channel-dry-run-v1.mjs
@@ -126,10 +132,14 @@ jobs:
         run: node scripts/test-marketing-carousel-v1.mjs
       - name: Validate carousel/media Admin safety contract
         run: node scripts/test-marketing-carousel-media-admin-v1.mjs
+      - name: Validate carousel progress Admin safety contract
+        run: node scripts/test-marketing-carousel-progress-admin-v1.mjs
       - name: Validate carousel preflight/render safety contract
         run: node scripts/test-marketing-carousel-preflight-v1.mjs
       - name: Validate carousel output binding safety contract
         run: node scripts/test-marketing-carousel-output-binding-v1.mjs
+      - name: Validate render completion adapter safety contract
+        run: node scripts/test-marketing-render-completion-v1.mjs
       - name: Validate metrics/dry-run Admin and framing safety
         run: node scripts/test-marketing-insights-admin-v1.mjs
       - name: Validate deterministic attribution contract
