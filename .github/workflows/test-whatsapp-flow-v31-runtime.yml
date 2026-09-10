@@ -7,14 +7,20 @@ on:
       - 'supabase/migrations/20260910124500_whatsapp_flow_v31_targeted_homologation_guard_v5.sql'
       - 'supabase/migrations/20260910125000_whatsapp_flow_v31_runtime_v18_v22_backfill.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
+      - 'scripts/build-flow-v31-stable-text-products.py'
+      - 'scripts/validate-flow-v31-commercial-contract.py'
       - 'scripts/test-whatsapp-flow-v31-runtime-contract.mjs'
+      - 'whatsapp/flows/flow-cestas-comercial-v6.json'
       - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
   pull_request:
     paths:
       - 'supabase/migrations/20260910124500_whatsapp_flow_v31_targeted_homologation_guard_v5.sql'
       - 'supabase/migrations/20260910125000_whatsapp_flow_v31_runtime_v18_v22_backfill.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
+      - 'scripts/build-flow-v31-stable-text-products.py'
+      - 'scripts/validate-flow-v31-commercial-contract.py'
       - 'scripts/test-whatsapp-flow-v31-runtime-contract.mjs'
+      - 'whatsapp/flows/flow-cestas-comercial-v6.json'
       - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
   workflow_dispatch:
 
@@ -30,5 +36,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Build stable V31 from canonical V6
+        run: python scripts/build-flow-v31-stable-text-products.py
+      - name: Validate generated JSON
+        run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json >/dev/null
+      - name: Validate full commercial Flow contract
+        run: python scripts/validate-flow-v31-commercial-contract.py
+      - name: Verify exact validated artifact identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACTUAL="$(git hash-object whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json)"
+          EXPECTED="6303988545169f90ae2a87e1133fae9d2d091b5b"
+          test "$ACTUAL" = "$EXPECTED" || {
+            echo "V31 artifact drift: expected $EXPECTED, got $ACTUAL" >&2
+            exit 1
+          }
+          echo "v31_artifact_blob=$ACTUAL"
       - name: Validate V31 runtime and owner-only homologation contract
         run: node scripts/test-whatsapp-flow-v31-runtime-contract.mjs
