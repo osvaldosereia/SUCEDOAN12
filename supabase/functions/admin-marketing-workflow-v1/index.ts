@@ -22,6 +22,17 @@ Deno.serve(async(req:Request)=>{
   if(!admin?.is_active||!["owner","operator"].includes(admin.role))return json({ok:false,error:"admin_not_authorized"},403);
   let body:Record<string,unknown>={}; try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
   const action=clean(body.action||"calendar",80).toLowerCase();
+
+  if(action==="workflow_overview"){
+    const [{data:assets,error:assetsError},{data:jobs,error:jobsError},{data:calendar,error:calendarError}]=await Promise.all([
+      sb.from("marketing_assets").select("id,title,media_kind,generation_mode,status,updated_at,review_requested_at,reviewed_at").in("status",["draft","rendered","review","approved"]).order("updated_at",{ascending:false}).limit(100),
+      sb.from("marketing_publication_jobs").select("id,asset_id,channel,content_type,status,scheduled_for,manual_confirmation_required,marketing_assets(title)").in("status",["approved","scheduled"]).order("scheduled_for",{ascending:true,nullsFirst:false}).limit(200),
+      sb.rpc("marketing_calendar_v1",{})
+    ]);
+    if(assetsError||jobsError||calendarError)return json({ok:false,error:"workflow_overview_failed",detail:assetsError?.message||jobsError?.message||calendarError?.message},500);
+    const normalizedJobs=(jobs||[]).map((j:any)=>({...j,title:j.marketing_assets?.title||null,marketing_assets:undefined}));
+    return json({ok:true,user:{role:admin.role,display_name:admin.display_name},assets:assets||[],jobs:normalizedJobs,calendar:calendar||[],external_side_effect:false});
+  }
   if(action==="calendar"){
     const now=new Date(),to=new Date(now.getTime()+31*86400000);
     const fromRaw=clean(body.from,80),toRaw=clean(body.to,80);
