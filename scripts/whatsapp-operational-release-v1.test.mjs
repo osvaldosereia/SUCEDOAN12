@@ -12,7 +12,9 @@ const resumeScope=read('supabase/migrations/20260907230000_resume_ai_channel_sco
 const truthfulUsage=read('supabase/migrations/20260907230500_whatsapp_ops_usage_truthful_v1.sql');
 const observeHomologation=read('supabase/migrations/20260907231500_whatsapp_observe_homologation_v1.sql');
 const handoffSmallintFix=read('supabase/migrations/20260907232500_whatsapp_observe_handoff_smallint_fix.sql');
-const worker=read('supabase/functions/conversation-worker-v2/index.ts');
+const canonicalDispatch=read('supabase/migrations/20260910160512_dona_antonia_agent_core_round4_worker_dispatch_v3_v1.sql');
+const canonicalRecovery=read('supabase/migrations/20260910161803_dona_antonia_agent_core_round4_worker_recovery_v3_v1.sql');
+const worker=read('supabase/functions/conversation-worker-v3/index.ts');
 const adminEdge=read('supabase/functions/admin-whatsapp-ops-v1/index.ts');
 const adminHtml=read('admin/index.html');
 const adminJs=read('admin-v3/whatsapp-ops.js');
@@ -70,7 +72,7 @@ test('live release requires explicit server-side confirmation and canary',()=>{
   has(main,/whatsapp_live_max_outbound_per_hour/);
 });
 
-test('worker dispatch is exact-id, event-driven and does not blindly replay processing jobs',()=>{
+test('historical dispatcher remains auditable while current dispatcher is V3',()=>{
   has(main,/dispatch_conversation_worker_job_v2/);
   has(main,/net\.http_post/);
   has(main,/conversation-worker-v2/);
@@ -78,6 +80,11 @@ test('worker dispatch is exact-id, event-driven and does not blindly replay proc
   has(fix,/status='processing'[\s\S]*lease_expired_review_required/);
   assert.doesNotMatch(fix,/status='pending'[^;]*lease_expired_review_required/,'expired paid lease must never return to pending');
   has(hard,/timeout_milliseconds:=120000/);
+  has(canonicalDispatch,/functions\/v1\/conversation-worker-v3/,'canonical dispatcher must target V3');
+  has(canonicalDispatch,/select public\.dispatch_conversation_worker_job_v3\(p_job_id\)/,'V2 DB wrapper must forward to V3');
+  assert.doesNotMatch(canonicalDispatch,/functions\/v1\/conversation-worker-v2/,'canonical dispatcher must never call V2 endpoint');
+  has(canonicalRecovery,/recover_conversation_worker_dispatch_v3/,'canonical recovery must be V3');
+  has(canonicalRecovery,/dona-antonia-conversation-worker-recovery-v3/,'canonical cron must be V3');
 });
 
 test('human-mode media stays held rather than waking AI',()=>{
@@ -108,16 +115,17 @@ test('ops dashboard never reports unknown provider cost as zero',()=>{
   has(adminJs,/u\.unpriced_events/,'admin must expose unpriced event count');
 });
 
-test('edge worker authenticates internally and processes exactly one claimed job',()=>{
+test('edge worker V3 authenticates internally and processes exactly one claimed job',()=>{
   has(worker,/x-da-worker-key/);
-  has(worker,/conversation_worker_webhook_v2/);
+  has(worker,/conversation_worker_webhook_v2/,'existing server-to-server secret name remains compatible');
+  has(worker,/worker_version:3/,'health must identify worker V3');
   has(worker,/job_id_required/);
-  has(worker,/claim_conversation_job_v2/);
-  has(worker,/p_expected_job_id: expectedJobId/);
+  has(worker,/claim_conversation_job_v2/,'claim RPC version is a DB contract, not worker identity');
+  has(worker,/p_expected_job_id:expectedJobId/);
   has(worker,/completion_uncertain_review_required/);
-  has(worker,/gpt-4o-mini-transcribe/);
-  has(worker,/gpt-4o-mini/);
-  has(worker,/detail: "low"/);
+  has(worker,/gpt-5\.6-luna/,'V3 default planner must use GPT-5.6 Luna');
+  has(worker,/gpt-5\.6-terra/,'V3 escalation must use GPT-5.6 Terra');
+  has(worker,/detail:"low"/,'image detail remains cost-controlled');
 });
 
 test('provider secret is Vault-backed, service-role only and health exposes only configured boolean',()=>{
@@ -129,7 +137,7 @@ test('provider secret is Vault-backed, service-role only and health exposes only
   has(providerVaultFix,/extensions\.digest\(v_key,'sha256'\)/,'SECURITY DEFINER functions with empty search_path must schema-qualify pgcrypto');
   assert.doesNotMatch(providerVaultFix,/(?<!extensions\.)digest\(v_key,'sha256'\)/,'provider vault fix must not call unqualified digest');
   has(worker,/get_conversation_worker_provider_secret_v1/);
-  has(worker,/provider_configured: Boolean\(openaiKey\)/);
+  has(worker,/provider_configured:Boolean\(openaiKey\)/);
   assert.doesNotMatch(worker,/provider_configured:\s*openaiKey/,'health must never return provider secret');
 });
 
@@ -156,6 +164,8 @@ test('admin operations edge is JWT/admin gated and live change is owner-only',()
   has(adminEdge,/admin_users/);
   has(adminEdge,/owner_required/);
   has(adminEdge,/configure_whatsapp_release_v1/);
+  has(config,/# Compatibilidade histórica\. O dispatcher\/cron canônicos já usam conversation-worker-v3\./);
   has(config,/\[functions\.conversation-worker-v2\][\s\S]*verify_jwt = false/);
+  has(config,/\[functions\.conversation-worker-v3\][\s\S]*verify_jwt = false/);
   has(config,/\[functions\.admin-whatsapp-ops-v1\][\s\S]*verify_jwt = true/);
 });
