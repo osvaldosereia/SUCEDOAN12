@@ -18,8 +18,9 @@ function text(value: unknown, max = 500) {
 }
 function digits(value: unknown, max = 32) { return String(value ?? "").replace(/\D/g, "").slice(0, max); }
 function finiteNumber(value: unknown) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  const parsed = Number(String(value ?? "").replace(/\s/g, "").replace(",", "."));
+  const parsed = Number(String(value).replace(/\s/g, "").replace(",", "."));
   return Number.isFinite(parsed) ? parsed : null;
 }
 function sanitizeSource(input: any) {
@@ -93,6 +94,8 @@ Deno.serve(async (req: Request) => {
     if (cost !== null && cost < 0) return json({ ok: false, error: "invalid_cost" }, 400);
     const validity = parseDate(body?.validity_date);
     if (body?.validity_date && !validity) return json({ ok: false, error: "invalid_validity_date" }, 400);
+    const clearGondola = body?.clear_gondola === true;
+    const clearShelf = body?.clear_shelf === true;
 
     const { data: before } = await supabase.from("products")
       .select("id,is_active,price,cost,gondola,shelf")
@@ -104,15 +107,17 @@ Deno.serve(async (req: Request) => {
     else if (["I", "INATIVO", "INACTIVE"].includes(text((source as any).situacao, 30).toUpperCase())) requestedActive = false;
     if (stock <= 0) requestedActive = false;
 
-    const { data, error } = await supabase.rpc("save_verified_inventory_count", {
+    const { data, error } = await supabase.rpc("save_verified_inventory_count_v3", {
       p_inventory_count_id: body?.inventory_count_id || null,
       p_user_id: user.id,
       p_firebase_key: text(body?.firebase_key || (source as any).firebaseKey, 160) || null,
       p_source: source,
       p_counted_stock: stock,
       p_validity_date: validity,
-      p_gondola: text(body?.gondola || (source as any).gondola, 80) || null,
-      p_shelf: text(body?.shelf || (source as any).prateleira, 80) || null,
+      p_gondola: clearGondola ? null : (text(body?.gondola ?? (source as any).gondola, 80) || null),
+      p_shelf: clearShelf ? null : (text(body?.shelf ?? (source as any).prateleira, 80) || null),
+      p_clear_gondola: clearGondola,
+      p_clear_shelf: clearShelf,
     });
     if (error) return json({ ok: false, error: "save_failed", detail: error.message }, 400);
 
