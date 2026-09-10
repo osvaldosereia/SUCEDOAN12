@@ -1,5 +1,6 @@
 (()=>{
   const API="https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/basket-shop-v1";
+  const WHATSAPP_PHONE="556584491018";
   const params=new URLSearchParams(location.search);
   const token=params.get("t")||"";
   const validToken=/^[a-f0-9]{64}$/i.test(token);
@@ -15,9 +16,21 @@
     toast.timer=setTimeout(()=>el.classList.add("hidden"),5000);
   }
 
-  function goBack(){
-    try{ history.back(); }catch{}
-    try{ window.close(); }catch{}
+  function whatsappUrl(){
+    const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||"");
+    return mobile
+      ? `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&type=phone_number&app_absent=0`
+      : `https://web.whatsapp.com/send?phone=${WHATSAPP_PHONE}`;
+  }
+
+  function openWhatsApp(){
+    const url=whatsappUrl();
+    try{
+      location.replace(url);
+    }catch{
+      location.href=url;
+    }
+    return url;
   }
 
   function showReturnButton(){
@@ -30,20 +43,20 @@
     button.type="button";
     button.textContent="Voltar ao WhatsApp";
     button.style.cssText="width:100%;min-height:52px;border:0;border-radius:8px;background:#f36b21;color:#fff;font:700 16px system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;";
-    button.addEventListener("click",goBack,{passive:true});
+    button.addEventListener("click",openWhatsApp,{passive:true});
     wrap.appendChild(button);
     document.body.appendChild(wrap);
   }
 
   function returnToConversation(){
     toast("Pronto! Sua escolha foi enviada. Voltando para o WhatsApp…");
-    setTimeout(goBack,120);
+    setTimeout(openWhatsApp,80);
     setTimeout(()=>{
       if(document.visibilityState==="visible"){
         showReturnButton();
         toast("Sua escolha já foi enviada. Toque em Voltar ao WhatsApp para continuar.");
       }
-    },800);
+    },1200);
   }
 
   function autoOpenAddProducts(){
