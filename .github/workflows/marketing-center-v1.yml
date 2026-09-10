@@ -7,6 +7,7 @@ on:
       - 'admin-v3/marketing-center.*'
       - 'admin-v3/marketing-workflow-v1.js'
       - 'admin-v3/marketing-editor-v1.js'
+      - 'admin-v3/marketing-carousel-media-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/functions/admin-marketing-media-v1/**'
@@ -26,15 +27,7 @@ on:
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
       - 'scripts/marketing-private-media-adapter-v1.mjs'
-      - 'scripts/test-marketing-render-v1.mjs'
-      - 'scripts/test-marketing-video-v1.mjs'
-      - 'scripts/test-marketing-worker-v1.mjs'
-      - 'scripts/test-marketing-private-media-adapter-v1.mjs'
-      - 'scripts/test-marketing-center-v1.mjs'
-      - 'scripts/test-marketing-workflow-v1.mjs'
-      - 'scripts/test-marketing-editor-v1.mjs'
-      - 'scripts/test-marketing-private-media-v1.mjs'
-      - 'scripts/test-marketing-carousel-v1.mjs'
+      - 'scripts/test-marketing-*.mjs'
       - '.github/workflows/marketing-center-v1.yml'
   push:
     branches: [main]
@@ -43,6 +36,7 @@ on:
       - 'admin-v3/marketing-center.*'
       - 'admin-v3/marketing-workflow-v1.js'
       - 'admin-v3/marketing-editor-v1.js'
+      - 'admin-v3/marketing-carousel-media-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/functions/admin-marketing-media-v1/**'
@@ -62,15 +56,7 @@ on:
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
       - 'scripts/marketing-private-media-adapter-v1.mjs'
-      - 'scripts/test-marketing-render-v1.mjs'
-      - 'scripts/test-marketing-video-v1.mjs'
-      - 'scripts/test-marketing-worker-v1.mjs'
-      - 'scripts/test-marketing-private-media-adapter-v1.mjs'
-      - 'scripts/test-marketing-center-v1.mjs'
-      - 'scripts/test-marketing-workflow-v1.mjs'
-      - 'scripts/test-marketing-editor-v1.mjs'
-      - 'scripts/test-marketing-private-media-v1.mjs'
-      - 'scripts/test-marketing-carousel-v1.mjs'
+      - 'scripts/test-marketing-*.mjs'
 
 permissions:
   contents: read
@@ -97,6 +83,7 @@ jobs:
           node --check admin-v3/marketing-center.js
           node --check admin-v3/marketing-workflow-v1.js
           node --check admin-v3/marketing-editor-v1.js
+          node --check admin-v3/marketing-carousel-media-v1.js
           node --check admin/config.js
       - name: Check worker JavaScript syntax
         run: |
@@ -112,6 +99,8 @@ jobs:
         run: node scripts/test-marketing-private-media-v1.mjs
       - name: Validate carousel safety contract
         run: node scripts/test-marketing-carousel-v1.mjs
+      - name: Validate carousel/media Admin safety contract
+        run: node scripts/test-marketing-carousel-media-admin-v1.mjs
       - name: Validate deterministic WebP renderer
         run: node scripts/test-marketing-render-v1.mjs
       - name: Validate economical MP4 renderer
