@@ -3,6 +3,8 @@ import fs from 'node:fs';
 const v9=fs.readFileSync('supabase/migrations/20260910185912_dona_antonia_agent_core_round4_stateful_preconditions_v9.sql','utf8').toLowerCase();
 const v10=fs.readFileSync('supabase/migrations/20260910190016_dona_antonia_agent_core_round4_stateful_preconditions_hardening_v10.sql','utf8').toLowerCase();
 const v11=fs.readFileSync('supabase/migrations/20260910191049_dona_antonia_agent_core_round4_stateful_transition_gate_v11.sql','utf8').toLowerCase();
+const v12=fs.readFileSync('supabase/migrations/20260910192018_dona_antonia_agent_core_round4_pre_router_snapshot_v12.sql','utf8').toLowerCase();
+const v13=fs.readFileSync('supabase/migrations/20260910192201_dona_antonia_agent_core_round4_pre_router_snapshot_hardening_v13.sql','utf8').toLowerCase();
 const edge=fs.readFileSync('supabase/functions/dona-antonia-agent-core-v1/index.ts','utf8').toLowerCase();
 
 const must=(body,s,label)=>{if(!body.includes(s.toLowerCase()))throw new Error(`missing:${label}`)};
@@ -44,6 +46,27 @@ must(v11,"stateful_non_observe=0",'all_stateful_actions_observe');
 must(v11,"'global_retirement_ready',false",'global_retirement_forced_off');
 must(v11,"'retirement_execution_permitted',false",'retirement_execution_forced_off');
 
+// V12/V13: captura estrutural antes dos routers, somente homologação, sem payload textual/PII.
+must(v12,'create table if not exists public.agent_core_pre_router_snapshots','pre_router_snapshot_table');
+must(v12,'observe_agent_core_pre_router_state_v1','pre_router_observer');
+must(v12,'a0z_agent_core_pre_router_state_v1','pre_router_trigger');
+must(v12,"coalesce(c.automation_cohort,'')<>'homologation'",'snapshot_homologation_only');
+must(v12,'alter table public.agent_core_pre_router_snapshots enable row level security','snapshot_rls');
+must(v12,'revoke all on public.agent_core_pre_router_snapshots from public,anon,authenticated','snapshot_server_only');
+must(v12,'pii_stored boolean not null default false check (pii_stored=false)','snapshot_pii_fail_closed');
+mustNot(v12,'body_text text','snapshot_must_not_store_message_body');
+mustNot(v12,'transcript text','snapshot_must_not_store_transcript');
+mustNot(v12,'customer_id uuid','snapshot_must_not_store_customer_id');
+must(v13,"'a0_whatsapp_release_gate_v1' < 'a0z_agent_core_pre_router_state_v1'",'snapshot_after_release_gate');
+must(v13,"'a0z_agent_core_pre_router_state_v1' < 'a1_whatsapp_simple_product_query_v1'",'snapshot_before_commercial_router');
+must(v13,"data_type in ('text','character varying','json','jsonb','bytea')",'pii_detector_payload_types');
+must(v13,"'message_body_stored',false",'snapshot_no_message_body');
+must(v13,"'pii_stored',false",'snapshot_no_pii');
+must(v13,"'structural_address_flag_only',true",'address_boolean_is_structural');
+must(v13,'get_agent_core_round4_consolidated_readiness_v9','consolidated_v9');
+must(v13,"'stateful_execution_permitted_now',false",'v13_stateful_execution_off');
+must(v13,"'global_retirement_ready',false",'v13_global_retirement_off');
+
 must(edge,'preview_whatsapp_agent_action_v2','edge_uses_preview_v2');
 must(edge,'p_message_id:job.message_id','edge_passes_current_message');
 mustNot(edge,'sb.rpc("preview_whatsapp_agent_action_v1"','edge_must_not_call_preview_v1_directly');
@@ -66,7 +89,7 @@ for(const unsafe of [
   'whatsapp_flow_commercial_write_enabled=true',
   'bling_order_sync_enabled=true'
 ]){
-  mustNot(v9+v10+v11+edge,unsafe,`unsafe_rollout_change_${unsafe}`);
+  mustNot(v9+v10+v11+v12+v13+edge,unsafe,`unsafe_rollout_change_${unsafe}`);
 }
 
-console.log('Agent Core Round 4 stateful V11 OK: 19 preconditions, hardened inputs, observe-only execution and transition gates are protected.');
+console.log('Agent Core Round 4 stateful V13 OK: 19 preconditions, hardened inputs, observe-only execution, transition gates and pre-router structural snapshots are protected.');
