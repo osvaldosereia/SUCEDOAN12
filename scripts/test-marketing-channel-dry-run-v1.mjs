@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {buildChannelDryRun,supportedMarketingChannels} from './marketing-channel-dry-run-v1.mjs';
+assert.deepEqual(new Set(supportedMarketingChannels()),new Set(['whatsapp_status','instagram_story','facebook_story','instagram_carousel','pinterest_pin','google_business_post']));
+const img={url:'https://example.com/a.webp',mime_type:'image/webp'};
+const pin=buildChannelDryRun('pinterest_pin',{title:'Oferta',caption:'Cesta',board_id:'123',media:[img]});
+assert.equal(pin.ok,true);assert.equal(pin.method,'POST');assert.equal(pin.endpoint,'https://api.pinterest.com/v5/pins');assert.equal(pin.request.body.media_source.source_type,'image_url');assert.equal(pin.external_side_effect,false);assert.equal(pin.dry_run,true);
+const gbp=buildChannelDryRun('google_business_post',{parent:'accounts/1/locations/2',caption:'Entrega em Cuiabá',media:[img],link:'https://donaantonia.com.br'});
+assert.equal(gbp.ok,true);assert.match(gbp.endpoint,/mybusiness\.googleapis\.com\/v4\/accounts\/1\/locations\/2\/localPosts$/);assert.deepEqual(gbp.required_scopes,['https://www.googleapis.com/auth/business.manage']);assert.equal(gbp.external_side_effect,false);
+const carousel=buildChannelDryRun('instagram_carousel',{account_id:'ig1',caption:'Ofertas',media:[img,{...img,url:'https://example.com/b.webp'}]});
+assert.equal(carousel.ok,true);assert.equal(carousel.request_preview.container_type,'CAROUSEL');assert.equal(carousel.request_preview.children.length,2);assert.equal(carousel.external_side_effect,false);
+const story=buildChannelDryRun('instagram_story',{account_id:'ig1',media:[img]});assert.equal(story.ok,true);assert.equal(story.request_preview.container_type,'STORIES');
+const status=buildChannelDryRun('whatsapp_status',{account_id:'wa1',media:[img]});assert.equal(status.ok,true);assert.equal(status.publication_path,'manual_confirm');assert.equal(status.request,null);assert.equal(status.external_side_effect,false);
+assert.equal(buildChannelDryRun('pinterest_pin',{media:[img]}).ok,false);
+assert.equal(buildChannelDryRun('google_business_post',{parent:'bad',media:[img]}).ok,false);
+assert.equal(buildChannelDryRun('instagram_carousel',{account_id:'x',media:[img]}).ok,false);
+assert.equal(buildChannelDryRun('instagram_story',{account_id:'x',media:[{url:'http://insecure.test/x.jpg',mime_type:'image/jpeg'}]}).ok,false);
+assert.throws(()=>buildChannelDryRun('unknown',{}),/unsupported_channel/);
+console.log('marketing channel dry-run contract ok');
