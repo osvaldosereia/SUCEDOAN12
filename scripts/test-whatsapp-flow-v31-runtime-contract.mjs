@@ -8,9 +8,11 @@ const runtime = read('supabase/migrations/20260910125000_whatsapp_flow_v31_runti
 const allowlist = read('supabase/migrations/20260910142700_whatsapp_flow_v31_owner_allowlist_purpose_unification_v1.sql');
 const dispatch = read('supabase/migrations/20260910143500_whatsapp_flow_v31_owner_dispatch_contract_v2.sql');
 const preflight3 = read('supabase/migrations/20260910144200_whatsapp_flow_v31_owner_preflight_v3_dispatch_v6.sql');
+const terminal = read('supabase/migrations/20260910153000_whatsapp_flow_v31_terminal_nfm_bridge_v1.sql');
 const edge = read('supabase/functions/whatsapp-flow-data-exchange-v1/index.ts');
 const cards = read('supabase/functions/whatsapp-flow-data-exchange-v1/card-images.ts');
 const crypto = read('supabase/functions/whatsapp-flow-data-exchange-v1/crypto.ts');
+const ingest = read('supabase/functions/whatsapp-ingest-make-v1/index.ts');
 
 // Global rollout must stay fail-closed while V31 is a DRAFT candidate.
 assert.match(guard, /whatsapp_live_canary_percent,0\) <> 1/);
@@ -96,6 +98,29 @@ assert.match(runtime, /limit 20/);
 assert.match(runtime, /format_whatsapp_flow_session_preview_v1/);
 assert.match(runtime, /v_screen in \('REVISAO','FINALIZAR'\)/);
 
+// Terminal nfm_reply bridge: V31 is explicitly supported, completed sessions are valid,
+// only a confirmed order triggers the location request, and duplicate replies are idempotent.
+assert.match(terminal, /process_whatsapp_flow_nfm_reply_legacy_v1/);
+assert.match(terminal, /flow-cestas-comercial-v8-stable/);
+assert.match(terminal, /s\.status not in \('offered','open','completed'\)/);
+assert.match(terminal, /status='confirmed'/);
+assert.match(terminal, /confirmed_at is not null/);
+assert.match(terminal, /coalesce\(total,0\)>0/);
+assert.match(terminal, /event_type='flow_nfm_reply'/);
+assert.match(terminal, /v_duplicate/);
+assert.match(terminal, /location_required/);
+assert.match(terminal, /envie sua localização/i);
+assert.match(terminal, /get_whatsapp_flow_v31_terminal_readiness_v1/);
+assert.match(terminal, /wrapper_delegates_commercial/);
+assert.match(terminal, /global_flow_gates_off/);
+assert.match(terminal, /revoke all on function public\.process_whatsapp_flow_nfm_reply_legacy_v1/);
+assert.match(terminal, /revoke all on function public\.get_whatsapp_flow_v31_terminal_readiness_v1/);
+
+// Make inbound payload must carry nfm_reply JSON to the deterministic processor.
+assert.match(ingest, /interactive_type==="nfm_reply"/);
+assert.match(ingest, /interactiveResponseJson/);
+assert.match(ingest, /process_whatsapp_flow_nfm_reply_v1/);
+
 // Edge: V31 always remains owner-only and routes to the current deterministic handler.
 assert.match(edge, /resolvedDefinitionSlug==="flow-cestas-comercial-v8-stable"/);
 assert.match(edge, /flow_candidate_homologation_only/);
@@ -126,4 +151,4 @@ for (let version = 18; version <= 22; version++) {
   assert.match(runtime, new RegExp(`grant execute on function public\\.handle_whatsapp_flow_commercial_exchange_v${version}\\([^;]+\\) to service_role`));
 }
 
-console.log('WhatsApp Flow V31 runtime + owner-only homologation contract: ok');
+console.log('WhatsApp Flow V31 runtime + owner-only homologation + terminal nfm_reply contract: ok');
