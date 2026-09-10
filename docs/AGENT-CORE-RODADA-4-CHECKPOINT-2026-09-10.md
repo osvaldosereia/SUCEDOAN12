@@ -18,11 +18,11 @@ Rodada 4 em andamento, com a fundação de consolidação protegida por gates fa
 - pacote histórico realmente neutro: sem estado atual, carrinho, cliente, resumo ou memória atual;
 - gate semântico V5 com deduplicação por `message_id`, expectativa histórica recomputada e `legacy` tratado apenas como informação;
 - gate por router: evidência suficiente não equivale a permissão de desligamento;
-- Edge `dona-antonia-agent-core-v1` promovida para versão 6 após CI verde;
-- Edge v6 usa `preview_whatsapp_agent_action_v2` com `message_id` atual antes de qualquer tool call;
-- somente tools `read_only` são executadas no shadow; demais ações continuam simuladas, sem side effects;
+- Edge `dona-antonia-agent-core-v1` promovida até a versão 7 após CI verde;
+- a Edge usa `preview_whatsapp_agent_action_v2` com `message_id` atual antes de qualquer tool call;
+- somente tools `read_only` são executadas no shadow; ações de escrita continuam simuladas, sem side effects;
 - preconditions stateful: 19/19 tipos declarados cobertos e inputs UUID/número/boolean tratados fail-closed;
-- 16 ações WhatsApp stateful registradas: 14 reversíveis e 2 de compromisso, todas ainda em `observe`;
+- V19 elevou o catálogo para 19 ações WhatsApp stateful: 17 reversíveis e 2 de compromisso, todas ainda em `observe`;
 - `get_agent_core_round4_stateful_transition_readiness_v1`: separa prontidão técnica de shadow da autorização para executar;
 - `stateful_execution_permitted_now=false` e `manual_authorization_required=true` permanecem explícitos;
 - captura estrutural pré-router criada em `agent_core_pre_router_snapshots`, somente para homologação, sem corpo da mensagem, transcrição, `customer_id` ou PII de payload;
@@ -35,10 +35,24 @@ Rodada 4 em andamento, com a fundação de consolidação protegida por gates fa
 - V15/V16 adicionaram `get_agent_core_round4_worker_v2_retirement_readiness_v1`, auditando runtime de banco sem confundir a própria string de diagnóstico com uma chamada real ao endpoint V2;
 - V16 confirma V3 como caminho canônico de banco: trigger V3 presente, trigger V2 ausente, cron V3 presente, cron V2 ausente, wrappers V2 encaminhando para V3 e zero funções atuais atribuindo URL ao endpoint V2;
 - `get_agent_core_round4_consolidated_readiness_v12` inclui o readiness do worker V2, mas mantém `worker_v2_edge_removal_authorized=false`, `retirement_execution_permitted=false` e `global_retirement_ready=false`;
+- V17 corrigiu no router legado ainda ativo a promessa rígida de entrega: até 11h passa a ser `previsão de entrega no mesmo dia`; após 11h, `previsão de entrega no próximo dia útil`; em ambos, o horário depende da rota e do bairro;
+- V17 possui guard de drift: a migration aborta se as frases antigas esperadas não estiverem exatamente na função que será alterada;
+- V18 criou `get_agent_core_round4_blocked_router_contract_readiness_v1`, decompondo os 8 routers bloqueados em substitutos, tools requeridas, ações legadas equivalentes e mínimo de 3 amostras por router;
+- V18 criou `get_agent_core_round4_consolidated_readiness_v13`, incorporando o novo gate e mantendo execução, aposentadoria e retirada global forçadas a `false`;
+- imediatamente após V18, 5/8 contratos estavam completos e três superfícies faltavam: vínculo de identidade, abertura da personalização da cesta e vitrine extra de busca;
+- V19 criou `wa_link_customer_identity`, `wa_open_basket_storefront` e `wa_create_search_showcase`, todas `reversible_write`, `execution_mode=observe` e `confidence_autorun_allowed=false`;
+- `wa_link_customer_identity` encapsula o vínculo determinístico por telefone e devolve ao modelo apenas `known_customer` e `display_name_available`, sem nome, telefone ou endereço;
+- `wa_open_basket_storefront` valida conversa/mensagem/sessão, mantém o token da cesta dentro do backend e devolve ao modelo apenas resultado compacto;
+- `wa_create_search_showcase` cria no máximo uma vitrine adicional por chamada e mantém URL/sessão no backend;
+- depois da V19, os 8/8 routers bloqueados possuem contrato de substituição completo; nenhum possui ainda evidência stateful suficiente para desligamento;
+- a Edge v7 expõe essas três novas tools somente nos tópicos adequados (`greeting`, personalização de cesta e `product_search`), mas o executor continua efetuando apenas `read_only`; as três novas writes são simuladas em shadow;
+- o kernel da Edge v7 limita a no máximo uma vitrine extra de busca por turno quando isso realmente reduzir passos;
+- `scripts/test-agent-core-round4-router-contracts-v19.mjs` protege V17–V19, privacidade, observe-only, exposição das tools no shadow e ausência de execução direta de suas implementações;
+- o workflow do Agent Core passou a observar também migrations de correção da promessa de entrega, além das migrations `dona_antonia_agent_core`;
 - `scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs` impede migrations posteriores ao cutover ou Edges atuais de reintroduzirem chamada ao endpoint V2;
-- `scripts/whatsapp-operational-release-v1.test.mjs` passou a validar o `conversation-worker-v3` como implementação canônica, mantendo migrations V2 apenas como evidência histórica;
-- `.github/workflows/test-conversation-worker-v1.yml` agora inclui `conversation-worker-v3` no gatilho e no `deno check`, mantendo V2 apenas para compatibilidade/rollback;
-- migrations V6–V16 e contratos correspondentes reproduzidos no GitHub/CI.
+- `scripts/whatsapp-operational-release-v1.test.mjs` valida o `conversation-worker-v3` como implementação canônica, mantendo migrations V2 apenas como evidência histórica;
+- `.github/workflows/test-conversation-worker-v1.yml` inclui `conversation-worker-v3` no gatilho e no `deno check`, mantendo V2 apenas para compatibilidade/rollback;
+- migrations V6–V19 e contratos correspondentes reproduzidos no GitHub/CI.
 
 ## Paridade observada atual
 
@@ -53,17 +67,21 @@ A janela de 168h possui 20 decisões semânticas únicas válidas para o gate, d
 - comparação de intenção com legado: 19/20 = 95%, mantida somente como métrica informacional;
 - `candidate_retirement_ready=true` para a evidência agregada.
 
-Depois do deploy da Edge v6, quatro replays stateless seguros foram repetidos: 2 buscas e 2 cestas. Os quatro mantiveram topic/intenção corretos. As tools realmente executadas foram somente `wa_search_products` e `wa_list_baskets`, ambas `read_only`; nenhuma ação stateful foi executada.
+Depois do deploy da Edge v6, quatro replays stateless seguros foram repetidos: 2 buscas e 2 cestas. Os quatro mantiveram topic/intenção corretos. As tools realmente executadas foram somente `wa_search_products` e `wa_list_baskets`, ambas `read_only`; nenhuma ação stateful foi executada. A Edge v7 não altera essa política de execução: novas tools stateful podem ser planejadas/observadas, mas permanecem simuladas.
 
 ## Aposentadoria por router
 
-O gate agregado não autoriza remoção em bloco.
+O gate agregado não autoriza remoção em bloco. A V18/V19 tornou o bloqueio mensurável por router.
 
-- `a1_whatsapp_simple_product_query_v1`: possui evidência específica suficiente, mas `can_disable_now=false` porque o Agent Core continua em `observe`;
-- saudação: bloqueada até haver eval próprio e contrato do vínculo de cliente;
-- troca de cesta: bloqueada até eval stateful da sessão/substituição;
-- personalização: bloqueada até eval stateful das transições de checkout/vitrine;
-- multi-search CTA: bloqueada até substituto/eval de apresentação e outbound;
+- 8 routers legacy continuam classificados como bloqueados;
+- 8/8 possuem agora contrato de substituição completo;
+- 0/8 possuem evidência de homologação suficiente no último fechamento;
+- mínimo atual: 3 amostras pré-router reais por contrato;
+- `a1_whatsapp_simple_product_query_v1` continua sendo o único candidato stateless com evidência específica suficiente, mas `can_disable_now=false` enquanto o Agent Core estiver em `observe`;
+- saudação agora possui substituto `wa_link_customer_identity`, mas continua bloqueada até evidência própria;
+- troca de cesta possui `wa_create_basket_replacement`, mas continua bloqueada até evidência stateful da sessão/substituição;
+- personalização possui `wa_start_basket_checkout` + `wa_open_basket_storefront`, mas continua bloqueada até evidência stateful;
+- multi-search CTA possui `wa_create_search_showcase`, mas continua bloqueado até evidência de apresentação/outbound;
 - routers de checkout/pagamento permanecem bloqueados até comparação com estado pré-router.
 
 Nenhum router comercial foi removido nesta execução.
@@ -74,9 +92,9 @@ Os eventos históricos mostraram que resultados stateful como `basket_customer_d
 
 Por isso foi criado `agent_core_pre_router_snapshots`. Ele grava apenas estado estrutural: modo/stage, `awaiting`, presença de sessão/carrinho, validade estrutural, flags de cadastro/endereço, janela de serviço e handoff. Não grava texto do cliente nem dados cadastrais.
 
-A captura não faz backfill artificial e registra somente novos jobs de homologação. A V14 transforma esses novos snapshots em relatório de cobertura por ação/estado. Enquanto qualquer núcleo crítico tiver menos de 3 amostras, `stateful_evidence_ready=false`. Mesmo quando a cobertura atingir o mínimo, a V14 não autoriza automaticamente execução ou aposentadoria; ambas continuam exigindo gate posterior e autorização explícita.
+A captura não faz backfill artificial e registra somente novos jobs de homologação. A V14 transforma esses novos snapshots em relatório de cobertura por ação/estado. A V18 adiciona uma visão por router, também sem backfill. Enquanto os mínimos não forem alcançados, `stateful_evidence_ready=false` e `blocked_router_evidence_ready=false`. Mesmo depois de atingir cobertura, nenhum desses relatórios autoriza automaticamente execução ou aposentadoria.
 
-No último fechamento deste checkpoint, `snapshot_rows=0` e o motivo do readiness permanecia `awaiting_new_homologation_snapshots`.
+No último fechamento antes do deploy v7, `snapshot_rows=0`, todos os contratos estavam completos e o motivo do gate por router era `awaiting_router_specific_homologation_evidence`.
 
 ## Worker V2/V3
 
@@ -96,12 +114,13 @@ O runtime de banco está canônico em V3. O readiness V16 confirmou:
 
 A auditoria dos três cenários Make ativos também confirmou que nenhum aponta para `conversation-worker-v2`: inbound usa Edges de ingestão do Supabase; outbound transporta mensagens para Meta/OpenAI TTS; e consulta de CPF usa Bling.
 
-A Edge V2 continua preservada como compatibilidade histórica/rollback. Referências antigas em migrations e documentos não são tratadas como dependência ativa. O CI agora impede que uma migration posterior ao cutover ou uma Edge atual volte a chamar o endpoint V2.
+A Edge V2 continua preservada como compatibilidade histórica/rollback. Referências antigas em migrations e documentos não são tratadas como dependência ativa. O CI impede que uma migration posterior ao cutover ou uma Edge atual volte a chamar o endpoint V2.
 
 ## CI validado
 
-- CI Dona Antônia Agent Core: V14 e checkpoint passaram; posteriormente o gate V16 de aposentadoria V2 também passou integralmente (Node + Deno).
-- `Test Dona Antonia conversation worker`: run 994, commit `248054fd3c0f640c64cec96ed7d36c4324d0756a`, concluído com `success`, já validando V3 como worker canônico e executando `deno check` em V2 + V3.
+- `CI Dona Antonia Agent Core` run 84: `success`, incluindo todos os contratos anteriores, novo teste V17–V19 e `deno check` da Edge do Agent Core antes do deploy v7;
+- `Test Dona Antonia conversation worker` run 994: `success`, já validando V3 como worker canônico e executando `deno check` em V2 + V3;
+- o primeiro run do novo teste V19 detectou uma asserção excessivamente ampla sobre `person_name`; ela foi corrigida para distinguir leitura interna de retorno de PII antes do run 84 verde.
 
 ## Make
 
@@ -124,6 +143,7 @@ Make continua sendo transporte/integração temporária; a inteligência comerci
 - Agent Core em `observe`;
 - `legacy_router_policy=shadow`;
 - stateful tools em `observe`;
+- novas tools V19 em `reversible_write`, sem autorun;
 - `stateful_execution_permitted_now=false`;
 - `retirement_execution_permitted=false`;
 - `global_retirement_ready=false`;
@@ -135,12 +155,12 @@ Make continua sendo transporte/integração temporária; a inteligência comerci
 
 ## Rollback
 
-A Edge v6 pode ser revertida para a versão anterior do Agent Core sem alteração de schema; o preview V2 apenas adiciona validações e delega a policy-base V1. O snapshot pré-router é telemetria fail-open: em rollback, basta remover `a0z_agent_core_pre_router_state_v1`; nenhum dado transacional depende da tabela. O relatório V14 é somente leitura. Dispatcher/recovery V2 continuam disponíveis como wrappers históricos para V3, e a própria Edge V2 permanece implantada para rollback enquanto sua remoção não for explicitamente autorizada.
+A Edge v7 pode ser revertida para a v6 sem alteração de schema. As três novas tools V19 continuam `observe` no registro e, na Edge v7, não possuem executor stateful: se selecionadas, são apenas simuladas. O preview V2 permanece antes de qualquer tool call. O snapshot pré-router é telemetria fail-open: em rollback, basta remover `a0z_agent_core_pre_router_state_v1`; nenhum dado transacional depende da tabela. Os relatórios V14/V18 são somente leitura. Dispatcher/recovery V2 continuam disponíveis como wrappers históricos para V3, e a própria Edge V2 permanece implantada para rollback enquanto sua remoção não for explicitamente autorizada.
 
 ## Próximo ponto programável
 
-1. coletar novos snapshots estruturais em homologação e usar V14 para medir cobertura stateful real, sem replay de estado inventado;
-2. decompor routers bloqueados usando as tools/preconditions já registradas, sem desativá-los antes da evidência;
-3. manter a Edge V2 somente como rollback até decisão posterior; runtime ativo deve continuar V3;
-4. manter cada retirada individual sob gate por router;
-5. somente depois avançar para a Rodada 5 de evals em escala.
+1. coletar novos snapshots estruturais reais em homologação e medir V14 + V18 sem inventar estado histórico;
+2. comparar, por router, decisão do Agent Core, preconditions e ação efetivamente tomada pelo legado;
+3. manter os 8 routers bloqueados até cada contrato atingir evidência própria suficiente;
+4. manter a Edge V2 somente como rollback; runtime ativo deve continuar V3;
+5. somente depois de cobertura stateful real avançar para retirada individual e Rodada 5 de evals em escala.
