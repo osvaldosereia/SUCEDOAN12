@@ -15,6 +15,8 @@ on:
       - 'supabase/migrations/20260910162624_whatsapp_flow_v31_runtime_v23_preflight_metadata_v1.sql'
       - 'supabase/migrations/20260910172000_whatsapp_flow_v31_full_release_readiness_v1.sql'
       - 'supabase/migrations/20260910182000_whatsapp_flow_v31_behavioral_release_readiness_v2.sql'
+      - 'supabase/migrations/20260910192156_whatsapp_flow_v31_transactional_readonly_regression_v3.sql'
+      - 'supabase/migrations/20260910192340_whatsapp_flow_v31_full_release_readiness_v2.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
       - 'supabase/functions/whatsapp-ingest-make-v1/**'
       - 'scripts/build-flow-v31-stable-text-products.py'
@@ -22,6 +24,7 @@ on:
       - 'scripts/test-whatsapp-flow-v31-runtime-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-full-release-readiness-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-behavioral-catalog-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v31-transactional-readonly-contract.mjs'
       - 'whatsapp/flows/flow-cestas-comercial-v6.json'
       - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
   pull_request:
@@ -37,6 +40,8 @@ on:
       - 'supabase/migrations/20260910162624_whatsapp_flow_v31_runtime_v23_preflight_metadata_v1.sql'
       - 'supabase/migrations/20260910172000_whatsapp_flow_v31_full_release_readiness_v1.sql'
       - 'supabase/migrations/20260910182000_whatsapp_flow_v31_behavioral_release_readiness_v2.sql'
+      - 'supabase/migrations/20260910192156_whatsapp_flow_v31_transactional_readonly_regression_v3.sql'
+      - 'supabase/migrations/20260910192340_whatsapp_flow_v31_full_release_readiness_v2.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
       - 'supabase/functions/whatsapp-ingest-make-v1/**'
       - 'scripts/build-flow-v31-stable-text-products.py'
@@ -44,6 +49,7 @@ on:
       - 'scripts/test-whatsapp-flow-v31-runtime-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-full-release-readiness-contract.mjs'
       - 'scripts/test-whatsapp-flow-v31-behavioral-catalog-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v31-transactional-readonly-contract.mjs'
       - 'whatsapp/flows/flow-cestas-comercial-v6.json'
       - '.github/workflows/test-whatsapp-flow-v31-runtime.yml'
   workflow_dispatch:
@@ -94,3 +100,5 @@ jobs:
         run: node scripts/test-whatsapp-flow-v31-full-release-readiness-contract.mjs
       - name: Validate behavioral catalog readiness contract
         run: node scripts/test-whatsapp-flow-v31-behavioral-catalog-contract.mjs
+      - name: Validate transactional read-only regression contract
+        run: node scripts/test-whatsapp-flow-v31-transactional-readonly-contract.mjs
