@@ -1,0 +1,50 @@
+{
+  "version": "7.3",
+  "screens": [
+    {
+      "id": "ENDERECO",
+      "title": "Alterar endereço",
+      "terminal": true,
+      "success": true,
+      "data": {
+        "postal_code": {"type":"string","__example__":"78090660"},
+        "street": {"type":"string","__example__":"Rua 30"},
+        "number": {"type":"string","__example__":"315"},
+        "complement": {"type":"string","__example__":""},
+        "neighborhood": {"type":"string","__example__":"Nossa Senhora Aparecida"},
+        "city": {"type":"string","__example__":"cuiaba"},
+        "reference": {"type":"string","__example__":"Barracão aberto"}
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "Form",
+            "name": "address_form",
+            "init-values": {
+              "postal_code": "${data.postal_code}",
+              "street": "${data.street}",
+              "number": "${data.number}",
+              "complement": "${data.complement}",
+              "neighborhood": "${data.neighborhood}",
+              "city": "${data.city}",
+              "reference": "${data.reference}"
+            },
+            "children": [
+              {"type":"TextHeading","text":"Endereço de entrega"},
+              {"type":"TextBody","text":"Confira e altere somente o que precisar."},
+              {"type":"TextInput","name":"postal_code","label":"CEP","input-type":"text","max-chars":9,"required":false},
+              {"type":"TextInput","name":"street","label":"Rua ou avenida","input-type":"text","max-chars":80,"required":true},
+              {"type":"TextInput","name":"number","label":"Número","input-type":"text","max-chars":20,"required":true},
+              {"type":"TextInput","name":"complement","label":"Complemento / quadra","input-type":"text","max-chars":80,"required":false},
+              {"type":"TextInput","name":"neighborhood","label":"Bairro","input-type":"text","max-chars":80,"required":true},
+              {"type":"Dropdown","name":"city","label":"Cidade","required":true,"data-source":[{"id":"cuiaba","title":"Cuiabá"},{"id":"varzea_grande","title":"Várzea Grande"}]},
+              {"type":"TextInput","name":"reference","label":"Referência","input-type":"text","max-chars":100,"required":false},
+              {"type":"Footer","label":"Salvar endereço","on-click-action":{"name":"complete","payload":{"action":"address_saved","postal_code":"${form.postal_code}","street":"${form.street}","number":"${form.number}","complement":"${form.complement}","neighborhood":"${form.neighborhood}","city":"${form.city}","reference":"${form.reference}"}}}
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
