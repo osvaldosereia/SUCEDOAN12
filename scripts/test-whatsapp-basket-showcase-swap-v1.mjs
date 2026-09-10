@@ -7,6 +7,7 @@ const priceMigration=read('supabase/migrations/20260908231500_whatsapp_basket_dy
 const api=read('supabase/functions/basket-shop-v1/index.ts');
 const adminApi=read('supabase/functions/admin-product-categories-v1/index.ts');
 const app=read('cesta/app.js');
+const returnBridge=read('cesta/whatsapp-return.js');
 const html=read('cesta/index.html');
 const admin=read('admin-v3/product-categories-inline.js');
 
@@ -32,17 +33,25 @@ assert.match(api,/action==="set_replacement_categories"/,'API precisa montar can
 assert.match(api,/action==="choose_replacement"/,'API precisa registrar escolha do substituto');
 assert.match(api,/replacement_price_hidden:true/,'API deve declarar preço individual oculto na substituição');
 assert.match(api,/product:products\(id,name,image_url\)/,'Lista inicial da cesta precisa carregar foto sem buscar preço individual');
-assert.match(api,/whatsapp_deep_link/,'Retorno precisa oferecer deep link do WhatsApp');
-assert.match(api,/whatsapp_web_fallback/,'Retorno precisa oferecer fallback web');
+assert.match(api,/action==="return"/,'Backend precisa registrar retorno ao fluxo comercial');
+assert.match(api,/complete_whatsapp_basket_storefront_v1/,'Retorno precisa passar pelo backend determinístico');
+assert.match(api,/checkout_queued:Boolean\(data\?\.queued\)/,'Backend deve informar se checkout foi enfileirado');
 
 assert.doesNotMatch(app,/data-swap=/,'Lista inicial não deve exibir botão Trocar');
 assert.match(app,/data-remove=/,'Lista inicial deve oferecer botão Retirar');
 assert.match(app,/basket-row-image/,'Lista inicial deve mostrar foto de cada produto');
 assert.match(app,/basketTotal/,'Barra fixa precisa mostrar total da cesta');
-assert.match(app,/whatsapp_deep_link/,'Frontend precisa tentar abrir o app diretamente');
 assert.match(app,/set_replacement_categories/,'Vitrine específica de troca precisa filtrar por categorias reais');
 assert.match(app,/choose_replacement/,'Substituição continua sendo registrada somente na vitrine específica');
 assert.match(app,/replacement-note/,'Vitrine de troca não deve mostrar valor individual');
+
+assert.match(returnBridge,/action:"return"/,'Bridge precisa registrar a conclusão antes de voltar ao WhatsApp');
+assert.match(returnBridge,/api\.whatsapp\.com\/send/,'Mobile precisa abrir WhatsApp por URL oficial');
+assert.match(returnBridge,/web\.whatsapp\.com\/send/,'Desktop precisa oferecer WhatsApp Web');
+assert.match(returnBridge,/whatsappReturnFallback/,'Retorno precisa ter fallback visual se o redirecionamento não sair da página');
+assert.match(returnBridge,/Voltar ao WhatsApp/,'Fallback precisa ter CTA claro');
+assert.match(html,/whatsapp-return\.js/,'Página precisa carregar o bridge dedicado de retorno ao WhatsApp');
+
 assert.match(html,/Aumente, diminua ou retire produtos/,'Página deve orientar edição simples da composição');
 assert.match(html,/logoantonia5\.png/,'Topo precisa usar a logo oficial Dona Antônia');
 assert.match(html,/id="basketTotal"/,'Página precisa reservar total fixo da cesta');
@@ -52,4 +61,4 @@ assert.match(admin,/data-showcase-enabled/,'Admin precisa permitir ativar/desati
 assert.match(admin,/data-showcase-label/,'Admin precisa editar nome mostrado ao cliente');
 assert.match(admin,/data-showcase-order/,'Admin precisa editar ordem das categorias');
 
-console.log('PASS: cesta inicial editável com fotos/retirada/total, troca externa por IA e retorno robusto ao WhatsApp validados.');
+console.log('PASS: cesta inicial editável com fotos/retirada/total, troca externa por IA e bridge dedicado de retorno ao WhatsApp validados.');
