@@ -17,6 +17,7 @@ on:
       - 'scripts/test-agent-core-round4-contract-v1.mjs'
       - 'scripts/test-agent-core-round4-safe-replay-v1.mjs'
       - 'scripts/test-agent-core-round4-parity-v3.mjs'
+      - 'scripts/test-agent-core-round4-semantic-v5.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
     paths:
@@ -34,6 +35,7 @@ on:
       - 'scripts/test-agent-core-round4-contract-v1.mjs'
       - 'scripts/test-agent-core-round4-safe-replay-v1.mjs'
       - 'scripts/test-agent-core-round4-parity-v3.mjs'
+      - 'scripts/test-agent-core-round4-semantic-v5.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
 permissions:
@@ -54,6 +56,7 @@ jobs:
           node scripts/test-agent-core-round4-contract-v1.mjs
           node scripts/test-agent-core-round4-safe-replay-v1.mjs
           node scripts/test-agent-core-round4-parity-v3.mjs
+          node scripts/test-agent-core-round4-semantic-v5.mjs
           node --check admin-v3/agent-learning.js
       - uses: denoland/setup-deno@v2
         with:
