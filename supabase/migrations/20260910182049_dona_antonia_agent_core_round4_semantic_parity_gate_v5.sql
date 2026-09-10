@@ -1,5 +1,6 @@
 begin;
 
+-- Compatibilidade: todos os chamadores antigos passam a usar o verificador semântico mais restrito.
 create or replace function public.is_agent_core_stateless_historical_replay_job_v2(p_job_id uuid)
 returns jsonb
 language sql
@@ -163,7 +164,7 @@ select jsonb_build_object(
   'version',5,'window_hours',(select hours from cfg),'planned_sample',total,'deduplicated_by_message_id',true,
   'unsafe_historical_replays_excluded',(select n from excluded),'replay_count',replay_count,
   'policy_intent_matches',policy_matches,'policy_intent_mismatches',policy_mismatches,'policy_intent_match_rate',policy_rate,
-  'legacy_comparable',legacy_comparable,'legacy_intent_matches',legacy_matches,'legacy_intent_mismatches',legacy_mismatchess,'legacy_intent_match_rate',legacy_rate,
+  'legacy_comparable',legacy_comparable,'legacy_intent_matches',legacy_matches,'legacy_intent_mismatches',legacy_mismatches,'legacy_intent_match_rate',legacy_rate,
   'decision_tool_coherent',coherent_tools,'decision_tool_incoherent',incoherent_tools,'decision_tool_coherence_rate',coherence_rate,
   'escalations',escalations,'average_confidence',coalesce(avg_confidence,0),
   'coverage',jsonb_build_object('basket',basket_count,'product_search',product_search_count,'greeting',greeting_count,'minimum_basket_required',6,'minimum_product_search_required',6),
