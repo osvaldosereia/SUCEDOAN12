@@ -11,10 +11,14 @@ for(const days of ['7','30','90'])must(admin.includes(`data-days="${days}"`),`Ad
 must(admin.includes("external_side_effect!==false")&&admin.includes("d.dry_run!==true"),'Admin precisa recusar resposta dry-run insegura');
 must(admin.includes("admin-marketing-dry-run-v1"),'Admin precisa usar o validador dry-run dedicado');
 must(admin.includes("admin-marketing-media-v1"),'Admin precisa assinar mídia privada antes do preview');
-must(admin.includes("foundation_only"),'Admin precisa deixar atribuição incompleta explícita');
+must(admin.includes('deterministic_evidence_only'),'Admin precisa explicar que atribuição usa apenas evidência determinística');
+for(const label of ['Cliques atribuídos','Conversas atribuídas','Pedidos atribuídos'])must(admin.includes(label),`Admin precisa exibir ${label}`);
+must(!admin.includes('foundation_only'),'Admin não deve manter placeholder antigo de atribuição');
 
 must(edge.includes('[7,30,90].includes(days)'),'Edge deve limitar métricas a 7/30/90 dias');
 must(edge.includes('marketing_metrics_read_model_v1'),'Edge deve reutilizar read model server-only');
+must(edge.includes('attribution_clicks')&&edge.includes('attribution_conversations')&&edge.includes('attribution_orders'),'Edge precisa normalizar métricas determinísticas de atribuição');
+must(edge.includes('attribution_recording_enabled'),'Overview precisa expor o subgate de atribuição para observabilidade');
 must(edge.includes('["owner","operator"].includes(admin.role)'),'Edge deve exigir RBAC owner/operator');
 must(edge.includes('external_side_effect:false'),'Edge deve declarar ausência de efeito externo');
 for(const forbidden of ['api.pinterest.com','graph.facebook.com','mybusiness.googleapis.com','OPENAI_API_KEY','META_ACCESS_TOKEN','PINTEREST_ACCESS_TOKEN'])must(!edge.includes(forbidden),`Insights não pode conter provider externo/credencial: ${forbidden}`);
