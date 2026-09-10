@@ -63,21 +63,32 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate Agent Core contracts
-        run: |
-          node scripts/test-dona-antonia-agent-core-contract-v1.mjs
-          node scripts/test-agent-core-round3-contract-v1.mjs
-          node scripts/test-agent-core-round4-contract-v1.mjs
-          node scripts/test-agent-core-round4-safe-replay-v1.mjs
-          node scripts/test-agent-core-round4-parity-v3.mjs
-          node scripts/test-agent-core-round4-semantic-v5.mjs
-          node scripts/test-agent-core-round4-stateful-v10.mjs
-          node scripts/test-agent-core-round4-router-contracts-v19.mjs
-          node scripts/test-agent-core-round4-pre-router-parity-v23.mjs
-          node scripts/test-agent-core-round4-runtime-surface-v24.mjs
-          node scripts/test-agent-core-round4-evidence-preflight-v25.mjs
-          node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
-          node --check admin-v3/agent-learning.js
+      - name: Contract · Agent Core base
+        run: node scripts/test-dona-antonia-agent-core-contract-v1.mjs
+      - name: Contract · Round 3 memory and learning
+        run: node scripts/test-agent-core-round3-contract-v1.mjs
+      - name: Contract · Round 4 foundation
+        run: node scripts/test-agent-core-round4-contract-v1.mjs
+      - name: Contract · Round 4 safe replay
+        run: node scripts/test-agent-core-round4-safe-replay-v1.mjs
+      - name: Contract · Round 4 parity V3
+        run: node scripts/test-agent-core-round4-parity-v3.mjs
+      - name: Contract · Round 4 semantic V5
+        run: node scripts/test-agent-core-round4-semantic-v5.mjs
+      - name: Contract · Round 4 stateful V10
+        run: node scripts/test-agent-core-round4-stateful-v10.mjs
+      - name: Contract · Round 4 router contracts V19
+        run: node scripts/test-agent-core-round4-router-contracts-v19.mjs
+      - name: Contract · Round 4 pre-router parity V23
+        run: node scripts/test-agent-core-round4-pre-router-parity-v23.mjs
+      - name: Contract · Round 4 runtime surface V24
+        run: node scripts/test-agent-core-round4-runtime-surface-v24.mjs
+      - name: Contract · Round 4 evidence preflight V25
+        run: node scripts/test-agent-core-round4-evidence-preflight-v25.mjs
+      - name: Contract · Worker V2 retirement guard
+        run: node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
+      - name: Syntax · Admin learning
+        run: node --check admin-v3/agent-learning.js
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
