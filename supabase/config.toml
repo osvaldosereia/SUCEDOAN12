@@ -10,8 +10,22 @@ verify_jwt = false
 [functions.whatsapp-outbound-v1]
 verify_jwt = false
 
+# Compatibilidade histórica. O dispatcher/cron canônicos já usam conversation-worker-v3.
 [functions.conversation-worker-v2]
 verify_jwt = false
+
+[functions.conversation-worker-v3]
+verify_jwt = false
+
+# Agent Core usa segredos server-to-server próprios no corpo da função.
+[functions.dona-antonia-agent-core-v1]
+verify_jwt = false
+
+[functions.dona-antonia-agent-learning-v1]
+verify_jwt = false
+
+[functions.admin-agent-learning-v1]
+verify_jwt = true
 
 [functions.bling-products-ingest]
 verify_jwt = false
