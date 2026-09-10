@@ -5,6 +5,7 @@ const v10=fs.readFileSync('supabase/migrations/20260910190016_dona_antonia_agent
 const v11=fs.readFileSync('supabase/migrations/20260910191049_dona_antonia_agent_core_round4_stateful_transition_gate_v11.sql','utf8').toLowerCase();
 const v12=fs.readFileSync('supabase/migrations/20260910192018_dona_antonia_agent_core_round4_pre_router_snapshot_v12.sql','utf8').toLowerCase();
 const v13=fs.readFileSync('supabase/migrations/20260910192201_dona_antonia_agent_core_round4_pre_router_snapshot_hardening_v13.sql','utf8').toLowerCase();
+const v14=fs.readFileSync('supabase/migrations/20260910193028_dona_antonia_agent_core_round4_stateful_evidence_report_v14.sql','utf8').toLowerCase();
 const edge=fs.readFileSync('supabase/functions/dona-antonia-agent-core-v1/index.ts','utf8').toLowerCase();
 
 const must=(body,s,label)=>{if(!body.includes(s.toLowerCase()))throw new Error(`missing:${label}`)};
@@ -67,6 +68,26 @@ must(v13,'get_agent_core_round4_consolidated_readiness_v9','consolidated_v9');
 must(v13,"'stateful_execution_permitted_now',false",'v13_stateful_execution_off');
 must(v13,"'global_retirement_ready',false",'v13_global_retirement_off');
 
+// V14: evidência stateful só com snapshots novos e sem autorização implícita de corte.
+must(v14,'get_agent_core_round4_stateful_evidence_report_v1','stateful_evidence_report');
+must(v14,'get_agent_core_round4_consolidated_readiness_v10','consolidated_v10');
+must(v14,"'historical_backfill_allowed',false",'no_historical_stateful_backfill');
+must(v14,"'pii_payload_in_report',false",'stateful_report_no_pii');
+must(v14,"'retirement_authorized',false",'stateful_retirement_not_authorized');
+must(v14,"'execution_authorized',false",'stateful_execution_not_authorized');
+must(v14,"'stateful_execution_permitted_now',false",'v14_stateful_execution_off');
+must(v14,"'retirement_execution_permitted',false",'v14_retirement_execution_off');
+must(v14,"'global_retirement_ready',false",'v14_global_retirement_off');
+must(v14,"'minimum_stateful_samples_per_core_action',3",'stateful_minimum_samples');
+for(const action of [
+  'basket_customer_data_processed','confirm_order','basket_ready_for_human','change_basket_delivery_address'
+]){
+  must(v14,`('${action}'::text,3)`,`stateful_target_${action}`);
+}
+must(v14,"when v_rows=0 then 'awaiting_new_homologation_snapshots'",'empty_stateful_evidence_reason');
+must(v14,"when not v_ready then 'insufficient_stateful_action_coverage'",'insufficient_stateful_evidence_reason');
+mustNot(v14,'insert into public.agent_core_pre_router_snapshots','stateful_report_must_not_backfill_snapshots');
+
 must(edge,'preview_whatsapp_agent_action_v2','edge_uses_preview_v2');
 must(edge,'p_message_id:job.message_id','edge_passes_current_message');
 mustNot(edge,'sb.rpc("preview_whatsapp_agent_action_v1"','edge_must_not_call_preview_v1_directly');
@@ -89,7 +110,7 @@ for(const unsafe of [
   'whatsapp_flow_commercial_write_enabled=true',
   'bling_order_sync_enabled=true'
 ]){
-  mustNot(v9+v10+v11+v12+v13+edge,unsafe,`unsafe_rollout_change_${unsafe}`);
+  mustNot(v9+v10+v11+v12+v13+v14+edge,unsafe,`unsafe_rollout_change_${unsafe}`);
 }
 
-console.log('Agent Core Round 4 stateful V13 OK: 19 preconditions, hardened inputs, observe-only execution, transition gates and pre-router structural snapshots are protected.');
+console.log('Agent Core Round 4 stateful V14 OK: 19 preconditions, hardened inputs, observe-only execution, pre-router snapshots and stateful evidence gates are protected.');
