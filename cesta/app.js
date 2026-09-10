@@ -1,19 +1,37 @@
 (()=>{
   const API="https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/basket-shop-v1";
+  const ASSET_BASE="https://ssbesxgaijknwsjbsbcz.supabase.co/storage/v1/object/public/whatsapp-flow-assets/products/";
   const params=new URLSearchParams(location.search);
   const token=params.get("t")||"";
   const $=id=>document.getElementById(id);
-  const state={flow:null,data:null,items:[],filtered:[],modal:null,busy:new Set(),categoryDialog:null};
+  const state={flow:null,data:null,items:[],filtered:[],modal:null,busy:new Set(),categoryDialog:null,finishing:false};
   const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   const esc=s=>String(s??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
   const quantityText=v=>`${Math.max(0,Number(v||0))} ${Number(v||0)===1?"unidade":"unidades"}`;
-  const toast=msg=>{const el=$("toast");el.textContent=msg;el.classList.remove("hidden");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.add("hidden"),2400)};
+  const toast=msg=>{const el=$("toast");el.textContent=msg;el.classList.remove("hidden");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.add("hidden"),3600)};
+  const thumbUrl=id=>/^[0-9a-f-]{36}$/i.test(String(id||""))?`${ASSET_BASE}${encodeURIComponent(id)}.jpg`:"";
 
   async function api(action,extra={}){
     const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,token,...extra}),cache:"no-store",credentials:"omit"});
     const data=await r.json().catch(()=>({ok:false,error:"invalid_response"}));
     if(!r.ok||!data.ok)throw new Error(data.detail||data.error||"Falha ao carregar");
     return data;
+  }
+
+  function productImage(item,cls){
+    const thumb=thumbUrl(item.product_id),fallback=String(item.image_url||"");
+    const src=thumb||fallback;
+    return `<img class="${cls}" loading="lazy" decoding="async" src="${esc(src)}" data-fallback="${esc(fallback)}" alt="${esc(item.name||"Produto")}">`;
+  }
+  function bindImageFallback(root=document){
+    root.querySelectorAll('img[data-fallback]').forEach(img=>{
+      if(img.dataset.fallbackBound==="1")return;
+      img.dataset.fallbackBound="1";
+      img.addEventListener("error",()=>{
+        const fallback=img.dataset.fallback||"";
+        if(fallback&&img.src!==fallback){img.removeAttribute("data-fallback");img.src=fallback;}
+      },{once:true});
+    });
   }
 
   function stepper(item){
@@ -38,8 +56,7 @@
     const quantity=Number(item.quantity||0);
     row.classList.toggle("is-removed",quantity===0);
     const qty=row.querySelector(".basket-row-qty");if(qty)qty.textContent=quantityText(quantity);
-    const sub=row.querySelector(".basket-row-sub");
-    if(sub)sub.textContent=quantity===0?"Retirado da cesta":quantity!==Number(item.base_quantity)?"Quantidade alterada":"";
+    const sub=row.querySelector(".basket-row-sub");if(sub)sub.textContent=quantity===0?"Retirado da cesta":quantity!==Number(item.base_quantity)?"Quantidade alterada":"";
     const remove=row.querySelector("[data-remove]");if(remove)remove.disabled=quantity===0;
   }
 
@@ -48,10 +65,8 @@
     const card=document.querySelector(`[data-product="${CSS.escape(id)}"]`);if(!card)return;
     const quantity=Number(item.quantity||0);
     card.classList.toggle("has-quantity",quantity>0);
-    const qty=card.querySelector(".product-quantity");
-    if(qty){qty.textContent=quantityText(quantity);qty.classList.toggle("hidden",quantity<=0)}
-    const add=card.querySelector(".product-add-button");
-    if(add){add.disabled=false;add.textContent="Adicionar"}
+    const qty=card.querySelector(".product-quantity");if(qty){qty.textContent=quantityText(quantity);qty.classList.toggle("hidden",quantity<=0)}
+    const add=card.querySelector(".product-add-button");if(add){add.disabled=false;add.textContent="Adicionar"}
   }
 
   function bindSteppers(root,items){
@@ -68,21 +83,16 @@
           const res=await api("set_quantity",{product_id:id,quantity:next});
           item.quantity=next;input.value=String(next);
           if(state.flow==="basket_basic_v1"){
-            updateBasketPricing(res.result||{});refreshBasketRow(id);
-            toast(next===0?"Produto retirado da cesta":"Cesta atualizada");
+            updateBasketPricing(res.result||{});refreshBasketRow(id);toast(next===0?"Produto retirado da cesta":"Cesta atualizada");
           }else if(state.flow==="basket_extras_v1"){
             const total=res.result?.cart?.commercial_total??res.result?.cart?.total;
             if(total!=null)$("cartTotal").textContent=money(total);
-            refreshExtraCard(id);
-            toast(next===0?"Produto retirado":"Quantidade atualizada");
+            refreshExtraCard(id);toast(next===0?"Produto retirado":"Quantidade atualizada");
           }
         }catch(e){
-          input.value=String(item.quantity||0);
-          if(state.flow==="basket_extras_v1")refreshExtraCard(id);
-          toast(e.message||"Não consegui atualizar");
+          input.value=String(item.quantity||0);if(state.flow==="basket_extras_v1")refreshExtraCard(id);toast(e.message||"Não consegui atualizar");
         }finally{
-          state.busy.delete(id);
-          el.querySelectorAll("button,input").forEach(x=>x.disabled=item.quantity_editable===false);
+          state.busy.delete(id);el.querySelectorAll("button,input").forEach(x=>x.disabled=item.quantity_editable===false);
         }
       };
       el.querySelectorAll("button").forEach(btn=>btn.addEventListener("click",()=>commit(Number(input.value||0)+Number(btn.dataset.step||0))));
@@ -92,12 +102,10 @@
 
   function bindRemoveButtons(root){
     root.querySelectorAll("[data-remove]").forEach(btn=>btn.addEventListener("click",()=>{
-      const id=btn.dataset.remove;
-      const step=root.querySelector(`.stepper[data-id="${CSS.escape(id)}"]`);if(!step)return;
+      const id=btn.dataset.remove,step=root.querySelector(`.stepper[data-id="${CSS.escape(id)}"]`);if(!step)return;
       const input=step.querySelector("input");input.value="0";input.dispatchEvent(new Event("change",{bubbles:true}));
     }));
   }
-
   function bindExtraAddButtons(root){
     root.querySelectorAll(".product-add-button").forEach(btn=>btn.addEventListener("click",()=>{
       const card=btn.closest("[data-product]"),id=card?.dataset.product;if(!id||state.busy.has(id))return;
@@ -117,30 +125,30 @@
     const root=$("basketItems");
     root.innerHTML=state.items.map(item=>{
       const sub=item.substitution;
-      const status=sub?`<div class="swap-status">Substituição registrada: <strong>${esc(sub.replacement_name||"produto selecionado")}</strong></div>`:"";
+      const status=sub?`<div class="swap-status">Troca: <strong>${esc(sub.replacement_name||"produto selecionado")}</strong></div>`:"";
       const quantity=Number(item.quantity||0),removed=quantity===0;
       const detail=removed?"Retirado da cesta":quantity!==Number(item.base_quantity)?"Quantidade alterada":"";
-      return `<article class="basket-row${removed?" is-removed":""}" data-basket-row="${esc(item.product_id)}"><img class="basket-row-image" loading="lazy" decoding="async" src="${esc(item.image_url||"")}" alt="${esc(item.name)}"><div class="basket-row-copy"><div class="basket-row-qty">${quantityText(quantity)}</div><div class="basket-row-name">${esc(item.name)}</div><div class="basket-row-sub">${detail}</div>${status}</div><div class="basket-row-actions">${stepper(item)}<button class="remove-button" type="button" data-remove="${esc(item.product_id)}" ${removed?"disabled":""}>Retirar</button></div></article>`;
+      return `<article class="basket-row${removed?" is-removed":""}" data-basket-row="${esc(item.product_id)}">${productImage(item,"basket-row-image")}<div class="basket-row-copy"><div class="basket-row-qty">${quantityText(quantity)}</div><div class="basket-row-name">${esc(item.name)}</div><div class="basket-row-sub">${detail}</div>${status}</div><div class="basket-row-actions">${stepper(item)}<button class="remove-button" type="button" data-remove="${esc(item.product_id)}" ${removed?"disabled":""}>Retirar</button></div></article>`;
     }).join("");
-    bindSteppers(root,state.items);bindRemoveButtons(root);
-    if(params.get("swap")==="ok")toast("Substituição registrada para conferência");
+    bindImageFallback(root);bindSteppers(root,state.items);bindRemoveButtons(root);
+    if(params.get("swap")==="ok")toast("Troca registrada");
   }
 
   function renderExtraCards(items){
     const root=$("productGrid");
     root.innerHTML=items.map(item=>{
       const quantity=Number(item.quantity||0);
-      return `<article class="product-card${quantity>0?" has-quantity":""}" data-product="${esc(item.product_id)}"><button class="product-open" type="button" data-open="${esc(item.product_id)}"><div class="product-image-wrap"><img class="product-image" loading="lazy" decoding="async" src="${esc(item.image_url||"")}" alt="${esc(item.name)}"></div><div class="product-copy"><div class="product-quantity${quantity>0?"":" hidden"}">${quantityText(quantity)}</div><div class="product-name">${esc(item.name)}</div><div class="product-price">${money(item.price)}</div></div></button>${stepper({...item,min_quantity:0,max_quantity:item.stock,quantity_editable:true})}<button class="product-add-button" type="button">Adicionar</button></article>`;
+      return `<article class="product-card${quantity>0?" has-quantity":""}" data-product="${esc(item.product_id)}"><button class="product-open" type="button" data-open="${esc(item.product_id)}"><div class="product-image-wrap">${productImage(item,"product-image")}</div><div class="product-copy"><div class="product-quantity${quantity>0?"":" hidden"}">${quantityText(quantity)}</div><div class="product-name">${esc(item.name)}</div><div class="product-price">${money(item.price)}</div></div></button>${stepper({...item,min_quantity:0,max_quantity:item.stock,quantity_editable:true})}<button class="product-add-button" type="button">Adicionar</button></article>`;
     }).join("");
     $("emptyProducts").classList.toggle("hidden",items.length>0);
-    bindSteppers(root,state.items);bindExtraAddButtons(root);
+    bindImageFallback(root);bindSteppers(root,state.items);bindExtraAddButtons(root);
     root.querySelectorAll("[data-open]").forEach(btn=>btn.addEventListener("click",()=>openProduct(btn.dataset.open)));
   }
 
   function renderReplacementCards(items){
     const root=$("productGrid");
-    root.innerHTML=items.map(item=>`<article class="product-card replacement-card" data-product="${esc(item.product_id)}"><button class="product-open" type="button" data-open="${esc(item.product_id)}"><div class="product-image-wrap"><img class="product-image" loading="lazy" decoding="async" src="${esc(item.image_url||"")}" alt="${esc(item.name)}"></div><div class="product-copy"><div class="product-name">${esc(item.name)}</div><div class="replacement-category">${esc(item.category||"")}</div></div></button><button class="choose-replacement" type="button" data-choose="${esc(item.product_id)}">Escolher</button></article>`).join("");
-    $("emptyProducts").classList.toggle("hidden",items.length>0);
+    root.innerHTML=items.map(item=>`<article class="product-card replacement-card" data-product="${esc(item.product_id)}"><button class="product-open" type="button" data-open="${esc(item.product_id)}"><div class="product-image-wrap">${productImage(item,"product-image")}</div><div class="product-copy"><div class="product-name">${esc(item.name)}</div><div class="replacement-category">${esc(item.category||"")}</div></div></button><button class="choose-replacement" type="button" data-choose="${esc(item.product_id)}">Escolher</button></article>`).join("");
+    $("emptyProducts").classList.toggle("hidden",items.length>0);bindImageFallback(root);
     root.querySelectorAll("[data-open]").forEach(btn=>btn.addEventListener("click",()=>openProduct(btn.dataset.open)));
     root.querySelectorAll("[data-choose]").forEach(btn=>btn.addEventListener("click",()=>chooseReplacement(btn.dataset.choose,btn)));
   }
@@ -153,33 +161,26 @@
 
   function renderExtras(data){
     state.items=(data.items||[]).map(x=>({...x,min_quantity:0,max_quantity:Number(x.stock||99),quantity_editable:true}));
-    $("pageSubtitle").textContent="Adicionar produtos";
-    $("extrasView").classList.remove("hidden");$("extrasActions").classList.remove("hidden");
-    const cats=data.session?.categories||[];
-    $("sectionChips").innerHTML=cats.map(c=>`<span class="chip">${esc(c)}</span>`).join("");
+    $("pageSubtitle").textContent="Adicionar produtos";$("extrasView").classList.remove("hidden");$("extrasActions").classList.remove("hidden");
+    const cats=data.session?.categories||[];$("sectionChips").innerHTML=cats.map(c=>`<span class="chip">${esc(c)}</span>`).join("");
     $("extrasTitle").textContent=data.basket?.name?`Complete a ${data.basket.name}`:"Complete sua cesta";
     $("cartTotal").textContent=money(data.cart?.total??data.basket?.base_price??0);
     $("searchInput").addEventListener("input",applyFilter);applyFilter();
   }
 
   function renderReplacement(data){
-    state.items=data.items||[];
-    $("pageSubtitle").textContent="Trocar produto";
-    $("extrasView").classList.remove("hidden");$("extrasActions").classList.remove("hidden");
-    $("extrasView").classList.add("replacement-view");
-    const source=data.session?.source_product_name||"produto";
-    $("extrasTitle").textContent=`Trocar ${source}`;
-    const cats=data.session?.categories||[];
-    $("sectionChips").innerHTML=cats.map(c=>`<span class="chip">${esc(c)}</span>`).join("");
-    $("cartTotal").parentElement.classList.add("hidden");
-    $("sendBtn").textContent="Voltar para cesta";$("sendBtn").dataset.mode="back";
+    state.items=data.items||[];$("pageSubtitle").textContent="Trocar produto";
+    $("extrasView").classList.remove("hidden");$("extrasActions").classList.remove("hidden");$("extrasView").classList.add("replacement-view");
+    const source=data.session?.source_product_name||"produto";$("extrasTitle").textContent=`Trocar ${source}`;
+    const cats=data.session?.categories||[];$("sectionChips").innerHTML=cats.map(c=>`<span class="chip">${esc(c)}</span>`).join("");
+    $("cartTotal").parentElement.classList.add("hidden");$("sendBtn").textContent="Voltar para cesta";$("sendBtn").dataset.mode="back";
     $("searchInput").placeholder="Buscar nas opções";$("searchInput").addEventListener("input",applyFilter);applyFilter();
     if(!state.items.length)setTimeout(()=>chooseCategories("replacement",true),50);
   }
 
   function openProduct(id){
     const item=state.items.find(x=>x.product_id===id);if(!item)return;
-    state.modal=item;$("modalImage").src=item.image_url||"";$("modalImage").alt=item.name||"Produto";$("modalName").textContent=item.name;
+    state.modal=item;$("modalImage").src=item.image_url||thumbUrl(item.product_id)||"";$("modalImage").alt=item.name||"Produto";$("modalName").textContent=item.name;
     if(state.flow==="basket_replace_v1"){
       $("modalPrice").classList.add("hidden");
       $("modalStepper").innerHTML=`<p class="replacement-note">A troca faz parte da composição da cesta. Não exibimos valor individual deste item.</p><button type="button" class="btn btn-primary modal-choose" data-choose="${esc(item.product_id)}">Usar este produto</button>`;
@@ -200,7 +201,7 @@
 
   async function chooseCategories(mode="extras",force=false){
     if(state.categoryDialog)return;
-    let response;try{response=await api("categories")}catch(e){toast("Não consegui carregar as categorias");return}
+    let response;try{response=await api("categories")}catch{toast("Não consegui carregar as categorias");return}
     const dialog=document.createElement("dialog");dialog.className=`category-modal${mode==="extras"?" category-simple":""}`;state.categoryDialog=dialog;
     const title=mode==="replacement"?"Escolha onde procurar":"O que te interessa?";
     const intro=mode==="replacement"?`<span class="eyebrow">Trocar produto</span>`:"";
@@ -212,7 +213,7 @@
     dialog.addEventListener("click",e=>{if(e.target===dialog&&!force)close()});
     dialog.querySelector(".category-go").addEventListener("click",async()=>{
       const selected=[...dialog.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);if(!selected.length){toast("Marque pelo menos uma categoria");return}
-      const btn=dialog.querySelector(".category-go"),old=btn.textContent;btn.disabled=true;btn.textContent="Montando vitrine…";
+      const btn=dialog.querySelector(".category-go"),old=btn.textContent;btn.disabled=true;btn.textContent="Montando…";
       try{
         if(mode==="replacement"){
           await api("set_replacement_categories",{categories:selected});close();const data=await api("open");state.data=data;state.items=data.items||[];$("sectionChips").innerHTML=(data.session?.categories||[]).map(c=>`<span class="chip">${esc(c)}</span>`).join("");applyFilter();
@@ -221,25 +222,21 @@
     });
   }
 
-  async function returnWhatsapp(intent){
-    const btn=intent==="order"?$("orderBtn"):$("sendBtn");const old=btn.textContent;btn.disabled=true;btn.textContent="Abrindo WhatsApp…";
+  async function finishToWhatsapp(intent,btn){
+    if(state.finishing||btn.dataset.returnDone==="1")return;
+    state.finishing=true;const old=btn.textContent;btn.disabled=true;btn.textContent="Salvando…";
     try{
-      const res=await api("return",{intent});
-      const deep=res.whatsapp_deep_link||"";const fallback=res.whatsapp_web_fallback||res.whatsapp_url||"";
-      if(!deep&&!fallback)throw new Error("whatsapp_link_missing");
-      if(deep){
-        location.href=deep;
-        setTimeout(()=>{if(document.visibilityState==="visible"&&fallback)location.href=fallback},900);
-      }else location.href=fallback;
-      setTimeout(()=>{if(document.visibilityState==="visible"){btn.disabled=false;btn.textContent="Abrir WhatsApp"}},1800);
-    }catch(e){toast("Não consegui abrir automaticamente. Toque novamente.");btn.disabled=false;btn.textContent=old}
+      await api("return",{intent});
+      btn.dataset.returnDone="1";btn.disabled=true;btn.textContent="Pronto ✓";
+      toast("Pronto! Sua escolha foi enviada para a conversa. Volte ao WhatsApp para continuar.");
+    }catch(e){btn.disabled=false;btn.textContent=old;toast(e.message||"Não consegui concluir agora. Tente novamente.")}
+    finally{state.finishing=false}
   }
 
   async function boot(){
     if(!/^[a-f0-9]{64}$/i.test(token)){showError("Este link não é válido.");return}
     try{
-      const data=await api("open");state.data=data;state.flow=data.flow;
-      $("loading").classList.add("hidden");
+      const data=await api("open");state.data=data;state.flow=data.flow;$("loading").classList.add("hidden");
       if(data.flow==="basket_basic_v1")renderBasket(data);
       else if(data.flow==="basket_extras_v1")renderExtras(data);
       else if(data.flow==="basket_replace_v1")renderReplacement(data);
@@ -248,9 +245,9 @@
   }
   function showError(msg){$("loading").classList.add("hidden");$("errorText").textContent=msg;$("error").classList.remove("hidden")}
 
-  $("orderBtn").addEventListener("click",()=>returnWhatsapp("order"));
+  $("orderBtn").addEventListener("click",()=>finishToWhatsapp("order",$("orderBtn")));
   $("extrasBtn").addEventListener("click",()=>chooseCategories("extras"));
-  $("sendBtn").addEventListener("click",()=>{if(state.flow==="basket_replace_v1")location.href=state.data?.session?.parent_url||"/cesta/";else returnWhatsapp("extras_done")});
+  $("sendBtn").addEventListener("click",()=>{if(state.flow==="basket_replace_v1")location.href=state.data?.session?.parent_url||"/cesta/";else finishToWhatsapp("extras_done",$("sendBtn"))});
   $("closeModal").addEventListener("click",()=>$("productModal").close());
   $("productModal").addEventListener("click",e=>{if(e.target===$("productModal"))$("productModal").close()});
   boot();
