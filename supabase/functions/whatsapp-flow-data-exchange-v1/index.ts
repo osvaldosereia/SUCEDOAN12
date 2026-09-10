@@ -18,9 +18,9 @@ async function ownerHomologationAllowed(sb:any,resolved:Record<string,unknown>|n
   if(defError||!def)return false;
   const metadata=isObject(def.metadata)?def.metadata:{};
   const slug=text(def.slug,120);
-  const candidate=/^flow-cestas-comercial-v[4-6]$/.test(slug)||slug==="flow-cestas-comercial-v7-diagnostico";
+  const candidate=/^flow-cestas-comercial-v[4-6]$/.test(slug)||slug==="flow-cestas-comercial-v7-diagnostico"||slug==="flow-cestas-comercial-v8-stable";
   const dormant=["draft","ready"].includes(text(def.status,32));
-  const isolated=metadata.candidate_not_live===true&&metadata.customer_exposure!==true;
+  const isolated=metadata.candidate_not_live===true&&metadata.customer_exposure!==true&&metadata.default_for_new_sessions!==true;
   if(!candidate||!dormant||!isolated)return false;
   const testRecipient=text(ctx.test_recipient,32);
   if(testRecipient){
@@ -91,7 +91,7 @@ Deno.serve(async(req:Request)=>{
       let handled:any=null,handleError:any=null;
       const definitionSlug=text(resolved?.definition_slug,120)||null;
       const params={p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data};
-      if(definitionSlug==="flow-cestas-comercial-v1"||definitionSlug==="flow-cestas-comercial-v7-diagnostico"){
+      if(definitionSlug==="flow-cestas-comercial-v1"||definitionSlug==="flow-cestas-comercial-v7-diagnostico"||definitionSlug==="flow-cestas-comercial-v8-stable"){
         const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v8",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v2"){
         const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v9",params);handled=result.data;handleError=result.error;
