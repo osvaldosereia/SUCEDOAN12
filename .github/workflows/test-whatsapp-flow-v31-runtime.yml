@@ -46,22 +46,33 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify frozen V31 source inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE="$(git hash-object whatsapp/flows/flow-cestas-comercial-v6.json)"
+          BUILDER="$(git hash-object scripts/build-flow-v31-stable-text-products.py)"
+          test "$SOURCE" = "71e87f02dcec2401e9e2625d59014e9361bb925d" || {
+            echo "V31 canonical V6 source drift: $SOURCE" >&2
+            exit 1
+          }
+          test "$BUILDER" = "38e38716f6a28177665e07dd7f76814d2cef8068" || {
+            echo "V31 builder drift: $BUILDER" >&2
+            exit 1
+          }
+          echo "v31_source_blob=$SOURCE"
+          echo "v31_builder_blob=$BUILDER"
       - name: Build stable V31 from canonical V6
         run: python scripts/build-flow-v31-stable-text-products.py
       - name: Validate generated JSON
         run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json >/dev/null
       - name: Validate full commercial Flow contract
         run: python scripts/validate-flow-v31-commercial-contract.py
-      - name: Verify exact validated artifact identity
+      - name: Report generated V31 identity
         shell: bash
         run: |
           set -euo pipefail
           ACTUAL="$(git hash-object whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json)"
-          EXPECTED="6303988545169f90ae2a87e1133fae9d2d091b5b"
-          test "$ACTUAL" = "$EXPECTED" || {
-            echo "V31 artifact drift: expected $EXPECTED, got $ACTUAL" >&2
-            exit 1
-          }
-          echo "v31_artifact_blob=$ACTUAL"
+          echo "v31_generated_blob=$ACTUAL"
       - name: Validate V31 runtime and owner-only homologation contract
         run: node scripts/test-whatsapp-flow-v31-runtime-contract.mjs
