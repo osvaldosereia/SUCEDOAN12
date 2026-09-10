@@ -128,4 +128,6 @@ Critério de saída: atendimento tecnicamente pronto. **Não aumentar canary aci
 
 - Rodada 1: **concluída** — fundação, ferramentas governadas, contexto compacto, observer shadow e CI inicial.
 - Rodada 2: **concluída** — `dona-antonia-agent-core-v1` em shadow/observe com Responses API, function calling, prompt cache, Luna + Terra crítica, limite de tools, telemetria, replays e CI ampliado. Checkpoint: `docs/AGENT-CORE-RODADA-2-CHECKPOINT-2026-09-10.md`.
-- Próximo ponto programável: **Rodada 3/6 — memória seletiva e aprendizagem assíncrona**, mantendo `learning_write_enabled=false` para publicação global e todos os gates de rollout fechados.
+- Rodada 3: **concluída** — memória seletiva, resumo incremental, fila assíncrona, privacidade, deduplicação, revisão humana de candidatos e Admin de aprendizados. `learning_write_enabled=false` e autopublicação global continuam desligados. Checkpoint: `docs/AGENT-CORE-RODADA-3-CHECKPOINT-2026-09-10.md`.
+- Rodada 4: **em andamento** — inventário/classificação dos routers criado; pós-processamento shadow consolidado; duplicidade de `updated_at` removida; dispatcher canônico do worker atual alinhado para V3; gate objetivo de paridade criado. Aposentadoria dos routers comerciais de interpretação está bloqueada enquanto `get_agent_core_round4_parity_report_v1()` não atingir amostra mínima e taxa de concordância exigida.
+- Próximo ponto programável: ampliar evidência shadow e decompor os routers `legacy` bloqueados em ferramentas/validações determinísticas, sem alterar os gates de rollout.
