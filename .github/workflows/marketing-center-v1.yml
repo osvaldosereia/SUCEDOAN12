@@ -48,8 +48,10 @@ jobs:
           node-version: '22'
       - name: Install deterministic renderer dependency
         run: npm install --no-save sharp@0.34.3
-      - name: Verify FFmpeg toolchain
+      - name: Install FFmpeg toolchain
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
       - name: Check admin JavaScript syntax
