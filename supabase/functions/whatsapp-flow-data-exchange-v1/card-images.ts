@@ -1,3 +1,4 @@
+// V31 regression surface: bounded visual hydration; runtime checkout is handled server-side.
 import {hydrateExperienceImages,loadFlowCompatibleImageBase64} from "./image.ts";
 const FALLBACK_IMAGE_BASE64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC";
 const isUuid=(value:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
