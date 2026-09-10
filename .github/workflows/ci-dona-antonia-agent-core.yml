@@ -3,29 +3,33 @@ name: CI Dona Antonia Agent Core
 on:
   push:
     paths:
-      - 'supabase/migrations/20260910134400_dona_antonia_agent_core_foundation_v1.sql'
-      - 'supabase/migrations/20260910135500_dona_antonia_agent_core_observe_v1.sql'
-      - 'supabase/migrations/20260910140200_dona_antonia_agent_core_shadow_hook_v1.sql'
-      - 'supabase/migrations/20260910142000_dona_antonia_agent_core_round2_shadow_v1.sql'
-      - 'supabase/migrations/20260910143500_dona_antonia_agent_core_round2_report_v1.sql'
+      - 'supabase/migrations/*dona_antonia_agent_core*'
       - 'supabase/functions/dona-antonia-agent-core-v1/**'
+      - 'supabase/functions/dona-antonia-agent-learning-v1/**'
+      - 'supabase/functions/admin-agent-learning-v1/**'
       - 'supabase/functions/conversation-worker-v3/**'
+      - 'admin-v3/agent-learning.js'
+      - 'admin-v3/aprendizados.html'
       - 'docs/ROADMAP-AGENT-CORE-DONA-ANTONIA-6-RODADAS.md'
       - 'docs/AGENT-CORE-RODADA-*-CHECKPOINT-*.md'
       - 'scripts/test-dona-antonia-agent-core-contract-v1.mjs'
+      - 'scripts/test-agent-core-round3-contract-v1.mjs'
+      - 'scripts/test-agent-core-round4-contract-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
     paths:
-      - 'supabase/migrations/20260910134400_dona_antonia_agent_core_foundation_v1.sql'
-      - 'supabase/migrations/20260910135500_dona_antonia_agent_core_observe_v1.sql'
-      - 'supabase/migrations/20260910140200_dona_antonia_agent_core_shadow_hook_v1.sql'
-      - 'supabase/migrations/20260910142000_dona_antonia_agent_core_round2_shadow_v1.sql'
-      - 'supabase/migrations/20260910143500_dona_antonia_agent_core_round2_report_v1.sql'
+      - 'supabase/migrations/*dona_antonia_agent_core*'
       - 'supabase/functions/dona-antonia-agent-core-v1/**'
+      - 'supabase/functions/dona-antonia-agent-learning-v1/**'
+      - 'supabase/functions/admin-agent-learning-v1/**'
       - 'supabase/functions/conversation-worker-v3/**'
+      - 'admin-v3/agent-learning.js'
+      - 'admin-v3/aprendizados.html'
       - 'docs/ROADMAP-AGENT-CORE-DONA-ANTONIA-6-RODADAS.md'
       - 'docs/AGENT-CORE-RODADA-*-CHECKPOINT-*.md'
       - 'scripts/test-dona-antonia-agent-core-contract-v1.mjs'
+      - 'scripts/test-agent-core-round3-contract-v1.mjs'
+      - 'scripts/test-agent-core-round4-contract-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
 permissions:
@@ -39,5 +43,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate Agent Core contract
-        run: node scripts/test-dona-antonia-agent-core-contract-v1.mjs
+      - name: Validate Agent Core contracts
+        run: |
+          node scripts/test-dona-antonia-agent-core-contract-v1.mjs
+          node scripts/test-agent-core-round3-contract-v1.mjs
+          node scripts/test-agent-core-round4-contract-v1.mjs
+          node --check admin-v3/agent-learning.js
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Deno check Agent Core functions
+        run: |
+          deno check supabase/functions/dona-antonia-agent-core-v1/index.ts
+          deno check supabase/functions/dona-antonia-agent-learning-v1/index.ts
+          deno check supabase/functions/admin-agent-learning-v1/index.ts
+          deno check supabase/functions/conversation-worker-v3/index.ts
