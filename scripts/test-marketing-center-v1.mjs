@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const foundation=fs.readFileSync('supabase/migrations/20260910004500_marketing_center_foundation_v1.sql','utf8');
 const presets=fs.readFileSync('supabase/migrations/20260910004600_marketing_default_presets_v1.sql','utf8');
+const perf=fs.readFileSync('supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-marketing-v1/index.ts','utf8');
 const ui=fs.readFileSync('admin-v3/marketing-center.js','utf8');
 const cfg=fs.readFileSync('admin/config.js','utf8');
@@ -33,6 +34,7 @@ assert.match(presets,/deterministic_renderer/);
 assert.match(presets,/imagem_produto_ia_opcional/);
 assert.match(presets,/requires_ai_gate/);
 assert.match(presets,/command_text,negative_prompt,variables,settings/);
+for(const idx of ['marketing_assets_campaign_idx','marketing_assets_parent_idx','marketing_assets_template_idx','marketing_assets_command_idx','marketing_publication_jobs_campaign_idx','marketing_publication_jobs_asset_idx']) assert.ok(perf.includes(idx),`${idx} missing`);
 
 assert.match(edge,/npm:@supabase\/supabase-js@2\.112\.3/,'Supabase client must be pinned');
 for(const action of ['overview','create_command','create_template','create_campaign','update_campaign','create_asset','update_asset','create_publication_draft','kill']) assert.ok(edge.includes(`action==="${action}"`),`${action} missing`);
