@@ -31,6 +31,7 @@ on:
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
       - 'scripts/marketing-private-media-adapter-v1.mjs'
+      - 'scripts/marketing-private-media-resolver-v1.mjs'
       - 'scripts/marketing-channel-dry-run-v1.mjs'
       - 'scripts/test-marketing-*.mjs'
       - '.github/workflows/marketing-center-v1.yml'
@@ -65,6 +66,7 @@ on:
       - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/marketing-render-worker-v1.mjs'
       - 'scripts/marketing-private-media-adapter-v1.mjs'
+      - 'scripts/marketing-private-media-resolver-v1.mjs'
       - 'scripts/marketing-channel-dry-run-v1.mjs'
       - 'scripts/test-marketing-*.mjs'
 
@@ -100,6 +102,7 @@ jobs:
         run: |
           node --check scripts/marketing-render-worker-v1.mjs
           node --check scripts/marketing-private-media-adapter-v1.mjs
+          node --check scripts/marketing-private-media-resolver-v1.mjs
           node --check scripts/marketing-channel-dry-run-v1.mjs
       - name: Validate Marketing Center safety contract
         run: node scripts/test-marketing-center-v1.mjs
@@ -123,5 +126,7 @@ jobs:
         run: node scripts/test-marketing-worker-v1.mjs
       - name: Validate private media persistence adapter
         run: node scripts/test-marketing-private-media-adapter-v1.mjs
+      - name: Validate private media source resolver
+        run: node scripts/test-marketing-private-media-resolver-v1.mjs
       - name: Validate official channel dry-run contracts
         run: node scripts/test-marketing-channel-dry-run-v1.mjs
