@@ -6,6 +6,8 @@ const read = (path) => readFileSync(path, 'utf8');
 const guard = read('supabase/migrations/20260910124500_whatsapp_flow_v31_targeted_homologation_guard_v5.sql');
 const runtime = read('supabase/migrations/20260910125000_whatsapp_flow_v31_runtime_v18_v22_backfill.sql');
 const allowlist = read('supabase/migrations/20260910142700_whatsapp_flow_v31_owner_allowlist_purpose_unification_v1.sql');
+const dispatch = read('supabase/migrations/20260910143500_whatsapp_flow_v31_owner_dispatch_contract_v2.sql');
+const preflight3 = read('supabase/migrations/20260910144200_whatsapp_flow_v31_owner_preflight_v3_dispatch_v6.sql');
 const edge = read('supabase/functions/whatsapp-flow-data-exchange-v1/index.ts');
 const cards = read('supabase/functions/whatsapp-flow-data-exchange-v1/card-images.ts');
 const crypto = read('supabase/functions/whatsapp-flow-data-exchange-v1/crypto.ts');
@@ -30,33 +32,44 @@ assert.match(guard, /owner_number_not_pre_authorized/);
 assert.match(guard, /owner_allowlist_target/);
 assert.match(guard, /w\.phone_e164=v_target_phone/);
 assert.match(guard, /target_conversation_consistent/);
-assert.match(guard, /queue_and_dispatch_whatsapp_flow_owner_homologation_v5/);
-assert.match(guard, /get_whatsapp_flow_v31_homologation_preflight_v2\(null,p_conversation_id\)/);
-assert.match(guard, /get_whatsapp_flow_v31_homologation_preflight_v2\(v_session_id,p_conversation_id\)/);
 
-// The token issuer and preflight/lease must share the same single owner-only allowlist purpose.
+// The token issuer and preflight/lease share one owner-only allowlist purpose.
 assert.match(allowlist, /flow_v31_owner_homologation/);
 assert.match(allowlist, /controlled_live_homologation/);
 assert.match(allowlist, /issue_whatsapp_flow_owner_homologation_token_v1/);
 assert.doesNotMatch(allowlist, /insert\s+into\s+public\.whatsapp_test_allowlist/i);
 
-// Owner-only outbound must carry a dedicated homologation session marker and the exact Flow identity issued by the token helper.
-assert.match(guard, /queue_and_dispatch_whatsapp_flow_owner_homologation_v1/);
-assert.match(guard, /v_flow_id:=v_issue->>'flow_id'/);
-assert.match(guard, /'homologation_session_id',v_session_id::text/);
-assert.match(guard, /'type','flow'/);
-assert.match(guard, /'flow_id',v_flow_id/);
-assert.match(guard, /'flow_action',v_action/);
-assert.match(guard, /dispatch_whatsapp_flow_owner_homologation_job_v1\(v_job_id\)/);
+// Dedicated owner dispatch carries its session marker all the way to Make and never bypasses human control.
+assert.match(dispatch, /w\.purpose='controlled_live_homologation'/);
+assert.doesNotMatch(dispatch, /flow_v31_owner_homologation/);
+assert.match(dispatch, /c\.mode<>'ai'/);
+assert.match(dispatch, /human_handoffs[\s\S]*status in \('open','claimed'\)/);
+assert.match(dispatch, /homologation_human_handoff_active/);
+assert.match(dispatch, /'homologation_session_id',v_session_id::text/);
+assert.match(dispatch, /'interactive',j\.payload->'interactive'/);
+assert.match(dispatch, /net\.http_post/);
 
-// Homologation helpers are server-only.
-for (const fn of [
-  'renew_whatsapp_flow_owner_homologation_lease_v1',
-  'get_whatsapp_flow_v31_homologation_preflight_v2',
-  'queue_and_dispatch_whatsapp_flow_owner_homologation_v5',
-  'get_whatsapp_flow_v31_journey_audit_v3',
+// V3 preflight catches unavailable/human-owned conversations before dispatch and V6 uses it before V5.
+assert.match(preflight3, /get_whatsapp_flow_v31_homologation_preflight_v3/);
+assert.match(preflight3, /owner_conversation_ai/);
+assert.match(preflight3, /owner_service_window_open/);
+assert.match(preflight3, /owner_handoff_clear/);
+assert.match(preflight3, /human_handoffs[\s\S]*status in \('open','claimed'\)/);
+assert.match(preflight3, /queue_and_dispatch_whatsapp_flow_owner_homologation_v6/);
+assert.match(preflight3, /owner_conversation_preflight_failed/);
+assert.match(preflight3, /queue_and_dispatch_whatsapp_flow_owner_homologation_v5/);
+
+// Homologation helpers remain server-only.
+for (const [source, fn] of [
+  [guard, 'renew_whatsapp_flow_owner_homologation_lease_v1'],
+  [guard, 'get_whatsapp_flow_v31_homologation_preflight_v2'],
+  [guard, 'queue_and_dispatch_whatsapp_flow_owner_homologation_v5'],
+  [guard, 'get_whatsapp_flow_v31_journey_audit_v3'],
+  [dispatch, 'dispatch_whatsapp_flow_owner_homologation_job_v1'],
+  [preflight3, 'get_whatsapp_flow_v31_homologation_preflight_v3'],
+  [preflight3, 'queue_and_dispatch_whatsapp_flow_owner_homologation_v6'],
 ]) {
-  assert.match(guard, new RegExp(`revoke all on function public\\.${fn}`));
+  assert.match(source, new RegExp(`revoke all on function public\\.${fn}`));
 }
 
 // V18: never load full catalog through a Flow response; terms/products are capped, upsell is optional and small.
@@ -66,7 +79,7 @@ assert.match(runtime, /PRODUTOS_\[ABC\][\s\S]*limit 20/);
 assert.match(runtime, /v_screen='UPSELL'[\s\S]*limit 6/);
 assert.match(runtime, /Você pode continuar sem adicionar nada/);
 
-// V20-V22: product truth must come from Supabase and quantity is constrained by stock and accumulated selection.
+// V20-V22: product truth comes from Supabase and quantity is constrained by stock and accumulated selection.
 assert.match(runtime, /pr\.is_active=true/);
 assert.match(runtime, /is_whatsapp_active,false\)=true/);
 assert.match(runtime, /coalesce\(pr\.price,0\)>0/);
@@ -100,7 +113,7 @@ assert.match(cards, /delete start\.image/);
 assert.match(cards, /PRODUTO_\[A-L\]/);
 assert.match(cards, /products\/\$\{productId\}\.jpg/);
 
-// Crypto implementation must remain the stricter production-safe variant.
+// Crypto implementation remains the stricter production-safe variant.
 assert.match(crypto, /iv\.length<12\|\|iv\.length>16/);
 assert.match(crypto, /aesKeyBytes\.length!==16/);
 assert.match(crypto, /invalid_flow_json/);
