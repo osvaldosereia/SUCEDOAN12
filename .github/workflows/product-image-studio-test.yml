@@ -18,9 +18,7 @@ concurrency:
 jobs:
   test-real-nine-products:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,18 +28,20 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install image dependencies
-        run: python -m pip install --disable-pip-version-check --no-cache-dir pillow==11.3.0 requests==2.32.5
+      - name: Cache background-removal model
+        uses: actions/cache@v4
+        with:
+          path: ~/.u2net
+          key: product-studio-u2net-v1
 
-      - name: Verify OpenAI secret is configured
-        shell: bash
+      - name: Install deterministic image dependencies
         run: |
-          if [ -z "${OPENAI_API_KEY:-}" ]; then
-            echo "OPENAI_API_KEY is not configured"
-            exit 1
-          fi
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            pillow==11.3.0 \
+            opencv-python-headless==4.11.0.86 \
+            'rembg[cpu]>=2.0.65,<3'
 
-      - name: Run real 9-product studio test
+      - name: Run real 9-product deterministic studio test
         run: |
           python automation/product-image-studio/run_batch.py \
             --manifest automation/product-image-studio/test-manifest-9.json \
@@ -58,12 +58,17 @@ jobs:
           print(json.dumps({
             'mode': p.get('mode'),
             'production_images_changed': p.get('production_images_changed'),
-            'model': p.get('model'),
-            'quality': p.get('quality'),
             'background': p.get('background'),
-            'openai_request_id': p.get('openai_request_id'),
+            'grid': p.get('grid'),
+            'segmentation': {
+              'engine': (p.get('segmentation') or {}).get('engine'),
+              'model': (p.get('segmentation') or {}).get('model'),
+              'generative_ai_used': (p.get('segmentation') or {}).get('generative_ai_used'),
+              'openai_used': (p.get('segmentation') or {}).get('openai_used'),
+              'openai_cost_usd': (p.get('segmentation') or {}).get('openai_cost_usd'),
+            },
             'outputs': len(p.get('outputs') or []),
-            'usage_and_cost': p.get('usage_and_cost'),
+            'average_output_bytes': p.get('average_output_bytes'),
           }, ensure_ascii=False, indent=2))
           PY
           fi
@@ -72,7 +77,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: product-image-studio-homologation
+          name: product-image-studio-homologation-deterministic
           path: artifacts/product-image-studio/
           if-no-files-found: warn
           retention-days: 7
