@@ -105,7 +105,7 @@ Deno.serve(async(req:Request)=>{
       const definitionSlug=text(resolved?.definition_slug,120)||null;
       const params={p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data};
       if(definitionSlug==="flow-cestas-comercial-v8-stable"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v22",params);handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v23",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v1"||definitionSlug==="flow-cestas-comercial-v7-diagnostico"){
         const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v8",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v2"){
@@ -123,17 +123,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(handleError)throw new FlowCryptoError(500,"flow_handler_failed","Flow handler failed.");
       sessionId=handled?.session_id||sessionId;
-      if(!handled?.ok){
-        eventStatus="rejected";
-        errorCode=text(handled?.reason,120)||"flow_rejected";
-        response={data:{error:true,error_code:errorCode,replayed:isReplay}};
-      }else{
-        response=await hydrateExperienceImagesWithCards(handled.response,url,definitionSlug);
-        if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});
-      }
+      if(!handled?.ok){eventStatus="rejected";errorCode=text(handled?.reason,120)||"flow_rejected";response={data:{error:true,error_code:errorCode,replayed:isReplay}};}
+      else{response=await hydrateExperienceImagesWithCards(handled.response,url,definitionSlug);if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});}
       if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"unknown"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
     }
-
     const encrypted=await encryptFlowResponse(response,decrypted.aesKeyBytes,decrypted.initialVectorBytes);
     return plain(encrypted,200);
   }catch(error){
