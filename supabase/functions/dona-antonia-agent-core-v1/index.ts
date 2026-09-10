@@ -32,6 +32,7 @@ Nunca invente produto, preço, estoque, cesta, pagamento, entrega, cadastro ou r
 Cestas têm preço comercial próprio. Nunca exponha preço individual dos componentes nem recalcule a cesta pela soma dos componentes.
 Para intenção de cesta, prefira a jornada de cesta/Flow quando disponível; personalização e extras são opcionais. Se o cliente pedir cesta e também produtos extras, a intenção principal é basket e product_search entra em secondary_intents; comece pela cesta e preserve os extras para a etapa adequada.
 Antes de pedir novamente cadastro/endereço, consulte as ferramentas compactas de estado quando elas estiverem disponíveis. Nunca tente inferir dados pessoais ausentes.
+Em estados de checkout, sales_state.awaiting é contexto determinístico. Use as ferramentas governadas de cadastro, endereço e localizador; os dados da mensagem atual são injetados pelo backend e não devem ser repetidos como argumentos da ferramenta.
 Faça poucas perguntas. Quando a intenção estiver clara, aja/responda com o que já é conhecido. Não prometa horário exato de entrega sem dado determinístico.
 Ações reversíveis podem ser propostas; compromissos como confirmar pedido exigem confirmação explícita e validação do backend. Em shadow nenhuma escrita é efetivada.
 Handoff humano tem precedência absoluta. Se faltar informação crítica, não improvise: esclareça ou encaminhe.
@@ -52,9 +53,10 @@ function minimizePacket(packet:any){
 function allowedForTopic(topic:string,allNames:string[]){
   const core=["wa_get_policy","wa_handoff_human"];
   const basketState=["wa_get_basket_state","wa_get_checkout_contact","wa_get_basket_customer_status","wa_get_cart"];
+  const checkoutTransitions=["wa_save_checkout_customer_data","wa_set_delivery_locator","wa_request_address_flow","wa_cancel_address_flow"];
   const basketWrites=["wa_select_basket","wa_start_basket_checkout","wa_create_basket_replacement","wa_add_more_products","wa_request_basket_payment","wa_prepare_basket_confirmation","wa_finalize_basket_order"];
-  const basketCommerce=["wa_list_baskets",...basketState,"wa_get_recommendations","wa_add_product","wa_set_quantity","wa_replace_product",...basketWrites,"wa_confirm_order",...core];
-  const checkoutTools=[...basketState,"wa_start_basket_checkout","wa_request_basket_payment","wa_prepare_basket_confirmation","wa_finalize_basket_order","wa_confirm_order",...core];
+  const basketCommerce=["wa_list_baskets",...basketState,"wa_get_recommendations","wa_add_product","wa_set_quantity","wa_replace_product",...basketWrites,"wa_request_address_flow","wa_confirm_order",...core];
+  const checkoutTools=[...basketState,...checkoutTransitions,"wa_start_basket_checkout","wa_request_basket_payment","wa_prepare_basket_confirmation","wa_finalize_basket_order","wa_confirm_order",...core];
   const map:Record<string,string[]>={
     basket:basketCommerce,
     basket_customization:[...basketState,"wa_create_basket_replacement","wa_add_more_products","wa_set_quantity","wa_replace_product","wa_get_recommendations","wa_start_basket_checkout",...core],
@@ -63,7 +65,7 @@ function allowedForTopic(topic:string,allNames:string[]){
     cart:["wa_get_cart","wa_set_quantity","wa_replace_product","wa_confirm_order","wa_get_recommendations",...core],
     cart_change:["wa_get_cart","wa_search_products","wa_get_product","wa_add_product","wa_set_quantity","wa_replace_product",...core],
     checkout:checkoutTools,
-    payment:["wa_get_policy","wa_get_cart","wa_get_basket_state","wa_get_checkout_contact","wa_get_basket_customer_status","wa_request_basket_payment","wa_prepare_basket_confirmation","wa_finalize_basket_order","wa_handoff_human"],
+    payment:["wa_get_policy","wa_get_cart","wa_get_basket_state","wa_get_checkout_contact","wa_get_basket_customer_status","wa_request_address_flow","wa_cancel_address_flow","wa_request_basket_payment","wa_prepare_basket_confirmation","wa_finalize_basket_order","wa_handoff_human"],
     delivery:["wa_get_policy","wa_get_cart","wa_handoff_human"],
     delivery_time:["wa_get_policy","wa_get_cart","wa_handoff_human"],
     delivery_fee:["wa_get_policy","wa_get_cart","wa_handoff_human"],
