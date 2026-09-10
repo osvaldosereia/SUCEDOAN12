@@ -9,6 +9,26 @@ const isObject=(value:unknown):value is Record<string,unknown>=>Boolean(value)&&
 const safeAction=(value:string)=>/^[A-Za-z0-9_:-]{1,80}$/.test(value)?value:"invalid_action";
 const safeScreen=(value:string|null)=>value&&/^[A-Za-z0-9_:-]{1,120}$/.test(value)?value:null;
 
+async function ownerHomologationAllowed(sb:any,resolved:Record<string,unknown>|null):Promise<boolean>{
+  if(!resolved?.session_id||!resolved?.conversation_id||!resolved?.definition_id)return false;
+  const ctx=isObject(resolved.context)?resolved.context:{};
+  const ownerMarked=(ctx.test_mode===true&&text(ctx.requested_by,32)==="owner")||(ctx.homologation_test===true&&ctx.requested_by_owner===true);
+  const testRecipient=text(ctx.test_recipient,32);
+  if(!ownerMarked||!testRecipient)return false;
+
+  const [{data:def,error:defError},{data:conversation,error:conversationError}]=await Promise.all([
+    sb.from("experience_definitions").select("slug,status,metadata").eq("id",resolved.definition_id).maybeSingle(),
+    sb.from("conversations").select("wa_contact_e164").eq("id",resolved.conversation_id).maybeSingle(),
+  ]);
+  if(defError||conversationError||!def||!conversation)return false;
+  const metadata=isObject(def.metadata)?def.metadata:{};
+  const slug=text(def.slug,120);
+  const candidate=/^flow-cestas-comercial-v[4-6]$/.test(slug);
+  const dormant=["draft","ready"].includes(text(def.status,32));
+  const isolated=metadata.candidate_not_live===true&&metadata.customer_exposure!==true;
+  return candidate&&dormant&&isolated&&text(conversation.wa_contact_e164,32)===testRecipient;
+}
+
 Deno.serve(async(req:Request)=>{
   const requestId=crypto.randomUUID();
   if(req.method!=="POST")return plain("method_not_allowed",405);
@@ -42,8 +62,6 @@ Deno.serve(async(req:Request)=>{
     const flowToken=text(body.flow_token,200);
     const data=isObject(body.data)?body.data:{};
 
-    if(action!=="ping"&&!readiness?.data_exchange_enabled)return plain("flow_endpoint_disabled",503);
-
     let response:unknown;
     let sessionId:string|null=null;
     let resolved:Record<string,unknown>|null=null;
@@ -53,6 +71,13 @@ Deno.serve(async(req:Request)=>{
     if(flowToken){
       const result=await sb.rpc("resolve_whatsapp_flow_token_v1",{p_flow_token:flowToken});
       if(result.data?.ok){resolved=result.data;sessionId=result.data.session_id}
+    }
+
+    // Global commercial Data Exchange remains OFF. Only an explicit, unexpired,
+    // owner-marked homologation session for a dormant candidate and its exact
+    // test recipient may pass. Customer sessions remain fail-closed.
+    if(action!=="ping"&&!readiness?.data_exchange_enabled){
+      if(!await ownerHomologationAllowed(sb,resolved))return plain("flow_endpoint_disabled",503);
     }
 
     const {data:claim,error:claimError}=await sb.rpc("claim_whatsapp_flow_request_v1",{p_request_fingerprint:requestFingerprint,p_request_id:requestId,p_session_id:sessionId,p_action:safeAction(action||"unknown"),p_screen:screen});
@@ -86,6 +111,9 @@ Deno.serve(async(req:Request)=>{
         handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v5"){
         const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v16",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
+        handled=result.data;handleError=result.error;
+      }else if(definitionSlug==="flow-cestas-comercial-v6"){
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v17",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
         handled=result.data;handleError=result.error;
       }else{
         const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
