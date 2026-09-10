@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const migration = fs.readFileSync('supabase/migrations/20260910185000_marketing_attribution_foundation_v10.sql','utf8');
+const hardening = fs.readFileSync('supabase/migrations/20260910185500_marketing_attribution_privileges_v10_fix.sql','utf8');
 
 for (const token of [
   'attribution_recording_enabled boolean not null default false',
@@ -22,6 +23,8 @@ for (const token of [
 
 assert.ok(/revoke all on table public\.marketing_attribution_touchpoints from public, anon, authenticated;/i.test(migration));
 assert.ok(/grant select, insert on table public\.marketing_attribution_touchpoints to service_role;/i.test(migration));
+assert.ok(/revoke update, delete, truncate, references, trigger on table public\.marketing_attribution_touchpoints from service_role;/i.test(hardening));
+assert.ok(/grant select, insert on table public\.marketing_attribution_touchpoints to service_role;/i.test(hardening));
 assert.ok(/revoke all on function public\.record_marketing_attribution_touchpoint_v1[\s\S]*from public, anon, authenticated;/i.test(migration));
 assert.ok(/grant execute on function public\.record_marketing_attribution_touchpoint_v1[\s\S]*to service_role;/i.test(migration));
 assert.ok(!/security definer/i.test(migration), 'attribution migration must not use SECURITY DEFINER');
