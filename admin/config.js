@@ -2,6 +2,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   supabaseUrl: 'https://ssbesxgaijknwsjbsbcz.supabase.co',
   supabasePublishableKey: 'sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8',
   edgeFunction: 'admin-ops-v1',
+  productsEdgeFunction: 'admin-products-live-v1',
   categoryEdgeFunction: 'admin-product-categories-v1',
   whatsappOpsEdgeFunction: 'admin-whatsapp-ops-v1',
   humanServiceCenterUiEnabled: false,
@@ -19,7 +20,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   commercialTruthUiEnabled: false,
   driverAppUrl: '../driver-app/',
   countAppUrl: '../contagem/',
-  build: '20260908-basket-showcase-admin-02'
+  build: '20260910-products-live-01'
 });
 
 (function loadHumanServiceCenter(cfg){
@@ -86,5 +87,17 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   if(!document.querySelector('script[data-product-categories-inline]')){
     const script=document.createElement('script');
     script.src='../admin-v3/product-categories-inline.js?v=20260908-02';script.dataset.productCategoriesInline='1';document.body.appendChild(script);
+  }
+})(window.DA_ADMIN_V3_CONFIG);
+
+(function loadProductsLiveUi(cfg){
+  if(!cfg?.productsEdgeFunction)return;
+  if(!document.querySelector('link[data-products-live-ui]')){
+    const link=document.createElement('link');
+    link.rel='stylesheet';link.href='../admin-v3/products-live-ui.css?v=20260910-01';link.dataset.productsLiveUi='1';document.head.appendChild(link);
+  }
+  if(!document.querySelector('script[data-products-live-ui]')){
+    const script=document.createElement('script');
+    script.src='../admin-v3/products-live-ui.js?v=20260910-01';script.dataset.productsLiveUi='1';document.body.appendChild(script);
   }
 })(window.DA_ADMIN_V3_CONFIG);
