@@ -2,7 +2,8 @@ import fs from 'node:fs';
 
 const inventory=fs.readFileSync('supabase/migrations/20260910160252_dona_antonia_agent_core_round4_router_inventory_v1.sql','utf8');
 const dispatch=fs.readFileSync('supabase/migrations/20260910160512_dona_antonia_agent_core_round4_worker_dispatch_v3_v1.sql','utf8');
-const body=(inventory+'\n'+dispatch).toLowerCase();
+const parity=fs.readFileSync('supabase/migrations/20260910161028_dona_antonia_agent_core_round4_parity_gate_v1.sql','utf8');
+const body=(inventory+'\n'+dispatch+'\n'+parity).toLowerCase();
 const must=(text,label)=>{if(!body.includes(text.toLowerCase()))throw new Error(`missing:${label}`)};
 const forbid=(text,label)=>{if(body.includes(text.toLowerCase()))throw new Error(`forbidden:${label}`)};
 
@@ -26,6 +27,15 @@ must('ai_job_event_dispatch_v3','worker_v3_trigger');
 must('select public.dispatch_conversation_worker_job_v3(p_job_id)','v2_compat_wrapper');
 must('drop function if exists public.ai_job_dispatch_trigger_v2()','retire_v2_trigger_function');
 
+must('get_agent_core_round4_parity_report_v1','parity_report');
+must('get_agent_core_round4_mismatch_sample_v1','mismatch_sample');
+must("'minimum_sample_required',20",'minimum_shadow_sample');
+must("'minimum_match_rate_required',0.95",'minimum_parity_rate');
+must("'retirement_ready'",'retirement_gate');
+must("'insufficient_shadow_sample'",'sample_fail_closed');
+must("'intent_parity_below_threshold'",'intent_fail_closed');
+must("'tool_parity_below_threshold'",'tool_fail_closed');
+
 for(const guard of [
   'release gate; deve permanecer fora do modelo',
   'handoff humano por erro/held',
@@ -43,4 +53,4 @@ for(const unsafe of [
   'bling_order_sync_enabled=true'
 ]) forbid(unsafe,unsafe);
 
-console.log('Agent Core Rodada 4: inventário/classificação, pós-processamento shadow único, dispatcher v3 explícito e guardrails de rollout OK.');
+console.log('Agent Core Rodada 4: inventário/classificação, pós-processamento shadow único, dispatcher v3 explícito, gate de paridade e guardrails de rollout OK.');
