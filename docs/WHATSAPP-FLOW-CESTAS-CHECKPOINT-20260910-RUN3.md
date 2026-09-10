@@ -85,7 +85,12 @@ Resultado após aplicação: **12/12 checks aprovados (`ok=true`)**.
 - transporte de `interactive_type=nfm_reply` pelo ingest do Make/Supabase;
 - privilégios server-only.
 
-O workflow `Test WhatsApp Flow V31 Runtime` passou a observar a nova migration e mudanças no ingest de WhatsApp. No momento deste checkpoint, o status do commit mais recente ainda estava pendente de consolidação pelo GitHub.
+O primeiro CI desta rodada chegou até a validação completa do JSON e do contrato comercial, mas falhou em um hash fixo antigo do artefato gerado. A auditoria confirmou que os dois inputs do V31 não sofreram drift desde o candidato validado:
+
+- `flow-cestas-comercial-v6.json` blob `71e87f02dcec2401e9e2625d59014e9361bb925d`;
+- `build-flow-v31-stable-text-products.py` blob `38e38716f6a28177665e07dd7f76814d2cef8068`.
+
+O CI foi corrigido para fixar a identidade desses dois inputs canônicos e gerar/validar o V31 deterministicamente, em vez de depender do hash incorreto do arquivo temporário gerado. O commit da correção é `fad8e0f0442e53c4471bcb4848a5a6f8771d2ef2`. O rerun foi disparado automaticamente e estava enfileirado no fechamento deste checkpoint.
 
 ## Homologação owner-only
 
