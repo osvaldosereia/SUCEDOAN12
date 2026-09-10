@@ -17,7 +17,7 @@ declare
   v_audit jsonb;
   v_cfg public.automation_config%rowtype;
   v_runtime text:=coalesce(pg_get_functiondef('public.handle_whatsapp_flow_commercial_exchange_v23(uuid,uuid,text,text,jsonb)'::regprocedure),'');
-  v_nfm text:=coalesce(pg_get_functiondef('public.process_whatsapp_flow_nfm_reply_v1(uuid,uuid,text,jsonb)'::regprocedure),'');
+  v_nfm text:=coalesce(pg_get_functiondef('public.process_whatsapp_flow_nfm_reply_v1(uuid,uuid,jsonb)'::regprocedure),'');
   checks jsonb:='[]'::jsonb;
   passed int:=0;
   total int:=0;
