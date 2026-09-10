@@ -10,9 +10,12 @@ const basketTools=fs.readFileSync('supabase/migrations/20260910163906_dona_anton
 const compactTools=fs.readFileSync('supabase/migrations/20260910164127_dona_antonia_agent_core_round4_compact_basket_tool_outputs_v1.sql','utf8');
 const compactFix=fs.readFileSync('supabase/migrations/20260910164209_dona_antonia_agent_core_round4_compact_basket_tool_outputs_fix_v1.sql','utf8');
 const routerObservability=fs.readFileSync('supabase/migrations/20260910165937_dona_antonia_agent_core_round4_router_observability_v1.sql','utf8');
+const stateCheckout=fs.readFileSync('supabase/migrations/20260910170334_dona_antonia_agent_core_round4_state_aware_checkout_tools_v1.sql','utf8');
+const stateCheckoutFix=fs.readFileSync('supabase/migrations/20260910170409_dona_antonia_agent_core_round4_state_aware_checkout_topics_fix_v1.sql','utf8');
 const edge=fs.readFileSync('supabase/functions/dona-antonia-agent-core-v1/index.ts','utf8');
-const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy+'\n'+basketTools+'\n'+compactTools+'\n'+compactFix+'\n'+routerObservability).toLowerCase();
+const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy+'\n'+basketTools+'\n'+compactTools+'\n'+compactFix+'\n'+routerObservability+'\n'+stateCheckout+'\n'+stateCheckoutFix).toLowerCase();
 const edgeLower=edge.toLowerCase();
+const stateFixLower=stateCheckoutFix.toLowerCase();
 const must=(text,label)=>{if(!body.includes(text.toLowerCase()))throw new Error(`missing:${label}`)};
 const mustEdge=(text,label)=>{if(!edgeLower.includes(text.toLowerCase()))throw new Error(`missing_edge:${label}`)};
 const forbid=(text,label)=>{if(body.includes(text.toLowerCase()))throw new Error(`forbidden:${label}`)};
@@ -103,6 +106,17 @@ must("'pii_payload_stored',false",'legacy_router_no_pii_payload');
 must('enable row level security','legacy_router_rls');
 must('revoke all on table public.agent_core_legacy_router_observations from public, anon, authenticated','legacy_router_private_table');
 
+const transitionTools=['wa_save_checkout_customer_data','wa_set_delivery_locator','wa_request_address_flow','wa_cancel_address_flow'];
+for(const tool of transitionTools){must(`'${tool}'`,`transition_registry_${tool}`);mustEdge(`"${tool}"`,`transition_edge_${tool}`);if(edgeLower.includes(`if(name==="${tool}")return await sb.rpc`))throw new Error(`checkout_write_tool_direct_executor:${tool}`)}
+must('resolve_whatsapp_agent_core_topic_v2','state_aware_topic_resolver');
+must("awaiting:=coalesce(base#>>'{sales_state,awaiting}','')",'packet_reads_awaiting_state');
+must('get_agent_core_round4_checkout_transition_readiness_v1','checkout_transition_readiness');
+must('pii_not_in_tool_arguments','checkout_transition_pii_minimized');
+must("'pii_in_tool_arguments'",'checkout_transition_pii_readiness');
+if(!stateFixLower.includes("v_awaiting text := lower(trim(coalesce(p_awaiting,'')))")) throw new Error('state_aware_topic_must_preserve_internal_underscores');
+mustEdge('checkouttransitions=[','checkout_transition_tool_group');
+mustEdge('sales_state.awaiting é contexto determinístico','checkout_state_kernel_rule');
+
 for(const guard of [
   'release gate; deve permanecer fora do modelo',
   'handoff humano por erro/held',
@@ -120,4 +134,4 @@ for(const unsafe of [
   'bling_order_sync_enabled=true'
 ]) forbid(unsafe,unsafe);
 
-console.log(`Agent Core Rodada 4 OK: ${newTools.length} tools de cesta/checkout, outputs compactos, schemas filtrados, observabilidade de routers sem texto/PII e writes apenas simulados em observe.`);
+console.log(`Agent Core Rodada 4 OK: ${newTools.length+transitionTools.length} tools de cesta/checkout, estado-aware, observabilidade sem texto/PII, schemas filtrados e writes apenas simulados em observe.`);
