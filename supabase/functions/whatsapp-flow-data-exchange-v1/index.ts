@@ -13,20 +13,26 @@ async function ownerHomologationAllowed(sb:any,resolved:Record<string,unknown>|n
   if(!resolved?.session_id||!resolved?.conversation_id||!resolved?.definition_id)return false;
   const ctx=isObject(resolved.context)?resolved.context:{};
   const ownerMarked=(ctx.test_mode===true&&text(ctx.requested_by,32)==="owner")||(ctx.homologation_test===true&&ctx.requested_by_owner===true);
-  const testRecipient=text(ctx.test_recipient,32);
-  if(!ownerMarked||!testRecipient)return false;
+  if(!ownerMarked)return false;
 
-  const [{data:def,error:defError},{data:conversation,error:conversationError}]=await Promise.all([
-    sb.from("experience_definitions").select("slug,status,metadata").eq("id",resolved.definition_id).maybeSingle(),
-    sb.from("conversations").select("wa_contact_e164").eq("id",resolved.conversation_id).maybeSingle(),
-  ]);
-  if(defError||conversationError||!def||!conversation)return false;
+  const {data:def,error:defError}=await sb.from("experience_definitions").select("slug,status,metadata").eq("id",resolved.definition_id).maybeSingle();
+  if(defError||!def)return false;
   const metadata=isObject(def.metadata)?def.metadata:{};
   const slug=text(def.slug,120);
   const candidate=/^flow-cestas-comercial-v[4-6]$/.test(slug);
   const dormant=["draft","ready"].includes(text(def.status,32));
   const isolated=metadata.candidate_not_live===true&&metadata.customer_exposure!==true;
-  return candidate&&dormant&&isolated&&text(conversation.wa_contact_e164,32)===testRecipient;
+  if(!candidate||!dormant||!isolated)return false;
+
+  // When the test session carries an explicit recipient, bind the bypass to it.
+  // Older owner sessions created before this field existed remain isolated by
+  // the unguessable Flow token + dormant candidate + global send gate OFF.
+  const testRecipient=text(ctx.test_recipient,32);
+  if(testRecipient){
+    const {data:conversation,error}=await sb.from("conversations").select("wa_contact_e164").eq("id",resolved.conversation_id).maybeSingle();
+    if(error||!conversation||text(conversation.wa_contact_e164,32)!==testRecipient)return false;
+  }
+  return true;
 }
 
 Deno.serve(async(req:Request)=>{
@@ -73,9 +79,8 @@ Deno.serve(async(req:Request)=>{
       if(result.data?.ok){resolved=result.data;sessionId=result.data.session_id}
     }
 
-    // Global commercial Data Exchange remains OFF. Only an explicit, unexpired,
-    // owner-marked homologation session for a dormant candidate and its exact
-    // test recipient may pass. Customer sessions remain fail-closed.
+    // Global Data Exchange remains OFF. Only a valid owner homologation token
+    // for a dormant candidate may pass. Normal/customer traffic stays closed.
     if(action!=="ping"&&!readiness?.data_exchange_enabled){
       if(!await ownerHomologationAllowed(sb,resolved))return plain("flow_endpoint_disabled",503);
     }
@@ -96,40 +101,28 @@ Deno.serve(async(req:Request)=>{
       if(!flowToken)throw new FlowCryptoError(400,"flow_token_required","Flow token is required.");
       let handled:any=null,handleError:any=null;
       const definitionSlug=text(resolved?.definition_slug,120)||null;
+      const params={p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data};
 
       if(definitionSlug==="flow-cestas-comercial-v1"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v8",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
-        handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v8",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v2"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v9",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
-        handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v9",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v3"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v12",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
-        handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v12",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v4"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v15",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
-        handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v15",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v5"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v16",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
-        handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v16",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v6"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v17",{p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data});
-        handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v17",params);handled=result.data;handleError=result.error;
       }else{
-        const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});
-        handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});handled=result.data;handleError=result.error;
       }
 
       if(handleError)throw new FlowCryptoError(500,"flow_handler_failed","Flow handler failed.");
       sessionId=handled?.session_id||sessionId;
-      if(!handled?.ok){
-        eventStatus="rejected";
-        errorCode=text(handled?.reason,120)||"flow_rejected";
-        response={data:{error:true,error_code:errorCode,replayed:isReplay}};
-      }else{
-        response=await hydrateExperienceImagesWithCards(handled.response,url,definitionSlug);
-        if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});
-      }
+      if(!handled?.ok){eventStatus="rejected";errorCode=text(handled?.reason,120)||"flow_rejected";response={data:{error:true,error_code:errorCode,replayed:isReplay}};}
+      else{response=await hydrateExperienceImagesWithCards(handled.response,url,definitionSlug);if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});}
       if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"unknown"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
     }
 
