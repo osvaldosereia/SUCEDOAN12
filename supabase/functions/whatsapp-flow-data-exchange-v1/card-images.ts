@@ -1,6 +1,7 @@
 import {hydrateExperienceImages,loadFlowCompatibleImageBase64} from "./image.ts";
 
 const FALLBACK_IMAGE_BASE64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC";
+const isUuid=(value:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 function stripNavigationProductImages(items:unknown[]):unknown[]{
   return items.slice(0,20).map((item)=>{
@@ -28,25 +29,34 @@ export async function hydrateExperienceImagesWithCards(response:unknown,supabase
   if(!obj.data||typeof obj.data!=="object"||Array.isArray(obj.data))return hydrated;
   const data=obj.data as Record<string,unknown>;
   const current=String(obj.screen||"");
-  const candidate=definitionSlug==="flow-cestas-comercial-v5"||definitionSlug==="flow-cestas-comercial-v6";
+  const legacyCandidate=definitionSlug==="flow-cestas-comercial-v5"||definitionSlug==="flow-cestas-comercial-v6";
+  const stableV31=definitionSlug==="flow-cestas-comercial-v8-stable";
+  const candidate=legacyCandidate||stableV31;
 
-  // Homologation isolation test: product lists render as text-only rows.
-  // This deliberately removes every media field from NavigationList items.
+  // Product result lists stay text-only in the stable candidate.
   if(candidate&&/^PRODUTOS_[A-L]$/.test(current)&&Array.isArray(data.product_items)){
     data.product_items=stripNavigationProductImages(data.product_items as unknown[]);
     return hydrated;
   }
 
-  // Product detail may still show one large image; list media is the variable under test.
+  // Product detail may show one compressed image. V31 must preserve product_id because
+  // the Flow sends it back in the add_product Data Exchange payload.
   if(candidate&&/^PRODUTO_[A-L]$/.test(current)){
+    const productId=String(data.product_id||"").trim();
     const existing=String(data.product_image_base64||"").trim();
-    if(existing){data.has_product_image=true;delete data.product_image_url;delete data.product_id;return hydrated;}
+    if(existing){
+      data.has_product_image=true;
+      delete data.product_image_url;
+      if(legacyCandidate)delete data.product_id;
+      return hydrated;
+    }
     const imageUrl=String(data.product_image_url||"").trim().slice(0,2000);
-    const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,null):null;
+    const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
+    const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,assetKey):null;
     data.product_image_base64=image||FALLBACK_IMAGE_BASE64;
     data.has_product_image=Boolean(image);
     delete data.product_image_url;
-    delete data.product_id;
+    if(legacyCandidate)delete data.product_id;
   }
   return hydrated;
 }
