@@ -10,11 +10,14 @@ on:
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
       - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
+      - 'supabase/migrations/20260910074400_marketing_render_worker_hardening_v3.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
+      - 'scripts/marketing-render-worker-v1.mjs'
       - 'scripts/test-marketing-render-v1.mjs'
       - 'scripts/test-marketing-video-v1.mjs'
+      - 'scripts/test-marketing-worker-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
       - '.github/workflows/marketing-center-v1.yml'
   push:
@@ -27,11 +30,14 @@ on:
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
       - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
+      - 'supabase/migrations/20260910074400_marketing_render_worker_hardening_v3.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
+      - 'scripts/marketing-render-worker-v1.mjs'
       - 'scripts/test-marketing-render-v1.mjs'
       - 'scripts/test-marketing-video-v1.mjs'
+      - 'scripts/test-marketing-worker-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
 
 permissions:
@@ -40,7 +46,7 @@ permissions:
 jobs:
   contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,9 +62,13 @@ jobs:
           ffprobe -version | head -n 1
       - name: Check admin JavaScript syntax
         run: node --check admin-v3/marketing-center.js
+      - name: Check worker JavaScript syntax
+        run: node --check scripts/marketing-render-worker-v1.mjs
       - name: Validate Marketing Center safety contract
         run: node scripts/test-marketing-center-v1.mjs
       - name: Validate deterministic WebP renderer
         run: node scripts/test-marketing-render-v1.mjs
       - name: Validate economical MP4 renderer
         run: node scripts/test-marketing-video-v1.mjs
+      - name: Validate deterministic queue worker
+        run: node scripts/test-marketing-worker-v1.mjs
