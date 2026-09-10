@@ -10,6 +10,15 @@ const obj=(v:unknown):Record<string,any>=>v&&typeof v==="object"&&!Array.isArray
 const digits=(v:unknown)=>String(v??"").replace(/\D/g,"").slice(0,32);
 async function sha256Hex(value:string){const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return Array.from(new Uint8Array(d)).map(b=>b.toString(16).padStart(2,"0")).join("")}
 function finalText(data:any){return arr(data?.output).filter((x:any)=>x?.type==="message").flatMap((x:any)=>arr(x.content)).filter((x:any)=>x?.type==="output_text").map((x:any)=>String(x.text||"")).join("").trim()}
+function commercialDescription(value:unknown){
+  let s=clean(value,900)
+    .replace(/\(\[[^\]]+\]\(https?:\/\/[^)]+\)\)/gi,' ')
+    .replace(/\[[^\]]+\]\(https?:\/\/[^)]+\)/gi,' ')
+    .replace(/https?:\/\/\S+/gi,' ');
+  const sentences=s.split(/(?<=[.!?])\s+/).filter(x=>!/(\bEAN\b|\bGTIN\b|varejist|fonte|cat[aá]logo|p[aá]gina|pesquisa|explicitamente associado)/i.test(x));
+  const cleaned=clean(sentences.join(' '),900);
+  return cleaned||clean(s,900);
+}
 
 const productSchema={
   type:"object",additionalProperties:false,
@@ -27,7 +36,7 @@ Use a busca na web. Dê prioridade a fabricante, distribuidor, grandes varejista
 Nunca invente correspondência. Se não houver evidência suficiente de que o EAN pertence ao produto, retorne found=false.
 Quando identificar, devolva somente fatos úteis ao cadastro: nome comercial claro, marca, embalagem/apresentação e uma descrição curta factual em português do Brasil.
 Não invente preço, custo, estoque, NCM, categoria, validade, localização, SKU ou qualquer outro campo.
-A descrição deve ter uma ou duas frases, sem propaganda exagerada e sem dados não confirmados.`;
+A descrição deve ter uma ou duas frases sobre o produto, sem propaganda exagerada, sem URLs, sem citações, sem nomes de sites e sem explicar como o EAN foi encontrado. Use evidence_summary somente para resumir a evidência da pesquisa.`;
 
 async function research(openaiKey:string,model:string,ean:string){
   const body={
@@ -82,7 +91,7 @@ Deno.serve(async(req:Request)=>{
 
       const researched=await research(openaiKey,model,ean),r=researched.result;
       const confidence=Math.max(0,Math.min(1,Number(r.confidence||0)));
-      const name=clean(r.name,300),brand=clean(r.brand,160),packaging=clean(r.packaging,120),description=clean(r.description,900);
+      const name=clean(r.name,300),brand=clean(r.brand,160),packaging=clean(r.packaging,120),description=commercialDescription(r.description);
       if(r.found!==true||confidence<0.60||!name){
         await sb.from("unresolved_product_eans").update({status:"error",resolution:{reason:"insufficient_evidence",confidence,evidence_summary:clean(r.evidence_summary,700),response_id:researched.response_id},updated_at:new Date().toISOString()}).eq("id",id);
         results.push({ean,ok:false,error:"insufficient_evidence",confidence});continue;
