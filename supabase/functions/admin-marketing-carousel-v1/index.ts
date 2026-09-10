@@ -54,6 +54,15 @@ Deno.serve(async(req:Request)=>{
     return json({ok:true,asset:{id:asset.id,version:asset.version,title:asset.title,status:asset.status,generation_mode:asset.generation_mode},preflight:{canonical,slide_count:slides.length,slides},external_side_effect:false});
   }
 
+  if(action==="progress"){
+    const {data,error}=await sb.rpc("marketing_carousel_render_progress_v1",{p_asset_id:assetId});
+    if(error)return json({ok:false,error:"carousel_progress_failed",detail:error.message},400);
+    const slides=Array.isArray(data)?data:[];
+    const rendered=slides.filter((s:any)=>s.slide_status==="rendered"&&s.output_media_id).length;
+    const failed=slides.filter((s:any)=>["failed","review_required"].includes(s.job_status)).length;
+    return json({ok:true,asset:{id:asset.id,version:asset.version,title:asset.title,status:asset.status},progress:{total:slides.length,rendered,failed,pending:Math.max(0,slides.length-rendered-failed),complete:slides.length>0&&rendered===slides.length,slides},external_side_effect:false});
+  }
+
   if(action==="request_render"){
     const keyIn=clean(body.idempotency_key,80);
     const key=keyIn||idem(assetId,Number(asset.version||1));
