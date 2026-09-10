@@ -26,6 +26,8 @@ on:
       - 'supabase/migrations/20260910113000_marketing_private_media_v7.sql'
       - 'supabase/migrations/20260910114500_marketing_carousel_slides_v8.sql'
       - 'supabase/migrations/20260910143000_marketing_metrics_read_model_v9.sql'
+      - 'supabase/migrations/20260910185000_marketing_attribution_foundation_v10.sql'
+      - 'supabase/migrations/20260910185500_marketing_attribution_privileges_v10_fix.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -61,6 +63,8 @@ on:
       - 'supabase/migrations/20260910113000_marketing_private_media_v7.sql'
       - 'supabase/migrations/20260910114500_marketing_carousel_slides_v8.sql'
       - 'supabase/migrations/20260910143000_marketing_metrics_read_model_v9.sql'
+      - 'supabase/migrations/20260910185000_marketing_attribution_foundation_v10.sql'
+      - 'supabase/migrations/20260910185500_marketing_attribution_privileges_v10_fix.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -118,6 +122,8 @@ jobs:
         run: node scripts/test-marketing-carousel-media-admin-v1.mjs
       - name: Validate metrics/dry-run Admin and framing safety
         run: node scripts/test-marketing-insights-admin-v1.mjs
+      - name: Validate deterministic attribution contract
+        run: node scripts/test-marketing-attribution-v1.mjs
       - name: Validate deterministic WebP renderer
         run: node scripts/test-marketing-render-v1.mjs
       - name: Validate economical MP4 renderer
