@@ -1,310 +1,97 @@
-const SOURCE_IMAGE_MAX_BYTES=2_000_000;
-const FLOW_IMAGE_MAX_BYTES=80_000;
 const FLOW_SELECTOR_IMAGE_MAX_BYTES=45_000;
-const FLOW_IMAGE_TARGET_EDGE=360;
-const FLOW_SELECTOR_TARGET_EDGE=260;
-const FLOW_IMAGE_JPEG_QUALITY=66;
-const FLOW_SELECTOR_JPEG_QUALITY=58;
-const FLOW_ASSET_BUCKET="whatsapp-flow-assets";
-const MAGICK_SPECIFIER="npm:@imagemagick/magick-wasm@0.0.43";
-const MAGICK_WASM_SPECIFIER="npm:@imagemagick/magick-wasm@0.0.43/magick.wasm";
-// Neutral white fallback. V26+ hides the Image component when has_*_image=false;
-// older published screens remain visually neutral instead of showing a green pixel.
-const FALLBACK_IMAGE_BASE64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC";
+const FLOW_IMAGE_MAX_BYTES=80_000;
+const FLOW_ASSET_BUCKET='whatsapp-flow-assets';
+const FALLBACK_IMAGE_BASE64='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC';
 
-let magickModulePromise:Promise<any>|null=null;
-let magickInitPromise:Promise<void>|null=null;
-
-export type FlowImageKind="jpeg"|"png"|"webp"|"avif";
-
-export function bytesToBase64(bytes:Uint8Array):string{
-  let out="";
-  for(let i=0;i<bytes.length;i+=0x8000){
-    out+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
-  }
-  return btoa(out);
+function bytesToBase64(bytes:Uint8Array):string{
+  let s='';
+  for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+  return btoa(s);
 }
-
-function ascii(bytes:Uint8Array,start:number,length:number):string{
-  return String.fromCharCode(...bytes.subarray(start,start+length));
+function imageStem(imageUrl:string):string|null{
+  try{
+    const base=decodeURIComponent(new URL(imageUrl).pathname.split('/').filter(Boolean).pop()||'');
+    return base?base.replace(/\.(avif|webp|png|jpe?g)$/i,'').replace(/[^A-Za-z0-9._-]/g,'-').slice(0,160):null;
+  }catch{return null;}
 }
-
-export function sniffFlowImageKind(bytes:Uint8Array):FlowImageKind|null{
-  if(bytes.length>=3&&bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)return "jpeg";
-  if(bytes.length>=8&&bytes[0]===0x89&&bytes[1]===0x50&&bytes[2]===0x4e&&bytes[3]===0x47&&bytes[4]===0x0d&&bytes[5]===0x0a&&bytes[6]===0x1a&&bytes[7]===0x0a)return "png";
-  if(bytes.length>=12&&ascii(bytes,0,4)==="RIFF"&&ascii(bytes,8,4)==="WEBP")return "webp";
-  if(bytes.length>=12&&ascii(bytes,4,4)==="ftyp"&&["avif","avis"].includes(ascii(bytes,8,4)))return "avif";
+function isUuid(v:string){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);}
+async function fetchBase64(url:string,maxBytes:number):Promise<string|null>{
+  try{
+    const r=await fetch(url,{signal:AbortSignal.timeout(3000)});
+    if(!r.ok)return null;
+    const declared=Number(r.headers.get('content-length')||0);
+    if(declared&&declared>maxBytes)return null;
+    const b=new Uint8Array(await r.arrayBuffer());
+    if(!b.length||b.length>maxBytes)return null;
+    return bytesToBase64(b);
+  }catch{return null;}
+}
+function assetUrl(supabaseUrl:string,key:string){
+  return `${supabaseUrl.replace(/\/$/,'')}/storage/v1/object/public/${FLOW_ASSET_BUCKET}/${key.split('/').map(encodeURIComponent).join('/')}`;
+}
+export async function loadFlowSelectorImageBase64(_imageUrl:string,supabaseUrl:string,assetKey?:string|null):Promise<string|null>{
+  if(assetKey){const cached=await fetchBase64(assetUrl(supabaseUrl,assetKey),FLOW_SELECTOR_IMAGE_MAX_BYTES);if(cached)return cached;}
+  return null;
+}
+export async function loadFlowCompatibleImageBase64(_imageUrl:string,supabaseUrl:string,assetKey?:string|null):Promise<string|null>{
+  if(assetKey){const cached=await fetchBase64(assetUrl(supabaseUrl,assetKey),FLOW_IMAGE_MAX_BYTES);if(cached)return cached;}
   return null;
 }
 
-export function isAllowedProductImageUrl(value:string,supabaseUrl:string):boolean{
-  try{
-    const imageUrl=new URL(value);
-    if(imageUrl.protocol!=="https:")return false;
-    if(imageUrl.hostname==="raw.githubusercontent.com"){
-      return imageUrl.pathname.startsWith("/osvaldosereia/SUCEDOAN12/");
-    }
-    if(imageUrl.hostname==="donaantonia.com.br"||imageUrl.hostname==="www.donaantonia.com.br")return true;
-    const projectUrl=new URL(supabaseUrl);
-    return imageUrl.hostname===projectUrl.hostname&&imageUrl.pathname.startsWith("/storage/v1/object/");
-  }catch{return false;}
+async function hydrateItems(items:unknown[],supabaseUrl:string,scope:'basket'|'product'):Promise<unknown[]>{
+  return await Promise.all(items.map(async(item)=>{
+    if(!item||typeof item!=='object'||Array.isArray(item))return item;
+    const o={...(item as Record<string,unknown>)};
+    const imageUrl=String(o.image_url||'');
+    const id=String(o.id||'');
+    delete o.image_url;
+    let key:string|null=null;
+    if(scope==='basket'){const stem=imageStem(imageUrl);if(stem)key=`baskets/${stem}.jpg`;}
+    else if(isUuid(id))key=`products/${id}.jpg`;
+    if(key){const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,key);if(image)o.image=image;}
+    return o;
+  }));
 }
 
-function storageAssetUrl(supabaseUrl:string,assetKey:string):string{
-  const safe=assetKey.split("/").map((part)=>encodeURIComponent(part)).join("/");
-  return `${supabaseUrl.replace(/\/$/,"")}/storage/v1/object/public/${FLOW_ASSET_BUCKET}/${safe}`;
-}
-
-function imageStem(imageUrl:string):string|null{
-  try{
-    const pathname=new URL(imageUrl).pathname;
-    const base=decodeURIComponent(pathname.split("/").filter(Boolean).pop()||"");
-    if(!base)return null;
-    return base.replace(/\.(avif|webp|png|jpe?g)$/i,"").replace(/[^A-Za-z0-9._-]/g,"-").slice(0,160)||null;
-  }catch{return null;}
-}
-
-function isUuid(value:string):boolean{
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
-async function readResponseBytesLimited(response:Response,maxBytes=SOURCE_IMAGE_MAX_BYTES):Promise<Uint8Array|null>{
-  const declared=Number(response.headers.get("content-length")||0);
-  if(Number.isFinite(declared)&&declared>maxBytes)return null;
-  if(!response.body)return null;
-  const reader=response.body.getReader();
-  const chunks:Uint8Array[]=[];
-  let total=0;
-  try{
-    while(true){
-      const {done,value}=await reader.read();
-      if(done)break;
-      if(!value)continue;
-      total+=value.byteLength;
-      if(total>maxBytes){await reader.cancel("image_too_large");return null;}
-      chunks.push(value);
-    }
-  }catch{
-    try{await reader.cancel("image_read_failed");}catch{/* noop */}
-    return null;
-  }
-  if(total===0)return null;
-  const out=new Uint8Array(total);
-  let offset=0;
-  for(const chunk of chunks){out.set(chunk,offset);offset+=chunk.byteLength;}
-  return out;
-}
-
-async function fetchImage(imageUrl:string,supabaseUrl:string,maxBytes=SOURCE_IMAGE_MAX_BYTES):Promise<{bytes:Uint8Array;kind:FlowImageKind}|null>{
-  if(!isAllowedProductImageUrl(imageUrl,supabaseUrl))return null;
-  try{
-    const response=await fetch(imageUrl,{method:"GET",redirect:"follow",signal:AbortSignal.timeout(4500)});
-    if(!response.ok)return null;
-    const bytes=await readResponseBytesLimited(response,maxBytes);
-    if(!bytes)return null;
-    const kind=sniffFlowImageKind(bytes);
-    return kind?{bytes,kind}:null;
-  }catch{return null;}
-}
-
-async function fetchPrecompressedAsset(assetKey:string,supabaseUrl:string,maxBytes:number):Promise<Uint8Array|null>{
-  const source=await fetchImage(storageAssetUrl(supabaseUrl,assetKey),supabaseUrl,maxBytes);
-  if(!source||source.kind!=="jpeg"||source.bytes.length>maxBytes)return null;
-  return source.bytes;
-}
-
-async function getMagick():Promise<any>{
-  if(!magickModulePromise)magickModulePromise=import(MAGICK_SPECIFIER);
-  const magick=await magickModulePromise;
-  if(!magickInitPromise){
-    magickInitPromise=(async()=>{
-      const wasmUrl=new URL(import.meta.resolve(MAGICK_WASM_SPECIFIER));
-      const wasmBytes=await Deno.readFile(wasmUrl);
-      await magick.initializeImageMagick(wasmBytes);
-    })();
-  }
-  await magickInitPromise;
-  return magick;
-}
-
-async function transcodeJpeg(bytes:Uint8Array,targetEdge:number,quality:number,maxBytes:number):Promise<Uint8Array|null>{
-  try{
-    const magick=await getMagick();
-    const attempts=[
-      {edge:targetEdge,q:quality},
-      {edge:Math.max(200,Math.floor(targetEdge*0.80)),q:Math.max(48,quality-10)},
-      {edge:200,q:46},
-    ];
-    for(const attempt of attempts){
-      const result=await magick.ImageMagick.read(bytes,async(image:any):Promise<Uint8Array>=>{
-        if(Number(image.width)>attempt.edge||Number(image.height)>attempt.edge)image.resize(attempt.edge,attempt.edge);
-        image.quality=attempt.q;
-        return await image.write(magick.MagickFormat.Jpeg,(data:Uint8Array)=>Uint8Array.from(data));
-      });
-      const output=result instanceof Uint8Array?result:Uint8Array.from(result||[]);
-      if(output.length>0&&output.length<=maxBytes)return output;
-    }
-    return null;
-  }catch{return null;}
-}
-
-export async function transcodeFlowImageToJpeg(bytes:Uint8Array):Promise<Uint8Array|null>{
-  return await transcodeJpeg(bytes,FLOW_IMAGE_TARGET_EDGE,FLOW_IMAGE_JPEG_QUALITY,FLOW_IMAGE_MAX_BYTES);
-}
-
-async function loadImageBase64(imageUrl:string,supabaseUrl:string,maxBytes:number,targetEdge:number,quality:number,assetKey?:string|null):Promise<string|null>{
-  if(assetKey){
-    const precompressed=await fetchPrecompressedAsset(assetKey,supabaseUrl,maxBytes);
-    if(precompressed)return bytesToBase64(precompressed);
-  }
-  const source=await fetchImage(imageUrl,supabaseUrl);
-  if(!source)return null;
-  let output=source.bytes;
-  if(source.kind==="webp"||source.kind==="avif"||output.length>maxBytes){
-    const converted=await transcodeJpeg(source.bytes,targetEdge,quality,maxBytes);
-    if(!converted)return null;
-    output=converted;
-  }
-  return output.length<=maxBytes?bytesToBase64(output):null;
-}
-
-export async function loadFlowCompatibleImageBase64(imageUrl:string,supabaseUrl:string,assetKey?:string|null):Promise<string|null>{
-  return await loadImageBase64(imageUrl,supabaseUrl,FLOW_IMAGE_MAX_BYTES,FLOW_IMAGE_TARGET_EDGE,FLOW_IMAGE_JPEG_QUALITY,assetKey);
-}
-
-export async function loadFlowSelectorImageBase64(imageUrl:string,supabaseUrl:string,assetKey?:string|null):Promise<string|null>{
-  return await loadImageBase64(imageUrl,supabaseUrl,FLOW_SELECTOR_IMAGE_MAX_BYTES,FLOW_SELECTOR_TARGET_EDGE,FLOW_SELECTOR_JPEG_QUALITY,assetKey);
-}
-
-async function mapLimited<T,R>(values:T[],limit:number,fn:(value:T,index:number)=>Promise<R>):Promise<R[]>{
-  const output=new Array<R>(values.length);
-  let cursor=0;
-  const workers=Array.from({length:Math.min(limit,values.length)},async()=>{
-    while(true){
-      const index=cursor++;
-      if(index>=values.length)return;
-      output[index]=await fn(values[index],index);
-    }
-  });
-  await Promise.all(workers);
-  return output;
-}
-
-type AssetScope="basket"|"product"|"none";
-
-async function hydrateSelectorItems(items:unknown[],supabaseUrl:string,maxItems:number,scope:AssetScope="none"):Promise<unknown[]>{
-  return await mapLimited(items.slice(0,maxItems),3,async(item)=>{
-    if(!item||typeof item!=="object"||Array.isArray(item))return item;
-    const option={...(item as Record<string,unknown>)};
-    const imageUrl=String(option.image_url||"").trim().slice(0,2000);
-    const id=String(option.id||"").trim();
-    delete option.image_url;
-    if(imageUrl){
-      let assetKey:string|null=null;
-      if(scope==="product"&&isUuid(id))assetKey=`products/${id}.jpg`;
-      if(scope==="basket"){
-        const stem=imageStem(imageUrl);
-        if(stem)assetKey=`baskets/${stem}.jpg`;
-      }
-      const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,assetKey);
-      if(image)option.image=image;
-    }
-    return option;
-  });
-}
-
-// NavigationList uses a nested `start.src` image instead of the top-level
-// media field used by RadioButtonsGroup/CheckboxGroup. Keep both contracts so
-// already-published legacy Flows continue to work while the new basket Flow
-// gets one lightweight photo at the left of every row.
-async function hydrateBasketNavigationItems(items:unknown[],supabaseUrl:string):Promise<unknown[]>{
-  return await mapLimited(items.slice(0,9),3,async(item)=>{
-    if(!item||typeof item!=="object"||Array.isArray(item))return item;
-    const option={...(item as Record<string,unknown>)};
-    const imageUrl=String(option.image_url||"").trim().slice(0,2000);
-    delete option.image_url;
-    if(!imageUrl)return option;
+async function hydrateBasketNavigation(items:unknown[],supabaseUrl:string):Promise<unknown[]>{
+  return await Promise.all(items.slice(0,9).map(async(item)=>{
+    if(!item||typeof item!=='object'||Array.isArray(item))return item;
+    const row={...(item as Record<string,unknown>)};
+    const imageUrl=String(row.image_url||'');
+    delete row.image_url;
     const stem=imageStem(imageUrl);
-    const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,stem?`baskets/${stem}.jpg`:null);
-    if(!image)return option;
-    const main=(option["main-content"]&&typeof option["main-content"]==="object"&&!Array.isArray(option["main-content"]))
-      ? option["main-content"] as Record<string,unknown>
-      : {};
-    option.start={
-      src:image,
-      "alt-text":String(main.title||"Cesta básica").slice(0,80),
-    };
-    return option;
-  });
+    if(!stem)return row;
+    const image=await loadFlowSelectorImageBase64(imageUrl,supabaseUrl,`baskets/${stem}.jpg`);
+    if(!image)return row;
+    const main=row['main-content']&&typeof row['main-content']==='object'&&!Array.isArray(row['main-content'])
+      ? row['main-content'] as Record<string,unknown> : {};
+    row.start={src:image,'alt-text':String(main.title||'Cesta básica').slice(0,80)};
+    return row;
+  }));
 }
 
 export async function hydrateExperienceImages(response:unknown,supabaseUrl:string):Promise<unknown>{
-  if(!response||typeof response!=="object"||Array.isArray(response))return response;
+  if(!response||typeof response!=='object'||Array.isArray(response))return response;
   const obj=response as Record<string,unknown>;
-  if(!obj.data||typeof obj.data!=="object"||Array.isArray(obj.data))return response;
+  if(!obj.data||typeof obj.data!=='object'||Array.isArray(obj.data))return response;
   const data=obj.data as Record<string,unknown>;
-  const screen=String(obj.screen||"");
-
-  if(screen==="CESTAS"&&Array.isArray(data.baskets)){
+  const screen=String(obj.screen||'');
+  if(screen==='CESTAS'&&Array.isArray(data.baskets)){
     const first=(data.baskets as unknown[])[0];
-    const isNavigation=Boolean(first&&typeof first==="object"&&!Array.isArray(first)&&("main-content" in (first as Record<string,unknown>)||"on-click-action" in (first as Record<string,unknown>)));
-    data.baskets=isNavigation
-      ?await hydrateBasketNavigationItems(data.baskets as unknown[],supabaseUrl)
-      :await hydrateSelectorItems(data.baskets as unknown[],supabaseUrl,9,"basket");
+    const nav=Boolean(first&&typeof first==='object'&&!Array.isArray(first)&&('main-content' in (first as Record<string,unknown>)||'on-click-action' in (first as Record<string,unknown>)));
+    data.baskets=nav
+      ?await hydrateBasketNavigation(data.baskets as unknown[],supabaseUrl)
+      :await hydrateItems((data.baskets as unknown[]).slice(0,9),supabaseUrl,'basket');
+    return response;
   }
-
-  if(/^PERSONALIZAR_[ABC]$/.test(screen)){
-    const imageUrl=String(data.basket_image_url||"").trim().slice(0,2000);
+  if(/^PERSONALIZAR_[A-L]$/.test(screen)){
+    const imageUrl=String(data.basket_image_url||'');
     const stem=imageStem(imageUrl);
-    const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,stem?`baskets/${stem}.jpg`:null):null;
+    const image=stem?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,`baskets/${stem}.jpg`):null;
     data.basket_image_base64=image||FALLBACK_IMAGE_BASE64;
     data.has_basket_image=Boolean(image);
     delete data.basket_image_url;
     return response;
   }
-
-  // V27 premium lists: a CheckboxGroup may carry up to 20 media options. We
-  // hydrate from the precompressed product cache, keeping photos small and
-  // avoiding the three-standalone-image limit used by the older V26 layout.
-  if(/^PRODUTOS_[ABC]$/.test(screen)&&Array.isArray(data.product_options)){
-    data.product_options=await hydrateSelectorItems(data.product_options as unknown[],supabaseUrl,20,"product");
-    return response;
-  }
-
-  if(/^PRODUTOS_[ABC]$/.test(screen)&&Array.isArray(data.products)){
-    data.products=await hydrateSelectorItems(data.products as unknown[],supabaseUrl,12,"product");
-    return response;
-  }
-
-  if(screen==="UPSELL"&&Array.isArray(data.products)){
-    data.products=await hydrateSelectorItems(data.products as unknown[],supabaseUrl,6,"product");
-    return response;
-  }
-
-  if(/^PRODUTO_[ABC]$/.test(screen)){
-    const imageUrl=String(data.product_image_url||"").trim().slice(0,2000);
-    const productId=String(data.product_id||"").trim();
-    const assetKey=isUuid(productId)?`products/${productId}.jpg`:null;
-    const image=imageUrl?await loadFlowCompatibleImageBase64(imageUrl,supabaseUrl,assetKey):null;
-    data.product_image_base64=image||FALLBACK_IMAGE_BASE64;
-    data.has_product_image=Boolean(image);
-    delete data.product_image_url;
-    return response;
-  }
-
   return response;
 }
-
-export const FLOW_IMAGE_LIMITS={
-  sourceMaxBytes:SOURCE_IMAGE_MAX_BYTES,
-  outputMaxBytes:FLOW_IMAGE_MAX_BYTES,
-  selectorOutputMaxBytes:FLOW_SELECTOR_IMAGE_MAX_BYTES,
-  targetEdge:FLOW_IMAGE_TARGET_EDGE,
-  selectorTargetEdge:FLOW_SELECTOR_TARGET_EDGE,
-  jpegQuality:FLOW_IMAGE_JPEG_QUALITY,
-  selectorJpegQuality:FLOW_SELECTOR_JPEG_QUALITY,
-  assetBucket:FLOW_ASSET_BUCKET,
-  precompressedPreferred:true,
-  premiumProductOptionsMax:20,
-  magickVersion:"0.0.43",
-} as const;
