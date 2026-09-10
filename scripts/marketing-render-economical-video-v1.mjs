@@ -57,12 +57,14 @@ async function render(specInput,{baseDir=process.cwd(),outputPath,ffmpegBin='ffm
     for(let i=0;i<spec.slides.length;i++){
       const slide=spec.slides[i];
       const src=localPath(slide.src,baseDir);
-      const target=path.join(work,`slide-${String(i).padStart(3,'0')}.jpg`);
-      await sharp(src).rotate().resize({width:spec.width,height:spec.height,fit:'cover',position:slide.position||'centre'}).jpeg({quality:88,mozjpeg:true}).toFile(target);
+      const target=path.join(work,`slide-${String(i).padStart(3,'0')}.png`);
+      // PNG intermediates are intentionally used here. They are lossless and avoid
+      // decoder differences observed with optimized JPEGs across FFmpeg builds.
+      await sharp(src).rotate().resize({width:spec.width,height:spec.height,fit:'cover',position:slide.position||'centre'}).png({compressionLevel:6}).toFile(target);
       concat.push(`file '${target.replaceAll("'","'\\''")}'`);
       concat.push(`duration ${slide.duration.toFixed(3)}`);
     }
-    const last=path.join(work,`slide-${String(spec.slides.length-1).padStart(3,'0')}.jpg`);
+    const last=path.join(work,`slide-${String(spec.slides.length-1).padStart(3,'0')}.png`);
     concat.push(`file '${last.replaceAll("'","'\\''")}'`);
     const concatPath=path.join(work,'slides.txt');
     await fs.writeFile(concatPath,concat.join('\n')+'\n','utf8');
