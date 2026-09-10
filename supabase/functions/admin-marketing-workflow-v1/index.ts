@@ -8,6 +8,7 @@ const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f
 const jsonObject=(v:unknown)=>v&&typeof v==="object"&&!Array.isArray(v)?v:{};
 const jsonArray=(v:unknown)=>Array.isArray(v)?v:[];
 const payloadSizeOk=(v:unknown,max=120000)=>{try{return JSON.stringify(v??null).length<=max}catch{return false}};
+const renderKey=(assetId:string,version:unknown)=>`admin:${assetId}:v${Number(version||1)}:${crypto.randomUUID()}`.slice(0,160);
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -37,28 +38,58 @@ Deno.serve(async(req:Request)=>{
     const normalizedJobs=(jobs||[]).map((j:any)=>({...j,title:j.marketing_assets?.title||null,marketing_assets:undefined}));
     return json({ok:true,user:{role:admin.role,display_name:admin.display_name},assets:assets||[],jobs:normalizedJobs,calendar:calendar||[],external_side_effect:false});
   }
+
   if(action==="editor_overview"){
-    const [{data:assets,error:assetsError},{data:revisions,error:revisionsError},{data:runtime,error:runtimeError}]=await Promise.all([
+    const [{data:assets,error:assetsError},{data:revisions,error:revisionsError},{data:runtime,error:runtimeError},{data:media,error:mediaError},{data:renderJobs,error:renderError}]=await Promise.all([
       sb.from("marketing_assets").select("id,campaign_id,parent_asset_id,version,title,media_kind,generation_mode,status,source_refs,edit_spec,render_spec,output_spec,editable,updated_at,review_requested_at,reviewed_at").neq("status","archived").order("updated_at",{ascending:false}).limit(100),
       sb.from("marketing_asset_revisions").select("id,asset_id,revision_no,title,generation_mode,status_at_revision,edit_spec,render_spec,change_note,created_at").order("created_at",{ascending:false}).limit(300),
-      sb.from("marketing_runtime_config").select("enabled,execution_mode,kill_switch,generation_enabled,deterministic_render_enabled,ai_image_enabled,ai_video_enabled,publishing_enabled").eq("id",1).maybeSingle()
+      sb.from("marketing_runtime_config").select("enabled,execution_mode,kill_switch,generation_enabled,deterministic_render_enabled,ai_image_enabled,ai_video_enabled,publishing_enabled").eq("id",1).maybeSingle(),
+      sb.from("marketing_media_objects").select("id,asset_id,version,role,storage_provider,bucket_name,object_path,mime_type,width,height,duration_ms,byte_size,sha256,metadata,created_at").order("created_at",{ascending:false}).limit(300),
+      sb.from("marketing_render_jobs").select("id,asset_id,render_kind,status,attempt_count,ai_used,last_error,created_at,updated_at,finished_at").order("created_at",{ascending:false}).limit(200)
     ]);
-    if(assetsError||revisionsError||runtimeError)return json({ok:false,error:"editor_overview_failed",detail:assetsError?.message||revisionsError?.message||runtimeError?.message},500);
-    return json({ok:true,user:{role:admin.role,display_name:admin.display_name},runtime:runtime||{},assets:assets||[],revisions:revisions||[],external_side_effect:false});
+    if(assetsError||revisionsError||runtimeError||mediaError||renderError)return json({ok:false,error:"editor_overview_failed",detail:assetsError?.message||revisionsError?.message||runtimeError?.message||mediaError?.message||renderError?.message},500);
+    return json({ok:true,user:{role:admin.role,display_name:admin.display_name},runtime:runtime||{},assets:assets||[],revisions:revisions||[],media:media||[],render_jobs:renderJobs||[],external_side_effect:false});
   }
+
   if(action==="editor_save"){
     const id=clean(body.asset_id,80); if(!uuid(id))return json({ok:false,error:"invalid_asset_id"},400);
     const mode=clean(body.generation_mode,20); if(!["no_ai","ai","hybrid","manual"].includes(mode))return json({ok:false,error:"invalid_generation_mode"},400);
     const editSpec=jsonObject(body.edit_spec),renderSpec=jsonObject(body.render_spec),sourceRefs=jsonArray(body.source_refs);
     if(!payloadSizeOk({editSpec,renderSpec,sourceRefs},90000))return json({ok:false,error:"editor_spec_too_large"},413);
-    const {data,error}=await sb.rpc("marketing_save_asset_edit_v1",{
-      p_asset_id:id,p_title:clean(body.title,180),p_generation_mode:mode,p_source_refs:sourceRefs,
-      p_edit_spec:editSpec,p_render_spec:renderSpec,p_change_note:clean(body.change_note,1000)||null,p_actor:user.id
-    });
+    const {data,error}=await sb.rpc("marketing_save_asset_edit_v1",{p_asset_id:id,p_title:clean(body.title,180),p_generation_mode:mode,p_source_refs:sourceRefs,p_edit_spec:editSpec,p_render_spec:renderSpec,p_change_note:clean(body.change_note,1000)||null,p_actor:user.id});
     if(error)return json({ok:false,error:"editor_save_failed",detail:error.message},400);
     if(!data?.ok)return json(data,409);
     return json({ok:true,result:data,external_side_effect:false});
   }
+
+  if(action==="editor_render"){
+    const id=clean(body.asset_id,80); if(!uuid(id))return json({ok:false,error:"invalid_asset_id"},400);
+    const {data:asset,error:assetError}=await sb.from("marketing_assets").select("id,version,status").eq("id",id).maybeSingle();
+    if(assetError)return json({ok:false,error:"asset_lookup_failed",detail:assetError.message},500);
+    if(!asset)return json({ok:false,error:"asset_not_found"},404);
+    const key=clean(body.idempotency_key,160)||renderKey(id,asset.version);
+    const {data,error}=await sb.rpc("request_marketing_asset_render_v1",{p_asset_id:id,p_idempotency_key:key,p_actor:user.id});
+    if(error)return json({ok:false,error:"render_request_failed",detail:error.message},400);
+    if(!data?.ok)return json({ok:false,...data},409);
+    return json({ok:true,result:data,external_side_effect:false});
+  }
+
+  if(action==="editor_save_and_render"){
+    const id=clean(body.asset_id,80); if(!uuid(id))return json({ok:false,error:"invalid_asset_id"},400);
+    const mode=clean(body.generation_mode,20); if(!["no_ai","ai","hybrid","manual"].includes(mode))return json({ok:false,error:"invalid_generation_mode"},400);
+    const editSpec=jsonObject(body.edit_spec),renderSpec=jsonObject(body.render_spec),sourceRefs=jsonArray(body.source_refs);
+    if(!payloadSizeOk({editSpec,renderSpec,sourceRefs},90000))return json({ok:false,error:"editor_spec_too_large"},413);
+    const {data:saved,error:saveError}=await sb.rpc("marketing_save_asset_edit_v1",{p_asset_id:id,p_title:clean(body.title,180),p_generation_mode:mode,p_source_refs:sourceRefs,p_edit_spec:editSpec,p_render_spec:renderSpec,p_change_note:clean(body.change_note,1000)||null,p_actor:user.id});
+    if(saveError)return json({ok:false,error:"editor_save_failed",detail:saveError.message},400);
+    if(!saved?.ok)return json(saved,409);
+    const version=Number(saved.version||1);
+    const key=clean(body.idempotency_key,160)||renderKey(id,version);
+    const {data:rendered,error:renderError}=await sb.rpc("request_marketing_asset_render_v1",{p_asset_id:id,p_idempotency_key:key,p_actor:user.id});
+    if(renderError)return json({ok:false,error:"render_request_failed",detail:renderError.message,saved:true,save_result:saved},400);
+    if(!rendered?.ok)return json({ok:false,error:rendered?.error||"render_blocked",saved:true,save_result:saved,render_result:rendered,external_side_effect:false},409);
+    return json({ok:true,saved:true,save_result:saved,render_result:rendered,external_side_effect:false});
+  }
+
   if(action==="editor_fork"){
     const id=clean(body.asset_id,80); if(!uuid(id))return json({ok:false,error:"invalid_asset_id"},400);
     const {data,error}=await sb.rpc("marketing_fork_asset_version_v1",{p_asset_id:id,p_change_note:clean(body.change_note,1000)||null,p_actor:user.id});
@@ -66,6 +97,7 @@ Deno.serve(async(req:Request)=>{
     if(!data?.ok)return json(data,409);
     return json({ok:true,result:data,external_side_effect:false});
   }
+
   if(action==="calendar"){
     const now=new Date(),to=new Date(now.getTime()+31*86400000);
     const fromRaw=clean(body.from,80),toRaw=clean(body.to,80);
