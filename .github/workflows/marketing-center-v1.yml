@@ -9,9 +9,12 @@ on:
       - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
+      - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
+      - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/test-marketing-render-v1.mjs'
+      - 'scripts/test-marketing-video-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
       - '.github/workflows/marketing-center-v1.yml'
   push:
@@ -23,9 +26,12 @@ on:
       - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
       - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
       - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
+      - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
+      - 'scripts/marketing-render-economical-video-v1.mjs'
       - 'scripts/test-marketing-render-v1.mjs'
+      - 'scripts/test-marketing-video-v1.mjs'
       - 'scripts/test-marketing-center-v1.mjs'
 
 permissions:
@@ -42,9 +48,15 @@ jobs:
           node-version: '22'
       - name: Install deterministic renderer dependency
         run: npm install --no-save sharp@0.34.3
+      - name: Verify FFmpeg toolchain
+        run: |
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
       - name: Check admin JavaScript syntax
         run: node --check admin-v3/marketing-center.js
       - name: Validate Marketing Center safety contract
         run: node scripts/test-marketing-center-v1.mjs
       - name: Validate deterministic WebP renderer
         run: node scripts/test-marketing-render-v1.mjs
+      - name: Validate economical MP4 renderer
+        run: node scripts/test-marketing-video-v1.mjs
