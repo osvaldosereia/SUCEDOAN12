@@ -12,10 +12,12 @@ const compactFix=fs.readFileSync('supabase/migrations/20260910164209_dona_antoni
 const routerObservability=fs.readFileSync('supabase/migrations/20260910165937_dona_antonia_agent_core_round4_router_observability_v1.sql','utf8');
 const stateCheckout=fs.readFileSync('supabase/migrations/20260910170334_dona_antonia_agent_core_round4_state_aware_checkout_tools_v1.sql','utf8');
 const stateCheckoutFix=fs.readFileSync('supabase/migrations/20260910170409_dona_antonia_agent_core_round4_state_aware_checkout_topics_fix_v1.sql','utf8');
+const consolidated=fs.readFileSync('supabase/migrations/20260910171457_dona_antonia_agent_core_round4_consolidated_readiness_v2.sql','utf8');
 const edge=fs.readFileSync('supabase/functions/dona-antonia-agent-core-v1/index.ts','utf8');
-const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy+'\n'+basketTools+'\n'+compactTools+'\n'+compactFix+'\n'+routerObservability+'\n'+stateCheckout+'\n'+stateCheckoutFix).toLowerCase();
+const body=(inventory+'\n'+dispatch+'\n'+parity+'\n'+recovery+'\n'+parityV2+'\n'+policy+'\n'+basketTools+'\n'+compactTools+'\n'+compactFix+'\n'+routerObservability+'\n'+stateCheckout+'\n'+stateCheckoutFix+'\n'+consolidated).toLowerCase();
 const edgeLower=edge.toLowerCase();
 const stateFixLower=stateCheckoutFix.toLowerCase();
+const consolidatedLower=consolidated.toLowerCase();
 const must=(text,label)=>{if(!body.includes(text.toLowerCase()))throw new Error(`missing:${label}`)};
 const mustEdge=(text,label)=>{if(!edgeLower.includes(text.toLowerCase()))throw new Error(`missing_edge:${label}`)};
 const forbid=(text,label)=>{if(body.includes(text.toLowerCase()))throw new Error(`forbidden:${label}`)};
@@ -117,6 +119,17 @@ if(!stateFixLower.includes("v_awaiting text := lower(trim(coalesce(p_awaiting,''
 mustEdge('checkouttransitions=[','checkout_transition_tool_group');
 mustEdge('sales_state.awaiting é contexto determinístico','checkout_state_kernel_rule');
 
+must('get_agent_core_round4_consolidated_readiness_v2','consolidated_readiness_v2');
+for(const gate of ['whatsapp_live_canary_percent','experience_orchestrator_enabled','whatsapp_flow_data_exchange_enabled','whatsapp_flow_send_enabled','whatsapp_flow_commercial_write_enabled','bling_order_sync_enabled']){
+  if(!consolidatedLower.includes(gate)) throw new Error(`consolidated_missing_gate:${gate}`);
+}
+for(const dependency of ['get_agent_core_round4_parity_report_v2','get_agent_core_round4_basket_tool_readiness_v1','get_agent_core_round4_checkout_transition_readiness_v1','get_agent_core_round4_router_observability_v1']){
+  if(!consolidatedLower.includes(dependency)) throw new Error(`consolidated_missing_dependency:${dependency}`);
+}
+if(!consolidatedLower.includes("when not parity_ready then")) throw new Error('consolidated_gate_must_fail_closed_on_parity');
+if(!consolidatedLower.includes("unsafe_safety_state=0")) throw new Error('consolidated_gate_must_preserve_hard_safety');
+if(!consolidatedLower.includes("'gates_preserved',rollout_gates_preserved")) throw new Error('consolidated_gate_must_report_rollout');
+
 for(const guard of [
   'release gate; deve permanecer fora do modelo',
   'handoff humano por erro/held',
@@ -134,4 +147,4 @@ for(const unsafe of [
   'bling_order_sync_enabled=true'
 ]) forbid(unsafe,unsafe);
 
-console.log(`Agent Core Rodada 4 OK: ${newTools.length+transitionTools.length} tools de cesta/checkout, estado-aware, observabilidade sem texto/PII, schemas filtrados e writes apenas simulados em observe.`);
+console.log(`Agent Core Rodada 4 OK: ${newTools.length+transitionTools.length} tools de cesta/checkout, estado-aware, observabilidade privada, gate consolidado fail-closed e writes apenas simulados em observe.`);
