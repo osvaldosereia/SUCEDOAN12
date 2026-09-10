@@ -17,158 +17,40 @@
             "type": "object",
             "properties": {
               "id": {"type": "string"},
-              "main-content": {
-                "type": "object",
-                "properties": {
-                  "title": {"type": "string"},
-                  "description": {"type": "string"},
-                  "metadata": {"type": "string"}
-                }
-              },
-              "start": {
-                "type": "object",
-                "properties": {
-                  "image": {"type": "string"},
-                  "alt-text": {"type": "string"}
-                }
-              },
-              "end": {
-                "type": "object",
-                "properties": {
-                  "title": {"type": "string"},
-                  "description": {"type": "string"},
-                  "metadata": {"type": "string"}
-                }
-              },
-              "on-click-action": {
-                "type": "object",
-                "properties": {
-                  "name": {"type": "string"},
-                  "payload": {
-                    "type": "object",
-                    "properties": {
-                      "trigger": {"type": "string"},
-                      "basket_id": {"type": "string"}
-                    }
-                  }
-                }
-              }
+              "main-content": {"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"metadata":{"type":"string"}}},
+              "start": {"type":"object","properties":{"image":{"type":"string"},"alt-text":{"type":"string"}}},
+              "end": {"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"metadata":{"type":"string"}}},
+              "on-click-action": {"type":"object","properties":{"name":{"type":"string"},"payload":{"type":"object","properties":{"trigger":{"type":"string"},"basket_id":{"type":"string"}}}}}
             }
           },
-          "__example__": [
-            {
-              "id": "00000000-0000-4000-8000-000000000001",
-              "main-content": {
-                "title": "Cesta Econômica",
-                "description": "Toque para ver os produtos",
-                "metadata": ""
-              },
-              "start": {
-                "image": "iVBORw0KGgoAAA...",
-                "alt-text": "Cesta Econômica"
-              },
-              "end": {"title": "R$ 92,00"},
-              "on-click-action": {
-                "name": "data_exchange",
-                "payload": {
-                  "trigger": "basket_open",
-                  "basket_id": "00000000-0000-4000-8000-000000000001"
-                }
-              }
-            }
-          ]
+          "__example__": [{"id":"00000000-0000-4000-8000-000000000001","main-content":{"title":"Cesta Econômica","description":"Toque para ver os produtos","metadata":""},"start":{"image":"iVBORw0KGgoAAA...","alt-text":"Cesta Econômica"},"end":{"title":"R$ 92,00"},"on-click-action":{"name":"data_exchange","payload":{"trigger":"basket_open","basket_id":"00000000-0000-4000-8000-000000000001"}}}]
         }
       },
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          {
-            "type": "NavigationList",
-            "name": "basket_list",
-            "list-items": "${data.baskets}"
-          }
-        ]
-      }
+      "layout": {"type":"SingleColumnLayout","children":[{"type":"NavigationList","name":"basket_list","list-items":"${data.baskets}"}]}
     },
     {
       "id": "DETALHE",
       "title": "Produtos da cesta",
       "data": {
-        "basket_name": {"type": "string", "__example__": "Média Koblenz"},
-        "basket_price": {"type": "string", "__example__": "R$ 350,00"},
-        "items_summary": {"type": "string", "__example__": "2 × Arroz 5 kg\n2 × Feijão 1 kg\n1 × Café 500 g"},
-        "decision_options": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {"type": "string"},
-              "title": {"type": "string"},
-              "description": {"type": "string"}
-            }
-          },
-          "__example__": [
-            {"id": "customize", "title": "Quero trocar produtos", "description": "Abrir a vitrine para personalizar"},
-            {"id": "standard", "title": "Quero encomendar a cesta padrão", "description": "Levar exatamente como está"}
-          ]
-        }
+        "basket_name":{"type":"string","__example__":"Média Koblenz"},
+        "basket_price":{"type":"string","__example__":"R$ 350,00"},
+        "items_summary":{"type":"string","__example__":"2 × Arroz 5 kg\n2 × Feijão 1 kg\n1 × Café 500 g"}
       },
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          {"type": "TextHeading", "text": "${data.basket_name}"},
-          {"type": "TextSubheading", "text": "${data.basket_price}"},
-          {"type": "TextBody", "text": "${data.items_summary}"},
-          {
-            "type": "Form",
-            "name": "decision_form",
-            "children": [
-              {
-                "type": "RadioButtonsGroup",
-                "label": "Como deseja continuar?",
-                "name": "decision",
-                "data-source": "${data.decision_options}",
-                "required": true
-              },
-              {
-                "type": "Footer",
-                "label": "Enviar",
-                "on-click-action": {
-                  "name": "data_exchange",
-                  "payload": {
-                    "trigger": "basket_decision",
-                    "decision": "${form.decision}"
-                  }
-                }
-              }
-            ]
-          }
-        ]
-      }
+      "layout":{"type":"SingleColumnLayout","children":[
+        {"type":"TextHeading","text":"${data.basket_name}"},
+        {"type":"TextSubheading","text":"${data.basket_price}"},
+        {"type":"TextBody","text":"${data.items_summary}"},
+        {"type":"Footer","label":"Encomendar","on-click-action":{"name":"data_exchange","payload":{"trigger":"basket_order"}}}
+      ]}
     },
     {
-      "id": "ENVIADO",
-      "title": "Pronto",
-      "terminal": true,
-      "success": true,
-      "data": {
-        "message": {"type": "string", "__example__": "Recebi sua escolha. Continue na conversa do WhatsApp."}
-      },
-      "layout": {
-        "type": "SingleColumnLayout",
-        "children": [
-          {"type": "TextHeading", "text": "Tudo certo"},
-          {"type": "TextBody", "text": "${data.message}"},
-          {
-            "type": "Footer",
-            "label": "Voltar ao WhatsApp",
-            "on-click-action": {
-              "name": "complete",
-              "payload": {"action": "basket_decision_done"}
-            }
-          }
-        ]
-      }
+      "id":"ENVIADO","title":"Pronto","terminal":true,"success":true,
+      "data":{"message":{"type":"string","__example__":"Cesta escolhida. Continue no WhatsApp para finalizar ou personalizar."}},
+      "layout":{"type":"SingleColumnLayout","children":[
+        {"type":"TextHeading","text":"Cesta escolhida"},
+        {"type":"TextBody","text":"${data.message}"},
+        {"type":"Footer","label":"Voltar ao WhatsApp","on-click-action":{"name":"complete","payload":{"action":"basket_order_done"}}}
+      ]}
     }
   ]
 }
