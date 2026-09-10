@@ -1,69 +1,48 @@
 (()=>{
   const API="https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/basket-shop-v1";
-  const WHATSAPP_PHONE="556584491018";
   const token=new URLSearchParams(location.search).get("t")||"";
+  const validToken=/^[a-f0-9]{64}$/i.test(token);
+  const originalLabels=new WeakMap();
+  let sending=false;
 
-  const messageFor=intent=>intent==="order"
-    ?"Quero encomendar a cesta que escolhi."
-    :"Terminei de escolher os produtos adicionais da minha cesta. Pode finalizar meu pedido.";
+  function toast(message){
+    const el=document.getElementById("toast");
+    if(!el)return;
+    el.textContent=message;
+    el.classList.remove("hidden");
+    clearTimeout(toast.timer);
+    toast.timer=setTimeout(()=>el.classList.add("hidden"),5000);
+  }
 
-  function registerReturn(intent){
-    if(!/^[a-f0-9]{64}$/i.test(token))return;
+  async function finish(intent,button){
+    if(sending||!validToken)return;
+    sending=true;
+    if(!originalLabels.has(button))originalLabels.set(button,button.textContent||"Continuar");
+    button.disabled=true;
+    button.textContent="Salvando…";
+
     try{
-      fetch(API,{
+      const response=await fetch(API,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({action:"return",token,intent}),
         cache:"no-store",
-        keepalive:true
-      }).catch(()=>{});
-    }catch{}
-  }
+        credentials:"omit"
+      });
+      const data=await response.json().catch(()=>({ok:false,error:"invalid_response"}));
+      if(!response.ok||!data.ok)throw new Error(data.detail||data.error||"Não consegui concluir agora");
 
-  function openWhatsapp(intent,button){
-    const message=messageFor(intent);
-    const encoded=encodeURIComponent(message);
-
-    // Link HTTPS universal/app-link primeiro: funciona melhor dentro do navegador
-    // embutido do WhatsApp e do WhatsApp Business e não força um pacote específico.
-    const primary=`https://wa.me/${WHATSAPP_PHONE}?text=${encoded}`;
-    const native=`whatsapp://send?phone=${WHATSAPP_PHONE}&text=${encoded}`;
-    const webFallback=`https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&text=${encoded}`;
-    let leftPage=false;
-
-    registerReturn(intent);
-
-    if(button){
-      button.disabled=true;
-      button.textContent="Abrindo WhatsApp…";
+      button.disabled=false;
+      button.dataset.returnDone="1";
+      button.textContent="Pronto ✓";
+      toast("Pronto! Sua cesta foi salva e a continuação já foi enviada no WhatsApp. Agora volte para a conversa.");
+    }catch(error){
+      button.disabled=false;
+      button.textContent=originalLabels.get(button)||"Tentar novamente";
+      toast("Não consegui concluir agora. Tente novamente em alguns segundos.");
+    }finally{
+      sending=false;
     }
-
-    const markLeft=()=>{leftPage=true};
-    document.addEventListener("visibilitychange",()=>{
-      if(document.visibilityState==="hidden")markLeft();
-    },{once:true});
-    window.addEventListener("pagehide",markLeft,{once:true});
-
-    // A navegação precisa acontecer sincronamente no clique do usuário. Evita
-    // bloqueio de deep-link em webviews do WhatsApp/WhatsApp Business.
-    location.assign(primary);
-
-    // Se o navegador impedir a navegação HTTPS, tenta o esquema nativo.
-    setTimeout(()=>{
-      if(!leftPage&&document.visibilityState==="visible")location.href=native;
-    },1200);
-
-    // Último fallback oficial para navegadores que não tratam o esquema nativo.
-    setTimeout(()=>{
-      if(!leftPage&&document.visibilityState==="visible")location.href=webFallback;
-    },2400);
-
-    setTimeout(()=>{
-      if(!leftPage&&document.visibilityState==="visible"&&button){
-        button.disabled=false;
-        button.textContent="Abrir WhatsApp";
-      }
-    },3600);
   }
 
   document.addEventListener("click",event=>{
@@ -72,9 +51,14 @@
 
     if(button.id==="sendBtn"&&/voltar\s+para\s+cesta/i.test(button.textContent||""))return;
 
-    const intent=button.id==="orderBtn"?"order":"extras_done";
     event.preventDefault();
     event.stopImmediatePropagation();
-    openWhatsapp(intent,button);
+
+    if(button.dataset.returnDone==="1"){
+      toast("A continuação já está no WhatsApp. Use o botão Voltar do celular para retornar à conversa.");
+      return;
+    }
+
+    finish(button.id==="orderBtn"?"order":"extras_done",button);
   },true);
 })();
