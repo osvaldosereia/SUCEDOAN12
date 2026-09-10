@@ -118,15 +118,16 @@ Nenhum Meta/Pinterest/Google foi chamado, nenhum Instagram/Messenger/Ads foi ati
 ## CI
 
 - Run 86 confirmado verde antes desta rodada.
-- novo CI da Run 14 disparado pela atualização do workflow/worker/resolver; confirmar conclusão antes de avançar na próxima rodada.
+- Run 91 falhou exclusivamente no novo teste por uma asserção ampla demais que confundia o nome da RPC `marketing_media_signable_v1` com criação de signed URL; código do resolver e todos os contratos anteriores haviam passado.
+- a asserção foi corrigida para detectar somente endpoint real de assinatura do Storage.
+- Run 93 (`Marketing Center V1`) terminou **verde**: sintaxe, contratos do Admin, aprovação/calendário, mídia privada, carrossel, métricas/dry-run, WebP, MP4, worker, persistência, resolver privado e canais dry-run passaram.
 
 ## Próximo bloco seguro
 
-1. confirmar CI da Run 14;
-2. fazer homologação controlada `media_id -> materialização temporária -> crop -> WebP` com asset descartável/rollback ou fixture privada, sem habilitar geração global;
-3. transformar o contrato de slides salvo no Admin em `render_spec` determinístico explícito, preservando versionamento;
-4. implementar atribuição determinística append-only `conteúdo -> clique/conversa -> pedido`, inicialmente somente coleta/read model e sem inferência;
-5. manter todos os adapters sociais em dry-run até autorização explícita.
+1. fazer homologação controlada `media_id -> materialização temporária -> crop -> WebP` com asset descartável/rollback ou fixture privada, sem habilitar geração global;
+2. transformar o contrato de slides salvo no Admin em `render_spec` determinístico explícito, preservando versionamento;
+3. implementar atribuição determinística append-only `conteúdo -> clique/conversa -> pedido`, inicialmente somente coleta/read model e sem inferência;
+4. manter todos os adapters sociais em dry-run até autorização explícita.
 
 ## Conclusão
 
