@@ -20,7 +20,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   commercialTruthUiEnabled: false,
   driverAppUrl: '../driver-app/',
   countAppUrl: '../contagem/',
-  build: '20260910-products-live-01'
+  build: '20260910-products-live-02'
 });
 
 (function loadHumanServiceCenter(cfg){
@@ -50,8 +50,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   if(!document.querySelector('script[data-human-service-center]')){
     const script=document.createElement('script');
     script.src='../admin-v3/human-service-center.js?v=20260908-02';script.dataset.humanServiceCenter='1';
-    script.onload=()=>{window.DAHumanServiceCenter?.mount(mount);loadCopilotPanel()};
-    document.body.appendChild(script);
+    script.onload=()=>{window.DAHumanServiceCenter?.mount(mount);loadCopilotPanel()};document.body.appendChild(script);
   }else{
     window.DAHumanServiceCenter?.mount(mount);loadCopilotPanel();
   }
@@ -94,10 +93,10 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   if(!cfg?.productsEdgeFunction)return;
   if(!document.querySelector('link[data-products-live-ui]')){
     const link=document.createElement('link');
-    link.rel='stylesheet';link.href='../admin-v3/products-live-ui.css?v=20260910-01';link.dataset.productsLiveUi='1';document.head.appendChild(link);
+    link.rel='stylesheet';link.href='../admin-v3/products-live-ui.css?v=20260910-02';link.dataset.productsLiveUi='1';document.head.appendChild(link);
   }
   if(!document.querySelector('script[data-products-live-ui]')){
     const script=document.createElement('script');
-    script.src='../admin-v3/products-live-ui.js?v=20260910-01';script.dataset.productsLiveUi='1';document.body.appendChild(script);
+    script.src='../admin-v3/products-live-ui.js?v=20260910-02';script.dataset.productsLiveUi='1';document.body.appendChild(script);
   }
 })(window.DA_ADMIN_V3_CONFIG);
