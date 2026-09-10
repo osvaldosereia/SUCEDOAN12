@@ -8,6 +8,7 @@ const plain=(body:string,status=200)=>new Response(body,{status,headers:{"Conten
 const isObject=(value:unknown):value is Record<string,unknown>=>Boolean(value)&&typeof value==="object"&&!Array.isArray(value);
 const safeAction=(value:string)=>/^[A-Za-z0-9_:-]{1,80}$/.test(value)?value:"invalid_action";
 const safeScreen=(value:string|null)=>value&&/^[A-Za-z0-9_:-]{1,120}$/.test(value)?value:null;
+const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 
 async function ownerHomologationAllowed(sb:any,resolved:Record<string,unknown>|null):Promise<boolean>{
   if(!resolved?.session_id||!resolved?.conversation_id||!resolved?.definition_id)return false;
@@ -34,6 +35,26 @@ async function basketChoiceLiveAllowed(sb:any,resolved:Record<string,unknown>|nu
   if(text(resolved?.definition_slug,120)!=="flow-cestas-escolha-v1")return false;
   const {data,error}=await sb.rpc("is_whatsapp_basket_choice_flow_live_v1");
   return !error&&data===true;
+}
+
+async function loadReplayResponse(sb:any,requestFingerprint:string):Promise<Record<string,unknown>|null>{
+  for(const delay of [0,80,160,320]){
+    if(delay)await sleep(delay);
+    const {data,error}=await sb.rpc("get_whatsapp_flow_replay_response_v1",{p_request_fingerprint:requestFingerprint});
+    if(error)throw new FlowCryptoError(500,"flow_replay_cache_read_failed","Flow replay cache read failed.");
+    if(data?.found===true&&isObject(data.response))return data.response;
+  }
+  return null;
+}
+
+async function cacheFlowResponse(sb:any,requestFingerprint:string,response:Record<string,unknown>):Promise<void>{
+  const {data,error}=await sb.rpc("cache_whatsapp_flow_response_v1",{p_request_fingerprint:requestFingerprint,p_response:response});
+  if(error||data?.ok!==true)throw new FlowCryptoError(500,"flow_replay_cache_write_failed","Flow replay cache write failed.");
+}
+
+function requiredResponseScreen(response:unknown):string|null{
+  if(!isObject(response))return null;
+  return safeScreen(text(response.screen,120)||null);
 }
 
 Deno.serve(async(req:Request)=>{
@@ -67,6 +88,7 @@ Deno.serve(async(req:Request)=>{
     const flowToken=text(body.flow_token,200);
     const data=isObject(body.data)?body.data:{};
     let response:unknown;
+    let responseForCache:Record<string,unknown>|null=null;
     let sessionId:string|null=null;
     let resolved:Record<string,unknown>|null=null;
     let eventStatus="accepted";
@@ -91,14 +113,23 @@ Deno.serve(async(req:Request)=>{
     if(claimError||!claim?.ok)throw new FlowCryptoError(500,"flow_replay_guard_failed","Flow replay guard failed.");
     const isReplay=claim.replay===true;
 
-    if(action==="ping"){
+    if(action!=="ping"&&isReplay){
+      const cached=await loadReplayResponse(sb,requestFingerprint);
+      if(!cached)throw new FlowCryptoError(409,"flow_replay_response_pending","Original Flow response is not cached yet.");
+      if(!requiredResponseScreen(cached))throw new FlowCryptoError(500,"flow_cached_response_screen_missing","Cached Flow response is missing screen.");
+      response=await hydrateExperienceImagesWithCards(cached,url,resolvedDefinitionSlug||null);
+      if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"replay"),p_screen:screen,p_status:"accepted",p_error_code:null,p_is_replay:true});
+    }else if(action==="ping"){
       response={data:{status:"active"}};
       await sb.from("whatsapp_flow_exchange_events").insert({request_id:requestId,action:"ping",screen:null,status:"accepted",is_replay:isReplay});
     }else if(isObject(data)&&data.error){
-      response={data:{acknowledged:true,replayed:isReplay}};
+      const responseScreen=safeScreen(screen||text(resolved?.current_screen,120)||null);
+      if(!responseScreen)throw new FlowCryptoError(500,"flow_response_screen_missing","Flow client-error acknowledgement has no screen.");
+      response={screen:responseScreen,data:{acknowledged:true,replayed:false}};
+      responseForCache=response as Record<string,unknown>;
       eventStatus="acknowledged";
       errorCode=text(data.error,120)||"client_error";
-      if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"client_error"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
+      if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"client_error"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:false});
     }else{
       if(!flowToken)throw new FlowCryptoError(400,"flow_token_required","Flow token is required.");
       let handled:any=null,handleError:any=null;
@@ -119,14 +150,29 @@ Deno.serve(async(req:Request)=>{
       }else if(definitionSlug==="flow-cestas-comercial-v6"){
         const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v17",params);handled=result.data;handleError=result.error;
       }else{
-        const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:isReplay});handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_exchange_v1",{p_flow_token:flowToken,p_action:action,p_screen:screen,p_data:data,p_request_fingerprint:requestFingerprint,p_is_replay:false});handled=result.data;handleError=result.error;
       }
       if(handleError)throw new FlowCryptoError(500,"flow_handler_failed","Flow handler failed.");
       sessionId=handled?.session_id||sessionId;
-      if(!handled?.ok){eventStatus="rejected";errorCode=text(handled?.reason,120)||"flow_rejected";response={data:{error:true,error_code:errorCode,replayed:isReplay}};}
-      else{response=await hydrateExperienceImagesWithCards(handled.response,url,definitionSlug);if(action==="INIT"&&sessionId&&!isReplay)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});}
-      if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"unknown"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:isReplay});
+      if(!handled?.ok){
+        eventStatus="rejected";
+        errorCode=text(handled?.reason,120)||"flow_rejected";
+        const responseScreen=safeScreen(text(handled?.expected_screen,120)||text(resolved?.current_screen,120)||screen||null);
+        if(!responseScreen)throw new FlowCryptoError(500,"flow_response_screen_missing","Rejected Flow response has no recoverable screen.");
+        response={screen:responseScreen,data:{error:true,error_code:errorCode,replayed:false}};
+        responseForCache=response as Record<string,unknown>;
+      }else{
+        if(!requiredResponseScreen(handled.response))throw new FlowCryptoError(500,"flow_response_screen_missing","Flow handler response is missing screen.");
+        responseForCache=handled.response as Record<string,unknown>;
+        response=await hydrateExperienceImagesWithCards(responseForCache,url,definitionSlug);
+        if(action==="INIT"&&sessionId)await sb.rpc("mark_experience_session_open_v1",{p_session_id:sessionId,p_provider_session_id:null});
+      }
+      if(sessionId)await sb.rpc("record_whatsapp_flow_exchange_v1",{p_session_id:sessionId,p_request_id:requestId,p_action:safeAction(action||"unknown"),p_screen:screen,p_status:eventStatus,p_error_code:errorCode,p_is_replay:false});
     }
+
+    if(action!=="ping"&&!isReplay&&responseForCache)await cacheFlowResponse(sb,requestFingerprint,responseForCache);
+    if(action!=="ping"&&!requiredResponseScreen(response))throw new FlowCryptoError(500,"flow_response_screen_missing","Flow endpoint response is missing screen.");
+
     const encrypted=await encryptFlowResponse(response,decrypted.aesKeyBytes,decrypted.initialVectorBytes);
     return plain(encrypted,200);
   }catch(error){
