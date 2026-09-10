@@ -6,6 +6,7 @@ const read = (path) => readFileSync(path, 'utf8');
 const guard = read('supabase/migrations/20260910124500_whatsapp_flow_v31_targeted_homologation_guard_v5.sql');
 const runtime = read('supabase/migrations/20260910125000_whatsapp_flow_v31_runtime_v18_v22_backfill.sql');
 const runtime23 = read('supabase/migrations/20260910162244_whatsapp_flow_v31_runtime_v23_checkout_contact_v1.sql');
+const runtime24 = read('supabase/migrations/20260910223500_whatsapp_flow_v31_runtime_v24_preview_dedupe.sql');
 const journeyReadiness = read('supabase/migrations/20260910162311_whatsapp_flow_v31_commercial_journey_readiness_v2_fix.sql');
 const runtime23Meta = read('supabase/migrations/20260910162624_whatsapp_flow_v31_runtime_v23_preflight_metadata_v1.sql');
 const allowlist = read('supabase/migrations/20260910142700_whatsapp_flow_v31_owner_allowlist_purpose_unification_v1.sql');
@@ -114,6 +115,15 @@ assert.match(runtime23, /'cartao_alimentacao'/);
 assert.match(runtime23, /revoke all on function public\.handle_whatsapp_flow_commercial_exchange_v23/);
 assert.match(runtime23, /grant execute on function public\.handle_whatsapp_flow_commercial_exchange_v23[^;]+to service_role/);
 
+// V24 keeps V23 checkout but corrects preview parity and duplicate pending extras.
+assert.match(runtime24, /handle_whatsapp_flow_commercial_exchange_v24/);
+assert.match(runtime24, /handle_whatsapp_flow_commercial_exchange_v23/);
+assert.match(runtime24, /format_whatsapp_flow_session_preview_v2/);
+assert.match(runtime24, /normalize_whatsapp_flow_pending_addons_v1/);
+assert.match(runtime24, /validate_basket_flow_selection_v1/);
+assert.match(runtime24, /remove_unit_delta/);
+assert.match(runtime24, /add_unit_delta/);
+
 // Commercial-journey readiness permanently guards bounded catalog, optional upsell and checkout semantics.
 for (const check of [
   'catalog_subset_default_12','catalog_subset_hard_cap_20','macro_sections_capped_3',
@@ -125,7 +135,7 @@ assert.match(journeyReadiness, /commercial_write_off/);
 assert.match(journeyReadiness, /bling_off/);
 assert.match(journeyReadiness, /grant execute on function public\.get_whatsapp_flow_v31_commercial_journey_readiness_v1\(\) to service_role/);
 
-// Candidate metadata/preflight must describe the same V23 runtime that the Edge invokes.
+// Historical V23 metadata remains reproducible; V24 is asserted by the newer owner/readiness contract.
 assert.match(runtime23Meta, /'handler_version'.*'v23'/s);
 assert.match(runtime23Meta, /'edge_version',44/);
 assert.match(runtime23Meta, /checkout_contact_source/);
@@ -156,11 +166,12 @@ assert.match(ingest, /interactive_type==="nfm_reply"/);
 assert.match(ingest, /interactiveResponseJson/);
 assert.match(ingest, /process_whatsapp_flow_nfm_reply_v1/);
 
-// Edge: V31 always remains owner-only and routes to the current deterministic V23 handler.
+// Edge: V31 always remains owner-only and routes to the current deterministic V24 handler.
 assert.match(edge, /resolvedDefinitionSlug==="flow-cestas-comercial-v8-stable"/);
 assert.match(edge, /flow_candidate_homologation_only/);
 assert.match(edge, /if\(!await ownerHomologationAllowed\(sb,resolved\)\)/);
-assert.match(edge, /definitionSlug==="flow-cestas-comercial-v8-stable"[\s\S]*handle_whatsapp_flow_commercial_exchange_v23/);
+assert.match(edge, /definitionSlug==="flow-cestas-comercial-v8-stable"[\s\S]*handle_whatsapp_flow_commercial_exchange_v24/);
+assert.doesNotMatch(edge, /definitionSlug==="flow-cestas-comercial-v8-stable"[\s\S]{0,220}handle_whatsapp_flow_commercial_exchange_v23/);
 assert.doesNotMatch(edge, /definitionSlug==="flow-cestas-comercial-v8-stable"[\s\S]{0,220}handle_whatsapp_flow_commercial_exchange_v22/);
 assert.match(edge, /!readiness\?\.data_exchange_enabled/);
 assert.match(edge, /claim_whatsapp_flow_request_v1/);
@@ -187,4 +198,4 @@ for (let version = 18; version <= 22; version++) {
   assert.match(runtime, new RegExp(`grant execute on function public\\.handle_whatsapp_flow_commercial_exchange_v${version}\\([^;]+\\) to service_role`));
 }
 
-console.log('WhatsApp Flow V31 runtime V23 + owner-only homologation + bounded catalog + canonical checkout + terminal nfm_reply contract: ok');
+console.log('WhatsApp Flow V31 runtime V24 + owner-only homologation + bounded catalog + canonical checkout + terminal nfm_reply contract: ok');
