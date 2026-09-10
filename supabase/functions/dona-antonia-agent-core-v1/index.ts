@@ -36,6 +36,10 @@ Para múltiplas buscas de produto, proponha no máximo uma vitrine adicional no 
 Antes de pedir novamente cadastro/endereço, consulte as ferramentas compactas de estado quando elas estiverem disponíveis. Nunca tente inferir dados pessoais ausentes.
 Em estados de checkout, sales_state.awaiting é contexto determinístico. Use as ferramentas governadas de cadastro, endereço e localizador; os dados da mensagem atual são injetados pelo backend e não devem ser repetidos como argumentos da ferramenta.
 Para checkout de produtos avulsos, use wa_start_order_checkout; para cesta selecionada, use wa_start_basket_checkout. Em shadow ambas as ações permanecem simuladas.
+Quando o cliente disser que quer finalizar, fechar ou prosseguir e já houver carrinho, não peça uma autorização redundante para iniciar o checkout: consulte o estado necessário e use a ferramenta de checkout correta. A confirmação final do pedido continua sendo uma etapa separada e explícita.
+Se o cliente quiser trocar, retirar, aumentar ou personalizar itens de uma cesta, conduza a alteração pela jornada/Flow governado; não transforme o chat em formulário de substituições quando o Flow estiver disponível.
+Pedidos de mudança de endereço durante carrinho ou checkout devem usar wa_request_address_flow quando a intenção estiver clara, mesmo que o cliente use palavras diferentes de "mudar endereço"; o backend continua validando elegibilidade.
+Se a decisão for needs_human=true ou next_action=handoff, chame wa_handoff_human no mesmo turno, salvo se a evidência indicar handoff já aberto. Nunca diga que encaminhou sem acionar a ferramenta governada.
 Faça poucas perguntas. Quando a intenção estiver clara, aja/responda com o que já é conhecido. Não prometa horário exato de entrega sem dado determinístico.
 Ações reversíveis podem ser propostas; compromissos como confirmar pedido exigem confirmação explícita e validação do backend. Em shadow nenhuma escrita é efetivada.
 Handoff humano tem precedência absoluta. Se faltar informação crítica, não improvise: esclareça ou encaminhe.
@@ -64,7 +68,7 @@ function allowedForTopic(topic:string,allNames:string[]){
     greeting:["wa_link_customer_identity","wa_handoff_human"],
     basket:basketCommerce,
     basket_customization:[...basketState,"wa_get_basket_contents","wa_create_basket_replacement","wa_open_basket_storefront","wa_add_more_products","wa_set_quantity","wa_replace_product","wa_get_recommendations","wa_start_basket_checkout",...core],
-    product_search:["wa_search_products","wa_get_product","wa_get_cart","wa_add_product","wa_set_quantity","wa_create_search_showcase",...core],
+    product_search:["wa_search_products","wa_get_product","wa_get_cart","wa_add_product","wa_set_quantity","wa_create_search_showcase","wa_create_basket_replacement","wa_open_basket_storefront","wa_add_more_products","wa_start_order_checkout",...core],
     product_detail:["wa_search_products","wa_get_product","wa_get_cart","wa_add_product",...core],
     cart:["wa_get_cart","wa_set_quantity","wa_replace_product","wa_confirm_order","wa_get_recommendations",...core],
     cart_change:["wa_get_cart","wa_search_products","wa_get_product","wa_add_product","wa_set_quantity","wa_replace_product",...core],
@@ -77,7 +81,7 @@ function allowedForTopic(topic:string,allNames:string[]){
     delivery_area:["wa_get_policy","wa_get_cart","wa_handoff_human"],
     post_sale:["wa_get_policy","wa_handoff_human"],
     human:["wa_handoff_human"],
-    general:["wa_get_policy","wa_search_products","wa_list_baskets","wa_get_cart","wa_handoff_human"]
+    general:["wa_get_policy","wa_search_products","wa_list_baskets","wa_get_cart","wa_get_basket_state","wa_get_checkout_contact","wa_request_address_flow","wa_handoff_human"]
   };
   const picked=(map[topic]||map.general).filter(x=>allNames.includes(x));return [...new Set(picked.length?picked:allNames)];
 }
