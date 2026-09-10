@@ -10,13 +10,14 @@ const files={
   privacy:'supabase/migrations/20260910150915_dona_antonia_agent_core_round3_privacy_hardening_v1.sql',
   trigger:'supabase/migrations/20260910151206_dona_antonia_agent_core_round3_inbound_trigger_fix_v1.sql',
   packet:'supabase/migrations/20260910151318_dona_antonia_agent_core_round3_packet_integration_v1.sql',
+  pgcryptoFix:'supabase/migrations/20260910154125_dona_antonia_agent_core_round3_pgcrypto_schema_fix_v1.sql',
   worker:'supabase/functions/dona-antonia-agent-learning-v1/index.ts',
   adminApi:'supabase/functions/admin-agent-learning-v1/index.ts',
   adminUi:'admin-v3/agent-learning.js',
   adminPage:'admin/aprendizados.html'
 };
 for(const [name,p] of Object.entries(files))if(!fs.existsSync(p))throw new Error(`${name}: arquivo ausente ${p}`);
-const memory=read(files.memory),queue=read(files.queue),privacy=read(files.privacy),trigger=read(files.trigger),packet=read(files.packet),worker=read(files.worker),adminApi=read(files.adminApi),adminUi=read(files.adminUi),adminPage=read(files.adminPage);
+const memory=read(files.memory),queue=read(files.queue),privacy=read(files.privacy),trigger=read(files.trigger),packet=read(files.packet),pgcryptoFix=read(files.pgcryptoFix),worker=read(files.worker),adminApi=read(files.adminApi),adminUi=read(files.adminUi),adminPage=read(files.adminPage);
 
 must(memory,'learning_write_enabled=false','gate de escrita');
 must(memory,'global_candidate_autopublish_enabled=false','autopublicação');
@@ -42,6 +43,9 @@ must(packet,'get_agent_core_selective_memory_v1','memória seletiva no pacote');
 must(packet,'search_service_knowledge_text_v1','busca textual no pacote');
 must(packet,"'global_learning_requires_human_review',true",'revisão humana no pacote');
 must(packet,"'sensitive_attributes_excluded',true",'política de memória no pacote');
+
+must(pgcryptoFix,'extensions.digest','pgcrypto qualificado');
+must(pgcryptoFix,'set search_path=\'\'','security definer com search_path fechado');
 
 must(worker,'store:false','Responses API sem armazenamento');
 must(worker,'gpt-5.6-luna','modelo de aprendizagem');
