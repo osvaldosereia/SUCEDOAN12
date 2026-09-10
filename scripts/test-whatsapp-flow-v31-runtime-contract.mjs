@@ -5,6 +5,7 @@ const read = (path) => readFileSync(path, 'utf8');
 
 const guard = read('supabase/migrations/20260910124500_whatsapp_flow_v31_targeted_homologation_guard_v5.sql');
 const runtime = read('supabase/migrations/20260910125000_whatsapp_flow_v31_runtime_v18_v22_backfill.sql');
+const allowlist = read('supabase/migrations/20260910142700_whatsapp_flow_v31_owner_allowlist_purpose_unification_v1.sql');
 const edge = read('supabase/functions/whatsapp-flow-data-exchange-v1/index.ts');
 const cards = read('supabase/functions/whatsapp-flow-data-exchange-v1/card-images.ts');
 const crypto = read('supabase/functions/whatsapp-flow-data-exchange-v1/crypto.ts');
@@ -32,6 +33,12 @@ assert.match(guard, /target_conversation_consistent/);
 assert.match(guard, /queue_and_dispatch_whatsapp_flow_owner_homologation_v5/);
 assert.match(guard, /get_whatsapp_flow_v31_homologation_preflight_v2\(null,p_conversation_id\)/);
 assert.match(guard, /get_whatsapp_flow_v31_homologation_preflight_v2\(v_session_id,p_conversation_id\)/);
+
+// The token issuer and preflight/lease must share the same single owner-only allowlist purpose.
+assert.match(allowlist, /flow_v31_owner_homologation/);
+assert.match(allowlist, /controlled_live_homologation/);
+assert.match(allowlist, /issue_whatsapp_flow_owner_homologation_token_v1/);
+assert.doesNotMatch(allowlist, /insert\s+into\s+public\.whatsapp_test_allowlist/i);
 
 // Owner-only outbound must carry a dedicated homologation session marker and the exact Flow identity issued by the token helper.
 assert.match(guard, /queue_and_dispatch_whatsapp_flow_owner_homologation_v1/);
