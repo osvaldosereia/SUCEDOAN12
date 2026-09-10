@@ -92,7 +92,7 @@ must(admin,'owner_required','publicação continua owner-only');
 must(admin,'search_whatsapp_sellable_products_v1','Admin consulta catálogo próprio');
 
 // Interface do MVP esconde complexidade técnica.
-for(const label of ['O que a IA deve saber','Como a IA deve atender','Regras importantes'])must(page,label,`Admin simples contém ${label}`);
+for(const label of ['O que a IA deve saber','Como a IA deve atender','Roteiro e regras'])must(page,label,`Admin simples contém ${label}`);
 must(page,'Preço, estoque e fotos dos produtos continuam vindo automaticamente','Admin explica fonte dinâmica');
 must(ui,"o.priority=90",'prioridade técnica é automática');
 must(ui,"channel_scope:['whatsapp']",'canal técnico é automático');
