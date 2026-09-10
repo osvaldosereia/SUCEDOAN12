@@ -50,11 +50,10 @@ def strip_product_list_component_media(component):
         component.pop('media-size', None)
     if ctype == 'NavigationList':
         raise AssertionError('NavigationList is forbidden in stable text-only product lists')
-    for child_key in ('children',):
-        children = component.get(child_key)
-        if isinstance(children, list):
-            for child in children:
-                strip_product_list_component_media(child)
+    children = component.get('children')
+    if isinstance(children, list):
+        for child in children:
+            strip_product_list_component_media(child)
 
 
 product_screens = 0
@@ -67,7 +66,6 @@ for screen in flow.get('screens', []):
         for child in layout.get('children', []):
             strip_product_list_component_media(child)
 
-        # Hard guard: product-list screens must not contain standalone Images.
         def assert_no_images(node):
             if isinstance(node, dict):
                 assert node.get('type') != 'Image', f'{sid}: standalone Image forbidden'
@@ -96,14 +94,13 @@ for src, targets in flow.get('routing_model', {}).items():
     for target in targets:
         assert target in ids, f'missing route target {target}'
 
-flow.setdefault('_diagnostic', {})
-flow['_diagnostic'] = {
-    'base': 'flow-cestas-comercial-v6.json',
-    'purpose': 'stable-base text-only product lists',
-    'product_list_media': False,
-    'basket_media': True,
-    'navigation_list_in_product_screens': False,
-}
+# Meta Flow JSON accepts only schema-defined root keys. Never persist internal
+# diagnostics/metadata in the artifact sent to Meta.
+allowed_root_keys = {'version', 'data_api_version', 'routing_model', 'screens'}
+for key in list(flow.keys()):
+    if key not in allowed_root_keys:
+        flow.pop(key, None)
+assert set(flow.keys()) <= allowed_root_keys, f'unsupported root keys: {set(flow) - allowed_root_keys}'
 
 DST.write_text(json.dumps(flow, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 print(f'wrote {DST} with {len(flow["screens"])} screens; product_screens={product_screens}')
