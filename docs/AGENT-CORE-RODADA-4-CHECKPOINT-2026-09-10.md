@@ -12,7 +12,7 @@ Rodada 4 em andamento, com a fundação de consolidação protegida por gates fa
 - pós-processamento shadow consolidado em `trg_agent_core_shadow_postprocess_v1`;
 - duplicidade de `updated_at` removida;
 - dispatcher e recovery canônicos alinhados ao `conversation-worker-v3`;
-- `conversation-worker-v2` mantido apenas como compatibilidade histórica;
+- `conversation-worker-v2` mantido apenas como compatibilidade histórica/rollback;
 - busca comercial do Agent Core isolada em `search_whatsapp_sellable_products_agent_v1`, sem alterar a busca do worker V3;
 - replay histórico seguro V3, restrito a famílias stateless e homologação;
 - pacote histórico realmente neutro: sem estado atual, carrinho, cliente, resumo ou memória atual;
@@ -28,11 +28,17 @@ Rodada 4 em andamento, com a fundação de consolidação protegida por gates fa
 - captura estrutural pré-router criada em `agent_core_pre_router_snapshots`, somente para homologação, sem corpo da mensagem, transcrição, `customer_id` ou PII de payload;
 - trigger `a0z_agent_core_pre_router_state_v1` roda depois do release gate e antes do primeiro router comercial, permitindo futura comparação stateful a partir do estado correto anterior à ação;
 - snapshot é fail-open e não interfere no atendimento se a telemetria falhar;
-- `get_agent_core_round4_stateful_evidence_report_v1`: relatório stateful V14 que cruza somente novos snapshots pré-router com a ação efetivamente tomada pelo legado;
+- `get_agent_core_round4_stateful_evidence_report_v1`: relatório V14 que cruza somente novos snapshots pré-router com a ação efetivamente tomada pelo legado;
 - a V14 proíbe backfill histórico stateful, não carrega PII de payload e exige pelo menos 3 amostras por núcleo crítico antes de marcar `evidence_ready=true`;
 - núcleos críticos iniciais: `basket_customer_data_processed`, `confirm_order`, `basket_ready_for_human` e `change_basket_delivery_address`;
-- `get_agent_core_round4_consolidated_readiness_v10` inclui explicitamente `stateful_evidence_ready`, mas mantém execução e aposentadoria forçadas a `false`;
-- migrations V6–V14 e contratos correspondentes reproduzidos no GitHub/CI.
+- `get_agent_core_round4_consolidated_readiness_v10` inclui explicitamente `stateful_evidence_ready`, mantendo execução e aposentadoria forçadas a `false`;
+- V15/V16 adicionaram `get_agent_core_round4_worker_v2_retirement_readiness_v1`, auditando runtime de banco sem confundir a própria string de diagnóstico com uma chamada real ao endpoint V2;
+- V16 confirma V3 como caminho canônico de banco: trigger V3 presente, trigger V2 ausente, cron V3 presente, cron V2 ausente, wrappers V2 encaminhando para V3 e zero funções atuais atribuindo URL ao endpoint V2;
+- `get_agent_core_round4_consolidated_readiness_v12` inclui o readiness do worker V2, mas mantém `worker_v2_edge_removal_authorized=false`, `retirement_execution_permitted=false` e `global_retirement_ready=false`;
+- `scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs` impede migrations posteriores ao cutover ou Edges atuais de reintroduzirem chamada ao endpoint V2;
+- `scripts/whatsapp-operational-release-v1.test.mjs` passou a validar o `conversation-worker-v3` como implementação canônica, mantendo migrations V2 apenas como evidência histórica;
+- `.github/workflows/test-conversation-worker-v1.yml` agora inclui `conversation-worker-v3` no gatilho e no `deno check`, mantendo V2 apenas para compatibilidade/rollback;
+- migrations V6–V16 e contratos correspondentes reproduzidos no GitHub/CI.
 
 ## Paridade observada atual
 
@@ -64,23 +70,38 @@ Nenhum router comercial foi removido nesta execução.
 
 ## Observabilidade stateful
 
-Os eventos históricos mostraram que vários resultados stateful (`basket_customer_data_processed`, `confirm_order`, `basket_ready_for_human` e alterações de endereço) não tinham um snapshot confiável do estado imediatamente anterior à ação. Comparar o Agent Core usando o estado posterior seria inválido.
+Os eventos históricos mostraram que resultados stateful como `basket_customer_data_processed`, `confirm_order`, `basket_ready_for_human` e alterações de endereço não tinham um snapshot confiável do estado imediatamente anterior à ação. Comparar o Agent Core usando o estado posterior seria inválido.
 
 Por isso foi criado `agent_core_pre_router_snapshots`. Ele grava apenas estado estrutural: modo/stage, `awaiting`, presença de sessão/carrinho, validade estrutural, flags de cadastro/endereço, janela de serviço e handoff. Não grava texto do cliente nem dados cadastrais.
 
-No momento da criação havia `snapshot_rows=0`, o que é esperado: a captura não faz backfill artificial e passa a registrar somente novos jobs de homologação. Isso evita fabricar evidência histórica falsa.
+A captura não faz backfill artificial e registra somente novos jobs de homologação. A V14 transforma esses novos snapshots em relatório de cobertura por ação/estado. Enquanto qualquer núcleo crítico tiver menos de 3 amostras, `stateful_evidence_ready=false`. Mesmo quando a cobertura atingir o mínimo, a V14 não autoriza automaticamente execução ou aposentadoria; ambas continuam exigindo gate posterior e autorização explícita.
 
-A V14 transforma esses novos snapshots em um relatório de cobertura por ação e estado. Enquanto qualquer núcleo crítico tiver menos de 3 amostras, `stateful_evidence_ready=false`. Mesmo quando a cobertura atingir o mínimo, V14 não autoriza automaticamente execução ou aposentadoria; ambas continuam exigindo gate posterior e autorização explícita.
+No último fechamento deste checkpoint, `snapshot_rows=0` e o motivo do readiness permanecia `awaiting_new_homologation_snapshots`.
 
-## Worker V2
+## Worker V2/V3
 
-O banco, dispatcher e recovery canônicos usam V3. A auditoria dos três cenários Make ativos confirmou que nenhum deles aponta para `conversation-worker-v2`:
+O runtime de banco está canônico em V3. O readiness V16 confirmou:
 
-- inbound usa somente as Edges de ingestão do Supabase;
-- outbound recebe jobs do Supabase e transporta mensagens para Meta/OpenAI TTS;
-- consulta de CPF usa Bling.
+- `database_runtime_ready=true`;
+- `canonical_dispatch_trigger_present=true`;
+- `legacy_dispatch_trigger_absent=true`;
+- `canonical_recovery_cron_present=true`;
+- `legacy_recovery_cron_absent=true`;
+- `dispatch_v2_wrapper_forwards_to_v3=true`;
+- `recovery_v2_wrapper_forwards_to_v3=true`;
+- `current_db_functions_calling_v2_endpoint=0`;
+- `endpoint_detector=url_assignment_only`;
+- `edge_v2_removal_authorized=false`;
+- `automatic_removal_allowed=false`.
 
-No GitHub ainda existem referências históricas em documentação, `supabase/config.toml`, migrations antigas e alguns testes. A Edge V2 continua preservada como compatibilidade histórica até a limpeza dessas referências; não existe motivo técnico para recolocá-la no caminho canônico.
+A auditoria dos três cenários Make ativos também confirmou que nenhum aponta para `conversation-worker-v2`: inbound usa Edges de ingestão do Supabase; outbound transporta mensagens para Meta/OpenAI TTS; e consulta de CPF usa Bling.
+
+A Edge V2 continua preservada como compatibilidade histórica/rollback. Referências antigas em migrations e documentos não são tratadas como dependência ativa. O CI agora impede que uma migration posterior ao cutover ou uma Edge atual volte a chamar o endpoint V2.
+
+## CI validado
+
+- CI Dona Antônia Agent Core: V14 e checkpoint passaram; posteriormente o gate V16 de aposentadoria V2 também passou integralmente (Node + Deno).
+- `Test Dona Antonia conversation worker`: run 994, commit `248054fd3c0f640c64cec96ed7d36c4324d0756a`, concluído com `success`, já validando V3 como worker canônico e executando `deno check` em V2 + V3.
 
 ## Make
 
@@ -106,6 +127,7 @@ Make continua sendo transporte/integração temporária; a inteligência comerci
 - `stateful_execution_permitted_now=false`;
 - `retirement_execution_permitted=false`;
 - `global_retirement_ready=false`;
+- `worker_v2_edge_removal_authorized=false`;
 - `stateful_evidence_ready=false` enquanto não houver cobertura mínima de novos snapshots;
 - aprendizagem automática/global continua sem autopublicação;
 - nenhum pedido foi enviado ao Bling por este trabalho;
@@ -113,12 +135,12 @@ Make continua sendo transporte/integração temporária; a inteligência comerci
 
 ## Rollback
 
-A Edge v6 pode ser revertida para a versão anterior do código do Agent Core sem alteração de schema; o preview V2 apenas adiciona validações e delega a policy-base V1. O snapshot pré-router é telemetria fail-open: em rollback, basta remover `a0z_agent_core_pre_router_state_v1`; nenhum dado transacional depende da tabela de snapshots. O relatório V14 é somente leitura e pode ser removido sem afetar estado comercial. Dispatcher/recovery V2 continuam disponíveis como wrappers históricos para V3.
+A Edge v6 pode ser revertida para a versão anterior do Agent Core sem alteração de schema; o preview V2 apenas adiciona validações e delega a policy-base V1. O snapshot pré-router é telemetria fail-open: em rollback, basta remover `a0z_agent_core_pre_router_state_v1`; nenhum dado transacional depende da tabela. O relatório V14 é somente leitura. Dispatcher/recovery V2 continuam disponíveis como wrappers históricos para V3, e a própria Edge V2 permanece implantada para rollback enquanto sua remoção não for explicitamente autorizada.
 
 ## Próximo ponto programável
 
 1. coletar novos snapshots estruturais em homologação e usar V14 para medir cobertura stateful real, sem replay de estado inventado;
-2. decompor os routers bloqueados usando as tools/preconditions já registradas;
-3. atualizar referências históricas/testes do `conversation-worker-v2` e preparar sua retirada definitiva sem apagar evidência documental;
+2. decompor routers bloqueados usando as tools/preconditions já registradas, sem desativá-los antes da evidência;
+3. manter a Edge V2 somente como rollback até decisão posterior; runtime ativo deve continuar V3;
 4. manter cada retirada individual sob gate por router;
 5. somente depois avançar para a Rodada 5 de evals em escala.
