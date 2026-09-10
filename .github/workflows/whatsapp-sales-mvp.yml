@@ -7,8 +7,12 @@ on:
       - 'supabase/migrations/20260908211*.sql'
       - 'supabase/migrations/20260908223*.sql'
       - 'supabase/migrations/2026090823*.sql'
+      - 'supabase/migrations/20260910150*.sql'
+      - 'supabase/migrations/20260910151*.sql'
       - 'supabase/functions/conversation-worker-v3/**'
       - 'supabase/functions/admin-service-intelligence-v1/**'
+      - 'supabase/functions/dona-antonia-agent-learning-v1/**'
+      - 'supabase/functions/admin-agent-learning-v1/**'
       - 'supabase/functions/basket-shop-v1/**'
       - 'supabase/functions/admin-product-categories-v1/**'
       - 'scripts/bling-order-writer-v1.mjs'
@@ -21,10 +25,13 @@ on:
       - 'scripts/test-whatsapp-release-pregate-v1.mjs'
       - 'scripts/test-whatsapp-basket-return-link-v1.mjs'
       - 'scripts/test-whatsapp-interactive-escape-fix-v1.mjs'
+      - 'scripts/test-agent-core-round3-contract-v1.mjs'
       - 'admin/index.html'
       - 'admin/inteligencia.html'
+      - 'admin/aprendizados.html'
       - 'admin/config.js'
       - 'admin-v3/service-intelligence.*'
+      - 'admin-v3/agent-learning.*'
       - 'admin-v3/product-categories-inline.*'
       - 'cesta/**'
       - '.github/workflows/whatsapp-sales-mvp.yml'
@@ -34,8 +41,12 @@ on:
       - 'supabase/migrations/20260908211*.sql'
       - 'supabase/migrations/20260908223*.sql'
       - 'supabase/migrations/2026090823*.sql'
+      - 'supabase/migrations/20260910150*.sql'
+      - 'supabase/migrations/20260910151*.sql'
       - 'supabase/functions/conversation-worker-v3/**'
       - 'supabase/functions/admin-service-intelligence-v1/**'
+      - 'supabase/functions/dona-antonia-agent-learning-v1/**'
+      - 'supabase/functions/admin-agent-learning-v1/**'
       - 'supabase/functions/basket-shop-v1/**'
       - 'supabase/functions/admin-product-categories-v1/**'
       - 'scripts/bling-order-writer-v1.mjs'
@@ -48,10 +59,13 @@ on:
       - 'scripts/test-whatsapp-release-pregate-v1.mjs'
       - 'scripts/test-whatsapp-basket-return-link-v1.mjs'
       - 'scripts/test-whatsapp-interactive-escape-fix-v1.mjs'
+      - 'scripts/test-agent-core-round3-contract-v1.mjs'
       - 'admin/index.html'
       - 'admin/inteligencia.html'
+      - 'admin/aprendizados.html'
       - 'admin/config.js'
       - 'admin-v3/service-intelligence.*'
+      - 'admin-v3/agent-learning.*'
       - 'admin-v3/product-categories-inline.*'
       - 'cesta/**'
       - '.github/workflows/whatsapp-sales-mvp.yml'
@@ -82,6 +96,7 @@ jobs:
           node scripts/test-whatsapp-release-pregate-v1.mjs
           node scripts/test-whatsapp-basket-return-link-v1.mjs
           node scripts/test-whatsapp-interactive-escape-fix-v1.mjs
+          node scripts/test-agent-core-round3-contract-v1.mjs
       - name: Catálogo próprio, carrinho e inteligência em PostgreSQL isolado
         env:
           TEST_RUNTIME: ${{ runner.temp }}/whatsapp-sales-mvp
@@ -89,6 +104,7 @@ jobs:
       - name: Validar JavaScript do Admin, vitrine e writer
         run: |
           node --check admin-v3/service-intelligence.js
+          node --check admin-v3/agent-learning.js
           node --check admin-v3/product-categories-inline.js
           node --check cesta/app.js
           node --check cesta/whatsapp-return.js
@@ -100,6 +116,8 @@ jobs:
       - run: |
           deno check supabase/functions/conversation-worker-v3/index.ts
           deno check supabase/functions/admin-service-intelligence-v1/index.ts
+          deno check supabase/functions/dona-antonia-agent-learning-v1/index.ts
+          deno check supabase/functions/admin-agent-learning-v1/index.ts
           deno check supabase/functions/basket-shop-v1/index.ts
           deno check supabase/functions/admin-product-categories-v1/index.ts
       - name: Regressão crítica do worker existente
