@@ -30,6 +30,7 @@ on:
       - 'scripts/test-agent-core-round4-contract-evidence-epoch-v29.mjs'
       - 'scripts/test-agent-core-round4-stateless-parity-v30.mjs'
       - 'scripts/test-agent-core-round4-safe-replay-dispatcher-v31.mjs'
+      - 'scripts/test-agent-core-round4-customer-data-address-v32.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
@@ -61,6 +62,7 @@ on:
       - 'scripts/test-agent-core-round4-contract-evidence-epoch-v29.mjs'
       - 'scripts/test-agent-core-round4-stateless-parity-v30.mjs'
       - 'scripts/test-agent-core-round4-safe-replay-dispatcher-v31.mjs'
+      - 'scripts/test-agent-core-round4-customer-data-address-v32.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
@@ -109,6 +111,8 @@ jobs:
         run: node scripts/test-agent-core-round4-stateless-parity-v30.mjs
       - name: Contract · Round 4 safe replay dispatcher V31
         run: node scripts/test-agent-core-round4-safe-replay-dispatcher-v31.mjs
+      - name: Contract · Round 4 customer data/address V32
+        run: node scripts/test-agent-core-round4-customer-data-address-v32.mjs
       - name: Contract · Worker V2 retirement guard
         run: node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
       - name: Syntax · Admin learning
