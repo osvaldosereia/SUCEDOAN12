@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <title>Dona Antônia · Aprendizados da IA</title>
+  <link rel="stylesheet" href="../admin-v3/style.css?v=20260907-02">
+  <link rel="stylesheet" href="../admin-v3/agent-learning.css?v=20260910-01">
+</head>
+<body>
+<div class="al-page">
+  <header class="al-topbar">
+    <div class="al-topbar-copy">
+      <a class="al-back" href="./inteligencia.html" aria-label="Voltar para Inteligência">←</a>
+      <div>
+        <div class="eyebrow">Agent Core · memória e aprendizagem</div>
+        <h1>Aprendizados para revisar</h1>
+        <p>A IA pode sugerir melhorias com base no atendimento, mas nenhuma regra global é publicada automaticamente.</p>
+      </div>
+    </div>
+    <button id="alRefresh" class="button primary" type="button">Atualizar</button>
+  </header>
+
+  <main class="al-shell">
+    <div id="alAuthWarning" class="ops-alert hidden">Faça login no Admin principal antes de abrir esta tela.</div>
+
+    <section id="alMetrics" class="metrics"></section>
+
+    <section class="panel al-policy">
+      <div class="al-policy-icon">✓</div>
+      <div><strong>Aprendizado com revisão humana em duas etapas</strong><p>O candidato primeiro precisa ser aprovado aqui para virar rascunho. Só depois o conteúdo pode ser publicado na Inteligência do Atendimento por uma pessoa autorizada.</p></div>
+      <span class="al-safe">Autopublicação bloqueada</span>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><div class="eyebrow">Segurança operacional</div><h2>Estado da aprendizagem</h2></div></div>
+      <div class="al-guard-grid">
+        <div class="al-guard"><span>Agent Core</span><strong id="alRuntime">—</strong></div>
+        <div class="al-guard"><span>Escrita automática</span><strong id="alWriteGate">—</strong></div>
+        <div class="al-guard"><span>Autopublicação</span><strong id="alAutopublish">—</strong></div>
+        <div class="al-guard"><span>Fila</span><strong id="alQueue">—</strong></div>
+        <div class="al-guard"><span>Busca vetorial</span><strong id="alVector">—</strong></div>
+      </div>
+    </section>
+
+    <div class="al-filters">
+      <select id="alStatus" aria-label="Filtrar por status">
+        <option value="">Todos os estados</option>
+        <option value="draft">A revisar</option>
+        <option value="reviewing">Rascunho criado</option>
+        <option value="rejected">Rejeitados</option>
+        <option value="published">Publicados</option>
+      </select>
+      <span class="muted">A fila pode permanecer vazia enquanto a escrita automática estiver desligada.</span>
+    </div>
+
+    <div class="al-layout">
+      <section class="panel">
+        <div class="panel-head"><div><div class="eyebrow">Candidatos</div><h2>Fila de revisão</h2></div></div>
+        <div id="alList" class="al-list"><div class="al-empty">Carregando…</div></div>
+      </section>
+      <section id="alDetail" class="panel al-detail">
+        <div class="eyebrow">Revisão humana</div><h2>Selecione um aprendizado</h2><p class="al-detail-copy">Veja o conteúdo proposto antes de decidir. Nada aqui é publicado automaticamente.</p>
+      </section>
+    </div>
+
+    <div id="toastRegion" class="toasts" aria-live="polite"></div>
+  </main>
+</div>
+<script src="./config.js?v=20260908-02"></script>
+<script src="../admin-v3/agent-learning.js?v=20260910-01"></script>
+</body>
+</html>
