@@ -28,7 +28,7 @@
               "start": {
                 "type": "object",
                 "properties": {
-                  "src": {"type": "string"},
+                  "image": {"type": "string"},
                   "alt-text": {"type": "string"}
                 }
               },
@@ -64,7 +64,7 @@
                 "metadata": ""
               },
               "start": {
-                "src": "iVBORw0KGgoAAA...",
+                "image": "iVBORw0KGgoAAA...",
                 "alt-text": "Cesta Econômica"
               },
               "end": {"title": "R$ 92,00"},
@@ -82,8 +82,6 @@
       "layout": {
         "type": "SingleColumnLayout",
         "children": [
-          {"type": "TextHeading", "text": "Cestas Básicas Dona Antônia"},
-          {"type": "TextBody", "text": "Toque em uma cesta para ver o que vem nela."},
           {
             "type": "NavigationList",
             "name": "basket_list",
@@ -110,7 +108,7 @@
             }
           },
           "__example__": [
-            {"id": "customize", "title": "Quero trocar produtos", "description": "Abre a vitrine para personalizar"},
+            {"id": "customize", "title": "Quero trocar produtos", "description": "Abrir a vitrine para personalizar"},
             {"id": "standard", "title": "Quero encomendar a cesta padrão", "description": "Levar exatamente como está"}
           ]
         }
