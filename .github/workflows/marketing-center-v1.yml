@@ -20,6 +20,7 @@ on:
       - 'supabase/migrations/20260910094600_marketing_asset_editor_privileges_v5_fix.sql'
       - 'supabase/migrations/20260910104500_marketing_render_media_registry_v6.sql'
       - 'supabase/migrations/20260910113000_marketing_private_media_v7.sql'
+      - 'supabase/migrations/20260910114500_marketing_carousel_slides_v8.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -31,6 +32,7 @@ on:
       - 'scripts/test-marketing-workflow-v1.mjs'
       - 'scripts/test-marketing-editor-v1.mjs'
       - 'scripts/test-marketing-private-media-v1.mjs'
+      - 'scripts/test-marketing-carousel-v1.mjs'
       - '.github/workflows/marketing-center-v1.yml'
   push:
     branches: [main]
@@ -52,6 +54,7 @@ on:
       - 'supabase/migrations/20260910094600_marketing_asset_editor_privileges_v5_fix.sql'
       - 'supabase/migrations/20260910104500_marketing_render_media_registry_v6.sql'
       - 'supabase/migrations/20260910113000_marketing_private_media_v7.sql'
+      - 'supabase/migrations/20260910114500_marketing_carousel_slides_v8.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -63,6 +66,7 @@ on:
       - 'scripts/test-marketing-workflow-v1.mjs'
       - 'scripts/test-marketing-editor-v1.mjs'
       - 'scripts/test-marketing-private-media-v1.mjs'
+      - 'scripts/test-marketing-carousel-v1.mjs'
 
 permissions:
   contents: read
@@ -100,6 +104,8 @@ jobs:
         run: node scripts/test-marketing-editor-v1.mjs
       - name: Validate private media safety contract
         run: node scripts/test-marketing-private-media-v1.mjs
+      - name: Validate carousel safety contract
+        run: node scripts/test-marketing-carousel-v1.mjs
       - name: Validate deterministic WebP renderer
         run: node scripts/test-marketing-render-v1.mjs
       - name: Validate economical MP4 renderer
