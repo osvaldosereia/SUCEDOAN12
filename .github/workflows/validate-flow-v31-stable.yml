@@ -1,0 +1,86 @@
+name: Validate WhatsApp Flow V31 Stable
+
+on:
+  push:
+    branches:
+      - flow-v29-fast-owner-test
+    paths:
+      - 'scripts/build-flow-v31-stable-text-products.py'
+      - 'scripts/validate-flow-v31-commercial-contract.py'
+      - 'whatsapp/flows/flow-cestas-comercial-v6.json'
+      - 'whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json'
+      - '.github/workflows/validate-flow-v31-stable.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: flow-v29-fast-owner-test
+
+      - name: Build stable candidate
+        run: python scripts/build-flow-v31-stable-text-products.py
+
+      - name: Validate JSON
+        run: python -m json.tool whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json >/dev/null
+
+      - name: Validate full commercial contract
+        run: python scripts/validate-flow-v31-commercial-contract.py
+
+      - name: Guard stable UX contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          p='whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json'
+          f=json.load(open(p,encoding='utf-8'))
+          assert f['version']=='7.3'
+          assert f['data_api_version']=='3.0'
+          allowed_root={'version','data_api_version','routing_model','screens'}
+          assert set(f)<=allowed_root, f"unsupported Meta root keys: {set(f)-allowed_root}"
+          assert not any(str(k).startswith('_') for k in f), 'internal root metadata forbidden'
+          screens={s['id']:s for s in f['screens']}
+          assert 'CESTAS' in screens
+          basket_props=screens['CESTAS']['data']['baskets']['items']['properties']
+          assert 'image' in basket_props
+
+          product_screens=[s for s in f['screens'] if s['id'].startswith('PRODUTOS_')]
+          assert len(product_screens)>=3
+
+          def walk(x):
+              if isinstance(x,dict):
+                  yield x
+                  for v in x.values():
+                      yield from walk(v)
+              elif isinstance(x,list):
+                  for v in x:
+                      yield from walk(v)
+
+          for s in product_screens:
+              for node in walk(s['layout']):
+                  assert node.get('type')!='NavigationList', f"{s['id']}: NavigationList forbidden"
+                  assert node.get('type')!='Image', f"{s['id']}: Image forbidden"
+              raw=json.dumps(s,ensure_ascii=False)
+              assert 'media-size' not in raw, f"{s['id']}: media-size forbidden"
+          print('flow_v31_stable_contract_ok')
+          PY
+
+      - name: Persist validated candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json'
+          if [ -z "$(git status --porcelain -- "$TARGET")" ]; then
+            echo 'validated_candidate_already_current=true'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$TARGET"
+          git commit -m 'Flow V31: persist validated stable candidate [skip ci]'
+          git push origin HEAD:flow-v29-fast-owner-test
