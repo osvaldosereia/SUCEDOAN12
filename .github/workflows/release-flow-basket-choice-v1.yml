@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate minimal flow locally
+      - name: Validate simple basket flow locally
         shell: bash
         run: |
           set -euo pipefail
@@ -35,12 +35,19 @@ jobs:
           python - <<'PY'
           import json
           f=json.load(open('whatsapp/flows/flow-cestas-escolha-v1.json',encoding='utf-8'))
-          assert f['version']=='7.1'
+          assert f['version']=='7.3'
           assert f['data_api_version']=='3.0'
-          assert [s['id'] for s in f['screens']]==['CESTAS','ESCOLHIDA']
-          assert f['screens'][1].get('terminal') is True
-          assert f['routing_model']=={'CESTAS':['ESCOLHIDA'],'ESCOLHIDA':[]}
-          print('minimal_basket_choice_flow_ok')
+          assert [s['id'] for s in f['screens']]==['CESTAS','DETALHE','ENVIADO']
+          assert f['routing_model']=={'CESTAS':['DETALHE'],'DETALHE':['ENVIADO'],'ENVIADO':[]}
+          assert f['screens'][2].get('terminal') is True
+          nav=next(c for c in f['screens'][0]['layout']['children'] if c.get('type')=='NavigationList')
+          assert nav['list-items']=='${data.baskets}'
+          form=next(c for c in f['screens'][1]['layout']['children'] if c.get('type')=='Form')
+          radios=next(c for c in form['children'] if c.get('type')=='RadioButtonsGroup')
+          footer=next(c for c in form['children'] if c.get('type')=='Footer')
+          assert radios['name']=='decision'
+          assert footer['label']=='Enviar'
+          print('simple_photo_basket_flow_ok')
           PY
 
       - name: Require Meta token
