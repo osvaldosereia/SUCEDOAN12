@@ -126,4 +126,6 @@ Critério de saída: atendimento tecnicamente pronto. **Não aumentar canary aci
 
 ## Estado desta execução
 
-Rodada 1 iniciada. Fundação do Agent Core aplicada no Supabase em modo `observe`. Próximo passo programável: persistir migration/CI e, na Rodada 2, implementar o orquestrador com tool calling e prompt cache mantendo o worker V3 como baseline.
+- Rodada 1: **concluída** — fundação, ferramentas governadas, contexto compacto, observer shadow e CI inicial.
+- Rodada 2: **concluída** — `dona-antonia-agent-core-v1` em shadow/observe com Responses API, function calling, prompt cache, Luna + Terra crítica, limite de tools, telemetria, replays e CI ampliado. Checkpoint: `docs/AGENT-CORE-RODADA-2-CHECKPOINT-2026-09-10.md`.
+- Próximo ponto programável: **Rodada 3/6 — memória seletiva e aprendizagem assíncrona**, mantendo `learning_write_enabled=false` para publicação global e todos os gates de rollout fechados.
