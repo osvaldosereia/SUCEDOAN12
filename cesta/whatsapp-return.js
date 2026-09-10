@@ -15,17 +15,35 @@
     toast.timer=setTimeout(()=>el.classList.add("hidden"),5000);
   }
 
+  function goBack(){
+    try{ history.back(); }catch{}
+    try{ window.close(); }catch{}
+  }
+
+  function showReturnButton(){
+    if(document.getElementById("whatsappReturnFallback"))return;
+    const wrap=document.createElement("div");
+    wrap.id="whatsappReturnFallback";
+    wrap.setAttribute("role","status");
+    wrap.style.cssText="position:fixed;inset:auto 0 0 0;z-index:1000;background:#fff;border-top:1px solid #ddd;padding:12px 14px calc(12px + env(safe-area-inset-bottom));";
+    const button=document.createElement("button");
+    button.type="button";
+    button.textContent="Voltar ao WhatsApp";
+    button.style.cssText="width:100%;min-height:52px;border:0;border-radius:8px;background:#f36b21;color:#fff;font:700 16px system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;";
+    button.addEventListener("click",goBack,{passive:true});
+    wrap.appendChild(button);
+    document.body.appendChild(wrap);
+  }
+
   function returnToConversation(){
     toast("Pronto! Sua escolha foi enviada. Voltando para o WhatsApp…");
-    setTimeout(()=>{
-      try{ history.back(); }catch{}
-      try{ window.close(); }catch{}
-    },220);
+    setTimeout(goBack,120);
     setTimeout(()=>{
       if(document.visibilityState==="visible"){
-        toast("Sua escolha já está no WhatsApp. Toque em Voltar ao WhatsApp se esta tela não fechar sozinha.");
+        showReturnButton();
+        toast("Sua escolha já foi enviada. Toque em Voltar ao WhatsApp para continuar.");
       }
-    },1200);
+    },800);
   }
 
   function autoOpenAddProducts(){
