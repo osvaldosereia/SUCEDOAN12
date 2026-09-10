@@ -1,0 +1,40 @@
+name: Marketing Center V1
+
+on:
+  pull_request:
+    paths:
+      - 'admin/config.js'
+      - 'admin-v3/marketing-center.*'
+      - 'supabase/functions/admin-marketing-v1/**'
+      - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
+      - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
+      - 'supabase/config.toml'
+      - 'scripts/test-marketing-center-v1.mjs'
+      - '.github/workflows/marketing-center-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'admin/config.js'
+      - 'admin-v3/marketing-center.*'
+      - 'supabase/functions/admin-marketing-v1/**'
+      - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
+      - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
+      - 'supabase/config.toml'
+      - 'scripts/test-marketing-center-v1.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check admin JavaScript syntax
+        run: node --check admin-v3/marketing-center.js
+      - name: Validate Marketing Center safety contract
+        run: node scripts/test-marketing-center-v1.mjs
