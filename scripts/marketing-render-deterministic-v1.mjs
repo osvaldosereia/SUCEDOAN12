@@ -3,6 +3,7 @@ import path from 'node:path';
 import sharp from 'sharp';
 
 const MAX_DIMENSION = 2160;
+const MAX_SOURCE_DIMENSION = MAX_DIMENSION * 3;
 const MAX_LAYERS = 24;
 const SAFE_FONTS = new Set(['Arial','Helvetica','sans-serif','Georgia','serif']);
 
@@ -20,6 +21,16 @@ function localPath(p,base){
   const root=path.resolve(base)+path.sep;
   if(resolved!==path.resolve(base)&&!resolved.startsWith(root)) fail('source path escapes working directory');
   return resolved;
+}
+function normalizeCrop(layer={}){
+  const crop=layer.crop&&typeof layer.crop==='object'?layer.crop:{};
+  const fit=['contain','cover'].includes(crop.fit)?crop.fit:(['contain','cover'].includes(layer.fit)?layer.fit:'contain');
+  return {
+    fit,
+    x:clamp(num(crop.x,50),0,100),
+    y:clamp(num(crop.y,50),0,100),
+    scale:clamp(num(crop.scale,1),0.5,3)
+  };
 }
 function validateSpec(spec){
   if(!spec||typeof spec!=='object') fail('invalid spec');
@@ -47,6 +58,23 @@ function rectSvg(layer,canvas){
   const radius=clamp(num(layer.radius,0),0,Math.min(width,height)/2);
   return Buffer.from(`<svg width="${canvas.width}" height="${canvas.height}" xmlns="http://www.w3.org/2000/svg"><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="${radius}" fill="${escXml(safeColor(layer.fill,'#ffffff'))}"/></svg>`);
 }
+async function imageFrameBuffer(source,width,height,layer){
+  const crop=normalizeCrop(layer);
+  const input=sharp(source).rotate();
+  const meta=await input.metadata();
+  if(!meta.width||!meta.height) fail('image source has invalid dimensions');
+  const baseScale=crop.fit==='cover'?Math.max(width/meta.width,height/meta.height):Math.min(width/meta.width,height/meta.height);
+  const effectiveScale=baseScale*crop.scale;
+  const resizedWidth=Math.max(1,Math.round(meta.width*effectiveScale));
+  const resizedHeight=Math.max(1,Math.round(meta.height*effectiveScale));
+  if(resizedWidth>MAX_SOURCE_DIMENSION||resizedHeight>MAX_SOURCE_DIMENSION) fail('scaled image out of bounds');
+  const resized=await input.resize({width:resizedWidth,height:resizedHeight,fit:'fill'}).png().toBuffer();
+  const left=Math.round((width-resizedWidth)*(crop.x/100));
+  const top=Math.round((height-resizedHeight)*(crop.y/100));
+  return sharp({create:{width,height,channels:4,background:{r:0,g:0,b:0,alpha:0}}})
+    .composite([{input:resized,left,top,blend:'over'}])
+    .png().toBuffer();
+}
 async function render(specInput,{baseDir=process.cwd(),outputPath}={}){
   const spec=validateSpec(specInput);
   const background=safeColor(spec.background,'#f2f2f2');
@@ -58,8 +86,7 @@ async function render(specInput,{baseDir=process.cwd(),outputPath}={}){
       const source=localPath(layer.src,baseDir);
       const width=Math.round(clamp(num(layer.width,spec.width),1,spec.width));
       const height=Math.round(clamp(num(layer.height,spec.height),1,spec.height));
-      const fit=['contain','cover','fill','inside','outside'].includes(layer.fit)?layer.fit:'contain';
-      const buf=await sharp(source).rotate().resize({width,height,fit,background:{r:0,g:0,b:0,alpha:0}}).png().toBuffer();
+      const buf=await imageFrameBuffer(source,width,height,layer);
       composites.push({input:buf,left:Math.round(clamp(num(layer.x,0),0,Math.max(0,spec.width-width))),top:Math.round(clamp(num(layer.y,0),0,Math.max(0,spec.height-height))),blend:'over'});
     }else if(layer.type==='text') composites.push({input:textSvg(layer,spec),left:0,top:0,blend:'over'});
     else if(layer.type==='rect') composites.push({input:rectSvg(layer,spec),left:0,top:0,blend:'over'});
@@ -82,4 +109,4 @@ async function cli(){
   process.stdout.write(JSON.stringify(result)+'\n');
 }
 if(import.meta.url===`file://${process.argv[1]}`) cli().catch(e=>{console.error(e.message);process.exit(1)});
-export {render,validateSpec};
+export {render,validateSpec,normalizeCrop,imageFrameBuffer};
