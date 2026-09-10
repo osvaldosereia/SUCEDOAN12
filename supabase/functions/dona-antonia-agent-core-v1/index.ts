@@ -69,7 +69,7 @@ function allowedForTopic(topic:string,allNames:string[]){
     cart_change:["wa_get_cart","wa_search_products","wa_get_product","wa_add_product","wa_set_quantity","wa_replace_product",...core],
     checkout:checkoutTools,
     payment:["wa_get_policy","wa_get_cart","wa_get_basket_state","wa_get_checkout_contact","wa_get_basket_customer_status","wa_request_address_flow","wa_cancel_address_flow","wa_request_basket_payment","wa_prepare_basket_confirmation","wa_finalize_basket_order","wa_handoff_human"],
-    delivery:["wa_get_policy","wa_get_cart","wa_handoff_human"],
+    delivery:[...basketState,"wa_request_address_flow",...core],
     delivery_time:["wa_get_policy","wa_get_cart","wa_handoff_human"],
     delivery_fee:["wa_get_policy","wa_get_cart","wa_handoff_human"],
     delivery_promise:["wa_get_policy","wa_get_cart","wa_handoff_human"],
