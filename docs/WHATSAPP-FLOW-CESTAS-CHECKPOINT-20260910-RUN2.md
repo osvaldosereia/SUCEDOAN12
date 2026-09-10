@@ -4,9 +4,9 @@
 
 Continuação segura da homologação do candidato `flow-cestas-comercial-v8-stable`, artefato V31 e runtime comercial V22, sem abrir rollout global.
 
-## Auditoria inicial
+## Estado confirmado
 
-Estado confirmado no Supabase:
+Supabase:
 
 - candidato `flow-cestas-comercial-v8-stable` em `ready`;
 - Meta `DRAFT` e validação sem erros;
@@ -21,11 +21,11 @@ Estado confirmado no Supabase:
 - preço, estoque, quantidade e total seguem determinísticos no Supabase;
 - upsell permanece opcional.
 
-Preflight owner-only executado contra a conversa homologada: `ok=true`, com 29/29 checks aprovados, incluindo allowlist exata, criptografia, assinatura Meta, replay guard, candidato isolado e gates globais fechados.
+O preflight de infraestrutura V2 passou 29/29 checks para o alvo homologado, incluindo allowlist, criptografia, assinatura Meta, replay guard, isolamento do candidato e gates globais fechados.
 
-## Correção Make — outbound Flow
+## Correção Make — outbound Flow V31
 
-Foi encontrada uma incompatibilidade concreta no cenário `Dona Antônia - WhatsApp Outbound Event-Driven v3`: a rota `Enviar WhatsApp Flow comercial` ainda filtrava por um `flow_id` antigo (`1070149582048643`). Isso impediria o envio do candidato V31 mesmo quando o Supabase tivesse emitido corretamente uma sessão owner-only.
+Foi encontrada uma incompatibilidade concreta no cenário `Dona Antônia - WhatsApp Outbound Event-Driven v3`: a rota `Enviar WhatsApp Flow comercial` ainda filtrava por um `flow_id` antigo (`1070149582048643`). Isso bloquearia o candidato V31 mesmo quando o Supabase tivesse emitido corretamente uma sessão owner-only.
 
 A rota foi corrigida para aceitar exclusivamente:
 
@@ -35,21 +35,83 @@ A rota foi corrigida para aceitar exclusivamente:
 - `flow_id=2579927222524475` do candidato V31;
 - presença obrigatória de `homologation_session_id`.
 
-A mudança não aceita Flow arbitrário e não abre o envio global. O candidato continua dependente do helper server-only do Supabase, que emite token apenas para a conversa/telefone previamente autorizados e mantém o alvo na allowlist `controlled_live_homologation`.
+A mudança não aceita Flow arbitrário e não abre o envio global.
+
+## Drift de allowlist corrigido
+
+A primeira tentativa controlada foi bloqueada antes do envio com `homologation_recipient_not_allowed`. A causa era um drift interno: lease/preflight utilizavam o purpose `controlled_live_homologation`, enquanto o emissor de token ainda exigia `flow_v31_owner_homologation`.
+
+Foi criada e aplicada a migration:
+
+`20260910142700_whatsapp_flow_v31_owner_allowlist_purpose_unification_v1.sql`
+
+Ela unifica o emissor no único purpose owner-only ativo, `controlled_live_homologation`, sem inserir nenhum novo destinatário e mantendo execução server-only.
+
+## Dispatcher owner-only endurecido
+
+A segunda tentativa controlada revelou dois pontos adicionais antes de qualquer envio:
+
+1. o dispatcher dedicado ainda consultava o purpose antigo;
+2. o payload enviado ao Make não repassava `homologation_session_id`, embora a rota segura do Make agora exija esse marcador.
+
+Foi criada e aplicada:
+
+`20260910143500_whatsapp_flow_v31_owner_dispatch_contract_v2.sql`
+
+O dispatcher agora:
+
+- usa `controlled_live_homologation`;
+- exige conversa em modo IA;
+- bloqueia explicitamente qualquer handoff humano `open/claimed`;
+- valida sessão owner-only, definição V31, token e `flow_id`;
+- repassa `homologation_session_id` até o Make;
+- mantém o dispatcher dedicado separado do rollout normal.
+
+## Preflight V3 + dispatcher V6
+
+O preflight V2 verificava corretamente a infraestrutura, mas não a disponibilidade operacional da conversa. Por isso podia retornar `ok=true` e o dispatcher bloquear logo depois.
+
+Foi criada e aplicada:
+
+`20260910144200_whatsapp_flow_v31_owner_preflight_v3_dispatch_v6.sql`
+
+O novo preflight adiciona:
+
+- `owner_conversation_ai`;
+- `owner_service_window_open`;
+- `owner_handoff_clear`.
+
+O novo helper `queue_and_dispatch_whatsapp_flow_owner_homologation_v6` executa esse preflight antes de emitir/enviar o Flow. Se houver controle humano, encerra com retorno seguro e sem outbound.
+
+Teste real do V6 contra o alvo autorizado retornou corretamente:
+
+- infraestrutura: aprovada;
+- service window: aberta;
+- conversa: `mode=human`;
+- handoff humano: ativo;
+- resultado: `owner_conversation_preflight_failed`;
+- nenhuma mensagem V31 enviada.
+
+A precedência do atendimento humano foi preservada; o sistema não tentou alterar modo, fechar handoff ou contornar a proteção.
 
 ## Contrato de regressão ampliado
 
-O teste `scripts/test-whatsapp-flow-v31-runtime-contract.mjs` foi reforçado para impedir regressão do outbound owner-only. Agora ele também exige que o helper:
+`scripts/test-whatsapp-flow-v31-runtime-contract.mjs` foi ampliado para cobrir:
 
-- obtenha o `flow_id` do token emitido pelo backend;
-- grave `homologation_session_id` no payload outbound;
-- envie `interactive.type=flow`;
-- preserve `flow_id` e `flow_action` emitidos pelo backend;
-- use o dispatcher dedicado de homologação.
+- purpose único de homologação;
+- `homologation_session_id` no payload até o Make;
+- `flow_id` e `flow_action` emitidos pelo backend;
+- bloqueio quando a conversa não está em IA;
+- bloqueio quando existe handoff humano;
+- preflight V3;
+- dispatcher V6;
+- privilégios server-only.
+
+O workflow `Test WhatsApp Flow V31 Runtime` foi atualizado para observar as novas migrations.
 
 ## Gates preservados
 
-Continuam rigorosamente fechados:
+Devem permanecer exatamente assim até autorização explícita:
 
 ```text
 whatsapp_live_canary_percent=1
@@ -62,9 +124,9 @@ bling_order_sync_enabled=false
 
 Nenhum cliente recebeu o candidato nesta rodada e nenhum rollout foi aumentado.
 
-## Estado funcional do Flow
+## Estado funcional alvo
 
-A arquitetura alvo permanece:
+O Flow continua estruturado para:
 
 1. escolher cesta básica;
 2. personalizar a composição sem mostrar preço individual dos componentes;
@@ -80,13 +142,12 @@ A arquitetura alvo permanece:
 12. finalizar e retornar por `nfm_reply`;
 13. pedir localização na conversa WhatsApp para confirmar entrega.
 
-## Próximo bloco seguro
+## Próximo ponto exato
 
-1. conferir CI do contrato V31 após o reforço;
-2. executar sessão owner-only ponta a ponta usando o dispatcher dedicado;
-3. validar no journey audit INIT → cesta → personalização → seções/termos → produto → quantidade → extras → upsell → revisão → cliente/endereço → pagamento → finalização;
-4. conferir retorno `nfm_reply` e pedido de localização;
-5. corrigir somente regressões encontradas;
-6. manter todos os gates globais fechados até autorização explícita do proprietário.
+1. confirmar CI verde das novas proteções;
+2. aguardar uma conversa do número owner homologado que esteja naturalmente em modo IA, service window aberta e sem handoff humano;
+3. então usar exclusivamente `queue_and_dispatch_whatsapp_flow_owner_homologation_v6`;
+4. validar jornada V31 ponta a ponta e `nfm_reply`;
+5. corrigir regressões encontradas sem abrir gates globais.
 
-Nenhuma ação manual do proprietário é necessária para continuar a programação segura.
+Não há ação manual indispensável do proprietário para continuar a programação. O teste real deve permanecer bloqueado enquanto o atendimento humano estiver ativo; essa proteção é intencional.
