@@ -24,6 +24,7 @@ on:
       - 'scripts/test-agent-core-round4-pre-router-parity-v23.mjs'
       - 'scripts/test-agent-core-round4-runtime-surface-v24.mjs'
       - 'scripts/test-agent-core-round4-evidence-preflight-v25.mjs'
+      - 'scripts/test-agent-core-round4-stateful-evidence-aliases-v26.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
@@ -49,6 +50,7 @@ on:
       - 'scripts/test-agent-core-round4-pre-router-parity-v23.mjs'
       - 'scripts/test-agent-core-round4-runtime-surface-v24.mjs'
       - 'scripts/test-agent-core-round4-evidence-preflight-v25.mjs'
+      - 'scripts/test-agent-core-round4-stateful-evidence-aliases-v26.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
@@ -85,6 +87,8 @@ jobs:
         run: node scripts/test-agent-core-round4-runtime-surface-v24.mjs
       - name: Contract · Round 4 evidence preflight V25
         run: node scripts/test-agent-core-round4-evidence-preflight-v25.mjs
+      - name: Contract · Round 4 evidence aliases V26
+        run: node scripts/test-agent-core-round4-stateful-evidence-aliases-v26.mjs
       - name: Contract · Worker V2 retirement guard
         run: node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
       - name: Syntax · Admin learning
