@@ -78,8 +78,8 @@ must('get_agent_core_round4_basket_tool_readiness_v1','basket_tool_readiness');
 must('get_agent_core_basket_state_compact_v1','compact_basket_state');
 must('get_agent_core_checkout_contact_compact_v1','compact_checkout_contact');
 must('get_agent_core_basket_customer_status_compact_v1','compact_customer_status');
-must("'internal_token_excluded':true",'basket_token_excluded');
-must("'pii_excluded':true",'compact_pii_excluded');
+must('"internal_token_excluded":true','basket_token_excluded');
+must('"pii_excluded":true','compact_pii_excluded');
 must('missing_conversation_fail_safe','compact_missing_state_fail_safe');
 
 mustEdge('get_agent_core_basket_state_compact_v1','edge_compact_basket_executor');
