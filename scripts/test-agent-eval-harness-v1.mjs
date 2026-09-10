@@ -3,9 +3,11 @@ import fs from 'node:fs';
 const prodPath='supabase/functions/dona-antonia-agent-core-v1/index.ts';
 const evalPath='supabase/functions/dona-antonia-agent-eval-v1/index.ts';
 const migrationPath='supabase/migrations/20260910231800_dona_antonia_agent_eval_harness_v1.sql';
+const corpusPath='supabase/migrations/20260910232200_dona_antonia_agent_eval_scenarios_full_v1.sql';
 const prod=fs.readFileSync(prodPath,'utf8');
 const ev=fs.readFileSync(evalPath,'utf8');
 const sql=fs.readFileSync(migrationPath,'utf8');
+const corpus=fs.readFileSync(corpusPath,'utf8');
 
 const must=(src,needle,label)=>{if(!src.includes(needle))throw new Error(`Eval V1 missing ${label}: ${needle}`)};
 const mustNot=(src,needle,label)=>{if(src.includes(needle))throw new Error(`Eval V1 forbidden ${label}: ${needle}`)};
@@ -73,4 +75,19 @@ for(const forbidden of [
   "execution_mode='live'"
 ]) mustNot(sql,forbidden,`gate mutation ${forbidden}`);
 
-console.log('OK Dona Antonia Agent Eval Harness V1 isolation and parity contract');
+const scenarioKeys=[...corpus.matchAll(/\('([a-z0-9_]+)','[a-z_]+',/g)].map(m=>m[1]);
+const uniqueKeys=new Set(scenarioKeys);
+if(uniqueKeys.size<80)throw new Error(`Eval corpus too small: ${uniqueKeys.size}, expected >= 80`);
+if(uniqueKeys.size!==scenarioKeys.length)throw new Error('Eval corpus has duplicate scenario keys');
+for(const category of ['basket_info','delivery','payment','customization','product_search','offers','checkout','post_sale','journey','robustness','safety','human']){
+  if(!corpus.includes(`,'${category}',`))throw new Error(`Eval corpus missing category: ${category}`);
+}
+for(const ownerPrompt of ['Qual o valor das cestas?','O que vem na cesta Econômica?','Entregam em Cuiabá?','Entregam em Vg?','Tem taxa de entrega?','Posso trocar produtos?','Quero montar minha cesta','Quero montar minha compra','Me manda o link das ofertas.','Que horas vão entregar?','Quais as formas de pagamento?','Vende pra 30 dias?','Parcelam no cartão?','Qual a maior cesta?']){
+  if(!corpus.includes(ownerPrompt))throw new Error(`Owner seed missing from corpus: ${ownerPrompt}`);
+}
+must(corpus,"on conflict(scenario_key) do update",'idempotent corpus seed');
+mustNot(corpus,'insert into public.messages','no messages seed');
+mustNot(corpus,'insert into public.conversations','no conversations seed');
+mustNot(corpus,'agent_core_pre_router_snapshots','no homologation snapshots');
+
+console.log(`OK Dona Antonia Agent Eval Harness V1 isolation/parity contract; corpus=${uniqueKeys.size}`);
