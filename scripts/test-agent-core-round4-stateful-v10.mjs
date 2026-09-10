@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 const v9=fs.readFileSync('supabase/migrations/20260910185912_dona_antonia_agent_core_round4_stateful_preconditions_v9.sql','utf8').toLowerCase();
 const v10=fs.readFileSync('supabase/migrations/20260910190016_dona_antonia_agent_core_round4_stateful_preconditions_hardening_v10.sql','utf8').toLowerCase();
+const v11=fs.readFileSync('supabase/migrations/20260910191049_dona_antonia_agent_core_round4_stateful_transition_gate_v11.sql','utf8').toLowerCase();
 const edge=fs.readFileSync('supabase/functions/dona-antonia-agent-core-v1/index.ts','utf8').toLowerCase();
 
 const must=(body,s,label)=>{if(!body.includes(s.toLowerCase()))throw new Error(`missing:${label}`)};
@@ -32,6 +33,17 @@ must(v10,'v_base_basket_id is not null','basket_id_guard');
 mustNot(v10,"coalesce((p_input->>'quantity')::numeric",'unsafe_quantity_cast');
 mustNot(v10,"coalesce((p_input->>'customer_confirmed')::boolean",'unsafe_boolean_cast');
 
+must(v11,'get_agent_core_round4_stateful_transition_readiness_v1','stateful_transition_gate');
+must(v11,'get_agent_core_round4_consolidated_readiness_v8','consolidated_v8');
+must(v11,"cfg.execution_mode='observe'",'transition_requires_observe');
+must(v11,"cfg.legacy_router_policy='shadow'",'transition_requires_shadow_policy');
+must(v11,"'manual_authorization_required',true",'manual_authorization_gate');
+must(v11,"'stateful_execution_permitted_now',false",'stateful_execution_off');
+must(v11,"'future_homologation_ready'",'future_homologation_readiness');
+must(v11,"stateful_non_observe=0",'all_stateful_actions_observe');
+must(v11,"'global_retirement_ready',false",'global_retirement_forced_off');
+must(v11,"'retirement_execution_permitted',false",'retirement_execution_forced_off');
+
 must(edge,'preview_whatsapp_agent_action_v2','edge_uses_preview_v2');
 must(edge,'p_message_id:job.message_id','edge_passes_current_message');
 mustNot(edge,'sb.rpc("preview_whatsapp_agent_action_v1"','edge_must_not_call_preview_v1_directly');
@@ -54,7 +66,7 @@ for(const unsafe of [
   'whatsapp_flow_commercial_write_enabled=true',
   'bling_order_sync_enabled=true'
 ]){
-  mustNot(v9+v10+edge,unsafe,`unsafe_rollout_change_${unsafe}`);
+  mustNot(v9+v10+v11+edge,unsafe,`unsafe_rollout_change_${unsafe}`);
 }
 
-console.log('Agent Core Round 4 stateful V10 OK: 19 preconditions, hardened inputs and observe-only execution are protected.');
+console.log('Agent Core Round 4 stateful V11 OK: 19 preconditions, hardened inputs, observe-only execution and transition gates are protected.');
