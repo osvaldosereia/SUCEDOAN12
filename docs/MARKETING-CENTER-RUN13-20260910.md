@@ -87,16 +87,15 @@ Nenhum Instagram/Messenger/Ads foi ativado, nenhum provider foi chamado, nenhum 
 - Run 79 (Run 12): verde antes desta rodada.
 - Run 81: falhou apenas no novo teste do renderer e revelou o caso de overlay maior que frame; demais contratos anteriores passaram até esse passo.
 - correção de clipping aplicada.
-- CI mais recente desta rodada foi disparado após a correção e a seleção privada de source image; confirmar conclusão antes do próximo bloco se ainda estiver em execução.
+- Run 84 (`Marketing Center V1`), executada após a correção e após a seleção privada de source image: **verde**. O conjunto completo de contratos do Marketing passou, incluindo Admin, aprovação/calendário, mídia privada, carrossel, métricas/dry-run, renderer WebP, vídeo MP4, worker, persistência privada e validadores de canais.
 
 ## Próximo bloco seguro
 
-1. confirmar o CI mais recente da Run 13;
-2. validar em asset de homologação a seleção `media_id -> slide -> render spec`, sem ativar geração global;
-3. criar resolver server-side/worker de `media_id` privado para arquivo temporário local, sem URL persistente e sem SSRF;
-4. ligar esse resolver ao renderer determinístico apenas atrás dos gates existentes;
-5. avançar contrato determinístico de atribuição `conteúdo -> clique/conversa -> pedido`, append-only e sem inferência;
-6. manter adapters sociais somente em dry-run até autorização explícita.
+1. validar em asset de homologação a seleção `media_id -> slide -> render spec`, sem ativar geração global;
+2. criar resolver server-side/worker de `media_id` privado para arquivo temporário local, sem URL persistente e sem SSRF;
+3. ligar esse resolver ao renderer determinístico apenas atrás dos gates existentes;
+4. avançar contrato determinístico de atribuição `conteúdo -> clique/conversa -> pedido`, append-only e sem inferência;
+5. manter adapters sociais somente em dry-run até autorização explícita.
 
 ## Critério de conclusão
 
