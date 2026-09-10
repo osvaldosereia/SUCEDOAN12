@@ -27,6 +27,7 @@ on:
       - 'scripts/test-agent-core-round4-stateful-evidence-aliases-v26.mjs'
       - 'scripts/test-agent-core-round4-evidence-next-step-v27.mjs'
       - 'scripts/test-agent-core-round4-address-change-v28.mjs'
+      - 'scripts/test-agent-core-round4-contract-evidence-epoch-v29.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
   pull_request:
@@ -55,6 +56,7 @@ on:
       - 'scripts/test-agent-core-round4-stateful-evidence-aliases-v26.mjs'
       - 'scripts/test-agent-core-round4-evidence-next-step-v27.mjs'
       - 'scripts/test-agent-core-round4-address-change-v28.mjs'
+      - 'scripts/test-agent-core-round4-contract-evidence-epoch-v29.mjs'
       - 'scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs'
       - '.github/workflows/ci-dona-antonia-agent-core.yml'
 
@@ -97,6 +99,8 @@ jobs:
         run: node scripts/test-agent-core-round4-evidence-next-step-v27.mjs
       - name: Contract · Round 4 address change V28
         run: node scripts/test-agent-core-round4-address-change-v28.mjs
+      - name: Contract · Round 4 evidence epoch V29
+        run: node scripts/test-agent-core-round4-contract-evidence-epoch-v29.mjs
       - name: Contract · Worker V2 retirement guard
         run: node scripts/test-agent-core-round4-worker-v2-retirement-v1.mjs
       - name: Syntax · Admin learning
