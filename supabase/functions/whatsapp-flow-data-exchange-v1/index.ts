@@ -30,6 +30,12 @@ async function ownerHomologationAllowed(sb:any,resolved:Record<string,unknown>|n
   return true;
 }
 
+async function basketChoiceLiveAllowed(sb:any,resolved:Record<string,unknown>|null):Promise<boolean>{
+  if(text(resolved?.definition_slug,120)!=="flow-cestas-escolha-v1")return false;
+  const {data,error}=await sb.rpc("is_whatsapp_basket_choice_flow_live_v1");
+  return !error&&data===true;
+}
+
 Deno.serve(async(req:Request)=>{
   const requestId=crypto.randomUUID();
   if(req.method!=="POST")return plain("method_not_allowed",405);
@@ -71,11 +77,12 @@ Deno.serve(async(req:Request)=>{
       if(result.data?.ok){resolved=result.data;sessionId=result.data.session_id}
     }
     const resolvedDefinitionSlug=text(resolved?.definition_slug,120);
+    const basketChoiceLive=action!=="ping"&&await basketChoiceLiveAllowed(sb,resolved);
     if(action!=="ping"&&resolvedDefinitionSlug==="flow-cestas-comercial-v8-stable"){
       if(!await ownerHomologationAllowed(sb,resolved))return plain("flow_candidate_homologation_only",403);
     }
     if(action!=="ping"&&!readiness?.data_exchange_enabled){
-      if(!await ownerHomologationAllowed(sb,resolved))return plain("flow_endpoint_disabled",503);
+      if(!basketChoiceLive&&!await ownerHomologationAllowed(sb,resolved))return plain("flow_endpoint_disabled",503);
     }
 
     const {data:claim,error:claimError}=await sb.rpc("claim_whatsapp_flow_request_v1",{p_request_fingerprint:requestFingerprint,p_request_id:requestId,p_session_id:sessionId,p_action:safeAction(action||"unknown"),p_screen:screen});
