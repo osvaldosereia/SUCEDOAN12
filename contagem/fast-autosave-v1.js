@@ -12,7 +12,9 @@
     device:'da_count_v2_device',
     lastTotal:'da_fast_autosave_last_total_v1',
     unknownRecorded:'da_fast_unknown_recorded_v1',
-    restored:'da_fast_autosave_restored_v1'
+    restored:'da_fast_autosave_restored_v1',
+    finalized:'da_fast_autosave_finalized_v1',
+    finalizedBaseline:'da_fast_autosave_finalized_baseline_v1'
   };
   const $=id=>document.getElementById(id);
   const dig=v=>String(v??'').replace(/\D/g,'');
@@ -21,6 +23,8 @@
   let busy=false;
   let unknownBusy=false;
   let restoreTried=false;
+  let completing=false;
+  let finalizedCleanupBusy=false;
 
   function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
   function write(key,value){localStorage.setItem(key,JSON.stringify(value))}
@@ -31,6 +35,10 @@
   function mode(){const value=sessionStorage.getItem(K.operation);return value==='add'||value==='balance'?value:''}
   function lastTotal(){const n=Number(sessionStorage.getItem(K.lastTotal)||0);return Number.isFinite(n)&&n>=0?n:0}
   function setLastTotal(value){sessionStorage.setItem(K.lastTotal,String(Math.max(0,Math.trunc(Number(value)||0))))}
+  function isFinalized(){return sessionStorage.getItem(K.finalized)==='1'}
+  function finalizedBaseline(){const n=Number(sessionStorage.getItem(K.finalizedBaseline)||0);return Number.isFinite(n)&&n>=0?n:0}
+  function markFinalized(){sessionStorage.setItem(K.finalized,'1');sessionStorage.setItem(K.finalizedBaseline,String(totalReads()))}
+  function clearFinalized(){sessionStorage.removeItem(K.finalized);sessionStorage.removeItem(K.finalizedBaseline)}
 
   function device(){
     let value=localStorage.getItem(K.device);
@@ -100,7 +108,7 @@
   }
 
   async function checkpoint(force=false){
-    if(busy||!navigator.onLine)return;
+    if(busy||!navigator.onLine||isFinalized())return;
     const selectedMode=mode();
     if(!selectedMode)return;
     const total=totalReads();
@@ -122,6 +130,16 @@
     }catch(e){
       show(`Checkpoint pendente · ${e.message||'falha de conexão'}`,'error');
     }finally{busy=false}
+  }
+
+  function cleanupRecorded(){
+    const active=new Set(unknownRows().map(row=>dig(row?.code)).filter(Boolean));
+    const recorded=read(K.unknownRecorded,{});
+    let changed=false;
+    for(const ean of Object.keys(recorded)){
+      if(!active.has(ean)){delete recorded[ean];changed=true}
+    }
+    if(changed)write(K.unknownRecorded,recorded);
   }
 
   async function recordUnknowns(){
@@ -148,10 +166,10 @@
   }
 
   async function restore(){
-    if(restoreTried||!navigator.onLine)return;
-    restoreTried=true;
+    if(restoreTried||!navigator.onLine||isFinalized())return;
     if(totalReads()>0)return;
     if(!read(K.auth,null)?.access_token)return;
+    restoreTried=true;
     try{
       const data=await api('restore');
       const cp=data?.checkpoint;
@@ -166,15 +184,25 @@
         sessionStorage.setItem(K.restored,'1');
         setTimeout(()=>location.reload(),120);
       }
-    }catch{}
+    }catch{restoreTried=false}
   }
 
   async function completeCheckpoint(){
-    try{await api('complete')}catch{}
+    if(completing)return;
+    completing=true;
+    markFinalized();
     setLastTotal(0);
-    localStorage.removeItem(K.unknownRecorded);
+    try{await api('complete')}catch{}
+    if(!unknownRows().length)localStorage.removeItem(K.unknownRecorded);
     sessionStorage.removeItem(K.restored);
     show(`Salvamento automático: a cada ${EVERY} leituras`);
+    completing=false;
+  }
+
+  async function cleanupFinalizedCheckpoint(){
+    if(!isFinalized()||finalizedCleanupBusy||!navigator.onLine||!read(K.auth,null)?.access_token)return;
+    finalizedCleanupBusy=true;
+    try{await api('complete')}catch{}finally{finalizedCleanupBusy=false}
   }
 
   function watchFinish(){
@@ -182,14 +210,26 @@
     const timer=setInterval(()=>{
       tries+=1;
       if(knownRows().length===0){clearInterval(timer);completeCheckpoint()}
-      else if(tries>=30)clearInterval(timer);
+      else if(tries>=120)clearInterval(timer);
     },500);
   }
 
   function tick(){
-    restore();
+    cleanupRecorded();
     const total=totalReads();
-    if(total===0&&lastTotal()>0)setLastTotal(0);
+    if(isFinalized()){
+      cleanupFinalizedCheckpoint();
+      if(total>finalizedBaseline()){
+        clearFinalized();
+        restoreTried=true;
+        setLastTotal(0);
+      }else{
+        recordUnknowns();
+        return;
+      }
+    }
+    restore();
+    if(total===0&&lastTotal()>0){completeCheckpoint();return}
     if(total-lastTotal()>=EVERY)checkpoint(false);
     recordUnknowns();
   }
@@ -197,9 +237,12 @@
   function bind(){
     indicator();
     setInterval(tick,400);
-    $('fastFinishButton')?.addEventListener('click',watchFinish);
+    document.addEventListener('click',e=>{
+      const target=e.target instanceof Element?e.target.closest('#fastFinishButton'):null;
+      if(target)watchFinish();
+    },true);
     $('fastClearButton')?.addEventListener('click',()=>setTimeout(()=>{if(totalReads()===0)completeCheckpoint()},80));
-    window.addEventListener('online',()=>{restore();checkpoint(true);recordUnknowns()});
+    window.addEventListener('online',()=>{restore();checkpoint(true);recordUnknowns();cleanupFinalizedCheckpoint()});
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&totalReads()>0)checkpoint(true)});
     tick();
   }
