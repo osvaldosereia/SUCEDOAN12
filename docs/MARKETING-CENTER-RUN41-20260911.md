@@ -51,7 +51,7 @@ TDD iniciou com `scripts/test-marketing-operations-readonly-v1.mjs` antes da imp
 
 Commit funcional do bloco/CI: `84cf5b40b1be1315a04ec0514f8c3c0485c4e86b`.
 
-Workflow `Marketing Center Clean Transplant` run `34650914670` foi disparado para esse HEAD e estava `in_progress` na última verificação desta rodada. Não declarar verde até uma leitura posterior confirmar `completed/success`.
+Workflow `Marketing Center Clean Transplant` run `34650914670` terminou `completed/success` para esse commit funcional. O HEAD documental posterior não altera código executável nem entra nos paths de disparo desse workflow.
 
 ## Rollout / produção
 
@@ -59,7 +59,6 @@ Nenhuma migration, Edge Function ou integração foi implantada/reimplantada no 
 
 ## Próxima rodada segura
 
-1. Confirmar o resultado final do CI run 34650914670 e corrigir qualquer falha antes de avançar.
-2. Reauditar PR #276 contra a `main` atual.
-3. Transplantar o próximo slice privado/read-only de métricas/publicadores oficiais, priorizando observabilidade e readiness por canal, sem executar publicação real.
-4. Continuar mantendo o Marketing fora do Admin público até existir uma superfície autenticada compatível com JWT/RBAC.
+1. Reauditar PR #276 contra a `main` atual.
+2. Transplantar o próximo slice privado/read-only de métricas/publicadores oficiais, priorizando observabilidade e readiness por canal, sem executar publicação real.
+3. Continuar mantendo o Marketing fora do Admin público até existir uma superfície autenticada compatível com JWT/RBAC.
