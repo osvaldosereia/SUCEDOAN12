@@ -18,7 +18,8 @@ for (const forbidden of [
   'marketingCenter',
   'marketing-carousel-progress-v1',
   'marketing-editor-v1',
-  'marketing-library-v1'
+  'marketing-library-v1',
+  'marketing-operations-readonly-v1'
 ]) assert.ok(!publicAdmin.includes(forbidden), `public Admin must not load Marketing surface: ${forbidden}`);
 
 const marketingFunctions = [
@@ -45,7 +46,8 @@ const dormantUiFiles = [
   'admin-v3/marketing-center.css',
   'admin-v3/marketing-carousel-progress-v1.js',
   'admin-v3/marketing-editor-v1.js',
-  'admin-v3/marketing-library-v1.js'
+  'admin-v3/marketing-library-v1.js',
+  'admin-v3/marketing-operations-readonly-v1.js'
 ];
 for (const file of dormantUiFiles) assert.ok(fs.existsSync(file), `dormant Marketing UI asset missing: ${file}`);
 
@@ -67,6 +69,13 @@ assert.match(library, /Authorization:`Bearer \$\{a\.access_token\}`/, 'private l
 assert.match(library, /external_side_effect!==false/, 'private library must fail closed on side-effect marker');
 assert.match(library, /admin-marketing-v1/, 'private library must use protected Marketing edge');
 assert.ok(!externalProviderPattern.test(library), 'dormant library must not call external providers directly');
+
+const operations = fs.readFileSync('admin-v3/marketing-operations-readonly-v1.js','utf8');
+assert.match(operations, /Authorization:`Bearer \$\{a\.access_token\}`/, 'private operations reader must send bearer JWT');
+assert.match(operations, /external_side_effect!==false/, 'private operations reader must fail closed on side-effect marker');
+assert.match(operations, /admin-marketing-workflow-v1/, 'private operations reader must use protected workflow edge');
+assert.ok(!externalProviderPattern.test(operations), 'dormant operations reader must not call external providers directly');
+assert.ok(!/call\('(submit_review|approve_asset|schedule_job|unschedule_job|publish|execute|requeue)'/.test(operations),'dormant operations reader must stay read-only');
 
 const migrations = [
   '20260910004500_marketing_center_foundation_v1.sql',
