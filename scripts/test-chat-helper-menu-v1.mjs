@@ -1,0 +1,35 @@
+import {readFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+
+const html=readFileSync('comprar/index.html','utf8');
+const config=readFileSync('comprar/config.js','utf8');
+const helper=readFileSync('comprar/chat-helper-menu.js','utf8');
+const css=readFileSync('comprar/chat-helper-menu.css','utf8');
+const publicEdge=readFileSync('supabase/functions/shopping-chat-menu-v1/index.ts','utf8');
+const adminEdge=readFileSync('supabase/functions/admin-chat-menu-v1/index.ts','utf8');
+const productEdge=readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
+const adminConfig=readFileSync('admin/config.js','utf8');
+const adminUi=readFileSync('admin-v3/chat-menu-admin.js','utf8');
+
+assert.match(html,/chat-helper-menu\.css/);
+assert.match(html,/chat-helper-menu\.js/);
+assert.match(config,/menuApi:/);
+assert.match(helper,/da-helper-avatar/);
+assert.match(helper,/Quer ajuda\?/);
+assert.match(helper,/basket_items/);
+assert.match(helper,/limit:30/);
+assert.match(helper,/Formas de pagamento|runItem/);
+assert.match(helper,/showProfile/);
+assert.match(css,/\.da-helper/);
+assert.match(css,/\.da-help-rail/);
+assert.match(publicEdge,/tokenOk/);
+assert.match(publicEdge,/shopping_chat_helper_config/);
+assert.match(publicEdge,/basket_template_items/);
+assert.match(adminEdge,/admin_users/);
+assert.match(adminEdge,/sanitizeItems/);
+assert.match(productEdge,/Math\.min\(Number\(body\?\.limit\)\|\|12,30\)/);
+assert.match(adminConfig,/chatMenuEdgeFunction/);
+assert.match(adminConfig,/Menu do Chat/);
+assert.match(adminUi,/Nova resposta/);
+assert.match(adminUi,/response_text/);
+console.log('chat_helper_menu_v1_ok');
