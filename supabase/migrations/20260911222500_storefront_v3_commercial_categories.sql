@@ -20,9 +20,11 @@ set category = case
 end
 where category is null or btrim(category)='';
 
--- Camada comercial simples da Vitrine. A categoria técnica original fica preservada.
+-- Campo exclusivo da Vitrine V3. sales_category permanece intacto para o chat legado.
+alter table public.products add column if not exists storefront_category text;
+
 update public.products
-set sales_category = case
+set storefront_category = case
   when category='MERCEARIA BÁSICA' then 'Mercearia'
   when category='CAFÉ DA MANHÃ' then 'Café da manhã'
   when category in ('TEMPEROS','MACARRÃO E MOLHOS','MOLHOS E CONDIMENTOS') then 'Massas, molhos e temperos'
@@ -64,12 +66,11 @@ insert into public.storefront_v3_categories(name,is_visible,show_home,sort_order
   ('Pets',true,true,100),
   ('Utilidades',true,true,110);
 
-create index if not exists products_storefront_sales_category_idx
-  on public.products (sales_category, category, sort_order, name)
+create index if not exists products_storefront_category_idx
+  on public.products (storefront_category, category, sort_order, name)
   where is_active=true;
 
 -- Itens de cesta sem preço não podem variar até que recebam preço no Admin.
--- Assim nenhum ajuste mostra R$ 0,00 ou diverge do cálculo validado no servidor.
 update public.basket_template_items bi
 set quantity_editable = false
 from public.products p
@@ -77,8 +78,7 @@ where p.id = bi.product_id
   and coalesce(p.price,0) <= 0
   and bi.quantity_editable = true;
 
--- Mantém o cálculo comercial da cesta no servidor, mas não transforma
--- "conferido fisicamente" em requisito de venda. Estoque e ativo continuam obrigatórios.
+-- Mantém cálculo comercial no servidor sem exigir conferência física como requisito de venda.
 create or replace function public.create_storefront_order_v2(
   p_phone text,
   p_items jsonb default '[]'::jsonb,
