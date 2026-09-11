@@ -50,6 +50,10 @@ verify_jwt = true
 [functions.admin-simple-v2]
 verify_jwt = false
 
+# API pública mínima da Vitrine V2. Não usa Meta API; pedido é persistido antes do link externo.
+[functions.storefront-v2]
+verify_jwt = false
+
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = true
 
