@@ -3,8 +3,8 @@ begin;
 do $$
 declare
   d text;
-  target text := $q$$') then raise exception 'cta_url_not_allowed'; end if;$q$;
-  replacement text := $q$$' and cta_url !~ '^https://donaantonia\\.com\\.br/comprar/\\?s=[A-Fa-f0-9]{64}$') then raise exception 'cta_url_not_allowed'; end if;$q$;
+  target text := '$'') then raise exception ''cta_url_not_allowed''; end if;';
+  replacement text := '$'' and cta_url !~ ''^https://donaantonia\\.com\\.br/comprar/\\?s=[A-Fa-f0-9]{64}$'') then raise exception ''cta_url_not_allowed''; end if;';
 begin
   d:=pg_get_functiondef('public.queue_whatsapp_sales_reply_v1(uuid,uuid,text,text,text,jsonb,text,jsonb,numeric)'::regprocedure);
   if position(target in d)=0 then
@@ -14,7 +14,7 @@ begin
   execute d;
 end $$;
 
--- Defesa positiva: somente os três caminhos próprios continuam autorizados.
+-- Defesa positiva: somente links próprios continuam autorizados; o patch apenas soma /comprar/?s=<token>.
 do $$
 declare d text;
 begin
