@@ -1,0 +1,68 @@
+name: Testar Admin V3 e Vitrine V3
+
+on:
+  push:
+    branches:
+      - admin-v3-vitrine-v3-design-20260911
+    paths:
+      - 'vitrine-v3/**'
+      - 'admin-v3/**'
+      - 'supabase/functions/catalog-v3/**'
+      - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/migrations/*storefront_v3*'
+      - 'supabase/config.toml'
+      - 'scripts/test-storefront-v3-ui.mjs'
+      - 'scripts/test-catalog-v3-contract.mjs'
+      - 'scripts/test-admin-v3-contract.mjs'
+      - '.github/workflows/test-v3.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'vitrine-v3/**'
+      - 'admin-v3/**'
+      - 'supabase/functions/catalog-v3/**'
+      - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/migrations/*storefront_v3*'
+      - 'supabase/config.toml'
+      - 'scripts/test-storefront-v3-ui.mjs'
+      - 'scripts/test-catalog-v3-contract.mjs'
+      - 'scripts/test-admin-v3-contract.mjs'
+      - '.github/workflows/test-v3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-v3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Contrato Vitrine V3
+        run: node scripts/test-storefront-v3-ui.mjs
+      - name: Contrato catálogo V3
+        run: node scripts/test-catalog-v3-contract.mjs
+      - name: Contrato Admin V3
+        run: node scripts/test-admin-v3-contract.mjs
+      - name: Validar JavaScript V3
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in vitrine-v3/*.js admin-v3/*.js admin-v3/views/*.js; do
+            [ -f "$f" ] && node --check "$f"
+          done
+      - name: Compilar Edge Functions V3
+        run: |
+          deno check supabase/functions/catalog-v3/index.ts
+          deno check supabase/functions/admin-v3-api/index.ts
