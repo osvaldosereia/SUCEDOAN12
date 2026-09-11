@@ -136,7 +136,7 @@ Deno.serve(async(req:Request)=>{
       const definitionSlug=text(resolved?.definition_slug,120)||null;
       const params={p_session_id:sessionId,p_conversation_id:resolved?.conversation_id,p_action:action,p_screen:screen,p_data:data};
       if(definitionSlug==="flow-cestas-comercial-v8-stable"){
-        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v24",params);handled=result.data;handleError=result.error;
+        const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v25",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v1"||definitionSlug==="flow-cestas-comercial-v7-diagnostico"){
         const result=await sb.rpc("handle_whatsapp_flow_commercial_exchange_v8",params);handled=result.data;handleError=result.error;
       }else if(definitionSlug==="flow-cestas-comercial-v2"){
