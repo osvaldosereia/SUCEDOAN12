@@ -7,6 +7,7 @@ on:
       - 'supabase/migrations/*marketing*.sql'
       - 'supabase/config.toml'
       - 'scripts/test-marketing-clean-transplant-v1.mjs'
+      - 'scripts/test-marketing-editor-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -19,6 +20,7 @@ on:
       - 'supabase/migrations/*marketing*.sql'
       - 'supabase/config.toml'
       - 'scripts/test-marketing-clean-transplant-v1.mjs'
+      - 'scripts/test-marketing-editor-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -40,3 +42,5 @@ jobs:
         run: node --check admin-v3/marketing-carousel-progress-v1.js
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
+      - name: Validate dormant Marketing editor contract
+        run: node scripts/test-marketing-editor-v1.mjs
