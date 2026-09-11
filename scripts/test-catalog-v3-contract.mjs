@@ -30,6 +30,7 @@ assert.match(config,/\[functions\.catalog-v3\][\s\S]*verify_jwt\s*=\s*false/);
 
 for(const category of ['Mercearia','Café da manhã','Massas, molhos e temperos','Biscoitos, doces e lanches','Bebidas','Limpeza da casa','Lavanderia','Higiene e beleza','Bebê','Pets','Utilidades']) assert.match(migration,new RegExp(category.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'),`categoria comercial ausente: ${category}`);
 assert.match(migration,/update\s+public\.products[\s\S]+sales_category/i,'migration precisa classificar os produtos');
+assert.match(migration,/update\s+public\.basket_template_items[\s\S]+quantity_editable\s*=\s*false[\s\S]+coalesce\(p\.price,0\)\s*<=\s*0/i,'item de cesta sem preço precisa permanecer com quantidade fixa');
 assert.match(migration,/create\s+or\s+replace\s+function\s+public\.create_storefront_order_v2/i,'pedido precisa continuar validado no servidor');
 assert.doesNotMatch(migration,/is_active\s*=\s*true\s+and\s+physically_verified\s*=\s*true/i,'pedido não pode rejeitar item ativo só por falta de conferência física');
 
