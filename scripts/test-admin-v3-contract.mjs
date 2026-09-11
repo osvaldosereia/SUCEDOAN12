@@ -15,6 +15,7 @@ assert.match(html,/Balanço rápido/);
 assert.match(html,/\.\.\/contagem\//);
 assert.match(html,/\.\.\/vitrine-v3\//);
 assert.match(config,/admin-v3-api/);
+assert.match(app,/sidebar\.addEventListener\(['"]click['"]/,'menu lateral precisa ter delegação de clique própria');
 assert.match(css,/font-size:\s*1[67]px/,'texto base deve ficar em 16–17px');
 assert.match(css,/font-size:\s*2[2-8]px/,'títulos precisam de 22–28px');
 assert.match(css,/min-height:\s*(4[6-9]|[5-9]\d)px/,'controles precisam de pelo menos 46px');
