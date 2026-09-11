@@ -6,12 +6,24 @@ on:
     paths:
       - 'contagem/**'
       - 'contagem-v2/**'
+      - 'scripts/test-fast-balance-no-login.mjs'
       - 'scripts/bling-stock-writer-v1.mjs'
       - 'supabase/functions/inventory-count-v2/**'
       - 'supabase/functions/inventory-fast-v1/**'
       - 'supabase/functions/inventory-fast-stock-v1/**'
+      - 'supabase/functions/inventory-fast-balance-v3/**'
+      - 'supabase/config.toml'
       - 'supabase/migrations/*fast_inventory_add_balance_v1.sql'
       - '.github/workflows/bling-stock-writer-v1.yml'
+      - '.github/workflows/test-contagem-v2.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'contagem/**'
+      - 'contagem-v2/**'
+      - 'scripts/test-fast-balance-no-login.mjs'
+      - 'supabase/functions/inventory-fast-balance-v3/**'
+      - 'supabase/config.toml'
       - '.github/workflows/test-contagem-v2.yml'
   workflow_dispatch:
 
@@ -43,32 +55,8 @@ jobs:
           node --check contagem/fast-mode-tabs.js
           node --check contagem/fast-stock-operation.js
           node --check scripts/bling-stock-writer-v1.mjs
-      - name: Validar tela operacional
-        run: |
-          grep -q 'app-v2.js' contagem/index.html
-          grep -q 'kiosk-mode.js' contagem/index.html
-          grep -q 'product-edit-controls.js' contagem/index.html
-          grep -q 'fast-mode.js' contagem/index.html
-          grep -q 'fast-mode-compat.js' contagem/index.html
-          grep -q 'fast-mode-tabs.js' contagem/index.html
-          grep -q 'countModeTabs' contagem/index.html
-          grep -q 'detailModeTab' contagem/index.html
-          grep -q 'fastModeTab' contagem/index.html
-          grep -q 'modeToggleButton' contagem/index.html
-          grep -q 'fastScanInput' contagem/index.html
-          grep -q 'fastFinishButton' contagem/index.html
-          grep -q 'costInput' contagem/index.html
-          grep -q 'priceInput' contagem/index.html
-          grep -q 'gondolaInput' contagem/index.html
-          grep -q 'shelfInput' contagem/index.html
-          grep -q 'activeInput' contagem/product-edit-controls.js
-          grep -q 'quickSearchInput' contagem-v2/kiosk-mode.js
-          grep -q 'inventory-count-v2' contagem-v2/config.js
-          grep -q 'inventory-fast-v1' contagem/fast-mode.js
-          grep -q 'inventory-fast-stock-v1' contagem/fast-stock-operation.js
-          grep -q 'ADICIONAR' contagem/fast-stock-operation.js
-          grep -q 'BALANÇO' contagem/fast-stock-operation.js
-          grep -q 'fast-stock-operation.js' contagem/fast-mode-compat.js
+      - name: Validar balanço rápido sem login
+        run: node scripts/test-fast-balance-no-login.mjs
       - name: Validar ausência de segredos óbvios no microapp
         shell: bash
         run: |
