@@ -35,6 +35,11 @@ Deno.serve(async(req:Request)=>{
       .select("render_triage_enabled,render_requeue_enabled,render_triage_kill_switch,enabled,execution_mode,kill_switch,generation_enabled")
       .eq("id",1).maybeSingle();
     if(re||!runtime)return fail("runtime_lookup_failed","Não foi possível consultar os gates",500);
+    const {data:metrics,error:me}=await sb.rpc("marketing_render_triage_metrics_v1");
+    if(me)return fail("triage_metrics_failed","Não foi possível consultar os contadores",500);
+    if(!metrics||typeof metrics!=="object"||(metrics as Record<string,unknown>).external_side_effect!==false)return fail("unsafe_triage_metrics","Contadores recusados",500);
+    const redaction=(metrics as Record<string,any>).redaction||{};
+    if(redaction.eligibility_snapshot_exposed!==false||redaction.result_snapshot_exposed!==false||redaction.idempotency_key_exposed!==false||redaction.actor_ids_exposed!==false||redaction.raw_error_exposed!==false||redaction.job_payload_exposed!==false)return fail("unsafe_triage_metrics_redaction","Contadores recusados por redaction",500);
     const {data:rows,error:le}=await sb.from("marketing_render_triage_requests")
       .select("id,job_id,asset_id,reason_code,status,requested_at,reviewed_at,executed_at")
       .in("status",statuses).order("created_at",{ascending:false}).limit(limit);
@@ -51,7 +56,7 @@ Deno.serve(async(req:Request)=>{
       requested_at:r.requested_at,reviewed_at:r.reviewed_at,executed_at:r.executed_at,
       render_kind:j.render_kind||null,job_status:j.status||null,attempt_count:Number(j.attempt_count||0)
     }});
-    return json({ok:true,items,runtime:{
+    return json({ok:true,items,metrics,runtime:{
       triage_enabled:runtime.render_triage_enabled===true,
       requeue_enabled:runtime.render_requeue_enabled===true,
       triage_kill_switch:runtime.render_triage_kill_switch!==false,
@@ -59,7 +64,7 @@ Deno.serve(async(req:Request)=>{
       execution_mode:clean(runtime.execution_mode,20)||"off",
       marketing_kill_switch:runtime.kill_switch!==false,
       generation_enabled:runtime.generation_enabled===true
-    },redaction:{eligibility_snapshot_exposed:false,result_snapshot_exposed:false,idempotency_key_exposed:false,actor_ids_exposed:false,raw_error_exposed:false},user:{role:admin.role,display_name:admin.display_name},external_side_effect:false});
+    },redaction:{eligibility_snapshot_exposed:false,result_snapshot_exposed:false,idempotency_key_exposed:false,actor_ids_exposed:false,raw_error_exposed:false,job_payload_exposed:false},user:{role:admin.role,display_name:admin.display_name},external_side_effect:false});
   }
 
   if(action==="preview"){
