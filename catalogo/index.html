@@ -9,6 +9,7 @@
   <title>Dona Antônia · Vitrine</title>
   <link rel="stylesheet" href="./style.css?v=20260911-06">
   <link rel="stylesheet" href="./product-preview.css?v=20260911-01">
+  <link rel="stylesheet" href="./basket-editor.css?v=20260911-01">
 </head>
 <body>
   <header class="top">
@@ -54,59 +55,28 @@
   </aside>
 
   <nav class="bottom-nav" aria-label="Navegação da vitrine">
-    <button id="navHome" class="nav-item active" type="button" aria-label="Início">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 11v10h7v-6h5v6h7V11L12 3Z"/></svg><span>Início</span>
-    </button>
-    <button id="navCategories" class="nav-item" type="button" aria-label="Categorias">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h2v2H4v-2Zm4 0h12v2H8v-2ZM4 11h2v2H4v-2Zm4 0h12v2H8v-2Zm-4 5.5h2v2H4v-2Zm4 0h12v2H8v-2Z"/></svg><span>Categorias</span>
-    </button>
-    <button id="navFavorites" class="nav-item" type="button" aria-label="Favoritos">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6 10.6 19.3C5.4 14.6 2 11.5 2 7.7 2 4.6 4.4 2.2 7.5 2.2c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3.1 0 5.5 2.4 5.5 5.5 0 3.8-3.4 6.9-8.6 11.6L12 20.6Z"/></svg><span>Favoritos</span>
-    </button>
-    <button id="navAccount" class="nav-item" type="button" aria-label="Minha conta">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-5 0-8 2.5-8 5.5V22h16v-2.5C20 16.5 17 14 12 14Z"/></svg><span>Minha conta</span>
-    </button>
+    <button id="navHome" class="nav-item active" type="button" aria-label="Início"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 11v10h7v-6h5v6h7V11L12 3Z"/></svg><span>Início</span></button>
+    <button id="navCategories" class="nav-item" type="button" aria-label="Categorias"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h2v2H4v-2Zm4 0h12v2H8v-2ZM4 11h2v2H4v-2Zm4 0h12v2H8v-2Zm-4 5.5h2v2H4v-2Zm4 0h12v2H8v-2Z"/></svg><span>Categorias</span></button>
+    <button id="navFavorites" class="nav-item" type="button" aria-label="Favoritos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6 10.6 19.3C5.4 14.6 2 11.5 2 7.7 2 4.6 4.4 2.2 7.5 2.2c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3.1 0 5.5 2.4 5.5 5.5 0 3.8-3.4 6.9-8.6 11.6L12 20.6Z"/></svg><span>Favoritos</span></button>
+    <button id="navAccount" class="nav-item" type="button" aria-label="Minha conta"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-5 0-8 2.5-8 5.5V22h16v-2.5C20 16.5 17 14 12 14Z"/></svg><span>Minha conta</span></button>
   </nav>
 
   <template id="basketTemplate">
-    <button class="basket-card" type="button">
-      <div class="basket-image-wrap"><img class="basket-image" alt="" loading="lazy" decoding="async"></div>
-      <div class="basket-copy"><strong class="basket-name"></strong><span class="basket-price"></span></div>
-    </button>
+    <button class="basket-card" type="button"><div class="basket-image-wrap"><img class="basket-image" alt="" loading="lazy" decoding="async"></div><div class="basket-copy"><strong class="basket-name"></strong><span class="basket-price"></span></div></button>
   </template>
 
   <template id="productTemplate">
     <article class="product">
-      <div class="image-wrap">
-        <img class="product-image" alt="" loading="lazy" decoding="async">
-        <button class="favorite" type="button" aria-label="Adicionar aos favoritos">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6 10.6 19.3C5.4 14.6 2 11.5 2 7.7 2 4.6 4.4 2.2 7.5 2.2c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3.1 0 5.5 2.4 5.5 5.5 0 3.8-3.4 6.9-8.6 11.6L12 20.6Z"/></svg>
-        </button>
-      </div>
-      <div class="product-info">
-        <h2 class="product-name"></h2>
-        <p class="product-meta"></p>
-        <strong class="product-price"></strong>
-        <div class="add-row">
-          <button class="add-button" type="button"><span aria-hidden="true">＋</span> Adicionar</button>
-          <div class="qty-row hidden">
-            <button class="minus" type="button" aria-label="Diminuir quantidade">−</button>
-            <span class="qty" aria-live="polite">0</span>
-            <button class="plus" type="button" aria-label="Aumentar quantidade">＋</button>
-          </div>
-        </div>
-      </div>
+      <div class="image-wrap"><img class="product-image" alt="" loading="lazy" decoding="async"><button class="favorite" type="button" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6 10.6 19.3C5.4 14.6 2 11.5 2 7.7 2 4.6 4.4 2.2 7.5 2.2c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3.1 0 5.5 2.4 5.5 5.5 0 3.8-3.4 6.9-8.6 11.6L12 20.6Z"/></svg></button></div>
+      <div class="product-info"><h2 class="product-name"></h2><p class="product-meta"></p><strong class="product-price"></strong><div class="add-row"><button class="add-button" type="button"><span aria-hidden="true">＋</span> Adicionar</button><div class="qty-row hidden"><button class="minus" type="button" aria-label="Diminuir quantidade">−</button><span class="qty" aria-live="polite">0</span><button class="plus" type="button" aria-label="Aumentar quantidade">＋</button></div></div></div>
     </article>
   </template>
 
-  <dialog id="basketDialog" class="basket-dialog">
-    <button id="basketClose" class="dialog-close" type="button" aria-label="Fechar">×</button>
-    <div id="basketDialogContent"></div>
-  </dialog>
-
+  <dialog id="basketDialog" class="basket-dialog"><button id="basketClose" class="dialog-close" type="button" aria-label="Fechar">×</button><div id="basketDialogContent"></div></dialog>
   <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="./config.js?v=20260911-06"></script>
-  <script src="./app.js?v=20260911-06"></script>
+  <script src="./config.js?v=20260911-07"></script>
+  <script src="./app.js?v=20260911-07"></script>
+  <script src="./basket-editor.js?v=20260911-01"></script>
   <script src="./product-preview.js?v=20260911-01"></script>
 </body>
 </html>
