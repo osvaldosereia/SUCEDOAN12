@@ -1,98 +1,15 @@
-name: Test WhatsApp Flow Live Audit
+name: Test WhatsApp Flow Live Audit — arquivado
 
+# O Flow próprio deixou de ser o canal comercial ativo após a migração para o PapoAI.
+# Evita falhas V31–V41 e execuções em push/PR sem relevância para produção atual.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/migrations/20260910225200_whatsapp_flow_v31_live_session_audit_v1.sql'
-      - 'supabase/migrations/20260911012500_whatsapp_flow_v32_live_session_audit_v2.sql'
-      - 'supabase/migrations/20260911023000_whatsapp_flow_v32_owner_homologation_readiness_v3.sql'
-      - 'supabase/migrations/20260911031800_whatsapp_flow_v33_segmented_catalog_readiness_v1.sql'
-      - 'supabase/migrations/20260911031900_whatsapp_flow_v33_utilidades_pet_alias_fix_v1.sql'
-      - 'supabase/migrations/20260911041700_whatsapp_flow_v34_direct_intent_search_v1.sql'
-      - 'supabase/migrations/20260911051600_whatsapp_flow_v35_session_aware_upsell_v1.sql'
-      - 'supabase/migrations/20260911072400_whatsapp_flow_v37_live_segmented_path_readiness_v1.sql'
-      - 'supabase/migrations/20260911082000_whatsapp_flow_v38_runtime_definition_alignment_v1.sql'
-      - 'supabase/migrations/20260911091700_whatsapp_flow_v39_terminal_checkout_readiness_v1.sql'
-      - 'supabase/migrations/20260911101833_whatsapp_flow_v40_end_to_end_homologation_readiness_v1.sql'
-      - 'supabase/migrations/20260911114000_whatsapp_flow_v41_physical_homologation_evidence_v1.sql'
-      - 'supabase/functions/whatsapp-flow-data-exchange-v1/index.ts'
-      - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v34-direct-intent-search-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v35-session-upsell-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v36-stable-runtime-promotion-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v37-live-segmented-path-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v39-terminal-checkout-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v40-end-to-end-readiness-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v41-physical-evidence-contract.mjs'
-      - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
-  pull_request:
-    paths:
-      - 'supabase/migrations/20260910225200_whatsapp_flow_v31_live_session_audit_v1.sql'
-      - 'supabase/migrations/20260911012500_whatsapp_flow_v32_live_session_audit_v2.sql'
-      - 'supabase/migrations/20260911023000_whatsapp_flow_v32_owner_homologation_readiness_v3.sql'
-      - 'supabase/migrations/20260911031800_whatsapp_flow_v33_segmented_catalog_readiness_v1.sql'
-      - 'supabase/migrations/20260911031900_whatsapp_flow_v33_utilidades_pet_alias_fix_v1.sql'
-      - 'supabase/migrations/20260911041700_whatsapp_flow_v34_direct_intent_search_v1.sql'
-      - 'supabase/migrations/20260911051600_whatsapp_flow_v35_session_aware_upsell_v1.sql'
-      - 'supabase/migrations/20260911072400_whatsapp_flow_v37_live_segmented_path_readiness_v1.sql'
-      - 'supabase/migrations/20260911082000_whatsapp_flow_v38_runtime_definition_alignment_v1.sql'
-      - 'supabase/migrations/20260911091700_whatsapp_flow_v39_terminal_checkout_readiness_v1.sql'
-      - 'supabase/migrations/20260911101833_whatsapp_flow_v40_end_to_end_homologation_readiness_v1.sql'
-      - 'supabase/migrations/20260911114000_whatsapp_flow_v41_physical_homologation_evidence_v1.sql'
-      - 'supabase/functions/whatsapp-flow-data-exchange-v1/index.ts'
-      - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v34-direct-intent-search-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v35-session-upsell-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v36-stable-runtime-promotion-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v37-live-segmented-path-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v39-terminal-checkout-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v40-end-to-end-readiness-contract.mjs'
-      - 'scripts/test-whatsapp-flow-v41-physical-evidence-contract.mjs'
-      - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  contract:
+  archived:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Validate V31 live journey audit contract
-        run: node scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs
-      - name: Validate V32 cutover-aware live journey audit contract
-        run: node scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs
-      - name: Validate V32 owner homologation readiness contract
-        run: node scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs
-      - name: Validate V33 segmented catalog contract
-        run: node scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs
-      - name: Validate V34 direct intent search contract
-        run: node scripts/test-whatsapp-flow-v34-direct-intent-search-contract.mjs
-      - name: Validate V35 session-aware upsell contract
-        run: node scripts/test-whatsapp-flow-v35-session-upsell-contract.mjs
-      - name: Validate V36 stable runtime promotion contract
-        run: node scripts/test-whatsapp-flow-v36-stable-runtime-promotion-contract.mjs
-      - name: Validate V37 live segmented path contract
-        run: node scripts/test-whatsapp-flow-v37-live-segmented-path-contract.mjs
-      - name: Validate V38 runtime definition alignment contract
-        run: node scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs
-      - name: Validate V39 terminal checkout readiness contract
-        run: node scripts/test-whatsapp-flow-v39-terminal-checkout-contract.mjs
-      - name: Validate V40 end-to-end homologation readiness contract
-        run: node scripts/test-whatsapp-flow-v40-end-to-end-readiness-contract.mjs
-      - name: Validate V41 physical homologation evidence contract
-        run: node scripts/test-whatsapp-flow-v41-physical-evidence-contract.mjs
+      - run: echo "Auditoria do WhatsApp Flow próprio arquivada."

@@ -1,31 +1,10 @@
-name: Package Agent Core V46
-
+name: Package Agent Core — arquivado
 on:
-  push:
-    branches:
-      - fix/agent-core-v45-order-context
-    paths:
-      - '.github/workflows/package-agent-core-v46.yml'
-
+  workflow_dispatch:
 permissions:
   contents: read
-
 jobs:
-  package:
+  archived:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: fix/agent-core-v45-order-context
-      - name: Verify source files
-        run: |
-          test -f supabase/functions/dona-antonia-agent-core-v1/index.ts
-          test -f supabase/functions/dona-antonia-agent-eval-v1/index.ts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: agent-core-v46-edge-sources
-          path: |
-            supabase/functions/dona-antonia-agent-core-v1/index.ts
-            supabase/functions/dona-antonia-agent-eval-v1/index.ts
-          if-no-files-found: error
-          retention-days: 1
+      - run: echo "Empacotamento do agente próprio arquivado."
