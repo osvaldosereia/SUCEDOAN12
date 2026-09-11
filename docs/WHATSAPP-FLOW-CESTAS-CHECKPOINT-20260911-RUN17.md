@@ -68,7 +68,7 @@ Persistidos:
 - `scripts/test-whatsapp-flow-v35-session-upsell-contract.mjs`;
 - workflow `Test WhatsApp Flow Live Audit` atualizado.
 
-Run de CI disparado: `34565473572`. Na última verificação estava `in_progress`; não considerar verde até conclusão.
+Run `34565473572`: `completed/success`.
 
 ## Make
 
@@ -82,12 +82,11 @@ Nenhum cenário foi alterado.
 
 ## Estado de promoção
 
-O runtime V25 já existe e foi validado diretamente no Supabase, mas o Edge `whatsapp-flow-data-exchange-v1` ainda aponta o candidato stable para V24. Nesta rodada ele não foi promovido antes de o contrato versionado terminar o CI. Portanto, nenhum comportamento owner-only em produção controlada foi trocado prematuramente.
+O runtime V25 já existe e foi validado diretamente no Supabase, mas o Edge `whatsapp-flow-data-exchange-v1` ainda aponta o candidato stable para V24. Nesta rodada ele não foi promovido antes da validação versionada. O contrato V35 agora está verde, então o próximo bloco pode promover `V24 -> V25` de forma controlada sem alterar os gates globais.
 
 ## Próximo bloco seguro
 
-1. confirmar CI V35 verde;
-2. versionar a troca do Edge stable `V24 -> V25` com teste explícito;
-3. implantar nova versão da Edge mantendo owner-only e todos os gates globais OFF;
-4. reexecutar readiness owner;
-5. quando houver interação física, validar a tela real `UPSELL` e seguir para revisão, cadastro/endereço, pagamento, finalização, `nfm_reply` e localização.
+1. versionar a troca do Edge stable `V24 -> V25` com teste explícito;
+2. implantar nova versão da Edge mantendo owner-only e todos os gates globais OFF;
+3. reexecutar readiness owner;
+4. quando houver interação física, validar a tela real `UPSELL` e seguir para revisão, cadastro/endereço, pagamento, finalização, `nfm_reply` e localização.
