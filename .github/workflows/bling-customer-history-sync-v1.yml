@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: bling-api-global
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   sincronizar:
@@ -30,8 +30,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [ ! -f scripts/bling-customer-history-sync-core.mjs ] || node --check scripts/bling-customer-history-sync-core.mjs
-          [ ! -f scripts/bling-customer-history-sync-v1.mjs ] || node --check scripts/bling-customer-history-sync-v1.mjs
+          node --check scripts/bling-customer-history-sync-core.mjs
+          node --check scripts/bling-customer-history-sync-v1.mjs
           node scripts/test-bling-customer-history-sync.mjs
       - name: Validar secrets
         if: github.ref == 'refs/heads/main'
