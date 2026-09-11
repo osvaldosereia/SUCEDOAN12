@@ -4,18 +4,28 @@ import fs from 'node:fs';
 const admin = fs.readFileSync('admin/config.js','utf8');
 const supabase = fs.readFileSync('supabase/config.toml','utf8');
 
+// Current main Admin is intentionally small/app-lite based. Marketing may extend it,
+// but this isolated branch must not resurrect unrelated legacy module loaders.
 for (const token of [
-  "productsEdgeFunction: 'admin-products-live-v1'",
-  "chatMenuEdgeFunction: 'admin-chat-menu-v1'",
-  'trustedBrowserSession: true',
-  'loadProductsLiveUi',
-  'loadProductsConsoleV3',
-  'loadChatMenuAdmin',
+  "edgeFunction: 'admin-ops-v1'",
+  "basketsEdgeFunction: 'admin-baskets-v1'",
+  "customerEdgeFunction: 'customer-intelligence-v1'",
+  "countAppUrl: '../contagem/'",
   "marketingEdgeFunction: 'admin-marketing-v1'",
   "marketingWorkflowEdgeFunction: 'admin-marketing-workflow-v1'",
   'marketingUiEnabled: true',
   'loadMarketingCenter'
 ]) assert.ok(admin.includes(token), `admin/config.js compatibility token missing: ${token}`);
+
+for (const forbidden of [
+  "productsEdgeFunction: 'admin-products-live-v1'",
+  "chatMenuEdgeFunction: 'admin-chat-menu-v1'",
+  'loadProductsLiveUi',
+  'loadProductsConsoleV3',
+  'loadChatMenuAdmin',
+  'loadHumanServiceCenter',
+  'loadFinancialAdmin'
+]) assert.ok(!admin.includes(forbidden), `admin/config.js must not resurrect unrelated legacy integration: ${forbidden}`);
 
 for (const section of [
   '[functions.conversation-worker-v3]',
@@ -50,4 +60,4 @@ for (const marketingFn of [
 }
 
 assert.ok(!/marketingUiEnabled:\s*false/.test(admin),'Marketing Admin compatibility must not silently disable the module in its isolated branch');
-console.log('PASS: Marketing branch preserves current main Admin/Edge configuration while adding only Marketing integration.');
+console.log('PASS: Marketing branch extends the current simplified Admin without resurrecting unrelated legacy integrations.');
