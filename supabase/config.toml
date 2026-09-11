@@ -102,3 +102,11 @@ verify_jwt = false
 # Feed público de produtos do chat: catálogo vendável + token válido da sessão + CORS estrito.
 [functions.shopping-chat-products-v1]
 verify_jwt = false
+
+# Menu flutuante público: somente leitura, token válido da sessão + CORS estrito.
+[functions.shopping-chat-menu-v1]
+verify_jwt = false
+
+# Admin do Menu do Chat: autenticação é validada dentro da função contra auth.users + admin_users.
+[functions.admin-chat-menu-v1]
+verify_jwt = false
