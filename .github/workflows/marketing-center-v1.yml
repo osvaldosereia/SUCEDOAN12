@@ -123,6 +123,8 @@ jobs:
         run: node scripts/test-marketing-render-triage-v1.mjs
       - name: Validate renderer triage metrics safety contract
         run: node scripts/test-marketing-render-triage-metrics-v1.mjs
+      - name: Validate renderer triage summary UI contract
+        run: node scripts/test-marketing-render-triage-summary-ui-v1.mjs
       - name: Validate deterministic attribution contract
         run: node scripts/test-marketing-attribution-v1.mjs
       - name: Validate deterministic WebP renderer
