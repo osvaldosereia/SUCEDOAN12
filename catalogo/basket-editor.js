@@ -38,13 +38,14 @@
       const render=()=>{
         list.innerHTML='';
         for(const row of b.items||[]){
-          const id=String(row.product_id),q=qty(id),removed=q===0,el=document.createElement('div');el.className=`basket-detail-item basket-edit-row${removed?' is-removed':''}`;
+          const id=String(row.product_id),q=qty(id),removed=q===0,min=Math.max(0,Number(row.min_quantity||0)),max=Math.max(Number(row.base_quantity||0),Number(row.max_quantity??row.stock??0)),el=document.createElement('div');
+          el.className=`basket-detail-item basket-edit-row${removed?' is-removed':''}`;
           el.innerHTML='<img alt=""><div class="basket-edit-copy"><strong></strong><span class="basket-removed-label"></span></div><div class="basket-stepper"><button class="basket-minus" type="button" aria-label="Diminuir">−</button><span class="basket-qty"></span><button class="basket-plus" type="button" aria-label="Aumentar">＋</button></div>';
-          const img=el.querySelector('img'),minus=el.querySelector('.basket-minus'),plus=el.querySelector('.basket-plus');img.src=row.image_url||PLACEHOLDER;img.alt=clean(row.name);el.querySelector('strong').textContent=row.name;el.querySelector('.basket-removed-label').textContent=removed?'Removido':'';el.querySelector('.basket-qty').textContent=String(q);minus.disabled=busy||q<=Number(row.min_quantity||0);plus.disabled=busy||q>=Number(row.max_quantity||6);
+          const img=el.querySelector('img'),minus=el.querySelector('.basket-minus'),plus=el.querySelector('.basket-plus');img.src=row.image_url||PLACEHOLDER;img.alt=clean(row.name);el.querySelector('strong').textContent=row.name;el.querySelector('.basket-removed-label').textContent=removed?'Removido':'';el.querySelector('.basket-qty').textContent=String(q);minus.disabled=busy||q<=min;plus.disabled=busy||q>=max;
           const adjust=async delta=>{
-            if(busy)return;const current=qty(id),next=Math.max(Number(row.min_quantity||0),Math.min(Number(row.max_quantity||6),current+delta));if(next===current)return;
+            if(busy)return;const current=qty(id),next=Math.max(min,Math.min(max,current+delta));if(next===current){if(delta>0&&current>=max)toast('Estoque máximo deste produto atingido.');return}
             const old=selection.map(x=>({...x})),target=selection.find(x=>x.product_id===id);if(target)target.quantity=next;else selection.push({product_id:id,quantity:next});busy=true;render();
-            try{const qd=await post('quote',{basket_id:b.id,selection:payload()});sync(qd);busy=false;render()}catch(err){selection=old;busy=false;render();toast(err.message||'Não foi possível alterar a cesta')}
+            try{const qd=await post('quote',{basket_id:b.id,selection:payload()});sync(qd)}catch(err){selection=old;toast(err.message||'Não foi possível alterar a cesta')}finally{busy=false;render()}
           };
           minus.addEventListener('click',()=>adjust(-1));plus.addEventListener('click',()=>adjust(1));list.appendChild(el);
         }
