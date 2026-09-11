@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           node --check scripts/bling-customer-history-sync-core.mjs
-          node --check scripts/bling-customer-history-sync-v1.mjs
+          node --check scripts/bling-customer-history-sync-v2.mjs
           node scripts/test-bling-customer-history-sync.mjs
       - name: Validar secrets
         if: github.ref == 'refs/heads/main'
@@ -59,7 +59,7 @@ jobs:
           BLING_SYNC_REPORT_FILE: ${{ runner.temp }}/bling-customer-history-report.json
           BLING_REQUEST_INTERVAL_MS: '460'
           HISTORY_MAX_YEARS: '10'
-        run: node scripts/bling-customer-history-sync-v1.mjs --apply
+        run: node scripts/bling-customer-history-sync-v2.mjs --apply
       - name: Persistir refresh token rotacionado
         if: always() && github.ref == 'refs/heads/main'
         env:
