@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { normalizePhoneBR, mapBlingContact, mapBlingSale } from './bling-customer-history-sync-core.mjs';
+import { normalizePhoneBR, mapBlingContact, mapBlingSale, historyWindow } from './bling-customer-history-sync-core.mjs';
 
 assert.equal(normalizePhoneBR('(65) 99999-8888'), '+5565999998888');
 assert.equal(normalizePhoneBR('5565999998888'), '+5565999998888');
@@ -32,4 +32,7 @@ assert.equal(sale.bling_contact_id,123);
 assert.equal(sale.total,199.9);
 assert.equal(sale.items.length,1);
 assert.equal(sale.items[0].line_total,40);
+
+const window90=historyWindow(90,new Date('2026-09-11T12:00:00Z'));
+assert.deepEqual(window90,{start:'2026-06-14',end:'2026-09-11'});
 console.log('bling-customer-history-sync core ok');
