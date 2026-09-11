@@ -27,3 +27,5 @@ jobs:
           node-version: 22
       - name: Contrato de schema Storefront V2
         run: node scripts/test-storefront-v2-schema.mjs
+      - name: Contrato transacional do pedido
+        run: node scripts/test-storefront-v2-order-contract.mjs
