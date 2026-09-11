@@ -4,14 +4,18 @@ on:
   push:
     paths:
       - 'supabase/migrations/20260910230600_whatsapp_flow_replay_response_cache_v32.sql'
+      - 'supabase/migrations/20260911002000_whatsapp_flow_v32_replay_cache_transactional_smoke_v2.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
       - 'scripts/test-whatsapp-flow-v32-replay-idempotency-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v32-replay-cache-smoke-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v32-replay.yml'
   pull_request:
     paths:
       - 'supabase/migrations/20260910230600_whatsapp_flow_replay_response_cache_v32.sql'
+      - 'supabase/migrations/20260911002000_whatsapp_flow_v32_replay_cache_transactional_smoke_v2.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/**'
       - 'scripts/test-whatsapp-flow-v32-replay-idempotency-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v32-replay-cache-smoke-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v32-replay.yml'
   workflow_dispatch:
 
@@ -29,6 +33,8 @@ jobs:
           node-version: '22'
       - name: Validate replay idempotency contract
         run: node scripts/test-whatsapp-flow-v32-replay-idempotency-contract.mjs
+      - name: Validate replay cache smoke contract
+        run: node scripts/test-whatsapp-flow-v32-replay-cache-smoke-contract.mjs
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
