@@ -34,7 +34,7 @@ must(cancel.includes("v_admin_role<>'owner' and v_req.requested_by is distinct f
 must(cancel.includes("v_admin_role not in ('owner','operator')"),'Cancelamento deve revalidar RBAC no banco');
 must(cancel.includes("'requeue_cancelled'"),'Cancelamento deve emitir evento auditável');
 must(cancel.includes("'previous_status','pending_review'"),'Auditoria deve registrar o estado anterior');
-must(!cancel.includes('update public.marketing_render_jobs set status=\'queued\''),'Cancelamento jamais pode requeueiar job');
+must(!cancel.includes("update public.marketing_render_jobs set status='queued'"),'Cancelamento jamais pode requeueiar job');
 must(!cancel.includes('marketing_runtime_config'),'Cancelamento de segurança não deve depender de gate aberto');
 
 must(edge.includes('["owner","operator"].includes(admin.role)'),'Edge precisa exigir RBAC de Admin');
@@ -43,17 +43,24 @@ for(const action of ['list','preview','request','cancel','approve','execute'])mu
 for(const rpc of ['preview_marketing_render_requeue_v1','request_marketing_render_requeue_v1','cancel_marketing_render_requeue_v1','approve_marketing_render_requeue_v1','execute_marketing_render_requeue_v1'])must(edge.includes(rpc)||edge.includes('const rpc=action==='),`Edge precisa alcançar ${rpc}`);
 must(edge.includes('external_side_effect!==false'),'Edge deve falhar fechado para resposta insegura');
 must(edge.includes('unsafe_cancel_response'),'Cancelamento deve falhar fechado para resposta insegura');
-must(edge.includes('LIST_STATUSES=["pending_review","approved","blocked"]'),'Listagem deve se limitar aos estados de triagem operacionais');
+must(edge.includes('unsafe_cancel_status'),'Edge deve rejeitar cancelamento que não termine em cancelled');
+must(edge.includes('ACTIVE_LIST_STATUSES=["pending_review","approved","blocked"]'),'Listagem operacional deve se limitar aos estados ativos');
+must(edge.includes('HISTORY_LIST_STATUSES=["cancelled"]'),'Histórico deve separar explicitamente cancelados');
+must(edge.includes('include_cancelled')&&edge.includes('includeCancelled'),'Cancelados só devem entrar quando solicitados explicitamente');
 must(edge.includes('.select("id,job_id,asset_id,reason_code,status,requested_at,reviewed_at,executed_at")'),'Listagem deve usar projeção redigida explícita');
 for(const redaction of ['eligibility_snapshot_exposed:false','result_snapshot_exposed:false','idempotency_key_exposed:false','actor_ids_exposed:false','raw_error_exposed:false'])must(edge.includes(redaction),`Listagem deve declarar redaction: ${redaction}`);
 for(const forbidden of ['graph.facebook.com','api.pinterest.com','mybusiness.googleapis.com','OPENAI_API_KEY','META_ACCESS_TOKEN','PINTEREST_ACCESS_TOKEN','fetch("https://'])must(!edge.includes(forbidden),`Edge de triagem não pode chamar provider externo: ${forbidden}`);
 must(config.includes('[functions.admin-marketing-render-triage-v1]')&&config.includes('verify_jwt = true'),'Edge de triagem deve exigir JWT');
 
-must(ui.includes("triage('list'")&&ui.includes("triage('preview'")&&ui.includes("triage('request'"),'UI deve usar list/preview/request');
+for(const action of ["triage('list'","triage('preview'","triage('request'","triage('cancel'"])must(ui.includes(action),`UI deve usar ${action}`);
 must(!ui.includes("triage('approve'")&&!ui.includes("triage('execute'"),'UI Renderer não pode expor approve/execute');
 must(ui.includes('runtime.triage_enabled===true&&runtime.triage_kill_switch===false'),'Botão de solicitação deve depender do gate e kill switch');
 must(ui.includes('eligibility_snapshot_exposed!==false')&&ui.includes('result_snapshot_exposed!==false')&&ui.includes('idempotency_key_exposed!==false')&&ui.includes('actor_ids_exposed!==false'),'UI deve falhar fechado se a redaction for relaxada');
 must(ui.includes('Verificar elegibilidade')&&ui.includes('Solicitar triagem'),'UI deve ter preview explícito e solicitação manual');
+must(ui.includes('Cancelar solicitação')&&ui.includes("v.status==='pending_review'"),'UI só deve exibir cancelamento para pending_review');
+must(ui.includes("d.status!=='cancelled'")&&ui.includes('estado final inválido'),'UI deve falhar fechado se cancel não terminar em cancelled');
+must(ui.includes('include_cancelled:true'),'UI deve pedir histórico cancelado explicitamente');
+must(ui.includes('Histórico cancelado')&&ui.includes("v.status==='cancelled'"),'Cancelados devem aparecer apenas em histórico separado');
 must(ui.includes('Sem approve/execute nesta tela'),'UI deve deixar claro que execução não é exposta');
 for(const forbidden of ['setInterval(()=>load','requestAnimationFrame','graph.facebook.com','api.pinterest.com','mybusiness.googleapis.com','OPENAI_API_KEY'])must(!ui.includes(forbidden),`UI Renderer não pode introduzir polling/provider: ${forbidden}`);
 
