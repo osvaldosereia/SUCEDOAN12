@@ -19,7 +19,8 @@ must(edge.includes('sb.rpc("marketing_render_triage_metrics_v1")'),'Edge deve co
 must(edge.includes('unsafe_triage_metrics'),'Edge deve falhar fechada para contrato inseguro');
 must(edge.includes('unsafe_triage_metrics_redaction'),'Edge deve falhar fechada para redaction relaxada');
 must(edge.includes('job_payload_exposed!==false'),'Edge deve validar redaction de payload');
-must(edge.includes('return json({ok:true,items,metrics,runtime:'),'List deve devolver métricas junto da projeção redigida');
+// V19 acrescentou SLA à mesma resposta list sem substituir as métricas V18.
+must(edge.includes('return json({ok:true,items,metrics,sla,runtime:'),'List deve devolver métricas V18 e SLA V19 junto da projeção redigida');
 for(const forbidden of ['graph.facebook.com','api.pinterest.com','mybusiness.googleapis.com','OPENAI_API_KEY','META_ACCESS_TOKEN','PINTEREST_ACCESS_TOKEN'])must(!edge.includes(forbidden),`Edge não pode chamar provider externo: ${forbidden}`);
 
 console.log('marketing render triage metrics v1: ok');
