@@ -10,6 +10,14 @@ export function normalizePhoneBR(value){
   return null;
 }
 
+export function historyWindow(days=90,now=new Date()){
+  const safe=Math.max(1,Math.min(3650,Number.parseInt(String(days),10)||90));
+  const end=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()));
+  const start=new Date(end.getTime()-(safe-1)*86400000);
+  const iso=d=>d.toISOString().slice(0,10);
+  return {start:iso(start),end:iso(end)};
+}
+
 function addressSource(contact){
   const e=contact?.endereco||{};
   return e?.geral||e?.principal||e?.cobranca||e||{};
