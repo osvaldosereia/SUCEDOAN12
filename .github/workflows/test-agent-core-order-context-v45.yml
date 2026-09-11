@@ -1,38 +1,10 @@
-name: Test Agent Core Order Context V45
-
+name: Test Agent Core Order Context — arquivado
 on:
-  push:
-    paths:
-      - 'supabase/migrations/*order_context_post_sale_guard_v45.sql'
-      - 'supabase/functions/dona-antonia-agent-core-v1/**'
-      - 'supabase/functions/dona-antonia-agent-eval-v1/**'
-      - 'scripts/test-agent-core-order-context-v45.mjs'
-      - '.github/workflows/test-agent-core-order-context-v45.yml'
-  pull_request:
-    paths:
-      - 'supabase/migrations/*order_context_post_sale_guard_v45.sql'
-      - 'supabase/functions/dona-antonia-agent-core-v1/**'
-      - 'supabase/functions/dona-antonia-agent-eval-v1/**'
-      - 'scripts/test-agent-core-order-context-v45.mjs'
-      - '.github/workflows/test-agent-core-order-context-v45.yml'
-
+  workflow_dispatch:
 permissions:
   contents: read
-
 jobs:
-  contract:
+  archived:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Contract · order context/post-sale V45-V46
-        run: node scripts/test-agent-core-order-context-v45.mjs
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - name: Deno check Agent Core and evaluator
-        run: |
-          deno check supabase/functions/dona-antonia-agent-core-v1/index.ts
-          deno check supabase/functions/dona-antonia-agent-eval-v1/index.ts
+      - run: echo "Teste legado do agente próprio arquivado."

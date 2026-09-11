@@ -1,61 +1,10 @@
-name: Test Agent Workflow Admin V1
+name: Test Agent Workflow Admin — arquivado
 on:
-  pull_request:
-    paths:
-      - 'admin/index.html'
-      - 'admin/inteligencia.html'
-      - 'admin/aprendizados.html'
-      - 'admin/whatsapp-flow-key.html'
-      - 'admin-v3/agent-workflow.*'
-      - 'admin-v3/admin-pin-access.js'
-      - 'admin-v3/admin-subpage-guard.js'
-      - 'admin-v3/mobile-priority.css'
-      - 'admin-v3/agent-learning.css'
-      - 'supabase/functions/admin-pin-auth-v1/**'
-      - 'supabase/config.toml'
-      - 'supabase/migrations/*agent_workflow*'
-      - 'supabase/migrations/*admin_pin_access*'
-      - '.github/workflows/test-agent-workflow-admin-v1.yml'
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  validate:
+  archived:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-      - name: Check JavaScript syntax
-        run: |
-          node --check admin-v3/agent-workflow.js
-          node --check admin-v3/agent-workflow-io.js
-          node --check admin-v3/admin-pin-access.js
-          node --check admin-v3/admin-subpage-guard.js
-      - name: Check Admin mobile PIN entry
-        run: |
-          grep -q 'id="pinInput"' admin/index.html
-          grep -q 'inputmode="numeric"' admin/index.html
-          grep -q 'admin-pin-access.js' admin/index.html
-          grep -q 'mobile-priority.css' admin/index.html
-          grep -q 'admin-pin-auth-v1' supabase/config.toml
-          ! grep -q '121212' admin-v3/admin-pin-access.js
-          ! grep -q '121212' supabase/functions/admin-pin-auth-v1/index.ts
-          ! grep -q '121212' supabase/migrations/20260911032000_admin_pin_access_v1.sql
-      - name: Check Workflow Markdown controls
-        run: |
-          grep -q 'agent-workflow.css' admin/inteligencia.html
-          grep -q 'agent-workflow.js' admin/inteligencia.html
-          grep -q 'agent-workflow-io.js' admin/inteligencia.html
-          grep -q 'DA_AGENT_WORKFLOW_MD_V1' admin-v3/agent-workflow-io.js
-          grep -q 'Baixar fluxo completo' admin-v3/agent-workflow-io.js
-          grep -q 'Importar .md' admin-v3/agent-workflow-io.js
-      - name: Check Agent Core policy wiring
-        run: |
-          grep -q 'get_agent_workflow_policy_v1' supabase/migrations/20260911025000_dona_antonia_agent_workflow_admin_v1.sql
-          grep -q "jsonb_set(v_packet,'{toolset}'" supabase/migrations/20260911025000_dona_antonia_agent_workflow_admin_v1.sql
-          grep -q 'agent_workflow' supabase/migrations/20260911025000_dona_antonia_agent_workflow_admin_v1.sql
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - name: Check PIN Edge Function
-        run: deno check supabase/functions/admin-pin-auth-v1/index.ts
+      - run: echo "Admin do agente próprio arquivado."

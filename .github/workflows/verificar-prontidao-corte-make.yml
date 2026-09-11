@@ -1,40 +1,10 @@
-name: CanecaFácil · prontidão corte Make
-
-# EMERGÊNCIA 2026-09-06: TODOS os acionamentos automáticos foram desativados
-# porque a auditoria lê /produtos completo no Firebase. Execução somente manual
-# até a verificação ser convertida para leitura incremental.
+name: Verificar prontidão corte Make — arquivado
 on:
   workflow_dispatch:
-
 permissions:
   contents: read
-
-concurrency:
-  group: canecafacil-cutover-readiness
-  cancel-in-progress: true
-
 jobs:
-  prontidao:
+  archived:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            scripts
-            admin-canecas
-          sparse-checkout-cone-mode: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Validar sintaxe do painel de prontidão
-        run: node --check admin-canecas/github-cutover-readiness-v1.js
-      - name: Verificar substitutos GitHub sem alterar Make
-        env:
-          FIREBASE_BASE_URL: https://cedar-chemist-310801-default-rtdb.firebaseio.com
-          LOJA_INTEGRADA_BASE_URL: https://api.awsli.com.br/v1
-          LOJA_INTEGRADA_AUTHORIZATION: ${{ secrets.LOJA_INTEGRADA_APP_KEY }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          READINESS_SKU: CANP-WTM83S
-          PUBLISH_READINESS: 'true'
-        run: node scripts/verificar-prontidao-corte-make-v1.mjs
+      - run: echo "Verificação de corte do Make arquivada; PapoAI assumiu o atendimento."

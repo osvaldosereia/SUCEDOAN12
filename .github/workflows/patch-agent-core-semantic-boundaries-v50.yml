@@ -1,45 +1,10 @@
-name: Patch Agent Core Semantic Boundaries V50
-
+name: Patch Agent Core Semantic Boundaries — arquivado
 on:
-  push:
-    branches:
-      - fix/agent-core-v45-order-context
-    paths:
-      - 'scripts/patch-agent-core-semantic-boundaries-v50.mjs'
-      - '.github/workflows/patch-agent-core-semantic-boundaries-v50.yml'
-
+  workflow_dispatch:
 permissions:
-  contents: write
-
+  contents: read
 jobs:
-  patch:
+  archived:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: fix/agent-core-v45-order-context
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Apply V50 patch
-        run: node scripts/patch-agent-core-semantic-boundaries-v50.mjs
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - name: Deno check patched edges
-        run: |
-          deno check supabase/functions/dona-antonia-agent-core-v1/index.ts
-          deno check supabase/functions/dona-antonia-agent-eval-v1/index.ts
-      - name: Validate semantic punctuation normalization
-        run: |
-          grep -Fq '.replace(/[^a-z0-9]+/g," ")' supabase/functions/dona-antonia-agent-core-v1/index.ts
-          grep -Fq '.replace(/[^a-z0-9]+/g," ")' supabase/functions/dona-antonia-agent-eval-v1/index.ts
-      - name: Commit patch if needed
-        run: |
-          if git diff --quiet; then exit 0; fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add supabase/functions/dona-antonia-agent-core-v1/index.ts supabase/functions/dona-antonia-agent-eval-v1/index.ts
-          git commit -m 'fix(agent-core): normalize punctuation in state intents V50'
-          git push origin HEAD:fix/agent-core-v45-order-context
+      - run: echo "Patch legado do agente próprio arquivado."
