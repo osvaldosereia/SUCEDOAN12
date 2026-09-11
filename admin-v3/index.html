@@ -2,11 +2,40 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-  <title>Dona Antônia · Admin</title>
-  <script>window.location.replace(new URL('../admin/'+window.location.search+window.location.hash, window.location.href).href);</script>
+  <meta name="theme-color" content="#ffffff">
+  <title>Dona Antônia · Admin V3</title>
+  <link rel="stylesheet" href="./styles.css?v=20260911-2">
 </head>
-<body><p>Abrindo o <a href="../admin/">Admin Dona Antônia</a>…</p></body>
+<body>
+  <header class="topbar">
+    <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button>
+    <a class="brand" href="#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin V3</b></span></a>
+    <a class="view-storefront" href="../vitrine-v3/" target="_blank" rel="noopener">Ver vitrine</a>
+  </header>
+
+  <div class="admin-layout">
+    <aside id="sidebar" class="sidebar" aria-label="Menu principal">
+      <nav>
+        <button type="button" data-route="dashboard">Início</button>
+        <button type="button" data-route="storefront">Vitrine</button>
+        <button type="button" data-route="baskets">Cestas</button>
+        <button type="button" data-route="products">Produtos</button>
+        <button type="button" data-route="categories">Categorias</button>
+        <button type="button" data-route="orders">Pedidos</button>
+        <button type="button" data-route="customers">Clientes</button>
+        <a href="../contagem/">Balanço rápido</a>
+      </nav>
+    </aside>
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+    <main id="app" class="content" tabindex="-1"></main>
+  </div>
+
+  <dialog id="editorDialog" class="editor-dialog"><div id="editorBody"></div></dialog>
+  <div id="toastRegion" class="toasts" aria-live="polite" aria-atomic="true"></div>
+  <noscript><div class="noscript">Ative o JavaScript para usar o Admin.</div></noscript>
+  <script type="module" src="./app.js?v=20260911-2"></script>
+  <script type="module" src="./basket-editor.js?v=20260911-2"></script>
+</body>
 </html>
