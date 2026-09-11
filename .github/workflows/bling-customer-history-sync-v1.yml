@@ -58,7 +58,7 @@ jobs:
           BLING_REFRESH_TOKEN_FILE: ${{ runner.temp }}/bling-refresh-token
           BLING_SYNC_REPORT_FILE: ${{ runner.temp }}/bling-customer-history-report.json
           BLING_REQUEST_INTERVAL_MS: '460'
-          HISTORY_MAX_YEARS: '10'
+          HISTORY_DAYS: '90'
         run: node scripts/bling-customer-history-sync-v2.mjs --apply
       - name: Persistir refresh token rotacionado
         if: always() && github.ref == 'refs/heads/main'
