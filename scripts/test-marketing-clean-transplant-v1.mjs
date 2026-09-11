@@ -19,7 +19,8 @@ for (const forbidden of [
   'marketing-carousel-progress-v1',
   'marketing-editor-v1',
   'marketing-library-v1',
-  'marketing-operations-readonly-v1'
+  'marketing-operations-readonly-v1',
+  'marketing-readiness-readonly-v1'
 ]) assert.ok(!publicAdmin.includes(forbidden), `public Admin must not load Marketing surface: ${forbidden}`);
 
 const marketingFunctions = [
@@ -47,7 +48,8 @@ const dormantUiFiles = [
   'admin-v3/marketing-carousel-progress-v1.js',
   'admin-v3/marketing-editor-v1.js',
   'admin-v3/marketing-library-v1.js',
-  'admin-v3/marketing-operations-readonly-v1.js'
+  'admin-v3/marketing-operations-readonly-v1.js',
+  'admin-v3/marketing-readiness-readonly-v1.js'
 ];
 for (const file of dormantUiFiles) assert.ok(fs.existsSync(file), `dormant Marketing UI asset missing: ${file}`);
 
@@ -76,6 +78,13 @@ assert.match(operations, /external_side_effect!==false/, 'private operations rea
 assert.match(operations, /admin-marketing-workflow-v1/, 'private operations reader must use protected workflow edge');
 assert.ok(!externalProviderPattern.test(operations), 'dormant operations reader must not call external providers directly');
 assert.ok(!/call\('(submit_review|approve_asset|schedule_job|unschedule_job|publish|execute|requeue)'/.test(operations),'dormant operations reader must stay read-only');
+
+const readiness = fs.readFileSync('admin-v3/marketing-readiness-readonly-v1.js','utf8');
+assert.match(readiness, /Authorization:`Bearer \$\{a\.access_token\}`/, 'private readiness reader must send bearer JWT');
+assert.match(readiness, /external_side_effect!==false/, 'private readiness reader must fail closed on side-effect marker');
+assert.match(readiness, /admin-marketing-insights-v1/, 'private readiness reader must use protected insights edge');
+assert.ok(!externalProviderPattern.test(readiness), 'dormant readiness reader must not call external providers directly');
+assert.ok(!/call\('(publish|execute|schedule_job|approve_asset|requeue|kill|create_|update_)/.test(readiness),'dormant readiness reader must stay read-only');
 
 const migrations = [
   '20260910004500_marketing_center_foundation_v1.sql',
