@@ -36,6 +36,10 @@ verify_jwt = false
 [functions.inventory-count-v2]
 verify_jwt = true
 
+# Balanço rápido: acesso direto sem login/senha. A função aceita somente ações do fluxo de leitura rápida.
+[functions.inventory-fast-balance-v3]
+verify_jwt = false
+
 # Porta pública mínima antiga; será removida na limpeza final do legado.
 [functions.admin-pin-auth-v1]
 verify_jwt = false
