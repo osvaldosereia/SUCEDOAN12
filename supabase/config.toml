@@ -98,3 +98,7 @@ verify_jwt = false
 # Chat público leve: autenticação própria por token aleatório da sessão + CORS estrito.
 [functions.shopping-chat-v1]
 verify_jwt = false
+
+# Feed público de produtos do chat: catálogo vendável + token válido da sessão + CORS estrito.
+[functions.shopping-chat-products-v1]
+verify_jwt = false
