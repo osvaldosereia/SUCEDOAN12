@@ -95,6 +95,8 @@ jobs:
           node --check scripts/marketing-private-media-adapter-v1.mjs
           node --check scripts/marketing-private-media-resolver-v1.mjs
           node --check scripts/marketing-channel-dry-run-v1.mjs
+      - name: Validate current main compatibility guard
+        run: node scripts/test-marketing-main-compat-v1.mjs
       - name: Validate Marketing Center safety contract
         run: node scripts/test-marketing-center-v1.mjs
       - name: Validate approval/calendar safety contract
