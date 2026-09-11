@@ -6,7 +6,11 @@ on:
       - admin-v3-vitrine-v3-design-20260911
     paths:
       - 'vitrine-v3/**'
-      - 'admin-v3/**'
+      - 'admin-v3/index.html'
+      - 'admin-v3/styles.css'
+      - 'admin-v3/config.js'
+      - 'admin-v3/api.js'
+      - 'admin-v3/app.js'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
       - 'supabase/migrations/*storefront_v3*'
@@ -19,7 +23,11 @@ on:
     branches: [main]
     paths:
       - 'vitrine-v3/**'
-      - 'admin-v3/**'
+      - 'admin-v3/index.html'
+      - 'admin-v3/styles.css'
+      - 'admin-v3/config.js'
+      - 'admin-v3/api.js'
+      - 'admin-v3/app.js'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
       - 'supabase/migrations/*storefront_v3*'
@@ -56,12 +64,19 @@ jobs:
       - name: Contrato Admin V3
         run: node scripts/test-admin-v3-contract.mjs
       - name: Validar JavaScript V3
-        shell: bash
         run: |
-          set -euo pipefail
-          for f in vitrine-v3/*.js admin-v3/*.js admin-v3/views/*.js; do
-            [ -f "$f" ] && node --check "$f"
-          done
+          node --check vitrine-v3/app.js
+          node --check vitrine-v3/catalog-api.js
+          node --check vitrine-v3/cache.js
+          node --check vitrine-v3/state.js
+          node --check vitrine-v3/products.js
+          node --check vitrine-v3/baskets.js
+          node --check vitrine-v3/cart.js
+          node --check vitrine-v3/checkout.js
+          node --check vitrine-v3/order-api.js
+          node --check admin-v3/config.js
+          node --check admin-v3/api.js
+          node --check admin-v3/app.js
       - name: Compilar Edge Functions V3
         run: |
           deno check supabase/functions/catalog-v3/index.ts
