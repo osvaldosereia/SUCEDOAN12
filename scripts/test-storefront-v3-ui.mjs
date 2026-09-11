@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const files=[
-  'vitrine-v3/index.html','vitrine-v3/styles.css','vitrine-v3/details.css','vitrine-v3/config.js','vitrine-v3/catalog-api.js',
+  'vitrine-v3/index.html','vitrine-v3/styles.css','vitrine-v3/details.css','vitrine-v3/flow.css','vitrine-v3/config.js','vitrine-v3/catalog-api.js',
   'vitrine-v3/cache.js','vitrine-v3/state.js','vitrine-v3/products.js','vitrine-v3/baskets.js',
   'vitrine-v3/cart.js','vitrine-v3/checkout.js','vitrine-v3/order-api.js','vitrine-v3/app.js'
 ];
@@ -10,7 +10,7 @@ for(const file of files) assert.ok(fs.existsSync(file),`faltando ${file}`);
 
 const read=f=>fs.readFileSync(f,'utf8');
 const html=read('vitrine-v3/index.html');
-const css=read('vitrine-v3/styles.css')+'\n'+read('vitrine-v3/details.css');
+const css=read('vitrine-v3/styles.css')+'\n'+read('vitrine-v3/details.css')+'\n'+read('vitrine-v3/flow.css');
 const config=read('vitrine-v3/config.js');
 const app=read('vitrine-v3/app.js');
 const catalog=read('vitrine-v3/catalog-api.js');
@@ -28,6 +28,7 @@ assert.match(html,/type="module"/);
 assert.match(html,/Pedido/);
 assert.match(html,/id="mobileOrderButton"/,'barra móvel do pedido precisa existir');
 assert.match(html,/id="productDialog"/,'detalhe do produto precisa abrir em modal central');
+assert.match(html,/flow\.css/,'estilos do fluxo de cesta precisam ser carregados');
 assert.match(app,/\$\(['"]mobileOrderButton['"]\)/,'app precisa usar o mesmo id da barra móvel definido no HTML');
 assert.doesNotMatch(app,/\$\(['"]mobileOrderBar['"]\)/,'id inexistente não pode interromper o boot da vitrine');
 assert.match(config,/catalogFunction:'catalog-v3'/);
@@ -66,14 +67,17 @@ assert.match(baskets,/data-select-basket/,'visualização da cesta precisa ter a
 assert.match(app,/data-select-basket/,'app precisa tratar a escolha explícita da cesta');
 assert.match(app,/Trocar a cesta atual por esta\?/,'troca de cesta escolhida precisa pedir confirmação');
 assert.match(baskets,/Escolher esta cesta/,'CTA de escolha da cesta precisa ser claro');
+assert.match(app,/Quer comprar sem cesta\?/,'pedido avulso deve ser caminho secundário na home');
+assert.ok(app.indexOf('Escolha sua cesta')<app.indexOf('Quer comprar sem cesta?'),'cestas devem vir antes do caminho de pedido avulso');
 
 assert.match(css,/#1a73e8/i);
 assert.match(css,/#202124/i);
 assert.match(css,/product-dialog/,'modal de produto precisa ter estilo próprio');
-assert.match(css,/aspect-ratio:\s*1\s*\/\s*1/,'fotos de cestas e produtos devem trabalhar em formato quadrado');
+assert.match(css,/\.basket-photo\{aspect-ratio:\s*1\/1/,'foto da cesta deve ser quadrada');
+assert.match(css,/\.product-detail-photo\{[^}]*aspect-ratio:\s*1\/1/,'foto grande do produto deve ser quadrada');
 assert.doesNotMatch(css,/linear-gradient/i);
 assert.match(css,/min-height:\s*4[6-9]px|min-height:\s*[5-9]\dpx/,'ações devem ter toque confortável');
 assert.doesNotMatch(all,/SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY/);
-assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)+Buffer.byteLength(app)<145_000,'shell inicial ficou pesado');
+assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)+Buffer.byteLength(app)<150_000,'shell inicial ficou pesado');
 
 console.log('storefront-v3-ui contract ok');
