@@ -2,9 +2,12 @@ import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(p,'utf8');
 const admin=read('admin-v3/marketing-insights-v1.js');
+const observability=read('admin-v3/marketing-render-observability-v1.js');
 const carousel=read('admin-v3/marketing-carousel-media-v1.js');
 const edge=read('supabase/functions/admin-marketing-insights-v1/index.ts');
 const renderMetrics=read('supabase/migrations/20260911005000_marketing_render_metrics_v13.sql');
+const renderKindMetrics=read('supabase/migrations/20260911014500_marketing_render_kind_metrics_v14.sql');
+const adminConfig=read('admin/config.js');
 const config=read('supabase/config.toml');
 const must=(cond,msg)=>{if(!cond)throw new Error(msg)};
 
@@ -34,6 +37,22 @@ must(renderMetrics.includes('grant execute on function public.marketing_render_m
 for(const metric of ['avg_queue_wait','p95_queue_wait','avg_render','p95_render','jobs_retried','success_rate_percent'])must(renderMetrics.includes(`'${metric}'`),`Read-model precisa calcular ${metric}`);
 must(renderMetrics.includes("'external_side_effect',false"),'Read-model deve declarar ausência de efeito externo');
 for(const forbidden of ['http://','https://','net.http','OPENAI','META_ACCESS_TOKEN'])must(!renderMetrics.includes(forbidden),`Migration de métricas não pode chamar provider/rede: ${forbidden}`);
+
+must(renderKindMetrics.includes("'by_kind_detail'"),'V14 precisa detalhar saúde por render_kind');
+for(const metric of ['failed','review_required','jobs_retried','attempts_total','success_rate_percent'])must(renderKindMetrics.includes(`'${metric}'`),`V14 precisa calcular ${metric} por render_kind`);
+must(renderKindMetrics.includes('security invoker'),'V14 deve preservar SECURITY INVOKER');
+must(renderKindMetrics.includes('from public,anon,authenticated')&&renderKindMetrics.includes('to service_role'),'V14 deve preservar execução server-only');
+must(renderKindMetrics.includes("'external_side_effect',false"),'V14 deve declarar ausência de efeito externo');
+for(const forbidden of ['http://','https://','net.http','OPENAI','META_ACCESS_TOKEN','PINTEREST_ACCESS_TOKEN'])must(!renderKindMetrics.includes(forbidden),`V14 não pode chamar rede/provider: ${forbidden}`);
+
+for(const label of ['Na fila','Processando','Renderizados','Falhas','P95 fila','P95 render','Sucesso','Com retry'])must(observability.includes(label),`Painel renderer precisa exibir ${label}`);
+for(const days of ['7','30','90'])must(observability.includes(`data-mro-days="${days}"`),`Painel renderer precisa expor janela ${days} dias`);
+must(observability.includes("action:'metrics'")&&observability.includes('admin-marketing-insights-v1'),'Painel renderer deve usar exclusivamente a Edge read-only de insights');
+must(observability.includes('d.external_side_effect!==false')&&observability.includes('d.metrics?.render?.external_side_effect!==false'),'Painel renderer deve falhar fechado para resposta insegura');
+must(observability.includes('by_kind_detail')&&observability.includes('jobs_retried'),'Painel renderer deve mostrar falhas/retries por tipo');
+must(observability.includes('sem polling contínuo')&&!observability.includes('setInterval(()=>load'),'Painel renderer não deve fazer polling contínuo de métricas');
+for(const forbidden of ['api.pinterest.com','graph.facebook.com','mybusiness.googleapis.com','OPENAI_API_KEY','META_ACCESS_TOKEN','request_render','publish_job'])must(!observability.includes(forbidden),`Painel renderer deve ser somente leitura: ${forbidden}`);
+must(adminConfig.includes('marketing-render-observability-v1.js'),'Admin precisa carregar o painel de observabilidade do renderer');
 
 must(carousel.includes('data-f="crop_x"')&&carousel.includes('data-f="crop_y"')&&carousel.includes('data-f="crop_scale"'),'Carrossel precisa expor enquadramento X/Y/escala');
 must(carousel.includes('clamp(c.x,0,100,50)')&&carousel.includes('clamp(c.scale,0.5,3,1)'),'Enquadramento precisa ser limitado deterministicamente');
