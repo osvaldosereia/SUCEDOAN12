@@ -18,11 +18,17 @@ jobs:
   regenerate-and-verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout only Flow build inputs
         uses: actions/checkout@v4
         with:
           ref: flow/run30-v48-repro
-          fetch-depth: 0
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts/build-flow-v31-stable-text-products.py
+            scripts/validate-flow-v31-commercial-contract.py
+            whatsapp/flows/flow-cestas-comercial-v6.json
+            whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json
+          sparse-checkout-cone-mode: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
