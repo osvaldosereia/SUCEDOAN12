@@ -68,6 +68,15 @@ create index if not exists products_storefront_sales_category_idx
   on public.products (sales_category, category, sort_order, name)
   where is_active=true;
 
+-- Itens de cesta sem preço não podem variar até que recebam preço no Admin.
+-- Assim nenhum ajuste mostra R$ 0,00 ou diverge do cálculo validado no servidor.
+update public.basket_template_items bi
+set quantity_editable = false
+from public.products p
+where p.id = bi.product_id
+  and coalesce(p.price,0) <= 0
+  and bi.quantity_editable = true;
+
 -- Mantém o cálculo comercial da cesta no servidor, mas não transforma
 -- "conferido fisicamente" em requisito de venda. Estoque e ativo continuam obrigatórios.
 create or replace function public.create_storefront_order_v2(
