@@ -6,6 +6,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const fail=(error:string,detail:string,status=400)=>json({ok:false,error,detail,external_side_effect:false},status);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const LIST_STATUSES=["pending_review","approved","blocked"];
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -24,6 +25,39 @@ Deno.serve(async(req:Request)=>{
   let b:Record<string,unknown>={};try{b=await req.json()}catch{return fail("invalid_json","JSON inválido")}
   const action=clean(b.action,40)||"preview";
   const stuckSeconds=Math.max(60,Math.min(Number(b.stuck_after_seconds||600)||600,86400));
+
+  if(action==="list"){
+    const limit=Math.max(1,Math.min(Number(b.limit||30)||30,100));
+    const {data:runtime,error:re}=await sb.from("marketing_runtime_config")
+      .select("render_triage_enabled,render_requeue_enabled,render_triage_kill_switch,enabled,execution_mode,kill_switch,generation_enabled")
+      .eq("id",1).maybeSingle();
+    if(re||!runtime)return fail("runtime_lookup_failed","Não foi possível consultar os gates",500);
+    const {data:rows,error:le}=await sb.from("marketing_render_triage_requests")
+      .select("id,job_id,asset_id,reason_code,status,requested_at,reviewed_at,executed_at")
+      .in("status",LIST_STATUSES).order("created_at",{ascending:false}).limit(limit);
+    if(le)return fail("triage_list_failed","Não foi possível consultar a triagem",500);
+    const jobIds=[...new Set((rows||[]).map((r:any)=>r.job_id).filter(Boolean))];
+    const jobs=new Map<string,any>();
+    if(jobIds.length){
+      const {data:j,error:je}=await sb.from("marketing_render_jobs").select("id,render_kind,status,attempt_count").in("id",jobIds);
+      if(je)return fail("triage_jobs_failed","Não foi possível consultar os jobs",500);
+      for(const row of j||[])jobs.set(row.id,row);
+    }
+    const items=(rows||[]).map((r:any)=>{const j=jobs.get(r.job_id)||{};return {
+      request_id:r.id,job_id:r.job_id,asset_id:r.asset_id,reason_code:r.reason_code,status:r.status,
+      requested_at:r.requested_at,reviewed_at:r.reviewed_at,executed_at:r.executed_at,
+      render_kind:j.render_kind||null,job_status:j.status||null,attempt_count:Number(j.attempt_count||0)
+    }});
+    return json({ok:true,items,runtime:{
+      triage_enabled:runtime.render_triage_enabled===true,
+      requeue_enabled:runtime.render_requeue_enabled===true,
+      triage_kill_switch:runtime.render_triage_kill_switch!==false,
+      marketing_enabled:runtime.enabled===true,
+      execution_mode:clean(runtime.execution_mode,20)||"off",
+      marketing_kill_switch:runtime.kill_switch!==false,
+      generation_enabled:runtime.generation_enabled===true
+    },redaction:{eligibility_snapshot_exposed:false,result_snapshot_exposed:false,idempotency_key_exposed:false,actor_ids_exposed:false,raw_error_exposed:false},user:{role:admin.role,display_name:admin.display_name},external_side_effect:false});
+  }
 
   if(action==="preview"){
     const jobId=clean(b.job_id,40);if(!UUID.test(jobId))return fail("invalid_job_id","Job inválido");
