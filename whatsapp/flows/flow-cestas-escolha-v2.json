@@ -1,0 +1,56 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+  "routing_model": {
+    "CESTAS": ["DETALHE"],
+    "DETALHE": ["ENVIADO"],
+    "ENVIADO": []
+  },
+  "screens": [
+    {
+      "id": "CESTAS",
+      "title": "Escolha sua cesta",
+      "data": {
+        "baskets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string"},
+              "main-content": {"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"metadata":{"type":"string"}}},
+              "start": {"type":"object","properties":{"image":{"type":"string"},"alt-text":{"type":"string"}}},
+              "end": {"type":"object","properties":{"title":{"type":"string"},"description":{"type":"string"},"metadata":{"type":"string"}}},
+              "on-click-action": {"type":"object","properties":{"name":{"type":"string"},"payload":{"type":"object","properties":{"trigger":{"type":"string"},"basket_id":{"type":"string"}}}}}
+            }
+          },
+          "__example__": [{"id":"00000000-0000-4000-8000-000000000001","main-content":{"title":"Cesta Econômica","description":"Ver produtos","metadata":""},"start":{"image":"iVBORw0KGgoAAA...","alt-text":"Cesta Econômica"},"end":{"title":"R$ 92,00"},"on-click-action":{"name":"data_exchange","payload":{"trigger":"basket_open","basket_id":"00000000-0000-4000-8000-000000000001"}}}]
+        }
+      },
+      "layout": {"type":"SingleColumnLayout","children":[{"type":"NavigationList","name":"basket_list","list-items":"${data.baskets}"}]}
+    },
+    {
+      "id": "DETALHE",
+      "title": "Produtos da cesta",
+      "data": {
+        "basket_name":{"type":"string","__example__":"Média Koblenz"},
+        "basket_price":{"type":"string","__example__":"R$ 350,00"},
+        "items_summary":{"type":"string","__example__":"2 × Arroz 5 kg\n2 × Feijão 1 kg\n1 × Café 500 g"}
+      },
+      "layout":{"type":"SingleColumnLayout","children":[
+        {"type":"TextHeading","text":"${data.basket_name}"},
+        {"type":"TextSubheading","text":"${data.basket_price}"},
+        {"type":"TextBody","text":"${data.items_summary}"},
+        {"type":"Footer","label":"Quero essa","on-click-action":{"name":"data_exchange","payload":{"trigger":"basket_order"}}}
+      ]}
+    },
+    {
+      "id":"ENVIADO","title":"Pronto","terminal":true,"success":true,
+      "data":{"message":{"type":"string","__example__":"Cesta escolhida. Continue no WhatsApp para encomendar a cesta padrão ou personalizar."}},
+      "layout":{"type":"SingleColumnLayout","children":[
+        {"type":"TextHeading","text":"Cesta escolhida"},
+        {"type":"TextBody","text":"${data.message}"},
+        {"type":"Footer","label":"Voltar ao WhatsApp","on-click-action":{"name":"complete","payload":{"action":"basket_order_done"}}}
+      ]}
+    }
+  ]
+}
