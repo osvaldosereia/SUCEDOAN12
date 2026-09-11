@@ -22,7 +22,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   marketingUiEnabled: true,
   driverAppUrl: '../driver-app/',
   countAppUrl: '../contagem/',
-  build: '20260910-marketing-workflow-v4'
+  build: '20260911-marketing-render-observability-v1'
 });
 
 (function loadHumanServiceCenter(cfg){
@@ -52,7 +52,8 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   let mount=document.getElementById('marketingCenterMount');if(!mount){mount=document.createElement('section');mount.id='marketingCenterMount';mount.className='view';mount.dataset.view='marketing';main.appendChild(mount)}
   button.addEventListener('click',()=>setTimeout(()=>{const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSubtitle');if(title)title.textContent='Marketing';if(sub)sub.textContent='Conteúdo, campanhas, canais e automações sem Make.'},0));
   if(!document.querySelector('link[data-marketing-center]')){const link=document.createElement('link');link.rel='stylesheet';link.href='../admin-v3/marketing-center.css?v=20260910-04';link.dataset.marketingCenter='1';document.head.appendChild(link)}
-  const loadWorkflow=()=>{if(document.querySelector('script[data-marketing-workflow]'))return;const ext=document.createElement('script');ext.src='../admin-v3/marketing-workflow-v1.js?v=20260910-01';ext.dataset.marketingWorkflow='1';document.body.appendChild(ext)};
+  const loadObservability=()=>{if(document.querySelector('script[data-marketing-render-observability]'))return;const obs=document.createElement('script');obs.src='../admin-v3/marketing-render-observability-v1.js?v=20260911-01';obs.dataset.marketingRenderObservability='1';document.body.appendChild(obs)};
+  const loadWorkflow=()=>{if(document.querySelector('script[data-marketing-workflow]')){loadObservability();return}const ext=document.createElement('script');ext.src='../admin-v3/marketing-workflow-v1.js?v=20260910-01';ext.dataset.marketingWorkflow='1';ext.onload=loadObservability;document.body.appendChild(ext)};
   if(!document.querySelector('script[data-marketing-center]')){const script=document.createElement('script');script.src='../admin-v3/marketing-center.js?v=20260910-01';script.dataset.marketingCenter='1';script.onload=()=>{window.DAMarketingCenter?.mount(mount);loadWorkflow()};document.body.appendChild(script)}else{window.DAMarketingCenter?.mount(mount);loadWorkflow()}
 })(window.DA_ADMIN_V3_CONFIG);
 
