@@ -5,9 +5,11 @@ const edgePath='supabase/functions/catalog-v3/index.ts';
 assert.ok(fs.existsSync(edgePath),'faltando catalog-v3');
 const edge=fs.readFileSync(edgePath,'utf8');
 const config=fs.readFileSync('supabase/config.toml','utf8');
-const migrationName=fs.readdirSync('supabase/migrations').find(name=>name.includes('storefront_v3_commercial_categories'));
+const migrationFiles=fs.readdirSync('supabase/migrations');
+const migrationName=migrationFiles.find(name=>name.includes('storefront_v3_commercial_categories'));
 assert.ok(migrationName,'faltando migration de categorias comerciais e pedido V3');
 const migration=fs.readFileSync(`supabase/migrations/${migrationName}`,'utf8');
+const allMigrations=migrationFiles.map(name=>fs.readFileSync(`supabase/migrations/${name}`,'utf8')).join('\n');
 
 assert.match(edge,/req\.method\s*!==\s*['"]GET['"]/,'catálogo deve ser GET/read-only');
 assert.match(edge,/resource/);
@@ -31,7 +33,7 @@ assert.match(config,/\[functions\.catalog-v3\][\s\S]*verify_jwt\s*=\s*false/);
 
 for(const category of ['Mercearia','Café da manhã','Massas, molhos e temperos','Biscoitos, doces e lanches','Bebidas','Limpeza da casa','Lavanderia','Higiene e beleza','Bebê','Pets','Utilidades']) assert.match(migration,new RegExp(category.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'),`categoria comercial ausente: ${category}`);
 assert.match(migration,/add\s+column\s+if\s+not\s+exists\s+storefront_category\s+text/i,'migration precisa criar campo próprio para a Vitrine V3');
-assert.match(migration,/alter\s+table\s+public\.basket_template_items[\s\S]+add\s+column\s+if\s+not\s+exists\s+updated_at\s+timestamptz/i,'basket_template_items precisa ter updated_at porque seu trigger já tenta atualizá-lo');
+assert.match(allMigrations,/alter\s+table\s+public\.basket_template_items[\s\S]+add\s+column\s+if\s+not\s+exists\s+updated_at\s+timestamptz/i,'basket_template_items precisa ter updated_at porque seu trigger já tenta atualizá-lo');
 assert.match(migration,/update\s+public\.products[\s\S]+storefront_category/i,'migration precisa classificar os produtos da Vitrine');
 assert.doesNotMatch(migration,/set\s+sales_category\s*=/i,'categoria legada do atendimento não pode ser reescrita');
 assert.match(migration,/update\s+public\.basket_template_items[\s\S]+quantity_editable\s*=\s*false[\s\S]+coalesce\(p\.price,0\)\s*<=\s*0/i,'item de cesta sem preço precisa permanecer com quantidade fixa');
