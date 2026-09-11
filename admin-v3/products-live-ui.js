@@ -8,7 +8,6 @@
   const nativeFetch=window.fetch.bind(window);
   let latestProducts=[];
   let latestMetrics={verified:0,counting:0,ai_review:0,ai_created:0};
-  let refreshTimer=null;
 
   function productView(){return document.querySelector('.view[data-view="products"]')}
   function isProductsVisible(){return productView()?.classList.contains('active')}
@@ -54,7 +53,7 @@
         <button type="button" class="product-live-card ai" data-product-live-filter="ai-review">
           <span>REVISÃO IA</span><strong id="productLiveAi">0</strong><small>inativos até revisão humana</small>
         </button>
-        <div class="product-live-sync"><i></i><div><strong>Atualização automática</strong><small>a cada 15 segundos enquanto esta tela estiver aberta</small></div></div>`;
+        <div class="product-live-sync"><i></i><div><strong>Atualização manual</strong><small>use o botão Atualizar para buscar mudanças</small></div></div>`;
       const toolbar=view.querySelector('.toolbar');
       view.insertBefore(summary,toolbar||view.firstChild);
       summary.addEventListener('click',event=>{
@@ -121,7 +120,7 @@
     if(!isProductsVisible())return;
     const title=$('pageTitle'),subtitle=$('pageSubtitle');
     if(title)title.textContent='Produtos e conferência';
-    if(subtitle)subtitle.textContent='Acompanhe em tempo real os conferidos, os EANs em contagem e os cadastros da IA aguardando revisão humana.';
+    if(subtitle)subtitle.textContent='Confira os produtos, EANs em contagem e cadastros da IA. Use Atualizar quando quiser buscar mudanças.';
   }
 
   async function interceptedFetch(input,init){
@@ -147,17 +146,6 @@
     return nativeFetch(input,init);
   }
 
-  function startAutoRefresh(){
-    clearInterval(refreshTimer);
-    refreshTimer=setInterval(()=>{
-      if(document.hidden||!isProductsVisible())return;
-      if(!$('modal')?.classList.contains('hidden'))return;
-      const active=document.activeElement;
-      if(active&&productView()?.contains(active)&&/^(INPUT|SELECT|TEXTAREA)$/.test(active.tagName))return;
-      $('refreshButton')?.click();
-    },15000);
-  }
-
   function bind(){
     ensureUi();
     const host=$('productRows');
@@ -165,8 +153,6 @@
     const view=productView();
     if(view)new MutationObserver(()=>{ensureUi();syncHeader();if(isProductsVisible())setTimeout(enhanceRows,0)}).observe(view,{attributes:true,attributeFilter:['class']});
     $('productStatus')?.addEventListener('change',()=>setTimeout(renderMetrics,0));
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden&&isProductsVisible())$('refreshButton')?.click()});
-    startAutoRefresh();
   }
 
   window.fetch=interceptedFetch;
