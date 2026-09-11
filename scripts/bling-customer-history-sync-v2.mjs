@@ -1,5 +1,5 @@
 import { writeFileSync } from 'node:fs';
-import { mapBlingContact, mapBlingSale, digits } from './bling-customer-history-sync-core.mjs';
+import { mapBlingContact, mapBlingSale, digits, historyWindow } from './bling-customer-history-sync-core.mjs';
 
 function text(v){ return String(v ?? '').trim(); }
 function required(name){ const v=text(process.env[name]); if(!v) throw new Error(`A secret ${name} não foi configurada.`); return v; }
@@ -9,12 +9,12 @@ const API_BASE='https://api.bling.com.br/Api/v3';
 const SUPABASE_URL=required('SUPABASE_URL').replace(/\/+$/,'');
 const SUPABASE_SERVICE_ROLE_KEY=required('SUPABASE_SERVICE_ROLE_KEY');
 const MIN_INTERVAL_MS=Math.max(420,Number(process.env.BLING_REQUEST_INTERVAL_MS||460));
-const MAX_YEARS=Math.max(1,Math.min(15,Number.parseInt(process.env.HISTORY_MAX_YEARS||'10',10)||10));
+const HISTORY_DAYS=Math.max(1,Math.min(3650,Number.parseInt(process.env.HISTORY_DAYS||'90',10)||90));
 const REPORT_FILE=String(process.env.BLING_SYNC_REPORT_FILE||'bling-customer-history-report.json');
 let accessToken='',lastBlingRequestAt=0;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const nowIso=()=>new Date().toISOString();
-const summary={mode:APPLY?'apply':'dry-run',local_customers_before:0,linked_bling_before:0,contacts_synced:0,contacts_created:0,contacts_updated:0,addresses_saved:0,emails_saved:0,phones_saved:0,contact_conflicts:0,contact_errors:0,years_scanned:0,sales_listed:0,history_orders_saved:0,history_items_saved:0,history_errors:0};
+const summary={mode:APPLY?'apply':'dry-run',history_days:HISTORY_DAYS,history_window_start:null,history_window_end:null,local_customers_before:0,linked_bling_before:0,contacts_synced:0,contacts_created:0,contacts_updated:0,addresses_saved:0,emails_saved:0,phones_saved:0,contact_conflicts:0,contact_errors:0,sales_listed:0,history_orders_saved:0,history_items_saved:0,history_errors:0};
 
 function report(){ writeFileSync(REPORT_FILE,`${JSON.stringify(summary,null,2)}\n`,'utf8'); }
 async function pace(){ const wait=Math.max(0,MIN_INTERVAL_MS-(Date.now()-lastBlingRequestAt)); if(wait) await sleep(wait); lastBlingRequestAt=Date.now(); }
@@ -84,7 +84,7 @@ async function syncContact(raw){
   refreshIndexes(customer); await savePhone(customer.id,safePhone); await saveEmail(customer.id,c.email); await saveAddress(customer.id,c.bling_contact_id,c.address); summary.contacts_synced++; return customer;
 }
 async function contactDetail(id){ const r=await bling(`/contatos/${encodeURIComponent(id)}`,{label:`Contato ${id}`}); return (await r.json())?.data||null; }
-async function ensureContact(id){ id=Number(id)||0; if(!id) return null; if(state.contactCache.has(id)) return state.contactCache.get(id); try{ const raw=await contactDetail(id); const customer=raw?await syncContact(raw):null; state.contactCache.set(id,customer); return customer; }catch(e){ summary.contact_errors++; console.error(`Contato ${id}: ${e.message}`); state.contactCache.set(id,null); return null; } }
+async function ensureContact(id){ id=Number(id)||0; if(!id) return null; if(state.contactCache.has(id)) return state.contactCache.get(id); try{ const raw=await contactDetail(id); const customer=raw?await syncContact(raw):state.byBling.get(id)||null; state.contactCache.set(id,customer); return customer; }catch(e){ summary.contact_errors++; console.error(`Contato ${id}: ${e.message}`); const local=state.byBling.get(id)||null; state.contactCache.set(id,local); return local; } }
 async function listSales(start,end){ const rows=[]; for(let page=1;page<=5000;page++){ const q=new URLSearchParams({pagina:String(page),limite:'100',dataInicial:start,dataFinal:end}); const r=await bling(`/pedidos/vendas?${q}`,{label:`Pedidos ${start}..${end} pág ${page}`}); const pageRows=(await r.json())?.data||[]; rows.push(...pageRows); if(pageRows.length<100) break; } return rows; }
 async function saleDetail(id){ const r=await bling(`/pedidos/vendas/${encodeURIComponent(id)}`,{label:`Pedido ${id}`,allow404:true}); if(r.status===404) return null; return (await r.json())?.data||null; }
 async function saveSale(raw){
@@ -98,14 +98,14 @@ async function saveSale(raw){
 }
 async function syncExistingLinkedContacts(){ for(const id of [...state.byBling.keys()]) await ensureContact(id); }
 async function syncHistory(){
-  const currentYear=new Date().getUTCFullYear(); let foundAny=false,emptyOlder=0;
-  for(let offset=0;offset<MAX_YEARS;offset++){
-    const year=currentYear-offset,start=`${year}-01-01`,end=offset===0?new Date().toISOString().slice(0,10):`${year}-12-31`; let rows;
-    try{ rows=await listSales(start,end); }catch(e){ summary.history_errors++; console.error(`Ano ${year}: ${e.message}`); continue; }
-    summary.years_scanned++; summary.sales_listed+=rows.length; if(rows.length){ foundAny=true; emptyOlder=0; } else if(foundAny) emptyOlder++;
-    for(const row of rows){ try{ const detail=await saleDetail(row.id); await saveSale(detail||row); }catch(e){ summary.history_errors++; console.error(`Pedido ${row?.id||'?'}: ${e.message}`); } }
-    if(foundAny&&emptyOlder>=2) break;
-  }
+  const {start,end}=historyWindow(HISTORY_DAYS,new Date());
+  summary.history_window_start=start; summary.history_window_end=end;
+  if(APPLY) await removeWhere('bling_sales_history',`order_date=lt.${encodeURIComponent(start)}`);
+  let rows=[];
+  try{ rows=await listSales(start,end); }
+  catch(e){ summary.history_errors++; console.error(`Histórico ${start}..${end}: ${e.message}`); return; }
+  summary.sales_listed=rows.length;
+  for(const row of rows){ try{ const detail=await saleDetail(row.id); await saveSale(detail||row); }catch(e){ summary.history_errors++; console.error(`Pedido ${row?.id||'?'}: ${e.message}`); } }
 }
 
 try{ await oauth(); await loadLocal(); await syncExistingLinkedContacts(); await syncHistory(); report(); console.log(JSON.stringify(summary,null,2)); }
