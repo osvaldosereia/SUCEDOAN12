@@ -7,12 +7,14 @@ on:
     paths:
       - 'vitrine-v2/**'
       - 'scripts/test-storefront-v2-ui.mjs'
+      - 'scripts/test-storefront-v2-live-read.mjs'
       - '.github/workflows/test-storefront-v2-ui.yml'
   pull_request:
     branches: [main]
     paths:
       - 'vitrine-v2/**'
       - 'scripts/test-storefront-v2-ui.mjs'
+      - 'scripts/test-storefront-v2-live-read.mjs'
       - '.github/workflows/test-storefront-v2-ui.yml'
   workflow_dispatch:
 
@@ -34,3 +36,5 @@ jobs:
         run: |
           set -euo pipefail
           for f in vitrine-v2/*.js; do node --check "$f"; done
+      - name: Smoke read-only na API de produção
+        run: node scripts/test-storefront-v2-live-read.mjs
