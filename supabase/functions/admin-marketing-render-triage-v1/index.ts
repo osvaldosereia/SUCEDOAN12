@@ -6,7 +6,8 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const clean=(v:unknown,max=200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const fail=(error:string,detail:string,status=400)=>json({ok:false,error,detail,external_side_effect:false},status);
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const LIST_STATUSES=["pending_review","approved","blocked"];
+const ACTIVE_LIST_STATUSES=["pending_review","approved","blocked"];
+const HISTORY_LIST_STATUSES=["cancelled"];
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -28,13 +29,15 @@ Deno.serve(async(req:Request)=>{
 
   if(action==="list"){
     const limit=Math.max(1,Math.min(Number(b.limit||30)||30,100));
+    const includeCancelled=b.include_cancelled===true;
+    const statuses=includeCancelled?[...ACTIVE_LIST_STATUSES,...HISTORY_LIST_STATUSES]:ACTIVE_LIST_STATUSES;
     const {data:runtime,error:re}=await sb.from("marketing_runtime_config")
       .select("render_triage_enabled,render_requeue_enabled,render_triage_kill_switch,enabled,execution_mode,kill_switch,generation_enabled")
       .eq("id",1).maybeSingle();
     if(re||!runtime)return fail("runtime_lookup_failed","Não foi possível consultar os gates",500);
     const {data:rows,error:le}=await sb.from("marketing_render_triage_requests")
       .select("id,job_id,asset_id,reason_code,status,requested_at,reviewed_at,executed_at")
-      .in("status",LIST_STATUSES).order("created_at",{ascending:false}).limit(limit);
+      .in("status",statuses).order("created_at",{ascending:false}).limit(limit);
     if(le)return fail("triage_list_failed","Não foi possível consultar a triagem",500);
     const jobIds=[...new Set((rows||[]).map((r:any)=>r.job_id).filter(Boolean))];
     const jobs=new Map<string,any>();
@@ -82,6 +85,7 @@ Deno.serve(async(req:Request)=>{
     const {data,error}=await sb.rpc("cancel_marketing_render_requeue_v1",{p_request_id:requestId,p_actor:u.user.id});
     if(error)return fail("cancel_failed",error.message,500);
     if(!data||typeof data!=="object"||(data as Record<string,unknown>).external_side_effect!==false)return fail("unsafe_cancel_response","Cancelamento recusado",500);
+    if((data as Record<string,unknown>).status!=="cancelled")return fail("unsafe_cancel_status","Cancelamento recusado: estado final inválido",500);
     return json(data);
   }
 
