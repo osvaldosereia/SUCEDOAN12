@@ -21,6 +21,7 @@ const hashKey=async(value:string)=>{
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest)).slice(0,12).map(x=>x.toString(16).padStart(2,"0")).join("");
 };
+const basketReady=(items:any[])=>items.length>0&&items.every((i:any)=>i.product?.is_active===true&&i.product?.physically_verified===true&&Number(i.product?.stock||0)>=Number(i.quantity||0));
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get("origin");
@@ -37,15 +38,14 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return respond({ok:false,error:"invalid_json"},400)}
   const action=clean(body?.action,60).toLowerCase();
 
-  if(action==="health")return respond({ok:true,version:2});
+  if(action==="health")return respond({ok:true,version:3});
 
   if(action==="list_baskets"){
     const {data,error}=await sb.from("basket_templates").select("id,name,description,image_url,base_price,sort_order,is_featured,basket_template_items(id,quantity,product:products(id,is_active,physically_verified,stock))").eq("is_active",true).order("sort_order",{ascending:true}).order("name",{ascending:true});
     if(error)return respond({ok:false,error:"baskets_failed"},500);
     const baskets=(data||[]).map((b:any)=>{
       const items=Array.isArray(b.basket_template_items)?b.basket_template_items:[];
-      const ready=items.length>0&&items.every((i:any)=>i.product?.is_active===true&&i.product?.physically_verified===true&&Number(i.product?.stock||0)>=Number(i.quantity||0));
-      return {id:b.id,name:b.name,description:b.description||null,image_url:b.image_url||null,base_price:Number(b.base_price||0),sort_order:Number(b.sort_order||0),is_featured:b.is_featured===true,item_count:items.length,ready};
+      return {id:b.id,name:b.name,description:b.description||null,image_url:b.image_url||null,base_price:Number(b.base_price||0),sort_order:Number(b.sort_order||0),is_featured:b.is_featured===true,item_count:items.length,ready:basketReady(items)};
     });
     return respond({ok:true,baskets});
   }
@@ -55,9 +55,8 @@ Deno.serve(async(req:Request)=>{
     const {data:b,error}=await sb.from("basket_templates").select("id,name,description,image_url,base_price,sort_order,is_featured,basket_template_items(id,product_id,quantity,removable,quantity_editable,min_quantity,max_quantity,sort_order,product:products(id,name,price,stock,image_url,brand,category,packaging,is_active,physically_verified))").eq("id",id).eq("is_active",true).maybeSingle();
     if(error||!b)return respond({ok:false,error:"basket_not_found"},404);
     const items=Array.isArray((b as any).basket_template_items)?(b as any).basket_template_items:[];
-    const ready=items.length>0&&items.every((i:any)=>i.product?.is_active===true&&i.product?.physically_verified===true&&Number(i.product?.stock||0)>=Number(i.quantity||0));
-    if(!ready)return respond({ok:false,error:"basket_not_ready"},409);
-    return respond({ok:true,basket:{id:(b as any).id,name:(b as any).name,description:(b as any).description||null,image_url:(b as any).image_url||null,base_price:Number((b as any).base_price||0),is_featured:(b as any).is_featured===true},items:items.sort((a:any,c:any)=>Number(a.sort_order||0)-Number(c.sort_order||0)).map((i:any)=>({product_id:i.product_id,quantity:Number(i.quantity||0),removable:i.removable===true,quantity_editable:i.quantity_editable===true,min_quantity:Number(i.min_quantity||0),max_quantity:i.max_quantity==null?null:Number(i.max_quantity),product:publicProduct(i.product)}))});
+    const ready=basketReady(items);
+    return respond({ok:true,basket:{id:(b as any).id,name:(b as any).name,description:(b as any).description||null,image_url:(b as any).image_url||null,base_price:Number((b as any).base_price||0),is_featured:(b as any).is_featured===true,ready},items:items.sort((a:any,c:any)=>Number(a.sort_order||0)-Number(c.sort_order||0)).map((i:any)=>({product_id:i.product_id,quantity:Number(i.quantity||0),removable:i.removable===true,quantity_editable:i.quantity_editable===true,min_quantity:Number(i.min_quantity||0),max_quantity:i.max_quantity==null?null:Number(i.max_quantity),product:publicProduct(i.product)}))});
   }
 
   if(action==="list_sections"){

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fffaf4">
+  <meta name="description" content="Cestas básicas e produtos Dona Antônia. Escolha, personalize e envie seu pedido pelo WhatsApp.">
+  <title>Dona Antônia · Cestas básicas e produtos</title>
+  <link rel="stylesheet" href="./styles.css?v=20260911-1">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <button id="headerHome" class="brand" type="button" aria-label="Ir para o início"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><span><strong>Dona Antônia</strong><small>Cestas e mercado</small></span></button>
+      <nav aria-label="Navegação principal"><button id="headerProducts" class="nav-link" type="button">Produtos</button><button id="cartButton" class="cart-button" type="button" aria-label="Abrir minha compra"><span>🛒</span><b>Minha compra</b><em id="cartCount" class="hidden">0</em></button></nav>
+    </div>
+  </header>
+
+  <main id="app" class="main" tabindex="-1"></main>
+
+  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+  <aside id="cartDrawer" class="cart-drawer" aria-label="Minha compra" aria-hidden="true">
+    <header><div><span class="eyebrow">Resumo</span><h2>Minha compra</h2></div><button id="closeCart" class="icon-button" type="button" aria-label="Fechar">×</button></header>
+    <div id="cartBody" class="cart-body"></div>
+  </aside>
+
+  <div id="toastRegion" class="toasts" aria-live="polite" aria-atomic="true"></div>
+
+  <noscript><div class="noscript">Ative o JavaScript para usar a vitrine da Dona Antônia.</div></noscript>
+  <script type="module" src="./app.js?v=20260911-1"></script>
+</body>
+</html>
