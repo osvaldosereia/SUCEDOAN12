@@ -16,6 +16,21 @@ on:
       - '.github/workflows/bling-product-writer-v1.yml'
       - '.github/workflows/bling-stock-writer-v1.yml'
       - '.github/workflows/test-admin-v3.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'admin/**'
+      - 'admin-v3/**'
+      - 'setup-admin/**'
+      - 'supabase/functions/admin-ops-v1/**'
+      - 'supabase/functions/admin-baskets-v1/**'
+      - 'supabase/functions/bootstrap-owner-v1/**'
+      - 'scripts/bling-product-writer-v1.mjs'
+      - 'scripts/bling-stock-writer-v1.mjs'
+      - 'scripts/bling-sync-core.mjs'
+      - '.github/workflows/bling-product-writer-v1.yml'
+      - '.github/workflows/bling-stock-writer-v1.yml'
+      - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
 permissions:
@@ -37,22 +52,31 @@ jobs:
       - name: Validar JavaScript público e workers
         run: |
           node --check admin/config.js
-          node --check admin-v3/app.js
+          node --check admin/app-lite.js
           node --check admin-v3/enhancements.js
+          node --check admin-v3/customer-intelligence.js
           node --check setup-admin/app.js
           node --check setup-admin/config.js
           node --check scripts/bling-product-writer-v1.mjs
           node --check scripts/bling-stock-writer-v1.mjs
           node --check scripts/bling-sync-core.mjs
-      - name: Validar rotas essenciais do Admin oficial
+      - name: Validar Admin oficial simplificado
         run: |
-          grep -q 'data-route="dashboard"' admin/index.html
           grep -q 'data-route="products"' admin/index.html
           grep -q 'data-route="baskets"' admin/index.html
+          grep -q 'data-route="customers"' admin/index.html
           grep -q 'data-route="counts"' admin/index.html
           grep -q 'data-route="queue"' admin/index.html
           grep -q '../contagem/' admin/index.html
           grep -q 'admin-ops-v1' admin/config.js
+          grep -q 'app-lite.js' admin/index.html
+          grep -q 'simple.css' admin/index.html
+          ! grep -q 'data-route="dashboard"' admin/index.html
+          ! grep -q 'data-route="whatsapp"' admin/index.html
+          ! grep -q 'inteligencia.html' admin/index.html
+          ! grep -q 'whatsapp-ops.js' admin/index.html
+          ! grep -q 'admin-pin-access.js' admin/index.html
+          ! grep -q 'Menu do Chat' admin/index.html
           grep -q 'bootstrap-owner-v1' setup-admin/config.js
           grep -q '../admin/' setup-admin/index.html
       - name: Bloquear segredos no navegador
