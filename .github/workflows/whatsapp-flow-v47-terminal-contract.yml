@@ -1,0 +1,23 @@
+name: WhatsApp Flow V47 Terminal Contract
+
+on:
+  push:
+    paths:
+      - 'supabase/migrations/20260911172252_whatsapp_flow_v47_terminal_contract_readiness_v1.sql'
+      - 'scripts/test-whatsapp-flow-v47-terminal-contract-readiness.mjs'
+      - '.github/workflows/whatsapp-flow-v47-terminal-contract.yml'
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260911172252_whatsapp_flow_v47_terminal_contract_readiness_v1.sql'
+      - 'scripts/test-whatsapp-flow-v47-terminal-contract-readiness.mjs'
+      - '.github/workflows/whatsapp-flow-v47-terminal-contract.yml'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-whatsapp-flow-v47-terminal-contract-readiness.mjs
