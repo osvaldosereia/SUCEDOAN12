@@ -17,6 +17,7 @@ on:
       - 'supabase/functions/admin-marketing-dry-run-v1/**'
       - 'supabase/functions/admin-marketing-insights-v1/**'
       - 'supabase/functions/admin-marketing-carousel-v1/**'
+      - 'supabase/functions/admin-marketing-render-triage-v1/**'
       - 'supabase/migrations/*marketing*.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
@@ -45,6 +46,7 @@ on:
       - 'supabase/functions/admin-marketing-dry-run-v1/**'
       - 'supabase/functions/admin-marketing-insights-v1/**'
       - 'supabase/functions/admin-marketing-carousel-v1/**'
+      - 'supabase/functions/admin-marketing-render-triage-v1/**'
       - 'supabase/migrations/*marketing*.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
@@ -117,6 +119,8 @@ jobs:
         run: node scripts/test-marketing-insights-admin-v1.mjs
       - name: Validate renderer diagnostics safety contract
         run: node scripts/test-marketing-render-diagnostics-v1.mjs
+      - name: Validate renderer triage safety contract
+        run: node scripts/test-marketing-render-triage-v1.mjs
       - name: Validate deterministic attribution contract
         run: node scripts/test-marketing-attribution-v1.mjs
       - name: Validate deterministic WebP renderer
