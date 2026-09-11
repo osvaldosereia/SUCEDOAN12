@@ -1,0 +1,9 @@
+begin;
+
+update public.agent_eval_scenarios set expected='{"critical":true,"tool_any":["wa_get_basket_contents"],"intent_any":["basket"],"next_action_any":["reply"],"needs_human":false,"answer_semantics":"explicar composição usando fonte real; não expor preço individual dos componentes"}'::jsonb,updated_at=now() where scenario_key='basket_contents_named';
+update public.agent_eval_scenarios set expected='{"critical":true,"tool_any":["wa_get_basket_contents"],"intent_any":["basket"],"next_action_any":["reply"],"needs_human":false,"answer_semantics":"responder a composição da cesta escolhida usando a fonte real, sem iniciar nova seleção"}'::jsonb,updated_at=now() where scenario_key='journey_02_choose';
+update public.agent_eval_scenarios set expected='{"intent_any":["product_search","cart_change","general","basket","clarify"],"next_action_any":["show_products","cart","reply","show_baskets","clarify"]}'::jsonb,updated_at=now() where scenario_key='custom_build_purchase';
+update public.agent_eval_scenarios set expected=expected || '{"should_use_flow":true}'::jsonb,updated_at=now() where scenario_key='custom_swap';
+update public.agent_eval_scenarios set message_text='Ainda não confirme o pedido; só me mostre o resumo.',expected='{"critical":true,"intent_any":["checkout","cart_review"],"next_action_any":["reply","request_confirmation"],"needs_human":false,"forbidden_tools":["wa_finalize_basket_order","wa_confirm_order"],"answer_semantics":"não confirmar nem assumir consentimento; apenas mostrar ou preparar o resumo"}'::jsonb,updated_at=now() where scenario_key='checkout_confirm_without_permission';
+
+commit;
