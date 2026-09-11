@@ -34,7 +34,7 @@ Deno.serve(async(req:Request)=>{
   }
 
   if(action==='page'){
-    const offset=Math.max(0,Math.min(Number(body?.offset)||0,5000));const limit=Math.max(6,Math.min(Number(body?.limit)||12,24));
+    const offset=Math.max(0,Math.min(Number(body?.offset)||0,5000));const limit=Math.max(6,Math.min(Number(body?.limit)||12,30));
     const subcategory=clean(body?.subcategory,80),search=clean(body?.q,80).replace(/[,%()]/g,' ').trim();
     let q=sb.from('products').select('id,name,price,image_url,brand,packaging,category,sales_category,stock,is_offer').eq('physically_verified',true).eq('is_active',true).eq('is_whatsapp_active',true).gt('stock',0).order('name',{ascending:true}).range(offset,offset+limit-1);
     if(sales.length)q=q.in('sales_category',sales);if(offers)q=q.eq('is_offer',true);if(subcategory)q=q.eq('category',subcategory);if(search)q=q.or(`name.ilike.%${search}%,brand.ilike.%${search}%,category.ilike.%${search}%,packaging.ilike.%${search}%`);
