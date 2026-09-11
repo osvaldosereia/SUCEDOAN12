@@ -38,7 +38,7 @@ Deno.serve(async(req:Request)=>{
   if(action==='get'){
     const {data,error}=await sb.from('shopping_chat_helper_config').select('enabled,prompt_text,avatar_url,menu_items,updated_at').eq('id',1).maybeSingle();
     if(error)return json(req,{ok:false,error:'helper_config_failed'},500);
-    const cfg=data||{enabled:true,prompt_text:'Quer ajuda?',avatar_url:null,menu_items:[]};
+    const cfg:any=data||{enabled:true,prompt_text:'Quer ajuda?',avatar_url:null,menu_items:[],updated_at:null};
     return json(req,{ok:true,config:{enabled:cfg.enabled!==false,prompt_text:clean(cfg.prompt_text,60)||'Quer ajuda?',avatar_url:clean(cfg.avatar_url,500)||null,menu_items:publicItems(cfg.menu_items),updated_at:cfg.updated_at||null}});
   }
 
