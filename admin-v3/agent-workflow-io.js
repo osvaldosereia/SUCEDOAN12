@@ -5,7 +5,6 @@
   const MARKER='<!-- DA_AGENT_WORKFLOW_MD_V1 -->';
   const BEGIN='DA_STAGE_BEGIN';
   const END='<!-- DA_STAGE_END -->';
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const auth=()=>{try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch{return null}};
   const clean=v=>String(v??'').replace(/\r/g,'').trim();
 
@@ -20,11 +19,15 @@
   function stageMarkdown(s,index,total){
     return `<!-- ${BEGIN}:${s.stage_key} -->\n## Etapa ${index+1} de ${total}: ${s.name}\n\n- Chave: \`${s.stage_key}\`\n- Ativa: ${yes(s.enabled)}\n- IA autônoma: ${yes(s.autonomous)}\n- Máximo de ofertas: ${Number(s.max_offers||0)}\n- Chamar humano quando não souber: ${yes(s.human_on_unknown)}\n\n### Orientação\n${clean(s.instructions)||'Sem orientação específica.'}\n\n### Ferramentas permitidas\n${(s.allowed_tools||[]).map(x=>`- \`${x}\``).join('\n')||'- Nenhuma'}\n\n### Próximas etapas\n${(s.next_stages||[]).map(x=>`- \`${x}\``).join('\n')||'- Nenhuma'}\n${END}\n`;
   }
-
+  function toolCatalog(data){
+    const tools=data?.tools||[];
+    if(!tools.length)return '';
+    return `\n## Catálogo de ferramentas disponíveis\n\nA IA revisora pode mover estas ferramentas entre etapas, mas não pode inventar outras:\n\n${tools.map(t=>`- \`${t.action_key}\` — ${clean(t.risk_class||'')}`).join('\n')}\n`;
+  }
   function documentMarkdown(data,stages,title){
     const exportedAt=new Date().toISOString();
     const body=stages.map((s,i)=>stageMarkdown(s,i,stages.length)).join('\n');
-    return `# ${title}\n\n${MARKER}\n\nExportado em: ${exportedAt}\nMotor do fluxo: ${data?.settings?.enabled?'ligado':'desligado'} · versão ${Number(data?.settings?.version||1)}\n\n## Instruções para a IA que vai configurar este arquivo\n\nEste Markdown representa o fluxo operacional real do atendimento da Dona Antônia. A configuração oficial continua salva no Supabase; este arquivo serve para revisão humana/por IA e posterior importação no Admin.\n\nAo editar:\n- mantenha cada **Chave** exatamente como está;\n- não invente nomes de ferramentas: use somente as ferramentas já listadas no arquivo;\n- pode melhorar a **Orientação**, ativar/desativar etapa, definir autonomia, limite de ofertas e próximas etapas;\n- não crie preço, estoque, política comercial ou promessa de entrega; essas verdades vêm do backend;\n- preserve os marcadores \`${BEGIN}\` e \`DA_STAGE_END\`;\n- devolva o arquivo Markdown completo.\n\n${body}`;
+    return `# ${title}\n\n${MARKER}\n\nExportado em: ${exportedAt}\nMotor do fluxo: ${data?.settings?.enabled?'ligado':'desligado'} · versão ${Number(data?.settings?.version||1)}\n\n## Instruções para a IA que vai configurar este arquivo\n\nEste Markdown representa o fluxo operacional real do atendimento da Dona Antônia. A configuração oficial continua salva no Supabase; este arquivo serve para revisão humana/por IA e posterior importação no Admin.\n\nAo editar:\n- mantenha cada **Chave** exatamente como está;\n- use somente ferramentas existentes no **Catálogo de ferramentas disponíveis**;\n- pode melhorar a **Orientação**, ativar/desativar etapa, definir autonomia, limite de ofertas, ferramentas e próximas etapas;\n- não crie preço, estoque, política comercial ou promessa de entrega; essas verdades vêm do backend;\n- preserve os marcadores \`${BEGIN}\` e \`DA_STAGE_END\`;\n- devolva o arquivo Markdown completo.\n\n${body}${toolCatalog(data)}`;
   }
 
   function download(name,text){
@@ -63,7 +66,7 @@
   function parseMarkdown(text,current){
     if(!text.includes(MARKER))throw new Error('Arquivo de fluxo não reconhecido.');
     const stages=current.stages||[],stageKeys=new Set(stages.map(x=>x.stage_key)),toolKeys=new Set((current.tools||[]).map(x=>x.action_key));
-    const blocks=[];const re=new RegExp(`<!-- ${BEGIN}:([a-z0-9_]+) -->([\\s\\S]*?)${END.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}`,'g');let m;
+    const blocks=[];const re=/<!-- DA_STAGE_BEGIN:([a-z0-9_]+) -->([\s\S]*?)<!-- DA_STAGE_END -->/g;let m;
     while((m=re.exec(text))){
       const key=m[1],block=m[2],base=stages.find(x=>x.stage_key===key);if(!base)throw new Error(`Etapa desconhecida: ${key}`);
       const heading=block.match(/^##\s+Etapa(?:\s+\d+\s+de\s+\d+)?:\s*(.+)$/mi);const name=clean(heading?.[1]||base.name).slice(0,100);
