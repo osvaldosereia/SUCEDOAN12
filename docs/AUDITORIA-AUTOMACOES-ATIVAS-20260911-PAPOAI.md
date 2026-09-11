@@ -8,7 +8,7 @@
 
 ## Automação automática preservada
 
-1. `product-image-studio-production.yml` — fotos de produtos, lote de até 9, cron a cada 20 minutos.
+1. `product-image-studio-production.yml` — fotos de produtos, lote de até 9, cron atual a cada 5 minutos.
 2. `update-public-data.yml` — SEO, sitemap, Merchant e dados públicos, cron horário.
 3. GitHub Pages — publicação do site; gerenciado pelo próprio GitHub.
 4. CIs diretamente ligados à vitrine/site atual permanecem disponíveis.
