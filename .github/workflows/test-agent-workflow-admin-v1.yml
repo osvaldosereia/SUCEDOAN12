@@ -1,0 +1,28 @@
+name: Test Agent Workflow Admin V1
+on:
+  pull_request:
+    paths:
+      - 'admin/inteligencia.html'
+      - 'admin-v3/agent-workflow.*'
+      - 'supabase/migrations/*agent_workflow*'
+      - '.github/workflows/test-agent-workflow-admin-v1.yml'
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: node --check admin-v3/agent-workflow.js
+      - name: Check Admin mount
+        run: |
+          grep -q 'agent-workflow.css' admin/inteligencia.html
+          grep -q 'agent-workflow.js' admin/inteligencia.html
+      - name: Check Agent Core policy wiring
+        run: |
+          grep -q 'get_agent_workflow_policy_v1' supabase/migrations/20260911025000_dona_antonia_agent_workflow_admin_v1.sql
+          grep -q "jsonb_set(v_packet,'{toolset}'" supabase/migrations/20260911025000_dona_antonia_agent_workflow_admin_v1.sql
+          grep -q 'agent_workflow' supabase/migrations/20260911025000_dona_antonia_agent_workflow_admin_v1.sql
