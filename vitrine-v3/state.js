@@ -1,7 +1,7 @@
 const KEY='da_vitrine_v3_cart';
 
 export const state={basket:null,basketItems:[],extras:{}};
-const safeProduct=p=>p?{id:p.id,name:p.name,price:Number(p.price||0),stock:Number(p.stock??0),image_url:p.image_url||null,brand:p.brand||null,category:p.category||null,sales_category:p.sales_category||null,packaging:p.packaging||null}:null;
+const safeProduct=p=>p?{id:p.id,name:p.name,price:Number(p.price||0),stock:Number(p.stock??0),image_url:p.image_url||null,brand:p.brand||null,category:p.category||null,storefront_category:p.storefront_category||null,packaging:p.packaging||null}:null;
 const moneyNumber=v=>Math.round((Number(v||0)+Number.EPSILON)*100)/100;
 
 export function restore(){
