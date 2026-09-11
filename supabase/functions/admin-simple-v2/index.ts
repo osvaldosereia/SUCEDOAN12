@@ -13,6 +13,7 @@ const numberValue=(v:unknown)=>{if(v===null||v===undefined||v==="")return null;c
 const integer=(v:unknown,min=-100000,max=100000)=>Math.min(max,Math.max(min,Number.parseInt(String(v??0),10)||0));
 const normalizePhone=(v:unknown)=>{let d=digits(v);if(!d)return null;if(d.startsWith("55")&&(d.length===12||d.length===13))return `+${d}`;if(d.length===10||d.length===11)return `+55${d}`;return null};
 const validGtin=(value:unknown)=>{const g=digits(value);if(!g)return true;if(![8,12,13,14].includes(g.length))return false;const expected=Number(g.at(-1));let sum=0;for(let i=g.length-2,o=0;i>=0;i--,o++)sum+=Number(g[i])*(o%2===0?3:1);return(10-(sum%10))%10===expected};
+const safeGoogleMapsUrl=(v:unknown)=>{const raw=clean(v,1200);if(!raw)return null;try{const u=new URL(raw);const h=u.hostname.toLowerCase();const allowed=u.protocol==="https:"&&(h==="maps.app.goo.gl"||h==="goo.gl"||h==="google.com"||h.endsWith(".google.com"));return allowed?u.toString():null}catch{return null}};
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -24,19 +25,24 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{}
   const action=clean(body?.action||"health",60).toLowerCase();
 
-  if(action==="health")return json({ok:true,mode:"public_no_auth",version:2});
+  if(action==="health")return json({ok:true,mode:"public_no_auth",version:3});
 
   if(action==="products"){
     const page=Math.max(1,integer(body?.page,1,100000));
     const limit=Math.min(100,Math.max(10,integer(body?.limit,10,100)));
     const from=(page-1)*limit,to=from+limit-1;
     const q=clean(body?.q,100),status=clean(body?.status,30),category=clean(body?.category,120),brand=clean(body?.brand,120);
-    let query=sb.from("products").select("id,sku,name,gtin,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,physically_verified,updated_at",{count:"exact"}).eq("physically_verified",true).range(from,to);
+    let query=sb.from("products")
+      .select("id,sku,name,gtin,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,physically_verified,source_system,updated_at",{count:"exact"})
+      .or("physically_verified.eq.true,source_system.eq.inventory_fast_discovered,source_system.eq.inventory_fast_firebase,source_system.eq.firebase_verified,source_system.eq.ai_ean_research")
+      .range(from,to);
     if(q){const safe=q.replace(/[,%()]/g," ").trim();if(safe)query=query.or(`name.ilike.%${safe}%,gtin.ilike.%${safe}%,sku.ilike.%${safe}%,brand.ilike.%${safe}%`)}
     if(category)query=query.ilike("category",`%${category.replace(/[%_]/g,"")}%`);
     if(brand)query=query.ilike("brand",`%${brand.replace(/[%_]/g,"")}%`);
-    if(status==="offer")query=query.eq("is_offer",true);
+    if(status==="active")query=query.eq("is_active",true);
     if(status==="inactive")query=query.eq("is_active",false);
+    if(status==="ai-review")query=query.eq("source_system","ai_ean_research").eq("is_active",false);
+    if(status==="offer")query=query.eq("is_offer",true);
     if(status==="no-stock")query=query.lte("stock",0);
     const sort=clean(body?.sort,20);
     const col=sort==="name"?"name":sort==="price"?"price":sort==="stock"?"stock":"sort_order";
@@ -48,7 +54,7 @@ Deno.serve(async(req:Request)=>{
 
   if(action==="product"){
     const id=clean(body?.id,80);if(!id)return json({ok:false,error:"id_required"},400);
-    const {data,error}=await sb.from("products").select("id,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,updated_at").eq("id",id).maybeSingle();
+    const {data,error}=await sb.from("products").select("id,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,source_system,updated_at").eq("id",id).maybeSingle();
     if(error||!data)return json({ok:false,error:"product_not_found"},404);
     return json({ok:true,product:data});
   }
@@ -67,7 +73,7 @@ Deno.serve(async(req:Request)=>{
     if(src.validity_date!==undefined)patch.validity_date=clean(src.validity_date,10)||null;
     if(src.tags!==undefined)patch.tags=Array.isArray(src.tags)?src.tags.map((x:any)=>clean(x,80)).filter(Boolean).slice(0,50):[];
     if(patch.name!==undefined&&!patch.name)return json({ok:false,error:"name_required"},400);
-    const {data,error}=await sb.from("products").update(patch).eq("id",id).select("id,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,updated_at").single();
+    const {data,error}=await sb.from("products").update(patch).eq("id",id).select("id,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,source_system,updated_at").single();
     if(error)return json({ok:false,error:"update_failed",detail:error.message},400);
     return json({ok:true,product:data});
   }
@@ -135,7 +141,7 @@ Deno.serve(async(req:Request)=>{
     const id=clean(body?.id,80);if(!id)return json({ok:false,error:"id_required"},400);
     const {data:customer,error}=await sb.from("customers").select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,order_count,lifetime_value,last_order_at,created_at,updated_at").eq("id",id).maybeSingle();if(error||!customer)return json({ok:false,error:"customer_not_found"},404);
     const [{data:address},{data:email}]=await Promise.all([
-      sb.from("customer_addresses").select("id,label,street,number,complement,neighborhood,city,state,postal_code,reference,is_default,is_active").eq("customer_id",id).eq("is_active",true).order("is_default",{ascending:false}).limit(1).maybeSingle(),
+      sb.from("customer_addresses").select("id,label,street,number,complement,neighborhood,city,state,postal_code,reference,google_maps_url,is_default,is_active").eq("customer_id",id).eq("is_active",true).order("is_default",{ascending:false}).limit(1).maybeSingle(),
       sb.from("customer_emails").select("id,email,is_primary").eq("customer_id",id).order("is_primary",{ascending:false}).limit(1).maybeSingle()
     ]);
     return json({ok:true,customer,address:address||null,email:email?.email||null});
@@ -153,7 +159,8 @@ Deno.serve(async(req:Request)=>{
     if(phone){await sb.from("customer_phones").delete().eq("customer_id",customerId);const {error}=await sb.from("customer_phones").insert({customer_id:customerId,phone_e164:phone,source:"admin_simple_v2",is_primary:true});if(error)return json({ok:false,error:"phone_save_failed",detail:error.message},400)}
     if(email){await sb.from("customer_emails").delete().eq("customer_id",customerId);const {error}=await sb.from("customer_emails").insert({customer_id:customerId,email,email_normalized:email,verification_status:"unverified",is_primary:true,source:"admin_simple_v2",evidence:{}});if(error)return json({ok:false,error:"email_save_failed",detail:error.message},400)}
     if(body?.address&&typeof body.address==="object"){
-      const a=body.address;const payload={customer_id:customerId,label:clean(a.label,80)||"Principal",street:clean(a.street,180)||null,number:clean(a.number,60)||null,complement:clean(a.complement,180)||null,neighborhood:clean(a.neighborhood,180)||null,city:clean(a.city,120)||null,state:clean(a.state,2).toUpperCase()||"MT",postal_code:digits(a.postal_code)||null,reference:clean(a.reference,300)||null,is_default:true,is_active:true,updated_at:new Date().toISOString()};
+      const a=body.address;const rawMaps=clean(a.google_maps_url,1200);const mapsUrl=safeGoogleMapsUrl(rawMaps);if(rawMaps&&!mapsUrl)return json({ok:false,error:"invalid_google_maps_url"},400);
+      const payload={customer_id:customerId,label:clean(a.label,80)||"Principal",street:clean(a.street,180)||null,number:clean(a.number,60)||null,complement:clean(a.complement,180)||null,neighborhood:clean(a.neighborhood,180)||null,city:clean(a.city,120)||null,state:clean(a.state,2).toUpperCase()||"MT",postal_code:digits(a.postal_code)||null,reference:clean(a.reference,300)||null,google_maps_url:mapsUrl,is_default:true,is_active:true,updated_at:new Date().toISOString()};
       const {data:existing}=await sb.from("customer_addresses").select("id").eq("customer_id",customerId).eq("is_default",true).limit(1).maybeSingle();
       if(existing){const {error}=await sb.from("customer_addresses").update(payload).eq("id",existing.id);if(error)return json({ok:false,error:"address_save_failed",detail:error.message},400)}
       else{const {error}=await sb.from("customer_addresses").insert(payload);if(error)return json({ok:false,error:"address_save_failed",detail:error.message},400)}

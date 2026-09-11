@@ -7,7 +7,8 @@
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Admin</title>
-  <link rel="stylesheet" href="./simple.css?v=20260911-v2">
+  <link rel="stylesheet" href="./simple.css?v=20260911-v3">
+  <link rel="stylesheet" href="./ops-v3.css?v=20260911-v1">
 </head>
 <body>
 <div class="app">
@@ -17,13 +18,14 @@
       <button class="nav active" data-route="products" type="button"><span>PR</span>Produtos</button>
       <button class="nav" data-route="baskets" type="button"><span>CE</span>Cestas básicas</button>
       <button class="nav" data-route="customers" type="button"><span>CL</span>Clientes</button>
+      <a class="nav" href="../contagem/" target="_blank" rel="noopener"><span>BA</span>Balanço rápido</a>
     </nav>
   </aside>
 
   <div class="workspace">
     <header class="topbar">
       <button id="menuButton" class="icon mobile-only" type="button" aria-label="Abrir menu">☰</button>
-      <div><h1 id="pageTitle">Produtos</h1><p id="pageSubtitle">Produtos que aparecem na vitrine.</p></div>
+      <div><h1 id="pageTitle">Produtos</h1><p id="pageSubtitle">Produtos cadastrados, incluindo inativos e revisão automática por EAN.</p></div>
       <button id="refreshButton" class="button secondary" type="button">Atualizar</button>
     </header>
 
@@ -31,7 +33,14 @@
       <section class="view active" data-view="products">
         <div class="toolbar">
           <div class="search"><span>⌕</span><input id="productSearch" type="search" placeholder="Buscar nome, EAN, SKU ou marca"></div>
-          <select id="productStatus" aria-label="Status"><option value="">Todos</option><option value="offer">Ofertas</option><option value="no-stock">Sem estoque</option><option value="inactive">Inativos</option></select>
+          <select id="productStatus" aria-label="Status">
+            <option value="">Todos</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+            <option value="ai-review">Revisão IA</option>
+            <option value="offer">Ofertas</option>
+            <option value="no-stock">Sem estoque</option>
+          </select>
           <select id="productSort" aria-label="Ordenação"><option value="">Ordem da vitrine</option><option value="name">Nome</option><option value="stock">Menor estoque</option><option value="price">Menor preço</option></select>
         </div>
         <details class="panel filters-panel">
@@ -66,7 +75,7 @@
 </section>
 <div id="toastRegion" class="toasts" aria-live="polite"></div>
 
-<script src="./config.js?v=20260911-v2"></script>
-<script src="./app-lite.js?v=20260911-v2"></script>
+<script src="./config.js?v=20260911-v3"></script>
+<script src="./app-lite.js?v=20260911-v3"></script>
 </body>
 </html>
