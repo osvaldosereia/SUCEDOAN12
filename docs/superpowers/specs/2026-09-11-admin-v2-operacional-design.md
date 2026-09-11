@@ -27,7 +27,7 @@ Cadastro completo com nome, telefone, CPF/CNPJ, e-mail e endereço principal: CE
 
 ## Balanço rápido
 
-Reaproveitar o leitor já existente em `/contagem/` e os backends `inventory-fast-balance-v2`/`inventory-count-v2`. O Admin V2 terá acesso claro ao balanço rápido sem duplicar regras de estoque. A operação continua protegida pelo mecanismo de autorização já usado pelo backend de inventário; não expor gravação de estoque através do endpoint público `admin-simple-v2`.
+Reaproveitar o leitor já existente em `/contagem/`, cujo runtime atual usa `inventory-fast-balance-v3`, mantendo `inventory-count-v2` para o fluxo detalhado existente. O Admin V2 terá acesso claro ao balanço rápido sem duplicar regras de estoque. A operação continua protegida pelo mecanismo de autorização já usado pelo backend de inventário; não expor gravação de estoque através do endpoint público `admin-simple-v2`.
 
 ## Pesquisa automática de EAN
 
