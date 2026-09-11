@@ -2,15 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Cache-Control" content="no-store">
   <title>Dona Antônia · Inteligência do Atendimento</title>
   <link rel="stylesheet" href="../admin-v3/style.css?v=20260907-02">
   <link rel="stylesheet" href="../admin-v3/service-intelligence.css?v=20260908-03">
-  <link rel="stylesheet" href="../admin-v3/agent-workflow.css?v=20260911-01">
+  <link rel="stylesheet" href="../admin-v3/agent-workflow.css?v=20260911-02">
+  <link rel="stylesheet" href="../admin-v3/mobile-priority.css?v=20260911-01">
 </head>
 <body>
+<script src="../admin-v3/admin-subpage-guard.js?v=20260911-01"></script>
 <div class="si-page">
   <header class="si-topbar">
     <div class="si-topbar-copy">
@@ -18,32 +20,32 @@
       <div>
         <div class="eyebrow">Inteligência do atendimento</div>
         <h1>Como a IA atende</h1>
-        <p>Informações, orientações, roteiro e regras que guiam o atendimento e as vendas.</p>
+        <p>Informações, orientações, roteiro, etapas e ferramentas que guiam o atendimento e as vendas.</p>
       </div>
     </div>
     <div class="si-actions">
       <a class="button secondary" href="./aprendizados.html">Aprendizados</a>
-      <button id="siImportMd" class="button secondary" type="button">Importar .md</button>
-      <button id="siExportMd" class="button secondary" type="button">Exportar .md</button>
+      <button id="siImportMd" class="button secondary" type="button">Importar inteligência</button>
+      <button id="siExportMd" class="button secondary" type="button">Baixar inteligência</button>
       <button id="siRefresh" class="button primary" type="button">Atualizar</button>
       <input id="siImportFile" class="hidden" type="file" accept=".md,text/markdown,text/plain">
     </div>
   </header>
 
   <main class="si-shell">
-    <div id="siAuthWarning" class="ops-alert hidden">Faça login no Admin principal antes de abrir esta tela.</div>
+    <div id="siAuthWarning" class="ops-alert hidden">Sessão indisponível. Volte ao Admin e use o código de acesso.</div>
 
     <section id="siMetrics" class="metrics"></section>
 
     <section class="si-intro panel">
       <div class="si-intro-icon">IA</div>
       <div>
-        <strong>Ensine a IA como um funcionário novo</strong>
-        <p>Cadastre apenas conhecimento estável, orientações e o roteiro de atendimento. Preço, estoque e fotos dos produtos continuam vindo automaticamente do sistema; outras verdades comerciais dinâmicas também não devem ser cadastradas manualmente aqui.</p>
+        <strong>Controle a IA sem transformar o atendimento em robô</strong>
+        <p>O fluxo visual define etapa, ferramentas e transições. A IA continua interpretando a conversa real. Preço, estoque e outras verdades comerciais continuam vindo automaticamente do sistema.</p>
       </div>
       <div class="si-file-hint">
-        <strong>Revisar com IA</strong>
-        <span>Exporte o .md, peça melhorias para uma IA e importe o arquivo revisado. Novas regras podem ser criadas pelo próprio arquivo.</span>
+        <strong>Configuração com IA</strong>
+        <span>Baixe uma etapa ou o fluxo completo em Markdown, peça à IA para melhorar e importe o arquivo revisado. A configuração oficial permanece no Supabase.</span>
       </div>
     </section>
 
@@ -98,5 +100,6 @@
 <script src="../admin-v3/service-intelligence.js?v=20260908-02"></script>
 <script src="../admin-v3/service-intelligence-io.js?v=20260908-01"></script>
 <script src="../admin-v3/agent-workflow.js?v=20260911-01"></script>
+<script src="../admin-v3/agent-workflow-io.js?v=20260911-01"></script>
 </body>
 </html>
