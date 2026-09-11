@@ -40,6 +40,9 @@ A Edge `admin-marketing-render-triage-v1` foi implantada no Supabase como versã
 
 O workflow `Marketing Center V1` já executa esse teste, portanto não foi necessário criar novo job de CI.
 
+## Segurança pós-deploy
+O Security Advisor foi executado novamente. O Marketing não introduziu novo `SECURITY DEFINER` executável por `anon`/`authenticated`; os WARN encontrados pertencem a funções de outras frentes (`route_whatsapp_active_basket_address_guard_v52` e funções de Agent Workflow) e ficaram fora do escopo desta rodada. Os INFO `RLS Enabled No Policy` continuam incluindo as tabelas server-only de Marketing, compatíveis com o padrão atual porque o acesso do navegador ocorre via Edge/RPC controlada e os privilégios públicos permanecem revogados quando aplicável.
+
 ## Estado real após a rodada
 Contagens confirmadas após o deploy:
 - assets = 0;
