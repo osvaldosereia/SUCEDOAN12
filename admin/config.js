@@ -4,6 +4,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   edgeFunction: 'admin-ops-v1',
   productsEdgeFunction: 'admin-products-live-v1',
   categoryEdgeFunction: 'admin-product-categories-v1',
+  chatMenuEdgeFunction: 'admin-chat-menu-v1',
   whatsappOpsEdgeFunction: 'admin-whatsapp-ops-v1',
   trustedBrowserSession: true,
   humanServiceCenterUiEnabled: false,
@@ -21,7 +22,7 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
   commercialTruthUiEnabled: false,
   driverAppUrl: '../driver-app/',
   countAppUrl: '../contagem/',
-  build: '20260910-products-console-04'
+  build: '20260911-chat-menu-01'
 });
 
 (function prepareTrustedBrowserSession(cfg){
@@ -130,7 +131,21 @@ window.DA_ADMIN_V3_CONFIG = Object.freeze({
     link.rel='stylesheet';link.href='../admin-v3/products-console-v3.css?v=20260910-01';link.dataset.productsConsoleV3='1';document.head.appendChild(link);
   }
   if(!document.querySelector('script[data-products-console-v3]')){
-    const script=document.createElement('script');
-    script.src='../admin-v3/products-console-v3.js?v=20260910-01';script.dataset.productsConsoleV3='1';document.body.appendChild(script);
+    const script=document.createElement('script');script.src='../admin-v3/products-console-v3.js?v=20260910-01';script.dataset.productsConsoleV3='1';document.body.appendChild(script);
   }
+})(window.DA_ADMIN_V3_CONFIG);
+
+(function loadChatMenuAdmin(cfg){
+  if(!cfg?.chatMenuEdgeFunction)return;
+  const mount=()=>{
+    const nav=document.getElementById('nav'),main=document.querySelector('.workspace main');if(!nav||!main)return false;
+    let button=document.querySelector('[data-route="chat-menu"]');
+    if(!button){button=document.createElement('button');button.className='nav';button.type='button';button.dataset.route='chat-menu';button.innerHTML='<span>CH</span>Menu do Chat';const wa=document.querySelector('.nav[data-route="whatsapp"]');wa?.insertAdjacentElement('afterend',button)||nav.appendChild(button)}
+    if(!document.querySelector('.view[data-view="chat-menu"]')){const view=document.createElement('section');view.className='view';view.dataset.view='chat-menu';main.appendChild(view)}
+    button.addEventListener('click',()=>setTimeout(()=>{const title=document.getElementById('pageTitle'),sub=document.getElementById('pageSubtitle');if(title)title.textContent='Menu do Chat';if(sub)sub.textContent='Botão flutuante, atalhos comerciais e respostas rápidas do chat de compra.'},0));
+    if(!document.querySelector('link[data-chat-menu-admin]')){const link=document.createElement('link');link.rel='stylesheet';link.href='../admin-v3/chat-menu-admin.css?v=20260911-01';link.dataset.chatMenuAdmin='1';document.head.appendChild(link)}
+    if(!document.querySelector('script[data-chat-menu-admin]')){const script=document.createElement('script');script.src='../admin-v3/chat-menu-admin.js?v=20260911-01';script.dataset.chatMenuAdmin='1';document.body.appendChild(script)}
+    return true;
+  };
+  if(!mount())document.addEventListener('DOMContentLoaded',mount,{once:true});
 })(window.DA_ADMIN_V3_CONFIG);
