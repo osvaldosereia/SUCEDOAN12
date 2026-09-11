@@ -7,18 +7,24 @@ on:
       - 'supabase/migrations/20260910225200_whatsapp_flow_v31_live_session_audit_v1.sql'
       - 'supabase/migrations/20260911012500_whatsapp_flow_v32_live_session_audit_v2.sql'
       - 'supabase/migrations/20260911023000_whatsapp_flow_v32_owner_homologation_readiness_v3.sql'
+      - 'supabase/migrations/20260911031800_whatsapp_flow_v33_segmented_catalog_readiness_v1.sql'
+      - 'supabase/migrations/20260911031900_whatsapp_flow_v33_utilidades_pet_alias_fix_v1.sql'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   pull_request:
     paths:
       - 'supabase/migrations/20260910225200_whatsapp_flow_v31_live_session_audit_v1.sql'
       - 'supabase/migrations/20260911012500_whatsapp_flow_v32_live_session_audit_v2.sql'
       - 'supabase/migrations/20260911023000_whatsapp_flow_v32_owner_homologation_readiness_v3.sql'
+      - 'supabase/migrations/20260911031800_whatsapp_flow_v33_segmented_catalog_readiness_v1.sql'
+      - 'supabase/migrations/20260911031900_whatsapp_flow_v33_utilidades_pet_alias_fix_v1.sql'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   workflow_dispatch:
 
@@ -40,3 +46,5 @@ jobs:
         run: node scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs
       - name: Validate V32 owner homologation readiness contract
         run: node scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs
+      - name: Validate V33 segmented catalog contract
+        run: node scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs
