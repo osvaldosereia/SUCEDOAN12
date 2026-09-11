@@ -63,7 +63,7 @@ function hasAddress(a){return !![a.street,a.number,a.neighborhood,a.city,a.state
 
 async function saveAddress(customerId,blingId,a){if(!hasAddress(a))return;const existing=state.addressByCustomer.get(customerId);const payload={label:'Principal',bling_address_ref:`bling-contact-${blingId}`,is_default:true,is_active:true,updated_at:nowIso()};for(const key of ['street','number','complement','neighborhood','city','state','postal_code','reference'])if(a[key])payload[key]=a[key];if(existing){const saved=await patch('customer_addresses',existing.id,payload);state.addressByCustomer.set(customerId,saved||{...existing,...payload});}else{const saved=await insert('customer_addresses',{customer_id:customerId,...payload});state.addressByCustomer.set(customerId,saved)}summary.addresses_saved++}
 async function saveEmail(customerId,email){if(!email)return;const existing=state.emailByCustomer.get(customerId);const payload={email,email_normalized:email.toLowerCase(),verification_status:'unverified',is_primary:true,source:'bling',evidence:{bling_sync:true},updated_at:nowIso()};if(existing){const saved=await patch('customer_emails',existing.id,payload);state.emailByCustomer.set(customerId,saved||{...existing,...payload});}else{const saved=await insert('customer_emails',{customer_id:customerId,...payload});state.emailByCustomer.set(customerId,saved)}summary.emails_saved++}
-async function savePhone(customerId,phone){if(!phone)return;const owner=state.phoneOwners.get(phone);if(owner&&owner.customer_id!==customerId)return; if(!owner){const saved=await insert('customer_phones',{customer_id:customerId,phone_e164:phone,source:'bling',is_primary:true});state.phoneOwners.set(phone,saved);summary.phones_saved++}}
+async function savePhone(customerId,phone){if(!phone)return;const owner=state.phoneOwners.get(phone);if(owner&&owner.customer_id!==customerId)return;if(!owner){const saved=await insert('customer_phones',{customer_id:customerId,phone_e164:phone,source:'bling',is_primary:true});state.phoneOwners.set(phone,saved);summary.phones_saved++}}
 
 async function syncContact(raw){
   const c=mapBlingContact(raw);if(!c.bling_contact_id||!c.name)return null;
@@ -98,4 +98,4 @@ async function syncHistory(){const currentYear=new Date().getUTCFullYear();let f
     if(foundAny&&emptyOlder>=2)break;
   }}
 
-try{await oauth();await loadLocal();await syncExistingLinkedContacts();await syncHistory();report();console.log(JSON.stringify(summary,null,2));if(summary.contact_errors>0||summary.history_errors>0)process.exitCode=2}catch(e){console.error(e.stack||e.message||e);summary.fatal_error=String(e.message||e);report();process.exitCode=1}
+try{await oauth();await loadLocal();await syncExistingLinkedContacts();await syncHistory();report();console.log(JSON.stringify(summary,null,2));}catch(e){console.error(e.stack||e.message||e);summary.fatal_error=String(e.message||e);report();process.exitCode=1}
