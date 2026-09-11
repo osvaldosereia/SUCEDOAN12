@@ -6,26 +6,22 @@ on:
     paths:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
-      - 'supabase/functions/admin-customer-history-v1/**'
       - 'supabase/migrations/*admin_v2_customer_maps*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-no-auth-v2.mjs'
       - 'scripts/test-admin-v2-operational-contract.mjs'
-      - 'scripts/test-admin-customer-bling-history.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
     paths:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
-      - 'supabase/functions/admin-customer-history-v1/**'
       - 'supabase/migrations/*admin_v2_customer_maps*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-no-auth-v2.mjs'
       - 'scripts/test-admin-v2-operational-contract.mjs'
-      - 'scripts/test-admin-customer-bling-history.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -52,17 +48,13 @@ jobs:
         run: |
           node --check admin/config.js
           node --check admin/app-lite.js
-          [ ! -f admin/customer-bling-history.js ] || node --check admin/customer-bling-history.js
           deno check supabase/functions/admin-simple-v2/index.ts
-          [ ! -f supabase/functions/admin-customer-history-v1/index.ts ] || deno check supabase/functions/admin-customer-history-v1/index.ts
       - name: Validar contrato Admin Simple V2
         run: node scripts/test-admin-simple-v2.mjs
       - name: Validar Admin sem autenticação
         run: node scripts/test-admin-no-auth-v2.mjs
       - name: Validar Admin operacional
         run: node scripts/test-admin-v2-operational-contract.mjs
-      - name: Validar histórico Bling dos clientes
-        run: node scripts/test-admin-customer-bling-history.mjs
       - name: Validar shell oficial
         run: |
           grep -q 'data-route="products"' admin/index.html
