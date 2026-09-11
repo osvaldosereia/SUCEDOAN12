@@ -82,7 +82,7 @@ Persistidos:
 - `scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs`;
 - workflow `Test WhatsApp Flow Live Audit` atualizado com V38.
 
-Run `34578957280` disparado para o commit `4585917ea10cc8e50c0da4d2c8f69f55bd483d5f`; estava `in_progress` na última leitura deste checkpoint.
+Run `34578957280`, commit `4585917ea10cc8e50c0da4d2c8f69f55bd483d5f`: `completed/success`.
 
 ## Make
 
