@@ -17,7 +17,8 @@ for (const forbidden of [
   'marketing-center',
   'marketingCenter',
   'marketing-carousel-progress-v1',
-  'marketing-editor-v1'
+  'marketing-editor-v1',
+  'marketing-library-v1'
 ]) assert.ok(!publicAdmin.includes(forbidden), `public Admin must not load Marketing surface: ${forbidden}`);
 
 const marketingFunctions = [
@@ -43,11 +44,12 @@ for (const slug of marketingFunctions) {
 const dormantUiFiles = [
   'admin-v3/marketing-center.css',
   'admin-v3/marketing-carousel-progress-v1.js',
-  'admin-v3/marketing-editor-v1.js'
+  'admin-v3/marketing-editor-v1.js',
+  'admin-v3/marketing-library-v1.js'
 ];
 for (const file of dormantUiFiles) assert.ok(fs.existsSync(file), `dormant Marketing UI asset missing: ${file}`);
 
-const externalProviderPattern=/graph\.facebook\.com|api\.pinterest\.com|mybusiness\.googleapis\.com|api\.openai\.com/;
+const externalProviderPattern=/graph\.facebook\.com|api\.pinterest\.com|mybusiness\.googleapis\.com|api\.openai\.com|generativelanguage\.googleapis\.com/;
 const carouselProgress = fs.readFileSync('admin-v3/marketing-carousel-progress-v1.js','utf8');
 assert.match(carouselProgress, /Authorization:`Bearer \$\{a\.access_token\}`/, 'private carousel progress reader must send bearer JWT');
 assert.match(carouselProgress, /external_side_effect!==false/, 'private carousel progress reader must fail closed on side-effect marker');
@@ -59,6 +61,12 @@ assert.match(editor, /Authorization:`Bearer \$\{a\.access_token\}`/, 'private ed
 assert.match(editor, /external_side_effect!==false/, 'private editor must fail closed on side-effect marker');
 assert.match(editor, /admin-marketing-workflow-v1/, 'private editor must use the protected Marketing workflow edge');
 assert.ok(!externalProviderPattern.test(editor), 'dormant editor must not call external providers directly');
+
+const library = fs.readFileSync('admin-v3/marketing-library-v1.js','utf8');
+assert.match(library, /Authorization:`Bearer \$\{a\.access_token\}`/, 'private library must send bearer JWT');
+assert.match(library, /external_side_effect!==false/, 'private library must fail closed on side-effect marker');
+assert.match(library, /admin-marketing-v1/, 'private library must use protected Marketing edge');
+assert.ok(!externalProviderPattern.test(library), 'dormant library must not call external providers directly');
 
 const migrations = [
   '20260910004500_marketing_center_foundation_v1.sql',
