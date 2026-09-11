@@ -16,7 +16,7 @@ const productCache=new Map();
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function toast(message,kind=''){const host=$('toastRegion');const node=document.createElement('div');node.className=`toast ${kind}`.trim();node.textContent=message;host.appendChild(node);setTimeout(()=>node.remove(),kind==='error'?5000:2600)}
 function loading(label='Carregando…'){app.innerHTML=`<div class="page-loading"><span></span><p>${esc(label)}</p></div>`}
-function updateOrderButtons(){const count=cartCount();$('cartCount').textContent=count>99?'99+':String(count);$('cartCount').classList.toggle('hidden',count===0);$('mobileOrderBar').classList.toggle('hidden',count===0);$('mobileOrderCount').textContent=String(count)}
+function updateOrderButtons(){const count=cartCount();$('cartCount').textContent=count>99?'99+':String(count);$('cartCount').classList.toggle('hidden',count===0);$('mobileOrderButton').classList.toggle('hidden',count===0);$('mobileOrderCount').textContent=String(count)}
 function openCart(){cartBody.innerHTML=renderCart();cartDrawer.classList.add('open');cartDrawer.setAttribute('aria-hidden','false');backdrop.classList.remove('hidden');document.body.classList.add('drawer-open')}
 function closeCart(){cartDrawer.classList.remove('open');cartDrawer.setAttribute('aria-hidden','true');backdrop.classList.add('hidden');document.body.classList.remove('drawer-open')}
 function stopPrefetch(){prefetchObserver?.disconnect();prefetchObserver=null;prefetched=null}
