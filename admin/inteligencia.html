@@ -10,12 +10,14 @@
   <link rel="stylesheet" href="../admin-v3/service-intelligence.css?v=20260908-03">
   <link rel="stylesheet" href="../admin-v3/mobile-priority.css?v=20260911-01">
   <style>
-    .si-simple-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .si-simple-status .badge{font-weight:700}
     .si-editor select{width:100%;min-height:44px}
-    .si-editor textarea[name="variations"]{min-height:130px}
-    .si-editor textarea[name="answer"]{min-height:180px}
-    .si-simple-help{margin-top:8px;color:var(--muted,#697386);font-size:.9rem;line-height:1.45}
+    .si-editor textarea[name="variations"]{min-height:110px}
+    .si-editor textarea[name="answer"]{min-height:150px}
+    .si-simple-help{margin:8px 0;color:var(--muted,#697386);font-size:.9rem;line-height:1.45}
+    .si-stages{display:grid;gap:16px;margin-bottom:14px}
+    .si-stage{border:1px solid rgba(127,127,127,.25);border-radius:14px;padding:16px;background:rgba(127,127,127,.04)}
+    .si-stage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .si-stage-head strong{font-size:1rem}
   </style>
 </head>
 <body>
@@ -27,12 +29,10 @@
       <div>
         <div class="eyebrow">IA do atendimento</div>
         <h1>Orientações simples da IA</h1>
-        <p>Cadastre o que o cliente pode perguntar, como responder e qual ferramenta usar.</p>
+        <p>Configure as etapas da conversa: pergunta, variações, resposta e ferramenta.</p>
       </div>
     </div>
-    <div class="si-actions">
-      <button id="siRefresh" class="button primary" type="button">Atualizar</button>
-    </div>
+    <div class="si-actions"><button id="siRefresh" class="button primary" type="button">Atualizar</button></div>
   </header>
 
   <main class="si-shell">
@@ -42,36 +42,28 @@
     <section class="si-intro panel">
       <div class="si-intro-icon">IA</div>
       <div>
-        <strong>IA ativa, mas bem amarrada</strong>
-        <p>A IA entende a pergunta e deixa a resposta natural e cordial. Ela só usa informações e ferramentas que você cadastrou aqui.</p>
+        <strong>Simples e configurável</strong>
+        <p>Cada orientação pode ter uma ou várias etapas. A IA mantém a conversa natural, mas segue somente o que estiver configurado.</p>
       </div>
       <div class="si-file-hint">
-        <strong>Contexto curto</strong>
-        <span>O sistema envia poucas mensagens recentes e somente as regras mais parecidas com a pergunta. Isso reduz custo e evita conflito.</span>
+        <strong>Você controla a sequência</strong>
+        <span>Use “Adicionar etapa” quando quiser continuar a conversa depois da resposta anterior.</span>
       </div>
     </section>
 
     <div class="si-grid">
       <section class="panel si-list-panel">
         <div class="panel-head">
-          <div>
-            <div class="eyebrow">Orientações cadastradas</div>
-            <h2>Perguntas e respostas</h2>
-          </div>
+          <div><div class="eyebrow">Orientações cadastradas</div><h2>Conversas</h2></div>
           <button id="siNew" class="button primary small" type="button">+ Adicionar</button>
         </div>
-        <div class="si-list-toolbar">
-          <div class="search"><span>⌕</span><input id="siSearch" type="search" placeholder="Buscar pergunta ou resposta"></div>
-        </div>
+        <div class="si-list-toolbar"><div class="search"><span>⌕</span><input id="siSearch" type="search" placeholder="Buscar"></div></div>
         <div id="siList" class="si-list"></div>
       </section>
 
       <section class="panel si-editor">
         <div class="panel-head">
-          <div>
-            <div class="eyebrow">Editar orientação</div>
-            <h2 id="siEditorTitle">Nova orientação</h2>
-          </div>
+          <div><div class="eyebrow">Editar</div><h2 id="siEditorTitle">Nova orientação</h2></div>
           <span id="siStatus" class="badge">Rascunho</span>
         </div>
         <div class="si-editor-body">
@@ -85,13 +77,11 @@
       </section>
     </div>
 
-    <section class="si-note">
-      <strong>Importante:</strong> preço e estoque não devem ser digitados na resposta. Para isso escolha <strong>Consultar produto</strong>, e o sistema consulta o banco na hora.
-    </section>
+    <section class="si-note"><strong>É só isso:</strong> em cada etapa você configura pergunta, variações, resposta e modo/ferramenta.</section>
     <div id="toastRegion" class="toasts" aria-live="polite"></div>
   </main>
 </div>
 <script src="./config.js?v=20260910-03"></script>
-<script src="../admin-v3/service-intelligence.js?v=20260911-04"></script>
+<script src="../admin-v3/service-intelligence.js?v=20260911-05"></script>
 </body>
 </html>
