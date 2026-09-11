@@ -10,8 +10,22 @@ verify_jwt = false
 [functions.whatsapp-outbound-v1]
 verify_jwt = false
 
+# Compatibilidade histórica. O dispatcher/cron canônicos já usam conversation-worker-v3.
 [functions.conversation-worker-v2]
 verify_jwt = false
+
+[functions.conversation-worker-v3]
+verify_jwt = false
+
+# Agent Core usa segredos server-to-server próprios no corpo da função.
+[functions.dona-antonia-agent-core-v1]
+verify_jwt = false
+
+[functions.dona-antonia-agent-learning-v1]
+verify_jwt = false
+
+[functions.admin-agent-learning-v1]
+verify_jwt = true
 
 [functions.bling-products-ingest]
 verify_jwt = false
@@ -21,6 +35,10 @@ verify_jwt = false
 
 [functions.inventory-count-v2]
 verify_jwt = true
+
+# Porta pública mínima: valida PIN com hash/rate-limit e emite bootstrap de sessão Supabase.
+[functions.admin-pin-auth-v1]
+verify_jwt = false
 
 [functions.admin-ops-v1]
 verify_jwt = true
@@ -96,4 +114,20 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.shopping-room-sales-v1]
+verify_jwt = false
+
+# Chat público leve: autenticação própria por token aleatório da sessão + CORS estrito.
+[functions.shopping-chat-v1]
+verify_jwt = false
+
+# Feed público de produtos do chat: catálogo vendável + token válido da sessão + CORS estrito.
+[functions.shopping-chat-products-v1]
+verify_jwt = false
+
+# Menu flutuante público: somente leitura, token válido da sessão + CORS estrito.
+[functions.shopping-chat-menu-v1]
+verify_jwt = false
+
+# Admin do Menu do Chat: autenticação é validada dentro da função contra auth.users + admin_users.
+[functions.admin-chat-menu-v1]
 verify_jwt = false
