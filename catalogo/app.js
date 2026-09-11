@@ -23,26 +23,29 @@
     let count=0,total=0;
     state.items.forEach(x=>{const q=Number(x.quantity||0),price=Number(x.product?.price||0);count+=q;total+=q*price});
     $('selectedCount').textContent=`${count} ${count===1?'item':'itens'}`;
-    $('countBadge').textContent=`${count} ${count===1?'item':'itens'}`;
+    $('countBadge').textContent=String(count);
     $('selectedTotal').textContent=state.cart?.total!=null?money(state.cart.total):money(total);
     $('stickyBar').classList.remove('hidden');
   }
   function render(){
     const host=$('productGrid');host.innerHTML='';
     const list=filtered();
-    if(!list.length){$('stateBox').textContent=state.items.length?'Nenhum produto encontrado nesta busca.':'Nenhum produto disponível nesta vitrine.';$('stateBox').classList.remove('hidden');host.classList.add('hidden');totals();return}
+    if(!list.length){$('stateBox').textContent=state.items.length?'Nenhum produto encontrado.':'Nenhum produto disponível.';$('stateBox').classList.remove('hidden');host.classList.add('hidden');totals();return}
     $('stateBox').classList.add('hidden');host.classList.remove('hidden');
     for(const item of list){
       const p=item.product||{},frag=$('productTemplate').content.cloneNode(true),card=frag.querySelector('.product');
       card.dataset.id=item.product_id;
-      const img=frag.querySelector('.product-image');img.src=p.image_url||'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="100%" height="100%" fill="#eef1ee"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#778078" font-family="Arial" font-size="20">sem foto</text></svg>');img.alt=text(p.name)||'Produto';
+      const img=frag.querySelector('.product-image');
+      img.src=p.image_url||'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="#f1f3f4"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#80868b" font-family="Arial" font-size="28">sem foto</text></svg>');
+      img.alt=text(p.name)||'Produto';
       frag.querySelector('.product-name').textContent=text(p.name)||'Produto';
-      frag.querySelector('.product-meta').textContent=[text(p.brand),text(p.packaging),text(p.category)].filter(Boolean).join(' · ');
+      const meta=[text(p.packaging),text(p.brand)].filter(Boolean).join(' · ');
+      const metaEl=frag.querySelector('.product-meta');metaEl.textContent=meta;if(!meta)metaEl.hidden=true;
       frag.querySelector('.product-price').textContent=money(p.price);
-      frag.querySelector('.product-reason').textContent=text(item.reason)||'';
-      frag.querySelector('.qty').textContent=String(Number(item.quantity||0));
-      frag.querySelector('.minus').addEventListener('click',()=>change(item,-1,card));
-      frag.querySelector('.plus').addEventListener('click',()=>change(item,1,card));
+      const qty=Number(item.quantity||0),qtyEl=frag.querySelector('.qty'),minus=frag.querySelector('.minus'),plus=frag.querySelector('.plus');
+      qtyEl.textContent=String(qty);minus.disabled=qty<=0;
+      minus.addEventListener('click',()=>change(item,-1,card));
+      plus.addEventListener('click',()=>change(item,1,card));
       host.appendChild(frag);
     }
     totals();
@@ -58,10 +61,9 @@
     if(!/^[a-f0-9]{64}$/i.test(token)){ $('stateBox').textContent='Este link de vitrine é inválido ou incompleto.';return }
     try{
       const data=await api('open');state.session=data.session;state.items=data.items||[];state.cart=data.cart||null;state.whatsappUrl=data.whatsapp_url||'';
-      $('catalogTitle').textContent=initialQuery?`Resultados para ${initialQuery}`:(data.session?.title||'Vitrine Dona Antônia');
+      const sessionTitle=text(data.session?.title);
+      $('catalogTitle').textContent=initialQuery?`Resultados para “${initialQuery}”`:(sessionTitle&&sessionTitle.toLowerCase()!=='vitrine dona antônia'?sessionTitle:'Produtos');
       $('searchInput').value=initialQuery;
-      const expires=data.session?.expires_at?new Date(data.session.expires_at):null;
-      $('catalogSubtitle').textContent=expires?`Escolha os produtos e ajuste as quantidades. Link disponível até ${expires.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}.`:'Escolha os produtos e ajuste as quantidades.';
       render();
     }catch(e){$('stateBox').textContent=e.message==='catalog_unavailable'?'Esta vitrine expirou ou não está mais disponível.':'Não foi possível abrir esta vitrine.'}
   }
