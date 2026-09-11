@@ -39,7 +39,9 @@ jobs:
         with:
           node-version: '22'
       - name: Syntax check dormant private Marketing UI
-        run: node --check admin-v3/marketing-carousel-progress-v1.js
+        run: |
+          node --check admin-v3/marketing-carousel-progress-v1.js
+          node --check admin-v3/marketing-editor-v1.js
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
       - name: Validate dormant Marketing editor contract
