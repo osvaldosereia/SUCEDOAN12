@@ -12,6 +12,7 @@ on:
       - 'supabase/migrations/20260911041700_whatsapp_flow_v34_direct_intent_search_v1.sql'
       - 'supabase/migrations/20260911051600_whatsapp_flow_v35_session_aware_upsell_v1.sql'
       - 'supabase/migrations/20260911072400_whatsapp_flow_v37_live_segmented_path_readiness_v1.sql'
+      - 'supabase/migrations/20260911082000_whatsapp_flow_v38_runtime_definition_alignment_v1.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/index.ts'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
@@ -21,6 +22,7 @@ on:
       - 'scripts/test-whatsapp-flow-v35-session-upsell-contract.mjs'
       - 'scripts/test-whatsapp-flow-v36-stable-runtime-promotion-contract.mjs'
       - 'scripts/test-whatsapp-flow-v37-live-segmented-path-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   pull_request:
     paths:
@@ -32,6 +34,7 @@ on:
       - 'supabase/migrations/20260911041700_whatsapp_flow_v34_direct_intent_search_v1.sql'
       - 'supabase/migrations/20260911051600_whatsapp_flow_v35_session_aware_upsell_v1.sql'
       - 'supabase/migrations/20260911072400_whatsapp_flow_v37_live_segmented_path_readiness_v1.sql'
+      - 'supabase/migrations/20260911082000_whatsapp_flow_v38_runtime_definition_alignment_v1.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/index.ts'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
@@ -41,6 +44,7 @@ on:
       - 'scripts/test-whatsapp-flow-v35-session-upsell-contract.mjs'
       - 'scripts/test-whatsapp-flow-v36-stable-runtime-promotion-contract.mjs'
       - 'scripts/test-whatsapp-flow-v37-live-segmented-path-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   workflow_dispatch:
 
@@ -72,3 +76,5 @@ jobs:
         run: node scripts/test-whatsapp-flow-v36-stable-runtime-promotion-contract.mjs
       - name: Validate V37 live segmented path contract
         run: node scripts/test-whatsapp-flow-v37-live-segmented-path-contract.mjs
+      - name: Validate V38 runtime definition alignment contract
+        run: node scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs
