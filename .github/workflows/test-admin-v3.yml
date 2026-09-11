@@ -6,18 +6,22 @@ on:
     paths:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
+      - 'supabase/migrations/*admin_v2_customer_maps*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-no-auth-v2.mjs'
+      - 'scripts/test-admin-v2-operational-contract.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
     paths:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
+      - 'supabase/migrations/*admin_v2_customer_maps*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-no-auth-v2.mjs'
+      - 'scripts/test-admin-v2-operational-contract.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -49,11 +53,15 @@ jobs:
         run: node scripts/test-admin-simple-v2.mjs
       - name: Validar Admin sem autenticação
         run: node scripts/test-admin-no-auth-v2.mjs
+      - name: Validar Admin operacional
+        run: node scripts/test-admin-v2-operational-contract.mjs
       - name: Validar shell oficial
         run: |
           grep -q 'data-route="products"' admin/index.html
           grep -q 'data-route="baskets"' admin/index.html
           grep -q 'data-route="customers"' admin/index.html
+          grep -q 'Balanço rápido' admin/index.html
+          grep -q '../contagem/' admin/index.html
           ! grep -q 'data-route="counts"' admin/index.html
           ! grep -q 'data-route="queue"' admin/index.html
           ! grep -qi 'WhatsApp ativos' admin/index.html
