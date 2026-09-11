@@ -25,11 +25,16 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
       - name: Contrato de schema Storefront V2
         run: node scripts/test-storefront-v2-schema.mjs
       - name: Contrato transacional do pedido
         run: node scripts/test-storefront-v2-order-contract.mjs
       - name: Contrato da Edge Function pública
         run: node scripts/test-storefront-v2-edge.mjs
+      - name: Compilar Edge Function
+        run: deno check supabase/functions/storefront-v2/index.ts
       - name: Vínculo posterior pedido-cliente
         run: node scripts/test-customer-order-link-v2.mjs
