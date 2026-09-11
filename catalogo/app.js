@@ -36,7 +36,7 @@
       const p=item.product||{},frag=$('productTemplate').content.cloneNode(true),card=frag.querySelector('.product');
       card.dataset.id=item.product_id;
       const img=frag.querySelector('.product-image');
-      img.src=p.image_url||'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="#f1f3f4"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#80868b" font-family="Arial" font-size="28">sem foto</text></svg>');
+      img.src=p.image_url||'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="#ECECEC"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#80868b" font-family="Arial" font-size="28">sem foto</text></svg>');
       img.alt=text(p.name)||'Produto';
       frag.querySelector('.product-name').textContent=text(p.name)||'Produto';
       const meta=[text(p.packaging),text(p.brand)].filter(Boolean).join(' · ');
