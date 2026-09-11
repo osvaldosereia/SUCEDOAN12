@@ -58,6 +58,10 @@ verify_jwt = false
 [functions.storefront-v2]
 verify_jwt = false
 
+# Catálogo público V3: somente leitura GET, CORS restrito e cache curto.
+[functions.catalog-v3]
+verify_jwt = false
+
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = true
 
