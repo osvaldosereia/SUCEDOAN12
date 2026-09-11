@@ -9,10 +9,12 @@ on:
       - 'supabase/migrations/20260911023000_whatsapp_flow_v32_owner_homologation_readiness_v3.sql'
       - 'supabase/migrations/20260911031800_whatsapp_flow_v33_segmented_catalog_readiness_v1.sql'
       - 'supabase/migrations/20260911031900_whatsapp_flow_v33_utilidades_pet_alias_fix_v1.sql'
+      - 'supabase/migrations/20260911041700_whatsapp_flow_v34_direct_intent_search_v1.sql'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs'
       - 'scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v34-direct-intent-search-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   pull_request:
     paths:
@@ -21,10 +23,12 @@ on:
       - 'supabase/migrations/20260911023000_whatsapp_flow_v32_owner_homologation_readiness_v3.sql'
       - 'supabase/migrations/20260911031800_whatsapp_flow_v33_segmented_catalog_readiness_v1.sql'
       - 'supabase/migrations/20260911031900_whatsapp_flow_v33_utilidades_pet_alias_fix_v1.sql'
+      - 'supabase/migrations/20260911041700_whatsapp_flow_v34_direct_intent_search_v1.sql'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs'
       - 'scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v34-direct-intent-search-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   workflow_dispatch:
 
@@ -48,3 +52,5 @@ jobs:
         run: node scripts/test-whatsapp-flow-v32-owner-homologation-readiness-contract.mjs
       - name: Validate V33 segmented catalog contract
         run: node scripts/test-whatsapp-flow-v33-segmented-catalog-contract.mjs
+      - name: Validate V34 direct intent search contract
+        run: node scripts/test-whatsapp-flow-v34-direct-intent-search-contract.mjs
