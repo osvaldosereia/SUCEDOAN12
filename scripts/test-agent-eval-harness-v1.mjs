@@ -32,7 +32,7 @@ for(const src of [prod,ev]){
   must(src,'conduza a alteração pela jornada/Flow governado','basket customization Flow rule');
 }
 
-must(ev,'resolve_whatsapp_agent_core_topic_v5','same topic resolver');
+must(ev,'resolve_whatsapp_agent_core_topic_v6','same topic resolver');
 for(const readTool of ['search_whatsapp_sellable_products_agent_v1','get_whatsapp_sellable_product_v1','get_whatsapp_simple_baskets_v1','get_whatsapp_basket_contents_v1','get_whatsapp_basic_policy_reply_v1']) must(ev,readTool,`real read tool ${readTool}`);
 must(ev,'simulated:true','write simulation');
 must(ev,'synthetic_eval:true','synthetic marker');
@@ -82,4 +82,4 @@ mustNot(corpus,'insert into public.messages','no messages seed');
 mustNot(corpus,'insert into public.conversations','no conversations seed');
 mustNot(corpus,'agent_core_pre_router_snapshots','no homologation snapshots');
 
-console.log(`OK Dona Antonia Agent Eval V36-V50 isolation/parity contract; corpus=${uniqueKeys.size}`);
+console.log(`OK Dona Antonia Agent Eval V36-V51 isolation/parity contract; corpus=${uniqueKeys.size}`);
