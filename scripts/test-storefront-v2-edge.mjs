@@ -20,4 +20,12 @@ for(const forbidden of [/graph\.facebook/i,/meta.*api/i,/firebase/i,/make\.com/i
 const lookupBlock=edge.match(/lookup_customer_by_phone[\s\S]{0,4500}/i)?.[0]||'';
 assert.doesNotMatch(lookupBlock,/cpf_cnpj|delivery_address|customer_addresses|email/i,'lookup público não deve expor cadastro completo');
 
+assert.match(edge,/https:\/\/donaantonia\.com\.br/i,'CORS deve reconhecer o domínio oficial');
+assert.match(edge,/https:\/\/www\.donaantonia\.com\.br/i,'CORS deve reconhecer o domínio www oficial');
+assert.doesNotMatch(edge,/Access-Control-Allow-Origin["']\s*:\s*["']\*["']/i,'CORS público não deve usar wildcard');
+assert.match(edge,/consume_public_rate_limit/i,'endpoint público deve usar limitador de requisições');
+assert.match(lookupBlock,/consume_public_rate_limit/i,'consulta por telefone precisa de rate limit');
+const createBlock=edge.match(/action\s*===\s*["']create_order["'][\s\S]{0,4500}/i)?.[0]||'';
+assert.match(createBlock,/consume_public_rate_limit/i,'criação de pedido precisa de rate limit');
+
 console.log('storefront-v2-edge ok');
