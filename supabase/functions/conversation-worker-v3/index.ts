@@ -2,82 +2,17 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const PROJECT_HOST="ssbesxgaijknwsjbsbcz.supabase.co";
+const OPENAI_URL="https://api.openai.com/v1/responses";
 const MAX_MEDIA_BYTES=10*1024*1024;
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
-const clean=(v:unknown,max=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
-const money=(v:unknown)=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const clean=(v:unknown,max=1200)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80))?clean(v,80):"";
 const arr=(v:unknown)=>Array.isArray(v)?v:[];
-const norm=(v:unknown)=>String(v??"").normalize("NFD").replace(/\p{Diacritic}/gu,"").toLowerCase().replace(/\s+/g," ").trim();
+const money=(v:unknown)=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 async function sha256Hex(value:string){const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return Array.from(new Uint8Array(d)).map(b=>b.toString(16).padStart(2,"0")).join("")}
-function bytesToBase64(bytes:Uint8Array){let binary="";for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary)}
-function safeErrorCode(error:unknown){const m=error instanceof Error?error.message:"worker_failed";return /^[a-z_]+(?:_\d+)?$/.test(m)?m:"provider_or_sales_failed"}
+function finalText(data:any){return arr(data?.output).flatMap((x:any)=>arr(x?.content)).filter((x:any)=>x?.type==="output_text").map((x:any)=>String(x.text||"")).join("").trim()}
 
-const planSchema={
-  type:"object",additionalProperties:false,
-  properties:{
-    intent:{type:"string",enum:["greeting","search","add","set_quantity","remove","replace","cart","checkout","confirm_order","baskets","answer","human","clarify"]},
-    confidence:{type:"number",minimum:0,maximum:1},
-    items:{type:"array",maxItems:8,items:{type:"object",additionalProperties:false,properties:{query:{type:"string"},product_id:{type:"string"},quantity:{type:"number"}},required:["query","product_id","quantity"]}},
-    original_query:{type:"string"},original_product_id:{type:"string"},replacement_query:{type:"string"},replacement_product_id:{type:"string"},quantity:{type:"number"},
-    needs_image:{type:"boolean"},prefer_interactive:{type:"boolean"},reply_text:{type:"string"},
-    address:{type:"object",additionalProperties:false,properties:{street:{type:"string"},number:{type:"string"},complement:{type:"string"},neighborhood:{type:"string"},city:{type:"string"},state:{type:"string"},postal_code:{type:"string"},reference:{type:"string"}},required:["street","number","complement","neighborhood","city","state","postal_code","reference"]}
-  },required:["intent","confidence","items","original_query","original_product_id","replacement_query","replacement_product_id","quantity","needs_image","prefer_interactive","reply_text","address"]
-};
-
-const instructions=`Você é o planejador comercial da Dona Antônia. Sua saída é JSON estruturado, não conversa livre.
-Objetivo em ordem: resolver corretamente, tornar fácil, fechar venda, aumentar ticket só quando fizer sentido.
-Use somente o contexto fornecido. Catálogo, preço, estoque e fotos vêm do banco próprio counter_verified; nunca do Bling e nunca invente.
-Minimize mensagens e carga cognitiva. Se a intenção estiver clara, não faça perguntas desnecessárias.
-Ações reversíveis de carrinho podem ser executadas sem confirmação quando a identificação for clara. Confirmar pedido exige confirmação explícita e será validada no backend.
-Se houver ambiguidade real de produto, use clarify. Para frases implícitas como 'tá faltando óleo', use search. Para 'coloca 2 arroz X', use add.
-Ao informar product_id, use somente IDs presentes em product_candidates ou cart. Caso contrário deixe vazio e preencha query.
-Para perguntas de regras/atendimento, use answer e baseie reply_text exclusivamente em intelligence. Se a informação não estiver no contexto, use clarify ou human.
-Não prometa prazo/entrega. Não use carrossel. Pode sugerir imagem, lista ou botões quando isso reduzir atrito.\nPara cestas básicas, identifique a intenção e deixe o backend/Flow conduzir escolha, personalização e fechamento.\nQuando preencher reply_text, use português brasileiro natural, cordial e curto; responda primeiro o que a pessoa perguntou, sem linguagem de robô e sem repetir a pergunta.`;
-
-function parsePlan(data:any){
-  if(data?.status!=="completed")throw new Error("model_response_incomplete");
-  const content=(data.output||[]).flatMap((x:any)=>x.content||[]);
-  if(content.some((x:any)=>x.type==="refusal"))throw new Error("model_refusal");
-  const out=content.filter((x:any)=>x.type==="output_text").map((x:any)=>x.text).join("");
-  const p=JSON.parse(out);
-  if(!p||typeof p!=="object"||typeof p.intent!=="string"||typeof p.confidence!=="number")throw new Error("invalid_sales_plan");
-  return p;
-}
-
-function itemTitle(name:string){const s=clean(name,60);return s.length<=24?s:`${s.slice(0,21)}…`}
-function productListInteractive(products:any[],body:string,action="add"){
-  return {type:"list",body:{text:clean(body,1024)},action:{button:"Escolher",sections:[{title:"Opções",rows:products.slice(0,10).map(p=>({id:`da_${action}_product:${p.id}`,title:itemTitle(p.name),description:clean(`${money(p.price)} · ${p.packaging||p.brand||"Disponível"}`,72)}))}]}};
-}
-function basketListInteractive(baskets:any[]){
-  return {type:"list",body:{text:"Escolha uma das nossas 9 cestas básicas:"},action:{button:"Ver cestas",sections:[{title:"Cestas básicas",rows:baskets.slice(0,9).map((b:any)=>({id:`da_basket:${b.id}`,title:itemTitle(b.display_name||b.name),description:money(b.base_price)}))}]}};
-}
-function confirmInteractive(body:string){return {type:"button",body:{text:clean(body,1024)},action:{buttons:[{type:"reply",reply:{id:"da_confirm_order",title:"Confirmar pedido"}},{type:"reply",reply:{id:"da_cart",title:"Revisar pedido"}},{type:"reply",reply:{id:"da_human",title:"Falar com equipe"}}]}}}
-function basketCustomerInteractive(body:string){return {type:"button",body:{text:clean(body,1024)},action:{buttons:[{type:"reply",reply:{id:"da_basket_customer_confirm",title:"Confirmar dados"}},{type:"reply",reply:{id:"da_basket_customer_change",title:"Alterar dados"}},{type:"reply",reply:{id:"da_human",title:"Falar com equipe"}}]}}}
-function cartText(cart:any){
-  const items=arr(cart?.items);if(!items.length)return "Seu carrinho está vazio.";
-  const lines=items.slice(0,30).map((i:any)=>`• ${Number(i.quantity)}× ${clean(i.name,80)}${i.unit_price==null?"":` — ${money(i.line_total)}`}`);
-  return `${lines.join("\n")}\n\nTotal: ${money(cart.total)}`;
-}
-function completeAddress(a:any){return Boolean(clean(a?.street)&&clean(a?.number)&&clean(a?.city))}
-function mergeAddress(a:any,b:any){const out:any={};for(const k of ["street","number","complement","neighborhood","city","state","postal_code","reference"]){out[k]=clean(b?.[k]||a?.[k],160)}return out}
-function categoryText(categories:any[]){return `Escolha as categorias que quer ver e responda com os números ou nomes. Pode escolher várias de uma vez:\n\n${categories.map((c:any,i:number)=>`${i+1}. ${clean(c.category,80)}`).join("\n")}`}
-function selectCategories(message:string,categories:any[]){
-  const out:any[]=[];const seen=new Set<string>();const n=norm(message);
-  for(const m of message.matchAll(/\b(\d{1,2})\b/g)){const idx=Number(m[1])-1;if(idx>=0&&idx<categories.length){const c=categories[idx];if(!seen.has(c.category)){seen.add(c.category);out.push(c)}}}
-  for(const c of categories){if(n.includes(norm(c.category))&&!seen.has(c.category)){seen.add(c.category);out.push(c)}}
-  return out;
-}
-function parseBasketCustomer(message:string){
-  const raw=String(message||"");const fields:any={};
-  const labels:any={nome:"name",rua:"street",quadra:"block",casa:"house",bairro:"neighborhood",localizador:"locator"};
-  const re=/(nome|rua|quadra|casa|bairro|localizador)\s*:\s*([^\n;|]+)/gi;
-  for(const m of raw.matchAll(re)){fields[labels[norm(m[1])]]=clean(m[2],180)}
-  return fields;
-}
-function customerPrompt(){return "Para finalizar, envie estes dados em uma única mensagem, um por linha:\n\nNome: \nRua: \nQuadra: \nCasa: \nBairro: \nLocalizador: ";}
-function customerStatusText(st:any){const u=st?.customer||{},a=st?.address||{};return `Encontrei seu cadastro:\n\nNome: ${clean(u.name,100)}\nRua: ${clean(a.street,100)}\nQuadra: ${clean(a.block||"—",80)}\nCasa: ${clean(a.house,60)}\nBairro: ${clean(a.neighborhood,100)}\nLocalizador: ${clean(a.locator||"—",120)}\n\nOs dados estão corretos?`}
-function dateBR(v:any){const s=clean(v,20);if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const [y,m,d]=s.split("-");return `${d}/${m}/${y}`}
+const CLASSIFY_SCHEMA={type:"object",additionalProperties:false,properties:{matched:{type:"boolean"},rule_id:{type:"string"},confidence:{type:"number",minimum:0,maximum:1},tool_input:{type:"string",maxLength:160}},required:["matched","rule_id","confidence","tool_input"]};
 
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
@@ -91,235 +26,100 @@ Deno.serve(async(req:Request)=>{
   if(secretError||!secretRow?.is_active||(await sha256Hex(suppliedKey))!==secretRow.key_hash)return json({ok:false,error:"unauthorized"},401);
   if(!openaiKey){const {data:vaultKey}=await sb.rpc("get_conversation_worker_provider_secret_v1");if(typeof vaultKey==="string")openaiKey=vaultKey}
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
-  if(body?.event==="healthcheck")return json({ok:true,event:"healthcheck",worker_version:3,provider_configured:Boolean(openaiKey)},200);
+  if(body?.event==="healthcheck")return json({ok:true,event:"healthcheck",worker_version:"3-simple",provider_configured:Boolean(openaiKey)},200);
   const expectedJobId=uuid(body?.job_id);if(!expectedJobId)return json({ok:false,error:"job_id_required"},400);
 
-  const {data:cfg,error:cfgError}=await sb.from("automation_config").select("automation_enabled,ai_enabled,conversation_worker_enabled,conversation_worker_dispatch_enabled,whatsapp_sales_mvp_enabled,whatsapp_sales_images_enabled,whatsapp_sales_interactive_enabled,whatsapp_sales_order_submit_enabled,whatsapp_sales_bling_submit_enabled").eq("id",1).maybeSingle();
-  if(cfgError||!cfg)return json({ok:false,error:"config_unavailable"},500);
-  if(!cfg.automation_enabled||!cfg.ai_enabled||!cfg.conversation_worker_enabled||!cfg.conversation_worker_dispatch_enabled)return json({ok:true,skipped:true,reason:"worker_disabled"},202);
-  if(!cfg.whatsapp_sales_mvp_enabled)return json({ok:true,skipped:true,reason:"sales_mvp_disabled"},202);
+  const [{data:cfg,error:cfgError},{data:simple,error:simpleError}]=await Promise.all([
+    sb.from("automation_config").select("automation_enabled,ai_enabled,conversation_worker_enabled,conversation_worker_dispatch_enabled,whatsapp_sales_mvp_enabled").eq("id",1).maybeSingle(),
+    sb.from("service_simple_runtime_config").select("*").eq("id",1).maybeSingle()
+  ]);
+  if(cfgError||!cfg||simpleError||!simple)return json({ok:false,error:"config_unavailable"},500);
+  if(!cfg.automation_enabled||!cfg.ai_enabled||!cfg.conversation_worker_enabled||!cfg.conversation_worker_dispatch_enabled||!simple.enabled)return json({ok:true,skipped:true,reason:"worker_disabled"},202);
 
-  const workerId=`conversation-sales-${crypto.randomUUID()}`;
+  const workerId=`conversation-simple-${crypto.randomUUID()}`;
   const {data:job,error:claimError}=await sb.rpc("claim_conversation_job_v2",{p_worker:workerId,p_expected_job_id:expectedJobId});
   if(claimError)return json({ok:false,error:"claim_failed"},500);
   if(!job)return json({ok:true,skipped:true,reason:"job_not_claimable"},202);
   if(job.skipped)return json({ok:true,skipped:true,reason:clean(job.reason,100)},200);
 
-  const finishSales=async(result:any,usage:any,error:string|null)=>{const {data,error:finishError}=await sb.rpc("finish_whatsapp_sales_job_v1",{p_job_id:job.id,p_worker:workerId,p_attempt:job.attempt,p_result:result,p_usage:usage,p_error:error});if(finishError)throw new Error("completion_uncertain");return data};
-  const queueReply=async(text:string,mode="text",imageUrl:string|null=null,interactive:any=null,action="reply",actionResult:any={},confidence:number|null=null)=>{
-    const {data,error}=await sb.rpc("queue_whatsapp_sales_reply_v1",{p_conversation_id:job.conversation_id,p_source_message_id:job.message_id,p_body_text:text,p_delivery_mode:mode,p_image_url:imageUrl,p_interactive:interactive,p_action_type:action,p_action_result:actionResult,p_confidence:confidence});
-    if(error)throw new Error(clean(error.message,100).replace(/[^a-z0-9_]+/gi,"_").toLowerCase()||"reply_queue_failed");return data;
+  let inputTokens=0,outputTokens=0,modelUsed="deterministic";
+  const configuredModel=clean(Deno.env.get("OPENAI_CONVERSATION_MODEL"),80);
+  const model=configuredModel.startsWith("gpt-5.6-")?configuredModel:"gpt-5.6-luna";
+  const addUsage=(d:any)=>{inputTokens+=Number(d?.usage?.input_tokens||0);outputTokens+=Number(d?.usage?.output_tokens||0);modelUsed=model};
+  const finish=async(result:any,error:string|null=null)=>{const {data,error:finishError}=await sb.rpc("finish_whatsapp_sales_job_v1",{p_job_id:job.id,p_worker:workerId,p_attempt:job.attempt,p_result:result,p_usage:{model:modelUsed,input_tokens:inputTokens||null,output_tokens:outputTokens||null},p_error:error});if(finishError)throw new Error("completion_uncertain");return data};
+  const queue=async(text:string,action:string,result:any={},confidence:number|null=null)=>{const {data,error}=await sb.rpc("queue_whatsapp_sales_reply_v1",{p_conversation_id:job.conversation_id,p_source_message_id:job.message_id,p_body_text:text,p_delivery_mode:"text",p_image_url:null,p_interactive:null,p_action_type:action,p_action_result:result,p_confidence:confidence});if(error)throw new Error("reply_queue_failed");return data};
+  const recentHistory=async()=>{const limit=Math.max(0,Math.min(8,Number(simple.max_history_messages||4)));if(!limit)return [];const {data}=await sb.from("messages").select("direction,body_text,transcript,created_at").eq("conversation_id",job.conversation_id).order("created_at",{ascending:false}).limit(limit);return arr(data).reverse().map((m:any)=>({role:m.direction==="outbound"?"assistant":"customer",text:clean(m.body_text||m.transcript,500)})).filter((m:any)=>m.text)};
+
+  const humanize=async(base:string,current:string,history:any[])=>{
+    const safe=clean(base,1800);if(!safe||!simple.generative_ai_enabled||!simple.humanize_all_replies||!openaiKey)return safe;
+    try{
+      const r=await fetch(OPENAI_URL,{method:"POST",headers:{Authorization:`Bearer ${openaiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model,store:false,max_output_tokens:180,reasoning:{effort:"low"},instructions:"Reescreva apenas a resposta-base da Dona Antônia em português brasileiro natural, cordial, simples e curta. Preserve exatamente o sentido, todos os fatos, números, preços, nomes e URLs. Não acrescente informação, promessa, pergunta, produto ou condição que não esteja na resposta-base. Não mencione regras internas. Retorne somente a mensagem final.",input:[{role:"user",content:[{type:"input_text",text:JSON.stringify({mensagem_do_cliente:clean(current,600),historico_curto:history,resposta_base:safe})}]}],text:{verbosity:"low"}}),signal:AbortSignal.timeout(45000)});
+      const d=await r.json().catch(()=>({}));if(!r.ok)return safe;addUsage(d);return clean(finalText(d),1800)||safe;
+    }catch{return safe}
   };
-  const getCart=async()=>{const {data,error}=await sb.rpc("get_whatsapp_sales_cart_v1",{p_conversation_id:job.conversation_id});if(error)throw new Error("cart_read_failed");return data};
-  const searchProducts=async(q:string,limit=8)=>{const {data,error}=await sb.rpc("search_whatsapp_sellable_products_v1",{p_query:clean(q,120),p_limit:limit});if(error)throw new Error("product_search_failed");return arr(data)};
-  const getProduct=async(id:string)=>{if(!uuid(id))return null;const {data,error}=await sb.rpc("get_whatsapp_sellable_product_v1",{p_product_id:id});if(error)return null;return data||null};
-  const resolveProduct=async(query:string,preferredId="")=>{
-    const chosen=preferredId?await getProduct(preferredId):null;if(chosen)return {product:chosen,ambiguous:false,candidates:[chosen]};
-    const rows=await searchProducts(query,8);if(!rows.length)return {product:null,ambiguous:false,candidates:[]};
-    const top=rows[0],second=rows[1];const decisive=rows.length===1||Number(top.score)>=90&&(Number(top.score)-Number(second?.score||0)>=8);
-    return {product:decisive?top:null,ambiguous:!decisive,candidates:rows};
-  };
-  const handoffBasket=async()=>{
-    const {data:reqData,error:reqError}=await sb.rpc("prepare_whatsapp_basket_handoff_v1",{p_conversation_id:job.conversation_id});if(reqError)throw new Error("basket_handoff_prepare_failed");
-    const changed=arr(reqData?.basket_selection).some((x:any)=>Boolean(x.changed));
-    const totalLabel=changed?"Subtotal atual":"Total";
-    const note=changed?"\nA equipe vai conferir as alterações feitas na composição da cesta antes de finalizar.":"";
-    const text=`Pedido recebido para conferência.\n\nCesta: ${clean(reqData?.basket_name,100)}\n${totalLabel}: ${money(reqData?.total)}\nEntrega prevista: ${dateBR(reqData?.delivery_date)}\nTaxa de entrega: R$ 0,00${note}\n\nVou transferir você para o atendimento humano para finalizar.`;
-    await queueReply(text,"text",null,null,"basket_ready_for_human",reqData,1);
-    await sb.rpc("clear_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id});
-    await sb.rpc("queue_human_handoff_v1",{p_conversation_id:job.conversation_id,p_reason:"basket_order_ready",p_message_id:job.message_id,p_priority:2,p_summary:`Cesta pronta para finalizar: ${clean(reqData?.basket_name,80)}`,p_context:{source:"whatsapp_basket_basic_v1",request_id:reqData?.request_id,total:reqData?.total,delivery_date:reqData?.delivery_date}});
-    return reqData;
+
+  const classify=async(current:string,history:any[],candidates:any[])=>{
+    if(!candidates.length)return {matched:false,rule_id:"",confidence:0,tool_input:""};
+    const top=candidates[0];
+    if(Number(top.exact)===1&&top.response_mode!=="product_lookup")return {matched:true,rule_id:String(top.id),confidence:1,tool_input:""};
+    if(!simple.classifier_ai_enabled||!openaiKey){return Number(top.score||0)>=Number(simple.similarity_threshold||0.5)?{matched:true,rule_id:String(top.id),confidence:Number(top.score||0),tool_input:current}:{matched:false,rule_id:"",confidence:0,tool_input:""}}
+    try{
+      const compact=candidates.map((c:any)=>({id:c.id,pergunta:c.question,variacoes:c.variations,modo:c.response_mode,similaridade:Number(c.score||0)}));
+      const r=await fetch(OPENAI_URL,{method:"POST",headers:{Authorization:`Bearer ${openaiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model,store:false,max_output_tokens:150,reasoning:{effort:"low"},instructions:"Classifique a intenção do cliente usando SOMENTE uma das regras candidatas fornecidas. Se nenhuma tiver a mesma intenção, matched=false. Não invente regra. Para modo product_lookup, tool_input deve conter somente o nome/termo do produto que deve ser pesquisado, sem frases como 'vocês têm' ou 'quanto custa'. Para outros modos, tool_input pode ficar vazio.",input:[{role:"user",content:[{type:"input_text",text:JSON.stringify({mensagem:clean(current,600),historico_curto:history,regras_candidatas:compact})}]}],text:{verbosity:"low",format:{type:"json_schema",name:"simple_rule_match",strict:true,schema:CLASSIFY_SCHEMA}}}),signal:AbortSignal.timeout(45000)});
+      const d=await r.json().catch(()=>({}));if(!r.ok)return {matched:false,rule_id:"",confidence:0,tool_input:""};addUsage(d);const t=finalText(d);const x=JSON.parse(t);if(!x?.matched)return {matched:false,rule_id:"",confidence:Number(x?.confidence||0),tool_input:""};if(!candidates.some((c:any)=>String(c.id)===String(x.rule_id)))return {matched:false,rule_id:"",confidence:0,tool_input:""};return x;
+    }catch{return {matched:false,rule_id:"",confidence:0,tool_input:""}}
   };
 
   try{
     if(job.job_type==="transcription"){
       const mime=clean(job.media?.mime_type,80);if(!job.media?.object_path||!mime)throw new Error("media_required");
-      const {data:blob,error:downloadError}=await sb.storage.from("shopping-room-media").download(job.media.object_path);if(downloadError||!blob)throw new Error("media_download_failed");
-      if(blob.size<=0||blob.size>MAX_MEDIA_BYTES)throw new Error("media_size_mismatch");
+      const {data:blob,error:downloadError}=await sb.storage.from("shopping-room-media").download(job.media.object_path);if(downloadError||!blob||blob.size<=0||blob.size>MAX_MEDIA_BYTES)throw new Error("media_download_failed");
       if(!openaiKey)throw new Error("openai_key_missing");
       const form=new FormData();form.append("file",blob,String(job.media.object_path).split("/").pop()||"audio.ogg");form.append("model",Deno.env.get("OPENAI_TRANSCRIPTION_MODEL")||"gpt-4o-mini-transcribe");form.append("language","pt");form.append("response_format","json");
-      const r=await fetch("https://api.openai.com/v1/audio/transcriptions",{method:"POST",headers:{Authorization:`Bearer ${openaiKey}`},body:form,signal:AbortSignal.timeout(90000),redirect:"error"});if(!r.ok)throw new Error(`openai_http_${r.status}`);
-      const data=await r.json();if(typeof data.text!=="string"||!data.text.trim())throw new Error("empty_transcript");
-      const {data:done,error:finishError}=await sb.rpc("finish_conversation_job",{p_job_id:job.id,p_worker:workerId,p_attempt:job.attempt,p_result:{transcript:data.text.trim().slice(0,4000)},p_usage:{model:Deno.env.get("OPENAI_TRANSCRIPTION_MODEL")||"gpt-4o-mini-transcribe",provider_request_id:r.headers.get("x-request-id"),input_tokens:data.usage?.input_tokens??null,output_tokens:data.usage?.output_tokens??null,audio_seconds:data.usage?.seconds??null},p_error:null});
-      if(finishError)throw new Error("completion_uncertain");return json({ok:true,job_id:job.id,job_type:"transcription",status:done?.status||"done"},200);
+      const r=await fetch("https://api.openai.com/v1/audio/transcriptions",{method:"POST",headers:{Authorization:`Bearer ${openaiKey}`},body:form,signal:AbortSignal.timeout(90000)});const d=await r.json().catch(()=>({}));if(!r.ok||!clean(d.text,4000))throw new Error("transcription_failed");
+      const {data:done,error:finishError}=await sb.rpc("finish_conversation_job",{p_job_id:job.id,p_worker:workerId,p_attempt:job.attempt,p_result:{transcript:clean(d.text,4000)},p_usage:{model:Deno.env.get("OPENAI_TRANSCRIPTION_MODEL")||"gpt-4o-mini-transcribe"},p_error:null});if(finishError)throw new Error("completion_uncertain");return json({ok:true,status:done?.status||"done",action:"transcription"},200);
     }
 
     const {data:ctx,error:ctxError}=await sb.rpc("build_whatsapp_sales_context_v1",{p_conversation_id:job.conversation_id,p_message_id:job.message_id});if(ctxError||!ctx)throw new Error("sales_context_failed");
-    const interactiveId=clean(ctx?.message?.interactive?.id,256);
-    const stateAddress=ctx?.sales_state?.pending_delivery_address||{};
-    const currentText=String(ctx?.message?.text||"");
-    const awaiting=clean(ctx?.sales_state?.awaiting,80);
+    const current=clean(ctx?.message?.text||"",1200),interactiveId=clean(ctx?.message?.interactive?.id,240),history=await recentHistory();
+    if(!current&&!interactiveId){const text=await humanize("Recebi sua mensagem, mas ainda preciso que você me diga em texto o que deseja.",current,history);await queue(text,"simple_need_text",{},1);await finish({simple:true,action:"need_text"});return json({ok:true,status:"done",action:"need_text"},200)}
 
-    // Políticas comerciais fixas: respondidas antes da IA.
-    const {data:policy}=await sb.rpc("get_whatsapp_basic_policy_reply_v1",{p_message:currentText});
-    if(policy?.matched){
-      await queueReply(String(policy.reply||""),"text",null,null,`fixed_${clean(policy.kind,40)}`,policy,1);
-      if(policy.handoff)await sb.rpc("queue_human_handoff_v1",{p_conversation_id:job.conversation_id,p_reason:"delivery_time_question",p_message_id:job.message_id,p_priority:2,p_summary:"Cliente perguntou o horário da entrega; horário depende da rota/bairro.",p_context:{source:"whatsapp_basic_policy"}});
-      await finishSales({plan:{intent:"answer",deterministic:true},action_result:policy},{model:"deterministic_policy"},null);return json({ok:true,status:"done",action:`fixed_${policy.kind}`},200);
-    }
-
-    // Retorno do catálogo externo da cesta.
-    const {data:basketFlow}=await sb.rpc("get_whatsapp_basket_flow_state_v1",{p_conversation_id:job.conversation_id});
-    const pendingReturn=basketFlow?.pending_return;
-    if(pendingReturn?.intent==="extras"){
-      const {data:categories,error:catError}=await sb.rpc("get_whatsapp_basket_product_categories_v1");if(catError)throw new Error("basket_categories_failed");
-      await sb.rpc("consume_whatsapp_basket_return_v1",{p_session_id:pendingReturn.session_id});
-      await sb.rpc("update_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id,p_awaiting:"basket_categories",p_last_action:"basket_categories"});
-      await queueReply(categoryText(arr(categories)),"text",null,null,"basket_category_list",{categories},1);
-      await finishSales({plan:{intent:"baskets",deterministic:true},action_result:{categories}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_categories"},200);
-    }
-    if(pendingReturn?.intent==="order"||pendingReturn?.intent==="extras_done"){
-      await sb.rpc("consume_whatsapp_basket_return_v1",{p_session_id:pendingReturn.session_id});
-      const st=basketFlow?.customer_status||{};
-      if(st.registered){
-        const txt=customerStatusText(st);
-        await queueReply(txt,"interactive",null,basketCustomerInteractive(txt),"basket_confirm_customer",st,1);
-        await finishSales({plan:{intent:"checkout",deterministic:true},action_result:{customer_status:st}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_confirm_customer"},200);
-      }
-      await sb.rpc("update_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id,p_awaiting:"basket_customer_data",p_last_action:"basket_customer_data"});
-      await queueReply(customerPrompt(),"text",null,null,"basket_request_customer",{},1);
-      await finishSales({plan:{intent:"checkout",deterministic:true},action_result:{needs_customer_data:true}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_request_customer"},200);
-    }
-
-    // Respostas esperadas pelo fluxo simples da cesta.
-    if(awaiting==="basket_categories"){
-      const {data:categories,error:catError}=await sb.rpc("get_whatsapp_basket_product_categories_v1");if(catError)throw new Error("basket_categories_failed");
-      const selected=selectCategories(currentText,arr(categories));
-      if(!selected.length){await queueReply(`Não consegui identificar as categorias.\n\n${categoryText(arr(categories))}`,"text",null,null,"basket_category_retry",{},1);await finishSales({plan:{intent:"clarify",deterministic:true},action_result:{}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_category_retry"},200)}
-      const {data:session,error:sessionError}=await sb.rpc("create_whatsapp_basket_extras_session_v1",{p_conversation_id:job.conversation_id,p_categories:selected.map((x:any)=>x.category)});if(sessionError)throw new Error("basket_extras_session_failed");
-      await sb.rpc("update_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id,p_awaiting:"",p_last_action:"basket_extras_link"});
-      await queueReply(`Montei a vitrine somente com: ${selected.map((x:any)=>x.category).join(", ")}.\n\nAbra aqui para escolher os produtos:\n${session.url}`,"text",null,null,"basket_extras_link",session,1);
-      await finishSales({plan:{intent:"baskets",deterministic:true},action_result:session},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_extras_link"},200);
-    }
-    if(awaiting==="basket_customer_data"){
-      const f=parseBasketCustomer(currentText);
-      if(!f.name||!f.street||!f.house||!f.neighborhood||!f.locator){await queueReply(`Ainda faltou algum dado. Envie exatamente assim, um por linha:\n\n${customerPrompt()}`,"text",null,null,"basket_customer_retry",{},1);await finishSales({plan:{intent:"clarify",deterministic:true},action_result:{}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_customer_retry"},200)}
-      const {data:saved,error:saveError}=await sb.rpc("save_whatsapp_basket_customer_v1",{p_conversation_id:job.conversation_id,p_name:f.name,p_street:f.street,p_block:f.block||"",p_house:f.house,p_neighborhood:f.neighborhood,p_locator:f.locator});if(saveError)throw new Error("basket_customer_save_failed");
-      const ready=await handoffBasket();
-      await finishSales({plan:{intent:"checkout",deterministic:true},action_result:{customer:saved,request:ready}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_handoff"},200);
-    }
-
-    if(interactiveId.startsWith("da_basket:")){
-      const bid=uuid(interactiveId.slice("da_basket:".length));if(!bid)throw new Error("invalid_basket_selection");
-      const {data:session,error:sessionError}=await sb.rpc("create_whatsapp_basket_session_v1",{p_conversation_id:job.conversation_id,p_basket_id:bid});if(sessionError)throw new Error("basket_session_failed");
-      await queueReply(`Você escolheu ${clean(session.basket_name,100)} — ${money(session.basket_price)}.\n\nVeja a foto e os produtos da cesta aqui:\n${session.url}`,"text",null,null,"basket_selected",session,1);
-      await finishSales({plan:{intent:"baskets",interactive:true},action_result:session},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_selected"},200);
-    }
-    if(interactiveId==="da_basket_customer_confirm"){
-      const {data:confirmed,error:confirmError}=await sb.rpc("confirm_whatsapp_basket_customer_v1",{p_conversation_id:job.conversation_id});if(confirmError)throw new Error("basket_customer_confirm_failed");
-      const ready=await handoffBasket();
-      await finishSales({plan:{intent:"checkout",interactive:true},action_result:{customer:confirmed,request:ready}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_handoff"},200);
-    }
-    if(interactiveId==="da_basket_customer_change"){
-      await sb.rpc("update_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id,p_awaiting:"basket_customer_data",p_last_action:"basket_customer_data"});
-      await queueReply(customerPrompt(),"text",null,null,"basket_request_customer",{},1);
-      await finishSales({plan:{intent:"checkout",interactive:true},action_result:{change_customer:true}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"basket_request_customer"},200);
-    }
-
-    if(interactiveId.startsWith("da_add_product:")){
-      const pid=uuid(interactiveId.slice("da_add_product:".length));if(!pid)throw new Error("invalid_product_selection");
-      const {data:added,error:addError}=await sb.rpc("add_whatsapp_sales_product_v1",{p_conversation_id:job.conversation_id,p_product_id:pid,p_quantity:1});if(addError)throw new Error("add_product_failed");
-      const cart=await getCart();await queueReply(`Adicionei ${clean(added?.product_name||"o produto",80)}. Seu pedido está em ${money(cart.total)}. Pode continuar me dizendo o que precisa.`,"text",null,null,"add_product",added,1);
-      await finishSales({plan:{intent:"add",interactive:true},action_result:added},{model:"deterministic_interactive"},null);return json({ok:true,status:"done",action:"add_product"},200);
-    }
-    if(interactiveId==="da_cart"){
-      const cart=await getCart();await queueReply(cartText(cart),"interactive",null,confirmInteractive(`${cartText(cart)}\n\nSe estiver tudo certo, confirme abaixo.`),"cart_summary",cart,1);
-      await finishSales({plan:{intent:"cart",interactive:true},action_result:cart},{model:"deterministic_interactive"},null);return json({ok:true,status:"done",action:"cart_summary"},200);
-    }
-    if(interactiveId==="da_confirm_order"){
-      const {data:order,error:orderError}=await sb.rpc("confirm_whatsapp_sales_order_v1",{p_conversation_id:job.conversation_id,p_message_id:job.message_id,p_delivery_address:stateAddress});
-      if(orderError){const msg=String(orderError.message||"");if(msg.includes("delivery_address_required")){await sb.rpc("update_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id,p_awaiting:"delivery_address"});await queueReply("Para fechar, me passe o endereço de entrega com rua, número e cidade.","text",null,null,"request_address",{},1);await finishSales({plan:{intent:"confirm_order"},action_result:{needs_address:true}},{model:"deterministic_interactive"},null);return json({ok:true,status:"done",action:"request_address"},200)}throw new Error("order_confirm_failed")}
-      await sb.rpc("clear_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id});
-      await queueReply(`Pedido confirmado. Total: ${money(order.total)}.`,"text",null,null,"confirm_order",order,1);
-      await finishSales({plan:{intent:"confirm_order",interactive:true},action_result:order},{model:"deterministic_interactive"},null);return json({ok:true,status:"done",action:"confirm_order"},200);
-    }
     if(interactiveId==="da_human"){
-      await sb.rpc("queue_human_handoff_v1",{p_conversation_id:job.conversation_id,p_reason:"customer_requested_human",p_message_id:job.message_id,p_priority:2,p_summary:"Cliente pediu atendimento humano no MVP de vendas.",p_context:{source:"whatsapp_sales_mvp"}});
-      await finishSales({plan:{intent:"human",interactive:true},action_result:{handoff:true}},{model:"deterministic_interactive"},null);return json({ok:true,status:"done",action:"human"},200);
+      await sb.rpc("queue_human_handoff_v1",{p_conversation_id:job.conversation_id,p_reason:"customer_requested_human",p_message_id:job.message_id,p_priority:2,p_summary:"Cliente pediu atendimento humano.",p_context:{source:"simple_ai"}});
+      const text=await humanize("Claro. Vou chamar nossa equipe para continuar com você.",current,history);await queue(text,"simple_human",{handoff:true},1);await finish({simple:true,action:"human"});return json({ok:true,status:"done",action:"human"},200);
     }
 
-    // Qualquer pergunta sobre cesta mostra imediatamente as 9 opções.
-    if(/\bcestas?\b/i.test(norm(currentText))){
-      const {data:baskets,error:basketError}=await sb.rpc("get_whatsapp_simple_baskets_v1");if(basketError)throw new Error("basket_search_failed");
-      const list=arr(baskets);if(!list.length)throw new Error("baskets_unavailable");
-      await queueReply("Escolha uma das nossas 9 cestas básicas:","interactive",null,basketListInteractive(list),"show_baskets",{baskets:list},1);
-      await finishSales({plan:{intent:"baskets",deterministic:true},action_result:{baskets:list}},{model:"deterministic_basket"},null);return json({ok:true,status:"done",action:"show_baskets"},200);
+    const {data:candidatePack,error:candidateError}=await sb.rpc("get_service_simple_rule_candidates_v1",{p_message:current,p_limit:Number(simple.max_candidate_rules||5)});if(candidateError)throw new Error("rule_candidates_failed");
+    const candidates=arr(candidatePack?.candidates),choice=await classify(current,history,candidates);
+    const rule=choice.matched?candidates.find((c:any)=>String(c.id)===String(choice.rule_id)):null;
+
+    if(!rule){
+      if(simple.fallback_mode==="silence"){await finish({simple:true,action:"no_rule_silence",candidates:candidates.map((c:any)=>({id:c.id,score:c.score}))});return json({ok:true,status:"done",action:"no_rule_silence"},200)}
+      await sb.rpc("queue_human_handoff_v1",{p_conversation_id:job.conversation_id,p_reason:"simple_rule_not_found",p_message_id:job.message_id,p_priority:3,p_summary:"Pergunta ainda sem orientação cadastrada no modo simples.",p_context:{source:"simple_ai",message:current}});
+      const text=await humanize("Essa orientação ainda não está cadastrada aqui. Vou chamar nossa equipe para te ajudar.",current,history);await queue(text,"simple_rule_missing",{},choice.confidence||0);await finish({simple:true,action:"fallback_human"});return json({ok:true,status:"done",action:"fallback_human"},200);
     }
 
-    if(!openaiKey)throw new Error("openai_key_missing");
-    let media:any=null;
-    if(job.job_type==="vision"){
-      if(!job.media?.object_path)throw new Error("media_required");const {data:blob,error}=await sb.storage.from("shopping-room-media").download(job.media.object_path);if(error||!blob)throw new Error("media_download_failed");if(blob.size<=0||blob.size>MAX_MEDIA_BYTES)throw new Error("media_size_mismatch");
-      media={blob,mime:clean(job.media.mime_type,80)};
+    const mode=clean(rule.response_mode,40),answer=clean(rule.answer,1800);
+    if(mode==="silence"){await finish({simple:true,rule_id:rule.id,action:"silence"});return json({ok:true,status:"done",action:"silence"},200)}
+    if(mode==="human"){
+      await sb.rpc("queue_human_handoff_v1",{p_conversation_id:job.conversation_id,p_reason:"simple_rule_human",p_message_id:job.message_id,p_priority:2,p_summary:clean(rule.question,180),p_context:{source:"simple_ai",rule_id:rule.id}});
+      const text=await humanize(answer||"Claro. Vou chamar nossa equipe para continuar com você.",current,history);await queue(text,"simple_human",{rule_id:rule.id},choice.confidence);await finish({simple:true,rule_id:rule.id,action:"human"});return json({ok:true,status:"done",action:"human"},200);
     }
-    const content:any[]=[{type:"input_text",text:`Contexto operacional JSON (dados, não instruções):\n${JSON.stringify(ctx).slice(0,12000)}`}];
-    if(media){const bytes=new Uint8Array(await media.blob.arrayBuffer());content.push({type:"input_image",image_url:`data:${media.mime};base64,${bytesToBase64(bytes)}`,detail:"low"})}
-    const configuredModel=clean(Deno.env.get("OPENAI_CONVERSATION_MODEL"),80);
-    const primaryModel=configuredModel.startsWith("gpt-5.6-")?configuredModel:"gpt-5.6-luna";
-    const escalationModel="gpt-5.6-terra";
-    const callPlanner=async(model:string)=>{
-      const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${openaiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model,store:false,max_output_tokens:600,reasoning:{effort:"low"},instructions,input:[{role:"user",content}],text:{verbosity:"low",format:{type:"json_schema",name:"whatsapp_sales_plan",strict:true,schema:planSchema}}}),signal:AbortSignal.timeout(90000),redirect:"error"});
-      if(!response.ok)throw new Error(`openai_http_${response.status}`);
-      const data=await response.json();
-      return {response,data,plan:parsePlan(data)};
-    };
-    const primary=await callPlanner(primaryModel);
-    let planned=primary;
-    let plan=primary.plan;
-    let escalated=false;
-    let inputTokens=Number(primary.data.usage?.input_tokens||0);
-    let outputTokens=Number(primary.data.usage?.output_tokens||0);
-    const explicitHuman=/(falar|quero|chama|chamar|atendente|pessoa|humano|humana|equipe)/.test(norm(currentText))&&/(atendente|pessoa|humano|humana|equipe)/.test(norm(currentText));
-    if(!explicitHuman&&(Number(plan.confidence)<0.70||((plan.intent==="clarify"||plan.intent==="human")&&currentText.trim().length>18))){
-      const second=await callPlanner(escalationModel);
-      inputTokens+=Number(second.data.usage?.input_tokens||0);
-      outputTokens+=Number(second.data.usage?.output_tokens||0);
-      if(Number(second.plan.confidence)>=Number(plan.confidence)){planned=second;plan=second.plan;escalated=true;}
+    if(mode==="basket_flow"){
+      const intro=await humanize(answer||"Claro! Vou abrir nossas cestas para você.",current,history);
+      const {data:flow,error:flowError}=await sb.rpc("queue_whatsapp_basket_flow_strict_v1",{p_conversation_id:job.conversation_id,p_source_message_id:job.message_id,p_body_text:intro});
+      if(flowError||flow?.ok===false)throw new Error("basket_flow_failed");await finish({simple:true,rule_id:rule.id,action:"basket_flow",flow});return json({ok:true,status:"done",action:"basket_flow"},200);
     }
-    const usage={model:escalated?`${primaryModel}+${escalationModel}`:primaryModel,provider_request_id:planned.response.headers.get("x-request-id"),input_tokens:inputTokens||null,output_tokens:outputTokens||null};
-
-    const mergedAddress=mergeAddress(stateAddress,plan.address);if(Object.values(plan.address||{}).some(v=>clean(v)))await sb.rpc("update_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id,p_delivery_address:plan.address,p_last_action:plan.intent});
-    let actionResult:any={};
-
-    if(plan.intent==="greeting"){
-      await queueReply("Oi! Pode me dizer o que você precisa. Eu consigo procurar produtos, montar e ajustar seu pedido por aqui.","text",null,null,"greeting",{},plan.confidence);
-    } else if(plan.intent==="search"){
-      const q=clean(plan.items?.[0]?.query||plan.reply_text||ctx?.message?.text,120);const rows=await searchProducts(q,8);actionResult={query:q,products:rows};
-      if(!rows.length)await queueReply(`Não encontrei ${q||"esse produto"} entre os produtos já conferidos. Se quiser, me diga outra marca ou opção.`,"text",null,null,"search_product",actionResult,plan.confidence);
-      else if(rows.length===1&&plan.needs_image&&cfg.whatsapp_sales_images_enabled&&rows[0].image_url)await queueReply(`${clean(rows[0].name,100)} — ${money(rows[0].price)}`,"image",rows[0].image_url,null,"show_product",rows[0],plan.confidence);
-      else if(cfg.whatsapp_sales_interactive_enabled)await queueReply(`Encontrei estas opções para ${q}:`,"interactive",null,productListInteractive(rows,`Encontrei estas opções para ${q}:`),"search_product",actionResult,plan.confidence);
-      else await queueReply(rows.slice(0,5).map((p:any,i:number)=>`${i+1}. ${clean(p.name,80)} — ${money(p.price)}`).join("\n"),"text",null,null,"search_product",actionResult,plan.confidence);
-    } else if(plan.intent==="add"){
-      const added:any[]=[];const unresolved:any[]=[];
-      for(const item of arr(plan.items)){const resolved=await resolveProduct(clean(item.query,120),clean(item.product_id,80));if(!resolved.product){unresolved.push({query:item.query,candidates:resolved.candidates});continue}const qty=Math.max(1,Number(item.quantity)||1);const {data:a,error}=await sb.rpc("add_whatsapp_sales_product_v1",{p_conversation_id:job.conversation_id,p_product_id:resolved.product.id,p_quantity:qty});if(error)throw new Error("add_product_failed");added.push({...a,product:resolved.product})}
-      const cart=await getCart();actionResult={added,unresolved,cart};
-      if(unresolved.length){const options=unresolved[0].candidates||[];if(options.length&&cfg.whatsapp_sales_interactive_enabled)await queueReply("Encontrei mais de uma opção. Qual você quer?","interactive",null,productListInteractive(options,"Qual dessas opções você quer adicionar?"),"clarify_product",actionResult,plan.confidence);else await queueReply("Preciso só confirmar qual produto você quer. Me diga a marca ou o tamanho.","text",null,null,"clarify_product",actionResult,plan.confidence)}
-      else await queueReply(`${added.map(x=>`${Number(x.quantity)}× ${clean(x.product_name||x.product?.name,80)}`).join(", ")} adicionado ao pedido. Total agora: ${money(cart.total)}.`,"text",null,null,"add_product",actionResult,plan.confidence);
-    } else if(plan.intent==="set_quantity"||plan.intent==="remove"){
-      const item=plan.items?.[0]||{};const resolved=await resolveProduct(clean(item.query,120),clean(item.product_id,80));if(!resolved.product){await queueReply("Qual produto do pedido você quer alterar?","text",null,null,"clarify_product",{},plan.confidence)}else{const qty=plan.intent==="remove"?0:Math.max(0,Number(item.quantity||plan.quantity)||0);const {data:set,error}=await sb.rpc("set_whatsapp_sales_product_quantity_v1",{p_conversation_id:job.conversation_id,p_product_id:resolved.product.id,p_quantity:qty});if(error)throw new Error("set_quantity_failed");const cart=await getCart();actionResult={set,cart};await queueReply(`${qty===0?"Retirei":"Atualizei"} ${clean(resolved.product.name,80)}${qty===0?"":` para ${qty}`}. Total: ${money(cart.total)}.`,"text",null,null,plan.intent,actionResult,plan.confidence)}
-    } else if(plan.intent==="replace"){
-      const cart=await getCart();const cartItems=arr(cart.items);const findCart=(id:string,q:string)=>cartItems.find((x:any)=>id&&x.product_id===id)||cartItems.find((x:any)=>clean(x.name,120).toLowerCase().includes(clean(q,120).toLowerCase()));
-      const original=findCart(clean(plan.original_product_id,80),clean(plan.original_query,120));const replacement=await resolveProduct(clean(plan.replacement_query,120),clean(plan.replacement_product_id,80));
-      if(!original||!replacement.product){await queueReply("Preciso confirmar qual item sai e qual entra. Me diga os dois produtos.","text",null,null,"clarify_replacement",{},plan.confidence)}else{const {data:rep,error}=await sb.rpc("replace_whatsapp_sales_product_v1",{p_conversation_id:job.conversation_id,p_original_product_id:original.product_id,p_replacement_product_id:replacement.product.id,p_customer_confirmed:true});if(error){await queueReply("Essa troca precisa de uma regra da cesta ou de conferência da equipe. Posso te mostrar outra opção ou chamar alguém.","text",null,null,"replacement_needs_review",{error:error.message},plan.confidence)}else{const after=await getCart();actionResult={replacement:rep,cart:after};await queueReply(`Troquei por ${clean(replacement.product.name,80)}. Total do pedido: ${money(after.total)}.`,"text",null,null,"replace_product",actionResult,plan.confidence)}}
-    } else if(plan.intent==="cart"||plan.intent==="checkout"){
-      const cart=await getCart();actionResult=cart;if(!cart.exists||!arr(cart.items).length)await queueReply("Seu carrinho ainda está vazio. Me diga o primeiro produto que você quer.","text",null,null,"cart_empty",cart,plan.confidence);else if(cfg.whatsapp_sales_interactive_enabled)await queueReply(cartText(cart),"interactive",null,confirmInteractive(`${cartText(cart)}\n\nSe estiver tudo certo, confirme abaixo.`),"checkout_preview",cart,plan.confidence);else await queueReply(`${cartText(cart)}\n\nSe estiver tudo certo, escreva “pode fechar o pedido”.`,"text",null,null,"checkout_preview",cart,plan.confidence);
-    } else if(plan.intent==="confirm_order"){
-      const address=completeAddress(mergedAddress)?mergedAddress:stateAddress;const {data:order,error}=await sb.rpc("confirm_whatsapp_sales_order_v1",{p_conversation_id:job.conversation_id,p_message_id:job.message_id,p_delivery_address:address});
-      if(error){if(String(error.message).includes("delivery_address_required")){await sb.rpc("update_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id,p_awaiting:"delivery_address"});await queueReply("Só falta o endereço de entrega: rua, número e cidade.","text",null,null,"request_address",{},plan.confidence)}else if(String(error.message).includes("explicit_order_confirmation_required")){const cart=await getCart();await queueReply(cartText(cart),"interactive",null,confirmInteractive(`${cartText(cart)}\n\nConfirme o pedido abaixo.`),"request_confirmation",cart,plan.confidence)}else throw new Error("order_confirm_failed")}else{actionResult=order;await sb.rpc("clear_whatsapp_sales_state_v1",{p_conversation_id:job.conversation_id});await queueReply(`Pedido confirmado. Total: ${money(order.total)}.`,"text",null,null,"confirm_order",order,plan.confidence)}
-    } else if(plan.intent==="baskets"){
-      const {data:baskets,error}=await sb.rpc("get_whatsapp_simple_baskets_v1");if(error)throw new Error("basket_search_failed");actionResult={baskets:baskets||[]};
-      if(!baskets?.length)await queueReply("Ainda não há cestas liberadas no atendimento.","text",null,null,"baskets_unavailable",actionResult,plan.confidence);else if(cfg.whatsapp_sales_interactive_enabled)await queueReply("Escolha uma das nossas 9 cestas básicas:","interactive",null,basketListInteractive(baskets),"show_baskets",actionResult,plan.confidence);else await queueReply((baskets||[]).map((b:any)=>`• ${clean(b.display_name||b.name,80)} — ${money(b.base_price)}`).join("\n"),"text",null,null,"show_baskets",actionResult,plan.confidence);
-    } else if(plan.intent==="answer"){
-      const reply=clean(plan.reply_text,900);if(!reply)await queueReply("Essa informação ainda não está cadastrada na minha base. Posso chamar a equipe para confirmar.","text",null,null,"knowledge_missing",{},plan.confidence);else await queueReply(reply,"text",null,null,"knowledge_answer",{},plan.confidence);
-    } else if(plan.intent==="human"){
-      await sb.rpc("queue_human_handoff_v1",{p_conversation_id:job.conversation_id,p_reason:"customer_requested_human",p_message_id:job.message_id,p_priority:2,p_summary:"Cliente pediu atendimento humano no MVP de vendas.",p_context:{source:"whatsapp_sales_mvp"}});actionResult={handoff:true};
-    } else {
-      await queueReply("Me diga o produto, a quantidade ou o que você quer ajustar no pedido.","text",null,null,"clarify",{},plan.confidence);
+    if(mode==="product_lookup"){
+      const q=clean(choice.tool_input||current,120);const {data:products,error:productError}=await sb.rpc("search_whatsapp_sellable_products_v1",{p_query:q,p_limit:5});if(productError)throw new Error("product_lookup_failed");const rows=arr(products);
+      if(!rows.length){const lead=await humanize(`Não encontrei ${q||"esse produto"} entre os produtos disponíveis agora.`,current,history);await queue(lead,"simple_product_lookup",{rule_id:rule.id,query:q,count:0},choice.confidence)}
+      else {const lead=await humanize(answer||"Encontrei estas opções para você:",current,history);const list=rows.map((p:any)=>`• ${clean(p.name,90)} — ${money(p.price)}`).join("\n");await queue(`${lead}\n\n${list}`,"simple_product_lookup",{rule_id:rule.id,query:q,count:rows.length,product_ids:rows.map((p:any)=>p.id)},choice.confidence)}
+      await finish({simple:true,rule_id:rule.id,action:"product_lookup",query:q,count:rows.length});return json({ok:true,status:"done",action:"product_lookup"},200);
     }
 
-    await finishSales({plan,action_result:actionResult},usage,null);return json({ok:true,job_id:job.id,status:"done",intent:plan.intent},200);
+    const text=await humanize(answer,current,history);await queue(text,"simple_text",{rule_id:rule.id},choice.confidence);await finish({simple:true,rule_id:rule.id,action:"text"});return json({ok:true,status:"done",action:"text"},200);
   }catch(error){
-    const code=safeErrorCode(error);if(code==="completion_uncertain")return json({ok:false,error:"completion_uncertain_review_required"},500);
-    try{if(job.job_type==="transcription")await sb.rpc("finish_conversation_job",{p_job_id:job.id,p_worker:workerId,p_attempt:job.attempt,p_result:{},p_usage:{},p_error:code});else await finishSales({}, {}, code);return json({ok:false,handled:true,error:code},200)}catch{return json({ok:false,error:"completion_uncertain_review_required"},500)}
+    const code=clean(error instanceof Error?error.message:"simple_worker_failed",100).replace(/[^a-z0-9_]+/gi,"_").toLowerCase();
+    try{await finish({},code);return json({ok:false,handled:true,error:code},200)}catch{return json({ok:false,error:"completion_uncertain_review_required"},500)}
   }
 });
