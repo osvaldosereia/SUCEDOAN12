@@ -1,0 +1,36 @@
+name: Marketing Center Clean Transplant
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/admin-marketing-*/**'
+      - 'supabase/migrations/*marketing*.sql'
+      - 'supabase/config.toml'
+      - 'scripts/test-marketing-clean-transplant-v1.mjs'
+      - 'admin/app-lite.js'
+      - '.github/workflows/marketing-center-clean-v1.yml'
+  push:
+    branches:
+      - feat/marketing-center-clean-20260911
+    paths:
+      - 'supabase/functions/admin-marketing-*/**'
+      - 'supabase/migrations/*marketing*.sql'
+      - 'supabase/config.toml'
+      - 'scripts/test-marketing-clean-transplant-v1.mjs'
+      - 'admin/app-lite.js'
+      - '.github/workflows/marketing-center-clean-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  safety-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate clean Marketing transplant safety contract
+        run: node scripts/test-marketing-clean-transplant-v1.mjs

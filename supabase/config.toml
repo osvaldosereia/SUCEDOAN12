@@ -118,3 +118,25 @@ verify_jwt = false
 # Admin do Menu do Chat: autenticação é validada dentro da função contra auth.users + admin_users.
 [functions.admin-chat-menu-v1]
 verify_jwt = false
+
+# Marketing Center: superfície administrativa privada. Nunca expor no Admin público sem sessão JWT.
+[functions.admin-marketing-v1]
+verify_jwt = true
+
+[functions.admin-marketing-workflow-v1]
+verify_jwt = true
+
+[functions.admin-marketing-media-v1]
+verify_jwt = true
+
+[functions.admin-marketing-dry-run-v1]
+verify_jwt = true
+
+[functions.admin-marketing-insights-v1]
+verify_jwt = true
+
+[functions.admin-marketing-carousel-v1]
+verify_jwt = true
+
+[functions.admin-marketing-render-triage-v1]
+verify_jwt = true
