@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Cache-Control" content="no-store">
-  <title>Dona Antônia · Inteligência do Atendimento</title>
+  <title>Dona Antônia · IA do Atendimento</title>
   <link rel="stylesheet" href="../admin-v3/style.css?v=20260907-02">
   <link rel="stylesheet" href="../admin-v3/service-intelligence.css?v=20260908-03">
-  <link rel="stylesheet" href="../admin-v3/agent-workflow.css?v=20260911-03">
   <link rel="stylesheet" href="../admin-v3/mobile-priority.css?v=20260911-01">
+  <style>
+    .si-simple-status{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .si-simple-status .badge{font-weight:700}
+    .si-editor select{width:100%;min-height:44px}
+    .si-editor textarea[name="variations"]{min-height:130px}
+    .si-editor textarea[name="answer"]{min-height:180px}
+    .si-simple-help{margin-top:8px;color:var(--muted,#697386);font-size:.9rem;line-height:1.45}
+  </style>
 </head>
 <body>
 <script src="../admin-v3/admin-subpage-guard.js?v=20260911-01"></script>
@@ -18,54 +25,43 @@
     <div class="si-topbar-copy">
       <a class="si-back" href="./" aria-label="Voltar ao Admin">←</a>
       <div>
-        <div class="eyebrow">Inteligência do atendimento</div>
-        <h1>Como a IA atende</h1>
-        <p>Informações, orientações, roteiro, etapas e ferramentas que guiam o atendimento e as vendas.</p>
+        <div class="eyebrow">IA do atendimento</div>
+        <h1>Orientações simples da IA</h1>
+        <p>Cadastre o que o cliente pode perguntar, como responder e qual ferramenta usar.</p>
       </div>
     </div>
     <div class="si-actions">
-      <a class="button secondary" href="./aprendizados.html">Aprendizados</a>
-      <button id="siImportMd" class="button secondary" type="button">Importar inteligência</button>
-      <button id="siExportMd" class="button secondary" type="button">Baixar inteligência</button>
       <button id="siRefresh" class="button primary" type="button">Atualizar</button>
-      <input id="siImportFile" class="hidden" type="file" accept=".md,text/markdown,text/plain">
     </div>
   </header>
 
   <main class="si-shell">
     <div id="siAuthWarning" class="ops-alert hidden">Sessão indisponível. Volte ao Admin e use o código de acesso.</div>
-
     <section id="siMetrics" class="metrics"></section>
 
     <section class="si-intro panel">
       <div class="si-intro-icon">IA</div>
       <div>
-        <strong>Controle a IA sem transformar o atendimento em robô</strong>
-        <p>O fluxo visual define etapa, ferramentas e transições. A IA continua interpretando a conversa real. Preço, estoque e outras verdades comerciais continuam vindo automaticamente do sistema.</p>
+        <strong>IA ativa, mas bem amarrada</strong>
+        <p>A IA entende a pergunta e deixa a resposta natural e cordial. Ela só usa informações e ferramentas que você cadastrou aqui.</p>
       </div>
       <div class="si-file-hint">
-        <strong>Configuração com IA</strong>
-        <span>Baixe uma etapa ou o fluxo completo em Markdown, peça à IA para melhorar e importe o arquivo revisado. A configuração oficial permanece no Supabase.</span>
+        <strong>Contexto curto</strong>
+        <span>O sistema envia poucas mensagens recentes e somente as regras mais parecidas com a pergunta. Isso reduz custo e evita conflito.</span>
       </div>
     </section>
-
-    <nav class="si-tabs panel" aria-label="Áreas da inteligência">
-      <button class="active" data-tab="knowledge"><span>01</span><strong>O que a IA deve saber</strong><small>Fatos estáveis da empresa</small></button>
-      <button data-tab="guidance"><span>02</span><strong>Como a IA deve atender</strong><small>Comportamento e condução</small></button>
-      <button data-tab="procedure"><span>03</span><strong>Roteiro e regras</strong><small>Etapas, gatilhos e procedimentos</small></button>
-    </nav>
 
     <div class="si-grid">
       <section class="panel si-list-panel">
         <div class="panel-head">
           <div>
-            <div class="eyebrow">Cadastrados</div>
-            <h2 id="siListTitle">O que a IA deve saber</h2>
+            <div class="eyebrow">Orientações cadastradas</div>
+            <h2>Perguntas e respostas</h2>
           </div>
           <button id="siNew" class="button primary small" type="button">+ Adicionar</button>
         </div>
         <div class="si-list-toolbar">
-          <div class="search"><span>⌕</span><input id="siSearch" type="search" placeholder="Buscar nesta área"></div>
+          <div class="search"><span>⌕</span><input id="siSearch" type="search" placeholder="Buscar pergunta ou resposta"></div>
         </div>
         <div id="siList" class="si-list"></div>
       </section>
@@ -73,8 +69,8 @@
       <section class="panel si-editor">
         <div class="panel-head">
           <div>
-            <div class="eyebrow">Editar</div>
-            <h2 id="siEditorTitle">Nova informação</h2>
+            <div class="eyebrow">Editar orientação</div>
+            <h2 id="siEditorTitle">Nova orientação</h2>
           </div>
           <span id="siStatus" class="badge">Rascunho</span>
         </div>
@@ -90,16 +86,12 @@
     </div>
 
     <section class="si-note">
-      <strong>Não cadastre aqui:</strong> preço atual, estoque atual ou dados do Bling. Essas informações vêm do sistema automaticamente para evitar respostas erradas.
+      <strong>Importante:</strong> preço e estoque não devem ser digitados na resposta. Para isso escolha <strong>Consultar produto</strong>, e o sistema consulta o banco na hora.
     </section>
-
     <div id="toastRegion" class="toasts" aria-live="polite"></div>
   </main>
 </div>
 <script src="./config.js?v=20260910-03"></script>
-<script src="../admin-v3/service-intelligence.js?v=20260908-02"></script>
-<script src="../admin-v3/service-intelligence-io.js?v=20260908-01"></script>
-<script src="../admin-v3/agent-workflow.js?v=20260911-03"></script>
-<script src="../admin-v3/agent-workflow-io.js?v=20260911-01"></script>
+<script src="../admin-v3/service-intelligence.js?v=20260911-04"></script>
 </body>
 </html>
