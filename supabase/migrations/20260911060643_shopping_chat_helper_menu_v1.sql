@@ -15,7 +15,7 @@ values (
   1,
   true,
   'Quer ajuda?',
-  null,
+  '/img/avatar.png',
   jsonb_build_array(
     jsonb_build_object('id','baskets','label','Cestas Básicas','kind','baskets','enabled',true,'sort_order',10,'response_text',''),
     jsonb_build_object('id','offers','label','Ofertas','kind','offers','enabled',true,'sort_order',20,'response_text',''),
