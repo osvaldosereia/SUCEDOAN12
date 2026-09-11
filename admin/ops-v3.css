@@ -1,0 +1,8 @@
+.nav{text-decoration:none}
+.badge.ai-review{background:#fce8e6;color:#b31412}
+.badge.warning{background:#fef7e0;color:#8a4b00}
+.editor-note.ai-note{background:#fef7e0;border-color:#f6d58b;color:#5f4300}
+.maps-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0}
+.maps-actions small{color:#5f6368;max-width:520px}
+.button.disabled{pointer-events:none;opacity:.5;color:#5f6368}
+@media(max-width:760px){.maps-actions{align-items:stretch}.maps-actions .button{display:flex;align-items:center;justify-content:center;width:100%}}
