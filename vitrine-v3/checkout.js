@@ -1,9 +1,15 @@
 import {CONFIG} from './config.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
 export function normalizePhone(value){let d=String(value||'').replace(/\D/g,'');if(d.length===10||d.length===11)d=`55${d}`;return d.startsWith('55')&&(d.length===12||d.length===13)?`+${d}`:''}
-export function renderCheckout(summary=''){
-  return `<section class="checkout"><button class="text-button" type="button" data-home>← Voltar</button><h1>Finalizar pedido</h1><p>${esc(summary)}</p><form id="checkoutForm"><label><span>Seu telefone com DDD</span><input id="checkoutPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999" required></label><button id="checkoutSubmit" class="primary-button full" type="submit">Enviar pedido</button></form></section>`;
+
+export function renderCheckout({basket=null,basketItems=[],extras={},total=0}={}){
+  const basketRows=basketItems.map(item=>`<div class="checkout-item"><span>${esc(item.quantity)}x ${esc(item.product?.name||'Produto')}</span></div>`).join('');
+  const extraRows=Object.values(extras||{}).map(item=>`<div class="checkout-item"><span>${esc(item.quantity)}x ${esc(item.product?.name||'Produto')}</span></div>`).join('');
+  const basketBlock=basket?`<section class="checkout-group"><h3>${esc(basket.name)}</h3><p>Produtos da cesta</p>${basketRows}</section>`:'';
+  const extraBlock=extraRows?`<section class="checkout-group"><h3>Produtos adicionados</h3>${extraRows}</section>`:'';
+  return `<section class="checkout"><button class="text-button" type="button" data-home>← Voltar</button><h1>Finalizar pedido</h1><section class="checkout-summary"><h2>Resumo do pedido</h2>${basketBlock}${extraBlock}<div class="checkout-total"><span>Total</span><strong>${money(total)}</strong></div></section><form id="checkoutForm"><label><span>Seu telefone com DDD</span><input id="checkoutPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999" required></label><button id="checkoutSubmit" class="primary-button full" type="submit">Enviar pedido</button></form></section>`;
 }
 export function renderSuccess(order){
   const message=String(order?.message||`Olá! Meu pedido é ${order?.number||''}.`).trim();
