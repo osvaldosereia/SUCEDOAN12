@@ -6,6 +6,7 @@ on:
     paths:
       - 'comprar/**'
       - 'catalogo/index.html'
+      - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'supabase/functions/shopping-room-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
@@ -17,6 +18,7 @@ on:
   pull_request:
     paths:
       - 'comprar/**'
+      - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
       - 'supabase/migrations/*shopping_chat*'
@@ -39,6 +41,7 @@ jobs:
         run: |
           node --check comprar/app.js
           node --check comprar/chat-light-v2.js
+          node scripts/test-light-shopping-chat-v2.mjs
       - name: Estrutura pública
         shell: bash
         run: |
