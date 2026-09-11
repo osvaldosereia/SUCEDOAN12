@@ -15,6 +15,7 @@ on:
       - 'supabase/migrations/20260911082000_whatsapp_flow_v38_runtime_definition_alignment_v1.sql'
       - 'supabase/migrations/20260911091700_whatsapp_flow_v39_terminal_checkout_readiness_v1.sql'
       - 'supabase/migrations/20260911101833_whatsapp_flow_v40_end_to_end_homologation_readiness_v1.sql'
+      - 'supabase/migrations/20260911114000_whatsapp_flow_v41_physical_homologation_evidence_v1.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/index.ts'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
@@ -27,6 +28,7 @@ on:
       - 'scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs'
       - 'scripts/test-whatsapp-flow-v39-terminal-checkout-contract.mjs'
       - 'scripts/test-whatsapp-flow-v40-end-to-end-readiness-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v41-physical-evidence-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   pull_request:
     paths:
@@ -41,6 +43,7 @@ on:
       - 'supabase/migrations/20260911082000_whatsapp_flow_v38_runtime_definition_alignment_v1.sql'
       - 'supabase/migrations/20260911091700_whatsapp_flow_v39_terminal_checkout_readiness_v1.sql'
       - 'supabase/migrations/20260911101833_whatsapp_flow_v40_end_to_end_homologation_readiness_v1.sql'
+      - 'supabase/migrations/20260911114000_whatsapp_flow_v41_physical_homologation_evidence_v1.sql'
       - 'supabase/functions/whatsapp-flow-data-exchange-v1/index.ts'
       - 'scripts/test-whatsapp-flow-v31-live-session-audit-contract.mjs'
       - 'scripts/test-whatsapp-flow-v32-live-session-audit-contract.mjs'
@@ -53,6 +56,7 @@ on:
       - 'scripts/test-whatsapp-flow-v38-runtime-alignment-contract.mjs'
       - 'scripts/test-whatsapp-flow-v39-terminal-checkout-contract.mjs'
       - 'scripts/test-whatsapp-flow-v40-end-to-end-readiness-contract.mjs'
+      - 'scripts/test-whatsapp-flow-v41-physical-evidence-contract.mjs'
       - '.github/workflows/test-whatsapp-flow-v31-live-audit.yml'
   workflow_dispatch:
 
@@ -90,3 +94,5 @@ jobs:
         run: node scripts/test-whatsapp-flow-v39-terminal-checkout-contract.mjs
       - name: Validate V40 end-to-end homologation readiness contract
         run: node scripts/test-whatsapp-flow-v40-end-to-end-readiness-contract.mjs
+      - name: Validate V41 physical homologation evidence contract
+        run: node scripts/test-whatsapp-flow-v41-physical-evidence-contract.mjs
