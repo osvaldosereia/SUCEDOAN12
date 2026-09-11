@@ -30,7 +30,9 @@ on:
       - 'scripts/test-marketing-*.mjs'
       - '.github/workflows/marketing-center-v1.yml'
   push:
-    branches: [main]
+    branches:
+      - main
+      - feat/marketing-center-v1-20260910
     paths:
       - 'admin/config.js'
       - 'admin-v3/marketing-center.*'
