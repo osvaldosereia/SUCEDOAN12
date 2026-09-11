@@ -62,6 +62,10 @@ verify_jwt = false
 [functions.catalog-v3]
 verify_jwt = false
 
+# Admin V3: abertura direta sem login/senha, preservando a decisão explícita já adotada no Admin oficial.
+[functions.admin-v3-api]
+verify_jwt = false
+
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = true
 
