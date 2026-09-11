@@ -29,7 +29,7 @@ must(ui.includes('assertDiagnostics'),'Painel deve validar o contrato antes de r
 for(const redaction of ['raw_error_exposed','input_spec_exposed','output_spec_exposed','lease_owner_exposed'])must(ui.includes(`r.${redaction}!==false`),`Painel deve falhar fechado se ${redaction} mudar`);
 for(const signal of ['potentially_stuck','recent_failures','expired_leases','processing_without_lease','queued_over_threshold'])must(ui.includes(signal),`Painel precisa exibir sinal seguro ${signal}`);
 for(const label of ['Jobs potencialmente presos','Falhas e revisão recentes','Somente sinais operacionais redigidos'])must(ui.includes(label),`Painel precisa comunicar ${label}`);
-for(const forbidden of ['last_error','input_spec','output_spec','lease_owner','request_render','retry_render','publish_job','setInterval(()=>load','graph.facebook.com','api.pinterest.com','mybusiness.googleapis.com'])must(!ui.includes(forbidden),`Painel de diagnóstico não pode expor/acionar ${forbidden}`);
+for(const forbidden of ['v.last_error','v.input_spec','v.output_spec','v.lease_owner','[\'last_error\']','[\'input_spec\']','[\'output_spec\']','[\'lease_owner\']','request_render','retry_render','publish_job','setInterval(()=>load','graph.facebook.com','api.pinterest.com','mybusiness.googleapis.com'])must(!ui.includes(forbidden),`Painel de diagnóstico não pode expor/acionar ${forbidden}`);
 must(ui.includes("slice(0,8)"),'Painel deve abreviar IDs operacionais');
 must(ui.includes("data-mro-days=\"7\"")&&ui.includes("data-mro-days=\"30\"")&&ui.includes("data-mro-days=\"90\""),'Painel deve manter janelas manuais 7/30/90 dias');
 
