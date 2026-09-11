@@ -16,6 +16,21 @@ on:
       - '.github/workflows/bling-product-writer-v1.yml'
       - '.github/workflows/bling-stock-writer-v1.yml'
       - '.github/workflows/test-admin-v3.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'admin/**'
+      - 'admin-v3/**'
+      - 'setup-admin/**'
+      - 'supabase/functions/admin-ops-v1/**'
+      - 'supabase/functions/admin-baskets-v1/**'
+      - 'supabase/functions/bootstrap-owner-v1/**'
+      - 'scripts/bling-product-writer-v1.mjs'
+      - 'scripts/bling-stock-writer-v1.mjs'
+      - 'scripts/bling-sync-core.mjs'
+      - '.github/workflows/bling-product-writer-v1.yml'
+      - '.github/workflows/bling-stock-writer-v1.yml'
+      - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
 permissions:
