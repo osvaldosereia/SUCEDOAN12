@@ -11,15 +11,14 @@ async function call(action,payload={}){
 }
 
 const health=await call('health');
-assert.ok(Number(health.version)>=2);
+assert.ok(Number(health.version)>=3,'backend precisa permitir visualizar cesta ativa durante conferência de estoque');
 const baskets=await call('list_baskets');
 assert.ok(Array.isArray(baskets.baskets)&&baskets.baskets.length>0,'sem cestas ativas');
-const ready=baskets.baskets.find(b=>b.ready);
-assert.ok(ready,'nenhuma cesta pronta para venda');
-const basket=await call('get_basket',{id:ready.id});
-assert.ok(Array.isArray(basket.items)&&basket.items.length>0,'cesta sem itens');
+const first=baskets.baskets[0];
+const basket=await call('get_basket',{id:first.id});
+assert.ok(Array.isArray(basket.items)&&basket.items.length>0,'cesta ativa sem composição visível');
 const sections=await call('list_sections');
 assert.ok(Array.isArray(sections.sections)&&sections.sections.length>0,'sem seções');
 const products=await call('list_products',{section:sections.sections[0].name,page:1,limit:8});
 assert.ok(Array.isArray(products.products),'lista de produtos inválida');
-console.log(JSON.stringify({health:health.version,baskets:baskets.baskets.length,ready_basket:ready.name,basket_items:basket.items.length,sections:sections.sections.length,products_sample:products.products.length}));
+console.log(JSON.stringify({health:health.version,baskets:baskets.baskets.length,basket:first.name,basket_ready:Boolean(basket.basket?.ready),basket_items:basket.items.length,sections:sections.sections.length,products_sample:products.products.length}));
