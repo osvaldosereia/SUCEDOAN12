@@ -19,7 +19,7 @@ declare
   cfg public.automation_config%rowtype;
   c public.conversations%rowtype;
   customer public.customers%rowtype;
-  v_mode text:=lower(trim(coalesce(p_delivery_mode,'text'));
+  v_mode text:=lower(trim(coalesce(p_delivery_mode,'text')));
   body text:=left(trim(coalesce(p_body_text,'')),4096);
   img text:=nullif(trim(coalesce(p_image_url,'')),'');
   reply_id uuid;
