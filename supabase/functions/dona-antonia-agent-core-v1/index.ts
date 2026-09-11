@@ -64,13 +64,13 @@ function minimizePacket(packet:any){
 function isConfirmedOrderPostSaleContext(packet:any){
   const p=obj(packet),order=obj(p.order),msg=obj(p.message);
   if(!Boolean(order.commercial_commitment_exists||order.confirmed))return false;
-  const text=clean(msg.text,1600).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const text=normalizeSemanticText(msg.text);
   const orderRef=/(^| )(pedido|encomenda|compra|confirmad[oa]?|finalizad[oa]?|fechad[oa]?)( |$)/.test(text);
   if(!orderRef)return false;
   return /(^| )(alterar|mudar|trocar|corrigir|cancelar|cancelamento|endereco|pagamento|produto|item|devolver|devolucao|reembolso|atrasad[oa]?|atraso|faltando|faltou|errado|errada|avariado|avariada|quebrado|quebrada|nao chegou|nao recebi)( |$)/.test(text);
 }
 
-function normalizeSemanticText(v:unknown){return clean(v,1600).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function normalizeSemanticText(v:unknown){return clean(v,1600).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();}
 function requiredToolForState(packet:any,topic:string,allNames:string[]){
   const p=obj(packet),state=obj(p.sales_state),cart=obj(p.cart),order=obj(p.order),text=normalizeSemanticText(obj(p.message).text);
   if(Boolean(order.commercial_commitment_exists||order.confirmed)||topic==="post_sale")return "";
