@@ -11,6 +11,7 @@ on:
       - 'admin-v3/config.js'
       - 'admin-v3/api.js'
       - 'admin-v3/app.js'
+      - 'admin-v3/basket-editor.js'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
       - 'supabase/migrations/*storefront_v3*'
@@ -28,6 +29,7 @@ on:
       - 'admin-v3/config.js'
       - 'admin-v3/api.js'
       - 'admin-v3/app.js'
+      - 'admin-v3/basket-editor.js'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
       - 'supabase/migrations/*storefront_v3*'
@@ -77,6 +79,7 @@ jobs:
           node --check admin-v3/config.js
           node --check admin-v3/api.js
           node --check admin-v3/app.js
+          node --check admin-v3/basket-editor.js
       - name: Compilar Edge Functions V3
         run: |
           deno check supabase/functions/catalog-v3/index.ts
