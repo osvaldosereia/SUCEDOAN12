@@ -36,12 +36,19 @@ verify_jwt = false
 [functions.inventory-count-v2]
 verify_jwt = true
 
-# Porta pública mínima: valida PIN com hash/rate-limit e emite bootstrap de sessão Supabase.
+# Porta pública mínima antiga; será removida na limpeza final do legado.
 [functions.admin-pin-auth-v1]
 verify_jwt = false
 
 [functions.admin-ops-v1]
 verify_jwt = true
+
+[functions.admin-baskets-v1]
+verify_jwt = true
+
+# Admin oficial V2: abertura direta, sem login/PIN/sessão, por decisão explícita do proprietário.
+[functions.admin-simple-v2]
+verify_jwt = false
 
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = true
@@ -78,9 +85,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.bootstrap-owner-v1]
-verify_jwt = true
-
-[functions.admin-baskets-v1]
 verify_jwt = true
 
 [functions.mini-catalog-v1]
