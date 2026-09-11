@@ -13,7 +13,7 @@ let current={mode:'featured',category:'',sub:'',subfilters:[],query:'',page:1,pr
 let prefetched=null,prefetchObserver=null,searchController=null,searchTimer=null,modalProduct=null,modalQty=1,previewBasketData=null,marketVisible=false;
 const productCache=new Map();
 
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 function toast(message,kind=''){const host=$('toastRegion');const node=document.createElement('div');node.className=`toast ${kind}`.trim();node.textContent=message;host.appendChild(node);setTimeout(()=>node.remove(),kind==='error'?5000:2600)}
 function loading(label='Carregando…'){app.innerHTML=`<div class="page-loading"><span></span><p>${esc(label)}</p></div>`}
