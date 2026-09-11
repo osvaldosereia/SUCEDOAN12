@@ -22,7 +22,7 @@ export function addExtra(product,delta=1){
   if(!product?.id)return;const current=state.extras[product.id];const next=Math.max(0,Math.min(Number(product.stock||99),Number(current?.quantity||0)+delta));
   if(next===0)delete state.extras[product.id];else state.extras[product.id]={product:safeProduct(product),quantity:next};persist();
 }
-export function setExtraQuantity(productId,quantity){const current=state.extras[productId];if(!current)return;const next=Math.max(0,Math.min(Number(current.product?.stock||99),Math.floor(Number(quantity)||0));if(next===0)delete state.extras[productId];else current.quantity=next;persist()}
+export function setExtraQuantity(productId,quantity){const current=state.extras[productId];if(!current)return;const next=Math.max(0,Math.min(Number(current.product?.stock||99),Math.floor(Number(quantity)||0)));if(next===0)delete state.extras[productId];else current.quantity=next;persist()}
 export function clearCart(){state.basket=null;state.basketItems=[];state.extras={};try{localStorage.removeItem(KEY)}catch{}}
 export function cartCount(){return state.basketItems.reduce((sum,i)=>sum+Number(i.quantity||0),0)+Object.values(state.extras).reduce((sum,i)=>sum+Number(i.quantity||0),0)}
 export function hasCart(){return Boolean(state.basket)||Object.keys(state.extras).length>0}
