@@ -5,11 +5,16 @@ on:
     branches: [main]
     paths:
       - 'comprar/**'
+      - 'admin/config.js'
+      - 'admin-v3/chat-menu-admin.*'
       - 'catalogo/index.html'
       - 'scripts/test-light-shopping-chat-v2.mjs'
+      - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'supabase/functions/shopping-room-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
+      - 'supabase/functions/shopping-chat-menu-v1/**'
+      - 'supabase/functions/admin-chat-menu-v1/**'
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/migrations/*shopping_room*'
       - 'supabase/migrations/*shopping_chat*'
@@ -18,9 +23,14 @@ on:
   pull_request:
     paths:
       - 'comprar/**'
+      - 'admin/config.js'
+      - 'admin-v3/chat-menu-admin.*'
       - 'scripts/test-light-shopping-chat-v2.mjs'
+      - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
+      - 'supabase/functions/shopping-chat-menu-v1/**'
+      - 'supabase/functions/admin-chat-menu-v1/**'
       - 'supabase/migrations/*shopping_chat*'
       - '.github/workflows/test-shopping-room.yml'
   workflow_dispatch:
@@ -41,7 +51,10 @@ jobs:
         run: |
           node --check comprar/app.js
           node --check comprar/chat-light-v2.js
+          node --check comprar/chat-helper-menu.js
+          node --check admin-v3/chat-menu-admin.js
           node scripts/test-light-shopping-chat-v2.mjs
+          node scripts/test-chat-helper-menu-v1.mjs
       - name: Estrutura pública
         shell: bash
         run: |
@@ -49,15 +62,20 @@ jobs:
           test -f comprar/index.html
           test -f comprar/chat-light-v2.css
           test -f comprar/chat-light-v2.js
+          test -f comprar/chat-helper-menu.css
+          test -f comprar/chat-helper-menu.js
           test -f comprar/config.js
           grep -q "shopping-chat-v1" comprar/config.js
           grep -q "shopping-chat-products-v1" comprar/config.js
+          grep -q "shopping-chat-menu-v1" comprar/config.js
           grep -q "chat-light-v2" comprar/index.html
+          grep -q "chat-helper-menu" comprar/index.html
           grep -q "MediaRecorder" comprar/chat-light-v2.js
           grep -q "set_basket_quantity" comprar/chat-light-v2.js
           grep -q "products-rail" comprar/chat-light-v2.js
           grep -q "loadMoreProducts" comprar/chat-light-v2.js
           grep -q "requestLocation" comprar/chat-light-v2.js
+          grep -q "limit:30" comprar/chat-helper-menu.js
           ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY" comprar/
       - name: Instalar Deno
         uses: denoland/setup-deno@v2
@@ -68,6 +86,8 @@ jobs:
           deno check supabase/functions/shopping-room-v1/index.ts
           deno check supabase/functions/shopping-chat-v1/index.ts
           deno check supabase/functions/shopping-chat-products-v1/index.ts
+          deno check supabase/functions/shopping-chat-menu-v1/index.ts
+          deno check supabase/functions/admin-chat-menu-v1/index.ts
           deno check supabase/functions/customer-intelligence-v1/index.ts
       - name: Segurança do chat público
         shell: bash
@@ -78,6 +98,10 @@ jobs:
           grep -q "ORIGINS" supabase/functions/shopping-chat-products-v1/index.ts
           grep -q "tokenOk" supabase/functions/shopping-chat-products-v1/index.ts
           grep -q "physically_verified" supabase/functions/shopping-chat-products-v1/index.ts
+          grep -q "ORIGINS" supabase/functions/shopping-chat-menu-v1/index.ts
+          grep -q "tokenOk" supabase/functions/shopping-chat-menu-v1/index.ts
+          grep -q "admin_users" supabase/functions/admin-chat-menu-v1/index.ts
+          grep -q "shopping_chat_helper_config" supabase/migrations/20260911060643_shopping_chat_helper_menu_v1.sql
           grep -q "room_start_for_conversation_v1" supabase/migrations/20260911043000_light_shopping_chat_entry_v1.sql
           grep -q "shopping_room_basket_entry" supabase/migrations/20260911043000_light_shopping_chat_entry_v1.sql
       - name: Regras de pedido e outbound
