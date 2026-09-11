@@ -50,7 +50,7 @@ jobs:
           node --check admin-v3/marketing-editor-v1.js
           node --check admin-v3/marketing-library-v1.js
           node --check admin-v3/marketing-operations-readonly-v1.js
-          if [ -f admin-v3/marketing-readiness-readonly-v1.js ]; then node --check admin-v3/marketing-readiness-readonly-v1.js; fi
+          node --check admin-v3/marketing-readiness-readonly-v1.js
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
       - name: Validate dormant Marketing editor contract
