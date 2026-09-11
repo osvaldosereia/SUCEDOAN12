@@ -1,4 +1,4 @@
-name: Deploy Agent Core V46
+name: Deploy Agent Core V51
 
 on:
   push:
@@ -34,12 +34,12 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Deploy Agent Core V46
+      - name: Deploy Agent Core V51
         if: steps.auth.outputs.available == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: supabase functions deploy dona-antonia-agent-core-v1 --project-ref ssbesxgaijknwsjbsbcz --no-verify-jwt
-      - name: Deploy Eval V46
+      - name: Deploy Eval V51
         if: steps.auth.outputs.available == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -47,7 +47,7 @@ jobs:
       - name: Deployment result
         run: |
           if [ "${{ steps.auth.outputs.available }}" = "true" ]; then
-            echo "V46 deployment attempted with repository credential."
+            echo "V51 deployment attempted with repository credential."
           else
-            echo "V46 was not deployed; repository has no SUPABASE_ACCESS_TOKEN."
+            echo "V51 was not deployed; repository has no SUPABASE_ACCESS_TOKEN."
           fi
