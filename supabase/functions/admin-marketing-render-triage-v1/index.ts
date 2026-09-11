@@ -8,6 +8,7 @@ const fail=(error:string,detail:string,status=400)=>json({ok:false,error,detail,
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ACTIVE_LIST_STATUSES=["pending_review","approved","blocked"];
 const HISTORY_LIST_STATUSES=["cancelled"];
+const SLA_STATUSES=["healthy","warning","critical"];
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -40,6 +41,11 @@ Deno.serve(async(req:Request)=>{
     if(!metrics||typeof metrics!=="object"||(metrics as Record<string,unknown>).external_side_effect!==false)return fail("unsafe_triage_metrics","Contadores recusados",500);
     const redaction=(metrics as Record<string,any>).redaction||{};
     if(redaction.eligibility_snapshot_exposed!==false||redaction.result_snapshot_exposed!==false||redaction.idempotency_key_exposed!==false||redaction.actor_ids_exposed!==false||redaction.raw_error_exposed!==false||redaction.job_payload_exposed!==false)return fail("unsafe_triage_metrics_redaction","Contadores recusados por redaction",500);
+    const {data:sla,error:se}=await sb.rpc("marketing_render_triage_sla_v1");
+    if(se)return fail("triage_sla_failed","Não foi possível consultar o SLA",500);
+    if(!sla||typeof sla!=="object"||(sla as Record<string,unknown>).external_side_effect!==false)return fail("unsafe_triage_sla","SLA recusado",500);
+    const slaObj=sla as Record<string,any>,slaRedaction=slaObj.redaction||{};
+    if(!SLA_STATUSES.includes(clean(slaObj.status,20))||slaRedaction.request_ids_exposed!==false||slaRedaction.job_ids_exposed!==false||slaRedaction.actor_ids_exposed!==false||slaRedaction.idempotency_key_exposed!==false||slaRedaction.raw_error_exposed!==false||slaRedaction.job_payload_exposed!==false)return fail("unsafe_triage_sla_redaction","SLA recusado por contrato seguro",500);
     const {data:rows,error:le}=await sb.from("marketing_render_triage_requests")
       .select("id,job_id,asset_id,reason_code,status,requested_at,reviewed_at,executed_at")
       .in("status",statuses).order("created_at",{ascending:false}).limit(limit);
@@ -56,7 +62,7 @@ Deno.serve(async(req:Request)=>{
       requested_at:r.requested_at,reviewed_at:r.reviewed_at,executed_at:r.executed_at,
       render_kind:j.render_kind||null,job_status:j.status||null,attempt_count:Number(j.attempt_count||0)
     }});
-    return json({ok:true,items,metrics,runtime:{
+    return json({ok:true,items,metrics,sla,runtime:{
       triage_enabled:runtime.render_triage_enabled===true,
       requeue_enabled:runtime.render_requeue_enabled===true,
       triage_kill_switch:runtime.render_triage_kill_switch!==false,
