@@ -15,7 +15,8 @@ for (const forbidden of [
   'admin-marketing-carousel-v1',
   'admin-marketing-render-triage-v1',
   'marketing-center',
-  'marketingCenter'
+  'marketingCenter',
+  'marketing-carousel-progress-v1'
 ]) assert.ok(!publicAdmin.includes(forbidden), `public Admin must not load Marketing surface: ${forbidden}`);
 
 const marketingFunctions = [
@@ -37,6 +38,18 @@ for (const slug of marketingFunctions) {
   );
   assert.ok(fs.existsSync(`supabase/functions/${slug}/index.ts`), `${slug} source missing`);
 }
+
+const dormantUiFiles = [
+  'admin-v3/marketing-center.css',
+  'admin-v3/marketing-carousel-progress-v1.js'
+];
+for (const file of dormantUiFiles) assert.ok(fs.existsSync(file), `dormant Marketing UI asset missing: ${file}`);
+
+const carouselProgress = fs.readFileSync('admin-v3/marketing-carousel-progress-v1.js','utf8');
+assert.match(carouselProgress, /Authorization:`Bearer \$\{a\.access_token\}`/, 'private carousel progress reader must send bearer JWT');
+assert.match(carouselProgress, /external_side_effect!==false/, 'private carousel progress reader must fail closed on side-effect marker');
+assert.match(carouselProgress, /admin-marketing-carousel-v1/, 'private carousel progress reader must use the protected Marketing carousel edge');
+assert.ok(!/graph\.facebook\.com|api\.pinterest\.com|mybusiness\.googleapis\.com|api\.openai\.com/.test(carouselProgress), 'dormant UI must not call external providers directly');
 
 const migrations = [
   '20260910004500_marketing_center_foundation_v1.sql',
@@ -74,4 +87,4 @@ for (const invariant of ['kill_switch', 'canary_percent', 'execution_mode']) {
   assert.ok(foundation.includes(invariant), `foundation safety invariant missing: ${invariant}`);
 }
 
-console.log('PASS: clean Marketing backend transplant is complete, JWT-protected, and not wired into the public Admin.');
+console.log('PASS: clean Marketing transplant stays JWT-protected, rollout-off, and disconnected from the public Admin.');
