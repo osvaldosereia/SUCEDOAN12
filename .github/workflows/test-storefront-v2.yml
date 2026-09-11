@@ -31,3 +31,5 @@ jobs:
         run: node scripts/test-storefront-v2-order-contract.mjs
       - name: Contrato da Edge Function pública
         run: node scripts/test-storefront-v2-edge.mjs
+      - name: Vínculo posterior pedido-cliente
+        run: node scripts/test-customer-order-link-v2.mjs
