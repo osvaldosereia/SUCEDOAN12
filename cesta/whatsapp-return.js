@@ -16,19 +16,28 @@
     toast.timer=setTimeout(()=>el.classList.add("hidden"),5000);
   }
 
+  function isMobile(){
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||"");
+  }
+
+  function whatsappAppUrl(){
+    return `whatsapp://send?phone=${WHATSAPP_PHONE}`;
+  }
+
+  function whatsappWebUrl(){
+    return `https://web.whatsapp.com/send?phone=${WHATSAPP_PHONE}`;
+  }
+
   function whatsappUrl(){
-    const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||"");
-    return mobile
-      ? `https://api.whatsapp.com/send?phone=${WHATSAPP_PHONE}&type=phone_number&app_absent=0`
-      : `https://web.whatsapp.com/send?phone=${WHATSAPP_PHONE}`;
+    return isMobile()?whatsappAppUrl():whatsappWebUrl();
   }
 
   function openWhatsApp(){
     const url=whatsappUrl();
     try{
-      location.replace(url);
-    }catch{
       location.href=url;
+    }catch{
+      if(!isMobile())location.href=whatsappWebUrl();
     }
     return url;
   }
@@ -39,22 +48,24 @@
     wrap.id="whatsappReturnFallback";
     wrap.setAttribute("role","status");
     wrap.style.cssText="position:fixed;inset:auto 0 0 0;z-index:1000;background:#fff;border-top:1px solid #ddd;padding:12px 14px calc(12px + env(safe-area-inset-bottom));";
-    const button=document.createElement("button");
-    button.type="button";
-    button.textContent="Voltar ao WhatsApp";
-    button.style.cssText="width:100%;min-height:52px;border:0;border-radius:8px;background:#f36b21;color:#fff;font:700 16px system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;";
-    button.addEventListener("click",openWhatsApp,{passive:true});
-    wrap.appendChild(button);
+    const link=document.createElement("a");
+    link.id="whatsappReturnLink";
+    link.href=whatsappUrl();
+    link.textContent="Voltar ao WhatsApp";
+    link.style.cssText="display:flex;width:100%;min-height:52px;align-items:center;justify-content:center;box-sizing:border-box;text-decoration:none;border:0;border-radius:8px;background:#f36b21;color:#fff;font:700 16px system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;";
+    link.addEventListener("click",()=>toast("Abrindo o WhatsApp…"),{passive:true});
+    wrap.appendChild(link);
     document.body.appendChild(wrap);
   }
 
   function returnToConversation(){
-    toast("Pronto! Sua escolha foi enviada. Voltando para o WhatsApp…");
-    setTimeout(openWhatsApp,80);
+    showReturnButton();
+    toast("Pronto! Sua cesta foi salva. Voltando para o WhatsApp…");
+    setTimeout(openWhatsApp,40);
     setTimeout(()=>{
       if(document.visibilityState==="visible"){
         showReturnButton();
-        toast("Sua escolha já foi enviada. Toque em Voltar ao WhatsApp para continuar.");
+        toast("Sua cesta já foi salva. Toque em Voltar ao WhatsApp para continuar.");
       }
     },1200);
   }
