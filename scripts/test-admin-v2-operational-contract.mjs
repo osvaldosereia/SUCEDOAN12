@@ -13,6 +13,6 @@ assert.match(app,/REVISÃO IA/,'Admin UI must identify AI review products');
 assert.match(app,/google_maps_url/,'customer editor must include Google Maps URL');
 assert.match(html,/Balanço rápido/,'Admin menu must expose quick inventory balance');
 assert.match(html,/\.\.\/contagem\//,'quick balance must reuse existing inventory app');
-assert.doesNotMatch(edge,/balance_scan|record_inventory_fast_balance_scan_v2/,'public admin endpoint must not expose stock balance writes');
+assert.doesNotMatch(edge,/balance_scan|record_inventory_fast_balance_scan_v\d+|inventory-fast-balance-v\d+/,'public admin endpoint must not expose stock balance writes');
 
 console.log('admin-v2-operational-contract ok');
