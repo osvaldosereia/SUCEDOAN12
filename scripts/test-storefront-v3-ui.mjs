@@ -69,6 +69,8 @@ assert.match(app,/Trocar a cesta atual por esta\?/,'troca de cesta escolhida pre
 assert.match(baskets,/Escolher esta cesta/,'CTA de escolha da cesta precisa ser claro');
 assert.match(app,/Quer comprar sem cesta\?/,'pedido avulso deve ser caminho secundário na home');
 assert.match(app,/renderBasketCards\(home\.baskets,state\.basket\?\.id\|\|''\)\}<\/section>\$\{marketMarkup\(\)\}/,'cestas precisam ser renderizadas antes do caminho de pedido avulso');
+assert.match(baskets,/Total do pedido/,'personalização precisa mostrar o total corrente');
+assert.match(app,/renderBasketDetail\(state\.basket,state\.basketItems,estimatedTotal\(\)\)/,'total da cesta precisa ser recalculado a cada alteração');
 
 assert.match(css,/#1a73e8/i);
 assert.match(css,/#202124/i);
