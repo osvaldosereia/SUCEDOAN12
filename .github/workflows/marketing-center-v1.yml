@@ -10,28 +10,14 @@ on:
       - 'admin-v3/marketing-carousel-media-v1.js'
       - 'admin-v3/marketing-carousel-progress-v1.js'
       - 'admin-v3/marketing-insights-v1.js'
+      - 'admin-v3/marketing-render-observability-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/functions/admin-marketing-media-v1/**'
       - 'supabase/functions/admin-marketing-dry-run-v1/**'
       - 'supabase/functions/admin-marketing-insights-v1/**'
       - 'supabase/functions/admin-marketing-carousel-v1/**'
-      - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
-      - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
-      - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
-      - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
-      - 'supabase/migrations/20260910074400_marketing_render_worker_hardening_v3.sql'
-      - 'supabase/migrations/20260910085000_marketing_review_calendar_v4.sql'
-      - 'supabase/migrations/20260910093500_marketing_asset_editor_v5.sql'
-      - 'supabase/migrations/20260910094600_marketing_asset_editor_privileges_v5_fix.sql'
-      - 'supabase/migrations/20260910104500_marketing_render_media_registry_v6.sql'
-      - 'supabase/migrations/20260910113000_marketing_private_media_v7.sql'
-      - 'supabase/migrations/20260910114500_marketing_carousel_slides_v8.sql'
-      - 'supabase/migrations/20260910143000_marketing_metrics_read_model_v9.sql'
-      - 'supabase/migrations/20260910185000_marketing_attribution_foundation_v10.sql'
-      - 'supabase/migrations/20260910185500_marketing_attribution_privileges_v10_fix.sql'
-      - 'supabase/migrations/20260910194000_marketing_carousel_render_spec_v11.sql'
-      - 'supabase/migrations/20260910215500_marketing_carousel_output_binding_v12.sql'
+      - 'supabase/migrations/*marketing*.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -52,28 +38,14 @@ on:
       - 'admin-v3/marketing-carousel-media-v1.js'
       - 'admin-v3/marketing-carousel-progress-v1.js'
       - 'admin-v3/marketing-insights-v1.js'
+      - 'admin-v3/marketing-render-observability-v1.js'
       - 'supabase/functions/admin-marketing-v1/**'
       - 'supabase/functions/admin-marketing-workflow-v1/**'
       - 'supabase/functions/admin-marketing-media-v1/**'
       - 'supabase/functions/admin-marketing-dry-run-v1/**'
       - 'supabase/functions/admin-marketing-insights-v1/**'
       - 'supabase/functions/admin-marketing-carousel-v1/**'
-      - 'supabase/migrations/20260910004500_marketing_center_foundation_v1.sql'
-      - 'supabase/migrations/20260910004600_marketing_default_presets_v1.sql'
-      - 'supabase/migrations/20260910004650_marketing_performance_hardening_v1.sql'
-      - 'supabase/migrations/20260910054800_marketing_media_render_queue_v2.sql'
-      - 'supabase/migrations/20260910074400_marketing_render_worker_hardening_v3.sql'
-      - 'supabase/migrations/20260910085000_marketing_review_calendar_v4.sql'
-      - 'supabase/migrations/20260910093500_marketing_asset_editor_v5.sql'
-      - 'supabase/migrations/20260910094600_marketing_asset_editor_privileges_v5_fix.sql'
-      - 'supabase/migrations/20260910104500_marketing_render_media_registry_v6.sql'
-      - 'supabase/migrations/20260910113000_marketing_private_media_v7.sql'
-      - 'supabase/migrations/20260910114500_marketing_carousel_slides_v8.sql'
-      - 'supabase/migrations/20260910143000_marketing_metrics_read_model_v9.sql'
-      - 'supabase/migrations/20260910185000_marketing_attribution_foundation_v10.sql'
-      - 'supabase/migrations/20260910185500_marketing_attribution_privileges_v10_fix.sql'
-      - 'supabase/migrations/20260910194000_marketing_carousel_render_spec_v11.sql'
-      - 'supabase/migrations/20260910215500_marketing_carousel_output_binding_v12.sql'
+      - 'supabase/migrations/*marketing*.sql'
       - 'supabase/config.toml'
       - 'scripts/marketing-render-deterministic-v1.mjs'
       - 'scripts/marketing-render-economical-video-v1.mjs'
@@ -112,6 +84,7 @@ jobs:
           node --check admin-v3/marketing-carousel-media-v1.js
           node --check admin-v3/marketing-carousel-progress-v1.js
           node --check admin-v3/marketing-insights-v1.js
+          node --check admin-v3/marketing-render-observability-v1.js
           node --check admin/config.js
       - name: Check worker JavaScript syntax
         run: |
@@ -142,6 +115,8 @@ jobs:
         run: node scripts/test-marketing-render-completion-v1.mjs
       - name: Validate metrics/dry-run Admin and framing safety
         run: node scripts/test-marketing-insights-admin-v1.mjs
+      - name: Validate renderer diagnostics safety contract
+        run: node scripts/test-marketing-render-diagnostics-v1.mjs
       - name: Validate deterministic attribution contract
         run: node scripts/test-marketing-attribution-v1.mjs
       - name: Validate deterministic WebP renderer
