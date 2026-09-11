@@ -77,6 +77,14 @@ Deno.serve(async(req:Request)=>{
     return json(data);
   }
 
+  if(action==="cancel"){
+    const requestId=clean(b.request_id,40);if(!UUID.test(requestId))return fail("invalid_request_id","Solicitação inválida");
+    const {data,error}=await sb.rpc("cancel_marketing_render_requeue_v1",{p_request_id:requestId,p_actor:u.user.id});
+    if(error)return fail("cancel_failed",error.message,500);
+    if(!data||typeof data!=="object"||(data as Record<string,unknown>).external_side_effect!==false)return fail("unsafe_cancel_response","Cancelamento recusado",500);
+    return json(data);
+  }
+
   if(action==="approve"||action==="execute"){
     if(admin.role!=="owner")return fail("owner_required","Somente owner pode aprovar ou executar triagem",403);
     const requestId=clean(b.request_id,40);if(!UUID.test(requestId))return fail("invalid_request_id","Solicitação inválida");
