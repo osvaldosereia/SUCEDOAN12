@@ -7,58 +7,104 @@
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Vitrine</title>
-  <link rel="stylesheet" href="./style.css?v=20260911-05">
+  <link rel="stylesheet" href="./style.css?v=20260911-06">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/" aria-label="Dona Antônia">
-      <img src="/img/logoantonia5.png" alt="Dona Antônia" width="160" height="44" decoding="async" fetchpriority="high">
+    <div class="top-spacer" aria-hidden="true"></div>
+    <a class="brand" href="/catalogo/" aria-label="Dona Antônia">
+      <img src="/img/logoantonia5.png" alt="Dona Antônia" width="180" height="48" decoding="async" fetchpriority="high">
     </a>
-    <div class="cart-status" aria-label="Itens selecionados">
+    <button id="cartButton" class="cart-status" type="button" aria-label="Ver itens selecionados">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2ZM1 2v2h2l3.6 7.59-1.35 2.45A2 2 0 0 0 7 17h12v-2H7.42a.25.25 0 0 1-.22-.37L8.1 13h7.45a2 2 0 0 0 1.75-1.03L20.88 5H5.21l-.94-2H1Zm16 16c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2Z"/></svg>
       <span id="countBadge" class="badge">0</span>
-    </div>
+    </button>
   </header>
 
   <main>
-    <section class="catalog-head">
+    <section class="search-wrap" aria-label="Busca de produtos">
       <label class="search" for="searchInput">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21.53 20.47-4.69-4.69A7.45 7.45 0 1 0 15.78 16.84l4.69 4.69 1.06-1.06ZM5.5 11a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0Z"/></svg>
-        <input id="searchInput" type="search" placeholder="Buscar produtos" autocomplete="off" enterkeyhint="search">
+        <input id="searchInput" type="search" placeholder="Buscar produtos..." autocomplete="off" enterkeyhint="search">
       </label>
-      <h1 id="catalogTitle">Produtos</h1>
     </section>
 
-    <section id="stateBox" class="state">Carregando produtos...</section>
-    <section id="productGrid" class="grid hidden"></section>
+    <section id="homeBlocks" class="home-blocks hidden">
+      <div id="basketRail" class="basket-rail" aria-label="Cestas básicas"></div>
+      <nav id="categoryRail" class="category-rail" aria-label="Categorias principais"></nav>
+    </section>
+
+    <section class="products-section">
+      <div class="section-title-row">
+        <h1 id="catalogTitle">Mais procurados</h1>
+        <button id="viewAllButton" class="text-action" type="button">Ver todos <span aria-hidden="true">›</span></button>
+      </div>
+      <section id="stateBox" class="state">Carregando produtos...</section>
+      <section id="productGrid" class="grid hidden"></section>
+    </section>
   </main>
 
-  <footer id="stickyBar" class="sticky hidden">
+  <aside id="stickyBar" class="sticky hidden" aria-label="Resumo da seleção">
     <div class="order-summary">
       <span id="selectedCount">0 itens</span>
       <strong id="selectedTotal">R$ 0,00</strong>
     </div>
     <button id="whatsappButton" type="button">Continuar no WhatsApp</button>
-  </footer>
+  </aside>
+
+  <nav class="bottom-nav" aria-label="Navegação da vitrine">
+    <button id="navHome" class="nav-item active" type="button" aria-label="Início">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 11v10h7v-6h5v6h7V11L12 3Z"/></svg><span>Início</span>
+    </button>
+    <button id="navCategories" class="nav-item" type="button" aria-label="Categorias">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h2v2H4v-2Zm4 0h12v2H8v-2ZM4 11h2v2H4v-2Zm4 0h12v2H8v-2Zm-4 5.5h2v2H4v-2Zm4 0h12v2H8v-2Z"/></svg><span>Categorias</span>
+    </button>
+    <button id="navFavorites" class="nav-item" type="button" aria-label="Favoritos">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6 10.6 19.3C5.4 14.6 2 11.5 2 7.7 2 4.6 4.4 2.2 7.5 2.2c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3.1 0 5.5 2.4 5.5 5.5 0 3.8-3.4 6.9-8.6 11.6L12 20.6Z"/></svg><span>Favoritos</span>
+    </button>
+    <button id="navAccount" class="nav-item" type="button" aria-label="Minha conta">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-5 0-8 2.5-8 5.5V22h16v-2.5C20 16.5 17 14 12 14Z"/></svg><span>Minha conta</span>
+    </button>
+  </nav>
+
+  <template id="basketTemplate">
+    <button class="basket-card" type="button">
+      <div class="basket-image-wrap"><img class="basket-image" alt="" loading="lazy" decoding="async"></div>
+      <div class="basket-copy"><strong class="basket-name"></strong><span class="basket-price"></span></div>
+    </button>
+  </template>
 
   <template id="productTemplate">
     <article class="product">
-      <div class="image-wrap"><img class="product-image" alt="" loading="lazy" decoding="async"></div>
+      <div class="image-wrap">
+        <img class="product-image" alt="" loading="lazy" decoding="async">
+        <button class="favorite" type="button" aria-label="Adicionar aos favoritos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6 10.6 19.3C5.4 14.6 2 11.5 2 7.7 2 4.6 4.4 2.2 7.5 2.2c1.7 0 3.4.8 4.5 2.1 1.1-1.3 2.8-2.1 4.5-2.1 3.1 0 5.5 2.4 5.5 5.5 0 3.8-3.4 6.9-8.6 11.6L12 20.6Z"/></svg>
+        </button>
+      </div>
       <div class="product-info">
         <h2 class="product-name"></h2>
         <p class="product-meta"></p>
         <strong class="product-price"></strong>
-        <div class="qty-row">
-          <button class="minus" type="button" aria-label="Diminuir quantidade">−</button>
-          <span class="qty" aria-live="polite">0</span>
-          <button class="plus" type="button" aria-label="Aumentar quantidade">+</button>
+        <div class="add-row">
+          <button class="add-button" type="button"><span aria-hidden="true">＋</span> Adicionar</button>
+          <div class="qty-row hidden">
+            <button class="minus" type="button" aria-label="Diminuir quantidade">−</button>
+            <span class="qty" aria-live="polite">0</span>
+            <button class="plus" type="button" aria-label="Aumentar quantidade">＋</button>
+          </div>
         </div>
       </div>
     </article>
   </template>
 
+  <dialog id="basketDialog" class="basket-dialog">
+    <button id="basketClose" class="dialog-close" type="button" aria-label="Fechar">×</button>
+    <div id="basketDialogContent"></div>
+  </dialog>
+
   <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="./config.js?v=20260911-05"></script>
-  <script src="./app.js?v=20260911-05"></script>
+  <script src="./config.js?v=20260911-06"></script>
+  <script src="./app.js?v=20260911-06"></script>
 </body>
 </html>
