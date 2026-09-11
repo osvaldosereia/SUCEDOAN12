@@ -10,78 +10,26 @@
   <link rel="stylesheet" href="../admin-v3/service-intelligence.css?v=20260908-03">
   <link rel="stylesheet" href="../admin-v3/mobile-priority.css?v=20260911-01">
   <style>
-    .si-editor select{width:100%;min-height:44px}
-    .si-editor textarea[name="variations"]{min-height:110px}
-    .si-editor textarea[name="answer"]{min-height:150px}
-    .si-simple-help{margin:8px 0;color:var(--muted,#697386);font-size:.9rem;line-height:1.45}
-    .si-stages{display:grid;gap:16px;margin-bottom:14px}
-    .si-stage{border:1px solid rgba(127,127,127,.25);border-radius:14px;padding:16px;background:rgba(127,127,127,.04)}
-    .si-stage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-    .si-stage-head strong{font-size:1rem}
+    .si-editor select{width:100%;min-height:44px}.si-editor textarea[name="variations"]{min-height:110px}.si-editor textarea[name="answer"]{min-height:150px}
+    .si-simple-help{margin:8px 0;color:var(--muted,#697386);font-size:.9rem;line-height:1.45}.si-stages{display:grid;gap:16px;margin-bottom:14px}
+    .si-stage{border:1px solid rgba(127,127,127,.25);border-radius:14px;padding:16px;background:rgba(127,127,127,.04)}.si-stage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .si-stage-head>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.si-stage-head strong{font-size:1rem}.si-mode-status{padding:4px 8px;border-radius:999px;background:rgba(127,127,127,.12);font-size:.75rem;color:var(--muted,#697386)}
+    .si-tool-config{display:grid;gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed rgba(127,127,127,.25)}.si-resource-note{padding:10px 12px;border-radius:10px;background:rgba(127,127,127,.08);font-size:.88rem;line-height:1.45;color:var(--muted,#697386)}
   </style>
 </head>
 <body>
 <script src="../admin-v3/admin-subpage-guard.js?v=20260911-01"></script>
 <div class="si-page">
-  <header class="si-topbar">
-    <div class="si-topbar-copy">
-      <a class="si-back" href="./" aria-label="Voltar ao Admin">←</a>
-      <div>
-        <div class="eyebrow">IA do atendimento</div>
-        <h1>Orientações simples da IA</h1>
-        <p>Configure as etapas da conversa: pergunta, variações, resposta e ferramenta.</p>
-      </div>
-    </div>
-    <div class="si-actions"><button id="siRefresh" class="button primary" type="button">Atualizar</button></div>
-  </header>
-
+  <header class="si-topbar"><div class="si-topbar-copy"><a class="si-back" href="./" aria-label="Voltar ao Admin">←</a><div><div class="eyebrow">IA do atendimento</div><h1>Orientações simples da IA</h1><p>Configure as etapas da conversa e escolha o recurso que a IA pode usar em cada uma.</p></div></div><div class="si-actions"><button id="siRefresh" class="button primary" type="button">Atualizar</button></div></header>
   <main class="si-shell">
-    <div id="siAuthWarning" class="ops-alert hidden">Sessão indisponível. Volte ao Admin e use o código de acesso.</div>
-    <section id="siMetrics" class="metrics"></section>
-
-    <section class="si-intro panel">
-      <div class="si-intro-icon">IA</div>
-      <div>
-        <strong>Simples e configurável</strong>
-        <p>Cada orientação pode ter uma ou várias etapas. A IA mantém a conversa natural, mas segue somente o que estiver configurado.</p>
-      </div>
-      <div class="si-file-hint">
-        <strong>Você controla a sequência</strong>
-        <span>Use “Adicionar etapa” quando quiser continuar a conversa depois da resposta anterior.</span>
-      </div>
-    </section>
-
+    <div id="siAuthWarning" class="ops-alert hidden">Sessão indisponível. Volte ao Admin e use o código de acesso.</div><section id="siMetrics" class="metrics"></section>
+    <section class="si-intro panel"><div class="si-intro-icon">IA</div><div><strong>Simples por fora, completo por dentro</strong><p>Cada etapa tem pergunta, variações, resposta e um recurso. Você pode combinar texto, botões, listas, Flows, áudio, mídia, catálogo e templates.</p></div><div class="si-file-hint"><strong>Você controla a sequência</strong><span>Use “Adicionar etapa” para continuar a conversa. O recurso escolhido mostra apenas as opções necessárias.</span></div></section>
     <div class="si-grid">
-      <section class="panel si-list-panel">
-        <div class="panel-head">
-          <div><div class="eyebrow">Orientações cadastradas</div><h2>Conversas</h2></div>
-          <button id="siNew" class="button primary small" type="button">+ Adicionar</button>
-        </div>
-        <div class="si-list-toolbar"><div class="search"><span>⌕</span><input id="siSearch" type="search" placeholder="Buscar"></div></div>
-        <div id="siList" class="si-list"></div>
-      </section>
-
-      <section class="panel si-editor">
-        <div class="panel-head">
-          <div><div class="eyebrow">Editar</div><h2 id="siEditorTitle">Nova orientação</h2></div>
-          <span id="siStatus" class="badge">Rascunho</span>
-        </div>
-        <div class="si-editor-body">
-          <form id="siForm"></form>
-          <div class="si-editor-actions">
-            <button id="siSave" class="button primary" type="button">Salvar</button>
-            <button id="siPublish" class="button secondary" type="button">Publicar</button>
-            <button id="siArchive" class="button secondary" type="button">Arquivar</button>
-          </div>
-        </div>
-      </section>
+      <section class="panel si-list-panel"><div class="panel-head"><div><div class="eyebrow">Orientações cadastradas</div><h2>Conversas</h2></div><button id="siNew" class="button primary small" type="button">+ Adicionar</button></div><div class="si-list-toolbar"><div class="search"><span>⌕</span><input id="siSearch" type="search" placeholder="Buscar"></div></div><div id="siList" class="si-list"></div></section>
+      <section class="panel si-editor"><div class="panel-head"><div><div class="eyebrow">Editar</div><h2 id="siEditorTitle">Nova orientação</h2></div><span id="siStatus" class="badge">Rascunho</span></div><div class="si-editor-body"><form id="siForm"></form><div class="si-editor-actions"><button id="siSave" class="button primary" type="button">Salvar</button><button id="siPublish" class="button secondary" type="button">Publicar</button><button id="siArchive" class="button secondary" type="button">Arquivar</button></div></div></section>
     </div>
-
-    <section class="si-note"><strong>É só isso:</strong> em cada etapa você configura pergunta, variações, resposta e modo/ferramenta.</section>
-    <div id="toastRegion" class="toasts" aria-live="polite"></div>
+    <section class="si-note"><strong>Regra simples:</strong> a IA só pode usar o recurso escolhido naquela etapa. Recursos que exigem template Meta ou transporte adicional aparecem identificados no seletor.</section><div id="toastRegion" class="toasts" aria-live="polite"></div>
   </main>
 </div>
-<script src="./config.js?v=20260910-03"></script>
-<script src="../admin-v3/service-intelligence.js?v=20260911-05"></script>
-</body>
-</html>
+<script src="./config.js?v=20260910-03"></script><script src="../admin-v3/service-intelligence.js?v=20260911-06"></script>
+</body></html>
