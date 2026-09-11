@@ -10,6 +10,7 @@ on:
       - 'supabase/functions/admin-ops-v1/**'
       - 'supabase/functions/admin-baskets-v1/**'
       - 'supabase/functions/bootstrap-owner-v1/**'
+      - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/bling-product-writer-v1.mjs'
       - 'scripts/bling-stock-writer-v1.mjs'
       - 'scripts/bling-sync-core.mjs'
@@ -25,6 +26,7 @@ on:
       - 'supabase/functions/admin-ops-v1/**'
       - 'supabase/functions/admin-baskets-v1/**'
       - 'supabase/functions/bootstrap-owner-v1/**'
+      - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/bling-product-writer-v1.mjs'
       - 'scripts/bling-stock-writer-v1.mjs'
       - 'scripts/bling-sync-core.mjs'
@@ -60,6 +62,8 @@ jobs:
           node --check scripts/bling-product-writer-v1.mjs
           node --check scripts/bling-stock-writer-v1.mjs
           node --check scripts/bling-sync-core.mjs
+      - name: Validar contrato Admin Simple V2
+        run: node scripts/test-admin-simple-v2.mjs
       - name: Validar Admin oficial simplificado
         run: |
           grep -q 'data-route="products"' admin/index.html
