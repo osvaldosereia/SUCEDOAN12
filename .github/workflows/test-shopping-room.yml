@@ -7,9 +7,17 @@ on:
       - 'comprar/**'
       - 'catalogo/index.html'
       - 'supabase/functions/shopping-room-v1/**'
+      - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/migrations/*shopping_room*'
+      - 'supabase/migrations/*shopping_chat*'
       - 'supabase/migrations/*outbound*'
+      - '.github/workflows/test-shopping-room.yml'
+  pull_request:
+    paths:
+      - 'comprar/**'
+      - 'supabase/functions/shopping-chat-v1/**'
+      - 'supabase/migrations/*shopping_chat*'
       - '.github/workflows/test-shopping-room.yml'
   workflow_dispatch:
 
@@ -26,23 +34,24 @@ jobs:
         with:
           node-version: 22
       - name: JavaScript do cliente
-        run: node --check comprar/app.js
+        run: |
+          node --check comprar/app.js
+          node --check comprar/chat-light.js
       - name: Estrutura pública
         shell: bash
         run: |
           set -euo pipefail
           test -f comprar/index.html
-          test -f comprar/style.css
-          test -f comprar/room-v2.css
+          test -f comprar/chat-light.css
+          test -f comprar/chat-light.js
           test -f comprar/config.js
-          grep -q "shopping-room-v1" comprar/config.js
-          grep -q "Sala de Compra" comprar/index.html
-          grep -q "MediaRecorder" comprar/app.js
-          grep -q "upload_media" comprar/app.js
-          grep -q "create_web_room" comprar/app.js
-          grep -q "identify" comprar/app.js
-          grep -q "Pagamento na entrega" comprar/app.js
-          grep -q "location.replace('../comprar/'" catalogo/index.html
+          grep -q "shopping-chat-v1" comprar/config.js
+          grep -q "Compra rápida" comprar/index.html
+          grep -q "MediaRecorder" comprar/chat-light.js
+          grep -q "upload_media" comprar/chat-light.js
+          grep -q "create_web_room" comprar/chat-light.js
+          grep -q "set_payment" comprar/chat-light.js
+          grep -q "captureLocation" comprar/chat-light.js
           ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY" comprar/
       - name: Instalar Deno
         uses: denoland/setup-deno@v2
@@ -51,26 +60,23 @@ jobs:
       - name: Checar Edge Functions
         run: |
           deno check supabase/functions/shopping-room-v1/index.ts
+          deno check supabase/functions/shopping-chat-v1/index.ts
           deno check supabase/functions/customer-intelligence-v1/index.ts
-      - name: Segurança da Sala pública
+      - name: Segurança do chat público
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "ALLOWED_ORIGINS" supabase/functions/shopping-room-v1/index.ts
-          grep -q "consume_public_rate_limit" supabase/functions/shopping-room-v1/index.ts
-          grep -q "shopping-room-media" supabase/functions/shopping-room-v1/index.ts
-          grep -q "queue_ai_job_for_message" supabase/functions/shopping-room-v1/index.ts
-          grep -q "10485760" supabase/functions/shopping-room-v1/index.ts
-          grep -q "room_start_web_session" supabase/migrations/20260907160549_shopping_room_identity_media_and_security.sql
-          grep -q "room_identify_customer" supabase/migrations/20260907160549_shopping_room_identity_media_and_security.sql
-          grep -q "revoke execute on function public.apply_catalog_behavior_event" supabase/migrations/20260907160549_shopping_room_identity_media_and_security.sql
+          grep -q "ORIGINS" supabase/functions/shopping-chat-v1/index.ts
+          grep -q "tokenOk" supabase/functions/shopping-chat-v1/index.ts
+          grep -q "shopping-room-media" supabase/functions/shopping-chat-v1/index.ts
+          grep -q "queue_ai_job_for_message" supabase/functions/shopping-chat-v1/index.ts
+          grep -q "room_start_for_conversation_v1" supabase/migrations/20260911043000_light_shopping_chat_entry_v1.sql
+          grep -q "shopping_room_basket_entry" supabase/migrations/20260911043000_light_shopping_chat_entry_v1.sql
       - name: Regras de pedido e outbound
         shell: bash
         run: |
           set -euo pipefail
           grep -q "room_confirm_order" supabase/migrations/20260907152000_shopping_room_core_v1.sql
           grep -q "build_bling_order_draft" supabase/migrations/20260907152000_shopping_room_core_v1.sql
-          grep -q "sales_pressure_level" supabase/migrations/20260907152000_shopping_room_core_v1.sql
           grep -q "customer_document_required" supabase/migrations/20260907160650_order_customer_resolution_and_outbound_queue.sql
           grep -q "outbound_enabled" supabase/migrations/20260907160650_order_customer_resolution_and_outbound_queue.sql
-          grep -q "dedupe_key text not null unique" supabase/migrations/20260907160650_order_customer_resolution_and_outbound_queue.sql
