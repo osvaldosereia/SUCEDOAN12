@@ -64,7 +64,7 @@ Persistidos:
 - `scripts/test-whatsapp-flow-v37-live-segmented-path-contract.mjs`;
 - workflow `Test WhatsApp Flow Live Audit` atualizado com V37.
 
-Run `34574228896` disparado; ainda estava `in_progress` na última leitura deste checkpoint.
+Run `34574228896`: `completed/success`.
 
 ## Make
 
