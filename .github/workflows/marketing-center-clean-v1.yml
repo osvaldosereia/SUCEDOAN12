@@ -9,6 +9,7 @@ on:
       - 'scripts/test-marketing-clean-transplant-v1.mjs'
       - 'scripts/test-marketing-editor-v1.mjs'
       - 'scripts/test-marketing-library-v1.mjs'
+      - 'scripts/test-marketing-operations-readonly-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -23,6 +24,7 @@ on:
       - 'scripts/test-marketing-clean-transplant-v1.mjs'
       - 'scripts/test-marketing-editor-v1.mjs'
       - 'scripts/test-marketing-library-v1.mjs'
+      - 'scripts/test-marketing-operations-readonly-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -45,9 +47,12 @@ jobs:
           node --check admin-v3/marketing-carousel-progress-v1.js
           node --check admin-v3/marketing-editor-v1.js
           node --check admin-v3/marketing-library-v1.js
+          node --check admin-v3/marketing-operations-readonly-v1.js
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
       - name: Validate dormant Marketing editor contract
         run: node scripts/test-marketing-editor-v1.mjs
       - name: Validate dormant Marketing library contract
         run: node scripts/test-marketing-library-v1.mjs
+      - name: Validate dormant read-only Marketing operations contract
+        run: node scripts/test-marketing-operations-readonly-v1.mjs
