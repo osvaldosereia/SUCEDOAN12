@@ -46,13 +46,13 @@ jobs:
             opencv-python-headless==4.11.0.86 \
             'rembg[cpu]==2.0.69'
 
-      - name: Process next unprocessed images
+      - name: Process next unprocessed repository images
         run: |
           python automation/product-image-studio/run_production.py \
             --state automation/product-image-studio/state.json \
             --report artifacts/product-image-studio-production/result.json
 
-      - name: Show non-sensitive result summary
+      - name: Show non-sensitive repository result summary
         if: always()
         shell: bash
         run: |
@@ -74,20 +74,49 @@ jobs:
           PY
           fi
 
-      - name: Commit processed images and dedupe ledger
+      - name: Commit processed repository images and dedupe ledger
         if: success()
         shell: bash
         run: |
           git add site/img/produtos_3 automation/product-image-studio/state.json
           if git diff --cached --quiet; then
-            echo 'No product images changed; nothing to commit.'
-            exit 0
+            echo 'No repository product images changed; nothing to commit.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'chore: process product studio image batch'
+            git pull --rebase origin main
+            git push origin HEAD:main
           fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'chore: process product studio image batch'
-          git pull --rebase origin main
-          git push origin HEAD:main
+
+      - name: Enrich researched EAN products with owned studio images
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python automation/product-image-studio/enrich_researched_products.py \
+            --limit 9 \
+            --report artifacts/product-image-studio-production/researched-products.json
+
+      - name: Show researched-product image summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/product-image-studio-production/researched-products.json ]; then
+            python - <<'PY'
+          import json
+          p = json.load(open('artifacts/product-image-studio-production/researched-products.json', encoding='utf-8'))
+          print(json.dumps({
+            'status': p.get('status'),
+            'pipeline_version': p.get('pipeline_version'),
+            'background': p.get('background'),
+            'selected': p.get('selected'),
+            'processed_count': p.get('processed_count', len(p.get('processed') or [])),
+            'error_count': p.get('error_count', len(p.get('errors') or [])),
+            'generative_ai_used': p.get('generative_ai_used'),
+          }, ensure_ascii=False, indent=2))
+          PY
+          fi
 
       - name: Upload production report
         if: always()
