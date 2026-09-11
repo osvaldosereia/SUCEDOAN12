@@ -58,7 +58,26 @@ A UI recusa a listagem se a Edge deixar de declarar como `false` qualquer um des
 - botão de request condicionado ao gate + kill switch;
 - ausência de polling e providers externos.
 
-O workflow dedicado já executa esse contrato e observa os arquivos alterados. O status do novo HEAD deve ser verificado na próxima rodada; não considerar CI verde antes disso.
+Commit funcional da rodada: `9881b3cf6272c0a174e5dc6d2eb3e0ca58213118`.
+O GitHub continuou retornando 0 workflow runs/check-runs para esse HEAD durante a rodada. Não considerar CI verde antes de execução conclusiva.
+
+## Deploy Supabase
+A Edge atualmente implantada continuou `ACTIVE`, versão 1, `verify_jwt=true`.
+A tentativa de implantar a nova versão da Edge foi bloqueada pela camada de segurança da ferramenta antes da execução. O bloqueio não foi contornado. Portanto:
+- código V17 está persistido na branch/PR;
+- banco não foi alterado nesta rodada;
+- Edge em produção permanece na versão anterior;
+- a nova ação `list` ainda não deve ser considerada homologada em runtime até deploy permitido em rodada posterior.
+
+## Security Advisor / auditoria final
+O Security Advisor foi executado. A tabela `marketing_render_triage_requests` continua no padrão server-only já adotado: RLS ON e sem policy pública; o advisor reporta `RLS Enabled No Policy` como INFO. Os WARN de `SECURITY DEFINER` encontrados pertencem a outras frentes (`route_whatsapp_active_basket_address_guard_v52` e funções de Agent Workflow) e não foram alterados por escopo.
+
+Auditoria final do Marketing:
+- 0 assets;
+- 0 render jobs;
+- 0 publication jobs;
+- 0 triage requests;
+- 0 eventos Marketing com efeito externo.
 
 ## Gates preservados
 - Marketing OFF;
@@ -75,10 +94,11 @@ O workflow dedicado já executa esse contrato e observa os arquivos alterados. O
 - budgets/limites zero.
 
 ## Próximo bloco seguro
-1. Confirmar o GitHub Actions `Marketing Center V1` deste HEAD e corrigir somente falhas do Marketing.
-2. Homologar a ação `list`/redaction e a Edge implantada, mantendo gates OFF.
-3. Evoluir a triagem com ação explícita de `cancel` para solicitação ainda pendente, com owner/operator conforme política, auditoria e idempotência, sem tocar em requeue real.
-4. Manter approve/execute fora da UI até decisão específica; requeue real continua OFF.
-5. Continuar sem publishers reais, sem IA paga e sem elevar canary.
+1. Confirmar o GitHub Actions `Marketing Center V1` do novo HEAD e corrigir somente falhas do Marketing.
+2. Repetir o deploy da Edge apenas se a ferramenta permitir normalmente; não contornar bloqueios de segurança.
+3. Após deploy permitido, homologar `list`/redaction mantendo todos os gates OFF.
+4. Evoluir a triagem com ação explícita de `cancel` para solicitação ainda pendente, com auditoria e idempotência, sem tocar em requeue real.
+5. Manter approve/execute fora da UI até decisão específica; requeue real continua OFF.
+6. Continuar sem publishers reais, sem IA paga e sem elevar canary.
 
 O Marketing ainda não está integralmente concluído/homologado.
