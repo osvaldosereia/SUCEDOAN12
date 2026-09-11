@@ -25,9 +25,14 @@ Deno.serve(async(req:Request)=>{
     const days=Number(b.days||30);
     if(![7,30,90].includes(days))return fail("invalid_metric_window","Use 7, 30 ou 90 dias");
     const to=new Date(),from=new Date(to.getTime()-days*86400000);
-    const {data,error}=await sb.rpc("marketing_metrics_read_model_v1",{p_from:from.toISOString(),p_to:to.toISOString()});
-    if(error)return fail("metrics_failed",error.message,500);
+    const [{data,error},{data:renderData,error:renderError}]=await Promise.all([
+      sb.rpc("marketing_metrics_read_model_v1",{p_from:from.toISOString(),p_to:to.toISOString()}),
+      sb.rpc("marketing_render_metrics_read_model_v1",{p_from:from.toISOString(),p_to:to.toISOString()})
+    ]);
+    if(error||renderError)return fail("metrics_failed",error?.message||renderError?.message||"Falha nas métricas",500);
     const raw=(data&&typeof data==="object")?data as Record<string,any>:{};
+    const render=(renderData&&typeof renderData==="object")?renderData as Record<string,any>:{};
+    if(render?.external_side_effect!==false)return fail("unsafe_render_metrics","Read-model de render recusado",500);
     const attribution=(raw?.attribution&&typeof raw.attribution==="object")?raw.attribution:{status:"unavailable",touchpoints:{}};
     const metrics={
       counts:{
@@ -41,11 +46,21 @@ Deno.serve(async(req:Request)=>{
         external_side_effects:Number(raw?.events?.external_side_effects||0),
         attribution_clicks:Number(attribution?.touchpoints?.clicks||0),
         attribution_conversations:Number(attribution?.touchpoints?.conversations||0),
-        attribution_orders:Number(attribution?.touchpoints?.orders||0)
+        attribution_orders:Number(attribution?.touchpoints?.orders||0),
+        render_jobs:Number(render?.jobs?.total||0),
+        render_queued:Number(render?.jobs?.queued||0),
+        render_processing:Number(render?.jobs?.processing||0),
+        render_rendered:Number(render?.jobs?.rendered||0),
+        render_failed:Number(render?.jobs?.failed||0),
+        render_review_required:Number(render?.jobs?.review_required||0),
+        render_avg_ms:Number(render?.latency_ms?.avg_render||0),
+        render_p95_ms:Number(render?.latency_ms?.p95_render||0),
+        render_success_rate_percent:Number(render?.quality?.success_rate_percent||0)
       },
       by_mode:raw?.assets?.by_mode||{},
       by_status:raw?.publication_jobs?.by_status||{},
       by_channel:raw?.publication_jobs?.by_channel||{},
+      render,
       attribution,
       raw
     };
