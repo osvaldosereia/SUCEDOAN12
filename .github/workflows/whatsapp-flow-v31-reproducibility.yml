@@ -1,0 +1,54 @@
+name: WhatsApp Flow V31 reproducibility
+
+on:
+  push:
+    branches:
+      - flow/run30-v48-repro
+    paths:
+      - 'scripts/build-flow-v31-stable-text-products.py'
+      - 'scripts/validate-flow-v31-commercial-contract.py'
+      - 'whatsapp/flows/flow-cestas-comercial-v6.json'
+      - '.github/workflows/whatsapp-flow-v31-reproducibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: flow/run30-v48-repro
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Regenerate stable artifact from authoritative builder
+        run: python scripts/build-flow-v31-stable-text-products.py
+
+      - name: Validate V31 commercial contract
+        run: python scripts/validate-flow-v31-commercial-contract.py
+
+      - name: Verify deterministic regeneration
+        run: |
+          cp whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json /tmp/v31-first.json
+          python scripts/build-flow-v31-stable-text-products.py
+          cmp --silent /tmp/v31-first.json whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json
+
+      - name: Commit generated artifact when needed
+        run: |
+          if git diff --quiet -- whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json && git ls-files --error-unmatch whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json >/dev/null 2>&1; then
+            echo 'V31 artifact already reproducible and tracked.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add whatsapp/flows/flow-cestas-comercial-v31-stable-text-products.json
+          git commit -m 'build(flow): restore reproducible V31 stable artifact'
+          git push origin HEAD:flow/run30-v48-repro
