@@ -104,11 +104,11 @@ async function openBasket(id){
 }
 function selectPreviewBasket(){
   const data=previewBasketData;if(!data?.basket)return;
-  if(state.basket?.id===data.basket.id){previewBasketData=null;app.innerHTML=renderBasketDetail(state.basket,state.basketItems);window.scrollTo({top:0,behavior:'smooth'});return}
+  if(state.basket?.id===data.basket.id){previewBasketData=null;app.innerHTML=renderBasketDetail(state.basket,state.basketItems,estimatedTotal());window.scrollTo({top:0,behavior:'smooth'});return}
   if(state.basket&&!confirm('Trocar a cesta atual por esta?'))return;
-  setBasket(data);previewBasketData=null;app.innerHTML=renderBasketDetail(state.basket,state.basketItems);updateOrderButtons();window.scrollTo({top:0,behavior:'smooth'});
+  setBasket(data);previewBasketData=null;app.innerHTML=renderBasketDetail(state.basket,state.basketItems,estimatedTotal());updateOrderButtons();window.scrollTo({top:0,behavior:'smooth'});
 }
-function refreshBasket(){if(state.basket)app.innerHTML=renderBasketDetail(state.basket,state.basketItems)}
+function refreshBasket(){if(state.basket)app.innerHTML=renderBasketDetail(state.basket,state.basketItems,estimatedTotal())}
 function syncVisibleProductQty(){document.querySelectorAll('[data-product-card]').forEach(card=>{const qty=Number(state.extras[card.dataset.productCard]?.quantity||0),add=card.querySelector('[data-add-extra]'),wrap=card.querySelector('[data-extra-qty-wrap]'),label=card.querySelector('[data-extra-qty]');if(label)label.textContent=String(qty);add?.classList.toggle('hidden',qty>0);wrap?.classList.toggle('hidden',qty===0)})}
 
 function goCheckout(){closeCart();if(!hasCart()){toast('Seu pedido está vazio.','error');return}app.innerHTML=renderCheckout({basket:state.basket,basketItems:state.basketItems,extras:state.extras,total:estimatedTotal()});window.scrollTo({top:0});setTimeout(()=>$('checkoutPhone')?.focus(),40)}
