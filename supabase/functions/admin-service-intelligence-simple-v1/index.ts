@@ -1,80 +1,22 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type","Access-Control-Allow-Methods":"POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=4000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80))?clean(v,80):"";
-const variations=(v:unknown)=>Array.isArray(v)?v.map(x=>clean(x,240)).filter(Boolean).slice(0,20):String(v??"").split(/\n+/).map(x=>clean(x,240)).filter(Boolean).slice(0,20);
+const vars=(v:unknown)=>Array.isArray(v)?v.map(x=>clean(x,240)).filter(Boolean).slice(0,20):String(v??"").split(/\n+/).map(x=>clean(x,240)).filter(Boolean).slice(0,20);
 const MODES=new Set(["text","basket_flow","product_lookup","human","silence"]);
-
+function stagesOf(v:any){const input=Array.isArray(v)?v:[];return input.slice(0,12).map((s:any)=>({question:clean(s?.question,600),variations:vars(s?.variations),answer:clean(s?.answer,6000),response_mode:clean(s?.response_mode,40)||"text",tool_config:{}})).filter((s:any)=>s.question)}
 Deno.serve(async(req:Request)=>{
-  if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
-  if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
-  const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if(!url||!key)return json({ok:false,error:"server_config"},500);
-  const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
-  if(!token)return json({ok:false,error:"missing_token"},401);
-  const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data:userData,error:userError}=await sb.auth.getUser(token);
-  if(userError||!userData?.user?.id)return json({ok:false,error:"invalid_user"},401);
-  const {data:admin,error:adminError}=await sb.from("admin_users").select("role,is_active,display_name").eq("user_id",userData.user.id).maybeSingle();
-  if(adminError)return json({ok:false,error:"admin_lookup_failed"},500);
-  if(!admin?.is_active)return json({ok:false,error:"admin_not_authorized"},403);
-  const isOwner=admin.role==="owner",canEdit=isOwner||["admin","manager"].includes(admin.role);
-  let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
-  const action=clean(body?.action||"dashboard",40).toLowerCase();
-
-  if(action==="dashboard"){
-    const [{data:runtime},{count:total},{count:published},{count:drafts}]=await Promise.all([
-      sb.from("service_simple_runtime_config").select("*").eq("id",1).maybeSingle(),
-      sb.from("service_simple_rules").select("id",{count:"exact",head:true}),
-      sb.from("service_simple_rules").select("id",{count:"exact",head:true}).eq("status","published"),
-      sb.from("service_simple_rules").select("id",{count:"exact",head:true}).eq("status","draft")
-    ]);
-    return json({ok:true,user:{role:admin.role,display_name:admin.display_name||null},runtime,counts:{total:total||0,published:published||0,drafts:drafts||0}});
-  }
-
-  if(action==="list"){
-    const {data,error}=await sb.from("service_simple_rules").select("*").order("priority",{ascending:false}).order("updated_at",{ascending:false}).limit(300);
-    if(error)return json({ok:false,error:"list_failed",detail:error.message},500);
-    const q=clean(body?.q,120).toLowerCase();
-    const items=(data||[]).filter((x:any)=>!q||[x.question,x.answer,...(x.variations||[])].some(v=>String(v||"").toLowerCase().includes(q)));
-    return json({ok:true,items});
-  }
-
-  if(action==="save"){
-    if(!canEdit)return json({ok:false,error:"editor_required"},403);
-    const id=uuid(body?.id),question=clean(body?.question,600),answer=clean(body?.answer,6000),mode=clean(body?.response_mode,40)||"text",vars=variations(body?.variations);
-    if(!question)return json({ok:false,error:"question_required"},400);
-    if(!MODES.has(mode))return json({ok:false,error:"invalid_response_mode"},400);
-    if(mode==="text"&&!answer)return json({ok:false,error:"answer_required"},400);
-    const row={question,variations:vars,answer,response_mode:mode,tool_config:{},priority:Math.max(0,Math.min(100,Number(body?.priority??50)||50)),updated_by:userData.user.id,updated_at:new Date().toISOString()};
-    let item:any,error:any;
-    if(id)({data:item,error}=await sb.from("service_simple_rules").update(row).eq("id",id).select("*").single());
-    else ({data:item,error}=await sb.from("service_simple_rules").insert({...row,created_by:userData.user.id}).select("*").single());
-    if(error)return json({ok:false,error:"save_failed",detail:error.message},400);
-    return json({ok:true,item});
-  }
-
-  if(action==="set_status"){
-    if(!isOwner)return json({ok:false,error:"owner_required"},403);
-    const id=uuid(body?.id),status=clean(body?.status,30);
-    if(!id||!["draft","published","archived"].includes(status))return json({ok:false,error:"invalid_status"},400);
-    const {data:item,error}=await sb.from("service_simple_rules").update({status,updated_by:userData.user.id,updated_at:new Date().toISOString()}).eq("id",id).select("*").single();
-    if(error)return json({ok:false,error:"status_update_failed",detail:error.message},400);
-    return json({ok:true,item});
-  }
-
-  if(action==="runtime"){
-    if(!isOwner)return json({ok:false,error:"owner_required"},403);
-    const patch:any={updated_at:new Date().toISOString()};
-    for(const k of ["enabled","strict_mode","classifier_ai_enabled","generative_ai_enabled","humanize_all_replies"])if(typeof body?.[k]==="boolean")patch[k]=body[k];
-    if(["human","silence"].includes(body?.fallback_mode))patch.fallback_mode=body.fallback_mode;
-    const {data:runtime,error}=await sb.from("service_simple_runtime_config").update(patch).eq("id",1).select("*").single();
-    if(error)return json({ok:false,error:"runtime_update_failed",detail:error.message},400);
-    return json({ok:true,runtime});
-  }
-
+  if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
+  const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");if(!url||!key)return json({ok:false,error:"server_config"},500);
+  const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();if(!token)return json({ok:false,error:"missing_token"},401);
+  const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});const {data:userData,error:userError}=await sb.auth.getUser(token);if(userError||!userData?.user?.id)return json({ok:false,error:"invalid_user"},401);
+  const {data:admin,error:adminError}=await sb.from("admin_users").select("role,is_active,display_name").eq("user_id",userData.user.id).maybeSingle();if(adminError)return json({ok:false,error:"admin_lookup_failed"},500);if(!admin?.is_active)return json({ok:false,error:"admin_not_authorized"},403);
+  const isOwner=admin.role==="owner",canEdit=isOwner||["admin","manager"].includes(admin.role);let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}const action=clean(body?.action||"dashboard",40).toLowerCase();
+  if(action==="dashboard"){const [{data:runtime},{count:total},{count:published},{count:drafts}]=await Promise.all([sb.from("service_simple_runtime_config").select("*").eq("id",1).maybeSingle(),sb.from("service_simple_rules").select("id",{count:"exact",head:true}),sb.from("service_simple_rules").select("id",{count:"exact",head:true}).eq("status","published"),sb.from("service_simple_rules").select("id",{count:"exact",head:true}).eq("status","draft")]);return json({ok:true,user:{role:admin.role,display_name:admin.display_name||null},runtime,counts:{total:total||0,published:published||0,drafts:drafts||0}})}
+  if(action==="list"){const {data,error}=await sb.from("service_simple_rules").select("*").order("priority",{ascending:false}).order("updated_at",{ascending:false}).limit(300);if(error)return json({ok:false,error:"list_failed",detail:error.message},500);const q=clean(body?.q,120).toLowerCase();const items=(data||[]).filter((x:any)=>!q||JSON.stringify(x.stages||[]).toLowerCase().includes(q)||String(x.question||"").toLowerCase().includes(q));return json({ok:true,items})}
+  if(action==="save"){if(!canEdit)return json({ok:false,error:"editor_required"},403);const id=uuid(body?.id);let stages=stagesOf(body?.stages);if(!stages.length)stages=stagesOf([{question:body?.question,variations:body?.variations,answer:body?.answer,response_mode:body?.response_mode}]);if(!stages.length)return json({ok:false,error:"stage_required"},400);for(const s of stages){if(!MODES.has(s.response_mode))return json({ok:false,error:"invalid_response_mode"},400);if(s.response_mode==="text"&&!s.answer)return json({ok:false,error:"answer_required"},400)}const first=stages[0];const row={question:first.question,variations:first.variations,answer:first.answer,response_mode:first.response_mode,tool_config:{},stages,priority:Math.max(0,Math.min(100,Number(body?.priority??50)||50)),updated_by:userData.user.id,updated_at:new Date().toISOString()};let item:any,error:any;if(id)({data:item,error}=await sb.from("service_simple_rules").update(row).eq("id",id).select("*").single());else ({data:item,error}=await sb.from("service_simple_rules").insert({...row,created_by:userData.user.id}).select("*").single());if(error)return json({ok:false,error:"save_failed",detail:error.message},400);return json({ok:true,item})}
+  if(action==="set_status"){if(!isOwner)return json({ok:false,error:"owner_required"},403);const id=uuid(body?.id),status=clean(body?.status,30);if(!id||!["draft","published","archived"].includes(status))return json({ok:false,error:"invalid_status"},400);const {data:item,error}=await sb.from("service_simple_rules").update({status,updated_by:userData.user.id,updated_at:new Date().toISOString()}).eq("id",id).select("*").single();if(error)return json({ok:false,error:"status_update_failed",detail:error.message},400);return json({ok:true,item})}
   return json({ok:false,error:"unknown_action"},400);
 });
