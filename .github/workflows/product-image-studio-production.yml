@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: product-image-studio-production
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   process-next-nine:
