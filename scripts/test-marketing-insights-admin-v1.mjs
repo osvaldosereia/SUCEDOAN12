@@ -11,6 +11,8 @@ const adminConfig=read('admin/config.js');
 const config=read('supabase/config.toml');
 const must=(cond,msg)=>{if(!cond)throw new Error(msg)};
 
+new Function(observability);
+
 for(const days of ['7','30','90'])must(admin.includes(`data-days="${days}"`),`Admin precisa expor janela ${days} dias`);
 must(admin.includes("external_side_effect!==false")&&admin.includes("d.dry_run!==true"),'Admin precisa recusar resposta dry-run insegura');
 must(admin.includes("admin-marketing-dry-run-v1"),'Admin precisa usar o validador dry-run dedicado');
