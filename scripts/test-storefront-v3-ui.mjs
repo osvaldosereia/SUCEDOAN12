@@ -16,6 +16,7 @@ const app=read('vitrine-v3/app.js');
 const catalog=read('vitrine-v3/catalog-api.js');
 const cache=read('vitrine-v3/cache.js');
 const products=read('vitrine-v3/products.js');
+const baskets=read('vitrine-v3/baskets.js');
 const cart=read('vitrine-v3/cart.js');
 const checkout=read('vitrine-v3/checkout.js');
 const order=read('vitrine-v3/order-api.js');
@@ -56,9 +57,20 @@ assert.match(cart,/data-cart-basket-minus/,'pedido precisa permitir reduzir item
 assert.match(cart,/data-cart-basket-plus/,'pedido precisa permitir aumentar item editável da cesta');
 assert.match(checkout,/Resumo do pedido/,'checkout precisa mostrar os itens antes de enviar');
 assert.match(checkout,/Produtos da cesta/,'checkout precisa listar composição da cesta sem preço individual');
+
+// Ver uma cesta nunca pode significar adicioná-la ao pedido.
+const openBasketBody=(app.match(/async function openBasket\(id\)\{([\s\S]*?)\n\}/)||[])[1]||'';
+assert.ok(openBasketBody,'função openBasket precisa existir');
+assert.doesNotMatch(openBasketBody,/setBasket\s*\(/,'abrir cesta deve ser somente visualização');
+assert.match(baskets,/data-select-basket/,'visualização da cesta precisa ter ação explícita para escolher');
+assert.match(app,/data-select-basket/,'app precisa tratar a escolha explícita da cesta');
+assert.match(app,/Trocar a cesta atual por esta\?/,'troca de cesta escolhida precisa pedir confirmação');
+assert.match(baskets,/Escolher esta cesta/,'CTA de escolha da cesta precisa ser claro');
+
 assert.match(css,/#1a73e8/i);
 assert.match(css,/#202124/i);
 assert.match(css,/product-dialog/,'modal de produto precisa ter estilo próprio');
+assert.match(css,/aspect-ratio:\s*1\s*\/\s*1/,'fotos de cestas e produtos devem trabalhar em formato quadrado');
 assert.doesNotMatch(css,/linear-gradient/i);
 assert.match(css,/min-height:\s*4[6-9]px|min-height:\s*[5-9]\dpx/,'ações devem ter toque confortável');
 assert.doesNotMatch(all,/SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY/);
