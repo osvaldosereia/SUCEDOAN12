@@ -3,7 +3,7 @@ name: Product Image Studio — Production
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '*/5 * * * *'
   push:
     branches:
       - main
