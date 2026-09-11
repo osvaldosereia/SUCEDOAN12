@@ -37,7 +37,7 @@ assert.doesNotMatch(all,/type="checkbox"|data-section-check|Role a página para 
 assert.match(cache,/localStorage/);
 assert.match(cache,/120000|120_000/,'cache local curto esperado');
 assert.match(cache,/stale|revalidate/i,'cache deve suportar stale-while-revalidate');
-assert.doesNotMatch(state,/phone|telefone/i,'telefone não deve persistir no carrinho local');
+assert.match(state,/JSON\.stringify\(\{basket:state\.basket,basketItems:state\.basketItems,extras:state\.extras\}\)/,'persistência local deve conter somente o carrinho');
 assert.match(css,/#1a73e8/i);
 assert.match(css,/#202124/i);
 assert.doesNotMatch(css,/linear-gradient/i);
