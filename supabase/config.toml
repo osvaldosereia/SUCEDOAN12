@@ -36,6 +36,10 @@ verify_jwt = false
 [functions.inventory-count-v2]
 verify_jwt = true
 
+# Porta pública mínima: valida PIN com hash/rate-limit e emite bootstrap de sessão Supabase.
+[functions.admin-pin-auth-v1]
+verify_jwt = false
+
 [functions.admin-ops-v1]
 verify_jwt = true
 
