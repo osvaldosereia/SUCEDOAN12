@@ -37,7 +37,7 @@ from rembg import new_session
 ROOT = Path(__file__).resolve().parents[2]
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-BUCKET = "whatsapp-flow-assets"
+BUCKET = "product-images"
 BACKGROUND = "#ECECEC"
 PIPELINE_VERSION = "web-research-studio-v1-rembg-u2net-ececec-400"
 DEFAULT_LIMIT = 9
@@ -231,7 +231,8 @@ def upload_webp(product_id: str, payload: bytes) -> tuple[str, str]:
         data=payload,
         timeout=TIMEOUT,
     )
-    response.raise_for_status()
+    if not response.ok:
+        raise RuntimeError(f"storage_upload_{response.status_code}:{response.text[:300]}")
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET}/{quoted}"
     return object_path, public_url
 
