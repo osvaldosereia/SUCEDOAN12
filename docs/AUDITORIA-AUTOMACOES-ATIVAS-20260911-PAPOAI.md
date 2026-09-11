@@ -16,7 +16,7 @@
 
 ## Subsystem arquivado nesta rodada
 
-Foram neutralizados os gatilhos automáticos do antigo atendimento próprio: Agent Core, Conversation Worker, WhatsApp Sales MVP, WhatsApp Flow (build/release/runtime/audit/replay), AI Action Registry e verificação de corte do Make.
+Foram neutralizados 36 workflows do antigo atendimento próprio: Agent Core, Conversation Worker, WhatsApp Sales MVP, WhatsApp Flow (build/release/runtime/audit/replay), AI Action Registry, verificação de corte do Make, CRM/inbox próprio, Messenger próprio e o antigo núcleo/adaptadores omnichannel.
 
 Os arquivos permanecem no histórico do Git e os stubs atuais aceitam apenas execução manual deliberada. Nenhum deles roda em `push`, `pull_request`, `schedule`, `workflow_run` ou `repository_dispatch`.
 
