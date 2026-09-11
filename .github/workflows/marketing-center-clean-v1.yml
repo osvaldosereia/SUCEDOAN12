@@ -11,6 +11,8 @@ on:
       - 'scripts/test-marketing-library-v1.mjs'
       - 'scripts/test-marketing-operations-readonly-v1.mjs'
       - 'scripts/test-marketing-readiness-readonly-v1.mjs'
+      - 'scripts/test-marketing-channel-preflight-v1.mjs'
+      - 'scripts/marketing-channel-preflight-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -27,6 +29,8 @@ on:
       - 'scripts/test-marketing-library-v1.mjs'
       - 'scripts/test-marketing-operations-readonly-v1.mjs'
       - 'scripts/test-marketing-readiness-readonly-v1.mjs'
+      - 'scripts/test-marketing-channel-preflight-v1.mjs'
+      - 'scripts/marketing-channel-preflight-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -61,3 +65,5 @@ jobs:
         run: node scripts/test-marketing-operations-readonly-v1.mjs
       - name: Validate dormant read-only Marketing metrics/readiness contract
         run: node scripts/test-marketing-readiness-readonly-v1.mjs
+      - name: Validate local-only Marketing channel preflight contract
+        run: node scripts/test-marketing-channel-preflight-v1.mjs
