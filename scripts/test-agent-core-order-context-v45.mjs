@@ -34,11 +34,11 @@ for(const [src,name] of [[core,'core'],[evaluator,'evaluator']]){
 
 must(core,'commercial_commitment_exists:Boolean(order.commercial_commitment_exists)','core compact order packet');
 must(core,'postSaleContext?"post_sale"','core effective post-sale topic');
-must(evaluator,'resolve_whatsapp_agent_core_topic_v5','evaluator topic v5');
+must(evaluator,'resolve_whatsapp_agent_core_topic_v6','evaluator topic v6');
 must(evaluator,'const f=obj(item.fixture),customer=obj(f.customer),sales=obj(f.sales_state),cart=obj(f.cart),order=obj(f.order);','evaluator order fixture');
 must(evaluator,'postSaleContext?"post_sale"','evaluator effective post-sale topic');
 
 const kernel=(src)=>src.match(/const KERNEL=`([\s\S]*?)`;\nconst CRITIC=/)?.[1]||'';
 if(!kernel(core)||kernel(core)!==kernel(evaluator))throw new Error('Agent Core and evaluator KERNEL drift');
 
-console.log('Agent Core V45-V46 order context/post-sale guard contract OK');
+console.log('Agent Core V45-V51 order context/post-sale guard contract OK');
