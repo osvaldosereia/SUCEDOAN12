@@ -3,24 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#173f2a">
+  <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex,nofollow">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-  <title>Dona Antônia · Catálogo</title>
-  <link rel="stylesheet" href="./style.css?v=20260909-02">
+  <title>Dona Antônia · Vitrine</title>
+  <link rel="stylesheet" href="./style.css?v=20260911-03">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><span>DA</span><div><strong>Dona Antônia</strong><small>Escolha os produtos e continue no WhatsApp</small></div></div>
-    <div id="countBadge" class="badge">0 itens</div>
+    <a class="brand" href="/" aria-label="Dona Antônia">
+      <img src="/img/logoantonia5.png" alt="Dona Antônia" width="160" height="44" decoding="async" fetchpriority="high">
+    </a>
+    <div class="cart-status" aria-label="Itens selecionados">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2ZM1 2v2h2l3.6 7.59-1.35 2.45A2 2 0 0 0 7 17h12v-2H7.42a.25.25 0 0 1-.22-.37L8.1 13h7.45a2 2 0 0 0 1.75-1.03L20.88 5H5.21l-.94-2H1Zm16 16c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2Z"/></svg>
+      <span id="countBadge" class="badge">0</span>
+    </div>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="eyebrow">Vitrine Dona Antônia</div>
-      <h1 id="catalogTitle">Carregando...</h1>
-      <p id="catalogSubtitle">Adicione os produtos que quiser ao seu pedido.</p>
-      <div class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="Buscar produto"></div>
+    <section class="catalog-head">
+      <label class="search" for="searchInput">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21.53 20.47-4.69-4.69A7.45 7.45 0 1 0 15.78 16.84l4.69 4.69 1.06-1.06ZM5.5 11a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0Z"/></svg>
+        <input id="searchInput" type="search" placeholder="Buscar produtos" autocomplete="off" enterkeyhint="search">
+      </label>
+      <h1 id="catalogTitle">Produtos</h1>
     </section>
 
     <section id="stateBox" class="state">Carregando produtos...</section>
@@ -28,23 +34,31 @@
   </main>
 
   <footer id="stickyBar" class="sticky hidden">
-    <div><small>Seu pedido</small><strong id="selectedTotal">R$ 0,00</strong><span id="selectedCount">0 itens</span></div>
+    <div class="order-summary">
+      <span id="selectedCount">0 itens</span>
+      <strong id="selectedTotal">R$ 0,00</strong>
+    </div>
     <button id="whatsappButton" type="button">Continuar no WhatsApp</button>
   </footer>
 
   <template id="productTemplate">
     <article class="product">
-      <div class="image-wrap"><img class="product-image" alt=""></div>
+      <div class="image-wrap"><img class="product-image" alt="" loading="lazy" decoding="async"></div>
       <div class="product-info">
-        <div class="product-top"><div><h2 class="product-name"></h2><p class="product-meta"></p></div><strong class="product-price"></strong></div>
-        <p class="product-reason"></p>
-        <div class="qty-row"><button class="minus" type="button" aria-label="Diminuir">−</button><span class="qty">0</span><button class="plus" type="button" aria-label="Aumentar">+</button></div>
+        <h2 class="product-name"></h2>
+        <p class="product-meta"></p>
+        <strong class="product-price"></strong>
+        <div class="qty-row">
+          <button class="minus" type="button" aria-label="Diminuir quantidade">−</button>
+          <span class="qty" aria-live="polite">0</span>
+          <button class="plus" type="button" aria-label="Aumentar quantidade">+</button>
+        </div>
       </div>
     </article>
   </template>
 
   <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="./config.js?v=20260909-02"></script>
-  <script src="./app.js?v=20260909-02"></script>
+  <script src="./config.js?v=20260911-03"></script>
+  <script src="./app.js?v=20260911-03"></script>
 </body>
 </html>
