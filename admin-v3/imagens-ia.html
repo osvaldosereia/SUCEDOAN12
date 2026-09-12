@@ -59,6 +59,7 @@
       <label class="field wide"><span>Observação interna</span><textarea id="repairNote" rows="3" placeholder="Ex.: foto original está cortando a tampa; trocar a origem antes de reprocessar."></textarea><small>Esta observação é administrativa e não altera o rótulo ou a identidade do produto na geração.</small></label>
       <label class="field"><span>Próxima tentativa</span><select id="repairMode"><option value="individual">Sozinho (mais seguro)</option><option value="batch">Lote de 18 (mais barato)</option></select></label>
       <div class="repair-actions">
+        <button id="useCurrentSource" class="secondary" type="button">Usar foto atual como origem</button>
         <button id="saveNote" class="secondary" type="button">Salvar observação</button>
         <button id="retryOnly" class="secondary" type="button">Reprocessar</button>
         <button id="saveSourceRetry" class="primary" type="button">Salvar origem e reprocessar</button>
@@ -69,6 +70,6 @@
   </dialog>
 
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./image-automation.js?v=20260912-2"></script>
+  <script type="module" src="./image-automation.js?v=20260912-3"></script>
 </body>
 </html>
