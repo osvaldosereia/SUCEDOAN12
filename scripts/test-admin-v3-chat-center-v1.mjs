@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const html=readFileSync('admin-v3/atendimento.html','utf8');
-const strategy=readFileSync('admin-v3/service-strategy.js','utf8');
 const center=readFileSync('admin-v3/service-chat-center.js','utf8');
 const edge=readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 
@@ -13,8 +12,7 @@ assert.match(html,/id=["']tabChat["']/,'painel Chat deve existir');
 assert.match(html,/id=["']tabIntelligence["']/,'painel Inteligência deve existir');
 assert.match(html,/service-chat-center\.js/,'módulo da central do chat deve ser carregado');
 
-assert.match(strategy,/\['rules','chat','intelligence','history','evolution'\]/,'navegação central deve reconhecer as cinco abas');
-
+assert.match(center,/\['rules','chat','intelligence','history','evolution'\]/,'navegação central deve reconhecer as cinco abas');
 assert.match(center,/admin-chat-menu-v1/,'aba Chat deve reutilizar o backend do Menu do Chat');
 assert.match(center,/runtime_save/,'aba Inteligência deve salvar o runtime simples');
 assert.match(center,/strict_mode/,'modo restrito deve ser configurável');
