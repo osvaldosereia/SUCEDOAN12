@@ -123,6 +123,10 @@ verify_jwt = false
 [functions.shopping-chat-products-v1]
 verify_jwt = false
 
+# Consulta de cliente e políticas da cesta: token válido da sessão, CORS estrito e limite de tentativas por sala.
+[functions.shopping-chat-customer-v1]
+verify_jwt = false
+
 # Menu flutuante público: somente leitura, token válido da sessão + CORS estrito.
 [functions.shopping-chat-menu-v1]
 verify_jwt = false
