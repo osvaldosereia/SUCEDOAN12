@@ -36,6 +36,7 @@ on:
       - 'scripts/test-marketing-quick-edit-review-package-v1.mjs'
       - 'scripts/marketing-quick-edit-review-package-v1.mjs'
       - 'scripts/test-marketing-quick-edit-review-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-handoff-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -77,6 +78,7 @@ on:
       - 'scripts/test-marketing-quick-edit-review-package-v1.mjs'
       - 'scripts/marketing-quick-edit-review-package-v1.mjs'
       - 'scripts/test-marketing-quick-edit-review-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-handoff-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -106,6 +108,7 @@ jobs:
           node --check admin-v3/marketing-approval-preview-readonly-v1.js
           node --check admin-v3/marketing-ai-readiness-readonly-v1.js
           node --check admin-v3/marketing-quick-edit-review-readonly-v1.js
+          node --check admin-v3/marketing-quick-edit-review-handoff-v1.js
           node --check scripts/marketing-channel-preflight-v1.mjs
           node --check scripts/marketing-channel-request-bundle-v1.mjs
           node --check scripts/marketing-approval-preview-v1.mjs
@@ -155,3 +158,5 @@ jobs:
         run: node scripts/test-marketing-quick-edit-review-package-v1.mjs
       - name: Validate dormant readonly Marketing quick edit review UI
         run: node scripts/test-marketing-quick-edit-review-readonly-ui-v1.mjs
+      - name: Validate memory-only Marketing quick edit review handoff
+        run: node scripts/test-marketing-quick-edit-review-handoff-v1.mjs
