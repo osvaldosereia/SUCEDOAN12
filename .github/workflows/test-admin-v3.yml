@@ -6,22 +6,28 @@ on:
     paths:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
+      - 'supabase/functions/catalog-v3/**'
       - 'supabase/migrations/*admin_v2_customer_maps*'
+      - 'supabase/migrations/*admin_inline_product_controls*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-no-auth-v2.mjs'
       - 'scripts/test-admin-v2-operational-contract.mjs'
+      - 'scripts/test-admin-inline-product-controls.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
     paths:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
+      - 'supabase/functions/catalog-v3/**'
       - 'supabase/migrations/*admin_v2_customer_maps*'
+      - 'supabase/migrations/*admin_inline_product_controls*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-no-auth-v2.mjs'
       - 'scripts/test-admin-v2-operational-contract.mjs'
+      - 'scripts/test-admin-inline-product-controls.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -49,8 +55,11 @@ jobs:
           node --check admin/config.js
           node --check admin/app-lite.js
           deno check supabase/functions/admin-simple-v2/index.ts
+          deno check supabase/functions/catalog-v3/index.ts
       - name: Validar contrato Admin Simple V2
         run: node scripts/test-admin-simple-v2.mjs
+      - name: Validar controles rápidos dos produtos
+        run: node scripts/test-admin-inline-product-controls.mjs
       - name: Validar Admin sem autenticação
         run: node scripts/test-admin-no-auth-v2.mjs
       - name: Validar Admin operacional
