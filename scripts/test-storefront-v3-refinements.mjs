@@ -40,4 +40,12 @@ assert.match(css,/\.offer-carousel/,'carrossel precisa de estilo próprio');
 assert.match(css,/overflow-x\s*:\s*auto/,'carrossel precisa rolar horizontalmente');
 assert.match(css,/flex\s*:\s*0\s+0\s+3[6-9]%/,'no celular devem aparecer aproximadamente 2,5 cards por tela');
 
+// Carrossel continua manual, mas ganha setas de navegação visíveis.
+assert.match(app,/data-offer-prev/,'carrossel precisa ter seta para voltar');
+assert.match(app,/data-offer-next/,'carrossel precisa ter seta para avançar');
+assert.match(app,/scrollBy\s*\(/,'setas precisam deslocar o carrossel manualmente');
+assert.match(app,/behavior\s*:\s*['"]smooth['"]/,'deslocamento pelas setas deve ser suave');
+assert.doesNotMatch(app,/setInterval\s*\(|setTimeout\s*\([^\n]*offer-carousel|autoplay/i,'carrossel não deve rolar automaticamente');
+assert.match(css,/\.offer-carousel-arrow/,'setas precisam de estilo próprio');
+
 console.log('storefront-v3-refinements contract ok');
