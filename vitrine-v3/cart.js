@@ -3,8 +3,11 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
 function basketRow(item){
-  const p=item.product||{};const qty=Number(item.quantity||0);const stock=Math.max(0,Number(p.stock||0));const max=item.max_quantity==null?stock:Number(item.max_quantity);const editable=item.quantity_editable===true;
-  const control=editable?`<div class="qty-control"><button type="button" data-cart-basket-minus="${esc(item.product_id)}" ${qty<=Number(item.min_quantity||0)?'disabled':''}>−</button><b>${esc(qty)}</b><button type="button" data-cart-basket-plus="${esc(item.product_id)}" ${qty>=max?'disabled':''}>+</button></div>`:`<b class="fixed-qty">${esc(qty)}x</b>`;
+  const p=item.product||{};const qty=Number(item.quantity||0);const stock=Math.max(0,Number(p.stock||0));const base=Math.max(0,Number(item.base_quantity??qty));const min=Math.max(0,Number(item.min_quantity||0));const max=item.max_quantity==null?Math.max(min,stock):Math.max(min,Number(item.max_quantity));
+  const canReduce=item.removable===true?qty>min:item.quantity_editable===true&&qty>min;
+  const canIncrease=item.quantity_editable===true?(stock>0&&qty<max):(item.removable===true&&qty<Math.min(base,max));
+  const showControl=item.removable===true||item.quantity_editable===true;
+  const control=showControl?`<div class="qty-control"><button type="button" data-cart-basket-minus="${esc(item.product_id)}" ${canReduce?'':'disabled'}>−</button><b>${esc(qty)}</b><button type="button" data-cart-basket-plus="${esc(item.product_id)}" ${canIncrease?'':'disabled'}>+</button></div>`:`<b class="fixed-qty">${esc(qty)}x</b>`;
   return `<article class="cart-row basket-cart-row"><div><strong>${esc(p.name||'Produto')}</strong><p>${esc([p.brand,p.packaging].filter(Boolean).join(' · '))}</p></div>${control}</article>`;
 }
 

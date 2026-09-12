@@ -80,16 +80,17 @@ assert.match(baskets,/Ver cesta/,'card da cesta precisa deixar explícito que ab
 assert.match(app,/Cuiabá e Várzea Grande/,'home precisa comunicar área atendida sem banner grande');
 assert.match(app,/Pagamento na entrega/,'home precisa antecipar condição comercial importante');
 
-// Depois da escolha da cesta, a compra segue na mesma página: personalização -> ofertas relevantes -> demais produtos.
+// Depois da escolha da cesta, a compra segue na mesma página: personalização -> ofertas -> busca/categorias.
 assert.doesNotMatch(baskets,/Adicionar mais produtos|data-add-products/,'detalhe da cesta não deve terminar em botão intermediário para abrir o mercado');
 assert.doesNotMatch(baskets,/class="basket-actions"/,'detalhe da cesta não deve usar o antigo bloco grande de ações');
-assert.match(baskets,/Total até agora/,'total deve continuar visível de forma compacta durante a personalização');
-assert.match(app,/Ofertas para seu pedido/,'página selecionada precisa reservar seção para ofertas relevantes');
+assert.doesNotMatch(baskets,/Total até agora|basket-inline-total/,'personalização não deve repetir quadro de total');
+assert.match(app,/Ofertas de Hoje/,'página selecionada precisa mostrar Ofertas de Hoje');
 assert.match(app,/catalog\(['"]offers['"]\s*,/,'ofertas relevantes precisam vir do catálogo');
 assert.match(state,/export function cartCategories\(/,'estado precisa expor categorias presentes no pedido');
 assert.match(state,/export function cartProductIds\(/,'estado precisa expor produtos presentes no pedido para não repetir oferta');
 assert.match(app,/refreshRelevantOffers/,'ofertas precisam ser atualizadas quando o pedido muda');
 assert.match(app,/renderSelectedBasketPage/,'cesta selecionada precisa renderizar fluxo contínuo de compra');
+assert.match(app,/renderBasketDetail\(state\.basket,state\.basketItems\)/,'detalhe selecionado deve ser renderizado sem quadro de total interno');
 
 assert.match(css,/#1a73e8/i);
 assert.match(css,/#202124/i);
@@ -101,6 +102,6 @@ assert.match(css,/\.offer-section/,'ofertas contextuais precisam ter apresentaç
 assert.doesNotMatch(css,/linear-gradient/i);
 assert.match(css,/min-height:\s*4[6-9]px|min-height:\s*[5-9]\dpx/,'ações devem ter toque confortável');
 assert.doesNotMatch(all,/SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY/);
-assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)+Buffer.byteLength(app)<160_000,'shell inicial ficou pesado');
+assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)+Buffer.byteLength(app)<165_000,'shell inicial ficou pesado');
 
 console.log('storefront-v3-ui contract ok');

@@ -1,7 +1,7 @@
 import {catalog} from './catalog-api.js';
 import {state,restore,setBasket,setBasketQuantity,addExtra,setExtraQuantity,setExtraProductQuantity,clearCart,cartCount,hasCart,cartCategories,cartProductIds,estimatedTotal,orderPayload} from './state.js';
-import {renderCategoryChips,renderProductResults,renderProductDetail,renderProductRow} from './products.js';
-import {renderBasketCards,renderBasketPreview,renderBasketDetail} from './baskets.js?v=20260911-6';
+import {renderCategoryChips,renderProductResults,renderProductDetail,renderOfferCard} from './products.js';
+import {renderBasketCards,renderBasketPreview,renderBasketDetail} from './baskets.js?v=20260911-7';
 import {renderCart} from './cart.js';
 import {normalizePhone,renderCheckout,renderSuccess} from './checkout.js';
 import {createOrder} from './order-api.js';
@@ -32,12 +32,15 @@ function currentResultsMarkup(){
   if(current.mode==='category'||current.mode==='search')return renderProductResults({title:current.mode==='search'?'Resultados da busca':current.category||'Produtos',products:current.products,hasMore:current.hasMore,mode:current.mode,query:current.query,subfilters:current.subfilters,activeSub:current.sub});
   return '';
 }
-function browseMarkup(){return `<section class="catalog-tools"><h2>Produtos</h2>${renderCategoryChips(home.categories,current.category)}</section><div id="browseArea">${currentResultsMarkup()}</div>`}
-function marketMarkup(){return `<section id="marketSection" class="market-section"><div class="market-heading"><div><h2>Comprar outros produtos</h2><p>Busque pelo nome ou escolha uma categoria.</p></div></div><div class="search-block"><label for="productSearchInput">O que você está procurando?</label><div class="search-box"><span aria-hidden="true">⌕</span><input id="productSearchInput" type="search" autocomplete="off" placeholder="Ex.: arroz, leite, detergente"></div></div>${browseMarkup()}</section>`}
+function browseMarkup(showTitle=true){return `<section class="catalog-tools">${showTitle?'<h2>Produtos</h2>':''}${renderCategoryChips(home.categories,current.category)}</section><div id="browseArea">${currentResultsMarkup()}</div>`}
+function marketMarkup(showHeading=true){
+  const heading=showHeading?'<div class="market-heading"><div><h2>Comprar outros produtos</h2><p>Busque pelo nome ou escolha uma categoria.</p></div></div>':'';
+  return `<section id="marketSection" class="market-section">${heading}<div class="search-block"><label for="productSearchInput">O que você está procurando?</label><div class="search-box"><span aria-hidden="true">⌕</span><input id="productSearchInput" type="search" autocomplete="off" placeholder="Ex.: arroz, leite, detergente"></div></div>${browseMarkup(showHeading)}</section>`;
+}
 function offerInnerMarkup(){
-  if(offerState.loading)return '<div class="offer-loading">Buscando ofertas para o seu pedido…</div>';
+  if(offerState.loading)return '<div class="offer-loading">Buscando as ofertas de hoje…</div>';
   if(!offerState.products.length)return '';
-  return `<div class="offer-heading"><div><span class="eyebrow">Economize no pedido</span><h2>Ofertas para seu pedido</h2><p>Selecionadas entre as categorias dos produtos que você já escolheu.</p></div></div><div class="product-list offer-list">${offerState.products.map(renderProductRow).join('')}</div>`;
+  return `<div class="offer-heading"><div><span class="eyebrow">Economize</span><h2>Ofertas de Hoje</h2><p>Selecionadas entre as categorias dos produtos que já estão no seu pedido.</p></div></div><div class="offer-carousel" aria-label="Ofertas de Hoje">${offerState.products.slice(0,10).map(renderOfferCard).join('')}</div>`;
 }
 function offerSectionMarkup(){return `<section id="relevantOffers" class="offer-section" aria-live="polite">${offerInnerMarkup()}</section>`}
 
@@ -112,7 +115,7 @@ async function openBasket(id){
 function renderSelectedBasketPage({resetProducts=true}={}){
   if(!state.basket)return renderHome();
   stopPrefetch();previewBasketData=null;if(resetProducts)resetBrowse();offerState={products:[],loading:true};
-  app.innerHTML=`${renderBasketDetail(state.basket,state.basketItems,estimatedTotal())}${offerSectionMarkup()}${marketMarkup()}`;
+  app.innerHTML=`${renderBasketDetail(state.basket,state.basketItems)}${offerSectionMarkup()}${marketMarkup(false)}`;
   syncVisibleProductQty();refreshRelevantOffers();
 }
 function selectPreviewBasket(){
@@ -129,8 +132,8 @@ async function refreshRelevantOffers(){
   if(!categories.length){offerState={products:[],loading:false};host.innerHTML='';return}
   const request=++offerRequest;offerState.loading=true;host.innerHTML=offerInnerMarkup();
   try{
-    const data=await catalog('offers',{categories:JSON.stringify(categories),exclude:JSON.stringify(exclude),limit:8},{background:false});
-    if(request!==offerRequest)return;offerState={products:data.products||[],loading:false};rememberProducts(offerState.products);host.innerHTML=offerInnerMarkup();syncVisibleProductQty();
+    const data=await catalog('offers',{categories:JSON.stringify(categories),exclude:JSON.stringify(exclude),limit:10},{background:false});
+    if(request!==offerRequest)return;offerState={products:(data.products||[]).slice(0,10),loading:false};rememberProducts(offerState.products);host.innerHTML=offerInnerMarkup();syncVisibleProductQty();
   }catch{if(request!==offerRequest)return;offerState={products:[],loading:false};host.innerHTML=''}
 }
 function syncVisibleProductQty(){document.querySelectorAll('[data-product-card]').forEach(card=>{const qty=Number(state.extras[card.dataset.productCard]?.quantity||0),add=card.querySelector('[data-add-extra]'),wrap=card.querySelector('[data-extra-qty-wrap]'),label=card.querySelector('[data-extra-qty]');if(label)label.textContent=String(qty);add?.classList.toggle('hidden',qty>0);wrap?.classList.toggle('hidden',qty===0)})}
