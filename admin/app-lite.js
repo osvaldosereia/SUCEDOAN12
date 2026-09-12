@@ -78,9 +78,18 @@
     }catch(e){rows.innerHTML=`<tr><td colspan="7" class="empty">${esc(e.message)}</td></tr>`}
   }
   function setProductRowBusy(row,busy){if(!row)return;row.classList.toggle('saving',busy);row.querySelectorAll('input,button').forEach(el=>el.disabled=busy)}
+  function syncInlineProductRow(row,product){
+    if(!row||!product)return;
+    const stock=row.querySelector('[data-inline-stock]'),active=row.querySelector('[data-inline-active]'),offer=row.querySelector('[data-inline-offer]'),offerPrice=row.querySelector('[data-inline-offer-price]');
+    if(stock)stock.value=product.stock??0;
+    if(active)active.checked=product.is_active===true;
+    if(offer)offer.checked=product.is_offer===true;
+    if(offerPrice)offerPrice.value=product.offer_price??'';
+    if(product.name)row.dataset.productName=product.name;
+  }
   async function saveInlineProduct(row,patch,message='Alteração salva.'){
     setProductRowBusy(row,true);
-    try{await api('update_product',{id:row.dataset.productRow,patch});toast(message,'success');if(val('productStatus'))loadProducts()}
+    try{const data=await api('update_product',{id:row.dataset.productRow,patch});syncInlineProductRow(row,data.product);toast(message,'success');if(val('productStatus'))loadProducts()}
     catch(e){toast(e.message,'error');loadProducts()}
     finally{if(document.body.contains(row))setProductRowBusy(row,false)}
   }
@@ -88,8 +97,8 @@
     const control=e.target,row=control.closest('[data-product-row]');if(!row)return;
     if(control.matches('[data-inline-stock]')){const n=Number(control.value);if(!Number.isFinite(n)||n<0){toast('Informe um estoque válido.','error');loadProducts();return}await saveInlineProduct(row,{stock:n},'Estoque atualizado.');return}
     if(control.matches('[data-inline-active]')){await saveInlineProduct(row,{is_active:control.checked},control.checked?'Produto ativado.':'Produto desativado.');return}
-    if(control.matches('[data-inline-offer]')){const priceInput=row.querySelector('[data-inline-offer-price]');const offerPrice=Number(priceInput?.value);if(control.checked&&(!priceInput?.value||!Number.isFinite(offerPrice)||offerPrice<0)){control.checked=false;priceInput?.focus();toast('Informe primeiro o preço da oferta.','error');return}await saveInlineProduct(row,{is_offer:control.checked},control.checked?'Oferta ativada.':'Oferta desativada.');return}
-    if(control.matches('[data-inline-offer-price]')){const raw=control.value.trim(),n=raw===''?null:Number(raw);if(n!==null&&(!Number.isFinite(n)||n<0)){toast('Informe um preço de oferta válido.','error');loadProducts();return}await saveInlineProduct(row,{offer_price:n},'Preço da oferta atualizado.');}
+    if(control.matches('[data-inline-offer]')){const priceInput=row.querySelector('[data-inline-offer-price]');const raw=priceInput?.value.trim()||'',offerPrice=raw===''?null:Number(raw);if(control.checked&&(offerPrice===null||!Number.isFinite(offerPrice)||offerPrice<0)){control.checked=false;priceInput?.focus();toast('Informe primeiro o preço da oferta.','error');return}await saveInlineProduct(row,{is_offer:control.checked,offer_price:offerPrice},control.checked?'Oferta ativada.':'Oferta desativada.');return}
+    if(control.matches('[data-inline-offer-price]')){const raw=control.value.trim(),n=raw===''?null:Number(raw),offerToggle=row.querySelector('[data-inline-offer]');if(n!==null&&(!Number.isFinite(n)||n<0)){toast('Informe um preço de oferta válido.','error');loadProducts();return}if(offerToggle?.checked&&n===null){toast('Preço da oferta é obrigatório enquanto a oferta estiver ativa.','error');loadProducts();return}await saveInlineProduct(row,{offer_price:n,is_offer:!!offerToggle?.checked},'Preço da oferta atualizado.');}
   }
   async function deleteProductFromRow(row,id){
     const name=row?.dataset.productName||'este produto';if(!confirm(`Apagar ${name}? Esta ação só será concluída se o produto não possuir histórico ou vínculos.`))return;
