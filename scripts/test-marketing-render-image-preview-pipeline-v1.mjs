@@ -8,6 +8,7 @@ const input={
   revision:3,
   render_profile:'square_1_1',
   generation_mode:'no_ai',
+  resource_budget:{max_input_bytes:12_000_000,max_svg_bytes:2_000_000,max_png_bytes:8_000_000,max_complexity_units:200},
   spec:{
     width:1080,
     height:1080,
@@ -52,6 +53,22 @@ assert.equal(first.preview_metadata.sha256,second.preview_metadata.sha256);
 assert.ok(!Object.hasOwn(first.preview_metadata,'png_bytes'));
 assert.ok(!Object.hasOwn(first.svg_metadata,'svg_bytes'));
 
+assert.equal(first.render_integrity.schema_version,'marketing-render-integrity-v1');
+assert.match(first.render_integrity.spec_sha256,/^[0-9a-f]{64}$/);
+assert.equal(first.render_integrity.svg_sha256,first.svg_metadata.sha256);
+assert.equal(first.render_integrity.png_sha256,first.preview_metadata.sha256);
+assert.equal(first.render_integrity.manifest_idempotency_key,first.manifest.idempotency_key);
+assert.equal(first.render_integrity.preview_idempotency_key,first.preview_metadata.idempotency_key);
+assert.equal(first.render_integrity.external_side_effect,false);
+assert.equal(first.render_integrity.network_allowed,false);
+assert.equal(first.render_integrity.storage_write_allowed,false);
+assert.equal(first.render_integrity.filesystem_write_allowed,false);
+assert.equal(first.render_integrity.budget.status,'within_budget');
+assert.ok(first.render_integrity.budget.complexity_units>0);
+assert.ok(first.render_integrity.budget.input_bytes>0);
+assert.equal(first.render_integrity.idempotency_key,second.render_integrity.idempotency_key);
+assert.ok(!JSON.stringify(first.render_integrity).includes(tinyPng.toString('base64')));
+
 await assert.rejects(
   ()=>buildMarketingRenderImagePreviewPipeline({...input,spec:{...input.spec,width:1081}}),
   /render_profile_canvas_mismatch/
@@ -67,6 +84,18 @@ await assert.rejects(
 await assert.rejects(
   ()=>buildMarketingRenderImagePreviewPipeline({...input,spec:{...input.spec,layers:[{type:'image',src:'https://example.test/a.png'}]}}),
   /remote_source_forbidden/
+);
+await assert.rejects(
+  ()=>buildMarketingRenderImagePreviewPipeline({...input,resource_budget:{...input.resource_budget,max_complexity_units:1}}),
+  /render_complexity_budget_exceeded/
+);
+await assert.rejects(
+  ()=>buildMarketingRenderImagePreviewPipeline({...input,resource_budget:{...input.resource_budget,max_svg_bytes:32}}),
+  /svg_budget_exceeded/
+);
+await assert.rejects(
+  ()=>buildMarketingRenderImagePreviewPipeline({...input,resource_budget:{...input.resource_budget,max_png_bytes:32}}),
+  /png_budget_exceeded/
 );
 
 const source=await fs.readFile('scripts/marketing-render-image-preview-pipeline-v1.mjs','utf8');
@@ -86,4 +115,4 @@ for(const forbidden of [
   assert.ok(!source.includes(forbidden),`in-memory preview pipeline must not use filesystem/network/provider: ${forbidden}`);
 }
 
-console.log('PASS: Marketing image preview pipeline stays fully in memory, deterministic and fail-closed.');
+console.log('PASS: Marketing image preview pipeline stays fully in memory, budgeted, integrity-linked, deterministic and fail-closed.');
