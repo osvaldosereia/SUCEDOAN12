@@ -1,4 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import "jsr:@supabase/functions-js@2.112.3";
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
 const CORS={
@@ -14,6 +14,8 @@ const integer=(v:unknown,min=-100000,max=100000)=>Math.min(max,Math.max(min,Numb
 const normalizePhone=(v:unknown)=>{let d=digits(v);if(!d)return null;if(d.startsWith("55")&&(d.length===12||d.length===13))return `+${d}`;if(d.length===10||d.length===11)return `+55${d}`;return null};
 const validGtin=(value:unknown)=>{const g=digits(value);if(!g)return true;if(![8,12,13,14].includes(g.length))return false;const expected=Number(g.at(-1));let sum=0;for(let i=g.length-2,o=0;i>=0;i--,o++)sum+=Number(g[i])*(o%2===0?3:1);return(10-(sum%10))%10===expected};
 const safeGoogleMapsUrl=(v:unknown)=>{const raw=clean(v,1200);if(!raw)return null;try{const u=new URL(raw);const h=u.hostname.toLowerCase();const allowed=u.protocol==="https:"&&(h==="maps.app.goo.gl"||h==="goo.gl"||h==="google.com"||h.endsWith(".google.com"));return allowed?u.toString():null}catch{return null}};
+const PRODUCT_LIST_FIELDS="id,sku,name,gtin,price,offer_price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,physically_verified,source_system,updated_at";
+const PRODUCT_DETAIL_FIELDS="id,sku,name,gtin,ncm,price,offer_price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,source_system,updated_at";
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -25,16 +27,14 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{}
   const action=clean(body?.action||"health",60).toLowerCase();
 
-  if(action==="health")return json({ok:true,mode:"public_no_auth",version:3});
+  if(action==="health")return json({ok:true,mode:"public_no_auth",version:4});
 
   if(action==="products"){
     const page=Math.max(1,integer(body?.page,1,100000));
     const limit=Math.min(100,Math.max(10,integer(body?.limit,10,100)));
     const from=(page-1)*limit,to=from+limit-1;
     const q=clean(body?.q,100),status=clean(body?.status,30),category=clean(body?.category,120),brand=clean(body?.brand,120);
-    let query=sb.from("products")
-      .select("id,sku,name,gtin,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,physically_verified,source_system,updated_at",{count:"exact"})
-      .range(from,to);
+    let query=sb.from("products").select(PRODUCT_LIST_FIELDS,{count:"exact"}).range(from,to);
     if(q){const safe=q.replace(/[,%()]/g," ").trim();if(safe)query=query.or(`name.ilike.%${safe}%,gtin.ilike.%${safe}%,sku.ilike.%${safe}%,brand.ilike.%${safe}%`)}
     if(category)query=query.ilike("category",`%${category.replace(/[%_]/g,"")}%`);
     if(brand)query=query.ilike("brand",`%${brand.replace(/[%_]/g,"")}%`);
@@ -53,7 +53,7 @@ Deno.serve(async(req:Request)=>{
 
   if(action==="product"){
     const id=clean(body?.id,80);if(!id)return json({ok:false,error:"id_required"},400);
-    const {data,error}=await sb.from("products").select("id,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,source_system,updated_at").eq("id",id).maybeSingle();
+    const {data,error}=await sb.from("products").select(PRODUCT_DETAIL_FIELDS).eq("id",id).maybeSingle();
     if(error||!data)return json({ok:false,error:"product_not_found"},404);
     return json({ok:true,product:data});
   }
@@ -66,15 +66,38 @@ Deno.serve(async(req:Request)=>{
     if(src.gtin!==undefined){if(!validGtin(src.gtin))return json({ok:false,error:"invalid_gtin"},400);patch.gtin=digits(src.gtin)||null}
     if(src.ncm!==undefined){const n=digits(src.ncm);if(n&&n.length!==8)return json({ok:false,error:"invalid_ncm"},400);patch.ncm=n||null}
     for(const key of ["price","cost"]){if(src[key]!==undefined){const n=numberValue(src[key]);if(n!==null&&n<0)return json({ok:false,error:`invalid_${key}`},400);patch[key]=n}}
+    if(src.offer_price!==undefined){const n=numberValue(src.offer_price);if(n!==null&&n<0)return json({ok:false,error:"invalid_offer_price"},400);patch.offer_price=n}
+    if(src.stock!==undefined){const n=numberValue(src.stock);if(n===null||n<0)return json({ok:false,error:"invalid_stock"},400);patch.stock=n}
     if(src.sort_order!==undefined)patch.sort_order=integer(src.sort_order);
     if(typeof src.is_active==="boolean")patch.is_active=src.is_active;
     if(typeof src.is_offer==="boolean")patch.is_offer=src.is_offer;
     if(src.validity_date!==undefined)patch.validity_date=clean(src.validity_date,10)||null;
     if(src.tags!==undefined)patch.tags=Array.isArray(src.tags)?src.tags.map((x:any)=>clean(x,80)).filter(Boolean).slice(0,50):[];
     if(patch.name!==undefined&&!patch.name)return json({ok:false,error:"name_required"},400);
-    const {data,error}=await sb.from("products").update(patch).eq("id",id).select("id,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,source_system,updated_at").single();
+    const {data,error}=await sb.from("products").update(patch).eq("id",id).select(PRODUCT_DETAIL_FIELDS).single();
     if(error)return json({ok:false,error:"update_failed",detail:error.message},400);
     return json({ok:true,product:data});
+  }
+
+  if(action==="delete_product"){
+    const id=clean(body?.id,80);if(!id)return json({ok:false,error:"id_required"},400);
+    const {data:product,error:productError}=await sb.from("products").select("id,name").eq("id",id).maybeSingle();
+    if(productError||!product)return json({ok:false,error:"product_not_found"},404);
+    const references:[string,string][]=[
+      ["basket_template_items","product_id"],["cart_items","product_id"],["order_items","product_id"],
+      ["inventory_count_items","product_id"],["inventory_lots","product_id"],["inventory_lot_movements","product_id"],
+      ["cycle_count_tasks","product_id"],["fulfillment_items","product_id"],["customer_product_stats","product_id"],
+      ["catalog_session_items","product_id"],["substitution_group_items","product_id"],
+      ["substitution_evaluations","candidate_product_id"],["substitution_evaluations","original_product_id"]
+    ];
+    for(const [table,column] of references){
+      const {count,error}=await sb.from(table).select("id",{count:"exact",head:true}).eq(column,id);
+      if(error)return json({ok:false,error:"delete_check_failed",detail:error.message},400);
+      if((count||0)>0)return json({ok:false,error:"product_in_use",detail:`${table}.${column}`},409);
+    }
+    const {error}=await sb.from("products").delete().eq("id",id);
+    if(error){if(error.code==="23503")return json({ok:false,error:"product_in_use"},409);return json({ok:false,error:"delete_failed",detail:error.message},400)}
+    return json({ok:true,deleted_id:id});
   }
 
   if(action==="baskets"){
