@@ -5,11 +5,11 @@ const edge=new URL('../supabase/functions/admin-chat-deterministic-v1/index.ts',
 const html=new URL('../admin-v3/chat-deterministic.html',import.meta.url);
 const js=new URL('../admin-v3/chat-deterministic.js',import.meta.url);
 
-test('admin edge is authenticated and manages deterministic config only',()=>{
+test('admin edge follows Admin V3 public-no-auth model with strict origin and deterministic config only',()=>{
   assert.equal(existsSync(edge),true);
   const s=readFileSync(edge,'utf8').toLowerCase();
-  assert.match(s,/auth\.getuser/);
-  assert.match(s,/admin_users/);
+  assert.match(s,/donaantonia\.com\.br/);
+  assert.match(s,/origin_not_allowed/);
   assert.match(s,/shopping_chat_deterministic_config/);
   assert.match(s,/shopping_chat_trigger_events/);
   assert.doesNotMatch(s,/openai|queue_ai_job|bling|make_webhook/);
@@ -25,5 +25,5 @@ test('admin page exposes simple deterministic settings',()=>{
   assert.match(h,/Entrega/i);
   assert.match(h,/Atendente/i);
   assert.match(j,/admin-chat-deterministic-v1/);
-  assert.match(j,/da_admin_v3_auth/);
+  assert.doesNotMatch(j,/da_admin_v3_auth/);
 });
