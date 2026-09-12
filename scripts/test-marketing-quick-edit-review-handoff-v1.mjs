@@ -61,6 +61,18 @@ let snapshot=bridge.getSnapshot();
 assert.equal(snapshot.history.length,1);
 assert.equal(snapshot.latest.revision,2);
 assert.equal(snapshot.comparison,null);
+
+// Exact replay must be idempotent: no duplicate history and no synthetic comparison.
+bridge.handoff(first);
+snapshot=bridge.getSnapshot();
+assert.equal(snapshot.history.length,1,'same review delivery must not duplicate history');
+assert.equal(snapshot.latest.revision,2);
+assert.equal(snapshot.comparison,null);
+
+// Reusing the same idempotency key with different content must fail closed.
+const firstConflict={...first,package_sha256:'9'.repeat(64)};
+assert.throws(()=>bridge.handoff(firstConflict),/idempotency_conflict/);
+
 bridge.handoff(second);
 snapshot=bridge.getSnapshot();
 assert.equal(snapshot.history.length,2);
@@ -68,6 +80,13 @@ assert.equal(snapshot.latest.revision,3);
 assert.equal(snapshot.comparison.status,'contiguous');
 assert.equal(snapshot.comparison.paths[0].status,'changed');
 assert.ok(!JSON.stringify(snapshot).includes('texto que não deve ficar no snapshot'));
+
+// Exact replay of current revision must preserve the existing comparison and history.
+const comparisonBeforeReplay=JSON.stringify(snapshot.comparison);
+bridge.handoff(second);
+snapshot=bridge.getSnapshot();
+assert.equal(snapshot.history.length,2,'current revision replay must remain idempotent');
+assert.equal(JSON.stringify(snapshot.comparison),comparisonBeforeReplay,'replay must not rewrite comparison');
 
 const third=packet({fromRevision:3,revision:4,path:'/layers/1/text',afterSha:'5'.repeat(64),packageSha:'6'.repeat(64)});
 bridge.handoff(third);
@@ -77,4 +96,4 @@ assert.deepEqual(Array.from(snapshot.history, item => item.revision),[3,4]);
 
 assert.throws(()=>bridge.compareRevisions(first,third),/non_contiguous_revisions/);
 assert.throws(()=>bridge.sanitizePacket({...first,network_allowed:true}),/unsafe_review_packet/);
-console.log('PASS: quick edit review handoff is bounded-memory, metadata-only, revision-aware and read-only.');
+console.log('PASS: quick edit review handoff is bounded-memory, metadata-only, revision-aware, idempotent and read-only.');
