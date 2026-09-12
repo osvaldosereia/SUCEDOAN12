@@ -15,6 +15,9 @@ on:
       - 'scripts/marketing-channel-preflight-v1.mjs'
       - 'scripts/test-marketing-approval-preview-v1.mjs'
       - 'scripts/marketing-approval-preview-v1.mjs'
+      - 'scripts/test-marketing-approval-preview-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-ai-preflight-v1.mjs'
+      - 'scripts/marketing-ai-preflight-v1.mjs'
       - 'scripts/test-marketing-render-svg-v1.mjs'
       - 'scripts/marketing-render-svg-v1.mjs'
       - 'admin/app-lite.js'
@@ -37,6 +40,9 @@ on:
       - 'scripts/marketing-channel-preflight-v1.mjs'
       - 'scripts/test-marketing-approval-preview-v1.mjs'
       - 'scripts/marketing-approval-preview-v1.mjs'
+      - 'scripts/test-marketing-approval-preview-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-ai-preflight-v1.mjs'
+      - 'scripts/marketing-ai-preflight-v1.mjs'
       - 'scripts/test-marketing-render-svg-v1.mjs'
       - 'scripts/marketing-render-svg-v1.mjs'
       - 'admin/app-lite.js'
@@ -63,8 +69,10 @@ jobs:
           node --check admin-v3/marketing-library-v1.js
           node --check admin-v3/marketing-operations-readonly-v1.js
           node --check admin-v3/marketing-readiness-readonly-v1.js
+          node --check admin-v3/marketing-approval-preview-readonly-v1.js
           node --check scripts/marketing-channel-preflight-v1.mjs
           node --check scripts/marketing-approval-preview-v1.mjs
+          node --check scripts/marketing-ai-preflight-v1.mjs
           node --check scripts/marketing-render-svg-v1.mjs
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
@@ -80,5 +88,9 @@ jobs:
         run: node scripts/test-marketing-channel-preflight-v1.mjs
       - name: Validate local-only Marketing approval preview contract
         run: node scripts/test-marketing-approval-preview-v1.mjs
+      - name: Validate dormant approval preview UI contract
+        run: node scripts/test-marketing-approval-preview-readonly-ui-v1.mjs
+      - name: Validate local-only Marketing AI preflight contract
+        run: node scripts/test-marketing-ai-preflight-v1.mjs
       - name: Validate local-only deterministic Marketing SVG renderer
         run: node scripts/test-marketing-render-svg-v1.mjs
