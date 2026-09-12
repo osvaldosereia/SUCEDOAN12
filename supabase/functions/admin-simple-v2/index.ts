@@ -34,7 +34,6 @@ Deno.serve(async(req:Request)=>{
     const q=clean(body?.q,100),status=clean(body?.status,30),category=clean(body?.category,120),brand=clean(body?.brand,120);
     let query=sb.from("products")
       .select("id,sku,name,gtin,price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,physically_verified,source_system,updated_at",{count:"exact"})
-      .or("physically_verified.eq.true,source_system.eq.inventory_fast_discovered,source_system.eq.inventory_fast_firebase,source_system.eq.firebase_verified,source_system.eq.ai_ean_research")
       .range(from,to);
     if(q){const safe=q.replace(/[,%()]/g," ").trim();if(safe)query=query.or(`name.ilike.%${safe}%,gtin.ilike.%${safe}%,sku.ilike.%${safe}%,brand.ilike.%${safe}%`)}
     if(category)query=query.ilike("category",`%${category.replace(/[%_]/g,"")}%`);
