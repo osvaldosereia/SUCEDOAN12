@@ -25,6 +25,7 @@ function stable(value){
   return Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])]));
 }
 function digest(value){return createHash('sha256').update(JSON.stringify(stable(value))).digest('hex').slice(0,32)}
+function isSha(value){return /^[a-f0-9]{64}$/i.test(text(value))}
 function safeAsset(asset){
   if(!asset||typeof asset!=='object'||Array.isArray(asset)||!text(asset.id))throw new Error('asset_required');
   return {
@@ -65,16 +66,18 @@ function validateRenderManifest(manifest,channel,asset){
   if(!manifest||typeof manifest!=='object'||Array.isArray(manifest))return {manifest:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:null,error:'invalid_manifest'}};
   const actualProfile=text(manifest.render_profile)||null;
   const checks=[
-    ['schema_version',manifest.schema_version==='marketing-render-manifest-v1','schema_version_invalid'],
-    ['dry_run',manifest.dry_run===true,'dry_run_not_true'],
-    ['external_side_effect',manifest.external_side_effect===false,'external_side_effect_not_false'],
-    ['network_allowed',manifest.network_allowed===false,'network_allowed_not_false'],
-    ['provider_call_allowed',manifest.provider_call_allowed===false,'provider_call_allowed_not_false'],
-    ['executor_allowed',manifest.executor_allowed===false,'executor_allowed_not_false'],
-    ['asset_id',text(manifest.asset_id)===asset.id,'asset_id_mismatch']
+    [manifest.schema_version==='marketing-render-manifest-v1','schema_version_invalid'],
+    [manifest.dry_run===true,'dry_run_not_true'],
+    [manifest.external_side_effect===false,'external_side_effect_not_false'],
+    [manifest.network_allowed===false,'network_allowed_not_false'],
+    [manifest.provider_call_allowed===false,'provider_call_allowed_not_false'],
+    [manifest.executor_allowed===false,'executor_allowed_not_false'],
+    [text(manifest.asset_id)===asset.id,'asset_id_mismatch'],
+    [Number.isInteger(Number(manifest.revision))&&Number(manifest.revision)>=1,'revision_invalid'],
+    [Boolean(text(manifest.idempotency_key)),'idempotency_key_missing']
   ];
-  const failed=checks.find(([,ok])=>!ok);
-  if(failed)return {manifest:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:actualProfile,error:failed[2]}};
+  const failed=checks.find(([ok])=>!ok);
+  if(failed)return {manifest:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:actualProfile,error:failed[1]}};
   const safeManifest={
     schema_version:'marketing-render-manifest-v1',
     asset_id:text(manifest.asset_id),
@@ -120,7 +123,7 @@ function validateRenderPreviewMetadata(metadata,render,asset){
     [Number.isInteger(width)&&width>0&&Number.isInteger(height)&&height>0,'dimensions_invalid'],
     [text(metadata.mime_type)==='image/png','mime_type_invalid'],
     [Number.isInteger(byteLength)&&byteLength>0,'byte_length_invalid'],
-    [/^[a-f0-9]{64}$/i.test(sha),'sha256_invalid'],
+    [isSha(sha),'sha256_invalid'],
     [Boolean(text(metadata.raster_idempotency_key)),'raster_idempotency_key_missing'],
     [Boolean(text(metadata.idempotency_key)),'idempotency_key_missing']
   ];
@@ -159,6 +162,74 @@ function validateRenderPreviewMetadata(metadata,render,asset){
   }
   return {metadata:safeMetadata,validation:{status:'compatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:null}};
 }
+function validateRenderIntegrity(integrity,render,preview,asset){
+  const expectedProfile=render.validation.expected_profile||null;
+  if(integrity==null)return {integrity:null,validation:{status:'not_provided',expected_profile:expectedProfile,actual_profile:null,error:null}};
+  if(!integrity||typeof integrity!=='object'||Array.isArray(integrity))return {integrity:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:null,error:'invalid_integrity'}};
+  const actualProfile=text(integrity.render_profile)||null;
+  const revision=Number(integrity.revision);
+  const sourceAssets=Array.isArray(integrity.source_assets)?integrity.source_assets:[];
+  const budget=integrity.budget&&typeof integrity.budget==='object'&&!Array.isArray(integrity.budget)?integrity.budget:null;
+  const limits=budget?.limits&&typeof budget.limits==='object'&&!Array.isArray(budget.limits)?budget.limits:null;
+  const safeSources=[];
+  let sourceError=null;
+  for(const source of sourceAssets){
+    const byteLength=Number(source?.byte_length);
+    if(!source||typeof source!=='object'||Array.isArray(source)||!text(source.key)||!text(source.mime_type)||!isSha(source.sha256)||!Number.isInteger(byteLength)||byteLength<1){sourceError='source_asset_invalid';break;}
+    safeSources.push({key:text(source.key),mime_type:text(source.mime_type),sha256:text(source.sha256).toLowerCase(),byte_length:byteLength});
+  }
+  const numericBudgetKeys=['input_bytes','svg_bytes','png_bytes','complexity_units'];
+  const numericLimitKeys=['max_input_bytes','max_svg_bytes','max_png_bytes','max_complexity_units'];
+  const checks=[
+    [integrity.schema_version==='marketing-render-integrity-v1','schema_version_invalid'],
+    [integrity.preview_only===true,'preview_only_not_true'],
+    [integrity.external_side_effect===false,'external_side_effect_not_false'],
+    [integrity.network_allowed===false,'network_allowed_not_false'],
+    [integrity.provider_call_allowed===false,'provider_call_allowed_not_false'],
+    [integrity.storage_write_allowed===false,'storage_write_allowed_not_false'],
+    [integrity.filesystem_write_allowed===false,'filesystem_write_allowed_not_false'],
+    [text(integrity.asset_id)===asset.id,'asset_id_mismatch'],
+    [Number.isInteger(revision)&&revision>=1,'revision_invalid'],
+    [Boolean(actualProfile),'render_profile_missing'],
+    [isSha(integrity.spec_sha256),'spec_sha256_invalid'],
+    [isSha(integrity.svg_sha256),'svg_sha256_invalid'],
+    [isSha(integrity.png_sha256),'png_sha256_invalid'],
+    [Boolean(text(integrity.manifest_idempotency_key)),'manifest_idempotency_key_missing'],
+    [Boolean(text(integrity.svg_idempotency_key)),'svg_idempotency_key_missing'],
+    [Boolean(text(integrity.preview_idempotency_key)),'preview_idempotency_key_missing'],
+    [Boolean(text(integrity.idempotency_key)),'idempotency_key_missing'],
+    [sourceError==null,sourceError||'source_asset_invalid'],
+    [Boolean(budget)&&budget.status==='within_budget','budget_not_within_limits'],
+    [Boolean(limits),'budget_limits_missing'],
+    [Boolean(budget)&&numericBudgetKeys.every(key=>Number.isInteger(Number(budget[key]))&&Number(budget[key])>=0),'budget_values_invalid'],
+    [Boolean(limits)&&numericLimitKeys.every(key=>Number.isInteger(Number(limits[key]))&&Number(limits[key])>0),'budget_limits_invalid']
+  ];
+  if(render.manifest){
+    checks.push([revision===Number(render.manifest.revision),'revision_mismatch']);
+    checks.push([text(integrity.manifest_idempotency_key)===text(render.manifest.idempotency_key),'manifest_idempotency_key_mismatch']);
+    checks.push([actualProfile===render.manifest.render_profile,'render_profile_mismatch']);
+  }else checks.push([false,'render_manifest_required']);
+  if(preview.metadata){
+    checks.push([revision===Number(preview.metadata.revision),'preview_revision_mismatch']);
+    checks.push([actualProfile===preview.metadata.render_profile,'preview_render_profile_mismatch']);
+    checks.push([text(integrity.png_sha256).toLowerCase()===preview.metadata.sha256,'png_sha256_mismatch']);
+    checks.push([text(integrity.preview_idempotency_key)===preview.metadata.idempotency_key,'preview_idempotency_key_mismatch']);
+  }else checks.push([false,'render_preview_required']);
+  const failed=checks.find(([ok])=>!ok);
+  if(failed)return {integrity:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:actualProfile,error:failed[1]}};
+  const safeIntegrity={
+    schema_version:'marketing-render-integrity-v1',
+    asset_id:text(integrity.asset_id),revision,render_profile:actualProfile,
+    spec_sha256:text(integrity.spec_sha256).toLowerCase(),source_assets:safeSources,
+    manifest_idempotency_key:text(integrity.manifest_idempotency_key),svg_idempotency_key:text(integrity.svg_idempotency_key),svg_sha256:text(integrity.svg_sha256).toLowerCase(),
+    png_sha256:text(integrity.png_sha256).toLowerCase(),preview_idempotency_key:text(integrity.preview_idempotency_key),
+    budget:{status:'within_budget',...Object.fromEntries(numericBudgetKeys.map(key=>[key,Number(budget[key])])),limits:Object.fromEntries(numericLimitKeys.map(key=>[key,Number(limits[key])]))},
+    preview_only:true,external_side_effect:false,network_allowed:false,provider_call_allowed:false,storage_write_allowed:false,filesystem_write_allowed:false,
+    idempotency_key:text(integrity.idempotency_key)
+  };
+  if(expectedProfile&&actualProfile!==expectedProfile)return {integrity:safeIntegrity,validation:{status:'incompatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:'channel_format_mismatch'}};
+  return {integrity:safeIntegrity,validation:{status:'compatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:null}};
+}
 
 export function buildMarketingApprovalPreview(input={}){
   const asset=safeAsset(input.asset);
@@ -171,25 +242,10 @@ export function buildMarketingApprovalPreview(input={}){
     let preflight;
     try{preflight=buildMarketingChannelPreflight(channel,target?.input||{})}
     catch(error){
-      preflight={
-        schema_version:'marketing-channel-preflight-v1',
-        channel,
-        ok:false,
-        dry_run:true,
-        external_side_effect:false,
-        network_allowed:false,
-        credentials_required_now:false,
-        publisher_enabled:false,
-        request:null,
-        request_preview:null,
-        validation:{errors:[text(error?.message)||'invalid_channel'],warnings:[]},
-        idempotency_key:`marketing-preflight-v1:${digest({channel,error:text(error?.message)})}`
-      };
+      preflight={schema_version:'marketing-channel-preflight-v1',channel,ok:false,dry_run:true,external_side_effect:false,network_allowed:false,credentials_required_now:false,publisher_enabled:false,request:null,request_preview:null,validation:{errors:[text(error?.message)||'invalid_channel'],warnings:[]},idempotency_key:`marketing-preflight-v1:${digest({channel,error:text(error?.message)})}`};
     }
     blockers.push(...runtimeBlockers(runtime,channel));
-    if(!preflight.ok){
-      for(const error of preflight.validation?.errors||['invalid_preflight'])blockers.push(`preflight_invalid:${channel}:${text(error)}`);
-    }
+    if(!preflight.ok)for(const error of preflight.validation?.errors||['invalid_preflight'])blockers.push(`preflight_invalid:${channel}:${text(error)}`);
     const render=validateRenderManifest(target?.render_manifest,channel,asset);
     if(render.validation.status==='not_provided')blockers.push(`render_manifest_missing:${channel}`);
     if(render.validation.status==='invalid')blockers.push(`render_manifest_invalid:${channel}:${render.validation.error}`);
@@ -198,30 +254,14 @@ export function buildMarketingApprovalPreview(input={}){
     if(preview.validation.status==='not_provided')blockers.push(`render_preview_missing:${channel}`);
     if(preview.validation.status==='invalid')blockers.push(`render_preview_invalid:${channel}:${preview.validation.error}`);
     if(preview.validation.status==='incompatible')blockers.push(`render_preview_incompatible:${channel}:${preview.validation.actual_profile}:${preview.validation.expected_profile}`);
-    return {channel,preflight,render_manifest:render.manifest,render_validation:render.validation,render_preview_metadata:preview.metadata,render_preview_validation:preview.validation};
+    const integrity=validateRenderIntegrity(target?.render_integrity,render,preview,asset);
+    if(integrity.validation.status==='not_provided')blockers.push(`render_integrity_missing:${channel}`);
+    if(integrity.validation.status==='invalid')blockers.push(`render_integrity_invalid:${channel}:${integrity.validation.error}`);
+    if(integrity.validation.status==='incompatible')blockers.push(`render_integrity_incompatible:${channel}:${integrity.validation.actual_profile}:${integrity.validation.expected_profile}`);
+    return {channel,preflight,render_manifest:render.manifest,render_validation:render.validation,render_preview_metadata:preview.metadata,render_preview_validation:preview.validation,render_integrity:integrity.integrity,render_integrity_validation:integrity.validation};
   });
 
   const uniqueBlockers=[...new Set(blockers)];
-  const identity={asset,runtime,targets:targets.map(({channel,preflight,render_manifest,render_validation,render_preview_metadata,render_preview_validation})=>({
-    channel,
-    preflight_idempotency_key:preflight.idempotency_key,
-    render_manifest_idempotency_key:render_manifest?.idempotency_key||null,
-    render_validation_status:render_validation.status,
-    render_preview_idempotency_key:render_preview_metadata?.idempotency_key||null,
-    render_preview_validation_status:render_preview_validation.status
-  }))};
-  return {
-    schema_version:'marketing-approval-preview-v1',
-    preview_only:true,
-    approval_state:'preview_only',
-    ready_for_real_publish:false,
-    external_side_effect:false,
-    network_allowed:false,
-    mutations_allowed:false,
-    asset,
-    runtime_snapshot:runtime,
-    targets,
-    blockers:uniqueBlockers,
-    idempotency_key:`marketing-approval-preview-v1:${digest(identity)}`
-  };
+  const identity={asset,runtime,targets:targets.map(({channel,preflight,render_manifest,render_validation,render_preview_metadata,render_preview_validation,render_integrity,render_integrity_validation})=>({channel,preflight_idempotency_key:preflight.idempotency_key,render_manifest_idempotency_key:render_manifest?.idempotency_key||null,render_validation_status:render_validation.status,render_preview_idempotency_key:render_preview_metadata?.idempotency_key||null,render_preview_validation_status:render_preview_validation.status,render_integrity_idempotency_key:render_integrity?.idempotency_key||null,render_integrity_validation_status:render_integrity_validation.status}))};
+  return {schema_version:'marketing-approval-preview-v1',preview_only:true,approval_state:'preview_only',ready_for_real_publish:false,external_side_effect:false,network_allowed:false,mutations_allowed:false,asset,runtime_snapshot:runtime,targets,blockers:uniqueBlockers,idempotency_key:`marketing-approval-preview-v1:${digest(identity)}`};
 }
