@@ -1,5 +1,35 @@
 begin;
 
+create or replace function public.guard_web_existing_customer_binding_v1()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_customer_created_at timestamptz;
+begin
+  if old.customer_id is null
+     and new.customer_id is not null
+     and coalesce(old.metadata->>'entry_channel',new.metadata->>'entry_channel','')='website'
+     and nullif(coalesce(new.metadata->>'web_identity_verified_at',''),'') is null then
+    select c.created_at into v_customer_created_at from public.customers c where c.id=new.customer_id;
+    if v_customer_created_at is not null and v_customer_created_at < old.created_at then
+      raise exception 'customer_verification_required';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_web_existing_customer_binding_v1 on public.catalog_sessions;
+create trigger guard_web_existing_customer_binding_v1
+before update of customer_id on public.catalog_sessions
+for each row execute function public.guard_web_existing_customer_binding_v1();
+
+revoke all on function public.guard_web_existing_customer_binding_v1() from public,anon,authenticated;
+grant execute on function public.guard_web_existing_customer_binding_v1() to service_role;
+
 create or replace function public.confirm_web_room_identity_from_whatsapp_v1(
   p_from text,
   p_text text,
@@ -66,6 +96,15 @@ begin
   ) then
     return jsonb_build_object('ok',false,'reason','verification_phone_mismatch');
   end if;
+
+  update public.catalog_sessions
+     set metadata=coalesce(metadata,'{}'::jsonb)
+                  || jsonb_build_object(
+                    'web_identity_verified_at',now(),
+                    'web_identity_verification_method','whatsapp'
+                  ),
+         last_activity_at=now()
+   where id=v_session.id;
 
   v_identified:=public.room_identify_customer(
     v_session.public_token,
