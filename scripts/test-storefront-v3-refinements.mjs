@@ -5,7 +5,9 @@ const read=file=>fs.readFileSync(file,'utf8');
 const app=read('vitrine-v3/app.js');
 const baskets=read('vitrine-v3/baskets.js');
 const checkout=read('vitrine-v3/checkout.js');
+const state=read('vitrine-v3/state.js');
 const css=read('vitrine-v3/styles.css')+'\n'+read('vitrine-v3/details.css')+'\n'+read('vitrine-v3/flow.css');
+const migrations=fs.readdirSync('supabase/migrations').filter(x=>x.endsWith('.sql')).map(x=>read(`supabase/migrations/${x}`)).join('\n');
 
 // Checkout precisa continuar simples, mas com foto pequena em cada item.
 assert.match(checkout,/checkout-item-photo/,'checkout precisa renderizar foto do produto');
@@ -20,6 +22,10 @@ assert.doesNotMatch(baskets,/Total até agora|basket-inline-total/,'não deve ex
 // Itens removíveis podem ser reduzidos mesmo quando não permitem aumento.
 assert.match(baskets,/canReduce\s*=\s*item\.removable===true/,'redução precisa respeitar removable');
 assert.match(baskets,/canIncrease\s*=\s*item\.quantity_editable===true/,'aumento precisa respeitar quantity_editable');
+assert.match(state,/reducing[\s\S]*item\.removable/,'estado precisa permitir redução de item removível');
+assert.match(state,/increasing[\s\S]*item\.quantity_editable/,'estado precisa exigir quantity_editable para aumentar');
+assert.match(migrations,/v_qty\s*<\s*v_bi\.quantity[\s\S]*v_bi\.removable/i,'servidor precisa aceitar redução de item removível');
+assert.match(migrations,/v_qty\s*>\s*v_bi\.quantity[\s\S]*v_bi\.quantity_editable/i,'servidor precisa manter aumento restrito a item editável');
 
 // Depois da cesta: Ofertas de Hoje em carrossel, até 10 cards; depois busca e chips.
 assert.match(app,/Ofertas de Hoje/,'título de ofertas precisa ser “Ofertas de Hoje”');
