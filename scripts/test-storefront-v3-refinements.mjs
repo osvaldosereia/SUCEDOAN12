@@ -23,11 +23,11 @@ assert.doesNotMatch(baskets,/Total até agora|basket-inline-total/,'não deve ex
 
 // Itens removíveis podem ser reduzidos e restaurados até a quantidade original sem liberar aumento acima dela.
 assert.match(baskets,/canReduce\s*=\s*item\.removable===true/,'redução precisa respeitar removable');
-assert.match(baskets,/canIncrease[\s\S]*base_quantity/,'item removível precisa poder voltar até a quantidade original');
+assert.match(baskets,/base_quantity[\s\S]*canIncrease/,'item removível precisa poder voltar até a quantidade original');
 assert.match(cart,/canReduce\s*=\s*item\.removable===true/,'pedido precisa repetir a mesma regra de redução');
-assert.match(cart,/canIncrease[\s\S]*base_quantity/,'pedido precisa permitir restaurar até a quantidade original');
+assert.match(cart,/base_quantity[\s\S]*canIncrease/,'pedido precisa permitir restaurar até a quantidade original');
 assert.match(state,/reducing[\s\S]*item\.removable/,'estado precisa permitir redução de item removível');
-assert.match(state,/increasing[\s\S]*base_quantity[\s\S]*item\.quantity_editable/,'estado precisa permitir restauração até a base e exigir edição acima dela');
+assert.match(state,/base_quantity[\s\S]*increasing[\s\S]*requested>base[\s\S]*item\.quantity_editable/,'estado precisa permitir restauração até a base e exigir edição acima dela');
 assert.match(migrations,/v_qty\s*<\s*v_bi\.quantity[\s\S]*v_bi\.removable/i,'servidor precisa aceitar redução de item removível');
 assert.match(migrations,/v_qty\s*>\s*v_bi\.quantity[\s\S]*v_bi\.quantity_editable/i,'servidor precisa manter aumento acima da base restrito a item editável');
 
