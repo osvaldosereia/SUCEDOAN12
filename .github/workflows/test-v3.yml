@@ -21,6 +21,7 @@ on:
       - 'scripts/test-storefront-v3-senior-ux-polish.mjs'
       - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
+      - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - '.github/workflows/test-v3.yml'
   pull_request:
     branches: [main]
@@ -41,6 +42,7 @@ on:
       - 'scripts/test-storefront-v3-senior-ux-polish.mjs'
       - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
+      - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - '.github/workflows/test-v3.yml'
   workflow_dispatch:
 
@@ -73,6 +75,8 @@ jobs:
         run: node scripts/test-catalog-v3-contract.mjs
       - name: Contrato Admin V3
         run: node scripts/test-admin-v3-contract.mjs
+      - name: Controles inline Admin V3
+        run: node scripts/test-admin-v3-inline-product-controls.mjs
       - name: Validar JavaScript V3
         run: |
           node --check vitrine-v3/app.js
