@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>Dona Antônia · Atendimento · Admin V3</title>
+  <link rel="stylesheet" href="./styles.css?v=20260911-2">
+  <link rel="stylesheet" href="./service-strategy.css?v=20260912-1">
+</head>
+<body class="strategy-body">
+  <header class="strategy-topbar">
+    <a class="strategy-back" href="./">← Admin V3</a>
+    <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>Gatilhos, histórico e evolução</span></div></div>
+    <span id="runtimeBadge" class="strategy-runtime-badge">Carregando…</span>
+  </header>
+
+  <main class="strategy-shell">
+    <section id="loginGate" class="strategy-login hidden">
+      <div class="strategy-login-card">
+        <div class="eyebrow">Área protegida</div>
+        <h1>Histórico do atendimento</h1>
+        <p>O Admin V3 principal continua abrindo sem senha. Só esta área pede o código porque contém conversas e dados de clientes.</p>
+        <form id="strategyLoginForm" autocomplete="off">
+          <label>Código de 6 números<input id="strategyPin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required></label>
+          <button id="strategyLoginButton" class="primary" type="submit">Abrir atendimento</button>
+          <div id="strategyLoginStatus" class="strategy-login-status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <section id="strategyApp" class="hidden">
+      <div class="strategy-page-head">
+        <div><div class="eyebrow">Admin V3</div><h1>Central de Atendimento</h1><p>Configure o que a IA pode responder, revise os últimos 7 dias e acompanhe cada ajuste feito na estratégia.</p></div>
+        <div class="strategy-page-actions"><button id="strategyRefresh" class="secondary" type="button">Atualizar</button><button id="strategyLogout" class="secondary" type="button">Bloquear área</button></div>
+      </div>
+
+      <nav class="strategy-tabs" aria-label="Seções do atendimento">
+        <button class="active" type="button" data-strategy-tab="rules">Regras</button>
+        <button type="button" data-strategy-tab="history">Histórico 7 dias</button>
+        <button type="button" data-strategy-tab="evolution">Evolução</button>
+      </nav>
+
+      <section id="tabRules" class="strategy-tab active">
+        <div id="ruleMetrics" class="strategy-metrics"></div>
+        <div class="strategy-rule-grid">
+          <section class="panel strategy-rule-list-panel">
+            <div class="strategy-panel-head"><div><div class="eyebrow">Gatilhos cadastrados</div><h2>Conversas</h2></div><button id="ruleNew" class="primary" type="button">+ Nova</button></div>
+            <div class="strategy-toolbar"><input id="ruleSearch" type="search" placeholder="Buscar pergunta ou resposta"></div>
+            <div id="ruleList" class="strategy-rule-list"></div>
+          </section>
+          <section class="panel strategy-rule-editor-panel">
+            <div class="strategy-panel-head"><div><div class="eyebrow">Editor</div><h2 id="ruleEditorTitle">Nova orientação</h2></div><span id="ruleStatus" class="strategy-status-pill">Rascunho</span></div>
+            <div id="ruleEditor"></div>
+            <div class="strategy-change-note">
+              <label>Motivo do ajuste <input id="changeReason" placeholder="Ex.: clientes perguntam muito pelas formas de pagamento"></label>
+              <label>Resultado esperado <input id="changeExpected" placeholder="Ex.: reduzir repasse ao humano e responder em uma mensagem"></label>
+            </div>
+            <div class="strategy-editor-actions"><button id="ruleSave" class="primary" type="button">Salvar</button><button id="rulePublish" class="secondary" type="button">Publicar</button><button id="ruleArchive" class="secondary" type="button">Arquivar</button></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="tabHistory" class="strategy-tab">
+        <div class="strategy-section-head"><div><div class="eyebrow">Últimos 7 dias</div><h2>Conversas reais</h2><p>Use este histórico para descobrir o que os clientes realmente perguntam antes de criar novos gatilhos.</p></div></div>
+        <form id="historySearchForm" class="strategy-toolbar"><input id="historySearch" type="search" placeholder="Buscar por cliente, final do telefone ou mensagem"><button class="secondary" type="submit">Buscar</button></form>
+        <div class="strategy-history-grid">
+          <section class="panel"><div id="historySummary" class="strategy-history-summary"></div><div id="conversationList" class="strategy-conversation-list"></div><div id="historyPagination" class="strategy-pagination"></div></section>
+          <section class="panel strategy-conversation-detail"><div id="conversationDetail" class="strategy-empty">Selecione uma conversa para ver as mensagens.</div></section>
+        </div>
+      </section>
+
+      <section id="tabEvolution" class="strategy-tab">
+        <div class="strategy-section-head"><div><div class="eyebrow">Evolução contínua</div><h2>Análise e histórico de ajustes</h2><p>Snapshots guardam o estado de cada rodada para comparar o que melhorou, piorou ou precisa ser revertido.</p></div><button id="generateSnapshot" class="primary" type="button">Gerar análise agora</button></div>
+        <div id="strategyMetrics" class="strategy-metrics"></div>
+        <div class="strategy-evolution-grid">
+          <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Diagnóstico</div><h3>Última análise</h3></div></div><div id="latestAnalysis" class="strategy-empty">Nenhum snapshot ainda.</div></section>
+          <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Comparação</div><h3>Snapshots</h3></div></div><div id="snapshotList" class="strategy-snapshot-list"></div></section>
+        </div>
+        <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Auditoria</div><h3>Histórico de ajustes</h3></div><span class="strategy-help">Antes/depois registrado automaticamente</span></div><div id="changeLog" class="strategy-change-log"></div></section>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="changeDialog" class="strategy-dialog"><form id="changeDialogForm" method="dialog"><div id="changeDialogBody"></div></form></dialog>
+  <div id="toastRegion" class="toasts" aria-live="polite"></div>
+  <script type="module" src="./service-strategy.js?v=20260912-1"></script>
+</body>
+</html>
