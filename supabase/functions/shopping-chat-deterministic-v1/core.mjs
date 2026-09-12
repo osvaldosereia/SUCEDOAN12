@@ -16,3 +16,18 @@ export function routeDeterministicText(value=''){
   if(/\b(mercearia|arroz|feijao|cafe|macarrao|molho|tempero|produto|produtos|comprar)\b/.test(s))return {type:'products',category:'mercearia',state:'VIEWING_PRODUCTS'};
   return {type:'menu',state:'MENU'};
 }
+
+export function mergeDeterministicMetadata(currentMetadata={},state='',patch={}){
+  const current=currentMetadata&&typeof currentMetadata==='object'&&!Array.isArray(currentMetadata)?currentMetadata:{};
+  const extra=patch&&typeof patch==='object'&&!Array.isArray(patch)?patch:{};
+  return {...current,...extra,...(state?{state}: {})};
+}
+
+export function extractPapoAIIdentity(payload={}){
+  const source=payload&&typeof payload==='object'?payload:{};
+  const pick=(...values)=>values.map(v=>String(v??'').replace(/\s+/g,' ').trim()).find(Boolean)||'';
+  return {
+    name:pick(source.name,source.nome,source.contact_name,source.lead_name,source.customer_name),
+    phone:pick(source.phone,source.telefone,source.whatsapp,source.whatsapp_phone,source.wa_id,source.contact_phone)
+  };
+}
