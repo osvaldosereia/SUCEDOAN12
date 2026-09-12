@@ -10,6 +10,15 @@ verify_jwt = false
 [functions.whatsapp-outbound-v1]
 verify_jwt = false
 
+# Webhook oficial Meta direto. JWT desligado porque a Meta não envia Supabase JWT;
+# a função valida hub.verify_token no GET e x-hub-signature-256/HMAC no POST.
+[functions.whatsapp-meta-direct-v1]
+verify_jwt = false
+
+# Admin sensível do canal direto: JWT obrigatório + validação de admin_users no handler.
+[functions.admin-whatsapp-direct-v1]
+verify_jwt = true
+
 # Compatibilidade histórica. O dispatcher/cron canônicos já usam conversation-worker-v3.
 [functions.conversation-worker-v2]
 verify_jwt = false
