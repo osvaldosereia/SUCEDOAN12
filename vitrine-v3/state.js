@@ -16,9 +16,10 @@ export function setBasket(data){
 }
 export function setBasketQuantity(productId,next){
   const item=state.basketItems.find(x=>x.product_id===productId);if(!item)return;
-  const current=Number(item.quantity||0);const requested=Math.floor(Number(next)||0);const reducing=requested<current;const increasing=requested>current;
+  const current=Number(item.quantity||0);const requested=Math.floor(Number(next)||0);const base=Number(item.base_quantity??current);const reducing=requested<current;const increasing=requested>current;
   if(reducing&&!item.removable&&!item.quantity_editable)return;
-  if(increasing&&!item.quantity_editable)return;
+  if(increasing&&requested>base&&!item.quantity_editable)return;
+  if(increasing&&requested<=base&&!item.removable&&!item.quantity_editable)return;
   const min=Math.max(0,Number(item.min_quantity||0));const max=item.max_quantity==null?Math.max(min,Number(item.product?.stock??0)):Math.max(min,Number(item.max_quantity));
   item.quantity=Math.max(min,Math.min(max,requested));persist();
 }
