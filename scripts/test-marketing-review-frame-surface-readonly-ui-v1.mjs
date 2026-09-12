@@ -119,3 +119,4 @@ assert.throws(()=>surface.mountCurrent(tamperedRoot,tampered),/review_frame_surf
 assert.equal(tamperedRoot.innerHTML,'unchanged-tampered');
 
 console.log('PASS: dormant Marketing review frame surface exposes only sanitized status/revision/epoch/counts, renders lifecycle states read-only, and fails closed before DOM mutation for superseded, stale, revoked or tampered leases.');
+await import('./test-marketing-review-active-aggregate-readonly-ui-v1.mjs');
