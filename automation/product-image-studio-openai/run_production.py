@@ -3,8 +3,8 @@
 
 The pipeline edits one real product photo at a time. It never uses local
 background segmentation. When the current asset was produced by the legacy
-rembg workflow, the original predecessor image is recovered from Git history
-and used as the OpenAI input.
+rembg workflow, the original predecessor image is recovered through the GitHub
+API and used as the OpenAI input.
 
 Dry-run writes previews only. Production mode replaces the same catalog path
 and records a hash ledger so the same output is not processed again.
@@ -18,11 +18,11 @@ import hashlib
 import io
 import json
 import os
-import subprocess
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import requests
 from openai import OpenAI
@@ -36,11 +36,12 @@ DEFAULT_STATE = Path("automation/product-image-studio-openai/state.json")
 DEFAULT_REPORT = Path("artifacts/product-image-studio-openai/result.json")
 DEFAULT_PREVIEW = Path("artifacts/product-image-studio-openai/previews")
 PATTERN = "*foto-atual-otimizada*.webp"
-PIPELINE_VERSION = "openai-sunburst-low-v1"
+PIPELINE_VERSION = "openai-sunburst-low-v2"
 TARGET_SIZE = 400
 INNER_SIZE = 320
 TARGET_MAX_BYTES = 100_000
 LEGACY_COMMIT_PREFIX = "chore: process product studio image batch"
+GITHUB_API = "https://api.github.com"
 
 
 def utc_now() -> str:
@@ -64,31 +65,69 @@ def derive_product_name(path: Path) -> str:
     return " ".join(words)[:180] or "produto"
 
 
-def git_original_before_legacy(repo_root: Path, rel_path: str, current: bytes) -> tuple[bytes, str]:
-    """Recover the version immediately before legacy rembg touched this path."""
-    log = subprocess.run(
-        ["git", "log", "-1", "--format=%H%x09%s", "--", rel_path],
-        cwd=repo_root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    line = log.stdout.decode("utf-8", errors="replace").strip()
-    if not line or "\t" not in line:
-        return current, "current_asset"
-    commit_sha, subject = line.split("\t", 1)
-    if not subject.startswith(LEGACY_COMMIT_PREFIX):
-        return current, "current_asset"
-    show = subprocess.run(
-        ["git", "show", f"{commit_sha}^:{rel_path}"],
-        cwd=repo_root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    if show.returncode == 0 and show.stdout:
-        return show.stdout, "git_parent_before_legacy_rembg"
-    return current, "current_asset_fallback"
+def github_headers() -> dict[str, str]:
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "DonaAntonia-ProductImageStudio/2.0",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def github_original_before_legacy(rel_path: str, current: bytes) -> tuple[bytes, str]:
+    """Fetch only this file's predecessor instead of cloning repository history."""
+    repository = os.environ.get("GITHUB_REPOSITORY", "").strip()
+    if not repository:
+        return current, "current_asset_no_github_context"
+
+    try:
+        commits = requests.get(
+            f"{GITHUB_API}/repos/{repository}/commits",
+            params={"path": rel_path, "per_page": 10},
+            headers=github_headers(),
+            timeout=30,
+        )
+        commits.raise_for_status()
+        rows = commits.json()
+        if not isinstance(rows, list):
+            return current, "current_asset_history_unavailable"
+
+        legacy = None
+        for row in rows:
+            message = str(((row.get("commit") or {}).get("message") or "")).splitlines()[0]
+            if message.startswith(LEGACY_COMMIT_PREFIX):
+                legacy = row
+                break
+        if not legacy:
+            return current, "current_asset_not_legacy"
+
+        parents = legacy.get("parents") or []
+        if not parents:
+            return current, "current_asset_legacy_parent_missing"
+        parent_sha = str(parents[0].get("sha") or "").strip()
+        if not parent_sha:
+            return current, "current_asset_legacy_parent_missing"
+
+        content = requests.get(
+            f"{GITHUB_API}/repos/{repository}/contents/{quote(rel_path, safe='/')}",
+            params={"ref": parent_sha},
+            headers=github_headers(),
+            timeout=30,
+        )
+        content.raise_for_status()
+        payload = content.json()
+        encoded = str(payload.get("content") or "").replace("\n", "")
+        if payload.get("encoding") == "base64" and encoded:
+            original = base64.b64decode(encoded)
+            if original:
+                return original, "github_parent_before_legacy_rembg"
+    except Exception:
+        return current, "current_asset_history_fallback"
+
+    return current, "current_asset_history_fallback"
 
 
 def prepare_input(source: bytes) -> bytes:
@@ -150,10 +189,10 @@ def edit_product(client: OpenAI, source_png: bytes, product_name: str) -> tuple[
 
 
 def normalize_output(generated: bytes) -> tuple[bytes, dict[str, Any]]:
-    """Guarantee a square 400px output and at least 10% empty border per side.
+    """Guarantee 400x400 and a deterministic 40px safety margin.
 
-    We shrink the complete generated square to 320px and extend it with the same
-    catalog background. No product segmentation or alpha-mask inference is used.
+    The whole AI output is shrunk to 320x320 and surrounded by the same catalog
+    background. No mask, segmentation model or object crop is used.
     """
     bg = tuple(int(BACKGROUND.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4))
     with Image.open(io.BytesIO(generated)) as image:
@@ -254,7 +293,7 @@ def main() -> int:
         rel = path.relative_to(repo_root).as_posix()
         try:
             current = path.read_bytes()
-            input_source, source_origin = git_original_before_legacy(repo_root, rel, current)
+            input_source, source_origin = github_original_before_legacy(rel, current)
             source_png = prepare_input(input_source)
             product_name = derive_product_name(path)
             generated, openai_raw = edit_product(client, source_png, product_name)
