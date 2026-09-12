@@ -16,13 +16,13 @@
 
   function assertSafePacket(packet) {
     const validator = window.DAMarketingQuickEditReviewReadonlyV1;
-    if (!validator || typeof validator.validatePackage !== 'function') {
+    if (!validator || typeof validator.validatePacket !== 'function') {
       throw new Error('unsafe_review_packet:validator_unavailable');
     }
 
     let validated;
     try {
-      validated = validator.validatePackage(packet);
+      validated = validator.validatePacket(packet);
     } catch (error) {
       throw new Error(`unsafe_review_packet:${error?.message || 'invalid_package'}`);
     }
