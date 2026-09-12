@@ -36,5 +36,5 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ssbesxgaijknwsjbsbcz.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          MIGRATION_MODE: ${{ github.event.inputs.mode || 'dry-run' }}
+          MIGRATION_MODE: apply
         run: node scripts/firebase-to-supabase-products.mjs
