@@ -1,0 +1,174 @@
+name: Product Image Studio — OpenAI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/product-image-studio-openai.yml
+      - automation/product-image-studio-openai/run_production.py
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true = preview only; false = replace live catalog images'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      limit:
+        description: 'Maximum products in this run'
+        required: true
+        default: '5'
+        type: string
+      force:
+        description: 'Reprocess even if already completed'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: product-image-studio-openai-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke-test-on-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            'openai>=2,<3' \
+            pillow==11.3.0 \
+            requests==2.32.5
+
+      - name: Compile pipeline
+        run: python -m py_compile automation/product-image-studio-openai/run_production.py
+
+      - name: Check OpenAI secret
+        shell: bash
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo 'OPENAI_API_KEY GitHub secret is missing.' >&2
+            exit 1
+          fi
+          echo 'OPENAI_API_KEY is configured.'
+
+      - name: Generate one safe preview
+        run: |
+          python automation/product-image-studio-openai/run_production.py \
+            --dry-run \
+            --limit 1 \
+            --report artifacts/product-image-studio-openai/result.json \
+            --preview-root artifacts/product-image-studio-openai/previews
+
+      - name: Show result summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f artifacts/product-image-studio-openai/result.json ]; then
+            python - <<'PY'
+          import json
+          p = json.load(open('artifacts/product-image-studio-openai/result.json', encoding='utf-8'))
+          print(json.dumps({
+            'status': p.get('status'),
+            'model': p.get('model'),
+            'quality': p.get('quality'),
+            'dry_run': p.get('dry_run'),
+            'selected': p.get('selected'),
+            'processed_count': p.get('processed_count'),
+            'error_count': p.get('error_count'),
+            'processed': p.get('processed'),
+            'errors': p.get('errors'),
+          }, ensure_ascii=False, indent=2))
+          PY
+          fi
+
+      - name: Upload smoke-test preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-image-openai-smoke-test
+          path: artifacts/product-image-studio-openai/
+          if-no-files-found: warn
+          retention-days: 7
+
+  manual-batch:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check --no-cache-dir \
+            'openai>=2,<3' \
+            pillow==11.3.0 \
+            requests==2.32.5
+
+      - name: Compile pipeline
+        run: python -m py_compile automation/product-image-studio-openai/run_production.py
+
+      - name: Run requested batch
+        shell: bash
+        run: |
+          ARGS="--limit ${{ inputs.limit }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+          python automation/product-image-studio-openai/run_production.py \
+            $ARGS \
+            --report artifacts/product-image-studio-openai/result.json \
+            --preview-root artifacts/product-image-studio-openai/previews
+
+      - name: Commit production images and state
+        if: success() && inputs.dry_run == 'false'
+        shell: bash
+        run: |
+          git add site/img/produtos_3 automation/product-image-studio-openai/state.json
+          if git diff --cached --quiet; then
+            echo 'No production image changes to commit.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'chore: update product images with OpenAI studio'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Upload report and previews
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-image-openai-manual-${{ github.run_number }}
+          path: artifacts/product-image-studio-openai/
+          if-no-files-found: warn
+          retention-days: 7
