@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Imagens IA</title>
   <link rel="stylesheet" href="./styles.css?v=20260912-5">
-  <link rel="stylesheet" href="./image-automation.css?v=20260912-1">
+  <link rel="stylesheet" href="./image-automation.css?v=20260912-2">
 </head>
 <body>
   <header class="topbar">
@@ -21,17 +21,54 @@
     </nav></aside>
     <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
     <main class="content">
-      <div class="page-head"><div><h1>Imagens IA</h1><p>Geração em lote com 18 produtos (3×6), validação individual e fallback automático.</p></div><div class="page-actions"><button id="refreshData" class="secondary" type="button">Atualizar</button><button id="runNow" class="primary" type="button">Rodar agora</button></div></div>
+      <div class="page-head"><div><h1>Imagens IA</h1><p>Geração em lote com 18 produtos (3×6), validação individual, diagnóstico e correção dos itens com problema.</p></div><div class="page-actions"><button id="refreshData" class="secondary" type="button">Atualizar</button><button id="runNow" class="primary" type="button">Rodar agora</button></div></div>
       <section id="unlockPanel" class="panel hidden"><h2>Desbloquear controles</h2><p class="muted">Use o mesmo código de 6 dígitos do Admin.</p><form id="unlockForm" class="unlock-form"><input id="pinInput" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-label="Código de acesso"><button class="primary" type="submit">Entrar</button></form><p id="unlockStatus" class="muted"></p></section>
       <section id="automationArea" class="hidden">
-        <div class="stats-grid automation-stats"><article class="stat-card"><span>Aprovadas</span><strong id="statCompleted">0</strong></article><article class="stat-card"><span>Rejeitadas</span><strong id="statRejected">0</strong></article><article class="stat-card"><span>Processando</span><strong id="statProcessing">0</strong></article><article class="stat-card"><span>Na fila</span><strong id="statPending">0</strong></article></div>
+        <div class="stats-grid automation-stats">
+          <article class="stat-card"><span>Aprovadas</span><strong id="statCompleted">0</strong></article>
+          <article class="stat-card"><span>Nunca processadas</span><strong id="statNotProcessed">0</strong></article>
+          <article class="stat-card"><span>Com problema</span><strong id="statProblems">0</strong></article>
+          <article class="stat-card"><span>Rejeitadas</span><strong id="statRejected">0</strong></article>
+          <article class="stat-card"><span>Processando</span><strong id="statProcessing">0</strong></article>
+          <article class="stat-card"><span>Na fila</span><strong id="statPending">0</strong></article>
+          <article class="stat-card"><span>Ignoradas</span><strong id="statIgnored">0</strong></article>
+        </div>
         <section class="panel"><div class="automation-control-head"><div><h2>Automação</h2><p id="automationSummary" class="muted">Carregando…</p></div><span id="automationBadge" class="badge">—</span></div><div class="control-grid"><label class="field"><span>Intervalo</span><select id="intervalSelect"><option value="1">1 minuto</option><option value="3">3 minutos</option><option value="5">5 minutos</option><option value="10">10 minutos</option><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option></select></label><div class="control-actions"><button id="saveFrequency" class="secondary" type="button">Salvar intervalo</button><button id="automationToggle" class="danger" type="button">Pausar</button></div></div></section>
+
+        <section class="panel triage-panel">
+          <div class="panel-title-row"><div><h2>Não processadas e problemas</h2><p class="muted">Veja o motivo e resolva sem sair desta tela. Produtos ignorados não entram novamente no Cron.</p></div></div>
+          <div class="triage-toolbar">
+            <select id="issueFilter" aria-label="Filtrar produtos com problema"><option value="unprocessed">Nunca processadas</option><option value="problems">Com problema</option><option value="pending">Na fila</option><option value="ignored">Ignoradas</option></select>
+            <div class="bulk-actions"><button id="bulkUnprocessed" class="secondary" type="button">Enviar não processadas ao lote</button><button id="bulkProblems" class="secondary" type="button">Reprocessar problemas individualmente</button></div>
+          </div>
+          <div class="triage-summary"><strong id="issueCountLabel">0 produtos</strong><span class="muted">Mostrando até 100 por grupo.</span></div>
+          <div id="issueRows" class="issue-list"></div>
+        </section>
+
         <section class="panel"><div class="panel-title-row"><div><h2>Últimos resultados</h2><p class="muted">Somente imagens aprovadas são publicadas no catálogo.</p></div></div><div id="recentResults" class="image-results"></div></section>
         <section class="panel"><h2>Lotes recentes</h2><div id="recentBatches" class="batch-list"></div></section>
       </section>
     </main>
   </div>
+
+  <dialog id="repairDialog" class="repair-dialog">
+    <form id="repairForm" method="dialog" class="repair-shell">
+      <header class="repair-head"><div><span class="eyebrow">Resolver imagem</span><h2 id="repairTitle">Produto</h2></div><button id="repairClose" type="button" class="close-dialog" aria-label="Fechar">×</button></header>
+      <div class="repair-preview"><img id="repairImage" alt=""><div><div id="repairDiagnosis" class="diagnosis"></div><div id="repairRawError" class="muted"></div></div></div>
+      <label class="field wide"><span>Imagem de origem confiável</span><input id="repairSourceUrl" type="url" inputmode="url" placeholder="https://..."><small>Use uma foto original do produto. Domínios permitidos: Dona Antônia, Supabase e GitHub do projeto.</small></label>
+      <label class="field wide"><span>Observação interna</span><textarea id="repairNote" rows="3" placeholder="Ex.: foto original está cortando a tampa; trocar a origem antes de reprocessar."></textarea><small>Esta observação é administrativa e não altera o rótulo ou a identidade do produto na geração.</small></label>
+      <label class="field"><span>Próxima tentativa</span><select id="repairMode"><option value="individual">Sozinho (mais seguro)</option><option value="batch">Lote de 18 (mais barato)</option></select></label>
+      <div class="repair-actions">
+        <button id="saveNote" class="secondary" type="button">Salvar observação</button>
+        <button id="retryOnly" class="secondary" type="button">Reprocessar</button>
+        <button id="saveSourceRetry" class="primary" type="button">Salvar origem e reprocessar</button>
+        <button id="ignoreProduct" class="danger" type="button">Ignorar</button>
+        <button id="restoreProduct" class="primary hidden" type="button">Restaurar e reprocessar</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./image-automation.js?v=20260912-1"></script>
+  <script type="module" src="./image-automation.js?v=20260912-2"></script>
 </body>
 </html>
