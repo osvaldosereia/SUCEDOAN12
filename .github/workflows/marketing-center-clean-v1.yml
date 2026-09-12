@@ -1,0 +1,192 @@
+name: Marketing Center Clean Transplant
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/admin-marketing-*/**'
+      - 'supabase/migrations/*marketing*.sql'
+      - 'supabase/config.toml'
+      - 'scripts/test-marketing-clean-transplant-v1.mjs'
+      - 'scripts/test-marketing-editor-v1.mjs'
+      - 'scripts/test-marketing-library-v1.mjs'
+      - 'scripts/test-marketing-operations-readonly-v1.mjs'
+      - 'scripts/test-marketing-readiness-readonly-v1.mjs'
+      - 'scripts/test-marketing-channel-preflight-v1.mjs'
+      - 'scripts/marketing-channel-preflight-v1.mjs'
+      - 'scripts/test-marketing-channel-request-bundle-v1.mjs'
+      - 'scripts/marketing-channel-request-bundle-v1.mjs'
+      - 'scripts/test-marketing-approval-preview-v1.mjs'
+      - 'scripts/marketing-approval-preview-v1.mjs'
+      - 'scripts/test-marketing-approval-preview-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-ai-preflight-v1.mjs'
+      - 'scripts/marketing-ai-preflight-v1.mjs'
+      - 'scripts/test-marketing-ai-readiness-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-render-svg-v1.mjs'
+      - 'scripts/marketing-render-svg-v1.mjs'
+      - 'scripts/test-marketing-render-manifest-v1.mjs'
+      - 'scripts/marketing-render-manifest-v1.mjs'
+      - 'scripts/test-marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/test-marketing-render-preview-buffer-v1.mjs'
+      - 'scripts/marketing-render-preview-buffer-v1.mjs'
+      - 'scripts/test-marketing-render-image-preview-pipeline-v1.mjs'
+      - 'scripts/marketing-render-image-preview-pipeline-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-patch-v1.mjs'
+      - 'scripts/marketing-quick-edit-patch-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-package-v1.mjs'
+      - 'scripts/marketing-quick-edit-review-package-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-handoff-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-revision-comparison-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-summary-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-session-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-session-surface-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-frame-coordinator-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-frame-surface-readonly-ui-v1.mjs'
+      - 'admin/app-lite.js'
+      - 'admin-v3/marketing-*.js'
+      - 'admin-v3/marketing-*.css'
+      - '.github/workflows/marketing-center-clean-v1.yml'
+  push:
+    branches:
+      - feat/marketing-center-clean-20260911
+    paths:
+      - 'supabase/functions/admin-marketing-*/**'
+      - 'supabase/migrations/*marketing*.sql'
+      - 'supabase/config.toml'
+      - 'scripts/test-marketing-clean-transplant-v1.mjs'
+      - 'scripts/test-marketing-editor-v1.mjs'
+      - 'scripts/test-marketing-library-v1.mjs'
+      - 'scripts/test-marketing-operations-readonly-v1.mjs'
+      - 'scripts/test-marketing-readiness-readonly-v1.mjs'
+      - 'scripts/test-marketing-channel-preflight-v1.mjs'
+      - 'scripts/marketing-channel-preflight-v1.mjs'
+      - 'scripts/test-marketing-channel-request-bundle-v1.mjs'
+      - 'scripts/marketing-channel-request-bundle-v1.mjs'
+      - 'scripts/test-marketing-approval-preview-v1.mjs'
+      - 'scripts/marketing-approval-preview-v1.mjs'
+      - 'scripts/test-marketing-approval-preview-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-ai-preflight-v1.mjs'
+      - 'scripts/marketing-ai-preflight-v1.mjs'
+      - 'scripts/test-marketing-ai-readiness-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-render-svg-v1.mjs'
+      - 'scripts/marketing-render-svg-v1.mjs'
+      - 'scripts/test-marketing-render-manifest-v1.mjs'
+      - 'scripts/marketing-render-manifest-v1.mjs'
+      - 'scripts/test-marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/test-marketing-render-preview-buffer-v1.mjs'
+      - 'scripts/marketing-render-preview-buffer-v1.mjs'
+      - 'scripts/test-marketing-render-image-preview-pipeline-v1.mjs'
+      - 'scripts/marketing-render-image-preview-pipeline-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-patch-v1.mjs'
+      - 'scripts/marketing-quick-edit-patch-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-package-v1.mjs'
+      - 'scripts/marketing-quick-edit-review-package-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-handoff-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-revision-comparison-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-summary-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-session-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-session-surface-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-frame-coordinator-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-frame-surface-readonly-ui-v1.mjs'
+      - 'admin/app-lite.js'
+      - 'admin-v3/marketing-*.js'
+      - 'admin-v3/marketing-*.css'
+      - '.github/workflows/marketing-center-clean-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  safety-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned local raster dependency
+        run: npm install --no-save sharp@0.34.3
+      - name: Syntax check dormant private Marketing UI and local tooling
+        run: |
+          node --check admin-v3/marketing-carousel-progress-v1.js
+          node --check admin-v3/marketing-editor-v1.js
+          node --check admin-v3/marketing-library-v1.js
+          node --check admin-v3/marketing-operations-readonly-v1.js
+          node --check admin-v3/marketing-readiness-readonly-v1.js
+          node --check admin-v3/marketing-approval-preview-readonly-v1.js
+          node --check admin-v3/marketing-ai-readiness-readonly-v1.js
+          node --check admin-v3/marketing-quick-edit-review-readonly-v1.js
+          node --check admin-v3/marketing-quick-edit-review-handoff-v1.js
+          node --check admin-v3/marketing-quick-edit-revision-comparison-readonly-v1.js
+          node --check admin-v3/marketing-quick-edit-review-summary-readonly-v1.js
+          node --check admin-v3/marketing-quick-edit-review-session-readonly-v1.js
+          node --check admin-v3/marketing-review-session-surface-readonly-v1.js
+          node --check admin-v3/marketing-review-frame-coordinator-readonly-v1.js
+          node --check admin-v3/marketing-review-frame-surface-readonly-v1.js
+          node --check scripts/marketing-channel-preflight-v1.mjs
+          node --check scripts/marketing-channel-request-bundle-v1.mjs
+          node --check scripts/marketing-approval-preview-v1.mjs
+          node --check scripts/marketing-ai-preflight-v1.mjs
+          node --check scripts/marketing-render-svg-v1.mjs
+          node --check scripts/marketing-render-manifest-v1.mjs
+          node --check scripts/marketing-rasterize-png-buffer-v1.mjs
+          node --check scripts/marketing-render-preview-buffer-v1.mjs
+          node --check scripts/marketing-render-image-preview-pipeline-v1.mjs
+          node --check scripts/marketing-quick-edit-patch-v1.mjs
+          node --check scripts/marketing-quick-edit-review-package-v1.mjs
+      - name: Validate clean Marketing transplant safety contract
+        run: node scripts/test-marketing-clean-transplant-v1.mjs
+      - name: Validate dormant Marketing editor contract
+        run: node scripts/test-marketing-editor-v1.mjs
+      - name: Validate dormant Marketing library contract
+        run: node scripts/test-marketing-library-v1.mjs
+      - name: Validate dormant read-only Marketing operations contract
+        run: node scripts/test-marketing-operations-readonly-v1.mjs
+      - name: Validate dormant read-only Marketing metrics/readiness contract
+        run: node scripts/test-marketing-readiness-readonly-v1.mjs
+      - name: Validate local-only Marketing channel preflight contract
+        run: node scripts/test-marketing-channel-preflight-v1.mjs
+      - name: Validate local-only Marketing channel request bundle contract
+        run: node scripts/test-marketing-channel-request-bundle-v1.mjs
+      - name: Validate local-only Marketing approval preview contract
+        run: node scripts/test-marketing-approval-preview-v1.mjs
+      - name: Validate dormant approval preview UI contract
+        run: node scripts/test-marketing-approval-preview-readonly-ui-v1.mjs
+      - name: Validate local-only Marketing AI preflight contract
+        run: node scripts/test-marketing-ai-preflight-v1.mjs
+      - name: Validate dormant AI readiness UI contract
+        run: node scripts/test-marketing-ai-readiness-readonly-ui-v1.mjs
+      - name: Validate local-only deterministic Marketing SVG renderer
+        run: node scripts/test-marketing-render-svg-v1.mjs
+      - name: Validate deterministic Marketing render manifest
+        run: node scripts/test-marketing-render-manifest-v1.mjs
+      - name: Validate in-memory PNG rasterizer
+        run: node scripts/test-marketing-rasterize-png-buffer-v1.mjs
+      - name: Validate ephemeral render preview buffer
+        run: node scripts/test-marketing-render-preview-buffer-v1.mjs
+      - name: Validate fully in-memory Marketing image preview pipeline
+        run: node scripts/test-marketing-render-image-preview-pipeline-v1.mjs
+      - name: Validate local-only Marketing quick edit patches
+        run: node scripts/test-marketing-quick-edit-patch-v1.mjs
+      - name: Validate private Marketing quick edit review package
+        run: node scripts/test-marketing-quick-edit-review-package-v1.mjs
+      - name: Validate dormant readonly Marketing quick edit review UI
+        run: node scripts/test-marketing-quick-edit-review-readonly-ui-v1.mjs
+      - name: Validate memory-only Marketing quick edit review handoff
+        run: node scripts/test-marketing-quick-edit-review-handoff-v1.mjs
+      - name: Validate dormant readonly Marketing revision comparison UI
+        run: node scripts/test-marketing-quick-edit-revision-comparison-readonly-ui-v1.mjs
+      - name: Validate dormant readonly Marketing review summary UI
+        run: node scripts/test-marketing-quick-edit-review-summary-readonly-ui-v1.mjs
+      - name: Validate bounded readonly Marketing review session lifecycle
+        run: node scripts/test-marketing-quick-edit-review-session-readonly-ui-v1.mjs
+      - name: Validate dormant fail-closed Marketing review session surface
+        run: node scripts/test-marketing-review-session-surface-readonly-ui-v1.mjs
+      - name: Validate bounded readonly Marketing review frame coordinator
+        run: node scripts/test-marketing-review-frame-coordinator-readonly-ui-v1.mjs
+      - name: Validate dormant fail-closed Marketing review frame surface
+        run: node scripts/test-marketing-review-frame-surface-readonly-ui-v1.mjs
