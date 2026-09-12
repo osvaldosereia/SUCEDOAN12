@@ -30,7 +30,7 @@ vm.runInContext(summarySource,context,{filename:summaryPath});
 const bridge=context.window.DAMarketingQuickEditReviewHandoffV1;
 const ui=context.window.DAMarketingQuickEditReviewSummaryReadonlyV1;
 assert.ok(ui,'summary UI must be exported');
-for(const fn of ['buildSummary','mountFromHandoff','renderSummary']) assert.equal(typeof ui[fn],'function',`${fn} must exist`);
+for(const fn of ['buildSummary','mountFromHandoff','mountSummary','renderSummary','createSnapshotToken']) assert.equal(typeof ui[fn],'function',`${fn} must exist`);
 
 function packet({fromRevision,revision,path,afterSha,packageSha,blockers=['marketing_disabled','kill_switch_on']}) {
   return {
@@ -47,7 +47,11 @@ const second=packet({fromRevision:2,revision:3,path:'/layers/0/text',afterSha:'3
 bridge.handoff(first);
 bridge.handoff(second);
 
-const expected={asset_id:'asset-1',revision:3,package_sha256:'4'.repeat(64),idempotency_key:'review:3'};
+const expectedBase={asset_id:'asset-1',revision:3,package_sha256:'4'.repeat(64),idempotency_key:'review:3'};
+const snapshotToken=ui.createSnapshotToken(expectedBase);
+assert.equal(snapshotToken,ui.createSnapshotToken({...expectedBase}),'snapshot token must be deterministic');
+assert.match(snapshotToken,/^marketing-snapshot-v1:/);
+const expected={...expectedBase,snapshot_token:snapshotToken};
 const summary=ui.buildSummary(bridge.getSnapshot(),expected);
 assert.equal(summary.schema_version,'marketing-quick-edit-review-summary-v1');
 assert.equal(summary.asset_id,'asset-1');
@@ -59,6 +63,7 @@ assert.equal(summary.comparison.status,'contiguous');
 assert.equal(summary.comparison.changed_paths,1);
 assert.equal(summary.latest.package_sha256,'4'.repeat(64));
 assert.equal(summary.latest.idempotency_key,'review:3');
+assert.equal(summary.snapshot_token,snapshotToken);
 assert.equal(summary.preview_only,true);
 assert.equal(summary.mutations_allowed,false);
 assert.equal(summary.network_allowed,false);
@@ -74,10 +79,20 @@ for(const stale of [
   {...expected,revision:4},
   {...expected,package_sha256:'9'.repeat(64)},
   {...expected,idempotency_key:'review:999'},
+  {...expected,snapshot_token:'marketing-snapshot-v1:tampered'},
 ]) {
   assert.throws(()=>ui.buildSummary(bridge.getSnapshot(),stale),/stale_snapshot/);
 }
 assert.throws(()=>ui.buildSummary({latest:null,comparison:null,history:[]},expected),/stale_snapshot/);
+
+const firstSafe=bridge.sanitizePacket(first);
+const regressionExpectedBase={asset_id:'asset-1',revision:2,package_sha256:'2'.repeat(64),idempotency_key:'review:2'};
+const regressionExpected={...regressionExpectedBase,snapshot_token:ui.createSnapshotToken(regressionExpectedBase)};
+assert.throws(
+  ()=>ui.buildSummary({latest:firstSafe,history:[firstSafe],comparison:null},regressionExpected),
+  /stale_snapshot:revision_regression/,
+  'summary must reject a lower revision after a newer revision was observed in memory'
+);
 
 const root={innerHTML:''};
 elements.set('marketing-summary',root);
@@ -86,5 +101,8 @@ assert.equal(mounted.revision,3);
 assert.match(root.innerHTML,/Revisão 3/);
 assert.match(root.innerHTML,/3 bloqueios/);
 assert.ok(!root.innerHTML.includes('conteudo privado'));
+assert.throws(()=>ui.mountSummary(root,summary,'marketing-snapshot-v1:swapped-context'),/stale_snapshot:snapshot_token_mismatch/);
+ui.mountSummary(root,summary,snapshotToken);
+assert.match(root.innerHTML,/Revisão 3/);
 
-console.log('PASS: readonly Marketing review summary is stale-guarded, metadata-only, memory-only and dormant.');
+console.log('PASS: readonly Marketing review summary has deterministic ephemeral snapshot tokens, blocks revision regression, stays metadata-only, memory-only and dormant.');
