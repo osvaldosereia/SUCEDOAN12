@@ -96,7 +96,61 @@
     setTimeout(()=>input?.focus(),0);
   }
 
-  function refresh(){decorateBasketRows();const stage=document.querySelector('.stage.checkout-stage');if(stage)setupPhoneFirst(stage)}
+  function setupAddressConfirmation(stage){
+    if(stage.dataset.addressConfirmReady==='1')return;
+    const cards=[...stage.querySelectorAll('.checkout-card')];
+    const deliveryCard=cards.find(card=>card.querySelector('h3')?.textContent?.trim()==='Entrega');
+    if(!deliveryCard)return;
+    stage.dataset.addressConfirmReady='1';
+
+    const heading=deliveryCard.querySelector('h3');
+    const prompt=document.createElement('p');
+    prompt.className='muted address-confirm-required';
+    prompt.textContent='Confirme o endereço desta entrega antes de concluir o pedido.';
+    heading?.insertAdjacentElement('afterend',prompt);
+
+    const radios=[...deliveryCard.querySelectorAll('input[name="address"]')];
+    if(radios.length){
+      radios.forEach(r=>{r.checked=false});
+      deliveryCard.querySelector('#newAddress')?.classList.add('hidden');
+    }
+
+    const save=deliveryCard.querySelector('#saveAddress');
+    if(save){
+      save.checked=true;
+      const saveLabel=save.closest('label');
+      if(saveLabel)saveLabel.classList.add('always-save-address');
+      const note=document.createElement('small');
+      note.className='muted address-save-note';
+      note.textContent='Novo endereço será salvo para as próximas compras.';
+      saveLabel?.insertAdjacentElement('afterend',note);
+    }
+
+    const confirm=stage.querySelector('.confirm');
+    if(confirm){
+      confirm.addEventListener('click',event=>{
+        const choices=[...deliveryCard.querySelectorAll('input[name="address"]')];
+        const selected=choices.find(r=>r.checked);
+        if(choices.length&&!selected){
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          prompt.classList.add('attention');
+          prompt.setAttribute('role','alert');
+          prompt.textContent='Escolha e confirme o endereço desta entrega.';
+          deliveryCard.scrollIntoView({behavior:'smooth',block:'center'});
+          return;
+        }
+        if(selected?.value==='new'&&save)save.checked=true;
+        prompt.classList.remove('attention');
+      },true);
+    }
+  }
+
+  function refresh(){
+    decorateBasketRows();
+    const stage=document.querySelector('.stage.checkout-stage');
+    if(stage){setupPhoneFirst(stage);setupAddressConfirmation(stage)}
+  }
   const observer=new MutationObserver(refresh);observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
   document.addEventListener('click',()=>setTimeout(refresh,0),true);
   refresh();
