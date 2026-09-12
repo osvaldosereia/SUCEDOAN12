@@ -96,6 +96,16 @@ export function buildExistingPatch(existing,p,matchedBy='firebase_key'){
 }
 
 export function rememberInsertedProduct(rows,row){if(row&&typeof row==='object')rows.push(row);return row}
+export async function collectPages(fetchPage,pageSize=1000){
+  const rows=[];
+  for(let from=0;;from+=pageSize){
+    const page=await fetchPage(from,from+pageSize-1);
+    const list=Array.isArray(page)?page:[];
+    rows.push(...list);
+    if(list.length<pageSize)break;
+  }
+  return rows;
+}
 
 let firebaseAccessToken='';
 function base64Url(v){return Buffer.from(typeof v==='string'?v:JSON.stringify(v)).toString('base64url')}
@@ -116,14 +126,17 @@ async function readFirebaseProducts(){
 }
 function supabaseHeaders(extra={}){const key=text(process.env.SUPABASE_SERVICE_ROLE_KEY);if(!key)throw new Error('SUPABASE_SERVICE_ROLE_KEY ausente');return {apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',...extra}}
 async function sb(path,options={}){const base=text(process.env.SUPABASE_URL||'https://ssbesxgaijknwsjbsbcz.supabase.co').replace(/\/+$/,'');const r=await fetch(`${base}/rest/v1/${path}`,{...options,headers:supabaseHeaders(options.headers)});if(!r.ok)throw new Error(`Supabase ${options.method||'GET'} ${path}: ${r.status} ${(await r.text()).slice(0,1000)}`);if(r.status===204)return null;const t=await r.text();return t?JSON.parse(t):null}
-async function readSupabaseProducts(){return await sb('products?select=id,firebase_key,sku,name,gtin,ncm,price,cost,stock,image_url,image_original_url,brand,category,subcategory,subsubcategory,packaging,supplier,validity_date,gondola,shelf,unit,description_short,description_long,is_active,is_whatsapp_active,physically_verified,firebase_snapshot,metadata,source_system,sync_status&limit=5000')||[]}
+const SUPABASE_PRODUCT_FIELDS='id,firebase_key,sku,name,gtin,ncm,price,cost,stock,image_url,image_original_url,brand,category,subcategory,subsubcategory,packaging,supplier,validity_date,gondola,shelf,unit,description_short,description_long,is_active,is_whatsapp_active,physically_verified,firebase_snapshot,metadata,source_system,sync_status';
+async function readSupabaseProducts(){
+  return collectPages(async(from,to)=>await sb(`products?select=${SUPABASE_PRODUCT_FIELDS}&order=id.asc&offset=${from}&limit=${to-from+1}`)||[],1000);
+}
 async function insertRow(row){const data=await sb('products',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(row)});return Array.isArray(data)?data[0]:data}
 async function patchRow(id,patch){return sb(`products?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(patch)})}
 
 async function run(){
   const mode=text(process.env.MIGRATION_MODE||'dry-run').toLowerCase();if(!['dry-run','apply'].includes(mode))throw new Error('MIGRATION_MODE deve ser dry-run ou apply');
   const firebase=await readFirebaseProducts();const supabase=await readSupabaseProducts();
-  const summary={mode,firebase_total:Object.keys(firebase).length,firebase_active:0,matched_firebase_key:0,matched_gtin:0,matched_sku:0,new_products:0,updated_existing:0,alias_records:0,conflicts:[],missing_image:[],skipped_invalid:[]};
+  const summary={mode,firebase_total:Object.keys(firebase).length,firebase_active:0,supabase_loaded:supabase.length,matched_firebase_key:0,matched_gtin:0,matched_sku:0,new_products:0,updated_existing:0,alias_records:0,conflicts:[],missing_image:[],skipped_invalid:[]};
   for(const [key,raw] of Object.entries(firebase)){
     if(!firebaseIsActive(raw))continue;summary.firebase_active++;
     const p=normalizeFirebaseProduct(key,raw);
