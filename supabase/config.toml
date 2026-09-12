@@ -124,8 +124,12 @@ verify_jwt = false
 [functions.shopping-room-sales-v1]
 verify_jwt = false
 
-# Chat público leve: autenticação própria por token aleatório da sessão + CORS estrito.
+# Chat público leve legado: autenticação própria por token aleatório da sessão + CORS estrito.
 [functions.shopping-chat-v1]
+verify_jwt = false
+
+# Atendimento oficial sem IA: token aleatório da sessão + CORS estrito; somente gatilhos determinísticos.
+[functions.shopping-chat-deterministic-v1]
 verify_jwt = false
 
 # Feed público de produtos do chat: catálogo vendável + token válido da sessão + CORS estrito.
@@ -139,3 +143,7 @@ verify_jwt = false
 # Admin do Menu do Chat: autenticação é validada dentro da função contra auth.users + admin_users.
 [functions.admin-chat-menu-v1]
 verify_jwt = false
+
+# Configuração do atendimento determinístico: JWT obrigatório + admin_users no handler.
+[functions.admin-chat-deterministic-v1]
+verify_jwt = true
