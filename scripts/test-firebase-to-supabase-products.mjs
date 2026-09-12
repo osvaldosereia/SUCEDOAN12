@@ -21,9 +21,9 @@ const existing=[
   {id:'2',firebase_key:null,gtin:'7891234567890',sku:'TWO'},
   {id:'3',firebase_key:null,gtin:null,sku:'ABC'}
 ];
-assert.equal(findExistingProduct(normalized,existing).row.id,'1','firebase_key tem prioridade');
-assert.equal(findExistingProduct({...normalized,firebase_key:'other'},existing).row.id,'2','GTIN é segundo critério');
-assert.equal(findExistingProduct({...normalized,firebase_key:'other',gtin:null},existing).row.id,'3','SKU é terceiro critério');
+assert.equal(findExistingProduct(normalized,existing).conflict,true,'chaves que apontam para produtos diferentes devem virar conflito, nunca serem unidas automaticamente');
+assert.equal(findExistingProduct({...normalized,firebase_key:'other',sku:'OTHER'},existing).row.id,'2','GTIN é usado quando não há conflito');
+assert.equal(findExistingProduct({...normalized,firebase_key:'other',gtin:null},existing).row.id,'3','SKU é usado quando não há chave/GTIN correspondente');
 
 const inserted=buildNewProductRow(normalized);
 assert.equal(inserted.is_active,false);
