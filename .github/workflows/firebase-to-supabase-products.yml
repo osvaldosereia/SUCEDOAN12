@@ -1,0 +1,41 @@
+name: Migrar produtos Firebase para Supabase
+
+on:
+  push:
+    branches:
+      - agent/firebase-to-supabase-products-20260912
+    paths:
+      - 'scripts/firebase-to-supabase-products.mjs'
+      - 'scripts/test-firebase-to-supabase-products.mjs'
+      - '.github/workflows/firebase-to-supabase-products.yml'
+      - '.automation/firebase-to-supabase-products-mode.txt'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run ou apply'
+        required: true
+        default: 'dry-run'
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Testar contrato da migração
+        run: node scripts/test-firebase-to-supabase-products.mjs
+      - name: Executar migração
+        env:
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com' }}
+          FIREBASE_AUTH_TOKEN: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ssbesxgaijknwsjbsbcz.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MIGRATION_MODE: ${{ github.event.inputs.mode || 'dry-run' }}
+        run: node scripts/firebase-to-supabase-products.mjs
