@@ -8,6 +8,8 @@ on:
       - 'comprar/index.html'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'supabase/functions/shopping-chat-customer-v1/**'
+      - 'supabase/functions/whatsapp-ingest-make-v1/**'
+      - 'supabase/migrations/*web_room_identity_verification*'
       - 'supabase/config.toml'
       - '.github/workflows/chat-quantity-phone-checkout-tests.yml'
   push:
@@ -18,6 +20,8 @@ on:
       - 'comprar/index.html'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'supabase/functions/shopping-chat-customer-v1/**'
+      - 'supabase/functions/whatsapp-ingest-make-v1/**'
+      - 'supabase/migrations/*web_room_identity_verification*'
       - 'supabase/config.toml'
       - '.github/workflows/chat-quantity-phone-checkout-tests.yml'
   workflow_dispatch:
@@ -45,9 +49,11 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Check customer helper edge
+      - name: Check customer and WhatsApp verification edges
         run: |
           deno check supabase/functions/shopping-chat-customer-v1/index.ts
+          deno check supabase/functions/whatsapp-ingest-make-v1/index.ts
           grep -q "lookup_customer_by_phone" supabase/functions/shopping-chat-customer-v1/index.ts
           grep -q "customer_lookup_attempts" supabase/functions/shopping-chat-customer-v1/index.ts
+          grep -q "confirm_web_room_identity_from_whatsapp_v1" supabase/functions/whatsapp-ingest-make-v1/index.ts
           grep -q "shopping-chat-customer-v1" supabase/config.toml
