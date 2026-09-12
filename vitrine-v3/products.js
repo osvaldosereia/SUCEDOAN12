@@ -20,6 +20,11 @@ export function renderProductRow(p){
   return `<article class="product-row" data-product-card="${esc(p.id)}"><button class="product-photo product-open" type="button" data-open-product="${esc(p.id)}" aria-label="Ver ${esc(p.name)}">${p.image_url?`<img src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async">`:'<span aria-hidden="true">□</span>'}</button><div class="product-copy">${badge}<button class="product-open-name" type="button" data-open-product="${esc(p.id)}"><h3>${esc(p.name)}</h3></button>${meta?`<p>${esc(meta)}</p>`:''}<strong>${money(p.price)}</strong></div><div class="product-action"><button class="add-button" type="button" data-add-extra="${esc(p.id)}">Adicionar</button><div class="qty-control hidden" data-extra-qty-wrap><button type="button" data-extra-minus aria-label="Diminuir">−</button><b data-extra-qty>0</b><button type="button" data-extra-plus aria-label="Aumentar">+</button></div></div></article>`;
 }
 
+export function renderOfferCard(p){
+  const badge=p.is_offer===true?'<span class="offer-badge">Oferta</span>':'';
+  return `<article class="offer-card" data-product-card="${esc(p.id)}"><button class="offer-card-photo product-open" type="button" data-open-product="${esc(p.id)}" aria-label="Ver ${esc(p.name)}">${p.image_url?`<img src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async">`:'<span aria-hidden="true">□</span>'}</button><div class="offer-card-copy">${badge}<button class="product-open-name" type="button" data-open-product="${esc(p.id)}"><h3>${esc(p.name)}</h3></button><strong>${money(p.price)}</strong></div><div class="offer-card-action"><button class="add-button" type="button" data-add-extra="${esc(p.id)}">Adicionar</button><div class="qty-control hidden" data-extra-qty-wrap><button type="button" data-extra-minus aria-label="Diminuir">−</button><b data-extra-qty>0</b><button type="button" data-extra-plus aria-label="Aumentar">+</button></div></div></article>`;
+}
+
 export function renderProductResults({title='Produtos',products=[],hasMore=false,mode='category',query='',subfilters=[],activeSub=''}){
   const subtitle=query?`Resultados para “${esc(query)}”`:'Escolha o que quiser adicionar ao pedido.';
   const filters=mode==='category'?renderSubfilterChips(subfilters,activeSub):'';
