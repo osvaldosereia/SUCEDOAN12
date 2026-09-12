@@ -144,6 +144,6 @@ verify_jwt = false
 [functions.admin-chat-menu-v1]
 verify_jwt = false
 
-# Configuração do atendimento determinístico: JWT obrigatório + admin_users no handler.
+# Admin V3 do atendimento determinístico: sem login, CORS restrito ao site oficial e sem exposição de segredos.
 [functions.admin-chat-deterministic-v1]
-verify_jwt = true
+verify_jwt = false
