@@ -33,6 +33,8 @@ on:
       - 'scripts/marketing-render-image-preview-pipeline-v1.mjs'
       - 'scripts/test-marketing-quick-edit-patch-v1.mjs'
       - 'scripts/marketing-quick-edit-patch-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-package-v1.mjs'
+      - 'scripts/marketing-quick-edit-review-package-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -71,6 +73,8 @@ on:
       - 'scripts/marketing-render-image-preview-pipeline-v1.mjs'
       - 'scripts/test-marketing-quick-edit-patch-v1.mjs'
       - 'scripts/marketing-quick-edit-patch-v1.mjs'
+      - 'scripts/test-marketing-quick-edit-review-package-v1.mjs'
+      - 'scripts/marketing-quick-edit-review-package-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -109,6 +113,7 @@ jobs:
           node --check scripts/marketing-render-preview-buffer-v1.mjs
           node --check scripts/marketing-render-image-preview-pipeline-v1.mjs
           node --check scripts/marketing-quick-edit-patch-v1.mjs
+          node --check scripts/marketing-quick-edit-review-package-v1.mjs
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
       - name: Validate dormant Marketing editor contract
@@ -143,3 +148,5 @@ jobs:
         run: node scripts/test-marketing-render-image-preview-pipeline-v1.mjs
       - name: Validate local-only Marketing quick edit patches
         run: node scripts/test-marketing-quick-edit-patch-v1.mjs
+      - name: Validate private Marketing quick edit review package
+        run: node scripts/test-marketing-quick-edit-review-package-v1.mjs
