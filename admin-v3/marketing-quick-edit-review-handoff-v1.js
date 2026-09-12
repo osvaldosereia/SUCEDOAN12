@@ -112,6 +112,7 @@
     if (!Number.isInteger(safeSnapshot.from_revision) || !Number.isInteger(safeSnapshot.revision) || safeSnapshot.revision <= safeSnapshot.from_revision) {
       throw new Error('unsafe_review_packet:invalid_revision');
     }
+    if (!safeSnapshot.idempotency_key) throw new Error('unsafe_review_packet:missing_idempotency_key');
     for (const hash of [safeSnapshot.package_sha256, safeSnapshot.spec_sha256, safeSnapshot.svg_sha256, safeSnapshot.png_sha256]) {
       if (!isSha256(hash)) throw new Error('unsafe_review_packet:invalid_hash');
     }
@@ -166,8 +167,31 @@
     return compareSanitized(sanitizePacket(previousPacket), sanitizePacket(currentPacket));
   }
 
+  function sameDelivery(previous, current) {
+    return previous.asset_id === current.asset_id
+      && previous.from_revision === current.from_revision
+      && previous.revision === current.revision
+      && previous.idempotency_key === current.idempotency_key
+      && previous.package_sha256 === current.package_sha256
+      && previous.spec_sha256 === current.spec_sha256
+      && previous.svg_sha256 === current.svg_sha256
+      && previous.png_sha256 === current.png_sha256;
+  }
+
   function handoff(packet) {
     const current = sanitizePacket(packet);
+    const sameKey = state.history.find((item) => item.idempotency_key === current.idempotency_key);
+    if (sameKey) {
+      if (sameDelivery(sameKey, current)) return getSnapshot();
+      throw new Error('idempotency_conflict');
+    }
+
+    const sameRevision = state.history.find((item) => item.asset_id === current.asset_id && item.revision === current.revision);
+    if (sameRevision) {
+      if (sameDelivery(sameRevision, current)) return getSnapshot();
+      throw new Error('revision_conflict');
+    }
+
     const previous = state.history.at(-1) || null;
     state.comparison = previous ? compareSanitized(previous, current) : null;
     state.history.push(current);
