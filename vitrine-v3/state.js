@@ -1,7 +1,7 @@
 const KEY='da_vitrine_v3_cart';
 
 export const state={basket:null,basketItems:[],extras:{}};
-const safeProduct=p=>p?{id:p.id,name:p.name,price:Number(p.price||0),stock:Number(p.stock??0),image_url:p.image_url||null,brand:p.brand||null,category:p.category||null,storefront_category:p.storefront_category||null,packaging:p.packaging||null}:null;
+const safeProduct=p=>p?{id:p.id,name:p.name,price:Number(p.price||0),stock:Number(p.stock??0),image_url:p.image_url||null,brand:p.brand||null,category:p.category||null,storefront_category:p.storefront_category||null,packaging:p.packaging||null,is_offer:p.is_offer===true}:null;
 const moneyNumber=v=>Math.round((Number(v||0)+Number.EPSILON)*100)/100;
 
 export function restore(){
@@ -28,6 +28,8 @@ export function setExtraProductQuantity(product,quantity){if(!product?.id)return
 export function clearCart(){state.basket=null;state.basketItems=[];state.extras={};try{localStorage.removeItem(KEY)}catch{}}
 export function cartCount(){return state.basketItems.reduce((sum,i)=>sum+Number(i.quantity||0),0)+Object.values(state.extras).reduce((sum,i)=>sum+Number(i.quantity||0),0)}
 export function hasCart(){return Boolean(state.basket)||Object.keys(state.extras).length>0}
+export function cartCategories(){const names=[];for(const item of state.basketItems){if(Number(item.quantity||0)>0&&item.product?.storefront_category)names.push(String(item.product.storefront_category).trim())}for(const item of Object.values(state.extras)){if(Number(item.quantity||0)>0&&item.product?.storefront_category)names.push(String(item.product.storefront_category).trim())}return [...new Set(names.filter(Boolean))]}
+export function cartProductIds(){const ids=[];for(const item of state.basketItems){if(Number(item.quantity||0)>0&&item.product_id)ids.push(String(item.product_id))}for(const item of Object.values(state.extras)){if(Number(item.quantity||0)>0&&item.product?.id)ids.push(String(item.product.id))}return [...new Set(ids)]}
 export function basketChanged(){return state.basketItems.some(i=>Number(i.quantity)!==Number(i.base_quantity))}
 export function basketAdjustmentSubtotal(){return state.basketItems.reduce((sum,item)=>{const diff=Number(item.quantity||0)-Number(item.base_quantity||0);if(diff===0)return sum;if(diff>0){const unit=item.add_unit_delta==null?Number(item.product?.price||0):Number(item.add_unit_delta);return sum+(diff*unit)}const unit=item.remove_unit_delta==null?-Number(item.product?.price||0):Number(item.remove_unit_delta);return sum+(Math.abs(diff)*unit)},0)}
 export function extraSubtotal(){return Object.values(state.extras).reduce((sum,i)=>sum+Number(i.product?.price||0)*Number(i.quantity||0),0)}

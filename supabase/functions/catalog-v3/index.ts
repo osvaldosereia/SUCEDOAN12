@@ -13,6 +13,7 @@ const cors=(origin:string|null)=>({
 const reply=(body:unknown,status=200,origin:string|null=null,cache=CACHE)=>new Response(JSON.stringify(body),{status,headers:{...cors(origin),"Content-Type":"application/json; charset=utf-8","Cache-Control":cache}});
 const clean=(value:unknown,max=160)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const integer=(value:unknown,min:number,max:number,fallback:number)=>{const parsed=Number.parseInt(String(value??fallback),10);return Math.min(max,Math.max(min,Number.isFinite(parsed)?parsed:fallback))};
+const jsonList=(value:string|null,maxItems:number,maxLength:number)=>{try{const parsed=JSON.parse(value||"[]");if(!Array.isArray(parsed))return [];return [...new Set(parsed.map(v=>clean(v,maxLength)).filter(Boolean))].slice(0,maxItems)}catch{return []}};
 const publicProduct=(p:any)=>({id:p.id,name:p.name,price:Number(p.price||0),stock:Math.max(0,Math.floor(Number(p.stock||0))),image_url:p.image_url||null,brand:p.brand||null,category:p.category||null,storefront_category:p.storefront_category||null,packaging:p.packaging||null,is_offer:p.is_offer===true,sort_order:Number(p.sort_order||0)});
 const productFields="id,name,price,stock,image_url,brand,category,storefront_category,packaging,is_offer,sort_order";
 const basketReady=(items:any[])=>items.length>0&&items.every((i:any)=>i.product?.is_active===true&&Number(i.product?.stock||0)>=Number(i.quantity||0));
@@ -29,7 +30,7 @@ Deno.serve(async(req:Request)=>{
   const requestUrl=new URL(req.url);
   const resource=clean(requestUrl.searchParams.get("resource")||"home",40).toLowerCase();
 
-  if(resource==="health")return reply({ok:true,version:4,mode:"read_only",cache_seconds:300},200,origin);
+  if(resource==="health")return reply({ok:true,version:5,mode:"read_only",cache_seconds:300},200,origin);
 
   if(resource==="home"){
     const basketResult=await sb.from("basket_templates").select("id,name,description,image_url,base_price,sort_order,is_featured,basket_template_items(quantity,product:products(is_active,stock))").eq("is_active",true).order("sort_order",{ascending:true}).order("name",{ascending:true});
@@ -55,6 +56,18 @@ Deno.serve(async(req:Request)=>{
     const baskets=(basketResult.data||[]).map((b:any)=>{const items=Array.isArray(b.basket_template_items)?b.basket_template_items:[];return {id:b.id,name:b.name,description:b.description||null,image_url:b.image_url||null,base_price:Number(b.base_price||0),sort_order:Number(b.sort_order||0),is_featured:b.is_featured===true,item_count:items.length,ready:basketReady(items)}});
     const categories=categoryRows.map((c:any)=>({name:clean(c.name,120),show_home:c.show_home!==false,sort_order:Number(c.sort_order||0)})).filter((c:any)=>c.name);
     return reply({ok:true,baskets,categories,featured},200,origin);
+  }
+
+  if(resource==="offers"){
+    const categories=jsonList(requestUrl.searchParams.get("categories"),16,120);
+    const excludedIds=new Set(jsonList(requestUrl.searchParams.get("exclude"),80,80).filter(id=>/^[0-9a-f-]{36}$/i.test(id)));
+    const limit=integer(requestUrl.searchParams.get("limit"),1,12,8);
+    if(!categories.length)return reply({ok:true,products:[]},200,origin);
+    const fetchLimit=Math.min(48,Math.max(limit+excludedIds.size+8,limit));
+    const {data,error}=await sb.from("products").select(productFields).eq("is_active",true).gt("stock",0).eq("is_offer",true).in("storefront_category",categories).order("sort_order",{ascending:true}).order("name",{ascending:true}).limit(fetchLimit);
+    if(error)return reply({ok:false,error:"offers_failed"},500,origin,NO_STORE);
+    const products=(data||[]).filter((p:any)=>!excludedIds.has(String(p.id))).slice(0,limit).map(publicProduct);
+    return reply({ok:true,products},200,origin);
   }
 
   if(resource==="category"||resource==="search"){
@@ -84,7 +97,7 @@ Deno.serve(async(req:Request)=>{
 
   if(resource==="basket"){
     const id=clean(requestUrl.searchParams.get("id"),80);if(!/^[0-9a-f-]{36}$/i.test(id))return reply({ok:false,error:"invalid_id"},400,origin,NO_STORE);
-    const {data:b,error}=await sb.from("basket_templates").select("id,name,description,image_url,base_price,is_featured,basket_template_items(id,product_id,quantity,removable,quantity_editable,min_quantity,max_quantity,add_unit_delta,remove_unit_delta,sort_order,product:products(id,name,price,stock,image_url,brand,category,storefront_category,packaging,is_active))").eq("id",id).eq("is_active",true).maybeSingle();
+    const {data:b,error}=await sb.from("basket_templates").select("id,name,description,image_url,base_price,is_featured,basket_template_items(id,product_id,quantity,removable,quantity_editable,min_quantity,max_quantity,add_unit_delta,remove_unit_delta,sort_order,product:products(id,name,price,stock,image_url,brand,category,storefront_category,packaging,is_active,is_offer))").eq("id",id).eq("is_active",true).maybeSingle();
     if(error||!b)return reply({ok:false,error:"basket_not_found"},404,origin,NO_STORE);
     const items=Array.isArray((b as any).basket_template_items)?(b as any).basket_template_items:[];
     return reply({ok:true,basket:{id:(b as any).id,name:(b as any).name,description:(b as any).description||null,image_url:(b as any).image_url||null,base_price:Number((b as any).base_price||0),is_featured:(b as any).is_featured===true,ready:basketReady(items)},items:items.sort((a:any,c:any)=>Number(a.sort_order||0)-Number(c.sort_order||0)).map((i:any)=>({product_id:i.product_id,quantity:Number(i.quantity||0),removable:i.removable===true,quantity_editable:i.quantity_editable===true,min_quantity:Number(i.min_quantity||0),max_quantity:i.max_quantity==null?null:Number(i.max_quantity),add_unit_delta:i.add_unit_delta==null?null:Number(i.add_unit_delta),remove_unit_delta:i.remove_unit_delta==null?null:Number(i.remove_unit_delta),product:publicProduct(i.product)}))},200,origin);

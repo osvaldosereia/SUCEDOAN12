@@ -13,7 +13,7 @@ const allMigrations=migrationFiles.map(name=>fs.readFileSync(`supabase/migration
 
 assert.match(edge,/req\.method\s*!==\s*['"]GET['"]/,'catálogo deve ser GET/read-only');
 assert.match(edge,/resource/);
-for(const name of ['health','home','category','search','basket','product']) assert.match(edge,new RegExp(name),`resource ${name} ausente`);
+for(const name of ['health','home','category','search','basket','product','offers']) assert.match(edge,new RegExp(name),`resource ${name} ausente`);
 assert.match(edge,/Cache-Control/);
 assert.match(edge,/public,\s*max-age=60/);
 assert.match(edge,/s-maxage=300/);
@@ -30,6 +30,15 @@ assert.match(edge,/remove_unit_delta/,'cesta precisa expor delta comercial de re
 assert.match(edge,/limit/);
 assert.doesNotMatch(edge,/insert\(|update\(|delete\(|upsert\(|create_order|create_storefront_order/i,'catalog-v3 deve ser somente leitura');
 assert.match(config,/\[functions\.catalog-v3\][\s\S]*verify_jwt\s*=\s*false/);
+
+// Ofertas são somente produtos marcados no Admin e relacionadas às categorias presentes no pedido.
+assert.match(edge,/resource===['"]offers['"]/,'catálogo precisa de recurso dedicado para ofertas contextuais');
+assert.match(edge,/searchParams\.get\(['"]categories['"]\)/,'ofertas precisam receber categorias do pedido');
+assert.match(edge,/searchParams\.get\(['"]exclude['"]\)/,'ofertas precisam receber produtos já presentes no pedido');
+assert.match(edge,/\.eq\(['"]is_offer['"],\s*true\)/,'ofertas devem respeitar exatamente o marcador Oferta do Admin');
+assert.match(edge,/\.in\(['"]storefront_category['"],\s*categories\)/,'ofertas devem ser limitadas às categorias comerciais do pedido');
+assert.match(edge,/excludedIds/,'endpoint deve excluir produtos já presentes no pedido antes de responder');
+assert.doesNotMatch(edge,/Math\.random|random\(/i,'ofertas não podem ser aleatórias');
 
 for(const category of ['Mercearia','Café da manhã','Massas, molhos e temperos','Biscoitos, doces e lanches','Bebidas','Limpeza da casa','Lavanderia','Higiene e beleza','Bebê','Pets','Utilidades']) assert.match(migration,new RegExp(category.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i'),`categoria comercial ausente: ${category}`);
 assert.match(migration,/add\s+column\s+if\s+not\s+exists\s+storefront_category\s+text/i,'migration precisa criar campo próprio para a Vitrine V3');
