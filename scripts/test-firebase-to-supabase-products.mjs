@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import {firebaseIsActive, normalizeFirebaseProduct, findExistingProduct, buildNewProductRow, buildExistingPatch} from './firebase-to-supabase-products.mjs';
+
+const active={ativo:true,codigo:'ABC',nome:'Produto Teste',gtin:'7891234567890',preco:12.5,preco_custo:8,estoque:7,ncm:'12345678',marca:'Marca',categoria:'Mercearia',subcategoria:'Arroz',embalagem:'1kg',fornecedor:'Fornecedor',validade:'2027-01-31',gondola:'G1',prateleira:'P2',url_imagem:'https://example.com/p.jpg',descricao:'Descrição completa'};
+assert.equal(firebaseIsActive(active),true);
+assert.equal(firebaseIsActive({...active,ativo:false}),false);
+assert.equal(firebaseIsActive({...active,situacao:'INATIVO'}),false);
+
+const normalized=normalizeFirebaseProduct('fb-key',active);
+assert.equal(normalized.firebase_key,'fb-key');
+assert.equal(normalized.sku,'ABC');
+assert.equal(normalized.gtin,'7891234567890');
+assert.equal(normalized.image_url,'https://example.com/p.jpg');
+assert.equal(normalized.price,12.5);
+assert.equal(normalized.cost,8);
+assert.equal(normalized.stock,7);
+assert.equal(normalized.firebase_snapshot.nome,'Produto Teste');
+
+const existing=[
+  {id:'1',firebase_key:'fb-key',gtin:'111',sku:'ONE'},
+  {id:'2',firebase_key:null,gtin:'7891234567890',sku:'TWO'},
+  {id:'3',firebase_key:null,gtin:null,sku:'ABC'}
+];
+assert.equal(findExistingProduct(normalized,existing).row.id,'1','firebase_key tem prioridade');
+assert.equal(findExistingProduct({...normalized,firebase_key:'other'},existing).row.id,'2','GTIN é segundo critério');
+assert.equal(findExistingProduct({...normalized,firebase_key:'other',gtin:null},existing).row.id,'3','SKU é terceiro critério');
+
+const inserted=buildNewProductRow(normalized);
+assert.equal(inserted.is_active,false);
+assert.equal(inserted.is_whatsapp_active,false);
+assert.equal(inserted.physically_verified,false);
+assert.equal(inserted.image_url,'https://example.com/p.jpg');
+assert.equal(inserted.image_original_url,'https://example.com/p.jpg');
+
+const patch=buildExistingPatch({id:'1',name:'Nome Atual',price:99,cost:50,stock:22,image_url:'https://current/img.jpg',brand:null,category:null,firebase_key:'fb-key',firebase_snapshot:{}},normalized);
+assert.equal(patch.price,undefined,'não sobrescreve preço atual');
+assert.equal(patch.cost,undefined,'não sobrescreve custo atual');
+assert.equal(patch.stock,undefined,'não sobrescreve estoque atual');
+assert.equal(patch.image_url,undefined,'não sobrescreve imagem atual');
+assert.equal(patch.brand,'Marca','completa campo ausente');
+assert.equal(patch.firebase_snapshot.nome,'Produto Teste','preserva snapshot completo');
+
+console.log('firebase-to-supabase-products contract ok');
