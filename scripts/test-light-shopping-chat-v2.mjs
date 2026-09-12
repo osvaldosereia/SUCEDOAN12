@@ -27,7 +27,7 @@ assert.match(addon,/lookup_customer/,'checkout must look up an existing customer
 assert.match(addon,/checkoutPhoneLookup/,'checkout must start with the phone lookup step for anonymous customers');
 assert.match(addon,/address-confirm-required/,'saved delivery addresses must require an explicit confirmation on every order');
 assert.match(addon,/stopImmediatePropagation/,'order confirmation must be blocked until a saved address is explicitly chosen');
-assert.match(addon,/saveAddress[^\n]*checked\s*=\s*true/,'a newly entered delivery address must always be saved');
+assert.match(addon,/save\.checked\s*=\s*true/,'a newly entered delivery address must always be saved');
 assert.match(addonCss,/\.qty-fixed/,'fixed quantity state must be styled explicitly');
 assert.match(addonCss,/\.address-confirm-required/,'explicit delivery address confirmation must have a visible prompt');
 assert.match(customerEdge,/action==='lookup_customer'/,'helper API must expose the phone lookup action');
