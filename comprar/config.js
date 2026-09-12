@@ -2,8 +2,9 @@ window.DA_SHOPPING_ROOM_CONFIG=Object.freeze({
   api:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-v1',
   productsApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-products-v1',
   menuApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-menu-v1',
+  customerApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-customer-v1',
   legacyApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-room-v1',
   salesApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-room-sales-v1',
   whatsappFallback:'https://wa.me/556584491018',
-  build:'20260911-light-chat-helper-01'
+  build:'20260912-phone-first-quantity-01'
 });
