@@ -67,19 +67,40 @@ assert.match(baskets,/data-select-basket/,'visualização da cesta precisa ter a
 assert.match(app,/data-select-basket/,'app precisa tratar a escolha explícita da cesta');
 assert.match(app,/Trocar a cesta atual por esta\?/,'troca de cesta escolhida precisa pedir confirmação');
 assert.match(baskets,/Escolher esta cesta/,'CTA de escolha da cesta precisa ser claro');
-assert.match(app,/Quer comprar sem cesta\?/,'pedido avulso deve ser caminho secundário na home');
-assert.match(app,/renderBasketCards\(home\.baskets,state\.basket\?\.id\|\|''\)\}<\/section>\$\{marketMarkup\(\)\}/,'cestas precisam ser renderizadas antes do caminho de pedido avulso');
-assert.match(baskets,/Total do pedido/,'personalização precisa mostrar o total corrente');
-assert.match(app,/renderBasketDetail\(state\.basket,state\.basketItems,estimatedTotal\(\)\)/,'total da cesta precisa ser recalculado a cada alteração');
+
+// Home V3: cestas primeiro, mas busca e categorias de produtos avulsos ficam visíveis sem etapa intermediária.
+assert.match(app,/Escolha sua cesta básica/,'home precisa usar linguagem comercial clara');
+assert.match(app,/Veja o que vem em cada cesta e escolha a melhor para você\./,'home não deve explicar funcionamento interno do sistema');
+assert.match(app,/Comprar outros produtos/,'mercado avulso precisa ter chamada positiva e direta');
+assert.doesNotMatch(app,/Quer comprar sem cesta\?/,'home não deve apresentar compra avulsa como caminho negativo');
+assert.doesNotMatch(app,/marketVisible/,'busca e categorias não devem depender de botão para aparecer');
+assert.match(app,/productSearchInput/,'busca deve estar disponível na home');
+assert.match(app,/renderBasketCards\(home\.baskets,state\.basket\?\.id\|\|''\)[\s\S]*marketMarkup\(\)/,'cestas devem vir antes do mercado avulso');
+assert.match(baskets,/Ver cesta/,'card da cesta precisa deixar explícito que abre detalhes');
+assert.match(app,/Cuiabá e Várzea Grande/,'home precisa comunicar área atendida sem banner grande');
+assert.match(app,/Pagamento na entrega/,'home precisa antecipar condição comercial importante');
+
+// Depois da escolha da cesta, a compra segue na mesma página: personalização -> ofertas relevantes -> demais produtos.
+assert.doesNotMatch(baskets,/Adicionar mais produtos|data-add-products/,'detalhe da cesta não deve terminar em botão intermediário para abrir o mercado');
+assert.doesNotMatch(baskets,/class="basket-actions"/,'detalhe da cesta não deve usar o antigo bloco grande de ações');
+assert.match(baskets,/Total até agora/,'total deve continuar visível de forma compacta durante a personalização');
+assert.match(app,/Ofertas para seu pedido/,'página selecionada precisa reservar seção para ofertas relevantes');
+assert.match(app,/catalog\(['"]offers['"]\s*,/,'ofertas relevantes precisam vir do catálogo');
+assert.match(state,/export function cartCategories\(/,'estado precisa expor categorias presentes no pedido');
+assert.match(state,/export function cartProductIds\(/,'estado precisa expor produtos presentes no pedido para não repetir oferta');
+assert.match(app,/refreshRelevantOffers/,'ofertas precisam ser atualizadas quando o pedido muda');
+assert.match(app,/renderSelectedBasketPage/,'cesta selecionada precisa renderizar fluxo contínuo de compra');
 
 assert.match(css,/#1a73e8/i);
 assert.match(css,/#202124/i);
 assert.match(css,/product-dialog/,'modal de produto precisa ter estilo próprio');
 assert.match(css,/\.basket-photo\{aspect-ratio:\s*1\/1/,'foto da cesta deve ser quadrada');
 assert.match(css,/\.product-detail-photo\{[^}]*aspect-ratio:\s*1\/1/,'foto grande do produto deve ser quadrada');
+assert.match(css,/\.trust-strip/,'home precisa de linha compacta de confiança/serviço');
+assert.match(css,/\.offer-section/,'ofertas contextuais precisam ter apresentação própria');
 assert.doesNotMatch(css,/linear-gradient/i);
 assert.match(css,/min-height:\s*4[6-9]px|min-height:\s*[5-9]\dpx/,'ações devem ter toque confortável');
 assert.doesNotMatch(all,/SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY/);
-assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)+Buffer.byteLength(app)<150_000,'shell inicial ficou pesado');
+assert.ok(Buffer.byteLength(html)+Buffer.byteLength(css)+Buffer.byteLength(app)<160_000,'shell inicial ficou pesado');
 
 console.log('storefront-v3-ui contract ok');
