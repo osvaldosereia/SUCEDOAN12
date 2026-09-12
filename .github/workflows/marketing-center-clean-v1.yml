@@ -40,6 +40,7 @@ on:
       - 'scripts/test-marketing-quick-edit-revision-comparison-readonly-ui-v1.mjs'
       - 'scripts/test-marketing-quick-edit-review-summary-readonly-ui-v1.mjs'
       - 'scripts/test-marketing-quick-edit-review-session-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-session-surface-readonly-ui-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -85,6 +86,7 @@ on:
       - 'scripts/test-marketing-quick-edit-revision-comparison-readonly-ui-v1.mjs'
       - 'scripts/test-marketing-quick-edit-review-summary-readonly-ui-v1.mjs'
       - 'scripts/test-marketing-quick-edit-review-session-readonly-ui-v1.mjs'
+      - 'scripts/test-marketing-review-session-surface-readonly-ui-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -118,6 +120,7 @@ jobs:
           node --check admin-v3/marketing-quick-edit-revision-comparison-readonly-v1.js
           node --check admin-v3/marketing-quick-edit-review-summary-readonly-v1.js
           node --check admin-v3/marketing-quick-edit-review-session-readonly-v1.js
+          node --check admin-v3/marketing-review-session-surface-readonly-v1.js
           node --check scripts/marketing-channel-preflight-v1.mjs
           node --check scripts/marketing-channel-request-bundle-v1.mjs
           node --check scripts/marketing-approval-preview-v1.mjs
@@ -175,3 +178,5 @@ jobs:
         run: node scripts/test-marketing-quick-edit-review-summary-readonly-ui-v1.mjs
       - name: Validate bounded readonly Marketing review session lifecycle
         run: node scripts/test-marketing-quick-edit-review-session-readonly-ui-v1.mjs
+      - name: Validate dormant fail-closed Marketing review session surface
+        run: node scripts/test-marketing-review-session-surface-readonly-ui-v1.mjs
