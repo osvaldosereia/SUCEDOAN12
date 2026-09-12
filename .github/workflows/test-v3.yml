@@ -12,8 +12,11 @@ on:
       - 'admin-v3/api.js'
       - 'admin-v3/app.js'
       - 'admin-v3/basket-editor.js'
+      - 'admin-v3/products-inline-controls-v4.js'
+      - 'admin-v3/products-inline-controls-v4.css'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/migrations/*storefront_v3*'
       - 'supabase/config.toml'
       - 'scripts/test-storefront-v3-ui.mjs'
@@ -33,8 +36,11 @@ on:
       - 'admin-v3/api.js'
       - 'admin-v3/app.js'
       - 'admin-v3/basket-editor.js'
+      - 'admin-v3/products-inline-controls-v4.js'
+      - 'admin-v3/products-inline-controls-v4.css'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/migrations/*storefront_v3*'
       - 'supabase/config.toml'
       - 'scripts/test-storefront-v3-ui.mjs'
@@ -92,7 +98,9 @@ jobs:
           node --check admin-v3/api.js
           node --check admin-v3/app.js
           node --check admin-v3/basket-editor.js
+          node --check admin-v3/products-inline-controls-v4.js
       - name: Compilar Edge Functions V3
         run: |
           deno check supabase/functions/catalog-v3/index.ts
           deno check supabase/functions/admin-v3-api/index.ts
+          deno check supabase/functions/admin-simple-v2/index.ts
