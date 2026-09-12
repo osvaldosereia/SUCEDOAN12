@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.112.3";
-import {routeDeterministicText} from "./core.mjs";
+import {extractPapoAIIdentity,mergeDeterministicMetadata,routeDeterministicText} from "./core.mjs";
 
 const ORIGINS=new Set(['https://donaantonia.com.br','https://www.donaantonia.com.br']);
 const cors=(req:Request)=>{const o=req.headers.get('origin');if(o&&!ORIGINS.has(o))return null;return {'Access-Control-Allow-Origin':o||'https://donaantonia.com.br','Access-Control-Allow-Headers':'content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'}};
@@ -32,6 +32,16 @@ Deno.serve(async(req:Request)=>{
     return json(req,{ok:true,...data,room_url:`https://donaantonia.com.br/comprar/?s=${data.token}`});
   }
 
+  if(action==='create_papoai_room'){
+    const identity=extractPapoAIIdentity(body);
+    if(!identity.phone)return json(req,{ok:false,error:'valid_whatsapp_required'},400);
+    const {data,error}=await sb.rpc('deterministic_chat_start_session_v1');
+    if(error)return json(req,{ok:false,error:'room_create_failed',detail:error.message},400);
+    const {data:attached,error:attachError}=await sb.rpc('deterministic_chat_attach_papoai_contact_v1',{p_public_token:data.token,p_name:clean(identity.name,120),p_phone:clean(identity.phone,40)});
+    if(attachError)return json(req,{ok:false,error:'papoai_identity_failed',detail:attachError.message},400);
+    return json(req,{ok:true,...data,identity:attached,customer_found:attached?.customer_found===true,customer_ambiguous:attached?.customer_ambiguous===true,display_name:attached?.display_name||clean(identity.name,120)||'Cliente',room_url:`https://donaantonia.com.br/comprar/?s=${data.token}`});
+  }
+
   const token=clean(body?.token,80);if(!tokenOk(token))return json(req,{ok:false,error:'invalid_token'},400);
   const {data:session,error:se}=await sb.from('catalog_sessions').select('id,public_token,customer_id,conversation_id,cart_id,status,expires_at,created_at,current_view,metadata,completed_at').eq('public_token',token).maybeSingle();
   if(se)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);
@@ -40,13 +50,13 @@ Deno.serve(async(req:Request)=>{
 
   const cart=async()=>{const {data:s}=await sb.from('catalog_sessions').select('cart_id').eq('id',session.id).single();if(!s?.cart_id)return null;const {data:c}=await sb.from('carts').select('id,status,total,fiscal_subtotal,other_expenses,discount,version,basket_id').eq('id',s.cart_id).maybeSingle();if(!c)return null;const {data:items}=await sb.from('cart_items').select('product_id,source,quantity,base_quantity,commercial_delta,product:products(id,name,price,image_url,brand,packaging,category)').eq('cart_id',c.id).gt('quantity',0).order('created_at');return {...c,items:items||[]}};
   const messages=async()=>{if(!session.conversation_id)return [];const {data}=await sb.from('messages').select('id,direction,message_type,body_text,created_at,raw_event').eq('conversation_id',session.conversation_id).gte('created_at',session.created_at).in('message_type',['text','system']).order('created_at',{ascending:true}).limit(60);return (data||[]).map((m:any)=>({id:m.id,direction:m.direction,message_type:m.message_type,body_text:m.body_text,created_at:m.created_at,source:m.raw_event?.source||null}))};
-  const logTrigger=async(trigger:string,toState:string,payload:any={})=>{const fromState=clean(session.metadata?.state||'MENU',60);await sb.from('shopping_chat_trigger_events').insert({catalog_session_id:session.id,conversation_id:session.conversation_id,customer_id:session.customer_id,trigger,from_state:fromState,to_state:toState,payload});await sb.from('catalog_sessions').update({metadata:{...(session.metadata||{}),state:toState},last_activity_at:new Date().toISOString()}).eq('id',session.id)};
+  const logTrigger=async(trigger:string,toState:string,payload:any={})=>{const {data:latest,error:latestError}=await sb.from('catalog_sessions').select('metadata').eq('id',session.id).maybeSingle();if(latestError)throw latestError;const latestMetadata=latest?.metadata||session.metadata||{};const fromState=clean(latestMetadata?.state||'MENU',60);const {error:logError}=await sb.from('shopping_chat_trigger_events').insert({catalog_session_id:session.id,conversation_id:session.conversation_id,customer_id:session.customer_id,trigger,from_state:fromState,to_state:toState,payload});if(logError)throw logError;const {error:updateError}=await sb.from('catalog_sessions').update({metadata:mergeDeterministicMetadata(latestMetadata,toState),last_activity_at:new Date().toISOString()}).eq('id',session.id);if(updateError)throw updateError};
 
   if(action==='open'){
     await sb.from('catalog_sessions').update({last_opened_at:new Date().toISOString(),last_activity_at:new Date().toISOString(),experience:'shopping_room'}).eq('id',session.id);
-    let customer:any=null;if(session.customer_id){const {data:c}=await sb.from('customers').select('id,name,primary_whatsapp_e164,preferred_reply').eq('id',session.customer_id).maybeSingle();customer=c||null}
+    let customer:any=null;if(session.customer_id){const {data:c}=await sb.from('customers').select('id,name,primary_whatsapp_e164,preferred_reply').eq('id',session.customer_id).maybeSingle();customer=c?{...c,registered:true}:null}else if(session.metadata?.identity_source==='papoai'&&session.metadata?.display_name){customer={id:null,name:clean(session.metadata.display_name,120),primary_whatsapp_e164:clean(session.metadata.contact_phone,40),preferred_reply:'text',registered:false}}
     const {data:baskets}=await sb.from('basket_templates').select('id,name,description,image_url,base_price,sort_order').eq('is_active',true).order('sort_order').order('name').limit(20);
-    return json(req,{ok:true,mode:'deterministic',config:{greeting_text:cfg.greeting_text,composer_enabled:cfg.composer_enabled,media_input_enabled:cfg.media_input_enabled},session:{id:session.id,current_view:session.current_view,state:session.metadata?.state||'MENU',entry_intent:session.metadata?.entry_intent||null,entry_message:session.metadata?.entry_message||null,entry_source:session.metadata?.entry_source||null,expires_at:session.expires_at},customer:customer?{id:customer.id,name:customer.name,phone:customer.primary_whatsapp_e164,preferred_reply:customer.preferred_reply}:null,baskets:baskets||[],cart:await cart(),messages:await messages()});
+    return json(req,{ok:true,mode:'deterministic',config:{greeting_text:cfg.greeting_text,composer_enabled:cfg.composer_enabled,media_input_enabled:cfg.media_input_enabled},session:{id:session.id,current_view:session.current_view,state:session.metadata?.state||'MENU',entry_intent:session.metadata?.entry_intent||null,entry_message:session.metadata?.entry_message||null,entry_source:session.metadata?.entry_source||null,identity_source:session.metadata?.identity_source||null,customer_found:session.metadata?.customer_found===true,customer_ambiguous:session.metadata?.customer_ambiguous===true,expires_at:session.expires_at},customer:customer?{id:customer.id,name:customer.name,phone:customer.primary_whatsapp_e164,preferred_reply:customer.preferred_reply,registered:customer.registered===true}:null,baskets:baskets||[],cart:await cart(),messages:await messages()});
   }
 
   if(action==='messages')return json(req,{ok:true,messages:await messages()});
@@ -71,7 +81,7 @@ Deno.serve(async(req:Request)=>{
     const id=clean(body?.product_id,80),n=qty(body?.quantity);if(!uuidOk(id)||n===null)return json(req,{ok:false,error:'invalid_quantity'},400);const {data,error}=await sb.rpc('room_set_basket_quantity',{p_public_token:token,p_product_id:id,p_quantity:n});if(error)return json(req,{ok:false,error:'basket_quantity_failed',detail:error.message},400);await logTrigger('SET_BASKET_QUANTITY','VIEWING_BASKET',{product_id:id,quantity:n});return json(req,{ok:true,cart:await cart()});
   }
   if(action==='checkout_preview'){
-    const {data,error}=await sb.rpc('deterministic_chat_checkout_preview_v1',{p_public_token:token});if(error)return json(req,{ok:false,error:'checkout_failed',detail:error.message},400);await logTrigger('START_CHECKOUT','CHECKOUT');return json(req,{ok:true,checkout:data,payment_method:session.metadata?.payment_method||null});
+    const {data,error}=await sb.rpc('deterministic_chat_checkout_preview_v1',{p_public_token:token});if(error)return json(req,{ok:false,error:'checkout_failed',detail:error.message},400);await logTrigger('START_CHECKOUT','CHECKOUT');const {data:latest}=await sb.from('catalog_sessions').select('metadata').eq('id',session.id).maybeSingle();return json(req,{ok:true,checkout:data,payment_method:latest?.metadata?.payment_method||null});
   }
   if(action==='identify'){
     const {data,error}=await sb.rpc('deterministic_chat_identify_customer_v1',{p_public_token:token,p_name:clean(body?.name,120),p_phone:clean(body?.phone,40)});if(error)return json(req,{ok:false,error:'identify_failed',detail:error.message},400);return json(req,{ok:true,customer:data});
@@ -80,7 +90,7 @@ Deno.serve(async(req:Request)=>{
     const address=body?.delivery_address&&typeof body.delivery_address==='object'?body.delivery_address:{};const locator=body?.delivery_locator&&typeof body.delivery_locator==='object'?body.delivery_locator:null;const enriched={...address,...(locator?.latitude!=null?{latitude:locator.latitude}:{}),...(locator?.longitude!=null?{longitude:locator.longitude}:{}),...(locator?.google_maps_url?{google_maps_url:locator.google_maps_url}:mapsUrl(locator?.latitude,locator?.longitude)?{google_maps_url:mapsUrl(locator?.latitude,locator?.longitude)}:{})};const {data,error}=await sb.rpc('deterministic_chat_save_address_v1',{p_public_token:token,p_address:enriched});if(error)return json(req,{ok:false,error:'address_failed',detail:error.message},400);return json(req,{ok:true,address:data});
   }
   if(action==='set_payment'){
-    const method=clean(body?.payment_method,30);if(!PAYMENT.has(method))return json(req,{ok:false,error:'invalid_payment_method'},400);await sb.from('catalog_sessions').update({metadata:{...(session.metadata||{}),payment_method:method,state:'CHECKOUT'},last_activity_at:new Date().toISOString()}).eq('id',session.id);await logTrigger('SET_PAYMENT','CHECKOUT',{payment_method:method});return json(req,{ok:true,payment_method:method});
+    const method=clean(body?.payment_method,30);if(!PAYMENT.has(method))return json(req,{ok:false,error:'invalid_payment_method'},400);const {data:latest,error:latestError}=await sb.from('catalog_sessions').select('metadata').eq('id',session.id).maybeSingle();if(latestError)return json(req,{ok:false,error:'payment_state_failed'},500);const nextMetadata=mergeDeterministicMetadata(latest?.metadata||session.metadata||{},'CHECKOUT',{payment_method:method});const {error:updateError}=await sb.from('catalog_sessions').update({metadata:nextMetadata,last_activity_at:new Date().toISOString()}).eq('id',session.id);if(updateError)return json(req,{ok:false,error:'payment_state_failed'},500);await logTrigger('SET_PAYMENT','CHECKOUT',{payment_method:method});return json(req,{ok:true,payment_method:method});
   }
   if(action==='preferences'){
     const {data,error}=await sb.rpc('room_save_customer_preferences',{p_public_token:token,p_day:body?.birthday_day??null,p_month:body?.birthday_month??null,p_marketing_opt_in:typeof body?.marketing_opt_in==='boolean'?body.marketing_opt_in:null});if(error)return json(req,{ok:false,error:'preferences_failed',detail:error.message},400);return json(req,{ok:true,preferences:data});
