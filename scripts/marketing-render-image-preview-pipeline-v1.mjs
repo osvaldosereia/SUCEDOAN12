@@ -7,6 +7,9 @@ const MAX_LAYERS=24;
 const MAX_TEXT_LENGTH=600;
 const MAX_IMAGE_ASSET_BYTES=4_000_000;
 const MAX_TOTAL_IMAGE_BYTES=12_000_000;
+const MAX_SVG_BYTES=2_000_000;
+const MAX_PNG_BYTES=8_000_000;
+const MAX_COMPLEXITY_UNITS=240;
 const SAFE_IMAGE_MIME=new Set(['image/png','image/jpeg','image/webp']);
 const SAFE_FONTS=new Set(['Arial','Helvetica','Georgia','serif','sans-serif']);
 
@@ -54,7 +57,27 @@ function validateAssets(imageAssets={}){
     if(total>MAX_TOTAL_IMAGE_BYTES)fail('image_assets_total_too_large');
     normalized.set(key,{mime,bytes,sha256:sha256(bytes)});
   }
-  return normalized;
+  return {assets:normalized,total_bytes:total};
+}
+
+function positiveBudget(value,fallback,hardMax,error){
+  const parsed=Math.floor(number(value,fallback));
+  if(parsed<1||parsed>hardMax)fail(error);
+  return parsed;
+}
+function normalizeResourceBudget(input={}){
+  if(input==null)input={};
+  if(!input||typeof input!=='object'||Array.isArray(input))fail('invalid_resource_budget');
+  return Object.freeze({
+    max_input_bytes:positiveBudget(input.max_input_bytes,MAX_TOTAL_IMAGE_BYTES,MAX_TOTAL_IMAGE_BYTES,'input_budget_invalid'),
+    max_svg_bytes:positiveBudget(input.max_svg_bytes,MAX_SVG_BYTES,MAX_SVG_BYTES,'svg_budget_invalid'),
+    max_png_bytes:positiveBudget(input.max_png_bytes,MAX_PNG_BYTES,MAX_PNG_BYTES,'png_budget_invalid'),
+    max_complexity_units:positiveBudget(input.max_complexity_units,MAX_COMPLEXITY_UNITS,MAX_COMPLEXITY_UNITS,'complexity_budget_invalid')
+  });
+}
+function estimateComplexity(spec,assets){
+  const textChars=spec.layers.filter(layer=>layer.type==='text').reduce((sum,layer)=>sum+String(layer.text??'').slice(0,MAX_TEXT_LENGTH).length,0);
+  return spec.layers.length*4+assets.size*8+Math.ceil(textChars/80)+Math.ceil((spec.width*spec.height)/500_000);
 }
 
 function rectMarkup(layer,canvas){
@@ -124,8 +147,15 @@ export async function buildMarketingRenderImagePreviewPipeline(input={}){
   });
   validateAiPreflight(input,manifest);
   const spec=validateSpec(input.spec,manifest.canvas);
-  const assets=validateAssets(input.image_assets||{});
+  const {assets,total_bytes:inputBytes}=validateAssets(input.image_assets||{});
+  const budget=normalizeResourceBudget(input.resource_budget);
+  if(inputBytes>budget.max_input_bytes)fail('input_budget_exceeded');
+  const complexityUnits=estimateComplexity(spec,assets);
+  if(complexityUnits>budget.max_complexity_units)fail('render_complexity_budget_exceeded');
+  const specHash=sha256(JSON.stringify(stable(spec)));
+  const sourceAssets=[...assets].map(([key,a])=>({key,mime_type:a.mime,sha256:a.sha256,byte_length:a.bytes.length}));
   const svgBytes=renderSvgBytes(spec,assets);
+  if(svgBytes.length>budget.max_svg_bytes)fail('svg_budget_exceeded');
   const svgHash=sha256(svgBytes);
   const preview=await buildMarketingRenderPreviewBuffer({
     asset_id:manifest.asset_id,
@@ -133,6 +163,7 @@ export async function buildMarketingRenderImagePreviewPipeline(input={}){
     manifest,
     svg_bytes:svgBytes
   });
+  if(preview.png_bytes.length>budget.max_png_bytes)fail('png_budget_exceeded');
   const svgMetadata=Object.freeze({
     schema_version:'marketing-render-svg-buffer-metadata-v1',
     mime_type:'image/svg+xml',
@@ -145,9 +176,37 @@ export async function buildMarketingRenderImagePreviewPipeline(input={}){
     external_side_effect:false,
     network_allowed:false,
     provider_call_allowed:false,
-    idempotency_key:`marketing-render-svg-buffer-v1:${digest({spec,image_assets:[...assets].map(([key,a])=>({key,mime:a.mime,sha256:a.sha256,byte_length:a.bytes.length}))})}`
+    idempotency_key:`marketing-render-svg-buffer-v1:${digest({spec,image_assets:sourceAssets})}`
   });
-  const basis={asset_id:manifest.asset_id,revision:manifest.revision,render_profile:manifest.render_profile,manifest_key:manifest.idempotency_key,svg_key:svgMetadata.idempotency_key,svg_sha256:svgHash,preview_key:preview.idempotency_key,preview_sha256:preview.preview_metadata.sha256};
+  const renderIntegrity=Object.freeze({
+    schema_version:'marketing-render-integrity-v1',
+    asset_id:manifest.asset_id,
+    revision:manifest.revision,
+    render_profile:manifest.render_profile,
+    spec_sha256:specHash,
+    source_assets:Object.freeze(sourceAssets.map(asset=>Object.freeze({...asset}))),
+    manifest_idempotency_key:manifest.idempotency_key,
+    svg_idempotency_key:svgMetadata.idempotency_key,
+    svg_sha256:svgHash,
+    png_sha256:preview.preview_metadata.sha256,
+    preview_idempotency_key:preview.preview_metadata.idempotency_key,
+    budget:Object.freeze({
+      status:'within_budget',
+      input_bytes:inputBytes,
+      svg_bytes:svgBytes.length,
+      png_bytes:preview.png_bytes.length,
+      complexity_units:complexityUnits,
+      limits:budget
+    }),
+    preview_only:true,
+    external_side_effect:false,
+    network_allowed:false,
+    provider_call_allowed:false,
+    storage_write_allowed:false,
+    filesystem_write_allowed:false,
+    idempotency_key:`marketing-render-integrity-v1:${digest({asset_id:manifest.asset_id,revision:manifest.revision,render_profile:manifest.render_profile,spec_sha256:specHash,source_assets:sourceAssets,manifest_key:manifest.idempotency_key,svg_key:svgMetadata.idempotency_key,svg_sha256:svgHash,png_sha256:preview.preview_metadata.sha256,preview_key:preview.preview_metadata.idempotency_key,budget:{input_bytes:inputBytes,svg_bytes:svgBytes.length,png_bytes:preview.png_bytes.length,complexity_units:complexityUnits,limits:budget}})}`
+  });
+  const basis={asset_id:manifest.asset_id,revision:manifest.revision,render_profile:manifest.render_profile,integrity_key:renderIntegrity.idempotency_key};
   return Object.freeze({
     schema_version:'marketing-render-image-preview-pipeline-v1',
     asset_id:manifest.asset_id,
@@ -158,6 +217,7 @@ export async function buildMarketingRenderImagePreviewPipeline(input={}){
     svg_metadata:svgMetadata,
     png_bytes:preview.png_bytes,
     preview_metadata:preview.preview_metadata,
+    render_integrity:renderIntegrity,
     preview_only:true,
     external_side_effect:false,
     network_allowed:false,
