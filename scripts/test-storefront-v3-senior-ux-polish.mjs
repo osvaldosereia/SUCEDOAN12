@@ -12,7 +12,7 @@ const styles=read('vitrine-v3/styles.css')+'\n'+read('vitrine-v3/details.css')+'
 assert.match(products,/data-extra-plus[^>]*disabled|disabled[^>]*data-extra-plus/,'lista de produtos precisa desabilitar + quando atingir estoque');
 assert.match(products,/data-modal-extra-minus[^>]*disabled|disabled[^>]*data-modal-extra-minus/,'modal precisa ter estado mínimo explícito e permitir remoção até zero');
 assert.match(app,/modalQty=Math\.max\(0,/,'modal deve permitir reduzir quantidade até zero para remover do pedido');
-assert.match(cart,/data-cart-extra-plus[^>]*disabled|disabled[^>]*data-cart-extra-plus/,'carrinho precisa desabilitar + no limite de estoque');
+assert.match(cart,/data-cart-extra-plus[\s\S]*qty>=stock\?'disabled'/,'carrinho precisa desabilitar + no limite de estoque');
 
 assert.match(cart,/cart-row-photo/,'carrinho precisa mostrar miniatura do produto');
 assert.match(cart,/filter\(item=>Number\(item\.quantity\|\|0\)>0\)/,'carrinho não deve listar componente da cesta com quantidade zero');
