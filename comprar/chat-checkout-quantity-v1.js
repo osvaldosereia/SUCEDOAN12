@@ -38,7 +38,8 @@
       }catch{}
     }
     if(action==='checkout_preview')lastCheckout=data.checkout||null;
-    return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers:new Headers(response.headers)});
+    const headers=new Headers(response.headers);headers.delete('content-length');headers.set('content-type','application/json');
+    return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers});
   };
 
   function policyForRow(row,index){
