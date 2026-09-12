@@ -26,10 +26,9 @@ vm.createContext(context);
 for(const path of [summaryPath,sessionPath,surfacePath,coordinatorPath]) vm.runInContext(fs.readFileSync(path,'utf8'),context,{filename:path});
 
 const summaryApi=context.window.DAMarketingQuickEditReviewSummaryReadonlyV1;
-const sessions=context.window.DAMarketingQuickEditReviewSessionReadonlyV1;
 const coordinator=context.window.DAMarketingReviewFrameCoordinatorReadonlyV1;
 assert.ok(coordinator,'review frame coordinator API must be exported');
-for(const fn of ['openFrame','getFrameStatus','mountCurrent','getRegistryStats']) assert.equal(typeof coordinator[fn],'function',`${fn} must exist`);
+for(const fn of ['openFrame','getFrameStatus','invalidateFrame','mountCurrent','getRegistryStats']) assert.equal(typeof coordinator[fn],'function',`${fn} must exist`);
 
 function summary(assetId,fromRevision,revision,packageSha,changedPaths=1){
   const idempotencyKey=`review:${assetId}:${revision}`;
@@ -84,17 +83,19 @@ const supersededRoot={innerHTML:'unchanged'};
 assert.throws(()=>coordinator.mountCurrent(supersededRoot,first),/review_frame_not_current:superseded/,'superseded frame must fail closed');
 assert.equal(supersededRoot.innerHTML,'unchanged','superseded frame must not mutate DOM');
 
-sessions.invalidateSession(second.session_token,'manual_invalidation');
-assert.equal(coordinator.getFrameStatus(second).status,'stale','session invalidation must stale the active frame immediately');
+const invalidation=coordinator.invalidateFrame(second,'manual_invalidation');
+assert.equal(invalidation.status,'stale','explicit sanitized frame invalidation must return stale');
+assert.equal(coordinator.getFrameStatus(second).status,'stale','frame invalidation must stale the active frame immediately');
 const staleRoot={innerHTML:'unchanged-stale'};
 assert.throws(()=>coordinator.mountCurrent(staleRoot,second),/review_frame_not_current:stale/,'stale frame must fail closed');
 assert.equal(staleRoot.innerHTML,'unchanged-stale','stale frame must not mutate DOM');
 
 const tampered={...second,lease_token:`${second.lease_token}tampered`};
 assert.equal(coordinator.getFrameStatus(tampered).status,'stale','tampered lease must be stale');
+assert.equal(coordinator.invalidateFrame(tampered).status,'stale','tampered lease invalidation must fail closed');
 
 const serialized=JSON.stringify(first);
-for(const forbiddenValue of ['blockers','marketing_disabled','package_sha256','idempotency_key','snapshot_token','approval_preview','render_integrity','caption','request_body','svg','png']) assert.ok(!serialized.includes(forbiddenValue),`frame envelope must remain sanitized: ${forbiddenValue}`);
+for(const forbiddenValue of ['blockers','marketing_disabled','package_sha256','idempotency_key','snapshot_token','session_token','approval_preview','render_integrity','caption','request_body','svg','png']) assert.ok(!serialized.includes(forbiddenValue),`frame envelope must remain sanitized: ${forbiddenValue}`);
 
 const stats=coordinator.getRegistryStats();
 assert.ok(stats.asset_count<=100,'frame registry must be bounded by assets');
@@ -102,4 +103,4 @@ assert.ok(stats.lease_count<=200,'frame registry must be bounded by leases');
 assert.equal(stats.max_assets,100);
 assert.equal(stats.max_leases,200);
 
-console.log('PASS: Marketing review frame coordinator binds summary/session/comparison/surface with bounded in-memory lease epochs and fail-closed invalidation.');
+console.log('PASS: Marketing review frame coordinator binds summary/session/comparison/surface with bounded in-memory lease epochs, sanitized invalidation and fail-closed status changes.');
