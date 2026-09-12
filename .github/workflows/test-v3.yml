@@ -18,6 +18,7 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-storefront-v3-ui.mjs'
       - 'scripts/test-storefront-v3-refinements.mjs'
+      - 'scripts/test-storefront-v3-senior-ux-polish.mjs'
       - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - '.github/workflows/test-v3.yml'
@@ -37,6 +38,7 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-storefront-v3-ui.mjs'
       - 'scripts/test-storefront-v3-refinements.mjs'
+      - 'scripts/test-storefront-v3-senior-ux-polish.mjs'
       - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - '.github/workflows/test-v3.yml'
@@ -65,6 +67,8 @@ jobs:
         run: node scripts/test-storefront-v3-ui.mjs
       - name: Refinamentos Vitrine V3
         run: node scripts/test-storefront-v3-refinements.mjs
+      - name: Polimento senior UX Vitrine V3
+        run: node scripts/test-storefront-v3-senior-ux-polish.mjs
       - name: Contrato catálogo V3
         run: node scripts/test-catalog-v3-contract.mjs
       - name: Contrato Admin V3
