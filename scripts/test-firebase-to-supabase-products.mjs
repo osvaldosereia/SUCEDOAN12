@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {firebaseIsActive, normalizeFirebaseProduct, findExistingProduct, buildNewProductRow, buildExistingPatch, rememberInsertedProduct} from './firebase-to-supabase-products.mjs';
+import {firebaseIsActive, normalizeFirebaseProduct, findExistingProduct, buildNewProductRow, buildExistingPatch, rememberInsertedProduct, collectPages} from './firebase-to-supabase-products.mjs';
 
 const active={ativo:true,codigo:'ABC',nome:'Produto Teste',gtin:'7891234567890',preco:12.5,preco_custo:8,estoque:7,ncm:'12345678',marca:'Marca',categoria:'Mercearia',subcategoria:'Arroz',embalagem:'1kg',fornecedor:'Fornecedor',validade:'2027-01-31',gondola:'G1',prateleira:'P2',url_imagem:'https://example.com/p.jpg',descricao:'Descrição completa'};
 assert.equal(firebaseIsActive(active),true);
@@ -50,5 +50,11 @@ assert.equal(aliasPatch.metadata.firebase_aliases[0].firebase_key,'fb-alias');
 const dynamicRows=[];
 rememberInsertedProduct(dynamicRows,{id:'novo',firebase_key:'first',gtin:'7900204005654',sku:'A'});
 assert.equal(findExistingProduct({firebase_key:'second',gtin:'7900204005654',sku:'B'},dynamicRows).row.id,'novo','produto recém inserido entra no índice da mesma execução');
+
+const pagedSource=Array.from({length:2305},(_,i)=>({id:String(i+1)}));
+const requested=[];
+const paged=await collectPages(async(from,to)=>{requested.push([from,to]);return pagedSource.slice(from,to+1)},1000);
+assert.equal(paged.length,2305,'paginação precisa ler além do limite de 1000 do PostgREST');
+assert.deepEqual(requested,[[0,999],[1000,1999],[2000,2999]],'paginação deve avançar por ranges de 1000 até a última página');
 
 console.log('firebase-to-supabase-products contract ok');
