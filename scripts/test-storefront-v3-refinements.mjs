@@ -13,6 +13,7 @@ const migrations=fs.readdirSync('supabase/migrations').filter(x=>x.endsWith('.sq
 // Checkout precisa continuar simples, mas com foto pequena em cada item.
 assert.match(checkout,/checkout-item-photo/,'checkout precisa renderizar foto do produto');
 assert.match(checkout,/image_url/,'checkout precisa usar a imagem real do produto');
+assert.match(checkout,/filter\(item=>Number\(item\.quantity\|\|0\)>0\)/,'checkout não deve listar item removido com quantidade zero');
 
 // Produtos das cestas devem abrir o mesmo detalhe/modal dos produtos avulsos.
 assert.match(baskets,/data-open-product/,'produtos da composição da cesta precisam abrir o card do produto');
@@ -20,15 +21,15 @@ assert.match(baskets,/data-open-product/,'produtos da composição da cesta prec
 // O bloco “Total até agora” foi removido; o total continua acessível no botão Pedido.
 assert.doesNotMatch(baskets,/Total até agora|basket-inline-total/,'não deve existir quadro “Total até agora” dentro da cesta');
 
-// Itens removíveis podem ser reduzidos mesmo quando não permitem aumento.
+// Itens removíveis podem ser reduzidos e restaurados até a quantidade original sem liberar aumento acima dela.
 assert.match(baskets,/canReduce\s*=\s*item\.removable===true/,'redução precisa respeitar removable');
-assert.match(baskets,/canIncrease\s*=\s*item\.quantity_editable===true/,'aumento precisa respeitar quantity_editable');
+assert.match(baskets,/canIncrease[\s\S]*base_quantity/,'item removível precisa poder voltar até a quantidade original');
 assert.match(cart,/canReduce\s*=\s*item\.removable===true/,'pedido precisa repetir a mesma regra de redução');
-assert.match(cart,/canIncrease\s*=\s*item\.quantity_editable===true/,'pedido precisa repetir a mesma regra de aumento');
+assert.match(cart,/canIncrease[\s\S]*base_quantity/,'pedido precisa permitir restaurar até a quantidade original');
 assert.match(state,/reducing[\s\S]*item\.removable/,'estado precisa permitir redução de item removível');
-assert.match(state,/increasing[\s\S]*item\.quantity_editable/,'estado precisa exigir quantity_editable para aumentar');
+assert.match(state,/increasing[\s\S]*base_quantity[\s\S]*item\.quantity_editable/,'estado precisa permitir restauração até a base e exigir edição acima dela');
 assert.match(migrations,/v_qty\s*<\s*v_bi\.quantity[\s\S]*v_bi\.removable/i,'servidor precisa aceitar redução de item removível');
-assert.match(migrations,/v_qty\s*>\s*v_bi\.quantity[\s\S]*v_bi\.quantity_editable/i,'servidor precisa manter aumento restrito a item editável');
+assert.match(migrations,/v_qty\s*>\s*v_bi\.quantity[\s\S]*v_bi\.quantity_editable/i,'servidor precisa manter aumento acima da base restrito a item editável');
 
 // Depois da cesta: Ofertas de Hoje em carrossel, até 10 cards; depois busca e chips.
 assert.match(app,/Ofertas de Hoje/,'título de ofertas precisa ser “Ofertas de Hoje”');
