@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const read=file=>fs.readFileSync(file,'utf8');
 const app=read('vitrine-v3/app.js');
 const baskets=read('vitrine-v3/baskets.js');
+const cart=read('vitrine-v3/cart.js');
 const checkout=read('vitrine-v3/checkout.js');
 const state=read('vitrine-v3/state.js');
 const css=read('vitrine-v3/styles.css')+'\n'+read('vitrine-v3/details.css')+'\n'+read('vitrine-v3/flow.css');
@@ -22,6 +23,8 @@ assert.doesNotMatch(baskets,/Total até agora|basket-inline-total/,'não deve ex
 // Itens removíveis podem ser reduzidos mesmo quando não permitem aumento.
 assert.match(baskets,/canReduce\s*=\s*item\.removable===true/,'redução precisa respeitar removable');
 assert.match(baskets,/canIncrease\s*=\s*item\.quantity_editable===true/,'aumento precisa respeitar quantity_editable');
+assert.match(cart,/canReduce\s*=\s*item\.removable===true/,'pedido precisa repetir a mesma regra de redução');
+assert.match(cart,/canIncrease\s*=\s*item\.quantity_editable===true/,'pedido precisa repetir a mesma regra de aumento');
 assert.match(state,/reducing[\s\S]*item\.removable/,'estado precisa permitir redução de item removível');
 assert.match(state,/increasing[\s\S]*item\.quantity_editable/,'estado precisa exigir quantity_editable para aumentar');
 assert.match(migrations,/v_qty\s*<\s*v_bi\.quantity[\s\S]*v_bi\.removable/i,'servidor precisa aceitar redução de item removível');
