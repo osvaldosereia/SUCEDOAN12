@@ -14,6 +14,7 @@ on:
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
       - 'supabase/functions/shopping-chat-menu-v1/**'
+      - 'supabase/functions/shopping-chat-customer-v1/**'
       - 'supabase/functions/admin-chat-menu-v1/**'
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/migrations/*shopping_room*'
@@ -30,6 +31,7 @@ on:
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
       - 'supabase/functions/shopping-chat-menu-v1/**'
+      - 'supabase/functions/shopping-chat-customer-v1/**'
       - 'supabase/functions/admin-chat-menu-v1/**'
       - 'supabase/migrations/*shopping_chat*'
       - '.github/workflows/test-shopping-room.yml'
@@ -51,6 +53,7 @@ jobs:
         run: |
           node --check comprar/app.js
           node --check comprar/chat-light-v2.js
+          node --check comprar/chat-checkout-quantity-v1.js
           node --check comprar/chat-helper-menu.js
           node --check admin-v3/chat-menu-admin.js
           node scripts/test-light-shopping-chat-v2.mjs
@@ -62,19 +65,25 @@ jobs:
           test -f comprar/index.html
           test -f comprar/chat-light-v2.css
           test -f comprar/chat-light-v2.js
+          test -f comprar/chat-checkout-quantity-v1.css
+          test -f comprar/chat-checkout-quantity-v1.js
           test -f comprar/chat-helper-menu.css
           test -f comprar/chat-helper-menu.js
           test -f comprar/config.js
           grep -q "shopping-chat-v1" comprar/config.js
           grep -q "shopping-chat-products-v1" comprar/config.js
           grep -q "shopping-chat-menu-v1" comprar/config.js
+          grep -q "shopping-chat-customer-v1" comprar/config.js
           grep -q "chat-light-v2" comprar/index.html
+          grep -q "chat-checkout-quantity-v1" comprar/index.html
           grep -q "chat-helper-menu" comprar/index.html
           grep -q "MediaRecorder" comprar/chat-light-v2.js
           grep -q "set_basket_quantity" comprar/chat-light-v2.js
           grep -q "products-rail" comprar/chat-light-v2.js
           grep -q "loadMoreProducts" comprar/chat-light-v2.js
           grep -q "requestLocation" comprar/chat-light-v2.js
+          grep -q "checkoutPhoneLookup" comprar/chat-checkout-quantity-v1.js
+          grep -q "quantity_editable" comprar/chat-checkout-quantity-v1.js
           grep -q "limit:30" comprar/chat-helper-menu.js
           ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY" comprar/
       - name: Instalar Deno
@@ -87,6 +96,7 @@ jobs:
           deno check supabase/functions/shopping-chat-v1/index.ts
           deno check supabase/functions/shopping-chat-products-v1/index.ts
           deno check supabase/functions/shopping-chat-menu-v1/index.ts
+          deno check supabase/functions/shopping-chat-customer-v1/index.ts
           deno check supabase/functions/admin-chat-menu-v1/index.ts
           deno check supabase/functions/customer-intelligence-v1/index.ts
       - name: Segurança do chat público
@@ -100,6 +110,9 @@ jobs:
           grep -q "physically_verified" supabase/functions/shopping-chat-products-v1/index.ts
           grep -q "ORIGINS" supabase/functions/shopping-chat-menu-v1/index.ts
           grep -q "tokenOk" supabase/functions/shopping-chat-menu-v1/index.ts
+          grep -q "ORIGINS" supabase/functions/shopping-chat-customer-v1/index.ts
+          grep -q "tokenOk" supabase/functions/shopping-chat-customer-v1/index.ts
+          grep -q "customer_lookup_attempts" supabase/functions/shopping-chat-customer-v1/index.ts
           grep -q "admin_users" supabase/functions/admin-chat-menu-v1/index.ts
           grep -q "shopping_chat_helper_config" supabase/migrations/20260911060643_shopping_chat_helper_menu_v1.sql
           grep -q "room_start_for_conversation_v1" supabase/migrations/20260911043000_light_shopping_chat_entry_v1.sql
