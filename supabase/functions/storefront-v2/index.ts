@@ -22,6 +22,7 @@ const hashKey=async(value:string)=>{
   return Array.from(new Uint8Array(digest)).slice(0,12).map(x=>x.toString(16).padStart(2,"0")).join("");
 };
 const basketReady=(items:any[])=>items.length>0&&items.every((i:any)=>i.product?.is_active===true&&i.product?.physically_verified===true&&Number(i.product?.stock||0)>=Number(i.quantity||0));
+const orderWhatsappMessage=(orderNumber:unknown)=>{const value=clean(orderNumber,80);if(!value)throw new Error("order_number_required");return `FINALIZAR PEDIDO #${value}`};
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get("origin");
@@ -38,7 +39,7 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return respond({ok:false,error:"invalid_json"},400)}
   const action=clean(body?.action,60).toLowerCase();
 
-  if(action==="health")return respond({ok:true,version:3});
+  if(action==="health")return respond({ok:true,version:4});
 
   if(action==="list_baskets"){
     const {data,error}=await sb.from("basket_templates").select("id,name,description,image_url,base_price,sort_order,is_featured,basket_template_items(id,quantity,product:products(id,is_active,physically_verified,stock))").eq("is_active",true).order("sort_order",{ascending:true}).order("name",{ascending:true});
@@ -102,7 +103,8 @@ Deno.serve(async(req:Request)=>{
     const {data,error}=await sb.rpc("create_storefront_order_v2",{p_phone:phone,p_items:items,p_basket:basket});
     if(error){const code=clean(error.message,120).split("\n")[0];return respond({ok:false,error:code||"order_failed"},400)}
     const result:any=data||{};
-    return respond({ok:true,order:{id:result.order_id,number:result.order_number,total:Number(result.total||0),message:result.message||"",customer_found:Boolean(result.customer_id),status:"storefront_received"}});
+    let message:string;try{message=orderWhatsappMessage(result.order_number)}catch{return respond({ok:false,error:"order_number_missing"},500)}
+    return respond({ok:true,order:{id:result.order_id,number:result.order_number,total:Number(result.total||0),message,customer_found:Boolean(result.customer_id),status:"storefront_received"}});
   }
 
   return respond({ok:false,error:"unknown_action"},400);
