@@ -74,8 +74,19 @@ export function buildNewProductRow(p){
   };
 }
 
-export function buildExistingPatch(existing,p){
-  const source=commonFields(p),patch={firebase_snapshot:p.firebase_snapshot};
+function aliasEntry(p){return {firebase_key:p.firebase_key,sku:p.sku,gtin:p.gtin,name:p.name,snapshot:p.firebase_snapshot}}
+export function buildExistingPatch(existing,p,matchedBy='firebase_key'){
+  const source=commonFields(p),patch={};
+  const aliasMatch=matchedBy!=='firebase_key'&&text(existing?.firebase_key)&&text(p.firebase_key)&&text(existing.firebase_key)!==text(p.firebase_key);
+  if(aliasMatch){
+    const metadata=existing?.metadata&&typeof existing.metadata==='object'&&!Array.isArray(existing.metadata)?{...existing.metadata}:{};
+    const aliases=Array.isArray(metadata.firebase_aliases)?[...metadata.firebase_aliases]:[];
+    const idx=aliases.findIndex(a=>text(a?.firebase_key)===text(p.firebase_key));
+    if(idx>=0)aliases[idx]=aliasEntry(p);else aliases.push(aliasEntry(p));
+    patch.metadata={...metadata,firebase_aliases:aliases};
+  }else{
+    patch.firebase_snapshot=p.firebase_snapshot;
+  }
   const fillable=['firebase_key','sku','name','gtin','ncm','price','cost','stock','image_url','image_original_url','brand','category','subcategory','subsubcategory','packaging','supplier','validity_date','gondola','shelf','unit','description_short','description_long'];
   for(const key of fillable){
     const current=existing?.[key];
@@ -83,6 +94,8 @@ export function buildExistingPatch(existing,p){
   }
   return patch;
 }
+
+export function rememberInsertedProduct(rows,row){if(row&&typeof row==='object')rows.push(row);return row}
 
 let firebaseAccessToken='';
 function base64Url(v){return Buffer.from(typeof v==='string'?v:JSON.stringify(v)).toString('base64url')}
@@ -103,14 +116,14 @@ async function readFirebaseProducts(){
 }
 function supabaseHeaders(extra={}){const key=text(process.env.SUPABASE_SERVICE_ROLE_KEY);if(!key)throw new Error('SUPABASE_SERVICE_ROLE_KEY ausente');return {apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json',...extra}}
 async function sb(path,options={}){const base=text(process.env.SUPABASE_URL||'https://ssbesxgaijknwsjbsbcz.supabase.co').replace(/\/+$/,'');const r=await fetch(`${base}/rest/v1/${path}`,{...options,headers:supabaseHeaders(options.headers)});if(!r.ok)throw new Error(`Supabase ${options.method||'GET'} ${path}: ${r.status} ${(await r.text()).slice(0,1000)}`);if(r.status===204)return null;const t=await r.text();return t?JSON.parse(t):null}
-async function readSupabaseProducts(){return await sb('products?select=id,firebase_key,sku,name,gtin,ncm,price,cost,stock,image_url,image_original_url,brand,category,subcategory,subsubcategory,packaging,supplier,validity_date,gondola,shelf,unit,description_short,description_long,is_active,is_whatsapp_active,physically_verified,firebase_snapshot&limit=5000')||[]}
-async function insertRow(row){return sb('products',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(row)})}
+async function readSupabaseProducts(){return await sb('products?select=id,firebase_key,sku,name,gtin,ncm,price,cost,stock,image_url,image_original_url,brand,category,subcategory,subsubcategory,packaging,supplier,validity_date,gondola,shelf,unit,description_short,description_long,is_active,is_whatsapp_active,physically_verified,firebase_snapshot,metadata,source_system,sync_status&limit=5000')||[]}
+async function insertRow(row){const data=await sb('products',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(row)});return Array.isArray(data)?data[0]:data}
 async function patchRow(id,patch){return sb(`products?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify(patch)})}
 
 async function run(){
   const mode=text(process.env.MIGRATION_MODE||'dry-run').toLowerCase();if(!['dry-run','apply'].includes(mode))throw new Error('MIGRATION_MODE deve ser dry-run ou apply');
   const firebase=await readFirebaseProducts();const supabase=await readSupabaseProducts();
-  const summary={mode,firebase_total:Object.keys(firebase).length,firebase_active:0,matched_firebase_key:0,matched_gtin:0,matched_sku:0,new_products:0,updated_existing:0,conflicts:[],missing_image:[],skipped_invalid:[]};
+  const summary={mode,firebase_total:Object.keys(firebase).length,firebase_active:0,matched_firebase_key:0,matched_gtin:0,matched_sku:0,new_products:0,updated_existing:0,alias_records:0,conflicts:[],missing_image:[],skipped_invalid:[]};
   for(const [key,raw] of Object.entries(firebase)){
     if(!firebaseIsActive(raw))continue;summary.firebase_active++;
     const p=normalizeFirebaseProduct(key,raw);
@@ -120,11 +133,21 @@ async function run(){
     if(match.conflict){summary.conflicts.push({key,name:p.name,matched_by:match.matched_by,count:match.matches.length});continue}
     if(match.row){
       summary[`matched_${match.matched_by}`]++;
-      const patch=buildExistingPatch(match.row,p);
+      const isAlias=match.matched_by!=='firebase_key'&&text(match.row.firebase_key)&&text(match.row.firebase_key)!==text(p.firebase_key);
+      if(isAlias)summary.alias_records++;
+      const patch=buildExistingPatch(match.row,p,match.matched_by);
       summary.updated_existing++;
       if(mode==='apply')await patchRow(match.row.id,patch);
+      Object.assign(match.row,patch);
     }else{
-      summary.new_products++;if(mode==='apply')await insertRow(buildNewProductRow(p));
+      summary.new_products++;
+      const row=buildNewProductRow(p);
+      if(mode==='apply'){
+        const created=await insertRow(row);
+        rememberInsertedProduct(supabase,created||{...row,id:`inserted:${key}`});
+      }else{
+        rememberInsertedProduct(supabase,{...row,id:`dry-run:${key}`});
+      }
     }
   }
   console.log('MIGRATION_SUMMARY '+JSON.stringify(summary));
