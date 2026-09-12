@@ -40,6 +40,7 @@ jobs:
           node --check admin-v3/service-strategy.js
           node --check admin-v3/service-strategy-addon.js
           node --check admin-v3/service-chat-center.js
+          node --check admin-v3/service-strategy-own-tools.js
       - name: Run service strategy contracts
         run: |
           node tests/admin-v3-service-strategy-contract.mjs
