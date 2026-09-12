@@ -9,13 +9,14 @@
   <title>Dona Antônia · Compra rápida</title>
   <link rel="stylesheet" href="./chat-light-v2.css?v=20260911-02">
   <link rel="stylesheet" href="./chat-helper-menu.css?v=20260911-01">
+  <link rel="stylesheet" href="./chat-deterministic-mode.css?v=20260912-01">
 </head>
 <body>
   <div class="chat-app">
     <header class="chat-topbar">
       <button id="backButton" class="top-icon" type="button" aria-label="Voltar">‹</button>
       <div class="brand-mark">DA</div>
-      <div class="brand-copy"><strong>Dona Antônia</strong><small id="roomStatus">Atendimento online</small></div>
+      <div class="brand-copy"><strong>Dona Antônia</strong><small id="roomStatus">Atendimento rápido</small></div>
       <button id="cartButton" class="cart-pill" type="button" aria-label="Ver pedido"><span>Pedido</span><b id="cartCount">0</b></button>
     </header>
     <main id="timeline" class="timeline" aria-live="polite">
@@ -29,7 +30,7 @@
       <span class="record-dot"></span><strong id="recordingTime">0:00</strong><span>Gravando</span>
       <button id="cancelRecording" type="button">Cancelar</button>
     </div>
-    <form id="composer" class="composer">
+    <form id="composer" class="composer hidden" aria-hidden="true">
       <button id="photoButton" class="composer-icon" type="button" aria-label="Enviar foto">＋</button>
       <input id="photoInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
       <input id="messageInput" type="text" maxlength="800" autocomplete="off" placeholder="Digite aqui…">
@@ -38,8 +39,9 @@
     </form>
   </div>
   <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="./config.js?v=20260911-03"></script>
+  <script src="./config.js?v=20260912-01"></script>
   <script src="./chat-light-v2.js?v=20260911-02"></script>
   <script src="./chat-helper-menu.js?v=20260911-01"></script>
+  <script src="./chat-deterministic-mode.js?v=20260912-01"></script>
 </body>
 </html>
