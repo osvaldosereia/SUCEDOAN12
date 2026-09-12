@@ -23,6 +23,8 @@ on:
       - 'scripts/test-marketing-ai-readiness-readonly-ui-v1.mjs'
       - 'scripts/test-marketing-render-svg-v1.mjs'
       - 'scripts/marketing-render-svg-v1.mjs'
+      - 'scripts/test-marketing-render-manifest-v1.mjs'
+      - 'scripts/marketing-render-manifest-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -51,6 +53,8 @@ on:
       - 'scripts/test-marketing-ai-readiness-readonly-ui-v1.mjs'
       - 'scripts/test-marketing-render-svg-v1.mjs'
       - 'scripts/marketing-render-svg-v1.mjs'
+      - 'scripts/test-marketing-render-manifest-v1.mjs'
+      - 'scripts/marketing-render-manifest-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -82,6 +86,7 @@ jobs:
           node --check scripts/marketing-approval-preview-v1.mjs
           node --check scripts/marketing-ai-preflight-v1.mjs
           node --check scripts/marketing-render-svg-v1.mjs
+          node --check scripts/marketing-render-manifest-v1.mjs
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
       - name: Validate dormant Marketing editor contract
@@ -106,3 +111,5 @@ jobs:
         run: node scripts/test-marketing-ai-readiness-readonly-ui-v1.mjs
       - name: Validate local-only deterministic Marketing SVG renderer
         run: node scripts/test-marketing-render-svg-v1.mjs
+      - name: Validate deterministic Marketing render manifest
+        run: node scripts/test-marketing-render-manifest-v1.mjs
