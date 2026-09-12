@@ -75,6 +75,7 @@
       <section id="tabEvolution" class="strategy-tab">
         <div class="strategy-section-head"><div><div class="eyebrow">Evolução contínua</div><h2>Análise e histórico de ajustes</h2><p>Snapshots guardam o estado de cada rodada para comparar o que melhorou, piorou ou precisa ser revertido.</p></div><button id="generateSnapshot" class="primary" type="button">Gerar análise agora</button></div>
         <div id="strategyMetrics" class="strategy-metrics"></div>
+        <section class="panel strategy-playbook-panel"><div class="strategy-panel-head"><div><div class="eyebrow">Estratégia permanente</div><h3>Método de análise</h3></div><span id="playbookVersion" class="strategy-status-pill">v1</span></div><div id="strategyPlaybook" class="strategy-empty">Carregando método de análise…</div></section>
         <div class="strategy-evolution-grid">
           <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Diagnóstico</div><h3>Última análise</h3></div></div><div id="latestAnalysis" class="strategy-empty">Nenhum snapshot ainda.</div></section>
           <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Comparação</div><h3>Snapshots</h3></div></div><div id="snapshotList" class="strategy-snapshot-list"></div></section>
@@ -86,6 +87,6 @@
 
   <dialog id="changeDialog" class="strategy-dialog"><form id="changeDialogForm" method="dialog"><div id="changeDialogBody"></div></form></dialog>
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./service-strategy.js?v=20260912-1"></script>
+  <script type="module" src="./service-strategy.js?v=20260912-2"></script>
 </body>
 </html>
