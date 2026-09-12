@@ -1,9 +1,8 @@
 window.DA_SHOPPING_ROOM_CONFIG=Object.freeze({
-  api:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-v1',
+  api:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-deterministic-v1',
   productsApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-products-v1',
   menuApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-menu-v1',
-  legacyApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-room-v1',
-  salesApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-room-sales-v1',
-  whatsappFallback:'https://wa.me/556584491018',
-  build:'20260911-light-chat-helper-01'
+  whatsappFallback:'https://wa.me/5565984491018',
+  deterministic:true,
+  build:'20260912-deterministic-chat-01'
 });
