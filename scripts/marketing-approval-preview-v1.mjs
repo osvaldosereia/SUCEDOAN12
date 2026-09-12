@@ -99,6 +99,66 @@ function validateRenderManifest(manifest,channel,asset){
   }
   return {manifest:safeManifest,validation:{status:'compatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:null}};
 }
+function validateRenderPreviewMetadata(metadata,render,asset){
+  const expectedProfile=render.validation.expected_profile||null;
+  if(metadata==null)return {metadata:null,validation:{status:'not_provided',expected_profile:expectedProfile,actual_profile:null,error:null}};
+  if(!metadata||typeof metadata!=='object'||Array.isArray(metadata))return {metadata:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:null,error:'invalid_metadata'}};
+  const actualProfile=text(metadata.render_profile)||null;
+  const width=Number(metadata.width);
+  const height=Number(metadata.height);
+  const byteLength=Number(metadata.byte_length);
+  const sha=text(metadata.sha256);
+  const checks=[
+    [metadata.schema_version==='marketing-render-preview-metadata-v1','schema_version_invalid'],
+    [metadata.preview_only===true,'preview_only_not_true'],
+    [metadata.external_side_effect===false,'external_side_effect_not_false'],
+    [metadata.network_allowed===false,'network_allowed_not_false'],
+    [metadata.provider_call_allowed===false,'provider_call_allowed_not_false'],
+    [metadata.storage_write_allowed===false,'storage_write_allowed_not_false'],
+    [text(metadata.asset_id)===asset.id,'asset_id_mismatch'],
+    [Number.isInteger(Number(metadata.revision))&&Number(metadata.revision)>=1,'revision_invalid'],
+    [Number.isInteger(width)&&width>0&&Number.isInteger(height)&&height>0,'dimensions_invalid'],
+    [text(metadata.mime_type)==='image/png','mime_type_invalid'],
+    [Number.isInteger(byteLength)&&byteLength>0,'byte_length_invalid'],
+    [/^[a-f0-9]{64}$/i.test(sha),'sha256_invalid'],
+    [Boolean(text(metadata.raster_idempotency_key)),'raster_idempotency_key_missing'],
+    [Boolean(text(metadata.idempotency_key)),'idempotency_key_missing']
+  ];
+  if(render.manifest){
+    checks.push([Number(metadata.revision)===Number(render.manifest.revision),'revision_mismatch']);
+    checks.push([text(metadata.manifest_idempotency_key)===text(render.manifest.idempotency_key),'manifest_idempotency_key_mismatch']);
+    checks.push([actualProfile===render.manifest.render_profile,'render_profile_mismatch']);
+  }else{
+    checks.push([false,'render_manifest_required']);
+  }
+  const failed=checks.find(([ok])=>!ok);
+  if(failed)return {metadata:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:actualProfile,error:failed[1]}};
+  const safeMetadata={
+    schema_version:'marketing-render-preview-metadata-v1',
+    asset_id:text(metadata.asset_id),
+    revision:Number(metadata.revision),
+    render_profile:actualProfile,
+    width,
+    height,
+    mime_type:'image/png',
+    byte_length:byteLength,
+    sha256:sha.toLowerCase(),
+    manifest_idempotency_key:text(metadata.manifest_idempotency_key),
+    raster_idempotency_key:text(metadata.raster_idempotency_key),
+    ai_used:metadata.ai_used===true,
+    requires_ai_preflight:metadata.requires_ai_preflight===true,
+    preview_only:true,
+    external_side_effect:false,
+    network_allowed:false,
+    provider_call_allowed:false,
+    storage_write_allowed:false,
+    idempotency_key:text(metadata.idempotency_key)
+  };
+  if(expectedProfile&&actualProfile!==expectedProfile){
+    return {metadata:safeMetadata,validation:{status:'incompatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:'channel_format_mismatch'}};
+  }
+  return {metadata:safeMetadata,validation:{status:'compatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:null}};
+}
 
 export function buildMarketingApprovalPreview(input={}){
   const asset=safeAsset(input.asset);
@@ -134,15 +194,21 @@ export function buildMarketingApprovalPreview(input={}){
     if(render.validation.status==='not_provided')blockers.push(`render_manifest_missing:${channel}`);
     if(render.validation.status==='invalid')blockers.push(`render_manifest_invalid:${channel}:${render.validation.error}`);
     if(render.validation.status==='incompatible')blockers.push(`render_manifest_incompatible:${channel}:${render.validation.actual_profile}:${render.validation.expected_profile}`);
-    return {channel,preflight,render_manifest:render.manifest,render_validation:render.validation};
+    const preview=validateRenderPreviewMetadata(target?.render_preview_metadata,render,asset);
+    if(preview.validation.status==='not_provided')blockers.push(`render_preview_missing:${channel}`);
+    if(preview.validation.status==='invalid')blockers.push(`render_preview_invalid:${channel}:${preview.validation.error}`);
+    if(preview.validation.status==='incompatible')blockers.push(`render_preview_incompatible:${channel}:${preview.validation.actual_profile}:${preview.validation.expected_profile}`);
+    return {channel,preflight,render_manifest:render.manifest,render_validation:render.validation,render_preview_metadata:preview.metadata,render_preview_validation:preview.validation};
   });
 
   const uniqueBlockers=[...new Set(blockers)];
-  const identity={asset,runtime,targets:targets.map(({channel,preflight,render_manifest,render_validation})=>({
+  const identity={asset,runtime,targets:targets.map(({channel,preflight,render_manifest,render_validation,render_preview_metadata,render_preview_validation})=>({
     channel,
     preflight_idempotency_key:preflight.idempotency_key,
     render_manifest_idempotency_key:render_manifest?.idempotency_key||null,
-    render_validation_status:render_validation.status
+    render_validation_status:render_validation.status,
+    render_preview_idempotency_key:render_preview_metadata?.idempotency_key||null,
+    render_preview_validation_status:render_preview_validation.status
   }))};
   return {
     schema_version:'marketing-approval-preview-v1',
