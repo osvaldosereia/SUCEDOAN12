@@ -21,7 +21,8 @@ for (const forbidden of [
   'marketing-library-v1',
   'marketing-operations-readonly-v1',
   'marketing-readiness-readonly-v1',
-  'marketing-approval-preview-readonly-v1'
+  'marketing-approval-preview-readonly-v1',
+  'marketing-ai-readiness-readonly-v1'
 ]) assert.ok(!publicAdmin.includes(forbidden), `public Admin must not load Marketing surface: ${forbidden}`);
 
 const marketingFunctions = [
@@ -51,7 +52,8 @@ const dormantUiFiles = [
   'admin-v3/marketing-library-v1.js',
   'admin-v3/marketing-operations-readonly-v1.js',
   'admin-v3/marketing-readiness-readonly-v1.js',
-  'admin-v3/marketing-approval-preview-readonly-v1.js'
+  'admin-v3/marketing-approval-preview-readonly-v1.js',
+  'admin-v3/marketing-ai-readiness-readonly-v1.js'
 ];
 for (const file of dormantUiFiles) assert.ok(fs.existsSync(file), `dormant Marketing UI asset missing: ${file}`);
 
@@ -93,6 +95,13 @@ assert.ok(!/fetch\(|XMLHttpRequest|axios|Authorization|Bearer /.test(approvalPre
 assert.ok(!externalProviderPattern.test(approvalPreviewUi),'approval preview UI must not call external providers directly');
 assert.match(approvalPreviewUi,/external_side_effect/,'approval preview UI must validate side-effect contract');
 assert.match(approvalPreviewUi,/ready_for_real_publish/,'approval preview UI must validate publish-readiness contract');
+
+const aiReadinessUi = fs.readFileSync('admin-v3/marketing-ai-readiness-readonly-v1.js','utf8');
+assert.ok(!/fetch\(|XMLHttpRequest|axios|Authorization|Bearer |localStorage|sessionStorage/.test(aiReadinessUi),'AI readiness UI must stay local-only and credential-free');
+assert.ok(!externalProviderPattern.test(aiReadinessUi),'AI readiness UI must not call external providers directly');
+assert.match(aiReadinessUi,/provider_call_allowed/,'AI readiness UI must validate provider-call prohibition');
+assert.match(aiReadinessUi,/external_side_effect/,'AI readiness UI must validate side-effect prohibition');
+assert.match(aiReadinessUi,/network_allowed/,'AI readiness UI must validate network prohibition');
 
 const migrations = [
   '20260910004500_marketing_center_foundation_v1.sql',
