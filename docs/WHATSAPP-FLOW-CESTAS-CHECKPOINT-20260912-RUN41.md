@@ -43,7 +43,8 @@ Proteções mantidas/adicionadas:
 - cestas continuam usando seus 9 assets locais.
 
 ## Deploy
-`whatsapp-flow-data-exchange-v1` foi redeployado com sucesso e está ACTIVE na revisão de deployment 53.
+`whatsapp-flow-data-exchange-v1` foi redeployado com sucesso e está ACTIVE na revisão de deployment 54.
+O deployment final foi refeito com os quatro arquivos exatamente alinhados ao GitHub (`index.ts`, `crypto.ts`, `card-images.ts`, `image.ts`), eliminando drift do pacote implantado.
 O marcador interno histórico `edge_version=49` do control plane não representa o contador de deployment da plataforma; o handler comercial continua V26.
 
 ## Verificação
@@ -65,6 +66,9 @@ O marcador interno histórico `edge_version=49` do control plane não representa
 
 ## Make
 Somente `consultar no cpf` permanece ativo e `incompleteExecutions=0`. Nenhum cenário Make foi modificado.
+
+## Segurança
+O Security Advisor foi relido. Nenhum alerta novo é específico do V58/Edge deploy. Permanecem avisos preexistentes em outras áreas do banco, sem relação com esta alteração.
 
 ## Próximo passo
 A prova física owner-only continua pendente a partir de `UPSELL`. Quando existir exatamente uma conversa autorizada dentro da janela de serviço, o único lançador permitido continua sendo o V10. Até lá, seguir melhorando componentes seguros e isolados sem abrir rollout.
