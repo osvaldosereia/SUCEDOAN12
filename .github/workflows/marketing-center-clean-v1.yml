@@ -27,6 +27,8 @@ on:
       - 'scripts/marketing-render-manifest-v1.mjs'
       - 'scripts/test-marketing-rasterize-png-buffer-v1.mjs'
       - 'scripts/marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/test-marketing-render-preview-buffer-v1.mjs'
+      - 'scripts/marketing-render-preview-buffer-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -59,6 +61,8 @@ on:
       - 'scripts/marketing-render-manifest-v1.mjs'
       - 'scripts/test-marketing-rasterize-png-buffer-v1.mjs'
       - 'scripts/marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/test-marketing-render-preview-buffer-v1.mjs'
+      - 'scripts/marketing-render-preview-buffer-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -94,6 +98,7 @@ jobs:
           node --check scripts/marketing-render-svg-v1.mjs
           node --check scripts/marketing-render-manifest-v1.mjs
           node --check scripts/marketing-rasterize-png-buffer-v1.mjs
+          node --check scripts/marketing-render-preview-buffer-v1.mjs
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
       - name: Validate dormant Marketing editor contract
@@ -122,3 +127,5 @@ jobs:
         run: node scripts/test-marketing-render-manifest-v1.mjs
       - name: Validate in-memory PNG rasterizer
         run: node scripts/test-marketing-rasterize-png-buffer-v1.mjs
+      - name: Validate ephemeral render preview buffer
+        run: node scripts/test-marketing-render-preview-buffer-v1.mjs
