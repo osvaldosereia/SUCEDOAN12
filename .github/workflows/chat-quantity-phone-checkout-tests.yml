@@ -1,0 +1,53 @@
+name: Chat quantity and phone checkout
+
+on:
+  pull_request:
+    paths:
+      - 'comprar/chat-checkout-quantity-v1.*'
+      - 'comprar/config.js'
+      - 'comprar/index.html'
+      - 'scripts/test-light-shopping-chat-v2.mjs'
+      - 'supabase/functions/shopping-chat-customer-v1/**'
+      - 'supabase/config.toml'
+      - '.github/workflows/chat-quantity-phone-checkout-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'comprar/chat-checkout-quantity-v1.*'
+      - 'comprar/config.js'
+      - 'comprar/index.html'
+      - 'scripts/test-light-shopping-chat-v2.mjs'
+      - 'supabase/functions/shopping-chat-customer-v1/**'
+      - 'supabase/config.toml'
+      - '.github/workflows/chat-quantity-phone-checkout-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Check browser addon and contracts
+        run: |
+          node --check comprar/chat-checkout-quantity-v1.js
+          node scripts/test-light-shopping-chat-v2.mjs
+          grep -q "shopping-chat-customer-v1" comprar/config.js
+          grep -q "chat-checkout-quantity-v1.js" comprar/index.html
+          grep -q "chat-checkout-quantity-v1.css" comprar/index.html
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check customer helper edge
+        run: |
+          deno check supabase/functions/shopping-chat-customer-v1/index.ts
+          grep -q "lookup_customer_by_phone" supabase/functions/shopping-chat-customer-v1/index.ts
+          grep -q "customer_lookup_attempts" supabase/functions/shopping-chat-customer-v1/index.ts
+          grep -q "shopping-chat-customer-v1" supabase/config.toml
