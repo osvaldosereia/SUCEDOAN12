@@ -1,0 +1,41 @@
+name: Admin V3 Service Strategy
+
+on:
+  push:
+    paths:
+      - 'admin-v3/atendimento.html'
+      - 'admin-v3/service-strategy*.js'
+      - 'admin-v3/service-strategy.css'
+      - 'supabase/functions/admin-service-strategy-v1/**'
+      - 'supabase/migrations/20260912_admin_v3_service_strategy_*.sql'
+      - 'tests/admin-v3-service-strategy-*.mjs'
+      - '.github/workflows/admin-v3-service-strategy-tests.yml'
+  pull_request:
+    paths:
+      - 'admin-v3/atendimento.html'
+      - 'admin-v3/service-strategy*.js'
+      - 'admin-v3/service-strategy.css'
+      - 'supabase/functions/admin-service-strategy-v1/**'
+      - 'supabase/migrations/20260912_admin_v3_service_strategy_*.sql'
+      - 'tests/admin-v3-service-strategy-*.mjs'
+      - '.github/workflows/admin-v3-service-strategy-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check frontend syntax
+        run: |
+          node --check admin-v3/service-strategy.js
+          node --check admin-v3/service-strategy-addon.js
+      - name: Run service strategy contracts
+        run: |
+          node tests/admin-v3-service-strategy-contract.mjs
+          node tests/admin-v3-service-strategy-playbook-contract.mjs
