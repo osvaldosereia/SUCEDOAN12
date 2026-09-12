@@ -13,6 +13,8 @@ on:
       - 'scripts/test-marketing-readiness-readonly-v1.mjs'
       - 'scripts/test-marketing-channel-preflight-v1.mjs'
       - 'scripts/marketing-channel-preflight-v1.mjs'
+      - 'scripts/test-marketing-channel-request-bundle-v1.mjs'
+      - 'scripts/marketing-channel-request-bundle-v1.mjs'
       - 'scripts/test-marketing-approval-preview-v1.mjs'
       - 'scripts/marketing-approval-preview-v1.mjs'
       - 'scripts/test-marketing-approval-preview-readonly-ui-v1.mjs'
@@ -39,6 +41,8 @@ on:
       - 'scripts/test-marketing-readiness-readonly-v1.mjs'
       - 'scripts/test-marketing-channel-preflight-v1.mjs'
       - 'scripts/marketing-channel-preflight-v1.mjs'
+      - 'scripts/test-marketing-channel-request-bundle-v1.mjs'
+      - 'scripts/marketing-channel-request-bundle-v1.mjs'
       - 'scripts/test-marketing-approval-preview-v1.mjs'
       - 'scripts/marketing-approval-preview-v1.mjs'
       - 'scripts/test-marketing-approval-preview-readonly-ui-v1.mjs'
@@ -74,6 +78,7 @@ jobs:
           node --check admin-v3/marketing-approval-preview-readonly-v1.js
           node --check admin-v3/marketing-ai-readiness-readonly-v1.js
           node --check scripts/marketing-channel-preflight-v1.mjs
+          node --check scripts/marketing-channel-request-bundle-v1.mjs
           node --check scripts/marketing-approval-preview-v1.mjs
           node --check scripts/marketing-ai-preflight-v1.mjs
           node --check scripts/marketing-render-svg-v1.mjs
@@ -89,6 +94,8 @@ jobs:
         run: node scripts/test-marketing-readiness-readonly-v1.mjs
       - name: Validate local-only Marketing channel preflight contract
         run: node scripts/test-marketing-channel-preflight-v1.mjs
+      - name: Validate local-only Marketing channel request bundle contract
+        run: node scripts/test-marketing-channel-request-bundle-v1.mjs
       - name: Validate local-only Marketing approval preview contract
         run: node scripts/test-marketing-approval-preview-v1.mjs
       - name: Validate dormant approval preview UI contract
