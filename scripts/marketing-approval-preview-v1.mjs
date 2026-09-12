@@ -9,6 +9,14 @@ const CHANNEL_GATES=Object.freeze({
   pinterest_pin:'pinterest_publish_enabled',
   google_business_post:'google_business_publish_enabled'
 });
+const CHANNEL_RENDER_PROFILES=Object.freeze({
+  whatsapp_status:'story_9_16',
+  instagram_story:'story_9_16',
+  facebook_story:'story_9_16',
+  instagram_carousel:'square_1_1',
+  pinterest_pin:'pinterest_2_3',
+  google_business_post:'square_1_1'
+});
 
 function text(value){return String(value??'').trim().replace(/\s+/g,' ')}
 function stable(value){
@@ -51,6 +59,46 @@ function runtimeBlockers(runtime,channel){
   if(runtime.max_daily_publications<=0)blockers.push('publication_budget_zero');
   return blockers;
 }
+function validateRenderManifest(manifest,channel,asset){
+  const expectedProfile=CHANNEL_RENDER_PROFILES[channel]||null;
+  if(manifest==null)return {manifest:null,validation:{status:'not_provided',expected_profile:expectedProfile,actual_profile:null,error:null}};
+  if(!manifest||typeof manifest!=='object'||Array.isArray(manifest))return {manifest:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:null,error:'invalid_manifest'}};
+  const actualProfile=text(manifest.render_profile)||null;
+  const checks=[
+    ['schema_version',manifest.schema_version==='marketing-render-manifest-v1','schema_version_invalid'],
+    ['dry_run',manifest.dry_run===true,'dry_run_not_true'],
+    ['external_side_effect',manifest.external_side_effect===false,'external_side_effect_not_false'],
+    ['network_allowed',manifest.network_allowed===false,'network_allowed_not_false'],
+    ['provider_call_allowed',manifest.provider_call_allowed===false,'provider_call_allowed_not_false'],
+    ['executor_allowed',manifest.executor_allowed===false,'executor_allowed_not_false'],
+    ['asset_id',text(manifest.asset_id)===asset.id,'asset_id_mismatch']
+  ];
+  const failed=checks.find(([,ok])=>!ok);
+  if(failed)return {manifest:null,validation:{status:'invalid',expected_profile:expectedProfile,actual_profile:actualProfile,error:failed[2]}};
+  const safeManifest={
+    schema_version:'marketing-render-manifest-v1',
+    asset_id:text(manifest.asset_id),
+    revision:Number(manifest.revision),
+    generation_mode:text(manifest.generation_mode),
+    media_kind:text(manifest.media_kind),
+    render_profile:actualProfile,
+    source_svg:text(manifest.source_svg),
+    output:manifest.output&&typeof manifest.output==='object'?stable(manifest.output):null,
+    ai_used:manifest.ai_used===true,
+    requires_ai_preflight:manifest.requires_ai_preflight===true,
+    dry_run:true,
+    executor_allowed:false,
+    external_side_effect:false,
+    network_allowed:false,
+    provider_call_allowed:false,
+    credentials_required_now:manifest.credentials_required_now===true,
+    idempotency_key:text(manifest.idempotency_key)
+  };
+  if(expectedProfile&&actualProfile!==expectedProfile){
+    return {manifest:safeManifest,validation:{status:'incompatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:'channel_format_mismatch'}};
+  }
+  return {manifest:safeManifest,validation:{status:'compatible',expected_profile:expectedProfile,actual_profile:actualProfile,error:null}};
+}
 
 export function buildMarketingApprovalPreview(input={}){
   const asset=safeAsset(input.asset);
@@ -82,11 +130,20 @@ export function buildMarketingApprovalPreview(input={}){
     if(!preflight.ok){
       for(const error of preflight.validation?.errors||['invalid_preflight'])blockers.push(`preflight_invalid:${channel}:${text(error)}`);
     }
-    return {channel,preflight};
+    const render=validateRenderManifest(target?.render_manifest,channel,asset);
+    if(render.validation.status==='not_provided')blockers.push(`render_manifest_missing:${channel}`);
+    if(render.validation.status==='invalid')blockers.push(`render_manifest_invalid:${channel}:${render.validation.error}`);
+    if(render.validation.status==='incompatible')blockers.push(`render_manifest_incompatible:${channel}:${render.validation.actual_profile}:${render.validation.expected_profile}`);
+    return {channel,preflight,render_manifest:render.manifest,render_validation:render.validation};
   });
 
   const uniqueBlockers=[...new Set(blockers)];
-  const identity={asset,runtime,targets:targets.map(({channel,preflight})=>({channel,preflight_idempotency_key:preflight.idempotency_key}))};
+  const identity={asset,runtime,targets:targets.map(({channel,preflight,render_manifest,render_validation})=>({
+    channel,
+    preflight_idempotency_key:preflight.idempotency_key,
+    render_manifest_idempotency_key:render_manifest?.idempotency_key||null,
+    render_validation_status:render_validation.status
+  }))};
   return {
     schema_version:'marketing-approval-preview-v1',
     preview_only:true,
