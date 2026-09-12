@@ -4,7 +4,6 @@ const html=readFileSync('comprar/index.html','utf8');
 const js=readFileSync('comprar/chat-light-v2.js','utf8');
 const css=readFileSync('comprar/chat-light-v2.css','utf8');
 const edge=readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
-const shoppingChatEdge=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const ingestMakeEdge=readFileSync('supabase/functions/whatsapp-ingest-make-v1/index.ts','utf8');
 assert.match(html,/chat-light-v2\.css/);
 assert.match(html,/chat-light-v2\.js/);
@@ -29,6 +28,8 @@ assert.match(addon,/lookup_customer/,'checkout must look up an existing customer
 assert.match(addon,/checkoutPhoneLookup/,'checkout must start with the phone lookup step for anonymous customers');
 assert.match(addon,/Confirmar pelo WhatsApp/,'existing web customers must prove number ownership through WhatsApp before saved data is shown');
 assert.match(addon,/verification_status/,'checkout must be able to observe WhatsApp verification completion');
+assert.match(addon,/confirm_order/,'checkout addon must observe order confirmation to build the WhatsApp continuation');
+assert.match(addon,/Continuar no WhatsApp/,'successful checkout must provide an explicit WhatsApp continuation button');
 assert.match(addon,/address-confirm-required/,'saved delivery addresses must require an explicit confirmation on every order');
 assert.match(addon,/stopImmediatePropagation/,'order confirmation must be blocked until a saved address is explicitly chosen');
 assert.match(addon,/save\.checked\s*=\s*true/,'a newly entered delivery address must always be saved');
@@ -40,9 +41,6 @@ assert.match(customerEdge,/verification_required/,'existing customer lookup from
 assert.match(customerEdge,/action==='verification_status'/,'helper API must expose verification status without leaking PII');
 assert.match(customerEdge,/basket_policies/,'helper API must expose basket editability metadata');
 assert.match(ingestMakeEdge,/confirm_web_room_identity_from_whatsapp_v1/,'WhatsApp inbound must be able to confirm a pending web-room identity');
-assert.match(shoppingChatEdge,/customer_verification_required/,'direct web identify must reject an existing phone until ownership is verified');
-assert.match(shoppingChatEdge,/whatsapp_url/,'confirmed orders must return a WhatsApp continuation URL');
-assert.match(js,/Continuar no WhatsApp/,'successful checkout must provide an explicit WhatsApp continuation button');
 const policyMigration='supabase/migrations/20260912125000_chat_quantity_phone_address_confirmation_v2.sql';
 assert.ok(existsSync(policyMigration),'quantity/phone policy migration must exist');
 const migration=readFileSync(policyMigration,'utf8');
@@ -52,6 +50,7 @@ const verifyMigration='supabase/migrations/20260912143000_web_room_identity_veri
 assert.ok(existsSync(verifyMigration),'web-room verification migration must exist');
 const verifySql=readFileSync(verifyMigration,'utf8');
 assert.match(verifySql,/confirm_web_room_identity_from_whatsapp_v1/,'migration must install WhatsApp proof-of-number verification');
+assert.match(verifySql,/customer_verification_required/,'database must reject binding a pre-existing customer to an unverified direct web room');
 assert.match(css,/\.basket-row/);
 assert.match(css,/\.products-rail/);
 assert.match(css,/\.checkout-stage/);
