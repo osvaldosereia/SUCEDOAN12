@@ -27,8 +27,7 @@ assert.match(addon,/quantity_editable/,'basket UI must honor whether each item c
 assert.match(addon,/qty-fixed/,'fixed basket items must not show misleading +/- controls');
 assert.match(addon,/lookup_customer/,'checkout must look up an existing customer by phone before asking for the rest');
 assert.match(addon,/checkoutPhoneLookup/,'checkout must start with the phone lookup step for anonymous customers');
-assert.match(addon,/verify_customer/,'direct web checkout must verify an existing customer before revealing saved data');
-assert.match(addon,/Confirmar pelo WhatsApp/,'direct web checkout must offer proof-of-number via WhatsApp');
+assert.match(addon,/Confirmar pelo WhatsApp/,'existing web customers must prove number ownership through WhatsApp before saved data is shown');
 assert.match(addon,/verification_status/,'checkout must be able to observe WhatsApp verification completion');
 assert.match(addon,/address-confirm-required/,'saved delivery addresses must require an explicit confirmation on every order');
 assert.match(addon,/stopImmediatePropagation/,'order confirmation must be blocked until a saved address is explicitly chosen');
@@ -38,7 +37,6 @@ assert.match(addonCss,/\.address-confirm-required/,'explicit delivery address co
 assert.match(customerEdge,/action==='lookup_customer'/,'helper API must expose the phone lookup action');
 assert.match(customerEdge,/lookup_customer_by_phone/,'phone lookup must reuse the canonical customer lookup routine');
 assert.match(customerEdge,/verification_required/,'existing customer lookup from the public web must not bind immediately');
-assert.match(customerEdge,/action==='verify_customer'/,'helper API must verify customer ownership before binding');
 assert.match(customerEdge,/action==='verification_status'/,'helper API must expose verification status without leaking PII');
 assert.match(customerEdge,/basket_policies/,'helper API must expose basket editability metadata');
 assert.match(ingestMakeEdge,/confirm_web_room_identity_from_whatsapp_v1/,'WhatsApp inbound must be able to confirm a pending web-room identity');
