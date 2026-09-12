@@ -101,6 +101,20 @@ Deno.serve(async(req:Request)=>{
     const {data:dispatch}=await sb.rpc("dispatch_product_image_grid18_worker_v1");
     return respond({ok:true,...q,dispatch:dispatch||null});
   }
+  if(action==="use_current_image_as_source"){
+    const productId=uuid(body?.product_id);if(!productId)return respond({ok:false,error:"invalid_product_id"},400);
+    const {data:p,error:pe}=await sb.from("products").select("id,image_url,image_ai_status").eq("id",productId).maybeSingle();
+    if(pe||!p)return respond({ok:false,error:"product_not_found"},404);
+    if(String(p.image_ai_status||"")==="processing")return respond({ok:false,error:"product_processing"},409);
+    const source=safeSourceUrl(p.image_url);if(!source)return respond({ok:false,error:"current_image_not_allowed"},400);
+    const now=new Date().toISOString(),note=clean(body?.note,1000)||null;
+    const u=await sb.from("products").update({image_source_url:source,image_source_origin:"admin_current_image_override",image_source_verified_at:null,image_source_sha256:null,image_source_width:null,image_source_height:null,image_ai_admin_note:note,image_ai_admin_updated_at:now,image_ai_ignored:false,updated_at:now}).eq("id",productId);
+    if(u.error)return respond({ok:false,error:"source_update_failed",detail:clean(u.error.message,300)},500);
+    const mode=body?.mode==="batch"?"batch":"individual",q=await queueProduct(productId,mode);
+    if(!q.ok)return respond(q,400);
+    const {data:dispatch}=await sb.rpc("dispatch_product_image_grid18_worker_v1");
+    return respond({ok:true,...q,source_url:source,dispatch:dispatch||null});
+  }
   if(action==="replace_source"){
     const productId=uuid(body?.product_id);if(!productId)return respond({ok:false,error:"invalid_product_id"},400);
     const source=safeSourceUrl(body?.source_url);if(!source)return respond({ok:false,error:"invalid_source_url"},400);
