@@ -9,11 +9,12 @@
   <title>Dona Antônia · Atendimento · Admin V3</title>
   <link rel="stylesheet" href="./styles.css?v=20260911-2">
   <link rel="stylesheet" href="./service-strategy.css?v=20260912-1">
+  <link rel="stylesheet" href="./service-chat-center.css?v=20260912-1">
 </head>
 <body class="strategy-body">
   <header class="strategy-topbar">
     <a class="strategy-back" href="./">← Admin V3</a>
-    <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>Gatilhos, histórico e evolução</span></div></div>
+    <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>Regras, chat, inteligência e evolução</span></div></div>
     <span id="runtimeBadge" class="strategy-runtime-badge">Carregando…</span>
   </header>
 
@@ -21,8 +22,8 @@
     <section id="loginGate" class="strategy-login hidden">
       <div class="strategy-login-card">
         <div class="eyebrow">Área protegida</div>
-        <h1>Histórico do atendimento</h1>
-        <p>O Admin V3 principal continua abrindo sem senha. Só esta área pede o código porque contém conversas e dados de clientes.</p>
+        <h1>Central de Atendimento</h1>
+        <p>O Admin V3 principal continua abrindo sem senha. Só esta área pede o código porque contém conversas e configurações do atendimento.</p>
         <form id="strategyLoginForm" autocomplete="off">
           <label>Código de 6 números<input id="strategyPin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required></label>
           <button id="strategyLoginButton" class="primary" type="submit">Abrir atendimento</button>
@@ -33,13 +34,15 @@
 
     <section id="strategyApp" class="hidden">
       <div class="strategy-page-head">
-        <div><div class="eyebrow">Admin V3</div><h1>Central de Atendimento</h1><p>Configure o que a IA pode responder, revise os últimos 7 dias e acompanhe cada ajuste feito na estratégia.</p></div>
+        <div><div class="eyebrow">Admin V3</div><h1>Central de Atendimento</h1><p>Configure regras, aparência do chat e inteligência; revise conversas reais e acompanhe cada ajuste feito na estratégia.</p></div>
         <div class="strategy-page-actions"><button id="strategyRefresh" class="secondary" type="button">Atualizar</button><button id="strategyLogout" class="secondary" type="button">Bloquear área</button></div>
       </div>
 
       <nav class="strategy-tabs" aria-label="Seções do atendimento">
         <button class="active" type="button" data-strategy-tab="rules">Regras</button>
-        <button type="button" data-strategy-tab="history">Histórico 7 dias</button>
+        <button type="button" data-strategy-tab="chat">Chat</button>
+        <button type="button" data-strategy-tab="intelligence">Inteligência</button>
+        <button type="button" data-strategy-tab="history" aria-label="Histórico 7 dias">Conversas</button>
         <button type="button" data-strategy-tab="evolution">Evolução</button>
       </nav>
 
@@ -61,6 +64,16 @@
             <div class="strategy-editor-actions"><button id="ruleSave" class="primary" type="button">Salvar</button><button id="rulePublish" class="secondary" type="button">Publicar</button><button id="ruleArchive" class="secondary" type="button">Arquivar</button></div>
           </section>
         </div>
+      </section>
+
+      <section id="tabChat" class="strategy-tab">
+        <div class="strategy-section-head"><div><div class="eyebrow">Experiência do cliente</div><h2>Chat</h2><p>Controle o menu de ajuda e confira as proteções obrigatórias do checkout.</p></div></div>
+        <div id="chatConfigRoot" class="strategy-empty">Abra esta aba para carregar as configurações do chat.</div>
+      </section>
+
+      <section id="tabIntelligence" class="strategy-tab">
+        <div class="strategy-section-head"><div><div class="eyebrow">Motor simples</div><h2>Inteligência</h2><p>Ajuste como o atendimento reconhece intenções e humaniza respostas sem ligar automaticamente os gates globais.</p></div></div>
+        <div id="intelligenceConfigRoot" class="strategy-empty">Abra esta aba para carregar a inteligência.</div>
       </section>
 
       <section id="tabHistory" class="strategy-tab">
@@ -89,5 +102,6 @@
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
   <script type="module" src="./service-strategy.js?v=20260912-2"></script>
   <script type="module" src="./service-strategy-addon.js?v=20260912-1"></script>
+  <script type="module" src="./service-chat-center.js?v=20260912-1"></script>
 </body>
 </html>

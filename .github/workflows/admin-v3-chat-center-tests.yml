@@ -1,0 +1,31 @@
+name: Admin V3 chat center
+
+on:
+  pull_request:
+    paths:
+      - 'admin-v3/atendimento.html'
+      - 'admin-v3/service-strategy.js'
+      - 'admin-v3/service-chat-center.js'
+      - 'supabase/functions/admin-service-intelligence-simple-v1/**'
+      - 'scripts/test-admin-v3-chat-center-v1.mjs'
+      - '.github/workflows/admin-v3-chat-center-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'admin-v3/atendimento.html'
+      - 'admin-v3/service-strategy.js'
+      - 'admin-v3/service-chat-center.js'
+      - 'supabase/functions/admin-service-intelligence-simple-v1/**'
+      - 'scripts/test-admin-v3-chat-center-v1.mjs'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/test-admin-v3-chat-center-v1.mjs
+      - run: node --check admin-v3/service-strategy.js
+      - run: node --check admin-v3/service-chat-center.js

@@ -5,6 +5,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const clean=(v:unknown,max=4000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80))?clean(v,80):"";
 const vars=(v:unknown)=>Array.isArray(v)?v.map(x=>clean(x,240)).filter(Boolean).slice(0,30):String(v??"").split(/\n+/).map(x=>clean(x,240)).filter(Boolean).slice(0,30);
+const clamp=(v:unknown,min:number,max:number,fallback:number)=>{const n=Number(v);return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback};
 const MODES=new Set(["text","reply_buttons","cta_url","list_view","list_select","basket_flow","registration_flow","address_flow","custom_flow","product_lookup","catalog_message","single_product","product_list","image","audio_ai","video","document","location","contact","template_quick_reply","template_cta","template_carousel","template_catalog","template_multi_product","human","silence"]);
 const LIVE_MODES=new Set(["text","reply_buttons","cta_url","list_view","list_select","basket_flow","address_flow","product_lookup","image","audio_ai","human","silence"]);
 const toolCfg=(v:any)=>{if(!v||typeof v!=="object"||Array.isArray(v))return {};try{const s=JSON.stringify(v);return s.length<=20000?JSON.parse(s):{}}catch{return {}}};
@@ -17,6 +18,26 @@ Deno.serve(async(req:Request)=>{
   const {data:admin,error:adminError}=await sb.from("admin_users").select("role,is_active,display_name").eq("user_id",userData.user.id).maybeSingle();if(adminError)return json({ok:false,error:"admin_lookup_failed"},500);if(!admin?.is_active)return json({ok:false,error:"admin_not_authorized"},403);
   const isOwner=admin.role==="owner",canEdit=isOwner||["admin","manager"].includes(admin.role);let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}const action=clean(body?.action||"dashboard",40).toLowerCase();
   if(action==="dashboard"){const [{data:runtime},{count:total},{count:published},{count:drafts}]=await Promise.all([sb.from("service_simple_runtime_config").select("*").eq("id",1).maybeSingle(),sb.from("service_simple_rules").select("id",{count:"exact",head:true}),sb.from("service_simple_rules").select("id",{count:"exact",head:true}).eq("status","published"),sb.from("service_simple_rules").select("id",{count:"exact",head:true}).eq("status","draft")]);return json({ok:true,user:{role:admin.role,display_name:admin.display_name||null},runtime,counts:{total:total||0,published:published||0,drafts:drafts||0}})}
+  if(action==="runtime_get"){const {data,error}=await sb.from("service_simple_runtime_config").select("*").eq("id",1).maybeSingle();if(error)return json({ok:false,error:"runtime_read_failed",detail:error.message},500);return json({ok:true,runtime:data})}
+  if(action==="runtime_save"){
+    if(!canEdit)return json({ok:false,error:"editor_required"},403);
+    const fallback_mode=clean(body?.fallback_mode,20)==="silence"?"silence":"human";
+    const patch={
+      enabled:body?.enabled!==false,
+      strict_mode:body?.strict_mode!==false,
+      classifier_ai_enabled:body?.classifier_ai_enabled!==false,
+      generative_ai_enabled:body?.generative_ai_enabled!==false,
+      humanize_all_replies:body?.humanize_all_replies!==false,
+      max_history_messages:Math.round(clamp(body?.max_history_messages,0,8,4)),
+      max_candidate_rules:Math.round(clamp(body?.max_candidate_rules,1,10,5)),
+      similarity_threshold:clamp(body?.similarity_threshold,0,1,0.5),
+      fallback_mode,
+      updated_at:new Date().toISOString()
+    };
+    const {data,error}=await sb.from("service_simple_runtime_config").update(patch).eq("id",1).select("*").single();
+    if(error)return json({ok:false,error:"runtime_save_failed",detail:error.message},400);
+    return json({ok:true,runtime:data});
+  }
   if(action==="resources"){const {data:flows,error}=await sb.from("experience_definitions").select("id,slug,feature_key,experience_type,purpose,status,provider,provider_id,provider_version").eq("experience_type","whatsapp_flow").in("status",["active","ready","draft"]).order("status",{ascending:true}).order("updated_at",{ascending:false});if(error)return json({ok:false,error:"resources_failed",detail:error.message},500);return json({ok:true,flows:flows||[],live_modes:[...LIVE_MODES]})}
   if(action==="list"){const {data,error}=await sb.from("service_simple_rules").select("*").order("priority",{ascending:false}).order("updated_at",{ascending:false}).limit(300);if(error)return json({ok:false,error:"list_failed",detail:error.message},500);const q=clean(body?.q,120).toLowerCase();const items=(data||[]).filter((x:any)=>!q||JSON.stringify(x.stages||[]).toLowerCase().includes(q)||String(x.question||"").toLowerCase().includes(q));return json({ok:true,items})}
   if(action==="save"){if(!canEdit)return json({ok:false,error:"editor_required"},403);const id=uuid(body?.id);let stages=stagesOf(body?.stages);if(!stages.length)stages=stagesOf([{question:body?.question,variations:body?.variations,answer:body?.answer,response_mode:body?.response_mode,tool_config:body?.tool_config}]);if(!stages.length)return json({ok:false,error:"stage_required"},400);for(const s of stages){if(!MODES.has(s.response_mode))return json({ok:false,error:"invalid_response_mode"},400);if(s.response_mode==="text"&&!s.answer)return json({ok:false,error:"answer_required"},400)}const first=stages[0];const row={question:first.question,variations:first.variations,answer:first.answer,response_mode:first.response_mode,tool_config:first.tool_config,stages,priority:Math.max(0,Math.min(100,Number(body?.priority??50)||50)),updated_by:userData.user.id,updated_at:new Date().toISOString()};let item:any,error:any;if(id)({data:item,error}=await sb.from("service_simple_rules").update(row).eq("id",id).select("*").single());else ({data:item,error}=await sb.from("service_simple_rules").insert({...row,created_by:userData.user.id}).select("*").single());if(error)return json({ok:false,error:"save_failed",detail:error.message},400);return json({ok:true,item})}
