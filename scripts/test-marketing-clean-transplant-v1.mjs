@@ -20,7 +20,8 @@ for (const forbidden of [
   'marketing-editor-v1',
   'marketing-library-v1',
   'marketing-operations-readonly-v1',
-  'marketing-readiness-readonly-v1'
+  'marketing-readiness-readonly-v1',
+  'marketing-approval-preview-readonly-v1'
 ]) assert.ok(!publicAdmin.includes(forbidden), `public Admin must not load Marketing surface: ${forbidden}`);
 
 const marketingFunctions = [
@@ -49,7 +50,8 @@ const dormantUiFiles = [
   'admin-v3/marketing-editor-v1.js',
   'admin-v3/marketing-library-v1.js',
   'admin-v3/marketing-operations-readonly-v1.js',
-  'admin-v3/marketing-readiness-readonly-v1.js'
+  'admin-v3/marketing-readiness-readonly-v1.js',
+  'admin-v3/marketing-approval-preview-readonly-v1.js'
 ];
 for (const file of dormantUiFiles) assert.ok(fs.existsSync(file), `dormant Marketing UI asset missing: ${file}`);
 
@@ -85,6 +87,12 @@ assert.match(readiness, /external_side_effect!==false/, 'private readiness reade
 assert.match(readiness, /admin-marketing-insights-v1/, 'private readiness reader must use protected insights edge');
 assert.ok(!externalProviderPattern.test(readiness), 'dormant readiness reader must not call external providers directly');
 assert.ok(!/call\('(publish|execute|schedule_job|approve_asset|requeue|kill|create_|update_)/.test(readiness),'dormant readiness reader must stay read-only');
+
+const approvalPreviewUi = fs.readFileSync('admin-v3/marketing-approval-preview-readonly-v1.js','utf8');
+assert.ok(!/fetch\(|XMLHttpRequest|axios|Authorization|Bearer /.test(approvalPreviewUi),'approval preview UI must stay local-only');
+assert.ok(!externalProviderPattern.test(approvalPreviewUi),'approval preview UI must not call external providers directly');
+assert.match(approvalPreviewUi,/external_side_effect/,'approval preview UI must validate side-effect contract');
+assert.match(approvalPreviewUi,/ready_for_real_publish/,'approval preview UI must validate publish-readiness contract');
 
 const migrations = [
   '20260910004500_marketing_center_foundation_v1.sql',
