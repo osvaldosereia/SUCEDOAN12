@@ -10,8 +10,8 @@ function renderCheckoutItem(item){
 }
 
 export function renderCheckout({basket=null,basketItems=[],extras={},total=0}={}){
-  const basketRows=basketItems.map(renderCheckoutItem).join('');
-  const extraRows=Object.values(extras||{}).map(renderCheckoutItem).join('');
+  const basketRows=basketItems.filter(item=>Number(item.quantity||0)>0).map(renderCheckoutItem).join('');
+  const extraRows=Object.values(extras||{}).filter(item=>Number(item.quantity||0)>0).map(renderCheckoutItem).join('');
   const basketBlock=basket?`<section class="checkout-group"><h3>${esc(basket.name)}</h3><p>Produtos da cesta</p>${basketRows}</section>`:'';
   const extraBlock=extraRows?`<section class="checkout-group"><h3>Produtos adicionados</h3>${extraRows}</section>`:'';
   return `<section class="checkout"><button class="text-button" type="button" data-home>← Voltar</button><h1>Finalizar pedido</h1><section class="checkout-summary"><h2>Resumo do pedido</h2>${basketBlock}${extraBlock}<div class="checkout-total"><span>Total</span><strong>${money(total)}</strong></div></section><form id="checkoutForm"><label><span>Seu telefone com DDD</span><input id="checkoutPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999" required></label><button id="checkoutSubmit" class="primary-button full" type="submit">Enviar pedido</button></form></section>`;
