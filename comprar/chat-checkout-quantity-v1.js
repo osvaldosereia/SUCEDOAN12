@@ -4,9 +4,12 @@
   if(!C.customerApi||!C.api)return;
   const nativeFetch=window.fetch.bind(window);
   const token=()=>new URLSearchParams(location.search).get('s')||new URLSearchParams(location.search).get('c')||new URLSearchParams(location.search).get('token')||'';
+  const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   let basketPolicies=[];
   let lastCheckout=null;
   let verificationTimer=null;
+  let lastWhatsappUrl='';
+  let whatsappReturnScheduled=false;
 
   async function helper(action,payload={}){
     const r=await nativeFetch(C.customerApi,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:token(),...payload}),cache:'no-store'});
@@ -21,13 +24,21 @@
     return items.map(item=>({...item,...(map.get(String(item.product_id))||{})}));
   }
 
+  function buildWhatsappReturn(order){
+    const base=String(C.whatsappFallback||'https://wa.me/556584491018');
+    const ref=String(order?.order_number||order?.number||order?.order_id||'').trim();
+    const total=Number(order?.total||0);
+    const message=`Olá! Meu pedido foi confirmado na Sala de Compra da Dona Antônia${ref?` · Pedido ${ref}`:''}${total>0?` · Total ${money(total)}`:''}. Quero continuar o atendimento por aqui.`;
+    return `${base}${base.includes('?')?'&':'?'}text=${encodeURIComponent(message)}`;
+  }
+
   window.fetch=async(input,init={})=>{
     const url=typeof input==='string'?input:input?.url;
     const response=await nativeFetch(input,init);
     if(url!==C.api||!init?.body||typeof init.body!=='string')return response;
     let requestBody;try{requestBody=JSON.parse(init.body)}catch{return response}
     const action=String(requestBody?.action||'').toLowerCase();
-    if(!['open','start_basket','checkout_preview'].includes(action))return response;
+    if(!['open','start_basket','checkout_preview','confirm_order'].includes(action))return response;
     let data;try{data=await response.clone().json()}catch{return response}
     if(!response.ok||data?.ok===false)return response;
     if(action==='open'||action==='start_basket'){
@@ -39,6 +50,10 @@
       }catch{}
     }
     if(action==='checkout_preview')lastCheckout=data.checkout||null;
+    if(action==='confirm_order'){
+      lastWhatsappUrl=buildWhatsappReturn(data.order||{});
+      data.whatsapp_url=lastWhatsappUrl;
+    }
     const headers=new Headers(response.headers);headers.delete('content-length');headers.set('content-type','application/json');
     return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers});
   };
@@ -178,8 +193,25 @@
     }
   }
 
+  function decorateOrderSuccess(){
+    const success=document.querySelector('.checkout-card.success');
+    if(!success||!lastWhatsappUrl)return;
+    if(!success.querySelector('.checkout-whatsapp-return')){
+      const link=document.createElement('a');
+      link.className='primary checkout-whatsapp-return';
+      link.href=lastWhatsappUrl;
+      link.textContent='Continuar no WhatsApp';
+      success.appendChild(link);
+    }
+    if(!whatsappReturnScheduled){
+      whatsappReturnScheduled=true;
+      setTimeout(()=>{if(lastWhatsappUrl)location.href=lastWhatsappUrl},1200);
+    }
+  }
+
   function refresh(){
     decorateBasketRows();
+    decorateOrderSuccess();
     const stage=document.querySelector('.stage.checkout-stage');
     if(stage){setupPhoneFirst(stage);setupAddressConfirmation(stage)}
   }
