@@ -25,6 +25,8 @@ on:
       - 'scripts/marketing-render-svg-v1.mjs'
       - 'scripts/test-marketing-render-manifest-v1.mjs'
       - 'scripts/marketing-render-manifest-v1.mjs'
+      - 'scripts/test-marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/marketing-rasterize-png-buffer-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -55,6 +57,8 @@ on:
       - 'scripts/marketing-render-svg-v1.mjs'
       - 'scripts/test-marketing-render-manifest-v1.mjs'
       - 'scripts/marketing-render-manifest-v1.mjs'
+      - 'scripts/test-marketing-rasterize-png-buffer-v1.mjs'
+      - 'scripts/marketing-rasterize-png-buffer-v1.mjs'
       - 'admin/app-lite.js'
       - 'admin-v3/marketing-*.js'
       - 'admin-v3/marketing-*.css'
@@ -72,6 +76,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install pinned local raster dependency
+        run: npm install --no-save sharp@0.34.3
       - name: Syntax check dormant private Marketing UI and local tooling
         run: |
           node --check admin-v3/marketing-carousel-progress-v1.js
@@ -87,6 +93,7 @@ jobs:
           node --check scripts/marketing-ai-preflight-v1.mjs
           node --check scripts/marketing-render-svg-v1.mjs
           node --check scripts/marketing-render-manifest-v1.mjs
+          node --check scripts/marketing-rasterize-png-buffer-v1.mjs
       - name: Validate clean Marketing transplant safety contract
         run: node scripts/test-marketing-clean-transplant-v1.mjs
       - name: Validate dormant Marketing editor contract
@@ -113,3 +120,5 @@ jobs:
         run: node scripts/test-marketing-render-svg-v1.mjs
       - name: Validate deterministic Marketing render manifest
         run: node scripts/test-marketing-render-manifest-v1.mjs
+      - name: Validate in-memory PNG rasterizer
+        run: node scripts/test-marketing-rasterize-png-buffer-v1.mjs
