@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>WhatsApp Direto · Dona Antônia</title>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body{background:#f6f3ee}.direct-shell{max-width:1280px;margin:0 auto;padding:24px}.direct-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.direct-head img{height:58px}.direct-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}.direct-card{grid-column:span 12;background:#fff;border:1px solid #e7e0d7;border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(44,32,19,.05)}.half{grid-column:span 6}@media(max-width:850px){.half{grid-column:span 12}}.status-row{display:flex;gap:8px;flex-wrap:wrap}.dot{padding:7px 10px;border-radius:999px;background:#eee;font-size:12px}.dot.ok{background:#e5f7e9;color:#176529}.dot.bad{background:#fde8e8;color:#8d2020}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fields .wide{grid-column:1/-1}.fields label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700}.fields input,.fields textarea,.fields select{width:100%;border:1px solid #d9d1c8;border-radius:10px;padding:10px;font:inherit}.fields textarea{min-height:100px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;background:#5f2e1f;color:white;text-decoration:none}.btn.secondary{background:#ede7df;color:#3b2b22}.btn:disabled{opacity:.5;cursor:not-allowed}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;word-break:break-all;background:#f7f5f2;padding:9px;border-radius:9px}.template,.basket{border-top:1px solid #eee;padding:14px 0}.template:first-child,.basket:first-child{border-top:0}.basket{display:grid;grid-template-columns:82px 1fr auto;gap:12px;align-items:center}.basket img{width:82px;height:82px;object-fit:contain;background:#f3f3f3;border-radius:12px}.small{font-size:12px;color:#6e625b}.login-box{max-width:420px;margin:70px auto;background:#fff;border-radius:18px;padding:24px;border:1px solid #e5ddd4}.login-box input{font-size:28px;letter-spacing:8px;text-align:center}.hidden{display:none!important}#assetCanvas{max-width:360px;width:100%;height:auto;border:1px solid #ddd;border-radius:14px;background:#fff}.preview-wrap{display:grid;grid-template-columns:380px 1fr;gap:18px}@media(max-width:850px){.preview-wrap{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div id="loginBox" class="login-box hidden">
+    <img src="../img/logoantonia5.png" alt="Dona Antônia" style="height:64px;display:block;margin:0 auto 14px">
+    <h1 style="text-align:center">WhatsApp Direto</h1>
+    <p class="small" style="text-align:center">Área protegida do Admin.</p>
+    <form id="pinForm" class="fields" style="grid-template-columns:1fr">
+      <label>Código do Admin<input id="pinInput" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
+      <button class="btn" id="pinButton">Entrar</button>
+      <div id="pinStatus" class="small"></div>
+    </form>
+  </div>
+
+  <main id="app" class="direct-shell hidden">
+    <header class="direct-head">
+      <div style="display:flex;align-items:center;gap:14px"><img src="../img/logoantonia5.png" alt="Dona Antônia"><div><div class="small">Admin V3</div><h1>WhatsApp Direto</h1></div></div>
+      <div class="actions"><a class="btn secondary" href="./">← Admin</a><a class="btn secondary" href="../vitrine-v3/" target="_blank" rel="noopener">Abrir Vitrine</a><button class="btn secondary" id="reloadBtn">Atualizar</button></div>
+    </header>
+
+    <div class="direct-grid">
+      <section class="direct-card half"><h2>Conexão Meta</h2><div id="readiness" class="status-row"></div><div id="accountBox" style="margin-top:12px"></div><p class="small">O canal só pode ser ativado quando todas as credenciais obrigatórias estiverem configuradas. Os valores secretos nunca são exibidos nesta tela.</p></section>
+      <section class="direct-card half"><h2>Regras do canal</h2><p>Atendimento determinístico, sem IA. Dentro da janela de 24h usamos texto, imagem, áudio e botões internos. Fora dela, somente template aprovado para sua finalidade.</p><div class="status-row"><span class="dot ok">Botões internos</span><span class="dot ok">Link escrito</span><span class="dot ok">Imagem quando útil</span><span class="dot ok">Saída para atendente</span></div></section>
+
+      <section class="direct-card"><h2>Configuração</h2><form id="configForm" class="fields">
+        <label>Link da Vitrine<input id="storefrontUrl" type="url"></label>
+        <label>Telefone exibido nas artes<input id="publicPhone" placeholder="(65) 98449-1018"></label>
+        <label class="wide">Saudação<textarea id="greetingText"></textarea></label>
+        <label class="wide">Pedido de endereço<textarea id="addressRequestText"></textarea></label>
+        <label class="wide">Áudio pré-gravado para pedir endereço (URL HTTPS)<input id="addressAudioUrl" type="url" placeholder="Opcional"></label>
+        <label><span>Exigir localização do WhatsApp</span><select id="requireLocation"><option value="true">Sim</option><option value="false">Não</option></select></label>
+        <label>Modo<select id="releaseMode"><option value="off">Desligado</option><option value="homologation">Homologação</option><option value="live">Produção</option></select></label>
+        <label><span>Motor direto</span><select id="enabled"><option value="false">Desligado</option><option value="true">Ligado</option></select></label>
+        <div class="wide actions"><button class="btn" type="submit">Salvar configuração</button></div>
+      </form></section>
+
+      <section class="direct-card"><div class="direct-head" style="margin:0"><div><div class="small">Mensagens iniciadas pela empresa</div><h2>Templates Utility</h2></div><button class="btn secondary" id="syncTemplates">Sincronizar com Meta</button></div><div id="templates"></div></section>
+
+      <section class="direct-card"><h2>Imagens das cestas</h2><p class="small">Arte vertical 1080×1920 para WhatsApp, com logo, foto atual da cesta, composição e quantidades exatamente como estão no Supabase.</p><div id="baskets"></div></section>
+
+      <section id="assetPreviewCard" class="direct-card hidden"><h2>Prévia da arte</h2><div class="preview-wrap"><canvas id="assetCanvas" width="1080" height="1920"></canvas><div><h3 id="assetTitle"></h3><p class="small">A geração é determinística: o texto vem do cadastro atual da cesta, sem IA alterando nomes ou quantidades.</p><div class="actions"><button class="btn" id="saveAsset">Salvar para WhatsApp</button><button class="btn secondary" id="downloadAsset">Baixar PNG</button></div><div id="assetStatus" class="small"></div></div></div></section>
+
+      <section class="direct-card"><h2>Eventos recentes</h2><div id="events"></div></section>
+    </div>
+  </main>
+  <script type="module" src="./whatsapp-direct.js?v=20260912-1"></script>
+</body>
+</html>
