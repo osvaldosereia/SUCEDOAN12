@@ -6,6 +6,7 @@
   const token=()=>new URLSearchParams(location.search).get('s')||new URLSearchParams(location.search).get('c')||new URLSearchParams(location.search).get('token')||'';
   let basketPolicies=[];
   let lastCheckout=null;
+  let verificationTimer=null;
 
   async function helper(action,payload={}){
     const r=await nativeFetch(C.customerApi,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:token(),...payload}),cache:'no-store'});
@@ -69,6 +70,36 @@
     const confirm=stage.querySelector('.confirm');if(confirm)confirm.classList.add('checkout-deferred','hidden');
   }
   function revealCheckoutCards(stage){stage.querySelectorAll('.checkout-deferred').forEach(el=>el.classList.remove('hidden','checkout-deferred'))}
+  function refreshVerifiedCheckout(checkout,status){
+    clearTimeout(verificationTimer);
+    lastCheckout=checkout||lastCheckout;
+    if(status)status.textContent='Cadastro confirmado. Carregando seus dados…';
+    setTimeout(()=>document.getElementById('checkoutButton')?.click(),250);
+  }
+  function pollVerification(status,tries=0){
+    clearTimeout(verificationTimer);
+    if(tries>=60){status.textContent='Se você já enviou a mensagem, volte para esta tela e toque em “Verificar novamente”.';return}
+    verificationTimer=setTimeout(async()=>{
+      try{
+        const d=await helper('verification_status');
+        if(d.verified){refreshVerifiedCheckout(d.checkout,status);return}
+      }catch{}
+      pollVerification(status,tries+1);
+    },2000);
+  }
+  function showVerification(customerCard,data,stage){
+    deferCheckoutCards(stage,customerCard);
+    customerCard.innerHTML='<h3>Confirmar cadastro</h3><p class="muted checkout-phone-hint">Encontrei um cadastro com esse número. Por segurança, nenhum endereço será mostrado até você confirmar pelo próprio WhatsApp.</p><div class="checkout-verify-actions"><a id="checkoutVerifyWhatsApp" class="primary checkout-verify-whatsapp" target="_blank" rel="noopener">Confirmar pelo WhatsApp</a><button id="checkoutVerifyAgain" type="button" class="secondary">Verificar novamente</button></div><small id="checkoutVerifyStatus" class="muted">Abra o WhatsApp e envie a mensagem pronta. Depois volte para esta tela.</small>';
+    const link=customerCard.querySelector('#checkoutVerifyWhatsApp');
+    const again=customerCard.querySelector('#checkoutVerifyAgain');
+    const status=customerCard.querySelector('#checkoutVerifyStatus');
+    link.href=String(data.whatsapp_url||C.whatsappFallback||'#');
+    link.onclick=()=>{status.textContent='Aguardando a confirmação enviada pelo WhatsApp…';pollVerification(status,0)};
+    again.onclick=async()=>{
+      again.disabled=true;status.textContent='Verificando…';
+      try{const d=await helper('verification_status');if(d.verified){refreshVerifiedCheckout(d.checkout,status);return}status.textContent='Ainda não chegou a confirmação. Envie a mensagem pronta pelo WhatsApp.'}catch(e){status.textContent=String(e?.message||'Não foi possível verificar agora.')}finally{again.disabled=false}
+    };
+  }
 
   function setupPhoneFirst(stage){
     if(stage.dataset.phoneFirstReady==='1')return;
@@ -78,7 +109,7 @@
     stage.dataset.phoneFirstReady='1';
     const original=customerCard.innerHTML;
     deferCheckoutCards(stage,customerCard);
-    customerCard.innerHTML='<h3>Identificar cadastro</h3><p class="muted checkout-phone-hint">Digite primeiro seu WhatsApp. Se já tiver cadastro, eu preencho seus dados automaticamente.</p><label class="field"><span>WhatsApp com DDD</span><input id="checkoutPhoneLookup" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999"></label><button id="checkoutPhoneLookupButton" type="button" class="primary checkout-phone-button">Continuar</button><small id="checkoutPhoneLookupStatus" class="muted"></small>';
+    customerCard.innerHTML='<h3>Identificar cadastro</h3><p class="muted checkout-phone-hint">Digite primeiro seu WhatsApp. Se já tiver cadastro, eu confirmo o número antes de mostrar seus dados.</p><label class="field"><span>WhatsApp com DDD</span><input id="checkoutPhoneLookup" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999"></label><button id="checkoutPhoneLookupButton" type="button" class="primary checkout-phone-button">Continuar</button><small id="checkoutPhoneLookupStatus" class="muted"></small>';
     const input=customerCard.querySelector('#checkoutPhoneLookup');const button=customerCard.querySelector('#checkoutPhoneLookupButton');const status=customerCard.querySelector('#checkoutPhoneLookupStatus');
     button.onclick=async()=>{
       const phone=String(input.value||'').trim();const digits=phone.replace(/\D/g,'');
@@ -86,7 +117,8 @@
       button.disabled=true;button.textContent='Buscando…';status.textContent='';
       try{
         const d=await helper('lookup_customer',{phone});
-        if(d.found){status.textContent='Cadastro encontrado. Carregando seus dados…';lastCheckout=d.checkout||lastCheckout;document.getElementById('checkoutButton')?.click();return}
+        if(d.verified){refreshVerifiedCheckout(d.checkout,status);return}
+        if(d.found&&d.verification_required){showVerification(customerCard,d,stage);return}
         customerCard.innerHTML=original;
         const phoneInput=customerCard.querySelector('#checkoutPhone');if(phoneInput)phoneInput.value=phone;
         revealCheckoutCards(stage);
@@ -153,5 +185,6 @@
   }
   const observer=new MutationObserver(refresh);observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
   document.addEventListener('click',()=>setTimeout(refresh,0),true);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&document.querySelector('#checkoutVerifyStatus')){const status=document.querySelector('#checkoutVerifyStatus');pollVerification(status,0)}});
   refresh();
 })();
