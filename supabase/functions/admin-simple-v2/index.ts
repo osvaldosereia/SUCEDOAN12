@@ -27,7 +27,7 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{}
   const action=clean(body?.action||"health",60).toLowerCase();
 
-  if(action==="health")return json({ok:true,mode:"public_no_auth",version:4});
+  if(action==="health")return json({ok:true,mode:"public_no_auth",version:5});
 
   if(action==="products"){
     const page=Math.max(1,integer(body?.page,1,100000));
@@ -60,6 +60,8 @@ Deno.serve(async(req:Request)=>{
 
   if(action==="update_product"){
     const id=clean(body?.id,80);if(!id)return json({ok:false,error:"id_required"},400);
+    const {data:currentProduct,error:currentProductError}=await sb.from("products").select("is_offer,offer_price").eq("id",id).maybeSingle();
+    if(currentProductError||!currentProduct)return json({ok:false,error:"product_not_found"},404);
     const src=body?.patch&&typeof body.patch==="object"?body.patch:{};
     const patch:any={updated_at:new Date().toISOString(),last_admin_edit_at:new Date().toISOString(),last_admin_edit_by:null};
     for(const [key,max] of [["name",180],["sku",100],["brand",180],["category",180],["subcategory",180],["packaging",180],["image_url",1200],["description_short",1000],["description_long",5000]] as const){if(src[key]!==undefined)patch[key]=clean(src[key],max)||null}
@@ -74,6 +76,9 @@ Deno.serve(async(req:Request)=>{
     if(src.validity_date!==undefined)patch.validity_date=clean(src.validity_date,10)||null;
     if(src.tags!==undefined)patch.tags=Array.isArray(src.tags)?src.tags.map((x:any)=>clean(x,80)).filter(Boolean).slice(0,50):[];
     if(patch.name!==undefined&&!patch.name)return json({ok:false,error:"name_required"},400);
+    const nextOffer=typeof patch.is_offer==="boolean"?patch.is_offer:currentProduct.is_offer===true;
+    const nextOfferPrice=patch.offer_price!==undefined?patch.offer_price:numberValue(currentProduct.offer_price);
+    if(nextOffer&&(nextOfferPrice===null||nextOfferPrice<0))return json({ok:false,error:"invalid_offer_price"},400);
     const {data,error}=await sb.from("products").update(patch).eq("id",id).select(PRODUCT_DETAIL_FIELDS).single();
     if(error)return json({ok:false,error:"update_failed",detail:error.message},400);
     return json({ok:true,product:data});
@@ -87,11 +92,12 @@ Deno.serve(async(req:Request)=>{
       ["basket_template_items","product_id"],["cart_items","product_id"],["order_items","product_id"],
       ["inventory_count_items","product_id"],["inventory_lots","product_id"],["inventory_lot_movements","product_id"],
       ["cycle_count_tasks","product_id"],["fulfillment_items","product_id"],["customer_product_stats","product_id"],
-      ["catalog_session_items","product_id"],["substitution_group_items","product_id"],
+      ["catalog_session_items","product_id"],["substitution_group_items","product_id"],["product_changes","product_id"],
+      ["inventory_fast_balance_events_v2","product_id"],
       ["substitution_evaluations","candidate_product_id"],["substitution_evaluations","original_product_id"]
     ];
     for(const [table,column] of references){
-      const {count,error}=await sb.from(table).select("id",{count:"exact",head:true}).eq(column,id);
+      const {count,error}=await sb.from(table).select(column,{count:"exact",head:true}).eq(column,id);
       if(error)return json({ok:false,error:"delete_check_failed",detail:error.message},400);
       if((count||0)>0)return json({ok:false,error:"product_in_use",detail:`${table}.${column}`},409);
     }
