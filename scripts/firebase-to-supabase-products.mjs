@@ -121,7 +121,8 @@ async function run(){
     if(match.row){
       summary[`matched_${match.matched_by}`]++;
       const patch=buildExistingPatch(match.row,p);
-      if(Object.keys(patch).length>1){summary.updated_existing++;if(mode==='apply')await patchRow(match.row.id,patch)}
+      summary.updated_existing++;
+      if(mode==='apply')await patchRow(match.row.id,patch);
     }else{
       summary.new_products++;if(mode==='apply')await insertRow(buildNewProductRow(p));
     }
