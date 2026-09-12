@@ -55,6 +55,18 @@ Deno.serve(async(req:Request)=>{
   let result:any;
   try{result=JSON.parse(text)}catch{return new Response(text,{status:upstream.status,headers:HEADERS})}
 
+  if(upstream.ok&&raw.message_type==="text"&&/DAWEB-[A-Z0-9]{8}/i.test(raw.text_body)){
+    const supabase=createClient(base,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+    const {data:verified,error:verifyError}=await supabase.rpc("confirm_web_room_identity_from_whatsapp_v1",{
+      p_from:raw.from,
+      p_text:raw.text_body,
+      p_profile_name:raw.contact_name||null,
+    });
+    if(!verifyError&&verified?.ok===true){
+      return json({...result,web_identity:verified,should_reply:true,reply_type:"text",reply_body:"Cadastro confirmado ✅ Volte para a Sala de Compra para continuar.",action:"web_room_identity_verified",ai_job:null},200);
+    }
+  }
+
   if(upstream.ok&&interactiveResponseJson&&raw.interactive_type==="nfm_reply"&&result?.conversation_id&&result?.message_row_id){
     let response:any;
     try{response=JSON.parse(interactiveResponseJson)}catch{return json({...result,flow_reply:{ok:false,reason:"invalid_response_json"},should_reply:false,reply_type:"none"},200)}
