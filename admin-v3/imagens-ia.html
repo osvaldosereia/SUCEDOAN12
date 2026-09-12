@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>Dona Antônia · Imagens IA</title>
+  <link rel="stylesheet" href="./styles.css?v=20260912-5">
+  <link rel="stylesheet" href="./image-automation.css?v=20260912-1">
+</head>
+<body>
+  <header class="topbar">
+    <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button>
+    <a class="brand" href="./#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin V3</b></span></a>
+    <a class="view-storefront" href="../vitrine-v3/" target="_blank" rel="noopener">Ver vitrine</a>
+  </header>
+  <div class="admin-layout">
+    <aside id="sidebar" class="sidebar" aria-label="Menu principal"><nav>
+      <a href="./#dashboard">Início</a><a href="./#storefront">Vitrine</a><a href="./#baskets">Cestas</a><a href="./#products">Produtos</a><a class="active" href="./imagens-ia.html">Imagens IA</a><a href="./#categories">Categorias</a><a href="./#orders">Pedidos</a><a href="./#customers">Clientes</a><a href="./atendimento.html">Atendimento</a><a href="../contagem/">Balanço rápido</a>
+    </nav></aside>
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+    <main class="content">
+      <div class="page-head"><div><h1>Imagens IA</h1><p>Geração em lote com 18 produtos (3×6), validação individual e fallback automático.</p></div><div class="page-actions"><button id="refreshData" class="secondary" type="button">Atualizar</button><button id="runNow" class="primary" type="button">Rodar agora</button></div></div>
+      <section id="unlockPanel" class="panel hidden"><h2>Desbloquear controles</h2><p class="muted">Use o mesmo código de 6 dígitos do Admin.</p><form id="unlockForm" class="unlock-form"><input id="pinInput" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-label="Código de acesso"><button class="primary" type="submit">Entrar</button></form><p id="unlockStatus" class="muted"></p></section>
+      <section id="automationArea" class="hidden">
+        <div class="stats-grid automation-stats"><article class="stat-card"><span>Aprovadas</span><strong id="statCompleted">0</strong></article><article class="stat-card"><span>Rejeitadas</span><strong id="statRejected">0</strong></article><article class="stat-card"><span>Processando</span><strong id="statProcessing">0</strong></article><article class="stat-card"><span>Na fila</span><strong id="statPending">0</strong></article></div>
+        <section class="panel"><div class="automation-control-head"><div><h2>Automação</h2><p id="automationSummary" class="muted">Carregando…</p></div><span id="automationBadge" class="badge">—</span></div><div class="control-grid"><label class="field"><span>Intervalo</span><select id="intervalSelect"><option value="1">1 minuto</option><option value="3">3 minutos</option><option value="5">5 minutos</option><option value="10">10 minutos</option><option value="15">15 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option></select></label><div class="control-actions"><button id="saveFrequency" class="secondary" type="button">Salvar intervalo</button><button id="automationToggle" class="danger" type="button">Pausar</button></div></div></section>
+        <section class="panel"><div class="panel-title-row"><div><h2>Últimos resultados</h2><p class="muted">Somente imagens aprovadas são publicadas no catálogo.</p></div></div><div id="recentResults" class="image-results"></div></section>
+        <section class="panel"><h2>Lotes recentes</h2><div id="recentBatches" class="batch-list"></div></section>
+      </section>
+    </main>
+  </div>
+  <div id="toastRegion" class="toasts" aria-live="polite"></div>
+  <script type="module" src="./image-automation.js?v=20260912-1"></script>
+</body>
+</html>
