@@ -14,7 +14,7 @@
 <body class="strategy-body">
   <header class="strategy-topbar">
     <a class="strategy-back" href="./">← Admin V3</a>
-    <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>Regras, chat, inteligência e evolução</span></div></div>
+    <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>IA própria, chat, inteligência e evolução</span></div></div>
     <span id="runtimeBadge" class="strategy-runtime-badge">Carregando…</span>
   </header>
 
@@ -34,12 +34,12 @@
 
     <section id="strategyApp" class="hidden">
       <div class="strategy-page-head">
-        <div><div class="eyebrow">Admin V3</div><h1>Central de Atendimento</h1><p>Configure regras, aparência do chat e inteligência; revise conversas reais e acompanhe cada ajuste feito na estratégia.</p></div>
+        <div><div class="eyebrow">Admin V3</div><h1>Central de Atendimento</h1><p>Configure o nosso atendimento, aparência do chat e inteligência; revise conversas reais e acompanhe cada ajuste feito na estratégia.</p></div>
         <div class="strategy-page-actions"><button id="strategyRefresh" class="secondary" type="button">Atualizar</button><button id="strategyLogout" class="secondary" type="button">Bloquear área</button></div>
       </div>
 
       <nav class="strategy-tabs" aria-label="Seções do atendimento">
-        <button class="active" type="button" data-strategy-tab="rules">Regras</button>
+        <button class="active" type="button" data-strategy-tab="rules">Regras da IA</button>
         <button type="button" data-strategy-tab="chat">Chat</button>
         <button type="button" data-strategy-tab="intelligence">Inteligência</button>
         <button type="button" data-strategy-tab="history" aria-label="Histórico 7 dias">Conversas</button>
@@ -47,6 +47,7 @@
       </nav>
 
       <section id="tabRules" class="strategy-tab active">
+        <div class="strategy-resource-note"><strong>Atendimento próprio da Dona Antônia.</strong> Estas regras pertencem ao nosso agente e ao nosso chat; esta tela não altera Meta nem PapoAI. O seletor mostra somente ferramentas que planejamos usar no atendimento próprio.</div>
         <div id="ruleMetrics" class="strategy-metrics"></div>
         <div class="strategy-rule-grid">
           <section class="panel strategy-rule-list-panel">
@@ -103,5 +104,6 @@
   <script type="module" src="./service-strategy.js?v=20260912-2"></script>
   <script type="module" src="./service-strategy-addon.js?v=20260912-1"></script>
   <script type="module" src="./service-chat-center.js?v=20260912-1"></script>
+  <script type="module" src="./service-strategy-own-tools.js?v=20260912-1"></script>
 </body>
 </html>

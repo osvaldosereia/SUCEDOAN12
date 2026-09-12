@@ -7,8 +7,10 @@ on:
       - 'admin-v3/service-strategy*.js'
       - 'admin-v3/service-strategy.css'
       - 'supabase/functions/admin-service-strategy-v1/**'
+      - 'supabase/functions/admin-service-intelligence-simple-v1/**'
       - 'supabase/migrations/20260912_admin_v3_service_strategy_*.sql'
       - 'tests/admin-v3-service-strategy-*.mjs'
+      - 'tests/admin-v3-own-attendance-tools-contract.mjs'
       - '.github/workflows/admin-v3-service-strategy-tests.yml'
   pull_request:
     paths:
@@ -16,8 +18,10 @@ on:
       - 'admin-v3/service-strategy*.js'
       - 'admin-v3/service-strategy.css'
       - 'supabase/functions/admin-service-strategy-v1/**'
+      - 'supabase/functions/admin-service-intelligence-simple-v1/**'
       - 'supabase/migrations/20260912_admin_v3_service_strategy_*.sql'
       - 'tests/admin-v3-service-strategy-*.mjs'
+      - 'tests/admin-v3-own-attendance-tools-contract.mjs'
       - '.github/workflows/admin-v3-service-strategy-tests.yml'
 
 permissions:
@@ -35,7 +39,10 @@ jobs:
         run: |
           node --check admin-v3/service-strategy.js
           node --check admin-v3/service-strategy-addon.js
+          node --check admin-v3/service-chat-center.js
+          node --check admin-v3/service-strategy-own-tools.js
       - name: Run service strategy contracts
         run: |
           node tests/admin-v3-service-strategy-contract.mjs
           node tests/admin-v3-service-strategy-playbook-contract.mjs
+          node tests/admin-v3-own-attendance-tools-contract.mjs
