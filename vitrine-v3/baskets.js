@@ -30,9 +30,9 @@ function renderBasketPreviewItem(item){
 }
 
 function renderBasketItem(item){
-  const p=item.product||{};const stock=Math.max(0,Number(p.stock||0));const qty=Number(item.quantity||0);const min=Math.max(0,Number(item.min_quantity||0));const max=item.max_quantity==null?Math.max(min,stock):Math.max(min,Number(item.max_quantity));
+  const p=item.product||{};const stock=Math.max(0,Number(p.stock||0));const qty=Number(item.quantity||0);const base=Math.max(0,Number(item.base_quantity??qty));const min=Math.max(0,Number(item.min_quantity||0));const max=item.max_quantity==null?Math.max(min,stock):Math.max(min,Number(item.max_quantity));
   const canReduce=item.removable===true?qty>min:item.quantity_editable===true&&qty>min;
-  const canIncrease=item.quantity_editable===true&&stock>0&&qty<max;
+  const canIncrease=item.quantity_editable===true?(stock>0&&qty<max):(item.removable===true&&qty<Math.min(base,max));
   const showControl=item.removable===true||item.quantity_editable===true;
   const control=showControl?`<div class="qty-control"><button type="button" data-basket-minus ${canReduce?'':'disabled'} aria-label="Diminuir">−</button><b>${esc(qty)}</b><button type="button" data-basket-plus ${canIncrease?'':'disabled'} aria-label="Aumentar">+</button></div>`:`<b class="fixed-qty">${esc(qty)}x</b>`;
   return `<article class="basket-item" data-basket-product="${esc(item.product_id)}">${productButton(p)}<div class="basket-item-copy">${productButton(p,'name')}</div>${control}</article>`;
