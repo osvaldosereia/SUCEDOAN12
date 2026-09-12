@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Dona Antônia · Atendimento sem IA</title>
+  <link rel="stylesheet" href="./styles.css?v=20260911-2">
+  <style>
+    body{background:#f7f6f3}.wrap{max-width:1050px;margin:0 auto;padding:22px}.head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.head img{height:52px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border:1px solid #e5e1da;border-radius:16px;padding:18px}.wide{grid-column:1/-1}@media(max-width:760px){.grid{grid-template-columns:1fr}.wide{grid-column:auto}}label{display:block;font-weight:700;margin:12px 0 5px}textarea,input,select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8d2ca;border-radius:10px;font:inherit}textarea{min-height:94px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;background:#5a2c1f;color:#fff}.btn.alt{background:#ece7e1;color:#392a23}.pill{display:inline-flex;padding:6px 9px;border-radius:999px;background:#e7f4e9;color:#215b31;font-size:12px;font-weight:800}.event{padding:10px 0;border-bottom:1px solid #eee}.event:last-child{border:0}.muted{color:#756b65;font-size:12px}.metrics{display:flex;gap:8px;flex-wrap:wrap}.metric{padding:10px 12px;background:#f5f2ee;border-radius:12px}.metric strong{display:block;font-size:20px}.status{margin-top:10px;font-size:13px}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <div style="display:flex;gap:12px;align-items:center"><img src="../img/logoantonia5.png" alt=""><div><div class="muted">Admin V3</div><h1>Atendimento sem IA</h1></div></div>
+      <div class="actions"><a class="btn alt" href="./">← Admin</a><a class="btn alt" href="../comprar/" target="_blank" rel="noopener">Testar chat</a></div>
+    </header>
+    <div class="grid">
+      <section class="card"><h2>Status</h2><div id="metrics" class="metrics"></div><p class="muted">Fluxo por botões, gatilhos e estados. Sem IA, sem interpretação automática e sem integração externa no fechamento.</p></section>
+      <section class="card"><h2>Controle</h2><label>Atendimento</label><select id="enabled"><option value="true">Ligado</option><option value="false">Desligado</option></select><div class="status" id="saveStatus"></div></section>
+      <section class="card wide"><h2>Mensagens</h2><label>Mensagem inicial</label><textarea id="greetingText"></textarea><label>Quando não reconhecer uma opção</label><textarea id="unknownText"></textarea><label>Pagamento</label><textarea id="paymentText"></textarea><label>Entrega</label><textarea id="deliveryText"></textarea><label>Atendente</label><textarea id="humanText"></textarea><div class="actions"><button class="btn" id="saveButton" type="button">Salvar</button></div></section>
+      <section class="card wide"><h2>Gatilhos recentes</h2><div id="events"></div></section>
+    </div>
+  </main>
+  <script type="module" src="./chat-deterministic.js?v=20260912-01"></script>
+</body>
+</html>
