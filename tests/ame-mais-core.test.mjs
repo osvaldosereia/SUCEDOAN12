@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   PRODUCT_FIELDS,
   buildAnalysisPrompt,
@@ -174,4 +175,11 @@ test('busca chave no Vault quando variável da Edge Function não existe', async
 test('retorna vazio se nenhuma chave estiver configurada', async () => {
   const sb={rpc:async()=>({data:null,error:{message:'missing'}})};
   assert.equal(await resolveOpenAiKey('',sb),'');
+});
+
+test('rota pública /amemais reutiliza a aplicação Ame Mais sem redirecionar', () => {
+  const html=readFileSync(new URL('../amemais/index.html', import.meta.url),'utf8');
+  assert.match(html,/\/ame-mais\/styles\.css/);
+  assert.match(html,/\/ame-mais\/app\.js/);
+  assert.doesNotMatch(html,/http-equiv=["']refresh/i);
 });
