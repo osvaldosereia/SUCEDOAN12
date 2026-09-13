@@ -84,13 +84,14 @@ test('categorias principais têm cenas próprias', () => {
   assert.match(getSceneProfile({tipo_produto:'Chaveiro'}).scenes[0].prompt,/m[aã]o.*chaveiro/i);
 });
 
-test('não usa mais fundo cinza nos três prompts universais', () => {
+test('prompts não adicionam logo, marca, selo ou texto promocional', () => {
   const prompts=buildImagePrompts({tipo_produto:'Terço',nome_cadastro:'Terço Cristal Branco'});
   assert.deepEqual(prompts.map(x=>x.kind),['hero','lifestyle','detail']);
   assert.equal(prompts.length,3);
   for (const p of prompts) {
     assert.doesNotMatch(p.prompt,/#ECECEC|fundo cinza/i);
     assert.match(p.prompt,/ultra[- ]?real|fotogr[aá]fic/i);
+    assert.match(p.prompt,/sem logo|sem marca|sem selo|sem texto promocional/i);
   }
 });
 
@@ -147,18 +148,25 @@ test('card simples continua disponível', () => {
   assert.equal(card.aspectRatio,'1 / 1');
 });
 
-test('card completo tem logo, três imagens ordenadas e hero ativa', () => {
-  const run={id:'r1',analysis:{nome_cadastro:'Terço Cristal Branco',descricao_cadastro:'Busca.',descricao_vitrine:'Venda.',tipo_produto:'Terço',devocao_tema:'',material_modelo:'Cristal',cor_acabamento:'Branco',diferencial_tamanho:'Crucifixo',termos_busca:['terço'],conflitos:['medalha incerta'],confianca_geral:.91},images:{
+test('card completo não expõe logo e mantém três imagens ordenadas', () => {
+  const run={id:'r1',logo_url:'https://example.com/logo.jpg',analysis:{nome_cadastro:'Terço Cristal Branco',descricao_cadastro:'Busca.',descricao_vitrine:'Venda.',tipo_produto:'Terço',devocao_tema:'',material_modelo:'Cristal',cor_acabamento:'Branco',diferencial_tamanho:'Crucifixo',termos_busca:['terço'],conflitos:['medalha incerta'],confianca_geral:.91},images:{
     detail:{kind:'detail',url:'https://e/d.webp'},
     hero:{kind:'hero',url:'https://e/h.webp'},
     lifestyle:{kind:'lifestyle',url:'https://e/l.webp'},
   }};
-  const card=buildRunCardModel(run,'/ame-mais/assets/logo-ame-store.jpg');
-  assert.equal(card.logoUrl,'/ame-mais/assets/logo-ame-store.jpg');
+  const card=buildRunCardModel(run);
+  assert.equal('logoUrl' in card,false);
   assert.deepEqual(card.gallery.map(x=>x.kind),['hero','lifestyle','detail']);
   assert.equal(card.activeKind,'hero');
   assert.equal(card.name,'Terço Cristal Branco');
   assert.deepEqual(card.conflicts,['medalha incerta']);
+});
+
+test('site e rota pública não renderizam logo', () => {
+  const canonical=readFileSync(new URL('../ame-mais/index.html', import.meta.url),'utf8');
+  const alias=readFileSync(new URL('../amemais/index.html', import.meta.url),'utf8');
+  assert.doesNotMatch(canonical,/logo-ame-store|brand-logo|storefront-brand/i);
+  assert.doesNotMatch(alias,/logo-ame-store|brand-logo|storefront-brand/i);
 });
 
 test('usa OPENAI_API_KEY quando disponível', async () => {
