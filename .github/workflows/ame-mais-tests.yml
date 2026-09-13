@@ -5,15 +5,18 @@ on:
     branches:
       - main
       - feature/ame-mais-universal-catalog-v2
+      - feature/ame-mais-inputs-history
     paths:
       - 'ame-mais/**'
       - 'tests/ame-mais-core.test.mjs'
+      - 'tests/ame-mais-inputs-history.test.mjs'
       - 'supabase/functions/ame-mais-analyze-v1/**'
       - '.github/workflows/ame-mais-tests.yml'
   pull_request:
     paths:
       - 'ame-mais/**'
       - 'tests/ame-mais-core.test.mjs'
+      - 'tests/ame-mais-inputs-history.test.mjs'
       - 'supabase/functions/ame-mais-analyze-v1/**'
 
 jobs:
@@ -26,7 +29,7 @@ jobs:
         with:
           node-version: '22'
       - name: Core tests
-        run: node --test tests/ame-mais-core.test.mjs
+        run: node --test tests/ame-mais-core.test.mjs tests/ame-mais-inputs-history.test.mjs
       - name: Frontend syntax
         run: |
           node --check ame-mais/app.js
