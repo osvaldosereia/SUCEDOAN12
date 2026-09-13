@@ -32,7 +32,7 @@ export function buildProductCardModel(analysis={}, image={}){
 const clean=v=>String(v??'').trim();
 const list=v=>Array.isArray(v)?v.map(clean).filter(Boolean):[];
 
-export function buildRunCardModel(run={},logoUrl=''){
+export function buildRunCardModel(run={}){
   const analysis=run.analysis||{};
   const rawImages=run.images||{};
   const sourceArray=Array.isArray(rawImages)
@@ -55,7 +55,6 @@ export function buildRunCardModel(run={},logoUrl=''){
   const conflicts=list(analysis.conflitos?.length?analysis.conflitos:run.conflicts);
   return {
     runId:clean(run.id||run.run_id),
-    logoUrl:clean(logoUrl||run.logo_url),
     name:clean(analysis.nome_cadastro||run.nome_cadastro),
     storefrontDescription:clean(analysis.descricao_vitrine||run.descricao_vitrine),
     catalogDescription:clean(analysis.descricao_cadastro||run.descricao_cadastro),
