@@ -19,7 +19,6 @@ import {
 const RESPONSES_URL = "https://api.openai.com/v1/responses";
 const IMAGE_EDIT_URL = "https://api.openai.com/v1/images/edits";
 const BUCKET = "ame-mais";
-const LOGO_URL = "https://donaantonia.com.br/ame-mais/assets/logo-ame-store.jpg";
 const MAX_UPLOAD = 10 * 1024 * 1024;
 const RATE_LIMIT_PER_HOUR = 80;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -255,7 +254,6 @@ function buildCardJson(run: any, rows: any[]) {
   });
   return {
     run_id: run.id,
-    logo_url: LOGO_URL,
     name: a.nome_cadastro || "",
     storefront_description: a.descricao_vitrine || "",
     catalog_description: a.descricao_cadastro || "",
