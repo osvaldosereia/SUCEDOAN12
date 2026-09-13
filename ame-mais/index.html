@@ -3,23 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#7b5b52">
+  <meta name="theme-color" content="#f6f2ef">
   <meta name="robots" content="noindex,nofollow">
   <title>Ame Mais · Cadastro por Foto</title>
-  <link rel="stylesheet" href="./styles.css?v=20260913-2">
+  <link rel="stylesheet" href="./styles.css?v=20260913-5">
 </head>
 <body>
   <main class="app-shell">
     <header class="app-head">
-      <div class="brand-mark">AM</div>
-      <div><h1>Ame Mais</h1><p>Cadastro inteligente de artigos católicos</p></div>
+      <img class="brand-logo" src="./assets/logo-ame-store.jpg" alt="Ame+ Store">
       <span class="test-badge">TESTE</span>
     </header>
 
     <section id="appArea">
       <section class="card capture-card">
-        <div class="section-title"><div><span class="eyebrow">1 · Foto</span><h2>Fotografe o produto</h2></div><span class="public-badge">Sem login</span></div>
-        <p class="hint">Enquadre o produto inteiro e use boa luz. A foto original e todos os resultados serão salvos no Supabase na pasta própria do Ame Mais.</p>
+        <div class="section-title"><div><span class="eyebrow">1 · Foto</span><h1>Crie o produto pela foto</h1></div><span class="public-badge">Sem login</span></div>
+        <p class="hint">Fotografe o produto inteiro e use boa luz. A foto original, textos, conflitos, prompts e as 3 imagens serão salvos no Supabase.</p>
         <div id="photoStage" class="photo-stage empty">
           <img id="photoPreview" alt="Prévia do produto">
           <div id="emptyPhoto" class="empty-photo"><div class="camera-icon">◉</div><strong>Nenhuma foto</strong><span>Tire uma foto ou escolha da galeria</span></div>
@@ -51,6 +50,7 @@
             <label class="field full"><span>Diferencial / tamanho</span><input id="fieldDetail" type="text"></label>
           </div>
           <div id="reviewWarning" class="review-warning hidden"></div>
+          <div id="conflictBox" class="conflict-box hidden"></div>
         </section>
 
         <section class="card">
@@ -62,22 +62,49 @@
           <div class="search-terms"><strong>Termos de busca</strong><div id="searchTerms"></div></div>
         </section>
 
-        <section class="card">
-          <div class="section-title"><div><span class="eyebrow">4 · Simulação da vitrine</span><h2>Cards de e-commerce</h2></div><span class="image-count">3 cards</span></div>
-          <p class="hint">Cada criação aparece como se já estivesse em uma loja virtual: imagem quadrada, nome e descrição comercial. As imagens são geradas em qualidade LOW para reduzir custo.</p>
+        <section class="card storefront-section">
+          <div class="section-title"><div><span class="eyebrow">4 · Simulação da vitrine</span><h2>Card do produto</h2></div><span class="image-count">3 fotos</span></div>
+          <p class="hint">As três imagens mudam conforme o tipo do produto. Toque nas miniaturas para simular a galeria de uma loja.</p>
+
+          <article id="storefrontCard" class="storefront-card">
+            <div class="storefront-brand"><img src="./assets/logo-ame-store.jpg" alt="Ame+ Store"></div>
+            <div class="storefront-main-media">
+              <div id="mainImagePlaceholder" class="image-loading"><div class="spinner"></div><span>Aguardando foto 1…</span></div>
+              <img id="storefrontMainImage" class="hidden" alt="Imagem principal do produto">
+            </div>
+            <div id="storefrontThumbs" class="storefront-thumbs"></div>
+            <div class="storefront-copy">
+              <h3 id="storefrontCardName">Produto</h3>
+              <p id="storefrontCardDescription">A descrição comercial aparecerá aqui.</p>
+              <div id="storefrontAttributes" class="storefront-attributes"></div>
+              <button class="store-card-demo-button" type="button" disabled>Ver produto</button>
+            </div>
+            <details class="storefront-details">
+              <summary>Informações do cadastro</summary>
+              <p id="storefrontCatalogDescription"></p>
+              <div id="storefrontSearchTerms" class="detail-list"></div>
+              <div id="storefrontConflicts" class="detail-list"></div>
+              <small id="runReference"></small>
+            </details>
+            <div class="storefront-actions">
+              <button id="downloadActive" class="btn small secondary" type="button" disabled>Baixar imagem atual</button>
+              <button id="shareWhatsApp" class="btn small whatsapp" type="button">Compartilhar no WhatsApp</button>
+            </div>
+          </article>
+
           <div id="imageGrid" class="image-grid"></div>
         </section>
 
         <section class="card share-card">
-          <span class="eyebrow">5 · Compartilhar</span>
-          <h2>Pronto para usar</h2>
-          <button id="shareWhatsApp" class="btn whatsapp" type="button">Compartilhar no WhatsApp</button>
-          <button id="newProduct" class="btn secondary" type="button">Criar outro produto</button>
+          <span class="eyebrow">5 · Finalizar</span>
+          <h2>Criação salva</h2>
+          <button id="copyRunLink" class="btn secondary" type="button">Copiar link desta criação</button>
+          <button id="newProduct" class="btn primary" type="button">Criar outro produto</button>
         </section>
       </section>
     </section>
   </main>
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=20260913-2"></script>
+  <script type="module" src="./app.js?v=20260913-5"></script>
 </body>
 </html>
