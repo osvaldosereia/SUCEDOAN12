@@ -17,3 +17,13 @@ export function buildWhatsAppUrl(text){
 export function buildShareText(analysis={}){
   return [analysis.nome_cadastro?`*${analysis.nome_cadastro}*`:'',analysis.descricao_vitrine||''].filter(Boolean).join('\n\n');
 }
+
+export function buildProductCardModel(analysis={}, image={}){
+  return {
+    name:String(analysis.nome_cadastro||'').trim(),
+    description:String(analysis.descricao_vitrine||'').trim(),
+    imageUrl:String(image.url||'').trim(),
+    kind:String(image.kind||'').trim(),
+    aspectRatio:'1 / 1',
+  };
+}
