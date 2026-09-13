@@ -3,7 +3,6 @@ import {validatePhotoFile,buildWhatsAppUrl,buildShareText,buildRunCardModel} fro
 
 const $=id=>document.getElementById(id);
 const ANALYZE_FUNCTION='ame-mais-analyze-v1';
-const LOGO_URL='./assets/logo-ame-store.jpg';
 const IMAGE_KINDS=[['hero','Foto 1 · Principal'],['lifestyle','Foto 2 · Em uso'],['detail','Foto 3 · Detalhe']];
 const PROCESS_STAGES=[
   ['preparing_photo','Preparando foto','Otimizando a foto para envio.',4],
@@ -101,7 +100,7 @@ function renderImageStatus(){
 function cardRun(){return {id:state.sessionId,analysis:currentAnalysis(),images:state.images,conflicts:state.analysis?.conflitos||[],observations:state.analysis?.observacoes||[]}}
 function renderStorefrontCard(){
   if(!state.analysis)return;
-  const card=buildRunCardModel(cardRun(),LOGO_URL);let active=card.gallery.find(x=>x.kind===state.activeKind&&x.url)||card.gallery.find(x=>x.url)||card.gallery[0];if(active?.kind)state.activeKind=active.kind;
+  const card=buildRunCardModel(cardRun());let active=card.gallery.find(x=>x.kind===state.activeKind&&x.url)||card.gallery.find(x=>x.url)||card.gallery[0];if(active?.kind)state.activeKind=active.kind;
   $('storefrontCardName').textContent=card.name||'Produto';$('storefrontCardDescription').textContent=card.storefrontDescription||'Descrição comercial da vitrine.';$('storefrontCatalogDescription').textContent=card.catalogDescription||'';$('runReference').textContent=card.runId?`Criação: ${card.runId}`:'';
   const attrs=Object.values(card.attributes||{}).filter(Boolean);$('storefrontAttributes').innerHTML=attrs.map(x=>`<span class="attribute-chip">${escapeHtml(x)}</span>`).join('');
   $('storefrontSearchTerms').innerHTML=card.searchTerms.length?`<strong>Busca:</strong>${card.searchTerms.map(x=>`<span class="detail-chip">${escapeHtml(x)}</span>`).join('')}`:'';
