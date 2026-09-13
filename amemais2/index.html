@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f6f2ef">
   <meta name="robots" content="noindex,nofollow">
   <title>Ame Mais 2 · Cadastro por Fotos</title>
-  <link rel="stylesheet" href="./styles.css?v=20260913-2">
+  <link rel="stylesheet" href="./styles.css?v=20260913-3">
 </head>
 <body>
 <main class="app-shell">
@@ -23,13 +23,14 @@
   </section>
 
   <section class="card">
-    <span class="eyebrow">2 · EAN opcional</span>
-    <h2>Código de barras</h2>
-    <p class="hint">Pode deixar vazio. Leia pela câmera ou digite.</p>
+    <span class="eyebrow">2 · Dados opcionais</span>
+    <h2>EAN e valor</h2>
+    <p class="hint">Os dois campos são opcionais.</p>
     <div class="ean-row">
       <input id="eanInput" type="text" inputmode="numeric" maxlength="14" placeholder="EAN / GTIN">
       <label class="btn secondary scan-btn">▣ Ler EAN<input id="scanEanInput" type="file" accept="image/*" capture="environment" hidden></label>
     </div>
+    <label class="field price-field"><span>Valor</span><input id="priceInput" type="text" inputmode="decimal" placeholder="R$ 0,00"></label>
     <div id="eanMessage" class="message"></div>
   </section>
 
@@ -48,8 +49,7 @@
     <section class="card">
       <span class="eyebrow">3 · Cadastro</span><h2>Resultado</h2>
       <label class="field"><span>Nome</span><input id="productName"></label>
-      <label class="field"><span>Descrição de cadastro</span><textarea id="catalogDescription" rows="4"></textarea></label>
-      <label class="field"><span>Descrição da vitrine</span><textarea id="storefrontDescription" rows="4"></textarea></label>
+      <label class="field"><span>Descrição para o site de vendas</span><textarea id="ecommerceDescription" rows="8"></textarea></label>
       <div id="resultMeta" class="result-meta"></div>
     </section>
     <section class="card">
@@ -60,11 +60,16 @@
   </section>
 
   <section class="card recent-section">
-    <span class="eyebrow">Últimas criações</span><h2>3 mais recentes</h2>
+    <span class="eyebrow">Últimas criações</span><h2>Vitrine · 3 mais recentes</h2>
     <div id="recentCreations" class="recent-list"><p class="hint">Nenhuma criação salva neste aparelho.</p></div>
   </section>
 </main>
+
+<div id="imageModal" class="image-modal hidden" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
+  <button id="modalClose" class="modal-close" type="button" aria-label="Fechar">×</button>
+  <img id="modalImage" alt="Produto ampliado">
+</div>
 <div id="toastRegion" class="toasts" aria-live="polite"></div>
-<script type="module" src="./app.js?v=20260913-2"></script>
+<script type="module" src="./app.js?v=20260913-3"></script>
 </body>
 </html>
