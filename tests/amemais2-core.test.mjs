@@ -74,15 +74,9 @@ test('escalada avançada só ocorre com confiança realmente baixa ou campos ess
   assert.equal(shouldEscalateV2({confianca_geral:.95,tipo_produto:'',nome_cadastro:'',descricao_ecommerce:''}),true);
 });
 
-test('rota amemais2 existe isolada e aponta para app v2', () => {
-  const html=readFileSync(new URL('../amemais2/index.html', import.meta.url),'utf8');
-  assert.match(html,/Ame Mais 2/i);
-  assert.match(html,/\.\/app\.js/);
-  assert.doesNotMatch(html,/ame-mais\/app\.js/i);
-});
-
-test('frontend oferece EAN, preço opcional, uma descrição e histórico-vitrine', () => {
-  const html=readFileSync(new URL('../amemais2/index.html', import.meta.url),'utf8');
+test('rota principal amemais usa a versão aprovada', () => {
+  const html=readFileSync(new URL('../amemais/index.html', import.meta.url),'utf8');
+  assert.match(html,/Cadastro inteligente por fotos/i);
   assert.match(html,/eanInput/);
   assert.match(html,/scanEanInput/);
   assert.match(html,/photoInput/);
@@ -92,13 +86,12 @@ test('frontend oferece EAN, preço opcional, uma descrição e histórico-vitrin
   assert.match(html,/recentCreations/);
   assert.match(html,/imageModal/);
   assert.match(html,/modalClose/);
-});
-
-test('rota principal amemais usa a versão v2 aprovada', () => {
-  const html=readFileSync(new URL('../amemais/index.html', import.meta.url),'utf8');
-  assert.match(html,/Cadastro inteligente por fotos/i);
-  assert.match(html,/priceInput/);
-  assert.match(html,/ecommerceDescription/);
   assert.match(html,/\.\/app\.js/);
   assert.doesNotMatch(html,/ame-mais\/app\.js/i);
+});
+
+test('amemais2 redireciona para a rota principal amemais', () => {
+  const html=readFileSync(new URL('../amemais2/index.html', import.meta.url),'utf8');
+  assert.match(html,/\/amemais\//i);
+  assert.match(html,/location\.replace/i);
 });
