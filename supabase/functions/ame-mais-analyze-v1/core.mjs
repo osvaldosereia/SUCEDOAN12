@@ -146,11 +146,12 @@ export function getSceneProfile(analysis={}) {
   const name=clean(analysis.nome_cadastro)||clean(analysis.tipo_produto)||'produto da foto de referência';
   const fidelity=`A foto de referência é a única verdade visual. Preserve o MESMO produto: identidade, forma, proporções, cores, símbolos religiosos, medalhas, crucifixos, estampas, bordas, acessórios, quantidade de peças e inscrições principais visíveis. Não invente partes, não troque santo/devoção, não altere desenho, não transforme em outro modelo e não crie texto que não esteja legível na referência.`;
   const realism=`Fotografia quadrada de e-commerce ultra-realista, aparência de câmera profissional, nitidez alta no produto, iluminação fisicamente plausível, materiais e texturas naturais, microdetalhes reais, sombras coerentes, profundidade de campo fotográfica e pele humana realista quando houver pessoa. Sem aparência de ilustração, CGI plástico ou render artificial.`;
-  const common=`${fidelity} ${realism} O produto é o protagonista comercial da cena e deve continuar facilmente comparável à referência.`;
+  const noBrand=`Não adicione logo, marca, selo, assinatura, marca d'água, etiqueta promocional ou texto sobreposto à imagem. Preserve apenas textos ou marcas que já façam parte fisicamente do próprio produto na foto de referência.`;
+  const common=`${fidelity} ${realism} ${noBrand} O produto é o protagonista comercial da cena e deve continuar facilmente comparável à referência.`;
 
   const profiles={
     terco_rosario:[
-      scene('hero','Foto 1 · Mão segurando',`Crie a foto principal do ${name}. ${common} Mostre uma mão humana adulta realista segurando o terço/rosário e posando para a câmera, com o produto disposto de modo elegante e suficientemente inteiro para reconhecer contas, medalha e crucifixo. Fundo discreto e natural, sem texto promocional.`),
+      scene('hero','Foto 1 · Mão segurando',`Crie a foto principal do ${name}. ${common} Mostre uma mão humana adulta realista segurando o terço/rosário e posando para a câmera, com o produto disposto de modo elegante e suficientemente inteiro para reconhecer contas, medalha e crucifixo. Fundo discreto e natural.`),
       scene('lifestyle','Foto 2 · Em uso',`Crie um mockup fotográfico do MESMO ${name}. ${common} Mostre o terço/rosário em uso plausível por uma pessoa adulta em contexto devocional sereno, com mãos e produto bem visíveis. A pessoa é secundária; o produto é o foco. Não invente acessórios religiosos que alterem o item.`),
       scene('detail','Foto 3 · Close-up',`Crie um close-up macro fotográfico do MESMO ${name}. ${common} Destaque somente um detalhe realmente visível na referência — medalha, crucifixo, contas, pérolas, pedras ou acabamento — preservando desenho e materiais aparentes. O detalhe deve parecer fotografado de perto, não recriado.`),
     ],
