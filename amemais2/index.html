@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f2ef">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Ame Mais 2 · Cadastro por Fotos</title>
+  <link rel="stylesheet" href="./styles.css?v=20260913-1">
+</head>
+<body>
+<main class="app-shell">
+  <header class="v2-head"><div><span class="eyebrow">AME MAIS 2</span><h1>Cadastro inteligente por fotos</h1></div><span class="test-badge">V2</span></header>
+
+  <section class="card capture-card">
+    <div class="section-title"><div><span class="eyebrow">1 · Referências</span><h2>Envie até 3 fotos do mesmo produto</h2></div><span id="photoCount" class="public-badge">0/3</span></div>
+    <p class="hint">Use ângulos diferentes quando possível. Uma foto já é suficiente.</p>
+    <div id="photoPreviews" class="photo-previews"><div class="empty-slot">Nenhuma foto selecionada</div></div>
+    <div class="capture-actions">
+      <label class="btn primary">📷 Câmera<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden></label>
+      <label class="btn secondary">🖼️ Fotos / Galeria<input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <span class="eyebrow">2 · EAN opcional</span>
+    <h2>Código de barras</h2>
+    <p class="hint">Pode deixar vazio. Leia pela câmera ou digite.</p>
+    <div class="ean-row">
+      <input id="eanInput" type="text" inputmode="numeric" maxlength="14" placeholder="EAN / GTIN">
+      <label class="btn secondary scan-btn">▣ Ler EAN<input id="scanEanInput" type="file" accept="image/*" capture="environment" hidden></label>
+    </div>
+    <div id="eanMessage" class="message"></div>
+  </section>
+
+  <section class="card">
+    <button id="analyzeButton" class="btn analyze" type="button" disabled>✨ Analisar e criar 4 fotos</button>
+    <div id="mainMessage" class="message"></div>
+  </section>
+
+  <section id="progressCard" class="card hidden">
+    <div class="section-title"><div><span class="eyebrow">Processamento</span><h2 id="progressTitle">Preparando…</h2></div><span id="progressPercent" class="progress-percent">0%</span></div>
+    <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+    <p id="progressText" class="hint"></p>
+  </section>
+
+  <section id="resultArea" class="hidden">
+    <section class="card">
+      <span class="eyebrow">3 · Cadastro</span><h2>Resultado</h2>
+      <label class="field"><span>Nome</span><input id="productName"></label>
+      <label class="field"><span>Descrição de cadastro</span><textarea id="catalogDescription" rows="4"></textarea></label>
+      <label class="field"><span>Descrição da vitrine</span><textarea id="storefrontDescription" rows="4"></textarea></label>
+      <div id="resultMeta" class="result-meta"></div>
+    </section>
+    <section class="card">
+      <div class="section-title"><div><span class="eyebrow">4 · Fotos finais</span><h2>4 imagens low</h2></div><span class="image-count">1024 × 1024</span></div>
+      <div id="imageGrid" class="output-grid"></div>
+      <button id="newProduct" class="btn primary full-button" type="button">Criar outro produto</button>
+    </section>
+  </section>
+
+  <section class="card recent-section">
+    <span class="eyebrow">Últimas criações</span><h2>3 mais recentes</h2>
+    <div id="recentCreations" class="recent-list"><p class="hint">Nenhuma criação salva neste aparelho.</p></div>
+  </section>
+</main>
+<div id="toastRegion" class="toasts" aria-live="polite"></div>
+<script type="module" src="./app.js?v=20260913-1"></script>
+</body>
+</html>
