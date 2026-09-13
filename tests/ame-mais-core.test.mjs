@@ -44,7 +44,8 @@ test('normalização esvazia devoção quando confiança é baixa e preserva con
   });
   assert.equal(result.devocao_tema, '');
   assert.equal(result.precisa_revisao, true);
-  assert.deepEqual(result.conflitos,['medalha não identificada']);
+  assert.ok(result.conflitos.includes('medalha não identificada'));
+  assert.ok(result.conflitos.some(x=>/devo[cç][aã]o/i.test(x)));
   assert.deepEqual(result.observacoes,['foto com reflexo']);
 });
 
