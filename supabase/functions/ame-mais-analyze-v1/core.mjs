@@ -27,6 +27,16 @@ export const PROCESSING_STEPS = Object.freeze([
   {key:'completed',label:'Concluído'},
 ]);
 
+export async function resolveOpenAiKey(envKey, sb) {
+  const direct = String(envKey || '').trim();
+  if (direct) return direct;
+  try {
+    const { data, error } = await sb.rpc('get_conversation_worker_provider_secret_v1');
+    if (!error && typeof data === 'string' && data.trim()) return data.trim();
+  } catch { /* fallback unavailable */ }
+  return '';
+}
+
 export function storagePaths(sessionId){
   const sid=String(sessionId||'').trim();
   return {
