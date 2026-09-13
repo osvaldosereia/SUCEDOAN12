@@ -93,3 +93,12 @@ test('frontend oferece EAN, preço opcional, uma descrição e histórico-vitrin
   assert.match(html,/imageModal/);
   assert.match(html,/modalClose/);
 });
+
+test('rota principal amemais usa a versão v2 aprovada', () => {
+  const html=readFileSync(new URL('../amemais/index.html', import.meta.url),'utf8');
+  assert.match(html,/Cadastro inteligente por fotos/i);
+  assert.match(html,/priceInput/);
+  assert.match(html,/ecommerceDescription/);
+  assert.match(html,/\.\/app\.js/);
+  assert.doesNotMatch(html,/ame-mais\/app\.js/i);
+});
