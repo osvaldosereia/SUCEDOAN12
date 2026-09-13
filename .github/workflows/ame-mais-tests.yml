@@ -7,12 +7,14 @@ on:
       - feature/ame-mais-universal-catalog-v2
     paths:
       - 'ame-mais/**'
+      - 'amemais/**'
       - 'tests/ame-mais-core.test.mjs'
       - 'supabase/functions/ame-mais-analyze-v1/**'
       - '.github/workflows/ame-mais-tests.yml'
   pull_request:
     paths:
       - 'ame-mais/**'
+      - 'amemais/**'
       - 'tests/ame-mais-core.test.mjs'
       - 'supabase/functions/ame-mais-analyze-v1/**'
 
