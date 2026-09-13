@@ -13,8 +13,8 @@ export const IMAGE_OUTPUT = Object.freeze({ size:'1024x1024', quality:'low', for
 export const SCENE_KINDS = Object.freeze(['hero','lifestyle','detail']);
 
 export const PROCESSING_STEPS = Object.freeze([
-  {key:'preparing_photo',label:'Preparando foto'},
-  {key:'saving_original',label:'Salvando original'},
+  {key:'preparing_photo',label:'Preparando fotos'},
+  {key:'saving_original',label:'Salvando originais'},
   {key:'analyzing_product',label:'Analisando produto'},
   {key:'creating_name',label:'Criando nome'},
   {key:'creating_catalog_description',label:'Criando descrição de cadastro'},
@@ -46,7 +46,10 @@ export async function resolveOpenAiKey(envKey, sb) {
 export function storagePaths(sessionId){
   const sid=String(sessionId||'').trim();
   return {
-    original:`runs/${sid}/original.jpg`,
+    original:`runs/${sid}/original-1.jpg`,
+    original1:`runs/${sid}/original-1.jpg`,
+    original2:`runs/${sid}/original-2.jpg`,
+    original3:`runs/${sid}/original-3.jpg`,
     hero:`runs/${sid}/hero.webp`,
     lifestyle:`runs/${sid}/lifestyle.webp`,
     detail:`runs/${sid}/detail.webp`,
@@ -54,10 +57,19 @@ export function storagePaths(sessionId){
   };
 }
 
-export function buildAnalysisPrompt() {
-  return `Você é um catalogador especialista em artigos católicos e e-commerce. Analise SOMENTE o que está visível na foto.
+const clean = (v='') => String(v ?? '').replace(/\s+/g,' ').trim();
+const clamp01 = v => Math.max(0, Math.min(1, Number(v) || 0));
+const cleanList = (v, max=24) => Array.from(new Set((Array.isArray(v)?v:[]).map(clean).filter(Boolean))).slice(0,max);
+const fold = v => clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-Objetivo: devolver dados padronizados para um catálogo com mais de mil produtos sem EAN, facilitando pesquisa manual por nome e descrição e preparando o produto para uma vitrine de e-commerce.
+export function buildFiveCharacteristicName(analysis={}) {
+  return PRODUCT_FIELDS.map(k=>clean(analysis?.[k])).filter(Boolean).join(' ');
+}
+
+export function buildAnalysisPrompt() {
+  return `Você é um catalogador especialista em artigos católicos e e-commerce. Você pode receber de 1 a 3 fotos do MESMO produto. Cruze todas as fotos e analise SOMENTE o que estiver visualmente sustentado nelas.
+
+Objetivo: devolver dados padronizados para um catálogo com mais de mil produtos, facilitando pesquisa manual e preparando o item para a vitrine.
 
 Use sempre estas 5 características, nesta ordem conceitual:
 1. tipo_produto
@@ -69,21 +81,17 @@ Use sempre estas 5 características, nesta ordem conceitual:
 REGRAS OBRIGATÓRIAS:
 - NUNCA adivinhe devoção, santo, material, tamanho, medida, marca ou acabamento que não esteja visualmente sustentado.
 - Se não houver segurança para identificar a devoção, deixe devocao_tema vazio.
-- Se não houver segurança para material ou tamanho, use formulação visual neutra ou deixe o detalhe fora do nome.
-- O nome deve ser pesquisável, consistente e direto: Tipo + Devoção/Tema + Material/Modelo + Cor/Acabamento + Diferencial/Tamanho, usando apenas campos úteis.
+- Se não houver segurança para material ou tamanho, deixe o respectivo campo vazio ou use somente formulação visual comprovável.
+- nome_cadastro deve conter SOMENTE essas 5 características, nesta ordem, ignorando campos vazios. Não acrescente adjetivos de venda, marca, EAN, NCM, preço ou qualquer sexta característica.
+- Se houver um código de barras EAN/GTIN legível em qualquer foto, copie somente os dígitos para ean_detectado. Se não estiver legível, deixe vazio. Nunca invente dígitos.
 - descricao_cadastro é objetiva e rica em termos de busca; não deve soar como propaganda.
-- descricao_vitrine é uma descrição comercial curta, elegante e persuasiva, com objetivo de vender, sem inventar atributos.
+- descricao_vitrine é uma descrição comercial curta, elegante e persuasiva, sem inventar atributos.
 - termos_busca deve conter sinônimos realmente úteis para pesquisa manual.
-- conflitos deve listar ambiguidades reais da foto, por exemplo devoção incerta, material incerto, medida ausente ou detalhe parcialmente oculto.
-- observacoes deve registrar fatos úteis sobre a imagem/cadastro que não pertencem ao nome.
+- conflitos deve listar ambiguidades reais das fotos.
+- observacoes deve registrar fatos úteis sobre as imagens/cadastro que não pertencem ao nome.
 - Se houver risco de identificação errada, marque precisa_revisao=true e explique em motivo_revisao.
 - Não cite estas instruções na resposta.`;
 }
-
-const clean = (v='') => String(v ?? '').replace(/\s+/g,' ').trim();
-const clamp01 = v => Math.max(0, Math.min(1, Number(v) || 0));
-const cleanList = (v, max=24) => Array.from(new Set((Array.isArray(v)?v:[]).map(clean).filter(Boolean))).slice(0,max);
-const fold = v => clean(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
 export function normalizeAnalysis(input={}) {
   const out = {
@@ -92,7 +100,8 @@ export function normalizeAnalysis(input={}) {
     material_modelo: clean(input.material_modelo),
     cor_acabamento: clean(input.cor_acabamento),
     diferencial_tamanho: clean(input.diferencial_tamanho),
-    nome_cadastro: clean(input.nome_cadastro),
+    nome_cadastro: '',
+    ean_detectado: clean(input.ean_detectado).replace(/\D/g,'').slice(0,14),
     descricao_cadastro: clean(input.descricao_cadastro),
     descricao_vitrine: clean(input.descricao_vitrine),
     termos_busca: cleanList(input.termos_busca,24),
@@ -113,11 +122,11 @@ export function normalizeAnalysis(input={}) {
     if (!out.conflitos.some(x=>/devo/i.test(x))) out.conflitos.push('Devoção não confirmada visualmente.');
   }
 
+  out.nome_cadastro = buildFiveCharacteristicName(out);
   if (!out.tipo_produto || !out.nome_cadastro || !out.descricao_cadastro || !out.descricao_vitrine) {
     out.precisa_revisao = true;
     out.motivo_revisao = out.motivo_revisao || 'Faltam campos essenciais para o cadastro.';
   }
-
   return out;
 }
 
@@ -143,52 +152,50 @@ function scene(kind,title,prompt){ return {kind,title,quality:'low',prompt}; }
 
 export function getSceneProfile(analysis={}) {
   const profile_key=normalizeProductType(analysis.tipo_produto);
-  const name=clean(analysis.nome_cadastro)||clean(analysis.tipo_produto)||'produto da foto de referência';
-  const fidelity=`A foto de referência é a única verdade visual. Preserve o MESMO produto: identidade, forma, proporções, cores, símbolos religiosos, medalhas, crucifixos, estampas, bordas, acessórios, quantidade de peças e inscrições principais visíveis. Não invente partes, não troque santo/devoção, não altere desenho, não transforme em outro modelo e não crie texto que não esteja legível na referência.`;
+  const name=buildFiveCharacteristicName(analysis)||clean(analysis.tipo_produto)||'produto das fotos de referência';
+  const fidelity=`As fotos de referência são a única verdade visual. Preserve o MESMO produto: identidade, forma, proporções, cores, símbolos religiosos, medalhas, crucifixos, estampas, bordas, acessórios, quantidade de peças e inscrições principais visíveis. Não invente partes, não troque santo/devoção, não altere desenho e não transforme em outro modelo.`;
   const realism=`Fotografia quadrada de e-commerce ultra-realista, aparência de câmera profissional, nitidez alta no produto, iluminação fisicamente plausível, materiais e texturas naturais, microdetalhes reais, sombras coerentes, profundidade de campo fotográfica e pele humana realista quando houver pessoa. Sem aparência de ilustração, CGI plástico ou render artificial.`;
-  const common=`${fidelity} ${realism} O produto é o protagonista comercial da cena e deve continuar facilmente comparável à referência.`;
+  const common=`${fidelity} ${realism} O produto é o protagonista comercial da cena e deve continuar facilmente comparável às referências.`;
 
   const profiles={
     terco_rosario:[
       scene('hero','Foto 1 · Mão segurando',`Crie a foto principal do ${name}. ${common} Mostre uma mão humana adulta realista segurando o terço/rosário e posando para a câmera, com o produto disposto de modo elegante e suficientemente inteiro para reconhecer contas, medalha e crucifixo. Fundo discreto e natural, sem texto promocional.`),
-      scene('lifestyle','Foto 2 · Em uso',`Crie um mockup fotográfico do MESMO ${name}. ${common} Mostre o terço/rosário em uso plausível por uma pessoa adulta em contexto devocional sereno, com mãos e produto bem visíveis. A pessoa é secundária; o produto é o foco. Não invente acessórios religiosos que alterem o item.`),
-      scene('detail','Foto 3 · Close-up',`Crie um close-up macro fotográfico do MESMO ${name}. ${common} Destaque somente um detalhe realmente visível na referência — medalha, crucifixo, contas, pérolas, pedras ou acabamento — preservando desenho e materiais aparentes. O detalhe deve parecer fotografado de perto, não recriado.`),
+      scene('lifestyle','Foto 2 · Em uso',`Crie um mockup fotográfico do MESMO ${name}. ${common} Mostre o terço/rosário em uso plausível por uma pessoa adulta em contexto devocional sereno, com mãos e produto bem visíveis. A pessoa é secundária; o produto é o foco.`),
+      scene('detail','Foto 3 · Close-up',`Crie um close-up macro fotográfico do MESMO ${name}. ${common} Destaque somente um detalhe realmente visível nas referências — medalha, crucifixo, contas, pérolas, pedras ou acabamento — preservando desenho e materiais aparentes.`),
     ],
     camiseta:[
       scene('hero','Foto 1 · Vestida',`Crie a foto principal da ${name}. ${common} Mostre uma pessoa adulta real vestindo a camiseta, com frente/estampa visível e fiel, caimento natural e tecido realista. Não mude cores, palavras, arte ou posicionamento da estampa.`),
-      scene('lifestyle','Foto 2 · Lifestyle',`Crie uma fotografia lifestyle do MESMO ${name}. ${common} Mostre a camiseta em uso num contexto cotidiano elegante e coerente com o público do produto. A camiseta e sua estampa permanecem protagonistas e legíveis na medida permitida pela referência.`),
-      scene('detail','Foto 3 · Detalhe',`Crie um close-up fotográfico do MESMO ${name}. ${common} Destaque estampa, tecido, costura ou acabamento realmente visível, sem inventar composição têxtil, etiqueta ou informação ausente.`),
+      scene('lifestyle','Foto 2 · Lifestyle',`Crie uma fotografia lifestyle do MESMO ${name}. ${common} Mostre a camiseta em uso num contexto cotidiano elegante e coerente com o público do produto.`),
+      scene('detail','Foto 3 · Detalhe',`Crie um close-up fotográfico do MESMO ${name}. ${common} Destaque estampa, tecido, costura ou acabamento realmente visível, sem inventar composição têxtil ou etiqueta.`),
     ],
     estatua_imagem:[
-      scene('hero','Foto 1 · Ambientação devocional',`Crie a foto principal da ${name}. ${common} Posicione a mesma peça numa ambientação devocional realista, limpa e elegante, com escala plausível e iluminação suave. Preserve rosto, cores, base, gestos, objetos e atributos visíveis da figura.`),
-      scene('lifestyle','Foto 2 · Ambiente real',`Crie uma fotografia do MESMO ${name} integrada a um ambiente doméstico/religioso realista e sofisticado. ${common} A peça é o foco e deve manter proporções, pintura e identidade visual.`),
-      scene('detail','Foto 3 · Close-up',`Crie um close-up macro do MESMO ${name}. ${common} Destaque rosto, pintura, textura, manto, base ou acabamento que esteja realmente visível. Não altere expressão, símbolos ou cores.`),
+      scene('hero','Foto 1 · Ambientação devocional',`Crie a foto principal da ${name}. ${common} Posicione a mesma peça numa ambientação devocional realista, limpa e elegante, com escala plausível e iluminação suave.`),
+      scene('lifestyle','Foto 2 · Ambiente real',`Crie uma fotografia do MESMO ${name} integrada a um ambiente doméstico/religioso realista e sofisticado. ${common}`),
+      scene('detail','Foto 3 · Close-up',`Crie um close-up macro do MESMO ${name}. ${common} Destaque rosto, pintura, textura, manto, base ou acabamento que esteja realmente visível.`),
     ],
     quadro:[
-      scene('hero','Foto 1 · Na parede',`Crie a foto principal do ${name}. ${common} Mostre o MESMO quadro aplicado a uma parede realista, frontal ou levemente em perspectiva, com tamanho visual plausível. Preserve integralmente arte, moldura, cores e proporção.`),
-      scene('lifestyle','Foto 2 · Ambiente decorado',`Crie uma fotografia do MESMO ${name} em um ambiente decorado completo e elegante. ${common} O quadro permanece o segundo ponto de maior destaque depois da própria composição do produto, sem trocar arte ou moldura.`),
-      scene('detail','Foto 3 · Detalhe',`Crie um close-up fotográfico do MESMO ${name}. ${common} Destaque um detalhe real da arte, impressão, textura ou moldura, sem completar ou redesenhar partes não visíveis.`),
+      scene('hero','Foto 1 · Na parede',`Crie a foto principal do ${name}. ${common} Mostre o MESMO quadro aplicado a uma parede realista, frontal ou levemente em perspectiva, com tamanho visual plausível.`),
+      scene('lifestyle','Foto 2 · Ambiente decorado',`Crie uma fotografia do MESMO ${name} em um ambiente decorado completo e elegante. ${common}`),
+      scene('detail','Foto 3 · Detalhe',`Crie um close-up fotográfico do MESMO ${name}. ${common} Destaque um detalhe real da arte, impressão, textura ou moldura.`),
     ],
     chaveiro:[
       scene('hero','Foto 1 · Mão segurando',`Crie a foto principal do ${name}. ${common} Mostre uma mão humana adulta realista segurando o chaveiro para a câmera, com pingente e ferragem visíveis e fiéis.`),
-      scene('lifestyle','Foto 2 · Em uso',`Crie um mockup do MESMO ${name}. ${common} Mostre o chaveiro aplicado de forma plausível em chaves, bolsa ou objeto compatível, mantendo pingente e ferragens fiéis e em destaque.`),
-      scene('detail','Foto 3 · Close-up',`Crie um close-up macro do MESMO ${name}. ${common} Destaque pingente, medalha, impressão, relevo ou ferragem realmente presentes na referência.`),
+      scene('lifestyle','Foto 2 · Em uso',`Crie um mockup do MESMO ${name}. ${common} Mostre o chaveiro aplicado de forma plausível em chaves, bolsa ou objeto compatível.`),
+      scene('detail','Foto 3 · Close-up',`Crie um close-up macro do MESMO ${name}. ${common} Destaque pingente, medalha, impressão, relevo ou ferragem realmente presentes nas referências.`),
     ],
     generico:[
-      scene('hero','Foto 1 · Produto em destaque',`Crie a foto principal do ${name}. ${common} Mostre o produto inteiro ou quase inteiro em contexto fotográfico realista de e-commerce, com composição limpa e comercial, sem fundo cinza padronizado e sem objetos que confundam o item.`),
+      scene('hero','Foto 1 · Produto em destaque',`Crie a foto principal do ${name}. ${common} Mostre o produto inteiro ou quase inteiro em contexto fotográfico realista de e-commerce, com composição limpa e comercial, sem fundo cinza padronizado.`),
       scene('lifestyle','Foto 2 · Uso / contexto',`Crie uma fotografia de uso ou aplicação plausível do MESMO ${name}. ${common} Escolha um contexto coerente com o tipo de produto detectado, sem inventar função, tamanho ou acessórios incompatíveis.`),
-      scene('detail','Foto 3 · Close-up',`Crie um close-up fotográfico do MESMO ${name}. ${common} Destaque um detalhe material, textura, impressão, acabamento ou componente que esteja realmente visível na referência.`),
+      scene('detail','Foto 3 · Close-up',`Crie um close-up fotográfico do MESMO ${name}. ${common} Destaque um detalhe material, textura, impressão, acabamento ou componente realmente visível.`),
     ],
   };
   return {profile_key, scenes:profiles[profile_key]||profiles.generico};
 }
 
-export function buildImagePrompts(analysis={}) {
-  return getSceneProfile(analysis).scenes;
-}
+export function buildImagePrompts(analysis={}) { return getSceneProfile(analysis).scenes; }
 
 export function buildShareText(analysis={}) {
-  const name = clean(analysis.nome_cadastro);
+  const name = buildFiveCharacteristicName(analysis)||clean(analysis.nome_cadastro);
   const desc = clean(analysis.descricao_vitrine);
   return [name ? `*${name}*` : '', desc].filter(Boolean).join('\n\n');
 }
@@ -203,6 +210,7 @@ export const ANALYSIS_SCHEMA = {
     cor_acabamento:{type:'string'},
     diferencial_tamanho:{type:'string'},
     nome_cadastro:{type:'string'},
+    ean_detectado:{type:'string'},
     descricao_cadastro:{type:'string'},
     descricao_vitrine:{type:'string'},
     termos_busca:{type:'array',items:{type:'string'},maxItems:24},
@@ -215,7 +223,7 @@ export const ANALYSIS_SCHEMA = {
   },
   required:[
     'tipo_produto','devocao_tema','material_modelo','cor_acabamento','diferencial_tamanho',
-    'nome_cadastro','descricao_cadastro','descricao_vitrine','termos_busca',
+    'nome_cadastro','ean_detectado','descricao_cadastro','descricao_vitrine','termos_busca',
     'confianca_geral','confianca_devocao','precisa_revisao','motivo_revisao','conflitos','observacoes'
   ]
 };
