@@ -6,10 +6,12 @@ import {
   IMAGE_MODEL,
   IMAGE_OUTPUT,
   ANALYSIS_SCHEMA,
+  SCENE_KINDS,
   buildAnalysisPrompt,
   normalizeAnalysis,
   shouldEscalate,
   buildImagePrompts,
+  getSceneProfile,
   storagePaths,
   resolveOpenAiKey,
 } from "./core.mjs";
@@ -17,10 +19,11 @@ import {
 const RESPONSES_URL = "https://api.openai.com/v1/responses";
 const IMAGE_EDIT_URL = "https://api.openai.com/v1/images/edits";
 const BUCKET = "ame-mais";
+const LOGO_URL = "https://donaantonia.com.br/ame-mais/assets/logo-ame-store.jpg";
 const MAX_UPLOAD = 10 * 1024 * 1024;
 const RATE_LIMIT_PER_HOUR = 80;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const ALLOWED_KINDS = new Set(["principal", "ambientada", "detalhe"]);
+const ALLOWED_KINDS = new Set(SCENE_KINDS);
 const ALLOWED_ORIGINS = new Set([
   "https://donaantonia.com.br",
   "https://www.donaantonia.com.br",
@@ -68,7 +71,7 @@ async function analyzeWithModel(apiKey: string, model: string, image: Uint8Array
   const body = {
     model,
     store: false,
-    max_output_tokens: 1200,
+    max_output_tokens: 1400,
     reasoning: { effort: model === ESCALATION_MODEL ? "medium" : "low" },
     input: [{
       role: "user",
@@ -77,7 +80,7 @@ async function analyzeWithModel(apiKey: string, model: string, image: Uint8Array
         { type: "input_image", image_url: `data:${mime};base64,${bytesToBase64(image)}`, detail: "high" },
       ],
     }],
-    text: { format: { type: "json_schema", name: "ame_mais_product_analysis_v1", strict: true, schema: ANALYSIS_SCHEMA } },
+    text: { format: { type: "json_schema", name: "ame_mais_product_analysis_v2", strict: true, schema: ANALYSIS_SCHEMA } },
   };
   const r = await fetch(RESPONSES_URL, {
     method: "POST",
@@ -109,9 +112,9 @@ const VALIDATION_SCHEMA = {
 };
 
 async function validateImage(apiKey: string, source: Uint8Array, mime: string, candidate: Uint8Array, kind: string) {
-  const prompt = kind === "principal"
-    ? "Compare a primeira foto (referência verdadeira) com a segunda (imagem de e-commerce). A segunda deve ser o MESMO produto com fidelidade muito alta. Ignore apenas fundo, iluminação e pequenos ajustes de posição. Reprove se mudar santo, medalha, crucifixo, estampa, cor, forma, quantidade, texto principal, ornamentos ou identidade do produto."
-    : "Compare a primeira foto (referência verdadeira) com a segunda imagem comercial. Confirme que continua sendo o MESMO produto. Cenário, enquadramento e aproximação podem mudar, mas identidade, cor principal, forma e detalhes religiosos/visuais existentes não podem ser inventados ou trocados.";
+  const prompt = kind === "hero"
+    ? "Compare a primeira foto (referência verdadeira) com a segunda (foto comercial). A segunda deve mostrar o MESMO produto com fidelidade muito alta. Pessoa, mão, ambiente e enquadramento podem mudar, mas reprove se mudar santo, medalha, crucifixo, estampa, cor, forma, quantidade, texto principal, ornamentos ou identidade do produto."
+    : "Compare a primeira foto (referência verdadeira) com a segunda foto comercial. Confirme que continua sendo o MESMO produto. Cenário, pessoa, enquadramento e aproximação podem mudar, mas identidade, cor principal, forma e detalhes religiosos/visuais existentes não podem ser inventados ou trocados.";
   const body = {
     model: ANALYSIS_MODEL,
     store: false,
@@ -122,7 +125,7 @@ async function validateImage(apiKey: string, source: Uint8Array, mime: string, c
       { type: "input_image", image_url: `data:${mime};base64,${bytesToBase64(source)}`, detail: "high" },
       { type: "input_image", image_url: `data:image/webp;base64,${bytesToBase64(candidate)}`, detail: "high" },
     ] }],
-    text: { format: { type: "json_schema", name: "ame_mais_image_validation_v1", strict: true, schema: VALIDATION_SCHEMA } },
+    text: { format: { type: "json_schema", name: "ame_mais_image_validation_v2", strict: true, schema: VALIDATION_SCHEMA } },
   };
   const r = await fetch(RESPONSES_URL, {
     method: "POST",
@@ -136,8 +139,8 @@ async function validateImage(apiKey: string, source: Uint8Array, mime: string, c
   if (!text) throw new Error("validation_empty_output");
   let v;
   try { v = JSON.parse(text); } catch { throw new Error("validation_invalid_json"); }
-  const threshold = kind === "principal" ? 0.90 : kind === "ambientada" ? 0.82 : 0.80;
-  const accepted = v.same_product === true && v.color_match === true && v.shape_match === true && Number(v.fidelity_score || 0) >= threshold && (kind !== "principal" || v.identity_details_match === true);
+  const threshold = kind === "hero" ? 0.90 : kind === "lifestyle" ? 0.84 : 0.82;
+  const accepted = v.same_product === true && v.color_match === true && v.shape_match === true && Number(v.fidelity_score || 0) >= threshold && (kind !== "hero" || v.identity_details_match === true);
   return { accepted, threshold, ...v };
 }
 
@@ -204,18 +207,102 @@ async function updateRun(sb: any, sessionId: string, patch: Record<string, unkno
 }
 
 async function getRun(sb: any, sessionId: string) {
-  const q = await sb.from("ame_mais_runs").select("id,status,step,source_url,analysis,images,model_analysis,model_image,error_message,created_at,updated_at,completed_at").eq("id", sessionId).maybeSingle();
+  const q = await sb.from("ame_mais_runs")
+    .select("id,status,step,source_url,analysis,images,scene_profile,conflicts,observations,prompts,card_json,model_analysis,model_image,error_message,created_at,updated_at,completed_at")
+    .eq("id", sessionId).maybeSingle();
   if (q.error) throw new Error(`run_lookup_${clean(q.error.message, 180)}`);
   return q.data;
+}
+
+async function getRunImages(sb: any, sessionId: string) {
+  const q = await sb.from("ame_mais_images")
+    .select("id,run_id,kind,title,prompt,image_url,storage_path,status,validation,model,quality,size,attempt_count,created_at,updated_at")
+    .eq("run_id", sessionId).order("created_at", { ascending: true });
+  if (q.error) throw new Error(`images_lookup_${clean(q.error.message, 180)}`);
+  const order = new Map([["hero",0],["lifestyle",1],["detail",2]]);
+  return (q.data || []).sort((a:any,b:any)=>(order.get(a.kind)??9)-(order.get(b.kind)??9));
+}
+
+function imagesObject(rows: any[]) {
+  const out: Record<string, unknown> = {};
+  for (const row of rows || []) {
+    out[row.kind] = {
+      kind: row.kind,
+      title: row.title,
+      url: row.image_url,
+      status: row.status,
+      validation: row.validation || {},
+      model: row.model,
+      quality: row.quality,
+      size: row.size,
+    };
+  }
+  return out;
+}
+
+function buildCardJson(run: any, rows: any[]) {
+  const a = run?.analysis || {};
+  const gallery = ["hero","lifestyle","detail"].map(kind => {
+    const row = (rows || []).find((x:any)=>x.kind===kind) || {};
+    return {
+      kind,
+      title: row.title || ({hero:"Foto principal",lifestyle:"Em uso",detail:"Detalhe"} as any)[kind],
+      url: row.image_url || "",
+      download_url: row.image_url || "",
+      status: row.status || "pending",
+      validation: row.validation || {},
+    };
+  });
+  return {
+    run_id: run.id,
+    logo_url: LOGO_URL,
+    name: a.nome_cadastro || "",
+    storefront_description: a.descricao_vitrine || "",
+    catalog_description: a.descricao_cadastro || "",
+    attributes: {
+      tipo_produto: a.tipo_produto || "",
+      devocao_tema: a.devocao_tema || "",
+      material_modelo: a.material_modelo || "",
+      cor_acabamento: a.cor_acabamento || "",
+      diferencial_tamanho: a.diferencial_tamanho || "",
+    },
+    search_terms: a.termos_busca || [],
+    conflicts: a.conflitos || run.conflicts || [],
+    observations: a.observacoes || run.observations || [],
+    confidence: Number(a.confianca_geral || 0),
+    needs_review: Boolean(a.precisa_revisao),
+    review_reason: a.motivo_revisao || "",
+    scene_profile: run.scene_profile || "generico",
+    gallery,
+    active_kind: gallery.find(x=>x.kind==="hero" && x.url)?.kind || gallery.find(x=>x.url)?.kind || "hero",
+  };
 }
 
 async function saveResultJson(sb: any, sessionId: string) {
   const run = await getRun(sb, sessionId);
   if (!run) return;
-  const bytes = new TextEncoder().encode(JSON.stringify(run, null, 2));
-  const path = `runs/${sessionId}/result.json`;
+  const imageRows = await getRunImages(sb, sessionId);
+  const bytes = new TextEncoder().encode(JSON.stringify({ ...run, image_rows: imageRows }, null, 2));
+  const path = storagePaths(sessionId).result;
   const up = await sb.storage.from(BUCKET).upload(path, bytes, { contentType: "application/json", cacheControl: "0", upsert: true });
   if (up.error) throw new Error(`result_json_${clean(up.error.message, 180)}`);
+}
+
+async function upsertImagePlan(sb:any, sessionId:string, prompts:any[]) {
+  const rows = prompts.map(p=>({
+    run_id: sessionId,
+    kind: p.kind,
+    title: p.title,
+    prompt: p.prompt,
+    status: "pending",
+    validation: {},
+    model: IMAGE_MODEL,
+    quality: IMAGE_OUTPUT.quality,
+    size: IMAGE_OUTPUT.size,
+    updated_at: new Date().toISOString(),
+  }));
+  const q = await sb.from("ame_mais_images").upsert(rows, { onConflict: "run_id,kind" });
+  if (q.error) throw new Error(`image_plan_${clean(q.error.message,180)}`);
 }
 
 Deno.serve(async (req: Request) => {
@@ -242,10 +329,11 @@ Deno.serve(async (req: Request) => {
   try {
     await ensureBucket(sb);
 
-    if (action === "status") {
+    if (action === "status" || action === "get_run") {
       const run = await getRun(sb, sessionId);
       if (!run) return json({ ok: false, error: "run_not_found" }, 404, origin);
-      return json({ ok: true, run }, 200, origin);
+      const imageRows = await getRunImages(sb, sessionId);
+      return json({ ok: true, run, image_rows: imageRows, card: run.card_json || {} }, 200, origin);
     }
 
     const limited = await rateLimit(req, sb);
@@ -265,6 +353,11 @@ Deno.serve(async (req: Request) => {
         step: "preparing_photo",
         analysis: {},
         images: {},
+        conflicts: [],
+        observations: [],
+        prompts: {},
+        card_json: {},
+        scene_profile: null,
         error_message: null,
         model_analysis: null,
         model_image: IMAGE_MODEL,
@@ -273,6 +366,7 @@ Deno.serve(async (req: Request) => {
       }, { onConflict: "id" });
       if (start.error) throw new Error(`run_create_${clean(start.error.message, 180)}`);
 
+      await updateRun(sb, sessionId, { step: "saving_original" });
       const originalUpload = await sb.storage.from(BUCKET).upload(paths.original, source, { contentType: file.type, cacheControl: "31536000", upsert: true });
       if (originalUpload.error) throw new Error(`source_upload_${clean(originalUpload.error.message, 180)}`);
       const sourceUrl = sb.storage.from(BUCKET).getPublicUrl(paths.original).data.publicUrl;
@@ -280,19 +374,37 @@ Deno.serve(async (req: Request) => {
 
       let result = await analyzeWithModel(openaiKey, ANALYSIS_MODEL, source, file.type);
       if (shouldEscalate(result.analysis)) {
-        await updateRun(sb, sessionId, { step: "analyzing_product" });
         const escalated = await analyzeWithModel(openaiKey, ESCALATION_MODEL, source, file.type, result.analysis);
         result = escalated.analysis.confianca_geral >= result.analysis.confianca_geral ? escalated : result;
       }
       await updateRun(sb, sessionId, { step: "creating_name" });
       await updateRun(sb, sessionId, { step: "creating_catalog_description" });
+      await updateRun(sb, sessionId, { step: "creating_storefront_description" });
+      await updateRun(sb, sessionId, { step: "choosing_scene_profile" });
+
+      const profile = getSceneProfile(result.analysis);
+      const prompts = profile.scenes;
+      const promptObject = Object.fromEntries(prompts.map(p=>[p.kind,{title:p.title,prompt:p.prompt,quality:p.quality}]));
+      await upsertImagePlan(sb, sessionId, prompts);
       await updateRun(sb, sessionId, {
-        step: "creating_storefront_description",
         analysis: result.analysis,
+        conflicts: result.analysis.conflitos || [],
+        observations: result.analysis.observacoes || [],
+        scene_profile: profile.profile_key,
+        prompts: promptObject,
         model_analysis: result.model,
+        step: "generating_hero",
       });
       await saveResultJson(sb, sessionId);
-      return json({ ok: true, session_id: sessionId, analysis: result.analysis, model: result.model, source_url: sourceUrl, image_plan: buildImagePrompts(result.analysis).map(({ kind, title }) => ({ kind, title })) }, 200, origin);
+      return json({
+        ok: true,
+        session_id: sessionId,
+        analysis: result.analysis,
+        model: result.model,
+        source_url: sourceUrl,
+        scene_profile: profile.profile_key,
+        image_plan: prompts.map(({ kind, title }) => ({ kind, title })),
+      }, 200, origin);
     }
 
     if (action === "generate_image") {
@@ -310,42 +422,85 @@ Deno.serve(async (req: Request) => {
       if (sourceDownload.error || !sourceDownload.data) throw new Error(`source_download_${clean(sourceDownload.error?.message || "missing", 180)}`);
       const source = new Uint8Array(await sourceDownload.data.arrayBuffer());
       const sourceMime = sourceDownload.data.type || "image/jpeg";
-      const prompt = buildImagePrompts(analysis).find(x => x.kind === kind)!;
+      const prompt = buildImagePrompts(analysis).find(x => x.kind === kind);
+      if (!prompt) return json({ ok:false, error:"invalid_kind" },400,origin);
+
+      const currentRows = await getRunImages(sb, sessionId);
+      const currentRow = currentRows.find((x:any)=>x.kind===kind);
+      const baseAttempts = Number(currentRow?.attempt_count || 0);
+      await sb.from("ame_mais_images").upsert({
+        run_id:sessionId, kind, title:prompt.title, prompt:prompt.prompt, status:"generating",
+        model:IMAGE_MODEL, quality:IMAGE_OUTPUT.quality, size:IMAGE_OUTPUT.size,
+        attempt_count:baseAttempts, updated_at:new Date().toISOString()
+      },{onConflict:"run_id,kind"});
       await updateRun(sb, sessionId, { step: `generating_${kind}`, analysis });
 
       let generated: any = null;
       let validation: any = null;
+      let attemptsUsed = 0;
       for (let attempt = 1; attempt <= 2; attempt++) {
+        attemptsUsed = attempt;
         generated = await editImage(openaiKey, source, sourceMime, prompt);
         await updateRun(sb, sessionId, { step: `validating_${kind}` });
+        await sb.from("ame_mais_images").update({ status:"validating", attempt_count:baseAttempts+attempt, updated_at:new Date().toISOString() }).eq("run_id",sessionId).eq("kind",kind);
         validation = await validateImage(openaiKey, source, sourceMime, generated.bytes, kind);
         if (validation.accepted) break;
-        if (attempt < 2) await updateRun(sb, sessionId, { step: `generating_${kind}` });
+        if (attempt < 2) {
+          await updateRun(sb, sessionId, { step: `generating_${kind}` });
+          await sb.from("ame_mais_images").update({ status:"generating", validation, updated_at:new Date().toISOString() }).eq("run_id",sessionId).eq("kind",kind);
+        }
       }
       if (!validation?.accepted) {
+        await sb.from("ame_mais_images").update({ status:"rejected", validation, attempt_count:baseAttempts+attemptsUsed, updated_at:new Date().toISOString() }).eq("run_id",sessionId).eq("kind",kind);
         await updateRun(sb, sessionId, { error_message: `image_fidelity_rejected:${kind}`, step: `validating_${kind}` });
         await saveResultJson(sb, sessionId);
         return json({ ok: false, error: "image_fidelity_rejected", kind, validation }, 422, origin);
       }
 
-      await updateRun(sb, sessionId, { step: "saving_supabase" });
+      await updateRun(sb, sessionId, { step: `saving_${kind}` });
       const outputPath = (paths as any)[kind];
       const upload = await sb.storage.from(BUCKET).upload(outputPath, generated.bytes, { contentType: "image/webp", cacheControl: "31536000", upsert: true });
       if (upload.error) throw new Error(`storage_upload_${clean(upload.error.message, 180)}`);
       const publicUrl = sb.storage.from(BUCKET).getPublicUrl(outputPath).data.publicUrl;
-      const latest = await getRun(sb, sessionId);
-      const images = { ...(latest?.images || {}), [kind]: { kind, title: prompt.title, url: publicUrl, validation, model: IMAGE_MODEL, quality: IMAGE_OUTPUT.quality, size: IMAGE_OUTPUT.size } };
-      const final = Boolean(images.principal && images.ambientada && images.detalhe);
+      await sb.from("ame_mais_images").update({
+        image_url:publicUrl,
+        storage_path:outputPath,
+        status:"completed",
+        validation,
+        model:IMAGE_MODEL,
+        quality:IMAGE_OUTPUT.quality,
+        size:IMAGE_OUTPUT.size,
+        attempt_count:baseAttempts+attemptsUsed,
+        updated_at:new Date().toISOString(),
+      }).eq("run_id",sessionId).eq("kind",kind);
+
+      const imageRows = await getRunImages(sb, sessionId);
+      const images = imagesObject(imageRows);
+      const allComplete = ["hero","lifestyle","detail"].every(k=>imageRows.some((r:any)=>r.kind===k && r.status==="completed" && r.image_url));
+      let cardJson:any = run.card_json || {};
+      let status = "processing";
+      let step = `saving_${kind}`;
+      let completedAt:any = null;
+      if (allComplete) {
+        step = "building_card";
+        await updateRun(sb,sessionId,{step,images,error_message:null});
+        const latest = await getRun(sb,sessionId);
+        cardJson = buildCardJson({...latest,images},imageRows);
+        status = "completed";
+        step = "completed";
+        completedAt = new Date().toISOString();
+      }
       await updateRun(sb, sessionId, {
         images,
-        model_image: IMAGE_MODEL,
-        error_message: null,
-        status: final ? "completed" : "processing",
-        step: final ? "completed" : "saving_supabase",
-        completed_at: final ? new Date().toISOString() : null,
+        card_json:cardJson,
+        model_image:IMAGE_MODEL,
+        error_message:null,
+        status,
+        step,
+        completed_at:completedAt,
       });
       await saveResultJson(sb, sessionId);
-      return json({ ok: true, kind, title: prompt.title, url: publicUrl, validation, model: IMAGE_MODEL, quality: IMAGE_OUTPUT.quality, size: IMAGE_OUTPUT.size }, 200, origin);
+      return json({ ok:true, kind, title:prompt.title, url:publicUrl, validation, model:IMAGE_MODEL, quality:IMAGE_OUTPUT.quality, size:IMAGE_OUTPUT.size, completed:allComplete, card:cardJson },200,origin);
     }
 
     return json({ ok: false, error: "unknown_action" }, 400, origin);
