@@ -6,8 +6,11 @@ import {
   normalizeAnalysis,
   buildImagePrompts,
   buildShareText,
+  IMAGE_OUTPUT,
+  PROCESSING_STEPS,
+  storagePaths,
 } from '../supabase/functions/ame-mais-analyze-v1/core.mjs';
-import { validatePhotoFile, buildWhatsAppUrl } from '../ame-mais/app-core.mjs';
+import { validatePhotoFile, buildWhatsAppUrl, buildProductCardModel } from '../ame-mais/app-core.mjs';
 
 test('exige as cinco características fixas da taxonomia', () => {
   assert.deepEqual(PRODUCT_FIELDS, [
@@ -66,4 +69,41 @@ test('url de whatsapp carrega o texto comercial codificado', () => {
   const u = buildWhatsAppUrl('Terço lindo\nDescrição comercial');
   assert.match(u, /^https:\/\/wa\.me\/\?text=/);
   assert.match(decodeURIComponent(u), /Terço lindo/);
+});
+
+test('imagens da vitrine são quadradas e low', () => {
+  assert.equal(IMAGE_OUTPUT.size, '1024x1024');
+  assert.equal(IMAGE_OUTPUT.quality, 'low');
+  assert.equal(IMAGE_OUTPUT.format, 'webp');
+});
+
+test('processamento expõe etapas legíveis da IA', () => {
+  const labels = PROCESSING_STEPS.map(x => x.label).join(' | ');
+  assert.match(labels, /Preparando foto/i);
+  assert.match(labels, /Analisando produto/i);
+  assert.match(labels, /Criando nome/i);
+  assert.match(labels, /descri[cç][aã]o comercial/i);
+  assert.match(labels, /Gerando foto principal/i);
+  assert.match(labels, /Validando fidelidade/i);
+  assert.match(labels, /Salvando no Supabase/i);
+});
+
+test('cada execução usa uma pasta própria no bucket Ame Mais', () => {
+  const sid='123e4567-e89b-12d3-a456-426614174000';
+  const p=storagePaths(sid);
+  assert.equal(p.original, `runs/${sid}/original.jpg`);
+  assert.equal(p.principal, `runs/${sid}/principal.webp`);
+  assert.equal(p.ambientada, `runs/${sid}/ambientada.webp`);
+  assert.equal(p.detalhe, `runs/${sid}/detalhe.webp`);
+});
+
+test('card de vitrine usa imagem quadrada, nome e descrição comercial', () => {
+  const card=buildProductCardModel({
+    nome_cadastro:'Terço Cristal Branco',
+    descricao_vitrine:'Uma peça delicada para presentear.',
+  }, {url:'https://example.com/p.webp', kind:'principal'});
+  assert.equal(card.name,'Terço Cristal Branco');
+  assert.equal(card.description,'Uma peça delicada para presentear.');
+  assert.equal(card.imageUrl,'https://example.com/p.webp');
+  assert.equal(card.aspectRatio,'1 / 1');
 });
