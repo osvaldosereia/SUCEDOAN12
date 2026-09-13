@@ -1,0 +1,33 @@
+name: Ame Mais tests
+
+on:
+  push:
+    branches:
+      - main
+      - feature/ame-mais-universal-catalog-v2
+    paths:
+      - 'ame-mais/**'
+      - 'tests/ame-mais-core.test.mjs'
+      - 'supabase/functions/ame-mais-analyze-v1/**'
+      - '.github/workflows/ame-mais-tests.yml'
+  pull_request:
+    paths:
+      - 'ame-mais/**'
+      - 'tests/ame-mais-core.test.mjs'
+      - 'supabase/functions/ame-mais-analyze-v1/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Core tests
+        run: node --test tests/ame-mais-core.test.mjs
+      - name: Frontend syntax
+        run: |
+          node --check ame-mais/app.js
+          node --check ame-mais/app-core.mjs
