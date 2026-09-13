@@ -2,8 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 import {
   ANALYSIS_MODEL, ESCALATION_MODEL, ANALYSIS_SCHEMA, IMAGE_MODEL, IMAGE_OUTPUT,
-  OUTPUT_KINDS, MAX_INPUT_PHOTOS, buildAnalysisPrompt, normalizeAnalysis,
-  resolveOpenAiKey, shouldEscalateV2, buildImagePrompts, storagePaths, sanitizeEan,
+  OUTPUT_KINDS, MAX_INPUT_PHOTOS, buildAnalysisPrompt, normalizeAnalysisV2,
+  resolveOpenAiKey, shouldEscalateV2, buildImagePrompts, storagePaths, sanitizeEan, sanitizePrice,
 } from "./core.mjs";
 
 const RESPONSES_URL="https://api.openai.com/v1/responses";
@@ -24,15 +24,15 @@ const base64ToBytes=(s:string)=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 function finalText(data:any){return (Array.isArray(data?.output)?data.output:[]).filter((x:any)=>x?.type==="message").flatMap((x:any)=>Array.isArray(x?.content)?x.content:[]).filter((x:any)=>x?.type==="output_text").map((x:any)=>String(x?.text||"")).join("").trim()}
 
 async function analyzeWithModel(apiKey:string,model:string,photos:{bytes:Uint8Array,mime:string}[],prior?:any){
-  const extra=prior?`\nUma análise anterior ficou realmente incerta. Reavalie sem inventar. Análise anterior: ${JSON.stringify(prior).slice(0,3500)}`:"";
+  const extra=prior?`\nUma análise anterior ficou realmente incerta. Reavalie sem inventar. Análise anterior: ${JSON.stringify(prior).slice(0,2800)}`:"";
   const content:any[]=[{type:"input_text",text:buildAnalysisPrompt()+"\nAs imagens mostram o mesmo produto por ângulos diferentes. Consolide as evidências e não duplique atributos."+extra}];
   for(const p of photos)content.push({type:"input_image",image_url:`data:${p.mime};base64,${bytesToBase64(p.bytes)}`,detail:"high"});
-  const body={model,store:false,max_output_tokens:1050,reasoning:{effort:model===ESCALATION_MODEL?"medium":"low"},input:[{role:"user",content}],text:{format:{type:"json_schema",name:"ame_mais_product_analysis_v3",strict:true,schema:ANALYSIS_SCHEMA}}};
+  const body={model,store:false,max_output_tokens:900,reasoning:{effort:model===ESCALATION_MODEL?"medium":"low"},input:[{role:"user",content}],text:{format:{type:"json_schema",name:"ame_mais_product_analysis_v4",strict:true,schema:ANALYSIS_SCHEMA}}};
   const r=await fetch(RESPONSES_URL,{method:"POST",headers:{Authorization:`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(90000)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(`analysis_http_${r.status}_${clean(data?.error?.message||"error",160)}`);
   const text=finalText(data);if(!text)throw new Error("analysis_empty_output");
   let parsed;try{parsed=JSON.parse(text)}catch{throw new Error("analysis_invalid_json")}
-  return {analysis:normalizeAnalysis(parsed),model};
+  return {analysis:normalizeAnalysisV2(parsed),model};
 }
 
 async function generateImage(apiKey:string,photos:{bytes:Uint8Array,mime:string}[],prompt:string){
@@ -60,7 +60,7 @@ async function getRun(sb:any,id:string){const q=await sb.from("ame_mais_runs").s
 async function getImages(sb:any,id:string){const q=await sb.from("ame_mais_images").select("*").eq("run_id",id);if(q.error)throw new Error(q.error.message);const order=new Map(OUTPUT_KINDS.map((k,i)=>[k,i]));return (q.data||[]).sort((a:any,b:any)=>(order.get(a.kind)??9)-(order.get(b.kind)??9))}
 async function loadPhotos(sb:any,id:string){const paths=storagePaths(id);const out:any[]=[];for(const path of paths.sources){const d=await sb.storage.from(BUCKET).download(path);if(!d.error&&d.data)out.push({bytes:new Uint8Array(await d.data.arrayBuffer()),mime:d.data.type||"image/jpeg"});}return out}
 function imageObject(rows:any[]){return Object.fromEntries((rows||[]).map(r=>[r.kind,{kind:r.kind,title:r.title,url:r.image_url,status:r.status,validation:r.validation||{},model:r.model,quality:r.quality,size:r.size}]))}
-function cardJson(run:any,rows:any[]){const a=run.analysis||{};return {run_id:run.id,ean:a.ean||"",name:a.nome_cadastro||"",storefront_description:a.descricao_vitrine||"",catalog_description:a.descricao_cadastro||"",gallery:OUTPUT_KINDS.map(k=>{const r=rows.find((x:any)=>x.kind===k)||{};return {kind:k,title:r.title||k,url:r.image_url||"",status:r.status||"pending"}})}}
+function cardJson(run:any,rows:any[]){const a=run.analysis||{};return {run_id:run.id,ean:a.ean||"",name:a.nome_cadastro||"",price:Number(a.preco||0),description:a.descricao_ecommerce||"",gallery:OUTPUT_KINDS.map(k=>{const r=rows.find((x:any)=>x.kind===k)||{};return {kind:k,title:r.title||k,url:r.image_url||"",status:r.status||"pending"}})}}
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get("origin");const local=Boolean(origin&&/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin));if(origin&&!ALLOWED_ORIGINS.has(origin)&&!local)return json({ok:false,error:"origin_not_allowed"},403);if(req.method==="OPTIONS")return new Response("ok",{headers:cors(origin)});if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405,origin);
@@ -73,15 +73,15 @@ Deno.serve(async(req:Request)=>{
     if(action==="analyze"){
       const files=[] as File[];for(let i=1;i<=MAX_INPUT_PHOTOS;i++){const f=form.get(`image${i}`);if(f instanceof File&&f.size)files.push(f)}if(files.length<1||files.length>MAX_INPUT_PHOTOS)return json({ok:false,error:"image_count_invalid"},400,origin);
       for(const f of files)if(!ALLOWED_TYPES.has(f.type)||f.size<5000||f.size>MAX_UPLOAD)return json({ok:false,error:"image_invalid"},400,origin);
-      const ean=sanitizeEan(form.get("ean")||"");const photos=[] as any[];const paths=storagePaths(id);
-      await sb.from("ame_mais_runs").upsert({id,status:"processing",step:"saving_original",analysis:{ean},images:{},conflicts:[],observations:[],prompts:{},card_json:{},model_image:IMAGE_MODEL,error_message:null,updated_at:new Date().toISOString()},{onConflict:"id"});
+      const ean=sanitizeEan(form.get("ean")||"");const preco=sanitizePrice(form.get("price")||"");const photos=[] as any[];const paths=storagePaths(id);
+      await sb.from("ame_mais_runs").upsert({id,status:"processing",step:"saving_original",analysis:{ean,preco},images:{},conflicts:[],observations:[],prompts:{},card_json:{},model_image:IMAGE_MODEL,error_message:null,updated_at:new Date().toISOString()},{onConflict:"id"});
       for(let i=0;i<files.length;i++){const bytes=new Uint8Array(await files[i].arrayBuffer());photos.push({bytes,mime:files[i].type});const up=await sb.storage.from(BUCKET).upload(paths.sources[i],bytes,{contentType:files[i].type,cacheControl:"31536000",upsert:true});if(up.error)throw new Error(up.error.message)}
       const firstUrl=sb.storage.from(BUCKET).getPublicUrl(paths.sources[0]).data.publicUrl;await updateRun(sb,id,{source_url:firstUrl,step:"analyzing_product"});
       let result=await analyzeWithModel(apiKey,ANALYSIS_MODEL,photos);if(shouldEscalateV2(result.analysis)){const advanced=await analyzeWithModel(apiKey,ESCALATION_MODEL,photos,result.analysis);if(Number(advanced.analysis.confianca_geral||0)>=Number(result.analysis.confianca_geral||0))result=advanced}
-      result.analysis={...result.analysis,ean};const prompts=buildImagePrompts(result.analysis);await sb.from("ame_mais_images").upsert(prompts.map(p=>({run_id:id,kind:p.kind,title:p.title,prompt:p.prompt,status:"pending",validation:{},model:IMAGE_MODEL,quality:IMAGE_OUTPUT.quality,size:IMAGE_OUTPUT.size,updated_at:new Date().toISOString()})),{onConflict:"run_id,kind"});await updateRun(sb,id,{analysis:result.analysis,conflicts:result.analysis.conflitos||[],observations:result.analysis.observacoes||[],prompts:Object.fromEntries(prompts.map(p=>[p.kind,p])),model_analysis:result.model,step:"generating_hero"});return json({ok:true,session_id:id,analysis:result.analysis,model:result.model,image_plan:prompts.map(({kind,title})=>({kind,title}))},200,origin)
+      result.analysis={...result.analysis,ean,preco};const prompts=buildImagePrompts(result.analysis);await sb.from("ame_mais_images").upsert(prompts.map(p=>({run_id:id,kind:p.kind,title:p.title,prompt:p.prompt,status:"pending",validation:{},model:IMAGE_MODEL,quality:IMAGE_OUTPUT.quality,size:IMAGE_OUTPUT.size,updated_at:new Date().toISOString()})),{onConflict:"run_id,kind"});await updateRun(sb,id,{analysis:result.analysis,conflicts:result.analysis.conflitos||[],observations:result.analysis.observacoes||[],prompts:Object.fromEntries(prompts.map(p=>[p.kind,p])),model_analysis:result.model,step:"generating_hero"});return json({ok:true,session_id:id,analysis:result.analysis,model:result.model,image_plan:prompts.map(({kind,title})=>({kind,title}))},200,origin)
     }
     if(action==="generate_image"){
-      const kind=clean(form.get("kind"),30);if(!ALLOWED_KINDS.has(kind))return json({ok:false,error:"invalid_kind"},400,origin);const run=await getRun(sb,id);if(!run)return json({ok:false,error:"run_not_found"},404,origin);let analysis=run.analysis||{};const supplied=clean(form.get("analysis_json"),20000);if(supplied){try{analysis={...normalizeAnalysis(JSON.parse(supplied)),ean:run.analysis?.ean||""}}catch{return json({ok:false,error:"invalid_analysis"},400,origin)}}const photos=await loadPhotos(sb,id);if(!photos.length)return json({ok:false,error:"run_not_ready"},409,origin);const prompt=buildImagePrompts(analysis).find(x=>x.kind===kind);if(!prompt)return json({ok:false,error:"invalid_kind"},400,origin);
+      const kind=clean(form.get("kind"),30);if(!ALLOWED_KINDS.has(kind))return json({ok:false,error:"invalid_kind"},400,origin);const run=await getRun(sb,id);if(!run)return json({ok:false,error:"run_not_found"},404,origin);let analysis=run.analysis||{};const supplied=clean(form.get("analysis_json"),20000);if(supplied){try{analysis={...normalizeAnalysisV2(JSON.parse(supplied)),ean:run.analysis?.ean||"",preco:Number(run.analysis?.preco||0)}}catch{return json({ok:false,error:"invalid_analysis"},400,origin)}}const photos=await loadPhotos(sb,id);if(!photos.length)return json({ok:false,error:"run_not_ready"},409,origin);const prompt=buildImagePrompts(analysis).find(x=>x.kind===kind);if(!prompt)return json({ok:false,error:"invalid_kind"},400,origin);
       await updateRun(sb,id,{step:`generating_${kind}`,analysis});await sb.from("ame_mais_images").update({status:"generating",updated_at:new Date().toISOString()}).eq("run_id",id).eq("kind",kind);const bytes=await generateImage(apiKey,photos,prompt.prompt);let validation:any={skipped:true};if(kind==="hero"){await updateRun(sb,id,{step:"validating_hero"});validation=await validateHero(apiKey,photos,bytes)}
       const out=(storagePaths(id) as any)[kind];const up=await sb.storage.from(BUCKET).upload(out,bytes,{contentType:"image/webp",cacheControl:"31536000",upsert:true});if(up.error)throw new Error(up.error.message);const url=sb.storage.from(BUCKET).getPublicUrl(out).data.publicUrl;await sb.from("ame_mais_images").update({image_url:url,storage_path:out,status:"completed",validation,model:IMAGE_MODEL,quality:IMAGE_OUTPUT.quality,size:IMAGE_OUTPUT.size,attempt_count:1,updated_at:new Date().toISOString()}).eq("run_id",id).eq("kind",kind);
       const rows=await getImages(sb,id),images=imageObject(rows),all=OUTPUT_KINDS.every(k=>rows.some((r:any)=>r.kind===k&&r.status==="completed"&&r.image_url));let card=run.card_json||{};if(all){const latest=await getRun(sb,id);card=cardJson({...latest,analysis},rows)}await updateRun(sb,id,{images,card_json:card,status:all?"completed":"processing",step:all?"completed":`saving_${kind}`,completed_at:all?new Date().toISOString():null,error_message:null});return json({ok:true,kind,title:prompt.title,url,validation,completed:all,card},200,origin)
