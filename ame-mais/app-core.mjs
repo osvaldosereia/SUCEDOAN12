@@ -1,6 +1,16 @@
 export const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg','image/png','image/webp']);
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_INPUT_PHOTOS = 3;
 export const CARD_IMAGE_ORDER = Object.freeze(['hero','lifestyle','detail']);
+export const FIVE_NAME_FIELDS = Object.freeze(['tipo_produto','devocao_tema','material_modelo','cor_acabamento','diferencial_tamanho']);
+
+const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+const list=v=>Array.isArray(v)?v.map(clean).filter(Boolean):[];
+const money=v=>{
+  if(v===null||v===undefined||v==='') return null;
+  const n=Number(String(v).replace(/\./g,'').replace(',','.').replace(/[^0-9.-]/g,''));
+  return Number.isFinite(n)?Math.round(n*100)/100:null;
+};
 
 export function validatePhotoFile(file){
   if(!file) return {ok:false,error:'Selecione ou tire uma foto.'};
@@ -9,6 +19,27 @@ export function validatePhotoFile(file){
   if(size<5000) return {ok:false,error:'A foto parece vazia ou pequena demais.'};
   if(size>MAX_IMAGE_BYTES) return {ok:false,error:'A foto está muito grande. Use uma imagem de até 10 MB.'};
   return {ok:true};
+}
+
+export function validatePhotoFiles(files=[]){
+  const arr=Array.from(files||[]);
+  if(arr.length<1) return {ok:false,error:'Adicione pelo menos uma foto.'};
+  if(arr.length>MAX_INPUT_PHOTOS) return {ok:false,error:'Use no máximo 3 fotos do mesmo produto.'};
+  for(const f of arr){const v=validatePhotoFile(f);if(!v.ok)return v;}
+  return {ok:true};
+}
+
+export function buildFiveCharacteristicName(analysis={}){
+  return FIVE_NAME_FIELDS.map(k=>clean(analysis?.[k])).filter(Boolean).join(' ');
+}
+
+export function normalizeManualCatalogFields(input={}){
+  return {
+    ean:clean(input.ean).replace(/\D/g,'').slice(0,14),
+    ncm:clean(input.ncm).replace(/\D/g,'').slice(0,8),
+    preco_custo:money(input.preco_custo),
+    preco_venda:money(input.preco_venda),
+  };
 }
 
 export function buildWhatsAppUrl(text){
@@ -28,9 +59,6 @@ export function buildProductCardModel(analysis={}, image={}){
     aspectRatio:'1 / 1',
   };
 }
-
-const clean=v=>String(v??'').trim();
-const list=v=>Array.isArray(v)?v.map(clean).filter(Boolean):[];
 
 export function buildRunCardModel(run={},logoUrl=''){
   const analysis=run.analysis||{};
@@ -56,9 +84,13 @@ export function buildRunCardModel(run={},logoUrl=''){
   return {
     runId:clean(run.id||run.run_id),
     logoUrl:clean(logoUrl||run.logo_url),
-    name:clean(analysis.nome_cadastro||run.nome_cadastro),
+    name:buildFiveCharacteristicName(analysis)||clean(analysis.nome_cadastro||run.nome_cadastro),
     storefrontDescription:clean(analysis.descricao_vitrine||run.descricao_vitrine),
     catalogDescription:clean(analysis.descricao_cadastro||run.descricao_cadastro),
+    ean:clean(run.ean||analysis.ean_detectado),
+    ncm:clean(run.ncm),
+    precoCusto:run.preco_custo===null||run.preco_custo===undefined?null:Number(run.preco_custo),
+    precoVenda:run.preco_venda===null||run.preco_venda===undefined?null:Number(run.preco_venda),
     attributes:{
       tipo_produto:clean(analysis.tipo_produto),
       devocao_tema:clean(analysis.devocao_tema),
