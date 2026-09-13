@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#7b5b52">
   <meta name="robots" content="noindex,nofollow">
   <title>Ame Mais · Cadastro por Foto</title>
-  <link rel="stylesheet" href="./styles.css?v=20260912-1">
+  <link rel="stylesheet" href="./styles.css?v=20260913-2">
 </head>
 <body>
   <main class="app-shell">
@@ -16,21 +16,10 @@
       <span class="test-badge">TESTE</span>
     </header>
 
-    <section id="loginCard" class="card login-card">
-      <span class="eyebrow">Acesso protegido</span>
-      <h2>Digite o PIN do Admin</h2>
-      <p>O mesmo código de 6 dígitos usado no Admin V3.</p>
-      <form id="loginForm" class="pin-form">
-        <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="••••••" aria-label="PIN do Admin">
-        <button class="btn primary" type="submit">Entrar</button>
-      </form>
-      <div id="loginMessage" class="message"></div>
-    </section>
-
-    <section id="appArea" class="hidden">
+    <section id="appArea">
       <section class="card capture-card">
-        <div class="section-title"><div><span class="eyebrow">1 · Foto</span><h2>Fotografe o produto</h2></div><button id="logoutButton" class="link-button" type="button">Sair</button></div>
-        <p class="hint">Enquadre o produto inteiro, com boa luz. A foto será a referência para nome, descrição e imagens comerciais.</p>
+        <div class="section-title"><div><span class="eyebrow">1 · Foto</span><h2>Fotografe o produto</h2></div><span class="public-badge">Sem login</span></div>
+        <p class="hint">Enquadre o produto inteiro e use boa luz. A foto original e todos os resultados serão salvos no Supabase na pasta própria do Ame Mais.</p>
         <div id="photoStage" class="photo-stage empty">
           <img id="photoPreview" alt="Prévia do produto">
           <div id="emptyPhoto" class="empty-photo"><div class="camera-icon">◉</div><strong>Nenhuma foto</strong><span>Tire uma foto ou escolha da galeria</span></div>
@@ -44,10 +33,10 @@
       </section>
 
       <section id="progressCard" class="card hidden">
-        <span class="eyebrow">Processando</span>
-        <h2 id="progressTitle">Analisando a foto…</h2>
+        <div class="section-title"><div><span class="eyebrow">Processamento</span><h2 id="progressTitle">Preparando…</h2></div><span id="progressPercent" class="progress-percent">0%</span></div>
         <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
-        <p id="progressText" class="hint">Identificando o tipo do produto e suas características.</p>
+        <p id="progressText" class="hint">Aguardando início.</p>
+        <div id="processingTimeline" class="processing-timeline"></div>
       </section>
 
       <section id="resultArea" class="hidden">
@@ -74,8 +63,8 @@
         </section>
 
         <section class="card">
-          <div class="section-title"><div><span class="eyebrow">4 · Vitrine</span><h2>Imagens comerciais</h2></div><span class="image-count">3 imagens</span></div>
-          <p class="hint">A primeira é a foto principal extremamente fiel. As outras duas ajudam a vender sem descaracterizar o produto.</p>
+          <div class="section-title"><div><span class="eyebrow">4 · Simulação da vitrine</span><h2>Cards de e-commerce</h2></div><span class="image-count">3 cards</span></div>
+          <p class="hint">Cada criação aparece como se já estivesse em uma loja virtual: imagem quadrada, nome e descrição comercial. As imagens são geradas em qualidade LOW para reduzir custo.</p>
           <div id="imageGrid" class="image-grid"></div>
         </section>
 
@@ -83,12 +72,12 @@
           <span class="eyebrow">5 · Compartilhar</span>
           <h2>Pronto para usar</h2>
           <button id="shareWhatsApp" class="btn whatsapp" type="button">Compartilhar no WhatsApp</button>
-          <button id="newProduct" class="btn secondary" type="button">Cadastrar outro produto</button>
+          <button id="newProduct" class="btn secondary" type="button">Criar outro produto</button>
         </section>
       </section>
     </section>
   </main>
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=20260912-1"></script>
+  <script type="module" src="./app.js?v=20260913-2"></script>
 </body>
 </html>
