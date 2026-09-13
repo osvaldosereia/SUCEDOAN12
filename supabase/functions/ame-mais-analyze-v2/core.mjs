@@ -1,14 +1,11 @@
 import {
   ANALYSIS_MODEL,
   ESCALATION_MODEL,
-  ANALYSIS_SCHEMA,
-  buildAnalysisPrompt,
-  normalizeAnalysis,
   normalizeProductType,
   resolveOpenAiKey,
 } from '../ame-mais-analyze-v1/core.mjs';
 
-export { ANALYSIS_MODEL, ESCALATION_MODEL, ANALYSIS_SCHEMA, buildAnalysisPrompt, normalizeAnalysis, resolveOpenAiKey };
+export { ANALYSIS_MODEL, ESCALATION_MODEL, resolveOpenAiKey };
 
 export const MAX_INPUT_PHOTOS = 3;
 export const OUTPUT_KINDS = Object.freeze(['hero','lifestyle','detail','alternate']);
@@ -18,9 +15,71 @@ export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg','image/png','image/webp']);
 
 const clean=v=>String(v??'').replace(/\s+/g,' ').trim();
+const clamp01=v=>Math.max(0,Math.min(1,Number(v)||0));
+const cleanList=(v,max=20)=>Array.from(new Set((Array.isArray(v)?v:[]).map(clean).filter(Boolean))).slice(0,max);
 
 export function sanitizeEan(value=''){
   return String(value||'').replace(/\D/g,'').slice(0,14);
+}
+
+export function sanitizePrice(value=''){
+  if(typeof value==='number') return Number.isFinite(value)&&value>0?Math.round(value*100)/100:0;
+  let s=String(value||'').trim().replace(/[^\d,.-]/g,'');
+  if(!s) return 0;
+  if(s.includes(',')) s=s.replace(/\./g,'').replace(',','.');
+  const n=Number(s);
+  return Number.isFinite(n)&&n>0?Math.round(n*100)/100:0;
+}
+
+export function formatPriceBRL(value=0){
+  return `R$ ${sanitizePrice(value).toFixed(2).replace('.',',')}`;
+}
+
+export const ANALYSIS_SCHEMA = {
+  type:'object',
+  additionalProperties:false,
+  properties:{
+    tipo_produto:{type:'string'},
+    devocao_tema:{type:'string'},
+    material_modelo:{type:'string'},
+    cor_acabamento:{type:'string'},
+    diferencial_tamanho:{type:'string'},
+    nome_cadastro:{type:'string'},
+    descricao_ecommerce:{type:'string'},
+    termos_busca:{type:'array',items:{type:'string'},maxItems:20},
+    confianca_geral:{type:'number',minimum:0,maximum:1},
+    precisa_revisao:{type:'boolean'},
+    motivo_revisao:{type:'string'},
+    conflitos:{type:'array',items:{type:'string'},maxItems:12},
+    observacoes:{type:'array',items:{type:'string'},maxItems:12}
+  },
+  required:['tipo_produto','devocao_tema','material_modelo','cor_acabamento','diferencial_tamanho','nome_cadastro','descricao_ecommerce','termos_busca','confianca_geral','precisa_revisao','motivo_revisao','conflitos','observacoes']
+};
+
+export function buildAnalysisPrompt(){
+  return `Analise as fotos do mesmo produto para cadastro em um site de e-commerce. Use somente informações visualmente sustentadas e não invente material, medida, marca, devoção, função ou característica ausente.
+
+Entregue um nome de produto claro e pesquisável e UMA ÚNICA descricao_ecommerce completa, pronta para página de produto. A descrição deve ser comercial, detalhada e útil, em português natural, seguindo boas práticas de e-commerce: explicar o que é o produto, seus principais detalhes visíveis, acabamento/aparência, possibilidades de uso ou ocasião quando forem evidentes e benefícios comerciais sem promessas falsas. Escreva em 2 a 4 parágrafos curtos, sem títulos artificiais, sem emojis, sem preço, sem EAN e sem repetir o nome excessivamente.
+
+Também extraia tipo_produto, devocao_tema, material_modelo, cor_acabamento, diferencial_tamanho e termos_busca. Se algo importante estiver incerto, deixe o campo vazio, registre em conflitos e marque precisa_revisao quando necessário. Não cite estas instruções.`;
+}
+
+export function normalizeAnalysisV2(input={}){
+  return {
+    tipo_produto:clean(input.tipo_produto),
+    devocao_tema:clean(input.devocao_tema),
+    material_modelo:clean(input.material_modelo),
+    cor_acabamento:clean(input.cor_acabamento),
+    diferencial_tamanho:clean(input.diferencial_tamanho),
+    nome_cadastro:clean(input.nome_cadastro),
+    descricao_ecommerce:clean(input.descricao_ecommerce),
+    termos_busca:cleanList(input.termos_busca,20),
+    confianca_geral:clamp01(input.confianca_geral),
+    precisa_revisao:Boolean(input.precisa_revisao),
+    motivo_revisao:clean(input.motivo_revisao),
+    conflitos:cleanList(input.conflitos,12),
+    observacoes:cleanList(input.observacoes,12),
+  };
 }
 
 export function validateInputFiles(files=[]){
@@ -42,7 +101,7 @@ export function rememberRunId(current=[],runId=''){
 }
 
 export function shouldEscalateV2(a={}){
-  const essentials=Boolean(clean(a.tipo_produto)&&clean(a.nome_cadastro)&&clean(a.descricao_cadastro)&&clean(a.descricao_vitrine));
+  const essentials=Boolean(clean(a.tipo_produto)&&clean(a.nome_cadastro)&&clean(a.descricao_ecommerce));
   return !essentials || Number(a.confianca_geral||0)<0.65;
 }
 
