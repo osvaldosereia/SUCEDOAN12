@@ -134,3 +134,7 @@ verify_jwt = false
 # Admin do Menu do Chat: autenticação é validada dentro da função contra auth.users + admin_users.
 [functions.admin-chat-menu-v1]
 verify_jwt = false
+
+# Ame Mais é público, sem login/PIN; a função aplica suas próprias regras de origem e rate limit.
+[functions.ame-mais-analyze-v1]
+verify_jwt = false
