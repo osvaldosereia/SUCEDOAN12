@@ -9,6 +9,33 @@ export const PRODUCT_FIELDS = [
 export const ANALYSIS_MODEL = 'gpt-5.6-luna';
 export const ESCALATION_MODEL = 'gpt-5.6-terra';
 export const IMAGE_MODEL = 'gpt-image-2.5-sunburst';
+export const IMAGE_OUTPUT = Object.freeze({ size:'1024x1024', quality:'low', format:'webp', compression:68 });
+
+export const PROCESSING_STEPS = Object.freeze([
+  {key:'preparing_photo',label:'Preparando foto'},
+  {key:'analyzing_product',label:'Analisando produto'},
+  {key:'creating_name',label:'Criando nome'},
+  {key:'creating_catalog_description',label:'Criando descrição de cadastro'},
+  {key:'creating_storefront_description',label:'Criando descrição comercial'},
+  {key:'generating_principal',label:'Gerando foto principal'},
+  {key:'validating_principal',label:'Validando fidelidade'},
+  {key:'generating_ambientada',label:'Gerando imagem comercial 1'},
+  {key:'validating_ambientada',label:'Validando imagem comercial 1'},
+  {key:'generating_detalhe',label:'Gerando imagem comercial 2'},
+  {key:'validating_detalhe',label:'Validando imagem comercial 2'},
+  {key:'saving_supabase',label:'Salvando no Supabase'},
+  {key:'completed',label:'Concluído'},
+]);
+
+export function storagePaths(sessionId){
+  const sid=String(sessionId||'').trim();
+  return {
+    original:`runs/${sid}/original.jpg`,
+    principal:`runs/${sid}/principal.webp`,
+    ambientada:`runs/${sid}/ambientada.webp`,
+    detalhe:`runs/${sid}/detalhe.webp`,
+  };
+}
 
 export function buildAnalysisPrompt() {
   return `Você é um catalogador especialista em artigos católicos e e-commerce. Analise SOMENTE o que está visível na foto.
@@ -85,20 +112,20 @@ export function buildImagePrompts(analysis={}) {
     {
       kind:'principal',
       title:'Principal — fundo cinza claro',
-      quality:'high',
-      prompt:`Edite a foto de referência do ${name}. ${fidelityRule} Gere uma fotografia de e-commerce extremamente fiel ao produto original, com apenas mínimos ajustes de posição e alinhamento. Produto inteiro, centralizado, bem iluminado, sem objetos extras, fundo uniforme #ECECEC. A imagem será a foto principal da vitrine; fidelidade tem prioridade absoluta sobre estética.`
+      quality:'low',
+      prompt:`Edite a foto de referência do ${name}. ${fidelityRule} Gere uma fotografia quadrada de e-commerce extremamente fiel ao produto original, com apenas mínimos ajustes de posição e alinhamento. Produto inteiro, centralizado, bem iluminado, sem objetos extras, fundo uniforme #ECECEC. A imagem será a foto principal da vitrine; fidelidade tem prioridade absoluta sobre estética.`
     },
     {
       kind:'ambientada',
       title:'E-commerce — produto em destaque',
-      quality:'medium',
-      prompt:`Crie uma imagem comercial elegante para e-commerce usando o MESMO ${name}. ${fidelityRule} Mantenha o produto como protagonista absoluto, ocupando a maior parte da composição. Use um cenário discreto, refinado e coerente com artigo católico/presente religioso, sem poluição visual e sem texto promocional. O cenário deve valorizar o produto, nunca competir com ele.`
+      quality:'low',
+      prompt:`Crie uma imagem comercial quadrada para e-commerce usando o MESMO ${name}. ${fidelityRule} Mantenha o produto como protagonista absoluto, ocupando a maior parte da composição. Use um cenário discreto, refinado e coerente com artigo católico/presente religioso, sem poluição visual e sem texto promocional. O cenário deve valorizar o produto, nunca competir com ele.`
     },
     {
       kind:'detalhe',
       title:'E-commerce — detalhe do produto',
-      quality:'medium',
-      prompt:`Crie uma segunda imagem comercial do MESMO ${name}. ${fidelityRule} Dê destaque secundário a um detalhe visível e realmente presente na foto de referência — por exemplo medalha, crucifixo, textura, acabamento, estampa ou ornamento — sem inventar verso, inscrições ou partes não visíveis. O produto continua claramente reconhecível e dominante; composição limpa, sofisticada e apropriada para e-commerce.`
+      quality:'low',
+      prompt:`Crie uma segunda imagem comercial quadrada do MESMO ${name}. ${fidelityRule} Dê destaque secundário a um detalhe visível e realmente presente na foto de referência — por exemplo medalha, crucifixo, textura, acabamento, estampa ou ornamento — sem inventar verso, inscrições ou partes não visíveis. O produto continua claramente reconhecível e dominante; composição limpa, sofisticada e apropriada para e-commerce.`
     }
   ];
 }
