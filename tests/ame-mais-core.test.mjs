@@ -9,6 +9,7 @@ import {
   IMAGE_OUTPUT,
   PROCESSING_STEPS,
   storagePaths,
+  resolveOpenAiKey,
 } from '../supabase/functions/ame-mais-analyze-v1/core.mjs';
 import { validatePhotoFile, buildWhatsAppUrl, buildProductCardModel } from '../ame-mais/app-core.mjs';
 
@@ -106,4 +107,24 @@ test('card de vitrine usa imagem quadrada, nome e descrição comercial', () => 
   assert.equal(card.description,'Uma peça delicada para presentear.');
   assert.equal(card.imageUrl,'https://example.com/p.webp');
   assert.equal(card.aspectRatio,'1 / 1');
+});
+
+test('usa OPENAI_API_KEY quando disponível', async () => {
+  let called=false;
+  const sb={rpc:async()=>{called=true;return{data:'vault-key',error:null}}};
+  assert.equal(await resolveOpenAiKey('env-key',sb),'env-key');
+  assert.equal(called,false);
+});
+
+test('busca chave no Vault quando variável da Edge Function não existe', async () => {
+  const sb={rpc:async(name)=>{
+    assert.equal(name,'get_conversation_worker_provider_secret_v1');
+    return{data:'vault-key',error:null};
+  }};
+  assert.equal(await resolveOpenAiKey('',sb),'vault-key');
+});
+
+test('retorna vazio se nenhuma chave estiver configurada', async () => {
+  const sb={rpc:async()=>({data:null,error:{message:'missing'}})};
+  assert.equal(await resolveOpenAiKey('',sb),'');
 });
