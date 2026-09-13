@@ -4,17 +4,20 @@ import {
   ANALYSIS_MODEL,
   ESCALATION_MODEL,
   IMAGE_MODEL,
+  IMAGE_OUTPUT,
   ANALYSIS_SCHEMA,
   buildAnalysisPrompt,
   normalizeAnalysis,
   shouldEscalate,
   buildImagePrompts,
+  storagePaths,
 } from "./core.mjs";
 
 const RESPONSES_URL = "https://api.openai.com/v1/responses";
 const IMAGE_EDIT_URL = "https://api.openai.com/v1/images/edits";
-const BUCKET = "product-images";
+const BUCKET = "ame-mais";
 const MAX_UPLOAD = 10 * 1024 * 1024;
+const RATE_LIMIT_PER_HOUR = 80;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const ALLOWED_KINDS = new Set(["principal", "ambientada", "detalhe"]);
 const ALLOWED_ORIGINS = new Set([
@@ -28,7 +31,7 @@ const cors = (origin: string | null) => {
   const allowed = Boolean(origin && (ALLOWED_ORIGINS.has(origin) || local));
   return {
     ...(allowed ? { "Access-Control-Allow-Origin": origin! } : {}),
-    "Access-Control-Allow-Headers": "apikey, authorization, content-type, x-client-info",
+    "Access-Control-Allow-Headers": "apikey, content-type, x-client-info",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin",
   };
@@ -40,6 +43,7 @@ const json = (body: unknown, status = 200, origin: string | null = null) => new 
 });
 
 const clean = (v: unknown, max = 1000) => String(v ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+const isUuid = (v: unknown) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v, 80));
 const bytesToBase64 = (bytes: Uint8Array) => {
   let binary = "";
   const chunk = 0x8000;
@@ -47,7 +51,6 @@ const bytesToBase64 = (bytes: Uint8Array) => {
   return btoa(binary);
 };
 const base64ToBytes = (s: string) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-const randomId = () => crypto.randomUUID();
 
 function finalText(data: any) {
   return (Array.isArray(data?.output) ? data.output : [])
@@ -132,19 +135,19 @@ async function validateImage(apiKey: string, source: Uint8Array, mime: string, c
   if (!text) throw new Error("validation_empty_output");
   let v;
   try { v = JSON.parse(text); } catch { throw new Error("validation_invalid_json"); }
-  const threshold = kind === "principal" ? 0.92 : kind === "ambientada" ? 0.85 : 0.82;
+  const threshold = kind === "principal" ? 0.90 : kind === "ambientada" ? 0.82 : 0.80;
   const accepted = v.same_product === true && v.color_match === true && v.shape_match === true && Number(v.fidelity_score || 0) >= threshold && (kind !== "principal" || v.identity_details_match === true);
   return { accepted, threshold, ...v };
 }
 
-async function editImage(apiKey: string, source: Uint8Array, mime: string, prompt: { quality: string, prompt: string }) {
+async function editImage(apiKey: string, source: Uint8Array, mime: string, prompt: { prompt: string }) {
   const form = new FormData();
   form.append("model", IMAGE_MODEL);
   form.append("prompt", prompt.prompt);
-  form.append("size", "1024x1024");
-  form.append("quality", prompt.quality);
-  form.append("output_format", "webp");
-  form.append("output_compression", "78");
+  form.append("size", IMAGE_OUTPUT.size);
+  form.append("quality", IMAGE_OUTPUT.quality);
+  form.append("output_format", IMAGE_OUTPUT.format);
+  form.append("output_compression", String(IMAGE_OUTPUT.compression));
   form.append("background", "opaque");
   form.append("image[]", new Blob([source], { type: mime }), "referencia-produto");
   const r = await fetch(IMAGE_EDIT_URL, {
@@ -160,16 +163,58 @@ async function editImage(apiKey: string, source: Uint8Array, mime: string, promp
   return { bytes: base64ToBytes(b64), usage: data?.usage || {}, request_id: r.headers.get("x-request-id") || null };
 }
 
-async function requireAdmin(req: Request, sb: any) {
-  const auth = req.headers.get("authorization") || "";
-  const token = auth.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return { ok: false, status: 401, error: "admin_session_required" };
-  const { data: userData, error: userError } = await sb.auth.getUser(token);
-  const user = userData?.user;
-  if (userError || !user) return { ok: false, status: 401, error: "admin_session_invalid" };
-  const { data: admin, error: adminError } = await sb.from("admin_users").select("role,is_active").eq("user_id", user.id).eq("is_active", true).maybeSingle();
-  if (adminError || !admin || !["owner", "admin"].includes(String(admin.role || ""))) return { ok: false, status: 403, error: "admin_forbidden" };
-  return { ok: true, user };
+async function sha256Hex(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return Array.from(digest).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function rateLimit(req: Request, sb: any) {
+  const ip = clean(req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown", 120);
+  const ua = clean(req.headers.get("user-agent") || "unknown", 220);
+  const fingerprint = await sha256Hex(`${ip}|${ua}`);
+  const now = new Date();
+  const { data, error } = await sb.from("ame_mais_rate_limits").select("window_started_at,request_count").eq("fingerprint", fingerprint).maybeSingle();
+  if (error) throw new Error(`rate_lookup_${clean(error.message, 160)}`);
+  const started = data?.window_started_at ? new Date(data.window_started_at) : null;
+  const expired = !started || now.getTime() - started.getTime() >= 60 * 60 * 1000;
+  const count = expired ? 0 : Number(data?.request_count || 0);
+  if (count >= RATE_LIMIT_PER_HOUR) return { ok: false, retryAfter: Math.max(60, Math.ceil((60 * 60 * 1000 - (now.getTime() - (started?.getTime() || now.getTime()))) / 1000)) };
+  const next = { fingerprint, window_started_at: expired ? now.toISOString() : started!.toISOString(), request_count: count + 1, updated_at: now.toISOString() };
+  const up = await sb.from("ame_mais_rate_limits").upsert(next, { onConflict: "fingerprint" });
+  if (up.error) throw new Error(`rate_update_${clean(up.error.message, 160)}`);
+  return { ok: true };
+}
+
+async function ensureBucket(sb: any) {
+  const existing = await sb.storage.getBucket(BUCKET);
+  if (!existing.error) return;
+  const created = await sb.storage.createBucket(BUCKET, {
+    public: true,
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "application/json"],
+    fileSizeLimit: "10MB",
+  });
+  if (created.error && !/already exists/i.test(String(created.error.message || ""))) throw new Error(`bucket_${clean(created.error.message, 180)}`);
+}
+
+async function updateRun(sb: any, sessionId: string, patch: Record<string, unknown>) {
+  const q = await sb.from("ame_mais_runs").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", sessionId);
+  if (q.error) throw new Error(`run_update_${clean(q.error.message, 180)}`);
+}
+
+async function getRun(sb: any, sessionId: string) {
+  const q = await sb.from("ame_mais_runs").select("id,status,step,source_url,analysis,images,model_analysis,model_image,error_message,created_at,updated_at,completed_at").eq("id", sessionId).maybeSingle();
+  if (q.error) throw new Error(`run_lookup_${clean(q.error.message, 180)}`);
+  return q.data;
+}
+
+async function saveResultJson(sb: any, sessionId: string) {
+  const run = await getRun(sb, sessionId);
+  if (!run) return;
+  const bytes = new TextEncoder().encode(JSON.stringify(run, null, 2));
+  const path = `runs/${sessionId}/result.json`;
+  const up = await sb.storage.from(BUCKET).upload(path, bytes, { contentType: "application/json", cacheControl: "0", upsert: true });
+  if (up.error) throw new Error(`result_json_${clean(up.error.message, 180)}`);
 }
 
 Deno.serve(async (req: Request) => {
@@ -184,57 +229,129 @@ Deno.serve(async (req: Request) => {
   const openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
   if (!supabaseUrl || !serviceKey || !openaiKey) return json({ ok: false, error: "server_config" }, 500, origin);
   const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const admin = await requireAdmin(req, sb);
-  if (!admin.ok) return json({ ok: false, error: admin.error }, admin.status, origin);
 
   let form: FormData;
   try { form = await req.formData(); } catch { return json({ ok: false, error: "invalid_form" }, 400, origin); }
   const action = clean(form.get("action") || "analyze", 40).toLowerCase();
-  const file = form.get("image");
-  if (!(file instanceof File)) return json({ ok: false, error: "image_required" }, 400, origin);
-  if (!ALLOWED_TYPES.has(file.type)) return json({ ok: false, error: "image_type_not_allowed" }, 400, origin);
-  if (file.size < 5_000 || file.size > MAX_UPLOAD) return json({ ok: false, error: "image_size_invalid" }, 400, origin);
-  const source = new Uint8Array(await file.arrayBuffer());
+  const sessionId = clean(form.get("session_id"), 80);
+  if (!isUuid(sessionId)) return json({ ok: false, error: "invalid_session_id" }, 400, origin);
 
   try {
+    await ensureBucket(sb);
+
+    if (action === "status") {
+      const run = await getRun(sb, sessionId);
+      if (!run) return json({ ok: false, error: "run_not_found" }, 404, origin);
+      return json({ ok: true, run }, 200, origin);
+    }
+
+    const limited = await rateLimit(req, sb);
+    if (!limited.ok) return json({ ok: false, error: "rate_limited", retry_after_seconds: limited.retryAfter }, 429, origin);
+
     if (action === "analyze") {
+      const file = form.get("image");
+      if (!(file instanceof File)) return json({ ok: false, error: "image_required" }, 400, origin);
+      if (!ALLOWED_TYPES.has(file.type)) return json({ ok: false, error: "image_type_not_allowed" }, 400, origin);
+      if (file.size < 5_000 || file.size > MAX_UPLOAD) return json({ ok: false, error: "image_size_invalid" }, 400, origin);
+      const source = new Uint8Array(await file.arrayBuffer());
+      const paths = storagePaths(sessionId);
+
+      const start = await sb.from("ame_mais_runs").upsert({
+        id: sessionId,
+        status: "processing",
+        step: "preparing_photo",
+        analysis: {},
+        images: {},
+        error_message: null,
+        model_analysis: null,
+        model_image: IMAGE_MODEL,
+        completed_at: null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+      if (start.error) throw new Error(`run_create_${clean(start.error.message, 180)}`);
+
+      const originalUpload = await sb.storage.from(BUCKET).upload(paths.original, source, { contentType: file.type, cacheControl: "31536000", upsert: true });
+      if (originalUpload.error) throw new Error(`source_upload_${clean(originalUpload.error.message, 180)}`);
+      const sourceUrl = sb.storage.from(BUCKET).getPublicUrl(paths.original).data.publicUrl;
+      await updateRun(sb, sessionId, { source_url: sourceUrl, step: "analyzing_product" });
+
       let result = await analyzeWithModel(openaiKey, ANALYSIS_MODEL, source, file.type);
       if (shouldEscalate(result.analysis)) {
+        await updateRun(sb, sessionId, { step: "analyzing_product" });
         const escalated = await analyzeWithModel(openaiKey, ESCALATION_MODEL, source, file.type, result.analysis);
         result = escalated.analysis.confianca_geral >= result.analysis.confianca_geral ? escalated : result;
       }
-      return json({ ok: true, analysis: result.analysis, model: result.model, image_plan: buildImagePrompts(result.analysis).map(({kind,title}) => ({kind,title})) }, 200, origin);
+      await updateRun(sb, sessionId, { step: "creating_name" });
+      await updateRun(sb, sessionId, { step: "creating_catalog_description" });
+      await updateRun(sb, sessionId, {
+        step: "creating_storefront_description",
+        analysis: result.analysis,
+        model_analysis: result.model,
+      });
+      await saveResultJson(sb, sessionId);
+      return json({ ok: true, session_id: sessionId, analysis: result.analysis, model: result.model, source_url: sourceUrl, image_plan: buildImagePrompts(result.analysis).map(({ kind, title }) => ({ kind, title })) }, 200, origin);
     }
 
     if (action === "generate_image") {
       const kind = clean(form.get("kind"), 30);
       if (!ALLOWED_KINDS.has(kind)) return json({ ok: false, error: "invalid_kind" }, 400, origin);
-      let analysis: any = {};
-      try { analysis = normalizeAnalysis(JSON.parse(String(form.get("analysis_json") || "{}"))); } catch { return json({ ok: false, error: "invalid_analysis" }, 400, origin); }
+      const run = await getRun(sb, sessionId);
+      if (!run?.source_url) return json({ ok: false, error: "run_not_ready" }, 409, origin);
+      let analysis: any = run.analysis || {};
+      const supplied = String(form.get("analysis_json") || "").trim();
+      if (supplied) {
+        try { analysis = normalizeAnalysis(JSON.parse(supplied)); } catch { return json({ ok: false, error: "invalid_analysis" }, 400, origin); }
+      }
+      const paths = storagePaths(sessionId);
+      const sourceDownload = await sb.storage.from(BUCKET).download(paths.original);
+      if (sourceDownload.error || !sourceDownload.data) throw new Error(`source_download_${clean(sourceDownload.error?.message || "missing", 180)}`);
+      const source = new Uint8Array(await sourceDownload.data.arrayBuffer());
+      const sourceMime = sourceDownload.data.type || "image/jpeg";
       const prompt = buildImagePrompts(analysis).find(x => x.kind === kind)!;
+      await updateRun(sb, sessionId, { step: `generating_${kind}`, analysis });
+
       let generated: any = null;
       let validation: any = null;
-      const maxAttempts = 2;
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        generated = await editImage(openaiKey, source, file.type, prompt);
-        validation = await validateImage(openaiKey, source, file.type, generated.bytes, kind);
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        generated = await editImage(openaiKey, source, sourceMime, prompt);
+        await updateRun(sb, sessionId, { step: `validating_${kind}` });
+        validation = await validateImage(openaiKey, source, sourceMime, generated.bytes, kind);
         if (validation.accepted) break;
+        if (attempt < 2) await updateRun(sb, sessionId, { step: `generating_${kind}` });
       }
-      if (!validation?.accepted) return json({ ok: false, error: "image_fidelity_rejected", kind, validation }, 422, origin);
+      if (!validation?.accepted) {
+        await updateRun(sb, sessionId, { error_message: `image_fidelity_rejected:${kind}`, step: `validating_${kind}` });
+        await saveResultJson(sb, sessionId);
+        return json({ ok: false, error: "image_fidelity_rejected", kind, validation }, 422, origin);
+      }
 
-      const session = clean(form.get("session_id"), 80) || randomId();
-      const safeSession = /^[0-9a-f-]{20,80}$/i.test(session) ? session : randomId();
-      const path = `ame-mais/${admin.user.id}/${safeSession}/${kind}-${Date.now()}.webp`;
-      const upload = await sb.storage.from(BUCKET).upload(path, generated.bytes, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
+      await updateRun(sb, sessionId, { step: "saving_supabase" });
+      const outputPath = (paths as any)[kind];
+      const upload = await sb.storage.from(BUCKET).upload(outputPath, generated.bytes, { contentType: "image/webp", cacheControl: "31536000", upsert: true });
       if (upload.error) throw new Error(`storage_upload_${clean(upload.error.message, 180)}`);
-      const publicUrl = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-      return json({ ok: true, kind, title: prompt.title, url: publicUrl, validation, model: IMAGE_MODEL }, 200, origin);
+      const publicUrl = sb.storage.from(BUCKET).getPublicUrl(outputPath).data.publicUrl;
+      const latest = await getRun(sb, sessionId);
+      const images = { ...(latest?.images || {}), [kind]: { kind, title: prompt.title, url: publicUrl, validation, model: IMAGE_MODEL, quality: IMAGE_OUTPUT.quality, size: IMAGE_OUTPUT.size } };
+      const final = Boolean(images.principal && images.ambientada && images.detalhe);
+      await updateRun(sb, sessionId, {
+        images,
+        model_image: IMAGE_MODEL,
+        error_message: null,
+        status: final ? "completed" : "processing",
+        step: final ? "completed" : "saving_supabase",
+        completed_at: final ? new Date().toISOString() : null,
+      });
+      await saveResultJson(sb, sessionId);
+      return json({ ok: true, kind, title: prompt.title, url: publicUrl, validation, model: IMAGE_MODEL, quality: IMAGE_OUTPUT.quality, size: IMAGE_OUTPUT.size }, 200, origin);
     }
 
     return json({ ok: false, error: "unknown_action" }, 400, origin);
   } catch (e) {
     const message = clean((e as Error)?.message || e, 300);
     console.error("ame-mais", action, message);
+    if (isUuid(sessionId)) {
+      try { await updateRun(sb, sessionId, { status: "error", error_message: message }); await saveResultJson(sb, sessionId); } catch { /* noop */ }
+    }
     return json({ ok: false, error: "processing_failed", detail: message }, 500, origin);
   }
 });
