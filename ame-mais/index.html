@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#7b5b52">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Ame Mais · Cadastro por Foto</title>
+  <link rel="stylesheet" href="./styles.css?v=20260912-1">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-head">
+      <div class="brand-mark">AM</div>
+      <div><h1>Ame Mais</h1><p>Cadastro inteligente de artigos católicos</p></div>
+      <span class="test-badge">TESTE</span>
+    </header>
+
+    <section id="loginCard" class="card login-card">
+      <span class="eyebrow">Acesso protegido</span>
+      <h2>Digite o PIN do Admin</h2>
+      <p>O mesmo código de 6 dígitos usado no Admin V3.</p>
+      <form id="loginForm" class="pin-form">
+        <input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="••••••" aria-label="PIN do Admin">
+        <button class="btn primary" type="submit">Entrar</button>
+      </form>
+      <div id="loginMessage" class="message"></div>
+    </section>
+
+    <section id="appArea" class="hidden">
+      <section class="card capture-card">
+        <div class="section-title"><div><span class="eyebrow">1 · Foto</span><h2>Fotografe o produto</h2></div><button id="logoutButton" class="link-button" type="button">Sair</button></div>
+        <p class="hint">Enquadre o produto inteiro, com boa luz. A foto será a referência para nome, descrição e imagens comerciais.</p>
+        <div id="photoStage" class="photo-stage empty">
+          <img id="photoPreview" alt="Prévia do produto">
+          <div id="emptyPhoto" class="empty-photo"><div class="camera-icon">◉</div><strong>Nenhuma foto</strong><span>Tire uma foto ou escolha da galeria</span></div>
+        </div>
+        <div class="capture-actions">
+          <label class="btn primary camera-button">📷 Tirar foto<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden></label>
+          <label class="btn secondary">🖼️ Galeria<input id="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></label>
+        </div>
+        <button id="analyzeButton" class="btn analyze" type="button" disabled>✨ Analisar e criar produto</button>
+        <div id="mainMessage" class="message"></div>
+      </section>
+
+      <section id="progressCard" class="card hidden">
+        <span class="eyebrow">Processando</span>
+        <h2 id="progressTitle">Analisando a foto…</h2>
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <p id="progressText" class="hint">Identificando o tipo do produto e suas características.</p>
+      </section>
+
+      <section id="resultArea" class="hidden">
+        <section class="card">
+          <div class="section-title"><div><span class="eyebrow">2 · Cadastro</span><h2>Nome e características</h2></div><span id="confidenceBadge" class="confidence">—</span></div>
+          <label class="field"><span>Nome do produto</span><input id="productName" type="text"></label>
+          <div class="taxonomy-grid">
+            <label class="field"><span>Tipo</span><input id="fieldType" type="text"></label>
+            <label class="field"><span>Devoção / tema</span><input id="fieldDevotion" type="text"></label>
+            <label class="field"><span>Material / modelo</span><input id="fieldMaterial" type="text"></label>
+            <label class="field"><span>Cor / acabamento</span><input id="fieldColor" type="text"></label>
+            <label class="field full"><span>Diferencial / tamanho</span><input id="fieldDetail" type="text"></label>
+          </div>
+          <div id="reviewWarning" class="review-warning hidden"></div>
+        </section>
+
+        <section class="card">
+          <span class="eyebrow">3 · Textos</span>
+          <h2>Descrições</h2>
+          <label class="field"><span>Descrição para cadastro e pesquisa</span><textarea id="catalogDescription" rows="5"></textarea></label>
+          <label class="field"><span>Descrição comercial para a vitrine</span><textarea id="storefrontDescription" rows="5"></textarea></label>
+          <div class="small-actions"><button id="copyName" class="btn small secondary" type="button">Copiar nome</button><button id="copyStorefront" class="btn small secondary" type="button">Copiar descrição da vitrine</button></div>
+          <div class="search-terms"><strong>Termos de busca</strong><div id="searchTerms"></div></div>
+        </section>
+
+        <section class="card">
+          <div class="section-title"><div><span class="eyebrow">4 · Vitrine</span><h2>Imagens comerciais</h2></div><span class="image-count">3 imagens</span></div>
+          <p class="hint">A primeira é a foto principal extremamente fiel. As outras duas ajudam a vender sem descaracterizar o produto.</p>
+          <div id="imageGrid" class="image-grid"></div>
+        </section>
+
+        <section class="card share-card">
+          <span class="eyebrow">5 · Compartilhar</span>
+          <h2>Pronto para usar</h2>
+          <button id="shareWhatsApp" class="btn whatsapp" type="button">Compartilhar no WhatsApp</button>
+          <button id="newProduct" class="btn secondary" type="button">Cadastrar outro produto</button>
+        </section>
+      </section>
+    </section>
+  </main>
+  <div id="toastRegion" class="toasts" aria-live="polite"></div>
+  <script type="module" src="./app.js?v=20260912-1"></script>
+</body>
+</html>
