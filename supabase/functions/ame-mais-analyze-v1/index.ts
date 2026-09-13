@@ -11,6 +11,7 @@ import {
   shouldEscalate,
   buildImagePrompts,
   storagePaths,
+  resolveOpenAiKey,
 } from "./core.mjs";
 
 const RESPONSES_URL = "https://api.openai.com/v1/responses";
@@ -226,9 +227,11 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
-  if (!supabaseUrl || !serviceKey || !openaiKey) return json({ ok: false, error: "server_config" }, 500, origin);
+  let openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
+  if (!supabaseUrl || !serviceKey) return json({ ok: false, error: "server_config" }, 500, origin);
   const sb = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  openaiKey = await resolveOpenAiKey(openaiKey, sb);
+  if (!openaiKey) return json({ ok: false, error: "server_config" }, 500, origin);
 
   let form: FormData;
   try { form = await req.formData(); } catch { return json({ ok: false, error: "invalid_form" }, 400, origin); }
