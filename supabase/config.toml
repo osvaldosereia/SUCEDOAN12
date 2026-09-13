@@ -138,3 +138,7 @@ verify_jwt = false
 # Ame Mais é público, sem login/PIN; a função aplica suas próprias regras de origem e rate limit.
 [functions.ame-mais-analyze-v1]
 verify_jwt = false
+
+# Ame Mais 2 é uma rota evolutiva pública e isolada da v1.
+[functions.ame-mais-analyze-v2]
+verify_jwt = false
