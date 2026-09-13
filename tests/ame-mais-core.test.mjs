@@ -91,7 +91,8 @@ test('prompts não adicionam logo, marca, selo ou texto promocional', () => {
   for (const p of prompts) {
     assert.doesNotMatch(p.prompt,/#ECECEC|fundo cinza/i);
     assert.match(p.prompt,/ultra[- ]?real|fotogr[aá]fic/i);
-    assert.match(p.prompt,/sem logo|sem marca|sem selo|sem texto promocional/i);
+    assert.match(p.prompt,/n[aã]o adicione logo, marca, selo/i);
+    assert.match(p.prompt,/texto sobreposto/i);
   }
 });
 
