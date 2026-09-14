@@ -1,10 +1,12 @@
 const BUY_URL='../comprar/';
 
 function redirectLegacyHash(event){
-  if(location.hash!=='#storefront')return false;
-  event?.stopImmediatePropagation?.();
-  location.replace(BUY_URL);
-  return true;
+  if(location.hash==='#storefront'){
+    event?.stopImmediatePropagation?.();
+    location.replace(BUY_URL);
+    return true;
+  }
+  return false;
 }
 
 redirectLegacyHash();
