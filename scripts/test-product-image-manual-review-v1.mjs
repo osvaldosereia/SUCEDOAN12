@@ -62,4 +62,12 @@ assert.match(admin,/product_ids/);
 assert.match(admin,/approved/);
 assert.match(admin,/skipped/);
 
+// A bad-image card remains selectable when the visible image is source/current
+// and image_ai_url is missing. Only processing/no-image rows remain blocked.
+assert.match(js,/function reviewCandidateUrl\(p\).*image_ai_url\|\|p\.image_source_url\|\|p\.image_url/s);
+assert.match(js,/function eligibleBadImage\(p\).*reviewCandidateUrl\(p\)/s);
+assert.match(js,/String\(p\.image_ai_status\|\|''\)!=='processing'/);
+assert.match(admin,/select\("id,is_active,image_ai_status,image_ai_ignored,image_ai_manual_review_required,image_ai_url,image_source_url,image_url,image_ai_admin_note"\)/);
+assert.match(admin,/const candidate=safeSourceUrl\(p\.image_ai_url\|\|p\.image_source_url\|\|p\.image_url\)/);
+
 console.log('product image manual review contract ok');
