@@ -44,14 +44,14 @@ begin
   end if;
   return new;
 exception when others then
-  -- Never break image production because review metadata was malformed.
+  -- Review metadata must never break image production.
   return new;
 end;
 $$;
 
 drop trigger if exists trg_product_image_source_review_flag_v1 on public.products;
 create trigger trg_product_image_source_review_flag_v1
-before insert or update of image_ai_validation,is_active on public.products
+before update of image_ai_validation,is_active on public.products
 for each row execute function public.product_image_source_review_flag_v1();
 
 -- Legacy automatic fallbacks become manual-review items instead of silently
