@@ -4,6 +4,7 @@ const html=readFileSync('comprar/index.html','utf8');
 const js=readFileSync('comprar/chat-light-v2.js','utf8');
 const css=readFileSync('comprar/chat-light-v2.css','utf8');
 const edge=readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
+const chatEdge=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const ingestMakeEdge=readFileSync('supabase/functions/whatsapp-ingest-make-v1/index.ts','utf8');
 assert.match(html,/chat-light-v2\.css/);
 assert.match(html,/chat-light-v2\.js/);
@@ -72,4 +73,13 @@ assert.match(edge,/customer_subcategory/,'products API must filter by customer_s
 assert.match(edge,/customer_subsubcategory/,'products API must filter by customer_subsubcategory');
 assert.match(edge,/subcategories/,'filters response must expose first-level customer subcategories');
 assert.match(edge,/subsubcategories/,'filters response must expose second-level customer subsubcategories');
+
+// Product +/- must feel immediate: update the UI/cart optimistically, allow rapid taps,
+// coalesce server synchronization and request only a compact cart summary from the mutation endpoint.
+assert.match(js,/applyOptimisticProductDelta/,'product quantity must update local cart totals immediately');
+assert.match(js,/syncProductQty/,'rapid quantity changes must be synchronized through a per-product queue');
+assert.match(js,/compact:true/,'quantity mutation must request the compact server response');
+assert.doesNotMatch(js,/async function changeProductQty[\s\S]{0,700}pointerEvents='none'/,'product card must not be locked while quantity is saving');
+assert.match(chatEdge,/body\?\.compact===true/,'set_quantity must support a compact response');
+assert.match(chatEdge,/cart_summary/,'compact quantity response must return the authoritative cart total');
 console.log('light_shopping_chat_v2_ok');
