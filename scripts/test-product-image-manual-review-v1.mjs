@@ -17,6 +17,12 @@ const sourceSafety=readFileSync(sourceSafetyUrl,'utf8');
 const badBulkUrl=new URL('../supabase/migrations/20260914195000_product_image_bad_bulk_grid18_v1.sql',import.meta.url);
 assert.ok(existsSync(badBulkUrl),'bad image bulk grid18 migration must exist');
 const badBulk=readFileSync(badBulkUrl,'utf8');
+const bulkUiUrl=new URL('../admin-v3/image-bulk-grid18.js',import.meta.url);
+assert.ok(existsSync(bulkUiUrl),'bulk grid18 admin module must exist');
+const bulkUi=readFileSync(bulkUiUrl,'utf8');
+const bulkAdminUrl=new URL('../supabase/functions/admin-product-images-bulk-grid18-v1/index.ts',import.meta.url);
+assert.ok(existsSync(bulkAdminUrl),'bulk grid18 admin edge function must exist');
+const bulkAdmin=readFileSync(bulkAdminUrl,'utf8');
 
 assert.match(gridImage,/f\.append\('quality','medium'\)/);
 assert.match(grid,/items\.length!==18/);
@@ -56,26 +62,30 @@ assert.match(css,/\.image-results[^\{]*\{[^}]*grid-template-columns:repeat\(4,mi
 assert.match(css,/\.issue-row[^\{]*\{[^}]*display:flex[^}]*flex-direction:column/s);
 assert.match(css,/\.issue-thumb[^\{]*\{[^}]*width:100%[^}]*aspect-ratio:1/s);
 
-for(const id of ['badImageBulkActions','selectAllBadImages','selectedBadImagesCount','bulkApproveSelected','bulkRegenerateSelectedGrid18']) assert.match(page,new RegExp(`id=["']${id}["']`));
+for(const id of ['badImageBulkActions','selectAllBadImages','selectedBadImagesCount','bulkApproveSelected','selectAllBadImagesGrid18','grid18BadSelectionCount','bulkRegenerateSelectedGrid18']) assert.match(page,new RegExp(`id=["']${id}["']`));
 assert.match(page,/Selecionar todos os ruins/);
 assert.match(page,/Gerar selecionados em lotes de 18/);
+assert.match(page,/image-bulk-grid18\.js/);
 assert.match(js,/selectedBadImages:new Set\(\)/);
 assert.match(js,/data-bulk-select/);
 assert.match(js,/bulk_approve_manual/);
-assert.match(js,/list_bad_image_ids/);
-assert.match(js,/bulk_regenerate_grid18/);
-assert.match(js,/product_ids:/);
-assert.match(js,/Math\.ceil\(count\/18\)/);
 assert.doesNotMatch(js,/confirm\([^)]*Aprovar selecionadas/s);
 assert.match(admin,/action==="bulk_approve_manual"/);
-assert.match(admin,/action==="list_bad_image_ids"/);
-assert.match(admin,/action==="bulk_regenerate_grid18"/);
-assert.match(admin,/queue_product_image_bad_grid18_v1/);
-assert.match(admin,/dispatch_product_image_grid18_worker_v2/);
-assert.match(admin,/product_ids/);
 assert.match(admin,/approved/);
 assert.match(admin,/skipped/);
 
+assert.match(bulkUi,/list_bad_image_ids/);
+assert.match(bulkUi,/bulk_regenerate_grid18/);
+assert.match(bulkUi,/all_bad/);
+assert.match(bulkUi,/product_ids/);
+assert.match(bulkUi,/Math\.ceil\(count\/18\)/);
+assert.match(bulkAdmin,/action===["']list_bad_image_ids["']/);
+assert.match(bulkAdmin,/action===["']bulk_regenerate_grid18["']/);
+assert.match(bulkAdmin,/queue_product_image_bad_grid18_v1/);
+assert.match(bulkAdmin,/restart_product_image_grid18_drain_v1/);
+assert.match(bulkAdmin,/dispatch_product_image_grid18_worker_v2/);
+
+assert.match(badBulk,/list_product_image_bad_grid18_v1/);
 assert.match(badBulk,/queue_product_image_bad_grid18_v1/);
 assert.match(badBulk,/image_ai_pipeline_version\s*=\s*null/i);
 assert.match(badBulk,/image_ai_manual_review_required\s*=\s*true/i);
@@ -83,8 +93,10 @@ assert.match(badBulk,/force_individual\s*=\s*false/i);
 assert.match(badBulk,/grid_attempts\s*=\s*0/i);
 assert.match(badBulk,/claim_product_image_grid18_batch_v2/);
 assert.match(badBulk,/order by[\s\S]*image_ai_manual_review_required[\s\S]*storefront_featured/i);
-assert.match(grid,/image_ai_manual_review_required:false/);
-assert.match(grid,/image_ai_manual_review_reason:null/);
+assert.match(badBulk,/restart_product_image_grid18_drain_v1/);
+assert.match(badBulk,/product_image_clear_manual_review_after_grid18_v1/);
+assert.match(badBulk,/image_ai_manual_review_required\s*:=\s*false/i);
+assert.match(badBulk,/image_ai_manual_review_reason\s*:=\s*null/i);
 
 assert.match(candidateFallback,/product_image_manual_candidate_fallback_v1/);
 assert.match(candidateFallback,/image_ai_manual_review_required/);
