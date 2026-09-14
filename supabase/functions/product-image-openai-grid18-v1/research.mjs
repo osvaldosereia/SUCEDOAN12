@@ -1,5 +1,6 @@
 import {arr,clean,fetchExternalImage,fetchExternalPage,score} from './source.mjs';
 import {inspectSource} from './image.mjs';
+import {normalizeExternalSource} from './source-normalize.mjs';
 
 const RESPONSES_URL='https://api.openai.com/v1/responses';
 const RESEARCH_MODEL='gpt-5.6-luna';
@@ -14,4 +15,15 @@ function metaCandidates(html,pageUrl){const patterns=[/<meta[^>]+(?:property|nam
 async function candidateUrls(result){const out=[];const direct=safeUrl(result?.image_url),page=safeUrl(result?.source_page_url);if(direct)out.push({url:direct,page:page||null,kind:'direct'});if(page){try{const p=await fetchExternalPage(page);for(const url of metaCandidates(p.text,p.url)){if(!out.some(x=>x.url===url))out.push({url,page:p.url,kind:'page_meta'});if(out.length>=7)break;}}catch{}}return out;}
 async function inspectCandidate(key,product,c){try{const source=await fetchExternalImage(c.url),checked=await inspectSource(key,product,source);return{candidate:c,source,checked,error:null};}catch(e){return{candidate:c,source:null,checked:null,error:clean(e instanceof Error?e.message:e,180)};}}
 
-export async function findReplacementSource(key,product,rejectedSourceUrl=''){const researched=await webResearch(key,product),r=researched.result;if(r?.found!==true||score(r?.confidence)<0.80)return{found:false,reason:'no_confident_web_source',research:researched};const candidates=(await candidateUrls(r)).filter(c=>!rejectedSourceUrl||c.url!==rejectedSourceUrl).slice(0,3);const checked=await Promise.all(candidates.map(c=>inspectCandidate(key,product,c))),attempts=checked.map(x=>({url:x.candidate.url,accepted:x.checked?.accepted===true,inspection:x.checked?.inspection||null,error:x.error}));const winner=checked.find(x=>x.checked?.accepted===true&&x.source);if(winner)return{found:true,source:{...winner.source,field:'web_research',origin:'web_research_verified_v2',source_page_url:winner.candidate.page||safeUrl(r?.source_page_url)||null,inspection:winner.checked.inspection},research:researched,attempts};return{found:false,reason:'researched_candidates_failed_visual_inspection',research:researched,attempts};}
+export async function findReplacementSource(key,product,rejectedSourceUrl=''){
+  const researched=await webResearch(key,product),r=researched.result;
+  if(r?.found!==true||score(r?.confidence)<0.80)return{found:false,reason:'no_confident_web_source',research:researched};
+  const candidates=(await candidateUrls(r)).filter(c=>!rejectedSourceUrl||c.url!==rejectedSourceUrl).slice(0,3);
+  const checked=await Promise.all(candidates.map(c=>inspectCandidate(key,product,c))),attempts=checked.map(x=>({url:x.candidate.url,accepted:x.checked?.accepted===true,inspection:x.checked?.inspection||null,error:x.error}));
+  const winner=checked.find(x=>x.checked?.accepted===true&&x.source);
+  if(winner){
+    const normalized=await normalizeExternalSource(winner.source);
+    return{found:true,source:{...normalized,field:'web_research',origin:'web_research_verified_v2',source_page_url:winner.candidate.page||safeUrl(r?.source_page_url)||null,inspection:winner.checked.inspection},research:researched,attempts};
+  }
+  return{found:false,reason:'researched_candidates_failed_visual_inspection',research:researched,attempts};
+}
