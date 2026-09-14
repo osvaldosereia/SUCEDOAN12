@@ -30,6 +30,8 @@ for(const adminPage of [html,images,names]){
 }
 assert.match(html,/comprar-ui\.js/,'Admin principal deve carregar adaptação Comprar');
 assert.match(comprarUi,/location\.hash===['"]#storefront['"]/,'hash legado deve ser redirecionado para Comprar');
+assert.match(comprarUi,/addEventListener\(['"]hashchange['"]/,'hash legado digitado depois do carregamento também deve ser bloqueado');
+assert.match(comprarUi,/stopImmediatePropagation\(\)/,'painel legado não deve renderizar nem por um instante');
 assert.match(comprarUi,/Pedidos recentes do Comprar/);
 assert.match(comprarUi,/Somente pedidos recebidos pelo Comprar/);
 assert.match(comprarUi,/Destaque no Comprar/);
