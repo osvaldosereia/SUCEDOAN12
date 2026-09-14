@@ -66,6 +66,10 @@ verify_jwt = false
 [functions.admin-v3-api]
 verify_jwt = false
 
+# Gestão de nomes do Admin V3: mesma política do Admin, com CORS restrito e service role apenas no servidor.
+[functions.admin-v3-product-names]
+verify_jwt = false
+
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = true
 
