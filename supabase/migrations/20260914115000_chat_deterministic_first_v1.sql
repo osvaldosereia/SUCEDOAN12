@@ -126,19 +126,19 @@ with seed(question,variations,answer,response_mode,tool_config,priority) as (
   ('Quero produtos de mercearia',array['Mercearia','Quero alimentos','Quero mantimentos','Produtos de mercado','Comida','Produtos para despensa']::text[],
    'Veja os produtos de mercearia disponíveis.', 'products','{"category":"mercearia"}'::jsonb,86),
 
-  ('Quero produtos de limpeza e lavanderia',array['Quero produtos de limpeza','Quero produtos de lavanderia','Quero produtos para lavar roupa','Produtos para lavar roupa','Lavar roupa','Sabão em pó','Detergente','Amaciante','Desinfetante','Água sanitária','Alvejante','Quero coisas para limpar a casa','Preciso fazer uma compra de limpeza completa']::text[],
+  ('Quero produtos de limpeza e lavanderia',array['Quero produtos de limpeza','Quero produtos de lavanderia','Quero produtos para lavar roupa','Produtos para lavar roupa','Lavar roupa','Quero coisas para limpar a casa','Preciso fazer uma compra de limpeza completa']::text[],
    'Veja os produtos de limpeza e lavanderia.', 'products','{"category":"limpeza_lavanderia"}'::jsonb,86),
 
-  ('Quero produtos de higiene e beleza',array['Higiene e beleza','Quero produtos de higiene','Quero shampoo','Quero sabonete','Quero desodorante','Produtos de beleza','Cuidados pessoais','Quero fralda']::text[],
+  ('Quero produtos de higiene e beleza',array['Higiene e beleza','Quero produtos de higiene','Produtos de beleza','Cuidados pessoais','Quero cuidados pessoais']::text[],
    'Veja os produtos de higiene e beleza.', 'products','{"category":"higiene_beleza"}'::jsonb,86),
 
-  ('Quero produtos para meu pet',array['Quero produtos para cachorro','Quero produtos para gato','Tem coisa para cachorro?','Tem coisa para gato?','Produtos pet','Quero ração','Quero tapete higiênico']::text[],
+  ('Quero produtos para meu pet',array['Quero produtos para cachorro','Quero produtos para gato','Tem coisa para cachorro?','Tem coisa para gato?','Produtos pet','Casa e pet']::text[],
    'Veja os produtos de Casa e Pet.', 'products','{"category":"casa_pet"}'::jsonb,86),
 
-  ('Quero produtos para café da manhã',array['Café da manhã','Quero leite e coisas de café da manhã','Produtos para o café','Quero cereal','Quero leite','Coisas para o café da manhã']::text[],
+  ('Quero produtos para café da manhã',array['Café da manhã','Quero leite e coisas de café da manhã','Produtos para o café','Quero cereal','Coisas para o café da manhã']::text[],
    'Vou mostrar os produtos disponíveis para café da manhã.', 'product_lookup','{"query":"CAFÉ DA MANHÃ"}'::jsonb,85),
 
-  ('Vocês têm este produto?',array['Tem leite?','Tem arroz?','Quanto custa o leite?','Qual o preço desse produto?','Vocês vendem esse produto?','Tem esse produto?','Quanto custa OMO?','Tem Downy?','Tem fralda tamanho M?','Tem papel higiênico?']::text[],
+  ('Vocês têm este produto?',array['Tem leite?','Tem arroz?','Quanto custa o leite?','Qual o preço desse produto?','Vocês vendem esse produto?','Tem esse produto?','Quanto custa OMO?','Tem Downy?','Tem fralda tamanho M?','Tem papel higiênico?','Quero amaciante Downy','Quero shampoo','Quero sabonete','Quero desodorante','Quero fralda','Quero ração','Quero tapete higiênico']::text[],
    'Vou consultar o produto e o preço para você.', 'product_lookup','{}'::jsonb,84),
 
   ('Quero ver as ofertas',array['Quais produtos estão em promoção?','Tem alguma oferta hoje?','O que está em promoção?','Promoções','Ofertas de hoje','O que está mais barato hoje?']::text[],
