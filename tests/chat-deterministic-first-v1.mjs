@@ -19,6 +19,12 @@ assert.match(chat,/rankCandidateRules/,'IA deve receber candidatos ranqueados pe
 assert.match(chat,/resolveProductLookup/,'texto curto de produto deve ser resolvido no banco antes da IA');
 assert.match(chat,/resolveBasketInsight/,'perguntas de preço\/orçamento de cesta devem usar dados reais antes da IA');
 assert.match(chat,/generative_ai_enabled/,'motor deve respeitar IA generativa desligada');
+assert.ok(chat.includes("if(!/\\b(cesta|bonini|koblenz|economica)/.test(s))return null;"),'comparações Bonini/Koblenz devem usar dados das cestas mesmo sem a palavra cesta');
+assert.match(chat,/productLookupTerms/,'busca de produto deve tentar termos menores antes de recorrer à IA');
+const deterministicBlock=chat.slice(chat.indexOf('function deterministic'),chat.indexOf('function ruleScore'));
+for(const specific of ['amaciante','desinfetante','shampoo','sabonete','desodorante','fralda','racao','ração','tapete higienico','tapete higiênico']){
+  assert.ok(!deterministicBlock.includes(specific),`produto específico ${specific} não deve abrir categoria inteira no atalho determinístico`);
+}
 
 const intentCount=(migration.match(/-- INTENT:/g)||[]).length;
 assert.ok(intentCount>=20&&intentCount<=35,`esperadas 20-35 intenções comerciais, encontradas ${intentCount}`);
