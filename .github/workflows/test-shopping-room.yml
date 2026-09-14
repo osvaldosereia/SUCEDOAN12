@@ -10,6 +10,7 @@ on:
       - 'catalogo/index.html'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
+      - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'supabase/functions/shopping-room-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
@@ -28,6 +29,7 @@ on:
       - 'admin-v3/chat-menu-admin.*'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
+      - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
       - 'supabase/functions/shopping-chat-menu-v1/**'
@@ -58,6 +60,7 @@ jobs:
           node --check admin-v3/chat-menu-admin.js
           node scripts/test-light-shopping-chat-v2.mjs
           node scripts/test-chat-helper-menu-v1.mjs
+          node scripts/test-shopping-chat-routing-v1.mjs
       - name: Estrutura pública
         shell: bash
         run: |
