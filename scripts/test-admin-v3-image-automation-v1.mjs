@@ -12,9 +12,9 @@ assert.match(page,/18 produtos/);
 for(const id of ['runNow','automationToggle','intervalSelect','saveFrequency','refreshData','recentResults','statBadImages','repairManualPrompt','generateIndividualManual']) assert.match(page,new RegExp(`id=["']${id}["']`));
 assert.match(js,/Authorization/);assert.match(js,/Bearer/);assert.match(js,/admin-product-images-v1/);
 // Expired/invalid refresh tokens must return to the PIN unlock panel instead of only showing toasts.
-assert.match(js,/function authError\(/);
-assert.match(js,/code:'admin_session_invalid'/);
+assert.match(js,/function authError\([^\n]*admin_session_invalid/);
 assert.match(js,/localStorage\.removeItem\(AUTH_KEY\)/);
+assert.match(js,/throw authError/);
 assert.match(js,/unlockPanel.*remove\('hidden'\)/s);
 for(const action of ['status','run_now','configure','retry_product','generate_manual']) assert.match(edge,new RegExp(action));
 assert.match(edge,/admin_users/);assert.match(edge,/sb\.auth\.getUser/);
