@@ -3,7 +3,7 @@ import {CONFIG} from './config.js';
 const $=id=>document.getElementById(id);
 const AUTH_KEY='da_admin_v3_auth';
 const state={triage:{bad_images:[],unprocessed:[],problems:[],pending:[],ignored:[]},stats:{},current:null};
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('pt-BR')};
 const money=v=>v==null?'—':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'USD',minimumFractionDigits:4,maximumFractionDigits:4});
 const toast=(m,k='')=>{const n=document.createElement('div');n.className=`toast ${k}`.trim();n.textContent=m;$('toastRegion').append(n);setTimeout(()=>n.remove(),k==='error'?5000:2800)};
