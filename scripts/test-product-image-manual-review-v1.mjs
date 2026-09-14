@@ -10,6 +10,7 @@ const gridImage=r('supabase/functions/product-image-openai-grid18-v1/image.mjs')
 const policy=r('supabase/functions/product-image-openai-grid18-v1/policy.mjs');
 const manual=r('supabase/functions/product-image-manual-v1/index.ts');
 const migration=r('supabase/migrations/20260914100500_product_image_manual_review_v1.sql');
+const candidateFallback=r('supabase/migrations/20260914185000_product_image_manual_candidate_fallback_v1.sql');
 
 assert.match(gridImage,/f\.append\('quality','medium'\)/);
 assert.match(grid,/items\.length!==18/);
@@ -62,12 +63,17 @@ assert.match(admin,/product_ids/);
 assert.match(admin,/approved/);
 assert.match(admin,/skipped/);
 
-// A bad-image card remains selectable when the visible image is source/current
-// and image_ai_url is missing. Only processing/no-image rows remain blocked.
-assert.match(js,/function reviewCandidateUrl\(p\).*image_ai_url\|\|p\.image_source_url\|\|p\.image_url/s);
-assert.match(js,/function eligibleBadImage\(p\).*reviewCandidateUrl\(p\)/s);
-assert.match(js,/String\(p\.image_ai_status\|\|''\)!=='processing'/);
-assert.match(admin,/select\("id,is_active,image_ai_status,image_ai_ignored,image_ai_manual_review_required,image_ai_url,image_source_url,image_url,image_ai_admin_note"\)/);
-assert.match(admin,/const candidate=safeSourceUrl\(p\.image_ai_url\|\|p\.image_source_url\|\|p\.image_url\)/);
+// Manual review must always expose a selectable trusted candidate when a visible
+// source/current image exists, even when generation did not produce image_ai_url.
+assert.match(candidateFallback,/product_image_manual_candidate_fallback_v1/);
+assert.match(candidateFallback,/image_ai_manual_review_required/);
+assert.match(candidateFallback,/image_ai_url/);
+assert.match(candidateFallback,/image_source_url/);
+assert.match(candidateFallback,/image_url/);
+assert.match(candidateFallback,/raw\.githubusercontent\.com/);
+assert.match(candidateFallback,/ssbesxgaijknwsjbsbcz\.supabase\.co/);
+assert.match(candidateFallback,/create trigger/i);
+assert.match(candidateFallback,/update public\.products/i);
+assert.match(candidateFallback,/image_ai_status[^\n]*processing/i);
 
 console.log('product image manual review contract ok');
