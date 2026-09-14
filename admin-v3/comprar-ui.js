@@ -2,7 +2,7 @@ const BUY_URL='../comprar/';
 
 function redirectLegacyHash(event){
   if(location.hash==='#storefront'){
-    event?.stopImmediatePropagation?.();
+    if(event)event.stopImmediatePropagation();
     location.replace(BUY_URL);
     return true;
   }
