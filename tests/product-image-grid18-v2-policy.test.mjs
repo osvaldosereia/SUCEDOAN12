@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   firebaseProductActive,
   sourceInspectionAccepted,
+  sourceRecoverableForGrid,
   finalValidationAccepted,
 } from '../supabase/functions/product-image-openai-grid18-v1/policy.mjs';
 import {parseResearchJson} from '../supabase/functions/product-image-openai-grid18-v1/research.mjs';
@@ -28,6 +29,15 @@ test('source inspection hard-rejects crop, bad cutout, extras and incomplete pro
   assert.equal(sourceInspectionAccepted({ ...clean, bad_cutout: true }), false);
   assert.equal(sourceInspectionAccepted({ ...clean, extra_elements: true }), false);
   assert.equal(sourceInspectionAccepted({ ...clean, product_complete: false }), false);
+});
+
+test('a complete identifiable source with removable clutter can still feed the grid after web research fails', () => {
+  const messy={same_product_confidence:0.97,product_complete:true,bad_crop:true,bad_cutout:false,extra_elements:true,front_or_usable_view:true,source_quality_score:0.72};
+  assert.equal(sourceInspectionAccepted(messy),false);
+  assert.equal(sourceRecoverableForGrid(messy),true);
+  assert.equal(sourceRecoverableForGrid({...messy,product_complete:false}),false);
+  assert.equal(sourceRecoverableForGrid({...messy,bad_cutout:true}),false);
+  assert.equal(sourceRecoverableForGrid({...messy,same_product_confidence:0.70}),false);
 });
 
 test('final validation only accepts a clean professional whole product', () => {
