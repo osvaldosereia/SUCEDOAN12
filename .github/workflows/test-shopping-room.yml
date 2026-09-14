@@ -12,6 +12,8 @@ on:
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
+      - 'tests/chat-deterministic-query-engine-v2.mjs'
+      - 'supabase/functions/_shared/deterministic-query-engine.js'
       - 'supabase/functions/shopping-room-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
@@ -33,6 +35,8 @@ on:
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
+      - 'tests/chat-deterministic-query-engine-v2.mjs'
+      - 'supabase/functions/_shared/deterministic-query-engine.js'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
       - 'supabase/functions/shopping-chat-menu-v1/**'
@@ -66,6 +70,7 @@ jobs:
           node scripts/test-chat-helper-menu-v1.mjs
           node scripts/test-shopping-chat-routing-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
+          node tests/chat-deterministic-query-engine-v2.mjs
       - name: Estrutura pública
         shell: bash
         run: |
