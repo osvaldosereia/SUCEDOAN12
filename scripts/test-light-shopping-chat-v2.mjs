@@ -62,6 +62,16 @@ assert.match(edge,/\.order\('name'/);
 assert.match(edge,/\.range\(offset,offset\+limit-1\)/);
 assert.match(edge,/action==='filters'/);
 
+// Product carousel UX: make the product photo more prominent and the title slightly more compact.
+assert.match(css,/\.product img\{[^}]*height:132px/,'product carousel image must be taller');
+assert.match(css,/\.product h3\{[^}]*font-size:13px/,'product carousel title must use a slightly smaller font');
+
+// Phone lookup UX: a typo must not trap the customer in the new-customer form.
+assert.match(addon,/function showPhoneNotFound/,'phone lookup must have an explicit not-found retry state');
+assert.match(addon,/Buscar novamente/,'not-found state must let the customer retry the phone search');
+assert.match(addon,/Continuar como novo cliente/,'not-found state must still let a genuinely new customer continue');
+assert.match(addon,/if\(!d\.found\)\{showPhoneNotFound\(/,'a missing phone match must preserve a retry path instead of destroying the lookup UI');
+
 // Checkout UX: keep the review simple and turn GPS into a useful address shortcut.
 assert.match(addon,/function simplifyOrderSummary/,'checkout addon must simplify the visible order review');
 assert.match(addon,/line\.querySelectorAll\('span'\)\[1\]\?\.remove\(\)/,'checkout summary must remove the second per-item column (incluído/value)');
