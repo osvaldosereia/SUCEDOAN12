@@ -84,9 +84,9 @@ assert.ok(existsSync(webEligibilityMigration),'web storefront eligibility migrat
 const webEligibilitySql=readFileSync(webEligibilityMigration,'utf8');
 assert.match(webEligibilitySql,/create or replace function public\.set_cart_web_addon_quantity/i,'web storefront must have a channel-specific cart helper');
 assert.match(webEligibilitySql,/v_cart:=public\.set_cart_web_addon_quantity\(v_cart_id,p_product_id,p_quantity\)/,'shopping room must use the web-specific helper');
-const webHelper=webEligibilitySql.match(/create or replace function public\.set_cart_web_addon_quantity[\s\S]*?\$function\$/i)?.[0]||'';
-assert.match(webHelper,/physically_verified=true/i,'web helper must require physical verification');
-assert.match(webHelper,/is_active=true/i,'web helper must require an active product');
+const webHelper=webEligibilitySql.match(/create or replace function public\.set_cart_web_addon_quantity[\s\S]*?as \$function\$[\s\S]*?\$function\$;/i)?.[0]||'';
+assert.match(webHelper,/physically_verified\s*=\s*true/i,'web helper must require physical verification');
+assert.match(webHelper,/is_active\s*=\s*true/i,'web helper must require an active product');
 assert.match(webHelper,/coalesce\(stock,0\)/i,'web helper must enforce stock');
 assert.doesNotMatch(webHelper,/is_whatsapp_active/i,'web helper must not depend on the WhatsApp availability flag');
 console.log('light_shopping_chat_v2_ok');
