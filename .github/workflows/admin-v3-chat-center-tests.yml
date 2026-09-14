@@ -6,8 +6,12 @@ on:
       - 'admin-v3/atendimento.html'
       - 'admin-v3/index.html'
       - 'admin-v3/service-strategy.js'
+      - 'supabase/functions/_shared/chat-intelligence-config.js'
       - 'supabase/functions/admin-service-intelligence-simple-v1/**'
+      - 'supabase/functions/shopping-chat-v1/**'
+      - 'supabase/functions/shopping-chat-menu-v1/**'
       - 'tests/admin-v3-service-strategy-shopping-chat-final.mjs'
+      - 'tests/chat-intelligence-presets-v1.mjs'
       - '.github/workflows/admin-v3-chat-center-tests.yml'
   push:
     branches: [main]
@@ -15,8 +19,12 @@ on:
       - 'admin-v3/atendimento.html'
       - 'admin-v3/index.html'
       - 'admin-v3/service-strategy.js'
+      - 'supabase/functions/_shared/chat-intelligence-config.js'
       - 'supabase/functions/admin-service-intelligence-simple-v1/**'
+      - 'supabase/functions/shopping-chat-v1/**'
+      - 'supabase/functions/shopping-chat-menu-v1/**'
       - 'tests/admin-v3-service-strategy-shopping-chat-final.mjs'
+      - 'tests/chat-intelligence-presets-v1.mjs'
 
 jobs:
   contract:
@@ -28,3 +36,4 @@ jobs:
           node-version: 22
       - run: node --check admin-v3/service-strategy.js
       - run: node tests/admin-v3-service-strategy-shopping-chat-final.mjs
+      - run: node tests/chat-intelligence-presets-v1.mjs
