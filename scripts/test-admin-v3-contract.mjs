@@ -1,18 +1,19 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const files=['admin-v3/index.html','admin-v3/styles.css','admin-v3/config.js','admin-v3/api.js','admin-v3/app.js','admin-v3/nav-fix.js','admin-v3/imagens-ia.html','admin-v3/nomes-produtos-v3.html','supabase/functions/admin-v3-api/index.ts','vitrine-v3/index.html'];
+const files=['admin-v3/index.html','admin-v3/styles.css','admin-v3/config.js','admin-v3/api.js','admin-v3/app.js','admin-v3/nav-fix.js','admin-v3/comprar-ui.js','admin-v3/imagens-ia.html','admin-v3/nomes-produtos-v3.html','supabase/functions/admin-v3-api/index.ts','vitrine-v3/index.html'];
 for(const file of files) assert.ok(fs.existsSync(file),`faltando ${file}`);
 const html=fs.readFileSync('admin-v3/index.html','utf8');
 const css=fs.readFileSync('admin-v3/styles.css','utf8');
 const app=fs.readFileSync('admin-v3/app.js','utf8');
 const navFix=fs.readFileSync('admin-v3/nav-fix.js','utf8');
+const comprarUi=fs.readFileSync('admin-v3/comprar-ui.js','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-v3-api/index.ts','utf8');
 const config=fs.readFileSync('admin-v3/config.js','utf8');
 const images=fs.readFileSync('admin-v3/imagens-ia.html','utf8');
 const names=fs.readFileSync('admin-v3/nomes-produtos-v3.html','utf8');
 const legacyStorefront=fs.readFileSync('vitrine-v3/index.html','utf8');
-const all=[html,css,app,navFix,edge,config,images,names].join('\n');
+const all=[html,css,app,navFix,comprarUi,edge,config,images,names].join('\n');
 const adminUi=[html,config,images,names].join('\n');
 
 for(const route of ['dashboard','baskets','products','categories','orders','customers']) assert.match(html,new RegExp(`data-route=["']${route}["']`),`menu ${route} ausente`);
@@ -27,6 +28,11 @@ for(const adminPage of [html,images,names]){
   assert.match(adminPage,/\.\.\/comprar\//,'atalho do Admin deve abrir Comprar');
   assert.match(adminPage,/Abrir Comprar/,'atalho deve se chamar Abrir Comprar');
 }
+assert.match(html,/comprar-ui\.js/,'Admin principal deve carregar adaptação Comprar');
+assert.match(comprarUi,/location\.hash===['"]#storefront['"]/,'hash legado deve ser redirecionado para Comprar');
+assert.match(comprarUi,/Pedidos recentes do Comprar/);
+assert.match(comprarUi,/Somente pedidos recebidos pelo Comprar/);
+assert.match(comprarUi,/Destaque no Comprar/);
 assert.match(legacyStorefront,/http-equiv=["']refresh["'][^>]+url=\.\.\/comprar\//i,'vitrine-v3 deve redirecionar para Comprar');
 assert.match(legacyStorefront,/location\.replace\(['"]\.\.\/comprar\//,'redirecionamento legado deve ter fallback JavaScript');
 assert.match(html,/nav-fix\.js/,'ponte de navegação do menu precisa ser carregada');
