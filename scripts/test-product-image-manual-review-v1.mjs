@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
 const r=p=>readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
 const page=r('admin-v3/imagens-ia.html');
 const js=r('admin-v3/image-automation.js');
@@ -11,6 +11,9 @@ const policy=r('supabase/functions/product-image-openai-grid18-v1/policy.mjs');
 const manual=r('supabase/functions/product-image-manual-v1/index.ts');
 const migration=r('supabase/migrations/20260914100500_product_image_manual_review_v1.sql');
 const candidateFallback=r('supabase/migrations/20260914185000_product_image_manual_candidate_fallback_v1.sql');
+const sourceSafetyUrl=new URL('../supabase/migrations/20260914193500_product_image_manual_source_safety_v2.sql',import.meta.url);
+assert.ok(existsSync(sourceSafetyUrl),'manual source safety v2 migration must exist');
+const sourceSafety=readFileSync(sourceSafetyUrl,'utf8');
 
 assert.match(gridImage,/f\.append\('quality','medium'\)/);
 assert.match(grid,/items\.length!==18/);
@@ -89,5 +92,13 @@ for(const source of [gridImage,manual]){
   assert.match(source,/white_background/);
   assert.match(source,/white_border/);
 }
+
+// Manual regeneration must accept clean originals stored under /sources/grid18/
+// while still rejecting generated /openai/grid18/ outputs as references. The
+// claim must also consider image_original_url, which the worker already fetches.
+assert.match(sourceSafety,/sources\\\/grid18/i);
+assert.match(sourceSafety,/openai\\\/grid18/i);
+assert.match(sourceSafety,/image_original_url/);
+assert.match(sourceSafety,/claim_product_image_fallback_v1/);
 
 console.log('product image manual review contract ok');
