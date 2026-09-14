@@ -1,8 +1,8 @@
-import {api} from './api.js';
-import {CONFIG} from './config.js';
+import {api} from './api.js?v=20260914-2';
+import {CONFIG} from './config.js?v=20260914-2';
 
 const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('pt-BR')};
 const number=v=>Number(v||0).toLocaleString('pt-BR');
 const checked=v=>v?'checked':'';
@@ -27,7 +27,9 @@ async function normalizationApi(action,payload={}){
   const controller=new AbortController();
   const timer=window.setTimeout(()=>controller.abort(),20000);
   try{
-    const response=await fetch(endpoint,{method:'POST',headers:{apikey:CONFIG.supabasePublishableKey,'Content-Type':'application/json'},body:JSON.stringify({action,...payload}),cache:'no-store',credentials:'omit',signal:controller.signal});
+    // A função é verify_jwt=false e valida a origem. Enviar apenas uma string como body
+    // mantém a requisição CORS simples e evita o preflight que travava alguns navegadores.
+    const response=await fetch(endpoint,{method:'POST',body:JSON.stringify({action,...payload}),cache:'no-store',credentials:'omit',signal:controller.signal});
     const data=await response.json().catch(()=>({}));
     if(!response.ok||data.ok===false){const error=new Error(data.detail||data.error||'Não foi possível concluir.');error.code=data.error;error.data=data;throw error}
     return data;
@@ -49,7 +51,6 @@ function jobProductMarkup(job){
 }
 
 function historyRow(job){
-  const p=productOf(job);
   return `<article class="name-normalization-row"><div>${jobProductMarkup(job)}</div><div>${changeMarkup(job)}${job.explanation?`<div class="muted name-normalization-reason">${esc(job.explanation)}</div>`:''}</div><div class="row-actions"><button type="button" data-edit-product="${esc(job.product_id)}">Editar produto</button></div></article>`;
 }
 
@@ -92,6 +93,16 @@ function renderStats(counts={}){
   $('statProcessing').textContent=number(counts.processing);
 }
 
+function renderLoadError(error){
+  const detail=esc(error?.message||'Falha de conexão.');
+  const markup=`<div class="empty name-normalization-load-error"><strong>Não foi possível carregar os dados.</strong><div class="muted">${detail}</div><div class="row-actions"><button class="secondary" type="button" data-retry-load>Tentar novamente</button></div></div>`;
+  $('reviewList').innerHTML=markup;
+  $('roundsList').innerHTML=markup;
+  $('historyList').innerHTML=markup;
+  $('historySummary').textContent='Não foi possível carregar os dados da automação.';
+  $('lastUpdated').textContent='Falha ao consultar agora. A automação continua independente desta tela.';
+}
+
 async function loadData(){
   const button=$('refreshData');
   button.disabled=true;button.textContent='Atualizando…';
@@ -102,7 +113,7 @@ async function loadData(){
     renderRounds(data.runs||[],data.recent_jobs||[]);
     renderHistory(data.jobs||[]);
     $('lastUpdated').textContent=`Atualizado manualmente em ${date(data.generated_at)}. Nenhuma atualização automática está ativa nesta tela.`;
-  }catch(error){toast(error.message,'error')}
+  }catch(error){renderLoadError(error);toast(error.message,'error')}
   finally{button.disabled=false;button.textContent='Atualizar'}
 }
 
@@ -154,6 +165,7 @@ document.addEventListener('click',async e=>{
   const target=e.target.closest('button');if(!target)return;
   if(target.matches('[data-edit-product]')){await openProductEditor(target.dataset.editProduct);return}
   if(target.matches('[data-review-action]')){await reviewJob(target.dataset.jobId,target.dataset.reviewAction,target);return}
+  if(target.matches('[data-retry-load]')){await loadData();return}
   if(target.matches('[data-close-product-editor]')){closeProductEditor();return}
 });
 
