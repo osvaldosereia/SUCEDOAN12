@@ -34,6 +34,8 @@ assert.match(admin,/chat-real-test\.css/);
 assert.match(controller,/admin_test=1/,'teste deve abrir Comprar em modo admin_test');
 assert.match(controller,/da-admin-test-auth/,'Admin deve entregar autenticação ao iframe por postMessage');
 assert.match(controller,/da-admin-test-diagnostic/,'Admin deve receber diagnóstico do chat real');
+assert.match(controller,/const\s+esc\s*=|function\s+esc\s*\(/,'diagnóstico deve escapar texto antes de montar HTML');
+assert.match(controller,/esc\(e\.error/,'mensagens de erro do diagnóstico devem ser escapadas');
 assert.doesNotMatch(controller,/access_token=.*admin_test|admin_test=.*access_token/i,'token admin não pode ir na URL');
 
 const bridgePos=buy.indexOf('admin-test-bridge.js');
