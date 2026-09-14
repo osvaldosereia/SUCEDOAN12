@@ -89,4 +89,15 @@ assert.match(webHelper,/physically_verified\s*=\s*true/i,'web helper must requir
 assert.match(webHelper,/is_active\s*=\s*true/i,'web helper must require an active product');
 assert.match(webHelper,/coalesce\(stock,0\)/i,'web helper must enforce stock');
 assert.doesNotMatch(webHelper,/is_whatsapp_active/i,'web helper must not depend on the WhatsApp availability flag');
+
+// Product +/- must feel immediate while remaining transactionally safe.
+assert.match(js,/applyOptimisticProductDelta/,'product quantity must update local cart totals immediately');
+assert.match(js,/syncProductQty/,'rapid quantity changes must be synchronized through a per-product queue');
+assert.match(js,/_confirmedQuantity/,'client must remember the last server-confirmed quantity for rollback');
+assert.match(js,/state\.product\.syncing/,'client must track pending quantity synchronization');
+assert.doesNotMatch(js,/function changeProductQty[\s\S]{0,700}pointerEvents='none'/,'product card must not be locked while quantity is saving');
+assert.match(js,/async function showCheckout\(\)\{if\(state\.product\.syncing>0\)/,'checkout must wait for pending product writes');
+assert.match(js,/product_not_available:'Este produto não está disponível no momento\.'/,'raw product availability errors must be translated for customers');
+assert.match(js,/quantity_exceeds_stock:'A quantidade escolhida é maior que o estoque disponível\.'/,'stock errors must be translated for customers');
+assert.match(js,/quantity_exceeds_customer_limit:'Você pode adicionar até 6 unidades deste produto\.'/,'quantity cap errors must be translated for customers');
 console.log('light_shopping_chat_v2_ok');
