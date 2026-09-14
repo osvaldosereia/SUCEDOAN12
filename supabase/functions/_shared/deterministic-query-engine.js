@@ -79,7 +79,7 @@ export function parseDeterministicQuery(message,context={}){
   if(!domain&&productish)domain='products';
 
   let operation='lookup';
-  const mostOf=s.match(/\b(?:qual|quais)?\s*cesta\s+(?:tem|tem a|com)?\s*mais\s+([a-z][a-z0-9 ]{1,40})/);
+  const mostOf=s.match(/\b(?:qual|quais)?\s*cesta\s+(?:tem|com)\s+mais\s+([a-z][a-z0-9 ]{1,40})/);
   if(domain==='baskets'&&mostOf)operation='most_of_item';
   else if(/\bmais\s+car[oa]\b|\bmaior\s+(?:preco|valor)\b/.test(s))operation='most_expensive';
   else if(/\bmais\s+barat[oa]\b|\bmais\s+em\s+conta\b|\bmenor\s+(?:preco|valor)\b/.test(s))operation='cheapest';
