@@ -41,13 +41,16 @@
           <div class="triage-toolbar">
             <select id="issueFilter" aria-label="Filtrar imagens"><option value="bad_images">Imagens ruins</option><option value="unprocessed">Nunca processadas</option><option value="problems">Com problema</option><option value="pending">Na fila</option><option value="ignored">Ignoradas</option></select>
             <div id="badImageBulkActions" class="bulk-review-actions hidden">
-              <button id="selectAllBadImages" class="secondary" type="button">Selecionar todas</button>
+              <button id="selectAllBadImages" class="secondary" type="button">Selecionar visíveis para aprovar</button>
               <strong id="selectedBadImagesCount">0 selecionadas</strong>
               <button id="bulkApproveSelected" class="primary" type="button" disabled>Aprovar selecionadas</button>
+              <button id="selectAllBadImagesGrid18" class="secondary" type="button" aria-pressed="false">Selecionar todos os ruins</button>
+              <strong id="grid18BadSelectionCount">0 para regenerar</strong>
+              <button id="bulkRegenerateSelectedGrid18" class="danger" type="button" disabled>Gerar selecionados em lotes de 18</button>
             </div>
             <div id="otherBulkActions" class="bulk-actions"><button id="bulkUnprocessed" class="secondary" type="button">Enviar não processadas ao lote</button></div>
           </div>
-          <div class="triage-summary"><strong id="issueCountLabel">0 produtos</strong><span class="muted">Mostrando até 100 por grupo.</span></div>
+          <div class="triage-summary"><strong id="issueCountLabel">0 produtos</strong><span class="muted">Mostrando até 100 por grupo. “Selecionar todos os ruins” inclui também os que não estão visíveis nesta página.</span></div>
           <div id="issueRows" class="issue-list"></div>
         </section>
 
@@ -78,5 +81,6 @@
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
   <script type="module" src="./comprar-ui.js?v=20260914-1"></script>
   <script type="module" src="./image-automation.js?v=20260914-3"></script>
+  <script type="module" src="./image-bulk-grid18.js?v=20260914-1"></script>
 </body>
 </html>
