@@ -8,6 +8,7 @@ const required=[
   'comprar/index.html',
   'comprar/config.js',
   'comprar/admin-test-bridge.js',
+  'comprar/admin-test-after-checkout.js',
   'supabase/functions/shopping-chat-admin-test-v1/index.ts',
   'supabase/migrations/20260914162000_shopping_chat_admin_test_preview_v1.sql'
 ];
@@ -19,6 +20,7 @@ const css=fs.readFileSync('admin-v3/chat-real-test.css','utf8');
 const buy=fs.readFileSync('comprar/index.html','utf8');
 const config=fs.readFileSync('comprar/config.js','utf8');
 const bridge=fs.readFileSync('comprar/admin-test-bridge.js','utf8');
+const afterCheckout=fs.readFileSync('comprar/admin-test-after-checkout.js','utf8');
 const edge=fs.readFileSync('supabase/functions/shopping-chat-admin-test-v1/index.ts','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260914162000_shopping_chat_admin_test_preview_v1.sql','utf8');
 
@@ -36,13 +38,17 @@ assert.doesNotMatch(controller,/access_token=.*admin_test|admin_test=.*access_to
 
 const bridgePos=buy.indexOf('admin-test-bridge.js');
 const checkoutPos=buy.indexOf('chat-checkout-quantity-v1.js');
+const afterPos=buy.indexOf('admin-test-after-checkout.js');
+const chatPos=buy.indexOf('chat-light-v2.js');
 assert.ok(bridgePos>=0&&checkoutPos>=0&&bridgePos<checkoutPos,'bridge de teste deve carregar antes do checkout');
+assert.ok(checkoutPos>=0&&afterPos>checkoutPos&&chatPos>afterPos,'bypass de confirmação deve carregar depois do checkout e antes do chat principal');
 assert.match(bridge,/admin_test/);
-assert.match(bridge,/confirm_order/);
 assert.match(bridge,/adminTestApi/,'confirm_order de teste deve usar API administrativa separada');
+assert.match(bridge,/DA_ADMIN_TEST_CONFIRM/,'bridge deve expor confirmação segura sem passar pelo wrapper comercial');
 assert.match(bridge,/da-admin-test-ready/);
 assert.match(bridge,/da-admin-test-diagnostic/);
-assert.match(bridge,/classList\.remove\(['"]success['"]\)/,'modo teste deve impedir retorno automático ao WhatsApp');
+assert.match(afterCheckout,/confirm_order/);
+assert.match(afterCheckout,/DA_ADMIN_TEST_CONFIRM/,'confirm_order deve desviar antes do wrapper que cria retorno ao WhatsApp');
 assert.match(config,/adminTestApi:\s*['"][^'"]+shopping-chat-admin-test-v1/);
 
 assert.match(edge,/auth\.getUser/,'API de teste deve validar JWT do Admin');
