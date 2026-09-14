@@ -57,4 +57,19 @@ assert.match(css,/\.checkout-stage/);
 assert.match(edge,/\.order\('name'/);
 assert.match(edge,/\.range\(offset,offset\+limit-1\)/);
 assert.match(edge,/action==='filters'/);
+
+// Customer taxonomy v2: the public shopping room must expose the four simple entry choices
+// and drive product browsing from the new customer-facing taxonomy instead of the legacy sales_category tree.
+assert.match(js,/Cestas Básicas/,'start menu must expose Cestas Básicas');
+assert.match(js,/Ofertas/,'start menu must expose Ofertas');
+assert.match(js,/Para Você/,'start menu must expose Para Você');
+assert.match(js,/Para Casa/,'start menu must expose Para Casa');
+assert.match(js,/customerCategory/,'client state must track the selected customer category');
+assert.match(js,/customerSubcategory/,'client state must track the selected customer subcategory');
+assert.match(js,/customerSubsubcategory/,'client state must track the selected customer subsubcategory');
+assert.match(edge,/customer_category/,'products API must filter by customer_category');
+assert.match(edge,/customer_subcategory/,'products API must filter by customer_subcategory');
+assert.match(edge,/customer_subsubcategory/,'products API must filter by customer_subsubcategory');
+assert.match(edge,/subcategories/,'filters response must expose first-level customer subcategories');
+assert.match(edge,/subsubcategories/,'filters response must expose second-level customer subsubcategories');
 console.log('light_shopping_chat_v2_ok');
