@@ -76,13 +76,19 @@ const MENU_FEATURE=Object.freeze({
 });
 
 export function modeAllowed(mode,flags={}){
-  const feature=MODE_FEATURE[String(mode||'')];
-  return !feature||normalizeFlags(flags)[feature]!==false;
+  const normalized=normalizeFlags(flags);
+  const key=String(mode||'');
+  if(key==='offers')return normalized.offers!==false&&normalized.products!==false;
+  const feature=MODE_FEATURE[key];
+  return !feature||normalized[feature]!==false;
 }
 
 export function menuItemAllowed(kind,flags={}){
-  const feature=MENU_FEATURE[String(kind||'')];
-  return !feature||normalizeFlags(flags)[feature]!==false;
+  const normalized=normalizeFlags(flags);
+  const key=String(kind||'');
+  if(key==='offers')return normalized.offers!==false&&normalized.products!==false;
+  const feature=MENU_FEATURE[key];
+  return !feature||normalized[feature]!==false;
 }
 
 export function publicConfig(runtime={}){
