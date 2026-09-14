@@ -9,6 +9,15 @@ const clean=(v:unknown,max=500)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,
 const tokenOk=(v:unknown)=>/^[a-f0-9]{64}$/i.test(clean(v,80));
 const phoneDigits=(v:unknown)=>String(v??'').replace(/\D/g,'');
 const verifyUrl=(code:string)=>`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Confirmar meu cadastro na Dona Antônia: DAWEB-${code}`)}`;
+const STATES:Record<string,string>={
+  'acre':'AC','alagoas':'AL','amapa':'AP','amazonas':'AM','bahia':'BA','ceara':'CE','distrito federal':'DF','espirito santo':'ES','goias':'GO','maranhao':'MA','mato grosso':'MT','mato grosso do sul':'MS','minas gerais':'MG','para':'PA','paraiba':'PB','parana':'PR','pernambuco':'PE','piaui':'PI','rio de janeiro':'RJ','rio grande do norte':'RN','rio grande do sul':'RS','rondonia':'RO','roraima':'RR','santa catarina':'SC','sao paulo':'SP','sergipe':'SE','tocantins':'TO'
+};
+const fold=(v:unknown)=>clean(v,100).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const stateCode=(address:any)=>{
+  const iso=clean(address?.['ISO3166-2-lvl4']||address?.['ISO3166-2-lvl6']||'',20).toUpperCase();
+  const m=iso.match(/^BR-([A-Z]{2})$/);if(m)return m[1];
+  return STATES[fold(address?.state)]||'';
+};
 
 Deno.serve(async(req:Request)=>{
   const ch=cors(req);if(!ch)return new Response('forbidden',{status:403});
@@ -38,6 +47,30 @@ Deno.serve(async(req:Request)=>{
       max_quantity:item.metadata?.max_quantity==null?null:Number(item.metadata.max_quantity)
     }));
     return json(req,{ok:true,policies});
+  }
+
+  if(action==='reverse_geocode'){
+    const latitude=Number(body?.latitude),longitude=Number(body?.longitude);
+    if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude<-90||latitude>90||longitude<-180||longitude>180)return json(req,{ok:false,error:'invalid_coordinates'},400);
+    const reverseUrl=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&zoom=18&addressdetails=1&countrycodes=br`;
+    try{
+      const response=await fetch(reverseUrl,{headers:{'Accept':'application/json','Accept-Language':'pt-BR,pt;q=0.9','User-Agent':'DonaAntoniaCheckout/1.0 (https://donaantonia.com.br)'},signal:AbortSignal.timeout(7000)});
+      if(!response.ok)return json(req,{ok:false,error:'reverse_geocode_unavailable'},502);
+      const data:any=await response.json();
+      const a=data?.address||{};
+      const address={
+        street:clean(a.road||a.pedestrian||a.residential||a.footway||a.path||a.cycleway||a.highway||'',160),
+        number:clean(a.house_number||'',30),
+        neighborhood:clean(a.suburb||a.neighbourhood||a.quarter||a.city_district||'',120),
+        city:clean(a.city||a.town||a.village||a.municipality||'',100),
+        state:stateCode(a),
+        postal_code:phoneDigits(a.postcode).slice(0,8)
+      };
+      if(!address.street&&!address.neighborhood&&!address.city)return json(req,{ok:false,error:'address_not_found'},404);
+      return json(req,{ok:true,address,display_name:clean(data?.display_name,240)});
+    }catch{
+      return json(req,{ok:false,error:'reverse_geocode_unavailable'},502);
+    }
   }
 
   if(action==='lookup_customer'){
