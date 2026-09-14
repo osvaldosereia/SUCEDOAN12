@@ -5,11 +5,11 @@ if(location.hash==='#storefront'){
 }
 
 const replacements=[
-  ['Pedidos recentes da vitrine','Pedidos recentes'],
-  ['Nenhum pedido da vitrine ainda.','Nenhum pedido ainda.'],
-  ['Somente pedidos recebidos pela vitrine.','Pedidos recebidos no sistema.'],
+  ['Pedidos recentes da vitrine','Pedidos recentes do Comprar'],
+  ['Nenhum pedido da vitrine ainda.','Nenhum pedido do Comprar ainda.'],
+  ['Somente pedidos recebidos pela vitrine.','Somente pedidos recebidos pelo Comprar.'],
   ['Organize o que o cliente encontra na vitrine.','Organize as categorias do catálogo.'],
-  ['Destaque na vitrine','Destaque'],
+  ['Destaque na vitrine','Destaque no Comprar'],
   ['Abrir vitrine','Abrir Comprar'],
   ['Ver vitrine','Abrir Comprar'],
   ['Carregando controles da vitrine…','Carregando…'],
@@ -27,7 +27,7 @@ function rewriteText(root=document){
   const nodes=[];
   while(walker.nextNode())nodes.push(walker.currentNode);
   for(const node of nodes){
-    let value=node.nodeValue||'';
+    const value=node.nodeValue||'';
     let next=value;
     for(const [from,to] of replacements)next=next.split(from).join(to);
     if(next!==value)node.nodeValue=next;
