@@ -1,18 +1,18 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-const js=readFileSync('comprar/chat-light-v2.js','utf8');
 const addon=readFileSync('comprar/chat-checkout-quantity-v1.js','utf8');
 const config=readFileSync('comprar/config.js','utf8');
 const customerEdge=readFileSync('supabase/functions/shopping-chat-customer-v1/index.ts','utf8');
 
 // Ver a composição de uma cesta deve ser uma leitura, nunca uma inclusão no carrinho.
 assert.match(config,/basketStorefrontApi:\s*'[^']*basket-storefront-v1'/,'Comprar must expose the read-only basket detail API');
-assert.match(js,/async function basketDetailApi/,'client must have a read-only basket detail helper');
-assert.match(js,/async function previewBasket/,'basket cards must open a preview before selection');
-assert.match(js,/bt\.textContent='Ver produtos'/,'basket card action must say Ver produtos');
-assert.match(js,/bt\.onclick=\(\)=>previewBasket\(b,bt\)/,'basket card must open preview instead of starting the basket');
-const preview=js.match(/async function previewBasket[\s\S]*?(?=async function chooseBasket)/)?.[0]||'';
+assert.match(addon,/async function basketDetailApi/,'client must have a read-only basket detail helper');
+assert.match(addon,/async function previewBasket/,'basket cards must open a preview before selection');
+assert.match(addon,/function decorateBasketPicker/,'basket picker must be upgraded without changing the cart flow');
+assert.match(addon,/button\.textContent='Ver produtos'/,'basket card action must say Ver produtos');
+assert.match(addon,/button\.onclick=\(\)=>previewBasket\(card,button,originalChoose\)/,'basket card must open preview instead of starting the basket');
+const preview=addon.match(/async function previewBasket[\s\S]*?(?=function decorateBasketPicker)/)?.[0]||'';
 assert.match(preview,/basketDetailApi\('detail'/,'preview must load basket details without mutating the cart');
 assert.doesNotMatch(preview,/start_basket/,'preview must never add the basket to the cart');
 assert.match(preview,/Escolher esta cesta/,'preview must have an explicit selection action');
