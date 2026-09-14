@@ -34,4 +34,12 @@ for(const action of ['product_name_normalization','product_name_normalization_re
 assert.match(edge,/dispatch_product_name_normalizer_v1/,'rodada manual deve reutilizar o dispatcher existente');
 assert.match(css,/name-normalization/,'estilos da gestão de nomes ausentes');
 
+// Regressão 2026-09-14: a tela ficava eternamente em "Carregando…" quando a primeira
+// chamada do navegador falhava. A consulta desta subpágina não precisa forçar preflight
+// CORS, pois a Edge Function já é pública (verify_jwt=false) e valida a origem.
+assert.doesNotMatch(app,/headers\s*:\s*\{[^}]*apikey/i,'consulta de nomes não deve forçar preflight CORS com apikey');
+assert.match(app,/renderLoadError/,'falha inicial deve substituir os estados Carregando por erro visível');
+assert.match(app,/Não foi possível carregar os dados/i,'mensagem de falha precisa permanecer visível na tela');
+assert.match(page,/product-name-management\.js\?v=20260914-2/,'HTML deve forçar a versão corrigida do JS para escapar do cache do GitHub Pages');
+
 console.log('admin-v3 product name management contract ok');
