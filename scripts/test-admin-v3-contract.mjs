@@ -13,6 +13,7 @@ const images=fs.readFileSync('admin-v3/imagens-ia.html','utf8');
 const names=fs.readFileSync('admin-v3/nomes-produtos-v3.html','utf8');
 const legacyStorefront=fs.readFileSync('vitrine-v3/index.html','utf8');
 const all=[html,css,app,navFix,edge,config,images,names].join('\n');
+const adminUi=[html,app,config,images,names].join('\n');
 
 for(const route of ['dashboard','storefront','baskets','products','categories','orders','customers']) assert.match(html,new RegExp(`data-route=["']${route}["']`),`menu ${route} ausente`);
 assert.match(html,/Balanço rápido/);
@@ -20,7 +21,7 @@ assert.match(html,/\.\.\/contagem\//);
 assert.match(config,/admin-v3-api/);
 assert.match(config,/storefrontUrl:\s*['"]\.\.\/comprar\//,'Admin deve apontar storefrontUrl para Comprar');
 assert.doesNotMatch(all,/\.\.\/vitrine-v3\//,'Admin não deve mais apontar para a Vitrine V3');
-assert.doesNotMatch(all,/Ver vitrine|Abrir vitrine|>Vitrine</i,'Admin não deve exibir a antiga Vitrine');
+assert.doesNotMatch(adminUi,/vitrine/i,'Admin não deve mais exibir nem referenciar a antiga Vitrine');
 for(const adminPage of [html,images,names]){
   assert.match(adminPage,/\.\.\/comprar\//,'atalho do Admin deve abrir Comprar');
   assert.match(adminPage,/Abrir Comprar/,'atalho deve se chamar Abrir Comprar');
