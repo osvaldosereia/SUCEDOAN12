@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./styles.css?v=20260911-2">
   <link rel="stylesheet" href="./service-strategy.css?v=20260912-1">
   <link rel="stylesheet" href="./service-chat-center.css?v=20260914-2">
+  <link rel="stylesheet" href="./chat-real-test.css?v=20260914-1">
 </head>
 <body class="strategy-body">
   <header class="strategy-topbar">
@@ -70,19 +71,23 @@
       </section>
 
       <section id="tabTest" class="strategy-tab">
-        <div class="strategy-section-head"><div><div class="eyebrow">Sem enviar nada ao cliente</div><h2>Testar atendimento</h2><p>Digite como se fosse um cliente. O simulador mostra a intenção, a regra usada, se precisou de IA e o que apareceria no Chat Comprar.</p></div></div>
-        <section class="panel">
-          <form id="testForm" class="chat-center-form">
-            <label>Mensagem do cliente<input id="testMessage" maxlength="800" placeholder="Ex.: tem leite integral?"></label>
-            <div class="strategy-editor-actions"><button id="testRun" class="primary" type="submit">Testar agora</button></div>
-          </form>
-          <div id="testResult" class="strategy-empty">Digite uma mensagem para testar.</div>
-        </section>
+        <div class="strategy-section-head"><div><div class="eyebrow">Teste real e seguro</div><h2>Testar Chat Comprar</h2><p>Use exatamente como um cliente: texto, botões, cestas, produtos, carrinho, áudio, foto, localização e checkout. A confirmação final é validada, mas nenhum pedido real é criado.</p></div></div>
+        <div class="chat-real-test-toolbar">
+          <div><span class="chat-real-test-safe">✓ Modo seguro</span> <span id="testStatus" class="chat-real-test-status">Clique em “Novo teste” para começar.</span></div>
+          <div class="strategy-editor-actions"><button id="testNewSession" class="primary" type="button">Novo teste</button><button id="testClearDiagnostics" class="secondary" type="button">Limpar diagnóstico</button></div>
+        </div>
+        <p class="chat-real-test-note">Cada novo teste abre uma sessão separada. As consultas e o carrinho usam os dados reais do sistema; somente a gravação final do pedido é bloqueada.</p>
+        <div class="chat-real-test-shell">
+          <div class="chat-real-test-frame-wrap"><iframe id="testChatFrame" class="chat-real-test-frame" title="Chat Comprar em modo de teste" src="about:blank" allow="microphone; camera; geolocation" referrerpolicy="same-origin"></iframe></div>
+          <aside class="panel chat-real-test-diagnostics"><h3>Diagnóstico</h3><p class="strategy-help">Acompanhe a rota usada, IA, ação, tempo e erros enquanto conversa.</p><div id="testDiagnostics"></div></aside>
+        </div>
+        <form id="testForm" hidden><input id="testMessage"><button id="testRun" type="submit">Teste técnico</button></form><div id="testResult" hidden></div>
       </section>
     </section>
   </main>
 
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
   <script type="module" src="./service-strategy.js?v=20260914-2"></script>
+  <script type="module" src="./chat-real-test.js?v=20260914-1"></script>
 </body>
 </html>
