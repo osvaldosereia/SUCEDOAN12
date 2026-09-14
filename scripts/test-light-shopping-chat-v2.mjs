@@ -80,3 +80,4 @@ assert.match(js,/syncProductQty/,'rapid quantity changes must be synchronized th
 assert.match(js,/_confirmedQuantity/,'client must remember the last server-confirmed quantity for rollback');
 assert.doesNotMatch(js,/function changeProductQty[\s\S]{0,700}pointerEvents='none'/,'product card must not be locked while quantity is saving');
 console.log('light_shopping_chat_v2_ok');
+// Keep this test bound to the latest optimistic quantity implementation at the PR head.
