@@ -14,6 +14,9 @@ const candidateFallback=r('supabase/migrations/20260914185000_product_image_manu
 const sourceSafetyUrl=new URL('../supabase/migrations/20260914193500_product_image_manual_source_safety_v2.sql',import.meta.url);
 assert.ok(existsSync(sourceSafetyUrl),'manual source safety v2 migration must exist');
 const sourceSafety=readFileSync(sourceSafetyUrl,'utf8');
+const badBulkUrl=new URL('../supabase/migrations/20260914195000_product_image_bad_bulk_grid18_v1.sql',import.meta.url);
+assert.ok(existsSync(badBulkUrl),'bad image bulk grid18 migration must exist');
+const badBulk=readFileSync(badBulkUrl,'utf8');
 
 assert.match(gridImage,/f\.append\('quality','medium'\)/);
 assert.match(grid,/items\.length!==18/);
@@ -53,16 +56,35 @@ assert.match(css,/\.image-results[^\{]*\{[^}]*grid-template-columns:repeat\(4,mi
 assert.match(css,/\.issue-row[^\{]*\{[^}]*display:flex[^}]*flex-direction:column/s);
 assert.match(css,/\.issue-thumb[^\{]*\{[^}]*width:100%[^}]*aspect-ratio:1/s);
 
-for(const id of ['badImageBulkActions','selectAllBadImages','selectedBadImagesCount','bulkApproveSelected']) assert.match(page,new RegExp(`id=["']${id}["']`));
+for(const id of ['badImageBulkActions','selectAllBadImages','selectedBadImagesCount','bulkApproveSelected','bulkRegenerateSelectedGrid18']) assert.match(page,new RegExp(`id=["']${id}["']`));
+assert.match(page,/Selecionar todos os ruins/);
+assert.match(page,/Gerar selecionados em lotes de 18/);
 assert.match(js,/selectedBadImages:new Set\(\)/);
 assert.match(js,/data-bulk-select/);
 assert.match(js,/bulk_approve_manual/);
+assert.match(js,/list_bad_image_ids/);
+assert.match(js,/bulk_regenerate_grid18/);
 assert.match(js,/product_ids:/);
+assert.match(js,/Math\.ceil\(count\/18\)/);
 assert.doesNotMatch(js,/confirm\([^)]*Aprovar selecionadas/s);
 assert.match(admin,/action==="bulk_approve_manual"/);
+assert.match(admin,/action==="list_bad_image_ids"/);
+assert.match(admin,/action==="bulk_regenerate_grid18"/);
+assert.match(admin,/queue_product_image_bad_grid18_v1/);
+assert.match(admin,/dispatch_product_image_grid18_worker_v2/);
 assert.match(admin,/product_ids/);
 assert.match(admin,/approved/);
 assert.match(admin,/skipped/);
+
+assert.match(badBulk,/queue_product_image_bad_grid18_v1/);
+assert.match(badBulk,/image_ai_pipeline_version\s*=\s*null/i);
+assert.match(badBulk,/image_ai_manual_review_required\s*=\s*true/i);
+assert.match(badBulk,/force_individual\s*=\s*false/i);
+assert.match(badBulk,/grid_attempts\s*=\s*0/i);
+assert.match(badBulk,/claim_product_image_grid18_batch_v2/);
+assert.match(badBulk,/order by[\s\S]*image_ai_manual_review_required[\s\S]*storefront_featured/i);
+assert.match(grid,/image_ai_manual_review_required:false/);
+assert.match(grid,/image_ai_manual_review_reason:null/);
 
 assert.match(candidateFallback,/product_image_manual_candidate_fallback_v1/);
 assert.match(candidateFallback,/image_ai_manual_review_required/);
@@ -86,8 +108,6 @@ for(const source of [gridImage,manual]){
   assert.match(source,/white_border/);
 }
 
-// Original/reference assets stored under /sources/grid18/ must remain eligible.
-// Generated assets under /openai/ must never be reused as source references.
 assert.match(sourceSafety,/Sources persisted under \/sources\/grid18\//i);
 assert.ok(sourceSafety.includes("p_url not ilike '%/openai/%'"));
 assert.equal(sourceSafety.includes("p_url not ilike '%/grid18/%'"),false);
