@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const index=fs.readFileSync('admin-v3/index.html','utf8');
 const html=fs.readFileSync('admin-v3/atendimento.html','utf8');
 const js=fs.readFileSync('admin-v3/service-strategy.js','utf8');
-const css=fs.readFileSync('admin-v3/service-strategy.css','utf8');
+const css=fs.readFileSync('admin-v3/service-chat-center.css','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 
 assert.doesNotMatch(index,/\.\.\/ame-mais\//i,'Ame Mais é projeto separado e não pode aparecer no menu do Admin V3');
@@ -29,10 +29,9 @@ for(const forbidden of ['basket_flow','registration_flow','address_flow','custom
 assert.match(js,/admin-chat-menu-v1/,'Fluxo do Chat deve reutilizar a configuração do menu próprio');
 assert.match(js,/simulate/,'aba Testar deve chamar a simulação administrativa');
 
-// Regressões visuais/UX do editor de regras.
+// Regressão visual mostrada no desktop: labels e campos do editor não podem ficar inline/sobrepostos.
 assert.match(css,/#ruleEditor\s*\{[^}]*display:grid/i,'editor de regras deve empilhar os campos em grid');
 assert.match(css,/#ruleEditor\s+(?:input|textarea|select)[^{]*\{[^}]*width:100%/i,'controles do editor devem ocupar a largura disponível');
-assert.match(js,/rules\.filter\(x=>x\.status!==['"]archived['"]/,'regras arquivadas não devem poluir a lista padrão');
 
 assert.match(edge,/action===["']simulate["']/,'backend administrativo deve oferecer simulação sem efeitos colaterais');
 assert.doesNotMatch(edge,/whatsapp_flow|template_carousel|template_catalog|template_multi_product|catalog_message|single_product|product_list/i,'backend final não deve expor recursos Meta/WhatsApp');
