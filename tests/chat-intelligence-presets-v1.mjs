@@ -52,6 +52,7 @@ const js=fs.readFileSync('admin-v3/service-strategy.js','utf8');
 const adminEdge=fs.readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 const chatEdge=fs.readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const menuEdge=fs.readFileSync('supabase/functions/shopping-chat-menu-v1/index.ts','utf8');
+const productsEdge=fs.readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
 
 assert.match(js,/runtimeLevel/,'Admin deve renderizar seletor de nível');
 for(const level of ['basic','recommended','complete']) assert.match(js,new RegExp(`value=["']${level}["']|['"]${level}['"]`),`preset ${level} deve existir no Admin`);
@@ -59,5 +60,7 @@ for(const feature of ['openai','baskets','products','offers','checkout','profile
 assert.match(adminEdge,/integration_flags|integrations/,'backend administrativo deve persistir controles individuais');
 assert.match(chatEdge,/modeAllowed|integration_flags|integrations/,'motor público deve respeitar integrações desligadas');
 assert.match(menuEdge,/menuItemAllowed|integration_flags|integrations/,'menu público deve esconder integrações desligadas');
+assert.match(productsEdge,/integration_flags|normalizeFlags/,'API dedicada de produtos também deve respeitar integrações');
+assert.match(productsEdge,/feature_disabled/,'API dedicada de produtos deve bloquear catálogo/ofertas desligados');
 
 console.log('chat_intelligence_presets_v1_ok');
