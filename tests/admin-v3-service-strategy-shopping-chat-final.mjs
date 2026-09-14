@@ -32,6 +32,7 @@ assert.match(js,/simulate/,'aba Testar deve chamar a simulação administrativa'
 // Regressão visual mostrada no desktop: labels e campos do editor não podem ficar inline/sobrepostos.
 assert.match(css,/#ruleEditor\s*\{[^}]*display:grid/i,'editor de regras deve empilhar os campos em grid');
 assert.match(css,/#ruleEditor\s+(?:input|textarea|select)[^{]*\{[^}]*width:100%/i,'controles do editor devem ocupar a largura disponível');
+assert.match(html,/service-chat-center\.css\?v=20260914-2/,'HTML deve forçar a versão nova do CSS para não reutilizar cache quebrado');
 
 assert.match(edge,/action===["']simulate["']/,'backend administrativo deve oferecer simulação sem efeitos colaterais');
 assert.doesNotMatch(edge,/whatsapp_flow|template_carousel|template_catalog|template_multi_product|catalog_message|single_product|product_list/i,'backend final não deve expor recursos Meta/WhatsApp');
