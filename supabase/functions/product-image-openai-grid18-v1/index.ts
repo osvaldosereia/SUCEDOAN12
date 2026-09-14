@@ -165,9 +165,6 @@ async function bestSource(sb,supabaseUrl,key,product,fb){
     const trusted=await persistExternalSource(sb,product,researched.source);
     return{...trusted,inspection:researched.source.inspection};
   }
-  // If the real product is complete and identifiable, a messy background/crop
-  // can still be cleaned by the 18-grid model. We first attempted a better web
-  // source; this fallback never permits a source whose product pixels are missing.
   if(source&&sourceRecoverableForGrid(inspection)){
     return{...source,inspection,origin:`${source.origin||'source'}_recoverable_cleanup_v2`};
   }
@@ -231,11 +228,11 @@ async function generateStage(sb,key,batch,items){
     await upload(sb,BATCH_BUCKET,gridPath,generated.bytes,{contentType:'image/webp',upsert:true});
     const cost=generationCost(generated.usage),now=new Date().toISOString();
     await sb.from('product_image_batches').update({
-      status:'generated',quality:'high',input_storage_path:inputPath,input_url:null,
+      status:'generated',quality:'medium',input_storage_path:inputPath,input_url:null,
       grid_storage_path:gridPath,grid_url:null,openai_usage:generated.usage,
       generation_cost_usd:cost,updated_at:now,
     }).eq('id',batch.id);
-    return{stage:'generated',generation_cost_usd:cost,request_id:generated.requestId,size:'2400x1200',quality:'high'};
+    return{stage:'generated',generation_cost_usd:cost,request_id:generated.requestId,size:'2400x1200',quality:'medium'};
   }catch(e){
     const message=clean(e instanceof Error?e.message:e,260);
     await technicalReset(sb,batch,items,message);
@@ -440,6 +437,6 @@ Deno.serve(async req=>{
   }catch(e){
     return json({ok:false,error:clean(e instanceof Error?e.message:e,260),pipeline_version:PIPELINE_VERSION},500);
   }finally{
-    await sb.rpc('release_product_image_worker_v2',{p_token:token}).catch(()=>{});
+    try{await sb.rpc('release_product_image_worker_v2',{p_token:token});}catch{}
   }
 });
