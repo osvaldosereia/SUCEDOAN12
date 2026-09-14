@@ -28,6 +28,11 @@ function productTerm(message:string){
     .trim();
   return clean(stripped,120)||clean(message,120);
 }
+function productLookupTerms(message:string){
+  const full=productTerm(message),stop=new Set(['produto','produtos','mais','barato','barata','grande','pequeno','pequena','medio','media','médio','média','liquido','líquido','unidade','pacote','litro','litros','quilo','quilos','kg','ml','g','de','da','do','para','com','sem']);
+  const words=full.split(/\s+/).map(x=>x.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}'’.-]+$/gu,'')).filter(x=>x.length>=3&&!stop.has(norm(x))&&!/^\d+(?:[.,]\d+)?$/.test(x));
+  return [...new Set([full,...words].map(x=>clean(x,80)).filter(Boolean))].slice(0,5);
+}
 function quickChips(flags:any){const items:string[]=[];if(flags?.baskets!==false)items.push('Cestas');if(flags?.offers!==false&&flags?.products!==false)items.push('Ofertas');if(flags?.products!==false)items.push('Produtos');return items}
 function fallback(flags:any){const items=quickChips(flags);return {source:'fallback',ai_used:false,mode:items.length?'reply_buttons':'text',reply:items.length?'Posso te ajudar por aqui. Escolha uma opção:':'Posso te ajudar com as opções que estão ativas no Chat Comprar.',ui:items.length?{type:'chips',items}:{type:'none'},rule_question:null}}
 function featureDisabled(req:Request,feature:string){return json(req,{ok:false,error:'feature_disabled',feature},409)}
@@ -42,11 +47,10 @@ function deterministic(message:string,flags:any){
   if(flags?.commerce_info!==false&&/\b(entrega hoje|taxa de entrega|quanto e a entrega|quanto é a entrega|que horas entrega|quando chega)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'text',reply:'A disponibilidade e as condições da entrega são confirmadas no fechamento do pedido conforme endereço e rota.',ui:{type:'none'}};
   if(flags?.commerce_info!==false&&/\b(entrega|entregam|delivery|cuiaba|cuiabá|varzea grande|várzea grande)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'text',reply:'Entregamos em Cuiabá e Várzea Grande. Os dados da entrega são confirmados no fechamento do pedido.',ui:{type:'none'}};
   if(flags?.baskets!==false&&/\b(cesta|cestas|cesta basica|cestas basicas)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'baskets',reply:'Claro! Veja nossas cestas básicas e os valores atualizados.',ui:{type:'baskets'}};
-  if(flags?.products!==false&&/\b(limpeza|lavanderia|sabao|sabão|amaciante|desinfetante|agua sanitaria|água sanitária|alvejante|faxina|tirar mancha|roupa branca|lavar roupa)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de limpeza e lavanderia.',ui:{type:'products',category:'limpeza_lavanderia'}};
-  if(flags?.products!==false&&/\b(higiene|beleza|shampoo|sabonete|desodorante|fralda|cuidados pessoais)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de higiene e beleza.',ui:{type:'products',category:'higiene_beleza'}};
-  if(flags?.products!==false&&/\b(pet|cachorro|gato|racao|ração|tapete higienico|tapete higiênico|vassoura|rodo|balde|utilidades)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de Casa e Pet.',ui:{type:'products',category:'casa_pet'}};
-  if(flags?.products!==false&&/\b(mercearia|mantimentos|despensa|alimentos)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de mercearia.',ui:{type:'products',category:'mercearia'}};
-  if(flags?.products!==false&&/\b(tem|vende|vendem|preco|preço|quanto custa|quanto esta|quanto está|quanto ta|quanto tá)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'product_lookup',reply:'Vou pesquisar para você.',ui:{type:'product_lookup',query:productTerm(message)}};
+  if(flags?.products!==false&&/\b(produtos? de limpeza|produtos? de lavanderia|limpeza|lavanderia|faxina|limpar a casa|compra de limpeza|lavar roupa)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de limpeza e lavanderia.',ui:{type:'products',category:'limpeza_lavanderia'}};
+  if(flags?.products!==false&&/\b(produtos? de higiene|higiene e beleza|beleza|cuidados pessoais)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de higiene e beleza.',ui:{type:'products',category:'higiene_beleza'}};
+  if(flags?.products!==false&&/\b(produtos? pet|produtos? para cachorro|produtos? para gato|coisas? para cachorro|coisas? para gato|casa e pet|utilidades)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de Casa e Pet.',ui:{type:'products',category:'casa_pet'}};
+  if(flags?.products!==false&&/\b(mercearia|mantimentos|despensa|alimentos|produtos? de mercado)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de mercearia.',ui:{type:'products',category:'mercearia'}};
   return null;
 }
 function ruleScore(message:string,rule:any){
@@ -67,7 +71,7 @@ function stageForMessage(stage:any,message:string){const tool=stage?.tool_config
 function ruleResult(stage:any,source:string,aiUsed=false){const mode=clean(stage?.response_mode,40),tool=stage?.tool_config&&typeof stage.tool_config==='object'?stage.tool_config:{},reply=clean(stage?.answer,1800);let ui:any={type:'none'};if(mode==='reply_buttons')ui={type:'chips',items:arr(tool.buttons).map((x:any)=>clean(x?.label||x?.value||x,80)).filter(Boolean).slice(0,8)};else if(mode==='cta_url')ui={type:'link',label:clean(tool.label||'Abrir',40),url:clean(tool.url,1000)};else if(mode==='baskets')ui={type:'baskets'};else if(mode==='offers')ui={type:'products',offers:true};else if(mode==='products')ui={type:'products',category:clean(tool.category,40)||null};else if(mode==='product_lookup')ui={type:'product_lookup',query:clean(tool.query,120)};else if(mode==='checkout')ui={type:'checkout'};return {source,ai_used:aiUsed,mode,reply,ui,rule_question:clean(stage?.question,300)||null}}
 function money(v:unknown){const n=Number(v||0);return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 async function resolveBasketInsight(sb:any,message:string,flags:any){
-  if(flags?.baskets===false)return null;const s=norm(message);if(!/\bcesta/.test(s))return null;
+  if(flags?.baskets===false)return null;const s=norm(message);if(!/\b(cesta|bonini|koblenz|economica)/.test(s))return null;
   const special=/mais barata|mais em conta|menor valor|mais economica|mais completa|mais produtos|compensa|bonini.*koblenz|koblenz.*bonini|o que vem|quais itens|composicao|composição|tenho\s+(?:r\$\s*)?\d|ate\s+(?:r\$\s*)?\d|até\s+(?:r\$\s*)?\d|orcamento|orçamento/.test(s);if(!special)return null;
   const {data:baskets}=await sb.from('basket_templates').select('id,name,base_price,sort_order').eq('is_active',true).order('base_price',{ascending:true}).limit(20);const list=arr(baskets);if(!list.length)return null;
   if(/mais barata|mais em conta|menor valor|mais economica/.test(s)){const b=list[0];return {source:'basket_data',ai_used:false,mode:'baskets',reply:`A cesta com menor valor no momento é ${b.name}, por ${money(b.base_price)}. Veja as opções abaixo.`,ui:{type:'baskets'},rule_question:null}}
@@ -86,9 +90,12 @@ async function resolveOfferInsight(sb:any,message:string,flags:any){
 }
 async function resolveProductLookup(sb:any,message:string,flags:any){
   if(flags?.products===false)return null;const s=norm(message),words=s.split(/\s+/).filter(Boolean);const explicit=/\b(tem|vende|vendem|procuro|quero|preciso|quanto|preco|preço)\b/.test(s);if((!explicit&&words.length>5)||(explicit&&words.length>12))return null;
-  const term=productTerm(message);if(term.length<2)return null;const q=clean(term,80).replace(/[,%()]/g,' ').trim();if(!q)return null;
-  const {data}=await sb.from('products').select('id').eq('physically_verified',true).eq('is_active',true).gt('stock',0).or(`name.ilike.%${q}%,brand.ilike.%${q}%,category.ilike.%${q}%,packaging.ilike.%${q}%`).limit(1);
-  if(!arr(data).length)return null;return {source:'product_data',ai_used:false,mode:'product_lookup',reply:'Encontrei opções no catálogo. Veja abaixo.',ui:{type:'product_lookup',query:q},rule_question:null};
+  for(const raw of productLookupTerms(message)){
+    const q=clean(raw,80).replace(/[,%()]/g,' ').trim();if(!q)continue;
+    const {data}=await sb.from('products').select('id').eq('physically_verified',true).eq('is_active',true).gt('stock',0).or(`name.ilike.%${q}%,brand.ilike.%${q}%,category.ilike.%${q}%,packaging.ilike.%${q}%`).limit(1);
+    if(arr(data).length)return {source:'product_data',ai_used:false,mode:'product_lookup',reply:'Encontrei opções no catálogo. Veja abaixo.',ui:{type:'product_lookup',query:q},rule_question:null};
+  }
+  return null;
 }
 async function aiChoose(sb:any,message:string,rules:any[],runtime:any,flags:any){
   if(flags?.openai===false)return null;const key=await openAiKey(sb);if(!key||runtime?.classifier_ai_enabled===false||!rules.length)return null;
