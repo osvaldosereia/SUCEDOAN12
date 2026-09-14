@@ -58,4 +58,22 @@ assert.match(admin,/image_ai_manual_review_required/);
 assert.match(admin,/bad_images:badRows\.data/);
 assert.match(admin,/manual_action_required/);
 
+// Manual review comparison: source x generated, zoom, approve-as-is or regenerate with written guidance.
+for(const id of ['repairSourceImage','repairGeneratedImage','approveGeneratedManual','imageZoomDialog','imageZoomImage']) assert.match(page,new RegExp(`id=["']${id}["']`));
+assert.match(page,/Original \/ Referência/);
+assert.match(page,/Gerada \/ Candidata/);
+assert.match(js,/approve_manual/);
+assert.match(js,/data-zoom-image/);
+assert.match(js,/repairSourceImage/);
+assert.match(js,/repairGeneratedImage/);
+assert.match(admin,/action==="approve_manual"/);
+assert.match(admin,/image_ai_manual_review_required:false/);
+assert.match(admin,/image_ai_manual_resolved_at:now/);
+assert.match(admin,/image_ai_status:"completed"/);
+assert.match(admin,/image_url:candidate/);
+assert.match(admin,/image_original_url/);
+
+// Dynamic HTML values keep quote escaping well-formed.
+assert.match(js,/['"]&quot;['"]/);
+
 console.log('product image manual review contract ok');

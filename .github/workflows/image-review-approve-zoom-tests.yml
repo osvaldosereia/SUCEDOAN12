@@ -1,0 +1,31 @@
+name: Image review approve zoom tests
+
+on:
+  push:
+    branches:
+      - feat/image-review-approve-zoom
+    paths:
+      - 'admin-v3/imagens-ia.html'
+      - 'admin-v3/image-automation.js'
+      - 'admin-v3/image-automation.css'
+      - 'supabase/functions/admin-product-images-v1/**'
+      - 'scripts/test-product-image-manual-review-v1.mjs'
+      - '.github/workflows/image-review-approve-zoom-tests.yml'
+  pull_request:
+    paths:
+      - 'admin-v3/imagens-ia.html'
+      - 'admin-v3/image-automation.js'
+      - 'admin-v3/image-automation.css'
+      - 'supabase/functions/admin-product-images-v1/**'
+      - 'scripts/test-product-image-manual-review-v1.mjs'
+      - '.github/workflows/image-review-approve-zoom-tests.yml'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-product-image-manual-review-v1.mjs
