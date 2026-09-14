@@ -86,7 +86,7 @@
     const base=String(C.whatsappFallback||'https://wa.me/556584491018');
     const ref=String(order?.order_number||order?.number||order?.order_id||'').trim();
     const checkout=lastCheckout||{},items=Array.isArray(checkout.items)?checkout.items:[],policies=Array.isArray(basketPolicies)?basketPolicies:[];
-    const current=new Map(items.map(item=>[String(item.product_id),item])),policyMap=new Map(policies.map(item=>[String(item.product_id),item]));
+    const basketItems=items.filter(item=>item.source==='basket'||item.source==='substitution'),current=new Map(basketItems.map(item=>[String(item.product_id),item])),policyMap=new Map(policies.map(item=>[String(item.product_id),item]));
     const standard=[],changed=[];
     policies.forEach(policy=>{
       const item=current.get(String(policy.product_id)),quantity=Number(item?.quantity??policy.quantity??0),baseQuantity=Number(policy.base_quantity??policy.quantity??0),entry={name:String(item?.name||policy.name||'Produto'),quantity};
