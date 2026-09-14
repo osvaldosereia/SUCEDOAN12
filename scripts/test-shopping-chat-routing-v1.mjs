@@ -19,6 +19,14 @@ assert.match(edge,/routeChatMessage/,'deve existir um roteador próprio do Chat 
 assert.match(edge,/source:'shopping_room'/,'mensagens devem permanecer identificadas como shopping_room');
 assert.match(edge,/direction:'outbound'/,'resposta direta deve ser persistida sem transporte WhatsApp');
 
+for(const [label,pattern] of [
+  ['pagamento',/Você pode pagar na entrega por PIX/],
+  ['entrega',/Entregamos em Cuiabá e Várzea Grande/]
+]){
+  assert.match(edge,pattern,`produção deve responder ${label} sem IA`);
+  assert.match(adminAi,pattern,`simulador do Admin deve reproduzir ${label} igual à produção`);
+}
+
 assert.ok(!edge.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!products.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-products-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!menu.includes('is_whatsapp_active'),'shopping-chat-menu-v1 não deve filtrar cesta por flag do WhatsApp');
