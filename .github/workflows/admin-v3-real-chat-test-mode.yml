@@ -7,6 +7,7 @@ on:
       - 'comprar/index.html'
       - 'comprar/config.js'
       - 'comprar/admin-test-bridge.js'
+      - 'supabase/config.toml'
       - 'supabase/functions/shopping-chat-admin-test-v1/**'
       - 'supabase/migrations/*shopping_chat_admin_test*'
       - 'tests/admin-v3-real-chat-test-mode.mjs'
@@ -18,6 +19,7 @@ on:
       - 'comprar/index.html'
       - 'comprar/config.js'
       - 'comprar/admin-test-bridge.js'
+      - 'supabase/config.toml'
       - 'supabase/functions/shopping-chat-admin-test-v1/**'
       - 'supabase/migrations/*shopping_chat_admin_test*'
       - 'tests/admin-v3-real-chat-test-mode.mjs'
@@ -30,4 +32,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node tests/admin-v3-real-chat-test-mode.mjs
+      - name: Check browser scripts
+        run: |
+          node --check admin-v3/chat-real-test.js
+          node --check comprar/admin-test-bridge.js
+      - name: Run real test-mode contract
+        run: node tests/admin-v3-real-chat-test-mode.mjs
+      - name: Run existing Chat Comprar Admin regression
+        run: node tests/admin-v3-service-strategy-shopping-chat-final.mjs
