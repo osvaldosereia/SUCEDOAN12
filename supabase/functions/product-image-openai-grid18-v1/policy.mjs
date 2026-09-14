@@ -1,7 +1,7 @@
 const score=v=>Math.max(0,Math.min(1,Number(v||0)));
 const upper=v=>String(v??'').trim().toUpperCase();
 
-export const PIPELINE_VERSION='grid18-studio-v2-high-clean';
+export const PIPELINE_VERSION='grid18-studio-v2-medium-clean';
 export const POLICY={
   sourceIdentityMin:0.92,
   sourceQualityMin:0.80,
