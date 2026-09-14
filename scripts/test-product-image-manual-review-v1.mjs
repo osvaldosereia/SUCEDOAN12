@@ -10,6 +10,7 @@ const gridImage=r('supabase/functions/product-image-openai-grid18-v1/image.mjs')
 const policy=r('supabase/functions/product-image-openai-grid18-v1/policy.mjs');
 const manual=r('supabase/functions/product-image-manual-v1/index.ts');
 const migration=r('supabase/migrations/20260914100500_product_image_manual_review_v1.sql');
+const candidateFallback=r('supabase/migrations/20260914185000_product_image_manual_candidate_fallback_v1.sql');
 
 assert.match(gridImage,/f\.append\('quality','medium'\)/);
 assert.match(grid,/items\.length!==18/);
@@ -61,5 +62,18 @@ assert.match(admin,/action==="bulk_approve_manual"/);
 assert.match(admin,/product_ids/);
 assert.match(admin,/approved/);
 assert.match(admin,/skipped/);
+
+// Manual review must always expose a selectable trusted candidate when a visible
+// source/current image exists, even when generation did not produce image_ai_url.
+assert.match(candidateFallback,/product_image_manual_candidate_fallback_v1/);
+assert.match(candidateFallback,/image_ai_manual_review_required/);
+assert.match(candidateFallback,/image_ai_url/);
+assert.match(candidateFallback,/image_source_url/);
+assert.match(candidateFallback,/image_url/);
+assert.match(candidateFallback,/githubusercontent/);
+assert.match(candidateFallback,/supabase/);
+assert.match(candidateFallback,/create trigger/i);
+assert.match(candidateFallback,/update public\.products/i);
+assert.match(candidateFallback,/image_ai_status[^\n]*processing/i);
 
 console.log('product image manual review contract ok');
