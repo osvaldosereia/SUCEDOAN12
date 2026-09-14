@@ -1,8 +1,14 @@
 const BUY_URL='../comprar/';
 
-if(location.hash==='#storefront'){
+function redirectLegacyHash(event){
+  if(location.hash!=='#storefront')return false;
+  event?.stopImmediatePropagation?.();
   location.replace(BUY_URL);
+  return true;
 }
+
+redirectLegacyHash();
+window.addEventListener('hashchange',event=>redirectLegacyHash(event),true);
 
 const replacements=[
   ['Pedidos recentes da vitrine','Pedidos recentes do Comprar'],
