@@ -3,10 +3,13 @@ import fs from 'node:fs';
 
 const chatPath='supabase/functions/shopping-chat-v1/index.ts';
 const migrationPath='supabase/migrations/20260914115000_chat_deterministic_first_v1.sql';
+const edgeCasesPath='supabase/migrations/20260914154000_chat_launch_edge_cases_v1.sql';
 const chat=fs.readFileSync(chatPath,'utf8');
 
 assert.equal(fs.existsSync(migrationPath),true,'deve existir migration com regras comerciais e classificação de catálogo');
+assert.equal(fs.existsSync(edgeCasesPath),true,'deve existir migration para casos reais encontrados no smoke de lançamento');
 const migration=fs.readFileSync(migrationPath,'utf8');
+const edgeCases=fs.readFileSync(edgeCasesPath,'utf8');
 
 const routeStart=chat.indexOf('async function routeChatMessage');
 assert.ok(routeStart>=0,'motor deve possuir routeChatMessage');
@@ -21,15 +24,24 @@ assert.match(chat,/resolveBasketInsight/,'perguntas de preço\/orçamento de ces
 assert.match(chat,/generative_ai_enabled/,'motor deve respeitar IA generativa desligada');
 assert.ok(chat.includes("if(!/\\b(cesta|bonini|koblenz|economica)/.test(s))return null;"),'comparações Bonini/Koblenz devem usar dados das cestas mesmo sem a palavra cesta');
 assert.match(chat,/productLookupTerms/,'busca de produto deve tentar termos menores antes de recorrer à IA');
-for(const stop of ['uma','um','opção','opcao','simples','abastecer','casa']) assert.ok(chat.includes(`'${stop}'`),`busca de produto deve ignorar palavra genérica ${stop}`);
-assert.match(route,/direct\.stage\?\.response_mode==='product_lookup'[\s\S]*?resolveProductLookup/,'regra de produto deve validar uma busca real antes de devolver o termo literal');
 const deterministicBlock=chat.slice(chat.indexOf('function deterministic'),chat.indexOf('function ruleScore'));
 for(const specific of ['amaciante','desinfetante','shampoo','sabonete','desodorante','fralda','racao','ração','tapete higienico','tapete higiênico']){
   assert.ok(!deterministicBlock.includes(specific),`produto específico ${specific} não deve abrir categoria inteira no atalho determinístico`);
 }
 
-const intentCount=(migration.match(/-- INTENT:/g)||[]).length;
-assert.ok(intentCount>=20&&intentCount<=35,`esperadas 20-35 intenções comerciais, encontradas ${intentCount}`);
+for(const phrase of [
+  '-- INTENT: downy_especifico',
+  "'Quero amaciante Downy'",
+  "'{\"query\":\"Downy\"}'::jsonb",
+  '-- INTENT: abastecer_casa',
+  'Preciso de uma opção simples para abastecer a casa',
+  'Quero fazer a compra do mês',
+  'Ver cestas',
+  'Ver produtos'
+]) assert.ok(edgeCases.includes(phrase),`caso de lançamento deve cobrir: ${phrase}`);
+
+const intentCount=(migration.match(/-- INTENT:/g)||[]).length+(edgeCases.match(/-- INTENT:/g)||[]).length;
+assert.ok(intentCount>=22&&intentCount<=37,`esperadas 22-37 intenções comerciais, encontradas ${intentCount}`);
 
 for(const phrase of [
   'Aceita Alelo',
