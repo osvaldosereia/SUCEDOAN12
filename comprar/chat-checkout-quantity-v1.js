@@ -10,6 +10,7 @@
   let verificationTimer=null;
   let lastWhatsappUrl='';
   let whatsappReturnScheduled=false;
+  let deliveryLocator=null;
 
   async function helper(action,payload={}){
     const r=await nativeFetch(C.customerApi,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:token(),...payload}),cache:'no-store'});
@@ -34,10 +35,16 @@
 
   window.fetch=async(input,init={})=>{
     const url=typeof input==='string'?input:input?.url;
-    const response=await nativeFetch(input,init);
-    if(url!==C.api||!init?.body||typeof init.body!=='string')return response;
-    let requestBody;try{requestBody=JSON.parse(init.body)}catch{return response}
-    const action=String(requestBody?.action||'').toLowerCase();
+    let requestBody=null,action='';
+    if(url===C.api&&init?.body&&typeof init.body==='string'){
+      try{requestBody=JSON.parse(init.body);action=String(requestBody?.action||'').toLowerCase()}catch{}
+    }
+    let outgoingInit=init;
+    if(action==='confirm_order'&&deliveryLocator&&requestBody){
+      outgoingInit={...init,body:JSON.stringify({...requestBody,delivery_locator:deliveryLocator})};
+    }
+    const response=await nativeFetch(input,outgoingInit);
+    if(url!==C.api||!requestBody)return response;
     if(!['open','start_basket','checkout_preview','confirm_order'].includes(action))return response;
     let data;try{data=await response.clone().json()}catch{return response}
     if(!response.ok||data?.ok===false)return response;
@@ -77,6 +84,15 @@
       const buttons=ctrl.querySelectorAll('button');
       if(buttons[0])buttons[0].disabled=(policy.removable===false&&current<=Number(policy.quantity||0))||(policy.min_quantity!=null&&current<=Number(policy.min_quantity));
       if(buttons[1])buttons[1].disabled=policy.max_quantity!=null&&current>=Number(policy.max_quantity);
+    });
+  }
+
+  function simplifyOrderSummary(stage){
+    const order=[...stage.querySelectorAll('.checkout-card')].find(card=>card.querySelector('.total-line'));
+    if(!order)return;
+    order.classList.add('checkout-order');
+    order.querySelectorAll('.order-line').forEach(line=>{
+      line.querySelectorAll('span')[1]?.remove();
     });
   }
 
@@ -124,12 +140,12 @@
     stage.dataset.phoneFirstReady='1';
     const original=customerCard.innerHTML;
     deferCheckoutCards(stage,customerCard);
-    customerCard.innerHTML='<h3>Identificar cadastro</h3><p class="muted checkout-phone-hint">Digite primeiro seu WhatsApp. Se já tiver cadastro, eu confirmo o número antes de mostrar seus dados.</p><label class="field"><span>WhatsApp com DDD</span><input id="checkoutPhoneLookup" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999"></label><button id="checkoutPhoneLookupButton" type="button" class="primary checkout-phone-button">Continuar</button><small id="checkoutPhoneLookupStatus" class="muted"></small>';
+    customerCard.innerHTML='<h3>Identificar cadastro</h3><p class="muted checkout-phone-hint">Digite seu WhatsApp. Se você já compra com a gente, encontro seu cadastro automaticamente.</p><label class="field"><span>WhatsApp com DDD</span><input id="checkoutPhoneLookup" inputmode="tel" autocomplete="tel" placeholder="(65) 99999-9999"></label><button id="checkoutPhoneLookupButton" type="button" class="primary checkout-phone-button">Continuar</button><small id="checkoutPhoneLookupStatus" class="muted"></small>';
     const input=customerCard.querySelector('#checkoutPhoneLookup');const button=customerCard.querySelector('#checkoutPhoneLookupButton');const status=customerCard.querySelector('#checkoutPhoneLookupStatus');
     button.onclick=async()=>{
       const phone=String(input.value||'').trim();const digits=phone.replace(/\D/g,'');
       if(digits.length<10){status.textContent='Digite o WhatsApp com DDD.';input.focus();return}
-      button.disabled=true;button.textContent='Buscando…';status.textContent='';
+      button.disabled=true;button.textContent='Buscando…';status.textContent='Procurando seu cadastro…';
       try{
         const d=await helper('lookup_customer',{phone});
         if(d.verified){refreshVerifiedCheckout(d.checkout,status);return}
@@ -140,6 +156,7 @@
         customerCard.querySelector('#checkoutName')?.focus();
       }catch(e){status.textContent=String(e?.message||'Não foi possível consultar o cadastro.');button.disabled=false;button.textContent='Continuar'}
     };
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();button.click()}});
     setTimeout(()=>input?.focus(),0);
   }
 
@@ -193,6 +210,59 @@
     }
   }
 
+  function fillAddressField(deliveryCard,id,value){
+    if(value==null||String(value).trim()==='')return;
+    const input=deliveryCard.querySelector(`#${id}`);if(!input)return;
+    input.value=String(value).trim();
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+
+  function applyLocatedAddress(address,stage){
+    const deliveryCard=[...stage.querySelectorAll('.checkout-card')].find(card=>card.querySelector('h3')?.textContent?.trim()==='Entrega');
+    if(!deliveryCard)return;
+    const newChoice=deliveryCard.querySelector('input[name="address"][value="new"]');
+    if(newChoice){newChoice.checked=true;newChoice.dispatchEvent(new Event('change',{bubbles:true}))}
+    deliveryCard.querySelector('#newAddress')?.classList.remove('hidden');
+    fillAddressField(deliveryCard,'street',address?.street);
+    fillAddressField(deliveryCard,'number',address?.number);
+    fillAddressField(deliveryCard,'neighborhood',address?.neighborhood);
+    fillAddressField(deliveryCard,'city',address?.city);
+    fillAddressField(deliveryCard,'stateUf',address?.state);
+    fillAddressField(deliveryCard,'postal',address?.postal_code);
+    const save=deliveryCard.querySelector('#saveAddress');if(save)save.checked=true;
+    const prompt=deliveryCard.querySelector('.address-confirm-required');
+    if(prompt){prompt.classList.remove('attention');prompt.textContent='Confira o endereço preenchido pela localização antes de concluir.'}
+    const status=deliveryCard.querySelector('#locationStatus');
+    if(status){status.classList.add('location-success');status.textContent=address?.number?'Endereço preenchido ✓ Confira os dados.':'Endereço encontrado ✓ Informe ou confira o número.'}
+    if(!address?.number)deliveryCard.querySelector('#number')?.focus();
+  }
+
+  function setupLocationFill(stage){
+    if(stage.dataset.locationFillReady==='1')return;
+    const deliveryCard=[...stage.querySelectorAll('.checkout-card')].find(card=>card.querySelector('h3')?.textContent?.trim()==='Entrega');
+    const button=deliveryCard?.querySelector('#useLocation');const status=deliveryCard?.querySelector('#locationStatus');
+    if(!deliveryCard||!button||!status)return;
+    stage.dataset.locationFillReady='1';
+    button.onclick=null;
+    button.addEventListener('click',()=>{
+      if(button.dataset.busy==='1')return;
+      if(!navigator.geolocation){status.textContent='Localização não disponível neste aparelho.';return}
+      button.dataset.busy='1';button.disabled=true;status.classList.remove('location-success');status.textContent='Localizando e preenchendo o endereço…';
+      navigator.geolocation.getCurrentPosition(async pos=>{
+        deliveryLocator={latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy_m:Math.round(pos.coords.accuracy||0),captured_at:new Date().toISOString()};
+        try{
+          const d=await helper('reverse_geocode',{latitude:deliveryLocator.latitude,longitude:deliveryLocator.longitude});
+          applyLocatedAddress(d.address||{},stage);
+        }catch{
+          status.textContent='Localização recebida ✓ Não consegui preencher a rua automaticamente; complete o endereço abaixo.';
+          const newChoice=deliveryCard.querySelector('input[name="address"][value="new"]');
+          if(newChoice){newChoice.checked=true;newChoice.dispatchEvent(new Event('change',{bubbles:true}))}
+          deliveryCard.querySelector('#newAddress')?.classList.remove('hidden');
+        }finally{button.dataset.busy='0';button.disabled=false}
+      },()=>{status.textContent='Não foi possível obter sua localização. Preencha o endereço abaixo.';button.dataset.busy='0';button.disabled=false},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+    });
+  }
+
   function decorateOrderSuccess(){
     const success=document.querySelector('.checkout-card.success');
     if(!success||!lastWhatsappUrl)return;
@@ -213,7 +283,7 @@
     decorateBasketRows();
     decorateOrderSuccess();
     const stage=document.querySelector('.stage.checkout-stage');
-    if(stage){setupPhoneFirst(stage);setupAddressConfirmation(stage)}
+    if(stage){simplifyOrderSummary(stage);setupPhoneFirst(stage);setupAddressConfirmation(stage);setupLocationFill(stage)}
   }
   const observer=new MutationObserver(refresh);observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
   document.addEventListener('click',()=>setTimeout(refresh,0),true);
