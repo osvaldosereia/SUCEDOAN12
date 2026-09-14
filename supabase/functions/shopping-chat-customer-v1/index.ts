@@ -36,11 +36,13 @@ Deno.serve(async(req:Request)=>{
 
   if(action==='basket_policies'){
     if(!session.cart_id)return json(req,{ok:true,policies:[]});
-    const {data,error}=await sb.from('cart_items').select('product_id,source,quantity,metadata').eq('cart_id',session.cart_id).in('source',['basket','substitution']).order('created_at');
+    const {data,error}=await sb.from('cart_items').select('product_id,source,quantity,base_quantity,metadata,product:products(name)').eq('cart_id',session.cart_id).in('source',['basket','substitution']).order('created_at');
     if(error)return json(req,{ok:false,error:'basket_policies_failed'},500);
     const policies=(data||[]).map((item:any)=>({
       product_id:item.product_id,
+      name:clean(item.product?.name||'',180),
       quantity:Number(item.quantity||0),
+      base_quantity:Number(item.base_quantity??item.quantity??0),
       quantity_editable:item.metadata?.quantity_editable!==false,
       removable:item.metadata?.removable!==false,
       min_quantity:item.metadata?.min_quantity==null?null:Number(item.metadata.min_quantity),
