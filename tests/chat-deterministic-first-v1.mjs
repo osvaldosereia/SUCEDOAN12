@@ -21,6 +21,8 @@ assert.match(chat,/resolveBasketInsight/,'perguntas de preço\/orçamento de ces
 assert.match(chat,/generative_ai_enabled/,'motor deve respeitar IA generativa desligada');
 assert.ok(chat.includes("if(!/\\b(cesta|bonini|koblenz|economica)/.test(s))return null;"),'comparações Bonini/Koblenz devem usar dados das cestas mesmo sem a palavra cesta');
 assert.match(chat,/productLookupTerms/,'busca de produto deve tentar termos menores antes de recorrer à IA');
+for(const stop of ['uma','um','opção','opcao','simples','abastecer','casa']) assert.ok(chat.includes(`'${stop}'`),`busca de produto deve ignorar palavra genérica ${stop}`);
+assert.match(route,/direct\.stage\?\.response_mode==='product_lookup'[\s\S]*?resolveProductLookup/,'regra de produto deve validar uma busca real antes de devolver o termo literal');
 const deterministicBlock=chat.slice(chat.indexOf('function deterministic'),chat.indexOf('function ruleScore'));
 for(const specific of ['amaciante','desinfetante','shampoo','sabonete','desodorante','fralda','racao','ração','tapete higienico','tapete higiênico']){
   assert.ok(!deterministicBlock.includes(specific),`produto específico ${specific} não deve abrir categoria inteira no atalho determinístico`);
