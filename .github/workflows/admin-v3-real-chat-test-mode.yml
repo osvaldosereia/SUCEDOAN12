@@ -1,0 +1,33 @@
+name: Admin V3 real Chat test mode
+on:
+  push:
+    paths:
+      - 'admin-v3/atendimento.html'
+      - 'admin-v3/chat-real-test.*'
+      - 'comprar/index.html'
+      - 'comprar/config.js'
+      - 'comprar/admin-test-bridge.js'
+      - 'supabase/functions/shopping-chat-admin-test-v1/**'
+      - 'supabase/migrations/*shopping_chat_admin_test*'
+      - 'tests/admin-v3-real-chat-test-mode.mjs'
+      - '.github/workflows/admin-v3-real-chat-test-mode.yml'
+  pull_request:
+    paths:
+      - 'admin-v3/atendimento.html'
+      - 'admin-v3/chat-real-test.*'
+      - 'comprar/index.html'
+      - 'comprar/config.js'
+      - 'comprar/admin-test-bridge.js'
+      - 'supabase/functions/shopping-chat-admin-test-v1/**'
+      - 'supabase/migrations/*shopping_chat_admin_test*'
+      - 'tests/admin-v3-real-chat-test-mode.mjs'
+      - '.github/workflows/admin-v3-real-chat-test-mode.yml'
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/admin-v3-real-chat-test-mode.mjs
