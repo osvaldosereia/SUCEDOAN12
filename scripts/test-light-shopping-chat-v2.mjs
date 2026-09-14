@@ -76,4 +76,17 @@ assert.match(edge,/customer_subcategory/,'products API must filter by customer_s
 assert.match(edge,/customer_subsubcategory/,'products API must filter by customer_subsubcategory');
 assert.match(edge,/subcategories/,'filters response must expose first-level customer subcategories');
 assert.match(edge,/subsubcategories/,'filters response must expose second-level customer subsubcategories');
+
+// The web storefront must be able to sell products that are valid for the web even when
+// the legacy WhatsApp channel flag is disabled. WhatsApp writes keep their own helper/rules.
+const webEligibilityMigration='supabase/migrations/20260914203500_web_shopping_room_product_eligibility_v1.sql';
+assert.ok(existsSync(webEligibilityMigration),'web storefront eligibility migration must exist');
+const webEligibilitySql=readFileSync(webEligibilityMigration,'utf8');
+assert.match(webEligibilitySql,/create or replace function public\.set_cart_web_addon_quantity/i,'web storefront must have a channel-specific cart helper');
+assert.match(webEligibilitySql,/v_cart:=public\.set_cart_web_addon_quantity\(v_cart_id,p_product_id,p_quantity\)/,'shopping room must use the web-specific helper');
+const webHelper=webEligibilitySql.match(/create or replace function public\.set_cart_web_addon_quantity[\s\S]*?\$function\$/i)?.[0]||'';
+assert.match(webHelper,/physically_verified=true/i,'web helper must require physical verification');
+assert.match(webHelper,/is_active=true/i,'web helper must require an active product');
+assert.match(webHelper,/coalesce\(stock,0\)/i,'web helper must enforce stock');
+assert.doesNotMatch(webHelper,/is_whatsapp_active/i,'web helper must not depend on the WhatsApp availability flag');
 console.log('light_shopping_chat_v2_ok');
