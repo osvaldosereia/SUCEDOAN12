@@ -150,13 +150,13 @@ async function aiChoose(sb:any,message:string,rules:any[],runtime:any,flags:any)
   try{const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model,store:false,max_output_tokens:100,reasoning:{effort:'low'},instructions:`${generativeDisabled?'Modo somente classificação. ':''}Classifique a mensagem somente entre as regras candidatas do Chat Comprar. Se nenhuma regra servir, matched=false. Não invente ações nem respostas.`,input:[{role:'user',content:[{type:'input_text',text:JSON.stringify({message,candidates})}]}],text:{verbosity:'low',format:{type:'json_schema',name:'shopping_route',strict:true,schema:{type:'object',additionalProperties:false,properties:{matched:{type:'boolean'},id:{type:'string'}},required:['matched','id']}}}}),signal:AbortSignal.timeout(20000)});const data=await response.json().catch(()=>({}));if(!response.ok)return null;const parsed=JSON.parse(finalText(data)||'{}');if(!parsed.matched)return null;return rules.find((r:any)=>String(r.id)===String(parsed.id))||null}catch{return null}
 }
 async function routeChatMessage(sb:any,message:string,runtime:any,flags:any,context:any={}){
-  const basketLegacy=await resolveBasketInsight(sb,message,flags);if(basketLegacy)return basketLegacy;
   const offer=await resolveOfferInsight(sb,message,flags);if(offer)return offer;
   const {data:rows}=await sb.from('service_simple_rules').select('*').eq('status','published').order('priority',{ascending:false}).limit(100);
   const rules=arr(rows).filter((r:any)=>{const mode=clean((stagesOf(r.stages)[0]||r).response_mode,40);return CHAT_MODES.has(mode)&&modeAllowed(mode,flags)}),direct=directRule(message,rules),threshold=Number(runtime?.similarity_threshold??.42);
   if(direct&&direct.score>=Math.max(.78,threshold))return ruleResult(stageForMessage(direct.stage,message),'rule',false);
   const basket=await resolveBasketQuery(sb,message,flags,context);if(basket)return basket;
   const catalog=await resolveCatalogQuery(sb,message,flags,context);if(catalog)return catalog;
+  const basketLegacy=await resolveBasketInsight(sb,message,flags);if(basketLegacy)return basketLegacy;
   if(direct&&direct.score>=threshold)return ruleResult(stageForMessage(direct.stage,message),'rule',false);
   const det=deterministic(message,flags);if(det)return det;
   const product=await resolveProductLookup(sb,message,flags);if(product)return product;
