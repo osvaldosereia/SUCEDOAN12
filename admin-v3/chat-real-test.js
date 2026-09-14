@@ -5,6 +5,7 @@ const newButton=document.getElementById('testNewSession');
 const clearButton=document.getElementById('testClearDiagnostics');
 const status=document.getElementById('testStatus');
 const testTab=document.querySelector('[data-strategy-tab="test"]');
+const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 let started=false;
 let events=[];
 
@@ -13,7 +14,7 @@ function testUrl(){const id=globalThis.crypto?.randomUUID?.()||`${Date.now()}-${
 function renderDiagnostics(){
   if(!diagnostics)return;
   if(!events.length){diagnostics.innerHTML='<div class="chat-real-test-empty">As ações do teste aparecerão aqui: rota, uso de IA, API, tempo e possíveis erros.</div>';return}
-  diagnostics.innerHTML=`<div class="chat-real-test-events">${events.slice().reverse().map(e=>`<article class="chat-real-test-event ${e.error?'error':e.action==='confirm_order'&&e.ok?'success':''}"><strong>${String(e.action||'evento')}</strong><small>${e.ok===false?'Erro':`HTTP ${e.status||200}`} · ${Math.round(Number(e.ms||0))} ms${e.source?` · rota ${String(e.source)}`:''}${e.ai_used===true?' · IA usada':e.ai_used===false?' · sem IA':''}${e.mode?` · ${String(e.mode)}`:''}</small>${e.error?`<small>${String(e.error)}</small>`:''}</article>`).join('')}</div>`;
+  diagnostics.innerHTML=`<div class="chat-real-test-events">${events.slice().reverse().map(e=>`<article class="chat-real-test-event ${e.error?'error':e.action==='confirm_order'&&e.ok?'success':''}"><strong>${esc(e.action||'evento')}</strong><small>${e.ok===false?'Erro':`HTTP ${Number(e.status||200)}`} · ${Math.round(Number(e.ms||0))} ms${e.source?` · rota ${esc(e.source)}`:''}${e.ai_used===true?' · IA usada':e.ai_used===false?' · sem IA':''}${e.mode?` · ${esc(e.mode)}`:''}</small>${e.error?`<small>${esc(e.error)}</small>`:''}</article>`).join('')}</div>`;
 }
 function addDiagnostic(data){events.push(data);if(events.length>80)events=events.slice(-80);renderDiagnostics()}
 function sendAuth(){
