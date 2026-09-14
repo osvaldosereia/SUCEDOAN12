@@ -24,6 +24,7 @@ assert.doesNotMatch(addon,/setTimeout\(\(\)=>input\?\.focus\(\),0\)/,'phone look
 // O WhatsApp deve receber um resumo operacional, separando cesta normal, alterações e extras.
 assert.match(customerEdge,/base_quantity/,'basket policy helper must expose original basket quantity');
 assert.match(customerEdge,/product:products\(name\)/,'basket policy helper must expose product name for removed/changed items');
+assert.match(addon,/item\.source==='basket'\|\|item\.source==='substitution'/,'basket comparison must ignore addon rows even when the same product is also in the basket');
 assert.match(addon,/PRODUTOS DA CESTA SEM ALTERACAO/,'WhatsApp message must list unchanged basket items');
 assert.match(addon,/PRODUTOS DA CESTA COM QUANTIDADE ALTERADA/,'WhatsApp message must list changed basket items');
 assert.match(addon,/PRODUTOS ADICIONADOS FORA DA CESTA/,'WhatsApp message must list products added outside the basket');
