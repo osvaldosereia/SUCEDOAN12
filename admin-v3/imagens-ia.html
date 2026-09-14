@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Imagens IA</title>
   <link rel="stylesheet" href="./styles.css?v=20260912-5">
-  <link rel="stylesheet" href="./image-automation.css?v=20260914-1">
+  <link rel="stylesheet" href="./image-automation.css?v=20260914-2">
 </head>
 <body>
   <header class="topbar">
@@ -46,7 +46,7 @@
           <div id="issueRows" class="issue-list"></div>
         </section>
 
-        <section class="panel"><div class="panel-title-row"><div><h2>Últimos resultados</h2><p class="muted">A foto publicada só é substituída quando a validação aprova o resultado.</p></div></div><div id="recentResults" class="image-results"></div></section>
+        <section class="panel"><div class="panel-title-row"><div><h2>Últimos resultados</h2><p class="muted">A foto publicada só é substituída quando a validação aprova o resultado ou quando você aprova manualmente.</p></div></div><div id="recentResults" class="image-results"></div></section>
         <section class="panel"><h2>Lotes recentes</h2><div id="recentBatches" class="batch-list"></div></section>
       </section>
     </main>
@@ -54,25 +54,60 @@
 
   <dialog id="repairDialog" class="repair-dialog">
     <form id="repairForm" method="dialog" class="repair-shell">
-      <header class="repair-head"><div><span class="eyebrow">Resolver imagem</span><h2 id="repairTitle">Produto</h2></div><button id="repairClose" type="button" class="close-dialog" aria-label="Fechar">×</button></header>
-      <div class="repair-preview"><img id="repairImage" alt=""><div><div id="repairDiagnosis" class="diagnosis"></div><div id="repairRawError" class="muted"></div></div></div>
-      <label class="field wide"><span>Imagem de origem confiável</span><input id="repairSourceUrl" type="url" inputmode="url" placeholder="https://..."><small>Opcional. Use para trocar a referência antes de reenviar ao lote.</small></label>
-      <label class="field wide"><span>Observação interna</span><textarea id="repairNote" rows="2" placeholder="Anotação administrativa sobre esta imagem."></textarea></label>
-      <label class="field wide"><span>Orientação para gerar novamente</span><textarea id="repairManualPrompt" rows="4" maxlength="1200" placeholder="Ex.: manter a embalagem verde correta, remover o copo ao lado e mostrar o frasco inteiro sem cortar a tampa."></textarea><small>Esta orientação é usada somente quando você clicar em “Gerar individualmente”. A identidade do produto continua fixa.</small></label>
-      <div class="repair-actions">
-        <button id="useCurrentSource" class="secondary" type="button">Usar foto atual como origem</button>
-        <button id="saveNote" class="secondary" type="button">Salvar observação</button>
-        <button id="retryOnly" class="secondary" type="button">Reprocessar no lote</button>
-        <button id="saveSourceRetry" class="secondary" type="button">Salvar origem e reenviar ao lote</button>
-        <button id="generateIndividualManual" class="primary" type="button">Gerar individualmente</button>
-        <button id="ignoreProduct" class="danger" type="button">Ignorar</button>
-        <button id="restoreProduct" class="primary hidden" type="button">Restaurar e reenviar ao lote</button>
+      <header class="repair-head"><div><span class="eyebrow">Resolver imagem</span><h2 id="repairTitle">Produto</h2><div id="repairMeta" class="muted"></div></div><button id="repairClose" type="button" class="close-dialog" aria-label="Fechar">×</button></header>
+
+      <div class="repair-compare" aria-label="Comparação de imagens">
+        <section class="compare-card">
+          <div class="compare-card-head"><strong>Original / Referência</strong><span class="muted">Base usada pela IA</span></div>
+          <button type="button" class="compare-image-button" data-zoom-image="repairSourceImage" data-zoom-label="Original / Referência" aria-label="Ampliar imagem original">
+            <img id="repairSourceImage" alt="Imagem original ou referência do produto">
+          </button>
+        </section>
+        <section class="compare-card">
+          <div class="compare-card-head"><strong>Gerada / Candidata</strong><span class="muted">Imagem que está em revisão</span></div>
+          <button type="button" class="compare-image-button" data-zoom-image="repairGeneratedImage" data-zoom-label="Gerada / Candidata" aria-label="Ampliar imagem gerada">
+            <img id="repairGeneratedImage" alt="Imagem gerada pela IA">
+          </button>
+        </section>
       </div>
-      <p class="muted">A geração individual custa mais que o lote e só será executada após o clique acima.</p>
+      <p class="zoom-hint muted">Clique em qualquer imagem para ampliar.</p>
+
+      <div class="repair-diagnosis-panel"><div id="repairDiagnosis" class="diagnosis"></div><div id="repairRawError" class="muted"></div></div>
+
+      <div class="repair-decision-actions">
+        <button id="approveGeneratedManual" class="primary" type="button">Aprovar como está</button>
+        <button id="generateIndividualManual" class="primary" type="button">Gerar outra</button>
+      </div>
+
+      <label class="field wide"><span>Orientação para gerar novamente</span><textarea id="repairManualPrompt" rows="4" maxlength="1200" placeholder="Ex.: manter a embalagem verde correta, remover o copo ao lado e mostrar o frasco inteiro sem cortar a tampa."></textarea><small>Obrigatório apenas para “Gerar outra”. A identidade do produto continua fixa.</small></label>
+
+      <details class="repair-advanced">
+        <summary>Outras opções de correção</summary>
+        <div class="repair-advanced-body">
+          <label class="field wide"><span>Imagem de origem confiável</span><input id="repairSourceUrl" type="url" inputmode="url" placeholder="https://..."><small>Opcional. Use para trocar a referência antes de reenviar ao lote.</small></label>
+          <label class="field wide"><span>Observação interna</span><textarea id="repairNote" rows="2" placeholder="Anotação administrativa sobre esta imagem."></textarea></label>
+          <div class="repair-actions">
+            <button id="useCurrentSource" class="secondary" type="button">Usar foto atual como origem</button>
+            <button id="saveNote" class="secondary" type="button">Salvar observação</button>
+            <button id="retryOnly" class="secondary" type="button">Reprocessar no lote</button>
+            <button id="saveSourceRetry" class="secondary" type="button">Salvar origem e reenviar ao lote</button>
+            <button id="ignoreProduct" class="danger" type="button">Ignorar</button>
+            <button id="restoreProduct" class="primary hidden" type="button">Restaurar e reenviar ao lote</button>
+          </div>
+        </div>
+      </details>
+      <p class="muted">“Aprovar como está” mantém a imagem candidata e retira o produto da fila de imagens ruins. “Gerar outra” usa sua orientação e custa mais que o lote de 18.</p>
     </form>
   </dialog>
 
+  <dialog id="imageZoomDialog" class="image-zoom-dialog">
+    <div class="image-zoom-shell">
+      <header class="image-zoom-head"><strong id="imageZoomLabel">Imagem</strong><button id="imageZoomClose" type="button" class="close-dialog" aria-label="Fechar ampliação">×</button></header>
+      <img id="imageZoomImage" alt="Imagem ampliada do produto">
+    </div>
+  </dialog>
+
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./image-automation.js?v=20260914-1"></script>
+  <script type="module" src="./image-automation.js?v=20260914-2"></script>
 </body>
 </html>
