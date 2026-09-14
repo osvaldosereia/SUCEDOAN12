@@ -62,6 +62,19 @@ assert.match(edge,/\.order\('name'/);
 assert.match(edge,/\.range\(offset,offset\+limit-1\)/);
 assert.match(edge,/action==='filters'/);
 
+// Checkout UX: keep the review simple and turn GPS into a useful address shortcut.
+assert.doesNotMatch(js,/['"]incluído['"]/,'checkout summary must not show the internal "incluído" label');
+assert.doesNotMatch(js,/money\(i\.line_total\)/,'checkout summary must not expose per-item prices');
+assert.match(js,/customerApi\(/,'public chat must have a dedicated customer helper for checkout conveniences');
+assert.match(js,/reverse_geocode/,'GPS flow must request reverse geocoding');
+assert.match(js,/applyLocatedAddress/,'GPS flow must fill the editable delivery address form');
+assert.match(js,/input\[name="address"\]\[value="new"\]/,'GPS flow must switch from a saved address to the editable address form before filling it');
+assert.match(customerEdge,/action==='reverse_geocode'/,'customer helper must expose reverse geocoding');
+assert.match(customerEdge,/nominatim\.openstreetmap\.org\/reverse/,'reverse geocoding must happen server-side instead of exposing a third-party call in the browser');
+assert.match(customerEdge,/countrycodes=br/,'reverse geocoding must stay constrained to Brazilian addresses');
+assert.match(addonCss,/\.checkout-order/,'checkout order summary must have dedicated compact styling');
+assert.match(addonCss,/\.location-success/,'successful GPS address fill must be visually clear');
+
 // Customer taxonomy v2: the public shopping room must expose the four simple entry choices
 // and drive product browsing from the new customer-facing taxonomy instead of the legacy sales_category tree.
 assert.match(js,/Cestas Básicas/,'start menu must expose Cestas Básicas');
