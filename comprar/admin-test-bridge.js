@@ -36,30 +36,36 @@
     post('da-admin-test-diagnostic',{action:action||'request',ok:!error&&response?.ok!==false&&data?.ok!==false,status:response?.status||0,ms,source:routing.source||data?.source||'',ai_used:routing.ai_used,mode:routing.mode||data?.mode||data?.ui?.type||'',error:error||data?.detail||data?.error||''});
   }
 
+  window.DA_ADMIN_TEST_CONFIRM=async(input,init={})=>{
+    const started=performance.now();
+    const action=actionFrom(init?.body)||'confirm_order';
+    try{
+      const body=jsonBody(init.body)||{};
+      const token=await waitForAdminToken();
+      const headers=new Headers(init.headers||{});
+      headers.set('Content-Type','application/json');
+      headers.set('Authorization',`Bearer ${token}`);
+      const response=await nativeFetch(C.adminTestApi,{...init,headers,body:JSON.stringify({...body,action:'confirm_order',admin_test:true})});
+      let data={};try{data=await response.clone().json()}catch{}
+      diagnostic(action,response,data,performance.now()-started);
+      return response;
+    }catch(error){
+      diagnostic(action,null,null,performance.now()-started,String(error?.message||error));
+      throw error;
+    }
+  };
+
   window.fetch=async(input,init={})=>{
     const url=typeof input==='string'?input:input?.url||'';
     const action=actionFrom(init?.body);
     const tracked=[C.api,C.productsApi,C.menuApi,C.customerApi].filter(Boolean).includes(url);
     const started=performance.now();
-    let target=input,nextInit=init;
     try{
-      if(url===C.api&&action==='confirm_order'){
-        const body=jsonBody(init.body)||{};
-        const token=await waitForAdminToken();
-        target=C.adminTestApi;
-        const headers=new Headers(init.headers||{});
-        headers.set('Content-Type','application/json');
-        headers.set('Authorization',`Bearer ${token}`);
-        nextInit={...init,headers,body:JSON.stringify({...body,admin_test:true})};
-      }
-      const response=await nativeFetch(target,nextInit);
-      if(tracked||action==='confirm_order'){
-        let data={};try{data=await response.clone().json()}catch{}
-        diagnostic(action,response,data,performance.now()-started);
-      }
+      const response=await nativeFetch(input,init);
+      if(tracked){let data={};try{data=await response.clone().json()}catch{}diagnostic(action,response,data,performance.now()-started)}
       return response;
     }catch(error){
-      diagnostic(action,null,null,performance.now()-started,String(error?.message||error));
+      if(tracked)diagnostic(action,null,null,performance.now()-started,String(error?.message||error));
       throw error;
     }
   };
