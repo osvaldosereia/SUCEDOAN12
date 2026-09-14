@@ -139,6 +139,10 @@ verify_jwt = false
 [functions.admin-chat-menu-v1]
 verify_jwt = false
 
+# Confirmação dry-run exclusiva da aba Testar. JWT do Admin é validado no handler; nunca cria orders.
+[functions.shopping-chat-admin-test-v1]
+verify_jwt = false
+
 # Ame Mais é público, sem login/PIN; a função aplica suas próprias regras de origem e rate limit.
 [functions.ame-mais-analyze-v1]
 verify_jwt = false
