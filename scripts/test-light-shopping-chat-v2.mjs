@@ -20,11 +20,17 @@ assert.match(js,/\$\('checkoutButton'\)\.disabled=n<=0/,'fixed Finish must stay 
 assert.ok(existsSync('comprar/chat-checkout-quantity-v1.js'),'phone-first/quantity addon must exist');
 assert.ok(existsSync('comprar/chat-checkout-quantity-v1.css'),'phone-first/quantity addon styles must exist');
 assert.ok(existsSync('supabase/functions/shopping-chat-customer-v1/index.ts'),'customer lookup helper edge must exist');
+assert.ok(existsSync('comprar/comprar-ux-polish-v1.css'),'Comprar UX polish stylesheet must exist');
+assert.ok(existsSync('comprar/phone-retry-v1.js'),'phone retry helper must exist');
 const addon=readFileSync('comprar/chat-checkout-quantity-v1.js','utf8');
 const addonCss=readFileSync('comprar/chat-checkout-quantity-v1.css','utf8');
+const uxCss=readFileSync('comprar/comprar-ux-polish-v1.css','utf8');
+const phoneRetry=readFileSync('comprar/phone-retry-v1.js','utf8');
 const customerEdge=readFileSync('supabase/functions/shopping-chat-customer-v1/index.ts','utf8');
 assert.match(html,/chat-checkout-quantity-v1\.css/,'addon styles must load in the public chat');
 assert.match(html,/chat-checkout-quantity-v1\.js/,'addon must load in the public chat');
+assert.match(html,/comprar-ux-polish-v1\.css/,'product carousel polish must load in the public chat');
+assert.match(html,/phone-retry-v1\.js/,'phone retry helper must load in the public chat');
 assert.ok(html.indexOf('chat-checkout-quantity-v1.js')<html.indexOf('chat-light-v2.js'),'addon must load before the main chat so it can enrich responses');
 assert.match(addon,/quantity_editable/,'basket UI must honor whether each item can change quantity');
 assert.match(addon,/qty-fixed/,'fixed basket items must not show misleading +/- controls');
@@ -61,6 +67,16 @@ assert.match(css,/\.checkout-stage/);
 assert.match(edge,/\.order\('name'/);
 assert.match(edge,/\.range\(offset,offset\+limit-1\)/);
 assert.match(edge,/action==='filters'/);
+
+// Product carousel UX: make the product photo more prominent and the title slightly more compact.
+assert.match(uxCss,/\.product img\{[^}]*height:132px/,'product carousel image must be taller');
+assert.match(uxCss,/\.product h3\{[^}]*font-size:13px/,'product carousel title must use a slightly smaller font');
+
+// Phone lookup UX: a typo must not trap the customer in the new-customer form.
+assert.match(phoneRetry,/checkoutPhoneRetry/,'not-found customer form must expose a retry action');
+assert.match(phoneRetry,/Buscar novamente/,'retry action must clearly offer another phone search');
+assert.match(phoneRetry,/delete stage\.dataset\.phoneFirstReady/,'retry must return to the existing phone-first lookup instead of duplicating customer lookup logic');
+assert.match(phoneRetry,/input\.value=current/,'retry must preserve the corrected phone number when returning to lookup');
 
 // Checkout UX: keep the review simple and turn GPS into a useful address shortcut.
 assert.match(addon,/function simplifyOrderSummary/,'checkout addon must simplify the visible order review');
