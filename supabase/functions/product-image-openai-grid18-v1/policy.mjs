@@ -5,7 +5,12 @@ export const PIPELINE_VERSION='grid18-studio-v2-medium-clean';
 export const POLICY={
   sourceIdentityMin:0.92,
   sourceQualityMin:0.80,
-  sourceRecoverableQualityMin:0.65,
+  // If web recovery cannot find a cleaner reference, keep the cheap grid moving
+  // with the best available source as long as it still plausibly represents the
+  // same product. Bad crop/cutout/background/extra elements are then flagged for
+  // manual review instead of aborting the whole 18-product batch.
+  sourceRecoverableIdentityMin:0.60,
+  sourceRecoverableQualityMin:0.00,
   fidelityMin:0.90,
   compositionMin:0.90,
   cutoutMin:0.90,
@@ -36,10 +41,7 @@ export function sourceInspectionAccepted(v){
 
 export function sourceRecoverableForGrid(v){
   return Boolean(v)
-    && score(v.same_product_confidence)>=POLICY.sourceIdentityMin
-    && v.product_complete===true
-    && v.bad_cutout===false
-    && v.front_or_usable_view===true
+    && score(v.same_product_confidence)>=POLICY.sourceRecoverableIdentityMin
     && score(v.source_quality_score)>=POLICY.sourceRecoverableQualityMin;
 }
 
