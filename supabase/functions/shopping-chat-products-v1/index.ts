@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { normalizeFlags } from "../_shared/chat-intelligence-config.js";
 
 const ORIGINS=new Set(['https://donaantonia.com.br','https://www.donaantonia.com.br']);
 const cors=(req:Request)=>{const o=req.headers.get('origin');if(o&&!ORIGINS.has(o))return null;return {'Access-Control-Allow-Origin':o||'https://donaantonia.com.br','Access-Control-Allow-Headers':'content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'}};
@@ -16,8 +17,15 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json(req,{ok:false,error:'invalid_json'},400)}
   const token=clean(body?.token,80);if(!tokenOk(token))return json(req,{ok:false,error:'invalid_token'},400);
   const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data:session,error:se}=await sb.from('catalog_sessions').select('id,cart_id,status,expires_at').eq('public_token',token).maybeSingle();if(se)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);if(session.status!=='open'||new Date(session.expires_at).getTime()<=Date.now())return json(req,{ok:false,error:'room_inactive'},410);
+  const [{data:session,error:se},{data:runtime}]=await Promise.all([
+    sb.from('catalog_sessions').select('id,cart_id,status,expires_at').eq('public_token',token).maybeSingle(),
+    sb.from('service_simple_runtime_config').select('config_level,integration_flags').eq('id',1).maybeSingle(),
+  ]);
+  if(se)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);if(session.status!=='open'||new Date(session.expires_at).getTime()<=Date.now())return json(req,{ok:false,error:'room_inactive'},410);
+  const flags=normalizeFlags(runtime?.integration_flags,runtime?.config_level||'recommended');
+  if(flags.products===false)return json(req,{ok:false,error:'feature_disabled',feature:'products'},409);
   const action=clean(body?.action||'page',30).toLowerCase(),sales=(Array.isArray(body?.sales_categories)?body.sales_categories:[]).map((x:any)=>clean(x,40)).filter((x:string)=>validSales.has(x)).slice(0,4),offers=body?.offers===true;
+  if(offers&&flags.offers===false)return json(req,{ok:false,error:'feature_disabled',feature:'offers'},409);
   if(action==='filters'){
     let q=sb.from('products').select('category,sales_category').eq('physically_verified',true).eq('is_active',true).gt('stock',0).not('category','is',null).order('category').limit(1000);
     if(sales.length)q=q.in('sales_category',sales);if(offers)q=q.eq('is_offer',true);const {data,error}=await q;if(error)return json(req,{ok:false,error:'filters_failed',detail:error.message},400);
