@@ -84,6 +84,27 @@ Deno.serve(async(req:Request)=>{
     return{ok:true,product_id:productId,mode:"individual_manual",dispatch:dispatch||null};
   }
 
+  async function approveManualProduct(productId:string,noteInput?:unknown){
+    const {data:p,error:pe}=await sb.from("products").select("id,is_active,image_ai_status,image_ai_ignored,image_ai_manual_review_required,image_ai_url,image_ai_admin_note").eq("id",productId).maybeSingle();
+    if(pe||!p)return{ok:false,error:"product_not_found"};
+    if(p.is_active!==true)return{ok:false,error:"product_inactive"};
+    if(p.image_ai_ignored===true)return{ok:false,error:"product_ignored"};
+    if(p.image_ai_manual_review_required!==true)return{ok:false,error:"manual_review_not_required"};
+    if(String(p.image_ai_status||"")==="processing")return{ok:false,error:"product_processing"};
+    const candidate=safeSourceUrl(p.image_ai_url);if(!candidate)return{ok:false,error:"candidate_required"};
+    const {data:job,error:je}=await sb.from("product_image_jobs").select("id,status").eq("product_id",productId).maybeSingle();
+    if(je)return{ok:false,error:"job_lookup_failed",detail:clean(je.message,240)};
+    if(job&&String(job.status)==="processing")return{ok:false,error:"job_processing"};
+    const now=new Date().toISOString(),note=clean(noteInput,1000)||clean(p.image_ai_admin_note,1000)||"Aprovada manualmente pelo Admin";
+    if(job&&["pending","error","rejected"].includes(String(job.status||""))){
+      const jq=await sb.from("product_image_jobs").update({status:"completed",force_individual:false,error_message:null,processed_at:now,updated_at:now}).eq("id",job.id).neq("status","processing");
+      if(jq.error)return{ok:false,error:"job_update_failed",detail:clean(jq.error.message,240)};
+    }
+    const pq=await sb.from("products").update({image_url:candidate,image_ai_status:"completed",image_ai_error:null,image_ai_manual_review_required:false,image_ai_manual_review_reason:null,image_ai_manual_prompt:null,image_ai_manual_requested_at:null,image_ai_manual_requested_by:null,image_ai_manual_resolved_at:now,image_ai_processed_at:now,image_ai_admin_note:note,image_ai_admin_updated_at:now,image_ai_ignored:false,updated_at:now}).eq("id",productId).eq("image_ai_manual_review_required",true).neq("image_ai_status","processing").select("id").maybeSingle();
+    if(pq.error||!pq.data)return{ok:false,error:"manual_approval_failed",detail:clean(pq.error?.message||"approval_state_changed",300)};
+    return{ok:true,product_id:productId,candidate_url:candidate,approved_manually:true};
+  }
+
   if(action==="status"){
     const [control,completed,rejected,processing,pending,neverProcessed,problems,ignored,badImages,jobsProcessing,jobsPending,batches,results,neverRows,problemRows,pendingRows,ignoredRows,badRows]=await Promise.all([
       sb.rpc("admin_product_image_automation_control_v1",{p_action:"status",p_enabled:null,p_interval_minutes:null}),
@@ -123,23 +144,19 @@ Deno.serve(async(req:Request)=>{
   }
   if(action==="approve_manual"){
     const productId=uuid(body?.product_id);if(!productId)return respond({ok:false,error:"invalid_product_id"},400);
-    const {data:p,error:pe}=await sb.from("products").select("id,is_active,image_ai_ignored,image_ai_manual_review_required,image_ai_url,image_ai_admin_note").eq("id",productId).maybeSingle();
-    if(pe||!p)return respond({ok:false,error:"product_not_found"},404);
-    if(p.is_active!==true)return respond({ok:false,error:"product_inactive"},400);
-    if(p.image_ai_ignored===true)return respond({ok:false,error:"product_ignored"},400);
-    if(p.image_ai_manual_review_required!==true)return respond({ok:false,error:"manual_review_not_required"},400);
-    const candidate=safeSourceUrl(p.image_ai_url);if(!candidate)return respond({ok:false,error:"candidate_required"},400);
-    const {data:job,error:je}=await sb.from("product_image_jobs").select("id,status").eq("product_id",productId).maybeSingle();
-    if(je)return respond({ok:false,error:"job_lookup_failed",detail:clean(je.message,240)},500);
-    if(job&&String(job.status)==="processing")return respond({ok:false,error:"job_processing"},409);
-    const now=new Date().toISOString(),note=clean(body?.note,1000)||clean(p.image_ai_admin_note,1000)||"Aprovada manualmente pelo Admin";
-    if(job&&["pending","error","rejected"].includes(String(job.status||""))){
-      const jq=await sb.from("product_image_jobs").update({status:"completed",force_individual:false,error_message:null,processed_at:now,updated_at:now}).eq("id",job.id);
-      if(jq.error)return respond({ok:false,error:"job_update_failed",detail:clean(jq.error.message,240)},500);
+    const q=await approveManualProduct(productId,body?.note);
+    if(!q.ok)return respond(q,q.error==="product_not_found"?404:q.error?.includes("processing")?409:400);
+    return respond(q);
+  }
+  if(action==="bulk_approve_manual"){
+    const rawIds=Array.isArray(body?.product_ids)?body.product_ids:[],productIds=[...new Set(rawIds.map(uuid).filter(Boolean))].slice(0,100);
+    if(!productIds.length)return respond({ok:false,error:"invalid_product_ids"},400);
+    let approved=0,skipped=0;const errors:Record<string,number>={};
+    for(let i=0;i<productIds.length;i+=8){
+      const chunk=productIds.slice(i,i+8),results=await Promise.all(chunk.map(id=>approveManualProduct(id,"Aprovada em massa pelo Admin")));
+      for(const q of results){if(q.ok)approved++;else{skipped++;const key=String(q.error||"unknown");errors[key]=(errors[key]||0)+1;}}
     }
-    const pq=await sb.from("products").update({image_url:candidate,image_ai_status:"completed",image_ai_error:null,image_ai_manual_review_required:false,image_ai_manual_review_reason:null,image_ai_manual_prompt:null,image_ai_manual_requested_at:null,image_ai_manual_requested_by:null,image_ai_manual_resolved_at:now,image_ai_processed_at:now,image_ai_admin_note:note,image_ai_admin_updated_at:now,image_ai_ignored:false,updated_at:now}).eq("id",productId).select("id").maybeSingle();
-    if(pq.error||!pq.data)return respond({ok:false,error:"manual_approval_failed",detail:clean(pq.error?.message||"product_not_found",300)},pq.data?500:404);
-    return respond({ok:true,product_id:productId,candidate_url:candidate,approved_manually:true});
+    return respond({ok:true,approved,skipped,errors,requested:productIds.length});
   }
   if(action==="generate_manual"){
     const productId=uuid(body?.product_id);if(!productId)return respond({ok:false,error:"invalid_product_id"},400);
