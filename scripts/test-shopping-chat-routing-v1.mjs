@@ -27,6 +27,10 @@ for(const [label,pattern] of [
   assert.match(adminAi,pattern,`simulador do Admin deve reproduzir ${label} igual à produção`);
 }
 
+const cleaningVocabulary=/limpeza\|lavanderia\|lavar\|roupa\|roupas\|sabao\|detergente/;
+assert.match(edge,cleaningVocabulary,'produção deve reconhecer linguagem natural como “lavar roupa” na intenção de limpeza');
+assert.match(adminAi,cleaningVocabulary,'simulador do Admin deve reconhecer a mesma linguagem natural de limpeza da produção');
+
 assert.ok(!edge.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!products.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-products-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!menu.includes('is_whatsapp_active'),'shopping-chat-menu-v1 não deve filtrar cesta por flag do WhatsApp');
