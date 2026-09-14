@@ -7,7 +7,9 @@ const cors=(req:Request)=>{const o=req.headers.get('origin');if(o&&!ORIGINS.has(
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...(cors(req)||{}),'Content-Type':'application/json','Cache-Control':'no-store'}});
 const clean=(v:unknown,max=200)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const tokenOk=(v:unknown)=>/^[a-f0-9]{64}$/i.test(clean(v,80));
-const validSales=new Set(['mercearia','limpeza_lavanderia','higiene_beleza','casa_pet']);
+const TAXONOMY_VERSION='v2_2026_09';
+const validCustomerCategories=new Set(['Para Você','Para Casa']);
+const sortPt=(a:{label:string},b:{label:string})=>a.label.localeCompare(b.label,'pt-BR');
 
 Deno.serve(async(req:Request)=>{
   const ch=cors(req);if(!ch)return new Response('forbidden',{status:403});
@@ -24,19 +26,72 @@ Deno.serve(async(req:Request)=>{
   if(se)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);if(session.status!=='open'||new Date(session.expires_at).getTime()<=Date.now())return json(req,{ok:false,error:'room_inactive'},410);
   const flags=normalizeFlags(runtime?.integration_flags,runtime?.config_level||'recommended');
   if(flags.products===false)return json(req,{ok:false,error:'feature_disabled',feature:'products'},409);
-  const action=clean(body?.action||'page',30).toLowerCase(),sales=(Array.isArray(body?.sales_categories)?body.sales_categories:[]).map((x:any)=>clean(x,40)).filter((x:string)=>validSales.has(x)).slice(0,4),offers=body?.offers===true;
+  const action=clean(body?.action||'page',30).toLowerCase();
+  const requestedCategory=clean(body?.customer_category,40);
+  const customerCategory=validCustomerCategories.has(requestedCategory)?requestedCategory:'';
+  const offers=body?.offers===true;
   if(offers&&flags.offers===false)return json(req,{ok:false,error:'feature_disabled',feature:'offers'},409);
+
   if(action==='filters'){
-    let q=sb.from('products').select('category,sales_category').eq('physically_verified',true).eq('is_active',true).gt('stock',0).not('category','is',null).order('category').limit(1000);
-    if(sales.length)q=q.in('sales_category',sales);if(offers)q=q.eq('is_offer',true);const {data,error}=await q;if(error)return json(req,{ok:false,error:'filters_failed',detail:error.message},400);
-    const seen=new Set<string>(),filters:any[]=[];for(const p of data||[]){const label=clean((p as any).category,80),key=label.toLocaleLowerCase('pt-BR');if(!label||seen.has(key))continue;seen.add(key);filters.push({key:label,label});if(filters.length>=24)break}return json(req,{ok:true,filters});
+    let q=sb.from('products')
+      .select('customer_subcategory,customer_subsubcategory')
+      .eq('physically_verified',true)
+      .eq('is_active',true)
+      .gt('stock',0)
+      .eq('customer_taxonomy_version',TAXONOMY_VERSION)
+      .not('customer_subcategory','is',null)
+      .not('customer_subsubcategory','is',null)
+      .limit(2000);
+    if(customerCategory)q=q.eq('customer_category',customerCategory);
+    if(offers)q=q.eq('is_offer',true);
+    const {data,error}=await q;
+    if(error)return json(req,{ok:false,error:'filters_failed',detail:error.message},400);
+
+    const subcategoryMap=new Map<string,{key:string,label:string}>();
+    const leafMap=new Map<string,Map<string,{key:string,label:string}>>();
+    for(const p of data||[]){
+      const sub=clean((p as any).customer_subcategory,80),leaf=clean((p as any).customer_subsubcategory,80);
+      if(!sub||!leaf)continue;
+      const subKey=sub.toLocaleLowerCase('pt-BR');
+      if(!subcategoryMap.has(subKey))subcategoryMap.set(subKey,{key:sub,label:sub});
+      if(!leafMap.has(sub))leafMap.set(sub,new Map());
+      const leafKey=leaf.toLocaleLowerCase('pt-BR');
+      const leaves=leafMap.get(sub)!;
+      if(!leaves.has(leafKey))leaves.set(leafKey,{key:leaf,label:leaf});
+    }
+    const subcategories=[...subcategoryMap.values()].sort(sortPt);
+    const subsubcategories:Record<string,{key:string,label:string}[]>={};
+    for(const sub of subcategories)subsubcategories[sub.key]=[...(leafMap.get(sub.key)?.values()||[])].sort(sortPt);
+    return json(req,{ok:true,subcategories,subsubcategories});
   }
+
   if(action==='page'){
-    const offset=Math.max(0,Math.min(Number(body?.offset)||0,5000)),limit=Math.max(6,Math.min(Number(body?.limit)||12,30)),subcategory=clean(body?.subcategory,80),search=clean(body?.q,80).replace(/[,%()]/g,' ').trim();
-    let q=sb.from('products').select('id,name,price,image_url,brand,packaging,category,sales_category,stock,is_offer').eq('physically_verified',true).eq('is_active',true).gt('stock',0).order('name',{ascending:true}).range(offset,offset+limit-1);
-    if(sales.length)q=q.in('sales_category',sales);if(offers)q=q.eq('is_offer',true);if(subcategory)q=q.eq('category',subcategory);if(search)q=q.or(`name.ilike.%${search}%,brand.ilike.%${search}%,category.ilike.%${search}%,packaging.ilike.%${search}%`);
-    const {data,error}=await q;if(error)return json(req,{ok:false,error:'products_failed',detail:error.message},400);const ids=(data||[]).map((p:any)=>p.id);let current:any[]=[];if(session.cart_id&&ids.length){const {data:items}=await sb.from('cart_items').select('product_id,quantity').eq('cart_id',session.cart_id).in('product_id',ids).gt('quantity',0);current=items||[]}
-    const qty=new Map(current.map((x:any)=>[x.product_id,Number(x.quantity||0)])),products=(data||[]).map((p:any)=>({...p,quantity:qty.get(p.id)||0}));return json(req,{ok:true,products,next_offset:offset+products.length,has_more:products.length===limit});
+    const offset=Math.max(0,Math.min(Number(body?.offset)||0,5000));
+    const limit=Math.max(6,Math.min(Number(body?.limit)||12,30));
+    const customerSubcategory=clean(body?.customer_subcategory,80);
+    const customerSubsubcategory=clean(body?.customer_subsubcategory,80);
+    const search=clean(body?.q,80).replace(/[,%()]/g,' ').trim();
+    let q=sb.from('products')
+      .select('id,name,price,image_url,brand,packaging,stock,is_offer,customer_category,customer_subcategory,customer_subsubcategory')
+      .eq('physically_verified',true)
+      .eq('is_active',true)
+      .gt('stock',0)
+      .eq('customer_taxonomy_version',TAXONOMY_VERSION)
+      .order('name',{ascending:true})
+      .range(offset,offset+limit-1);
+    if(customerCategory)q=q.eq('customer_category',customerCategory);
+    if(offers)q=q.eq('is_offer',true);
+    if(customerSubcategory)q=q.eq('customer_subcategory',customerSubcategory);
+    if(customerSubsubcategory)q=q.eq('customer_subsubcategory',customerSubsubcategory);
+    if(search)q=q.or(`name.ilike.%${search}%,brand.ilike.%${search}%,packaging.ilike.%${search}%,customer_subcategory.ilike.%${search}%,customer_subsubcategory.ilike.%${search}%`);
+    const {data,error}=await q;
+    if(error)return json(req,{ok:false,error:'products_failed',detail:error.message},400);
+    const ids=(data||[]).map((p:any)=>p.id);
+    let current:any[]=[];
+    if(session.cart_id&&ids.length){const {data:items}=await sb.from('cart_items').select('product_id,quantity').eq('cart_id',session.cart_id).in('product_id',ids).gt('quantity',0);current=items||[]}
+    const qty=new Map(current.map((x:any)=>[x.product_id,Number(x.quantity||0)]));
+    const products=(data||[]).map((p:any)=>({...p,quantity:qty.get(p.id)||0}));
+    return json(req,{ok:true,products,next_offset:offset+products.length,has_more:products.length===limit});
   }
   return json(req,{ok:false,error:'unknown_action'},400);
 });
