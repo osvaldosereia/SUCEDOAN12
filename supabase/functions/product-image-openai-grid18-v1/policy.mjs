@@ -50,6 +50,11 @@ export function finalValidationAccepted(v){
     && v.extra_elements===false
     && v.professional_photo===true
     && v.natural_contact_shadow===true
+    && v.background_uniform===true
+    && v.background_is_ececec===true
+    && v.white_background===false
+    && v.original_background_visible===false
+    && v.white_border===false
     && score(v.fidelity_score)>=POLICY.fidelityMin
     && score(v.composition_score)>=POLICY.compositionMin
     && score(v.cutout_score)>=POLICY.cutoutMin
