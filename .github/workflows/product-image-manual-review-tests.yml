@@ -9,7 +9,17 @@ on:
       - 'admin-v3/image-automation.js'
       - 'supabase/functions/admin-product-images-v1/**'
       - 'supabase/functions/product-image-openai-grid18-v1/**'
-      - 'supabase/functions/product-image-openai-v2/**'
+      - 'supabase/functions/product-image-manual-v1/**'
+      - 'supabase/migrations/20260914100500_product_image_manual_review_v1.sql'
+      - 'scripts/test-product-image-manual-review-v1.mjs'
+      - '.github/workflows/product-image-manual-review-tests.yml'
+  pull_request:
+    paths:
+      - 'admin-v3/imagens-ia.html'
+      - 'admin-v3/image-automation.js'
+      - 'supabase/functions/admin-product-images-v1/**'
+      - 'supabase/functions/product-image-openai-grid18-v1/**'
+      - 'supabase/functions/product-image-manual-v1/**'
       - 'supabase/migrations/20260914100500_product_image_manual_review_v1.sql'
       - 'scripts/test-product-image-manual-review-v1.mjs'
       - '.github/workflows/product-image-manual-review-tests.yml'
@@ -24,3 +34,4 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/test-product-image-manual-review-v1.mjs
+      - run: node scripts/test-admin-v3-image-automation-v1.mjs
