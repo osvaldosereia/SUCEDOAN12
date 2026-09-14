@@ -9,6 +9,7 @@ on:
       - 'admin-v3/chat-menu-admin.*'
       - 'catalogo/index.html'
       - 'scripts/test-light-shopping-chat-v2.mjs'
+      - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -30,6 +31,7 @@ on:
       - 'admin/config.js'
       - 'admin-v3/chat-menu-admin.*'
       - 'scripts/test-light-shopping-chat-v2.mjs'
+      - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -63,6 +65,7 @@ jobs:
           node --check comprar/chat-helper-menu.js
           node --check admin-v3/chat-menu-admin.js
           node scripts/test-light-shopping-chat-v2.mjs
+          node scripts/test-basket-preview-checkout-whatsapp-v1.mjs
           node scripts/test-chat-helper-menu-v1.mjs
           node scripts/test-shopping-chat-routing-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
