@@ -16,14 +16,13 @@ async function candidateUrls(result){const out=[];const direct=safeUrl(result?.i
 async function inspectCandidate(key,product,c){try{const source=await fetchExternalImage(c.url),checked=await inspectSource(key,product,source);return{candidate:c,source,checked,error:null};}catch(e){return{candidate:c,source:null,checked:null,error:clean(e instanceof Error?e.message:e,180)};}}
 
 export async function findReplacementSource(key,product,rejectedSourceUrl=''){
-  const researched=await webResearch(key,product),r=researched.result;
+  let researched;
+  try{researched=await webResearch(key,product);}catch(e){return{found:false,reason:`research_unavailable:${clean(e instanceof Error?e.message:e,140)}`,research:null,attempts:[]};}
+  const r=researched.result;
   if(r?.found!==true||score(r?.confidence)<0.80)return{found:false,reason:'no_confident_web_source',research:researched};
   const candidates=(await candidateUrls(r)).filter(c=>!rejectedSourceUrl||c.url!==rejectedSourceUrl).slice(0,3);
   const checked=await Promise.all(candidates.map(c=>inspectCandidate(key,product,c))),attempts=checked.map(x=>({url:x.candidate.url,accepted:x.checked?.accepted===true,inspection:x.checked?.inspection||null,error:x.error}));
   const winner=checked.find(x=>x.checked?.accepted===true&&x.source);
-  if(winner){
-    const normalized=await normalizeExternalSource(winner.source);
-    return{found:true,source:{...normalized,field:'web_research',origin:'web_research_verified_v2',source_page_url:winner.candidate.page||safeUrl(r?.source_page_url)||null,inspection:winner.checked.inspection},research:researched,attempts};
-  }
+  if(winner){const normalized=await normalizeExternalSource(winner.source);return{found:true,source:{...normalized,field:'web_research',origin:'web_research_verified_v2',source_page_url:winner.candidate.page||safeUrl(r?.source_page_url)||null,inspection:winner.checked.inspection},research:researched,attempts};}
   return{found:false,reason:'researched_candidates_failed_visual_inspection',research:researched,attempts};
 }
