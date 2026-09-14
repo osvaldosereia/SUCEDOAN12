@@ -14,6 +14,46 @@ create index if not exists idx_products_image_ai_manual_review_v1
   on public.products (image_ai_manual_review_required, is_active, updated_at desc)
   where image_ai_manual_review_required=true;
 
+-- Whenever the grid intentionally keeps a visually imperfect source, mark it
+-- for review from the source-inspection JSON that the worker already persists.
+create or replace function public.product_image_source_review_flag_v1()
+returns trigger
+language plpgsql
+set search_path to ''
+as $$
+declare
+  v jsonb := coalesce(new.image_ai_validation->'source_inspection','{}'::jsonb);
+  v_reason text := null;
+begin
+  if new.is_active is distinct from true then return new; end if;
+  if v='{}'::jsonb then return new; end if;
+
+  if coalesce((v->>'bad_crop')::boolean,false) then v_reason:='source_bad_crop';
+  elsif coalesce((v->>'bad_cutout')::boolean,false) then v_reason:='source_bad_cutout';
+  elsif coalesce((v->>'extra_elements')::boolean,false) then v_reason:='source_extra_elements';
+  elsif coalesce((v->>'product_complete')::boolean,true)=false then v_reason:='source_product_incomplete';
+  elsif coalesce((v->>'same_product_confidence')::numeric,1)<0.92 then v_reason:='source_identity_low';
+  elsif coalesce((v->>'source_quality_score')::numeric,1)<0.80 then v_reason:='source_quality_low';
+  elsif coalesce((v->>'front_or_usable_view')::boolean,true)=false then v_reason:='source_view_poor';
+  end if;
+
+  if v_reason is not null then
+    new.image_ai_manual_review_required:=true;
+    new.image_ai_manual_review_reason:=coalesce(nullif(v->>'critical_issue',''),v_reason);
+    new.image_ai_manual_resolved_at:=null;
+  end if;
+  return new;
+exception when others then
+  -- Never break image production because review metadata was malformed.
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_product_image_source_review_flag_v1 on public.products;
+create trigger trg_product_image_source_review_flag_v1
+before insert or update of image_ai_validation,is_active on public.products
+for each row execute function public.product_image_source_review_flag_v1();
+
 -- Legacy automatic fallbacks become manual-review items instead of silently
 -- spending on one-by-one generation.
 update public.products p
@@ -165,7 +205,7 @@ begin
   end if;
 
   v_request:=net.http_post(
-    url:='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/product-image-openai-v2',
+    url:='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/product-image-manual-v1',
     headers:=jsonb_build_object(
       'Content-Type','application/json',
       'x-da-product-image-key',v_secret
