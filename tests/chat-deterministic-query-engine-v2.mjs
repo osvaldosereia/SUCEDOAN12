@@ -90,6 +90,7 @@ const route=index.slice(routeStart,routeStart+7000);
 assert.ok(route.indexOf('directRule(message,rules)')<route.indexOf('resolveBasketQuery'),'regra explícita deve vir antes do motor V2');
 assert.ok(route.indexOf('resolveBasketQuery')<route.indexOf('aiChoose'),'consulta de cesta deve vir antes da IA');
 assert.ok(route.indexOf('resolveCatalogQuery')<route.indexOf('aiChoose'),'consulta de produto deve vir antes da IA');
+assert.ok(!index.includes("opção${ranked.length===1?'':'ões'}"),'plural de opção deve ser formado como opção/opções, nunca opçãoões');
 
 const simulations=[
 'Qual a maior cesta?','Qual a menor cesta?','Qual a mais cara?','Qual a mais barata?','Qual cesta tem mais itens?','Qual cesta tem menos itens?','Quero uma cesta com 2 arroz','Tem cesta com 1 arroz?','Tem cesta com 3 arroz?','Tem cesta com 4 arroz?','Qual cesta tem mais arroz?','Qual cesta mais barata com pelo menos 3 arroz?','Quero cesta com pelo menos 2 arroz','Tem cesta sem material de limpeza?','Tem cesta sem produto de limpeza?','Tem cesta sem sabão?','Tem cesta sem detergente?','Tem cesta sem lavanderia?','Quero cesta até 200 reais','Quero cesta até 250 reais','Quero cesta até 300 reais','Tenho 350 reais para uma cesta','Quero cesta até 300 sem limpeza','Qual cesta até 250 tem 2 arroz?','Qual cesta mais barata com arroz?','Qual cesta mais cara com arroz?','A cesta Econômica tem limpeza?','A Pequena Bonini tem 2 arroz?','A Média Bonini tem quantos arroz?','A Grande Koblenz tem material de limpeza?',
