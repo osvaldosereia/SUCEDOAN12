@@ -76,4 +76,18 @@ assert.match(candidateFallback,/create trigger/i);
 assert.match(candidateFallback,/update public\.products/i);
 assert.match(candidateFallback,/image_ai_status[^\n]*processing/i);
 
+// Generation prompts must explicitly discard the source environment and force a
+// solid #ECECEC background across the whole canvas. Validation must hard-fail
+// white backgrounds, source-background remnants and white borders.
+for(const source of [gridImage,manual]){
+  assert.match(source,/não preserve o fundo da imagem original/i);
+  assert.match(source,/fundo branco/i);
+  assert.match(source,/moldura branca/i);
+  assert.match(source,/ocupar toda a imagem/i);
+  assert.match(source,/#ECECEC/);
+  assert.match(source,/original_background_visible/);
+  assert.match(source,/white_background/);
+  assert.match(source,/white_border/);
+}
+
 console.log('product image manual review contract ok');
