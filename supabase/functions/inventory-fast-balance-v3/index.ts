@@ -30,7 +30,7 @@ Deno.serve(async(req:Request)=>{
   const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
   const action=text(body?.action||"health",40).toLowerCase(),deviceLabel=text(body?.device_label,120)||"Leitor-Rapido";
-  if(action==="health")return json({ok:true,mode:"balance_only",access:"no_login",window_minutes:30,capture_queue:true,max_batch:100});
+  if(action==="health")return json({ok:true,mode:"balance_only",access:"no_login",window_minutes:30,capture_queue:true,max_batch:100,quantity_mode:true});
   if(action==="bootstrap"){
     const [{count:pendingAi},states]=await Promise.all([sb.from("unresolved_product_eans").select("id",{count:"exact",head:true}).in("status",["pending","researching","error"]),recentStates(sb)]);
     return json({ok:true,mode:"balance_only",access:"no_login",window_minutes:30,adopted:{adopted_products:0,closed_checkpoints:0},recent:states,pending_ai:pendingAi||0});
@@ -40,7 +40,12 @@ Deno.serve(async(req:Request)=>{
 
   const rawEvents=Array.isArray(body?.events)?body.events.slice(0,100):[];
   if(!rawEvents.length)return json({ok:true,applied:0,unknown:0,duplicates:0,stale:0,results:[],products:[]});
-  const cleanEvents=rawEvents.map((e:any)=>({event_id:text(e?.event_id,80),ean:digits(e?.ean),scanned_at:text(e?.scanned_at,50)})).filter((e:any)=>/^[0-9a-f-]{36}$/i.test(e.event_id)&&e.ean.length>=5&&e.ean.length<=32);
+  const cleanEvents=rawEvents.map((e:any)=>({
+    event_id:text(e?.event_id,80),
+    ean:digits(e?.ean),
+    scanned_at:text(e?.scanned_at,50),
+    quantity:Number.isFinite(Number(e?.quantity))?Math.max(0,Math.min(1000000,Math.trunc(Number(e.quantity)))):null
+  })).filter((e:any)=>/^[0-9a-f-]{36}$/i.test(e.event_id)&&e.ean.length>=5&&e.ean.length<=32);
   if(!cleanEvents.length)return json({ok:false,error:"no_valid_events"},400);
 
   const unique=[...new Set(cleanEvents.map((e:any)=>e.ean))];
