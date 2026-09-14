@@ -4,7 +4,6 @@ const html=readFileSync('comprar/index.html','utf8');
 const js=readFileSync('comprar/chat-light-v2.js','utf8');
 const css=readFileSync('comprar/chat-light-v2.css','utf8');
 const edge=readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
-const chatEdge=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const ingestMakeEdge=readFileSync('supabase/functions/whatsapp-ingest-make-v1/index.ts','utf8');
 assert.match(html,/chat-light-v2\.css/);
 assert.match(html,/chat-light-v2\.js/);
@@ -74,12 +73,10 @@ assert.match(edge,/customer_subsubcategory/,'products API must filter by custome
 assert.match(edge,/subcategories/,'filters response must expose first-level customer subcategories');
 assert.match(edge,/subsubcategories/,'filters response must expose second-level customer subsubcategories');
 
-// Product +/- must feel immediate: update the UI/cart optimistically, allow rapid taps,
-// coalesce server synchronization and request only a compact cart summary from the mutation endpoint.
+// Product +/- must feel immediate: update local quantity/cart before awaiting the network,
+// keep rapid taps enabled, and coalesce synchronization per product.
 assert.match(js,/applyOptimisticProductDelta/,'product quantity must update local cart totals immediately');
 assert.match(js,/syncProductQty/,'rapid quantity changes must be synchronized through a per-product queue');
-assert.match(js,/compact:true/,'quantity mutation must request the compact server response');
-assert.doesNotMatch(js,/async function changeProductQty[\s\S]{0,700}pointerEvents='none'/,'product card must not be locked while quantity is saving');
-assert.match(chatEdge,/body\?\.compact===true/,'set_quantity must support a compact response');
-assert.match(chatEdge,/cart_summary/,'compact quantity response must return the authoritative cart total');
+assert.match(js,/_confirmedQuantity/,'client must remember the last server-confirmed quantity for rollback');
+assert.doesNotMatch(js,/function changeProductQty[\s\S]{0,700}pointerEvents='none'/,'product card must not be locked while quantity is saving');
 console.log('light_shopping_chat_v2_ok');
