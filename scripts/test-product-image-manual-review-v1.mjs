@@ -13,8 +13,8 @@ const migration=r('supabase/migrations/20260914100500_product_image_manual_revie
 // Automatic production remains exactly 18 products at medium quality.
 assert.match(gridImage,/f\.append\('quality','medium'\)/);
 assert.match(grid,/items\.length!==18/);
-assert.match(policy,/sourceRecoverableIdentityMin/);
 assert.match(policy,/sourceRecoverableForGrid/);
+assert.match(policy,/return Boolean\(v\)/);
 assert.doesNotMatch(grid,/generateSingle|quality','high'/);
 
 // Source inspection can flag crop/cutout/extras without stopping production.
