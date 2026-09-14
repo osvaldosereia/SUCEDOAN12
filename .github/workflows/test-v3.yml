@@ -14,8 +14,12 @@ on:
       - 'admin-v3/basket-editor.js'
       - 'admin-v3/products-inline-controls-v4.js'
       - 'admin-v3/products-inline-controls-v4.css'
+      - 'admin-v3/nomes-produtos.html'
+      - 'admin-v3/product-name-management.js'
+      - 'admin-v3/product-name-management.css'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/functions/admin-v3-product-names/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/migrations/*storefront_v3*'
       - 'supabase/config.toml'
@@ -25,6 +29,7 @@ on:
       - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
+      - 'scripts/test-admin-v3-product-name-management.mjs'
       - '.github/workflows/test-v3.yml'
   pull_request:
     branches: [main]
@@ -38,8 +43,12 @@ on:
       - 'admin-v3/basket-editor.js'
       - 'admin-v3/products-inline-controls-v4.js'
       - 'admin-v3/products-inline-controls-v4.css'
+      - 'admin-v3/nomes-produtos.html'
+      - 'admin-v3/product-name-management.js'
+      - 'admin-v3/product-name-management.css'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/functions/admin-v3-product-names/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/migrations/*storefront_v3*'
       - 'supabase/config.toml'
@@ -49,6 +58,7 @@ on:
       - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
+      - 'scripts/test-admin-v3-product-name-management.mjs'
       - '.github/workflows/test-v3.yml'
   workflow_dispatch:
 
@@ -83,6 +93,8 @@ jobs:
         run: node scripts/test-admin-v3-contract.mjs
       - name: Controles inline Admin V3
         run: node scripts/test-admin-v3-inline-product-controls.mjs
+      - name: Gestão de nomes Admin V3
+        run: node scripts/test-admin-v3-product-name-management.mjs
       - name: Validar JavaScript V3
         run: |
           node --check vitrine-v3/app.js
@@ -99,8 +111,10 @@ jobs:
           node --check admin-v3/app.js
           node --check admin-v3/basket-editor.js
           node --check admin-v3/products-inline-controls-v4.js
+          node --check admin-v3/product-name-management.js
       - name: Compilar Edge Functions V3
         run: |
           deno check supabase/functions/catalog-v3/index.ts
           deno check supabase/functions/admin-v3-api/index.ts
+          deno check supabase/functions/admin-v3-product-names/index.ts
           deno check supabase/functions/admin-simple-v2/index.ts
