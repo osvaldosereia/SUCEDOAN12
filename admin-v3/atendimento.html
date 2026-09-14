@@ -14,16 +14,16 @@
 <body class="strategy-body">
   <header class="strategy-topbar">
     <a class="strategy-back" href="./">← Admin V3</a>
-    <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>IA própria, chat, inteligência e evolução</span></div></div>
-    <span id="runtimeBadge" class="strategy-runtime-badge">Carregando…</span>
+    <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>Configuração exclusiva do Chat Comprar</span></div></div>
+    <span id="runtimeBadge" class="strategy-runtime-badge on">Chat Comprar</span>
   </header>
 
   <main class="strategy-shell">
     <section id="loginGate" class="strategy-login hidden">
       <div class="strategy-login-card">
         <div class="eyebrow">Área protegida</div>
-        <h1>Central de Atendimento</h1>
-        <p>O Admin V3 principal continua abrindo sem senha. Só esta área pede o código porque contém conversas e configurações do atendimento.</p>
+        <h1>Atendimento do Chat Comprar</h1>
+        <p>Esta tela configura apenas o atendimento do site. Ela não controla WhatsApp, Meta ou PapoAI.</p>
         <form id="strategyLoginForm" autocomplete="off">
           <label>Código de 6 números<input id="strategyPin" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required></label>
           <button id="strategyLoginButton" class="primary" type="submit">Abrir atendimento</button>
@@ -34,76 +34,55 @@
 
     <section id="strategyApp" class="hidden">
       <div class="strategy-page-head">
-        <div><div class="eyebrow">Admin V3</div><h1>Central de Atendimento</h1><p>Configure o nosso atendimento, aparência do chat e inteligência; revise conversas reais e acompanhe cada ajuste feito na estratégia.</p></div>
-        <div class="strategy-page-actions"><button id="strategyRefresh" class="secondary" type="button">Atualizar</button><button id="strategyLogout" class="secondary" type="button">Bloquear área</button></div>
+        <div><div class="eyebrow">Admin V3</div><h1>Chat Comprar</h1><p>Organize o fluxo principal, cadastre respostas inteligentes e teste antes de publicar.</p></div>
+        <div class="strategy-page-actions"><a class="secondary" href="../comprar/" target="_blank" rel="noopener">Abrir Chat Comprar</a><button id="strategyRefresh" class="secondary" type="button">Atualizar</button><button id="strategyLogout" class="secondary" type="button">Bloquear</button></div>
       </div>
 
-      <nav class="strategy-tabs" aria-label="Seções do atendimento">
-        <button class="active" type="button" data-strategy-tab="rules">Regras da IA</button>
-        <button type="button" data-strategy-tab="chat">Chat</button>
-        <button type="button" data-strategy-tab="intelligence">Inteligência</button>
-        <button type="button" data-strategy-tab="history" aria-label="Histórico 7 dias">Conversas</button>
-        <button type="button" data-strategy-tab="evolution">Evolução</button>
+      <div class="strategy-resource-note"><strong>Escopo simples.</strong> Cliques em chips, botões, cestas, ofertas, produtos, carrinho e checkout não usam IA. A IA só ajuda quando a pessoa escreve uma frase livre que precisa ser interpretada.</div>
+
+      <nav class="strategy-tabs" aria-label="Configuração do Chat Comprar">
+        <button class="active" type="button" data-strategy-tab="flow">Fluxo do Chat</button>
+        <button type="button" data-strategy-tab="rules">Respostas inteligentes</button>
+        <button type="button" data-strategy-tab="test">Testar</button>
       </nav>
 
-      <section id="tabRules" class="strategy-tab active">
-        <div class="strategy-resource-note"><strong>Atendimento próprio da Dona Antônia.</strong> Estas regras pertencem ao nosso agente e ao nosso chat; esta tela não altera Meta nem PapoAI. O seletor mostra somente ferramentas que planejamos usar no atendimento próprio.</div>
+      <section id="tabFlow" class="strategy-tab active">
+        <div class="strategy-section-head"><div><div class="eyebrow">Atendimento estruturado</div><h2>Fluxo do Chat</h2><p>Escolha o que aparece no menu de ajuda e em que ordem. Cestas, ofertas e produtos usam os dados reais do Supabase.</p></div></div>
+        <div id="flowRoot" class="strategy-empty">Carregando fluxo…</div>
+      </section>
+
+      <section id="tabRules" class="strategy-tab">
+        <div class="strategy-section-head"><div><div class="eyebrow">Texto livre</div><h2>Respostas inteligentes</h2><p>Cadastre somente as frases que precisam de interpretação. Cada regra executa uma ação do próprio Chat Comprar.</p></div></div>
+        <div id="ruleRuntime" class="panel"></div>
         <div id="ruleMetrics" class="strategy-metrics"></div>
         <div class="strategy-rule-grid">
           <section class="panel strategy-rule-list-panel">
-            <div class="strategy-panel-head"><div><div class="eyebrow">Gatilhos cadastrados</div><h2>Conversas</h2></div><button id="ruleNew" class="primary" type="button">+ Nova</button></div>
+            <div class="strategy-panel-head"><div><div class="eyebrow">Regras</div><h2>Intenções</h2></div><button id="ruleNew" class="primary" type="button">+ Nova</button></div>
             <div class="strategy-toolbar"><input id="ruleSearch" type="search" placeholder="Buscar pergunta ou resposta"></div>
             <div id="ruleList" class="strategy-rule-list"></div>
           </section>
           <section class="panel strategy-rule-editor-panel">
-            <div class="strategy-panel-head"><div><div class="eyebrow">Editor</div><h2 id="ruleEditorTitle">Nova orientação</h2></div><span id="ruleStatus" class="strategy-status-pill">Rascunho</span></div>
+            <div class="strategy-panel-head"><div><div class="eyebrow">Editor</div><h2 id="ruleEditorTitle">Nova regra</h2></div><span id="ruleStatus" class="strategy-status-pill">Rascunho</span></div>
             <div id="ruleEditor"></div>
-            <div class="strategy-change-note">
-              <label>Motivo do ajuste <input id="changeReason" placeholder="Ex.: clientes perguntam muito pelas formas de pagamento"></label>
-              <label>Resultado esperado <input id="changeExpected" placeholder="Ex.: reduzir repasse ao humano e responder em uma mensagem"></label>
-            </div>
             <div class="strategy-editor-actions"><button id="ruleSave" class="primary" type="button">Salvar</button><button id="rulePublish" class="secondary" type="button">Publicar</button><button id="ruleArchive" class="secondary" type="button">Arquivar</button></div>
           </section>
         </div>
       </section>
 
-      <section id="tabChat" class="strategy-tab">
-        <div class="strategy-section-head"><div><div class="eyebrow">Experiência do cliente</div><h2>Chat</h2><p>Controle o menu de ajuda e confira as proteções obrigatórias do checkout.</p></div></div>
-        <div id="chatConfigRoot" class="strategy-empty">Abra esta aba para carregar as configurações do chat.</div>
-      </section>
-
-      <section id="tabIntelligence" class="strategy-tab">
-        <div class="strategy-section-head"><div><div class="eyebrow">Motor simples</div><h2>Inteligência</h2><p>Ajuste como o atendimento reconhece intenções e humaniza respostas sem ligar automaticamente os gates globais.</p></div></div>
-        <div id="intelligenceConfigRoot" class="strategy-empty">Abra esta aba para carregar a inteligência.</div>
-      </section>
-
-      <section id="tabHistory" class="strategy-tab">
-        <div class="strategy-section-head"><div><div class="eyebrow">Últimos 7 dias</div><h2>Conversas reais</h2><p>Use este histórico para descobrir o que os clientes realmente perguntam antes de criar novos gatilhos.</p></div></div>
-        <form id="historySearchForm" class="strategy-toolbar"><input id="historySearch" type="search" placeholder="Buscar por cliente, final do telefone ou mensagem"><button class="secondary" type="submit">Buscar</button></form>
-        <div class="strategy-history-grid">
-          <section class="panel"><div id="historySummary" class="strategy-history-summary"></div><div id="conversationList" class="strategy-conversation-list"></div><div id="historyPagination" class="strategy-pagination"></div></section>
-          <section class="panel strategy-conversation-detail"><div id="conversationDetail" class="strategy-empty">Selecione uma conversa para ver as mensagens.</div></section>
-        </div>
-      </section>
-
-      <section id="tabEvolution" class="strategy-tab">
-        <div class="strategy-section-head"><div><div class="eyebrow">Evolução contínua</div><h2>Análise e histórico de ajustes</h2><p>Snapshots guardam o estado de cada rodada para comparar o que melhorou, piorou ou precisa ser revertido.</p></div><button id="generateSnapshot" class="primary" type="button">Gerar análise agora</button></div>
-        <div id="strategyMetrics" class="strategy-metrics"></div>
-        <section class="panel strategy-playbook-panel"><div class="strategy-panel-head"><div><div class="eyebrow">Estratégia permanente</div><h3>Método de análise</h3></div><span id="playbookVersion" class="strategy-status-pill">v1</span></div><div id="strategyPlaybook" class="strategy-empty">Carregando método de análise…</div></section>
-        <div class="strategy-evolution-grid">
-          <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Diagnóstico</div><h3>Última análise</h3></div></div><div id="latestAnalysis" class="strategy-empty">Nenhum snapshot ainda.</div></section>
-          <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Comparação</div><h3>Snapshots</h3></div></div><div id="snapshotList" class="strategy-snapshot-list"></div></section>
-        </div>
-        <section class="panel"><div class="strategy-panel-head"><div><div class="eyebrow">Auditoria</div><h3>Histórico de ajustes</h3></div><span class="strategy-help">Antes/depois registrado automaticamente</span></div><div id="changeLog" class="strategy-change-log"></div></section>
+      <section id="tabTest" class="strategy-tab">
+        <div class="strategy-section-head"><div><div class="eyebrow">Sem enviar nada ao cliente</div><h2>Testar atendimento</h2><p>Digite como se fosse um cliente. O simulador mostra a intenção, a regra usada, se precisou de IA e o que apareceria no Chat Comprar.</p></div></div>
+        <section class="panel">
+          <form id="testForm" class="chat-center-form">
+            <label>Mensagem do cliente<input id="testMessage" maxlength="800" placeholder="Ex.: tem leite integral?"></label>
+            <div class="strategy-editor-actions"><button id="testRun" class="primary" type="submit">Testar agora</button></div>
+          </form>
+          <div id="testResult" class="strategy-empty">Digite uma mensagem para testar.</div>
+        </section>
       </section>
     </section>
   </main>
 
-  <dialog id="changeDialog" class="strategy-dialog"><form id="changeDialogForm" method="dialog"><div id="changeDialogBody"></div></form></dialog>
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./service-strategy.js?v=20260912-2"></script>
-  <script type="module" src="./service-strategy-addon.js?v=20260912-1"></script>
-  <script type="module" src="./service-chat-center.js?v=20260912-1"></script>
-  <script type="module" src="./service-strategy-own-tools.js?v=20260912-1"></script>
+  <script type="module" src="./service-strategy.js?v=20260914-1"></script>
 </body>
 </html>

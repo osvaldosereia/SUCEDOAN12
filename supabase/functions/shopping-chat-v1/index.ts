@@ -5,154 +5,75 @@ const ORIGINS=new Set(['https://donaantonia.com.br','https://www.donaantonia.com
 const cors=(req:Request)=>{const o=req.headers.get('origin');if(o&&!ORIGINS.has(o))return null;return {'Access-Control-Allow-Origin':o||'https://donaantonia.com.br','Access-Control-Allow-Headers':'content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'}};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...(cors(req)||{}),'Content-Type':'application/json','Cache-Control':'no-store'}});
 const clean=(v:unknown,max=1000)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+const norm=(v:unknown)=>clean(v,1000).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const digits=(v:unknown)=>String(v??'').replace(/\D/g,'');
 const tokenOk=(v:unknown)=>/^[a-f0-9]{64}$/i.test(clean(v,80));
 const uuidOk=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80));
 const qty=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)?Math.max(0,Math.min(999,n)):null};
-const norm=(v:unknown)=>clean(v,500).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const arr=(v:any)=>Array.isArray(v)?v:[];
 const PAYMENT=new Set(['pix','credit_card','meal_card','cash']);
 const MIME={audio:new Set(['audio/webm','audio/ogg','audio/mpeg','audio/mp4','audio/aac']),image:new Set(['image/jpeg','image/png','image/webp'])};
 const EXT:Record<string,string>={'audio/webm':'webm','audio/ogg':'ogg','audio/mpeg':'mp3','audio/mp4':'m4a','audio/aac':'aac','image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
-
-function simpleIntent(input:string){
-  const s=norm(input);
-  if(/\b(finalizar|fechar|concluir|confirmar pedido|terminar compra)\b/.test(s))return {type:'checkout'};
-  if(/\b(cesta|cestas|cesta basica|cestas basicas)\b/.test(s))return {type:'baskets'};
-  if(/\b(oferta|ofertas|promocao|promocoes)\b/.test(s))return {type:'products',offers:true};
-  if(/\b(limpeza|lavanderia|sabao|amaciante|desinfetante)\b/.test(s))return {type:'products',category:'limpeza_lavanderia'};
-  if(/\b(higiene|beleza|shampoo|sabonete|desodorante|creme)\b/.test(s))return {type:'products',category:'higiene_beleza'};
-  if(/\b(pet|cachorro|gato|vassoura|rodo|balde)\b/.test(s))return {type:'products',category:'casa_pet'};
-  if(/\b(mercearia|arroz|feijao|cafe|macarrao|molho|tempero)\b/.test(s))return {type:'products',category:'mercearia'};
-  return {type:'ai'};
+const CHAT_MODES=new Set(['text','reply_buttons','cta_url','baskets','offers','products','product_lookup','checkout','silence']);
+const vars=(v:any)=>Array.isArray(v)?v.map(x=>clean(x,240)).filter(Boolean).slice(0,30):[];
+const stagesOf=(v:any)=>arr(v).map((s:any)=>({question:clean(s?.question,600),variations:vars(s?.variations),answer:clean(s?.answer,1800),response_mode:clean(s?.response_mode,40),tool_config:s?.tool_config&&typeof s.tool_config==='object'?s.tool_config:{}})).filter((s:any)=>s.question);
+function finalText(data:any){return arr(data?.output).flatMap((x:any)=>arr(x?.content)).filter((x:any)=>x?.type==='output_text').map((x:any)=>String(x.text||'')).join('').trim()}
+function productTerm(message:string){return clean(message.replace(/\b(voces?|vocês?|tem|temos|vende|vendem|quanto|custa|preco|preço|qual|o|a|um|uma|esse|essa|produto|por favor)\b/gi,' '),120)||clean(message,120)}
+function deterministic(message:string){
+  const s=norm(message);
+  if(/^(oi+|ola+|bom dia|boa tarde|boa noite|tudo bem)[!?., ]*$/.test(s))return {source:'deterministic',ai_used:false,mode:'reply_buttons',reply:'Olá! Como posso ajudar?',ui:{type:'chips',items:['Cestas','Ofertas','Produtos']}};
+  if(/\b(finalizar|fechar|concluir|checkout|terminar compra|confirmar pedido)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'checkout',reply:'Claro. Vamos finalizar seu pedido.',ui:{type:'checkout'}};
+  if(/\b(oferta|ofertas|promocao|promocoes)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'offers',reply:'Estas são as ofertas disponíveis agora.',ui:{type:'products',offers:true}};
+  if(/\b(cesta|cestas|cesta basica|cestas basicas)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'baskets',reply:'Claro! Veja nossas cestas básicas.',ui:{type:'baskets'}};
+  if(/\b(forma de pagamento|formas de pagamento|pagamento|pagar|pix|cartao|cartão|dinheiro)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'text',reply:'Você pode pagar na entrega por PIX, cartão de crédito, cartão alimentação/refeição ou dinheiro.',ui:{type:'none'}};
+  if(/\b(entrega|entregam|delivery|cuiaba|cuiabá|varzea grande|várzea grande)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'text',reply:'Entregamos em Cuiabá e Várzea Grande. Os dados da entrega são confirmados no fechamento do pedido.',ui:{type:'none'}};
+  if(/\b(limpeza|lavanderia|sabao|sabão|amaciante|desinfetante)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de limpeza e lavanderia.',ui:{type:'products',category:'limpeza_lavanderia'}};
+  if(/\b(higiene|beleza|shampoo|sabonete|desodorante|creme)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de higiene e beleza.',ui:{type:'products',category:'higiene_beleza'}};
+  if(/\b(pet|cachorro|gato|vassoura|rodo|balde)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de Casa e Pet.',ui:{type:'products',category:'casa_pet'}};
+  if(/\b(mercearia)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'products',reply:'Veja os produtos de mercearia.',ui:{type:'products',category:'mercearia'}};
+  if(/\b(tem|vende|vendem|preco|preço|quanto custa|quanto esta|quanto está|quanto ta|quanto tá)\b/.test(s))return {source:'deterministic',ai_used:false,mode:'product_lookup',reply:'Vou pesquisar para você.',ui:{type:'product_lookup',query:productTerm(message)}};
+  return null;
+}
+function directRule(message:string,rules:any[]){const q=norm(message);let best:any=null,bestScore=0;for(const rule of rules){const stage=stagesOf(rule.stages)[0]||{question:rule.question,variations:rule.variations,answer:rule.answer,response_mode:rule.response_mode,tool_config:rule.tool_config};for(const p0 of [stage.question,...vars(stage.variations)]){const p=norm(p0);if(!p)continue;let score=0;if(q===p)score=1;else if(q.includes(p)||p.includes(q))score=.86;else{const a=new Set(q.split(/\s+/).filter(x=>x.length>2)),b=new Set(p.split(/\s+/).filter(x=>x.length>2));score=[...a].filter(x=>b.has(x)).length/Math.max(1,Math.max(a.size,b.size))}if(score>bestScore){bestScore=score;best={rule,stage,score}}}}return best}
+function ruleResult(stage:any,source:string,aiUsed=false){const mode=clean(stage?.response_mode,40),tool=stage?.tool_config&&typeof stage.tool_config==='object'?stage.tool_config:{},reply=clean(stage?.answer,1800);let ui:any={type:'none'};if(mode==='reply_buttons')ui={type:'chips',items:arr(tool.buttons).map((x:any)=>clean(x?.label||x?.value||x,80)).filter(Boolean).slice(0,8)};else if(mode==='cta_url')ui={type:'link',label:clean(tool.label||'Abrir',40),url:clean(tool.url,1000)};else if(mode==='baskets')ui={type:'baskets'};else if(mode==='offers')ui={type:'products',offers:true};else if(mode==='products')ui={type:'products',category:clean(tool.category,40)||null};else if(mode==='product_lookup')ui={type:'product_lookup',query:clean(tool.query,120)};else if(mode==='checkout')ui={type:'checkout'};return {source,ai_used:aiUsed,mode,reply,ui,rule_question:clean(stage?.question,300)||null}}
+async function aiChoose(message:string,rules:any[],runtime:any){
+  const key=Deno.env.get('OPENAI_API_KEY')||'';if(!key||runtime?.classifier_ai_enabled===false||!rules.length)return null;
+  const candidates=rules.slice(0,Math.max(1,Math.min(10,Number(runtime?.max_candidate_rules||5)))).map((r:any)=>{const s=stagesOf(r.stages)[0]||r;return {id:r.id,question:s.question,variations:vars(s.variations),mode:s.response_mode}}),configured=clean(Deno.env.get('OPENAI_CONVERSATION_MODEL'),80),model=configured.startsWith('gpt-5.6-')?configured:'gpt-5.6-luna';
+  try{const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model,store:false,max_output_tokens:100,reasoning:{effort:'low'},instructions:'Classifique a mensagem somente entre as regras candidatas do Chat Comprar. Se nenhuma regra servir, matched=false. Não invente ações.',input:[{role:'user',content:[{type:'input_text',text:JSON.stringify({message,candidates})}]}],text:{verbosity:'low',format:{type:'json_schema',name:'shopping_route',strict:true,schema:{type:'object',additionalProperties:false,properties:{matched:{type:'boolean'},id:{type:'string'}},required:['matched','id']}}}}),signal:AbortSignal.timeout(20000)});const data=await response.json().catch(()=>({}));if(!response.ok)return null;const parsed=JSON.parse(finalText(data)||'{}');if(!parsed.matched)return null;return rules.find((r:any)=>String(r.id)===String(parsed.id))||null}catch{return null}
+}
+async function routeChatMessage(sb:any,message:string){
+  const det=deterministic(message);if(det)return det;
+  const [{data:runtime},{data:rows}]=await Promise.all([sb.from('service_simple_runtime_config').select('*').eq('id',1).maybeSingle(),sb.from('service_simple_rules').select('*').eq('status','published').order('priority',{ascending:false}).limit(100)]);
+  const rules=arr(rows).filter((r:any)=>CHAT_MODES.has(clean((stagesOf(r.stages)[0]||r).response_mode,40))),direct=directRule(message,rules);
+  if(direct&&direct.score>=Number(runtime?.similarity_threshold??.3)){const stage={...direct.stage,tool_config:{...(direct.stage.tool_config||{}),...(direct.stage.response_mode==='product_lookup'?{query:productTerm(message)}:{})}};return ruleResult(stage,'rule',false)}
+  if(runtime?.enabled!==false){const picked=await aiChoose(message,rules,runtime);if(picked){const s0=stagesOf(picked.stages)[0]||picked,stage={...s0,tool_config:{...(s0.tool_config||{}),...(s0.response_mode==='product_lookup'?{query:productTerm(message)}:{})}};return ruleResult(stage,'ai_rule',true)}}
+  return {source:'fallback',ai_used:false,mode:'reply_buttons',reply:'Posso te ajudar por aqui. Escolha uma opção:',ui:{type:'chips',items:['Cestas','Ofertas','Produtos']},rule_question:null};
 }
 
 Deno.serve(async(req:Request)=>{
-  const ch=cors(req);if(!ch)return new Response('forbidden',{status:403});
-  if(req.method==='OPTIONS')return new Response('ok',{headers:ch});
-  if(req.method!=='POST')return json(req,{ok:false,error:'method_not_allowed'},405);
-  const url=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if(!url||!key)return json(req,{ok:false,error:'server_config'},500);
-  const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
-
-  const ct=req.headers.get('content-type')||'';let body:any={},file:File|null=null;
-  if(ct.includes('multipart/form-data')){try{const f=await req.formData();body={action:f.get('action'),token:f.get('token'),kind:f.get('kind'),duration_ms:f.get('duration_ms')};const x=f.get('file');if(x instanceof File)file=x}catch{return json(req,{ok:false,error:'invalid_form'},400)}}
-  else{try{body=await req.json()}catch{return json(req,{ok:false,error:'invalid_json'},400)}}
+  const ch=cors(req);if(!ch)return new Response('forbidden',{status:403});if(req.method==='OPTIONS')return new Response('ok',{headers:ch});if(req.method!=='POST')return json(req,{ok:false,error:'method_not_allowed'},405);
+  const url=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');if(!url||!key)return json(req,{ok:false,error:'server_config'},500);const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  const ct=req.headers.get('content-type')||'';let body:any={},file:File|null=null;if(ct.includes('multipart/form-data')){try{const f=await req.formData();body={action:f.get('action'),token:f.get('token'),kind:f.get('kind'),duration_ms:f.get('duration_ms')};const x=f.get('file');if(x instanceof File)file=x}catch{return json(req,{ok:false,error:'invalid_form'},400)}}else{try{body=await req.json()}catch{return json(req,{ok:false,error:'invalid_json'},400)}}
   const action=clean(body?.action||'open',60).toLowerCase();
-
-  if(action==='create_web_room'){
-    const {data,error}=await sb.rpc('room_start_web_session');
-    if(error)return json(req,{ok:false,error:'room_create_failed',detail:error.message},400);
-    return json(req,{ok:true,...data,room_url:`https://donaantonia.com.br/comprar/?s=${data.token}`});
-  }
-
-  const token=clean(body?.token,80);if(!tokenOk(token))return json(req,{ok:false,error:'invalid_token'},400);
-  const {data:session,error:se}=await sb.from('catalog_sessions').select('id,public_token,customer_id,conversation_id,cart_id,status,expires_at,created_at,current_view,metadata,completed_at').eq('public_token',token).maybeSingle();
-  if(se)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);
-  if(new Date(session.expires_at).getTime()<=Date.now()&&session.status!=='closed')return json(req,{ok:false,error:'room_expired'},410);
-  if(session.status==='closed'&&!['open','messages'].includes(action))return json(req,{ok:false,error:'room_closed'},409);
-
+  if(action==='create_web_room'){const {data,error}=await sb.rpc('room_start_web_session');if(error)return json(req,{ok:false,error:'room_create_failed',detail:error.message},400);return json(req,{ok:true,...data,room_url:`https://donaantonia.com.br/comprar/?s=${data.token}`})}
+  const token=clean(body?.token,80);if(!tokenOk(token))return json(req,{ok:false,error:'invalid_token'},400);const {data:session,error:se}=await sb.from('catalog_sessions').select('id,public_token,customer_id,conversation_id,cart_id,status,expires_at,created_at,current_view,metadata,completed_at').eq('public_token',token).maybeSingle();if(se)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);if(new Date(session.expires_at).getTime()<=Date.now()&&session.status!=='closed')return json(req,{ok:false,error:'room_expired'},410);if(session.status==='closed'&&!['open','messages'].includes(action))return json(req,{ok:false,error:'room_closed'},409);
   const cart=async()=>{const {data:s}=await sb.from('catalog_sessions').select('cart_id').eq('id',session.id).single();if(!s?.cart_id)return null;const {data:c}=await sb.from('carts').select('id,status,total,fiscal_subtotal,other_expenses,discount,version,basket_id').eq('id',s.cart_id).maybeSingle();if(!c)return null;const {data:items}=await sb.from('cart_items').select('product_id,source,quantity,base_quantity,commercial_delta,product:products(id,name,price,image_url,brand,packaging,category)').eq('cart_id',c.id).gt('quantity',0).order('created_at');return {...c,items:items||[]}};
-  const messages=async()=>{if(!session.conversation_id)return [];const {data}=await sb.from('messages').select('id,direction,message_type,body_text,transcript,ai_interpretation,created_at,raw_event').eq('conversation_id',session.conversation_id).gte('created_at',session.created_at).in('message_type',['text','audio','image','system']).order('created_at',{ascending:true}).limit(40);return (data||[]).map((m:any)=>({id:m.id,direction:m.direction,message_type:m.message_type,body_text:m.body_text,transcript:m.transcript,created_at:m.created_at,ui:m.ai_interpretation?.ui||null,source:m.raw_event?.source||null}))};
-
-  if(action==='open'){
-    await sb.from('catalog_sessions').update({last_opened_at:new Date().toISOString(),last_activity_at:new Date().toISOString(),experience:'shopping_room'}).eq('id',session.id);
-    let customer:any=null;if(session.customer_id){const {data:c}=await sb.from('customers').select('id,name,primary_whatsapp_e164,cpf_cnpj,bling_contact_id,preferred_reply').eq('id',session.customer_id).maybeSingle();customer=c||null}
-    const {data:baskets}=await sb.from('basket_templates').select('id,name,description,image_url,base_price,sort_order').eq('is_active',true).eq('is_whatsapp_active',true).order('sort_order').limit(12);
-    return json(req,{ok:true,session:{id:session.id,current_view:session.current_view,entry_intent:session.metadata?.entry_intent||null,entry_message:session.metadata?.entry_message||null,entry_source:session.metadata?.entry_source||null,expires_at:session.expires_at},customer:customer?{id:customer.id,name:customer.name,phone:customer.primary_whatsapp_e164,has_document:!!digits(customer.cpf_cnpj),has_bling_contact:!!customer.bling_contact_id,preferred_reply:customer.preferred_reply}:null,baskets:baskets||[],cart:await cart(),messages:await messages()});
-  }
-
+  const messages=async()=>{if(!session.conversation_id)return [];const {data}=await sb.from('messages').select('id,direction,message_type,body_text,transcript,ai_interpretation,created_at,raw_event').eq('conversation_id',session.conversation_id).gte('created_at',session.created_at).in('message_type',['text','audio','image','system']).order('created_at',{ascending:true}).limit(60);return (data||[]).map((m:any)=>({id:m.id,direction:m.direction,message_type:m.message_type,body_text:m.body_text,transcript:m.transcript,created_at:m.created_at,ui:m.ai_interpretation?.ui||null,source:m.raw_event?.source||null}))};
+  const saveReply=async(result:any,sourceMessageId:string|null=null)=>{if(!session.conversation_id||(!clean(result?.reply,1800)&&result?.ui?.type==='none'))return null;const {data}=await sb.from('messages').insert({conversation_id:session.conversation_id,direction:'outbound',message_type:'text',body_text:clean(result?.reply,1800),ai_interpretation:{ui:result?.ui||{type:'none'},routing:{source:result?.source||'unknown',ai_used:result?.ai_used===true,mode:result?.mode||null,rule_question:result?.rule_question||null}},raw_event:{source:'shopping_room',surface:'light_chat',session_id:session.id,source_message_id:sourceMessageId}}).select('id').single();return data?.id||null};
+  if(action==='open'){await sb.from('catalog_sessions').update({last_opened_at:new Date().toISOString(),last_activity_at:new Date().toISOString(),experience:'shopping_room'}).eq('id',session.id);let customer:any=null;if(session.customer_id){const {data:c}=await sb.from('customers').select('id,name,primary_whatsapp_e164,cpf_cnpj,bling_contact_id,preferred_reply').eq('id',session.customer_id).maybeSingle();customer=c||null}const {data:baskets}=await sb.from('basket_templates').select('id,name,description,image_url,base_price,sort_order').eq('is_active',true).order('sort_order').limit(12);return json(req,{ok:true,session:{id:session.id,current_view:session.current_view,entry_intent:session.metadata?.entry_intent||null,entry_message:session.metadata?.entry_message||null,entry_source:session.metadata?.entry_source||null,expires_at:session.expires_at},customer:customer?{id:customer.id,name:customer.name,phone:customer.primary_whatsapp_e164,has_document:!!digits(customer.cpf_cnpj),has_bling_contact:!!customer.bling_contact_id,preferred_reply:customer.preferred_reply}:null,baskets:baskets||[],cart:await cart(),messages:await messages()})}
   if(action==='messages')return json(req,{ok:true,messages:await messages()});
-
-  if(action==='baskets'){
-    const {data,error}=await sb.from('basket_templates').select('id,name,description,image_url,base_price,sort_order').eq('is_active',true).eq('is_whatsapp_active',true).order('sort_order').limit(20);
-    if(error)return json(req,{ok:false,error:'baskets_failed'},400);return json(req,{ok:true,baskets:data||[]});
-  }
-
-  if(action==='products'){
-    const q=clean(body?.q,100).replace(/[,%()]/g,' ').trim(),category=clean(body?.category,40),offers=body?.offers===true,limit=Math.max(1,Math.min(Number(body?.limit)||18,30));
-    let query=sb.from('products').select('id,name,price,image_url,brand,packaging,category,sales_category,stock,is_offer,sort_order').eq('physically_verified',true).eq('is_active',true).eq('is_whatsapp_active',true).gt('stock',0).order('sort_order').order('name').limit(limit);
-    if(category&&['mercearia','limpeza_lavanderia','higiene_beleza','casa_pet'].includes(category))query=query.eq('sales_category',category);
-    if(offers)query=query.eq('is_offer',true);
-    if(q)query=query.or(`name.ilike.%${q}%,brand.ilike.%${q}%,category.ilike.%${q}%,packaging.ilike.%${q}%`);
-    const {data,error}=await query;if(error)return json(req,{ok:false,error:'products_failed',detail:error.message},400);
-    const current=await cart(),map=new Map((current?.items||[]).map((i:any)=>[i.product_id,Number(i.quantity||0)]));
-    return json(req,{ok:true,products:(data||[]).map((p:any)=>({...p,quantity:map.get(p.id)||0}))});
-  }
-
-  if(action==='start_basket'){
-    const id=clean(body?.basket_id,80);if(!uuidOk(id))return json(req,{ok:false,error:'invalid_basket'},400);
-    const {data,error}=await sb.rpc('room_start_basket',{p_public_token:token,p_basket_id:id});if(error)return json(req,{ok:false,error:'basket_start_failed',detail:error.message},400);
-    const {data:items}=await sb.from('cart_items').select('product_id,source,quantity,base_quantity,commercial_delta,product:products(id,name,image_url,stock)').eq('cart_id',data.cart_id).order('created_at');
-    await sb.from('catalog_sessions').update({current_view:'basket',last_activity_at:new Date().toISOString()}).eq('id',session.id);
-    return json(req,{ok:true,result:data,items:items||[],cart:await cart()});
-  }
-
-  if(action==='set_quantity'){
-    const id=clean(body?.product_id,80),n=qty(body?.quantity);if(!uuidOk(id)||n===null)return json(req,{ok:false,error:'invalid_quantity'},400);
-    const {data,error}=await sb.rpc('room_set_product_quantity',{p_public_token:token,p_product_id:id,p_quantity:n});if(error)return json(req,{ok:false,error:'quantity_failed',detail:error.message},400);return json(req,{ok:true,...data,cart:await cart()});
-  }
-
-  if(action==='set_basket_quantity'){
-    const id=clean(body?.product_id,80),n=qty(body?.quantity);if(!uuidOk(id)||n===null)return json(req,{ok:false,error:'invalid_quantity'},400);
-    const {data,error}=await sb.rpc('room_set_basket_quantity',{p_public_token:token,p_product_id:id,p_quantity:n});if(error)return json(req,{ok:false,error:'basket_quantity_failed',detail:error.message},400);return json(req,{ok:true,cart:await cart()});
-  }
-
-  if(action==='checkout_preview'){
-    const {data,error}=await sb.rpc('room_checkout_preview',{p_public_token:token});if(error)return json(req,{ok:false,error:'checkout_failed',detail:error.message},400);
-    return json(req,{ok:true,checkout:data,payment_method:session.metadata?.payment_method||null});
-  }
-
-  if(action==='identify'){
-    const {data,error}=await sb.rpc('room_identify_customer',{p_public_token:token,p_name:clean(body?.name,120),p_phone:clean(body?.phone,40),p_document:clean(body?.document,30)||null});if(error)return json(req,{ok:false,error:'identify_failed',detail:error.message},400);return json(req,{ok:true,customer:data});
-  }
-
-  if(action==='save_address'){
-    const address=body?.delivery_address&&typeof body.delivery_address==='object'?body.delivery_address:{};const {data,error}=await sb.rpc('room_save_address',{p_public_token:token,p_address:address});if(error)return json(req,{ok:false,error:'address_failed',detail:error.message},400);return json(req,{ok:true,address:data});
-  }
-
-  if(action==='set_payment'){
-    const method=clean(body?.payment_method,30);if(!PAYMENT.has(method))return json(req,{ok:false,error:'invalid_payment_method'},400);
-    await sb.from('catalog_sessions').update({metadata:{...(session.metadata||{}),payment_method:method},last_activity_at:new Date().toISOString()}).eq('id',session.id);
-    if(session.conversation_id)await sb.from('whatsapp_sales_state').upsert({conversation_id:session.conversation_id,pending_payment_method:method,updated_at:new Date().toISOString()},{onConflict:'conversation_id'});
-    return json(req,{ok:true,payment_method:method});
-  }
-
-  if(action==='preferences'){
-    const {data,error}=await sb.rpc('room_save_customer_preferences',{p_public_token:token,p_day:body?.birthday_day??null,p_month:body?.birthday_month??null,p_marketing_opt_in:typeof body?.marketing_opt_in==='boolean'?body.marketing_opt_in:null});if(error)return json(req,{ok:false,error:'preferences_failed',detail:error.message},400);return json(req,{ok:true,preferences:data});
-  }
-
-  if(action==='confirm_order'){
-    const method=clean(body?.payment_method||session.metadata?.payment_method,30);if(!PAYMENT.has(method))return json(req,{ok:false,error:'payment_method_required'},400);
-    const address=body?.delivery_address&&typeof body.delivery_address==='object'?body.delivery_address:{};
-    const locator=body?.delivery_locator&&typeof body.delivery_locator==='object'?body.delivery_locator:null;
-    const finalAddress=locator?{...address,locator}:address;
-    const {data,error}=await sb.rpc('room_confirm_order',{p_public_token:token,p_delivery_address:finalAddress});if(error)return json(req,{ok:false,error:'confirm_failed',detail:error.message},400);
-    if(data?.order_id)await sb.from('orders').update({payment_method:method,updated_at:new Date().toISOString()}).eq('id',data.order_id);
-    await sb.from('catalog_sessions').update({metadata:{...(session.metadata||{}),payment_method:method,light_chat_completed:true},last_activity_at:new Date().toISOString()}).eq('id',session.id);
-    return json(req,{ok:true,order:data,payment_method:method});
-  }
-
-  if(action==='send_text'){
-    const message=clean(body?.message,800);if(!message)return json(req,{ok:false,error:'message_required'},400);
-    if(!session.conversation_id)return json(req,{ok:false,error:'conversation_missing'},400);
-    const {data:inbound,error}=await sb.from('messages').insert({conversation_id:session.conversation_id,direction:'inbound',message_type:'text',body_text:message,raw_event:{source:'shopping_room',surface:'light_chat',session_id:session.id}}).select('id').single();if(error)return json(req,{ok:false,error:'message_save_failed'},500);
-    const intent=simpleIntent(message);
-    if(intent.type!=='ai')return json(req,{ok:true,reply:null,ui:intent,message_id:inbound.id});
-    const {data:cfg}=await sb.from('automation_config').select('automation_enabled,ai_enabled,conversation_worker_enabled').eq('id',1).maybeSingle();
-    if(cfg?.automation_enabled&&cfg?.ai_enabled&&cfg?.conversation_worker_enabled){const {data:job,error:qe}=await sb.rpc('queue_ai_job_for_message',{p_message_id:inbound.id,p_job_type:'conversation',p_input:{source:'shopping_room',surface:'light_chat'}});if(qe)return json(req,{ok:false,error:'message_queue_failed',detail:qe.message},500);return json(req,{ok:true,reply:null,ui:{type:'none'},ai_job:job,message_id:inbound.id});}
-    return json(req,{ok:true,reply:'Me diga o produto ou a cesta que você procura.',ui:{type:'none'},message_id:inbound.id});
-  }
-
-  if(action==='upload_media'){
-    if(!file)return json(req,{ok:false,error:'file_required'},400);const kind=clean(body?.kind,20);if(kind!=='audio'&&kind!=='image')return json(req,{ok:false,error:'invalid_media_kind'},400);
-    const mime=file.type.split(';')[0].trim().toLowerCase();if(!MIME[kind as 'audio'|'image'].has(mime))return json(req,{ok:false,error:'unsupported_media_type'},415);if(file.size<=0||file.size>8*1024*1024)return json(req,{ok:false,error:'media_too_large'},413);
-    const path=`sessions/${session.id}/${kind}/${new Date().toISOString().slice(0,7)}/${crypto.randomUUID()}.${EXT[mime]||'bin'}`;
-    const {error:up}=await sb.storage.from('shopping-room-media').upload(path,file,{contentType:mime,upsert:false});if(up)return json(req,{ok:false,error:'media_upload_failed',detail:up.message},400);
-    const {data:msg,error:me}=await sb.from('messages').insert({conversation_id:session.conversation_id,direction:'inbound',message_type:kind,media_id:path,raw_event:{source:'shopping_room',surface:'light_chat',session_id:session.id,mime_type:mime,size:file.size}}).select('id,direction,message_type,created_at').single();if(me)return json(req,{ok:false,error:'media_message_failed'},400);
-    const duration=Math.max(0,Math.min(Number(body?.duration_ms)||0,10*60*1000))||null;const {data:rm,error:re}=await sb.from('room_media').insert({catalog_session_id:session.id,conversation_id:session.conversation_id,customer_id:session.customer_id,message_id:msg.id,kind,bucket:'shopping-room-media',object_path:path,mime_type:mime,bytes:file.size,duration_ms:duration,processing_status:'uploaded'}).select('id').single();if(re)return json(req,{ok:false,error:'media_record_failed'},400);
-    const {data:job}=await sb.rpc('queue_ai_job_for_message',{p_message_id:msg.id,p_job_type:kind==='audio'?'transcription':'vision',p_input:{room_media_id:rm.id,object_path:path,mime_type:mime,source:'shopping_room',surface:'light_chat'}});await sb.from('room_media').update({processing_status:job?.status==='pending'?'queued':'held'}).eq('id',rm.id);
-    return json(req,{ok:true,message:msg,ai_job:job||null});
-  }
-
+  if(action==='baskets'){const {data,error}=await sb.from('basket_templates').select('id,name,description,image_url,base_price,sort_order').eq('is_active',true).order('sort_order').limit(20);if(error)return json(req,{ok:false,error:'baskets_failed'},400);return json(req,{ok:true,baskets:data||[]})}
+  if(action==='products'){const q=clean(body?.q,100).replace(/[,%()]/g,' ').trim(),category=clean(body?.category,40),offers=body?.offers===true,limit=Math.max(1,Math.min(Number(body?.limit)||18,30));let query=sb.from('products').select('id,name,price,image_url,brand,packaging,category,sales_category,stock,is_offer,sort_order').eq('physically_verified',true).eq('is_active',true).gt('stock',0).order('sort_order').order('name').limit(limit);if(category&&['mercearia','limpeza_lavanderia','higiene_beleza','casa_pet'].includes(category))query=query.eq('sales_category',category);if(offers)query=query.eq('is_offer',true);if(q)query=query.or(`name.ilike.%${q}%,brand.ilike.%${q}%,category.ilike.%${q}%,packaging.ilike.%${q}%`);const {data,error}=await query;if(error)return json(req,{ok:false,error:'products_failed',detail:error.message},400);const current=await cart(),map=new Map((current?.items||[]).map((i:any)=>[i.product_id,Number(i.quantity||0)]));return json(req,{ok:true,products:(data||[]).map((p:any)=>({...p,quantity:map.get(p.id)||0}))})}
+  if(action==='start_basket'){const id=clean(body?.basket_id,80);if(!uuidOk(id))return json(req,{ok:false,error:'invalid_basket'},400);const {data,error}=await sb.rpc('room_start_basket',{p_public_token:token,p_basket_id:id});if(error)return json(req,{ok:false,error:'basket_start_failed',detail:error.message},400);const {data:items}=await sb.from('cart_items').select('product_id,source,quantity,base_quantity,commercial_delta,product:products(id,name,image_url,stock)').eq('cart_id',data.cart_id).order('created_at');await sb.from('catalog_sessions').update({current_view:'basket',last_activity_at:new Date().toISOString()}).eq('id',session.id);return json(req,{ok:true,result:data,items:items||[],cart:await cart()})}
+  if(action==='set_quantity'){const id=clean(body?.product_id,80),n=qty(body?.quantity);if(!uuidOk(id)||n===null)return json(req,{ok:false,error:'invalid_quantity'},400);const {data,error}=await sb.rpc('room_set_product_quantity',{p_public_token:token,p_product_id:id,p_quantity:n});if(error)return json(req,{ok:false,error:'quantity_failed',detail:error.message},400);return json(req,{ok:true,...data,cart:await cart()})}
+  if(action==='set_basket_quantity'){const id=clean(body?.product_id,80),n=qty(body?.quantity);if(!uuidOk(id)||n===null)return json(req,{ok:false,error:'invalid_quantity'},400);const {data,error}=await sb.rpc('room_set_basket_quantity',{p_public_token:token,p_product_id:id,p_quantity:n});if(error)return json(req,{ok:false,error:'basket_quantity_failed',detail:error.message},400);return json(req,{ok:true,cart:await cart()})}
+  if(action==='checkout_preview'){const {data,error}=await sb.rpc('room_checkout_preview',{p_public_token:token});if(error)return json(req,{ok:false,error:'checkout_failed',detail:error.message},400);return json(req,{ok:true,checkout:data,payment_method:session.metadata?.payment_method||null})}
+  if(action==='identify'){const {data,error}=await sb.rpc('room_identify_customer',{p_public_token:token,p_name:clean(body?.name,120),p_phone:clean(body?.phone,40),p_document:clean(body?.document,30)||null});if(error)return json(req,{ok:false,error:'identify_failed',detail:error.message},400);return json(req,{ok:true,customer:data})}
+  if(action==='save_address'){const address=body?.delivery_address&&typeof body.delivery_address==='object'?body.delivery_address:{};const {data,error}=await sb.rpc('room_save_address',{p_public_token:token,p_address:address});if(error)return json(req,{ok:false,error:'address_failed',detail:error.message},400);return json(req,{ok:true,address:data})}
+  if(action==='set_payment'){const method=clean(body?.payment_method,30);if(!PAYMENT.has(method))return json(req,{ok:false,error:'invalid_payment_method'},400);await sb.from('catalog_sessions').update({metadata:{...(session.metadata||{}),payment_method:method},last_activity_at:new Date().toISOString()}).eq('id',session.id);return json(req,{ok:true,payment_method:method})}
+  if(action==='preferences'){const {data,error}=await sb.rpc('room_save_customer_preferences',{p_public_token:token,p_day:body?.birthday_day??null,p_month:body?.birthday_month??null,p_marketing_opt_in:typeof body?.marketing_opt_in==='boolean'?body.marketing_opt_in:null});if(error)return json(req,{ok:false,error:'preferences_failed',detail:error.message},400);return json(req,{ok:true,preferences:data})}
+  if(action==='confirm_order'){const method=clean(body?.payment_method||session.metadata?.payment_method,30);if(!PAYMENT.has(method))return json(req,{ok:false,error:'payment_method_required'},400);const address=body?.delivery_address&&typeof body.delivery_address==='object'?body.delivery_address:{},locator=body?.delivery_locator&&typeof body.delivery_locator==='object'?body.delivery_locator:null,finalAddress=locator?{...address,locator}:address;const {data,error}=await sb.rpc('room_confirm_order',{p_public_token:token,p_delivery_address:finalAddress});if(error)return json(req,{ok:false,error:'confirm_failed',detail:error.message},400);if(data?.order_id)await sb.from('orders').update({payment_method:method,updated_at:new Date().toISOString()}).eq('id',data.order_id);await sb.from('catalog_sessions').update({metadata:{...(session.metadata||{}),payment_method:method,light_chat_completed:true},last_activity_at:new Date().toISOString()}).eq('id',session.id);return json(req,{ok:true,order:data,payment_method:method})}
+  if(action==='send_text'){const message=clean(body?.message,800);if(!message)return json(req,{ok:false,error:'message_required'},400);if(!session.conversation_id)return json(req,{ok:false,error:'conversation_missing'},400);const {data:inbound,error}=await sb.from('messages').insert({conversation_id:session.conversation_id,direction:'inbound',message_type:'text',body_text:message,raw_event:{source:'shopping_room',surface:'light_chat',session_id:session.id}}).select('id').single();if(error)return json(req,{ok:false,error:'message_save_failed'},500);const result=await routeChatMessage(sb,message),outboundId=await saveReply(result,inbound.id);return json(req,{ok:true,reply:result.reply,ui:result.ui,routing:{source:result.source,ai_used:result.ai_used,mode:result.mode},message_id:inbound.id,outbound_message_id:outboundId})}
+  if(action==='upload_media'){if(!file)return json(req,{ok:false,error:'file_required'},400);const kind=clean(body?.kind,20);if(kind!=='audio'&&kind!=='image')return json(req,{ok:false,error:'invalid_media_kind'},400);const mime=file.type.split(';')[0].trim().toLowerCase();if(!MIME[kind as 'audio'|'image'].has(mime))return json(req,{ok:false,error:'unsupported_media_type'},415);if(file.size<=0||file.size>8*1024*1024)return json(req,{ok:false,error:'media_too_large'},413);const path=`sessions/${session.id}/${kind}/${new Date().toISOString().slice(0,7)}/${crypto.randomUUID()}.${EXT[mime]||'bin'}`;const {error:up}=await sb.storage.from('shopping-room-media').upload(path,file,{contentType:mime,upsert:false});if(up)return json(req,{ok:false,error:'media_upload_failed',detail:up.message},400);const {data:msg,error:me}=await sb.from('messages').insert({conversation_id:session.conversation_id,direction:'inbound',message_type:kind,media_id:path,raw_event:{source:'shopping_room',surface:'light_chat',session_id:session.id,mime_type:mime,size:file.size}}).select('id').single();if(me)return json(req,{ok:false,error:'media_message_failed'},400);const duration=Math.max(0,Math.min(Number(body?.duration_ms)||0,10*60*1000))||null;const {error:re}=await sb.from('room_media').insert({catalog_session_id:session.id,conversation_id:session.conversation_id,customer_id:session.customer_id,message_id:msg.id,kind,bucket:'shopping-room-media',object_path:path,mime_type:mime,bytes:file.size,duration_ms:duration,processing_status:'uploaded'});if(re)return json(req,{ok:false,error:'media_record_failed'},400);const result={source:'media_safe_fallback',ai_used:false,mode:'reply_buttons',reply:`Recebi ${kind==='audio'?'seu áudio':'sua foto'}. Para te atender mais rápido agora, escreva em poucas palavras o que você precisa.`,ui:{type:'chips',items:['Cestas','Ofertas','Produtos']}};await saveReply(result,msg.id);return json(req,{ok:true,message:msg,reply:result.reply,ui:result.ui,routing:{source:result.source,ai_used:false,mode:result.mode}})}
   return json(req,{ok:false,error:'unknown_action'},400);
 });
