@@ -14,7 +14,7 @@ const clean=(v:unknown,max=500)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g,
 const uuid=(v:unknown)=>{const x=clean(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x)?x:""};
 const safeSourceUrl=(v:unknown)=>{try{const u=new URL(clean(v,1800));return u.protocol==="https:"&&ALLOWED_SOURCE_HOSTS.has(u.hostname)?u.toString():""}catch{return""}};
 const ISSUE_STATUSES=["error","rejected","source_rejected","needs_reprocess"];
-const PRODUCT_FIELDS="id,name,sku,gtin,is_active,image_url,image_source_url,image_source_origin,image_ai_url,image_ai_status,image_ai_error,image_ai_validation,image_ai_processed_at,image_ai_ignored,image_ai_admin_note,image_ai_admin_updated_at,image_ai_manual_review_required,image_ai_manual_review_reason,image_ai_manual_prompt,image_ai_manual_requested_at,image_ai_manual_requested_by,image_ai_manual_attempts,image_ai_manual_resolved_at,updated_at";
+const PRODUCT_FIELDS="id,name,sku,gtin,is_active,image_url,image_original_url,image_source_url,image_source_origin,image_ai_url,image_ai_status,image_ai_error,image_ai_validation,image_ai_processed_at,image_ai_ignored,image_ai_admin_note,image_ai_admin_updated_at,image_ai_manual_review_required,image_ai_manual_review_reason,image_ai_manual_prompt,image_ai_manual_requested_at,image_ai_manual_requested_by,image_ai_manual_attempts,image_ai_manual_resolved_at,updated_at";
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get("origin");
@@ -120,6 +120,26 @@ Deno.serve(async(req:Request)=>{
     const {data,error}=await sb.rpc("admin_product_image_automation_control_v1",{p_action:"configure",p_enabled:enabled,p_interval_minutes:interval});
     if(error)return respond({ok:false,error:"configure_failed",detail:clean(error.message,300)},500);
     return respond({ok:true,control:data});
+  }
+  if(action==="approve_manual"){
+    const productId=uuid(body?.product_id);if(!productId)return respond({ok:false,error:"invalid_product_id"},400);
+    const {data:p,error:pe}=await sb.from("products").select("id,is_active,image_ai_ignored,image_ai_manual_review_required,image_ai_url,image_ai_admin_note").eq("id",productId).maybeSingle();
+    if(pe||!p)return respond({ok:false,error:"product_not_found"},404);
+    if(p.is_active!==true)return respond({ok:false,error:"product_inactive"},400);
+    if(p.image_ai_ignored===true)return respond({ok:false,error:"product_ignored"},400);
+    if(p.image_ai_manual_review_required!==true)return respond({ok:false,error:"manual_review_not_required"},400);
+    const candidate=safeSourceUrl(p.image_ai_url);if(!candidate)return respond({ok:false,error:"candidate_required"},400);
+    const {data:job,error:je}=await sb.from("product_image_jobs").select("id,status").eq("product_id",productId).maybeSingle();
+    if(je)return respond({ok:false,error:"job_lookup_failed",detail:clean(je.message,240)},500);
+    if(job&&String(job.status)==="processing")return respond({ok:false,error:"job_processing"},409);
+    const now=new Date().toISOString(),note=clean(body?.note,1000)||clean(p.image_ai_admin_note,1000)||"Aprovada manualmente pelo Admin";
+    if(job&&["pending","error","rejected"].includes(String(job.status||""))){
+      const jq=await sb.from("product_image_jobs").update({status:"completed",force_individual:false,error_message:null,processed_at:now,updated_at:now}).eq("id",job.id);
+      if(jq.error)return respond({ok:false,error:"job_update_failed",detail:clean(jq.error.message,240)},500);
+    }
+    const pq=await sb.from("products").update({image_url:candidate,image_ai_status:"completed",image_ai_error:null,image_ai_manual_review_required:false,image_ai_manual_review_reason:null,image_ai_manual_prompt:null,image_ai_manual_requested_at:null,image_ai_manual_requested_by:null,image_ai_manual_resolved_at:now,image_ai_processed_at:now,image_ai_admin_note:note,image_ai_admin_updated_at:now,image_ai_ignored:false,updated_at:now}).eq("id",productId).select("id").maybeSingle();
+    if(pq.error||!pq.data)return respond({ok:false,error:"manual_approval_failed",detail:clean(pq.error?.message||"product_not_found",300)},pq.data?500:404);
+    return respond({ok:true,product_id:productId,candidate_url:candidate,approved_manually:true});
   }
   if(action==="generate_manual"){
     const productId=uuid(body?.product_id);if(!productId)return respond({ok:false,error:"invalid_product_id"},400);
