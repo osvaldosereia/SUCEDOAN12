@@ -11,6 +11,7 @@ on:
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
+      - 'tests/chat-deterministic-first-v1.mjs'
       - 'supabase/functions/shopping-room-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
@@ -20,6 +21,7 @@ on:
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/migrations/*shopping_room*'
       - 'supabase/migrations/*shopping_chat*'
+      - 'supabase/migrations/*chat_deterministic*'
       - 'supabase/migrations/*outbound*'
       - '.github/workflows/test-shopping-room.yml'
   pull_request:
@@ -30,12 +32,14 @@ on:
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
+      - 'tests/chat-deterministic-first-v1.mjs'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
       - 'supabase/functions/shopping-chat-menu-v1/**'
       - 'supabase/functions/shopping-chat-customer-v1/**'
       - 'supabase/functions/admin-chat-menu-v1/**'
       - 'supabase/migrations/*shopping_chat*'
+      - 'supabase/migrations/*chat_deterministic*'
       - '.github/workflows/test-shopping-room.yml'
   workflow_dispatch:
 
@@ -61,6 +65,7 @@ jobs:
           node scripts/test-light-shopping-chat-v2.mjs
           node scripts/test-chat-helper-menu-v1.mjs
           node scripts/test-shopping-chat-routing-v1.mjs
+          node tests/chat-deterministic-first-v1.mjs
       - name: Estrutura pública
         shell: bash
         run: |
