@@ -5,6 +5,7 @@ export const PIPELINE_VERSION='grid18-studio-v2-high-clean';
 export const POLICY={
   sourceIdentityMin:0.92,
   sourceQualityMin:0.80,
+  sourceRecoverableQualityMin:0.65,
   fidelityMin:0.90,
   compositionMin:0.90,
   cutoutMin:0.90,
@@ -19,8 +20,6 @@ export function firebaseProductActive(record){
   const raw=upper(record.situacao??record.status);
   if(['I','INATIVO','INACTIVE','0','FALSE'].includes(raw))return false;
   if(['A','ATIVO','ACTIVE','1','TRUE'].includes(raw))return true;
-  // Legacy Firebase products commonly have no explicit status; presence in
-  // /produtos with no inactive marker has historically meant active.
   return true;
 }
 
@@ -33,6 +32,15 @@ export function sourceInspectionAccepted(v){
     && v.extra_elements===false
     && v.front_or_usable_view===true
     && score(v.source_quality_score)>=POLICY.sourceQualityMin;
+}
+
+export function sourceRecoverableForGrid(v){
+  return Boolean(v)
+    && score(v.same_product_confidence)>=POLICY.sourceIdentityMin
+    && v.product_complete===true
+    && v.bad_cutout===false
+    && v.front_or_usable_view===true
+    && score(v.source_quality_score)>=POLICY.sourceRecoverableQualityMin;
 }
 
 export function finalValidationAccepted(v){
