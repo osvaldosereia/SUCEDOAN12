@@ -14,14 +14,14 @@
   <header class="topbar">
     <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button>
     <a class="brand" href="#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin V3</b></span></a>
-    <a class="view-storefront" href="../vitrine-v3/" target="_blank" rel="noopener">Ver vitrine</a>
+    <a class="view-storefront" href="../comprar/" target="_blank" rel="noopener">Abrir Comprar</a>
   </header>
 
   <div class="admin-layout">
     <aside id="sidebar" class="sidebar" aria-label="Menu principal">
       <nav>
         <button type="button" data-route="dashboard">Início</button>
-        <button type="button" data-route="storefront">Vitrine</button>
+        <a href="../comprar/" target="_blank" rel="noopener">Comprar</a>
         <button type="button" data-route="baskets">Cestas</button>
         <button type="button" data-route="products">Produtos</button>
         <a href="./nomes-produtos-v3.html">Nomes dos produtos</a>
@@ -40,6 +40,7 @@
   <dialog id="editorDialog" class="editor-dialog"><div id="editorBody"></div></dialog>
   <div id="toastRegion" class="toasts" aria-live="polite" aria-atomic="true"></div>
   <noscript><div class="noscript">Ative o JavaScript para usar o Admin.</div></noscript>
+  <script type="module" src="./comprar-ui.js?v=20260914-1"></script>
   <script type="module" src="./app.js?v=20260912-4"></script>
   <script type="module" src="./products-inline-controls-v4.js?v=20260912-1"></script>
   <script type="module" src="./nav-fix.js?v=20260911-3"></script>
