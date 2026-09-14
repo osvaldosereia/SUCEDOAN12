@@ -18,7 +18,7 @@
   function stage(number,title,subtitle='',extra=''){const s=document.createElement('section');s.className=`stage ${extra}`;s.innerHTML=`<div class="stage-head"><span class="stage-no">${number}</span><div><strong>${esc(title)}</strong>${subtitle?`<small>${esc(subtitle)}</small>`:''}</div></div>`;timeline.appendChild(s);return s}
   function firstName(){return text(state.customer?.name).split(' ')[0]||''}
   function cartCount(){return (state.cart?.items||[]).reduce((n,x)=>n+Number(x.quantity||0),0)}
-  function updateCart(){const n=cartCount();$('cartCount').textContent=String(Math.round(n));$('cartTotal').textContent=money(state.cart?.total||0);$('cartBar').classList.toggle('hidden',n<=0);timeline.querySelectorAll('[data-basket-total]').forEach(x=>x.textContent=money(state.cart?.total||0))}
+  function updateCart(){const n=cartCount();$('cartCount').textContent=String(Math.round(n));$('cartTotal').textContent=money(state.cart?.total||0);$('cartBar').classList.remove('hidden');$('checkoutButton').disabled=n<=0;timeline.querySelectorAll('[data-basket-total]').forEach(x=>x.textContent=money(state.cart?.total||0))}
   function removeCommercialStages(){timeline.querySelectorAll('.stage').forEach(x=>x.remove())}
 
   async function openRoom(){
@@ -63,6 +63,6 @@
   function stopRecording(){if(state.recorder&&state.recorder.state!=='inactive')state.recorder.stop()}
   function cancelRecording(){state.chunks=[];stopRecording()}
 
-  $('composer').addEventListener('submit',e=>{e.preventDefault();sendText($('messageInput').value)});$('checkoutButton').onclick=showCheckout;$('cartButton').onclick=showCheckout;$('photoButton').onclick=()=>$('photoInput').click();$('photoInput').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';if(f)upload('image',f)});$('micButton').onclick=()=>state.recorder&&state.recorder.state==='recording'?stopRecording():startRecording();$('cancelRecording').onclick=cancelRecording;$('backButton').onclick=()=>history.length>1?history.back():location.href='/';window.addEventListener('beforeunload',()=>state.stream?.getTracks().forEach(t=>t.stop()));
-  openRoom().catch(e=>{$('loadingCard').textContent=e.message||'Não foi possível abrir.';$('composer').classList.add('hidden')});
+  $('composer').addEventListener('submit',e=>{e.preventDefault();sendText($('messageInput').value)});$('cartAddProducts').onclick=renderExtraSelector;$('checkoutButton').onclick=showCheckout;$('cartButton').onclick=showCheckout;$('photoButton').onclick=()=>$('photoInput').click();$('photoInput').addEventListener('change',e=>{const f=e.target.files?.[0];e.target.value='';if(f)upload('image',f)});$('micButton').onclick=()=>state.recorder&&state.recorder.state==='recording'?stopRecording():startRecording();$('cancelRecording').onclick=cancelRecording;$('backButton').onclick=()=>history.length>1?history.back():location.href='/';window.addEventListener('beforeunload',()=>state.stream?.getTracks().forEach(t=>t.stop()));
+  openRoom().catch(e=>{$('loadingCard').textContent=e.message||'Não foi possível abrir.';$('cartBar').classList.add('hidden');$('composer').classList.add('hidden')});
 })();
