@@ -73,4 +73,7 @@ assert.match(admin,/image_ai_status:"completed"/);
 assert.match(admin,/image_url:candidate/);
 assert.match(admin,/image_original_url/);
 
+// Dynamic HTML values keep quote escaping well-formed.
+assert.match(js,/['"]&quot;['"]/);
+
 console.log('product image manual review contract ok');
