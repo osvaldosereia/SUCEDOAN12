@@ -6,6 +6,7 @@ const adminAi=fs.readFileSync('supabase/functions/admin-service-intelligence-sim
 const products=fs.readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
 const menu=fs.readFileSync('supabase/functions/shopping-chat-menu-v1/index.ts','utf8');
 const client=fs.readFileSync('comprar/chat-light-v2.js','utf8');
+const adminController=fs.readFileSync('admin-v3/service-strategy.js','utf8');
 
 for(const forbidden of ['automation_config','queue_ai_job_for_message','whatsapp_sales_state','queue_human_handoff_v1','queue_whatsapp_sales_reply_v1','queue_whatsapp_simple_rich_interactive_v1']){
   assert.ok(!edge.includes(forbidden),`Chat Comprar não deve depender de ${forbidden}`);
@@ -30,6 +31,20 @@ for(const [label,pattern] of [
 assert.ok(!edge.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!products.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-products-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!menu.includes('is_whatsapp_active'),'shopping-chat-menu-v1 não deve filtrar cesta por flag do WhatsApp');
+
+// A categoria oficial é products.category, preservada da importação original.
+// Chat Comprar não pode manter uma taxonomia comercial paralela.
+assert.doesNotMatch(products,/sales_category/,'feed do Chat Comprar não deve depender de sales_category');
+assert.doesNotMatch(products,/physically_verified/,'todo produto ativo deve poder aparecer no Chat Comprar, mesmo sem conferência física');
+assert.doesNotMatch(products,/\.gt\('stock',0\)/,'produto ativo sem estoque deve continuar visível no Chat Comprar');
+assert.match(products,/body\?\.categories/,'feed deve aceitar apenas categorias oficiais selecionadas');
+assert.match(products,/\.in\('category',categories\)/,'filtro deve usar products.category');
+assert.doesNotMatch(edge,/\.eq\('sales_category'/,'roteador principal não deve filtrar produtos por sales_category');
+assert.doesNotMatch(client,/sales_categories/,'frontend não deve enviar categorias comerciais paralelas');
+assert.doesNotMatch(client,/limpeza_lavanderia|higiene_beleza|casa_pet/,'frontend não deve inventar agrupamentos de categoria');
+assert.match(client,/\['Cestas','Ofertas','Produtos'\]/,'entrada do chat deve abrir Produtos e deixar as categorias reais virem do catálogo');
+assert.match(adminController,/productCategories/,'editor de regras deve receber as categorias oficiais do catálogo');
+assert.doesNotMatch(adminController,/limpeza_lavanderia|higiene_beleza|casa_pet/,'editor não deve oferecer categorias artificiais');
 
 for(const ui of ["ui.type==='chips'","ui.type==='link'","ui.type==='product_lookup'"]){
   assert.ok(client.includes(ui),`frontend deve renderizar ${ui}`);
