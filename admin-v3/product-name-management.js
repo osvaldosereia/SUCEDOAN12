@@ -2,7 +2,7 @@ import {api} from './api.js?v=20260914-2';
 import {CONFIG} from './config.js?v=20260914-2';
 
 const $=id=>document.getElementById(id);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('pt-BR')};
 const number=v=>Number(v||0).toLocaleString('pt-BR');
 const checked=v=>v?'checked':'';
