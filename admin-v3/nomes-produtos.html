@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>Dona Antônia · Nomes dos produtos</title>
+  <link rel="stylesheet" href="./styles.css?v=20260914-1">
+  <link rel="stylesheet" href="./product-name-management.css?v=20260914-1">
+</head>
+<body>
+  <header class="topbar">
+    <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button>
+    <a class="brand" href="./#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin V3</b></span></a>
+    <a class="view-storefront" href="../vitrine-v3/" target="_blank" rel="noopener">Ver vitrine</a>
+  </header>
+
+  <div class="admin-layout">
+    <aside id="sidebar" class="sidebar" aria-label="Menu principal"><nav>
+      <a href="./#dashboard">Início</a>
+      <a href="./#storefront">Vitrine</a>
+      <a href="./#baskets">Cestas</a>
+      <a href="./#products">Produtos</a>
+      <a class="active" href="./nomes-produtos.html">Nomes dos produtos</a>
+      <a href="./imagens-ia.html">Imagens IA</a>
+      <a href="../ame-mais/">Ame Mais</a>
+      <a href="./#categories">Categorias</a>
+      <a href="./#orders">Pedidos</a>
+      <a href="./#customers">Clientes</a>
+      <a href="./atendimento.html">Atendimento</a>
+      <a href="../contagem/">Balanço rápido</a>
+    </nav></aside>
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+
+    <main class="content">
+      <div class="page-head">
+        <div><h1>Nomes dos produtos</h1><p>Acompanhe a padronização feita pela IA, revise dúvidas e veja claramente como cada nome estava e como ficou.</p></div>
+        <div class="page-actions"><button id="refreshData" class="secondary" type="button">Atualizar</button><button id="runNow" class="primary" type="button">Processar agora</button></div>
+      </div>
+
+      <div class="name-normalization-note"><span class="badge">Atualização manual</span><span id="lastUpdated" class="muted">Os dados só são consultados ao abrir esta tela ou ao clicar em Atualizar.</span></div>
+
+      <div class="stats-grid name-normalization-stats">
+        <article class="stat-card"><span>Total de produtos</span><strong id="statTotal">0</strong></article>
+        <article class="stat-card"><span>Nomes aplicados</span><strong id="statApplied">0</strong></article>
+        <article class="stat-card"><span>Em revisão</span><strong id="statReview">0</strong></article>
+        <article class="stat-card"><span>Na fila / aguardando</span><strong id="statQueued">0</strong></article>
+        <article class="stat-card"><span>Sem alteração</span><strong id="statUnchanged">0</strong></article>
+        <article class="stat-card"><span>Erros</span><strong id="statError">0</strong></article>
+        <article class="stat-card"><span>Mantidos manualmente</span><strong id="statSkipped">0</strong></article>
+        <article class="stat-card"><span>Processando agora</span><strong id="statProcessing">0</strong></article>
+      </div>
+
+      <form id="normalizationFilterForm" class="toolbar name-normalization-filter">
+        <input id="normalizationSearch" type="search" name="q" placeholder="Buscar nome antigo, novo, produto, EAN ou marca">
+        <select id="normalizationStatus" name="status" aria-label="Status"><option value="">Todos os status</option><option value="review">Em revisão</option><option value="applied">Aplicados</option><option value="queued">Na fila</option><option value="processing">Processando</option><option value="unchanged">Sem alteração</option><option value="skipped">Mantidos</option><option value="error">Erros</option></select>
+        <button class="primary" type="submit">Buscar</button>
+      </form>
+
+      <section class="panel">
+        <div class="page-head"><div><h2>Revisões que precisam de decisão</h2><p>Quando a automação encontra conflito ou dúvida, nada é alterado até você decidir.</p></div></div>
+        <div id="reviewList" class="name-normalization-review-list"><div class="empty">Carregando…</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="page-head"><div><h2>Últimas rodadas</h2><p>Em cada rodada, veja produto por produto: como o nome era e como ficou.</p></div></div>
+        <div id="roundsList" class="name-normalization-rounds"><div class="empty">Carregando…</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="page-head"><div><h2>Histórico recente</h2><p id="historySummary">Últimos ajustes da automação.</p></div></div>
+        <div id="historyList" class="name-normalization-history"><div class="empty">Carregando…</div></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="productDialog" class="editor-dialog"><div id="productEditorBody"></div></dialog>
+  <div id="toastRegion" class="toasts" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="./product-name-management.js?v=20260914-1"></script>
+</body>
+</html>
