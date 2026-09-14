@@ -5,6 +5,8 @@
   const nativeFetch=window.fetch.bind(window);
   const token=()=>new URLSearchParams(location.search).get('s')||new URLSearchParams(location.search).get('c')||new URLSearchParams(location.search).get('token')||'';
   const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const norm=v=>String(v??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   let basketPolicies=[];
   let lastCheckout=null;
   let verificationTimer=null;
@@ -19,17 +21,88 @@
     return d;
   }
 
+  async function roomRead(action,payload={}){
+    const r=await nativeFetch(C.api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:token(),...payload}),cache:'no-store'});
+    const d=await r.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!r.ok||d.ok===false)throw new Error(String(d.detail||d.error||`Erro ${r.status}`));
+    return d;
+  }
+
+  async function basketDetailApi(action,basketId){
+    if(!C.basketStorefrontApi)throw new Error('Detalhes da cesta indisponíveis.');
+    const r=await nativeFetch(C.basketStorefrontApi,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,token:token(),basket_id:basketId}),cache:'no-store'});
+    const d=await r.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!r.ok||d.ok===false)throw new Error(String(d.detail||d.error||`Erro ${r.status}`));
+    return d;
+  }
+
+  async function previewBasket(card,button,originalChoose){
+    if(button.dataset.previewBusy==='1')return;
+    button.dataset.previewBusy='1';button.disabled=true;button.textContent='Abrindo…';
+    try{
+      const name=String(card.querySelector('h3')?.textContent||'').trim();
+      const listed=await roomRead('baskets');
+      const basket=(listed.baskets||[]).find(item=>norm(item?.name)===norm(name));
+      if(!basket?.id)throw new Error('Não consegui abrir esta cesta agora.');
+      const detail=await basketDetailApi('detail',basket.id),data=detail.basket||{};
+      document.querySelector('.stage.basket-preview-stage')?.remove();
+      const timeline=document.getElementById('timeline');if(!timeline)return;
+      const section=document.createElement('section');section.className='stage basket-preview-stage';
+      section.innerHTML=`<div class="stage-head"><span class="stage-no">1</span><div><strong>Confira esta cesta</strong><small>Veja todos os produtos antes de escolher.</small></div></div><div class="stage-inner"><div class="basket-hero"><img src="${esc(data.image_url||'')}" alt="${esc(data.name||name)}"><div><h2>${esc(data.name||name)}</h2><div class="value">${money(data.price||data.base_price||basket.base_price)}</div></div></div><div class="basket-list" data-basket-preview-list></div><div class="actions" data-basket-preview-actions></div></div>`;
+      const list=section.querySelector('[data-basket-preview-list]');
+      (data.items||[]).forEach(item=>{const row=document.createElement('div');row.className='basket-row';row.innerHTML=`<img src="${esc(item.image_url||'')}" alt=""><div><h3>${esc(item.name||'Produto')}</h3><small>${Number(item.quantity||0)===1?'1 unidade':`${Number(item.quantity||0)} unidades`}</small></div><span class="qty-fixed">${Number(item.quantity||0)}×</span>`;list.appendChild(row)});
+      const actions=section.querySelector('[data-basket-preview-actions]');
+      const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='Voltar às cestas';back.onclick=()=>{section.remove();card.scrollIntoView({behavior:'smooth',block:'center'})};
+      const choose=document.createElement('button');choose.type='button';choose.className='primary';choose.textContent='Escolher esta cesta';choose.onclick=()=>{section.remove();originalChoose?.call(button)};
+      actions.append(back,choose);timeline.appendChild(section);section.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch(e){window.dispatchEvent(new CustomEvent('da-basket-preview-error',{detail:String(e?.message||e)}))}
+    finally{button.dataset.previewBusy='0';button.disabled=false;button.textContent='Ver produtos'}
+  }
+
+  function decorateBasketPicker(){
+    document.querySelectorAll('.basket-picker .basket-mini').forEach(card=>{
+      const button=card.querySelector('button');if(!button||button.dataset.basketPreviewReady==='1')return;
+      const originalChoose=button.onclick;if(typeof originalChoose!=='function')return;
+      button.dataset.basketPreviewReady='1';button.textContent='Ver produtos';
+      button.onclick=()=>previewBasket(card,button,originalChoose);
+    });
+  }
+
   function mergePolicies(items){
     if(!Array.isArray(items)||!basketPolicies.length)return items;
     const map=new Map(basketPolicies.map(p=>[String(p.product_id),p]));
     return items.map(item=>({...item,...(map.get(String(item.product_id))||{})}));
   }
 
-  function buildWhatsappReturn(order){
+  function itemSection(title,items){
+    const rows=items.length?items.map(item=>Number(item.quantity||0)>0?`${Number(item.quantity||0)}x ${item.name}`:`Retirado: ${item.name}`).join('\n'):'Nenhum item.';
+    const total=items.reduce((sum,item)=>sum+Math.max(0,Number(item.quantity||0)),0);
+    return `*${title}*\n${rows}\nTotal de itens: ${total}`;
+  }
+
+  function paymentLabel(code){return ({pix:'PIX',credit_card:'Cartão de crédito',meal_card:'Vale Alimentação / Refeição',cash:'Dinheiro'})[String(code||'')]||String(code||'A confirmar')}
+  function formatPhone(value){const d=String(value||'').replace(/\D/g,'').replace(/^55/,'');if(d.length===11)return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return String(value||'')}
+  function buildWhatsappReturn(order,context={}){
     const base=String(C.whatsappFallback||'https://wa.me/556584491018');
     const ref=String(order?.order_number||order?.number||order?.order_id||'').trim();
-    const total=Number(order?.total||0);
-    const message=`Olá! Meu pedido foi confirmado na Sala de Compra da Dona Antônia${ref?` · Pedido ${ref}`:''}${total>0?` · Total ${money(total)}`:''}. Quero continuar o atendimento por aqui.`;
+    const checkout=lastCheckout||{},items=Array.isArray(checkout.items)?checkout.items:[],policies=Array.isArray(basketPolicies)?basketPolicies:[];
+    const current=new Map(items.map(item=>[String(item.product_id),item])),policyMap=new Map(policies.map(item=>[String(item.product_id),item]));
+    const standard=[],changed=[];
+    policies.forEach(policy=>{
+      const item=current.get(String(policy.product_id)),quantity=Number(item?.quantity??policy.quantity??0),baseQuantity=Number(policy.base_quantity??policy.quantity??0),entry={name:String(item?.name||policy.name||'Produto'),quantity};
+      if(quantity===baseQuantity&&quantity>0)standard.push(entry);else changed.push(entry);
+    });
+    const extras=items.filter(item=>item.source==='addon'||!policyMap.has(String(item.product_id))).map(item=>({name:String(item.name||'Produto'),quantity:Number(item.quantity||0)}));
+    const basketName=String(checkout.basket?.name||'').trim();
+    const basketLine=basketName?`*CESTA:* ${basketName.toUpperCase()}${changed.length?' - ALTERADA':''}\n`:'';
+    const cart=checkout.cart||{},discount=Number(order?.discount??cart.discount??0),total=Number(order?.total??cart.total??0),normal=Math.max(total,Number(total+discount));
+    const request=context.requestBody||{},address=request.delivery_address||order?.delivery_address||{},known=checkout.customer||{};
+    const name=String(document.getElementById('checkoutName')?.value||known.name||'Cliente').trim();
+    const phone=String(document.getElementById('checkoutPhone')?.value||known.phone||'').trim();
+    const payment=paymentLabel(request.payment_method||context.paymentMethod);
+    const valueLines=[`Valor normal sem descontos: ${money(normal)}`,discount>0?`✅ *ECONOMIA TOTAL:* − ${money(discount)}`:'',`💰 *TOTAL FINAL:* ${money(total)}`].filter(Boolean).join('\n');
+    const dataLines=[`Nome: ${name}`,phone?`Telefone/WhatsApp: ${formatPhone(phone)}`:'',address.city?`Cidade: ${address.city}${address.state?`/${address.state}`:''}`:'',address.neighborhood?`Bairro: ${address.neighborhood}`:'',address.street?`Rua: ${address.street}`:'',address.number?`Nº: ${address.number}`:'',address.reference?`Referência: ${address.reference}`:'',`💳 *Pagamento:* ${payment}`].filter(Boolean).join('\n');
+    const message=`*PEDIDO #${ref||'CONFIRMADO'}*\n${basketLine}------------------------------\n*ITENS SELECIONADOS*\n${itemSection('PRODUTOS DA CESTA SEM ALTERACAO',standard)}\n------------------------------\n${itemSection('PRODUTOS DA CESTA COM QUANTIDADE ALTERADA',changed)}\n------------------------------\n${itemSection('PRODUTOS ADICIONADOS FORA DA CESTA',extras)}\n\n*RESUMO DE VALORES*\n${valueLines}\n------------------------------\n*👤 DADOS PARA ATENDIMENTO*\n${dataLines}\n------------------------------\nOlá! Gostaria de confirmar este pedido e o endereço de entrega.`;
     return `${base}${base.includes('?')?'&':'?'}text=${encodeURIComponent(message)}`;
   }
 
@@ -42,6 +115,7 @@
     let outgoingInit=init;
     if(action==='confirm_order'&&deliveryLocator&&requestBody){
       outgoingInit={...init,body:JSON.stringify({...requestBody,delivery_locator:deliveryLocator})};
+      requestBody={...requestBody,delivery_locator:deliveryLocator};
     }
     const response=await nativeFetch(input,outgoingInit);
     if(url!==C.api||!requestBody)return response;
@@ -56,9 +130,12 @@
         if(data.cart&&Array.isArray(data.cart.items))data.cart.items=mergePolicies(data.cart.items);
       }catch{}
     }
-    if(action==='checkout_preview')lastCheckout=data.checkout||null;
+    if(action==='checkout_preview'){
+      lastCheckout=data.checkout||null;
+      try{const p=await helper('basket_policies');basketPolicies=Array.isArray(p.policies)?p.policies:basketPolicies}catch{}
+    }
     if(action==='confirm_order'){
-      lastWhatsappUrl=buildWhatsappReturn(data.order||{});
+      lastWhatsappUrl=buildWhatsappReturn(data.order||{},{requestBody,paymentMethod:data.payment_method});
       data.whatsapp_url=lastWhatsappUrl;
     }
     const headers=new Headers(response.headers);headers.delete('content-length');headers.set('content-type','application/json');
@@ -75,6 +152,7 @@
   function decorateBasketRows(){
     const rows=[...document.querySelectorAll('.basket-list .basket-row')];
     rows.forEach((row,index)=>{
+      if(row.closest('.basket-preview-stage'))return;
       const policy=policyForRow(row,index);if(!policy)return;
       const current=Number(row.querySelector('.qty span')?.textContent||row.querySelector('[data-q-label]')?.textContent?.match(/\d+/)?.[0]||policy.quantity||0);
       const ctrl=row.querySelector('.qty');if(!ctrl)return;
@@ -157,7 +235,6 @@
       }catch(e){status.textContent=String(e?.message||'Não foi possível consultar o cadastro.');button.disabled=false;button.textContent='Continuar'}
     };
     input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();button.click()}});
-    setTimeout(()=>input?.focus(),0);
   }
 
   function setupAddressConfirmation(stage){
@@ -280,6 +357,7 @@
   }
 
   function refresh(){
+    decorateBasketPicker();
     decorateBasketRows();
     decorateOrderSuccess();
     const stage=document.querySelector('.stage.checkout-stage');
@@ -288,5 +366,6 @@
   const observer=new MutationObserver(refresh);observer.observe(document.documentElement,{childList:true,subtree:true,characterData:true});
   document.addEventListener('click',()=>setTimeout(refresh,0),true);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&document.querySelector('#checkoutVerifyStatus')){const status=document.querySelector('#checkoutVerifyStatus');pollVerification(status,0)}});
+  window.addEventListener('da-basket-preview-error',event=>{const message=String(event?.detail||'Não consegui abrir esta cesta agora.');const toast=document.getElementById('toast');if(!toast)return;toast.textContent=message;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2600)});
   refresh();
 })();
