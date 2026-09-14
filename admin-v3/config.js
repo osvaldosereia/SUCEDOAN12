@@ -2,7 +2,7 @@ export const CONFIG=Object.freeze({
   supabaseUrl:'https://ssbesxgaijknwsjbsbcz.supabase.co',
   supabasePublishableKey:'sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8',
   adminFunction:'admin-v3-api',
-  storefrontUrl:'../vitrine-v3/',
+  storefrontUrl:'../comprar/',
   countAppUrl:'../contagem/',
-  build:'20260911-admin-v3-1'
+  build:'20260914-admin-comprar-1'
 });
