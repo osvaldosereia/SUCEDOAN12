@@ -54,12 +54,21 @@ assert.match(verification,/checkoutVerifyWhatsApp/,'customer verification must e
 assert.doesNotMatch(verification,/target=["']_blank["']/,'verification must not depend on a new browser tab');
 assert.match(verification,/location\.assign\(link\.href\)/,'verification click must navigate directly to WhatsApp');
 
-// A confirmação final salva apenas uma vez; o fallback reutiliza a URL já devolvida pelo backend.
+// A confirmação final salva apenas uma vez e abre o WhatsApp com um resumo completo.
+const whatsappBuilder=checkout.match(/function buildWhatsAppUrl[\s\S]*?(?=\n\s*async function confirmOrder)/)?.[0]||'';
+assert.match(whatsappBuilder,/app\.config\.whatsappFallback/,'WhatsApp final must use the official configured destination');
+assert.match(whatsappBuilder,/encodeURIComponent/,'WhatsApp final message must be URL encoded');
+assert.match(whatsappBuilder,/order_number/,'WhatsApp summary must include the order number');
+assert.match(whatsappBuilder,/paymentLabels/,'WhatsApp summary must include the selected payment method');
+assert.match(whatsappBuilder,/addressLine/,'WhatsApp summary must include the confirmed delivery address');
+assert.match(whatsappBuilder,/state\.checkout\?\.items/,'WhatsApp summary must include the cart items');
+assert.match(whatsappBuilder,/total/,'WhatsApp summary must include the final total');
 const confirm=checkout.match(/async function confirmOrder[\s\S]*?(?=\n\s*function renderSuccess)/)?.[0]||'';
 assert.match(confirm,/app\.confirmOrder\(payload\)/,'final action must persist through the single app transport');
 assert.match(confirm,/local\.orderSaved=true/,'client must remember that the order was already persisted');
-assert.match(confirm,/local\.whatsappUrl=data\.whatsapp_url/,'client must retain the prepared WhatsApp URL returned by the backend');
+assert.match(confirm,/data\.whatsapp_url\|\|buildWhatsAppUrl\(data\)/,'client must fall back to a complete locally prepared WhatsApp URL');
 assert.match(confirm,/if\(local\.orderSaved\)/,'a repeated confirmation must reuse the saved result instead of creating another order');
+assert.match(confirm,/renderSuccess\(data\);[\s\S]*location\.assign\(local\.whatsappUrl\)/,'first successful confirmation must immediately navigate to the prepared WhatsApp URL');
 assert.doesNotMatch(confirm,/setTimeout\(/,'final confirmation must not depend on delayed navigation');
 const success=checkout.match(/function renderSuccess[\s\S]*?(?=\n\s*document\.addEventListener|\n\s*app\.registerModule)/)?.[0]||'';
 assert.match(success,/checkout-whatsapp-return/,'success state must expose a manual WhatsApp continuation');

@@ -209,6 +209,30 @@
     host.querySelector('#checkoutConfirmOrder').onclick=()=>confirmOrder(host.querySelector('#checkoutConfirmOrder'));
   }
 
+  function buildWhatsAppUrl(data={}){
+    const order=data.order||{},checkout=state.checkout||{},customer=checkout.customer||state.customer||{},address=local.address||order.delivery_address||{};
+    const items=state.checkout?.items||[];
+    const total=checkout.cart?.total??checkout.cart?.commercial_total??order.total??state.cart?.total??state.cart?.commercial_total??0;
+    const orderNumber=order.order_number||order.number||'';
+    const lines=[];
+    lines.push(orderNumber?`*PEDIDO #${orderNumber}*`:'*NOVO PEDIDO - DONA ANTÔNIA*');
+    if(customer.name)lines.push(`*Cliente:* ${customer.name}`);
+    if(customer.phone)lines.push(`*WhatsApp:* ${customer.phone}`);
+    if(addressLine(address))lines.push(`*Entrega:* ${addressLine(address)}`);
+    if(address.complement)lines.push(`*Complemento:* ${address.complement}`);
+    if(address.reference)lines.push(`*Referência:* ${address.reference}`);
+    if(address.postal_code)lines.push(`*CEP:* ${address.postal_code}`);
+    lines.push(`*Pagamento:* ${paymentLabels[state.payment]||state.payment||'A confirmar'}`);
+    lines.push('','*ITENS:*');
+    for(const item of items){
+      const quantity=Number(item.quantity||0),name=item.name||item.product?.name||'Produto';
+      if(quantity>0)lines.push(`• ${quantity}x ${name}`);
+    }
+    lines.push('',`*TOTAL:* ${money(total)}`);
+    const base=app.config.whatsappFallback||'https://wa.me/5565998150975';
+    return `${base}${base.includes('?')?'&':'?'}text=${encodeURIComponent(lines.join('\n'))}`;
+  }
+
   async function confirmOrder(button){
     if(local.orderSaved){if(local.whatsappUrl)location.assign(local.whatsappUrl);return}
     if(!local.addressConfirmed){toast('Confirme o endereço de entrega.');return}
@@ -218,8 +242,10 @@
     try{
       const payload={payment_method:state.payment,delivery_address:local.address,save_address:true,...(local.locator?{delivery_locator:local.locator}:{})};
       const data=await app.confirmOrder(payload);
-      local.orderSaved=true;local.whatsappUrl=data.whatsapp_url||'';
+      const simulated=data.admin_test===true||new URLSearchParams(location.search).get('admin_test')==='1';
+      local.orderSaved=true;local.whatsappUrl=simulated?'':(data.whatsapp_url||buildWhatsAppUrl(data));
       renderSuccess(data);
+      if(local.whatsappUrl)location.assign(local.whatsappUrl);
     }catch(error){if(status)status.textContent=error.message;setButtonBusy(button,false)}
   }
 
