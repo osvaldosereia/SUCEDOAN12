@@ -82,7 +82,7 @@
   function paymentLabel(code){return ({pix:'PIX',credit_card:'Cartão de crédito',meal_card:'Vale Alimentação / Refeição',cash:'Dinheiro'})[String(code||'')]||String(code||'A confirmar')}
   function formatPhone(value){const d=String(value||'').replace(/\D/g,'').replace(/^55/,'');if(d.length===11)return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return String(value||'')}
   function buildWhatsappReturn(order,context={}){
-    const base=String(C.whatsappFallback||'https://wa.me/556584491018');
+    const base=String(C.whatsappFallback||'https://wa.me/5565998150975');
     const ref=String(order?.order_number||order?.number||order?.order_id||'').trim();
     const checkout=lastCheckout||{},items=Array.isArray(checkout.items)?checkout.items:[],policies=Array.isArray(basketPolicies)?basketPolicies:[];
     const basketItems=items.filter(item=>item.source==='basket'||item.source==='substitution'),current=new Map(basketItems.map(item=>[String(item.product_id),item])),policyMap=new Map(policies.map(item=>[String(item.product_id),item]));
