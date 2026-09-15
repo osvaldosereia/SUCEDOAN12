@@ -47,7 +47,8 @@ assert.match(confirmOrder,/state\.orderSaved=true/,'client must remember that th
 assert.match(confirmOrder,/state\.whatsappUrl=d\.whatsapp_url/,'client must retain the prepared WhatsApp URL returned after persistence');
 assert.match(confirmOrder,/location\.assign\(whatsappAppUrl\(state\.whatsappUrl\)\)/,'final action must navigate directly to WhatsApp after persistence');
 assert.doesNotMatch(confirmOrder,/setTimeout\(/,'final WhatsApp navigation must not depend on a delayed timer');
-assert.match(checkout,/whatsapp:\/\/send\?phone=/,'mobile flow must prefer the native WhatsApp deep link');
+assert.doesNotMatch(checkout,/whatsapp:\/\/send\?phone=/,'mobile web flow must not depend on a custom deep-link scheme that can bounce back to the storefront');
+assert.match(checkout,/https:\/\/wa\.me\//,'mobile flow must use the official WhatsApp universal click-to-chat link');
 
 // O fallback reutiliza o pedido já salvo; não chama confirm_order novamente.
 const success=checkout.match(/function renderSuccess[\s\S]*?(?=\n\s*const observer)/)?.[0]||'';
