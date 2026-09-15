@@ -2,6 +2,7 @@ import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const addon=readFileSync('comprar/chat-checkout-quantity-v1.js','utf8');
+const chat=readFileSync('comprar/chat-light-v2.js','utf8');
 const checkout=readFileSync('comprar/checkout-final-v2.js','utf8');
 const config=readFileSync('comprar/config.js','utf8');
 const customerEdge=readFileSync('supabase/functions/shopping-chat-customer-v1/index.ts','utf8');
@@ -19,8 +20,26 @@ assert.match(addon,/button\.onclick=\(\)=>previewBasket\(card,button,originalCho
 const preview=addon.match(/async function previewBasket[\s\S]*?(?=function decorateBasketPicker)/)?.[0]||'';
 assert.match(preview,/basketDetailApi\('detail'/,'preview must load basket details without mutating the cart');
 assert.doesNotMatch(preview,/start_basket/,'preview must never add the basket to the cart');
+assert.doesNotMatch(preview,/set_basket_quantity/,'preview quantity controls must remain local until the basket is chosen');
+assert.match(preview,/className='qty'/,'preview must render minus/quantity/plus controls for editable basket items');
+assert.match(preview,/min_quantity/,'preview quantity control must respect the basket minimum');
+assert.match(preview,/max_quantity/,'preview quantity control must respect the basket maximum');
+assert.doesNotMatch(preview,/class=\"qty-fixed\"[^>]*>\$\{Number\(item\.quantity/,'preview must not render every basket quantity as fixed');
+assert.match(preview,/basketPreviewQuantities/,'preview must pass the locally edited quantities only when the customer chooses the basket');
 assert.match(preview,/Escolher esta cesta/,'preview must have an explicit selection action');
 assert.match(preview,/Voltar às cestas/,'preview must let the customer return to basket choices');
+
+// Escolher a cesta aplica as quantidades locais somente depois de criar a cesta no carrinho.
+const chooseBasket=chat.match(/async function chooseBasket[\s\S]*?(?=function renderBasketStage)/)?.[0]||'';
+assert.match(chooseBasket,/start_basket/,'basket selection must still create the basket using the canonical cart flow');
+assert.match(chooseBasket,/basketPreviewQuantities/,'basket selection must consume the quantities edited in preview');
+assert.match(chooseBasket,/set_basket_quantity/,'basket selection must apply edited quantities after start_basket');
+assert.ok(chooseBasket.indexOf("start_basket")<chooseBasket.indexOf("set_basket_quantity"),'basket edits must be applied only after the basket exists in the cart');
+
+// Abrir o checkout não deve ficar bloqueado esperando uma consulta auxiliar de políticas da cesta.
+const checkoutPreviewIntercept=addon.match(/if\(action==='checkout_preview'\)\{[\s\S]*?(?=\n\s*if\(action==='confirm_order'\))/)?.[0]||'';
+assert.match(checkoutPreviewIntercept,/lastCheckout=data\.checkout/,'checkout wrapper must retain checkout context');
+assert.doesNotMatch(checkoutPreviewIntercept,/await helper\('basket_policies'\)/,'checkout preview must not wait for basket_policies before rendering');
 
 // Abrir o checkout não deve abrir o teclado sozinho.
 assert.doesNotMatch(addon,/setTimeout\(\(\)=>input\?\.focus\(\),0\)/,'phone lookup must not autofocus when checkout opens');
