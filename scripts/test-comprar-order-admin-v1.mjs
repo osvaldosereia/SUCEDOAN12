@@ -7,7 +7,6 @@ const addressMigration=readFileSync('supabase/migrations/20260915023000_room_add
 const webConfirm=readFileSync('supabase/migrations/20260915150000_web_checkout_confirm_order_v1.sql','utf8');
 const adminApi=readFileSync('supabase/functions/admin-orders-comprar-v1/index.ts','utf8');
 const checkoutApi=readFileSync('supabase/functions/shopping-checkout-v2/index.ts','utf8');
-const chatApi=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const checkout=readFileSync('comprar/checkout.js','utf8');
 const app=readFileSync('comprar/app.js','utf8');
 const adminOfficial=readFileSync('admin/index.html','utf8');
@@ -23,17 +22,16 @@ const config=readFileSync('supabase/config.toml','utf8');
 assert.match(orderMigration,/catalog_session_id/);assert.match(orderMigration,/basket_name_snapshot/);assert.match(orderMigration,/checkout_snapshot/);
 assert.match(orderMigration,/source:='shopping_room'/);assert.match(orderMigration,/order_number:='DA-'/);assert.match(orderMigration,/idempotency_key/);assert.match(orderMigration,/phone_e164/);assert.match(orderMigration,/delivery_address/);assert.match(orderMigration,/payment_method/);
 assert.match(orderNumberMigration,/order_number/);assert.match(orderNumberMigration,/catalog_session_id/);
-
 assert.match(addressMigration,/room_save_address_v2/);assert.match(addressMigration,/v_mode='replace'/);assert.match(addressMigration,/coalesce\(p_mode,'add'\)/);assert.match(addressMigration,/insert into public\.customer_addresses/);assert.match(addressMigration,/customer_id=v_session\.customer_id/);assert.match(checkoutApi,/room_save_address_v2/);
 
 assert.match(webConfirm,/create or replace function public\.room_confirm_web_order_v1/,'web checkout needs a dedicated order confirmation RPC');
 assert.doesNotMatch(webConfirm,/customer_document_required/,'web order confirmation must not require CPF');
 assert.match(webConfirm,/confirm_cart_order/,'web confirmation must persist via the existing cart order source of truth');
 assert.match(webConfirm,/order_number/);assert.match(webConfirm,/catalog_session_id/);assert.match(webConfirm,/status='closed'/);
-assert.match(chatApi,/room_confirm_web_order_v1/,'shopping-chat confirm_order must use the web RPC');
+assert.match(checkoutApi,/room_confirm_web_order_v1/,'checkout endpoint must use the web order RPC');
 
 assert.match(checkout,/app\.confirmOrder\(payload\)/);assert.match(checkout,/local\.orderSaved=true/);assert.match(checkout,/Seu pedido foi salvo/);assert.match(checkout,/if\(local\.orderSaved\)/);
-assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app,/api\('confirm_order',payload\)/);assert.match(app,/DA_ADMIN_TEST_TRANSPORT/);
+assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app,/checkoutApi\('confirm_order',payload\)/,'normal commercial transport must use the checkout endpoint');assert.match(app,/DA_ADMIN_TEST_TRANSPORT/);
 
 assert.match(adminOfficial,/\/admin-v3\/app\.js/);assert.match(adminOfficial,/data-route=["']orders["']/);assert.match(adminLatest,/data-route=["']orders["']/);assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
 assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/);assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/);assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/);
