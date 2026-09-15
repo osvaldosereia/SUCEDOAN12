@@ -28,7 +28,7 @@ assert.match(baskets,/function basketAltered\(/,'cesta deve detectar mudança na
 assert.match(baskets,/base_quantity/,'mudança deve ser comparada com a quantidade-base');
 assert.match(baskets,/basketDisplayName/,'nome alterado deve ser calculado em um único lugar');
 assert.match(baskets,/alterada/,'cesta modificada deve receber o sufixo alterada');
-assert.match(products,/if\(!auto\).*openSection/s,'entrada explícita de produtos deve abrir direto no navegador');
+assert.match(products,/if\(!auto\|\|section\)return openSection\(section\|\|['"]Para Você['"]\)/,'entrada explícita de produtos deve abrir direto no navegador');
 assert.doesNotMatch(products,/if\(section\)openSection\(section\);else if\(!auto\)/,'não deve haver tela intermediária duplicando os chips');
 assert.match(css,/\.products-filter-sticky\s*\{[^}]*position\s*:\s*sticky/s,'filtros devem ficar sticky');
 assert.match(css,/\.chips-subcategories\s+\.chip\s*\{/,'subcategorias devem ter estilo próprio');
