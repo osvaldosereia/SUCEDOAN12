@@ -9,6 +9,12 @@ const integer=(v:unknown,min:number,max:number)=>Math.min(max,Math.max(min,Numbe
 const safeSearch=(v:unknown)=>clean(v,100).replace(/[,%()]/g," ").trim();
 const validUuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80));
 const supportedSources=['storefront_v2','shopping_room'];
+const sanitizeCustomer=(value:any,fallbackPhone='')=>({name:clean(value?.name,160),phone:clean(value?.phone||fallbackPhone,40)});
+const sanitizeOrder=(order:any)=>{
+  const checkout=order?.checkout_snapshot&&typeof order.checkout_snapshot==='object'?{...order.checkout_snapshot}:{};
+  if(checkout.customer)checkout.customer=sanitizeCustomer(checkout.customer,order?.phone_e164);
+  return {...order,customer_snapshot:{name:sanitizeCustomer(order?.customer_snapshot,order?.phone_e164).name,phone:sanitizeCustomer(order?.customer_snapshot,order?.phone_e164).phone},checkout_snapshot:{...checkout,customer:checkout.customer?{name:checkout.customer.name,phone:checkout.customer.phone}:undefined}};
+};
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get('origin');
@@ -22,7 +28,7 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json(origin,{ok:false,error:'invalid_json'},400)}
   const action=clean(body?.action||'list',30).toLowerCase();
 
-  if(action==='health')return json(origin,{ok:true,version:2,sources:supportedSources});
+  if(action==='health')return json(origin,{ok:true,version:3,sources:supportedSources});
 
   if(action==='list'){
     const page=integer(body?.page,1,100000),limit=integer(body?.limit,10,100),from=(page-1)*limit,to=from+limit-1;
@@ -33,7 +39,7 @@ Deno.serve(async(req:Request)=>{
     if(q)query=query.or(`order_number.ilike.%${q}%,phone_e164.ilike.%${q}%`);
     const {data,error,count}=await query;
     if(error)return json(origin,{ok:false,error:'orders_failed',detail:error.message},400);
-    const orders=(data||[]).map((order:any)=>({...order,customer_snapshot:{name:clean(order?.customer_snapshot?.name,160),phone:clean(order?.customer_snapshot?.phone||order?.phone_e164,40)}}));
+    const orders=(data||[]).map((order:any)=>{const customer=sanitizeCustomer(order?.customer_snapshot,order?.phone_e164);return {...order,customer_snapshot:{name:customer.name,phone:customer.phone}}});
     return json(origin,{ok:true,orders,total:count||0,page,limit});
   }
 
@@ -43,7 +49,7 @@ Deno.serve(async(req:Request)=>{
     if(error||!order)return json(origin,{ok:false,error:'order_not_found'},404);
     const {data:items,error:itemsError}=await sb.from('order_items').select('id,product_id,sku_snapshot,name_snapshot,quantity,unit_price,line_total,metadata,created_at').eq('order_id',id).order('created_at',{ascending:true});
     if(itemsError)return json(origin,{ok:false,error:'order_items_failed',detail:itemsError.message},400);
-    return json(origin,{ok:true,order,items:items||[]});
+    return json(origin,{ok:true,order:sanitizeOrder(order),items:items||[]});
   }
 
   return json(origin,{ok:false,error:'unknown_action'},400);
