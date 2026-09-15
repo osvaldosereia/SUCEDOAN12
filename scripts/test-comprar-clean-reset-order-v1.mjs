@@ -1,24 +1,25 @@
 import {readFileSync,existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-const app=readFileSync('comprar/app.js','utf8');
+const upsell=readFileSync('comprar/upsell.js','utf8');
 const resetFunction='supabase/functions/shopping-room-reset-v1/index.ts';
 const migration='supabase/migrations/20260915184500_room_reset_open_cart_v1.sql';
 
-assert.match(app,/Limpar pedido/,'resumo do pedido deve oferecer ação Limpar pedido');
-assert.match(app,/Quer limpar este pedido e começar novamente\?/,'limpeza deve exigir confirmação explícita');
-assert.match(app,/shopping-room-reset-v1/,'front deve usar endpoint isolado de reset');
-assert.match(app,/post\(resetApi,['"]reset_cart['"]\)/,'front deve limpar o carrinho no backend');
-assert.match(app,/waitForPendingProductSyncs\(\)/,'reset deve aguardar sincronizações de quantidade pendentes');
-assert.match(app,/state\.selectedBasket\s*=\s*null/,'front deve esquecer cesta escolhida');
-assert.match(app,/state\.basketItems\s*=\s*\[\]/,'front deve limpar composição em memória');
-assert.match(app,/state\.checkout\s*=\s*null/,'front deve limpar checkout temporário');
-assert.match(app,/state\.payment\s*=\s*null/,'front deve limpar pagamento temporário');
-assert.match(app,/renderStart\(\)/,'após limpar deve voltar ao início do atendimento');
+assert.match(upsell,/Limpar pedido/,'resumo do pedido deve oferecer ação Limpar pedido');
+assert.match(upsell,/Quer limpar este pedido e começar novamente\?/,'limpeza deve exigir confirmação explícita');
+assert.match(upsell,/shopping-room-reset-v1/,'front deve usar endpoint isolado de reset');
+assert.match(upsell,/post\(resetApi,['"]reset_cart['"]\)/,'front deve limpar o carrinho no backend');
+assert.match(upsell,/waitForPendingProductSyncs\(\)/,'reset deve aguardar sincronizações de quantidade pendentes');
+assert.match(upsell,/state\.selectedBasket\s*=\s*null/,'front deve esquecer cesta escolhida');
+assert.match(upsell,/state\.basketItems\s*=\s*\[\]/,'front deve limpar composição em memória');
+assert.match(upsell,/state\.checkout\s*=\s*null/,'front deve limpar checkout temporário');
+assert.match(upsell,/state\.payment\s*=\s*null/,'front deve limpar pagamento temporário');
+assert.match(upsell,/renderStart\(\)/,'após limpar deve voltar ao início do atendimento');
+assert.match(upsell,/location\.reload\(\)/,'produção deve recarregar a mesma sala para zerar estados internos dos módulos');
 
 assert.ok(existsSync(resetFunction),'edge function isolada de reset deve existir');
 const roomReset=readFileSync(resetFunction,'utf8');
-assert.match(roomReset,/action===['"]reset_cart['"]/,'API de reset deve aceitar reset_cart');
+assert.match(roomReset,/action\s*!==\s*['"]reset_cart['"]/,'API de reset deve aceitar apenas reset_cart');
 assert.match(roomReset,/room_reset_open_cart_v1/,'reset_cart deve usar RPC transacional');
 assert.ok(existsSync(migration),'migration transacional de reset deve existir');
 const sql=readFileSync(migration,'utf8');
