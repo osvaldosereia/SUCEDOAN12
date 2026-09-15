@@ -5,6 +5,8 @@ const buy=readFileSync('comprar/index.html','utf8');
 const root=readFileSync('index.html','utf8');
 const css=readFileSync('comprar/styles.css','utf8');
 const app=readFileSync('comprar/app.js','utf8');
+const baskets=readFileSync('comprar/baskets.js','utf8');
+const products=readFileSync('comprar/products.js','utf8');
 
 for(const [name,html,prefix] of [['Comprar',buy,'./'],['Raiz',root,'/comprar/']]){
   assert.match(html,new RegExp(`${prefix.replace('/','\\/')}styles\\.css\\?v=20260915-05-chat-\\d+`),`${name} deve carregar CSS híbrido`);
@@ -18,6 +20,16 @@ for(const id of ['checkoutButton','cartButton','backButton'])assert.match(app,ne
 assert.match(app,/openCheckout/,'app deve ter caminho único para Ver pedido');
 assert.match(app,/openAddProductsStage/,'app deve ter caminho único para produtos adicionais');
 assert.match(app,/renderOrderReview/,'Ver pedido deve abrir resumo antes do checkout');
+assert.match(app,/extrasItems/,'revisão deve manter a lista dos produtos extras');
+assert.match(app,/order-review-extra-list/,'revisão deve mostrar todos os produtos extras');
+assert.match(app,/products-entry-stage.*products-stage/s,'Ver pedido deve limpar a navegação antiga de produtos');
+assert.match(app,/products-browser-message/,'Ver pedido deve limpar a mensagem antiga dos produtos');
+assert.match(baskets,/function basketAltered\(/,'cesta deve detectar mudança na composição');
+assert.match(baskets,/base_quantity/,'mudança deve ser comparada com a quantidade-base');
+assert.match(baskets,/basketDisplayName/,'nome alterado deve ser calculado em um único lugar');
+assert.match(baskets,/alterada/,'cesta modificada deve receber o sufixo alterada');
+assert.match(products,/if\(!auto\).*openSection/s,'entrada explícita de produtos deve abrir direto no navegador');
+assert.doesNotMatch(products,/if\(section\)openSection\(section\);else if\(!auto\)/,'não deve haver tela intermediária duplicando os chips');
 assert.match(css,/\.products-filter-sticky\s*\{[^}]*position\s*:\s*sticky/s,'filtros devem ficar sticky');
 assert.match(css,/\.chips-subcategories\s+\.chip\s*\{/,'subcategorias devem ter estilo próprio');
 assert.match(css,/\.basket-grid/,'CSS deve conter grade de cestas');
