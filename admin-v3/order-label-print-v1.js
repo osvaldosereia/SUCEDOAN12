@@ -11,8 +11,8 @@ function ensureStyles(){
   const style=document.createElement('style');
   style.id=STYLE_ID;
   style.textContent=`
-    #app .data-table .row-actions a[href^="https://wa.me/"]{font-size:0;white-space:nowrap}
-    #app .data-table .row-actions a[href^="https://wa.me/"]::after{content:"Imprimir etiqueta";font-size:14px;line-height:1.2}
+    #app .data-table tr:has([data-view-order]) .row-actions a[href^="https://wa.me/"]{font-size:0;white-space:nowrap}
+    #app .data-table tr:has([data-view-order]) .row-actions a[href^="https://wa.me/"]::after{content:"Imprimir etiqueta";font-size:14px;line-height:1.2}
     #${ROOT_ID}{display:none}
     @media print{
       @page{size:100mm 150mm;margin:4mm}
