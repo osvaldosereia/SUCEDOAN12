@@ -27,7 +27,7 @@ if(rootIsComprar){
 }
 
 // Runtime: biblioteca/favoritos + thumbnails + UX + personalização direta, sem 3D e sem bridge que desviava para generate_mug_art.
-need('runtime',"const BUILD = '20260828-site-mug-runtime-v26-direct-personalize'",'Runtime público não está na release de personalização direta.');
+need('runtime',"const BUILD = '20260828-site-mug-runtime-v28-personalizable-badge'",'Runtime público não está na release atual com personalização direta.');
 need('runtime','customer-favorites-v27.js','Runtime perdeu Favoritos/Minhas canecas.');
 need('runtime','customer-mug-media-v28.js','Runtime perdeu capa das criações.');
 need('runtime','mug-public-thumbnails-v2.js','Runtime perdeu miniaturas leves.');
