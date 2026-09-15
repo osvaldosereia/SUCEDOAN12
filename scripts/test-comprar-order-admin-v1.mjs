@@ -19,6 +19,7 @@ const adminConfig=readFileSync('admin-v3/config.js','utf8');
 const adminOrders=readFileSync('admin-v3/pedidos.html','utf8');
 const adminOrdersJs=readFileSync('admin-v3/pedidos-v2.js','utf8');
 const integratedOrders=existsSync('admin-v3/orders-integrated-v2.js')?readFileSync('admin-v3/orders-integrated-v2.js','utf8'):'';
+const labelPrinter=existsSync('admin-v3/order-label-print-v1.js')?readFileSync('admin-v3/order-label-print-v1.js','utf8'):'';
 const config=readFileSync('supabase/config.toml','utf8');
 
 assert.match(orderMigration,/catalog_session_id/);assert.match(orderMigration,/basket_name_snapshot/);assert.match(orderMigration,/checkout_snapshot/);
@@ -50,16 +51,30 @@ assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app
 
 assert.match(adminOfficial,/\/admin-v3\/app\.js/);assert.match(adminOfficial,/data-route=["']orders["']/);assert.match(adminLatest,/data-route=["']orders["']/);assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
 assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/);assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/);assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/);
-assert.match(adminOfficial,/orders-integrated-v2\.js/);assert.match(adminLatest,/orders-integrated-v2\.js/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
+assert.match(adminOfficial,/orders-integrated-v2\.js\?v=20260915-2/);assert.match(adminLatest,/orders-integrated-v2\.js\?v=20260915-2/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
 for(const label of ['Cliente','Endereço de entrega','Forma de pagamento','Produtos','Dados operacionais'])assert.match(integratedOrders,new RegExp(label));
 
 assert.match(adminApi,/supportedSources=\['storefront_v2','shopping_room'\]/);assert.match(adminApi,/customer_snapshot/,'Admin list must expose customer snapshot');assert.match(adminApi,/order_items/);assert.match(adminApi,/delivery_address/);assert.match(adminApi,/payment_method/);assert.match(adminApi,/checkout_snapshot/);
 assert.match(adminApi,/sanitizeOrder/,'public Admin orders response must explicitly sanitize order snapshots');
 assert.match(adminApi,/customer_snapshot:\{name:/,'customer snapshot returned by Admin must be reduced to name/phone');
 assert.match(adminApi,/checkout_snapshot:[\s\S]*customer:[\s\S]*name:/,'nested checkout snapshot customer must also be sanitized');
-assert.match(adminOrders,/<th>Cliente<\/th>/,'basic orders screen must show customer');assert.match(adminOrders,/pedidos-v2\.js/);
+assert.match(adminOrders,/<th>Cliente<\/th>/,'basic orders screen must show customer');assert.match(adminOrders,/pedidos-v2\.js\?v=20260915-3/);
 assert.match(adminOrdersJs,/customer_snapshot/,'orders controller must render customer name');assert.match(adminOrdersJs,/Produtos da cesta/);assert.match(adminOrdersJs,/Produtos extras/);assert.match(adminOrdersJs,/Dados operacionais/);
 assert.match(adminOrdersJs,/&quot;/,'HTML escaping must keep a valid quote entity');
+
+assert.ok(labelPrinter,'thermal label printer module must exist');
+assert.match(labelPrinter,/@page\s*\{[^}]*size:\s*100mm 150mm/i,'label must target vertical 10x15cm media');
+assert.match(labelPrinter,/Quantidade de volumes/i,'printing must ask how many volumes the order has');
+assert.match(labelPrinter,/Volume\s*\$\{index\}\s*\/\s*\$\{volumes\}/,'each printed label must identify its volume number');
+assert.match(labelPrinter,/window\.print\(\)/,'label printer must use the browser print dialog');
+assert.match(labelPrinter,/content:"Imprimir etiqueta"/,'the former WhatsApp action in the main orders list must be relabeled as print');
+assert.match(labelPrinter,/tr:has\(\[data-view-order\]\)/,'print relabeling must be restricted to order rows');
+assert.doesNotMatch(labelPrinter,/qr\s*code|qrcode|barcode|c[oó]digo de barras/i,'label must not include QR code or barcode');
+assert.match(integratedOrders,/requestOrderLabelPrint/,'main orders integration must invoke the shared label printer');
+assert.match(integratedOrders,/printIntegratedOrder/,'main orders list must route its print action through order detail data');
+assert.match(integratedOrders,/a\[href\^=\"https:\/\/wa\.me\/\"\]/,'main orders integration must intercept the old WhatsApp list action before navigation');
+assert.match(adminOrdersJs,/data-print-order/,'standalone orders list must expose a print-label action');
+assert.match(adminOrdersJs,/requestOrderLabelPrint/,'standalone orders list must use the shared label printer');
 
 assert.match(config,/\[functions\.admin-orders-comprar-v1\][\s\S]*?verify_jwt = false/);assert.match(config,/\[functions\.shopping-checkout-v2\][\s\S]*?verify_jwt = false/);
 
