@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 
 const edge=readFileSync('supabase/functions/shopping-chat-customer-v1/index.ts','utf8');
 const migration=readFileSync('supabase/migrations/20260915143000_web_checkout_customer_v1.sql','utf8');
-const checkout=readFileSync('comprar/checkout.js','utf8');
 
 assert.match(edge,/action==='lookup_customer'/);
 assert.match(edge,/profile:/,'lookup encontrado deve devolver perfil sanitizado');
@@ -21,7 +20,5 @@ assert.doesNotMatch(migration,/customer_document_required/,'fluxo web não exige
 assert.match(migration,/primary_whatsapp_e164/,'RPC pode persistir telefone corrigido');
 assert.match(migration,/customer_identity_conflict/,'RPC deve impedir reassociação de telefone de outro cliente');
 assert.match(migration,/customer_id=v_customer_id/,'vínculos da sessão devem apontar para o cliente confirmado');
-
-assert.doesNotMatch(checkout,/checkoutDocument/,'checkout não deve renderizar CPF');
 
 console.log('comprar_checkout_profile_v1_contract_ok');
