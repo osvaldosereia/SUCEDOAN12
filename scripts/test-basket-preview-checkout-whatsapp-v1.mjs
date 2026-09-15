@@ -19,8 +19,24 @@ assert.match(addon,/button\.onclick=\(\)=>previewBasket\(card,button,originalCho
 const preview=addon.match(/async function previewBasket[\s\S]*?(?=function decorateBasketPicker)/)?.[0]||'';
 assert.match(preview,/basketDetailApi\('detail'/,'preview must load basket details without mutating the cart');
 assert.doesNotMatch(preview,/start_basket/,'preview must never add the basket to the cart');
+assert.doesNotMatch(preview,/set_basket_quantity/,'preview quantity controls must remain local until the basket is chosen');
+assert.match(preview,/className='qty'/,'preview must render minus/quantity/plus controls for editable basket items');
+assert.match(preview,/min_quantity/,'preview quantity control must respect the basket minimum');
+assert.match(preview,/max_quantity/,'preview quantity control must respect the basket maximum');
+assert.match(preview,/pendingBasketPreview/,'preview must retain the locally edited quantities only when the customer chooses the basket');
 assert.match(preview,/Escolher esta cesta/,'preview must have an explicit selection action');
 assert.match(preview,/Voltar às cestas/,'preview must let the customer return to basket choices');
+
+// Escolher a cesta aplica as quantidades locais somente depois de start_basket criar a cesta no carrinho.
+assert.match(addon,/let pendingBasketPreview=null/,'client must keep one pending local basket selection');
+const startBasketApply=addon.match(/if\(action==='start_basket'&&pendingBasketPreview[\s\S]*?(?=\n\s*if\(action==='checkout_preview'\))/)?.[0]||'';
+assert.match(startBasketApply,/set_basket_quantity/,'basket selection must apply edited quantities after start_basket returns');
+assert.match(startBasketApply,/pendingBasketPreview=null/,'pending preview selection must be consumed once');
+
+// Abrir o checkout não deve ficar bloqueado esperando uma consulta auxiliar de políticas da cesta.
+const checkoutPreviewIntercept=addon.match(/if\(action==='checkout_preview'\)\{[\s\S]*?(?=\n\s*if\(action==='confirm_order'\))/)?.[0]||'';
+assert.match(checkoutPreviewIntercept,/lastCheckout=data\.checkout/,'checkout wrapper must retain checkout context');
+assert.doesNotMatch(checkoutPreviewIntercept,/await helper\('basket_policies'\)/,'checkout preview must not wait for basket_policies before rendering');
 
 // Abrir o checkout não deve abrir o teclado sozinho.
 assert.doesNotMatch(addon,/setTimeout\(\(\)=>input\?\.focus\(\),0\)/,'phone lookup must not autofocus when checkout opens');

@@ -113,7 +113,7 @@ jobs:
           grep -q 'https://donaantonia.com.br/cestas/' sitemap.xml
           ! grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
           grep -q '/comprar/config.js?v=20260915-02' index.html
-          grep -q '/comprar/chat-checkout-quantity-v1.js?v=20260915-03' index.html
+          grep -q '/comprar/chat-checkout-quantity-v1.js?v=20260915-04' index.html
           grep -q '/comprar/checkout-final-v2.js' index.html
           grep -q '/comprar/storefront-visual-v2.js' index.html
           grep -q '"@type":"OnlineStore"' index.html

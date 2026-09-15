@@ -8,6 +8,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const norm=v=>String(v??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   let basketPolicies=[];
+  let pendingBasketPreview=null;
   let lastCheckout=null;
   let verificationTimer=null;
   let lastWhatsappUrl='';
@@ -35,8 +36,19 @@
     return d;
   }
 
+  function previewBasketTotal(data){
+    let total=Number(data?.price??data?.base_price??0);
+    for(const item of data?.items||[]){
+      const base=Math.max(0,Number(item.base_quantity??0)),current=Math.max(0,Number(item.quantity??0));
+      if(current<base)total-=(base-current)*Number(item.remove_unit_delta??item.price??0);
+      else if(current>base)total+=(current-base)*Number(item.add_unit_delta??item.price??0);
+    }
+    return Math.max(0,total);
+  }
+
   async function previewBasket(card,button,originalChoose){
     if(button.dataset.previewBusy==='1')return;
+    pendingBasketPreview=null;
     button.dataset.previewBusy='1';button.disabled=true;button.textContent='Abrindo…';
     try{
       const name=String(card.querySelector('h3')?.textContent||'').trim();
@@ -47,12 +59,24 @@
       document.querySelector('.stage.basket-preview-stage')?.remove();
       const timeline=document.getElementById('timeline');if(!timeline)return;
       const section=document.createElement('section');section.className='stage basket-preview-stage';
-      section.innerHTML=`<div class="stage-head"><span class="stage-no">1</span><div><strong>Confira esta cesta</strong><small>Veja todos os produtos antes de escolher.</small></div></div><div class="stage-inner"><div class="basket-hero"><img src="${esc(data.image_url||'')}" alt="${esc(data.name||name)}"><div><h2>${esc(data.name||name)}</h2><div class="value">${money(data.price||data.base_price||basket.base_price)}</div></div></div><div class="basket-list" data-basket-preview-list></div><div class="actions" data-basket-preview-actions></div></div>`;
-      const list=section.querySelector('[data-basket-preview-list]');
-      (data.items||[]).forEach(item=>{const row=document.createElement('div');row.className='basket-row';row.innerHTML=`<img src="${esc(item.image_url||'')}" alt=""><div><h3>${esc(item.name||'Produto')}</h3><small>${Number(item.quantity||0)===1?'1 unidade':`${Number(item.quantity||0)} unidades`}</small></div><span class="qty-fixed">${Number(item.quantity||0)}×</span>`;list.appendChild(row)});
+      section.innerHTML=`<div class="stage-head"><span class="stage-no">1</span><div><strong>Confira esta cesta</strong><small>Ajuste as quantidades se quiser. A cesta só entra no pedido depois de escolher.</small></div></div><div class="stage-inner"><div class="basket-hero"><img src="${esc(data.image_url||'')}" alt="${esc(data.name||name)}"><div><h2>${esc(data.name||name)}</h2><div class="value" data-basket-preview-total>${money(previewBasketTotal(data))}</div></div></div><div class="basket-list" data-basket-preview-list></div><div class="actions" data-basket-preview-actions></div></div>`;
+      const list=section.querySelector('[data-basket-preview-list]'),totalEl=section.querySelector('[data-basket-preview-total]');
+      (data.items||[]).forEach(item=>{
+        const row=document.createElement('div');row.className='basket-row';
+        const image=document.createElement('img');image.src=item.image_url||'';image.alt='';
+        const info=document.createElement('div'),label=document.createElement('small');info.innerHTML=`<h3>${esc(item.name||'Produto')}</h3>`;info.appendChild(label);
+        const ctrl=document.createElement('div');ctrl.className='qty';
+        const minus=document.createElement('button'),num=document.createElement('span'),plus=document.createElement('button');minus.type=plus.type='button';minus.textContent='−';plus.textContent='+';
+        item.quantity=Math.max(0,Math.trunc(Number(item.quantity||0)));
+        const min=Math.max(0,Math.trunc(Number(item.min_quantity??(item.removable?0:item.quantity)))),max=Math.max(min,Math.trunc(Number(item.max_quantity??item.quantity)));
+        const refreshQty=()=>{const q=Number(item.quantity||0);num.textContent=String(q);label.textContent=q===0?'Retirado':q===1?'1 unidade':`${q} unidades`;minus.disabled=item.quantity_editable===false||q<=min;plus.disabled=item.quantity_editable===false||q>=max;if(totalEl)totalEl.textContent=money(previewBasketTotal(data))};
+        minus.onclick=()=>{if(minus.disabled)return;item.quantity=Math.max(min,Number(item.quantity||0)-1);refreshQty()};
+        plus.onclick=()=>{if(plus.disabled)return;item.quantity=Math.min(max,Number(item.quantity||0)+1);refreshQty()};
+        ctrl.append(minus,num,plus);row.append(image,info,ctrl);list.appendChild(row);refreshQty();
+      });
       const actions=section.querySelector('[data-basket-preview-actions]');
-      const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='Voltar às cestas';back.onclick=()=>{section.remove();card.scrollIntoView({behavior:'smooth',block:'center'})};
-      const choose=document.createElement('button');choose.type='button';choose.className='primary';choose.textContent='Escolher esta cesta';choose.onclick=()=>{section.remove();originalChoose?.call(button)};
+      const back=document.createElement('button');back.type='button';back.className='secondary';back.textContent='Voltar às cestas';back.onclick=()=>{pendingBasketPreview=null;section.remove();card.scrollIntoView({behavior:'smooth',block:'center'})};
+      const choose=document.createElement('button');choose.type='button';choose.className='primary';choose.textContent='Escolher esta cesta';choose.onclick=()=>{pendingBasketPreview={basket_id:String(basket.id),quantities:Object.fromEntries((data.items||[]).map(item=>[String(item.product_id),Number(item.quantity||0)])),policies:(data.items||[]).map(item=>({...item,name:item.name||'Produto'}))};section.remove();originalChoose?.call(button)};
       actions.append(back,choose);timeline.appendChild(section);section.scrollIntoView({behavior:'smooth',block:'start'});
     }catch(e){window.dispatchEvent(new CustomEvent('da-basket-preview-error',{detail:String(e?.message||e)}))}
     finally{button.dataset.previewBusy='0';button.disabled=false;button.textContent='Ver produtos'}
@@ -121,17 +145,27 @@
     if(!['open','start_basket','checkout_preview','confirm_order'].includes(action))return response;
     let data;try{data=await response.clone().json()}catch{return response}
     if(!response.ok||data?.ok===false)return response;
+    let appliedPreview=false;
+    if(action==='start_basket'&&pendingBasketPreview&&String(requestBody.basket_id||'')===String(pendingBasketPreview.basket_id||'')){
+      const pending=pendingBasketPreview;pendingBasketPreview=null;
+      for(const item of data.items||[]){
+        const desired=pending.quantities?.[String(item.product_id)];
+        if(!Number.isInteger(desired)||desired===Number(item.quantity||0))continue;
+        const changed=await roomRead('set_basket_quantity',{product_id:item.product_id,quantity:desired});
+        item.quantity=desired;if(changed.cart)data.cart=changed.cart;
+      }
+      basketPolicies=Array.isArray(pending.policies)?pending.policies:[];
+      appliedPreview=true;
+    }
     if(action==='open'||action==='start_basket'){
-      try{
-        const p=await helper('basket_policies');
-        basketPolicies=Array.isArray(p.policies)?p.policies:[];
-        if(Array.isArray(data.items))data.items=mergePolicies(data.items);
-        if(data.cart&&Array.isArray(data.cart.items))data.cart.items=mergePolicies(data.cart.items);
-      }catch{}
+      if(!appliedPreview){
+        try{const p=await helper('basket_policies');basketPolicies=Array.isArray(p.policies)?p.policies:[]}catch{}
+      }
+      if(Array.isArray(data.items))data.items=mergePolicies(data.items);
+      if(data.cart&&Array.isArray(data.cart.items))data.cart.items=mergePolicies(data.cart.items);
     }
     if(action==='checkout_preview'){
       lastCheckout=data.checkout||null;
-      try{const p=await helper('basket_policies');basketPolicies=Array.isArray(p.policies)?p.policies:basketPolicies}catch{}
     }
     if(action==='confirm_order'){
       lastWhatsappUrl=buildWhatsappReturn(data.order||{},{requestBody,paymentMethod:data.payment_method});
