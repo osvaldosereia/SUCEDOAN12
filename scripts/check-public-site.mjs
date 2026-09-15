@@ -34,7 +34,7 @@ required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}
 const production = read('index.html');
 for (const marker of [
   '/comprar/config.js?v=20260915-02',
-  '/comprar/chat-checkout-quantity-v1.js?v=20260915-03',
+  '/comprar/chat-checkout-quantity-v1.js?v=20260915-04',
   '/comprar/checkout-final-v2.js',
   '/comprar/storefront-visual-v2.js',
   '"@type":"OnlineStore"', '"@type":"WebSite"',
