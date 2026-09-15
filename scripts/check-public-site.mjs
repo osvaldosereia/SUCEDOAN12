@@ -24,7 +24,8 @@ const required = [
   'app-next/src/checkout.js', 'app-next/src/ui.js', 'app-next/src/main.js',
   'app-next/src/home-carousels.js', 'app-next/src/image-performance.js',
   'app-next/src/catalog.js', 'app-next/src/mug-public-runtime-v6.js',
-  'app-next/src/mug-public-3d-v2.js', 'app-next/src/mug-public-thumbnails-v2.js',
+  'app-next/src/mug-public-personalization-v7.js', 'app-next/src/mug-public-personalization-contract-v25.js',
+  'app-next/src/mug-public-ux-v1.js', 'app-next/src/mug-public-thumbnails-v2.js',
   'scripts/catalogos-combos-lib.js', 'scripts/estabilizar-catalogo-publico.mjs'
 ];
 required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}`));
@@ -104,14 +105,16 @@ for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refres
 }
 
 const mugRuntime = read('app-next/src/mug-public-runtime-v6.js');
-const mug3d = read('app-next/src/mug-public-3d-v2.js');
 const mugThumbs = read('app-next/src/mug-public-thumbnails-v2.js');
-for (const marker of ['mug-public-personalization-v6.js', 'mug-public-3d-v2.js', 'mug-public-thumbnails-v2.js', 'v21-printable-arc']) {
+for (const marker of [
+  'mug-public-personalization-v7.js',
+  'mug-public-personalization-contract-v25.js',
+  'mug-public-thumbnails-v2.js',
+  'mug-public-ux-v1.js'
+]) {
   assert(mugRuntime.includes(marker), `Runtime público de canecas incompleto: ${marker}`);
 }
-for (const marker of ['PRINT_WIDTH_MM=235', 'MUG_CIRCUMFERENCE_MM=260', 'PRINT_ARC_RAD', 'HANDLE_GAP_RAD', 'Ver caneca em 360°']) {
-  assert(mug3d.includes(marker), `Render 3D de canecas incompleto: ${marker}`);
-}
+assert(!mugRuntime.includes('mug-public-3d-v2.js'), 'Runtime público de canecas voltou a carregar 3D legado');
 assert(mugThumbs.includes('IntersectionObserver'), 'Miniaturas de caneca não usam carregamento lazy');
 assert(!mugThumbs.includes('THREE_URL'), 'Grade pública não deve carregar Three.js');
 
