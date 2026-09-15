@@ -12,6 +12,7 @@ on:
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - 'scripts/test-comprar-mobile-v1.mjs'
       - 'scripts/test-light-shopping-chat-v2.mjs'
+      - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/catalogos-combos-lib.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
@@ -66,10 +67,14 @@ jobs:
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
-            grep -q '/comprar/config.js?v=20260915-02' index.html
-            grep -q '/comprar/chat-checkout-quantity-v1.js?v=20260915-04' index.html
-            grep -q '/comprar/checkout-final-v2.js' index.html
-            grep -q '/comprar/storefront-visual-v2.js' index.html
+            grep -q '/comprar/config.js?v=20260915-05' index.html
+            grep -q '/comprar/app.js?v=20260915-05' index.html
+            grep -q '/comprar/baskets.js?v=20260915-05' index.html
+            grep -q '/comprar/products.js?v=20260915-05' index.html
+            grep -q '/comprar/checkout.js?v=20260915-05' index.html
+            grep -q '/comprar/help.js?v=20260915-05' index.html
+            grep -q '/comprar/styles.css?v=20260915-05' index.html
+            ! grep -Eq 'chat-light-v2|chat-checkout-quantity-v1|checkout-final-v2|chat-helper-menu|phone-retry-v1|product-detail-v1|storefront-visual-v2' index.html
             grep -q '"@type":"OnlineStore"' index.html
             grep -q '"@type":"WebSite"' index.html
             ! grep -q '/app-next/src/main.js' index.html
@@ -92,6 +97,7 @@ jobs:
             node scripts/test-comprar-order-admin-v1.mjs
             node scripts/test-comprar-mobile-v1.mjs
             node scripts/test-comprar-root-home-v1.mjs
+            for test_file in scripts/test-comprar-clean-*.mjs; do node "$test_file"; done
           } 2>&1 | tee -a public-site-test-report.txt
 
       - name: Verificar sintaxe
@@ -103,12 +109,11 @@ jobs:
           set -o pipefail
           {
             node --check comprar/app.js
-            node --check comprar/chat-light-v2.js
-            node --check comprar/chat-checkout-quantity-v1.js
-            node --check comprar/product-detail-v1.js
-            node --check comprar/checkout-final-v2.js
-            node --check comprar/storefront-visual-v2.js
-            node --check comprar/chat-helper-menu.js
+            node --check comprar/baskets.js
+            node --check comprar/products.js
+            node --check comprar/checkout.js
+            node --check comprar/help.js
+            node --check comprar/admin-test-bridge.js
             node --check scripts/catalogos-combos-lib.js
             node --check scripts/gerar-merchant.js
             node --check scripts/gerar-meta-combos.js
