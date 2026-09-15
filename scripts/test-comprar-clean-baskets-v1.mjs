@@ -21,7 +21,7 @@ const chooseEnd=js.indexOf('function renderSelectedBasket',chooseStart);
 const chooseBlock=js.slice(chooseStart,chooseEnd>chooseStart?chooseEnd:undefined);
 assert.match(chooseBlock,/start_basket/,'só a confirmação deve iniciar a cesta');
 assert.match(chooseBlock,/set_basket_quantity/,'quantidades alteradas devem ser aplicadas após escolher');
-assert.match(chooseBlock,/renderEntry\s*\(\s*\{\s*auto\s*:\s*true/,'etapa 2 deve abrir automaticamente após escolher');
+assert.match(chooseBlock,/renderEntry\?\.\(\s*\{\s*auto\s*:\s*true/,'etapa 2 deve abrir automaticamente após escolher');
 assert.match(js,/basket-finish-anchor/,'Finalizar deve possuir âncora de rolagem acima da etapa 2');
 assert.match(js,/quantity_editable/,'prévia deve respeitar política de edição');
 assert.match(js,/min_quantity/,'prévia deve respeitar mínimo');
