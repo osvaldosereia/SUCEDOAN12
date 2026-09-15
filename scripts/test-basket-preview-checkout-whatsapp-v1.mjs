@@ -32,4 +32,5 @@ assert.match(addon,/RESUMO DE VALORES/,'WhatsApp message must include a value su
 assert.match(addon,/DADOS PARA ATENDIMENTO/,'WhatsApp message must include customer and delivery data');
 assert.match(addon,/Olá! Gostaria de confirmar este pedido e o endereço de entrega\./,'WhatsApp message must end with the confirmation request');
 
+await import('./test-checkout-address-payment-v2.mjs');
 console.log('basket_preview_checkout_whatsapp_v1_ok');
