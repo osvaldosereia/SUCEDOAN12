@@ -13,6 +13,7 @@ redirectLegacyHash();
 window.addEventListener('hashchange',event=>redirectLegacyHash(event),true);
 
 const replacements=[
+  ['Admin V3','Admin'],
   ['Pedidos recentes da vitrine','Pedidos recentes do Comprar'],
   ['Nenhum pedido da vitrine ainda.','Nenhum pedido do Comprar ainda.'],
   ['Somente pedidos recebidos pela vitrine.','Somente pedidos recebidos pelo Comprar.'],
@@ -55,6 +56,7 @@ function rewriteLinks(root=document){
 }
 
 function apply(root=document){
+  document.title=document.title.replaceAll('Admin V3','Admin');
   rewriteLinks(root);
   rewriteText(root);
 }
