@@ -20,5 +20,7 @@ assert.doesNotMatch(migration,/customer_document_required/,'fluxo web não exige
 assert.match(migration,/primary_whatsapp_e164/,'RPC pode persistir telefone corrigido');
 assert.match(migration,/customer_identity_conflict/,'RPC deve impedir reassociação de telefone de outro cliente');
 assert.match(migration,/customer_id=v_customer_id/,'vínculos da sessão devem apontar para o cliente confirmado');
+assert.match(migration,/values\(v_customer_id,v_phone,'manual',true,now\(\)\)/,'telefone informado pelo checkout deve usar a origem manual já permitida pela tabela');
+assert.doesNotMatch(migration,/source='web_checkout'|,'web_checkout',/,'RPC não pode gravar origem fora da constraint customer_phones_source_check');
 
 console.log('comprar_checkout_profile_v1_contract_ok');
