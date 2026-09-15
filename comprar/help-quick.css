@@ -1,0 +1,30 @@
+.help-quick-questions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  max-width:92%;
+  align-self:flex-start;
+  padding:1px 0 2px;
+}
+.help-quick-questions .chip,
+.help-other-questions .chip{
+  min-height:38px;
+  padding:8px 12px;
+  border:1px solid #cedbd2;
+  border-radius:999px;
+  background:#fff;
+  color:#294536;
+  font-weight:700;
+  line-height:1.2;
+}
+.help-other-questions{
+  display:flex;
+  align-self:flex-start;
+  max-width:92%;
+}
+.help-quick-prompt{margin-top:2px}
+.help-quick-answer{margin-bottom:0}
+@media(max-width:480px){
+  .help-quick-questions{max-width:96%;gap:7px}
+  .help-quick-questions .chip,.help-other-questions .chip{min-height:36px;padding:7px 10px;font-size:13px}
+}
