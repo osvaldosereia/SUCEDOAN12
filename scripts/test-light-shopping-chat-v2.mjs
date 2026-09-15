@@ -129,18 +129,25 @@ assert.match(js,/product_not_available:'Este produto não está disponível no m
 assert.match(js,/quantity_exceeds_stock:'A quantidade escolhida é maior que o estoque disponível\.'/,'stock errors must be translated for customers');
 assert.match(js,/quantity_exceeds_customer_limit:'Você pode adicionar até 6 unidades deste produto\.'/,'quantity cap errors must be translated for customers');
 
-// Checkout address/payment v2: official WhatsApp, explicit address confirmation, six tender types and final review.
+// Checkout address/payment v2: keep payment/order writes isolated from the live conversation intelligence edge.
 const checkoutConfig=readFileSync('comprar/config.js','utf8');
-const checkoutEdge=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
+const checkoutPaymentPath='supabase/functions/shopping-chat-checkout-v2/index.ts';
+assert.ok(existsSync(checkoutPaymentPath),'isolated checkout payment edge must exist');
+const checkoutPaymentEdge=readFileSync(checkoutPaymentPath,'utf8');
 const checkoutAdminTestEdge=readFileSync('supabase/functions/shopping-chat-admin-test-v1/index.ts','utf8');
+assert.match(checkoutConfig,/checkoutApi:\s*'[^']*shopping-chat-checkout-v2'/,'public checkout must use the isolated payment/order endpoint');
 assert.match(checkoutConfig,/5565998150975/,'public checkout must point to the official 99815-0975 WhatsApp');
 assert.doesNotMatch(checkoutConfig,/556584491018/,'public checkout must not keep the old WhatsApp fallback');
 assert.match(customerEdge,/WA_NUMBER='5565998150975'/,'identity verification must use the official WhatsApp');
 assert.match(js,/Este endereço continua correto\?/,'saved address must be explicitly confirmed in the requested model');
 assert.match(js,/Quero usar outro endereço/,'saved address confirmation must offer another address');
+assert.match(js,/async function checkoutApi/,'browser must have a dedicated checkout write helper');
+assert.match(js,/checkoutApi\('set_payment'/,'payment selection must use the isolated checkout edge');
+assert.match(js,/checkoutApi\('confirm_order'/,'order confirmation must use the isolated checkout edge');
+assert.match(addon,/C\.checkoutApi/,'WhatsApp return interceptor must observe the isolated checkout endpoint');
 for(const code of ['pix','cash','debit_card','credit_card','food_card','meal_card']){
   assert.ok(js.includes(`'${code}'`),`checkout UI must expose payment code ${code}`);
-  assert.ok(checkoutEdge.includes(`'${code}'`),`shopping-chat edge must accept payment code ${code}`);
+  assert.ok(checkoutPaymentEdge.includes(`'${code}'`),`isolated checkout edge must accept payment code ${code}`);
   assert.ok(checkoutAdminTestEdge.includes(`'${code}'`),`admin test edge must accept payment code ${code}`);
 }
 for(const label of ['PIX','Dinheiro','Cartão de débito','Cartão de crédito','Vale-alimentação','Vale-refeição']){
