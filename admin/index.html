@@ -31,15 +31,27 @@
         <button type="button" data-route="customers">Clientes</button>
         <a href="/admin-v3/atendimento.html">Atendimento</a>
         <a href="../contagem/">Balanço rápido</a>
+        <button id="commercialTruthNav" class="nav hidden" type="button" hidden aria-hidden="true">Central comercial</button>
+        <button id="logisticsNav" class="nav hidden" type="button" hidden aria-hidden="true">Logística</button>
       </nav>
     </aside>
     <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
     <main id="app" class="content" tabindex="-1"></main>
+    <section id="commercialTruthMount" hidden aria-hidden="true"></section>
+    <section id="logisticsMount" hidden aria-hidden="true"></section>
+    <section id="automationBuilderMount" hidden aria-hidden="true"></section>
   </div>
 
   <dialog id="editorDialog" class="editor-dialog"><div id="editorBody"></div></dialog>
   <div id="toastRegion" class="toasts" aria-live="polite" aria-atomic="true"></div>
   <noscript><div class="noscript">Ative o JavaScript para usar o Admin.</div></noscript>
+
+  <script src="./config.js?v=20260915-1"></script>
+  <script>
+    if(window.DA_ADMIN_V3_CONFIG?.commercialTruthUiEnabled){import('/admin-v3/commercial-truth.js')}
+    if(window.DA_ADMIN_V3_CONFIG?.logisticsUiEnabled){import('/admin-v3/logistics.js')}
+    if(window.DA_ADMIN_V3_CONFIG?.automationBuilderUiEnabled){import('/admin-v3/automation-builder.js')}
+  </script>
   <script type="module" src="/admin-v3/comprar-ui.js?v=20260914-1"></script>
   <script type="module" src="/admin-v3/app.js?v=20260912-4"></script>
   <script type="module" src="/admin-v3/orders-integrated-v2.js?v=20260915-1"></script>
