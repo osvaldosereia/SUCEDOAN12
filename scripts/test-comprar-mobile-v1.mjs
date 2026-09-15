@@ -28,7 +28,7 @@ assert.match(visualJs,/help\.classList\.toggle\('hidden',checkout\)/,'help butto
 // Correções críticas do WhatsApp devem furar o cache dos celulares já usados pelos clientes.
 for(const [name,source,prefix] of [['Comprar',html,'\\./'],['Raiz',rootHtml,'/comprar/']]){
   assert.match(source,new RegExp(`${prefix}config\\.js\\?v=20260915-02`),`${name} must load the updated WhatsApp config with a fresh cache key`);
-  assert.match(source,new RegExp(`${prefix}chat-checkout-quantity-v1\\.js\\?v=20260915-02`),`${name} must load the single-navigation checkout script with a fresh cache key`);
+  assert.match(source,new RegExp(`${prefix}chat-checkout-quantity-v1\\.js\\?v=20260915-03`),`${name} must load the old-number-free checkout script with a fresh cache key`);
 }
 
 console.log('comprar_mobile_v1_contract_ok');
