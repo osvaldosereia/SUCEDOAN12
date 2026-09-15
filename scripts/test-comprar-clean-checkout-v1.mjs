@@ -12,7 +12,11 @@ const openStart=js.indexOf('async function open');
 const renderStart=js.indexOf('function render',openStart);
 const openBlock=js.slice(openStart,renderStart>openStart?renderStart:undefined);
 assert.match(openBlock,/waitForPending/,'checkout deve aguardar apenas sincronizações de produto pendentes');
-assert.match(openBlock,/checkout_preview/,'checkout deve buscar preview diretamente');
+assert.match(openBlock,/refreshCheckout\s*\(/,'checkout deve buscar preview por função explícita');
+const refreshStart=js.indexOf('async function refreshCheckout');
+const openFunctionStart=js.indexOf('async function open',refreshStart);
+const refreshBlock=js.slice(refreshStart,openFunctionStart>refreshStart?openFunctionStart:undefined);
+assert.match(refreshBlock,/api\(['"]checkout_preview['"]\)/,'refresh explícito deve chamar checkout_preview diretamente');
 assert.match(openBlock,/finally/,'botão deve ser sempre liberado');
 for(const action of ['lookup_customer','verification_status','identify','save_address','set_payment']){
   assert.match(js,new RegExp(action),`checkout deve usar ação ${action}`);
