@@ -5,6 +5,7 @@
   const params=new URLSearchParams(location.search);
   let token=(params.get('s')||params.get('c')||params.get('token')||'').trim();
   let started=false;
+  let renewingRoom=null;
 
   const state={
     session:null,
@@ -23,11 +24,11 @@
   const $=id=>document.getElementById(id);
   const text=value=>String(value??'').replace(/\s+/g,' ').trim();
   const money=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
   const fallbackImage='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180"><rect width="100%" height="100%" fill="#f2f4f2"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#718078" font-family="Arial" font-size="14">Dona Antônia</text></svg>');
 
   const errors={
-    invalid_token:'Link inválido.',room_not_found:'Esta compra não foi encontrada.',room_expired:'Este link expirou.',room_closed:'Este pedido já foi concluído.',
+    invalid_token:'Link inválido.',room_not_found:'Esta compra não foi encontrada.',room_expired:'Este link expirou.',room_closed:'Este pedido já foi concluído.',room_inactive:'Este pedido já foi concluído.',
     payment_method_required:'Escolha como vai pagar na entrega.',invalid_payment_method:'Escolha uma forma de pagamento válida.',customer_name_required:'Informe seu nome.',
     valid_whatsapp_required:'Informe seu WhatsApp com DDD.',customer_document_required:'Informe o CPF para concluir.',customer_identification_required:'Preencha seus dados para concluir.',
     delivery_address_required:'Informe o endereço de entrega.',empty_cart:'Escolha uma cesta ou produto antes de finalizar.',product_not_available:'Este produto não está disponível no momento.',
@@ -98,15 +99,81 @@
   function stage(number,title,subtitle='',className=''){const timeline=$('timeline');if(!timeline)return null;const section=document.createElement('section');section.className=`stage ${className}`.trim();section.innerHTML=`<div class="stage-head"><span class="stage-no">${escapeHtml(number)}</span><div><strong>${escapeHtml(title)}</strong>${subtitle?`<small>${escapeHtml(subtitle)}</small>`:''}</div></div>`;timeline.appendChild(section);return section}
   function clearStages(selector='.stage'){document.querySelectorAll(selector).forEach(element=>element.remove())}
 
-  function openAddProductsStage(options={auto:false}){return state.modules.products?.renderEntry?.(options)}
-  function openCheckout(button){return state.modules.checkout?.open?.(button)}
+  function applyOpenData(data={}){
+    state.session=data.session||null;
+    state.customer=data.customer||null;
+    state.baskets=Array.isArray(data.baskets)?data.baskets:[];
+    setCart(data.cart||{items:[],total:0});
+    return data;
+  }
+
+  function replaceRoomToken(nextToken){
+    token=String(nextToken||'').trim();
+    if(!token)throw new Error('Não consegui iniciar sua compra.');
+    const adminTest=params.get('admin_test')==='1'?'&admin_test=1':'';
+    history.replaceState({},'',`${location.pathname}?s=${encodeURIComponent(token)}${adminTest}${location.hash||''}`);
+    return token;
+  }
+
+  async function createRoomToken(){
+    const previousToken=token;
+    token='';
+    try{
+      const data=await api('create_web_room');
+      return replaceRoomToken(data.token);
+    }catch(error){token=previousToken;throw error}
+  }
+
+  function resetPurchaseState(){
+    state.session=null;
+    state.customer=null;
+    state.baskets=[];
+    state.selectedBasket=null;
+    state.basketItems=[];
+    state.checkout=null;
+    state.payment=null;
+    state.productFilters={customerCategory:'',subcategory:'',subsubcategory:'',offers:false,query:''};
+    state.pendingProductSyncs.clear();
+    state.modules.products?.resetForNewRoom?.();
+    state.modules.baskets?.resetForNewRoom?.();
+    state.modules.help?.setCheckoutMode?.(false);
+    clearStages('.stage');
+    setCart({items:[],total:0});
+  }
+
+  async function renewRoom(){
+    if(renewingRoom)return renewingRoom;
+    renewingRoom=(async()=>{
+      resetPurchaseState();
+      await createRoomToken();
+      const data=await api('open');
+      if(data.closed===true)throw new Error('Não consegui iniciar uma nova compra.');
+      applyOpenData(data);
+      return data;
+    })();
+    try{return await renewingRoom}finally{renewingRoom=null}
+  }
+
+  async function ensureActiveRoom(){
+    if(state.session?.status==='closed'||state.session?.current_view==='success')await renewRoom();
+    return state;
+  }
+
+  function markOrderCompleted(data={}){
+    if(data.admin_test===true||isAdminTest())return;
+    state.session={...(state.session||{}),status:'closed',current_view:'success',completed_at:new Date().toISOString()};
+  }
+
+  async function openAddProductsStage(options={auto:false}){await ensureActiveRoom();return state.modules.products?.renderEntry?.(options)}
+  async function openCheckout(button){await ensureActiveRoom();return state.modules.checkout?.open?.(button)}
 
   function bindShell(){
     const checkoutButton=$('checkoutButton'),cartButton=$('cartButton'),addProducts=$('cartAddProducts'),backButton=$('backButton');
     if(checkoutButton)checkoutButton.onclick=()=>openCheckout(checkoutButton);
     if(cartButton)cartButton.onclick=()=>openCheckout(cartButton);
     if(addProducts)addProducts.onclick=()=>openAddProductsStage({auto:false});
-    if(backButton)backButton.onclick=()=>{
+    if(backButton)backButton.onclick=async()=>{
+      await ensureActiveRoom();
       const checkout=document.querySelector('.stage.checkout-stage');
       if(checkout){checkout.remove();state.modules.help?.setCheckoutMode?.(false);if(state.selectedBasket){state.modules.baskets?.renderSelectedBasket?.();openAddProductsStage({auto:true})}else renderStart();return}
       if(state.selectedBasket){state.modules.baskets?.renderSelectedBasket?.();openAddProductsStage({auto:true});return}
@@ -118,20 +185,23 @@
     clearStages('.stage');
     const section=stage(1,'Como posso ajudar?','Escolha uma opção ou escreva normalmente.','start-stage');if(!section)return;
     const chips=document.createElement('div');chips.className='chips start-chips';
-    const choices=[['Cestas Básicas',()=>state.modules.baskets?.renderPicker?.()],['Ofertas',()=>state.modules.products?.renderEntry?.({section:'Ofertas'})],['Para Você',()=>state.modules.products?.renderEntry?.({section:'Para Você'})],['Para Casa',()=>state.modules.products?.renderEntry?.({section:'Para Casa'})]];
+    const choices=[['Cestas Básicas',()=>state.modules.baskets?.renderPicker?.()],['Ofertas',()=>openAddProductsStage({section:'Ofertas'})],['Para Você',()=>openAddProductsStage({section:'Para Você'})],['Para Casa',()=>openAddProductsStage({section:'Para Casa'})]];
     for(const [label,handler] of choices){const button=document.createElement('button');button.type='button';button.className='chip';button.textContent=label;button.onclick=handler;chips.appendChild(button)}
     section.appendChild(chips);
   }
 
   async function ensureToken(){
     if(token){if(!/^[a-f0-9]{64}$/i.test(token))throw new Error('Link inválido.');return token}
-    const data=await api('create_web_room');token=String(data.token||'').trim();if(!token)throw new Error('Não consegui iniciar sua compra.');history.replaceState({},'',`${location.pathname}?s=${encodeURIComponent(token)}`);return token;
+    return createRoomToken();
   }
 
   async function start(){
     if(started)return state;started=true;bindShell();
     try{
-      await ensureToken();const data=await api('open');state.session=data.session||null;state.customer=data.customer||null;state.baskets=Array.isArray(data.baskets)?data.baskets:[];setCart(data.cart||{items:[],total:0});$('loadingCard')?.remove();
+      await ensureToken();
+      let data=await api('open');
+      if(data.closed===true)data=await renewRoom();else applyOpenData(data);
+      $('loadingCard')?.remove();
       if(state.cart?.basket_id&&state.modules.baskets?.restoreFromOpen)await state.modules.baskets.restoreFromOpen(data);else renderStart();
       return state;
     }catch(error){started=false;$('loadingCard')?.remove();bubble(error.message||'Não consegui abrir sua compra.');throw error}
@@ -140,6 +210,6 @@
   window.DA_COMPRAR_APP={
     config,state,get token(){return token},$,text,money,escapeHtml,fallbackImage,errorText,toast,scrollTo,image,bubble,stage,clearStages,
     post,api,productApi,customerApi,checkoutApi,basketStorefrontApi,uploadMedia,confirmOrder,setCart,cartCount,registerModule,registerPendingProductSync,
-    waitForPendingProductSyncs,openAddProductsStage,openCheckout,renderStart,start
+    waitForPendingProductSyncs,ensureActiveRoom,renewRoom,markOrderCompleted,openAddProductsStage,openCheckout,renderStart,start
   };
 })();
