@@ -78,9 +78,9 @@ begin
      and is_primary=true;
 
   insert into public.customer_phones(customer_id,phone_e164,source,is_primary,verified_at)
-  values(v_customer_id,v_phone,'web_checkout',true,now())
+  values(v_customer_id,v_phone,'manual',true,now())
   on conflict (phone_e164) do update
-     set source='web_checkout',
+     set source='manual',
          is_primary=true,
          verified_at=now()
    where public.customer_phones.customer_id=excluded.customer_id;
