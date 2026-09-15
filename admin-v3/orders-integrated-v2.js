@@ -1,4 +1,5 @@
 import {api} from './api.js';
+import {requestOrderLabelPrint} from './order-label-print-v1.js';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -19,6 +20,9 @@ function itemRows(items=[]){
 }
 function field(label,value){return `<div><strong>${esc(label)}</strong><div class="muted">${esc(value||'—')}</div></div>`}
 
+async function loadOrder(id){const data=await api('order',{id});return data.order||{}}
+async function printIntegratedOrder(id){const order=await loadOrder(id);requestOrderLabelPrint(order)}
+
 async function openIntegratedOrder(id){
   const dialog=document.getElementById('editorDialog'),body=document.getElementById('editorBody');
   if(!dialog||!body)return;
@@ -38,11 +42,21 @@ async function openIntegratedOrder(id){
   }catch(error){body.innerHTML=`<div class="editor-shell"><div class="editor-head"><h2>Pedido</h2><button class="close-dialog" type="button" data-close-integrated-order>×</button></div><div class="panel empty">${esc(error?.message||'Não foi possível abrir o pedido.')}</div></div>`;body.querySelector('[data-close-integrated-order]')?.addEventListener('click',()=>dialog.close())}
 }
 
-document.addEventListener('click',event=>{
-  const target=event.target instanceof Element?event.target.closest('[data-view-order]'):null;
+document.addEventListener('click',async event=>{
+  const element=event.target instanceof Element?event.target:null;
+  if(!element)return;
+  const printLink=element.closest('.data-table tr:has([data-view-order]) .row-actions a[href^="https://wa.me/"]');
+  if(printLink){
+    const row=printLink.closest('tr'),viewButton=row?.querySelector('[data-view-order]'),id=viewButton?.dataset.viewOrder;
+    if(!id)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    try{await printIntegratedOrder(id)}catch(error){window.alert(error?.message||'Não foi possível preparar a etiqueta.')}
+    return;
+  }
+  const target=element.closest('[data-view-order]');
   if(!target)return;
   event.preventDefault();event.stopImmediatePropagation();
   openIntegratedOrder(target.dataset.viewOrder);
 },true);
 
-export {openIntegratedOrder};
+export {openIntegratedOrder,printIntegratedOrder};
