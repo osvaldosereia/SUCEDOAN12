@@ -5,6 +5,7 @@ const app=readFileSync('comprar/app.js','utf8');
 const baskets=readFileSync('comprar/baskets.js','utf8');
 const checkout=readFileSync('comprar/checkout.js','utf8');
 const config=readFileSync('comprar/config.js','utf8');
+const chatEdge=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const customerEdge=readFileSync('supabase/functions/shopping-chat-customer-v1/index.ts','utf8');
 const roomEdge=readFileSync('supabase/functions/shopping-room-v1/index.ts','utf8');
 const cestaReturn=readFileSync('cesta/whatsapp-return.js','utf8');
@@ -60,11 +61,23 @@ assert.match(confirm,/app\.confirmOrder\(payload\)/,'final action must persist t
 assert.match(confirm,/local\.orderSaved=true/,'client must remember that the order was already persisted');
 assert.match(confirm,/local\.whatsappUrl=data\.whatsapp_url/,'client must retain the prepared WhatsApp URL returned by the backend');
 assert.match(confirm,/if\(local\.orderSaved\)/,'a repeated confirmation must reuse the saved result instead of creating another order');
+assert.match(confirm,/renderSuccess\(data\);[\s\S]*location\.assign\(local\.whatsappUrl\)/,'first successful confirmation must immediately navigate to the prepared WhatsApp URL');
 assert.doesNotMatch(confirm,/setTimeout\(/,'final confirmation must not depend on delayed navigation');
 const success=checkout.match(/function renderSuccess[\s\S]*?(?=\n\s*document\.addEventListener|\n\s*app\.registerModule)/)?.[0]||'';
 assert.match(success,/checkout-whatsapp-return/,'success state must expose a manual WhatsApp continuation');
 assert.match(success,/local\.whatsappUrl/,'success fallback must reuse the stored WhatsApp URL');
 assert.doesNotMatch(success,/confirm_order/,'success fallback must never confirm the order again');
+
+// O endpoint comercial deve devolver uma URL oficial do WhatsApp já preenchida com o resumo final.
+const edgeConfirm=chatEdge.match(/if\(action==='confirm_order'\)[\s\S]*?(?=if\(action==='send_text'\))/)?.[0]||'';
+assert.match(chatEdge,/WA_NUMBER='5565998150975'/,'commercial endpoint must own the official WhatsApp destination');
+assert.match(edgeConfirm,/whatsapp_url/,'confirm_order must return the prepared WhatsApp URL at top level');
+assert.match(edgeConfirm,/encodeURIComponent/,'WhatsApp message must be URL encoded');
+assert.match(edgeConfirm,/order_number/,'WhatsApp summary must include the order number');
+assert.match(edgeConfirm,/payment_method/,'WhatsApp summary must include the selected payment method');
+assert.match(edgeConfirm,/delivery_address/,'WhatsApp summary must include the confirmed delivery address');
+assert.match(edgeConfirm,/items/,'WhatsApp summary must include the cart items');
+assert.match(edgeConfirm,/total/,'WhatsApp summary must include the final total');
 
 // Admin V3 usa transporte explícito, sem interceptar fetch comercial.
 assert.match(app,/window\.DA_ADMIN_TEST_TRANSPORT/,'app must use explicit Admin test transport');
