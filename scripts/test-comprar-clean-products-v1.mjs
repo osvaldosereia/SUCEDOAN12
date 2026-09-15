@@ -21,7 +21,7 @@ const syncStart=js.indexOf('async function syncProduct');
 const waitStart=js.indexOf('async function waitForPending');
 const syncBlock=js.slice(syncStart,waitStart>syncStart?waitStart:undefined);
 assert.match(syncBlock,/while\s*\(/,'sincronização deve consolidar cliques em loop');
-assert.doesNotMatch(syncBlock,/syncProduct\s*\(/g.test(syncBlock.slice(syncBlock.indexOf('{')+1))?/a^/:/a^/,'placeholder');
+assert.doesNotMatch(syncBlock.slice(syncBlock.indexOf('{')+1),/\bsyncProduct\s*\(/,'loop não pode se chamar recursivamente');
 assert.match(js,/registerPendingProductSync/,'cada sincronização deve ser registrada no estado central');
 assert.match(js,/set_quantity/,'produto deve persistir quantidade pela API oficial');
 assert.match(js,/if\s*\(\s*requestGeneration\s*!==\s*generation\s*\)/,'respostas antigas de filtros/listagem devem ser ignoradas');
