@@ -6,15 +6,15 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#ffffff">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-  <title>Dona Antônia · Atendimento · Admin V3</title>
-  <link rel="stylesheet" href="./styles.css?v=20260911-2">
-  <link rel="stylesheet" href="./service-strategy.css?v=20260912-1">
-  <link rel="stylesheet" href="./service-chat-center.css?v=20260914-2">
-  <link rel="stylesheet" href="./chat-real-test.css?v=20260914-1">
+  <title>Dona Antônia · Atendimento · Admin</title>
+  <link rel="stylesheet" href="./styles.css?v=20260915-admin-01">
+  <link rel="stylesheet" href="./service-strategy.css?v=20260915-admin-01">
+  <link rel="stylesheet" href="./service-chat-center.css?v=20260915-admin-01">
+  <link rel="stylesheet" href="./chat-real-test.css?v=20260915-admin-01">
 </head>
 <body class="strategy-body">
   <header class="strategy-topbar">
-    <a class="strategy-back" href="./">← Admin V3</a>
+    <a class="strategy-back" href="./">← Admin</a>
     <div class="strategy-brand"><img src="../img/logoantonia5.png" alt="" width="42" height="42"><div><strong>Atendimento</strong><span>Configuração exclusiva do Chat Comprar</span></div></div>
     <span id="runtimeBadge" class="strategy-runtime-badge on">Chat Comprar</span>
   </header>
@@ -35,7 +35,7 @@
 
     <section id="strategyApp" class="hidden">
       <div class="strategy-page-head">
-        <div><div class="eyebrow">Admin V3</div><h1>Chat Comprar</h1><p>Organize o fluxo principal, cadastre respostas inteligentes e teste antes de publicar.</p></div>
+        <div><div class="eyebrow">Admin</div><h1>Chat Comprar</h1><p>Organize o fluxo principal, as perguntas rápidas, as respostas inteligentes e teste antes de publicar.</p></div>
         <div class="strategy-page-actions"><a class="secondary" href="../comprar/" target="_blank" rel="noopener">Abrir Chat Comprar</a><button id="strategyRefresh" class="secondary" type="button">Atualizar</button><button id="strategyLogout" class="secondary" type="button">Bloquear</button></div>
       </div>
 
@@ -48,7 +48,7 @@
       </nav>
 
       <section id="tabFlow" class="strategy-tab active">
-        <div class="strategy-section-head"><div><div class="eyebrow">Atendimento estruturado</div><h2>Fluxo do Chat</h2><p>Escolha o que aparece no menu de ajuda e em que ordem. Cestas, ofertas e produtos usam os dados reais do Supabase.</p></div></div>
+        <div class="strategy-section-head"><div><div class="eyebrow">Atendimento estruturado</div><h2>Fluxo do Chat</h2><p>Configure as perguntas rápidas que aparecem ao abrir Ajuda. Cestas, ofertas e produtos continuam no fluxo principal de compra e não aparecem como dúvidas.</p></div></div>
         <div id="flowRoot" class="strategy-empty">Carregando fluxo…</div>
       </section>
 
@@ -87,7 +87,8 @@
   </main>
 
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="./service-strategy.js?v=20260914-2"></script>
-  <script type="module" src="./chat-real-test.js?v=20260914-1"></script>
+  <script type="module" src="./service-strategy.js?v=20260915-admin-01"></script>
+  <script type="module" src="./chat-real-test.js?v=20260915-admin-01"></script>
+  <script src="./admin-canonical-ui.js?v=20260915-admin-01"></script>
 </body>
 </html>
