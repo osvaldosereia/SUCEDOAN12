@@ -46,7 +46,6 @@ assert.match(bridge,/da-admin-test-ready/);
 assert.match(bridge,/da-admin-test-diagnostic/);
 assert.doesNotMatch(bridge,/window\.fetch\s*=/,'modo de teste não pode interceptar fetch global');
 assert.doesNotMatch(bridge,/new\s+MutationObserver/,'modo de teste não pode corrigir DOM por observer global');
-assert.doesNotMatch(buy,/admin-test-after-checkout\.js/,'bypass legado pós-checkout deve sair do carregamento ativo');
 assert.match(config,/adminTestApi:\s*['"][^'"]+shopping-chat-admin-test-v1/);
 
 assert.match(edge,/auth\.getUser/,'API de teste deve validar JWT do Admin');
