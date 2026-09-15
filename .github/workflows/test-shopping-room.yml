@@ -81,8 +81,10 @@ jobs:
           node --check comprar/checkout-final-v2.js
           node --check comprar/storefront-visual-v2.js
           node --check comprar/chat-helper-menu.js
+          node --check admin-v3/api.js
           node --check admin-v3/chat-menu-admin.js
           node --check admin-v3/pedidos-v2.js
+          node --check admin-v3/orders-integrated-v2.js
           node scripts/test-light-shopping-chat-v2.mjs
           node scripts/test-basket-preview-checkout-whatsapp-v1.mjs
           node scripts/test-comprar-product-visual-v2.mjs
@@ -111,6 +113,7 @@ jobs:
           test -f comprar/config.js
           test -f admin/pedidos.html
           test -f admin-v3/pedidos-v2.js
+          test -f admin-v3/orders-integrated-v2.js
           grep -q "shopping-chat-v1" comprar/config.js
           grep -q "shopping-chat-products-v1" comprar/config.js
           grep -q "shopping-chat-menu-v1" comprar/config.js
@@ -126,7 +129,8 @@ jobs:
           grep -q "quantity_editable" comprar/chat-checkout-quantity-v1.js
           grep -q "limit:30" comprar/chat-helper-menu.js
           grep -q "/admin-v3/app.js" admin/index.html
-          grep -q "pedidos.html" admin/index.html
+          grep -q "data-route=\"orders\"" admin/index.html
+          grep -q "orders-integrated-v2.js" admin/index.html
           ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY" comprar/ admin/ admin-v3/
       - name: Instalar Deno
         uses: denoland/setup-deno@v2
