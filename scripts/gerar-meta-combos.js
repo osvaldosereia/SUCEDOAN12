@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const { atomicWrite, csvCell, loadComboCatalog, round } = require('./catalogos-combos-lib');
 
@@ -106,9 +107,8 @@ function adminRecord(record) {
   };
 }
 
-function buildAdminJson(catalog) {
-  const payload = {
-    generatedAt: catalog.generatedAt,
+function buildAdminPayload(catalog) {
+  return {
     source: 'cestas-e-kits-oficiais',
     deliveryOnly: true,
     summary: {
@@ -119,13 +119,38 @@ function buildAdminJson(catalog) {
     },
     items: catalog.all.map(adminRecord),
   };
-  return `${JSON.stringify(payload, null, 2)}\n`;
+}
+
+function preservedGeneratedAt(catalog, payload, previousContent = '') {
+  try {
+    const previous = JSON.parse(String(previousContent || '').replace(/^\uFEFF/, ''));
+    const { generatedAt, ...previousPayload } = previous || {};
+    if (generatedAt && JSON.stringify(previousPayload) === JSON.stringify(payload)) return generatedAt;
+  } catch {}
+  return catalog.generatedAt;
+}
+
+function buildAdminJson(catalog, previousContent = '') {
+  const payload = buildAdminPayload(catalog);
+  return `${JSON.stringify({
+    generatedAt: preservedGeneratedAt(catalog, payload, previousContent),
+    ...payload,
+  }, null, 2)}\n`;
+}
+
+function readExisting(filePath) {
+  try { return fs.readFileSync(filePath, 'utf8'); }
+  catch (error) {
+    if (error?.code === 'ENOENT') return '';
+    throw error;
+  }
 }
 
 function main() {
   const catalog = loadComboCatalog();
+  const previousAdmin = readExisting(ADMIN_OUTPUT);
   atomicWrite(CSV_OUTPUT, buildCsv(catalog));
-  atomicWrite(ADMIN_OUTPUT, buildAdminJson(catalog));
+  atomicWrite(ADMIN_OUTPUT, buildAdminJson(catalog, previousAdmin));
   console.log(`Catálogo da Meta gerado com ${catalog.active.length} cestas e kits ativos; ${catalog.all.length} registros no diagnóstico administrativo.`);
 }
 
@@ -133,4 +158,4 @@ if (require.main === module) {
   try { main(); } catch (error) { console.error('Erro ao gerar catálogo da Meta:', error); process.exit(1); }
 }
 
-module.exports = { HEADER, buildAdminJson, buildCsv, csvRow, saleWindow };
+module.exports = { HEADER, buildAdminJson, buildAdminPayload, buildCsv, csvRow, preservedGeneratedAt, saleWindow };
