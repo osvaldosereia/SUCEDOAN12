@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const index=fs.readFileSync('admin-v3/index.html','utf8');
-const html=fs.readFileSync('admin-v3/atendimento.html','utf8');
-const js=fs.readFileSync('admin-v3/service-strategy.js','utf8');
-const css=fs.readFileSync('admin-v3/service-chat-center.css','utf8');
+const index=fs.readFileSync('admin/index.html','utf8');
+const html=fs.readFileSync('admin/atendimento.html','utf8');
+const js=fs.readFileSync('admin/service-strategy.js','utf8');
+const css=fs.readFileSync('admin/service-chat-center.css','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 
-assert.doesNotMatch(index,/\.\.\/ame-mais\//i,'Ame Mais é projeto separado e não pode aparecer no menu do Admin V3');
+assert.doesNotMatch(index,/\.\.\/ame-mais\//i,'Ame Mais é projeto separado e não pode aparecer no menu do Admin');
+assert.doesNotMatch(index,/\/admin-v3\//i,'Admin final não deve depender de /admin-v3');
 
 for(const tab of ['flow','rules','test']){
   assert.match(html,new RegExp(`data-strategy-tab=["']${tab}["']`),`aba ${tab} deve existir`);
@@ -29,10 +30,9 @@ for(const forbidden of ['basket_flow','registration_flow','address_flow','custom
 assert.match(js,/admin-chat-menu-v1/,'Fluxo do Chat deve reutilizar a configuração do menu próprio');
 assert.match(js,/simulate/,'aba Testar deve chamar a simulação administrativa');
 
-// Regressão visual mostrada no desktop: labels e campos do editor não podem ficar inline/sobrepostos.
 assert.match(css,/#ruleEditor\s*\{[^}]*display:grid/i,'editor de regras deve empilhar os campos em grid');
 assert.match(css,/#ruleEditor\s+(?:input|textarea|select)[^{]*\{[^}]*width:100%/i,'controles do editor devem ocupar a largura disponível');
-assert.match(html,/service-chat-center\.css\?v=20260914-2/,'HTML deve forçar a versão nova do CSS para não reutilizar cache quebrado');
+assert.match(html,/service-chat-center\.css\?v=20260915-admin-01/,'HTML deve usar a versão canônica atual do CSS');
 
 assert.match(edge,/action===["']simulate["']/,'backend administrativo deve oferecer simulação sem efeitos colaterais');
 assert.doesNotMatch(edge,/whatsapp_flow|template_carousel|template_catalog|template_multi_product|catalog_message|single_product|product_list/i,'backend final não deve expor recursos Meta/WhatsApp');
@@ -41,4 +41,4 @@ assert.match(edge,/"baskets"/,'backend deve aceitar ação de cestas do Chat Com
 assert.match(edge,/"offers"/,'backend deve aceitar ação de ofertas do Chat Comprar');
 assert.match(edge,/"checkout"/,'backend deve aceitar ação de checkout do Chat Comprar');
 
-console.log('admin_v3_shopping_chat_final_contract_ok');
+console.log('admin_canonical_shopping_chat_final_contract_ok');

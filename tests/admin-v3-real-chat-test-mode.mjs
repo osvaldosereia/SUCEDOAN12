@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const required=[
-  'admin-v3/atendimento.html',
-  'admin-v3/chat-real-test.js',
-  'admin-v3/chat-real-test.css',
+  'admin/atendimento.html',
+  'admin/chat-real-test.js',
+  'admin/chat-real-test.css',
   'comprar/index.html',
   'comprar/config.js',
   'comprar/admin-test-bridge.js',
@@ -13,9 +13,9 @@ const required=[
 ];
 for(const file of required) assert.ok(fs.existsSync(file),`faltando ${file}`);
 
-const admin=fs.readFileSync('admin-v3/atendimento.html','utf8');
-const controller=fs.readFileSync('admin-v3/chat-real-test.js','utf8');
-const css=fs.readFileSync('admin-v3/chat-real-test.css','utf8');
+const admin=fs.readFileSync('admin/atendimento.html','utf8');
+const controller=fs.readFileSync('admin/chat-real-test.js','utf8');
+const css=fs.readFileSync('admin/chat-real-test.css','utf8');
 const buy=fs.readFileSync('comprar/index.html','utf8');
 const config=fs.readFileSync('comprar/config.js','utf8');
 const bridge=fs.readFileSync('comprar/admin-test-bridge.js','utf8');
@@ -28,6 +28,7 @@ assert.match(admin,/id=["']testDiagnostics["']/,'deve mostrar diagnóstico do te
 assert.match(admin,/allow=["'][^"']*microphone[^"']*camera[^"']*geolocation/i,'iframe deve permitir testar áudio, foto e localização');
 assert.match(admin,/chat-real-test\.js/);
 assert.match(admin,/chat-real-test\.css/);
+assert.doesNotMatch(admin,/\/admin-v3\//,'Atendimento final não deve carregar Admin V3');
 
 assert.match(controller,/admin_test=1/,'teste deve abrir Comprar em modo admin_test');
 assert.match(controller,/da-admin-test-auth/,'Admin deve entregar autenticação ao iframe por postMessage');

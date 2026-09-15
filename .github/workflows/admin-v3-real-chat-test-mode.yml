@@ -1,9 +1,10 @@
-name: Admin V3 real Chat test mode
+name: Admin real Chat test mode
 on:
   push:
     paths:
+      - 'admin/atendimento.html'
+      - 'admin/chat-real-test.*'
       - 'admin-v3/atendimento.html'
-      - 'admin-v3/chat-real-test.*'
       - 'comprar/index.html'
       - 'comprar/config.js'
       - 'comprar/admin-test-bridge.js'
@@ -16,8 +17,9 @@ on:
       - '.github/workflows/admin-v3-real-chat-test-mode.yml'
   pull_request:
     paths:
+      - 'admin/atendimento.html'
+      - 'admin/chat-real-test.*'
       - 'admin-v3/atendimento.html'
-      - 'admin-v3/chat-real-test.*'
       - 'comprar/index.html'
       - 'comprar/config.js'
       - 'comprar/admin-test-bridge.js'
@@ -38,7 +40,7 @@ jobs:
           node-version: '22'
       - name: Check browser scripts
         run: |
-          node --check admin-v3/chat-real-test.js
+          node --check admin/chat-real-test.js
           node --check comprar/admin-test-bridge.js
           node --check comprar/app.js
           node --check comprar/checkout.js

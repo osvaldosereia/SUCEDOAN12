@@ -47,13 +47,14 @@ assert.equal(menuItemAllowed('delivery',{...custom,commerce_info:false}),false);
 assert.equal(menuItemAllowed('profile',{...custom,profile:false}),false);
 assert.equal(menuItemAllowed('text',custom),true);
 
-const html=fs.readFileSync('admin-v3/atendimento.html','utf8');
-const js=fs.readFileSync('admin-v3/service-strategy.js','utf8');
+const html=fs.readFileSync('admin/atendimento.html','utf8');
+const js=fs.readFileSync('admin/service-strategy.js','utf8');
 const adminEdge=fs.readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 const chatEdge=fs.readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const menuEdge=fs.readFileSync('supabase/functions/shopping-chat-menu-v1/index.ts','utf8');
 const productsEdge=fs.readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
 
+assert.match(html,/Admin/,'configuração final deve estar no Admin canônico');
 assert.match(js,/runtimeLevel/,'Admin deve renderizar seletor de nível');
 for(const level of ['basic','recommended','complete']) assert.match(js,new RegExp(`value=["']${level}["']|['"]${level}['"]`),`preset ${level} deve existir no Admin`);
 for(const feature of ['openai','baskets','products','offers','checkout','profile','commerce_info','external_links']) assert.ok(js.includes(feature),`controle individual ${feature} deve existir no Admin`);
