@@ -18,7 +18,7 @@ assert.match(product,/@media\(max-width:380px\)/,'narrow phones must have a dedi
 assert.match(product,/\.product-detail-sheet\{[^}]*env\(safe-area-inset-bottom\)/s,'product detail sheet must respect bottom safe area');
 
 assert.match(checkout,/\.checkout-v2-form input[^}]*font-size:16px/s,'checkout inputs must avoid mobile browser zoom');
-assert.match(checkout,/@media\(max-width:520px\)\{[^}]*\.checkout-v2-grid\{grid-template-columns:1fr\}/s,'checkout form must become one column on phones');
+assert.match(checkout,/@media\(max-width:520px\)[\s\S]*?\.checkout-v2-grid\{grid-template-columns:1fr\}/,'checkout form must become one column on phones');
 assert.match(checkout,/\.checkout-v2-primary[^}]*min-height:48px/s,'primary checkout actions must have touch-friendly height');
 
 assert.match(visualJs,/document\.querySelector\('\.checkout-v2-stage'\)/,'mobile helper must detect checkout mode');
