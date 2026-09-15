@@ -8,7 +8,6 @@ const required=[
   'comprar/index.html',
   'comprar/config.js',
   'comprar/admin-test-bridge.js',
-  'comprar/admin-test-after-checkout.js',
   'supabase/functions/shopping-chat-admin-test-v1/index.ts',
   'supabase/migrations/20260914162000_shopping_chat_admin_test_preview_v1.sql'
 ];
@@ -20,7 +19,6 @@ const css=fs.readFileSync('admin-v3/chat-real-test.css','utf8');
 const buy=fs.readFileSync('comprar/index.html','utf8');
 const config=fs.readFileSync('comprar/config.js','utf8');
 const bridge=fs.readFileSync('comprar/admin-test-bridge.js','utf8');
-const afterCheckout=fs.readFileSync('comprar/admin-test-after-checkout.js','utf8');
 const edge=fs.readFileSync('supabase/functions/shopping-chat-admin-test-v1/index.ts','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260914162000_shopping_chat_admin_test_preview_v1.sql','utf8');
 
@@ -38,19 +36,17 @@ assert.match(controller,/const\s+esc\s*=|function\s+esc\s*\(/,'diagnóstico deve
 assert.match(controller,/esc\(e\.error/,'mensagens de erro do diagnóstico devem ser escapadas');
 assert.doesNotMatch(controller,/access_token=.*admin_test|admin_test=.*access_token/i,'token admin não pode ir na URL');
 
-const bridgePos=buy.indexOf('admin-test-bridge.js');
-const checkoutPos=buy.indexOf('chat-checkout-quantity-v1.js');
-const afterPos=buy.indexOf('admin-test-after-checkout.js');
-const chatPos=buy.indexOf('chat-light-v2.js');
-assert.ok(bridgePos>=0&&checkoutPos>=0&&bridgePos<checkoutPos,'bridge de teste deve carregar antes do checkout');
-assert.ok(checkoutPos>=0&&afterPos>checkoutPos&&chatPos>afterPos,'bypass de confirmação deve carregar depois do checkout e antes do chat principal');
+assert.match(buy,/admin-test-bridge\.js/,'Comprar deve carregar o adaptador de teste');
 assert.match(bridge,/admin_test/);
 assert.match(bridge,/adminTestApi/,'confirm_order de teste deve usar API administrativa separada');
-assert.match(bridge,/DA_ADMIN_TEST_CONFIRM/,'bridge deve expor confirmação segura sem passar pelo wrapper comercial');
+assert.match(bridge,/DA_ADMIN_TEST_TRANSPORT/,'bridge deve expor transporte explícito para o núcleo do Comprar');
+assert.match(bridge,/confirmOrder/,'transporte deve expor apenas confirmação de pedido');
+assert.match(bridge,/Authorization/,'API administrativa deve receber Bearer token fora da URL');
 assert.match(bridge,/da-admin-test-ready/);
 assert.match(bridge,/da-admin-test-diagnostic/);
-assert.match(afterCheckout,/confirm_order/);
-assert.match(afterCheckout,/DA_ADMIN_TEST_CONFIRM/,'confirm_order deve desviar antes do wrapper que cria retorno ao WhatsApp');
+assert.doesNotMatch(bridge,/window\.fetch\s*=/,'modo de teste não pode interceptar fetch global');
+assert.doesNotMatch(bridge,/new\s+MutationObserver/,'modo de teste não pode corrigir DOM por observer global');
+assert.doesNotMatch(buy,/admin-test-after-checkout\.js/,'bypass legado pós-checkout deve sair do carregamento ativo');
 assert.match(config,/adminTestApi:\s*['"][^'"]+shopping-chat-admin-test-v1/);
 
 assert.match(edge,/auth\.getUser/,'API de teste deve validar JWT do Admin');
