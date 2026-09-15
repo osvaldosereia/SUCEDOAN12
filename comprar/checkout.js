@@ -204,7 +204,7 @@
 
   function renderConfirmation(){
     const host=document.getElementById('checkoutConfirmHost');if(!host||!local.addressConfirmed||!state.payment)return;
-    const total=state.checkout?.cart?.total??state.cart?.total??0;
+    const total=state.checkout?.cart?.total??state.checkout?.cart?.commercial_total??state.cart?.total??state.cart?.commercial_total??0;
     host.innerHTML=`<section class="checkout-card checkout-summary">${sectionTitle(4,'Confirmar pedido','Confira o resumo antes de enviar.')}<div class="checkout-summary-line"><span>Entrega</span><strong>${escapeHtml(addressLine(local.address))}</strong></div><div class="checkout-summary-line"><span>Pagamento</span><strong>${escapeHtml(paymentLabels[state.payment]||state.payment)}</strong></div><div class="checkout-summary-line total"><span>Total</span><strong>${money(total)}</strong></div><button id="checkoutConfirmOrder" class="confirm" type="button">Confirmar pedido</button><small id="checkoutConfirmStatus" class="muted"></small></section>`;
     host.querySelector('#checkoutConfirmOrder').onclick=()=>confirmOrder(host.querySelector('#checkoutConfirmOrder'));
   }
