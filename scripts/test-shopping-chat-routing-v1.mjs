@@ -5,7 +5,7 @@ const edge=fs.readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8'
 const adminAi=fs.readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 const products=fs.readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
 const menu=fs.readFileSync('supabase/functions/shopping-chat-menu-v1/index.ts','utf8');
-const client=fs.readFileSync('comprar/chat-light-v2.js','utf8');
+const help=fs.readFileSync('comprar/help.js','utf8');
 
 for(const forbidden of ['automation_config','queue_ai_job_for_message','whatsapp_sales_state','queue_human_handoff_v1','queue_whatsapp_sales_reply_v1','queue_whatsapp_simple_rich_interactive_v1']){
   assert.ok(!edge.includes(forbidden),`Chat Comprar não deve depender de ${forbidden}`);
@@ -31,9 +31,11 @@ assert.ok(!edge.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-v1 nã
 assert.ok(!products.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-products-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!menu.includes('is_whatsapp_active'),'shopping-chat-menu-v1 não deve filtrar cesta por flag do WhatsApp');
 
-for(const ui of ["ui.type==='chips'","ui.type==='link'","ui.type==='product_lookup'"]){
-  assert.ok(client.includes(ui),`frontend deve renderizar ${ui}`);
-}
-assert.doesNotMatch(client,/startPolling\(\)/,'resposta de texto não deve depender de polling de worker');
+// No front limpo a Ajuda é propositalmente simples: envia texto/mídia e mostra a resposta textual.
+assert.match(help,/app\.api\('send_text'/,'Ajuda simples deve enviar texto diretamente ao chat');
+assert.match(help,/function applyReply\(data\)/,'Ajuda simples deve ter um único caminho para resposta');
+assert.match(help,/data\?\.reply\|\|data\?\.message/,'Ajuda simples deve renderizar a resposta textual do backend');
+assert.doesNotMatch(help,/startPolling|MutationObserver|window\.fetch\s*=/,'Ajuda simples não deve depender de polling ou interceptadores globais');
+assert.doesNotMatch(help,/start_basket|set_quantity|productsApi/,'Ajuda não deve abrir catálogo nem alterar o carrinho');
 
 console.log('shopping_chat_routing_v1_contract_ok');
