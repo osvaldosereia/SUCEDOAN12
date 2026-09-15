@@ -109,6 +109,20 @@
     loadMore(requestGeneration);
   }
 
+  function renderLoadMore(){
+    const host=activeStage?.querySelector('[data-products-loading]');
+    if(!host)return;
+    host.innerHTML='';
+    if(!hasMore)return;
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='secondary products-more';
+    button.setAttribute('data-products-more','1');
+    button.textContent='Ver mais';
+    button.onclick=()=>loadMore(generation);
+    host.appendChild(button);
+  }
+
   async function loadMore(requestGeneration=generation){
     if(loading||!hasMore||!productGrid)return;
     loading=true;
@@ -129,14 +143,15 @@
       for(const product of products){registry.set(String(product.id),product);productGrid.appendChild(productCard(product))}
       offset=data.next_offset??offset+products.length;
       hasMore=data.has_more===true;
-      if(loadingNode)loadingNode.textContent=hasMore?'Role para ver mais':'';
     }catch(error){
       if(requestGeneration!==generation)return;
       if(loadingNode)loadingNode.textContent='Não consegui carregar mais produtos.';
       toast(error.message);
+      return;
     }finally{
       if(requestGeneration===generation)loading=false;
     }
+    if(requestGeneration===generation)renderLoadMore();
   }
 
   function productState(product){
@@ -238,12 +253,6 @@
 
   function closeDetail(){if(detailLayer){detailLayer.remove();detailLayer=null}document.body.classList.remove('product-detail-open')}
 
-  function onScroll(){
-    if(!activeStage||!document.body.contains(activeStage)||loading||!hasMore)return;
-    const rect=activeStage.getBoundingClientRect();
-    if(rect.bottom<innerHeight+700)loadMore(generation);
-  }
-  window.addEventListener('scroll',onScroll,{passive:true});
   window.addEventListener('keydown',event=>{if(event.key==='Escape')closeDetail()});
 
   app.registerModule('products',{renderEntry,openSection,resetProducts,loadMore,changeQuantity,openDetail,closeDetail,waitForPending});
