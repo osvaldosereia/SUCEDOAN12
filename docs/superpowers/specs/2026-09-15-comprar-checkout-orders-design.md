@@ -36,7 +36,7 @@ Não haverá `IntersectionObserver`, `scroll` listener ou outro carregamento imp
 
 `shopping-chat-customer-v1` continuará sendo a fronteira server-side da consulta por telefone, mas o retorno web passa a ser um perfil sanitizado próprio para checkout.
 
-Quando o telefone for encontrado, o endpoint pode retornar somente:
+Quando o telefone for encontrado, o endpoint retorna somente:
 
 - `customer_id` interno;
 - nome;
@@ -47,6 +47,8 @@ Quando o telefone for encontrado, o endpoint pode retornar somente:
 O endpoint **não retorna CPF/CNPJ** ao navegador e o front nunca renderiza esse dado.
 
 A consulta mantém proteção contra abuso, inclusive limite de tentativas por sessão. A etapa intermediária de verificação pelo WhatsApp (`verification_required`) deixa de fazer parte do checkout web do Comprar.
+
+Como essa decisão permite usar diretamente um cadastro encontrado por telefone, a associação do cliente à sessão deve ser feita de forma atômica no servidor. Será criado um RPC específico para o checkout web, em vez de reutilizar a verificação atual por código do WhatsApp.
 
 Quando o telefone não for encontrado, a mesma interface é usada para cadastrar o cliente sem trocar de fluxo.
 
@@ -75,9 +77,9 @@ Formas de pagamento:
 - Alimentação / refeição;
 - Dinheiro.
 
-O CPF não aparece nesse cartão.
+O CPF não aparece nesse cartão e **não será exigido para concluir um pedido local pelo Comprar**. Se o cliente já tiver CPF/CNPJ no banco, esse dado permanece intacto no servidor, mas não é devolvido nem alterado pelo checkout web.
 
-Se o cliente existente tiver mais de um endereço, o checkout pode mostrar os endereços salvos para seleção, mas ao escolher um deles os campos editáveis devem refletir aquele endereço na mesma tela.
+Se o cliente existente tiver mais de um endereço, o checkout usa inicialmente o endereço padrão; os demais endereços salvos ficam disponíveis para troca. Ao selecionar outro, os campos editáveis da mesma tela são preenchidos com aquele endereço.
 
 ### 4. Salvamento no clique final
 
@@ -86,11 +88,11 @@ O botão passa a se chamar **Confirmar e enviar pedido**.
 No clique, o sistema executa uma única sequência coordenada:
 
 1. validar nome, telefone, endereço e pagamento;
-2. criar cliente quando novo ou atualizar somente os dados permitidos quando existente;
-3. salvar/adicionar/substituir endereço quando houve alteração;
+2. criar cliente quando novo ou atualizar nome/telefone quando existente;
+3. salvar o endereço editado como substituição do endereço selecionado ou como novo endereço quando necessário;
 4. salvar forma de pagamento na sessão;
 5. chamar a confirmação idempotente do pedido;
-6. exigir retorno com `order_id` e/ou `order_number` válidos;
+6. exigir retorno com `order_id` e `order_number` válidos;
 7. considerar o pedido concluído somente depois de existir em `orders` e seus itens em `order_items`;
 8. montar a URL final do WhatsApp;
 9. entregar a navegação para o WhatsApp.
@@ -174,7 +176,9 @@ CPF/CNPJ não será incluído na mensagem.
 
 O problema atual ocorre depois de uma operação assíncrona: o pedido é salvo e então o código tenta trocar a página para `wa.me`, mas em alguns navegadores móveis a navegação pode falhar ou devolver o usuário ao chat.
 
-O novo fluxo terá um único controlador de handoff e nenhuma navegação concorrente. No clique final, o front reserva a possibilidade de abertura do WhatsApp a partir do gesto do usuário; depois que a persistência termina com sucesso, essa mesma tentativa é direcionada para a URL final `wa.me`. Se o navegador impedir a abertura automática, a tela permanece em sucesso com um link real **Abrir WhatsApp** usando a URL já montada.
+O novo fluxo terá um único controlador de handoff e nenhuma navegação concorrente. No clique final, o front reserva uma janela/contexto de navegação enquanto o gesto do usuário ainda está ativo. Se a persistência concluir com sucesso, esse contexto reservado é direcionado para a URL final `wa.me`. Se a reserva for bloqueada ou o navegador não completar o handoff, a tela permanece em sucesso com um link real **Abrir WhatsApp** usando a URL já montada.
+
+Se a persistência falhar, qualquer contexto reservado é fechado e o usuário permanece no checkout com o erro visível.
 
 Não haverá:
 
@@ -188,14 +192,29 @@ O fluxo em `admin_test=1` nunca abrirá WhatsApp nem criará pedido real.
 
 ## Backend e compatibilidade
 
-Preferência: reutilizar RPCs e tabelas atuais. Nova migration só será criada se for indispensável para atualizar de forma segura cadastro/endereço ou para preservar idempotência; não haverá mudança de schema apenas por conveniência.
+Os testes no banco atual mostraram duas incompatibilidades com o fluxo aprovado:
 
-Funções envolvidas:
+1. `room_identify_customer` não substitui o telefone principal de um cliente já existente e foi desenhado em torno de documento/identidade;
+2. `room_confirm_order` bloqueia cliente sem CPF/CNPJ quando não há contato Bling, embora o novo checkout local não vá exigir CPF.
 
-- `shopping-chat-customer-v1` — lookup sanitizado e cadastro/edição necessária ao checkout;
-- `shopping-checkout-v2` — persistência de endereço quando aplicável;
-- `shopping-chat-v1` — pagamento e confirmação final;
+Por isso, esta mudança **exigirá uma migration funcional**, sem alterar tabelas, criando RPCs versionados específicos para o checkout web. Isso evita quebrar fluxos antigos que ainda dependem das regras atuais.
+
+RPCs previstos:
+
+- `room_attach_customer_by_phone_v1(p_public_token, p_phone)` — localiza um único cliente por telefone, associa sessão/carrinho/conversa de forma atômica e retorna somente perfil sanitizado;
+- `room_upsert_checkout_customer_v1(p_public_token, p_name, p_phone)` — cria cliente novo ou atualiza nome/telefone do cliente já associado, sem expor nem apagar CPF/CNPJ existente e com validação de conflito de telefone;
+- `room_confirm_order_web_v1(p_public_token, p_delivery_address)` — confirma o pedido local sem exigir documento, preservando toda a persistência comercial atual e retornando `order_id`, `order_number`, endereço e IDs da sessão.
+
+`room_save_address_v2` já suporta `add` e `replace` e será reutilizado.
+
+Funções Edge envolvidas:
+
+- `shopping-chat-customer-v1` — lookup sanitizado e associação segura ao checkout;
+- `shopping-checkout-v2` — persistência de endereço;
+- `shopping-chat-v1` — atualização de cadastro, pagamento e confirmação final usando os RPCs web versionados;
 - `admin-orders-comprar-v1` — leitura do pedido no Admin.
+
+Não haverá alteração de schema das tabelas apenas por conveniência.
 
 ## Segurança
 
@@ -206,7 +225,8 @@ A decisão de produto aprovada permite consultar nome/telefone/endereço a parti
 - limite de tentativas por sessão permanece;
 - resposta não inclui dados administrativos, Bling ou histórico de compras;
 - nenhum segredo/service role vai para o navegador;
-- funções server-side continuam usando service role apenas internamente.
+- funções server-side continuam usando service role apenas internamente;
+- conflito de telefone entre clientes bloqueia a atualização em vez de reatribuir dados silenciosamente.
 
 A correção das tabelas do projeto que atualmente estão sem RLS é um item de segurança separado e não será misturado com este checkout sem revisão das políticas necessárias.
 
@@ -215,11 +235,11 @@ A correção das tabelas do projeto que atualmente estão sem RLS é um item de 
 Antes de integrar:
 
 1. Produtos: rolagem não chama `loadMore`; botão **Ver mais** chama uma única nova página.
-2. Lookup encontrado: retorna perfil sanitizado, sem `cpf_cnpj`/documento, e a UI mostra campos editáveis.
-3. Lookup não encontrado: mesma UI permite cadastro novo.
-4. Edição: alteração de endereço é persistida antes do pedido.
+2. Lookup encontrado: retorna perfil sanitizado, sem `cpf_cnpj`/documento, associa a sessão e a UI mostra campos editáveis.
+3. Lookup não encontrado: mesma UI permite cadastro novo sem CPF.
+4. Edição: nome/telefone e alteração de endereço são persistidos antes do pedido.
 5. Pagamento: seleção é obrigatória e aparece em `orders.payment_method`.
-6. Pedido: `confirm_order` cria um único pedido completo e itens correspondentes.
+6. Pedido: confirmação web cria um único pedido completo e itens correspondentes, inclusive para cliente local sem CPF.
 7. Admin: o pedido criado pelo Comprar aparece na lista e abre com os mesmos dados.
 8. WhatsApp: URL final usa `5565998150975`, contém pedido/endereço/pagamento/itens/total e não contém CPF.
 9. Fallback: tentar novamente abrir WhatsApp não cria segundo pedido.
