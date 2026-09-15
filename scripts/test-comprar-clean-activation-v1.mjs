@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const buy=readFileSync('comprar/index.html','utf8');
 const root=readFileSync('index.html','utf8');
 const css=readFileSync('comprar/styles.css','utf8');
+const app=readFileSync('comprar/app.js','utf8');
 
 for(const [name,html,prefix] of [['Comprar',buy,'./'],['Raiz',root,'/comprar/']]){
   assert.match(html,new RegExp(`${prefix.replace('/','\\/')}styles\\.css\\?v=20260915-05`),`${name} deve carregar apenas o CSS consolidado`);
@@ -15,6 +16,12 @@ for(const [name,html,prefix] of [['Comprar',buy,'./'],['Raiz',root,'/comprar/']]
   }
   assert.match(html,/DA_COMPRAR_APP\.start\(\)/,`${name} deve iniciar explicitamente o app depois de registrar os módulos`);
 }
+
+for(const id of ['checkoutButton','cartButton','cartAddProducts','backButton']){
+  assert.match(app,new RegExp(`\\$\\('${id}'\\)`),`app deve ligar o controle ${id} sem decoradores externos`);
+}
+assert.match(app,/openCheckout/,'app deve ter caminho único para abrir o pedido');
+assert.match(app,/openAddProductsStage/,'app deve ter caminho único para abrir produtos adicionais');
 
 assert.match(css,/\.products-filter-sticky\s*\{[^}]*position\s*:\s*sticky/s,'filtros de produtos devem ficar sticky');
 assert.match(css,/\.chips-subcategories\s+\.chip\s*\{/,'subcategorias devem ter estilo próprio e discreto');
