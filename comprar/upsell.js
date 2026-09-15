@@ -38,7 +38,8 @@
       const copy=document.createElement('div');copy.className='upsell-card-copy';copy.innerHTML=`<strong>${app.escapeHtml(product.name||'Produto')}</strong><small>${money(product.price)}</small>`;card.appendChild(copy);
       const button=document.createElement('button');button.type='button';button.textContent='+ Adicionar';button.onclick=()=>{if(button.disabled)return;const ok=state.modules.products?.addSuggestedProduct?.(product);if(ok!==false){button.disabled=true;button.textContent='Adicionado'}};card.appendChild(button);grid.appendChild(card);
     }
-    host.appendChild(strip);return true;
+    const resetAction=host.querySelector('.clear-order-action');
+    if(resetAction)host.insertBefore(strip,resetAction);else host.appendChild(strip);return true;
   }
   function queueRender(host,limit,message){
     fetchCandidates().then(products=>renderCards(products,limit,message,host)).catch(()=>{});
@@ -48,8 +49,57 @@
     if(stopped||afterBasketUsed||!host)return false;afterBasketUsed=true;
     return queueRender(host,MAX_AFTER_BASKET,'Separei algumas coisas que podem completar sua compra.');
   }
+
+  function resetClientState(cart={items:[],total:0}){
+    state.selectedBasket=null;
+    state.basketItems=[];
+    state.checkout=null;
+    state.payment=null;
+    state.productFilters={customerCategory:'',subcategory:'',subsubcategory:'',offers:false,query:''};
+    app.setCart(cart||{items:[],total:0});
+    document.querySelectorAll('.stage').forEach(el=>el.remove());
+    document.querySelectorAll('.conversation-message').forEach(el=>el.remove());
+    app.renderStart();
+  }
+
+  async function clearOrder(button){
+    if(button?.dataset.busy==='1')return;
+    const previous=button?.textContent||'Sim, limpar';
+    if(button){button.dataset.busy='1';button.disabled=true;button.textContent='Limpando…'}
+    try{
+      await app.waitForPendingProductSyncs();
+      const params=new URLSearchParams(location.search);
+      const adminTest=params.get('admin_test')==='1'&&window.parent!==window;
+      if(adminTest){resetClientState();return}
+      const resetApi=app.config.resetApi||String(app.config.api||'').replace(/shopping-room-v1\/?(?:\?.*)?$/,'shopping-room-reset-v1');
+      if(!resetApi||resetApi===app.config.api)throw new Error('Serviço de limpeza indisponível.');
+      const data=await app.post(resetApi,'reset_cart');
+      resetClientState(data.cart||{items:[],total:0});
+      location.reload();
+    }catch(error){app.toast(error.message||'Não consegui limpar o pedido.');if(button){button.dataset.busy='0';button.disabled=false;button.textContent=previous}}
+  }
+
+  function renderResetConfirmation(host,action){
+    host.querySelector('.clear-order-confirm')?.remove();
+    const box=document.createElement('section');box.className='conversation-tool-summary clear-order-confirm';
+    const copy=document.createElement('div');copy.className='conversation-tool-summary-copy';copy.innerHTML='<strong>Quer limpar este pedido e começar novamente?</strong><small>A cesta e os produtos serão removidos. Seu cadastro continuará disponível.</small>';box.appendChild(copy);
+    const actions=document.createElement('div');actions.className='conversation-tool-summary-actions';
+    const cancel=document.createElement('button');cancel.type='button';cancel.className='text-button';cancel.textContent='Cancelar';cancel.onclick=()=>{box.remove();action.hidden=false};
+    const confirm=document.createElement('button');confirm.type='button';confirm.className='secondary';confirm.textContent='Sim, limpar';confirm.onclick=()=>clearOrder(confirm);
+    actions.append(cancel,confirm);box.appendChild(actions);action.hidden=true;host.appendChild(box);app.scrollTo(box,{block:'center'});
+  }
+
+  function renderResetAction(host){
+    if(!host||host.querySelector('.clear-order-action'))return;
+    const action=document.createElement('div');action.className='clear-order-action';
+    const button=document.createElement('button');button.type='button';button.className='text-button clear-order-button';button.textContent='Limpar pedido';button.onclick=()=>renderResetConfirmation(host,action);
+    action.appendChild(button);host.appendChild(action);
+  }
+
   function renderBeforeCheckout(host){
-    if(stopped||beforeCheckoutUsed||!host)return false;beforeCheckoutUsed=true;
+    if(!host)return false;
+    renderResetAction(host);
+    if(stopped||beforeCheckoutUsed)return false;beforeCheckoutUsed=true;
     return queueRender(host,MAX_BEFORE_CHECKOUT,'Antes de finalizar, tem algo que costuma faltar em casa?');
   }
   function stop(){stopped=true;document.querySelectorAll('.upsell-strip').forEach(el=>el.remove())}
