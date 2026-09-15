@@ -26,6 +26,9 @@
   <link rel="stylesheet" href="/comprar/chat-checkout-quantity-v1.css?v=20260914-03">
   <link rel="stylesheet" href="/comprar/chat-helper-menu.css?v=20260911-01">
   <link rel="stylesheet" href="/comprar/comprar-ux-polish-v1.css?v=20260914-01">
+  <link rel="stylesheet" href="/comprar/product-detail-v1.css?v=20260915-01">
+  <link rel="stylesheet" href="/comprar/checkout-final-v2.css?v=20260915-01">
+  <link rel="stylesheet" href="/comprar/storefront-visual-v2.css?v=20260915-01">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"OnlineStore","@id":"https://donaantonia.com.br/#organization","name":"Super Cestas Básicas Dona Antônia","alternateName":"Dona Antônia","url":"https://donaantonia.com.br/","logo":"https://donaantonia.com.br/img/logoantonia5.png","image":"https://donaantonia.com.br/img/logoantonia5.png","description":"Cestas básicas, ofertas e produtos de supermercado com delivery em Cuiabá e Várzea Grande.","email":"atendimento@donaantonia.com.br","telephone":"+5565998150975","taxID":"51.385.335/0001-06","areaServed":[{"@type":"City","name":"Cuiabá","containedInPlace":{"@type":"State","name":"Mato Grosso"}},{"@type":"City","name":"Várzea Grande","containedInPlace":{"@type":"State","name":"Mato Grosso"}}]}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","@id":"https://donaantonia.com.br/#website","url":"https://donaantonia.com.br/","name":"Dona Antônia - Cestas Básicas","inLanguage":"pt-BR","publisher":{"@id":"https://donaantonia.com.br/#organization"}}</script>
 </head>
@@ -33,7 +36,7 @@
   <div class="chat-app">
     <header class="chat-topbar">
       <button id="backButton" class="top-icon" type="button" aria-label="Voltar">‹</button>
-      <div class="brand-mark">DA</div>
+      <img class="brand-logo" src="/img/logoantonia5.png" alt="Dona Antônia" width="42" height="42">
       <div class="brand-copy"><strong>Dona Antônia</strong><small id="roomStatus">Atendimento online</small></div>
       <button id="cartButton" class="cart-pill" type="button" aria-label="Ver pedido"><span>Pedido</span><b id="cartCount">0</b></button>
     </header>
@@ -44,14 +47,15 @@
       <div class="cart-bar-total"><small>Seu pedido</small><strong id="cartTotal">R$ 0,00</strong></div>
       <div class="cart-bar-actions">
         <button id="cartAddProducts" class="cart-add-products" type="button">Adicionar produtos</button>
-        <button id="checkoutButton" type="button" disabled>Finalizar</button>
+        <button id="checkoutButton" type="button" disabled>Ver pedido</button>
       </div>
     </div>
+    <button id="helpToggle" class="help-toggle" type="button" aria-expanded="false" aria-controls="composer">💬 Ajuda</button>
     <div id="recordingBar" class="recording hidden" aria-live="polite">
       <span class="record-dot"></span><strong id="recordingTime">0:00</strong><span>Gravando</span>
       <button id="cancelRecording" type="button">Cancelar</button>
     </div>
-    <form id="composer" class="composer">
+    <form id="composer" class="composer composer-collapsed">
       <button id="photoButton" class="composer-icon" type="button" aria-label="Enviar foto">＋</button>
       <input id="photoInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
       <input id="messageInput" type="text" maxlength="800" autocomplete="off" placeholder="Digite aqui…">
@@ -60,11 +64,15 @@
     </form>
   </div>
   <div id="toast" class="toast" aria-live="polite"></div>
-  <script src="/comprar/config.js?v=20260914-04"></script>
+  <script src="/comprar/config.js?v=20260915-01"></script>
+  <script src="/comprar/product-detail-v1.js?v=20260915-01"></script>
   <script src="/comprar/admin-test-bridge.js?v=20260914-02"></script>
   <script src="/comprar/chat-checkout-quantity-v1.js?v=20260914-04"></script>
   <script src="/comprar/admin-test-after-checkout.js?v=20260914-01"></script>
+  <script src="/comprar/checkout-message-context-v1.js?v=20260915-01"></script>
+  <script src="/comprar/checkout-final-v2.js?v=20260915-01"></script>
   <script src="/comprar/chat-light-v2.js?v=20260914-04"></script>
+  <script src="/comprar/storefront-visual-v2.js?v=20260915-01"></script>
   <script src="/comprar/phone-retry-v1.js?v=20260914-01"></script>
   <script src="/comprar/chat-helper-menu.js?v=20260911-01"></script>
 </body>

@@ -66,6 +66,10 @@ verify_jwt = false
 [functions.admin-v3-api]
 verify_jwt = false
 
+# Leitura dos pedidos completos do Comprar/Vitrine no Admin oficial; CORS restrito e service role só no servidor.
+[functions.admin-orders-comprar-v1]
+verify_jwt = false
+
 # Gestão de nomes do Admin V3: mesma política do Admin, com CORS restrito e service role apenas no servidor.
 [functions.admin-v3-product-names]
 verify_jwt = false
@@ -121,6 +125,10 @@ verify_jwt = false
 
 # Chat público leve: autenticação própria por token aleatório da sessão + CORS estrito.
 [functions.shopping-chat-v1]
+verify_jwt = false
+
+# Checkout público v2: token aleatório da sessão + CORS estrito, sem JWT de usuário.
+[functions.shopping-checkout-v2]
 verify_jwt = false
 
 # Feed público de produtos do chat: catálogo vendável + token válido da sessão + CORS estrito.
