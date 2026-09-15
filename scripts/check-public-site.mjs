@@ -15,9 +15,9 @@ const required = [
   'politica-de-troca.html', 'politica-de-privacidade.html', 'termos-de-uso.html',
   'cestas/index.html', 'kits/index.html', 'site/seo-combos-manifest.json',
   'site/produtos-cesta-basica.json', 'site/kits.json', 'site/app-version.json',
-  'comprar/config.js', 'comprar/chat-light-v2.js',
-  'comprar/chat-checkout-quantity-v1.js', 'comprar/checkout-final-v2.js',
-  'comprar/storefront-visual-v2.js',
+  'comprar/config.js', 'comprar/app.js', 'comprar/baskets.js',
+  'comprar/products.js', 'comprar/checkout.js', 'comprar/help.js',
+  'comprar/admin-test-bridge.js', 'comprar/styles.css',
   'app-next/index.html', 'app-next/styles/storefront-base.css',
   'app-next/styles/storefront-components.css', 'app-next/styles/storefront-responsive.css',
   'app-next/styles/checkout-flow.css', 'app-next/styles/bundle-confirmation.css',
@@ -29,20 +29,27 @@ const required = [
 ];
 required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}`));
 
-// A raiz pública é o Comprar atual. O app-next continua no repositório para módulos auxiliares,
+// A raiz pública é o Comprar limpo. O app-next continua no repositório para módulos auxiliares,
 // mas não pode voltar a ser injetado como shell da home.
 const production = read('index.html');
 for (const marker of [
-  '/comprar/config.js?v=20260915-02',
-  '/comprar/chat-checkout-quantity-v1.js?v=20260915-04',
-  '/comprar/checkout-final-v2.js',
-  '/comprar/storefront-visual-v2.js',
+  '/comprar/config.js?v=20260915-05',
+  '/comprar/app.js?v=20260915-05',
+  '/comprar/baskets.js?v=20260915-05',
+  '/comprar/products.js?v=20260915-05',
+  '/comprar/checkout.js?v=20260915-05',
+  '/comprar/help.js?v=20260915-05',
+  '/comprar/styles.css?v=20260915-05',
   '"@type":"OnlineStore"', '"@type":"WebSite"',
   'Cestas Básicas em Cuiabá e Várzea Grande',
   'Somente delivery', 'id="timeline"', 'id="checkoutButton"'
 ]) assert(production.includes(marker), `Index Comprar incompleto: ${marker}`);
 
 for (const removed of [
+  '/comprar/chat-light-v2.js', '/comprar/chat-checkout-quantity-v1.js',
+  '/comprar/checkout-final-v2.js', '/comprar/chat-helper-menu.js',
+  '/comprar/phone-retry-v1.js', '/comprar/product-detail-v1.js',
+  '/comprar/storefront-visual-v2.js', '/comprar/admin-test-after-checkout.js',
   '/app-next/src/main.js', '/app-next/src/image-performance.js', '/app-next/src/home-carousels.js',
   '/app-next/styles/storefront-base.css', '/app-next/styles/storefront-components.css',
   '/app-next/styles/storefront-responsive.css', '/app-next/styles/checkout-flow.css',
@@ -56,6 +63,10 @@ for (const removed of [
 const comprarConfig = read('comprar/config.js');
 assert(comprarConfig.includes("whatsappFallback:'https://wa.me/5565998150975'"), 'Comprar não usa o WhatsApp oficial');
 assert(!comprarConfig.includes('556584491018'), 'Comprar ainda contém o WhatsApp antigo');
+
+const comprarModules = ['comprar/app.js','comprar/baskets.js','comprar/products.js','comprar/checkout.js','comprar/help.js'].map(read).join('\n');
+assert(!/window\.fetch\s*=/.test(comprarModules), 'Comprar comercial ainda sobrescreve window.fetch');
+assert(!/new\s+MutationObserver/.test(comprarModules), 'Comprar comercial ainda usa MutationObserver global');
 
 // Os módulos app-next/canecas continuam sendo validados no próprio código, sem serem exigidos na raiz.
 const css = [
@@ -159,4 +170,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, raiz Comprar atual e módulos auxiliares íntegros.`);
+console.log(`Site validado: ${baskets.length} cestas, raiz Comprar limpa e módulos auxiliares íntegros.`);
