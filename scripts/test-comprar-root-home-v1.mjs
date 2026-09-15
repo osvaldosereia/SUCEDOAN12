@@ -21,6 +21,9 @@ assert.doesNotMatch(root,/noindex,nofollow/,'main domain must not inherit the in
 assert.doesNotMatch(root,/\/app-next\//,'legacy storefront must no longer load on the main domain');
 assert.doesNotMatch(root,/http-equiv="refresh"/i,'main domain must render Comprar directly instead of redirecting');
 assert.match(comprar,/name="robots" content="noindex,nofollow"/,'internal /comprar/ route must remain available and non-indexable');
-assert.match(app,/history\.replaceState\(\{\},'',`\$\{location\.pathname\}\?s=\$\{encodeURIComponent\(token\)\}`\)/,'new shopping sessions must preserve the current pathname, including the root domain');
+const roomUrl=app.match(/function roomUrl\(nextToken,resume=''\)[\s\S]*?(?=\n\s*async function createRoomToken)/)?.[0]||'';
+assert.match(roomUrl,/location\.pathname/,'new shopping sessions must preserve the current pathname, including the root domain');
+assert.match(roomUrl,/\?s=\$\{encodeURIComponent\(nextToken\)\}/,'new shopping sessions must put the fresh token in the URL');
+assert.match(app,/history\.replaceState\(\{\},'',roomUrl\(token\)\)/,'new shopping sessions must replace the stale URL through the shared pathname-preserving builder');
 
 console.log('comprar_root_home_v1_ok');
