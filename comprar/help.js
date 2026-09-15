@@ -18,7 +18,8 @@
     quickLoading=(async()=>{
       const data=await app.post(app.config.menuApi,'get');
       const cfg=data?.config||{};
-      const items=(Array.isArray(cfg.menu_items)?cfg.menu_items:[])
+      const source=cfg.enabled===false?[]:(Array.isArray(cfg.menu_items)?cfg.menu_items:[]);
+      const items=source
         .filter(item=>item?.enabled!==false)
         .filter(item=>!PURCHASE_KINDS.has(app.text(item?.kind)))
         .filter(item=>app.text(item?.label)&&app.text(item?.response_text))
@@ -32,7 +33,7 @@
     if(checkoutMode)return null;document.querySelectorAll('.help-other-questions').forEach(node=>node.remove());
     const {timeline}=elements();if(!timeline)return null;
     const host=document.createElement('div');host.className='help-other-questions';
-    const button=document.createElement('button');button.type='button';button.className='chip';button.textContent='Outras dúvidas';button.onclick=()=>{host.remove();renderQuickQuestions({refresh:false})};
+    const button=document.createElement('button');button.type='button';button.className='chip';button.textContent='Outras dúvidas';button.onclick=()=>{host.remove();renderQuickQuestions({refresh:true})};
     host.appendChild(button);timeline.appendChild(host);app.scrollTo(host,{block:'nearest'});return host;
   }
   async function renderQuickQuestions({refresh=false}={}){
@@ -54,7 +55,7 @@
     }
     timeline.appendChild(host);app.scrollTo(host,{block:'nearest'});return host;
   }
-  function open(){if(checkoutMode)return;setOpen(true);renderQuickQuestions({refresh:false})}
+  function open(){if(checkoutMode)return;setOpen(true);renderQuickQuestions({refresh:true})}
   function close(){setOpen(false)}
   function toggle(){const {help}=elements();if(!help||checkoutMode)return;help.getAttribute('aria-expanded')==='true'?close():open()}
   function setCheckoutMode(active){checkoutMode=!!active;const {help}=elements();if(checkoutMode)close();help?.classList.toggle('hidden',checkoutMode)}
