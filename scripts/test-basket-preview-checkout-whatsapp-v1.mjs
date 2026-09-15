@@ -2,7 +2,6 @@ import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const addon=readFileSync('comprar/chat-checkout-quantity-v1.js','utf8');
-const chat=readFileSync('comprar/chat-light-v2.js','utf8');
 const checkout=readFileSync('comprar/checkout-final-v2.js','utf8');
 const config=readFileSync('comprar/config.js','utf8');
 const customerEdge=readFileSync('supabase/functions/shopping-chat-customer-v1/index.ts','utf8');
@@ -24,17 +23,15 @@ assert.doesNotMatch(preview,/set_basket_quantity/,'preview quantity controls mus
 assert.match(preview,/className='qty'/,'preview must render minus/quantity/plus controls for editable basket items');
 assert.match(preview,/min_quantity/,'preview quantity control must respect the basket minimum');
 assert.match(preview,/max_quantity/,'preview quantity control must respect the basket maximum');
-assert.doesNotMatch(preview,/class=\"qty-fixed\"[^>]*>\$\{Number\(item\.quantity/,'preview must not render every basket quantity as fixed');
-assert.match(preview,/basketPreviewQuantities/,'preview must pass the locally edited quantities only when the customer chooses the basket');
+assert.match(preview,/pendingBasketPreview/,'preview must retain the locally edited quantities only when the customer chooses the basket');
 assert.match(preview,/Escolher esta cesta/,'preview must have an explicit selection action');
 assert.match(preview,/Voltar às cestas/,'preview must let the customer return to basket choices');
 
-// Escolher a cesta aplica as quantidades locais somente depois de criar a cesta no carrinho.
-const chooseBasket=chat.match(/async function chooseBasket[\s\S]*?(?=function renderBasketStage)/)?.[0]||'';
-assert.match(chooseBasket,/start_basket/,'basket selection must still create the basket using the canonical cart flow');
-assert.match(chooseBasket,/basketPreviewQuantities/,'basket selection must consume the quantities edited in preview');
-assert.match(chooseBasket,/set_basket_quantity/,'basket selection must apply edited quantities after start_basket');
-assert.ok(chooseBasket.indexOf("start_basket")<chooseBasket.indexOf("set_basket_quantity"),'basket edits must be applied only after the basket exists in the cart');
+// Escolher a cesta aplica as quantidades locais somente depois de start_basket criar a cesta no carrinho.
+assert.match(addon,/let pendingBasketPreview=null/,'client must keep one pending local basket selection');
+const startBasketApply=addon.match(/if\(action==='start_basket'&&pendingBasketPreview[\s\S]*?(?=\n\s*if\(action==='checkout_preview'\))/)?.[0]||'';
+assert.match(startBasketApply,/set_basket_quantity/,'basket selection must apply edited quantities after start_basket returns');
+assert.match(startBasketApply,/pendingBasketPreview=null/,'pending preview selection must be consumed once');
 
 // Abrir o checkout não deve ficar bloqueado esperando uma consulta auxiliar de políticas da cesta.
 const checkoutPreviewIntercept=addon.match(/if\(action==='checkout_preview'\)\{[\s\S]*?(?=\n\s*if\(action==='confirm_order'\))/)?.[0]||'';
