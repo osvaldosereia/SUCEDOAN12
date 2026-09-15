@@ -131,8 +131,9 @@
   function orderReviewMeta(){
     const items=state.cart?.items||[];
     const basketItems=items.filter(item=>item.source!=='addon').reduce((sum,item)=>sum+Math.max(0,Number(item.quantity||0)),0);
-    const extras=items.filter(item=>item.source==='addon').reduce((sum,item)=>sum+Math.max(0,Number(item.quantity||0)),0);
-    return {basketItems,extras,total:state.cart?.total??state.cart?.commercial_total??0,count:cartCount()};
+    const extrasItems=items.filter(item=>item.source==='addon'&&Math.max(0,Number(item.quantity||0))>0);
+    const extras=extrasItems.reduce((sum,item)=>sum+Math.max(0,Number(item.quantity||0)),0);
+    return {basketItems,extras,extrasItems,total:state.cart?.total??state.cart?.commercial_total??0,count:cartCount()};
   }
 
   async function renderOrderReview(trigger){
@@ -140,6 +141,8 @@
     if(trigger?.dataset.busy==='1')return;
     document.querySelector('.stage.checkout-stage')?.remove();
     document.querySelector('.stage.order-review-stage')?.remove();
+    document.querySelectorAll('.stage.products-entry-stage,.stage.products-stage,.stage.selected-basket-expanded').forEach(element=>element.remove());
+    removeConversation('.products-browser-message');
     removeConversation('.order-review-message');
     const meta=orderReviewMeta();
     if(!meta.count){toast('empty_cart');return}
@@ -147,10 +150,21 @@
     const section=stage(2,'Seu pedido','','order-review-stage');if(!section)return;
     const inner=document.createElement('div');inner.className='order-review-tool';section.appendChild(inner);
     if(state.selectedBasket){
-      const row=document.createElement('div');row.className='order-review-row';row.innerHTML=`<div><strong>${escapeHtml(state.selectedBasket.name||'Cesta básica')}</strong><small>${meta.basketItems} ${meta.basketItems===1?'item':'itens'} da cesta</small></div><button type="button" class="text-button" data-review-composition>Ver composição</button>`;inner.appendChild(row);
+      const basketName=state.modules.baskets?.basketDisplayName?.(state.selectedBasket)||state.selectedBasket.name||'Cesta básica';
+      const row=document.createElement('div');row.className='order-review-row';row.innerHTML=`<div><strong>${escapeHtml(basketName)}</strong><small>${meta.basketItems} ${meta.basketItems===1?'item':'itens'} da cesta</small></div><button type="button" class="text-button" data-review-composition>Ver composição</button>`;inner.appendChild(row);
       row.querySelector('[data-review-composition]').onclick=()=>state.modules.baskets?.expandSelectedBasket?.();
     }
-    if(meta.extras>0){const row=document.createElement('div');row.className='order-review-row';row.innerHTML=`<div><strong>Produtos extras</strong><small>${meta.extras} ${meta.extras===1?'item':'itens'} adicionados</small></div><button type="button" class="text-button" data-review-products>Alterar</button>`;inner.appendChild(row);row.querySelector('[data-review-products]').onclick=()=>openAddProductsStage({auto:false})}
+    if(meta.extrasItems.length){
+      const row=document.createElement('div');row.className='order-review-row';
+      const copy=document.createElement('div');
+      const heading=document.createElement('strong');heading.textContent='Produtos extras';copy.appendChild(heading);
+      const summary=document.createElement('small');summary.textContent=`${meta.extrasItems.length} ${meta.extrasItems.length===1?'produto':'produtos'} · ${meta.extras} ${meta.extras===1?'unidade':'unidades'}`;copy.appendChild(summary);
+      const list=document.createElement('div');list.className='order-review-extra-list';
+      for(const item of meta.extrasItems){const quantity=Math.max(0,Number(item.quantity||0));const product=item.product||item;const line=document.createElement('div');line.className='muted order-review-extra-item';line.textContent=`${quantity}× ${product.name||item.name||'Produto'}`;list.appendChild(line)}
+      copy.appendChild(list);
+      const alter=document.createElement('button');alter.type='button';alter.className='text-button';alter.dataset.reviewProducts='1';alter.textContent='Alterar';alter.onclick=()=>openAddProductsStage({auto:false});
+      row.append(copy,alter);inner.appendChild(row);
+    }
     const total=document.createElement('div');total.className='order-review-total';total.innerHTML=`<span>Total</span><strong>${money(meta.total)}</strong>`;inner.appendChild(total);
     const upsellHost=document.createElement('div');upsellHost.className='order-review-upsell';inner.appendChild(upsellHost);
     try{await state.modules.upsell?.renderBeforeCheckout?.(upsellHost)}catch{}
