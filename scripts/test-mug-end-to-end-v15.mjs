@@ -19,7 +19,9 @@ const contract=read('app-next/src/mug-public-personalization-contract-v25.js');
 const media=read('app-next/src/product-media.js');
 const resultPage=read('caneca10/resultado.html');
 const config=read('app-next/src/config.js');
-need(rootIndex,'mug-public-runtime-v6.js','Raiz não carrega runtime público de canecas.');
+// A raiz atual pertence ao Comprar da Dona Antônia; o stack de canecas é validado nos módulos próprios.
+need(rootIndex,'/comprar/app.js?v=20260915-05','Raiz não está no shell atual do Comprar.');
+reject(rootIndex,'mug-public-runtime-v6.js','Raiz Dona Antônia não deve carregar runtime de canecas.');
 need(runtime,'./mug-public-personalization-v7.js','Runtime público não carrega personalizador de 2 mockups.');
 need(runtime,'./mug-public-thumbnails-v2.js','Runtime público não carrega miniaturas leves.');
 reject(runtime,'mug-public-3d-v2.js','Runtime público ainda carrega 3D legado.');
@@ -74,4 +76,4 @@ const printPage=read('caneca-print/index.html');
 need(printPage,'arte_horizontal','CanecaPrint não resolve arte_horizontal.');
 
 if(failures.length){console.error(`Canecas ponta a ponta FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);process.exit(1)}
-console.log('OK · Canecas ponta a ponta: 2 mockups + arte horizontal; Short manual no site; impressão usa somente arte_horizontal.');
+console.log('OK · Canecas ponta a ponta: raiz Dona Antônia isolada; 2 mockups + arte horizontal; Short manual; impressão usa somente arte_horizontal.');
