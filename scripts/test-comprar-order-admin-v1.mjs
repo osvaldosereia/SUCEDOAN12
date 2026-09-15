@@ -2,6 +2,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const orderMigration=readFileSync('supabase/migrations/20260915020000_shopping_room_order_admin_v1.sql','utf8');
+const orderNumberMigration=readFileSync('supabase/migrations/20260915024500_room_confirm_order_number_v2.sql','utf8');
 const addressMigration=readFileSync('supabase/migrations/20260915023000_room_address_save_v2.sql','utf8');
 const adminApi=readFileSync('supabase/functions/admin-orders-comprar-v1/index.ts','utf8');
 const checkoutApi=readFileSync('supabase/functions/shopping-checkout-v2/index.ts','utf8');
@@ -21,10 +22,13 @@ assert.match(orderMigration,/idempotency_key/,'order persistence must have an id
 assert.match(orderMigration,/phone_e164/,'order snapshot must retain the customer phone');
 assert.match(orderMigration,/delivery_address/,'order snapshot must retain the confirmed delivery address');
 assert.match(orderMigration,/payment_method/,'order snapshot must retain payment information after order update');
+assert.match(orderNumberMigration,/order_number/,'room_confirm_order must return the readable order number');
+assert.match(orderNumberMigration,/catalog_session_id/,'room_confirm_order must return the session id with the saved order');
 
 assert.match(addressMigration,/room_save_address_v2/,'checkout must have a versioned address save RPC');
 assert.match(addressMigration,/v_mode='replace'/,'address RPC must support real replacement');
-assert.match(addressMigration,/v_mode='add'/,'address RPC must support adding a second address');
+assert.match(addressMigration,/coalesce\(p_mode,'add'\)/,'address RPC must default to adding another address');
+assert.match(addressMigration,/insert into public\.customer_addresses/,'add mode must create a distinct address record');
 assert.match(addressMigration,/customer_id=v_session\.customer_id/,'replace must be scoped to the current customer');
 assert.match(checkoutApi,/room_save_address_v2/,'checkout edge function must use the address v2 RPC');
 
