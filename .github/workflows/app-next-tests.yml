@@ -67,7 +67,7 @@ jobs:
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
             grep -q '/comprar/config.js?v=20260915-02' index.html
-            grep -q '/comprar/chat-checkout-quantity-v1.js?v=20260915-02' index.html
+            grep -q '/comprar/chat-checkout-quantity-v1.js?v=20260915-03' index.html
             grep -q '/comprar/checkout-final-v2.js' index.html
             grep -q '/comprar/storefront-visual-v2.js' index.html
             grep -q '"@type":"OnlineStore"' index.html
