@@ -2,6 +2,7 @@ import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const html=readFileSync('comprar/index.html','utf8');
+const rootHtml=readFileSync('index.html','utf8');
 const visual=readFileSync('comprar/storefront-visual-v2.css','utf8');
 const product=readFileSync('comprar/product-detail-v1.css','utf8');
 const checkout=readFileSync('comprar/checkout-final-v2.css','utf8');
@@ -23,5 +24,11 @@ assert.match(checkout,/\.checkout-v2-primary[^}]*min-height:48px/s,'primary chec
 
 assert.match(visualJs,/document\.querySelector\('\.checkout-v2-stage'\)/,'mobile helper must detect checkout mode');
 assert.match(visualJs,/help\.classList\.toggle\('hidden',checkout\)/,'help button must be hidden while checkout is active');
+
+// Correções críticas do WhatsApp devem furar o cache dos celulares já usados pelos clientes.
+for(const [name,source,prefix] of [['Comprar',html,'\\./'],['Raiz',rootHtml,'/comprar/']]){
+  assert.match(source,new RegExp(`${prefix}config\\.js\\?v=20260915-02`),`${name} must load the updated WhatsApp config with a fresh cache key`);
+  assert.match(source,new RegExp(`${prefix}chat-checkout-quantity-v1\\.js\\?v=20260915-02`),`${name} must load the single-navigation checkout script with a fresh cache key`);
+}
 
 console.log('comprar_mobile_v1_contract_ok');
