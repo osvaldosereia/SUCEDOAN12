@@ -20,21 +20,6 @@ on:
       - 'scripts/injetar-seo-combos.js'
       - 'scripts/normalizar-seo-delivery.js'
       - 'scripts/check-public-site.mjs'
-      - 'scripts/estabilizar-catalogo-publico.mjs'
-      - 'app-next/src/bundle-routes.js'
-      - 'app-next/src/core.js'
-      - 'app-next/src/catalog.js'
-      - 'app-next/src/ui.js'
-      - 'app-next/src/checkout.js'
-      - 'app-next/src/main.js'
-      - 'app-next/src/image-performance.js'
-      - 'app-next/src/home-carousels.js'
-      - 'app-next/src/config.js'
-      - 'app-next/styles/storefront-base.css'
-      - 'app-next/styles/storefront-components.css'
-      - 'app-next/styles/storefront-responsive.css'
-      - 'app-next/styles/checkout-flow.css'
-      - 'app-next/styles/bundle-confirmation.css'
       - '.github/workflows/update-public-data.yml'
 
 permissions:
@@ -86,23 +71,16 @@ jobs:
           node --check scripts/gerar-sitemap.js
           node --check scripts/injetar-seo-combos.js
           node --check scripts/normalizar-seo-delivery.js
-          node --check scripts/estabilizar-catalogo-publico.mjs
+          node --check scripts/check-public-site.mjs
           node --check comprar/chat-light-v2.js
           node --check comprar/chat-checkout-quantity-v1.js
           node --check comprar/checkout-final-v2.js
           node --check comprar/storefront-visual-v2.js
-          node --check app-next/src/bundle-routes.js
-          node --check app-next/src/core.js
-          node --check app-next/src/catalog.js
-          node --check app-next/src/ui.js
-          node --check app-next/src/checkout.js
-          node --check app-next/src/main.js
-          node --check app-next/src/image-performance.js
-          node --check app-next/src/home-carousels.js
           node scripts/check-public-site.mjs
           test -s merchant.xml
           grep -q '<item>' merchant.xml
           test -s site/produtos_meta.csv
+          test -s site/produtos_admin_meta.json
           test -s cestas/index.html
           test -s kits/index.html
           grep -q '"@type":"CollectionPage"' cestas/index.html

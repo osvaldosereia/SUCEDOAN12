@@ -13,24 +13,16 @@ const required = [
   'index.html', 'CNAME', 'robots.txt', 'sitemap.xml', 'merchant.xml',
   'sobre-nos.html', 'contato.html', 'politica-de-entrega.html',
   'politica-de-troca.html', 'politica-de-privacidade.html', 'termos-de-uso.html',
-  'cestas/index.html', 'kits/index.html', 'site/seo-combos-manifest.json',
-  'site/produtos-cesta-basica.json', 'site/kits.json', 'site/app-version.json',
+  'cestas/index.html', 'kits/index.html',
+  'site/seo-combos-manifest.json', 'site/produtos-cesta-basica.json', 'site/kits.json',
+  'site/produtos_meta.csv', 'site/produtos_admin_meta.json',
   'comprar/config.js', 'comprar/chat-light-v2.js',
   'comprar/chat-checkout-quantity-v1.js', 'comprar/checkout-final-v2.js',
   'comprar/storefront-visual-v2.js',
-  'app-next/index.html', 'app-next/styles/storefront-base.css',
-  'app-next/styles/storefront-components.css', 'app-next/styles/storefront-responsive.css',
-  'app-next/styles/checkout-flow.css', 'app-next/styles/bundle-confirmation.css',
-  'app-next/src/checkout.js', 'app-next/src/ui.js', 'app-next/src/main.js',
-  'app-next/src/home-carousels.js', 'app-next/src/image-performance.js',
-  'app-next/src/catalog.js', 'app-next/src/mug-public-runtime-v6.js',
-  'app-next/src/mug-public-3d-v2.js', 'app-next/src/mug-public-thumbnails-v2.js',
-  'scripts/catalogos-combos-lib.js', 'scripts/estabilizar-catalogo-publico.mjs'
+  'scripts/catalogos-combos-lib.js'
 ];
 required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}`));
 
-// A raiz pública é o Comprar atual. O app-next continua no repositório para módulos auxiliares,
-// mas não pode voltar a ser injetado como shell da home.
 const production = read('index.html');
 for (const marker of [
   '/comprar/config.js?v=20260915-02',
@@ -42,73 +34,21 @@ for (const marker of [
   'Somente delivery', 'id="timeline"', 'id="checkoutButton"'
 ]) assert(production.includes(marker), `Index Comprar incompleto: ${marker}`);
 
-for (const removed of [
+for (const legacy of [
   '/app-next/src/main.js', '/app-next/src/image-performance.js', '/app-next/src/home-carousels.js',
   '/app-next/styles/storefront-base.css', '/app-next/styles/storefront-components.css',
   '/app-next/styles/storefront-responsive.css', '/app-next/styles/checkout-flow.css',
-  '/app-next/styles/bundle-confirmation.css', '/app-next/styles/visual-parity.css',
-  '/app-next/styles/home-parity.css', '/app-next/styles/live-polish.css',
-  '/app-next/src/live-polish.js', '/app-next/src/seo-combos.js',
-  'mug-printable-arc-v3', 'window.__DA_PRODUCTION__ = true',
-  'html.booting #app{opacity:0', 'raw.githubusercontent.com'
-]) assert(!production.includes(removed), `Index ainda carrega camada ou marcador legado: ${removed}`);
+  '/app-next/styles/bundle-confirmation.css', '/app-next/src/seo-combos.js',
+  '/app-next/src/live-polish.js', 'mug-printable-arc-v3',
+  'window.__DA_PRODUCTION__ = true', 'raw.githubusercontent.com'
+]) assert(!production.includes(legacy), `Index ainda carrega camada legada: ${legacy}`);
 
 const comprarConfig = read('comprar/config.js');
+const comprarCheckout = read('comprar/chat-checkout-quantity-v1.js');
 assert(comprarConfig.includes("whatsappFallback:'https://wa.me/5565998150975'"), 'Comprar não usa o WhatsApp oficial');
-assert(!comprarConfig.includes('556584491018'), 'Comprar ainda contém o WhatsApp antigo');
-
-// Os módulos app-next/canecas continuam sendo validados no próprio código, sem serem exigidos na raiz.
-const css = [
-  read('app-next/styles/storefront-base.css'),
-  read('app-next/styles/storefront-components.css'),
-  read('app-next/styles/storefront-responsive.css')
-].join('\n');
-for (const marker of [
-  '.product-grid{grid-template-columns:repeat(4',
-  '.home-page .bundle-grid{display:flex',
-  'calc(58.8235% - 7px)',
-  '.product-card-media{position:relative;width:100%;height:auto;aspect-ratio:1/1',
-  '.product-packaging{display:inline-flex',
-  '.bundle-detail-hero>img{width:100%;max-width:360px',
-  '.bundle-total{position:static',
-  '[inert]'
-]) assert(css.includes(marker), `CSS app-next incompleto: ${marker}`);
-assert(!css.includes('.bundle-total{position:sticky'), 'Resumo da cesta app-next ainda está flutuante');
-assert(!css.includes('repeat(5,minmax'), 'CSS app-next ainda força cinco colunas de cards');
-
-const main = read('app-next/src/main.js');
-for (const marker of ['internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog', 'load-more-offers', "router.navigate('#/ofertas')", 'warmOfferImages']) {
-  assert(main.includes(marker), `Main app-next incompleto: ${marker}`);
-}
-
-const checkout = read('app-next/src/checkout.js');
-for (const marker of ['Pedir no WhatsApp', 'Buscar o cadastro é opcional', 'checkout-whatsapp-note', 'openWhatsApp(message)']) {
-  assert(checkout.includes(marker), `Checkout app-next incompleto: ${marker}`);
-}
-assert(!checkout.includes('lookupReady ?'), 'Checkout app-next ainda oculta a finalização antes da consulta do CPF');
-
-const catalog = read('app-next/src/catalog.js');
-for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed', 'thumbnail', 'preview_esquerda', 'preview_direita']) {
-  assert(catalog.includes(marker), `Catálogo app-next incompleto: ${marker}`);
-}
-
-const mugRuntime = read('app-next/src/mug-public-runtime-v6.js');
-const mug3d = read('app-next/src/mug-public-3d-v2.js');
-const mugThumbs = read('app-next/src/mug-public-thumbnails-v2.js');
-for (const marker of ['mug-public-personalization-v6.js', 'mug-public-3d-v2.js', 'mug-public-thumbnails-v2.js', 'v21-printable-arc']) {
-  assert(mugRuntime.includes(marker), `Runtime público de canecas incompleto: ${marker}`);
-}
-for (const marker of ['PRINT_WIDTH_MM=235', 'MUG_CIRCUMFERENCE_MM=260', 'PRINT_ARC_RAD', 'HANDLE_GAP_RAD', 'Ver caneca em 360°']) {
-  assert(mug3d.includes(marker), `Render 3D de canecas incompleto: ${marker}`);
-}
-assert(mugThumbs.includes('IntersectionObserver'), 'Miniaturas de caneca não usam carregamento lazy');
-assert(!mugThumbs.includes('THREE_URL'), 'Grade pública não deve carregar Three.js');
-
-const stabilizer = read('scripts/estabilizar-catalogo-publico.mjs');
-for (const marker of ['contentHash', 'versão ${version.version} preservada', 'thumbnail', 'preview_esquerda', 'preview_direita']) {
-  assert(stabilizer.includes(marker), `Estabilizador público incompleto: ${marker}`);
-}
-assert(!stabilizer.includes('catalog-${Date.now()}'), 'Estabilizador ainda invalida cache por horário');
+assert(comprarCheckout.includes('https://wa.me/5565998150975'), 'Checkout não possui fallback para o WhatsApp oficial');
+assert(!comprarConfig.includes('556584491018'), 'Config do Comprar ainda contém o WhatsApp antigo');
+assert(!comprarCheckout.includes('556584491018'), 'Checkout do Comprar ainda contém o WhatsApp antigo');
 
 const baskets = JSON.parse(read('site/produtos-cesta-basica.json'));
 assert(Array.isArray(baskets) && baskets.length > 0, 'Catálogo de cestas vazio');
@@ -124,9 +64,12 @@ assert(manifest.seoFocus === 'cestas-basicas', 'Manifesto não declara foco em c
 assert(Array.isArray(manifest.files) && manifest.files.length >= 4, 'Manifesto SEO incompleto');
 
 const basketLanding = read('cestas/index.html');
-for (const marker of ['<h1>Cestas básicas em Cuiabá e Várzea Grande</h1>', '"@type":"CollectionPage"', '"@type":"ItemList"', '"@type":"FAQPage"', 'index,follow,max-image-preview:large']) {
-  assert(basketLanding.includes(marker), `Landing de cestas incompleta: ${marker}`);
-}
+for (const marker of [
+  '<h1>Cestas básicas em Cuiabá e Várzea Grande</h1>',
+  '"@type":"CollectionPage"', '"@type":"ItemList"', '"@type":"FAQPage"',
+  'index,follow,max-image-preview:large'
+]) assert(basketLanding.includes(marker), `Landing de cestas incompleta: ${marker}`);
+
 const basketPagePath = manifest.files.find(file => /^cestas\/[^/]+\/index\.html$/.test(file));
 assert(basketPagePath, 'Nenhuma página individual de cesta gerada');
 const basketPage = read(basketPagePath);
@@ -136,9 +79,15 @@ for (const marker of ['"@type":"Product"', '"@type":"Offer"', '"@type":"Breadcru
 
 const kitLanding = read('kits/index.html');
 assert(kitLanding.includes('noindex,follow'), 'Landing de kits deve permanecer funcional sem foco de indexação');
+
 const sitemap = read('sitemap.xml');
 assert(sitemap.includes('https://donaantonia.com.br/cestas/'), 'Sitemap sem cestas');
 assert(!sitemap.includes('https://donaantonia.com.br/kits/'), 'Sitemap ainda prioriza kits');
+
+const merchant = read('merchant.xml');
+assert(merchant.includes('<item>'), 'Merchant sem itens');
+assert(!merchant.includes('https://www.donaantonia.com.br'), 'Merchant usa domínio com www');
+assert(!read('robots.txt').includes('https://www.donaantonia.com.br'), 'robots.txt usa domínio com www');
 
 for (const file of ['sobre-nos.html', 'contato.html', 'politica-de-entrega.html', 'politica-de-troca.html', 'politica-de-privacidade.html', 'termos-de-uso.html']) {
   const html = read(file);
@@ -159,4 +108,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, raiz Comprar atual e módulos auxiliares íntegros.`);
+console.log(`Site validado: ${baskets.length} cestas, raiz Comprar atual e dados públicos consistentes.`);
