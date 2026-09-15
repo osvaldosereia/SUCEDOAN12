@@ -7,8 +7,8 @@ const css=readFileSync('comprar/styles.css','utf8');
 const app=readFileSync('comprar/app.js','utf8');
 
 for(const [name,html,prefix] of [['Comprar',buy,'./'],['Raiz',root,'/comprar/']]){
-  assert.match(html,new RegExp(`${prefix.replace('/','\\/')}styles\\.css\\?v=20260915-chat-01`),`${name} deve carregar CSS híbrido`);
-  for(const file of ['config.js','app.js','baskets.js','products.js','upsell.js','checkout.js','help.js','admin-test-bridge.js'])assert.match(html,new RegExp(`${prefix.replace('/','\\/')}${file.replace('.','\\.')}\\?v=20260915-chat-01`),`${name} deve carregar ${file}`);
+  assert.match(html,new RegExp(`${prefix.replace('/','\\/')}styles\\.css\\?v=20260915-05-chat-01`),`${name} deve carregar CSS híbrido`);
+  for(const file of ['config.js','app.js','baskets.js','products.js','upsell.js','checkout.js','help.js','admin-test-bridge.js'])assert.match(html,new RegExp(`${prefix.replace('/','\\/')}${file.replace('.','\\.')}\\?v=20260915-05-chat-01`),`${name} deve carregar ${file}`);
   for(const old of ['chat-light-v2.js','chat-checkout-quantity-v1.js','checkout-final-v2.js','checkout-message-context-v1.js','phone-retry-v1.js','product-detail-v1.js','storefront-visual-v2.js','chat-helper-menu.js','admin-test-after-checkout.js'])assert.doesNotMatch(html,new RegExp(old.replaceAll('.','\\.')),`${name} não deve carregar ${old}`);
   assert.match(html,/DA_COMPRAR_APP\.start\(\)/,`${name} deve iniciar explicitamente o app`);
   assert.doesNotMatch(html,/id="cartAddProducts"/,`${name} não deve duplicar Adicionar produtos na barra fixa`);
