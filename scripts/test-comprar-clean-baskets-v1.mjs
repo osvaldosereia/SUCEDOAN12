@@ -26,6 +26,7 @@ assert.match(js,/basket-finish-anchor/,'Finalizar deve possuir âncora de rolage
 assert.match(js,/quantity_editable/,'prévia deve respeitar política de edição');
 assert.match(js,/min_quantity/,'prévia deve respeitar mínimo');
 assert.match(js,/max_quantity/,'prévia deve respeitar máximo');
+assert.match(js,/commercial_total/,'cesta selecionada deve exibir também o total comercial retornado pelo backend');
 assert.match(js,/restoreFromOpen/,'sessão com cesta existente deve poder ser restaurada');
 
 console.log('OK: contrato limpo de cestas');
