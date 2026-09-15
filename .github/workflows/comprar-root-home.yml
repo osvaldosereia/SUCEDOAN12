@@ -1,0 +1,35 @@
+name: Comprar na raiz
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'comprar/**'
+      - 'scripts/test-comprar-root-home-v1.mjs'
+      - '.github/workflows/comprar-root-home.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'comprar/**'
+      - 'scripts/test-comprar-root-home-v1.mjs'
+      - '.github/workflows/comprar-root-home.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Validar raiz usando Comprar
+        run: |
+          node scripts/test-comprar-root-home-v1.mjs
+          node --check comprar/chat-light-v2.js
+          node --check comprar/chat-checkout-quantity-v1.js
+          node --check comprar/phone-retry-v1.js
