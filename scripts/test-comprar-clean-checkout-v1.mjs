@@ -27,6 +27,7 @@ for(const fn of ['renderIdentification','renderVerification','renderNewCustomer'
 assert.match(js,/app\.confirmOrder/,'confirmação deve usar transporte central compatível com Admin V3');
 assert.match(js,/orderSaved/,'checkout deve impedir persistência duplicada do pedido');
 assert.match(js,/whatsapp_url/,'checkout deve preservar retorno oficial ao WhatsApp');
+assert.match(js,/commercial_total/,'resumo final deve aceitar total comercial quando o backend não enviar total');
 assert.match(js,/dataset\.busy/,'botões críticos devem ter trava local contra clique duplo');
 
 console.log('OK: contrato limpo de checkout');
