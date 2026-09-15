@@ -16,12 +16,13 @@
 
   function renderEntry({auto=false,section=''}={}){
     document.querySelectorAll('.stage.products-entry-stage,.stage.products-stage,.stage.checkout-stage,.stage.order-review-stage').forEach(el=>el.remove());
+    if(!auto||section)return openSection(section||'Para Você');
     const host=stage(2,'Adicionar produtos','','products-entry-stage');if(!host)return null;
     const chips=document.createElement('div');chips.className='chips products-entry-chips';host.appendChild(chips);
     for(const label of ['Para Você','Para Casa','Ofertas']){
       const button=document.createElement('button');button.type='button';button.className='chip';button.textContent=label;button.onclick=()=>openSection(label);chips.appendChild(button);
     }
-    if(section)openSection(section);else if(!auto)app.scrollTo(host,{block:'start'});return host;
+    return host;
   }
 
   async function openSection(label='Para Você'){
