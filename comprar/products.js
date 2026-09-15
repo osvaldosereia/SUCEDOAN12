@@ -14,6 +14,29 @@
     return {customerCategory:'Para Você',offers:false,label:'Para Você'};
   }
 
+  function hasOfferPrice(product){
+    if(product?.is_offer!==true||product?.offer_price===null||product?.offer_price===undefined||product?.offer_price==='')return false;
+    const value=Number(product.offer_price);return Number.isFinite(value)&&value>=0;
+  }
+
+  function effectiveProductPrice(product){return hasOfferPrice(product)?Number(product.offer_price):Number(product?.price||0)}
+
+  function appendProductPrice(host,product){
+    const pricing=document.createElement('div');pricing.className='product-pricing';
+    if(hasOfferPrice(product)){
+      const regular=document.createElement('span');regular.className='product-price-regular';regular.textContent=money(product.price);pricing.appendChild(regular);
+      const offer=document.createElement('strong');offer.className='price product-price-offer';offer.textContent=money(product.offer_price);pricing.appendChild(offer);
+    }else{
+      const price=document.createElement('strong');price.className='price';price.textContent=money(product.price);pricing.appendChild(price);
+    }
+    host.appendChild(pricing);
+  }
+
+  function detailPriceHtml(product){
+    if(!hasOfferPrice(product))return `<strong class="product-detail-price">${money(product.price)}</strong>`;
+    return `<div class="product-detail-offer"><span class="product-offer-badge">OFERTA</span><span class="product-price-regular">${money(product.price)}</span><strong class="product-detail-price product-price-offer">${money(product.offer_price)}</strong></div>`;
+  }
+
   function renderEntry({auto=false,section=''}={}){
     document.querySelectorAll('.stage.products-entry-stage,.stage.products-stage,.stage.checkout-stage,.stage.order-review-stage').forEach(el=>el.remove());
     if(!auto||section)return openSection(section||'Para Você');
@@ -85,19 +108,20 @@
   function productCard(product){
     const sync=productState(product),card=document.createElement('article');card.className='product';card.dataset.productId=String(product.id);
     const picture=image(product.image_url,product.name);picture.className='product-detail-trigger';picture.onclick=()=>openDetail(product);card.appendChild(picture);
+    if(hasOfferPrice(product)){const badge=document.createElement('span');badge.className='product-offer-badge';badge.textContent='OFERTA';card.appendChild(badge)}
     const title=document.createElement('h3');title.className='product-detail-trigger';title.textContent=product.name||'Produto';title.onclick=()=>openDetail(product);card.appendChild(title);
     const meta=document.createElement('div');meta.className='meta';meta.textContent=[product.brand,product.packaging].filter(Boolean).join(' · ');card.appendChild(meta);
-    const price=document.createElement('strong');price.className='price';price.textContent=money(product.price);card.appendChild(price);
+    appendProductPrice(card,product);
     const qty=document.createElement('div');qty.className='qty';const minus=document.createElement('button'),num=document.createElement('span'),plus=document.createElement('button');minus.type=plus.type='button';minus.textContent='−';plus.textContent='+';num.dataset.qty='1';num.textContent=String(sync.desiredQuantity);minus.onclick=()=>changeQuantity(product,-1);plus.onclick=()=>changeQuantity(product,1);qty.append(minus,num,plus);card.appendChild(qty);return card;
   }
 
   function refreshProductViews(productId){const sync=syncState.get(String(productId));if(!sync)return;document.querySelectorAll(`[data-product-id="${CSS.escape(String(productId))}"] [data-qty]`).forEach(node=>{node.textContent=String(sync.desiredQuantity)});if(detailLayer?.dataset.productId===String(productId)){const node=detailLayer.querySelector('[data-detail-qty]');if(node)node.textContent=String(sync.desiredQuantity)}}
   function applyOptimisticDelta(product,before,after){
     const cart=state.cart?structuredClone(state.cart):{items:[],total:0};if(!Array.isArray(cart.items))cart.items=[];
-    const key=String(product.id);let item=cart.items.find(entry=>String(entry.product_id)===key&&entry.source==='addon');
-    if(!item&&after>0){item={product_id:product.id,source:'addon',quantity:0,unit_price:Number(product.price||0),line_total:0,product:{id:product.id,name:product.name,image_url:product.image_url,price:product.price,customer_category:product.customer_category,customer_subcategory:product.customer_subcategory}};cart.items.push(item)}
-    if(item){item.quantity=after;item.line_total=after*Number(product.price||item.unit_price||0);if(after<=0)cart.items=cart.items.filter(entry=>entry!==item)}
-    const currentTotal=Number(cart.total??cart.commercial_total??0),nextTotal=Math.max(0,currentTotal+(after-before)*Number(product.price||0));cart.total=nextTotal;if(Object.prototype.hasOwnProperty.call(cart,'commercial_total'))cart.commercial_total=nextTotal;setCart(cart);
+    const key=String(product.id),unitPrice=effectiveProductPrice(product);let item=cart.items.find(entry=>String(entry.product_id)===key&&entry.source==='addon');
+    if(!item&&after>0){item={product_id:product.id,source:'addon',quantity:0,unit_price:unitPrice,line_total:0,product:{id:product.id,name:product.name,image_url:product.image_url,price:product.price,offer_price:product.offer_price,is_offer:product.is_offer,customer_category:product.customer_category,customer_subcategory:product.customer_subcategory}};cart.items.push(item)}
+    if(item){item.unit_price=unitPrice;item.quantity=after;item.line_total=after*unitPrice;if(after<=0)cart.items=cart.items.filter(entry=>entry!==item)}
+    const currentTotal=Number(cart.total??cart.commercial_total??0),nextTotal=Math.max(0,currentTotal+(after-before)*unitPrice);cart.total=nextTotal;if(Object.prototype.hasOwnProperty.call(cart,'commercial_total'))cart.commercial_total=nextTotal;setCart(cart);
   }
 
   function changeQuantity(product,delta){
@@ -119,7 +143,7 @@
 
   function openDetail(product){
     closeDetail();const sync=productState(product);detailLayer=document.createElement('div');detailLayer.className='product-detail-layer open';detailLayer.dataset.productId=String(product.id);
-    detailLayer.innerHTML=`<button class="product-detail-backdrop" type="button" aria-label="Fechar"></button><section class="product-detail-sheet" role="dialog" aria-modal="true"><button class="product-detail-close" type="button" aria-label="Fechar">×</button><div class="product-detail-image"></div><div class="product-detail-copy"><h2>${escapeHtml(product.name||'Produto')}</h2><p class="product-detail-meta">${escapeHtml([product.brand,product.packaging].filter(Boolean).join(' · '))}</p><strong class="product-detail-price">${money(product.price)}</strong>${product.description_short?`<p class="product-detail-description">${escapeHtml(product.description_short)}</p>`:''}<div class="product-detail-actions"><div class="product-detail-qty"><button type="button" data-detail-minus>−</button><strong data-detail-qty>${sync.desiredQuantity}</strong><button type="button" data-detail-plus>+</button></div></div></div></section>`;
+    detailLayer.innerHTML=`<button class="product-detail-backdrop" type="button" aria-label="Fechar"></button><section class="product-detail-sheet" role="dialog" aria-modal="true"><button class="product-detail-close" type="button" aria-label="Fechar">×</button><div class="product-detail-image"></div><div class="product-detail-copy"><h2>${escapeHtml(product.name||'Produto')}</h2><p class="product-detail-meta">${escapeHtml([product.brand,product.packaging].filter(Boolean).join(' · '))}</p>${detailPriceHtml(product)}${product.description_short?`<p class="product-detail-description">${escapeHtml(product.description_short)}</p>`:''}<div class="product-detail-actions"><div class="product-detail-qty"><button type="button" data-detail-minus>−</button><strong data-detail-qty>${sync.desiredQuantity}</strong><button type="button" data-detail-plus>+</button></div></div></div></section>`;
     detailLayer.querySelector('.product-detail-image').appendChild(image(product.image_url,product.name));detailLayer.querySelector('.product-detail-backdrop').onclick=closeDetail;detailLayer.querySelector('.product-detail-close').onclick=closeDetail;detailLayer.querySelector('[data-detail-minus]').onclick=()=>changeQuantity(product,-1);detailLayer.querySelector('[data-detail-plus]').onclick=()=>changeQuantity(product,1);document.body.appendChild(detailLayer);document.body.classList.add('product-detail-open');
   }
   function closeDetail(){if(detailLayer){detailLayer.remove();detailLayer=null}document.body.classList.remove('product-detail-open')}
