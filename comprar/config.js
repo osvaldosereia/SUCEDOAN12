@@ -8,6 +8,6 @@ window.DA_SHOPPING_ROOM_CONFIG=Object.freeze({
   adminTestApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-chat-admin-test-v1',
   legacyApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-room-v1',
   salesApi:'https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/shopping-room-sales-v1',
-  whatsappFallback:'https://wa.me/556584491018',
-  build:'20260915-comprar-checkout-v2-01'
+  whatsappFallback:'https://wa.me/5565998150975',
+  build:'20260915-comprar-checkout-v2-02'
 });

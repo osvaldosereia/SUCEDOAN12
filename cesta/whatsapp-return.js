@@ -1,6 +1,6 @@
 (()=>{
   const API="https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/basket-shop-v1";
-  const WHATSAPP_PHONE="556584491018";
+  const WHATSAPP_PHONE="5565998150975";
   const params=new URLSearchParams(location.search);
   const token=params.get("t")||"";
   const validToken=/^[a-f0-9]{64}$/i.test(token);

@@ -5,6 +5,8 @@ const addon=readFileSync('comprar/chat-checkout-quantity-v1.js','utf8');
 const checkout=readFileSync('comprar/checkout-final-v2.js','utf8');
 const config=readFileSync('comprar/config.js','utf8');
 const customerEdge=readFileSync('supabase/functions/shopping-chat-customer-v1/index.ts','utf8');
+const cestaReturn=readFileSync('cesta/whatsapp-return.js','utf8');
+const publicHome=readFileSync('index.html','utf8');
 
 // Ver a composição de uma cesta deve ser uma leitura, nunca uma inclusão no carrinho.
 assert.match(config,/basketStorefrontApi:\s*'[^']*basket-storefront-v1'/,'Comprar must expose the read-only basket detail API');
@@ -32,6 +34,16 @@ assert.match(addon,/PRODUTOS ADICIONADOS FORA DA CESTA/,'WhatsApp message must l
 assert.match(addon,/RESUMO DE VALORES/,'WhatsApp message must include a value summary');
 assert.match(addon,/DADOS PARA ATENDIMENTO/,'WhatsApp message must include customer and delivery data');
 assert.match(addon,/Olá! Gostaria de confirmar este pedido e o endereço de entrega\./,'WhatsApp message must end with the confirmation request');
+
+// Todo o fluxo ativo deve usar o mesmo WhatsApp oficial exibido no site.
+const officialWhatsApp='5565998150975';
+assert.match(publicHome,new RegExp(officialWhatsApp),'public home must expose the official WhatsApp number');
+assert.match(config,new RegExp(`whatsappFallback:'https://wa\\.me/${officialWhatsApp}'`),'Comprar fallback must use the official WhatsApp number');
+assert.match(addon,/C\.whatsappFallback/,'Comprar message builder must derive its destination from the official runtime config');
+assert.match(customerEdge,new RegExp(`WA_NUMBER='${officialWhatsApp}'`),'customer verification must use the official WhatsApp number');
+assert.match(cestaReturn,new RegExp(`WHATSAPP_PHONE="${officialWhatsApp}"`),'basket return must use the official WhatsApp number');
+assert.doesNotMatch(config,/556584491018/,'Comprar must not retain the former WhatsApp number');
+assert.doesNotMatch(customerEdge,/556584491018/,'customer verification must not retain the former WhatsApp number');
 
 // A nova confirmação de identidade deve abrir o WhatsApp no contexto atual, sem target=_blank.
 const verification=checkout.match(/function renderVerification[\s\S]*?(?=\n\s*async function checkVerification)/)?.[0]||'';
