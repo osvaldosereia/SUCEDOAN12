@@ -173,7 +173,10 @@
     const key=String(product.id);let item=cart.items.find(entry=>String(entry.product_id)===key&&entry.source==='addon');
     if(!item&&after>0){item={product_id:product.id,source:'addon',quantity:0,unit_price:Number(product.price||0),line_total:0,product:{id:product.id,name:product.name,image_url:product.image_url,price:product.price}};cart.items.push(item)}
     if(item){item.quantity=after;item.line_total=after*Number(product.price||item.unit_price||0);if(after<=0)cart.items=cart.items.filter(entry=>entry!==item)}
-    cart.total=Math.max(0,Number(cart.total||0)+(after-before)*Number(product.price||0));
+    const currentTotal=Number(cart.total??cart.commercial_total??0);
+    const nextTotal=Math.max(0,currentTotal+(after-before)*Number(product.price||0));
+    cart.total=nextTotal;
+    if(Object.prototype.hasOwnProperty.call(cart,'commercial_total'))cart.commercial_total=nextTotal;
     setCart(cart);
   }
 
