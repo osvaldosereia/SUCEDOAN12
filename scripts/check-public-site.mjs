@@ -15,6 +15,9 @@ const required = [
   'politica-de-troca.html', 'politica-de-privacidade.html', 'termos-de-uso.html',
   'cestas/index.html', 'kits/index.html', 'site/seo-combos-manifest.json',
   'site/produtos-cesta-basica.json', 'site/kits.json', 'site/app-version.json',
+  'comprar/config.js', 'comprar/chat-light-v2.js',
+  'comprar/chat-checkout-quantity-v1.js', 'comprar/checkout-final-v2.js',
+  'comprar/storefront-visual-v2.js',
   'app-next/index.html', 'app-next/styles/storefront-base.css',
   'app-next/styles/storefront-components.css', 'app-next/styles/storefront-responsive.css',
   'app-next/styles/checkout-flow.css', 'app-next/styles/bundle-confirmation.css',
@@ -26,29 +29,35 @@ const required = [
 ];
 required.forEach(file => assert(exists(file), `Arquivo público ausente: ${file}`));
 
+// A raiz pública é o Comprar atual. O app-next continua no repositório para módulos auxiliares,
+// mas não pode voltar a ser injetado como shell da home.
 const production = read('index.html');
 for (const marker of [
-  'mug-printable-arc-v3',
-  '/app-next/styles/storefront-base.css',
-  '/app-next/styles/storefront-components.css',
-  '/app-next/styles/storefront-responsive.css',
-  '/app-next/styles/checkout-flow.css',
-  '/app-next/styles/bundle-confirmation.css',
-  '/app-next/src/image-performance.js',
-  '/app-next/src/home-carousels.js',
-  '/app-next/src/main.js',
-  '/app-next/src/mug-public-runtime-v6.js',
-  'window.__DA_PRODUCTION__ = true', '"@type":"OnlineStore"', '"@type":"WebSite"',
-  'Cestas Básicas em Cuiabá e Várzea Grande', 'id="menu-drawer"', 'inert'
-]) assert(production.includes(marker), `Index público incompleto: ${marker}`);
+  '/comprar/config.js?v=20260915-02',
+  '/comprar/chat-checkout-quantity-v1.js?v=20260915-03',
+  '/comprar/checkout-final-v2.js',
+  '/comprar/storefront-visual-v2.js',
+  '"@type":"OnlineStore"', '"@type":"WebSite"',
+  'Cestas Básicas em Cuiabá e Várzea Grande',
+  'Somente delivery', 'id="timeline"', 'id="checkoutButton"'
+]) assert(production.includes(marker), `Index Comprar incompleto: ${marker}`);
 
 for (const removed of [
-  '/app-next/styles/visual-parity.css', '/app-next/styles/home-parity.css',
-  '/app-next/styles/live-polish.css', '/app-next/src/live-polish.js',
-  '/app-next/src/seo-combos.js', 'html.booting #app{opacity:0',
-  'raw.githubusercontent.com'
+  '/app-next/src/main.js', '/app-next/src/image-performance.js', '/app-next/src/home-carousels.js',
+  '/app-next/styles/storefront-base.css', '/app-next/styles/storefront-components.css',
+  '/app-next/styles/storefront-responsive.css', '/app-next/styles/checkout-flow.css',
+  '/app-next/styles/bundle-confirmation.css', '/app-next/styles/visual-parity.css',
+  '/app-next/styles/home-parity.css', '/app-next/styles/live-polish.css',
+  '/app-next/src/live-polish.js', '/app-next/src/seo-combos.js',
+  'mug-printable-arc-v3', 'window.__DA_PRODUCTION__ = true',
+  'html.booting #app{opacity:0', 'raw.githubusercontent.com'
 ]) assert(!production.includes(removed), `Index ainda carrega camada ou marcador legado: ${removed}`);
 
+const comprarConfig = read('comprar/config.js');
+assert(comprarConfig.includes("whatsappFallback:'https://wa.me/5565998150975'"), 'Comprar não usa o WhatsApp oficial');
+assert(!comprarConfig.includes('556584491018'), 'Comprar ainda contém o WhatsApp antigo');
+
+// Os módulos app-next/canecas continuam sendo validados no próprio código, sem serem exigidos na raiz.
 const css = [
   read('app-next/styles/storefront-base.css'),
   read('app-next/styles/storefront-components.css'),
@@ -63,24 +72,24 @@ for (const marker of [
   '.bundle-detail-hero>img{width:100%;max-width:360px',
   '.bundle-total{position:static',
   '[inert]'
-]) assert(css.includes(marker), `CSS público incompleto: ${marker}`);
-assert(!css.includes('.bundle-total{position:sticky'), 'Resumo da cesta ainda está flutuante');
-assert(!css.includes('repeat(5,minmax'), 'CSS ainda força cinco colunas de cards');
+]) assert(css.includes(marker), `CSS app-next incompleto: ${marker}`);
+assert(!css.includes('.bundle-total{position:sticky'), 'Resumo da cesta app-next ainda está flutuante');
+assert(!css.includes('repeat(5,minmax'), 'CSS app-next ainda força cinco colunas de cards');
 
 const main = read('app-next/src/main.js');
 for (const marker of ['internalAppNavigation', 'da:catalog-refreshed', 'applyCatalog', 'load-more-offers', "router.navigate('#/ofertas')", 'warmOfferImages']) {
-  assert(main.includes(marker), `Main incompleto: ${marker}`);
+  assert(main.includes(marker), `Main app-next incompleto: ${marker}`);
 }
 
 const checkout = read('app-next/src/checkout.js');
 for (const marker of ['Pedir no WhatsApp', 'Buscar o cadastro é opcional', 'checkout-whatsapp-note', 'openWhatsApp(message)']) {
-  assert(checkout.includes(marker), `Checkout incompleto: ${marker}`);
+  assert(checkout.includes(marker), `Checkout app-next incompleto: ${marker}`);
 }
-assert(!checkout.includes('lookupReady ?'), 'Checkout ainda oculta a finalização antes da consulta do CPF');
+assert(!checkout.includes('lookupReady ?'), 'Checkout app-next ainda oculta a finalização antes da consulta do CPF');
 
 const catalog = read('app-next/src/catalog.js');
 for (const marker of ['cachedCatalog', 'refreshInBackground', 'da:catalog-refreshed', 'thumbnail', 'preview_esquerda', 'preview_direita']) {
-  assert(catalog.includes(marker), `Catálogo incompleto: ${marker}`);
+  assert(catalog.includes(marker), `Catálogo app-next incompleto: ${marker}`);
 }
 
 const mugRuntime = read('app-next/src/mug-public-runtime-v6.js');
@@ -150,4 +159,4 @@ const sampleCatalog = buildComboCatalog({
 });
 assert(sampleCatalog.active.length === 2, 'Catálogo de teste deveria manter cesta e kit funcionais');
 
-console.log(`Site validado: ${baskets.length} cestas, storefront atual e canecas com mídia art-only + 3D calibrado.`);
+console.log(`Site validado: ${baskets.length} cestas, raiz Comprar atual e módulos auxiliares íntegros.`);
