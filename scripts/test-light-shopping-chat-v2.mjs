@@ -128,4 +128,30 @@ assert.match(js,/async function showCheckout\(\)\{if\(state\.product\.syncing>0\
 assert.match(js,/product_not_available:'Este produto não está disponível no momento\.'/,'raw product availability errors must be translated for customers');
 assert.match(js,/quantity_exceeds_stock:'A quantidade escolhida é maior que o estoque disponível\.'/,'stock errors must be translated for customers');
 assert.match(js,/quantity_exceeds_customer_limit:'Você pode adicionar até 6 unidades deste produto\.'/,'quantity cap errors must be translated for customers');
+
+// Checkout address/payment v2: official WhatsApp, explicit address confirmation, six tender types and final review.
+const checkoutConfig=readFileSync('comprar/config.js','utf8');
+const checkoutEdge=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
+const checkoutAdminTestEdge=readFileSync('supabase/functions/shopping-chat-admin-test-v1/index.ts','utf8');
+assert.match(checkoutConfig,/5565998150975/,'public checkout must point to the official 99815-0975 WhatsApp');
+assert.doesNotMatch(checkoutConfig,/556584491018/,'public checkout must not keep the old WhatsApp fallback');
+assert.match(customerEdge,/WA_NUMBER='5565998150975'/,'identity verification must use the official WhatsApp');
+assert.match(js,/Este endereço continua correto\?/,'saved address must be explicitly confirmed in the requested model');
+assert.match(js,/Quero usar outro endereço/,'saved address confirmation must offer another address');
+for(const code of ['pix','cash','debit_card','credit_card','food_card','meal_card']){
+  assert.ok(js.includes(`'${code}'`),`checkout UI must expose payment code ${code}`);
+  assert.ok(checkoutEdge.includes(`'${code}'`),`shopping-chat edge must accept payment code ${code}`);
+  assert.ok(checkoutAdminTestEdge.includes(`'${code}'`),`admin test edge must accept payment code ${code}`);
+}
+for(const label of ['PIX','Dinheiro','Cartão de débito','Cartão de crédito','Vale-alimentação','Vale-refeição']){
+  assert.ok(js.includes(label),`checkout UI must show ${label}`);
+}
+assert.match(js,/Forma de pagamento confirmada:/,'payment selection must be visibly confirmed');
+assert.match(js,/Revise antes de confirmar/,'checkout must show a final review card');
+assert.match(js,/Entrega:/,'final review must show delivery address');
+assert.match(js,/Pagamento:/,'final review must show payment method');
+const paymentMigration='supabase/migrations/20260914223000_shopping_chat_checkout_payment_methods_v2.sql';
+assert.ok(existsSync(paymentMigration),'payment-method migration must exist');
+const paymentSql=readFileSync(paymentMigration,'utf8');
+for(const code of ['pix','cash','debit_card','credit_card','food_card','meal_card'])assert.ok(paymentSql.includes(`'${code}'`),`orders constraint must allow ${code}`);
 console.log('light_shopping_chat_v2_ok');
