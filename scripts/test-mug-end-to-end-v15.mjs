@@ -72,8 +72,9 @@ need(catalog,'arte_horizontal','Catálogo não preserva arte horizontal.');
 need(sync,'isPublicMugModel','Sincronizador não reconhece modelo público.');
 need(stabilizer,'modelo_publico','Estabilizador não preserva modelo_publico.');
 
-const printPage=read('caneca-print/index.html');
-need(printPage,'arte_horizontal','CanecaPrint não resolve arte_horizontal.');
+const printPage=read('caneca-print/index.html'),commerce=read('shared/mug-commerce-v1.js');
+need(printPage,"mugArt",'CanecaPrint não usa o resolvedor compartilhado de arte.');
+need(commerce,'record.arte_horizontal','Resolvedor compartilhado de impressão não reconhece arte_horizontal.');
 
 if(failures.length){console.error(`Canecas ponta a ponta FALHOU (${failures.length}):\n- ${failures.join('\n- ')}`);process.exit(1)}
-console.log('OK · Canecas ponta a ponta: raiz Dona Antônia isolada; 2 mockups + arte horizontal; Short manual; impressão usa somente arte_horizontal.');
+console.log('OK · Canecas ponta a ponta: raiz Dona Antônia isolada; 2 mockups + arte horizontal; Short manual; impressão resolve arte pelo helper compartilhado.');
