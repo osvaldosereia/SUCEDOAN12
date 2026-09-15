@@ -6,6 +6,7 @@ on:
       - 'index.html'
       - 'comprar/**'
       - 'scripts/test-comprar-root-home-v1.mjs'
+      - 'scripts/test-comprar-clean-activation-v1.mjs'
       - '.github/workflows/comprar-root-home.yml'
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - 'index.html'
       - 'comprar/**'
       - 'scripts/test-comprar-root-home-v1.mjs'
+      - 'scripts/test-comprar-clean-activation-v1.mjs'
       - '.github/workflows/comprar-root-home.yml'
 
 permissions:
@@ -30,6 +32,10 @@ jobs:
       - name: Validar raiz usando Comprar
         run: |
           node scripts/test-comprar-root-home-v1.mjs
-          node --check comprar/chat-light-v2.js
-          node --check comprar/chat-checkout-quantity-v1.js
-          node --check comprar/phone-retry-v1.js
+          node scripts/test-comprar-clean-activation-v1.mjs
+          node --check comprar/app.js
+          node --check comprar/baskets.js
+          node --check comprar/products.js
+          node --check comprar/checkout.js
+          node --check comprar/help.js
+          node --check comprar/admin-test-bridge.js
