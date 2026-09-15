@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Refinar o Comprar da Dona Antônia para ficar visualmente mais limpo, com menos interferência, fotos maiores e navegação mais óbvia; adicionar detalhe de produto ao toque; e redesenhar o fechamento do pedido para confirmar endereço e pagamento antes de enviar o resumo ao WhatsApp.
+Refinar o Comprar da Dona Antônia para ficar visualmente mais limpo, com menos interferência, fotos maiores e navegação mais óbvia; adicionar detalhe de produto ao toque; redesenhar o fechamento do pedido para confirmar endereço e pagamento antes de enviar o resumo ao WhatsApp; e garantir que o pedido seja salvo integralmente e possa ser consultado no Admin oficial.
 
 ## Princípios visuais
 
@@ -122,6 +122,38 @@ Botão final:
 
 O botão só fica ativo quando endereço e pagamento estiverem confirmados.
 
+## Persistência integral do pedido
+
+Antes de qualquer tentativa de abrir o WhatsApp, o pedido precisa estar persistido de forma completa e idempotente no banco.
+
+O registro operacional deve permitir reconstruir o pedido sem depender da mensagem do WhatsApp e deve conter, direta ou indiretamente por snapshots/itens relacionados:
+
+- ID interno e número legível do pedido;
+- data/hora de criação e confirmação;
+- origem `shopping_room`/Comprar;
+- cliente: ID, nome, WhatsApp, CPF/CNPJ quando houver e snapshot dos dados usados na compra;
+- endereço de entrega completo confirmado, incluindo localização/locator quando fornecida;
+- forma de pagamento confirmada;
+- cesta escolhida, quando houver;
+- todos os produtos, com product_id, SKU quando houver, nome snapshot, quantidade, preço unitário, total da linha e origem do item (cesta/alteração/extra);
+- subtotal/fiscal subtotal, outras despesas, desconto e total final;
+- IDs de carrinho, conversa e sessão quando disponíveis;
+- status operacional e status de integração;
+- dados suficientes para o Admin mostrar alterações da cesta e produtos extras.
+
+A operação de confirmação deve ser idempotente: repetir a abertura do WhatsApp ou tocar no fallback não pode gerar um segundo pedido.
+
+## Admin oficial
+
+O Admin atual em `/admin/` é anterior ao Admin V3. A versão mais nova deve se tornar o Admin oficial no caminho `/admin/`.
+
+- O Admin oficial precisa ter a área **Pedidos**.
+- Pedidos originados no Comprar devem aparecer junto dos demais pedidos suportados, com filtro de origem/status quando necessário.
+- A lista deve mostrar pelo menos: número do pedido, data, cliente/telefone, total, pagamento e status.
+- Ao abrir um pedido, o Admin deve mostrar todos os dados persistidos: cliente, endereço, pagamento, cesta, itens, alterações, extras, valores e IDs operacionais úteis.
+- O Admin deve ler da mesma fonte de verdade (`orders` + `order_items` e snapshots relacionados), não de uma cópia criada apenas para a interface.
+- Durante a promoção, `/admin-v3/` deve continuar funcionando como caminho de compatibilidade, mas `/admin/` passa a ser o endereço oficial.
+
 ## Abertura do WhatsApp
 
 - O pedido deve ser salvo primeiro.
@@ -151,6 +183,7 @@ O checkout deve consumir IDs de endereço já presentes em `room_checkout_previe
 - Criar módulo focado para checkout final e abertura do WhatsApp, reaproveitando APIs existentes.
 - Alterar funções de endereço no Supabase de forma compatível com sessões existentes.
 - Manter os fluxos atuais de carrinho e composição de cesta.
+- Evoluir o Admin V3 somente no necessário para Pedidos e promovê-lo a `/admin/` ao final, sem redesenhar outros módulos administrativos.
 
 ## Estados e erros
 
@@ -160,6 +193,7 @@ O checkout deve consumir IDs de endereço já presentes em `room_checkout_previe
 - Se WhatsApp não abrir, manter pedido salvo e mostrar fallback manual.
 - Se salvar/substituir endereço falhar, não avançar para pagamento como se estivesse confirmado.
 - Se forma de pagamento não estiver selecionada, bloquear o botão final com mensagem curta no próprio checkout.
+- Se a persistência integral do pedido falhar, não abrir o WhatsApp nem exibir o pedido como confirmado.
 
 ## Critérios de sucesso
 
@@ -169,14 +203,15 @@ O checkout deve consumir IDs de endereço já presentes em `room_checkout_previe
 - + continua sendo adição rápida.
 - Cliente recorrente com endereço correto conclui em três ações principais: confirmar endereço, escolher pagamento, confirmar/enviar.
 - Cliente pode substituir um endereço existente ou adicionar um segundo endereço de verdade.
+- Pedido completo é salvo antes do WhatsApp e pode ser aberto no Admin oficial.
+- `/admin/` representa a versão administrativa mais nova e contém a área de Pedidos.
 - WhatsApp abre uma única vez, com mensagem pronta e sem voltar automaticamente para o Comprar por causa de um segundo redirecionamento.
-- Pedido já está persistido antes da tentativa de abrir WhatsApp.
-- Testes automatizados cobrem produto, endereço, pagamento e WhatsApp.
+- Testes automatizados cobrem produto, endereço, pagamento, persistência do pedido, Admin e WhatsApp.
 
 ## Fora de escopo
 
 - Não alterar identidade visual da marca.
-- Não refazer Admin V3.
+- Não refazer módulos do Admin que não sejam necessários para Pedidos e para a promoção do Admin V3 a `/admin/`.
 - Não alterar Bling nesta etapa.
 - Não criar novo sistema de chat/IA.
 - Não alterar regras comerciais de preço/estoque/cestas além do necessário para refletir o estado atual no novo visual.
