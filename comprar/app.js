@@ -32,6 +32,8 @@
     valid_whatsapp_required:'Informe seu WhatsApp com DDD.',customer_document_required:'Informe o CPF para concluir.',customer_identification_required:'Preencha seus dados para concluir.',
     delivery_address_required:'Informe o endereço de entrega.',empty_cart:'Escolha uma cesta ou produto antes de finalizar.',product_not_available:'Este produto não está disponível no momento.',
     quantity_exceeds_stock:'A quantidade escolhida é maior que o estoque disponível.',quantity_exceeds_customer_limit:'Você atingiu o limite permitido para este produto.',
+    customer_identity_conflict:'Este WhatsApp já está vinculado a outro cadastro. Fale com a Dona Antônia para corrigirmos.',
+    order_persistence_failed:'Não consegui salvar seu pedido. Tente novamente.',order_items_persistence_failed:'Não consegui salvar os itens do pedido. Tente novamente.',
     invalid_response:'Não consegui concluir esta ação agora.'
   };
 
@@ -80,7 +82,7 @@
       if(!transport||typeof transport.confirmOrder!=='function')throw new Error('Modo de teste do Admin ainda não está pronto.');
       return transport.confirmOrder(payload);
     }
-    return api('confirm_order',payload);
+    return checkoutApi('confirm_order',payload);
   }
 
   function registerModule(name,module){if(!name||!module)throw new Error('Módulo inválido.');state.modules[name]=module;return module}

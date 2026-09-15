@@ -44,7 +44,7 @@ assert.match(choose,/renderSelectedBasket\(\)/);
 assert.match(choose,/state\.modules\.products\?\.renderEntry\?\.\(\{auto:true\}\)/,'after choosing a basket, stage 2 must open automatically');
 assert.match(choose,/scrollTo\(finish,\{block:'start'\}\)/,'scroll must retain Finalizar pedido directly above stage 2');
 
-// Produtos: filtros sticky, taxonomia simples e sincronização por produto.
+// Produtos: filtros sticky, taxonomia simples, paginação manual e sincronização por produto.
 for(const label of ['Para Você','Para Casa','Ofertas','Buscar produto','Todos'])assert.match(products,new RegExp(label));
 assert.match(products,/products-filter-sticky/);
 assert.match(products,/chips-categories/);
@@ -57,6 +57,8 @@ assert.match(products,/while\(sync\.desiredQuantity!==sync\.confirmedQuantity\)/
 assert.match(products,/registerPendingProductSync/,'only the affected product write must be tracked');
 assert.doesNotMatch(products,/pointerEvents='none'/,'product grid must not freeze while a quantity is saving');
 assert.match(products,/set_quantity/,'product quantity must use the official cart API');
+assert.doesNotMatch(products,/addEventListener\(['"]scroll['"]/,'scroll must not load more products');
+assert.match(products,/data-products-more/,'product pagination must expose Ver mais');
 assert.match(css,/\.products-filter-sticky\{[^}]*position:sticky/s,'search and chips must remain sticky');
 assert.match(css,/\.chips-subcategories \.chip\{[^}]*font-size:12px/s,'subcategory chips must be smaller and discreet');
 assert.match(css,/\.products-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s,'mobile product grid must remain two columns');
@@ -69,14 +71,20 @@ assert.match(edge,/customer_subsubcategory/);
 assert.match(edge,/subcategories/);
 assert.match(edge,/subsubcategories/);
 
-// Checkout: telefone primeiro, confirmação de endereço e recuperação de busy state.
+// Checkout: telefone primeiro, dados editáveis no chat e um único clique final.
 assert.match(checkout,/lookup_customer/,'checkout must look up an existing customer by phone');
 assert.match(checkout,/checkoutPhoneLookup/,'anonymous checkout must begin with phone lookup');
-assert.match(checkout,/Confirmar pelo WhatsApp/,'existing customers must verify WhatsApp ownership');
-assert.match(checkout,/verification_status/,'checkout must verify WhatsApp confirmation');
+assert.match(checkout,/renderCheckoutForm/,'existing/new customer must continue in the same chat form');
+assert.doesNotMatch(checkout,/Confirmar pelo WhatsApp/,'lookup must not leave the checkout to verify WhatsApp ownership');
+assert.doesNotMatch(checkout,/verification_status/,'checkout must not poll an intermediate WhatsApp verification');
+assert.doesNotMatch(checkout,/checkoutDocument/,'checkout must never render CPF');
+for(const id of ['checkoutName','checkoutPhone','checkoutStreet','checkoutNumber','checkoutNeighborhood','checkoutCity','checkoutState','checkoutPostal'])assert.match(checkout,new RegExp(id));
+assert.match(checkout,/checkout-payments/,'payment options must be in the same form');
+assert.match(checkout,/Confirmar e enviar pedido/,'final action must be explicit');
 assert.match(checkout,/reverse_geocode/,'GPS shortcut must reverse-geocode server-side');
-assert.match(checkout,/save_address/,'delivery addresses must be saved explicitly');
-assert.match(checkout,/local\.addressConfirmed=true/,'delivery address must be explicitly confirmed');
+assert.match(checkout,/commit_customer/,'customer changes must persist at final confirmation');
+assert.match(checkout,/save_address/,'delivery address must persist at final confirmation');
+assert.match(checkout,/set_payment/,'payment must persist at final confirmation');
 assert.match(checkout,/app\.confirmOrder/,'final order must use the single app transport');
 assert.match(checkout,/local\.orderSaved=true/,'final order must not be persisted twice');
 const openCheckout=checkout.match(/async function open\(button\)[\s\S]*?(?=\n\s*function render\()/)?.[0]||'';
@@ -85,11 +93,14 @@ assert.match(openCheckout,/finally/,'checkout must recover its trigger on every 
 assert.match(openCheckout,/setButtonBusy\(button,false\)/);
 assert.match(customerEdge,/action==='lookup_customer'/);
 assert.match(customerEdge,/lookup_customer_by_phone/);
-assert.match(customerEdge,/verification_required/);
-assert.match(customerEdge,/action==='verification_status'/);
+assert.match(customerEdge,/profile:/,'customer lookup must return sanitized checkout profile');
+assert.match(customerEdge,/action==='commit_customer'/);
+assert.doesNotMatch(customerEdge,/verification_required/,'customer edge must not require intermediate WhatsApp verification');
+assert.doesNotMatch(customerEdge,/action==='verification_status'/,'customer edge must not expose obsolete verification polling');
 assert.match(customerEdge,/action==='reverse_geocode'/);
 assert.match(customerEdge,/nominatim\.openstreetmap\.org\/reverse/);
 assert.match(customerEdge,/countrycodes=br/);
+// O ingest ainda pode reconhecer mensagens antigas de verificação de sessões históricas; o checkout novo não depende disso.
 assert.match(ingestMakeEdge,/confirm_web_room_identity_from_whatsapp_v1/);
 
 // Ajuda simples: só conversa/mídia; nunca catálogo ou carrinho.
@@ -98,17 +109,16 @@ assert.match(help,/uploadMedia/);
 assert.match(help,/setCheckoutMode/);
 assert.doesNotMatch(help,/start_basket|set_quantity|productsApi|renderPicker/,'simple Help must never alter shopping state');
 
-// Políticas persistidas no backend continuam protegidas.
+// Políticas antigas continuam no banco por compatibilidade, sem controlar o novo checkout web.
 const policyMigration='supabase/migrations/20260912125000_chat_quantity_phone_address_confirmation_v2.sql';
 assert.ok(existsSync(policyMigration),'quantity/phone policy migration must exist');
 const migration=readFileSync(policyMigration,'utf8');
 assert.match(migration,/quantity_editable\s*=\s*true/,'priced basket items must become quantity-editable');
 assert.match(migration,/customer_phone_primary_guard/,'incoming WhatsApp numbers must remain secondary when different from primary');
 const verifyMigration='supabase/migrations/20260912143000_web_room_identity_verification_and_whatsapp_return_v1.sql';
-assert.ok(existsSync(verifyMigration),'web-room verification migration must exist');
+assert.ok(existsSync(verifyMigration),'historical web-room verification migration must remain available for compatibility');
 const verifySql=readFileSync(verifyMigration,'utf8');
 assert.match(verifySql,/confirm_web_room_identity_from_whatsapp_v1/);
-assert.match(verifySql,/customer_verification_required/);
 const webEligibilityMigration='supabase/migrations/20260914203500_web_shopping_room_product_eligibility_v1.sql';
 assert.ok(existsSync(webEligibilityMigration),'web storefront eligibility migration must exist');
 const webEligibilitySql=readFileSync(webEligibilityMigration,'utf8');

@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.112.3";
 
 const ORIGINS=new Set(['https://donaantonia.com.br','https://www.donaantonia.com.br']);
+const PAYMENT=new Set(['pix','credit_card','meal_card','cash']);
 const cors=(req:Request)=>{const o=req.headers.get('origin');if(o&&!ORIGINS.has(o))return null;return {'Access-Control-Allow-Origin':o||'https://donaantonia.com.br','Access-Control-Allow-Headers':'content-type','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'}};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...(cors(req)||{}),'Content-Type':'application/json','Cache-Control':'no-store'}});
 const clean=(v:unknown,max=500)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
@@ -16,7 +17,7 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json(req,{ok:false,error:'invalid_json'},400)}
   const token=clean(body?.token,80),action=clean(body?.action,40).toLowerCase();if(!tokenOk(token))return json(req,{ok:false,error:'invalid_token'},400);
   const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data:session,error}=await sb.from('catalog_sessions').select('id,customer_id,status,expires_at').eq('public_token',token).maybeSingle();
+  const {data:session,error}=await sb.from('catalog_sessions').select('id,customer_id,status,expires_at,metadata').eq('public_token',token).maybeSingle();
   if(error)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);if(session.status!=='open'||new Date(session.expires_at).getTime()<=Date.now())return json(req,{ok:false,error:'room_unavailable'},409);
 
   if(action==='preview'){
@@ -34,6 +35,18 @@ Deno.serve(async(req:Request)=>{
     if(saveError)return json(req,{ok:false,error:'address_failed',detail:saveError.message},400);
     const {data:checkout}=await sb.rpc('room_checkout_preview',{p_public_token:token});
     return json(req,{ok:true,address:data,checkout});
+  }
+
+  if(action==='confirm_order'){
+    const method=clean(body?.payment_method||session.metadata?.payment_method,30);
+    if(!PAYMENT.has(method))return json(req,{ok:false,error:'payment_method_required'},400);
+    const address=body?.delivery_address&&typeof body.delivery_address==='object'?body.delivery_address:{};
+    const locator=body?.delivery_locator&&typeof body.delivery_locator==='object'?body.delivery_locator:null;
+    const finalAddress=locator?{...address,locator}:address;
+    const {data,error:confirmError}=await sb.rpc('room_confirm_web_order_v2',{p_public_token:token,p_delivery_address:finalAddress,p_payment_method:method});
+    if(confirmError)return json(req,{ok:false,error:'confirm_failed',detail:confirmError.message},400);
+    if(!data?.order_id)return json(req,{ok:false,error:'order_persistence_failed'},500);
+    return json(req,{ok:true,order:data,payment_method:data.payment_method||method});
   }
 
   return json(req,{ok:false,error:'unknown_action'},400);

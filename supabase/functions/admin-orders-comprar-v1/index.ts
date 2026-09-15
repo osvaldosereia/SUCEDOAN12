@@ -2,18 +2,19 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.112.3";
 
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const cors=(origin:string|null)=>({
-  ...(origin&&ALLOWED_ORIGINS.has(origin)?{"Access-Control-Allow-Origin":origin}:{}),
-  "Access-Control-Allow-Headers":"content-type, apikey, x-client-info",
-  "Access-Control-Allow-Methods":"POST, OPTIONS",
-  "Vary":"Origin"
-});
+const cors=(origin:string|null)=>({...(origin&&ALLOWED_ORIGINS.has(origin)?{"Access-Control-Allow-Origin":origin}:{}),"Access-Control-Allow-Headers":"content-type, apikey, x-client-info","Access-Control-Allow-Methods":"POST, OPTIONS","Vary":"Origin"});
 const json=(origin:string|null,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(origin),"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=300)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const integer=(v:unknown,min:number,max:number)=>Math.min(max,Math.max(min,Number.parseInt(String(v??min),10)||min));
 const safeSearch=(v:unknown)=>clean(v,100).replace(/[,%()]/g," ").trim();
 const validUuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80));
 const supportedSources=['storefront_v2','shopping_room'];
+const sanitizeCustomer=(value:any,fallbackPhone='')=>({name:clean(value?.name,160),phone:clean(value?.phone||fallbackPhone,40)});
+const sanitizeOrder=(order:any)=>{
+  const checkout=order?.checkout_snapshot&&typeof order.checkout_snapshot==='object'?{...order.checkout_snapshot}:{};
+  if(checkout.customer)checkout.customer=sanitizeCustomer(checkout.customer,order?.phone_e164);
+  return {...order,customer_snapshot:{name:sanitizeCustomer(order?.customer_snapshot,order?.phone_e164).name,phone:sanitizeCustomer(order?.customer_snapshot,order?.phone_e164).phone},checkout_snapshot:{...checkout,customer:checkout.customer?{name:checkout.customer.name,phone:checkout.customer.phone}:undefined}};
+};
 
 Deno.serve(async(req:Request)=>{
   const origin=req.headers.get('origin');
@@ -27,18 +28,19 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json(origin,{ok:false,error:'invalid_json'},400)}
   const action=clean(body?.action||'list',30).toLowerCase();
 
-  if(action==='health')return json(origin,{ok:true,version:1,sources:supportedSources});
+  if(action==='health')return json(origin,{ok:true,version:3,sources:supportedSources});
 
   if(action==='list'){
     const page=integer(body?.page,1,100000),limit=integer(body?.limit,10,100),from=(page-1)*limit,to=from+limit-1;
     const status=clean(body?.status,40),source=clean(body?.source,40),q=safeSearch(body?.q);
-    let query=sb.from('orders').select('id,order_number,source,customer_id,phone_e164,status,total,subtotal,fiscal_subtotal,other_expenses,discount,payment_method,basket_id,basket_name_snapshot,sync_status,created_at,confirmed_at',{count:'exact'}).range(from,to).order('created_at',{ascending:false});
+    let query=sb.from('orders').select('id,order_number,source,customer_id,customer_snapshot,phone_e164,status,total,subtotal,fiscal_subtotal,other_expenses,discount,payment_method,basket_id,basket_name_snapshot,sync_status,created_at,confirmed_at',{count:'exact'}).range(from,to).order('created_at',{ascending:false});
     if(source&&supportedSources.includes(source))query=query.eq('source',source);else query=query.in('source',supportedSources);
     if(status)query=query.eq('status',status);
     if(q)query=query.or(`order_number.ilike.%${q}%,phone_e164.ilike.%${q}%`);
     const {data,error,count}=await query;
     if(error)return json(origin,{ok:false,error:'orders_failed',detail:error.message},400);
-    return json(origin,{ok:true,orders:data||[],total:count||0,page,limit});
+    const orders=(data||[]).map((order:any)=>{const customer=sanitizeCustomer(order?.customer_snapshot,order?.phone_e164);return {...order,customer_snapshot:{name:customer.name,phone:customer.phone}}});
+    return json(origin,{ok:true,orders,total:count||0,page,limit});
   }
 
   if(action==='detail'){
@@ -47,7 +49,7 @@ Deno.serve(async(req:Request)=>{
     if(error||!order)return json(origin,{ok:false,error:'order_not_found'},404);
     const {data:items,error:itemsError}=await sb.from('order_items').select('id,product_id,sku_snapshot,name_snapshot,quantity,unit_price,line_total,metadata,created_at').eq('order_id',id).order('created_at',{ascending:true});
     if(itemsError)return json(origin,{ok:false,error:'order_items_failed',detail:itemsError.message},400);
-    return json(origin,{ok:true,order,items:items||[]});
+    return json(origin,{ok:true,order:sanitizeOrder(order),items:items||[]});
   }
 
   return json(origin,{ok:false,error:'unknown_action'},400);

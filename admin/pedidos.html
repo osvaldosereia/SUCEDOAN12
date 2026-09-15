@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Pedidos</title>
   <link rel="stylesheet" href="/admin-v3/styles.css?v=20260911-2">
-  <link rel="stylesheet" href="/admin-v3/pedidos-v2.css?v=20260915-1">
+  <link rel="stylesheet" href="/admin-v3/pedidos-v2.css?v=20260915-2">
 </head>
 <body>
   <header class="topbar">
@@ -32,7 +32,7 @@
       </nav>
     </aside>
     <main class="content orders-page">
-      <div class="page-head"><div><h1>Pedidos</h1><p>Pedidos salvos no Comprar e na vitrine, com todos os dados para conferência.</p></div><div class="page-actions"><button id="refreshOrders" class="secondary" type="button">Atualizar</button></div></div>
+      <div class="page-head"><div><h1>Pedidos</h1><p>Pedidos mais recentes do Comprar, com cliente, pagamento e dados para conferência.</p></div><div class="page-actions"><button id="refreshOrders" class="secondary" type="button">Atualizar</button></div></div>
       <form id="filterForm" class="toolbar orders-toolbar">
         <div class="search"><input name="q" type="search" placeholder="Buscar pedido ou telefone"></div>
         <select name="source" aria-label="Origem"><option value="">Todas as origens</option><option value="shopping_room">Comprar</option><option value="storefront_v2">Vitrine antiga</option></select>
@@ -41,12 +41,12 @@
       </form>
       <section class="panel">
         <div class="orders-meta"><span id="pageInfo" class="muted"></span><div class="pagination"><button id="prevPage" class="secondary" type="button">Anterior</button><button id="nextPage" class="secondary" type="button">Próxima</button></div></div>
-        <div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Data</th><th>Telefone</th><th>Cesta</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr></thead><tbody id="orderRows"></tbody></table></div>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Telefone</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Ações</th></tr></thead><tbody id="orderRows"></tbody></table></div>
       </section>
     </main>
   </div>
   <dialog id="orderDialog" class="editor-dialog"><div id="orderDialogBody"></div></dialog>
   <div id="toastRegion" class="toasts" aria-live="polite"></div>
-  <script type="module" src="/admin-v3/pedidos-v2.js?v=20260915-1"></script>
+  <script type="module" src="/admin-v3/pedidos-v2.js?v=20260915-2"></script>
 </body>
 </html>

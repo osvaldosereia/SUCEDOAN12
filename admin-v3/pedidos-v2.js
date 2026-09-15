@@ -22,16 +22,16 @@ function addressText(a={}){return [a.street,a.number&&`nº ${a.number}`,a.comple
 function renderRows(rows=[]){
   const host=$('orderRows');
   if(!rows.length){host.innerHTML='<tr><td colspan="8"><div class="empty">Nenhum pedido encontrado.</div></td></tr>';return}
-  host.innerHTML=rows.map(o=>`<tr>
+  host.innerHTML=rows.map(o=>{const customer=o.customer_snapshot||{};return `<tr>
     <td><strong>${esc(o.order_number||o.id.slice(0,8))}</strong><div class="muted">${esc(source(o.source))}</div></td>
     <td>${esc(date(o.created_at))}</td>
-    <td>${esc(o.phone_e164||'—')}</td>
-    <td>${esc(o.basket_name_snapshot||'—')}</td>
+    <td><strong>${esc(customer.name||'Cliente')}</strong></td>
+    <td>${esc(o.phone_e164||customer.phone||'—')}</td>
     <td>${money(o.total)}</td>
     <td>${esc(payment(o.payment_method))}</td>
     <td><span class="badge">${esc(status(o.status))}</span></td>
     <td><button type="button" data-order-id="${esc(o.id)}">Ver pedido</button></td>
-  </tr>`).join('');
+  </tr>`}).join('');
 }
 
 function renderPager(){const pages=Math.max(1,Math.ceil(state.total/state.limit));$('pageInfo').textContent=`Página ${state.page} de ${pages} · ${state.total} pedido${state.total===1?'':'s'}`;$('prevPage').disabled=state.page<=1;$('nextPage').disabled=state.page>=pages}
@@ -56,7 +56,7 @@ async function openOrder(id){
     body.innerHTML=`<div class="editor-shell order-detail-shell">
       <div class="editor-head"><div><div class="eyebrow">${esc(source(o.source))}</div><h2>Pedido ${esc(o.order_number||o.id)}</h2><div class="muted">${esc(date(o.created_at))}</div></div><button class="close-dialog" type="button" data-close-order>×</button></div>
       <div class="order-detail-grid">
-        <section class="panel"><h3>Cliente</h3><p><strong>${esc(customer.name||'Cliente')}</strong></p><p>${esc(o.phone_e164||customer.phone||'—')}</p>${customer.cpf_cnpj?`<p>CPF/CNPJ: ${esc(customer.cpf_cnpj)}</p>`:''}${phoneLink(o.phone_e164||customer.phone)?`<a class="secondary maps-link" href="${phoneLink(o.phone_e164||customer.phone)}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}</section>
+        <section class="panel"><h3>Cliente</h3><p><strong>${esc(customer.name||'Cliente')}</strong></p><p>${esc(o.phone_e164||customer.phone||'—')}</p>${phoneLink(o.phone_e164||customer.phone)?`<a class="secondary maps-link" href="${phoneLink(o.phone_e164||customer.phone)}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}</section>
         <section class="panel"><h3>Entrega</h3><p>${esc(addressText(addr))}</p>${addr.locator&&typeof addr.locator==='object'?`<p class="muted">Localização recebida do aparelho.</p>`:''}</section>
         <section class="panel"><h3>Pagamento</h3><p><strong>${esc(payment(o.payment_method))}</strong></p><p>Status: ${esc(status(o.status))}</p><p>Integração: ${esc(o.sync_status||'local')}</p></section>
         <section class="panel"><h3>Cesta</h3><p><strong>${esc(o.basket_name_snapshot||'Sem cesta base')}</strong></p><p class="muted">Origem: ${esc(source(o.source))}</p></section>
