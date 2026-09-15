@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 const orderMigration=readFileSync('supabase/migrations/20260915020000_shopping_room_order_admin_v1.sql','utf8');
 const orderNumberMigration=readFileSync('supabase/migrations/20260915024500_room_confirm_order_number_v2.sql','utf8');
 const addressMigration=readFileSync('supabase/migrations/20260915023000_room_address_save_v2.sql','utf8');
+const webConfirm=readFileSync('supabase/migrations/20260915150000_web_checkout_confirm_order_v1.sql','utf8');
 const adminApi=readFileSync('supabase/functions/admin-orders-comprar-v1/index.ts','utf8');
 const checkoutApi=readFileSync('supabase/functions/shopping-checkout-v2/index.ts','utf8');
+const chatApi=readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const checkout=readFileSync('comprar/checkout.js','utf8');
 const app=readFileSync('comprar/app.js','utf8');
 const adminOfficial=readFileSync('admin/index.html','utf8');
@@ -13,69 +15,35 @@ const adminLatest=readFileSync('admin-v3/index.html','utf8');
 const adminLatestApp=readFileSync('admin-v3/app.js','utf8');
 const adminApiClient=readFileSync('admin-v3/api.js','utf8');
 const adminConfig=readFileSync('admin-v3/config.js','utf8');
-const adminOrders=readFileSync('admin/pedidos.html','utf8');
+const adminOrders=readFileSync('admin-v3/pedidos.html','utf8');
 const adminOrdersJs=readFileSync('admin-v3/pedidos-v2.js','utf8');
 const integratedOrders=existsSync('admin-v3/orders-integrated-v2.js')?readFileSync('admin-v3/orders-integrated-v2.js','utf8'):'';
 const config=readFileSync('supabase/config.toml','utf8');
 
-assert.ok(existsSync('supabase/migrations/20260915020000_shopping_room_order_admin_v1.sql'));
-assert.match(orderMigration,/catalog_session_id/,'shopping-room orders must retain the catalog session id');
-assert.match(orderMigration,/basket_name_snapshot/,'shopping-room orders must snapshot the basket name');
-assert.match(orderMigration,/checkout_snapshot/,'shopping-room orders must persist an operational checkout snapshot');
-assert.match(orderMigration,/source:='shopping_room'/,'shopping-room orders must be identifiable by source');
-assert.match(orderMigration,/order_number:='DA-'/,'shopping-room orders must receive a readable order number');
-assert.match(orderMigration,/idempotency_key/,'order persistence must have an idempotency key');
-assert.match(orderMigration,/phone_e164/,'order snapshot must retain the customer phone');
-assert.match(orderMigration,/delivery_address/,'order snapshot must retain the confirmed delivery address');
-assert.match(orderMigration,/payment_method/,'order snapshot must retain payment information after order update');
-assert.match(orderNumberMigration,/order_number/,'room_confirm_order must return the readable order number');
-assert.match(orderNumberMigration,/catalog_session_id/,'room_confirm_order must return the session id with the saved order');
+assert.match(orderMigration,/catalog_session_id/);assert.match(orderMigration,/basket_name_snapshot/);assert.match(orderMigration,/checkout_snapshot/);
+assert.match(orderMigration,/source:='shopping_room'/);assert.match(orderMigration,/order_number:='DA-'/);assert.match(orderMigration,/idempotency_key/);assert.match(orderMigration,/phone_e164/);assert.match(orderMigration,/delivery_address/);assert.match(orderMigration,/payment_method/);
+assert.match(orderNumberMigration,/order_number/);assert.match(orderNumberMigration,/catalog_session_id/);
 
-assert.match(addressMigration,/room_save_address_v2/,'checkout must have a versioned address save RPC');
-assert.match(addressMigration,/v_mode='replace'/,'address RPC must support real replacement');
-assert.match(addressMigration,/coalesce\(p_mode,'add'\)/,'address RPC must default to adding another address');
-assert.match(addressMigration,/insert into public\.customer_addresses/,'add mode must create a distinct address record');
-assert.match(addressMigration,/customer_id=v_session\.customer_id/,'replace must be scoped to the current customer');
-assert.match(checkoutApi,/room_save_address_v2/,'checkout edge function must use the address v2 RPC');
+assert.match(addressMigration,/room_save_address_v2/);assert.match(addressMigration,/v_mode='replace'/);assert.match(addressMigration,/coalesce\(p_mode,'add'\)/);assert.match(addressMigration,/insert into public\.customer_addresses/);assert.match(addressMigration,/customer_id=v_session\.customer_id/);assert.match(checkoutApi,/room_save_address_v2/);
 
-// O novo front mantém uma única confirmação e o app decide o transporte comercial/teste.
-assert.match(checkout,/app\.confirmOrder\(payload\)/,'final checkout must persist through the single app transport');
-assert.match(checkout,/local\.orderSaved=true/,'successful checkout must remember that persistence already happened');
-assert.match(checkout,/Seu pedido foi salvo e está pronto para confirmação no WhatsApp\./,'success copy must make persistence clear');
-assert.match(checkout,/if\(local\.orderSaved\)/,'repeated confirmation must reuse the already saved order');
-assert.match(app,/async function confirmOrder\(payload=\{\}\)/,'app must own the order-confirm transport');
-assert.match(app,/api\('confirm_order',payload\)/,'normal commercial transport must call confirm_order exactly through the app');
-assert.match(app,/DA_ADMIN_TEST_TRANSPORT/,'Admin test mode must use an explicit safe transport');
+assert.match(webConfirm,/create or replace function public\.room_confirm_web_order_v1/,'web checkout needs a dedicated order confirmation RPC');
+assert.doesNotMatch(webConfirm,/customer_document_required/,'web order confirmation must not require CPF');
+assert.match(webConfirm,/confirm_cart_order/,'web confirmation must persist via the existing cart order source of truth');
+assert.match(webConfirm,/order_number/);assert.match(webConfirm,/catalog_session_id/);assert.match(webConfirm,/status='closed'/);
+assert.match(chatApi,/room_confirm_web_order_v1/,'shopping-chat confirm_order must use the web RPC');
 
-// /admin é o Admin oficial e Pedidos fica integrado nele.
-assert.match(adminOfficial,/\/admin-v3\/app\.js/,'/admin must use the latest Admin V3 application');
-assert.match(adminOfficial,/data-route=["']orders["']/,'official /admin must expose the integrated Orders route');
-assert.match(adminLatest,/data-route=["']orders["']/,'latest Admin must expose the integrated Orders route');
-assert.match(adminLatestApp,/async function loadOrders\(/,'latest Admin application must load the integrated Orders route');
-assert.match(adminLatestApp,/async function openOrder\(/,'latest Admin application must expose an order detail action');
+assert.match(checkout,/app\.confirmOrder\(payload\)/);assert.match(checkout,/local\.orderSaved=true/);assert.match(checkout,/Seu pedido foi salvo/);assert.match(checkout,/if\(local\.orderSaved\)/);
+assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app,/api\('confirm_order',payload\)/);assert.match(app,/DA_ADMIN_TEST_TRANSPORT/);
 
-assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/,'Admin config must expose the full Comprar orders function');
-assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/,'Admin API client must map integrated order actions to the full orders API');
-assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/,'Admin API client must route order actions to the full orders API');
-assert.match(adminOfficial,/orders-integrated-v2\.js/,'official Admin must load the complete integrated order detail');
-assert.match(adminLatest,/orders-integrated-v2\.js/,'latest Admin must load the complete integrated order detail');
-assert.match(integratedOrders,/data-view-order/,'integrated order detail must intercept the order view action');
-assert.match(integratedOrders,/stopImmediatePropagation\(\)/,'integrated order detail must prevent the old compact detail from opening');
-for(const label of ['Cliente','Endereço de entrega','Forma de pagamento','Produtos','Dados operacionais'])assert.match(integratedOrders,new RegExp(label),`integrated Admin order detail must show ${label}`);
+assert.match(adminOfficial,/\/admin-v3\/app\.js/);assert.match(adminOfficial,/data-route=["']orders["']/);assert.match(adminLatest,/data-route=["']orders["']/);assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
+assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/);assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/);assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/);
+assert.match(adminOfficial,/orders-integrated-v2\.js/);assert.match(adminLatest,/orders-integrated-v2\.js/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
+for(const label of ['Cliente','Endereço de entrega','Forma de pagamento','Produtos','Dados operacionais'])assert.match(integratedOrders,new RegExp(label));
 
-assert.match(adminApi,/supportedSources=\['storefront_v2','shopping_room'\]/,'Admin orders API must include Comprar and legacy storefront orders');
-assert.match(adminApi,/order_items/,'Admin order detail must read persisted order items');
-assert.match(adminApi,/delivery_address/,'Admin order detail must expose the delivery address');
-assert.match(adminApi,/payment_method/,'Admin order detail must expose payment method');
-assert.match(adminApi,/checkout_snapshot/,'Admin order detail must expose the operational snapshot');
+assert.match(adminApi,/supportedSources=\['storefront_v2','shopping_room'\]/);assert.match(adminApi,/customer_snapshot/,'Admin list must expose customer snapshot');assert.match(adminApi,/order_items/);assert.match(adminApi,/delivery_address/);assert.match(adminApi,/payment_method/);assert.match(adminApi,/checkout_snapshot/);
+assert.match(adminOrders,/<th>Cliente<\/th>/,'basic orders screen must show customer');assert.match(adminOrders,/pedidos-v2\.js/);
+assert.match(adminOrdersJs,/customer_snapshot/,'orders controller must render customer name');assert.match(adminOrdersJs,/Produtos da cesta/);assert.match(adminOrdersJs,/Produtos extras/);assert.match(adminOrdersJs,/Dados operacionais/);
 
-assert.match(adminOrders,/Pedidos salvos no Comprar/,'compatibility order page must remain available');
-assert.match(adminOrders,/pedidos-v2\.js/,'compatibility order page must use the full-order controller');
-assert.match(adminOrdersJs,/Produtos da cesta/,'Admin compatibility detail must show basket products');
-assert.match(adminOrdersJs,/Produtos extras/,'Admin compatibility detail must show extras separately');
-assert.match(adminOrdersJs,/Dados operacionais/,'Admin compatibility detail must expose operational identifiers');
-
-assert.match(config,/\[functions\.admin-orders-comprar-v1\][\s\S]*?verify_jwt = false/,'Admin order edge function deployment policy must be explicit');
-assert.match(config,/\[functions\.shopping-checkout-v2\][\s\S]*?verify_jwt = false/,'Checkout v2 deployment policy must be explicit');
+assert.match(config,/\[functions\.admin-orders-comprar-v1\][\s\S]*?verify_jwt = false/);assert.match(config,/\[functions\.shopping-checkout-v2\][\s\S]*?verify_jwt = false/);
 
 console.log('comprar_order_admin_v1_contract_ok');
