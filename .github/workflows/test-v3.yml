@@ -1,64 +1,38 @@
-name: Testar Admin V3 e Vitrine V3
+name: Testar Admin V3 e compatibilidade Vitrine
 
 on:
   push:
     branches:
-      - admin-v3-vitrine-v3-design-20260911
+      - main
     paths:
       - 'vitrine-v3/**'
-      - 'admin-v3/index.html'
-      - 'admin-v3/styles.css'
-      - 'admin-v3/config.js'
-      - 'admin-v3/api.js'
-      - 'admin-v3/app.js'
-      - 'admin-v3/basket-editor.js'
-      - 'admin-v3/products-inline-controls-v4.js'
-      - 'admin-v3/products-inline-controls-v4.css'
-      - 'admin-v3/nomes-produtos.html'
-      - 'admin-v3/product-name-management.js'
-      - 'admin-v3/product-name-management.css'
+      - 'admin-v3/**'
+      - 'admin/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
       - 'supabase/functions/admin-v3-product-names/**'
       - 'supabase/functions/admin-simple-v2/**'
-      - 'supabase/migrations/*storefront_v3*'
       - 'supabase/config.toml'
-      - 'scripts/test-storefront-v3-ui.mjs'
-      - 'scripts/test-storefront-v3-refinements.mjs'
-      - 'scripts/test-storefront-v3-senior-ux-polish.mjs'
-      - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - 'scripts/test-admin-v3-product-name-management.mjs'
+      - 'scripts/test-comprar-order-admin-v1.mjs'
       - '.github/workflows/test-v3.yml'
   pull_request:
     branches: [main]
     paths:
       - 'vitrine-v3/**'
-      - 'admin-v3/index.html'
-      - 'admin-v3/styles.css'
-      - 'admin-v3/config.js'
-      - 'admin-v3/api.js'
-      - 'admin-v3/app.js'
-      - 'admin-v3/basket-editor.js'
-      - 'admin-v3/products-inline-controls-v4.js'
-      - 'admin-v3/products-inline-controls-v4.css'
-      - 'admin-v3/nomes-produtos.html'
-      - 'admin-v3/product-name-management.js'
-      - 'admin-v3/product-name-management.css'
+      - 'admin-v3/**'
+      - 'admin/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-v3-api/**'
       - 'supabase/functions/admin-v3-product-names/**'
       - 'supabase/functions/admin-simple-v2/**'
-      - 'supabase/migrations/*storefront_v3*'
       - 'supabase/config.toml'
-      - 'scripts/test-storefront-v3-ui.mjs'
-      - 'scripts/test-storefront-v3-refinements.mjs'
-      - 'scripts/test-storefront-v3-senior-ux-polish.mjs'
-      - 'scripts/test-catalog-v3-contract.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - 'scripts/test-admin-v3-product-name-management.mjs'
+      - 'scripts/test-comprar-order-admin-v1.mjs'
       - '.github/workflows/test-v3.yml'
   workflow_dispatch:
 
@@ -81,34 +55,27 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Contrato Vitrine V3
-        run: node scripts/test-storefront-v3-ui.mjs
-      - name: Refinamentos Vitrine V3
-        run: node scripts/test-storefront-v3-refinements.mjs
-      - name: Polimento senior UX Vitrine V3
-        run: node scripts/test-storefront-v3-senior-ux-polish.mjs
-      - name: Contrato catálogo V3
-        run: node scripts/test-catalog-v3-contract.mjs
+      - name: Compatibilidade Vitrine V3
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'viewport-fit=cover' vitrine-v3/index.html
+          grep -q '../comprar/' vitrine-v3/index.html
+          grep -q 'location.replace' vitrine-v3/index.html
       - name: Contrato Admin V3
         run: node scripts/test-admin-v3-contract.mjs
       - name: Controles inline Admin V3
         run: node scripts/test-admin-v3-inline-product-controls.mjs
       - name: Gestão de nomes Admin V3
         run: node scripts/test-admin-v3-product-name-management.mjs
-      - name: Validar JavaScript V3
+      - name: Pedidos completos no Admin oficial
+        run: node scripts/test-comprar-order-admin-v1.mjs
+      - name: Validar JavaScript Admin
         run: |
-          node --check vitrine-v3/app.js
-          node --check vitrine-v3/catalog-api.js
-          node --check vitrine-v3/cache.js
-          node --check vitrine-v3/state.js
-          node --check vitrine-v3/products.js
-          node --check vitrine-v3/baskets.js
-          node --check vitrine-v3/cart.js
-          node --check vitrine-v3/checkout.js
-          node --check vitrine-v3/order-api.js
           node --check admin-v3/config.js
           node --check admin-v3/api.js
           node --check admin-v3/app.js
+          node --check admin-v3/orders-integrated-v2.js
           node --check admin-v3/basket-editor.js
           node --check admin-v3/products-inline-controls-v4.js
           node --check admin-v3/product-name-management.js
