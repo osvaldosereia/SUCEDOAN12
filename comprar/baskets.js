@@ -141,7 +141,8 @@
     if(!section)return null;
     const inner=document.createElement('div');inner.className='stage-inner';section.appendChild(inner);
     const hero=document.createElement('div');hero.className='basket-hero';hero.appendChild(image(basket.image_url,basket.name));
-    const copy=document.createElement('div');copy.innerHTML=`<h2>${escapeHtml(basket.name||'Sua cesta')}</h2><div class="value" data-cart-total>${money(state.cart?.total||basket.base_price)}</div>`;hero.appendChild(copy);inner.appendChild(hero);
+    const selectedTotal=state.cart?.total??state.cart?.commercial_total??basket.base_price;
+    const copy=document.createElement('div');copy.innerHTML=`<h2>${escapeHtml(basket.name||'Sua cesta')}</h2><div class="value" data-cart-total>${money(selectedTotal)}</div>`;hero.appendChild(copy);inner.appendChild(hero);
     const list=document.createElement('div');list.className='basket-list';inner.appendChild(list);
     for(const item of state.basketItems||[]){
       const product=item.product||item;
