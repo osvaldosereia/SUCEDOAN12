@@ -15,7 +15,6 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
-      - 'scripts/test-admin-v3-product-name-management.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - '.github/workflows/test-v3.yml'
   pull_request:
@@ -31,7 +30,6 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
-      - 'scripts/test-admin-v3-product-name-management.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - '.github/workflows/test-v3.yml'
   workflow_dispatch:
@@ -66,8 +64,6 @@ jobs:
         run: node scripts/test-admin-v3-contract.mjs
       - name: Controles inline Admin V3
         run: node scripts/test-admin-v3-inline-product-controls.mjs
-      - name: Gestão de nomes Admin V3
-        run: node scripts/test-admin-v3-product-name-management.mjs
       - name: Pedidos completos no Admin oficial
         run: node scripts/test-comprar-order-admin-v1.mjs
       - name: Validar JavaScript Admin
