@@ -24,6 +24,7 @@ assert.match(syncBlock,/while\s*\(/,'sincronização deve consolidar cliques em 
 assert.doesNotMatch(syncBlock.slice(syncBlock.indexOf('{')+1),/\bsyncProduct\s*\(/,'loop não pode se chamar recursivamente');
 assert.match(js,/registerPendingProductSync/,'cada sincronização deve ser registrada no estado central');
 assert.match(js,/set_quantity/,'produto deve persistir quantidade pela API oficial');
+assert.match(js,/commercial_total/,'carrinho otimista deve preservar o total comercial devolvido pelo backend');
 assert.match(js,/if\s*\(\s*requestGeneration\s*!==\s*generation\s*\)/,'respostas antigas de filtros/listagem devem ser ignoradas');
 assert.match(js,/openDetail/,'detalhe do produto deve pertencer ao mesmo módulo');
 assert.match(js,/closeDetail/,'detalhe deve fechar sem módulo decorador');
