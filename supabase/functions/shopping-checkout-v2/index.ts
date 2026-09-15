@@ -43,12 +43,10 @@ Deno.serve(async(req:Request)=>{
     const address=body?.delivery_address&&typeof body.delivery_address==='object'?body.delivery_address:{};
     const locator=body?.delivery_locator&&typeof body.delivery_locator==='object'?body.delivery_locator:null;
     const finalAddress=locator?{...address,locator}:address;
-    const {data,error:confirmError}=await sb.rpc('room_confirm_web_order_v1',{p_public_token:token,p_delivery_address:finalAddress});
+    const {data,error:confirmError}=await sb.rpc('room_confirm_web_order_v2',{p_public_token:token,p_delivery_address:finalAddress,p_payment_method:method});
     if(confirmError)return json(req,{ok:false,error:'confirm_failed',detail:confirmError.message},400);
     if(!data?.order_id)return json(req,{ok:false,error:'order_persistence_failed'},500);
-    const {error:updateError}=await sb.from('orders').update({payment_method:method,updated_at:new Date().toISOString()}).eq('id',data.order_id);
-    if(updateError)return json(req,{ok:false,error:'order_payment_update_failed',detail:updateError.message},500);
-    return json(req,{ok:true,order:data,payment_method:method});
+    return json(req,{ok:true,order:data,payment_method:data.payment_method||method});
   }
 
   return json(req,{ok:false,error:'unknown_action'},400);
