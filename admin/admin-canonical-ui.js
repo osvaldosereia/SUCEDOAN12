@@ -1,5 +1,6 @@
 (()=>{
   'use strict';
+  const PURCHASE_KINDS=new Set(['baskets','offers','products']);
   const PURCHASE_SELECTOR='[data-menu-item][data-kind="baskets"],[data-menu-item][data-kind="offers"],[data-menu-item][data-kind="products"]';
   const replacements=[
     ['Admin V3','Admin'],
@@ -18,8 +19,9 @@
   function hidePurchaseRows(){
     document.querySelectorAll(PURCHASE_SELECTOR).forEach(row=>{row.hidden=true;row.setAttribute('aria-hidden','true')});
     const rows=[...document.querySelectorAll('[data-menu-item]')];
+    const enabledRows=rows.filter(row=>row.querySelector('[data-field="enabled"]')?.checked!==false);
     const preview=[...document.querySelectorAll('#menuPreview .strategy-chip')];
-    rows.forEach((row,index)=>{if(['baskets','offers','products'].includes(row.dataset.kind||''))preview[index]?.classList.add('hidden')});
+    preview.forEach((chip,index)=>chip.classList.toggle('hidden',PURCHASE_KINDS.has(enabledRows[index]?.dataset.kind||'')));
     const panel=document.querySelector('#flowRoot .panel');
     if(panel&&!panel.querySelector('[data-canonical-quick-note]')){
       const note=document.createElement('p');note.dataset.canonicalQuickNote='1';note.className='strategy-help';note.textContent='Cestas, Ofertas e Produtos fazem parte do fluxo principal de compra e não aparecem nesta lista de dúvidas.';
