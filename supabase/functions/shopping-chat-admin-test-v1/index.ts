@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS=new Set(['https://donaantonia.com.br','https://www.donaantonia.com.br']);
-const PAYMENT=new Set(['pix','credit_card','meal_card','cash']);
+const PAYMENT=new Set(['pix','cash','debit_card','credit_card','food_card','meal_card']);
 const clean=(v:unknown,max=1000)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const cors=(req:Request)=>{
   const origin=req.headers.get('origin');
