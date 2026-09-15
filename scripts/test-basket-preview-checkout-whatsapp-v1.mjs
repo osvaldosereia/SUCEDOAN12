@@ -50,6 +50,13 @@ assert.doesNotMatch(confirmOrder,/setTimeout\(/,'final WhatsApp navigation must 
 assert.doesNotMatch(checkout,/whatsapp:\/\/send\?phone=/,'mobile web flow must not depend on a custom deep-link scheme that can bounce back to the storefront');
 assert.match(checkout,/https:\/\/wa\.me\//,'mobile flow must use the official WhatsApp universal click-to-chat link');
 
+// Nenhum módulo legado pode disparar uma segunda navegação automática depois do checkout v2.
+const legacySuccess=addon.match(/function decorateOrderSuccess[\s\S]*?(?=\n\s*function refresh)/)?.[0]||'';
+assert.match(legacySuccess,/checkout-whatsapp-return/,'legacy success state may keep a manual WhatsApp fallback');
+assert.doesNotMatch(legacySuccess,/setTimeout\(/,'legacy success decorator must not schedule a second WhatsApp navigation');
+assert.doesNotMatch(legacySuccess,/location\.(?:href|assign)/,'legacy success decorator must never auto-navigate after checkout v2');
+assert.doesNotMatch(addon,/whatsappReturnScheduled/,'obsolete delayed redirect state must be removed');
+
 // O fallback reutiliza o pedido já salvo; não chama confirm_order novamente.
 const success=checkout.match(/function renderSuccess[\s\S]*?(?=\n\s*const observer)/)?.[0]||'';
 assert.match(success,/Abrir WhatsApp/,'success state must expose a manual WhatsApp fallback');
