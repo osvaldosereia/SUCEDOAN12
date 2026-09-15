@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'comprar/**'
       - 'site/produtos-home.json'
       - 'site/produtos-cesta-basica.json'
       - 'site/kits.json'
@@ -86,6 +87,10 @@ jobs:
           node --check scripts/injetar-seo-combos.js
           node --check scripts/normalizar-seo-delivery.js
           node --check scripts/estabilizar-catalogo-publico.mjs
+          node --check comprar/chat-light-v2.js
+          node --check comprar/chat-checkout-quantity-v1.js
+          node --check comprar/checkout-final-v2.js
+          node --check comprar/storefront-visual-v2.js
           node --check app-next/src/bundle-routes.js
           node --check app-next/src/core.js
           node --check app-next/src/catalog.js
@@ -107,22 +112,15 @@ jobs:
           test -s sitemap.xml
           grep -q 'https://donaantonia.com.br/cestas/' sitemap.xml
           ! grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
-          grep -q '2026-07-27-product-cards-spacing-v11' index.html
-          grep -q 'app-next/src/main.js' index.html
-          grep -q 'app-next/src/image-performance.js' index.html
-          grep -q 'app-next/src/home-carousels.js' index.html
-          grep -q 'storefront-base.css' index.html
-          grep -q 'storefront-components.css' index.html
-          grep -q 'storefront-responsive.css' index.html
-          grep -q 'checkout-flow.css' index.html
-          grep -q 'bundle-confirmation.css' index.html
-          grep -q 'da_v16_product_cards_20260727' index.html
-          ! grep -q 'app-next/src/seo-combos.js' index.html
-          ! grep -q 'app-next/src/live-polish.js' index.html
-          ! grep -q 'styles/visual-parity.css' index.html
-          ! grep -q 'styles/home-parity.css' index.html
-          ! grep -q 'styles/live-polish.css' index.html
-          grep -q 'id="menu-drawer".*inert' index.html
+          grep -q '/comprar/config.js?v=20260915-02' index.html
+          grep -q '/comprar/chat-checkout-quantity-v1.js?v=20260915-03' index.html
+          grep -q '/comprar/checkout-final-v2.js' index.html
+          grep -q '/comprar/storefront-visual-v2.js' index.html
+          grep -q '"@type":"OnlineStore"' index.html
+          grep -q '"@type":"WebSite"' index.html
+          ! grep -q '/app-next/src/main.js' index.html
+          ! grep -q 'mug-printable-arc-v3' index.html
+          ! grep -q '556584491018' index.html comprar/config.js comprar/chat-checkout-quantity-v1.js
           ! grep -q 'https://www.donaantonia.com.br' sitemap.xml merchant.xml robots.txt index.html
 
       - name: Publicar dados e páginas geradas
