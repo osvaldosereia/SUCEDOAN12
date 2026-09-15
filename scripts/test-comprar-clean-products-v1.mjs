@@ -27,5 +27,6 @@ assert.match(js,/set_quantity/,'produto deve persistir quantidade pela API ofici
 assert.match(js,/if\s*\(\s*requestGeneration\s*!==\s*generation\s*\)/,'respostas antigas de filtros/listagem devem ser ignoradas');
 assert.match(js,/openDetail/,'detalhe do produto deve pertencer ao mesmo módulo');
 assert.match(js,/closeDetail/,'detalhe deve fechar sem módulo decorador');
+assert.doesNotMatch(js,/finish\.textContent='Finalizar pedido'/,'etapa 2 não deve duplicar Finalizar pedido: a ação fica na cesta logo acima do título 2');
 
 console.log('OK: contrato limpo de produtos');
