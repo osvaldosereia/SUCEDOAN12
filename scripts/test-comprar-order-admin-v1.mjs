@@ -6,6 +6,7 @@ const orderNumberMigration=readFileSync('supabase/migrations/20260915024500_room
 const addressMigration=readFileSync('supabase/migrations/20260915023000_room_address_save_v2.sql','utf8');
 const webConfirm=readFileSync('supabase/migrations/20260915150000_web_checkout_confirm_order_v1.sql','utf8');
 const atomicConfirm=readFileSync('supabase/migrations/20260915152000_web_checkout_confirm_order_payment_v2.sql','utf8');
+const customerCommitGuard=readFileSync('supabase/migrations/20260915154500_web_customer_commit_guard_v2.sql','utf8');
 const adminApi=readFileSync('supabase/functions/admin-orders-comprar-v1/index.ts','utf8');
 const checkoutApi=readFileSync('supabase/functions/shopping-checkout-v2/index.ts','utf8');
 const checkout=readFileSync('comprar/checkout.js','utf8');
@@ -38,6 +39,11 @@ assert.doesNotMatch(atomicConfirm,/customer_document_required/,'atomic web order
 assert.match(checkoutApi,/room_confirm_web_order_v2/,'checkout endpoint must use the atomic order/payment RPC');
 const confirmBlock=checkoutApi.match(/if\(action==='confirm_order'\)[\s\S]*?(?=\n\s*return json\(req,\{ok:false,error:'unknown_action')/)?.[0]||'';
 assert.doesNotMatch(confirmBlock,/from\('orders'\)\.update/,'edge must not perform a second non-atomic payment update');
+
+assert.match(customerCommitGuard,/create or replace function public\.guard_web_existing_customer_binding_v1\(\)/,'existing-customer guard must be versioned for the simplified checkout');
+assert.match(customerCommitGuard,/web_customer_committed_at/,'explicit customer commit must be accepted by the website guard');
+assert.match(customerCommitGuard,/web_identity_verified_at/,'legacy verified sessions must remain accepted');
+assert.match(customerCommitGuard,/customer_verification_required/,'guard must still reject silent bindings without verification or explicit commit');
 
 assert.match(checkout,/app\.confirmOrder\(payload\)/);assert.match(checkout,/local\.orderSaved=true/);assert.match(checkout,/Seu pedido foi salvo/);assert.match(checkout,/if\(local\.orderSaved\)/);
 assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app,/checkoutApi\('confirm_order',payload\)/,'normal commercial transport must use the checkout endpoint');assert.match(app,/DA_ADMIN_TEST_TRANSPORT/);
