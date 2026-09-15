@@ -19,6 +19,7 @@ const adminConfig=readFileSync('admin-v3/config.js','utf8');
 const adminOrders=readFileSync('admin-v3/pedidos.html','utf8');
 const adminOrdersJs=readFileSync('admin-v3/pedidos-v2.js','utf8');
 const integratedOrders=existsSync('admin-v3/orders-integrated-v2.js')?readFileSync('admin-v3/orders-integrated-v2.js','utf8'):'';
+const labelPrinter=existsSync('admin-v3/order-label-print-v1.js')?readFileSync('admin-v3/order-label-print-v1.js','utf8'):'';
 const config=readFileSync('supabase/config.toml','utf8');
 
 assert.match(orderMigration,/catalog_session_id/);assert.match(orderMigration,/basket_name_snapshot/);assert.match(orderMigration,/checkout_snapshot/);
@@ -60,6 +61,18 @@ assert.match(adminApi,/checkout_snapshot:[\s\S]*customer:[\s\S]*name:/,'nested c
 assert.match(adminOrders,/<th>Cliente<\/th>/,'basic orders screen must show customer');assert.match(adminOrders,/pedidos-v2\.js/);
 assert.match(adminOrdersJs,/customer_snapshot/,'orders controller must render customer name');assert.match(adminOrdersJs,/Produtos da cesta/);assert.match(adminOrdersJs,/Produtos extras/);assert.match(adminOrdersJs,/Dados operacionais/);
 assert.match(adminOrdersJs,/&quot;/,'HTML escaping must keep a valid quote entity');
+
+assert.ok(labelPrinter,'thermal label printer module must exist');
+assert.match(labelPrinter,/@page\s*\{[^}]*size:\s*100mm 150mm/i,'label must target vertical 10x15cm media');
+assert.match(labelPrinter,/Quantidade de volumes/i,'printing must ask how many volumes the order has');
+assert.match(labelPrinter,/Volume\s*\$\{index\}\s*\/\s*\$\{volumes\}/,'each printed label must identify its volume number');
+assert.match(labelPrinter,/window\.print\(\)/,'label printer must use the browser print dialog');
+assert.doesNotMatch(labelPrinter,/qr\s*code|qrcode|barcode|c[oó]digo de barras/i,'label must not include QR code or barcode');
+const ordersTableBlock=adminLatestApp.match(/function renderOrdersTable[\s\S]*?(?=\nasync function loadOrders)/)?.[0]||'';
+assert.match(ordersTableBlock,/data-print-order/,'main orders list must expose a print-label action');
+assert.doesNotMatch(ordersTableBlock,/>WhatsApp<\/a>/,'main orders list must not expose a WhatsApp button');
+assert.match(adminOrdersJs,/data-print-order/,'standalone orders list must expose a print-label action');
+assert.match(adminOrdersJs,/printShippingLabels/,'standalone orders list must use the shared label printer');
 
 assert.match(config,/\[functions\.admin-orders-comprar-v1\][\s\S]*?verify_jwt = false/);assert.match(config,/\[functions\.shopping-checkout-v2\][\s\S]*?verify_jwt = false/);
 
