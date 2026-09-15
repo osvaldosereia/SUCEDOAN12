@@ -10,6 +10,7 @@ on:
       - 'catalogo/index.html'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
+      - 'scripts/test-comprar-product-visual-v2.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -32,6 +33,7 @@ on:
       - 'admin-v3/chat-menu-admin.*'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
+      - 'scripts/test-comprar-product-visual-v2.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -40,6 +42,7 @@ on:
       - 'supabase/functions/shopping-chat-menu-v1/**'
       - 'supabase/functions/shopping-chat-customer-v1/**'
       - 'supabase/functions/admin-chat-menu-v1/**'
+      - 'supabase/migrations/*shopping_room*'
       - 'supabase/migrations/*shopping_chat*'
       - 'supabase/migrations/*chat_deterministic*'
       - '.github/workflows/test-shopping-room.yml'
@@ -66,6 +69,7 @@ jobs:
           node --check admin-v3/chat-menu-admin.js
           node scripts/test-light-shopping-chat-v2.mjs
           node scripts/test-basket-preview-checkout-whatsapp-v1.mjs
+          node scripts/test-comprar-product-visual-v2.mjs
           node scripts/test-chat-helper-menu-v1.mjs
           node scripts/test-shopping-chat-routing-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
