@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 const file='comprar/products.js';
 assert.doesNotThrow(()=>readFileSync(file,'utf8'),'products.js deve existir');
 const js=readFileSync(file,'utf8');
+const apiFile='supabase/functions/shopping-chat-products-v1/index.ts';
+assert.doesNotThrow(()=>readFileSync(apiFile,'utf8'),'shopping-chat-products-v1 deve existir');
+const api=readFileSync(apiFile,'utf8');
 
 assert.doesNotMatch(js,/window\.fetch\s*=/,'produtos não podem interceptar fetch');
 assert.doesNotMatch(js,/new\s+MutationObserver/,'produtos não podem observar globalmente o DOM');
@@ -36,5 +39,13 @@ assert.match(js,/data-products-more/,'grade deve possuir botão Ver mais explíc
 assert.match(js,/Ver mais/,'ação manual deve ter texto Ver mais');
 const moreHandler=js.match(/function\s+renderLoadMore[\s\S]*?(?=\n\s*function|\n\s*async function)/)?.[0]||'';
 assert.match(moreHandler,/loadMore\(generation\)/,'Ver mais deve chamar a próxima página explicitamente');
+
+assert.match(api,/\.select\(['"][^'\"]*offer_price[^'\"]*['"]\)/,'API de produtos deve devolver offer_price');
+assert.match(js,/function\s+effectiveProductPrice/,'frontend deve centralizar o preço efetivo do produto');
+assert.match(js,/product-offer-badge/,'card deve possuir etiqueta visual de oferta');
+assert.match(js,/product-price-regular/,'preço normal deve aparecer separado no produto em oferta');
+assert.match(js,/product-price-offer/,'preço promocional deve aparecer em destaque');
+assert.match(js,/OFERTA/,'etiqueta deve informar OFERTA ao cliente');
+assert.match(js,/effectiveProductPrice\(product\)/,'carrinho otimista deve usar preço efetivo da oferta');
 
 console.log('OK: contrato limpo de produtos');
