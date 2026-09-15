@@ -12,6 +12,7 @@ on:
       - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
       - 'scripts/test-comprar-product-visual-v2.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
+      - 'scripts/test-comprar-mobile-v1.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -40,6 +41,7 @@ on:
       - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
       - 'scripts/test-comprar-product-visual-v2.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
+      - 'scripts/test-comprar-mobile-v1.mjs'
       - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -85,6 +87,7 @@ jobs:
           node scripts/test-basket-preview-checkout-whatsapp-v1.mjs
           node scripts/test-comprar-product-visual-v2.mjs
           node scripts/test-comprar-order-admin-v1.mjs
+          node scripts/test-comprar-mobile-v1.mjs
           node scripts/test-chat-helper-menu-v1.mjs
           node scripts/test-shopping-chat-routing-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
