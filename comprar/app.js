@@ -24,7 +24,7 @@
   const $=id=>document.getElementById(id);
   const text=value=>String(value??'').replace(/\s+/g,' ').trim();
   const money=value=>Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+  const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const fallbackImage='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180"><rect width="100%" height="100%" fill="#f2f4f2"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#718078" font-family="Arial" font-size="14">Dona Antônia</text></svg>');
 
   const errors={
@@ -77,13 +77,20 @@
   }
 
   function isAdminTest(){return params.get('admin_test')==='1'&&window.parent!==window}
+  function markOrderCompleted(data={}){
+    if(data.admin_test===true||isAdminTest())return;
+    state.session={...(state.session||{}),status:'closed',current_view:'success',completed_at:new Date().toISOString()};
+    requestAnimationFrame(()=>document.querySelectorAll('.stage:not(.checkout-stage)').forEach(element=>element.remove()));
+  }
   async function confirmOrder(payload={}){
     if(isAdminTest()){
       const transport=window.DA_ADMIN_TEST_TRANSPORT;
       if(!transport||typeof transport.confirmOrder!=='function')throw new Error('Modo de teste do Admin ainda não está pronto.');
       return transport.confirmOrder(payload);
     }
-    return checkoutApi('confirm_order',payload);
+    const data=await checkoutApi('confirm_order',payload);
+    markOrderCompleted(data);
+    return data;
   }
 
   function registerModule(name,module){if(!name||!module)throw new Error('Módulo inválido.');state.modules[name]=module;return module}
@@ -107,12 +114,10 @@
     return data;
   }
 
-  function replaceRoomToken(nextToken){
-    token=String(nextToken||'').trim();
-    if(!token)throw new Error('Não consegui iniciar sua compra.');
+  function roomUrl(nextToken,resume=''){
     const adminTest=params.get('admin_test')==='1'?'&admin_test=1':'';
-    history.replaceState({},'',`${location.pathname}?s=${encodeURIComponent(token)}${adminTest}${location.hash||''}`);
-    return token;
+    const next=resume?`&resume=${encodeURIComponent(resume)}`:'';
+    return `${location.pathname}?s=${encodeURIComponent(nextToken)}${adminTest}${next}${location.hash||''}`;
   }
 
   async function createRoomToken(){
@@ -120,52 +125,31 @@
     token='';
     try{
       const data=await api('create_web_room');
-      return replaceRoomToken(data.token);
+      const nextToken=String(data.token||'').trim();
+      if(!/^[a-f0-9]{64}$/i.test(nextToken))throw new Error('Não consegui iniciar sua compra.');
+      token=nextToken;
+      history.replaceState({},'',roomUrl(token));
+      return token;
     }catch(error){token=previousToken;throw error}
   }
 
-  function resetPurchaseState(){
-    state.session=null;
-    state.customer=null;
-    state.baskets=[];
-    state.selectedBasket=null;
-    state.basketItems=[];
-    state.checkout=null;
-    state.payment=null;
-    state.productFilters={customerCategory:'',subcategory:'',subsubcategory:'',offers:false,query:''};
-    state.pendingProductSyncs.clear();
-    state.modules.products?.resetForNewRoom?.();
-    state.modules.baskets?.resetForNewRoom?.();
-    state.modules.help?.setCheckoutMode?.(false);
-    clearStages('.stage');
-    setCart({items:[],total:0});
-  }
-
-  async function renewRoom(){
+  async function renewRoom(resume='start'){
     if(renewingRoom)return renewingRoom;
     renewingRoom=(async()=>{
-      resetPurchaseState();
-      await createRoomToken();
-      const data=await api('open');
-      if(data.closed===true)throw new Error('Não consegui iniciar uma nova compra.');
-      applyOpenData(data);
-      return data;
+      const nextToken=await createRoomToken();
+      location.replace(roomUrl(nextToken,resume));
+      await new Promise(()=>{});
     })();
     try{return await renewingRoom}finally{renewingRoom=null}
   }
 
-  async function ensureActiveRoom(){
-    if(state.session?.status==='closed'||state.session?.current_view==='success')await renewRoom();
+  async function ensureActiveRoom(resume='start'){
+    if(state.session?.status==='closed'||state.session?.current_view==='success')await renewRoom(resume);
     return state;
   }
 
-  function markOrderCompleted(data={}){
-    if(data.admin_test===true||isAdminTest())return;
-    state.session={...(state.session||{}),status:'closed',current_view:'success',completed_at:new Date().toISOString()};
-  }
-
-  async function openAddProductsStage(options={auto:false}){await ensureActiveRoom();return state.modules.products?.renderEntry?.(options)}
-  async function openCheckout(button){await ensureActiveRoom();return state.modules.checkout?.open?.(button)}
+  async function openAddProductsStage(options={auto:false}){await ensureActiveRoom('products');return state.modules.products?.renderEntry?.(options)}
+  async function openCheckout(button){await ensureActiveRoom('start');return state.modules.checkout?.open?.(button)}
 
   function bindShell(){
     const checkoutButton=$('checkoutButton'),cartButton=$('cartButton'),addProducts=$('cartAddProducts'),backButton=$('backButton');
@@ -173,7 +157,7 @@
     if(cartButton)cartButton.onclick=()=>openCheckout(cartButton);
     if(addProducts)addProducts.onclick=()=>openAddProductsStage({auto:false});
     if(backButton)backButton.onclick=async()=>{
-      await ensureActiveRoom();
+      await ensureActiveRoom('start');
       const checkout=document.querySelector('.stage.checkout-stage');
       if(checkout){checkout.remove();state.modules.help?.setCheckoutMode?.(false);if(state.selectedBasket){state.modules.baskets?.renderSelectedBasket?.();openAddProductsStage({auto:true})}else renderStart();return}
       if(state.selectedBasket){state.modules.baskets?.renderSelectedBasket?.();openAddProductsStage({auto:true});return}
@@ -195,13 +179,22 @@
     return createRoomToken();
   }
 
+  function clearResumeParam(){
+    if(!params.get('resume'))return;
+    history.replaceState({},'',roomUrl(token));
+  }
+
   async function start(){
     if(started)return state;started=true;bindShell();
     try{
       await ensureToken();
-      let data=await api('open');
-      if(data.closed===true)data=await renewRoom();else applyOpenData(data);
+      const data=await api('open');
+      if(data.closed===true){await renewRoom(params.get('resume')||'start');return state}
+      applyOpenData(data);
       $('loadingCard')?.remove();
+      const resume=params.get('resume')||'';
+      clearResumeParam();
+      if(resume==='products'){await openAddProductsStage({auto:false});return state}
       if(state.cart?.basket_id&&state.modules.baskets?.restoreFromOpen)await state.modules.baskets.restoreFromOpen(data);else renderStart();
       return state;
     }catch(error){started=false;$('loadingCard')?.remove();bubble(error.message||'Não consegui abrir sua compra.');throw error}
