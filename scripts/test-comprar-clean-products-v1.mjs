@@ -30,4 +30,11 @@ assert.match(js,/openDetail/,'detalhe do produto deve pertencer ao mesmo módulo
 assert.match(js,/closeDetail/,'detalhe deve fechar sem módulo decorador');
 assert.doesNotMatch(js,/finish\.textContent='Finalizar pedido'/,'etapa 2 não deve duplicar Finalizar pedido: a ação fica na cesta logo acima do título 2');
 
+assert.doesNotMatch(js,/addEventListener\(['"]scroll['"]/,'rolagem não pode carregar produtos');
+assert.doesNotMatch(js,/function\s+onScroll/,'não deve existir paginação acionada por scroll');
+assert.match(js,/data-products-more/,'grade deve possuir botão Ver mais explícito');
+assert.match(js,/Ver mais/,'ação manual deve ter texto Ver mais');
+const moreHandler=js.match(/function\s+renderLoadMore[\s\S]*?(?=\n\s*function|\n\s*async function)/)?.[0]||'';
+assert.match(moreHandler,/loadMore\(generation\)/,'Ver mais deve chamar a próxima página explicitamente');
+
 console.log('OK: contrato limpo de produtos');
