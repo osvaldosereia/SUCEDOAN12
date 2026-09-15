@@ -138,7 +138,7 @@
 
   function whatsappAppUrl(url){
     const raw=String(url||'');if(!raw)return '';
-    try{const u=new URL(raw);let phone='';if(u.hostname.includes('wa.me'))phone=u.pathname.replace(/\D/g,'');else phone=u.searchParams.get('phone')||'';const message=u.searchParams.get('text')||'';if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||''))return `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`}catch{return raw}
+    try{const u=new URL(raw);let phone='';if(u.hostname.includes('wa.me'))phone=u.pathname.replace(/\D/g,'');else phone=(u.searchParams.get('phone')||'').replace(/\D/g,'');if(!phone)return raw;const message=u.searchParams.get('text')||'';return `https://wa.me/${phone}${message?`?text=${encodeURIComponent(message)}`:''}`}catch{return raw}
   }
   async function confirmOrder(){
     if(state.busy)return;if(state.orderSaved){if(state.whatsappUrl)location.assign(whatsappAppUrl(state.whatsappUrl));return}
