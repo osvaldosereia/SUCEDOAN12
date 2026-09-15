@@ -1,7 +1,7 @@
 # Dona Antônia — Comprar em chat híbrido com upsell suave
 
 Data: 2026-09-15
-Status: design aprovado em conversa, aguardando revisão final do documento antes da implementação
+Status: design aprovado em conversa e auto-revisado; aguardando revisão final do documento antes da implementação
 
 ## 1. Objetivo
 
@@ -55,7 +55,7 @@ Reduzir:
 
 **Ação secundária**
 - fundo branco, borda leve;
-- exemplos: “Voltar às cestas”, “Alterar”, “Ver composição”, “+ Produtos”.
+- exemplos: “Voltar às cestas”, “Alterar”, “Ver composição”.
 
 **Chips de navegação/filtro**
 - pequenos, leves, horizontais;
@@ -98,13 +98,13 @@ Motivo: a grade facilita comparação e não depende de o usuário perceber que 
 ### 4.3 Composição da cesta
 
 Ao tocar “Ver produtos”:
-- a grade de cestas deixa de ser o foco e pode ser recolhida;
+- a grade de cestas é recolhida e substituída por um resumo curto da escolha em análise;
 - aparece um bloco maior dentro da conversa;
 - mostra foto, nome, preço e composição;
 - itens editáveis mantêm controles − quantidade + conforme as regras já existentes da cesta.
 
 Ações no final:
-- “Voltar às cestas” — secundária;
+- “Voltar às cestas” — secundária, restaura a grade;
 - “Quero esta cesta” — principal.
 
 ### 4.4 Confirmação da cesta
@@ -126,7 +126,9 @@ A lista completa de produtos não deve permanecer aberta durante o restante da c
 
 ### 4.5 Primeira oportunidade de upsell
 
-Logo após confirmar a cesta, pode aparecer uma sugestão suave com até **4 produtos**.
+Logo após confirmar a cesta, o sistema tenta montar uma sugestão suave com até **4 produtos**.
+
+Ela só é exibida se existirem pelo menos **2 produtos elegíveis com relevância suficiente**. Se não houver, o fluxo segue direto para as opções de produtos extras sem mostrar mensagem vazia ou genérica.
 
 Mensagem deve soar como ajuda, por exemplo:
 
@@ -159,15 +161,11 @@ A paginação deve ser manual por **“Ver mais”**. Não usar carregamento aut
 
 ### 4.7 Barra inferior do pedido
 
-Simplificar a barra fixa inferior.
-
-Formato desejado:
+Simplificar a barra fixa inferior para apenas:
 - resumo: “29 itens · R$ 240,80”;
 - ação principal: “Ver pedido”.
 
-Opcionalmente pode existir “+ Produtos” de forma discreta, desde que não concorra visualmente com “Ver pedido”.
-
-Evitar duplicar simultaneamente grandes botões de “Adicionar produtos”, “Ver pedido” e “Finalizar pedido”.
+Não manter um segundo grande botão “Adicionar produtos” na barra fixa. A volta para produtos será oferecida dentro do fluxo do chat/resumo do pedido quando necessário.
 
 ### 4.8 Ver pedido
 
@@ -179,14 +177,17 @@ O resumo mostra:
 - cesta escolhida;
 - produtos extras;
 - total;
-- possibilidade de expandir itens quando necessário.
+- possibilidade de expandir itens quando necessário;
+- ação secundária discreta para continuar comprando.
 
 Ação principal:
 - “Finalizar pedido”.
 
 ### 4.9 Segunda e última oportunidade de upsell
 
-Antes de iniciar o checkout pode aparecer uma última sugestão com no máximo **3 produtos de alta relevância**.
+Antes de iniciar o checkout, o sistema pode mostrar uma última sugestão com no máximo **3 produtos de alta relevância**.
+
+Ela só aparece quando existir pelo menos **1 produto elegível diferente dos itens já sugeridos e não ignorados repetidamente**, acima do limiar de relevância. Se não existir, “Finalizar pedido” segue diretamente ao checkout.
 
 Exemplo de intenção:
 
@@ -279,7 +280,7 @@ Comportamento desejado:
 Depois que uma decisão foi concluída, o bloco grande deve virar um resumo compacto.
 
 Exemplos:
-- grade de cestas → cesta escolhida;
+- grade de cestas → cesta em análise ou cesta escolhida;
 - composição completa → “Cesta Grande · 18 itens · R$ X”;
 - produtos extras → resumo de quantidade/valor;
 - cadastro → resumo do endereço;
@@ -328,7 +329,9 @@ Pontuação conceitual:
 
 `relevância de complemento + compra conjunta + oferta + histórico + estoque + adequação de preço - repetição - excesso de quantidade`
 
-A arquitetura deve permitir evoluir depois para:
+A implementação inicial pode começar apenas com os sinais que já existirem de forma confiável no banco. Sinais ausentes não bloqueiam o lançamento; entram depois sem mudar o contrato visual.
+
+A arquitetura deve permitir evoluir para:
 - histórico de compras do cliente;
 - produtos comprados em conjunto;
 - sazonalidade;
@@ -409,21 +412,23 @@ A implementação só será considerada pronta quando:
 
 1. o atendimento parecer uma conversa contínua, não um wizard;
 2. cestas forem comparáveis em grade de 2 colunas no celular;
-3. “Ver produtos” abrir composição editável;
-4. “Quero esta cesta” recolher composição para resumo compacto;
-5. produtos extras permanecerem em grade com “Ver mais” manual;
-6. barra inferior estiver simplificada;
-7. checkout não usar numeração visual de etapas;
-8. telefone encontrado mostrar cadastro/endereço no próprio fluxo;
-9. pagamento aparecer no mesmo fechamento;
-10. ajuda aberta não sobrepor botão/composer;
-11. no máximo duas intervenções de upsell existirem;
-12. upsell cessar completamente no início do checkout;
-13. pedidos continuarem sendo gravados antes do WhatsApp;
-14. Admin test continuar sem pedido real;
-15. mobile de largura semelhante a iPhone 14 Pro estiver visualmente consistente;
-16. desktop não quebrar a experiência, mantendo largura de chat controlada;
-17. testes existentes de Comprar, checkout, Admin test e site público continuarem verdes.
+3. “Ver produtos” recolher a grade e abrir composição editável;
+4. “Voltar às cestas” restaurar a grade;
+5. “Quero esta cesta” recolher composição para resumo compacto;
+6. produtos extras permanecerem em grade com “Ver mais” manual;
+7. barra inferior mostrar apenas resumo + “Ver pedido” como ação principal;
+8. checkout não usar numeração visual de etapas;
+9. telefone encontrado mostrar cadastro/endereço no próprio fluxo;
+10. pagamento aparecer no mesmo fechamento;
+11. ajuda aberta não sobrepor botão/composer;
+12. no máximo duas intervenções de upsell existirem;
+13. upsell ser omitido silenciosamente quando não houver sugestão relevante;
+14. upsell cessar completamente no início do checkout;
+15. pedidos continuarem sendo gravados antes do WhatsApp;
+16. Admin test continuar sem pedido real;
+17. mobile de largura semelhante a iPhone 14 Pro estiver visualmente consistente;
+18. desktop não quebrar a experiência, mantendo largura de chat controlada;
+19. testes existentes de Comprar, checkout, Admin test e site público continuarem verdes.
 
 ## 13. Fora de escopo desta primeira implementação
 
