@@ -31,8 +31,6 @@
       button.onclick=()=>openSection(label);
       chips.appendChild(button);
     }
-    const actions=document.createElement('div');actions.className='actions products-entry-actions';
-    const finish=document.createElement('button');finish.type='button';finish.className='primary';finish.textContent='Finalizar pedido';finish.onclick=()=>state.modules.checkout?.open?.(finish);actions.appendChild(finish);host.appendChild(actions);
     if(section)openSection(section);
     else if(!auto)app.scrollTo(host,{block:'start'});
     return host;
@@ -61,8 +59,6 @@
 
     productGrid=document.createElement('div');productGrid.className='products-grid';host.appendChild(productGrid);
     const bottom=document.createElement('div');bottom.className='products-loading';bottom.dataset.productsLoading='1';host.appendChild(bottom);
-    const actions=document.createElement('div');actions.className='actions products-actions';
-    const finish=document.createElement('button');finish.type='button';finish.className='primary';finish.textContent='Finalizar pedido';finish.onclick=()=>state.modules.checkout?.open?.(finish);actions.appendChild(finish);host.appendChild(actions);
 
     const requestGeneration=++generation;
     resetPagination();
