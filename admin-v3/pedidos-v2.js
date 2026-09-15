@@ -1,3 +1,5 @@
+import {requestOrderLabelPrint} from './order-label-print-v1.js';
+
 const ENDPOINT='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-orders-comprar-v1';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -30,7 +32,7 @@ function renderRows(rows=[]){
     <td>${money(o.total)}</td>
     <td>${esc(payment(o.payment_method))}</td>
     <td><span class="badge">${esc(status(o.status))}</span></td>
-    <td><button type="button" data-order-id="${esc(o.id)}">Ver pedido</button></td>
+    <td><div class="row-actions"><button type="button" data-order-id="${esc(o.id)}">Ver pedido</button><button type="button" data-print-order="${esc(o.id)}">Imprimir etiqueta</button></div></td>
   </tr>`}).join('');
 }
 
@@ -46,6 +48,11 @@ async function load(){
 
 function itemSource(item){const s=String(item?.metadata?.source||'');return ({basket:'Cesta',substitution:'Cesta alterada',addon:'Produto extra'})[s]||'Produto'}
 function detailSection(title,items){if(!items.length)return '';return `<section class="panel order-detail-section"><h3>${esc(title)}</h3><div class="order-detail-items">${items.map(i=>`<div class="order-detail-item"><div><strong>${esc(i.quantity)}× ${esc(i.name_snapshot)}</strong><small>${esc(itemSource(i))}${i.sku_snapshot?` · SKU ${esc(i.sku_snapshot)}`:''}</small></div><div><span>${money(i.unit_price)}</span><strong>${money(i.line_total)}</strong></div></div>`).join('')}</div></section>`}
+
+async function printOrder(id){
+  try{const d=await api('detail',{id});requestOrderLabelPrint(d.order||{})}
+  catch(e){toast(e.message)}
+}
 
 async function openOrder(id){
   const dialog=$('orderDialog'),body=$('orderDialogBody');body.innerHTML='<div class="loading">Carregando pedido…</div>';if(!dialog.open)dialog.showModal();
@@ -70,7 +77,7 @@ async function openOrder(id){
 }
 
 $('filterForm').addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(e.currentTarget);state.q=String(fd.get('q')||'').trim();state.status=String(fd.get('status')||'');state.source=String(fd.get('source')||'');state.page=1;load()});
-$('orderRows').addEventListener('click',e=>{const b=e.target.closest('[data-order-id]');if(b)openOrder(b.dataset.orderId)});
+$('orderRows').addEventListener('click',e=>{const print=e.target.closest('[data-print-order]');if(print){printOrder(print.dataset.printOrder);return}const b=e.target.closest('[data-order-id]');if(b)openOrder(b.dataset.orderId)});
 $('prevPage').onclick=()=>{if(state.page>1){state.page--;load()}};
 $('nextPage').onclick=()=>{const pages=Math.max(1,Math.ceil(state.total/state.limit));if(state.page<pages){state.page++;load()}};
 $('refreshOrders').onclick=load;
