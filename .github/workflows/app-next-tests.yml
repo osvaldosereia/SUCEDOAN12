@@ -5,7 +5,13 @@ on:
     branches: [main]
     paths:
       - 'index.html'
-      - 'app-next/**'
+      - 'comprar/**'
+      - 'scripts/test-comprar-root-home-v1.mjs'
+      - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
+      - 'scripts/test-comprar-product-visual-v2.mjs'
+      - 'scripts/test-comprar-order-admin-v1.mjs'
+      - 'scripts/test-comprar-mobile-v1.mjs'
+      - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/catalogos-combos-lib.js'
       - 'scripts/gerar-merchant.js'
       - 'scripts/gerar-meta-combos.js'
@@ -13,8 +19,6 @@ on:
       - 'scripts/gerar-sitemap.js'
       - 'scripts/injetar-seo-combos.js'
       - 'scripts/normalizar-seo-delivery.js'
-      - 'scripts/estabilizar-catalogo-publico.mjs'
-      - 'scripts/check-public-site.mjs'
       - 'sobre-nos.html'
       - 'contato.html'
       - 'politica-de-entrega.html'
@@ -31,7 +35,6 @@ on:
       - 'site/produtos_admin_meta.json'
       - '.github/workflows/app-next-tests.yml'
       - '.github/workflows/update-public-data.yml'
-      - '.github/workflows/sincronizar-produtos-home-firebase.yml'
   workflow_dispatch:
 
 permissions:
@@ -40,6 +43,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -48,8 +52,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: app-next/package.json
 
       - name: Gerar SEO, páginas e feeds para validação
         id: seo
@@ -64,66 +66,49 @@ jobs:
             node scripts/gerar-merchant.js
             node scripts/gerar-meta-combos.js
             node scripts/gerar-sitemap.js
-            grep -q 'mug-printable-arc-v3' index.html
-            grep -q 'app-next/src/main.js' index.html
-            grep -q 'app-next/src/image-performance.js' index.html
-            grep -q 'app-next/src/home-carousels.js' index.html
-            grep -q 'app-next/src/mug-public-runtime-v6.js' index.html
-            grep -q 'storefront-base.css' index.html
-            grep -q 'storefront-components.css' index.html
-            grep -q 'storefront-responsive.css' index.html
-            grep -q 'checkout-flow.css' index.html
-            grep -q 'bundle-confirmation.css' index.html
-            ! grep -q 'da_v16_product_cards_20260727' index.html
-            ! grep -q '2026-07-27-product-cards-spacing-v11' index.html
-            ! grep -q 'app-next/src/fast-offers-v9.js' index.html
-            ! grep -q 'app-next/src/seo-combos.js' index.html
-            ! grep -q 'app-next/src/live-polish.js' index.html
-            ! grep -q 'styles/visual-parity.css' index.html
-            ! grep -q 'styles/home-parity.css' index.html
-            ! grep -q 'styles/live-polish.css' index.html
+            grep -q '/comprar/config.js?v=20260915-02' index.html
+            grep -q '/comprar/chat-checkout-quantity-v1.js?v=20260915-02' index.html
+            grep -q '/comprar/checkout-final-v2.js' index.html
+            grep -q '/comprar/storefront-visual-v2.js' index.html
+            grep -q '"@type":"OnlineStore"' index.html
+            grep -q '"@type":"WebSite"' index.html
+            ! grep -q '/app-next/src/main.js' index.html
             grep -q '"@type":"FAQPage"' cestas/index.html
             grep -q 'noindex,follow' kits/index.html
             ! grep -q 'https://donaantonia.com.br/kits/' sitemap.xml
           } 2>&1 | tee public-site-test-report.txt
 
-      - name: Testar módulos
-        id: modules
-        if: always()
-        continue-on-error: true
-        working-directory: app-next
-        shell: bash
-        run: |
-          set -o pipefail
-          npm test 2>&1 | tee -a ../public-site-test-report.txt
-
-      - name: Smoke test
-        id: smoke
-        if: always()
-        continue-on-error: true
-        working-directory: app-next
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run check 2>&1 | tee -a ../public-site-test-report.txt
-
-      - name: Validar estrutura pública
-        id: public
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -o pipefail
-          node scripts/check-public-site.mjs 2>&1 | tee -a public-site-test-report.txt
-
-      - name: Verificar sintaxe
-        id: generators
+      - name: Validar Comprar atual
+        id: comprar
         if: always()
         continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
           {
+            node scripts/test-light-shopping-chat-v2.mjs
+            node scripts/test-basket-preview-checkout-whatsapp-v1.mjs
+            node scripts/test-comprar-product-visual-v2.mjs
+            node scripts/test-comprar-order-admin-v1.mjs
+            node scripts/test-comprar-mobile-v1.mjs
+            node scripts/test-comprar-root-home-v1.mjs
+          } 2>&1 | tee -a public-site-test-report.txt
+
+      - name: Verificar sintaxe
+        id: syntax
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            node --check comprar/app.js
+            node --check comprar/chat-light-v2.js
+            node --check comprar/chat-checkout-quantity-v1.js
+            node --check comprar/product-detail-v1.js
+            node --check comprar/checkout-final-v2.js
+            node --check comprar/storefront-visual-v2.js
+            node --check comprar/chat-helper-menu.js
             node --check scripts/catalogos-combos-lib.js
             node --check scripts/gerar-merchant.js
             node --check scripts/gerar-meta-combos.js
@@ -131,18 +116,6 @@ jobs:
             node --check scripts/gerar-sitemap.js
             node --check scripts/injetar-seo-combos.js
             node --check scripts/normalizar-seo-delivery.js
-            node --check scripts/estabilizar-catalogo-publico.mjs
-            node --check scripts/check-public-site.mjs
-            node --check app-next/src/bundle-routes.js
-            node --check app-next/src/core.js
-            node --check app-next/src/catalog.js
-            node --check app-next/src/ui.js
-            node --check app-next/src/checkout.js
-            node --check app-next/src/main.js
-            node --check app-next/src/image-performance.js
-            node --check app-next/src/home-carousels.js
-            node --check app-next/src/mug-public-runtime-v6.js
-            node --check app-next/src/mug-public-3d-v2.js
           } 2>&1 | tee -a public-site-test-report.txt
 
       - name: Anexar relatório
@@ -155,7 +128,7 @@ jobs:
           retention-days: 7
 
       - name: Confirmar resultado
-        if: steps.modules.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.seo.outcome == 'failure' || steps.public.outcome == 'failure' || steps.generators.outcome == 'failure'
+        if: steps.seo.outcome == 'failure' || steps.comprar.outcome == 'failure' || steps.syntax.outcome == 'failure'
         run: |
           cat public-site-test-report.txt
           exit 1
