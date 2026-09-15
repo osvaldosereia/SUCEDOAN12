@@ -6,7 +6,8 @@ const orderNumberMigration=readFileSync('supabase/migrations/20260915024500_room
 const addressMigration=readFileSync('supabase/migrations/20260915023000_room_address_save_v2.sql','utf8');
 const adminApi=readFileSync('supabase/functions/admin-orders-comprar-v1/index.ts','utf8');
 const checkoutApi=readFileSync('supabase/functions/shopping-checkout-v2/index.ts','utf8');
-const checkout=readFileSync('comprar/checkout-final-v2.js','utf8');
+const checkout=readFileSync('comprar/checkout.js','utf8');
+const app=readFileSync('comprar/app.js','utf8');
 const adminOfficial=readFileSync('admin/index.html','utf8');
 const adminLatest=readFileSync('admin-v3/index.html','utf8');
 const adminLatestApp=readFileSync('admin-v3/app.js','utf8');
@@ -37,10 +38,14 @@ assert.match(addressMigration,/insert into public\.customer_addresses/,'add mode
 assert.match(addressMigration,/customer_id=v_session\.customer_id/,'replace must be scoped to the current customer');
 assert.match(checkoutApi,/room_save_address_v2/,'checkout edge function must use the address v2 RPC');
 
-assert.match(checkout,/api\('confirm_order'/,'final checkout must persist the order before WhatsApp');
-assert.match(checkout,/Pedido salvo/,'success copy must make clear that persistence happened');
-assert.match(checkout,/O pedido será salvo antes de abrir o WhatsApp/,'customer must be told the order is saved before leaving');
-assert.match(checkout,/state\.orderSaved/,'WhatsApp fallback must be idempotent on the client');
+// O novo front mantém uma única confirmação e o app decide o transporte comercial/teste.
+assert.match(checkout,/app\.confirmOrder\(payload\)/,'final checkout must persist through the single app transport');
+assert.match(checkout,/local\.orderSaved=true/,'successful checkout must remember that persistence already happened');
+assert.match(checkout,/Seu pedido foi salvo e está pronto para confirmação no WhatsApp\./,'success copy must make persistence clear');
+assert.match(checkout,/if\(local\.orderSaved\)/,'repeated confirmation must reuse the already saved order');
+assert.match(app,/async function confirmOrder\(payload=\{\}\)/,'app must own the order-confirm transport');
+assert.match(app,/api\('confirm_order',payload\)/,'normal commercial transport must call confirm_order exactly through the app');
+assert.match(app,/DA_ADMIN_TEST_TRANSPORT/,'Admin test mode must use an explicit safe transport');
 
 // /admin é o Admin oficial e Pedidos fica integrado nele.
 assert.match(adminOfficial,/\/admin-v3\/app\.js/,'/admin must use the latest Admin V3 application');
@@ -49,7 +54,6 @@ assert.match(adminLatest,/data-route=["']orders["']/,'latest Admin must expose t
 assert.match(adminLatestApp,/async function loadOrders\(/,'latest Admin application must load the integrated Orders route');
 assert.match(adminLatestApp,/async function openOrder\(/,'latest Admin application must expose an order detail action');
 
-// A rota Pedidos do Admin oficial deve usar a API completa de pedidos do Comprar.
 assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/,'Admin config must expose the full Comprar orders function');
 assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/,'Admin API client must map integrated order actions to the full orders API');
 assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/,'Admin API client must route order actions to the full orders API');
@@ -59,14 +63,12 @@ assert.match(integratedOrders,/data-view-order/,'integrated order detail must in
 assert.match(integratedOrders,/stopImmediatePropagation\(\)/,'integrated order detail must prevent the old compact detail from opening');
 for(const label of ['Cliente','Endereço de entrega','Forma de pagamento','Produtos','Dados operacionais'])assert.match(integratedOrders,new RegExp(label),`integrated Admin order detail must show ${label}`);
 
-// Fonte completa: pedidos antigos da vitrine e novos do Comprar, itens e snapshots.
 assert.match(adminApi,/supportedSources=\['storefront_v2','shopping_room'\]/,'Admin orders API must include Comprar and legacy storefront orders');
 assert.match(adminApi,/order_items/,'Admin order detail must read persisted order items');
 assert.match(adminApi,/delivery_address/,'Admin order detail must expose the delivery address');
 assert.match(adminApi,/payment_method/,'Admin order detail must expose payment method');
 assert.match(adminApi,/checkout_snapshot/,'Admin order detail must expose the operational snapshot');
 
-// Mantemos a página dedicada apenas como compatibilidade.
 assert.match(adminOrders,/Pedidos salvos no Comprar/,'compatibility order page must remain available');
 assert.match(adminOrders,/pedidos-v2\.js/,'compatibility order page must use the full-order controller');
 assert.match(adminOrdersJs,/Produtos da cesta/,'Admin compatibility detail must show basket products');
