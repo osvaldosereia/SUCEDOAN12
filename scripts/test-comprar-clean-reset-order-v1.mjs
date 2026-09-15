@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const upsell=readFileSync('comprar/upsell.js','utf8');
 const resetFunction='supabase/functions/shopping-room-reset-v1/index.ts';
 const migration='supabase/migrations/20260915184500_room_reset_open_cart_v1.sql';
+const paymentPatch='supabase/migrations/20260915190500_room_reset_clear_payment_v1.sql';
 
 assert.match(upsell,/Limpar pedido/,'resumo do pedido deve oferecer ação Limpar pedido');
 assert.match(upsell,/Quer limpar este pedido e começar novamente\?/,'limpeza deve exigir confirmação explícita');
@@ -29,5 +30,10 @@ assert.match(sql,/delete from public\.cart_items/i,'RPC deve remover itens do ca
 assert.match(sql,/basket_id\s*=\s*null/i,'RPC deve remover cesta selecionada');
 assert.match(sql,/current_view\s*=\s*['"]start['"]/i,'sessão deve voltar ao início');
 assert.doesNotMatch(sql,/customer_id\s*=\s*null/i,'reset não deve apagar cliente já identificado');
+
+assert.ok(existsSync(paymentPatch),'patch de reset deve limpar pagamento persistido');
+const paymentSql=readFileSync(paymentPatch,'utf8');
+assert.match(paymentSql,/metadata\s*=\s*coalesce\([^;]+\)\s*-\s*['"]payment_method['"]/is,'reset deve remover apenas payment_method do metadata');
+assert.doesNotMatch(paymentSql,/customer_id\s*=\s*null/i,'patch de pagamento não deve apagar cliente');
 
 console.log('OK: contrato de limpar pedido');
