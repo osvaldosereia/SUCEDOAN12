@@ -11,7 +11,6 @@
   let lastCheckout=null;
   let verificationTimer=null;
   let lastWhatsappUrl='';
-  let whatsappReturnScheduled=false;
   let deliveryLocator=null;
 
   async function helper(action,payload={}){
@@ -349,10 +348,6 @@
       link.href=lastWhatsappUrl;
       link.textContent='Continuar no WhatsApp';
       success.appendChild(link);
-    }
-    if(!whatsappReturnScheduled){
-      whatsappReturnScheduled=true;
-      setTimeout(()=>{if(lastWhatsappUrl)location.href=lastWhatsappUrl},1200);
     }
   }
 
