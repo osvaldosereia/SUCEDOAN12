@@ -40,8 +40,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: node scripts/test-comprar-help-quick-questions-v1.mjs
       - run: node scripts/test-admin-canonical-v1.mjs
       - run: node --check admin/service-strategy.js
-        if: ${{ hashFiles('admin/service-strategy.js') != '' }}
       - run: node tests/admin-v3-service-strategy-shopping-chat-final.mjs
       - run: node tests/chat-intelligence-presets-v1.mjs
