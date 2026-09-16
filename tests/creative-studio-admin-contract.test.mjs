@@ -10,7 +10,7 @@ test('Admin oficial publica entrada do Estúdio Criativo', () => {
   assert.match(html, />Estúdio Criativo</);
 });
 
-test('gerenciador usa somente endpoints Creative Studio e protege packshot do produto', () => {
+test('gerenciador usa endpoints Creative Studio e protege packshot do produto', () => {
   const html = read('admin/creative-studio.html');
   const js = read('admin/creative-studio.js');
   assert.match(html, /Estúdio Criativo/);
@@ -19,4 +19,17 @@ test('gerenciador usa somente endpoints Creative Studio e protege packshot do pr
   assert.match(js, /creative-studio-jobs-v1/);
   assert.match(js, /product\.image_url/);
   assert.match(js, /packshot/i);
+});
+
+test('busca de produto é explícita e sempre informa seu estado', () => {
+  const html = read('admin/creative-studio.html');
+  const js = read('admin/creative-studio.js');
+  assert.match(html, /id="productSearchForm"/);
+  assert.match(html, /id="productSearchButton"/);
+  assert.match(html, /id="productSearchStatus"/);
+  assert.match(html, />Buscar<\/button>/);
+  assert.match(js, /Buscando produtos/);
+  assert.match(js, /Nenhum produto encontrado para/);
+  assert.match(js, /productSearchForm.*addEventListener\('submit'/s);
+  assert.doesNotMatch(js, /productSearch.*addEventListener\('input'/s);
 });
