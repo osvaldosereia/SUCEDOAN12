@@ -46,18 +46,16 @@ ACTIVE_ADMIN_FILES = [
     "whatsapp-flow-key.html",
 ]
 
+GENERATED_PAGES = {"atendimento.html", "nomes-produtos.html"}
 TEXT_SUFFIXES = {".html", ".js", ".mjs", ".css", ".json", ".md", ".txt"}
 
 
 def transform_text(text: str) -> str:
-    # Tratar primeiro os caminhos relativos longos. Se `/admin-v3/` for
-    # substituído antes de `../admin-v3/`, `../admin-v3/x` vira `.../x`.
     text = text.replace("../admin-v3/nomes-produtos-v3.html", "./nomes-produtos.html")
     text = text.replace("/admin-v3/nomes-produtos-v3.html", "./nomes-produtos.html")
     text = text.replace("./nomes-produtos-v3.html", "./nomes-produtos.html")
     text = text.replace("../admin-v3/", "./")
     text = text.replace("/admin-v3/", "./")
-    # Repara os três arquivos atingidos pela primeira execução defeituosa.
     text = text.replace(".../", "./")
     text = text.replace("DA_ADMIN_V3_CONFIG", "DA_ADMIN_CONFIG")
     text = text.replace("da_admin_v3_auth", "da_admin_auth")
@@ -80,7 +78,9 @@ def relative_dependencies(text: str) -> set[str]:
 
 
 def copy_one(name: str, queue: list[str], copied: set[str]) -> None:
-    if name in copied:
+    # Essas páginas são geradas explicitamente a partir dos runtimes ativos.
+    # Não podem ser sobrescritas por aliases/redirects transitivos do legado.
+    if name in GENERATED_PAGES or name in copied:
         return
     source_name = "config.js" if name == "runtime-config.js" else name
     source = LEGACY / source_name
@@ -97,6 +97,8 @@ def copy_one(name: str, queue: list[str], copied: set[str]) -> None:
         for dep in relative_dependencies(text):
             if dep == "config.js":
                 dep = "runtime-config.js"
+            if dep in GENERATED_PAGES:
+                continue
             if (LEGACY / ("config.js" if dep == "runtime-config.js" else dep)).exists():
                 queue.append(dep)
     else:
@@ -145,10 +147,12 @@ def main() -> None:
     while queue:
         copy_one(queue.pop(0), queue, copied)
 
-    for page_name in ("atendimento.html", "nomes-produtos.html"):
+    for page_name in GENERATED_PAGES:
         for dep in relative_dependencies((ADMIN / page_name).read_text(encoding="utf-8")):
             if dep == "config.js":
                 dep = "runtime-config.js"
+            if dep in GENERATED_PAGES:
+                continue
             queue.append(dep)
     while queue:
         copy_one(queue.pop(0), queue, copied)
