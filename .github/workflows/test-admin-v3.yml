@@ -17,6 +17,7 @@ on:
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - 'scripts/test-admin-product-image-editor-v1.mjs'
+      - 'scripts/test-admin-product-verification-expiry-v1.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - 'scripts/test-admin-no-v3-runtime.mjs'
       - '.github/workflows/test-admin-v3.yml'
@@ -36,6 +37,7 @@ on:
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - 'scripts/test-admin-product-image-editor-v1.mjs'
+      - 'scripts/test-admin-product-verification-expiry-v1.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - 'scripts/test-admin-no-v3-runtime.mjs'
       - '.github/workflows/test-admin-v3.yml'
@@ -79,6 +81,8 @@ jobs:
         run: node scripts/test-admin-v3-contract.mjs
       - name: Validar controles rápidos dos produtos
         run: node scripts/test-admin-v3-inline-product-controls.mjs
+      - name: Validar verificação e validade dos produtos
+        run: node scripts/test-admin-product-verification-expiry-v1.mjs
       - name: Validar editor individual de imagens
         run: node scripts/test-admin-product-image-editor-v1.mjs
       - name: Validar pedidos completos do Comprar

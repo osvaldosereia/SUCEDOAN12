@@ -14,8 +14,8 @@ const integer=(v:unknown,min=-100000,max=100000)=>Math.min(max,Math.max(min,Numb
 const normalizePhone=(v:unknown)=>{let d=digits(v);if(!d)return null;if(d.startsWith("55")&&(d.length===12||d.length===13))return `+${d}`;if(d.length===10||d.length===11)return `+55${d}`;return null};
 const validGtin=(value:unknown)=>{const g=digits(value);if(!g)return true;if(![8,12,13,14].includes(g.length))return false;const expected=Number(g.at(-1));let sum=0;for(let i=g.length-2,o=0;i>=0;i--,o++)sum+=Number(g[i])*(o%2===0?3:1);return(10-(sum%10))%10===expected};
 const safeGoogleMapsUrl=(v:unknown)=>{const raw=clean(v,1200);if(!raw)return null;try{const u=new URL(raw);const h=u.hostname.toLowerCase();const allowed=u.protocol==="https:"&&(h==="maps.app.goo.gl"||h==="goo.gl"||h==="google.com"||h.endsWith(".google.com"));return allowed?u.toString():null}catch{return null}};
-const PRODUCT_LIST_FIELDS="id,sku,name,gtin,price,offer_price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,physically_verified,source_system,updated_at";
-const PRODUCT_DETAIL_FIELDS="id,sku,name,gtin,ncm,price,offer_price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,source_system,updated_at";
+const PRODUCT_LIST_FIELDS="id,sku,name,gtin,price,offer_price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,physically_verified,physically_verified_at,last_counted_at,source_system,updated_at";
+const PRODUCT_DETAIL_FIELDS="id,sku,name,gtin,ncm,price,offer_price,cost,stock,image_url,brand,category,subcategory,packaging,validity_date,gondola,shelf,is_active,is_offer,sort_order,description_short,description_long,tags,physically_verified,physically_verified_at,last_counted_at,source_system,updated_at";
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -27,13 +27,16 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{}
   const action=clean(body?.action||"health",60).toLowerCase();
 
-  if(action==="health")return json({ok:true,mode:"public_no_auth",version:5});
+  if(action==="health")return json({ok:true,mode:"public_no_auth",version:6});
 
   if(action==="products"){
     const page=Math.max(1,integer(body?.page,1,100000));
     const limit=Math.min(100,Math.max(10,integer(body?.limit,10,100)));
     const from=(page-1)*limit,to=from+limit-1;
     const q=clean(body?.q,100),status=clean(body?.status,30),category=clean(body?.category,120),brand=clean(body?.brand,120);
+    const verification=clean(body?.verification,20),expiry=clean(body?.expiry,20),sort=clean(body?.sort,20);
+    const today=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+    const days=(n:number)=>new Date(Date.parse(`${today}T12:00:00Z`)+n*86400000).toISOString().slice(0,10);
     let query=sb.from("products").select(PRODUCT_LIST_FIELDS,{count:"exact"}).range(from,to);
     if(q){const safe=q.replace(/[,%()]/g," ").trim();if(safe)query=query.or(`name.ilike.%${safe}%,gtin.ilike.%${safe}%,sku.ilike.%${safe}%,brand.ilike.%${safe}%`)}
     if(category)query=query.ilike("category",`%${category.replace(/[%_]/g,"")}%`);
@@ -43,9 +46,17 @@ Deno.serve(async(req:Request)=>{
     if(status==="ai-review")query=query.eq("source_system","ai_ean_research").eq("is_active",false);
     if(status==="offer")query=query.eq("is_offer",true);
     if(status==="no-stock")query=query.lte("stock",0);
-    const sort=clean(body?.sort,20);
-    const col=sort==="name"?"name":sort==="price"?"price":sort==="stock"?"stock":"sort_order";
-    query=query.order(col,{ascending:true,nullsFirst:false}).order("name",{ascending:true});
+    if(verification==="verified")query=query.eq("physically_verified",true);
+    if(verification==="unverified")query=query.eq("physically_verified",false);
+    if(expiry==="expired")query=query.lt("validity_date",today);
+    if(expiry==="30")query=query.gte("validity_date",today).lte("validity_date",days(30));
+    if(expiry==="60")query=query.gt("validity_date",days(30)).lte("validity_date",days(60));
+    if(expiry==="missing")query=query.is("validity_date",null);
+    if(sort==="expiry")query=query.order("validity_date",{ascending:true,nullsFirst:false}).order("name",{ascending:true});
+    else{
+      const col=sort==="price"?"price":sort==="stock"?"stock":sort==="name"?"name":"sort_order";
+      query=query.order(col,{ascending:true,nullsFirst:false}).order("name",{ascending:true});
+    }
     const {data,error,count}=await query;
     if(error)return json({ok:false,error:"products_failed",detail:error.message},400);
     return json({ok:true,products:data||[],total:count||0,page,limit});
@@ -60,7 +71,7 @@ Deno.serve(async(req:Request)=>{
 
   if(action==="update_product"){
     const id=clean(body?.id,80);if(!id)return json({ok:false,error:"id_required"},400);
-    const {data:currentProduct,error:currentProductError}=await sb.from("products").select("is_offer,offer_price").eq("id",id).maybeSingle();
+    const {data:currentProduct,error:currentProductError}=await sb.from("products").select("is_offer,offer_price,metadata,physically_verified,last_counted_at").eq("id",id).maybeSingle();
     if(currentProductError||!currentProduct)return json({ok:false,error:"product_not_found"},404);
     const src=body?.patch&&typeof body.patch==="object"?body.patch:{};
     const patch:any={updated_at:new Date().toISOString(),last_admin_edit_at:new Date().toISOString(),last_admin_edit_by:null};
@@ -73,6 +84,23 @@ Deno.serve(async(req:Request)=>{
     if(src.sort_order!==undefined)patch.sort_order=integer(src.sort_order);
     if(typeof src.is_active==="boolean")patch.is_active=src.is_active;
     if(typeof src.is_offer==="boolean")patch.is_offer=src.is_offer;
+    if(typeof src.physically_verified==="boolean"){
+      patch.physically_verified=src.physically_verified;
+      const wasVerified=currentProduct.physically_verified===true;
+      if(src.physically_verified!==wasVerified){
+        const now=new Date().toISOString();
+        const metadata=currentProduct.metadata&&typeof currentProduct.metadata==="object"&&!Array.isArray(currentProduct.metadata)?currentProduct.metadata:{};
+        patch.physically_verified_by=null;
+        if(src.physically_verified){
+          patch.physically_verified_at=now;
+          patch.last_counted_at=now;
+          patch.metadata={...metadata,verification_source:"admin_manual",admin_manual_verified_at:now};
+        }else{
+          patch.physically_verified_at=null;
+          patch.metadata={...metadata,verification_source:"admin_manual",admin_manual_unverified_at:now};
+        }
+      }
+    }
     if(src.validity_date!==undefined)patch.validity_date=clean(src.validity_date,10)||null;
     if(src.tags!==undefined)patch.tags=Array.isArray(src.tags)?src.tags.map((x:any)=>clean(x,80)).filter(Boolean).slice(0,50):[];
     if(patch.name!==undefined&&!patch.name)return json({ok:false,error:"name_required"},400);
