@@ -16,13 +16,8 @@ function flattenFiles(node,path=[],out=[]){
 }
 function ext(url){const m=String(url).toLowerCase().match(/\.([a-z0-9]+)(?:\?|$)/);return m?m[1]:''}
 function chooseFile(manifest){
-  const allowed=new Set(['jpg','jpeg','png','webp','hdr','exr','glb','gltf']);
-  return flattenFiles(manifest).filter(f=>allowed.has(ext(f.url))).sort((a,b)=>{
-    const ae=['jpg','jpeg','png','webp'].includes(ext(a.url))?0:1;
-    const be=['jpg','jpeg','png','webp'].includes(ext(b.url))?0:1;
-    if(ae!==be)return ae-be;
-    return (a.size||Number.MAX_SAFE_INTEGER)-(b.size||Number.MAX_SAFE_INTEGER);
-  })[0]||null;
+  const allowed=new Set(['jpg','jpeg','png','webp']);
+  return flattenFiles(manifest).filter(f=>allowed.has(ext(f.url))).sort((a,b)=>(a.size||Number.MAX_SAFE_INTEGER)-(b.size||Number.MAX_SAFE_INTEGER))[0]||null;
 }
 
 export function createPolyHavenProvider({fetcher=fetch}={}){
