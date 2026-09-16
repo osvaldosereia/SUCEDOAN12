@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - "producao/**"
-      - "admin/**"
       - "producao-v2/**"
       - "app-next/**"
       - "caneca-print/**"
@@ -21,7 +20,6 @@ on:
       - "site/banners/banners.json"
       - "site/ofertas-historico.json"
       - "site/canecas-print.json"
-      - ".github/workflows/test-admin-v2-definitivo.yml"
       - ".github/workflows/verificar-admin-producao.yml"
       - ".github/workflows/processar-ofertas.yml"
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
@@ -32,7 +30,6 @@ on:
       - main
     paths:
       - "producao/**"
-      - "admin/**"
       - "producao-v2/**"
       - "app-next/**"
       - "caneca-print/**"
@@ -49,7 +46,6 @@ on:
       - "site/banners/banners.json"
       - "site/ofertas-historico.json"
       - "site/canecas-print.json"
-      - ".github/workflows/test-admin-v2-definitivo.yml"
       - ".github/workflows/verificar-admin-producao.yml"
       - ".github/workflows/processar-ofertas.yml"
       - ".github/workflows/sincronizar-produtos-home-firebase.yml"
