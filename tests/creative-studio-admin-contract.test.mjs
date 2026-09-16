@@ -33,3 +33,10 @@ test('busca de produto é explícita e sempre informa seu estado', () => {
   assert.match(js, /productSearchForm.*addEventListener\('submit'/s);
   assert.doesNotMatch(js, /productSearch.*addEventListener\('input'/s);
 });
+
+test('elementos procedurais não dependem do Asset Hunter', () => {
+  const js = read('admin/creative-studio.js');
+  assert.match(js, /isProceduralAssetRequest/);
+  assert.match(js, /kind:'procedural'/);
+  assert.match(js, /Gerado proceduralmente no renderizador/);
+});
