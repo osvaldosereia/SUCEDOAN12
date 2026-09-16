@@ -37,6 +37,9 @@ for (const relative of requiredPages) {
 const forbidden = [
   { label: 'rota absoluta /admin-v3/', re: /\/admin-v3\//g },
   { label: 'rota relativa ../admin-v3/', re: /\.\.\/admin-v3\//g },
+  { label: 'endpoint admin-v3-api', re: /admin-v3-api/g },
+  { label: 'endpoint admin-v3-product-names', re: /admin-v3-product-names/g },
+  { label: 'marcador __DA_NAMES_V3_READY__', re: /__DA_NAMES_V3_READY__/g },
   { label: 'config DA_ADMIN_V3_CONFIG', re: /DA_ADMIN_V3_CONFIG/g },
   { label: 'sessão da_admin_v3_auth', re: /da_admin_v3_auth/g },
   { label: 'rótulo visual Admin V3', re: /Admin V3/g },
@@ -82,6 +85,15 @@ if (existsSync(namesPath)) {
   if (/http-equiv=["']refresh["'][^>]*nomes-produtos\.html/i.test(names) || /location\.replace\(['"]\.\/nomes-produtos\.html['"]\)/.test(names)) {
     fail('admin/nomes-produtos.html: redireciona para ela mesma');
   }
+  if (!names.includes('admin-product-names-v1')) fail('admin/nomes-produtos.html: endpoint neutro de nomes ausente');
+  if (!names.includes('admin-core-v1')) fail('admin/nomes-produtos.html: endpoint neutro principal ausente');
+  if (!names.includes('__DA_NAMES_READY__')) fail('admin/nomes-produtos.html: marcador neutro de prontidão ausente');
+}
+
+const runtimePath = path.join(ROOT, 'admin/runtime-config.js');
+if (existsSync(runtimePath)) {
+  const runtime = readFileSync(runtimePath, 'utf8');
+  if (!runtime.includes("adminFunction:'admin-core-v1'")) fail('admin/runtime-config.js: adminFunction deve apontar para admin-core-v1');
 }
 
 const servicePath = path.join(ROOT, 'admin/atendimento.html');
@@ -98,4 +110,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('OK: /admin não depende do Admin V3, referências locais existem e as subpáginas ativas estão íntegras.');
+console.log('OK: /admin não depende do Admin V3, usa endpoints neutros, referências locais existem e as subpáginas ativas estão íntegras.');
