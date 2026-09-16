@@ -15,6 +15,12 @@ const ALIASES=Object.freeze({
   padrao:'pattern',padroes:'pattern',
   rabisco:'scribble',rabiscos:'scribble'
 });
+const REAL_PRODUCT_TERMS=[
+  'imagem real','produto real','embalagem real','packshot','foto do produto','foto real do produto',
+  'logo oficial','logotipo oficial','marca oficial','rotulo real','rótulo real','embalagem do produto',
+  'produto principal','hero product','pack shot'
+];
 const fold=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
 export function normalizeAssetRequest(r={}){return{need:fold(r.need),keywords:[...new Set((r.keywords??[]).map(fold).filter(Boolean))],role:fold(r.role||'support'),actions:[...new Set((r.actions??[]).map(fold).filter(Boolean))],orientation:r.orientation??null,transparent:r.transparent??null}}
 export function proceduralKind(r){const n=normalizeAssetRequest(r);for(const token of [n.need,...n.keywords].join(' ').split(/[^a-z0-9_-]+/).filter(Boolean)){const canonical=ALIASES[token]||token;if(PROCEDURAL.has(canonical))return canonical}return null}
+export function isRealProductAssetRequest(r={}){const n=normalizeAssetRequest(r);const haystack=[n.need,n.role,...n.keywords].join(' ');return REAL_PRODUCT_TERMS.map(fold).some(term=>term&&haystack.includes(term))}
