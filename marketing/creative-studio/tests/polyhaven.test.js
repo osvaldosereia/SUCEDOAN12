@@ -40,7 +40,9 @@ test('acquire returns null when only unsupported 3D files exist',async()=>{
 });
 
 test('deployed asset provider is raster-only until the renderer supports 3D',()=>{
-  const source=readFileSync(new URL('../../../supabase/functions/creative-studio-assets-v1/polyhaven.ts',import.meta.url),'utf8');
-  assert.doesNotMatch(source,/model\/gltf|\bglb\b|\bgltf\b/);
-  assert.match(source,/asset_type:'image'/);
+  const providerSource=readFileSync(new URL('../../../supabase/functions/creative-studio-assets-v1/polyhaven.ts',import.meta.url),'utf8');
+  const edgeSource=readFileSync(new URL('../../../supabase/functions/creative-studio-assets-v1/index.ts',import.meta.url),'utf8');
+  assert.doesNotMatch(providerSource,/model\/gltf|\bglb\b|\bgltf\b/);
+  assert.doesNotMatch(edgeSource,/\['glb','gltf'\]/);
+  assert.match(edgeSource,/asset_type:'image'/);
 });
