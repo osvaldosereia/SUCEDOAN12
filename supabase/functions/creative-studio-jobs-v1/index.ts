@@ -64,27 +64,23 @@ Deno.serve(async(req:Request)=>{
     if(productError||!product)return json({ok:false,error:'product_not_found'},404);
     if(product.is_active!==true)return json({ok:false,error:'product_not_active'},409);
     const key=await idempotencyKey(user.id,job);
-    const {data:existing}=await sb.from('creative_studio_jobs').select('id,status,created_at,duration_seconds,estimated_cost_brl,requires_paid_approval,paid_approved,attempt_count,max_attempts,idempotency_key').eq('idempotency_key',key).maybeSingle();
-    if(existing)return json({ok:true,job:existing,reused:true});
+    const fields='id,status,created_at,duration_seconds,estimated_cost_brl,requires_paid_approval,paid_approved,attempt_count,max_attempts,idempotency_key';
+    const {data:existing}=await sb.from('creative_studio_jobs').select(fields).eq('idempotency_key',key).maybeSingle();
+    if(existing)return json({ok:true,job:existing,reused:true,idempotent:true});
     const requiresApproval=job.requires_paid_approval===true;
-    const row={
-      product_id:product.id,product_snapshot:job.product_snapshot||{},creative_plan:job.creative_plan||{},resolved_assets:job.resolved_assets||{},timeline:job.timeline||{},
-      status:'ready',width:1080,height:1920,fps:30,duration_seconds:finite(job.duration_seconds,18),external_assets_used:finite(job.external_assets_used),
-      provider_usage:job.provider_usage||{},estimated_cost_brl:Math.max(0,finite(job.estimated_cost_brl)),requires_paid_approval:requiresApproval,paid_approved:!requiresApproval,
-      render_strategy:'ffmpeg_svg',output_bucket:'creative-studio-renders',created_by:user.id,idempotency_key:key,attempt_count:0,max_attempts:3
-    };
-    const {data,error}=await sb.from('creative_studio_jobs').insert(row).select('id,status,created_at,duration_seconds,estimated_cost_brl,requires_paid_approval,paid_approved,attempt_count,max_attempts,idempotency_key').single();
+    const row={product_id:product.id,product_snapshot:job.product_snapshot||{},creative_plan:job.creative_plan||{},resolved_assets:job.resolved_assets||{},timeline:job.timeline||{},status:'ready',width:1080,height:1920,fps:30,duration_seconds:finite(job.duration_seconds,18),external_assets_used:finite(job.external_assets_used),provider_usage:job.provider_usage||{},estimated_cost_brl:Math.max(0,finite(job.estimated_cost_brl)),requires_paid_approval:requiresApproval,paid_approved:!requiresApproval,render_strategy:'ffmpeg_svg',output_bucket:'creative-studio-renders',created_by:user.id,idempotency_key:key,attempt_count:0,max_attempts:3};
+    const {data,error}=await sb.from('creative_studio_jobs').insert(row).select(fields).single();
     if(error){
       if(error.code==='23505'){
-        const {data:race}=await sb.from('creative_studio_jobs').select('id,status,created_at,duration_seconds,estimated_cost_brl,requires_paid_approval,paid_approved,attempt_count,max_attempts,idempotency_key').eq('idempotency_key',key).maybeSingle();
-        if(race)return json({ok:true,job:race,reused:true});
+        const {data:race}=await sb.from('creative_studio_jobs').select(fields).eq('idempotency_key',key).maybeSingle();
+        if(race)return json({ok:true,job:race,reused:true,idempotent:true});
       }
       return json({ok:false,error:'job_create_failed',detail:error.message},400);
     }
     await sb.from('creative_studio_job_events').insert({job_id:data.id,event_type:'created',payload:{source:'creative_studio_admin',idempotency_key:key}});
     const plan=job.creative_plan||{};
     await sb.from('creative_studio_memory').insert({product_id:product.id,product_name:product.name,product_category:product.category||null,territory:clean(plan.territory,120)||'unknown',concept:clean(plan.concept,500)||'untitled',hook:clean(plan.hook,500)||null,story_signature:clean([plan.territory,plan.concept,plan.hook,plan.payoff].filter(Boolean).join('|'),1200)||null,duration_seconds:finite(job.duration_seconds,18),asset_ids:[],motions:(plan.scenes||[]).flatMap((s:any)=>(s.actors||[]).map((a:any)=>clean(a.motion,60))).filter(Boolean).slice(0,60)});
-    return json({ok:true,job:data,reused:false},201);
+    return json({ok:true,job:data,reused:false,idempotent:false},201);
   }
 
   if(action==='queue'){
