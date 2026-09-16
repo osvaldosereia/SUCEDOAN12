@@ -1,7 +1,7 @@
-import {CONFIG} from './config.js';
+import {CONFIG} from './image-runtime-config.js';
 
 const $=id=>document.getElementById(id);
-const AUTH_KEY='da_admin_v3_auth';
+const AUTH_KEY='da_admin_auth';
 const state={triage:{bad_images:[],unprocessed:[],problems:[],pending:[],ignored:[]},stats:{},current:null,selectedBadImages:new Set()};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('pt-BR')};

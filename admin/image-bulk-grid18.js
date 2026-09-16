@@ -1,7 +1,7 @@
-import {CONFIG} from './config.js';
+import {CONFIG} from './image-runtime-config.js';
 
 const $=id=>document.getElementById(id);
-const AUTH_KEY='da_admin_v3_auth';
+const AUTH_KEY='da_admin_auth';
 const state={selectedIds:new Set(),allBadIds:[],allSelected:false,busy:false};
 const toast=(message,kind='')=>{const region=$('toastRegion');if(!region)return;const node=document.createElement('div');node.className=`toast ${kind}`.trim();node.textContent=message;region.append(node);setTimeout(()=>node.remove(),kind==='error'?5000:3200)};
 const getSession=()=>{try{return JSON.parse(localStorage.getItem(AUTH_KEY)||'null')}catch{return null}};
