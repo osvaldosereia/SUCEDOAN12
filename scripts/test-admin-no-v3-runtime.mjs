@@ -34,6 +34,23 @@ for (const relative of requiredPages) {
   if (!existsSync(path.join(ROOT, relative))) fail(`Página obrigatória ausente: ${relative}`);
 }
 
+const requiredNeutralBackend = [
+  'supabase/functions/admin-core-v1/index.ts',
+  'supabase/functions/admin-product-names-v1/index.ts',
+];
+for (const relative of requiredNeutralBackend) {
+  if (!existsSync(path.join(ROOT, relative))) fail(`Backend neutro obrigatório ausente: ${relative}`);
+}
+
+const legacyPaths = [
+  'admin-v3',
+  'supabase/functions/admin-v3-api',
+  'supabase/functions/admin-v3-product-names',
+];
+for (const relative of legacyPaths) {
+  if (existsSync(path.join(ROOT, relative))) fail(`Legado ainda presente no repositório: ${relative}`);
+}
+
 const forbidden = [
   { label: 'rota absoluta /admin-v3/', re: /\/admin-v3\//g },
   { label: 'rota relativa ../admin-v3/', re: /\.\.\/admin-v3\//g },
@@ -110,4 +127,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('OK: /admin não depende do Admin V3, usa endpoints neutros, referências locais existem e as subpáginas ativas estão íntegras.');
+console.log('OK: /admin é independente, usa endpoints neutros, referências locais existem e o legado Admin V3 foi removido do repositório.');
