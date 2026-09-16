@@ -5,6 +5,8 @@ on:
     branches: [fix/admin-images-no-v3-20260916]
     paths:
       - 'scripts/remove-admin-v3-legacy.py'
+      - 'scripts/test-comprar-order-admin-v1.mjs'
+      - 'scripts/test-stage12-commercial-central-v1.mjs'
       - '.github/workflows/remove-admin-v3-legacy.yml'
   workflow_dispatch:
 
