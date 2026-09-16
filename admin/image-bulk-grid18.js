@@ -1,4 +1,4 @@
-import {CONFIG} from './image-runtime-config.js';
+import {CONFIG} from './runtime-config.js';
 
 const $=id=>document.getElementById(id);
 const AUTH_KEY='da_admin_auth';

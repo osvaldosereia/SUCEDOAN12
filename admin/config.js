@@ -24,10 +24,7 @@ window.DA_ADMIN_CONFIG = Object.freeze({
   build: '20260915-admin-simple-v2-no-auth-safety-flags'
 });
 
-// Alias de compatibilidade somente para módulos antigos. Todos os módulos sensíveis
-// continuam explicitamente desligados acima e o Admin oficial segue no endpoint simples.
-window.DA_ADMIN_V3_CONFIG = window.DA_ADMIN_CONFIG;
 
 (function loadHumanServiceCenter(cfg){
   if(!cfg?.humanServiceCenterUiEnabled)return;
-})(window.DA_ADMIN_V3_CONFIG);
+})(window.DA_ADMIN_CONFIG);
