@@ -6,7 +6,7 @@ on:
     paths:
       - 'catalogo/**'
       - 'admin/**'
-      - 'admin-v3/customer-intelligence.*'
+      - 'admin/customer-intelligence.*'
       - 'supabase/functions/mini-catalog-v1/**'
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/migrations/*customer_purchase_intelligence*'
@@ -34,7 +34,7 @@ jobs:
         run: |
           node --check catalogo/app.js
           node --check catalogo/config.js
-          node --check admin-v3/customer-intelligence.js
+          node --check admin/customer-intelligence.js
       - name: Validar estrutura do catálogo
         run: |
           grep -q 'mini-catalog-v1' catalogo/config.js
@@ -45,9 +45,9 @@ jobs:
           ! grep -q 'basket-editor.js' catalogo/index.html
       - name: Validar inteligência de clientes
         run: |
-          grep -q 'customer-intelligence-v1' admin-v3/customer-intelligence.js
-          grep -q 'create_catalog' admin-v3/customer-intelligence.js
-          grep -q 'Produtos que já compra' admin-v3/customer-intelligence.js
+          grep -q 'customer-intelligence-v1' admin/customer-intelligence.js
+          grep -q 'create_catalog' admin/customer-intelligence.js
+          grep -q 'Produtos que já compra' admin/customer-intelligence.js
           grep -q 'data-route="customers"' admin/index.html
       - name: Validar backend versionado
         run: |
@@ -61,4 +61,4 @@ jobs:
       - name: Verificar ausência de segredos no frontend
         shell: bash
         run: |
-          ! grep -R -E 'service_role|BLING_CLIENT_SECRET|BLING_REFRESH_TOKEN|META_ACCESS_TOKEN|OPENAI_API_KEY' catalogo/ admin-v3/customer-intelligence.js || (echo 'Segredo proibido no frontend' >&2; exit 1)
+          ! grep -R -E 'service_role|BLING_CLIENT_SECRET|BLING_REFRESH_TOKEN|META_ACCESS_TOKEN|OPENAI_API_KEY' catalogo/ admin/customer-intelligence.js || (echo 'Segredo proibido no frontend' >&2; exit 1)
