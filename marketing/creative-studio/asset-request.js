@@ -1,0 +1,3 @@
+const PROCEDURAL=new Set(['circle','line','star','confetti','gradient','wave','grid','ray','shadow','label','box','pattern','particle','particles','scribble']);
+export function normalizeAssetRequest(r={}){return{need:String(r.need??'').trim().toLowerCase(),keywords:[...new Set((r.keywords??[]).map(v=>String(v).trim().toLowerCase()).filter(Boolean))],role:String(r.role??'support').trim().toLowerCase(),actions:[...new Set((r.actions??[]).map(v=>String(v).trim().toLowerCase()).filter(Boolean))],orientation:r.orientation??null,transparent:r.transparent??null}}
+export function proceduralKind(r){const n=normalizeAssetRequest(r);return[n.need,...n.keywords].join(' ').split(/[^a-z0-9_-]+/).find(t=>PROCEDURAL.has(t))??null}
