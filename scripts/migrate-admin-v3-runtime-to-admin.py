@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY = ROOT / "admin-v3"
 ADMIN = ROOT / "admin"
+FUNCTIONS = ROOT / "supabase" / "functions"
 
 SEED_FILES = {
     "styles.css",
@@ -47,7 +48,7 @@ ACTIVE_ADMIN_FILES = [
 ]
 
 GENERATED_PAGES = {"atendimento.html", "nomes-produtos.html"}
-TEXT_SUFFIXES = {".html", ".js", ".mjs", ".css", ".json", ".md", ".txt"}
+TEXT_SUFFIXES = {".html", ".js", ".mjs", ".css", ".json", ".md", ".txt", ".ts"}
 
 
 def transform_text(text: str) -> str:
@@ -57,11 +58,24 @@ def transform_text(text: str) -> str:
     text = text.replace("../admin-v3/", "./")
     text = text.replace("/admin-v3/", "./")
     text = text.replace(".../", "./")
+    text = text.replace("admin-v3-product-names", "admin-product-names-v1")
+    text = text.replace("admin-v3-api", "admin-core-v1")
+    text = text.replace("__DA_NAMES_V3_READY__", "__DA_NAMES_READY__")
     text = text.replace("DA_ADMIN_V3_CONFIG", "DA_ADMIN_CONFIG")
     text = text.replace("da_admin_v3_auth", "da_admin_auth")
     text = text.replace("Admin V3", "Admin")
     text = text.replace("from './config.js'", "from './runtime-config.js'")
     text = text.replace('from "./config.js"', 'from "./runtime-config.js"')
+    return text
+
+
+def transform_edge_text(text: str) -> str:
+    text = text.replace("admin_v3_product_names", "admin_product_names")
+    text = text.replace("[Admin V3 ", "[Admin ")
+    text = text.replace('source:"admin_v3"', 'source:"admin"')
+    text = text.replace("source:'admin_v3'", "source:'admin'")
+    text = text.replace('source: "admin_v3"', 'source: "admin"')
+    text = text.replace("Admin V3", "Admin")
     return text
 
 
@@ -78,8 +92,6 @@ def relative_dependencies(text: str) -> set[str]:
 
 
 def copy_one(name: str, queue: list[str], copied: set[str]) -> None:
-    # Essas páginas são geradas explicitamente a partir dos runtimes ativos.
-    # Não podem ser sobrescritas por aliases/redirects transitivos do legado.
     if name in GENERATED_PAGES or name in copied:
         return
     source_name = "config.js" if name == "runtime-config.js" else name
@@ -119,8 +131,7 @@ def migrate_active_pages() -> None:
         "window.DA_ADMIN_V3_CONFIG = window.DA_ADMIN_CONFIG;\n",
         "\n",
     )
-    source = source.replace("DA_ADMIN_V3_CONFIG", "DA_ADMIN_CONFIG")
-    source = source.replace("da_admin_v3_auth", "da_admin_auth")
+    source = transform_text(source)
     config.write_text(source, encoding="utf-8")
 
 
@@ -132,6 +143,24 @@ def migrate_named_pages() -> None:
     nomes = nomes.replace("nomes-produtos-v3.html", "nomes-produtos.html")
     nomes = nomes.replace("versão atual do Admin", "Admin atual")
     (ADMIN / "nomes-produtos.html").write_text(nomes, encoding="utf-8")
+
+
+def clone_edge_function(source_slug: str, target_slug: str) -> None:
+    source_dir = FUNCTIONS / source_slug
+    target_dir = FUNCTIONS / target_slug
+    if not source_dir.exists():
+        raise SystemExit(f"Função fonte ausente: {source_dir}")
+    if target_dir.exists():
+        shutil.rmtree(target_dir)
+    shutil.copytree(source_dir, target_dir)
+    for file in target_dir.rglob("*"):
+        if file.is_file() and file.suffix.lower() in TEXT_SUFFIXES:
+            file.write_text(transform_edge_text(file.read_text(encoding="utf-8")), encoding="utf-8")
+
+
+def migrate_edge_sources() -> None:
+    clone_edge_function("admin-v3-api", "admin-core-v1")
+    clone_edge_function("admin-v3-product-names", "admin-product-names-v1")
 
 
 def main() -> None:
@@ -157,7 +186,8 @@ def main() -> None:
     while queue:
         copy_one(queue.pop(0), queue, copied)
 
-    print(f"Migração concluída: {len(copied)} assets copiados para admin/.")
+    migrate_edge_sources()
+    print(f"Migração concluída: {len(copied)} assets copiados para admin/ e Edge Functions neutras preparadas.")
 
 
 if __name__ == "__main__":
