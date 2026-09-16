@@ -1,4 +1,5 @@
 import {buildProceduralAudio} from './audio-render.js';
+import {buildProceduralVisualFilters} from './procedural-visuals.js';
 
 const FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 const clean=v=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim();
@@ -26,6 +27,7 @@ export function buildFfmpegArgs(job={},options={}){
   const width=num(job.width,1080),height=num(job.height,1920),fps=num(job.fps,30);
   const output=options.output||'creative-studio-output.mp4',productInput=options.productInput||null;
   const assetInputs=(options.assetInputs||[]).filter(x=>x?.path).slice(0,8);
+  const proceduralVisuals=(options.proceduralVisuals||[]).filter(x=>x?.kind).slice(0,12);
   const args=['-y','-f','lavfi','-i',`color=c=0xF5F2EC:s=${width}x${height}:r=${fps}:d=${duration}`];
   let nextInput=1,productIndex=null;
   if(productInput){productIndex=nextInput++;args.push('-loop','1','-i',productInput)}
@@ -40,6 +42,7 @@ export function buildFfmpegArgs(job={},options={}){
     const start=Math.max(0,num(asset.start,0)),end=Math.min(duration,num(asset.end,duration));const pos=assetPosition(index,width,height,asset.motion,start);
     filters.push(`[${visual}][${scaled}]overlay=x='${pos.x}':y='${pos.y}':enable='between(t,${start.toFixed(3)},${end.toFixed(3)})'[${out}]`);visual=out;
   });
+  if(proceduralVisuals.length){const proc=buildProceduralVisualFilters(proceduralVisuals,{inputLabel:visual,width,height,duration});filters.push(...proc.filters);visual=proc.outputLabel}
   if(productIndex!==null){filters.push(`[${productIndex}:v]scale=w=${Math.round(width*.78)}:h=${Math.round(height*.56)}:force_original_aspect_ratio=decrease,format=rgba[p]`,`[${visual}][p]overlay=x=(W-w)/2:y=(H-h)/2-${Math.round(height*.035)}:enable='between(t,0,${duration})'[base]`);visual='base'}
   const concept=escapeDrawtext(job?.creative_plan?.concept||'Dona Antônia');
   const productName=escapeDrawtext(job?.product_snapshot?.name||'Produto');
