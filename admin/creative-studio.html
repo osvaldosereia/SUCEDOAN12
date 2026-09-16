@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#f6f4ef">
+  <title>Dona Antônia · Estúdio Criativo</title>
+  <link rel="stylesheet" href="./creative-studio.css?v=20260916-1">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><img src="../img/logoantonia5.png" width="48" height="48" alt=""><span><strong>Dona Antônia</strong><small>Estúdio Criativo</small></span></a>
+    <a class="back" href="./">Voltar ao Admin</a>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <div><span class="eyebrow">Reels automáticos</span><h1>Do produto para uma história em vídeo.</h1><p>Escolha um produto. O Diretor Criativo encontra o melhor território, cria uma micro-história e prepara os elementos para produção.</p></div>
+      <div id="secureState" class="secure-state">Verificando sessão segura…</div>
+    </section>
+
+    <section id="authPanel" class="panel hidden">
+      <div class="panel-head"><div><h2>Acesso seguro</h2><p>Esta área pode consumir IA e baixar elementos externos, por isso usa sua conta administrativa.</p></div></div>
+      <form id="authForm" class="auth-form">
+        <label><span>E-mail</span><input id="authEmail" type="email" autocomplete="email" required></label>
+        <label><span>Senha</span><input id="authPassword" type="password" autocomplete="current-password"></label>
+        <div class="actions"><button class="primary" type="submit">Entrar</button><button id="magicLinkButton" class="secondary" type="button">Enviar link de acesso</button></div>
+      </form>
+      <p id="authMessage" class="message"></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>1. Escolha o produto</h2><p>Somente o produto real do cadastro será usado no fechamento comercial.</p></div></div>
+      <form id="productSearchForm" class="searchbar"><input id="productSearch" type="search" placeholder="Digite nome, EAN ou marca" autocomplete="off"><button class="secondary" type="submit">Buscar</button></form>
+      <div id="productResults" class="product-grid"></div>
+      <div id="selectedProduct" class="selected-product hidden"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>2. Direção criativa</h2><p>Uma ideia principal por vez. Você pode pedir outra sem produzir nada.</p></div></div>
+      <div class="controls">
+        <label><span>Duração desejada</span><select id="duration"><option value="15">15 s</option><option value="18" selected>18 s</option><option value="20">20 s</option><option value="25">25 s</option></select></label>
+        <label><span>Instrução opcional</span><input id="creativeInstruction" type="text" maxlength="280" placeholder="Ex.: mais divertido, foco em aroma…"></label>
+      </div>
+      <div class="actions"><button id="createIdeaButton" class="primary" type="button" disabled>Criar ideia</button><button id="otherIdeaButton" class="secondary hidden" type="button">Outra ideia</button></div>
+      <div id="progress" class="progress hidden"></div>
+    </section>
+
+    <section id="ideaPanel" class="panel hidden">
+      <div class="panel-head"><div><span class="eyebrow">Ideia escolhida pelo Diretor</span><h2 id="conceptTitle"></h2></div><div id="durationBadge" class="badge"></div></div>
+      <div class="idea-grid">
+        <article><span>Território</span><strong id="territoryText"></strong></article>
+        <article><span>Emoção</span><strong id="emotionText"></strong></article>
+        <article><span>Hook</span><strong id="hookText"></strong></article>
+        <article><span>Payoff</span><strong id="payoffText"></strong></article>
+      </div>
+      <h3>História</h3><div id="sceneList" class="scene-list"></div>
+      <h3>Elementos</h3><div id="assetList" class="asset-list"></div>
+      <div class="summary-row"><div><span>Elementos prontos</span><strong id="assetSummary">—</strong></div><div><span>Uso do Diretor</span><strong id="usageSummary">—</strong></div></div>
+      <div class="actions"><button id="produceButton" class="primary" type="button" disabled>Preparar produção</button><button id="adjustButton" class="secondary" type="button">Ajustar instrução</button></div>
+      <p id="productionMessage" class="message"></p>
+    </section>
+  </main>
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="./config.js?v=20260915-1"></script>
+  <script type="module" src="./creative-studio.js?v=20260916-1"></script>
+</body>
+</html>
