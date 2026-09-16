@@ -14,10 +14,15 @@ Deno.serve(async(req:Request)=>{
   const token=(req.headers.get('Authorization')||'').replace(/^Bearer\s+/i,'').trim();
   if(!token)return json({ok:false,error:'missing_token'},401);
   const sb=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data:userData}=await sb.auth.getUser(token);
-  if(!userData?.user?.id)return json({ok:false,error:'invalid_user'},401);
-  const {data:admin}=await sb.from('admin_users').select('role,is_active').eq('user_id',userData.user.id).maybeSingle();
-  if(!admin?.is_active||!['owner','operator'].includes(admin.role))return json({ok:false,error:'admin_not_authorized'},403);
+  let caller='authenticated_admin';
+  if(token===serviceKey){
+    caller='internal_service_role';
+  }else{
+    const {data:userData}=await sb.auth.getUser(token);
+    if(!userData?.user?.id)return json({ok:false,error:'invalid_user'},401);
+    const {data:admin}=await sb.from('admin_users').select('role,is_active').eq('user_id',userData.user.id).maybeSingle();
+    if(!admin?.is_active||!['owner','operator'].includes(admin.role))return json({ok:false,error:'admin_not_authorized'},403);
+  }
   let body:any;try{body=await req.json()}catch{return json({ok:false,error:'invalid_json'},400)}
   if(!body?.product?.name)return json({ok:false,error:'product_required'},400);
   const key=Deno.env.get('OPENAI_API_KEY');if(!key)return json({ok:false,error:'openai_not_configured'},503);
@@ -25,5 +30,5 @@ Deno.serve(async(req:Request)=>{
   if(!response.ok)return json({ok:false,error:'director_provider_failed',status:response.status},502);
   const data=await response.json();
   const output=clean(data?.output_text,20000);let plan:any;try{plan=JSON.parse(output)}catch{return json({ok:false,error:'director_invalid_json'},502)}
-  return json({ok:true,plan,provider:'openai',model:CREATIVE_STUDIO_MODEL,usage:data?.usage||null,response_id:data?.id||null,auto_render:false,paid_generation:false});
+  return json({ok:true,plan,provider:'openai',model:CREATIVE_STUDIO_MODEL,usage:data?.usage||null,response_id:data?.id||null,caller,auto_render:false,paid_generation:false});
 });
