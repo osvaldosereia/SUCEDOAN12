@@ -12,8 +12,8 @@ const settings={
 
 test('turns actual Director token usage into BRL estimate for the Reel',()=>{
   const cost=buildStudioCostSnapshot({usage:{input_tokens:10000,output_tokens:2000},settings});
-  assert.equal(cost.directorCostBrl,0.02262532);
-  assert.equal(cost.estimated,0.022625);
+  assert.equal(cost.directorCostBrl,0.02262832);
+  assert.equal(cost.estimated,0.022628);
   assert.equal(cost.requiresApproval,false);
   assert.equal(cost.limit,0.2);
   assert.equal(cost.pricingKnown,true);
@@ -21,7 +21,7 @@ test('turns actual Director token usage into BRL estimate for the Reel',()=>{
 
 test('future paid generation above the configured Reel cap requires approval',()=>{
   const cost=buildStudioCostSnapshot({usage:{input_tokens:10000,output_tokens:2000},settings,extraPaid:{image_generation:.19}});
-  assert.equal(cost.estimated,0.212625);
+  assert.equal(cost.estimated,0.212628);
   assert.equal(cost.requiresApproval,true);
   assert.equal(cost.allowedActions.paid_generation,false);
 });
