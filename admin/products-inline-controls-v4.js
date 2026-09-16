@@ -95,7 +95,7 @@ function pageMarkup(data){
   const products=data.products||[];
   const pages=Math.max(1,Math.ceil(Number(data.total||0)/40));
   return `<section data-inline-products-root>
-    <div class="page-head inline-products-head"><div><h1>Produtos</h1><p>Ativo controla o cadastro comercial. Verificado confirma a conferência física exigida pelo Comprar.</p></div><div class="inline-save-actions"><button class="primary" type="button" data-inline-save-all disabled>Salvar alterações</button><small data-inline-pending-hint>Nenhuma alteração pendente</small></div></div>
+    <div class="page-head inline-products-head"><div><h1>Produtos</h1><p>Ativo controla o cadastro comercial. Verificado confirma a conferência física exigida pelo Comprar.</p></div><div class="inline-save-actions"><button class="primary" type="button" data-inline-save-all disabled>Salvar alterações</button><small data-inline-pending-hint>Nenhuma alteração pendente</small><div class="inline-pending-warning" data-inline-pending-warning role="status" aria-live="polite"><strong>Alterações não salvas</strong><span>Salve as mudanças antes de sair desta página.</span></div></div></div>
     <form data-inline-product-filter class="toolbar inline-product-toolbar">
       <input type="search" name="q" value="${esc(state.q)}" placeholder="Buscar produto, SKU ou marca" aria-label="Buscar produto">
       <select name="status" aria-label="Status">
@@ -164,11 +164,19 @@ function updatePendingUi(){
   const count=pendingInlineChanges.size;
   const button=app?.querySelector('[data-inline-save-all]');
   const hint=app?.querySelector('[data-inline-pending-hint]');
+  const warning=app?.querySelector('[data-inline-pending-warning]');
   if(button){
     button.disabled=count===0||savingInlineChanges;
     button.textContent=savingInlineChanges?`Salvando ${count}…`:count?`Salvar alterações (${count})`:'Salvar alterações';
   }
   if(hint)hint.textContent=count?`${count} produto${count===1?'':'s'} com alteração pendente`:'Nenhuma alteração pendente';
+  if(warning){
+    warning.classList.toggle('is-visible',count>0);
+    warning.classList.toggle('is-saving',savingInlineChanges);
+    const detail=warning.querySelector('span');
+    if(detail)detail.textContent=savingInlineChanges?`Salvando ${count} produto${count===1?'':'s'}…`:`${count} produto${count===1?' foi alterado':'s foram alterados'}. Clique em Salvar alterações antes de sair.`;
+    if(count===0)warning.classList.remove('is-exit-warning');
+  }
 }
 
 function readInlinePatch(row){
@@ -222,8 +230,19 @@ function queueInlineChange(control){
   updatePendingUi();
 }
 
+function emphasizePendingWarning(){
+  const warning=app?.querySelector('[data-inline-pending-warning]');
+  if(!warning)return;
+  warning.classList.remove('is-exit-warning');
+  void warning.offsetWidth;
+  warning.classList.add('is-visible','is-exit-warning');
+  warning.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+  setTimeout(()=>warning.classList.remove('is-exit-warning'),1600);
+}
+
 function guardPendingNavigation(){
   if(pendingInlineChanges.size===0)return true;
+  emphasizePendingWarning();
   toast('Salve as alterações pendentes antes de continuar.','error');
   app?.querySelector('[data-inline-save-all]')?.focus();
   return false;

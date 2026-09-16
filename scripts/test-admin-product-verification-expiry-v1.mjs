@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const ui=read('admin/products-inline-controls-v4.js');
+const css=read('admin/products-inline-controls-v4.css');
 const backend=read('supabase/functions/admin-simple-v2/index.ts');
 const comprar=read('supabase/functions/shopping-chat-products-v1/index.ts');
 
@@ -41,6 +42,16 @@ assert.doesNotMatch(ui,/if\(control\.matches\('\[data-inline-active\]'\)\)return
 assert.match(ui,/Salve as alterações pendentes/);
 assert.match(ui,/pendingInlineChanges\.size/);
 
+// Quando houver alterações pendentes, o Admin deve manter um aviso visual persistente
+// e reforçá-lo quando o usuário tentar sair sem salvar.
+assert.match(ui,/data-inline-pending-warning/);
+assert.match(ui,/Alterações não salvas/);
+assert.match(ui,/function emphasizePendingWarning\(/);
+assert.match(ui,/guardPendingNavigation\(\)[\s\S]*emphasizePendingWarning\(\)/);
+assert.match(css,/\.inline-pending-warning/);
+assert.match(css,/\.inline-pending-warning\.is-visible/);
+assert.match(css,/\.inline-pending-warning\.is-exit-warning/);
+
 // O editor individual continua salvando separadamente.
 assert.match(ui,/name="physically_verified"/);
 assert.match(ui,/is_active:form\.elements\.is_active\.checked/);
@@ -77,4 +88,4 @@ assert.match(comprar,/\.eq\('physically_verified',true\)/);
 assert.match(comprar,/\.eq\('is_active',true\)/);
 assert.match(comprar,/\.gt\('stock',0\)/);
 
-console.log('admin product verification + expiry + batch save contract ok');
+console.log('admin product verification + expiry + batch save + pending warning contract ok');
