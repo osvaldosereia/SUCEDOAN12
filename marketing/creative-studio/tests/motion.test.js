@@ -20,3 +20,24 @@ test('stop motion modifier quantizes timing without changing semantic motion',()
   assert.equal(t.modifier,'stop_motion');
   assert.ok(t.keyframes.every(k=>Math.abs(k.time*10-Math.round(k.time*10))<1e-9));
 });
+
+test('walk crawl and chase create readable travel tracks',()=>{
+  for(const motion of ['walk','crawl','chase']){
+    const t=buildMotionTrack({motion,behavior:'excited',start:0,duration:1.4});
+    assert.ok(t.keyframes.some(k=>k.phase==='travel'));
+    assert.equal(t.keyframes.at(-1).phase,'settle');
+  }
+});
+
+test('explode scatter and celebrate include exaggerated action',()=>{
+  for(const motion of ['explode','scatter','celebrate']){
+    const t=buildMotionTrack({motion,behavior:'chaotic',start:0,duration:1});
+    assert.ok(t.keyframes.some(k=>['overshoot','burst','travel'].includes(k.phase)));
+  }
+});
+
+test('confident behavior is supported for product hero acting',()=>{
+  const t=buildMotionTrack({motion:'rise',behavior:'confident',start:0,duration:1});
+  assert.equal(t.behavior,'confident');
+  assert.equal(t.keyframes.at(-1).phase,'settle');
+});
