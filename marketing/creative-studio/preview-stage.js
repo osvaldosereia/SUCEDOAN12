@@ -13,6 +13,6 @@ export function renderPreviewMarkup(model={}){
       <div class="preview-close">${badge}<strong>${esc(model.productName||'Produto')}</strong>${compare}<b>${esc(model?.close?.priceText||'')}</b><span>${esc(model?.close?.cta||'')}</span><small>${esc(model?.close?.serviceArea||'')}</small></div>
     </div>
     <div class="preview-meta"><strong>${esc(`${model.assetReady||'0/0'} elementos prontos`)}</strong><span>${esc(`${sec(model.duration)}s · ${model.camera||'static_fallback'}`)}</span></div>
-    <div class="preview-scenes">${scenes}</div>
+    <div class="preview-timeline">${scenes}</div>
   </div>`;
 }
