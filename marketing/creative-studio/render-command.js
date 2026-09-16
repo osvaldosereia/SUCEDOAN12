@@ -1,12 +1,13 @@
 import {buildProceduralAudio} from './audio-render.js';
 import {buildProceduralVisualFilters} from './procedural-visuals.js';
 import {buildCameraFilter,buildCameraPlan,parallaxAmplitude} from './camera.js';
+import {buildCommercialClose} from './commercial-close.js';
 
 const FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 const clean=v=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim();
 const num=(v,fallback)=>Number.isFinite(Number(v))?Number(v):fallback;
 
-export function escapeDrawtext(value){return clean(value).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/:/g,'\\:').replace(/%/g,'\\%').slice(0,220)}
+export function escapeDrawtext(value){return clean(value).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/:/g,'\\:').replace(/,/g,'\\,').replace(/%/g,'\\%').slice(0,220)}
 
 function assetPosition(index,width,height,motion,start,role='support'){
   const left=index%2===0;
@@ -51,19 +52,20 @@ export function buildFfmpegArgs(job={},options={}){
   const camera=job?.timeline?.camera||buildCameraPlan(job?.timeline?.scenes||[],{duration});
   filters.push(buildCameraFilter({...camera,duration},{inputLabel:visual,outputLabel:'camera',width,height,fps}));visual='camera';
   const concept=escapeDrawtext(job?.creative_plan?.concept||'Dona Antônia');
-  const productName=escapeDrawtext(job?.product_snapshot?.name||'Produto');
-  const offer=job?.product_snapshot?.is_offer===true&&job?.product_snapshot?.offer_price!=null?Number(job.product_snapshot.offer_price):Number(job?.product_snapshot?.price||0);
-  const price=Number.isFinite(offer)&&offer>0?`R$ ${offer.toFixed(2).replace('.',',')}`:'';
+  const close=buildCommercialClose(job?.product_snapshot||{});
   let input=visual,serial=0;
   const add=(expr)=>{const out=`v${serial++}`;filters.push(`[${input}]${expr}[${out}]`);input=out};
   add(`drawtext=fontfile=${FONT}:text='${concept}':fontsize=${Math.round(width*.055)}:fontcolor=0x2A2927:x=(w-text_w)/2:y=${Math.round(height*.065)}:box=1:boxcolor=0xF5F2ECBB:boxborderw=18`);
   for(const scene of (job?.timeline?.scenes||[]).slice(0,7)){
     const start=Math.max(0,num(scene.start,0)),end=Math.min(duration,num(scene.end,duration)),summary=escapeDrawtext(scene.summary||scene.beat||'');if(!summary)continue;
-    add(`drawtext=fontfile=${FONT}:text='${summary}':fontsize=${Math.round(width*.044)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(height*.79)}:box=1:boxcolor=0x111111AA:boxborderw=22:enable='between(t,${start.toFixed(3)},${end.toFixed(3)})'`);
+    add(`drawtext=fontfile=${FONT}:text='${summary}':fontsize=${Math.round(width*.044)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(height*.74)}:box=1:boxcolor=0x111111AA:boxborderw=22:enable='between(t,${start.toFixed(3)},${end.toFixed(3)})'`);
   }
-  const closeStart=Math.max(0,duration-3.2).toFixed(3);
-  add(`drawtext=fontfile=${FONT}:text='${productName}':fontsize=${Math.round(width*.048)}:fontcolor=0x2A2927:x=(w-text_w)/2:y=${Math.round(height*.865)}:box=1:boxcolor=0xF5F2ECDD:boxborderw=16:enable='gte(t,${closeStart})'`);
-  if(price)add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(price)}':fontsize=${Math.round(width*.075)}:fontcolor=0xB21E35:x=(w-text_w)/2:y=${Math.round(height*.91)}:box=1:boxcolor=white@0.90:boxborderw=18:enable='gte(t,${closeStart})'`);
+  const closeStart=Math.max(0,duration-3.8).toFixed(3);
+  if(close.badge)add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(close.badge)}':fontsize=${Math.round(width*.045)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(height*.79)}:box=1:boxcolor=0xB21E35:boxborderw=18:enable='gte(t,${closeStart})'`);
+  add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(close.productName)}':fontsize=${Math.round(width*.048)}:fontcolor=0x2A2927:x=(w-text_w)/2:y=${Math.round(height*.835)}:box=1:boxcolor=0xF5F2EEDD:boxborderw=16:enable='gte(t,${closeStart})'`);
+  if(close.compareAtText)add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(`De ${close.compareAtText}`)}':fontsize=${Math.round(width*.036)}:fontcolor=0x595754:x=(w-text_w)/2:y=${Math.round(height*.875)}:box=1:boxcolor=white@0.82:boxborderw=12:enable='gte(t,${closeStart})'`);
+  if(close.priceText)add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(close.priceText)}':fontsize=${Math.round(width*.075)}:fontcolor=0xB21E35:x=(w-text_w)/2:y=${Math.round(height*.905)}:box=1:boxcolor=white@0.92:boxborderw=18:enable='gte(t,${closeStart})'`);
+  add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(`${close.cta} · ${close.serviceArea}`)}':fontsize=${Math.round(width*.029)}:fontcolor=white:x=(w-text_w)/2:y=${Math.round(height*.955)}:box=1:boxcolor=0x111111CC:boxborderw=14:enable='gte(t,${closeStart})'`);
   filters.push(`[${input}]fade=t=in:st=0:d=0.25,fade=t=out:st=${Math.max(0,duration-0.25).toFixed(3)}:d=0.25[vout]`);
   args.push('-filter_complex',filters.join(';'),'-map','[vout]','-map',audio.outputMap,'-t',String(duration),'-r',String(fps),'-c:v','libx264','-preset','veryfast','-crf','21','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output);
   return args;
