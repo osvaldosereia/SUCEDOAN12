@@ -5,6 +5,8 @@ const dialog=document.getElementById('editorDialog');
 const editorBody=document.getElementById('editorBody');
 const toastRegion=document.getElementById('toastRegion');
 const state={page:1,total:0,q:'',status:'',verification:'',expiry:'',sort:'name',loading:false,token:0};
+const pendingInlineChanges=new Map();
+let savingInlineChanges=false;
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const money=value=>(value===null||value===undefined||value==='')?'—':Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -14,6 +16,8 @@ const cuiabaDateKey=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Cuiab
 const dayNumber=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]))/86400000:null};
 const formatDate=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?`${match[3]}/${match[2]}/${match[1]}`:'—'};
 const formatDateTime=value=>{if(!value)return 'Nunca';const date=new Date(value);return Number.isNaN(date.getTime())?'Nunca':date.toLocaleString('pt-BR',{timeZone:'America/Cuiaba',dateStyle:'short',timeStyle:'short'})};
+const nullableNumber=value=>{const raw=String(value??'').trim();if(raw==='')return null;const n=Number(raw.replace(',','.'));return Number.isFinite(n)?n:Number.NaN};
+const numbersEqual=(left,right)=>(left===null&&right===null)||(Number.isFinite(left)&&Number.isFinite(right)&&Number(left)===Number(right));
 
 function validityInfo(value){
   const raw=String(value||'').trim();
@@ -74,7 +78,7 @@ async function productApi(action,payload={}){
 function productRow(p){
   const meta=[p.sku?`SKU ${p.sku}`:'',p.brand,p.packaging,p.category].filter(Boolean).join(' · ');
   const validity=validityInfo(p.validity_date);
-  return `<tr data-inline-product-row="${esc(p.id)}" data-product-name="${esc(p.name||'Produto')}">
+  return `<tr data-inline-product-row="${esc(p.id)}" data-product-name="${esc(p.name||'Produto')}" data-original-stock="${esc(p.stock??0)}" data-original-active="${p.is_active===true?'1':'0'}" data-original-verified="${p.physically_verified===true?'1':'0'}" data-original-offer="${p.is_offer===true?'1':'0'}" data-original-offer-price="${esc(p.offer_price??'')}">
     <td><div class="name-cell inline-product-name">${p.image_url?`<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async">`:'<div class="thumb"></div>'}<div><strong>${esc(p.name||'Produto')}</strong><span>${esc(meta||p.sku||'')}</span></div></div></td>
     <td><input data-product-inline data-inline-stock class="inline-product-input inline-stock" type="number" min="0" step="0.001" value="${esc(p.stock??0)}" aria-label="Estoque de ${esc(p.name||'produto')}"></td>
     <td><strong class="inline-regular-price">${money(p.price)}</strong></td>
@@ -91,7 +95,7 @@ function pageMarkup(data){
   const products=data.products||[];
   const pages=Math.max(1,Math.ceil(Number(data.total||0)/40));
   return `<section data-inline-products-root>
-    <div class="page-head"><div><h1>Produtos</h1><p>Ativo controla o cadastro comercial. Verificado confirma a conferência física exigida pelo Comprar.</p></div></div>
+    <div class="page-head inline-products-head"><div><h1>Produtos</h1><p>Ativo controla o cadastro comercial. Verificado confirma a conferência física exigida pelo Comprar.</p></div><div class="inline-save-actions"><button class="primary" type="button" data-inline-save-all disabled>Salvar alterações</button><small data-inline-pending-hint>Nenhuma alteração pendente</small></div></div>
     <form data-inline-product-filter class="toolbar inline-product-toolbar">
       <input type="search" name="q" value="${esc(state.q)}" placeholder="Buscar produto, SKU ou marca" aria-label="Buscar produto">
       <select name="status" aria-label="Status">
@@ -144,6 +148,7 @@ async function mountProducts({force=false}={}){
     const maxPage=Math.max(1,Math.ceil(state.total/40));
     if(state.page>maxPage){state.page=maxPage;state.loading=false;return mountProducts({force:true})}
     app.innerHTML=pageMarkup(data);
+    updatePendingUi();
   }catch(error){
     if(token===state.token&&productRoute())app.innerHTML=`<div class="page-head"><div><h1>Produtos</h1></div></div><section class="panel empty">${esc(error.message)}</section>`;
   }finally{state.loading=false}
@@ -155,63 +160,136 @@ function setRowBusy(row,busy){
   row.querySelectorAll('input,button').forEach(control=>control.disabled=busy);
 }
 
-function syncRow(row,product){
-  if(!row||!product)return;
-  const stock=row.querySelector('[data-inline-stock]');
-  const active=row.querySelector('[data-inline-active]');
-  const verified=row.querySelector('[data-inline-verified]');
-  const offer=row.querySelector('[data-inline-offer]');
-  const offerPrice=row.querySelector('[data-inline-offer-price]');
-  if(stock)stock.value=product.stock??0;
-  if(active)active.checked=product.is_active===true;
-  if(verified)verified.checked=product.physically_verified===true;
-  if(offer)offer.checked=product.is_offer===true;
-  if(offerPrice)offerPrice.value=product.offer_price??'';
+function updatePendingUi(){
+  const count=pendingInlineChanges.size;
+  const button=app?.querySelector('[data-inline-save-all]');
+  const hint=app?.querySelector('[data-inline-pending-hint]');
+  if(button){
+    button.disabled=count===0||savingInlineChanges;
+    button.textContent=savingInlineChanges?`Salvando ${count}…`:count?`Salvar alterações (${count})`:'Salvar alterações';
+  }
+  if(hint)hint.textContent=count?`${count} produto${count===1?'':'s'} com alteração pendente`:'Nenhuma alteração pendente';
 }
 
-async function saveInline(row,patch,message){
-  setRowBusy(row,true);
-  try{
-    const data=await productApi('update_product',{id:row.dataset.inlineProductRow,patch});
-    syncRow(row,data.product);
-    toast(message,'success');
-    if(Object.prototype.hasOwnProperty.call(patch,'physically_verified')||state.status||state.verification||state.expiry||state.sort==='expiry')await mountProducts({force:true});
-  }catch(error){
-    toast(error.message,'error');
-    await mountProducts({force:true});
-  }finally{if(document.body.contains(row))setRowBusy(row,false)}
+function readInlinePatch(row){
+  const patch={};
+  let error='';
+  const stockInput=row.querySelector('[data-inline-stock]');
+  const activeInput=row.querySelector('[data-inline-active]');
+  const verifiedInput=row.querySelector('[data-inline-verified]');
+  const offerInput=row.querySelector('[data-inline-offer]');
+  const offerPriceInput=row.querySelector('[data-inline-offer-price]');
+
+  const stock=Number(stockInput?.value);
+  const originalStock=Number(row.dataset.originalStock??0);
+  if(!Number.isFinite(stock)||stock<0)error='Informe um estoque válido.';
+  else if(stock!==originalStock)patch.stock=stock;
+
+  const active=!!activeInput?.checked;
+  if(active!==(row.dataset.originalActive==='1'))patch.is_active=active;
+
+  const verified=!!verifiedInput?.checked;
+  if(verified!==(row.dataset.originalVerified==='1'))patch.physically_verified=verified;
+
+  const offer=!!offerInput?.checked;
+  if(offer!==(row.dataset.originalOffer==='1'))patch.is_offer=offer;
+
+  const offerPrice=nullableNumber(offerPriceInput?.value);
+  const originalOfferPrice=nullableNumber(row.dataset.originalOfferPrice);
+  if(Number.isNaN(offerPrice))error=error||'Informe um preço de oferta válido.';
+  else{
+    if(offer&&offerPrice===null)error=error||'Preço da oferta é obrigatório enquanto a oferta estiver ativa.';
+    if(!numbersEqual(offerPrice,originalOfferPrice))patch.offer_price=offerPrice;
+  }
+
+  return {patch,error};
 }
 
-async function handleInlineChange(control){
+function queueInlineChange(control){
   const row=control.closest('[data-inline-product-row]');
   if(!row)return;
-  if(control.matches('[data-inline-stock]')){
-    const value=Number(control.value);
-    if(!Number.isFinite(value)||value<0){toast('Informe um estoque válido.','error');return mountProducts({force:true})}
-    return saveInline(row,{stock:value},'Estoque atualizado.');
+  const id=row.dataset.inlineProductRow;
+  const change=readInlinePatch(row);
+  if(Object.keys(change.patch).length===0){
+    pendingInlineChanges.delete(id);
+    row.classList.remove('is-dirty','has-error');
+  }else{
+    pendingInlineChanges.set(id,change);
+    row.classList.add('is-dirty');
+    row.classList.toggle('has-error',!!change.error);
+    if(change.error)toast(change.error,'error');
   }
-  if(control.matches('[data-inline-active]'))return saveInline(row,{is_active:control.checked},control.checked?'Produto ativado.':'Produto desativado.');
-  if(control.matches('[data-inline-verified]'))return saveInline(row,{physically_verified:control.checked},control.checked?'Produto marcado como verificado.':'Verificação física removida.');
-  if(control.matches('[data-inline-offer]')){
-    const priceInput=row.querySelector('[data-inline-offer-price]');
-    const raw=priceInput?.value.trim()||'';
-    const price=raw===''?null:Number(raw);
-    if(control.checked&&(price===null||!Number.isFinite(price)||price<0)){
-      control.checked=false;
-      priceInput?.focus();
-      toast('Informe primeiro o preço da oferta.','error');
-      return;
+  updatePendingUi();
+}
+
+function guardPendingNavigation(){
+  if(pendingInlineChanges.size===0)return true;
+  toast('Salve as alterações pendentes antes de continuar.','error');
+  app?.querySelector('[data-inline-save-all]')?.focus();
+  return false;
+}
+
+async function savePendingInlineChanges(){
+  if(savingInlineChanges||pendingInlineChanges.size===0)return;
+  const valid=[];
+  let invalid=0;
+
+  for(const id of [...pendingInlineChanges.keys()]){
+    const row=app?.querySelector(`[data-inline-product-row="${CSS.escape(id)}"]`);
+    if(!row){pendingInlineChanges.delete(id);continue}
+    const change=readInlinePatch(row);
+    if(Object.keys(change.patch).length===0){
+      pendingInlineChanges.delete(id);
+      row.classList.remove('is-dirty','has-error');
+      continue;
     }
-    return saveInline(row,{is_offer:control.checked,offer_price:price},control.checked?'Oferta ativada.':'Oferta desativada.');
+    pendingInlineChanges.set(id,change);
+    row.classList.toggle('has-error',!!change.error);
+    if(change.error){invalid+=1;continue}
+    valid.push({id,row,patch:change.patch});
   }
-  if(control.matches('[data-inline-offer-price]')){
-    const raw=control.value.trim();
-    const price=raw===''?null:Number(raw);
-    const offer=row.querySelector('[data-inline-offer]');
-    if(price!==null&&(!Number.isFinite(price)||price<0)){toast('Informe um preço de oferta válido.','error');return mountProducts({force:true})}
-    if(offer?.checked&&price===null){toast('Preço da oferta é obrigatório enquanto a oferta estiver ativa.','error');return mountProducts({force:true})}
-    return saveInline(row,{offer_price:price,is_offer:!!offer?.checked},'Preço da oferta atualizado.');
+
+  if(valid.length===0){
+    updatePendingUi();
+    if(invalid)toast('Corrija os campos destacados antes de salvar.','error');
+    return;
   }
+
+  savingInlineChanges=true;
+  updatePendingUi();
+  let saved=0;
+  let failed=invalid;
+
+  for(let index=0;index<valid.length;index+=5){
+    const batch=valid.slice(index,index+5);
+    batch.forEach(item=>setRowBusy(item.row,true));
+    const results=await Promise.allSettled(batch.map(async item=>({item,data:await productApi('update_product',{id:item.id,patch:item.patch})})));
+    results.forEach((result,resultIndex)=>{
+      const item=batch[resultIndex];
+      if(result.status==='fulfilled'){
+        pendingInlineChanges.delete(item.id);
+        saved+=1;
+        item.row.outerHTML=productRow(result.value.data.product);
+      }else{
+        failed+=1;
+        item.row.classList.add('is-dirty','has-error');
+        setRowBusy(item.row,false);
+      }
+    });
+    updatePendingUi();
+  }
+
+  savingInlineChanges=false;
+  updatePendingUi();
+
+  if(pendingInlineChanges.size===0){
+    toast(`${saved} produto${saved===1?' salvo':'s salvos'}.`,'success');
+    await mountProducts({force:true});
+    return;
+  }
+
+  if(saved)toast(`${saved} produto${saved===1?' salvo':'s salvos'}. ${pendingInlineChanges.size} ainda precisa${pendingInlineChanges.size===1?'':'m'} de atenção.`,failed?'error':'success');
+  else toast('Não foi possível salvar as alterações. Revise os campos destacados.','error');
 }
 
 function editorMarkup(p){
@@ -304,6 +382,7 @@ app?.addEventListener('submit',async event=>{
   const form=event.target.closest('[data-inline-product-filter]');
   if(!form)return;
   event.preventDefault();
+  if(!guardPendingNavigation())return;
   const data=new FormData(form);
   state.q=String(data.get('q')||'').trim();
   state.status=String(data.get('status')||'').trim();
@@ -316,19 +395,43 @@ app?.addEventListener('submit',async event=>{
 
 app?.addEventListener('click',async event=>{
   const target=event.target.closest('button');if(!target)return;
-  if(target.matches('[data-inline-refresh]')){await mountProducts({force:true});return}
-  if(target.matches('[data-inline-page]')){const page=Number(target.dataset.inlinePage);if(page>=1){state.page=page;await mountProducts({force:true})}return}
-  if(target.matches('[data-inline-edit-product]')){await openEditor(target.dataset.inlineEditProduct);return}
-  if(target.matches('[data-inline-delete-product]')){await deleteProduct(target.dataset.inlineDeleteProduct,target.closest('[data-inline-product-row]'));return}
+  if(target.matches('[data-inline-save-all]')){await savePendingInlineChanges();return}
+  if(target.matches('[data-inline-refresh]')){if(guardPendingNavigation())await mountProducts({force:true});return}
+  if(target.matches('[data-inline-page]')){if(!guardPendingNavigation())return;const page=Number(target.dataset.inlinePage);if(page>=1){state.page=page;await mountProducts({force:true})}return}
+  if(target.matches('[data-inline-edit-product]')){if(guardPendingNavigation())await openEditor(target.dataset.inlineEditProduct);return}
+  if(target.matches('[data-inline-delete-product]')){if(guardPendingNavigation())await deleteProduct(target.dataset.inlineDeleteProduct,target.closest('[data-inline-product-row]'));return}
 });
 
 app?.addEventListener('change',event=>{
   const control=event.target.closest('[data-product-inline]');
-  if(control)handleInlineChange(control);
+  if(control)queueInlineChange(control);
 });
 
 app?.addEventListener('keydown',event=>{
   if(event.key==='Enter'&&event.target.matches('[data-inline-stock],[data-inline-offer-price]')){event.preventDefault();event.target.blur()}
+});
+
+document.addEventListener('click',event=>{
+  if(!productRoute()||pendingInlineChanges.size===0)return;
+  const route=event.target.closest('[data-route]');
+  if(route&&route.dataset.route!=='products'){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    guardPendingNavigation();
+    return;
+  }
+  const link=event.target.closest('a:not([target="_blank"])');
+  if(link&&!link.closest('[data-inline-products-root]')){
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    guardPendingNavigation();
+  }
+},true);
+
+window.addEventListener('beforeunload',event=>{
+  if(pendingInlineChanges.size===0)return;
+  event.preventDefault();
+  event.returnValue='';
 });
 
 editorBody?.addEventListener('click',event=>{if(event.target.closest('[data-inline-close-dialog]'))closeEditor()});
@@ -343,5 +446,12 @@ const observer=new MutationObserver(()=>{
   if(productRoute()&&!app.querySelector('[data-inline-products-root]')&&!state.loading)queueMicrotask(()=>mountProducts());
 });
 if(app)observer.observe(app,{childList:true});
-window.addEventListener('hashchange',()=>setTimeout(()=>mountProducts(),0));
+window.addEventListener('hashchange',()=>{
+  if(pendingInlineChanges.size&& !productRoute()){
+    location.hash='products';
+    guardPendingNavigation();
+    return;
+  }
+  setTimeout(()=>mountProducts(),0);
+});
 setTimeout(()=>mountProducts(),0);

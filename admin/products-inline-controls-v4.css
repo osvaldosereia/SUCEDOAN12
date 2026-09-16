@@ -1,4 +1,8 @@
 .inline-product-toolbar{display:grid;grid-template-columns:minmax(230px,1.7fr) repeat(4,minmax(145px,1fr)) auto auto;gap:10px;align-items:center}
+.inline-products-head{gap:18px;align-items:flex-start}
+.inline-save-actions{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:190px}
+.inline-save-actions button{min-width:190px}
+.inline-save-actions small{color:var(--muted,#667085);font-size:.75rem}
 .inline-products-panel{padding:0;overflow:hidden}
 .inline-products-summary{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border,#e5e7eb);font-size:.9rem}
 .inline-products-table{min-width:1280px}
@@ -39,6 +43,8 @@
 .inline-actions button{white-space:nowrap}
 .inline-actions .danger-inline{background:#fff;color:#b42318;border-color:#fecdca}
 .inline-actions .danger-inline:hover{background:#fef3f2}
+.inline-products-table tr.is-dirty{background:#fffbeb;box-shadow:inset 4px 0 #f79009}
+.inline-products-table tr.has-error{background:#fef3f2;box-shadow:inset 4px 0 #d92d20}
 .inline-products-table tr.is-saving{opacity:.58}
 .inline-products-table tr.is-saving input,.inline-products-table tr.is-saving button{cursor:wait}
 
@@ -48,6 +54,9 @@
 }
 
 @media (max-width:760px){
+  .inline-products-head{flex-direction:column;align-items:stretch}
+  .inline-save-actions{align-items:stretch;min-width:0}
+  .inline-save-actions button{width:100%;min-width:0}
   .inline-product-toolbar{grid-template-columns:1fr 1fr}
   .inline-product-toolbar input[type="search"]{grid-column:1/-1}
   .inline-product-toolbar button{width:100%}
