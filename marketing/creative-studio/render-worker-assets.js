@@ -1,8 +1,14 @@
 import {assessRenderAssets,visualAssetSpecs} from './render-assets.js';
+import {proceduralVisualSpecs} from './procedural-visuals.js';
 
 export function storedAssetDownloads(job={}){
   const assessed=assessRenderAssets(job?.resolved_assets?.items||[]);
   return visualAssetSpecs(assessed.items,{duration:Number(job?.duration_seconds||18)});
+}
+
+export function proceduralAssetVisuals(job={}){
+  const assessed=assessRenderAssets(job?.resolved_assets?.items||[]);
+  return proceduralVisualSpecs(assessed.items,{duration:Number(job?.duration_seconds||18)});
 }
 
 export function renderAssetExtension(spec={}){
