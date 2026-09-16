@@ -12,14 +12,13 @@ const checkoutApi=readFileSync('supabase/functions/shopping-checkout-v2/index.ts
 const checkout=readFileSync('comprar/checkout.js','utf8');
 const app=readFileSync('comprar/app.js','utf8');
 const adminOfficial=readFileSync('admin/index.html','utf8');
-const adminLatest=readFileSync('admin-v3/index.html','utf8');
-const adminLatestApp=readFileSync('admin-v3/app.js','utf8');
-const adminApiClient=readFileSync('admin-v3/api.js','utf8');
-const adminConfig=readFileSync('admin-v3/config.js','utf8');
-const adminOrders=readFileSync('admin-v3/pedidos.html','utf8');
-const adminOrdersJs=readFileSync('admin-v3/pedidos-v2.js','utf8');
-const integratedOrders=existsSync('admin-v3/orders-integrated-v2.js')?readFileSync('admin-v3/orders-integrated-v2.js','utf8'):'';
-const labelPrinter=existsSync('admin-v3/order-label-print-v1.js')?readFileSync('admin-v3/order-label-print-v1.js','utf8'):'';
+const adminLatestApp=readFileSync('admin/app.js','utf8');
+const adminApiClient=readFileSync('admin/api.js','utf8');
+const adminConfig=readFileSync('admin/runtime-config.js','utf8');
+const adminOrders=readFileSync('admin/pedidos.html','utf8');
+const adminOrdersJs=readFileSync('admin/pedidos-v2.js','utf8');
+const integratedOrders=existsSync('admin/orders-integrated-v2.js')?readFileSync('admin/orders-integrated-v2.js','utf8'):'';
+const labelPrinter=existsSync('admin/order-label-print-v1.js')?readFileSync('admin/order-label-print-v1.js','utf8'):'';
 const config=readFileSync('supabase/config.toml','utf8');
 
 assert.match(orderMigration,/catalog_session_id/);assert.match(orderMigration,/basket_name_snapshot/);assert.match(orderMigration,/checkout_snapshot/);
@@ -49,9 +48,12 @@ assert.match(customerCommitGuard,/customer_verification_required/,'guard must st
 assert.match(checkout,/app\.confirmOrder\(payload\)/);assert.match(checkout,/local\.orderSaved=true/);assert.match(checkout,/Seu pedido foi salvo/);assert.match(checkout,/if\(local\.orderSaved\)/);
 assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app,/checkoutApi\('confirm_order',payload\)/,'normal commercial transport must use the checkout endpoint');assert.match(app,/DA_ADMIN_TEST_TRANSPORT/);
 
-assert.match(adminOfficial,/\/admin-v3\/app\.js/);assert.match(adminOfficial,/data-route=["']orders["']/);assert.match(adminLatest,/data-route=["']orders["']/);assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
+assert.match(adminOfficial,/\.\/app\.js\?v=20260912-4/,'Admin oficial deve carregar o app local');
+assert.doesNotMatch(adminOfficial,/\/admin-v3\//,'Admin oficial não deve carregar o legado V3');
+assert.match(adminOfficial,/data-route=["']orders["']/);
+assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
 assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/);assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/);assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/);
-assert.match(adminOfficial,/orders-integrated-v2\.js\?v=20260915-2/);assert.match(adminLatest,/orders-integrated-v2\.js\?v=20260915-2/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
+assert.match(adminOfficial,/orders-integrated-v2\.js\?v=20260915-2/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
 for(const label of ['Cliente','Endereço de entrega','Forma de pagamento','Produtos','Dados operacionais'])assert.match(integratedOrders,new RegExp(label));
 
 assert.match(adminApi,/supportedSources=\['storefront_v2','shopping_room'\]/);assert.match(adminApi,/customer_snapshot/,'Admin list must expose customer snapshot');assert.match(adminApi,/order_items/);assert.match(adminApi,/delivery_address/);assert.match(adminApi,/payment_method/);assert.match(adminApi,/checkout_snapshot/);
