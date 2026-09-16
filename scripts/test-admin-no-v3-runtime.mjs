@@ -73,10 +73,29 @@ else {
   }
 }
 
+const namesPath = path.join(ROOT, 'admin/nomes-produtos.html');
+if (existsSync(namesPath)) {
+  const names = readFileSync(namesPath, 'utf8');
+  for (const marker of ['normalizationFilterForm', 'reviewList', 'runNow', 'historyList']) {
+    if (!names.includes(marker)) fail(`admin/nomes-produtos.html: tela real ausente (${marker})`);
+  }
+  if (/http-equiv=["']refresh["'][^>]*nomes-produtos\.html/i.test(names) || /location\.replace\(['"]\.\/nomes-produtos\.html['"]\)/.test(names)) {
+    fail('admin/nomes-produtos.html: redireciona para ela mesma');
+  }
+}
+
+const servicePath = path.join(ROOT, 'admin/atendimento.html');
+if (existsSync(servicePath)) {
+  const service = readFileSync(servicePath, 'utf8');
+  for (const marker of ['strategyApp', 'tabFlow', 'tabRules', 'tabTest']) {
+    if (!service.includes(marker)) fail(`admin/atendimento.html: tela ativa incompleta (${marker})`);
+  }
+}
+
 if (failures.length) {
   console.error('Admin ainda não está independente e íntegro:');
   for (const message of failures) console.error(`- ${message}`);
   process.exit(1);
 }
 
-console.log('OK: /admin não depende do Admin V3 e todas as referências locais verificadas existem.');
+console.log('OK: /admin não depende do Admin V3, referências locais existem e as subpáginas ativas estão íntegras.');
