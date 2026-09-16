@@ -11,7 +11,7 @@ const BUCKET='creative-studio-assets',MAX_EXTERNAL=3;
 function searchTerms(need:string,keywords:string[]){return [need,...keywords].map(x=>clean(x,80)).filter(Boolean).join(' ')}
 async function localSearch(sb:any,need:string,keywords:string[],limit=12){
   const q=searchTerms(need,keywords);if(!q)return [];
-  const {data}=await sb.from('stopmotion_assets').select('id,asset_key,name,category,tags,asset_type,object_name,concepts,actions_compatible,visual_roles,styles,orientation,transparent,quality_score,usage_count,local_storage_path,file_format,license_code,license_url,attribution_required,commercial_use_allowed,source_provider,source_asset_id,metadata').eq('commercial_use_allowed',true).textSearch('search_vector',q,{type:'websearch',config:'simple'}).order('quality_score',{ascending:false}).limit(limit);
+  const {data}=await sb.from('stopmotion_assets').select('id,asset_key,name,category,tags,asset_type,object_name,concepts,actions_compatible,visual_roles,styles,orientation,transparent,quality_score,usage_count,local_storage_path,file_format,license_code,license_url,attribution_required,commercial_use_allowed,source_provider,source_asset_id,metadata').eq('commercial_use_allowed',true).in('file_format',['jpg','jpeg','png','webp','svg']).textSearch('search_vector',q,{type:'websearch',config:'simple'}).order('quality_score',{ascending:false}).limit(limit);
   return data||[];
 }
 async function adminClient(req:Request){
@@ -44,7 +44,7 @@ Deno.serve(async(req:Request)=>{
   if(jobKey){const {count}=await sb.from('creative_studio_asset_requests').select('id',{count:'exact',head:true}).eq('job_key',jobKey).eq('external_acquisition',true);used=Math.max(used,Number(count)||0)}
   if(used>=MAX_EXTERNAL)return json({ok:true,status:'blocked',reason:'external_acquisition_cap'});
   const candidates=await searchPolyHaven(need,keywords,8);const candidate=candidates[0];if(!candidate)return json({ok:true,status:'missing',reason:'no_safe_free_candidate'});
-  const {data:existing}=await sb.from('stopmotion_assets').select('*').eq('source_provider','polyhaven').eq('source_asset_id',candidate.id).maybeSingle();
+  const {data:existing}=await sb.from('stopmotion_assets').select('*').eq('source_provider','polyhaven').eq('source_asset_id',candidate.id).in('file_format',['jpg','jpeg','png','webp','svg']).maybeSingle();
   if(existing)return json({ok:true,status:'resolved_local',asset:existing,external_acquisition:false,reused:true,provider_credit:'Powered by Poly Haven'});
   const acquired=await acquirePolyHaven(candidate);if(!acquired)return json({ok:true,status:'missing',reason:'provider_no_compatible_file'});
   const download=await fetch(acquired.download_url);if(!download.ok)return json({ok:true,status:'missing',reason:'provider_download_failed'});
@@ -52,7 +52,7 @@ Deno.serve(async(req:Request)=>{
   const path=`polyhaven/${slug(candidate.id)}/${slug(candidate.id)}.${acquired.file_format}`;
   const {error:uploadError}=await sb.storage.from(BUCKET).upload(path,bytes,{contentType:acquired.mime_type,upsert:false});
   if(uploadError&&!String(uploadError.message||'').toLowerCase().includes('already exists'))return json({ok:false,error:'storage_upload_failed',detail:uploadError.message},500);
-  const record={asset_key:`polyhaven:${candidate.id}:${acquired.file_format}`,name:candidate.name,category:candidate.category||null,tags:(candidate.tags||[]).map((x:any)=>clean(x,80)),source_asset_url:acquired.source_url,source_download_url:acquired.download_url,local_storage_path:path,file_format:acquired.file_format,license_code:'CC0',attribution_required:true,commercial_use_allowed:true,ingest_status:'ready',metadata:{description:candidate.description||'',provider_credit:'Powered by Poly Haven'},asset_type:['glb','gltf'].includes(acquired.file_format)?'3d_model':'image',object_name:candidate.name,concepts:(candidate.tags||[]).map((x:any)=>clean(x,80).toLowerCase()),styles:['style_agnostic'],quality_score:.9,source_provider:'polyhaven',source_asset_id:candidate.id,license_url:acquired.license_url,license_validated:true,acquired_at:new Date().toISOString()};
+  const record={asset_key:`polyhaven:${candidate.id}:${acquired.file_format}`,name:candidate.name,category:candidate.category||null,tags:(candidate.tags||[]).map((x:any)=>clean(x,80)),source_asset_url:acquired.source_url,source_download_url:acquired.download_url,local_storage_path:path,file_format:acquired.file_format,license_code:'CC0',attribution_required:true,commercial_use_allowed:true,ingest_status:'ready',metadata:{description:candidate.description||'',provider_credit:'Powered by Poly Haven'},asset_type:'image',object_name:candidate.name,concepts:(candidate.tags||[]).map((x:any)=>clean(x,80).toLowerCase()),styles:['style_agnostic'],quality_score:.9,source_provider:'polyhaven',source_asset_id:candidate.id,license_url:acquired.license_url,license_validated:true,acquired_at:new Date().toISOString()};
   const {data:asset,error:insertError}=await sb.from('stopmotion_assets').upsert(record,{onConflict:'asset_key'}).select('*').single();
   if(insertError)return json({ok:false,error:'asset_record_failed',detail:insertError.message},500);
   if(jobKey)await sb.from('creative_studio_asset_requests').insert({job_key:jobKey,need,keywords,status:'acquired',resolved_asset_id:asset.id,external_acquisition:true,resolved_at:new Date().toISOString()});
