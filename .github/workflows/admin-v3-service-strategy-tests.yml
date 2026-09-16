@@ -1,12 +1,12 @@
-name: Admin V3 Service Strategy
+name: Admin Service Strategy
 
 on:
   push:
     paths:
-      - 'admin-v3/atendimento.html'
-      - 'admin-v3/index.html'
-      - 'admin-v3/service-strategy*.js'
-      - 'admin-v3/service-strategy.css'
+      - 'admin/atendimento.html'
+      - 'admin/index.html'
+      - 'admin/service-strategy*.js'
+      - 'admin/service-strategy.css'
       - 'supabase/functions/admin-service-strategy-v1/**'
       - 'supabase/functions/admin-service-intelligence-simple-v1/**'
       - 'supabase/migrations/20260912_admin_v3_service_strategy_*.sql'
@@ -16,10 +16,10 @@ on:
       - '.github/workflows/admin-v3-service-strategy-tests.yml'
   pull_request:
     paths:
-      - 'admin-v3/atendimento.html'
-      - 'admin-v3/index.html'
-      - 'admin-v3/service-strategy*.js'
-      - 'admin-v3/service-strategy.css'
+      - 'admin/atendimento.html'
+      - 'admin/index.html'
+      - 'admin/service-strategy*.js'
+      - 'admin/service-strategy.css'
       - 'supabase/functions/admin-service-strategy-v1/**'
       - 'supabase/functions/admin-service-intelligence-simple-v1/**'
       - 'supabase/migrations/20260912_admin_v3_service_strategy_*.sql'
@@ -41,6 +41,6 @@ jobs:
           node-version: '22'
       - name: Check frontend syntax
         run: |
-          node --check admin-v3/service-strategy.js
+          node --check admin/service-strategy.js
       - name: Run final shopping chat admin contract
         run: node tests/admin-v3-service-strategy-shopping-chat-final.mjs
