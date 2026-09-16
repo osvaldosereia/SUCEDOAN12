@@ -18,13 +18,14 @@ REPLACEMENTS = (
     ("Admin v3", "Admin"),
 )
 
+# Workflows são tratados pela conexão GitHub, porque o GITHUB_TOKEN de Actions
+# não possui a permissão `workflows` necessária para alterá-los.
 SCAN_ROOTS = (
-    ROOT / ".github" / "workflows",
     ROOT / "scripts",
     ROOT / "tests",
 )
 
-TEXT_SUFFIXES = {".js", ".mjs", ".cjs", ".ts", ".yml", ".yaml", ".json", ".sh", ".py"}
+TEXT_SUFFIXES = {".js", ".mjs", ".cjs", ".ts", ".json", ".sh", ".py"}
 EXCLUDE = {
     # Estes testes já foram reescritos manualmente e contêm expressões que
     # deliberadamente procuram os nomes antigos para impedir regressão.
@@ -35,8 +36,6 @@ EXCLUDE = {
     ROOT / "scripts" / "test-comprar-order-admin-v1.mjs",
     ROOT / "scripts" / "migrate-admin-v3-runtime-to-admin.py",
     ROOT / "scripts" / "remove-admin-v3-legacy.py",
-    ROOT / ".github" / "workflows" / "apply-admin-runtime-migration.yml",
-    ROOT / ".github" / "workflows" / "remove-admin-v3-legacy.yml",
 }
 
 LEGACY_PATHS = (
@@ -44,12 +43,10 @@ LEGACY_PATHS = (
     ROOT / "supabase" / "functions" / "admin-v3-api",
     ROOT / "supabase" / "functions" / "admin-v3-product-names",
     ROOT / "scripts" / "migrate-admin-v3-runtime-to-admin.py",
-    ROOT / ".github" / "workflows" / "apply-admin-runtime-migration.yml",
 )
 
 SELF_PATHS = (
     ROOT / "scripts" / "remove-admin-v3-legacy.py",
-    ROOT / ".github" / "workflows" / "remove-admin-v3-legacy.yml",
 )
 
 
@@ -86,14 +83,14 @@ def main() -> None:
             path.unlink()
             changed.append(path.relative_to(ROOT).as_posix())
 
-    # O utilitário e o workflow são deliberadamente descartáveis: depois da limpeza,
-    # manter um mecanismo de migração do legado recriaria a dependência que estamos removendo.
+    # O utilitário é descartável: depois da limpeza, mantê-lo poderia recriar
+    # uma dependência do legado por engano.
     for path in SELF_PATHS:
         if path.exists():
             path.unlink()
             changed.append(path.relative_to(ROOT).as_posix())
 
-    print(f"Limpeza final preparada: {len(changed)} caminhos alterados/removidos.")
+    print(f"Limpeza de código preparada: {len(changed)} caminhos alterados/removidos.")
     for item in changed:
         print(f"- {item}")
 
