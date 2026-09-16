@@ -7,6 +7,8 @@ on:
     paths:
       - 'marketing/creative-studio/**'
       - 'admin/creative-studio.*'
+      - 'admin/index.html'
+      - 'scripts/creative-studio-*'
       - 'supabase/functions/creative-studio-*/**'
       - 'supabase/migrations/*creative_studio*'
       - '.github/workflows/creative-studio-tests.yml'
@@ -14,13 +16,14 @@ on:
     paths:
       - 'marketing/creative-studio/**'
       - 'admin/creative-studio.*'
+      - 'scripts/creative-studio-*'
       - 'supabase/functions/creative-studio-*/**'
       - 'supabase/migrations/*creative_studio*'
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,9 +35,16 @@ jobs:
         run: |
           find marketing/creative-studio -maxdepth 2 -type f -name '*.js' ! -path '*/tests/*' -print0 | xargs -0 -n1 node --check
           node --check admin/creative-studio.js
-      - name: Admin surface contract
+          node --check scripts/creative-studio-render-worker.mjs
+          node --check scripts/creative-studio-render-smoke.mjs
+      - name: Admin separation contract
         run: |
-          grep -q 'Estúdio Criativo' admin/creative-studio.html
-          grep -q './creative-studio.html' admin/index.html
+          grep -q 'PROJETO SEPARADO' admin/creative-studio.html
+          grep -q 'Estúdio Criativo · Reels' admin/index.html
+          grep -q 'não altera' marketing/creative-studio/PROJECT-BOUNDARIES.md
           grep -q 'creative-studio-director' admin/creative-studio.js
           grep -q 'creative-studio-assets-v1' admin/creative-studio.js
+      - name: Real MP4 smoke render
+        run: |
+          ffmpeg -version | head -n 1
+          node scripts/creative-studio-render-smoke.mjs
