@@ -63,11 +63,11 @@
   <script>
   (function(){
     'use strict';
-    window.__DA_NAMES_V3_READY__ = true;
+    window.__DA_NAMES_READY__ = true;
     const SUPABASE_URL='https://ssbesxgaijknwsjbsbcz.supabase.co';
     const SUPABASE_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
-    const NAMES_ENDPOINT=SUPABASE_URL+'/functions/v1/admin-v3-product-names';
-    const ADMIN_ENDPOINT=SUPABASE_URL+'/functions/v1/admin-v3-api';
+    const NAMES_ENDPOINT=SUPABASE_URL+'/functions/v1/admin-product-names-v1';
+    const ADMIN_ENDPOINT=SUPABASE_URL+'/functions/v1/admin-core-v1';
     const $=id=>document.getElementById(id);
     const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('pt-BR')};
