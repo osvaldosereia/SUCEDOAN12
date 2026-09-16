@@ -40,7 +40,17 @@ const forbidden = [
   { label: 'config DA_ADMIN_V3_CONFIG', re: /DA_ADMIN_V3_CONFIG/g },
   { label: 'sessão da_admin_v3_auth', re: /da_admin_v3_auth/g },
   { label: 'rótulo visual Admin V3', re: /Admin V3/g },
+  { label: 'caminho inválido .../', re: /\.\.\.\//g },
 ];
+
+function checkLocalTarget(file, relative, target) {
+  const clean = target.split(/[?#]/, 1)[0];
+  if (!clean || clean === '.' || clean === './' || clean.startsWith('#')) return;
+  if (!/^\.\//.test(clean)) return;
+  if (!/\.(?:html|js|css)$/i.test(clean)) return;
+  const resolved = path.resolve(path.dirname(file), clean);
+  if (!existsSync(resolved)) fail(`${relative}: referência local ausente: ${target}`);
+}
 
 if (!existsSync(ADMIN)) fail('Diretório admin/ ausente.');
 else {
@@ -51,13 +61,22 @@ else {
       item.re.lastIndex = 0;
       if (item.re.test(source)) fail(`${relative}: contém ${item.label}`);
     }
+
+    if (/\.html$/i.test(file)) {
+      for (const match of source.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
+        checkLocalTarget(file, relative, match[1]);
+      }
+      for (const match of source.matchAll(/import\(["']([^"']+)["']\)/g)) {
+        checkLocalTarget(file, relative, match[1]);
+      }
+    }
   }
 }
 
 if (failures.length) {
-  console.error('Admin ainda depende do legado V3:');
+  console.error('Admin ainda não está independente e íntegro:');
   for (const message of failures) console.error(`- ${message}`);
   process.exit(1);
 }
 
-console.log('OK: /admin é independente de referências runtime ao Admin V3.');
+console.log('OK: /admin não depende do Admin V3 e todas as referências locais verificadas existem.');
