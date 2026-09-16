@@ -1,5 +1,6 @@
 import {buildProceduralAudio} from './audio-render.js';
 import {buildProceduralVisualFilters} from './procedural-visuals.js';
+import {buildCameraFilter,buildCameraPlan,parallaxAmplitude} from './camera.js';
 
 const FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 const clean=v=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim();
@@ -7,18 +8,21 @@ const num=(v,fallback)=>Number.isFinite(Number(v))?Number(v):fallback;
 
 export function escapeDrawtext(value){return clean(value).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/:/g,'\\:').replace(/%/g,'\\%').slice(0,220)}
 
-function assetPosition(index,width,height,motion,start){
+function assetPosition(index,width,height,motion,start,role='support'){
   const left=index%2===0;
   const baseX=left?Math.round(width*.07):`W-w-${Math.round(width*.07)}`;
   const baseY=Math.round(height*(.28+(index%3)*.12));
-  if(motion==='rise')return {x:baseX,y:`${baseY}+max(0\,(${Number(start).toFixed(3)}-t))*90`};
-  if(motion==='drop')return {x:baseX,y:`${baseY}-max(0\,(${Number(start).toFixed(3)}+0.8-t))*120`};
-  if(motion==='slide'||motion==='enter_left')return {x:`${left?'-w':'W'}+min(1\,max(0\,(t-${Number(start).toFixed(3)})/.7))*${left?Math.round(width*.07)+'+w':`-(w+${Math.round(width*.07)})`}`,y:baseY};
-  if(motion==='enter_right')return {x:`W-min(1\,max(0\,(t-${Number(start).toFixed(3)})/.7))*(w+${Math.round(width*.07)})`,y:baseY};
-  if(motion==='bounce'||motion==='hop'||motion==='celebrate')return {x:baseX,y:`${baseY}-abs(sin((t-${Number(start).toFixed(3)})*5))*35`};
-  if(motion==='walk'||motion==='crawl'||motion==='chase'||motion==='follow')return {x:`-w+min(1\,max(0\,(t-${Number(start).toFixed(3)})/1.2))*(W+w)`,y:baseY};
-  if(motion==='wobble'||motion==='shake')return {x:`${typeof baseX==='number'?baseX:Math.round(width*.62)}+sin((t-${Number(start).toFixed(3)})*12)*12`,y:baseY};
-  return {x:baseX,y:baseY};
+  let pos;
+  if(motion==='rise')pos={x:baseX,y:`${baseY}+max(0\,(${Number(start).toFixed(3)}-t))*90`};
+  else if(motion==='drop')pos={x:baseX,y:`${baseY}-max(0\,(${Number(start).toFixed(3)}+0.8-t))*120`};
+  else if(motion==='slide'||motion==='enter_left')pos={x:`${left?'-w':'W'}+min(1\,max(0\,(t-${Number(start).toFixed(3)})/.7))*${left?Math.round(width*.07)+'+w':`-(w+${Math.round(width*.07)})`}`,y:baseY};
+  else if(motion==='enter_right')pos={x:`W-min(1\,max(0\,(t-${Number(start).toFixed(3)})/.7))*(w+${Math.round(width*.07)})`,y:baseY};
+  else if(motion==='bounce'||motion==='hop'||motion==='celebrate')pos={x:baseX,y:`${baseY}-abs(sin((t-${Number(start).toFixed(3)})*5))*35`};
+  else if(motion==='walk'||motion==='crawl'||motion==='chase'||motion==='follow')pos={x:`-w+min(1\,max(0\,(t-${Number(start).toFixed(3)})/1.2))*(W+w)`,y:baseY};
+  else if(motion==='wobble'||motion==='shake')pos={x:`${typeof baseX==='number'?baseX:Math.round(width*.62)}+sin((t-${Number(start).toFixed(3)})*12)*12`,y:baseY};
+  else pos={x:baseX,y:baseY};
+  const amp=parallaxAmplitude(role),yAmp=Math.max(2,Math.round(amp*.6));
+  return {x:`(${pos.x})+sin(t*0.7)*${amp}`,y:`(${pos.y})+cos(t*0.6)*${yAmp}`};
 }
 
 export function buildFfmpegArgs(job={},options={}){
@@ -39,11 +43,13 @@ export function buildFfmpegArgs(job={},options={}){
     const scaled=`asset${index}`,out=`assetbase${index}`;
     const maxW=Math.round(width*(asset.role==='background'?.58:.34)),maxH=Math.round(height*(asset.role==='background'?.42:.24));
     filters.push(`[${asset.inputIndex}:v]scale=w=${maxW}:h=${maxH}:force_original_aspect_ratio=decrease,format=rgba[${scaled}]`);
-    const start=Math.max(0,num(asset.start,0)),end=Math.min(duration,num(asset.end,duration));const pos=assetPosition(index,width,height,asset.motion,start);
+    const start=Math.max(0,num(asset.start,0)),end=Math.min(duration,num(asset.end,duration));const pos=assetPosition(index,width,height,asset.motion,start,asset.role);
     filters.push(`[${visual}][${scaled}]overlay=x='${pos.x}':y='${pos.y}':enable='between(t,${start.toFixed(3)},${end.toFixed(3)})'[${out}]`);visual=out;
   });
   if(proceduralVisuals.length){const proc=buildProceduralVisualFilters(proceduralVisuals,{inputLabel:visual,width,height,duration});filters.push(...proc.filters);visual=proc.outputLabel}
   if(productIndex!==null){filters.push(`[${productIndex}:v]scale=w=${Math.round(width*.78)}:h=${Math.round(height*.56)}:force_original_aspect_ratio=decrease,format=rgba[p]`,`[${visual}][p]overlay=x=(W-w)/2:y=(H-h)/2-${Math.round(height*.035)}:enable='between(t,0,${duration})'[base]`);visual='base'}
+  const camera=job?.timeline?.camera||buildCameraPlan(job?.timeline?.scenes||[],{duration});
+  filters.push(buildCameraFilter({...camera,duration},{inputLabel:visual,outputLabel:'camera',width,height,fps}));visual='camera';
   const concept=escapeDrawtext(job?.creative_plan?.concept||'Dona Antônia');
   const productName=escapeDrawtext(job?.product_snapshot?.name||'Produto');
   const offer=job?.product_snapshot?.is_offer===true&&job?.product_snapshot?.offer_price!=null?Number(job.product_snapshot.offer_price):Number(job?.product_snapshot?.price||0);
