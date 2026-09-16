@@ -66,6 +66,10 @@ verify_jwt = false
 [functions.admin-core-v1]
 verify_jwt = false
 
+# Gôndolas do Admin: usa a mesma política do Admin oficial, com service role somente no servidor e CORS restrito.
+[functions.admin-gondolas-v1]
+verify_jwt = false
+
 # Leitura dos pedidos completos do Comprar/Vitrine no Admin oficial; CORS restrito e service role só no servidor.
 [functions.admin-orders-comprar-v1]
 verify_jwt = false
