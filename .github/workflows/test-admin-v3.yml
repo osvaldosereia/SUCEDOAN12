@@ -5,9 +5,9 @@ on:
     branches: [main]
     paths:
       - 'admin/**'
-      - 'admin-v3/**'
       - 'supabase/functions/admin-simple-v2/**'
-      - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-orders-comprar-v1/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/config.toml'
@@ -15,14 +15,15 @@ on:
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
+      - 'scripts/test-admin-no-v3-runtime.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
     paths:
       - 'admin/**'
-      - 'admin-v3/**'
       - 'supabase/functions/admin-simple-v2/**'
-      - 'supabase/functions/admin-v3-api/**'
+      - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-orders-comprar-v1/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/config.toml'
@@ -30,6 +31,7 @@ on:
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
+      - 'scripts/test-admin-no-v3-runtime.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -54,13 +56,13 @@ jobs:
           deno-version: v2.x
       - name: Validar sintaxe do Admin oficial
         run: |
-          node --check admin-v3/config.js
-          node --check admin-v3/api.js
-          node --check admin-v3/app.js
-          node --check admin-v3/orders-integrated-v2.js
-          node --check admin-v3/products-inline-controls-v4.js
+          node --check admin/api.js
+          node --check admin/app.js
+          node --check admin/orders-integrated-v2.js
+          node --check admin/products-inline-controls-v4.js
           deno check supabase/functions/admin-simple-v2/index.ts
-          deno check supabase/functions/admin-v3-api/index.ts
+          deno check supabase/functions/admin-core-v1/index.ts
+          deno check supabase/functions/admin-product-names-v1/index.ts
           deno check supabase/functions/admin-orders-comprar-v1/index.ts
           deno check supabase/functions/catalog-v3/index.ts
       - name: Validar backend de produtos
@@ -71,11 +73,15 @@ jobs:
         run: node scripts/test-admin-v3-inline-product-controls.mjs
       - name: Validar pedidos completos do Comprar
         run: node scripts/test-comprar-order-admin-v1.mjs
+      - name: Validar independência do Admin oficial
+        run: node scripts/test-admin-no-v3-runtime.mjs
       - name: Validar shell oficial
         shell: bash
         run: |
           set -euo pipefail
-          grep -q '/admin-v3/app.js' admin/index.html
+          grep -q './app.js?v=20260912-4' admin/index.html
+          grep -q './runtime-config.js' admin/app.js
+          grep -q "adminFunction:'admin-core-v1'" admin/runtime-config.js
           grep -q 'data-route="products"' admin/index.html
           grep -q 'data-route="baskets"' admin/index.html
           grep -q 'data-route="orders"' admin/index.html
@@ -86,4 +92,4 @@ jobs:
       - name: Bloquear segredos no navegador
         shell: bash
         run: |
-          ! grep -R -E 'SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|BLING_REFRESH_TOKEN|OPENAI_API_KEY' admin/ admin-v3/ || (echo 'Referência de segredo detectada no código público' >&2; exit 1)
+          ! grep -R -E 'SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|BLING_REFRESH_TOKEN|OPENAI_API_KEY' admin/ || (echo 'Referência de segredo detectada no código público' >&2; exit 1)
