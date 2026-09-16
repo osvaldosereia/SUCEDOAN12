@@ -4,21 +4,42 @@ const num=(v,fallback)=>Number.isFinite(Number(v))?Number(v):fallback;
 
 export function escapeDrawtext(value){return clean(value).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/:/g,'\\:').replace(/%/g,'\\%').slice(0,220)}
 
+function assetPosition(index,width,height,motion,start){
+  const left=index%2===0;
+  const baseX=left?Math.round(width*.07):`W-w-${Math.round(width*.07)}`;
+  const baseY=Math.round(height*(.28+(index%3)*.12));
+  if(motion==='rise')return {x:baseX,y:`${baseY}+max(0\,(${Number(start).toFixed(3)}-t))*90`};
+  if(motion==='slide'||motion==='enter_left')return {x:`${left?'-w':'W'}+min(1\,max(0\,(t-${Number(start).toFixed(3)})/.7))*${left?Math.round(width*.07)+'+w':`-(w+${Math.round(width*.07)})`}`,y:baseY};
+  if(motion==='bounce'||motion==='hop')return {x:baseX,y:`${baseY}-abs(sin((t-${Number(start).toFixed(3)})*5))*35`};
+  return {x:baseX,y:baseY};
+}
+
 export function buildFfmpegArgs(job={},options={}){
   const duration=num(job.duration_seconds,0);if(duration<15||duration>25)throw new Error('duration_out_of_range');
   if(job?.timeline?.audio?.voice===true)throw new Error('voice_forbidden');
   const width=num(job.width,1080),height=num(job.height,1920),fps=num(job.fps,30);
   const output=options.output||'creative-studio-output.mp4',productInput=options.productInput||null;
+  const assetInputs=(options.assetInputs||[]).filter(x=>x?.path).slice(0,8);
   const args=['-y','-f','lavfi','-i',`color=c=0xF5F2EC:s=${width}x${height}:r=${fps}:d=${duration}`];
-  let audioIndex=1;
+  let nextInput=1,productIndex=null;
+  if(productInput){productIndex=nextInput++;args.push('-loop','1','-i',productInput)}
+  const indexedAssets=assetInputs.map(asset=>{const inputIndex=nextInput++;args.push('-loop','1','-i',asset.path);return {...asset,inputIndex}});
+  const audioIndex=nextInput;args.push('-f','lavfi','-i','anullsrc=channel_layout=stereo:sample_rate=44100');
   const filters=[];
-  if(productInput){args.push('-loop','1','-i',productInput);audioIndex=2;filters.push(`[1:v]scale=w=${Math.round(width*.78)}:h=${Math.round(height*.56)}:force_original_aspect_ratio=decrease,format=rgba[p]`,`[0:v][p]overlay=x=(W-w)/2:y=(H-h)/2-${Math.round(height*.035)}:enable='between(t,0,${duration})'[base]`)}else filters.push('[0:v]null[base]');
-  args.push('-f','lavfi','-i','anullsrc=channel_layout=stereo:sample_rate=44100');
+  let visual='bg';filters.push('[0:v]null[bg]');
+  indexedAssets.forEach((asset,index)=>{
+    const scaled=`asset${index}`,out=`assetbase${index}`;
+    const maxW=Math.round(width*(asset.role==='background'?.58:.34)),maxH=Math.round(height*(asset.role==='background'?.42:.24));
+    filters.push(`[${asset.inputIndex}:v]scale=w=${maxW}:h=${maxH}:force_original_aspect_ratio=decrease,format=rgba[${scaled}]`);
+    const start=Math.max(0,num(asset.start,0)),end=Math.min(duration,num(asset.end,duration));const pos=assetPosition(index,width,height,asset.motion,start);
+    filters.push(`[${visual}][${scaled}]overlay=x='${pos.x}':y='${pos.y}':enable='between(t,${start.toFixed(3)},${end.toFixed(3)})'[${out}]`);visual=out;
+  });
+  if(productIndex!==null){filters.push(`[${productIndex}:v]scale=w=${Math.round(width*.78)}:h=${Math.round(height*.56)}:force_original_aspect_ratio=decrease,format=rgba[p]`,`[${visual}][p]overlay=x=(W-w)/2:y=(H-h)/2-${Math.round(height*.035)}:enable='between(t,0,${duration})'[base]`);visual='base'}
   const concept=escapeDrawtext(job?.creative_plan?.concept||'Dona Antônia');
   const productName=escapeDrawtext(job?.product_snapshot?.name||'Produto');
   const offer=job?.product_snapshot?.is_offer===true&&job?.product_snapshot?.offer_price!=null?Number(job.product_snapshot.offer_price):Number(job?.product_snapshot?.price||0);
   const price=Number.isFinite(offer)&&offer>0?`R$ ${offer.toFixed(2).replace('.',',')}`:'';
-  let input='base',serial=0;
+  let input=visual,serial=0;
   const add=(expr)=>{const out=`v${serial++}`;filters.push(`[${input}]${expr}[${out}]`);input=out};
   add(`drawtext=fontfile=${FONT}:text='${concept}':fontsize=${Math.round(width*.055)}:fontcolor=0x2A2927:x=(w-text_w)/2:y=${Math.round(height*.065)}:box=1:boxcolor=0xF5F2ECBB:boxborderw=18`);
   for(const scene of (job?.timeline?.scenes||[]).slice(0,7)){
