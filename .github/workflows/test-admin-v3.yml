@@ -66,6 +66,7 @@ jobs:
           node --check admin/app.js
           node --check admin/orders-integrated-v2.js
           node --check admin/products-inline-controls-v4.js
+          node --check admin/product-image-editor-v1.js
           deno check supabase/functions/admin-simple-v2/index.ts
           deno check supabase/functions/admin-core-v1/index.ts
           deno check supabase/functions/admin-product-names-v1/index.ts
