@@ -50,11 +50,15 @@ TEXT_SUFFIXES = {".html", ".js", ".mjs", ".css", ".json", ".md", ".txt"}
 
 
 def transform_text(text: str) -> str:
-    text = text.replace("/admin-v3/nomes-produtos-v3.html", "./nomes-produtos.html")
+    # Tratar primeiro os caminhos relativos longos. Se `/admin-v3/` for
+    # substituído antes de `../admin-v3/`, `../admin-v3/x` vira `.../x`.
     text = text.replace("../admin-v3/nomes-produtos-v3.html", "./nomes-produtos.html")
+    text = text.replace("/admin-v3/nomes-produtos-v3.html", "./nomes-produtos.html")
     text = text.replace("./nomes-produtos-v3.html", "./nomes-produtos.html")
-    text = text.replace("/admin-v3/", "./")
     text = text.replace("../admin-v3/", "./")
+    text = text.replace("/admin-v3/", "./")
+    # Repara os três arquivos atingidos pela primeira execução defeituosa.
+    text = text.replace(".../", "./")
     text = text.replace("DA_ADMIN_V3_CONFIG", "DA_ADMIN_CONFIG")
     text = text.replace("da_admin_v3_auth", "da_admin_auth")
     text = text.replace("Admin V3", "Admin")
@@ -88,8 +92,7 @@ def copy_one(name: str, queue: list[str], copied: set[str]) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
 
     if source.suffix.lower() in TEXT_SUFFIXES:
-        text = source.read_text(encoding="utf-8")
-        text = transform_text(text)
+        text = transform_text(source.read_text(encoding="utf-8"))
         destination.write_text(text, encoding="utf-8")
         for dep in relative_dependencies(text):
             if dep == "config.js":
@@ -142,7 +145,6 @@ def main() -> None:
     while queue:
         copy_one(queue.pop(0), queue, copied)
 
-    # Dependências relativas das duas páginas recém-migradas.
     for page_name in ("atendimento.html", "nomes-produtos.html"):
         for dep in relative_dependencies((ADMIN / page_name).read_text(encoding="utf-8")):
             if dep == "config.js":
