@@ -1,0 +1,53 @@
+name: Creative Studio real E2E
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/stopmotion-smart-director
+    paths:
+      - scripts/creative-studio-e2e-prepare.mjs
+      - scripts/creative-studio-e2e-verify.mjs
+      - .github/workflows/creative-studio-real-e2e.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: creative-studio-real-e2e
+  cancel-in-progress: false
+
+jobs:
+  real-reel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      CREATIVE_STUDIO_E2E_PRODUCT_ID: 97b235af-8468-401a-8672-e95f23545e78
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg
+      - name: Prepare real product creative job
+        run: node scripts/creative-studio-e2e-prepare.mjs
+      - name: Render queued Reel
+        run: node scripts/creative-studio-render-worker.mjs
+      - name: Verify completed MP4
+        run: node scripts/creative-studio-e2e-verify.mjs
+      - name: Upload real Reel test artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: creative-studio-real-e2e
+          path: |
+            artifacts/creative-studio-e2e.mp4
+            artifacts/creative-studio-e2e.json
+            .creative-studio-e2e-job.json
+          if-no-files-found: ignore
+          retention-days: 7
