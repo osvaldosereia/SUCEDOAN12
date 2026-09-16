@@ -28,3 +28,12 @@ test('acquire fetches file manifest only for the selected winner and chooses lig
   assert.equal(asset.file_format,'jpg');
   assert.equal(asset.attribution_required,true);
 });
+
+test('acquire returns null when only unsupported 3D files exist',async()=>{
+  const only3d={models:{'1k':{glb:{url:'https://dl.polyhaven.org/floral_field.glb',size:700000}}}};
+  const fetcher=async url=>({ok:true,json:async()=>url.includes('/files/')?only3d:assets});
+  const p=createPolyHavenProvider({fetcher});
+  const [candidate]=await p.search({need:'flower',keywords:['field']},{limit:1});
+  const asset=await p.acquire(candidate);
+  assert.equal(asset,null);
+});
