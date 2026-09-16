@@ -1,3 +1,5 @@
+import {buildProceduralAudio} from './audio-render.js';
+
 const FONT='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 const clean=v=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim();
 const num=(v,fallback)=>Number.isFinite(Number(v))?Number(v):fallback;
@@ -9,8 +11,12 @@ function assetPosition(index,width,height,motion,start){
   const baseX=left?Math.round(width*.07):`W-w-${Math.round(width*.07)}`;
   const baseY=Math.round(height*(.28+(index%3)*.12));
   if(motion==='rise')return {x:baseX,y:`${baseY}+max(0\,(${Number(start).toFixed(3)}-t))*90`};
+  if(motion==='drop')return {x:baseX,y:`${baseY}-max(0\,(${Number(start).toFixed(3)}+0.8-t))*120`};
   if(motion==='slide'||motion==='enter_left')return {x:`${left?'-w':'W'}+min(1\,max(0\,(t-${Number(start).toFixed(3)})/.7))*${left?Math.round(width*.07)+'+w':`-(w+${Math.round(width*.07)})`}`,y:baseY};
-  if(motion==='bounce'||motion==='hop')return {x:baseX,y:`${baseY}-abs(sin((t-${Number(start).toFixed(3)})*5))*35`};
+  if(motion==='enter_right')return {x:`W-min(1\,max(0\,(t-${Number(start).toFixed(3)})/.7))*(w+${Math.round(width*.07)})`,y:baseY};
+  if(motion==='bounce'||motion==='hop'||motion==='celebrate')return {x:baseX,y:`${baseY}-abs(sin((t-${Number(start).toFixed(3)})*5))*35`};
+  if(motion==='walk'||motion==='crawl'||motion==='chase'||motion==='follow')return {x:`-w+min(1\,max(0\,(t-${Number(start).toFixed(3)})/1.2))*(W+w)`,y:baseY};
+  if(motion==='wobble'||motion==='shake')return {x:`${typeof baseX==='number'?baseX:Math.round(width*.62)}+sin((t-${Number(start).toFixed(3)})*12)*12`,y:baseY};
   return {x:baseX,y:baseY};
 }
 
@@ -24,8 +30,8 @@ export function buildFfmpegArgs(job={},options={}){
   let nextInput=1,productIndex=null;
   if(productInput){productIndex=nextInput++;args.push('-loop','1','-i',productInput)}
   const indexedAssets=assetInputs.map(asset=>{const inputIndex=nextInput++;args.push('-loop','1','-i',asset.path);return {...asset,inputIndex}});
-  const audioIndex=nextInput;args.push('-f','lavfi','-i','anullsrc=channel_layout=stereo:sample_rate=44100');
-  const filters=[];
+  const audio=buildProceduralAudio(job?.timeline?.audio?.cues||[],{startInputIndex:nextInput,duration});args.push(...audio.inputArgs);
+  const filters=[...audio.filters];
   let visual='bg';filters.push('[0:v]null[bg]');
   indexedAssets.forEach((asset,index)=>{
     const scaled=`asset${index}`,out=`assetbase${index}`;
@@ -50,6 +56,6 @@ export function buildFfmpegArgs(job={},options={}){
   add(`drawtext=fontfile=${FONT}:text='${productName}':fontsize=${Math.round(width*.048)}:fontcolor=0x2A2927:x=(w-text_w)/2:y=${Math.round(height*.865)}:box=1:boxcolor=0xF5F2ECDD:boxborderw=16:enable='gte(t,${closeStart})'`);
   if(price)add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(price)}':fontsize=${Math.round(width*.075)}:fontcolor=0xB21E35:x=(w-text_w)/2:y=${Math.round(height*.91)}:box=1:boxcolor=white@0.90:boxborderw=18:enable='gte(t,${closeStart})'`);
   filters.push(`[${input}]fade=t=in:st=0:d=0.25,fade=t=out:st=${Math.max(0,duration-0.25).toFixed(3)}:d=0.25[vout]`);
-  args.push('-filter_complex',filters.join(';'),'-map','[vout]','-map',`${audioIndex}:a`,'-t',String(duration),'-r',String(fps),'-c:v','libx264','-preset','veryfast','-crf','21','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output);
+  args.push('-filter_complex',filters.join(';'),'-map','[vout]','-map',audio.outputMap,'-t',String(duration),'-r',String(fps),'-c:v','libx264','-preset','veryfast','-crf','21','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output);
   return args;
 }
