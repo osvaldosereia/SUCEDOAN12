@@ -25,7 +25,12 @@ Deno.serve(async(req:Request)=>{
   }
   let body:any;try{body=await req.json()}catch{return json({ok:false,error:'invalid_json'},400)}
   if(!body?.product?.name)return json({ok:false,error:'product_required'},400);
-  const key=Deno.env.get('OPENAI_API_KEY');if(!key)return json({ok:false,error:'openai_not_configured'},503);
+  let key=Deno.env.get('OPENAI_API_KEY')||'';
+  if(!key){
+    const {data:vaultKey,error:vaultError}=await sb.rpc('get_conversation_worker_provider_secret_v1');
+    if(!vaultError&&typeof vaultKey==='string')key=vaultKey;
+  }
+  if(!key)return json({ok:false,error:'openai_not_configured'},503);
   const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:CREATIVE_STUDIO_MODEL,instructions:buildDirectorInstructions(),input:buildDirectorInput(body),text:{format:{type:'json_schema',name:'creative_plan',strict:true,schema:creativePlanSchema}},max_output_tokens:2200})});
   if(!response.ok)return json({ok:false,error:'director_provider_failed',status:response.status},502);
   const data=await response.json();
