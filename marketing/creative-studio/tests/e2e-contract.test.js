@@ -17,6 +17,14 @@ test('real E2E uses a real active product and the deployed Director, Assets and 
   assert.match(source,/paid_approved:false/);
 });
 
+test('real product or packshot requests are satisfied only by the canonical product image',()=>{
+  const source=prepare();
+  assert.match(source,/isRealProductAssetRequest/);
+  assert.match(source,/product\.image_url/);
+  assert.match(source,/status:'product'/);
+  assert.match(source,/source:'canonical_product'/);
+});
+
 test('real E2E verifies the completed MP4 from the private render bucket',()=>{
   const source=verify();
   assert.match(source,/creative-studio-renders/);
