@@ -1,0 +1,65 @@
+name: Aplicar migração Imagens IA para Admin
+
+on:
+  push:
+    branches: [fix/admin-images-no-v3-20260916]
+    paths:
+      - '.github/workflows/apply-admin-images-migration.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  migrar:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: fix/admin-images-no-v3-20260916
+      - name: Isolar Imagens IA em /admin
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          page=Path('admin/imagens-ia.html')
+          text=page.read_text()
+          text=text.replace('./styles.css?v=20260912-5','./admin-shell.css?v=20260916-1')
+          text=text.replace('<b>Admin V3</b>','<b>Admin</b>')
+          text=text.replace('./image-automation.css?v=20260914-3','./image-automation.css?v=20260916-1')
+          text=text.replace('./comprar-ui.js?v=20260914-1','./comprar-ui.js?v=20260916-1')
+          text=text.replace('./image-automation.js?v=20260914-3','./image-automation.js?v=20260916-1')
+          text=text.replace('./image-bulk-grid18.js?v=20260914-1','./image-bulk-grid18.js?v=20260916-1')
+          page.write_text(text)
+
+          for name in ['admin/image-automation.js','admin/image-bulk-grid18.js']:
+              p=Path(name)
+              src=p.read_text()
+              src=src.replace("from './config.js'","from './image-runtime-config.js'")
+              src=src.replace('da_admin_v3_auth','da_admin_auth')
+              p.write_text(src)
+
+          cfg=Path('admin/image-runtime-config.js')
+          cfg.write_text("""export const CONFIG=Object.freeze({\n  supabaseUrl:'https://ssbesxgaijknwsjbsbcz.supabase.co',\n  supabasePublishableKey:'sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8',\n  build:'20260916-admin-images-1'\n});\n""")
+
+          for name in ['admin/index.html','admin/pedidos.html']:
+              p=Path(name)
+              src=p.read_text()
+              src=src.replace('href="/admin-v3/imagens-ia.html"','href="./imagens-ia.html"')
+              p.write_text(src)
+          PY
+      - name: Validar alteração antes do commit
+        run: node scripts/test-admin-images-no-v3.mjs
+      - name: Commitar migração
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add admin/
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix: manter Imagens IA dentro do Admin oficial'
+          git push origin HEAD:fix/admin-images-no-v3-20260916
