@@ -19,19 +19,21 @@ function ensureStyles(){
       html,body{margin:0!important;padding:0!important;background:#fff!important}
       body>*:not(#${ROOT_ID}){display:none!important}
       #${ROOT_ID}{display:block!important;margin:0!important;padding:0!important}
-      #${ROOT_ID} .shipping-label{box-sizing:border-box;width:92mm;min-height:142mm;margin:0;padding:5mm 5mm 4mm;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;page-break-after:always;break-after:page;display:flex;flex-direction:column}
+      #${ROOT_ID} .shipping-label{box-sizing:border-box;width:92mm;height:142mm;max-height:142mm;overflow:hidden;margin:0;padding:3mm 4mm 2.5mm;font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;page-break-inside:avoid;break-inside:avoid;page-break-after:always;break-after:page;display:flex;flex-direction:column}
       #${ROOT_ID} .shipping-label:last-child{page-break-after:auto;break-after:auto}
-      #${ROOT_ID} .label-brand{font-size:12pt;font-weight:800;text-align:center;border-bottom:1.2mm solid #000;padding-bottom:3mm;margin-bottom:4mm}
-      #${ROOT_ID} .label-order{display:flex;justify-content:space-between;gap:4mm;align-items:flex-start;margin-bottom:4mm}
-      #${ROOT_ID} .label-order strong{font-size:19pt;line-height:1.05}
-      #${ROOT_ID} .label-volume{font-size:14pt;font-weight:800;text-align:right;white-space:nowrap}
-      #${ROOT_ID} .label-section{border-top:.5mm solid #000;padding-top:3mm;margin-top:3mm}
-      #${ROOT_ID} .label-kicker{font-size:8pt;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1.5mm}
-      #${ROOT_ID} .label-main{font-size:13pt;font-weight:800;line-height:1.2}
-      #${ROOT_ID} .label-line{font-size:10.5pt;line-height:1.3;margin-top:1.2mm}
-      #${ROOT_ID} .label-payment{display:grid;grid-template-columns:1fr auto;gap:4mm;align-items:end}
-      #${ROOT_ID} .label-total{font-size:18pt;font-weight:900;text-align:right}
-      #${ROOT_ID} .label-footer{margin-top:auto;padding-top:4mm;border-top:.5mm solid #000;font-size:8.5pt;text-align:center}
+      #${ROOT_ID} .label-brand{font-size:10pt;font-weight:900;line-height:1.05;text-align:center;border-bottom:.8mm solid #000;padding-bottom:1.6mm;margin-bottom:2mm}
+      #${ROOT_ID} .label-order{display:flex;justify-content:space-between;gap:2mm;align-items:flex-start;margin-bottom:2mm}
+      #${ROOT_ID} .label-order>div:first-child{min-width:0;flex:1}
+      #${ROOT_ID} .label-order strong{display:block;font-size:15pt;line-height:1;overflow-wrap:anywhere}
+      #${ROOT_ID} .label-volume{font-size:10.5pt;line-height:1.05;font-weight:900;text-align:right;white-space:nowrap}
+      #${ROOT_ID} .label-section{border-top:.35mm solid #000;padding-top:1.6mm;margin-top:1.6mm}
+      #${ROOT_ID} .label-kicker{font-size:6.8pt;line-height:1;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.6mm}
+      #${ROOT_ID} .label-main{font-size:11.5pt;font-weight:900;line-height:1.1;overflow-wrap:anywhere}
+      #${ROOT_ID} .label-line{font-size:8.8pt;line-height:1.15;margin-top:.55mm;overflow-wrap:anywhere}
+      #${ROOT_ID} .label-payment{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2.5mm;align-items:end}
+      #${ROOT_ID} .label-payment>div{min-width:0}
+      #${ROOT_ID} .label-total{font-size:16.5pt;line-height:1;font-weight:900;text-align:right;white-space:nowrap}
+      #${ROOT_ID} .label-footer{margin-top:auto;padding-top:1.8mm;border-top:.35mm solid #000;font-size:7.4pt;line-height:1.1;text-align:center}
     }
   `;
   document.head.appendChild(style);
@@ -41,8 +43,8 @@ function addressLines(address={}){
   const first=[address.street,address.number&&`nº ${address.number}`].filter(Boolean).join(', ');
   const second=[address.complement,address.neighborhood].filter(Boolean).join(' · ');
   const third=[address.city,address.state].filter(Boolean).join(' - ');
-  const fourth=address.postal_code?`CEP ${address.postal_code}`:'';
-  return [first,second,third,fourth].filter(Boolean);
+  const locality=[third,address.postal_code&&`CEP ${address.postal_code}`].filter(Boolean).join(' · ');
+  return [first,second,locality].filter(Boolean);
 }
 
 function askVolumeCount(){
