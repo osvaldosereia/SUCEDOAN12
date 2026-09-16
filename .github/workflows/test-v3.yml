@@ -2,11 +2,11 @@ name: Testar Admin e compatibilidade Vitrine
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'vitrine-v3/**'
       - 'admin/**'
+      - 'tests/creative-studio-admin-contract.test.mjs'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-core-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
@@ -22,6 +22,7 @@ on:
     paths:
       - 'vitrine-v3/**'
       - 'admin/**'
+      - 'tests/creative-studio-admin-contract.test.mjs'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-core-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
@@ -62,6 +63,8 @@ jobs:
           grep -q 'location.replace' vitrine-v3/index.html
       - name: Contrato do Admin oficial
         run: node scripts/test-admin-v3-contract.mjs
+      - name: Contrato do Estúdio Criativo
+        run: node --test tests/creative-studio-admin-contract.test.mjs
       - name: Controles inline do Admin oficial
         run: node scripts/test-admin-v3-inline-product-controls.mjs
       - name: Nomes dos produtos no Admin oficial
@@ -72,6 +75,7 @@ jobs:
         run: |
           node --check admin/api.js
           node --check admin/app.js
+          node --check admin/creative-studio.js
           node --check admin/orders-integrated-v2.js
           node --check admin/basket-editor.js
           node --check admin/products-inline-controls-v4.js
