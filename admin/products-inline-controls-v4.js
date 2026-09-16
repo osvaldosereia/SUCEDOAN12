@@ -175,7 +175,7 @@ async function saveInline(row,patch,message){
     const data=await productApi('update_product',{id:row.dataset.inlineProductRow,patch});
     syncRow(row,data.product);
     toast(message,'success');
-    if(state.status||state.verification||state.expiry||state.sort==='expiry')await mountProducts({force:true});
+    if(Object.prototype.hasOwnProperty.call(patch,'physically_verified')||state.status||state.verification||state.expiry||state.sort==='expiry')await mountProducts({force:true});
   }catch(error){
     toast(error.message,'error');
     await mountProducts({force:true});
