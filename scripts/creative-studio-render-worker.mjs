@@ -3,169 +3,37 @@ import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-
-const WIDTH=1080;
-const HEIGHT=1920;
-const FPS=30;
-const MIN_DURATION=15;
-const MAX_DURATION=25;
-const BUCKET='creative-studio-renders';
-
-export function sanitizeText(value,max=180){
-  return String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+const WIDTH=1080,HEIGHT=1920,FPS=30,MIN_DURATION=15,MAX_DURATION=25,BUCKET='creative-studio-renders';
+export function sanitizeText(value,max=180){return String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
+function clampDuration(value){const n=Math.round(Number(value)||18);return Math.max(MIN_DURATION,Math.min(MAX_DURATION,n))}
+export function pickPackshotUrl(job){return job?.resolved_assets?.packshot?.url||job?.product_snapshot?.image_url||job?.product_snapshot?.image_ai_url||''}
+export function buildOutputPath(job){if(!job?.id)throw new Error('job_id_required');return `${job.id}/final.mp4`}
+export function claimPayload(workerId,leaseSeconds=1200){return {p_worker_id:String(workerId),p_lease_seconds:Number(leaseSeconds)}}
+export function completePayload(job,workerId,outputPath,metadata={}){return {p_job_id:job.id,p_worker_id:String(workerId),p_output_path:String(outputPath),p_output_metadata:metadata,p_actual_cost_brl:0}}
+export function failPayload(job,workerId,error){return {p_job_id:job.id,p_worker_id:String(workerId),p_error:sanitizeText(error,1500)||'render_failed'}}
+function normalizedSfx(value,index,total){const s=String(value||'').toLowerCase();if(/whoosh|swoosh|vento|movimento/.test(s))return 'whoosh';if(/chime|brilho|shine|spark|final|cta/.test(s))return 'chime';if(/impact|boom|batida/.test(s))return 'impact';if(/pop|click|salto/.test(s))return 'pop';return index===0?'pop':index===total-1?'chime':'whoosh'}
+export function buildCompositionPlan(job){
+ const duration=clampDuration(job?.duration_seconds),raw=Array.isArray(job?.creative_plan?.scenes)?job.creative_plan.scenes:[],count=Math.max(1,raw.length),slice=duration/count;
+ const scenes=(raw.length?raw:[{summary:job?.creative_plan?.concept||'Produto em destaque'}]).map((scene,i)=>({index:i,start:Number((i*slice).toFixed(3)),end:Number((i===count-1?duration:(i+1)*slice).toFixed(3)),summary:sanitizeText(scene?.summary||scene?.beat||'',240),beat:sanitizeText(scene?.beat||'',80),sfx:normalizedSfx(scene?.sound_intent,i,count)}));
+ const assets=(job?.resolved_assets?.items||[]).filter(a=>a&&((a.kind==='procedural')||a.url)).slice(0,3);
+ return {duration,packshot:{kind:'packshot',url:pickPackshotUrl(job),protected:true},assets,scenes,concept:sanitizeText(job?.creative_plan?.concept,240),hook:sanitizeText(job?.creative_plan?.hook,240),payoff:sanitizeText(job?.creative_plan?.payoff,240)};
 }
-
-function clampDuration(value){
-  const n=Math.round(Number(value)||18);
-  return Math.max(MIN_DURATION,Math.min(MAX_DURATION,n));
-}
-
-export function pickPackshotUrl(job){
-  return job?.resolved_assets?.packshot?.url||job?.product_snapshot?.image_url||job?.product_snapshot?.image_ai_url||'';
-}
-
-export function buildOutputPath(job){
-  if(!job?.id)throw new Error('job_id_required');
-  return `${job.id}/final.mp4`;
-}
-
-export function claimPayload(workerId,leaseSeconds=1200){
-  return {p_worker_id:String(workerId),p_lease_seconds:Number(leaseSeconds)};
-}
-
-export function completePayload(job,workerId,outputPath,metadata={}){
-  return {p_job_id:job.id,p_worker_id:String(workerId),p_output_path:String(outputPath),p_output_metadata:metadata,p_actual_cost_brl:0};
-}
-
-export function failPayload(job,workerId,error){
-  return {p_job_id:job.id,p_worker_id:String(workerId),p_error:sanitizeText(error,1500)||'render_failed'};
-}
-
 export function buildFfmpegArgs(job,inputPath,outputPath){
-  const duration=clampDuration(job?.duration_seconds);
-  const middle=Math.max(1000,Math.round(duration*500));
-  const finish=Math.max(1000,Math.round((duration-1.15)*1000));
-  const step="floor(t*8)/8";
-  const filter=[
-    `[0:v]scale=720:1080:force_original_aspect_ratio=decrease,format=rgba[prod]`,
-    `[1:v][prod]overlay=x='(W-w)/2+20*sin(2*PI*${step}/2.8)':y='(H-h)/2+34*sin(2*PI*${step}/2.2)':eval=frame:format=auto,fade=t=in:st=0:d=0.35,fade=t=out:st=${Math.max(0,duration-0.55)}:d=0.55[v]`,
-    `[2:a]adelay=300|300,volume=0.18[a0]`,
-    `[3:a]adelay=${middle}|${middle},volume=0.16[a1]`,
-    `[4:a]adelay=${finish}|${finish},volume=0.18[a2]`,
-    `[a0][a1][a2]amix=inputs=3:duration=longest,apad=pad_dur=${duration}[a]`
-  ].join(';');
-  return [
-    '-y',
-    '-loop','1','-framerate',String(FPS),'-i',inputPath,
-    '-f','lavfi','-i',`color=c=0xF4EFE9:s=${WIDTH}x${HEIGHT}:r=${FPS}:d=${duration}`,
-    '-f','lavfi','-i','sine=frequency=190:sample_rate=48000:duration=0.16',
-    '-f','lavfi','-i','sine=frequency=520:sample_rate=48000:duration=0.12',
-    '-f','lavfi','-i','sine=frequency=880:sample_rate=48000:duration=0.32',
-    '-filter_complex',filter,
-    '-map','[v]','-map','[a]',
-    '-t',String(duration),'-r',String(FPS),
-    '-c:v','libx264','-preset','medium','-crf','20','-pix_fmt','yuv420p',
-    '-c:a','aac','-b:a','128k','-movflags','+faststart',outputPath
-  ];
+ const c=buildCompositionPlan(job),duration=c.duration,middle=Math.max(1000,Math.round(duration*500)),finish=Math.max(1000,Math.round((duration-1.15)*1000)),step='floor(t*8)/8';
+ const filter=[`[0:v]scale=720:1080:force_original_aspect_ratio=decrease,format=rgba[prod]`,`[1:v][prod]overlay=x='(W-w)/2+20*sin(2*PI*${step}/2.8)':y='(H-h)/2+34*sin(2*PI*${step}/2.2)':eval=frame:format=auto,fade=t=in:st=0:d=0.35,fade=t=out:st=${Math.max(0,duration-0.55)}:d=0.55[v]`,`[2:a]adelay=300|300,volume=0.18[a0]`,`[3:a]adelay=${middle}|${middle},volume=0.16[a1]`,`[4:a]adelay=${finish}|${finish},volume=0.18[a2]`,`[a0][a1][a2]amix=inputs=3:duration=longest,apad=pad_dur=${duration}[a]`].join(';');
+ return ['-y','-loop','1','-framerate',String(FPS),'-i',inputPath,'-f','lavfi','-i',`color=c=0xF4EFE9:s=${WIDTH}x${HEIGHT}:r=${FPS}:d=${duration}`,'-f','lavfi','-i','sine=frequency=190:sample_rate=48000:duration=0.16','-f','lavfi','-i','sine=frequency=520:sample_rate=48000:duration=0.12','-f','lavfi','-i','sine=frequency=880:sample_rate=48000:duration=0.32','-filter_complex',filter,'-map','[v]','-map','[a]','-t',String(duration),'-r',String(FPS),'-c:v','libx264','-preset','medium','-crf','20','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart',outputPath]
 }
-
-function envRequired(name){
-  const value=process.env[name];
-  if(!value)throw new Error(`${name}_required`);
-  return value.replace(/\/+$/,'');
-}
-
-function serviceHeaders(key,extra={}){
-  return {'apikey':key,'Authorization':`Bearer ${key}`,'Content-Type':'application/json',...extra};
-}
-
-async function rpc(base,key,name,payload){
-  const response=await fetch(`${base}/rest/v1/rpc/${name}`,{method:'POST',headers:serviceHeaders(key),body:JSON.stringify(payload)});
-  const text=await response.text();
-  let data=null;
-  try{data=text?JSON.parse(text):null}catch{data=text}
-  if(!response.ok)throw new Error(`${name}:${response.status}:${typeof data==='string'?data:JSON.stringify(data)}`);
-  return data;
-}
-
-async function downloadFile(url,path){
-  const response=await fetch(url,{redirect:'follow'});
-  if(!response.ok)throw new Error(`packshot_download:${response.status}`);
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength<100)throw new Error('packshot_empty');
-  await writeFile(path,bytes);
-}
-
-async function runProcess(command,args){
-  await new Promise((resolve,reject)=>{
-    const child=spawn(command,args,{stdio:'inherit'});
-    child.once('error',reject);
-    child.once('exit',code=>code===0?resolve():reject(new Error(`${command}_exit_${code}`)));
-  });
-}
-
-async function uploadVideo(base,key,outputPath,filePath){
-  const bytes=await readFile(filePath);
-  const encoded=outputPath.split('/').map(encodeURIComponent).join('/');
-  const response=await fetch(`${base}/storage/v1/object/${BUCKET}/${encoded}`,{
-    method:'POST',
-    headers:{'apikey':key,'Authorization':`Bearer ${key}`,'Content-Type':'video/mp4','x-upsert':'true'},
-    body:bytes
-  });
-  if(!response.ok)throw new Error(`storage_upload:${response.status}:${await response.text()}`);
-  return bytes.byteLength;
-}
-
-function inputExtension(url){
-  try{
-    const ext=extname(new URL(url).pathname).toLowerCase();
-    return ['.png','.jpg','.jpeg','.webp','.avif'].includes(ext)?ext:'.img';
-  }catch{return '.img'}
-}
-
+function envRequired(name){const value=process.env[name];if(!value)throw new Error(`${name}_required`);return value.replace(/\/+$/,'')}
+function serviceHeaders(key,extra={}){return {'apikey':key,'Authorization':`Bearer ${key}`,'Content-Type':'application/json',...extra}}
+async function rpc(base,key,name,payload){const response=await fetch(`${base}/rest/v1/rpc/${name}`,{method:'POST',headers:serviceHeaders(key),body:JSON.stringify(payload)}),text=await response.text();let data=null;try{data=text?JSON.parse(text):null}catch{data=text}if(!response.ok)throw new Error(`${name}:${response.status}:${typeof data==='string'?data:JSON.stringify(data)}`);return data}
+async function downloadFile(url,path){const response=await fetch(url,{redirect:'follow'});if(!response.ok)throw new Error(`asset_download:${response.status}`);const bytes=new Uint8Array(await response.arrayBuffer());if(bytes.byteLength<100)throw new Error('asset_empty');await writeFile(path,bytes)}
+async function runProcess(command,args){await new Promise((resolve,reject)=>{const child=spawn(command,args,{stdio:'inherit'});child.once('error',reject);child.once('exit',code=>code===0?resolve():reject(new Error(`${command}_exit_${code}`)))})}
+async function uploadVideo(base,key,outputPath,filePath){const bytes=await readFile(filePath),encoded=outputPath.split('/').map(encodeURIComponent).join('/'),response=await fetch(`${base}/storage/v1/object/${BUCKET}/${encoded}`,{method:'POST',headers:{'apikey':key,'Authorization':`Bearer ${key}`,'Content-Type':'video/mp4','x-upsert':'true'},body:bytes});if(!response.ok)throw new Error(`storage_upload:${response.status}:${await response.text()}`);return bytes.byteLength}
+function inputExtension(url){try{const ext=extname(new URL(url).pathname).toLowerCase();return ['.png','.jpg','.jpeg','.webp','.avif'].includes(ext)?ext:'.img'}catch{return '.img'}}
 export async function runWorker(){
-  const base=envRequired('SUPABASE_URL');
-  const key=envRequired('SUPABASE_SERVICE_ROLE_KEY');
-  const workerId=process.env.CREATIVE_STUDIO_WORKER_ID||`github-${process.env.GITHUB_RUN_ID||Date.now()}`;
-  const claimed=await rpc(base,key,'creative_studio_claim_job',claimPayload(workerId,1200));
-  const job=Array.isArray(claimed)?claimed[0]:null;
-  if(!job){
-    console.log('creative-studio: no queued job');
-    return {processed:false};
-  }
-  const dir=await mkdtemp(join(tmpdir(),'creative-studio-'));
-  const packshotUrl=pickPackshotUrl(job);
-  const outputPath=buildOutputPath(job);
-  try{
-    if(!packshotUrl)throw new Error('packshot_url_required');
-    const input=join(dir,`packshot${inputExtension(packshotUrl)}`);
-    const output=join(dir,'final.mp4');
-    await downloadFile(packshotUrl,input);
-    await runProcess('ffmpeg',buildFfmpegArgs(job,input,output));
-    const info=await stat(output);
-    if(info.size<1024)throw new Error('render_output_too_small');
-    const uploadedBytes=await uploadVideo(base,key,outputPath,output);
-    const metadata={
-      width:WIDTH,height:HEIGHT,fps:FPS,duration_seconds:clampDuration(job.duration_seconds),
-      codec:'h264',audio_codec:'aac',audio_voice:false,
-      render_strategy:'ffmpeg_stopmotion_v1',file_size_bytes:uploadedBytes,
-      product_name:sanitizeText(job?.product_snapshot?.name,200),generated_at:new Date().toISOString()
-    };
-    const completed=await rpc(base,key,'creative_studio_complete_job',completePayload(job,workerId,outputPath,metadata));
-    if(!Array.isArray(completed)||!completed.length)throw new Error('complete_job_not_applied');
-    console.log(`creative-studio: completed ${job.id} -> ${outputPath}`);
-    return {processed:true,job_id:job.id,output_path:outputPath};
-  }catch(error){
-    const message=error instanceof Error?error.message:String(error);
-    console.error(`creative-studio: failed ${job.id}: ${message}`);
-    try{await rpc(base,key,'creative_studio_fail_job',failPayload(job,workerId,message))}catch(failError){console.error('creative-studio: fail rpc error',failError)}
-    throw error;
-  }finally{
-    await rm(dir,{recursive:true,force:true});
-  }
+ const base=envRequired('SUPABASE_URL'),key=envRequired('SUPABASE_SERVICE_ROLE_KEY'),workerId=process.env.CREATIVE_STUDIO_WORKER_ID||`github-${process.env.GITHUB_RUN_ID||Date.now()}`,claimed=await rpc(base,key,'creative_studio_claim_job',claimPayload(workerId,1200)),job=Array.isArray(claimed)?claimed[0]:null;if(!job){console.log('creative-studio: no queued job');return {processed:false}}
+ const dir=await mkdtemp(join(tmpdir(),'creative-studio-')),packshotUrl=pickPackshotUrl(job),outputPath=buildOutputPath(job);
+ try{if(!packshotUrl)throw new Error('packshot_url_required');const input=join(dir,`packshot${inputExtension(packshotUrl)}`),output=join(dir,'final.mp4');await downloadFile(packshotUrl,input);await runProcess('ffmpeg',buildFfmpegArgs(job,input,output));const info=await stat(output);if(info.size<1024)throw new Error('render_output_too_small');const uploadedBytes=await uploadVideo(base,key,outputPath,output),composition=buildCompositionPlan(job),metadata={width:WIDTH,height:HEIGHT,fps:FPS,duration_seconds:composition.duration,codec:'h264',audio_codec:'aac',audio_voice:false,render_strategy:'ffmpeg_stopmotion_v2',file_size_bytes:uploadedBytes,scene_count:composition.scenes.length,resolved_asset_count:composition.assets.length,product_name:sanitizeText(job?.product_snapshot?.name,200),generated_at:new Date().toISOString()};const completed=await rpc(base,key,'creative_studio_complete_job',completePayload(job,workerId,outputPath,metadata));if(!Array.isArray(completed)||!completed.length)throw new Error('complete_job_not_applied');console.log(`creative-studio: completed ${job.id} -> ${outputPath}`);return {processed:true,job_id:job.id,output_path:outputPath}}
+ catch(error){const message=error instanceof Error?error.message:String(error);console.error(`creative-studio: failed ${job.id}: ${message}`);try{await rpc(base,key,'creative_studio_fail_job',failPayload(job,workerId,message))}catch(failError){console.error('creative-studio: fail rpc error',failError)}throw error}finally{await rm(dir,{recursive:true,force:true})}
 }
-
-const isCli=process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href;
-if(isCli){
-  runWorker().catch(error=>{console.error(error);process.exitCode=1});
-}
+const isCli=process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href;if(isCli){runWorker().catch(error=>{console.error(error);process.exitCode=1})}
