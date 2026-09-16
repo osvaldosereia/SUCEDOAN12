@@ -1,4 +1,4 @@
-name: Testar Admin V3 e compatibilidade Vitrine
+name: Testar Admin e compatibilidade Vitrine
 
 on:
   push:
@@ -6,11 +6,10 @@ on:
       - main
     paths:
       - 'vitrine-v3/**'
-      - 'admin-v3/**'
       - 'admin/**'
       - 'supabase/functions/catalog-v3/**'
-      - 'supabase/functions/admin-v3-api/**'
-      - 'supabase/functions/admin-v3-product-names/**'
+      - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/config.toml'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -21,11 +20,10 @@ on:
     branches: [main]
     paths:
       - 'vitrine-v3/**'
-      - 'admin-v3/**'
       - 'admin/**'
       - 'supabase/functions/catalog-v3/**'
-      - 'supabase/functions/admin-v3-api/**'
-      - 'supabase/functions/admin-v3-product-names/**'
+      - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/config.toml'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -38,7 +36,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: test-v3-${{ github.ref }}
+  group: test-admin-compat-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -53,31 +51,30 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Compatibilidade Vitrine V3
+      - name: Compatibilidade Vitrine antiga
         shell: bash
         run: |
           set -euo pipefail
           grep -q 'viewport-fit=cover' vitrine-v3/index.html
           grep -q '../comprar/' vitrine-v3/index.html
           grep -q 'location.replace' vitrine-v3/index.html
-      - name: Contrato Admin V3
+      - name: Contrato do Admin oficial
         run: node scripts/test-admin-v3-contract.mjs
-      - name: Controles inline Admin V3
+      - name: Controles inline do Admin oficial
         run: node scripts/test-admin-v3-inline-product-controls.mjs
       - name: Pedidos completos no Admin oficial
         run: node scripts/test-comprar-order-admin-v1.mjs
-      - name: Validar JavaScript Admin
+      - name: Validar JavaScript do Admin
         run: |
-          node --check admin-v3/config.js
-          node --check admin-v3/api.js
-          node --check admin-v3/app.js
-          node --check admin-v3/orders-integrated-v2.js
-          node --check admin-v3/basket-editor.js
-          node --check admin-v3/products-inline-controls-v4.js
-          node --check admin-v3/product-name-management.js
-      - name: Compilar Edge Functions V3
+          node --check admin/api.js
+          node --check admin/app.js
+          node --check admin/orders-integrated-v2.js
+          node --check admin/basket-editor.js
+          node --check admin/products-inline-controls-v4.js
+          node --check admin/product-name-management.js
+      - name: Compilar Edge Functions do Admin
         run: |
           deno check supabase/functions/catalog-v3/index.ts
-          deno check supabase/functions/admin-v3-api/index.ts
-          deno check supabase/functions/admin-v3-product-names/index.ts
+          deno check supabase/functions/admin-core-v1/index.ts
+          deno check supabase/functions/admin-product-names-v1/index.ts
           deno check supabase/functions/admin-simple-v2/index.ts
