@@ -1,0 +1,37 @@
+name: Creative Studio tests
+
+on:
+  push:
+    branches:
+      - feat/stopmotion-smart-director
+    paths:
+      - 'marketing/creative-studio/**'
+      - 'supabase/functions/creative-studio-director/**'
+      - 'supabase/migrations/*creative_studio*'
+      - '.github/workflows/creative-studio-tests.yml'
+  pull_request:
+    paths:
+      - 'marketing/creative-studio/**'
+      - 'supabase/functions/creative-studio-director/**'
+      - 'supabase/migrations/*creative_studio*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Creative Studio unit tests
+        run: node --test marketing/creative-studio/tests/*.test.js
+      - name: JavaScript syntax
+        run: |
+          node --check marketing/creative-studio/contracts.js
+          node --check marketing/creative-studio/validate-plan.js
+          node --check marketing/creative-studio/creative-mining.js
+          node --check marketing/creative-studio/asset-request.js
+          node --check marketing/creative-studio/asset-resolver.js
+          node --check marketing/creative-studio/asset-hunter.js
+          node --check marketing/creative-studio/cost.js
