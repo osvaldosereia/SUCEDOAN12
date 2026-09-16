@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>Dona Antônia · Estúdio Criativo</title>
+  <link rel="stylesheet" href="./styles.css?v=20260916-1">
+  <link rel="stylesheet" href="./creative-studio.css?v=20260916-1">
+  <script src="./admin-subpage-guard.js"></script>
+</head>
+<body>
+<header class="topbar"><button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button><a class="brand" href="./#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin</b></span></a><a class="view-storefront" href="../comprar/" target="_blank" rel="noopener">Abrir Comprar</a></header>
+<div class="admin-layout">
+<aside id="sidebar" class="sidebar"><nav><a href="./#dashboard">Início</a><a href="./#products">Produtos</a><a href="./imagens-ia.html">Imagens IA</a><a class="active" href="./creative-studio.html">Estúdio Criativo</a><a href="./#orders">Pedidos</a><a href="./#customers">Clientes</a></nav></aside>
+<div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+<main class="content studio-page">
+<div class="page-head"><div><span class="studio-eyebrow">Vídeos automáticos</span><h1>Estúdio Criativo</h1><p>Escolha um produto e gere a primeira micro-história. O produto real sempre usa a foto cadastrada; o Asset Hunter fica restrito aos elementos complementares.</p></div><button id="refreshStudio" class="secondary" type="button">Atualizar</button></div>
+<section class="studio-grid">
+<article class="panel studio-create"><h2>1. Produto</h2><label class="field"><span>Buscar produto ativo</span><input id="productSearch" type="search" placeholder="Digite nome, marca ou EAN"></label><div id="productResults" class="studio-products"></div><div id="selectedProduct" class="selected-product empty">Nenhum produto selecionado.</div><div class="studio-actions"><button id="createStory" class="primary" type="button" disabled>Criar história</button><button id="alternateStory" class="secondary" type="button" disabled>Criar outra ideia</button></div><p id="createStatus" class="muted"></p></article>
+<article class="panel"><h2>2. Direção criativa</h2><div id="creativePlan" class="studio-plan empty">A história aparecerá aqui antes de qualquer renderização.</div></article>
+<article class="panel"><h2>3. Assets</h2><div id="assetStatus" class="studio-assets empty">Os elementos necessários aparecerão aqui. Packshot, produto e logo nunca serão buscados externamente.</div></article>
+<article class="panel"><h2>4. Renderização</h2><div id="renderStatus" class="studio-render empty">Depois da história e dos assets estarem prontos, o vídeo poderá entrar na fila.</div><button id="queueRender" class="primary" type="button" disabled>Renderizar vídeo</button></article>
+</section>
+<section class="panel"><div class="panel-title-row"><div><h2>Vídeos recentes</h2><p class="muted">Acompanhe fila, processamento, conclusão e custo.</p></div></div><div id="recentJobs" class="studio-jobs"></div></section>
+</main></div>
+<div id="toastRegion" class="toasts" aria-live="polite"></div>
+<script src="./config.js?v=20260915-1"></script>
+<script type="module" src="./creative-studio.js?v=20260916-1"></script>
+</body></html>
