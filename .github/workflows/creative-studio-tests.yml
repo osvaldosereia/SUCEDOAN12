@@ -23,7 +23,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,7 +44,13 @@ jobs:
           grep -q 'não altera' marketing/creative-studio/PROJECT-BOUNDARIES.md
           grep -q 'creative-studio-director' admin/creative-studio.js
           grep -q 'creative-studio-assets-v1' admin/creative-studio.js
+          grep -q 'creative-studio-jobs-v1' admin/creative-studio.js
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg
       - name: Real MP4 smoke render
         run: |
           ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
           node scripts/creative-studio-render-smoke.mjs
