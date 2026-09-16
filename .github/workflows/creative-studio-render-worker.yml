@@ -1,0 +1,43 @@
+name: Renderizar Estúdio Criativo
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/creative-studio-render-worker.mjs'
+      - '.github/workflows/creative-studio-render-worker.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: creative-studio-render-worker
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Verificar FFmpeg
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version
+      - name: Processar um job do Estúdio Criativo
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CREATIVE_STUDIO_WORKER_ID: github-actions
+        run: node scripts/creative-studio-render-worker.mjs
