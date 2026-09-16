@@ -24,7 +24,7 @@ const bulkAdminUrl=new URL('../supabase/functions/admin-product-images-bulk-grid
 assert.ok(existsSync(bulkAdminUrl),'bulk grid18 admin edge function must exist');
 const bulkAdmin=readFileSync(bulkAdminUrl,'utf8');
 
-assert.match(gridImage,/f\.append\('quality','medium'\)/);
+assert.match(gridImage,/f\.append\('quality','low'\)/);
 assert.match(grid,/items\.length!==18/);
 assert.match(policy,/sourceRecoverableForGrid/);
 assert.match(policy,/return Boolean\(v\)/);
