@@ -16,11 +16,13 @@ test('compiles scenes to a continuous 15-25 second timeline',()=>{
   assert.ok(t.scenes.every((s,i)=>i===0||s.start===t.scenes[i-1].end));
 });
 
-test('creates semantic motion tracks and audio cues without voice',()=>{
+test('creates semantic motion tracks audio cues and deterministic camera without voice',()=>{
   const t=compileTimeline(plan);
   assert.equal(t.motionTracks.length,3);
   assert.equal(t.audio.voice,false);
   assert.equal(t.audio.cues.at(-1).sound,'impact');
+  assert.equal(t.camera.mode,'cinematic_push');
+  assert.ok(t.camera.endZoom>t.camera.startZoom);
 });
 
 test('rejects an invalid duration before compiling',()=>assert.throws(()=>compileTimeline({...plan,duration:10}),/duration_out_of_range/));
