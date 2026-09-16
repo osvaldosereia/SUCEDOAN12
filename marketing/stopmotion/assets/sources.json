@@ -1,79 +1,22 @@
 {
-  "version": 1,
-  "styleTarget": "massinha_v1",
+  "version": 2,
+  "stylePolicy": "style_agnostic",
   "licensePolicy": {
     "automaticImportAllowed": ["CC0"],
+    "reviewBeforeImport": ["SVG_REPO_LICENSE", "CUSTOM_COMMERCIAL_FREE"],
+    "excluded": ["CC-BY-NC", "NON_COMMERCIAL", "UNKNOWN"],
     "requireCommercialUse": true,
-    "requireAttribution": false
+    "storeLicensePerAsset": true
   },
   "sources": [
-    {
-      "key": "kenney_food_kit",
-      "provider": "Kenney",
-      "name": "Food Kit",
-      "url": "https://kenney.nl/assets/food-kit",
-      "license": "CC0",
-      "declaredAssetCount": 200,
-      "kind": "3d",
-      "segments": ["Mercearia", "Casa e Utilidades"]
-    },
-    {
-      "key": "kenney_mini_market",
-      "provider": "Kenney",
-      "name": "Mini Market",
-      "url": "https://kenney.nl/assets/mini-market",
-      "license": "CC0",
-      "declaredAssetCount": 20,
-      "kind": "3d",
-      "segments": ["Mercearia", "Casa e Utilidades", "Limpeza", "Lavanderia", "Higiene Pessoal", "Beleza e Cuidados", "Cabelos", "Bebê", "Pets", "Calçados"]
-    },
-    {
-      "key": "quaternius_ultimate_food",
-      "provider": "Quaternius",
-      "name": "Ultimate Food Pack",
-      "url": "https://quaternius.com/packs/ultimatefood.html",
-      "license": "CC0",
-      "declaredAssetCount": 103,
-      "kind": "3d",
-      "segments": ["Mercearia"]
-    },
-    {
-      "key": "quaternius_junk_food",
-      "provider": "Quaternius",
-      "name": "Junk Food Pack",
-      "url": "https://quaternius.com/packs/junkfood.html",
-      "license": "CC0",
-      "declaredAssetCount": 16,
-      "kind": "3d",
-      "segments": ["Mercearia"]
-    },
-    {
-      "key": "oga_cooking_assets",
-      "provider": "OpenGameArt",
-      "name": "Cooking Assets",
-      "url": "https://opengameart.org/content/cooking-assets",
-      "license": "CC0",
-      "kind": "3d",
-      "segments": ["Casa e Utilidades", "Mercearia"]
-    },
-    {
-      "key": "polyhaven_models",
-      "provider": "Poly Haven",
-      "name": "Models",
-      "url": "https://polyhaven.com/models",
-      "license": "CC0",
-      "kind": "3d",
-      "segments": ["Mercearia", "Casa e Utilidades", "Limpeza", "Lavanderia", "Higiene Pessoal", "Beleza e Cuidados", "Cabelos", "Bebê", "Pets", "Calçados"],
-      "notes": "Assets downloaded/self-hosted are CC0; live API use has separate attribution terms."
-    },
-    {
-      "key": "polyhaven_materials",
-      "provider": "Poly Haven",
-      "name": "Textures / Materials",
-      "url": "https://polyhaven.com/textures",
-      "license": "CC0",
-      "kind": "material",
-      "segments": ["ALL"]
-    }
+    {"key":"kenney_food_kit","provider":"Kenney","name":"Food Kit","url":"https://kenney.nl/assets/food-kit","license":"CC0","kind":"3d","segments":["Mercearia","Casa e Utilidades"]},
+    {"key":"kenney_mini_market","provider":"Kenney","name":"Mini Market","url":"https://kenney.nl/assets/mini-market","license":"CC0","kind":"3d","segments":["ALL"]},
+    {"key":"quaternius_ultimate_food","provider":"Quaternius","name":"Ultimate Food Pack","url":"https://quaternius.com/packs/ultimatefood.html","license":"CC0","kind":"3d","segments":["Mercearia"]},
+    {"key":"quaternius_junk_food","provider":"Quaternius","name":"Junk Food Pack","url":"https://quaternius.com/packs/junkfood.html","license":"CC0","kind":"3d","segments":["Mercearia"]},
+    {"key":"oga_cooking_assets","provider":"OpenGameArt","name":"Cooking Assets","url":"https://opengameart.org/content/cooking-assets","license":"CC0","kind":"3d","segments":["Casa e Utilidades","Mercearia"]},
+    {"key":"polyhaven_models","provider":"Poly Haven","name":"Models","url":"https://polyhaven.com/models","license":"CC0","kind":"3d","segments":["ALL"]},
+    {"key":"polyhaven_materials","provider":"Poly Haven","name":"Textures / Materials","url":"https://polyhaven.com/textures","license":"CC0","kind":"material","segments":["ALL"]},
+    {"key":"svgrepo","provider":"SVG Repo","name":"SVG Repo vectors and illustrations","url":"https://www.svgrepo.com/","license":"PER_ASSET","kind":"svg_vector_illustration","segments":["ALL"],"notes":"Only ingest assets whose individual license permits commercial use; exclude NC/unknown/logo-restricted assets."},
+    {"key":"undraw","provider":"unDraw","name":"unDraw Illustrations","url":"https://undraw.co/illustrations","license":"CUSTOM_COMMERCIAL_FREE","kind":"illustration_svg","segments":["ALL"],"notes":"Useful as complete scenes/background illustrations. Do not redistribute as an asset pack or use for ML training."}
   ]
 }
