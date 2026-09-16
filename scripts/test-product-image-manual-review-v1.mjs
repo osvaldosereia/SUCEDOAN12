@@ -110,7 +110,7 @@ assert.match(candidateFallback,/update public\.products/i);
 assert.match(candidateFallback,/image_ai_status[^\n]*processing/i);
 
 for(const source of [gridImage,manual]){
-  assert.match(source,/não preserve o fundo da imagem original|remova completamente (?:todo o )?fundo original/i);
+  assert.match(source,/não preserve o fundo da imagem original|remova completamente (?:todo )?o fundo original/i);
   assert.match(source,/fundo branco/i);
   assert.match(source,/moldura(?: branca)?|borda branca/i);
   assert.match(source,/#ECECEC/);
