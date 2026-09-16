@@ -1,0 +1,68 @@
+name: Remover legado do Admin
+
+on:
+  push:
+    branches: [fix/admin-images-no-v3-20260916]
+    paths:
+      - 'scripts/remove-admin-v3-legacy.py'
+      - '.github/workflows/remove-admin-v3-legacy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  limpar:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: fix/admin-images-no-v3-20260916
+          fetch-depth: 1
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Remover legado e neutralizar referências ativas
+        run: python scripts/remove-admin-v3-legacy.py
+      - name: Validar contrato do Admin consolidado
+        run: |
+          node scripts/test-admin-v3-contract.mjs
+          node scripts/test-admin-v3-inline-product-controls.mjs
+          node scripts/test-comprar-order-admin-v1.mjs
+          node scripts/test-admin-no-v3-runtime.mjs
+          node scripts/test-stage12-commercial-central-v1.mjs
+      - name: Validar sintaxe e Edge Functions neutras
+        run: |
+          node --check admin/app.js
+          node --check admin/api.js
+          node --check admin/products-inline-controls-v4.js
+          node --check admin/orders-integrated-v2.js
+          node --check admin/commercial-truth.js
+          node --check admin/logistics.js
+          node --check admin/automation-builder.js
+          deno check supabase/functions/admin-core-v1/index.ts
+          deno check supabase/functions/admin-product-names-v1/index.ts
+      - name: Garantir ausência física do legado
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e admin-v3
+          test ! -e supabase/functions/admin-v3-api
+          test ! -e supabase/functions/admin-v3-product-names
+          test ! -e scripts/migrate-admin-v3-runtime-to-admin.py
+          test ! -e .github/workflows/apply-admin-runtime-migration.yml
+      - name: Commitar limpeza final
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m 'refactor: remover legado do Admin V3'
+          git push origin HEAD:fix/admin-images-no-v3-20260916
