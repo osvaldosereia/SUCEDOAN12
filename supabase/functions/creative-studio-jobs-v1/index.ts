@@ -37,6 +37,18 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:'invalid_json'},400)}
   const action=clean(body?.action||'list',40).toLowerCase();
 
+  if(action==='settings'){
+    const {data,error}=await sb.from('creative_studio_settings').select('*').eq('id',1).maybeSingle();
+    if(error)return json({ok:false,error:'settings_failed',detail:error.message},400);return json({ok:true,settings:data});
+  }
+
+  if(action==='memory'){
+    const productId=clean(body?.product_id,80),category=clean(body?.category,160);const limit=Math.min(12,Math.max(1,finite(body?.limit,8)));
+    let q=sb.from('creative_studio_memory').select('product_id,product_name,product_category,territory,concept,hook,story_signature,duration_seconds,motions,created_at').order('created_at',{ascending:false}).limit(limit);
+    if(productId)q=q.eq('product_id',productId);else if(category)q=q.eq('product_category',category);
+    const {data,error}=await q;if(error)return json({ok:false,error:'memory_failed',detail:error.message},400);return json({ok:true,memory:data||[]});
+  }
+
   if(action==='create'){
     const job=body?.job||{};const errors=validateJob(job);if(errors.length)return json({ok:false,error:'invalid_job',errors},400);
     const {data:product,error:productError}=await sb.from('products').select('id,name,category,is_active').eq('id',job.product_id).maybeSingle();
