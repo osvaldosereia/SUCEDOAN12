@@ -11,7 +11,7 @@ for(const file of [
   'admin/image-bulk-grid18.js',
   'admin/image-automation.css',
   'admin/styles.css',
-  'admin/image-runtime-config.js'
+  'admin/runtime-config.js'
 ]) assert.ok(fs.existsSync(file),`faltando ${file}`);
 
 const page=fs.readFileSync('admin/imagens-ia.html','utf8');
@@ -24,7 +24,7 @@ const automation=fs.readFileSync('admin/image-automation.js','utf8');
 const bulk=fs.readFileSync('admin/image-bulk-grid18.js','utf8');
 for(const [name,source] of [['image-automation.js',automation],['image-bulk-grid18.js',bulk]]){
   assert.doesNotMatch(source,/admin-v3|da_admin_v3_auth/i,`${name} ainda contém dependência/nome V3`);
-  assert.match(source,/\.\/image-runtime-config\.js/,`${name} deve usar configuração local neutra`);
+  assert.match(source,/\.\/runtime-config\.js/,`${name} deve usar o runtime único do Admin`);
 }
 
-console.log('Admin Imagens IA está isolado de /admin-v3 e usa o shell oficial.');
+console.log('Admin Imagens IA está isolado de /admin-v3 e usa o runtime oficial.');
