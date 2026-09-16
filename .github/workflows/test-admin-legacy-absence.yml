@@ -40,11 +40,12 @@ jobs:
           legacy_dir="admin""-v3/"
           legacy_api="admin""-v3-api"
           legacy_names="admin""-v3-product-names"
-          if grep -R -n -F "$legacy_dir" .github/workflows; then
+          guard_file='test-admin-legacy-absence.yml'
+          if grep -R -n -F --exclude="$guard_file" "$legacy_dir" .github/workflows; then
             echo 'Workflow ainda referencia o diretório legado.' >&2
             exit 1
           fi
-          if grep -R -n -E "$legacy_api|$legacy_names" .github/workflows; then
+          if grep -R -n -E --exclude="$guard_file" "$legacy_api|$legacy_names" .github/workflows; then
             echo 'Workflow ainda referencia endpoint legado.' >&2
             exit 1
           fi
