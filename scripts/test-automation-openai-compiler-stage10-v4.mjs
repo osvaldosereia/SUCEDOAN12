@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const fn=fs.readFileSync('supabase/functions/admin-automation-builder-v1/index.ts','utf8');
 const compiler=fs.readFileSync('supabase/functions/admin-automation-builder-v1/openai-compiler.ts','utf8');
-const admin=fs.readFileSync('admin-v3/automation-builder.js','utf8');
+const admin=fs.readFileSync('admin/automation-builder.js','utf8');
 const config=fs.readFileSync('admin/config.js','utf8');
 
 assert.match(config,/automationBuilderUiEnabled:\s*false/,'Builder UI must remain dormant');

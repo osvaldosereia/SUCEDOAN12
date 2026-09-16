@@ -34,7 +34,7 @@ assert.match(js,/Confirmar e enviar pedido/,'ação final deve salvar e enviar o
 assert.match(js,/customerApi\('commit_customer'/,'cliente deve ser confirmado no clique final');
 assert.match(js,/checkoutApi\('save_address'/,'endereço deve ser salvo no clique final');
 assert.match(js,/api\('set_payment'/,'pagamento deve ser salvo no clique final');
-assert.match(js,/app\.confirmOrder/,'confirmação deve usar transporte central compatível com Admin V3');
+assert.match(js,/app\.confirmOrder/,'confirmação deve usar transporte central compatível com Admin');
 assert.match(js,/orderSaved/,'checkout deve impedir persistência duplicada do pedido');
 assert.match(js,/whatsappUrl/,'checkout deve preservar a URL final do WhatsApp');
 assert.match(js,/commercial_total/,'resumo final deve aceitar total comercial quando o backend não enviar total');

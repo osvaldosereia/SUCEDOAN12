@@ -6,8 +6,8 @@ const financialSql=fs.readFileSync('supabase/migrations/20260908194000_stage13_f
 const copilotFn=fs.readFileSync('supabase/functions/admin-human-copilot-v1/index.ts','utf8');
 const financialFn=fs.readFileSync('supabase/functions/admin-financial-v1/index.ts','utf8');
 const config=fs.readFileSync('admin/config.js','utf8');
-const panel=fs.readFileSync('admin-v3/human-copilot-panel.js','utf8');
-const financialUi=fs.readFileSync('admin-v3/financial-admin.js','utf8');
+const panel=fs.readFileSync('admin/human-copilot-panel.js','utf8');
+const financialUi=fs.readFileSync('admin/financial-admin.js','utf8');
 
 assert.match(config,/humanServiceCenterUiEnabled:\s*false/);
 assert.match(config,/humanCopilotEnabled:\s*false/);

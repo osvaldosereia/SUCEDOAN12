@@ -1,6 +1,6 @@
 import {readFileSync} from 'node:fs';
 
-const ui=readFileSync('admin-v3/experience-orchestrator.js','utf8');
+const ui=readFileSync('admin/experience-orchestrator.js','utf8');
 const backend=readFileSync('supabase/functions/admin-whatsapp-flow-v1/index.ts','utf8');
 const config=readFileSync('admin/config.js','utf8');
 const must=(condition,message)=>{if(!condition)throw new Error(message)};

@@ -13,7 +13,7 @@ const files={
   pgcryptoFix:'supabase/migrations/20260910154125_dona_antonia_agent_core_round3_pgcrypto_schema_fix_v1.sql',
   worker:'supabase/functions/dona-antonia-agent-learning-v1/index.ts',
   adminApi:'supabase/functions/admin-agent-learning-v1/index.ts',
-  adminUi:'admin-v3/agent-learning.js',
+  adminUi:'admin/agent-learning.js',
   adminPage:'admin/aprendizados.html'
 };
 for(const [name,p] of Object.entries(files))if(!fs.existsSync(p))throw new Error(`${name}: arquivo ausente ${p}`);

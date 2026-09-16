@@ -17,7 +17,7 @@ const canonicalRecovery=read('supabase/migrations/20260910161803_dona_antonia_ag
 const worker=read('supabase/functions/conversation-worker-v3/index.ts');
 const adminEdge=read('supabase/functions/admin-whatsapp-ops-v1/index.ts');
 const adminHtml=read('admin/index.html');
-const adminJs=read('admin-v3/whatsapp-ops.js');
+const adminJs=read('admin/whatsapp-ops.js');
 const config=read('supabase/config.toml');
 const nodeCore=read('scripts/lib/conversation-core-v1.mjs');
 

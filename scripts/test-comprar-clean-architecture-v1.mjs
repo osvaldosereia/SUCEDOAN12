@@ -14,7 +14,7 @@ for(const name of ['api','productApi','customerApi','checkoutApi','basketStorefr
 for(const key of ['session','customer','baskets','selectedBasket','basketItems','cart','checkout','payment','productFilters','pendingProductSyncs']){
   assert.match(app,new RegExp(`\\b${key}\\b`),`estado central deve conter ${key}`);
 }
-assert.match(app,/DA_ADMIN_TEST_TRANSPORT/,'o núcleo deve aceitar transporte explícito do modo Admin V3');
+assert.match(app,/DA_ADMIN_TEST_TRANSPORT/,'o núcleo deve aceitar transporte explícito do modo Admin');
 assert.match(app,/confirm_order/,'o transporte de teste deve ser usado somente na confirmação do pedido');
 
 console.log('OK: contrato arquitetural do Comprar limpo');

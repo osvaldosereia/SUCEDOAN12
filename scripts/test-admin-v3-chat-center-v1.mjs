@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const html=readFileSync('admin-v3/atendimento.html','utf8');
-const center=readFileSync('admin-v3/service-chat-center.js','utf8');
+const html=readFileSync('admin/atendimento.html','utf8');
+const center=readFileSync('admin/service-chat-center.js','utf8');
 const edge=readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 
 for(const tab of ['rules','chat','intelligence','history','evolution']){
