@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {storedAssetDownloads,storageObjectUrl,renderAssetExtension} from '../render-worker-assets.js';
+import {storedAssetDownloads,proceduralAssetVisuals,storageObjectUrl,renderAssetExtension} from '../render-worker-assets.js';
 
 test('extracts only renderable stored assets from a resolved job',()=>{
   const job={duration_seconds:18,resolved_assets:{items:[
@@ -13,6 +13,18 @@ test('extracts only renderable stored assets from a resolved job',()=>{
   assert.equal(specs[0].storage_path,'poly/a.png');
   assert.equal(specs[0].motion,'rise');
   assert.equal(specs[0].bucket,'creative-studio-assets');
+});
+
+test('extracts procedural visuals from the immutable job snapshot',()=>{
+  const job={duration_seconds:18,resolved_assets:{items:[
+    {status:'procedural',request:{need:'confetti',role:'foreground',actions:['celebrate']},procedural:{kind:'confetti'}},
+    {status:'procedural',request:{need:'gradient',role:'background',actions:['reveal']},procedural:{kind:'gradient'}}
+  ]}};
+  const specs=proceduralAssetVisuals(job);
+  assert.equal(specs.length,2);
+  assert.equal(specs[0].kind,'confetti');
+  assert.equal(specs[1].start,0);
+  assert.equal(specs[1].end,18);
 });
 
 test('preserves explicit storage bucket and semantic timing',()=>{
