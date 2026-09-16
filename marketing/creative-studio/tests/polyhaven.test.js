@@ -45,4 +45,5 @@ test('deployed asset provider is raster-only until the renderer supports 3D',()=
   assert.doesNotMatch(providerSource,/model\/gltf|\bglb\b|\bgltf\b/);
   assert.doesNotMatch(edgeSource,/\['glb','gltf'\]/);
   assert.match(edgeSource,/asset_type:'image'/);
+  assert.match(edgeSource,/\.in\('file_format',\['jpg','jpeg','png','webp','svg'\]\)/);
 });
