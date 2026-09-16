@@ -6,6 +6,7 @@ const adminAi=fs.readFileSync('supabase/functions/admin-service-intelligence-sim
 const products=fs.readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
 const menu=fs.readFileSync('supabase/functions/shopping-chat-menu-v1/index.ts','utf8');
 const help=fs.readFileSync('comprar/help.js','utf8');
+const productUi=fs.readFileSync('comprar/products.js','utf8');
 
 for(const forbidden of ['automation_config','queue_ai_job_for_message','whatsapp_sales_state','queue_human_handoff_v1','queue_whatsapp_sales_reply_v1','queue_whatsapp_simple_rich_interactive_v1']){
   assert.ok(!edge.includes(forbidden),`Chat Comprar não deve depender de ${forbidden}`);
@@ -31,11 +32,16 @@ assert.ok(!edge.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-v1 nã
 assert.ok(!products.includes(".eq('is_whatsapp_active',true)"),'shopping-chat-products-v1 não deve filtrar catálogo por flag do WhatsApp');
 assert.ok(!menu.includes('is_whatsapp_active'),'shopping-chat-menu-v1 não deve filtrar cesta por flag do WhatsApp');
 
-// No front limpo a Ajuda é propositalmente simples: envia texto/mídia e mostra a resposta textual.
-assert.match(help,/app\.api\('send_text'/,'Ajuda simples deve enviar texto diretamente ao chat');
-assert.match(help,/function applyReply\(data\)/,'Ajuda simples deve ter um único caminho para resposta');
-assert.match(help,/data\?\.reply\|\|data\?\.message/,'Ajuda simples deve renderizar a resposta textual do backend');
-assert.doesNotMatch(help,/startPolling|MutationObserver|window\.fetch\s*=/,'Ajuda simples não deve depender de polling ou interceptadores globais');
-assert.doesNotMatch(help,/start_basket|set_quantity|productsApi/,'Ajuda não deve abrir catálogo nem alterar o carrinho');
+// O composer recebe {reply, ui} do backend. A resposta textual deve aparecer e a ação deve ser entregue ao módulo visual correspondente.
+assert.match(help,/app\.api\('send_text'/,'Ajuda deve enviar texto diretamente ao chat');
+assert.match(help,/function applyReply\(data\)/,'Ajuda deve ter um único caminho para aplicar resposta');
+assert.match(help,/data\?\.reply\|\|data\?\.message/,'Ajuda deve renderizar a resposta textual do backend');
+assert.match(help,/data\?\.ui/,'Ajuda deve consumir a ação visual devolvida pelo backend');
+assert.match(help,/product_lookup/,'Ajuda deve reconhecer consulta de produto');
+assert.match(help,/openLookup/,'Consulta de produto deve abrir os resultados visuais');
+assert.match(productUi,/function openLookup\(/,'Módulo de produtos deve oferecer abertura direta por consulta');
+assert.match(productUi,/customerCategory:''/,'Consulta direta deve pesquisar em Para Você e Para Casa, sem prender a busca a uma seção');
+assert.doesNotMatch(help,/startPolling|MutationObserver|window\.fetch\s*=/,'Ajuda não deve depender de polling ou interceptadores globais');
+assert.doesNotMatch(help,/start_basket|set_quantity|productsApi/,'Ajuda não deve alterar carrinho diretamente; deve delegar aos módulos oficiais');
 
 console.log('shopping_chat_routing_v1_contract_ok');
