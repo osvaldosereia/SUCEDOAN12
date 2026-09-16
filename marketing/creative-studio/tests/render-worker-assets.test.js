@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {storedAssetDownloads} from '../render-worker-assets.js';
+import {storedAssetDownloads,storageObjectUrl,renderAssetExtension} from '../render-worker-assets.js';
 
 test('extracts only renderable stored assets from a resolved job',()=>{
   const job={duration_seconds:18,resolved_assets:{items:[
@@ -21,4 +21,14 @@ test('preserves explicit storage bucket and semantic timing',()=>{
   assert.equal(spec.bucket,'custom-assets');
   assert.equal(spec.motion,'drop');
   assert.ok(spec.end>spec.start);
+});
+
+test('builds authenticated storage URL without losing nested asset path',()=>{
+  assert.equal(storageObjectUrl('https://abc.supabase.co/','creative-studio-assets','poly haven/flower 1.png'),'https://abc.supabase.co/storage/v1/object/authenticated/creative-studio-assets/poly%20haven/flower%201.png');
+});
+
+test('maps supported formats to safe local extensions',()=>{
+  assert.equal(renderAssetExtension({file_format:'svg'}),'.svg');
+  assert.equal(renderAssetExtension({file_format:'jpeg'}),'.jpg');
+  assert.equal(renderAssetExtension({file_format:'glb'}),'.asset');
 });
