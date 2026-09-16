@@ -40,3 +40,10 @@ test('elementos procedurais não dependem do Asset Hunter', () => {
   assert.match(js, /kind:'procedural'/);
   assert.match(js, /Gerado proceduralmente no renderizador/);
 });
+
+test('Asset Hunter recebe need e keywords no contrato esperado', () => {
+  const js = read('admin/creative-studio.js');
+  assert.match(js, /need:req\.need/);
+  assert.match(js, /keywords:req\.keywords\|\|\[\]/);
+  assert.doesNotMatch(js, /requests:\[req\]/);
+});
