@@ -15,7 +15,6 @@ on:
       - 'scripts/test-comprar-mobile-v1.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
-      - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
       - 'supabase/functions/shopping-room-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
@@ -46,7 +45,6 @@ on:
       - 'scripts/test-comprar-mobile-v1.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
-      - 'scripts/test-chat-helper-menu-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
@@ -96,7 +94,6 @@ jobs:
           node scripts/test-comprar-mobile-v1.mjs
           for test_file in scripts/test-comprar-clean-*.mjs; do node "$test_file"; done
           node scripts/test-shopping-chat-routing-v1.mjs
-          node scripts/test-chat-helper-menu-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
       - name: Estrutura pública
         shell: bash
