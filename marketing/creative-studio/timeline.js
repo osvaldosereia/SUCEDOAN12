@@ -1,5 +1,6 @@
 import {buildMotionTrack} from './motion.js';
 import {buildAudioPlan} from './audio.js';
+import {buildCameraPlan} from './camera.js';
 
 export function compileTimeline(plan={}){
   const duration=Number(plan.duration);
@@ -20,5 +21,5 @@ export function compileTimeline(plan={}){
     }
     if(scene.sound_intent)soundEvents.push({time:scene.start,event:scene.sound_intent});
   }
-  return {duration,scenes,motionTracks,audio:buildAudioPlan(soundEvents)};
+  return {duration,scenes,motionTracks,camera:buildCameraPlan(scenes,{duration}),audio:buildAudioPlan(soundEvents)};
 }
