@@ -13,11 +13,12 @@ async function authorized(req:Request){
   const token=(req.headers.get('Authorization')||'').replace(/^Bearer\s+/i,'').trim();
   if(!token)return {error:json({ok:false,error:'missing_token'},401)};
   const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  if(token===key)return {sb,user:null,authMode:'internal_service_role'};
   const {data:userData}=await sb.auth.getUser(token);const user=userData?.user;
   if(!user)return {error:json({ok:false,error:'invalid_user'},401)};
   const {data:admin}=await sb.from('admin_users').select('role,is_active').eq('user_id',user.id).maybeSingle();
   if(!admin?.is_active||!['owner','operator'].includes(admin.role))return {error:json({ok:false,error:'admin_not_authorized'},403)};
-  return {sb,user};
+  return {sb,user,authMode:'admin_user'};
 }
 
 function validateJob(job:any){
@@ -32,9 +33,9 @@ function validateJob(job:any){
   return errors;
 }
 
-async function idempotencyKey(userId:string,job:any){
+async function idempotencyKey(principalId:string,job:any){
   const plan=job?.creative_plan||{};
-  const raw=[userId,job?.product_id,clean(plan.concept,500),clean(plan.hook,500),clean(plan.payoff,500),finite(job?.duration_seconds,18)].join('|');
+  const raw=[principalId,job?.product_id,clean(plan.concept,500),clean(plan.hook,500),clean(plan.payoff,500),finite(job?.duration_seconds,18)].join('|');
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw));
   return `studio:${Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,40)}`;
 }
@@ -42,7 +43,9 @@ async function idempotencyKey(userId:string,job:any){
 Deno.serve(async(req:Request)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});
   if(req.method!=='POST')return json({ok:false,error:'method_not_allowed'},405);
-  const auth=await authorized(req);if(auth.error)return auth.error;const {sb,user}=auth as any;
+  const auth=await authorized(req);if(auth.error)return auth.error;const {sb,user,authMode}=auth as any;
+  const principalId=user?.id||'internal_service_role';
+  const creatorId=user?.id||null;
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:'invalid_json'},400)}
   const action=clean(body?.action||'list',40).toLowerCase();
 
@@ -63,12 +66,12 @@ Deno.serve(async(req:Request)=>{
     const {data:product,error:productError}=await sb.from('products').select('id,name,category,is_active').eq('id',job.product_id).maybeSingle();
     if(productError||!product)return json({ok:false,error:'product_not_found'},404);
     if(product.is_active!==true)return json({ok:false,error:'product_not_active'},409);
-    const key=await idempotencyKey(user.id,job);
+    const key=await idempotencyKey(principalId,job);
     const fields='id,status,created_at,duration_seconds,estimated_cost_brl,requires_paid_approval,paid_approved,attempt_count,max_attempts,idempotency_key';
     const {data:existing}=await sb.from('creative_studio_jobs').select(fields).eq('idempotency_key',key).maybeSingle();
     if(existing)return json({ok:true,job:existing,reused:true,idempotent:true});
     const requiresApproval=job.requires_paid_approval===true;
-    const row={product_id:product.id,product_snapshot:job.product_snapshot||{},creative_plan:job.creative_plan||{},resolved_assets:job.resolved_assets||{},timeline:job.timeline||{},status:'ready',width:1080,height:1920,fps:30,duration_seconds:finite(job.duration_seconds,18),external_assets_used:finite(job.external_assets_used),provider_usage:job.provider_usage||{},estimated_cost_brl:Math.max(0,finite(job.estimated_cost_brl)),requires_paid_approval:requiresApproval,paid_approved:!requiresApproval,render_strategy:'ffmpeg_svg',output_bucket:'creative-studio-renders',created_by:user.id,idempotency_key:key,attempt_count:0,max_attempts:3};
+    const row={product_id:product.id,product_snapshot:job.product_snapshot||{},creative_plan:job.creative_plan||{},resolved_assets:job.resolved_assets||{},timeline:job.timeline||{},status:'ready',width:1080,height:1920,fps:30,duration_seconds:finite(job.duration_seconds,18),external_assets_used:finite(job.external_assets_used),provider_usage:job.provider_usage||{},estimated_cost_brl:Math.max(0,finite(job.estimated_cost_brl)),requires_paid_approval:requiresApproval,paid_approved:!requiresApproval,render_strategy:'ffmpeg_svg',output_bucket:'creative-studio-renders',created_by:creatorId,idempotency_key:key,attempt_count:0,max_attempts:3};
     const {data,error}=await sb.from('creative_studio_jobs').insert(row).select(fields).single();
     if(error){
       if(error.code==='23505'){
@@ -77,7 +80,7 @@ Deno.serve(async(req:Request)=>{
       }
       return json({ok:false,error:'job_create_failed',detail:error.message},400);
     }
-    await sb.from('creative_studio_job_events').insert({job_id:data.id,event_type:'created',payload:{source:'creative_studio_admin',idempotency_key:key}});
+    await sb.from('creative_studio_job_events').insert({job_id:data.id,event_type:'created',payload:{source:authMode,idempotency_key:key}});
     const plan=job.creative_plan||{};
     await sb.from('creative_studio_memory').insert({product_id:product.id,product_name:product.name,product_category:product.category||null,territory:clean(plan.territory,120)||'unknown',concept:clean(plan.concept,500)||'untitled',hook:clean(plan.hook,500)||null,story_signature:clean([plan.territory,plan.concept,plan.hook,plan.payoff].filter(Boolean).join('|'),1200)||null,duration_seconds:finite(job.duration_seconds,18),asset_ids:[],motions:(plan.scenes||[]).flatMap((s:any)=>(s.actors||[]).map((a:any)=>clean(a.motion,60))).filter(Boolean).slice(0,60)});
     return json({ok:true,job:data,reused:false,idempotent:false},201);
@@ -97,7 +100,7 @@ Deno.serve(async(req:Request)=>{
     const {data,error}=await sb.from('creative_studio_jobs').update(patch).eq('id',id).in('status',['ready','failed']).select('id,status,queued_at,paid_approved,attempt_count,max_attempts,idempotency_key').maybeSingle();
     if(error)return json({ok:false,error:'queue_failed',detail:error.message},400);
     if(!data){const {data:latest}=await sb.from('creative_studio_jobs').select('id,status,attempt_count,max_attempts,idempotency_key').eq('id',id).maybeSingle();return json({ok:true,job:latest,idempotent:true})}
-    await sb.from('creative_studio_job_events').insert({job_id:id,event_type:'queued',payload:{paid_approved:paidApproved,attempt_count:data.attempt_count,max_attempts:data.max_attempts}});
+    await sb.from('creative_studio_job_events').insert({job_id:id,event_type:'queued',payload:{paid_approved:paidApproved,attempt_count:data.attempt_count,max_attempts:data.max_attempts,source:authMode}});
     return json({ok:true,job:data,idempotent:false});
   }
 
