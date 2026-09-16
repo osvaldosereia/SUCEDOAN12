@@ -19,16 +19,29 @@ assert.match(ui,/>Sem validade</);
 assert.match(ui,/name="sort"/);
 assert.match(ui,/>Validade mais próxima</);
 
-// Cada linha precisa mostrar/trocar verificação e expor validade/última contagem.
+// Cada linha precisa mostrar verificação, validade e última contagem.
 assert.match(ui,/data-inline-verified/);
-assert.match(ui,/physically_verified:control\.checked/);
 assert.match(ui,/validity_date/);
 assert.match(ui,/last_counted_at/);
 assert.match(ui,/Validade/);
 assert.match(ui,/Verificado/);
 assert.match(ui,/Data suspeita/);
 
-// O editor individual também preserva a separação Ativo x Verificado.
+// Alterações rápidas precisam ficar locais até o usuário clicar em Salvar alterações.
+assert.match(ui,/const pendingInlineChanges=new Map\(\)/);
+assert.match(ui,/data-inline-save-all/);
+assert.match(ui,/Salvar alterações/);
+assert.match(ui,/function queueInlineChange\(/);
+assert.match(ui,/pendingInlineChanges\.set\(/);
+assert.match(ui,/pendingInlineChanges\.delete\(/);
+assert.match(ui,/async function savePendingInlineChanges\(/);
+assert.match(ui,/data-inline-product-row/);
+assert.doesNotMatch(ui,/if\(control\.matches\('\[data-inline-verified\]'\)\)return saveInline/);
+assert.doesNotMatch(ui,/if\(control\.matches\('\[data-inline-active\]'\)\)return saveInline/);
+assert.match(ui,/Salve as alterações pendentes/);
+assert.match(ui,/pendingInlineChanges\.size/);
+
+// O editor individual continua salvando separadamente.
 assert.match(ui,/name="physically_verified"/);
 assert.match(ui,/is_active:form\.elements\.is_active\.checked/);
 assert.match(ui,/physically_verified:form\.elements\.physically_verified\.checked/);
@@ -64,4 +77,4 @@ assert.match(comprar,/\.eq\('physically_verified',true\)/);
 assert.match(comprar,/\.eq\('is_active',true\)/);
 assert.match(comprar,/\.gt\('stock',0\)/);
 
-console.log('admin product verification + expiry contract ok');
+console.log('admin product verification + expiry + batch save contract ok');
