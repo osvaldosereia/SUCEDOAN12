@@ -4,12 +4,33 @@ const app=document.getElementById('app');
 const dialog=document.getElementById('editorDialog');
 const editorBody=document.getElementById('editorBody');
 const toastRegion=document.getElementById('toastRegion');
-const state={page:1,total:0,q:'',status:'',loading:false,token:0};
+const state={page:1,total:0,q:'',status:'',verification:'',expiry:'',sort:'name',loading:false,token:0};
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const money=value=>(value===null||value===undefined||value==='')?'—':Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const checked=value=>value?'checked':'';
 const productRoute=()=>location.hash.replace(/^#/,'').trim()==='products';
+const cuiabaDateKey=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Cuiaba',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const dayNumber=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]))/86400000:null};
+const formatDate=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return match?`${match[3]}/${match[2]}/${match[1]}`:'—'};
+const formatDateTime=value=>{if(!value)return 'Nunca';const date=new Date(value);return Number.isNaN(date.getTime())?'Nunca':date.toLocaleString('pt-BR',{timeZone:'America/Cuiaba',dateStyle:'short',timeStyle:'short'})};
+
+function validityInfo(value){
+  const raw=String(value||'').trim();
+  if(!raw)return {className:'missing',label:'Sem validade',detail:'Não informada'};
+  const match=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const currentYear=Number(cuiabaDateKey().slice(0,4));
+  const year=match?Number(match[1]):0;
+  if(!match||year<2000||year>currentYear+20)return {className:'suspicious',label:'Data suspeita',detail:formatDate(raw)};
+  const target=dayNumber(raw),today=dayNumber(cuiabaDateKey());
+  if(target===null||today===null)return {className:'suspicious',label:'Data suspeita',detail:formatDate(raw)};
+  const days=Math.round(target-today);
+  if(days<0)return {className:'expired',label:'Vencido',detail:`${formatDate(raw)} · ${Math.abs(days)} dia${Math.abs(days)===1?'':'s'} atrás`};
+  if(days===0)return {className:'urgent',label:'Vence hoje',detail:formatDate(raw)};
+  if(days<=30)return {className:'urgent',label:`Vence em ${days} dia${days===1?'':'s'}`,detail:formatDate(raw)};
+  if(days<=60)return {className:'soon',label:`Vence em ${days} dias`,detail:formatDate(raw)};
+  return {className:'ok',label:formatDate(raw),detail:`${days} dias`};
+}
 
 function toast(message,kind=''){
   if(!toastRegion)return;
@@ -52,11 +73,14 @@ async function productApi(action,payload={}){
 
 function productRow(p){
   const meta=[p.sku?`SKU ${p.sku}`:'',p.brand,p.packaging,p.category].filter(Boolean).join(' · ');
+  const validity=validityInfo(p.validity_date);
   return `<tr data-inline-product-row="${esc(p.id)}" data-product-name="${esc(p.name||'Produto')}">
     <td><div class="name-cell inline-product-name">${p.image_url?`<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy" decoding="async">`:'<div class="thumb"></div>'}<div><strong>${esc(p.name||'Produto')}</strong><span>${esc(meta||p.sku||'')}</span></div></div></td>
     <td><input data-product-inline data-inline-stock class="inline-product-input inline-stock" type="number" min="0" step="0.001" value="${esc(p.stock??0)}" aria-label="Estoque de ${esc(p.name||'produto')}"></td>
     <td><strong class="inline-regular-price">${money(p.price)}</strong></td>
     <td><label class="inline-switch" title="Ativar ou desativar produto"><input data-product-inline data-inline-active type="checkbox" ${checked(p.is_active)} aria-label="Produto ativo"><span></span></label></td>
+    <td><div class="inline-verification"><label class="inline-switch" title="Marcar como verificado fisicamente"><input data-product-inline data-inline-verified type="checkbox" ${checked(p.physically_verified)} aria-label="Produto verificado"><span></span></label><small>${esc(p.last_counted_at?`Última: ${formatDateTime(p.last_counted_at)}`:'Nunca conferido')}</small></div></td>
+    <td><div class="inline-validity ${esc(validity.className)}"><strong>${esc(validity.label)}</strong><small>${esc(validity.detail)}</small></div></td>
     <td><label class="inline-switch" title="Ativar ou desativar oferta"><input data-product-inline data-inline-offer type="checkbox" ${checked(p.is_offer)} aria-label="Produto em oferta"><span></span></label></td>
     <td><input data-product-inline data-inline-offer-price class="inline-product-input inline-offer-price" type="number" min="0" step="0.01" value="${esc(p.offer_price??'')}" placeholder="0,00" aria-label="Preço da oferta"></td>
     <td><div class="row-actions inline-actions"><button type="button" data-inline-edit-product="${esc(p.id)}">Editar</button><button class="danger-inline" type="button" data-inline-delete-product="${esc(p.id)}">Apagar</button></div></td>
@@ -67,22 +91,40 @@ function pageMarkup(data){
   const products=data.products||[];
   const pages=Math.max(1,Math.ceil(Number(data.total||0)/40));
   return `<section data-inline-products-root>
-    <div class="page-head"><div><h1>Produtos</h1><p>Altere estoque, ativação e ofertas diretamente na lista. EAN fica dentro do card de edição.</p></div></div>
+    <div class="page-head"><div><h1>Produtos</h1><p>Ativo controla o cadastro comercial. Verificado confirma a conferência física exigida pelo Comprar.</p></div></div>
     <form data-inline-product-filter class="toolbar inline-product-toolbar">
       <input type="search" name="q" value="${esc(state.q)}" placeholder="Buscar produto, SKU ou marca" aria-label="Buscar produto">
       <select name="status" aria-label="Status">
-        <option value="" ${state.status===''?'selected':''}>Todos</option>
+        <option value="" ${state.status===''?'selected':''}>Todos os status</option>
         <option value="active" ${state.status==='active'?'selected':''}>Ativos</option>
         <option value="inactive" ${state.status==='inactive'?'selected':''}>Inativos</option>
         <option value="offer" ${state.status==='offer'?'selected':''}>Ofertas</option>
         <option value="no-stock" ${state.status==='no-stock'?'selected':''}>Sem estoque</option>
       </select>
-      <button class="primary" type="submit">Buscar</button>
+      <select name="verification" aria-label="Verificação física">
+        <option value="" ${state.verification===''?'selected':''}>Todos: verificação</option>
+        <option value="verified" ${state.verification==='verified'?'selected':''}>Verificados</option>
+        <option value="unverified" ${state.verification==='unverified'?'selected':''}>Não verificados</option>
+      </select>
+      <select name="expiry" aria-label="Validade">
+        <option value="" ${state.expiry===''?'selected':''}>Todas as validades</option>
+        <option value="expired" ${state.expiry==='expired'?'selected':''}>Vencidos</option>
+        <option value="30" ${state.expiry==='30'?'selected':''}>Até 30 dias</option>
+        <option value="60" ${state.expiry==='60'?'selected':''}>31–60 dias</option>
+        <option value="missing" ${state.expiry==='missing'?'selected':''}>Sem validade</option>
+      </select>
+      <select name="sort" aria-label="Ordenação">
+        <option value="name" ${state.sort==='name'?'selected':''}>Nome</option>
+        <option value="expiry" ${state.sort==='expiry'?'selected':''}>Validade mais próxima</option>
+        <option value="stock" ${state.sort==='stock'?'selected':''}>Menor estoque</option>
+        <option value="price" ${state.sort==='price'?'selected':''}>Menor preço</option>
+      </select>
+      <button class="primary" type="submit">Filtrar</button>
       <button class="secondary" type="button" data-inline-refresh>Atualizar</button>
     </form>
     <section class="panel inline-products-panel">
       <div class="inline-products-summary"><strong>${esc(data.total||0)} produtos</strong><span>Página ${esc(data.page||state.page)} de ${esc(pages)}</span></div>
-      <div class="table-wrap"><table class="data-table inline-products-table"><thead><tr><th>Produto</th><th>Estoque</th><th>Preço normal</th><th>Ativo</th><th>Oferta</th><th>Preço da oferta</th><th>Ações</th></tr></thead><tbody>${products.length?products.map(productRow).join(''):'<tr><td colspan="7" class="empty">Nenhum produto encontrado.</td></tr>'}</tbody></table></div>
+      <div class="table-wrap"><table class="data-table inline-products-table"><thead><tr><th>Produto</th><th>Estoque</th><th>Preço normal</th><th>Ativo</th><th>Verificado</th><th>Validade</th><th>Oferta</th><th>Preço da oferta</th><th>Ações</th></tr></thead><tbody>${products.length?products.map(productRow).join(''):'<tr><td colspan="9" class="empty">Nenhum produto encontrado.</td></tr>'}</tbody></table></div>
       ${pages>1?`<div class="pagination"><button class="secondary" type="button" data-inline-page="${state.page-1}" ${state.page<=1?'disabled':''}>Anterior</button><span>Página ${state.page} de ${pages}</span><button class="secondary" type="button" data-inline-page="${state.page+1}" ${state.page>=pages?'disabled':''}>Próxima</button></div>`:''}
     </section>
   </section>`;
@@ -96,7 +138,7 @@ async function mountProducts({force=false}={}){
   const token=++state.token;
   app.innerHTML='<div class="loading"><span class="spinner"></span><p>Carregando produtos…</p></div>';
   try{
-    const data=await productApi('products',{page:state.page,limit:40,q:state.q,status:state.status,sort:'name'});
+    const data=await productApi('products',{page:state.page,limit:40,q:state.q,status:state.status,verification:state.verification,expiry:state.expiry,sort:state.sort});
     if(token!==state.token||!productRoute())return;
     state.total=Number(data.total||0);
     const maxPage=Math.max(1,Math.ceil(state.total/40));
@@ -117,10 +159,12 @@ function syncRow(row,product){
   if(!row||!product)return;
   const stock=row.querySelector('[data-inline-stock]');
   const active=row.querySelector('[data-inline-active]');
+  const verified=row.querySelector('[data-inline-verified]');
   const offer=row.querySelector('[data-inline-offer]');
   const offerPrice=row.querySelector('[data-inline-offer-price]');
   if(stock)stock.value=product.stock??0;
   if(active)active.checked=product.is_active===true;
+  if(verified)verified.checked=product.physically_verified===true;
   if(offer)offer.checked=product.is_offer===true;
   if(offerPrice)offerPrice.value=product.offer_price??'';
 }
@@ -131,7 +175,7 @@ async function saveInline(row,patch,message){
     const data=await productApi('update_product',{id:row.dataset.inlineProductRow,patch});
     syncRow(row,data.product);
     toast(message,'success');
-    if(state.status)await mountProducts({force:true});
+    if(state.status||state.verification||state.expiry||state.sort==='expiry')await mountProducts({force:true});
   }catch(error){
     toast(error.message,'error');
     await mountProducts({force:true});
@@ -147,6 +191,7 @@ async function handleInlineChange(control){
     return saveInline(row,{stock:value},'Estoque atualizado.');
   }
   if(control.matches('[data-inline-active]'))return saveInline(row,{is_active:control.checked},control.checked?'Produto ativado.':'Produto desativado.');
+  if(control.matches('[data-inline-verified]'))return saveInline(row,{physically_verified:control.checked},control.checked?'Produto marcado como verificado.':'Verificação física removida.');
   if(control.matches('[data-inline-offer]')){
     const priceInput=row.querySelector('[data-inline-offer-price]');
     const raw=priceInput?.value.trim()||'';
@@ -171,7 +216,7 @@ async function handleInlineChange(control){
 
 function editorMarkup(p){
   return `<form id="productInlineEditorForm" class="editor-shell" data-product-id="${esc(p.id)}">
-    <div class="editor-head"><div><h2>Editar produto</h2><div class="muted">EAN fica aqui, dentro do card.</div></div><button class="close-dialog" type="button" data-inline-close-dialog>×</button></div>
+    <div class="editor-head"><div><h2>Editar produto</h2><div class="muted">Ativo e Verificado são controles separados. Última conferência: ${esc(formatDateTime(p.last_counted_at))}.</div></div><button class="close-dialog" type="button" data-inline-close-dialog>×</button></div>
     <div class="form-grid">
       <label class="field wide"><span>Nome</span><input name="name" value="${esc(p.name||'')}" required></label>
       <label class="field"><span>EAN / GTIN</span><input name="gtin" value="${esc(p.gtin||'')}" inputmode="numeric"></label>
@@ -190,7 +235,7 @@ function editorMarkup(p){
       <label class="field wide"><span>URL da imagem</span><input name="image_url" value="${esc(p.image_url||'')}"></label>
       <label class="field wide"><span>Descrição curta</span><textarea name="description_short">${esc(p.description_short||'')}</textarea></label>
       <label class="field wide"><span>Descrição</span><textarea name="description_long">${esc(p.description_long||'')}</textarea></label>
-      <div class="wide check-row"><label class="check"><input name="is_active" type="checkbox" ${checked(p.is_active)}> Ativo</label><label class="check"><input name="is_offer" type="checkbox" ${checked(p.is_offer)}> Oferta</label></div>
+      <div class="wide check-row"><label class="check"><input name="is_active" type="checkbox" ${checked(p.is_active)}> Ativo</label><label class="check"><input name="physically_verified" type="checkbox" ${checked(p.physically_verified)}> Verificado</label><label class="check"><input name="is_offer" type="checkbox" ${checked(p.is_offer)}> Oferta</label></div>
     </div>
     <div class="form-actions"><button class="secondary" type="button" data-inline-close-dialog>Cancelar</button><button class="primary" type="submit">Salvar produto</button></div>
   </form>`;
@@ -225,7 +270,7 @@ async function saveEditor(form){
     category:data.category,subcategory:data.subcategory,brand:data.brand,packaging:data.packaging,
     validity_date:data.validity_date||null,sort_order:data.sort_order,image_url:data.image_url,
     description_short:data.description_short,description_long:data.description_long,
-    is_active:form.elements.is_active.checked,is_offer:offer
+    is_active:form.elements.is_active.checked,physically_verified:form.elements.physically_verified.checked,is_offer:offer
   };
   const submit=form.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
   try{
@@ -262,6 +307,9 @@ app?.addEventListener('submit',async event=>{
   const data=new FormData(form);
   state.q=String(data.get('q')||'').trim();
   state.status=String(data.get('status')||'').trim();
+  state.verification=String(data.get('verification')||'').trim();
+  state.expiry=String(data.get('expiry')||'').trim();
+  state.sort=String(data.get('sort')||'name').trim()||'name';
   state.page=1;
   await mountProducts({force:true});
 });
