@@ -1,22 +1,25 @@
 import {readFileSync,existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
-const uiPath='admin/products-inline-controls-v4.js';
-const cssPath='admin/products-inline-controls-v4.css';
+const uiPath='admin/product-image-editor-v1.js';
+const cssPath='admin/product-image-editor-v1.css';
+const indexPath='admin/index.html';
 const fnPath='supabase/functions/admin-product-image-editor-v1/index.ts';
 const migrationPath='supabase/migrations/20260916173000_product_image_versions_v1.sql';
 
-assert.ok(existsSync(fnPath),'editor individual de imagens deve ter uma Edge Function autenticada');
-assert.ok(existsSync(migrationPath),'histórico de imagens do produto deve ter migration versionada');
+for(const path of [uiPath,cssPath,fnPath,migrationPath])assert.ok(existsSync(path),`arquivo obrigatório ausente: ${path}`);
 
 const ui=readFileSync(uiPath,'utf8');
 const css=readFileSync(cssPath,'utf8');
+const index=readFileSync(indexPath,'utf8');
 const fn=readFileSync(fnPath,'utf8');
 const migration=readFileSync(migrationPath,'utf8');
 
 for(const marker of ['data-product-image-preview','data-product-image-upload','data-product-image-replace','data-product-image-generate-current','data-product-image-generate-upload','data-product-image-history']){
   assert.match(ui,new RegExp(marker),`cadastro do produto deve expor ${marker}`);
 }
+assert.match(index,/product-image-editor-v1\.css/,'Admin deve carregar o estilo do editor individual');
+assert.match(index,/product-image-editor-v1\.js/,'Admin deve carregar o editor individual');
 assert.match(ui,/admin-product-image-editor-v1/,'cadastro deve chamar o controlador individual de imagem');
 assert.match(ui,/Authorization:\s*`Bearer \$\{[^}]+\}`/,'ações de imagem devem usar a sessão autenticada do Admin');
 assert.match(ui,/FormData\(/,'upload deve enviar o arquivo sem converter imagem para base64');
