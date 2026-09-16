@@ -7,6 +7,7 @@ on:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
       - 'supabase/functions/admin-orders-comprar-v1/**'
@@ -16,6 +17,7 @@ on:
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
+      - 'scripts/test-admin-gondolas-v1.mjs'
       - 'scripts/test-admin-product-image-editor-v1.mjs'
       - 'scripts/test-admin-product-verification-expiry-v1.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
@@ -27,6 +29,7 @@ on:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
       - 'supabase/functions/admin-orders-comprar-v1/**'
@@ -36,6 +39,7 @@ on:
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
+      - 'scripts/test-admin-gondolas-v1.mjs'
       - 'scripts/test-admin-product-image-editor-v1.mjs'
       - 'scripts/test-admin-product-verification-expiry-v1.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
@@ -81,6 +85,8 @@ jobs:
         run: node scripts/test-admin-v3-contract.mjs
       - name: Validar controles rápidos dos produtos
         run: node scripts/test-admin-v3-inline-product-controls.mjs
+      - name: Validar Gôndolas do Admin
+        run: node scripts/test-admin-gondolas-v1.mjs
       - name: Validar verificação e validade dos produtos
         run: node scripts/test-admin-product-verification-expiry-v1.mjs
       - name: Validar editor individual de imagens
