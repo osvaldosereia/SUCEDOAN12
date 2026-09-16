@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createPolyHavenProvider} from '../providers/polyhaven.js';
 
 const assets={
@@ -36,4 +37,10 @@ test('acquire returns null when only unsupported 3D files exist',async()=>{
   const [candidate]=await p.search({need:'flower',keywords:['field']},{limit:1});
   const asset=await p.acquire(candidate);
   assert.equal(asset,null);
+});
+
+test('deployed asset provider is raster-only until the renderer supports 3D',()=>{
+  const source=readFileSync(new URL('../../../supabase/functions/creative-studio-assets-v1/polyhaven.ts',import.meta.url),'utf8');
+  assert.doesNotMatch(source,/model\/gltf|\bglb\b|\bgltf\b/);
+  assert.match(source,/asset_type:'image'/);
 });
