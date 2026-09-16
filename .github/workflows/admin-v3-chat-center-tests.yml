@@ -1,11 +1,11 @@
-name: Admin V3 Chat Comprar
+name: Admin Chat Comprar
 
 on:
   pull_request:
     paths:
-      - 'admin-v3/atendimento.html'
-      - 'admin-v3/index.html'
-      - 'admin-v3/service-strategy.js'
+      - 'admin/atendimento.html'
+      - 'admin/index.html'
+      - 'admin/service-strategy.js'
       - 'supabase/functions/_shared/chat-intelligence-config.js'
       - 'supabase/functions/admin-service-intelligence-simple-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
@@ -16,9 +16,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'admin-v3/atendimento.html'
-      - 'admin-v3/index.html'
-      - 'admin-v3/service-strategy.js'
+      - 'admin/atendimento.html'
+      - 'admin/index.html'
+      - 'admin/service-strategy.js'
       - 'supabase/functions/_shared/chat-intelligence-config.js'
       - 'supabase/functions/admin-service-intelligence-simple-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
@@ -34,6 +34,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node --check admin-v3/service-strategy.js
+      - run: node --check admin/service-strategy.js
       - run: node tests/admin-v3-service-strategy-shopping-chat-final.mjs
       - run: node tests/chat-intelligence-presets-v1.mjs

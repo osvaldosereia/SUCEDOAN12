@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const html=fs.readFileSync('admin-v3/atendimento.html','utf8');
-const own=fs.readFileSync('admin-v3/service-strategy-own-tools.js','utf8');
+const html=fs.readFileSync('admin/atendimento.html','utf8');
+const own=fs.readFileSync('admin/service-strategy-own-tools.js','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260912_admin_v3_service_strategy_own_tools_v1.sql','utf8');
 
 assert.ok(html.includes('Regras da IA'),'a aba deve se chamar Regras da IA');

@@ -5,13 +5,13 @@ on:
     branches:
       - feat/admin-comprar-no-vitrine
     paths:
-      - 'admin-v3/**'
+      - 'admin/**'
       - 'vitrine-v3/index.html'
       - 'scripts/test-admin-v3-contract.mjs'
       - '.github/workflows/admin-comprar-link-tests.yml'
   pull_request:
     paths:
-      - 'admin-v3/**'
+      - 'admin/**'
       - 'vitrine-v3/index.html'
       - 'scripts/test-admin-v3-contract.mjs'
       - '.github/workflows/admin-comprar-link-tests.yml'

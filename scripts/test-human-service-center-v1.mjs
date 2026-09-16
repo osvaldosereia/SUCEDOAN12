@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const config=fs.readFileSync('admin/config.js','utf8');
-const center=fs.readFileSync('admin-v3/human-service-center.js','utf8');
-const css=fs.readFileSync('admin-v3/human-service-center.css','utf8');
+const center=fs.readFileSync('admin/human-service-center.js','utf8');
+const css=fs.readFileSync('admin/human-service-center.css','utf8');
 const api=fs.readFileSync('supabase/functions/admin-whatsapp-ops-v1/index.ts','utf8');
 const doc=fs.readFileSync('docs/CENTRAL-ATENDIMENTO-HUMANO-COPILOTO-IA-2026-09-08.md','utf8');
 

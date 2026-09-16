@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const r=p=>readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
-const index=r('admin-v3/index.html');
-const page=r('admin-v3/imagens-ia.html');
-const js=r('admin-v3/image-automation.js');
+const index=r('admin/index.html');
+const page=r('admin/imagens-ia.html');
+const js=r('admin/image-automation.js');
 const edge=r('supabase/functions/admin-product-images-v1/index.ts');
 const migration=r('supabase/migrations/20260912153813_admin_product_image_automation_controls_v1.sql');
 assert.match(index,/\.\/imagens-ia\.html/);

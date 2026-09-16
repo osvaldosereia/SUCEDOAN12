@@ -6,7 +6,6 @@ on:
     paths:
       - 'comprar/**'
       - 'admin/**'
-      - 'admin-v3/**'
       - 'catalogo/index.html'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
@@ -38,7 +37,6 @@ on:
     paths:
       - 'comprar/**'
       - 'admin/**'
-      - 'admin-v3/**'
       - 'scripts/test-light-shopping-chat-v2.mjs'
       - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
       - 'scripts/test-comprar-product-visual-v2.mjs'
@@ -84,10 +82,10 @@ jobs:
           node --check comprar/checkout.js
           node --check comprar/help.js
           node --check comprar/admin-test-bridge.js
-          node --check admin-v3/api.js
-          node --check admin-v3/chat-menu-admin.js
-          node --check admin-v3/pedidos-v2.js
-          node --check admin-v3/orders-integrated-v2.js
+          node --check admin/api.js
+          node --check admin/service-strategy.js
+          node --check admin/pedidos-v2.js
+          node --check admin/orders-integrated-v2.js
           node scripts/test-light-shopping-chat-v2.mjs
           node scripts/test-basket-preview-checkout-whatsapp-v1.mjs
           node scripts/test-comprar-product-visual-v2.mjs
@@ -111,8 +109,9 @@ jobs:
           test -f comprar/help.js
           test -f comprar/admin-test-bridge.js
           test -f admin/pedidos.html
-          test -f admin-v3/pedidos-v2.js
-          test -f admin-v3/orders-integrated-v2.js
+          test -f admin/pedidos-v2.js
+          test -f admin/orders-integrated-v2.js
+          test -f admin/service-strategy.js
           grep -q "shopping-chat-v1" comprar/config.js
           grep -q "shopping-chat-products-v1" comprar/config.js
           grep -q "shopping-chat-customer-v1" comprar/config.js
@@ -126,7 +125,7 @@ jobs:
           grep -q "lookup_customer" comprar/checkout.js
           grep -q "DA_ADMIN_TEST_TRANSPORT" comprar/admin-test-bridge.js
           ! grep -E "chat-light-v2|chat-checkout-quantity-v1|checkout-final-v2|chat-helper-menu|phone-retry-v1|product-detail-v1|storefront-visual-v2" comprar/index.html
-          ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY" comprar/ admin/ admin-v3/
+          ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|BLING_CLIENT_SECRET|OPENAI_API_KEY" comprar/ admin/
       - name: Instalar Deno
         uses: denoland/setup-deno@v2
         with:

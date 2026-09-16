@@ -9,7 +9,7 @@ const adminApi=read('supabase/functions/admin-product-categories-v1/index.ts');
 const app=read('cesta/app.js');
 const returnBridge=read('cesta/whatsapp-return.js');
 const html=read('cesta/index.html');
-const admin=read('admin-v3/product-categories-inline.js');
+const admin=read('admin/product-categories-inline.js');
 
 assert.match(migration,/basket_showcase_enabled/,'Admin precisa controlar categorias disponíveis na vitrine');
 assert.match(migration,/basket_showcase_label/,'Admin precisa controlar nome exibido ao cliente');

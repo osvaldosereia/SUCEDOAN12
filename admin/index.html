@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#ffffff">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Admin</title>
-  <link rel="stylesheet" href="/admin-v3/styles.css?v=20260911-2">
-  <link rel="stylesheet" href="/admin-v3/products-inline-controls-v4.css?v=20260912-1">
+  <link rel="stylesheet" href="./styles.css?v=20260911-2">
+  <link rel="stylesheet" href="./products-inline-controls-v4.css?v=20260912-1">
 </head>
 <body>
   <header class="topbar">
@@ -24,12 +24,12 @@
         <a href="../comprar/" target="_blank" rel="noopener">Comprar</a>
         <button type="button" data-route="baskets">Cestas</button>
         <button type="button" data-route="products">Produtos</button>
-        <a href="/admin-v3/nomes-produtos-v3.html">Nomes dos produtos</a>
-        <a href="/admin-v3/imagens-ia.html">Imagens IA</a>
+        <a href="./nomes-produtos.html">Nomes dos produtos</a>
+        <a href="./imagens-ia.html">Imagens IA</a>
         <button type="button" data-route="categories">Categorias</button>
         <button type="button" data-route="orders">Pedidos</button>
         <button type="button" data-route="customers">Clientes</button>
-        <a href="/admin-v3/atendimento.html">Atendimento</a>
+        <a href="./atendimento.html">Atendimento</a>
         <a href="../contagem/">Balanço rápido</a>
         <button id="commercialTruthNav" class="nav hidden" type="button" hidden aria-hidden="true">Central comercial</button>
         <button id="logisticsNav" class="nav hidden" type="button" hidden aria-hidden="true">Logística</button>
@@ -48,15 +48,15 @@
 
   <script src="./config.js?v=20260915-1"></script>
   <script>
-    if(window.DA_ADMIN_V3_CONFIG?.commercialTruthUiEnabled){import('/admin-v3/commercial-truth.js')}
-    if(window.DA_ADMIN_V3_CONFIG?.logisticsUiEnabled){import('/admin-v3/logistics.js')}
-    if(window.DA_ADMIN_V3_CONFIG?.automationBuilderUiEnabled){import('/admin-v3/automation-builder.js')}
+    if(window.DA_ADMIN_CONFIG?.commercialTruthUiEnabled){import('./commercial-truth.js')}
+    if(window.DA_ADMIN_CONFIG?.logisticsUiEnabled){import('./logistics.js')}
+    if(window.DA_ADMIN_CONFIG?.automationBuilderUiEnabled){import('./automation-builder.js')}
   </script>
-  <script type="module" src="/admin-v3/comprar-ui.js?v=20260914-1"></script>
-  <script type="module" src="/admin-v3/app.js?v=20260912-4"></script>
-  <script type="module" src="/admin-v3/orders-integrated-v2.js?v=20260915-2"></script>
-  <script type="module" src="/admin-v3/products-inline-controls-v4.js?v=20260912-1"></script>
-  <script type="module" src="/admin-v3/nav-fix.js?v=20260911-3"></script>
-  <script type="module" src="/admin-v3/basket-editor.js?v=20260911-2"></script>
+  <script type="module" src="./comprar-ui.js?v=20260914-1"></script>
+  <script type="module" src="./app.js?v=20260912-4"></script>
+  <script type="module" src="./orders-integrated-v2.js?v=20260915-2"></script>
+  <script type="module" src="./products-inline-controls-v4.js?v=20260912-1"></script>
+  <script type="module" src="./nav-fix.js?v=20260911-3"></script>
+  <script type="module" src="./basket-editor.js?v=20260911-2"></script>
 </body>
 </html>

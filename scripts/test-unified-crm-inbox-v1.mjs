@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 const migration = await readFile('supabase/migrations/20260908040000_unified_crm_inbox_v1.sql','utf8');
 const edge = await readFile('supabase/functions/admin-whatsapp-ops-v1/index.ts','utf8');
-const ui = await readFile('admin-v3/whatsapp-ops.js','utf8');
+const ui = await readFile('admin/whatsapp-ops.js','utf8');
 
 const has=(text,re,msg)=>assert.match(text,re,msg);
 const lacks=(text,re,msg)=>assert.doesNotMatch(text,re,msg);

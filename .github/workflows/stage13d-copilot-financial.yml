@@ -8,9 +8,9 @@ on:
       - 'supabase/functions/admin-human-copilot-v1/**'
       - 'supabase/functions/admin-financial-v1/**'
       - 'admin/config.js'
-      - 'admin-v3/human-copilot-panel.js'
-      - 'admin-v3/financial-admin.js'
-      - 'admin-v3/financial-admin.css'
+      - 'admin/human-copilot-panel.js'
+      - 'admin/financial-admin.js'
+      - 'admin/financial-admin.css'
       - 'scripts/test-stage13d-copilot-financial-contract-v1.mjs'
       - 'scripts/test-stage13d-copilot-financial-db-v1.mjs'
       - 'docs/ETAPA-13D-COPILOTO-CONCILIACAO-V1.md'
@@ -23,9 +23,9 @@ on:
       - 'supabase/functions/admin-human-copilot-v1/**'
       - 'supabase/functions/admin-financial-v1/**'
       - 'admin/config.js'
-      - 'admin-v3/human-copilot-panel.js'
-      - 'admin-v3/financial-admin.js'
-      - 'admin-v3/financial-admin.css'
+      - 'admin/human-copilot-panel.js'
+      - 'admin/financial-admin.js'
+      - 'admin/financial-admin.css'
       - 'scripts/test-stage13d-copilot-financial-contract-v1.mjs'
       - 'scripts/test-stage13d-copilot-financial-db-v1.mjs'
       - 'docs/ETAPA-13D-COPILOTO-CONCILIACAO-V1.md'
@@ -49,9 +49,9 @@ jobs:
             supabase/functions/admin-human-copilot-v1/index.ts
             supabase/functions/admin-financial-v1/index.ts
             admin/config.js
-            admin-v3/human-copilot-panel.js
-            admin-v3/financial-admin.js
-            admin-v3/financial-admin.css
+            admin/human-copilot-panel.js
+            admin/financial-admin.js
+            admin/financial-admin.css
             scripts/test-stage13d-copilot-financial-contract-v1.mjs
             scripts/test-stage13d-copilot-financial-db-v1.mjs
             docs/ETAPA-13D-COPILOTO-CONCILIACAO-V1.md
@@ -69,8 +69,8 @@ jobs:
       - name: Validar JavaScript Admin
         run: |
           node --check admin/config.js
-          node --check admin-v3/human-copilot-panel.js
-          node --check admin-v3/financial-admin.js
+          node --check admin/human-copilot-panel.js
+          node --check admin/financial-admin.js
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x

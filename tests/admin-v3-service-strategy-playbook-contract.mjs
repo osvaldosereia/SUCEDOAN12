@@ -12,7 +12,7 @@ for(const token of ['service_strategy_playbook','Estratégia permanente','últim
 const edge=fs.readFileSync('supabase/functions/admin-service-strategy-v1/index.ts','utf8');
 assert.ok(edge.includes('service_strategy_playbook'),'strategy API must expose the persisted playbook');
 
-const html=fs.readFileSync('admin-v3/atendimento.html','utf8');
-assert.ok(html.includes('Método de análise'),'Admin V3 evolution tab must show the analysis method');
+const html=fs.readFileSync('admin/atendimento.html','utf8');
+assert.ok(html.includes('Método de análise'),'Admin evolution tab must show the analysis method');
 
 console.log('admin-v3 service strategy playbook contract: PASS');

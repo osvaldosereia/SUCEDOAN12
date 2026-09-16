@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const index=fs.readFileSync('admin-v3/index.html','utf8');
-const html=fs.readFileSync('admin-v3/atendimento.html','utf8');
-const js=fs.readFileSync('admin-v3/service-strategy.js','utf8');
-const css=fs.readFileSync('admin-v3/service-chat-center.css','utf8');
+const index=fs.readFileSync('admin/index.html','utf8');
+const html=fs.readFileSync('admin/atendimento.html','utf8');
+const js=fs.readFileSync('admin/service-strategy.js','utf8');
+const css=fs.readFileSync('admin/service-chat-center.css','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 
-assert.doesNotMatch(index,/\.\.\/ame-mais\//i,'Ame Mais é projeto separado e não pode aparecer no menu do Admin V3');
+assert.doesNotMatch(index,/\.\.\/ame-mais\//i,'Ame Mais é projeto separado e não pode aparecer no menu do Admin');
 
 for(const tab of ['flow','rules','test']){
   assert.match(html,new RegExp(`data-strategy-tab=["']${tab}["']`),`aba ${tab} deve existir`);

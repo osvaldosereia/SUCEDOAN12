@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 const r=p=>readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
-const page=r('admin-v3/imagens-ia.html');
-const js=r('admin-v3/image-automation.js');
-const css=r('admin-v3/image-automation.css');
+const page=r('admin/imagens-ia.html');
+const js=r('admin/image-automation.js');
+const css=r('admin/image-automation.css');
 const admin=r('supabase/functions/admin-product-images-v1/index.ts');
 const grid=r('supabase/functions/product-image-openai-grid18-v1/index.ts');
 const gridImage=r('supabase/functions/product-image-openai-grid18-v1/image.mjs');
@@ -17,14 +17,14 @@ const sourceSafety=readFileSync(sourceSafetyUrl,'utf8');
 const badBulkUrl=new URL('../supabase/migrations/20260914195000_product_image_bad_bulk_grid18_v1.sql',import.meta.url);
 assert.ok(existsSync(badBulkUrl),'bad image bulk grid18 migration must exist');
 const badBulk=readFileSync(badBulkUrl,'utf8');
-const bulkUiUrl=new URL('../admin-v3/image-bulk-grid18.js',import.meta.url);
+const bulkUiUrl=new URL('../admin/image-bulk-grid18.js',import.meta.url);
 assert.ok(existsSync(bulkUiUrl),'bulk grid18 admin module must exist');
 const bulkUi=readFileSync(bulkUiUrl,'utf8');
 const bulkAdminUrl=new URL('../supabase/functions/admin-product-images-bulk-grid18-v1/index.ts',import.meta.url);
 assert.ok(existsSync(bulkAdminUrl),'bulk grid18 admin edge function must exist');
 const bulkAdmin=readFileSync(bulkAdminUrl,'utf8');
 
-assert.match(gridImage,/f\.append\('quality','medium'\)/);
+assert.match(gridImage,/f\.append\('quality','low'\)/);
 assert.match(grid,/items\.length!==18/);
 assert.match(policy,/sourceRecoverableForGrid/);
 assert.match(policy,/return Boolean\(v\)/);
@@ -110,15 +110,16 @@ assert.match(candidateFallback,/update public\.products/i);
 assert.match(candidateFallback,/image_ai_status[^\n]*processing/i);
 
 for(const source of [gridImage,manual]){
-  assert.match(source,/não preserve o fundo da imagem original/i);
+  assert.match(source,/não preserve o fundo da imagem original|remova completamente (?:todo )?o fundo original/i);
   assert.match(source,/fundo branco/i);
-  assert.match(source,/moldura branca/i);
-  assert.match(source,/ocupar toda a imagem/i);
+  assert.match(source,/moldura(?: branca)?|borda branca/i);
   assert.match(source,/#ECECEC/);
-  assert.match(source,/original_background_visible/);
-  assert.match(source,/white_background/);
-  assert.match(source,/white_border/);
+  assert.match(source,/quatro cantos|ocupar toda a imagem/i);
 }
+assert.match(gridImage,/VALIDATOR_MODEL='disabled'/);
+assert.match(gridImage,/validator_disabled:true/);
+assert.match(gridImage,/manual_review_required:true/);
+for(const marker of ['original_background_visible','white_background','white_border']) assert.match(manual,new RegExp(marker));
 
 assert.match(sourceSafety,/Sources persisted under \/sources\/grid18\//i);
 assert.ok(sourceSafety.includes("p_url not ilike '%/openai/%'"));

@@ -47,8 +47,8 @@ assert.equal(menuItemAllowed('delivery',{...custom,commerce_info:false}),false);
 assert.equal(menuItemAllowed('profile',{...custom,profile:false}),false);
 assert.equal(menuItemAllowed('text',custom),true);
 
-const html=fs.readFileSync('admin-v3/atendimento.html','utf8');
-const js=fs.readFileSync('admin-v3/service-strategy.js','utf8');
+const html=fs.readFileSync('admin/atendimento.html','utf8');
+const js=fs.readFileSync('admin/service-strategy.js','utf8');
 const adminEdge=fs.readFileSync('supabase/functions/admin-service-intelligence-simple-v1/index.ts','utf8');
 const chatEdge=fs.readFileSync('supabase/functions/shopping-chat-v1/index.ts','utf8');
 const menuEdge=fs.readFileSync('supabase/functions/shopping-chat-menu-v1/index.ts','utf8');

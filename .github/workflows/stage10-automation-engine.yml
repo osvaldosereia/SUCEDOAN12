@@ -7,8 +7,8 @@ on:
       - 'supabase/functions/admin-automation-builder-v1/**'
       - 'supabase/functions/automation-dispatcher-v1/**'
       - 'supabase/config.toml'
-      - 'admin-v3/automation-builder.js'
-      - 'admin-v3/automation-builder.css'
+      - 'admin/automation-builder.js'
+      - 'admin/automation-builder.css'
       - 'admin/index.html'
       - 'admin/config.js'
       - 'scripts/test-automation-engine-stage10-v1.mjs'
@@ -23,8 +23,8 @@ on:
       - 'supabase/functions/admin-automation-builder-v1/**'
       - 'supabase/functions/automation-dispatcher-v1/**'
       - 'supabase/config.toml'
-      - 'admin-v3/automation-builder.js'
-      - 'admin-v3/automation-builder.css'
+      - 'admin/automation-builder.js'
+      - 'admin/automation-builder.css'
       - 'admin/index.html'
       - 'admin/config.js'
       - 'scripts/test-automation-engine-stage10-v1.mjs'
@@ -49,8 +49,8 @@ jobs:
             supabase/functions/admin-automation-builder-v1
             supabase/functions/automation-dispatcher-v1
             supabase/config.toml
-            admin-v3/automation-builder.js
-            admin-v3/automation-builder.css
+            admin/automation-builder.js
+            admin/automation-builder.css
             admin/index.html
             admin/config.js
             scripts/test-automation-engine-stage10-v1.mjs
@@ -73,7 +73,7 @@ jobs:
       - name: Testar compilador OpenAI v4
         run: node scripts/test-automation-openai-compiler-stage10-v4.mjs
       - name: Verificar JavaScript do Admin
-        run: node --check admin-v3/automation-builder.js
+        run: node --check admin/automation-builder.js
       - name: Deno check do Builder
         run: deno check supabase/functions/admin-automation-builder-v1/index.ts
       - name: Deno check do dispatcher

@@ -5,8 +5,8 @@ on:
     paths:
       - 'admin/index.html'
       - 'admin/config.js'
-      - 'admin-v3/commercial-truth.js'
-      - 'admin-v3/commercial-truth.css'
+      - 'admin/commercial-truth.js'
+      - 'admin/commercial-truth.css'
       - 'lib/commercial/**'
       - 'scripts/commercial-snapshot-v1.mjs'
       - 'scripts/test-stage12-commercial-central-v1.mjs'
@@ -16,8 +16,8 @@ on:
     paths:
       - 'admin/index.html'
       - 'admin/config.js'
-      - 'admin-v3/commercial-truth.js'
-      - 'admin-v3/commercial-truth.css'
+      - 'admin/commercial-truth.js'
+      - 'admin/commercial-truth.css'
       - 'lib/commercial/**'
       - 'scripts/commercial-snapshot-v1.mjs'
       - 'scripts/test-stage12-commercial-central-v1.mjs'
@@ -39,8 +39,8 @@ jobs:
           sparse-checkout: |
             admin/index.html
             admin/config.js
-            admin-v3/commercial-truth.js
-            admin-v3/commercial-truth.css
+            admin/commercial-truth.js
+            admin/commercial-truth.css
             lib/commercial/
             scripts/commercial-snapshot-v1.mjs
             scripts/test-stage12-commercial-central-v1.mjs
@@ -51,7 +51,7 @@ jobs:
         run: node scripts/test-stage12-commercial-central-v1.mjs
       - name: Sintaxe
         run: |
-          node --check admin-v3/commercial-truth.js
+          node --check admin/commercial-truth.js
           node --check lib/commercial/commercial-snapshot-v1.mjs
           node --check scripts/commercial-snapshot-v1.mjs
       - name: Snapshot determinístico de fixture

@@ -10,7 +10,7 @@ for (const forbidden of [
   'accessNotice',
   'Autorizar este aparelho',
   'Sessão protegida',
-  'da_admin_v3_auth',
+  'da_admin_auth',
   'refresh_token',
   'access_token',
   'setup-admin'
