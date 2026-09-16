@@ -51,9 +51,10 @@ for(const table of ['basket_template_items','order_items','inventory_count_items
 }
 assert.match(api,/product_in_use/i,'backend precisa bloquear exclusão de produto com histórico/vínculo');
 
-assert.match(html,/products-inline-controls-v4\.css\?v=20260916-3/i,'Admin precisa carregar o CSS atualizado dos controles em lote');
-assert.match(html,/products-inline-controls-v4\.js\?v=20260916-3/i,'Admin precisa carregar o módulo atualizado dos controles em lote');
+assert.match(html,/products-inline-controls-v4\.css\?v=20260916-4/i,'Admin precisa carregar o CSS atualizado dos controles em lote');
+assert.match(html,/products-inline-controls-v4\.js\?v=20260916-4/i,'Admin precisa carregar o módulo atualizado dos controles em lote');
 assert.match(html,/app\.js\?v=20260912-4/i,'Admin deve usar cache-bust novo do app base');
 assert.match(css,/inline-products-table/i,'controles rápidos precisam de estilo próprio');
 assert.match(css,/is-dirty/i,'linha alterada precisa ter destaque visual enquanto não foi salva');
+assert.match(css,/inline-pending-warning/i,'alterações pendentes precisam de aviso visual persistente');
 console.log('admin-inline-product-controls ok');
