@@ -31,7 +31,8 @@ Deno.serve(async(req:Request)=>{
   if(!token)return respond(origin,{ok:false,error:"admin_session_required"},401);
   const {data:userData,error:userError}=await sb.auth.getUser(token),user=userData?.user;
   if(userError||!user)return respond(origin,{ok:false,error:"admin_session_invalid"},401);
-  const {data:admin,error:adminError}=await sb.from("admin_users").select("role,is_active").eq("user_id",user.id).eq("is_active",true).maybeSingle();
+  const adminUserId=user.id;
+  const {data:admin,error:adminError}=await sb.from("admin_users").select("role,is_active").eq("user_id",adminUserId).eq("is_active",true).maybeSingle();
   if(adminError||!admin||!["owner","admin"].includes(String(admin.role||"")))return respond(origin,{ok:false,error:"admin_forbidden"},403);
 
   const contentType=req.headers.get("content-type")||"";
@@ -57,7 +58,7 @@ Deno.serve(async(req:Request)=>{
 
   async function remember(imageUrl:unknown,sourceType:string,sourceImageUrl:unknown=null,metadata:Record<string,unknown>={}){
     const image=clean(imageUrl,1800);if(!image)return;
-    await sb.from("product_image_versions").insert({product_id:productId,image_url:image,source_type:sourceType,source_image_url:clean(sourceImageUrl,1800)||null,created_by:user.id,metadata});
+    await sb.from("product_image_versions").insert({product_id:productId,image_url:image,source_type:sourceType,source_image_url:clean(sourceImageUrl,1800)||null,created_by:adminUserId,metadata});
   }
 
   async function uploadFile(file:File,folder:string){
@@ -89,7 +90,7 @@ Deno.serve(async(req:Request)=>{
       image_ai_manual_review_reason:"admin_product_editor",
       image_ai_manual_prompt:prompt,
       image_ai_manual_requested_at:now,
-      image_ai_manual_requested_by:user.id,
+      image_ai_manual_requested_by:adminUserId,
       image_ai_manual_resolved_at:null,
       image_ai_status:"pending",
       image_ai_error:null,
