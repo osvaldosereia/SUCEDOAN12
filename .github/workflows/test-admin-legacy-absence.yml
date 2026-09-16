@@ -51,3 +51,5 @@ jobs:
           test ! -d admin-v3
           test ! -d supabase/functions/admin-v3-api
           test ! -d supabase/functions/admin-v3-product-names
+          test ! -e .github/workflows/apply-admin-runtime-migration.yml
+          test ! -e .github/workflows/remove-admin-v3-legacy.yml
