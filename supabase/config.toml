@@ -74,6 +74,10 @@ verify_jwt = false
 [functions.admin-product-names-v1]
 verify_jwt = false
 
+# Gestão individual de imagens do cadastro de produtos. JWT é validado dentro da função contra auth.users + admin_users.
+[functions.admin-product-image-editor-v1]
+verify_jwt = false
+
 [functions.admin-whatsapp-ops-v1]
 verify_jwt = true
 
