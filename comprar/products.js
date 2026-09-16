@@ -75,6 +75,23 @@
     app.scrollTo(host,{block:'start'});
   }
 
+  async function openLookup(query=''){
+    const value=text(query);if(!value)return renderEntry({auto:false});
+    state.productFilters={customerCategory:'',subcategory:'',subsubcategory:'',offers:false,query:value,availableCategories:[],availableSubcategories:{}};
+    document.querySelectorAll('.stage.products-entry-stage,.stage.products-stage,.stage.checkout-stage,.stage.order-review-stage').forEach(el=>el.remove());
+    document.querySelectorAll('.products-browser-message').forEach(el=>el.remove());
+    const host=stage(2,'Produtos encontrados',`Busca: ${value}`,'products-stage');activeStage=host;if(!host)return;
+    const selector=document.createElement('div');selector.className='chips products-section-chips';
+    for(const choice of ['Para Você','Para Casa','Ofertas']){const button=document.createElement('button');button.type='button';button.className='chip';button.textContent=choice;button.onclick=()=>openSection(choice);selector.appendChild(button)}host.appendChild(selector);
+    const sticky=document.createElement('div');sticky.className='products-filter-sticky';host.appendChild(sticky);
+    const search=document.createElement('form');search.className='product-search';search.innerHTML='<input type="search" autocomplete="off" placeholder="Buscar produto"><button type="submit">Buscar</button>';sticky.appendChild(search);
+    const input=search.querySelector('input');if(input)input.value=value;
+    search.onsubmit=event=>{event.preventDefault();state.productFilters.query=text(search.querySelector('input').value);resetProducts()};
+    productGrid=document.createElement('div');productGrid.className='products-grid';host.appendChild(productGrid);
+    const bottom=document.createElement('div');bottom.className='products-loading';bottom.dataset.productsLoading='1';host.appendChild(bottom);
+    const requestGeneration=++generation;resetPagination();await loadMore(requestGeneration);app.scrollTo(host,{block:'start'});
+  }
+
   function renderFilterChips(categories=[],subMap={}){
     if(!activeStage)return;const categoryHost=activeStage.querySelector('[data-categories]'),subHost=activeStage.querySelector('[data-subcategories]');if(!categoryHost||!subHost)return;
     categoryHost.innerHTML='';const all=document.createElement('button');all.type='button';all.className=`chip ${!state.productFilters.subcategory?'active':''}`;all.textContent='Todos';all.onclick=()=>{state.productFilters.subcategory='';state.productFilters.subsubcategory='';resetProducts()};categoryHost.appendChild(all);
@@ -149,5 +166,5 @@
   function closeDetail(){if(detailLayer){detailLayer.remove();detailLayer=null}document.body.classList.remove('product-detail-open')}
   window.addEventListener('keydown',event=>{if(event.key==='Escape')closeDetail()});
 
-  app.registerModule('products',{renderEntry,openSection,resetProducts,loadMore,changeQuantity,addSuggestedProduct,openDetail,closeDetail,waitForPending});
+  app.registerModule('products',{renderEntry,openSection,openLookup,resetProducts,loadMore,changeQuantity,addSuggestedProduct,openDetail,closeDetail,waitForPending});
 })();

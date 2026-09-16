@@ -15,10 +15,17 @@
   function setCheckoutMode(active){checkoutMode=!!active;const {help}=elements();if(checkoutMode)close();help?.classList.toggle('hidden',checkoutMode)}
   function appendUserMessage(message){return app.bubble(message,'user')}
   function appendAssistantMessage(message){return app.bubble(message,'assistant')}
-  function applyReply(data){const reply=app.text(data?.reply||data?.message||'');if(reply)appendAssistantMessage(reply)}
-  async function sendText(message){const value=app.text(message);if(!value)return;appendUserMessage(value);const data=await app.api('send_text',{message:value});applyReply(data)}
+  async function applyReply(data){
+    const reply=app.text(data?.reply||data?.message||'');if(reply)appendAssistantMessage(reply);
+    const ui=data?.ui&&typeof data.ui==='object'?data.ui:null;if(!ui)return;
+    const type=app.text(ui.type);
+    if(type==='product_lookup'){
+      const query=app.text(ui.query);if(query)await app.state.modules.products?.openLookup?.(query);
+    }
+  }
+  async function sendText(message){const value=app.text(message);if(!value)return;appendUserMessage(value);const data=await app.api('send_text',{message:value});await applyReply(data)}
   async function onSubmit(event){event.preventDefault();const {input,send}=elements(),value=app.text(input?.value);if(!value||send?.dataset.busy==='1')return;if(send){send.dataset.busy='1';send.disabled=true}if(input)input.value='';try{await sendText(value);close()}catch(error){if(input)input.value=value;app.toast(error.message)}finally{if(send){send.dataset.busy='0';send.disabled=false}}}
-  async function sendMedia(kind,file,durationMs=0){appendUserMessage(kind==='image'?'📷 Foto enviada':'🎤 Áudio enviado');const data=await app.uploadMedia(kind,file,durationMs);applyReply(data)}
+  async function sendMedia(kind,file,durationMs=0){appendUserMessage(kind==='image'?'📷 Foto enviada':'🎤 Áudio enviado');const data=await app.uploadMedia(kind,file,durationMs);await applyReply(data)}
   async function onPhotoChange(){const {photoInput,photoButton}=elements(),file=photoInput?.files?.[0];if(!file||photoButton?.dataset.busy==='1')return;if(photoButton){photoButton.dataset.busy='1';photoButton.disabled=true}try{await sendMedia('image',file);close()}catch(error){app.toast(error.message)}finally{if(photoInput)photoInput.value='';if(photoButton){photoButton.dataset.busy='0';photoButton.disabled=false}}}
   function formatDuration(ms){const seconds=Math.max(0,Math.floor(ms/1000));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
   function stopTimer(){clearInterval(timer);timer=null}
