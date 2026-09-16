@@ -14,6 +14,7 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
+      - 'scripts/test-admin-v3-product-name-management.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - '.github/workflows/test-v3.yml'
   pull_request:
@@ -28,6 +29,7 @@ on:
       - 'supabase/config.toml'
       - 'scripts/test-admin-v3-contract.mjs'
       - 'scripts/test-admin-v3-inline-product-controls.mjs'
+      - 'scripts/test-admin-v3-product-name-management.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - '.github/workflows/test-v3.yml'
   workflow_dispatch:
@@ -62,6 +64,8 @@ jobs:
         run: node scripts/test-admin-v3-contract.mjs
       - name: Controles inline do Admin oficial
         run: node scripts/test-admin-v3-inline-product-controls.mjs
+      - name: Nomes dos produtos no Admin oficial
+        run: node scripts/test-admin-v3-product-name-management.mjs
       - name: Pedidos completos no Admin oficial
         run: node scripts/test-comprar-order-admin-v1.mjs
       - name: Validar JavaScript do Admin
@@ -71,7 +75,6 @@ jobs:
           node --check admin/orders-integrated-v2.js
           node --check admin/basket-editor.js
           node --check admin/products-inline-controls-v4.js
-          node --check admin/product-name-management.js
       - name: Compilar Edge Functions do Admin
         run: |
           deno check supabase/functions/catalog-v3/index.ts
