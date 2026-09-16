@@ -28,7 +28,7 @@ export function buildFfmpegArgs(job={},options={}){
   const closeStart=Math.max(0,duration-3.2).toFixed(3);
   add(`drawtext=fontfile=${FONT}:text='${productName}':fontsize=${Math.round(width*.048)}:fontcolor=0x2A2927:x=(w-text_w)/2:y=${Math.round(height*.865)}:box=1:boxcolor=0xF5F2ECDD:boxborderw=16:enable='gte(t,${closeStart})'`);
   if(price)add(`drawtext=fontfile=${FONT}:text='${escapeDrawtext(price)}':fontsize=${Math.round(width*.075)}:fontcolor=0xB21E35:x=(w-text_w)/2:y=${Math.round(height*.91)}:box=1:boxcolor=white@0.90:boxborderw=18:enable='gte(t,${closeStart})'`);
-  filters.push(`[${input}]fade=t=in:st=0:d=.25,fade=t=out:st=${Math.max(0,duration-.25).toFixed(3)}:d=.25[vout]`);
+  filters.push(`[${input}]fade=t=in:st=0:d=0.25,fade=t=out:st=${Math.max(0,duration-0.25).toFixed(3)}:d=0.25[vout]`);
   args.push('-filter_complex',filters.join(';'),'-map','[vout]','-map',`${audioIndex}:a`,'-t',String(duration),'-r',String(fps),'-c:v','libx264','-preset','veryfast','-crf','21','-pix_fmt','yuv420p','-c:a','aac','-b:a','128k','-movflags','+faststart','-shortest',output);
   return args;
 }
