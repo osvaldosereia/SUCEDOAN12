@@ -1,0 +1,30 @@
+name: Creative Studio render worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: creative-studio-render-worker
+  cancel-in-progress: false
+
+jobs:
+  render-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify renderer runtime
+        run: |
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+      - name: Render next queued Creative Studio job
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/creative-studio-render-worker.mjs
