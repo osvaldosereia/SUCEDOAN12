@@ -6,13 +6,15 @@ on:
       - feat/stopmotion-smart-director
     paths:
       - 'marketing/creative-studio/**'
-      - 'supabase/functions/creative-studio-director/**'
+      - 'admin/creative-studio.*'
+      - 'supabase/functions/creative-studio-*/**'
       - 'supabase/migrations/*creative_studio*'
       - '.github/workflows/creative-studio-tests.yml'
   pull_request:
     paths:
       - 'marketing/creative-studio/**'
-      - 'supabase/functions/creative-studio-director/**'
+      - 'admin/creative-studio.*'
+      - 'supabase/functions/creative-studio-*/**'
       - 'supabase/migrations/*creative_studio*'
 
 jobs:
@@ -28,10 +30,11 @@ jobs:
         run: node --test marketing/creative-studio/tests/*.test.js
       - name: JavaScript syntax
         run: |
-          node --check marketing/creative-studio/contracts.js
-          node --check marketing/creative-studio/validate-plan.js
-          node --check marketing/creative-studio/creative-mining.js
-          node --check marketing/creative-studio/asset-request.js
-          node --check marketing/creative-studio/asset-resolver.js
-          node --check marketing/creative-studio/asset-hunter.js
-          node --check marketing/creative-studio/cost.js
+          find marketing/creative-studio -maxdepth 2 -type f -name '*.js' ! -path '*/tests/*' -print0 | xargs -0 -n1 node --check
+          node --check admin/creative-studio.js
+      - name: Admin surface contract
+        run: |
+          grep -q 'Estúdio Criativo' admin/creative-studio.html
+          grep -q './creative-studio.html' admin/index.html
+          grep -q 'creative-studio-director' admin/creative-studio.js
+          grep -q 'creative-studio-assets-v1' admin/creative-studio.js
