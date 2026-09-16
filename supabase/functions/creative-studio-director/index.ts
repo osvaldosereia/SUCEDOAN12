@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {createClient} from 'npm:@supabase/supabase-js@2';
 import {CREATIVE_STUDIO_MODEL,creativePlanSchema,buildDirectorInstructions,buildDirectorInput} from './prompt.ts';
+import {extractOutputText} from './response.mjs';
 
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,x-client-info,apikey,content-type','Access-Control-Allow-Methods':'POST,OPTIONS'};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,'Content-Type':'application/json','Cache-Control':'no-store'}});
@@ -34,6 +35,6 @@ Deno.serve(async(req:Request)=>{
   const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:CREATIVE_STUDIO_MODEL,instructions:buildDirectorInstructions(),input:buildDirectorInput(body),text:{format:{type:'json_schema',name:'creative_plan',strict:true,schema:creativePlanSchema}},max_output_tokens:2200})});
   if(!response.ok)return json({ok:false,error:'director_provider_failed',status:response.status},502);
   const data=await response.json();
-  const output=clean(data?.output_text,20000);let plan:any;try{plan=JSON.parse(output)}catch{return json({ok:false,error:'director_invalid_json'},502)}
+  const output=clean(extractOutputText(data),20000);let plan:any;try{plan=JSON.parse(output)}catch{return json({ok:false,error:'director_invalid_json'},502)}
   return json({ok:true,plan,provider:'openai',model:CREATIVE_STUDIO_MODEL,usage:data?.usage||null,response_id:data?.id||null,caller,auto_render:false,paid_generation:false});
 });
