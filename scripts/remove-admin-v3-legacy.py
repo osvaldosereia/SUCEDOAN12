@@ -26,8 +26,13 @@ SCAN_ROOTS = (
 
 TEXT_SUFFIXES = {".js", ".mjs", ".cjs", ".ts", ".yml", ".yaml", ".json", ".sh", ".py"}
 EXCLUDE = {
+    # Estes testes já foram reescritos manualmente e contêm expressões que
+    # deliberadamente procuram os nomes antigos para impedir regressão.
     ROOT / "scripts" / "test-admin-no-v3-runtime.mjs",
     ROOT / "scripts" / "test-admin-images-no-v3.mjs",
+    ROOT / "scripts" / "test-admin-v3-contract.mjs",
+    ROOT / "scripts" / "test-admin-v3-inline-product-controls.mjs",
+    ROOT / "scripts" / "test-comprar-order-admin-v1.mjs",
     ROOT / "scripts" / "migrate-admin-v3-runtime-to-admin.py",
     ROOT / "scripts" / "remove-admin-v3-legacy.py",
     ROOT / ".github" / "workflows" / "apply-admin-runtime-migration.yml",
