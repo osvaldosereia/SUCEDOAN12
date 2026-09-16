@@ -35,7 +35,6 @@ Deno.serve(async(req:Request)=>{
   if(action==='filters'){
     let q=sb.from('products')
       .select('customer_subcategory,customer_subsubcategory')
-      .eq('physically_verified',true)
       .eq('is_active',true)
       .gt('stock',0)
       .eq('customer_taxonomy_version',TAXONOMY_VERSION)
@@ -73,7 +72,6 @@ Deno.serve(async(req:Request)=>{
     const search=clean(body?.q,80).replace(/[,%()]/g,' ').trim();
     let q=sb.from('products')
       .select('id,name,price,offer_price,image_url,brand,packaging,description_short,stock,is_offer,customer_category,customer_subcategory,customer_subsubcategory')
-      .eq('physically_verified',true)
       .eq('is_active',true)
       .gt('stock',0)
       .eq('customer_taxonomy_version',TAXONOMY_VERSION)
