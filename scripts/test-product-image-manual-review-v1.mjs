@@ -110,15 +110,16 @@ assert.match(candidateFallback,/update public\.products/i);
 assert.match(candidateFallback,/image_ai_status[^\n]*processing/i);
 
 for(const source of [gridImage,manual]){
-  assert.match(source,/não preserve o fundo da imagem original/i);
+  assert.match(source,/não preserve o fundo da imagem original|remova completamente (?:todo o )?fundo original/i);
   assert.match(source,/fundo branco/i);
-  assert.match(source,/moldura branca/i);
-  assert.match(source,/ocupar toda a imagem/i);
+  assert.match(source,/moldura(?: branca)?|borda branca/i);
   assert.match(source,/#ECECEC/);
-  assert.match(source,/original_background_visible/);
-  assert.match(source,/white_background/);
-  assert.match(source,/white_border/);
+  assert.match(source,/quatro cantos|ocupar toda a imagem/i);
 }
+assert.match(gridImage,/VALIDATOR_MODEL='disabled'/);
+assert.match(gridImage,/validator_disabled:true/);
+assert.match(gridImage,/manual_review_required:true/);
+for(const marker of ['original_background_visible','white_background','white_border']) assert.match(manual,new RegExp(marker));
 
 assert.match(sourceSafety,/Sources persisted under \/sources\/grid18\//i);
 assert.ok(sourceSafety.includes("p_url not ilike '%/openai/%'"));
