@@ -72,9 +72,12 @@ jobs:
           node --check admin/app.js
           node --check admin/orders-integrated-v2.js
           node --check admin/products-inline-controls-v4.js
+          node --check admin/product-gondola-editor-v1.js
+          node --check admin/gondolas-v1.js
           node --check admin/product-image-editor-v1.js
           deno check supabase/functions/admin-simple-v2/index.ts
           deno check supabase/functions/admin-core-v1/index.ts
+          deno check supabase/functions/admin-gondolas-v1/index.ts
           deno check supabase/functions/admin-product-names-v1/index.ts
           deno check supabase/functions/admin-product-image-editor-v1/index.ts
           deno check supabase/functions/admin-orders-comprar-v1/index.ts
@@ -106,6 +109,8 @@ jobs:
           grep -q 'data-route="baskets"' admin/index.html
           grep -q 'data-route="orders"' admin/index.html
           grep -q 'data-route="customers"' admin/index.html
+          grep -q './gondolas.html' admin/index.html
+          grep -q 'product-gondola-editor-v1.js' admin/index.html
           grep -q 'orders-integrated-v2.js' admin/index.html
           grep -q 'Balanço rápido' admin/index.html
           grep -q '../contagem/' admin/index.html
