@@ -1,12 +1,50 @@
 export const CREATIVE_STUDIO_MODEL=Deno.env.get('CREATIVE_STUDIO_MODEL')||'gpt-5.6-luna';
 
+const MOTIONS=['enter_left','enter_right','enter_top','rise','drop','hop','bounce','shake','wobble','spin','tilt','slide','peek','fall','push','pull','chase','follow','orbit','scatter','stack','celebrate','squash','stretch','zoom','reveal','exit'];
+const BEHAVIORS=['curious','shy','excited','sleepy','nervous','heroic','sneaky','surprised','happy','chaotic'];
+
+const actorSchema={
+  type:'object',additionalProperties:false,required:['role','motion','behavior'],
+  properties:{
+    role:{type:'string'},
+    motion:{type:'string',enum:MOTIONS},
+    behavior:{type:'string',enum:BEHAVIORS}
+  }
+};
+
+const sceneSchema={
+  type:'object',additionalProperties:false,required:['beat','summary','actors','sound_intent'],
+  properties:{
+    beat:{type:'string'},
+    summary:{type:'string'},
+    sound_intent:{type:'string'},
+    actors:{type:'array',items:actorSchema}
+  }
+};
+
+const assetRequestSchema={
+  type:'object',additionalProperties:false,required:['need','keywords','role','actions'],
+  properties:{
+    need:{type:'string'},
+    keywords:{type:'array',items:{type:'string'},maxItems:6},
+    role:{type:'string'},
+    actions:{type:'array',items:{type:'string'},maxItems:4}
+  }
+};
+
 export const creativePlanSchema={
   type:'object',additionalProperties:false,
   required:['territory','concept','emotions','hook','payoff','product_role','duration','scenes','asset_requests'],
   properties:{
-    territory:{type:'string'},concept:{type:'string'},emotions:{type:'array',items:{type:'string'},maxItems:3},hook:{type:'string'},payoff:{type:'string'},product_role:{type:'string'},duration:{type:'integer',minimum:15,maximum:25},
-    scenes:{type:'array',minItems:3,maxItems:7,items:{type:'object',additionalProperties:false,required:['beat','summary','actors','sound_intent'],properties:{beat:{type:'string'},summary:{type:'string'},sound_intent:{type:'string'},actors:{type:'array',items:{type:'object',additionalProperties:false,required:['role','motion','behavior'],properties:{role:{type:'string'},motion:{type:'string',enum:['enter_left','enter_right','enter_top','rise','drop','hop','bounce','shake','wobble','spin','tilt','slide','peek','fall','push','pull','chase','follow','orbit','scatter','stack','celebrate','squash','stretch','zoom','reveal','exit']},behavior:{type:'string',enum:['curious','shy','excited','sleepy','nervous','heroic','sneaky','surprised','happy','chaotic']}}}}}},
-    asset_requests:{type:'array',maxItems:12,items:{type:'object',additionalProperties:false,required:['need','keywords','role','actions'],properties:{need:{type:'string'},keywords:{type:'array',items:{type:'string'},maxItems:6},role:{type:'string'},actions:{type:'array',items:{type:'string'},maxItems:4}}}}
+    territory:{type:'string'},
+    concept:{type:'string'},
+    emotions:{type:'array',items:{type:'string'},maxItems:3},
+    hook:{type:'string'},
+    payoff:{type:'string'},
+    product_role:{type:'string'},
+    duration:{type:'integer',minimum:15,maximum:25},
+    scenes:{type:'array',minItems:3,maxItems:7,items:sceneSchema},
+    asset_requests:{type:'array',maxItems:12,items:assetRequestSchema}
   }
 };
 
