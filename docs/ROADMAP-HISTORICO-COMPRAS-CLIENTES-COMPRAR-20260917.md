@@ -111,7 +111,7 @@ Dado um `customer_id`, o sistema retorna uma linha do tempo comercial coerente e
 
 ## Etapa 2 — Resumo inteligente do cliente
 
-Status: **PRÓXIMA**
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
@@ -144,6 +144,8 @@ O resumo de um cliente precisa poder ser reconstruído integralmente a partir de
 ---
 
 ## Etapa 3 — Histórico no Admin
+
+Status: **PRÓXIMA**
 
 ### Entregas
 
