@@ -174,7 +174,7 @@ A equipe consegue entender o relacionamento comercial do cliente em poucos segun
 
 ## Etapa 4 — “Repetir minha última compra” no Comprar
 
-Status: **PRÓXIMA**
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
@@ -206,6 +206,8 @@ O cliente consegue reconstruir a última compra em poucos toques sem carregar va
 ---
 
 ## Etapa 5 — “Minhas compras frequentes”
+
+Status: **PRÓXIMA**
 
 ### Entregas
 
