@@ -1,32 +1,30 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const conversation = fs.readFileSync('comprar/conversation.js','utf8');
+const exists=path=>fs.existsSync(path);
+const read=path=>fs.readFileSync(path,'utf8');
 
-assert.match(conversation,/function\s+placeCheckoutStageAtEnd\s*\(/,'checkout deve controlar diretamente a posição do bloco de ferramenta');
+assert.ok(exists('comprar/checkout-stage-order.js'),'deve existir um controlador determinístico da ordem do checkout');
 
-const identificationStart=conversation.indexOf('async function renderIdentificationStep');
-const identificationEnd=conversation.indexOf('async function renderAddressStep');
-const identification=conversation.slice(identificationStart,identificationEnd);
-assert.ok(identification.indexOf("await say('Qual é seu WhatsApp com DDD? Vou procurar seu cadastro.')")>=0,'pergunta do WhatsApp deve existir');
-assert.ok(identification.indexOf('placeCheckoutStageAtEnd()')>identification.indexOf("await say('Qual é seu WhatsApp com DDD? Vou procurar seu cadastro.')"),'campo de WhatsApp só pode ser posicionado depois da pergunta');
-assert.ok(identification.indexOf('checkout-turn-card')>identification.indexOf('placeCheckoutStageAtEnd()'),'campo deve ser renderizado depois do reposicionamento');
+const localIndex=read('comprar/index.html');
+const rootIndex=read('index.html');
+const orderFix=read('comprar/checkout-stage-order.js');
 
-const addressStart=conversation.indexOf('async function renderAddressStep');
-const addressEnd=conversation.indexOf('async function renderAddressForm');
-const address=conversation.slice(addressStart,addressEnd);
-assert.ok(address.indexOf('placeCheckoutStageAtEnd()')>=0,'endereço salvo deve ser posicionado no turno atual da conversa');
-assert.ok(address.indexOf('checkout-address-preview')>address.indexOf('placeCheckoutStageAtEnd()'),'cartão do endereço deve surgir depois do reposicionamento');
-assert.ok(address.indexOf("await ask({text:'Posso entregar neste endereço?'")>address.indexOf('checkout-address-preview'),'pergunta de confirmação deve vir depois de mostrar o endereço');
+assert.match(localIndex,/checkout-stage-order\.js\?v=/,'Comprar deve carregar o controlador de ordem');
+assert.match(rootIndex,/checkout-stage-order\.js\?v=/,'raiz deve carregar o controlador de ordem');
+assert.ok(localIndex.indexOf('checkout-stage-order.js')<localIndex.indexOf('conversation.js'),'controlador de ordem deve envolver app.stage antes do fluxo conversacional');
+assert.ok(rootIndex.indexOf('checkout-stage-order.js')<rootIndex.indexOf('conversation.js'),'raiz deve manter a mesma ordem de carregamento');
 
-const addressFormStart=conversation.indexOf('async function renderAddressForm');
-const addressFormEnd=conversation.indexOf('function readAddressForm');
-const addressForm=conversation.slice(addressFormStart,addressFormEnd);
-assert.ok(addressForm.indexOf('placeCheckoutStageAtEnd()')>addressForm.indexOf("await say('Confira seus dados de entrega.')"),'formulário manual deve aparecer depois da mensagem de orientação');
+assert.match(orderFix,/const\s+originalStage\s*=\s*app\.stage\.bind\(app\)/,'deve preservar o stage original');
+assert.match(orderFix,/app\.stage\s*=\s*\(/,'deve envolver a criação do stage');
+assert.match(orderFix,/checkout-conversation-stage/,'deve atuar apenas no checkout conversacional');
+assert.match(orderFix,/node\.remove\(\)/,'checkout deve nascer fora da timeline até a ferramenta estar pronta');
+assert.match(orderFix,/new\s+MutationObserver/,'deve observar quando a ferramenta do turno ficar visível');
+assert.match(orderFix,/checkout-turn-card/,'campo de WhatsApp e formulário devem ativar o posicionamento');
+assert.match(orderFix,/checkout-address-preview/,'endereço salvo deve ativar o posicionamento');
+assert.match(orderFix,/checkout-address-compact/,'resumo de endereço deve ativar o posicionamento');
+assert.match(orderFix,/checkout-confirm-card/,'confirmação final deve ativar o posicionamento');
+assert.match(orderFix,/timeline\.appendChild\(node\)/,'ferramenta pronta deve ser anexada ao fim do turno atual');
 
-const confirmationStart=conversation.indexOf('async function renderConfirmationStep');
-const confirmationEnd=conversation.indexOf('function reserveWhatsAppWindow');
-const confirmation=conversation.slice(confirmationStart,confirmationEnd);
-assert.ok(confirmation.indexOf('placeCheckoutStageAtEnd()')>confirmation.indexOf("await say('Perfeito. Confira tudo antes de confirmar:')"),'confirmação final deve ser posicionada depois da mensagem');
-
-console.log('PASS: ordem visual do checkout segue a conversa');
+new Function(orderFix);
+console.log('PASS: checkout tool só entra na timeline quando o turno está pronto');
