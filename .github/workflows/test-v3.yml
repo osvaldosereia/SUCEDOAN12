@@ -7,9 +7,13 @@ on:
       - 'vitrine-v3/**'
       - 'admin/**'
       - 'tests/creative-studio-admin-contract.test.mjs'
+      - 'tests/creative-storyboard-contract.test.mjs'
       - 'tests/creative-studio-render-worker.test.mjs'
       - 'scripts/creative-studio-render-worker.mjs'
       - '.github/workflows/creative-studio-render-worker.yml'
+      - 'supabase/functions/creative-storyboard-director/**'
+      - 'supabase/functions/creative-storyboard-projects/**'
+      - 'supabase/functions/creative-storyboard-image/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-core-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
@@ -26,9 +30,13 @@ on:
       - 'vitrine-v3/**'
       - 'admin/**'
       - 'tests/creative-studio-admin-contract.test.mjs'
+      - 'tests/creative-storyboard-contract.test.mjs'
       - 'tests/creative-studio-render-worker.test.mjs'
       - 'scripts/creative-studio-render-worker.mjs'
       - '.github/workflows/creative-studio-render-worker.yml'
+      - 'supabase/functions/creative-storyboard-director/**'
+      - 'supabase/functions/creative-storyboard-projects/**'
+      - 'supabase/functions/creative-storyboard-image/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/functions/admin-core-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
@@ -70,7 +78,9 @@ jobs:
       - name: Contrato do Admin oficial
         run: node scripts/test-admin-v3-contract.mjs
       - name: Contrato do Estúdio Criativo
-        run: node --test tests/creative-studio-admin-contract.test.mjs
+        run: |
+          node --test tests/creative-studio-admin-contract.test.mjs
+          node --test tests/creative-storyboard-contract.test.mjs
       - name: Contrato do worker do Estúdio Criativo
         run: node --test tests/creative-studio-render-worker.test.mjs
       - name: Controles inline do Admin oficial
@@ -84,11 +94,15 @@ jobs:
           node --check admin/api.js
           node --check admin/app.js
           node --check admin/creative-studio.js
+          node --check admin/creative-studio-persistence.js
           node --check admin/orders-integrated-v2.js
           node --check admin/basket-editor.js
           node --check admin/products-inline-controls-v4.js
       - name: Compilar Edge Functions do Admin
         run: |
+          deno check supabase/functions/creative-storyboard-director/index.ts
+          deno check supabase/functions/creative-storyboard-projects/index.ts
+          deno check supabase/functions/creative-storyboard-image/index.ts
           deno check supabase/functions/catalog-v3/index.ts
           deno check supabase/functions/admin-core-v1/index.ts
           deno check supabase/functions/admin-product-names-v1/index.ts
