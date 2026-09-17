@@ -31,7 +31,14 @@ async function chooseBasket(selection,button){
  try{const data=await api('start_basket',{basket_id:selection.basket.id});let cart=data.cart||state.cart;const actualItems=Array.isArray(data.items)?data.items:[],desired=new Map(selection.items.map(item=>[String(item.product_id),item]));
   for(const actual of actualItems){const wanted=desired.get(String(actual.product_id));if(!wanted)continue;const quantity=n(wanted.quantity);if(quantity===n(actual.quantity))continue;const changed=await api('set_basket_quantity',{product_id:actual.product_id,quantity});if(changed.cart)cart=changed.cart;actual.quantity=quantity}
   state.selectedBasket={...selection.basket};state.basketItems=actualItems.map(actual=>{const policy=desired.get(String(actual.product_id))||{};return {...actual,...policy,product:actual.product||policy.product||null,name:policy.name||actual.name}});state.selectedBasket.selected_total=selectedBasketTotal();setCart(cart||{items:[],total:0});previewState=null;
-  document.querySelectorAll('.stage.basket-picker-stage,.stage.basket-preview-stage,.stage.selected-basket-stage,.stage.selected-basket-expanded,.stage.products-entry-stage,.stage.products-stage,.upsell-strip').forEach(el=>el.remove());clearBasketConversation();app.userDecision(`Quero ${state.selectedBasket.name||'esta cesta'}`,{className:'basket-confirm-decision'});app.assistantMessage('Certo! Sua cesta já está no pedido. Quer acrescentar alguma coisa?',{className:'basket-confirm-message'});const summary=renderSelectedBasketSummary();try{state.modules.upsell?.renderAfterBasket?.(summary)}catch{}state.modules.products?.renderEntry?.({auto:true});if(summary)scrollTo(summary,{block:'center'});
+  document.querySelectorAll('.stage.basket-picker-stage,.stage.basket-preview-stage,.stage.selected-basket-stage,.stage.selected-basket-expanded,.stage.products-entry-stage,.stage.products-stage,.upsell-strip').forEach(el=>el.remove());clearBasketConversation();app.userDecision(`Quero ${state.selectedBasket.name||'esta cesta'}`,{className:'basket-confirm-decision'});
+  const conversation=state.modules.conversation;
+  if(conversation?.afterBasketSelected){
+    await conversation.afterBasketSelected({basket:state.selectedBasket,altered:basketAltered(),renderSummary:renderSelectedBasketSummary});
+  }else{
+    app.assistantMessage(`Perfeito! Recebi seu pedido da ${state.selectedBasket.name||'cesta'}.`,{className:'basket-confirm-message'});
+    const summary=renderSelectedBasketSummary();state.modules.products?.renderEntry?.({auto:true});if(summary)scrollTo(summary,{block:'center'});
+  }
  }catch(error){toast(error.message)}finally{if(button){button.dataset.busy='0';button.disabled=false;button.textContent='Quero esta cesta'}}
 }
 function basketItemCount(){return (state.basketItems||[]).reduce((sum,item)=>sum+n(item.quantity),0)}
@@ -46,6 +53,14 @@ function expandSelectedBasket(){
  const actions=document.createElement('div');actions.className='actions';const collapse=document.createElement('button');collapse.type='button';collapse.className='secondary';collapse.textContent='Recolher composição';collapse.onclick=()=>section.remove();const changeBasket=document.createElement('button');changeBasket.type='button';changeBasket.className='secondary';changeBasket.textContent='Trocar cesta';changeBasket.onclick=()=>{section.remove();renderPicker()};actions.append(collapse,changeBasket);inner.appendChild(actions);scrollTo(section,{block:'start'});return section;
 }
 function renderSelectedBasket(){return renderSelectedBasketSummary()}
-async function restoreFromOpen(data){const basketId=String(data?.cart?.basket_id||state.cart?.basket_id||'');if(!basketId)return renderPicker();state.selectedBasket=(state.baskets||[]).find(b=>String(b.id)===basketId)||{id:basketId,name:'Sua cesta'};let policies=[];try{const detail=await basketStorefrontApi('detail',{basket_id:basketId});policies=detail?.basket?.items||[];if(detail?.basket)state.selectedBasket={...state.selectedBasket,...detail.basket}}catch{}const policyMap=new Map(policies.map(item=>[String(item.product_id),item]));state.basketItems=(state.cart?.items||[]).filter(item=>item.source!=='addon').map(item=>{const policy=policyMap.get(String(item.product_id))||{};return {...policy,...item,quantity:item.quantity,product:item.product||policy.product||null,name:item.name||policy.name}});state.selectedBasket.selected_total=selectedBasketTotal();app.assistantMessage('Seu pedido está aberto. Você pode continuar de onde parou.',{className:'basket-confirm-message'});const summary=renderSelectedBasketSummary();state.modules.products?.renderEntry?.({auto:true});if(summary)scrollTo(summary,{block:'center'})}
+async function restoreFromOpen(data){
+ const basketId=String(data?.cart?.basket_id||state.cart?.basket_id||'');if(!basketId)return renderPicker();
+ state.selectedBasket=(state.baskets||[]).find(b=>String(b.id)===basketId)||{id:basketId,name:'Sua cesta'};let policies=[];
+ try{const detail=await basketStorefrontApi('detail',{basket_id:basketId});policies=detail?.basket?.items||[];if(detail?.basket)state.selectedBasket={...state.selectedBasket,...detail.basket}}catch{}
+ const policyMap=new Map(policies.map(item=>[String(item.product_id),item]));state.basketItems=(state.cart?.items||[]).filter(item=>item.source!=='addon').map(item=>{const policy=policyMap.get(String(item.product_id))||{};return {...policy,...item,quantity:item.quantity,product:item.product||policy.product||null,name:item.name||policy.name}});state.selectedBasket.selected_total=selectedBasketTotal();
+ const conversation=state.modules.conversation;
+ if(conversation?.afterBasketSelected){await conversation.afterBasketSelected({basket:state.selectedBasket,altered:basketAltered(),renderSummary:renderSelectedBasketSummary,resumed:true})}
+ else{app.assistantMessage('Seu pedido está aberto. Você pode continuar de onde parou.',{className:'basket-confirm-message'});const summary=renderSelectedBasketSummary();state.modules.products?.renderEntry?.({auto:true});if(summary)scrollTo(summary,{block:'center'})}
+}
 app.registerModule('baskets',{renderPicker,previewBasket,chooseBasket,renderSelectedBasket,renderSelectedBasketSummary,expandSelectedBasket,restoreFromOpen,basketAltered,basketDisplayName});
 })();
