@@ -26,6 +26,8 @@
     document.querySelectorAll('.conversation-quick-replies[data-active="1"]').forEach(node=>node.remove());
   }
 
+  function clearOfferStage(){document.querySelectorAll('.conversation-offers-stage').forEach(node=>node.remove())}
+
   function renderTyping(label='Ana está digitando…'){
     const host=timeline();if(!host)return null;
     const node=document.createElement('div');node.className='conversation-typing assistant';node.setAttribute('role','status');
@@ -90,7 +92,7 @@
 
   async function showOffers(){
     ui.offersSeen=true;
-    document.querySelectorAll('.conversation-offers-stage').forEach(node=>node.remove());
+    clearOfferStage();
     const waiting=renderTyping('Ana está separando as ofertas…');
     let products=[];
     try{
@@ -122,15 +124,14 @@
         const added=state.modules.products?.addSuggestedProduct?.(product);
         if(added===false)return;
         button.disabled=true;button.textContent='Adicionado ✓';
-        app.userDecision(`Adicionar ${product.name||'produto'}`,{className:'decision product-decision'});
       };
       card.appendChild(button);grid.appendChild(card);
     }
 
     app.assistantMessage('Quer continuar comprando ou conferir como ficou seu pedido?');
     quickReplies([
-      {label:'Ver outros produtos',userLabel:'Quero ver outros produtos',onChoose:()=>originalProductsRenderEntry?.({auto:false})},
-      {label:'Revisar meu pedido',userLabel:'Quero revisar meu pedido',onChoose:()=>app.renderOrderReview?.()}
+      {label:'Ver outros produtos',userLabel:'Quero ver outros produtos',onChoose:()=>{clearOfferStage();return originalProductsRenderEntry?.({auto:false})}},
+      {label:'Revisar meu pedido',userLabel:'Quero revisar meu pedido',onChoose:()=>{clearOfferStage();return app.renderOrderReview?.()}}
     ]);
     app.scrollTo(section,{block:'start'});return section;
   }
@@ -229,7 +230,7 @@
     host.querySelector('[data-use-location]').onclick=()=>requestLocation(status);
     host.querySelector('[data-address-continue]').onclick=()=>{
       try{
-        checkoutFlow.form=readAddressForm();validateAddressForm(checkoutFlow.form);checkoutFlow.selectedAddressId=null;app.userDecision('Usar este endereço');renderAddressSummary();renderPaymentStep();
+        checkoutFlow.form=readAddressForm();validateAddressForm(checkoutFlow.form);checkoutFlow.selectedAddressId=null;choose('Usar este endereço',{onChoose:()=>{renderAddressSummary();return renderPaymentStep()}});
       }catch(error){status.textContent=error.message}
     };
     app.scrollTo(host,{block:'start'});
@@ -321,16 +322,19 @@
   }
 
   function interceptSemanticClicks(event){
-    const button=event.target.closest?.('button');if(!button||ui.busy)return;
+    const button=event.target.closest?.('button');if(!button)return;
+    if(button.id==='checkoutButton'||button.id==='cartButton'){clearPrompt();clearOfferStage();return}
+    if(button.id==='backButton'){clearPrompt();return}
+    if(ui.busy)return;
     if(button.closest('.start-chips')){
       event.preventDefault();event.stopImmediatePropagation();const label=button.textContent.trim();
       const handlers={
-        'Cestas Básicas':()=>state.modules.baskets?.renderPicker?.(),
-        'Ofertas':()=>originalProductsRenderEntry?.({section:'Ofertas'}),
-        'Para Você':()=>originalProductsRenderEntry?.({section:'Para Você'}),
-        'Para Casa':()=>originalProductsRenderEntry?.({section:'Para Casa'})
+        'Cestas Básicas':{userLabel:'Quero ver as cestas básicas',run:()=>state.modules.baskets?.renderPicker?.()},
+        'Ofertas':{userLabel:'Quero ver as ofertas',run:()=>originalProductsRenderEntry?.({section:'Ofertas'})},
+        'Para Você':{userLabel:'Quero produtos para mim',run:()=>originalProductsRenderEntry?.({section:'Para Você'})},
+        'Para Casa':{userLabel:'Quero produtos para casa',run:()=>originalProductsRenderEntry?.({section:'Para Casa'})}
       };
-      if(handlers[label])choose(`Quero ver ${label}`,{onChoose:handlers[label]});return;
+      if(handlers[label])choose(handlers[label].userLabel,{onChoose:handlers[label].run});return;
     }
     if(button.closest('.order-review-actions')){
       event.preventDefault();event.stopImmediatePropagation();
