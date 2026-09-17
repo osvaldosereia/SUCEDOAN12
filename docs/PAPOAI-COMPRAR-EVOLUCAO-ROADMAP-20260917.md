@@ -9,10 +9,24 @@ Transformar o PapoAI em porta de entrada do WhatsApp e o Chat Comprar em continu
 ## Princípio de arquitetura
 
 - PapoAI: conversa WhatsApp, atendimento humano/IA e CRM operacional.
-- Supabase: identidade comercial, clientes, sessões, carrinho, pedidos, endereços, histórico e regras.
+- Supabase: identidade comercial, clientes, sessões, carrinho, pedidos, endereços, histórico, regras e **todas as automações novas**.
 - Chat Comprar: experiência visual de compra ligada à identidade já conhecida no WhatsApp.
 - O telefone normalizado é a chave de busca inicial. Nome vindo do PapoAI é contexto; nunca substitui a identificação por telefone.
 - Dados pessoais não são colocados em URLs. O Comprar recebe somente um token opaco de sessão.
+
+## Regra de automação — SUPABASE FIRST
+
+A partir de 17/09/2026, nenhuma automação nova da Dona Antônia deve ser criada no Make.
+
+Padrão obrigatório:
+
+1. **Supabase Database/PostgreSQL** para estado, filas, idempotência e histórico.
+2. **Supabase Edge Functions** para webhooks, integrações HTTP, IA e processamento externo.
+3. **pg_cron/Cron** para tarefas recorrentes e agendadas.
+4. **Triggers + outbox/jobs** para eventos internos e execução confiável.
+5. **Supabase Vault** para tokens, chaves e URLs privadas.
+6. PapoAI, Meta, Bling e demais serviços entram como integrações externas; não são fonte de verdade.
+7. Make não deve ser usado em novas automações nem como dependência de novas funcionalidades. Cenários antigos só permanecem enquanto forem necessários para legado e devem ser substituídos gradualmente por Supabase.
 
 ## Etapa 1 — Identidade PapoAI → Comprar — EXECUTAR AGORA
 
@@ -43,11 +57,12 @@ Resultado esperado: o cliente sai do WhatsApp para o Comprar já reconhecido, se
 3. Atualizar no PapoAI apenas contexto operacional útil: cliente conhecido, comprou, pedido aberto, recompra, atenção humana e último pedido.
 4. Nunca usar o PapoAI como banco mestre de pedidos/clientes.
 5. Tornar a sincronização idempotente e tolerante a indisponibilidade do PapoAI.
+6. Implementar a sincronização via Edge Functions/HTTP do Supabase, sem Make.
 
 ## Etapa 4 — Pedido e entrega conectados ao WhatsApp — FUTURA
 
 1. Pedido confirmado no Comprar gera evento operacional.
-2. Mudanças de status `separando`, `pronto`, `em rota`, `entregue` podem gerar mensagens pelo PapoAI.
+2. Mudanças de status `separando`, `pronto`, `em rota`, `entregue` podem gerar mensagens pelo PapoAI ou Meta, acionadas pelo Supabase.
 3. Motorista/equipe continua controlando rota e status no nosso sistema.
 4. Exceções de endereço, atraso ou item faltante encaminham para atendimento humano com contexto.
 
@@ -58,6 +73,7 @@ Resultado esperado: o cliente sai do WhatsApp para o Comprar já reconhecido, se
 3. Recompra usa intervalo e histórico real do cliente.
 4. Mensagens proativas respeitam consentimento e regras do WhatsApp/templates.
 5. Segmentar sem duplicar o histórico comercial no PapoAI.
+6. Agendamentos e gatilhos recorrentes ficam no Supabase Cron/pg_cron.
 
 ## Etapa 6 — CRM e inteligência operacional — FUTURA
 
