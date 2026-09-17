@@ -4,6 +4,19 @@ import {createClient} from 'npm:@supabase/supabase-js@2';
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type'};
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
 const cleanSearch=(v:unknown)=>String(v??'').replace(/[,%()]/g,' ').replace(/\s+/g,' ').trim().slice(0,100);
+function normalizeGeminiPackage(x:any,projectId:string,updatedAt?:string){
+  const critical=String(x?.critical_reinforcement??'').trim();
+  return {
+    project_id:projectId,
+    package_index:Number(x?.package_index||0),
+    start_second:Number(x?.start_second||0),
+    middle_second:Number(x?.middle_second||0),
+    end_second:Number(x?.end_second||0),
+    prompt:String(x?.prompt||''),
+    critical_reinforcement:critical||null,
+    ...(updatedAt?{updated_at:updatedAt}:{})
+  };
+}
 
 Deno.serve(async(req:Request)=>{
   if(req.method==='OPTIONS')return new Response('',{headers:cors});
@@ -45,7 +58,8 @@ Deno.serve(async(req:Request)=>{
       if(k.error)return json({ok:false,error:'keyframes_persist',detail:k.error.message},500);
     }
     if(b.plan?.gemini_packages?.length){
-      const g=await sb.from('creative_storyboard_gemini_packages').upsert(b.plan.gemini_packages.map((x:any)=>({...x,project_id:ins.data.id})),{onConflict:'project_id,package_index'});
+      const rows=b.plan.gemini_packages.map((x:any)=>normalizeGeminiPackage(x,ins.data.id));
+      const g=await sb.from('creative_storyboard_gemini_packages').upsert(rows,{onConflict:'project_id,package_index'});
       if(g.error)return json({ok:false,error:'packages_persist',detail:g.error.message},500);
     }
     return json({ok:true,project:ins.data});
@@ -53,15 +67,19 @@ Deno.serve(async(req:Request)=>{
 
   if(action==='update_plan'){
     if(!b.id||!b.plan)return json({ok:false,error:'id_plan_required'},400);
-    const u=await sb.from('creative_video_projects').update({creative_plan:b.plan,status:b.status||'draft',updated_at:new Date().toISOString()}).eq('id',b.id).select().single();
+    const updatedAt=new Date().toISOString();
+    const u=await sb.from('creative_video_projects').update({creative_plan:b.plan,status:b.status||'draft',updated_at:updatedAt}).eq('id',b.id).select().single();
     if(u.error)return json({ok:false,error:'plan_update',detail:u.error.message},500);
     for(const x of b.plan?.keyframes||[]){
       const ex=await sb.from('creative_storyboard_keyframes').select('id').eq('project_id',b.id).eq('second_mark',x.second_mark).maybeSingle();
       const continuity_lock={continuity_bible:b.plan.continuity_bible||{},visual_bible:b.plan.visual_bible||{}};
-      if(ex.data?.id)await sb.from('creative_storyboard_keyframes').update({visual_prompt:x.visual_prompt,continuity_lock,updated_at:new Date().toISOString()}).eq('id',ex.data.id);
+      if(ex.data?.id)await sb.from('creative_storyboard_keyframes').update({visual_prompt:x.visual_prompt,continuity_lock,updated_at:updatedAt}).eq('id',ex.data.id);
       else await sb.from('creative_storyboard_keyframes').insert({project_id:b.id,second_mark:x.second_mark,visual_prompt:x.visual_prompt,continuity_lock,status:'planned'});
     }
-    for(const x of b.plan?.gemini_packages||[])await sb.from('creative_storyboard_gemini_packages').upsert({...x,project_id:b.id,updated_at:new Date().toISOString()},{onConflict:'project_id,package_index'});
+    for(const x of b.plan?.gemini_packages||[]){
+      const g=await sb.from('creative_storyboard_gemini_packages').upsert(normalizeGeminiPackage(x,b.id,updatedAt),{onConflict:'project_id,package_index'});
+      if(g.error)return json({ok:false,error:'packages_persist',detail:g.error.message},500);
+    }
     return json({ok:true,project:u.data});
   }
 
