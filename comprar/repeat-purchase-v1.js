@@ -133,5 +133,5 @@
     };
   }
 
-  app.repeatLastPurchase={loadPreview,showPreview};
+  app.repeatLastPurchase={loadPreview,showPreview,getCache:()=>previewCache};
 })();
