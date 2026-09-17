@@ -2,6 +2,14 @@
 
 Data: 17/09/2026
 
+## Escopo atual — atualizado em 17/09/2026
+
+- Atendimento e IA do WhatsApp permanecem **nativos no PapoAI**.
+- Não desenvolver agente externo próprio para substituir a IA do PapoAI.
+- Nosso desenvolvimento fica concentrado em **Chat Comprar + Supabase**.
+- A integração PapoAI → Supabase é usada para identidade/sessão do Comprar: telefone → cliente → token opaco → checkout facilitado.
+- Projeto detalhado de histórico de compras e recompra: `docs/ROADMAP-HISTORICO-COMPRAS-CLIENTES-COMPRAR-20260917.md`.
+
 ## Objetivo
 
 Transformar o PapoAI em porta de entrada do WhatsApp e o Chat Comprar em continuação inteligente da mesma jornada, preservando o Supabase como fonte de verdade para cliente, pedido, endereço, cesta, estoque e histórico comercial.
