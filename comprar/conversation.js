@@ -26,6 +26,8 @@
     document.querySelectorAll('.conversation-quick-replies[data-active="1"]').forEach(node=>node.remove());
   }
 
+  function consumeStartChoices(){document.querySelector('.stage.start-stage')?.remove()}
+
   function clearOfferStage(){document.querySelectorAll('.conversation-offers-stage').forEach(node=>node.remove())}
 
   function renderTyping(label='Ana está digitando…'){
@@ -334,7 +336,7 @@
         'Para Você':{userLabel:'Quero produtos para mim',run:()=>originalProductsRenderEntry?.({section:'Para Você'})},
         'Para Casa':{userLabel:'Quero produtos para casa',run:()=>originalProductsRenderEntry?.({section:'Para Casa'})}
       };
-      if(handlers[label])choose(handlers[label].userLabel,{onChoose:handlers[label].run});return;
+      if(handlers[label]){consumeStartChoices();choose(handlers[label].userLabel,{onChoose:handlers[label].run})}return;
     }
     if(button.closest('.order-review-actions')){
       event.preventDefault();event.stopImmediatePropagation();
