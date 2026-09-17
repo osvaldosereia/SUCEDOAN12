@@ -58,7 +58,7 @@ No levantamento de 17/09/2026 havia 504 clientes, 17 pedidos locais e 423 itens 
 
 ## Etapa 0 — Auditoria e contrato do histórico
 
-Status: **PRÓXIMA**
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
@@ -76,6 +76,8 @@ Nenhum pedido válido novo pode ficar sem vínculo com cliente quando o cliente 
 ---
 
 ## Etapa 1 — Camada canônica de histórico
+
+Status: **PRÓXIMA**
 
 ### Entregas
 
