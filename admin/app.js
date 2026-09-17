@@ -15,6 +15,7 @@ let customerState={page:1,total:0,q:''};
 let orderState={page:1,total:0,q:'',status:''};
 let storefrontState={categories:[],featuredProducts:[],baskets:[]};
 let currentBasketId=null;
+let currentHistoryCustomerId=null;
 
 function toast(message,kind=''){const host=$('toastRegion');const node=document.createElement('div');node.className=`toast ${kind}`.trim();node.textContent=message;host.appendChild(node);setTimeout(()=>node.remove(),kind==='error'?5000:2600)}
 function loading(label='Carregando…'){app.innerHTML=`<div class="loading"><span class="spinner"></span><p>${esc(label)}</p></div>`}
@@ -114,9 +115,62 @@ async function loadOrders(){
 
 async function openOrder(id){try{const data=await api('order',{id}),o=data.order;openDialog(`<div class="editor-shell"><div class="editor-head"><div><h2>Pedido ${esc(o.order_number||'')}</h2><div class="muted">${date(o.created_at)}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="panel"><h3>${money(o.total)}</h3><p>Telefone: ${esc(o.phone_e164||'—')}</p><p>Status: ${esc(o.status||'')}</p>${o.phone_e164?`<a class="primary maps-link" href="${wa(o.phone_e164)}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}</div><section class="panel"><h3>Itens</h3><div class="order-items">${(data.items||[]).map(i=>`<div class="order-item"><strong>${esc(i.quantity)}x ${esc(i.name_snapshot)}</strong><span>${money(i.line_total)}</span></div>`).join('')}</div></section></div>`)}catch(e){toast(e.message,'error')}}
 
+const paymentLabel=v=>({pix:'PIX',credit_card:'Cartão de crédito',debit_card:'Cartão de débito',meal_card:'Alimentação/refeição',food_card:'Alimentação/refeição',cash:'Dinheiro'})[String(v||'')]||String(v||'—');
+const historyStatusLabel=v=>({storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Enviado ao Bling',processing:'Em processamento',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'})[String(v||'')]||String(v||'—');
+
+function customerHistoryMarkup(customer={},data={}){
+  const intel=data.intelligence||{},orders=data.orders||[],products=intel.top_products||[],categories=intel.top_categories||[];
+  const frequency=intel.repurchase_frequency_label?String(intel.repurchase_frequency_label):'Ainda sem padrão';
+  const favoriteBasket=intel.favorite_basket?.name||intel.last_basket?.name||'—';
+  return `<div class="customer-history-shell">
+    <div class="editor-head"><div><small class="muted">Histórico de compras</small><h2>${esc(customer.name||'Cliente')}</h2><div class="muted">${esc(customer.primary_whatsapp_e164||'')}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div>
+    <div class="customer-history-stats">
+      <article><span>Pedidos</span><strong>${esc(intel.order_count||0)}</strong></article>
+      <article><span>Total comprado</span><strong>${money(intel.lifetime_value||0)}</strong></article>
+      <article><span>Ticket médio</span><strong>${money(intel.average_ticket||0)}</strong></article>
+      <article><span>Última compra</span><strong>${intel.last_order_at?esc(date(intel.last_order_at)):'—'}</strong></article>
+    </div>
+    <section class="customer-history-summary">
+      <div><span>Cesta mais comprada</span><strong>${esc(favoriteBasket)}</strong></div>
+      <div><span>Pagamento mais usado</span><strong>${esc(paymentLabel(intel.favorite_payment_method))}</strong></div>
+      <div><span>Frequência estimada</span><strong>${esc(frequency)}</strong></div>
+      <div><span>Intervalo médio</span><strong>${intel.average_repurchase_interval_days!=null?`${esc(intel.average_repurchase_interval_days)} dias`:'—'}</strong></div>
+    </section>
+    ${products.length?`<section class="customer-history-block"><h3>Produtos mais recorrentes</h3><div class="customer-history-chips">${products.slice(0,8).map(p=>`<span><b>${esc(p.name)}</b><small>${esc(p.purchase_count)} compra(s)</small></span>`).join('')}</div></section>`:''}
+    ${categories.length?`<section class="customer-history-block"><h3>Categorias recorrentes</h3><div class="customer-history-chips compact">${categories.slice(0,5).map(x=>`<span><b>${esc(x.category)}</b><small>${esc(x.order_count)} pedido(s)</small></span>`).join('')}</div></section>`:''}
+    <section class="customer-history-block"><div class="customer-history-title"><h3>Pedidos</h3><small class="muted">${esc(data.total||orders.length)} registro(s)</small></div>
+      <div class="customer-history-orders">${orders.length?orders.map(o=>`<article>
+        <div><strong>${esc(o.order_number||'Pedido')}</strong><small>${esc(date(o.confirmed_at||o.created_at))} · ${esc(historyStatusLabel(o.status))}</small><small>${esc(o.basket_name||'Compra')} · ${esc(o.item_count||0)} item(ns)</small></div>
+        <div><b>${money(o.total||0)}</b><button type="button" data-history-order="${esc(o.order_id)}" data-history-customer="${esc(customer.id)}">Detalhes</button></div>
+      </article>`).join(''):'<div class="empty">Este cliente ainda não possui compras registradas.</div>'}</div>
+    </section>
+  </div>`;
+}
+
+async function openCustomerHistory(id){
+  currentHistoryCustomerId=id;openDialog('<div class="loading"><span class="spinner"></span><p>Carregando histórico…</p></div>');
+  try{
+    const [profile,history]=await Promise.all([api('customer',{id}),api('customer_history',{id,page:1,limit:30})]);
+    openDialog(customerHistoryMarkup(profile.customer||{},history));
+  }catch(e){openDialog(`<div class="editor-shell"><div class="editor-head"><h2>Histórico</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="empty">${esc(e.message)}</div></div>`)}
+}
+
+async function openCustomerHistoryOrder(customerId,orderId){
+  openDialog('<div class="loading"><span class="spinner"></span><p>Carregando pedido…</p></div>');
+  try{
+    const data=await api('customer_history_order',{customer_id:customerId,order_id:orderId}),detail=data.detail||{},o=detail.order||{},items=detail.items||[];
+    openDialog(`<div class="customer-history-shell">
+      <div class="editor-head"><div><small class="muted">Detalhe da compra</small><h2>${esc(o.order_number||'Pedido')}</h2><div class="muted">${esc(date(o.confirmed_at||o.created_at))}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div>
+      <button class="secondary customer-history-back" type="button" data-history-back="${esc(customerId)}">← Voltar ao histórico</button>
+      <div class="customer-history-stats detail"><article><span>Total</span><strong>${money(o.total||0)}</strong></article><article><span>Status</span><strong>${esc(historyStatusLabel(o.status))}</strong></article><article><span>Pagamento</span><strong>${esc(paymentLabel(o.payment_method))}</strong></article><article><span>Cesta</span><strong>${esc(o.basket_name||'—')}</strong></article></div>
+      <section class="customer-history-block"><h3>Itens</h3><div class="customer-history-items">${items.map(i=>`<div><span><b>${esc(i.quantity)}×</b> ${esc(i.name||'Produto')}</span><strong>${money(i.line_total||0)}</strong></div>`).join('')||'<div class="empty">Sem itens.</div>'}</div></section>
+    </div>`);
+  }catch(e){toast(e.message,'error');if(currentHistoryCustomerId)await openCustomerHistory(currentHistoryCustomerId)}
+}
+
 async function loadCustomers(){
   loading('Carregando clientes…');
-  try{const data=await api('customers',{page:customerState.page,limit:30,q:customerState.q});customerState.total=data.total||0;app.innerHTML=`${pageHead('Clientes','Cadastro simples com telefone e endereço.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}<form id="customerFilterForm" class="toolbar"><input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF"><button class="primary" type="submit">Buscar</button></form><section class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>CPF/CNPJ</th><th>Status</th><th>Ações</th></tr></thead><tbody>${(data.customers||[]).map(c=>`<tr><td><strong>${esc(c.name||'Sem nome')}</strong></td><td>${esc(c.primary_whatsapp_e164||'—')}</td><td>${esc(c.cpf_cnpj||'—')}</td><td><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></td><td><div class="row-actions"><button type="button" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div></td></tr>`).join('')}</tbody></table></div>${pagination(customerState.page,customerState.total,'customers',30)}</section>`}catch(e){app.innerHTML=`${pageHead('Clientes')}<div class="panel empty">${esc(e.message)}</div>`}
+  try{const data=await api('customers',{page:customerState.page,limit:30,q:customerState.q});customerState.total=data.total||0;app.innerHTML=`${pageHead('Clientes','Cadastro simples com telefone e endereço.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}<form id="customerFilterForm" class="toolbar"><input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF"><button class="primary" type="submit">Buscar</button></form><section class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Compras</th><th>Status</th><th>Ações</th></tr></thead><tbody>${(data.customers||[]).map(c=>`<tr><td><strong>${esc(c.name||'Sem nome')}</strong></td><td>${esc(c.primary_whatsapp_e164||'—')}</td><td><strong>${esc(c.order_count||0)}</strong><div class="muted">${money(c.lifetime_value||0)}${c.last_order_at?` · ${esc(date(c.last_order_at))}`:''}</div></td><td><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></td><td><div class="row-actions"><button type="button" data-customer-history="${esc(c.id)}">Histórico</button><button type="button" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div></td></tr>`).join('')}</tbody></table></div>${pagination(customerState.page,customerState.total,'customers',30)}</section>`}catch(e){app.innerHTML=`${pageHead('Clientes')}<div class="panel empty">${esc(e.message)}</div>`}
 }
 
 function customerEditorMarkup(customer={},address={},email=''){const a=address||{};return `<form id="customerEditorForm" class="editor-shell" data-id="${esc(customer.id||'')}"><div class="editor-head"><h2>${customer.id?'Editar cliente':'Novo cliente'}</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="form-grid"><label class="field wide"><span>Nome</span><input name="name" value="${esc(customer.name||'')}" required></label><label class="field"><span>Telefone</span><input name="phone" value="${esc(customer.primary_whatsapp_e164||'')}"></label><label class="field"><span>CPF/CNPJ</span><input name="cpf_cnpj" value="${esc(customer.cpf_cnpj||'')}"></label><label class="field wide"><span>E-mail</span><input name="email" type="email" value="${esc(email||'')}"></label><div class="wide check-row"><label class="check"><input name="is_active" type="checkbox" ${checked(customer.is_active!==false)}> Ativo</label></div><div class="wide"><h3>Endereço</h3></div><label class="field"><span>CEP</span><input name="postal_code" value="${esc(a.postal_code||'')}"></label><label class="field"><span>Cidade</span><input name="city" value="${esc(a.city||'Cuiabá')}"></label><label class="field"><span>Estado</span><input name="state" maxlength="2" value="${esc(a.state||'MT')}"></label><label class="field"><span>Bairro</span><input name="neighborhood" value="${esc(a.neighborhood||'')}"></label><label class="field wide"><span>Rua</span><input name="street" value="${esc(a.street||'')}"></label><label class="field"><span>Número</span><input name="number" value="${esc(a.number||'')}"></label><label class="field"><span>Complemento</span><input name="complement" value="${esc(a.complement||'')}"></label><label class="field wide"><span>Referência</span><input name="reference" value="${esc(a.reference||'')}"></label><label class="field wide"><span>Link exato do Google Maps</span><input name="google_maps_url" value="${esc(a.google_maps_url||'')}"></label></div><div class="form-actions"><button class="secondary" type="button" data-close-dialog>Cancelar</button><button class="primary" type="submit">Salvar cliente</button></div></form>`}
@@ -141,11 +195,12 @@ app.addEventListener('click',async e=>{
   if(t.matches('[data-rename-category]')){const oldName=t.dataset.renameCategory;const newName=prompt('Novo nome da categoria:',oldName);if(!newName||newName.trim()===oldName)return;try{await api('rename_category',{old_name:oldName,new_name:newName.trim()});toast('Categoria renomeada.','success');await loadCategories()}catch(err){toast(err.message,'error')}return}
   if(t.matches('[data-view-order]')){await openOrder(t.dataset.viewOrder);return}
   if(t.matches('[data-new-customer]')){await openCustomerEditor();return}
+  if(t.matches('[data-customer-history]')){await openCustomerHistory(t.dataset.customerHistory);return}
   if(t.matches('[data-edit-customer]')){await openCustomerEditor(t.dataset.editCustomer);return}
   if(t.matches('[data-page-kind]')){const next=Number(t.dataset.page);if(next<1)return;if(t.dataset.pageKind==='products'){productState.page=next;await loadProducts()}else if(t.dataset.pageKind==='customers'){customerState.page=next;await loadCustomers()}else if(t.dataset.pageKind==='orders'){orderState.page=next;await loadOrders()}return}
 });
 
-editorBody.addEventListener('click',e=>{const t=e.target.closest('button');if(t?.matches('[data-close-dialog]'))closeDialog()});
+editorBody.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;if(t.matches('[data-close-dialog]')){closeDialog();return}if(t.matches('[data-history-order]')){await openCustomerHistoryOrder(t.dataset.historyCustomer,t.dataset.historyOrder);return}if(t.matches('[data-history-back]')){await openCustomerHistory(t.dataset.historyBack);return}});
 editorBody.addEventListener('submit',async e=>{
   const form=e.target;e.preventDefault();
   if(form.id==='productEditorForm'){
