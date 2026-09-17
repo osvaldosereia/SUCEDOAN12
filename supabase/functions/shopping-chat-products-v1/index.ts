@@ -20,7 +20,7 @@ Deno.serve(async(req:Request)=>{
   const token=clean(body?.token,80);if(!tokenOk(token))return json(req,{ok:false,error:'invalid_token'},400);
   const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
   const [{data:session,error:se},{data:runtime}]=await Promise.all([
-    sb.from('catalog_sessions').select('id,cart_id,status,expires_at').eq('public_token',token).maybeSingle(),
+    sb.from('catalog_sessions').select('id,cart_id,customer_id,conversation_id,status,expires_at').eq('public_token',token).maybeSingle(),
     sb.from('service_simple_runtime_config').select('config_level,integration_flags').eq('id',1).maybeSingle(),
   ]);
   if(se)return json(req,{ok:false,error:'room_lookup_failed'},500);if(!session)return json(req,{ok:false,error:'room_not_found'},404);if(session.status!=='open'||new Date(session.expires_at).getTime()<=Date.now())return json(req,{ok:false,error:'room_inactive'},410);
@@ -37,6 +37,7 @@ Deno.serve(async(req:Request)=>{
       .select('customer_subcategory,customer_subsubcategory')
       .eq('physically_verified',true)
       .eq('is_active',true)
+      .eq('is_whatsapp_active',true)
       .gt('stock',0)
       .eq('customer_taxonomy_version',TAXONOMY_VERSION)
       .not('customer_subcategory','is',null)
@@ -71,27 +72,52 @@ Deno.serve(async(req:Request)=>{
     const customerSubcategory=clean(body?.customer_subcategory,80);
     const customerSubsubcategory=clean(body?.customer_subsubcategory,80);
     const search=clean(body?.q,80).replace(/[,%()]/g,' ').trim();
+    const personalizedOffers=offers&&!customerCategory&&!customerSubcategory&&!customerSubsubcategory&&!search&&!!session.customer_id&&!!session.conversation_id;
     let q=sb.from('products')
       .select('id,name,price,offer_price,image_url,brand,packaging,description_short,stock,is_offer,customer_category,customer_subcategory,customer_subsubcategory')
       .eq('physically_verified',true)
       .eq('is_active',true)
+      .eq('is_whatsapp_active',true)
       .gt('stock',0)
-      .eq('customer_taxonomy_version',TAXONOMY_VERSION)
-      .order('name',{ascending:true})
-      .range(offset,offset+limit-1);
+      .eq('customer_taxonomy_version',TAXONOMY_VERSION);
     if(customerCategory)q=q.eq('customer_category',customerCategory);
     if(offers)q=q.eq('is_offer',true);
     if(customerSubcategory)q=q.eq('customer_subcategory',customerSubcategory);
     if(customerSubsubcategory)q=q.eq('customer_subsubcategory',customerSubsubcategory);
     if(search)q=q.or(`name.ilike.%${search}%,brand.ilike.%${search}%,packaging.ilike.%${search}%,customer_subcategory.ilike.%${search}%,customer_subsubcategory.ilike.%${search}%`);
-    const {data,error}=await q;
+    q=q.order('name',{ascending:true});
+    q=personalizedOffers?q.limit(500):q.range(offset,offset+limit-1);
+
+    const recommendationsPromise=personalizedOffers
+      ? sb.rpc('get_cart_aware_recommendations',{p_conversation_id:session.conversation_id,p_limit:30,p_kind:'offers'})
+      : Promise.resolve({data:[],error:null});
+    const [{data,error},{data:recommendations,error:recommendationError}]=await Promise.all([q,recommendationsPromise]);
     if(error)return json(req,{ok:false,error:'products_failed',detail:error.message},400);
-    const ids=(data||[]).map((p:any)=>p.id);
+
+    let rows=[...(data||[])];
+    const recMap=new Map<string,any>();
+    if(personalizedOffers&&!recommendationError){
+      (recommendations||[]).forEach((r:any,index:number)=>recMap.set(String(r.product_id),{...r,rank:index}));
+      rows.sort((a:any,b:any)=>{
+        const ra=recMap.get(String(a.id)),rb=recMap.get(String(b.id));
+        if(ra&&rb)return Number(rb.score||0)-Number(ra.score||0)||Number(ra.rank||0)-Number(rb.rank||0)||String(a.name||'').localeCompare(String(b.name||''),'pt-BR');
+        if(ra)return -1;
+        if(rb)return 1;
+        return String(a.name||'').localeCompare(String(b.name||''),'pt-BR');
+      });
+    }
+
+    const totalRows=rows.length;
+    if(personalizedOffers)rows=rows.slice(offset,offset+limit);
+    const ids=rows.map((p:any)=>p.id);
     let current:any[]=[];
     if(session.cart_id&&ids.length){const {data:items}=await sb.from('cart_items').select('product_id,quantity').eq('cart_id',session.cart_id).in('product_id',ids).gt('quantity',0);current=items||[]}
     const qty=new Map(current.map((x:any)=>[x.product_id,Number(x.quantity||0)]));
-    const products=(data||[]).map((p:any)=>({...p,quantity:qty.get(p.id)||0}));
-    return json(req,{ok:true,products,next_offset:offset+products.length,has_more:products.length===limit});
+    const products=rows.map((p:any)=>{
+      const rec=recMap.get(String(p.id));
+      return {...p,quantity:qty.get(p.id)||0,personalized_reason:rec?.reason||null,personalized_score:rec?Number(rec.score||0):null,bought_before:rec?.bought_before===true,purchase_count:rec?Number(rec.purchase_count||0):0};
+    });
+    return json(req,{ok:true,products,next_offset:offset+products.length,has_more:personalizedOffers?offset+products.length<totalRows:products.length===limit,personalized:personalizedOffers&&recMap.size>0});
   }
   return json(req,{ok:false,error:'unknown_action'},400);
 });
