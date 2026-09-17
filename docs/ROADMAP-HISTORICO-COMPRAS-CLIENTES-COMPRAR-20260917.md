@@ -145,7 +145,7 @@ O resumo de um cliente precisa poder ser reconstruído integralmente a partir de
 
 ## Etapa 3 — Histórico no Admin
 
-Status: **PRÓXIMA**
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
@@ -173,6 +173,8 @@ A equipe consegue entender o relacionamento comercial do cliente em poucos segun
 ---
 
 ## Etapa 4 — “Repetir minha última compra” no Comprar
+
+Status: **PRÓXIMA**
 
 ### Entregas
 
