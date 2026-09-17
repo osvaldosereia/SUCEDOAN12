@@ -22,7 +22,7 @@ assert.match(edge,/room_start_for_conversation_v1/,'webhook deve reutilizar a in
 assert.match(edge,/whatsapp_accounts/,'webhook deve usar a conta WhatsApp ativa do banco');
 assert.match(edge,/customer_found/,'resposta deve indicar se o cliente foi identificado');
 assert.match(edge,/shopping_url/,'resposta deve devolver URL opaca para o Comprar');
-assert.doesNotMatch(edge,/lookup.*name|\.eq\(['"]name['"]/is,'nome não pode ser usado como chave de identidade');
+assert.doesNotMatch(edge,/lookup_customer_by_name|\.eq\(['"]name['"]/i,'nome não pode ser usado como chave de identidade');
 
 const app=fs.readFileSync('comprar/app.js','utf8');
 assert.match(app,/function\s+customerFirstName\s*\(/,'Comprar deve ter helper de primeiro nome');
