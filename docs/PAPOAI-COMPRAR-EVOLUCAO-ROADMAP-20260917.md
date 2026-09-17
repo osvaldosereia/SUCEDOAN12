@@ -25,6 +25,16 @@ Transformar o PapoAI em porta de entrada do WhatsApp e o Chat Comprar em continu
 7. No checkout, cliente já identificado não digita telefone novamente; segue direto para confirmação do endereço salvo.
 8. Cliente desconhecido mantém o fluxo atual e informa o telefone no checkout.
 
+### Etapa 1A — identificação — CONCLUÍDA E VALIDADA
+
+O PapoAI já envia nome e telefone no webhook. Em teste real de 17/09/2026, o Supabase recebeu os dados, encontrou o cliente pelo telefone, vinculou `customer_id` e criou/reutilizou a sessão personalizada do Comprar.
+
+### Etapa 1B — entrega do link personalizado — EXECUTAR AGORA
+
+Para cliente identificado, o mesmo webhook entrega automaticamente no WhatsApp a URL opaca da sessão do Comprar. A primeira versão usa uma **ponte temporária** e isolada no transporte outbound já existente (Supabase → webhook Make → WhatsApp Business Cloud), somente para enviar o link individual. Essa ponte não decide venda, não executa IA e não altera cadastro ou pedido.
+
+A IA antiga permanece desligada, assim como o worker conversacional e o auto-reply antigos. Somente o transporte estritamente necessário para entregar o link é habilitado. Quando a PapoAI disponibilizar/confirmar uma saída nativa segura para mensagens dinâmicas, esta ponte temporária pode ser substituída sem mudar a identidade, a sessão ou o checkout do Comprar.
+
 Resultado esperado: o cliente sai do WhatsApp para o Comprar já reconhecido, sem repetir dados que o sistema já possui.
 
 ## Etapa 2 — Última compra e recompra inteligente — FUTURA
