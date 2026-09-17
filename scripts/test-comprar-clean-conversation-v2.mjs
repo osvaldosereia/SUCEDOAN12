@@ -45,7 +45,7 @@ assert.match(conversation, /options\?\.auto===true/, 'abertura automática de pr
 assert.match(conversation, /order-review-actions/);
 assert.match(conversation, /stopImmediatePropagation/);
 assert.match(conversation, /function\s+consumeStartChoices\s*\(/, 'menu inicial deve ser consumido após a primeira escolha sem continuar clicável no meio da conversa');
-assert.match(conversation, /closest\?\.\('\.start-chips'\)[\s\S]*consumeStartChoices\(\)/, 'clique semântico inicial deve consumir o menu antes de abrir a próxima etapa');
+assert.match(conversation, /closest\('\.start-chips'\)[\s\S]*consumeStartChoices\(\)/, 'clique semântico inicial deve consumir o menu antes de abrir a próxima etapa');
 
 assert.match(styles, /\.conversation-quick-replies/);
 assert.match(styles, /\.conversation-typing/);
