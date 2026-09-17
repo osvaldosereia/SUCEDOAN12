@@ -45,19 +45,20 @@ Deno.serve(async(req:Request)=>{
   const current=await sb.from('creative_storyboard_keyframes').select('id,status,updated_at').eq('project_id',b.project_id).eq('second_mark',second).maybeSingle();
   if(current.error)return json({ok:false,error:'frame_lookup_failed',detail:current.error.message},500);
   if(!current.data)return json({ok:false,error:'frame_not_found'},404);
-  const state=String(current.data.status||'planned'),lockAge=Date.now()-new Date(current.data.updated_at||0).getTime(),staleGenerating=state==='generating'&&lockAge>5*60*1000;
+  const currentFrame=current.data;
+  const state=String(currentFrame.status||'planned'),lockAge=Date.now()-new Date(currentFrame.updated_at||0).getTime(),staleGenerating=state==='generating'&&lockAge>5*60*1000;
   if(state==='review'||state==='ready')return json({ok:false,error:'frame_in_review'},409);
   if(state==='approved')return json({ok:false,error:'frame_already_approved'},409);
   if(state==='generating'&&!staleGenerating)return json({ok:false,error:'generation_in_progress'},409);
   if(!['planned','stale','error','generating'].includes(state))return json({ok:false,error:'generation_state_invalid',detail:state},409);
 
   const now=new Date().toISOString();
-  let claim:any=sb.from('creative_storyboard_keyframes').update({status:'generating',updated_at:now}).eq('id',current.data.id).eq('status',state);
-  if(state==='generating')claim=claim.eq('updated_at',current.data.updated_at);
+  let claim:any=sb.from('creative_storyboard_keyframes').update({status:'generating',updated_at:now}).eq('id',currentFrame.id).eq('status',state);
+  if(state==='generating')claim=claim.eq('updated_at',currentFrame.updated_at);
   const claimed=await claim.select('id').maybeSingle();
   if(claimed.error)return json({ok:false,error:'generation_claim_failed',detail:claimed.error.message},500);
   if(!claimed.data)return json({ok:false,error:'generation_in_progress'},409);
-  const fail=async(stage:string,status=502,detail?:string)=>{await sb.from('creative_storyboard_keyframes').update({status:'error',updated_at:new Date().toISOString()}).eq('id',current.data.id);return json({ok:false,error:'generation_failed',stage,detail},status)};
+  const fail=async(stage:string,status=502,detail?:string)=>{await sb.from('creative_storyboard_keyframes').update({status:'error',updated_at:new Date().toISOString()}).eq('id',currentFrame.id);return json({ok:false,error:'generation_failed',stage,detail},status)};
 
   try{
     const refs:string[]=[];
@@ -79,7 +80,7 @@ Deno.serve(async(req:Request)=>{
     if(up.error)return await fail('storage_error',500,up.error.message);
     const publicUrl=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
     const event=await sb.from('creative_storyboard_generation_events').insert({project_id:b.project_id,second_mark:second,model:MODEL,quality:'low',image_url:publicUrl,provider_usage:providerUsage,estimated_cost_usd:cost}).select().single();
-    const saved=await sb.from('creative_storyboard_keyframes').update({visual_prompt:clean(b.visual_prompt),continuity_lock:b.continuity_lock||{},image_path:path,image_url:publicUrl,candidate_image_url:publicUrl,approved_image_url:null,status:'review',provider_usage:providerUsage,actual_cost_brl:0,updated_at:new Date().toISOString()}).eq('id',current.data.id).select().single();
+    const saved=await sb.from('creative_storyboard_keyframes').update({visual_prompt:clean(b.visual_prompt),continuity_lock:b.continuity_lock||{},image_path:path,image_url:publicUrl,candidate_image_url:publicUrl,approved_image_url:null,status:'review',provider_usage:providerUsage,actual_cost_brl:0,updated_at:new Date().toISOString()}).eq('id',currentFrame.id).select().single();
     if(saved.error)return await fail('persist_error',500,saved.error.message);
     return json({ok:true,keyframe:saved.data,generation_event:event.data||null,model:MODEL,quality:'low',size:'1024x1536',reference_source:previousApproved?'previous_approved_image':'product_only',estimated_cost_usd:cost});
   }catch(e){return await fail('unexpected_error',502,e instanceof Error?e.message:String(e))}
