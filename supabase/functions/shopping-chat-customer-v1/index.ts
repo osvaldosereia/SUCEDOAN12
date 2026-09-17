@@ -42,6 +42,19 @@ Deno.serve(async(req:Request)=>{
     return {customer_id:customer.id,name:clean(customer.name,120),phone:clean(customer.primary_whatsapp_e164||fallbackPhone,40),addresses:addresses||[]};
   };
 
+  if(action==='repeat_last_purchase_preview'){
+    const {data,error}=await sb.rpc('room_repeat_last_purchase_preview_v1',{p_public_token:token});
+    if(error)return json(req,{ok:false,error:'repeat_preview_failed',detail:error.message},400);
+    return json(req,{ok:true,preview:data||{available:false,reason:'no_purchase_history'}});
+  }
+
+  if(action==='repeat_last_purchase_apply'){
+    if(!session.customer_id)return json(req,{ok:false,error:'customer_not_identified'},409);
+    const {data,error}=await sb.rpc('room_repeat_last_purchase_apply_v1',{p_public_token:token});
+    if(error)return json(req,{ok:false,error:'repeat_apply_failed',detail:error.message},400);
+    return json(req,{ok:true,repeat:data});
+  }
+
   if(action==='basket_policies'){
     if(!session.cart_id)return json(req,{ok:true,policies:[]});
     const {data,error}=await sb.from('cart_items').select('product_id,source,quantity,base_quantity,metadata,product:products(name)').eq('cart_id',session.cart_id).in('source',['basket','substitution']).order('created_at');
