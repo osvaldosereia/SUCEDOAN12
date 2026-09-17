@@ -77,7 +77,7 @@ Nenhum pedido válido novo pode ficar sem vínculo com cliente quando o cliente 
 
 ## Etapa 1 — Camada canônica de histórico
 
-Status: **PRÓXIMA**
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
@@ -110,6 +110,8 @@ Dado um `customer_id`, o sistema retorna uma linha do tempo comercial coerente e
 ---
 
 ## Etapa 2 — Resumo inteligente do cliente
+
+Status: **PRÓXIMA**
 
 ### Entregas
 
