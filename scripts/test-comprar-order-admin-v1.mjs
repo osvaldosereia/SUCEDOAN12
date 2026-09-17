@@ -48,7 +48,7 @@ assert.match(customerCommitGuard,/customer_verification_required/,'guard must st
 assert.match(checkout,/app\.confirmOrder\(payload\)/);assert.match(checkout,/local\.orderSaved=true/);assert.match(checkout,/Seu pedido foi salvo/);assert.match(checkout,/if\(local\.orderSaved\)/);
 assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app,/checkoutApi\('confirm_order',payload\)/,'normal commercial transport must use the checkout endpoint');assert.match(app,/DA_ADMIN_TEST_TRANSPORT/);
 
-assert.match(adminOfficial,/\.\/app\.js\?v=20260912-4/,'Admin oficial deve carregar o app local');
+assert.match(adminOfficial,/\.\/app\.js\?v=[^\"']+/,'Admin oficial deve carregar o app local versionado');
 assert.doesNotMatch(adminOfficial,/\/admin-v3\//,'Admin oficial não deve carregar o legado V3');
 assert.match(adminOfficial,/data-route=["']orders["']/);
 assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
