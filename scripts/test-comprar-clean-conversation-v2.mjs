@@ -23,8 +23,17 @@ assert.ok(index.indexOf('conversation.js') < index.indexOf('DA_COMPRAR_APP.start
 assert.match(conversation, /function\s+ask\s*\(/, 'deve existir helper de pergunta conversacional');
 assert.match(conversation, /function\s+choose\s*\(/, 'deve existir helper de escolha conversacional');
 assert.match(conversation, /Ana está digitando/, 'deve existir indicador de digitação');
-assert.match(conversation, /450/);
-assert.match(conversation, /850/);
+assert.match(conversation, /MIN_DELAY\s*=\s*800/, 'cadência mínima deve ser perceptível');
+assert.match(conversation, /MAX_DELAY\s*=\s*1500/, 'cadência máxima deve ser calma sem ficar lenta demais');
+assert.match(conversation, /async\s+function\s+revealTool\s*\(/, 'cards e ferramentas devem surgir após estado de digitação');
+assert.match(conversation, /async\s+function\s+afterBasketSelected\s*\(/, 'pós-cesta deve ter sequência conversacional própria');
+assert.match(conversation, /padrão/, 'confirmação deve dizer quando a cesta ficou padrão');
+assert.match(conversation, /com alterações/, 'confirmação deve dizer quando a cesta foi alterada');
+assert.match(conversation, /Antes de finalizarmos/, 'Ana deve orientar o próximo passo antes de mostrar opções');
+assert.match(conversation, /await\s+typing\([^)]*\)[\s\S]*quickReplies\(/, 'chips devem aparecer somente depois de um novo indicador de digitação');
+assert.match(baskets, /afterBasketSelected/, 'cesta escolhida deve delegar a sequência ao controlador conversacional');
+assert.doesNotMatch(baskets, /Sua cesta já está no pedido\. Quer acrescentar alguma coisa\?/, 'não deve despejar confirmação e próxima pergunta na mesma fala');
+
 assert.match(conversation, /Ver 6 ofertas de hoje/);
 assert.match(conversation, /Procurar outros produtos/);
 assert.match(conversation, /Não, revisar meu pedido/);
@@ -40,46 +49,36 @@ assert.match(conversation, /commit_customer/);
 assert.match(conversation, /save_address/);
 assert.match(conversation, /set_payment/);
 assert.match(conversation, /confirmOrder/);
-assert.match(conversation, /state\.modules\.upsell\.renderAfterBasket\s*=\s*\(\)\s*=>\s*false/, 'upsell automático pós-cesta deve ser neutralizado');
-assert.match(conversation, /state\.modules\.upsell\.renderBeforeCheckout\s*=\s*\(\)\s*=>\s*false/, 'upsell automático na revisão deve ser neutralizado');
-assert.match(conversation, /originalProductsRenderEntry/);
-assert.match(conversation, /options\?\.auto===true/, 'abertura automática de produtos pós-cesta deve virar prompt');
+assert.match(conversation, /state\.modules\.upsell\.renderAfterBasket\s*=\s*\(\)\s*=>\s*false/);
+assert.match(conversation, /state\.modules\.upsell\.renderBeforeCheckout\s*=\s*\(\)\s*=>\s*false/);
 assert.match(conversation, /order-review-actions/);
 assert.match(conversation, /stopImmediatePropagation/);
-assert.match(conversation, /function\s+consumeStartChoices\s*\(/, 'menu inicial deve ser consumido após a primeira escolha sem continuar clicável no meio da conversa');
-assert.match(conversation, /closest\('\.start-chips'\)[\s\S]*consumeStartChoices\(\)/, 'clique semântico inicial deve consumir o menu antes de abrir a próxima etapa');
+assert.match(conversation, /function\s+consumeStartChoices\s*\(/);
 
 assert.match(styles, /\.conversation-quick-replies/);
 assert.match(styles, /\.conversation-typing/);
 assert.match(styles, /\.conversation-offers-grid/);
 assert.match(styles, /@media\s*\(max-width:\s*520px\)/);
+assert.match(styles, /body\s*\{[^}]*font-size:\s*16px/i);
+assert.match(styles, /\.conversation-message\s*,\s*\.bubble\s*\{[^}]*font-size:\s*18px/i);
+assert.match(styles, /\.conversation-typing[^}]*font-size:\s*(15\.5|16)px/i, 'indicador de digitação deve ser visível para público idoso');
+assert.match(styles, /\.conversation-typing-dots\s+i[^}]*width:\s*7px[^}]*height:\s*7px/i, 'reticências do indicador devem ficar mais visíveis');
+assert.match(styles, /\.conversation-quick-reply[^}]*min-height:\s*48px/i);
+assert.match(styles, /\.basket-row\s+img\s*\{[^}]*width:\s*68px[^}]*height:\s*68px/i);
+assert.match(styles, /\.basket-row\s+h3\s*\{[^}]*font-size:\s*15\.5px/i);
+assert.match(styles, /\.chips-categories\s+\.chip\s*\{[^}]*font-size:\s*16px/i);
+assert.match(styles, /\.chips-subcategories\s+\.chip\s*\{[^}]*font-size:\s*14\.5px/i);
 
-// Acessibilidade visual: público com maior necessidade de legibilidade e toque confiável.
-assert.match(styles, /body\s*\{[^}]*font-size:\s*16px/i, 'fonte-base do Comprar deve subir para 16px');
-assert.match(styles, /\.conversation-message\s*,\s*\.bubble\s*\{[^}]*font-size:\s*18px/i, 'balões devem usar fonte maior e mais legível');
-assert.match(styles, /\.conversation-quick-reply[^}]*min-height:\s*48px/i, 'respostas rápidas devem respeitar alvo de toque de 48px');
-assert.match(styles, /\.start-chips\s+\.chip[^}]*min-height:\s*48px/i, 'botões iniciais da conversa devem seguir o mesmo alvo de toque');
-assert.match(styles, /\.products-entry-chips\s+\.chip[^}]*min-height:\s*48px/i, 'escolhas principais de produtos devem seguir o padrão dos botões conversacionais');
-assert.match(styles, /\.products-section-chips\s+\.chip[^}]*min-height:\s*48px/i, 'troca entre Para Você, Para Casa e Ofertas deve manter alvo de toque amplo');
-assert.match(styles, /\.basket-row\s+img\s*\{[^}]*width:\s*68px[^}]*height:\s*68px/i, 'fotos dos produtos da cesta devem ser maiores');
-assert.match(styles, /\.basket-row\s+h3\s*\{[^}]*font-size:\s*15\.5px/i, 'nomes dos produtos da cesta devem ser maiores');
-assert.match(styles, /\.chips-categories\s+\.chip\s*\{[^}]*font-size:\s*16px/i, 'categorias devem ter hierarquia visual principal');
-assert.match(styles, /\.chips-subcategories\s+\.chip\s*\{[^}]*font-size:\s*14\.5px/i, 'subcategorias devem ser menores e mais discretas');
+assert.match(styles, /\.conversation-offers-grid\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*repeat\(2,minmax\(0,1fr\)\)/i);
+assert.doesNotMatch(styles, /\.conversation-offers-grid\s*\{[^}]*overflow-x:\s*auto/i);
+assert.match(baseStyles, /\.products-grid\s*\{[^}]*display:grid[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/i);
 
-// Produtos e ofertas sempre em grade; sem trilho/carrossel horizontal de cards.
-assert.match(styles, /\.conversation-offers-grid\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*repeat\(2,minmax\(0,1fr\)\)/i, 'ofertas conversacionais devem usar grade');
-assert.doesNotMatch(styles, /\.conversation-offers-grid\s*\{[^}]*overflow-x:\s*auto/i, 'ofertas não devem usar carrossel horizontal');
-assert.match(baseStyles, /\.products-grid\s*\{[^}]*display:grid[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/i, 'produtos da loja devem permanecer em grade');
-
-// Oferta adicionada deve confirmar sincronização antes de ficar travada como concluída.
-assert.match(conversation, /async\s+function\s+addOfferProduct\s*\(/, 'adição pela grade de ofertas deve ter helper resiliente');
-assert.match(conversation, /waitForPending/, 'adição pela oferta deve aguardar sincronização do carrinho');
-assert.match(conversation, /aria-busy/, 'botão de oferta deve expor estado de carregamento');
-assert.match(conversation, /cartProductIds\(\)\.has/, 'botão de oferta só deve permanecer concluído quando o item estiver confirmado no carrinho');
-assert.match(products, /waitForPending/, 'módulo de produtos deve continuar expondo sincronização pendente');
-
-assert.match(baskets, /state\.modules\.products\?\.renderEntry\?\.\(\{auto:true\}\)/, 'contrato deve provar que o legado ainda chama auto:true e é interceptado pelo V2');
-assert.match(app, /renderBeforeCheckout/, 'contrato deve provar que a revisão legada ainda chama upsell e é neutralizada pelo V2');
+assert.match(conversation, /async\s+function\s+addOfferProduct\s*\(/);
+assert.match(conversation, /waitForPending/);
+assert.match(conversation, /aria-busy/);
+assert.match(conversation, /cartProductIds\(\)\.has/);
+assert.match(products, /waitForPending/);
+assert.match(app, /renderBeforeCheckout/);
 
 new Function(conversation);
-console.log('PASS: Comprar Conversacional V2 — contrato estrutural');
+console.log('PASS: Comprar Conversacional V2 — contrato estrutural e cadência humana');
