@@ -15,6 +15,7 @@ on:
       - 'scripts/test-comprar-mobile-v1.mjs'
       - 'scripts/test-comprar-repeat-last-purchase-v1.mjs'
       - 'scripts/test-comprar-frequent-purchases-v1.mjs'
+      - 'scripts/test-comprar-personalized-start-v1.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -88,6 +89,7 @@ jobs:
           node --check comprar/help.js
           node --check comprar/repeat-purchase-v1.js
           node --check comprar/frequent-purchases-v1.js
+          node --check comprar/personalized-start-v1.js
           node --check comprar/admin-test-bridge.js
           node --check admin/api.js
           node --check admin/service-strategy.js
@@ -101,6 +103,7 @@ jobs:
           node scripts/test-comprar-mobile-v1.mjs
           node scripts/test-comprar-repeat-last-purchase-v1.mjs
           node scripts/test-comprar-frequent-purchases-v1.mjs
+          node scripts/test-comprar-personalized-start-v1.mjs
           for test_file in scripts/test-comprar-clean-*.mjs; do node "$test_file"; done
           node scripts/test-shopping-chat-routing-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
@@ -120,6 +123,8 @@ jobs:
           test -f comprar/repeat-purchase-v1.css
           test -f comprar/frequent-purchases-v1.js
           test -f comprar/frequent-purchases-v1.css
+          test -f comprar/personalized-start-v1.js
+          test -f comprar/personalized-start-v1.css
           test -f comprar/admin-test-bridge.js
           test -f admin/pedidos.html
           test -f admin/pedidos-v2.js
