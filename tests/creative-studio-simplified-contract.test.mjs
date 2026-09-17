@@ -20,7 +20,7 @@ test('modo completo usa 2 a 7 imagens conforme duração',()=>{
   const j=read('admin/creative-studio.js');
   assert.match(d,/imageCount\s*=\s*\(d:number\)=>d\/10\+1/);
   assert.match(j,/imageCountForDuration/);
-  for(const pair of [[10,2],[20,3],[30,4],[40,5],[50,6],[60,7]]) assert.match(d,new RegExp(`${pair[0]}`));
+  assert.match(d,/marks\s*=\s*\(d:number\)=>Array\.from\(\{length:imageCount\(d\)\}/);
 });
 
 test('imagens-chave usam papel narrativo e prompt robusto',()=>{
@@ -39,4 +39,21 @@ test('interface oferece somente modos completo rápido e institucional',()=>{
   const h=read('admin/creative-studio.html');
   for(const v of ['full','product_only','institutional']) assert.match(h,new RegExp(`value="${v}"`));
   assert.doesNotMatch(h,/value="mosaic_6x6"/);
+});
+
+test('continuidade usa imagem anterior a cada 10 segundos',()=>{
+  const i=read('supabase/functions/creative-storyboard-image/index.ts');
+  const p=read('supabase/functions/creative-storyboard-projects/index.ts');
+  assert.match(i,/second-10/);
+  assert.match(p,/second-10/);
+  assert.doesNotMatch(i,/second-5/);
+  assert.doesNotMatch(p,/second-5/);
+});
+
+test('modo institucional pode salvar projeto sem produto',()=>{
+  const p=read('supabase/functions/creative-storyboard-projects/index.ts');
+  const migration=read('supabase/migrations/20260917114500_creative_video_projects_optional_product.sql');
+  assert.match(p,/mode!==['"]institutional['"]&&!products\.length/);
+  assert.match(p,/product_id:primary\?\.id\|\|null/);
+  assert.match(migration,/drop not null/i);
 });
