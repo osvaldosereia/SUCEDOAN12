@@ -9,9 +9,6 @@ on:
       - 'tests/creative-studio-admin-contract.test.mjs'
       - 'tests/creative-studio-simplified-contract.test.mjs'
       - 'tests/creative-storyboard-contract.test.mjs'
-      - 'tests/creative-studio-render-worker.test.mjs'
-      - 'scripts/creative-studio-render-worker.mjs'
-      - '.github/workflows/creative-studio-render-worker.yml'
       - 'supabase/functions/creative-storyboard-director/**'
       - 'supabase/functions/creative-storyboard-projects/**'
       - 'supabase/functions/creative-storyboard-image/**'
@@ -34,9 +31,6 @@ on:
       - 'tests/creative-studio-admin-contract.test.mjs'
       - 'tests/creative-studio-simplified-contract.test.mjs'
       - 'tests/creative-storyboard-contract.test.mjs'
-      - 'tests/creative-studio-render-worker.test.mjs'
-      - 'scripts/creative-studio-render-worker.mjs'
-      - '.github/workflows/creative-studio-render-worker.yml'
       - 'supabase/functions/creative-storyboard-director/**'
       - 'supabase/functions/creative-storyboard-projects/**'
       - 'supabase/functions/creative-storyboard-image/**'
@@ -86,8 +80,6 @@ jobs:
           node --test tests/creative-studio-admin-contract.test.mjs
           node --test tests/creative-studio-simplified-contract.test.mjs
           node --test tests/creative-storyboard-contract.test.mjs
-      - name: Contrato do worker do Estúdio Criativo
-        run: node --test tests/creative-studio-render-worker.test.mjs
       - name: Controles inline do Admin oficial
         run: node scripts/test-admin-v3-inline-product-controls.mjs
       - name: Nomes dos produtos no Admin oficial
