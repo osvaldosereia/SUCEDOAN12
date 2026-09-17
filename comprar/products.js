@@ -109,7 +109,11 @@
     if(loading||!hasMore||!productGrid)return;loading=true;const loadingNode=activeStage?.querySelector('[data-products-loading]');if(loadingNode)loadingNode.textContent='Carregando…';
     try{
       const data=await productApi('page',{customer_category:state.productFilters.customerCategory,offers:state.productFilters.offers,customer_subcategory:state.productFilters.subcategory,customer_subsubcategory:state.productFilters.subsubcategory,q:state.productFilters.query,offset,limit:24});
-      if(requestGeneration!==generation)return;const products=data.products||[];
+      if(requestGeneration!==generation)return;
+      if(offset===0&&data.personalized===true&&activeStage&&!activeStage.querySelector('.personalized-offers-note')){
+        const note=document.createElement('div');note.className='personalized-offers-note';note.textContent='Primeiro aparecem ofertas mais próximas das suas compras. As demais ofertas continuam disponíveis abaixo.';activeStage.insertBefore(note,productGrid);
+      }
+      const products=data.products||[];
       if(offset===0&&!products.length){const empty=document.createElement('div');empty.className='products-empty';empty.textContent='Nenhum produto encontrado.';productGrid.appendChild(empty)}
       for(const product of products){registry.set(String(product.id),product);productGrid.appendChild(productCard(product))}
       offset=data.next_offset??offset+products.length;hasMore=data.has_more===true;
@@ -129,6 +133,9 @@
     const title=document.createElement('h3');title.className='product-detail-trigger';title.textContent=product.name||'Produto';title.onclick=()=>openDetail(product);card.appendChild(title);
     const meta=document.createElement('div');meta.className='meta';meta.textContent=[product.brand,product.packaging].filter(Boolean).join(' · ');card.appendChild(meta);
     appendProductPrice(card,product);
+    if(product.personalized_reason){
+      const reason=document.createElement('div');reason.className='product-personalized-reason';reason.textContent=product.personalized_reason;card.appendChild(reason);
+    }
     const qty=document.createElement('div');qty.className='qty';const minus=document.createElement('button'),num=document.createElement('span'),plus=document.createElement('button');minus.type=plus.type='button';minus.textContent='−';plus.textContent='+';num.dataset.qty='1';num.textContent=String(sync.desiredQuantity);minus.onclick=()=>changeQuantity(product,-1);plus.onclick=()=>changeQuantity(product,1);qty.append(minus,num,plus);card.appendChild(qty);return card;
   }
 
@@ -160,7 +167,7 @@
 
   function openDetail(product){
     closeDetail();const sync=productState(product);detailLayer=document.createElement('div');detailLayer.className='product-detail-layer open';detailLayer.dataset.productId=String(product.id);
-    detailLayer.innerHTML=`<button class="product-detail-backdrop" type="button" aria-label="Fechar"></button><section class="product-detail-sheet" role="dialog" aria-modal="true"><button class="product-detail-close" type="button" aria-label="Fechar">×</button><div class="product-detail-image"></div><div class="product-detail-copy"><h2>${escapeHtml(product.name||'Produto')}</h2><p class="product-detail-meta">${escapeHtml([product.brand,product.packaging].filter(Boolean).join(' · '))}</p>${detailPriceHtml(product)}${product.description_short?`<p class="product-detail-description">${escapeHtml(product.description_short)}</p>`:''}<div class="product-detail-actions"><div class="product-detail-qty"><button type="button" data-detail-minus>−</button><strong data-detail-qty>${sync.desiredQuantity}</strong><button type="button" data-detail-plus>+</button></div></div></div></section>`;
+    detailLayer.innerHTML=`<button class="product-detail-backdrop" type="button" aria-label="Fechar"></button><section class="product-detail-sheet" role="dialog" aria-modal="true"><button class="product-detail-close" type="button" aria-label="Fechar">×</button><div class="product-detail-image"></div><div class="product-detail-copy"><h2>${escapeHtml(product.name||'Produto')}</h2><p class="product-detail-meta">${escapeHtml([product.brand,product.packaging].filter(Boolean).join(' · '))}</p>${detailPriceHtml(product)}${product.personalized_reason?`<p class="product-detail-personalized">${escapeHtml(product.personalized_reason)}</p>`:''}${product.description_short?`<p class="product-detail-description">${escapeHtml(product.description_short)}</p>`:''}<div class="product-detail-actions"><div class="product-detail-qty"><button type="button" data-detail-minus>−</button><strong data-detail-qty>${sync.desiredQuantity}</strong><button type="button" data-detail-plus>+</button></div></div></div></section>`;
     detailLayer.querySelector('.product-detail-image').appendChild(image(product.image_url,product.name));detailLayer.querySelector('.product-detail-backdrop').onclick=closeDetail;detailLayer.querySelector('.product-detail-close').onclick=closeDetail;detailLayer.querySelector('[data-detail-minus]').onclick=()=>changeQuantity(product,-1);detailLayer.querySelector('[data-detail-plus]').onclick=()=>changeQuantity(product,1);document.body.appendChild(detailLayer);document.body.classList.add('product-detail-open');
   }
   function closeDetail(){if(detailLayer){detailLayer.remove();detailLayer=null}document.body.classList.remove('product-detail-open')}
