@@ -6,20 +6,26 @@ const exists = path => fs.existsSync(new URL(`../${path}`, import.meta.url));
 
 assert.ok(exists('comprar/conversation.js'), 'Comprar V2 deve carregar um controlador conversacional próprio');
 assert.ok(exists('comprar/conversation.css'), 'Comprar V2 deve ter estilos conversacionais isolados');
+assert.ok(exists('comprar/checkout-ux-fixes.js'), 'checkout deve ter correções de UX isoladas');
+assert.ok(exists('comprar/checkout-ux-fixes.css'), 'checkout deve ter estilos próprios para controles novos');
 
 const index = read('comprar/index.html');
 const conversation = read('comprar/conversation.js');
+const checkoutFixes = read('comprar/checkout-ux-fixes.js');
+const checkoutFixStyles = read('comprar/checkout-ux-fixes.css');
 const styles = read('comprar/conversation.css');
 const baseStyles = read('comprar/styles.css');
 const baskets = read('comprar/baskets.js');
 const products = read('comprar/products.js');
 const app = read('comprar/app.js');
-const upsell = read('comprar/upsell.js');
 
 assert.match(index, /conversation\.css\?v=/, 'CSS conversacional deve ser versionado no Comprar');
 assert.match(index, /conversation\.js\?v=/, 'controlador conversacional deve ser carregado e versionado');
+assert.match(index, /checkout-ux-fixes\.css\?v=/, 'CSS dos ajustes do checkout deve estar carregado');
+assert.match(index, /checkout-ux-fixes\.js\?v=/, 'ajustes do checkout devem estar carregados');
 assert.ok(index.indexOf('conversation.js') > index.indexOf('help.js'), 'controlador V2 deve carregar depois dos módulos legados e antes do start');
-assert.ok(index.indexOf('conversation.js') < index.indexOf('DA_COMPRAR_APP.start'), 'controlador V2 deve assumir os módulos antes do start');
+assert.ok(index.indexOf('checkout-ux-fixes.js') > index.indexOf('conversation.js'), 'ajustes devem carregar depois do controlador conversacional');
+assert.ok(index.indexOf('checkout-ux-fixes.js') < index.indexOf('DA_COMPRAR_APP.start'), 'ajustes devem assumir o checkout antes do start');
 
 assert.match(conversation, /function\s+ask\s*\(/, 'deve existir helper de pergunta conversacional');
 assert.match(conversation, /function\s+choose\s*\(/, 'deve existir helper de escolha conversacional');
@@ -56,23 +62,26 @@ assert.match(conversation, /order-review-actions/);
 assert.match(conversation, /stopImmediatePropagation/);
 assert.match(conversation, /function\s+consumeStartChoices\s*\(/);
 
-// Checkout deve manter a ordem visual da conversa: mensagem primeiro, ferramenta depois.
-assert.match(conversation, /function\s+placeCheckoutToolLast\s*\(/, 'checkout precisa reposicionar a ferramenta no fim da conversa');
-assert.match(conversation, /revealTool[\s\S]*placeCheckoutToolLast\(node\)/, 'qualquer formulário revelado no checkout deve ir para o fim da timeline');
-assert.match(conversation, /Encontrei seu endereço[\s\S]*revealTool/, 'mensagem de endereço encontrado deve aparecer antes do cartão do endereço');
-assert.match(conversation, /Usar outro endereço[\s\S]*renderAddressStep\(true\)/, 'troca de endereço deve seguir o fluxo conversacional');
+// Checkout deve manter a ordem visual: mensagens explicativas primeiro e ferramenta depois.
+assert.match(checkoutFixes, /function\s+placeCheckoutToolLast\s*\(/, 'checkout precisa reposicionar a ferramenta na vez correta');
+assert.match(checkoutFixes, /stage\.contains\(record\.target\)/, 'somente mudanças dentro da ferramenta do checkout devem disparar reposicionamento');
+assert.match(checkoutFixes, /checkout-turn-card,\.checkout-address-preview/, 'telefone e endereço devem seguir a mesma regra de ordem');
+assert.match(checkoutFixes, /new\s+MutationObserver/, 'ordem deve acompanhar as trocas de ferramenta sem reescrever o fluxo conversacional');
 
-// Alterar extras deve abrir lista editável com seletor de quantidade e aceitar zero.
-assert.match(app, /function\s+renderExtrasEditor\s*\(/, 'revisão deve ter editor de produtos extras');
-assert.match(app, /data-extra-minus/, 'editor de extras precisa botão de diminuir quantidade');
-assert.match(app, /data-extra-plus/, 'editor de extras precisa botão de aumentar quantidade');
-assert.match(products, /function\s+setCartItemQuantity\s*\(/, 'módulo de produtos deve permitir definir quantidade de item do carrinho');
-assert.match(products, /setCartItemQuantity/, 'controle deve ser exportado pelo módulo de produtos');
+// Alterar extras abre lista editável com quantidade inclusive zero.
+assert.match(checkoutFixes, /function\s+renderExtrasEditor\s*\(/, 'revisão deve ter editor de produtos extras');
+assert.match(checkoutFixes, /data-extra-minus/, 'editor de extras precisa botão de diminuir quantidade');
+assert.match(checkoutFixes, /data-extra-plus/, 'editor de extras precisa botão de aumentar quantidade');
+assert.match(checkoutFixes, /Math\.max\(0,Number\(target/, 'quantidade deve aceitar zero sem ficar negativa');
+assert.match(checkoutFixes, /state\.modules\.products[\s\S]*changeQuantity/, 'editor deve reutilizar o sincronismo oficial de produtos');
+assert.match(checkoutFixes, /data-review-products/, 'clique em Alterar deve ser interceptado para abrir a lista');
 
-// Limpar carrinho deve ficar explícito e independente do upsell.
-assert.match(app, /Limpar carrinho/, 'revisão do pedido deve mostrar botão visível para reiniciar a compra');
-assert.match(app, /clearOrder/, 'botão visível deve usar a limpeza oficial do pedido');
-assert.match(upsell, /clearOrder/, 'módulo de limpeza deve expor a ação de reset');
+// Limpar carrinho deve ficar explícito e reiniciar a compra usando o endpoint correto.
+assert.match(checkoutFixes, /Limpar carrinho/, 'revisão do pedido deve mostrar botão visível para reiniciar a compra');
+assert.match(checkoutFixes, /shopping-room-reset-v1/, 'limpeza deve chamar o endpoint oficial atual');
+assert.match(checkoutFixes, /reset_cart/, 'limpeza deve zerar cesta e adicionais no servidor');
+assert.match(checkoutFixStyles, /\.clear-cart-visible/, 'ação de limpar precisa destaque visual próprio');
+assert.match(checkoutFixStyles, /\.extras-editor-qty/, 'seletor de quantidade deve ter layout explícito');
 
 assert.match(styles, /\.conversation-quick-replies/);
 assert.match(styles, /\.conversation-typing/);
@@ -87,7 +96,6 @@ assert.match(styles, /\.basket-row\s+img\s*\{[^}]*width:\s*68px[^}]*height:\s*68
 assert.match(styles, /\.basket-row\s+h3\s*\{[^}]*font-size:\s*15\.5px/i);
 assert.match(styles, /\.chips-categories\s+\.chip\s*\{[^}]*font-size:\s*16px/i);
 assert.match(styles, /\.chips-subcategories\s+\.chip\s*\{[^}]*font-size:\s*14\.5px/i);
-
 assert.match(styles, /\.conversation-offers-grid\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*repeat\(2,minmax\(0,1fr\)\)/i);
 assert.doesNotMatch(styles, /\.conversation-offers-grid\s*\{[^}]*overflow-x:\s*auto/i);
 assert.match(baseStyles, /\.products-grid\s*\{[^}]*display:grid[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/i);
@@ -100,4 +108,5 @@ assert.match(products, /waitForPending/);
 assert.match(app, /renderBeforeCheckout/);
 
 new Function(conversation);
+new Function(checkoutFixes);
 console.log('PASS: Comprar Conversacional V2 — contrato estrutural e cadência humana');
