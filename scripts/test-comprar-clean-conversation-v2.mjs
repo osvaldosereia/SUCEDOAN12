@@ -12,6 +12,7 @@ const conversation = read('comprar/conversation.js');
 const styles = read('comprar/conversation.css');
 const baseStyles = read('comprar/styles.css');
 const baskets = read('comprar/baskets.js');
+const products = read('comprar/products.js');
 const app = read('comprar/app.js');
 
 assert.match(index, /conversation\.css\?v=/, 'CSS conversacional deve ser versionado no Comprar');
@@ -58,6 +59,8 @@ assert.match(styles, /body\s*\{[^}]*font-size:\s*16px/i, 'fonte-base do Comprar 
 assert.match(styles, /\.conversation-message\s*,\s*\.bubble\s*\{[^}]*font-size:\s*18px/i, 'balões devem usar fonte maior e mais legível');
 assert.match(styles, /\.conversation-quick-reply[^}]*min-height:\s*48px/i, 'respostas rápidas devem respeitar alvo de toque de 48px');
 assert.match(styles, /\.start-chips\s+\.chip[^}]*min-height:\s*48px/i, 'botões iniciais da conversa devem seguir o mesmo alvo de toque');
+assert.match(styles, /\.products-entry-chips\s+\.chip[^}]*min-height:\s*48px/i, 'escolhas principais de produtos devem seguir o padrão dos botões conversacionais');
+assert.match(styles, /\.products-section-chips\s+\.chip[^}]*min-height:\s*48px/i, 'troca entre Para Você, Para Casa e Ofertas deve manter alvo de toque amplo');
 assert.match(styles, /\.basket-row\s+img\s*\{[^}]*width:\s*68px[^}]*height:\s*68px/i, 'fotos dos produtos da cesta devem ser maiores');
 assert.match(styles, /\.basket-row\s+h3\s*\{[^}]*font-size:\s*15\.5px/i, 'nomes dos produtos da cesta devem ser maiores');
 assert.match(styles, /\.chips-categories\s+\.chip\s*\{[^}]*font-size:\s*16px/i, 'categorias devem ter hierarquia visual principal');
@@ -67,6 +70,13 @@ assert.match(styles, /\.chips-subcategories\s+\.chip\s*\{[^}]*font-size:\s*14\.5
 assert.match(styles, /\.conversation-offers-grid\s*\{[^}]*display:\s*grid[^}]*grid-template-columns:\s*repeat\(2,minmax\(0,1fr\)\)/i, 'ofertas conversacionais devem usar grade');
 assert.doesNotMatch(styles, /\.conversation-offers-grid\s*\{[^}]*overflow-x:\s*auto/i, 'ofertas não devem usar carrossel horizontal');
 assert.match(baseStyles, /\.products-grid\s*\{[^}]*display:grid[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/i, 'produtos da loja devem permanecer em grade');
+
+// Oferta adicionada deve confirmar sincronização antes de ficar travada como concluída.
+assert.match(conversation, /async\s+function\s+addOfferProduct\s*\(/, 'adição pela grade de ofertas deve ter helper resiliente');
+assert.match(conversation, /waitForPending/, 'adição pela oferta deve aguardar sincronização do carrinho');
+assert.match(conversation, /aria-busy/, 'botão de oferta deve expor estado de carregamento');
+assert.match(conversation, /cartProductIds\(\)\.has/, 'botão de oferta só deve permanecer concluído quando o item estiver confirmado no carrinho');
+assert.match(products, /waitForPending/, 'módulo de produtos deve continuar expondo sincronização pendente');
 
 assert.match(baskets, /state\.modules\.products\?\.renderEntry\?\.\(\{auto:true\}\)/, 'contrato deve provar que o legado ainda chama auto:true e é interceptado pelo V2');
 assert.match(app, /renderBeforeCheckout/, 'contrato deve provar que a revisão legada ainda chama upsell e é neutralizada pelo V2');
