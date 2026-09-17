@@ -20,10 +20,13 @@ button,input{font-size:16px}
 /* Decisões conversacionais: mesmo padrão visual em todo o chat. */
 .conversation-quick-replies{align-self:flex-start;display:flex;flex-wrap:wrap;gap:9px;max-width:94%;margin-top:-4px;margin-bottom:5px;padding-left:2px}
 .conversation-quick-reply{min-height:48px;border:1px solid #b7c9bd;border-radius:16px;padding:11px 15px;background:#fff;color:#1f4a34;font-size:16px;font-weight:800;line-height:1.25;box-shadow:0 2px 8px rgba(30,55,42,.05)}
-.start-chips{display:flex;flex-wrap:wrap;overflow:visible;gap:9px;padding:0 0 4px}
-.start-chips .chip{min-height:48px;border:1px solid #b7c9bd;border-radius:16px;padding:11px 15px;background:#fff;color:#1f4a34;font-size:16px;font-weight:800;line-height:1.25;box-shadow:0 2px 8px rgba(30,55,42,.05)}
-.conversation-quick-reply:hover,.conversation-quick-reply:focus-visible,.start-chips .chip:hover,.start-chips .chip:focus-visible{background:#edf5ef;border-color:#8eac99;outline:3px solid rgba(23,61,43,.12);outline-offset:1px}
-.conversation-quick-reply:disabled,.start-chips .chip:disabled{opacity:.48;cursor:default}
+.start-chips,.products-entry-chips,.products-section-chips{display:flex;flex-wrap:wrap;overflow:visible;gap:9px;padding:0 0 4px}
+.start-chips .chip,.products-entry-chips .chip{min-height:48px;border:1px solid #b7c9bd;border-radius:16px;padding:11px 15px;background:#fff;color:#1f4a34;font-size:16px;font-weight:800;line-height:1.25;box-shadow:0 2px 8px rgba(30,55,42,.05)}
+.products-section-chips .chip{min-height:48px;border:1px solid #c4d3c9;border-radius:14px;padding:10px 14px;background:#fff;color:#294b39;font-size:15.5px;font-weight:800;line-height:1.2}
+.products-section-chips .chip.active{background:#173d2b;border-color:#173d2b;color:#fff}
+.conversation-quick-reply:hover,.conversation-quick-reply:focus-visible,.start-chips .chip:hover,.start-chips .chip:focus-visible,.products-entry-chips .chip:hover,.products-entry-chips .chip:focus-visible,.products-section-chips .chip:hover,.products-section-chips .chip:focus-visible{background:#edf5ef;border-color:#8eac99;outline:3px solid rgba(23,61,43,.12);outline-offset:1px}
+.products-section-chips .chip.active:hover,.products-section-chips .chip.active:focus-visible{background:#173d2b;color:#fff}
+.conversation-quick-reply:disabled,.start-chips .chip:disabled,.products-entry-chips .chip:disabled,.products-section-chips .chip:disabled{opacity:.48;cursor:default}
 .actions button,.primary,.secondary,.confirm,.order-review-actions button,.checkout-address-actions button{min-height:48px;border-radius:14px;padding:11px 15px;font-size:16px;font-weight:800}
 
 .post-basket-replies{margin-top:0}
@@ -63,6 +66,7 @@ button,input{font-size:16px}
 .conversation-offer-price span{font-size:13px;color:#7f8c84;text-decoration:line-through}
 .conversation-offer-price strong{font-size:18px;color:#173d2b}
 .conversation-offer-add{min-height:48px;border:0;border-radius:12px;background:#173d2b;color:#fff;font-size:15.5px;font-weight:900}
+.conversation-offer-add[aria-busy="true"]{opacity:.76;cursor:progress}
 .conversation-offer-add:disabled{background:#dfe8e2;color:#345844}
 
 .checkout-conversation-stage{padding:0;border:0;background:transparent;box-shadow:none}
@@ -92,8 +96,10 @@ button,input{font-size:16px}
   .conversation-message,.bubble{max-width:90%;padding:13px 15px;font-size:18px}
   .conversation-quick-replies{max-width:96%;display:grid;grid-template-columns:1fr;gap:8px}
   .conversation-quick-reply{text-align:left;min-height:48px;border-radius:14px;padding:11px 13px}
-  .start-chips{display:grid;grid-template-columns:1fr;gap:8px;width:96%}
-  .start-chips .chip{text-align:left;width:100%}
+  .start-chips,.products-entry-chips{display:grid;grid-template-columns:1fr;gap:8px;width:96%}
+  .start-chips .chip,.products-entry-chips .chip{text-align:left;width:100%}
+  .products-section-chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%}
+  .products-section-chips .chip{width:100%;padding:9px 7px;font-size:14.5px}
   .checkout-form-grid{grid-template-columns:1fr}
   .checkout-form-grid .wide{grid-column:auto}
   .checkout-address-actions{display:grid;grid-template-columns:1fr}
@@ -108,4 +114,5 @@ button,input{font-size:16px}
 @media(max-width:360px){
   .basket-grid,.products-grid,.conversation-offers-grid{grid-template-columns:1fr}
   .conversation-message,.bubble{max-width:94%}
+  .products-section-chips{grid-template-columns:1fr}
 }

@@ -92,6 +92,20 @@
     return `<div class="conversation-offer-price"><span>${money(product.price)}</span><strong>${money(product.offer_price)}</strong></div>`;
   }
 
+  async function addOfferProduct(product,button){
+    if(!button||button.disabled)return false;
+    const added=productsModule?.addSuggestedProduct?.(product);
+    if(added===false){button.disabled=true;button.textContent='Já adicionado ✓';return false}
+    button.disabled=true;button.setAttribute('aria-busy','true');button.textContent='Adicionando…';
+    try{
+      await productsModule?.waitForPending?.();
+      if(cartProductIds().has(String(product.id||''))){button.textContent='Adicionado ✓';return true}
+      button.disabled=false;button.textContent='+ Adicionar';return false;
+    }catch(error){
+      button.disabled=false;button.textContent='+ Adicionar';toast(error?.message||'Não consegui adicionar este produto.');return false;
+    }finally{button.removeAttribute('aria-busy')}
+  }
+
   async function showOffers(){
     ui.offersSeen=true;
     clearOfferStage();
@@ -120,13 +134,8 @@
       const picture=image(product.image_url,product.name);picture.className='conversation-offer-image';card.appendChild(picture);
       const copy=document.createElement('div');copy.className='conversation-offer-copy';
       copy.innerHTML=`<span class="conversation-offer-badge">OFERTA</span><strong>${escapeHtml(product.name||'Produto')}</strong>${priceHtml(product)}`;card.appendChild(copy);
-      const button=document.createElement('button');button.type='button';button.className='conversation-offer-add';button.textContent='+ Adicionar';
-      button.onclick=()=>{
-        if(button.disabled)return;
-        const added=state.modules.products?.addSuggestedProduct?.(product);
-        if(added===false)return;
-        button.disabled=true;button.textContent='Adicionado ✓';
-      };
+      const button=document.createElement('button');button.type='button';button.className='conversation-offer-add';button.textContent='+ Adicionar';button.setAttribute('aria-label',`Adicionar ${product.name||'produto'} ao pedido`);
+      button.onclick=()=>addOfferProduct(product,button);
       card.appendChild(button);grid.appendChild(card);
     }
 
