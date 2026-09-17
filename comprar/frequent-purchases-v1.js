@@ -308,5 +308,5 @@
     };
   }
 
-  app.frequentPurchases={load,open:openFrequent};
+  app.frequentPurchases={load,open:openFrequent,getCache:()=>payloadCache};
 })();
