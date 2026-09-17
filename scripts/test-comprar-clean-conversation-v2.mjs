@@ -14,6 +14,7 @@ const baseStyles = read('comprar/styles.css');
 const baskets = read('comprar/baskets.js');
 const products = read('comprar/products.js');
 const app = read('comprar/app.js');
+const upsell = read('comprar/upsell.js');
 
 assert.match(index, /conversation\.css\?v=/, 'CSS conversacional deve ser versionado no Comprar');
 assert.match(index, /conversation\.js\?v=/, 'controlador conversacional deve ser carregado e versionado');
@@ -54,6 +55,24 @@ assert.match(conversation, /state\.modules\.upsell\.renderBeforeCheckout\s*=\s*\
 assert.match(conversation, /order-review-actions/);
 assert.match(conversation, /stopImmediatePropagation/);
 assert.match(conversation, /function\s+consumeStartChoices\s*\(/);
+
+// Checkout deve manter a ordem visual da conversa: mensagem primeiro, ferramenta depois.
+assert.match(conversation, /function\s+placeCheckoutToolLast\s*\(/, 'checkout precisa reposicionar a ferramenta no fim da conversa');
+assert.match(conversation, /revealTool[\s\S]*placeCheckoutToolLast\(node\)/, 'qualquer formulário revelado no checkout deve ir para o fim da timeline');
+assert.match(conversation, /Encontrei seu endereço[\s\S]*revealTool/, 'mensagem de endereço encontrado deve aparecer antes do cartão do endereço');
+assert.match(conversation, /Usar outro endereço[\s\S]*renderAddressStep\(true\)/, 'troca de endereço deve seguir o fluxo conversacional');
+
+// Alterar extras deve abrir lista editável com seletor de quantidade e aceitar zero.
+assert.match(app, /function\s+renderExtrasEditor\s*\(/, 'revisão deve ter editor de produtos extras');
+assert.match(app, /data-extra-minus/, 'editor de extras precisa botão de diminuir quantidade');
+assert.match(app, /data-extra-plus/, 'editor de extras precisa botão de aumentar quantidade');
+assert.match(products, /function\s+setCartItemQuantity\s*\(/, 'módulo de produtos deve permitir definir quantidade de item do carrinho');
+assert.match(products, /setCartItemQuantity/, 'controle deve ser exportado pelo módulo de produtos');
+
+// Limpar carrinho deve ficar explícito e independente do upsell.
+assert.match(app, /Limpar carrinho/, 'revisão do pedido deve mostrar botão visível para reiniciar a compra');
+assert.match(app, /clearOrder/, 'botão visível deve usar a limpeza oficial do pedido');
+assert.match(upsell, /clearOrder/, 'módulo de limpeza deve expor a ação de reset');
 
 assert.match(styles, /\.conversation-quick-replies/);
 assert.match(styles, /\.conversation-typing/);
