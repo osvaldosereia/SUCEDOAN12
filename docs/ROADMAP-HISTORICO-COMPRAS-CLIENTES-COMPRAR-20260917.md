@@ -207,7 +207,7 @@ O cliente consegue reconstruir a última compra em poucos toques sem carregar va
 
 ## Etapa 5 — “Minhas compras frequentes”
 
-Status: **PRÓXIMA**
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
@@ -238,6 +238,8 @@ A lista representa hábito real e não é dominada por uma compra atípica de gr
 
 ## Etapa 6 — Início personalizado do Comprar
 
+Status: **CONCLUÍDA — 17/09/2026**
+
 ### Entregas
 
 Quando o cliente estiver identificado e tiver histórico, o início pode mostrar:
@@ -260,6 +262,8 @@ Personalização reduz passos sem esconder Cestas Básicas, Ofertas, Para Você 
 ---
 
 ## Etapa 7 — Ofertas personalizadas dentro do Comprar
+
+Status: **PRÓXIMA**
 
 ### Entregas
 
