@@ -7,8 +7,10 @@ for(const n of [2,3,4,5,6]) assert.match(roadmap,new RegExp(`Etapa ${n} .*FUTURA
 
 const migrationPath='supabase/migrations/20260917160500_papo_comprar_identity_v1.sql';
 const edgePath='supabase/functions/papo-comprar-webhook-v1/index.ts';
+const uiPath='comprar/papo-identity-ui.js';
 assert.ok(fs.existsSync(migrationPath),'migration segura do webhook PapoAI deve existir');
 assert.ok(fs.existsSync(edgePath),'Edge Function do webhook PapoAI deve existir');
+assert.ok(fs.existsSync(uiPath),'camada de identidade visual do PapoAI deve existir');
 
 const migration=fs.readFileSync(migrationPath,'utf8');
 assert.match(migration,/dona_antonia_papo_comprar_webhook_token_v1/,'segredo deve ficar no Vault');
@@ -24,9 +26,15 @@ assert.match(edge,/customer_found/,'resposta deve indicar se o cliente foi ident
 assert.match(edge,/shopping_url/,'resposta deve devolver URL opaca para o Comprar');
 assert.doesNotMatch(edge,/lookup_customer_by_name|\.eq\(['"]name['"]/i,'nome não pode ser usado como chave de identidade');
 
+const ui=fs.readFileSync(uiPath,'utf8');
+assert.match(ui,/function\s+customerFirstName\s*\(/,'Comprar deve ter helper de primeiro nome');
+assert.match(ui,/Oi, \$\{firstName\}/,'saudação deve usar primeiro nome quando conhecido');
+assert.match(ui,/originalStart/,'camada deve preservar o start original');
+const root=fs.readFileSync('index.html','utf8'),nested=fs.readFileSync('comprar/index.html','utf8');
+assert.match(root,/\/comprar\/papo-identity-ui\.js\?v=/,'raiz deve carregar identidade PapoAI');
+assert.match(nested,/\.\/papo-identity-ui\.js\?v=/,'/comprar deve carregar identidade PapoAI');
+
 const app=fs.readFileSync('comprar/app.js','utf8');
-assert.match(app,/function\s+customerFirstName\s*\(/,'Comprar deve ter helper de primeiro nome');
-assert.match(app,/Oi, \$\{firstName\}/,'saudação deve usar primeiro nome quando conhecido');
 assert.match(app,/Olá! Como posso ajudar na sua compra\?/,'fallback genérico deve permanecer');
 
 const conversation=fs.readFileSync('comprar/conversation.js','utf8');
