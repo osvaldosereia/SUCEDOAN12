@@ -42,6 +42,13 @@ Deno.serve(async(req:Request)=>{
     return {customer_id:customer.id,name:clean(customer.name,120),phone:clean(customer.primary_whatsapp_e164||fallbackPhone,40),addresses:addresses||[]};
   };
 
+  if(action==='frequent_purchases'){
+    if(!session.customer_id)return json(req,{ok:true,frequent:{has_history:false,frequent_products:[],recent_extras:[],favorite_basket:null}});
+    const {data,error}=await sb.rpc('get_customer_frequent_purchases_v1',{p_customer_id:session.customer_id,p_product_limit:10,p_extra_limit:6});
+    if(error)return json(req,{ok:false,error:'frequent_purchases_failed',detail:error.message},400);
+    return json(req,{ok:true,frequent:data||{has_history:false,frequent_products:[],recent_extras:[],favorite_basket:null}});
+  }
+
   if(action==='repeat_last_purchase_preview'){
     const {data,error}=await sb.rpc('room_repeat_last_purchase_preview_v1',{p_public_token:token});
     if(error)return json(req,{ok:false,error:'repeat_preview_failed',detail:error.message},400);
