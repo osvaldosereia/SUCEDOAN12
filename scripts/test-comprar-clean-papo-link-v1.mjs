@@ -6,8 +6,8 @@ const edgePath='supabase/functions/papo-comprar-webhook-v1/index.ts';
 
 assert.ok(fs.existsSync(migrationPath),'migration da ponte de entrega do link deve existir');
 const migration=fs.readFileSync(migrationPath,'utf8');
-assert.match(migration,/dona_antonia_papo_comprar_outbound_make_url_v1/,'URL privada da ponte deve ficar no Vault');
-assert.match(migration,/dona_antonia_papo_comprar_outbound_make_token_v1/,'token da ponte deve ficar no Vault');
+assert.match(migration,/dona_antonia_whatsapp_outbound_make_webhook/,'ponte deve reutilizar o transporte outbound já guardado no Vault');
+assert.match(migration,/dona_antonia_papo_comprar_outbound_make_token_v1/,'token próprio da ponte deve ficar no Vault');
 assert.match(migration,/get_dona_antonia_papo_comprar_outbound_bridge_v1/,'backend deve obter configuração da ponte via RPC');
 assert.match(migration,/grant execute .* service_role/is,'configuração da ponte deve ser exclusiva do service role');
 assert.doesNotMatch(migration,/hook\.eu1\.make\.com\/[A-Za-z0-9_-]{10,}/i,'webhook real do Make nunca pode entrar no repositório');
@@ -15,6 +15,7 @@ assert.doesNotMatch(migration,/hook\.eu1\.make\.com\/[A-Za-z0-9_-]{10,}/i,'webho
 const edge=fs.readFileSync(edgePath,'utf8');
 assert.match(edge,/async function dispatchShoppingLink\s*\(/,'webhook deve possuir entrega isolada do link');
 assert.match(edge,/get_dona_antonia_papo_comprar_outbound_bridge_v1/,'webhook deve ler a ponte do Vault');
+assert.match(edge,/papo_comprar_link/,'payload deve usar evento isolado do restante do outbound');
 assert.match(edge,/shopping_url/,'payload de entrega deve conter o link personalizado');
 assert.match(edge,/customer_found/,'payload deve declarar identidade encontrada');
 assert.match(edge,/matchedCustomerId\?await dispatchShoppingLink/,'somente cliente identificado recebe link automático nesta etapa');
@@ -24,5 +25,6 @@ assert.match(edge,/catch\s*\([^)]*\)\s*\{[^}]*bridge_error/s,'falha de entrega n
 const roadmap=fs.readFileSync('docs/PAPOAI-COMPRAR-EVOLUCAO-ROADMAP-20260917.md','utf8');
 assert.match(roadmap,/Etapa 1B .*link personalizado/i,'roadmap deve registrar a entrega do link personalizado');
 assert.match(roadmap,/ponte temporária/i,'roadmap deve registrar que a ponte outbound é temporária');
+assert.match(roadmap,/IA antiga permanece desligada/i,'roadmap deve proteger os gates antigos');
 
 console.log('PASS: PapoAI → Comprar entrega de link V1');
