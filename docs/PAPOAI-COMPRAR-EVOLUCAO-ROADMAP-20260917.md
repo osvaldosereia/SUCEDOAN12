@@ -41,6 +41,17 @@ Padrão obrigatório:
 
 Resultado esperado: o cliente sai do WhatsApp para o Comprar já reconhecido, sem repetir dados que o sistema já possui.
 
+### Etapa 1B — Agente externo PapoAI + link personalizado — EM HOMOLOGAÇÃO
+
+1. Usar o recurso nativo de **agente externo** do PapoAI, que envia `conversation.message`, histórico, sessão, contato, canal e agente para um endpoint HTTPS.
+2. O endpoint é uma **Supabase Edge Function**, autenticada, sem Make.
+3. Identificar o cliente exclusivamente pelo telefone e reutilizar/criar a sessão do Comprar.
+4. Devolver a resposta com o link opaco individual do Comprar para homologar o contrato de resposta do PapoAI.
+5. Usar `customers.preferred_reply` (`auto`, `text`, `audio`) para definir quais clientes poderão receber respostas por áudio.
+6. Quando `preferred_reply = audio`, preparar áudio com o perfil oficial `dona_antonia_marin_b_v1`, armazenar temporariamente no Supabase Storage e devolver também `audio_url`.
+7. A geração de áudio só é acionada para clientes explicitamente configurados para áudio, evitando custo e áudio desnecessários.
+8. Antes de liberar áudio em produção, validar no teste do próprio PapoAI qual formato de resposta de mídia o agente externo aceita; a documentação pública não especifica esse schema.
+
 ## Etapa 2 — Última compra e recompra inteligente — FUTURA
 
 1. Consultar último pedido concluído do cliente.
