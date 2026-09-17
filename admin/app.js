@@ -116,6 +116,7 @@ async function loadOrders(){
 async function openOrder(id){try{const data=await api('order',{id}),o=data.order;openDialog(`<div class="editor-shell"><div class="editor-head"><div><h2>Pedido ${esc(o.order_number||'')}</h2><div class="muted">${date(o.created_at)}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="panel"><h3>${money(o.total)}</h3><p>Telefone: ${esc(o.phone_e164||'—')}</p><p>Status: ${esc(o.status||'')}</p>${o.phone_e164?`<a class="primary maps-link" href="${wa(o.phone_e164)}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}</div><section class="panel"><h3>Itens</h3><div class="order-items">${(data.items||[]).map(i=>`<div class="order-item"><strong>${esc(i.quantity)}x ${esc(i.name_snapshot)}</strong><span>${money(i.line_total)}</span></div>`).join('')}</div></section></div>`)}catch(e){toast(e.message,'error')}}
 
 const paymentLabel=v=>({pix:'PIX',credit_card:'Cartão de crédito',debit_card:'Cartão de débito',meal_card:'Alimentação/refeição',food_card:'Alimentação/refeição',cash:'Dinheiro'})[String(v||'')]||String(v||'—');
+const historyAddressLine=a=>{const x=a&&typeof a==='object'?a:{};return [x.street,x.number&&`nº ${x.number}`,x.neighborhood,x.city,x.state].filter(Boolean).join(' · ')};
 const historyStatusLabel=v=>({storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Enviado ao Bling',processing:'Em processamento',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'})[String(v||'')]||String(v||'—');
 
 function customerHistoryMarkup(customer={},data={}){
@@ -163,6 +164,7 @@ async function openCustomerHistoryOrder(customerId,orderId){
       <div class="editor-head"><div><small class="muted">Detalhe da compra</small><h2>${esc(o.order_number||'Pedido')}</h2><div class="muted">${esc(date(o.confirmed_at||o.created_at))}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div>
       <button class="secondary customer-history-back" type="button" data-history-back="${esc(customerId)}">← Voltar ao histórico</button>
       <div class="customer-history-stats detail"><article><span>Total</span><strong>${money(o.total||0)}</strong></article><article><span>Status</span><strong>${esc(historyStatusLabel(o.status))}</strong></article><article><span>Pagamento</span><strong>${esc(paymentLabel(o.payment_method))}</strong></article><article><span>Cesta</span><strong>${esc(o.basket_name||'—')}</strong></article></div>
+      ${historyAddressLine(o.delivery_address)?`<section class="customer-history-summary single"><div><span>Endereço usado neste pedido</span><strong>${esc(historyAddressLine(o.delivery_address))}</strong></div></section>`:''}
       <section class="customer-history-block"><h3>Itens</h3><div class="customer-history-items">${items.map(i=>`<div><span><b>${esc(i.quantity)}×</b> ${esc(i.name||'Produto')}</span><strong>${money(i.line_total||0)}</strong></div>`).join('')||'<div class="empty">Sem itens.</div>'}</div></section>
     </div>`);
   }catch(e){toast(e.message,'error');if(currentHistoryCustomerId)await openCustomerHistory(currentHistoryCustomerId)}
