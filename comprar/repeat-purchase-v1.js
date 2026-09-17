@@ -15,14 +15,18 @@
 
   function ensureChip(preview){
     const host=document.querySelector('.start-stage .start-chips');
-    if(!host||host.querySelector('[data-repeat-last-purchase]'))return;
+    const stage=host?.closest('.start-stage');
+    if(!host||!stage||stage.querySelector('[data-repeat-last-purchase]'))return;
+    const wrap=document.createElement('div');
+    wrap.className='repeat-purchase-entry';
     const button=document.createElement('button');
     button.type='button';
     button.className='chip repeat-purchase-chip';
     button.dataset.repeatLastPurchase='1';
     button.textContent='Repetir última compra';
     button.onclick=()=>showPreview(preview);
-    host.prepend(button);
+    wrap.appendChild(button);
+    stage.insertBefore(wrap,host);
   }
 
   async function loadPreview(){
