@@ -174,6 +174,28 @@ Deno.serve(async(req:Request)=>{
     const id=clean(body?.id,80);if(!id)return respond({ok:false,error:"id_required"},400);const {data:customer,error}=await sb.from("customers").select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,created_at,updated_at").eq("id",id).maybeSingle();if(error||!customer)return respond({ok:false,error:"customer_not_found"},404);const [{data:address},{data:email}]=await Promise.all([sb.from("customer_addresses").select("id,label,street,number,complement,neighborhood,city,state,postal_code,reference,google_maps_url,is_default,is_active").eq("customer_id",id).eq("is_active",true).order("is_default",{ascending:false}).limit(1).maybeSingle(),sb.from("customer_emails").select("id,email,is_primary").eq("customer_id",id).order("is_primary",{ascending:false}).limit(1).maybeSingle()]);return respond({ok:true,customer,address:address||null,email:email?.email||null});
   }
 
+  if(action==="customer_history"){
+    const id=clean(body?.id,80);if(!id)return respond({ok:false,error:"id_required"},400);
+    const page=Math.max(1,integer(body?.page,1,100000)),limit=Math.min(50,Math.max(5,integer(body?.limit,10,50))),offset=(page-1)*limit;
+    const [{data:intelligence,error:intelligenceError},{data:history,error:historyError}]=await Promise.all([
+      sb.rpc("get_customer_purchase_intelligence_v1",{p_customer_id:id,p_product_limit:8,p_category_limit:5}),
+      sb.rpc("get_customer_purchase_history_v1",{p_customer_id:id,p_limit:limit,p_offset:offset})
+    ]);
+    if(intelligenceError)return respond({ok:false,error:"customer_intelligence_failed",detail:intelligenceError.message},400);
+    if(historyError)return respond({ok:false,error:"customer_history_failed",detail:historyError.message},400);
+    const total=Number((intelligence as any)?.order_count||0);
+    return respond({ok:true,intelligence:intelligence||{},orders:history||[],total,page,limit});
+  }
+
+  if(action==="customer_history_order"){
+    const customerId=clean(body?.customer_id,80),orderId=clean(body?.order_id,80);
+    if(!customerId||!orderId)return respond({ok:false,error:"ids_required"},400);
+    const {data,error}=await sb.rpc("get_customer_order_detail_v1",{p_customer_id:customerId,p_order_id:orderId});
+    if(error)return respond({ok:false,error:"customer_order_history_failed",detail:error.message},400);
+    if(!data||Object.keys(data).length===0)return respond({ok:false,error:"order_not_found"},404);
+    return respond({ok:true,detail:data});
+  }
+
   if(action==="save_customer"){
     const id=clean(body?.id,80),name=clean(body?.name,180),phone=normalizePhone(body?.phone),cpf=digits(body?.cpf_cnpj)||null,email=clean(body?.email,320).toLowerCase()||null;if(!name)return respond({ok:false,error:"name_required"},400);if(body?.phone&&!phone)return respond({ok:false,error:"invalid_phone"},400);
     if(phone){let dup=sb.from("customers").select("id").eq("primary_whatsapp_e164",phone);if(id)dup=dup.neq("id",id);const {data:duplicate}=await dup.limit(1).maybeSingle();if(duplicate)return respond({ok:false,error:"phone_already_used"},409)}
