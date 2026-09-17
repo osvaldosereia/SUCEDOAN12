@@ -44,6 +44,60 @@ async function parseBody(req:Request){
   }
 }
 
+async function dispatchShoppingLink(sb:any,input:{phone:string;name:string|null;shoppingUrl:string;sessionId:string;conversationId:string}){
+  try{
+    const {data:currentSession}=await sb.from('catalog_sessions').select('metadata').eq('id',input.sessionId).maybeSingle();
+    const metadata=(currentSession?.metadata&&typeof currentSession.metadata==='object')?currentSession.metadata:{};
+    const previousSentAt=clean(metadata?.papo_link_sent_at,80);
+    const previousMs=previousSentAt?Date.parse(previousSentAt):NaN;
+    if(Number.isFinite(previousMs)&&Date.now()-previousMs<5*60*1000){
+      return {ok:true,status:'already_sent'};
+    }
+
+    const {data:bridge,error:bridgeError}=await sb.rpc('get_dona_antonia_papo_comprar_outbound_bridge_v1');
+    const bridgeUrl=clean(bridge?.url,1000);
+    const bridgeToken=clean(bridge?.token,200);
+    if(bridgeError||!bridgeUrl||!bridgeToken)return {ok:false,status:'bridge_unavailable'};
+
+    const firstName=clean(input.name,160).split(/\s+/).filter(Boolean)[0]||'';
+    const greeting=firstName?`Oi, ${firstName} 😊`:'Oi 😊';
+    const message=`${greeting} Já deixei sua compra preparada para você. Toque no link para continuar: ${input.shoppingUrl}`;
+    const outboundPayload={
+      event:'papo_comprar_link',
+      job:{
+        id:bridgeToken,
+        recipient_e164:input.phone,
+        delivery_mode:'text',
+        body_text:message
+      },
+      shopping_url:input.shoppingUrl,
+      customer_found:true,
+      session_id:input.sessionId,
+      conversation_id:input.conversationId
+    };
+
+    const outbound=await fetch(bridgeUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(outboundPayload)
+    });
+    const raw=await outbound.text().catch(()=>'');
+    let parsed:any=null;
+    try{parsed=raw?JSON.parse(raw):null}catch{parsed=null}
+    if(!outbound.ok||parsed?.ok===false)return {ok:false,status:'bridge_http_error',http_status:outbound.status};
+
+    const sentAt=new Date().toISOString();
+    await sb.from('catalog_sessions').update({metadata:{
+      ...metadata,
+      papo_link_sent_at:sentAt,
+      papo_link_delivery:'sent'
+    }}).eq('id',input.sessionId);
+    return {ok:true,status:'sent',provider_message_id:clean(parsed?.provider_message_id,500)||null};
+  }catch(_error){
+    return {ok:false,status:'bridge_error'};
+  }
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method!=='POST')return response({ok:false,error:'method_not_allowed'},405);
 
@@ -138,6 +192,14 @@ Deno.serve(async(req:Request)=>{
   }}).eq('id',room.session_id);
 
   const canonicalName=clean(match?.customer_name||contactName,160)||null;
+  const linkDelivery=matchedCustomerId?await dispatchShoppingLink(sb,{
+    phone,
+    name:canonicalName,
+    shoppingUrl:room.url,
+    sessionId:room.session_id,
+    conversationId
+  }):{ok:false,status:'not_identified'};
+
   return response({
     ok:true,
     customer_found:Boolean(matchedCustomerId),
@@ -145,6 +207,7 @@ Deno.serve(async(req:Request)=>{
     contact:{name:canonicalName,phone,contact_id:contactId||null},
     shopping_url:room.url,
     session_id:room.session_id,
-    conversation_id:conversationId
+    conversation_id:conversationId,
+    link_delivery:linkDelivery
   });
 });
