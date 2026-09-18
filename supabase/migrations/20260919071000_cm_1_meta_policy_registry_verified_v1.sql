@@ -63,12 +63,12 @@ values
   '{"source_kind":"official_whatsapp_business_messaging_policy","source_reviewed_on":"2026-09-18","section":"Policy for WhatsApp Commerce Features"}'::jsonb,now()
 ),
 (
-  'whatsapp_regulated_verticals_fail_closed',1,'Verticais reguladas devem falhar fechado','commerce',
-  'Produtos e serviços regulados ou restritos exigem verificação específica de país, idade, licenças e regras aplicáveis; na ausência dessa verificação, o sistema deve bloquear promoção e comércio via WhatsApp.',
-  '{"unknown_eligibility":"block","age_or_country_unknown":"block"}'::jsonb,
-  '{"country_check_required":true,"age_check_when_applicable":true,"license_check_when_applicable":true}'::jsonb,
+  'whatsapp_regulated_verticals_fail_closed',2,'Bens e serviços regulados proibidos devem ser bloqueados','commerce',
+  'Bens e serviços regulados ou restritos que a Política de Mensagens do WhatsApp Business proíbe não podem ser comprados, vendidos, promovidos nem ter sua troca facilitada pelo WhatsApp. A proibição se aplica independentemente de licenças, registros ou outras aprovações globais ou locais.',
+  '{"regulated_or_restricted_goods":"block","promotion_or_commerce":"block","license_override":false}'::jsonb,
+  '{"whatsapp_business_policy_check_required":true,"prohibited_goods_must_be_blocked":true}'::jsonb,
   'https://business.whatsapp.com/policy',null,now(),'active',true,
-  '{"source_kind":"official_whatsapp_business_messaging_policy","source_reviewed_on":"2026-09-18","section":"Prohibited Organizations and Restrictions on Use / Regulated Verticals"}'::jsonb,now()
+  '{"source_kind":"official_whatsapp_business_messaging_policy","source_reviewed_on":"2026-09-18","section":"Prohibited Organizations and Restrictions on Use","revision_note":"v2 removes permissive country/age/license interpretation; Meta prohibition applies regardless of licenses."}'::jsonb,now()
 )
 on conflict(policy_key) do update set
   version=excluded.version,
