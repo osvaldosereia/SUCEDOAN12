@@ -62,9 +62,10 @@ test('catalog and checkout reject production-looking identifiers before fetch', 
     },
   });
 
-  await assert.rejects(
-    client.checkout({
+  assert.throws(
+    () => client.checkout({
       cart: [{
+        id: 'product:REAL-PROD-123',
         kind: 'product',
         refId: 'REAL-PROD-123',
         name: 'Produto',
