@@ -88,3 +88,18 @@ test('connection manager is provider-level and channel-level',()=>{
   assert.match(api,/getMarketingConnectionOverview/);
   assert.match(api,/completeMarketingOAuth/);
 });
+
+test('disconnect is local, owner-only and removes only provider Vault refs',()=>{
+  const disconnectMigration=read('supabase/migrations/20260918184518_marketing_connection_disconnect_v1.sql');
+  assert.match(disconnectMigration,/meta_page_\[a-z0-9_\]\+/);
+  assert.match(disconnectMigration,/pinterest_access_v1/);
+  assert.match(disconnectMigration,/pinterest_refresh_v1/);
+  assert.match(disconnectMigration,/revoke all on function public\.marketing_vault_delete_provider_secret_v1\(text\) from public,anon,authenticated/);
+  const pos=workflow.indexOf('action==="connection_disconnect"');
+  assert.ok(pos>=0);
+  assert.match(workflow.slice(pos,pos+450),/admin\.role!=="owner"/);
+  assert.match(workflow.slice(pos,pos+3500),/external_side_effect:false/);
+  assert.doesNotMatch(workflow.slice(pos,pos+3500),/graph\.facebook\.com|api\.pinterest\.com/);
+  assert.match(admin,/data-provider-disconnect/);
+  assert.match(api,/disconnectMarketingProvider/);
+});
