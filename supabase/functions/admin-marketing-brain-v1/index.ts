@@ -303,8 +303,18 @@ Deno.serve(async(req:Request)=>{
 
   if(action==="shortlist"){
     try{
-      const items=await getShortlist();
-      return json({ok:true,items,policy:{max_candidates:maxCandidates,lookback_days:lookbackDays,deterministic_first:true},external_side_effect:false});
+      const [items,readinessResult]=await Promise.all([
+        getShortlist(),
+        sb.rpc("product_marketing_readiness_summary_v1")
+      ]);
+      if(readinessResult.error)throw new Error(readinessResult.error.message);
+      return json({
+        ok:true,
+        items,
+        readiness:readinessResult.data||{},
+        policy:{max_candidates:maxCandidates,lookback_days:lookbackDays,deterministic_first:true,readiness_contract:"cm1.6-v1"},
+        external_side_effect:false
+      });
     }catch(error){return json({ok:false,error:"shortlist_failed",detail:clean((error as Error)?.message,500)},500)}
   }
 
