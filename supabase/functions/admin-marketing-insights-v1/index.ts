@@ -75,11 +75,11 @@ Deno.serve(async(req:Request)=>{
       {data:templates,error:e5},
       {data:jobs,error:e6}
     ]=await Promise.all([
-      sb.from("marketing_assets").select("id,campaign_id,title,media_kind,generation_mode,status,version,estimated_cost_cents,actual_cost_cents,updated_at").neq("status","archived").order("updated_at",{ascending:false}).limit(100),
+      sb.from("marketing_assets").select("id,campaign_id,title,media_kind,generation_mode,status,version,template_id,source_refs,edit_spec,render_spec,estimated_cost_cents,actual_cost_cents,updated_at").neq("status","archived").order("updated_at",{ascending:false}).limit(100),
       sb.from("marketing_media_objects").select("id,asset_id,version,role,mime_type,width,height,duration_ms,byte_size,created_at").order("created_at",{ascending:false}).limit(300),
       sb.from("marketing_runtime_config").select("enabled,execution_mode,canary_percent,kill_switch,generation_enabled,deterministic_render_enabled,ai_image_enabled,ai_video_enabled,publishing_enabled,attribution_recording_enabled,whatsapp_status_publish_enabled,instagram_story_publish_enabled,facebook_story_publish_enabled,instagram_carousel_publish_enabled,pinterest_publish_enabled,google_business_publish_enabled,require_approval,default_timezone,max_daily_publications,max_daily_ai_image_generations,max_daily_ai_video_seconds,max_daily_ai_cost_cents,metadata,updated_at").eq("id",1).maybeSingle(),
-      sb.from("marketing_campaigns").select("id,name,objective,status,enabled,execution_mode,canary_percent,kill_switch,max_cost_cents,max_publications_per_day,created_at,updated_at").order("updated_at",{ascending:false}).limit(100),
-      sb.from("marketing_content_templates").select("id,template_key,version,name,media_kind,status,created_at").eq("status","active").order("name",{ascending:true}).limit(100),
+      sb.from("marketing_campaigns").select("id,name,objective,status,enabled,execution_mode,canary_percent,kill_switch,content_policy,product_selection,schedule_rule,channel_plan,ai_policy,max_cost_cents,max_publications_per_day,created_at,updated_at").order("updated_at",{ascending:false}).limit(100),
+      sb.from("marketing_content_templates").select("id,template_key,version,name,media_kind,status,created_at").eq("status","approved").order("name",{ascending:true}).limit(100),
       sb.from("marketing_publication_jobs").select("id,campaign_id,asset_id,channel,content_type,status,manual_confirmation_required,scheduled_for,estimated_cost_cents,published_at,created_at,updated_at").order("updated_at",{ascending:false}).limit(200)
     ]);
     if(e1||e2||e3||e4||e5||e6)return fail("overview_failed",e1?.message||e2?.message||e3?.message||e4?.message||e5?.message||e6?.message||"Falha de leitura",500);
