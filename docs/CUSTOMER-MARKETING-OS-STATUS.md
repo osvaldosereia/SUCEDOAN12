@@ -2,7 +2,7 @@
 
 Atualizado em 18/09/2026.
 
-Status: **CM-1.1 EM EXECUÇÃO — BOUNDARY SEGURO IMPLANTADO**.
+Status: **CM-1.1 CONCLUÍDA TECNICAMENTE — CM-1.2 IDENTITY RESOLVER ATIVA EM OBSERVE**.
 
 ## Leia primeiro
 
@@ -11,8 +11,9 @@ Status: **CM-1.1 EM EXECUÇÃO — BOUNDARY SEGURO IMPLANTADO**.
 3. `docs/CUSTOMER-MARKETING-OS-ETAPA-CM1.md`
 4. `docs/CUSTOMER-MARKETING-OS-CM1-1-SECURITY-PLAN.md`
 5. `docs/CUSTOMER-MARKETING-OS-CM1-1-PROGRESS.md`
-6. `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`
-7. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
+6. `docs/CUSTOMER-MARKETING-OS-CM1-2-IDENTITY-RESOLVER.md`
+7. `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`
+8. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
 
 ## Governança
 
@@ -65,10 +66,32 @@ A auditoria confirmou que o projeto já possui omnichannel core, CRM unificado, 
 
 Foi detectado como prioridade de segurança que o Admin atual possui endpoints públicos `verify_jwt=false`; novas superfícies Customer/Marketing/Meta sensíveis nascerão autenticadas.
 
-## CM-1.1 em execução
+## CM-1.1 concluída tecnicamente
 
-Já foi implantado o boundary autenticado de Customer OS, a ação `customer_360`, o bootstrap de sessão por PIN/Auth, o client autenticado e o teste contratual. A nova UI permanece desligada até homologação.
+Concluído:
 
-Pendente nesta rodada: decisão explícita de policy para habilitar RLS nas 6 tabelas hoje sem RLS e homologação do fluxo de sessão.
+- boundary autenticado do Customer OS;
+- Customer 360 protegido;
+- PIN → token hash → sessão Supabase Auth;
+- RLS server-only nas 6 tabelas identificadas;
+- grants anon/authenticated removidos;
+- smoke test com service_role;
+- tela Clientes preparada para migrar por feature flag;
+- CI atualizado para validar os novos contratos.
 
-Não foi ativado envio em massa, Meta direta ou campanha automática.
+A flag `customerOsSecureUiEnabled` permanece desligada somente até o primeiro login manual com o PIN administrativo no navegador. Isso evita bloquear a operação caso o PIN configurado não esteja em mãos.
+
+## CM-1.2 em execução
+
+Já está ativo em modo observe/fail-closed:
+
+- `resolve_customer_identity_v1`;
+- auditoria de resolução;
+- conta canônica WhatsApp em `channel_accounts`;
+- Identity Graph inicial em `customer_channel_identities`;
+- observer de identidade;
+- PapoAI usando o resolver canônico;
+- PapoAI alimentando `normalized_channel_events` quando há message id;
+- diagnósticos de identidade incorporados ao Customer 360.
+
+Nenhum envio em massa, Meta direta ou campanha automática foi ativado.
