@@ -36,6 +36,63 @@ Deno.serve(async(req:Request)=>{
     const salesPlan={shopping_mode:mode||'whatsapp_only',preferred_reply:customer.preferred_reply||'auto',try_room_first:(mode==='catalog_first'),offer_room_as_option:(mode==='hybrid'),keep_whatsapp_primary:(mode==='whatsapp_only'),seller_audio_candidate:(customer.preferred_reply==='audio'||customer.preferred_reply==='auto')};
     return json({ok:true,customer,resolved_shopping_mode:mode||'whatsapp_only',sales_plan:salesPlan,purchased_products:stats||[],orders:orders||[],addresses:addresses||[],recommendations:recommendations||[]});
   }
+  if(action==='customer_360'){
+    const id=text(body?.id,80);if(!id)return json({ok:false,error:'id_required'},400);
+    const {data:customer,error:customerError}=await sb.from('customers').select('*').eq('id',id).maybeSingle();
+    if(customerError||!customer)return json({ok:false,error:'customer_not_found'},404);
+    const timelineLimit=int(body?.timeline_limit,10,100);
+    const [
+      {data:phones,error:phonesError},
+      {data:emails,error:emailsError},
+      {data:addresses,error:addressesError},
+      {data:identities,error:identitiesError},
+      {data:consents,error:consentsError},
+      {data:intelligence,error:intelligenceError},
+      {data:segments,error:segmentsError},
+      {data:timeline,error:timelineError},
+      {data:behavior,error:behaviorError},
+      {data:handoffs,error:handoffsError}
+    ]=await Promise.all([
+      sb.from('customer_phones').select('id,phone_e164,source,is_primary,verified_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
+      sb.from('customer_emails').select('id,email,verification_status,is_primary,source,verified_at,linked_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
+      sb.from('customer_addresses').select('id,label,street,number,complement,neighborhood,city,state,postal_code,reference,is_default,is_active,last_confirmed_at,google_maps_url,latitude,longitude').eq('customer_id',id).order('is_default',{ascending:false}),
+      sb.from('customer_channel_identities').select('id,channel,channel_account_id,external_user_id,identity_kind,verification_status,verified_at,evidence,created_at,updated_at,linked_at').eq('customer_id',id).order('updated_at',{ascending:false}),
+      sb.from('customer_channel_consents').select('id,channel,channel_identity_id,customer_email_id,purpose,status,source,evidence,occurred_at,created_at').eq('customer_id',id).order('occurred_at',{ascending:false}),
+      sb.rpc('get_customer_purchase_intelligence_v1',{p_customer_id:id,p_product_limit:10,p_category_limit:8}),
+      sb.rpc('get_customer_commercial_segments_v1',{p_customer_id:id}),
+      sb.from('customer_timeline_v1').select('customer_id,conversation_id,occurred_at,channel,event_kind,direction,title,body_text,reference_id,metadata').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(timelineLimit),
+      sb.from('customer_behavior_events').select('id,conversation_id,event_type,event_data,occurred_at').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(50),
+      sb.from('human_handoffs').select('id,conversation_id,reason,priority,status,summary,channel,created_at,claimed_at,resolved_at,sla_due_at').eq('customer_id',id).order('created_at',{ascending:false}).limit(20)
+    ]);
+    const failures=[
+      ['phones',phonesError],['emails',emailsError],['addresses',addressesError],['identities',identitiesError],
+      ['consents',consentsError],['intelligence',intelligenceError],['segments',segmentsError],['timeline',timelineError],
+      ['behavior',behaviorError],['handoffs',handoffsError]
+    ].filter(([,e])=>Boolean(e)).map(([part,e]:any)=>({part,error:e.message}));
+    if(failures.length)return json({ok:false,error:'customer_360_failed',failures},400);
+    const activeConsents=(consents||[]).reduce((acc:any,row:any)=>{
+      const key=`${row.channel}:${row.purpose}`;if(!acc[key])acc[key]=row;return acc;
+    },{});
+    const dataQuality={
+      has_name:Boolean(customer.name),
+      has_phone:Boolean(customer.primary_whatsapp_e164||(phones||[]).length),
+      has_document:Boolean(customer.cpf_cnpj),
+      has_address:Boolean((addresses||[]).some((x:any)=>x.is_active!==false)),
+      has_verified_channel:Boolean((identities||[]).some((x:any)=>x.verification_status==='verified')),
+      has_purchase_history:Number(intelligence?.order_count||0)>0,
+      has_positive_marketing_consent:Object.values(activeConsents).some((x:any)=>x.purpose==='marketing'&&x.status==='granted')
+    };
+    const completeness=Math.round(Object.values(dataQuality).filter(Boolean).length/Object.keys(dataQuality).length*100);
+    return json({
+      ok:true,
+      customer,
+      contact:{phones:phones||[],emails:emails||[],addresses:addresses||[],channel_identities:identities||[]},
+      consent:{events:consents||[],current:activeConsents},
+      commercial:{intelligence:intelligence||{},segments:segments||{}},
+      activity:{timeline:timeline||[],behavior_events:behavior||[],handoffs:handoffs||[]},
+      data_quality:{...dataQuality,completeness_percent:completeness}
+    });
+  }
   if(action==='set_shopping_mode'){
     if(!canWrite)return json({ok:false,error:'read_only'},403);const id=text(body?.id,80),mode=text(body?.mode,30);if(!['auto','catalog_first','whatsapp_only','hybrid'].includes(mode))return json({ok:false,error:'invalid_mode'},400);const {data,error}=await sb.from('customers').update({shopping_mode:mode,updated_at:new Date().toISOString()}).eq('id',id).select('id,shopping_mode,catalog_skill_score').single();if(error)return json({ok:false,error:'update_failed',detail:error.message},400);return json({ok:true,customer:data});
   }
