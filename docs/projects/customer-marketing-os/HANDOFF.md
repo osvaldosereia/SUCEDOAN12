@@ -99,7 +99,7 @@ Resultados principais:
 - webhook: unverified;
 - direct-ready flag: false;
 - Meta Direct Edge: version 2;
-- Admin Meta Direct: version 5;
+- Admin Meta Direct: version 7;
 - nenhum fallback de Graph API;
 - nenhum gate externo aberto.
 
@@ -177,3 +177,30 @@ Estado do preflight antes de executar o botão com a sessão humana:
 - `external_activation_authorized=false`.
 
 Próximo passo desta subetapa: responsável entra na Central com o PIN e executa **Meta Foundation → Verificar Meta agora**. Não é ativação externa; é uma consulta GET à Meta feita pelo Supabase.
+
+
+## Meta webhook — último checkpoint
+
+Leia também:
+
+`CM1-HOMOLOGATION-META-WEBHOOK-V2.md`
+
+Não confundir:
+
+- WABA subscribed;
+- Flow health webhook verified;
+- Meta Direct callback verified.
+
+Estado:
+
+- Flow health: 669 eventos assinados / 9 flows / funcionando;
+- Meta Direct callback: ainda pendente;
+- `whatsapp-meta-direct-v1` v3 preparado como ingress fail-closed e compatível com Flow health;
+- `admin-whatsapp-direct-v1` v7;
+- Meta Direct continua OFF;
+- outbound continua OFF;
+- `external_activation_authorized=false`.
+
+Próxima ação humana: **Central de Relacionamento → Meta Foundation → Verificar Meta agora**.
+
+Até essa ação acontecer, não promover `permissions_clear`, não promover `webhook_ready` e não alterar `direct_ready_flag`.
