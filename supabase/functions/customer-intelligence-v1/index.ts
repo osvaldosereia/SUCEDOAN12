@@ -98,7 +98,8 @@ Deno.serve(async(req:Request)=>{
       {data:marketingEvents,error:marketingEventsError},
       {data:consentLedger,error:consentLedgerError},
       {data:customerProtection,error:customerProtectionError},
-      {data:dynamicSegments,error:dynamicSegmentsError}
+      {data:dynamicSegments,error:dynamicSegmentsError},
+      {data:commercialProfile,error:commercialProfileError}
     ]=await Promise.all([
       sb.from('customer_phones').select('id,phone_e164,source,is_primary,verified_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
       sb.from('customer_emails').select('id,email,verification_status,is_primary,source,verified_at,linked_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
@@ -120,7 +121,8 @@ Deno.serve(async(req:Request)=>{
       sb.from('marketing_events').select('id,entity_type,entity_id,event_type,data,external_side_effect,created_at').eq('entity_type','customer').eq('entity_id',id).order('created_at',{ascending:false}).limit(50),
       sb.from('customer_channel_consent_events_v1').select('id,channel,channel_identity_id,customer_email_id,purpose,status,source,evidence,policy_version,event_key,occurred_at,created_at').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(100),
       sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:id,p_channel:'whatsapp',p_purpose:'marketing'}),
-      sb.rpc('get_customer_dynamic_segments_v1',{p_customer_id:id})
+      sb.rpc('get_customer_dynamic_segments_v1',{p_customer_id:id}),
+      sb.rpc('get_customer_commercial_profile_v1',{p_customer_id:id,p_product_limit:12,p_category_limit:10,p_brand_limit:10})
     ]);
     const failures=[
       ['phones',phonesError],['emails',emailsError],['addresses',addressesError],['identities',identitiesError],
@@ -130,7 +132,7 @@ Deno.serve(async(req:Request)=>{
       ['service_memory',serviceMemoryError],['substitution_preferences',substitutionPreferencesError],
       ['marketing_touchpoints',marketingTouchpointsError],['marketing_events',marketingEventsError],
       ['consent_ledger',consentLedgerError],['customer_protection',customerProtectionError],
-      ['dynamic_segments',dynamicSegmentsError]
+      ['dynamic_segments',dynamicSegmentsError],['commercial_profile',commercialProfileError]
     ].filter(([,e])=>Boolean(e)).map(([part,e]:any)=>({part,error:e.message}));
     if(failures.length)return json(origin,{ok:false,error:'customer_360_failed',failures},400);
     const activeConsents=(consents||[]).reduce((acc:any,row:any)=>{
@@ -195,7 +197,7 @@ Deno.serve(async(req:Request)=>{
         average_ticket:Number(intelligence?.average_ticket||0),
         open_cart:openCart?{id:openCart.id,total:openCart.total,status:openCart.status,updated_at:openCart.updated_at}:null
       },
-      commercial:{intelligence:intelligence||{},segments:dynamicSegments||segments||{},legacy_segments:segments||{},products:productRows,brands,categories},
+      commercial:{profile:commercialProfile||{},intelligence:intelligence||{},segments:dynamicSegments||segments||{},legacy_segments:segments||{},products:productRows,brands,categories},
       activity:{timeline:timeline||[],behavior_events:behavior||[],handoffs:handoffs||[],conversations:conversations||[],carts:carts||[]},
       preferences:{service_memory:serviceMemory||[],substitutions:substitutionPreferences||[]},
       marketing:{touchpoints:marketingTouchpoints||[],events:marketingEvents||[]},
