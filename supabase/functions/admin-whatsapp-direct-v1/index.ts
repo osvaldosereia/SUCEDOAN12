@@ -9,6 +9,15 @@ const validUuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0
 const graphVersion=()=>clean(Deno.env.get("META_GRAPH_VERSION")||"",20);
 const graphVersionReady=()=>/^v\d+\.\d+$/.test(graphVersion());
 const secureReady=()=>Boolean(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")&&Deno.env.get("META_APP_SECRET")&&Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")&&graphVersionReady());
+const whatsappAccessTokenVaultName="dona_antonia_whatsapp_access_token_v1";
+async function resolveWhatsappAccessTokenReadonly(sb:any){
+  const envToken=String(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"").trim();
+  if(envToken)return {token:envToken,source:"edge_secret"};
+  const secretR=await sb.rpc("get_customer_os_vault_secret_v1",{p_name:whatsappAccessTokenVaultName});
+  if(secretR.error)return {token:"",source:"vault",error:clean(secretR.error.message,300)};
+  const vaultToken=String(secretR.data||"").trim();
+  return {token:vaultToken,source:vaultToken?"supabase_vault":"missing"};
+}
 async function sha256(bytes:Uint8Array){const copy=new Uint8Array(bytes);const hash=await crypto.subtle.digest("SHA-256",copy.buffer);return Array.from(new Uint8Array(hash)).map(x=>x.toString(16).padStart(2,"0")).join("")}
 function parseButtons(input:unknown){const rows=Array.isArray(input)?input.slice(0,3):[];if(Array.isArray(input)&&input.length>3)throw new Error("max_3_buttons");return rows.map((x:any,i)=>{if(x?.url||x?.link||String(x?.type||"").toLowerCase().includes("url"))throw new Error("url_buttons_not_allowed");const id=clean(x?.id||`button_${i+1}`,256),title=clean(x?.title,20);if(!id||!title)throw new Error("invalid_button");return {id,title,type:"reply"}})}
 
@@ -116,8 +125,16 @@ Deno.serve(async(req:Request)=>{
   if(!canWrite)return json({ok:false,error:"read_only"},403);
 
   if(action==="meta_diagnostics_readonly"){
-    const access=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"",version=graphVersion();
-    if(!access)return json({ok:false,error:"meta_credentials_missing",external_side_effect:false},409);
+    const credential=await resolveWhatsappAccessTokenReadonly(sb);
+    const access=credential.token,version=graphVersion();
+    if(!access)return json({
+      ok:false,
+      error:"meta_credentials_missing",
+      detail:"Token de leitura da WhatsApp Cloud API ainda não está configurado no Supabase.",
+      required_secret_name:whatsappAccessTokenVaultName,
+      credential_source:credential.source,
+      external_side_effect:false
+    },409);
     if(!graphVersionReady())return json({ok:false,error:"meta_graph_version_unverified",external_side_effect:false},409);
 
     const accountR=await sb.from("whatsapp_accounts")
@@ -168,6 +185,7 @@ Deno.serve(async(req:Request)=>{
         http_status:permissionsR.status,
         api_version:permissionsR.api_version,
         checked_by:user.id,
+        credential_source:credential.source,
         external_side_effect:false
       },
       checked_at:checkedAt,
@@ -253,6 +271,7 @@ Deno.serve(async(req:Request)=>{
         flow_health_signed_events_14d:flowHealthSignedCount,
         flow_health_last_signed_at:flowHealthLastSignedAt,
         checked_by:user.id,
+        credential_source:credential.source,
         external_side_effect:false
       },
       checked_at:checkedAt
@@ -267,6 +286,7 @@ Deno.serve(async(req:Request)=>{
     return json({
       ok:true,
       mode:"READ_ONLY",
+      credential_source:credential.source,
       graph_api_version:healthWrite.data?.graph_api_version||version,
       permissions:Object.fromEntries(requiredPermissions.map(k=>[k,permissionMap.get(k)==="granted"?"granted":"missing"])),
       phone:{
