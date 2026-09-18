@@ -336,6 +336,8 @@ Reexecutar a importação não cria duplicatas e não altera pedidos locais corr
 
 ## Etapa 9 — Segmentação comercial derivada
 
+Status: **PRÓXIMA**
+
 Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
