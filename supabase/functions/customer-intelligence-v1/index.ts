@@ -126,12 +126,41 @@ Deno.serve(async(req:Request)=>{
   if(action==='identity_conflicts'){
     const limit=int(body?.limit,10,100);
     const {data,error}=await sb.from('customer_identity_resolution_evaluations')
-      .select('id,decision,confidence,source,channel,evidence,created_at')
+      .select('id,decision,confidence,confidence_scope,match_method,review_status,source,channel,evidence,created_at,reviewed_at,review_notes')
       .eq('decision','conflict')
+      .eq('review_status','pending')
       .order('created_at',{ascending:false})
       .limit(limit);
     if(error)return json(origin,{ok:false,error:'identity_conflicts_failed',detail:error.message},400);
     return json(origin,{ok:true,conflicts:data||[]});
+  }
+  if(action==='identity_review'){
+    if(!canWrite)return json(origin,{ok:false,error:'read_only'},403);
+    const evaluationId=text(body?.id,80),review=text(body?.review,20).toLowerCase(),notes=text(body?.notes,1000),selectedCustomerId=text(body?.customer_id,80)||null;
+    if(!evaluationId)return json(origin,{ok:false,error:'id_required'},400);
+    if(!['approved','rejected'].includes(review))return json(origin,{ok:false,error:'invalid_review'},400);
+    const {data:evaluation,error:lookupError}=await sb.from('customer_identity_resolution_evaluations')
+      .select('id,decision,evidence,review_status')
+      .eq('id',evaluationId).maybeSingle();
+    if(lookupError||!evaluation)return json(origin,{ok:false,error:'identity_evaluation_not_found'},404);
+    if(evaluation.review_status!=='pending')return json(origin,{ok:false,error:'identity_review_already_closed'},409);
+    const candidates=Array.isArray(evaluation.evidence?.candidate_ids)?evaluation.evidence.candidate_ids.map((x:any)=>String(x)):[];
+    if(review==='approved'){
+      if(!selectedCustomerId)return json(origin,{ok:false,error:'customer_id_required'},400);
+      if(!candidates.includes(selectedCustomerId))return json(origin,{ok:false,error:'customer_not_in_candidates'},400);
+    }
+    const patch:any={
+      review_status:review,
+      reviewed_at:new Date().toISOString(),
+      reviewed_by:user.id,
+      review_notes:notes||null
+    };
+    if(review==='approved')patch.customer_id=selectedCustomerId;
+    const {data,error}=await sb.from('customer_identity_resolution_evaluations')
+      .update(patch).eq('id',evaluationId)
+      .select('id,decision,customer_id,confidence,match_method,review_status,reviewed_at,review_notes').single();
+    if(error)return json(origin,{ok:false,error:'identity_review_failed',detail:error.message},400);
+    return json(origin,{ok:true,evaluation:data,side_effects:'review_only_no_merge'});
   }
   if(action==='customer_history'){
     const id=text(body?.id,80);if(!id)return json(origin,{ok:false,error:'id_required'},400);
