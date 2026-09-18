@@ -8,6 +8,27 @@
   const registry=new Map(),syncState=new Map();
   let generation=0,offset=0,hasMore=true,loading=false,activeStage=null,productGrid=null,detailLayer=null;
 
+  function trackCatalogInteraction(eventType,payload={}){
+    return productApi('track',{
+      event_type:eventType,
+      customer_category:state.productFilters?.customerCategory||'',
+      customer_subcategory:state.productFilters?.subcategory||'',
+      customer_subsubcategory:state.productFilters?.subsubcategory||'',
+      offers:state.productFilters?.offers===true,
+      q:state.productFilters?.query||'',
+      ...payload
+    }).catch(()=>null);
+  }
+
+  function trackCatalogSearch(surface='products_browser'){
+    return trackCatalogInteraction('catalog_search',{surface});
+  }
+
+  function trackProductView(product,surface='product_detail'){
+    if(!product?.id)return Promise.resolve(null);
+    return trackCatalogInteraction('product_view',{product_id:product.id,surface});
+  }
+
   function sectionConfig(label){
     if(label==='Ofertas')return {customerCategory:'',offers:true,label:'Ofertas'};
     if(label==='Para Casa')return {customerCategory:'Para Casa',offers:false,label:'Para Casa'};
@@ -60,7 +81,7 @@
     for(const choice of ['Para Você','Para Casa','Ofertas']){const button=document.createElement('button');button.type='button';button.className=`chip ${choice===label?'active':''}`;button.textContent=choice;button.onclick=()=>openSection(choice);selector.appendChild(button)}host.appendChild(selector);
     const sticky=document.createElement('div');sticky.className='products-filter-sticky';host.appendChild(sticky);
     const search=document.createElement('form');search.className='product-search';search.innerHTML='<input type="search" autocomplete="off" placeholder="Buscar produto"><button type="submit">Buscar</button>';sticky.appendChild(search);
-    search.onsubmit=event=>{event.preventDefault();state.productFilters.query=text(search.querySelector('input').value);resetProducts()};
+    search.onsubmit=event=>{event.preventDefault();state.productFilters.query=text(search.querySelector('input').value);trackCatalogSearch('search_form');resetProducts()};
     const categories=document.createElement('div');categories.className='chips chips-categories';categories.dataset.categories='1';sticky.appendChild(categories);
     const subcategories=document.createElement('div');subcategories.className='chips chips-subcategories';subcategories.dataset.subcategories='1';subcategories.hidden=true;sticky.appendChild(subcategories);
     productGrid=document.createElement('div');productGrid.className='products-grid';host.appendChild(productGrid);
@@ -86,19 +107,20 @@
     const sticky=document.createElement('div');sticky.className='products-filter-sticky';host.appendChild(sticky);
     const search=document.createElement('form');search.className='product-search';search.innerHTML='<input type="search" autocomplete="off" placeholder="Buscar produto"><button type="submit">Buscar</button>';sticky.appendChild(search);
     const input=search.querySelector('input');if(input)input.value=value;
-    search.onsubmit=event=>{event.preventDefault();state.productFilters.query=text(search.querySelector('input').value);resetProducts()};
+    search.onsubmit=event=>{event.preventDefault();state.productFilters.query=text(search.querySelector('input').value);trackCatalogSearch('search_form');resetProducts()};
     productGrid=document.createElement('div');productGrid.className='products-grid';host.appendChild(productGrid);
     const bottom=document.createElement('div');bottom.className='products-loading';bottom.dataset.productsLoading='1';host.appendChild(bottom);
+    trackCatalogSearch('chat_lookup');
     const requestGeneration=++generation;resetPagination();await loadMore(requestGeneration);app.scrollTo(host,{block:'start'});
   }
 
   function renderFilterChips(categories=[],subMap={}){
     if(!activeStage)return;const categoryHost=activeStage.querySelector('[data-categories]'),subHost=activeStage.querySelector('[data-subcategories]');if(!categoryHost||!subHost)return;
-    categoryHost.innerHTML='';const all=document.createElement('button');all.type='button';all.className=`chip ${!state.productFilters.subcategory?'active':''}`;all.textContent='Todos';all.onclick=()=>{state.productFilters.subcategory='';state.productFilters.subsubcategory='';resetProducts()};categoryHost.appendChild(all);
-    for(const category of categories){const button=document.createElement('button');button.type='button';button.className=`chip ${state.productFilters.subcategory===category.key?'active':''}`;button.textContent=category.label;button.onclick=()=>{state.productFilters.subcategory=category.key;state.productFilters.subsubcategory='';resetProducts()};categoryHost.appendChild(button)}
+    categoryHost.innerHTML='';const all=document.createElement('button');all.type='button';all.className=`chip ${!state.productFilters.subcategory?'active':''}`;all.textContent='Todos';all.onclick=()=>{state.productFilters.subcategory='';state.productFilters.subsubcategory='';trackCatalogSearch('subcategory_filter');resetProducts()};categoryHost.appendChild(all);
+    for(const category of categories){const button=document.createElement('button');button.type='button';button.className=`chip ${state.productFilters.subcategory===category.key?'active':''}`;button.textContent=category.label;button.onclick=()=>{state.productFilters.subcategory=category.key;state.productFilters.subsubcategory='';trackCatalogSearch('subcategory_filter');resetProducts()};categoryHost.appendChild(button)}
     subHost.innerHTML='';const leaves=state.productFilters.subcategory?(subMap[state.productFilters.subcategory]||[]):[];subHost.hidden=!leaves.length;if(!leaves.length)return;
-    const subAll=document.createElement('button');subAll.type='button';subAll.className=`chip ${!state.productFilters.subsubcategory?'active':''}`;subAll.textContent='Todos';subAll.onclick=()=>{state.productFilters.subsubcategory='';resetProducts()};subHost.appendChild(subAll);
-    for(const sub of leaves){const button=document.createElement('button');button.type='button';button.className=`chip ${state.productFilters.subsubcategory===sub.key?'active':''}`;button.textContent=sub.label;button.onclick=()=>{state.productFilters.subsubcategory=sub.key;resetProducts()};subHost.appendChild(button)}
+    const subAll=document.createElement('button');subAll.type='button';subAll.className=`chip ${!state.productFilters.subsubcategory?'active':''}`;subAll.textContent='Todos';subAll.onclick=()=>{state.productFilters.subsubcategory='';trackCatalogSearch('subsubcategory_filter');resetProducts()};subHost.appendChild(subAll);
+    for(const sub of leaves){const button=document.createElement('button');button.type='button';button.className=`chip ${state.productFilters.subsubcategory===sub.key?'active':''}`;button.textContent=sub.label;button.onclick=()=>{state.productFilters.subsubcategory=sub.key;trackCatalogSearch('subsubcategory_filter');resetProducts()};subHost.appendChild(button)}
   }
 
   function resetPagination(){offset=0;hasMore=true;loading=false;if(productGrid)productGrid.innerHTML=''}
@@ -167,6 +189,7 @@
   async function waitForPending(){while(pendingProductSyncs.size)await app.waitForPendingProductSyncs()}
 
   function openDetail(product){
+    trackProductView(product,'product_detail');
     closeDetail();const sync=productState(product);detailLayer=document.createElement('div');detailLayer.className='product-detail-layer open';detailLayer.dataset.productId=String(product.id);
     detailLayer.innerHTML=`<button class="product-detail-backdrop" type="button" aria-label="Fechar"></button><section class="product-detail-sheet" role="dialog" aria-modal="true"><button class="product-detail-close" type="button" aria-label="Fechar">×</button><div class="product-detail-image"></div><div class="product-detail-copy"><h2>${escapeHtml(product.name||'Produto')}</h2><p class="product-detail-meta">${escapeHtml([product.brand,product.packaging].filter(Boolean).join(' · '))}</p>${detailPriceHtml(product)}${product.personalized_reason?`<p class="product-detail-personalized">${escapeHtml(product.personalized_reason)}</p>`:''}${product.description_short?`<p class="product-detail-description">${escapeHtml(product.description_short)}</p>`:''}<div class="product-detail-actions"><div class="product-detail-qty"><button type="button" data-detail-minus>−</button><strong data-detail-qty>${sync.desiredQuantity}</strong><button type="button" data-detail-plus>+</button></div></div></div></section>`;
     detailLayer.querySelector('.product-detail-image').appendChild(image(product.image_url,product.name));detailLayer.querySelector('.product-detail-backdrop').onclick=closeDetail;detailLayer.querySelector('.product-detail-close').onclick=closeDetail;detailLayer.querySelector('[data-detail-minus]').onclick=()=>changeQuantity(product,-1);detailLayer.querySelector('[data-detail-plus]').onclick=()=>changeQuantity(product,1);document.body.appendChild(detailLayer);document.body.classList.add('product-detail-open');
