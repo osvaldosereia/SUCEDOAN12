@@ -1721,3 +1721,17 @@ Novos reforços:
 R24 NÃO significa beta iniciado: não existe APK/AAB/IPA homologado, nenhum build foi enviado, nenhum tester foi convidado e nenhum console de loja foi alterado.
 
 Estado operacional permanece OFF. R25 continua sendo a primeira rodada autorizada a tocar produção e exige autorização explícita.
+
+---
+
+# 32. Continuação segura — hardening, UX e readiness de lojas
+
+Sem avançar para produção, foram acrescentadas três camadas:
+
+1. **Segurança:** evaluator local de sessão expirada/revogada e scanner ampliado para credenciais FCM/APNs/Google/private keys. Isso prepara R22 sem fingir validação nativa/backend.
+2. **UX/desempenho:** controles críticos agora possuem 44px mínimos explícitos e existem budgets internos mensuráveis para renderização/transição/bundles/assets. As medições reais continuam pendentes.
+3. **Lojas:** os três documentos previstos no plano original (`APP-STORE-CHECKLIST.md`, `PLAY-STORE-CHECKLIST.md`, `REVIEW-PROFILE.md`) existem em modo DRAFT, com reviewer exclusivamente sintético.
+
+Validação local adicional: 13/13 testes verdes para session guard, performance budget, release readiness e store docs; typecheck verde dos novos módulos. Verificação estática confirmou 10/10 controles críticos com 44px.
+
+Nenhum desses avanços altera o gate: R24 continua parcial, R10/R11 continuam bloqueadas por toolchain e R25 exige autorização explícita antes de qualquer produção.
