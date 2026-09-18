@@ -33,4 +33,201 @@ if((btn==="address_confirm"||["sim confirmar","confirmar endereco","sim esta cor
 if(s?.state==="WAITING_ADDRESS"){if(m.type==="audio")return withTo([{kind:"buttons",body:"Recebi seu áudio. Para não correr risco de errar o endereço, envie por escrito no formato Rua, Quadra, Casa/Número, Bairro e Referência.",buttons:[{id:"human_support",title:"Atendente"}]}]);if(m.type!=="text")return withTo([{kind:"text",body:cfg.address_request_text}]);const p=parseAddress(txt);if(!complete(p)){const missing=[!p.street?"Rua":"",!p.number?"Casa/Número":"",!p.neighborhood?"Bairro":""].filter(Boolean).join(", ");return withTo([{kind:"buttons",body:`Ainda preciso de: ${missing}.\n\n${cfg.address_request_text}`,buttons:[{id:"human_support",title:"Atendente"}]}])}const next=cfg.require_location?"WAITING_LOCATION":"ADDRESS_REVIEW",ns=await state(sb,c.id,{state:next,address_draft:p});if(cfg.require_location)return withTo([{kind:"buttons",body:"Recebi o endereço. Agora envie sua localização pelo WhatsApp 📍.",buttons:[{id:"location_help",title:"Como enviar"},{id:"human_support",title:"Atendente"}]}]);return withTo([{kind:"buttons",body:`Confira:\n${formatAddress(ns.address_draft)}\n\nEstá correto?`,buttons:[{id:"address_confirm",title:"Confirmar"},{id:"address_change",title:"Corrigir"},{id:"human_support",title:"Atendente"}]}])}
 if(s?.state==="WAITING_LOCATION"){if(btn==="location_help")return withTo([{kind:"buttons",body:"No WhatsApp, toque no clipe 📎 ou +, escolha Localização e envie sua localização atual.",buttons:[{id:"human_support",title:"Atendente"}]}]);if(m.type!=="location"||m.location?.latitude==null||m.location?.longitude==null)return withTo([{kind:"buttons",body:"Falta somente sua localização 📍. Envie pelo botão de localização do WhatsApp.",buttons:[{id:"location_help",title:"Como enviar"},{id:"human_support",title:"Atendente"}]}]);const lat=Number(m.location.latitude),lng=Number(m.location.longitude),url=mapsUrl(lat,lng),d={...(s.address_draft||{}),latitude:lat,longitude:lng,location_url:url};await saveAddr(sb,u.id,d,false);await state(sb,c.id,{state:"ADDRESS_REVIEW",address_draft:d,latitude:lat,longitude:lng,location_url:url});return withTo([{kind:"buttons",body:`Confira o endereço:\n${formatAddress(d)}\nLocalização: ${url}\n\nEstá correto?`,buttons:[{id:"address_confirm",title:"Confirmar"},{id:"address_change",title:"Corrigir"},{id:"human_support",title:"Atendente"}]}])}
 if(btn==="menu_cestas"||n.includes("cesta"))return withTo([{kind:"text",body:`Veja nossas cestas, preços e composição aqui:\n${cfg.storefront_url}`},{kind:"buttons",body:"Se precisar, escolha uma opção:",buttons:[{id:"menu_products",title:"Comprar produtos"},{id:"menu_delivery",title:"Entrega e pagamento"},{id:"human_support",title:"Atendente"}]}]);if(btn==="menu_products"||n.includes("produto")||n==="comprar")return withTo([{kind:"text",body:`Pesquise os produtos e escolha as quantidades na nossa vitrine:\n${cfg.storefront_url}`},{kind:"buttons",body:"Posso ajudar em mais alguma coisa?",buttons:[{id:"menu_cestas",title:"Ver cestas"},{id:"menu_delivery",title:"Entrega e pagamento"},{id:"human_support",title:"Atendente"}]}]);if(btn==="menu_delivery"||n.includes("entrega")||n.includes("pagamento"))return withTo([{kind:"buttons",body:"Entregamos em Cuiabá e Várzea Grande. O pagamento é feito na entrega.",buttons:[{id:"menu_cestas",title:"Ver cestas"},{id:"menu_products",title:"Comprar produtos"},{id:"human_support",title:"Atendente"}]}]);await state(sb,c.id,{state:"MENU"});return withTo([{kind:"buttons",body:cfg.greeting_text,buttons:[{id:"menu_cestas",title:"Ver cestas"},{id:"menu_products",title:"Comprar produtos"},{id:"menu_delivery",title:"Entrega e pagamento"}]}])}
-Deno.serve(async(req:Request)=>{const env={url:Deno.env.get("SUPABASE_URL")||"",service:Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"",access:Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"",secret:Deno.env.get("META_APP_SECRET")||"",verify:Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")||"",version:Deno.env.get("META_GRAPH_VERSION")||""},u=new URL(req.url);if(req.method==="GET"){if(u.searchParams.has("hub.mode")){const mode=u.searchParams.get("hub.mode"),token=u.searchParams.get("hub.verify_token"),challenge=u.searchParams.get("hub.challenge")||"";if(mode==="subscribe"&&env.verify&&token===env.verify)return new Response(challenge,{status:200,headers:{"Content-Type":"text/plain"}});return new Response("Forbidden",{status:403})}return json({ok:true,service:"whatsapp-meta-direct-v1",ready:Boolean(env.url&&env.service&&env.access&&env.secret&&env.verify&&/^v\\d+\\.\\d+$/.test(env.version)),secrets:{access:Boolean(env.access),app_secret:Boolean(env.secret),verify_token:Boolean(env.verify)},graph_version_ready:/^v\\d+\\.\\d+$/.test(env.version),graph_version:/^v\\d+\\.\\d+$/.test(env.version)?env.version:null})}if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);if(!env.url||!env.service)return json({ok:false,error:"server_config"},500);const sb=createClient(env.url,env.service,{auth:{persistSession:false,autoRefreshToken:false}}),raw=await req.text();if(!env.secret||!(await signature(raw,req.headers.get("x-hub-signature-256"),env.secret)))return json({ok:false,error:"invalid_signature"},401);let body:any;try{body=JSON.parse(raw)}catch{return json({ok:false,error:"invalid_json"},400)}const cr=await sb.from("whatsapp_direct_config").select("*").eq("id",1).maybeSingle(),cfg=cr.data;if(cr.error)return json({ok:false,error:"config_lookup_failed"},500);if(!cfg?.enabled||cfg.release_mode==="off")return json({ok:true,disabled:true});if(!env.access)return json({ok:false,error:"meta_credentials_missing"},503);if(!/^v\\d+\\.\\d+$/.test(env.version))return json({ok:false,error:"meta_graph_version_unverified"},503);let processed=0;for(const m of extract(body)){if(m.status_event){if(m.message_id)await sb.from("messages").update({delivery_status:m.status,updated_at:new Date().toISOString()}).eq("whatsapp_message_id",m.message_id);continue}const p=phone(m.from);if(!p||!m.phone_number_id||!m.message_id)continue;const a=(await sb.from("whatsapp_accounts").select("*").eq("phone_number_id",m.phone_number_id).eq("is_active",true).maybeSingle()).data;if(!a)continue;const cust=await customer(sb,p,m.profile_name),conv=await conversation(sb,a.id,cust.id,p,m.timestamp),saved=await inbound(sb,conv.id,m);if(saved.duplicate)continue;let st=(await sb.from("whatsapp_direct_state").select("*").eq("conversation_id",conv.id).maybeSingle()).data;if(!st)st=await state(sb,conv.id,{customer_id:cust.id,state:"IDLE"});await log(sb,{conversation_id:conv.id,customer_id:cust.id,whatsapp_message_id:m.message_id,event_type:"inbound_received",direction:"inbound",payload:{type:m.type,button_id:m.button_id||null}});let intents:any[];try{intents=await route(sb,cfg,a,conv,cust,m,st,saved.id)}catch(e){await sb.rpc("queue_human_handoff_v1",{p_conversation_id:conv.id,p_reason:"direct_routing_error",p_source_message_id:saved.id,p_priority:3,p_summary:"Falha no fluxo determinístico",p_context:{source:"whatsapp_direct"}});intents=[{to:p,kind:"text",body:"Tive um problema para continuar automaticamente. Uma atendente vai assumir por aqui."}]}for(const i of intents){try{const sent=await sendMeta(env.access,env.version,a.phone_number_id,i);await sb.from("messages").insert({conversation_id:conv.id,whatsapp_message_id:sent.id,direction:"outbound",message_type:i.kind==="buttons"?"interactive":i.kind,body_text:clean(i.body||i.caption,4096)||null,raw_event:{source:"whatsapp_direct",request:sent.request},delivery_status:"sent"});await sb.from("conversations").update({last_outbound_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",conv.id);await log(sb,{conversation_id:conv.id,customer_id:cust.id,whatsapp_message_id:sent.id,event_type:"outbound_sent",direction:"outbound",payload:{kind:i.kind}})}catch(e){await log(sb,{conversation_id:conv.id,customer_id:cust.id,event_type:"outbound_error",direction:"system",payload:{error:clean((e as Error)?.message,500),kind:i.kind}});break}}processed++}return json({ok:true,processed})});
+
+async function sha256Hex(value:string){
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+const objectValue=(v:any)=>v&&typeof v==="object"&&!Array.isArray(v)?v:{};
+
+async function persistMetaIngressEvidence(sb:any,body:any,raw:string,cfg:any){
+  if(String(body?.object||"")!=="whatsapp_business_account")return {webhook_events:0,flow_health_events:0};
+  const channelR=await sb.from("channel_accounts").select("id").eq("channel","whatsapp").limit(1).maybeSingle();
+  const channelAccountId=channelR.data?.id||null;
+  const webhookRows:any[]=[];
+  const flowRows:any[]=[];
+  const entries=Array.isArray(body?.entry)?body.entry:[];
+  for(let ei=0;ei<entries.length;ei++){
+    const entry=objectValue(entries[ei]);
+    const changes=Array.isArray(entry?.changes)?entry.changes:[];
+    for(let ci=0;ci<changes.length;ci++){
+      const change=objectValue(changes[ci]);
+      const field=clean(change?.field||"unknown",120)||"unknown";
+      const value=objectValue(change?.value);
+      const messages=Array.isArray(value?.messages)?value.messages:[];
+      const statuses=Array.isArray(value?.statuses)?value.statuses:[];
+      const providerEventId=clean(messages?.[0]?.id||statuses?.[0]?.id||value?.flow_id||"",300)||null;
+      const payloadHash=await sha256Hex(`${raw}:${ei}:${ci}`);
+      const occurredAt=entry?.time?new Date(Number(entry.time)*1000).toISOString():null;
+      webhookRows.push({
+        channel_account_id:channelAccountId,
+        event_name:field,
+        object_type:"whatsapp_business_account",
+        provider_event_id:providerEventId,
+        payload_hash:payloadHash,
+        signature_verified:true,
+        processing_status:cfg?.enabled&&cfg?.release_mode!=="off"?"received":"ignored",
+        metadata:{
+          source:"whatsapp-meta-direct-v1",
+          direct_enabled:cfg?.enabled===true,
+          release_mode:clean(cfg?.release_mode||"off",20),
+          evidence_only:!(cfg?.enabled&&cfg?.release_mode!=="off")
+        },
+        occurred_at:occurredAt
+      });
+      if(field==="flows"){
+        const eventName=clean(value?.event||"UNKNOWN",120)||"UNKNOWN";
+        const flowId=clean(value?.flow_id||"",120)||null;
+        const availability=Number(value?.availability);
+        const threshold=Number(value?.threshold);
+        const alertState=clean(value?.alert_state||"",80)||null;
+        const normalized={
+          entry_id:clean(entry?.id||"",120)||null,
+          entry_time:Number(entry?.time||0)||null,
+          event:eventName,
+          flow_id:flowId,
+          availability:Number.isFinite(availability)?availability:null,
+          threshold:Number.isFinite(threshold)?threshold:null,
+          alert_state:alertState
+        };
+        flowRows.push({
+          event_fingerprint:await sha256Hex(JSON.stringify({normalized,entryIndex:ei,changeIndex:ci})),
+          event_name:eventName,
+          flow_id:flowId,
+          availability:Number.isFinite(availability)?availability:null,
+          threshold:Number.isFinite(threshold)?threshold:null,
+          alert_state:alertState,
+          signature_verified:true,
+          payload:normalized
+        });
+      }
+    }
+  }
+  if(webhookRows.length){
+    const wr=await sb.from("meta_webhook_events").upsert(webhookRows,{onConflict:"payload_hash",ignoreDuplicates:true});
+    if(wr.error)throw new Error(`meta_webhook_evidence_failed:${clean(wr.error.message,300)}`);
+  }
+  if(flowRows.length){
+    const fr=await sb.from("whatsapp_flow_health_events").upsert(flowRows,{onConflict:"event_fingerprint",ignoreDuplicates:true});
+    if(fr.error)throw new Error(`flow_health_evidence_failed:${clean(fr.error.message,300)}`);
+  }
+  return {webhook_events:webhookRows.length,flow_health_events:flowRows.length};
+}
+
+Deno.serve(async(req:Request)=>{
+  const env={
+    url:Deno.env.get("SUPABASE_URL")||"",
+    service:Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"",
+    access:Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"",
+    secret:Deno.env.get("META_APP_SECRET")||"",
+    verify:Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")||"",
+    version:Deno.env.get("META_GRAPH_VERSION")||""
+  };
+  const u=new URL(req.url);
+  if(!env.url||!env.service)return json({ok:false,error:"server_config"},500);
+  const sb=createClient(env.url,env.service,{auth:{persistSession:false,autoRefreshToken:false}});
+
+  const resolveVerifyToken=async()=>{
+    if(env.verify)return env.verify;
+    const r=await sb.rpc("get_whatsapp_flow_health_verify_token_v1");
+    return !r.error&&typeof r.data==="string"?r.data:"";
+  };
+  const resolveAppSecret=async()=>{
+    if(env.secret)return env.secret;
+    const r=await sb.rpc("get_dona_antonia_meta_app_secret_v1");
+    return !r.error&&typeof r.data==="string"?r.data:"";
+  };
+
+  if(req.method==="GET"){
+    if(u.searchParams.has("hub.mode")){
+      const mode=u.searchParams.get("hub.mode");
+      const token=u.searchParams.get("hub.verify_token");
+      const challenge=u.searchParams.get("hub.challenge")||"";
+      const verify=await resolveVerifyToken();
+      if(mode==="subscribe"&&verify&&token===verify)return new Response(challenge,{status:200,headers:{"Content-Type":"text/plain"}});
+      return new Response("Forbidden",{status:403});
+    }
+    const [secret,verify]=await Promise.all([resolveAppSecret(),resolveVerifyToken()]);
+    return json({
+      ok:true,
+      service:"whatsapp-meta-direct-v1",
+      ready:Boolean(env.access&&secret&&verify&&/^v\d+\.\d+$/.test(env.version)),
+      secrets:{access:Boolean(env.access),app_secret:Boolean(secret),verify_token:Boolean(verify)},
+      graph_version_ready:/^v\d+\.\d+$/.test(env.version),
+      graph_version:/^v\d+\.\d+$/.test(env.version)?env.version:null,
+      mode:"FAIL_CLOSED"
+    });
+  }
+
+  if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
+  const raw=await req.text();
+  if(!raw||raw.length>1_000_000)return json({ok:false,error:"invalid_payload"},400);
+
+  const secret=await resolveAppSecret();
+  if(!secret||!(await signature(raw,req.headers.get("x-hub-signature-256"),secret)))
+    return json({ok:false,error:"invalid_signature"},401);
+
+  let body:any;
+  try{body=JSON.parse(raw)}catch{return json({ok:false,error:"invalid_json"},400)}
+
+  const cr=await sb.from("whatsapp_direct_config").select("*").eq("id",1).maybeSingle();
+  const cfg=cr.data;
+  if(cr.error)return json({ok:false,error:"config_lookup_failed"},500);
+
+  let evidence={webhook_events:0,flow_health_events:0};
+  try{evidence=await persistMetaIngressEvidence(sb,body,raw,cfg)}
+  catch(e){return json({ok:false,error:"webhook_evidence_failed",detail:clean((e as Error)?.message,500)},500)}
+
+  if(!cfg?.enabled||cfg.release_mode==="off"){
+    return json({
+      ok:true,
+      disabled:true,
+      evidence_recorded:true,
+      ...evidence,
+      outbound_performed:false,
+      external_side_effect:false
+    });
+  }
+
+  if(!env.access)return json({ok:false,error:"meta_credentials_missing"},503);
+  if(!/^v\d+\.\d+$/.test(env.version))return json({ok:false,error:"meta_graph_version_unverified"},503);
+
+  let processed=0;
+  for(const m of extract(body)){
+    if(m.status_event){
+      if(m.message_id)await sb.from("messages").update({delivery_status:m.status,updated_at:new Date().toISOString()}).eq("whatsapp_message_id",m.message_id);
+      continue;
+    }
+    const p=phone(m.from);
+    if(!p||!m.phone_number_id||!m.message_id)continue;
+    const a=(await sb.from("whatsapp_accounts").select("*").eq("phone_number_id",m.phone_number_id).eq("is_active",true).maybeSingle()).data;
+    if(!a)continue;
+    const cust=await customer(sb,p,m.profile_name);
+    const conv=await conversation(sb,a.id,cust.id,p,m.timestamp);
+    const saved=await inbound(sb,conv.id,m);
+    if(saved.duplicate)continue;
+    let st=(await sb.from("whatsapp_direct_state").select("*").eq("conversation_id",conv.id).maybeSingle()).data;
+    if(!st)st=await state(sb,conv.id,{customer_id:cust.id,state:"IDLE"});
+    await log(sb,{conversation_id:conv.id,customer_id:cust.id,whatsapp_message_id:m.message_id,event_type:"inbound_received",direction:"inbound",payload:{type:m.type,button_id:m.button_id||null}});
+    let intents:any[];
+    try{
+      intents=await route(sb,cfg,a,conv,cust,m,st,saved.id);
+    }catch(e){
+      await sb.rpc("queue_human_handoff_v1",{p_conversation_id:conv.id,p_reason:"direct_routing_error",p_source_message_id:saved.id,p_priority:3,p_summary:"Falha no fluxo determinístico",p_context:{source:"whatsapp_direct"}});
+      intents=[{to:p,kind:"text",body:"Tive um problema para continuar automaticamente. Uma atendente vai assumir por aqui."}];
+    }
+    for(const i of intents){
+      try{
+        const sent=await sendMeta(env.access,env.version,a.phone_number_id,i);
+        await sb.from("messages").insert({conversation_id:conv.id,whatsapp_message_id:sent.id,direction:"outbound",message_type:i.kind==="buttons"?"interactive":i.kind,body_text:clean(i.body||i.caption,4096)||null,raw_event:{source:"whatsapp_direct",request:sent.request},delivery_status:"sent"});
+        await sb.from("conversations").update({last_outbound_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",conv.id);
+        await log(sb,{conversation_id:conv.id,customer_id:cust.id,whatsapp_message_id:sent.id,event_type:"outbound_sent",direction:"outbound",payload:{kind:i.kind}});
+      }catch(e){
+        await log(sb,{conversation_id:conv.id,customer_id:cust.id,event_type:"outbound_error",direction:"system",payload:{error:clean((e as Error)?.message,500),kind:i.kind}});
+        break;
+      }
+    }
+    processed++;
+  }
+  return json({ok:true,processed,...evidence});
+});
