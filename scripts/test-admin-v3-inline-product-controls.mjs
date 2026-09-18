@@ -53,7 +53,7 @@ assert.match(api,/product_in_use/i,'backend precisa bloquear exclusão de produt
 
 assert.match(html,/products-inline-controls-v4\.css\?v=20260916-4/i,'Admin precisa carregar o CSS atualizado dos controles em lote');
 assert.match(html,/products-inline-controls-v4\.js\?v=20260916-4/i,'Admin precisa carregar o módulo atualizado dos controles em lote');
-assert.match(html,/app\.js\?v=20260918-customer-360-redesign-1/i,'Admin deve usar cache-bust atual do app base');
+assert.match(html,/app\.js\?v=20260918-customer-360-polish-2/i,'Admin deve usar cache-bust atual do app base');
 assert.match(css,/inline-products-table/i,'controles rápidos precisam de estilo próprio');
 assert.match(css,/is-dirty/i,'linha alterada precisa ter destaque visual enquanto não foi salva');
 assert.match(css,/inline-pending-warning/i,'alterações pendentes precisam de aviso visual persistente');
