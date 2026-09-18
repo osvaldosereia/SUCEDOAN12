@@ -6,6 +6,20 @@
 **PR:** #396 — draft — NÃO MERGEAR  
 **Estado:** OFF / ISOLADO / NÃO PUBLICADO
 
+## ATUALIZAÇÃO FINAL DESTA RETOMADA — 18/09/2026
+
+Este é o estado mais novo e prevalece sobre checkpoints anteriores do arquivo:
+- testes tocados nesta retomada: 49/49 verdes;
+- typecheck do conjunto modificado/reconstruído: verde;
+- runtime/config atual: 60 arquivos; nenhum achado proibido nas varreduras incrementais;
+- R12 ganhou contrato de bridge nativo, mas Keychain/Keystore reais continuam pendentes;
+- R15 agora exige allowlist HTTPS para deep links absolutos;
+- R22 ganhou gate central de abuso local;
+- R24 está parcial com readiness local e documentação de loja, sem qualquer submissão;
+- R0–R9 e R20 concluídas; R12–R19 e R21–R24 parciais conforme dependências;
+- R10 segue bloqueada por toolchain Android; R25 continua proibida sem autorização explícita;
+- produção, comprar/, pedidos reais, push real e executores externos continuam OFF/intocados.
+
 ## CHECKPOINT MAIS RECENTE — 18/09/2026 — retomada 16:58+ America/Cuiaba
 
 **Este checkpoint substitui o “Ponto EXATO” antigo abaixo como estado operacional atual.**
