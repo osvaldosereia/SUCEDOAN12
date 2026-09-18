@@ -56,6 +56,7 @@ on:
       - 'scripts/test-cm-1-11-marketing-brain-observe-suggest.mjs'
       - 'scripts/test-cm-1-12-meta-foundation.mjs'
       - 'scripts/test-cm-1-meta-readonly-diagnostics-v1.mjs'
+      - 'scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs'
       - 'scripts/test-cm-1-13-template-draft-assistant.mjs'
       - 'scripts/test-cm-1-14-papoai-adapter.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
@@ -221,6 +222,8 @@ jobs:
         run: node scripts/test-cm-1-12-meta-foundation.mjs
       - name: Validar diagnóstico Meta read-only
         run: node scripts/test-cm-1-meta-readonly-diagnostics-v1.mjs
+      - name: Validar ingress Meta Direct fail-closed
+        run: node scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs
       - name: Validar Template Draft Assistant
         run: node scripts/test-cm-1-13-template-draft-assistant.mjs
       - name: Validar PapoAI Adapter
