@@ -212,3 +212,24 @@ Não usar fallback de Graph API version.
 - UI: `admin/relacionamento.js`;
 - cache: `20260918-5`;
 - teste: `scripts/test-cm-1-meta-command-center-v1.mjs`.
+
+
+## Meta homologation runtime — 18/09/2026
+
+- `admin-whatsapp-direct-v1`: v7 / JWT true / diagnóstico Meta read-only.
+- `whatsapp-meta-direct-v1`: v3 / webhook público com autenticação Meta própria / ingress fail-closed.
+- `whatsapp-flow-health-webhook-v1`: v4 / health callback legado ainda ativo.
+
+Evidência:
+
+- `meta_provider_health_snapshots`;
+- `meta_account_permissions`;
+- `meta_webhook_events`;
+- `whatsapp_flow_health_events`.
+
+Testes adicionais:
+
+- `scripts/test-cm-1-meta-readonly-diagnostics-v1.mjs`;
+- `scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs`.
+
+Regra: não remover `whatsapp-flow-health-webhook-v1` nem trocar callback na Meta durante homologação interna. A migração de callback é gate externo separado.
