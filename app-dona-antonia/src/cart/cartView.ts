@@ -102,9 +102,14 @@ export function renderCart(cart: CartSnapshot): string {
         </div>
       </div>
 
-      <button type="button" class="cart-clear" data-cart-clear>
-        Limpar pedido
-      </button>
+      <div class="cart-footer-actions">
+        <button type="button" class="cart-clear" data-cart-clear>
+          Limpar pedido
+        </button>
+        <button type="button" class="cart-continue" data-route-target="checkout">
+          Continuar
+        </button>
+      </div>
 
       <p class="homologation-note">
         Este é um pedido fictício. A finalização será implementada somente na próxima rodada.
