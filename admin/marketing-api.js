@@ -19,9 +19,10 @@ async function secureCall(functionName,body){
     const data=await response.json().catch(()=>({}));
     if(response.status===401)clearCustomerOsSession();
     if(!response.ok||data?.ok===false){
-      const error=new Error(data?.detail||data?.error||'Não foi possível carregar o Marketing.');
+      const error=new Error(data?.detail||data?.error||'Não foi possível concluir a operação de Marketing.');
       error.code=String(data?.error||'request_failed');
       error.status=response.status;
+      error.data=data;
       throw error;
     }
     return data;
@@ -33,3 +34,6 @@ async function secureCall(functionName,body){
 export const getMarketingOverview=()=>secureCall(CONFIG.marketingInsightsFunction,{action:'overview'});
 export const getMarketingMetrics=(days=30)=>secureCall(CONFIG.marketingInsightsFunction,{action:'metrics',days});
 export const getMarketingWorkflow=()=>secureCall(CONFIG.marketingWorkflowFunction,{action:'workflow_overview'});
+export const getMarketingShortlist=()=>secureCall(CONFIG.marketingBrainFunction,{action:'shortlist'});
+export const createDeterministicMarketingDraft=()=>secureCall(CONFIG.marketingBrainFunction,{action:'create_deterministic_draft'});
+export const previewAiMarketingStrategy=()=>secureCall(CONFIG.marketingBrainFunction,{action:'strategy_preview'});
