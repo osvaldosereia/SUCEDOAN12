@@ -462,7 +462,7 @@ Deno.serve(async(req:Request)=>{
         edit_spec:{
           ...common,content_role:"reel_light_10s",reuse_for:["instagram_reel","facebook_reel"],
           duration_seconds:10,
-          motion:["slow_zoom","float","shine","price_pop","cta_reveal"],
+          motion:["slow_zoom","float","fade_in","fade_out"],
           audio_mode:"optional_music_sfx",
           composition:"single_composition"
         },
@@ -472,9 +472,8 @@ Deno.serve(async(req:Request)=>{
           timeline:[
             {from_ms:0,to_ms:10000,effect:"slow_zoom",scale_from:1,scale_to:1.035},
             {from_ms:700,to_ms:8500,effect:"float",amplitude_px:8},
-            {from_ms:2500,to_ms:6500,effect:"shine"},
-            {at_ms:3500,effect:"price_pop"},
-            {at_ms:7600,effect:"cta_reveal"}
+            {from_ms:0,to_ms:350,effect:"fade_in"},
+            {from_ms:9550,to_ms:10000,effect:"fade_out"}
           ],
           external_side_effect:false
         }
