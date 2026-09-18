@@ -87,6 +87,12 @@ async function saveMedia(asset,role,file,bytes,width,height,metadata={}){
   await upload(path,bytes,'image/webp');
   return register(asset,role,path,'image/webp',width,height,null,bytes,metadata);
 }
+async function saveProviderJpeg(asset,file,webpBytes,width,height,metadata={}){
+  const bytes=await sharp(webpBytes).jpeg({quality:90,chromaSubsampling:'4:4:4'}).toBuffer();
+  const path=`${asset.id}/v${asset.version}/${file}`;
+  await upload(path,bytes,'image/jpeg');
+  return register(asset,'output',path,'image/jpeg',width,height,null,bytes,{...metadata,provider_ready:true,provider_format:'jpeg'});
+}
 async function patchOutputSpec(asset,patch){
   const output={...(asset.output_spec||{}),...patch};
   const res=await fetch(`${base}/rest/v1/marketing_assets?id=eq.${encodeURIComponent(asset.id)}`,{
@@ -101,7 +107,9 @@ async function renderAsset(asset){
     const product=edit.product||edit.products?.[0];if(!product?.image_url)throw new Error('product_image_missing');
     const width=Math.max(320,Math.min(2500,num(render.width,1080))),height=Math.max(320,Math.min(2500,num(render.height,1080)));
     const bytes=await productWebp(product,width,height,headline,cta,num(render.quality,84));
-    return [await saveMedia(asset,'preview','preview.webp',bytes,width,height,{content_role:edit.content_role||'image',renderer:'shared_svg_sharp_homologation'})];
+    const preview=await saveMedia(asset,'preview','preview.webp',bytes,width,height,{content_role:edit.content_role||'image',renderer:'shared_svg_sharp_homologation'});
+    await saveProviderJpeg(asset,'publish.jpg',bytes,width,height,{content_role:edit.content_role||'image',renderer:'shared_svg_sharp_homologation'});
+    return [preview];
   }
   if(asset.media_kind==='carousel'){
     const width=1080,height=1350,out=[];let i=0;
@@ -111,6 +119,7 @@ async function renderAsset(asset){
         ?await productWebp(slide.product,width,height,'',cta,84)
         :await textWebp(width,height,clean(slide?.headline||headline,160),clean(slide?.cta||cta,180),84);
       out.push(await saveMedia(asset,'preview',`slide-${String(i).padStart(2,'0')}.webp`,bytes,width,height,{content_role:'instagram_carousel',slide_no:i,slide_type:clean(slide?.type||'text',40),renderer:'shared_svg_sharp_homologation'}));
+      await saveProviderJpeg(asset,`publish-slide-${String(i).padStart(2,'0')}.jpg`,bytes,width,height,{content_role:'instagram_carousel',slide_no:i,slide_type:clean(slide?.type||'text',40),renderer:'shared_svg_sharp_homologation'});
     }
     return out;
   }
