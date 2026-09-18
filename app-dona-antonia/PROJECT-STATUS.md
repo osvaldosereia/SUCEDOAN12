@@ -53,7 +53,7 @@ Documento:
 
 Total: 27 rodadas numeradas de 0 a 26.
 
-**Próxima rodada permitida:** Rodada 5 — Cestas básicas fictícias.
+**Próxima rodada permitida:** Rodada 6 — Carrinho e regras locais.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
 
@@ -192,7 +192,7 @@ O documento principal para retomada em novas janelas está salvo na `main`:
 
 Ao retomar o projeto, este arquivo deve ser lido primeiro, seguido do design, plano de rodadas e deste `PROJECT-STATUS.md`.
 
-**Snapshot atual:** Rodadas 0–3 concluídas; próxima Rodada 4.
+**Snapshot atual:** Rodadas 0–5 concluídas; próxima Rodada 6.
 
 
 ## Checkpoint — Rodada 4
@@ -239,3 +239,49 @@ Limitação mantida:
 **Próxima rodada autorizável:** Rodada 5 — Cestas básicas fictícias.
 
 O projeto permanece OFF, não publicado, sem dados reais e sem conexão com produção.
+
+
+## Checkpoint — Rodada 5
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- 4 cestas básicas sintéticas;
+- IDs exclusivamente `TEST-BASKET-*`;
+- composição de cada cesta sem preço individual por item;
+- repositório de fixtures com cópias defensivas;
+- fluxo determinístico de abrir, voltar e escolher cesta;
+- seleção idempotente contra toque repetido;
+- valor total da cesta preservado na seleção;
+- cards de cesta;
+- tela de composição;
+- CTA único `Escolher esta cesta`;
+- escolha registrada como bolha do cliente;
+- confirmação da Ana após a escolha;
+- respostas pós-seleção:
+  - `Ver ofertas`;
+  - `Comprar outros produtos`;
+  - `Revisar cesta`;
+- ofertas não são abertas automaticamente;
+- `Ver ofertas` abre catálogo filtrado em ofertas;
+- `Comprar outros produtos` abre catálogo geral;
+- `Revisar cesta` reabre a cesta selecionada;
+- nenhuma edição de quantidade/remoção foi antecipada; isso pertence à Rodada 6.
+
+Validações executadas:
+- 9/9 testes específicos de repositório/flow/view de cestas aprovados;
+- 2/2 testes adicionais do motor conversacional e roteamento pós-cesta aprovados;
+- typecheck dos módulos da Rodada 5 aprovado;
+- composição validada sem campo de preço individual;
+- renderização faz escape de HTML;
+- nenhum endpoint externo conectado;
+- nenhum arquivo de `comprar/` modificado.
+
+Limitação mantida:
+- o checkout completo do Vite ainda não pode ser reproduzido diretamente a partir do GitHub neste ambiente porque o acesso DNS ao GitHub/npm está indisponível;
+- a suíte da Rodada 5 foi executada localmente com Node usando os mesmos contratos e implementações da branch.
+
+**Próxima rodada autorizável:** Rodada 6 — Carrinho e regras locais.
+
+O projeto permanece OFF, não publicado, sem pedidos reais e sem conexão com produção.
