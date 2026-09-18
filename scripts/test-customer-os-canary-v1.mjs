@@ -23,7 +23,7 @@ assert.match(app,/if\(secureCustomersEnabled\(\)&&!getCustomerOsSession\(\)\)ret
 assert.match(auth,/^import \{CONFIG\} from '\.\/runtime-config\.js\?v=20260918-customer-os-canary-1';/m);
 assert.match(api,/^import \{CONFIG\} from '\.\/runtime-config\.js\?v=20260918-customer-os-canary-1';/m);
 assert.match(app,/^import \{CONFIG\} from '\.\/runtime-config\.js\?v=20260918-customer-os-canary-1';/m);
-assert.match(html,/app\.js\?v=20260918-customer-ux-4/);
+assert.match(html,/app\.js\?v=20260918-customer-workspace-5/);
 
 assert.match(auth,/sessionStorage/,'secure session must remain tab-scoped');
 assert.match(auth,/^const SESSION_KEY='da_customer_os_session_v1'/m);
