@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow"><meta http-equiv="Cache-Control" content="no-store">
   <title>Dona Antônia · Marketing</title>
-  <link rel="stylesheet" href="./styles.css?v=20260911-2"><link rel="stylesheet" href="./marketing.css?v=20260918-3">
+  <link rel="stylesheet" href="./styles.css?v=20260911-2"><link rel="stylesheet" href="./marketing.css?v=20260918-4">
 </head>
 <body>
 <header class="topbar"><button id="menuButton" class="menu-button" type="button">☰</button><a class="brand" href="./#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin</b></span></a><a class="view-storefront" href="../comprar/" target="_blank" rel="noopener">Abrir Comprar</a></header>
@@ -38,12 +38,18 @@
       </section>
       <section data-panel="content" hidden><section class="panel"><div class="section-title"><div><h2>Conteúdos</h2><p>Posts, Stories, carrosséis e vídeos leves.</p></div></div><div id="assetsList"></div></section></section>
       <section data-panel="calendar" hidden><section class="panel"><div class="section-title"><div><h2>Agenda</h2><p>Calendário editorial.</p></div></div><div id="calendarList"></div></section></section>
-      <section data-panel="publications" hidden><section class="panel"><div class="section-title"><div><h2>Publicações</h2><p>Publicação externa continua desligada.</p></div></div><div id="jobsList"></div></section></section>
+      <section data-panel="publications" hidden>
+        <section class="panel">
+          <div class="section-title"><div><h2>Canais oficiais</h2><p>Estado real das conexões. Nenhuma publicação é liberada só por existir um job aprovado.</p></div><span class="phase-pill">FAIL-CLOSED</span></div>
+          <div id="channelAccountsView"></div>
+        </section>
+        <section class="panel"><div class="section-title"><div><h2>Fila de publicações</h2><p>Jobs internos preparados após aprovação. Publicação externa continua desligada.</p></div></div><div id="jobsList"></div></section>
+      </section>
       <section data-panel="templates" hidden><section class="panel"><div class="section-title"><div><h2>Modelos</h2><p>Layouts reutilizáveis para reduzir custo.</p></div></div><div id="templatesList"></div></section></section>
       <section data-panel="results" hidden><section class="panel"><div class="section-title"><div><h2>Resultados</h2><p>Métricas, atribuição e custos.</p></div></div><div id="resultsView"></div></section></section>
       <section data-panel="settings" hidden><section class="panel"><div class="section-title"><div><h2>Configurações</h2><p>Regras da primeira versão.</p></div></div><div id="settingsView"></div></section></section>
     </div>
   </main>
 </div>
-<div id="toastRegion" class="toasts"></div><script type="module" src="./marketing.js?v=20260918-3"></script>
+<div id="toastRegion" class="toasts"></div><script type="module" src="./marketing.js?v=20260918-4"></script>
 </body></html>
