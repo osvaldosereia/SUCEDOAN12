@@ -89,7 +89,7 @@ Deno.serve(async(req:Request)=>{
     q=personalizedOffers?q.limit(500):q.range(offset,offset+limit-1);
 
     const recommendationsPromise=personalizedOffers
-      ? sb.rpc('get_cart_aware_recommendations',{p_conversation_id:session.conversation_id,p_limit:30,p_kind:'offers'})
+      ? sb.rpc('get_personalized_offers_v1',{p_conversation_id:session.conversation_id,p_limit:100})
       : Promise.resolve({data:[],error:null});
     const [{data,error},{data:recommendations,error:recommendationError}]=await Promise.all([q,recommendationsPromise]);
     if(error)return json(req,{ok:false,error:'products_failed',detail:error.message},400);
