@@ -216,3 +216,18 @@ Até essa ação acontecer, não promover `permissions_clear`, não promover `we
 - 37 validações verdes, incluindo Meta read-only, Meta Direct fail-closed, readiness e acceptance checklist.
 
 Não repetir correções de CI desta rodada. A próxima pendência é evidência/runtime ou gate humano.
+
+
+## Critérios implemented — não repetir investigação
+
+Última auditoria confirmou:
+
+- catalog tracking backend está implantado e funcional no `shopping-chat-products-v1` v16;
+- houve uso real de catálogo (`catalog_open`, `catalog_add`, checkout), mas ainda 0 buscas e 0 product views;
+- portanto critérios 6/7 aguardam interação real, não correção de backend;
+- Opportunity Engine tem 75 oportunidades suprimidas e ainda 0 dismissed/converted/expired;
+- portanto critério 13 aguarda lifecycle natural;
+- SUGGEST e AI cost continuam fechados propositalmente;
+- conflito de identidade continua humano.
+
+Não fabricar nenhum desses eventos/estados para completar CM-1.
