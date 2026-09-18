@@ -33,8 +33,8 @@ function safeJson(v){
 }
 function toneForStatus(v){
   const s=String(v||'').toLowerCase();
-  if(['granted','active','valid','matched','approved','ready','temporary_active'].includes(s))return 'good';
-  if(['warning','pending','suggested','draft','unknown','observe','suppressed'].includes(s))return 'warn';
+  if(['granted','active','valid','matched','approved','ready','temporary_active','verified'].includes(s))return 'good';
+  if(['warning','pending','suggested','draft','unknown','observe','suppressed','implemented'].includes(s))return 'warn';
   if(['error','invalid','rejected','denied','revoked','conflict','blocked'].includes(s))return 'bad';
   return '';
 }
@@ -51,7 +51,8 @@ function renderOverview(){
     ['Recorrentes',profile.recurring||0,'perfil comercial'],
     ['Marketing permitido',segments.marketing_permitido||0,'consent + proteção'],
     ['Templates',templates.templates||0,`${templates.ready_for_submit||0} ready`],
-    ['Pendências identidade',quality.identity?.pending_reviews||0,'revisão manual']
+    ['Pendências identidade',quality.identity?.pending_reviews||0,'revisão manual'],
+    ['CM-1 verificados',s.acceptance?.verified_count||0,`${s.acceptance?.implemented_count||0} implementados · ${s.acceptance?.blocked_count||0} bloqueados`]
   ].map(x=>`<article class="summary-card"><span>${esc(x[0])}</span><strong>${esc(n(x[1]))}</strong><small>${esc(x[2])}</small></article>`).join('');
 
   $('#overviewCustomers').innerHTML='<div class="metric-list">'+[
@@ -182,6 +183,55 @@ function renderQuality(){
   ];
   $('#qualityView').innerHTML=`<div class="quality-grid">${cards.map(([title,items])=>`<article class="quality-box"><h3>${esc(title)}</h3><div class="metric-list">${items.map(x=>metric(x[0],n(x[1]))).join('')}</div></article>`).join('')}</div>`;
 }
+function acceptanceStatusLabel(value){
+  const status=String(value||'').toLowerCase();
+  if(status==='verified')return 'Verificado';
+  if(status==='implemented')return 'Implementado';
+  if(status==='blocked')return 'Bloqueado';
+  return value||'—';
+}
+function humanKey(value){
+  return String(value||'').replaceAll('_',' ').replace(/\b\w/g,m=>m.toUpperCase());
+}
+function compactEvidence(value){
+  const entries=Object.entries(value||{}).filter(([,v])=>v!==null&&v!==undefined&&v!=='').slice(0,6);
+  if(!entries.length)return '';
+  return '<div class="acceptance-evidence">'+entries.map(([k,v])=>{
+    const display=typeof v==='boolean'?(v?'Sim':'Não'):(typeof v==='object'?safeJson(v):String(v));
+    return `<span><b>${esc(humanKey(k))}</b>${esc(display)}</span>`;
+  }).join('')+'</div>';
+}
+function renderAcceptance(){
+  const a=state.overview?.summary?.acceptance||{};
+  const items=Array.isArray(a.items)?a.items:[];
+  const verified=Number(a.verified_count||0),implemented=Number(a.implemented_count||0),blocked=Number(a.blocked_count||0),total=Number(a.criteria_total||20);
+  const badge=$('#acceptanceBadge');
+  if(badge){
+    badge.textContent=blocked===0&&a.ready_for_manual_canary===true?'Pronto para canary manual':'Revisão necessária';
+    badge.className=`safe-pill ${blocked===0?'':'blocked-pill'}`;
+  }
+  $('#acceptanceSummary').innerHTML=[
+    ['Verificados',verified,'evidência observada'],
+    ['Implementados',implemented,'aguardam evidência/gate'],
+    ['Bloqueados',blocked,'precisam correção'],
+    ['Total',total,a.cm1_complete===true?'CM-1 concluída':'ativação externa fechada']
+  ].map(x=>`<article class="summary-card"><span>${esc(x[0])}</span><strong>${esc(n(x[1]))}</strong><small>${esc(x[2])}</small></article>`).join('');
+
+  $('#acceptanceView').innerHTML=items.length?`<div class="acceptance-list">${items.map(item=>{
+    const status=String(item.status||'implemented');
+    return `<article class="acceptance-item ${esc(status)}">
+      <div class="acceptance-number">${esc(item.no)}</div>
+      <div class="acceptance-copy">
+        <div class="acceptance-title-row"><strong>${esc(item.label||item.key)}</strong>${chip(acceptanceStatusLabel(status),toneForStatus(status))}</div>
+        ${compactEvidence(item.evidence)}
+      </div>
+    </article>`;
+  }).join('')}</div>`:empty('Checklist ainda não disponível.');
+
+  const manual=a.manual_gates&&typeof a.manual_gates==='object'?Object.entries(a.manual_gates):[];
+  $('#manualGatesView').innerHTML=manual.length?`<div class="manual-gates-grid">${manual.map(([key,value])=>`<article class="manual-gate-card"><span>${esc(humanKey(key))}</span>${chip(String(value||'pending'),toneForStatus(value))}</article>`).join('')}</div>`:empty('Nenhum gate manual informado.');
+}
+
 function renderAudit(){
   const a=state.audit;
   if(!a){$('#auditView').innerHTML=empty('Abra esta aba para carregar a auditoria recente.');return}
@@ -194,7 +244,7 @@ function renderAudit(){
   $('#auditView').innerHTML=items.length?`<div class="audit-stack">${items.map(i=>`<article class="audit-item"><div class="audit-item-head"><div><strong>${esc(i.title)}</strong> ${chip(i.status,toneForStatus(i.status))}</div><small>${dt(i.at)}</small></div><pre>${esc(safeJson(i.data))}</pre></article>`).join('')}</div>`:empty('Nenhum registro recente.');
 }
 function renderAll(){
-  renderOverview();renderCustomers();renderSegments();renderOpportunities();renderProducts();renderBrands();renderBrain();renderTemplates();renderMeta();renderQuality();renderAudit();
+  renderOverview();renderCustomers();renderSegments();renderOpportunities();renderProducts();renderBrands();renderBrain();renderTemplates();renderMeta();renderQuality();renderAcceptance();renderAudit();
 }
 
 async function loadOverview(){
