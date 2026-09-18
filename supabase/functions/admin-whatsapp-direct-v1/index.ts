@@ -6,7 +6,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const clean=(v:unknown,max=1000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const digits=(v:unknown)=>String(v??"").replace(/\D/g,"");
 const validUuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80));
-const secureReady=()=>Boolean(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")&&Deno.env.get("META_APP_SECRET")&&Deno.env.get("META_WEBHOOK_VERIFY_TOKEN"));
+const graphVersion=()=>clean(Deno.env.get("META_GRAPH_VERSION")||"",20);\nconst graphVersionReady=()=>/^v\\d+\\.\\d+$/.test(graphVersion());\nconst secureReady=()=>Boolean(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")&&Deno.env.get("META_APP_SECRET")&&Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")&&graphVersionReady());
 async function sha256(bytes:Uint8Array){const copy=new Uint8Array(bytes);const hash=await crypto.subtle.digest("SHA-256",copy.buffer);return Array.from(new Uint8Array(hash)).map(x=>x.toString(16).padStart(2,"0")).join("")}
 function parseButtons(input:unknown){const rows=Array.isArray(input)?input.slice(0,3):[];if(Array.isArray(input)&&input.length>3)throw new Error("max_3_buttons");return rows.map((x:any,i)=>{if(x?.url||x?.link||String(x?.type||"").toLowerCase().includes("url"))throw new Error("url_buttons_not_allowed");const id=clean(x?.id||`button_${i+1}`,256),title=clean(x?.title,20);if(!id||!title)throw new Error("invalid_button");return {id,title,type:"reply"}})}
 
@@ -51,7 +51,7 @@ Deno.serve(async(req:Request)=>{
     if(cfgR.error||accountR.error||eventR.error||stateR.error)return json({ok:false,error:"dashboard_failed"},500);
     const counts:Record<string,number>={};for(const x of stateR.data||[])counts[x.state]=(counts[x.state]||0)+1;
     const callback=`${url.replace(/\/$/,"")}/functions/v1/whatsapp-meta-direct-v1`;
-    return json({ok:true,user:{role,display_name:adminResult.data.display_name||null},config:cfgR.data||null,account:accountR.data||null,readiness:{ready:secureReady(),access:Boolean(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")),app_secret:Boolean(Deno.env.get("META_APP_SECRET")),verify_token:Boolean(Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")),graph_version:true,graph_version_value:Deno.env.get("META_GRAPH_VERSION")||"v26.0",callback_url:callback},state_counts:counts,active_baskets:basketR.count||0,recent_events:eventR.data||[]});
+    return json({ok:true,user:{role,display_name:adminResult.data.display_name||null},config:cfgR.data||null,account:accountR.data||null,readiness:{ready:secureReady(),access:Boolean(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")),app_secret:Boolean(Deno.env.get("META_APP_SECRET")),verify_token:Boolean(Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")),graph_version:graphVersionReady(),graph_version_value:graphVersionReady()?graphVersion():null,callback_url:callback},state_counts:counts,active_baskets:basketR.count||0,recent_events:eventR.data||[]});
   }
   if(action==="templates"){const {data,error}=await sb.from("whatsapp_direct_templates").select("*").order("template_key",{ascending:true});if(error)return json({ok:false,error:"templates_failed",detail:error.message},500);return json({ok:true,templates:data||[]})}
   if(action==="template_library"){
@@ -254,7 +254,7 @@ Deno.serve(async(req:Request)=>{
     return json({ok:false,error:"legacy_template_write_disabled",detail:"Use template_save_draft do CM-1.13. O fluxo novo é versionado, validado e DRAFT-only.",external_side_effect:false},409);
   }
   if(action==="sync_meta_templates"){
-    const access=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"",version=Deno.env.get("META_GRAPH_VERSION")||"v26.0";if(!access)return json({ok:false,error:"meta_credentials_missing"},409);const account=await sb.from("whatsapp_accounts").select("waba_id").eq("is_active",true).limit(1).maybeSingle();if(account.error||!account.data?.waba_id)return json({ok:false,error:"waba_missing"},409);
+    const access=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"",version=graphVersion();if(!access)return json({ok:false,error:"meta_credentials_missing"},409);if(!graphVersionReady())return json({ok:false,error:"meta_graph_version_unverified"},409);const account=await sb.from("whatsapp_accounts").select("waba_id").eq("is_active",true).limit(1).maybeSingle();if(account.error||!account.data?.waba_id)return json({ok:false,error:"waba_missing"},409);
     const endpoint=`https://graph.facebook.com/${version}/${encodeURIComponent(account.data.waba_id)}/message_templates?fields=name,status,category,language,components&limit=100`;const response=await fetch(endpoint,{headers:{Authorization:`Bearer ${access}`}});const payload=await response.json().catch(()=>({}));if(!response.ok)return json({ok:false,error:"meta_templates_failed",detail:clean(payload?.error?.message||"Meta error",500)},400);const templates=Array.isArray(payload?.data)?payload.data:[];for(const t of templates){const name=clean(t?.name,512);if(!name)continue;await sb.from("whatsapp_direct_templates").update({meta_status:clean(t?.status,40)||"unknown",updated_at:new Date().toISOString()}).eq("meta_template_name",name)}return json({ok:true,templates:templates.map((t:any)=>({name:t.name,status:t.status,category:t.category,language:t.language,components:t.components}))});
   }
   if(action==="save_basket_asset"){
