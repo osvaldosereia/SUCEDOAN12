@@ -223,3 +223,41 @@ CM-1 continua:
 - AI strategy OFF.
 
 O Policy Registry está tecnicamente preparado, mas os gates humanos e o preflight do Meta Direct continuam separados e fechados.
+
+
+## Central de Relacionamento — visibilidade do preflight
+
+Também foi concluída a exposição read-only do preflight na aba **Meta Foundation**.
+
+Migration:
+
+`supabase/migrations/20260919072000_cm_1_meta_policy_command_center_v1.sql`
+
+`relationship_command_summary_v1()` passou para `cm1.15-v2` e agora inclui:
+
+- `meta_policy_registry`;
+- `meta_direct_readiness`.
+
+A interface agora mostra:
+
+- Policy Registry 8/8;
+- políticas stale/sem fonte;
+- fail-closed;
+- status Meta Direct;
+- lista legível dos blockers;
+- aviso explícito de que a tela não ativa nada.
+
+Cache da Central:
+
+`20260918-5`
+
+Segurança verificada:
+
+- `relationship_command_summary_v1()` permanece service-role only;
+- anon execute=false;
+- authenticated execute=false;
+- service_role execute=true;
+- `external_side_effect=false`;
+- não existe alteração de `outbound_enabled`, `release_mode` ou autorização externa nesta migration.
+
+A validação de contrato da Central passou integralmente.
