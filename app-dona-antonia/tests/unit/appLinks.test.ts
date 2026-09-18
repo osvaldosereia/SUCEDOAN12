@@ -34,3 +34,13 @@ test('order link requires an opaque token, not a short predictable id', () => {
 test('deep links fail closed on malformed percent-encoding', () => {
   assert.equal(parseAppLink('/app/cestas/%E0%A4%A'),null);
 });
+
+
+test('absolute deep links require an explicit HTTPS host allowlist', () => {
+  assert.equal(parseAppLink('https://evil.example/app/ofertas'),null);
+  assert.equal(parseAppLink('http://hml.example/app/ofertas',{allowedHosts:['hml.example']}),null);
+  assert.equal(
+    parseAppLink('https://hml.example/app/ofertas',{allowedHosts:['hml.example']}),
+    'catalog',
+  );
+});
