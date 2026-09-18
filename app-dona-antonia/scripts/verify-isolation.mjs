@@ -21,7 +21,7 @@ const RUNTIME_PATHS = [
 export const FORBIDDEN_RUNTIME_PATTERNS = [
   ['Comprar atual', /(?:https?:\/\/[^\s"'\x60]+)?\/comprar(?:\/|\b)/i],
   ['service role', /\b(?:service_role|SUPABASE_SERVICE_ROLE_KEY)\b/i],
-  ['secret material', /(?:\bsb_secret_[A-Za-z0-9_-]+|\bSUPABASE_SECRET_KEY\b|\bOPENAI_API_KEY\b|\bMETA_APP_SECRET\b|\bBLING_CLIENT_SECRET\b)/i],
+  ['secret material', /(?:\bsb_secret_[A-Za-z0-9_-]+|\bSUPABASE_SECRET_KEY\b|\bOPENAI_API_KEY\b|\bMETA_APP_SECRET\b|\bBLING_CLIENT_SECRET\b|\bFIREBASE_SERVICE_ACCOUNT\b|\bFCM_SERVER_KEY\b|\bAPNS_PRIVATE_KEY\b|\bGOOGLE_APPLICATION_CREDENTIALS\b|-----BEGIN (?:EC |RSA )?PRIVATE KEY-----)/i],
   ['app habilitado em produção', /\bmobile_app_enabled\s*[:=]\s*["']?true\b/i],
   ['Supabase de produção atual', /\bssbesxgaijknwsjbsbcz\.supabase\.co\b/i],
   ['Bling', /\bapi\.bling\.com\.br\b/i],
