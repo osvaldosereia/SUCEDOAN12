@@ -18,9 +18,17 @@
       <div class="marketing-tabs"><button class="active" data-tab="panel">Painel</button><button data-tab="campaigns">Campanhas</button><button data-tab="content">Conteúdos</button><button data-tab="calendar">Agenda</button><button data-tab="publications">Publicações</button><button data-tab="templates">Modelos</button><button data-tab="results">Resultados</button><button data-tab="settings">Configurações</button></div>
       <section data-panel="panel"><div id="summaryCards" class="summary-grid"></div><div class="dashboard-grid"><section class="panel"><div class="section-title"><div><h2>Produção recente</h2><p>Conteúdos já existentes.</p></div></div><div id="recentAssets"></div></section><section class="panel"><div class="section-title"><div><h2>Segurança e custo</h2><p>V1 começa travada e econômica.</p></div></div><div id="runtimeSummary"></div></section></div></section>
       <section data-panel="campaigns" hidden>
+        <section class="panel marketing-customer-opportunities">
+          <div class="section-title">
+            <div><span class="marketing-eyebrow">CM-1.10 → CM-1.11</span><h2>Oportunidades de clientes</h2><p>O Opportunity Engine detecta sinais; o Marketing Brain observa e estrutura o brief. Nenhuma mensagem é enviada.</p></div>
+            <div class="section-actions"><span id="opportunityBrainGate" class="phase-pill">OBSERVE</span><button id="refreshCustomerOpportunities" class="secondary" type="button">Atualizar</button></div>
+          </div>
+          <p id="customerOpportunityStatus" class="muted"></p>
+          <div id="customerOpportunityList"></div>
+        </section>
         <section class="panel">
           <div class="section-title">
-            <div><h2>Oportunidades</h2><p>Ranking por dados reais. Esta análise não usa IA.</p></div>
+            <div><h2>Oportunidades de produtos</h2><p>Ranking por dados reais. Esta análise não usa IA.</p></div>
             <div class="section-actions"><span id="strategyGate" class="phase-pill">IA estratégica bloqueada</span><button id="refreshOpportunities" class="secondary" type="button">Atualizar análise</button><button id="createDeterministicDraft" class="primary" type="button">Criar rascunho econômico</button></div>
           </div>
           <p id="opportunityStatus" class="muted"></p>
