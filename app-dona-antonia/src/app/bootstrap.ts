@@ -1,6 +1,6 @@
 export interface BootstrapRoot {
   textContent: string | null;
-  dataset: Record<string, string>;
+  dataset: Record<string, string | undefined>;
 }
 
 export interface BootstrapResult {
