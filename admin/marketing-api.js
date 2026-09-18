@@ -42,3 +42,4 @@ export const previewAiMarketingStrategy=()=>secureCall(CONFIG.marketingBrainFunc
 
 export const renderMarketingPreview=(assetId)=>secureCall(CONFIG.marketingMediaFunction,{action:'render_preview',asset_id:assetId},60000);
 export const getMarketingMediaUrl=(mediaId,expiresIn=600)=>secureCall(CONFIG.marketingMediaFunction,{action:'signed_url',media_id:mediaId,expires_in:expiresIn},18000);
+export const queueMarketingLightVideo=(assetId)=>secureCall(CONFIG.marketingMediaFunction,{action:'queue_light_video',asset_id:assetId},18000);
