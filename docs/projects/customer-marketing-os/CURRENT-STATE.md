@@ -484,3 +484,38 @@ Permanecem intencionalmente em `implemented`:
 - AI executions = 0.
 
 Não ligar IA nem orçamento apenas para satisfazer acceptance checklist.
+
+
+## Meta Policy Registry — revisão técnica concluída
+
+Revisão realizada em 18/09/2026 contra a Política de Mensagens do WhatsApp Business vigente.
+
+Estado técnico:
+
+- políticas requeridas: 8;
+- ativas: 8;
+- stale: 0;
+- sem fonte: 0;
+- não fail-closed: 0;
+- `meta_policy_registry_readiness_v1().ready=true`;
+- `external_activation_authorized=false`.
+
+Correção aplicada:
+
+- `whatsapp_regulated_verticals_fail_closed` passou para version 2;
+- bens/serviços regulados ou restritos proibidos pela Meta ficam bloqueados para compra, venda, promoção ou facilitação via WhatsApp;
+- `license_override=false`;
+- a regra não considera licença/registro como exceção à proibição da Meta.
+
+Varredura preventiva do catálogo ativo não encontrou produto claramente enquadrado nos termos regulados pesquisados.
+
+O gate humano `meta_policy_registry_verification` continua **pending**; readiness técnico não é autorização externa.
+
+### CI após revisão da política
+
+- workflow: `Testar Admin Dona Antônia`;
+- run: `35388463946`;
+- commit: `1f29354122f550c6aea0282c457740980ead3e33`;
+- resultado: **SUCCESS**;
+- **38 validações verdes**;
+- inclui `Validar Meta Policy Registry`.
