@@ -1,6 +1,6 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot atualizado em **18/09/2026 ~19:09 UTC**.
+Snapshot atualizado em **18/09/2026 ~19:13 UTC**.
 
 ## Última rodada concluída
 
@@ -119,16 +119,16 @@ Ledger suporta custo estimado/real, mas ainda existem **0 execuções governadas
 
 Snapshot:
 
-- receipts: 6
-- normalized_linked: 6
-- conversation_linked: 6
+- receipts: 7
+- normalized_linked: 7
+- conversation_linked: 7
 - customer_linked: 3
 - distinct_customers: 1
-- provider identities: 5
-- shopping sessions: 3
+- provider identities: 6
+- shopping sessions: 6
 - errors: 0
 - duplicates: 0
-- canonical events 24h: 6
+- canonical events 24h: 7
 - adapter_receiving_real_traffic: true
 - legacy_transport_recently_active: false
 - external_side_effect: false
@@ -136,10 +136,10 @@ Snapshot:
 
 ## Dados relevantes
 
-- customers: 505
-- pedidos observados pelo checklist: 45
-- timeline rows: 1307
-- customer_product_stats: 680
+- customers: 506
+- pedidos observados pelo checklist: 46
+- timeline rows: 1312
+- customer_product_stats: 699
 - product graph edges: 526
 - opportunities ativas/suprimidas: 75
 - clientes com consentimento positivo de marketing: 0
@@ -196,10 +196,10 @@ O wrapper consultado no HEAD acima não retornou combined status nem workflow ru
 
 ## Evidências adicionais desta retomada
 
-- PapoAI receipts: 6;
-- normalized/canonical events 24h: 6;
+- PapoAI receipts: 7;
+- normalized/canonical events 24h: 7;
 - customer_linked: 3;
-- provider identities: 5;
+- provider identities: 6;
 - conflito de identidade pendente: 1;
 - `catalog_search` real: 0;
 - `product_view` real: 0;
@@ -255,3 +255,19 @@ Não criar evidência artificial para nenhum deles.
 `graph_api_version` canônica continua `null`.
 
 O código não possui mais fallback de versão. A versão só pode ser registrada após evidência oficial ou administrativa verificável.
+
+
+### Central Meta Foundation
+
+A Central agora exibe diretamente:
+
+- Policy Registry técnico 8/8;
+- Meta Direct `ready=false`;
+- Graph API version não verificada;
+- permissões não verificadas;
+- webhook não homologado;
+- direct-ready flag fechada.
+
+Read model `relationship_command_summary_v1`: `cm1.15-v2`.
+
+A tela é somente informativa e não possui ação de ativação.
