@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -48,6 +48,53 @@ function renderOpportunities(){
   }).join('')}</div>`;
 }
 
+function assetMedia(assetId){
+  return (state.overview?.media||[]).filter(m=>m.asset_id===assetId).sort((a,b)=>String(a.object_path||'').localeCompare(String(b.object_path||'')));
+}
+function assetPreviewHtml(asset){
+  const media=assetMedia(asset.id);
+  const role=asset.edit_spec?.content_role||'';
+  const mediaText=media.length?\`${media.length} prévia(s) pronta(s)\`:'Prévia ainda não gerada';
+  return \`<article class="asset-card" data-asset-id="${esc(asset.id)}">
+    <div class="asset-card-head"><div><span class="status-chip">${esc(asset.status)}</span><h3>${esc(asset.title)}</h3><p>${esc(roleLabel(role))} · ${esc(asset.media_kind)} · no_ai</p></div>
+      <button class="secondary" type="button" data-action="${media.length?'show-preview':'render-preview'}" data-asset-id="${esc(asset.id)}">${media.length?'Ver prévia':'Gerar prévia'}</button>
+    </div>
+    <div class="asset-safe-line"><span>${esc(mediaText)}</span><span>IA: não</span><span>Publicação: não</span>${asset.media_kind==='video'?'<span>MP4: ainda não</span>':''}</div>
+    <div class="asset-preview-slot" data-preview-slot="${esc(asset.id)}"></div>
+  </article>\`;
+}
+function renderAssets(){
+  const assets=state.overview?.assets||[];
+  const html=assets.length?\`<div class="asset-grid">${assets.map(assetPreviewHtml).join('')}</div>\`:empty('Nenhum conteúdo criado ainda.');
+  $('#assetsList').innerHTML=html;
+  $('#recentAssets').innerHTML=assets.length?\`<div class="data-list">${assets.slice(0,8).map(a=>row(a.title,\`${roleLabel(a.edit_spec?.content_role)} · ${a.media_kind} · v${a.version}\`,a.status,dt(a.updated_at))).join('')}</div>\`:empty('Nenhum conteúdo criado ainda.');
+}
+async function showAssetPreview(assetId){
+  const slot=document.querySelector(\`[data-preview-slot="${CSS.escape(assetId)}"]\`);
+  if(!slot)return;
+  const media=assetMedia(assetId);
+  if(!media.length){slot.innerHTML=empty('Nenhuma mídia de prévia disponível.');return}
+  slot.innerHTML='<div class="muted">Abrindo prévia segura…</div>';
+  try{
+    const signed=await Promise.all(media.slice(0,8).map(m=>getMarketingMediaUrl(m.id,600)));
+    slot.innerHTML=\`<div class="asset-preview-gallery">${signed.map((x,i)=>\`<figure><img src="${esc(x.signed_url)}" alt="Prévia ${i+1}" loading="lazy"><figcaption>${esc(media[i]?.role||'preview')}${media[i]?.duration_ms?' · '+Math.round(media[i].duration_ms/1000)+'s':''}</figcaption></figure>\`).join('')}</div>\`;
+  }catch(err){slot.innerHTML=\`<div class="empty-state">${esc(err.message||'Falha ao abrir prévia.')}</div>\`}
+}
+async function renderAssetPreview(assetId,button){
+  const slot=document.querySelector(\`[data-preview-slot="${CSS.escape(assetId)}"]\`);
+  if(button)button.disabled=true;
+  if(slot)slot.innerHTML='<div class="muted">Renderizando sem IA…</div>';
+  try{
+    const result=await renderMarketingPreview(assetId);
+    if(slot)slot.innerHTML=\`<div class="muted">Prévia gerada: ${Number(result.outputs?.length||0)} arquivo(s). Atualizando…</div>\`;
+    const previous=state;
+    const [overview,metrics,workflow,shortlist]=await Promise.all([getMarketingOverview(),getMarketingMetrics(30),getMarketingWorkflow(),getMarketingShortlist()]);
+    state={overview,metrics,workflow,shortlist,previewUrls:previous.previewUrls||{}};
+    render();
+    await showAssetPreview(assetId);
+  }catch(err){if(slot)slot.innerHTML=\`<div class="empty-state">${esc(err.message||'Falha ao gerar prévia.')}</div>\`}finally{if(button)button.disabled=false}
+}
+
 function renderCampaigns(){
   const campaigns=state.overview?.campaigns||[];
   const assets=state.overview?.assets||[];
@@ -85,7 +132,7 @@ function render(){
   $('#summaryCards').innerHTML=[['Campanhas',(o.campaigns||[]).length,'cadastradas'],['Conteúdos',m.assets_created||(o.assets||[]).length,'últimos 30 dias'],['Aguardando revisão',m.review_required||0,'publicações'],['Custo registrado',moneyCents(m.actual_cost_cents||0),'últimos 30 dias']].map(x=>`<article class="summary-card"><span>${esc(x[0])}</span><strong>${esc(x[1])}</strong><small>${esc(x[2])}</small></article>`).join('');
   const locked=o.safety?.external_actions_locked!==false;$('#safetyBadge').textContent=locked?'Publicação bloqueada · seguro':'Publicação habilitada';$('#safetyBadge').className=`safety-badge ${locked?'safe':'warn'}`;
   $('#runtimeSummary').innerHTML=`<div><div class="rule"><span>Publicação externa</span><strong class="${r.publishing_enabled?'danger':'ok'}">${r.publishing_enabled?'Ligada':'Desligada'}</strong></div><div class="rule"><span>Kill switch</span><strong class="ok">${r.kill_switch?'Ativo':'Inativo'}</strong></div><div class="rule"><span>Aprovação humana</span><strong>${r.require_approval===false?'Não':'Obrigatória'}</strong></div><div class="rule"><span>Imagem IA</span><strong>${esc(meta.image_generation_quality||'low')} · ${Number(meta.image_variants_default||1)} variação</strong></div><div class="rule"><span>Vídeo V1</span><strong>${Number(meta.video_duration_seconds||10)}s · ${esc(meta.video_mode||'light_motion')}</strong></div><div class="rule"><span>IA de estratégia</span><strong class="ok">${meta.strategy_ai_enabled===true?'Habilitada':'Bloqueada'}</strong></div></div>`;
-  const assets=o.assets||[];const assetsHtml=assets.length?`<div class="data-list">${assets.map(a=>row(a.title,`${roleLabel(a.edit_spec?.content_role)} · ${a.media_kind} · v${a.version}`,a.status,dt(a.updated_at))).join('')}</div>`:empty('Nenhum conteúdo criado ainda.');$('#assetsList').innerHTML=assetsHtml;$('#recentAssets').innerHTML=assetsHtml;
+  renderAssets();
   renderCampaigns();
   const jobs=o.jobs||[];$('#jobsList').innerHTML=jobs.length?`<div class="data-list">${jobs.map(j=>row(`${j.channel} · ${j.content_type}`,j.scheduled_for?dt(j.scheduled_for):'Sem agendamento',j.status,j.manual_confirmation_required?'confirmação manual':'')).join('')}</div>`:empty('Nenhuma publicação preparada.');
   const templates=o.templates||[];$('#templatesList').innerHTML=templates.length?`<div class="data-list">${templates.map(t=>row(t.name,`${t.media_kind} · v${t.version}`,t.status,t.template_key)).join('')}</div>`:empty('Nenhum modelo ativo.');
@@ -99,7 +146,7 @@ function render(){
 async function load(){
   try{
     const [overview,metrics,workflow,shortlist]=await Promise.all([getMarketingOverview(),getMarketingMetrics(30),getMarketingWorkflow(),getMarketingShortlist()]);
-    state={overview,metrics,workflow,shortlist};render();$('#authGate').hidden=true;$('#marketingApp').hidden=false;
+    state={overview,metrics,workflow,shortlist,previewUrls:state.previewUrls||{}};render();$('#authGate').hidden=true;$('#marketingApp').hidden=false;
   }catch(e){$('#authStatus').textContent=e.message||'Falha ao carregar.'}
 }
 async function refreshOpportunities(){
@@ -115,6 +162,14 @@ async function createDraft(){
     document.querySelector('[data-tab="campaigns"]')?.click();
   }catch(e){$('#opportunityStatus').textContent=e.message||'Não foi possível criar o rascunho.'}finally{button.disabled=false}
 }
+
+document.addEventListener('click',async e=>{
+  const button=e.target.closest('button[data-asset-id][data-action]');
+  if(!button)return;
+  const action=button.dataset.action,assetId=button.dataset.assetId;
+  if(action==='render-preview'){await renderAssetPreview(assetId,button)}
+  if(action==='show-preview'){await showAssetPreview(assetId)}
+});
 
 $('#campaignsList').addEventListener('click',async e=>{
   const button=e.target.closest('button[data-action]');
