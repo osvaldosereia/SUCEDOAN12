@@ -73,7 +73,8 @@ Deno.serve(async(req:Request)=>{
       {data:segments,error:segmentsError},
       {data:timeline,error:timelineError},
       {data:behavior,error:behaviorError},
-      {data:handoffs,error:handoffsError}
+      {data:handoffs,error:handoffsError},
+      {data:identityEvaluations,error:identityEvaluationsError}
     ]=await Promise.all([
       sb.from('customer_phones').select('id,phone_e164,source,is_primary,verified_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
       sb.from('customer_emails').select('id,email,verification_status,is_primary,source,verified_at,linked_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
@@ -84,12 +85,13 @@ Deno.serve(async(req:Request)=>{
       sb.rpc('get_customer_commercial_segments_v1',{p_customer_id:id}),
       sb.from('customer_timeline_v1').select('customer_id,conversation_id,occurred_at,channel,event_kind,direction,title,body_text,reference_id,metadata').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(timelineLimit),
       sb.from('customer_behavior_events').select('id,conversation_id,event_type,event_data,occurred_at').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(50),
-      sb.from('human_handoffs').select('id,conversation_id,reason,priority,status,summary,channel,created_at,claimed_at,resolved_at,sla_due_at').eq('customer_id',id).order('created_at',{ascending:false}).limit(20)
+      sb.from('human_handoffs').select('id,conversation_id,reason,priority,status,summary,channel,created_at,claimed_at,resolved_at,sla_due_at').eq('customer_id',id).order('created_at',{ascending:false}).limit(20),
+      sb.from('customer_identity_resolution_evaluations').select('id,decision,confidence,confidence_scope,source,channel,evidence,created_at').eq('customer_id',id).order('created_at',{ascending:false}).limit(20)
     ]);
     const failures=[
       ['phones',phonesError],['emails',emailsError],['addresses',addressesError],['identities',identitiesError],
       ['consents',consentsError],['intelligence',intelligenceError],['segments',segmentsError],['timeline',timelineError],
-      ['behavior',behaviorError],['handoffs',handoffsError]
+      ['behavior',behaviorError],['handoffs',handoffsError],['identity_evaluations',identityEvaluationsError]
     ].filter(([,e])=>Boolean(e)).map(([part,e]:any)=>({part,error:e.message}));
     if(failures.length)return json(origin,{ok:false,error:'customer_360_failed',failures},400);
     const activeConsents=(consents||[]).reduce((acc:any,row:any)=>{
@@ -112,8 +114,24 @@ Deno.serve(async(req:Request)=>{
       consent:{events:consents||[],current:activeConsents},
       commercial:{intelligence:intelligence||{},segments:segments||{}},
       activity:{timeline:timeline||[],behavior_events:behavior||[],handoffs:handoffs||[]},
+      identity_resolution:{latest:(identityEvaluations||[])[0]||null,evaluations:identityEvaluations||[]},
       data_quality:{...dataQuality,completeness_percent:completeness}
     });
+  }
+  if(action==='identity_readiness'){
+    const {data,error}=await sb.rpc('identity_resolution_readiness_v1');
+    if(error)return json(origin,{ok:false,error:'identity_readiness_failed',detail:error.message},400);
+    return json(origin,{ok:true,readiness:data||{}});
+  }
+  if(action==='identity_conflicts'){
+    const limit=int(body?.limit,10,100);
+    const {data,error}=await sb.from('customer_identity_resolution_evaluations')
+      .select('id,decision,confidence,source,channel,evidence,created_at')
+      .eq('decision','conflict')
+      .order('created_at',{ascending:false})
+      .limit(limit);
+    if(error)return json(origin,{ok:false,error:'identity_conflicts_failed',detail:error.message},400);
+    return json(origin,{ok:true,conflicts:data||[]});
   }
   if(action==='customer_history'){
     const id=text(body?.id,80);if(!id)return json(origin,{ok:false,error:'id_required'},400);
