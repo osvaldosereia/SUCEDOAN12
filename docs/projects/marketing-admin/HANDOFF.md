@@ -88,7 +88,7 @@ Ao terminar a próxima rodada, atualizar este HANDOFF e CURRENT-STATE.
 - Graph API explícita no runtime: `v26.0`;
 - Facebook Page esperada: `1928140920768577`;
 - Instagram Business esperado: `17841451162237654`;
-- `admin-marketing-workflow-v1` implantada em **v16**, JWT=true;
+- `admin-marketing-workflow-v1` implantada em **v17**, JWT=true;
 - nova proteção: `connection_save_config` valida App ID + App Secret da Meta via client credentials **antes** de persistir App ID ou novo segredo;
 - App Secret continua somente no Vault;
 - App ID Meta continua `null` até validação real do par;
@@ -107,4 +107,64 @@ Ao terminar a próxima rodada, atualizar este HANDOFF e CURRENT-STATE.
 
 ## Comando pronto para nova aba / novo projeto ChatGPT
 
-> Acesse o GitHub `osvaldosereia/SUCEDOAN12` e o Supabase `ssbesxgaijknwsjbsbcz`. Trabalhe somente no projeto **Marketing Admin / Organic Social — Dona Antônia**. Continue exatamente do checkpoint salvo em `docs/projects/marketing-admin/HANDOFF.md` e `CURRENT-STATE.md`. Use a branch `marketing-admin-round8-continue-20260918` e confirme o HEAD antes de editar. Estamos na **Rodada 8 — Connection Manager / homologação das conexões reais**. A Edge Function `admin-marketing-workflow-v1` está em **v16** com validação server-side do par Meta App ID + App Secret antes de persistir o App ID. O App Secret permanece somente no Supabase Vault. O `meta_oauth_app_id` ainda deve permanecer vazio até a validação real do par. Graph API explícita: `v26.0`. IDs esperados já registrados: Facebook Page `1928140920768577` e Instagram Business `17841451162237654` (@dona_antonia_cuiaba). Próxima ação: validar o App ID Meta correto contra o App Secret atual do Vault; somente se a Meta aceitar o par, salvar o App ID e iniciar OAuth para confirmar a Page e o Instagram esperados. Depois resolver Pinterest/board. **Não abrir publicação ainda.** Manter `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, todos os gates de canal OFF. Antes de qualquer canary, exigir conta verificada e preparar somente 1 publicação. Não misturar com **Customer & Marketing OS**.
+> Acesse o GitHub `osvaldosereia/SUCEDOAN12` e o Supabase `ssbesxgaijknwsjbsbcz`. Trabalhe somente no projeto **Marketing Admin / Organic Social — Dona Antônia**. Continue exatamente do checkpoint salvo em `docs/projects/marketing-admin/HANDOFF.md` e `CURRENT-STATE.md`. Use a branch `marketing-admin-round8-continue-20260918` e confirme o HEAD antes de editar. Estamos na **Rodada 8 — Connection Manager / homologação das conexões reais**. A Edge Function `admin-marketing-workflow-v1` está em **v17** com validação server-side do par Meta App ID + App Secret antes de persistir o App ID e validação estrita da identidade esperada da Page/Instagram durante o OAuth. O App Secret permanece somente no Supabase Vault. O `meta_oauth_app_id` ainda deve permanecer vazio até a validação real do par. Graph API explícita: `v26.0`. IDs esperados já registrados: Facebook Page `1928140920768577` e Instagram Business `17841451162237654` (@dona_antonia_cuiaba). Próxima ação: validar o App ID Meta correto contra o App Secret atual do Vault; somente se a Meta aceitar o par, salvar o App ID e iniciar OAuth para confirmar a Page e o Instagram esperados. Depois resolver Pinterest/board. **Não abrir publicação ainda.** Manter `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, todos os gates de canal OFF. Antes de qualquer canary, exigir conta verificada e preparar somente 1 publicação. Não misturar com **Customer & Marketing OS**.
+
+## Checkpoint Rodada 8.1 — homologação fail-closed de identidade Meta
+
+Data: 18/09/2026.
+
+- HEAD confirmado antes das edições: `4e7ee63e9fd2528d5e4c40943fb910d7a60e2124`;
+- branch preservada e isolada: `marketing-admin-round8-continue-20260918`;
+- a branch continua divergente de `main`; nenhum rebase/merge de trabalho paralelo foi feito;
+- teste de regressão adicionado primeiro em `c8c26529a96b41ebe7f2c69c81e8f430c975768e`;
+- proteção implementada em `b2fd5ad979335e86665b2005d5d4e38573324f81`;
+- `admin-marketing-workflow-v1` implantada em **v17**, ACTIVE, JWT=true;
+- durante `oauth_exchange`, somente a Facebook Page esperada `1928140920768577` é aceita;
+- o Instagram vinculado precisa ter ID `17841451162237654`; username esperado `dona_antonia_cuiaba` também é conferido quando retornado pela Meta;
+- apenas o token temporário da Page esperada pode ser armazenado;
+- `oauth_complete` repete a validação de identidade antes de persistir qualquer credencial Meta definitiva;
+- em divergência, os segredos temporários da sessão são limpos e a conclusão é bloqueada;
+- verificação estrutural da rodada: **25/25 checks verdes**;
+- deploy v17 compilou/ativou no Supabase sem abrir gates.
+
+### Busca do Meta App ID
+
+O App ID exato ainda **não foi localizado** em:
+- documentação/checkpoint do projeto;
+- código ou histórico pesquisável do GitHub;
+- metadata pública do Marketing no Supabase;
+- cenários históricos Meta inspecionados no Make;
+- contexto anterior e arquivos pesquisados.
+
+Não usar Page ID, Instagram Business ID, Flow ID, WABA ID ou connection ID como substituto do App ID.
+
+Foi criado no Make apenas para tentativa de leitura o cenário `7489979` — `TEMP - Marketing Meta App ID Readonly 20260918`. A execução foi bloqueada pela camada de segurança antes da chamada; o cenário permanece **inactive**. Não ativar nem reutilizar como automação do projeto.
+
+### Estado de segurança reconfirmado após v17
+
+- `meta_oauth_app_id=null`;
+- App Secret Meta presente somente via Vault;
+- Graph API: `v26.0`;
+- `enabled=false`;
+- `execution_mode=off`;
+- `kill_switch=true`;
+- `publishing_enabled=false`;
+- `max_daily_publications=0`;
+- todos os gates de canal OFF;
+- publication jobs=0;
+- published jobs=0;
+- external side effects=0;
+- OAuth sessions=0;
+- todos os canais seguem `disconnected`.
+
+### Próxima ação exata a partir deste checkpoint
+
+1. obter o **Meta App ID numérico exato** do mesmo aplicativo cujo App Secret já está no Vault;
+2. informar esse App ID no Connection Manager; não é necessário expor o App Secret no chat;
+3. deixar `connection_save_config` validar o par App ID + App Secret no servidor;
+4. somente se a Meta aceitar o par, persistir `meta_oauth_app_id`;
+5. iniciar OAuth Meta;
+6. o backend somente aceitará a Page `1928140920768577` vinculada ao Instagram Business `17841451162237654`;
+7. somente depois resolver Pinterest/board;
+8. canary de publicação continua proibido até concluir essas homologações.
+
