@@ -13,6 +13,9 @@ const ROUTES_BY_REPLY: Record<string, AppRoute> = {
   offers: 'catalog',
   'for-you': 'catalog',
   'for-home': 'catalog',
+  'basket-offers': 'catalog',
+  'basket-products': 'catalog',
+  'basket-review': 'basket',
 };
 
 export function routeForQuickReply(replyId: string): AppRoute | null {
