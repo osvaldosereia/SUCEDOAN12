@@ -53,7 +53,7 @@ Documento:
 
 Total: 27 rodadas numeradas de 0 a 26.
 
-**Próxima rodada permitida:** Rodada 8 — Acompanhamento de pedido fictício.
+**Próxima rodada permitida:** Rodada 9 — PWA isolada de homologação.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
 
@@ -192,7 +192,7 @@ O documento principal para retomada em novas janelas está salvo na `main`:
 
 Ao retomar o projeto, este arquivo deve ser lido primeiro, seguido do design, plano de rodadas e deste `PROJECT-STATUS.md`.
 
-**Snapshot atual:** Rodadas 0–7 concluídas; próxima Rodada 8.
+**Snapshot atual:** Rodadas 0–8 concluídas; próxima Rodada 9.
 
 
 ## Checkpoint — Rodada 4
@@ -371,3 +371,40 @@ Validações executadas:
 **Próxima rodada autorizável:** Rodada 8 — Acompanhamento de pedido fictício.
 
 O projeto permanece OFF, não publicado e incapaz de criar pedido real.
+
+
+## Checkpoint — Rodada 8
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- repositório de pedidos totalmente em memória;
+- pedido criado somente a partir de ID `TEST-*`;
+- status suportados:
+  - `confirmed`;
+  - `separating`;
+  - `ready`;
+  - `on_route`;
+  - `delivered`;
+  - `cancelled`;
+- timeline visual de acompanhamento;
+- botão `Avançar status de teste` para demonstração;
+- estados terminais bloqueiam avanço;
+- cancelamento permitido apenas antes da rota;
+- histórico de status com cópias defensivas;
+- checkout confirmado cria o pedido fictício no repositório;
+- botão `Acompanhar pedido` abre a timeline;
+- CTA `Preciso de ajuda` é interno e não abre WhatsApp;
+- nenhum evento de logística real é disparado.
+
+Validações executadas:
+- 8/8 testes específicos de pedido/timeline aprovados;
+- typecheck dos módulos de pedido aprovado;
+- URLs `wa.me` e `whatsapp://` ausentes da timeline;
+- nenhum endpoint externo conectado;
+- nenhum arquivo de `comprar/` modificado.
+
+**Próxima rodada autorizável:** Rodada 9 — PWA isolada de homologação.
+
+O projeto permanece OFF, não publicado e sem acompanhamento de entrega real.
