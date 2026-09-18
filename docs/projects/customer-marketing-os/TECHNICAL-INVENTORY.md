@@ -233,3 +233,21 @@ Testes adicionais:
 - `scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs`.
 
 Regra: não remover `whatsapp-flow-health-webhook-v1` nem trocar callback na Meta durante homologação interna. A migração de callback é gate externo separado.
+
+
+### Homologation evidence observer
+
+- migration: `20260919080000_cm_1_homologation_evidence_observer_v1.sql`;
+- hardening: `20260919080500_customer_os_vault_secret_reader_hardening_v1.sql`;
+- lifecycle acceptance: `20260919081000_cm_1_acceptance_lifecycle_evidence_v1.sql`;
+- RPC: `cm1_homologation_evidence_summary_v1()`;
+- Relationship read model: `relationship_command_summary_v1()` v`cm1.15-v3`;
+- Acceptance read model: `cm1_acceptance_checklist_v1()` v`cm1-acceptance-v1.1`;
+- UI: `admin/relacionamento.html` + `admin/relacionamento.js`;
+- tests:
+  - `scripts/test-cm-1-homologation-evidence-observer-v1.mjs`;
+  - `scripts/test-cm-1-acceptance-lifecycle-evidence-v1.mjs`;
+- no external side effect;
+- no Make runtime;
+- no automatic gate promotion without real evidence.
+
