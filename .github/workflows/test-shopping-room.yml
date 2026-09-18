@@ -18,6 +18,7 @@ on:
       - 'scripts/test-comprar-personalized-start-v1.mjs'
       - 'scripts/test-comprar-personalized-offers-v1.mjs'
       - 'scripts/test-bling-history-import-v2.mjs'
+      - 'scripts/test-customer-commercial-segments-v1.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -33,6 +34,7 @@ on:
       - 'supabase/functions/bling-history-import-v1/**'
       - 'supabase/functions/bling-history-contact-enrichment-v1/**'
       - 'supabase/migrations/*bling_history*'
+      - 'supabase/migrations/*commercial_segments*'
       - 'supabase/migrations/*shopping_room*'
       - 'supabase/migrations/*room_address*'
       - 'supabase/migrations/*shopping_chat*'
@@ -112,6 +114,7 @@ jobs:
           node scripts/test-comprar-personalized-start-v1.mjs
           node scripts/test-comprar-personalized-offers-v1.mjs
           node scripts/test-bling-history-import-v2.mjs
+          node scripts/test-customer-commercial-segments-v1.mjs
           for test_file in scripts/test-comprar-clean-*.mjs; do node "$test_file"; done
           node scripts/test-shopping-chat-routing-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
