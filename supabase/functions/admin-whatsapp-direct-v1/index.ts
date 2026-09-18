@@ -115,6 +115,152 @@ Deno.serve(async(req:Request)=>{
   }
   if(!canWrite)return json({ok:false,error:"read_only"},403);
 
+  if(action==="meta_diagnostics_readonly"){
+    const access=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"",version=graphVersion();
+    if(!access)return json({ok:false,error:"meta_credentials_missing",external_side_effect:false},409);
+    if(!graphVersionReady())return json({ok:false,error:"meta_graph_version_unverified",external_side_effect:false},409);
+
+    const accountR=await sb.from("whatsapp_accounts")
+      .select("id,display_name,phone_e164,phone_number_id,waba_id,is_active")
+      .eq("is_active",true).order("created_at",{ascending:true}).limit(1).maybeSingle();
+    if(accountR.error||!accountR.data?.phone_number_id||!accountR.data?.waba_id)
+      return json({ok:false,error:"meta_account_missing",external_side_effect:false},409);
+
+    const channelR=await sb.from("channel_accounts")
+      .select("id,channel,external_account_id,outbound_enabled,capabilities,metadata")
+      .eq("channel","whatsapp").eq("external_account_id",accountR.data.phone_number_id)
+      .limit(1).maybeSingle();
+    if(channelR.error||!channelR.data?.id)
+      return json({ok:false,error:"meta_channel_account_missing",external_side_effect:false},409);
+
+    const graphGet=async(path:string)=>{
+      const response=await fetch(`https://graph.facebook.com/${version}/${path}`,{
+        method:"GET",
+        headers:{Authorization:`Bearer ${access}`,"Accept":"application/json"}
+      });
+      const payload=await response.json().catch(()=>({}));
+      return {
+        ok:response.ok,
+        status:response.status,
+        payload,
+        api_version:clean(response.headers.get("facebook-api-version")||version,20)
+      };
+    };
+
+    const [permissionsR,subscriptionsR,phoneR]=await Promise.all([
+      graphGet("me/permissions"),
+      graphGet(`${encodeURIComponent(accountR.data.waba_id)}/subscribed_apps`),
+      graphGet(`${encodeURIComponent(accountR.data.phone_number_id)}?fields=id,display_phone_number,verified_name,quality_rating`)
+    ]);
+
+    const checkedAt=new Date().toISOString();
+    const rawPermissions=Array.isArray(permissionsR.payload?.data)?permissionsR.payload.data:[];
+    const permissionMap=new Map(rawPermissions.map((x:any)=>[clean(x?.permission,160),clean(x?.status,40).toLowerCase()]));
+    const requiredPermissions=["whatsapp_business_management","whatsapp_business_messaging"];
+    const permissionRows=requiredPermissions.map(permission_key=>({
+      channel_account_id:channelR.data.id,
+      permission_key,
+      status:permissionMap.get(permission_key)==="granted"?"granted":"missing",
+      source:"supabase_meta_readonly_probe",
+      evidence:{
+        http_status:permissionsR.status,
+        api_version:permissionsR.api_version,
+        checked_by:user.id,
+        external_side_effect:false
+      },
+      checked_at:checkedAt,
+      expires_at:null,
+      updated_at:checkedAt
+    }));
+    const permissionsWrite=await sb.from("meta_account_permissions")
+      .upsert(permissionRows,{onConflict:"channel_account_id,permission_key"});
+    if(permissionsWrite.error)
+      return json({ok:false,error:"meta_permissions_evidence_write_failed",detail:clean(permissionsWrite.error.message,500),external_side_effect:false},500);
+
+    const subscribedApps=Array.isArray(subscriptionsR.payload?.data)?subscriptionsR.payload.data:[];
+    const subscriptionIds=subscribedApps
+      .map((x:any)=>clean(x?.whatsapp_business_api_data?.id||x?.id,120))
+      .filter(Boolean);
+    const phoneQuality=clean(phoneR.payload?.quality_rating,80)||null;
+    const errors=[
+      !permissionsR.ok?{operation:"permissions",status:permissionsR.status}:null,
+      !subscriptionsR.ok?{operation:"subscribed_apps",status:subscriptionsR.status}:null,
+      !phoneR.ok?{operation:"phone_number",status:phoneR.status}:null
+    ].filter(Boolean);
+
+    const healthWrite=await sb.from("meta_provider_health_snapshots").insert({
+      channel_account_id:channelR.data.id,
+      provider:"meta_cloud_api",
+      provider_state:"read_only",
+      graph_api_version:permissionsR.api_version||subscriptionsR.api_version||phoneR.api_version||version,
+      waba_id:accountR.data.waba_id,
+      phone_number_id:accountR.data.phone_number_id,
+      phone_quality:phoneQuality,
+      account_quality:null,
+      messaging_limit:null,
+      webhook_state:subscriptionsR.ok&&subscriptionIds.length>0?"waba_subscribed":"unverified",
+      template_state:null,
+      flow_state:null,
+      health_score:null,
+      errors,
+      capabilities:{
+        graph_reachable:permissionsR.ok||subscriptionsR.ok||phoneR.ok,
+        waba_subscription_present:subscriptionsR.ok&&subscriptionIds.length>0,
+        subscribed_app_ids:subscriptionIds,
+        phone_verified_name:clean(phoneR.payload?.verified_name,200)||null,
+        display_phone_number:clean(phoneR.payload?.display_phone_number,80)||null
+      },
+      permissions:Object.fromEntries(requiredPermissions.map(k=>[k,permissionMap.get(k)==="granted"?"granted":"missing"])),
+      provider_snapshot:{
+        source:"supabase_meta_readonly_probe",
+        permission_http_status:permissionsR.status,
+        subscription_http_status:subscriptionsR.status,
+        phone_http_status:phoneR.status,
+        api_version:permissionsR.api_version||subscriptionsR.api_version||phoneR.api_version||version,
+        checked_by:user.id,
+        external_side_effect:false
+      },
+      checked_at:checkedAt
+    }).select("id,provider_state,graph_api_version,waba_id,phone_number_id,phone_quality,webhook_state,checked_at").single();
+    if(healthWrite.error)
+      return json({ok:false,error:"meta_health_evidence_write_failed",detail:clean(healthWrite.error.message,500),external_side_effect:false},500);
+
+    const readinessR=await sb.rpc("evaluate_meta_direct_readiness_v1",{p_channel_account_id:channelR.data.id});
+    if(readinessR.error)
+      return json({ok:false,error:"meta_readiness_failed",detail:clean(readinessR.error.message,500),external_side_effect:false},500);
+
+    return json({
+      ok:true,
+      mode:"READ_ONLY",
+      graph_api_version:healthWrite.data?.graph_api_version||version,
+      permissions:Object.fromEntries(requiredPermissions.map(k=>[k,permissionMap.get(k)==="granted"?"granted":"missing"])),
+      phone:{
+        id:accountR.data.phone_number_id,
+        display_phone_number:clean(phoneR.payload?.display_phone_number,80)||null,
+        verified_name:clean(phoneR.payload?.verified_name,200)||null,
+        quality_rating:phoneQuality
+      },
+      waba:{
+        id:accountR.data.waba_id,
+        subscribed_app_ids:subscriptionIds,
+        subscription_observed:subscriptionsR.ok&&subscriptionIds.length>0
+      },
+      webhook:{
+        state:healthWrite.data?.webhook_state||"unverified",
+        callback_verified:false,
+        note:"A assinatura da WABA foi observada, mas o callback do Meta Direct ainda exige verificação própria."
+      },
+      readiness:readinessR.data||{},
+      gates:{
+        canonical_outbound_enabled:channelR.data.outbound_enabled===true,
+        meta_direct_ready:channelR.data.capabilities?.meta_direct_ready===true
+      },
+      external_side_effect:false,
+      meta_message_sent:false,
+      meta_configuration_changed:false
+    });
+  }
+
   if(action==="template_save_draft"){
     const key=clean(body?.template_key,120).toLowerCase();
     const purpose=cleanText(body?.purpose,500);
