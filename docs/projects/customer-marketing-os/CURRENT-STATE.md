@@ -1,26 +1,34 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot atualizado em **18/09/2026 ~19:00 UTC**.
+Snapshot atualizado em **18/09/2026 ~19:09 UTC**.
 
 ## Última rodada concluída
 
-**Homologação CM-1 — Revisão Humana de Identidade V1.**
+**Homologação CM-1 — Meta Policy Registry + Preflight Fail-Closed V1.**
 
 Entregue:
 
-- fila de conflitos na Central de Relacionamento;
-- candidatos apresentados com PII mascarada;
-- revisão `approved | rejected` com justificativa;
-- confirmação humana obrigatória;
-- backend `review_only_no_merge`;
-- `external_side_effect=false`;
-- `customer-intelligence-v1` implantada como version 19;
-- contrato estático validado;
-- cache da Central atualizado para `20260918-4`.
+- Meta Policy Registry com 8 políticas oficiais/operacionais fail-closed;
+- readiness do registry: 8/8 ativo, fonte presente, stale=0;
+- revisão automática de frescor a cada 30 dias pelo snapshot;
+- ACL service-role only verificada;
+- fallback local `v26.0` removido do Meta Direct;
+- Graph API version passou a exigir configuração explícita `vN.N`;
+- `whatsapp-meta-direct-v1` implantada como version 2;
+- `admin-whatsapp-direct-v1` implantada como version 4;
+- contratos equivalentes aos testes novos validados no HEAD;
+- Meta Direct permanece READ_ONLY/OFF;
+- nenhum gate externo foi aberto.
 
 Documento da rodada:
 
+`docs/projects/customer-marketing-os/CM1-HOMOLOGATION-META-POLICY-PREFLIGHT-V1.md`
+
+### Rodada anterior importante
+
 `docs/projects/customer-marketing-os/CM1-HOMOLOGATION-IDENTITY-REVIEW-V1.md`
+
+A fila segura de revisão humana de identidade permanece disponível na Central.
 
 ## Estado geral
 
@@ -111,16 +119,16 @@ Ledger suporta custo estimado/real, mas ainda existem **0 execuções governadas
 
 Snapshot:
 
-- receipts: 4
-- normalized_linked: 4
-- conversation_linked: 4
-- customer_linked: 2
+- receipts: 6
+- normalized_linked: 6
+- conversation_linked: 6
+- customer_linked: 3
 - distinct_customers: 1
-- provider identities: 3
+- provider identities: 5
 - shopping sessions: 3
 - errors: 0
 - duplicates: 0
-- canonical events 24h: 4
+- canonical events 24h: 6
 - adapter_receiving_real_traffic: true
 - legacy_transport_recently_active: false
 - external_side_effect: false
@@ -130,7 +138,7 @@ Snapshot:
 
 - customers: 505
 - pedidos observados pelo checklist: 45
-- timeline rows: 1302
+- timeline rows: 1307
 - customer_product_stats: 680
 - product graph edges: 526
 - opportunities ativas/suprimidas: 75
@@ -164,11 +172,7 @@ Não descobrir, inferir, testar ou contornar PIN automaticamente.
 
 O repositório recebe commits paralelos de outros projetos, especialmente Marketing.
 
-Último HEAD observado durante esta retomada:
-`c8f6b02c7c074ba3865fb65c966856780115b061`
-— `docs(marketing): registra Round 8`.
-
-Antes de qualquer alteração, buscar novamente o HEAD e o arquivo alvo para preservar trabalho concorrente.
+O HEAD muda frequentemente por trabalhos paralelos. Nesta rodada foi observado trabalho concorrente apenas no projeto separado `APP-DONA-ANTONIA-MASTER.md`, sem colisão com esta pasta. Antes de qualquer alteração, buscar novamente o HEAD e o arquivo alvo para preservar trabalho concorrente.
 
 ## CI
 
@@ -183,8 +187,8 @@ O wrapper consultado no HEAD acima não retornou combined status nem workflow ru
 3. gerar uso real do Comprar para que `catalog_search` e `product_view` produzam evidência;
 4. validar Central de Relacionamento no navegador canary com o PIN pelo responsável;
 5. validar visual desktop/mobile;
-6. revisar Meta Policy Registry em modo read-only;
-7. homologar Meta Direct sem ativar outbound;
+6. Meta Policy Registry: readiness técnico concluído 8/8; gate humano continua pending;
+7. resolver apenas com evidência real os blockers do Meta Direct: Graph API version, permissões, webhook e direct-ready flag; não ativar outbound;
 8. reexecutar checklist;
 9. somente depois discutir encerramento da CM-1;
 10. ativação externa continua exigindo autorização explícita separada.
@@ -205,3 +209,49 @@ O wrapper consultado no HEAD acima não retornou combined status nem workflow ru
 - primeira expiração real observável: 23/09/2026.
 
 Portanto nenhum dos seis critérios restantes deve ser promovido artificialmente.
+
+
+## Meta Policy / Meta Direct — evidência técnica atual
+
+### Policy Registry
+
+- required policies: 8;
+- active: 8;
+- missing: 0;
+- stale: 0;
+- fail-closed violations: 0;
+- source missing: 0;
+- readiness técnico: true;
+- manual gate `meta_policy_registry_verification`: **pending**;
+- `external_activation_authorized=false`.
+
+### Meta Direct preflight
+
+Confirmado:
+
+- WABA: presente;
+- Phone Number ID: presente;
+- outbound fail-closed: true;
+- `whatsapp_direct_config.enabled=false`;
+- `release_mode=off`.
+
+Bloqueios reais que permanecem:
+
+1. `graph_api_version_unverified`;
+2. `permissions_unverified_or_blocking`;
+3. `webhook_not_verified`;
+4. `direct_ready_flag_false`.
+
+Não criar evidência artificial para nenhum deles.
+
+### Deploys atuais desta rodada
+
+- `customer-intelligence-v1`: version 19, JWT true;
+- `whatsapp-meta-direct-v1`: version 2, JWT false por ser webhook, POST protegido por HMAC;
+- `admin-whatsapp-direct-v1`: version 4, JWT true.
+
+### Graph API
+
+`graph_api_version` canônica continua `null`.
+
+O código não possui mais fallback de versão. A versão só pode ser registrada após evidência oficial ou administrativa verificável.
