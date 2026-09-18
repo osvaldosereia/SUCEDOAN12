@@ -329,3 +329,73 @@
 @media(prefers-reduced-motion:reduce){
   .c360-close,.c360-back-link,.c360-tabs button,.c360-summary-grid>div,.c360-insight-card,.c360-data-chip,.c360-product-card,.c360-order-row,.c360-conversation-list article{transition:none}
 }
+
+
+/* Customer directory — same visual language as Customer 360 */
+.customer-canary-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:14px 16px;margin-bottom:16px;border:1px solid #dbe8e3;border-radius:16px;
+  background:#f5faf8;color:#34544a
+}
+.customer-canary-banner>div{display:flex;align-items:center;gap:9px}
+.customer-canary-banner strong{font-size:13px}.customer-canary-banner p{margin:0;font-size:12px;color:#66736f}
+.customer-canary-dot{width:9px;height:9px;border-radius:50%;background:#2e8b61;box-shadow:0 0 0 4px rgba(46,139,97,.10)}
+.customer-directory-head{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  margin:18px 0 14px;padding:16px 18px;border:1px solid #dde5e2;border-radius:18px;background:#fff;
+  box-shadow:0 4px 18px rgba(15,23,42,.035)
+}
+.customer-directory-summary{display:flex;align-items:center;gap:12px;min-width:220px}
+.customer-directory-count{
+  min-width:54px;height:54px;border-radius:16px;background:#e9f4f1;color:#1d6f5f;
+  display:grid;place-items:center;font-size:18px;font-weight:800
+}
+.customer-directory-summary strong{display:block;font-size:14px}.customer-directory-summary small{display:block;margin-top:3px;color:#697570;font-size:11px;line-height:1.35}
+.customer-directory-toolbar{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end}
+.customer-directory-toolbar input,.customer-directory-toolbar select{
+  min-height:46px;border:1px solid #d7e0dc;border-radius:12px;background:#fff;padding:0 13px;font-size:14px
+}
+.customer-directory-toolbar input{min-width:260px;max-width:420px;flex:1}
+.customer-directory-toolbar select{min-width:220px}
+.customer-directory-toolbar input:focus,.customer-directory-toolbar select:focus{outline:2px solid #cfe2dc;border-color:#91b9ad}
+.customer-directory-panel{padding:0;margin:0;background:transparent}
+.customer-directory-list{display:grid;gap:9px}
+.customer-directory-row{
+  display:grid;grid-template-columns:minmax(260px,1.4fr) minmax(210px,1fr) auto auto;
+  align-items:center;gap:16px;padding:13px 14px;border:1px solid #dfe7e4;border-radius:16px;background:#fff;
+  box-shadow:0 2px 10px rgba(15,23,42,.025);transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease
+}
+.customer-directory-row:hover{border-color:#cfded8;box-shadow:0 6px 20px rgba(15,23,42,.05);transform:translateY(-1px)}
+.customer-directory-main{display:flex;align-items:center;gap:11px;min-width:0}
+.customer-directory-avatar{
+  width:42px;height:42px;border-radius:13px;background:#edf5f2;color:#1d6f5f;display:grid;place-items:center;
+  font-size:13px;font-weight:800;flex:0 0 auto
+}
+.customer-directory-main>div{min-width:0}.customer-directory-main strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.customer-directory-main small{display:block;color:#6f7b77;font-size:11px;margin-top:3px}
+.customer-directory-purchases strong{display:block;font-size:14px;font-variant-numeric:tabular-nums}.customer-directory-purchases small{display:block;color:#6f7b77;font-size:11px;margin-top:3px;line-height:1.35}
+.customer-directory-status{justify-self:start}
+.customer-directory-actions{display:flex;align-items:center;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.customer-directory-actions .secondary,.customer-directory-actions a.secondary,.customer-profile-button{
+  min-height:38px;border-radius:10px;padding:0 11px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;justify-content:center
+}
+.customer-profile-button{border:1px solid #1d6f5f;background:#1d6f5f;color:#fff;cursor:pointer}
+.customer-profile-button:hover{background:#175f51}
+@media(max-width:1100px){
+  .customer-directory-head{align-items:stretch;flex-direction:column}
+  .customer-directory-toolbar{justify-content:stretch}
+  .customer-directory-toolbar input{max-width:none}
+  .customer-directory-row{grid-template-columns:minmax(220px,1.3fr) minmax(180px,1fr) auto}
+  .customer-directory-actions{grid-column:1/-1;justify-content:flex-start;padding-left:53px}
+}
+@media(max-width:700px){
+  .customer-canary-banner{align-items:flex-start;flex-direction:column;gap:6px}
+  .customer-directory-head{padding:14px}
+  .customer-directory-toolbar{display:grid;grid-template-columns:1fr}
+  .customer-directory-toolbar input,.customer-directory-toolbar select{width:100%;min-width:0}
+  .customer-directory-row{grid-template-columns:1fr;padding:13px;gap:10px}
+  .customer-directory-status{position:absolute;right:14px;top:14px}
+  .customer-directory-row{position:relative}
+  .customer-directory-purchases{padding-left:53px}
+  .customer-directory-actions{grid-column:auto;padding-left:53px;justify-content:flex-start}
+  .customer-directory-main{padding-right:72px}
+}
