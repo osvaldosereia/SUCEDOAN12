@@ -8,7 +8,7 @@
 **Pull Request de homologação:** #396 — draft — **NÃO MERGEAR**  
 **Código do app:** `app-dona-antonia/`  
 **Comprar atual:** `comprar/` — **NÃO MODIFICAR durante o desenvolvimento do app**  
-**Próxima rodada autorizável:** **Rodada 10 — Shell Capacitor Android**
+**Próxima sequencial:** **Rodada 10 — Shell Capacitor Android (bloqueada até existir toolchain nativa válida)**
 
 ---
 
@@ -396,7 +396,8 @@ Android:
 Legenda:
 
 - ✅ concluída;
-- ▶ próxima;
+- 🟡 parcialmente implementada;
+- ⏸️ bloqueada por dependência externa/ambiente;
 - ⏳ futura;
 - 🔒 conexão com produção proibida até Rodada 25.
 
@@ -412,20 +413,20 @@ Legenda:
 | 7 | Checkout isolado | ✅ |
 | 8 | Pedido e acompanhamento fictício | ✅ |
 | 9 | PWA isolada | ✅ |
-| 10 | Shell Capacitor Android | ▶ |
+| 10 | Shell Capacitor Android | ⏸️ próxima sequencial; toolchain nativa ausente |
 | 11 | Shell Capacitor iOS | ⏳ |
 | 12 | Sessão segura nativa | ⏳ |
-| 13 | Backend Supabase de homologação | ⏳ |
+| 13 | Backend Supabase de homologação | 🟡 fundação pronta; Edge Functions bloqueadas por quota |
 | 14 | Identificação/pairing | ⏳ |
 | 15 | Deep links | ⏳ |
 | 16 | Push transacional de homologação | ⏳ |
 | 17 | Foto e áudio | ⏳ |
 | 18 | Histórico e recompra | ⏳ |
 | 19 | Central de privacidade | ⏳ |
-| 20 | Offline e recuperação | ⏳ |
-| 21 | Métricas e observabilidade | ⏳ |
-| 22 | Segurança e hardening | ⏳ |
-| 23 | UX final e acessibilidade | ⏳ |
+| 20 | Offline e recuperação | ✅ concluída em paralelo |
+| 21 | Métricas e observabilidade | 🟡 camada local pronta; backend pendente |
+| 22 | Segurança e hardening | 🟡 hardening local executado; testes nativos pendentes |
+| 23 | UX final e acessibilidade | 🟡 base melhorada; aparelhos reais pendentes |
 | 24 | Lojas e beta | ⏳ |
 | 25 | Gate final de produção | 🔒 |
 | 26 | Publicação e pós-lançamento | ⏳ |
@@ -671,32 +672,64 @@ Ana responde
 
 # 17. Estado atual exato
 
-**Última rodada concluída:** Rodada 9.
+**Última sequência integral concluída:** Rodadas 0–9.
 
-**Próxima rodada:** Rodada 10 — Shell Capacitor Android.
+**Concluída em paralelo:** Rodada 20 — Offline, reconexão e recuperação.
 
-Ainda não foi implementado:
+**Parcialmente avançadas:** Rodadas 13, 21, 22 e 23.
 
-- catálogo real;
-- Supabase;
-- cestas reais;
-- carrinho real;
-- checkout;
-- pedido;
-- PWA;
-- Android;
-- iOS;
-- sessão segura;
+**Próxima sequencial:** Rodada 10 — Shell Capacitor Android, atualmente bloqueada por ausência de Android SDK/ADB/Gradle no ambiente disponível.
+
+## Já implementado no app de homologação
+
+- shell web/PWA isolado;
+- conversa determinística;
+- catálogo sintético;
+- cestas sintéticas;
+- carrinho local;
+- checkout fictício;
+- pedido `TEST-*`;
+- acompanhamento fictício;
+- PWA isolada;
+- offline/reconexão segura;
+- política de URLs sem PII;
+- scanner ampliado de segredos;
+- telemetria local privacy-safe e OFF por padrão;
+- melhorias estruturais de acessibilidade.
+
+## Supabase HML
+
+Foi criada uma fundação **estritamente HML** no projeto Supabase existente, sem usar tabelas operacionais:
+
+- `customer_app_hml_config`;
+- `customer_app_hml_catalog`;
+- `customer_app_hml_orders`;
+- `customer_app_hml_rate_limits`.
+
+O gate está `enabled=false`, RLS está ativo e `anon/authenticated` têm zero grants.
+
+As três Edge Functions HML estão versionadas no GitHub, porém **não foram publicadas** porque o projeto atingiu a quota máxima de Edge Functions do plano.
+
+O cliente HML do app continua OFF e não está conectado ao `main.ts`.
+
+## Ainda não concluído
+
+- projeto Android gerado/APK;
+- projeto iOS/build;
+- sessão segura Keychain/Keystore;
 - pairing;
-- deep links;
+- deep links nativos;
 - push;
-- mídia;
-- histórico;
-- privacidade;
-- telemetria;
-- publicação.
+- foto/áudio;
+- histórico/recompra real;
+- central de privacidade completa;
+- backend de telemetria;
+- hardening de sessão/pairing/upload;
+- VoiceOver/TalkBack e testes em aparelhos reais;
+- beta/lojas;
+- qualquer conexão de produção.
 
-Tudo permanece OFF.
+**Produção operacional continua OFF.**
 
 ---
 
@@ -1332,7 +1365,7 @@ Status:
 - NÃO MERGEAR;
 - somente homologação.
 
-O PR contém as Rodadas 0–3.
+O PR contém as Rodadas 0–9, a Rodada 20 concluída em paralelo e fundações parciais das Rodadas 13, 21, 22 e 23.
 
 A `main` continua recebendo outros trabalhos do projeto Dona Antônia, portanto a branch pode ficar atrás da main. Isso é esperado.
 
@@ -1389,8 +1422,10 @@ Ao abrir uma nova conversa e pedir para continuar este projeto, seguir exatament
 9. Conferir qual foi o último checkpoint.
 
 10. Neste snapshot:
-    - Rodadas 0, 1, 2, 3, 4, 5, 6, 7, 8 e 9 estão concluídas;
-    - próxima é a Rodada 10.
+    - Rodadas 0–9 estão concluídas;
+    - Rodada 20 está concluída em paralelo;
+    - Rodadas 13, 21, 22 e 23 estão parcialmente avançadas;
+    - a próxima sequencial é a Rodada 10, bloqueada pela toolchain nativa.
 
 11. Executar TDD:
     - teste primeiro;
@@ -1405,7 +1440,8 @@ Ao abrir uma nova conversa e pedir para continuar este projeto, seguir exatament
     - atualizar `app-dona-antonia/PROJECT-STATUS.md`;
     - atualizar este documento-mestre na `main`;
     - atualizar título/corpo do PR #396;
-    - pedir autorização antes de iniciar a rodada seguinte.
+    - continuar autonomamente nas rodadas seguras já autorizadas;
+    - parar e pedir autorização apenas para custo novo, produção real, exclusão/alteração destrutiva relevante ou decisão que obrigatoriamente dependa do proprietário.
 
 ---
 
@@ -1415,13 +1451,15 @@ O proprietário definiu:
 
 > O assistente decide sempre o melhor caminho técnico e só pede autorização para continuar.
 
+Posteriormente, o proprietário ampliou a autorização e permitiu executar **quantas rodadas forem tecnicamente seguras de uma vez**.
+
 Portanto:
 
 - não transferir decisões técnicas comuns ao proprietário;
 - escolher arquitetura, sequência e implementação;
-- explicar objetivamente o que foi concluído;
-- pedir autorização apenas antes de iniciar a próxima rodada;
-- exceções: decisões comerciais/jurídicas que dependam obrigatoriamente do proprietário.
+- avançar autonomamente em rodadas isoladas/HML que não criem custo novo nem efeito real;
+- explicar objetivamente o que foi concluído, parcial ou bloqueado;
+- pedir autorização somente para custo novo, produção real, operação destrutiva relevante ou decisão comercial/jurídica que obrigatoriamente dependa do proprietário.
 
 ---
 
@@ -1450,30 +1488,29 @@ Uma rodada só pode ser marcada como concluída quando:
 
 **Estado:** OFF / HOMOLOGAÇÃO / ISOLADO
 
-**Concluído:**
+**Concluído integralmente:**
 
-- Rodada 0;
-- Rodada 1;
-- Rodada 2;
-- Rodada 3;
-- Rodada 4;
-- Rodada 5;
-- Rodada 6;
-- Rodada 7;
-- Rodada 8;
-- Rodada 9.
+- Rodadas 0–9;
+- Rodada 20 (executada em paralelo).
 
-**Próxima:**
+**Parcialmente avançado:**
 
-**Rodada 10 — Shell Capacitor Android.**
+- Rodada 13 — banco HML + código de Edge Functions + cliente HML; deploy bloqueado por quota;
+- Rodada 21 — telemetria local privacy-safe;
+- Rodada 22 — hardening local, URLs/segredos/XSS;
+- Rodada 23 — acessibilidade estrutural e checklist.
 
-**Produção:** intocada.
+**Próxima sequencial:**
+
+**Rodada 10 — Shell Capacitor Android, bloqueada pela toolchain nativa.**
+
+**Produção operacional:** intocada pelo app.
 
 **Comprar atual:** intocado.
 
-**Supabase real:** não conectado.
+**Supabase:** somente estruturas HML prefixadas foram adicionadas; gate OFF; nenhuma tabela operacional foi usada pelo app HML.
 
-**Meta/PapoAI/Bling:** não conectados.
+**Meta/PapoAI/Bling:** não conectados ao novo app.
 
 **Pedido real:** nenhum.
 
@@ -1483,10 +1520,11 @@ Uma rodada só pode ser marcada como concluída quando:
 
 Este documento deve ser atualizado continuamente para funcionar como a memória operacional oficial do projeto.
 
+---
 
 # 27. Bloqueio técnico atual para Rodada 10
 
-Em 18/09/2026 foi verificado o ambiente disponível para iniciar o shell Android.
+Em 18/09/2026 foi verificado o ambiente disponível para Android.
 
 Disponível:
 - Node 22.16.0;
@@ -1499,12 +1537,109 @@ Indisponível:
 - sdkmanager;
 - Gradle global;
 - Xcode;
-- acesso DNS ao registry npm.
+- acesso DNS ao registry npm no ambiente local.
 
-A tentativa de consultar `@capacitor/core` falhou com `EAI_AGAIN registry.npmjs.org`.
+Preparação já versionada:
+- dependências Capacitor 8.5.2 no `package.json`;
+- `capacitor.config.ts`;
+- app ID `br.com.donaantonia.app`.
+
+Foi tentado um builder temporário via GitHub Actions, mas nenhum check foi iniciado no repositório. O workflow temporário foi removido da branch.
+
+**Não existe ainda:**
+- pasta Android gerada;
+- APK validado;
+- emulador/smoke test;
+- projeto iOS.
 
 Decisão:
-- não iniciar uma Rodada 10 parcial;
-- não criar uma estrutura Android manual e chamá-la de validada;
-- manter Rodadas 0–9 como último checkpoint íntegro;
-- retomar Rodada 10 somente em ambiente capaz de instalar Capacitor e gerar APK real.
+- não fabricar estrutura Android manual e chamá-la de validada;
+- manter a Rodada 10 como bloqueada;
+- retomar quando existir ambiente capaz de instalar Capacitor e gerar/testar APK real.
+
+---
+
+# 28. Progresso paralelo enquanto a Rodada 10 está bloqueada
+
+## Rodada 13 — fundação HML parcial
+
+Migração Supabase aplicada:
+
+`20260918193553_customer_app_hml_foundation_v1.sql`
+
+Estruturas:
+- `customer_app_hml_config`;
+- `customer_app_hml_catalog`;
+- `customer_app_hml_orders`;
+- `customer_app_hml_rate_limits`.
+
+Verificações:
+- `enabled=false`;
+- ambiente `homologation`;
+- 10 produtos `TEST-PROD-*`;
+- zero IDs reais;
+- zero grants para `anon` e `authenticated`;
+- RLS ativo;
+- nenhum finding de performance específico dessas tabelas.
+
+O Security Advisor mostra apenas `rls_enabled_no_policy` em nível INFO para as quatro tabelas. Isso é intencional neste estágio: os papéis públicos não têm grants e o acesso planejado é exclusivamente server-side.
+
+Código versionado:
+- `customer-app-hml-bootstrap-v1`;
+- `customer-app-hml-catalog-v1`;
+- `customer-app-hml-checkout-v1`;
+- `src/platform/apiClient.ts`.
+
+Deploy das Edge Functions:
+- bloqueado por `Max number of functions reached for project`;
+- nenhuma função HML foi criada parcialmente;
+- nenhuma função existente foi apagada para abrir espaço;
+- nenhum upgrade/spend cap foi alterado.
+
+Validação do cliente:
+- 5/5 testes;
+- OFF por padrão;
+- apenas `TEST-CLIENT-*`;
+- apenas IDs TEST;
+- sem PII no checkout.
+
+## Rodada 20 — concluída em paralelo
+
+- estado online/offline/unknown;
+- confirmação só online;
+- nenhuma fila silenciosa de pedido;
+- recovery apenas para ações seguras;
+- rede caída não dispara retry automático;
+- reconexão não duplica pedido;
+- aviso offline permanece visível com conteúdo cacheado;
+- 6/6 testes offline + teste adicional de shell.
+
+## Rodada 21 — parcial
+
+- collector local com registry fechado;
+- OFF por padrão;
+- sem Ads/Analytics de terceiros;
+- rejeita PII, texto livre, IDFA e GAID;
+- 6/6 testes;
+- backend pendente por quota de Edge Functions.
+
+## Rodada 22 — parcial
+
+- política de URL sem PII/token/sessão;
+- HTTPS obrigatório para HML remoto;
+- scanner ampliado de segredos;
+- XSS testado em conversa/catálogo/cestas;
+- 10/10 testes de segurança;
+- exceção segura do service worker para negar `/comprar/` validada;
+- checklist de segurança criado;
+- sessão/pairing/upload ainda pendentes.
+
+## Rodada 23 — parcial
+
+- autocomplete/inputmode;
+- aviso offline anunciado;
+- `prefers-contrast`;
+- `forced-colors`;
+- 4/4 testes estruturais;
+- checklist UX criado;
+- VoiceOver/TalkBack/aparelhos reais ainda pendentes.
