@@ -619,6 +619,6 @@ A cada rodada:
 
 ## Próxima ação
 
-**Homologação CM-1.**
+**Homologação CM-1 — rodada manual canary.**
 
-A CM-1.15 concluiu a Central de Relacionamento em canary, reutilizando o boundary seguro do Customer Intelligence. A próxima rodada valida o fluxo ponta a ponta, os gates de consentimento/custo, a auditoria e a experiência do Admin antes de qualquer liberação global.
+O snapshot automático já retorna zero blockers e `safe_for_internal_homologation=true`, mantendo `external_activation_authorized=false`. A próxima ação é validar o login PIN e o visual da Central no navegador canary, sem abrir Marketing, Meta Direct ou qualquer outbound externo.
