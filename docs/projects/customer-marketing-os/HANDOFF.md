@@ -496,3 +496,41 @@ Os contadores de tráfego são snapshots dinâmicos e podem continuar subindo na
 - `external_activation_authorized=false`.
 
 Para qualquer retomada futura, os RPCs canônicos prevalecem sobre estes números pontuais.
+
+
+## Distinção entre Meta Social OAuth e Meta WhatsApp Direct
+
+Confirmado em 18/09/2026 após cruzar o projeto separado **Marketing Admin / Organic Social** com este Customer & Marketing OS.
+
+Há uma identidade Meta comum útil como evidência de aplicação:
+
+- Meta App ID: `1547249776748513`;
+- Graph API: `v26.0`;
+- o par App ID + App Secret foi validado server-side no projeto Organic Social por `client_credentials`;
+- o mesmo App ID já aparece em evidência histórica read-only do Customer OS.
+
+Isso **não equivale** a autorização WhatsApp.
+
+O OAuth do projeto Marketing Admin / Organic Social está configurado para:
+
+- `pages_show_list`;
+- `pages_read_engagement`;
+- `pages_manage_posts`;
+- `instagram_basic`;
+- `instagram_content_publish`.
+
+Ele serve para Facebook Page / Instagram Business e publicação social.
+
+O Customer & Marketing OS exige evidência separada do token usado para WhatsApp Direct:
+
+- `whatsapp_business_management`;
+- `whatsapp_business_messaging`.
+
+Portanto:
+
+- clicar **Conectar Meta** no Marketing Admin não deve promover `permissions_clear` do Customer OS;
+- a Page `1928140920768577` e o Instagram Business `17841451162237654` pertencem ao escopo Organic Social;
+- a WABA e o Phone Number ID do Customer OS permanecem no escopo WhatsApp;
+- o botão **Meta Foundation → Verificar Meta agora** continua sendo a prova humana/read-only específica do token WhatsApp guardado no Supabase;
+- não misturar consentimento OAuth social com homologação de Meta Direct;
+- `external_activation_authorized=false` permanece inalterado.
