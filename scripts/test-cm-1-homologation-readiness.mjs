@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const migration=fs.readFileSync('supabase/migrations/20260919050000_cm_1_homologation_readiness_v1.sql','utf8');
+const transportMigration=fs.readFileSync('supabase/migrations/20260919053000_cm_1_homologation_transport_evidence_v1.sql','utf8');
 const runtime=fs.readFileSync('admin/runtime-config.js','utf8');
 const relationship=fs.readFileSync('admin/relacionamento.js','utf8');
 const html=fs.readFileSync('admin/relacionamento.html','utf8');
@@ -23,6 +24,15 @@ assert.match(migration,/meta_direct_homologation','pending'/);
 assert.match(migration,/relationship_command_summary_v1[\s\S]*'homologation',public\.cm1_homologation_readiness_v1\(\)/);
 assert.match(migration,/revoke all on function public\.cm1_homologation_readiness_v1\(\) from public,anon,authenticated/);
 assert.doesNotMatch(migration,/insert into public\.(marketing_campaigns|whatsapp_direct_events)|graph\.facebook\.com|openai|gpt-|gemini/i);
+
+assert.match(transportMigration,/cm1_transport_evidence_v1/);
+assert.match(transportMigration,/channel_provider_event_receipts/);
+assert.match(transportMigration,/normalized_channel_events/);
+assert.match(transportMigration,/catalog_sessions/);
+assert.match(transportMigration,/legacy_meta_events_7d/);
+assert.match(transportMigration,/adapter_receiving_real_traffic/);
+assert.match(transportMigration,/relationship_command_summary_v1[\s\S]*transport_evidence/);
+assert.doesNotMatch(transportMigration,/insert into|update public|delete from|graph\.facebook\.com|openai|gpt-|gemini/i,'Transport evidence must be read-only');
 
 assert.match(runtime,/customerOsSecureUiEnabled:false/);
 assert.match(runtime,/relationshipUiEnabled:false/);
