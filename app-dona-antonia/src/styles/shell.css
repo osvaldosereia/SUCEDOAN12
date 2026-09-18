@@ -315,3 +315,310 @@
   from { opacity: 0.35; transform: translateY(1px); }
   to { opacity: 1; transform: translateY(-1px); }
 }
+
+
+.catalog-view {
+  display: grid;
+  gap: var(--da-space-5);
+}
+
+.catalog-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--da-space-4);
+}
+
+.catalog-heading small {
+  color: var(--da-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.catalog-heading h2 {
+  margin: 3px 0 0;
+  font-size: clamp(22px, 6vw, 30px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+.catalog-heading > span {
+  flex: 0 0 auto;
+  color: var(--da-text-muted);
+  font-size: 12px;
+}
+
+.catalog-search {
+  display: grid;
+  gap: var(--da-space-2);
+}
+
+.catalog-search label {
+  color: var(--da-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.catalog-search > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--da-space-2);
+}
+
+.catalog-search input {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 15px;
+  border: 1px solid var(--da-border);
+  border-radius: var(--da-radius-md);
+  background: var(--da-surface);
+  color: var(--da-text);
+  outline: 0;
+}
+
+.catalog-search input:focus {
+  border-color: color-mix(in srgb, var(--da-brand) 55%, var(--da-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-brand) 12%, transparent);
+}
+
+.catalog-search button {
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--da-radius-md);
+  background: var(--da-text);
+  color: white;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.catalog-filter-stack {
+  display: grid;
+  gap: var(--da-space-2);
+}
+
+.catalog-filter-group {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 1px 5px;
+  scrollbar-width: none;
+  overscroll-behavior-inline: contain;
+}
+
+.catalog-filter-group::-webkit-scrollbar {
+  display: none;
+}
+
+.catalog-chip {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 7px 13px;
+  border: 1px solid var(--da-border);
+  border-radius: var(--da-radius-pill);
+  background: var(--da-surface);
+  color: var(--da-text);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.catalog-chip.is-active {
+  border-color: var(--da-text);
+  background: var(--da-text);
+  color: white;
+}
+
+.catalog-chip-secondary {
+  min-height: 34px;
+  background: transparent;
+  font-size: 12px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--da-space-3);
+}
+
+.product-card {
+  min-width: 0;
+}
+
+.product-card-open {
+  width: 100%;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--da-border);
+  border-radius: var(--da-radius-lg);
+  background: var(--da-surface);
+  color: var(--da-text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(52, 39, 28, 0.04);
+}
+
+.product-placeholder {
+  aspect-ratio: 1.15 / 1;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 70% 25%, rgba(232, 111, 37, 0.13), transparent 32%),
+    linear-gradient(145deg, var(--da-surface-soft), var(--da-bg));
+}
+
+.product-placeholder span {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--da-surface);
+  color: var(--da-brand-strong);
+  font-size: 16px;
+  font-weight: 850;
+  box-shadow: 0 10px 30px rgba(52, 39, 28, 0.06);
+}
+
+.product-card-body {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 13px;
+}
+
+.product-card-body strong {
+  min-height: 2.6em;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.product-card-body small {
+  color: var(--da-text-muted);
+  font-size: 11px;
+}
+
+.offer-badge {
+  width: fit-content;
+  padding: 4px 7px;
+  border-radius: var(--da-radius-pill);
+  background: var(--da-brand-soft);
+  color: var(--da-brand-strong);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.product-price {
+  display: grid;
+  margin-top: var(--da-space-1);
+}
+
+.product-price del,
+.product-detail-price del {
+  color: var(--da-text-muted);
+  font-size: 11px;
+}
+
+.product-price b {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+
+.catalog-empty {
+  grid-column: 1 / -1;
+  padding: var(--da-space-8) var(--da-space-5);
+  border: 1px dashed var(--da-border);
+  border-radius: var(--da-radius-lg);
+  text-align: center;
+}
+
+.catalog-empty strong {
+  display: block;
+  margin-bottom: var(--da-space-1);
+}
+
+.catalog-empty p {
+  margin: 0;
+  color: var(--da-text-muted);
+  font-size: 13px;
+}
+
+.product-detail {
+  display: grid;
+  gap: var(--da-space-5);
+}
+
+.product-detail-back {
+  width: fit-content;
+  min-height: 38px;
+  padding: 7px 13px;
+  border: 1px solid var(--da-border);
+  border-radius: var(--da-radius-pill);
+  background: var(--da-surface);
+  color: var(--da-text);
+  cursor: pointer;
+}
+
+.product-detail-placeholder {
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  border-radius: var(--da-radius-lg);
+  background:
+    radial-gradient(circle at 68% 24%, rgba(232, 111, 37, 0.15), transparent 30%),
+    linear-gradient(145deg, var(--da-surface-soft), var(--da-bg));
+  color: var(--da-brand-strong);
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.product-detail-copy {
+  display: grid;
+  gap: var(--da-space-2);
+}
+
+.product-detail-copy > small {
+  color: var(--da-text-muted);
+}
+
+.product-detail-copy h2 {
+  margin: 0;
+  font-size: clamp(24px, 7vw, 34px);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.product-detail-copy p {
+  margin: 0;
+  color: var(--da-text-muted);
+}
+
+.product-detail-price {
+  display: grid;
+  margin-top: var(--da-space-2);
+}
+
+.product-detail-price strong {
+  font-size: 28px;
+  letter-spacing: -0.035em;
+}
+
+.homologation-note {
+  margin-top: var(--da-space-3) !important;
+  padding: var(--da-space-3);
+  border-radius: var(--da-radius-md);
+  background: var(--da-brand-soft);
+  color: var(--da-brand-strong) !important;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+@media (min-width: 520px) {
+  .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
