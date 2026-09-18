@@ -427,7 +427,7 @@ Legenda:
 | 21 | Métricas e observabilidade | 🟡 camada local pronta; backend pendente |
 | 22 | Segurança e hardening | 🟡 hardening local executado; testes nativos pendentes |
 | 23 | UX final e acessibilidade | 🟡 base melhorada; aparelhos reais pendentes |
-| 24 | Lojas e beta | ⏳ |
+| 24 | Lojas e beta | 🟡 readiness local + checklist atual; builds/submissões pendentes |
 | 25 | Gate final de produção | 🔒 |
 | 26 | Publicação e pós-lançamento | ⏳ |
 
@@ -1705,3 +1705,19 @@ Avanços locais seguros:
 Supabase HML foi apenas consultado: gate OFF, ambiente homologation, 60 req/min, 10/10 IDs TEST-PROD-*. A quota de Edge Functions não foi contornada.
 
 Estado: R0–R9 e R20 concluídas; R12–R19 e R21–R23 parciais conforme dependências; R10 bloqueada por toolchain nativa; produção e Comprar intocados.
+
+---
+
+# 31. Fechamento da retomada — R12 a R24 em modo seguro
+
+Validação final do conjunto tocado nesta retomada: 49/49 testes verdes e typecheck verde no workspace reconstruído com as opções reais do projeto.
+
+Novos reforços:
+- R12: contrato de bridge nativo de secure session, sem implementação Keychain/Keystore real;
+- R15: deep links absolutos exigem HTTPS + allowlist explícita de host;
+- R22: teste central de abuso cobrindo brute force/replay/deep links/push/mídia/revogação;
+- R24: gate local de readiness para beta e documento STORE-READINESS.md baseado nas regras oficiais Apple/Google vigentes em 18/09/2026.
+
+R24 NÃO significa beta iniciado: não existe APK/AAB/IPA homologado, nenhum build foi enviado, nenhum tester foi convidado e nenhum console de loja foi alterado.
+
+Estado operacional permanece OFF. R25 continua sendo a primeira rodada autorizada a tocar produção e exige autorização explícita.
