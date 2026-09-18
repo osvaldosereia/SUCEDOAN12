@@ -145,3 +145,40 @@ Limitação do ambiente:
 **Próxima rodada autorizável:** Rodada 3 — Motor conversacional determinístico.
 
 O projeto permanece OFF, não publicado e sem conexão com produção.
+
+
+## Checkpoint — Rodada 3
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- motor conversacional determinístico e totalmente local;
+- tipos próprios para mensagens, respostas rápidas e snapshot da conversa;
+- store com ordem determinística de mensagens;
+- primeira decisão bloqueia toque duplicado;
+- respostas rápidas desaparecem imediatamente após a escolha;
+- escolha do cliente vira bolha de usuário;
+- indicador local `Ana está digitando...`;
+- atraso humanizado configurável entre 450 e 850 ms no modo normal e 0 ms em testes;
+- renderer com escape de HTML;
+- quatro escolhas iniciais: `Cestas | Ofertas | Para Você | Para Casa`;
+- escolha conversa com a navegação interna e abre a rota correspondente;
+- fala seguinte da Ana é local e determinística;
+- nenhum uso de IA, Supabase, PapoAI, Meta, Bling ou rede.
+
+Validações executadas:
+- TDD do store: teste falhou primeiro por ausência de `conversation/store.ts`;
+- TDD da integração: teste falhou primeiro porque o shell ainda ignorava `conversationHtml`;
+- 8 testes específicos do motor conversacional aprovados;
+- 12 testes combinados de shell + conversa aprovados;
+- typecheck do motor, shell, navegação e `main.ts` aprovado no ambiente local;
+- renderer confirmou escape de `<cliente>` para HTML seguro;
+- nenhuma alteração em `comprar/`.
+
+Limitação mantida:
+- o build Vite completo segue dependente da disponibilidade do registry npm; isso continua registrado e não é tratado como build executado.
+
+**Próxima rodada autorizável:** Rodada 4 — Catálogo fictício e navegação.
+
+O projeto permanece OFF, não publicado e sem conexão com produção.
