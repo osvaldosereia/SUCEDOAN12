@@ -271,3 +271,24 @@ Assim que o App ID for fornecido no Connection Manager, a validação server-sid
 - Segurança reconfirmada depois do hotfix: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, 0 sessões OAuth ativas, 0 publication jobs, 0 published jobs e 0 external side effects.
 - Próximo passo agora é exclusivamente recarregar o Admin e iniciar **Conectar Meta**; o backend v17 aceitará somente Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`.
 
+
+## Atualização Rodada 9 — fundações internas sem owner
+
+- Fase externa continua `connection_homologation`; Meta OAuth está bloqueado apenas pela configuração manual de domínio/redirect URI no app Meta.
+- 1 sessão OAuth está em `started` por causa da tentativa que parou na tela de domínio não autorizado; nenhuma credencial final foi persistida.
+- `admin-marketing-insights-v1`: **v16 / ACTIVE / JWT=true**.
+- Migration aplicada: `marketing_round9_autonomy_foundation_v1`.
+- Etapa 18: Agenda inteligente V1 em modo `preview_only`; 0 agendamentos automáticos.
+- Etapa 20: gerador UTM/asset/channel V1 pronto; gravação de atribuição permanece OFF.
+- Etapa 21: Learning Engine determinístico V1 pronto; estado atual `insufficient_data` (0 publicações / 0 touchpoints), sem IA e sem auto-otimização.
+- Etapa 22: plano diário dry-run V1 pronto; lê shortlist real, mas não cria campanhas/jobs e não agenda/publica.
+- UI Round 9 programada apenas na branch isolada; não promovida para `main` para preservar trabalho paralelo.
+- Checks estruturais Round 9: **14/14**.
+- Segurança permanece fechada: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, todos os channel gates=false, `attribution_recording_enabled=false`, publication_jobs=0, published_jobs=0 e external_side_effect_events=0.
+
+### Dependências humanas restantes
+1. Meta App Domains + Valid OAuth Redirect URI;
+2. concluir OAuth Meta e identidade exata;
+3. Pinterest App/Secret/board;
+4. autorização explícita futura para canary unitário.
+
