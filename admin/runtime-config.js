@@ -16,7 +16,11 @@ export const CONFIG=Object.freeze({
   customerOsCanaryParam:'customer_os',
   customerOsCanaryValue:'canary',
   marketingUiEnabled:true,
+  relationshipUiEnabled:false,
+  relationshipCanaryEnabled:true,
+  relationshipCanaryParam:'relationship_os',
+  relationshipCanaryValue:'canary',
   storefrontUrl:'../comprar/',
   countAppUrl:'../contagem/',
-  build:'20260918-customer-os-canary-1'
+  build:'20260918-cm115-1'
 });
