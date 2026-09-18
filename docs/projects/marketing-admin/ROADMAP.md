@@ -80,7 +80,7 @@ Preparar mídia e compartilhar no celular.
 
 ### 18. Calendário editorial inteligente
 Agenda, filtros, reprogramação, limite de frequência.
-**Status: base existente; automação inteligente ainda pendente.**
+**Status: V1 preview determinístico implementado na Rodada 9; sugere distribuição operacional, mede conflitos e carga, mas `auto_schedule=false`.**
 
 ### 19. Métricas de canal
 Alcance, views, engajamento, saves/shares, retenção quando disponível.
@@ -88,15 +88,15 @@ Alcance, views, engajamento, saves/shares, retenção quando disponível.
 
 ### 20. Atribuição comercial
 UTM/link -> Comprar/chat -> carrinho -> pedido -> venda.
-**Status: planejada, não concluída.**
+**Status: fundação V1 implementada na Rodada 9: gerador determinístico de URL UTM/asset/channel + read-model append-only já existente. `attribution_recording_enabled=false`; captura real continua pendente.**
 
 ### 21. Learning Engine
 Estatística determinística; IA recebe apenas resumos.
-**Status: planejada.**
+**Status: V1 read-only implementado na Rodada 9 com limiares mínimos de evidência, sem IA, sem ranking e sem otimização automática. Atualmente retorna `insufficient_data` até existirem publicações/touchpoints reais.**
 
 ### 22. Automação diária
 Analisar oportunidades -> campanha -> assets -> fila de aprovação.
-**Status: planejada; não ativar antes de canary.**
+**Status: dry-run/preview V1 implementado na Rodada 9. Analisa shortlist + agenda + aprendizado, mas não cria campanha, não prepara jobs, não agenda e não publica. Nenhum cron foi ativado.**
 
 ### 23. Autonomia progressiva
 OFF -> OBSERVE -> SUGGEST -> DRAFT -> APPROVAL_REQUIRED -> CANARY -> LIVE.
