@@ -183,6 +183,27 @@ Deno.serve(async(req:Request)=>{
     const subscriptionIds=subscribedApps
       .map((x:any)=>clean(x?.whatsapp_business_api_data?.id||x?.id,120))
       .filter(Boolean);
+    const expectedDirectCallback=`${url.replace(/\/$/,"")}/functions/v1/whatsapp-meta-direct-v1`;
+    const normalizeCallback=(v:unknown)=>clean(v,1200).replace(/\/+$/,"");
+    const overrideCallbacks=subscribedApps
+      .map((x:any)=>normalizeCallback(x?.override_callback_uri))
+      .filter(Boolean);
+    const directCallbackVerified=overrideCallbacks.some((x:string)=>x===normalizeCallback(expectedDirectCallback));
+    const since14d=new Date(Date.now()-14*86400000).toISOString();
+    const flowHealthR=await sb.from("whatsapp_flow_health_events")
+      .select("id,received_at",{count:"exact"})
+      .eq("signature_verified",true)
+      .gte("received_at",since14d)
+      .order("received_at",{ascending:false})
+      .limit(1);
+    const flowHealthSignedCount=flowHealthR.error?0:Number(flowHealthR.count||0);
+    const flowHealthLastSignedAt=flowHealthR.error?null:(flowHealthR.data?.[0]?.received_at||null);
+    const flowHealthVerified=flowHealthSignedCount>0;
+    const webhookState=directCallbackVerified
+      ?"verified"
+      :(flowHealthVerified
+        ?"flow_health_verified_direct_pending"
+        :(subscriptionsR.ok&&subscriptionIds.length>0?"waba_subscribed":"unverified"));
     const phoneQuality=clean(phoneR.payload?.quality_rating,80)||null;
     const errors=[
       !permissionsR.ok?{operation:"permissions",status:permissionsR.status}:null,
@@ -200,7 +221,7 @@ Deno.serve(async(req:Request)=>{
       phone_quality:phoneQuality,
       account_quality:null,
       messaging_limit:null,
-      webhook_state:subscriptionsR.ok&&subscriptionIds.length>0?"waba_subscribed":"unverified",
+      webhook_state:webhookState,
       template_state:null,
       flow_state:null,
       health_score:null,
@@ -209,6 +230,12 @@ Deno.serve(async(req:Request)=>{
         graph_reachable:permissionsR.ok||subscriptionsR.ok||phoneR.ok,
         waba_subscription_present:subscriptionsR.ok&&subscriptionIds.length>0,
         subscribed_app_ids:subscriptionIds,
+        override_callback_uris:overrideCallbacks,
+        expected_meta_direct_callback:expectedDirectCallback,
+        meta_direct_callback_verified:directCallbackVerified,
+        flow_health_webhook_verified:flowHealthVerified,
+        flow_health_signed_events_14d:flowHealthSignedCount,
+        flow_health_last_signed_at:flowHealthLastSignedAt,
         phone_verified_name:clean(phoneR.payload?.verified_name,200)||null,
         display_phone_number:clean(phoneR.payload?.display_phone_number,80)||null
       },
@@ -219,6 +246,12 @@ Deno.serve(async(req:Request)=>{
         subscription_http_status:subscriptionsR.status,
         phone_http_status:phoneR.status,
         api_version:permissionsR.api_version||subscriptionsR.api_version||phoneR.api_version||version,
+        expected_meta_direct_callback:expectedDirectCallback,
+        override_callback_uris:overrideCallbacks,
+        meta_direct_callback_verified:directCallbackVerified,
+        flow_health_webhook_verified:flowHealthVerified,
+        flow_health_signed_events_14d:flowHealthSignedCount,
+        flow_health_last_signed_at:flowHealthLastSignedAt,
         checked_by:user.id,
         external_side_effect:false
       },
@@ -249,8 +282,18 @@ Deno.serve(async(req:Request)=>{
       },
       webhook:{
         state:healthWrite.data?.webhook_state||"unverified",
-        callback_verified:false,
-        note:"A assinatura da WABA foi observada, mas o callback do Meta Direct ainda exige verificação própria."
+        flow_health_verified:flowHealthVerified,
+        flow_health_signed_events_14d:flowHealthSignedCount,
+        flow_health_last_signed_at:flowHealthLastSignedAt,
+        waba_subscription_observed:subscriptionsR.ok&&subscriptionIds.length>0,
+        override_callback_uris:overrideCallbacks,
+        expected_direct_callback:expectedDirectCallback,
+        callback_verified:directCallbackVerified,
+        note:directCallbackVerified
+          ?"Override callback da WABA aponta exatamente para o endpoint Meta Direct do Supabase."
+          :(flowHealthVerified
+            ?"Webhook de health dos Flows está assinado e ativo; callback Meta Direct continua pendente."
+            :"Callback Meta Direct ainda não possui evidência suficiente.")
       },
       readiness:readinessR.data||{},
       gates:{
