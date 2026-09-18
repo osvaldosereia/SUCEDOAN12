@@ -20,6 +20,7 @@ on:
       - 'scripts/test-bling-history-import-v2.mjs'
       - 'scripts/test-customer-commercial-segments-v1.mjs'
       - 'scripts/test-purchase-history-metrics-v1.mjs'
+      - 'scripts/test-purchase-history-hardening-v1.mjs'
       - 'scripts/test-bling-history-customer-backfill-v1.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
@@ -121,6 +122,7 @@ jobs:
           node scripts/test-bling-history-import-v2.mjs
           node scripts/test-customer-commercial-segments-v1.mjs
           node scripts/test-purchase-history-metrics-v1.mjs
+          node scripts/test-purchase-history-hardening-v1.mjs
           node scripts/test-bling-history-customer-backfill-v1.mjs
           for test_file in scripts/test-comprar-clean-*.mjs; do node "$test_file"; done
           node scripts/test-shopping-chat-routing-v1.mjs
