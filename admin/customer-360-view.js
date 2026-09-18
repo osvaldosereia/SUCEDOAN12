@@ -312,6 +312,10 @@ export function renderCustomer360(options){
         '</article>'+
       '</section>'+
     '</div>'+
+    '<div class="c360-mobile-actions">'+
+      (wa?'<a href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+      '<button type="button" data-customer-edit="'+esc(customer.id||'')+'">Editar cliente</button>'+
+    '</div>'+
   '</div>';
 }
 
