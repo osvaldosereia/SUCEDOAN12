@@ -46,3 +46,30 @@ test('round-0 .env.example is safe', () => {
   const result = runNoProductionEffectsCheck({ runtimeEnv: {} });
   assert.equal(result.ok, true, JSON.stringify(result.errors));
 });
+
+
+test('isolation scan allows only the explicit service-worker deny guard for Comprar', () => {
+  const root = mkdtempSync(join(tmpdir(), 'da-app-isolation-'));
+  mkdirSync(join(root, 'public'), { recursive: true });
+  writeFileSync(
+    join(root, 'public', 'sw.js'),
+    "if (url.pathname.includes('/comprar/')) return;"
+  );
+  const result = runIsolationCheck({ rootDir: root });
+  assert.equal(result.ok, true, JSON.stringify(result.findings));
+});
+
+test('service-worker exemption does not allow a second Comprar runtime reference', () => {
+  const root = mkdtempSync(join(tmpdir(), 'da-app-isolation-'));
+  mkdirSync(join(root, 'public'), { recursive: true });
+  writeFileSync(
+    join(root, 'public', 'sw.js'),
+    [
+      "if (url.pathname.includes('/comprar/')) return;",
+      "const fallback = '/comprar/';"
+    ].join('\n')
+  );
+  const result = runIsolationCheck({ rootDir: root });
+  assert.equal(result.ok, false);
+  assert.ok(result.findings.some((f) => f.label === 'Comprar atual'));
+});
