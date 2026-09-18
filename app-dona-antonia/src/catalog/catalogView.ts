@@ -23,7 +23,7 @@ function money(cents: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(cents / 100);
+  }).format(cents / 100).replace(/\u00a0/g, ' ');
 }
 
 function sectionChip(
