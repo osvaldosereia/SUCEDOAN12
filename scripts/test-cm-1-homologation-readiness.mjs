@@ -45,7 +45,7 @@ assert.match(relationship,/Efeitos externos IA 7d/);
 
 assert.match(directMeta,/from\("whatsapp_direct_config"\)/);
 assert.match(directMeta,/!cfg\?\.enabled\|\|cfg\.release_mode===\"off\"/,'Meta Direct must hard-stop when dedicated config is off');
-assert.match(directMeta,/return json\(\{ok:true,disabled:true\}\)/);
+assert.match(directMeta,/disabled:true[\s\S]*outbound_performed:false[\s\S]*external_side_effect:false/);
 assert.doesNotMatch(directMeta,/from\("automation_config"\)/,'Meta Direct must not depend on legacy automation_config');
 
 console.log('cm-1 homologation readiness contract ok');
