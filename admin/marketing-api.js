@@ -35,6 +35,10 @@ export const getMarketingOverview=()=>secureCall(CONFIG.marketingInsightsFunctio
 export const getMarketingMetrics=(days=30)=>secureCall(CONFIG.marketingInsightsFunction,{action:'metrics',days});
 export const getMarketingWorkflow=()=>secureCall(CONFIG.marketingWorkflowFunction,{action:'workflow_overview'});
 export const getMarketingShortlist=()=>secureCall(CONFIG.marketingBrainFunction,{action:'shortlist'});
+export const getMarketingCustomerOpportunities=(limit=40)=>secureCall(CONFIG.marketingBrainFunction,{action:'opportunity_list',limit});
+export const getMarketingStrategyBriefs=(opportunityId=null,limit=50)=>secureCall(CONFIG.marketingBrainFunction,{action:'opportunity_briefs',opportunity_id:opportunityId,limit});
+export const observeMarketingOpportunity=(opportunityId)=>secureCall(CONFIG.marketingBrainFunction,{action:'opportunity_observe',opportunity_id:opportunityId});
+export const suggestMarketingOpportunity=(opportunityId)=>secureCall(CONFIG.marketingBrainFunction,{action:'opportunity_suggest',opportunity_id:opportunityId},60000);
 export const createDeterministicMarketingDraft=()=>secureCall(CONFIG.marketingBrainFunction,{action:'create_deterministic_draft'});
 export const planMarketingCampaignAssets=(campaignId)=>secureCall(CONFIG.marketingBrainFunction,{action:'plan_campaign_assets',campaign_id:campaignId});
 export const updateMarketingCampaignDraft=(payload)=>secureCall(CONFIG.marketingBrainFunction,{action:'update_campaign_draft',...payload});
