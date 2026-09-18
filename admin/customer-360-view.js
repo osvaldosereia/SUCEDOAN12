@@ -46,7 +46,10 @@ const labels={
   medium:'Média',
   low:'Baixa',
   dormant:'Sem atividade recente',
-  none:'Nenhuma'
+  none:'Nenhuma',
+  marketing_not_allowed:'Marketing não permitido',
+  high_marketing_pressure:'Pressão de marketing alta',
+  very_low_profile_completeness:'Perfil comercial insuficiente'
 };
 
 const human=value=>{
@@ -138,6 +141,22 @@ const renderCarts=(rows,helpers)=>{
   ).join('')+'</div>';
 };
 
+const renderOpportunities=(rows,helpers)=>{
+  const esc=helpers.esc,money=helpers.money;
+  if(!rows.length)return empty('Nenhuma oportunidade comercial detectada pelas regras atuais.');
+  return '<div class="c360-opportunity-list">'+rows.slice(0,6).map(x=>{
+    const blocked=x.status==='suppressed';
+    const candidates=Array.isArray(x.product_candidates)?x.product_candidates:[];
+    const exclusions=Array.isArray(x.exclusions)?x.exclusions:[];
+    const productText=candidates.slice(0,2).map(p=>p.name||'Produto').filter(Boolean).join(' · ');
+    return '<article class="c360-opportunity '+(blocked?'suppressed':'suggested')+'"><div class="c360-opportunity-main"><span class="c360-opportunity-state">'+(blocked?'Bloqueada':'Disponível')+'</span><strong>'+esc(x.title||'Oportunidade')+'</strong><small>Confiança '+esc(Math.round(Number(x.confidence||0)*100))+'%'+(productText?' · '+esc(productText):'')+'</small></div>'+
+      '<div class="c360-opportunity-side">'+
+        (candidates[0]&&candidates[0].offer_price!=null?'<b>'+money(candidates[0].offer_price)+'</b>':'')+
+        (exclusions.length?'<small>'+exclusions.map(v=>esc(human(v))).join(' · ')+'</small>':'<small>Sem bloqueios atuais</small>')+
+      '</div></article>';
+  }).join('')+'</div>';
+};
+
 export function renderCustomer360(options){
   const customer=options.customer||{};
   const data=options.data||{};
@@ -173,6 +192,7 @@ export function renderCustomer360(options){
   const substitutions=customer360&&customer360.preferences?customer360.preferences.substitutions||[]:[];
   const marketingTouchpoints=customer360&&customer360.marketing?customer360.marketing.touchpoints||[]:[];
   const marketingEvents=customer360&&customer360.marketing?customer360.marketing.events||[]:[];
+  const opportunities=customer360&&customer360.marketing&&Array.isArray(customer360.marketing.opportunities)?customer360.marketing.opportunities:[];
   const favoriteBasket=(commercialProfile.favorite_basket&&commercialProfile.favorite_basket.name)
     ?commercialProfile.favorite_basket.name
     :(intel.favorite_basket&&intel.favorite_basket.name?intel.favorite_basket.name:(intel.last_basket&&intel.last_basket.name?intel.last_basket.name:'—'));
@@ -295,6 +315,7 @@ export function renderCustomer360(options){
           '</article>'+
         '</div>'+
         '<article class="c360-card">'+sectionTitle('Segmentos dinâmicos',dynamicSegments?'Recalculados por fatos · '+esc(dynamicSegments.engine_version||'CM-1.8'):'Perfil comercial calculado')+segmentHtml+'</article>'+
+        '<article class="c360-card">'+sectionTitle('Oportunidades comerciais','Detectadas por regras e evidências · CM-1.10. Nenhuma ação é executada por este bloco.')+renderOpportunities(opportunities,h)+'</article>'+
         '<div class="c360-two-col">'+
           '<article class="c360-card">'+sectionTitle('Marcas com maior afinidade','Calculado a partir do histórico real de compras.')+renderBrands(topBrands,h)+'</article>'+
           '<article class="c360-card">'+sectionTitle('Categorias principais','Onde o cliente concentra mais compras.')+renderCategories(topCategories,h)+'</article>'+
