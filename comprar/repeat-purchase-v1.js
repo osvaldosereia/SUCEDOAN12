@@ -65,6 +65,12 @@
         return;
       }
       previewCache=preview;
+      customerApi('track_behavior',{event_type:'repeat_purchase_open',event_data:{
+        source:'repeat_last_purchase',
+        unavailable_count:Number(preview.unavailable_addon_count||0),
+        adjusted_count:Number(preview.adjusted_addon_count||0),
+        customized:preview.basket_customization_detected===true
+      }}).catch(()=>null);
       removeCard();
       app.assistantMessage?.('Encontrei sua última compra. Confira antes de repetir:');
       const timeline=document.getElementById('timeline');
