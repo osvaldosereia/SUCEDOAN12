@@ -248,3 +248,17 @@ Obter o **Meta App ID real** do mesmo aplicativo correspondente ao App Secret ex
 
 Assim que o App ID for fornecido no Connection Manager, a validação server-side decidirá se o par é válido. Só então o App ID poderá ser persistido e o OAuth Meta iniciado.
 
+
+## Atualização Rodada 8.2 — Meta App ID validado
+
+- Meta App ID correto: `1547249776748513` (**cell principal**), identificado em evidência read-only do histórico do Make e validado contra o App Secret já protegido no Supabase Vault.
+- Validação: `client_credentials` na Graph API `v26.0`, resposta HTTP 200.
+- Candidato anterior `1180091367536552`: rejeitado pela Meta como par inválido; não persistido.
+- Runtime atual: `meta_oauth_app_id=1547249776748513`, `meta_app_credentials_validation=client_credentials`.
+- Snapshot: `meta.app_id_set=true`, `meta.app_secret_set=true`, Graph `v26.0`.
+- Meta OAuth de usuário ainda não iniciado; `oauth_sessions=0` no checkpoint anterior e nenhum fluxo de consentimento foi disparado nesta atualização.
+- Canais Meta continuam `disconnected` até o consentimento OAuth e a descoberta exata de Page/Instagram.
+- Próximo gate: iniciar OAuth no Connection Manager autenticado como owner e confirmar exclusivamente Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`.
+- Pinterest continua pendente depois da Meta.
+- Publicação permanece totalmente OFF: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0` e channel gates OFF.
+
