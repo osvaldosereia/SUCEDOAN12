@@ -6,6 +6,22 @@
 **PR:** #396 — draft — NÃO MERGEAR  
 **Estado:** OFF / ISOLADO / NÃO PUBLICADO
 
+## CHECKPOINT MAIS RECENTE — 18/09/2026 — retomada 16:58+ America/Cuiaba
+
+**Este checkpoint substitui o “Ponto EXATO” antigo abaixo como estado operacional atual.**
+
+- PR #396 continua Draft e NÃO MERGEAR.
+- R12/R14/R15 tiveram fundações locais validadas e corrigidas, mas continuam parciais por dependências nativas/backend.
+- R16 parcial: push HML somente TEST-PUSH-*, marketing OFF, sem provedor/rede.
+- R17 parcial: política/fixtures de mídia TEST-MEDIA-*, sem upload/rede.
+- R18 parcial: histórico/recompra sintéticos, sessão verificada, preços recalculados e confirmação explícita.
+- R19 reforçada: revogação de aparelho limpa sessão local mesmo sem backend.
+- R21 reforçada: contadores locais sem PII para pairing/deep-link/push.
+- Supabase HML read-only: enabled=false, homologation, 60 req/min, 10/10 produtos TEST-PROD-*.
+- runtime/config atual: 58 arquivos; sem achados proibidos nas varreduras executadas.
+- R10 continua bloqueada por toolchain Android nativa real.
+- Produção, Comprar, pedido real, push real, Meta, PapoAI, Bling e logística continuam OFF/intocados.
+
 ## Ordem obrigatória de leitura
 
 1. `docs/projects/APP-DONA-ANTONIA-MASTER.md`
