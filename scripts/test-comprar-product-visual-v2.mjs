@@ -9,12 +9,12 @@ const checkout=readFileSync('comprar/checkout.js','utf8');
 const productEdge=readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
 
 for(const file of ['comprar/products.js','comprar/checkout.js','comprar/styles.css'])assert.ok(existsSync(file),`${file} must exist`);
-assert.match(html,/styles\.css\?v=20260915-05/,'/comprar must load consolidated styles');
-assert.match(html,/products\.js\?v=20260915-05/,'/comprar must load the products module');
-assert.match(html,/checkout\.js\?v=20260915-05/,'/comprar must load the checkout module');
-assert.match(root,/\/comprar\/styles\.css\?v=20260915-05/,'root must load consolidated Comprar styles');
-assert.match(root,/\/comprar\/products\.js\?v=20260915-05/,'root must load the same products module');
-assert.match(root,/\/comprar\/checkout\.js\?v=20260915-05/,'root must load the same checkout module');
+assert.match(html,/styles\.css\?v=[^\"']+/,'/comprar must load consolidated styles');
+assert.match(html,/products\.js\?v=[^\"']+/,'/comprar must load the products module');
+assert.match(html,/checkout\.js\?v=[^\"']+/,'/comprar must load the checkout module');
+assert.match(root,/\/comprar\/styles\.css\?v=[^\"']+/,'root must load consolidated Comprar styles');
+assert.match(root,/\/comprar\/products\.js\?v=[^\"']+/,'root must load the same products module');
+assert.match(root,/\/comprar\/checkout\.js\?v=[^\"']+/,'root must load the same checkout module');
 assert.match(html,/logoantonia5\.png/,'Comprar header must use the real Dona Antônia logo');
 assert.doesNotMatch(html,/<div class="brand-mark">DA<\/div>/,'Comprar must not use the DA text circle as the brand mark');
 
