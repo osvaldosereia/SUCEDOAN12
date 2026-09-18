@@ -41,3 +41,11 @@ async function relationshipCall(body,timeoutMs=20000){
 
 export const getRelationshipOverview=()=>relationshipCall({action:'relationship_overview'},30000);
 export const getRelationshipAudit=(limit=60)=>relationshipCall({action:'relationship_audit',limit},30000);
+export const getIdentityConflicts=(limit=20)=>relationshipCall({action:'identity_conflicts',limit},30000);
+export const reviewIdentityConflict=({id,review,customerId=null,notes=''})=>relationshipCall({
+  action:'identity_review',
+  id,
+  review,
+  customer_id:customerId,
+  notes
+},30000);
