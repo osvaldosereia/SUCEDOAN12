@@ -35,10 +35,12 @@ assert.match(app,/customer-profile-button/,'Diretório deve destacar abertura do
 assert.match(css,/\.customer-directory-head/);
 assert.match(css,/\.customer-directory-row/);
 assert.match(css,/\.customer-directory-avatar/);
+assert.match(app,/customer-identity-strip/,'Diagnóstico de identidade deve ser compacto');
+assert.match(css,/\.customer-identity-strip/);
 assert.match(css,/\.c360-mobile-actions/,'Customer 360 precisa de ações móveis persistentes');
 assert.match(css,/@media\(max-width:680px\)/);
 assert.match(html,/customer-360-v2\.css\?v=20260918-2/);
-assert.match(html,/app\.js\?v=20260918-customer-directory-3/);
+assert.match(html,/app\.js\?v=20260918-customer-ux-4/);
 assert.match(view,/marketing_consent_unknown:'Consentimento de marketing não registrado'/);
 assert.match(view,/order_in_progress:'Pedido em andamento'/);
 assert.match(view,/human_service_in_progress:'Atendimento humano em andamento'/);
