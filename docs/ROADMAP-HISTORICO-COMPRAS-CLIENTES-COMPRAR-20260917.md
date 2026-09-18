@@ -263,7 +263,7 @@ Personalização reduz passos sem esconder Cestas Básicas, Ofertas, Para Você 
 
 ## Etapa 7 — Ofertas personalizadas dentro do Comprar
 
-Status: **PRÓXIMA**
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
@@ -288,6 +288,8 @@ Cliente recebe prioridade para ofertas relevantes sem perder acesso ao catálogo
 ---
 
 ## Etapa 8 — Importação do histórico antigo do Bling
+
+Status: **EM AUDITORIA — 17/09/2026**
 
 ### Objetivo
 
