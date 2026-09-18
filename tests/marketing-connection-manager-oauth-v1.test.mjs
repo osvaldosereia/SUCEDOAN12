@@ -156,3 +156,9 @@ test('Meta OAuth only accepts the expected Facebook Page and linked Instagram id
   assert.ok(guardPos>=0&&finalSecretPos>guardPos,'identity guard must run before final Meta credential persistence');
   assert.match(complete,/cleanupOAuthSessionSecrets/);
 });
+
+
+test('Connection Manager accepts a real Meta Graph version like v26.0',()=>{
+  assert.ok(admin.includes('/^v\\d+\\.\\d+$/'),'frontend must recognize v26.0 as a valid graph version');
+  assert.ok(!admin.includes('/^v\\\\d+\\\\.\\\\d+$/'),'frontend regex must not require literal backslashes');
+});
