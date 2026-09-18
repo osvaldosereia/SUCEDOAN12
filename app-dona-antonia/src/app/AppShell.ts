@@ -6,6 +6,7 @@ export interface AppShellOptions {
   route: AppRoute;
   state: ShellState;
   conversationHtml?: string;
+  toolHtml?: string;
 }
 
 const STATE_COPY: Record<ShellState, { title: string; detail: string }> = {
@@ -42,6 +43,7 @@ export function renderAppShell({
   route,
   state,
   conversationHtml = DEFAULT_CONVERSATION,
+  toolHtml,
 }: AppShellOptions): string {
   const copy = STATE_COPY[state];
 
@@ -64,13 +66,15 @@ export function renderAppShell({
         </section>
 
         <section class="tool-region" data-shell="tool" data-state="${state}" aria-label="Área de atendimento">
-          <div class="state-card">
-            <span class="state-dot" aria-hidden="true"></span>
-            <div>
-              <strong>${copy.title}</strong>
-              <p>${copy.detail}</p>
+          ${toolHtml ?? `
+            <div class="state-card">
+              <span class="state-dot" aria-hidden="true"></span>
+              <div>
+                <strong>${copy.title}</strong>
+                <p>${copy.detail}</p>
+              </div>
             </div>
-          </div>
+          `}
         </section>
       </main>
 
