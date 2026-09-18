@@ -519,3 +519,22 @@ O gate humano `meta_policy_registry_verification` continua **pending**; readines
 - resultado: **SUCCESS**;
 - **38 validações verdes**;
 - inclui `Validar Meta Policy Registry`.
+
+
+## Checkpoint de troca de aba — 18/09/2026 16:56 America/Cuiaba
+
+Continuidade canônica:
+
+- `HANDOFF.md`: contém o checkpoint detalhado mais recente;
+- `NEXT-CHAT-PROMPT.md`: contém o comando pronto para uma nova conversa;
+- estado preservado: **14 verified / 6 implemented / 0 blocked**;
+- homologação interna liberada;
+- `external_activation_authorized=false`;
+- Supabase-first; Make somente histórico/auditoria;
+- CI ampliado: run `35388463946`, 38 validações, SUCCESS.
+
+Próximas evidências humanas:
+1. Central de Relacionamento → Meta Foundation → **Verificar Meta agora**;
+2. Comprar → executar uma busca real e abrir detalhe de um produto.
+
+Até essas evidências existirem, não fabricar eventos, não abrir outbound e não promover gates Meta.
