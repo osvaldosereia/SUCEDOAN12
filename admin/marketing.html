@@ -45,7 +45,42 @@
         </section>
         <section class="panel"><div class="section-title"><div><h2>Fila de publicações</h2><p>Jobs internos preparados após aprovação. Publicação externa continua desligada.</p></div></div><div id="jobsList"></div></section>
       </section>
-      <section data-panel="templates" hidden><section class="panel"><div class="section-title"><div><h2>Modelos</h2><p>Layouts reutilizáveis para reduzir custo.</p></div></div><div id="templatesList"></div></section></section>
+      <section data-panel="templates" hidden>
+        <section class="panel template-assistant-panel">
+          <div class="section-title">
+            <div><span class="marketing-eyebrow">CM-1.13 · DRAFT ONLY</span><h2>Templates oficiais do WhatsApp</h2><p>Crie, valide e versione localmente. Nenhum template é submetido à Meta nesta etapa.</p></div>
+            <div class="section-actions"><span id="templateAiGate" class="phase-pill">IA bloqueada</span><span class="phase-pill">Submit Meta OFF</span></div>
+          </div>
+          <div id="templateSummaryCards" class="summary-grid"></div>
+          <form id="templateDraftForm" class="template-draft-form">
+            <input type="hidden" name="editing_key" value="">
+            <div class="template-form-grid">
+              <label>Chave interna<input name="template_key" maxlength="120" placeholder="ex: recompra_cesta_v1" required></label>
+              <label>Nome futuro na Meta<input name="meta_template_name" maxlength="512" placeholder="opcional enquanto estiver em DRAFT"></label>
+              <label>Categoria<select name="category"><option value="UTILITY">UTILITY</option><option value="MARKETING">MARKETING</option><option value="AUTHENTICATION">AUTHENTICATION</option></select></label>
+              <label>Idioma<input name="language_code" maxlength="20" value="pt_BR"></label>
+              <label class="wide">Finalidade<input name="purpose" maxlength="500" placeholder="Para que este template será usado?" required></label>
+              <label class="wide">Texto do template<textarea name="body_text" maxlength="4096" rows="6" placeholder="Use variáveis como {{1}}, {{2}} em sequência." required></textarea></label>
+              <label>Mídia<select name="media_kind"><option value="none">Sem mídia</option><option value="image">Imagem</option><option value="video">Vídeo</option><option value="document">Documento</option></select></label>
+              <label>URL da mídia<input name="media_url" maxlength="1200" placeholder="opcional"></label>
+              <label>Estratégia<select name="strategy_brief_id"><option value="">Sem brief associado</option></select></label>
+              <label>Peça criativa<select name="creative_asset_id"><option value="">Sem peça associada</option></select></label>
+              <label class="wide">Botões (JSON)<textarea name="buttons_json" rows="3" placeholder='[{"type":"QUICK_REPLY","text":"Ver ofertas"}]'>[]</textarea></label>
+              <label class="wide">Observações<textarea name="notes" rows="2" maxlength="1500" placeholder="Notas internas"></textarea></label>
+              <label class="wide">Motivo da alteração<input name="change_note" maxlength="800" placeholder="ex: ajuste de linguagem e CTA"></label>
+            </div>
+            <div class="template-form-actions">
+              <button id="validateTemplateDraft" class="secondary" type="button">Validar localmente</button>
+              <button id="saveTemplateDraft" class="primary" type="submit">Salvar DRAFT</button>
+              <button id="createAiTemplateDraft" class="secondary" type="button" disabled>Criar com IA</button>
+              <button id="resetTemplateDraft" class="secondary" type="button">Limpar</button>
+            </div>
+            <p id="templateDraftStatus" class="muted"></p>
+          </form>
+          <div id="whatsappTemplateList"></div>
+        </section>
+        <section class="panel"><div class="section-title"><div><h2>Modelos visuais</h2><p>Layouts reutilizáveis para reduzir custo de produção.</p></div></div><div id="templatesList"></div></section>
+      </section>
       <section data-panel="results" hidden><section class="panel"><div class="section-title"><div><h2>Resultados</h2><p>Métricas, atribuição e custos.</p></div></div><div id="resultsView"></div></section></section>
       <section data-panel="settings" hidden><section class="panel"><div class="section-title"><div><h2>Configurações</h2><p>Regras da primeira versão.</p></div></div><div id="settingsView"></div></section></section>
     </div>
