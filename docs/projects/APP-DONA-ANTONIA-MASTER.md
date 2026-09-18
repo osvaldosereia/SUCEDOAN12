@@ -1735,3 +1735,22 @@ Sem avançar para produção, foram acrescentadas três camadas:
 Validação local adicional: 13/13 testes verdes para session guard, performance budget, release readiness e store docs; typecheck verde dos novos módulos. Verificação estática confirmou 10/10 controles críticos com 44px.
 
 Nenhum desses avanços altera o gate: R24 continua parcial, R10/R11 continuam bloqueadas por toolchain e R25 exige autorização explícita antes de qualquer produção.
+
+---
+
+# 33. R13 — integridade de checkout HML endurecida
+
+A fundação HML recebeu uma segunda migração, sem tocar tabelas operacionais:
+- `20260918204500_customer_app_hml_cart_integrity_v2.sql`;
+- hard-off de `enabled=false` no banco;
+- validação SQL fechada do carrinho;
+- IDs somente TEST;
+- rejeição de chaves extras como PII;
+- limites de quantidade/preço;
+- total recalculado pelo banco;
+- `total_cents` obrigado a corresponder ao carrinho;
+- funções de validação executáveis somente por `service_role`.
+
+O checkout HML versionado também deixou de confiar no `totalCents` do cliente e usa o mesmo helper determinístico compartilhado. O helper teve 5/5 testes locais verdes e typecheck verde.
+
+R13 permanece parcial: o banco está preparado e OFF, porém as Edge Functions HML ainda não podem ser publicadas devido à quota do projeto. Não houve exclusão de funções nem alteração de plano/spend cap.
