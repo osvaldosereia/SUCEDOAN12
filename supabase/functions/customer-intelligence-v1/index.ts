@@ -81,7 +81,9 @@ Deno.serve(async(req:Request)=>{
       {data:serviceMemory,error:serviceMemoryError},
       {data:substitutionPreferences,error:substitutionPreferencesError},
       {data:marketingTouchpoints,error:marketingTouchpointsError},
-      {data:marketingEvents,error:marketingEventsError}
+      {data:marketingEvents,error:marketingEventsError},
+      {data:consentLedger,error:consentLedgerError},
+      {data:customerProtection,error:customerProtectionError}
     ]=await Promise.all([
       sb.from('customer_phones').select('id,phone_e164,source,is_primary,verified_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
       sb.from('customer_emails').select('id,email,verification_status,is_primary,source,verified_at,linked_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
@@ -100,7 +102,9 @@ Deno.serve(async(req:Request)=>{
       sb.from('customer_service_memory').select('id,memory_key,memory_value,confidence,status,expires_at,source_kind,evidence_count,last_evidence_at,metadata,created_at,updated_at').eq('customer_id',id).order('updated_at',{ascending:false}).limit(50),
       sb.from('customer_substitution_preferences').select('id,product_id,substitution_group_id,basket_id,preference,notes,created_at,updated_at').eq('customer_id',id).order('updated_at',{ascending:false}).limit(50),
       sb.from('marketing_attribution_touchpoints').select('id,asset_id,campaign_id,channel,touchpoint_type,subject_ref,parent_touchpoint_id,evidence_key,evidence_source,occurred_at,evidence,created_at').eq('subject_ref',id).order('occurred_at',{ascending:false}).limit(50),
-      sb.from('marketing_events').select('id,entity_type,entity_id,event_type,data,external_side_effect,created_at').eq('entity_type','customer').eq('entity_id',id).order('created_at',{ascending:false}).limit(50)
+      sb.from('marketing_events').select('id,entity_type,entity_id,event_type,data,external_side_effect,created_at').eq('entity_type','customer').eq('entity_id',id).order('created_at',{ascending:false}).limit(50),
+      sb.from('customer_channel_consent_events_v1').select('id,channel,channel_identity_id,customer_email_id,purpose,status,source,evidence,policy_version,event_key,occurred_at,created_at').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(100),
+      sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:id,p_channel:'whatsapp',p_purpose:'marketing'})
     ]);
     const failures=[
       ['phones',phonesError],['emails',emailsError],['addresses',addressesError],['identities',identitiesError],
@@ -108,7 +112,8 @@ Deno.serve(async(req:Request)=>{
       ['behavior',behaviorError],['handoffs',handoffsError],['identity_evaluations',identityEvaluationsError],
       ['product_stats',productStatsError],['conversations',conversationsError],['carts',cartsError],
       ['service_memory',serviceMemoryError],['substitution_preferences',substitutionPreferencesError],
-      ['marketing_touchpoints',marketingTouchpointsError],['marketing_events',marketingEventsError]
+      ['marketing_touchpoints',marketingTouchpointsError],['marketing_events',marketingEventsError],
+      ['consent_ledger',consentLedgerError],['customer_protection',customerProtectionError]
     ].filter(([,e])=>Boolean(e)).map(([part,e]:any)=>({part,error:e.message}));
     if(failures.length)return json(origin,{ok:false,error:'customer_360_failed',failures},400);
     const activeConsents=(consents||[]).reduce((acc:any,row:any)=>{
@@ -162,7 +167,7 @@ Deno.serve(async(req:Request)=>{
       ok:true,
       customer,
       contact:{phones:phones||[],emails:emails||[],addresses:addresses||[],channel_identities:identities||[]},
-      consent:{events:consents||[],current:activeConsents},
+      consent:{current:activeConsents,ledger:consentLedger||[]},
       summary:{
         lifecycle,
         customer_since:customer.created_at||null,
@@ -177,9 +182,61 @@ Deno.serve(async(req:Request)=>{
       activity:{timeline:timeline||[],behavior_events:behavior||[],handoffs:handoffs||[],conversations:conversations||[],carts:carts||[]},
       preferences:{service_memory:serviceMemory||[],substitutions:substitutionPreferences||[]},
       marketing:{touchpoints:marketingTouchpoints||[],events:marketingEvents||[]},
+      customer_protection:customerProtection||{},
       identity_resolution:{latest:(identityEvaluations||[])[0]||null,evaluations:identityEvaluations||[]},
       data_quality:{...dataQuality,completeness_percent:completeness}
     });
+  }
+  if(action==='contact_eligibility'){
+    const id=text(body?.id,80),channel=text(body?.channel||'whatsapp',40).toLowerCase(),purpose=text(body?.purpose||'marketing',40).toLowerCase();
+    if(!id)return json(origin,{ok:false,error:'id_required'},400);
+    const {data,error}=await sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:id,p_channel:channel,p_purpose:purpose});
+    if(error)return json(origin,{ok:false,error:'contact_eligibility_failed',detail:error.message},400);
+    return json(origin,{ok:true,eligibility:data||{}});
+  }
+  if(action==='record_consent'){
+    if(!canWrite)return json(origin,{ok:false,error:'read_only'},403);
+    const id=text(body?.id,80),channel=text(body?.channel||'whatsapp',40).toLowerCase(),purpose=text(body?.purpose||'marketing',40).toLowerCase(),status=text(body?.status,20).toLowerCase();
+    const method=text(body?.method,80).toLowerCase(),note=text(body?.note,1000),policyVersion=text(body?.policy_version||'admin-manual-v1',120);
+    if(!id)return json(origin,{ok:false,error:'id_required'},400);
+    if(!['granted','denied','revoked','unknown'].includes(status))return json(origin,{ok:false,error:'invalid_consent_status'},400);
+    if(status==='granted'&&method!=='manual_documented')return json(origin,{ok:false,error:'manual_grant_requires_documented_evidence'},400);
+    if(status==='granted'&&note.length<10)return json(origin,{ok:false,error:'manual_grant_note_required'},400);
+    const evidence={method:method||'admin_record',note:note||null,actor_role:admin.role,actor_display_name:admin.display_name||null};
+    const {data,error}=await sb.rpc('record_customer_consent_v1',{
+      p_customer_id:id,p_channel:channel,p_purpose:purpose,p_status:status,
+      p_source:'admin_customer_360',p_policy_version:policyVersion,p_evidence:evidence,
+      p_event_key:null,p_recorded_by:user.id
+    });
+    if(error)return json(origin,{ok:false,error:'record_consent_failed',detail:error.message},400);
+    const {data:eligibility}=await sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:id,p_channel:channel,p_purpose:purpose});
+    return json(origin,{ok:true,consent:data,eligibility:eligibility||{}});
+  }
+  if(action==='suppress_contact'){
+    if(!canWrite)return json(origin,{ok:false,error:'read_only'},403);
+    const id=text(body?.id,80),channel=text(body?.channel||'whatsapp',40).toLowerCase(),purpose=text(body?.purpose||'marketing',40).toLowerCase(),reasonCode=text(body?.reason_code,80).toLowerCase(),notes=text(body?.notes,1000);
+    const allowedReasons=new Set(['customer_request','complaint','wrong_number','manual_hold','legal_request']);
+    if(!id)return json(origin,{ok:false,error:'id_required'},400);
+    if(!allowedReasons.has(reasonCode))return json(origin,{ok:false,error:'invalid_suppression_reason'},400);
+    const {data,error}=await sb.from('customer_contact_suppressions').insert({
+      customer_id:id,channel,purpose,reason_code:reasonCode,source:'admin_customer_360',
+      notes:notes||null,evidence:{actor_role:admin.role,actor_display_name:admin.display_name||null},
+      active:true,created_by:user.id
+    }).select('id,customer_id,channel,purpose,reason_code,source,notes,active,expires_at,created_at').single();
+    if(error)return json(origin,{ok:false,error:'contact_suppression_failed',detail:error.message},400);
+    const {data:eligibility}=await sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:id,p_channel:channel,p_purpose:purpose});
+    return json(origin,{ok:true,suppression:data,eligibility:eligibility||{}});
+  }
+  if(action==='release_suppression'){
+    if(!canWrite)return json(origin,{ok:false,error:'read_only'},403);
+    const suppressionId=text(body?.suppression_id,80);
+    if(!suppressionId)return json(origin,{ok:false,error:'suppression_id_required'},400);
+    const {data:existing,error:lookupError}=await sb.from('customer_contact_suppressions').select('id,customer_id,channel,purpose,active').eq('id',suppressionId).maybeSingle();
+    if(lookupError||!existing)return json(origin,{ok:false,error:'suppression_not_found'},404);
+    const {data,error}=await sb.from('customer_contact_suppressions').update({active:false,revoked_at:new Date().toISOString(),revoked_by:user.id}).eq('id',suppressionId).select('id,customer_id,channel,purpose,reason_code,active,revoked_at').single();
+    if(error)return json(origin,{ok:false,error:'release_suppression_failed',detail:error.message},400);
+    const {data:eligibility}=await sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:existing.customer_id,p_channel:existing.channel||'whatsapp',p_purpose:existing.purpose||'marketing'});
+    return json(origin,{ok:true,suppression:data,eligibility:eligibility||{}});
   }
   if(action==='identity_readiness'){
     const {data,error}=await sb.rpc('identity_resolution_readiness_v1');
