@@ -1,4 +1,4 @@
-import {CONFIG} from './runtime-config.js';
+import {CONFIG} from './runtime-config.js?v=20260918-customer-os-canary-1';
 import {getCustomerOsAccessToken,clearCustomerOsSession} from './customer-os-auth.js';
 
 const labels={
