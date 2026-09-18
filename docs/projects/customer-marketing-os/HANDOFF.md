@@ -204,3 +204,15 @@ Estado:
 Próxima ação humana: **Central de Relacionamento → Meta Foundation → Verificar Meta agora**.
 
 Até essa ação acontecer, não promover `permissions_clear`, não promover `webhook_ready` e não alterar `direct_ready_flag`.
+
+
+## CI confirmado antes da retomada
+
+Última suíte completa desta rodada:
+
+- GitHub Actions run `35387853415`;
+- SHA `f2912098a359ab93328f303815acea0b8d72f491`;
+- resultado: **SUCCESS**;
+- 37 validações verdes, incluindo Meta read-only, Meta Direct fail-closed, readiness e acceptance checklist.
+
+Não repetir correções de CI desta rodada. A próxima pendência é evidência/runtime ou gate humano.
