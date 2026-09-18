@@ -106,7 +106,16 @@ Deno.serve(async(req:Request)=>{
       sb.from('bling_history_import_runtime').select('enabled,fetch_enabled,promotion_enabled,max_orders_per_run,start_date,end_date,updated_at').eq('id',1).maybeSingle(),
       sb.rpc('get_bling_api_credentials_v1')
     ]);
-    const c=credentials||{};
+    const envCredentials={
+      client_id:Deno.env.get('BLING_CLIENT_ID')||'',
+      client_secret:Deno.env.get('BLING_CLIENT_SECRET')||'',
+      refresh_token:Deno.env.get('BLING_REFRESH_TOKEN')||''
+    };
+    const c={
+      client_id:credentials?.client_id||envCredentials.client_id,
+      client_secret:credentials?.client_secret||envCredentials.client_secret,
+      refresh_token:credentials?.refresh_token||envCredentials.refresh_token
+    };
     return response({
       ok:true,
       service:'bling-history-import-v1',
@@ -117,7 +126,10 @@ Deno.serve(async(req:Request)=>{
         client_id:Boolean(c.client_id),
         client_secret:Boolean(c.client_secret),
         refresh_token:Boolean(c.refresh_token),
-        ready:Boolean(c.client_id&&c.client_secret&&c.refresh_token)
+        ready:Boolean(c.client_id&&c.client_secret&&c.refresh_token),
+        client_id_source:credentials?.client_id?'vault':(envCredentials.client_id?'edge_secret':'missing'),
+        client_secret_source:credentials?.client_secret?'vault':(envCredentials.client_secret?'edge_secret':'missing'),
+        refresh_token_source:credentials?.refresh_token?'vault':(envCredentials.refresh_token?'edge_secret':'missing')
       }
     });
   }
@@ -171,12 +183,22 @@ Deno.serve(async(req:Request)=>{
 
   const {data:credentials,error:credentialError}=await sb.rpc('get_bling_api_credentials_v1');
   if(credentialError)return response({ok:false,error:'credentials_lookup_failed'},500);
-  const clientId=clean(credentials?.client_id,500),clientSecret=clean(credentials?.client_secret,500),refreshToken=clean(credentials?.refresh_token,5000);
+  const envClientId=Deno.env.get('BLING_CLIENT_ID')||'';
+  const envClientSecret=Deno.env.get('BLING_CLIENT_SECRET')||'';
+  const envRefreshToken=Deno.env.get('BLING_REFRESH_TOKEN')||'';
+  const clientId=clean(credentials?.client_id||envClientId,500);
+  const clientSecret=clean(credentials?.client_secret||envClientSecret,500);
+  const refreshToken=clean(credentials?.refresh_token||envRefreshToken,5000);
   const missing:string[]=[];
   if(!clientId)missing.push('client_id');
   if(!clientSecret)missing.push('client_secret');
   if(!refreshToken)missing.push('refresh_token');
   if(missing.length)return response({ok:false,error:'bling_credentials_missing',missing},503);
+
+  if(!credentials?.refresh_token&&envRefreshToken){
+    const {error:seedRefreshError}=await sb.rpc('set_bling_api_refresh_token_v1',{p_refresh_token:envRefreshToken});
+    if(seedRefreshError)return response({ok:false,error:'refresh_token_seed_failed'},500);
+  }
 
   const {data:runId,error:beginError}=await sb.rpc('begin_bling_history_import_run_v1',{
     p_start_date:startDate,p_end_date:endDate,p_page:page,p_page_size:pageSize
