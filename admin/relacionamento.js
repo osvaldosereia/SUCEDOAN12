@@ -90,6 +90,27 @@ function renderOverview(){
     ['Adapter PapoAI',a.status||'—'],
     ['Erros Meta não resolvidos',n(quality.integration?.unresolved_meta_errors||0)]
   ].map(x=>metric(x[0],x[1])).join('')+'</div>';
+
+  const hom=s.homologation||{};
+  const blockers=Array.isArray(hom.blockers)?hom.blockers:[];
+  const warnings=Array.isArray(hom.warnings)?hom.warnings:[];
+  const badge=$('#homologationBadge');
+  if(badge){
+    badge.textContent=hom.safe_for_internal_homologation===true?'Homologação interna segura':'Bloqueada';
+    badge.className=`safe-pill ${hom.safe_for_internal_homologation===true?'':'blocked-pill'}`;
+  }
+  $('#overviewHomologation').innerHTML='<div class="metric-list">'+[
+    ['Fase',hom.phase||'—'],
+    ['Homologação interna',hom.safe_for_internal_homologation===true?'Liberada':'Bloqueada'],
+    ['Ativação externa',hom.external_activation_authorized===true?'Autorizada':'Não autorizada'],
+    ['Blockers',n(blockers.length)],
+    ['Warnings',n(warnings.length)],
+    ['Templates runtime ativos',n(hom.counters?.enabled_runtime_templates||0)],
+    ['Efeitos externos marketing 7d',n(hom.counters?.marketing_external_side_effects_7d||0)],
+    ['Efeitos externos IA 7d',n(hom.counters?.ai_side_effects_7d||0)]
+  ].map(x=>metric(x[0],x[1])).join('')+
+  (warnings.length?`<div class="homologation-warning-list">${warnings.map(w=>`<span>${esc(w.replaceAll('_',' '))}</span>`).join('')}</div>`:'')+
+  '</div>';
 }
 
 function renderCustomers(){
