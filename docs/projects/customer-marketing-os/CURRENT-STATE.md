@@ -231,16 +231,16 @@ Confirmado:
 
 - WABA: presente;
 - Phone Number ID: presente;
+- Graph API: **v26.0** com evidência real e persistida;
 - outbound fail-closed: true;
 - `whatsapp_direct_config.enabled=false`;
 - `release_mode=off`.
 
 Bloqueios reais que permanecem:
 
-1. `graph_api_version_unverified`;
-2. `permissions_unverified_or_blocking`;
-3. `webhook_not_verified`;
-4. `direct_ready_flag_false`.
+1. `permissions_unverified_or_blocking` — falta executar o diagnóstico usando o token que está no Supabase;
+2. `webhook_not_verified` — assinatura da WABA não equivale à homologação do callback do Meta Direct;
+3. `direct_ready_flag_false` — deve continuar false até os demais blockers estarem comprovados.
 
 Não criar evidência artificial para nenhum deles.
 
@@ -252,9 +252,11 @@ Não criar evidência artificial para nenhum deles.
 
 ### Graph API
 
-`graph_api_version` canônica continua `null`.
+A Graph API **v26.0** foi comprovada por resposta real da Meta e persistida em `meta_provider_health_snapshots`.
 
-O código não possui mais fallback de versão. A versão só pode ser registrada após evidência oficial ou administrativa verificável.
+O preflight agora retorna `graph_api_version=true`.
+
+A metadata histórica da conta ainda pode conter `graph_api_version=null`; o readiness usa o latest health snapshot e não deve ser rebaixado por isso.
 
 
 ### Central Meta Foundation
@@ -314,3 +316,58 @@ Conclusões novas:
 - nenhum gate externo foi aberto.
 
 Próximo avanço técnico: obter evidência real read-only de permissões, webhook, provider health e Graph API version antes de alterar qualquer blocker do preflight.
+
+
+## Supabase-first / Make histórico — decisão operacional
+
+A arquitetura operacional deste projeto é **Supabase-first**.
+
+- automações novas e runtime do Customer & Marketing OS ficam no Supabase;
+- Make não deve ser usado como motor operacional, scheduler, outbound, worker ou source of truth;
+- Make pode ser consultado somente como **fonte histórica de evidência/configuração antiga** durante migrações e auditorias;
+- nenhuma nova dependência operacional deve ser criada no Make.
+
+Em 18/09/2026 foi usado um probe temporário no Make apenas para confirmar evidência antiga da Meta. O cenário ficou **inativo** e não integra o runtime.
+
+## Diagnóstico Meta nativo — 18/09/2026
+
+Implementado em `admin-whatsapp-direct-v1` versão **5**:
+
+- action: `meta_diagnostics_readonly`;
+- usa `META_WHATSAPP_ACCESS_TOKEN` do próprio Supabase;
+- somente requisições GET;
+- lê `/me/permissions`;
+- lê `/{WABA}/subscribed_apps`;
+- lê dados do Phone Number ID/quality rating;
+- grava evidência em `meta_account_permissions`;
+- grava health em `meta_provider_health_snapshots`;
+- reexecuta `evaluate_meta_direct_readiness_v1()`;
+- não envia mensagem;
+- não altera configuração Meta;
+- não altera `meta_direct_ready`;
+- `external_side_effect=false`.
+
+Central de Relacionamento:
+
+- botão `Verificar Meta agora` adicionado na aba Meta Foundation;
+- usa a sessão autenticada por PIN;
+- executa o diagnóstico no Supabase;
+- cache do JS: `20260918-6`.
+
+Teste permanente:
+
+- `scripts/test-cm-1-meta-readonly-diagnostics-v1.mjs`;
+- workflow `Testar Admin Dona Antônia` atualizado para validar o contrato read-only.
+
+### Runtime após a programação
+
+- CM-1: **14 verified / 6 implemented / 0 blocked**;
+- Meta Direct: `ready=false`;
+- Graph API: verified `v26.0`;
+- blockers Meta Direct: **3**;
+- permissões canônicas: ainda não executadas pelo token do Supabase;
+- webhook callback Meta Direct: ainda não verificado;
+- direct-ready flag: false;
+- external activation: não autorizada.
+
+Próxima evidência humana segura: entrar na Central de Relacionamento, aba **Meta Foundation**, e usar **Verificar Meta agora**. Essa ação é read-only na Meta e apenas persiste a evidência no Supabase.
