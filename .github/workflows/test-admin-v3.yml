@@ -12,6 +12,7 @@ on:
       - 'supabase/functions/papo-comprar-webhook-v1/**'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
+      - 'supabase/functions/whatsapp-meta-direct-v1/**'
       - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
@@ -73,6 +74,7 @@ on:
       - 'supabase/functions/papo-comprar-webhook-v1/**'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
+      - 'supabase/functions/whatsapp-meta-direct-v1/**'
       - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
@@ -167,6 +169,7 @@ jobs:
           deno check supabase/functions/papo-comprar-webhook-v1/index.ts
           deno check supabase/functions/admin-marketing-brain-v1/index.ts
           deno check supabase/functions/admin-whatsapp-direct-v1/index.ts
+          deno check supabase/functions/whatsapp-meta-direct-v1/index.ts
           deno check supabase/functions/admin-gondolas-v1/index.ts
           deno check supabase/functions/admin-product-names-v1/index.ts
           deno check supabase/functions/admin-product-image-editor-v1/index.ts
