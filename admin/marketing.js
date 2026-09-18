@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -21,6 +21,21 @@ function roleLabel(role){
     instagram_carousel:'Carrossel',
     reel_light_10s:'Reel leve 10s'
   })[role]||role||'Conteúdo';
+}
+
+function channelLabel(channel){
+  return ({
+    instagram_feed:'Instagram Feed',
+    instagram_story:'Instagram Story',
+    instagram_reel:'Instagram Reel',
+    instagram_carousel:'Instagram Carrossel',
+    facebook_post:'Facebook Post',
+    facebook_story:'Facebook Story',
+    facebook_reel:'Facebook Reel',
+    pinterest_pin:'Pinterest',
+    whatsapp_status:'WhatsApp Status',
+    google_business_post:'Google'
+  })[channel]||channel||'Canal';
 }
 
 function humanOpportunityReason(v){
@@ -120,35 +135,83 @@ function assetMedia(assetId){
 function assetRenderJobs(assetId){
   return (state.overview?.render_jobs||[]).filter(j=>j.asset_id===assetId).sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
 }
+function assetPublicationJobs(assetId){
+  return (state.overview?.jobs||[]).filter(j=>j.asset_id===assetId).sort((a,b)=>String(a.channel||'').localeCompare(String(b.channel||'')));
+}
+function assetReadyForReview(asset,media){
+  if(asset.media_kind==='video')return media.some(m=>m.mime_type==='video/mp4');
+  if(asset.media_kind==='carousel')return media.filter(m=>String(m.mime_type||'').startsWith('image/')&&m.role==='preview').length>=2;
+  return media.some(m=>String(m.mime_type||'').startsWith('image/')&&m.role==='preview');
+}
 function assetPreviewHtml(asset){
   const media=assetMedia(asset.id);
   const jobs=assetRenderJobs(asset.id);
+  const publicationJobs=assetPublicationJobs(asset.id);
   const role=asset.edit_spec?.content_role||'';
   const images=media.filter(m=>String(m.mime_type||'').startsWith('image/'));
   const videos=media.filter(m=>m.mime_type==='video/mp4');
   const latestJob=jobs[0]||null;
   const mp4Ready=videos.length>0||asset.output_spec?.mp4_ready===true;
   const posterReady=images.some(m=>m.role==='poster');
-  const mediaText=media.length?`${media.length} mídia(s) de prévia`:'Prévia ainda não gerada';
-  let actions='';
+  const ready=assetReadyForReview(asset,media);
+  const owner=state.overview?.user?.role==='owner';
+  const mediaText=media.length?`${media.length} mídia(s) pronta(s)`:'Mídia ainda não gerada';
+  const reviewNote=asset.approval_note||'';
+  let mediaActions='';
   if(asset.media_kind==='video'){
     if(!posterReady){
-      actions=`<button class="secondary" type="button" data-action="render-preview" data-asset-id="${esc(asset.id)}">Gerar poster</button>`;
+      mediaActions=`<button class="secondary" type="button" data-action="render-preview" data-asset-id="${esc(asset.id)}">Gerar poster</button>`;
     }else if(mp4Ready){
-      actions=`<button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver Reel 10s</button>`;
+      mediaActions=`<button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver Reel 10s</button>`;
     }else if(latestJob&&['queued','processing'].includes(latestJob.status)){
-      actions=`<button class="secondary" type="button" disabled>${latestJob.status==='processing'?'Gerando MP4…':'MP4 na fila'}</button><button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver poster</button>`;
+      mediaActions=`<button class="secondary" type="button" disabled>${latestJob.status==='processing'?'Gerando MP4…':'MP4 na fila'}</button><button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver poster</button>`;
     }else{
-      actions=`<button class="primary" type="button" data-action="queue-light-video" data-asset-id="${esc(asset.id)}">Colocar MP4 10s na fila</button><button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver poster</button>`;
+      mediaActions=`<button class="primary" type="button" data-action="queue-light-video" data-asset-id="${esc(asset.id)}">Gerar MP4 10s</button><button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver poster</button>`;
     }
   }else{
-    actions=`<button class="secondary" type="button" data-action="${media.length?'show-preview':'render-preview'}" data-asset-id="${esc(asset.id)}">${media.length?'Ver prévia':'Gerar prévia'}</button>`;
+    mediaActions=`<button class="secondary" type="button" data-action="${media.length?'show-preview':'render-preview'}" data-asset-id="${esc(asset.id)}">${media.length?'Ver prévia':'Gerar prévia'}</button>`;
   }
-  return `<article class="asset-card" data-asset-id="${esc(asset.id)}">
-    <div class="asset-card-head"><div><span class="status-chip">${esc(asset.status)}</span><h3>${esc(asset.title)}</h3><p>${esc(roleLabel(role))} · ${esc(asset.media_kind)} · no_ai</p></div>
-      <div class="asset-card-actions">${actions}</div>
+
+  let workflowActions='';
+  if(['draft','rendered'].includes(asset.status)){
+    workflowActions=`
+      <button class="secondary" type="button" data-action="toggle-asset-edit" data-asset-id="${esc(asset.id)}">Editar</button>
+      ${media.length?`<button class="secondary" type="button" data-action="render-preview" data-asset-id="${esc(asset.id)}">Gerar novamente</button>`:''}
+      <button class="primary" type="button" data-action="submit-review" data-asset-id="${esc(asset.id)}" ${ready?'':'disabled'}>Enviar para revisão</button>`;
+  }else if(asset.status==='review'){
+    workflowActions=`
+      <button class="secondary" type="button" data-action="toggle-asset-edit" data-asset-id="${esc(asset.id)}">Editar antes de aprovar</button>
+      ${owner?`<button class="approve-button" type="button" data-action="approve-asset" data-asset-id="${esc(asset.id)}">Aprovar</button><button class="reject-button" type="button" data-action="reject-asset" data-asset-id="${esc(asset.id)}">Reprovar</button>`:''}`;
+  }else if(asset.status==='approved'){
+    workflowActions=`${owner?`<button class="secondary" type="button" data-action="prepare-publication" data-asset-id="${esc(asset.id)}">Atualizar canais</button>`:''}<button class="secondary" type="button" data-action="fork-asset" data-asset-id="${esc(asset.id)}">Nova versão</button>`;
+  }
+
+  const channels=publicationJobs.length
+    ?`<div class="prepared-channels"><strong>Preparado para</strong>${publicationJobs.map(j=>`<span class="channel-chip ${j.manual_confirmation_required?'manual':''}">${esc(channelLabel(j.channel))} · ${esc(j.status)}</span>`).join('')}</div>`
+    :'';
+  const editSpec=asset.edit_spec||{};
+  return `<article class="asset-card status-${esc(asset.status)}" data-asset-id="${esc(asset.id)}">
+    <div class="asset-card-head">
+      <div><span class="status-chip">${esc(asset.status)}</span><h3>${esc(asset.title)}</h3><p>${esc(roleLabel(role))} · ${esc(asset.media_kind)} · ${esc(asset.generation_mode||'no_ai')}</p></div>
+      <div class="asset-card-actions">${mediaActions}</div>
     </div>
-    <div class="asset-safe-line"><span>${esc(mediaText)}</span><span>IA: não</span><span>Publicação: não</span>${asset.media_kind==='video'?`<span>MP4: ${mp4Ready?'pronto':latestJob?.status||'não gerado'}</span>`:''}</div>
+    <div class="asset-safe-line">
+      <span>${esc(mediaText)}</span><span>IA: ${asset.generation_mode==='no_ai'?'não':'configurada'}</span>
+      <span>Publicação externa: bloqueada</span>
+      ${asset.media_kind==='video'?`<span>MP4: ${mp4Ready?'pronto':latestJob?.status||'não gerado'}</span>`:''}
+    </div>
+    ${channels}
+    ${reviewNote?`<div class="asset-review-note"><strong>Última observação</strong><span>${esc(reviewNote)}</span></div>`:''}
+    <div class="asset-workflow-actions">${workflowActions}</div>
+    ${asset.status==='review'&&owner?`<div class="review-note-row"><input type="text" maxlength="1000" data-review-note placeholder="Observação para aprovação ou motivo da reprovação"></div>`:''}
+    <form class="asset-edit-form" data-asset-edit-id="${esc(asset.id)}" hidden>
+      <label>Título<input name="title" maxlength="180" value="${esc(asset.title)}"></label>
+      <label>Chamada principal<textarea name="headline" maxlength="220">${esc(editSpec.headline||'')}</textarea></label>
+      <label>CTA<textarea name="cta" maxlength="180">${esc(editSpec.cta||'')}</textarea></label>
+      <label class="wide">Motivo da alteração<input name="change_note" maxlength="1000" placeholder="Ex.: ajustar chamada e CTA"></label>
+      <div class="asset-edit-actions wide"><button type="button" class="secondary" data-action="cancel-asset-edit" data-asset-id="${esc(asset.id)}">Cancelar</button><button type="submit" class="primary">Salvar alteração</button></div>
+      <p class="asset-edit-message muted wide"></p>
+    </form>
     <div class="asset-preview-slot" data-preview-slot="${esc(asset.id)}"></div>
   </article>`;
 }
@@ -204,7 +267,8 @@ function renderCampaigns(){
         <div><span class="status-chip">${esc(c.status)}</span><h3>${esc(c.name)}</h3><p>${esc(c.objective||'Sem objetivo definido.')}</p></div>
         <div class="campaign-actions">
           <button class="secondary" type="button" data-action="toggle-edit">Editar</button>
-          <button class="primary" type="button" data-action="plan-assets">${campaignAssets.length>=5?'Revisar peças':'Gerar 5 peças DRAFT'}</button>
+          <button class="secondary" type="button" data-action="plan-assets">${campaignAssets.length>=5?'Revisar plano':'Gerar 5 peças DRAFT'}</button>
+          ${campaignAssets.length?`<button class="primary" type="button" data-action="render-campaign">Gerar mídias</button>`:''}
         </div>
       </div>
       <div class="campaign-meta">
@@ -305,8 +369,48 @@ document.addEventListener('click',async e=>{
   const button=e.target.closest('button[data-asset-id][data-action]');
   if(!button)return;
   const action=button.dataset.action,assetId=button.dataset.assetId;
-  if(action==='render-preview'){await renderAssetPreview(assetId,button)}
-  if(action==='show-preview'){await showAssetPreview(assetId)}
+  if(action==='render-preview'){await renderAssetPreview(assetId,button);return}
+  if(action==='show-preview'){await showAssetPreview(assetId);return}
+  if(action==='toggle-asset-edit'){
+    const form=button.closest('.asset-card')?.querySelector('.asset-edit-form');if(form)form.hidden=!form.hidden;return;
+  }
+  if(action==='cancel-asset-edit'){
+    const form=button.closest('.asset-card')?.querySelector('.asset-edit-form');if(form)form.hidden=true;return;
+  }
+  if(action==='submit-review'){
+    button.disabled=true;
+    try{await submitMarketingAssetReview(assetId);await load();document.querySelector('[data-tab="content"]')?.click()}
+    catch(err){alert(err.message||'Não foi possível enviar para revisão.')}finally{button.disabled=false}
+    return;
+  }
+  if(action==='approve-asset'){
+    button.disabled=true;
+    const note=button.closest('.asset-card')?.querySelector('[data-review-note]')?.value||'';
+    try{await approveMarketingAsset(assetId,note);await load();document.querySelector('[data-tab="content"]')?.click()}
+    catch(err){alert(err.message||'Não foi possível aprovar a peça.')}finally{button.disabled=false}
+    return;
+  }
+  if(action==='reject-asset'){
+    const input=button.closest('.asset-card')?.querySelector('[data-review-note]');
+    const note=String(input?.value||'').trim();
+    if(!note){if(input){input.focus();input.placeholder='Informe o motivo da reprovação';}return}
+    button.disabled=true;
+    try{await rejectMarketingAsset(assetId,note);await load();document.querySelector('[data-tab="content"]')?.click()}
+    catch(err){alert(err.message||'Não foi possível reprovar a peça.')}finally{button.disabled=false}
+    return;
+  }
+  if(action==='prepare-publication'){
+    button.disabled=true;
+    try{await prepareMarketingPublication(assetId);await load();document.querySelector('[data-tab="content"]')?.click()}
+    catch(err){alert(err.message||'Não foi possível preparar os canais.')}finally{button.disabled=false}
+    return;
+  }
+  if(action==='fork-asset'){
+    button.disabled=true;
+    try{const result=await forkMarketingAsset(assetId,'Nova versão criada pelo Admin');await load();document.querySelector('[data-tab="content"]')?.click()}
+    catch(err){alert(err.message||'Não foi possível criar nova versão.')}finally{button.disabled=false}
+    return;
+  }
   if(action==='queue-light-video'){
     button.disabled=true;
     const slot=document.querySelector(`[data-preview-slot="${CSS.escape(assetId)}"]`);
@@ -319,6 +423,7 @@ document.addEventListener('click',async e=>{
     }catch(err){
       if(slot)slot.innerHTML=`<div class="empty-state">${esc(err.message||'Falha ao colocar vídeo na fila.')}</div>`;
     }finally{button.disabled=false}
+    return;
   }
 });
 
@@ -337,6 +442,63 @@ $('#campaignsList').addEventListener('click',async e=>{
       await load(); document.querySelector('[data-tab="campaigns"]')?.click();
     }catch(err){message.textContent=err.message||'Falha ao montar peças.'}finally{button.disabled=false}
   }
+  if(button.dataset.action==='render-campaign'){
+    const campaignAssets=(state.overview?.assets||[]).filter(a=>a.campaign_id===id&&!['approved','archived'].includes(a.status));
+    if(!campaignAssets.length){message.textContent='Não há peças editáveis para gerar.';return}
+    button.disabled=true;
+    try{
+      let done=0;
+      for(const asset of campaignAssets){
+        message.textContent=`Gerando ${done+1}/${campaignAssets.length}: ${asset.title}…`;
+        await renderMarketingPreview(asset.id);
+        if(asset.media_kind==='video'){
+          try{await queueMarketingLightVideo(asset.id)}catch(err){
+            if(!['light_video_queue_blocked'].includes(err.code))throw err;
+          }
+        }
+        done++;
+      }
+      message.textContent=`${done} peça(s) gerada(s). Nenhuma publicação externa foi feita.`;
+      await load();document.querySelector('[data-tab="content"]')?.click();
+    }catch(err){message.textContent=err.message||'Falha ao gerar mídias.'}finally{button.disabled=false}
+  }
+});
+
+document.addEventListener('submit',async e=>{
+  const form=e.target.closest('.asset-edit-form');if(!form)return;
+  e.preventDefault();
+  const assetId=form.dataset.assetEditId;
+  const asset=(state.overview?.assets||[]).find(a=>a.id===assetId);
+  if(!asset)return;
+  const submit=form.querySelector('button[type="submit"]');
+  const message=form.querySelector('.asset-edit-message');
+  const data=new FormData(form);
+  const editSpec=structuredClone(asset.edit_spec||{});
+  const headline=String(data.get('headline')||'').trim();
+  const cta=String(data.get('cta')||'').trim();
+  editSpec.headline=headline;
+  editSpec.cta=cta;
+  if(Array.isArray(editSpec.slide_plan)){
+    editSpec.slide_plan=editSpec.slide_plan.map(slide=>{
+      if(slide?.type==='cover')return {...slide,headline};
+      if(slide?.type==='cta')return {...slide,cta};
+      return slide;
+    });
+  }
+  submit.disabled=true;if(message)message.textContent='Salvando e invalidando a prévia anterior…';
+  try{
+    await saveMarketingAssetEdit({
+      asset_id:assetId,
+      title:String(data.get('title')||asset.title).trim(),
+      generation_mode:asset.generation_mode||'no_ai',
+      source_refs:asset.source_refs||[],
+      edit_spec:editSpec,
+      render_spec:asset.render_spec||{},
+      change_note:String(data.get('change_note')||'').trim()||'Alteração pelo Admin'
+    });
+    if(message)message.textContent='Alteração salva. Gere uma nova prévia antes de enviar para revisão.';
+    await load();document.querySelector('[data-tab="content"]')?.click();
+  }catch(err){if(message)message.textContent=err.message||'Falha ao salvar alteração.'}finally{submit.disabled=false}
 });
 
 $('#campaignsList').addEventListener('submit',async e=>{
