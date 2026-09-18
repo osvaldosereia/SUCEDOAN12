@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import { calculateHmlCartTotalCents } from "../_shared/customer-app-hml-cart.ts";
 
 const ALLOWED_ORIGINS = new Set([
   "http://localhost:5173",
@@ -7,14 +8,7 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 const PAYMENT_METHODS = new Set(["pix", "cash", "credit_card", "meal_card"]);
 const TOP_LEVEL_KEYS = new Set(["cart", "payment", "totalCents"]);
-const LINE_KEYS = new Set([
-  "kind",
-  "refId",
-  "name",
-  "quantity",
-  "unitPriceCents",
-  "promoUnitPriceCents",
-]);
+
 
 function headers(req: Request): HeadersInit {
   const origin = req.headers.get("origin") ?? "";
@@ -41,31 +35,6 @@ function minuteWindow(date = new Date()): string {
 
 function hasOnlyKeys(value: Record<string, unknown>, allowed: Set<string>): boolean {
   return Object.keys(value).every((key) => allowed.has(key));
-}
-
-function validLine(value: unknown): boolean {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const line = value as Record<string, unknown>;
-  if (!hasOnlyKeys(line, LINE_KEYS)) return false;
-
-  const kind = line.kind;
-  const refId = line.refId;
-  const quantity = line.quantity;
-  const unitPriceCents = line.unitPriceCents;
-  const promo = line.promoUnitPriceCents;
-
-  if (kind !== "product" && kind !== "basket") return false;
-  if (typeof refId !== "string") return false;
-  if (kind === "product" && !refId.startsWith("TEST-PROD-")) return false;
-  if (kind === "basket" && !refId.startsWith("TEST-BASKET-")) return false;
-  if (!Number.isInteger(quantity) || Number(quantity) <= 0) return false;
-  if (!Number.isInteger(unitPriceCents) || Number(unitPriceCents) <= 0) return false;
-  if (
-    promo !== null
-    && promo !== undefined
-    && (!Number.isInteger(promo) || Number(promo) <= 0 || Number(promo) >= Number(unitPriceCents))
-  ) return false;
-  return true;
 }
 
 Deno.serve(async (req: Request) => {
@@ -177,15 +146,14 @@ Deno.serve(async (req: Request) => {
   const payment = payload.payment;
   const totalCents = payload.totalCents;
 
+  const calculatedTotalCents = calculateHmlCartTotalCents(cart);
+
   if (
-    !Array.isArray(cart)
-    || cart.length < 1
-    || cart.length > 100
-    || !cart.every(validLine)
+    calculatedTotalCents === null
     || typeof payment !== "string"
     || !PAYMENT_METHODS.has(payment)
     || !Number.isInteger(totalCents)
-    || Number(totalCents) <= 0
+    || Number(totalCents) !== calculatedTotalCents
   ) {
     return new Response(JSON.stringify({ error: "invalid_hml_order" }), {
       status: 400,
