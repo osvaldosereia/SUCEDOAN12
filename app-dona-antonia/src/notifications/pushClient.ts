@@ -33,7 +33,7 @@ function cloneRegistration(registration: PushRegistration | null): PushRegistrat
 export function createHomologationPushClient(): PushClient {
   let registration: PushRegistration | null = null;
   let preferences: PushPreferences = {
-    transactional: false,
+    transactional: true,
     marketing: false,
   };
 
