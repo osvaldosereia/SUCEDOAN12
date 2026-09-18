@@ -53,7 +53,7 @@ Documento:
 
 Total: 27 rodadas numeradas de 0 a 26.
 
-**Próxima rodada permitida:** Rodada 9 — PWA isolada de homologação.
+**Próxima rodada permitida:** Rodada 10 — Shell Capacitor Android.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
 
@@ -192,7 +192,7 @@ O documento principal para retomada em novas janelas está salvo na `main`:
 
 Ao retomar o projeto, este arquivo deve ser lido primeiro, seguido do design, plano de rodadas e deste `PROJECT-STATUS.md`.
 
-**Snapshot atual:** Rodadas 0–8 concluídas; próxima Rodada 9.
+**Snapshot atual:** Rodadas 0–9 concluídas; próxima Rodada 10.
 
 
 ## Checkpoint — Rodada 4
@@ -408,3 +408,38 @@ Validações executadas:
 **Próxima rodada autorizável:** Rodada 9 — PWA isolada de homologação.
 
 O projeto permanece OFF, não publicado e sem acompanhamento de entrega real.
+
+
+## Checkpoint — Rodada 9
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- `manifest.webmanifest` próprio do novo app;
+- ícones locais de homologação;
+- start URL e scope relativos ao app;
+- registro de service worker permitido apenas em:
+  - `/app-dona-antonia/`;
+  - `/hml/app-dona-antonia/`;
+- registro recusado em `/` e `/comprar/`;
+- service worker versionado `da-hml-v1`;
+- cache somente de destinos estáticos do mesmo domínio;
+- POST nunca é cacheado;
+- URLs com `token`, `session`, `code`, `secret` ou `auth` não são cacheadas;
+- caminhos contendo `/comprar/` são ignorados pelo service worker;
+- fallback offline usa somente o shell do novo app;
+- caches antigos de homologação são limpos por versão;
+- manifesto ligado ao HTML do novo app;
+- nenhum link público de produção criado.
+
+Validações executadas:
+- 5/5 testes específicos de PWA aprovados;
+- typecheck do registrador de service worker aprovado;
+- teste confirmou que `/comprar/` não pode registrar nem ser cacheado;
+- teste confirmou exclusão de POST e URLs sensíveis;
+- nenhum arquivo de `comprar/` modificado.
+
+**Próxima rodada autorizável:** Rodada 10 — Shell Capacitor Android.
+
+O projeto permanece OFF e a PWA ainda não possui rota pública de produção.
