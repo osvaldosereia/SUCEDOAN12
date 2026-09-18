@@ -128,6 +128,7 @@
   min-height: 180px;
   display: grid;
   align-items: start;
+  gap: var(--da-space-3);
 }
 
 .state-card {
@@ -1395,5 +1396,43 @@
 @media (max-width: 390px) {
   .order-tracking-actions {
     grid-template-columns: 1fr;
+  }
+}
+
+
+@media (prefers-contrast: more) {
+  .state-card,
+  .product-card-open,
+  .basket-card-open,
+  .basket-composition,
+  .cart-line,
+  .cart-summary,
+  .checkout-review-card,
+  .order-current-status {
+    border-width: 2px;
+  }
+
+  .quick-actions button,
+  .catalog-chip,
+  .product-detail-back,
+  .basket-detail-back,
+  .cart-clear,
+  .order-support {
+    border-width: 2px;
+  }
+}
+
+@media (forced-colors: active) {
+  .brand-mark,
+  .offer-badge,
+  .basket-badge,
+  .state-dot,
+  .order-timeline li > span {
+    forced-color-adjust: auto;
+  }
+
+  button,
+  input {
+    forced-color-adjust: auto;
   }
 }
