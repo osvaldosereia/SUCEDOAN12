@@ -59,3 +59,8 @@ export const rejectMarketingAsset=(assetId,note)=>secureCall(CONFIG.marketingWor
 export const prepareMarketingPublication=(assetId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'prepare_publication',asset_id:assetId});
 export const saveMarketingAssetEdit=(payload)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'editor_save',...payload},30000);
 export const forkMarketingAsset=(assetId,changeNote='')=>secureCall(CONFIG.marketingWorkflowFunction,{action:'editor_fork',asset_id:assetId,change_note:changeNote},30000);
+
+export const getMarketingPublicationPreflight=(jobId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'publication_preflight',job_id:jobId});
+export const verifyMarketingChannel=(channelAccountId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'verify_channel',channel_account_id:channelAccountId},30000);
+export const publishMarketingJob=(jobId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'publish_job',job_id:jobId},120000);
+export const getMarketingManualShareManifest=(jobId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'manual_share_manifest',job_id:jobId},30000);
