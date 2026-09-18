@@ -443,3 +443,29 @@ Validações executadas:
 **Próxima rodada autorizável:** Rodada 10 — Shell Capacitor Android.
 
 O projeto permanece OFF e a PWA ainda não possui rota pública de produção.
+
+
+## Bloqueio técnico atual — Rodada 10
+
+A Rodada 10 exige geração e validação nativa real do Android.
+
+Ambiente verificado em 18/09/2026:
+- Node 22.16.0 disponível;
+- npm 10.9.2 disponível;
+- Java 21 disponível;
+- Android SDK ausente;
+- `adb` ausente;
+- `sdkmanager` ausente;
+- Gradle global ausente;
+- Xcode indisponível neste ambiente;
+- registry npm inacessível por DNS (`EAI_AGAIN`).
+
+Por isso a Rodada 10 **não foi iniciada parcialmente** e não foi marcada como concluída.
+
+Próxima ação quando houver ambiente nativo:
+1. instalar dependências Capacitor 8;
+2. adicionar plataforma Android;
+3. configurar API 36+;
+4. gerar APK debug;
+5. executar smoke test real;
+6. só então marcar Rodada 10 como concluída.
