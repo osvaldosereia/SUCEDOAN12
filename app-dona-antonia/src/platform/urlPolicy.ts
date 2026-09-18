@@ -15,11 +15,11 @@ const FORBIDDEN_QUERY_KEYS = new Set([
 
 const PII_DIGIT_SEQUENCE = /(?:^|\D)\d{10,11}(?:\D|$)/;
 
-function decoded(value: string): string {
+function decoded(value: string): string | null {
   try {
     return decodeURIComponent(value);
   } catch {
-    return value;
+    return null;
   }
 }
 
@@ -40,7 +40,10 @@ export function isSafeAppUrl(value: string): boolean {
     }
   }
 
-  const pathSegments = decoded(url.pathname)
+  const decodedPath = decoded(url.pathname);
+  if (decodedPath === null) return false;
+
+  const pathSegments = decodedPath
     .split('/')
     .filter(Boolean);
 
@@ -49,10 +52,18 @@ export function isSafeAppUrl(value: string): boolean {
   }
 
   for (const [, queryValue] of url.searchParams) {
-    if (PII_DIGIT_SEQUENCE.test(decoded(queryValue))) return false;
+    const decodedQueryValue = decoded(queryValue);
+    if (
+      decodedQueryValue === null
+      || PII_DIGIT_SEQUENCE.test(decodedQueryValue)
+    ) {
+      return false;
+    }
   }
 
-  const hash = decoded(url.hash).toLocaleLowerCase('pt-BR');
+  const decodedHash = decoded(url.hash);
+  if (decodedHash === null) return false;
+  const hash = decodedHash.toLocaleLowerCase('pt-BR');
   if (PII_DIGIT_SEQUENCE.test(hash)) return false;
   for (const key of FORBIDDEN_QUERY_KEYS) {
     if (
