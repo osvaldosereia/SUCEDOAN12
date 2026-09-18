@@ -261,3 +261,29 @@ Segurança verificada:
 - não existe alteração de `outbound_enabled`, `release_mode` ou autorização externa nesta migration.
 
 A validação de contrato da Central passou integralmente.
+
+
+## Revisão 18/09/2026 — regra de bens regulados V2
+
+A revisão contra a Política de Mensagens do WhatsApp Business vigente identificou que a interpretação anterior de `whatsapp_regulated_verticals_fail_closed` era permissiva demais ao sugerir liberação após checagens de país/idade/licença.
+
+A política oficial estabelece que os bens/serviços regulados ou restritos listados como proibidos não podem ser comprados, vendidos, promovidos nem ter a troca facilitada pelo WhatsApp, independentemente de licenças, registros ou aprovações.
+
+Correção aplicada:
+
+- policy version: 2;
+- `regulated_or_restricted_goods=block`;
+- `promotion_or_commerce=block`;
+- `license_override=false`;
+- `fail_closed=true`.
+
+O readiness do registry permanece:
+
+- required: 8;
+- active: 8;
+- stale: 0;
+- without source: 0;
+- not fail-closed: 0;
+- ready=true.
+
+Esta verificação técnica não altera `external_activation_authorized=false`.
