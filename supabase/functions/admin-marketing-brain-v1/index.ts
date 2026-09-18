@@ -270,7 +270,18 @@ Deno.serve(async(req:Request)=>{
         p_render_spec:spec.render_spec,
         p_actor:user.id
       });
-      if(error)throw new Error(error.message);
+      if(error){
+        if(String((error as any)?.code||"")==="23505"){
+          const {data:raceWinner}=await sb.from("marketing_assets")
+            .select("id,title,media_kind,status,edit_spec,render_spec,template_id,version")
+            .eq("campaign_id",campaignId)
+            .contains("edit_spec",{content_role:spec.role})
+            .neq("status","archived")
+            .maybeSingle();
+          if(raceWinner){reused.push({...raceWinner,content_role:spec.role});continue;}
+        }
+        throw new Error(error.message);
+      }
       if(!data?.ok)return {ok:false,error:data?.error||"asset_draft_failed",role:spec.role};
       created.push({id:data.id,content_role:spec.role,title:spec.title,media_kind:spec.media_kind,status:"draft"});
     }
