@@ -6,6 +6,19 @@
 **PR:** #396 — draft — NÃO MERGEAR  
 **Estado:** OFF / ISOLADO / NÃO PUBLICADO
 
+## CHECKPOINT NOVO — 18/09/2026 — hardening seguro após R24
+
+- branch validada antes da edição: `app-dona-antonia-r0-isolation`;
+- R22: session guard local para expiração/revogação + scanner de segredos FCM/APNs/private key;
+- R23: 10 controles críticos com piso explícito de 44px + budgets mensuráveis de desempenho;
+- R24: `APP-STORE-CHECKLIST.md`, `PLAY-STORE-CHECKLIST.md` e `REVIEW-PROFILE.md` sintético criados;
+- 6/6 testes de session/performance verdes;
+- 3/3 testes de store docs verdes;
+- suíte combinada local destes gates + release readiness: 13/13 verdes;
+- runtime/config atual: 62 arquivos;
+- nenhuma publicação, tester, build nativo, produção ou integração real foi acionada;
+- R10 continua bloqueada; R25 continua proibida sem autorização explícita.
+
 ## ATUALIZAÇÃO FINAL DESTA RETOMADA — 18/09/2026
 
 Este é o estado mais novo e prevalece sobre checkpoints anteriores do arquivo:
