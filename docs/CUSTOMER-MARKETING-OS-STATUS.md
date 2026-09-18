@@ -2,14 +2,16 @@
 
 Atualizado em 18/09/2026.
 
-Status: **PLANEJAMENTO SALVO — PRONTO PARA COMEÇAR CM-0**.
+Status: **CM-0 CONCLUÍDA — PRONTO PARA COMEÇAR CM-1.1**.
 
 ## Leia primeiro
 
 1. `docs/CUSTOMER-MARKETING-OS-ARQUITETURA-MESTRE.md`
-2. `docs/CUSTOMER-MARKETING-OS-ETAPA-CM1.md`
-3. `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`
-4. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
+2. `docs/CUSTOMER-MARKETING-OS-CM0-ARCHITECTURE-LOCK.md`
+3. `docs/CUSTOMER-MARKETING-OS-ETAPA-CM1.md`
+4. `docs/CUSTOMER-MARKETING-OS-CM1-1-SECURITY-PLAN.md`
+5. `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`
+6. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
 
 ## Governança
 
@@ -56,17 +58,20 @@ No snapshot usado para planejamento:
 
 Os números são dinâmicos. Reconsultar antes de qualquer operação de migração/reconciliação.
 
+## CM-0 concluída
+
+A auditoria confirmou que o projeto já possui omnichannel core, CRM unificado, action registry, workflow engine, marketing foundation, commercial decision layer, purchase intelligence, segmentos e fundações WhatsApp/Meta. Eles serão consolidados, não duplicados.
+
+Foi detectado como prioridade de segurança que o Admin atual possui endpoints públicos `verify_jwt=false`; novas superfícies Customer/Marketing/Meta sensíveis nascerão autenticadas.
+
 ## Próxima rodada
 
-**CM-0 — Architecture Lock**
+**CM-1.1 — Segurança e fundação**
 
-Objetivo:
+Objetivo imediato:
 
-- auditar o que já existe;
-- mapear tabelas/Edge Functions/código/Admin;
-- definir contratos;
-- evitar duplicações;
-- fechar convenções de eventos, IDs, providers, consent, autonomia e auditoria;
-- produzir o plano de migrations e implementação da CM-1.1.
-
-Não ativar envio em massa, Meta direta, campanha automática ou ação externa durante CM-0.
+- criar boundary autenticado para Customer/Marketing/Meta;
+- preservar o Admin atual durante a transição;
+- preparar testes de segurança;
+- auditar consumidores das 6 tabelas sem RLS antes de qualquer mudança;
+- não ativar envio em massa, Meta direta ou campanha automática.
