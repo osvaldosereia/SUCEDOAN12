@@ -1,5 +1,6 @@
 import type { CartLine } from '../cart/types.ts';
 import type { PaymentMethod } from '../checkout/types.ts';
+import { evaluateHomologationExecution } from './homologationGuard.ts';
 
 const HML_FUNCTIONS = {
   bootstrap: 'customer-app-hml-bootstrap-v1',
@@ -14,6 +15,8 @@ export interface HmlApiClientOptions {
   jwt?: string;
   clientId?: string;
   fetchImpl?: typeof fetch;
+  environment?: 'homologation' | 'production';
+  productionEnabled?: boolean;
 }
 
 export interface HmlCheckoutInput {
@@ -83,6 +86,16 @@ export function createHmlApiClient(
 
   const baseUrl = requireHttpsBaseUrl(options.baseUrl);
   const clientId = requireTestClientId(options.clientId);
+  const guard = evaluateHomologationExecution({
+    action: 'hml_network',
+    environment: options.environment ?? 'homologation',
+    productionEnabled: options.productionEnabled === true,
+    resourceId: clientId,
+  });
+  if (!guard.allowed) {
+    throw new Error(`HML safety guard blocked client: ${guard.reason}`);
+  }
+
   const publishableKey = options.publishableKey?.trim();
   const jwt = options.jwt?.trim();
 
@@ -94,8 +107,9 @@ export function createHmlApiClient(
     slug: string,
     init: RequestInit = {},
   ): Promise<HmlClientResult<unknown>> {
-    if (!slug.startsWith('customer-app-hml-')) {
-      throw new Error('Only customer-app-hml-* functions are allowed');
+    const endpoint = slug.split('?')[0];
+    if (!Object.values(HML_FUNCTIONS).includes(endpoint as typeof HML_FUNCTIONS[keyof typeof HML_FUNCTIONS])) {
+      throw new Error('Only declared customer-app-hml-* functions are allowed');
     }
 
     let response: Response;
