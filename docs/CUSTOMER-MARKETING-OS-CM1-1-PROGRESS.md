@@ -2,7 +2,7 @@
 
 Atualizado em 18/09/2026.
 
-Status: **EM EXECUÇÃO — BOUNDARY AUTENTICADO IMPLANTADO; RLS DAS 6 TABELAS AGUARDA DECISÃO EXPLÍCITA DE POLICY**.
+Status: **QUASE CONCLUÍDA — RLS APLICADO, BOUNDARY SEGURO IMPLANTADO E MIGRAÇÃO DA TELA CLIENTES PREPARADA**.
 
 ## Concluído
 
@@ -82,9 +82,12 @@ Gates previstos:
 - Customer 360 não pode entrar no endpoint público;
 - Consent Ledger não pode entrar no endpoint público.
 
-## Segurança restante
+## RLS aplicado em produção
 
-Seis tabelas continuam sem RLS:
+A policy server-only aprovada foi aplicada por migration `cm_1_1_server_only_rls_v1`.
+
+As seis tabelas agora estão com RLS habilitado, zero policies para clientes e grants de dados removidos de `anon`/`authenticated`:
+
 
 - agent_eval_release_markers
 - whatsapp_basket_media_assets
@@ -93,28 +96,38 @@ Seis tabelas continuam sem RLS:
 - whatsapp_direct_state
 - whatsapp_direct_templates
 
-Auditoria de grants mostrou:
+Validação pós-migration confirmou para as 6 tabelas:
 
-- tabelas WhatsApp/media: operações de dados estão concedidas apenas a `postgres` e `service_role`;
-- `agent_eval_release_markers`: anon/authenticated não possuem SELECT/INSERT/UPDATE/DELETE;
-- risco imediato é menor do que uma tabela pública com CRUD anon, mas RLS continua recomendado como defesa em profundidade.
+- `rls_enabled = true`;
+- `policy_count = 0`;
+- `anon_privs = vazio`;
+- `authenticated_privs = vazio`;
+- `service_role` mantém acesso operacional.
 
-### Policy recomendada
+Foi executado smoke test usando `SET LOCAL ROLE service_role`, com leitura bem-sucedida de todas as seis tabelas.
 
-**server-only / deny-by-default**:
+Consumidores implantados `admin-whatsapp-direct-v1` e `whatsapp-meta-direct-v1` foram auditados e usam `SUPABASE_SERVICE_ROLE_KEY`, portanto continuam compatíveis com o novo RLS.
 
-- habilitar RLS;
-- não criar policy para anon;
-- não criar policy para authenticated;
-- manter acesso server-side por service role/security definer;
-- smoke-test de consumidores.
+O advisor do Supabase passa a reportar `RLS enabled, no policy` nessas tabelas. Neste caso o finding é **intencional**, porque elas são server-only/deny-by-default.
 
-Essa alteração ainda não foi aplicada porque a ativação de RLS exige decisão explícita sobre as policies.
+## Migração da tela Clientes preparada
 
-## Próximo bloco após RLS/homologação
+A tela Clientes já possui adapter para usar o Customer OS autenticado quando `customerOsSecureUiEnabled=true`.
 
-1. homologar PIN → sessão → customer_360;
-2. ligar `customerOsSecureUiEnabled` em canary;
-3. mover a leitura da área Clientes para o boundary seguro;
-4. depois remover PII do endpoint público;
-5. seguir para CM-1.2 Identity Resolver.
+Foram migrados no código protegido:
+
+- lista e filtros;
+- Customer 360;
+- histórico;
+- detalhe de pedido;
+- edição;
+- criação/alteração de cliente.
+
+A flag continua `false` até o primeiro teste manual do PIN no navegador. Isso evita bloquear o Admin sem confirmar que o proprietário conhece o PIN configurado.
+
+## Próximo bloco
+
+1. homologação manual do PIN no navegador;
+2. ligar a flag em canary;
+3. retirar PII correspondente do endpoint público depois do canary;
+4. CM-1.2 Identity Resolver — implementação iniciada em seguida.
