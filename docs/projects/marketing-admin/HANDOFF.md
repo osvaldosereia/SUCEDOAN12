@@ -191,3 +191,25 @@ Data: 2026-09-18.
 5. após Meta homologado, resolver Pinterest App/board;
 6. publicação real e canary continuam proibidos até concluir a homologação.
 
+
+## Checkpoint Rodada 8.3 — correção do readiness Graph no Admin
+
+Data: 2026-09-18.
+
+- Evidência visual do Admin mostrou contradição: o cartão Meta exibia `App ID: salvo`, `Secret: Vault ✓` e `Graph: v26.0`, mas ainda marcava `configuração incompleta` e `Falta: Graph version`.
+- Causa localizada em `admin/marketing.js`: o frontend usava regex com barras invertidas duplicadas no source (`/^v\\\\d+\\\\.\\\\d+$/`), portanto `v26.0` nunca passava no readiness do Connection Manager.
+- Foi adicionado teste de regressão em `tests/marketing-connection-manager-oauth-v1.test.mjs` antes da correção. Estado RED estrutural confirmado: padrão correto ausente e padrão quebrado presente.
+- Correção aplicada na branch: readiness e mensagem de missing agora usam `/^v\\d+\\.\\d+$/` no source; cache-buster de `marketing.js` atualizado para `20260918-6`.
+- Commits da branch desta correção: teste `338d1133ccc0ee1c259601353a1e357a4adbf3c5`, código `28f2da58e7b3f2f44ad9b1cffdd123a44c0c9808`, cache `84ac8ec032c8d1afe7444c1dae6a9e99b639c812`.
+- Hotfix equivalente foi aplicado diretamente sobre os arquivos correntes de `main`, sem merge da branch e sem sobrescrever trabalho paralelo: `2a6d01602ab82a64f0bba65ac31a6e539271085b` (JS) e `f428ac27e5450baa00ea9f3810f5a73bddb0f9f6` (cache-buster).
+- Verificação pós-correção na branch: 2 ocorrências do padrão correto, 0 do padrão quebrado, cache-buster correto e teste de regressão presente.
+- Runtime Supabase reconfirmado: App ID `1547249776748513`, Graph `v26.0`, publishing OFF, kill switch ON, 0 sessões OAuth ativas, 0 publication jobs, 0 published jobs e 0 external side effects.
+
+### Próxima ação exata
+
+1. atualizar/recarregar a página `/admin/marketing.html` para carregar `marketing.js?v=20260918-6`;
+2. na aba **Publicações**, o cartão Meta deve passar para **pronto** e exibir **Conectar Meta**;
+3. clicar **Conectar Meta** e concluir o consentimento no navegador;
+4. backend v17 seguirá fail-closed e só aceitará Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`;
+5. Pinterest permanece para depois; publicação real continua bloqueada.
+
