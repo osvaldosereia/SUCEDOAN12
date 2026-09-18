@@ -64,3 +64,9 @@ export const getMarketingPublicationPreflight=(jobId)=>secureCall(CONFIG.marketi
 export const verifyMarketingChannel=(channelAccountId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'verify_channel',channel_account_id:channelAccountId},30000);
 export const publishMarketingJob=(jobId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'publish_job',job_id:jobId},120000);
 export const getMarketingManualShareManifest=(jobId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'manual_share_manifest',job_id:jobId},30000);
+
+export const getMarketingConnectionOverview=()=>secureCall(CONFIG.marketingWorkflowFunction,{action:'connection_overview'});
+export const saveMarketingProviderConfig=(payload)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'connection_save_config',...payload},30000);
+export const startMarketingOAuth=(provider)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'oauth_start',provider},30000);
+export const exchangeMarketingOAuth=(payload)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'oauth_exchange',...payload},60000);
+export const completeMarketingOAuth=(payload)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'oauth_complete',...payload},60000);
