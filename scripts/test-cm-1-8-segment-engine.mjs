@@ -34,7 +34,7 @@ assert.match(edge,/query_customer_segment_v1/,'Customer list must filter through
 assert.match(edge,/get_customer_dynamic_segments_v1/,'Customer 360 must load dynamic segments');
 assert.match(edge,/segment_engine:'cm1\.8-v1'/);
 assert.match(edge,/action==='segment_registry'/);
-assert.match(edge,/commercial:\{intelligence:intelligence\|\|\{\},segments:dynamicSegments/);
+assert.match(edge,/commercial:\{profile:commercialProfile\|\|\{\},intelligence:intelligence\|\|\{\},segments:dynamicSegments/);
 
 assert.match(app,/sem_compra_30d/);
 assert.match(app,/falou_nao_comprou/);
