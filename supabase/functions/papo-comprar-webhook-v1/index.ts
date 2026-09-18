@@ -67,6 +67,10 @@ Deno.serve(async(req:Request)=>{
   const contactName=pick(body,['name','contact_name','sender.name','contact.name']);
   const contactId=pick(body,['contact_id','sender.id','contact.id','id']);
   const message=pick(body,['message','text','body','content','message.text','message.body']);
+  const externalMessageId=pick(body,['message_id','messageId','event_id','eventId','message.id','data.message.id','payload.message.id']);
+  const rawMessageType=pick(body,['message_type','type','message.type','data.message.type']).toLowerCase();
+  const allowedMessageTypes=new Set(['text','image','audio','video','document','location','reaction','button','quick_reply']);
+  const normalizedMessageType=allowedMessageTypes.has(rawMessageType)?rawMessageType:(message?'text':'unknown');
   const receivedAt=new Date().toISOString();
 
   const [{data:channelAccount,error:channelAccountError},{data:account,error:accountError}]=await Promise.all([
@@ -150,6 +154,35 @@ Deno.serve(async(req:Request)=>{
     conversationId=created.id;
   }
 
+  let normalizedEventRecorded=false;
+  if(externalMessageId){
+    const {error:normalizedEventError}=await sb.from('normalized_channel_events').insert({
+      channel:'whatsapp',
+      channel_account_id:channelAccount.id,
+      external_user_id:phone,
+      external_message_id:externalMessageId,
+      external_event_id:null,
+      direction:'inbound',
+      message_type:normalizedMessageType,
+      reply_to_external_message_id:null,
+      source:'papoai',
+      referral:{provider:'papoai',papo_contact_id:contactId||null},
+      occurred_at:receivedAt,
+      raw_event_id:null,
+      conversation_id:conversationId,
+      customer_id:customerId,
+      body_text:message||null,
+      media_refs:[],
+      context:{
+        identity_decision:identityDecision,
+        identity_confidence:Number(resolution?.confidence||0),
+        channel_identity_id:observedIdentity?.identity_id||null
+      },
+      processing_status:'normalized'
+    });
+    normalizedEventRecorded=!normalizedEventError||normalizedEventError.code==='23505';
+  }
+
   const {data:room,error:roomError}=await sb.rpc('room_start_for_conversation_v1',{
     p_conversation_id:conversationId,
     p_entry_intent:'home',
@@ -177,6 +210,7 @@ Deno.serve(async(req:Request)=>{
     contact:{name:canonicalName,phone,contact_id:contactId||null},
     shopping_url:room.url,
     session_id:room.session_id,
-    conversation_id:conversationId
+    conversation_id:conversationId,
+    normalized_event_recorded:normalizedEventRecorded
   });
 });
