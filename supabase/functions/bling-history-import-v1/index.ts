@@ -204,10 +204,20 @@ Deno.serve(async(req:Request)=>{
     if(seedRefreshError)return response({ok:false,error:'refresh_token_seed_failed'},500);
   }
 
+  const lockOwner=crypto.randomUUID();
+  const {data:lockClaimed,error:lockError}=await sb.rpc('claim_bling_history_import_lock_v1',{
+    p_owner:lockOwner,p_ttl_seconds:300
+  });
+  if(lockError)return response({ok:false,error:'import_lock_failed',detail:lockError.message},500);
+  if(lockClaimed!==true)return response({ok:false,error:'import_already_running'},409);
+
   const {data:runId,error:beginError}=await sb.rpc('begin_bling_history_import_run_v1',{
     p_start_date:startDate,p_end_date:endDate,p_page:page,p_page_size:pageSize
   });
-  if(beginError||!runId)return response({ok:false,error:'run_start_failed',detail:beginError?.message||null},400);
+  if(beginError||!runId){
+    await sb.rpc('release_bling_history_import_lock_v1',{p_owner:lockOwner});
+    return response({ok:false,error:'run_start_failed',detail:beginError?.message||null},400);
+  }
 
   const finish=async(status:string,summary:any,cursor:any={},error:string|null=null)=>{
     await sb.rpc('finish_bling_history_import_run_v1',{
@@ -254,9 +264,17 @@ Deno.serve(async(req:Request)=>{
 
     let lastRequestAt=0;
     const bling=async(path:string)=>{
-      const wait=Math.max(0,420-(Date.now()-lastRequestAt));if(wait)await sleep(wait);
-      lastRequestAt=Date.now();
-      return fetch(`${API_BASE}${path}`,{headers:{Authorization:`Bearer ${accessToken}`,Accept:'application/json','enable-jwt':'1'}});
+      let last:Response|null=null;
+      for(let attempt=0;attempt<4;attempt++){
+        const wait=Math.max(0,450-(Date.now()-lastRequestAt));if(wait)await sleep(wait);
+        lastRequestAt=Date.now();
+        const r=await fetch(`${API_BASE}${path}`,{headers:{Authorization:`Bearer ${accessToken}`,Accept:'application/json','enable-jwt':'1'}});
+        last=r;
+        if(r.status!==429&&r.status<500)return r;
+        const retryAfter=Math.max(0,Number(r.headers.get('retry-after')||0)*1000);
+        await sleep(Math.max(retryAfter,700*(attempt+1)));
+      }
+      return last as Response;
     };
 
     const query=new URLSearchParams({
@@ -319,5 +337,7 @@ Deno.serve(async(req:Request)=>{
   }catch(error:any){
     await finish('error',{stage:'unexpected'},{page},clean(error?.message||error,500));
     return response({ok:false,error:'unexpected_import_error',detail:clean(error?.message||error,500)},500);
+  }finally{
+    await sb.rpc('release_bling_history_import_lock_v1',{p_owner:lockOwner});
   }
 });
