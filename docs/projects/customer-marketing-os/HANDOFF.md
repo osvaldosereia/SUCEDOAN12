@@ -247,3 +247,152 @@ Revisão técnica concluída:
 - CI run `35388463946`: SUCCESS, 38 validações.
 
 O manual gate `meta_policy_registry_verification` permanece pending e não deve ser convertido em autorização externa automaticamente.
+
+
+# CHECKPOINT DE TROCA DE ABA — 18/09/2026 16:56 America/Cuiaba
+
+Este é o checkpoint mais recente e prevalece sobre trechos antigos deste arquivo quando houver divergência.
+
+## Projeto
+
+**Dona Antônia — Customer & Marketing OS**
+
+Não confundir com:
+- Marketing Admin / Organic Social;
+- Studio Criativo / gerador de vídeos;
+- Caneca Fácil;
+- etapas antigas gerais de `docs/RETOMADA-DONA-ANTONIA.md`.
+
+## Arquitetura vigente
+
+- GitHub: `osvaldosereia/SUCEDOAN12`;
+- Supabase: `ssbesxgaijknwsjbsbcz`;
+- runtime operacional: **Supabase-first**;
+- Make: **somente histórico/auditoria**, nunca runtime novo;
+- OpenAI: somente quando necessário e governado;
+- `external_activation_authorized=false`.
+
+## Estado CM-1
+
+- critérios totais: 20;
+- verified: **14**;
+- implemented aguardando evidência/gate: **6**;
+- blocked: **0**;
+- `ready_for_manual_canary=true`;
+- homologação interna: liberada;
+- ativação externa: **NÃO autorizada**.
+
+## Meta / WhatsApp
+
+Confirmado:
+- Graph API: **v26.0**;
+- WABA presente;
+- Phone Number ID presente;
+- Flow health webhook: **verified**;
+- 669 eventos de Flow health assinados observados em 14 dias;
+- 9 flows distintos;
+- Meta Direct: OFF;
+- canonical outbound: OFF;
+- `direct_ready_flag=false`;
+- `external_activation_authorized=false`.
+
+Ainda pendente:
+1. permissões do token Meta guardado no Supabase;
+2. callback específico do Meta Direct;
+3. `direct_ready_flag` continua false enquanto os dois itens acima não forem comprovados.
+
+Implementação:
+- `admin-whatsapp-direct-v1`: **v7**;
+- action `meta_diagnostics_readonly`;
+- `whatsapp-meta-direct-v1`: **v3**;
+- ingress unificado preparado em modo fail-closed;
+- botão **Verificar Meta agora** na Central de Relacionamento;
+- diagnóstico é GET/read-only e não envia mensagem nem altera configuração da Meta.
+
+## Meta Policy Registry
+
+- 8/8 políticas ativas;
+- readiness=true;
+- stale=0;
+- fail-closed=8/8;
+- regra `whatsapp_regulated_verticals_fail_closed`: **v2**;
+- `license_override=false`;
+- varredura preventiva não encontrou item ativo claramente regulado entre os termos pesquisados;
+- manual gate `meta_policy_registry_verification` continua pending.
+
+## Comprar / eventos orgânicos
+
+Runtime:
+- `shopping-chat-products-v1`: ACTIVE **v16**;
+- tracking `catalog_search` e `product_view` implantado;
+- gravação via `record_catalog_interaction_v1`.
+
+Uso real observado:
+- `catalog_open`: 56;
+- `catalog_add`: 384;
+- `catalog_checkout_return`: 22;
+- `catalog_remove`: 10;
+- `catalog_search`: 0;
+- `product_view`: 0.
+
+Conclusão:
+- não há falha técnica conhecida;
+- critérios 6 e 7 aguardam interação real;
+- não criar fixture.
+
+## Opportunity lifecycle
+
+- 75 oportunidades;
+- todas `suppressed`;
+- dismissed=0;
+- converted=0;
+- expired=0;
+- ausência de lifecycle encerrado é natural no estado atual;
+- critério 13 permanece implemented;
+- não alterar dados só para produzir evidência.
+
+## IA / Marketing Brain
+
+- SUGGEST continua fechado;
+- orçamento IA = 0;
+- AI executions = 0;
+- critérios correspondentes permanecem implemented de propósito;
+- não ligar IA apenas para fechar checklist.
+
+## CI
+
+Última suíte ampliada confirmada:
+- workflow: `Testar Admin Dona Antônia`;
+- run: `35388463946`;
+- SHA: `1f29354122f550c6aea0282c457740980ead3e33`;
+- resultado: **SUCCESS**;
+- **38 validações verdes**, incluindo Meta Policy Registry, Meta read-only, Meta Direct fail-closed, readiness, acceptance checklist e bloqueio de segredos no navegador.
+
+## Próximas ações humanas seguras
+
+1. Central de Relacionamento → entrar com PIN → **Meta Foundation → Verificar Meta agora**.
+   - ação somente leitura;
+   - persiste evidência no Supabase;
+   - não ativa outbound;
+   - não envia mensagem.
+
+2. No Comprar:
+   - fazer uma busca real;
+   - abrir o detalhe de um produto;
+   - depois reconsultar `catalog_search` e `product_view`.
+
+## Ao receber “continue” na nova aba
+
+1. ler este checkpoint;
+2. ler `CURRENT-STATE.md`;
+3. consultar runtime atual no Supabase antes de assumir qualquer contagem;
+4. consultar commits/CI recentes no GitHub;
+5. se o usuário já tiver feito as duas ações humanas acima, reexecutar:
+   - `cm1_acceptance_checklist_v1()`;
+   - `cm1_homologation_readiness_v1()`;
+   - `evaluate_meta_direct_readiness_v1(...)`;
+6. continuar somente por evidência real;
+7. preservar todos os gates externos;
+8. não reiniciar etapas concluídas;
+9. não usar Make operacionalmente;
+10. atualizar `HANDOFF.md` e `CURRENT-STATE.md` ao final da nova rodada.
