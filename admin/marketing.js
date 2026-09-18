@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft,getMarketingPublicationPreflight,verifyMarketingChannel,publishMarketingJob,getMarketingManualShareManifest,getMarketingConnectionOverview,saveMarketingProviderConfig,startMarketingOAuth,exchangeMarketingOAuth,completeMarketingOAuth,disconnectMarketingProvider} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingEditorialPlan,getMarketingTrackingPreview,getMarketingLearning,getMarketingDailyPlanPreview,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft,getMarketingPublicationPreflight,verifyMarketingChannel,publishMarketingJob,getMarketingManualShareManifest,getMarketingConnectionOverview,saveMarketingProviderConfig,startMarketingOAuth,exchangeMarketingOAuth,completeMarketingOAuth,disconnectMarketingProvider} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -531,6 +531,36 @@ function sharePreparedPublication(jobId){
   const first=prepared.manifest.items?.[0]?.url;if(first)window.open(first,'_blank','noopener');return Promise.resolve('O navegador não compartilha arquivos diretamente. A mídia foi aberta para envio manual.');
 }
 
+function renderEditorialPlan(){
+  const mount=$('#editorialPlanSummary');if(!mount)return;
+  const plan=state.editorialPlan?.plan;
+  if(!plan){mount.innerHTML=empty('Plano editorial ainda não carregado.');return}
+  const s=plan.summary||{},items=Array.isArray(plan.suggestions)?plan.suggestions:[];
+  const cards=`<div class="summary-grid"><article class="summary-card"><span>Agendadas</span><strong>${Number(s.scheduled||0)}</strong><small>já definidas</small></article><article class="summary-card"><span>Sem horário</span><strong>${Number(s.unscheduled_approved||0)}</strong><small>aprovadas</small></article><article class="summary-card"><span>Conflitos</span><strong>${Number(s.schedule_conflicts||0)}</strong><small>intervalo menor que 90 min</small></article><article class="summary-card"><span>Automático</span><strong>OFF</strong><small>somente sugestão</small></article></div>`;
+  const list=items.length?`<div class="data-list">${items.slice(0,20).map(i=>row(i.title||channelLabel(i.channel),`${channelLabel(i.channel)} · ${i.recommendation_reason==='already_scheduled'?'já agendado':'distribuição operacional'}`,i.status||'approved',dt(i.recommended_for))).join('')}</div>`:empty('Nenhuma peça aprovada aguardando agenda.');
+  mount.innerHTML=cards+list;
+}
+
+function renderLearningEngine(){
+  const mount=$('#learningEngineView');if(!mount)return;
+  const learning=state.learning?.learning;
+  if(!learning){mount.innerHTML=empty('Learning Engine ainda sem leitura.');return}
+  const evidence=learning.evidence||{},channels=Array.isArray(learning.channels)?learning.channels:[];
+  const status=learning.status==='observational'?'OBSERVE':'DADOS INSUFICIENTES';
+  const channelHtml=channels.length?`<div class="settings-grid">${channels.map(c=>`<div class="setting-card"><span>${esc(channelLabel(c.channel))}</span><strong>${Number(c.publications||0)} publicação(ões)</strong><small>${Number(c.clicks||0)} cliques · ${Number(c.conversations||0)} conversas · ${Number(c.orders||0)} pedidos · ${esc(c.evidence||'insufficient')}</small></div>`).join('')}</div>`:empty('Ainda não há publicações/touchpoints suficientes para aprender.');
+  mount.innerHTML=`<div class="section-title learning-title"><div><span class="marketing-eyebrow">LEARNING ENGINE V1</span><h3>Aprendizado determinístico</h3><p>Somente evidência observada; sem IA e sem otimização automática.</p></div><span class="phase-pill">${status}</span></div><p class="muted">Amostra: ${Number(evidence.publications||0)} publicação(ões) e ${Number(evidence.touchpoints||0)} touchpoint(s). Mínimo para observação: ${Number(evidence.minimum_publications||3)} publicações + ${Number(evidence.minimum_touchpoints||5)} touchpoints.</p>${channelHtml}`;
+}
+
+function renderDailyPlanPreview(){
+  const mount=$('#dailyPlanPreview');if(!mount)return;
+  const p=state.dailyPlan?.preview;
+  if(!p){mount.innerHTML=empty('Simulação diária ainda não carregada.');return}
+  const products=Array.isArray(p.candidate_products)?p.candidate_products:[];
+  const labels={NO_ACTION:'Sem ação necessária',REVIEW_EXISTING_DRAFTS:'Revisar rascunhos existentes',REVIEW_SHORTLIST:'Revisar shortlist'};
+  const productsHtml=products.length?`<div class="brain-products"><span>Candidatos determinísticos</span>${products.map(x=>`<b>${esc(x.name||'Produto')}</b>`).join('')}</div>`:'<div class="brain-empty">Nenhum produto elegível hoje.</div>';
+  mount.innerHTML=`<div class="daily-preview-grid"><div><span>Próximo passo interno</span><strong>${esc(labels[p.recommended_internal_step]||p.recommended_internal_step||'—')}</strong></div><div><span>Campanhas DRAFT</span><strong>${Number(p.draft_campaigns||0)}</strong></div><div><span>Runtime</span><strong>${esc(p.runtime_mode||'off')}</strong></div><div><span>Publicação</span><strong>${p.publishing_enabled===true?'Ligada':'Bloqueada'}</strong></div></div>${productsHtml}<p class="muted">Preview only: não cria campanha, não prepara jobs, não agenda e não publica.</p>`;
+}
+
 function render(){
   const o=state.overview||{},r=o.runtime||{},m=state.metrics?.metrics?.counts||{},meta=r.metadata||{};
   const reviewAssets=(o.assets||[]).filter(a=>a.status==='review').length;
@@ -541,6 +571,9 @@ function render(){
   renderCampaigns();
   renderRound8ConnectionManager();
   renderPublicationJobs();
+  renderEditorialPlan();
+  renderLearningEngine();
+  renderDailyPlanPreview();
   const templates=o.templates||[];$('#templatesList').innerHTML=templates.length?`<div class="data-list">${templates.map(t=>row(t.name,`${t.media_kind} · v${t.version}`,t.status,t.template_key)).join('')}</div>`:empty('Nenhum modelo ativo.');
   const cal=state.workflow?.calendar||[];$('#calendarList').innerHTML=cal.length?`<div class="data-list">${cal.slice(0,80).map(i=>row(i.title||i.channel||'Conteúdo',i.scheduled_for?dt(i.scheduled_for):'',i.status||'planejado',i.channel||'')).join('')}</div>`:empty('Agenda vazia.');
   $('#resultsView').innerHTML=`<div class="summary-grid"><article class="summary-card"><span>Cliques atribuídos</span><strong>${Number(m.attribution_clicks||0)}</strong></article><article class="summary-card"><span>Conversas</span><strong>${Number(m.attribution_conversations||0)}</strong></article><article class="summary-card"><span>Pedidos</span><strong>${Number(m.attribution_orders||0)}</strong></article><article class="summary-card"><span>Render OK</span><strong>${Number(m.render_success_rate_percent||0).toFixed(0)}%</strong></article></div>`;
@@ -552,11 +585,12 @@ function render(){
 
 async function load(){
   try{
-    const [overview,metrics,workflow,shortlist,customerOpportunities,briefPayload,templateLibrary,connections]=await Promise.all([
+    const [overview,metrics,workflow,shortlist,customerOpportunities,briefPayload,templateLibrary,connections,editorialPlan,learning,dailyPlan]=await Promise.all([
       getMarketingOverview(),getMarketingMetrics(30),getMarketingWorkflow(),getMarketingShortlist(),
-      getMarketingCustomerOpportunities(40),getMarketingStrategyBriefs(null,60),getWhatsAppTemplateLibrary(),getMarketingConnectionOverview()
+      getMarketingCustomerOpportunities(40),getMarketingStrategyBriefs(null,60),getWhatsAppTemplateLibrary(),getMarketingConnectionOverview(),
+      getMarketingEditorialPlan(14).catch(()=>null),getMarketingLearning(90).catch(()=>null),getMarketingDailyPlanPreview().catch(()=>null)
     ]);
-    state={overview,metrics,workflow,shortlist,customerOpportunities,strategyBriefs:briefPayload.items||[],templateLibrary,connections,previewUrls:state.previewUrls||{},oauthSelection:state.oauthSelection||null,pendingOAuthProvider:state.pendingOAuthProvider||null};
+    state={overview,metrics,workflow,shortlist,customerOpportunities,strategyBriefs:briefPayload.items||[],templateLibrary,connections,editorialPlan,learning,dailyPlan,previewUrls:state.previewUrls||{},oauthSelection:state.oauthSelection||null,pendingOAuthProvider:state.pendingOAuthProvider||null};
     render();$('#authGate').hidden=true;$('#marketingApp').hidden=false;
   }catch(e){$('#authStatus').textContent=e.message||'Falha ao carregar.'}
 }
