@@ -18,6 +18,7 @@ on:
       - 'supabase/migrations/*product_image_versions*'
       - 'supabase/migrations/*cm_1_1*'
       - 'supabase/migrations/*cm_1_2*'
+      - 'supabase/migrations/*cm_1_4*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -30,6 +31,7 @@ on:
       - 'scripts/test-customer-marketing-security-boundary-v1.mjs'
       - 'scripts/test-cm-1-2-identity-resolver.mjs'
       - 'scripts/test-cm-1-3-customer-360.mjs'
+      - 'scripts/test-cm-1-4-event-collector.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
@@ -48,6 +50,7 @@ on:
       - 'supabase/migrations/*product_image_versions*'
       - 'supabase/migrations/*cm_1_1*'
       - 'supabase/migrations/*cm_1_2*'
+      - 'supabase/migrations/*cm_1_4*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -60,6 +63,7 @@ on:
       - 'scripts/test-customer-marketing-security-boundary-v1.mjs'
       - 'scripts/test-cm-1-2-identity-resolver.mjs'
       - 'scripts/test-cm-1-3-customer-360.mjs'
+      - 'scripts/test-cm-1-4-event-collector.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -125,6 +129,8 @@ jobs:
         run: node scripts/test-cm-1-2-identity-resolver.mjs
       - name: Validar Customer 360
         run: node scripts/test-cm-1-3-customer-360.mjs
+      - name: Validar Event Collector
+        run: node scripts/test-cm-1-4-event-collector.mjs
       - name: Validar shell oficial
         shell: bash
         run: |
