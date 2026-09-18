@@ -18,28 +18,32 @@
 - R25: produção proibida sem autorização explícita.
 
 ## Último avanço seguro
-Foi adicionada uma nova barreira local fail-closed em `src/platform/homologationGuard.ts`.
+A barreira fail-closed de `src/platform/homologationGuard.ts` foi integrada ao cliente HML em `src/platform/apiClient.ts`.
 
-Ela bloqueia independentemente de feature flags:
-- qualquer ambiente diferente de `homologation`;
-- qualquer `productionEnabled=true`;
-- `production_order`;
-- `production_push`;
-- `external_executor`;
-- ações de fixture/simulação cujo recurso não comece por `TEST-`.
+Proteções desta rodada:
+- nova ação `hml_network` exige recurso `TEST-*`;
+- cliente HML habilitado passa pelo guard antes de qualquer chamada de rede;
+- `environment=production` bloqueia a construção do cliente;
+- `productionEnabled=true` bloqueia a construção do cliente;
+- `clientId` continua restrito a `TEST-CLIENT-*`;
+- endpoint remoto agora usa allowlist exata das três Edge Functions HML declaradas, em vez de aceitar qualquer slug pelo prefixo;
+- cliente desabilitado continua inerte e não exige credenciais.
 
-Cobertura criada em `tests/unit/homologationGuard.test.ts`, incluindo checkout sintético permitido, recurso não TEST recusado, ambiente/flag de produção recusados e executores/efeitos reais recusados.
+Cobertura adicionada/expandida:
+- `tests/unit/homologationGuard.test.ts`: HML TEST permitido e identificador não TEST recusado;
+- `tests/unit/apiClientSafety.test.ts`: prova que ambiente/flag de produção falham antes de `fetch` e que cliente OFF permanece inerte.
 
-**Importante:** os testes foram adicionados, mas este checkpoint não declara execução local/CI deles porque o conector GitHub não forneceu runner/check associado ao HEAD no momento da gravação. Validar no próximo ambiente com runner disponível antes de promovê-los a “verdes”.
+**Validação honesta:** não há workflow run associado ao HEAD desta rodada no conector GitHub. Portanto os testes novos estão implementados, mas não são declarados verdes até execução real de runner/typecheck.
 
 ## HEAD desta retomada
-Após código + teste: `64829413ef23f9238d289dca3733e919f88aa790`.
+Código + testes antes deste checkpoint: `ccc40b23688f17cb8be7627e9d0137b9dc4ca0bd`.
 
 ## Próximo trabalho seguro
-1. Executar suíte/typecheck/isolation do novo guard assim que houver runner disponível.
-2. Integrar o guard nos adapters de efeitos sintéticos onde isso não alterar contratos existentes.
-3. Continuar hardening de R22/R24 e preflights nativos sem fingir homologação.
-4. Não contornar quota de Edge Functions e não tocar produção.
+1. Executar suíte/typecheck/isolation assim que houver runner disponível e corrigir qualquer regressão real.
+2. Aplicar a mesma barreira fail-closed aos demais adapters sintéticos que possam produzir I/O, sem ampliar produção.
+3. Continuar hardening R22/R24 e preflights nativos sem fingir homologação.
+4. Manter R13 sem deploy enquanto a quota impedir Edge Functions; não apagar funções nem aumentar plano.
+5. Manter R25 fechado.
 
 ## Regras soberanas
 - não modificar `comprar/`;
