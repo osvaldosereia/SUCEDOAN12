@@ -168,3 +168,26 @@ Foi criado no Make apenas para tentativa de leitura o cenário `7489979` — `TE
 7. somente depois resolver Pinterest/board;
 8. canary de publicação continua proibido até concluir essas homologações.
 
+
+## Checkpoint Rodada 8.2 — Meta App ID identificado e validado
+
+Data: 2026-09-18.
+
+- O candidato `1180091367536552` foi testado contra o App Secret já existente no Supabase Vault e a Meta respondeu **Error validating client secret**. Ele **não** foi persistido.
+- A investigação read-only do histórico do Make encontrou, em uma execução bem-sucedida do cenário `7489721` (**TEMP - Meta Direct Readonly Evidence**), a aplicação conectada da Dona Antônia chamada **cell principal**, com App ID `1547249776748513`.
+- Esse App ID `1547249776748513` foi então validado server-side contra o App Secret do Vault usando o fluxo `client_credentials` na Graph API `v26.0`; a Meta respondeu HTTP 200 com token de aplicativo. O token não foi exposto e a resposta temporária de validação foi removida imediatamente.
+- Somente após a validação positiva, `marketing_runtime_config.metadata.meta_oauth_app_id` foi persistido como `1547249776748513`, com `meta_app_credentials_validation=client_credentials` e timestamp de validação.
+- Snapshot posterior confirmou `meta.app_id_set=true`, `meta.app_secret_set=true` e `graph_version=v26.0`.
+- Nenhum OAuth de usuário foi iniciado ainda; todos os canais continuam `disconnected`.
+- Safety gates permanecem fechados: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`.
+- As linhas temporárias de `pg_net` usadas nas duas validações foram removidas; não ficou token de aplicativo armazenado nessas respostas.
+
+### Próxima ação exata
+
+1. abrir o Marketing Admin autenticado como owner;
+2. iniciar **Conectar Meta** pelo Connection Manager para gerar a sessão OAuth pelo backend v17;
+3. concluir o consentimento Meta no navegador;
+4. deixar o backend fail-closed aceitar somente a Page `1928140920768577` e o Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`;
+5. após Meta homologado, resolver Pinterest App/board;
+6. publicação real e canary continuam proibidos até concluir a homologação.
+
