@@ -1,0 +1,66 @@
+const FORBIDDEN_QUERY_KEYS = new Set([
+  'phone',
+  'telefone',
+  'cpf',
+  'address',
+  'endereco',
+  'street',
+  'email',
+  'token',
+  'session',
+  'secret',
+  'auth',
+  'code',
+]);
+
+const PII_DIGIT_SEQUENCE = /(?:^|\D)\d{10,11}(?:\D|$)/;
+
+function decoded(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+export function isSafeAppUrl(value: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(value, 'https://app.invalid');
+  } catch {
+    return false;
+  }
+
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
+  if (url.username || url.password) return false;
+
+  for (const key of url.searchParams.keys()) {
+    if (FORBIDDEN_QUERY_KEYS.has(key.toLocaleLowerCase('pt-BR'))) {
+      return false;
+    }
+  }
+
+  const visible = decoded(
+    `${url.pathname}${url.search}${url.hash}`,
+  );
+
+  if (PII_DIGIT_SEQUENCE.test(visible)) return false;
+
+  const hash = decoded(url.hash).toLocaleLowerCase('pt-BR');
+  for (const key of FORBIDDEN_QUERY_KEYS) {
+    if (
+      hash.includes(`${key}=`)
+      || hash.includes(`${key}%3d`)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export function assertSafeAppUrl(value: string): void {
+  if (!isSafeAppUrl(value)) {
+    throw new Error('unsafe app URL: PII, credentials, session material or scheme rejected');
+  }
+}
