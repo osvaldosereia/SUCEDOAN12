@@ -44,3 +44,15 @@ Ver:
 ## Situação atual
 
 Somente planejamento/documentação. Nenhum código de produção do aplicativo foi ativado.
+
+
+## Plano oficial de programação
+
+Documento:
+`docs/superpowers/plans/2026-09-18-app-dona-antonia-rodadas-implementacao.md`
+
+Total: 26 rodadas numeradas de 0 a 26.
+
+**Próxima rodada permitida:** Rodada 0 — Blindagem e governança.
+
+Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
