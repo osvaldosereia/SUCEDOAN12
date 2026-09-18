@@ -79,3 +79,27 @@ Importante: conexões do Make provam IDs/contas e podem ser usadas como referên
 ## Regra
 
 Ao terminar a próxima rodada, atualizar este HANDOFF e CURRENT-STATE.
+
+
+## Continuação da Rodada 8 — 18/09/2026
+
+- branch de trabalho: `marketing-admin-round8-continue-20260918`;
+- frontend deixou de usar fallback hardcoded de Graph API;
+- Graph API explícita no runtime: `v26.0`;
+- Facebook Page esperada: `1928140920768577`;
+- Instagram Business esperado: `17841451162237654`;
+- `admin-marketing-workflow-v1` implantada em **v16**, JWT=true;
+- nova proteção: `connection_save_config` valida App ID + App Secret da Meta via client credentials **antes** de persistir App ID ou novo segredo;
+- App Secret continua somente no Vault;
+- App ID Meta continua `null` até validação real do par;
+- publicação continua totalmente fechada: enabled=false, execution_mode=off, kill_switch=true, publishing_enabled=false, max_daily_publications=0;
+- publication_jobs=0; published_jobs=0; external_side_effect_events=0.
+
+### Próximo ponto exato
+
+1. usar o Gerenciador de Conexões para testar o App ID Meta candidato/conhecido contra o App Secret atual do Vault;
+2. somente se a Meta validar o par, persistir o App ID;
+3. iniciar OAuth Meta e confirmar Page/Instagram esperados;
+4. manter todos os gates de publicação OFF;
+5. depois resolver Pinterest/board;
+6. canary de uma única publicação continua proibido até a conexão/identidade estar verificada.
