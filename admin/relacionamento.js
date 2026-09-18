@@ -82,12 +82,17 @@ function renderOverview(){
   ].map(x=>metric(x[0],x[1])).join('')+'</div>';
 
   const a=(adapter.adapters||[])[0]||{};
+  const transport=s.transport_evidence||{};
   $('#overviewIntegrations').innerHTML='<div class="metric-list">'+[
     ['Provider atual',metaAccount.capabilities?.provider_current||a.provider_key||'—'],
     ['Meta Direct pronto',metaAccount.capabilities?.meta_direct_ready?'Sim':'Não'],
     ['Outbound Meta',metaAccount.outbound_enabled?'Ligado':'Desligado'],
     ['Estado da fundação',metaAccount.readiness_state||'—'],
     ['Adapter PapoAI',a.status||'—'],
+    ['Eventos canônicos 24h',n(transport.canonical_events_24h||0)],
+    ['Receipts do adapter',n(transport.receipts||0)],
+    ['Erros do adapter',n(transport.errors||0)],
+    ['Transporte legado ativo 7d',transport.legacy_transport_recently_active===true?'Sim':'Não'],
     ['Erros Meta não resolvidos',n(quality.integration?.unresolved_meta_errors||0)]
   ].map(x=>metric(x[0],x[1])).join('')+'</div>';
 
