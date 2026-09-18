@@ -213,3 +213,56 @@ Data: 2026-09-18.
 4. backend v17 seguirá fail-closed e só aceitará Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`;
 5. Pinterest permanece para depois; publicação real continua bloqueada.
 
+
+## Checkpoint Rodada 9 — avanço autônomo sem dependência do owner
+
+Data: 2026-09-18.
+
+Enquanto o owner ficou ocupado, o desenvolvimento avançou apenas em partes internas que não dependem de configuração manual da Meta/Pinterest e sem abrir qualquer gate externo.
+
+### Meta — bloqueio manual atual preservado
+
+- OAuth Meta chegou até o diálogo oficial, confirmando que App ID/Secret/Graph estão aceitos pelo backend;
+- a Meta bloqueou a tela com **“O domínio dessa URL não está incluído nos domínios do app”**;
+- ação manual ainda necessária no app Meta `1547249776748513`: cadastrar `donaantonia.com.br` nos domínios do app e o callback exato `https://donaantonia.com.br/admin/marketing-oauth-callback.html` nas Valid OAuth Redirect URIs;
+- nenhuma tentativa de contornar essa configuração foi feita;
+- existe 1 sessão OAuth `started` criada pela tentativa do owner; ela não possui credencial final e expira/é limpa pelo fluxo normal.
+
+### Rodada 9 implementada sem publicação
+
+Foi criada a fundação segura das etapas 18, 20, 21 e 22 do roadmap:
+
+- **Etapa 18 — Agenda inteligente V1:** `marketing_editorial_plan_v1` gera somente sugestões operacionais, mede peças agendadas/sem horário, conflitos <90 min e carga diária. `auto_schedule=false` e `auto_publish=false`;
+- **Etapa 20 — Atribuição V1:** `marketing_tracking_link_v1` gera URL canônica `donaantonia.com.br/comprar/` com UTM + `da_asset` + `da_channel`. Não grava touchpoint e `attribution_recording_enabled=false`;
+- **Etapa 21 — Learning Engine V1:** `marketing_learning_read_model_v1` usa somente publicações/touchpoints reais, exige mínimo de 3 publicações + 5 touchpoints, não usa IA, não ranqueia canal e não faz otimização automática;
+- **Etapa 22 — Automação diária dry-run:** `marketing_daily_plan_preview_v1` lê shortlist + agenda + learning, mas `would_create_campaign=false`, `would_prepare_jobs=false`, `would_schedule=false`, `would_publish=false`, `automation_active=false`.
+
+### Deploy e UI
+
+- migration Supabase `marketing_round9_autonomy_foundation_v1` aplicada com sucesso;
+- as quatro funções novas têm EXECUTE somente para `service_role` (além do owner Postgres), não para `anon/authenticated`;
+- `admin-marketing-insights-v1` implantada em **v16 / ACTIVE / JWT=true** com ações read-only: `editorial_plan`, `tracking_preview`, `learning`, `daily_plan_preview`;
+- chamadas SQL reais confirmaram: Agenda `preview_only`, Learning `insufficient_data` com 0 publicações/0 touchpoints, Daily Preview `runtime_mode=off` e `would_publish=false`, tracking UTM válido;
+- UI da Rodada 9 foi programada na branch isolada com painéis **Plano diário seguro**, Agenda com sugestões e Learning Engine;
+- a UI nova **não foi levada para main** nesta rodada para não misturar/atropelar trabalho paralelo. Backend read-only é retrocompatível.
+
+### Verificações
+
+- verificação estrutural da Rodada 9: **14/14 checks verdes**;
+- runtime segue: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`;
+- todos os gates de canal continuam false;
+- `attribution_recording_enabled=false`;
+- publication_jobs=0;
+- published_jobs=0;
+- external_side_effect_events=0;
+- nenhum cron de marketing foi criado/ativado;
+- nenhum cenário Make foi criado/ativado nesta rodada.
+
+### Próximos passos que ainda dependem do owner
+
+1. corrigir App Domains/Valid OAuth Redirect URI no app Meta;
+2. repetir **Conectar Meta**;
+3. backend v17 confirmar Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`;
+4. depois resolver credenciais/board do Pinterest;
+5. somente então preparar canary unitário — publicação continua proibida até essa homologação.
+
