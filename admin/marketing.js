@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft,getMarketingPublicationPreflight,verifyMarketingChannel,publishMarketingJob,getMarketingManualShareManifest} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -130,7 +130,7 @@ function renderOpportunities(){
 }
 
 function assetMedia(assetId){
-  return (state.overview?.media||[]).filter(m=>m.asset_id===assetId).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+  return (state.overview?.media||[]).filter(m=>m.asset_id===assetId&&m.role!=='output').sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
 }
 function assetRenderJobs(assetId){
   return (state.overview?.render_jobs||[]).filter(j=>j.asset_id===assetId).sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
@@ -462,6 +462,43 @@ async function refreshTemplateLibrary(){
   renderTemplateAssistant();
 }
 
+const manualShareCache=new Map();
+function channelAccount(channel){return (state.overview?.channel_accounts||[]).find(a=>a.channel===channel)||null}
+function publishGateOpen(){const r=state.overview?.runtime||{};return r.publishing_enabled===true&&r.kill_switch!==true&&['canary','live'].includes(r.execution_mode)}
+function channelGateOpen(channel){const r=state.overview?.runtime||{};const key=({instagram_feed:'instagram_feed_publish_enabled',instagram_story:'instagram_story_publish_enabled',instagram_reel:'instagram_reel_publish_enabled',instagram_carousel:'instagram_carousel_publish_enabled',facebook_post:'facebook_post_publish_enabled',facebook_reel:'facebook_reel_publish_enabled',pinterest_pin:'pinterest_publish_enabled'})[channel];return Boolean(key&&r[key]===true&&publishGateOpen())}
+function publicationActionHtml(job){
+  const manual=job.manual_confirmation_required===true||['whatsapp_status','facebook_story'].includes(job.channel);
+  const account=channelAccount(job.channel);
+  if(job.status==='published')return '<span class="status-chip ok">Publicado</span>';
+  if(job.status==='review_required')return '<button class="secondary" type="button" disabled>Revisão necessária</button>';
+  if(manual){const prepared=manualShareCache.has(job.id);const label=prepared?'Compartilhar agora':(job.channel==='whatsapp_status'?'Preparar Status':'Preparar Story');return `<button class="primary" type="button" data-publish-action="${prepared?'manual-share-now':'manual-share-prepare'}" data-job-id="${esc(job.id)}">${label}</button>`;}
+  if(account?.status!=='verified'){if(account&&['configured','error'].includes(account.status))return `<button class="secondary" type="button" data-publish-action="verify-channel" data-job-id="${esc(job.id)}" data-channel-account-id="${esc(account.id)}">Verificar conexão</button>`;return '<button class="secondary" type="button" disabled>Credencial pendente</button>';}
+  return `<button class="primary" type="button" data-publish-action="publish-now" data-job-id="${esc(job.id)}" ${channelGateOpen(job.channel)?'':'disabled'}>${channelGateOpen(job.channel)?'Publicar agora':'Gate desligado'}</button>`;
+}
+function renderPublicationJobs(){
+  const jobs=state.overview?.jobs||[],mount=$('#jobsList');if(!mount)return;
+  if(!jobs.length){mount.innerHTML=empty('Nenhuma publicação preparada.');return}
+  mount.innerHTML=`<div class="publication-stack">${jobs.map(j=>{const account=channelAccount(j.channel);const detail=[j.scheduled_for?dt(j.scheduled_for):'Sem agendamento',`canal ${account?.status||'desconectado'}`,j.last_error?`erro: ${j.last_error}`:''].filter(Boolean).join(' · ');return `<article class="publication-card"><div><strong>${esc(channelLabel(j.channel))} · ${esc(j.content_type)}</strong><small>${esc(detail)}</small></div><span class="status-chip">${esc(j.status)}</span><div class="publication-actions">${publicationActionHtml(j)}</div><p class="publication-message muted" data-publication-message="${esc(j.id)}"></p></article>`;}).join('')}</div>`;
+}
+function round7ChannelMode(a){return ['whatsapp_status','facebook_story'].includes(a.channel)?'manual':'direct'}
+function round7ChannelStatusText(a){if(round7ChannelMode(a)==='manual')return 'Manual no celular';if(a.status==='verified')return 'Conexão verificada';if(a.status==='configured')return 'Pronta para verificar';if(a.status==='error')return 'Verificação com erro';return 'Credencial pendente'}
+function renderRound7ChannelConnections(){
+  const mount=$('#channelAccountsView');if(!mount)return;const accounts=state.overview?.channel_accounts||[];
+  if(!accounts.length){mount.innerHTML=empty('Nenhum canal cadastrado.');return}
+  mount.innerHTML=`<div class="channel-connection-grid">${accounts.map(a=>{const manual=round7ChannelMode(a)==='manual',verified=a.status==='verified',canVerify=!manual&&['configured','error'].includes(a.status);const action=manual?'<span class="channel-manual-pill">Confirmação manual</span>':verified?'<span class="channel-verified-pill">Conexão verificada</span>':canVerify?`<button class="secondary" type="button" data-channel-action="verify-channel" data-channel-account-id="${esc(a.id)}">Verificar conexão</button>`:'<button class="secondary" type="button" disabled>Credencial pendente</button>';const detail=manual?(a.channel==='whatsapp_status'?'Prepara a mídia e abre o compartilhamento nativo para você escolher WhatsApp > Meu status.':'Prepara a mídia para compartilhar no Story do Facebook pelo celular.'):(verified?'Identidade validada. Publicação segue bloqueada até os gates de produção serem abertos.':a.status==='configured'?'Credencial cadastrada no Vault; falta validar a conta.':'Cadastre a credencial no Vault e associe a conta antes de verificar.');return `<article class="channel-connection-card ${verified?'verified':manual?'manual':'pending'}"><div class="channel-connection-head"><div><strong>${esc(channelLabel(a.channel))}</strong><small>${esc(a.provider)} · ${esc(round7ChannelStatusText(a))}</small></div><span class="status-chip">${esc(a.status||'disconnected')}</span></div><p>${esc(detail)}</p><div class="channel-connection-actions">${action}</div><p class="channel-connection-message muted" data-channel-message="${esc(a.id)}"></p></article>`;}).join('')}</div>`;
+}
+async function prepareManualSharePublication(jobId){
+  const manifest=await getMarketingManualShareManifest(jobId),items=manifest.items||[];if(!items.length)throw new Error('Mídia não disponível para compartilhar.');
+  const files=[];for(const item of items){const res=await fetch(item.url,{cache:'no-store'});if(!res.ok)throw new Error('Não foi possível preparar a mídia.');const blob=await res.blob();files.push(new File([blob],item.filename||'dona-antonia',{type:item.mime_type||blob.type||'application/octet-stream'}));}
+  manualShareCache.set(jobId,{manifest,files,preparedAt:Date.now()});return 'Mídia pronta. Toque em “Compartilhar agora”.';
+}
+function sharePreparedPublication(jobId){
+  const prepared=manualShareCache.get(jobId);if(!prepared||Date.now()-prepared.preparedAt>8*60*1000){manualShareCache.delete(jobId);throw new Error('A preparação expirou. Prepare novamente.');}
+  const payload={files:prepared.files,text:prepared.manifest.caption||''};
+  if(navigator.share&&(!navigator.canShare||navigator.canShare(payload)))return navigator.share(payload).then(()=> 'Compartilhamento aberto pelo sistema. Confirme WhatsApp > Meu status ou o Story desejado.');
+  const first=prepared.manifest.items?.[0]?.url;if(first)window.open(first,'_blank','noopener');return Promise.resolve('O navegador não compartilha arquivos diretamente. A mídia foi aberta para envio manual.');
+}
+
 function render(){
   const o=state.overview||{},r=o.runtime||{},m=state.metrics?.metrics?.counts||{},meta=r.metadata||{};
   const reviewAssets=(o.assets||[]).filter(a=>a.status==='review').length;
@@ -470,8 +507,8 @@ function render(){
   $('#runtimeSummary').innerHTML=`<div><div class="rule"><span>Publicação externa</span><strong class="${r.publishing_enabled?'danger':'ok'}">${r.publishing_enabled?'Ligada':'Desligada'}</strong></div><div class="rule"><span>Kill switch</span><strong class="ok">${r.kill_switch?'Ativo':'Inativo'}</strong></div><div class="rule"><span>Aprovação humana</span><strong>${r.require_approval===false?'Não':'Obrigatória'}</strong></div><div class="rule"><span>Imagem IA</span><strong>${esc(meta.image_generation_quality||'low')} · ${Number(meta.image_variants_default||1)} variação</strong></div><div class="rule"><span>Vídeo V1</span><strong>${Number(meta.video_duration_seconds||10)}s · ${esc(meta.video_mode||'light_motion')}</strong></div><div class="rule"><span>IA de estratégia</span><strong class="ok">${meta.strategy_ai_enabled===true?'Habilitada':'Bloqueada'}</strong></div></div>`;
   renderAssets();
   renderCampaigns();
-  renderChannelAccounts();
-  const jobs=o.jobs||[];$('#jobsList').innerHTML=jobs.length?`<div class="data-list">${jobs.map(j=>row(`${channelLabel(j.channel)} · ${j.content_type}`,j.scheduled_for?dt(j.scheduled_for):'Sem agendamento',j.status,j.manual_confirmation_required?'confirmação manual':'')).join('')}</div>`:empty('Nenhuma publicação preparada.');
+  renderRound7ChannelConnections();
+  renderPublicationJobs();
   const templates=o.templates||[];$('#templatesList').innerHTML=templates.length?`<div class="data-list">${templates.map(t=>row(t.name,`${t.media_kind} · v${t.version}`,t.status,t.template_key)).join('')}</div>`:empty('Nenhum modelo ativo.');
   const cal=state.workflow?.calendar||[];$('#calendarList').innerHTML=cal.length?`<div class="data-list">${cal.slice(0,80).map(i=>row(i.title||i.channel||'Conteúdo',i.scheduled_for?dt(i.scheduled_for):'',i.status||'planejado',i.channel||'')).join('')}</div>`:empty('Agenda vazia.');
   $('#resultsView').innerHTML=`<div class="summary-grid"><article class="summary-card"><span>Cliques atribuídos</span><strong>${Number(m.attribution_clicks||0)}</strong></article><article class="summary-card"><span>Conversas</span><strong>${Number(m.attribution_conversations||0)}</strong></article><article class="summary-card"><span>Pedidos</span><strong>${Number(m.attribution_orders||0)}</strong></article><article class="summary-card"><span>Render OK</span><strong>${Number(m.render_success_rate_percent||0).toFixed(0)}%</strong></article></div>`;
@@ -621,6 +658,30 @@ document.addEventListener('click',async e=>{
     }finally{button.disabled=false}
     return;
   }
+});
+
+document.addEventListener('click',async e=>{
+  const button=e.target.closest('button[data-publish-action][data-job-id]');
+  if(!button)return;
+  const jobId=button.dataset.jobId,action=button.dataset.publishAction;
+  const message=document.querySelector(`[data-publication-message="${CSS.escape(jobId)}"]`);
+  button.disabled=true;
+  try{
+    if(action==='manual-share-prepare'){if(message)message.textContent='Preparando mídia segura…';const result=await prepareManualSharePublication(jobId);button.dataset.publishAction='manual-share-now';button.textContent='Compartilhar agora';if(message)message.textContent=result;return}
+    if(action==='manual-share-now'){if(message)message.textContent='Abrindo compartilhamento nativo…';const result=await sharePreparedPublication(jobId);if(message)message.textContent=result;return}
+    if(action==='verify-channel'){if(message)message.textContent='Verificando credencial e conta…';const accountId=button.dataset.channelAccountId;if(!accountId)throw new Error('Conta do canal não encontrada.');await verifyMarketingChannel(accountId);if(message)message.textContent='Conexão verificada.';await load();return}
+    if(action==='publish-now'){if(message)message.textContent='Executando preflight…';const pre=await getMarketingPublicationPreflight(jobId);if(pre.result?.eligible_for_external_publish!==true)throw new Error('Publicação bloqueada pelos gates de segurança.');if(message)message.textContent='Publicando pelo conector oficial…';await publishMarketingJob(jobId);if(message)message.textContent='Publicado pelo conector oficial.';await load();return}
+  }catch(err){if(message)message.textContent=err.message||'Não foi possível concluir.';}finally{button.disabled=false}
+});
+
+document.addEventListener('click',async e=>{
+  const button=e.target.closest('button[data-channel-action][data-channel-account-id]');if(!button)return;
+  if(button.dataset.channelAction!=='verify-channel')return;
+  const accountId=button.dataset.channelAccountId,message=document.querySelector(`[data-channel-message="${CSS.escape(accountId)}"]`);
+  button.disabled=true;
+  try{if(message)message.textContent='Verificando credencial e identidade da conta…';await verifyMarketingChannel(accountId);if(message)message.textContent='Conexão verificada.';await load()}
+  catch(err){if(message)message.textContent=err.message||'Não foi possível verificar a conexão.'}
+  finally{button.disabled=false}
 });
 
 $('#campaignsList').addEventListener('click',async e=>{
