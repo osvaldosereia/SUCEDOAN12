@@ -64,3 +64,27 @@ test('offline state remains an announced status', () => {
   assert.match(html, /role="status"/);
   assert.match(html, /Sem conexão/);
 });
+
+
+test('primary touch controls keep an explicit 44px minimum target', () => {
+  const shell = readFileSync(resolve(ROOT, 'src/styles/shell.css'), 'utf8');
+  const required = [
+    ['.quick-actions button', '.quick-actions button {'],
+    ['.order-bar button', '.order-bar button {'],
+    ['.catalog-chip', '.catalog-chip {'],
+    ['.product-detail-back', '.product-detail-back {'],
+    ['.basket-detail-back', '.basket-detail-back {'],
+    ['.quantity-control button', '.quantity-control button {'],
+    ['.cart-remove', '.cart-remove {'],
+    ['.cart-clear', '.cart-clear {'],
+    ['.privacy-card button', '.privacy-card button {'],
+    ['.privacy-rights button', '.privacy-rights button {'],
+  ] as const;
+
+  for (const [label, start] of required) {
+    const index = shell.indexOf(start);
+    assert.ok(index >= 0, label);
+    const block = shell.slice(index, shell.indexOf('}', index) + 1);
+    assert.match(block, /min-height:\s*44px/, label);
+  }
+});
