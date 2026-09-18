@@ -16,6 +16,7 @@ const basic=(id:string,secret:string)=>btoa(`${id}:${secret}`);
 
 Deno.serve(async(req:Request)=>{
   if(req.method!=='POST')return response({ok:false,error:'method_not_allowed'},405);
+  let body:any={};try{body=await req.json()}catch{body={}}
   const supabaseUrl=Deno.env.get('SUPABASE_URL');
   const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if(!supabaseUrl||!serviceKey)return response({ok:false,error:'server_config'},500);
@@ -69,6 +70,36 @@ Deno.serve(async(req:Request)=>{
     let json:any={};try{json=raw?JSON.parse(raw):{}}catch{}
     return {r,json};
   };
+
+  const directStatusIds=(Array.isArray(body?.status_ids)?body.status_ids:[])
+    .map((value:any)=>Number(value))
+    .filter((value:number,index:number,array:number[])=>Number.isInteger(value)&&value>0&&array.indexOf(value)===index)
+    .slice(0,25);
+
+  if(directStatusIds.length){
+    const saved:any[]=[];
+    const errors:any[]=[];
+    for(const id of directStatusIds){
+      const result=await get(`/situacoes/${encodeURIComponent(String(id))}`);
+      if(!result.r.ok){
+        errors.push({id,http_status:result.r.status});
+        continue;
+      }
+      const data=result.json?.data||{};
+      const name=clean(data?.nome||data?.descricao,160);
+      const {data:existing}=await sb.from('bling_history_status_policy').select('approved,canonical_status').eq('bling_status_id',id).maybeSingle();
+      const {error}=await sb.from('bling_history_status_policy').upsert({
+        bling_status_id:id,
+        status_name:name||null,
+        approved:existing?.approved===true,
+        canonical_status:existing?.canonical_status||null,
+        updated_at:new Date().toISOString()
+      },{onConflict:'bling_status_id'});
+      if(error){errors.push({id,error:'status_upsert_failed'});continue}
+      saved.push({id,name,approved:existing?.approved===true,canonical_status:existing?.canonical_status||null});
+    }
+    return response({ok:errors.length===0,direct:true,discovered:saved.length,statuses:saved,errors,auto_approved:0},errors.length?207:200);
+  }
 
   const modulesResult=await get('/situacoes/modulos');
   if(!modulesResult.r.ok)return response({ok:false,error:'modules_fetch_failed',http_status:modulesResult.r.status},502);
