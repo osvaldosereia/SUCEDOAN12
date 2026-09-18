@@ -54,6 +54,26 @@ Estado atual:
 - homologar Meta Direct em modo seguro;
 - reexecutar checklist.
 
+### Avanço técnico — Meta Policy / Preflight
+
+Concluído sem ativação externa:
+
+- Policy Registry operacional: 8/8 regras ativas, fail-closed e com fonte;
+- função de readiness do Policy Registry;
+- hardening para remover fallback de Graph API;
+- Meta Direct Edge v2;
+- Admin Meta Direct v4;
+- WABA e Phone Number ID observados.
+
+Ainda pendente por evidência/gate:
+
+- aceitação humana do Policy Registry;
+- Graph API version verificada;
+- permissões reais verificadas;
+- webhook homologado;
+- `direct_ready_flag=true` somente após os pré-requisitos;
+- autorização externa separada.
+
 ## Encerramento CM-1
 
 Somente declarar CM-1 concluída quando:
