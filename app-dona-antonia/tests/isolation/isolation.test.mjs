@@ -73,3 +73,13 @@ test('service-worker exemption does not allow a second Comprar runtime reference
   assert.equal(result.ok, false);
   assert.ok(result.findings.some((f) => f.label === 'Comprar atual'));
 });
+
+
+test('isolation scan blocks embedded native private key material', () => {
+  const root = mkdtempSync(join(tmpdir(), 'da-app-isolation-'));
+  mkdirSync(join(root, 'src'), { recursive: true });
+  writeFileSync(join(root, 'src', 'bad.ts'), 'const key = "-----BEGIN PRIVATE KEY-----";');
+  const result = runIsolationCheck({ rootDir: root });
+  assert.equal(result.ok, false);
+  assert.ok(result.findings.some((f) => f.label === 'secret material'));
+});
