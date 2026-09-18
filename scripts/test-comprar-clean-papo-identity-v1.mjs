@@ -7,9 +7,11 @@ for(const n of [2,3,4,5,6]) assert.match(roadmap,new RegExp(`Etapa ${n} .*FUTURA
 
 const migrationPath='supabase/migrations/20260917160500_papo_comprar_identity_v1.sql';
 const edgePath='supabase/functions/papo-comprar-webhook-v1/index.ts';
+const adapterCorePath='supabase/migrations/20260919030000_cm_1_14_papoai_adapter_core_v1.sql';
 const uiPath='comprar/papo-identity-ui.js';
 assert.ok(fs.existsSync(migrationPath),'migration segura do webhook PapoAI deve existir');
 assert.ok(fs.existsSync(edgePath),'Edge Function do webhook PapoAI deve existir');
+assert.ok(fs.existsSync(adapterCorePath),'core canônico do Provider Adapter deve existir');
 assert.ok(fs.existsSync(uiPath),'camada de identidade visual do PapoAI deve existir');
 
 const migration=fs.readFileSync(migrationPath,'utf8');
@@ -18,8 +20,12 @@ assert.match(migration,/get_dona_antonia_papo_comprar_webhook_token_v1/,'deve ex
 assert.match(migration,/grant execute .* service_role/is,'getter deve ser exclusivo do backend');
 
 const edge=fs.readFileSync(edgePath,'utf8');
+const adapterCore=fs.readFileSync(adapterCorePath,'utf8');
 assert.match(edge,/get_dona_antonia_papo_comprar_webhook_token_v1/,'webhook deve validar segredo do Vault');
-assert.match(edge,/lookup_customer_by_phone/,'identidade comercial deve ser consultada por telefone');
+assert.match(edge,/ingest_channel_adapter_event_v1/,'webhook PapoAI deve delegar identidade/eventos ao Provider Adapter canônico');
+assert.match(adapterCore,/resolve_customer_identity_v1/,'Provider Adapter deve usar o Identity Resolver canônico');
+assert.match(adapterCore,/normalized_channel_events/,'Provider Adapter deve alimentar o Event Core normalizado');
+assert.doesNotMatch(edge,/lookup_customer_by_phone/,'webhook PapoAI não deve escolher identidade por lookup legado');
 assert.match(edge,/room_start_for_conversation_v1/,'webhook deve reutilizar a infraestrutura oficial de sala');
 assert.match(edge,/whatsapp_accounts/,'webhook deve usar a conta WhatsApp ativa do banco');
 assert.match(edge,/customer_found/,'resposta deve indicar se o cliente foi identificado');
