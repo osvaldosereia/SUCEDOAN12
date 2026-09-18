@@ -7,12 +7,17 @@ on:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/customer-intelligence-v1/**'
+      - 'supabase/functions/admin-pin-auth-v1/**'
+      - 'supabase/functions/papo-comprar-webhook-v1/**'
       - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
       - 'supabase/functions/admin-orders-comprar-v1/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/migrations/*product_image_versions*'
+      - 'supabase/migrations/*cm_1_1*'
+      - 'supabase/migrations/*cm_1_2*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -22,6 +27,8 @@ on:
       - 'scripts/test-admin-product-verification-expiry-v1.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - 'scripts/test-admin-no-v3-runtime.mjs'
+      - 'scripts/test-customer-marketing-security-boundary-v1.mjs'
+      - 'scripts/test-cm-1-2-identity-resolver.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
@@ -29,12 +36,17 @@ on:
       - 'admin/**'
       - 'supabase/functions/admin-simple-v2/**'
       - 'supabase/functions/admin-core-v1/**'
+      - 'supabase/functions/customer-intelligence-v1/**'
+      - 'supabase/functions/admin-pin-auth-v1/**'
+      - 'supabase/functions/papo-comprar-webhook-v1/**'
       - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
       - 'supabase/functions/admin-orders-comprar-v1/**'
       - 'supabase/functions/catalog-v3/**'
       - 'supabase/migrations/*product_image_versions*'
+      - 'supabase/migrations/*cm_1_1*'
+      - 'supabase/migrations/*cm_1_2*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -44,6 +56,8 @@ on:
       - 'scripts/test-admin-product-verification-expiry-v1.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
       - 'scripts/test-admin-no-v3-runtime.mjs'
+      - 'scripts/test-customer-marketing-security-boundary-v1.mjs'
+      - 'scripts/test-cm-1-2-identity-resolver.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -70,6 +84,8 @@ jobs:
         run: |
           node --check admin/api.js
           node --check admin/app.js
+          node --check admin/customer-os-auth.js
+          node --check admin/customer-os-api.js
           node --check admin/orders-integrated-v2.js
           node --check admin/products-inline-controls-v4.js
           node --check admin/product-gondola-editor-v1.js
@@ -77,6 +93,9 @@ jobs:
           node --check admin/product-image-editor-v1.js
           deno check supabase/functions/admin-simple-v2/index.ts
           deno check supabase/functions/admin-core-v1/index.ts
+          deno check supabase/functions/customer-intelligence-v1/index.ts
+          deno check supabase/functions/admin-pin-auth-v1/index.ts
+          deno check supabase/functions/papo-comprar-webhook-v1/index.ts
           deno check supabase/functions/admin-gondolas-v1/index.ts
           deno check supabase/functions/admin-product-names-v1/index.ts
           deno check supabase/functions/admin-product-image-editor-v1/index.ts
@@ -98,6 +117,10 @@ jobs:
         run: node scripts/test-comprar-order-admin-v1.mjs
       - name: Validar independência do Admin oficial
         run: node scripts/test-admin-no-v3-runtime.mjs
+      - name: Validar boundary seguro do Customer OS
+        run: node scripts/test-customer-marketing-security-boundary-v1.mjs
+      - name: Validar Identity Resolver
+        run: node scripts/test-cm-1-2-identity-resolver.mjs
       - name: Validar shell oficial
         shell: bash
         run: |
