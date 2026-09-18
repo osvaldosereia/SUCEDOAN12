@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../orcamento/index.html', import.meta.url), 'utf8');
+const presets = JSON.parse(readFileSync(new URL('../orcamento/presets-bonini.json', import.meta.url), 'utf8'));
+
 const inlineScript = html.match(/<script>([\s\S]*?)<\/script>/)?.[1] || '';
 
 assert.ok(inlineScript, 'script principal do orçamento não encontrado');
@@ -62,5 +64,18 @@ assert.match(html, /id="viewCompanyLogo"/, 'logo da empresa deve aparecer na pr�
 assert.match(html, /id="viewClientEmail"/, 'e-mail do cliente deve aparecer na prévia');
 assert.match(html, /'companyName','companyDocument','companyPhone','companyEmail','companySite','companyLogo','companyAddress'/, 'dados da empresa devem persistir no rascunho');
 assert.match(html, /'phone','clientEmail','contact'/, 'e-mail do cliente deve persistir no cadastro e no rascunho');
+
+
+assert.match(html, /id="budgetPreset"/, 'seletor de orçamentos pré-prontos ausente');
+assert.match(html, /id="applyBudgetPreset"/, 'botão para aplicar orçamento pré-pronto ausente');
+assert.match(html, /PRESET_URL='\.\/presets-bonini\.json'/, 'arquivo de presets Bonini deve ser carregado pela ferramenta');
+assert.match(html, /variant==='food'\?basket\.items\.filter\(i=>i\.food===true\):basket\.items/, 'versão somente alimentos deve filtrar apenas itens alimentares');
+assert.match(html, /resolvePresetProduct/, 'preset deve reconciliar os itens com o catálogo atual');
+assert.match(html, /Substituir os produtos atuais pelos produtos deste modelo/, 'troca de um orçamento preenchido deve pedir confirmação');
+assert.equal(presets.length, 5, 'devem existir exatamente cinco cestas Bonini pré-prontas');
+assert.deepEqual(presets.map(p=>p.name), ['Economica Bonini','Mini Bonini','Pequena Bonini','Média Bonini','Grande Bonini'], 'presets devem cobrir todas as cestas Bonini ativas');
+assert.ok(presets.every(p=>p.items.some(i=>/Arroz Tio Bonini/i.test(i.name))), 'todas as cestas pré-prontas devem usar Arroz Tio Bonini');
+assert.ok(presets.every(p=>p.items.some(i=>i.food===true)), 'cada cesta deve permitir uma versão somente alimentos');
+assert.ok(presets.every(p=>p.items.filter(i=>i.food===true).every(i=>i.food===true)), 'versões alimentares não podem incluir itens marcados como não alimento');
 
 console.log('OK · orçamento V2: itens, financeiro, empresa e cliente editáveis + modos de PDF preservados.');
