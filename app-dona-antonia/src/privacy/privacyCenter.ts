@@ -1,3 +1,5 @@
+import type { SecureSession } from '../customer/secureSession.ts';
+
 export type PrivacyRequestType =
   | 'access'
   | 'correction'
@@ -14,10 +16,14 @@ export interface PrivacyGateway {
 }
 
 export function createPrivacyCenter(
-  options: { gateway?: PrivacyGateway } = {},
+  options: { gateway?: PrivacyGateway; secureSession?: SecureSession } = {},
 ) {
   return {
     async request(type: PrivacyRequestType) {
+      if (type === 'revoke_device' && options.secureSession) {
+        await options.secureSession.clear();
+      }
+
       if (!options.gateway) {
         return {
           submitted: false as const,
