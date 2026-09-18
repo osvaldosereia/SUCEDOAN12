@@ -66,3 +66,17 @@ test('pairing poll rate limit fails closed', () => {
   assert.deepEqual(fixture.pollPairing(challenge.challengeId,'bad-3'),{state:'invalid_secret'});
   assert.deepEqual(fixture.pollPairing(challenge.challengeId,'bad-4'),{state:'rate_limited'});
 });
+
+
+test('pairing human code confirmation is rate limited against brute force', () => {
+  const fixture=createPairingFixture({
+    now:()=>1000,
+    maxConfirmAttempts:3,
+  });
+  const challenge=fixture.challenge;
+
+  assert.equal(fixture.confirmHumanCode('AAAAAA'),false);
+  assert.equal(fixture.confirmHumanCode('BBBBBB'),false);
+  assert.equal(fixture.confirmHumanCode('CCCCCC'),false);
+  assert.equal(fixture.confirmHumanCode(challenge.humanCode),false);
+});
