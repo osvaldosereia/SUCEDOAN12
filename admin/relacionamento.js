@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getRelationshipOverview,getRelationshipAudit} from './relationship-api.js';
+import {getRelationshipOverview,getRelationshipAudit,getIdentityConflicts,reviewIdentityConflict} from './relationship-api.js';
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -10,7 +10,7 @@ const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL
 const pct=v=>`${Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`;
 const dt=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(d)};
 const empty=m=>`<div class="empty">${esc(m)}</div>`;
-let state={overview:null,audit:null};
+let state={overview:null,audit:null,identityConflicts:[],identityConflictsError:null};
 
 function canaryAllowed(){
   if(CONFIG.relationshipUiEnabled===true)return true;
@@ -172,6 +172,57 @@ function renderMeta(){
     ].map(x=>metric(x[0],x[1])).join('')}</div></div>
   </div>`;
 }
+function maskedPhone(value){
+  const digits=String(value||'').replace(/\D/g,'');
+  if(!digits)return 'sem telefone';
+  return digits.length>4?`•••• ${digits.slice(-4)}`:digits;
+}
+function maskedDocument(value){
+  const digits=String(value||'').replace(/\D/g,'');
+  if(!digits)return 'sem CPF/CNPJ';
+  return digits.length>4?`•••• ${digits.slice(-4)}`:digits;
+}
+function identityConflictCard(conflict){
+  const candidates=Array.isArray(conflict.candidates)?conflict.candidates:[];
+  const evidence=conflict.evidence||{};
+  return `<article class="identity-review-card" data-identity-conflict="${esc(conflict.id)}">
+    <div class="identity-review-head">
+      <div>
+        <span class="identity-review-kicker">Revisão humana obrigatória</span>
+        <h3>Conflito de identidade</h3>
+        <p>${esc(conflict.match_method||'sinais conflitantes')} · ${esc(conflict.source||'origem desconhecida')} · ${esc(dt(conflict.created_at))}</p>
+      </div>
+      ${chip('Pendente','warn')}
+    </div>
+    <div class="identity-review-evidence">
+      <span>Cadastros candidatos: <b>${esc(n(evidence.candidate_count||candidates.length))}</b></span>
+      <span>Telefone encontrou: <b>${esc(n(evidence.phone_match_count||0))}</b></span>
+      <span>Canal verificado: <b>${evidence.channel_verified===true?'Sim':'Não'}</b></span>
+      <span>Documento informado: <b>${evidence.document_supplied===true?'Sim':'Não'}</b></span>
+      <span>Bling informado: <b>${evidence.bling_supplied===true?'Sim':'Não'}</b></span>
+    </div>
+    <div class="identity-candidate-list">
+      ${candidates.length?candidates.map((candidate,index)=>`<label class="identity-candidate">
+        <input type="radio" name="identity-candidate-${esc(conflict.id)}" value="${esc(candidate.id)}">
+        <span>
+          <strong>${esc(candidate.name||`Cadastro ${index+1}`)}</strong>
+          <small>${esc(maskedPhone(candidate.primary_whatsapp_e164))} · ${esc(maskedDocument(candidate.cpf_cnpj))} · ${esc(n(candidate.order_count||0))} pedido(s) · ${esc(brl(candidate.lifetime_value||0))} em compras</small>
+          <small>Última compra: ${esc(dt(candidate.last_order_at))}</small>
+        </span>
+      </label>`).join(''):empty('Nenhum candidato disponível para este conflito.')}
+    </div>
+    <label class="identity-review-note">
+      <span>Justificativa da revisão</span>
+      <textarea rows="2" maxlength="1000" placeholder="Explique por que escolheu este cadastro ou por que nenhum candidato deve ser associado."></textarea>
+    </label>
+    <div class="identity-review-actions">
+      <button type="button" class="btn primary" data-identity-review="approved">Vincular avaliação ao cadastro escolhido</button>
+      <button type="button" class="btn" data-identity-review="rejected">Nenhum candidato é seguro</button>
+      <small class="identity-review-status" aria-live="polite"></small>
+    </div>
+    <p class="identity-review-footnote">Esta ação fecha somente a avaliação de identidade. Ela não mescla cadastros, não muda consentimento e não envia mensagem.</p>
+  </article>`;
+}
 function renderQuality(){
   const q=state.overview?.summary?.quality||{};
   const cards=[
@@ -181,7 +232,14 @@ function renderQuality(){
     ['Produtos',[['Ready',q.products?.ready],['Bloqueados',q.products?.blocked],['Sem imagem',q.products?.missing_image],['Sem estoque',q.products?.out_of_stock],['Sem custo',q.products?.missing_cost]]],
     ['Integrações',[['Erros Meta',q.integration?.unresolved_meta_errors],['Erros adapter 7d',q.integration?.provider_adapter_errors],['Eventos provider 24h',q.integration?.provider_events_24h]]]
   ];
-  $('#qualityView').innerHTML=`<div class="quality-grid">${cards.map(([title,items])=>`<article class="quality-box"><h3>${esc(title)}</h3><div class="metric-list">${items.map(x=>metric(x[0],n(x[1]))).join('')}</div></article>`).join('')}</div>`;
+  const conflicts=Array.isArray(state.identityConflicts)?state.identityConflicts:[];
+  const reviewBlock=state.identityConflictsError
+    ?`<div class="identity-review-section"><div class="section-title"><div><h2>Revisões de identidade</h2><p>Falha ao carregar a fila: ${esc(state.identityConflictsError)}</p></div></div></div>`
+    :`<div class="identity-review-section">
+        <div class="section-title"><div><h2>Revisões de identidade</h2><p>Decisão humana auditada. Nenhum merge é executado automaticamente.</p></div><span class="safe-pill">${esc(n(conflicts.length))} pendente(s)</span></div>
+        <div class="identity-review-stack">${conflicts.length?conflicts.map(identityConflictCard).join(''):empty('Nenhum conflito de identidade pendente.')}</div>
+      </div>`;
+  $('#qualityView').innerHTML=`<div class="quality-grid">${cards.map(([title,items])=>`<article class="quality-box"><h3>${esc(title)}</h3><div class="metric-list">${items.map(x=>metric(x[0],n(x[1]))).join('')}</div></article>`).join('')}</div>${reviewBlock}`;
 }
 function acceptanceStatusLabel(value){
   const status=String(value||'').toLowerCase();
@@ -250,7 +308,13 @@ function renderAll(){
 async function loadOverview(){
   $('#globalStatus').textContent='Atualizando visão consolidada…';
   try{
-    state.overview=await getRelationshipOverview();
+    const [overview,conflictResult]=await Promise.all([
+      getRelationshipOverview(),
+      getIdentityConflicts(20).catch(error=>({conflicts:[],_error:error?.message||'Falha ao carregar conflitos.'}))
+    ]);
+    state.overview=overview;
+    state.identityConflicts=Array.isArray(conflictResult?.conflicts)?conflictResult.conflicts:[];
+    state.identityConflictsError=conflictResult?._error||null;
     renderAll();
     $('#globalStatus').textContent=`Atualizado ${new Intl.DateTimeFormat('pt-BR',{timeStyle:'short'}).format(new Date())} · leitura segura · zero ação externa.`;
   }catch(err){
@@ -270,6 +334,35 @@ function selectPanel(name){
 }
 
 $('#relationshipTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-panel]');if(b)selectPanel(b.dataset.panel)});
+$('#qualityView').addEventListener('click',async e=>{
+  const button=e.target.closest('button[data-identity-review]');
+  if(!button)return;
+  const card=button.closest('[data-identity-conflict]');
+  if(!card)return;
+  const review=button.dataset.identityReview;
+  const notes=String(card.querySelector('textarea')?.value||'').trim();
+  const status=card.querySelector('.identity-review-status');
+  if(notes.length<5){if(status)status.textContent='Explique a decisão com pelo menos 5 caracteres.';return}
+  let customerId=null;
+  if(review==='approved'){
+    customerId=card.querySelector('input[type="radio"]:checked')?.value||null;
+    if(!customerId){if(status)status.textContent='Escolha um dos cadastros candidatos.';return}
+  }
+  const warning=review==='approved'
+    ?'Confirmar esta revisão? A avaliação será vinculada ao cadastro escolhido, sem mesclar cadastros.'
+    :'Confirmar que nenhum candidato é seguro? A avaliação será encerrada sem associação.';
+  if(!window.confirm(warning))return;
+  card.querySelectorAll('button,input,textarea').forEach(el=>el.disabled=true);
+  if(status)status.textContent='Salvando revisão…';
+  try{
+    await reviewIdentityConflict({id:card.dataset.identityConflict,review,customerId,notes});
+    if(status)status.textContent='Revisão registrada.';
+    await loadOverview();
+  }catch(error){
+    card.querySelectorAll('button,input,textarea').forEach(el=>el.disabled=false);
+    if(status)status.textContent=error?.message||'Não foi possível registrar a revisão.';
+  }
+});
 $('#refreshRelationship').addEventListener('click',loadOverview);
 $('#refreshAudit').addEventListener('click',loadAudit);
 $('#pinForm').addEventListener('submit',async e=>{
