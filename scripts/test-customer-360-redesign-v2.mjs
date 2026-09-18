@@ -42,7 +42,7 @@ assert.match(css,/grid-template-columns:190px minmax\(0,1fr\)/);
 assert.match(view,/c360-hero-tags/,'Cabeçalho deve mostrar status operacionais');
 assert.match(css,/\.c360-mobile-actions/,'Customer 360 precisa de ações móveis persistentes');
 assert.match(css,/@media\(max-width:680px\)/);
-assert.match(html,/customer-360-v2\.css\?v=20260918-6/);
+assert.match(html,/customer-360-v2\.css\?v=20260918-8/);
 assert.match(html,/app\.js\?v=20260918-cm110-7/);
 assert.match(view,/marketing_consent_unknown:'Consentimento de marketing não registrado'/);
 assert.match(view,/order_in_progress:'Pedido em andamento'/);
