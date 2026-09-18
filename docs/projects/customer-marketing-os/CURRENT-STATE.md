@@ -398,3 +398,40 @@ Preparação técnica concluída:
 - nenhuma mudança foi feita na configuração externa da Meta.
 
 CI da rodada anterior do diagnóstico read-only passou integralmente. O novo contrato de ingress fail-closed está coberto por `scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs`.
+
+
+## CI final desta rodada — VERDE
+
+GitHub Actions:
+
+- workflow: `Testar Admin Dona Antônia`;
+- run: `35387853415`;
+- commit validado: `f2912098a359ab93328f303815acea0b8d72f491`;
+- conclusão: **success**;
+- **37 etapas de validação concluídas com sucesso**.
+
+Inclui:
+
+- segurança/boundary do Customer OS;
+- Identity Resolver;
+- Customer 360;
+- Event Collector;
+- Consent/Protection;
+- Product Marketing Profile;
+- Product/Brand Graph;
+- Segment Engine;
+- Commercial Profile;
+- Opportunity Engine;
+- Marketing Brain;
+- Meta Foundation;
+- diagnóstico Meta read-only;
+- ingress Meta Direct fail-closed;
+- Template Draft Assistant;
+- PapoAI Adapter;
+- Central de Relacionamento;
+- homologation readiness;
+- acceptance checklist;
+- Customer OS canary;
+- bloqueio de segredos no navegador.
+
+Não há falha conhecida de CI nesta rodada.
