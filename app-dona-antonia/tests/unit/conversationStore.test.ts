@@ -60,3 +60,16 @@ test('typing delay is clamped to the configured humanized demo range', () => {
   assert.equal(createConversationStore({ typingDelayMs: 1200 }).typingDelayMs, 850);
   assert.equal(createConversationStore({ typingDelayMs: 0 }).typingDelayMs, 0);
 });
+
+
+test('tool decisions can be recorded as a user bubble without creating quick replies', () => {
+  const store = createConversationStore({ typingDelayMs: 0 });
+  store.userSay('Escolhi a Cesta Família');
+
+  const snapshot = store.getSnapshot();
+  assert.deepEqual(
+    snapshot.messages.map(({ role, text }) => ({ role, text })),
+    [{ role: 'user', text: 'Escolhi a Cesta Família' }],
+  );
+  assert.deepEqual(snapshot.replies, []);
+});
