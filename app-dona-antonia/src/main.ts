@@ -12,25 +12,27 @@ if (!root) {
   throw new Error('App root #app not found');
 }
 
+const appRoot = root;
+
 const standalone =
   window.matchMedia?.('(display-mode: standalone)').matches === true
   || ('standalone' in navigator
     && (navigator as Navigator & { standalone?: boolean }).standalone === true);
 
-root.dataset.runtime = detectRuntime({ standalone });
+appRoot.dataset.runtime = detectRuntime({ standalone });
 
-await bootstrapApp({ root });
+await bootstrapApp({ root: appRoot });
 
 const appNavigator = createNavigator();
 
 function render(route = appNavigator.current()): void {
-  root.innerHTML = renderAppShell({ route, state: 'ready' });
+  appRoot.innerHTML = renderAppShell({ route, state: 'ready' });
 }
 
 appNavigator.subscribe(render);
 render();
 
-root.addEventListener('click', (event) => {
+appRoot.addEventListener('click', (event) => {
   const target = event.target instanceof Element
     ? event.target.closest<HTMLElement>('[data-route-target]')
     : null;
