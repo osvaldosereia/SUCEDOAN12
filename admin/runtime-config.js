@@ -5,6 +5,7 @@ export const CONFIG=Object.freeze({
   adminOrdersFunction:'admin-orders-comprar-v1',
   customerOsFunction:'customer-intelligence-v1',
   adminPinAuthFunction:'admin-pin-auth-v1',
+  customerOsSecureUiEnabled:false,
   storefrontUrl:'../comprar/',
   countAppUrl:'../contagem/',
   build:'20260918-customer-os-security-foundation-1'
