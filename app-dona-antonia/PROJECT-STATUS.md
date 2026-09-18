@@ -53,7 +53,7 @@ Documento:
 
 Total: 27 rodadas numeradas de 0 a 26.
 
-**Próxima rodada permitida:** Rodada 7 — Checkout isolado.
+**Próxima rodada permitida:** Rodada 8 — Acompanhamento de pedido fictício.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
 
@@ -192,7 +192,7 @@ O documento principal para retomada em novas janelas está salvo na `main`:
 
 Ao retomar o projeto, este arquivo deve ser lido primeiro, seguido do design, plano de rodadas e deste `PROJECT-STATUS.md`.
 
-**Snapshot atual:** Rodadas 0–6 concluídas; próxima Rodada 7.
+**Snapshot atual:** Rodadas 0–7 concluídas; próxima Rodada 8.
 
 
 ## Checkpoint — Rodada 4
@@ -334,3 +334,40 @@ Limitação mantida:
 **Próxima rodada autorizável:** Rodada 7 — Checkout isolado.
 
 O projeto permanece OFF, não publicado e incapaz de gerar pedido real.
+
+
+## Checkpoint — Rodada 7
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- checkout totalmente local e fictício;
+- máquina de estados `customer → address → payment → review → confirmed`;
+- carrinho vazio bloqueia início;
+- visitante informa nome e telefone;
+- endereço local com cidade/UF;
+- pagamentos permitidos:
+  - PIX;
+  - dinheiro;
+  - cartão de crédito;
+  - alimentação/refeição;
+- pagamento marcado como realizado apenas na entrega;
+- gateway de fixture sem rede;
+- confirmação sempre gera ID `TEST-*`;
+- tela final marcada como Homologação;
+- botão `Acompanhar pedido` preparado para a Rodada 8;
+- nenhum formulário possui action externa;
+- nenhum `fetch`, POST ou persistência real.
+
+Validações executadas:
+- 9/9 testes específicos da Rodada 7 aprovados;
+- gateway confirmou `getExternalRequestCount() === 0`;
+- confirmação antes da revisão é bloqueada;
+- typecheck dos módulos de checkout aprovado;
+- nenhum endpoint externo conectado;
+- nenhum arquivo de `comprar/` modificado.
+
+**Próxima rodada autorizável:** Rodada 8 — Acompanhamento de pedido fictício.
+
+O projeto permanece OFF, não publicado e incapaz de criar pedido real.
