@@ -18,29 +18,28 @@
 - R25: produção proibida sem autorização explícita.
 
 ## Último avanço seguro
-A barreira fail-closed de `src/platform/homologationGuard.ts` foi integrada ao cliente HML em `src/platform/apiClient.ts`.
+A barreira fail-closed de `src/platform/homologationGuard.ts`, já integrada ao cliente HML, foi estendida ao adapter sintético de push em `src/notifications/pushClient.ts`.
 
-Proteções desta rodada:
-- nova ação `hml_network` exige recurso `TEST-*`;
-- cliente HML habilitado passa pelo guard antes de qualquer chamada de rede;
-- `environment=production` bloqueia a construção do cliente;
-- `productionEnabled=true` bloqueia a construção do cliente;
-- `clientId` continua restrito a `TEST-CLIENT-*`;
-- endpoint remoto agora usa allowlist exata das três Edge Functions HML declaradas, em vez de aceitar qualquer slug pelo prefixo;
-- cliente desabilitado continua inerte e não exige credenciais.
+Proteções acumuladas:
+- `hml_network` exige recurso `TEST-*` e cliente HML habilitado passa pelo guard antes de rede;
+- `environment=production` e `productionEnabled=true` bloqueiam o cliente HML;
+- endpoints HML usam allowlist exata das três Edge Functions declaradas;
+- registro de push continua aceitando somente `TEST-PUSH-*`;
+- antes de registrar token sintético, o push client agora executa `simulate_push` no guard central;
+- `environment=production` ou `productionEnabled=true` bloqueiam registro de push antes de mutar estado;
+- adapter de push permanece sem I/O e com `externalRequestCount=0`.
 
-Cobertura adicionada/expandida:
-- `tests/unit/homologationGuard.test.ts`: HML TEST permitido e identificador não TEST recusado;
-- `tests/unit/apiClientSafety.test.ts`: prova que ambiente/flag de produção falham antes de `fetch` e que cliente OFF permanece inerte.
+Cobertura adicionada nesta rodada:
+- `tests/unit/pushClientSafety.test.ts`: homologação sintética permitida, ambiente de produção bloqueado, flag de produção bloqueada e token real-looking recusado.
 
-**Validação honesta:** não há workflow run associado ao HEAD desta rodada no conector GitHub. Portanto os testes novos estão implementados, mas não são declarados verdes até execução real de runner/typecheck.
+**Validação honesta:** os testes foram implementados, porém não são declarados verdes sem execução real de runner/typecheck associada ao HEAD. Nenhuma homologação Android/iOS foi inferida.
 
 ## HEAD desta retomada
-Código + testes antes deste checkpoint: `ccc40b23688f17cb8be7627e9d0137b9dc4ca0bd`.
+Código + testes antes deste checkpoint: `6702c0a27984b74a1f6bf0181d8d54e1b3d87793`.
 
 ## Próximo trabalho seguro
-1. Executar suíte/typecheck/isolation assim que houver runner disponível e corrigir qualquer regressão real.
-2. Aplicar a mesma barreira fail-closed aos demais adapters sintéticos que possam produzir I/O, sem ampliar produção.
+1. Executar suíte/typecheck/isolation assim que houver runner disponível e corrigir regressões reais.
+2. Aplicar a barreira central aos demais adapters sintéticos com capacidade futura de I/O, priorizando mídia/sessão sem criar rede real.
 3. Continuar hardening R22/R24 e preflights nativos sem fingir homologação.
 4. Manter R13 sem deploy enquanto a quota impedir Edge Functions; não apagar funções nem aumentar plano.
 5. Manter R25 fechado.
