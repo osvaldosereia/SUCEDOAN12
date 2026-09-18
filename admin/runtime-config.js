@@ -10,6 +10,7 @@ export const CONFIG=Object.freeze({
   marketingMediaFunction:'admin-marketing-media-v1',
   marketingCarouselFunction:'admin-marketing-carousel-v1',
   marketingBrainFunction:'admin-marketing-brain-v1',
+  whatsappDirectAdminFunction:'admin-whatsapp-direct-v1',
   customerOsSecureUiEnabled:false,
   customerOsCanaryEnabled:true,
   customerOsCanaryParam:'customer_os',
