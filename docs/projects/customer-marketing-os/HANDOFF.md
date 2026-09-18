@@ -22,25 +22,27 @@
 - product_view real=0; backend implantado confirmado correto, aguardando uso real;
 - PapoAI adapter recebendo tráfego real;
 - nenhum side effect externo observado;
+- Meta Policy Registry técnico pronto 8/8; gate humano ainda pending;
 - Meta Direct OFF;
 - canonical outbound OFF;
 - Marketing publishing OFF;
 - strategy AI OFF;
+- Meta Direct blockers: Graph API version não verificada, permissões não verificadas, webhook não homologado e direct-ready flag=false;
 - orçamento IA da homologação = 0.
 
 ## Próximas ações
 
-1. confirmar HEAD atual;
-2. consultar `cm1_acceptance_checklist_v1()`;
-3. consultar `cm1_homologation_readiness_v1()`;
-4. manter gates externos fechados;
-5. responsável abre Qualidade dos Dados e decide o conflito de identidade pela fila nova; nenhum auto-merge;
-6. observar uso real de busca e produto no Comprar; não criar fixture para evidência;
-7. acompanhar lifecycle real das oportunidades; a primeira expiração atual começa em 23/09/2026;
-8. responsável valida PIN e visual da Central manualmente;
-9. verificar Meta Policy Registry em modo seguro;
-10. homologar Meta Direct sem liberar outbound;
-11. reexecutar acceptance checklist;
+1. confirmar HEAD atual e reler CURRENT-STATE;
+2. consultar `cm1_acceptance_checklist_v1()` e `cm1_homologation_readiness_v1()`;
+3. manter `external_activation_authorized=false`;
+4. responsável decide o conflito de identidade pela fila segura da Central; nenhum auto-merge;
+5. observar tráfego real `catalog_search` e `product_view`; não criar fixture para evidência;
+6. acompanhar lifecycle real das oportunidades; primeira expiração atual começa em 23/09/2026;
+7. responsável valida PIN e visual da Central manualmente;
+8. Policy Registry técnico já está pronto 8/8; manter gate humano separado até revisão;
+9. Meta Direct continua READ_ONLY: obter evidência real de Graph API version, permissões e webhook antes de qualquer mudança de readiness;
+10. não definir `direct_ready_flag=true` enquanto os demais blockers não estiverem comprovados;
+11. reexecutar acceptance checklist após cada evidência real;
 12. atualizar esta pasta ao final da rodada.
 
 ## Proibições de retomada
@@ -82,3 +84,21 @@ Este diretório deve permitir retomar o projeto sem depender de qualquer convers
 `CM1-HOMOLOGATION-IDENTITY-REVIEW-V1.md`
 
 A infraestrutura para resolver o critério 2 está pronta. A decisão do caso real permanece humana.
+
+
+## Última rodada Meta
+
+`CM1-HOMOLOGATION-META-POLICY-PREFLIGHT-V1.md`
+
+Resultados principais:
+
+- Policy Registry técnico: ready 8/8;
+- Meta Direct: ready=false;
+- Graph API version: unverified;
+- permissions: unverified;
+- webhook: unverified;
+- direct-ready flag: false;
+- Meta Direct Edge: version 2;
+- Admin Meta Direct: version 4;
+- nenhum fallback de Graph API;
+- nenhum gate externo aberto.
