@@ -8,7 +8,7 @@
 **Pull Request de homologação:** #396 — draft — **NÃO MERGEAR**  
 **Código do app:** `app-dona-antonia/`  
 **Comprar atual:** `comprar/` — **NÃO MODIFICAR durante o desenvolvimento do app**  
-**Próxima rodada autorizável:** **Rodada 4 — Catálogo fictício e navegação**
+**Próxima rodada autorizável:** **Rodada 5 — Cestas básicas fictícias**
 
 ---
 
@@ -406,8 +406,8 @@ Legenda:
 | 1 | Fundação técnica isolada | ✅ |
 | 2 | Sistema visual e shell mobile-first | ✅ |
 | 3 | Motor conversacional determinístico | ✅ |
-| 4 | Catálogo fictício e navegação | ▶ |
-| 5 | Cestas básicas fictícias | ⏳ |
+| 4 | Catálogo fictício e navegação | ✅ |
+| 5 | Cestas básicas fictícias | ▶ |
 | 6 | Carrinho e regras locais | ⏳ |
 | 7 | Checkout isolado | ⏳ |
 | 8 | Pedido e acompanhamento fictício | ⏳ |
@@ -671,9 +671,9 @@ Ana responde
 
 # 17. Estado atual exato
 
-**Última rodada concluída:** Rodada 3.
+**Última rodada concluída:** Rodada 4.
 
-**Próxima rodada:** Rodada 4 — Catálogo fictício e navegação.
+**Próxima rodada:** Rodada 5 — Cestas básicas fictícias.
 
 Ainda não foi implementado:
 
@@ -700,66 +700,133 @@ Tudo permanece OFF.
 
 ---
 
-# 18. Rodada 4 — próxima execução
+# 18. Rodada 4 — concluída
 
 ## Objetivo
 
-Construir o catálogo completo usando somente fixtures locais.
+Construir o catálogo completo com dados sintéticos e nenhuma conexão externa.
 
-## Arquivos previstos
+## Entregas
+
+Criados:
 
 - `tests/fixtures/products.json`
 - `src/catalog/types.ts`
 - `src/catalog/catalogRepository.ts`
 - `src/catalog/catalogFixtureRepository.ts`
+- `src/catalog/catalogController.ts`
 - `src/catalog/catalogView.ts`
 - `tests/unit/catalog.test.ts`
+- `tests/unit/catalogController.test.ts`
+- `tests/unit/catalogView.test.ts`
 
-## Contrato previsto
+Integrações realizadas:
+
+- `AppShell` passou a aceitar `toolHtml`;
+- `main.ts` passou a renderizar catálogo na região de ferramenta;
+- respostas `Ofertas | Para Você | Para Casa` abrem o filtro correto;
+- busca possui botão explícito;
+- categorias e subcategorias usam chips;
+- clique em produto abre detalhe;
+- detalhe volta ao catálogo;
+- ainda não existe ação de carrinho.
+
+## Fixtures
+
+Foram criados **24 produtos sintéticos**.
+
+Exemplos:
+
+- Arroz Tipo 1 5kg;
+- Feijão Carioca 1kg;
+- Café Torrado 500g;
+- Shampoo Nutrição 350ml;
+- Sabão em Pó 1,6kg;
+- Desinfetante Floral 2L;
+- Papel Higiênico Folha Dupla 12un;
+- Ração para Cães Adultos 1kg.
+
+Todos:
+
+- usam IDs `TEST-PROD-*`;
+- estão marcados como ativos apenas para homologação;
+- usam `imageKind: placeholder`;
+- não possuem URL externa;
+- não representam estoque real.
+
+## Contrato do catálogo
 
 ```ts
 CatalogRepository.search(filters): Promise<Product[]>
+CatalogRepository.getById(id): Promise<Product | null>
+CatalogRepository.listCategories(section): Promise<string[]>
+CatalogRepository.listSubcategories(filters): Promise<string[]>
 ```
 
-## Categorias iniciais
+## Filtros implantados
 
-- Ofertas
-- Para Você
-- Para Casa
+Seções:
 
-## Deve implementar
+- Todos;
+- Ofertas;
+- Para Você;
+- Para Casa.
 
-- no mínimo 24 produtos fictícios;
-- busca por nome;
-- categorias;
-- subcategorias;
-- preço normal;
-- preço promocional;
-- destaque visual de oferta;
-- cards;
-- detalhe do produto;
-- paginação/virtualização simples;
-- integração com conversa/navegação.
+Filtros adicionais:
 
-## Proibido nesta rodada
+- categoria;
+- subcategoria;
+- busca textual.
 
-- Supabase;
-- produtos reais;
-- imagens reais de produção;
-- estoque real;
-- pedido real;
-- endpoint externo;
-- alteração do Comprar.
+A busca é:
 
-## Gate da Rodada 4
+- case-insensitive;
+- accent-insensitive.
 
-Só concluir após:
+Exemplo validado:
 
-- testes verdes;
-- typecheck;
-- isolamento aprovado;
-- nenhuma alteração em `comprar/`;
-- checkpoint salvo.
+`CAFE` encontra `Café Torrado 500g`.
+
+## Oferta
+
+Produto em oferta mostra:
+
+- etiqueta `Oferta`;
+- preço anterior;
+- preço promocional em destaque.
+
+## Interface
+
+- cards responsivos;
+- 2 colunas em celular;
+- 3 colunas a partir de 520 px;
+- placeholders locais;
+- detalhe de produto;
+- estado vazio;
+- chips com rolagem horizontal;
+- busca com botão;
+- nenhum “Adicionar ao carrinho” ainda.
+
+Essa decisão é proposital: carrinho pertence à Rodada 6.
+
+## Validação
+
+- TDD do repositório: RED confirmado antes da implementação;
+- TDD do controller: RED confirmado;
+- TDD do `toolHtml`: RED confirmado;
+- **10/10 testes de catálogo/controller/view aprovados**;
+- **1/1 teste da região dinâmica do shell aprovado**;
+- typecheck dos módulos de catálogo aprovado;
+- integração do `main.ts` validada por typecheck com contratos equivalentes;
+- escape de HTML validado;
+- nenhum endpoint externo;
+- nenhum arquivo em `comprar/` alterado.
+
+## Limitação mantida
+
+O build completo do Vite ainda não foi executado porque o ambiente continua sem acesso confiável ao registry npm.
+
+Isso permanece registrado como pendência real, e não como build aprovado.
 
 ---
 
@@ -1076,8 +1143,8 @@ Ao abrir uma nova conversa e pedir para continuar este projeto, seguir exatament
 9. Conferir qual foi o último checkpoint.
 
 10. Neste snapshot:
-    - Rodadas 0, 1, 2 e 3 estão concluídas;
-    - próxima é a Rodada 4.
+    - Rodadas 0, 1, 2, 3 e 4 estão concluídas;
+    - próxima é a Rodada 5.
 
 11. Executar TDD:
     - teste primeiro;
@@ -1142,11 +1209,12 @@ Uma rodada só pode ser marcada como concluída quando:
 - Rodada 0;
 - Rodada 1;
 - Rodada 2;
-- Rodada 3.
+- Rodada 3;
+- Rodada 4.
 
 **Próxima:**
 
-**Rodada 4 — Catálogo fictício e navegação.**
+**Rodada 5 — Cestas básicas fictícias.**
 
 **Produção:** intocada.
 
