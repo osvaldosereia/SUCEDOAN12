@@ -30,7 +30,7 @@ assert.match(promotion,/promotion_enabled=v_old_gate/,'gate deve ser restaurado'
 assert.match(edge,/idContato/);
 assert.match(edge,/idsSituacoes\[\]/);
 assert.match(edge,/batch_size/);
-assert.match(edge,/Math\.min\(Number\(body\?\.batch_size\)\|\|5,5\)/);
+assert.match(edge,/Math\.min\(Number\(body\?\.batch_size\)\|\|5,10\)/);
 assert.match(edge,/promote_bling_history_ready_batch_v1/);
 assert.match(edge,/claim_bling_history_import_lock_v1/);
 assert.match(edge,/release_bling_history_import_lock_v1/);
