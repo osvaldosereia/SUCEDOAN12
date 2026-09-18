@@ -9,7 +9,7 @@
 - [x] layout mobile-first;
 - [x] safe areas;
 - [x] foco visível via `:focus-visible`;
-- [x] alvos principais com altura mínima de 44 px;
+- [x] alvos principais e controles de toque críticos com altura mínima explícita de 44 px;
 - [x] conversa com `aria-live="polite"`;
 - [x] regiões principais com labels;
 - [x] aviso offline anunciado com `role="status"`;
@@ -21,7 +21,9 @@
 - [x] chips usam `aria-pressed`;
 - [x] botões de quantidade possuem labels;
 - [x] texto não depende exclusivamente de cor para estado;
-- [x] conteúdo em cache permanece visível com aviso offline.
+- [x] conteúdo em cache permanece visível com aviso offline;
+- [x] budgets internos definidos para primeira renderização, transição de rota e tamanhos de bundle/assets;
+- [x] evaluator de budget falha fechado para métricas inválidas.
 
 ## Ainda exige ambiente/browser/aparelho real
 
@@ -34,8 +36,9 @@
 - [ ] contraste medido por ferramenta automatizada;
 - [ ] aparelho Android de entrada;
 - [ ] rotação/reflow;
-- [ ] primeira renderização medida;
-- [ ] bundle final medido após build Vite;
+- [ ] primeira renderização medida contra o budget interno;
+- [ ] transição de rota medida contra o budget interno;
+- [ ] bundle final medido após build Vite contra os budgets definidos;
 - [ ] APK/AAB final medido.
 
 ## Gate
