@@ -484,7 +484,7 @@ function round7ChannelMode(a){return ['whatsapp_status','facebook_story'].includ
 function round7ChannelStatusText(a){if(round7ChannelMode(a)==='manual')return 'Manual no celular';if(a.status==='verified')return 'Conexão verificada';if(a.status==='configured')return 'Pronta para verificar';if(a.status==='error')return 'Verificação com erro';return 'Credencial pendente'}
 function round8ProviderReady(provider){
   const c=state.connections?.connection||{},p=c?.[provider]||{};
-  return p.app_id_set===true&&p.app_secret_set===true&&(provider!=='meta'||/^v\\d+\\.\\d+$/.test(String(p.graph_version||'')));
+  return p.app_id_set===true&&p.app_secret_set===true&&(provider!=='meta'||/^v\d+\.\d+$/.test(String(p.graph_version||'')));
 }
 function renderOAuthCandidates(){
   const sel=state.oauthSelection;if(!sel)return '';
@@ -498,7 +498,7 @@ function renderRound8ConnectionManager(){
   const providerCard=(provider,label,p,description)=>{
     const ready=round8ProviderReady(provider),connected=channels.some(a=>a.provider===provider&&a.status==='verified');
     const graph=provider==='meta'?String(p.graph_version||''):'';
-    const missing=[p.app_id_set!==true?'App ID':null,p.app_secret_set!==true?'App Secret':null,provider==='meta'&&!/^v\\d+\\.\\d+$/.test(graph)?'Graph version':null].filter(Boolean);
+    const missing=[p.app_id_set!==true?'App ID':null,p.app_secret_set!==true?'App Secret':null,provider==='meta'&&!/^v\d+\.\d+$/.test(graph)?'Graph version':null].filter(Boolean);
     return `<article class="provider-connect-card ${connected?'verified':ready?'ready':'pending'}">
       <div class="provider-connect-head"><div><span class="eyebrow">${esc(provider==='meta'?'Meta':'Pinterest')}</span><h3>${esc(label)}</h3></div><span class="status-chip">${connected?'conectado':ready?'pronto':'configuração incompleta'}</span></div>
       <p>${esc(description)}</p>
