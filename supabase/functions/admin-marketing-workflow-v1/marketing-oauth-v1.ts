@@ -24,6 +24,17 @@ async function getJson(url:string,headers:Record<string,string>={}){
   return body;
 }
 
+export async function validateMetaAppCredentials(opts:{appId:string;appSecret:string;graphVersion:string}){
+  const appId=clean(opts.appId,200),appSecret=String(opts.appSecret??'');
+  if(!appId||!appSecret)throw new Error('meta_app_credentials_missing');
+  const base=graphBase(opts.graphVersion),body=new URLSearchParams({grant_type:'client_credentials',client_id:appId,client_secret:appSecret});
+  const res=await fetch(`${base}/oauth/access_token`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  const data=await safeJson(res);
+  if(!res.ok||data?.error)throw new Error(clean(data?.error?.message||data?.message||`HTTP ${res.status}`,800));
+  if(!clean(data?.access_token,5000))throw new Error('meta_app_access_token_missing');
+  return {ok:true,tokenType:clean(data?.token_type,40)||null};
+}
+
 export async function exchangeMetaAuthorization(cfg:MetaOAuthConfig){
   const base=graphBase(cfg.graphVersion),url=new URL(`${base}/oauth/access_token`);
   url.searchParams.set('client_id',clean(cfg.appId,200));url.searchParams.set('client_secret',cfg.appSecret);url.searchParams.set('redirect_uri',cfg.redirectUri);url.searchParams.set('code',cfg.code);
