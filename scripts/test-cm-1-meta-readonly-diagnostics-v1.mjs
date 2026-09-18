@@ -5,6 +5,7 @@ const admin=fs.readFileSync('supabase/functions/admin-whatsapp-direct-v1/index.t
 const api=fs.readFileSync('admin/relationship-api.js','utf8');
 const ui=fs.readFileSync('admin/relacionamento.js','utf8');
 const html=fs.readFileSync('admin/relacionamento.html','utf8');
+const vaultMigration=fs.readFileSync('supabase/migrations/20260918203000_customer_os_vault_secret_reader_v1.sql','utf8');
 
 assert.match(admin,/action==="meta_diagnostics_readonly"/);
 const start=admin.indexOf('if(action==="meta_diagnostics_readonly")');
@@ -12,6 +13,9 @@ const end=admin.indexOf('if(action==="template_save_draft")',start);
 assert.ok(start>=0&&end>start,'bloco meta_diagnostics_readonly ausente');
 const block=admin.slice(start,end);
 
+assert.match(admin,/dona_antonia_whatsapp_access_token_v1/);
+assert.match(admin,/get_customer_os_vault_secret_v1/);
+assert.match(block,/resolveWhatsappAccessTokenReadonly/);
 assert.match(block,/method:"GET"/);
 assert.match(block,/me\/permissions/);
 assert.match(block,/subscribed_apps/);
