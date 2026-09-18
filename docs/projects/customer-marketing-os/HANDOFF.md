@@ -115,3 +115,15 @@ A aba Meta Foundation já exibe o preflight real:
 O resumo canônico é `relationship_command_summary_v1()` versão `cm1.15-v2`.
 
 Não criar botão de ativação nesta fase. A interface é somente leitura para homologação.
+
+
+## Instrumentação Comprar — cuidado na retomada
+
+O código atual está corretamente instrumentado e usa cache key `products.js?v=20260918-cm1-events-02`, mas o deploy público do asset ainda não foi comprovado diretamente nesta sessão.
+
+Enquanto `catalog_search` e `product_view` permanecerem em zero:
+
+1. não reimplementar o collector;
+2. confirmar primeiro o asset realmente servido em produção;
+3. depois executar uso humano real no Comprar;
+4. só então reavaliar os critérios 6 e 7.
