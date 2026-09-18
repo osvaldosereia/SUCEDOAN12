@@ -2,9 +2,37 @@
 
 Atualizado em 18/09/2026.
 
-Status: **PRONTO PARA INICIAR**.
+Status: **EM EXECUÇÃO — CM-1.10 CONCLUÍDA; PRÓXIMA RODADA OFICIAL CM-1.11**.
 
 CM-1 corresponde à “Etapa 1” do novo subprojeto Customer/Marketing/WhatsApp OS. Não confundir com a Etapa 1 do roadmap geral em 20 etapas, que já foi concluída anteriormente.
+
+## Progresso oficial da implementação
+
+Atualizado em 18/09/2026.
+
+| Rodada | Estado |
+|---|---|
+| CM-0 — Architecture Lock | Concluída |
+| CM-1.1 — Segurança e fundação | Concluída |
+| CM-1.2 — Customer Identity Resolver | Concluída |
+| CM-1.3 — Customer 360 operacional | Concluída no backend; UI em canary |
+| CM-1.4 — Event Collector | Concluída V1 |
+| CM-1.5 — Consent Ledger / Customer Protection | Concluída V1 |
+| CM-1.6 — Product Marketing Profile | Concluída V1 |
+| CM-1.7 — Product/Brand Graph | Concluída V2 |
+| CM-1.8 — Segment Engine | Concluída V1 |
+| CM-1.9 — Customer Commercial Profile | Concluída V1 |
+| CM-1.10 — Opportunity Engine | Concluída V1 + precision pass |
+| CM-1.11 — Marketing Brain OBSERVE/SUGGEST | Próxima rodada |
+| CM-1.12 — Meta Foundation | Pendente |
+| CM-1.13 — Template Draft Assistant | Pendente |
+| CM-1.14 — PapoAI Adapter temporário | Pendente |
+| CM-1.15 — Central de Relacionamento | Pendente |
+| Homologação CM-1 | Pendente |
+
+As melhorias visuais do Customer 360 são tratadas como trabalho de homologação/UX **dentro da CM-1.3**, sem alterar a ordem oficial das rodadas centrais.
+
+Nenhuma melhoria visual autoriza pular Consent, Opportunity, Marketing Brain, Meta Foundation ou os demais gates.
 
 ## Objetivo da CM-1
 
@@ -591,4 +619,6 @@ A cada rodada:
 
 ## Próxima ação
 
-**Iniciar CM-0 — Architecture Lock.**
+**CM-1.11 — Marketing Brain em OBSERVE/SUGGEST.**
+
+O Opportunity Engine CM-1.10 entrega oportunidades estruturadas; a próxima rodada adiciona raciocínio publicitário somente sobre essas oportunidades, sem envio externo.
