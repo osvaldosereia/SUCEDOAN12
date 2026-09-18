@@ -15,11 +15,12 @@
     "test:isolation": "node --test tests/isolation/isolation.test.mjs",
     "test:unit": "node --no-warnings --experimental-strip-types --test tests/unit/*.test.ts",
     "test:e2e-contracts": "node --no-warnings --experimental-strip-types --test tests/e2e/*.spec.ts",
-    "test": "npm run verify:isolation && npm run test:no-production-effects && npm run test:isolation && npm run test:unit && npm run test:e2e-contracts && npm run test:contract",
+    "test": "npm run verify:isolation && npm run test:no-production-effects && npm run test:isolation && npm run test:unit && npm run test:e2e-contracts && npm run test:contract && npm run test:security",
     "cap:sync": "npx cap sync",
     "android:sync": "npx cap sync android",
     "android:build:debug": "cd android && ./gradlew assembleDebug",
-    "test:contract": "node --no-warnings --experimental-strip-types --test tests/contract/*.test.ts"
+    "test:contract": "node --no-warnings --experimental-strip-types --test tests/contract/*.test.ts",
+    "test:security": "node --no-warnings --experimental-strip-types --test tests/security/*.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
