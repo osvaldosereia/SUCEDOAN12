@@ -1,7 +1,7 @@
 import {CONFIG} from './runtime-config.js';
 import {getCustomerOsAccessToken,clearCustomerOsSession} from './customer-os-auth.js';
 
-async function secureCall(functionName,body){
+async function secureCall(functionName,body,timeoutMs=18000){
   const token=getCustomerOsAccessToken();
   if(!token){
     const error=new Error('Entre com o PIN para acessar o Marketing.');
@@ -9,7 +9,7 @@ async function secureCall(functionName,body){
     throw error;
   }
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),18000);
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
   try{
     const response=await fetch(`${CONFIG.supabaseUrl}/functions/v1/${functionName}`,{
       method:'POST',
@@ -39,3 +39,6 @@ export const createDeterministicMarketingDraft=()=>secureCall(CONFIG.marketingBr
 export const planMarketingCampaignAssets=(campaignId)=>secureCall(CONFIG.marketingBrainFunction,{action:'plan_campaign_assets',campaign_id:campaignId});
 export const updateMarketingCampaignDraft=(payload)=>secureCall(CONFIG.marketingBrainFunction,{action:'update_campaign_draft',...payload});
 export const previewAiMarketingStrategy=()=>secureCall(CONFIG.marketingBrainFunction,{action:'strategy_preview'});
+
+export const renderMarketingPreview=(assetId)=>secureCall(CONFIG.marketingMediaFunction,{action:'render_preview',asset_id:assetId},60000);
+export const getMarketingMediaUrl=(mediaId,expiresIn=600)=>secureCall(CONFIG.marketingMediaFunction,{action:'signed_url',media_id:mediaId,expires_in:expiresIn},18000);
