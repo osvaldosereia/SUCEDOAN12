@@ -5,7 +5,7 @@ const brain=read('supabase/functions/admin-marketing-brain-v1/index.ts');
 const insights=read('supabase/functions/admin-marketing-insights-v1/index.ts');
 const api=read('admin/marketing-api.js');
 const ui=read('admin/marketing.js');
-const migration=read('supabase/migrations/20260918153500_marketing_asset_plan_v1_hardening.sql');
+const migration=read('supabase/migrations/20260918153441_marketing_asset_plan_v1_hardening.sql');
 
 for(const role of ['feed_square','story_status','pinterest_pin','instagram_carousel','reel_light_10s']){
   must(brain.includes(role),'missing asset role '+role);
