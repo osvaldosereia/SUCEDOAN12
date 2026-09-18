@@ -20,7 +20,10 @@
 - [x] reconexão não duplica pedido;
 - [x] telemetria rejeita PII, texto livre e IDs de publicidade;
 - [x] tabelas Supabase HML estão com RLS e zero grants para anon/authenticated;
-- [x] gate Supabase HML permanece `enabled=false`.
+- [x] gate Supabase HML permanece `enabled=false`;
+- [x] `enabled=false` agora é também constraint de banco e exige migração explícita para qualquer ativação;
+- [x] carrinho HML é validado novamente no banco com IDs `TEST-*`, chaves fechadas e limites de quantidade/preço;
+- [x] total HML é recalculado e comparado ao carrinho no código server-side versionado e por constraint no banco.
 
 ## Hardening local adicional validado
 
