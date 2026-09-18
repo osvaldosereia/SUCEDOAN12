@@ -2,7 +2,7 @@
 
 Atualizado em 18/09/2026.
 
-Status: **EM EXECUÇÃO — CM-1.10 CONCLUÍDA; PRÓXIMA RODADA OFICIAL CM-1.11**.
+Status: **HOMOLOGAÇÃO CM-1 — 14/20 CRITÉRIOS VERIFICADOS · 6 IMPLEMENTADOS AGUARDANDO EVIDÊNCIA/GATE · 0 BLOQUEADOS**.
 
 CM-1 corresponde à “Etapa 1” do novo subprojeto Customer/Marketing/WhatsApp OS. Não confundir com a Etapa 1 do roadmap geral em 20 etapas, que já foi concluída anteriormente.
 
@@ -28,7 +28,7 @@ Atualizado em 18/09/2026.
 | CM-1.13 — Template Draft Assistant | Concluída V1 · DRAFT/manual ativo · IA gate fechado |
 | CM-1.14 — PapoAI Adapter temporário | Concluída V1 · core normalizado · outbound do adapter desligado |
 | CM-1.15 — Central de Relacionamento | Concluída V1 · interface canary · backend seguro |
-| Homologação CM-1 | Pendente |
+| Homologação CM-1 | Em andamento · 14 verified · 6 implemented · 0 blocked · canary manual pendente |
 
 As melhorias visuais do Customer 360 são tratadas como trabalho de homologação/UX **dentro da CM-1.3**, sem alterar a ordem oficial das rodadas centrais.
 
@@ -619,6 +619,6 @@ A cada rodada:
 
 ## Próxima ação
 
-**Homologação CM-1 — rodada manual canary.**
+**Homologação CM-1 — fechar evidências restantes e executar canary manual.**
 
-O snapshot automático já retorna zero blockers e `safe_for_internal_homologation=true`, mantendo `external_activation_authorized=false`. A próxima ação é validar o login PIN e o visual da Central no navegador canary, sem abrir Marketing, Meta Direct ou qualquer outbound externo.
+O acceptance checklist automático cobre os 20 critérios oficiais e atualmente retorna 14 `verified`, 6 `implemented` e 0 `blocked`. A infraestrutura está pronta para homologação manual, mas `cm1_complete=false` e `external_activation_authorized=false` permanecem obrigatoriamente fechados. O próximo gate humano é validar PIN e visual da Central no navegador canary.
