@@ -54,45 +54,45 @@ function assetMedia(assetId){
 function assetPreviewHtml(asset){
   const media=assetMedia(asset.id);
   const role=asset.edit_spec?.content_role||'';
-  const mediaText=media.length?\`${media.length} prévia(s) pronta(s)\`:'Prévia ainda não gerada';
-  return \`<article class="asset-card" data-asset-id="${esc(asset.id)}">
+  const mediaText=media.length?`${media.length} prévia(s) pronta(s)`:'Prévia ainda não gerada';
+  return `<article class="asset-card" data-asset-id="${esc(asset.id)}">
     <div class="asset-card-head"><div><span class="status-chip">${esc(asset.status)}</span><h3>${esc(asset.title)}</h3><p>${esc(roleLabel(role))} · ${esc(asset.media_kind)} · no_ai</p></div>
       <button class="secondary" type="button" data-action="${media.length?'show-preview':'render-preview'}" data-asset-id="${esc(asset.id)}">${media.length?'Ver prévia':'Gerar prévia'}</button>
     </div>
     <div class="asset-safe-line"><span>${esc(mediaText)}</span><span>IA: não</span><span>Publicação: não</span>${asset.media_kind==='video'?'<span>MP4: ainda não</span>':''}</div>
     <div class="asset-preview-slot" data-preview-slot="${esc(asset.id)}"></div>
-  </article>\`;
+  </article>`;
 }
 function renderAssets(){
   const assets=state.overview?.assets||[];
-  const html=assets.length?\`<div class="asset-grid">${assets.map(assetPreviewHtml).join('')}</div>\`:empty('Nenhum conteúdo criado ainda.');
+  const html=assets.length?`<div class="asset-grid">${assets.map(assetPreviewHtml).join('')}</div>`:empty('Nenhum conteúdo criado ainda.');
   $('#assetsList').innerHTML=html;
-  $('#recentAssets').innerHTML=assets.length?\`<div class="data-list">${assets.slice(0,8).map(a=>row(a.title,\`${roleLabel(a.edit_spec?.content_role)} · ${a.media_kind} · v${a.version}\`,a.status,dt(a.updated_at))).join('')}</div>\`:empty('Nenhum conteúdo criado ainda.');
+  $('#recentAssets').innerHTML=assets.length?`<div class="data-list">${assets.slice(0,8).map(a=>row(a.title,`${roleLabel(a.edit_spec?.content_role)} · ${a.media_kind} · v${a.version}`,a.status,dt(a.updated_at))).join('')}</div>`:empty('Nenhum conteúdo criado ainda.');
 }
 async function showAssetPreview(assetId){
-  const slot=document.querySelector(\`[data-preview-slot="${CSS.escape(assetId)}"]\`);
+  const slot=document.querySelector(`[data-preview-slot="${CSS.escape(assetId)}"]`);
   if(!slot)return;
   const media=assetMedia(assetId);
   if(!media.length){slot.innerHTML=empty('Nenhuma mídia de prévia disponível.');return}
   slot.innerHTML='<div class="muted">Abrindo prévia segura…</div>';
   try{
     const signed=await Promise.all(media.slice(0,8).map(m=>getMarketingMediaUrl(m.id,600)));
-    slot.innerHTML=\`<div class="asset-preview-gallery">${signed.map((x,i)=>\`<figure><img src="${esc(x.signed_url)}" alt="Prévia ${i+1}" loading="lazy"><figcaption>${esc(media[i]?.role||'preview')}${media[i]?.duration_ms?' · '+Math.round(media[i].duration_ms/1000)+'s':''}</figcaption></figure>\`).join('')}</div>\`;
-  }catch(err){slot.innerHTML=\`<div class="empty-state">${esc(err.message||'Falha ao abrir prévia.')}</div>\`}
+    slot.innerHTML=`<div class="asset-preview-gallery">${signed.map((x,i)=>`<figure><img src="${esc(x.signed_url)}" alt="Prévia ${i+1}" loading="lazy"><figcaption>${esc(media[i]?.role||'preview')}${media[i]?.duration_ms?' · '+Math.round(media[i].duration_ms/1000)+'s':''}</figcaption></figure>`).join('')}</div>`;
+  }catch(err){slot.innerHTML=`<div class="empty-state">${esc(err.message||'Falha ao abrir prévia.')}</div>`}
 }
 async function renderAssetPreview(assetId,button){
-  const slot=document.querySelector(\`[data-preview-slot="${CSS.escape(assetId)}"]\`);
+  const slot=document.querySelector(`[data-preview-slot="${CSS.escape(assetId)}"]`);
   if(button)button.disabled=true;
   if(slot)slot.innerHTML='<div class="muted">Renderizando sem IA…</div>';
   try{
     const result=await renderMarketingPreview(assetId);
-    if(slot)slot.innerHTML=\`<div class="muted">Prévia gerada: ${Number(result.outputs?.length||0)} arquivo(s). Atualizando…</div>\`;
+    if(slot)slot.innerHTML=`<div class="muted">Prévia gerada: ${Number(result.outputs?.length||0)} arquivo(s). Atualizando…</div>`;
     const previous=state;
     const [overview,metrics,workflow,shortlist]=await Promise.all([getMarketingOverview(),getMarketingMetrics(30),getMarketingWorkflow(),getMarketingShortlist()]);
     state={overview,metrics,workflow,shortlist,previewUrls:previous.previewUrls||{}};
     render();
     await showAssetPreview(assetId);
-  }catch(err){if(slot)slot.innerHTML=\`<div class="empty-state">${esc(err.message||'Falha ao gerar prévia.')}</div>\`}finally{if(button)button.disabled=false}
+  }catch(err){if(slot)slot.innerHTML=`<div class="empty-state">${esc(err.message||'Falha ao gerar prévia.')}</div>`}finally{if(button)button.disabled=false}
 }
 
 function renderCampaigns(){
