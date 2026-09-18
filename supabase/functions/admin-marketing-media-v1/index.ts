@@ -29,8 +29,11 @@ async function fetchImageData(value:unknown){
 function rasterWebp(svg:string){
   return ImageMagick.read(new TextEncoder().encode(svg),(img):Uint8Array=>img.write(MagickFormat.WebP,(data)=>data));
 }
+function normalizePng(bytes:Uint8Array){
+  return ImageMagick.read(bytes,(img):Uint8Array=>img.write(MagickFormat.Png,(data)=>data));
+}
 async function renderProduct(p:any,width:number,height:number,headline:string,cta:string){
-  const fetched=await fetchImageData(p.image_url),uri=`data:${fetched.mime};base64,${bytesBase64(fetched.bytes)}`;
+  const fetched=await fetchImageData(p.image_url),normalized=normalizePng(fetched.bytes),uri=`data:image/png;base64,${bytesBase64(normalized)}`;
   return rasterWebp(artSvg({width,height,headline,cta,product:p,imageDataUri:uri}));
 }
 async function storePreview(sb:any,userId:string,asset:any,bytes:Uint8Array,role:string,file:string,width:number,height:number,metadata:any){
@@ -100,7 +103,7 @@ Deno.serve(async(req:Request)=>{
         outputs.push(await storePreview(sb,user.id,asset,bytes,"preview","preview.webp",width,height,{content_role:edit.content_role||"image"}));
       }else if(asset.media_kind==="carousel"){
         const plan=arr(edit.slide_plan).slice(0,5),width=1080,height=1350;let n=0;
-        for(const slide of plan){n++;let bytes:Uint8Array;if(slide?.type==="product"&&slide?.product?.image_url)bytes=await renderProduct(slide.product,width,height,clean(slide.product.name,150),cta);else bytes=rasterWebp(textSlideSvg(width,height,clean(slide?.headline||headline,160),cta));
+        for(const slide of plan){n++;let bytes:Uint8Array;if(slide?.type==="product"&&slide?.product?.image_url)bytes=await renderProduct(slide.product,width,height,"",cta);else bytes=rasterWebp(textSlideSvg(width,height,clean(slide?.headline||headline,160),cta));
           outputs.push(await storePreview(sb,user.id,asset,bytes,"preview",`slide-${String(n).padStart(2,"0")}.webp`,width,height,{content_role:"instagram_carousel",slide_no:n,slide_type:clean(slide?.type||"text",40)}));
         }
       }else if(asset.media_kind==="video"){
