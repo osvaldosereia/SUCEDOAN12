@@ -127,3 +127,19 @@ Enquanto `catalog_search` e `product_view` permanecerem em zero:
 2. confirmar primeiro o asset realmente servido em produção;
 3. depois executar uso humano real no Comprar;
 4. só então reavaliar os critérios 6 e 7.
+
+
+## Última auditoria adicional
+
+`CM1-HOMOLOGATION-LEGACY-META-EVIDENCE-V1.md`
+
+- não limpar `automation_config` ainda: existem dependências legadas no código;
+- 0 outbound jobs nas últimas 24h e 7 dias;
+- WABA e Phone Number ID presentes;
+- permissões Meta persistidas: 0;
+- provider health snapshots: 0;
+- webhook events Meta: 0;
+- Graph API version: null;
+- Meta Direct continua fail-closed e `external_activation_authorized=false`.
+
+Na retomada, não repetir essa auditoria. Continuar pela obtenção de evidência real read-only da Meta ou pelas evidências orgânicas restantes do acceptance checklist.
