@@ -74,7 +74,14 @@ Deno.serve(async(req:Request)=>{
       {data:timeline,error:timelineError},
       {data:behavior,error:behaviorError},
       {data:handoffs,error:handoffsError},
-      {data:identityEvaluations,error:identityEvaluationsError}
+      {data:identityEvaluations,error:identityEvaluationsError},
+      {data:productStats,error:productStatsError},
+      {data:conversations,error:conversationsError},
+      {data:carts,error:cartsError},
+      {data:serviceMemory,error:serviceMemoryError},
+      {data:substitutionPreferences,error:substitutionPreferencesError},
+      {data:marketingTouchpoints,error:marketingTouchpointsError},
+      {data:marketingEvents,error:marketingEventsError}
     ]=await Promise.all([
       sb.from('customer_phones').select('id,phone_e164,source,is_primary,verified_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
       sb.from('customer_emails').select('id,email,verification_status,is_primary,source,verified_at,linked_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
@@ -86,17 +93,60 @@ Deno.serve(async(req:Request)=>{
       sb.from('customer_timeline_v1').select('customer_id,conversation_id,occurred_at,channel,event_kind,direction,title,body_text,reference_id,metadata').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(timelineLimit),
       sb.from('customer_behavior_events').select('id,conversation_id,event_type,event_data,occurred_at').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(50),
       sb.from('human_handoffs').select('id,conversation_id,reason,priority,status,summary,channel,created_at,claimed_at,resolved_at,sla_due_at').eq('customer_id',id).order('created_at',{ascending:false}).limit(20),
-      sb.from('customer_identity_resolution_evaluations').select('id,decision,confidence,confidence_scope,source,channel,evidence,created_at').eq('customer_id',id).order('created_at',{ascending:false}).limit(20)
+      sb.from('customer_identity_resolution_evaluations').select('id,decision,confidence,confidence_scope,match_method,review_status,source,channel,evidence,created_at,matched_at,reviewed_at').eq('customer_id',id).order('created_at',{ascending:false}).limit(20),
+      sb.from('customer_product_stats').select('purchase_count,total_quantity,total_spent,first_purchase_at,last_purchase_at,product:products(id,name,brand,category,subcategory,packaging,image_url,is_active)').eq('customer_id',id).order('last_purchase_at',{ascending:false}).limit(100),
+      sb.from('conversations').select('id,source,status,stage,response_preference,human_required,context_summary,opened_at,last_inbound_at,last_outbound_at,mode,sales_pressure_level,proactive_offer_count,upsell_declined,fast_checkout,last_offer_at,room_last_active_at,channel,channel_account_id,external_user_id,created_at,updated_at').eq('customer_id',id).order('updated_at',{ascending:false}).limit(30),
+      sb.from('carts').select('id,conversation_id,basket_id,status,subtotal,adjustments,total,currency,expires_at,created_at,updated_at,pricing_status,pricing_issues').eq('customer_id',id).order('updated_at',{ascending:false}).limit(30),
+      sb.from('customer_service_memory').select('id,memory_key,memory_value,confidence,status,expires_at,source_kind,evidence_count,last_evidence_at,metadata,created_at,updated_at').eq('customer_id',id).order('updated_at',{ascending:false}).limit(50),
+      sb.from('customer_substitution_preferences').select('id,product_id,substitution_group_id,basket_id,preference,notes,created_at,updated_at').eq('customer_id',id).order('updated_at',{ascending:false}).limit(50),
+      sb.from('marketing_attribution_touchpoints').select('id,asset_id,campaign_id,channel,touchpoint_type,subject_ref,parent_touchpoint_id,evidence_key,evidence_source,occurred_at,evidence,created_at').eq('subject_ref',id).order('occurred_at',{ascending:false}).limit(50),
+      sb.from('marketing_events').select('id,entity_type,entity_id,event_type,data,external_side_effect,created_at').eq('entity_type','customer').eq('entity_id',id).order('created_at',{ascending:false}).limit(50)
     ]);
     const failures=[
       ['phones',phonesError],['emails',emailsError],['addresses',addressesError],['identities',identitiesError],
       ['consents',consentsError],['intelligence',intelligenceError],['segments',segmentsError],['timeline',timelineError],
-      ['behavior',behaviorError],['handoffs',handoffsError],['identity_evaluations',identityEvaluationsError]
+      ['behavior',behaviorError],['handoffs',handoffsError],['identity_evaluations',identityEvaluationsError],
+      ['product_stats',productStatsError],['conversations',conversationsError],['carts',cartsError],
+      ['service_memory',serviceMemoryError],['substitution_preferences',substitutionPreferencesError],
+      ['marketing_touchpoints',marketingTouchpointsError],['marketing_events',marketingEventsError]
     ].filter(([,e])=>Boolean(e)).map(([part,e]:any)=>({part,error:e.message}));
     if(failures.length)return json(origin,{ok:false,error:'customer_360_failed',failures},400);
     const activeConsents=(consents||[]).reduce((acc:any,row:any)=>{
       const key=`${row.channel}:${row.purpose}`;if(!acc[key])acc[key]=row;return acc;
     },{});
+    const productRows=(productStats||[]).filter((x:any)=>x.product);
+    const brandMap=new Map<string,any>();
+    const categoryMap=new Map<string,any>();
+    for(const row of productRows){
+      const brand=text(row.product?.brand,120)||'Sem marca';
+      const category=text(row.product?.category,120)||'Sem categoria';
+      const brandAgg=brandMap.get(brand)||{brand,purchase_count:0,total_quantity:0,total_spent:0,last_purchase_at:null};
+      brandAgg.purchase_count+=Number(row.purchase_count||0);
+      brandAgg.total_quantity+=Number(row.total_quantity||0);
+      brandAgg.total_spent+=Number(row.total_spent||0);
+      if(!brandAgg.last_purchase_at||String(row.last_purchase_at||'')>String(brandAgg.last_purchase_at||''))brandAgg.last_purchase_at=row.last_purchase_at||null;
+      brandMap.set(brand,brandAgg);
+      const categoryAgg=categoryMap.get(category)||{category,purchase_count:0,total_quantity:0,total_spent:0,last_purchase_at:null};
+      categoryAgg.purchase_count+=Number(row.purchase_count||0);
+      categoryAgg.total_quantity+=Number(row.total_quantity||0);
+      categoryAgg.total_spent+=Number(row.total_spent||0);
+      if(!categoryAgg.last_purchase_at||String(row.last_purchase_at||'')>String(categoryAgg.last_purchase_at||''))categoryAgg.last_purchase_at=row.last_purchase_at||null;
+      categoryMap.set(category,categoryAgg);
+    }
+    const brands=[...brandMap.values()].sort((a,b)=>b.total_spent-a.total_spent||b.purchase_count-a.purchase_count).slice(0,20);
+    const categories=[...categoryMap.values()].sort((a,b)=>b.total_spent-a.total_spent||b.purchase_count-a.purchase_count).slice(0,20);
+    const segmentKeys=Array.isArray(segments?.segments)?segments.segments:[];
+    const lifecycle=Number(intelligence?.order_count||0)===0?'prospect':
+      segmentKeys.includes('inativo')?'inactive':
+      segmentKeys.includes('primeiro_comprador')?'new_customer':
+      (segmentKeys.includes('recorrente')||segmentKeys.includes('mensal'))?'recurring':'active';
+    const interactionCandidates=[
+      ...(timeline||[]).map((x:any)=>x.occurred_at),
+      ...(conversations||[]).flatMap((x:any)=>[x.last_inbound_at,x.last_outbound_at,x.updated_at]),
+      customer.last_catalog_at,customer.last_order_at
+    ].filter(Boolean).map((x:any)=>new Date(x)).filter((x:Date)=>!Number.isNaN(x.getTime())).sort((a:Date,b:Date)=>b.getTime()-a.getTime());
+    const lastInteractionAt=interactionCandidates[0]?.toISOString()||null;
+    const openCart=(carts||[]).find((x:any)=>['draft','open','active'].includes(String(x.status||'').toLowerCase()))||null;
     const dataQuality={
       has_name:Boolean(customer.name),
       has_phone:Boolean(customer.primary_whatsapp_e164||(phones||[]).length),
@@ -112,8 +162,20 @@ Deno.serve(async(req:Request)=>{
       customer,
       contact:{phones:phones||[],emails:emails||[],addresses:addresses||[],channel_identities:identities||[]},
       consent:{events:consents||[],current:activeConsents},
-      commercial:{intelligence:intelligence||{},segments:segments||{}},
-      activity:{timeline:timeline||[],behavior_events:behavior||[],handoffs:handoffs||[]},
+      summary:{
+        lifecycle,
+        customer_since:customer.created_at||null,
+        last_interaction_at:lastInteractionAt,
+        last_purchase_at:intelligence?.last_order_at||customer.last_order_at||null,
+        order_count:Number(intelligence?.order_count||customer.order_count||0),
+        lifetime_value:Number(intelligence?.lifetime_value||customer.lifetime_value||0),
+        average_ticket:Number(intelligence?.average_ticket||0),
+        open_cart:openCart?{id:openCart.id,total:openCart.total,status:openCart.status,updated_at:openCart.updated_at}:null
+      },
+      commercial:{intelligence:intelligence||{},segments:segments||{},products:productRows,brands,categories},
+      activity:{timeline:timeline||[],behavior_events:behavior||[],handoffs:handoffs||[],conversations:conversations||[],carts:carts||[]},
+      preferences:{service_memory:serviceMemory||[],substitutions:substitutionPreferences||[]},
+      marketing:{touchpoints:marketingTouchpoints||[],events:marketingEvents||[]},
       identity_resolution:{latest:(identityEvaluations||[])[0]||null,evaluations:identityEvaluations||[]},
       data_quality:{...dataQuality,completeness_percent:completeness}
     });
