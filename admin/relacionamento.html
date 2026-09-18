@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-store">
   <title>Dona Antônia · Central de Relacionamento</title>
   <link rel="stylesheet" href="./styles.css?v=20260911-2">
-  <link rel="stylesheet" href="./relacionamento.css?v=20260918-2">
+  <link rel="stylesheet" href="./relacionamento.css?v=20260918-3">
 </head>
 <body>
 <header class="topbar">
@@ -30,10 +30,11 @@
       <button type="button" data-panel="templates">Templates</button>
       <button type="button" data-panel="meta">Meta Foundation</button>
       <button type="button" data-panel="quality">Qualidade dos Dados</button>
+      <button type="button" data-panel="homologation">Homologação CM-1</button>
       <button type="button" data-panel="audit">Auditoria</button>
     </nav>
     <div class="relationship-side-note">
-      <strong>CM-1.15</strong>
+      <strong>Homologação CM-1</strong>
       <span>Leitura operacional unificada</span>
       <small>Sem campanhas automáticas e sem envio externo.</small>
     </div>
@@ -95,11 +96,25 @@
       <section data-relationship-panel="templates" hidden><article class="panel"><div class="section-title"><div><h2>Templates WhatsApp</h2><p>Biblioteca local versionada, ainda em DRAFT.</p></div><a href="./marketing.html" class="inline-link">Abrir Templates</a></div><div id="templatesView"></div></article></section>
       <section data-relationship-panel="meta" hidden><article class="panel"><div class="section-title"><div><h2>Meta Foundation</h2><p>Estado da fundação Meta e do provider atual.</p></div></div><div id="metaView"></div></article></section>
       <section data-relationship-panel="quality" hidden><article class="panel"><div class="section-title"><div><h2>Qualidade dos Dados</h2><p>Pendências que reduzem a capacidade comercial do sistema.</p></div></div><div id="qualityView"></div></article></section>
+      <section data-relationship-panel="homologation" hidden>
+        <div id="acceptanceSummary" class="acceptance-summary"></div>
+        <article class="panel">
+          <div class="section-title">
+            <div><h2>20 critérios de saída da CM-1</h2><p>Verificação automática do roadmap oficial. “Implementado” significa que a capacidade passou nos contratos/smokes, mas ainda aguarda evidência real ou gate manual.</p></div>
+            <span id="acceptanceBadge" class="safe-pill">Verificando</span>
+          </div>
+          <div id="acceptanceView"></div>
+        </article>
+        <article class="panel">
+          <div class="section-title"><div><h2>Gates manuais</h2><p>Nenhum deles é contornado pela automação.</p></div></div>
+          <div id="manualGatesView"></div>
+        </article>
+      </section>
       <section data-relationship-panel="audit" hidden><article class="panel"><div class="section-title"><div><h2>Auditoria</h2><p>Execuções, eventos e integrações recentes.</p></div><button id="refreshAudit" class="secondary" type="button">Atualizar auditoria</button></div><div id="auditView"></div></article></section>
     </section>
   </main>
 </div>
 
-<script type="module" src="./relacionamento.js?v=20260918-2"></script>
+<script type="module" src="./relacionamento.js?v=20260918-3"></script>
 </body>
 </html>
