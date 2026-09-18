@@ -106,6 +106,7 @@
 
 .quick-actions button {
   appearance: none;
+  min-height: 44px;
   padding: 10px 15px;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
@@ -213,6 +214,7 @@
 
 .order-bar button {
   min-width: 116px;
+  min-height: 44px;
   padding: 10px 16px;
   border: 0;
   border-radius: var(--da-radius-pill);
@@ -412,7 +414,7 @@
 
 .catalog-chip {
   flex: 0 0 auto;
-  min-height: 38px;
+  min-height: 44px;
   padding: 7px 13px;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
@@ -430,7 +432,7 @@
 }
 
 .catalog-chip-secondary {
-  min-height: 34px;
+  min-height: 44px;
   background: transparent;
   font-size: 12px;
 }
@@ -555,7 +557,7 @@
 
 .product-detail-back {
   width: fit-content;
-  min-height: 38px;
+  min-height: 44px;
   padding: 7px 13px;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
@@ -746,7 +748,7 @@
 
 .basket-detail-back {
   width: fit-content;
-  min-height: 38px;
+  min-height: 44px;
   padding: 7px 13px;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
@@ -961,9 +963,9 @@
 
 .quantity-control {
   display: grid;
-  grid-template-columns: 36px 34px 36px;
+  grid-template-columns: 44px 34px 44px;
   align-items: center;
-  min-height: 36px;
+  min-height: 44px;
   overflow: hidden;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
@@ -971,7 +973,7 @@
 }
 
 .quantity-control button {
-  min-height: 36px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   color: var(--da-text);
@@ -991,7 +993,7 @@
 }
 
 .cart-remove {
-  min-height: 32px;
+  min-height: 44px;
   padding: 4px 7px;
   border: 0;
   background: transparent;
@@ -1041,7 +1043,7 @@
 
 .cart-clear {
   width: fit-content;
-  min-height: 38px;
+  min-height: 44px;
   padding: 7px 12px;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
@@ -1486,7 +1488,7 @@
 
 .privacy-card button {
   flex: 0 0 auto;
-  min-height: 40px;
+  min-height: 44px;
   padding: 7px 12px;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
@@ -1521,7 +1523,7 @@
 }
 
 .privacy-rights button {
-  min-height: 40px;
+  min-height: 44px;
   padding: 7px 11px;
   border: 1px solid var(--da-border);
   border-radius: var(--da-radius-pill);
