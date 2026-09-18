@@ -33,8 +33,9 @@ test('Round 8 does not enable publishing',()=>{
   assert.doesNotMatch(migration,/facebook_.*publish_enabled\s*=\s*true/i);
 });
 
-test('Meta OAuth uses current configured graph version and minimum publishing scopes',()=>{
-  assert.match(migration,/meta_graph_version'.*'v26\.0'/s);
+test('Meta OAuth requires explicit graph version and minimum publishing scopes',()=>{
+  assert.doesNotMatch(admin,/graph_version\|\|'v26\.0'/);
+  assert.match(workflow,/graph_version/);
   for(const scope of ['pages_show_list','pages_read_engagement','pages_manage_posts','instagram_basic','instagram_content_publish'])assert.ok(migration.includes("'"+scope+"'"),scope);
   assert.match(oauth,/www\.facebook\.com\/\$\{version\}\/dialog\/oauth/);
   assert.match(oauth,/\/me\/accounts/);
@@ -102,4 +103,13 @@ test('disconnect is local, owner-only and removes only provider Vault refs',()=>
   assert.doesNotMatch(workflow.slice(pos,pos+3500),/graph\.facebook\.com|api\.pinterest\.com/);
   assert.match(admin,/data-provider-disconnect/);
   assert.match(api,/disconnectMarketingProvider/);
+});
+
+
+test('OAuth hardening cleans temp refs incrementally',()=>{
+  assert.match(workflow,/marketing_oauth_cleanup_v1/);
+  assert.match(workflow,/cleanupOAuthSessionSecrets/);
+  assert.match(workflow,/secret_refs:\{pages:refs\}/);
+  assert.match(workflow,/secret_refs:\{access:accessRef,refresh:null\}/);
+  assert.match(workflow,/temp_secrets_cleaned:true/);
 });
