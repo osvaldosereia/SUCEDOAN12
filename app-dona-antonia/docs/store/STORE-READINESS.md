@@ -43,6 +43,16 @@ Fontes oficiais:
 - https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy
 - https://developer.apple.com/help/app-store-connect/test-a-beta-version/add-internal-testers
 
+## Artefatos de preparação já criados
+
+- `APP-STORE-CHECKLIST.md`;
+- `PLAY-STORE-CHECKLIST.md`;
+- `REVIEW-PROFILE.md` com identidade exclusivamente `TEST-*`;
+- gate automático `releaseReadiness.ts`;
+- testes que exigem estado DRAFT/OFF e ausência de contato real no perfil de review.
+
+Nenhum desses artefatos representa submissão ou criação de conta de loja.
+
 ## Bloqueios atuais da R24
 
 - Android APK/AAB real inexistente;
