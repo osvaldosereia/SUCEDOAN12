@@ -214,7 +214,7 @@ export function renderCustomer360(options){
     '<header class="c360-hero">'+
       '<div class="c360-identity">'+
         '<div class="c360-avatar">'+esc(initials(customer.name))+'</div>'+
-        '<div><span class="c360-eyebrow">Cliente 360</span><h2>'+esc(customer.name||'Cliente')+'</h2><p>'+esc(phone||'Telefone não informado')+'</p></div>'+
+        '<div><span class="c360-eyebrow">Cliente 360</span><h2>'+esc(customer.name||'Cliente')+'</h2><p>'+esc(phone||'Telefone não informado')+'</p><div class="c360-hero-tags"><span>'+esc(lifecycle)+'</span><span class="'+(customer.is_active===false?'bad':'good')+'">'+(customer.is_active===false?'Cliente inativo':'Cliente ativo')+'</span><span class="'+(protectionAllowed?'good':'bad')+'">Marketing '+(protectionAllowed?'liberado':'bloqueado')+'</span></div></div>'+
       '</div>'+
       '<div class="c360-hero-actions">'+
         (wa?'<a class="secondary" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
