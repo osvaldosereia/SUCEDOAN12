@@ -114,11 +114,239 @@ Deno.serve(async(req:Request)=>{
     return Array.isArray(data)?data:[];
   };
 
+
+  const getCampaign=async(campaignId:string)=>{
+    const {data,error}=await sb.from("marketing_campaigns")
+      .select("id,name,objective,status,enabled,execution_mode,kill_switch,content_policy,product_selection,channel_plan,ai_policy")
+      .eq("id",campaignId).maybeSingle();
+    if(error)throw new Error(error.message);
+    return data;
+  };
+
+  const planCampaignAssets=async(campaignId:string)=>{
+    const campaign=await getCampaign(campaignId);
+    if(!campaign)return {ok:false,error:"campaign_not_found"};
+    if(campaign.status!=="draft"||campaign.enabled||campaign.execution_mode!=="off"||campaign.kill_switch!==true){
+      return {ok:false,error:"campaign_not_safe_for_draft_planning"};
+    }
+
+    const ids=arr(campaign?.product_selection?.product_ids).map(String).filter(Boolean).slice(0,4);
+    if(!ids.length)return {ok:false,error:"campaign_has_no_products"};
+    const {data:productRows,error:productError}=await sb.from("products")
+      .select("id,name,brand,price,cost,stock,is_offer,offer_price,category,subcategory,customer_category,customer_subcategory,image_ai_url,image_url,image_original_url,image_source_url,is_active,desired_bling_status,sales_category")
+      .in("id",ids);
+    if(productError)throw new Error(productError.message);
+    const productMap=new Map((productRows||[]).map((p:any)=>[String(p.id),p]));
+    const products=ids.map(id=>productMap.get(id)).filter(Boolean).filter((p:any)=>
+      p.is_active===true&&p.desired_bling_status==="A"&&clean(p.sales_category,80)&&num(p.stock)>0&&num(p.price)>0
+    );
+    if(!products.length)return {ok:false,error:"campaign_products_not_eligible"};
+
+    const {data:templateRows,error:templateError}=await sb.from("marketing_content_templates")
+      .select("id,template_key,name,media_kind,canvas_spec,status")
+      .in("template_key",["square_offer","vertical_story_status","pinterest_vertical","instagram_carousel_card","vertical_video_offer"]);
+    if(templateError)throw new Error(templateError.message);
+    const templates=new Map((templateRows||[]).map((t:any)=>[String(t.template_key),t]));
+    const required=["square_offer","vertical_story_status","pinterest_vertical","instagram_carousel_card","vertical_video_offer"];
+    for(const key of required){if(!templates.get(key))return {ok:false,error:"template_missing",template_key:key};}
+
+    const {data:existing,error:existingError}=await sb.from("marketing_assets")
+      .select("id,title,media_kind,status,edit_spec,render_spec,template_id,version")
+      .eq("campaign_id",campaignId).neq("status","archived");
+    if(existingError)throw new Error(existingError.message);
+    const existingByRole=new Map((existing||[]).map((a:any)=>[clean(a?.edit_spec?.content_role,80),a]));
+
+    const policy=campaign.content_policy&&typeof campaign.content_policy==="object"?campaign.content_policy:{};
+    const hero=products[0];
+    const bestImage=(p:any)=>clean(p.image_ai_url||p.image_url||p.image_original_url||p.image_source_url,1200);
+    const effectivePrice=(p:any)=>p.is_offer&&num(p.offer_price)>0&&num(p.offer_price)<num(p.price)?num(p.offer_price):num(p.price);
+    const source=(p:any)=>({kind:"product_image",product_id:String(p.id),url:bestImage(p),name:clean(p.name,180)});
+    const productPayload=(p:any)=>({
+      id:String(p.id),name:clean(p.name,180),brand:clean(p.brand,100)||null,
+      price:num(p.price),effective_price:effectivePrice(p),is_offer:Boolean(p.is_offer&&effectivePrice(p)<num(p.price)),
+      image_url:bestImage(p),stock:num(p.stock)
+    });
+    const productRefs=products.map(source);
+    const compactProducts=products.map(productPayload);
+    const headline=clean(policy.hook||campaign.name,120)||clean(campaign.name,120);
+    const cta=clean(policy.cta||"Peça pelo WhatsApp ou compre no site da Dona Antônia.",180);
+    const common={
+      campaign_id:campaignId,
+      campaign_name:clean(campaign.name,120),
+      headline,cta,
+      strategy_mode:clean(policy.strategy_mode||"deterministic",40),
+      image_quality:"low",
+      reuse_assets_first:true,
+      products:compactProducts
+    };
+
+    const specs=[
+      {
+        role:"feed_square",
+        title:"Post · "+clean(campaign.name,120),
+        media_kind:"image",
+        template_key:"square_offer",
+        source_refs:[source(hero)],
+        edit_spec:{...common,content_role:"feed_square",reuse_for:["instagram_feed","facebook_image"],product:productPayload(hero)},
+        render_spec:{schema:"marketing.asset.draft.v1",kind:"deterministic_image",width:1080,height:1080,template_key:"square_offer",quality:84,ai_used:false,external_side_effect:false}
+      },
+      {
+        role:"story_status",
+        title:"Story e Status · "+clean(campaign.name,120),
+        media_kind:"image",
+        template_key:"vertical_story_status",
+        source_refs:[source(hero)],
+        edit_spec:{...common,content_role:"story_status",reuse_for:["instagram_story","whatsapp_status","facebook_story_if_available"],product:productPayload(hero)},
+        render_spec:{schema:"marketing.asset.draft.v1",kind:"deterministic_image",width:1080,height:1920,template_key:"vertical_story_status",quality:84,ai_used:false,external_side_effect:false}
+      },
+      {
+        role:"pinterest_pin",
+        title:"Pinterest · "+clean(campaign.name,120),
+        media_kind:"image",
+        template_key:"pinterest_vertical",
+        source_refs:[source(hero)],
+        edit_spec:{...common,content_role:"pinterest_pin",reuse_for:["pinterest_pin"],product:productPayload(hero),link_target:"storefront_campaign"},
+        render_spec:{schema:"marketing.asset.draft.v1",kind:"deterministic_image",width:1000,height:1500,template_key:"pinterest_vertical",quality:84,ai_used:false,external_side_effect:false}
+      },
+      {
+        role:"instagram_carousel",
+        title:"Carrossel · "+clean(campaign.name,120),
+        media_kind:"carousel",
+        template_key:"instagram_carousel_card",
+        source_refs:productRefs,
+        edit_spec:{
+          ...common,content_role:"instagram_carousel",reuse_for:["instagram_carousel"],
+          slide_plan:[
+            {type:"cover",headline},
+            ...compactProducts.map((p:any)=>({type:"product",product:p})),
+            {type:"cta",headline:"Peça na Dona Antônia",cta}
+          ]
+        },
+        render_spec:{schema:"marketing.carousel.plan.v1",width:1080,height:1350,template_key:"instagram_carousel_card",slide_count:Math.min(5,compactProducts.length+2),ai_used:false,external_side_effect:false}
+      },
+      {
+        role:"reel_light_10s",
+        title:"Reel 10s · "+clean(campaign.name,120),
+        media_kind:"video",
+        template_key:"vertical_video_offer",
+        source_refs:productRefs,
+        edit_spec:{
+          ...common,content_role:"reel_light_10s",reuse_for:["instagram_reel","facebook_reel"],
+          duration_seconds:10,
+          motion:["slow_zoom","float","shine","price_pop","cta_reveal"],
+          audio_mode:"optional_music_sfx",
+          composition:"single_composition"
+        },
+        render_spec:{
+          schema:"marketing.light_motion.v1",width:1080,height:1920,fps:30,duration_ms:10000,
+          template_key:"vertical_video_offer",codec:"h264",ai_used:false,generative_video:false,
+          timeline:[
+            {from_ms:0,to_ms:10000,effect:"slow_zoom",scale_from:1,scale_to:1.035},
+            {from_ms:700,to_ms:8500,effect:"float",amplitude_px:8},
+            {from_ms:2500,to_ms:6500,effect:"shine"},
+            {at_ms:3500,effect:"price_pop"},
+            {at_ms:7600,effect:"cta_reveal"}
+          ],
+          external_side_effect:false
+        }
+      }
+    ];
+
+    const created:any[]=[];
+    const reused:any[]=[];
+    for(const spec of specs){
+      const found=existingByRole.get(spec.role);
+      if(found){reused.push({...found,content_role:spec.role});continue;}
+      const template=templates.get(spec.template_key);
+      const {data,error}=await sb.rpc("create_marketing_asset_draft_v1",{
+        p_title:spec.title,
+        p_media_kind:spec.media_kind,
+        p_generation_mode:"no_ai",
+        p_campaign_id:campaignId,
+        p_template_id:template.id,
+        p_command_preset_id:null,
+        p_source_refs:spec.source_refs,
+        p_edit_spec:spec.edit_spec,
+        p_render_spec:spec.render_spec,
+        p_actor:user.id
+      });
+      if(error)throw new Error(error.message);
+      if(!data?.ok)return {ok:false,error:data?.error||"asset_draft_failed",role:spec.role};
+      created.push({id:data.id,content_role:spec.role,title:spec.title,media_kind:spec.media_kind,status:"draft"});
+    }
+
+    if(created.length){
+      await sb.from("marketing_events").insert({
+        entity_type:"campaign",entity_id:campaignId,event_type:"asset_plan_created",actor_id:user.id,
+        data:{version:"marketing_asset_plan_v1",created_count:created.length,reused_count:reused.length,roles:specs.map(s=>s.role),ai_used:false},
+        external_side_effect:false
+      });
+    }
+    return {
+      ok:true,campaign_id:campaignId,
+      created,reused,
+      plan:{version:"marketing_asset_plan_v1",asset_count:specs.length,roles:specs.map(s=>s.role),publication_jobs_created:0,render_jobs_created:0,ai_used:false},
+      external_side_effect:false
+    };
+  };
+
   if(action==="shortlist"){
     try{
       const items=await getShortlist();
       return json({ok:true,items,policy:{max_candidates:maxCandidates,lookback_days:lookbackDays,deterministic_first:true},external_side_effect:false});
     }catch(error){return json({ok:false,error:"shortlist_failed",detail:clean((error as Error)?.message,500)},500)}
+  }
+
+
+
+  if(action==="update_campaign_draft"){
+    const campaignId=clean(body?.campaign_id,80);
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(campaignId)){
+      return json({ok:false,error:"invalid_campaign_id"},400);
+    }
+    try{
+      const campaign=await getCampaign(campaignId);
+      if(!campaign)return json({ok:false,error:"campaign_not_found"},404);
+      if(campaign.status!=="draft"||campaign.enabled||campaign.execution_mode!=="off"){
+        return json({ok:false,error:"campaign_not_editable"},409);
+      }
+      const name=clean(body?.name,120)||campaign.name;
+      const objective=clean(body?.objective,240);
+      const hook=clean(body?.hook,220);
+      const cta=clean(body?.cta,180);
+      const contentPolicy={...(campaign.content_policy||{})};
+      if(hook)contentPolicy.hook=hook;
+      if(cta)contentPolicy.cta=cta;
+      const {data,error}=await sb.rpc("update_marketing_campaign_draft_v1",{
+        p_campaign_id:campaignId,
+        p_name:name,
+        p_objective:objective||campaign.objective||null,
+        p_content_policy:contentPolicy,
+        p_product_selection:campaign.product_selection||{},
+        p_schedule_rule:null,
+        p_channel_plan:campaign.channel_plan||{},
+        p_ai_policy:campaign.ai_policy||{},
+        p_actor:user.id
+      });
+      if(error)return json({ok:false,error:"campaign_update_failed",detail:clean(error.message,500)},400);
+      if(!data?.ok)return json(data,409);
+      return json({ok:true,campaign_id:campaignId,status:"draft",external_side_effect:false});
+    }catch(error){
+      return json({ok:false,error:"campaign_update_failed",detail:clean((error as Error)?.message,500),external_side_effect:false},500);
+    }
+  }
+
+  if(action==="plan_campaign_assets"){
+    const campaignId=clean(body?.campaign_id,80);
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(campaignId)){
+      return json({ok:false,error:"invalid_campaign_id"},400);
+    }
+    try{
+      const result=await planCampaignAssets(campaignId);
+      return json(result,result?.ok?200:400);
+    }catch(error){
+      return json({ok:false,error:"asset_plan_failed",detail:clean((error as Error)?.message,500),external_side_effect:false},500);
+    }
   }
 
   const createDraft=async(strategy:any,items:any[],strategyMode:string,model:string|null,usage:any=null,responseId:string|null=null)=>{
