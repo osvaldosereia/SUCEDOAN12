@@ -43,10 +43,14 @@ Deno.serve(async(req:Request)=>{
   };
 
   if(action==='frequent_purchases'){
-    if(!session.customer_id)return json(req,{ok:true,frequent:{has_history:false,frequent_products:[],recent_extras:[],favorite_basket:null}});
-    const {data,error}=await sb.rpc('get_customer_frequent_purchases_v1',{p_customer_id:session.customer_id,p_product_limit:10,p_extra_limit:6});
+    if(!session.customer_id)return json(req,{ok:true,frequent:{has_history:false,frequent_products:[],recent_extras:[],favorite_basket:null,segments:{segments:[],reasons:{}}}});
+    const [{data,error},{data:segments,error:segmentsError}]=await Promise.all([
+      sb.rpc('get_customer_frequent_purchases_v1',{p_customer_id:session.customer_id,p_product_limit:10,p_extra_limit:6}),
+      sb.rpc('get_customer_commercial_segments_v1',{p_customer_id:session.customer_id})
+    ]);
     if(error)return json(req,{ok:false,error:'frequent_purchases_failed',detail:error.message},400);
-    return json(req,{ok:true,frequent:data||{has_history:false,frequent_products:[],recent_extras:[],favorite_basket:null}});
+    if(segmentsError)return json(req,{ok:false,error:'customer_segments_failed',detail:segmentsError.message},400);
+    return json(req,{ok:true,frequent:{...(data||{has_history:false,frequent_products:[],recent_extras:[],favorite_basket:null}),segments:segments||{segments:[],reasons:{}}}});
   }
 
   if(action==='repeat_last_purchase_preview'){
