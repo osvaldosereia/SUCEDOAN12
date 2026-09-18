@@ -25,6 +25,7 @@ export interface HmlCheckoutInput {
 export type HmlClientResult<T> =
   | { ok: true; status: number; data: T }
   | { ok: false; reason: 'client_disabled' }
+  | { ok: false; reason: 'network_error' }
   | { ok: false; reason: 'http_error'; status: number; data: unknown };
 
 export interface HmlApiClient {
@@ -97,19 +98,27 @@ export function createHmlApiClient(
       throw new Error('Only customer-app-hml-* functions are allowed');
     }
 
-    const response = await fetchImpl(
-      `${baseUrl}/functions/v1/${slug}`,
-      {
-        ...init,
-        headers: {
-          apikey: publishableKey,
-          Authorization: `Bearer ${jwt}`,
-          'x-hml-client-id': clientId,
-          ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-          ...init.headers,
+    let response: Response;
+    try {
+      response = await fetchImpl(
+        `${baseUrl}/functions/v1/${slug}`,
+        {
+          ...init,
+          headers: {
+            apikey: publishableKey,
+            Authorization: `Bearer ${jwt}`,
+            'x-hml-client-id': clientId,
+            ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+            ...init.headers,
+          },
         },
-      },
-    );
+      );
+    } catch {
+      return {
+        ok: false,
+        reason: 'network_error',
+      };
+    }
 
     let data: unknown = null;
     try {
