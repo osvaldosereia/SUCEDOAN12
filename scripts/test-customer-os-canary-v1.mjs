@@ -15,7 +15,7 @@ assert.match(config,/customerOsCanaryValue:'canary'/);
 assert.match(app,/customerOsCanaryRequested/);
 assert.match(app,/URLSearchParams\(window\.location\.search\)/);
 assert.match(app,/customerOsSecureUiEnabled===true\|\|customerOsCanaryRequested\(\)/);
-assert.match(app,/CANARY CUSTOMER OS/);
+assert.match(app,/Customer OS · Canary/i);
 assert.match(app,/ativação global continua desligada/);
 assert.match(app,/if\(secureCustomersEnabled\(\)&&!getCustomerOsSession\(\)\)return renderCustomerOsLogin\(\)/,
   'canary must require protected PIN session before customer data is rendered');
