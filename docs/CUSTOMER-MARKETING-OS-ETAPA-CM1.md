@@ -23,9 +23,9 @@ Atualizado em 18/09/2026.
 | CM-1.8 — Segment Engine | Concluída V1 |
 | CM-1.9 — Customer Commercial Profile | Concluída V1 |
 | CM-1.10 — Opportunity Engine | Concluída V1 + precision pass |
-| CM-1.11 — Marketing Brain OBSERVE/SUGGEST | Próxima rodada |
-| CM-1.12 — Meta Foundation | Pendente |
-| CM-1.13 — Template Draft Assistant | Pendente |
+| CM-1.11 — Marketing Brain OBSERVE/SUGGEST | Concluída V1 · OBSERVE ativo / SUGGEST gate fechado |
+| CM-1.12 — Meta Foundation | Concluída V1 · READ_ONLY / fail-closed |
+| CM-1.13 — Template Draft Assistant | Próxima rodada |
 | CM-1.14 — PapoAI Adapter temporário | Pendente |
 | CM-1.15 — Central de Relacionamento | Pendente |
 | Homologação CM-1 | Pendente |
@@ -619,6 +619,6 @@ A cada rodada:
 
 ## Próxima ação
 
-**CM-1.11 — Marketing Brain em OBSERVE/SUGGEST.**
+**CM-1.13 — Template Draft Assistant.**
 
-O Opportunity Engine CM-1.10 entrega oportunidades estruturadas; a próxima rodada adiciona raciocínio publicitário somente sobre essas oportunidades, sem envio externo.
+A Meta Foundation CM-1.12 já criou o contrato fail-closed e o versionamento necessário. A próxima rodada trabalha somente em DRAFT/manual, sem submissão ou envio externo.
