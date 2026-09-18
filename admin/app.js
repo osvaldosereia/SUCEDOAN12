@@ -45,6 +45,7 @@ function renderCustomerOsLogin(message=''){
 }
 
 const maskPhone=v=>{const d=String(v||'').replace(/\D/g,'');return d?`•••• ${d.slice(-4)}`:'—'};
+const customerInitials=name=>{const words=String(name||'Cliente').trim().split(/\s+/).filter(Boolean);return (words.slice(0,2).map(x=>x[0]).join('')||'CL').toUpperCase()};
 
 function identitySummaryMarkup(){
   if(!secureCustomersEnabled())return '';
@@ -389,14 +390,25 @@ async function loadCustomers(){
     ];
     const segmentOptions=secureCustomersEnabled()?secureSegmentOptions:legacySegmentOptions;
     app.innerHTML=`${pageHead('Clientes',customerOsCanaryMode()?'Customer 360 em canary controlado · ativação global continua desligada.':'Cadastro, Customer 360 e histórico comercial.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}
-      ${customerOsCanaryMode()?`<section class="panel"><div class="badge ok">CANARY CUSTOMER OS</div><p class="muted" style="margin:8px 0 0">Somente esta URL especial usa a interface segura. O Admin normal continua no modo anterior.</p></section>`:``}
+      ${customerOsCanaryMode()?`<section class="customer-canary-banner"><div><span class="customer-canary-dot"></span><strong>Customer OS · Canary</strong></div><p>Somente esta URL especial usa a nova experiência. A ativação global continua desligada.</p></section>`:``}
       ${identitySummaryMarkup()}
-      <form id="customerFilterForm" class="toolbar">
-        <input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF">
-        <select name="segment" aria-label="Filtrar por segmento">${segmentOptions.map(([value,label])=>`<option value="${esc(value)}" ${customerState.segment===value?'selected':''}>${esc(label)}</option>`).join('')}</select>
-        <button class="primary" type="submit">Buscar</button>
-      </form>
-      <section class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Compras</th><th>Status</th><th>Ações</th></tr></thead><tbody>${(data.customers||[]).map(c=>`<tr><td><strong>${esc(c.name||'Sem nome')}</strong></td><td>${esc(c.primary_whatsapp_e164||'—')}</td><td><strong>${esc(c.order_count||0)}</strong><div class="muted">${money(c.lifetime_value||0)}${c.last_order_at?` · ${esc(date(c.last_order_at))}`:''}</div></td><td><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></td><td><div class="row-actions"><button type="button" data-customer-history="${esc(c.id)}">${secureCustomersEnabled()?'Abrir perfil':'Histórico'}</button><button type="button" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div></td></tr>`).join('')}</tbody></table></div>${pagination(customerState.page,customerState.total,'customers',30)}</section>`;
+      <section class="customer-directory-head">
+        <div class="customer-directory-summary"><span class="customer-directory-count">${esc(customerState.total)}</span><div><strong>clientes encontrados</strong><small>Use a busca ou os segmentos para encontrar rapidamente quem precisa de atenção.</small></div></div>
+        <form id="customerFilterForm" class="customer-directory-toolbar">
+          <input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF">
+          <select name="segment" aria-label="Filtrar por segmento">${segmentOptions.map(([value,label])=>`<option value="${esc(value)}" ${customerState.segment===value?'selected':''}>${esc(label)}</option>`).join('')}</select>
+          <button class="primary" type="submit">Buscar</button>
+        </form>
+      </section>
+      <section class="customer-directory-panel">
+        <div class="customer-directory-list">${(data.customers||[]).map(c=>`<article class="customer-directory-row">
+          <div class="customer-directory-main"><span class="customer-directory-avatar">${esc(customerInitials(c.name))}</span><div><strong>${esc(c.name||'Sem nome')}</strong><small>${esc(c.primary_whatsapp_e164||'Telefone não informado')}</small></div></div>
+          <div class="customer-directory-purchases"><strong>${money(c.lifetime_value||0)}</strong><small>${esc(c.order_count||0)} pedido(s)${c.last_order_at?` · última compra ${esc(date(c.last_order_at))}`:''}</small></div>
+          <div class="customer-directory-status"><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></div>
+          <div class="customer-directory-actions"><button type="button" class="customer-profile-button" data-customer-history="${esc(c.id)}">${secureCustomersEnabled()?'Abrir perfil':'Histórico'}</button><button type="button" class="secondary" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a class="secondary" href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div>
+        </article>`).join('')||'<div class="empty">Nenhum cliente encontrado.</div>'}</div>
+        ${pagination(customerState.page,customerState.total,'customers',30)}
+      </section>`;
   }catch(e){app.innerHTML=`${pageHead('Clientes')}<div class="panel empty">${esc(e.message)}</div>`}
 }
 
