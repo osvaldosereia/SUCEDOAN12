@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft,getMarketingPublicationPreflight,verifyMarketingChannel,publishMarketingJob,getMarketingManualShareManifest,getMarketingConnectionOverview,saveMarketingProviderConfig,startMarketingOAuth,exchangeMarketingOAuth,completeMarketingOAuth} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft,getMarketingPublicationPreflight,verifyMarketingChannel,publishMarketingJob,getMarketingManualShareManifest,getMarketingConnectionOverview,saveMarketingProviderConfig,startMarketingOAuth,exchangeMarketingOAuth,completeMarketingOAuth,disconnectMarketingProvider} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -509,7 +509,7 @@ function renderRound8ConnectionManager(){
         <label class="wide">App Secret<input name="app_secret" type="password" autocomplete="new-password" ${p.app_secret_set?'':'required'} placeholder="${p.app_secret_set?'Já existe no Vault — deixe vazio para manter':'Cole o App Secret'}"></label>
         <button class="secondary" type="submit">Salvar configuração</button><p class="muted" data-provider-config-message></p>
       </form>`:''}
-      <div class="provider-connect-actions">${owner&&ready?`<button class="primary" type="button" data-provider-oauth="${provider}">${connected?'Reconectar':'Conectar'} ${esc(provider==='meta'?'Meta':'Pinterest')}</button>`:''}${missing.length?`<small>Falta: ${esc(missing.join(' · '))}</small>`:''}</div>
+      <div class="provider-connect-actions">${owner&&ready?`<button class="primary" type="button" data-provider-oauth="${provider}">${connected?'Reconectar':'Conectar'} ${esc(provider==='meta'?'Meta':'Pinterest')}</button>`:''}${owner&&connected?`<button class="secondary" type="button" data-provider-disconnect="${provider}">Desconectar</button>`:''}${missing.length?`<small>Falta: ${esc(missing.join(' · '))}</small>`:''}</div>
       <p class="provider-connect-message muted" data-provider-message="${provider}"></p>
     </article>`;
   };
@@ -754,6 +754,8 @@ document.addEventListener('submit',async e=>{
 });
 
 document.addEventListener('click',async e=>{
+  const disconnectButton=e.target.closest('button[data-provider-disconnect]');
+  if(disconnectButton){const provider=disconnectButton.dataset.providerDisconnect,message=document.querySelector(`[data-provider-message="${CSS.escape(provider)}"]`);disconnectButton.disabled=true;try{if(message)message.textContent='Removendo credencial local do Vault…';state.connections=await disconnectMarketingProvider(provider);state.oauthSelection=null;state.pendingOAuthProvider=null;await load();}catch(err){if(message)message.textContent=err.message||'Não foi possível desconectar.'}finally{disconnectButton.disabled=false}return}
   const oauthButton=e.target.closest('button[data-provider-oauth]');
   if(oauthButton){const provider=oauthButton.dataset.providerOauth,message=document.querySelector(`[data-provider-message="${CSS.escape(provider)}"]`);oauthButton.disabled=true;try{if(message)message.textContent='Abrindo autorização oficial…';await beginMarketingOAuth(provider,oauthButton)}catch(err){if(message)message.textContent=err.message||'Falha ao iniciar conexão.'}finally{oauthButton.disabled=false}return}
   const choice=e.target.closest('button[data-oauth-choice]');
