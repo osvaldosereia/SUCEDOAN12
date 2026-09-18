@@ -63,12 +63,12 @@ export function renderCheckout(snapshot: CheckoutSnapshot): string {
         <small>Etapa 2 de 4</small>
         <h2>Onde entregar?</h2>
         <form data-checkout-address>
-          <label>Rua<input name="street" required /></label>
-          <label>Número<input name="number" required /></label>
-          <label>Bairro<input name="neighborhood" required /></label>
-          <label>Cidade<input name="city" value="Cuiabá" required /></label>
-          <label>UF<input name="state" value="MT" maxlength="2" required /></label>
-          <label>Referência<input name="reference" /></label>
+          <label>Rua<input name="street" autocomplete="address-line1" required /></label>
+          <label>Número<input name="number" autocomplete="off" inputmode="numeric" required /></label>
+          <label>Bairro<input name="neighborhood" autocomplete="address-level3" required /></label>
+          <label>Cidade<input name="city" value="Cuiabá" autocomplete="address-level2" required /></label>
+          <label>UF<input name="state" value="MT" maxlength="2" autocomplete="address-level1" required /></label>
+          <label>Referência<input name="reference" autocomplete="off" /></label>
           <button type="submit">Continuar</button>
         </form>
       </div>
