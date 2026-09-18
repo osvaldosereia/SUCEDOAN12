@@ -193,19 +193,43 @@ function customerHistoryMarkup(customer={},data={},customer360=null){
   const contact=customer360?.contact||{};
   const consentCurrent=customer360?.consent?.current||{};
   const timeline=customer360?.activity?.timeline||[];
+  const conversations=customer360?.activity?.conversations||[];
+  const carts=customer360?.activity?.carts||[];
   const identityLatest=customer360?.identity_resolution?.latest||null;
   const channelIdentities=Array.isArray(contact.channel_identities)?contact.channel_identities:[];
   const currentConsents=Object.values(consentCurrent||{});
+  const summary=customer360?.summary||{};
+  const brands=customer360?.commercial?.brands||[];
+  const secureProducts=customer360?.commercial?.products||[];
+  const secureCategories=customer360?.commercial?.categories||[];
+  const serviceMemory=customer360?.preferences?.service_memory||[];
+  const substitutions=customer360?.preferences?.substitutions||[];
+  const marketingTouchpoints=customer360?.marketing?.touchpoints||[];
+  const marketingEvents=customer360?.marketing?.events||[];
+  const lifecycleLabel=v=>({prospect:'Prospect',new_customer:'Novo cliente',active:'Ativo',recurring:'Recorrente',inactive:'Inativo'})[String(v||'')]||String(v||'—');
   const secureExtras=customer360?`<section class="customer-history-block"><div class="customer-history-title"><h3>Customer 360</h3><small class="muted">Dados protegidos</small></div>
     <div class="customer-history-stats detail">
+      <article><span>Ciclo de vida</span><strong>${esc(lifecycleLabel(summary.lifecycle))}</strong></article>
       <article><span>Qualidade dos dados</span><strong>${esc(dq?.completeness_percent??0)}%</strong></article>
-      <article><span>Identidades de canal</span><strong>${esc(channelIdentities.length)}</strong></article>
-      <article><span>Consentimentos atuais</span><strong>${esc(currentConsents.length)}</strong></article>
+      <article><span>Última interação</span><strong>${summary.last_interaction_at?esc(date(summary.last_interaction_at)):'—'}</strong></article>
       <article><span>Confiança da identidade</span><strong>${identityLatest?`${Math.round(Number(identityLatest.confidence||0)*100)}%`:'—'}</strong></article>
+    </div>
+    <div class="customer-history-summary">
+      <div><span>Cliente desde</span><strong>${summary.customer_since?esc(date(summary.customer_since)):'—'}</strong></div>
+      <div><span>Identidades de canal</span><strong>${esc(channelIdentities.length)}</strong></div>
+      <div><span>Consentimentos atuais</span><strong>${esc(currentConsents.length)}</strong></div>
+      <div><span>Carrinho aberto</span><strong>${summary.open_cart?money(summary.open_cart.total):'—'}</strong></div>
     </div>
     ${channelIdentities.length?`<div class="customer-history-chips compact">${channelIdentities.slice(0,8).map(x=>`<span><b>${esc(String(x.channel||'canal').toUpperCase())}</b><small>${esc(x.verification_status||'observed')} · ${esc(x.identity_kind||'')}</small></span>`).join('')}</div>`:''}
     ${currentConsents.length?`<div class="customer-history-chips compact">${currentConsents.slice(0,8).map(x=>`<span><b>${esc(x.purpose||'consentimento')}</b><small>${esc(x.channel||'')} · ${esc(x.status||'')}</small></span>`).join('')}</div>`:''}
   </section>
+  ${brands.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Marcas</h3><small class="muted">Afinidade calculada por compras</small></div><div class="customer-history-chips">${brands.slice(0,12).map(x=>`<span><b>${esc(x.brand)}</b><small>${esc(x.purchase_count)} compra(s) · ${money(x.total_spent)}</small></span>`).join('')}</div></section>`:''}
+  ${secureCategories.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Categorias</h3><small class="muted">Histórico consolidado</small></div><div class="customer-history-chips compact">${secureCategories.slice(0,12).map(x=>`<span><b>${esc(x.category)}</b><small>${esc(x.purchase_count)} compra(s) · ${money(x.total_spent)}</small></span>`).join('')}</div></section>`:''}
+  ${secureProducts.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Produtos</h3><small class="muted">Até 12 mais recentes/recorrentes</small></div><div class="customer-history-chips">${secureProducts.slice(0,12).map(x=>`<span><b>${esc(x.product?.name||'Produto')}</b><small>${esc(x.purchase_count)} compra(s) · ${money(x.total_spent)}</small></span>`).join('')}</div></section>`:''}
+  ${conversations.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Conversas</h3><small class="muted">Últimos atendimentos</small></div><div class="customer-history-orders">${conversations.slice(0,10).map(x=>`<article><div><strong>${esc(String(x.channel||'canal').toUpperCase())} · ${esc(x.stage||x.status||'')}</strong><small>${esc(date(x.updated_at||x.opened_at))} · ${esc(x.source||'')}</small><small>${esc(x.context_summary||'')}</small></div><div><span class="badge">${esc(x.mode||x.status||'')}</span></div></article>`).join('')}</div></section>`:''}
+  ${carts.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Carrinhos</h3><small class="muted">Interesse e abandono</small></div><div class="customer-history-orders">${carts.slice(0,10).map(x=>`<article><div><strong>${esc(x.status||'Carrinho')}</strong><small>${esc(date(x.updated_at||x.created_at))} · ${esc(x.pricing_status||'')}</small></div><div><b>${money(x.total||0)}</b></div></article>`).join('')}</div></section>`:''}
+  ${(serviceMemory.length||substitutions.length)?`<section class="customer-history-block"><div class="customer-history-title"><h3>Preferências e memória</h3><small class="muted">Somente evidências registradas</small></div>${serviceMemory.length?`<div class="customer-history-chips compact">${serviceMemory.slice(0,12).map(x=>`<span><b>${esc(x.memory_key)}</b><small>${esc(x.memory_value)} · confiança ${Math.round(Number(x.confidence||0)*100)}%</small></span>`).join('')}</div>`:''}${substitutions.length?`<div class="customer-history-chips compact">${substitutions.slice(0,8).map(x=>`<span><b>Substituição</b><small>${esc(x.preference||'')} ${x.notes?`· ${esc(x.notes)}`:''}</small></span>`).join('')}</div>`:''}</section>`:''}
+  ${(marketingTouchpoints.length||marketingEvents.length)?`<section class="customer-history-block"><div class="customer-history-title"><h3>Marketing</h3><small class="muted">Contato, resposta e atribuição</small></div><div class="customer-history-orders">${marketingTouchpoints.slice(0,10).map(x=>`<article><div><strong>${esc(x.touchpoint_type||'Touchpoint')}</strong><small>${esc(date(x.occurred_at))} · ${esc(x.channel||'')}</small></div></article>`).join('')}${marketingEvents.slice(0,10).map(x=>`<article><div><strong>${esc(x.event_type||'Evento')}</strong><small>${esc(date(x.created_at))}${x.external_side_effect?' · efeito externo':''}</small></div></article>`).join('')}</div></section>`:''}
   ${timeline.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Linha do tempo</h3><small class="muted">Últimos eventos consolidados</small></div><div class="customer-history-orders">${timeline.slice(0,20).map(x=>`<article><div><strong>${esc(x.title||x.event_kind||'Evento')}</strong><small>${esc(date(x.occurred_at))} · ${esc(x.channel||'')}</small><small>${esc(x.body_text||'')}</small></div><div><span class="badge">${esc(x.direction||'system')}</span></div></article>`).join('')}</div></section>`:''}`:'';
   const frequency=intel.repurchase_frequency_label?String(intel.repurchase_frequency_label):'Ainda sem padrão';
   const favoriteBasket=intel.favorite_basket?.name||intel.last_basket?.name||'—';
