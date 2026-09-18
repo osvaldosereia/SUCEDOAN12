@@ -231,3 +231,19 @@ Não repetir correções de CI desta rodada. A próxima pendência é evidência
 - conflito de identidade continua humano.
 
 Não fabricar nenhum desses eventos/estados para completar CM-1.
+
+
+## Policy Registry — checkpoint final
+
+Revisão técnica concluída:
+
+- 8/8 políticas ativas;
+- readiness=true;
+- stale=0;
+- fail-closed=8/8;
+- regra de bens regulados atualizada para v2;
+- `license_override=false`;
+- catálogo ativo: nenhum item claramente regulado encontrado na varredura preventiva;
+- CI run `35388463946`: SUCCESS, 38 validações.
+
+O manual gate `meta_policy_registry_verification` permanece pending e não deve ser convertido em autorização externa automaticamente.
