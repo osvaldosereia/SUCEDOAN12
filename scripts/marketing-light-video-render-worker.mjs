@@ -25,7 +25,7 @@ export function buildFfmpegArgs(inputPath,outputPath){
     'fade=t=out:st=9.55:d=0.45',
     'format=yuv420p'
   ].join(',');
-  return ['-y','-loop','1','-i',inputPath,'-vf',filter,'-t','10','-an','-c:v','libx264','-preset','veryfast','-crf','23','-movflags','+faststart',outputPath];
+  return ['-y','-loop','1','-i',inputPath,'-f','lavfi','-i','anullsrc=channel_layout=stereo:sample_rate=48000','-vf',filter,'-map','0:v:0','-map','1:a:0','-t','10','-c:v','libx264','-preset','veryfast','-crf','23','-c:a','aac','-b:a','128k','-ar','48000','-shortest','-movflags','+faststart',outputPath];
 }
 export function rpcUrl(base,name){return `${String(base).replace(/\/+$/,'')}/rest/v1/rpc/${name}`}
 export function storageObjectUrl(base,bucket,path,authenticated=false){
@@ -94,7 +94,7 @@ export async function runOne(env=process.env){
       p_job_id:jobId,p_worker_id:WORKER_ID,p_object_path:outputPath,p_byte_size:bytes.length,p_sha256:sha
     });
     if(!complete?.ok)throw new Error('completion_rejected');
-    return {ok:true,processed:true,job_id:jobId,asset_id:assetId,bytes:bytes.length,sha256:sha,duration_seconds:10,fps:30,ai_used:false};
+    return {ok:true,processed:true,job_id:jobId,asset_id:assetId,bytes:bytes.length,sha256:sha,duration_seconds:10,fps:30,video_codec:'h264',audio_codec:'aac',audio_sample_rate_hz:48000,ai_used:false};
   }catch(error){
     try{await rpc(base,key,'fail_marketing_light_video_preview_v1',{p_job_id:jobId,p_worker_id:WORKER_ID,p_error:sanitizeText(error?.message||error,900)})}catch{}
     throw error;
