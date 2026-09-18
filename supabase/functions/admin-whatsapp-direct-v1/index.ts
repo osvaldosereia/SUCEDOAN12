@@ -125,13 +125,15 @@ Deno.serve(async(req:Request)=>{
       .eq("is_active",true).order("created_at",{ascending:true}).limit(1).maybeSingle();
     if(accountR.error||!accountR.data?.phone_number_id||!accountR.data?.waba_id)
       return json({ok:false,error:"meta_account_missing",external_side_effect:false},409);
+    const account=accountR.data;
 
     const channelR=await sb.from("channel_accounts")
       .select("id,channel,external_account_id,outbound_enabled,capabilities,metadata")
-      .eq("channel","whatsapp").eq("external_account_id",accountR.data.phone_number_id)
+      .eq("channel","whatsapp").eq("external_account_id",account.phone_number_id)
       .limit(1).maybeSingle();
     if(channelR.error||!channelR.data?.id)
       return json({ok:false,error:"meta_channel_account_missing",external_side_effect:false},409);
+    const channel=channelR.data;
 
     const graphGet=async(path:string)=>{
       const response=await fetch(`https://graph.facebook.com/${version}/${path}`,{
@@ -149,8 +151,8 @@ Deno.serve(async(req:Request)=>{
 
     const [permissionsR,subscriptionsR,phoneR]=await Promise.all([
       graphGet("me/permissions"),
-      graphGet(`${encodeURIComponent(accountR.data.waba_id)}/subscribed_apps`),
-      graphGet(`${encodeURIComponent(accountR.data.phone_number_id)}?fields=id,display_phone_number,verified_name,quality_rating`)
+      graphGet(`${encodeURIComponent(account.waba_id)}/subscribed_apps`),
+      graphGet(`${encodeURIComponent(account.phone_number_id)}?fields=id,display_phone_number,verified_name,quality_rating`)
     ]);
 
     const checkedAt=new Date().toISOString();
@@ -158,7 +160,7 @@ Deno.serve(async(req:Request)=>{
     const permissionMap=new Map(rawPermissions.map((x:any)=>[clean(x?.permission,160),clean(x?.status,40).toLowerCase()]));
     const requiredPermissions=["whatsapp_business_management","whatsapp_business_messaging"];
     const permissionRows=requiredPermissions.map(permission_key=>({
-      channel_account_id:channelR.data.id,
+      channel_account_id:channel.id,
       permission_key,
       status:permissionMap.get(permission_key)==="granted"?"granted":"missing",
       source:"supabase_meta_readonly_probe",
@@ -189,12 +191,12 @@ Deno.serve(async(req:Request)=>{
     ].filter(Boolean);
 
     const healthWrite=await sb.from("meta_provider_health_snapshots").insert({
-      channel_account_id:channelR.data.id,
+      channel_account_id:channel.id,
       provider:"meta_cloud_api",
       provider_state:"read_only",
       graph_api_version:permissionsR.api_version||subscriptionsR.api_version||phoneR.api_version||version,
-      waba_id:accountR.data.waba_id,
-      phone_number_id:accountR.data.phone_number_id,
+      waba_id:account.waba_id,
+      phone_number_id:account.phone_number_id,
       phone_quality:phoneQuality,
       account_quality:null,
       messaging_limit:null,
@@ -225,7 +227,7 @@ Deno.serve(async(req:Request)=>{
     if(healthWrite.error)
       return json({ok:false,error:"meta_health_evidence_write_failed",detail:clean(healthWrite.error.message,500),external_side_effect:false},500);
 
-    const readinessR=await sb.rpc("evaluate_meta_direct_readiness_v1",{p_channel_account_id:channelR.data.id});
+    const readinessR=await sb.rpc("evaluate_meta_direct_readiness_v1",{p_channel_account_id:channel.id});
     if(readinessR.error)
       return json({ok:false,error:"meta_readiness_failed",detail:clean(readinessR.error.message,500),external_side_effect:false},500);
 
@@ -235,13 +237,13 @@ Deno.serve(async(req:Request)=>{
       graph_api_version:healthWrite.data?.graph_api_version||version,
       permissions:Object.fromEntries(requiredPermissions.map(k=>[k,permissionMap.get(k)==="granted"?"granted":"missing"])),
       phone:{
-        id:accountR.data.phone_number_id,
+        id:account.phone_number_id,
         display_phone_number:clean(phoneR.payload?.display_phone_number,80)||null,
         verified_name:clean(phoneR.payload?.verified_name,200)||null,
         quality_rating:phoneQuality
       },
       waba:{
-        id:accountR.data.waba_id,
+        id:account.waba_id,
         subscribed_app_ids:subscriptionIds,
         subscription_observed:subscriptionsR.ok&&subscriptionIds.length>0
       },
@@ -252,8 +254,8 @@ Deno.serve(async(req:Request)=>{
       },
       readiness:readinessR.data||{},
       gates:{
-        canonical_outbound_enabled:channelR.data.outbound_enabled===true,
-        meta_direct_ready:channelR.data.capabilities?.meta_direct_ready===true
+        canonical_outbound_enabled:channel.outbound_enabled===true,
+        meta_direct_ready:channel.capabilities?.meta_direct_ready===true
       },
       external_side_effect:false,
       meta_message_sent:false,
