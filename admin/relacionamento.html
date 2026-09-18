@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <title>Dona Antônia · Central de Relacionamento</title>
+  <link rel="stylesheet" href="./styles.css?v=20260911-2">
+  <link rel="stylesheet" href="./relacionamento.css?v=20260918-1">
+</head>
+<body>
+<header class="topbar">
+  <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button>
+  <a class="brand" href="./"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Central de Relacionamento</b></span></a>
+  <a class="view-storefront" href="./" rel="noopener">Voltar ao Admin</a>
+</header>
+
+<div class="relationship-shell">
+  <aside id="relationshipSidebar" class="relationship-sidebar">
+    <div class="sidebar-caption">Customer & Marketing OS</div>
+    <nav id="relationshipTabs" aria-label="Seções da central">
+      <button class="active" type="button" data-panel="overview">Visão Geral</button>
+      <button type="button" data-panel="customers">Clientes</button>
+      <button type="button" data-panel="segments">Segmentos</button>
+      <button type="button" data-panel="opportunities">Oportunidades</button>
+      <button type="button" data-panel="products">Produtos</button>
+      <button type="button" data-panel="brands">Marcas</button>
+      <button type="button" data-panel="brain">Marketing Brain</button>
+      <button type="button" data-panel="templates">Templates</button>
+      <button type="button" data-panel="meta">Meta Foundation</button>
+      <button type="button" data-panel="quality">Qualidade dos Dados</button>
+      <button type="button" data-panel="audit">Auditoria</button>
+    </nav>
+    <div class="relationship-side-note">
+      <strong>CM-1.15</strong>
+      <span>Leitura operacional unificada</span>
+      <small>Sem campanhas automáticas e sem envio externo.</small>
+    </div>
+  </aside>
+  <div id="relationshipBackdrop" class="sidebar-backdrop hidden"></div>
+
+  <main class="relationship-main">
+    <section id="featureGate" class="relationship-gate" hidden>
+      <span class="eyebrow">CM-1.15 · CANARY</span>
+      <h1>Central de Relacionamento em homologação</h1>
+      <p>A interface está pronta, mas a liberação global continua bloqueada até a validação manual da sessão segura.</p>
+      <a class="primary-link" href="./">Voltar ao Admin</a>
+    </section>
+
+    <section id="authGate" class="relationship-gate" hidden>
+      <span class="eyebrow">ACESSO SEGURO</span>
+      <h1>Central de Relacionamento</h1>
+      <p>Use o PIN administrativo para abrir a visão segura dos clientes e do Marketing OS.</p>
+      <form id="pinForm" class="pin-form">
+        <input id="pinInput" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="••••••" aria-label="PIN de seis dígitos" required>
+        <button type="submit" class="primary">Entrar</button>
+      </form>
+      <p id="authStatus" class="muted"></p>
+    </section>
+
+    <section id="relationshipApp" hidden>
+      <div class="relationship-head">
+        <div>
+          <span class="eyebrow">Customer & Marketing OS · CM-1.15</span>
+          <h1>Central de Relacionamento</h1>
+          <p>Clientes, inteligência comercial, marketing e integrações no mesmo painel operacional.</p>
+        </div>
+        <div class="relationship-head-actions">
+          <span class="safe-pill">Somente leitura</span>
+          <span class="safe-pill">Ações externas OFF</span>
+          <button id="refreshRelationship" type="button" class="secondary">Atualizar</button>
+        </div>
+      </div>
+
+      <div id="globalStatus" class="relationship-status"></div>
+
+      <section data-relationship-panel="overview">
+        <div id="overviewCards" class="summary-grid"></div>
+        <div class="overview-grid">
+          <article class="panel"><div class="section-title"><div><h2>Clientes e relacionamento</h2><p>Saúde da base e recorrência.</p></div></div><div id="overviewCustomers"></div></article>
+          <article class="panel"><div class="section-title"><div><h2>Proteção e consentimento</h2><p>Gate de contato permanece fail-closed.</p></div></div><div id="overviewProtection"></div></article>
+          <article class="panel"><div class="section-title"><div><h2>Marketing</h2><p>Oportunidades e readiness dos produtos.</p></div></div><div id="overviewMarketing"></div></article>
+          <article class="panel"><div class="section-title"><div><h2>Integrações</h2><p>Meta Foundation e provider temporário.</p></div></div><div id="overviewIntegrations"></div></article>
+        </div>
+      </section>
+
+      <section data-relationship-panel="customers" hidden><article class="panel"><div class="section-title"><div><h2>Clientes</h2><p>Principais perfis comerciais da base.</p></div><a href="./index.html#customers" class="inline-link">Abrir gestão completa</a></div><div id="customersView"></div></article></section>
+      <section data-relationship-panel="segments" hidden><article class="panel"><div class="section-title"><div><h2>Segmentos</h2><p>Segmentação determinística do Customer OS.</p></div></div><div id="segmentsView"></div></article></section>
+      <section data-relationship-panel="opportunities" hidden><article class="panel"><div class="section-title"><div><h2>Oportunidades</h2><p>Oportunidades detectadas com guardrails de consentimento.</p></div><a href="./marketing.html" class="inline-link">Abrir Marketing</a></div><div id="opportunitiesView"></div></article></section>
+      <section data-relationship-panel="products" hidden><article class="panel"><div class="section-title"><div><h2>Produtos</h2><p>Readiness comercial e principais bloqueios.</p></div><a href="./index.html#products" class="inline-link">Abrir Produtos</a></div><div id="productsView"></div></article></section>
+      <section data-relationship-panel="brands" hidden><article class="panel"><div class="section-title"><div><h2>Marcas</h2><p>Visão agregada por marca para planejamento.</p></div></div><div id="brandsView"></div></article></section>
+      <section data-relationship-panel="brain" hidden><article class="panel"><div class="section-title"><div><h2>Marketing Brain</h2><p>Briefs OBSERVE/SUGGEST e uso de IA.</p></div><a href="./marketing.html" class="inline-link">Abrir Marketing Brain</a></div><div id="brainView"></div></article></section>
+      <section data-relationship-panel="templates" hidden><article class="panel"><div class="section-title"><div><h2>Templates WhatsApp</h2><p>Biblioteca local versionada, ainda em DRAFT.</p></div><a href="./marketing.html" class="inline-link">Abrir Templates</a></div><div id="templatesView"></div></article></section>
+      <section data-relationship-panel="meta" hidden><article class="panel"><div class="section-title"><div><h2>Meta Foundation</h2><p>Estado da fundação Meta e do provider atual.</p></div></div><div id="metaView"></div></article></section>
+      <section data-relationship-panel="quality" hidden><article class="panel"><div class="section-title"><div><h2>Qualidade dos Dados</h2><p>Pendências que reduzem a capacidade comercial do sistema.</p></div></div><div id="qualityView"></div></article></section>
+      <section data-relationship-panel="audit" hidden><article class="panel"><div class="section-title"><div><h2>Auditoria</h2><p>Execuções, eventos e integrações recentes.</p></div><button id="refreshAudit" class="secondary" type="button">Atualizar auditoria</button></div><div id="auditView"></div></article></section>
+    </section>
+  </main>
+</div>
+
+<script type="module" src="./relacionamento.js?v=20260918-1"></script>
+</body>
+</html>
