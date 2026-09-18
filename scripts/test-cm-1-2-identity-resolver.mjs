@@ -18,6 +18,8 @@ assert.match(bootstrap,/'e164'/);
 assert.match(bootstrap,/'observed'/);
 assert.match(papo,/resolve_customer_identity_v1/);
 assert.match(papo,/observe_customer_channel_identity_v1/);
+assert.match(papo,/p_identity_kind:'e164'/);
+assert.match(papo,/normalized_channel_events/,'PapoAI deve alimentar o event core omnichannel quando houver message id');
 assert.doesNotMatch(papo,/lookup_customer_by_phone/,'PapoAI deve usar o resolver canônico, não escolher primeiro match legado');
 
 console.log('cm-1.2 identity resolver contract ok');
