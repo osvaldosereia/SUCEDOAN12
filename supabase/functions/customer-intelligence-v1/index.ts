@@ -132,7 +132,20 @@ Deno.serve(async(req:Request)=>{
       .order('created_at',{ascending:false})
       .limit(limit);
     if(error)return json(origin,{ok:false,error:'identity_conflicts_failed',detail:error.message},400);
-    return json(origin,{ok:true,conflicts:data||[]});
+    const conflicts=[];
+    for(const row of data||[]){
+      const candidateIds=Array.isArray(row.evidence?.candidate_ids)?row.evidence.candidate_ids.map((x:any)=>String(x)).filter(Boolean):[];
+      let candidates:any[]=[];
+      if(candidateIds.length){
+        const {data:candidateRows,error:candidateError}=await sb.from('customers')
+          .select('id,name,primary_whatsapp_e164,cpf_cnpj,bling_contact_id,order_count,lifetime_value,last_order_at')
+          .in('id',candidateIds);
+        if(candidateError)return json(origin,{ok:false,error:'identity_conflict_candidates_failed',detail:candidateError.message},400);
+        candidates=candidateRows||[];
+      }
+      conflicts.push({...row,candidates});
+    }
+    return json(origin,{ok:true,conflicts});
   }
   if(action==='identity_review'){
     if(!canWrite)return json(origin,{ok:false,error:'read_only'},403);
