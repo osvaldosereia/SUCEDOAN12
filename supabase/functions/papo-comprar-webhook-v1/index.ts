@@ -69,10 +69,18 @@ Deno.serve(async(req:Request)=>{
   const message=pick(body,['message','text','body','content','message.text','message.body']);
   const receivedAt=new Date().toISOString();
 
-  const {data:lookup,error:lookupError}=await sb.rpc('lookup_customer_by_phone',{p_phone:phone});
-  if(lookupError)return response({ok:false,error:'customer_lookup_failed'},500);
-  const match=Array.isArray(lookup)?lookup[0]:lookup;
-  const matchedCustomerId=match?.customer_id||null;
+  const {data:resolution,error:resolutionError}=await sb.rpc('resolve_customer_identity_v1',{
+    p_phone:phone,
+    p_source:'papoai_webhook',
+    p_persist:true
+  });
+  if(resolutionError)return response({ok:false,error:'identity_resolution_failed'},500);
+  const identityDecision=clean(resolution?.decision,40)||'unmatched';
+  const matchedCustomerId=identityDecision==='matched'?clean(resolution?.customer_id,80)||null:null;
+  const {data:matchedCustomer,error:matchedCustomerError}=matchedCustomerId
+    ?await sb.from('customers').select('id,name,preferred_reply').eq('id',matchedCustomerId).maybeSingle()
+    :{data:null,error:null};
+  if(matchedCustomerError)return response({ok:false,error:'customer_lookup_failed'},500);
 
   const {data:account,error:accountError}=await sb.from('whatsapp_accounts')
     .select('id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
@@ -137,10 +145,11 @@ Deno.serve(async(req:Request)=>{
     papo_received_at:receivedAt
   }}).eq('id',room.session_id);
 
-  const canonicalName=clean(match?.customer_name||contactName,160)||null;
+  const canonicalName=clean(matchedCustomer?.name||contactName,160)||null;
   return response({
     ok:true,
     customer_found:Boolean(matchedCustomerId),
+    identity_resolution:{decision:identityDecision,confidence:Number(resolution?.confidence||0),conflict:identityDecision==='conflict'},
     customer:matchedCustomerId?{id:matchedCustomerId,name:canonicalName,phone}:null,
     contact:{name:canonicalName,phone,contact_id:contactId||null},
     shopping_url:room.url,
