@@ -294,3 +294,23 @@ Ainda assim:
 A sessão atual não conseguiu inspecionar diretamente o arquivo JS servido pelo domínio público. Portanto, **deploy público da versão do frontend ainda não é considerado evidência comprovada nesta homologação**.
 
 Não tratar o zero como bug nem como sucesso até existir uso real ou comprovação direta do asset publicado.
+
+
+## Auditoria de legado e evidência Meta — checkpoint adicional
+
+Documento: `docs/projects/customer-marketing-os/CM1-HOMOLOGATION-LEGACY-META-EVIDENCE-V1.md`
+
+Conclusões novas:
+
+- `automation_config` legado continua com automation/outbound/live, porém AI, worker, dispatch e auto-reply permanecem OFF;
+- nenhum `outbound_job` foi criado nas últimas 24h ou 7 dias;
+- funções legadas ainda dependem de `automation_config`, portanto não limpar essas flags automaticamente;
+- WABA ID e Phone Number ID estão presentes no Meta Control Plane;
+- `meta_account_permissions` possui 0 registros;
+- `meta_provider_health_snapshots` possui 0 registros;
+- `meta_webhook_events` possui 0 registros;
+- `graph_api_version` continua null;
+- Meta Direct permanece `ready=false` e OFF;
+- nenhum gate externo foi aberto.
+
+Próximo avanço técnico: obter evidência real read-only de permissões, webhook, provider health e Graph API version antes de alterar qualquer blocker do preflight.
