@@ -8,7 +8,7 @@
 **Pull Request de homologação:** #396 — draft — **NÃO MERGEAR**  
 **Código do app:** `app-dona-antonia/`  
 **Comprar atual:** `comprar/` — **NÃO MODIFICAR durante o desenvolvimento do app**  
-**Próxima rodada autorizável:** **Rodada 6 — Carrinho e regras locais**
+**Próxima rodada autorizável:** **Rodada 7 — Checkout isolado**
 
 ---
 
@@ -408,8 +408,8 @@ Legenda:
 | 3 | Motor conversacional determinístico | ✅ |
 | 4 | Catálogo fictício e navegação | ✅ |
 | 5 | Cestas básicas fictícias | ✅ |
-| 6 | Carrinho e regras locais | ▶ |
-| 7 | Checkout isolado | ⏳ |
+| 6 | Carrinho e regras locais | ✅ |
+| 7 | Checkout isolado | ▶ |
 | 8 | Pedido e acompanhamento fictício | ⏳ |
 | 9 | PWA isolada | ⏳ |
 | 10 | Shell Capacitor Android | ⏳ |
@@ -671,9 +671,9 @@ Ana responde
 
 # 17. Estado atual exato
 
-**Última rodada concluída:** Rodada 5.
+**Última rodada concluída:** Rodada 6.
 
-**Próxima rodada:** Rodada 6 — Carrinho e regras locais.
+**Próxima rodada:** Rodada 7 — Checkout isolado.
 
 Ainda não foi implementado:
 
@@ -903,6 +903,95 @@ Essas operações pertencem à Rodada 6 para evitar mistura de responsabilidades
 - escape de HTML;
 - nenhum endpoint externo;
 - nenhum arquivo em `comprar/` alterado.
+
+---
+
+# 18.2 Rodada 6 — concluída
+
+## Objetivo
+
+Centralizar o estado local do pedido e implementar as regras determinísticas de quantidade e preço.
+
+## Arquivos principais
+
+- `src/cart/types.ts`
+- `src/cart/cartStore.ts`
+- `src/cart/cartMath.ts`
+- `src/cart/cartView.ts`
+- `tests/unit/cart.test.ts`
+- `tests/unit/cartView.test.ts`
+
+## Regras implementadas
+
+- cesta entra no carrinho como uma linha única;
+- produtos extras entram como linhas separadas;
+- adição repetida soma quantidade;
+- remoção explícita;
+- alteração de quantidade positiva inteira;
+- zero e negativo bloqueados;
+- preço promocional só vale quando é positivo e menor que o preço normal;
+- mesma referência em `basket` e `product` não se mistura;
+- `clear()` limpa o pedido;
+- cálculo feito em centavos;
+- economia promocional calculada separadamente;
+- total do pedido é determinístico.
+
+## Interface
+
+A barra fixa agora mostra:
+
+- quantidade total de itens;
+- valor total;
+- botão `Ver pedido`.
+
+A tela do carrinho permite:
+
+- aumentar quantidade;
+- diminuir quantidade;
+- remover linha;
+- limpar pedido.
+
+Quantidade 1 não diminui para zero silenciosamente. A remoção é uma ação separada.
+
+O detalhe do produto ganhou:
+
+`Adicionar ao pedido`
+
+A confirmação de uma cesta também adiciona a cesta ao carrinho.
+
+## Regra da cesta preservada
+
+A composição interna da cesta continua sem preço individual.
+
+No carrinho:
+
+- a cesta usa apenas seu valor total;
+- os produtos extras têm preço individual;
+- promoções dos extras são aplicadas normalmente.
+
+## Limite da rodada
+
+Ainda não existe:
+
+- checkout;
+- cadastro;
+- endereço;
+- forma de pagamento;
+- pedido real;
+- POST externo.
+
+A tela de carrinho não apresenta ação de finalização.
+
+## Validação
+
+- TDD RED confirmado;
+- 11/11 testes de carrinho aprovados;
+- 3/3 testes de integração aprovados;
+- typecheck dos módulos afetados aprovado;
+- typecheck da integração do `main.ts` aprovado;
+- linguagem prematura de checkout foi detectada por teste e removida;
+- nenhum endpoint externo;
+- nenhum arquivo de `comprar/` alterado.
 
 ---
 
@@ -1219,8 +1308,8 @@ Ao abrir uma nova conversa e pedir para continuar este projeto, seguir exatament
 9. Conferir qual foi o último checkpoint.
 
 10. Neste snapshot:
-    - Rodadas 0, 1, 2, 3, 4 e 5 estão concluídas;
-    - próxima é a Rodada 6.
+    - Rodadas 0, 1, 2, 3, 4, 5 e 6 estão concluídas;
+    - próxima é a Rodada 7.
 
 11. Executar TDD:
     - teste primeiro;
@@ -1287,11 +1376,12 @@ Uma rodada só pode ser marcada como concluída quando:
 - Rodada 2;
 - Rodada 3;
 - Rodada 4;
-- Rodada 5.
+- Rodada 5;
+- Rodada 6.
 
 **Próxima:**
 
-**Rodada 6 — Carrinho e regras locais.**
+**Rodada 7 — Checkout isolado.**
 
 **Produção:** intocada.
 
