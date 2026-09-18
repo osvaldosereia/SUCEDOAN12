@@ -49,4 +49,18 @@ assert.match(html, /id="summaryTaxesRow"/, 'resumo do PDF deve suportar impostos
 assert.match(html, /id="summaryShippingRow"/, 'resumo do PDF deve suportar frete e entrega');
 assert.match(html, /'discountType','discount','taxType','taxes','shipping','notes'/, 'campos financeiros devem persistir no rascunho');
 
-console.log('OK · orçamento V2: itens e ajustes financeiros editáveis + modos de PDF preservados.');
+assert.match(html, /id="companyName"/, 'nome da empresa deve ser editável');
+assert.match(html, /id="companyDocument"/, 'documento da empresa deve ser editável');
+assert.match(html, /id="companyPhone"/, 'telefone da empresa deve ser editável');
+assert.match(html, /id="companyEmail"/, 'e-mail da empresa deve ser editável');
+assert.match(html, /id="companySite"/, 'site da empresa deve ser editável');
+assert.match(html, /id="companyLogo"/, 'logo da empresa deve ser editável');
+assert.match(html, /id="companyAddress"/, 'endereço da empresa deve ser editável');
+assert.match(html, /id="clientEmail"/, 'e-mail do cliente deve ser editável');
+assert.match(html, /id="viewCompanyName"/, 'nome da empresa deve aparecer na prévia');
+assert.match(html, /id="viewCompanyLogo"/, 'logo da empresa deve aparecer na prévia');
+assert.match(html, /id="viewClientEmail"/, 'e-mail do cliente deve aparecer na prévia');
+assert.match(html, /'companyName','companyDocument','companyPhone','companyEmail','companySite','companyLogo','companyAddress'/, 'dados da empresa devem persistir no rascunho');
+assert.match(html, /'phone','clientEmail','contact'/, 'e-mail do cliente deve persistir no cadastro e no rascunho');
+
+console.log('OK · orçamento V2: itens, financeiro, empresa e cliente editáveis + modos de PDF preservados.');
