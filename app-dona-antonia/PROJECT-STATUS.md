@@ -53,7 +53,7 @@ Documento:
 
 Total: 27 rodadas numeradas de 0 a 26.
 
-**Próxima rodada permitida:** Rodada 6 — Carrinho e regras locais.
+**Próxima rodada permitida:** Rodada 7 — Checkout isolado.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
 
@@ -192,7 +192,7 @@ O documento principal para retomada em novas janelas está salvo na `main`:
 
 Ao retomar o projeto, este arquivo deve ser lido primeiro, seguido do design, plano de rodadas e deste `PROJECT-STATUS.md`.
 
-**Snapshot atual:** Rodadas 0–5 concluídas; próxima Rodada 6.
+**Snapshot atual:** Rodadas 0–6 concluídas; próxima Rodada 7.
 
 
 ## Checkpoint — Rodada 4
@@ -285,3 +285,52 @@ Limitação mantida:
 **Próxima rodada autorizável:** Rodada 6 — Carrinho e regras locais.
 
 O projeto permanece OFF, não publicado, sem pedidos reais e sem conexão com produção.
+
+
+## Checkpoint — Rodada 6
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- domínio próprio de carrinho;
+- `CartStore.add`, `remove`, `setQuantity`, `clear`;
+- cálculo determinístico em centavos;
+- preço promocional usado somente quando válido e menor que o preço normal;
+- cesta entra como uma linha única com seu valor total;
+- produtos adicionais entram como linhas independentes;
+- adição repetida do mesmo produto/cesta soma quantidade;
+- cesta e produto nunca se fundem mesmo com `refId` igual;
+- quantidade zero ou negativa é rejeitada;
+- botão de diminuir fica bloqueado em quantidade 1;
+- remoção é ação explícita;
+- botão `Limpar pedido`;
+- tela `Ver pedido`;
+- barra fixa agora mostra quantidade total e valor;
+- detalhe do produto ganhou `Adicionar ao pedido`;
+- escolha de cesta passa a adicionar a cesta ao carrinho;
+- preço promocional e economia são exibidos no resumo;
+- nenhum botão ou fluxo de finalização foi antecipado.
+
+Validações executadas:
+- ciclo TDD RED confirmado antes da criação dos módulos de carrinho;
+- 11/11 testes do núcleo e visualização do carrinho aprovados;
+- 3/3 testes adicionais de integração de barra fixa/catálogo aprovados;
+- typecheck dos módulos de carrinho, shell e catálogo aprovado;
+- typecheck do `main.ts` com contratos de integração equivalentes aprovado;
+- teste encontrou e corrigiu linguagem prematura de `checkout` na tela;
+- nenhum endpoint externo conectado;
+- nenhum arquivo de `comprar/` modificado.
+
+Regra comercial preservada:
+- a cesta mantém preço total;
+- seus itens internos continuam sem preço individual;
+- produtos extras são calculados separadamente;
+- promoção de produto é aplicada deterministicamente no carrinho.
+
+Limitação mantida:
+- o build Vite completo ainda depende do acesso ao registry npm e continua não sendo tratado como validado enquanto esse acesso não estiver disponível.
+
+**Próxima rodada autorizável:** Rodada 7 — Checkout isolado.
+
+O projeto permanece OFF, não publicado e incapaz de gerar pedido real.
