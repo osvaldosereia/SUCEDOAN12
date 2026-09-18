@@ -33,7 +33,7 @@
 
 ---
 
-# Visão geral das rodadas
+# Visão geral das 27 rodadas (0 a 26)
 
 | Rodada | Tema | Estado esperado ao terminar |
 |---|---|---|
