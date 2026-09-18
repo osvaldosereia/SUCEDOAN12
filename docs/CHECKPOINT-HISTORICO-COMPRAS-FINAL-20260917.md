@@ -104,3 +104,29 @@ Evoluções futuras devem ser feitas como melhorias independentes, por exemplo:
 - ajustar rankings de frequentes/ofertas a partir das métricas reais de uso.
 
 Nenhuma dessas melhorias é necessária para considerar o projeto atual concluído.
+## Revalidação — 18/09/2026
+
+Após uma nova leitura controlada da API do Bling e validação pós-backfill:
+
+- pedidos totais em `orders`: **45**;
+- pedidos importados do Bling: **27**;
+- clientes na base: **505**;
+- clientes com histórico útil: **31**;
+- clientes com duas ou mais compras: **6**;
+- itens totais em pedidos: **921**;
+- itens dos pedidos Bling: **484**;
+- itens Bling ligados ao produto atual: **441**;
+- itens Bling preservados somente como snapshot: **43**;
+- duplicidade de `bling_order_id`: **0**;
+- divergências de resumo do cliente: **0**.
+
+A leitura adicional confirmou que pedidos antigos de 2025 e amostras de 2024 usam majoritariamente cliente genérico e, por isso, continuam fora do histórico individual. Pedidos recentes em situação `Em aberto` também continuam fora do histórico concluído.
+
+Ao final da revalidação o importador voltou ao estado seguro:
+
+- `enabled=false`;
+- `fetch_enabled=false`;
+- `promotion_enabled=false`.
+
+A segmentação comercial permanece funcional após o backfill. No estado atual há 25 clientes de primeira compra, 6 recorrentes, 1 com ritmo mensal, 7 classificados como alto valor, 11 compradores de cesta e 2 com cesta favorita recorrente.
+
