@@ -40,13 +40,20 @@ export function isSafeAppUrl(value: string): boolean {
     }
   }
 
-  const visible = decoded(
-    `${url.pathname}${url.search}${url.hash}`,
-  );
+  const pathSegments = decoded(url.pathname)
+    .split('/')
+    .filter(Boolean);
 
-  if (PII_DIGIT_SEQUENCE.test(visible)) return false;
+  if (pathSegments.some((segment) => /^\d{10,11}$/.test(segment))) {
+    return false;
+  }
+
+  for (const [, queryValue] of url.searchParams) {
+    if (PII_DIGIT_SEQUENCE.test(decoded(queryValue))) return false;
+  }
 
   const hash = decoded(url.hash).toLocaleLowerCase('pt-BR');
+  if (PII_DIGIT_SEQUENCE.test(hash)) return false;
   for (const key of FORBIDDEN_QUERY_KEYS) {
     if (
       hash.includes(`${key}=`)
