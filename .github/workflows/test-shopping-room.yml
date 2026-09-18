@@ -17,6 +17,7 @@ on:
       - 'scripts/test-comprar-frequent-purchases-v1.mjs'
       - 'scripts/test-comprar-personalized-start-v1.mjs'
       - 'scripts/test-comprar-personalized-offers-v1.mjs'
+      - 'scripts/test-bling-history-import-v2.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
@@ -29,6 +30,9 @@ on:
       - 'supabase/functions/admin-orders-comprar-v1/**'
       - 'supabase/functions/admin-chat-menu-v1/**'
       - 'supabase/functions/customer-intelligence-v1/**'
+      - 'supabase/functions/bling-history-import-v1/**'
+      - 'supabase/functions/bling-history-contact-enrichment-v1/**'
+      - 'supabase/migrations/*bling_history*'
       - 'supabase/migrations/*shopping_room*'
       - 'supabase/migrations/*room_address*'
       - 'supabase/migrations/*shopping_chat*'
@@ -107,6 +111,7 @@ jobs:
           node scripts/test-comprar-frequent-purchases-v1.mjs
           node scripts/test-comprar-personalized-start-v1.mjs
           node scripts/test-comprar-personalized-offers-v1.mjs
+          node scripts/test-bling-history-import-v2.mjs
           for test_file in scripts/test-comprar-clean-*.mjs; do node "$test_file"; done
           node scripts/test-shopping-chat-routing-v1.mjs
           node tests/chat-deterministic-first-v1.mjs
@@ -162,6 +167,8 @@ jobs:
           deno check supabase/functions/admin-orders-comprar-v1/index.ts
           deno check supabase/functions/admin-chat-menu-v1/index.ts
           deno check supabase/functions/customer-intelligence-v1/index.ts
+          deno check supabase/functions/bling-history-import-v1/index.ts
+          deno check supabase/functions/bling-history-contact-enrichment-v1/index.ts
       - name: Segurança do chat público
         shell: bash
         run: |
