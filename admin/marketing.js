@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -49,17 +49,40 @@ function renderOpportunities(){
 }
 
 function assetMedia(assetId){
-  return (state.overview?.media||[]).filter(m=>m.asset_id===assetId).sort((a,b)=>String(a.object_path||'').localeCompare(String(b.object_path||'')));
+  return (state.overview?.media||[]).filter(m=>m.asset_id===assetId).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+}
+function assetRenderJobs(assetId){
+  return (state.overview?.render_jobs||[]).filter(j=>j.asset_id===assetId).sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
 }
 function assetPreviewHtml(asset){
   const media=assetMedia(asset.id);
+  const jobs=assetRenderJobs(asset.id);
   const role=asset.edit_spec?.content_role||'';
-  const mediaText=media.length?`${media.length} prévia(s) pronta(s)`:'Prévia ainda não gerada';
+  const images=media.filter(m=>String(m.mime_type||'').startsWith('image/'));
+  const videos=media.filter(m=>m.mime_type==='video/mp4');
+  const latestJob=jobs[0]||null;
+  const mp4Ready=videos.length>0||asset.output_spec?.mp4_ready===true;
+  const posterReady=images.some(m=>m.role==='poster');
+  const mediaText=media.length?`${media.length} mídia(s) de prévia`:'Prévia ainda não gerada';
+  let actions='';
+  if(asset.media_kind==='video'){
+    if(!posterReady){
+      actions=`<button class="secondary" type="button" data-action="render-preview" data-asset-id="${esc(asset.id)}">Gerar poster</button>`;
+    }else if(mp4Ready){
+      actions=`<button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver Reel 10s</button>`;
+    }else if(latestJob&&['queued','processing'].includes(latestJob.status)){
+      actions=`<button class="secondary" type="button" disabled>${latestJob.status==='processing'?'Gerando MP4…':'MP4 na fila'}</button><button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver poster</button>`;
+    }else{
+      actions=`<button class="primary" type="button" data-action="queue-light-video" data-asset-id="${esc(asset.id)}">Colocar MP4 10s na fila</button><button class="secondary" type="button" data-action="show-preview" data-asset-id="${esc(asset.id)}">Ver poster</button>`;
+    }
+  }else{
+    actions=`<button class="secondary" type="button" data-action="${media.length?'show-preview':'render-preview'}" data-asset-id="${esc(asset.id)}">${media.length?'Ver prévia':'Gerar prévia'}</button>`;
+  }
   return `<article class="asset-card" data-asset-id="${esc(asset.id)}">
     <div class="asset-card-head"><div><span class="status-chip">${esc(asset.status)}</span><h3>${esc(asset.title)}</h3><p>${esc(roleLabel(role))} · ${esc(asset.media_kind)} · no_ai</p></div>
-      <button class="secondary" type="button" data-action="${media.length?'show-preview':'render-preview'}" data-asset-id="${esc(asset.id)}">${media.length?'Ver prévia':'Gerar prévia'}</button>
+      <div class="asset-card-actions">${actions}</div>
     </div>
-    <div class="asset-safe-line"><span>${esc(mediaText)}</span><span>IA: não</span><span>Publicação: não</span>${asset.media_kind==='video'?'<span>MP4: ainda não</span>':''}</div>
+    <div class="asset-safe-line"><span>${esc(mediaText)}</span><span>IA: não</span><span>Publicação: não</span>${asset.media_kind==='video'?`<span>MP4: ${mp4Ready?'pronto':latestJob?.status||'não gerado'}</span>`:''}</div>
     <div class="asset-preview-slot" data-preview-slot="${esc(asset.id)}"></div>
   </article>`;
 }
@@ -77,7 +100,14 @@ async function showAssetPreview(assetId){
   slot.innerHTML='<div class="muted">Abrindo prévia segura…</div>';
   try{
     const signed=await Promise.all(media.slice(0,8).map(m=>getMarketingMediaUrl(m.id,600)));
-    slot.innerHTML=`<div class="asset-preview-gallery">${signed.map((x,i)=>`<figure><img src="${esc(x.signed_url)}" alt="Prévia ${i+1}" loading="lazy"><figcaption>${esc(media[i]?.role||'preview')}${media[i]?.duration_ms?' · '+Math.round(media[i].duration_ms/1000)+'s':''}</figcaption></figure>`).join('')}</div>`;
+    slot.innerHTML=`<div class="asset-preview-gallery">${signed.map((x,i)=>{
+      const m=media[i]||{};
+      const caption=`${m.role||'preview'}${m.duration_ms?' · '+Math.round(m.duration_ms/1000)+'s':''}`;
+      if(m.mime_type==='video/mp4'){
+        return `<figure class="video-preview"><video src="${esc(x.signed_url)}" controls playsinline preload="metadata"></video><figcaption>${esc(caption)}</figcaption></figure>`;
+      }
+      return `<figure><img src="${esc(x.signed_url)}" alt="Prévia ${i+1}" loading="lazy"><figcaption>${esc(caption)}</figcaption></figure>`;
+    }).join('')}</div>`;
   }catch(err){slot.innerHTML=`<div class="empty-state">${esc(err.message||'Falha ao abrir prévia.')}</div>`}
 }
 async function renderAssetPreview(assetId,button){
@@ -169,6 +199,19 @@ document.addEventListener('click',async e=>{
   const action=button.dataset.action,assetId=button.dataset.assetId;
   if(action==='render-preview'){await renderAssetPreview(assetId,button)}
   if(action==='show-preview'){await showAssetPreview(assetId)}
+  if(action==='queue-light-video'){
+    button.disabled=true;
+    const slot=document.querySelector(`[data-preview-slot="${CSS.escape(assetId)}"]`);
+    if(slot)slot.innerHTML='<div class="muted">Colocando MP4 de 10s na fila…</div>';
+    try{
+      await queueMarketingLightVideo(assetId);
+      if(slot)slot.innerHTML='<div class="muted">MP4 na fila de homologação. Nenhuma publicação foi feita.</div>';
+      await load();
+      document.querySelector('[data-tab="content"]')?.click();
+    }catch(err){
+      if(slot)slot.innerHTML=`<div class="empty-state">${esc(err.message||'Falha ao colocar vídeo na fila.')}</div>`;
+    }finally{button.disabled=false}
+  }
 });
 
 $('#campaignsList').addEventListener('click',async e=>{
