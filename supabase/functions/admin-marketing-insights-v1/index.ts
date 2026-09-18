@@ -66,6 +66,42 @@ Deno.serve(async(req:Request)=>{
     return json({ok:true,days,from:from.toISOString(),to:to.toISOString(),metrics,attribution_mode:clean(attribution?.status,80)||"unavailable",external_side_effect:false});
   }
 
+  if(action==="editorial_plan"){
+    const days=Number(b.days||14);
+    if(![7,14,30].includes(days))return fail("invalid_editorial_window","Use 7, 14 ou 30 dias");
+    const {data,error}=await sb.rpc("marketing_editorial_plan_v1",{p_days:days});
+    if(error)return fail("editorial_plan_failed",error.message||"Falha no plano editorial",500);
+    if(data?.external_side_effect!==false||data?.mode!=="preview_only")return fail("unsafe_editorial_plan","Plano editorial recusado",500);
+    return json({ok:true,plan:data,external_side_effect:false});
+  }
+
+  if(action==="tracking_preview"){
+    const assetId=clean(b.asset_id,80),channel=clean(b.channel,80),destination=clean(b.destination,1200)||null;
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assetId))return fail("invalid_asset_id","Asset inválido");
+    const {data,error}=await sb.rpc("marketing_tracking_link_v1",{p_asset_id:assetId,p_channel:channel,p_destination:destination});
+    if(error)return fail("tracking_preview_failed",error.message||"Falha no link de rastreio",500);
+    if(data?.ok===false)return json(data,400);
+    if(data?.external_side_effect!==false||data?.preview_only!==true)return fail("unsafe_tracking_preview","Preview de rastreio recusado",500);
+    return json({ok:true,tracking:data,external_side_effect:false});
+  }
+
+  if(action==="learning"){
+    const days=Number(b.days||90);
+    if(![30,90,180].includes(days))return fail("invalid_learning_window","Use 30, 90 ou 180 dias");
+    const to=new Date(),from=new Date(to.getTime()-days*86400000);
+    const {data,error}=await sb.rpc("marketing_learning_read_model_v1",{p_from:from.toISOString(),p_to:to.toISOString()});
+    if(error)return fail("learning_failed",error.message||"Falha no Learning Engine",500);
+    if(data?.external_side_effect!==false||data?.policy?.auto_optimization!==false)return fail("unsafe_learning_model","Learning Engine recusado",500);
+    return json({ok:true,days,learning:data,external_side_effect:false});
+  }
+
+  if(action==="daily_plan_preview"){
+    const {data,error}=await sb.rpc("marketing_daily_plan_preview_v1");
+    if(error)return fail("daily_plan_preview_failed",error.message||"Falha no plano diário",500);
+    if(data?.external_side_effect!==false||data?.mode!=="preview_only"||data?.automation_active!==false)return fail("unsafe_daily_plan","Plano diário recusado",500);
+    return json({ok:true,preview:data,external_side_effect:false});
+  }
+
   if(action==="overview"){
     const [
       {data:assets,error:e1},
