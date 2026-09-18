@@ -1,5 +1,5 @@
 import {api} from './api.js';
-import {CONFIG} from './runtime-config.js';
+import {CONFIG} from './runtime-config.js?v=20260918-customer-os-canary-1';
 import {customerOsApi} from './customer-os-api.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession} from './customer-os-auth.js';
 
