@@ -1482,3 +1482,29 @@ Uma rodada só pode ser marcada como concluída quando:
 **Publicação:** nenhuma.
 
 Este documento deve ser atualizado continuamente para funcionar como a memória operacional oficial do projeto.
+
+
+# 27. Bloqueio técnico atual para Rodada 10
+
+Em 18/09/2026 foi verificado o ambiente disponível para iniciar o shell Android.
+
+Disponível:
+- Node 22.16.0;
+- npm 10.9.2;
+- Java 21.
+
+Indisponível:
+- Android SDK;
+- adb;
+- sdkmanager;
+- Gradle global;
+- Xcode;
+- acesso DNS ao registry npm.
+
+A tentativa de consultar `@capacitor/core` falhou com `EAI_AGAIN registry.npmjs.org`.
+
+Decisão:
+- não iniciar uma Rodada 10 parcial;
+- não criar uma estrutura Android manual e chamá-la de validada;
+- manter Rodadas 0–9 como último checkpoint íntegro;
+- retomar Rodada 10 somente em ambiente capaz de instalar Capacitor e gerar APK real.
