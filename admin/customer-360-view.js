@@ -41,7 +41,12 @@ const labels={
   catalog:'Catálogo',
   message:'Mensagem',
   handoff:'Transferência para atendimento',
-  operator_reply:'Resposta do atendimento'
+  operator_reply:'Resposta do atendimento',
+  high:'Alta',
+  medium:'Média',
+  low:'Baixa',
+  dormant:'Sem atividade recente',
+  none:'Nenhuma'
 };
 
 const human=value=>{
@@ -86,7 +91,7 @@ const renderBrands=(brands,helpers)=>{
   const esc=helpers.esc,money=helpers.money;
   if(!brands.length)return empty('Ainda não há afinidade de marcas suficiente.');
   return '<div class="c360-insight-grid">'+brands.slice(0,12).map((x,i)=>
-    '<article class="c360-insight-card"><span class="c360-rank">'+(i+1)+'</span><div><strong>'+esc(x.brand||'Sem marca')+'</strong><small>'+esc(x.purchase_count||0)+' compra(s) · '+money(x.total_spent||0)+'</small></div></article>'
+    '<article class="c360-insight-card"><span class="c360-rank">'+(i+1)+'</span><div><strong>'+esc(x.brand||'Sem marca')+'</strong><small>'+esc(x.purchase_count||x.order_count||0)+' compra(s) · '+money(x.total_spent||0)+'</small></div></article>'
   ).join('')+'</div>';
 };
 
@@ -143,6 +148,7 @@ export function renderCustomer360(options){
   const orders=data.orders||[];
   const legacyProducts=intel.top_products||[];
   const legacyCategories=intel.top_categories||[];
+  const commercialProfile=customer360&&customer360.commercial?customer360.commercial.profile||{}:{};
   const dynamicSegments=customer360&&customer360.commercial?customer360.commercial.segments:null;
   const segmentSource=dynamicSegments||data.segments||{};
   const segments=Array.isArray(segmentSource.segments)?segmentSource.segments:[];
@@ -167,17 +173,29 @@ export function renderCustomer360(options){
   const substitutions=customer360&&customer360.preferences?customer360.preferences.substitutions||[]:[];
   const marketingTouchpoints=customer360&&customer360.marketing?customer360.marketing.touchpoints||[]:[];
   const marketingEvents=customer360&&customer360.marketing?customer360.marketing.events||[]:[];
-  const favoriteBasket=intel.favorite_basket&&intel.favorite_basket.name?intel.favorite_basket.name:(intel.last_basket&&intel.last_basket.name?intel.last_basket.name:'—');
-  const frequency=intel.repurchase_frequency_label||'Ainda sem padrão';
+  const favoriteBasket=(commercialProfile.favorite_basket&&commercialProfile.favorite_basket.name)
+    ?commercialProfile.favorite_basket.name
+    :(intel.favorite_basket&&intel.favorite_basket.name?intel.favorite_basket.name:(intel.last_basket&&intel.last_basket.name?intel.last_basket.name:'—'));
+  const frequency=commercialProfile.repurchase_frequency_label||intel.repurchase_frequency_label||'Ainda sem padrão';
   const phone=customer.primary_whatsapp_e164||'';
   const wa=digits(phone)?'https://wa.me/'+digits(phone):'';
   const lifecycle=human(summary.lifecycle||'');
   const protectionAllowed=protection.allowed===true;
   const consentStatus=protection.consent&&protection.consent.status?protection.consent.status:'unknown';
-  const topProducts=secureProducts.length?secureProducts:legacyProducts;
-  const topCategories=secureCategories.length?secureCategories:legacyCategories;
+  const profileProducts=Array.isArray(commercialProfile.top_products)?commercialProfile.top_products:[];
+  const profileCategories=Array.isArray(commercialProfile.top_categories)?commercialProfile.top_categories:[];
+  const profileBrands=Array.isArray(commercialProfile.top_brands)?commercialProfile.top_brands:[];
+  const topProducts=profileProducts.length?profileProducts:(secureProducts.length?secureProducts:legacyProducts);
+  const topCategories=profileCategories.length?profileCategories:(secureCategories.length?secureCategories:legacyCategories);
+  const topBrands=profileBrands.length?profileBrands:brands;
   const identityConfidence=identityLatest?Math.round(Number(identityLatest.confidence||0)*100):null;
-  const quality=Number(dq.completeness_percent||0);
+  const dataQuality=Number(commercialProfile.data_quality_score??dq.completeness_percent??0);
+  const profileCompleteness=Number(commercialProfile.profile_completeness||0);
+  const engagement=commercialProfile.recent_engagement||{};
+  const pressure=commercialProfile.marketing_pressure||{};
+  const estimatedNextRepurchase=commercialProfile.estimated_next_repurchase_at||intel.estimated_next_repurchase_at||null;
+  const avgInterval=commercialProfile.average_repurchase_interval_days??intel.average_repurchase_interval_days??null;
+  const daysSinceLast=commercialProfile.days_since_last_order??intel.days_since_last_order??null;
 
   const segmentHtml=segments.length?'<div class="c360-pill-row">'+segments.map(key=>{
     const text=segmentLabel(key);
@@ -227,7 +245,7 @@ export function renderCustomer360(options){
       metric('Total comprado',money(intel.lifetime_value||0),'Valor acumulado','accent')+
       metric('Ticket médio',money(intel.average_ticket||0),'Média por pedido')+
       metric('Última compra',intel.last_order_at?esc(date(intel.last_order_at)):'—','Compra mais recente')+
-      metric('Qualidade dos dados',esc(quality)+'%','Completude cadastral',quality>=75?'good':(quality>=50?'warn':'bad'))+
+      metric('Perfil comercial',esc(profileCompleteness)+'%','Completude do perfil',profileCompleteness>=75?'good':(profileCompleteness>=50?'warn':'bad'))+
       metric('Marketing',protectionAllowed?'Liberado':'Bloqueado',esc(human(consentStatus)),protectionAllowed?'good':'bad')+
     '</section>'+
     '<nav class="c360-tabs" aria-label="Seções do cliente">'+
@@ -248,9 +266,10 @@ export function renderCustomer360(options){
               '<div><span>Última interação</span><strong>'+esc(summary.last_interaction_at?date(summary.last_interaction_at):'—')+'</strong></div>'+
               '<div><span>Confiança da identidade</span><strong>'+(identityConfidence==null?'—':esc(identityConfidence)+'%')+'</strong></div>'+
               '<div><span>Cesta mais comprada</span><strong>'+esc(favoriteBasket)+'</strong></div>'+
-              '<div><span>Pagamento mais usado</span><strong>'+esc(paymentLabel(intel.favorite_payment_method))+'</strong></div>'+
+              '<div><span>Pagamento mais usado</span><strong>'+esc(paymentLabel(commercialProfile.favorite_payment_method||intel.favorite_payment_method))+'</strong></div>'+
               '<div><span>Frequência estimada</span><strong>'+esc(frequency)+'</strong></div>'+
-              '<div><span>Intervalo médio</span><strong>'+(intel.average_repurchase_interval_days!=null?esc(intel.average_repurchase_interval_days)+' dias':'—')+'</strong></div>'+
+              '<div><span>Intervalo médio</span><strong>'+(avgInterval!=null?esc(avgInterval)+' dias':'—')+'</strong></div>'+
+              '<div><span>Qualidade cadastral</span><strong>'+esc(dataQuality)+'%</strong></div>'+
             '</div>'+
           '</article>'+
           '<article class="c360-card">'+sectionTitle('Situação agora','Sinais que merecem atenção antes de qualquer ação.')+
@@ -260,9 +279,24 @@ export function renderCustomer360(options){
             (protectionState.open_handoff?'<div class="c360-alert warn"><strong>Atendimento humano em andamento</strong><small>Priorize a resolução do atendimento atual.</small></div>':'')+
           '</article>'+
         '</div>'+
+        '<div class="c360-two-col">'+
+          '<article class="c360-card">'+sectionTitle('Ritmo comercial','Calculado por histórico e interação, sem IA.')+
+            '<div class="c360-summary-grid">'+
+              '<div><span>Dias desde a última compra</span><strong>'+(daysSinceLast!=null?esc(daysSinceLast)+' dias':'—')+'</strong></div>'+
+              '<div><span>Próxima recompra estimada</span><strong>'+(estimatedNextRepurchase?esc(date(estimatedNextRepurchase)):'Ainda sem padrão')+'</strong></div>'+
+              '<div><span>Engajamento recente</span><strong>'+esc(human(engagement.level||'none'))+'</strong></div>'+
+              '<div><span>Pressão de marketing</span><strong>'+esc(human(pressure.level||'none'))+'</strong></div>'+
+            '</div>'+
+          '</article>'+
+          '<article class="c360-card">'+sectionTitle('Qualidade do perfil','Indica o quanto sabemos com evidência sobre este cliente.')+
+            '<div class="c360-profile-meter"><div><span>Perfil comercial</span><strong>'+esc(profileCompleteness)+'%</strong></div><progress max="100" value="'+esc(profileCompleteness)+'"></progress></div>'+
+            '<div class="c360-profile-meter"><div><span>Qualidade cadastral</span><strong>'+esc(dataQuality)+'%</strong></div><progress max="100" value="'+esc(dataQuality)+'"></progress></div>'+
+            '<p class="c360-profile-note">'+(Array.isArray(commercialProfile.profile_gaps)&&commercialProfile.profile_gaps.length?esc(commercialProfile.profile_gaps.length)+' ponto(s) ainda podem ser enriquecidos.':'Perfil sem lacunas relevantes pelas regras atuais.')+'</p>'+
+          '</article>'+
+        '</div>'+
         '<article class="c360-card">'+sectionTitle('Segmentos dinâmicos',dynamicSegments?'Recalculados por fatos · '+esc(dynamicSegments.engine_version||'CM-1.8'):'Perfil comercial calculado')+segmentHtml+'</article>'+
         '<div class="c360-two-col">'+
-          '<article class="c360-card">'+sectionTitle('Marcas com maior afinidade','Calculado a partir do histórico real de compras.')+renderBrands(brands,h)+'</article>'+
+          '<article class="c360-card">'+sectionTitle('Marcas com maior afinidade','Calculado a partir do histórico real de compras.')+renderBrands(topBrands,h)+'</article>'+
           '<article class="c360-card">'+sectionTitle('Categorias principais','Onde o cliente concentra mais compras.')+renderCategories(topCategories,h)+'</article>'+
         '</div>'+
       '</section>'+
@@ -283,7 +317,7 @@ export function renderCustomer360(options){
       '</section>'+
       '<section class="c360-panel" data-customer-panel="preferences">'+
         '<div class="c360-two-col">'+
-          '<article class="c360-card">'+sectionTitle('Marcas favoritas','Ranking por histórico de compra.')+renderBrands(brands,h)+'</article>'+
+          '<article class="c360-card">'+sectionTitle('Marcas favoritas','Ranking por histórico de compra.')+renderBrands(topBrands,h)+'</article>'+
           '<article class="c360-card">'+sectionTitle('Categorias de afinidade','Categorias que mais aparecem nas compras.')+renderCategories(topCategories,h)+'</article>'+
         '</div>'+
         '<article class="c360-card">'+sectionTitle('Produtos de afinidade','Produtos mais relevantes para este cliente.')+renderProducts(topProducts,h)+'</article>'+
