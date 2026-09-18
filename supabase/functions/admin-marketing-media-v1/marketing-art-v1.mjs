@@ -25,17 +25,17 @@ function layout(width,height,hasHeadline){
     headlineLine:tall?66:medium?56:58,
     headlineChars:tall?27:medium?29:31,
     headlineLines:tall?3:2,
-    nameY:Math.round(height*(tall?.665:medium?.69:.71)),
+    nameY:Math.round(height*(tall?.665:medium?.69:.69)),
     nameSize:tall?36:medium?31:30,
     nameLine:tall?44:medium?38:36,
-    oldY:Math.round(height*(tall?.725:medium?.755:.775)),
+    oldY:Math.round(height*(tall?.725:medium?.755:.75)),
     oldSize:tall?31:medium?27:25,
-    priceY:Math.round(height*(tall?.795:medium?.83:.85)),
+    priceY:Math.round(height*(tall?.795:medium?.83:.82)),
     priceSize:tall?78:medium?66:60,
-    ctaY:Math.round(height*(tall?.86:medium?.89:.905)),
-    ctaH:Math.round(height*(tall?.055:medium?.063:.07)),
+    ctaY:Math.round(height*(tall?.86:medium?.89:.865)),
+    ctaH:Math.round(height*(tall?.055:medium?.063:.065)),
     ctaSize:tall?32:medium?28:26,
-    footerY:Math.round(height*.978)
+    footerY:Math.round(height*(tall?.978:medium?.978:.975))
   };
 }
 function visualCta(cta){
