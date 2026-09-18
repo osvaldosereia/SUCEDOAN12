@@ -25,8 +25,8 @@ Atualizado em 18/09/2026.
 | CM-1.10 — Opportunity Engine | Concluída V1 + precision pass |
 | CM-1.11 — Marketing Brain OBSERVE/SUGGEST | Concluída V1 · OBSERVE ativo / SUGGEST gate fechado |
 | CM-1.12 — Meta Foundation | Concluída V1 · READ_ONLY / fail-closed |
-| CM-1.13 — Template Draft Assistant | Próxima rodada |
-| CM-1.14 — PapoAI Adapter temporário | Pendente |
+| CM-1.13 — Template Draft Assistant | Concluída V1 · DRAFT/manual ativo · IA gate fechado |
+| CM-1.14 — PapoAI Adapter temporário | Próxima rodada |
 | CM-1.15 — Central de Relacionamento | Pendente |
 | Homologação CM-1 | Pendente |
 
@@ -619,6 +619,6 @@ A cada rodada:
 
 ## Próxima ação
 
-**CM-1.13 — Template Draft Assistant.**
+**CM-1.14 — PapoAI Adapter temporário.**
 
-A Meta Foundation CM-1.12 já criou o contrato fail-closed e o versionamento necessário. A próxima rodada trabalha somente em DRAFT/manual, sem submissão ou envio externo.
+A CM-1.13 concluiu a biblioteca DRAFT/versionada de templates. A próxima rodada isola o PapoAI atrás de um adapter normalizado para que a futura troca por Meta Direct não exija reescrever Customer OS, Marketing OS ou regras de negócio.
