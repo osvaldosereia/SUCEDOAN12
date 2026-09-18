@@ -415,14 +415,14 @@ Legenda:
 | 9 | PWA isolada | ✅ |
 | 10 | Shell Capacitor Android | ⏸️ próxima sequencial; toolchain nativa ausente |
 | 11 | Shell Capacitor iOS | ⏳ |
-| 12 | Sessão segura nativa | ⏳ |
+| 12 | Sessão segura nativa | 🟡 adapter local validado; Keychain/Keystore pendentes |
 | 13 | Backend Supabase de homologação | 🟡 fundação pronta; Edge Functions bloqueadas por quota |
-| 14 | Identificação/pairing | ⏳ |
-| 15 | Deep links | ⏳ |
-| 16 | Push transacional de homologação | ⏳ |
-| 17 | Foto e áudio | ⏳ |
-| 18 | Histórico e recompra | ⏳ |
-| 19 | Central de privacidade | ⏳ |
+| 14 | Identificação/pairing | 🟡 core local validado; backend HML pendente |
+| 15 | Deep links | 🟡 parser/política local validados; links nativos pendentes |
+| 16 | Push transacional de homologação | 🟡 contrato HML local; FCM/APNs pendentes |
+| 17 | Foto e áudio | 🟡 política/fixtures locais; mídia nativa/storage pendentes |
+| 18 | Histórico e recompra | 🟡 fluxo sintético local; backend pendente |
+| 19 | Central de privacidade | 🟡 central local + revogação de sessão; backend pendente |
 | 20 | Offline e recuperação | ✅ concluída em paralelo |
 | 21 | Métricas e observabilidade | 🟡 camada local pronta; backend pendente |
 | 22 | Segurança e hardening | 🟡 hardening local executado; testes nativos pendentes |
@@ -1688,3 +1688,20 @@ A próxima conversa deve:
 6. continuar pelas próximas rodadas seguras já autorizadas.
 
 O proprietário autorizou avançar automaticamente por várias rodadas seguras. Pedir nova autorização apenas para custo novo, produção real, operação destrutiva relevante ou decisão obrigatória do proprietário.
+
+---
+
+# 30. Checkpoint de validação e avanço seguro — 18/09/2026
+
+R12/R14/R15 foram validadas antes de qualquer avanço. Foram corrigidas duas bordas de segurança: percent-encoding malformado em deep links e comparação de segredo de pairing com retorno antecipado. O pairing passou a limitar também tentativas do código humano.
+
+Avanços locais seguros:
+- R16: cliente push HML TEST-PUSH-*, marketing OFF, zero provedor/rede;
+- R17: política/fixtures de foto e áudio TEST-MEDIA-*, limites e zero upload/rede;
+- R18: perfil/histórico TEST-*, recompra com preço atual, indisponíveis e confirmação explícita;
+- R19: revogação de aparelho limpa sessão local mesmo sem backend;
+- R21: contadores operacionais locais sem PII para pairing/deep-link/push.
+
+Supabase HML foi apenas consultado: gate OFF, ambiente homologation, 60 req/min, 10/10 IDs TEST-PROD-*. A quota de Edge Functions não foi contornada.
+
+Estado: R0–R9 e R20 concluídas; R12–R19 e R21–R23 parciais conforme dependências; R10 bloqueada por toolchain nativa; produção e Comprar intocados.
