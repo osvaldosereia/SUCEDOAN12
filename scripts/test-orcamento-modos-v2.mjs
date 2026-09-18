@@ -29,4 +29,14 @@ assert.match(html, /class="item-qty"/, 'quantidade deve permanecer visível na g
 assert.match(html, /class="item-name"/, 'descrição deve permanecer visível na grade de itens');
 assert.match(html, /formatMoney\(i\.quantity\*i\.unitPrice\)/, 'modo normal deve continuar exibindo total por item');
 
-console.log('OK · orçamento V2: modo normal + modo somente com itens em duas colunas e total final.');
+assert.match(html, /data-item-name=/, 'nome ou descrição do item deve ser editável');
+assert.match(html, /data-item-code=/, 'código do item deve ser editável');
+assert.match(html, /data-item-qty=/, 'quantidade do item deve continuar editável');
+assert.match(html, /data-item-price=/, 'valor unitário do item deve continuar editável');
+assert.match(html, /data-item-total=/, 'total da linha deve ser editável');
+assert.match(html, /item\.name=e\.target\.value/, 'edição do nome deve atualizar o estado do orçamento');
+assert.match(html, /item\.code=e\.target\.value/, 'edição do código deve atualizar o estado do orçamento');
+assert.match(html, /parseMoney\(e\.target\.value\)\/Math\.max\(\.01,item\.quantity\)/, 'edição do total da linha deve recalcular o valor unitário');
+assert.match(html, /id="payment" list="paymentOptions"/, 'forma de pagamento deve aceitar texto livre com sugestões');
+
+console.log('OK · orçamento V2: itens totalmente editáveis + modo normal + modo somente com itens em duas colunas e total final.');
