@@ -435,3 +435,52 @@ Inclui:
 - bloqueio de segredos no navegador.
 
 Não há falha conhecida de CI nesta rodada.
+
+
+## Auditoria dos 6 critérios implemented — checkpoint final da rodada
+
+### Critérios 6 e 7 — catalog_search / product_view
+
+Runtime confirmado:
+
+- `shopping-chat-products-v1` ACTIVE v16;
+- action `track` implantada;
+- `catalog_search` e `product_view` aceitos;
+- persistência via `record_catalog_interaction_v1`;
+- `external_side_effect=false`.
+
+Uso real observado:
+
+- `catalog_open`: 56;
+- `catalog_add`: 384;
+- `catalog_checkout_return`: 22;
+- `catalog_remove`: 10;
+- `catalog_search`: 0;
+- `product_view`: 0.
+
+Existem sessões reais do website e compras recentes, inclusive pedido concluído, mas não houve ação real de busca nem abertura de detalhe depois da implantação do collector.
+
+Conclusão: **não há falha técnica conhecida**. Manter critérios 6 e 7 em `implemented` até ocorrer interação real; não criar fixture.
+
+### Critério 13 — opportunity lifecycle
+
+Estado real:
+
+- 75 oportunidades;
+- todas em `suppressed`;
+- dismissed: 0;
+- converted: 0;
+- expired: 0;
+- suppressão coerente com ausência de consentimento positivo.
+
+Conclusão: criação real está comprovada, mas ainda não ocorreu encerramento natural. Manter em `implemented`; não alterar oportunidade apenas para produzir evidência.
+
+### Critérios 15 e 18
+
+Permanecem intencionalmente em `implemented`:
+
+- Marketing Brain SUGGEST fechado;
+- budget IA = 0;
+- AI executions = 0.
+
+Não ligar IA nem orçamento apenas para satisfazer acceptance checklist.
