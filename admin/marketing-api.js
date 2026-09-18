@@ -47,3 +47,10 @@ export const previewAiMarketingStrategy=()=>secureCall(CONFIG.marketingBrainFunc
 export const renderMarketingPreview=(assetId)=>secureCall(CONFIG.marketingMediaFunction,{action:'render_preview',asset_id:assetId},60000);
 export const getMarketingMediaUrl=(mediaId,expiresIn=600)=>secureCall(CONFIG.marketingMediaFunction,{action:'signed_url',media_id:mediaId,expires_in:expiresIn},18000);
 export const queueMarketingLightVideo=(assetId)=>secureCall(CONFIG.marketingMediaFunction,{action:'queue_light_video',asset_id:assetId},18000);
+
+export const submitMarketingAssetReview=(assetId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'submit_review',asset_id:assetId});
+export const approveMarketingAsset=(assetId,note='')=>secureCall(CONFIG.marketingWorkflowFunction,{action:'approve_asset',asset_id:assetId,note});
+export const rejectMarketingAsset=(assetId,note)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'reject_asset',asset_id:assetId,note});
+export const prepareMarketingPublication=(assetId)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'prepare_publication',asset_id:assetId});
+export const saveMarketingAssetEdit=(payload)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'editor_save',...payload},30000);
+export const forkMarketingAsset=(assetId,changeNote='')=>secureCall(CONFIG.marketingWorkflowFunction,{action:'editor_fork',asset_id:assetId,change_note:changeNote},30000);
