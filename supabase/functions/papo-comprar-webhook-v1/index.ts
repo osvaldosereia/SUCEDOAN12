@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.112.3";
 
+const PROVIDER_KEY="papoai";
+const ADAPTER_VERSION="cm1.14-v1";
 const clean=(value:unknown,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const digits=(value:unknown)=>String(value??'').replace(/\D/g,'');
 const response=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
@@ -20,13 +22,43 @@ function normalizePhone(value:unknown){
   return `+${valueDigits}`;
 }
 
+function getPath(body:any,path:string){
+  let current:any=body;
+  for(const part of path.split('.'))current=current&&typeof current==='object'?current[part]:undefined;
+  return current;
+}
+
 function pick(body:any,paths:string[]){
   for(const path of paths){
-    let current:any=body;
-    for(const part of path.split('.'))current=current&&typeof current==='object'?current[part]:undefined;
-    const value=clean(current,1000);if(value)return value;
+    const value=clean(getPath(body,path),1000);
+    if(value)return value;
   }
   return '';
+}
+
+function pickRaw(body:any,paths:string[]){
+  for(const path of paths){
+    const value=getPath(body,path);
+    if(value!==undefined&&value!==null)return {path,value};
+  }
+  return {path:'',value:null};
+}
+
+function normalizeTags(body:any){
+  const found=pickRaw(body,[
+    'tags','labels','etiquetas',
+    'contact.tags','contact.labels','contact.etiquetas',
+    'sender.tags','sender.labels','data.contact.tags','payload.contact.tags'
+  ]);
+  if(!found.path)return {present:false,source:null,tags:[] as string[]};
+  const sourceValue=found.value;
+  const raw=Array.isArray(sourceValue)
+    ?sourceValue
+    :typeof sourceValue==='string'
+      ?sourceValue.split(/[,;|]/g)
+      :[];
+  const tags=[...new Set(raw.map((x:any)=>clean(typeof x==='object'?(x?.name||x?.label||x?.title||x?.value):x,100)).filter(Boolean))].slice(0,100);
+  return {present:true,source:found.path,tags};
 }
 
 async function parseBody(req:Request){
@@ -40,7 +72,9 @@ async function parseBody(req:Request){
   const raw=await req.text().catch(()=>'');
   if(!raw)return {};
   try{return JSON.parse(raw)}catch{
-    const params=new URLSearchParams(raw),body:Record<string,string>={};for(const [key,value] of params)body[key]=value;return body;
+    const params=new URLSearchParams(raw),body:Record<string,string>={};
+    for(const [key,value] of params)body[key]=value;
+    return body;
   }
 }
 
@@ -60,6 +94,7 @@ Deno.serve(async(req:Request)=>{
   const supplied=clean(req.headers.get('x-papo-webhook-token')||url.searchParams.get('webhook_token')||body?.webhook_token||bearer,200);
   if(!supplied||!safeEqual(supplied,String(expected)))return response({ok:false,error:'unauthorized'},401);
 
+  // Provider-specific parsing ends here. Everything below uses the canonical adapter contract.
   const rawPhone=pick(body,['phone','whatsapp','phone_number','sender_phone','from','sender.phone','sender.whatsapp','contact.phone','contact.phone_number']);
   const phone=normalizePhone(rawPhone);
   if(!phone)return response({ok:false,error:'invalid_phone'},400);
@@ -67,10 +102,12 @@ Deno.serve(async(req:Request)=>{
   const contactName=pick(body,['name','contact_name','sender.name','contact.name']);
   const contactId=pick(body,['contact_id','sender.id','contact.id','id']);
   const message=pick(body,['message','text','body','content','message.text','message.body']);
-  const externalMessageId=pick(body,['message_id','messageId','event_id','eventId','message.id','data.message.id','payload.message.id']);
+  const externalMessageId=pick(body,['message_id','messageId','message.id','data.message.id','payload.message.id']);
+  const externalEventId=pick(body,['event_id','eventId','event.id','data.event.id','payload.event.id']);
   const rawMessageType=pick(body,['message_type','type','message.type','data.message.type']).toLowerCase();
   const allowedMessageTypes=new Set(['text','image','audio','video','document','location','reaction','button','quick_reply']);
   const normalizedMessageType=allowedMessageTypes.has(rawMessageType)?rawMessageType:(message?'text':'unknown');
+  const tagObservation=normalizeTags(body);
   const receivedAt=new Date().toISOString();
 
   const [{data:channelAccount,error:channelAccountError},{data:account,error:accountError}]=await Promise.all([
@@ -80,109 +117,59 @@ Deno.serve(async(req:Request)=>{
   if(channelAccountError||!channelAccount?.id)return response({ok:false,error:'channel_account_unavailable'},503);
   if(accountError||!account?.id)return response({ok:false,error:'whatsapp_account_unavailable'},503);
 
-  const {data:resolution,error:resolutionError}=await sb.rpc('resolve_customer_identity_v1',{
-    p_phone:phone,
-    p_channel:'whatsapp',
-    p_channel_account_id:channelAccount.id,
-    p_external_user_id:phone,
-    p_source:'papoai_webhook',
-    p_persist:true
-  });
-  if(resolutionError)return response({ok:false,error:'identity_resolution_failed'},500);
-  const identityDecision=clean(resolution?.decision,40)||'unmatched';
-  const matchedCustomerId=identityDecision==='matched'?clean(resolution?.customer_id,80)||null:null;
-  const {data:observedIdentity,error:observeIdentityError}=await sb.rpc('observe_customer_channel_identity_v1',{
-    p_channel:'whatsapp',
-    p_channel_account_id:channelAccount.id,
-    p_external_user_id:phone,
-    p_identity_kind:'e164',
-    p_source:'papoai_webhook',
-    p_evidence:{
-      provider:'papoai',
-      papo_contact_id:contactId||null,
-      candidate_customer_id:matchedCustomerId,
-      resolution_decision:identityDecision,
-      resolution_confidence:Number(resolution?.confidence||0)
-    }
-  });
-  if(observeIdentityError)return response({ok:false,error:'channel_identity_observation_failed'},500);
-
-  const {data:matchedCustomer,error:matchedCustomerError}=matchedCustomerId
-    ?await sb.from('customers').select('id,name,preferred_reply').eq('id',matchedCustomerId).maybeSingle()
-    :{data:null,error:null};
-  if(matchedCustomerError)return response({ok:false,error:'customer_lookup_failed'},500);
-
-  const {data:openConversation,error:conversationLookupError}=await sb.from('conversations')
-    .select('id,customer_id,referral,source')
-    .eq('whatsapp_account_id',account.id).eq('wa_contact_e164',phone).neq('status','closed')
-    .order('updated_at',{ascending:false}).limit(1).maybeSingle();
-  if(conversationLookupError)return response({ok:false,error:'conversation_lookup_failed'},500);
-
-  const papoReferral={
-    ...((openConversation?.referral&&typeof openConversation.referral==='object')?openConversation.referral:{}),
-    provider:'papoai',
-    papo_contact_id:contactId||null,
-    papo_contact_name:contactName||null,
-    papo_last_seen_at:receivedAt,
-    channel_identity_id:observedIdentity?.identity_id||null
+  const providerContext={
+    adapter_version:ADAPTER_VERSION,
+    event_type:rawMessageType||normalizedMessageType,
+    tags_field_present:tagObservation.present,
+    tags_source:tagObservation.source,
+    provider_contact_id:contactId||null
   };
-  let conversationId=openConversation?.id||null;
-  const customerId=matchedCustomerId||openConversation?.customer_id||null;
 
-  if(conversationId){
-    const {error:updateError}=await sb.from('conversations').update({
-      customer_id:customerId,
-      last_inbound_at:receivedAt,
-      updated_at:receivedAt,
-      referral:papoReferral,
-      external_user_id:contactId||phone
-    }).eq('id',conversationId);
-    if(updateError)return response({ok:false,error:'conversation_update_failed'},500);
-  }else{
-    const {data:created,error:createError}=await sb.from('conversations').insert({
-      whatsapp_account_id:account.id,
-      customer_id:customerId,
-      wa_contact_e164:phone,
-      source:'organic',
-      channel:'whatsapp',
-      external_user_id:contactId||phone,
-      last_inbound_at:receivedAt,
-      referral:papoReferral,
-      context_summary:contactName?`Contato iniciado no PapoAI: ${contactName}`:'Contato iniciado no PapoAI'
-    }).select('id').single();
-    if(createError||!created?.id)return response({ok:false,error:'conversation_create_failed'},500);
-    conversationId=created.id;
+  const {data:ingested,error:ingestError}=await sb.rpc('ingest_channel_adapter_event_v1',{
+    p_provider_key:PROVIDER_KEY,
+    p_channel:'whatsapp',
+    p_channel_account_id:channelAccount.id,
+    p_whatsapp_account_id:account.id,
+    p_external_user_id:phone,
+    p_external_contact_id:contactId||null,
+    p_phone:phone,
+    p_display_name:contactName||null,
+    p_external_message_id:externalMessageId||null,
+    p_external_event_id:externalEventId||null,
+    p_direction:'inbound',
+    p_message_type:normalizedMessageType,
+    p_body_text:message||null,
+    p_media_refs:[],
+    p_tags:tagObservation.tags,
+    p_provider_context:providerContext,
+    p_referral:{provider_adapter:PROVIDER_KEY},
+    p_occurred_at:receivedAt
+  });
+  if(ingestError)return response({ok:false,error:'adapter_ingest_failed',detail:clean(ingestError.message,500)},500);
+  if(ingested?.ignored)return response({...ingested,provider:PROVIDER_KEY});
+
+  if(tagObservation.present){
+    await sb.from('channel_provider_adapters')
+      .update({
+        tag_read_state:'observed_webhook',
+        capabilities:{
+          normalized_event_ingest:true,
+          identity_resolution:true,
+          shopping_handoff:true,
+          tags_read_verified:false,
+          tags_write_verified:false,
+          tags_observed_in_webhook:true
+        },
+        updated_at:receivedAt
+      })
+      .eq('provider_key',PROVIDER_KEY).eq('channel','whatsapp').eq('channel_account_id',channelAccount.id)
+      .eq('tag_read_state','unknown');
   }
 
-  let normalizedEventRecorded=false;
-  if(externalMessageId){
-    const {error:normalizedEventError}=await sb.from('normalized_channel_events').insert({
-      channel:'whatsapp',
-      channel_account_id:channelAccount.id,
-      external_user_id:phone,
-      external_message_id:externalMessageId,
-      external_event_id:null,
-      direction:'inbound',
-      message_type:normalizedMessageType,
-      reply_to_external_message_id:null,
-      source:'papoai',
-      referral:{provider:'papoai',papo_contact_id:contactId||null},
-      occurred_at:receivedAt,
-      raw_event_id:null,
-      conversation_id:conversationId,
-      customer_id:customerId,
-      body_text:message||null,
-      media_refs:[],
-      context:{
-        identity_decision:identityDecision,
-        identity_confidence:Number(resolution?.confidence||0),
-        channel_identity_id:observedIdentity?.identity_id||null
-      },
-      processing_status:'normalized'
-    });
-    normalizedEventRecorded=!normalizedEventError||normalizedEventError.code==='23505';
-  }
+  const conversationId=clean(ingested?.conversation_id,80);
+  if(!conversationId)return response({ok:false,error:'adapter_conversation_missing'},500);
 
+  // Shopping is a downstream consumer of the canonical conversation, not a PapoAI rule.
   const {data:room,error:roomError}=await sb.rpc('room_start_for_conversation_v1',{
     p_conversation_id:conversationId,
     p_entry_intent:'home',
@@ -193,24 +180,37 @@ Deno.serve(async(req:Request)=>{
   const {data:session}=await sb.from('catalog_sessions').select('metadata').eq('id',room.session_id).maybeSingle();
   await sb.from('catalog_sessions').update({metadata:{
     ...((session?.metadata&&typeof session.metadata==='object')?session.metadata:{}),
-    entry_source:'papoai',
-    papo_contact_id:contactId||null,
-    papo_contact_name:contactName||null,
-    papo_phone:phone,
-    papo_customer_found:Boolean(matchedCustomerId),
-    papo_received_at:receivedAt
+    entry_source:'channel_adapter',
+    provider_key:PROVIDER_KEY,
+    provider_contact_id:contactId||null,
+    provider_contact_name:contactName||null,
+    provider_external_user_id:phone,
+    adapter_customer_found:Boolean(ingested?.customer_id),
+    adapter_received_at:receivedAt,
+    adapter_version:ADAPTER_VERSION
   }}).eq('id',room.session_id);
 
-  const canonicalName=clean(matchedCustomer?.name||contactName,160)||null;
+  let customer:any=null;
+  if(ingested?.customer_id){
+    const customerR=await sb.from('customers').select('id,name,primary_whatsapp_e164').eq('id',ingested.customer_id).maybeSingle();
+    customer=customerR.data||null;
+  }
+
   return response({
     ok:true,
-    customer_found:Boolean(matchedCustomerId),
-    identity_resolution:{decision:identityDecision,confidence:Number(resolution?.confidence||0),conflict:identityDecision==='conflict',channel_identity_id:observedIdentity?.identity_id||null},
-    customer:matchedCustomerId?{id:matchedCustomerId,name:canonicalName,phone}:null,
-    contact:{name:canonicalName,phone,contact_id:contactId||null},
+    provider:PROVIDER_KEY,
+    adapter_version:ADAPTER_VERSION,
+    duplicate:Boolean(ingested?.duplicate),
+    customer_found:Boolean(ingested?.customer_id),
+    identity_resolution:ingested?.identity_resolution||null,
+    customer:customer?{id:customer.id,name:customer.name||contactName||null,phone:customer.primary_whatsapp_e164||phone}:null,
+    contact:{name:customer?.name||contactName||null,phone,contact_id:contactId||null},
+    tags_observed:tagObservation.present,
+    tag_count:tagObservation.tags.length,
     shopping_url:room.url,
     session_id:room.session_id,
     conversation_id:conversationId,
-    normalized_event_recorded:normalizedEventRecorded
+    normalized_event_id:ingested?.normalized_event_id||null,
+    external_side_effect:false
   });
 });
