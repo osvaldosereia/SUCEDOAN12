@@ -164,3 +164,46 @@ Ela não:
 - aumenta orçamento de IA;
 - abre outbound do adapter;
 - muda consentimento.
+
+
+## Evidência real do transporte
+
+Após a implantação do CM-1.14, o adapter começou a receber tráfego real do PapoAI sem intervenção de teste.
+
+Snapshot canônico:
+
+- receipts PapoAI: 3;
+- normalized_linked: 3;
+- conversation_linked: 3;
+- customer_linked: 2;
+- clientes distintos resolvidos: 1;
+- erros: 0;
+- duplicatas: 0;
+- normalized status: 3;
+- channel identities com evidência do provider: 2;
+- Shopping Room sessions associadas: 2;
+- eventos canônicos nas últimas 24h: 3;
+- adapter_receiving_real_traffic: true.
+
+O transporte legado Meta/Make não registrou evento nos últimos 7 dias.
+
+O último evento legado observado é anterior ao adapter atual, em 11/09/2026.
+
+Essa evidência foi encapsulada em:
+
+`cm1_transport_evidence_v1()`
+
+e agora também aparece na Central de Relacionamento.
+
+### Hard gate do Meta Direct
+
+O código implantado de `whatsapp-meta-direct-v1` foi versionado no GitHub durante a homologação.
+
+A auditoria confirmou que ele:
+
+1. lê `whatsapp_direct_config`;
+2. retorna `disabled:true` quando `enabled=false` ou `release_mode=off`;
+3. somente depois desse gate chega ao caminho que pode chamar Graph API;
+4. não usa `automation_config`.
+
+Portanto os flags legados `outbound_enabled=true` / `whatsapp_release_mode=live` não abrem o Meta Direct atual enquanto `whatsapp_direct_config` permanecer OFF.
