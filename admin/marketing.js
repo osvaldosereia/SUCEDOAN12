@@ -497,7 +497,7 @@ function renderRound8ConnectionManager(){
   const c=state.connections?.connection||{},owner=state.overview?.user?.role==='owner',meta=c.meta||{},pin=c.pinterest||{},channels=c.channels||state.overview?.channel_accounts||[];
   const providerCard=(provider,label,p,description)=>{
     const ready=round8ProviderReady(provider),connected=channels.some(a=>a.provider===provider&&a.status==='verified');
-    const graph=provider==='meta'?String(p.graph_version||'v26.0'):'';
+    const graph=provider==='meta'?String(p.graph_version||''):'';
     const missing=[p.app_id_set!==true?'App ID':null,p.app_secret_set!==true?'App Secret':null,provider==='meta'&&!/^v\\d+\\.\\d+$/.test(graph)?'Graph version':null].filter(Boolean);
     return `<article class="provider-connect-card ${connected?'verified':ready?'ready':'pending'}">
       <div class="provider-connect-head"><div><span class="eyebrow">${esc(provider==='meta'?'Meta':'Pinterest')}</span><h3>${esc(label)}</h3></div><span class="status-chip">${connected?'conectado':ready?'pronto':'configuração incompleta'}</span></div>
@@ -505,7 +505,7 @@ function renderRound8ConnectionManager(){
       <div class="provider-config-status"><span>App ID: ${p.app_id_set?'salvo':'faltando'}</span><span>Secret: ${p.app_secret_set?'Vault ✓':'faltando'}</span>${provider==='meta'? `<span>Graph: ${esc(graph||'faltando')}</span>`:''}</div>
       ${owner&&!ready?`<form class="provider-config-form" data-provider-config="${provider}">
         <label>App ID<input name="app_id" autocomplete="off" required placeholder="${provider==='meta'?'ID do app Meta':'ID do app Pinterest'}"></label>
-        ${provider==='meta'? `<label>Graph API<input name="graph_version" value="${esc(graph||'v26.0')}" pattern="v[0-9]+\\.[0-9]+" required></label>`:''}
+        ${provider==='meta'? `<label>Graph API<input name="graph_version" value="${esc(graph)}" pattern="v[0-9]+\\.[0-9]+" required></label>`:''}
         <label class="wide">App Secret<input name="app_secret" type="password" autocomplete="new-password" ${p.app_secret_set?'':'required'} placeholder="${p.app_secret_set?'Já existe no Vault — deixe vazio para manter':'Cole o App Secret'}"></label>
         <button class="secondary" type="submit">Salvar configuração</button><p class="muted" data-provider-config-message></p>
       </form>`:''}
