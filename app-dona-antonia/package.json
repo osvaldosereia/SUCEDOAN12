@@ -20,7 +20,10 @@
     "android:sync": "npx cap sync android",
     "android:build:debug": "cd android && ./gradlew assembleDebug",
     "test:contract": "node --no-warnings --experimental-strip-types --test tests/contract/*.test.ts",
-    "test:security": "node --no-warnings --experimental-strip-types --test tests/security/*.test.ts"
+    "test:security": "node --no-warnings --experimental-strip-types --test tests/security/*.test.ts",
+    "native:preflight": "node scripts/native-toolchain-preflight.mjs",
+    "native:require:android": "node scripts/native-toolchain-preflight.mjs --require=android",
+    "native:require:ios": "node scripts/native-toolchain-preflight.mjs --require=ios"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
