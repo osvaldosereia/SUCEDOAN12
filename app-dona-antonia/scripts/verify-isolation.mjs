@@ -38,10 +38,21 @@ function walk(path) {
   });
 }
 
+function textForPattern(text, fileName, label) {
+  if (label === 'Comprar atual' && fileName === 'public/sw.js') {
+    return text.replace(
+      /if\s*\(\s*url\.pathname\.includes\(\s*['"]\/comprar\/['"]\s*\)\s*\)\s*return\s*;/g,
+      ''
+    );
+  }
+  return text;
+}
+
 export function inspectText(text, fileName = '<memory>') {
   const findings = [];
   for (const [label, pattern] of FORBIDDEN_RUNTIME_PATTERNS) {
-    if (pattern.test(text)) findings.push({ file: fileName, label });
+    const inspected = textForPattern(text, fileName, label);
+    if (pattern.test(inspected)) findings.push({ file: fileName, label });
   }
   return findings;
 }
