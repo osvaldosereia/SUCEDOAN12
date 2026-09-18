@@ -10,6 +10,7 @@ on:
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/functions/admin-pin-auth-v1/**'
       - 'supabase/functions/papo-comprar-webhook-v1/**'
+      - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
@@ -20,6 +21,7 @@ on:
       - 'supabase/migrations/*cm_1_2*'
       - 'supabase/migrations/*cm_1_4*'
       - 'supabase/migrations/*cm_1_5*'
+      - 'supabase/migrations/*cm_1_6*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -34,6 +36,8 @@ on:
       - 'scripts/test-cm-1-3-customer-360.mjs'
       - 'scripts/test-cm-1-4-event-collector.mjs'
       - 'scripts/test-cm-1-5-consent-protection.mjs'
+      - 'scripts/test-cm-1-6-product-marketing-profile.mjs'
+      - 'scripts/test-marketing-brain-v1.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
@@ -44,6 +48,7 @@ on:
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/functions/admin-pin-auth-v1/**'
       - 'supabase/functions/papo-comprar-webhook-v1/**'
+      - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-gondolas-v1/**'
       - 'supabase/functions/admin-product-names-v1/**'
       - 'supabase/functions/admin-product-image-editor-v1/**'
@@ -54,6 +59,7 @@ on:
       - 'supabase/migrations/*cm_1_2*'
       - 'supabase/migrations/*cm_1_4*'
       - 'supabase/migrations/*cm_1_5*'
+      - 'supabase/migrations/*cm_1_6*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -68,6 +74,8 @@ on:
       - 'scripts/test-cm-1-3-customer-360.mjs'
       - 'scripts/test-cm-1-4-event-collector.mjs'
       - 'scripts/test-cm-1-5-consent-protection.mjs'
+      - 'scripts/test-cm-1-6-product-marketing-profile.mjs'
+      - 'scripts/test-marketing-brain-v1.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -96,6 +104,8 @@ jobs:
           node --check admin/app.js
           node --check admin/customer-os-auth.js
           node --check admin/customer-os-api.js
+          node --check admin/marketing-api.js
+          node --check admin/marketing.js
           node --check admin/orders-integrated-v2.js
           node --check admin/products-inline-controls-v4.js
           node --check admin/product-gondola-editor-v1.js
@@ -106,6 +116,7 @@ jobs:
           deno check supabase/functions/customer-intelligence-v1/index.ts
           deno check supabase/functions/admin-pin-auth-v1/index.ts
           deno check supabase/functions/papo-comprar-webhook-v1/index.ts
+          deno check supabase/functions/admin-marketing-brain-v1/index.ts
           deno check supabase/functions/admin-gondolas-v1/index.ts
           deno check supabase/functions/admin-product-names-v1/index.ts
           deno check supabase/functions/admin-product-image-editor-v1/index.ts
@@ -137,6 +148,10 @@ jobs:
         run: node scripts/test-cm-1-4-event-collector.mjs
       - name: Validar Consent Ledger e Customer Protection
         run: node scripts/test-cm-1-5-consent-protection.mjs
+      - name: Validar Product Marketing Profile
+        run: node scripts/test-cm-1-6-product-marketing-profile.mjs
+      - name: Validar Marketing Brain
+        run: node scripts/test-marketing-brain-v1.mjs
       - name: Validar shell oficial
         shell: bash
         run: |
