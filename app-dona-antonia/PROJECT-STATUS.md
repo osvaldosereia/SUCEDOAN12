@@ -641,3 +641,116 @@ A Rodada 23 permanece parcial.
 **Próxima sequencial:** Rodada 10 — Android, bloqueada por toolchain nativa.  
 **Produção:** continua OFF e intocada.  
 **Comprar atual:** continua intocado.
+
+
+---
+
+# HANDOFF — 18/09/2026 — ponto exato para próxima aba
+
+**Projeto:** App Dona Antônia  
+**Branch de trabalho:** `app-dona-antonia-r0-isolation`  
+**PR:** #396 — draft — NÃO MERGEAR  
+**Produção:** OFF  
+**Comprar atual:** NÃO MODIFICAR
+
+## Estado confirmado
+
+Concluídas integralmente:
+- Rodadas 0–9;
+- Rodada 20 — offline/reconexão.
+
+Parciais já registradas:
+- Rodada 13 — fundação Supabase HML; deploy de Edge Functions bloqueado pela quota do projeto;
+- Rodada 19 — central de privacidade local implementada e integrada, backend ainda indisponível;
+- Rodada 21 — telemetria local privacy-safe;
+- Rodada 22 — hardening local;
+- Rodada 23 — base de acessibilidade/UX.
+
+Próxima sequencial:
+- Rodada 10 — Android, bloqueada por ausência de toolchain nativa válida.
+
+## Último código criado e ainda NÃO homologado neste checkpoint
+
+Foram versionadas as fundações locais de:
+
+### Rodada 12 — sessão segura
+Arquivos:
+- `app-dona-antonia/src/customer/secureSession.ts`
+- `app-dona-antonia/tests/unit/secureSession.test.ts`
+
+Estado:
+- adapter de memória criado;
+- interface `get/set/clear`;
+- não usa localStorage;
+- não loga token;
+- Keychain/Keystore ainda NÃO implementados;
+- testes finais deste bloco ainda precisam ser executados na próxima aba.
+
+### Rodada 14 — pairing seguro
+Arquivos:
+- `app-dona-antonia/src/customer/pairing.ts`
+- `app-dona-antonia/tests/contract/pairing.test.ts`
+
+Estado:
+- challenge `TEST-PAIR-*`;
+- código humano de 6 caracteres;
+- segredo de dispositivo com 256 bits;
+- TTL 10 minutos;
+- uso único;
+- comparação de segredo sem retorno antecipado;
+- rate limit local de polling;
+- fixture retorna somente `TEST-SESSION-PAIRING`;
+- integração Supabase/WhatsApp/PapoAI/Meta continua OFF;
+- testes finais deste bloco ainda precisam ser executados na próxima aba.
+
+### Rodada 15 — deep links
+Arquivos:
+- `app-dona-antonia/src/platform/appLinks.ts`
+- `app-dona-antonia/tests/unit/appLinks.test.ts`
+- ajuste em `app-dona-antonia/src/platform/urlPolicy.ts`
+
+Estado:
+- parser local criado para ofertas, cestas e pedido;
+- pedido exige token opaco;
+- PII/session material rejeitados;
+- Android intent filters e iOS Associated Domains ainda NÃO existem;
+- testes finais deste bloco ainda precisam ser executados na próxima aba.
+
+## Primeira ação obrigatória da próxima aba
+
+Antes de programar novas funções:
+
+1. ler este arquivo;
+2. ler `docs/projects/APP-DONA-ANTONIA-MASTER.md` na `main`;
+3. ler o plano oficial;
+4. validar os módulos R12/R14/R15 recém-criados:
+   - `secureSession.test.ts`;
+   - `pairing.test.ts`;
+   - `appLinks.test.ts`;
+5. rodar typecheck;
+6. rodar isolamento;
+7. corrigir qualquer falha encontrada;
+8. somente depois atualizar os checkpoints das Rodadas 12/14/15;
+9. continuar autonomamente pelas rodadas seguras que não exigirem produção/custo novo.
+
+## Bloqueios que NÃO devem ser contornados de forma arriscada
+
+- não apagar Edge Functions existentes só para liberar quota;
+- não aumentar plano/spend cap sem autorização;
+- não conectar app às tabelas operacionais reais;
+- não tocar em `comprar/`;
+- não fazer merge do PR #396;
+- não criar APK/Android manual e chamá-lo de validado;
+- não ativar Meta, PapoAI, Bling, push real ou pedidos reais;
+- não usar dados reais de clientes nos testes.
+
+## Autorização operacional vigente
+
+O proprietário autorizou executar automaticamente várias rodadas tecnicamente seguras de uma vez.
+
+Só parar para pedir autorização em caso de:
+- custo novo;
+- produção real;
+- operação destrutiva relevante;
+- alteração que possa atingir clientes/dados reais;
+- decisão comercial/jurídica obrigatoriamente do proprietário.
