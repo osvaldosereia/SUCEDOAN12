@@ -3,7 +3,7 @@
 
   const app=window.DA_COMPRAR_APP;
   if(!app)return;
-  const {state,stage,image,money,escapeHtml,text,toast,setCart,api,productApi,registerPendingProductSync}=app;
+  const {state,stage,image,money,escapeHtml,text,toast,setCart,api,productApi,customerApi,registerPendingProductSync}=app;
   const pendingProductSyncs=state.pendingProductSyncs;
   const registry=new Map(),syncState=new Map();
   let generation=0,offset=0,hasMore=true,loading=false,activeStage=null,productGrid=null,detailLayer=null;
@@ -112,6 +112,7 @@
       if(requestGeneration!==generation)return;
       if(offset===0&&data.personalized===true&&activeStage&&!activeStage.querySelector('.personalized-offers-note')){
         const note=document.createElement('div');note.className='personalized-offers-note';note.textContent='Primeiro aparecem ofertas mais próximas das suas compras. As demais ofertas continuam disponíveis abaixo.';activeStage.insertBefore(note,productGrid);
+        customerApi?.('track_behavior',{event_type:'personalized_offers_view',event_data:{source:'offers'}}).catch(()=>null);
       }
       const products=data.products||[];
       if(offset===0&&!products.length){const empty=document.createElement('div');empty.className='products-empty';empty.textContent='Nenhum produto encontrado.';productGrid.appendChild(empty)}
@@ -159,7 +160,7 @@
   async function syncProduct(product,sync){
     sync.syncing=true;const cardSelector=`[data-product-id="${CSS.escape(String(product.id))}"]`;document.querySelectorAll(cardSelector).forEach(card=>card.classList.add('saving'));
     try{
-      while(sync.desiredQuantity!==sync.confirmedQuantity){const target=sync.desiredQuantity;try{const data=await api('set_quantity',{product_id:product.id,quantity:target});const confirmed=Math.max(0,Number(data.quantity??target));sync.confirmedQuantity=confirmed;if(sync.desiredQuantity===target&&confirmed!==target)sync.desiredQuantity=confirmed;product.quantity=sync.desiredQuantity;if(data.cart)setCart(data.cart);refreshProductViews(product.id)}catch(error){const current=sync.desiredQuantity;sync.desiredQuantity=sync.confirmedQuantity;product.quantity=sync.confirmedQuantity;applyOptimisticDelta(product,current,sync.confirmedQuantity);refreshProductViews(product.id);toast(error.message);break}}
+      while(sync.desiredQuantity!==sync.confirmedQuantity){const target=sync.desiredQuantity;const beforeConfirmed=sync.confirmedQuantity;try{const data=await api('set_quantity',{product_id:product.id,quantity:target});const confirmed=Math.max(0,Number(data.quantity??target));sync.confirmedQuantity=confirmed;if(sync.desiredQuantity===target&&confirmed!==target)sync.desiredQuantity=confirmed;product.quantity=sync.desiredQuantity;if(data.cart)setCart(data.cart);refreshProductViews(product.id);if(product.personalized_reason&&confirmed>beforeConfirmed){customerApi?.('track_behavior',{event_type:'personalized_offer_add',event_data:{product_id:product.id,source:'personalized_offers',quantity:confirmed-beforeConfirmed}}).catch(()=>null)}}catch(error){const current=sync.desiredQuantity;sync.desiredQuantity=sync.confirmedQuantity;product.quantity=sync.confirmedQuantity;applyOptimisticDelta(product,current,sync.confirmedQuantity);refreshProductViews(product.id);toast(error.message);break}}
     }finally{sync.syncing=false;document.querySelectorAll(cardSelector).forEach(card=>card.classList.remove('saving'))}
   }
 
