@@ -553,7 +553,7 @@ Deno.serve(async(req:Request)=>{
     const requestedStatus=clean(body?.status||"",30).toLowerCase();
     try{
       let query=sb.from("customer_marketing_opportunities")
-        .select("id,customer_id,strategy_key,title,confidence,status,exclusions,evidence,product_candidates,first_detected_at,last_evaluated_at,expires_at,engine_version")
+        .select("id,customer_id,strategy_key,title,confidence,status,exclusions,evidence,product_candidates,first_detected_at,last_evaluated_at,expires_at,engine_version,customer:customers(name)")
         .in("status",requestedStatus? [requestedStatus] : ["suggested","suppressed"])
         .order("status",{ascending:false})
         .order("confidence",{ascending:false})
