@@ -24,6 +24,7 @@ on:
       - 'scripts/test-bling-history-customer-backfill-v1.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
+      - 'scripts/test-cm-1-catalog-interactions.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
       - 'supabase/functions/shopping-room-v1/**'
       - 'supabase/functions/shopping-chat-v1/**'
@@ -49,6 +50,7 @@ on:
       - 'supabase/migrations/*outbound*'
       - 'supabase/migrations/*frequent*'
       - 'supabase/migrations/*personalized_offers*'
+      - 'supabase/migrations/*cm_1_homologation_catalog_interactions*'
       - 'supabase/config.toml'
       - '.github/workflows/test-shopping-room.yml'
   pull_request:
@@ -64,6 +66,7 @@ on:
       - 'scripts/test-comprar-frequent-purchases-v1.mjs'
       - 'scripts/test-comprar-clean-*.mjs'
       - 'scripts/test-shopping-chat-routing-v1.mjs'
+      - 'scripts/test-cm-1-catalog-interactions.mjs'
       - 'tests/chat-deterministic-first-v1.mjs'
       - 'supabase/functions/shopping-chat-v1/**'
       - 'supabase/functions/shopping-chat-products-v1/**'
@@ -126,6 +129,7 @@ jobs:
           node scripts/test-bling-history-customer-backfill-v1.mjs
           for test_file in scripts/test-comprar-clean-*.mjs; do node "$test_file"; done
           node scripts/test-shopping-chat-routing-v1.mjs
+          node scripts/test-cm-1-catalog-interactions.mjs
           node tests/chat-deterministic-first-v1.mjs
       - name: Estrutura pública
         shell: bash
