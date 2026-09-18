@@ -58,7 +58,8 @@ async function fetchImage(urlValue){
 }
 async function productWebp(product,width,height,headline,cta,quality=84){
   const source=await fetchImage(product.image_url);
-  const uri=`data:${source.mime};base64,${source.bytes.toString('base64')}`;
+  const normalized=await sharp(source.bytes).png().toBuffer();
+  const uri=`data:image/png;base64,${normalized.toString('base64')}`;
   const svg=artSvg({width,height,headline,cta,product,imageDataUri:uri});
   return sharp(Buffer.from(svg)).webp({quality}).toBuffer();
 }
@@ -107,7 +108,7 @@ async function renderAsset(asset){
     for(const slide of (edit.slide_plan||[]).slice(0,5)){
       i++;
       const bytes=slide?.type==='product'&&slide?.product?.image_url
-        ?await productWebp(slide.product,width,height,clean(slide.product.name,150),cta,84)
+        ?await productWebp(slide.product,width,height,'',cta,84)
         :await textWebp(width,height,clean(slide?.headline||headline,160),clean(slide?.cta||cta,180),84);
       out.push(await saveMedia(asset,'preview',`slide-${String(i).padStart(2,'0')}.webp`,bytes,width,height,{content_role:'instagram_carousel',slide_no:i,slide_type:clean(slide?.type||'text',40),renderer:'shared_svg_sharp_homologation'}));
     }
