@@ -33,15 +33,16 @@ Deno.serve(async(req:Request)=>{
   if(action==="health")return respond({ok:true,mode:"public_no_auth",version:3});
 
   if(action==="dashboard"){
-    const [active,noImage,noStock,baskets,offers,recent]=await Promise.all([
+    const [active,noImage,noStock,baskets,offers,recent,historyMetrics]=await Promise.all([
       sb.from("products").select("id",{count:"exact",head:true}).eq("is_active",true),
       sb.from("products").select("id",{count:"exact",head:true}).eq("is_active",true).or("image_url.is.null,image_url.eq."),
       sb.from("products").select("id",{count:"exact",head:true}).eq("is_active",true).lte("stock",0),
       sb.from("basket_templates").select("id",{count:"exact",head:true}).eq("is_active",true),
       sb.from("products").select("id",{count:"exact",head:true}).eq("is_active",true).eq("is_offer",true),
-      sb.from("orders").select("id,order_number,phone_e164,status,total,created_at").eq("source","storefront_v2").order("created_at",{ascending:false}).limit(8)
+      sb.from("orders").select("id,order_number,phone_e164,status,total,created_at").eq("source","storefront_v2").order("created_at",{ascending:false}).limit(8),
+      sb.rpc("get_purchase_history_product_metrics_v1")
     ]);
-    return respond({ok:true,stats:{active_products:active.count||0,no_image:noImage.count||0,no_stock:noStock.count||0,active_baskets:baskets.count||0,offers:offers.count||0,recent_orders:recent.data?.length||0},recent_orders:recent.data||[]});
+    return respond({ok:true,stats:{active_products:active.count||0,no_image:noImage.count||0,no_stock:noStock.count||0,active_baskets:baskets.count||0,offers:offers.count||0,recent_orders:recent.data?.length||0},history_metrics:historyMetrics.error?{}:(historyMetrics.data||{}),recent_orders:recent.data||[]});
   }
 
   if(action==="storefront"){
