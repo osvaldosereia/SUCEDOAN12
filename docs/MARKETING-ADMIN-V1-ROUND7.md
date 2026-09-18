@@ -136,3 +136,35 @@ Conexão/homologação real das contas:
 4. verificar cada conta pelo Admin;
 5. fazer canary com uma peça aprovada;
 6. somente depois abrir os gates necessários.
+
+
+## Homologação concluída
+
+Run one-shot da campanha piloto concluído com sucesso.
+
+Resultado registrado no Supabase:
+- 7 JPEGs `provider_ready=true`;
+- 1 MP4 `provider_ready=true`;
+- H.264;
+- 1080x1920;
+- 30 fps;
+- AAC estéreo 48 kHz;
+- duração real confirmada por ffprobe: 10.000 s;
+- custo de render registrado: 0;
+- publication jobs reais: 0;
+- published jobs: 0;
+- eventos com efeito externo: 0.
+
+O preflight também foi testado dentro de transação com rollback:
+- Instagram Feed/Story e Facebook Post permaneceram bloqueados pelos gates, modo OFF, limite diário zero e ausência de credenciais;
+- WhatsApp Status e Facebook Story ficaram `ready_manual`;
+- `eligible_for_manual_share=true` para os destinos manuais;
+- nenhum job de teste permaneceu no banco após rollback.
+
+Edge Functions após implantação:
+- `admin-marketing-workflow-v1`: v10;
+- `admin-marketing-media-v1`: v10;
+- `admin-marketing-insights-v1`: v15.
+
+Migration aplicada:
+`20260918182110_marketing_official_publish_connectors_v1.sql`.
