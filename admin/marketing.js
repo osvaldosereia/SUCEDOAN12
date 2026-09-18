@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft,getMarketingPublicationPreflight,verifyMarketingChannel,publishMarketingJob,getMarketingManualShareManifest} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft,getMarketingPublicationPreflight,verifyMarketingChannel,publishMarketingJob,getMarketingManualShareManifest,getMarketingConnectionOverview,saveMarketingProviderConfig,startMarketingOAuth,exchangeMarketingOAuth,completeMarketingOAuth} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -482,11 +482,43 @@ function renderPublicationJobs(){
 }
 function round7ChannelMode(a){return ['whatsapp_status','facebook_story'].includes(a.channel)?'manual':'direct'}
 function round7ChannelStatusText(a){if(round7ChannelMode(a)==='manual')return 'Manual no celular';if(a.status==='verified')return 'Conexão verificada';if(a.status==='configured')return 'Pronta para verificar';if(a.status==='error')return 'Verificação com erro';return 'Credencial pendente'}
-function renderRound7ChannelConnections(){
-  const mount=$('#channelAccountsView');if(!mount)return;const accounts=state.overview?.channel_accounts||[];
-  if(!accounts.length){mount.innerHTML=empty('Nenhum canal cadastrado.');return}
-  mount.innerHTML=`<div class="channel-connection-grid">${accounts.map(a=>{const manual=round7ChannelMode(a)==='manual',verified=a.status==='verified',canVerify=!manual&&['configured','error'].includes(a.status);const action=manual?'<span class="channel-manual-pill">Confirmação manual</span>':verified?'<span class="channel-verified-pill">Conexão verificada</span>':canVerify?`<button class="secondary" type="button" data-channel-action="verify-channel" data-channel-account-id="${esc(a.id)}">Verificar conexão</button>`:'<button class="secondary" type="button" disabled>Credencial pendente</button>';const detail=manual?(a.channel==='whatsapp_status'?'Prepara a mídia e abre o compartilhamento nativo para você escolher WhatsApp > Meu status.':'Prepara a mídia para compartilhar no Story do Facebook pelo celular.'):(verified?'Identidade validada. Publicação segue bloqueada até os gates de produção serem abertos.':a.status==='configured'?'Credencial cadastrada no Vault; falta validar a conta.':'Cadastre a credencial no Vault e associe a conta antes de verificar.');return `<article class="channel-connection-card ${verified?'verified':manual?'manual':'pending'}"><div class="channel-connection-head"><div><strong>${esc(channelLabel(a.channel))}</strong><small>${esc(a.provider)} · ${esc(round7ChannelStatusText(a))}</small></div><span class="status-chip">${esc(a.status||'disconnected')}</span></div><p>${esc(detail)}</p><div class="channel-connection-actions">${action}</div><p class="channel-connection-message muted" data-channel-message="${esc(a.id)}"></p></article>`;}).join('')}</div>`;
+function round8ProviderReady(provider){
+  const c=state.connections?.connection||{},p=c?.[provider]||{};
+  return p.app_id_set===true&&p.app_secret_set===true&&(provider!=='meta'||/^v\\d+\\.\\d+$/.test(String(p.graph_version||'')));
 }
+function renderOAuthCandidates(){
+  const sel=state.oauthSelection;if(!sel)return '';
+  const title=sel.provider==='meta'?'Escolha a Página da Dona Antônia':'Escolha o board do Pinterest';
+  const cards=(sel.candidates||[]).map(c=>`<button class="oauth-choice" type="button" data-oauth-choice="${esc(c.id)}"><strong>${esc(c.name||c.id)}</strong><span>${sel.provider==='meta'?(c.instagram?.username?'Instagram @'+esc(c.instagram.username):'Sem Instagram profissional vinculado'):esc(c.privacy||'board')}</span></button>`).join('');
+  return `<section class="oauth-choice-panel"><div><span class="eyebrow">Conexão autorizada</span><h3>${title}</h3><p>A credencial já está segura no backend temporário. Escolha qual conta deve ser usada pelo Marketing.</p></div><div class="oauth-choice-grid">${cards||'<div class="empty-state">Nenhuma conta elegível encontrada.</div>'}</div><p class="oauth-selection-message muted" data-oauth-selection-message></p></section>`;
+}
+function renderRound8ConnectionManager(){
+  const mount=$('#channelAccountsView');if(!mount)return;
+  const c=state.connections?.connection||{},owner=state.overview?.user?.role==='owner',meta=c.meta||{},pin=c.pinterest||{},channels=c.channels||state.overview?.channel_accounts||[];
+  const providerCard=(provider,label,p,description)=>{
+    const ready=round8ProviderReady(provider),connected=channels.some(a=>a.provider===provider&&a.status==='verified');
+    const graph=provider==='meta'?String(p.graph_version||'v26.0'):'';
+    const missing=[p.app_id_set!==true?'App ID':null,p.app_secret_set!==true?'App Secret':null,provider==='meta'&&!/^v\\d+\\.\\d+$/.test(graph)?'Graph version':null].filter(Boolean);
+    return `<article class="provider-connect-card ${connected?'verified':ready?'ready':'pending'}">
+      <div class="provider-connect-head"><div><span class="eyebrow">${esc(provider==='meta'?'Meta':'Pinterest')}</span><h3>${esc(label)}</h3></div><span class="status-chip">${connected?'conectado':ready?'pronto':'configuração incompleta'}</span></div>
+      <p>${esc(description)}</p>
+      <div class="provider-config-status"><span>App ID: ${p.app_id_set?'salvo':'faltando'}</span><span>Secret: ${p.app_secret_set?'Vault ✓':'faltando'}</span>${provider==='meta'? `<span>Graph: ${esc(graph||'faltando')}</span>`:''}</div>
+      ${owner&&!ready?`<form class="provider-config-form" data-provider-config="${provider}">
+        <label>App ID<input name="app_id" autocomplete="off" required placeholder="${provider==='meta'?'ID do app Meta':'ID do app Pinterest'}"></label>
+        ${provider==='meta'? `<label>Graph API<input name="graph_version" value="${esc(graph||'v26.0')}" pattern="v[0-9]+\\.[0-9]+" required></label>`:''}
+        <label class="wide">App Secret<input name="app_secret" type="password" autocomplete="new-password" ${p.app_secret_set?'':'required'} placeholder="${p.app_secret_set?'Já existe no Vault — deixe vazio para manter':'Cole o App Secret'}"></label>
+        <button class="secondary" type="submit">Salvar configuração</button><p class="muted" data-provider-config-message></p>
+      </form>`:''}
+      <div class="provider-connect-actions">${owner&&ready?`<button class="primary" type="button" data-provider-oauth="${provider}">${connected?'Reconectar':'Conectar'} ${esc(provider==='meta'?'Meta':'Pinterest')}</button>`:''}${missing.length?`<small>Falta: ${esc(missing.join(' · '))}</small>`:''}</div>
+      <p class="provider-connect-message muted" data-provider-message="${provider}"></p>
+    </article>`;
+  };
+  const metaDesc='Uma autorização configura Facebook e Instagram juntos. O sistema descobre suas Pages e o Instagram profissional vinculado.';
+  const pinDesc='Autoriza o Pinterest, lista seus boards e salva access/refresh token no Vault.';
+  const channelCards=channels.map(a=>{const manual=['whatsapp_status','facebook_story'].includes(a.channel),verified=a.status==='verified',name=a.identity_name||a.external_account_id||'';return `<article class="channel-connection-card ${verified?'verified':manual?'manual':'pending'}"><div class="channel-connection-head"><div><strong>${esc(channelLabel(a.channel))}</strong><small>${esc(a.provider)}${name?' · '+esc(name):''}</small></div><span class="status-chip">${esc(manual?'manual':a.status||'disconnected')}</span></div><p>${manual?(a.channel==='whatsapp_status'?'Status continua com confirmação no celular.':'Story do Facebook continua com compartilhamento manual/cross-share.'):(verified?'Identidade e credencial verificadas. Gate de publicação continua separado.':'Aguardando conexão ou verificação.')}</p></article>`;}).join('');
+  mount.innerHTML=`<div class="provider-connect-grid">${providerCard('meta','Facebook + Instagram',meta,metaDesc)}${providerCard('pinterest','Pinterest',pin,pinDesc)}</div>${renderOAuthCandidates()}<div class="channel-connection-grid">${channelCards}</div><div class="oauth-security-note"><strong>Segurança</strong><span>Tokens ficam no Supabase Vault. O navegador recebe apenas code/state durante OAuth; publicação continua bloqueada pelos gates da Rodada 7.</span></div>`;
+}
+
 async function prepareManualSharePublication(jobId){
   const manifest=await getMarketingManualShareManifest(jobId),items=manifest.items||[];if(!items.length)throw new Error('Mídia não disponível para compartilhar.');
   const files=[];for(const item of items){const res=await fetch(item.url,{cache:'no-store'});if(!res.ok)throw new Error('Não foi possível preparar a mídia.');const blob=await res.blob();files.push(new File([blob],item.filename||'dona-antonia',{type:item.mime_type||blob.type||'application/octet-stream'}));}
@@ -507,7 +539,7 @@ function render(){
   $('#runtimeSummary').innerHTML=`<div><div class="rule"><span>Publicação externa</span><strong class="${r.publishing_enabled?'danger':'ok'}">${r.publishing_enabled?'Ligada':'Desligada'}</strong></div><div class="rule"><span>Kill switch</span><strong class="ok">${r.kill_switch?'Ativo':'Inativo'}</strong></div><div class="rule"><span>Aprovação humana</span><strong>${r.require_approval===false?'Não':'Obrigatória'}</strong></div><div class="rule"><span>Imagem IA</span><strong>${esc(meta.image_generation_quality||'low')} · ${Number(meta.image_variants_default||1)} variação</strong></div><div class="rule"><span>Vídeo V1</span><strong>${Number(meta.video_duration_seconds||10)}s · ${esc(meta.video_mode||'light_motion')}</strong></div><div class="rule"><span>IA de estratégia</span><strong class="ok">${meta.strategy_ai_enabled===true?'Habilitada':'Bloqueada'}</strong></div></div>`;
   renderAssets();
   renderCampaigns();
-  renderRound7ChannelConnections();
+  renderRound8ConnectionManager();
   renderPublicationJobs();
   const templates=o.templates||[];$('#templatesList').innerHTML=templates.length?`<div class="data-list">${templates.map(t=>row(t.name,`${t.media_kind} · v${t.version}`,t.status,t.template_key)).join('')}</div>`:empty('Nenhum modelo ativo.');
   const cal=state.workflow?.calendar||[];$('#calendarList').innerHTML=cal.length?`<div class="data-list">${cal.slice(0,80).map(i=>row(i.title||i.channel||'Conteúdo',i.scheduled_for?dt(i.scheduled_for):'',i.status||'planejado',i.channel||'')).join('')}</div>`:empty('Agenda vazia.');
@@ -520,11 +552,11 @@ function render(){
 
 async function load(){
   try{
-    const [overview,metrics,workflow,shortlist,customerOpportunities,briefPayload,templateLibrary]=await Promise.all([
+    const [overview,metrics,workflow,shortlist,customerOpportunities,briefPayload,templateLibrary,connections]=await Promise.all([
       getMarketingOverview(),getMarketingMetrics(30),getMarketingWorkflow(),getMarketingShortlist(),
-      getMarketingCustomerOpportunities(40),getMarketingStrategyBriefs(null,60),getWhatsAppTemplateLibrary()
+      getMarketingCustomerOpportunities(40),getMarketingStrategyBriefs(null,60),getWhatsAppTemplateLibrary(),getMarketingConnectionOverview()
     ]);
-    state={overview,metrics,workflow,shortlist,customerOpportunities,strategyBriefs:briefPayload.items||[],templateLibrary,previewUrls:state.previewUrls||{}};
+    state={overview,metrics,workflow,shortlist,customerOpportunities,strategyBriefs:briefPayload.items||[],templateLibrary,connections,previewUrls:state.previewUrls||{},oauthSelection:state.oauthSelection||null,pendingOAuthProvider:state.pendingOAuthProvider||null};
     render();$('#authGate').hidden=true;$('#marketingApp').hidden=false;
   }catch(e){$('#authStatus').textContent=e.message||'Falha ao carregar.'}
 }
@@ -682,6 +714,50 @@ document.addEventListener('click',async e=>{
   try{if(message)message.textContent='Verificando credencial e identidade da conta…';await verifyMarketingChannel(accountId);if(message)message.textContent='Conexão verificada.';await load()}
   catch(err){if(message)message.textContent=err.message||'Não foi possível verificar a conexão.'}
   finally{button.disabled=false}
+});
+
+let marketingOAuthPopup=null;
+async function beginMarketingOAuth(provider,button){
+  if(marketingOAuthPopup&&!marketingOAuthPopup.closed)marketingOAuthPopup.close();
+  marketingOAuthPopup=window.open('about:blank','donaAntoniaMarketingOAuth','popup=yes,width=640,height=760');
+  if(!marketingOAuthPopup)throw new Error('O navegador bloqueou a janela de conexão. Libere pop-ups para o Admin.');
+  marketingOAuthPopup.document.write('<p style="font-family:system-ui;padding:24px">Preparando conexão segura…</p>');
+  try{const result=await startMarketingOAuth(provider);state.pendingOAuthProvider=provider;marketingOAuthPopup.location.href=result.authorization_url;}
+  catch(err){marketingOAuthPopup.close();marketingOAuthPopup=null;throw err}
+}
+window.addEventListener('message',async event=>{
+  if(event.origin!==location.origin||event.data?.type!=='marketing-oauth-callback')return;
+  const provider=state.pendingOAuthProvider;if(!provider)return;
+  const message=document.querySelector(`[data-provider-message="${CSS.escape(provider)}"]`);
+  if(event.data?.error){if(message)message.textContent=event.data.error_description||event.data.error;return}
+  if(message)message.textContent='Autorização recebida. Descobrindo contas…';
+  try{
+    const result=await exchangeMarketingOAuth({provider,code:event.data.code,state:event.data.state});
+    state.oauthSelection={provider,session_id:result.session_id,candidates:result.candidates||[]};
+    if(result.auto_select&&result.candidates?.length===1){
+      if(message)message.textContent='Uma conta encontrada. Concluindo conexão…';
+      await completeMarketingOAuth({session_id:result.session_id,selection_id:result.candidates[0].id});
+      state.oauthSelection=null;state.pendingOAuthProvider=null;await load();
+    }else{renderRound8ConnectionManager();if(message)message.textContent='Escolha a conta correta abaixo.'}
+  }catch(err){if(message)message.textContent=err.message||'Falha ao concluir OAuth.'}
+});
+
+document.addEventListener('submit',async e=>{
+  const form=e.target.closest('form[data-provider-config]');if(!form)return;
+  e.preventDefault();const provider=form.dataset.providerConfig,data=new FormData(form),button=form.querySelector('button[type="submit"]'),message=form.querySelector('[data-provider-config-message]');
+  button.disabled=true;if(message)message.textContent='Salvando no Vault…';
+  try{
+    const payload={provider,app_id:String(data.get('app_id')||'').trim(),app_secret:String(data.get('app_secret')||'').trim()};
+    if(provider==='meta')payload.graph_version=String(data.get('graph_version')||'v26.0').trim();
+    state.connections=await saveMarketingProviderConfig(payload);if(message)message.textContent='Configuração salva.';await load();
+  }catch(err){if(message)message.textContent=err.message||'Não foi possível salvar.'}finally{button.disabled=false}
+});
+
+document.addEventListener('click',async e=>{
+  const oauthButton=e.target.closest('button[data-provider-oauth]');
+  if(oauthButton){const provider=oauthButton.dataset.providerOauth,message=document.querySelector(`[data-provider-message="${CSS.escape(provider)}"]`);oauthButton.disabled=true;try{if(message)message.textContent='Abrindo autorização oficial…';await beginMarketingOAuth(provider,oauthButton)}catch(err){if(message)message.textContent=err.message||'Falha ao iniciar conexão.'}finally{oauthButton.disabled=false}return}
+  const choice=e.target.closest('button[data-oauth-choice]');
+  if(choice&&state.oauthSelection){const msg=document.querySelector('[data-oauth-selection-message]');choice.disabled=true;try{if(msg)msg.textContent='Salvando credencial no Vault e verificando canais…';await completeMarketingOAuth({session_id:state.oauthSelection.session_id,selection_id:choice.dataset.oauthChoice});state.oauthSelection=null;state.pendingOAuthProvider=null;await load();}catch(err){if(msg)msg.textContent=err.message||'Falha ao concluir conexão.'}finally{choice.disabled=false}return}
 });
 
 $('#campaignsList').addEventListener('click',async e=>{
