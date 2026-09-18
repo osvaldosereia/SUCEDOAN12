@@ -5,8 +5,13 @@ export const CONFIG=Object.freeze({
   adminOrdersFunction:'admin-orders-comprar-v1',
   customerOsFunction:'customer-intelligence-v1',
   adminPinAuthFunction:'admin-pin-auth-v1',
+  marketingInsightsFunction:'admin-marketing-insights-v1',
+  marketingWorkflowFunction:'admin-marketing-workflow-v1',
+  marketingMediaFunction:'admin-marketing-media-v1',
+  marketingCarouselFunction:'admin-marketing-carousel-v1',
   customerOsSecureUiEnabled:false,
+  marketingUiEnabled:true,
   storefrontUrl:'../comprar/',
   countAppUrl:'../contagem/',
-  build:'20260918-customer-os-security-foundation-1'
+  build:'20260918-marketing-admin-v1-foundation-1'
 });
