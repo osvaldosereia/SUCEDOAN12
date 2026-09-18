@@ -122,3 +122,17 @@ A parte funcional do projeto de histórico está pronta.
 A única etapa ainda em execução é o enriquecimento gradual do histórico antigo do Bling. Ele já está automatizado no Supabase e não depende de Make.
 
 Após o backfill chegar a zero pendentes, executar auditoria final de integridade e registrar o fechamento definitivo da Etapa 8.
+
+## Finalização automática do backfill
+
+Foi adicionada `finalize_bling_history_backfill_v1()`.
+
+Quando a fila chegar a zero pendentes/erros/em execução/pausados, o próprio Supabase:
+
+- recalcula os perfis de compra de todos os clientes;
+- gera uma auditoria final de integridade;
+- salva o snapshot em `purchase_history_integrity_snapshots`;
+- desliga `enabled`, `fetch_enabled` e `promotion_enabled` do importador;
+- remove o Cron do backfill.
+
+Teste de segurança executado enquanto a fila ainda estava em andamento: a função recusou finalizar e retornou `backfill_not_finished`, sem desligar a automação.
