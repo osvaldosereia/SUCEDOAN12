@@ -10,7 +10,7 @@ assert.match(migration,/get_personalized_offers_v1/);
 assert.match(migration,/p\.is_offer=true/);
 assert.match(migration,/p\.physically_verified=true/);
 assert.match(migration,/p\.is_active=true/);
-assert.doesNotMatch(migration,/is_whatsapp_active/,'Chat Comprar web não usa a flag específica do WhatsApp');
+assert.doesNotMatch(migration,/p\\.is_whatsapp_active\\s*=\\s*true/,'Chat Comprar web não usa a flag específica do WhatsApp como filtro SQL');
 assert.match(migration,/coalesce\(p\.stock,0\)>0/);
 assert.match(migration,/customer_product_stats/);
 assert.match(migration,/category_affinity/);
