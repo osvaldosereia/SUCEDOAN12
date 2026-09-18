@@ -16,3 +16,10 @@ test('quick reply maps to the expected app destination', () => {
   assert.equal(routeForQuickReply('for-home'), 'catalog');
   assert.equal(routeForQuickReply('unknown'), null);
 });
+
+
+test('basket post-selection replies route without auto-navigation', () => {
+  assert.equal(routeForQuickReply('basket-offers'), 'catalog');
+  assert.equal(routeForQuickReply('basket-products'), 'catalog');
+  assert.equal(routeForQuickReply('basket-review'), 'basket');
+});
