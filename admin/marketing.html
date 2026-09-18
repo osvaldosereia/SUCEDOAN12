@@ -16,7 +16,7 @@
     <section id="authGate" class="panel auth-gate"><div><h2>Acesso seguro</h2><p>Use o PIN do Admin. A sessão fica somente nesta aba.</p></div><form id="pinForm" class="pin-form"><input id="pinInput" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="PIN de 6 dígitos"><button class="primary" type="submit">Entrar</button></form><p id="authStatus" class="muted"></p></section>
     <div id="marketingApp" hidden>
       <div class="marketing-tabs"><button class="active" data-tab="panel">Painel</button><button data-tab="campaigns">Campanhas</button><button data-tab="content">Conteúdos</button><button data-tab="calendar">Agenda</button><button data-tab="publications">Publicações</button><button data-tab="templates">Modelos</button><button data-tab="results">Resultados</button><button data-tab="settings">Configurações</button></div>
-      <section data-panel="panel"><div id="summaryCards" class="summary-grid"></div><div class="dashboard-grid"><section class="panel"><div class="section-title"><div><h2>Produção recente</h2><p>Conteúdos já existentes.</p></div></div><div id="recentAssets"></div></section><section class="panel"><div class="section-title"><div><h2>Segurança e custo</h2><p>V1 começa travada e econômica.</p></div></div><div id="runtimeSummary"></div></section></div></section>
+      <section data-panel="panel"><div id="summaryCards" class="summary-grid"></div><div class="dashboard-grid"><section class="panel"><div class="section-title"><div><h2>Produção recente</h2><p>Conteúdos já existentes.</p></div></div><div id="recentAssets"></div></section><section class="panel"><div class="section-title"><div><h2>Segurança e custo</h2><p>V1 começa travada e econômica.</p></div></div><div id="runtimeSummary"></div></section></div><section class="panel"><div class="section-title"><div><span class="marketing-eyebrow">ROUND 9 · PREVIEW ONLY</span><h2>Plano diário seguro</h2><p>Simula oportunidades e próximos passos sem criar campanha, agendar ou publicar.</p></div><span class="phase-pill">AUTOMAÇÃO OFF</span></div><div id="dailyPlanPreview"></div></section></section>
       <section data-panel="campaigns" hidden>
         <section class="panel marketing-customer-opportunities">
           <div class="section-title">
@@ -37,7 +37,7 @@
         <section class="panel"><div class="section-title"><div><h2>Campanhas</h2><p>Rascunhos e campanhas existentes.</p></div><span class="phase-pill">DRAFT primeiro</span></div><div id="campaignsList"></div></section>
       </section>
       <section data-panel="content" hidden><section class="panel"><div class="section-title"><div><h2>Conteúdos</h2><p>Posts, Stories, carrosséis e vídeos leves.</p></div></div><div id="assetsList"></div></section></section>
-      <section data-panel="calendar" hidden><section class="panel"><div class="section-title"><div><h2>Agenda</h2><p>Calendário editorial.</p></div></div><div id="calendarList"></div></section></section>
+      <section data-panel="calendar" hidden><section class="panel"><div class="section-title"><div><h2>Agenda</h2><p>Calendário editorial com sugestões operacionais. Nada é agendado automaticamente.</p></div><span class="phase-pill">SUGESTÕES</span></div><div id="editorialPlanSummary"></div><div id="calendarList"></div></section></section>
       <section data-panel="publications" hidden>
         <section class="panel">
           <div class="section-title"><div><h2>Canais oficiais</h2><p>Estado real das conexões. Nenhuma publicação é liberada só por existir um job aprovado.</p></div><span class="phase-pill">FAIL-CLOSED</span></div>
@@ -81,10 +81,10 @@
         </section>
         <section class="panel"><div class="section-title"><div><h2>Modelos visuais</h2><p>Layouts reutilizáveis para reduzir custo de produção.</p></div></div><div id="templatesList"></div></section>
       </section>
-      <section data-panel="results" hidden><section class="panel"><div class="section-title"><div><h2>Resultados</h2><p>Métricas, atribuição e custos.</p></div></div><div id="resultsView"></div></section></section>
+      <section data-panel="results" hidden><section class="panel"><div class="section-title"><div><h2>Resultados</h2><p>Métricas, atribuição e custos.</p></div></div><div id="resultsView"></div><div id="learningEngineView"></div></section></section>
       <section data-panel="settings" hidden><section class="panel"><div class="section-title"><div><h2>Configurações</h2><p>Regras da primeira versão.</p></div></div><div id="settingsView"></div></section></section>
     </div>
   </main>
 </div>
-<div id="toastRegion" class="toasts"></div><script type="module" src="./marketing.js?v=20260918-6"></script>
+<div id="toastRegion" class="toasts"></div><script type="module" src="./marketing.js?v=20260918-7"></script>
 </body></html>
