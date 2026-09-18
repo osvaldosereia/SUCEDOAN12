@@ -815,3 +815,49 @@ Concluídas: R0–R9 e R20.
 Parciais: R12, R13, R14, R15, R16, R17, R18, R19, R21, R22, R23.
 R10 permanece bloqueada por toolchain nativa.
 Produção OFF; Comprar intocado; PR #396 deve permanecer Draft e NÃO MERGEAR.
+
+---
+
+# FECHAMENTO DESTA RETOMADA — 18/09/2026
+
+Após o checkpoint anterior, ainda foram adicionados:
+
+## R12 — bridge nativo de sessão — PARCIAL reforçada
+- src/customer/nativeSecureSession.ts;
+- tests/unit/nativeSecureSession.test.ts;
+- contrato estreito get/set/remove para futuro Keychain/Keystore;
+- sem localStorage/sessionStorage/indexedDB, sem rede e sem logs;
+- não existe implementação Keychain/Keystore real ainda.
+
+## R15 — allowlist de host — PARCIAL reforçada
+- links absolutos agora exigem HTTPS e host explicitamente permitido;
+- host externo arbitrário falha fechado;
+- links relativos internos continuam funcionando;
+- Android App Links/iOS Universal Links reais continuam pendentes.
+
+## R22 — gate de abuso local — PARCIAL reforçada
+- tests/security/session-abuse.test.ts;
+- cobre brute force do código de pairing, segredo incorreto/replay, deep link malformado/PII, token push não TEST, mídia inválida/oversized e revogação de sessão;
+- 6/6 testes do gate central verdes.
+
+## R24 — Store/Beta readiness — PARCIAL
+- src/platform/releaseReadiness.ts;
+- tests/unit/releaseReadiness.test.ts;
+- docs/store/STORE-READINESS.md;
+- gate de beta interno falha fechado quando faltam artefato nativo, sessão/deep links nativos, segurança, privacidade ou metadados;
+- qualquer produção/pedido real/push real/executor externo bloqueia readiness de beta;
+- regras atuais Apple/Google registradas no documento, mas nenhuma submissão, listing, tester ou build foi enviado.
+
+## Gate final executado nesta retomada
+- 49/49 testes do conjunto tocado aprovados;
+- typecheck do conjunto reconstruído/modificado aprovado com as opções reais do tsconfig;
+- runtime/config atual: 60 arquivos;
+- verificações incrementais de isolamento dos arquivos novos/modificados: 0 achados proibidos;
+- branch HEAD antes deste checkpoint: 61ba5923af14b85144940ef909a37db865ba9807.
+
+Estado consolidado:
+- concluídas: R0–R9 e R20;
+- parciais: R12, R13, R14, R15, R16, R17, R18, R19, R21, R22, R23, R24;
+- R10 Android e validações nativas dependentes seguem bloqueadas;
+- R25 produção continua proibida sem autorização explícita;
+- comprar/ continua intocado; PR #396 deve permanecer Draft e NÃO MERGEAR.
