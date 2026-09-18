@@ -262,3 +262,12 @@ Assim que o App ID for fornecido no Connection Manager, a validação server-sid
 - Pinterest continua pendente depois da Meta.
 - Publicação permanece totalmente OFF: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0` e channel gates OFF.
 
+
+## Atualização Rodada 8.3 — bug visual Graph corrigido
+
+- O App ID e o Graph já estavam corretos no backend, mas o Admin marcava `Falta: Graph version` por um erro de regex no frontend.
+- `admin/marketing.js` foi corrigido para reconhecer `v26.0`; o asset passou para cache-buster `marketing.js?v=20260918-6`.
+- Hotfix também aplicado de forma mínima na `main`, sem merge da branch e sem trazer trabalho paralelo.
+- Segurança reconfirmada depois do hotfix: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, 0 sessões OAuth ativas, 0 publication jobs, 0 published jobs e 0 external side effects.
+- Próximo passo agora é exclusivamente recarregar o Admin e iniciar **Conectar Meta**; o backend v17 aceitará somente Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`.
+
