@@ -147,7 +147,7 @@ Até este snapshot:
 Meta:
 - App Secret já existe no Vault;
 - App ID ainda não localizado no Supabase/GitHub;
-- Graph version pendente de validação explícita.
+- Graph API version explícita no runtime: `v26.0`.
 
 Pinterest:
 - App ID/App Secret não cadastrados no Connection Manager;
@@ -199,7 +199,7 @@ Em 18/09/2026 foi adicionada uma barreira extra à homologação Meta:
 - quando o segredo já existe, ele é lido somente no backend pelo Vault;
 - segredo novo só é persistido após a validação do par;
 - a resposta de validação não devolve access token ao navegador;
-- Edge Function `admin-marketing-workflow-v1`: v16, ACTIVE, JWT=true;
+- Edge Function `admin-marketing-workflow-v1`: v17, ACTIVE, JWT=true;
 - `meta_oauth_app_id` permanece vazio até uma validação real bem-sucedida.
 
 Estado de segurança após o deploy:
@@ -211,3 +211,40 @@ Estado de segurança após o deploy:
 - publication_jobs=0;
 - published_jobs=0;
 - external_side_effect_events=0.
+
+## Checkpoint operacional — Round 8.1
+
+Data: 18/09/2026.
+
+### Backend
+- `admin-marketing-workflow-v1`: **v17 / ACTIVE / JWT=true**;
+- validação App ID + App Secret continua obrigatória antes de persistir App ID;
+- novo fail-closed: OAuth Meta só aceita Page ID `1928140920768577` e Instagram Business ID `17841451162237654`;
+- username esperado: `dona_antonia_cuiaba`;
+- divergência de identidade limpa temporários e bloqueia conclusão antes da credencial definitiva;
+- teste novo foi escrito antes da implementação e o conjunto de checks estruturais da rodada fechou em **25/25**.
+
+### Credenciais/conexões
+- Meta App Secret: presente no Vault;
+- Meta App ID: **ainda ausente** (`null`);
+- Meta OAuth: não iniciado; sessions=0;
+- Meta channels: todos `disconnected`;
+- Pinterest App ID/App Secret/board: ainda pendentes;
+- cenário Make temporário de leitura `7489979`: `inactive`, não usar como automação de produção.
+
+### Safety invariants
+- `enabled=false`;
+- `execution_mode=off`;
+- `kill_switch=true`;
+- `publishing_enabled=false`;
+- `max_daily_publications=0`;
+- todos os channel publish gates=false;
+- publication_jobs=0;
+- published_jobs=0;
+- external_side_effect_events=0.
+
+### Bloqueio atual único para avançar Meta
+Obter o **Meta App ID real** do mesmo aplicativo correspondente ao App Secret existente no Vault. O sistema não deve tentar inferir esse número a partir de Page ID, Instagram ID, Flow ID, WABA, telefone ou Make connection ID.
+
+Assim que o App ID for fornecido no Connection Manager, a validação server-side decidirá se o par é válido. Só então o App ID poderá ser persistido e o OAuth Meta iniciado.
+
