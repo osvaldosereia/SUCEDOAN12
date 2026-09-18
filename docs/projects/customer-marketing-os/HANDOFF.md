@@ -479,3 +479,20 @@ Ao ocorrer qualquer uma delas, consultar imediatamente o Supabase e reexecutar:
 - `evaluate_meta_direct_readiness_v1(...)`.
 
 Não fabricar evidência e não transformar readiness em autorização externa.
+
+
+### Verificação final desta retomada — 18/09/2026 17:03 America/Cuiaba
+
+Os contadores de tráfego são snapshots dinâmicos e podem continuar subindo naturalmente. Na última leitura antes de encerrar esta rodada:
+
+- PapoAI receipts: **13**;
+- canonical events 24h: **13**;
+- provider identities: **11**;
+- `catalog_open`: **59**;
+- `catalog_search`: **0**;
+- `product_view`: **0**;
+- acceptance: **14 verified / 6 implemented / 0 blocked**;
+- Meta Direct: `ready=false`, blockers inalterados em 3;
+- `external_activation_authorized=false`.
+
+Para qualquer retomada futura, os RPCs canônicos prevalecem sobre estes números pontuais.
