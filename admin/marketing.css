@@ -39,3 +39,22 @@
   .customer-opportunity-actions button{flex:1}
   .brain-brief-grid{grid-template-columns:1fr}
 }
+
+.asset-card.status-review{border-color:#f2c66d;box-shadow:0 0 0 1px rgba(242,198,109,.16)}
+.asset-card.status-approved{border-color:#a9d8b8;box-shadow:0 0 0 1px rgba(22,101,52,.08)}
+.asset-workflow-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:12px;margin-top:10px;border-top:1px solid #eef0f2}
+.asset-workflow-actions button{min-height:38px}
+.approve-button,.reject-button{border:0;border-radius:12px;padding:9px 13px;font-weight:800;cursor:pointer}
+.approve-button{background:#166534;color:#fff}.reject-button{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}
+.review-note-row{margin-top:10px}.review-note-row input{width:100%;border:1px solid #d7dce0;border-radius:12px;padding:10px 12px;font:inherit}
+.prepared-channels{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:10px 0}.prepared-channels strong{font-size:11px;color:#59615e}
+.channel-chip{display:inline-flex;border-radius:999px;padding:5px 8px;background:#ecfdf5;color:#166534;font-size:10px;font-weight:800}
+.channel-chip.manual{background:#fff7ed;color:#9a3412}
+.asset-review-note{display:flex;gap:8px;align-items:flex-start;border-radius:12px;padding:9px 11px;background:#fff8eb;color:#7a5b16;font-size:11px;margin:9px 0}
+.asset-review-note strong{white-space:nowrap}.asset-review-note span{line-height:1.4}
+.asset-edit-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding:14px;border-radius:14px;background:#f8faf9;border:1px solid #e5ebe7}
+.asset-edit-form label{display:grid;gap:5px;font-size:11px;font-weight:800;color:#4b5563}
+.asset-edit-form input,.asset-edit-form textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:9px 10px;font:inherit;background:#fff;resize:vertical}
+.asset-edit-form textarea{min-height:68px}.asset-edit-form .wide{grid-column:1/-1}
+.asset-edit-actions{display:flex;gap:8px;justify-content:flex-end}.asset-edit-message{margin:0}
+@media(max-width:760px){.asset-workflow-actions{display:grid;grid-template-columns:1fr 1fr}.asset-workflow-actions button{width:100%}.asset-edit-form{grid-template-columns:1fr}.asset-edit-form .wide{grid-column:1}.asset-edit-actions{justify-content:stretch}.asset-edit-actions button{flex:1}}
