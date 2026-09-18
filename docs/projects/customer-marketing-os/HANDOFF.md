@@ -102,3 +102,16 @@ Resultados principais:
 - Admin Meta Direct: version 4;
 - nenhum fallback de Graph API;
 - nenhum gate externo aberto.
+
+
+## Central Meta Foundation
+
+A aba Meta Foundation já exibe o preflight real:
+
+- Policy Registry: 8/8;
+- Meta Direct: não pronto;
+- blockers: Graph API version, permissões, webhook e direct-ready flag.
+
+O resumo canônico é `relationship_command_summary_v1()` versão `cm1.15-v2`.
+
+Não criar botão de ativação nesta fase. A interface é somente leitura para homologação.
