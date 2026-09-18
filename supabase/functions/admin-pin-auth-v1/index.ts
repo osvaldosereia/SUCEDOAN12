@@ -51,5 +51,5 @@ Deno.serve(async(req:Request)=>{
   const {data:link,error:linkError}=await sb.auth.admin.generateLink({type:"magiclink",email,options:{redirectTo:"https://donaantonia.com.br/admin/"}});
   const tokenHash=link?.properties?.hashed_token;
   if(linkError||!tokenHash)return json(origin,{ok:false,error:"session_bootstrap_failed"},500);
-  return json(origin,{ok:true,token_hash:tokenHash,verification_type:"magiclink"},200);
+  return json(origin,{ok:true,token_hash:tokenHash,verification_type:"email"},200);
 });
