@@ -903,3 +903,28 @@ Estado permanece:
 - parciais: R12–R19 e R21–R24;
 - R10/R11 e validações nativas bloqueadas por toolchain;
 - R25 proibida sem autorização explícita.
+
+---
+
+# R13 — HARDENING HML ADICIONAL — 18/09/2026
+
+Sem liberar a quota de Edge Functions e sem tocar produção, a fundação Supabase HML foi endurecida:
+- nova migração `20260918204500_customer_app_hml_cart_integrity_v2.sql` aplicada com sucesso;
+- `customer_app_hml_config.enabled` agora possui constraint `enabled = false`; qualquer ativação exige nova migração explícita;
+- função SQL `customer_app_hml_cart_is_safe(jsonb)` valida array, chaves fechadas, IDs `TEST-PROD-*`/`TEST-BASKET-*`, nome, quantidade e preços;
+- função SQL `customer_app_hml_cart_total_cents(jsonb)` recalcula o total determinístico;
+- `customer_app_hml_orders` exige carrinho seguro e `total_cents` igual ao total calculado;
+- funções SQL têm EXECUTE apenas para `service_role`; `PUBLIC`, `anon` e `authenticated` não receberam EXECUTE;
+- helper compartilhado `supabase/functions/_shared/customer-app-hml-cart.ts` criado;
+- Edge Function HML de checkout versionada passou a recalcular o total server-side em vez de confiar no valor do cliente;
+- 5/5 testes locais do helper HML verdes e typecheck verde.
+
+Validação direta no banco:
+- carrinho TEST válido: aceito;
+- total calculado de 2 × R$25,00: 5000 centavos;
+- ID não TEST: recusado;
+- chave extra `phone`: recusada;
+- gate global continua `enabled=false`, `homologation`, 60 req/min;
+- advisors: nenhum finding de performance para `customer_app_hml_*`; somente INFO `rls_enabled_no_policy`, esperado porque não há grants públicos.
+
+R13 continua PARCIAL porque as Edge Functions HML ainda não podem ser publicadas/testadas devido à quota. Nenhuma função existente foi apagada e nenhum plano/spend cap foi alterado.
