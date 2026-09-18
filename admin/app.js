@@ -166,8 +166,26 @@ const customerSegmentLabel=value=>({
   proximo_recompra:'Próximo da recompra'
 })[String(value||'')]||String(value||'');
 
-function customerHistoryMarkup(customer={},data={}){
+function customerHistoryMarkup(customer={},data={},customer360=null){
   const intel=data.intelligence||{},segments=data.segments||{},orders=data.orders||[],products=intel.top_products||[],categories=intel.top_categories||[];
+  const dq=customer360?.data_quality||null;
+  const contact=customer360?.contact||{};
+  const consentCurrent=customer360?.consent?.current||{};
+  const timeline=customer360?.activity?.timeline||[];
+  const identityLatest=customer360?.identity_resolution?.latest||null;
+  const channelIdentities=Array.isArray(contact.channel_identities)?contact.channel_identities:[];
+  const currentConsents=Object.values(consentCurrent||{});
+  const secureExtras=customer360?`<section class="customer-history-block"><div class="customer-history-title"><h3>Customer 360</h3><small class="muted">Dados protegidos</small></div>
+    <div class="customer-history-stats detail">
+      <article><span>Qualidade dos dados</span><strong>${esc(dq?.completeness_percent??0)}%</strong></article>
+      <article><span>Identidades de canal</span><strong>${esc(channelIdentities.length)}</strong></article>
+      <article><span>Consentimentos atuais</span><strong>${esc(currentConsents.length)}</strong></article>
+      <article><span>Confiança da identidade</span><strong>${identityLatest?`${Math.round(Number(identityLatest.confidence||0)*100)}%`:'—'}</strong></article>
+    </div>
+    ${channelIdentities.length?`<div class="customer-history-chips compact">${channelIdentities.slice(0,8).map(x=>`<span><b>${esc(String(x.channel||'canal').toUpperCase())}</b><small>${esc(x.verification_status||'observed')} · ${esc(x.identity_kind||'')}</small></span>`).join('')}</div>`:''}
+    ${currentConsents.length?`<div class="customer-history-chips compact">${currentConsents.slice(0,8).map(x=>`<span><b>${esc(x.purpose||'consentimento')}</b><small>${esc(x.channel||'')} · ${esc(x.status||'')}</small></span>`).join('')}</div>`:''}
+  </section>
+  ${timeline.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Linha do tempo</h3><small class="muted">Últimos eventos consolidados</small></div><div class="customer-history-orders">${timeline.slice(0,20).map(x=>`<article><div><strong>${esc(x.title||x.event_kind||'Evento')}</strong><small>${esc(date(x.occurred_at))} · ${esc(x.channel||'')}</small><small>${esc(x.body_text||'')}</small></div><div><span class="badge">${esc(x.direction||'system')}</span></div></article>`).join('')}</div></section>`:''}`:'';
   const frequency=intel.repurchase_frequency_label?String(intel.repurchase_frequency_label):'Ainda sem padrão';
   const favoriteBasket=intel.favorite_basket?.name||intel.last_basket?.name||'—';
   const segmentList=Array.isArray(segments.segments)?segments.segments:[];
@@ -181,6 +199,7 @@ function customerHistoryMarkup(customer={},data={}){
       <article><span>Última compra</span><strong>${intel.last_order_at?esc(date(intel.last_order_at)):'—'}</strong></article>
     </div>
     ${segmentList.length?`<section class="customer-segments-panel"><div class="customer-history-title"><h3>Perfil comercial calculado</h3><small class="muted">Baseado somente no histórico</small></div><div class="customer-segment-badges">${segmentList.map(key=>`<span title="${esc(segmentReasons[key]||'Regra calculada a partir das compras')}">${esc(customerSegmentLabel(key))}</span>`).join('')}</div></section>`:''}
+    ${secureExtras}
     <section class="customer-history-summary">
       <div><span>Cesta mais comprada</span><strong>${esc(favoriteBasket)}</strong></div>
       <div><span>Pagamento mais usado</span><strong>${esc(paymentLabel(intel.favorite_payment_method))}</strong></div>
@@ -205,7 +224,7 @@ async function openCustomerHistory(id){
       secureCustomersEnabled()?customerOsApi('customer_360',{id,timeline_limit:30}):api('customer',{id}),
       customerApi('customer_history',{id,page:1,limit:30})
     ]);
-    openDialog(customerHistoryMarkup(profile.customer||{},history));
+    openDialog(customerHistoryMarkup(profile.customer||{},history,secureCustomersEnabled()?profile:null));
   }catch(e){openDialog(`<div class="editor-shell"><div class="editor-head"><h2>Histórico</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="empty">${esc(e.message)}</div></div>`)}
 }
 
