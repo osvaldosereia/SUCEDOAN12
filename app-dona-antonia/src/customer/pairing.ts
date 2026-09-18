@@ -1,0 +1,124 @@
+export interface PairingChallenge {
+  challengeId: string;
+  humanCode: string;
+  deviceSecret: string;
+  expiresAt: number;
+}
+
+export type PairingPollResult =
+  | { state: 'pending' }
+  | { state: 'invalid_challenge' }
+  | { state: 'invalid_secret' }
+  | { state: 'expired' }
+  | { state: 'rate_limited' }
+  | { state: 'consumed' }
+  | { state: 'confirmed'; sessionToken: string };
+
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const TEN_MINUTES_MS = 10 * 60 * 1000;
+
+function randomBytes(length: number): Uint8Array {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return bytes;
+}
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/g, '');
+}
+
+function createHumanCode(bytes: Uint8Array): string {
+  return Array.from(bytes.slice(0, 6))
+    .map((byte) => CODE_ALPHABET[byte % CODE_ALPHABET.length])
+    .join('');
+}
+
+function sameSecret(left: string, right: string): boolean {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+export function createPairingChallenge(
+  options: { now?: () => number } = {},
+): PairingChallenge {
+  const now = options.now ?? Date.now;
+  const secretBytes = randomBytes(32);
+  const codeBytes = randomBytes(6);
+
+  return {
+    challengeId: `TEST-PAIR-${crypto.randomUUID()}`,
+    humanCode: createHumanCode(codeBytes),
+    deviceSecret: toBase64Url(secretBytes),
+    expiresAt: now() + TEN_MINUTES_MS,
+  };
+}
+
+export function createPairingFixture(
+  options: {
+    now?: () => number;
+    maxPollAttempts?: number;
+    sessionTokenFactory?: () => string;
+  } = {},
+) {
+  const now = options.now ?? Date.now;
+  const maxPollAttempts = Math.max(1, options.maxPollAttempts ?? 20);
+  const sessionTokenFactory = options.sessionTokenFactory
+    ?? (() => 'TEST-SESSION-PAIRING');
+
+  const challenge = createPairingChallenge({ now });
+  let humanConfirmed = false;
+  let consumed = false;
+  let pollAttempts = 0;
+
+  function expired(): boolean {
+    return now() > challenge.expiresAt;
+  }
+
+  return {
+    challenge: { ...challenge },
+
+    confirmHumanCode(code: string): boolean {
+      if (expired() || consumed) return false;
+      if (code !== challenge.humanCode) return false;
+      humanConfirmed = true;
+      return true;
+    },
+
+    pollPairing(
+      challengeId: string,
+      deviceSecret: string,
+    ): PairingPollResult {
+      if (challengeId !== challenge.challengeId) {
+        return { state: 'invalid_challenge' };
+      }
+      if (expired()) return { state: 'expired' };
+      if (consumed) return { state: 'consumed' };
+      if (pollAttempts >= maxPollAttempts) {
+        return { state: 'rate_limited' };
+      }
+
+      pollAttempts += 1;
+
+      if (!sameSecret(deviceSecret, challenge.deviceSecret)) {
+        return { state: 'invalid_secret' };
+      }
+
+      if (!humanConfirmed) return { state: 'pending' };
+
+      consumed = true;
+      return {
+        state: 'confirmed',
+        sessionToken: sessionTokenFactory(),
+      };
+    },
+  };
+}
