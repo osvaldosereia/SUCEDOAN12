@@ -1,15 +1,16 @@
 # App Dona Antônia — iOS, Android e PWA — Design do Projeto
 
 Data: 18/09/2026  
-Status: projeto arquitetural para revisão antes da implementação  
+Status: **ISOLADO / DESATIVADO / NÃO USAR EM PRODUÇÃO até homologação integral**  
 Repositório: `osvaldosereia/SUCEDOAN12`  
-Núcleo existente: `comprar/` + Supabase  
+Diretório exclusivo do projeto: `app-dona-antonia/`  
+Núcleo existente `comprar/`: **somente referência; não será alterado por este projeto antes do gate final de implantação**  
 Nome de trabalho do app: **Dona Antônia**  
 Bundle/Application ID proposto: `br.com.donaantonia.app`
 
 ## 1. Objetivo
 
-Transformar o Chat Comprar atual em uma experiência de aplicativo instalável e publicável, mantendo uma única lógica comercial e um único backend.
+Construir uma nova experiência de aplicativo instalável e publicável em área totalmente isolada, usando o Chat Comprar atual apenas como referência funcional. Durante todo o desenvolvimento, nenhum arquivo de `comprar/`, nenhuma rota usada hoje pelos clientes e nenhuma automação de produção poderá ser alterada pelo projeto do app.
 
 O projeto deve entregar:
 
@@ -21,11 +22,36 @@ O projeto deve entregar:
 - mesma regra de preços, estoque, cestas, checkout, clientes e pedidos;
 - recursos nativos suficientes para que o aplicativo tenha utilidade própria e não seja apenas um site encapsulado;
 - baixo custo operacional e mínimo uso de serviços pagos;
-- implementação por etapas, sem interromper o Comprar atual.
+- implementação por etapas, sem tocar no Comprar atual;
+- projeto inteiro desligado e invisível ao público até concluir desenvolvimento, testes e homologação;
+- implantação somente após um gate final explícito de migração/cutover.
 
 O aplicativo será voltado inicialmente ao Brasil e continuará atendendo comercialmente **Cuiabá e Várzea Grande**. A loja de aplicativos não permite limitar a distribuição por cidade; portanto a disponibilidade inicial será Brasil e a área de entrega será validada pelo próprio sistema.
 
 ---
+
+## 1.1 Regra máxima de isolamento
+
+Esta regra prevalece sobre qualquer outro trecho deste documento.
+
+Até a homologação final:
+
+- **não modificar nenhum arquivo dentro de `comprar/`;**
+- **não publicar PWA em `/comprar/`;**
+- **não adicionar scripts, manifestos, service workers ou adapters ao Comprar atual;**
+- **não apontar links públicos, WhatsApp, anúncios ou Admin para o novo app;**
+- **não registrar service worker no domínio/escopo do Comprar atual;**
+- **não ativar push, deep links, pairing ou sessões em produção;**
+- **não criar triggers que reajam a pedidos reais;**
+- **não enviar notificações para clientes reais;**
+- **não escrever em pedidos/clientes/estoque reais durante desenvolvimento;**
+- **não acionar Bling, Meta, PapoAI, logística ou qualquer executor externo real a partir do novo projeto;**
+- todo recurso novo nasce `OFF`, sem agendamento automático e sem efeitos externos;
+- testes usam fixtures, dados sintéticos ou ambiente de homologação separado;
+- qualquer futura leitura de dados reais será read-only e somente após uma etapa específica de homologação;
+- qualquer futura escrita em produção exige autorização explícita no gate final.
+
+O projeto deve conseguir ser removido completamente apagando `app-dona-antonia/` e os artefatos de homologação relacionados, sem quebrar o Comprar atual.
 
 ## 2. Estado atual analisado
 
@@ -66,7 +92,7 @@ O repositório já possui experiências PWA em outros módulos, como `driver-app
 
 ### 3.1 Abordagem escolhida
 
-Usar **Capacitor** como runtime nativo sobre o nosso front web existente.
+Usar **Capacitor** como runtime nativo de um **novo front isolado em `app-dona-antonia/`**. O código atual de `comprar/` será estudado e seus contratos/regras poderão ser reproduzidos no novo projeto, mas não será a origem direta de build enquanto o app estiver em desenvolvimento.
 
 Arquitetura:
 
@@ -92,7 +118,7 @@ Não criar React Native, Flutter, Swift e Kotlin separados nesta primeira versã
 
 Capacitor permite inserir uma camada nativa em uma aplicação HTML/CSS/JavaScript existente e acessar recursos do aparelho quando necessário. Em setembro de 2026 a documentação oficial está na versão 8.
 
-O objetivo é **uma base comercial compartilhada**, e não três sistemas independentes.
+O objetivo final continua sendo compartilhar regras comerciais e backend, mas o desenvolvimento será deliberadamente separado. Primeiro construímos e homologamos o app isolado; somente no gate de implantação conectamos os adapters aprovados às APIs e dados de produção.
 
 ### 3.3 Regra importante de produção
 
@@ -387,50 +413,79 @@ Sessão:
 
 ## 7. Estrutura de código proposta
 
-Sem reescrever o Comprar inteiro.
+O projeto inteiro ficará separado do Comprar atual:
 
 ```
-comprar/
-  ... núcleo web atual ...
-  platform.js                 # detecção web/PWA/Capacitor
-  app-links.js                # roteamento de links
-  push-client.js              # interface única para push
-  privacy-center.js           # preferências e direitos
-  network-state.js            # online/offline
+app-dona-antonia/
+  README.md
+  PROJECT-STATUS.md
+  package.json
+  capacitor.config.ts
 
-mobile/
-  customer/
-    package.json
-    capacitor.config.ts
-    www/                      # GERADO, não editado manualmente
-    ios/
-    android/
-    native/
-      secure-session/         # bridge de sessão segura
+  src/
+    app/
+    conversation/
+    catalog/
+    baskets/
+    cart/
+    checkout/
+    customer/
+    orders/
+    privacy/
+    notifications/
+    platform/
 
-scripts/
-  build-customer-mobile.mjs   # copia/valida assets do comprar
-  test-customer-mobile-contract.mjs
+  public/
+    manifest.webmanifest
+    icons/
+
+  native/
+    secure-session/
+
+  ios/
+  android/
+
+  tests/
+    unit/
+    contract/
+    e2e/
+    fixtures/
+
+  scripts/
+    build.mjs
+    verify-isolation.mjs
+    test-no-production-effects.mjs
+
+  docs/
+    decisions/
+    homologation/
 ```
 
-Regra importante:
+Arquivos do Comprar atual permanecem fora do escopo:
 
-- `mobile/customer/www` não vira uma segunda fonte de verdade;
-- é gerado a partir do `comprar/`;
-- alterações de negócio continuam no núcleo;
-- diferenças de plataforma ficam em adapters/bridges.
+```
+comprar/   # NÃO MODIFICAR durante o desenvolvimento do app
+```
+
+Regras:
+
+- nenhum build do app escreve em `comprar/`;
+- nenhum asset do app é copiado automaticamente para `comprar/`;
+- nenhuma configuração do Comprar importa código de `app-dona-antonia/`;
+- adapters de produção só serão criados no final;
+- testes de isolamento deverão falhar se o projeto tentar atingir endpoints/executores reais não autorizados.
 
 ---
 
 ## 8. Build e atualização
 
-### 8.1 Web
+### 8.1 Web atual
 
-Deploy atual continua independente.
+O deploy do Comprar atual continua completamente independente e não recebe alterações deste projeto.
 
-### 8.2 PWA
+### 8.2 PWA do novo app
 
-Usa o mesmo `comprar/`.
+A PWA é construída dentro de `app-dona-antonia/` e permanece sem link público e sem substituir o Comprar atual até o gate final.
 
 Service worker:
 
@@ -443,7 +498,7 @@ Service worker:
 
 ### 8.3 Apps
 
-O build gera `mobile/customer/www` e depois executa sync do Capacitor.
+O build usa somente os assets do diretório `app-dona-antonia/` e depois executa o sync do Capacitor.
 
 Produção usa assets locais.
 
@@ -464,6 +519,13 @@ Não baixar JavaScript arbitrário para substituir o aplicativo já revisado pel
 ## 9. Backend mobile no Supabase
 
 Novas estruturas serão criadas somente quando a etapa correspondente for autorizada.
+
+Durante desenvolvimento e homologação, o projeto deverá usar isolamento por uma destas duas formas, nesta ordem de preferência:
+
+1. projeto/ambiente Supabase de homologação separado, quando disponível;
+2. estruturas dedicadas e prefixadas, sem triggers ou vínculos ativos com operações reais, quando for tecnicamente necessário usar o projeto existente.
+
+Antes do gate final é proibido criar gatilhos que reajam automaticamente a pedidos/clientes reais.
 
 ### 9.1 Tabelas previstas
 
@@ -971,23 +1033,24 @@ Objetivo: remover bloqueios que não dependem de programação.
 
 **Saída:** checklist administrativo pronto.
 
-## Etapa 1 — Contrato multiplataforma do Comprar
+## Etapa 1 — Fundação isolada do novo aplicativo
 
-Objetivo: preparar o código atual sem alterar a experiência da cliente.
+Objetivo: criar a base do app sem modificar o Comprar atual.
 
-- criar adapter de plataforma;
-- definir interfaces web/PWA/native;
-- identificar APIs incompatíveis com WebView;
-- validar CORS;
-- definir build dos assets;
-- criar testes de contrato;
+- criar `app-dona-antonia/`;
+- criar package/build próprios;
+- criar adapter de plataforma dentro do novo projeto;
+- mapear os contratos do Comprar apenas como referência;
+- criar fixtures e mocks para produtos, cestas, clientes e pedidos;
+- criar teste automático de isolamento;
+- proibir endpoints/executores reais nessa etapa;
 - não criar projeto nativo ainda.
 
-**Saída:** Comprar continua igual, mas pode ser consumido por mais de uma plataforma.
+**Saída:** novo projeto executa isoladamente e `comprar/` permanece byte a byte fora do escopo desta etapa.
 
-## Etapa 2 — PWA segura
+## Etapa 2 — PWA isolada de homologação
 
-Objetivo: instalar o Comprar pela tela inicial antes das lojas.
+Objetivo: validar instalação e comportamento PWA do novo app sem publicar ou alterar o Comprar usado hoje.
 
 - manifest;
 - ícones;
@@ -997,13 +1060,13 @@ Objetivo: instalar o Comprar pela tela inicial antes das lojas.
 - testes de instalação;
 - política de atualização.
 
-**Saída:** PWA funcional sem afetar checkout.
+**Saída:** PWA do projeto novo funcional apenas em homologação, sem rota/link público de produção.
 
 ## Etapa 3 — Shell Capacitor Android
 
 Objetivo: primeira execução nativa real.
 
-- criar `mobile/customer`;
+- usar `app-dona-antonia/`;
 - Capacitor;
 - Android project;
 - assets locais;
@@ -1206,7 +1269,26 @@ Coletar somente bugs/telemetria necessária.
 
 **Saída:** candidata a produção.
 
-## Etapa 16 — Publicação controlada
+## Etapa 16 — Gate final de integração e implantação
+
+Esta é a **primeira etapa em que qualquer conexão com produção pode ser autorizada**.
+
+Antes de executar:
+- aprovação explícita do proprietário;
+- backup/snapshot necessário;
+- comparação funcional App vs Comprar;
+- plano de rollback;
+- confirmação de que o Comprar atual continuará disponível durante o corte;
+- revisão das APIs/tabelas/eventos que passarão do modo homologação para produção.
+
+Depois da autorização:
+- conectar adapters às APIs/dados de produção;
+- habilitar flags uma a uma;
+- realizar canário interno;
+- validar pedido real controlado;
+- somente então preparar distribuição pública.
+
+## Etapa 17 — Publicação controlada
 
 - distribuição Brasil;
 - lançamento gradual quando disponível;
@@ -1217,7 +1299,7 @@ Coletar somente bugs/telemetria necessária.
 
 **Saída:** Dona Antônia publicada.
 
-## Etapa 17 — Pós-lançamento
+## Etapa 18 — Pós-lançamento
 
 Somente após estabilidade:
 
@@ -1237,11 +1319,11 @@ Somente após estabilidade:
 
 Primeira rodada de programação:
 
-**Etapa 1 — contrato multiplataforma + auditoria de compatibilidade.**
+**Etapa 1 — fundação isolada do novo aplicativo + teste de não interferência.**
 
 Segunda:
 
-**Etapa 2 — PWA.**
+**Etapa 2 — PWA isolada de homologação.**
 
 Terceira:
 
@@ -1303,4 +1385,11 @@ Até nova decisão explícita:
 15. app de produção empacota a interface em vez de ser apenas URL remota;
 16. publicação inicial somente Brasil;
 17. área comercial continua Cuiabá e Várzea Grande;
-18. implementação sempre em etapas pequenas e testáveis.
+18. implementação sempre em etapas pequenas e testáveis;
+19. todo código novo do app fica em `app-dona-antonia/`;
+20. `comprar/` não será modificado antes do gate final;
+21. nenhuma rota pública apontará para o app antes da homologação integral;
+22. todas as integrações externas e flags do app nascem OFF;
+23. nenhum cliente real receberá push/mensagem do app durante desenvolvimento;
+24. nenhum pedido real será criado pelo app antes do teste controlado do gate final;
+25. a integração com produção só acontece após autorização explícita.
