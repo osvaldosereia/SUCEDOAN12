@@ -33,7 +33,9 @@ assert.match(css,/\.c360-timeline/);
 assert.match(css,/@media\(max-width:680px\)/);
 assert.match(html,/customer-360-v2\.css\?v=20260918-2/);
 assert.match(html,/app\.js\?v=20260918-customer-360-redesign-1/);
-assert.doesNotMatch(view,/marketing_consent_unknown|order_in_progress|verification_status[^\n]*\+[^\n]*>/,
-  'raw technical identifiers should not be primary UI labels');
+assert.match(view,/marketing_consent_unknown:'Consentimento de marketing não registrado'/);
+assert.match(view,/order_in_progress:'Pedido em andamento'/);
+assert.match(view,/human_service_in_progress:'Atendimento humano em andamento'/);
+assert.match(view,/marketing_cooldown:'Intervalo mínimo entre campanhas'/);
 
 console.log('customer 360 redesign contract ok');
