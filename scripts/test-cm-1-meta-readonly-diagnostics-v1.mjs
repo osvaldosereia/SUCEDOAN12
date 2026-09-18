@@ -45,6 +45,6 @@ assert.match(ui,/runMetaDiagnosticsReadonly/);
 assert.match(ui,/Verificar Meta agora/);
 assert.match(ui,/Webhook Flow health/);
 assert.match(ui,/zero ação externa/i);
-assert.match(html,/relacionamento\.js\?v=20260918-6/);
+assert.match(html,/relacionamento\.js\?v=20260918-9/);
 
 console.log('CM-1 Meta read-only diagnostics contract: OK');
