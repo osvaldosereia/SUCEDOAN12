@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 import {publishMarketingChannel,verifyMarketingChannel} from "./marketing-publish-adapters-v1.ts";
-import {buildMarketingOAuthUrl,exchangeMetaAuthorization,discoverMetaPages,exchangePinterestAuthorization,discoverPinterestBoards,refreshPinterestAuthorization} from "./marketing-oauth-v1.ts";
+import {buildMarketingOAuthUrl,exchangeMetaAuthorization,discoverMetaPages,exchangePinterestAuthorization,discoverPinterestBoards,refreshPinterestAuthorization,validateMetaAppCredentials} from "./marketing-oauth-v1.ts";
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type","Access-Control-Allow-Methods":"POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=1000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
@@ -75,7 +75,13 @@ if(action==="connection_save_config"){
   if(provider==="meta"&&!/^v\d+\.\d+$/.test(graphVersion))return json({ok:false,error:"invalid_graph_version"},400);
   const {data:runtime,error:re}=await sb.from("marketing_runtime_config").select("metadata").eq("id",1).maybeSingle();if(re)return json({ok:false,error:"runtime_lookup_failed",detail:re.message},500);
   const metadata={...(runtime?.metadata||{})};
-  if(provider==="meta"){metadata.meta_oauth_app_id=appId;metadata.meta_graph_version=graphVersion;if(appSecret){const {data,error}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:"dona_antonia_marketing_meta_app_secret_v1",p_secret:appSecret,p_description:"Meta App Secret · Marketing OAuth"});if(error||!data?.ok)return json({ok:false,error:"meta_secret_save_failed",detail:error?.message||data?.error},500);}}
+  if(provider==="meta"){
+    let effectiveSecret=appSecret;
+    if(!effectiveSecret){const {data,error}=await sb.rpc("marketing_vault_get_secret_v1",{p_name:"dona_antonia_marketing_meta_app_secret_v1"});if(error||!data)return json({ok:false,error:"meta_app_secret_required_for_validation"},409);effectiveSecret=data;}
+    try{await validateMetaAppCredentials({appId,appSecret:effectiveSecret,graphVersion});}catch{return json({ok:false,error:"meta_app_credentials_invalid",detail:"Meta client credentials validation failed",external_side_effect:false},409);}
+    metadata.meta_oauth_app_id=appId;metadata.meta_graph_version=graphVersion;metadata.meta_app_credentials_validated_at=new Date().toISOString();metadata.meta_app_credentials_validation="client_credentials";
+    if(appSecret){const {data,error}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:"dona_antonia_marketing_meta_app_secret_v1",p_secret:appSecret,p_description:"Meta App Secret · Marketing OAuth"});if(error||!data?.ok)return json({ok:false,error:"meta_secret_save_failed",detail:error?.message||data?.error},500);}
+  }
   else{metadata.pinterest_oauth_app_id=appId;if(appSecret){const {data,error}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:"dona_antonia_marketing_pinterest_app_secret_v1",p_secret:appSecret,p_description:"Pinterest App Secret · Marketing OAuth"});if(error||!data?.ok)return json({ok:false,error:"pinterest_secret_save_failed",detail:error?.message||data?.error},500);}}
   const {error:ue2}=await sb.from("marketing_runtime_config").update({metadata,updated_at:new Date().toISOString(),updated_by:user.id}).eq("id",1);if(ue2)return json({ok:false,error:"connection_config_save_failed",detail:ue2.message},500);
   const {data:snapshot,error:se}=await sb.rpc("marketing_provider_connection_snapshot_v1");if(se)return json({ok:false,error:"connection_snapshot_failed",detail:se.message},500);
