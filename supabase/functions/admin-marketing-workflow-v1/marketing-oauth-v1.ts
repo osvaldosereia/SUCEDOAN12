@@ -77,3 +77,12 @@ export async function discoverPinterestBoards(accessToken:string){
   }
   return items.filter(x=>x.id);
 }
+
+export async function refreshPinterestAuthorization(opts:{appId:string;appSecret:string;refreshToken:string;scopes?:string[]}){
+  const body=new URLSearchParams({grant_type:'refresh_token',refresh_token:opts.refreshToken});
+  if(Array.isArray(opts.scopes)&&opts.scopes.length)body.set('scope',opts.scopes.join(','));
+  const res=await fetch('https://api.pinterest.com/v5/oauth/token',{method:'POST',headers:{Authorization:`Basic ${b64(`${opts.appId}:${opts.appSecret}`)}`,'Content-Type':'application/x-www-form-urlencoded'},body});
+  const data=await safeJson(res);if(!res.ok)throw new Error(clean(data?.message||data?.code||`Pinterest HTTP ${res.status}`,800));
+  const accessToken=clean(data?.access_token,5000),refreshToken=clean(data?.refresh_token,5000);if(!accessToken)throw new Error('pinterest_refresh_access_token_missing');
+  return {accessToken,refreshToken:refreshToken||opts.refreshToken,expiresIn:Number(data?.expires_in||0),refreshExpiresIn:Number(data?.refresh_token_expires_in||0),refreshExpiresAt:Number(data?.refresh_token_expires_at||0),scope:clean(data?.scope,1000)};
+}
