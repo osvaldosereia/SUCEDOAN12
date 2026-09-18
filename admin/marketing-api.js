@@ -70,3 +70,5 @@ export const saveMarketingProviderConfig=(payload)=>secureCall(CONFIG.marketingW
 export const startMarketingOAuth=(provider)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'oauth_start',provider},30000);
 export const exchangeMarketingOAuth=(payload)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'oauth_exchange',...payload},60000);
 export const completeMarketingOAuth=(payload)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'oauth_complete',...payload},60000);
+
+export const disconnectMarketingProvider=(provider)=>secureCall(CONFIG.marketingWorkflowFunction,{action:'connection_disconnect',provider},30000);
