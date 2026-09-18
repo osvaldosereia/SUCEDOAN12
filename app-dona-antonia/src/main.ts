@@ -14,6 +14,10 @@ import type { Basket } from './baskets/types.ts';
 import { createCartStore } from './cart/cartStore.ts';
 import { calculateCartTotal } from './cart/cartMath.ts';
 import { renderCart } from './cart/cartView.ts';
+import { createCheckoutFixtureGateway } from './checkout/checkoutFixtureGateway.ts';
+import { createCheckoutFlow } from './checkout/checkoutFlow.ts';
+import { renderCheckout } from './checkout/checkoutView.ts';
+import type { PaymentMethod } from './checkout/types.ts';
 import { createCatalogController } from './catalog/catalogController.ts';
 import { createCatalogFixtureRepository } from './catalog/catalogFixtureRepository.ts';
 import { renderCatalog, renderProductDetail } from './catalog/catalogView.ts';
@@ -43,6 +47,8 @@ await bootstrapApp({ root: appRoot });
 const appNavigator = createNavigator();
 const conversation = createConversationStore();
 const cart = createCartStore();
+const checkoutGateway = createCheckoutFixtureGateway();
+const checkout = createCheckoutFlow(checkoutGateway);
 
 const catalogRepository = createCatalogFixtureRepository(productsData as Product[]);
 const catalog = createCatalogController(catalogRepository);
@@ -89,7 +95,9 @@ function render(route = appNavigator.current()): void {
       ? basketToolHtml()
       : route === 'cart'
         ? renderCart(cart.getSnapshot())
-        : undefined;
+        : route === 'checkout'
+          ? renderCheckout(checkout.getSnapshot())
+          : undefined;
 
   const cartSummary = calculateCartTotal(cart.getSnapshot());
 
@@ -255,6 +263,19 @@ async function handleClick(event: MouseEvent): Promise<void> {
     return;
   }
 
+  const paymentTarget = element.closest<HTMLElement>('[data-checkout-payment]');
+  const payment = paymentTarget?.dataset.checkoutPayment as PaymentMethod | undefined;
+  if (payment) {
+    if (checkout.setPayment(payment)) render();
+    return;
+  }
+
+  if (element.closest('[data-checkout-confirm]')) {
+    const result = await checkout.confirm();
+    if (result) render();
+    return;
+  }
+
   const sectionTarget = element.closest<HTMLElement>('[data-catalog-section]');
   const section = sectionTarget?.dataset.catalogSection as CatalogSection | undefined;
   if (section && ['all', 'offers', 'for-you', 'for-home'].includes(section)) {
@@ -294,6 +315,10 @@ async function handleClick(event: MouseEvent): Promise<void> {
   const route = routeTarget?.dataset.routeTarget;
   if (!route || !isAppRoute(route)) return;
 
+  if (route === 'checkout') {
+    checkout.start(cart.getSnapshot());
+  }
+
   appNavigator.navigate(route);
 }
 
@@ -303,10 +328,37 @@ appRoot.addEventListener('click', (event) => {
 
 appRoot.addEventListener('submit', (event) => {
   const form = event.target instanceof HTMLFormElement ? event.target : null;
-  if (!form?.matches('[data-catalog-search]')) return;
+  if (!form) return;
 
-  event.preventDefault();
+  if (form.matches('[data-catalog-search]')) {
+    event.preventDefault();
+    const input = form.querySelector<HTMLInputElement>('input[name="query"]');
+    void catalog.setQuery(input?.value ?? '').then(() => render());
+    return;
+  }
 
-  const input = form.querySelector<HTMLInputElement>('input[name="query"]');
-  void catalog.setQuery(input?.value ?? '').then(() => render());
+  if (form.matches('[data-checkout-customer]')) {
+    event.preventDefault();
+    const name = form.querySelector<HTMLInputElement>('input[name="name"]')?.value ?? '';
+    const phone = form.querySelector<HTMLInputElement>('input[name="phone"]')?.value ?? '';
+    if (checkout.setCustomer({ name, phone })) render();
+    return;
+  }
+
+  if (form.matches('[data-checkout-address]')) {
+    event.preventDefault();
+    const value = (name: string) =>
+      form.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.value ?? '';
+
+    if (checkout.setAddress({
+      street: value('street'),
+      number: value('number'),
+      neighborhood: value('neighborhood'),
+      city: value('city'),
+      state: value('state'),
+      reference: value('reference'),
+    })) {
+      render();
+    }
+  }
 });
