@@ -136,3 +136,18 @@
   .template-version-list>div{grid-template-columns:auto 1fr}
   .template-version-list small{grid-column:2}
 }
+
+/* Marketing Round 7 — governed publishing */
+.publication-stack{display:grid;gap:10px}
+.publication-card{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;border:1px solid #e2e8e5;border-radius:16px;padding:13px 14px;background:#fff}
+.publication-card>div:first-child{display:grid;gap:4px;min-width:0}.publication-card strong{font-size:13px;color:#27342f}.publication-card small{font-size:10px;color:#6b7773;overflow-wrap:anywhere}
+.publication-actions{display:flex;gap:7px;justify-content:flex-end}.publication-message{grid-column:1/-1;margin:0;min-height:0;font-size:10px}
+.channel-connection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.channel-connection-card{border:1px solid #e2e8e5;border-radius:16px;padding:14px;background:#fff}
+.channel-connection-card.verified{border-color:#acd9bb;background:#fbfffc}.channel-connection-card.manual{border-color:#d8ddf5;background:#fcfcff}.channel-connection-card.pending{background:#fbfbfb}
+.channel-connection-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.channel-connection-head>div{display:grid;gap:3px}.channel-connection-head strong{font-size:13px}.channel-connection-head small{font-size:9px;color:#6c7773}
+.channel-connection-card p{font-size:10px;line-height:1.5;color:#66736e;min-height:30px;margin:10px 0}
+.channel-connection-actions{display:flex;align-items:center;min-height:36px}.channel-verified-pill,.channel-manual-pill{display:inline-flex;align-items:center;border-radius:999px;padding:7px 10px;font-size:9px;font-weight:850}
+.channel-verified-pill{background:#eaf8ef;color:#176b43}.channel-manual-pill{background:#eff1ff;color:#4b5798}
+@media(max-width:980px){.channel-connection-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.publication-card{grid-template-columns:minmax(0,1fr) auto}.publication-actions{grid-column:1/-1;justify-content:flex-start}}
+@media(max-width:620px){.channel-connection-grid{grid-template-columns:1fr}.publication-card{grid-template-columns:1fr}.publication-card>.status-chip{justify-self:start}.publication-actions{grid-column:auto}.publication-actions button{width:100%}}
