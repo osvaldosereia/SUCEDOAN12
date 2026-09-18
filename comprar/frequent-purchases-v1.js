@@ -253,6 +253,7 @@
     opening=true;
     try{
       app.userDecision?.('Quero ver minhas compras frequentes',{className:'decision frequent-purchases-decision'});
+      customerApi('track_behavior',{event_type:'frequent_purchases_open'}).catch(()=>null);
       app.assistantMessage?.('Separei o que aparece com mais frequência no seu histórico.',{className:'frequent-purchases-message'});
       const fresh=await customerApi('frequent_purchases').catch(()=>null);
       const data=meaningful(fresh?.frequent)?fresh.frequent:(initial||payloadCache);
@@ -284,6 +285,7 @@
       if(target<=current)throw new Error('Você atingiu o limite disponível para este produto.');
       const data=await app.api('set_quantity',{product_id:item.product_id,quantity:target});
       if(data?.cart)app.setCart(data.cart);
+      customerApi('track_behavior',{event_type:'frequent_product_add',event_data:{product_id:item.product_id,source:'frequent_purchases',quantity:target}}).catch(()=>null);
       button.textContent='Adicionado ✓';
       app.toast?.('Produto adicionado ao carrinho.');
       setTimeout(()=>{
