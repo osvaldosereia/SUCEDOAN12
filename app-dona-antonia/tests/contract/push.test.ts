@@ -6,10 +6,10 @@ import { fileURLToPath } from 'node:url';
 
 import { createHomologationPushClient } from '../../src/notifications/pushClient.ts';
 
-test('push preferences start disabled, including marketing', () => {
+test('transactional preference starts enabled while marketing starts disabled', () => {
   const client = createHomologationPushClient();
   assert.deepEqual(client.getSnapshot().preferences, {
-    transactional: false,
+    transactional: true,
     marketing: false,
   });
 });
