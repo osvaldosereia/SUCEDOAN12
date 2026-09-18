@@ -195,6 +195,7 @@ function renderMeta(){
         ['Permissão messaging',state.metaDiagnostics.permissions?.whatsapp_business_messaging||'—'],
         ['Qualidade do número',state.metaDiagnostics.phone?.quality_rating||'—'],
         ['WABA inscrita',state.metaDiagnostics.waba?.subscription_observed===true?'Sim':'Não'],
+        ['Webhook Flow health',state.metaDiagnostics.webhook?.flow_health_verified===true?'Verificado':'Sem evidência'],
         ['Callback Meta Direct',state.metaDiagnostics.webhook?.callback_verified===true?'Verificado':'Ainda não verificado']
       ].map(x=>metric(x[0],x[1])).join('')}</div>
       <p class="identity-review-footnote">Diagnóstico executado diretamente pelo Supabase. Nenhuma mensagem foi enviada e nenhuma configuração Meta foi alterada.</p>
