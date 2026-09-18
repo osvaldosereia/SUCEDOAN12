@@ -8,7 +8,7 @@
 **Pull Request de homologação:** #396 — draft — **NÃO MERGEAR**  
 **Código do app:** `app-dona-antonia/`  
 **Comprar atual:** `comprar/` — **NÃO MODIFICAR durante o desenvolvimento do app**  
-**Próxima rodada autorizável:** **Rodada 7 — Checkout isolado**
+**Próxima rodada autorizável:** **Rodada 10 — Shell Capacitor Android**
 
 ---
 
@@ -409,10 +409,10 @@ Legenda:
 | 4 | Catálogo fictício e navegação | ✅ |
 | 5 | Cestas básicas fictícias | ✅ |
 | 6 | Carrinho e regras locais | ✅ |
-| 7 | Checkout isolado | ▶ |
-| 8 | Pedido e acompanhamento fictício | ⏳ |
-| 9 | PWA isolada | ⏳ |
-| 10 | Shell Capacitor Android | ⏳ |
+| 7 | Checkout isolado | ✅ |
+| 8 | Pedido e acompanhamento fictício | ✅ |
+| 9 | PWA isolada | ✅ |
+| 10 | Shell Capacitor Android | ▶ |
 | 11 | Shell Capacitor iOS | ⏳ |
 | 12 | Sessão segura nativa | ⏳ |
 | 13 | Backend Supabase de homologação | ⏳ |
@@ -671,9 +671,9 @@ Ana responde
 
 # 17. Estado atual exato
 
-**Última rodada concluída:** Rodada 6.
+**Última rodada concluída:** Rodada 9.
 
-**Próxima rodada:** Rodada 7 — Checkout isolado.
+**Próxima rodada:** Rodada 10 — Shell Capacitor Android.
 
 Ainda não foi implementado:
 
@@ -995,6 +995,87 @@ A tela de carrinho não apresenta ação de finalização.
 
 ---
 
+# 18.3 Rodadas 7 a 9 — concluídas
+
+## Rodada 7 — Checkout isolado
+
+Implementado fluxo local:
+
+```
+cliente
+→ endereço
+→ pagamento
+→ revisão
+→ confirmação TEST-*
+```
+
+Regras:
+- carrinho vazio bloqueia checkout;
+- visitante usa nome e telefone;
+- endereço local;
+- pagamento na entrega;
+- PIX;
+- dinheiro;
+- cartão de crédito;
+- alimentação/refeição;
+- confirmação apenas após revisão;
+- gateway de fixture sem rede;
+- ID sempre `TEST-*`;
+- nenhum formulário usa action externa;
+- nenhuma persistência real.
+
+Validação:
+- 9/9 testes aprovados;
+- requisições externas = 0;
+- typecheck aprovado.
+
+## Rodada 8 — Acompanhamento fictício
+
+Status:
+- confirmed;
+- separating;
+- ready;
+- on_route;
+- delivered;
+- cancelled.
+
+Implementado:
+- repositório em memória;
+- timeline visual;
+- histórico;
+- avanço de status em modo demo;
+- estados terminais;
+- suporte interno;
+- nenhum WhatsApp automático;
+- nenhuma logística real.
+
+Validação:
+- 8/8 testes aprovados;
+- typecheck aprovado.
+
+## Rodada 9 — PWA isolada
+
+Implementado:
+- manifest próprio;
+- ícones locais;
+- service worker;
+- cache estático;
+- fallback offline;
+- cache versionado.
+
+Blindagem:
+- registro somente em `/app-dona-antonia/` ou `/hml/app-dona-antonia/`;
+- `/comprar/` nunca é controlado;
+- POST nunca é cacheado;
+- URLs com token/session/code/secret/auth nunca são cacheadas;
+- somente assets estáticos do mesmo domínio entram em cache.
+
+Validação:
+- 5/5 testes aprovados;
+- typecheck aprovado.
+
+---
+
 # 19. Próximas rodadas resumidas
 
 ## Rodada 5 — Cestas fictícias
@@ -1308,8 +1389,8 @@ Ao abrir uma nova conversa e pedir para continuar este projeto, seguir exatament
 9. Conferir qual foi o último checkpoint.
 
 10. Neste snapshot:
-    - Rodadas 0, 1, 2, 3, 4, 5 e 6 estão concluídas;
-    - próxima é a Rodada 7.
+    - Rodadas 0, 1, 2, 3, 4, 5, 6, 7, 8 e 9 estão concluídas;
+    - próxima é a Rodada 10.
 
 11. Executar TDD:
     - teste primeiro;
@@ -1377,11 +1458,14 @@ Uma rodada só pode ser marcada como concluída quando:
 - Rodada 3;
 - Rodada 4;
 - Rodada 5;
-- Rodada 6.
+- Rodada 6;
+- Rodada 7;
+- Rodada 8;
+- Rodada 9.
 
 **Próxima:**
 
-**Rodada 7 — Checkout isolado.**
+**Rodada 10 — Shell Capacitor Android.**
 
 **Produção:** intocada.
 
