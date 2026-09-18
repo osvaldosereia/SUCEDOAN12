@@ -15,6 +15,10 @@ const block=admin.slice(start,end);
 assert.match(block,/method:"GET"/);
 assert.match(block,/me\/permissions/);
 assert.match(block,/subscribed_apps/);
+assert.match(block,/override_callback_uri/);
+assert.match(block,/expectedDirectCallback/);
+assert.match(block,/whatsapp_flow_health_events/);
+assert.match(block,/flow_health_webhook_verified/);
 assert.match(block,/quality_rating/);
 assert.match(block,/meta_account_permissions/);
 assert.match(block,/meta_provider_health_snapshots/);
@@ -35,6 +39,7 @@ assert.match(api,/action:'meta_diagnostics_readonly'/);
 assert.match(ui,/data-meta-diagnostics/);
 assert.match(ui,/runMetaDiagnosticsReadonly/);
 assert.match(ui,/Verificar Meta agora/);
+assert.match(ui,/Webhook Flow health/);
 assert.match(ui,/zero ação externa/i);
 assert.match(html,/relacionamento\.js\?v=20260918-6/);
 
