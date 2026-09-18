@@ -10,6 +10,17 @@ const obj=(v:unknown)=>v&&typeof v==="object"&&!Array.isArray(v)?v:{};const arr=
 const randomState=()=>{const b=new Uint8Array(32);crypto.getRandomValues(b);return btoa(String.fromCharCode(...b)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
 const sha256Hex=async(v:string)=>{const d=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)));return [...d].map(x=>x.toString(16).padStart(2,"0")).join("")};
 const safeSecretSuffix=(v:unknown)=>clean(v,180).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,120);
+async function cleanupOAuthSessionSecrets(sb:any,sessionId:string){
+  const {data:s}=await sb.from("marketing_oauth_sessions").select("secret_refs").eq("id",sessionId).maybeSingle();
+  const refs=new Set<string>();
+  const pages=s?.secret_refs?.pages&&typeof s.secret_refs.pages==="object"?Object.values(s.secret_refs.pages):[];
+  for(const v of pages){const x=clean(v,300);if(x)refs.add(x)}
+  for(const k of ["access","refresh"]){const x=clean(s?.secret_refs?.[k],300);if(x)refs.add(x)}
+  let deleted=0;
+  for(const ref of refs){const {data}=await sb.rpc("marketing_vault_delete_secret_v1",{p_name:ref});if(data===true)deleted++}
+  await sb.from("marketing_oauth_sessions").update({secret_refs:{},updated_at:new Date().toISOString()}).eq("id",sessionId);
+  return deleted;
+}
 async function resolveMarketingChannelToken(sb:any,a:any){
   const {data:current,error:ce}=await sb.rpc("marketing_channel_secret_v1",{p_channel_account_id:a.id});
   if(ce||!current)return {token:null,error:ce?.message||"channel_credential_missing"};
@@ -55,7 +66,7 @@ if(action==="reject_asset"){if(admin.role!=="owner")return json({ok:false,error:
 if(action==="prepare_publication"){if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);const id=clean(body.asset_id,80);if(!uuid(id))return json({ok:false,error:"invalid_asset_id"},400);const {data,error}=await sb.rpc("prepare_marketing_publication_jobs_v1",{p_asset_id:id,p_actor:user.id});if(error)return json({ok:false,error:"publication_prepare_failed",detail:error.message},400);if(!data?.ok)return json(data,409);return json({ok:true,result:data,external_side_effect:false});}
 if(action==="schedule_job"){if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);const id=clean(body.job_id,80),when=clean(body.scheduled_for,80);if(!uuid(id)||!when||Number.isNaN(Date.parse(when)))return json({ok:false,error:"invalid_schedule"},400);const {data,error}=await sb.rpc("schedule_marketing_publication_v1",{p_job_id:id,p_scheduled_for:new Date(when).toISOString(),p_actor:user.id});if(error)return json({ok:false,error:"schedule_failed",detail:error.message},400);if(!data?.ok)return json(data,409);return json({ok:true,result:data,external_side_effect:false});}
 if(action==="unschedule_job"){if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);const id=clean(body.job_id,80);if(!uuid(id))return json({ok:false,error:"invalid_job_id"},400);const {data,error}=await sb.rpc("unschedule_marketing_publication_v1",{p_job_id:id,p_actor:user.id});if(error)return json({ok:false,error:"unschedule_failed",detail:error.message},400);if(!data?.ok)return json(data,409);return json({ok:true,result:data,external_side_effect:false});}
-if(action==="connection_overview"){const {data,error}=await sb.rpc("marketing_provider_connection_snapshot_v1");if(error)return json({ok:false,error:"connection_overview_failed",detail:error.message},500);return json({ok:true,connection:data,external_side_effect:false});}
+if(action==="connection_overview"){await sb.rpc("marketing_oauth_cleanup_v1");const {data,error}=await sb.rpc("marketing_provider_connection_snapshot_v1");if(error)return json({ok:false,error:"connection_overview_failed",detail:error.message},500);return json({ok:true,connection:data,external_side_effect:false});}
 if(action==="connection_save_config"){
   if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);
   const provider=clean(body.provider,30);if(!["meta","pinterest"].includes(provider))return json({ok:false,error:"invalid_provider"},400);
@@ -73,6 +84,7 @@ if(action==="connection_save_config"){
 if(action==="oauth_start"){
   if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);
   const provider=clean(body.provider,30);if(!["meta","pinterest"].includes(provider))return json({ok:false,error:"invalid_provider"},400);
+  await sb.rpc("marketing_oauth_cleanup_v1");
   const [{data:runtime,error:re},{data:snapshot,error:se}]=await Promise.all([sb.from("marketing_runtime_config").select("metadata").eq("id",1).maybeSingle(),sb.rpc("marketing_provider_connection_snapshot_v1")]);
   if(re||se)return json({ok:false,error:"oauth_config_lookup_failed",detail:re?.message||se?.message},500);
   const meta=runtime?.metadata||{},cfg=provider==="meta"?snapshot?.meta:snapshot?.pinterest;
@@ -101,18 +113,18 @@ if(action==="oauth_exchange"){
       const graphVersion=clean(meta.meta_graph_version,20),token=await exchangeMetaAuthorization({graphVersion,appId,appSecret,redirectUri:session.redirect_uri,code}),pages=await discoverMetaPages(graphVersion,token.accessToken);
       if(!pages.length){await sb.from("marketing_oauth_sessions").update({status:"failed",metadata:{...(session.metadata||{}),error:"no_manageable_pages"},updated_at:new Date().toISOString()}).eq("id",session.id);return json({ok:false,error:"no_manageable_meta_pages"},409);}
       const refs:any={},candidates:any[]=[];
-      for(const p of pages){const suffix=safeSecretSuffix(p.page_id),ref=`dona_antonia_marketing_oauth_${safeSecretSuffix(session.id)}_page_${suffix}`;const {data:put,error:pe}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:ref,p_secret:p.page_token,p_description:"Temporary Meta Page token · OAuth"});if(pe||!put?.ok)throw new Error("temp_page_token_store_failed");refs[p.page_id]=ref;candidates.push({id:p.page_id,name:p.page_name,tasks:p.tasks,instagram:p.instagram||null});}
+      for(const p of pages){const suffix=safeSecretSuffix(p.page_id),ref=`dona_antonia_marketing_oauth_${safeSecretSuffix(session.id)}_page_${suffix}`;const {data:put,error:pe}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:ref,p_secret:p.page_token,p_description:"Temporary Meta Page token · OAuth"});if(pe||!put?.ok)throw new Error("temp_page_token_store_failed");refs[p.page_id]=ref;await sb.from("marketing_oauth_sessions").update({secret_refs:{pages:refs},updated_at:new Date().toISOString()}).eq("id",session.id);candidates.push({id:p.page_id,name:p.page_name,tasks:p.tasks,instagram:p.instagram||null});}
       await sb.from("marketing_oauth_sessions").update({status:"exchanged",candidate_accounts:candidates,secret_refs:{pages:refs},metadata:{...(session.metadata||{}),token_long_lived:token.longLived,user_token_expires_in:token.expiresIn},updated_at:new Date().toISOString()}).eq("id",session.id);
       return json({ok:true,provider,session_id:session.id,candidates,auto_select:candidates.length===1,external_side_effect:false});
     }
     const token=await exchangePinterestAuthorization({appId,appSecret,redirectUri:session.redirect_uri,code}),boards=await discoverPinterestBoards(token.accessToken);
     const accessRef=`dona_antonia_marketing_oauth_${safeSecretSuffix(session.id)}_pinterest_access`,refreshRef=token.refreshToken?`dona_antonia_marketing_oauth_${safeSecretSuffix(session.id)}_pinterest_refresh`:null;
-    const {data:ap,error:ape}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:accessRef,p_secret:token.accessToken,p_description:"Temporary Pinterest access token · OAuth"});if(ape||!ap?.ok)throw new Error("temp_pinterest_token_store_failed");
-    if(refreshRef&&token.refreshToken){const {data:rp,error:rpe}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:refreshRef,p_secret:token.refreshToken,p_description:"Temporary Pinterest refresh token · OAuth"});if(rpe||!rp?.ok)throw new Error("temp_pinterest_refresh_store_failed");}
+    const {data:ap,error:ape}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:accessRef,p_secret:token.accessToken,p_description:"Temporary Pinterest access token · OAuth"});if(ape||!ap?.ok)throw new Error("temp_pinterest_token_store_failed");await sb.from("marketing_oauth_sessions").update({secret_refs:{access:accessRef,refresh:null},updated_at:new Date().toISOString()}).eq("id",session.id);
+    if(refreshRef&&token.refreshToken){const {data:rp,error:rpe}=await sb.rpc("marketing_vault_put_secret_v1",{p_name:refreshRef,p_secret:token.refreshToken,p_description:"Temporary Pinterest refresh token · OAuth"});if(rpe||!rp?.ok)throw new Error("temp_pinterest_refresh_store_failed");await sb.from("marketing_oauth_sessions").update({secret_refs:{access:accessRef,refresh:refreshRef},updated_at:new Date().toISOString()}).eq("id",session.id);}
     const expiresAt=token.expiresIn>0?new Date(Date.now()+token.expiresIn*1000).toISOString():null,refreshExpiresAt=token.refreshExpiresIn>0?new Date(Date.now()+token.refreshExpiresIn*1000).toISOString():null;
     await sb.from("marketing_oauth_sessions").update({status:"exchanged",candidate_accounts:boards,secret_refs:{access:accessRef,refresh:refreshRef},metadata:{...(session.metadata||{}),scope:token.scope,token_expires_at:expiresAt,refresh_expires_at:refreshExpiresAt},updated_at:new Date().toISOString()}).eq("id",session.id);
     return json({ok:true,provider,session_id:session.id,candidates:boards,auto_select:boards.length===1,external_side_effect:false});
-  }catch(e){await sb.from("marketing_oauth_sessions").update({status:"failed",metadata:{...(session.metadata||{}),error:clean((e as Error)?.message,400)},updated_at:new Date().toISOString()}).eq("id",session.id);return json({ok:false,error:"oauth_exchange_failed",detail:clean((e as Error)?.message,500),external_side_effect:false},400);}
+  }catch(e){await cleanupOAuthSessionSecrets(sb,session.id);await sb.from("marketing_oauth_sessions").update({status:"failed",metadata:{...(session.metadata||{}),error:clean((e as Error)?.message,400),temp_secrets_cleaned:true},updated_at:new Date().toISOString()}).eq("id",session.id);return json({ok:false,error:"oauth_exchange_failed",detail:clean((e as Error)?.message,500),external_side_effect:false},400);}
 }
 if(action==="connection_disconnect"){
   if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);
