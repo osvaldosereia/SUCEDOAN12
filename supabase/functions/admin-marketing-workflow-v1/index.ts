@@ -114,6 +114,32 @@ if(action==="oauth_exchange"){
     return json({ok:true,provider,session_id:session.id,candidates:boards,auto_select:boards.length===1,external_side_effect:false});
   }catch(e){await sb.from("marketing_oauth_sessions").update({status:"failed",metadata:{...(session.metadata||{}),error:clean((e as Error)?.message,400)},updated_at:new Date().toISOString()}).eq("id",session.id);return json({ok:false,error:"oauth_exchange_failed",detail:clean((e as Error)?.message,500),external_side_effect:false},400);}
 }
+if(action==="connection_disconnect"){
+  if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);
+  const provider=clean(body.provider,30);if(!["meta","pinterest"].includes(provider))return json({ok:false,error:"invalid_provider"},400);
+  const channels=provider==="meta"
+    ?["facebook_post","facebook_reel","facebook_story","instagram_feed","instagram_story","instagram_reel","instagram_carousel"]
+    :["pinterest_pin"];
+  const {data:rows,error:qe}=await sb.from("marketing_channel_accounts").select("id,channel,credential_ref,metadata").in("channel",channels);
+  if(qe)return json({ok:false,error:"connection_lookup_failed",detail:qe.message},500);
+  const refs=[...new Set((rows||[]).map((r:any)=>clean(r.credential_ref,300)).filter(Boolean))];
+  for(const r of rows||[]){
+    await sb.from("marketing_channel_accounts").update({
+      external_account_id:null,credential_ref:null,status:"disconnected",last_verified_at:null,token_expires_at:null,
+      metadata:{...(r.metadata||{}),disconnected_at:new Date().toISOString(),verified_identity:null,last_verification_error:null},
+      updated_at:new Date().toISOString()
+    }).eq("id",r.id);
+  }
+  for(const ref of refs)await sb.rpc("marketing_vault_delete_provider_secret_v1",{p_name:ref});
+  if(provider==="pinterest")await sb.rpc("marketing_vault_delete_provider_secret_v1",{p_name:"dona_antonia_marketing_pinterest_refresh_v1"});
+  await sb.from("marketing_events").insert({
+    entity_type:"system",entity_id:"marketing",event_type:"provider_connection_disconnected",actor_id:user.id,
+    data:{provider,channels,credential_refs_removed:refs.length},external_side_effect:false
+  });
+  const {data:snapshot,error:se}=await sb.rpc("marketing_provider_connection_snapshot_v1");
+  if(se)return json({ok:false,error:"connection_snapshot_failed",detail:se.message},500);
+  return json({ok:true,provider,connection:snapshot,external_side_effect:false});
+}
 if(action==="oauth_complete"){
   if(admin.role!=="owner")return json({ok:false,error:"owner_required"},403);
   const sessionId=clean(body.session_id,80),selectionId=clean(body.selection_id,200);if(!uuid(sessionId)||!selectionId)return json({ok:false,error:"invalid_oauth_selection"},400);
