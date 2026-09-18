@@ -1,11 +1,25 @@
 import sharp from 'sharp';
 import {createHash} from 'node:crypto';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {join} from 'node:path';
 import {artSvg,textSlideSvg,clean,num} from '../supabase/functions/admin-marketing-media-v1/marketing-art-v1.mjs';
 import {runOne as renderOneVideo} from './marketing-light-video-render-worker.mjs';
 
 export const CAMPAIGN_ID='75cd51f4-fcdc-4c39-85d9-2b6438d5ba5d';
 const ALLOWED_HOSTS=new Set(['ssbesxgaijknwsjbsbcz.supabase.co','raw.githubusercontent.com','donaantonia.com.br','www.donaantonia.com.br']);
 const MAX_SOURCE_BYTES=5*1024*1024;
+const ARTIFACT_DIR='artifacts/marketing-preview-homologation';
+mkdirSync(ARTIFACT_DIR,{recursive:true});
+const localImages=[];
+function safeFile(v){return clean(v,100).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase()||'asset'}
+function saveLocal(asset,file,bytes){
+  const role=safeFile(asset.edit_spec?.content_role||asset.media_kind||'asset');
+  const name=`${role}-${safeFile(file)}`;
+  const path=join(ARTIFACT_DIR,name);
+  writeFileSync(path,bytes);
+  localImages.push({path,label:`${role} · ${file}`});
+  return path;
+}
 
 const env=process.env;
 const base=clean(env.SUPABASE_URL,500).replace(/\/+$/,'');
@@ -67,6 +81,7 @@ async function register(asset,role,path,mime,width,height,durationMs,bytes,metad
   return {media_id:result.media_id,path,bytes:bytes.length,sha256:sha};
 }
 async function saveMedia(asset,role,file,bytes,width,height,metadata={}){
+  saveLocal(asset,file,bytes);
   const path=`${asset.id}/v${asset.version}/${file}`;
   await upload(path,bytes,'image/webp');
   return register(asset,role,path,'image/webp',width,height,null,bytes,metadata);
@@ -109,6 +124,27 @@ async function renderAsset(asset){
   }
   throw new Error(`unsupported_media_kind_${asset.media_kind}`);
 }
+async function createContactSheet(){
+  const tileW=800,tileH=720,cols=2,rows=Math.ceil(localImages.length/cols);
+  const composites=[];
+  for(let i=0;i<localImages.length;i++){
+    const item=localImages[i],x=(i%cols)*tileW,y=Math.floor(i/cols)*tileH;
+    const thumb=await sharp(item.path).resize(720,590,{fit:'contain',background:'#ffffff'}).webp({quality:82}).toBuffer();
+    const label=`<svg width="${tileW}" height="90"><rect width="100%" height="100%" fill="#ffffff"/><text x="40" y="55" font-family="DejaVu Sans,Arial,sans-serif" font-size="28" font-weight="700" fill="#173F2A">${item.label.replace(/[&<>]/g,'')}</text></svg>`;
+    composites.push({input:thumb,left:x+40,top:y+100});
+    composites.push({input:Buffer.from(label),left:x,top:y});
+  }
+  const sheet=await sharp({create:{width:tileW*cols,height:tileH*rows,channels:3,background:'#f3f4f6'}}).composite(composites).jpeg({quality:88}).toBuffer();
+  const path=join(ARTIFACT_DIR,'contact-sheet.jpg');writeFileSync(path,sheet);return path;
+}
+async function downloadVideoPreview(assetId,version){
+  const objectPath=`${assetId}/v${version}/preview-10s.mp4`;
+  const encoded=objectPath.split('/').map(encodeURIComponent).join('/');
+  const res=await fetch(`${base}/storage/v1/object/authenticated/marketing-private/${encoded}`,{headers:{apikey:key,Authorization:`Bearer ${key}`}});
+  if(!res.ok)return null;
+  const bytes=Buffer.from(await res.arrayBuffer());
+  const path=join(ARTIFACT_DIR,'reel-light-10s.mp4');writeFileSync(path,bytes);return {path,bytes:bytes.length};
+}
 async function insertEvent(type,data){
   const res=await fetch(`${base}/rest/v1/marketing_events`,{method:'POST',headers:headers({Prefer:'return=minimal'}),body:JSON.stringify({
     entity_type:'campaign',entity_id:CAMPAIGN_ID,event_type:type,data,external_side_effect:false
@@ -124,8 +160,11 @@ export async function run(){
     report.push({asset_id:asset.id,title:asset.title,media_kind:asset.media_kind,media});
   }
   const video=await renderOneVideo(env);
+  const reelAsset=assets.find(a=>a.media_kind==='video');
+  const downloadedVideo=reelAsset?await downloadVideoPreview(reelAsset.id,reelAsset.version):null;
+  const contactSheet=await createContactSheet();
   await insertEvent('pilot_visual_homologation_completed',{version:'marketing_visual_homologation_v1',asset_count:assets.length,media_count:report.reduce((n,x)=>n+x.media.length,0),video,ai_used:false,external_publish:false});
-  return {ok:true,campaign_id:CAMPAIGN_ID,assets:report,video,ai_used:false,external_publish:false};
+  return {ok:true,campaign_id:CAMPAIGN_ID,assets:report,video,downloadedVideo,contactSheet,ai_used:false,external_publish:false};
 }
 
 if(import.meta.url===`file://${process.argv[1]}`){
