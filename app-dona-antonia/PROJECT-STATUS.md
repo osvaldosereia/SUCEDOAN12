@@ -469,3 +469,175 @@ Próxima ação quando houver ambiente nativo:
 4. gerar APK debug;
 5. executar smoke test real;
 6. só então marcar Rodada 10 como concluída.
+
+
+## Checkpoint paralelo — Rodada 13 (fundação HML parcial)
+
+**Estado:** FUNDAÇÃO IMPLEMENTADA / DEPLOY DE EDGE FUNCTIONS BLOQUEADO POR QUOTA  
+**Data:** 18/09/2026
+
+Supabase HML criado de forma isolada no projeto existente, usando apenas estruturas prefixadas:
+
+- `customer_app_hml_config`;
+- `customer_app_hml_catalog`;
+- `customer_app_hml_orders`;
+- `customer_app_hml_rate_limits`.
+
+Migração aplicada e versionada:
+
+`20260918193553_customer_app_hml_foundation_v1.sql`
+
+Gates confirmados:
+- `enabled=false`;
+- `environment=homologation`;
+- limite configurado em 60 req/min;
+- 10 produtos sintéticos;
+- 0 IDs fora de `TEST-PROD-*`;
+- 0 imagens fora de placeholder;
+- RLS ativo nas quatro tabelas;
+- 0 grants para `anon`;
+- 0 grants para `authenticated`;
+- nenhuma tabela operacional foi usada pelo app HML.
+
+Código versionado para:
+- `customer-app-hml-bootstrap-v1`;
+- `customer-app-hml-catalog-v1`;
+- `customer-app-hml-checkout-v1`.
+
+As Edge Functions **não foram publicadas** porque o Supabase retornou:
+`Max number of functions reached for project`.
+
+Nenhuma função foi criada parcialmente.
+
+Cliente HML:
+- `src/platform/apiClient.ts`;
+- OFF por padrão;
+- aceita somente `TEST-CLIENT-*`;
+- rejeita IDs reais antes de rede;
+- checkout não envia cliente, telefone, CPF ou endereço;
+- 5/5 testes de contrato aprovados;
+- não conectado ao `main.ts`.
+
+Advisors:
+- nenhum finding de performance para `customer_app_hml_*`;
+- INFO `rls_enabled_no_policy` nas quatro tabelas é intencional neste estágio: os papéis públicos não têm grants e não existem policies de cliente.
+
+**Rodada 13 NÃO está marcada como concluída** até as Edge Functions poderem ser publicadas e testadas.
+
+---
+
+## Checkpoint paralelo — Rodada 20 concluída
+
+**Estado:** CONCLUÍDA EM PARALELO
+
+Entregas:
+- `networkState.ts`;
+- `recovery.ts`;
+- estado online/offline/unknown;
+- confirmação permitida somente quando online;
+- nenhum pedido é enfileirado silenciosamente;
+- recovery aceita apenas ações seguras de leitura/navegação;
+- falha de rede do cliente HML é classificada sem retry automático;
+- reconexão não duplica pedido;
+- carrinho local permanece intacto;
+- aviso offline permanece visível mesmo com conteúdo em cache.
+
+Validação:
+- 6/6 testes offline/reconexão aprovados;
+- 1 teste adicional do shell garante aviso offline + conteúdo cacheado;
+- typecheck dos módulos novos aprovado.
+
+---
+
+## Checkpoint paralelo — Rodada 21 parcial
+
+**Estado:** CAMADA LOCAL PRONTA / BACKEND BLOQUEADO PELA QUOTA DE EDGE FUNCTIONS
+
+Entregas locais:
+- `telemetry.ts`;
+- registry fechado de eventos operacionais;
+- OFF por padrão;
+- sem SDK de Ads/Analytics;
+- rejeita telefone, CPF, endereço, texto livre, query de busca, IDFA e GAID;
+- busca guarda apenas tamanho da consulta e quantidade de resultados;
+- envelope inclui apenas versão do app, plataforma e timestamp;
+- 6/6 testes aprovados.
+
+Pendente:
+- Edge Function de telemetria;
+- persistência HML;
+- health/counters de pairing, deep link e push.
+
+A Rodada 21 permanece parcial.
+
+---
+
+## Checkpoint paralelo — Rodada 22 parcial
+
+**Estado:** HARDENING LOCAL EXECUTADO / DEPENDÊNCIAS FUTURAS PENDENTES
+
+Entregas:
+- `urlPolicy.ts`;
+- URLs rejeitam telefone, CPF, endereço, credenciais, token/sessão/segredo;
+- cliente HML exige HTTPS remoto;
+- novos padrões de segredo no scanner:
+  - `sb_secret_*`;
+  - `SUPABASE_SECRET_KEY`;
+  - `OPENAI_API_KEY`;
+  - `META_APP_SECRET`;
+  - `BLING_CLIENT_SECRET`;
+- testes XSS em conversa, catálogo e cestas;
+- `SECURITY-CHECKLIST.md`;
+- correção do guardrail para permitir somente a linha de negação do service worker a `/comprar/`, sem permitir links runtime ao Comprar.
+
+Validação:
+- 10/10 testes de segurança aprovados;
+- 3/3 verificações específicas da exceção segura do service worker aprovadas;
+- typecheck aprovado com a configuração real `DOM.Iterable`.
+
+Pendente antes de concluir Rodada 22:
+- sessão nativa;
+- pairing;
+- deep links nativos;
+- push;
+- uploads;
+- inspeção final APK/AAB/IPA.
+
+---
+
+## Checkpoint paralelo — Rodada 23 parcial
+
+**Estado:** BASE DE ACESSIBILIDADE MELHORADA / TESTE EM APARELHOS PENDENTE
+
+Entregas:
+- autocomplete de nome, telefone e endereço;
+- inputmode adequado;
+- `prefers-contrast: more`;
+- `forced-colors`;
+- aviso offline com `role=status`;
+- conteúdo cacheado continua disponível;
+- `UX-CHECKLIST.md`.
+
+Validação:
+- 4/4 testes estruturais de acessibilidade aprovados;
+- base 320 px, foco visível e reduced-motion confirmados.
+
+Pendente:
+- VoiceOver;
+- TalkBack;
+- fonte/zoom 200% em browser real;
+- teclado virtual;
+- Android de entrada;
+- medições reais de bundle/renderização.
+
+A Rodada 23 permanece parcial.
+
+---
+
+## Estado consolidado após avanço paralelo
+
+**Concluídas integralmente:** Rodadas 0–9 e Rodada 20.  
+**Parcialmente avançadas:** Rodadas 13, 21, 22 e 23.  
+**Próxima sequencial:** Rodada 10 — Android, bloqueada por toolchain nativa.  
+**Produção:** continua OFF e intocada.  
+**Comprar atual:** continua intocado.
