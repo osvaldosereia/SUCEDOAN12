@@ -167,7 +167,20 @@ Deno.serve(async(req:Request)=>{
   }
 
   if(action==="customers"){
-    const page=Math.max(1,integer(body?.page,1,100000)),limit=Math.min(100,Math.max(10,integer(body?.limit,10,100))),from=(page-1)*limit,to=from+limit-1,q=safeSearch(body?.q);let query=sb.from("customers").select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,order_count,lifetime_value,last_order_at,created_at,updated_at",{count:"exact"}).range(from,to).order("name",{ascending:true,nullsFirst:false});if(q)query=query.or(`name.ilike.%${q}%,cpf_cnpj.ilike.%${q}%,primary_whatsapp_e164.ilike.%${q}%`);const {data,error,count}=await query;if(error)return respond({ok:false,error:"customers_failed",detail:error.message},400);return respond({ok:true,customers:data||[],total:count||0,page,limit});
+    const page=Math.max(1,integer(body?.page,1,100000)),limit=Math.min(100,Math.max(10,integer(body?.limit,10,100))),from=(page-1)*limit,to=from+limit-1,q=safeSearch(body?.q);
+    const allowedSegments=new Set(["primeiro_comprador","recorrente","mensal","inativo","alto_valor","comprador_cesta","produtos_avulsos","cesta_favorita","proximo_recompra"]);
+    const segment=clean(body?.segment,80);
+    let segmentIds:string[]|null=null;
+    if(segment&&allowedSegments.has(segment)){
+      const {data:segmentRows,error:segmentError}=await sb.from("customer_commercial_segments_v1").select("customer_id").contains("segments",[segment]).limit(2000);
+      if(segmentError)return respond({ok:false,error:"customer_segments_filter_failed",detail:segmentError.message},400);
+      segmentIds=(segmentRows||[]).map((row:any)=>row.customer_id).filter(Boolean);
+      if(!segmentIds.length)return respond({ok:true,customers:[],total:0,page,limit,segment});
+    }
+    let query=sb.from("customers").select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,order_count,lifetime_value,last_order_at,created_at,updated_at",{count:"exact"}).range(from,to).order("name",{ascending:true,nullsFirst:false});
+    if(segmentIds)query=query.in("id",segmentIds);
+    if(q)query=query.or(`name.ilike.%${q}%,cpf_cnpj.ilike.%${q}%,primary_whatsapp_e164.ilike.%${q}%`);
+    const {data,error,count}=await query;if(error)return respond({ok:false,error:"customers_failed",detail:error.message},400);return respond({ok:true,customers:data||[],total:count||0,page,limit,segment:segment||null});
   }
 
   if(action==="customer"){
