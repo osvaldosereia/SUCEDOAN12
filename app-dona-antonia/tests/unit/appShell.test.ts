@@ -65,3 +65,16 @@ test('order bar reflects dynamic cart count and total', () => {
   assert.match(html, /R\$ 279,70/);
   assert.match(html, /Ver pedido/);
 });
+
+
+test('offline warning remains visible while cached tool content stays available', () => {
+  const html = renderAppShell({
+    route: 'catalog',
+    state: 'offline',
+    toolHtml: '<div data-cached-tool>Catálogo em cache</div>',
+  });
+
+  assert.match(html, /Sem conexão/);
+  assert.match(html, /data-cached-tool/);
+  assert.match(html, /Catálogo em cache/);
+});
