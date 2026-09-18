@@ -159,17 +159,36 @@ function renderTemplates(){
   $('#templatesView').innerHTML=table(['Template','Categoria','Versão','Local','Validação','Meta','IA'],rows);
 }
 function renderMeta(){
-  const m=state.overview?.summary?.meta||{},a=(m.accounts||[])[0]||{},p=state.overview?.summary?.provider_adapters||{},adapter=(p.adapters||[])[0]||{};
+  const summary=state.overview?.summary||{};
+  const m=summary.meta||{},a=(m.accounts||[])[0]||{},policy=summary.meta_policy_registry||{},direct=summary.meta_direct_readiness||{},p=summary.provider_adapters||{},adapter=(p.adapters||[])[0]||{};
+  const blockers=Array.isArray(direct.blocking_reasons)?direct.blocking_reasons:[];
+  const blockerLabels={
+    graph_api_version_unverified:'Versão da Graph API não verificada',
+    permissions_unverified_or_blocking:'Permissões Meta não verificadas',
+    webhook_not_verified:'Webhook ainda não homologado',
+    direct_ready_flag_false:'Flag Meta Direct permanece fechada',
+    waba_missing:'WABA ausente',
+    phone_number_id_missing:'Phone Number ID ausente',
+    outbound_must_remain_disabled:'Outbound deve permanecer desligado'
+  };
   $('#metaView').innerHTML=`<div class="quality-grid">
     <div class="quality-box"><h3>Conta WhatsApp</h3><div class="metric-list">${[
-      ['Nome',a.display_name||'—'],['Telefone',a.phone_e164||'—'],['Readiness',a.readiness_state||'—'],['Provider',a.capabilities?.provider_current||'—'],['Meta Direct',a.capabilities?.meta_direct_ready?'Pronto':'Não pronto'],['Outbound',a.outbound_enabled?'Ligado':'Desligado']
+      ['Nome',a.display_name||'—'],['Telefone',a.phone_e164||'—'],['Readiness',a.readiness_state||'—'],['Provider',a.capabilities?.provider_current||'—'],['Meta Direct',direct.ready===true?'Pronto':'Não pronto'],['Outbound',a.outbound_enabled?'Ligado':'Desligado']
     ].map(x=>metric(x[0],x[1])).join('')}</div></div>
-    <div class="quality-box"><h3>Política e templates</h3><div class="metric-list">${[
-      ['Políticas ativas',n(m.policy_registry?.active||0)],['Políticas p/ revisão',n(m.policy_registry?.needs_review||0)],['Templates',n(a.template_count||0)],['Aprovados Meta',n(a.approved_templates||0)],['Pendentes',n(a.pending_templates||0)],['Erros abertos',n(m.unresolved_errors||0)]
+    <div class="quality-box"><h3>Policy Registry</h3><div class="metric-list">${[
+      ['Readiness técnico',policy.ready===true?'8/8 pronto':'Revisão necessária'],['Políticas obrigatórias',n(policy.required_count||m.policy_registry?.total||0)],['Ativas',n(policy.active_required_count||m.policy_registry?.active||0)],['Stale',n(policy.stale_count||0)],['Sem fonte',n(policy.without_source_count||0)],['Fail-closed',Number(policy.not_fail_closed_count||0)===0?'OK':'Revisar']
+    ].map(x=>metric(x[0],x[1])).join('')}</div></div>
+    <div class="quality-box"><h3>Templates</h3><div class="metric-list">${[
+      ['Templates',n(a.template_count||0)],['Aprovados Meta',n(a.approved_templates||0)],['Pendentes',n(a.pending_templates||0)],['Erros abertos',n(m.unresolved_errors||0)],['Runtime ativos',n(a.enabled_templates||0)],['Policy revisão',n(m.policy_registry?.needs_review||0)]
     ].map(x=>metric(x[0],x[1])).join('')}</div></div>
     <div class="quality-box"><h3>Adapter temporário</h3><div class="metric-list">${[
       ['Provider',adapter.provider_key||'—'],['Status',adapter.status||'—'],['Inbound',adapter.inbound_mode||'—'],['Outbound',adapter.outbound_mode||'—'],['Leitura tags',adapter.tag_read_state||'—'],['Escrita tags',adapter.tag_write_state||'—']
     ].map(x=>metric(x[0],x[1])).join('')}</div></div>
+  </div>
+  <div class="meta-preflight-box">
+    <div class="section-title"><div><h2>Bloqueios do Meta Direct</h2><p>Read-only. Estes itens precisam de evidência real; esta tela não ativa nada.</p></div>${chip(direct.ready===true?'Pronto':'Bloqueado',direct.ready===true?'ok':'warn')}</div>
+    ${blockers.length?`<div class="meta-blocker-list">${blockers.map(key=>`<div class="meta-blocker-row"><span>•</span><strong>${esc(blockerLabels[key]||humanKey(key))}</strong><small>${esc(key)}</small></div>`).join('')}</div>`:empty('Nenhum blocker técnico reportado. Isso não equivale a autorização externa.')}
+    <p class="identity-review-footnote">Policy Registry técnico pronto não altera o gate humano. Ativação externa continua não autorizada.</p>
   </div>`;
 }
 function maskedPhone(value){
