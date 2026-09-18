@@ -21,6 +21,7 @@ export interface ConversationStore {
   subscribe(listener: (snapshot: ConversationSnapshot) => void): () => void;
   assistantSay(text: string, options?: AssistantSayOptions): Promise<void>;
   userDecision(replyId: string): boolean;
+  userSay(text: string): void;
   setReplies(replies: QuickReply[]): void;
 }
 
@@ -119,6 +120,22 @@ export function createConversationStore(
       ];
       emit();
       return true;
+    },
+
+    userSay(text) {
+      const normalized = text.trim();
+      if (!normalized) return;
+
+      messages = [
+        ...messages,
+        {
+          id: idFactory(),
+          role: 'user',
+          text: normalized,
+          createdAt: now(),
+        },
+      ];
+      emit();
     },
 
     setReplies,
