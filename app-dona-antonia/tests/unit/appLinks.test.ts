@@ -30,3 +30,7 @@ test('deep links reject PII and session material', () => {
 test('order link requires an opaque token, not a short predictable id', () => {
   assert.equal(parseAppLink('/app/pedido/1234'),null);
 });
+
+test('deep links fail closed on malformed percent-encoding', () => {
+  assert.equal(parseAppLink('/app/cestas/%E0%A4%A'),null);
+});
