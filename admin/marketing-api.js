@@ -34,6 +34,10 @@ async function secureCall(functionName,body,timeoutMs=18000){
 export const getMarketingOverview=()=>secureCall(CONFIG.marketingInsightsFunction,{action:'overview'});
 export const getMarketingMetrics=(days=30)=>secureCall(CONFIG.marketingInsightsFunction,{action:'metrics',days});
 export const getMarketingWorkflow=()=>secureCall(CONFIG.marketingWorkflowFunction,{action:'workflow_overview'});
+export const getMarketingEditorialPlan=(days=14)=>secureCall(CONFIG.marketingInsightsFunction,{action:'editorial_plan',days});
+export const getMarketingTrackingPreview=(assetId,channel,destination=null)=>secureCall(CONFIG.marketingInsightsFunction,{action:'tracking_preview',asset_id:assetId,channel,destination});
+export const getMarketingLearning=(days=90)=>secureCall(CONFIG.marketingInsightsFunction,{action:'learning',days});
+export const getMarketingDailyPlanPreview=()=>secureCall(CONFIG.marketingInsightsFunction,{action:'daily_plan_preview'});
 export const getMarketingShortlist=()=>secureCall(CONFIG.marketingBrainFunction,{action:'shortlist'});
 export const getMarketingCustomerOpportunities=(limit=40)=>secureCall(CONFIG.marketingBrainFunction,{action:'opportunity_list',limit});
 export const getMarketingStrategyBriefs=(opportunityId=null,limit=50)=>secureCall(CONFIG.marketingBrainFunction,{action:'opportunity_briefs',opportunity_id:opportunityId,limit});
