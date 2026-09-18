@@ -6,6 +6,15 @@
 **PR:** #396 — draft — NÃO MERGEAR  
 **Estado:** OFF / ISOLADO / NÃO PUBLICADO
 
+## Preflight nativo automatizado — 18/09/2026
+
+- `scripts/native-toolchain-preflight.mjs` criado;
+- scripts npm `native:preflight`, `native:require:android`, `native:require:ios`;
+- 3/3 testes verdes;
+- ambiente observado: Node/npm/Java disponíveis; Capacitor instalado localmente, Android SDK/ADB e Xcode ausentes;
+- Android e iOS retornam `readyForNativeBuild=false`;
+- R10/R11 continuam bloqueadas com evidência automática, sem build fictício.
+
 ## R13 HML — hardening adicional aplicado — 18/09/2026
 
 - migração `20260918204500_customer_app_hml_cart_integrity_v2.sql` aplicada;
