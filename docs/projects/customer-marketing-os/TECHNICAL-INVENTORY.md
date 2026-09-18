@@ -46,6 +46,19 @@ Antes de alterar qualquer Edge Function, consultar o código implantado e o arqu
 ### Protection
 - `evaluate_customer_contact_eligibility_v1`
 
+### Identity review
+Backend `customer-intelligence-v1`:
+- action `identity_conflicts`;
+- action `identity_review`;
+- revisão exige justificativa;
+- `review_only_no_merge`;
+- `external_side_effect=false`.
+
+Admin:
+- `getIdentityConflicts()`;
+- `reviewIdentityConflict()`;
+- fila visual em Qualidade dos Dados.
+
 ### Opportunity
 - `evaluate_customer_opportunities_v1`
 
