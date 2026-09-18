@@ -22,6 +22,11 @@ assert.match(migration,/external_side_effect',false/);
 assert.match(migration,/external_activation_authorized',false/);
 assert.match(migration,/revoke all on function public\.meta_policy_registry_readiness_v1\(\)/);
 assert.match(migration,/grant execute on function public\.meta_policy_registry_readiness_v1\(\)[\s\S]*to service_role/);
+assert.match(migration,/whatsapp_regulated_verticals_fail_closed',2/);
+assert.match(migration,/independentemente de licenças, registros ou outras aprovações/);
+assert.match(migration,/"license_override":false/);
+assert.match(migration,/"prohibited_goods_must_be_blocked":true/);
+assert.doesNotMatch(migration,/"license_check_when_applicable":true/);
 assert.doesNotMatch(migration,/update public\.channel_accounts|update public\.whatsapp_direct_config|outbound_enabled\s*=\s*true|release_mode\s*=\s*'live'/i);
 
 console.log('cm-1 meta policy registry contract ok');
