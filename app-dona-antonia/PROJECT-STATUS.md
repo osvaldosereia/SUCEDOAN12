@@ -53,7 +53,7 @@ Documento:
 
 Total: 27 rodadas numeradas de 0 a 26.
 
-**Próxima rodada permitida:** Rodada 0 — Blindagem e governança.
+**Próxima rodada permitida:** Rodada 4 — Catálogo fictício e navegação.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
 
@@ -182,3 +182,14 @@ Limitação mantida:
 **Próxima rodada autorizável:** Rodada 4 — Catálogo fictício e navegação.
 
 O projeto permanece OFF, não publicado e sem conexão com produção.
+
+
+## Memória operacional oficial
+
+O documento principal para retomada em novas janelas está salvo na `main`:
+
+`docs/projects/APP-DONA-ANTONIA-MASTER.md`
+
+Ao retomar o projeto, este arquivo deve ser lido primeiro, seguido do design, plano de rodadas e deste `PROJECT-STATUS.md`.
+
+**Snapshot atual:** Rodadas 0–3 concluídas; próxima Rodada 4.
