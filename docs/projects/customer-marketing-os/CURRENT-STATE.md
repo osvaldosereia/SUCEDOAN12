@@ -371,3 +371,30 @@ Teste permanente:
 - external activation: não autorizada.
 
 Próxima evidência humana segura: entrar na Central de Relacionamento, aba **Meta Foundation**, e usar **Verificar Meta agora**. Essa ação é read-only na Meta e apenas persiste a evidência no Supabase.
+
+
+## Meta webhook — evidência separada corretamente
+
+Checkpoint detalhado:
+
+`docs/projects/customer-marketing-os/CM1-HOMOLOGATION-META-WEBHOOK-V2.md`
+
+Estado comprovado:
+
+- 669 eventos de Flow health assinados nos últimos 14 dias;
+- 9 flows distintos;
+- último evento assinado: 18/09/2026 15:22:41 UTC;
+- `signature_verified=true`;
+- Flow health webhook: **verified**;
+- Meta Direct callback: **pending**;
+- preflight continua `webhook_ready=false`.
+
+Preparação técnica concluída:
+
+- `admin-whatsapp-direct-v1` v7;
+- `whatsapp-meta-direct-v1` v3;
+- Direct ingress preserva Flow health mesmo quando Direct está OFF;
+- Direct ingress registra somente evidência enquanto `enabled=false` / `release_mode=off`;
+- nenhuma mudança foi feita na configuração externa da Meta.
+
+CI da rodada anterior do diagnóstico read-only passou integralmente. O novo contrato de ingress fail-closed está coberto por `scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs`.
