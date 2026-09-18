@@ -928,3 +928,30 @@ Validação direta no banco:
 - advisors: nenhum finding de performance para `customer_app_hml_*`; somente INFO `rls_enabled_no_policy`, esperado porque não há grants públicos.
 
 R13 continua PARCIAL porque as Edge Functions HML ainda não podem ser publicadas/testadas devido à quota. Nenhuma função existente foi apagada e nenhum plano/spend cap foi alterado.
+
+---
+
+# R10/R11 — PRECHECK NATIVO AUTOMATIZADO — 18/09/2026
+
+Foi criado `scripts/native-toolchain-preflight.mjs` e scripts npm:
+- `native:preflight`;
+- `native:require:android`;
+- `native:require:ios`.
+
+O evaluator possui 3/3 testes verdes e falha fechado quando faltam requisitos.
+
+Resultado real no ambiente de validação:
+- Node 22.16.0: disponível;
+- npm 10.9.2: disponível;
+- Java 21: disponível;
+- dependências Capacitor instaladas: não;
+- Android SDK configurado: não;
+- ADB: não;
+- Xcode: não.
+
+Consequência:
+- Android `readyForNativeBuild=false`;
+- iOS `readyForNativeBuild=false`;
+- R10/R11 permanecem bloqueadas e não foram artificialmente avançadas.
+
+Documento: `docs/homologation/NATIVE-TOOLCHAIN-PREFLIGHT.md`.
