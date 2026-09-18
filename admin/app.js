@@ -50,7 +50,16 @@ const customerInitials=name=>{const words=String(name||'Cliente').trim().split(/
 function identitySummaryMarkup(){
   if(!secureCustomersEnabled())return '';
   const pending=identityConflictsState.length;
-  return `<section class="panel"><div class="page-head"><div><h2>Identidade do cliente</h2><p class="muted">Resolver determinístico em modo seguro. Conflitos nunca são escolhidos automaticamente.</p></div><div class="page-actions"><button class="secondary" type="button" data-open-identity-conflicts ${pending?'':'disabled'}>Revisar conflitos (${esc(pending)})</button></div></div><div class="stats-grid"><article class="stat-card"><span>Identidades de canal</span><strong>${esc(identityReadinessState.channel_identities||0)}</strong></article><article class="stat-card"><span>Identidades ligadas</span><strong>${esc(identityReadinessState.linked_channel_identities||0)}</strong></article><article class="stat-card"><span>Verificadas</span><strong>${esc(identityReadinessState.verified_channel_identities||0)}</strong></article><article class="stat-card"><span>Avaliações</span><strong>${esc(identityReadinessState.evaluations||0)}</strong></article></div></section>`;
+  const total=Number(identityReadinessState.channel_identities||0);
+  const linked=Number(identityReadinessState.linked_channel_identities||0);
+  const verified=Number(identityReadinessState.verified_channel_identities||0);
+  const coverage=total?Math.round(linked/total*100):0;
+  return `<section class="customer-identity-strip">
+    <div class="customer-identity-icon">ID</div>
+    <div class="customer-identity-copy"><strong>Identidade dos clientes</strong><small>${esc(linked)} de ${esc(total)} identidades vinculadas · ${esc(coverage)}% de cobertura · ${esc(verified)} verificadas</small></div>
+    <span class="customer-identity-conflicts ${pending?'has-conflict':'is-clear'}">${pending?`${esc(pending)} conflito(s) para revisar`:'Nenhum conflito pendente'}</span>
+    <button class="secondary" type="button" data-open-identity-conflicts ${pending?'':'disabled'}>Revisar</button>
+  </section>`;
 }
 
 function identityConflictsMarkup(){
