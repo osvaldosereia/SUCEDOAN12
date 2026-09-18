@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const migration=read('supabase/migrations/20260918183416_marketing_connection_manager_oauth_v1.sql');
+const hardening=read('supabase/migrations/20260918185019_marketing_connection_manager_hardening_v2.sql');
 const workflow=read('supabase/functions/admin-marketing-workflow-v1/index.ts');
 const oauth=read('supabase/functions/admin-marketing-workflow-v1/marketing-oauth-v1.ts');
 const admin=read('admin/marketing.js');
@@ -37,6 +38,7 @@ test('Meta OAuth requires explicit graph version and minimum publishing scopes',
   assert.doesNotMatch(admin,/graph_version\|\|'v26\.0'/);
   assert.match(workflow,/graph_version/);
   for(const scope of ['pages_show_list','pages_read_engagement','pages_manage_posts','instagram_basic','instagram_content_publish'])assert.ok(migration.includes("'"+scope+"'"),scope);
+  assert.match(hardening,/meta_graph_version_source'.*'manual_required'/s);
   assert.match(oauth,/www\.facebook\.com\/\$\{version\}\/dialog\/oauth/);
   assert.match(oauth,/\/me\/accounts/);
   assert.match(oauth,/instagram_business_account/);
@@ -112,4 +114,12 @@ test('OAuth hardening cleans temp refs incrementally',()=>{
   assert.match(workflow,/secret_refs:\{pages:refs\}/);
   assert.match(workflow,/secret_refs:\{access:accessRef,refresh:null\}/);
   assert.match(workflow,/temp_secrets_cleaned:true/);
+});
+
+
+test('Pinterest hardening requests board write and cleanup is private',()=>{
+  for(const scope of ['boards:read','boards:write','pins:read','pins:write'])assert.ok(hardening.includes("'"+scope+"'"),scope);
+  assert.match(hardening,/marketing_oauth_cleanup_v1/);
+  assert.match(hardening,/revoke all on function public\.marketing_oauth_cleanup_v1\(\)[\s\S]*from public,anon,authenticated/);
+  assert.match(hardening,/grant execute on function public\.marketing_oauth_cleanup_v1\(\)[\s\S]*to service_role/);
 });
