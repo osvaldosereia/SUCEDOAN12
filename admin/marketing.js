@@ -28,6 +28,10 @@ function renderOpportunities(){
   const meta=state.overview?.runtime?.metadata||{};
   const gate=$('#strategyGate');
   gate.textContent=meta.strategy_ai_enabled===true?'IA estratégica habilitada':'IA estratégica bloqueada · custo zero';
+  const readiness=state.shortlist?.readiness||{};
+  if(readiness.total_products!=null){
+    $('#opportunityStatus').textContent=`${Number(readiness.marketing_ready||0)} produtos prontos para marketing · ${Number(readiness.blocked||0)} bloqueados por dados/política · readiness médio ${Number(readiness.avg_readiness_score||0).toFixed(0)}%`;
+  }
   if(!items.length){$('#opportunityList').innerHTML=empty('Nenhum produto elegível encontrado.');return}
   $('#opportunityList').innerHTML=`<div class="opportunity-grid">${items.slice(0,8).map(p=>{
     const img=safeUrl(p.image_url);
@@ -38,7 +42,7 @@ function renderOpportunities(){
         <h3>${esc(p.name)}</h3>
         <div class="opportunity-meta">${esc([p.brand,p.category,p.subcategory].filter(Boolean).join(' · '))}</div>
         <div class="opportunity-price">${offer?`<span class="old-price">${esc(brl(p.price))}</span>`:''}<strong>${esc(brl(p.effective_price))}</strong></div>
-        <div class="opportunity-foot"><span>Estoque ${esc(p.stock)}</span><span class="score-pill">score ${esc(p.score)}</span></div>
+        <div class="opportunity-foot"><span>Estoque ${esc(p.stock)}</span><span>Readiness ${esc(p.readiness_score||'—')}%</span><span class="score-pill">score ${esc(p.score)}</span></div>
       </div>
     </article>`;
   }).join('')}</div>`;
