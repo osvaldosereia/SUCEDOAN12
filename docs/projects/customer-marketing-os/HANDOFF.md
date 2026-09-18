@@ -534,3 +534,42 @@ Portanto:
 - o botão **Meta Foundation → Verificar Meta agora** continua sendo a prova humana/read-only específica do token WhatsApp guardado no Supabase;
 - não misturar consentimento OAuth social com homologação de Meta Direct;
 - `external_activation_authorized=false` permanece inalterado.
+
+
+## Diagnóstico Meta — correção do token de leitura
+
+Atualização de 18/09/2026 após teste humano da Central de Relacionamento.
+
+O clique **Meta Foundation → Verificar Meta agora** foi executado no canary e revelou o erro real `meta_credentials_missing`.
+
+Diagnóstico confirmado:
+
+- o frontend estava chamando corretamente `admin-whatsapp-direct-v1`;
+- nenhuma evidência nova foi persistida porque a Edge Function não encontrou `META_WHATSAPP_ACCESS_TOKEN`;
+- o Vault tinha App Secret e secrets de Flow/webhook, porém não tinha um access token WhatsApp Cloud API;
+- uma credencial Meta histórica continua protegida em keychain do Make, mas não será usada como runtime nem como proxy operacional.
+
+Correção implementada:
+
+- `admin-whatsapp-direct-v1` implantada em **v8**;
+- diagnóstico read-only continua preferindo `META_WHATSAPP_ACCESS_TOKEN` se existir como Edge Secret;
+- somente para o diagnóstico read-only, foi adicionado fallback para o Vault em `dona_antonia_whatsapp_access_token_v1`;
+- função SQL `get_customer_os_vault_secret_v1(text)` criada com execução restrita a `service_role`;
+- o fallback do Vault **não altera** `secureReady()` e não habilita outbound/runtime de envio;
+- erros do diagnóstico passaram a ficar visíveis dentro da própria aba Meta Foundation;
+- cache do canary avançado para `relacionamento.js?v=20260918-7`;
+- teste contratual atualizado para cobrir Vault + UI de erro;
+- `external_activation_authorized=false` e Meta Direct continuam fechados.
+
+Estado do secret no fechamento desta rodada:
+
+- `dona_antonia_whatsapp_access_token_v1`: **não configurado**.
+
+Próximo gate humano específico:
+
+1. criar/obter um System User access token do aplicativo Meta correto com `whatsapp_business_management` e `whatsapp_business_messaging`;
+2. armazená-lo diretamente no Supabase Vault com o nome `dona_antonia_whatsapp_access_token_v1`;
+3. recarregar o canary e executar **Verificar Meta agora** novamente;
+4. conferir no Supabase `meta_account_permissions`, `meta_provider_health_snapshots` e `evaluate_meta_direct_readiness_v1(...)`.
+
+Nenhum token deve ser colado em documentação, commit ou chat.
