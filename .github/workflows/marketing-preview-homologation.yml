@@ -47,3 +47,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/marketing-preview-homologation.mjs
+
+      - name: Upload visual inspection artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: marketing-preview-homologation
+          path: artifacts/marketing-preview-homologation/
+          if-no-files-found: warn
+          retention-days: 7
