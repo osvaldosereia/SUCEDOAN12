@@ -30,6 +30,7 @@ on:
       - 'supabase/migrations/*cm_1_11*'
       - 'supabase/migrations/*cm_1_12*'
       - 'supabase/migrations/*cm_1_13*'
+      - 'supabase/migrations/*cm_1_14*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -52,6 +53,7 @@ on:
       - 'scripts/test-cm-1-11-marketing-brain-observe-suggest.mjs'
       - 'scripts/test-cm-1-12-meta-foundation.mjs'
       - 'scripts/test-cm-1-13-template-draft-assistant.mjs'
+      - 'scripts/test-cm-1-14-papoai-adapter.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
       - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
@@ -85,6 +87,7 @@ on:
       - 'supabase/migrations/*cm_1_11*'
       - 'supabase/migrations/*cm_1_12*'
       - 'supabase/migrations/*cm_1_13*'
+      - 'supabase/migrations/*cm_1_14*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -107,6 +110,7 @@ on:
       - 'scripts/test-cm-1-11-marketing-brain-observe-suggest.mjs'
       - 'scripts/test-cm-1-12-meta-foundation.mjs'
       - 'scripts/test-cm-1-13-template-draft-assistant.mjs'
+      - 'scripts/test-cm-1-14-papoai-adapter.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
       - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
@@ -200,6 +204,8 @@ jobs:
         run: node scripts/test-cm-1-12-meta-foundation.mjs
       - name: Validar Template Draft Assistant
         run: node scripts/test-cm-1-13-template-draft-assistant.mjs
+      - name: Validar PapoAI Adapter
+        run: node scripts/test-cm-1-14-papoai-adapter.mjs
       - name: Validar Customer OS canary
         run: node scripts/test-customer-os-canary-v1.mjs
       - name: Validar redesign Customer 360
