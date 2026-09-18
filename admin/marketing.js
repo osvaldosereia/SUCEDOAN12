@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,getMarketingCustomerOpportunities,getMarketingStrategyBriefs,observeMarketingOpportunity,suggestMarketingOpportunity,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft,renderMarketingPreview,getMarketingMediaUrl,queueMarketingLightVideo,submitMarketingAssetReview,approveMarketingAsset,rejectMarketingAsset,prepareMarketingPublication,saveMarketingAssetEdit,forkMarketingAsset,getWhatsAppTemplateLibrary,getWhatsAppTemplateVersions,validateWhatsAppTemplateDraft,saveWhatsAppTemplateDraft,createAiWhatsAppTemplateDraft} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -322,6 +322,146 @@ function renderChannelAccounts(){
   </div>`;
 }
 
+
+function templateIssueLabel(v){
+  return ({
+    meta_policy_registry_not_yet_verified:'Política Meta ainda não verificada no registro',
+    marketing_template_requires_consent_and_customer_protection:'Marketing depende de consentimento e Customer Protection',
+    many_variables_review_recommended:'Muitas variáveis: revisar manualmente',
+    template_key_invalid:'Chave interna inválida',
+    body_required:'Texto obrigatório',
+    body_exceeds_local_limit:'Texto acima do limite local',
+    category_invalid:'Categoria inválida',
+    language_code_invalid:'Código de idioma inválido',
+    media_kind_invalid:'Tipo de mídia inválido',
+    buttons_must_be_array:'Botões precisam estar em lista JSON',
+    variable_syntax_invalid:'Sintaxe de variável inválida',
+    variable_sequence_has_gap:'Variáveis precisam seguir sequência {{1}}, {{2}}…'
+  })[String(v||'')]||String(v||'').replace(/_/g,' ');
+}
+
+function parseTemplateButtons(form){
+  const raw=String(new FormData(form).get('buttons_json')||'[]').trim()||'[]';
+  let buttons;
+  try{buttons=JSON.parse(raw)}catch{throw new Error('O campo Botões precisa ser um JSON válido.')}
+  if(!Array.isArray(buttons))throw new Error('O campo Botões precisa ser uma lista JSON.');
+  return buttons;
+}
+
+function templateFormPayload(){
+  const form=$('#templateDraftForm');
+  const data=new FormData(form);
+  return {
+    template_key:String(data.get('template_key')||'').trim().toLowerCase(),
+    meta_template_name:String(data.get('meta_template_name')||'').trim(),
+    category:String(data.get('category')||'UTILITY').trim(),
+    language_code:String(data.get('language_code')||'pt_BR').trim(),
+    purpose:String(data.get('purpose')||'').trim(),
+    body_text:String(data.get('body_text')||'').trim(),
+    media_kind:String(data.get('media_kind')||'none').trim(),
+    media_url:String(data.get('media_url')||'').trim(),
+    buttons:parseTemplateButtons(form),
+    strategy_brief_id:String(data.get('strategy_brief_id')||'').trim()||null,
+    creative_asset_id:String(data.get('creative_asset_id')||'').trim()||null,
+    notes:String(data.get('notes')||'').trim(),
+    change_note:String(data.get('change_note')||'').trim()
+  };
+}
+
+function resetTemplateDraftForm(){
+  const form=$('#templateDraftForm');if(!form)return;
+  form.reset();
+  form.elements.language_code.value='pt_BR';
+  form.elements.category.value='UTILITY';
+  form.elements.media_kind.value='none';
+  form.elements.buttons_json.value='[]';
+  form.elements.template_key.readOnly=false;
+  form.elements.editing_key.value='';
+  $('#templateDraftStatus').textContent='';
+}
+
+function editTemplateDraft(key){
+  const lib=state.templateLibrary||{};
+  const t=(lib.templates||[]).find(x=>x.template_key===key);if(!t)return;
+  const form=$('#templateDraftForm');
+  form.elements.editing_key.value=t.template_key||'';
+  form.elements.template_key.value=t.template_key||'';
+  form.elements.template_key.readOnly=true;
+  form.elements.meta_template_name.value=t.meta_template_name||'';
+  form.elements.category.value=t.category||'UTILITY';
+  form.elements.language_code.value=t.language_code||'pt_BR';
+  form.elements.purpose.value=t.purpose||'';
+  form.elements.body_text.value=t.body_text||'';
+  form.elements.media_kind.value=t.media_kind||'none';
+  form.elements.media_url.value=t.media_url||'';
+  form.elements.strategy_brief_id.value=t.strategy_brief_id||'';
+  form.elements.creative_asset_id.value=t.creative_asset_id||'';
+  form.elements.buttons_json.value=JSON.stringify(Array.isArray(t.buttons)?t.buttons:[],null,2);
+  form.elements.notes.value=t.notes||'';
+  form.elements.change_note.value='';
+  $('#templateDraftStatus').textContent=`Editando ${t.template_key} · versão atual ${t.current_version||1}. Salvar mudança cria nova versão quando necessário.`;
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderTemplateAssistant(){
+  const lib=state.templateLibrary||{};
+  const summary=lib.summary||{};
+  const policy=lib.policy||{};
+  const templates=lib.templates||[];
+  const form=$('#templateDraftForm');
+  if(!form)return;
+  const gate=$('#templateAiGate');
+  if(gate)gate.textContent=policy.ai_enabled===true?'IA de rascunho habilitada':'IA bloqueada · custo zero';
+  const aiButton=$('#createAiTemplateDraft');
+  if(aiButton){
+    aiButton.disabled=policy.ai_enabled!==true;
+    aiButton.title=policy.ai_enabled===true?'Criar rascunho com IA governada':'Gate de IA fechado: nenhuma chamada paga será feita';
+  }
+  const summaryMount=$('#templateSummaryCards');
+  if(summaryMount)summaryMount.innerHTML=[
+    ['Templates',summary.templates||0,'biblioteca local'],
+    ['DRAFT',summary.drafts||0,'sem submissão'],
+    ['Com aviso',summary.warnings||0,'revisão local'],
+    ['IA usada',summary.ai_generated||0,'rascunhos']
+  ].map(x=>`<article class="summary-card"><span>${esc(x[0])}</span><strong>${esc(x[1])}</strong><small>${esc(x[2])}</small></article>`).join('');
+
+  const briefSelect=form.elements.strategy_brief_id;
+  const assetSelect=form.elements.creative_asset_id;
+  const briefValue=briefSelect.value,assetValue=assetSelect.value;
+  briefSelect.innerHTML='<option value="">Sem brief associado</option>'+((lib.strategy_briefs||[]).map(b=>`<option value="${esc(b.id)}">${esc(b.strategy_key||'estratégia')} · ${esc(b.mode||'brief')} · ${Math.round(Number(b.confidence||0)*100)}%</option>`).join(''));
+  assetSelect.innerHTML='<option value="">Sem peça associada</option>'+((lib.creative_assets||[]).map(a=>`<option value="${esc(a.id)}">${esc(a.title||'Peça')} · ${esc(a.media_kind||'mídia')} · ${esc(a.status||'')}</option>`).join(''));
+  if([...briefSelect.options].some(o=>o.value===briefValue))briefSelect.value=briefValue;
+  if([...assetSelect.options].some(o=>o.value===assetValue))assetSelect.value=assetValue;
+
+  const mount=$('#whatsappTemplateList');
+  if(!templates.length){mount.innerHTML=empty('Nenhum template local cadastrado.');return}
+  mount.innerHTML=`<div class="template-library">${templates.map(t=>{
+    const report=t.validation_report||{};
+    const warnings=Array.isArray(report.warnings)?report.warnings:[];
+    const errors=Array.isArray(report.errors)?report.errors:[];
+    const vars=t.variable_schema?.positions||[];
+    return `<article class="template-card" data-template-key="${esc(t.template_key)}">
+      <div class="template-card-head">
+        <div><span class="status-chip">${esc(t.local_status||'draft')}</span><h3>${esc(t.template_key)}</h3><p>${esc(t.purpose||'Sem finalidade')}</p></div>
+        <div class="template-card-actions"><button class="secondary" type="button" data-template-action="edit">Editar</button><button class="secondary" type="button" data-template-action="versions">Versões</button></div>
+      </div>
+      <div class="template-card-meta"><span>${esc(t.category||'UTILITY')}</span><span>${esc(t.language_code||'pt_BR')}</span><span>v${esc(t.current_version||1)}</span><span>Meta: ${esc(t.meta_status||'not_submitted')}</span><span>Variáveis: ${esc(vars.length)}</span></div>
+      <pre class="template-body-preview">${esc(t.body_text||'')}</pre>
+      <div class="template-validation ${esc(t.validation_status||'pending')}">
+        <strong>Validação local: ${esc(t.validation_status||'pending')}</strong>
+        ${warnings.map(x=>`<span>${esc(templateIssueLabel(x))}</span>`).join('')}
+        ${errors.map(x=>`<span class="error">${esc(templateIssueLabel(x))}</span>`).join('')}
+      </div>
+      <div class="template-version-slot" data-template-version-slot hidden></div>
+    </article>`;
+  }).join('')}</div>`;
+}
+
+async function refreshTemplateLibrary(){
+  state.templateLibrary=await getWhatsAppTemplateLibrary();
+  renderTemplateAssistant();
+}
+
 function render(){
   const o=state.overview||{},r=o.runtime||{},m=state.metrics?.metrics?.counts||{},meta=r.metadata||{};
   const reviewAssets=(o.assets||[]).filter(a=>a.status==='review').length;
@@ -343,11 +483,11 @@ function render(){
 
 async function load(){
   try{
-    const [overview,metrics,workflow,shortlist,customerOpportunities,briefPayload]=await Promise.all([
+    const [overview,metrics,workflow,shortlist,customerOpportunities,briefPayload,templateLibrary]=await Promise.all([
       getMarketingOverview(),getMarketingMetrics(30),getMarketingWorkflow(),getMarketingShortlist(),
-      getMarketingCustomerOpportunities(40),getMarketingStrategyBriefs(null,60)
+      getMarketingCustomerOpportunities(40),getMarketingStrategyBriefs(null,60),getWhatsAppTemplateLibrary()
     ]);
-    state={overview,metrics,workflow,shortlist,customerOpportunities,strategyBriefs:briefPayload.items||[],previewUrls:state.previewUrls||{}};
+    state={overview,metrics,workflow,shortlist,customerOpportunities,strategyBriefs:briefPayload.items||[],templateLibrary,previewUrls:state.previewUrls||{}};
     render();$('#authGate').hidden=true;$('#marketingApp').hidden=false;
   }catch(e){$('#authStatus').textContent=e.message||'Falha ao carregar.'}
 }
@@ -377,6 +517,25 @@ async function createDraft(){
 }
 
 document.addEventListener('click',async e=>{
+  const templateButton=e.target.closest('.template-card button[data-template-action]');
+  if(templateButton){
+    const card=templateButton.closest('.template-card');
+    const key=card?.dataset.templateKey;
+    if(!key)return;
+    if(templateButton.dataset.templateAction==='edit'){editTemplateDraft(key);return}
+    if(templateButton.dataset.templateAction==='versions'){
+      const slot=card.querySelector('[data-template-version-slot]');
+      if(!slot)return;
+      if(!slot.hidden){slot.hidden=true;return}
+      slot.hidden=false;slot.innerHTML='<div class="muted">Carregando versões…</div>';
+      try{
+        const result=await getWhatsAppTemplateVersions(key);
+        const versions=result.versions||[];
+        slot.innerHTML=versions.length?`<div class="template-version-list">${versions.map(v=>`<div><strong>v${esc(v.version)}</strong><span>${esc(v.validation_status||'pending')} · ${esc(v.source_kind||'manual')}</span><small>${dt(v.updated_at||v.created_at)}${v.change_note?' · '+esc(v.change_note):''}</small></div>`).join('')}</div>`:empty('Sem histórico de versões.');
+      }catch(err){slot.innerHTML=`<div class="empty-state">${esc(err.message||'Falha ao carregar versões.')}</div>`}
+      return;
+    }
+  }
   const opportunityButton=e.target.closest('.customer-opportunity-card button[data-action]');
   if(opportunityButton){
     const card=opportunityButton.closest('.customer-opportunity-card');
@@ -547,6 +706,57 @@ $('#campaignsList').addEventListener('submit',async e=>{
     await updateMarketingCampaignDraft({campaign_id:id,name:data.get('name'),objective:data.get('objective'),hook:data.get('hook'),cta:data.get('cta')});
     message.textContent='Rascunho atualizado.'; await load(); document.querySelector('[data-tab="campaigns"]')?.click();
   }catch(err){message.textContent=err.message||'Falha ao salvar.'}finally{submit.disabled=false}
+});
+
+$('#templateDraftForm')?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const status=$('#templateDraftStatus'),button=$('#saveTemplateDraft');
+  button.disabled=true;status.textContent='Validando e salvando DRAFT…';
+  try{
+    const payload=templateFormPayload();
+    const result=await saveWhatsAppTemplateDraft(payload);
+    const version=result.version||result.template?.current_version||1;
+    status.textContent=`DRAFT salvo como v${version}. Nenhuma submissão à Meta foi feita.`;
+    await refreshTemplateLibrary();
+    editTemplateDraft(payload.template_key);
+  }catch(err){
+    const validation=err.data?.validation;
+    const issues=[...(validation?.errors||[]),...(validation?.warnings||[])].map(templateIssueLabel);
+    status.textContent=issues.length?issues.join(' · '):(err.message||'Não foi possível salvar o template.');
+  }finally{button.disabled=false}
+});
+
+$('#validateTemplateDraft')?.addEventListener('click',async()=>{
+  const status=$('#templateDraftStatus'),button=$('#validateTemplateDraft');
+  button.disabled=true;status.textContent='Validando estrutura local…';
+  try{
+    const result=await validateWhatsAppTemplateDraft(templateFormPayload());
+    const v=result.validation||{};
+    const issues=[...(v.errors||[]),...(v.warnings||[])].map(templateIssueLabel);
+    status.textContent=`${v.valid?'Estrutura local válida':'Estrutura inválida'} · ${issues.length?issues.join(' · '):'sem avisos'} · nenhuma consulta/submissão à Meta.`;
+  }catch(err){status.textContent=err.message||'Falha na validação.'}finally{button.disabled=false}
+});
+
+$('#resetTemplateDraft')?.addEventListener('click',resetTemplateDraftForm);
+
+$('#createAiTemplateDraft')?.addEventListener('click',async()=>{
+  const form=$('#templateDraftForm'),data=new FormData(form),status=$('#templateDraftStatus'),button=$('#createAiTemplateDraft');
+  button.disabled=true;status.textContent='Gerando rascunho com IA governada…';
+  try{
+    const result=await createAiWhatsAppTemplateDraft({
+      prompt:[String(data.get('purpose')||''),String(data.get('notes')||'')].filter(Boolean).join(' · '),
+      category:String(data.get('category')||'UTILITY'),
+      language_code:String(data.get('language_code')||'pt_BR'),
+      strategy_brief_id:String(data.get('strategy_brief_id')||'')||null
+    });
+    status.textContent='Rascunho de IA salvo localmente. Revisão humana obrigatória; nenhum submit foi feito.';
+    await refreshTemplateLibrary();
+    if(result.template?.template_key)editTemplateDraft(result.template.template_key);
+  }catch(err){status.textContent=err.message||'IA indisponível.'}
+  finally{
+    const enabled=state.templateLibrary?.policy?.ai_enabled===true;
+    button.disabled=!enabled;
+  }
 });
 
 $('#pinForm').addEventListener('submit',async e=>{e.preventDefault();try{$('#authStatus').textContent='Validando…';await authenticateCustomerOsWithPin($('#pinInput').value.trim());$('#pinInput').value='';$('#authStatus').textContent='';await load()}catch(err){clearCustomerOsSession();$('#authStatus').textContent=err.message||'PIN inválido.'}});
