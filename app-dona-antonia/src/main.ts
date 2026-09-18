@@ -28,6 +28,7 @@ import { createConversationStore } from './conversation/store.ts';
 import { createOrderFixtureRepository } from './orders/orderFixtureRepository.ts';
 import { renderOrderTracking } from './orders/orderTrackingView.ts';
 import type { OrderRecord } from './orders/types.ts';
+import { canConfirmOrder, getNetworkState } from './platform/networkState.ts';
 import { detectRuntime } from './platform/runtime.ts';
 import { registerAppServiceWorker } from './platform/serviceWorker.ts';
 
@@ -111,7 +112,7 @@ function render(route = appNavigator.current()): void {
 
   appRoot.innerHTML = renderAppShell({
     route,
-    state: 'ready',
+    state: getNetworkState() === 'offline' ? 'offline' : 'ready',
     conversationHtml,
     toolHtml,
     orderSummary: {
@@ -279,6 +280,15 @@ async function handleClick(event: MouseEvent): Promise<void> {
   }
 
   if (element.closest('[data-checkout-confirm]')) {
+    const networkState = getNetworkState();
+    if (!canConfirmOrder(networkState)) {
+      void conversation.assistantSay(
+        'Sem conexão segura no momento. Seu pedido não foi enviado. Tente confirmar novamente quando a internet voltar.',
+      );
+      render();
+      return;
+    }
+
     const result = await checkout.confirm();
     if (result) {
       const summary = calculateCartTotal(cart.getSnapshot());
@@ -396,6 +406,9 @@ appRoot.addEventListener('submit', (event) => {
   }
 });
 
+
+window.addEventListener('online', () => render());
+window.addEventListener('offline', () => render());
 
 void registerAppServiceWorker(
   'serviceWorker' in navigator ? navigator.serviceWorker : undefined,
