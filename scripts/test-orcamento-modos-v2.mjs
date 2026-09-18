@@ -39,4 +39,14 @@ assert.match(html, /item\.code=e\.target\.value/, 'edição do código deve atua
 assert.match(html, /parseMoney\(e\.target\.value\)\/Math\.max\(\.01,item\.quantity\)/, 'edição do total da linha deve recalcular o valor unitário');
 assert.match(html, /id="payment" list="paymentOptions"/, 'forma de pagamento deve aceitar texto livre com sugestões');
 
-console.log('OK · orçamento V2: itens totalmente editáveis + modo normal + modo somente com itens em duas colunas e total final.');
+assert.match(html, /id="discountType"/, 'desconto deve permitir escolher entre reais e percentual');
+assert.match(html, /id="taxType"/, 'impostos e acréscimos devem permitir escolher entre reais e percentual');
+assert.match(html, /id="taxes"/, 'campo de impostos e acréscimos ausente');
+assert.match(html, /id="shipping"/, 'campo de frete ou entrega ausente');
+assert.match(html, /adjustmentValue/, 'cálculo financeiro deve tratar ajustes em reais ou percentual');
+assert.match(html, /afterDiscount\+taxes\+shipping/, 'total calculado deve somar impostos e frete após o desconto');
+assert.match(html, /id="summaryTaxesRow"/, 'resumo do PDF deve suportar impostos e acréscimos');
+assert.match(html, /id="summaryShippingRow"/, 'resumo do PDF deve suportar frete e entrega');
+assert.match(html, /'discountType','discount','taxType','taxes','shipping','notes'/, 'campos financeiros devem persistir no rascunho');
+
+console.log('OK · orçamento V2: itens e ajustes financeiros editáveis + modos de PDF preservados.');
