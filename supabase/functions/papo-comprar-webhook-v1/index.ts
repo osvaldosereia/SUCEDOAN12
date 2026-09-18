@@ -69,22 +69,44 @@ Deno.serve(async(req:Request)=>{
   const message=pick(body,['message','text','body','content','message.text','message.body']);
   const receivedAt=new Date().toISOString();
 
+  const [{data:channelAccount,error:channelAccountError},{data:account,error:accountError}]=await Promise.all([
+    sb.from('channel_accounts').select('id').eq('channel','whatsapp').eq('status','active').order('updated_at',{ascending:false}).limit(1).maybeSingle(),
+    sb.from('whatsapp_accounts').select('id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle()
+  ]);
+  if(channelAccountError||!channelAccount?.id)return response({ok:false,error:'channel_account_unavailable'},503);
+  if(accountError||!account?.id)return response({ok:false,error:'whatsapp_account_unavailable'},503);
+
   const {data:resolution,error:resolutionError}=await sb.rpc('resolve_customer_identity_v1',{
     p_phone:phone,
+    p_channel:'whatsapp',
+    p_channel_account_id:channelAccount.id,
+    p_external_user_id:phone,
     p_source:'papoai_webhook',
     p_persist:true
   });
   if(resolutionError)return response({ok:false,error:'identity_resolution_failed'},500);
   const identityDecision=clean(resolution?.decision,40)||'unmatched';
   const matchedCustomerId=identityDecision==='matched'?clean(resolution?.customer_id,80)||null:null;
+  const {data:observedIdentity,error:observeIdentityError}=await sb.rpc('observe_customer_channel_identity_v1',{
+    p_channel:'whatsapp',
+    p_channel_account_id:channelAccount.id,
+    p_external_user_id:phone,
+    p_identity_kind:'whatsapp_user',
+    p_source:'papoai_webhook',
+    p_evidence:{
+      provider:'papoai',
+      papo_contact_id:contactId||null,
+      candidate_customer_id:matchedCustomerId,
+      resolution_decision:identityDecision,
+      resolution_confidence:Number(resolution?.confidence||0)
+    }
+  });
+  if(observeIdentityError)return response({ok:false,error:'channel_identity_observation_failed'},500);
+
   const {data:matchedCustomer,error:matchedCustomerError}=matchedCustomerId
     ?await sb.from('customers').select('id,name,preferred_reply').eq('id',matchedCustomerId).maybeSingle()
     :{data:null,error:null};
   if(matchedCustomerError)return response({ok:false,error:'customer_lookup_failed'},500);
-
-  const {data:account,error:accountError}=await sb.from('whatsapp_accounts')
-    .select('id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
-  if(accountError||!account?.id)return response({ok:false,error:'whatsapp_account_unavailable'},503);
 
   const {data:openConversation,error:conversationLookupError}=await sb.from('conversations')
     .select('id,customer_id,referral,source')
@@ -97,7 +119,8 @@ Deno.serve(async(req:Request)=>{
     provider:'papoai',
     papo_contact_id:contactId||null,
     papo_contact_name:contactName||null,
-    papo_last_seen_at:receivedAt
+    papo_last_seen_at:receivedAt,
+    channel_identity_id:observedIdentity?.identity_id||null
   };
   let conversationId=openConversation?.id||null;
   const customerId=matchedCustomerId||openConversation?.customer_id||null;
@@ -149,7 +172,7 @@ Deno.serve(async(req:Request)=>{
   return response({
     ok:true,
     customer_found:Boolean(matchedCustomerId),
-    identity_resolution:{decision:identityDecision,confidence:Number(resolution?.confidence||0),conflict:identityDecision==='conflict'},
+    identity_resolution:{decision:identityDecision,confidence:Number(resolution?.confidence||0),conflict:identityDecision==='conflict',channel_identity_id:observedIdentity?.identity_id||null},
     customer:matchedCustomerId?{id:matchedCustomerId,name:canonicalName,phone}:null,
     contact:{name:canonicalName,phone,contact_id:contactId||null},
     shopping_url:room.url,
