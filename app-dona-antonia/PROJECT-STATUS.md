@@ -79,3 +79,35 @@ Validação executada com Node 22:
 **Próxima rodada após autorização:** Rodada 1 — Fundação técnica isolada.
 
 A branch ainda não deve ser integrada à produção.
+
+
+## Checkpoint — Rodada 1
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- scaffold próprio em TypeScript;
+- configuração Vite isolada;
+- entrypoint próprio;
+- detecção de runtime `web | pwa | android | ios`;
+- bootstrap que identifica visualmente o ambiente como Homologação;
+- `noindex,nofollow` no shell;
+- nenhum endpoint externo;
+- nenhum acesso a Supabase, Meta, PapoAI, Bling ou Comprar atual.
+
+Validações executadas:
+- ciclo TDD: testes falharam antes das implementações de runtime/bootstrap;
+- 4 testes unitários novos aprovados;
+- typecheck local da pasta `src/` aprovado com TypeScript disponível no ambiente;
+- checagem sintática TypeScript aprovada;
+- JSON de configuração validado;
+- tentativa de instalar dependências para executar `vite build` bloqueada exclusivamente por indisponibilidade de DNS do registry npm no ambiente de execução (`EAI_AGAIN`).
+
+A versão declarada do Vite segue a linha 8.3 e requer Node >=22.12; o projeto exige Node >=22.12.
+
+**Importante:** a impossibilidade de baixar dependências neste ambiente foi registrada; não foi tratada como build executado.
+
+**Próxima rodada autorizável:** Rodada 2 — Sistema visual e shell mobile-first.
+
+O projeto permanece OFF e sem qualquer conexão com produção.
