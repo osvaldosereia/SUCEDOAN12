@@ -58,6 +58,15 @@ export function renderAppShell({
   orderSummary = { itemCount: 0, totalCents: 0 },
 }: AppShellOptions): string {
   const copy = STATE_COPY[state];
+  const stateCard = `
+    <div class="state-card" role="${state === 'error' || state === 'offline' ? 'status' : 'region'}">
+      <span class="state-dot" aria-hidden="true"></span>
+      <div>
+        <strong>${copy.title}</strong>
+        <p>${copy.detail}</p>
+      </div>
+    </div>
+  `.trim();
 
   return `
     <div class="app-shell" data-app-shell data-route="${route}">
@@ -78,15 +87,8 @@ export function renderAppShell({
         </section>
 
         <section class="tool-region" data-shell="tool" data-state="${state}" aria-label="Área de atendimento">
-          ${toolHtml ?? `
-            <div class="state-card">
-              <span class="state-dot" aria-hidden="true"></span>
-              <div>
-                <strong>${copy.title}</strong>
-                <p>${copy.detail}</p>
-              </div>
-            </div>
-          `}
+          ${state !== 'ready' ? stateCard : ''}
+          ${toolHtml ?? (state === 'ready' ? stateCard : '')}
         </section>
       </main>
 
