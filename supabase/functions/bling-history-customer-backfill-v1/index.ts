@@ -96,7 +96,7 @@ Deno.serve(async(req:Request)=>{
   if(!supplied||!safeEqual(supplied,String(expected)))return response({ok:false,error:'unauthorized'},401);
 
   let body:any={};try{body=await req.json()}catch{}
-  const batchSize=Math.max(1,Math.min(Number(body?.batch_size)||5,5));
+  const batchSize=Math.max(1,Math.min(Number(body?.batch_size)||5,10));
 
   const lockOwner=crypto.randomUUID();
   const {data:lockClaimed,error:lockError}=await sb.rpc('claim_bling_history_import_lock_v1',{p_owner:lockOwner,p_ttl_seconds:300});
