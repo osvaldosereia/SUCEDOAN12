@@ -1,9 +1,9 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,createDeterministicMarketingDraft} from './marketing-api.js';
+import {getMarketingOverview,getMarketingMetrics,getMarketingWorkflow,getMarketingShortlist,createDeterministicMarketingDraft,planMarketingCampaignAssets,updateMarketingCampaignDraft} from './marketing-api.js';
 
 const $=s=>document.querySelector(s);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const moneyCents=v=>(Number(v||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const dt=v=>v?new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(v)):'—';
@@ -12,6 +12,16 @@ let state={};
 
 const empty=m=>`<div class="empty-state">${esc(m)}</div>`;
 const row=(a,b,c,d='')=>`<div class="data-row"><div><strong>${esc(a)}</strong><small>${esc(b||'')}</small></div><div>${esc(d)}</div><div><span class="status-chip">${esc(c||'—')}</span></div></div>`;
+
+function roleLabel(role){
+  return ({
+    feed_square:'Post quadrado',
+    story_status:'Story + Status',
+    pinterest_pin:'Pinterest',
+    instagram_carousel:'Carrossel',
+    reel_light_10s:'Reel leve 10s'
+  })[role]||role||'Conteúdo';
+}
 
 function renderOpportunities(){
   const items=state.shortlist?.items||[];
@@ -34,13 +44,45 @@ function renderOpportunities(){
   }).join('')}</div>`;
 }
 
+function renderCampaigns(){
+  const campaigns=state.overview?.campaigns||[];
+  const assets=state.overview?.assets||[];
+  if(!campaigns.length){$('#campaignsList').innerHTML=empty('Nenhuma campanha cadastrada ainda.');return}
+  $('#campaignsList').innerHTML=`<div class="campaign-stack">${campaigns.map(c=>{
+    const campaignAssets=assets.filter(a=>a.campaign_id===c.id);
+    const hook=c.content_policy?.hook||'';
+    const cta=c.content_policy?.cta||'';
+    return `<article class="campaign-card" data-campaign-id="${esc(c.id)}">
+      <div class="campaign-card-head">
+        <div><span class="status-chip">${esc(c.status)}</span><h3>${esc(c.name)}</h3><p>${esc(c.objective||'Sem objetivo definido.')}</p></div>
+        <div class="campaign-actions">
+          <button class="secondary" type="button" data-action="toggle-edit">Editar</button>
+          <button class="primary" type="button" data-action="plan-assets">${campaignAssets.length>=5?'Revisar peças':'Gerar 5 peças DRAFT'}</button>
+        </div>
+      </div>
+      <div class="campaign-meta">
+        <span>${campaignAssets.length}/5 peças</span><span>IA: ${esc(c.ai_policy?.strategy_mode||'deterministic')}</span><span>Imagem: ${esc(c.ai_policy?.image_quality||'low')}</span><span>Vídeo: ${Number(c.ai_policy?.light_motion_duration_seconds||10)}s</span>
+      </div>
+      <div class="campaign-pieces">${campaignAssets.length?campaignAssets.map(a=>`<span class="piece-chip">${esc(roleLabel(a.edit_spec?.content_role))} · ${esc(a.status)}</span>`).join(''):'<span class="muted">Nenhuma peça criada ainda.</span>'}</div>
+      <form class="campaign-edit" hidden>
+        <label>Nome<input name="name" maxlength="120" value="${esc(c.name)}"></label>
+        <label>Objetivo<textarea name="objective" maxlength="240">${esc(c.objective||'')}</textarea></label>
+        <label>Hook<textarea name="hook" maxlength="220">${esc(hook)}</textarea></label>
+        <label>CTA<textarea name="cta" maxlength="180">${esc(cta)}</textarea></label>
+        <div class="campaign-edit-actions"><button type="button" class="secondary" data-action="cancel-edit">Cancelar</button><button type="submit" class="primary">Salvar rascunho</button></div>
+        <p class="campaign-message muted"></p>
+      </form>
+    </article>`;
+  }).join('')}</div>`;
+}
+
 function render(){
   const o=state.overview||{},r=o.runtime||{},m=state.metrics?.metrics?.counts||{},meta=r.metadata||{};
   $('#summaryCards').innerHTML=[['Campanhas',(o.campaigns||[]).length,'cadastradas'],['Conteúdos',m.assets_created||(o.assets||[]).length,'últimos 30 dias'],['Aguardando revisão',m.review_required||0,'publicações'],['Custo registrado',moneyCents(m.actual_cost_cents||0),'últimos 30 dias']].map(x=>`<article class="summary-card"><span>${esc(x[0])}</span><strong>${esc(x[1])}</strong><small>${esc(x[2])}</small></article>`).join('');
   const locked=o.safety?.external_actions_locked!==false;$('#safetyBadge').textContent=locked?'Publicação bloqueada · seguro':'Publicação habilitada';$('#safetyBadge').className=`safety-badge ${locked?'safe':'warn'}`;
   $('#runtimeSummary').innerHTML=`<div><div class="rule"><span>Publicação externa</span><strong class="${r.publishing_enabled?'danger':'ok'}">${r.publishing_enabled?'Ligada':'Desligada'}</strong></div><div class="rule"><span>Kill switch</span><strong class="ok">${r.kill_switch?'Ativo':'Inativo'}</strong></div><div class="rule"><span>Aprovação humana</span><strong>${r.require_approval===false?'Não':'Obrigatória'}</strong></div><div class="rule"><span>Imagem IA</span><strong>${esc(meta.image_generation_quality||'low')} · ${Number(meta.image_variants_default||1)} variação</strong></div><div class="rule"><span>Vídeo V1</span><strong>${Number(meta.video_duration_seconds||10)}s · ${esc(meta.video_mode||'light_motion')}</strong></div><div class="rule"><span>IA de estratégia</span><strong class="ok">${meta.strategy_ai_enabled===true?'Habilitada':'Bloqueada'}</strong></div></div>`;
-  const assets=o.assets||[];const assetsHtml=assets.length?`<div class="data-list">${assets.map(a=>row(a.title,`${a.media_kind} · v${a.version}`,a.status,dt(a.updated_at))).join('')}</div>`:empty('Nenhum conteúdo criado ainda.');$('#assetsList').innerHTML=assetsHtml;$('#recentAssets').innerHTML=assetsHtml;
-  const campaigns=o.campaigns||[];$('#campaignsList').innerHTML=campaigns.length?`<div class="data-list">${campaigns.map(c=>row(c.name,c.objective||'Sem objetivo',c.status,`máx. ${moneyCents(c.max_cost_cents)}`)).join('')}</div>`:empty('Nenhuma campanha cadastrada ainda.');
+  const assets=o.assets||[];const assetsHtml=assets.length?`<div class="data-list">${assets.map(a=>row(a.title,`${roleLabel(a.edit_spec?.content_role)} · ${a.media_kind} · v${a.version}`,a.status,dt(a.updated_at))).join('')}</div>`:empty('Nenhum conteúdo criado ainda.');$('#assetsList').innerHTML=assetsHtml;$('#recentAssets').innerHTML=assetsHtml;
+  renderCampaigns();
   const jobs=o.jobs||[];$('#jobsList').innerHTML=jobs.length?`<div class="data-list">${jobs.map(j=>row(`${j.channel} · ${j.content_type}`,j.scheduled_for?dt(j.scheduled_for):'Sem agendamento',j.status,j.manual_confirmation_required?'confirmação manual':'')).join('')}</div>`:empty('Nenhuma publicação preparada.');
   const templates=o.templates||[];$('#templatesList').innerHTML=templates.length?`<div class="data-list">${templates.map(t=>row(t.name,`${t.media_kind} · v${t.version}`,t.status,t.template_key)).join('')}</div>`:empty('Nenhum modelo ativo.');
   const cal=state.workflow?.calendar||[];$('#calendarList').innerHTML=cal.length?`<div class="data-list">${cal.slice(0,80).map(i=>row(i.title||i.channel||'Conteúdo',i.scheduled_for?dt(i.scheduled_for):'',i.status||'planejado',i.channel||'')).join('')}</div>`:empty('Agenda vazia.');
@@ -63,12 +105,40 @@ async function refreshOpportunities(){
 async function createDraft(){
   const button=$('#createDeterministicDraft');button.disabled=true;$('#opportunityStatus').textContent='Criando rascunho sem IA…';
   try{
-    const result=await createDeterministicMarketingDraft();
+    await createDeterministicMarketingDraft();
     $('#opportunityStatus').textContent='Rascunho criado com segurança. Nenhuma publicação foi feita.';
     await load();
     document.querySelector('[data-tab="campaigns"]')?.click();
   }catch(e){$('#opportunityStatus').textContent=e.message||'Não foi possível criar o rascunho.'}finally{button.disabled=false}
 }
+
+$('#campaignsList').addEventListener('click',async e=>{
+  const button=e.target.closest('button[data-action]');
+  if(!button)return;
+  const card=button.closest('.campaign-card'); if(!card)return;
+  const id=card.dataset.campaignId; const form=card.querySelector('.campaign-edit'); const message=card.querySelector('.campaign-message');
+  if(button.dataset.action==='toggle-edit'){form.hidden=!form.hidden;return}
+  if(button.dataset.action==='cancel-edit'){form.hidden=true;return}
+  if(button.dataset.action==='plan-assets'){
+    button.disabled=true;message.textContent='Montando peças DRAFT sem IA…';
+    try{
+      const result=await planMarketingCampaignAssets(id);
+      message.textContent=`Plano pronto: ${Number(result.created?.length||0)} criada(s), ${Number(result.reused?.length||0)} reutilizada(s). Zero render e zero publicação.`;
+      await load(); document.querySelector('[data-tab="campaigns"]')?.click();
+    }catch(err){message.textContent=err.message||'Falha ao montar peças.'}finally{button.disabled=false}
+  }
+});
+
+$('#campaignsList').addEventListener('submit',async e=>{
+  const form=e.target.closest('.campaign-edit'); if(!form)return; e.preventDefault();
+  const card=form.closest('.campaign-card'); const id=card.dataset.campaignId; const message=form.querySelector('.campaign-message');
+  const submit=form.querySelector('button[type="submit"]'); submit.disabled=true; message.textContent='Salvando…';
+  try{
+    const data=new FormData(form);
+    await updateMarketingCampaignDraft({campaign_id:id,name:data.get('name'),objective:data.get('objective'),hook:data.get('hook'),cta:data.get('cta')});
+    message.textContent='Rascunho atualizado.'; await load(); document.querySelector('[data-tab="campaigns"]')?.click();
+  }catch(err){message.textContent=err.message||'Falha ao salvar.'}finally{submit.disabled=false}
+});
 
 $('#pinForm').addEventListener('submit',async e=>{e.preventDefault();try{$('#authStatus').textContent='Validando…';await authenticateCustomerOsWithPin($('#pinInput').value.trim());$('#pinInput').value='';$('#authStatus').textContent='';await load()}catch(err){clearCustomerOsSession();$('#authStatus').textContent=err.message||'PIN inválido.'}});
 $('#refreshMarketing').addEventListener('click',load);
