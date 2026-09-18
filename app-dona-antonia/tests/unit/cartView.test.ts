@@ -39,10 +39,11 @@ test('cart view renders basket plus extras with quantity controls', () => {
   assert.match(html, /R\$ 279,70/);
 });
 
-test('cart view does not expose checkout action before round 7', () => {
+test('cart view exposes only isolated checkout continuation in round 7', () => {
   const html = renderCart(cart);
-  assert.doesNotMatch(html, /Finalizar pedido/i);
-  assert.doesNotMatch(html, /Checkout/i);
+  assert.match(html, /data-route-target="checkout"/);
+  assert.match(html, /Continuar/);
+  assert.doesNotMatch(html, /Finalizar pedido real/i);
 });
 
 test('empty cart has a clear empty state', () => {
