@@ -29,6 +29,22 @@ async function fetchImageData(value:unknown){
 function rasterWebp(svg:string){
   return ImageMagick.read(new TextEncoder().encode(svg),(img):Uint8Array=>img.write(MagickFormat.WebP,(data)=>data));
 }
+function webpToProviderJpeg(bytes:Uint8Array){
+  return ImageMagick.read(bytes,(img):Uint8Array=>img.write(MagickFormat.Jpeg,(data)=>data));
+}
+async function storeProviderJpeg(sb:any,userId:string,asset:any,webpBytes:Uint8Array,file:string,width:number,height:number,metadata:any){
+  const bytes=webpToProviderJpeg(webpBytes),path=`${asset.id}/v${asset.version}/${file}`;
+  const {error:up}=await sb.storage.from("marketing-private").upload(path,bytes,{contentType:"image/jpeg",cacheControl:"3600",upsert:true});
+  if(up)throw new Error("provider_jpeg_upload_failed:"+up.message);
+  const sha=await sha256Hex(bytes);
+  const {data,error}=await sb.rpc("register_marketing_private_media_v2",{
+    p_asset_id:asset.id,p_version:asset.version,p_role:"output",p_object_path:path,p_mime_type:"image/jpeg",
+    p_width:width,p_height:height,p_duration_ms:null,p_byte_size:bytes.length,p_sha256:sha,
+    p_metadata:{...metadata,bucket_name:"marketing-private",renderer:"magick_wasm_jpeg",provider_ready:true,ai_used:false,external_side_effect:false},p_actor:userId
+  });
+  if(error||!data?.ok)throw new Error("provider_jpeg_register_failed:"+(error?.message||data?.error||"unknown"));
+  return {media_id:data.media_id,object_path:path,byte_size:bytes.length,sha256:sha,mime_type:"image/jpeg"};
+}
 function normalizePng(bytes:Uint8Array){
   return ImageMagick.read(bytes,(img):Uint8Array=>img.write(MagickFormat.Png,(data)=>data));
 }
@@ -101,10 +117,12 @@ Deno.serve(async(req:Request)=>{
         const width=Math.max(320,Math.min(2500,num(render.width,1080))),height=Math.max(320,Math.min(2500,num(render.height,1080)));
         const bytes=await renderProduct(p,width,height,headline,cta);
         outputs.push(await storePreview(sb,user.id,asset,bytes,"preview","preview.webp",width,height,{content_role:edit.content_role||"image"}));
+        await storeProviderJpeg(sb,user.id,asset,bytes,"publish.jpg",width,height,{content_role:edit.content_role||"image",provider_format:"jpeg"});
       }else if(asset.media_kind==="carousel"){
         const plan=arr(edit.slide_plan).slice(0,5),width=1080,height=1350;let n=0;
         for(const slide of plan){n++;let bytes:Uint8Array;if(slide?.type==="product"&&slide?.product?.image_url)bytes=await renderProduct(slide.product,width,height,"",cta);else bytes=rasterWebp(textSlideSvg(width,height,clean(slide?.headline||headline,160),cta));
           outputs.push(await storePreview(sb,user.id,asset,bytes,"preview",`slide-${String(n).padStart(2,"0")}.webp`,width,height,{content_role:"instagram_carousel",slide_no:n,slide_type:clean(slide?.type||"text",40)}));
+          await storeProviderJpeg(sb,user.id,asset,bytes,`publish-slide-${String(n).padStart(2,"0")}.jpg`,width,height,{content_role:"instagram_carousel",slide_no:n,slide_type:clean(slide?.type||"text",40),provider_format:"jpeg"});
         }
       }else if(asset.media_kind==="video"){
         const p=arr(edit.products)[0]||edit.product;if(!p?.image_url)throw new Error("video_product_image_missing");
