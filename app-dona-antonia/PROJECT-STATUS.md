@@ -754,3 +754,64 @@ Só parar para pedir autorização em caso de:
 - operação destrutiva relevante;
 - alteração que possa atingir clientes/dados reais;
 - decisão comercial/jurídica obrigatoriamente do proprietário.
+
+---
+
+# CHECKPOINT MAIS RECENTE — 18/09/2026 — retomada 16:58+ America/Cuiaba
+
+**Este bloco prevalece sobre o HANDOFF antigo existente acima.**
+
+## Validação obrigatória concluída
+
+- R12 — sessão segura: adapter de memória validado; 3/3 testes verdes; sem localStorage/log de token. Continua PARCIAL: Keychain/Keystore e teste nativo real pendentes.
+- R14 — pairing: core local validado; segredo 256-bit, TTL 10 min, uso único, polling rate-limited, confirmação do código humano também rate-limited e comparação de segredo sem retorno antecipado. Continua PARCIAL: backend HML/Edge Function e confirmação externa pendentes/OFF.
+- R15 — deep links: parser/policy local validados; PII/session material rejeitados; token opaco obrigatório; percent-encoding malformado falha fechado. Continua PARCIAL: Android App Links/iOS Universal Links nativos pendentes.
+
+Correções desta retomada:
+- urlPolicy.ts rejeita decode inválido em path/query/hash;
+- teste regressivo para deep link malformado;
+- pairing.ts removeu retorno antecipado na comparação do segredo;
+- pairing ganhou limite de tentativas também para o código humano.
+
+Validação:
+- conjunto modificado R12–R21: 31/31 testes verdes antes do último hardening do código humano;
+- pairing após hardening de brute force: 6/6 verdes;
+- typecheck do conjunto reconstruído/modificado com as opções reais do projeto: verde;
+- isolamento: árvore atual possui 58 arquivos runtime/config; sem achados proibidos nas varreduras executadas;
+- checkout integral do repositório continua indisponível no ambiente local por DNS; não declarar npm test/build integral como executado.
+
+## Avanço paralelo seguro
+
+### R16 — Push HML local — PARCIAL
+- src/notifications/pushClient.ts + tests/contract/push.test.ts;
+- somente TEST-PUSH-*; preferência transacional alinhada à privacidade; marketing OFF; zero FCM/APNs/rede; 5/5 testes verdes.
+- pendente: plugin nativo, permissões, FCM/APNs, backend e aparelhos reais.
+
+### R17 — Foto e áudio — PARCIAL
+- src/platform/media.ts + src/conversation/mediaComposer.ts + tests/unit/media.test.ts;
+- somente TEST-MEDIA-*; MIME/limites/duração; zero upload/storage/rede/path/EXIF; 6/6 verdes.
+- pendente: Photo Picker/câmera/microfone nativos, Storage HML e aparelhos.
+
+### R18 — Histórico e recompra — PARCIAL
+- src/customer/customerProfile.ts + src/orders/purchaseHistory.ts + src/orders/reorder.ts + tests/unit/reorder.test.ts;
+- sessão TEST-SESSION-* verificada; cliente/histórico TEST-*; preço atual; indisponíveis separados; confirmação explícita antes do carrinho; 5/5 verdes.
+
+### R19 — Privacidade local — PARCIAL reforçada
+- revoke_device limpa sessão local mesmo sem backend; 2/2 testes adicionais verdes.
+
+### R21 — Observabilidade — PARCIAL reforçada
+- src/platform/operationalHealth.ts + teste;
+- contadores sem PII para pairing, deep-link e push; 3/3 verdes.
+
+## Supabase HML revalidado
+- enabled=false;
+- environment=homologation;
+- max_requests_per_minute=60;
+- catálogo: 10 registros, 0 IDs fora de TEST-PROD-*;
+- nenhuma alteração de banco; nenhuma função apagada/criada; nenhum plano/spend cap alterado.
+
+## Estado consolidado
+Concluídas: R0–R9 e R20.
+Parciais: R12, R13, R14, R15, R16, R17, R18, R19, R21, R22, R23.
+R10 permanece bloqueada por toolchain nativa.
+Produção OFF; Comprar intocado; PR #396 deve permanecer Draft e NÃO MERGEAR.
