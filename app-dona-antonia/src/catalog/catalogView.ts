@@ -171,6 +171,13 @@ export function renderProductDetail(product: Product): string {
           ${promo ? `<del>${money(product.priceCents)}</del>` : ''}
           <strong>${money(promo ? product.promoPriceCents! : product.priceCents)}</strong>
         </div>
+        <button
+          type="button"
+          class="product-add"
+          data-cart-add-product="${escapeHtml(product.id)}"
+        >
+          Adicionar ao pedido
+        </button>
         <p class="homologation-note">Produto fictício para teste. Nenhum pedido real será criado.</p>
       </div>
     </article>
