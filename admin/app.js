@@ -176,6 +176,8 @@ const historyAddressLine=a=>{const x=a&&typeof a==='object'?a:{};return [x.stree
 const historyStatusLabel=v=>({storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Enviado ao Bling',processing:'Em processamento',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'})[String(v||'')]||String(v||'—');
 
 const customerSegmentLabel=value=>({
+  comprou_alguma_vez:'Comprou alguma vez',
+  primeira_compra:'Primeira compra',
   primeiro_comprador:'Primeiro comprador',
   recorrente:'Recorrente',
   mensal:'Mensal',
@@ -184,11 +186,24 @@ const customerSegmentLabel=value=>({
   comprador_cesta:'Compra cestas',
   produtos_avulsos:'Produtos avulsos',
   cesta_favorita:'Cesta favorita',
-  proximo_recompra:'Próximo da recompra'
+  proximo_recompra:'Próximo da recompra',
+  sem_compra_30d:'30 dias sem compra',
+  sem_compra_60d:'60 dias sem compra',
+  mercearia:'Compra mercearia',
+  lavanderia:'Compra limpeza/lavanderia',
+  higiene:'Compra higiene/beleza',
+  cesta_basica:'Compra cesta básica',
+  falou_nao_comprou:'Falou e não comprou',
+  carrinho_nao_concluido:'Carrinho não concluído',
+  marketing_permitido:'Marketing permitido',
+  marketing_nao_permitido:'Marketing não permitido',
+  atendimento_problema:'Em atendimento/problema',
+  baixa_qualidade_dados:'Baixa qualidade de dados'
 })[String(value||'')]||String(value||'');
 
 function customerHistoryMarkup(customer={},data={},customer360=null){
   const intel=data.intelligence||{},segments=data.segments||{},orders=data.orders||[],products=intel.top_products||[],categories=intel.top_categories||[];
+  const dynamicSegments=customer360?.commercial?.segments||null;
   const dq=customer360?.data_quality||null;
   const contact=customer360?.contact||{};
   const consentCurrent=customer360?.consent?.current||{};
@@ -252,8 +267,11 @@ function customerHistoryMarkup(customer={},data={},customer360=null){
   ${timeline.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Linha do tempo</h3><small class="muted">Últimos eventos consolidados</small></div><div class="customer-history-orders">${timeline.slice(0,20).map(x=>`<article><div><strong>${esc(x.title||x.event_kind||'Evento')}</strong><small>${esc(date(x.occurred_at))} · ${esc(x.channel||'')}</small><small>${esc(x.body_text||'')}</small></div><div><span class="badge">${esc(x.direction||'system')}</span></div></article>`).join('')}</div></section>`:''}`:'';
   const frequency=intel.repurchase_frequency_label?String(intel.repurchase_frequency_label):'Ainda sem padrão';
   const favoriteBasket=intel.favorite_basket?.name||intel.last_basket?.name||'—';
-  const segmentList=Array.isArray(segments.segments)?segments.segments:[];
-  const segmentReasons=segments.reasons&&typeof segments.reasons==='object'?segments.reasons:{};
+  const segmentSource=dynamicSegments||segments;
+  const segmentList=Array.isArray(segmentSource?.segments)?segmentSource.segments:[];
+  const segmentReasons=segmentSource?.reasons&&typeof segmentSource.reasons==='object'?segmentSource.reasons:
+    (segmentSource?.legacy_reasons&&typeof segmentSource.legacy_reasons==='object'?segmentSource.legacy_reasons:{});
+  const segmentEngineVersion=dynamicSegments?.engine_version||null;
   return `<div class="customer-history-shell">
     <div class="editor-head"><div><small class="muted">Histórico de compras</small><h2>${esc(customer.name||'Cliente')}</h2><div class="muted">${esc(customer.primary_whatsapp_e164||'')}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div>
     <div class="customer-history-stats">
@@ -262,7 +280,7 @@ function customerHistoryMarkup(customer={},data={},customer360=null){
       <article><span>Ticket médio</span><strong>${money(intel.average_ticket||0)}</strong></article>
       <article><span>Última compra</span><strong>${intel.last_order_at?esc(date(intel.last_order_at)):'—'}</strong></article>
     </div>
-    ${segmentList.length?`<section class="customer-segments-panel"><div class="customer-history-title"><h3>Perfil comercial calculado</h3><small class="muted">Baseado somente no histórico</small></div><div class="customer-segment-badges">${segmentList.map(key=>`<span title="${esc(segmentReasons[key]||'Regra calculada a partir das compras')}">${esc(customerSegmentLabel(key))}</span>`).join('')}</div></section>`:''}
+    ${segmentList.length?`<section class="customer-segments-panel"><div class="customer-history-title"><h3>${segmentEngineVersion?'Segmentos dinâmicos':'Perfil comercial calculado'}</h3><small class="muted">${segmentEngineVersion?`Recalculados por fatos · ${esc(segmentEngineVersion)}`:'Baseado somente no histórico'}</small></div><div class="customer-segment-badges">${segmentList.map(key=>`<span title="${esc(segmentReasons[key]||'Regra calculada automaticamente a partir de fatos do cliente')}">${esc(customerSegmentLabel(key))}</span>`).join('')}</div></section>`:''}
     ${secureExtras}
     <section class="customer-history-summary">
       <div><span>Cesta mais comprada</span><strong>${esc(favoriteBasket)}</strong></div>
@@ -314,7 +332,7 @@ async function loadCustomers(){
     if(secureCustomersEnabled())await refreshIdentityDiagnostics();
     const data=await dataPromise;
     customerState.total=data.total||0;
-    const segmentOptions=[
+    const legacySegmentOptions=[
       ['','Todos os clientes'],
       ['primeiro_comprador','Primeiro comprador'],
       ['recorrente','Recorrente'],
@@ -326,6 +344,32 @@ async function loadCustomers(){
       ['cesta_favorita','Cesta favorita'],
       ['proximo_recompra','Próximo da recompra']
     ];
+    const secureSegmentOptions=[
+      ['','Todos os clientes'],
+      ['comprou_alguma_vez','Comprou alguma vez'],
+      ['primeira_compra','Primeira compra'],
+      ['recorrente','Recorrente'],
+      ['mensal','Mensal'],
+      ['proximo_recompra','Próximo da recompra'],
+      ['sem_compra_30d','30 dias sem compra'],
+      ['sem_compra_60d','60 dias sem compra'],
+      ['inativo','Inativo'],
+      ['alto_valor','Alto valor'],
+      ['cesta_basica','Compra cesta básica'],
+      ['comprador_cesta','Compra cestas'],
+      ['produtos_avulsos','Produtos avulsos'],
+      ['cesta_favorita','Cesta favorita'],
+      ['mercearia','Compra mercearia'],
+      ['lavanderia','Compra limpeza/lavanderia'],
+      ['higiene','Compra higiene/beleza'],
+      ['falou_nao_comprou','Falou e não comprou'],
+      ['carrinho_nao_concluido','Carrinho não concluído'],
+      ['atendimento_problema','Em atendimento/problema'],
+      ['baixa_qualidade_dados','Baixa qualidade de dados'],
+      ['marketing_permitido','Marketing permitido agora'],
+      ['marketing_nao_permitido','Marketing bloqueado agora']
+    ];
+    const segmentOptions=secureCustomersEnabled()?secureSegmentOptions:legacySegmentOptions;
     app.innerHTML=`${pageHead('Clientes','Cadastro, Customer 360 e histórico comercial.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}
       ${identitySummaryMarkup()}
       <form id="customerFilterForm" class="toolbar">
