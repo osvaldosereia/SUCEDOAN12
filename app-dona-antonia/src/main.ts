@@ -29,6 +29,7 @@ import { createOrderFixtureRepository } from './orders/orderFixtureRepository.ts
 import { renderOrderTracking } from './orders/orderTrackingView.ts';
 import type { OrderRecord } from './orders/types.ts';
 import { detectRuntime } from './platform/runtime.ts';
+import { registerAppServiceWorker } from './platform/serviceWorker.ts';
 
 const root = document.querySelector<HTMLElement>('#app');
 
@@ -394,3 +395,9 @@ appRoot.addEventListener('submit', (event) => {
     }
   }
 });
+
+
+void registerAppServiceWorker(
+  'serviceWorker' in navigator ? navigator.serviceWorker : undefined,
+  window.location.pathname,
+);
