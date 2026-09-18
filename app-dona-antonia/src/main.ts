@@ -28,6 +28,10 @@ import { createConversationStore } from './conversation/store.ts';
 import { createOrderFixtureRepository } from './orders/orderFixtureRepository.ts';
 import { renderOrderTracking } from './orders/orderTrackingView.ts';
 import type { OrderRecord } from './orders/types.ts';
+import { createPreferencesStore } from './privacy/preferences.ts';
+import { createPrivacyCenter } from './privacy/privacyCenter.ts';
+import type { PrivacyRequestType } from './privacy/privacyCenter.ts';
+import { renderPrivacyCenter } from './privacy/privacyView.ts';
 import { canConfirmOrder, getNetworkState } from './platform/networkState.ts';
 import { detectRuntime } from './platform/runtime.ts';
 import { registerAppServiceWorker } from './platform/serviceWorker.ts';
@@ -55,6 +59,8 @@ const cart = createCartStore();
 const checkoutGateway = createCheckoutFixtureGateway();
 const checkout = createCheckoutFlow(checkoutGateway);
 const orderRepository = createOrderFixtureRepository();
+const privacyPreferences = createPreferencesStore();
+const privacyCenter = createPrivacyCenter();
 let activeOrder: OrderRecord | null = null;
 
 const catalogRepository = createCatalogFixtureRepository(productsData as Product[]);
@@ -106,7 +112,9 @@ function render(route = appNavigator.current()): void {
           ? renderCheckout(checkout.getSnapshot())
           : route === 'order'
             ? renderOrderTracking(activeOrder)
-            : undefined;
+            : route === 'privacy'
+              ? renderPrivacyCenter(privacyPreferences.getSnapshot())
+              : undefined;
 
   const cartSummary = calculateCartTotal(cart.getSnapshot());
 
@@ -316,6 +324,33 @@ async function handleClick(event: MouseEvent): Promise<void> {
     void conversation.assistantSay(
       `Este é o pedido de homologação ${supportOrderId}. O suporte externo ainda não está ativado.`,
     );
+    return;
+  }
+
+  if (element.closest('[data-privacy-transactional]')) {
+    const current = privacyPreferences.getSnapshot().transactionalPushEnabled;
+    privacyPreferences.setTransactional(!current);
+    render();
+    return;
+  }
+
+  if (element.closest('[data-privacy-marketing]')) {
+    const current = privacyPreferences.getSnapshot().marketingPushOptIn;
+    privacyPreferences.setMarketing(!current);
+    render();
+    return;
+  }
+
+  const privacyRequestTarget = element.closest<HTMLElement>('[data-privacy-request]');
+  const privacyRequestType = privacyRequestTarget?.dataset.privacyRequest as PrivacyRequestType | undefined;
+  if (privacyRequestType) {
+    const result = await privacyCenter.request(privacyRequestType);
+    conversation.userSay('Quero exercer um direito de privacidade');
+    if (!result.submitted) {
+      void conversation.assistantSay(
+        'Esta solicitação ainda está somente em homologação e não foi enviada para produção.',
+      );
+    }
     return;
   }
 
