@@ -2,7 +2,7 @@
 
 **Data de consolidação:** 18/09/2026  
 **Repositório:** `osvaldosereia/SUCEDOAN12`  
-**Documento de continuidade:** este arquivo é a referência principal para retomar o projeto em qualquer nova janela.  
+**Documento de continuidade:** este arquivo é a referência principal para contexto geral; o checkpoint operacional mais recente está em `docs/projects/app-dona-antonia/HANDOFF.md` e em `app-dona-antonia/PROJECT-STATUS.md` na branch de homologação.  
 **Estado operacional:** **OFF / ISOLADO / NÃO PUBLICADO / NÃO USAR EM PRODUÇÃO**  
 **Branch de desenvolvimento atual:** `app-dona-antonia-r0-isolation`  
 **Pull Request de homologação:** #396 — draft — **NÃO MERGEAR**  
@@ -1643,3 +1643,48 @@ Validação do cliente:
 - 4/4 testes estruturais;
 - checklist UX criado;
 - VoiceOver/TalkBack/aparelhos reais ainda pendentes.
+
+
+---
+
+# 29. Handoff mais recente — próxima aba/projeto do ChatGPT
+
+Arquivo canônico criado:
+
+`docs/projects/app-dona-antonia/HANDOFF.md`
+
+## Estado adicional após o snapshot anterior
+
+A Central de Privacidade local da Rodada 19 foi implementada e integrada:
+- marketing push começa OFF;
+- push transacional permanece separado;
+- solicitações de acesso/correção/exclusão/revogação não fingem envio quando backend está indisponível;
+- 7/7 testes locais aprovados;
+- backend de privacidade permanece pendente.
+
+Também foram versionadas fundações ainda **não homologadas no checkpoint final**:
+
+### Rodada 12
+- `app-dona-antonia/src/customer/secureSession.ts`;
+- `app-dona-antonia/tests/unit/secureSession.test.ts`.
+
+### Rodada 14
+- `app-dona-antonia/src/customer/pairing.ts`;
+- `app-dona-antonia/tests/contract/pairing.test.ts`.
+
+### Rodada 15
+- `app-dona-antonia/src/platform/appLinks.ts`;
+- `app-dona-antonia/tests/unit/appLinks.test.ts`;
+- ajuste em `app-dona-antonia/src/platform/urlPolicy.ts`.
+
+**Esses módulos não podem ser marcados como concluídos ainda.**
+
+A próxima conversa deve:
+1. validar os testes R12/R14/R15;
+2. rodar typecheck;
+3. rodar isolamento;
+4. corrigir qualquer falha;
+5. salvar checkpoints;
+6. continuar pelas próximas rodadas seguras já autorizadas.
+
+O proprietário autorizou avançar automaticamente por várias rodadas seguras. Pedir nova autorização apenas para custo novo, produção real, operação destrutiva relevante ou decisão obrigatória do proprietário.
