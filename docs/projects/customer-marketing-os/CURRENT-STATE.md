@@ -271,3 +271,26 @@ A Central agora exibe diretamente:
 Read model `relationship_command_summary_v1`: `cm1.15-v2`.
 
 A tela é somente informativa e não possui ação de ativação.
+
+
+## Comprar — evidência de instrumentação
+
+Código no HEAD:
+
+- `comprar/index.html` carrega `products.js?v=20260918-cm1-events-02`;
+- busca manual dispara `trackCatalogSearch('search_form')`;
+- busca originada do chat dispara `trackCatalogSearch('chat_lookup')`;
+- abertura de detalhe dispara `trackProductView(product,'product_detail')`;
+- `productApi` inclui o token da sala;
+- `shopping-chat-products-v1` valida a sala e grava por `record_catalog_interaction_v1`.
+
+O backend implantado já foi validado anteriormente com smoke determinístico.
+
+Ainda assim:
+
+- `catalog_search=0`;
+- `product_view=0`.
+
+A sessão atual não conseguiu inspecionar diretamente o arquivo JS servido pelo domínio público. Portanto, **deploy público da versão do frontend ainda não é considerado evidência comprovada nesta homologação**.
+
+Não tratar o zero como bug nem como sucesso até existir uso real ou comprovação direta do asset publicado.
