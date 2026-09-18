@@ -26,3 +26,15 @@ test('shell keeps production-looking content out of homologation frame', () => {
   assert.match(html, /Como posso ajudar/);
   assert.doesNotMatch(html, /Finalizar pedido real/i);
 });
+
+
+test('shell renders conversation markup supplied by the conversation engine', () => {
+  const html = renderAppShell({
+    route: 'home',
+    state: 'ready',
+    conversationHtml: '<div data-test-conversation>Mensagem dinâmica</div>',
+  });
+
+  assert.match(html, /data-test-conversation/);
+  assert.match(html, /Mensagem dinâmica/);
+});
