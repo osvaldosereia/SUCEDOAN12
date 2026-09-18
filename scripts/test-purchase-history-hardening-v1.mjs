@@ -27,4 +27,15 @@ assert.match(migration,/revoke all on public\.purchase_history_integrity_v1 from
 assert.match(migration,/grant execute on function public\.get_purchase_history_integrity_v1\(\) to service_role/);
 assert.doesNotMatch(migration,/make\.com|hook\.make/i);
 
+const finalizer=fs.readFileSync('supabase/migrations/20260918042000_finalize_bling_history_backfill_v1.sql','utf8');
+assert.match(finalizer,/finalize_bling_history_backfill_v1/);
+assert.match(finalizer,/purchase_history_integrity_snapshots/);
+assert.match(finalizer,/refresh_customer_purchase_profile/);
+assert.match(finalizer,/get_purchase_history_integrity_v1/);
+assert.match(finalizer,/enabled=false/);
+assert.match(finalizer,/fetch_enabled=false/);
+assert.match(finalizer,/promotion_enabled=false/);
+assert.match(finalizer,/cron\.unschedule\('bling-history-customer-backfill-v1'\)/);
+assert.match(finalizer,/backfill_not_finished/);
+
 console.log('PASS: hardening do histórico de compras V1');
