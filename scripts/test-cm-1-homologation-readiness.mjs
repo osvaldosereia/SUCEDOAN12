@@ -5,6 +5,7 @@ const migration=fs.readFileSync('supabase/migrations/20260919050000_cm_1_homolog
 const runtime=fs.readFileSync('admin/runtime-config.js','utf8');
 const relationship=fs.readFileSync('admin/relacionamento.js','utf8');
 const html=fs.readFileSync('admin/relacionamento.html','utf8');
+const directMeta=fs.readFileSync('supabase/functions/whatsapp-meta-direct-v1/index.ts','utf8');
 
 assert.match(migration,/cm1_homologation_readiness_v1/);
 assert.match(migration,/safe_for_internal_homologation/);
@@ -31,5 +32,10 @@ assert.match(relationship,/safe_for_internal_homologation/);
 assert.match(relationship,/external_activation_authorized/);
 assert.match(relationship,/Efeitos externos marketing 7d/);
 assert.match(relationship,/Efeitos externos IA 7d/);
+
+assert.match(directMeta,/from\("whatsapp_direct_config"\)/);
+assert.match(directMeta,/!cfg\?\.enabled\|\|cfg\.release_mode===\"off\"/,'Meta Direct must hard-stop when dedicated config is off');
+assert.match(directMeta,/return json\(\{ok:true,disabled:true\}\)/);
+assert.doesNotMatch(directMeta,/from\("automation_config"\)/,'Meta Direct must not depend on legacy automation_config');
 
 console.log('cm-1 homologation readiness contract ok');
