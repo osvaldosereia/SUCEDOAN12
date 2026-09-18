@@ -11,7 +11,7 @@ const image=v=>v?`<img class="thumb" src="${esc(v)}" alt="" loading="lazy" decod
 const wa=v=>`https://wa.me/${String(v||'').replace(/\D/g,'')}`;
 let route='dashboard';
 let productState={page:1,total:0,q:'',status:'',category:''};
-let customerState={page:1,total:0,q:''};
+let customerState={page:1,total:0,q:'',segment:''};
 let orderState={page:1,total:0,q:'',status:''};
 let storefrontState={categories:[],featuredProducts:[],baskets:[]};
 let currentBasketId=null;
@@ -187,7 +187,29 @@ async function openCustomerHistoryOrder(customerId,orderId){
 
 async function loadCustomers(){
   loading('Carregando clientes…');
-  try{const data=await api('customers',{page:customerState.page,limit:30,q:customerState.q});customerState.total=data.total||0;app.innerHTML=`${pageHead('Clientes','Cadastro simples com telefone e endereço.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}<form id="customerFilterForm" class="toolbar"><input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF"><button class="primary" type="submit">Buscar</button></form><section class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Compras</th><th>Status</th><th>Ações</th></tr></thead><tbody>${(data.customers||[]).map(c=>`<tr><td><strong>${esc(c.name||'Sem nome')}</strong></td><td>${esc(c.primary_whatsapp_e164||'—')}</td><td><strong>${esc(c.order_count||0)}</strong><div class="muted">${money(c.lifetime_value||0)}${c.last_order_at?` · ${esc(date(c.last_order_at))}`:''}</div></td><td><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></td><td><div class="row-actions"><button type="button" data-customer-history="${esc(c.id)}">Histórico</button><button type="button" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div></td></tr>`).join('')}</tbody></table></div>${pagination(customerState.page,customerState.total,'customers',30)}</section>`}catch(e){app.innerHTML=`${pageHead('Clientes')}<div class="panel empty">${esc(e.message)}</div>`}
+  try{
+    const data=await api('customers',{page:customerState.page,limit:30,q:customerState.q,segment:customerState.segment});
+    customerState.total=data.total||0;
+    const segmentOptions=[
+      ['','Todos os clientes'],
+      ['primeiro_comprador','Primeiro comprador'],
+      ['recorrente','Recorrente'],
+      ['mensal','Mensal'],
+      ['inativo','Inativo'],
+      ['alto_valor','Alto valor'],
+      ['comprador_cesta','Compra cestas'],
+      ['produtos_avulsos','Produtos avulsos'],
+      ['cesta_favorita','Cesta favorita'],
+      ['proximo_recompra','Próximo da recompra']
+    ];
+    app.innerHTML=`${pageHead('Clientes','Cadastro e histórico comercial calculado.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}
+      <form id="customerFilterForm" class="toolbar">
+        <input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF">
+        <select name="segment" aria-label="Filtrar por segmento">${segmentOptions.map(([value,label])=>`<option value="${esc(value)}" ${customerState.segment===value?'selected':''}>${esc(label)}</option>`).join('')}</select>
+        <button class="primary" type="submit">Buscar</button>
+      </form>
+      <section class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Compras</th><th>Status</th><th>Ações</th></tr></thead><tbody>${(data.customers||[]).map(c=>`<tr><td><strong>${esc(c.name||'Sem nome')}</strong></td><td>${esc(c.primary_whatsapp_e164||'—')}</td><td><strong>${esc(c.order_count||0)}</strong><div class="muted">${money(c.lifetime_value||0)}${c.last_order_at?` · ${esc(date(c.last_order_at))}`:''}</div></td><td><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></td><td><div class="row-actions"><button type="button" data-customer-history="${esc(c.id)}">Histórico</button><button type="button" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div></td></tr>`).join('')}</tbody></table></div>${pagination(customerState.page,customerState.total,'customers',30)}</section>`;
+  }catch(e){app.innerHTML=`${pageHead('Clientes')}<div class="panel empty">${esc(e.message)}</div>`}
 }
 
 function customerEditorMarkup(customer={},address={},email=''){const a=address||{};return `<form id="customerEditorForm" class="editor-shell" data-id="${esc(customer.id||'')}"><div class="editor-head"><h2>${customer.id?'Editar cliente':'Novo cliente'}</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="form-grid"><label class="field wide"><span>Nome</span><input name="name" value="${esc(customer.name||'')}" required></label><label class="field"><span>Telefone</span><input name="phone" value="${esc(customer.primary_whatsapp_e164||'')}"></label><label class="field"><span>CPF/CNPJ</span><input name="cpf_cnpj" value="${esc(customer.cpf_cnpj||'')}"></label><label class="field wide"><span>E-mail</span><input name="email" type="email" value="${esc(email||'')}"></label><div class="wide check-row"><label class="check"><input name="is_active" type="checkbox" ${checked(customer.is_active!==false)}> Ativo</label></div><div class="wide"><h3>Endereço</h3></div><label class="field"><span>CEP</span><input name="postal_code" value="${esc(a.postal_code||'')}"></label><label class="field"><span>Cidade</span><input name="city" value="${esc(a.city||'Cuiabá')}"></label><label class="field"><span>Estado</span><input name="state" maxlength="2" value="${esc(a.state||'MT')}"></label><label class="field"><span>Bairro</span><input name="neighborhood" value="${esc(a.neighborhood||'')}"></label><label class="field wide"><span>Rua</span><input name="street" value="${esc(a.street||'')}"></label><label class="field"><span>Número</span><input name="number" value="${esc(a.number||'')}"></label><label class="field"><span>Complemento</span><input name="complement" value="${esc(a.complement||'')}"></label><label class="field wide"><span>Referência</span><input name="reference" value="${esc(a.reference||'')}"></label><label class="field wide"><span>Link exato do Google Maps</span><input name="google_maps_url" value="${esc(a.google_maps_url||'')}"></label></div><div class="form-actions"><button class="secondary" type="button" data-close-dialog>Cancelar</button><button class="primary" type="submit">Salvar cliente</button></div></form>`}
@@ -239,7 +261,7 @@ document.addEventListener('submit',async e=>{
   if(form.id==='featuredProductSearchForm'){e.preventDefault();const q=$('featuredProductSearch').value.trim();if(q.length>=2)await searchFeaturedProducts(q);return}
   if(form.id==='productFilterForm'){e.preventDefault();const d=formDataObject(form);productState={...productState,page:1,q:String(d.q||''),status:String(d.status||''),category:String(d.category||'')};await loadProducts();return}
   if(form.id==='orderFilterForm'){e.preventDefault();const d=formDataObject(form);orderState={...orderState,page:1,q:String(d.q||''),status:String(d.status||'')};await loadOrders();return}
-  if(form.id==='customerFilterForm'){e.preventDefault();const d=formDataObject(form);customerState={...customerState,page:1,q:String(d.q||'')};await loadCustomers();return}
+  if(form.id==='customerFilterForm'){e.preventDefault();const d=formDataObject(form);customerState={...customerState,page:1,q:String(d.q||''),segment:String(d.segment||'')};await loadCustomers();return}
   if(form.id==='newCategoryForm'){e.preventDefault();const d=formDataObject(form);try{await api('save_category',{name:d.name,sort_order:Number(d.sort_order||0),is_visible:form.elements.is_visible.checked,show_home:form.elements.show_home.checked});toast('Categoria adicionada.','success');await loadCategories()}catch(err){toast(err.message,'error')}return}
 });
 
