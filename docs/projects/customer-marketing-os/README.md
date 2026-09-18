@@ -38,7 +38,7 @@ Este projeto cobre a camada de relacionamento, inteligência de cliente, WhatsAp
 
 Manter separado, embora possa integrar no futuro:
 
-- Marketing Studio / publicação de conteúdo e Round 8;
+- Marketing Studio / publicação de conteúdo e Round 8 — documentação canônica em `docs/projects/marketing-admin/`;
 - Studio Criativo / Stop Motion;
 - app mobile Dona Antônia;
 - Financeiro / logística / fiscal do roadmap geral;
