@@ -43,6 +43,11 @@ export const createDeterministicMarketingDraft=()=>secureCall(CONFIG.marketingBr
 export const planMarketingCampaignAssets=(campaignId)=>secureCall(CONFIG.marketingBrainFunction,{action:'plan_campaign_assets',campaign_id:campaignId});
 export const updateMarketingCampaignDraft=(payload)=>secureCall(CONFIG.marketingBrainFunction,{action:'update_campaign_draft',...payload});
 export const previewAiMarketingStrategy=()=>secureCall(CONFIG.marketingBrainFunction,{action:'strategy_preview'});
+export const getWhatsAppTemplateLibrary=()=>secureCall(CONFIG.whatsappDirectAdminFunction,{action:'template_library'});
+export const getWhatsAppTemplateVersions=(templateKey)=>secureCall(CONFIG.whatsappDirectAdminFunction,{action:'template_versions',template_key:templateKey});
+export const validateWhatsAppTemplateDraft=(payload)=>secureCall(CONFIG.whatsappDirectAdminFunction,{action:'template_validate',...payload});
+export const saveWhatsAppTemplateDraft=(payload)=>secureCall(CONFIG.whatsappDirectAdminFunction,{action:'template_save_draft',...payload},30000);
+export const createAiWhatsAppTemplateDraft=(payload)=>secureCall(CONFIG.whatsappDirectAdminFunction,{action:'template_ai_draft',...payload},60000);
 
 export const renderMarketingPreview=(assetId)=>secureCall(CONFIG.marketingMediaFunction,{action:'render_preview',asset_id:assetId},60000);
 export const getMarketingMediaUrl=(mediaId,expiresIn=600)=>secureCall(CONFIG.marketingMediaFunction,{action:'signed_url',media_id:mediaId,expires_in:expiresIn},18000);
