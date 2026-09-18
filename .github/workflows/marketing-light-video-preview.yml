@@ -32,7 +32,9 @@ jobs:
         run: node --test tests/marketing-light-video-render-worker.test.mjs
 
       - name: Verify FFmpeg
-        run: command -v ffmpeg\n          ffmpeg -version | head -n 3
+        run: |
+          command -v ffmpeg
+          ffmpeg -version | head -n 3
 
       - name: Render one queued preview
         env:
