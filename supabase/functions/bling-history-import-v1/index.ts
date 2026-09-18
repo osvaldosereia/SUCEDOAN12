@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.112.3";
 
 const API_BASE='https://api.bling.com.br/Api/v3';
-const OAUTH_URL='https://api.bling.com.br/oauth/token';
+const OAUTH_URLS=['https://api.bling.com.br/oauth/token','https://api.bling.com.br/Api/v3/oauth/token'];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(value:unknown,max=500)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const digits=(value:unknown)=>String(value??'').replace(/\D/g,'');
@@ -212,22 +212,30 @@ Deno.serve(async(req:Request)=>{
   };
 
   try{
-    const oauthBody=new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken});
-    const oauthResponse=await fetch(OAUTH_URL,{
-      method:'POST',
-      headers:{
-        Authorization:`Basic ${basic(clientId,clientSecret)}`,
-        'Content-Type':'application/x-www-form-urlencoded',
-        Accept:'application/json',
-        'enable-jwt':'1'
-      },
-      body:oauthBody
-    });
-    const oauthText=await oauthResponse.text();
-    let oauth:any={};try{oauth=oauthText?JSON.parse(oauthText):{}}catch{}
-    if(!oauthResponse.ok||!clean(oauth?.access_token,5000)){
-      await finish('error',{stage:'oauth',http_status:oauthResponse.status},{page},'bling_oauth_failed');
-      return response({ok:false,error:'bling_oauth_failed',http_status:oauthResponse.status},502);
+    let oauthResponse:Response|null=null;
+    let oauth:any={};
+    for(const oauthUrl of OAUTH_URLS){
+      const oauthBody=new URLSearchParams({grant_type:'refresh_token',refresh_token:refreshToken});
+      const attempt=await fetch(oauthUrl,{
+        method:'POST',
+        headers:{
+          Authorization:`Basic ${basic(clientId,clientSecret)}`,
+          'Content-Type':'application/x-www-form-urlencoded',
+          Accept:'1.0',
+          'enable-jwt':'1'
+        },
+        body:oauthBody
+      });
+      const oauthText=await attempt.text();
+      let parsed:any={};try{parsed=oauthText?JSON.parse(oauthText):{}}catch{}
+      oauthResponse=attempt;
+      oauth=parsed;
+      if(attempt.ok&&clean(parsed?.access_token,5000))break;
+      if(![403,404,405].includes(attempt.status))break;
+    }
+    if(!oauthResponse?.ok||!clean(oauth?.access_token,5000)){
+      await finish('error',{stage:'oauth',http_status:oauthResponse?.status||0},{page},'bling_oauth_failed');
+      return response({ok:false,error:'bling_oauth_failed',http_status:oauthResponse?.status||0},502);
     }
 
     const accessToken=clean(oauth.access_token,5000);
