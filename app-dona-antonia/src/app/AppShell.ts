@@ -5,6 +5,7 @@ export type ShellState = 'ready' | 'loading' | 'empty' | 'error' | 'offline';
 export interface AppShellOptions {
   route: AppRoute;
   state: ShellState;
+  conversationHtml?: string;
 }
 
 const STATE_COPY: Record<ShellState, { title: string; detail: string }> = {
@@ -30,7 +31,18 @@ const STATE_COPY: Record<ShellState, { title: string; detail: string }> = {
   },
 };
 
-export function renderAppShell({ route, state }: AppShellOptions): string {
+const DEFAULT_CONVERSATION = `
+  <div class="message assistant-message">
+    <span class="message-author">Ana</span>
+    <p>Olá! Como posso ajudar?</p>
+  </div>
+`.trim();
+
+export function renderAppShell({
+  route,
+  state,
+  conversationHtml = DEFAULT_CONVERSATION,
+}: AppShellOptions): string {
   const copy = STATE_COPY[state];
 
   return `
@@ -48,16 +60,7 @@ export function renderAppShell({ route, state }: AppShellOptions): string {
 
       <main class="app-content">
         <section class="conversation-region" data-shell="conversation" aria-live="polite" aria-label="Conversa">
-          <div class="message assistant-message">
-            <p>Olá! Como posso ajudar?</p>
-          </div>
-
-          <div class="quick-actions" aria-label="Opções principais">
-            <button type="button" data-route-target="basket">Cestas</button>
-            <button type="button" data-route-target="catalog">Ofertas</button>
-            <button type="button" data-route-target="catalog">Para Você</button>
-            <button type="button" data-route-target="catalog">Para Casa</button>
-          </div>
+          ${conversationHtml}
         </section>
 
         <section class="tool-region" data-shell="tool" data-state="${state}" aria-label="Área de atendimento">
