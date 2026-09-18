@@ -53,7 +53,7 @@ Documento:
 
 Total: 27 rodadas numeradas de 0 a 26.
 
-**Próxima rodada permitida:** Rodada 4 — Catálogo fictício e navegação.
+**Próxima rodada permitida:** Rodada 5 — Cestas básicas fictícias.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
 
@@ -193,3 +193,49 @@ O documento principal para retomada em novas janelas está salvo na `main`:
 Ao retomar o projeto, este arquivo deve ser lido primeiro, seguido do design, plano de rodadas e deste `PROJECT-STATUS.md`.
 
 **Snapshot atual:** Rodadas 0–3 concluídas; próxima Rodada 4.
+
+
+## Checkpoint — Rodada 4
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- catálogo 100% sintético com 24 produtos de teste;
+- nenhum produto, imagem ou preço veio da produção;
+- contratos `Product`, `CatalogFilters` e `CatalogRepository`;
+- repositório em memória com busca sem diferenciar maiúsculas/minúsculas ou acentos;
+- filtros `Todos | Ofertas | Para Você | Para Casa`;
+- categorias e subcategorias derivadas dos produtos ativos da seção;
+- busca textual;
+- paginação determinística por `offset/limit`;
+- preço normal e preço promocional;
+- etiqueta `Oferta`;
+- cards responsivos;
+- detalhe do produto;
+- placeholders locais em vez de imagens externas;
+- controller próprio para estado de catálogo;
+- região dinâmica `toolHtml` no shell;
+- integração das respostas iniciais da conversa com os filtros corretos do catálogo;
+- botão Buscar explícito;
+- detalhe do produto deliberadamente sem ação de carrinho, pois carrinho pertence à Rodada 6.
+
+Validações executadas:
+- TDD do repositório: teste falhou inicialmente por ausência de `catalogFixtureRepository.ts`;
+- TDD do controller: teste falhou inicialmente por ausência de `catalogController.ts`;
+- TDD da integração do shell: typecheck falhou inicialmente porque `toolHtml` ainda não existia no contrato;
+- 10 testes específicos de catálogo/controller/view aprovados;
+- 1 teste específico da região dinâmica do shell aprovado;
+- typecheck dos módulos de catálogo aprovado;
+- typecheck da integração do `main.ts` aprovado em ambiente de validação com contratos equivalentes;
+- renderer do catálogo faz escape de HTML;
+- busca por `CAFE` encontrou corretamente `Café Torrado 500g`;
+- nenhum arquivo de `comprar/` foi modificado;
+- nenhum endpoint externo foi conectado.
+
+Limitação mantida:
+- o build Vite completo continua dependente do acesso ao registry npm e ainda não deve ser considerado validado enquanto esse acesso não estiver disponível.
+
+**Próxima rodada autorizável:** Rodada 5 — Cestas básicas fictícias.
+
+O projeto permanece OFF, não publicado, sem dados reais e sem conexão com produção.
