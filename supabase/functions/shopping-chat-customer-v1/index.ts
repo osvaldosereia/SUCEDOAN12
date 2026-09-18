@@ -44,7 +44,7 @@ Deno.serve(async(req:Request)=>{
 
   if(action==='track_behavior'){
     if(!session.customer_id)return json(req,{ok:true,tracked:false,reason:'customer_not_identified'});
-    const allowed=new Set(['frequent_purchases_open','frequent_product_add','personalized_offers_view','personalized_offer_add']);
+    const allowed=new Set(['repeat_purchase_open','frequent_purchases_open','frequent_product_add','personalized_offers_view','personalized_offer_add']);
     const eventType=clean(body?.event_type,80);
     if(!allowed.has(eventType))return json(req,{ok:false,error:'event_type_not_allowed'},400);
     const raw=body?.event_data&&typeof body.event_data==='object'?body.event_data:{};
@@ -52,6 +52,9 @@ Deno.serve(async(req:Request)=>{
     const productId=clean(raw?.product_id,80);if(productId)eventData.product_id=productId;
     const source=clean(raw?.source,80);if(source)eventData.source=source;
     const quantity=Number(raw?.quantity);if(Number.isFinite(quantity)&&quantity>=0&&quantity<=100)eventData.quantity=quantity;
+    const unavailableCount=Number(raw?.unavailable_count);if(Number.isInteger(unavailableCount)&&unavailableCount>=0&&unavailableCount<=100)eventData.unavailable_count=unavailableCount;
+    const adjustedCount=Number(raw?.adjusted_count);if(Number.isInteger(adjustedCount)&&adjustedCount>=0&&adjustedCount<=100)eventData.adjusted_count=adjustedCount;
+    if(typeof raw?.customized==='boolean')eventData.customized=raw.customized;
     const {error}=await sb.from('customer_behavior_events').insert({
       customer_id:session.customer_id,
       conversation_id:session.conversation_id||null,
