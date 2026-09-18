@@ -573,3 +573,45 @@ Próximo gate humano específico:
 4. conferir no Supabase `meta_account_permissions`, `meta_provider_health_snapshots` e `evaluate_meta_direct_readiness_v1(...)`.
 
 Nenhum token deve ser colado em documentação, commit ou chat.
+
+
+## CHECKPOINT AUTÔNOMO — observador de evidências CM-1
+
+A homologação ganhou infraestrutura adicional que pode continuar operando sem ação humana e sem side effects.
+
+Estado técnico novo:
+
+- `cm1_homologation_evidence_summary_v1()` implantado;
+- `relationship_command_summary_v1()` = `cm1.15-v3`;
+- `cm1_acceptance_checklist_v1()` = `cm1-acceptance-v1.1`;
+- Central > Homologação CM-1 > **Evidências em observação**;
+- Central > Meta Foundation mostra estado do token read-only antes da tentativa;
+- Vault reader limitado ao secret `dona_antonia_whatsapp_access_token_v1`;
+- aceite do lifecycle de oportunidades agora é promovido somente por fechamento real;
+- UI cache `relacionamento.js?v=20260918-9`.
+
+Snapshot canônico desta rodada:
+
+- 14 verified / 6 implemented / 0 blocked;
+- 59 catalog_open / 0 catalog_search / 0 product_view;
+- 75 oportunidades suppressed;
+- 0 oportunidades fechadas;
+- próxima expiração: 23/09/2026 17:00:15 UTC;
+- 1 conflito de identidade;
+- 0 execuções IA;
+- 0 side effects externos 7d;
+- Meta Graph v26.0;
+- token WhatsApp read-only no Vault ainda ausente;
+- `external_activation_authorized=false`.
+
+O sistema agora está preparado para detectar automaticamente futuras evidências reais. Não alterar dados só para promover critérios.
+
+Gates humanos que continuam humanos:
+
+1. fornecer/configurar o System User token WhatsApp no Vault;
+2. repetir Meta Foundation > Verificar Meta agora;
+3. revisão do conflito de identidade;
+4. uso real no Comprar para `catalog_search` e `product_view`;
+5. gates manuais de PIN/policy/ativação;
+6. IA/SUGGEST somente quando houver motivo real e autorização de custo.
+
