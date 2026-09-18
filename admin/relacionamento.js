@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getRelationshipOverview,getRelationshipAudit,getIdentityConflicts,reviewIdentityConflict} from './relationship-api.js';
+import {getRelationshipOverview,getRelationshipAudit,getIdentityConflicts,reviewIdentityConflict,runMetaDiagnosticsReadonly} from './relationship-api.js?v=20260918-6';
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -10,7 +10,7 @@ const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL
 const pct=v=>`${Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`;
 const dt=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(d)};
 const empty=m=>`<div class="empty">${esc(m)}</div>`;
-let state={overview:null,audit:null,identityConflicts:[],identityConflictsError:null};
+let state={overview:null,audit:null,identityConflicts:[],identityConflictsError:null,metaDiagnostics:null};
 
 function canaryAllowed(){
   if(CONFIG.relationshipUiEnabled===true)return true;
@@ -186,8 +186,19 @@ function renderMeta(){
     ].map(x=>metric(x[0],x[1])).join('')}</div></div>
   </div>
   <div class="meta-preflight-box">
-    <div class="section-title"><div><h2>Bloqueios do Meta Direct</h2><p>Read-only. Estes itens precisam de evidência real; esta tela não ativa nada.</p></div>${chip(direct.ready===true?'Pronto':'Bloqueado',direct.ready===true?'ok':'warn')}</div>
+    <div class="section-title"><div><h2>Bloqueios do Meta Direct</h2><p>Read-only. Estes itens precisam de evidência real; esta tela não ativa nada.</p></div><div class="relationship-head-actions">${chip(direct.ready===true?'Pronto':'Bloqueado',direct.ready===true?'ok':'warn')}<button type="button" class="secondary" data-meta-diagnostics>Verificar Meta agora</button></div></div>
     ${blockers.length?`<div class="meta-blocker-list">${blockers.map(key=>`<div class="meta-blocker-row"><span>•</span><strong>${esc(blockerLabels[key]||humanKey(key))}</strong><small>${esc(key)}</small></div>`).join('')}</div>`:empty('Nenhum blocker técnico reportado. Isso não equivale a autorização externa.')}
+    ${state.metaDiagnostics?`<div class="meta-diagnostic-result">
+      <div class="metric-list">${[
+        ['Graph API',state.metaDiagnostics.graph_api_version||'—'],
+        ['Permissão management',state.metaDiagnostics.permissions?.whatsapp_business_management||'—'],
+        ['Permissão messaging',state.metaDiagnostics.permissions?.whatsapp_business_messaging||'—'],
+        ['Qualidade do número',state.metaDiagnostics.phone?.quality_rating||'—'],
+        ['WABA inscrita',state.metaDiagnostics.waba?.subscription_observed===true?'Sim':'Não'],
+        ['Callback Meta Direct',state.metaDiagnostics.webhook?.callback_verified===true?'Verificado':'Ainda não verificado']
+      ].map(x=>metric(x[0],x[1])).join('')}</div>
+      <p class="identity-review-footnote">Diagnóstico executado diretamente pelo Supabase. Nenhuma mensagem foi enviada e nenhuma configuração Meta foi alterada.</p>
+    </div>`:''}
     <p class="identity-review-footnote">Policy Registry técnico pronto não altera o gate humano. Ativação externa continua não autorizada.</p>
   </div>`;
 }
@@ -380,6 +391,24 @@ $('#qualityView').addEventListener('click',async e=>{
   }catch(error){
     card.querySelectorAll('button,input,textarea').forEach(el=>el.disabled=false);
     if(status)status.textContent=error?.message||'Não foi possível registrar a revisão.';
+  }
+});
+$('#metaView').addEventListener('click',async e=>{
+  const button=e.target.closest('button[data-meta-diagnostics]');
+  if(!button)return;
+  const previous=button.textContent;
+  button.disabled=true;
+  button.textContent='Verificando…';
+  $('#globalStatus').textContent='Consultando Meta pela integração nativa do Supabase · somente leitura…';
+  try{
+    state.metaDiagnostics=await runMetaDiagnosticsReadonly();
+    await loadOverview();
+    selectPanel('meta');
+    $('#globalStatus').textContent='Diagnóstico Meta concluído · evidências atualizadas · zero ação externa.';
+  }catch(error){
+    $('#globalStatus').textContent=error?.message||'Não foi possível concluir o diagnóstico Meta.';
+    button.disabled=false;
+    button.textContent=previous;
   }
 });
 $('#refreshRelationship').addEventListener('click',loadOverview);
