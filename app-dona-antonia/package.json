@@ -1,0 +1,11 @@
+{
+  "name": "app-dona-antonia-isolation-guard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "verify:isolation": "node scripts/verify-isolation.mjs",
+    "test:no-production-effects": "node scripts/test-no-production-effects.mjs",
+    "test:isolation": "node --test tests/isolation/isolation.test.mjs",
+    "test": "npm run verify:isolation && npm run test:no-production-effects && npm run test:isolation"
+  }
+}
