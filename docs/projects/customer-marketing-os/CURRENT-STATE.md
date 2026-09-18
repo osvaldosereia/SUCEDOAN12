@@ -538,3 +538,118 @@ Próximas evidências humanas:
 2. Comprar → executar uma busca real e abrir detalhe de um produto.
 
 Até essas evidências existirem, não fabricar eventos, não abrir outbound e não promover gates Meta.
+
+
+## Retomada técnica — 18/09/2026 16:59 America/Cuiaba
+
+Auditoria executada imediatamente após o checkpoint de troca de aba das 16:56, sem ativação externa e sem alteração de dados operacionais.
+
+### GitHub
+
+- HEAD observado antes desta atualização: `f74f6e65b03cd1db260d95f7ddd8335ace83984e`;
+- comparação desde o último commit funcional validado `1f29354122f550c6aea0282c457740980ead3e33`: **7 commits, somente documentação**;
+- nenhum arquivo de runtime/código mudou nesse intervalo;
+- workflow funcional de referência continua `Testar Admin Dona Antônia` run `35388463946`, **SUCCESS**, 38 validações;
+- GitHub Pages no HEAD `f74f6e65...`: run `35388790595`, build **success** e deploy **success**.
+
+A publicação do Pages comprova que o HEAD foi implantado, mas não substitui a evidência orgânica de `catalog_search` / `product_view`.
+
+### Supabase runtime
+
+Reexecução canônica:
+
+- `cm1_acceptance_checklist_v1()`: **14 verified / 6 implemented / 0 blocked**;
+- `cm1_homologation_readiness_v1()`: `safe_for_internal_homologation=true`;
+- `external_activation_authorized=false`;
+- `cm1_complete=false`.
+
+Tráfego PapoAI cresceu naturalmente desde o snapshot anterior:
+
+- receipts: **12**;
+- normalized/canonical events 24h: **12**;
+- customer_linked: **6**;
+- provider identities: **10**;
+- distinct customers: **4**;
+- nenhum external side effect.
+
+Comprar:
+
+- `catalog_open`: **58**;
+- `catalog_add`: **384**;
+- `catalog_checkout_return`: **22**;
+- `catalog_remove`: **10**;
+- `catalog_search`: **0**;
+- `product_view`: **0**.
+
+Portanto os critérios 6 e 7 permanecem `implemented`; nenhuma fixture foi criada.
+
+Opportunity Engine:
+
+- total: **75**;
+- status: **75 suppressed**;
+- dismissed: **0**;
+- converted: **0**;
+- primeira expiração natural: **23/09/2026 17:00:15 UTC**.
+
+Nenhuma oportunidade foi alterada para produzir evidência.
+
+### Meta / WhatsApp
+
+Edge Functions confirmadas no runtime:
+
+- `shopping-chat-products-v1`: ACTIVE v16;
+- `admin-whatsapp-direct-v1`: ACTIVE v7;
+- `whatsapp-meta-direct-v1`: ACTIVE v3;
+- `whatsapp-flow-health-webhook-v1`: ACTIVE v4.
+
+Flow health permanece comprovado:
+
+- 669 eventos assinados em 14 dias;
+- 9 flows distintos;
+- último evento assinado: 18/09/2026 15:22:41 UTC.
+
+Provider health canônico:
+
+- provider_state: `read_only`;
+- Graph API: `v26.0`;
+- webhook_state: `flow_health_verified_direct_pending`;
+- `meta_direct_callback_verified=false`.
+
+O campo histórico `channel_accounts.metadata.graph_api_version` continua null, mas isso **não é blocker**: o read model `meta_control_plane_account_v1` e o readiness usam o latest `meta_provider_health_snapshots.graph_api_version`, atualmente `v26.0`.
+
+Reexecução de `evaluate_meta_direct_readiness_v1(...)`:
+
+- mode: `READ_ONLY`;
+- ready: false;
+- graph_api_version: true;
+- permissions_clear: false;
+- webhook_ready: false;
+- direct_ready_flag: false;
+- outbound_fail_closed: true.
+
+Blockers permanecem exatamente:
+
+1. `permissions_unverified_or_blocking`;
+2. `webhook_not_verified`;
+3. `direct_ready_flag_false`.
+
+Evidência adicional:
+
+- `meta_account_permissions`: **0 registros** para a conta canônica;
+- `meta_webhook_events` nas últimas 24h: **0**.
+
+Conclusão: o responsável ainda não executou (ou ainda não produziu evidência persistida de) **Meta Foundation → Verificar Meta agora** nesta retomada.
+
+### Próximas ações humanas ainda pendentes
+
+1. Central de Relacionamento → PIN → Meta Foundation → **Verificar Meta agora**;
+2. Comprar → fazer uma busca real e abrir o detalhe de um produto.
+
+Até lá:
+
+- não promover critérios;
+- não alterar `direct_ready_flag`;
+- não ativar outbound;
+- não publicar;
+- não ligar IA;
+- não fabricar evidência.
