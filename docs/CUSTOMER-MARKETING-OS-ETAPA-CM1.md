@@ -26,8 +26,8 @@ Atualizado em 18/09/2026.
 | CM-1.11 — Marketing Brain OBSERVE/SUGGEST | Concluída V1 · OBSERVE ativo / SUGGEST gate fechado |
 | CM-1.12 — Meta Foundation | Concluída V1 · READ_ONLY / fail-closed |
 | CM-1.13 — Template Draft Assistant | Concluída V1 · DRAFT/manual ativo · IA gate fechado |
-| CM-1.14 — PapoAI Adapter temporário | Próxima rodada |
-| CM-1.15 — Central de Relacionamento | Pendente |
+| CM-1.14 — PapoAI Adapter temporário | Concluída V1 · core normalizado · outbound do adapter desligado |
+| CM-1.15 — Central de Relacionamento | Próxima rodada |
 | Homologação CM-1 | Pendente |
 
 As melhorias visuais do Customer 360 são tratadas como trabalho de homologação/UX **dentro da CM-1.3**, sem alterar a ordem oficial das rodadas centrais.
@@ -619,6 +619,6 @@ A cada rodada:
 
 ## Próxima ação
 
-**CM-1.14 — PapoAI Adapter temporário.**
+**CM-1.15 — Central de Relacionamento.**
 
-A CM-1.13 concluiu a biblioteca DRAFT/versionada de templates. A próxima rodada isola o PapoAI atrás de um adapter normalizado para que a futura troca por Meta Direct não exija reescrever Customer OS, Marketing OS ou regras de negócio.
+A CM-1.14 isolou o PapoAI atrás do contrato canônico de eventos. A próxima rodada consolida Customer OS, oportunidades, Marketing Brain, templates, Meta Foundation, qualidade e auditoria em uma superfície operacional única.
