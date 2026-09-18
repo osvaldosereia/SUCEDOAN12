@@ -103,3 +103,8 @@ Ao terminar a próxima rodada, atualizar este HANDOFF e CURRENT-STATE.
 4. manter todos os gates de publicação OFF;
 5. depois resolver Pinterest/board;
 6. canary de uma única publicação continua proibido até a conexão/identidade estar verificada.
+
+
+## Comando pronto para nova aba / novo projeto ChatGPT
+
+> Acesse o GitHub `osvaldosereia/SUCEDOAN12` e o Supabase `ssbesxgaijknwsjbsbcz`. Trabalhe somente no projeto **Marketing Admin / Organic Social — Dona Antônia**. Continue exatamente do checkpoint salvo em `docs/projects/marketing-admin/HANDOFF.md` e `CURRENT-STATE.md`. Use a branch `marketing-admin-round8-continue-20260918` e confirme o HEAD antes de editar. Estamos na **Rodada 8 — Connection Manager / homologação das conexões reais**. A Edge Function `admin-marketing-workflow-v1` está em **v16** com validação server-side do par Meta App ID + App Secret antes de persistir o App ID. O App Secret permanece somente no Supabase Vault. O `meta_oauth_app_id` ainda deve permanecer vazio até a validação real do par. Graph API explícita: `v26.0`. IDs esperados já registrados: Facebook Page `1928140920768577` e Instagram Business `17841451162237654` (@dona_antonia_cuiaba). Próxima ação: validar o App ID Meta correto contra o App Secret atual do Vault; somente se a Meta aceitar o par, salvar o App ID e iniciar OAuth para confirmar a Page e o Instagram esperados. Depois resolver Pinterest/board. **Não abrir publicação ainda.** Manter `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, todos os gates de canal OFF. Antes de qualquer canary, exigir conta verificada e preparar somente 1 publicação. Não misturar com **Customer & Marketing OS**.
