@@ -240,6 +240,8 @@ jobs:
         run: node scripts/test-cm-1-homologation-readiness.mjs
       - name: Validar acceptance checklist CM-1
         run: node scripts/test-cm-1-acceptance-checklist.mjs
+      - name: Validar observador de evidências da homologação CM-1
+        run: node scripts/test-cm-1-homologation-evidence-observer-v1.mjs
       - name: Validar Customer OS canary
         run: node scripts/test-customer-os-canary-v1.mjs
       - name: Validar redesign Customer 360
