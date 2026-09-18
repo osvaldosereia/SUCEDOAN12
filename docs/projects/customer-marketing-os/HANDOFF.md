@@ -17,9 +17,9 @@
 - ready_for_manual_canary=true;
 - cm1_complete=false;
 - external_activation_authorized=false;
-- 1 conflito de identidade pendente;
-- catalog_search real=0;
-- product_view real=0;
+- 1 conflito de identidade pendente; a Central agora possui fila de revisão humana segura;
+- catalog_search real=0; backend implantado confirmado correto, aguardando uso real;
+- product_view real=0; backend implantado confirmado correto, aguardando uso real;
 - PapoAI adapter recebendo tráfego real;
 - nenhum side effect externo observado;
 - Meta Direct OFF;
@@ -34,13 +34,14 @@
 2. consultar `cm1_acceptance_checklist_v1()`;
 3. consultar `cm1_homologation_readiness_v1()`;
 4. manter gates externos fechados;
-5. revisar conflito de identidade sem auto-merge;
-6. observar uso real de busca e produto no Comprar;
-7. responsável valida PIN e visual da Central manualmente;
-8. verificar Meta Policy Registry em modo seguro;
-9. homologar Meta Direct sem liberar outbound;
-10. reexecutar acceptance checklist;
-11. atualizar esta pasta ao final da rodada.
+5. responsável abre Qualidade dos Dados e decide o conflito de identidade pela fila nova; nenhum auto-merge;
+6. observar uso real de busca e produto no Comprar; não criar fixture para evidência;
+7. acompanhar lifecycle real das oportunidades; a primeira expiração atual começa em 23/09/2026;
+8. responsável valida PIN e visual da Central manualmente;
+9. verificar Meta Policy Registry em modo seguro;
+10. homologar Meta Direct sem liberar outbound;
+11. reexecutar acceptance checklist;
+12. atualizar esta pasta ao final da rodada.
 
 ## Proibições de retomada
 
@@ -74,3 +75,10 @@ Quando houver gate humano, deixar preparado e registrar exatamente o que falta.
 Sempre terminar uma rodada atualizando `CURRENT-STATE.md` e este `HANDOFF.md`.
 
 Este diretório deve permitir retomar o projeto sem depender de qualquer conversa anterior.
+
+
+## Última rodada técnica
+
+`CM1-HOMOLOGATION-IDENTITY-REVIEW-V1.md`
+
+A infraestrutura para resolver o critério 2 está pronta. A decisão do caso real permanece humana.
