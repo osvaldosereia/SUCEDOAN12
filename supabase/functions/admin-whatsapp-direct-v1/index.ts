@@ -10,6 +10,25 @@ const secureReady=()=>Boolean(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")&&Deno.e
 async function sha256(bytes:Uint8Array){const hash=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(hash)).map(x=>x.toString(16).padStart(2,"0")).join("")}
 function parseButtons(input:unknown){const rows=Array.isArray(input)?input.slice(0,3):[];if(Array.isArray(input)&&input.length>3)throw new Error("max_3_buttons");return rows.map((x:any,i)=>{if(x?.url||x?.link||String(x?.type||"").toLowerCase().includes("url"))throw new Error("url_buttons_not_allowed");const id=clean(x?.id||`button_${i+1}`,256),title=clean(x?.title,20);if(!id||!title)throw new Error("invalid_button");return {id,title,type:"reply"}})}
 
+const cleanText=(v:unknown,max=4096)=>String(v??"").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,"").replace(/\r\n/g,"\n").trim().slice(0,max);
+const num=(v:unknown,d=0)=>{const n=Number(v);return Number.isFinite(n)?n:d};
+const templateAiSchema={
+  type:"object",additionalProperties:false,
+  required:["template_key","meta_template_name","category","language_code","purpose","body_text","media_kind","buttons","notes"],
+  properties:{
+    template_key:{type:"string",maxLength:120},
+    meta_template_name:{type:"string",maxLength:512},
+    category:{type:"string",enum:["UTILITY","MARKETING","AUTHENTICATION"]},
+    language_code:{type:"string",maxLength:20},
+    purpose:{type:"string",maxLength:500},
+    body_text:{type:"string",maxLength:4096},
+    media_kind:{type:"string",enum:["none","image","video","document"]},
+    buttons:{type:"array",maxItems:10,items:{type:"object"}},
+    notes:{type:"string",maxLength:1000}
+  }
+};
+function extractOutput(payload:any){for(const item of Array.isArray(payload?.output)?payload.output:[])for(const part of Array.isArray(item?.content)?item.content:[])if(typeof part?.text==="string"&&part.text.trim())return part.text.trim();return ""}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
@@ -35,11 +54,193 @@ Deno.serve(async(req:Request)=>{
     return json({ok:true,user:{role,display_name:adminResult.data.display_name||null},config:cfgR.data||null,account:accountR.data||null,readiness:{ready:secureReady(),access:Boolean(Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")),app_secret:Boolean(Deno.env.get("META_APP_SECRET")),verify_token:Boolean(Deno.env.get("META_WEBHOOK_VERIFY_TOKEN")),graph_version:true,graph_version_value:Deno.env.get("META_GRAPH_VERSION")||"v26.0",callback_url:callback},state_counts:counts,active_baskets:basketR.count||0,recent_events:eventR.data||[]});
   }
   if(action==="templates"){const {data,error}=await sb.from("whatsapp_direct_templates").select("*").order("template_key",{ascending:true});if(error)return json({ok:false,error:"templates_failed",detail:error.message},500);return json({ok:true,templates:data||[]})}
+  if(action==="template_library"){
+    const [templatesR,versionsR,summaryR,runtimeR,briefsR,assetsR,metaR]=await Promise.all([
+      sb.from("whatsapp_direct_templates").select("*").neq("local_status","archived").order("updated_at",{ascending:false}),
+      sb.from("whatsapp_direct_template_versions").select("id,template_key,version,local_status,validation_status,source_kind,ai_generated,change_note,created_at,updated_at,meta_status").order("created_at",{ascending:false}).limit(200),
+      sb.rpc("whatsapp_template_draft_summary_v1"),
+      sb.from("marketing_runtime_config").select("metadata,max_daily_ai_cost_cents").eq("id",1).maybeSingle(),
+      sb.from("marketing_strategy_briefs").select("id,brief_key,strategy_key,mode,status,brief,confidence,updated_at").neq("status","archived").order("updated_at",{ascending:false}).limit(80),
+      sb.from("marketing_assets").select("id,title,media_kind,status,updated_at").in("status",["draft","rendered","review","approved"]).order("updated_at",{ascending:false}).limit(100),
+      sb.rpc("get_meta_control_plane_snapshot_v1")
+    ]);
+    const err=templatesR.error||versionsR.error||summaryR.error||runtimeR.error||briefsR.error||assetsR.error||metaR.error;
+    if(err)return json({ok:false,error:"template_library_failed",detail:clean(err.message,500)},500);
+    const meta=runtimeR.data?.metadata||{};
+    return json({
+      ok:true,
+      templates:templatesR.data||[],
+      versions:versionsR.data||[],
+      summary:summaryR.data||{},
+      strategy_briefs:briefsR.data||[],
+      creative_assets:assetsR.data||[],
+      meta_control_plane:metaR.data||{},
+      policy:{
+        manual_enabled:meta.template_manual_enabled===true,
+        ai_enabled:meta.template_ai_enabled===true,
+        ai_max_daily_calls:num(meta.template_ai_max_daily_calls,0),
+        ai_model_task:clean(meta.template_ai_model_task||"whatsapp_template_copy",80),
+        submit_enabled:meta.template_submit_enabled===true,
+        auto_submit_enabled:meta.template_auto_submit_enabled===true,
+        external_side_effect:false
+      },
+      external_side_effect:false
+    });
+  }
+  if(action==="template_versions"){
+    const key=clean(body?.template_key,120).toLowerCase();
+    if(!key)return json({ok:false,error:"template_key_required"},400);
+    const {data,error}=await sb.from("whatsapp_direct_template_versions").select("*").eq("template_key",key).order("version",{ascending:false}).limit(50);
+    if(error)return json({ok:false,error:"template_versions_failed",detail:error.message},500);
+    return json({ok:true,template_key:key,versions:data||[],external_side_effect:false});
+  }
+  if(action==="template_validate"){
+    const key=clean(body?.template_key,120).toLowerCase();
+    const bodyText=cleanText(body?.body_text,4096);
+    const category=clean(body?.category||"UTILITY",40).toUpperCase();
+    const language=clean(body?.language_code||"pt_BR",20);
+    const media=clean(body?.media_kind||"none",20).toLowerCase();
+    const buttons=Array.isArray(body?.buttons)?body.buttons:[];
+    const {data,error}=await sb.rpc("validate_whatsapp_template_draft_v1",{
+      p_template_key:key,p_body_text:bodyText,p_category:category,p_language_code:language,p_buttons:buttons,p_media_kind:media
+    });
+    if(error)return json({ok:false,error:"template_validation_failed",detail:error.message},400);
+    return json({ok:true,validation:data,meta_submission_performed:false,external_side_effect:false});
+  }
   if(action==="basket_assets"){
     const [basketR,assetR]=await Promise.all([sb.from("basket_templates").select("id,name,base_price,image_url,sort_order,is_active,basket_template_items(id,quantity,sort_order,product:products(id,name,brand,packaging))").eq("is_active",true).order("sort_order",{ascending:true}).order("name",{ascending:true}),sb.from("whatsapp_basket_media_assets").select("*")]);
     if(basketR.error||assetR.error)return json({ok:false,error:"basket_assets_failed",detail:basketR.error?.message||assetR.error?.message},500);const assets=new Map((assetR.data||[]).map((x:any)=>[x.basket_id,x]));return json({ok:true,baskets:(basketR.data||[]).map((b:any)=>({...b,asset:assets.get(b.id)||null}))});
   }
   if(!canWrite)return json({ok:false,error:"read_only"},403);
+
+  if(action==="template_save_draft"){
+    const key=clean(body?.template_key,120).toLowerCase();
+    const purpose=cleanText(body?.purpose,500);
+    const bodyText=cleanText(body?.body_text,4096);
+    if(!key||!purpose||!bodyText)return json({ok:false,error:"template_fields_required"},400);
+    const buttons=Array.isArray(body?.buttons)?body.buttons:[];
+    const strategyBriefId=validUuid(body?.strategy_brief_id)?clean(body.strategy_brief_id,80):null;
+    const creativeAssetId=validUuid(body?.creative_asset_id)?clean(body.creative_asset_id,80):null;
+    const {data,error}=await sb.rpc("save_whatsapp_template_draft_v1",{
+      p_template_key:key,
+      p_meta_template_name:clean(body?.meta_template_name,512)||null,
+      p_category:clean(body?.category||"UTILITY",40).toUpperCase(),
+      p_language_code:clean(body?.language_code||"pt_BR",20),
+      p_purpose:purpose,
+      p_body_text:bodyText,
+      p_media_kind:clean(body?.media_kind||"none",20).toLowerCase(),
+      p_media_url:clean(body?.media_url,1200)||null,
+      p_buttons:buttons,
+      p_strategy_key:clean(body?.strategy_key,120)||null,
+      p_strategy_brief_id:strategyBriefId,
+      p_creative_asset_id:creativeAssetId,
+      p_notes:cleanText(body?.notes,1500)||null,
+      p_source_kind:"manual",
+      p_ai_generated:false,
+      p_change_note:cleanText(body?.change_note,800)||"Alteração manual pelo Admin",
+      p_created_by:user.id
+    });
+    if(error)return json({ok:false,error:"template_save_failed",detail:clean(error.message,500)},400);
+    if(data?.ok===false)return json(data,400);
+    return json({...data,meta_submission_performed:false,external_side_effect:false});
+  }
+
+  if(action==="template_ai_draft"){
+    const runtimeR=await sb.from("marketing_runtime_config").select("metadata,max_daily_ai_cost_cents").eq("id",1).maybeSingle();
+    if(runtimeR.error)return json({ok:false,error:"template_ai_policy_failed"},500);
+    const meta=runtimeR.data?.metadata||{};
+    if(meta.template_ai_enabled!==true){
+      return json({
+        ok:false,error:"template_ai_disabled",
+        detail:"O assistente de IA está programado, mas o gate de custo permanece fechado.",
+        policy:{enabled:false,max_daily_calls:num(meta.template_ai_max_daily_calls,0),submit_enabled:false},
+        external_side_effect:false
+      },409);
+    }
+    const maxCalls=Math.max(0,Math.min(20,num(meta.template_ai_max_daily_calls,0)));
+    if(maxCalls<=0||num(runtimeR.data?.max_daily_ai_cost_cents,0)<=0)return json({ok:false,error:"template_ai_budget_closed",external_side_effect:false},409);
+    const since=new Date(Date.now()-86400000).toISOString();
+    const {count,error:countError}=await sb.from("whatsapp_direct_template_versions").select("id",{count:"exact",head:true}).eq("ai_generated",true).gte("created_at",since);
+    if(countError)return json({ok:false,error:"template_ai_usage_check_failed"},500);
+    if(num(count,0)>=maxCalls)return json({ok:false,error:"template_ai_daily_limit_reached",limit:maxCalls,external_side_effect:false},429);
+
+    const briefId=validUuid(body?.strategy_brief_id)?clean(body.strategy_brief_id,80):null;
+    let brief:any=null;
+    if(briefId){
+      const br=await sb.from("marketing_strategy_briefs").select("id,strategy_key,brief,confidence,status").eq("id",briefId).maybeSingle();
+      if(br.error)return json({ok:false,error:"strategy_brief_lookup_failed"},500);
+      brief=br.data||null;
+    }
+    const prompt=cleanText(body?.prompt,1500);
+    if(!brief&&!prompt)return json({ok:false,error:"template_ai_context_required"},400);
+
+    let key=Deno.env.get("OPENAI_API_KEY")||"";
+    if(!key){
+      const secretR=await sb.rpc("get_conversation_worker_provider_secret_v1");
+      if(!secretR.error&&typeof secretR.data==="string")key=secretR.data;
+    }
+    if(!key)return json({ok:false,error:"openai_not_configured"},503);
+
+    const model=clean(meta.template_ai_model||meta.strategy_model||"gpt-5.6-luna",80);
+    const maxOutput=Math.max(300,Math.min(900,num(meta.template_ai_max_output_tokens,700)));
+    const instructions=[
+      "Você cria somente RASCUNHOS locais de templates de WhatsApp para a Dona Antônia.",
+      "Não afirme que o template está aprovado pela Meta.",
+      "Não invente desconto, preço, estoque, consentimento, vantagem ou condição comercial.",
+      "Use variáveis somente no formato {{1}}, {{2}} em sequência sem pular números.",
+      "Prefira texto simples, humano, objetivo e fácil para clientes com pouca familiaridade digital.",
+      "Se for MARKETING, não contorne consentimento ou Customer Protection.",
+      "Não gere links ou dados pessoais. O resultado não será enviado nem submetido automaticamente."
+    ].join(" ");
+    const aiInput={
+      prompt,
+      strategy_brief:brief?{strategy_key:brief.strategy_key,brief:brief.brief,confidence:brief.confidence}:null,
+      requested_category:clean(body?.category||"",40)||null,
+      requested_language:clean(body?.language_code||"pt_BR",20),
+      constraints:{draft_only:true,submit_to_meta:false,external_side_effect:false}
+    };
+    const response=await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model,instructions,input:JSON.stringify(aiInput),
+        text:{format:{type:"json_schema",name:"whatsapp_template_draft",strict:true,schema:templateAiSchema}},
+        max_output_tokens:maxOutput
+      })
+    });
+    const payload=await response.json().catch(()=>({}));
+    if(!response.ok)return json({ok:false,error:"template_ai_provider_failed",status:response.status,detail:clean(payload?.error?.message||"",500),external_side_effect:false},502);
+    const output=extractOutput(payload);
+    let draft:any;try{draft=JSON.parse(output)}catch{return json({ok:false,error:"template_ai_invalid_json",external_side_effect:false},502)}
+    const save=await sb.rpc("save_whatsapp_template_draft_v1",{
+      p_template_key:clean(draft.template_key,120).toLowerCase(),
+      p_meta_template_name:clean(draft.meta_template_name,512)||null,
+      p_category:clean(draft.category||"UTILITY",40).toUpperCase(),
+      p_language_code:clean(draft.language_code||"pt_BR",20),
+      p_purpose:cleanText(draft.purpose,500),
+      p_body_text:cleanText(draft.body_text,4096),
+      p_media_kind:clean(draft.media_kind||"none",20).toLowerCase(),
+      p_media_url:null,
+      p_buttons:Array.isArray(draft.buttons)?draft.buttons:[],
+      p_strategy_key:brief?.strategy_key||clean(body?.strategy_key,120)||null,
+      p_strategy_brief_id:briefId,
+      p_creative_asset_id:null,
+      p_notes:cleanText(draft.notes,1500)||null,
+      p_source_kind:"ai_draft",
+      p_ai_generated:true,
+      p_change_note:"Rascunho criado pelo assistente de IA; revisão humana obrigatória",
+      p_created_by:user.id
+    });
+    if(save.error)return json({ok:false,error:"template_ai_save_failed",detail:clean(save.error.message,500),external_side_effect:false},500);
+    if(save.data?.ok===false)return json(save.data,400);
+    return json({
+      ...save.data,
+      ai:{model,response_id:payload?.id||null,usage:payload?.usage||null},
+      meta_submission_performed:false,
+      external_side_effect:false
+    });
+  }
+
   if(action==="save_config"){
     const current=await sb.from("whatsapp_direct_config").select("*").eq("id",1).maybeSingle();if(current.error||!current.data)return json({ok:false,error:"config_not_found"},404);const patch:any={updated_at:new Date().toISOString()};
     if(body.storefront_url!==undefined){const v=clean(body.storefront_url,1000);if(!/^https:\/\/donaantonia\.com\.br\//i.test(v))return json({ok:false,error:"invalid_storefront_url"},400);patch.storefront_url=v}
@@ -50,9 +251,7 @@ Deno.serve(async(req:Request)=>{
     const {data,error}=await sb.from("whatsapp_direct_config").update(patch).eq("id",1).select("*").single();if(error)return json({ok:false,error:"config_save_failed",detail:error.message},400);return json({ok:true,config:data});
   }
   if(action==="save_template"){
-    const key=clean(body.template_key,120),purpose=clean(body.purpose,500),bodyText=clean(body.body_text,4096);if(!key||!purpose||!bodyText)return json({ok:false,error:"template_fields_required"},400);let buttons:any[]=[];try{buttons=parseButtons(body.buttons)}catch(error){return json({ok:false,error:clean((error as Error).message,100)},400)}
-    const mediaKind=clean(body.media_kind||"none",20);if(!["none","image"].includes(mediaKind))return json({ok:false,error:"invalid_media_kind"},400);const mediaUrl=clean(body.media_url,1200)||null;if(mediaKind==="image"&&mediaUrl&&!/^https:\/\//i.test(mediaUrl))return json({ok:false,error:"invalid_media_url"},400);
-    const row={template_key:key,meta_template_name:clean(body.meta_template_name,512)||null,category:"UTILITY",language_code:clean(body.language_code||"pt_BR",20),purpose,body_text:bodyText,media_kind:mediaKind,media_url:mediaUrl,buttons,enabled:body.enabled===true,meta_status:clean(body.meta_status||"not_configured",40),updated_at:new Date().toISOString()};const {data,error}=await sb.from("whatsapp_direct_templates").upsert(row,{onConflict:"template_key"}).select("*").single();if(error)return json({ok:false,error:"template_save_failed",detail:error.message},400);return json({ok:true,template:data});
+    return json({ok:false,error:"legacy_template_write_disabled",detail:"Use template_save_draft do CM-1.13. O fluxo novo é versionado, validado e DRAFT-only.",external_side_effect:false},409);
   }
   if(action==="sync_meta_templates"){
     const access=Deno.env.get("META_WHATSAPP_ACCESS_TOKEN")||"",version=Deno.env.get("META_GRAPH_VERSION")||"v26.0";if(!access)return json({ok:false,error:"meta_credentials_missing"},409);const account=await sb.from("whatsapp_accounts").select("waba_id").eq("is_active",true).limit(1).maybeSingle();if(account.error||!account.data?.waba_id)return json({ok:false,error:"waba_missing"},409);
