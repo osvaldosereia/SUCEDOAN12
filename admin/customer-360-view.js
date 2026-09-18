@@ -23,7 +23,25 @@ const labels={
   service:'Atendimento',
   transactional:'Transacional',
   marketing:'Marketing',
-  e164:'WhatsApp principal'
+  e164:'WhatsApp principal',
+  customer_inactive:'Cliente inativo',
+  invalid_or_missing_phone:'Telefone inválido ou ausente',
+  channel_identity_missing:'Identidade do WhatsApp ainda não confirmada',
+  marketing_consent_unknown:'Consentimento de marketing não registrado',
+  marketing_consent_denied:'Cliente não autorizou marketing',
+  marketing_consent_revoked:'Cliente retirou a autorização de marketing',
+  active_suppression:'Bloqueio de contato ativo',
+  order_in_progress:'Pedido em andamento',
+  human_service_in_progress:'Atendimento humano em andamento',
+  recent_customer_activity:'Cliente em atendimento recente',
+  marketing_cooldown:'Intervalo mínimo entre campanhas',
+  catalog_checkout_return:'Retorno do checkout',
+  room_order_confirmed:'Pedido confirmado no Comprar',
+  behavior:'Comportamento',
+  catalog:'Catálogo',
+  message:'Mensagem',
+  handoff:'Transferência para atendimento',
+  operator_reply:'Resposta do atendimento'
 };
 
 const human=value=>{
