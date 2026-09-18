@@ -23,7 +23,7 @@ assert.doesNotMatch(migration,/insert\s+into\s+public\.products/i);
 
 assert.match(edge,/select\('id,cart_id,customer_id,conversation_id,status,expires_at'\)/);
 assert.match(edge,/get_personalized_offers_v1/);
-assert.match(edge,/personalizedOffers=offers/);
+assert.match(edge,/personalizationEligible=offers/);\nassert.match(edge,/customer_product_stats/,'só deve personalizar quando existir histórico real');\nassert.match(edge,/personalizedOffers=Number\(historyCount\|\|0\)>0/);
 assert.match(edge,/q=q\.eq\('is_offer',true\)/);
 assert.doesNotMatch(edge,/\.eq\('is_whatsapp_active',true\)/,'catálogo web não deve usar flag específica do WhatsApp');
 assert.match(edge,/q\.limit\(500\)/,'deve carregar também ofertas gerais para não esconder opções');
