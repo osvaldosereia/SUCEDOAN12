@@ -38,3 +38,17 @@ test('shell renders conversation markup supplied by the conversation engine', ()
   assert.match(html, /data-test-conversation/);
   assert.match(html, /Mensagem dinâmica/);
 });
+
+
+test('shell renders dynamic tool content without replacing conversation', () => {
+  const html = renderAppShell({
+    route: 'catalog',
+    state: 'ready',
+    conversationHtml: '<div data-conversation-test>Conversa</div>',
+    toolHtml: '<div data-tool-test>Catálogo</div>',
+  });
+
+  assert.match(html, /data-conversation-test/);
+  assert.match(html, /data-tool-test/);
+  assert.match(html, /data-route="catalog"/);
+});
