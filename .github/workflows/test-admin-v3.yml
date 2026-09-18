@@ -29,6 +29,7 @@ on:
       - 'scripts/test-admin-no-v3-runtime.mjs'
       - 'scripts/test-customer-marketing-security-boundary-v1.mjs'
       - 'scripts/test-cm-1-2-identity-resolver.mjs'
+      - 'scripts/test-cm-1-3-customer-360.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
     branches: [main]
@@ -58,6 +59,7 @@ on:
       - 'scripts/test-admin-no-v3-runtime.mjs'
       - 'scripts/test-customer-marketing-security-boundary-v1.mjs'
       - 'scripts/test-cm-1-2-identity-resolver.mjs'
+      - 'scripts/test-cm-1-3-customer-360.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
 
@@ -121,6 +123,8 @@ jobs:
         run: node scripts/test-customer-marketing-security-boundary-v1.mjs
       - name: Validar Identity Resolver
         run: node scripts/test-cm-1-2-identity-resolver.mjs
+      - name: Validar Customer 360
+        run: node scripts/test-cm-1-3-customer-360.mjs
       - name: Validar shell oficial
         shell: bash
         run: |
