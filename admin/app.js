@@ -2,7 +2,7 @@ import {api} from './api.js';
 import {CONFIG} from './runtime-config.js?v=20260918-customer-os-canary-1';
 import {customerOsApi} from './customer-os-api.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession} from './customer-os-auth.js';
-import {renderCustomer360,renderCustomerOrderDetail} from './customer-360-view.js?v=20260918-2';
+import {renderCustomer360,renderCustomerOrderDetail} from './customer-360-view.js?v=20260918-3';
 
 const $=id=>document.getElementById(id);
 const app=$('app'),sidebar=$('sidebar'),sidebarBackdrop=$('sidebarBackdrop'),dialog=$('editorDialog'),editorBody=$('editorBody');
