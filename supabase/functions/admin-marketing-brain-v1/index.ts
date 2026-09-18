@@ -614,7 +614,7 @@ Deno.serve(async(req:Request)=>{
         "marketing_opportunity_observe_v1",briefKey,opportunity.customer_id,
         {opportunity_id:opportunity.id,strategy_key:opportunity.strategy_key},
         {mode:"observe",opportunity_status:opportunity.status,exclusions:opportunity.exclusions||[]},
-        {brief_id:saved?.brief_id||null,brief},0
+        {brief_id:saved?.brief_id||null,brief},"succeeded",0
       );
       return json({ok:true,opportunity_id:opportunity.id,mode:"observe",brief,saved,created_campaign:false,external_side_effect:false});
     }catch(error){
