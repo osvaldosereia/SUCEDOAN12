@@ -18,6 +18,8 @@ let orderState={page:1,total:0,q:'',status:''};
 let storefrontState={categories:[],featuredProducts:[],baskets:[]};
 let currentBasketId=null;
 let currentHistoryCustomerId=null;
+let identityConflictsState=[];
+let identityReadinessState={};
 
 const secureCustomersEnabled=()=>CONFIG.customerOsSecureUiEnabled===true;
 const customerApi=(action,payload={})=>secureCustomersEnabled()?customerOsApi(action,payload):api(action,payload);
@@ -35,6 +37,25 @@ function renderCustomerOsLogin(message=''){
     </section>`;
 }
 
+const maskPhone=v=>{const d=String(v||'').replace(/\D/g,'');return d?`•••• ${d.slice(-4)}`:'—'};
+
+function identitySummaryMarkup(){
+  if(!secureCustomersEnabled())return '';
+  const pending=identityConflictsState.length;
+  return `<section class="panel"><div class="page-head"><div><h2>Identidade do cliente</h2><p class="muted">Resolver determinístico em modo seguro. Conflitos nunca são escolhidos automaticamente.</p></div><div class="page-actions"><button class="secondary" type="button" data-open-identity-conflicts ${pending?'':'disabled'}>Revisar conflitos (${esc(pending)})</button></div></div><div class="stats-grid"><article class="stat-card"><span>Identidades de canal</span><strong>${esc(identityReadinessState.channel_identities||0)}</strong></article><article class="stat-card"><span>Identidades ligadas</span><strong>${esc(identityReadinessState.linked_channel_identities||0)}</strong></article><article class="stat-card"><span>Verificadas</span><strong>${esc(identityReadinessState.verified_channel_identities||0)}</strong></article><article class="stat-card"><span>Avaliações</span><strong>${esc(identityReadinessState.evaluations||0)}</strong></article></div></section>`;
+}
+
+function identityConflictsMarkup(){
+  if(!identityConflictsState.length)return `<div class="editor-shell"><div class="editor-head"><h2>Conflitos de identidade</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="empty">Nenhum conflito pendente.</div></div>`;
+  return `<div class="editor-shell"><div class="editor-head"><div><small class="muted">Revisão humana</small><h2>Conflitos de identidade</h2></div><button class="close-dialog" type="button" data-close-dialog>×</button></div><p class="muted">Escolher um candidato aqui apenas registra a revisão. Não faz merge de clientes nem altera pedidos.</p><div class="customer-history-orders">${identityConflictsState.map(row=>`<article><div style="width:100%"><strong>${esc(row.match_method||'Sinais conflitantes')}</strong><small>${esc(date(row.created_at))} · ${esc(row.source||'system')}</small><div class="customer-history-chips compact">${(row.candidates||[]).map(x=>`<span><b>${esc(x.name||'Sem nome')}</b><small>${esc(maskPhone(x.primary_whatsapp_e164))} · ${esc(x.order_count||0)} pedido(s) · ${money(x.lifetime_value||0)}</small><button type="button" data-identity-approve="${esc(row.id)}" data-identity-customer="${esc(x.id)}">Marcar como candidato correto</button></span>`).join('')}</div><button class="secondary" type="button" data-identity-reject="${esc(row.id)}">Nenhum candidato está correto</button></div></article>`).join('')}</div></div>`;
+}
+
+async function refreshIdentityDiagnostics(){
+  if(!secureCustomersEnabled()||!getCustomerOsSession()){identityConflictsState=[];identityReadinessState={};return}
+  const [ready,conflicts]=await Promise.all([customerOsApi('identity_readiness'),customerOsApi('identity_conflicts',{limit:25})]);
+  identityReadinessState=ready.readiness||{};
+  identityConflictsState=conflicts.conflicts||[];
+}
 function toast(message,kind=''){const host=$('toastRegion');const node=document.createElement('div');node.className=`toast ${kind}`.trim();node.textContent=message;host.appendChild(node);setTimeout(()=>node.remove(),kind==='error'?5000:2600)}
 function loading(label='Carregando…'){app.innerHTML=`<div class="loading"><span class="spinner"></span><p>${esc(label)}</p></div>`}
 function pageHead(title,description='',actions=''){return `<div class="page-head"><div><h1>${esc(title)}</h1>${description?`<p>${esc(description)}</p>`:''}</div>${actions?`<div class="page-actions">${actions}</div>`:''}</div>`}
@@ -246,7 +267,9 @@ async function loadCustomers(){
   if(secureCustomersEnabled()&&!getCustomerOsSession())return renderCustomerOsLogin();
   loading('Carregando clientes…');
   try{
-    const data=await customerApi('customers',{page:customerState.page,limit:30,q:customerState.q,segment:customerState.segment});
+    const dataPromise=customerApi('customers',{page:customerState.page,limit:30,q:customerState.q,segment:customerState.segment});
+    if(secureCustomersEnabled())await refreshIdentityDiagnostics();
+    const data=await dataPromise;
     customerState.total=data.total||0;
     const segmentOptions=[
       ['','Todos os clientes'],
@@ -260,7 +283,8 @@ async function loadCustomers(){
       ['cesta_favorita','Cesta favorita'],
       ['proximo_recompra','Próximo da recompra']
     ];
-    app.innerHTML=`${pageHead('Clientes','Cadastro e histórico comercial calculado.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}
+    app.innerHTML=`${pageHead('Clientes','Cadastro, Customer 360 e histórico comercial.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}
+      ${identitySummaryMarkup()}
       <form id="customerFilterForm" class="toolbar">
         <input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF">
         <select name="segment" aria-label="Filtrar por segmento">${segmentOptions.map(([value,label])=>`<option value="${esc(value)}" ${customerState.segment===value?'selected':''}>${esc(label)}</option>`).join('')}</select>
@@ -304,13 +328,29 @@ app.addEventListener('click',async e=>{
   if(t.matches('[data-save-category]')){try{await saveCategoryRow(t.dataset.saveCategory)}catch(err){toast(err.message,'error')}return}
   if(t.matches('[data-rename-category]')){const oldName=t.dataset.renameCategory;const newName=prompt('Novo nome da categoria:',oldName);if(!newName||newName.trim()===oldName)return;try{await api('rename_category',{old_name:oldName,new_name:newName.trim()});toast('Categoria renomeada.','success');await loadCategories()}catch(err){toast(err.message,'error')}return}
   if(t.matches('[data-view-order]')){await openOrder(t.dataset.viewOrder);return}
-  if(t.matches('[data-new-customer]')){await openCustomerEditor();return}
+  if(t.matches('[data-open-identity-conflicts]')){openDialog(identityConflictsMarkup());return}
+    if(t.matches('[data-new-customer]')){await openCustomerEditor();return}
   if(t.matches('[data-customer-history]')){await openCustomerHistory(t.dataset.customerHistory);return}
   if(t.matches('[data-edit-customer]')){await openCustomerEditor(t.dataset.editCustomer);return}
   if(t.matches('[data-page-kind]')){const next=Number(t.dataset.page);if(next<1)return;if(t.dataset.pageKind==='products'){productState.page=next;await loadProducts()}else if(t.dataset.pageKind==='customers'){customerState.page=next;await loadCustomers()}else if(t.dataset.pageKind==='orders'){orderState.page=next;await loadOrders()}return}
 });
 
-editorBody.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;if(t.matches('[data-close-dialog]')){closeDialog();return}if(t.matches('[data-history-order]')){await openCustomerHistoryOrder(t.dataset.historyCustomer,t.dataset.historyOrder);return}if(t.matches('[data-history-back]')){await openCustomerHistory(t.dataset.historyBack);return}});
+editorBody.addEventListener('click',async e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.matches('[data-close-dialog]')){closeDialog();return}
+  if(t.matches('[data-identity-approve]')){
+    if(!confirm('Registrar este cliente como o candidato correto desta avaliação? Isso não fará merge.'))return;
+    try{await customerOsApi('identity_review',{id:t.dataset.identityApprove,review:'approved',customer_id:t.dataset.identityCustomer,notes:'Revisado no Admin Customer 360'});await refreshIdentityDiagnostics();openDialog(identityConflictsMarkup());toast('Revisão registrada.','success')}catch(err){toast(err.message,'error')}
+    return;
+  }
+  if(t.matches('[data-identity-reject]')){
+    if(!confirm('Registrar que nenhum candidato está correto?'))return;
+    try{await customerOsApi('identity_review',{id:t.dataset.identityReject,review:'rejected',notes:'Nenhum candidato aprovado no Admin Customer 360'});await refreshIdentityDiagnostics();openDialog(identityConflictsMarkup());toast('Conflito rejeitado.','success')}catch(err){toast(err.message,'error')}
+    return;
+  }
+  if(t.matches('[data-history-order]')){await openCustomerHistoryOrder(t.dataset.historyCustomer,t.dataset.historyOrder);return}
+  if(t.matches('[data-history-back]')){await openCustomerHistory(t.dataset.historyBack);return}
+});
 editorBody.addEventListener('submit',async e=>{
   const form=e.target;e.preventDefault();
   if(form.id==='productEditorForm'){
