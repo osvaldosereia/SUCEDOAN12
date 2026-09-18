@@ -180,6 +180,10 @@ Deno.serve(async(req:Request)=>{
 
   const page=Math.max(1,Number(body?.page)||1);
   const pageSize=Math.max(1,Math.min(Number(body?.page_size)||10,Math.min(Number(runtime.max_orders_per_run)||10,10)));
+  const statusIds=(Array.isArray(body?.status_ids)?body.status_ids:[])
+    .map((value:any)=>Number(value))
+    .filter((value:number,index:number,array:number[])=>Number.isInteger(value)&&value>0&&array.indexOf(value)===index)
+    .slice(0,10);
 
   const {data:credentials,error:credentialError}=await sb.rpc('get_bling_api_credentials_v1');
   if(credentialError)return response({ok:false,error:'credentials_lookup_failed'},500);
@@ -261,6 +265,7 @@ Deno.serve(async(req:Request)=>{
       dataInicial:startDate,
       dataFinal:endDate
     });
+    for(const statusId of statusIds)query.append('idsSituacoes[]',String(statusId));
     const listResponse=await bling(`/pedidos/vendas?${query.toString()}`);
     const listText=await listResponse.text();
     let list:any={};try{list=listText?JSON.parse(listText):{}}catch{}
@@ -297,9 +302,9 @@ Deno.serve(async(req:Request)=>{
     const status=errors.length?'partial':'done';
     const summary={
       page,page_size:pageSize,listed:rows.length,staged:staged.length,errors:errors.length,
-      has_more:hasMore,start_date:startDate,end_date:endDate
+      has_more:hasMore,start_date:startDate,end_date:endDate,status_ids:statusIds
     };
-    const cursor={page,next_page:hasMore?page+1:null,has_more:hasMore};
+    const cursor={page,next_page:hasMore?page+1:null,has_more:hasMore,status_ids:statusIds};
     await finish(status,summary,cursor,errors.length?'partial_item_failures':null);
 
     return response({
