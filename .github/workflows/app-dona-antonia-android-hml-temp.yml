@@ -1,8 +1,9 @@
 name: TEMP App Dona Antonia Android HML
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - 'app-dona-antonia-r0-isolation'
     paths:
       - 'app-dona-antonia/**'
       - '.github/workflows/app-dona-antonia-android-hml-temp.yml'
@@ -12,7 +13,7 @@ permissions:
 
 jobs:
   android-hml:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'app-dona-antonia-r0-isolation'
+    if: github.ref_name == 'app-dona-antonia-r0-isolation'
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -24,7 +25,7 @@ jobs:
       - name: Checkout isolated app branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Setup Node 22
@@ -86,7 +87,7 @@ jobs:
           git add app-dona-antonia/android app-dona-antonia/package-lock.json
           if ! git diff --cached --quiet; then
             git commit -m "feat(app): generate Android Capacitor shell [skip ci]"
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            git push origin HEAD:${{ github.ref_name }}
           fi
 
       - name: Upload debug APK
