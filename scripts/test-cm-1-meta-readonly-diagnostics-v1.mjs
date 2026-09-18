@@ -24,8 +24,9 @@ assert.match(block,/meta_message_sent:false/);
 assert.match(block,/meta_configuration_changed:false/);
 assert.doesNotMatch(block,/\/messages/);
 assert.doesNotMatch(block,/method:"POST"/);
-assert.doesNotMatch(block,/outbound_enabled\s*:/);
-assert.doesNotMatch(block,/meta_direct_ready\s*:/);
+assert.doesNotMatch(block,/from\("channel_accounts"\)[\s\S]{0,300}\.update\(/);
+assert.doesNotMatch(block,/from\("whatsapp_direct_config"\)[\s\S]{0,300}\.update\(/);
+assert.doesNotMatch(block,/sendMeta\s*\(/);
 
 assert.match(api,/admin-whatsapp-direct-v1/);
 assert.match(api,/runMetaDiagnosticsReadonly/);
