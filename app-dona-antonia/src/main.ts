@@ -25,6 +25,9 @@ import type { CatalogSection, Product } from './catalog/types.ts';
 import { HOME_QUICK_REPLIES, routeForQuickReply } from './conversation/quickReplies.ts';
 import { renderConversation } from './conversation/renderer.ts';
 import { createConversationStore } from './conversation/store.ts';
+import { createOrderFixtureRepository } from './orders/orderFixtureRepository.ts';
+import { renderOrderTracking } from './orders/orderTrackingView.ts';
+import type { OrderRecord } from './orders/types.ts';
 import { detectRuntime } from './platform/runtime.ts';
 
 const root = document.querySelector<HTMLElement>('#app');
@@ -49,6 +52,8 @@ const conversation = createConversationStore();
 const cart = createCartStore();
 const checkoutGateway = createCheckoutFixtureGateway();
 const checkout = createCheckoutFlow(checkoutGateway);
+const orderRepository = createOrderFixtureRepository();
+let activeOrder: OrderRecord | null = null;
 
 const catalogRepository = createCatalogFixtureRepository(productsData as Product[]);
 const catalog = createCatalogController(catalogRepository);
@@ -97,7 +102,9 @@ function render(route = appNavigator.current()): void {
         ? renderCart(cart.getSnapshot())
         : route === 'checkout'
           ? renderCheckout(checkout.getSnapshot())
-          : undefined;
+          : route === 'order'
+            ? renderOrderTracking(activeOrder)
+            : undefined;
 
   const cartSummary = calculateCartTotal(cart.getSnapshot());
 
@@ -272,7 +279,32 @@ async function handleClick(event: MouseEvent): Promise<void> {
 
   if (element.closest('[data-checkout-confirm]')) {
     const result = await checkout.confirm();
-    if (result) render();
+    if (result) {
+      const summary = calculateCartTotal(cart.getSnapshot());
+      activeOrder = await orderRepository.create({
+        id: result.orderId,
+        totalCents: summary.totalCents,
+      });
+      render();
+    }
+    return;
+  }
+
+  const advanceOrderTarget = element.closest<HTMLElement>('[data-order-advance]');
+  const advanceOrderId = advanceOrderTarget?.dataset.orderAdvance;
+  if (advanceOrderId) {
+    activeOrder = await orderRepository.advance(advanceOrderId);
+    render();
+    return;
+  }
+
+  const supportOrderTarget = element.closest<HTMLElement>('[data-order-support]');
+  const supportOrderId = supportOrderTarget?.dataset.orderSupport;
+  if (supportOrderId) {
+    conversation.userSay('Preciso de ajuda com o pedido');
+    void conversation.assistantSay(
+      `Este é o pedido de homologação ${supportOrderId}. O suporte externo ainda não está ativado.`,
+    );
     return;
   }
 
