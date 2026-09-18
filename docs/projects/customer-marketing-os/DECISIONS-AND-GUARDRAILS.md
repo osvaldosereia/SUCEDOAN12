@@ -136,3 +136,23 @@ Toda rodada relevante deve atualizar:
 - inventory quando mudar componentes.
 
 O projeto não deve depender de conversa para ser compreendido.
+
+
+## D15 — Supabase-first; Make somente histórico
+
+O Customer & Marketing OS não usa Make como runtime de automação.
+
+Toda automação nova deve ser implementada preferencialmente em:
+- Supabase/PostgreSQL;
+- Edge Functions;
+- RPC/Jobs próprios aprovados;
+- integrações diretas server-side.
+
+Make pode ser consultado apenas como fonte histórica durante auditoria/migração para recuperar:
+- IDs;
+- nomes de conexões;
+- respostas antigas;
+- evidências de homologações anteriores;
+- configuração legada necessária para substituição.
+
+Não criar novos fluxos operacionais dependentes de Make.
