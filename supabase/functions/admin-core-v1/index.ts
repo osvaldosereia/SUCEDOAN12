@@ -177,16 +177,18 @@ Deno.serve(async(req:Request)=>{
   if(action==="customer_history"){
     const id=clean(body?.id,80);if(!id)return respond({ok:false,error:"id_required"},400);
     const page=Math.max(1,integer(body?.page,1,100000)),limit=Math.min(50,Math.max(5,integer(body?.limit,10,50))),offset=(page-1)*limit;
-    const [{data:intelligence,error:intelligenceError},{data:history,error:historyError},historyCount]=await Promise.all([
+    const [{data:intelligence,error:intelligenceError},{data:history,error:historyError},{data:segments,error:segmentsError},historyCount]=await Promise.all([
       sb.rpc("get_customer_purchase_intelligence_v1",{p_customer_id:id,p_product_limit:8,p_category_limit:5}),
       sb.rpc("get_customer_purchase_history_v1",{p_customer_id:id,p_limit:limit,p_offset:offset}),
+      sb.rpc("get_customer_commercial_segments_v1",{p_customer_id:id}),
       sb.from("orders").select("id",{count:"exact",head:true}).eq("customer_id",id)
     ]);
     if(intelligenceError)return respond({ok:false,error:"customer_intelligence_failed",detail:intelligenceError.message},400);
     if(historyError)return respond({ok:false,error:"customer_history_failed",detail:historyError.message},400);
+    if(segmentsError)return respond({ok:false,error:"customer_segments_failed",detail:segmentsError.message},400);
     if(historyCount.error)return respond({ok:false,error:"customer_history_count_failed",detail:historyCount.error.message},400);
     const total=historyCount.count||0;
-    return respond({ok:true,intelligence:intelligence||{},orders:history||[],total,page,limit});
+    return respond({ok:true,intelligence:intelligence||{},segments:segments||{},orders:history||[],total,page,limit});
   }
 
   if(action==="customer_history_order"){
