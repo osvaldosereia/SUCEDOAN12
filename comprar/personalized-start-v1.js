@@ -73,6 +73,8 @@
     const repeatEntry=stage.querySelector('.repeat-purchase-entry');
     const frequentEntry=stage.querySelector('.frequent-purchases-entry');
     const favorite=frequent?.favorite_basket||null;
+    const segmentList=Array.isArray(frequent?.segments?.segments)?frequent.segments.segments:[];
+    const segmentSet=new Set(segmentList);
     const showFavorite=shouldShowFavorite(favorite,repeat);
 
     const shortcuts=document.createElement('div');
@@ -92,7 +94,11 @@
     const title=document.createElement('strong');
     title.textContent='Atalhos para você';
     const hint=document.createElement('small');
-    hint.textContent='Com base nas suas compras anteriores';
+    hint.textContent=segmentSet.has('proximo_recompra')
+      ? 'Você está perto do período em que costuma recomprar'
+      : segmentSet.has('recorrente')
+        ? 'Atalhos baseados no seu histórico recorrente'
+        : 'Com base nas suas compras anteriores';
     head.append(title,hint);
 
     block.append(head,shortcuts);
@@ -106,9 +112,12 @@
     const greeting=document.querySelector('.start-message');
     const name=firstName();
     if(greeting){
-      greeting.textContent=name
-        ? 'Oi, '+name+'! Quer repetir algo que você já compra ou escolher algo diferente?'
-        : 'Quer repetir algo que você já compra ou escolher algo diferente?';
+      const base=name?'Oi, '+name+'! ':'';
+      greeting.textContent=segmentSet.has('proximo_recompra')
+        ? base+'Está chegando perto do seu período normal de recompra. Quer repetir algo ou escolher diferente?'
+        : segmentSet.has('primeiro_comprador')
+          ? base+'Deixei mais fácil repetir sua compra anterior ou escolher algo diferente.'
+          : base+'Quer repetir algo que você já compra ou escolher algo diferente?';
     }
 
     const stageTitle=stage.querySelector('.stage-head strong');
