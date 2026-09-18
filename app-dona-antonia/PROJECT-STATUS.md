@@ -861,3 +861,45 @@ Estado consolidado:
 - R10 Android e validações nativas dependentes seguem bloqueadas;
 - R25 produção continua proibida sem autorização explícita;
 - comprar/ continua intocado; PR #396 deve permanecer Draft e NÃO MERGEAR.
+
+---
+
+# CONTINUAÇÃO SEGURA — 18/09/2026 — hardening/UX/store readiness
+
+## R22 — hardening local reforçado
+- criado `src/customer/sessionGuard.ts`;
+- sessões `TEST-SESSION-*` agora possuem evaluator fail-closed para estados missing/invalid/expired/revoked;
+- 3/3 testes específicos de session guard verdes;
+- scanner de isolamento ampliado para bloquear `FIREBASE_SERVICE_ACCOUNT`, `FCM_SERVER_KEY`, `APNS_PRIVATE_KEY`, `GOOGLE_APPLICATION_CREDENTIALS` e private keys PEM;
+- extensão do padrão de segredo validada localmente contra 7 marcadores;
+- `secret-bundle.test.ts` e `isolation.test.mjs` ampliados para credenciais futuras de push/native;
+- testes ponta a ponta de revogação/expiração com backend e artefatos nativos continuam pendentes.
+
+## R23 — UX/desempenho reforçados
+- controles de toque críticos passaram a ter `min-height: 44px` explícito;
+- verificação estática na branch confirmou 10/10 seletores críticos com 44px;
+- criado `src/platform/performanceBudget.ts`;
+- budgets internos de homologação definidos para primeira renderização, transição de rota, JS/CSS gzip e assets;
+- evaluator falha fechado para métricas inválidas;
+- 3/3 testes de budget verdes;
+- medições reais continuam pendentes de browser/build/aparelho.
+
+## R24 — preparação de loja reforçada
+- criados `docs/store/APP-STORE-CHECKLIST.md`, `PLAY-STORE-CHECKLIST.md` e `REVIEW-PROFILE.md`;
+- perfil de review usa somente `TEST-REVIEWER-*`, `TEST-CUSTOMER-*` e sessão `TEST-SESSION-*`;
+- documentos permanecem DRAFT / NÃO PUBLICAR;
+- 3/3 testes específicos dos documentos de loja verdes;
+- suíte local combinada de session guard + performance budget + release readiness + store docs: 13/13 verdes;
+- nenhuma conta, tester, listing, upload, TestFlight ou Play testing foi criado.
+
+## Gate desta continuação
+- typecheck dos novos módulos `sessionGuard.ts`, `performanceBudget.ts` e `releaseReadiness.ts`: verde no ambiente local;
+- runtime/config atual na branch: 62 arquivos;
+- HEAD antes deste checkpoint: `ef1e8f1f531599d4d62769b0b00504999e26f40a`;
+- produção OFF; `comprar/` intocado; PR #396 continua Draft.
+
+Estado permanece:
+- concluídas: R0–R9 e R20;
+- parciais: R12–R19 e R21–R24;
+- R10/R11 e validações nativas bloqueadas por toolchain;
+- R25 proibida sem autorização explícita.
