@@ -16,6 +16,29 @@ const extractOutput=(payload:any)=>{
   return "";
 };
 
+function creativeImageScore(p:any){
+  const status=clean(p?.image_ai_status||"",40).toLowerCase();
+  const validation=p?.image_ai_validation&&typeof p.image_ai_validation==="object"?p.image_ai_validation:{};
+  const url=clean(p?.image_ai_url||p?.image_url||p?.image_original_url||p?.image_source_url||"",1400).toLowerCase();
+  const origin=clean(p?.image_source_origin||"",120).toLowerCase();
+  let score=0;
+  if(status==="completed"&&clean(p?.image_ai_url,1200))score+=100;
+  if(status==="rejected")score-=120;
+  if(p?.image_ai_manual_review_required===true)score-=80;
+  if(validation?.professional_photo===true)score+=25;
+  if(validation?.product_complete===true)score+=12;
+  if(validation?.natural_contact_shadow===true)score+=8;
+  if(num(validation?.fidelity_score)>=0.9)score+=15;
+  if(num(validation?.composition_score)>=0.9)score+=10;
+  if(origin.includes("web_research_verified"))score+=12;
+  if(/info-lado-a-lado|lado-a-lado|comparativo|montagem|banner|etiqueta|tabela/.test(url))score-=45;
+  if(!url)score-=200;
+  return score;
+}
+function creativeImageReady(p:any){
+  return creativeImageScore(p)>=80;
+}
+
 function channelPlan(){
   return {
     instagram:{story:true,carousel:true,reel_10s:true},
@@ -133,7 +156,7 @@ Deno.serve(async(req:Request)=>{
     const ids=arr(campaign?.product_selection?.product_ids).map(String).filter(Boolean).slice(0,4);
     if(!ids.length)return {ok:false,error:"campaign_has_no_products"};
     const {data:productRows,error:productError}=await sb.from("products")
-      .select("id,name,brand,price,cost,stock,is_offer,offer_price,category,subcategory,customer_category,customer_subcategory,image_ai_url,image_url,image_original_url,image_source_url,is_active,desired_bling_status,sales_category")
+      .select("id,name,brand,price,cost,stock,is_offer,offer_price,category,subcategory,customer_category,customer_subcategory,image_ai_url,image_url,image_original_url,image_source_url,image_ai_status,image_ai_validation,image_ai_manual_review_required,image_source_origin,is_active,desired_bling_status,sales_category")
       .in("id",ids);
     if(productError)throw new Error(productError.message);
     const productMap=new Map((productRows||[]).map((p:any)=>[String(p.id),p]));
@@ -157,8 +180,14 @@ Deno.serve(async(req:Request)=>{
     const existingByRole=new Map((existing||[]).map((a:any)=>[clean(a?.edit_spec?.content_role,80),a]));
 
     const policy=campaign.content_policy&&typeof campaign.content_policy==="object"?campaign.content_policy:{};
-    const hero=products[0];
-    const bestImage=(p:any)=>clean(p.image_ai_url||p.image_url||p.image_original_url||p.image_source_url,1200);
+    const creativeRanked=[...products].sort((a:any,b:any)=>creativeImageScore(b)-creativeImageScore(a));
+    const visualReady=creativeRanked.filter((p:any)=>creativeImageReady(p));
+    const creativeProducts=visualReady.length>=2?visualReady:creativeRanked;
+    const hero=creativeProducts[0]||products[0];
+    const bestImage=(p:any)=>clean(
+      (clean(p?.image_ai_status,40)==="completed"&&clean(p?.image_ai_url,1200)?p.image_ai_url:null)
+      ||p.image_url||p.image_original_url||p.image_source_url,1200
+    );
     const effectivePrice=(p:any)=>p.is_offer&&num(p.offer_price)>0&&num(p.offer_price)<num(p.price)?num(p.offer_price):num(p.price);
     const source=(p:any)=>({kind:"product_image",product_id:String(p.id),url:bestImage(p),name:clean(p.name,180)});
     const productPayload=(p:any)=>({
@@ -166,8 +195,8 @@ Deno.serve(async(req:Request)=>{
       price:num(p.price),effective_price:effectivePrice(p),is_offer:Boolean(p.is_offer&&effectivePrice(p)<num(p.price)),
       image_url:bestImage(p),stock:num(p.stock)
     });
-    const productRefs=products.map(source);
-    const compactProducts=products.map(productPayload);
+    const productRefs=creativeProducts.map(source);
+    const compactProducts=creativeProducts.map(productPayload);
     const headline=clean(policy.hook||campaign.name,120)||clean(campaign.name,120);
     const cta=clean(policy.cta||"Peça pelo WhatsApp ou compre no site da Dona Antônia.",180);
     const common={
@@ -177,7 +206,14 @@ Deno.serve(async(req:Request)=>{
       strategy_mode:clean(policy.strategy_mode||"deterministic",40),
       image_quality:"low",
       reuse_assets_first:true,
-      products:compactProducts
+      products:compactProducts,
+      image_selection:{
+        hero_product_id:String(hero.id),
+        hero_image_score:creativeImageScore(hero),
+        visual_ready_count:visualReady.length,
+        rejected_product_ids:products.filter((p:any)=>clean(p?.image_ai_status,40)==="rejected").map((p:any)=>String(p.id)),
+        policy_version:"marketing_visual_quality_v1"
+      }
     };
 
     const specs=[
