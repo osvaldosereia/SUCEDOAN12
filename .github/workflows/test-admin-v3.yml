@@ -24,6 +24,7 @@ on:
       - 'supabase/migrations/*cm_1_6*'
       - 'supabase/migrations/*cm_1_7*'
       - 'supabase/migrations/*cm_1_8*'
+      - 'supabase/migrations/*cm_1_9*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -41,6 +42,7 @@ on:
       - 'scripts/test-cm-1-6-product-marketing-profile.mjs'
       - 'scripts/test-cm-1-7-product-brand-graph.mjs'
       - 'scripts/test-cm-1-8-segment-engine.mjs'
+      - 'scripts/test-cm-1-9-customer-commercial-profile.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
       - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
@@ -68,6 +70,7 @@ on:
       - 'supabase/migrations/*cm_1_6*'
       - 'supabase/migrations/*cm_1_7*'
       - 'supabase/migrations/*cm_1_8*'
+      - 'supabase/migrations/*cm_1_9*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -85,6 +88,7 @@ on:
       - 'scripts/test-cm-1-6-product-marketing-profile.mjs'
       - 'scripts/test-cm-1-7-product-brand-graph.mjs'
       - 'scripts/test-cm-1-8-segment-engine.mjs'
+      - 'scripts/test-cm-1-9-customer-commercial-profile.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
       - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
@@ -167,6 +171,8 @@ jobs:
         run: node scripts/test-cm-1-7-product-brand-graph.mjs
       - name: Validar Segment Engine
         run: node scripts/test-cm-1-8-segment-engine.mjs
+      - name: Validar Customer Commercial Profile
+        run: node scripts/test-cm-1-9-customer-commercial-profile.mjs
       - name: Validar Customer OS canary
         run: node scripts/test-customer-os-canary-v1.mjs
       - name: Validar redesign Customer 360
