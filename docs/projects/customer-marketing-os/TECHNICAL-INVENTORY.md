@@ -200,3 +200,15 @@ Blockers atuais:
 - `scripts/test-cm-1-meta-direct-graph-version-gate.mjs`.
 
 Não usar fallback de Graph API version.
+
+
+### Central Meta read model
+
+- migration: `20260919072000_cm_1_meta_policy_command_center_v1.sql`;
+- `relationship_command_summary_v1()` versão `cm1.15-v2`;
+- campos novos:
+  - `meta_policy_registry`;
+  - `meta_direct_readiness`;
+- UI: `admin/relacionamento.js`;
+- cache: `20260918-5`;
+- teste: `scripts/test-cm-1-meta-command-center-v1.mjs`.
