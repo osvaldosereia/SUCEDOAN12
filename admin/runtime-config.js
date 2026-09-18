@@ -11,8 +11,11 @@ export const CONFIG=Object.freeze({
   marketingCarouselFunction:'admin-marketing-carousel-v1',
   marketingBrainFunction:'admin-marketing-brain-v1',
   customerOsSecureUiEnabled:false,
+  customerOsCanaryEnabled:true,
+  customerOsCanaryParam:'customer_os',
+  customerOsCanaryValue:'canary',
   marketingUiEnabled:true,
   storefrontUrl:'../comprar/',
   countAppUrl:'../contagem/',
-  build:'20260918-marketing-brain-v1-1'
+  build:'20260918-customer-os-canary-1'
 });
