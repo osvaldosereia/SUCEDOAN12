@@ -91,7 +91,7 @@ Deno.serve(async(req:Request)=>{
     p_channel:'whatsapp',
     p_channel_account_id:channelAccount.id,
     p_external_user_id:phone,
-    p_identity_kind:'whatsapp_user',
+    p_identity_kind:'e164',
     p_source:'papoai_webhook',
     p_evidence:{
       provider:'papoai',
