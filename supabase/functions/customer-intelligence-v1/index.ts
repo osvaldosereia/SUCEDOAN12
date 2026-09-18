@@ -105,7 +105,7 @@ Deno.serve(async(req:Request)=>{
       has_positive_marketing_consent:Object.values(activeConsents).some((x:any)=>x.purpose==='marketing'&&x.status==='granted')
     };
     const completeness=Math.round(Object.values(dataQuality).filter(Boolean).length/Object.keys(dataQuality).length*100);
-    return json({
+    return json(origin,{
       ok:true,
       customer,
       contact:{phones:phones||[],emails:emails||[],addresses:addresses||[],channel_identities:identities||[]},
