@@ -35,7 +35,7 @@ test('Round 8 does not enable publishing',()=>{
 });
 
 test('Meta OAuth requires explicit graph version and minimum publishing scopes',()=>{
-  assert.doesNotMatch(admin,/graph_version\|\|'v26\.0'/);
+  assert.doesNotMatch(admin,/graph_version[^;\n]{0,180}\|\|\s*['"]v\d+\.\d+['"]/);
   assert.match(workflow,/graph_version/);
   for(const scope of ['pages_show_list','pages_read_engagement','pages_manage_posts','instagram_basic','instagram_content_publish'])assert.ok(migration.includes("'"+scope+"'"),scope);
   assert.match(hardening,/meta_graph_version_source'.*'manual_required'/s);
