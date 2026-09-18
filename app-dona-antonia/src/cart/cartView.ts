@@ -107,7 +107,7 @@ export function renderCart(cart: CartSnapshot): string {
       </button>
 
       <p class="homologation-note">
-        Este é um pedido fictício. O checkout será implementado somente na próxima rodada.
+        Este é um pedido fictício. A finalização será implementada somente na próxima rodada.
       </p>
     </div>
   `.trim();
