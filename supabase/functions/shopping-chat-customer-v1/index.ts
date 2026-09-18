@@ -42,6 +42,26 @@ Deno.serve(async(req:Request)=>{
     return {customer_id:customer.id,name:clean(customer.name,120),phone:clean(customer.primary_whatsapp_e164||fallbackPhone,40),addresses:addresses||[]};
   };
 
+  if(action==='track_behavior'){
+    if(!session.customer_id)return json(req,{ok:true,tracked:false,reason:'customer_not_identified'});
+    const allowed=new Set(['frequent_purchases_open','frequent_product_add','personalized_offers_view','personalized_offer_add']);
+    const eventType=clean(body?.event_type,80);
+    if(!allowed.has(eventType))return json(req,{ok:false,error:'event_type_not_allowed'},400);
+    const raw=body?.event_data&&typeof body.event_data==='object'?body.event_data:{};
+    const eventData:any={};
+    const productId=clean(raw?.product_id,80);if(productId)eventData.product_id=productId;
+    const source=clean(raw?.source,80);if(source)eventData.source=source;
+    const quantity=Number(raw?.quantity);if(Number.isFinite(quantity)&&quantity>=0&&quantity<=100)eventData.quantity=quantity;
+    const {error}=await sb.from('customer_behavior_events').insert({
+      customer_id:session.customer_id,
+      conversation_id:session.conversation_id||null,
+      event_type:eventType,
+      event_data:eventData
+    });
+    if(error)return json(req,{ok:false,error:'behavior_track_failed',detail:error.message},400);
+    return json(req,{ok:true,tracked:true});
+  }
+
   if(action==='frequent_purchases'){
     if(!session.customer_id)return json(req,{ok:true,frequent:{has_history:false,frequent_products:[],recent_extras:[],favorite_basket:null,segments:{segments:[],reasons:{}}}});
     const [{data,error},{data:segments,error:segmentsError}]=await Promise.all([
