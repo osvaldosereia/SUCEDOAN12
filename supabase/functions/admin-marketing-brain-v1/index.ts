@@ -548,6 +548,54 @@ Deno.serve(async(req:Request)=>{
 
 
 
+  if(action==="opportunity_list"){
+    const limit=Math.max(1,Math.min(100,num(body?.limit,40)));
+    const requestedStatus=clean(body?.status||"",30).toLowerCase();
+    try{
+      let query=sb.from("customer_marketing_opportunities")
+        .select("id,customer_id,strategy_key,title,confidence,status,exclusions,evidence,product_candidates,first_detected_at,last_evaluated_at,expires_at,engine_version")
+        .in("status",requestedStatus? [requestedStatus] : ["suggested","suppressed"])
+        .order("status",{ascending:false})
+        .order("confidence",{ascending:false})
+        .order("last_evaluated_at",{ascending:false})
+        .limit(limit);
+      const {data,error}=await query;
+      if(error)throw new Error(error.message);
+      const {data:summary,error:summaryError}=await sb.rpc("opportunity_engine_summary_v1");
+      if(summaryError)throw new Error(summaryError.message);
+      const {data:briefSummary,error:briefSummaryError}=await sb.rpc("marketing_strategy_brief_summary_v1");
+      if(briefSummaryError)throw new Error(briefSummaryError.message);
+      return json({
+        ok:true,items:data||[],summary:summary||{},brief_summary:briefSummary||{},
+        policy:{
+          mode:"OBSERVE",
+          opportunity_observe_enabled:meta.opportunity_observe_enabled===true,
+          opportunity_suggest_enabled:meta.opportunity_suggest_enabled===true&&meta.strategy_ai_enabled===true,
+          create_campaign:false,external_side_effect:false
+        },
+        external_side_effect:false
+      });
+    }catch(error){
+      return json({ok:false,error:"opportunity_list_failed",detail:clean((error as Error)?.message,500),external_side_effect:false},500);
+    }
+  }
+
+  if(action==="opportunity_briefs"){
+    const opportunityId=clean(body?.opportunity_id||"",80);
+    const limit=Math.max(1,Math.min(100,num(body?.limit,50)));
+    try{
+      let query=sb.from("marketing_strategy_briefs")
+        .select("id,brief_key,opportunity_id,customer_id,strategy_key,mode,status,brief,ai_used,model_task,model_used,reasoning_effort,usage,confidence,engine_version,created_at,updated_at,external_side_effect")
+        .neq("status","archived").order("updated_at",{ascending:false}).limit(limit);
+      if(opportunityId)query=query.eq("opportunity_id",opportunityId);
+      const {data,error}=await query;
+      if(error)throw new Error(error.message);
+      return json({ok:true,items:data||[],external_side_effect:false});
+    }catch(error){
+      return json({ok:false,error:"opportunity_briefs_failed",detail:clean((error as Error)?.message,500),external_side_effect:false},500);
+    }
+  }
+
   if(action==="opportunity_observe"){
     if(meta.opportunity_observe_enabled!==true)return json({ok:false,error:"opportunity_observe_disabled",external_side_effect:false},409);
     const opportunityId=clean(body?.opportunity_id,80);
