@@ -59,6 +59,7 @@ on:
       - 'scripts/test-cm-1-14-papoai-adapter.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
+      - 'scripts/test-cm-1-acceptance-checklist.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
       - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
@@ -121,6 +122,7 @@ on:
       - 'scripts/test-cm-1-14-papoai-adapter.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
+      - 'scripts/test-cm-1-acceptance-checklist.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
       - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
@@ -223,6 +225,8 @@ jobs:
         run: node scripts/test-cm-1-15-relationship-command-center.mjs
       - name: Validar readiness da homologação CM-1
         run: node scripts/test-cm-1-homologation-readiness.mjs
+      - name: Validar acceptance checklist CM-1
+        run: node scripts/test-cm-1-acceptance-checklist.mjs
       - name: Validar Customer OS canary
         run: node scripts/test-customer-os-canary-v1.mjs
       - name: Validar redesign Customer 360
