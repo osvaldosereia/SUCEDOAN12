@@ -289,7 +289,17 @@ Cliente recebe prioridade para ofertas relevantes sem perder acesso ao catálogo
 
 ## Etapa 8 — Importação do histórico antigo do Bling
 
-Status: **EM AUDITORIA — 17/09/2026**
+Status: **EM BACKFILL CONTROLADO — 17/09/2026**
+
+Situação atual:
+- importador Supabase ativo;
+- credenciais migradas para Vault;
+- promoção automática global permanece OFF;
+- backfill por cliente roda em lotes via Supabase Cron;
+- 122 de 269 clientes com vínculo Bling já processados nesta rodada;
+- erros atuais da fila: 0;
+- pedidos genéricos sem identidade são ignorados com segurança;
+- somente histórico reconciliado é elegível à promoção.
 
 ### Objetivo
 
@@ -323,6 +333,8 @@ Reexecutar a importação não cria duplicatas e não altera pedidos locais corr
 
 ## Etapa 9 — Segmentação comercial derivada
 
+Status: **CONCLUÍDA — 17/09/2026**
+
 ### Entregas
 
 Criar segmentos calculados, não manuais:
@@ -351,6 +363,8 @@ Todo segmento pode ser explicado por regra objetiva baseada em pedidos.
 
 ## Etapa 10 — Métricas e aprendizado do produto
 
+Status: **CONCLUÍDA — 17/09/2026**
+
 ### Métricas
 
 - % de clientes identificados com histórico;
@@ -370,6 +384,8 @@ Conseguimos comparar experiência nova vs. fluxo normal sem depender de interpre
 ---
 
 ## Etapa 11 — Robustez, privacidade e manutenção
+
+Status: **CONCLUÍDA — 17/09/2026**
 
 ### Entregas
 
