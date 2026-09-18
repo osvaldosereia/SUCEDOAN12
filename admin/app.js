@@ -1,5 +1,7 @@
 import {api} from './api.js';
 import {CONFIG} from './runtime-config.js';
+import {customerOsApi} from './customer-os-api.js';
+import {authenticateCustomerOsWithPin,getCustomerOsSession} from './customer-os-auth.js';
 
 const $=id=>document.getElementById(id);
 const app=$('app'),sidebar=$('sidebar'),sidebarBackdrop=$('sidebarBackdrop'),dialog=$('editorDialog'),editorBody=$('editorBody');
@@ -16,6 +18,22 @@ let orderState={page:1,total:0,q:'',status:''};
 let storefrontState={categories:[],featuredProducts:[],baskets:[]};
 let currentBasketId=null;
 let currentHistoryCustomerId=null;
+
+const secureCustomersEnabled=()=>CONFIG.customerOsSecureUiEnabled===true;
+const customerApi=(action,payload={})=>secureCustomersEnabled()?customerOsApi(action,payload):api(action,payload);
+
+function renderCustomerOsLogin(message=''){
+  app.innerHTML=`${pageHead('Clientes','Área protegida para dados pessoais, histórico e marketing.')}
+    <section class="panel" style="max-width:520px">
+      <h2>Acesso protegido</h2>
+      <p class="muted">Digite o PIN administrativo para abrir o Customer 360. A sessão vale somente nesta aba.</p>
+      ${message?`<div class="empty">${esc(message)}</div>`:''}
+      <form id="customerOsLoginForm" class="inline-form" autocomplete="off">
+        <input name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="PIN de 6 dígitos" required>
+        <button class="primary" type="submit">Entrar</button>
+      </form>
+    </section>`;
+}
 
 function toast(message,kind=''){const host=$('toastRegion');const node=document.createElement('div');node.className=`toast ${kind}`.trim();node.textContent=message;host.appendChild(node);setTimeout(()=>node.remove(),kind==='error'?5000:2600)}
 function loading(label='Carregando…'){app.innerHTML=`<div class="loading"><span class="spinner"></span><p>${esc(label)}</p></div>`}
@@ -183,7 +201,10 @@ function customerHistoryMarkup(customer={},data={}){
 async function openCustomerHistory(id){
   currentHistoryCustomerId=id;openDialog('<div class="loading"><span class="spinner"></span><p>Carregando histórico…</p></div>');
   try{
-    const [profile,history]=await Promise.all([api('customer',{id}),api('customer_history',{id,page:1,limit:30})]);
+    const [profile,history]=await Promise.all([
+      secureCustomersEnabled()?customerOsApi('customer_360',{id,timeline_limit:30}):api('customer',{id}),
+      customerApi('customer_history',{id,page:1,limit:30})
+    ]);
     openDialog(customerHistoryMarkup(profile.customer||{},history));
   }catch(e){openDialog(`<div class="editor-shell"><div class="editor-head"><h2>Histórico</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="empty">${esc(e.message)}</div></div>`)}
 }
@@ -191,7 +212,7 @@ async function openCustomerHistory(id){
 async function openCustomerHistoryOrder(customerId,orderId){
   openDialog('<div class="loading"><span class="spinner"></span><p>Carregando pedido…</p></div>');
   try{
-    const data=await api('customer_history_order',{customer_id:customerId,order_id:orderId}),detail=data.detail||{},o=detail.order||{},items=detail.items||[];
+    const data=await customerApi('customer_history_order',{customer_id:customerId,order_id:orderId}),detail=data.detail||{},o=detail.order||{},items=detail.items||[];
     openDialog(`<div class="customer-history-shell">
       <div class="editor-head"><div><small class="muted">Detalhe da compra</small><h2>${esc(o.order_number||'Pedido')}</h2><div class="muted">${esc(date(o.confirmed_at||o.created_at))}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div>
       <button class="secondary customer-history-back" type="button" data-history-back="${esc(customerId)}">← Voltar ao histórico</button>
@@ -203,9 +224,10 @@ async function openCustomerHistoryOrder(customerId,orderId){
 }
 
 async function loadCustomers(){
+  if(secureCustomersEnabled()&&!getCustomerOsSession())return renderCustomerOsLogin();
   loading('Carregando clientes…');
   try{
-    const data=await api('customers',{page:customerState.page,limit:30,q:customerState.q,segment:customerState.segment});
+    const data=await customerApi('customers',{page:customerState.page,limit:30,q:customerState.q,segment:customerState.segment});
     customerState.total=data.total||0;
     const segmentOptions=[
       ['','Todos os clientes'],
@@ -230,7 +252,20 @@ async function loadCustomers(){
 }
 
 function customerEditorMarkup(customer={},address={},email=''){const a=address||{};return `<form id="customerEditorForm" class="editor-shell" data-id="${esc(customer.id||'')}"><div class="editor-head"><h2>${customer.id?'Editar cliente':'Novo cliente'}</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="form-grid"><label class="field wide"><span>Nome</span><input name="name" value="${esc(customer.name||'')}" required></label><label class="field"><span>Telefone</span><input name="phone" value="${esc(customer.primary_whatsapp_e164||'')}"></label><label class="field"><span>CPF/CNPJ</span><input name="cpf_cnpj" value="${esc(customer.cpf_cnpj||'')}"></label><label class="field wide"><span>E-mail</span><input name="email" type="email" value="${esc(email||'')}"></label><div class="wide check-row"><label class="check"><input name="is_active" type="checkbox" ${checked(customer.is_active!==false)}> Ativo</label></div><div class="wide"><h3>Endereço</h3></div><label class="field"><span>CEP</span><input name="postal_code" value="${esc(a.postal_code||'')}"></label><label class="field"><span>Cidade</span><input name="city" value="${esc(a.city||'Cuiabá')}"></label><label class="field"><span>Estado</span><input name="state" maxlength="2" value="${esc(a.state||'MT')}"></label><label class="field"><span>Bairro</span><input name="neighborhood" value="${esc(a.neighborhood||'')}"></label><label class="field wide"><span>Rua</span><input name="street" value="${esc(a.street||'')}"></label><label class="field"><span>Número</span><input name="number" value="${esc(a.number||'')}"></label><label class="field"><span>Complemento</span><input name="complement" value="${esc(a.complement||'')}"></label><label class="field wide"><span>Referência</span><input name="reference" value="${esc(a.reference||'')}"></label><label class="field wide"><span>Link exato do Google Maps</span><input name="google_maps_url" value="${esc(a.google_maps_url||'')}"></label></div><div class="form-actions"><button class="secondary" type="button" data-close-dialog>Cancelar</button><button class="primary" type="submit">Salvar cliente</button></div></form>`}
-async function openCustomerEditor(id=''){try{if(!id){openDialog(customerEditorMarkup({is_active:true},{state:'MT',city:'Cuiabá'},''));return}const data=await api('customer',{id});openDialog(customerEditorMarkup(data.customer,data.address,data.email))}catch(e){toast(e.message,'error')}}
+async function openCustomerEditor(id=''){
+  try{
+    if(!id){openDialog(customerEditorMarkup({is_active:true},{state:'MT',city:'Cuiabá'},''));return}
+    if(secureCustomersEnabled()){
+      const data=await customerOsApi('customer_360',{id,timeline_limit:10});
+      const addresses=data.contact?.addresses||[],emails=data.contact?.emails||[];
+      const address=addresses.find(x=>x.is_default&&x.is_active!==false)||addresses.find(x=>x.is_active!==false)||addresses[0]||null;
+      const email=emails.find(x=>x.is_primary)?.email||emails[0]?.email||'';
+      openDialog(customerEditorMarkup(data.customer||{},address,email));
+      return;
+    }
+    const data=await api('customer',{id});openDialog(customerEditorMarkup(data.customer,data.address,data.email));
+  }catch(e){toast(e.message,'error')}
+}
 
 async function saveCategoryRow(name){const row=document.querySelector(`[data-category-row="${CSS.escape(name)}"]`);if(!row)return;await api('save_category',{name,is_visible:row.querySelector('[data-visible]').checked,show_home:row.querySelector('[data-home]').checked,sort_order:Number(row.querySelector('[data-order]').value||0)});toast('Categoria salva.','success')}
 
@@ -269,12 +304,25 @@ editorBody.addEventListener('submit',async e=>{
     const q=$('basketProductSearch')?.value.trim();if(!q||q.length<2)return;const host=$('basketProductSearchResults');host.innerHTML='<div class="muted">Buscando…</div>';try{const data=await api('search_products',{q});host.innerHTML=(data.products||[]).map(p=>`<div class="search-result"><div><strong>${esc(p.name)}</strong><div class="muted">${esc(p.gtin||'')} · estoque ${esc(p.stock||0)}</div></div><button type="button" data-add-basket-product="${esc(p.id)}">Adicionar</button></div>`).join('')||'<div class="empty">Nenhum produto encontrado.</div>'}catch(err){host.innerHTML=`<div class="empty">${esc(err.message)}</div>`}return;
   }
   if(form.id==='customerEditorForm'){
-    const d=formDataObject(form);const address={postal_code:d.postal_code,city:d.city,state:d.state,neighborhood:d.neighborhood,street:d.street,number:d.number,complement:d.complement,reference:d.reference,google_maps_url:d.google_maps_url};try{await api('save_customer',{id:form.dataset.id||undefined,name:d.name,phone:d.phone,cpf_cnpj:d.cpf_cnpj,email:d.email,is_active:form.elements.is_active.checked,address});closeDialog();toast('Cliente salvo.','success');await loadCustomers()}catch(err){toast(err.message,'error')}return;
+    const d=formDataObject(form);const address={postal_code:d.postal_code,city:d.city,state:d.state,neighborhood:d.neighborhood,street:d.street,number:d.number,complement:d.complement,reference:d.reference,google_maps_url:d.google_maps_url};try{await customerApi('save_customer',{id:form.dataset.id||undefined,name:d.name,phone:d.phone,cpf_cnpj:d.cpf_cnpj,email:d.email,is_active:form.elements.is_active.checked,address});closeDialog();toast('Cliente salvo.','success');await loadCustomers()}catch(err){toast(err.message,'error')}return;
   }
 });
 
 document.addEventListener('submit',async e=>{
   const form=e.target;
+  if(form.id==='customerOsLoginForm'){
+    e.preventDefault();
+    const d=formDataObject(form),button=form.querySelector('button[type="submit"]');
+    if(button)button.disabled=true;
+    try{
+      await authenticateCustomerOsWithPin(d.pin);
+      toast('Acesso seguro liberado.','success');
+      await loadCustomers();
+    }catch(err){
+      renderCustomerOsLogin(err.message||'Não foi possível entrar.');
+    }
+    return;
+  }
   if(form.id==='featuredProductSearchForm'){e.preventDefault();const q=$('featuredProductSearch').value.trim();if(q.length>=2)await searchFeaturedProducts(q);return}
   if(form.id==='productFilterForm'){e.preventDefault();const d=formDataObject(form);productState={...productState,page:1,q:String(d.q||''),status:String(d.status||''),category:String(d.category||'')};await loadProducts();return}
   if(form.id==='orderFilterForm'){e.preventDefault();const d=formDataObject(form);orderState={...orderState,page:1,q:String(d.q||''),status:String(d.status||'')};await loadOrders();return}
