@@ -1,6 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession,clearCustomerOsSession} from './customer-os-auth.js';
-import {getRelationshipOverview,getRelationshipAudit,getIdentityConflicts,reviewIdentityConflict,runMetaDiagnosticsReadonly} from './relationship-api.js?v=20260918-6';
+import {getRelationshipOverview,getRelationshipAudit,getIdentityConflicts,reviewIdentityConflict,runMetaDiagnosticsReadonly} from './relationship-api.js?v=20260918-7';
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -10,7 +10,7 @@ const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL
 const pct=v=>`${Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`;
 const dt=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(d)};
 const empty=m=>`<div class="empty">${esc(m)}</div>`;
-let state={overview:null,audit:null,identityConflicts:[],identityConflictsError:null,metaDiagnostics:null};
+let state={overview:null,audit:null,identityConflicts:[],identityConflictsError:null,metaDiagnostics:null,metaDiagnosticsError:null};
 
 function canaryAllowed(){
   if(CONFIG.relationshipUiEnabled===true)return true;
@@ -188,6 +188,7 @@ function renderMeta(){
   <div class="meta-preflight-box">
     <div class="section-title"><div><h2>Bloqueios do Meta Direct</h2><p>Read-only. Estes itens precisam de evidência real; esta tela não ativa nada.</p></div><div class="relationship-head-actions">${chip(direct.ready===true?'Pronto':'Bloqueado',direct.ready===true?'ok':'warn')}<button type="button" class="secondary" data-meta-diagnostics>Verificar Meta agora</button></div></div>
     ${blockers.length?`<div class="meta-blocker-list">${blockers.map(key=>`<div class="meta-blocker-row"><span>•</span><strong>${esc(blockerLabels[key]||humanKey(key))}</strong><small>${esc(key)}</small></div>`).join('')}</div>`:empty('Nenhum blocker técnico reportado. Isso não equivale a autorização externa.')}
+    ${state.metaDiagnosticsError?`<div class="empty"><strong>Diagnóstico Meta não concluído.</strong><br>${esc(state.metaDiagnosticsError)}</div>`:'' }
     ${state.metaDiagnostics?`<div class="meta-diagnostic-result">
       <div class="metric-list">${[
         ['Graph API',state.metaDiagnostics.graph_api_version||'—'],
@@ -398,18 +399,24 @@ $('#metaView').addEventListener('click',async e=>{
   const button=e.target.closest('button[data-meta-diagnostics]');
   if(!button)return;
   const previous=button.textContent;
+  state.metaDiagnosticsError=null;
   button.disabled=true;
   button.textContent='Verificando…';
   $('#globalStatus').textContent='Consultando Meta pela integração nativa do Supabase · somente leitura…';
   try{
     state.metaDiagnostics=await runMetaDiagnosticsReadonly();
+    state.metaDiagnosticsError=null;
     await loadOverview();
     selectPanel('meta');
     $('#globalStatus').textContent='Diagnóstico Meta concluído · evidências atualizadas · zero ação externa.';
   }catch(error){
-    $('#globalStatus').textContent=error?.message||'Não foi possível concluir o diagnóstico Meta.';
-    button.disabled=false;
-    button.textContent=previous;
+    state.metaDiagnostics=null;
+    state.metaDiagnosticsError=error?.message||'Não foi possível concluir o diagnóstico Meta.';
+    renderMeta();
+    selectPanel('meta');
+    $('#globalStatus').textContent=state.metaDiagnosticsError;
+    const current=$('#metaView button[data-meta-diagnostics]');
+    if(current){current.disabled=false;current.textContent=previous}
   }
 });
 $('#refreshRelationship').addEventListener('click',loadOverview);
