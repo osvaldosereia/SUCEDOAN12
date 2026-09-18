@@ -60,7 +60,7 @@ assert.match(html,/id="createAiTemplateDraft"[^>]*disabled/);
 assert.match(html,/Submit Meta OFF/);
 
 assert.match(js,/renderTemplateAssistant/);
-assert.match(js,/Salvar DRAFT/);
+assert.match(html,/Salvar DRAFT/);
 assert.match(js,/Nenhuma submissão à Meta foi feita/);
 assert.match(js,/Gate de IA fechado: nenhuma chamada paga será feita/);
 assert.match(js,/getWhatsAppTemplateVersions/);
