@@ -11,6 +11,9 @@ import { createBasketFixtureRepository } from './baskets/basketFixtureRepository
 import { createBasketFlow } from './baskets/basketFlow.ts';
 import { renderBasketDetail, renderBasketList } from './baskets/basketView.ts';
 import type { Basket } from './baskets/types.ts';
+import { createCartStore } from './cart/cartStore.ts';
+import { calculateCartTotal } from './cart/cartMath.ts';
+import { renderCart } from './cart/cartView.ts';
 import { createCatalogController } from './catalog/catalogController.ts';
 import { createCatalogFixtureRepository } from './catalog/catalogFixtureRepository.ts';
 import { renderCatalog, renderProductDetail } from './catalog/catalogView.ts';
@@ -39,6 +42,7 @@ await bootstrapApp({ root: appRoot });
 
 const appNavigator = createNavigator();
 const conversation = createConversationStore();
+const cart = createCartStore();
 
 const catalogRepository = createCatalogFixtureRepository(productsData as Product[]);
 const catalog = createCatalogController(catalogRepository);
@@ -83,13 +87,21 @@ function render(route = appNavigator.current()): void {
     ? catalogToolHtml()
     : route === 'basket'
       ? basketToolHtml()
-      : undefined;
+      : route === 'cart'
+        ? renderCart(cart.getSnapshot())
+        : undefined;
+
+  const cartSummary = calculateCartTotal(cart.getSnapshot());
 
   appRoot.innerHTML = renderAppShell({
     route,
     state: 'ready',
     conversationHtml,
     toolHtml,
+    orderSummary: {
+      itemCount: cartSummary.itemCount,
+      totalCents: cartSummary.totalCents,
+    },
   });
 }
 
@@ -178,11 +190,68 @@ async function handleClick(event: MouseEvent): Promise<void> {
     const selection = basketFlow.getSnapshot().selection;
     if (!selection) return;
 
+    cart.add({
+      kind: 'basket',
+      refId: selection.basketId,
+      name: selection.basketName,
+      quantity: 1,
+      unitPriceCents: selection.priceCents,
+      promoUnitPriceCents: null,
+    });
+
     conversation.userSay(`Escolhi a ${selection.basketName}`);
     void conversation.assistantSay(
       `Perfeito. Você escolheu a ${selection.basketName}. O que deseja fazer agora?`,
       { replies: basketFlow.getPostSelectionReplies() },
     );
+    render();
+    return;
+  }
+
+  const addProductTarget = element.closest<HTMLElement>('[data-cart-add-product]');
+  const addProductId = addProductTarget?.dataset.cartAddProduct;
+  if (addProductId) {
+    const product = await catalogRepository.getById(addProductId);
+    if (!product) return;
+
+    cart.add({
+      kind: 'product',
+      refId: product.id,
+      name: product.name,
+      quantity: 1,
+      unitPriceCents: product.priceCents,
+      promoUnitPriceCents: product.promoPriceCents,
+    });
+    render();
+    return;
+  }
+
+  const increaseTarget = element.closest<HTMLElement>('[data-cart-increase]');
+  const increaseId = increaseTarget?.dataset.cartIncrease;
+  if (increaseId) {
+    const line = cart.getSnapshot().lines.find((item) => item.id === increaseId);
+    if (line && cart.setQuantity(line.id, line.quantity + 1)) render();
+    return;
+  }
+
+  const decreaseTarget = element.closest<HTMLElement>('[data-cart-decrease]');
+  const decreaseId = decreaseTarget?.dataset.cartDecrease;
+  if (decreaseId) {
+    const line = cart.getSnapshot().lines.find((item) => item.id === decreaseId);
+    if (line && line.quantity > 1 && cart.setQuantity(line.id, line.quantity - 1)) render();
+    return;
+  }
+
+  const removeTarget = element.closest<HTMLElement>('[data-cart-remove]');
+  const removeId = removeTarget?.dataset.cartRemove;
+  if (removeId) {
+    if (cart.remove(removeId)) render();
+    return;
+  }
+
+  if (element.closest('[data-cart-clear]')) {
+    cart.clear();
+    render();
     return;
   }
 
