@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow"><meta http-equiv="Cache-Control" content="no-store">
+  <title>Dona Antônia · Marketing</title>
+  <link rel="stylesheet" href="./styles.css?v=20260911-2"><link rel="stylesheet" href="./marketing.css?v=20260918-1">
+</head>
+<body>
+<header class="topbar"><button id="menuButton" class="menu-button" type="button">☰</button><a class="brand" href="./#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin</b></span></a><a class="view-storefront" href="../comprar/" target="_blank" rel="noopener">Abrir Comprar</a></header>
+<div class="admin-layout">
+  <aside id="sidebar" class="sidebar"><nav><a href="./#dashboard">Início</a><a href="./#products">Produtos</a><a href="./creative-studio.html">Estúdio Criativo</a><a class="active" href="./marketing.html">Marketing</a><a href="./#orders">Pedidos</a><a href="./#customers">Clientes</a></nav></aside>
+  <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+  <main class="content marketing-page">
+    <div class="marketing-head"><div><span class="marketing-eyebrow">Marketing Dona Antônia</span><h1>Central de Marketing</h1><p>Campanhas, conteúdos, agenda, publicações, custos e resultados no mesmo sistema.</p></div><div class="head-actions"><span id="safetyBadge" class="safety-badge">Carregando segurança…</span><button id="refreshMarketing" class="secondary" type="button">Atualizar</button></div></div>
+    <section id="authGate" class="panel auth-gate"><div><h2>Acesso seguro</h2><p>Use o PIN do Admin. A sessão fica somente nesta aba.</p></div><form id="pinForm" class="pin-form"><input id="pinInput" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="PIN de 6 dígitos"><button class="primary" type="submit">Entrar</button></form><p id="authStatus" class="muted"></p></section>
+    <div id="marketingApp" hidden>
+      <div class="marketing-tabs"><button class="active" data-tab="panel">Painel</button><button data-tab="campaigns">Campanhas</button><button data-tab="content">Conteúdos</button><button data-tab="calendar">Agenda</button><button data-tab="publications">Publicações</button><button data-tab="templates">Modelos</button><button data-tab="results">Resultados</button><button data-tab="settings">Configurações</button></div>
+      <section data-panel="panel"><div id="summaryCards" class="summary-grid"></div><div class="dashboard-grid"><section class="panel"><div class="section-title"><div><h2>Produção recente</h2><p>Conteúdos já existentes.</p></div></div><div id="recentAssets"></div></section><section class="panel"><div class="section-title"><div><h2>Segurança e custo</h2><p>V1 começa travada e econômica.</p></div></div><div id="runtimeSummary"></div></section></div></section>
+      <section data-panel="campaigns" hidden><section class="panel"><div class="section-title"><div><h2>Campanhas</h2><p>A unidade principal de planejamento.</p></div><span class="phase-pill">Leitura V1</span></div><div id="campaignsList"></div></section></section>
+      <section data-panel="content" hidden><section class="panel"><div class="section-title"><div><h2>Conteúdos</h2><p>Posts, Stories, carrosséis e vídeos leves.</p></div></div><div id="assetsList"></div></section></section>
+      <section data-panel="calendar" hidden><section class="panel"><div class="section-title"><div><h2>Agenda</h2><p>Calendário editorial.</p></div></div><div id="calendarList"></div></section></section>
+      <section data-panel="publications" hidden><section class="panel"><div class="section-title"><div><h2>Publicações</h2><p>Publicação externa continua desligada.</p></div></div><div id="jobsList"></div></section></section>
+      <section data-panel="templates" hidden><section class="panel"><div class="section-title"><div><h2>Modelos</h2><p>Layouts reutilizáveis para reduzir custo.</p></div></div><div id="templatesList"></div></section></section>
+      <section data-panel="results" hidden><section class="panel"><div class="section-title"><div><h2>Resultados</h2><p>Métricas, atribuição e custos.</p></div></div><div id="resultsView"></div></section></section>
+      <section data-panel="settings" hidden><section class="panel"><div class="section-title"><div><h2>Configurações</h2><p>Regras da primeira versão.</p></div></div><div id="settingsView"></div></section></section>
+    </div>
+  </main>
+</div>
+<div id="toastRegion" class="toasts"></div><script type="module" src="./marketing.js?v=20260918-1"></script>
+</body></html>
