@@ -158,3 +158,45 @@ Devem continuar verdadeiros:
 ## Observação
 
 Este inventário é um mapa de entrada, não substitui inspeção do schema/HEAD antes de modificar componentes.
+
+
+## Meta Policy Registry / Preflight
+
+### Policy Registry
+
+- tabela: `meta_policy_registry`;
+- readiness: `meta_policy_registry_readiness_v1()`;
+- migration: `20260919071000_cm_1_meta_policy_registry_verified_v1.sql`;
+- 8 políticas obrigatórias;
+- freshness: 30 dias;
+- service-role only;
+- `external_side_effect=false`;
+- `external_activation_authorized=false`.
+
+### Meta Direct readiness
+
+- snapshot: `get_meta_control_plane_snapshot_v1()`;
+- readiness: `evaluate_meta_direct_readiness_v1(uuid)`;
+- permissões: `meta_account_permissions`;
+- health: `meta_provider_health_snapshots`;
+- erros: `meta_control_plane_errors`;
+- webhook evidence: `meta_webhook_events`.
+
+Blockers atuais:
+- `graph_api_version_unverified`;
+- `permissions_unverified_or_blocking`;
+- `webhook_not_verified`;
+- `direct_ready_flag_false`.
+
+### Edge Functions
+
+- `whatsapp-meta-direct-v1` — deployment version 2; webhook público com HMAC; Graph version explícita obrigatória;
+- `admin-whatsapp-direct-v1` — deployment version 4; JWT obrigatório; Graph version explícita obrigatória;
+- `customer-intelligence-v1` — deployment version 19.
+
+### Testes novos
+
+- `scripts/test-cm-1-meta-policy-registry-v1.mjs`;
+- `scripts/test-cm-1-meta-direct-graph-version-gate.mjs`.
+
+Não usar fallback de Graph API version.
