@@ -8,7 +8,7 @@
 **Pull Request de homologação:** #396 — draft — **NÃO MERGEAR**  
 **Código do app:** `app-dona-antonia/`  
 **Comprar atual:** `comprar/` — **NÃO MODIFICAR durante o desenvolvimento do app**  
-**Próxima rodada autorizável:** **Rodada 5 — Cestas básicas fictícias**
+**Próxima rodada autorizável:** **Rodada 6 — Carrinho e regras locais**
 
 ---
 
@@ -407,8 +407,8 @@ Legenda:
 | 2 | Sistema visual e shell mobile-first | ✅ |
 | 3 | Motor conversacional determinístico | ✅ |
 | 4 | Catálogo fictício e navegação | ✅ |
-| 5 | Cestas básicas fictícias | ▶ |
-| 6 | Carrinho e regras locais | ⏳ |
+| 5 | Cestas básicas fictícias | ✅ |
+| 6 | Carrinho e regras locais | ▶ |
 | 7 | Checkout isolado | ⏳ |
 | 8 | Pedido e acompanhamento fictício | ⏳ |
 | 9 | PWA isolada | ⏳ |
@@ -671,9 +671,9 @@ Ana responde
 
 # 17. Estado atual exato
 
-**Última rodada concluída:** Rodada 4.
+**Última rodada concluída:** Rodada 5.
 
-**Próxima rodada:** Rodada 5 — Cestas básicas fictícias.
+**Próxima rodada:** Rodada 6 — Carrinho e regras locais.
 
 Ainda não foi implementado:
 
@@ -827,6 +827,82 @@ Essa decisão é proposital: carrinho pertence à Rodada 6.
 O build completo do Vite ainda não foi executado porque o ambiente continua sem acesso confiável ao registry npm.
 
 Isso permanece registrado como pendência real, e não como build aprovado.
+
+---
+
+# 18.1 Rodada 5 — concluída
+
+## Objetivo
+
+Criar seleção de cestas básicas com dados totalmente sintéticos, mantendo a experiência conversacional e sem antecipar o carrinho.
+
+## Entregas
+
+Criados:
+
+- `tests/fixtures/baskets.json`
+- `src/baskets/types.ts`
+- `src/baskets/basketFixtureRepository.ts`
+- `src/baskets/basketFlow.ts`
+- `src/baskets/basketView.ts`
+- testes de repositório, fluxo e visualização.
+
+Foram criadas quatro cestas sintéticas:
+
+- Cesta Essencial;
+- Cesta Família;
+- Cesta Completa;
+- Cesta Prática.
+
+Todas usam IDs `TEST-BASKET-*`.
+
+## Regras implementadas
+
+- valor total da cesta em destaque;
+- lista de composição sem preço individual;
+- abrir composição;
+- voltar para lista;
+- escolher cesta;
+- toque repetido não duplica seleção;
+- escolha vira bolha do cliente;
+- Ana confirma a cesta escolhida;
+- pós-seleção oferece:
+  - Ver ofertas;
+  - Comprar outros produtos;
+  - Revisar cesta.
+
+Nenhuma dessas opções abre automaticamente sem decisão do cliente.
+
+## Integração conversacional
+
+Ao tocar `Escolher esta cesta`:
+
+```
+Cliente: Escolhi a Cesta Família
+Ana: Perfeito. Você escolheu a Cesta Família. O que deseja fazer agora?
+[Ver ofertas] [Comprar outros produtos] [Revisar cesta]
+```
+
+## Decisão deliberada
+
+A Rodada 5 **não** permite:
+
+- remover item;
+- trocar item;
+- alterar quantidade;
+- adicionar item ao carrinho.
+
+Essas operações pertencem à Rodada 6 para evitar mistura de responsabilidades.
+
+## Validação
+
+- 9/9 testes de cestas aprovados;
+- 2/2 testes adicionais de conversa/roteamento aprovados;
+- typecheck dos módulos da rodada aprovado;
+- sem preço individual na composição;
+- escape de HTML;
+- nenhum endpoint externo;
+- nenhum arquivo em `comprar/` alterado.
 
 ---
 
@@ -1143,8 +1219,8 @@ Ao abrir uma nova conversa e pedir para continuar este projeto, seguir exatament
 9. Conferir qual foi o último checkpoint.
 
 10. Neste snapshot:
-    - Rodadas 0, 1, 2, 3 e 4 estão concluídas;
-    - próxima é a Rodada 5.
+    - Rodadas 0, 1, 2, 3, 4 e 5 estão concluídas;
+    - próxima é a Rodada 6.
 
 11. Executar TDD:
     - teste primeiro;
@@ -1210,11 +1286,12 @@ Uma rodada só pode ser marcada como concluída quando:
 - Rodada 1;
 - Rodada 2;
 - Rodada 3;
-- Rodada 4.
+- Rodada 4;
+- Rodada 5.
 
 **Próxima:**
 
-**Rodada 5 — Cestas básicas fictícias.**
+**Rodada 6 — Carrinho e regras locais.**
 
 **Produção:** intocada.
 
