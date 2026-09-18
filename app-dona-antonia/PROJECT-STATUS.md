@@ -56,3 +56,26 @@ Total: 27 rodadas numeradas de 0 a 26.
 **Próxima rodada permitida:** Rodada 0 — Blindagem e governança.
 
 Nenhuma rodada futura deve ser pulada se isso reduzir o isolamento, a segurança ou antecipar conexão com produção.
+
+
+## Checkpoint — Rodada 0
+
+**Estado:** CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- guard automático contra referência direta ao `/comprar/`;
+- bloqueio de material `service_role`;
+- bloqueio das flags de pedido real, push real e executores externos;
+- bloqueio explícito dos hosts atuais de produção do Supabase, Bling e Meta no runtime do app;
+- configuração padrão de homologação com todos os efeitos reais OFF;
+- testes automáticos de isolamento.
+
+Validação executada com Node 22:
+- 5 testes;
+- 5 aprovados;
+- 0 falhas.
+
+**Próxima rodada após autorização:** Rodada 1 — Fundação técnica isolada.
+
+A branch ainda não deve ser integrada à produção.
