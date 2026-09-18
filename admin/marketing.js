@@ -748,7 +748,7 @@ document.addEventListener('submit',async e=>{
   button.disabled=true;if(message)message.textContent='Salvando no Vault…';
   try{
     const payload={provider,app_id:String(data.get('app_id')||'').trim(),app_secret:String(data.get('app_secret')||'').trim()};
-    if(provider==='meta')payload.graph_version=String(data.get('graph_version')||'v26.0').trim();
+    if(provider==='meta')payload.graph_version=String(data.get('graph_version')||'').trim();
     state.connections=await saveMarketingProviderConfig(payload);if(message)message.textContent='Configuração salva.';await load();
   }catch(err){if(message)message.textContent=err.message||'Não foi possível salvar.'}finally{button.disabled=false}
 });
