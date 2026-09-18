@@ -287,6 +287,41 @@ function renderCampaigns(){
   }).join('')}</div>`;
 }
 
+function renderChannelAccounts(){
+  const mount=$('#channelAccountsView');if(!mount)return;
+  const accounts=state.overview?.channel_accounts||[];
+  const metaAccounts=state.overview?.meta_control_plane?.accounts||[];
+  const metaWhatsApp=metaAccounts.find(a=>a.channel==='whatsapp')||null;
+  if(!accounts.length){mount.innerHTML=empty('Nenhum canal cadastrado.');return}
+  mount.innerHTML=`<div class="channel-grid">${accounts.map(a=>{
+    const connected=['configured','verified'].includes(a.status);
+    const isWhatsApp=a.channel==='whatsapp_status';
+    let detail='Conexão necessária antes de publicar.';
+    if(a.channel==='pinterest_pin')detail='OAuth do Pinterest ainda não conectado.';
+    if(isWhatsApp&&metaWhatsApp){
+      detail=metaWhatsApp.channel_status==='active'
+        ?'Atendimento WhatsApp ativo; publicação em Status permanece manual.'
+        :'WhatsApp detectado, mas ainda sem readiness para Status.';
+    }
+    const statusText=connected?(a.status==='verified'?'Verificado':'Configurado'):'Não conectado';
+    const ready=connected&&(!isWhatsApp||a.capabilities?.manual_confirmation_required===true);
+    return `<article class="channel-card ${connected?'connected':'disconnected'}">
+      <div class="channel-card-head"><strong>${esc(channelLabel(a.channel))}</strong><span class="channel-state">${esc(statusText)}</span></div>
+      <p>${esc(detail)}</p>
+      <div class="channel-card-meta">
+        <span>${esc(a.provider)}</span>
+        <span>${esc(a.capabilities?.media||'mídia')}</span>
+        ${isWhatsApp?'<span>manual</span>':''}
+      </div>
+      <small>${ready?'Pronto para preparação governada':'Bloqueado até concluir conexão/homologação'}</small>
+    </article>`;
+  }).join('')}</div>
+  <div class="meta-readiness-note">
+    <strong>Meta Control Plane</strong>
+    <span>${metaWhatsApp?esc(`WhatsApp: ${metaWhatsApp.provider_state||'—'} · readiness ${metaWhatsApp.readiness_state||'—'}`):'Nenhuma conta Meta direta homologada para publicação.'}</span>
+  </div>`;
+}
+
 function render(){
   const o=state.overview||{},r=o.runtime||{},m=state.metrics?.metrics?.counts||{},meta=r.metadata||{};
   const reviewAssets=(o.assets||[]).filter(a=>a.status==='review').length;
@@ -295,6 +330,7 @@ function render(){
   $('#runtimeSummary').innerHTML=`<div><div class="rule"><span>Publicação externa</span><strong class="${r.publishing_enabled?'danger':'ok'}">${r.publishing_enabled?'Ligada':'Desligada'}</strong></div><div class="rule"><span>Kill switch</span><strong class="ok">${r.kill_switch?'Ativo':'Inativo'}</strong></div><div class="rule"><span>Aprovação humana</span><strong>${r.require_approval===false?'Não':'Obrigatória'}</strong></div><div class="rule"><span>Imagem IA</span><strong>${esc(meta.image_generation_quality||'low')} · ${Number(meta.image_variants_default||1)} variação</strong></div><div class="rule"><span>Vídeo V1</span><strong>${Number(meta.video_duration_seconds||10)}s · ${esc(meta.video_mode||'light_motion')}</strong></div><div class="rule"><span>IA de estratégia</span><strong class="ok">${meta.strategy_ai_enabled===true?'Habilitada':'Bloqueada'}</strong></div></div>`;
   renderAssets();
   renderCampaigns();
+  renderChannelAccounts();
   const jobs=o.jobs||[];$('#jobsList').innerHTML=jobs.length?`<div class="data-list">${jobs.map(j=>row(`${channelLabel(j.channel)} · ${j.content_type}`,j.scheduled_for?dt(j.scheduled_for):'Sem agendamento',j.status,j.manual_confirmation_required?'confirmação manual':'')).join('')}</div>`:empty('Nenhuma publicação preparada.');
   const templates=o.templates||[];$('#templatesList').innerHTML=templates.length?`<div class="data-list">${templates.map(t=>row(t.name,`${t.media_kind} · v${t.version}`,t.status,t.template_key)).join('')}</div>`:empty('Nenhum modelo ativo.');
   const cal=state.workflow?.calendar||[];$('#calendarList').innerHTML=cal.length?`<div class="data-list">${cal.slice(0,80).map(i=>row(i.title||i.channel||'Conteúdo',i.scheduled_for?dt(i.scheduled_for):'',i.status||'planejado',i.channel||'')).join('')}</div>`:empty('Agenda vazia.');
