@@ -46,6 +46,23 @@ async function loadDashboard(){
   try{
     const data=await api('dashboard'),s=data.stats||{};
     app.innerHTML=`${pageHead('Início','O essencial da operação, sem excesso de informações.',`<a class="primary" href="${CONFIG.storefrontUrl}" target="_blank" rel="noopener">Abrir vitrine</a>`)}<div class="stats-grid"><article class="stat-card"><span>Produtos ativos</span><strong>${esc(s.active_products||0)}</strong></article><article class="stat-card"><span>Sem foto</span><strong>${esc(s.no_image||0)}</strong></article><article class="stat-card"><span>Sem estoque</span><strong>${esc(s.no_stock||0)}</strong></article><article class="stat-card"><span>Cestas ativas</span><strong>${esc(s.active_baskets||0)}</strong></article><article class="stat-card"><span>Ofertas</span><strong>${esc(s.offers||0)}</strong></article><article class="stat-card"><span>Pedidos recentes</span><strong>${esc(s.recent_orders||0)}</strong></article></div><section class="panel"><h2>Pedidos recentes da vitrine</h2>${renderOrdersTable(data.recent_orders||[],false)}</section>`;
+    const m=data.history_metrics||{};
+    const metricsPanel=document.createElement('section');
+    metricsPanel.className='panel history-metrics-panel';
+    const repeatRate=m.repeat_session_conversion_pct==null?'—':esc(m.repeat_session_conversion_pct)+'%';
+    const checkoutTime=m.average_checkout_minutes==null?'—':esc(m.average_checkout_minutes)+' min';
+    const medianTime=m.median_checkout_minutes==null?'—':esc(m.median_checkout_minutes)+' min';
+    metricsPanel.innerHTML='<h2>Clientes e recompra</h2><p class="muted">Métricas calculadas pelo histórico real. Recursos novos passam a registrar uso a partir da ativação.</p>'+
+      '<div class="stats-grid history-metrics-grid">'+
+      '<article class="stat-card"><span>Clientes com histórico</span><strong>'+esc(m.customers_with_history||0)+'</strong><small class="muted">'+esc(m.history_coverage_pct||0)+'% da base</small></article>'+
+      '<article class="stat-card"><span>Recuperados pelo Bling</span><strong>'+esc(m.bling_recovered_customers||0)+'</strong><small class="muted">'+esc(m.bling_imported_orders||0)+' pedido(s) importado(s)</small></article>'+
+      '<article class="stat-card"><span>Repetir compra</span><strong>'+esc(m.repeat_orders||0)+' / '+esc(m.repeat_sessions||0)+'</strong><small class="muted">conversão '+repeatRate+'</small></article>'+
+      '<article class="stat-card"><span>Compras frequentes</span><strong>'+esc(m.frequent_opens||0)+'</strong><small class="muted">'+esc(m.frequent_product_adds||0)+' adição(ões)</small></article>'+
+      '<article class="stat-card"><span>Ofertas personalizadas</span><strong>'+esc(m.personalized_offer_views||0)+'</strong><small class="muted">'+esc(m.personalized_offer_adds||0)+' adição(ões)</small></article>'+
+      '<article class="stat-card"><span>Tempo médio até pedido</span><strong>'+checkoutTime+'</strong><small class="muted">mediana '+medianTime+'</small></article>'+
+      '</div>';
+    const recentPanel=app.querySelector('.panel');
+    if(recentPanel)recentPanel.before(metricsPanel);else app.appendChild(metricsPanel);
   }catch(e){app.innerHTML=`${pageHead('Início')}<div class="panel empty">${esc(e.message)}</div>`}
 }
 
