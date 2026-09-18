@@ -22,21 +22,31 @@
 - [x] tabelas Supabase HML estão com RLS e zero grants para anon/authenticated;
 - [x] gate Supabase HML permanece `enabled=false`.
 
+## Hardening local adicional validado
+
+- [x] sessão sintética expirada falha fechado;
+- [x] sessão sintética marcada como revogada falha fechado;
+- [x] revogação local do aparelho limpa a sessão segura local;
+- [x] brute force do código humano de pairing tem limite de tentativas;
+- [x] polling de pairing tem limite de tentativas;
+- [x] expiração e replay de challenge local são bloqueados;
+- [x] deep link com percent-encoding inválido falha fechado;
+- [x] deep link absoluto exige HTTPS + host em allowlist;
+- [x] token push fora de `TEST-PUSH-*` é recusado antes de efeito externo;
+- [x] mídia com ID não TEST, MIME inválido ou tamanho acima do limite é recusada;
+
 ## Testes obrigatórios ainda pendentes por dependência futura
 
-- [ ] replay de sessão nativa;
-- [ ] token de sessão expirado;
-- [ ] aparelho revogado;
-- [ ] brute force de pairing;
-- [ ] expiração/replay de challenge;
+- [ ] replay de sessão contra backend real de homologação;
+- [ ] token de sessão expirado validado ponta a ponta com backend;
+- [ ] aparelho revogado validado ponta a ponta com backend;
 - [ ] Keychain no iOS real;
 - [ ] Keystore/armazenamento criptografado no Android real;
-- [ ] upload de MIME inválido;
-- [ ] arquivo acima do limite;
+
 - [ ] EXIF/metadados de foto;
 - [ ] permissões reais de câmera/microfone;
-- [ ] deep link nativo malformado;
-- [ ] push malformado;
+- [ ] deep link nativo malformado em Android/iOS reais;
+- [ ] push nativo malformado em aparelho real;
 - [ ] inspeção final do APK/AAB/IPA por segredos.
 
 ## Regra de gate
