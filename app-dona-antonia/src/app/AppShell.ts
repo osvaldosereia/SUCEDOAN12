@@ -7,6 +7,10 @@ export interface AppShellOptions {
   state: ShellState;
   conversationHtml?: string;
   toolHtml?: string;
+  orderSummary?: {
+    itemCount: number;
+    totalCents: number;
+  };
 }
 
 const STATE_COPY: Record<ShellState, { title: string; detail: string }> = {
@@ -32,6 +36,13 @@ const STATE_COPY: Record<ShellState, { title: string; detail: string }> = {
   },
 };
 
+function money(cents: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(cents / 100).replace(/\u00a0/g, ' ');
+}
+
 const DEFAULT_CONVERSATION = `
   <div class="message assistant-message">
     <span class="message-author">Ana</span>
@@ -44,6 +55,7 @@ export function renderAppShell({
   state,
   conversationHtml = DEFAULT_CONVERSATION,
   toolHtml,
+  orderSummary = { itemCount: 0, totalCents: 0 },
 }: AppShellOptions): string {
   const copy = STATE_COPY[state];
 
@@ -81,7 +93,7 @@ export function renderAppShell({
       <footer class="order-bar" data-shell="order-bar">
         <div>
           <span>Seu pedido</span>
-          <strong>0 itens</strong>
+          <strong>${orderSummary.itemCount} ${orderSummary.itemCount === 1 ? 'item' : 'itens'} · ${money(orderSummary.totalCents)}</strong>
         </div>
         <button type="button" data-route-target="cart" aria-label="Ver pedido">Ver pedido</button>
       </footer>
