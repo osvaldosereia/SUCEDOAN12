@@ -40,6 +40,7 @@ jobs:
         run: |
           node --check scripts/marketing-preview-homologation.mjs
           node --test tests/marketing-light-video-render-worker.test.mjs
+          node --test tests/marketing-official-publish-connectors-v1.test.mjs
           command -v ffmpeg\n          ffmpeg -version | head -n 3
 
       - name: Render five pilot pieces and one real Reel
