@@ -196,6 +196,10 @@ function customerHistoryMarkup(customer={},data={},customer360=null){
   const conversations=customer360?.activity?.conversations||[];
   const carts=customer360?.activity?.carts||[];
   const identityLatest=customer360?.identity_resolution?.latest||null;
+  const protection=customer360?.customer_protection||{};
+  const protectionState=protection?.state||{};
+  const protectionReasons=Array.isArray(protection?.reasons)?protection.reasons:[];
+  const activeSuppressions=Array.isArray(protectionState?.suppressions)?protectionState.suppressions:[];
   const channelIdentities=Array.isArray(contact.channel_identities)?contact.channel_identities:[];
   const currentConsents=Object.values(consentCurrent||{});
   const summary=customer360?.summary||{};
@@ -207,6 +211,7 @@ function customerHistoryMarkup(customer={},data={},customer360=null){
   const marketingTouchpoints=customer360?.marketing?.touchpoints||[];
   const marketingEvents=customer360?.marketing?.events||[];
   const lifecycleLabel=v=>({prospect:'Prospect',new_customer:'Novo cliente',active:'Ativo',recurring:'Recorrente',inactive:'Inativo'})[String(v||'')]||String(v||'—');
+  const protectionReasonLabel=v=>({customer_inactive:'Cliente inativo',invalid_or_missing_phone:'Telefone inválido/ausente',channel_identity_missing:'Identidade do canal ausente',marketing_consent_unknown:'Consentimento ainda não registrado',marketing_consent_denied:'Consentimento negado',marketing_consent_revoked:'Consentimento revogado',active_suppression:'Bloqueio ativo',order_in_progress:'Pedido em andamento',human_service_in_progress:'Atendimento humano em andamento',recent_customer_activity:'Cliente em atendimento recente',marketing_cooldown:'Intervalo mínimo entre campanhas'})[String(v||'')]||String(v||'');
   const secureExtras=customer360?`<section class="customer-history-block"><div class="customer-history-title"><h3>Customer 360</h3><small class="muted">Dados protegidos</small></div>
     <div class="customer-history-stats detail">
       <article><span>Ciclo de vida</span><strong>${esc(lifecycleLabel(summary.lifecycle))}</strong></article>
@@ -222,6 +227,20 @@ function customerHistoryMarkup(customer={},data={},customer360=null){
     </div>
     ${channelIdentities.length?`<div class="customer-history-chips compact">${channelIdentities.slice(0,8).map(x=>`<span><b>${esc(String(x.channel||'canal').toUpperCase())}</b><small>${esc(x.verification_status||'observed')} · ${esc(x.identity_kind||'')}</small></span>`).join('')}</div>`:''}
     ${currentConsents.length?`<div class="customer-history-chips compact">${currentConsents.slice(0,8).map(x=>`<span><b>${esc(x.purpose||'consentimento')}</b><small>${esc(x.channel||'')} · ${esc(x.status||'')}</small></span>`).join('')}</div>`:''}
+  </section>
+  <section class="customer-history-block">
+    <div class="customer-history-title"><h3>Proteção do cliente</h3><small class="muted">Marketing WhatsApp · decisão explicável</small></div>
+    <div class="customer-history-stats detail">
+      <article><span>Marketing</span><strong>${protection.allowed?'Liberado':'Bloqueado'}</strong></article>
+      <article><span>Consentimento</span><strong>${esc(protection?.consent?.status||'unknown')}</strong></article>
+      <article><span>Bloqueios ativos</span><strong>${esc(activeSuppressions.length)}</strong></article>
+      <article><span>Cooldown</span><strong>${esc(protection?.policy?.cooldown_hours??'—')} h</strong></article>
+    </div>
+    ${protectionReasons.length?`<div class="customer-history-chips compact">${protectionReasons.map(x=>`<span><b>${esc(protectionReasonLabel(x))}</b><small>${esc(x)}</small></span>`).join('')}</div>`:'<div class="empty">Nenhum impedimento de marketing identificado pelos guardrails atuais.</div>'}
+    <div class="row-actions" style="margin-top:12px">
+      ${activeSuppressions.length?activeSuppressions.map(x=>`<button type="button" class="secondary" data-release-suppression="${esc(x.id)}" data-protection-customer="${esc(customer.id)}">Liberar bloqueio: ${esc(x.reason_code||'manual')}</button>`).join(''):`<button type="button" class="secondary" data-suppress-marketing="${esc(customer.id)}">Bloquear marketing manualmente</button>`}
+      <button type="button" class="secondary" data-revoke-marketing="${esc(customer.id)}">Registrar pedido de não receber marketing</button>
+    </div>
   </section>
   ${brands.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Marcas</h3><small class="muted">Afinidade calculada por compras</small></div><div class="customer-history-chips">${brands.slice(0,12).map(x=>`<span><b>${esc(x.brand)}</b><small>${esc(x.purchase_count)} compra(s) · ${money(x.total_spent)}</small></span>`).join('')}</div></section>`:''}
   ${secureCategories.length?`<section class="customer-history-block"><div class="customer-history-title"><h3>Categorias</h3><small class="muted">Histórico consolidado</small></div><div class="customer-history-chips compact">${secureCategories.slice(0,12).map(x=>`<span><b>${esc(x.category)}</b><small>${esc(x.purchase_count)} compra(s) · ${money(x.total_spent)}</small></span>`).join('')}</div></section>`:''}
