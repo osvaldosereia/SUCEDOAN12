@@ -8,7 +8,15 @@ Status: **PLANEJAMENTO SALVO — PRONTO PARA COMEÇAR CM-0**.
 
 1. `docs/CUSTOMER-MARKETING-OS-ARQUITETURA-MESTRE.md`
 2. `docs/CUSTOMER-MARKETING-OS-ETAPA-CM1.md`
-3. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
+3. `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`
+4. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
+
+## Governança
+
+- o proprietário delegou ao assistente as decisões técnicas e de implantação deste projeto;
+- não é necessário pedir aprovação para cada decisão técnica rotineira;
+- limites de segurança, gastos externos relevantes, ações irreversíveis e confirmações obrigatórias de provedores continuam respeitados;
+- referência: `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`.
 
 ## Decisões já aprovadas
 
