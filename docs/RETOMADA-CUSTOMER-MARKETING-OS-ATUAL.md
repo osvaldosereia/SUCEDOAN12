@@ -1,3 +1,11 @@
+> [!IMPORTANT]
+> **PONTO DE ENTRADA CANÔNICO MOVIDO.**
+> Para novas retomadas, leia primeiro:
+> `docs/projects/customer-marketing-os/HANDOFF.md`
+> e depois `docs/projects/customer-marketing-os/CURRENT-STATE.md`.
+>
+> Este arquivo foi preservado como checkpoint histórico de 18/09/2026 e não deve mais ser tratado isoladamente como fonte principal de retomada.
+
 # RETOMADA — Customer & Marketing OS / CM-1 — Dona Antônia
 
 Atualizado em 18/09/2026.
