@@ -22,6 +22,7 @@ on:
       - 'supabase/migrations/*cm_1_4*'
       - 'supabase/migrations/*cm_1_5*'
       - 'supabase/migrations/*cm_1_6*'
+      - 'supabase/migrations/*cm_1_7*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -37,6 +38,7 @@ on:
       - 'scripts/test-cm-1-4-event-collector.mjs'
       - 'scripts/test-cm-1-5-consent-protection.mjs'
       - 'scripts/test-cm-1-6-product-marketing-profile.mjs'
+      - 'scripts/test-cm-1-7-product-brand-graph.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
@@ -60,6 +62,7 @@ on:
       - 'supabase/migrations/*cm_1_4*'
       - 'supabase/migrations/*cm_1_5*'
       - 'supabase/migrations/*cm_1_6*'
+      - 'supabase/migrations/*cm_1_7*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -75,6 +78,7 @@ on:
       - 'scripts/test-cm-1-4-event-collector.mjs'
       - 'scripts/test-cm-1-5-consent-protection.mjs'
       - 'scripts/test-cm-1-6-product-marketing-profile.mjs'
+      - 'scripts/test-cm-1-7-product-brand-graph.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
@@ -150,6 +154,8 @@ jobs:
         run: node scripts/test-cm-1-5-consent-protection.mjs
       - name: Validar Product Marketing Profile
         run: node scripts/test-cm-1-6-product-marketing-profile.mjs
+      - name: Validar Product Brand Graph
+        run: node scripts/test-cm-1-7-product-brand-graph.mjs
       - name: Validar Marketing Brain
         run: node scripts/test-marketing-brain-v1.mjs
       - name: Validar shell oficial
