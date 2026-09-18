@@ -35,6 +35,10 @@ assert.match(customerEdge,/action==='relationship_audit'/);
 assert.match(customerEdge,/relationship_command_summary_v1/);
 assert.match(customerEdge,/read_only:true/);
 assert.match(customerEdge,/external_side_effect:false/);
+assert.match(customerEdge,/action==='identity_conflicts'/);
+assert.match(customerEdge,/action==='identity_review'/);
+assert.match(customerEdge,/identity_review_note_required/);
+assert.match(customerEdge,/review_only_no_merge/);
 assert.doesNotMatch(customerEdge,/action==='relationship_[^']+'[\s\S]{0,1000}graph\.facebook\.com/i);
 
 assert.match(runtime,/relationshipUiEnabled:false/,'Relationship UI must remain behind manual canary gate');
@@ -54,6 +58,8 @@ assert.match(api,/CONFIG\.customerOsFunction/,'Reuse existing secure Customer In
 assert.match(api,/getCustomerOsAccessToken/);
 assert.match(api,/relationship_overview/);
 assert.match(api,/relationship_audit/);
+assert.match(api,/getIdentityConflicts/);
+assert.match(api,/reviewIdentityConflict/);
 
 assert.match(js,/function canaryAllowed/);
 assert.match(js,/relationshipUiEnabled===true/);
@@ -61,7 +67,12 @@ assert.match(js,/authenticateCustomerOsWithPin/);
 assert.match(js,/getRelationshipOverview/);
 assert.match(js,/getRelationshipAudit/);
 assert.match(js,/zero ação externa/);
+assert.match(js,/data-identity-review/);
+assert.match(js,/Vincular avaliação ao cadastro escolhido/);
+assert.match(js,/Nenhum candidato é seguro/);
+assert.match(js,/sem mesclar cadastros/);
 assert.match(css,/relationship-shell/);
+assert.match(css,/identity-review-card/);
 assert.match(index,/id="relationshipNav"/);
 assert.match(index,/relationshipCanaryEnabled/);
 
