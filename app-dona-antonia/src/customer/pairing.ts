@@ -70,11 +70,13 @@ export function createPairingFixture(
   options: {
     now?: () => number;
     maxPollAttempts?: number;
+    maxConfirmAttempts?: number;
     sessionTokenFactory?: () => string;
   } = {},
 ) {
   const now = options.now ?? Date.now;
   const maxPollAttempts = Math.max(1, options.maxPollAttempts ?? 20);
+  const maxConfirmAttempts = Math.max(1, options.maxConfirmAttempts ?? 6);
   const sessionTokenFactory = options.sessionTokenFactory
     ?? (() => 'TEST-SESSION-PAIRING');
 
@@ -82,6 +84,7 @@ export function createPairingFixture(
   let humanConfirmed = false;
   let consumed = false;
   let pollAttempts = 0;
+  let confirmAttempts = 0;
 
   function expired(): boolean {
     return now() > challenge.expiresAt;
@@ -92,6 +95,10 @@ export function createPairingFixture(
 
     confirmHumanCode(code: string): boolean {
       if (expired() || consumed) return false;
+      if (humanConfirmed) return code === challenge.humanCode;
+      if (confirmAttempts >= maxConfirmAttempts) return false;
+
+      confirmAttempts += 1;
       if (code !== challenge.humanCode) return false;
       humanConfirmed = true;
       return true;
