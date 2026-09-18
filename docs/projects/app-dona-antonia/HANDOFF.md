@@ -6,6 +6,17 @@
 **PR:** #396 — draft — NÃO MERGEAR  
 **Estado:** OFF / ISOLADO / NÃO PUBLICADO
 
+## R13 HML — hardening adicional aplicado — 18/09/2026
+
+- migração `20260918204500_customer_app_hml_cart_integrity_v2.sql` aplicada;
+- config HML possui hard-off por constraint `enabled=false`;
+- banco valida carrinho TEST e recalcula total por funções SQL restritas a `service_role`;
+- checkout HML versionado recalcula total server-side e rejeita divergência;
+- helper compartilhado HML: 5/5 testes locais verdes + typecheck;
+- validação SQL: cart válido aceito, total 5000, ID real recusado, chave `phone` recusada;
+- advisors: nenhum finding de performance específico HML; apenas INFO de RLS sem policy pública, intencional com zero grants para anon/authenticated;
+- quota de Edge Functions continua sendo o único bloqueio de deploy da R13; nenhuma função existente foi apagada.
+
 ## CHECKPOINT NOVO — 18/09/2026 — hardening seguro após R24
 
 - branch validada antes da edição: `app-dona-antonia-r0-isolation`;
