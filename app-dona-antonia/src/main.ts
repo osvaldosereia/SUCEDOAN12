@@ -1,4 +1,9 @@
+import './styles/base.css';
+import './styles/shell.css';
+
+import { renderAppShell } from './app/AppShell.ts';
 import { bootstrapApp } from './app/bootstrap.ts';
+import { createNavigator, isAppRoute } from './app/navigation.ts';
 import { detectRuntime } from './platform/runtime.ts';
 
 const root = document.querySelector<HTMLElement>('#app');
@@ -14,4 +19,24 @@ const standalone =
 
 root.dataset.runtime = detectRuntime({ standalone });
 
-void bootstrapApp({ root });
+await bootstrapApp({ root });
+
+const appNavigator = createNavigator();
+
+function render(route = appNavigator.current()): void {
+  root.innerHTML = renderAppShell({ route, state: 'ready' });
+}
+
+appNavigator.subscribe(render);
+render();
+
+root.addEventListener('click', (event) => {
+  const target = event.target instanceof Element
+    ? event.target.closest<HTMLElement>('[data-route-target]')
+    : null;
+
+  const route = target?.dataset.routeTarget;
+  if (!route || !isAppRoute(route)) return;
+
+  appNavigator.navigate(route);
+});
