@@ -32,10 +32,12 @@ assert.doesNotMatch(hardening,/grant execute[\s\S]*authenticated/i);
 
 assert.match(html,/Evidências em observação/);
 assert.match(html,/homologationEvidenceView/);
-assert.match(html,/relacionamento\.js\?v=20260918-8/);
+assert.match(html,/relacionamento\.js\?v=20260918-9/);
 assert.match(ui,/renderHomologationEvidence/);
 assert.match(ui,/Aguardando lifecycle natural/);
 assert.match(ui,/Token read-only no Vault/);
+assert.match(ui,/Token diagnóstico/);
+assert.match(ui,/Ausente no Vault/);
 assert.match(ui,/Zero efeito externo/);
 assert.match(ui,/não cria eventos/);
 
