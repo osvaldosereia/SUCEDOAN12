@@ -2,6 +2,7 @@ import {api} from './api.js';
 import {CONFIG} from './runtime-config.js?v=20260918-customer-os-canary-1';
 import {customerOsApi} from './customer-os-api.js';
 import {authenticateCustomerOsWithPin,getCustomerOsSession} from './customer-os-auth.js';
+import {renderCustomer360,renderCustomerOrderDetail} from './customer-360-view.js?v=20260918-2';
 
 const $=id=>document.getElementById(id);
 const app=$('app'),sidebar=$('sidebar'),sidebarBackdrop=$('sidebarBackdrop'),dialog=$('editorDialog'),editorBody=$('editorBody');
@@ -65,8 +66,8 @@ async function refreshIdentityDiagnostics(){
 function toast(message,kind=''){const host=$('toastRegion');const node=document.createElement('div');node.className=`toast ${kind}`.trim();node.textContent=message;host.appendChild(node);setTimeout(()=>node.remove(),kind==='error'?5000:2600)}
 function loading(label='Carregando…'){app.innerHTML=`<div class="loading"><span class="spinner"></span><p>${esc(label)}</p></div>`}
 function pageHead(title,description='',actions=''){return `<div class="page-head"><div><h1>${esc(title)}</h1>${description?`<p>${esc(description)}</p>`:''}</div>${actions?`<div class="page-actions">${actions}</div>`:''}</div>`}
-function openDialog(html){editorBody.innerHTML=html;if(!dialog.open)dialog.showModal()}
-function closeDialog(){dialog.close();editorBody.innerHTML='';currentBasketId=null}
+function openDialog(html,variant=''){editorBody.innerHTML=html;dialog.classList.toggle('customer-360-dialog',variant==='customer360');if(!dialog.open)dialog.showModal()}
+function closeDialog(){dialog.close();editorBody.innerHTML='';dialog.classList.remove('customer-360-dialog');currentBasketId=null}
 function closeMenu(){sidebar.classList.remove('open');sidebarBackdrop.classList.add('hidden')}
 function openMenu(){sidebar.classList.add('open');sidebarBackdrop.classList.remove('hidden')}
 function setActiveRoute(name){document.querySelectorAll('[data-route]').forEach(node=>node.classList.toggle('active',node.dataset.route===name))}
@@ -306,28 +307,39 @@ function customerHistoryMarkup(customer={},data={},customer360=null){
 }
 
 async function openCustomerHistory(id){
-  currentHistoryCustomerId=id;openDialog('<div class="loading"><span class="spinner"></span><p>Carregando histórico…</p></div>');
+  currentHistoryCustomerId=id;
+  openDialog('<div class="loading"><span class="spinner"></span><p>Carregando perfil do cliente…</p></div>','customer360');
   try{
     const [profile,history]=await Promise.all([
-      secureCustomersEnabled()?customerOsApi('customer_360',{id,timeline_limit:30}):api('customer',{id}),
+      secureCustomersEnabled()?customerOsApi('customer_360',{id,timeline_limit:40}):api('customer',{id}),
       customerApi('customer_history',{id,page:1,limit:30})
     ]);
-    openDialog(customerHistoryMarkup(profile.customer||{},history,secureCustomersEnabled()?profile:null));
-  }catch(e){openDialog(`<div class="editor-shell"><div class="editor-head"><h2>Histórico</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="empty">${esc(e.message)}</div></div>`)}
+    const html=renderCustomer360({
+      customer:profile.customer||{},
+      data:history||{},
+      customer360:secureCustomersEnabled()?profile:null,
+      helpers:{esc,money,date,paymentLabel,historyStatusLabel,historyAddressLine,customerSegmentLabel}
+    });
+    openDialog(html,'customer360');
+  }catch(e){
+    openDialog(`<div class="editor-shell"><div class="editor-head"><h2>Perfil do cliente</h2><button class="close-dialog" type="button" data-close-dialog>×</button></div><div class="empty">${esc(e.message)}</div></div>`);
+  }
 }
 
 async function openCustomerHistoryOrder(customerId,orderId){
-  openDialog('<div class="loading"><span class="spinner"></span><p>Carregando pedido…</p></div>');
+  openDialog('<div class="loading"><span class="spinner"></span><p>Carregando pedido…</p></div>','customer360');
   try{
-    const data=await customerApi('customer_history_order',{customer_id:customerId,order_id:orderId}),detail=data.detail||{},o=detail.order||{},items=detail.items||[];
-    openDialog(`<div class="customer-history-shell">
-      <div class="editor-head"><div><small class="muted">Detalhe da compra</small><h2>${esc(o.order_number||'Pedido')}</h2><div class="muted">${esc(date(o.confirmed_at||o.created_at))}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div>
-      <button class="secondary customer-history-back" type="button" data-history-back="${esc(customerId)}">← Voltar ao histórico</button>
-      <div class="customer-history-stats detail"><article><span>Total</span><strong>${money(o.total||0)}</strong></article><article><span>Status</span><strong>${esc(historyStatusLabel(o.status))}</strong></article><article><span>Pagamento</span><strong>${esc(paymentLabel(o.payment_method))}</strong></article><article><span>Cesta</span><strong>${esc(o.basket_name||'—')}</strong></article></div>
-      ${historyAddressLine(o.delivery_address)?`<section class="customer-history-summary single"><div><span>Endereço usado neste pedido</span><strong>${esc(historyAddressLine(o.delivery_address))}</strong></div></section>`:''}
-      <section class="customer-history-block"><h3>Itens</h3><div class="customer-history-items">${items.map(i=>`<div><span><b>${esc(i.quantity)}×</b> ${esc(i.name||'Produto')}</span><strong>${money(i.line_total||0)}</strong></div>`).join('')||'<div class="empty">Sem itens.</div>'}</div></section>
-    </div>`);
-  }catch(e){toast(e.message,'error');if(currentHistoryCustomerId)await openCustomerHistory(currentHistoryCustomerId)}
+    const data=await customerApi('customer_history_order',{customer_id:customerId,order_id:orderId});
+    const html=renderCustomerOrderDetail({
+      customerId,
+      detail:data.detail||{},
+      helpers:{esc,money,date,paymentLabel,historyStatusLabel,historyAddressLine}
+    });
+    openDialog(html,'customer360');
+  }catch(e){
+    toast(e.message,'error');
+    if(currentHistoryCustomerId)await openCustomerHistory(currentHistoryCustomerId);
+  }
 }
 
 async function loadCustomers(){
@@ -384,7 +396,7 @@ async function loadCustomers(){
         <select name="segment" aria-label="Filtrar por segmento">${segmentOptions.map(([value,label])=>`<option value="${esc(value)}" ${customerState.segment===value?'selected':''}>${esc(label)}</option>`).join('')}</select>
         <button class="primary" type="submit">Buscar</button>
       </form>
-      <section class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Compras</th><th>Status</th><th>Ações</th></tr></thead><tbody>${(data.customers||[]).map(c=>`<tr><td><strong>${esc(c.name||'Sem nome')}</strong></td><td>${esc(c.primary_whatsapp_e164||'—')}</td><td><strong>${esc(c.order_count||0)}</strong><div class="muted">${money(c.lifetime_value||0)}${c.last_order_at?` · ${esc(date(c.last_order_at))}`:''}</div></td><td><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></td><td><div class="row-actions"><button type="button" data-customer-history="${esc(c.id)}">Histórico</button><button type="button" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div></td></tr>`).join('')}</tbody></table></div>${pagination(customerState.page,customerState.total,'customers',30)}</section>`;
+      <section class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Compras</th><th>Status</th><th>Ações</th></tr></thead><tbody>${(data.customers||[]).map(c=>`<tr><td><strong>${esc(c.name||'Sem nome')}</strong></td><td>${esc(c.primary_whatsapp_e164||'—')}</td><td><strong>${esc(c.order_count||0)}</strong><div class="muted">${money(c.lifetime_value||0)}${c.last_order_at?` · ${esc(date(c.last_order_at))}`:''}</div></td><td><span class="badge ${c.is_active?'ok':'off'}">${c.is_active?'Ativo':'Inativo'}</span></td><td><div class="row-actions"><button type="button" data-customer-history="${esc(c.id)}">${secureCustomersEnabled()?'Abrir perfil':'Histórico'}</button><button type="button" data-edit-customer="${esc(c.id)}">Editar</button>${c.primary_whatsapp_e164?`<a href="${wa(c.primary_whatsapp_e164)}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div></td></tr>`).join('')}</tbody></table></div>${pagination(customerState.page,customerState.total,'customers',30)}</section>`;
   }catch(e){app.innerHTML=`${pageHead('Clientes')}<div class="panel empty">${esc(e.message)}</div>`}
 }
 
@@ -440,6 +452,18 @@ editorBody.addEventListener('click',async e=>{
   if(t.matches('[data-identity-reject]')){
     if(!confirm('Registrar que nenhum candidato está correto?'))return;
     try{await customerOsApi('identity_review',{id:t.dataset.identityReject,review:'rejected',notes:'Nenhum candidato aprovado no Admin Customer 360'});await refreshIdentityDiagnostics();openDialog(identityConflictsMarkup());toast('Conflito rejeitado.','success')}catch(err){toast(err.message,'error')}
+    return;
+  }
+  if(t.matches('[data-customer-tab]')){
+    const tab=t.dataset.customerTab;
+    editorBody.querySelectorAll('[data-customer-tab]').forEach(node=>node.classList.toggle('is-active',node===t));
+    editorBody.querySelectorAll('[data-customer-panel]').forEach(node=>node.classList.toggle('is-active',node.dataset.customerPanel===tab));
+    return;
+  }
+  if(t.matches('[data-customer-edit]')){
+    const id=t.dataset.customerEdit;
+    closeDialog();
+    await openCustomerEditor(id);
     return;
   }
   if(t.matches('[data-history-order]')){await openCustomerHistoryOrder(t.dataset.historyCustomer,t.dataset.historyOrder);return}
