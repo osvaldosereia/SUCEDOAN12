@@ -397,7 +397,9 @@ Deno.serve(async(req:Request)=>{
       .select('id,decision,evidence,review_status')
       .eq('id',evaluationId).maybeSingle();
     if(lookupError||!evaluation)return json(origin,{ok:false,error:'identity_evaluation_not_found'},404);
+    if(evaluation.decision!=='conflict')return json(origin,{ok:false,error:'identity_review_requires_conflict'},409);
     if(evaluation.review_status!=='pending')return json(origin,{ok:false,error:'identity_review_already_closed'},409);
+    if(notes.length<5)return json(origin,{ok:false,error:'identity_review_note_required'},400);
     const candidates=Array.isArray(evaluation.evidence?.candidate_ids)?evaluation.evidence.candidate_ids.map((x:any)=>String(x)):[];
     if(review==='approved'){
       if(!selectedCustomerId)return json(origin,{ok:false,error:'customer_id_required'},400);
@@ -414,7 +416,7 @@ Deno.serve(async(req:Request)=>{
       .update(patch).eq('id',evaluationId)
       .select('id,decision,customer_id,confidence,match_method,review_status,reviewed_at,review_notes').single();
     if(error)return json(origin,{ok:false,error:'identity_review_failed',detail:error.message},400);
-    return json(origin,{ok:true,evaluation:data,side_effects:'review_only_no_merge'});
+    return json(origin,{ok:true,evaluation:data,side_effects:'review_only_no_merge',external_side_effect:false});
   }
   if(action==='customer_history'){
     const id=text(body?.id,80);if(!id)return json(origin,{ok:false,error:'id_required'},400);
