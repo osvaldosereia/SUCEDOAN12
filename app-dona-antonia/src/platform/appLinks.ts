@@ -2,8 +2,16 @@ import type { AppRoute } from '../app/navigation.ts';
 import { isSafeAppUrl } from './urlPolicy.ts';
 
 const OPAQUE_TOKEN = /^[A-Za-z0-9_-]{16,160}$/;
+const INTERNAL_BASE_HOST = 'app.invalid';
 
-export function parseAppLink(value: string): AppRoute | null {
+export interface AppLinkOptions {
+  allowedHosts?: readonly string[];
+}
+
+export function parseAppLink(
+  value: string,
+  options: AppLinkOptions = {},
+): AppRoute | null {
   if (!isSafeAppUrl(value)) return null;
 
   let url: URL;
@@ -11,6 +19,14 @@ export function parseAppLink(value: string): AppRoute | null {
     url = new URL(value, 'https://app.invalid');
   } catch {
     return null;
+  }
+
+  if (url.hostname !== INTERNAL_BASE_HOST) {
+    if (url.protocol !== 'https:') return null;
+    const allowedHosts = new Set(
+      (options.allowedHosts ?? []).map((host) => host.toLocaleLowerCase('en-US')),
+    );
+    if (!allowedHosts.has(url.hostname.toLocaleLowerCase('en-US'))) return null;
   }
 
   const segments = url.pathname
