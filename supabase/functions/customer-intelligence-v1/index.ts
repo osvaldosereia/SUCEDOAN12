@@ -44,8 +44,9 @@ Deno.serve(async(req:Request)=>{
       if(!allowedSegments.has(segment))return json(origin,{ok:false,error:'invalid_segment'},400);
       const {data:segmentRows,error:segmentError}=await sb.rpc('query_customer_segment_v1',{p_segment_key:segment,p_value:null,p_limit:1000,p_offset:0});
       if(segmentError)return json(origin,{ok:false,error:'customer_segments_filter_failed',detail:segmentError.message},400);
-      segmentIds=(segmentRows||[]).map((row:any)=>row.customer_id).filter(Boolean);
-      if(!segmentIds.length)return json(origin,{ok:true,customers:[],total:0,page,limit,segment,segment_engine:'cm1.8-v1'});
+      const ids=(segmentRows||[]).map((row:any)=>String(row.customer_id||'')).filter(Boolean);
+      segmentIds=ids;
+      if(!ids.length)return json(origin,{ok:true,customers:[],total:0,page,limit,segment,segment_engine:'cm1.8-v1'});
     }
     let query=sb.from('customers').select('id,name,cpf_cnpj,primary_whatsapp_e164,preferred_reply,shopping_mode,catalog_skill_score,catalog_open_count,catalog_success_count,order_count,lifetime_value,last_order_at,last_catalog_at,is_active,updated_at',{count:'exact'}).order('last_order_at',{ascending:false,nullsFirst:false}).range(from,to);
     if(segmentIds)query=query.in('id',segmentIds);
