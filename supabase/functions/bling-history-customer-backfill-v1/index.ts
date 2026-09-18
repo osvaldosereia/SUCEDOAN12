@@ -242,13 +242,15 @@ Deno.serve(async(req:Request)=>{
       }
     }
 
+    const {data:promotion,error:promotionError}=await sb.rpc('promote_bling_history_ready_batch_v1',{p_limit:20});
     const {data:summary}=await sb.rpc('bling_history_customer_backfill_summary_v1');
     return response({
-      ok:results.every((x:any)=>x.ok!==false),
+      ok:results.every((x:any)=>x.ok!==false)&&!promotionError,
       processed:results.length,
       results,
+      promotion:promotionError?{ok:false,error:promotionError.message}:promotion,
       queue_summary:summary||{}
-    },results.some((x:any)=>x.ok===false)?207:200);
+    },results.some((x:any)=>x.ok===false)||promotionError?207:200);
   }catch(error:any){
     if(activeCustomerId){
       await sb.rpc('finish_bling_history_customer_backfill_v1',{
