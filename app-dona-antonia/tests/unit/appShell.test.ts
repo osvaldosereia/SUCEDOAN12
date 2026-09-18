@@ -52,3 +52,16 @@ test('shell renders dynamic tool content without replacing conversation', () => 
   assert.match(html, /data-tool-test/);
   assert.match(html, /data-route="catalog"/);
 });
+
+
+test('order bar reflects dynamic cart count and total', () => {
+  const html = renderAppShell({
+    route: 'catalog',
+    state: 'ready',
+    orderSummary: { itemCount: 3, totalCents: 27970 },
+  });
+
+  assert.match(html, /3 itens/);
+  assert.match(html, /R\$ 279,70/);
+  assert.match(html, /Ver pedido/);
+});
