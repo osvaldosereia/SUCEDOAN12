@@ -22,6 +22,26 @@ describe('homologation execution guard', () => {
     ).toEqual({ allowed: false, reason: 'test_resource_required' });
   });
 
+  it('gates HML network behind a TEST client resource', () => {
+    expect(
+      evaluateHomologationExecution({
+        action: 'hml_network',
+        environment: 'homologation',
+        resourceId: 'TEST-CLIENT-R22',
+        productionEnabled: false,
+      }),
+    ).toEqual({ allowed: true, reason: 'allowed_test_only' });
+
+    expect(
+      evaluateHomologationExecution({
+        action: 'hml_network',
+        environment: 'homologation',
+        resourceId: 'CLIENT-R22',
+        productionEnabled: false,
+      }),
+    ).toEqual({ allowed: false, reason: 'test_resource_required' });
+  });
+
   it('blocks production environment and production flag', () => {
     expect(
       evaluateHomologationExecution({
