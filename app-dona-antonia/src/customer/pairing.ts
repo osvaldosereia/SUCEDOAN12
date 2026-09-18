@@ -39,11 +39,15 @@ function createHumanCode(bytes: Uint8Array): string {
 }
 
 function sameSecret(left: string, right: string): boolean {
-  if (left.length !== right.length) return false;
-  let difference = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  const comparisonLength = Math.max(left.length, right.length);
+  let difference = left.length ^ right.length;
+
+  for (let index = 0; index < comparisonLength; index += 1) {
+    const leftCode = index < left.length ? left.charCodeAt(index) : 0;
+    const rightCode = index < right.length ? right.charCodeAt(index) : 0;
+    difference |= leftCode ^ rightCode;
   }
+
   return difference === 0;
 }
 
