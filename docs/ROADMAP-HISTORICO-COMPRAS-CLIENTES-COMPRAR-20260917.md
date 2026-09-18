@@ -289,17 +289,20 @@ Cliente recebe prioridade para ofertas relevantes sem perder acesso ao catálogo
 
 ## Etapa 8 — Importação do histórico antigo do Bling
 
-Status: **EM BACKFILL CONTROLADO — 17/09/2026**
+Status: **CONCLUÍDA — 17/09/2026**
 
-Situação atual:
-- importador Supabase ativo;
-- credenciais migradas para Vault;
-- promoção automática global permanece OFF;
-- backfill por cliente roda em lotes via Supabase Cron;
-- 122 de 269 clientes com vínculo Bling já processados nesta rodada;
-- erros atuais da fila: 0;
-- pedidos genéricos sem identidade são ignorados com segurança;
-- somente histórico reconciliado é elegível à promoção.
+Situação final:
+- 269 de 269 clientes elegíveis processados;
+- pendentes: 0;
+- erros: 0;
+- 27 pedidos históricos promovidos;
+- 72 pedidos genéricos sem identidade ignorados com segurança;
+- 16 pedidos ainda em situação Em aberto mantidos fora do histórico concluído;
+- auditoria final sem divergências bloqueantes;
+- importador e fetch desligados;
+- promoção automática desligada;
+- Cron do backfill removido;
+- checkpoint final: `docs/CHECKPOINT-HISTORICO-COMPRAS-FINAL-20260917.md`.
 
 ### Objetivo
 
@@ -446,6 +449,8 @@ A sequência obrigatória é:
 
 Não começar por recomendações, remarketing ou IA antes de a base histórica estar correta.
 
-# Primeira próxima ação
+# Estado final
 
-Executar a **Etapa 0 — Auditoria e contrato do histórico**, sem alterar comportamento do cliente, e produzir um relatório técnico do que hoje já grava pedidos, como os status funcionam e quais lacunas existem antes da primeira migration do projeto.
+**Todas as etapas 0 a 11 estão concluídas.**
+
+O projeto entra agora em fase de uso real e melhoria incremental orientada pelas métricas, sem nova etapa obrigatória de implantação.
