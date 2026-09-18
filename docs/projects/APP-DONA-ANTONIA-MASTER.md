@@ -1754,3 +1754,13 @@ A fundação HML recebeu uma segunda migração, sem tocar tabelas operacionais:
 O checkout HML versionado também deixou de confiar no `totalCents` do cliente e usa o mesmo helper determinístico compartilhado. O helper teve 5/5 testes locais verdes e typecheck verde.
 
 R13 permanece parcial: o banco está preparado e OFF, porém as Edge Functions HML ainda não podem ser publicadas devido à quota do projeto. Não houve exclusão de funções nem alteração de plano/spend cap.
+
+---
+
+# 34. Gate automatizado da toolchain nativa
+
+Foi adicionado `scripts/native-toolchain-preflight.mjs`, com comandos npm para relatório e exigência explícita de Android/iOS.
+
+O gate teve 3/3 testes verdes. No ambiente de validação atual, Node/npm/Java existem, mas dependências Capacitor instaladas, Android SDK/ADB e Xcode não estão disponíveis. Assim, Android e iOS continuam com `readyForNativeBuild=false`.
+
+Isso transforma o bloqueio de R10/R11 em uma verificação reproduzível e evita que documentação futura confunda scaffold/preparação com build nativo homologado.
