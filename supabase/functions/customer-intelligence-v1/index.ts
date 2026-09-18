@@ -32,19 +32,32 @@ Deno.serve(async(req:Request)=>{
   const canWrite=admin.role==='owner'||admin.role==='operator';let body:any;try{body=await req.json()}catch{body={}}const action=text(body?.action||'customers',60).toLowerCase();
 
   if(action==='customers'){
-    const limit=int(body?.limit,10,80),page=int(body?.page,1,100000),from=(page-1)*limit,to=from+limit-1,q=text(body?.q,100).replace(/[,%()]/g,' ').trim(),segment=text(body?.segment,80);
-    const allowedSegments=new Set(['primeiro_comprador','recorrente','mensal','inativo','alto_valor','comprador_cesta','produtos_avulsos','cesta_favorita','proximo_recompra']);
+    const limit=int(body?.limit,10,80),page=int(body?.page,1,100000),from=(page-1)*limit,to=from+limit-1,q=text(body?.q,100).replace(/[,%()]/g,' ').trim(),segment=text(body?.segment,80).toLowerCase();
+    const allowedSegments=new Set([
+      'comprou_alguma_vez','primeira_compra','primeiro_comprador','recorrente','mensal','inativo','alto_valor',
+      'comprador_cesta','produtos_avulsos','cesta_favorita','proximo_recompra','sem_compra_30d','sem_compra_60d',
+      'mercearia','lavanderia','higiene','cesta_basica','falou_nao_comprou','carrinho_nao_concluido',
+      'marketing_permitido','marketing_nao_permitido','atendimento_problema','baixa_qualidade_dados'
+    ]);
     let segmentIds:string[]|null=null;
-    if(segment&&allowedSegments.has(segment)){
-      const {data:segmentRows,error:segmentError}=await sb.from('customer_commercial_segments_v1').select('customer_id').contains('segments',[segment]).limit(2000);
+    if(segment){
+      if(!allowedSegments.has(segment))return json(origin,{ok:false,error:'invalid_segment'},400);
+      const {data:segmentRows,error:segmentError}=await sb.rpc('query_customer_segment_v1',{p_segment_key:segment,p_value:null,p_limit:1000,p_offset:0});
       if(segmentError)return json(origin,{ok:false,error:'customer_segments_filter_failed',detail:segmentError.message},400);
       segmentIds=(segmentRows||[]).map((row:any)=>row.customer_id).filter(Boolean);
-      if(!segmentIds.length)return json(origin,{ok:true,customers:[],total:0,page,limit,segment});
+      if(!segmentIds.length)return json(origin,{ok:true,customers:[],total:0,page,limit,segment,segment_engine:'cm1.8-v1'});
     }
     let query=sb.from('customers').select('id,name,cpf_cnpj,primary_whatsapp_e164,preferred_reply,shopping_mode,catalog_skill_score,catalog_open_count,catalog_success_count,order_count,lifetime_value,last_order_at,last_catalog_at,is_active,updated_at',{count:'exact'}).order('last_order_at',{ascending:false,nullsFirst:false}).range(from,to);
     if(segmentIds)query=query.in('id',segmentIds);
     if(q)query=query.or(`name.ilike.%${q}%,primary_whatsapp_e164.ilike.%${q}%,cpf_cnpj.ilike.%${q}%`);
-    const {data,error,count}=await query;if(error)return json(origin,{ok:false,error:'customers_failed',detail:error.message},400);const rows=[];for(const c of data||[]){const {data:mode}=await sb.rpc('resolve_customer_shopping_mode',{p_customer_id:c.id});rows.push({...c,resolved_shopping_mode:mode||'whatsapp_only'})}return json(origin,{ok:true,customers:rows,total:count||0,page,limit});
+    const {data,error,count}=await query;
+    if(error)return json(origin,{ok:false,error:'customers_failed',detail:error.message},400);
+    const rows=[];
+    for(const customerRow of data||[]){
+      const {data:mode}=await sb.rpc('resolve_customer_shopping_mode',{p_customer_id:customerRow.id});
+      rows.push({...customerRow,resolved_shopping_mode:mode||'whatsapp_only'});
+    }
+    return json(origin,{ok:true,customers:rows,total:count||0,page,limit,segment:segment||null,segment_engine:'cm1.8-v1'});
   }
   if(action==='customer'){
     const id=text(body?.id,80);if(!id)return json(origin,{ok:false,error:'id_required'},400);const {data:customer,error}=await sb.from('customers').select('*').eq('id',id).maybeSingle();if(error||!customer)return json(origin,{ok:false,error:'customer_not_found'},404);
@@ -83,7 +96,8 @@ Deno.serve(async(req:Request)=>{
       {data:marketingTouchpoints,error:marketingTouchpointsError},
       {data:marketingEvents,error:marketingEventsError},
       {data:consentLedger,error:consentLedgerError},
-      {data:customerProtection,error:customerProtectionError}
+      {data:customerProtection,error:customerProtectionError},
+      {data:dynamicSegments,error:dynamicSegmentsError}
     ]=await Promise.all([
       sb.from('customer_phones').select('id,phone_e164,source,is_primary,verified_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
       sb.from('customer_emails').select('id,email,verification_status,is_primary,source,verified_at,linked_at,created_at').eq('customer_id',id).order('is_primary',{ascending:false}),
@@ -104,7 +118,8 @@ Deno.serve(async(req:Request)=>{
       sb.from('marketing_attribution_touchpoints').select('id,asset_id,campaign_id,channel,touchpoint_type,subject_ref,parent_touchpoint_id,evidence_key,evidence_source,occurred_at,evidence,created_at').eq('subject_ref',id).order('occurred_at',{ascending:false}).limit(50),
       sb.from('marketing_events').select('id,entity_type,entity_id,event_type,data,external_side_effect,created_at').eq('entity_type','customer').eq('entity_id',id).order('created_at',{ascending:false}).limit(50),
       sb.from('customer_channel_consent_events_v1').select('id,channel,channel_identity_id,customer_email_id,purpose,status,source,evidence,policy_version,event_key,occurred_at,created_at').eq('customer_id',id).order('occurred_at',{ascending:false}).limit(100),
-      sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:id,p_channel:'whatsapp',p_purpose:'marketing'})
+      sb.rpc('evaluate_customer_contact_eligibility_v1',{p_customer_id:id,p_channel:'whatsapp',p_purpose:'marketing'}),
+      sb.rpc('get_customer_dynamic_segments_v1',{p_customer_id:id})
     ]);
     const failures=[
       ['phones',phonesError],['emails',emailsError],['addresses',addressesError],['identities',identitiesError],
@@ -113,7 +128,8 @@ Deno.serve(async(req:Request)=>{
       ['product_stats',productStatsError],['conversations',conversationsError],['carts',cartsError],
       ['service_memory',serviceMemoryError],['substitution_preferences',substitutionPreferencesError],
       ['marketing_touchpoints',marketingTouchpointsError],['marketing_events',marketingEventsError],
-      ['consent_ledger',consentLedgerError],['customer_protection',customerProtectionError]
+      ['consent_ledger',consentLedgerError],['customer_protection',customerProtectionError],
+      ['dynamic_segments',dynamicSegmentsError]
     ].filter(([,e])=>Boolean(e)).map(([part,e]:any)=>({part,error:e.message}));
     if(failures.length)return json(origin,{ok:false,error:'customer_360_failed',failures},400);
     const activeConsents=(consents||[]).reduce((acc:any,row:any)=>{
@@ -141,7 +157,7 @@ Deno.serve(async(req:Request)=>{
     }
     const brands=[...brandMap.values()].sort((a,b)=>b.total_spent-a.total_spent||b.purchase_count-a.purchase_count).slice(0,20);
     const categories=[...categoryMap.values()].sort((a,b)=>b.total_spent-a.total_spent||b.purchase_count-a.purchase_count).slice(0,20);
-    const segmentKeys=Array.isArray(segments?.segments)?segments.segments:[];
+    const segmentKeys=Array.isArray(dynamicSegments?.segments)?dynamicSegments.segments:(Array.isArray(segments?.segments)?segments.segments:[]);
     const lifecycle=Number(intelligence?.order_count||0)===0?'prospect':
       segmentKeys.includes('inativo')?'inactive':
       segmentKeys.includes('primeiro_comprador')?'new_customer':
@@ -178,7 +194,7 @@ Deno.serve(async(req:Request)=>{
         average_ticket:Number(intelligence?.average_ticket||0),
         open_cart:openCart?{id:openCart.id,total:openCart.total,status:openCart.status,updated_at:openCart.updated_at}:null
       },
-      commercial:{intelligence:intelligence||{},segments:segments||{},products:productRows,brands,categories},
+      commercial:{intelligence:intelligence||{},segments:dynamicSegments||segments||{},legacy_segments:segments||{},products:productRows,brands,categories},
       activity:{timeline:timeline||[],behavior_events:behavior||[],handoffs:handoffs||[],conversations:conversations||[],carts:carts||[]},
       preferences:{service_memory:serviceMemory||[],substitutions:substitutionPreferences||[]},
       marketing:{touchpoints:marketingTouchpoints||[],events:marketingEvents||[]},
@@ -186,6 +202,14 @@ Deno.serve(async(req:Request)=>{
       identity_resolution:{latest:(identityEvaluations||[])[0]||null,evaluations:identityEvaluations||[]},
       data_quality:{...dataQuality,completeness_percent:completeness}
     });
+  }
+  if(action==='segment_registry'){
+    const [{data:registry,error:registryError},{data:summary,error:summaryError}]=await Promise.all([
+      sb.from('customer_segment_registry_v1').select('segment_key,label,requires_value,description').order('requires_value').order('label'),
+      sb.rpc('segment_engine_summary_v1')
+    ]);
+    if(registryError||summaryError)return json(origin,{ok:false,error:'segment_registry_failed',detail:registryError?.message||summaryError?.message},400);
+    return json(origin,{ok:true,registry:registry||[],summary:summary||{},engine_version:'cm1.8-v1'});
   }
   if(action==='contact_eligibility'){
     const id=text(body?.id,80),channel=text(body?.channel||'whatsapp',40).toLowerCase(),purpose=text(body?.purpose||'marketing',40).toLowerCase();
