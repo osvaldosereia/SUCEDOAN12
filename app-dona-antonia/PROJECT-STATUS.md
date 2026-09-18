@@ -111,3 +111,37 @@ A versão declarada do Vite segue a linha 8.3 e requer Node >=22.12; o projeto e
 **Próxima rodada autorizável:** Rodada 2 — Sistema visual e shell mobile-first.
 
 O projeto permanece OFF e sem qualquer conexão com produção.
+
+
+## Checkpoint — Rodada 2
+
+**Estado:** IMPLEMENTAÇÃO CONCLUÍDA NA BRANCH DE HOMOLOGAÇÃO  
+**Branch:** `app-dona-antonia-r0-isolation`
+
+Entregas:
+- sistema visual próprio do App Dona Antônia;
+- tokens de design isolados;
+- shell mobile-first com topo, conversa, ferramenta/contexto e barra do pedido;
+- navegação determinística entre `home | catalog | basket | cart | checkout | order | privacy`;
+- estados explícitos `ready | loading | empty | error | offline`;
+- safe areas para dispositivos com recorte/home indicator;
+- largura mínima de 320 px;
+- suporte a `prefers-reduced-motion`;
+- foco de teclado visível;
+- marcação permanente de Homologação;
+- nenhuma lógica comercial real e nenhuma chamada de rede.
+
+Validações executadas:
+- TDD: teste de navegação falhou inicialmente por ausência de `navigation.ts`;
+- 5 testes novos de shell/navegação aprovados;
+- typecheck da pasta `src/` aprovado após correção do narrowing do elemento raiz;
+- nenhum endpoint de produção foi adicionado;
+- nenhum arquivo de `comprar/` foi modificado.
+
+Limitação do ambiente:
+- teste visual automatizado em navegador/Playwright ainda não foi executado porque as dependências externas não podem ser baixadas neste ambiente;
+- a estrutura foi validada por testes unitários e typecheck; o teste visual real será obrigatório antes do beta.
+
+**Próxima rodada autorizável:** Rodada 3 — Motor conversacional determinístico.
+
+O projeto permanece OFF, não publicado e sem conexão com produção.
