@@ -123,3 +123,19 @@ test('Pinterest hardening requests board write and cleanup is private',()=>{
   assert.match(hardening,/revoke all on function public\.marketing_oauth_cleanup_v1\(\)[\s\S]*from public,anon,authenticated/);
   assert.match(hardening,/grant execute on function public\.marketing_oauth_cleanup_v1\(\)[\s\S]*to service_role/);
 });
+
+
+test('Meta app configuration validates client credentials before persisting App ID',()=>{
+  assert.match(oauth,/validateMetaAppCredentials/);
+  assert.match(oauth,/grant_type:'client_credentials'/);
+  assert.match(oauth,/method:'POST'/);
+  const pos=workflow.indexOf('action==="connection_save_config"');
+  assert.ok(pos>=0);
+  const section=workflow.slice(pos,pos+6500);
+  assert.match(section,/validateMetaAppCredentials/);
+  assert.match(section,/meta_app_credentials_invalid/);
+  const validatePos=section.indexOf('validateMetaAppCredentials');
+  const savePos=section.indexOf('marketing_vault_put_secret_v1');
+  assert.ok(validatePos>=0&&savePos>validatePos,'Meta secret must be validated before Vault persistence');
+  assert.match(section,/meta_app_credentials_validated_at/);
+});
