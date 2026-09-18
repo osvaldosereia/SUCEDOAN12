@@ -1,4 +1,4 @@
-import {CONFIG} from './runtime-config.js';
+import {CONFIG} from './runtime-config.js?v=20260918-customer-os-canary-1';
 
 const SESSION_KEY='da_customer_os_session_v1';
 const CLOCK_SKEW_SECONDS=45;
