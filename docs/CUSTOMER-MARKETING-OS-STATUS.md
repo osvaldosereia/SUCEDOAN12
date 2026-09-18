@@ -2,7 +2,7 @@
 
 Atualizado em 18/09/2026.
 
-Status: **CM-0 CONCLUÍDA — PRONTO PARA COMEÇAR CM-1.1**.
+Status: **CM-1.1 EM EXECUÇÃO — BOUNDARY SEGURO IMPLANTADO**.
 
 ## Leia primeiro
 
@@ -10,8 +10,9 @@ Status: **CM-0 CONCLUÍDA — PRONTO PARA COMEÇAR CM-1.1**.
 2. `docs/CUSTOMER-MARKETING-OS-CM0-ARCHITECTURE-LOCK.md`
 3. `docs/CUSTOMER-MARKETING-OS-ETAPA-CM1.md`
 4. `docs/CUSTOMER-MARKETING-OS-CM1-1-SECURITY-PLAN.md`
-5. `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`
-6. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
+5. `docs/CUSTOMER-MARKETING-OS-CM1-1-PROGRESS.md`
+6. `docs/CUSTOMER-MARKETING-OS-GOVERNANCA-E-AUTONOMIA.md`
+7. `docs/ROADMAP-FINAL-DONA-ANTONIA-20-ETAPAS.md`
 
 ## Governança
 
@@ -64,14 +65,10 @@ A auditoria confirmou que o projeto já possui omnichannel core, CRM unificado, 
 
 Foi detectado como prioridade de segurança que o Admin atual possui endpoints públicos `verify_jwt=false`; novas superfícies Customer/Marketing/Meta sensíveis nascerão autenticadas.
 
-## Próxima rodada
+## CM-1.1 em execução
 
-**CM-1.1 — Segurança e fundação**
+Já foi implantado o boundary autenticado de Customer OS, a ação `customer_360`, o bootstrap de sessão por PIN/Auth, o client autenticado e o teste contratual. A nova UI permanece desligada até homologação.
 
-Objetivo imediato:
+Pendente nesta rodada: decisão explícita de policy para habilitar RLS nas 6 tabelas hoje sem RLS e homologação do fluxo de sessão.
 
-- criar boundary autenticado para Customer/Marketing/Meta;
-- preservar o Admin atual durante a transição;
-- preparar testes de segurança;
-- auditar consumidores das 6 tabelas sem RLS antes de qualquer mudança;
-- não ativar envio em massa, Meta direta ou campanha automática.
+Não foi ativado envio em massa, Meta direta ou campanha automática.
