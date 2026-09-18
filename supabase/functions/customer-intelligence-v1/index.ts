@@ -117,7 +117,8 @@ Deno.serve(async(req:Request)=>{
     const productRows=(productStats||[]).filter((x:any)=>x.product);
     const brandMap=new Map<string,any>();
     const categoryMap=new Map<string,any>();
-    for(const row of productRows){
+    for(const rawRow of productRows){
+      const row:any=rawRow;
       const brand=text(row.product?.brand,120)||'Sem marca';
       const category=text(row.product?.category,120)||'Sem categoria';
       const brandAgg=brandMap.get(brand)||{brand,purchase_count:0,total_quantity:0,total_spent:0,last_purchase_at:null};
