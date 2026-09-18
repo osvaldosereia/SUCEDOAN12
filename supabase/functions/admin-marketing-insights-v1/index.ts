@@ -74,7 +74,9 @@ Deno.serve(async(req:Request)=>{
       {data:campaigns,error:e4},
       {data:templates,error:e5},
       {data:jobs,error:e6},
-      {data:renderJobs,error:e7}
+      {data:renderJobs,error:e7},
+      {data:channelAccounts,error:e8},
+      {data:metaSnapshot,error:e9}
     ]=await Promise.all([
       sb.from("marketing_assets").select("id,campaign_id,title,media_kind,generation_mode,status,version,template_id,source_refs,edit_spec,render_spec,output_spec,editable,approval_note,review_requested_at,reviewed_at,estimated_cost_cents,actual_cost_cents,updated_at").neq("status","archived").order("updated_at",{ascending:false}).limit(100),
       sb.from("marketing_media_objects").select("id,asset_id,version,role,mime_type,width,height,duration_ms,byte_size,created_at").order("created_at",{ascending:false}).limit(300),
@@ -82,10 +84,33 @@ Deno.serve(async(req:Request)=>{
       sb.from("marketing_campaigns").select("id,name,objective,status,enabled,execution_mode,canary_percent,kill_switch,content_policy,product_selection,schedule_rule,channel_plan,ai_policy,max_cost_cents,max_publications_per_day,created_at,updated_at").order("updated_at",{ascending:false}).limit(100),
       sb.from("marketing_content_templates").select("id,template_key,version,name,media_kind,status,created_at").eq("status","approved").order("name",{ascending:true}).limit(100),
       sb.from("marketing_publication_jobs").select("id,campaign_id,asset_id,channel,content_type,status,manual_confirmation_required,scheduled_for,estimated_cost_cents,published_at,created_at,updated_at").order("updated_at",{ascending:false}).limit(200),
-      sb.from("marketing_render_jobs").select("id,asset_id,render_kind,status,attempt_count,ai_used,estimated_cost_cents,actual_cost_cents,created_at,updated_at,finished_at").order("updated_at",{ascending:false}).limit(200)
+      sb.from("marketing_render_jobs").select("id,asset_id,render_kind,status,attempt_count,ai_used,estimated_cost_cents,actual_cost_cents,created_at,updated_at,finished_at").order("updated_at",{ascending:false}).limit(200),
+      sb.from("marketing_channel_accounts").select("id,channel,provider,display_name,status,capabilities,last_verified_at,token_expires_at").order("channel",{ascending:true}),
+      sb.rpc("get_meta_control_plane_snapshot_v1")
     ]);
-    if(e1||e2||e3||e4||e5||e6||e7)return fail("overview_failed",e1?.message||e2?.message||e3?.message||e4?.message||e5?.message||e6?.message||e7?.message||"Falha de leitura",500);
+    if(e1||e2||e3||e4||e5||e6||e7||e8||e9)return fail("overview_failed",e1?.message||e2?.message||e3?.message||e4?.message||e5?.message||e6?.message||e7?.message||e8?.message||e9?.message||"Falha de leitura",500);
     const runtimeSafe=runtime||{};
+    const metaRaw=(metaSnapshot&&typeof metaSnapshot==="object")?metaSnapshot as Record<string,any>:{};
+    const metaSafe={
+      version:clean(metaRaw.version,80)||null,
+      policy_registry:metaRaw.policy_registry||{},
+      webhook_events_24h:Number(metaRaw.webhook_events_24h||0),
+      unresolved_errors:Number(metaRaw.unresolved_errors||0),
+      accounts:(Array.isArray(metaRaw.accounts)?metaRaw.accounts:[]).map((a:any)=>({
+        channel:clean(a?.channel,80)||null,
+        display_name:clean(a?.display_name,160)||null,
+        channel_status:clean(a?.channel_status,80)||null,
+        provider_state:clean(a?.provider_state,80)||null,
+        graph_api_version:clean(a?.graph_api_version,40)||null,
+        webhook_state:clean(a?.webhook_state,80)||null,
+        readiness_state:clean(a?.readiness_state,80)||null,
+        permission_count:Number(a?.permission_count||0),
+        granted_permissions:Number(a?.granted_permissions||0),
+        blocking_permissions:Number(a?.blocking_permissions||0),
+        meta_direct_ready:a?.capabilities?.meta_direct_ready===true,
+        meta_direct_outbound_enabled:a?.capabilities?.meta_direct_outbound_enabled===true
+      }))
+    };
     const safety={
       external_actions_locked:runtimeSafe?.publishing_enabled!==true||runtimeSafe?.kill_switch===true||runtimeSafe?.execution_mode==="off",
       ai_video_generative_allowed:runtimeSafe?.ai_video_enabled===true,
@@ -98,6 +123,8 @@ Deno.serve(async(req:Request)=>{
       assets:assets||[],
       media:media||[],
       jobs:jobs||[],
+      channel_accounts:channelAccounts||[],
+      meta_control_plane:metaSafe,
       templates:templates||[],
       runtime:runtimeSafe,
       safety,
