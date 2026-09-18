@@ -95,18 +95,20 @@ Deno.serve(async(req:Request)=>{
   const supplied=clean(req.headers.get('x-dona-antonia-import-key')||bearer,200);
   if(!supplied||!safeEqual(supplied,String(expected)))return response({ok:false,error:'unauthorized'},401);
 
+  let body:any={};try{body=await req.json()}catch{}
+  const batchSize=Math.max(1,Math.min(Number(body?.batch_size)||5,5));
+
   const lockOwner=crypto.randomUUID();
   const {data:lockClaimed,error:lockError}=await sb.rpc('claim_bling_history_import_lock_v1',{p_owner:lockOwner,p_ttl_seconds:300});
   if(lockError)return response({ok:false,error:'import_lock_failed',detail:lockError.message},500);
   if(lockClaimed!==true)return response({ok:false,error:'import_already_running'},409);
 
-  let claimed:any=null;
+  let activeCustomerId:string|null=null;
 
   try{
-    const {data:queue,error:claimError}=await sb.rpc('claim_bling_history_customer_backfill_v1');
-    if(claimError)return response({ok:false,error:'queue_claim_failed',detail:claimError.message},500);
-    if(!queue||!queue.customer_id)return response({ok:true,done:true,message:'queue_empty'});
-    claimed=queue;
+    const {data:firstQueue,error:firstClaimError}=await sb.rpc('claim_bling_history_customer_backfill_v1');
+    if(firstClaimError)return response({ok:false,error:'queue_claim_failed',detail:firstClaimError.message},500);
+    if(!firstQueue||!firstQueue.customer_id)return response({ok:true,done:true,message:'queue_empty',processed:0,results:[]});
 
     const {data:credentials,error:credentialError}=await sb.rpc('get_bling_api_credentials_v1');
     if(credentialError)throw new Error('credentials_lookup_failed');
@@ -157,68 +159,100 @@ Deno.serve(async(req:Request)=>{
       return last as Response;
     };
 
-    const page=Math.max(1,Number(queue.page)||1);
-    const query=new URLSearchParams({
-      pagina:String(page),
-      limite:'20',
-      idContato:String(queue.bling_contact_id),
-      dataInicial:String(queue.window_start),
-      dataFinal:String(queue.window_end)
-    });
-    query.append('idsSituacoes[]','9');
+    const results:any[]=[];
+    let queue:any=firstQueue;
 
-    const listResponse=await bling(`/pedidos/vendas?${query.toString()}`);
-    const listRaw=await listResponse.text();let list:any={};try{list=listRaw?JSON.parse(listRaw):{}}catch{}
-    if(!listResponse.ok)throw new Error(`bling_list_failed_${listResponse.status}`);
+    for(let batchIndex=0;batchIndex<batchSize;batchIndex++){
+      if(batchIndex>0){
+        const {data:nextQueue,error:nextClaimError}=await sb.rpc('claim_bling_history_customer_backfill_v1');
+        if(nextClaimError){results.push({ok:false,error:'queue_claim_failed'});break}
+        if(!nextQueue||!nextQueue.customer_id)break;
+        queue=nextQueue;
+      }
 
-    const rows=Array.isArray(list?.data)?list.data:[];
-    let staged=0,ready=0;
-    const errors:any[]=[];
+      activeCustomerId=String(queue.customer_id);
+      const page=Math.max(1,Number(queue.page)||1);
 
-    for(const summary of rows){
-      const id=Number(summary?.id||0);
-      if(!id){errors.push({error:'missing_order_id'});continue}
-      const detailResponse=await bling(`/pedidos/vendas/${encodeURIComponent(String(id))}`);
-      const detailRaw=await detailResponse.text();let envelope:any={};try{envelope=detailRaw?JSON.parse(detailRaw):{}}catch{}
-      if(!detailResponse.ok){errors.push({id,error:`detail_${detailResponse.status}`});continue}
+      try{
+        const query=new URLSearchParams({
+          pagina:String(page),
+          limite:'20',
+          idContato:String(queue.bling_contact_id),
+          dataInicial:String(queue.window_start),
+          dataFinal:String(queue.window_end)
+        });
+        query.append('idsSituacoes[]','9');
 
-      const normalized=normalizeOrder(summary,envelope?.data||{});
-      const {data:stageResult,error:stageError}=await sb.rpc('stage_bling_history_order_v1',{
-        p_run_id:null,p_order:normalized.order,p_items:normalized.items
-      });
-      if(stageError){errors.push({id,error:'stage_failed'});continue}
-      staged++;
-      if(stageResult?.reconciliation?.status==='ready')ready++;
+        const listResponse=await bling(`/pedidos/vendas?${query.toString()}`);
+        const listRaw=await listResponse.text();let list:any={};try{list=listRaw?JSON.parse(listRaw):{}}catch{}
+        if(!listResponse.ok)throw new Error(`bling_list_failed_${listResponse.status}`);
+
+        const rows=Array.isArray(list?.data)?list.data:[];
+        let staged=0,ready=0;
+        const itemErrors:any[]=[];
+
+        for(const summary of rows){
+          const id=Number(summary?.id||0);
+          if(!id){itemErrors.push({error:'missing_order_id'});continue}
+          const detailResponse=await bling(`/pedidos/vendas/${encodeURIComponent(String(id))}`);
+          const detailRaw=await detailResponse.text();let envelope:any={};try{envelope=detailRaw?JSON.parse(detailRaw):{}}catch{}
+          if(!detailResponse.ok){itemErrors.push({id,error:`detail_${detailResponse.status}`});continue}
+
+          const normalized=normalizeOrder(summary,envelope?.data||{});
+          const {data:stageResult,error:stageError}=await sb.rpc('stage_bling_history_order_v1',{
+            p_run_id:null,p_order:normalized.order,p_items:normalized.items
+          });
+          if(stageError){itemErrors.push({id,error:'stage_failed'});continue}
+          staged++;
+          if(stageResult?.reconciliation?.status==='ready')ready++;
+        }
+
+        const hasMore=rows.length===20;
+        const errorText=itemErrors.length?('partial_'+itemErrors.length+'_errors'):null;
+        const {data:finished,error:finishError}=await sb.rpc('finish_bling_history_customer_backfill_v1',{
+          p_customer_id:queue.customer_id,
+          p_fetched:rows.length,
+          p_staged:staged,
+          p_ready:ready,
+          p_has_more:hasMore,
+          p_error:errorText
+        });
+        if(finishError)throw new Error('queue_finish_failed');
+
+        results.push({
+          ok:itemErrors.length===0,
+          customer_id:queue.customer_id,
+          page,
+          listed:rows.length,
+          staged,
+          ready,
+          has_more:hasMore,
+          errors:itemErrors.length,
+          queue:finished
+        });
+      }catch(customerError:any){
+        await sb.rpc('finish_bling_history_customer_backfill_v1',{
+          p_customer_id:queue.customer_id,
+          p_fetched:0,p_staged:0,p_ready:0,p_has_more:false,
+          p_error:clean(customerError?.message||customerError,500)
+        });
+        results.push({ok:false,customer_id:queue.customer_id,error:clean(customerError?.message||customerError,200)});
+      }finally{
+        activeCustomerId=null;
+      }
     }
 
-    const hasMore=rows.length===20;
-    const errorText=errors.length?('partial_'+errors.length+'_errors'):null;
-    const {data:finished,error:finishError}=await sb.rpc('finish_bling_history_customer_backfill_v1',{
-      p_customer_id:queue.customer_id,
-      p_fetched:rows.length,
-      p_staged:staged,
-      p_ready:ready,
-      p_has_more:hasMore,
-      p_error:errorText
-    });
-    if(finishError)return response({ok:false,error:'queue_finish_failed',detail:finishError.message},500);
-
+    const {data:summary}=await sb.rpc('bling_history_customer_backfill_summary_v1');
     return response({
-      ok:errors.length===0,
-      partial:errors.length>0,
-      customer_id:queue.customer_id,
-      page,
-      listed:rows.length,
-      staged,
-      ready,
-      has_more:hasMore,
-      errors:errors.length,
-      queue:finished
-    },errors.length?207:200);
+      ok:results.every((x:any)=>x.ok!==false),
+      processed:results.length,
+      results,
+      queue_summary:summary||{}
+    },results.some((x:any)=>x.ok===false)?207:200);
   }catch(error:any){
-    if(claimed?.customer_id){
+    if(activeCustomerId){
       await sb.rpc('finish_bling_history_customer_backfill_v1',{
-        p_customer_id:claimed.customer_id,
+        p_customer_id:activeCustomerId,
         p_fetched:0,p_staged:0,p_ready:0,p_has_more:false,p_error:clean(error?.message||error,500)
       });
     }
