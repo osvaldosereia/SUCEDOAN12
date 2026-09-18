@@ -177,7 +177,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q './app.js?v=20260918-customer-ux-4' admin/index.html
+          grep -q './app.js?v=20260918-customer-workspace-5' admin/index.html
           grep -q './runtime-config.js' admin/app.js
           grep -q "adminFunction:'admin-core-v1'" admin/runtime-config.js
           grep -q 'data-route="products"' admin/index.html
