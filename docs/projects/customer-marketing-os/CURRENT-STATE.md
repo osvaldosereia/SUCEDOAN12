@@ -747,3 +747,43 @@ Próximo gate humano específico:
 4. conferir no Supabase `meta_account_permissions`, `meta_provider_health_snapshots` e `evaluate_meta_direct_readiness_v1(...)`.
 
 Nenhum token deve ser colado em documentação, commit ou chat.
+
+
+## Rodada autônoma de homologação — observador de evidências
+
+Atualização após o gate humano do token Meta ter sido identificado. Nenhuma ativação externa foi aberta.
+
+Implementado sem depender do responsável:
+
+- novo RPC read-only `cm1_homologation_evidence_summary_v1()`;
+- `relationship_command_summary_v1()` avançou para `cm1.15-v3`;
+- a Central de Relacionamento ganhou a seção **Evidências em observação** dentro de Homologação CM-1;
+- o observador mostra uso real de catálogo, lifecycle de oportunidades, conflitos de identidade, IA/custo, Meta e side effects;
+- Meta Foundation agora mostra preventivamente o estado do token read-only no Vault;
+- `get_customer_os_vault_secret_v1(text)` foi endurecida e somente aceita `dona_antonia_whatsapp_access_token_v1`;
+- qualquer outro nome de secret retorna null;
+- o acceptance checklist avançou para `cm1-acceptance-v1.1`;
+- critério 13 passa a `verified` somente quando houver fechamento real de oportunidade em `dismissed`, `converted` ou `expired`;
+- nenhuma fixture ou alteração artificial de oportunidade foi criada;
+- cache do canary da Central: `relacionamento.js?v=20260918-9`;
+- novos testes contratuais adicionados ao workflow principal.
+
+Runtime após a rodada:
+
+- acceptance: **14 verified / 6 implemented / 0 blocked**;
+- `cm1_complete=false`;
+- `external_activation_authorized=false`;
+- `safe_for_internal_homologation=true`;
+- catálogo: `catalog_open=59`, `catalog_search=0`, `product_view=0`;
+- oportunidade: 75 suprimidas, 0 dismissed, 0 converted, 0 expired;
+- próxima expiração observada: 23/09/2026 17:00:15 UTC;
+- conflito de identidade pendente: 1;
+- IA: 0 execuções e 0 custo observado;
+- side effects externos em marketing/IA nos últimos 7 dias: 0;
+- Meta Graph: v26.0;
+- token read-only do WhatsApp no Vault: ausente;
+- permissões WhatsApp persistidas: 0;
+- callback Meta Direct: ainda não verificado.
+
+Nada desta rodada depende de Make como runtime.
+
