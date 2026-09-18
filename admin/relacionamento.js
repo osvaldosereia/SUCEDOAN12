@@ -291,6 +291,63 @@ function compactEvidence(value){
     return `<span><b>${esc(humanKey(k))}</b>${esc(display)}</span>`;
   }).join('')+'</div>';
 }
+function renderHomologationEvidence(){
+  const host=$('#homologationEvidenceView');
+  if(!host)return;
+  const e=state.overview?.summary?.homologation_evidence||{};
+  if(!e.version){host.innerHTML=empty('Observador de evidências ainda não disponível.');return}
+  const catalog=e.catalog||{},opp=e.opportunity_lifecycle||{},identity=e.identity||{},meta=e.meta||{},ai=e.ai_cost||{},safety=e.safety||{};
+  const searchObserved=Number(catalog.catalog_search||0)>0;
+  const viewObserved=Number(catalog.product_view||0)>0;
+  const lifecycleObserved=opp.lifecycle_closed_observed===true;
+  const tokenReady=meta.vault_readonly_token_configured===true;
+  const permissionsReady=Number(meta.granted_required_permissions||0)>=2;
+  const callbackReady=meta.direct_callback_verified===true;
+  const aiCostObserved=Number(ai.executions_with_cost_record||0)>0;
+  const noExternalEffects=Number(safety.marketing_external_side_effects_7d||0)===0&&Number(safety.ai_side_effects_7d||0)===0;
+  host.innerHTML=`<div class="quality-grid">
+    <article class="quality-box"><h3>Catálogo real</h3><div class="metric-list">${[
+      ['Busca real',searchObserved?'Observada':'Aguardando uso real'],
+      ['Buscas registradas',n(catalog.catalog_search||0)],
+      ['Última busca',dt(catalog.catalog_search_last_at)],
+      ['Produto aberto',viewObserved?'Observado':'Aguardando uso real'],
+      ['Visualizações registradas',n(catalog.product_view||0)],
+      ['Última visualização',dt(catalog.product_view_last_at)]
+    ].map(x=>metric(x[0],x[1])).join('')}</div><div class="mini-meta">${chip(searchObserved?'Busca OK':'Busca pendente',searchObserved?'good':'warn')}${chip(viewObserved?'Produto OK':'Produto pendente',viewObserved?'good':'warn')}</div></article>
+    <article class="quality-box"><h3>Lifecycle de oportunidades</h3><div class="metric-list">${[
+      ['Suprimidas',n(opp.suppressed||0)],
+      ['Encerradas observadas',n(Number(opp.dismissed||0)+Number(opp.converted||0)+Number(opp.expired||0))],
+      ['Próxima expiração',dt(opp.next_expiry_at)],
+      ['Vencidas ainda abertas',n(opp.clock_expired_still_open||0)]
+    ].map(x=>metric(x[0],x[1])).join('')}</div><div class="mini-meta">${chip(lifecycleObserved?'Lifecycle observado':'Aguardando lifecycle natural',lifecycleObserved?'good':'warn')}</div></article>
+    <article class="quality-box"><h3>Identidade</h3><div class="metric-list">${[
+      ['Conflitos pendentes',n(identity.pending_conflicts||0)],
+      ['Mais antigo',dt(identity.oldest_pending_at)],
+      ['Revisão humana',identity.human_review_required===true?'Necessária':'Sem pendência']
+    ].map(x=>metric(x[0],x[1])).join('')}</div><div class="mini-meta">${chip(Number(identity.pending_conflicts||0)===0?'Resolvido':'Gate humano',Number(identity.pending_conflicts||0)===0?'good':'warn')}</div></article>
+    <article class="quality-box"><h3>Meta Direct · evidências</h3><div class="metric-list">${[
+      ['Token read-only no Vault',tokenReady?'Configurado':'Ainda ausente'],
+      ['Graph API',meta.graph_api_version||'—'],
+      ['Permissões concedidas',`${n(meta.granted_required_permissions||0)}/2`],
+      ['Última checagem permissões',dt(meta.permissions_checked_at)],
+      ['Callback Direct',callbackReady?'Verificado':'Pendente'],
+      ['Health mais recente',dt(meta.health_checked_at)]
+    ].map(x=>metric(x[0],x[1])).join('')}</div><div class="mini-meta">${chip(tokenReady?'Token pronto':'Token pendente',tokenReady?'good':'warn')}${chip(permissionsReady?'Permissões OK':'Permissões pendentes',permissionsReady?'good':'warn')}${chip(callbackReady?'Callback OK':'Callback pendente',callbackReady?'good':'warn')}</div></article>
+    <article class="quality-box"><h3>IA e custo</h3><div class="metric-list">${[
+      ['Execuções',n(ai.executions||0)],
+      ['Com custo registrado',n(ai.executions_with_cost_record||0)],
+      ['Custo observado',brl(ai.observed_cost_brl||0)],
+      ['Amostra de custo',aiCostObserved?'Observada':'Ainda não necessária']
+    ].map(x=>metric(x[0],x[1])).join('')}</div><div class="mini-meta">${chip(aiCostObserved?'Custo observado':'Gate de IA fechado',aiCostObserved?'good':'warn')}</div></article>
+    <article class="quality-box"><h3>Segurança</h3><div class="metric-list">${[
+      ['Side effects marketing 7d',n(safety.marketing_external_side_effects_7d||0)],
+      ['Side effects IA 7d',n(safety.ai_side_effects_7d||0)],
+      ['Homologação interna',safety.safe_for_internal_homologation===true?'Segura':'Revisar'],
+      ['Ativação externa',safety.external_activation_authorized===true?'Autorizada':'Não autorizada']
+    ].map(x=>metric(x[0],x[1])).join('')}</div><div class="mini-meta">${chip(noExternalEffects?'Zero efeito externo':'Revisar efeitos',noExternalEffects?'good':'bad')}</div></article>
+  </div>
+  <p class="identity-review-footnote">Este observador somente lê evidências reais. Ele não cria eventos, não fecha critérios, não executa IA, não altera consentimento e não ativa a Meta.</p>`;
+}
 function renderAcceptance(){
   const a=state.overview?.summary?.acceptance||{};
   const items=Array.isArray(a.items)?a.items:[];
@@ -334,7 +391,7 @@ function renderAudit(){
   $('#auditView').innerHTML=items.length?`<div class="audit-stack">${items.map(i=>`<article class="audit-item"><div class="audit-item-head"><div><strong>${esc(i.title)}</strong> ${chip(i.status,toneForStatus(i.status))}</div><small>${dt(i.at)}</small></div><pre>${esc(safeJson(i.data))}</pre></article>`).join('')}</div>`:empty('Nenhum registro recente.');
 }
 function renderAll(){
-  renderOverview();renderCustomers();renderSegments();renderOpportunities();renderProducts();renderBrands();renderBrain();renderTemplates();renderMeta();renderQuality();renderAcceptance();renderAudit();
+  renderOverview();renderCustomers();renderSegments();renderOpportunities();renderProducts();renderBrands();renderBrain();renderTemplates();renderMeta();renderQuality();renderAcceptance();renderHomologationEvidence();renderAudit();
 }
 
 async function loadOverview(){
