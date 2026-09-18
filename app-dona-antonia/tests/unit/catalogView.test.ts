@@ -39,10 +39,11 @@ test('catalog renders search, sections, product cards and offer price emphasis',
   assert.match(html, /Produto &lt;Teste&gt;/);
 });
 
-test('product detail contains no add-to-cart action before cart round', () => {
+test('product detail exposes add-to-cart action in cart round', () => {
   const html = renderProductDetail(offer);
 
   assert.match(html, /Produto &lt;Teste&gt;/);
   assert.match(html, /data-product-detail="TEST-PROD-X"/);
-  assert.doesNotMatch(html, /Adicionar ao carrinho/i);
+  assert.match(html, /data-cart-add-product="TEST-PROD-X"/);
+  assert.match(html, /Adicionar ao pedido/i);
 });
