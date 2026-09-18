@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const migration=fs.readFileSync('supabase/migrations/20260918002500_personalized_offers_v1.sql','utf8');
+const migration=fs.readFileSync('supabase/migrations/20260918003200_fix_personalized_offers_web_scope_v1.sql','utf8');
 const edge=fs.readFileSync('supabase/functions/shopping-chat-products-v1/index.ts','utf8');
 const products=fs.readFileSync('comprar/products.js','utf8');
 const offersCss=fs.readFileSync('comprar/offers.css','utf8');
@@ -10,7 +10,7 @@ assert.match(migration,/get_personalized_offers_v1/);
 assert.match(migration,/p\.is_offer=true/);
 assert.match(migration,/p\.physically_verified=true/);
 assert.match(migration,/p\.is_active=true/);
-assert.match(migration,/p\.is_whatsapp_active=true/);
+assert.doesNotMatch(migration,/is_whatsapp_active/,'Chat Comprar web não usa a flag específica do WhatsApp');
 assert.match(migration,/coalesce\(p\.stock,0\)>0/);
 assert.match(migration,/customer_product_stats/);
 assert.match(migration,/category_affinity/);
@@ -25,7 +25,7 @@ assert.match(edge,/select\('id,cart_id,customer_id,conversation_id,status,expire
 assert.match(edge,/get_personalized_offers_v1/);
 assert.match(edge,/personalizedOffers=offers/);
 assert.match(edge,/q=q\.eq\('is_offer',true\)/);
-assert.match(edge,/eq\('is_whatsapp_active',true\)/);
+assert.doesNotMatch(edge,/\.eq\('is_whatsapp_active',true\)/,'catálogo web não deve usar flag específica do WhatsApp');
 assert.match(edge,/q\.limit\(500\)/,'deve carregar também ofertas gerais para não esconder opções');
 assert.match(edge,/if\(ra\)return -1;/);
 assert.match(edge,/if\(rb\)return 1;/);
