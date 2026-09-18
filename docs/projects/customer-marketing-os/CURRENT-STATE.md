@@ -1,6 +1,26 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot canônico observado em **18/09/2026 ~18:48 UTC**.
+Snapshot atualizado em **18/09/2026 ~19:00 UTC**.
+
+## Última rodada concluída
+
+**Homologação CM-1 — Revisão Humana de Identidade V1.**
+
+Entregue:
+
+- fila de conflitos na Central de Relacionamento;
+- candidatos apresentados com PII mascarada;
+- revisão `approved | rejected` com justificativa;
+- confirmação humana obrigatória;
+- backend `review_only_no_merge`;
+- `external_side_effect=false`;
+- `customer-intelligence-v1` implantada como version 19;
+- contrato estático validado;
+- cache da Central atualizado para `20260918-4`.
+
+Documento da rodada:
+
+`docs/projects/customer-marketing-os/CM1-HOMOLOGATION-IDENTITY-REVIEW-V1.md`
 
 ## Estado geral
 
@@ -168,3 +188,20 @@ O wrapper consultado no HEAD acima não retornou combined status nem workflow ru
 8. reexecutar checklist;
 9. somente depois discutir encerramento da CM-1;
 10. ativação externa continua exigindo autorização explícita separada.
+
+
+## Evidências adicionais desta retomada
+
+- PapoAI receipts: 6;
+- normalized/canonical events 24h: 6;
+- customer_linked: 3;
+- provider identities: 5;
+- conflito de identidade pendente: 1;
+- `catalog_search` real: 0;
+- `product_view` real: 0;
+- backend implantado de produtos contém tracking e collector;
+- oportunidades ativas/suprimidas: 75;
+- oportunidades vencidas em 18/09: 0;
+- primeira expiração real observável: 23/09/2026.
+
+Portanto nenhum dos seis critérios restantes deve ser promovido artificialmente.
