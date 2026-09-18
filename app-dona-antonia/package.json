@@ -1,11 +1,23 @@
 {
-  "name": "app-dona-antonia-isolation-guard",
+  "name": "app-dona-antonia",
+  "version": "0.1.0-hml.1",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run verify:isolation && npm run test:no-production-effects && npm run typecheck && vite build",
     "verify:isolation": "node scripts/verify-isolation.mjs",
     "test:no-production-effects": "node scripts/test-no-production-effects.mjs",
     "test:isolation": "node --test tests/isolation/isolation.test.mjs",
-    "test": "npm run verify:isolation && npm run test:no-production-effects && npm run test:isolation"
+    "test:unit": "node --no-warnings --experimental-strip-types --test tests/unit/*.test.ts",
+    "test": "npm run verify:isolation && npm run test:no-production-effects && npm run test:isolation && npm run test:unit"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.0",
+    "vite": "^8.3.0"
   }
 }
