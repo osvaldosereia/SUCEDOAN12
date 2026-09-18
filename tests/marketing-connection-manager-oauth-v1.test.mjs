@@ -139,3 +139,20 @@ test('Meta app configuration validates client credentials before persisting App 
   assert.ok(validatePos>=0&&savePos>validatePos,'Meta secret must be validated before Vault persistence');
   assert.match(section,/meta_app_credentials_validated_at/);
 });
+
+test('Meta OAuth only accepts the expected Facebook Page and linked Instagram identity',()=>{
+  const exchangePos=workflow.indexOf('action==="oauth_exchange"');
+  const completePos=workflow.indexOf('action==="oauth_complete"');
+  assert.ok(exchangePos>=0&&completePos>exchangePos);
+  const exchange=workflow.slice(exchangePos,completePos);
+  assert.match(exchange,/meta_expected_facebook_page_id/);
+  assert.match(exchange,/meta_expected_instagram_business_id/);
+  assert.match(exchange,/meta_expected_page_not_found/);
+  assert.match(exchange,/meta_expected_instagram_mismatch/);
+  const complete=workflow.slice(completePos,workflow.indexOf('action==="publication_preflight"'));
+  assert.match(complete,/meta_expected_identity_mismatch/);
+  const guardPos=complete.indexOf('meta_expected_identity_mismatch');
+  const finalSecretPos=complete.indexOf('dona_antonia_marketing_meta_page_');
+  assert.ok(guardPos>=0&&finalSecretPos>guardPos,'identity guard must run before final Meta credential persistence');
+  assert.match(complete,/cleanupOAuthSessionSecrets/);
+});
