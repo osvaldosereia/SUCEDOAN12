@@ -396,3 +396,86 @@ Conclusão:
 8. não reiniciar etapas concluídas;
 9. não usar Make operacionalmente;
 10. atualizar `HANDOFF.md` e `CURRENT-STATE.md` ao final da nova rodada.
+
+
+# CHECKPOINT DE RETOMADA — 18/09/2026 16:59 America/Cuiaba
+
+Este checkpoint sucede o das 16:56 apenas com auditoria/runtime; nenhum gate externo foi aberto.
+
+## Estado confirmado
+
+- CM-1: **20 critérios = 14 verified, 6 implemented, 0 blocked**;
+- `safe_for_internal_homologation=true`;
+- `cm1_complete=false`;
+- `external_activation_authorized=false`;
+- Meta Direct OFF;
+- canonical outbound OFF;
+- publishing OFF;
+- strategy AI OFF.
+
+## Mudanças naturais observadas desde 16:56
+
+PapoAI recebeu tráfego real adicional:
+
+- receipts: **12**;
+- canonical events 24h: **12**;
+- customer_linked: **6**;
+- provider identities: **10**;
+- distinct customers: **4**.
+
+Isso não muda a classificação dos seis critérios pendentes.
+
+Comprar:
+
+- `catalog_open=58`;
+- `catalog_add=384`;
+- `catalog_checkout_return=22`;
+- `catalog_remove=10`;
+- `catalog_search=0`;
+- `product_view=0`.
+
+Opportunity Engine:
+
+- 75 `suppressed`;
+- dismissed=0;
+- converted=0;
+- próxima expiração natural: 23/09/2026 17:00:15 UTC.
+
+## Meta atual
+
+Runtime confirmado:
+
+- `shopping-chat-products-v1` v16;
+- `admin-whatsapp-direct-v1` v7;
+- `whatsapp-meta-direct-v1` v3;
+- `whatsapp-flow-health-webhook-v1` v4;
+- Graph API canônica: `v26.0`;
+- Flow health: 669 eventos assinados / 9 flows;
+- permissões canônicas persistidas: **0**;
+- Meta Direct webhook events 24h: **0**;
+- `permissions_clear=false`;
+- `webhook_ready=false`;
+- `direct_ready_flag=false`;
+- blockers: 3.
+
+O `channel_accounts.metadata.graph_api_version=null` é histórico e não deve reabrir o blocker de versão: `meta_control_plane_account_v1` usa o último health snapshot, onde `graph_api_version=v26.0`.
+
+## GitHub / CI
+
+- HEAD auditado antes desta atualização: `f74f6e65b03cd1db260d95f7ddd8335ace83984e`;
+- desde `1f29354122f550c6aea0282c457740980ead3e33` houve somente alterações de documentação;
+- último CI funcional: run `35388463946`, **SUCCESS**, 38 validações;
+- Pages do HEAD auditado: run `35388790595`, build/deploy **SUCCESS**.
+
+## Próximas ações humanas continuam iguais
+
+1. Central de Relacionamento → PIN → Meta Foundation → **Verificar Meta agora**;
+2. Comprar → fazer uma busca real e abrir o detalhe de um produto.
+
+Ao ocorrer qualquer uma delas, consultar imediatamente o Supabase e reexecutar:
+
+- `cm1_acceptance_checklist_v1()`;
+- `cm1_homologation_readiness_v1()`;
+- `evaluate_meta_direct_readiness_v1(...)`.
+
+Não fabricar evidência e não transformar readiness em autorização externa.
