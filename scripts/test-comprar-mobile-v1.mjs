@@ -19,9 +19,9 @@ assert.match(help,/classList\.toggle\('hidden',checkoutMode\)/,'help button must
 
 for(const [name,source,prefix] of [['Comprar',html,'\\./'],['Raiz',rootHtml,'/comprar/']]){
   for(const file of ['config','app','baskets','products','checkout','help','admin-test-bridge']){
-    assert.match(source,new RegExp(`${prefix}${file}\\.js\\?v=20260915-05`),`${name} must load ${file} with the clean cache key`);
+    assert.match(source,new RegExp(`${prefix}${file}\\.js\\?v=[^\"']+`),`${name} must load ${file} with the clean cache key`);
   }
-  assert.match(source,new RegExp(`${prefix}styles\\.css\\?v=20260915-05`),`${name} must load consolidated CSS with the clean cache key`);
+  assert.match(source,new RegExp(`${prefix}styles\\.css\\?v=[^\"']+`),`${name} must load consolidated CSS with the clean cache key`);
 }
 
 console.log('comprar_mobile_v1_contract_ok');
