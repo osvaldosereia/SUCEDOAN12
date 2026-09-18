@@ -27,7 +27,7 @@ Atualizado em 18/09/2026.
 | CM-1.12 — Meta Foundation | Concluída V1 · READ_ONLY / fail-closed |
 | CM-1.13 — Template Draft Assistant | Concluída V1 · DRAFT/manual ativo · IA gate fechado |
 | CM-1.14 — PapoAI Adapter temporário | Concluída V1 · core normalizado · outbound do adapter desligado |
-| CM-1.15 — Central de Relacionamento | Próxima rodada |
+| CM-1.15 — Central de Relacionamento | Concluída V1 · interface canary · backend seguro |
 | Homologação CM-1 | Pendente |
 
 As melhorias visuais do Customer 360 são tratadas como trabalho de homologação/UX **dentro da CM-1.3**, sem alterar a ordem oficial das rodadas centrais.
@@ -619,6 +619,6 @@ A cada rodada:
 
 ## Próxima ação
 
-**CM-1.15 — Central de Relacionamento.**
+**Homologação CM-1.**
 
-A CM-1.14 isolou o PapoAI atrás do contrato canônico de eventos. A próxima rodada consolida Customer OS, oportunidades, Marketing Brain, templates, Meta Foundation, qualidade e auditoria em uma superfície operacional única.
+A CM-1.15 concluiu a Central de Relacionamento em canary, reutilizando o boundary seguro do Customer Intelligence. A próxima rodada valida o fluxo ponta a ponta, os gates de consentimento/custo, a auditoria e a experiência do Admin antes de qualquer liberação global.
