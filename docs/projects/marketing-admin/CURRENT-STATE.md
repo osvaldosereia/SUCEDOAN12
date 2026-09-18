@@ -188,3 +188,26 @@ Próximos passos:
 7. verificar contas;
 8. canary 1 peça / 1 canal / limite 1;
 9. fechar canary depois do teste.
+
+
+## Atualização Round 8 — validação de credenciais Meta
+
+Em 18/09/2026 foi adicionada uma barreira extra à homologação Meta:
+
+- o Admin não aceita mais salvar apenas um App ID textual;
+- `connection_save_config` exige validação server-side do par App ID + App Secret usando `grant_type=client_credentials`;
+- quando o segredo já existe, ele é lido somente no backend pelo Vault;
+- segredo novo só é persistido após a validação do par;
+- a resposta de validação não devolve access token ao navegador;
+- Edge Function `admin-marketing-workflow-v1`: v16, ACTIVE, JWT=true;
+- `meta_oauth_app_id` permanece vazio até uma validação real bem-sucedida.
+
+Estado de segurança após o deploy:
+- enabled=false;
+- execution_mode=off;
+- kill_switch=true;
+- publishing_enabled=false;
+- max_daily_publications=0;
+- publication_jobs=0;
+- published_jobs=0;
+- external_side_effect_events=0.
