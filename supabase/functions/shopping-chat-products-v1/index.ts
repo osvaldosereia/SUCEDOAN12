@@ -7,6 +7,7 @@ const cors=(req:Request)=>{const o=req.headers.get('origin');if(o&&!ORIGINS.has(
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...(cors(req)||{}),'Content-Type':'application/json','Cache-Control':'no-store'}});
 const clean=(v:unknown,max=200)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const tokenOk=(v:unknown)=>/^[a-f0-9]{64}$/i.test(clean(v,80));
+const uuidOk=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80));
 const TAXONOMY_VERSION='v2_2026_09';
 const validCustomerCategories=new Set(['Para Você','Para Casa']);
 const sortPt=(a:{label:string},b:{label:string})=>a.label.localeCompare(b.label,'pt-BR');
@@ -31,6 +32,41 @@ Deno.serve(async(req:Request)=>{
   const customerCategory=validCustomerCategories.has(requestedCategory)?requestedCategory:'';
   const offers=body?.offers===true;
   if(offers&&flags.offers===false)return json(req,{ok:false,error:'feature_disabled',feature:'offers'},409);
+
+  if(action==='track'){
+    const eventType=clean(body?.event_type,40).toLowerCase();
+    if(!['catalog_search','product_view'].includes(eventType))return json(req,{ok:false,error:'invalid_catalog_interaction'},400);
+    const productId=clean(body?.product_id,80)||null;
+    if(eventType==='product_view'&&!uuidOk(productId))return json(req,{ok:false,error:'invalid_product_id'},400);
+    const eventData=eventType==='catalog_search'
+      ?{
+          source:'comprar',
+          surface:clean(body?.surface||'products_browser',80),
+          query:clean(body?.q,100),
+          customer_category:customerCategory||null,
+          customer_subcategory:clean(body?.customer_subcategory,80)||null,
+          customer_subsubcategory:clean(body?.customer_subsubcategory,80)||null,
+          offers,
+        }
+      :{
+          source:'comprar',
+          surface:clean(body?.surface||'product_detail',80),
+          query:clean(body?.q,100)||null,
+          customer_category:customerCategory||null,
+          customer_subcategory:clean(body?.customer_subcategory,80)||null,
+          customer_subsubcategory:clean(body?.customer_subsubcategory,80)||null,
+          offers,
+        };
+    const {data,error}=await sb.rpc('record_catalog_interaction_v1',{
+      p_catalog_session_id:session.id,
+      p_event_type:eventType,
+      p_product_id:eventType==='product_view'?productId:null,
+      p_event_data:eventData,
+      p_dedupe_seconds:eventType==='product_view'?900:20,
+    });
+    if(error)return json(req,{ok:false,error:'catalog_interaction_failed',detail:error.message},400);
+    return json(req,{ok:true,event:data||null,external_side_effect:false});
+  }
 
   if(action==='filters'){
     let q=sb.from('products')
