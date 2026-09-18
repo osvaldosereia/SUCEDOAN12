@@ -109,7 +109,7 @@ Deno.serve(async(req:Request)=>{
   const lookbackDays=Math.max(0,Math.min(90,num(meta.strategy_lookback_days,14)));
 
   const getShortlist=async()=>{
-    const {data,error}=await sb.rpc("marketing_product_shortlist_v1",{p_limit:maxCandidates,p_lookback_days:lookbackDays});
+    const {data,error}=await sb.rpc("marketing_product_shortlist_v2",{p_limit:maxCandidates,p_lookback_days:lookbackDays});
     if(error)throw new Error(error.message);
     return Array.isArray(data)?data:[];
   };
@@ -381,7 +381,7 @@ Deno.serve(async(req:Request)=>{
       reuse_assets_first:true
     };
     const productSelection={
-      method:"marketing_product_shortlist_v1",
+      method:"marketing_product_shortlist_v2",
       product_ids:selected,
       candidates_considered:items.length,
       lookback_days:lookbackDays,
@@ -461,8 +461,10 @@ Deno.serve(async(req:Request)=>{
     const compact=items.map(x=>({
       id:x.product_id,name:x.name,brand:x.brand||null,category:x.category||null,subcategory:x.subcategory||null,
       price:num(x.price),effective_price:num(x.effective_price),stock:num(x.stock),is_offer:Boolean(x.is_offer),
-      margin_percent:x.margin_percent==null?null:num(x.margin_percent),offer_discount_percent:num(x.offer_discount_percent),
-      score:num(x.score),reasons:x.reasons||[]
+      margin_percent:x.margin_percent==null?null:num(x.margin_percent),
+      offer_discount_percent:num(x.price)>0?Math.max(0,((num(x.price)-num(x.effective_price))/num(x.price))*100):0,
+      price_tier:x.price_tier||null,commercial_role:x.commercial_role||null,replenishment_type:x.replenishment_type||null,
+      readiness_score:num(x.readiness_score),score:num(x.score),reasons:x.reasons||[]
     }));
     const model=clean(meta.strategy_model||"gpt-5.6-luna",80);
     const maxOutput=Math.max(400,Math.min(1200,num(meta.strategy_max_output_tokens,900)));
