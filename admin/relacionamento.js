@@ -161,6 +161,7 @@ function renderTemplates(){
 function renderMeta(){
   const summary=state.overview?.summary||{};
   const m=summary.meta||{},a=(m.accounts||[])[0]||{},policy=summary.meta_policy_registry||{},direct=summary.meta_direct_readiness||{},p=summary.provider_adapters||{},adapter=(p.adapters||[])[0]||{};
+  const metaEvidence=summary.homologation_evidence?.meta||{};
   const blockers=Array.isArray(direct.blocking_reasons)?direct.blocking_reasons:[];
   const blockerLabels={
     graph_api_version_unverified:'Versão da Graph API não verificada',
@@ -173,7 +174,7 @@ function renderMeta(){
   };
   $('#metaView').innerHTML=`<div class="quality-grid">
     <div class="quality-box"><h3>Conta WhatsApp</h3><div class="metric-list">${[
-      ['Nome',a.display_name||'—'],['Telefone',a.phone_e164||'—'],['Readiness',a.readiness_state||'—'],['Provider',a.capabilities?.provider_current||'—'],['Meta Direct',direct.ready===true?'Pronto':'Não pronto'],['Outbound',a.outbound_enabled?'Ligado':'Desligado']
+      ['Nome',a.display_name||'—'],['Telefone',a.phone_e164||'—'],['Readiness',a.readiness_state||'—'],['Provider',a.capabilities?.provider_current||'—'],['Token diagnóstico',metaEvidence.vault_readonly_token_configured===true?'Configurado':'Ausente no Vault'],['Meta Direct',direct.ready===true?'Pronto':'Não pronto'],['Outbound',a.outbound_enabled?'Ligado':'Desligado']
     ].map(x=>metric(x[0],x[1])).join('')}</div></div>
     <div class="quality-box"><h3>Policy Registry</h3><div class="metric-list">${[
       ['Readiness técnico',policy.ready===true?'8/8 pronto':'Revisão necessária'],['Políticas obrigatórias',n(policy.required_count||m.policy_registry?.total||0)],['Ativas',n(policy.active_required_count||m.policy_registry?.active||0)],['Stale',n(policy.stale_count||0)],['Sem fonte',n(policy.without_source_count||0)],['Fail-closed',Number(policy.not_fail_closed_count||0)===0?'OK':'Revisar']
@@ -188,6 +189,7 @@ function renderMeta(){
   <div class="meta-preflight-box">
     <div class="section-title"><div><h2>Bloqueios do Meta Direct</h2><p>Read-only. Estes itens precisam de evidência real; esta tela não ativa nada.</p></div><div class="relationship-head-actions">${chip(direct.ready===true?'Pronto':'Bloqueado',direct.ready===true?'ok':'warn')}<button type="button" class="secondary" data-meta-diagnostics>Verificar Meta agora</button></div></div>
     ${blockers.length?`<div class="meta-blocker-list">${blockers.map(key=>`<div class="meta-blocker-row"><span>•</span><strong>${esc(blockerLabels[key]||humanKey(key))}</strong><small>${esc(key)}</small></div>`).join('')}</div>`:empty('Nenhum blocker técnico reportado. Isso não equivale a autorização externa.')}
+    ${metaEvidence.vault_readonly_token_configured===false?`<div class="empty"><strong>Token read-only do WhatsApp ainda não está no Vault.</strong><br>O diagnóstico continua fail-closed até essa credencial ser configurada. Nenhuma ativação externa ocorre.</div>`:''}
     ${state.metaDiagnosticsError?`<div class="empty"><strong>Diagnóstico Meta não concluído.</strong><br>${esc(state.metaDiagnosticsError)}</div>`:'' }
     ${state.metaDiagnostics?`<div class="meta-diagnostic-result">
       <div class="metric-list">${[
