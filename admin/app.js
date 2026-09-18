@@ -119,10 +119,24 @@ const paymentLabel=v=>({pix:'PIX',credit_card:'Cartão de crédito',debit_card:'
 const historyAddressLine=a=>{const x=a&&typeof a==='object'?a:{};return [x.street,x.number&&`nº ${x.number}`,x.neighborhood,x.city,x.state].filter(Boolean).join(' · ')};
 const historyStatusLabel=v=>({storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Enviado ao Bling',processing:'Em processamento',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'})[String(v||'')]||String(v||'—');
 
+const customerSegmentLabel=value=>({
+  primeiro_comprador:'Primeiro comprador',
+  recorrente:'Recorrente',
+  mensal:'Mensal',
+  inativo:'Inativo',
+  alto_valor:'Alto valor',
+  comprador_cesta:'Compra cestas',
+  produtos_avulsos:'Produtos avulsos',
+  cesta_favorita:'Cesta favorita',
+  proximo_recompra:'Próximo da recompra'
+})[String(value||'')]||String(value||'');
+
 function customerHistoryMarkup(customer={},data={}){
-  const intel=data.intelligence||{},orders=data.orders||[],products=intel.top_products||[],categories=intel.top_categories||[];
+  const intel=data.intelligence||{},segments=data.segments||{},orders=data.orders||[],products=intel.top_products||[],categories=intel.top_categories||[];
   const frequency=intel.repurchase_frequency_label?String(intel.repurchase_frequency_label):'Ainda sem padrão';
   const favoriteBasket=intel.favorite_basket?.name||intel.last_basket?.name||'—';
+  const segmentList=Array.isArray(segments.segments)?segments.segments:[];
+  const segmentReasons=segments.reasons&&typeof segments.reasons==='object'?segments.reasons:{};
   return `<div class="customer-history-shell">
     <div class="editor-head"><div><small class="muted">Histórico de compras</small><h2>${esc(customer.name||'Cliente')}</h2><div class="muted">${esc(customer.primary_whatsapp_e164||'')}</div></div><button class="close-dialog" type="button" data-close-dialog>×</button></div>
     <div class="customer-history-stats">
@@ -131,6 +145,7 @@ function customerHistoryMarkup(customer={},data={}){
       <article><span>Ticket médio</span><strong>${money(intel.average_ticket||0)}</strong></article>
       <article><span>Última compra</span><strong>${intel.last_order_at?esc(date(intel.last_order_at)):'—'}</strong></article>
     </div>
+    ${segmentList.length?`<section class="customer-segments-panel"><div class="customer-history-title"><h3>Perfil comercial calculado</h3><small class="muted">Baseado somente no histórico</small></div><div class="customer-segment-badges">${segmentList.map(key=>`<span title="${esc(segmentReasons[key]||'Regra calculada a partir das compras')}">${esc(customerSegmentLabel(key))}</span>`).join('')}</div></section>`:''}
     <section class="customer-history-summary">
       <div><span>Cesta mais comprada</span><strong>${esc(favoriteBasket)}</strong></div>
       <div><span>Pagamento mais usado</span><strong>${esc(paymentLabel(intel.favorite_payment_method))}</strong></div>
