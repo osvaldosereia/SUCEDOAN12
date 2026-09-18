@@ -1,3 +1,5 @@
+import { evaluateHomologationExecution } from '../platform/homologationGuard.ts';
+
 export type PushPlatform = 'android' | 'ios';
 export type NotificationPreferenceKind = 'transactional' | 'marketing';
 
@@ -24,13 +26,20 @@ export interface PushClient {
   getSnapshot(): PushSnapshot;
 }
 
+export interface HomologationPushClientOptions {
+  environment?: 'homologation' | 'production';
+  productionEnabled?: boolean;
+}
+
 const TEST_PUSH_TOKEN = /^TEST-PUSH-[A-Za-z0-9_-]{16,180}$/;
 
 function cloneRegistration(registration: PushRegistration | null): PushRegistration | null {
   return registration ? { ...registration } : null;
 }
 
-export function createHomologationPushClient(): PushClient {
+export function createHomologationPushClient(
+  options: HomologationPushClientOptions = {},
+): PushClient {
   let registration: PushRegistration | null = null;
   let preferences: PushPreferences = {
     transactional: true,
@@ -42,6 +51,16 @@ export function createHomologationPushClient(): PushClient {
       const normalized = token.trim();
       if (!TEST_PUSH_TOKEN.test(normalized)) {
         throw new Error('homologation push token must use TEST-PUSH-*');
+      }
+
+      const guard = evaluateHomologationExecution({
+        action: 'simulate_push',
+        environment: options.environment ?? 'homologation',
+        productionEnabled: options.productionEnabled === true,
+        resourceId: normalized,
+      });
+      if (!guard.allowed) {
+        throw new Error(`homologation push safety guard blocked registration: ${guard.reason}`);
       }
 
       registration = { token: normalized, platform };
