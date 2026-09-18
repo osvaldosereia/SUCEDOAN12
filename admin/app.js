@@ -21,14 +21,20 @@ let currentHistoryCustomerId=null;
 let identityConflictsState=[];
 let identityReadinessState={};
 
-const secureCustomersEnabled=()=>CONFIG.customerOsSecureUiEnabled===true;
+const customerOsCanaryRequested=()=>{
+  if(CONFIG.customerOsCanaryEnabled!==true)return false;
+  const params=new URLSearchParams(window.location.search);
+  return params.get(String(CONFIG.customerOsCanaryParam||'customer_os'))===String(CONFIG.customerOsCanaryValue||'canary');
+};
+const secureCustomersEnabled=()=>CONFIG.customerOsSecureUiEnabled===true||customerOsCanaryRequested();
+const customerOsCanaryMode=()=>CONFIG.customerOsSecureUiEnabled!==true&&customerOsCanaryRequested();
 const customerApi=(action,payload={})=>secureCustomersEnabled()?customerOsApi(action,payload):api(action,payload);
 
 function renderCustomerOsLogin(message=''){
   app.innerHTML=`${pageHead('Clientes','Área protegida para dados pessoais, histórico e marketing.')}
     <section class="panel" style="max-width:520px">
-      <h2>Acesso protegido</h2>
-      <p class="muted">Digite o PIN administrativo para abrir o Customer 360. A sessão vale somente nesta aba.</p>
+      <h2>Acesso protegido${customerOsCanaryMode()?` · Canary`:``}</h2>
+      <p class="muted">Digite o PIN administrativo para abrir o Customer 360. A sessão vale somente nesta aba.${customerOsCanaryMode()?` Este acesso é um canary controlado; a ativação global continua desligada.`:``}</p>
       ${message?`<div class="empty">${esc(message)}</div>`:''}
       <form id="customerOsLoginForm" class="inline-form" autocomplete="off">
         <input name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="PIN de 6 dígitos" required>
@@ -370,7 +376,8 @@ async function loadCustomers(){
       ['marketing_nao_permitido','Marketing bloqueado agora']
     ];
     const segmentOptions=secureCustomersEnabled()?secureSegmentOptions:legacySegmentOptions;
-    app.innerHTML=`${pageHead('Clientes','Cadastro, Customer 360 e histórico comercial.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}
+    app.innerHTML=`${pageHead('Clientes',customerOsCanaryMode()?'Customer 360 em canary controlado · ativação global continua desligada.':'Cadastro, Customer 360 e histórico comercial.',`<button class="primary" type="button" data-new-customer>Novo cliente</button>`)}
+      ${customerOsCanaryMode()?`<section class="panel"><div class="badge ok">CANARY CUSTOMER OS</div><p class="muted" style="margin:8px 0 0">Somente esta URL especial usa a interface segura. O Admin normal continua no modo anterior.</p></section>`:``}
       ${identitySummaryMarkup()}
       <form id="customerFilterForm" class="toolbar">
         <input type="search" name="q" value="${esc(customerState.q)}" placeholder="Buscar por nome, telefone ou CPF">
