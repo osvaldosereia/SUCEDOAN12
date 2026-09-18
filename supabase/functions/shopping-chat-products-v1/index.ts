@@ -71,7 +71,12 @@ Deno.serve(async(req:Request)=>{
     const customerSubcategory=clean(body?.customer_subcategory,80);
     const customerSubsubcategory=clean(body?.customer_subsubcategory,80);
     const search=clean(body?.q,80).replace(/[,%()]/g,' ').trim();
-    const personalizedOffers=offers&&!customerCategory&&!customerSubcategory&&!customerSubsubcategory&&!search&&!!session.customer_id&&!!session.conversation_id;
+    const personalizationEligible=offers&&!customerCategory&&!customerSubcategory&&!customerSubsubcategory&&!search&&!!session.customer_id&&!!session.conversation_id;
+    let personalizedOffers=false;
+    if(personalizationEligible){
+      const {count:historyCount}=await sb.from('customer_product_stats').select('product_id',{count:'exact',head:true}).eq('customer_id',session.customer_id);
+      personalizedOffers=Number(historyCount||0)>0;
+    }
     let q=sb.from('products')
       .select('id,name,price,offer_price,image_url,brand,packaging,description_short,stock,is_offer,customer_category,customer_subcategory,customer_subsubcategory')
       .eq('physically_verified',true)
