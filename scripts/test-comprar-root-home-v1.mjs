@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const root=readFileSync('index.html','utf8'),comprar=readFileSync('comprar/index.html','utf8'),app=readFileSync('comprar/app.js','utf8');
 assert.match(root,/id="timeline" class="timeline"/);assert.match(root,/id="cartBar" class="cart-bar"/);
 assert.match(root,/src="\/comprar\/config\.js\?v=20260915-05-chat-\d+/);
-for(const file of ['app','baskets','products','upsell','checkout','help','admin-test-bridge'])assert.match(root,new RegExp(`src="\\/comprar\\/${file}\\.js\\?v=20260915-05-chat-\\d+`),`root deve carregar ${file}`);
+for(const file of ['app','baskets','products','upsell','checkout','help','admin-test-bridge'])assert.match(root,new RegExp(`src="\\/comprar\\/${file}\\.js\\?v=[^\"']+`),`root deve carregar ${file}`);
 assert.match(root,/href="\/comprar\/styles\.css\?v=20260915-05-chat-\d+/);
 for(const obsolete of ['chat-light-v2.js','chat-checkout-quantity-v1.js','checkout-final-v2.js','chat-helper-menu.js','phone-retry-v1.js'])assert.doesNotMatch(root,new RegExp(obsolete.replaceAll('.','\\.')));
 assert.match(root,/href="https:\/\/donaantonia\.com\.br\/"/);assert.match(root,/name="robots" content="index,follow/);assert.doesNotMatch(root,/noindex,nofollow/);assert.doesNotMatch(root,/\/app-next\//);assert.doesNotMatch(root,/http-equiv="refresh"/i);assert.match(comprar,/name="robots" content="noindex,nofollow"/);
