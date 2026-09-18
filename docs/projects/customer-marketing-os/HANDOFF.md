@@ -27,7 +27,7 @@
 - canonical outbound OFF;
 - Marketing publishing OFF;
 - strategy AI OFF;
-- Meta Direct blockers: Graph API version não verificada, permissões não verificadas, webhook não homologado e direct-ready flag=false;
+- Meta Direct blockers: permissões do token Supabase não verificadas, webhook não homologado e direct-ready flag=false;
 - orçamento IA da homologação = 0.
 
 ## Próximas ações
@@ -40,7 +40,7 @@
 6. acompanhar lifecycle real das oportunidades; primeira expiração atual começa em 23/09/2026;
 7. responsável valida PIN e visual da Central manualmente;
 8. Policy Registry técnico já está pronto 8/8; manter gate humano separado até revisão;
-9. Meta Direct continua READ_ONLY: obter evidência real de Graph API version, permissões e webhook antes de qualquer mudança de readiness;
+9. Meta Direct continua READ_ONLY: Graph API v26.0 já comprovada; executar o diagnóstico nativo para validar permissões do token Supabase e depois homologar webhook;
 10. não definir `direct_ready_flag=true` enquanto os demais blockers não estiverem comprovados;
 11. reexecutar acceptance checklist após cada evidência real;
 12. atualizar esta pasta ao final da rodada.
@@ -94,12 +94,12 @@ Resultados principais:
 
 - Policy Registry técnico: ready 8/8;
 - Meta Direct: ready=false;
-- Graph API version: unverified;
-- permissions: unverified;
+- Graph API version: v26.0 verified;
+- permissions do token Supabase: unverified;
 - webhook: unverified;
 - direct-ready flag: false;
 - Meta Direct Edge: version 2;
-- Admin Meta Direct: version 4;
+- Admin Meta Direct: version 5;
 - nenhum fallback de Graph API;
 - nenhum gate externo aberto.
 
@@ -143,3 +143,37 @@ Enquanto `catalog_search` e `product_view` permanecerem em zero:
 - Meta Direct continua fail-closed e `external_activation_authorized=false`.
 
 Na retomada, não repetir essa auditoria. Continuar pela obtenção de evidência real read-only da Meta ou pelas evidências orgânicas restantes do acceptance checklist.
+
+
+## Supabase-first — regra de retomada
+
+Não usar Make como automação operacional deste projeto.
+
+Make pode ser consultado somente para recuperar evidência/configuração histórica.
+
+Runtime e novas automações:
+- Supabase;
+- Edge Functions;
+- PostgreSQL/RPC;
+- GitHub como código-fonte;
+- OpenAI apenas quando necessário e governado.
+
+## Última programação Meta nativa
+
+Commit inicial backend: `de31d35116d6556a8a8e511dadd74b1e798d6240`.
+
+Foi implantada a action `meta_diagnostics_readonly` no `admin-whatsapp-direct-v1` v5 e adicionado o botão **Verificar Meta agora** na Central de Relacionamento.
+
+Estado do preflight antes de executar o botão com a sessão humana:
+
+- Graph API v26.0: comprovada;
+- WABA: true;
+- Phone Number ID: true;
+- outbound fail-closed: true;
+- permissions_clear: false;
+- webhook_ready: false;
+- direct_ready_flag: false;
+- blockers: 3;
+- `external_activation_authorized=false`.
+
+Próximo passo desta subetapa: responsável entra na Central com o PIN e executa **Meta Foundation → Verificar Meta agora**. Não é ativação externa; é uma consulta GET à Meta feita pelo Supabase.
