@@ -42,6 +42,7 @@ on:
       - 'scripts/test-cm-1-7-product-brand-graph.mjs'
       - 'scripts/test-cm-1-8-segment-engine.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
+      - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
       - '.github/workflows/test-admin-v3.yml'
   pull_request:
@@ -85,6 +86,7 @@ on:
       - 'scripts/test-cm-1-7-product-brand-graph.mjs'
       - 'scripts/test-cm-1-8-segment-engine.mjs'
       - 'scripts/test-customer-os-canary-v1.mjs'
+      - 'scripts/test-customer-360-redesign-v2.mjs'
       - 'scripts/test-marketing-brain-v1.mjs'
       - '.github/workflows/test-admin-v3.yml'
   workflow_dispatch:
@@ -114,6 +116,7 @@ jobs:
           node --check admin/app.js
           node --check admin/customer-os-auth.js
           node --check admin/customer-os-api.js
+          node --check admin/customer-360-view.js
           node --check admin/marketing-api.js
           node --check admin/marketing.js
           node --check admin/orders-integrated-v2.js
@@ -166,6 +169,8 @@ jobs:
         run: node scripts/test-cm-1-8-segment-engine.mjs
       - name: Validar Customer OS canary
         run: node scripts/test-customer-os-canary-v1.mjs
+      - name: Validar redesign Customer 360
+        run: node scripts/test-customer-360-redesign-v2.mjs
       - name: Validar Marketing Brain
         run: node scripts/test-marketing-brain-v1.mjs
       - name: Validar shell oficial
