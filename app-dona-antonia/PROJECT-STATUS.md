@@ -7,7 +7,7 @@
 **Pedidos reais:** PROIBIDOS  
 **Push para clientes reais:** PROIBIDO
 
-> Histórico detalhado das Rodadas 0–24 permanece no Git. Este arquivo passa a manter o checkpoint operacional consolidado para evitar divergência de handoffs extensos.
+> Histórico detalhado das Rodadas 0–24 permanece no Git. Este arquivo mantém o checkpoint operacional consolidado.
 
 ## Regras de isolamento vigentes
 - todo desenvolvimento do novo aplicativo fica em `app-dona-antonia/`;
@@ -30,23 +30,20 @@
 - A2 fail-closed central: concluída.
 - A3 sessão/pairing: concluída até limite não nativo.
 - A4 deep links/notificações: concluída até limite não nativo.
-- A5 mídia/privacidade/dados locais: **parcial avançada**.
-- A6–A9: pendentes.
+- A5 mídia/privacidade/dados locais: **esgotada programaticamente até limite nativo**; permissões/pickers/EXIF efetivo dependem de build/teste nativo.
+- A6 HML/backend: **em andamento seguro, sem deploy**.
+- A7–A9: pendentes.
 
-## Checkpoint A5 — 19/09/2026
-Já existia `localMediaVault.ts`, cofre efêmero somente de metadados com IDs `TEST-MEDIA-*`, MIME/tamanho/TTL/retenção fechados e zero bytes/texto/filename/URL persistidos.
-
-Nesta continuação foram adicionados:
-- `src/platform/mediaPrivacyPolicy.ts`: contrato puro de fronteira para Photo Picker/câmera/microfone; valida source/MIME, limite de 8 MiB e áudio <=120 s; determina `strip-exif-before-boundary`; não recebe bytes, filename, URL nem texto do cliente;
-- `src/privacy/localPrivacyRights.ts`: acesso e eliminação locais somente para `TEST-SUBJECT-*` + `TEST-MEDIA-*`; metadados são imutáveis e correção exige apagar/recriar;
-- `tests/unit/mediaPrivacyPolicy.test.ts`;
-- `tests/unit/localPrivacyRights.test.ts`.
+## Checkpoint A6 — 19/09/2026
+Adicionados:
+- `docs/homologation/HML-BACKEND-DEPLOY-MANIFEST.md`: invariantes HML, gate de migrations/rollback, integridade server-authoritative, idempotência/rate limit, pairing, telemetria/privacidade e regra de quota fail-closed;
+- `src/platform/hmlBackendPreflight.ts`: preflight puro que bloqueia produção, projeto não sintético/divergente, ausência de revisão/rollback/evidência de suíte/typecheck, quota indisponível, migration destrutiva e executor real;
+- `tests/unit/hmlBackendPreflight.test.ts`: cobertura de baseline sintético e de cada blocker.
 
 ### Validação honesta
-Os testes foram versionados, mas nesta execução não houve runner/typecheck real associado ao HEAD; portanto não são declarados verdes. Permissões nativas, pickers, stripping EXIF efetivo e comportamento em aparelho continuam explicitamente bloqueados até implementação/build/teste Android/iOS real.
+Nenhum deploy, migration ou executor foi acionado. Os testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. A quota continua sendo bloqueio válido e não será contornada apagando funções ou aumentando custo.
 
 ## Próximo trabalho seguro
-1. concluir apenas o restante programático de A5 que não dependa de dispositivo;
-2. avançar A6 em contratos/manifest/checklists HML/backend sem deploy, quota nova ou produção;
-3. depois A7, A8 e A9 sequencialmente;
-4. em A9 criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; só definir `PROGRAMMATIC_COMPLETE=true` se nenhuma tarefa segura independente restar.
+1. continuar A6 em contratos/testes sintéticos de integridade, idempotência e rate limit sem deploy;
+2. esgotada A6, avançar A7, A8 e A9 sequencialmente;
+3. em A9 criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; só definir `PROGRAMMATIC_COMPLETE=true` se nenhuma tarefa segura independente restar.
