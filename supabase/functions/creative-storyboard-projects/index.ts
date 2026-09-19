@@ -3,7 +3,7 @@ import {createClient} from 'npm:@supabase/supabase-js@2';
 
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type'};
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
-const cleanSearch=(v:unknown)=>String(v??'').replace(/[,%()]/g,' ').replace(/\s+/g,' ').trim().slice(0,100);
+const cleanSearch=(v:unknown)=>String(v??'').replace(/[,%()]/g,' ').replace(/\s+/g,' ').trim().slice(0,100);\nconst cleanText=(v:unknown,n=800)=>String(v??'').replace(/\\s+/g,' ').trim().slice(0,n);\nconst arr=(v:unknown)=>Array.isArray(v)?v:[];\nfunction openAiText(data:any){return arr(data?.output).flatMap((x:any)=>arr(x?.content)).filter((x:any)=>x?.type==='output_text').map((x:any)=>String(x.text||'')).join('').trim()}
 function normalizeGeminiPackage(x:any,projectId:string,updatedAt?:string){
   const critical=String(x?.critical_reinforcement??'').trim();
   return {
@@ -35,6 +35,84 @@ Deno.serve(async(req:Request)=>{
     const rows=(r.data||[]).filter((p:any)=>/^https?:\/\//i.test(String(p.image_url||'')));
     for(let i=rows.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[rows[i],rows[j]]=[rows[j],rows[i]]}
     return json({ok:true,products:rows.slice(0,limit),total:rows.length});
+  }
+
+
+  if(action==='video_search_products'){
+    const q=cleanSearch(b.q),limit=Math.min(16,Math.max(1,Number(b.limit||16)));
+    if(q.length<2)return json({ok:true,products:[],total:0});
+    const r=await sb.from('products')
+      .select('id,sku,name,gtin,price,stock,image_url,brand,category,subcategory,packaging,is_active,is_offer',{count:'exact'})
+      .eq('is_active',true)
+      .not('image_url','is',null)
+      .neq('image_url','')
+      .or(`name.ilike.%${q}%,gtin.ilike.%${q}%,sku.ilike.%${q}%,brand.ilike.%${q}%,category.ilike.%${q}%,subcategory.ilike.%${q}%`)
+      .order('name',{ascending:true})
+      .limit(limit);
+    if(r.error)return json({ok:false,error:'video_products_search_failed',detail:r.error.message},400);
+    const rows=(r.data||[]).filter((p:any)=>/^https?:\/\//i.test(String(p.image_url||'')));
+    return json({ok:true,products:rows,total:r.count||rows.length});
+  }
+
+  if(action==='video_generate_prompt'){
+    const theme=cleanText(b.theme,100)||'variedade de produtos';
+    const directions=cleanText(b.directions,800);
+    const products=arr(b.products).slice(0,16).map((p:any)=>({
+      name:cleanText(p?.name,140),
+      brand:cleanText(p?.brand,80),
+      category:cleanText(p?.category,80),
+      subcategory:cleanText(p?.subcategory,80),
+      packaging:cleanText(p?.packaging,80)
+    })).filter((p:any)=>p.name);
+    if(!products.length)return json({ok:false,error:'video_products_required'},400);
+    let openaiKey=Deno.env.get('OPENAI_API_KEY')||'';
+    if(!openaiKey){try{const q=await sb.rpc('get_conversation_worker_provider_secret_v1');if(typeof q.data==='string')openaiKey=q.data}catch{}}
+    if(!openaiKey)return json({ok:false,error:'openai_key_missing'},500);
+
+    const variation=Math.max(0,Math.min(9999,Number(b.variation||0)));
+    const instructions=`Você é diretor criativo especialista em vídeos curtos de varejo para Instagram Reels e em prompts para Google Flow / Gemini Omni Flash 1.1.
+Sua tarefa é produzir SOMENTE o prompt final do vídeo, em português, pronto para copiar no Flow.
+O vídeo é sempre UM ÚNICO vídeo vertical 9:16 de EXATAMENTE 10 segundos.
+Estrutura fixa e obrigatória: 0–1s abertura; 1–6s produtos; 6–10s CTA.
+A abertura deve ter uma chamada curtíssima criada por você e completamente ligada ao TEMA recebido.
+Os 5 segundos de produtos devem usar as 4 imagens anexadas apenas como referências dos produtos, nunca como slideshow.
+O CTA final deve ser simples e muito legível e mostrar exatamente: "Entrega grátis em Cuiabá e VG", "donaantonia.com.br", "WhatsApp 98449-1018".
+A logo oficial será anexada separadamente. Ela deve aparecer SOMENTE no CTA entre 6 e 10 segundos. Reforce de forma explícita e repetida que a logo não pode ser redesenhada, recriada, deformada, recolorida, reescrita, reinterpretada ou usada antes do CTA.
+Reforce de forma explícita e repetida que os produtos precisam permanecer visualmente idênticos: não alterar rótulo, texto, marca, logotipo, embalagem, formato, proporção, tampa, cor, ilustração ou qualquer detalhe. Se as fotos tiverem fundo cinza, branco ou colorido, remova somente esse fundo e preserve o produto intacto.
+Áudio: SOMENTE trilha instrumental. Proibido locução, narração, voz, canto, diálogo, vocal chop, sussurro ou palavra falada.
+O criativo inteiro — chamada, direção de arte, movimentos, paleta, elementos gráficos, ritmo e metáforas visuais — deve ser adaptado ao TEMA. Se o tema for uma marca, use os produtos da referência como verdade visual e não invente novo logotipo, slogan ou identidade da marca.
+As orientações adicionais são preferências do usuário: incorpore-as quando existirem sem violar as regras fixas.
+Faça um prompt forte para retenção em Reels: primeiro frame impactante, mudanças visuais frequentes, stop motion com recortes físicos, movimentos secos, snaps, saltos curtos e match cuts. Evite poluição visual.
+Não enumere os nomes dos 16 produtos no prompt final; use os metadados apenas para entender o tema e o mix.
+A cada variation diferente, mude de verdade o conceito criativo, gancho, direção visual e direção musical, mantendo todas as regras fixas.`;
+
+    const input=JSON.stringify({
+      theme,
+      directions:directions||null,
+      variation,
+      products,
+      fixed:{duration_seconds:10,opening_seconds:1,products_seconds:5,cta_seconds:4,whatsapp:'98449-1018',site:'donaantonia.com.br',free_delivery:'Cuiabá e VG'}
+    });
+
+    const response=await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',
+      headers:{Authorization:`Bearer ${openaiKey}`,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'gpt-5.6-luna',
+        store:false,
+        max_output_tokens:1400,
+        reasoning:{effort:'low'},
+        instructions,
+        input:[{role:'user',content:[{type:'input_text',text:input}]}],
+        text:{verbosity:'medium'}
+      }),
+      signal:AbortSignal.timeout(45000)
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)return json({ok:false,error:'video_prompt_ai_failed',detail:cleanText(data?.error?.message||data?.error?.code||('http_'+response.status),240)},502);
+    const prompt=openAiText(data);
+    if(!prompt)return json({ok:false,error:'video_prompt_empty'},502);
+    return json({ok:true,prompt,creative_label:`Tema: ${theme}`,model:'gpt-5.6-luna'});
   }
 
   const token=(req.headers.get('Authorization')||'').replace(/^Bearer\s+/i,'').trim();
