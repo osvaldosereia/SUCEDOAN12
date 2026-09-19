@@ -13,7 +13,19 @@ const CONCEPTS=[
 ['Esteira impossível','Comece com produtos atravessando o quadro em uma esteira visual muito rápida; alguns param abruptamente, crescem e viram protagonistas antes de sair e dar lugar aos próximos.'],
 ['Pop sincronizado','Abra com flashes de fundos sólidos e produtos surgindo exatamente nas batidas imaginárias. Construa uma sequência de pops, pequenos saltos, rotações mínimas e mudanças de escala com sensação musical.']
 ];
-function makePrompt(){let idea=$('idea').value.trim(),c=CONCEPTS[(promptSerial++)%CONCEPTS.length];return `Crie um vídeo publicitário vertical 9:16 de EXATAMENTE 10 segundos para Instagram Reels usando os produtos presentes nas imagens de referência anexadas. As imagens servem SOMENTE para identificar os produtos.
+const AUDIO_STYLES=[
+['Percussão eletrônica quebrada','batida seca e sincopada, micropercussões, cliques, estalos e graves curtos; sem melodia publicitária óbvia'],
+['Nu-disco recortado','groove disco moderno, baixo elástico, palmas secas e pequenos cortes rítmicos; alegre sem soar jingle'],
+['Funk eletrônico minimal','groove de baixo e bateria minimalista, swing marcante, pausas e retomadas para sincronizar os produtos'],
+['Electro-pop percussivo','sintetizadores curtos, bateria punchy, stabs e viradas inesperadas; sem refrão vocal genérico'],
+['Breakbeat colorido','breaks ágeis, percussão orgânica misturada a eletrônica e pequenas quebras de silêncio antes dos impactos'],
+['House quirky','house leve e excêntrico, groove rápido, sons pequenos e inesperados e baixo curto; evitar clima de balada genérica'],
+['Percussão latina futurista','ritmo latino abstrato com percussões digitais, graves controlados e acentos rápidos; sem clichês tropicais'],
+['Glitch groove','microcortes, clicks, pops, textura digital e batida dançante; usar glitches como pontuação, não como ruído constante'],
+['Indie dance instrumental','baixo dançante, bateria seca e pequenos riffs instrumentais com personalidade; sensação contemporânea e espontânea'],
+['Organic beat moderno','palmas, madeira, snaps e percussões táteis combinadas a subgrave discreto; sensação física de stop motion']
+];
+function makePrompt(){let idea=$('idea').value.trim(),serial=promptSerial++,c=CONCEPTS[serial%CONCEPTS.length],a=AUDIO_STYLES[(serial*3+Math.floor(serial/CONCEPTS.length))%AUDIO_STYLES.length];return `Crie um vídeo publicitário vertical 9:16 de EXATAMENTE 10 segundos para Instagram Reels usando os produtos presentes nas imagens de referência anexadas. As imagens servem SOMENTE para identificar os produtos.
 
 REGRA ABSOLUTA — FIDELIDADE DO PRODUTO
 O produto deve permanecer VISUALMENTE IDÊNTICO à fotografia de referência durante toda a animação. NÃO altere, reescreva, recrie, corrija, traduza, complete ou estilize absolutamente NADA do rótulo ou da embalagem. Preserve pixel visualmente: nome da marca, logotipo, textos, letras, números, cores, ilustrações, selos, códigos, formato, tampa e proporções. Não invente texto. Não substitua caracteres. Não faça morphing. Não misture dois produtos. Se algum detalhe do rótulo não puder ser preservado, mantenha a fotografia original do produto em vez de tentar reconstruí-lo.
