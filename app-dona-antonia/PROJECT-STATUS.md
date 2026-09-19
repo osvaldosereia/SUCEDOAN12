@@ -28,16 +28,15 @@
 - A4 deep links/notificações: concluída até limite não nativo.
 - A5 mídia/privacidade/dados locais: esgotada programaticamente até limite nativo.
 - A6 HML/backend: esgotada programaticamente sem deploy.
-- A7 UX/acessibilidade/offline/desempenho: **avançada; fechamento programático em andamento**.
-- A8–A9: pendentes.
+- A7 UX/acessibilidade/offline/desempenho: esgotada programaticamente até limite de browser/aparelho.
+- A8 release/store/native readiness: esgotada documentalmente até limite nativo/humano.
+- A9 auditoria final: **próxima**.
 
-## Checkpoint A7 — 19/09/2026
-A base já preserva viewport mínimo de 320px, touch targets primários de 44px, foco visível, reduced motion, contraste forçado e estados loading/empty/error/offline. `uxReadiness.ts` adiciona recovery determinístico e limitado para offline/error, budgets explícitos de JS/CSS/imagem crítica e contrato de acessibilidade para tamanho, label e teclado. Testes unitários correspondentes foram versionados.
+## Checkpoint A8 — 19/09/2026
+A auditoria estática A7 não deixou tarefa independente adicional identificada; medições e acessibilidade restantes exigem browser/aparelho real. A8 consolidou `STORE-RELEASE-READINESS.md` com gates Android/iOS, assinatura, metadata, reviewer TEST, privacy/data-safety e evidências exigidas. O preflight nativo continua fail-closed e Android/iOS continuam explicitamente não homologados.
 
 ### Validação honesta
-Os testes novos não são declarados verdes sem runner/typecheck real associado ao HEAD. Leitor de tela, teclado real, métricas de performance e comportamento nativo exigem execução em ambiente/dispositivo apropriado. Nenhum deploy, pedido, push ou integração externa foi acionado.
+Testes/typecheck não são declarados verdes sem runner associado ao HEAD. Nenhum build Gradle/Xcode, APK/AAB/IPA, console de loja, TestFlight, publicação, deploy, pedido, push ou integração externa foi acionado.
 
 ## Próximo trabalho seguro
-1. fechar auditoria estática restante da A7;
-2. executar A8 release/store/native readiness somente documental/preflight;
-3. em A9 criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; `PROGRAMMATIC_COMPLETE=true` somente se nenhuma tarefa segura independente restar.
+Executar A9: auditoria final da branch e dos gates, corrigir qualquer restante seguro, criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md` e somente então avaliar `PROGRAMMATIC_COMPLETE=true`.
