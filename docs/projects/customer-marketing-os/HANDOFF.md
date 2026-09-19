@@ -4,76 +4,54 @@
 
 Projeto: **Dona Antônia — Customer & Marketing OS**. GitHub `osvaldosereia/SUCEDOAN12`; Supabase `ssbesxgaijknwsjbsbcz`. Leia também `CURRENT-STATE.md` e `AUTONOMOUS-COMPLETION-PLAN.md`. Confirme HEAD antes de editar e preserve trabalhos paralelos. Runtime Supabase-first; Make somente histórico/auditoria. Não iniciar CM-2.
 
-## Estado canônico — 19/09/2026 ~02:16 America/Cuiaba
+## Estado canônico — 19/09/2026 ~03:16 America/Cuiaba
 
 - **20 critérios = 15 verified / 5 implemented / 0 blocked**;
-- `ready_for_manual_canary=true`;
 - `safe_for_internal_homologation=true`;
 - `cm1_complete=false`;
 - `external_activation_authorized=false`;
 - external side effect=false.
 
-Implemented restantes:
-- 2 Identity Resolver — 2 conflitos reais; decisão humana;
-- 7 Product View — `product_view=0`, collector pronto;
-- 13 Opportunity Lifecycle — 75 suppressed, 0 lifecycle fechado;
-- 15 Marketing Brain SUGGEST — gate OFF;
-- 18 AI cost — ledger pronto, 0 execuções/custo.
+Pendentes: Identity Resolver (2 conflitos humanos), Product View (`product_view=0`), Opportunity Lifecycle (75 suppressed/0 fechado), Marketing Brain SUGGEST (OFF) e AI cost (0 execução/custo).
 
-Evidência orgânica: receipts=18; catalog_open=64; catalog_search=31; product_view=0; carrinho=437; pedidos=47; timeline=1388. Próxima expiração natural de oportunidade: 23/09/2026 17:00:15 UTC.
+Evidência orgânica atual: receipts=18; catalog_open=64; catalog_search=50; product_view=0; carrinho=466; pedidos=47; timeline=1436.
 
 ## Gates obrigatórios
 
-Manter Meta Direct OFF, canonical outbound OFF, publishing OFF, strategy AI OFF, canary 0%, marketing kill switch ON, orçamento IA 0. Não testar PIN, não auto-resolver identidade, não fabricar evidência.
+Manter Meta Direct OFF, canonical outbound OFF, publishing OFF, strategy AI OFF, canary 0%, marketing kill switch ON e orçamento IA 0. Não testar PIN, não auto-resolver identidade, não fabricar evidência.
 
-Meta: WABA + Phone Number ID presentes; Graph API v26.0; Flow health separado e verificado; token WhatsApp read-only no Vault ausente; permissões e callback Direct não verificados; direct_ready_flag=false.
+Meta: WABA + Phone Number ID presentes; Graph API v26.0; Flow health separado; token WhatsApp read-only no Vault ausente; permissões/callback Direct não verificados; direct_ready_flag=false.
 
 ## Plano autônomo
 
-- Rodada 06 — concluída;
-- Rodada 07 — concluída;
-- Rodada 08 — **concluída tecnicamente**;
-- Rodada 09 — próxima;
-- Rodadas 10–14 — pendentes.
+- Rodadas 06–09 — concluídas;
+- Rodada 10 — próxima;
+- Rodadas 11–14 — pendentes.
 
-### Rodada 08 concluída
+### Rodada 09 concluída
 
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-08.md`.
+Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-09.md`.
 
-Entregue:
-- CI da Rodada 07 confirmado SUCCESS (`35423379708`);
-- contrato Meta read-only auditado;
-- GET-only e proibição de envio/mutação confirmados;
-- scopes `whatsapp_business_management` e `whatsapp_business_messaging` explícitos;
-- callback esperado `whatsapp-meta-direct-v1` e separação Flow health/Direct confirmados;
-- novo teste `test-cm-1-meta-preflight-fail-closed-v2.mjs`;
-- workflow dedicado `Customer OS · Meta Preflight` criado;
-- run inicial `35426161049` estava `in_progress` no fechamento; confirmar no início da Rodada 09.
+Entregue sem tocar nos 2 casos reais:
+- CI Meta da Rodada 08 `35426161049` confirmado SUCCESS;
+- revisão da UI: escolha explícita, justificativa, confirmação, mascaramento visual e aviso no-merge já presentes;
+- ledger `customer_identity_review_audit` criado no Supabase;
+- anon/authenticated sem acesso; service_role only;
+- UPDATE/DELETE bloqueados por trigger append-only;
+- toda transição real pending -> approved/rejected passa a gerar auditoria automaticamente;
+- RPC transacional preparado para evolução segura;
+- validação read-only: 0 registros de auditoria, ambos triggers ativos; portanto nenhum conflito real foi decidido.
 
-Nenhuma alteração/deploy de runtime foi necessária: o comportamento requerido já existia e permaneceu fail-closed.
+## Próxima rodada — 10
 
-## Próxima rodada — 09
+**Comprar / Product View / Event Collector.**
 
-**Identity Review: preparação final humana.**
-
-Antes de programar:
-1. confirmar resultado do run `35426161049`;
-2. confirmar HEAD atual e preservar paralelo;
-3. reexecutar RPCs canônicos.
-
-Pode avançar:
-- revisar fila/UX dos conflitos;
-- melhorar evidências exibidas para candidatos;
-- mascarar dados sensíveis;
-- exigir justificativa;
-- impedir auto-merge;
-- garantir auditoria append-only;
-- adicionar testes isolados de aprovação/rejeição sem tocar nos casos reais;
-- deixar decisão humana real simples e segura.
-
-## Não fazer
-
-Não ativar outbound/Meta Direct/publishing/IA externa; não submeter templates; não criar consentimento/product_view/lifecycle/custo artificial; não testar PIN; não auto-resolver identidade; não limpar flags legadas sem auditoria; não usar Make como runtime; não transformar readiness em autorização.
+1. confirmar HEAD e preservar paralelo;
+2. reexecutar RPCs canônicos;
+3. provar asset/frontend publicado e cache busting;
+4. validar caminho clique -> trackProductView -> Edge -> RPC sem criar evento real artificial;
+5. cobrir deduplicação, room token, produto inexistente, reload e navegação;
+6. confirmar que critério 7 passa a depender exclusivamente de abertura real de produto.
 
 ## Dependências humanas/orgânicas atuais
 
