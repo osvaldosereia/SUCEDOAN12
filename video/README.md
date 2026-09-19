@@ -54,3 +54,16 @@ O prompt é adaptado à quantidade real de produtos e imagens, mas a duração p
 Reutiliza a Edge Function existente `creative-storyboard-projects`:
 - `video_search_products`: busca pública limitada a 16 produtos com imagem;
 - `video_generate_prompt`: geração de prompt IA adaptado dinamicamente a 1–16 produtos e 1–4 referências.
+
+
+## Linha do tempo modular
+A aba **Linha do tempo** cria de 1 a 20 etapas. Cada etapa gera **somente o prompt** para o Google Flow e pode ser usada isoladamente.
+
+Módulos disponíveis:
+- Abertura / prompt: orientação, frase opcional, produtos opcionais;
+- Vídeo / prompt: conteúdo principal, produtos opcionais;
+- Transição contagem regressiva: 5 → 1;
+- Transição passagem do tempo: ex. 30 minutos;
+- Encerramento / CTA: logo Dona Antônia, WhatsApp 98449-1018, www.donaantonia.com.br e Entrega grátis em Cuiabá e VG.
+
+Cada módulo escolhe independentemente 4, 6, 8 ou 10 segundos. A automação recebe contexto do módulo anterior e do seguinte para manter continuidade.
