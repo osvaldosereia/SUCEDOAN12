@@ -11,23 +11,18 @@ Fase `connection_homologation`, com desenvolvimento interno autônomo. Meta App 
 Publicação deve permanecer fechada: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, `attribution_recording_enabled=false`, channel gates=false. Sem canary sem autorização explícita. Make não é runtime novo.
 
 ## Rodadas concluídas
-- Rodada 11: Observabilidade + Agenda Editorial concluída.
+- Rodada 11 — Observabilidade + Agenda Editorial.
+- Rodada 12 — Atribuição Comercial + Métricas de Canal, com fundação completa OFF/read-only: UTM preview, evidence chain, snapshots RLS/service-role-only, adapters puros Meta/Pinterest, fixtures/contratos sem rede e `channel_metrics` fail-closed.
 
-## Rodada 12 — checkpoint avançado
-Atribuição e métricas agora possuem fundação completa em modo seguro: tracking UTM preview-only, touchpoints/evidence chain, snapshots RLS/service-role-only, `evidence_key` único, read-model normalizado, adapters puros Meta/Pinterest e testes/contratos sem rede.
+## Rodada 13 — checkpoint
+Learning/Planner V1 já existem como read-model/dry-run determinísticos. Foi adicionada a camada pura V2 em `scripts/marketing-round13-learning-planner-v2.mjs`, cobrindo thresholds mínimos, `insufficient_data`, anti-repetição produto/hook/formato/canal, memória criativa, `NO_ACTION`/`SUGGEST`, limites de custo/frequência lógica, DRAFT gate OFF e zero IA/side effect.
 
-Novo estado:
-- `marketing_channel_metric_snapshots` e `marketing_channel_metrics_read_model_v1()` ativos;
-- adapters puros em `scripts/marketing-channel-metrics-adapters-v1.mjs`;
-- fixtures/teste em `scripts/marketing-channel-metrics-adapters-v1.test.mjs`;
-- contrato fail-closed em `scripts/marketing-round12-contract.test.mjs`;
-- `admin-marketing-insights-v1` v19 / ACTIVE / JWT=true com action `channel_metrics` read-only;
-- Admin client expõe `getMarketingChannelMetrics(days)`;
-- read-model real: `insufficient_data`, 0 snapshots, collection OFF, automatic=false, external_side_effect=false;
-- nenhum coletor externo criado/ativado e nenhuma chamada Meta/Pinterest executada.
+Testes/contratos adicionados:
+- `scripts/marketing-round13-learning-planner-v2.test.mjs`;
+- `scripts/marketing-round13-contract.test.mjs`.
 
 ## Próxima ação segura
-Executar/confirmar testes disponíveis, fechar formalmente o gate da Rodada 12 e avançar imediatamente à Rodada 13 — Learning Engine + Memória Criativa + Daily Planner. Não fabricar métricas e não consultar providers reais.
+Continuar a Rodada 13: integrar a política V2 ao caminho canônico apenas em dry-run/fail-closed, validar testes quando houver checkout executável e fechar seu gate. Em seguida avançar à Rodada 14 — Autonomy State Machine + Connection Readiness. Não fabricar métricas, não consultar providers reais e não abrir DRAFT/publishing.
 
 ## Bloqueios humanos
 - Meta App Domains + Valid OAuth Redirect URI;
