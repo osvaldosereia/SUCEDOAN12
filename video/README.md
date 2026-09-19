@@ -17,9 +17,9 @@ Módulo isolado do `SUCEDOAN12` para preparar referências e prompts de vídeo p
 9. A IA gera um prompt final adaptado ao tema para um único vídeo de 10 segundos.
 
 ## Estrutura fixa do vídeo
-- 0–1 s: abertura temática.
-- 1–6 s: produtos.
-- 6–10 s: CTA.
+- 0–2 s: abertura temática.
+- 2–10 s: produtos.
+- Sem CTA.
 
 ## Regras fixas
 - não usar CTA;
