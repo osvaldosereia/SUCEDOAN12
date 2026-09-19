@@ -132,6 +132,45 @@ A cada variation diferente, mude de verdade o conceito criativo, gancho, direç�
     return json({ok:true,prompt,creative_label:`Tema: ${theme} · ${productCount} produto${productCount===1?'':'s'}`,model:'gpt-5.6-luna',product_count:productCount,image_count:imageCount});
   }
 
+  if(action==='video_timeline_prompt'){
+    const types=['opening','content','transition_countdown','transition_time','closing_cta'];
+    const moduleType=cleanText(b.module_type,40),duration=Number(b.duration);
+    if(!types.includes(moduleType))return json({ok:false,error:'video_module_type_invalid'},400);
+    if(![4,6,8,10].includes(duration))return json({ok:false,error:'video_module_duration_invalid'},400);
+    const orientation=cleanText(b.orientation,900),phrase=cleanText(b.phrase,140),elapsedTime=cleanText(b.elapsed_time,80),theme=cleanText(b.theme,120);
+    const products=arr(b.products).slice(0,16).map((p:any)=>({name:cleanText(p?.name,140),brand:cleanText(p?.brand,80),category:cleanText(p?.category,80),subcategory:cleanText(p?.subcategory,80),packaging:cleanText(p?.packaging,80)})).filter((p:any)=>p.name);
+    const context={position:Math.max(1,Number(b.context?.position||1)),total:Math.max(1,Number(b.context?.total||1)),previous:b.context?.previous||null,next:b.context?.next||null};
+    let openaiKey=Deno.env.get('OPENAI_API_KEY')||'';
+    if(!openaiKey){try{const q=await sb.rpc('get_conversation_worker_provider_secret_v1');if(typeof q.data==='string')openaiKey=q.data}catch{}}
+    if(!openaiKey)return json({ok:false,error:'openai_key_missing'},500);
+    const rules:any={
+      opening:'ABERTURA: criar um começo forte e imediatamente compreensível. A frase fornecida, quando existir, deve aparecer exatamente como informada. Terminar preparando continuação natural.',
+      content:'CONTEÚDO: desenvolver a ideia principal com início, meio e fim. Se houver produtos, todos devem permanecer visualmente idênticos às referências.',
+      transition_countdown:'TRANSIÇÃO CONTAGEM REGRESSIVA: criar transição visual clara 5 → 4 → 3 → 2 → 1. É ligação entre clipes, não conteúdo principal nem CTA.',
+      transition_time:'TRANSIÇÃO PASSAGEM DO TEMPO: representar de forma rápida e inequívoca que o tempo informado passou, usando metáforas visuais coerentes com o contexto.',
+      closing_cta:'ENCERRAMENTO / CTA: fechamento comercial limpo, estável e legível. Preservar a logo oficial da Dona Antônia sem redesenhar. Mostrar exatamente: WhatsApp 98449-1018; www.donaantonia.com.br; Entrega grátis em Cuiabá e VG.'
+    };
+    const instructions=`Você é diretor criativo de vídeos verticais 9:16 para Google Flow / Gemini. Gere SOMENTE o prompt final em português para UM pequeno clipe de exatamente ${duration} segundos.
+Este clipe é o módulo ${context.position} de ${context.total} de uma linha do tempo maior.
+TIPO: ${moduleType}.
+REGRA: ${rules[moduleType]}
+Mantenha coerência com tema geral e com os módulos anterior e seguinte quando houver.
+Se houver produtos, trate cada produto como asset fotográfico bloqueado: não redesenhar, recriar, reescrever, traduzir, deformar, trocar embalagem, marca, rótulo, texto, número, cor ou proporção. Remover somente o fundo ao redor quando necessário.
+Se não houver produtos, não invente produtos.
+Áudio: somente trilha instrumental e efeitos sonoros discretos; sem locução, diálogo, canto ou palavras faladas.
+O clipe deve ter começo, desenvolvimento e resolução apropriados ao seu papel.
+Não invente telefone, site, preço, desconto, promoção, slogan ou texto comercial além do explicitamente solicitado.
+Duração rígida: exatamente ${duration} segundos.`;
+    const input=JSON.stringify({module_type:moduleType,duration_seconds:duration,theme:theme||null,orientation:orientation||null,on_screen_phrase:phrase||null,elapsed_time:moduleType==='transition_time'?(elapsedTime||'passagem de tempo'):null,products,context,variation:Number(b.variation||0)});
+    const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${openaiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-5.6-luna',store:false,max_output_tokens:1200,reasoning:{effort:'low'},instructions,input:[{role:'user',content:[{type:'input_text',text:input}]}],text:{verbosity:'medium'}}),signal:AbortSignal.timeout(45000)});
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)return json({ok:false,error:'video_timeline_prompt_failed',detail:cleanText(data?.error?.message||data?.error?.code||('http_'+response.status),240)},502);
+    const prompt=openAiText(data);
+    if(!prompt)return json({ok:false,error:'video_timeline_prompt_empty'},502);
+    return json({ok:true,prompt,module_type:moduleType,duration,product_count:products.length,model:'gpt-5.6-luna'});
+  }
+
+
   const token=(req.headers.get('Authorization')||'').replace(/^Bearer\s+/i,'').trim();
   if(!token)return json({ok:false,error:'missing_token'},401);
   const{data:ud,error:ue}=await sb.auth.getUser(token);
