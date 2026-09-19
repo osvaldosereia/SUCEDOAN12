@@ -2,153 +2,75 @@
 
 **Leia este arquivo primeiro em qualquer nova janela/rodada.**
 
-## Retomada obrigatória
+Projeto: **Dona Antônia — Customer & Marketing OS**. GitHub `osvaldosereia/SUCEDOAN12`; Supabase `ssbesxgaijknwsjbsbcz`. Leia também `CURRENT-STATE.md` e `AUTONOMOUS-COMPLETION-PLAN.md`. Confirme HEAD antes de editar e preserve trabalhos paralelos. Runtime Supabase-first; Make somente histórico/auditoria. Não iniciar CM-2.
 
-Projeto: **Dona Antônia — Customer & Marketing OS**.
+## Estado canônico — 19/09/2026 ~01:14 America/Cuiaba
 
-- GitHub: `osvaldosereia/SUCEDOAN12`;
-- Supabase: `ssbesxgaijknwsjbsbcz`;
-- ler `CURRENT-STATE.md` e `AUTONOMOUS-COMPLETION-PLAN.md`;
-- confirmar HEAD antes de editar e preservar trabalhos paralelos;
-- runtime operacional Supabase-first;
-- Make somente histórico/auditoria;
-- não iniciar CM-2 antes do encerramento correto da CM-1.
-
-## Estado canônico atual
-
-RPCs canônicos reexecutados em 19/09/2026 00:14 America/Cuiaba:
-
-- 20 critérios;
-- **15 verified**;
-- **5 implemented**;
-- **0 blocked**;
+- **20 critérios = 15 verified / 5 implemented / 0 blocked**;
 - `ready_for_manual_canary=true`;
 - `safe_for_internal_homologation=true`;
 - `cm1_complete=false`;
 - `external_activation_authorized=false`;
 - external side effect=false.
 
-Critérios ainda implemented:
+Implemented restantes:
+- 2 Identity Resolver — 2 conflitos reais; decisão humana;
+- 7 Product View — `product_view=0`, collector pronto;
+- 13 Opportunity Lifecycle — 75 suppressed, 0 lifecycle fechado;
+- 15 Marketing Brain SUGGEST — gate OFF;
+- 18 AI cost — ledger pronto, 0 execuções/custo.
 
-- 2 Identity Resolver — **2 conflitos reais**; revisão humana obrigatória;
-- 7 Product View — collector pronto; `product_view=0`;
-- 13 Opportunity Lifecycle — 75 suppressed; nenhum lifecycle fechado ainda;
-- 15 Marketing Brain SUGGEST — capacidade pronta, gate OFF;
-- 18 AI cost measured — ledger pronto, 0 execuções governadas reais.
+Evidência orgânica: receipts=18; catalog_open=64; **catalog_search=31**; product_view=0; carrinho=437; pedidos=47; timeline=1388. Próxima expiração natural de oportunidade: 23/09/2026 17:00:15 UTC.
 
-Evidência orgânica importante:
+## Gates obrigatórios
 
-- PapoAI receipts=18;
-- `catalog_open=64`;
-- `catalog_search=19` — critério 6 já verified;
-- `product_view=0`;
-- carrinho=437;
-- pedidos=47;
-- timeline=1376;
-- oportunidades=75 suppressed;
-- próxima expiração natural de oportunidade: 23/09/2026 17:00:15 UTC.
+Manter Meta Direct OFF, canonical outbound OFF, publishing OFF, strategy AI OFF, canary 0%, marketing kill switch ON, orçamento IA 0. Não testar PIN, não auto-resolver identidade, não fabricar evidência.
 
-## Gates / segurança
-
-Manter:
-
-- Meta Direct OFF;
-- canonical outbound OFF;
-- publishing OFF;
-- strategy AI OFF;
-- canary externo 0%;
-- marketing kill switch ON;
-- orçamento IA 0;
-- nenhum PIN testado/descoberto;
-- nenhum conflito real auto-resolvido;
-- nenhuma evidência fabricada.
-
-Meta atual:
-
-- WABA e Phone Number ID presentes;
-- Graph API `v26.0`;
-- Flow health verified separadamente;
-- System User token WhatsApp read-only no Vault: ausente;
-- permissões WhatsApp: unverified;
-- callback Meta Direct: unverified;
-- `direct_ready_flag=false`;
-- blockers: permissions, webhook Direct e flag.
+Meta: WABA + Phone Number ID presentes; Graph API v26.0; Flow health separado e verificado; token WhatsApp read-only no Vault ausente; permissões e callback Direct não verificados; direct_ready_flag=false.
 
 ## Plano autônomo
 
-Arquivo: `AUTONOMOUS-COMPLETION-PLAN.md`.
+- Rodada 06 — CONCLUÍDA;
+- Rodada 07 — **CONCLUÍDA**;
+- Rodada 08 — próxima;
+- Rodadas 09–14 — pendentes.
 
-Estado:
+### Rodada 07 concluída
 
-- Rodada 06 — **CONCLUÍDA**;
-- Rodada 07 — próxima;
-- Rodadas 08–14 — pendentes.
+Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-07.md`.
 
-### Rodada 06 concluída
+Entregue:
+- `admin/relationship-homologation-hardening.js`;
+- `admin/relationship-homologation-hardening.css`;
+- HTML versionado carregando hardening;
+- ARIA para tabs/status, foco visível e ajustes mobile;
+- distinção visual entre **Ação humana** e **Evidência real** nos critérios implemented;
+- aviso explícito de Meta diagnóstico somente leitura;
+- contrato `scripts/test-cm-1-relationship-hardening-v1.mjs`;
+- workflow dedicado `.github/workflows/test-customer-os-relationship-hardening.yml`;
+- run inicial `35423379708` estava in_progress no último check; confirmar conclusão na próxima rodada.
 
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-06.md`.
+HEAD inicial observado: `106cc4589ba1a43a99f1e2d15c6403778de8e67c`, mudança paralela de vídeo; preservada.
 
-Foi feita auditoria de regressão/CI/consistência:
+## Próxima rodada — 08
 
-- HEAD inicial observado: `7314fe5123c5e619869267f651bca2d61ee11beb`;
-- HEAD recente era trabalho paralelo de vídeo/Studio Criativo e foi preservado;
-- workflow Customer OS continua `.github/workflows/test-admin-v3.yml`;
-- última suíte Customer OS ampliada conhecida: run `35388463946`, SUCCESS, 38 validações;
-- no HEAD paralelo, workflow geral `Testar Admin e compatibilidade Vitrine` run `35420372760` passou;
-- não confundir esse run geral com execução da suíte Customer OS no HEAD atual;
-- nenhuma regressão funcional Customer OS conhecida foi encontrada;
-- `CURRENT-STATE.md` foi normalizado para o runtime real 15/5/0.
+**Meta Direct preflight completo sem credencial humana.**
 
-## Próxima rodada — 07
-
-**Hardening da Central de Relacionamento.**
-
-Pode avançar autonomamente:
-
-- revisar UX da homologação sem usar PIN;
-- separar claramente “programado”, “aguardando evidência real” e “ação humana”;
-- melhorar Meta Foundation/readiness sem criar ativação;
-- melhorar loading/erro/vazio;
-- revisar acessibilidade e comportamento responsivo por código/contrato;
-- adicionar refresh somente read-only se útil;
-- atualizar testes contratuais;
-- preservar todos os gates.
-
-Se a Rodada 07 terminar cedo, avançar Rodada 08 na mesma execução se continuar seguro.
+Pode avançar:
+- confirmar CI da Rodada 07;
+- revisar contrato de leitura do Vault e scopes esperados;
+- revisar WABA/Phone/Graph/callback esperado;
+- reforçar fail-closed e auditoria do diagnóstico;
+- adicionar testes isolados para token ausente/inválido, scope ausente, sucesso e callback divergente;
+- garantir que diagnóstico read-only nunca envie mensagem nem habilite runtime;
+- deixar como única pendência externa a credencial/evidência humana real, se tecnicamente possível.
 
 ## Não fazer
 
-- não reiniciar CM-1;
-- não ativar outbound/Meta Direct/publishing/IA externa;
-- não submeter templates;
-- não criar consentimento artificial;
-- não criar `product_view` artificial;
-- não alterar lifecycle real para fechar checklist;
-- não executar IA paga para produzir custo/evidência;
-- não testar PIN;
-- não auto-resolver identidade;
-- não limpar flags legadas sem auditoria de dependências;
-- não usar Make como runtime;
-- não transformar readiness em autorização externa.
+Não ativar outbound/Meta Direct/publishing/IA externa; não submeter templates; não criar consentimento/product_view/lifecycle/custo artificial; não testar PIN; não auto-resolver identidade; não limpar flags legadas sem auditoria; não usar Make como runtime; não transformar readiness em autorização.
 
-## O que já depende do responsável/evidência real
+## Dependências humanas/orgânicas atuais
 
-- revisar 2 conflitos de identidade;
-- abrir produto real no Comprar para `product_view`;
-- fornecer/configurar System User token WhatsApp no Vault;
-- executar diagnóstico Meta read-only autenticado;
-- validar PIN/interface da Central no navegador;
-- aceitar Policy Registry como gate humano;
-- homologar callback Meta Direct;
-- decidir se haverá execução real governada de SUGGEST/IA/custo;
-- autorizar separadamente qualquer ativação externa futura.
+Revisar 2 conflitos; abrir produto real; fornecer System User token WhatsApp no Vault; executar diagnóstico Meta read-only autenticado; validar PIN/interface; aceitar Policy Registry; homologar callback Meta Direct; decidir sobre execução real governada de SUGGEST/IA/custo; autorizar separadamente qualquer ativação externa futura.
 
-## Regra de fechamento de cada rodada
-
-1. consultar runtime canônico antes de assumir contagens;
-2. confirmar HEAD novamente antes de escrever;
-3. preservar trabalho paralelo;
-4. programar/testar/auditar o máximo seguro;
-5. atualizar `CURRENT-STATE.md` e este `HANDOFF.md`;
-6. registrar documento/commit da rodada;
-7. promover critérios somente com evidência real conforme os RPCs canônicos.
+Ao final de cada rodada: consultar runtime, confirmar HEAD, programar/testar o máximo seguro, atualizar `CURRENT-STATE.md` e este `HANDOFF.md`, registrar documento/commit e promover critérios somente por evidência real.
