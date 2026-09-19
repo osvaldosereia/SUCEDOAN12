@@ -1,6 +1,6 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot canônico atualizado em **19/09/2026 ~07:13 America/Cuiaba**.
+Snapshot canônico atualizado em **19/09/2026 ~08:40 America/Cuiaba**.
 
 ## Estado geral
 
@@ -12,47 +12,72 @@ Snapshot canônico atualizado em **19/09/2026 ~07:13 America/Cuiaba**.
 - `external_activation_authorized=false`;
 - external side effect=false.
 
+## Programação autônoma
+
+**Rodadas 06–14 concluídas.**
+
+A programação segura/independente conhecida da CM-1 foi esgotada. O projeto está congelado aguardando ações humanas/evidências reais.
+
+Documentos finais:
+- `HUMAN-ACTIONS-FINAL.md`;
+- `FINAL-AUTONOMOUS-CHECKLIST.md`;
+- `CM1-AUTONOMOUS-COMPLETION-ROUND-14.md`.
+
 ## Cinco critérios ainda implemented
 
-- **2 Identity Resolver:** 2 conflitos reais; revisão humana obrigatória; nenhum auto-merge.
-- **7 Product View:** caminho técnico endurecido; `product_view=0`; aguarda abertura real.
+- **2 Identity Resolver:** 2 conflitos reais; revisão humana obrigatória.
+- **7 Product View:** caminho técnico pronto; `product_view=0`; aguarda abertura real.
 - **13 Opportunity Lifecycle:** 75 suppressed e 0 terminal; próxima expiração natural `2026-09-23T17:00:15.936202+00:00`.
 - **15 Marketing Brain SUGGEST:** capacidade pronta; gate OFF; briefs=0.
-- **18 AI cost measured:** ledger/idempotência prontos; 0 execuções governadas e custo 0.
+- **18 AI cost measured:** ledger/idempotência prontos; 0 execução governada/custo.
 
 ## Evidência real atual
 
-- PapoAI receipts=18;
-- `catalog_open=64`;
+- PapoAI receipts=19;
+- provider identities=17;
+- `catalog_open=65`;
 - `catalog_search=50`;
 - `product_view=0`;
 - cart events=466;
 - orders=47;
-- consentimento positivo de marketing=0.
+- timeline rows=1438;
+- positive marketing consent=0.
 
-## Runtime protegido
+## Meta / Policy
 
-PapoAI inbound ativo/outbound desligado; canonical outbound=false; AI=false; auto reply=false; canary=0%; Meta Direct=false; marketing enabled=false; publishing=false; runtime templates=0; kill switch=true; orçamento IA=0; efeitos externos marketing/IA 7d=0.
+Meta Direct:
+- WABA=true;
+- Phone Number ID=true;
+- Graph API v26.0;
+- permissions_clear=false;
+- webhook_ready=false;
+- direct_ready_flag=false;
+- ready=false.
 
-`automation_config` ainda possui flags legadas outbound/live, mantidas sem mutação porque os gates canônicos fechados são autoritativos; readiness expõe isso apenas como warning informacional.
+Blockers:
+1. `permissions_unverified_or_blocking`;
+2. `webhook_not_verified`;
+3. `direct_ready_flag_false`.
 
-## Plano autônomo
+Policy Registry: **8/8 técnico pronto**, stale=0, source missing=0, fail-closed violations=0.
 
-- Rodadas 06–13 — **concluídas**;
-- Rodada 14 — próxima/final.
+Token WhatsApp read-only no Vault: ausente.
 
-### Rodada 13 — auditoria final de segurança e legado
+## Segurança
 
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-13.md`.
+- Meta Direct OFF;
+- canonical outbound OFF;
+- PapoAI outbound disabled;
+- publishing OFF;
+- runtime templates=0;
+- strategy AI OFF;
+- budget IA=0;
+- canary=0%;
+- marketing kill switch ON;
+- external effects AI/marketing 7d=0.
 
-Revalidados gates canônicos, PapoAI outbound OFF, Meta Direct OFF, publishing OFF, templates runtime=0, side effects=0, RLS em configurações sensíveis e grants dos RPCs canônicos restritos a `postgres/service_role`. Busca de código não encontrou dependência operacional Make nem evidência de service-role secret literal em frontend. Nenhuma limpeza perigosa do legado foi feita.
+## Próximo passo oficial
 
-## Próxima rodada — 14
+Seguir `HUMAN-ACTIONS-FINAL.md`.
 
-Freeze da programação autônoma e pacote final: reexecutar checklist/readiness/evidence, consolidar CI/estado, criar `HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`, atualizar docs canônicos e não declarar CM-1 concluída enquanto faltarem evidências/gates.
-
-## Ações humanas/orgânicas que permanecem
-
-Revisar 2 conflitos; abrir produto real; fornecer System User token WhatsApp no Vault; diagnóstico Meta read-only autenticado; validar PIN/interface; aceitar Policy Registry; homologar callback Meta Direct; decidir sobre execução real governada de SUGGEST/IA/custo; autorizar separadamente qualquer ativação externa futura.
-
-Supabase é runtime/source of truth; Make somente histórico/auditoria. Não iniciar CM-2.
+Não iniciar CM-2. Não fabricar evidência. Não abrir ativação externa automaticamente.
