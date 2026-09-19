@@ -20,28 +20,32 @@ Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `
 ## Rodadas 9–11 concluídas
 - Agenda V1 `preview_only`, tracking UTM preview, Learning determinístico e Daily Plan dry-run;
 - `marketing_observability_read_model_v1()` aplicada;
-- `admin-marketing-insights-v1` v17 / ACTIVE / JWT=true com `observability` read-only;
 - painel Saúde e Confiança fail-closed no Admin;
 - agenda permanece apenas sugestiva/preview, sem auto-schedule.
 
-## Rodada 12 — Atribuição Comercial + Métricas de Canal — em andamento
-- a fundação de atribuição existente já cobre `marketing_tracking_link_v1`, `marketing_attribution_touchpoints`, `evidence_key`, cadeia pai e `marketing_attribution_read_model_v1`;
-- UTM permanece preview-only e `attribution_recording_enabled=false`;
-- criada e aplicada migration `marketing_round12_channel_metrics_v1`;
-- criada tabela `marketing_channel_metric_snapshots`, RLS ligada e sem acesso `anon/authenticated`; escrita/leitura bruta reservada a `service_role`;
-- `evidence_key` é único para dedupe/idempotência;
-- snapshots suportam providers `meta` e `pinterest`, mas nenhum coletor externo foi criado/ativado;
-- criada RPC service-role-only `marketing_channel_metrics_read_model_v1()`;
-- read-model normaliza `reach`, `impressions`, `views`, `engagement`, `saves`, `shares` por canal;
-- estado real atual é `insufficient_data`, 0 snapshots, `collection.enabled=false`, `automatic=false`, `external_side_effect=false`;
-- migration canônica também foi salva no GitHub em `supabase/migrations/20260919001500_marketing_round12_channel_metrics_v1.sql`.
+## Rodada 12 — Atribuição Comercial + Métricas de Canal — praticamente concluída
+- fundação de atribuição cobre tracking UTM preview-only, touchpoints append-only, `evidence_key`, parent chain e read-model determinístico;
+- `attribution_recording_enabled=false`;
+- migration `marketing_round12_channel_metrics_v1` aplicada;
+- tabela `marketing_channel_metric_snapshots` com RLS, sem acesso `anon/authenticated`, service-role-only e `evidence_key` único;
+- RPC `marketing_channel_metrics_read_model_v1()` service-role-only normaliza reach/impressions/views/engagement/saves/shares;
+- adapters puros Meta/Pinterest adicionados em `scripts/marketing-channel-metrics-adapters-v1.mjs` sem rede nem persistência;
+- fixtures/teste de normalização adicionados em `scripts/marketing-channel-metrics-adapters-v1.test.mjs`;
+- contrato fail-closed da Rodada 12 adicionado em `scripts/marketing-round12-contract.test.mjs`;
+- backend `admin-marketing-insights-v1` ganhou action read-only `channel_metrics`, recusando qualquer read-model com collection enabled/automatic ou side effect;
+- cliente Admin ganhou `getMarketingChannelMetrics(days)`;
+- Edge Function `admin-marketing-insights-v1` implantada em v19 / ACTIVE / JWT=true preservando as actions anteriores;
+- read-model real revalidado: `insufficient_data`, 0 snapshots, collection OFF/automatic=false/external_side_effect=false;
+- nenhum coletor Meta/Pinterest foi criado ou ativado.
 
-## Invariantes revalidados
-- runtime permanece OFF/fail-closed;
+## Invariantes revalidados após deploy
+- runtime OFF/fail-closed;
+- publishing OFF;
+- max_daily_publications=0;
 - attribution recording OFF;
+- todos os channel gates OFF;
 - coletores Meta/Pinterest OFF/inexistentes;
-- published jobs continuam 0;
-- external side effect events continuam 0.
+- nenhuma consulta real aos providers nesta rodada.
 
 ## Bloqueios humanos restantes
 1. Meta App Domains + Valid OAuth Redirect URI;
@@ -50,4 +54,4 @@ Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `
 4. autorização explícita futura para canary unitário.
 
 ## Próximo ponto seguro
-Continuar a Rodada 12: adicionar contratos/adapters puros de normalização Meta/Pinterest, fixtures sintéticas, testes de dedupe/evidence e integrar o novo read-model ao backend/Admin sem criar coletor externo. Depois, se o gate da Rodada 12 estiver comprovado, avançar diretamente à Rodada 13 — Learning Engine + Memória Criativa + Daily Planner.
+Fechar formalmente o gate da Rodada 12 após executar/confirmar os testes disponíveis no ambiente e avançar diretamente à Rodada 13 — Learning Engine + Memória Criativa + Daily Planner. Não criar coleta externa para fabricar evidência.
