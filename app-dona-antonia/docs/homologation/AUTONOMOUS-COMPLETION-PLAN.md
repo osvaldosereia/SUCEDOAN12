@@ -21,11 +21,14 @@ Pairing/session sintéticos fechados com TEST IDs/tokens, expiração, uso únic
 ## Rodada A4 — Deep links e notificações ✅ PROGRAMATICAMENTE CONCLUÍDA ATÉ O LIMITE NÃO NATIVO
 Deep links mantêm roteamento determinístico e allowlist explícita; URLs absolutas exigem HTTPS. PII, credenciais e material de sessão falham fechado. Router sintético de notificações usa IDs `TEST-NOTIFICATION-*`, valida link antes do consumo e deduplica em memória. Push continua somente sintético.
 
-## Rodada A5 — Mídia, privacidade e dados locais — PARCIAL AVANÇADA
-Implementado cofre efêmero de metadados HML, IDs `TEST-MEDIA-*`, MIME/tamanho/TTL/retention fechados. A política pura `mediaPrivacyPolicy` agora valida origem/MIME, áudio <=120s e determina `strip-exif-before-boundary`, sem receber bytes, filename, URL ou texto do cliente. `LocalPrivacyRights` fornece acesso/eliminação somente para `TEST-SUBJECT-*` + `TEST-MEDIA-*`; metadados são imutáveis e correção exige apagar/recriar. Testes unitários foram adicionados, mas não são declarados verdes sem runner/typecheck real. Permissões/pickers e stripping EXIF efetivo continuam dependentes de implementação/build nativo em dispositivo.
+## Rodada A5 — Mídia, privacidade e dados locais — ESGOTADA PROGRAMATICAMENTE ATÉ LIMITE NATIVO
+Implementado cofre efêmero de metadados HML, IDs `TEST-MEDIA-*`, MIME/tamanho/TTL/retention fechados. A política pura `mediaPrivacyPolicy` valida origem/MIME, áudio <=120s e determina `strip-exif-before-boundary`, sem receber bytes, filename, URL ou texto do cliente. `LocalPrivacyRights` fornece acesso/eliminação somente para `TEST-SUBJECT-*` + `TEST-MEDIA-*`; metadados são imutáveis e correção exige apagar/recriar. Permissões/pickers e stripping EXIF efetivo continuam dependentes de implementação/build nativo em dispositivo.
 
-## Rodada A6 — HML/backend preparado para deploy
+## Rodada A6 — HML/backend preparado para deploy — EM ANDAMENTO SEGURO
 - migrations; integridade carrinho/total; idempotência/rate limit; bootstrap/catalog/checkout; contratos pairing/telemetria/privacidade; manifest/checklist; testes possíveis; sem apagar Edge Functions/aumentar plano.
+- implementados `hmlBackendPreflight.ts`, `hmlRequestSafety.ts` e `hmlBoundaryContracts.ts`.
+- bootstrap exige homologação sintética e zero requests externos; catálogo exige produtos `TEST-PRODUCT-*`, shape consistente e centavos válidos; checkout exige subject/cart/operação/idempotência/produtos sintéticos, carrinho não vazio e igualdade entre total apresentado e autoritativo.
+- testes unitários dos contratos foram versionados; não são declarados verdes sem runner/typecheck real.
 
 ## Rodada A7 — UX, acessibilidade, offline e desempenho
 - auditoria 320px/44px/teclado/foco/ARIA/contraste/reduced motion; loading/empty/error/offline; recovery; budgets; testes automatizáveis.
