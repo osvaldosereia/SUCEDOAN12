@@ -18,7 +18,8 @@ Módulo isolado do `SUCEDOAN12` para preparar referências e prompts de vídeo p
 
 ## Estrutura fixa do vídeo
 - 0–2 s: abertura temática.
-- 2–10 s: produtos.
+- 2–8,5 s: desenvolvimento e apresentação dos produtos.
+- 8,5–10 s: encerramento natural com os próprios produtos formando uma composição final estável.
 - Sem CTA.
 
 ## Regras fixas
@@ -27,7 +28,12 @@ Módulo isolado do `SUCEDOAN12` para preparar referências e prompts de vídeo p
 - preservar integralmente rótulos, embalagens e formatos;
 - remover somente fundos cinza/branco/colorido das fotos de produto;
 - somente trilha instrumental, sem voz/locução/narração;
-- usar os 10 segundos inteiros para abertura temática + apresentação dos produtos.
+- usar os 10 segundos inteiros para abertura temática + apresentação dos produtos;
+- o vídeo deve ter início, meio e fim;
+- nos últimos 1–1,5 s, o movimento desacelera e converge para uma composição final estável;
+- o último movimento deve terminar antes do frame final;
+- a trilha instrumental deve ter resolução musical sincronizada ao encerramento;
+- nunca encerrar com corte seco, movimento interrompido ou transição pela metade.
 
 ## Backend
 Reutiliza a Edge Function existente `creative-storyboard-projects`:

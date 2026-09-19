@@ -77,16 +77,18 @@ Deno.serve(async(req:Request)=>{
 Sua tarefa é produzir SOMENTE o prompt final do vídeo, em português, pronto para copiar no Flow.
 O vídeo é sempre UM ÚNICO vídeo vertical 9:16 de EXATAMENTE 10 segundos.
 Estrutura fixa e obrigatória: 0–2s abertura; 2–10s produtos. NÃO EXISTE CTA neste vídeo.
-A abertura deve ter uma chamada curtíssima criada por você e completamente ligada ao TEMA recebido.
-Os 8 segundos de produtos devem usar as 4 imagens anexadas apenas como referências dos produtos, nunca como slideshow.
-Use os 8 segundos de produtos para apresentar os 16 produtos com ritmo alto, alternando produto individual, duplas, trios e pequenos grupos, sem precisar mostrar todos ao mesmo tempo.
-NÃO inclua CTA, tela final de venda, telefone, WhatsApp, site, preço, promoção, chamada para comprar ou mensagem de encerramento comercial.
-NÃO use nem solicite a logo da Dona Antônia. O vídeo deve terminar ainda dentro da apresentação criativa dos produtos, sem cartela final.
+O vídeo precisa ter INÍCIO, MEIO E FIM claramente percebidos, mesmo sendo curto.
+INÍCIO — 0–2s: abertura com uma chamada curtíssima criada por você e completamente ligada ao TEMA recebido, acompanhada de um gancho visual imediato.
+MEIO — aproximadamente 2–8,5s: desenvolver a ideia visual e apresentar os 16 produtos com progressão, ritmo alto e variedade de composições, alternando produto individual, duplas, trios e pequenos grupos. As 4 imagens anexadas são apenas referências dos produtos, nunca slides.
+FIM — aproximadamente 8,5–10s: criar um ENCERRAMENTO VISUAL NATURAL usando somente os próprios produtos. Nos últimos 1–1,5s, reduzir progressivamente o movimento e conduzir os produtos para uma composição final estável, equilibrada e coerente com o tema. O último movimento deve se completar antes do fim e a composição final estável deve permanecer visível até o frame final.
+O encerramento NÃO é CTA: não incluir telefone, WhatsApp, site, preço, promoção, chamada para comprar, slogan comercial, logo ou cartela final.
+NÃO use nem solicite a logo da Dona Antônia.
+PROIBIDO terminar com objeto ainda em movimento, transição pela metade, corte no meio da ação ou sensação de vídeo interrompido.
 Reforce de forma explícita e repetida que os produtos precisam permanecer visualmente idênticos: não alterar rótulo, texto, marca, logotipo, embalagem, formato, proporção, tampa, cor, ilustração ou qualquer detalhe. Se as fotos tiverem fundo cinza, branco ou colorido, remova somente esse fundo e preserve o produto intacto.
-Áudio: SOMENTE trilha instrumental. Proibido locução, narração, voz, canto, diálogo, vocal chop, sussurro ou palavra falada.
+Áudio: SOMENTE trilha instrumental. Proibido locução, narração, voz, canto, diálogo, vocal chop, sussurro ou palavra falada. A trilha também deve ter INÍCIO, MEIO E FIM: manter o ritmo durante o desenvolvimento e fazer uma resolução musical curta nos segundos finais, sincronizada à estabilização da composição visual, terminando de forma concluída em 10,00s e nunca com corte abrupto.
 O criativo inteiro — chamada, direção de arte, movimentos, paleta, elementos gráficos, ritmo e metáforas visuais — deve ser adaptado ao TEMA. Se o tema for uma marca, use os produtos da referência como verdade visual e não invente novo logotipo, slogan ou identidade da marca.
 As orientações adicionais são preferências do usuário: incorpore-as quando existirem sem violar as regras fixas.
-Faça um prompt forte para retenção em Reels: primeiro frame impactante, mudanças visuais frequentes, stop motion com recortes físicos, movimentos secos, snaps, saltos curtos e match cuts. Evite poluição visual. O último segundo também deve manter produto e movimento; não converta o final em CTA, logo ou cartela.
+Faça um prompt forte para retenção em Reels: primeiro frame impactante, mudanças visuais frequentes, stop motion com recortes físicos, movimentos secos, snaps, saltos curtos e match cuts. Evite poluição visual. O prompt final DEVE descrever concretamente a progressão de início, meio e fim e terminar com uma composição final estável dos produtos, nunca com um corte seco ou ação interrompida.
 Não enumere os nomes dos 16 produtos no prompt final; use os metadados apenas para entender o tema e o mix.
 A cada variation diferente, mude de verdade o conceito criativo, gancho, direção visual e direção musical, mantendo todas as regras fixas.`;
 
@@ -95,7 +97,7 @@ A cada variation diferente, mude de verdade o conceito criativo, gancho, direç�
       directions:directions||null,
       variation,
       products,
-      fixed:{duration_seconds:10,opening_seconds:2,products_seconds:8,cta_seconds:0,no_cta:true,no_logo:true}
+      fixed:{duration_seconds:10,opening_seconds:2,products_seconds:8,cta_seconds:0,no_cta:true,no_logo:true,narrative_arc:true,stable_product_ending:true,no_abrupt_cut:true}
     });
 
     const response=await fetch('https://api.openai.com/v1/responses',{
