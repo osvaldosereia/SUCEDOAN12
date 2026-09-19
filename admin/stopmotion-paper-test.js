@@ -8,7 +8,7 @@ async function invoke(body,retry=true){let a=auth();if(!a.access_token&&a.refres
 const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
 async function load(){
  $('load').disabled=true;$('play').disabled=true;$('status').textContent='Sorteando produtos com foto…';
- try{const queries=['ar','ma','de','co','le','sa'];const all=[];for(const q of queries){const d=await invoke({action:'search_products',q,limit:50});for(const p of d.products||[])if(p.image_url&&!all.some(x=>x.id===p.id))all.push(p)}
+ try{const d=await invoke({action:'random_products',limit:Math.max(40,+$('count').value*2)});const all=(d.products||[]).filter(p=>p.image_url);
  products=shuffle(all).slice(0,+$('count').value);if(products.length<5)throw Error('Poucos produtos com imagem disponíveis.');
  $('picked').innerHTML=products.map(p=>'<img src="'+p.image_url.replace(/"/g,'&quot;')+'" title="'+String(p.name||'').replace(/"/g,'&quot;')+'">').join('');
  images=await Promise.all(products.map(p=>new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=p.image_url})));
