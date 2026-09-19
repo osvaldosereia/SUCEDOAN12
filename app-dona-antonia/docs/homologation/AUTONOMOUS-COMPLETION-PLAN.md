@@ -19,11 +19,10 @@ Barreira central cobre HML network, push, mídia, secure session e telemetry sin
 Pairing/session sintéticos fechados com TEST IDs/tokens, expiração, uso único e rate limits; restante depende de Keychain/Keystore/backend real.
 
 ## Rodada A4 — Deep links e notificações ✅ PROGRAMATICAMENTE CONCLUÍDA ATÉ O LIMITE NÃO NATIVO
-Deep links mantêm roteamento determinístico e allowlist explícita; URLs absolutas agora exigem HTTPS já na policy comum. PII, credenciais e material de sessão falham fechado. Adicionado router sintético de notificações com IDs `TEST-NOTIFICATION-*`, validação do link antes do consumo e deduplicação limitada em memória. Push continua somente `TEST-PUSH-*`, preferências transacional/marketing permanecem locais e nenhum push/rede real foi conectado. Configuração/build nativo real continua para homologação em aparelho.
+Deep links mantêm roteamento determinístico e allowlist explícita; URLs absolutas exigem HTTPS. PII, credenciais e material de sessão falham fechado. Router sintético de notificações usa IDs `TEST-NOTIFICATION-*`, valida link antes do consumo e deduplica em memória. Push continua somente sintético.
 
-## Rodada A5 — Mídia, privacidade e dados locais
-- contratos Photo Picker/câmera/microfone; MIME/tamanho/duração; EXIF; anexos; privacidade local; revogação/limpeza; acesso/correção/exclusão; testes fail-closed.
-**Saída esperada:** R17/R19 esgotadas até o limite não nativo/backend.
+## Rodada A5 — Mídia, privacidade e dados locais — PARCIAL AVANÇADA
+Implementado cofre efêmero de metadados HML, IDs `TEST-MEDIA-*`, MIME/tamanho/TTL/retention fechados. A política pura `mediaPrivacyPolicy` agora valida origem/MIME, áudio <=120s e determina `strip-exif-before-boundary`, sem receber bytes, filename, URL ou texto do cliente. `LocalPrivacyRights` fornece acesso/eliminação somente para `TEST-SUBJECT-*` + `TEST-MEDIA-*`; metadados são imutáveis e correção exige apagar/recriar. Testes unitários foram adicionados, mas não são declarados verdes sem runner/typecheck real. Permissões/pickers e stripping EXIF efetivo continuam dependentes de implementação/build nativo em dispositivo.
 
 ## Rodada A6 — HML/backend preparado para deploy
 - migrations; integridade carrinho/total; idempotência/rate limit; bootstrap/catalog/checkout; contratos pairing/telemetria/privacidade; manifest/checklist; testes possíveis; sem apagar Edge Functions/aumentar plano.
