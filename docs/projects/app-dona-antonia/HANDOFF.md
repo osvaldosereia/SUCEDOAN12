@@ -15,17 +15,15 @@
 - parciais seguras: R12–R19 e R21–R24;
 - R10/R11 bloqueadas até toolchain/build nativo real;
 - R13 deploy bloqueado por quota; R25 produção proibida;
-- plano autônomo: **A1–A6 esgotadas; A7 avançada e em fechamento programático**.
+- plano autônomo: **A1–A8 esgotadas nos respectivos limites seguros; A9 é a próxima e última rodada**.
 
-## Último avanço seguro — A7
-A auditoria existente já cobre piso de 320px, alvos primários de 44px, foco visível, ARIA, contraste forçado e reduced motion. Foi adicionado `uxReadiness.ts` com contratos determinísticos para recovery offline/error, limite de tentativas, budgets de JS/CSS/imagem crítica e validação fail-closed de tamanho/label/alcance por teclado. `uxReadiness.test.ts` cobre limites e falhas fechadas. Estados loading/empty/error/offline já permanecem modelados no shell.
+## Último avanço seguro — A7/A8
+A7 foi esgotada programaticamente: auditoria estática cobre 320px, 44px, foco/ARIA, contraste/reduced motion, loading/empty/error/offline, recovery e budgets; o restante exige browser/aparelho/medição real. A8 adicionou `STORE-RELEASE-READINESS.md`, consolidando gates Android/iOS, assinatura, metadata, reviewer TEST, privacy/data-safety e evidências de release. O preflight nativo permanece fail-closed.
 
-**Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Auditoria visual/nativa, leitor de tela e métricas em dispositivo continuam dependentes de execução real. Nenhum efeito externo foi acionado.
+**Validação honesta:** Android/iOS não estão homologados. Testes/typecheck não são declarados verdes sem runner real associado ao HEAD. Nenhum build, APK/AAB/IPA, console de loja, TestFlight, deploy, pedido, push ou efeito externo foi acionado.
 
 ## Próximo trabalho seguro
-1. Fechar A7 com qualquer auditoria estática restante que seja independente de runner/dispositivo.
-2. Entrar em A8 somente para preflight/documentação de release/store/native, sem build/submissão real.
-3. A9: auditoria final e documentos humanos/checklist; não criar novo escopo depois.
+Executar A9 integralmente: auditar branch/gates e isolamento; corrigir qualquer restante seguro; criar `app-dona-antonia/docs/homologation/HUMAN-ACTIONS-FINAL.md` e `app-dona-antonia/docs/homologation/FINAL-AUTONOMOUS-CHECKLIST.md`; atualizar checkpoints/PR. Marcar `PROGRAMMATIC_COMPLETE=true` apenas se a auditoria demonstrar que não resta tarefa segura e independente. Depois disso, não criar novo escopo.
 
 ## Regras soberanas
 - não modificar `comprar/`; não mergear PR #396;
