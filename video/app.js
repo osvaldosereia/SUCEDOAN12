@@ -251,3 +251,9 @@ $('copy').onclick=async()=>{
 };
 targetCount=clampCount($('productCount').value);
 syncControls();
+
+window.VideoProductSelection={
+  getProducts:()=>[...selected.values()].map(p=>({id:p.id,name:p.name,brand:p.brand||'',category:p.category||'',subcategory:p.subcategory||'',packaging:p.packaging||'',image_url:p.image_url||''})),
+  getCount:()=>selected.size,
+  getTheme:()=>$('theme')?.value?.trim()||lastSearch||''
+};
