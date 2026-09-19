@@ -1,6 +1,6 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot canônico atualizado em **19/09/2026 ~01:14 America/Cuiaba**.
+Snapshot canônico atualizado em **19/09/2026 ~02:16 America/Cuiaba**.
 
 ## Estado geral
 
@@ -26,7 +26,7 @@ Snapshot canônico atualizado em **19/09/2026 ~01:14 America/Cuiaba**.
 - PapoAI receipts=18;
 - customers=506;
 - `catalog_open=64`;
-- `catalog_search=31` — critério 6 verified por tráfego real;
+- `catalog_search=31`;
 - `product_view=0`;
 - carrinho=437;
 - pedidos=47;
@@ -61,32 +61,27 @@ Snapshot canônico atualizado em **19/09/2026 ~01:14 America/Cuiaba**.
 - `direct_ready_flag=false`;
 - blockers: `permissions_unverified_or_blocking`, `webhook_not_verified`, `direct_ready_flag_false`.
 
-## Warnings / gates humanos
+## Rodada 08 — concluída tecnicamente
 
-Warnings: `identity_conflicts_pending`, `no_positive_marketing_consent`, `legacy_automation_outbound_live_but_canonical_gate_closed`.
+Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-08.md`.
 
-Gates manuais: Customer OS PIN browser validation, Relationship Center PIN browser validation, Meta Policy Registry verification, Meta Direct homologation e external activation authorization. PIN não deve ser descoberto/testado automaticamente.
+Entregue:
+- confirmação do CI da Rodada 07: run `35423379708` SUCCESS;
+- auditoria completa do contrato `meta_diagnostics_readonly`;
+- confirmação de GET-only, scopes obrigatórios, callback exato, separação Flow health/Direct e ausência de mutação de gates;
+- novo contrato `scripts/test-cm-1-meta-preflight-fail-closed-v2.mjs`;
+- novo workflow `.github/workflows/test-customer-os-meta-preflight.yml`;
+- run inicial `35426161049` disparado e ainda `in_progress` no último check.
 
-## Rodada 07 — concluída
-
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-07.md`.
-
-Hardening da Central entregue sem PIN e sem side effect:
-- módulo progressivo `relationship-homologation-hardening.js` e CSS isolado;
-- critérios implemented passam a indicar visualmente **Ação humana** ou **Evidência real**;
-- Meta preflight explicita que o diagnóstico é somente leitura e não autoriza ativação;
-- tabs/tabpanel ARIA, `aria-selected`, live regions, foco visível e ajustes mobile;
-- contrato `test-cm-1-relationship-hardening-v1.mjs`;
-- workflow dedicado `Customer OS · Relationship Hardening`, run inicial `35423379708`, ainda em progresso no último check desta rodada.
-
-HEAD antes da programação: `106cc4589ba1a43a99f1e2d15c6403778de8e67c`, pertencente a trabalho paralelo de vídeo; preservado.
+Nenhuma Edge Function precisou ser alterada/deployada nesta rodada: o runtime já possuía o comportamento seguro requerido. A mudança foi hardening de teste/CI e documentação.
 
 ## Plano autônomo
 
 - Rodada 06 — concluída;
-- Rodada 07 — **concluída**;
-- Rodada 08 — próxima: Meta Direct preflight completo sem credencial humana;
-- Rodadas 09–14 — pendentes conforme `AUTONOMOUS-COMPLETION-PLAN.md`.
+- Rodada 07 — concluída;
+- Rodada 08 — **concluída tecnicamente; confirmar CI dedicado no início da próxima rodada**;
+- Rodada 09 — próxima: Identity Review, preparação final humana;
+- Rodadas 10–14 — pendentes conforme `AUTONOMOUS-COMPLETION-PLAN.md`.
 
 ## Ações humanas/orgânicas que permanecem
 
