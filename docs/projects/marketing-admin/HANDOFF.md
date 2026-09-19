@@ -16,23 +16,19 @@ Agenda V1 `preview_only`, tracking UTM preview sem gravação, Learning Engine d
 ## Rodada 10
 `marketing_observability_read_model_v1()` aplicada. Snapshot real: 0 publication jobs, 0 published, 0 touchpoints, 0 stale scheduled e 0 external side effects. Confidence=`insufficient_data`; performance claims bloqueados até 3 publicações + 5 touchpoints reais.
 
-## Rodada 11 — checkpoint atual
-HEAD de entrada: `1fb5c99d260acf861d9f45cc4d153cb59252b575`.
-
-Commits:
-- `70429979020acc86f2c0ca19dc4e82083bcf5c54` — action `observability` na Edge Function com fail-closed;
-- `e7340cbc1228d8801a957ecd0d04eeb5f1120dce` — `getMarketingObservability()` no cliente Admin;
-- `f2991f542463c38af65a923dfcfa396a18143f10` — CURRENT-STATE atualizado.
-
-A Edge Function ainda não foi redeployada nesta rodada; runtime v16 conhecido permanece até deploy posterior. Não afirmar que a action nova está ativa antes do deploy.
+## Rodada 11
+- action `observability` implementada na Edge Function com fail-closed;
+- `getMarketingObservability()` implementado no cliente Admin;
+- `admin-marketing-insights-v1` agora está **v17 / ACTIVE / JWT=true** no Supabase;
+- deploy não abriu publicação, cron, Make ou qualquer gate externo;
+- checkpoint documental: `ffd56b37f9b39e387530b8470f1275bac5f1bbd6` atualizou CURRENT-STATE antes deste HANDOFF.
 
 ## Próxima ação segura
-1. integrar observability ao `load()` e painel read-only de Saúde/Confiança;
-2. adicionar testes estruturais fail-closed/zero side effect;
-3. verificar checks;
-4. deployar nova versão de `admin-marketing-insights-v1` com JWT=true somente após checks;
-5. validar action no runtime real;
-6. continuar agenda/métricas/attribution preview/learning/daily dry-run.
+1. reler o HEAD antes de editar, pois existem frentes paralelas no mesmo repositório;
+2. integrar observability ao `load()` e painel read-only de Saúde/Confiança;
+3. adicionar testes estruturais fail-closed/zero side effect para action/client/UI;
+4. validar action v17 pelo fluxo autenticado do Admin;
+5. continuar agenda/métricas/attribution preview/learning/daily dry-run.
 
 ## Bloqueios humanos
 - Meta App Domains + Valid OAuth Redirect URI;
