@@ -44,3 +44,8 @@ A sequência canônica das próximas rodadas está em `docs/projects/marketing-a
 Executar da Rodada 11 até a Rodada 27, sempre pulando o que já estiver concluído por implementação equivalente e avançando para a próxima tarefa segura. O objetivo é terminar toda programação que não depende do owner e só então marcar `PROGRAMMATIC_COMPLETE=true`.
 
 Após `PROGRAMMATIC_COMPLETE=true`, não inventar novo escopo: rodadas futuras devem apenas confirmar o gate, preservar segurança e aguardar as ações humanas descritas em `HUMAN-ACTIONS.md`.
+
+
+## Plano autônomo condensado — 9 rodadas
+
+O plano canônico foi condensado para **9 rodadas amplas**, da Rodada 11 à Rodada 19, em `AUTONOMOUS-COMPLETION-PLAN.md`. Cada execução deve concluir múltiplos subblocos sempre que possível. Esta regra substitui qualquer referência anterior a Rodadas 11–27.
