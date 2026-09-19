@@ -27,17 +27,17 @@
 - A3 sessão/pairing: concluída até limite não nativo.
 - A4 deep links/notificações: concluída até limite não nativo.
 - A5 mídia/privacidade/dados locais: esgotada programaticamente até limite nativo.
-- A6 HML/backend: **esgotada programaticamente sem deploy**.
-- A7 UX/acessibilidade/offline/desempenho: **próxima**.
+- A6 HML/backend: esgotada programaticamente sem deploy.
+- A7 UX/acessibilidade/offline/desempenho: **avançada; fechamento programático em andamento**.
 - A8–A9: pendentes.
 
-## Checkpoint A6 — 19/09/2026
-A6 fecha preflight, request/idempotência e contratos de bootstrap/catalog/checkout/pairing/telemetria/privacidade. Pairing exige challenge e sessão `TEST-*`, não consumidos e não expirados. Telemetria exige evento sintético e proíbe PII, texto livre, advertising ID e sink externo. Privacidade aceita somente acesso/exclusão do mesmo subject sintético e zero escrita externa. Testes unitários correspondentes foram versionados.
+## Checkpoint A7 — 19/09/2026
+A base já preserva viewport mínimo de 320px, touch targets primários de 44px, foco visível, reduced motion, contraste forçado e estados loading/empty/error/offline. `uxReadiness.ts` adiciona recovery determinístico e limitado para offline/error, budgets explícitos de JS/CSS/imagem crítica e contrato de acessibilidade para tamanho, label e teclado. Testes unitários correspondentes foram versionados.
 
 ### Validação honesta
-Nenhum deploy, migration, executor, pedido ou push foi acionado. Os testes versionados não são declarados verdes sem runner/typecheck real associado ao HEAD. Quota permanece bloqueio válido; não será contornada com exclusão de funções ou aumento de custo.
+Os testes novos não são declarados verdes sem runner/typecheck real associado ao HEAD. Leitor de tela, teclado real, métricas de performance e comportamento nativo exigem execução em ambiente/dispositivo apropriado. Nenhum deploy, pedido, push ou integração externa foi acionado.
 
 ## Próximo trabalho seguro
-1. executar A7: UX, acessibilidade, offline e desempenho;
-2. depois A8 release/store/native readiness somente documental/preflight;
+1. fechar auditoria estática restante da A7;
+2. executar A8 release/store/native readiness somente documental/preflight;
 3. em A9 criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; `PROGRAMMATIC_COMPLETE=true` somente se nenhuma tarefa segura independente restar.
