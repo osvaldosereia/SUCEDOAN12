@@ -10,6 +10,7 @@ async function secureCall(functionName,body,timeoutMs=18000){
 }
 export const getMarketingOverview=()=>secureCall(CONFIG.marketingInsightsFunction,{action:'overview'});
 export const getMarketingMetrics=(days=30)=>secureCall(CONFIG.marketingInsightsFunction,{action:'metrics',days});
+export const getMarketingChannelMetrics=(days=30)=>secureCall(CONFIG.marketingInsightsFunction,{action:'channel_metrics',days});
 export const getMarketingObservability=()=>secureCall(CONFIG.marketingInsightsFunction,{action:'observability'});
 export const getMarketingWorkflow=()=>secureCall(CONFIG.marketingWorkflowFunction,{action:'workflow_overview'});
 export const getMarketingEditorialPlan=(days=14)=>secureCall(CONFIG.marketingInsightsFunction,{action:'editorial_plan',days});
