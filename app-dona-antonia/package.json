@@ -23,7 +23,9 @@
     "test:security": "node --no-warnings --experimental-strip-types --test tests/security/*.test.ts",
     "native:preflight": "node scripts/native-toolchain-preflight.mjs",
     "native:require:android": "node scripts/native-toolchain-preflight.mjs --require=android",
-    "native:require:ios": "node scripts/native-toolchain-preflight.mjs --require=ios"
+    "native:require:ios": "node scripts/native-toolchain-preflight.mjs --require=ios",
+    "verify:test-layout": "node scripts/verify-test-layout.mjs",
+    "validate:programmatic": "npm run verify:test-layout && npm test && npm run typecheck && npm run native:preflight"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
