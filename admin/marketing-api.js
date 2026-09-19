@@ -1,5 +1,6 @@
 import {CONFIG} from './runtime-config.js';
 import {getCustomerOsAccessToken,clearCustomerOsSession} from './customer-os-auth.js';
+import './marketing-observability-panel.js';
 
 async function secureCall(functionName,body,timeoutMs=18000){
   const token=getCustomerOsAccessToken();
