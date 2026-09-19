@@ -35,15 +35,12 @@
 - A7–A9: pendentes.
 
 ## Checkpoint A6 — 19/09/2026
-Adicionados:
-- `docs/homologation/HML-BACKEND-DEPLOY-MANIFEST.md`: invariantes HML, gate de migrations/rollback, integridade server-authoritative, idempotência/rate limit, pairing, telemetria/privacidade e regra de quota fail-closed;
-- `src/platform/hmlBackendPreflight.ts`: preflight puro que bloqueia produção, projeto não sintético/divergente, ausência de revisão/rollback/evidência de suíte/typecheck, quota indisponível, migration destrutiva e executor real;
-- `tests/unit/hmlBackendPreflight.test.ts`: cobertura de baseline sintético e de cada blocker.
+Além do manifest e `hmlBackendPreflight.ts`, foi adicionado `src/platform/hmlRequestSafety.ts` para modelar de forma puramente sintética integridade server-authoritative, idempotência e rate limit. O contrato rejeita produção, IDs/chaves não `TEST-*`, centavos inválidos, divergência entre total apresentado e total autoritativo e tentativas fora do limite. `SyntheticIdempotencyLedger` rejeita replay e nunca registra chave real. `tests/unit/hmlRequestSafety.test.ts` cobre esses invariantes sem rede, backend ou efeitos externos.
 
 ### Validação honesta
 Nenhum deploy, migration ou executor foi acionado. Os testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. A quota continua sendo bloqueio válido e não será contornada apagando funções ou aumentando custo.
 
 ## Próximo trabalho seguro
-1. continuar A6 em contratos/testes sintéticos de integridade, idempotência e rate limit sem deploy;
+1. continuar A6 em contratos/testes sintéticos de bootstrap/catalog/checkout sem deploy;
 2. esgotada A6, avançar A7, A8 e A9 sequencialmente;
 3. em A9 criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; só definir `PROGRAMMATIC_COMPLETE=true` se nenhuma tarefa segura independente restar.
