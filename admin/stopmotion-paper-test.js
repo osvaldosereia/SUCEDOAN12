@@ -53,6 +53,35 @@ Não altere rótulos. Não gere novas versões das embalagens. Não use morphing
 
 FORMATO
 Exatamente 10 segundos, 9:16, alta legibilidade no celular, ritmo de Reels, acabamento publicitário profissional e stop motion energético. Use as referências em qualquer ordem que produza o melhor vídeo.${idea?'\n\nDIREÇÃO ADICIONAL DO CRIADOR:\n'+idea:''}`}
-async function generate(){try{$('status').textContent='Sorteando e carregando 40 produtos…';let d=await api({action:'random_products',limit:70}),a=(await Promise.all((d.products||[]).filter(p=>p.image_url).slice(0,55).map(load))).filter(Boolean).slice(0,40);if(a.length<40)throw Error('Carregaram apenas '+a.length+' produtos; tente novamente.');products=a.map(o=>o.p);shots=[];$('grid').innerHTML='';for(let n=0;n<10;n++){let c=scene(a.slice(n*4,n*4+4),n);shots.push(c);let wrap=document.createElement('div');wrap.style.margin='12px 0';wrap.append(c);c.style='width:100%;max-width:360px;aspect-ratio:9/16;object-fit:contain';let p=document.createElement('p');p.textContent=String(n+1).padStart(2,'0')+' · '+products.slice(n*4,n*4+4).map(v=>v.name).join(' · ');wrap.append(p);$('grid').append(wrap)}$('prompt').textContent=makePrompt();$('status').textContent='Pronto: 40 produtos em 10 imagens. Prompt criativo gerado.'}catch(e){$('status').textContent='Erro: '+e.message}}
+
+function currentStyle(){let s=Math.max(0,promptSerial-1),c=CONCEPTS[s%CONCEPTS.length],a=AUDIO_STYLES[(s*3+Math.floor(s/CONCEPTS.length))%AUDIO_STYLES.length];return{c,a}}
+function openingPrompt(){let {c,a}=currentStyle();return `Crie a ABERTURA de uma campanha em vídeo vertical 9:16, EXATAMENTE 10 segundos, para Dona Antônia. Vou anexar a LOGO oficial: preserve-a exatamente, sem redesenhar, deformar, trocar tipografia, cor ou símbolo.
+
+A abertura precisa combinar visual e musicalmente com o vídeo principal dos produtos. Linguagem: stop motion artesanal premium, recortes impressos, papel, formas geométricas, movimentos secos, pequenos saltos, snap cuts e cores intensas. Conceito visual desta campanha: ${c[0]}. Direção musical: ${a[0]} — ${a[1]}.
+
+GANCHO: comece no PRIMEIRO FRAME com uma ação visual forte, sem fade ou introdução lenta. Em poucos segundos deixe imediatamente claro, de forma divertida e simples: AQUI TEM PRODUTOS PARA O DIA A DIA + SOMOS DELIVERY EM CUIABÁ E VÁRZEA GRANDE (VG).
+
+Use a logo como elemento físico de recorte stop motion: ela pode entrar, saltar, deslizar ou ser revelada por papéis/formas, mas nunca alterar sua identidade. Pode usar pequenas ilustrações gráficas de sacolas, caixa de entrega, mapa/pin e movimento de trajeto, sem aparência infantil. Texto na tela deve ser mínimo, grande, correto e legível. Sugestão de mensagem: "Aqui tem!" e "Delivery em Cuiabá e VG". Não invente promoções ou preços.
+
+Ritmo: mudança visual a cada 0,3–0,7s, sincronizada à trilha e SFX táteis discretos. 0–2s gancho; 2–7s comunicar variedade + delivery; 7–10s logo forte e transição visual que combine com a entrada do vídeo principal. Sem pessoas, sem cenas realistas e sem estética de comercial genérico. Resultado moderno, alegre, surpreendente e altamente legível no celular.`}
+function ctaPrompt(){let {c,a}=currentStyle();return `Crie o ENCERRAMENTO/CTA de uma campanha em vídeo vertical 9:16, EXATAMENTE 10 segundos, para Dona Antônia. Vou anexar a LOGO oficial e um PRINT REAL DO APP. Preserve ambos com máxima fidelidade. NÃO redesenhe a logo. NÃO invente, altere ou reescreva elementos da interface do print do app; use o print real como peça visual.
+
+O CTA deve parecer continuação direta do vídeo principal: stop motion artesanal premium, recortes impressos, papel, cores intensas, formas geométricas e movimentos secos. Conceito visual desta campanha: ${c[0]}. Direção musical: ${a[0]} — ${a[1]}. Mantenha a mesma personalidade, ritmo e linguagem gráfica.
+
+OBJETIVO: transformar atenção em pedido. Mostre de maneira muito clara e divertida que a Dona Antônia faz ENTREGA GRÁTIS EM CUIABÁ E VÁRZEA GRANDE (VG), que o cliente pode comprar pelo app/site e pelo WhatsApp.
+
+INFORMAÇÕES OBRIGATÓRIAS NA TELA:
+"Dona Antônia"
+"Entrega grátis em Cuiabá e VG"
+"donaantonia.com.br"
+"WhatsApp"
+
+IMPORTANTE: não invente número de WhatsApp se ele não estiver presente nas referências fornecidas. Se houver número oficial anexado/visível, preserve-o exatamente; caso contrário, mostre somente a palavra "WhatsApp". O endereço donaantonia.com.br deve aparecer EXATAMENTE assim, sem alterar letras.
+
+ANIMAÇÃO: comece já em movimento. Faça o print do app entrar como um recorte físico, telefone/cartão de papel ou painel stop motion, SEM modificar sua interface. A logo pode aparecer em interação com formas, pin de entrega e elementos de percurso. Faça "Entrega grátis em Cuiabá e VG" ganhar destaque visual forte. Termine com logo + site + WhatsApp extremamente legíveis e tempo suficiente para leitura.
+
+Ritmo: 0–2s conexão imediata com o vídeo anterior; 2–6s app/compra e delivery; 6–10s CTA forte. Sincronize movimentos com a trilha e use SFX táteis discretos. Nada de estética corporate, mockup 3D genérico, pessoas ou excesso de texto. Deve ser divertido, memorável, comercial e coerente com a abertura e o vídeo de produtos.`}
+function refreshCompanions(){$('openingPrompt').textContent=openingPrompt();$('ctaPrompt').textContent=ctaPrompt()}
+async function generate(){try{$('status').textContent='Sorteando e carregando 40 produtos…';let d=await api({action:'random_products',limit:70}),a=(await Promise.all((d.products||[]).filter(p=>p.image_url).slice(0,55).map(load))).filter(Boolean).slice(0,40);if(a.length<40)throw Error('Carregaram apenas '+a.length+' produtos; tente novamente.');products=a.map(o=>o.p);shots=[];$('grid').innerHTML='';for(let n=0;n<10;n++){let c=scene(a.slice(n*4,n*4+4),n);shots.push(c);let wrap=document.createElement('div');wrap.style.margin='12px 0';wrap.append(c);c.style='width:100%;max-width:360px;aspect-ratio:9/16;object-fit:contain';let p=document.createElement('p');p.textContent=String(n+1).padStart(2,'0')+' · '+products.slice(n*4,n*4+4).map(v=>v.name).join(' · ');wrap.append(p);$('grid').append(wrap)}$('prompt').textContent=makePrompt();refreshCompanions();$('status').textContent='Pronto: pacote + 3 prompts combinando entre si.'}catch(e){$('status').textContent='Erro: '+e.message}}
 async function download(){if(shots.length!==10)return;for(let i=0;i<10;i++){let blob=await new Promise(r=>shots[i].toBlob(r,'image/jpeg',.94)),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='gemini-stopmotion-'+String(i+1).padStart(2,'0')+'.jpg';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);await new Promise(r=>setTimeout(r,220))}}
-$('generate').onclick=generate;$('download').onclick=download;$('newPrompt').onclick=()=>$('prompt').textContent=makePrompt();$('idea').oninput=()=>$('prompt').textContent=makePrompt();$('copy').onclick=()=>navigator.clipboard.writeText($('prompt').textContent);generate();
+$('generate').onclick=generate;$('download').onclick=download;$('newPrompt').onclick=()=>{$('prompt').textContent=makePrompt();refreshCompanions()};$('idea').oninput=()=>$('prompt').textContent=makePrompt();$('copy').onclick=()=>navigator.clipboard.writeText($('prompt').textContent);$('copyOpening').onclick=()=>navigator.clipboard.writeText($('openingPrompt').textContent);$('copyCta').onclick=()=>navigator.clipboard.writeText($('ctaPrompt').textContent);generate();
