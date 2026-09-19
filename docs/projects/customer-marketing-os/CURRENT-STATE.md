@@ -1,6 +1,6 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot canônico atualizado em **19/09/2026 ~03:16 America/Cuiaba**.
+Snapshot canônico atualizado em **19/09/2026 ~04:20 America/Cuiaba**.
 
 ## Estado geral
 
@@ -15,7 +15,7 @@ Snapshot canônico atualizado em **19/09/2026 ~03:16 America/Cuiaba**.
 ## Cinco critérios ainda implemented
 
 - **2 Identity Resolver:** 2 conflitos reais; revisão humana obrigatória; nenhum auto-merge.
-- **7 Product View:** collector pronto; `product_view=0`; aguarda abertura real de produto.
+- **7 Product View:** caminho técnico integralmente endurecido na Rodada 10; `product_view=0`; aguarda exclusivamente abertura real de produto.
 - **13 Opportunity Lifecycle:** 75 suppressed; dismissed=0, converted=0, expired=0; próxima expiração natural `2026-09-23T17:00:15.936202+00:00`.
 - **15 Marketing Brain SUGGEST:** capacidade pronta; gate OFF; briefs=0.
 - **18 AI cost measured:** ledger pronto; 0 execuções governadas e custo 0.
@@ -23,14 +23,9 @@ Snapshot canônico atualizado em **19/09/2026 ~03:16 America/Cuiaba**.
 ## Evidência real atual
 
 - PapoAI receipts=18;
-- customers=506;
 - `catalog_open=64`;
 - `catalog_search=50`;
 - `product_view=0`;
-- carrinho=466;
-- pedidos=47;
-- timeline=1436;
-- graph edges=526;
 - consentimento positivo de marketing=0.
 
 ## Runtime protegido
@@ -43,22 +38,19 @@ WABA e Phone Number ID presentes; Graph API `v26.0`; Flow health separado; Meta 
 
 ## Plano autônomo
 
-- Rodada 06 — concluída;
-- Rodada 07 — concluída;
-- Rodada 08 — concluída; CI dedicado `35426161049` confirmado SUCCESS;
-- Rodada 09 — **concluída**;
-- Rodada 10 — próxima;
-- Rodadas 11–14 — pendentes.
+- Rodadas 06–10 — **concluídas**;
+- Rodada 11 — próxima;
+- Rodadas 12–14 — pendentes.
 
-### Rodada 09 — Identity Review
+### Rodada 10 — Comprar / Product View / Event Collector
 
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-09.md`.
+Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-10.md`.
 
-A UI já exigia escolha explícita, justificativa e confirmação, mostrava dados sensíveis mascarados e declarava review-only/no-merge. Foi acrescentado ledger persistente `customer_identity_review_audit` com ACL service-role only, bloqueio de UPDATE/DELETE e trigger automático para registrar transições reais pending -> approved/rejected. Validação read-only confirmou os dois triggers ativos, anon/authenticated sem SELECT e zero registros — nenhum conflito real foi tocado.
+Foi auditada a cadeia real `openDetail -> trackProductView -> productApi(track) -> shopping-chat-products-v1 -> record_catalog_interaction_v1`. Edge/RPC exigem room token/sessão válida, UUID e produto existente; dedupe Product View permanece 900 s; collector marca `external_side_effect=false`; RPC é service_role-only. O HTML versionado referencia `products.js?v=20260918-cm1-events-02`. Criados teste contratual Round 10 e CI dedicado. Nenhum evento operacional foi criado.
 
-## Próxima rodada — 10
+## Próxima rodada — 11
 
-**Comprar / Product View / Event Collector.** Provar frontend publicado, cache busting e caminho clique -> tracking -> Edge -> RPC por testes não-operacionais; cobrir deduplicação, room token, produto inexistente/reload/navegação. Não criar `product_view` artificial.
+**Opportunity Lifecycle e observabilidade temporal.** Revisar regras suggested/suppressed/dismissed/converted/expired, testar somente com fixtures não-operacionais, validar relógio/próxima expiração e hardenizar alerta/read model de oportunidade vencida ainda aberta. Não antecipar expiração real.
 
 ## Ações humanas/orgânicas que permanecem
 
