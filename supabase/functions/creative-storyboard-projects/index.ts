@@ -33,7 +33,16 @@ Deno.serve(async(req:Request)=>{
   if(!admin?.is_active)return json({ok:false,error:'admin_not_authorized'},403);
   let b:any={};try{b=await req.json()}catch{return json({ok:false,error:'invalid_json'},400)}
   const action=String(b.action||''),canWrite=admin.role==='owner'||admin.role==='operator';
-  if(!canWrite&&!['list','get','search_products'].includes(action))return json({ok:false,error:'read_only'},403);
+  if(!canWrite&&!['list','get','search_products','random_products'].includes(action))return json({ok:false,error:'read_only'},403);
+
+  if(action==='random_products'){
+    const limit=Math.min(60,Math.max(10,Number(b.limit||30)));
+    const r=await sb.from('products').select('id,sku,name,gtin,price,stock,image_url,brand,category,subcategory,packaging,is_active,is_offer').eq('is_active',true).not('image_url','is',null).neq('image_url','').limit(300);
+    if(r.error)return json({ok:false,error:'products_random_failed',detail:r.error.message},400);
+    const rows=(r.data||[]).filter((p:any)=>/^https?:\/\//i.test(String(p.image_url||'')));
+    for(let i=rows.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[rows[i],rows[j]]=[rows[j],rows[i]]}
+    return json({ok:true,products:rows.slice(0,limit),total:rows.length});
+  }
 
   if(action==='search_products'){
     const q=cleanSearch(b.q),limit=Math.min(50,Math.max(5,Number(b.limit||20)));
