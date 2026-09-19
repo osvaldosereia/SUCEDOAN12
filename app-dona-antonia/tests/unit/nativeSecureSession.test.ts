@@ -29,7 +29,7 @@ function createBridgeFixture() {
   return { bridge, calls };
 }
 
-test('native secure session delegates get/set/clear to a narrow storage bridge', async () => {
+test('native secure session delegates TEST session get/set/clear to a narrow storage bridge', async () => {
   const fixture = createBridgeFixture();
   const session = createNativeSecureSession(fixture.bridge);
 
@@ -48,11 +48,38 @@ test('native secure session delegates get/set/clear to a narrow storage bridge',
   ]);
 });
 
-test('native secure session rejects empty values before reaching bridge', async () => {
+test('native secure session rejects empty and non TEST tokens before reaching bridge', async () => {
   const fixture = createBridgeFixture();
   const session = createNativeSecureSession(fixture.bridge);
   await assert.rejects(session.set('   '), /non-empty/);
+  await assert.rejects(session.set('real-session-token'), /TEST-SESSION/);
   assert.deepEqual(fixture.calls, []);
+});
+
+test('native secure session blocks production environment before storage I/O', async () => {
+  const fixture = createBridgeFixture();
+  const session = createNativeSecureSession(fixture.bridge, { environment: 'production' });
+
+  await assert.rejects(session.get(), /production_environment_blocked/);
+  await assert.rejects(session.set('TEST-SESSION-native-0002'), /production_environment_blocked/);
+  await assert.rejects(session.clear(), /production_environment_blocked/);
+  assert.deepEqual(fixture.calls, []);
+});
+
+test('native secure session blocks production flag and non TEST resource before storage I/O', async () => {
+  const productionFixture = createBridgeFixture();
+  const productionSession = createNativeSecureSession(productionFixture.bridge, {
+    productionEnabled: true,
+  });
+  await assert.rejects(productionSession.get(), /production_flag_blocked/);
+  assert.deepEqual(productionFixture.calls, []);
+
+  const resourceFixture = createBridgeFixture();
+  const resourceSession = createNativeSecureSession(resourceFixture.bridge, {
+    resourceId: 'secure-session-real',
+  });
+  await assert.rejects(resourceSession.get(), /test_resource_required/);
+  assert.deepEqual(resourceFixture.calls, []);
 });
 
 test('native secure session adapter contains no web persistence or logging fallback', () => {
