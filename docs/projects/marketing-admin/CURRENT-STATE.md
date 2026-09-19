@@ -3,292 +3,51 @@
 Snapshot de continuidade: **18/09/2026**.
 
 ## Fase atual
+`connection_homologation` com desenvolvimento interno autônomo em paralelo. Publicação externa continua proibida.
 
-`connection_homologation`
-
-Rodadas técnicas 5–8 concluídas em implementação/homologação interna. Falta homologar credenciais reais e executar o primeiro canary externo de uma única publicação.
-
-## Runtime
-
+## Runtime seguro confirmado
 - enabled=false;
 - execution_mode=off;
 - kill_switch=true;
 - publishing_enabled=false;
 - max_daily_publications=0;
-- instagram_feed_publish_enabled=false;
-- instagram_story_publish_enabled=false;
-- instagram_reel_publish_enabled=false;
-- instagram_carousel_publish_enabled=false;
-- facebook_post_publish_enabled=false;
-- facebook_story_publish_enabled=false;
-- facebook_reel_publish_enabled=false;
-- pinterest_publish_enabled=false;
-- whatsapp_status_publish_enabled=false.
+- todos os gates de publicação por canal=false;
+- attribution_recording_enabled=false.
 
-## Visual / mídia
+## Conexões
+Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `v26.0`. OAuth de usuário continua bloqueado pela configuração manual de App Domain/Valid OAuth Redirect URI no app Meta. Backend aceita somente Page `1928140920768577` e Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`. Pinterest App/Secret/board continuam pendentes. Não contornar esses gates.
 
-Campanha piloto: `Ofertas de Limpeza`.
+## Rodada 9 — autonomia segura
+- `marketing_editorial_plan_v1`: agenda `preview_only`, sem auto-schedule;
+- `marketing_tracking_link_v1`: UTM/asset/channel sem gravação;
+- `marketing_learning_read_model_v1`: learning determinístico, sem IA e sem auto-otimização;
+- `marketing_daily_plan_preview_v1`: dry-run, sem criar campanha/job/agendamento/publicação;
+- `admin-marketing-insights-v1` v16 no último deploy conhecido;
+- migration `marketing_round9_autonomy_foundation_v1` aplicada.
 
-Formatos homologados:
-- feed quadrado 1080x1080;
-- Story/Status 1080x1920;
-- Pinterest 1000x1500;
-- carrossel 4 slides 1080x1350;
-- Reel leve 1080x1920, 10s.
+## Rodada 10 — observabilidade
+- migration/RPC `marketing_observability_read_model_v1` aplicada;
+- modelo é `observe_only`, determinístico, sem IA e sem ações automáticas;
+- runtime real consultado nesta continuidade: 0 publication jobs, 0 published, 0 touchpoints, 0 stale scheduled e 0 external side effects;
+- confidence=`insufficient_data`; performance claims proibidos até pelo menos 3 publicações e 5 touchpoints reais.
 
-Provider-ready:
-- JPEG `role=output`, `image/jpeg`, `provider_ready=true`;
-- Reel MP4 H.264;
-- AAC estéreo 48 kHz;
-- 30 fps;
-- 10.000 s;
-- faststart;
-- custo de IA do render=0.
+## Rodada 11 — integração segura da observabilidade
+- branch preservada: `marketing-admin-round8-continue-20260918`;
+- HEAD de entrada confirmado: `1fb5c99d260acf861d9f45cc4d153cb59252b575`;
+- `admin-marketing-insights-v1/index.ts` agora expõe ação read-only `observability` e recusa payload que não seja `observe_only` ou que indique auto_action/auto_publish/auto_schedule;
+- `admin/marketing-api.js` agora possui `getMarketingObservability()` para consumo do Admin;
+- nenhuma publicação, cron, Make ou gate externo foi ativado;
+- código ficou preparado para a próxima rodada integrar o painel visual sem duplicar lógica de segurança.
 
-Movimentos reais V1:
-- slow_zoom;
-- float;
-- fade_in;
-- fade_out.
-
-## Qualidade visual
-
-Marketing Brain usa qualidade da mídia na escolha do hero:
-- favorece image_ai_status=completed;
-- favorece foto profissional, produto completo, sombra natural e alta fidelidade;
-- penaliza rejected/manual review/lado-a-lado/comparativo/montagem/banner/tabela.
-
-Hero piloto aprovado: Água Sanitária Cloro Ativo Ypê 5 L.
-
-## Produção e aprovação
-
-Implementado:
-- render em lote;
-- prévia;
-- edição;
-- revisão histórica;
-- incremento de versão;
-- invalidação de mídia antiga;
-- enviar para revisão;
-- aprovar;
-- reprovar;
-- preparar jobs internos por canal.
-
-Aprovação continua humana.
-
-## Publicação
-
-Adapters oficiais preparados:
-- Instagram Feed;
-- Instagram Story;
-- Instagram Reel;
-- Instagram Carrossel;
-- Facebook Post;
-- Facebook Reel;
-- Pinterest Pin.
-
-Manual:
-- WhatsApp Status;
-- Facebook Story.
-
-WhatsApp Status:
-`Preparar Status -> Compartilhar agora -> share nativo -> WhatsApp -> Meu status -> Enviar`.
-
-## Segurança
-
-Preflight exige simultaneamente:
-- asset approved;
-- job em estado publicável;
-- publishing_enabled=true;
-- kill_switch=false;
-- execution_mode canary/live;
-- limite diário > 0;
-- limite ainda disponível;
-- gate do canal;
-- channel account verified;
-- credential_ref;
-- ID externo;
-- Graph API version explícita para Meta;
-- board_id para Pinterest;
-- mídia provider-ready da versão atual.
-
-Falha ambígua após chamada ao provedor => `review_required`, sem retry automático.
-
-## Connection Manager / OAuth
-
-Implementado:
-- Meta OAuth;
-- Pinterest OAuth;
-- state armazenado por hash;
-- TTL de sessão;
-- callback same-origin;
-- tokens apenas no Vault;
-- cleanup automático de secrets temporários;
-- Pinterest refresh token;
-- desconexão segura;
-- seleção de Página/IG/board.
-
-Hardening:
-- removido default presumido de Graph API version;
-- Graph version passa a ser explícita;
-- Pinterest scopes: boards:read, boards:write, pins:read, pins:write;
-- cleanup service-role only.
-
-## Estado real das conexões no Supabase
-
-Até este snapshot:
-- canais ainda `disconnected`;
-- nenhum token de publicação definitivo cadastrado pelo Connection Manager;
-- OAuth temp secrets=0;
-- publication jobs=0;
-- published jobs=0;
-- eventos external_side_effect=0.
-
-Meta:
-- App Secret já existe no Vault;
-- App ID ainda não localizado no Supabase/GitHub;
-- Graph API version explícita no runtime: `v26.0`.
-
-Pinterest:
-- App ID/App Secret não cadastrados no Connection Manager;
-- board ID pendente.
-
-## Evidência recuperada do Make
-
-Make org `6493671`, team `975208`.
-
-Conexões nativas:
-- Facebook: `7490477` e `7650626`, ambas funcionais para listar contas;
-- Pinterest: `7490792`, existente, porém listagem de boards falha e indica reautorização necessária.
-
-IDs confirmados via Make:
-- Facebook Page Super Cestas: `1928140920768577`;
-- Instagram Business Super Cestas (@dona_antonia_cuiaba): `17841451162237654`.
-
-O Make também possui cenários antigos de publicação Instagram/carrossel, atualmente inativos:
-- `6032233`;
-- `6051595`;
-- `6253699`;
-- `6508939`;
-- `6940562`.
-
-Não reativar esses cenários automaticamente; servem como referência histórica.
-
-## Próximo bloqueio real
-
-Não é mais código de publicação. É **homologação de credencial/conta**.
-
-Próximos passos:
-1. confirmar callback público;
-2. preencher Meta App ID + Graph API version validada;
-3. executar OAuth Meta ou decidir proxy temporário Make;
-4. usar Page ID/IG ID já confirmados;
-5. reautorizar Pinterest no Make ou fazer OAuth próprio;
-6. obter board ID;
-7. verificar contas;
-8. canary 1 peça / 1 canal / limite 1;
-9. fechar canary depois do teste.
-
-
-## Atualização Round 8 — validação de credenciais Meta
-
-Em 18/09/2026 foi adicionada uma barreira extra à homologação Meta:
-
-- o Admin não aceita mais salvar apenas um App ID textual;
-- `connection_save_config` exige validação server-side do par App ID + App Secret usando `grant_type=client_credentials`;
-- quando o segredo já existe, ele é lido somente no backend pelo Vault;
-- segredo novo só é persistido após a validação do par;
-- a resposta de validação não devolve access token ao navegador;
-- Edge Function `admin-marketing-workflow-v1`: v17, ACTIVE, JWT=true;
-- `meta_oauth_app_id` permanece vazio até uma validação real bem-sucedida.
-
-Estado de segurança após o deploy:
-- enabled=false;
-- execution_mode=off;
-- kill_switch=true;
-- publishing_enabled=false;
-- max_daily_publications=0;
-- publication_jobs=0;
-- published_jobs=0;
-- external_side_effect_events=0.
-
-## Checkpoint operacional — Round 8.1
-
-Data: 18/09/2026.
-
-### Backend
-- `admin-marketing-workflow-v1`: **v17 / ACTIVE / JWT=true**;
-- validação App ID + App Secret continua obrigatória antes de persistir App ID;
-- novo fail-closed: OAuth Meta só aceita Page ID `1928140920768577` e Instagram Business ID `17841451162237654`;
-- username esperado: `dona_antonia_cuiaba`;
-- divergência de identidade limpa temporários e bloqueia conclusão antes da credencial definitiva;
-- teste novo foi escrito antes da implementação e o conjunto de checks estruturais da rodada fechou em **25/25**.
-
-### Credenciais/conexões
-- Meta App Secret: presente no Vault;
-- Meta App ID: **ainda ausente** (`null`);
-- Meta OAuth: não iniciado; sessions=0;
-- Meta channels: todos `disconnected`;
-- Pinterest App ID/App Secret/board: ainda pendentes;
-- cenário Make temporário de leitura `7489979`: `inactive`, não usar como automação de produção.
-
-### Safety invariants
-- `enabled=false`;
-- `execution_mode=off`;
-- `kill_switch=true`;
-- `publishing_enabled=false`;
-- `max_daily_publications=0`;
-- todos os channel publish gates=false;
-- publication_jobs=0;
-- published_jobs=0;
-- external_side_effect_events=0.
-
-### Bloqueio atual único para avançar Meta
-Obter o **Meta App ID real** do mesmo aplicativo correspondente ao App Secret existente no Vault. O sistema não deve tentar inferir esse número a partir de Page ID, Instagram ID, Flow ID, WABA, telefone ou Make connection ID.
-
-Assim que o App ID for fornecido no Connection Manager, a validação server-side decidirá se o par é válido. Só então o App ID poderá ser persistido e o OAuth Meta iniciado.
-
-
-## Atualização Rodada 8.2 — Meta App ID validado
-
-- Meta App ID correto: `1547249776748513` (**cell principal**), identificado em evidência read-only do histórico do Make e validado contra o App Secret já protegido no Supabase Vault.
-- Validação: `client_credentials` na Graph API `v26.0`, resposta HTTP 200.
-- Candidato anterior `1180091367536552`: rejeitado pela Meta como par inválido; não persistido.
-- Runtime atual: `meta_oauth_app_id=1547249776748513`, `meta_app_credentials_validation=client_credentials`.
-- Snapshot: `meta.app_id_set=true`, `meta.app_secret_set=true`, Graph `v26.0`.
-- Meta OAuth de usuário ainda não iniciado; `oauth_sessions=0` no checkpoint anterior e nenhum fluxo de consentimento foi disparado nesta atualização.
-- Canais Meta continuam `disconnected` até o consentimento OAuth e a descoberta exata de Page/Instagram.
-- Próximo gate: iniciar OAuth no Connection Manager autenticado como owner e confirmar exclusivamente Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`.
-- Pinterest continua pendente depois da Meta.
-- Publicação permanece totalmente OFF: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0` e channel gates OFF.
-
-
-## Atualização Rodada 8.3 — bug visual Graph corrigido
-
-- O App ID e o Graph já estavam corretos no backend, mas o Admin marcava `Falta: Graph version` por um erro de regex no frontend.
-- `admin/marketing.js` foi corrigido para reconhecer `v26.0`; o asset passou para cache-buster `marketing.js?v=20260918-6`.
-- Hotfix também aplicado de forma mínima na `main`, sem merge da branch e sem trazer trabalho paralelo.
-- Segurança reconfirmada depois do hotfix: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, 0 sessões OAuth ativas, 0 publication jobs, 0 published jobs e 0 external side effects.
-- Próximo passo agora é exclusivamente recarregar o Admin e iniciar **Conectar Meta**; o backend v17 aceitará somente Page `1928140920768577` + Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`.
-
-
-## Atualização Rodada 9 — fundações internas sem owner
-
-- Fase externa continua `connection_homologation`; Meta OAuth está bloqueado apenas pela configuração manual de domínio/redirect URI no app Meta.
-- 1 sessão OAuth está em `started` por causa da tentativa que parou na tela de domínio não autorizado; nenhuma credencial final foi persistida.
-- `admin-marketing-insights-v1`: **v16 / ACTIVE / JWT=true**.
-- Migration aplicada: `marketing_round9_autonomy_foundation_v1`.
-- Etapa 18: Agenda inteligente V1 em modo `preview_only`; 0 agendamentos automáticos.
-- Etapa 20: gerador UTM/asset/channel V1 pronto; gravação de atribuição permanece OFF.
-- Etapa 21: Learning Engine determinístico V1 pronto; estado atual `insufficient_data` (0 publicações / 0 touchpoints), sem IA e sem auto-otimização.
-- Etapa 22: plano diário dry-run V1 pronto; lê shortlist real, mas não cria campanhas/jobs e não agenda/publica.
-- UI Round 9 programada apenas na branch isolada; não promovida para `main` para preservar trabalho paralelo.
-- Checks estruturais Round 9: **14/14**.
-- Segurança permanece fechada: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, todos os channel gates=false, `attribution_recording_enabled=false`, publication_jobs=0, published_jobs=0 e external_side_effect_events=0.
-
-### Dependências humanas restantes
+## Bloqueios humanos restantes
 1. Meta App Domains + Valid OAuth Redirect URI;
-2. concluir OAuth Meta e identidade exata;
+2. concluir OAuth Meta e homologar identidade exata;
 3. Pinterest App/Secret/board;
 4. autorização explícita futura para canary unitário.
 
+## Próximo ponto seguro
+1. integrar `getMarketingObservability()` ao `load()` e a um painel read-only de saúde/confiança no Admin;
+2. adicionar testes estruturais para action/client/UI e fail-closed;
+3. implantar nova versão de `admin-marketing-insights-v1` somente após os checks;
+4. continuar métricas/agenda/learning/dry-run sem side effects;
+5. manter publicação externa totalmente OFF.
