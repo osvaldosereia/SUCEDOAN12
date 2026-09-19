@@ -14,26 +14,23 @@
 - concluídas: R0–R9 e R20;
 - parciais seguras: R12–R19 e R21–R24;
 - R10/R11 bloqueadas até toolchain/build nativo real;
-- R13 deploy bloqueado por quota;
-- R25 produção proibida;
-- plano autônomo: A1–A4 concluídas; A5 esgotada programaticamente até o limite nativo; A6 em andamento seguro, sem deploy.
+- R13 deploy bloqueado por quota; R25 produção proibida;
+- plano autônomo: **A1–A6 esgotadas programaticamente dentro dos limites seguros; A7 é a próxima rodada**.
 
 ## Último avanço seguro — A6
-Além do preflight backend e da segurança de request/idempotência, foi adicionado `src/platform/hmlBoundaryContracts.ts`, fechando contratos puramente sintéticos para bootstrap, catálogo e checkout. Bootstrap exige HML + `TEST-SUBJECT-*` + zero requests externos. Catálogo exige IDs `TEST-PRODUCT-*`, preços inteiros não negativos e shape consistente. Checkout exige `TEST-SUBJECT-*`, `TEST-CART-*`, `TEST-OP-*`, `TEST-IDEMPOTENCY-*`, produtos sintéticos, carrinho não vazio e igualdade entre total apresentado e autoritativo. `tests/unit/hmlBoundaryContracts.test.ts` cobre baseline e falhas fechadas de produção/recurso real/total divergente.
+`hmlBoundaryContracts.ts` agora fecha também pairing, telemetria e privacidade. Pairing exige `TEST-PAIR-*` + `TEST-SESSION-*`, challenge fresco e não consumido. Telemetria exige `TEST-TELEMETRY-*` e rejeita PII, texto livre, advertising ID e qualquer sink externo. Privacidade exige `TEST-PRIVACY-*`, mesmo `TEST-SUBJECT-*` e zero escrita externa. A suíte unitária cobre os baselines e falhas fechadas correspondentes.
 
-**Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhum deploy/migration foi executado e nenhuma homologação Android/iOS foi inferida.
+**Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhum deploy/migration/executor/pedido/push foi executado e nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
-1. Continuar A6 nos contratos pairing/telemetria/privacidade e checklist backend sem deploy; revisar se resta qualquer fronteira HML programática.
-2. Quando A6 estiver esgotada programaticamente, avançar A7 UX/acessibilidade/offline/desempenho.
-3. Manter R10/R11 e R25 fechadas.
+1. A7: UX/acessibilidade/offline/desempenho — 320px, 44px, teclado/foco/ARIA, reduced motion, estados loading/empty/error/offline/recovery e budgets/testes automatizáveis.
+2. Depois A8 somente preflight/documentação de release/store/native, sem build/submissão real.
+3. A9 auditoria final e documentos humanos/checklist; não criar novo escopo depois.
 
 ## Regras soberanas
-- não modificar `comprar/`;
-- não mergear PR #396;
+- não modificar `comprar/`; não mergear PR #396;
 - produção/pedidos/push/executores reais OFF;
-- sem Bling, Meta, PapoAI ou logística;
-- sem dados reais de clientes;
+- sem Bling, Meta, PapoAI, logística ou dados reais;
 - sem apagar Edge Functions ou aumentar plano/spend cap;
 - sem publicação/submissão em lojas;
 - sem declarar Android/iOS homologados sem build/teste real.
