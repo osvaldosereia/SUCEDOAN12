@@ -17,35 +17,36 @@ Snapshot de continuidade: **19/09/2026**.
 ## Conexões
 Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `v26.0`. OAuth de usuário continua bloqueado pela configuração manual de App Domain/Valid OAuth Redirect URI no app Meta. Backend aceita somente Page `1928140920768577` e Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`. Pinterest App/Secret/board continuam pendentes. Não contornar esses gates.
 
-## Rodadas 9–11 concluídas
-- Agenda V1 `preview_only`, tracking UTM preview, Learning determinístico e Daily Plan dry-run;
-- `marketing_observability_read_model_v1()` aplicada;
-- painel Saúde e Confiança fail-closed no Admin;
-- agenda permanece apenas sugestiva/preview, sem auto-schedule.
+## Rodadas concluídas
+- Rodada 11 — Observabilidade + Agenda Editorial: concluída.
+- Rodada 12 — Atribuição Comercial + Métricas de Canal: fundação programática concluída em modo OFF/read-only, com tracking UTM preview-only, touchpoints/evidence chain, snapshots RLS/service-role-only, adapters puros Meta/Pinterest, fixtures/contratos sem rede e action `channel_metrics` fail-closed. Nenhum coletor externo foi criado/ativado.
 
-## Rodada 12 — Atribuição Comercial + Métricas de Canal — praticamente concluída
-- fundação de atribuição cobre tracking UTM preview-only, touchpoints append-only, `evidence_key`, parent chain e read-model determinístico;
-- `attribution_recording_enabled=false`;
-- migration `marketing_round12_channel_metrics_v1` aplicada;
-- tabela `marketing_channel_metric_snapshots` com RLS, sem acesso `anon/authenticated`, service-role-only e `evidence_key` único;
-- RPC `marketing_channel_metrics_read_model_v1()` service-role-only normaliza reach/impressions/views/engagement/saves/shares;
-- adapters puros Meta/Pinterest adicionados em `scripts/marketing-channel-metrics-adapters-v1.mjs` sem rede nem persistência;
-- fixtures/teste de normalização adicionados em `scripts/marketing-channel-metrics-adapters-v1.test.mjs`;
-- contrato fail-closed da Rodada 12 adicionado em `scripts/marketing-round12-contract.test.mjs`;
-- backend `admin-marketing-insights-v1` ganhou action read-only `channel_metrics`, recusando qualquer read-model com collection enabled/automatic ou side effect;
-- cliente Admin ganhou `getMarketingChannelMetrics(days)`;
-- Edge Function `admin-marketing-insights-v1` implantada em v19 / ACTIVE / JWT=true preservando as actions anteriores;
-- read-model real revalidado: `insufficient_data`, 0 snapshots, collection OFF/automatic=false/external_side_effect=false;
-- nenhum coletor Meta/Pinterest foi criado ou ativado.
+## Rodada 13 — Learning Engine + Memória Criativa + Daily Planner — em andamento
+A fundação Round 9 já fornece `marketing_learning_read_model_v1()` e `marketing_daily_plan_preview_v1()` determinísticos. Nesta rodada foi adicionada uma camada V2 pura e testável em `scripts/marketing-round13-learning-planner-v2.mjs`:
+- thresholds mínimos de 3 publicações + 5 touchpoints;
+- `insufficient_data` como estado explícito;
+- ranking e auto-action sempre OFF;
+- anti-repetição por fingerprint produto/hook/formato/canal;
+- memória criativa consolidada por fingerprint;
+- planner `dry_run` com `NO_ACTION`/`SUGGEST`;
+- limites de candidatos e custo lógico;
+- DRAFT atrás de gate explícito OFF/humano;
+- `wouldCreateDraft=false`, `wouldSchedule=false`, `wouldPublish=false`;
+- IA não usada e zero side effect externo.
 
-## Invariantes revalidados após deploy
+Testes adicionados:
+- `scripts/marketing-round13-learning-planner-v2.test.mjs`;
+- `scripts/marketing-round13-contract.test.mjs`, proibindo rede, persistência, IA, timers e operações de publish/schedule nessa camada pura.
+
+## Invariantes preservados
 - runtime OFF/fail-closed;
 - publishing OFF;
 - max_daily_publications=0;
 - attribution recording OFF;
 - todos os channel gates OFF;
-- coletores Meta/Pinterest OFF/inexistentes;
-- nenhuma consulta real aos providers nesta rodada.
+- sem consulta real Meta/Pinterest;
+- sem cron, canary ou publicação externa;
+- Make fora do runtime novo.
 
 ## Bloqueios humanos restantes
 1. Meta App Domains + Valid OAuth Redirect URI;
@@ -54,4 +55,4 @@ Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `
 4. autorização explícita futura para canary unitário.
 
 ## Próximo ponto seguro
-Fechar formalmente o gate da Rodada 12 após executar/confirmar os testes disponíveis no ambiente e avançar diretamente à Rodada 13 — Learning Engine + Memória Criativa + Daily Planner. Não criar coleta externa para fabricar evidência.
+Continuar a Rodada 13 integrando a política V2 ao read-model/planner canônico somente de forma fail-closed e dry-run, executar os testes em ambiente com checkout quando disponível e então fechar o gate da Rodada 13. Depois avançar à Rodada 14 — Autonomy State Machine + Connection Readiness. Não fabricar evidência e não abrir DRAFT/publishing gates.
