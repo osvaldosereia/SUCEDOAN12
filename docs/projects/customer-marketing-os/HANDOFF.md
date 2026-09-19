@@ -4,7 +4,7 @@
 
 Projeto: **Dona Antônia — Customer & Marketing OS**. GitHub `osvaldosereia/SUCEDOAN12`; Supabase `ssbesxgaijknwsjbsbcz`. Leia também `CURRENT-STATE.md` e `AUTONOMOUS-COMPLETION-PLAN.md`. Confirme HEAD antes de editar e preserve trabalhos paralelos. Runtime Supabase-first; Make somente histórico/auditoria. Não iniciar CM-2.
 
-## Estado canônico — 19/09/2026 ~01:14 America/Cuiaba
+## Estado canônico — 19/09/2026 ~02:16 America/Cuiaba
 
 - **20 critérios = 15 verified / 5 implemented / 0 blocked**;
 - `ready_for_manual_canary=true`;
@@ -20,7 +20,7 @@ Implemented restantes:
 - 15 Marketing Brain SUGGEST — gate OFF;
 - 18 AI cost — ledger pronto, 0 execuções/custo.
 
-Evidência orgânica: receipts=18; catalog_open=64; **catalog_search=31**; product_view=0; carrinho=437; pedidos=47; timeline=1388. Próxima expiração natural de oportunidade: 23/09/2026 17:00:15 UTC.
+Evidência orgânica: receipts=18; catalog_open=64; catalog_search=31; product_view=0; carrinho=437; pedidos=47; timeline=1388. Próxima expiração natural de oportunidade: 23/09/2026 17:00:15 UTC.
 
 ## Gates obrigatórios
 
@@ -30,40 +30,46 @@ Meta: WABA + Phone Number ID presentes; Graph API v26.0; Flow health separado e 
 
 ## Plano autônomo
 
-- Rodada 06 — CONCLUÍDA;
-- Rodada 07 — **CONCLUÍDA**;
-- Rodada 08 — próxima;
-- Rodadas 09–14 — pendentes.
+- Rodada 06 — concluída;
+- Rodada 07 — concluída;
+- Rodada 08 — **concluída tecnicamente**;
+- Rodada 09 — próxima;
+- Rodadas 10–14 — pendentes.
 
-### Rodada 07 concluída
+### Rodada 08 concluída
 
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-07.md`.
+Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-08.md`.
 
 Entregue:
-- `admin/relationship-homologation-hardening.js`;
-- `admin/relationship-homologation-hardening.css`;
-- HTML versionado carregando hardening;
-- ARIA para tabs/status, foco visível e ajustes mobile;
-- distinção visual entre **Ação humana** e **Evidência real** nos critérios implemented;
-- aviso explícito de Meta diagnóstico somente leitura;
-- contrato `scripts/test-cm-1-relationship-hardening-v1.mjs`;
-- workflow dedicado `.github/workflows/test-customer-os-relationship-hardening.yml`;
-- run inicial `35423379708` estava in_progress no último check; confirmar conclusão na próxima rodada.
+- CI da Rodada 07 confirmado SUCCESS (`35423379708`);
+- contrato Meta read-only auditado;
+- GET-only e proibição de envio/mutação confirmados;
+- scopes `whatsapp_business_management` e `whatsapp_business_messaging` explícitos;
+- callback esperado `whatsapp-meta-direct-v1` e separação Flow health/Direct confirmados;
+- novo teste `test-cm-1-meta-preflight-fail-closed-v2.mjs`;
+- workflow dedicado `Customer OS · Meta Preflight` criado;
+- run inicial `35426161049` estava `in_progress` no fechamento; confirmar no início da Rodada 09.
 
-HEAD inicial observado: `106cc4589ba1a43a99f1e2d15c6403778de8e67c`, mudança paralela de vídeo; preservada.
+Nenhuma alteração/deploy de runtime foi necessária: o comportamento requerido já existia e permaneceu fail-closed.
 
-## Próxima rodada — 08
+## Próxima rodada — 09
 
-**Meta Direct preflight completo sem credencial humana.**
+**Identity Review: preparação final humana.**
+
+Antes de programar:
+1. confirmar resultado do run `35426161049`;
+2. confirmar HEAD atual e preservar paralelo;
+3. reexecutar RPCs canônicos.
 
 Pode avançar:
-- confirmar CI da Rodada 07;
-- revisar contrato de leitura do Vault e scopes esperados;
-- revisar WABA/Phone/Graph/callback esperado;
-- reforçar fail-closed e auditoria do diagnóstico;
-- adicionar testes isolados para token ausente/inválido, scope ausente, sucesso e callback divergente;
-- garantir que diagnóstico read-only nunca envie mensagem nem habilite runtime;
-- deixar como única pendência externa a credencial/evidência humana real, se tecnicamente possível.
+- revisar fila/UX dos conflitos;
+- melhorar evidências exibidas para candidatos;
+- mascarar dados sensíveis;
+- exigir justificativa;
+- impedir auto-merge;
+- garantir auditoria append-only;
+- adicionar testes isolados de aprovação/rejeição sem tocar nos casos reais;
+- deixar decisão humana real simples e segura.
 
 ## Não fazer
 
