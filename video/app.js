@@ -2,8 +2,8 @@ const $=id=>document.getElementById(id);
 const cfg=window.DA_ADMIN_CONFIG||{};
 const BASE=cfg.supabaseUrl, KEY=cfg.supabasePublishableKey, FN='creative-storyboard-projects';
 
-const MAX_SELECTED=16;
-let searchResults=[],selected=new Map(),shots=[],themeTouched=false,lastSearch='',promptNonce=0;
+const MAX_PRODUCTS=16;
+let targetCount=16,searchResults=[],selected=new Map(),shots=[],themeTouched=false,lastSearch='',promptNonce=0;
 
 async function api(body){
   const r=await fetch(BASE+'/functions/v1/'+FN,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -13,14 +13,43 @@ async function api(body){
 }
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function clampCount(v){const n=Math.round(Number(v));return Number.isFinite(n)?Math.min(MAX_PRODUCTS,Math.max(1,n)):16}
+function referenceCountFor(n){return Math.ceil(clampCount(n)/4)}
+function imageWord(n){return n===1?'imagem':'imagens'}
+function productWord(n){return n===1?'produto':'produtos'}
+
+function invalidateOutput(){
+  shots=[];
+  $('outputSection').classList.add('hidden');
+  $('promptSection').classList.add('hidden');
+  $('download').disabled=true;
+}
 
 function syncControls(){
-  const n=selected.size;
-  $('selectionBadge').textContent=n+' / '+MAX_SELECTED;
+  const n=selected.size,refs=referenceCountFor(targetCount);
+  $('selectionBadge').textContent=n+' / '+targetCount;
   $('clearSelection').disabled=!n;
-  $('build').disabled=n!==MAX_SELECTED;
+  $('build').disabled=n!==targetCount;
+  $('selectionInstruction').textContent='Selecione exatamente '+targetCount+' '+productWord(targetCount)+' antes de montar as referências.';
+  $('build').textContent='Montar '+refs+' '+imageWord(refs)+' + gerar prompt';
+  $('referenceSummary').textContent=refs+' '+imageWord(refs)+' · até 4 produtos por imagem';
+  $('download').textContent='Baixar '+refs+' '+imageWord(refs);
   renderSelected();
   renderResults();
+}
+
+function changeTargetCount(){
+  const next=clampCount($('productCount').value);
+  $('productCount').value=String(next);
+  if(next===targetCount)return;
+  targetCount=next;
+  if(selected.size>targetCount){
+    const keys=[...selected.keys()];
+    while(selected.size>targetCount)selected.delete(keys.pop());
+  }
+  invalidateOutput();
+  $('status').textContent='Quantidade ajustada para '+targetCount+' '+productWord(targetCount)+'.';
+  syncControls();
 }
 
 function renderResults(){
@@ -76,13 +105,23 @@ async function searchProducts(){
 
 function toggleProduct(id){
   id=String(id);
-  if(selected.has(id)){selected.delete(id);syncControls();return}
-  if(selected.size>=MAX_SELECTED){
-    $('status').textContent='Limite de 16 produtos atingido. Remova um antes de selecionar outro.';
+  if(selected.has(id)){
+    selected.delete(id);
+    invalidateOutput();
+    syncControls();
+    return;
+  }
+  if(selected.size>=targetCount){
+    $('status').textContent='Você definiu '+targetCount+' '+productWord(targetCount)+'. Remova um antes de selecionar outro.';
     return;
   }
   const p=searchResults.find(x=>String(x.id)===id);
-  if(p){selected.set(id,p);$('status').textContent='';syncControls()}
+  if(p){
+    selected.set(id,p);
+    invalidateOutput();
+    $('status').textContent='';
+    syncControls();
+  }
 }
 
 function loadImage(p){
@@ -92,10 +131,17 @@ function loadImage(p){
   });
 }
 
+function slotsForCount(n){
+  if(n===1)return [[90,160,540,960]];
+  if(n===2)return [[80,80,560,520],[80,680,560,520]];
+  if(n===3)return [[28,100,318,500],[374,100,318,500],[201,680,318,500]];
+  return [[28,45,318,560],[374,45,318,560],[28,675,318,560],[374,675,318,560]];
+}
+
 function drawReference(group){
   const c=document.createElement('canvas');c.width=720;c.height=1280;
   const x=c.getContext('2d');x.fillStyle='#eeeeec';x.fillRect(0,0,c.width,c.height);
-  const slots=[[28,45,318,560],[374,45,318,560],[28,675,318,560],[374,675,318,560]];
+  const slots=slotsForCount(group.length);
   group.forEach((o,i)=>{
     const [sx,sy,sw,sh]=slots[i],im=o.im;
     const r=Math.min((sw-16)/im.naturalWidth,(sh-16)/im.naturalHeight);
@@ -108,10 +154,14 @@ function drawReference(group){
 function renderReferences(){
   $('grid').innerHTML='';
   shots.forEach((canvas,i)=>{
+    const count=Math.min(4,targetCount-(i*4));
     const el=document.createElement('article');el.className='ref';el.append(canvas);
-    const foot=document.createElement('footer');foot.textContent='Referência '+(i+1)+' · 4 produtos';
+    const foot=document.createElement('footer');foot.textContent='Referência '+(i+1)+' · '+count+' '+productWord(count);
     el.append(foot);$('grid').append(el);
   });
+  const refs=shots.length;
+  $('referenceSummary').textContent=refs+' '+imageWord(refs)+' · '+targetCount+' '+productWord(targetCount)+' no total';
+  $('download').textContent='Baixar '+refs+' '+imageWord(refs);
   $('outputSection').classList.remove('hidden');
   $('download').disabled=false;
 }
@@ -125,7 +175,8 @@ function productPayload(){
 async function generatePrompt(){
   const theme=$('theme').value.trim()||lastSearch||'variedade de produtos';
   const directions=$('directions').value.trim();
-  if(selected.size!==MAX_SELECTED)throw Error('Selecione 16 produtos antes de gerar o prompt.');
+  if(selected.size!==targetCount)throw Error('Selecione exatamente '+targetCount+' '+productWord(targetCount)+' antes de gerar o prompt.');
+  const imageCount=referenceCountFor(targetCount);
   $('promptSection').classList.remove('hidden');
   $('prompt').textContent='Gerando direção criativa com IA…';
   $('styleBadge').textContent='IA pensando…';
@@ -133,6 +184,8 @@ async function generatePrompt(){
     action:'video_generate_prompt',
     theme,
     directions,
+    product_count:targetCount,
+    image_count:imageCount,
     products:productPayload(),
     variation:promptNonce++
   });
@@ -142,33 +195,30 @@ async function generatePrompt(){
 
 async function build(){
   try{
-    if(selected.size!==MAX_SELECTED)return;
+    if(selected.size!==targetCount)return;
     $('build').disabled=true;$('download').disabled=true;
-    $('status').textContent='Carregando as 16 imagens…';
-    const loaded=await Promise.all([...selected.values()].map(loadImage));
+    $('status').textContent='Carregando '+targetCount+' '+productWord(targetCount)+'…';
+    const items=[...selected.values()].slice(0,targetCount);
+    const loaded=await Promise.all(items.map(loadImage));
     if(loaded.some(x=>!x))throw Error('Uma das imagens não carregou. Remova o produto com problema e selecione outro.');
-    shots=[
-      drawReference(loaded.slice(0,4)),
-      drawReference(loaded.slice(4,8)),
-      drawReference(loaded.slice(8,12)),
-      drawReference(loaded.slice(12,16))
-    ];
+    shots=[];
+    for(let i=0;i<loaded.length;i+=4)shots.push(drawReference(loaded.slice(i,i+4)));
     renderReferences();
-    $('status').textContent='4 referências montadas. Gerando prompt com IA…';
+    $('status').textContent=shots.length+' '+imageWord(shots.length)+' montada'+(shots.length===1?'':'s')+'. Gerando prompt com IA…';
     await generatePrompt();
-    $('status').textContent='Pronto: 4 imagens + prompt IA adaptado ao tema.';
+    $('status').textContent='Pronto: '+targetCount+' '+productWord(targetCount)+', '+shots.length+' '+imageWord(shots.length)+' e vídeo fixo de 10 segundos.';
   }catch(e){
     $('status').textContent='Erro: '+e.message;
   }finally{
-    $('build').disabled=selected.size!==MAX_SELECTED;
+    $('build').disabled=selected.size!==targetCount;
   }
 }
 
 async function download(){
-  if(shots.length!==4)return;
+  if(!shots.length)return;
   $('download').disabled=true;
-  $('status').textContent='Baixando as 4 imagens…';
-  for(let i=0;i<4;i++){
+  $('status').textContent='Baixando '+shots.length+' '+imageWord(shots.length)+'…';
+  for(let i=0;i<shots.length;i++){
     const blob=await new Promise(r=>shots[i].toBlob(r,'image/jpeg',.96));
     const url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='dona-antonia-video-ref-'+String(i+1).padStart(2,'0')+'.jpg';
@@ -176,16 +226,18 @@ async function download(){
     setTimeout(()=>URL.revokeObjectURL(url),2500);
     await new Promise(r=>setTimeout(r,250));
   }
-  $('status').textContent='As 4 imagens foram enviadas para download.';
+  $('status').textContent='Download concluído.';
   $('download').disabled=false;
 }
 
+$('productCount').addEventListener('change',changeTargetCount);
+$('productCount').addEventListener('blur',changeTargetCount);
 $('searchButton').onclick=searchProducts;
 $('searchTerm').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();searchProducts()}});
 $('theme').addEventListener('input',()=>{themeTouched=true});
 $('results').onclick=e=>{const card=e.target.closest('.product-card');if(card)toggleProduct(card.dataset.id)};
-$('selected').onclick=e=>{const item=e.target.closest('.selected-item');if(item&&e.target.closest('button')){selected.delete(String(item.dataset.id));syncControls()}};
-$('clearSelection').onclick=()=>{selected.clear();shots=[];$('outputSection').classList.add('hidden');$('promptSection').classList.add('hidden');$('status').textContent='';syncControls()};
+$('selected').onclick=e=>{const item=e.target.closest('.selected-item');if(item&&e.target.closest('button')){selected.delete(String(item.dataset.id));invalidateOutput();syncControls()}};
+$('clearSelection').onclick=()=>{selected.clear();invalidateOutput();$('status').textContent='';syncControls()};
 $('build').onclick=build;
 $('download').onclick=download;
 $('newPrompt').onclick=async()=>{
@@ -197,4 +249,5 @@ $('copy').onclick=async()=>{
   await navigator.clipboard.writeText($('prompt').textContent);
   const b=$('copy'),old=b.textContent;b.textContent='Copiado ✓';setTimeout(()=>b.textContent=old,1200);
 };
+targetCount=clampCount($('productCount').value);
 syncControls();

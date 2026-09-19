@@ -67,7 +67,13 @@ Deno.serve(async(req:Request)=>{
       subcategory:cleanText(p?.subcategory,80),
       packaging:cleanText(p?.packaging,80)
     })).filter((p:any)=>p.name);
-    if(!products.length)return json({ok:false,error:'video_products_required'},400);
+    const productCount=products.length;
+    if(productCount<1||productCount>16)return json({ok:false,error:'video_product_count_invalid'},400);
+    const requestedCount=Number(b.product_count??productCount);
+    if(!Number.isInteger(requestedCount)||requestedCount!==productCount)return json({ok:false,error:'video_product_count_mismatch',expected:requestedCount,actual:productCount},400);
+    const imageCount=Math.ceil(productCount/4);
+    const requestedImages=Number(b.image_count??imageCount);
+    if(!Number.isInteger(requestedImages)||requestedImages!==imageCount)return json({ok:false,error:'video_image_count_mismatch',expected:requestedImages,actual:imageCount},400);
     let openaiKey=Deno.env.get('OPENAI_API_KEY')||'';
     if(!openaiKey){try{const q=await sb.rpc('get_conversation_worker_provider_secret_v1');if(typeof q.data==='string')openaiKey=q.data}catch{}}
     if(!openaiKey)return json({ok:false,error:'openai_key_missing'},500);
@@ -75,27 +81,32 @@ Deno.serve(async(req:Request)=>{
     const variation=Math.max(0,Math.min(9999,Number(b.variation||0)));
     const instructions=`Você é diretor criativo especialista em vídeos curtos de varejo para Instagram Reels e em prompts para Google Flow / Gemini Omni Flash 1.1.
 Sua tarefa é produzir SOMENTE o prompt final do vídeo, em português, pronto para copiar no Flow.
-O vídeo é sempre UM ÚNICO vídeo vertical 9:16 de EXATAMENTE 10 segundos.
+O vídeo é sempre UM ÚNICO vídeo vertical 9:16 de EXATAMENTE 10 segundos, independentemente da quantidade de produtos.
+DADOS DESTA GERAÇÃO: ${productCount} produto(s) real(is), distribuído(s) em ${imageCount} imagem(ns) de referência, com no máximo 4 produtos por imagem.
+Use exatamente os produtos fornecidos. NÃO invente produtos adicionais e NÃO trate espaços vazios de uma referência como produto.
 Estrutura fixa e obrigatória: 0–2s abertura; 2–10s produtos. NÃO EXISTE CTA neste vídeo.
 O vídeo precisa ter INÍCIO, MEIO E FIM claramente percebidos, mesmo sendo curto.
 INÍCIO — 0–2s: abertura com uma chamada curtíssima criada por você e completamente ligada ao TEMA recebido, acompanhada de um gancho visual imediato.
-MEIO — aproximadamente 2–8,5s: desenvolver a ideia visual e apresentar os 16 produtos com progressão, ritmo alto e variedade de composições, alternando produto individual, duplas, trios e pequenos grupos. As 4 imagens anexadas são apenas referências dos produtos, nunca slides.
+MEIO — aproximadamente 2–8,5s: desenvolver a ideia visual e apresentar TODOS os ${productCount} produto(s) com progressão e ritmo adaptados à quantidade real. Se houver poucos produtos, dê mais tempo, protagonismo e variação de movimento a cada um. Se houver muitos produtos, aumente a cadência e use composições em pequenos grupos para que todos apareçam. Pode reapresentar os mesmos produtos em novos enquadramentos/movimentos, mas nunca criar produtos que não estejam nas referências.
+As ${imageCount} imagem(ns) anexada(s) servem somente como referências visuais dos produtos, nunca como slideshow.
 FIM — aproximadamente 8,5–10s: criar um ENCERRAMENTO VISUAL NATURAL usando somente os próprios produtos. Nos últimos 1–1,5s, reduzir progressivamente o movimento e conduzir os produtos para uma composição final estável, equilibrada e coerente com o tema. O último movimento deve se completar antes do fim e a composição final estável deve permanecer visível até o frame final.
 O encerramento NÃO é CTA: não incluir telefone, WhatsApp, site, preço, promoção, chamada para comprar, slogan comercial, logo ou cartela final.
 NÃO use nem solicite a logo da Dona Antônia.
 PROIBIDO terminar com objeto ainda em movimento, transição pela metade, corte no meio da ação ou sensação de vídeo interrompido.
 Reforce de forma explícita e repetida que os produtos precisam permanecer visualmente idênticos: não alterar rótulo, texto, marca, logotipo, embalagem, formato, proporção, tampa, cor, ilustração ou qualquer detalhe. Se as fotos tiverem fundo cinza, branco ou colorido, remova somente esse fundo e preserve o produto intacto.
-Áudio: SOMENTE trilha instrumental. Proibido locução, narração, voz, canto, diálogo, vocal chop, sussurro ou palavra falada. A trilha também deve ter INÍCIO, MEIO E FIM: manter o ritmo durante o desenvolvimento e fazer uma resolução musical curta nos segundos finais, sincronizada à estabilização da composição visual, terminando de forma concluída em 10,00s e nunca com corte abrupto.
+Áudio: SOMENTE trilHA INSTRUMENTAL. Proibido locução, narração, voz, canto, diálogo, vocal chop, sussurro ou palavra falada. A trilha também deve ter INÍCIO, MEIO E FIM: manter o ritmo durante o desenvolvimento e fazer uma resolução musical curta nos segundos finais, sincronizada à estabilização da composição visual, terminando de forma concluída em 10,00s e nunca com corte abrupto.
 O criativo inteiro — chamada, direção de arte, movimentos, paleta, elementos gráficos, ritmo e metáforas visuais — deve ser adaptado ao TEMA. Se o tema for uma marca, use os produtos da referência como verdade visual e não invente novo logotipo, slogan ou identidade da marca.
 As orientações adicionais são preferências do usuário: incorpore-as quando existirem sem violar as regras fixas.
 Faça um prompt forte para retenção em Reels: primeiro frame impactante, mudanças visuais frequentes, stop motion com recortes físicos, movimentos secos, snaps, saltos curtos e match cuts. Evite poluição visual. O prompt final DEVE descrever concretamente a progressão de início, meio e fim e terminar com uma composição final estável dos produtos, nunca com um corte seco ou ação interrompida.
-Não enumere os nomes dos 16 produtos no prompt final; use os metadados apenas para entender o tema e o mix.
+Não enumere os nomes dos produtos no prompt final; use os metadados apenas para entender o tema e o mix.
 A cada variation diferente, mude de verdade o conceito criativo, gancho, direção visual e direção musical, mantendo todas as regras fixas.`;
 
     const input=JSON.stringify({
       theme,
       directions:directions||null,
       variation,
+      product_count:productCount,
+      image_count:imageCount,
       products,
       fixed:{duration_seconds:10,opening_seconds:2,products_seconds:8,cta_seconds:0,no_cta:true,no_logo:true,narrative_arc:true,stable_product_ending:true,no_abrupt_cut:true}
     });
@@ -118,7 +129,7 @@ A cada variation diferente, mude de verdade o conceito criativo, gancho, direç�
     if(!response.ok)return json({ok:false,error:'video_prompt_ai_failed',detail:cleanText(data?.error?.message||data?.error?.code||('http_'+response.status),240)},502);
     const prompt=openAiText(data);
     if(!prompt)return json({ok:false,error:'video_prompt_empty'},502);
-    return json({ok:true,prompt,creative_label:`Tema: ${theme}`,model:'gpt-5.6-luna'});
+    return json({ok:true,prompt,creative_label:`Tema: ${theme} · ${productCount} produto${productCount===1?'':'s'}`,model:'gpt-5.6-luna',product_count:productCount,image_count:imageCount});
   }
 
   const token=(req.headers.get('Authorization')||'').replace(/^Bearer\s+/i,'').trim();

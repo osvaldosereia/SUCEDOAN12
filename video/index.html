@@ -12,7 +12,7 @@
   <header class="topbar">
     <div>
       <strong>VIDEO</strong>
-      <small>Dona Antônia · busca + 16 produtos · vídeo 10 s</small>
+      <small>Dona Antônia · busca + 1–16 produtos · vídeo fixo de 10 s</small>
     </div>
     <span class="ratio">9:16</span>
   </header>
@@ -22,7 +22,7 @@
       <div class="section-title">
         <div>
           <h1>Criar vídeo por tema</h1>
-          <p>Busque produtos, selecione 16, monte 4 referências e gere o prompt com IA.</p>
+          <p>Escolha de 1 a 16 produtos, monte automaticamente as referências e gere o prompt com IA.</p>
         </div>
         <span id="selectionBadge" class="badge">0 / 16</span>
       </div>
@@ -35,6 +35,12 @@
             <button id="searchButton" class="primary">Buscar</button>
           </div>
           <small>Você pode fazer várias buscas. Os produtos já selecionados permanecem.</small>
+        </label>
+
+        <label class="field">
+          <span>Quantidade de produtos</span>
+          <input id="productCount" type="number" min="1" max="16" step="1" value="16" inputmode="numeric">
+          <small>Escolha entre 1 e 16. O vídeo continua sempre com 10 segundos.</small>
         </label>
 
         <label class="field">
@@ -67,11 +73,11 @@
       <div class="section-title">
         <div>
           <h2>Selecionados</h2>
-          <p>Selecione exatamente 16 produtos antes de montar as referências.</p>
+          <p id="selectionInstruction">Selecione exatamente 16 produtos antes de montar as referências.</p>
         </div>
         <div class="actions compact">
           <button id="clearSelection" disabled>Limpar</button>
-          <button id="build" class="primary" disabled>Montar 4 imagens + gerar prompt</button>
+          <button id="build" class="primary" disabled>Montar imagens + gerar prompt</button>
         </div>
       </div>
       <div id="selected" class="selected-strip empty-state">Nenhum produto selecionado.</div>
@@ -82,9 +88,9 @@
       <div class="section-title">
         <div>
           <h2>Referências para o Google Flow</h2>
-          <p>4 imagens · 4 produtos por imagem</p>
+          <p id="referenceSummary">Até 4 produtos por imagem</p>
         </div>
-        <button id="download" disabled>Baixar 4 imagens</button>
+        <button id="download" disabled>Baixar imagens</button>
       </div>
       <section id="grid" class="refs"></section>
     </section>
@@ -107,16 +113,16 @@
     <section class="card">
       <h2>Como usar no Google Flow</h2>
       <div class="steps">
-        <div><b>1</b><span>Faça as buscas e selecione 16 produtos.</span></div>
+        <div><b>1</b><span>Defina a quantidade de 1 a 16, faça as buscas e selecione exatamente esse total.</span></div>
         <div><b>2</b><span>Clique em <strong>Montar 4 imagens + gerar prompt</strong>.</span></div>
         <div><b>3</b><span>No Flow use <strong>Gemini Omni Flash 1.1</strong>, Vídeo, 9:16, 10 s.</span></div>
-        <div><b>4</b><span>Anexe somente as 4 imagens geradas como Ingredients. Não é necessário anexar a logo.</span></div>
+        <div><b>4</b><span>Anexe todas as imagens de referência geradas como Ingredients. A quantidade varia automaticamente de 1 a 4 imagens. Não é necessário anexar a logo.</span></div>
         <div><b>5</b><span>Cole o prompt gerado pela IA e gere 1 saída. O vídeo termina com os produtos em composição estável, sem CTA.</span></div>
       </div>
     </section>
   </main>
 
   <script src="/admin/config.js"></script>
-  <script src="/video/app.js?v=4"></script>
+  <script src="/video/app.js?v=5"></script>
 </body>
 </html>
