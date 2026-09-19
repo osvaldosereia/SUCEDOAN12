@@ -5,22 +5,40 @@ Módulo isolado do `SUCEDOAN12` para preparar referências e prompts de vídeo p
 ## URL oficial
 - https://www.donaantonia.com.br/video
 
-## Fluxo atual
-1. Digitar uma palavra-chave para buscar produtos por nome, marca, categoria, subcategoria, GTIN ou SKU.
-2. A busca retorna até 16 produtos com imagem.
-3. O campo **Tema** é preenchido pela palavra-chave e pode ser editado.
-4. É possível fazer várias buscas sem perder os produtos já escolhidos.
-5. Selecionar exatamente 16 produtos.
-6. Clicar em **Montar 4 imagens + gerar prompt**.
-7. O sistema cria 4 referências, cada uma com 4 produtos.
-8. Os dados dos produtos + tema + orientações opcionais são enviados à automação IA no Supabase.
-9. A IA gera um prompt final adaptado ao tema para um único vídeo de 10 segundos.
+## Duração
+O vídeo é sempre **fixo em 10 segundos**, independentemente da quantidade de produtos:
+- 0–2 s: abertura temática;
+- 2–8,5 s: desenvolvimento e apresentação dos produtos;
+- 8,5–10 s: encerramento natural e estável com os próprios produtos;
+- sem CTA.
 
-## Estrutura fixa do vídeo
-- 0–2 s: abertura temática.
-- 2–8,5 s: desenvolvimento e apresentação dos produtos.
-- 8,5–10 s: encerramento natural com os próprios produtos formando uma composição final estável.
-- Sem CTA.
+## Quantidade variável de produtos
+O usuário define qualquer quantidade de **1 a 16 produtos**.
+
+A interface:
+- mantém múltiplas buscas sem perder a seleção;
+- limita a seleção ao total escolhido;
+- mostra contador `selecionados / quantidade desejada`;
+- só libera a montagem quando a quantidade selecionada for exatamente a definida.
+
+## Referências
+O sistema cria automaticamente até 4 produtos por imagem:
+- 1–4 produtos → 1 imagem;
+- 5–8 produtos → 2 imagens;
+- 9–12 produtos → 3 imagens;
+- 13–16 produtos → 4 imagens.
+
+A última referência se reorganiza automaticamente quando tiver 1, 2 ou 3 produtos.
+
+## Prompt IA
+A automação recebe:
+- `product_count`;
+- `image_count`;
+- tema;
+- orientações opcionais;
+- metadados dos produtos selecionados.
+
+O prompt é adaptado à quantidade real de produtos e imagens, mas a duração permanece sempre em 10 segundos. Com poucos produtos, a IA desenvolve mais cada produto; com muitos, aumenta a cadência e usa composições em grupos, sem inventar produtos adicionais.
 
 ## Regras fixas
 - não usar CTA;
@@ -28,14 +46,11 @@ Módulo isolado do `SUCEDOAN12` para preparar referências e prompts de vídeo p
 - preservar integralmente rótulos, embalagens e formatos;
 - remover somente fundos cinza/branco/colorido das fotos de produto;
 - somente trilha instrumental, sem voz/locução/narração;
-- usar os 10 segundos inteiros para abertura temática + apresentação dos produtos;
-- o vídeo deve ter início, meio e fim;
-- nos últimos 1–1,5 s, o movimento desacelera e converge para uma composição final estável;
-- o último movimento deve terminar antes do frame final;
-- a trilha instrumental deve ter resolução musical sincronizada ao encerramento;
+- ter início, meio e fim;
+- terminar com composição final estável;
 - nunca encerrar com corte seco, movimento interrompido ou transição pela metade.
 
 ## Backend
 Reutiliza a Edge Function existente `creative-storyboard-projects`:
 - `video_search_products`: busca pública limitada a 16 produtos com imagem;
-- `video_generate_prompt`: geração de prompt por IA, com entrada limitada e regras fixas de segurança/custo.
+- `video_generate_prompt`: geração de prompt IA adaptado dinamicamente a 1–16 produtos e 1–4 referências.
