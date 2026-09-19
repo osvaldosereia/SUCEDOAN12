@@ -53,7 +53,7 @@ assert.doesNotMatch(adminOfficial,/\/admin-v3\//,'Admin oficial não deve carreg
 assert.match(adminOfficial,/data-route=["']orders["']/);
 assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
 assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/);assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/);assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/);
-assert.match(adminOfficial,/orders-integrated-v2\\.js\\?v=20260919-print-pdf-3/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
+assert.match(adminOfficial,/orders-integrated-v2\.js\?v=20260919-print-pdf-3/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
 for(const label of ['Cliente','Endereço de entrega','Forma de pagamento','Produtos','Dados operacionais'])assert.match(integratedOrders,new RegExp(label));
 
 assert.match(adminApi,/supportedSources=\['storefront_v2','shopping_room'\]/);assert.match(adminApi,/customer_snapshot/,'Admin list must expose customer snapshot');assert.match(adminApi,/order_items/);assert.match(adminApi,/delivery_address/);assert.match(adminApi,/payment_method/);assert.match(adminApi,/checkout_snapshot/);
