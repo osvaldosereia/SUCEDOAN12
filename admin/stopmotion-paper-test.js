@@ -1,252 +1,192 @@
 const $=x=>document.getElementById(x),cfg=window.DA_ADMIN_CONFIG||{},BASE=cfg.supabaseUrl,KEY=cfg.supabasePublishableKey,FN='creative-storyboard-projects';
-let products=[],shots=[],promptSerial=0,campaign=null;
+let products=[],shots=[],promptSerial=0;
 
 async function api(b){
-  let r=await fetch(BASE+'/functions/v1/'+FN,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(b)}),
-      d=await r.json();
-  if(!r.ok||d.ok===false)throw Error(d.error||'Falha');
+  const r=await fetch(BASE+'/functions/v1/'+FN,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(b)});
+  const d=await r.json();
+  if(!r.ok||d.ok===false)throw Error(d.error||'Falha ao buscar produtos');
   return d;
 }
-const load=p=>new Promise(ok=>{let i=new Image;i.crossOrigin='anonymous';i.onload=()=>ok({p,i});i.onerror=()=>ok(null);i.src=p.image_url});
+
+const load=p=>new Promise(ok=>{
+  const i=new Image;
+  i.crossOrigin='anonymous';
+  i.onload=()=>ok({p,i});
+  i.onerror=()=>ok(null);
+  i.src=p.image_url;
+});
 
 function scene(g,n){
-  let c=document.createElement('canvas');c.width=540;c.height=960;
-  let x=c.getContext('2d');x.fillStyle='#eeeeec';x.fillRect(0,0,540,960);
-  let b=[[25,45,240,415],[275,45,240,415],[25,500,240,415],[275,500,240,415]];
+  const c=document.createElement('canvas'); c.width=540; c.height=960;
+  const x=c.getContext('2d');
+  x.fillStyle='#eeeeec'; x.fillRect(0,0,540,960);
+  const b=[[25,45,240,415],[275,45,240,415],[25,500,240,415],[275,500,240,415]];
   g.forEach((o,k)=>{
-    let [bx,by,bw,bh]=b[k],im=o.i,r=Math.min((bw-12)/im.naturalWidth,(bh-12)/im.naturalHeight),
-        w=im.naturalWidth*r,h=im.naturalHeight*r;
+    const [bx,by,bw,bh]=b[k], im=o.i;
+    const r=Math.min((bw-12)/im.naturalWidth,(bh-12)/im.naturalHeight);
+    const w=im.naturalWidth*r,h=im.naturalHeight*r;
     x.drawImage(im,bx+(bw-w)/2,by+(bh-h)/2,w,h);
   });
   return c;
 }
 
-const CONCEPTS=[
-  ['Explosão de prateleira','entradas opostas, impactos secos e cascata de produtos'],
-  ['Ímã visual','aproximações rápidas, travas no centro e trocas por batida'],
-  ['Dominó pop','produtos empurrando visualmente a próxima composição'],
-  ['Portal de cores','formas geométricas funcionando como passagens entre composições'],
-  ['Chuva de produtos','quedas curtas, rebotes e reorganizações rápidas'],
-  ['Batalha de lados','entradas laterais, confronto gráfico e match cuts'],
-  ['Esteira impossível','fluxo lateral rápido com paradas bruscas de protagonistas'],
-  ['Pop sincronizado','aparições e trocas precisas na pulsação da música']
+const STYLES=[
+  {name:'Pop magnético',motion:'entradas rápidas pelas bordas, pequenos saltos, snaps, giros mínimos e match cuts',music:'electro-pop percussivo moderno, seco, dançante e não clichê'},
+  {name:'Dominó gráfico',motion:'movimentos em cadeia, deslocamentos secos, empurrões visuais e reorganizações rápidas',music:'breakbeat leve com micropercussão, baixo curto e pausas rítmicas'},
+  {name:'Ímã visual',motion:'aproximações rápidas, travas no centro, trocas por batida e mudanças bruscas de composição',music:'nu-disco recortado, groove limpo, baixo elástico e bateria seca'},
+  {name:'Pop sincronizado',motion:'aparições marcadas pela batida, saltos curtos, slides e alternância de escala',music:'glitch groove elegante, clicks musicais e batida dançante limpa'},
+  {name:'Esteira impossível',motion:'fluxo lateral rápido com paradas bruscas, snaps e entradas diagonais',music:'funk eletrônico minimal, swing marcante e graves curtos'},
+  {name:'Portal de cores',motion:'formas geométricas abrindo passagem, mudanças de fundo e recortes entrando por match cut',music:'organic beat moderno com palmas secas, madeira e subgrave discreto'}
 ];
-const AUDIO_STYLES=[
-  ['Percussão eletrônica quebrada','micropercussão seca, clicks musicais, subgrave curto e síncopes'],
-  ['Nu-disco recortado','baixo elástico, bateria seca e pequenos stabs instrumentais'],
-  ['Funk eletrônico minimal','baixo curto, bateria minimalista e swing marcado'],
-  ['Electro-pop percussivo','bateria punchy, synth stabs curtos e viradas compactas'],
-  ['Breakbeat colorido','breaks ágeis, percussão orgânica-eletrônica e pausas rítmicas'],
-  ['House quirky','groove leve, baixo curto e detalhes instrumentais excêntricos'],
-  ['Percussão latina futurista','percussão digital sincopada e graves controlados, sem clichê tropical'],
-  ['Glitch groove','microcortes musicais, textura digital e batida dançante limpa'],
-  ['Indie dance instrumental','baixo dançante, bateria seca e riffs muito curtos'],
-  ['Organic beat moderno','palmas, madeira, snaps musicais e subgrave discreto']
-];
-const PALETTES=[
-  'coral, amarelo ácido e azul elétrico sobre fundos lisos',
-  'turquesa, magenta e amarelo vivo sobre fundos lisos',
-  'azul royal, laranja intenso e creme sobre fundos lisos',
-  'verde-limão, violeta e coral sobre fundos lisos',
-  'vermelho pop, ciano e amarelo solar sobre fundos lisos'
-];
+
 const HOOKS=[
-  'impacto instantâneo no primeiro frame com elemento central grande',
-  'entrada brusca pelas laterais já no primeiro frame',
-  'troca de fundo em três batidas antes do primeiro segundo',
-  'zoom stop motion curto seguido de snap para a composição seguinte',
-  'composição já cheia no primeiro frame e desmontagem rápida por batida'
+  'uma composição inesperada já no primeiro frame, com movimento imediato',
+  'uma entrada brusca de recortes e formas no primeiro frame',
+  'uma sequência de três mudanças visuais muito rápidas antes do primeiro segundo',
+  'um grande elemento gráfico abrindo espaço instantaneamente para a mensagem',
+  'uma montagem que começa cheia e se reorganiza de forma rápida e divertida'
 ];
-const BRIDGES=[
-  'um círculo sólido atravessando o quadro da direita para a esquerda',
-  'uma faixa de papel colorido cruzando o quadro na horizontal',
-  'um bloco de cor expandindo do centro até ocupar toda a tela',
-  'uma diagonal gráfica varrendo o quadro',
-  'uma sequência de três formas geométricas saltando para fora do quadro'
-];
-
-function newCampaign(){
-  const s=promptSerial++;
-  campaign={
-    concept:CONCEPTS[s%CONCEPTS.length],
-    audio:AUDIO_STYLES[(s*3+Math.floor(s/CONCEPTS.length))%AUDIO_STYLES.length],
-    palette:PALETTES[(s*2+1)%PALETTES.length],
-    hook:HOOKS[(s*3+2)%HOOKS.length],
-    bridge:BRIDGES[(s*5+1)%BRIDGES.length],
-    bpm:120
-  };
-}
-
-function sharedDirection(){
-  const c=campaign;
-  return `IDENTIDADE ÚNICA DA CAMPANHA — OBRIGATÓRIA NOS 3 VÍDEOS
-Conceito: ${c.concept[0]} — ${c.concept[1]}.
-Paleta: ${c.palette}.
-Gancho visual: ${c.hook}.
-Ponte visual entre os clipes: ${c.bridge}.
-Trilha: ${c.audio[0]} — ${c.audio[1]}.
-Tempo musical FIXO: ${c.bpm} BPM, compasso 4/4.
-Use a MESMA identidade instrumental, o MESMO groove, a MESMA bateria, o MESMO baixo, a MESMA textura e a MESMA pulsação nos três clipes. Não reinvente a trilha entre abertura, produtos e CTA. Deve parecer uma única peça de 20 segundos dividida em 3 arquivos.
-ÁUDIO: SOMENTE TRILHA INSTRUMENTAL. PROIBIDO locução, narração, diálogo, voz, canto, vocal, sussurro, vocal chops ou palavras faladas. Não use efeitos sonoros separados da música.`;
-}
-
-function productFidelity(){
-  return `REGRA ABSOLUTA — PRODUTOS
-Cada produto deve permanecer VISUALMENTE IDÊNTICO à referência. Preserve integralmente formato, silhueta, tampa, embalagem, proporções, cores, marca, logotipo, rótulo, letras, números, textos, ilustrações, selos e todos os detalhes gráficos.
-NÃO redesenhe, não recrie, não reescreva, não traduza, não corrija, não complete, não simplifique e não estilize absolutamente NADA do produto.
-NÃO faça morphing, deformação, fusão, troca de embalagem ou reconstrução generativa do rótulo.
-Se houver fundo cinza, branco ou colorido ao redor de um produto na imagem de referência, REMOVA SOMENTE ESSE FUNDO. O retângulo/fundo da fotografia NÃO faz parte do produto. Preserve os pixels visuais do produto e recorte apenas sua silhueta; nunca use remoção de fundo como desculpa para refazer ou alterar rótulo, formato ou embalagem.`;
-}
-
-function logoFidelity(){
-  return `REGRA ABSOLUTA — LOGO
-Use a logo anexada EXATAMENTE como ela é. NÃO redesenhe, não recrie, não troque tipografia, não altere letras, acentos, cores, símbolo, proporção ou composição. Não transforme em 3D e não gere uma versão parecida. Movimente a logo como uma peça física intacta.`;
-}
 
 function makePrompt(){
-  if(!campaign)newCampaign();
-  let idea=$('idea').value.trim();
-  return `Crie o VÍDEO PRINCIPAL de uma campanha para Instagram Reels, vertical 9:16, com EXATAMENTE 10 segundos, usando as 10 imagens anexadas como INGREDIENTS/REFERÊNCIAS dos produtos.
+  const idea=$('idea').value.trim();
+  const s=promptSerial++;
+  const style=STYLES[s%STYLES.length];
+  const hook=HOOKS[(s*2+1)%HOOKS.length];
 
-As imagens anexadas servem SOMENTE para identificar os produtos. NÃO copie seus fundos nem sua composição e NÃO transforme as 10 imagens em slideshow.
+  return `Crie UM ÚNICO vídeo publicitário vertical 9:16 de EXATAMENTE 10 segundos para Instagram Reels.
 
-${sharedDirection()}
+Vou anexar:
+1. DUAS imagens de referência contendo 8 produtos no total, 4 produtos em cada imagem.
+2. A LOGO oficial da Dona Antônia.
 
-${productFidelity()}
+As duas imagens servem SOMENTE para identificar visualmente os produtos. NÃO copie o fundo nem a composição das imagens e NÃO transforme as duas referências em slideshow.
 
-DIREÇÃO STOP MOTION
-Faça um stop motion publicitário moderno, energético e muito competitivo para retenção em Reels. Os produtos devem parecer recortes fotográficos físicos animados quadro a quadro. Use movimentos curtos e claros: snap, pequenos saltos, deslizes, giros mínimos, entradas e saídas rápidas e match cuts. Os produtos são protagonistas, grandes e reconhecíveis. Varie entre 1 produto, duplas, trios e pequenos grupos; nunca coloque os 40 simultaneamente.
+REGRA ABSOLUTA — PRODUTOS
+Cada produto deve permanecer visualmente IDÊNTICO à referência.
+Preserve integralmente: formato, silhueta, tampa, embalagem, proporções, cores, marca, logotipo do produto, rótulo, letras, números, textos, ilustrações, selos e todos os detalhes gráficos.
+NÃO redesenhe, NÃO recrie, NÃO reescreva, NÃO traduza, NÃO corrija, NÃO complete, NÃO simplifique e NÃO estilize absolutamente NADA do produto.
+NÃO faça morphing, deformação, fusão entre produtos, troca de embalagem ou reconstrução generativa do rótulo.
+Se houver fundo cinza, branco ou colorido ao redor do produto na referência, remova SOMENTE esse fundo. O fundo da fotografia NÃO faz parte do produto. Preserve o produto intacto.
 
-RITMO MUSICAL DESTE CLIPE
-Este é o trecho intermediário da peça de 20 segundos: equivale aos compassos 3 a 7 da mesma trilha a 120 BPM. São 20 batidas em 10 segundos. Faça as principais mudanças visuais coincidirem com as batidas e síncopes. Comece já no groove, sem nova introdução musical, e termine preparando a ponte visual ${campaign.bridge} para o CTA.
+REGRA ABSOLUTA — LOGO
+A logo oficial anexada deve permanecer EXATAMENTE como enviada.
+NÃO redesenhe, NÃO recrie, NÃO troque tipografia, NÃO altere letras, cores, símbolo, proporção ou composição.
+NÃO use a logo na abertura.
+NÃO use a logo durante a parte dos produtos.
+USE A LOGO SOMENTE NO CTA FINAL, entre 8 e 10 segundos.
 
-ESTRUTURA
-0–1s: impacto imediato e continuidade da abertura.
-1–3s: aceleração e primeira surpresa visual.
-3–8,5s: sequência variada, rápida e legível.
-8,5–10s: clímax visual e preparação clara para o CTA.
+ESTILO CRIATIVO DESTA VARIAÇÃO — ${style.name}
+Movimento: ${style.motion}.
+Gancho: ${hook}.
+Visual: stop motion publicitário moderno, divertido, artesanal premium, com recortes físicos, fundos lisos intensos e formas geométricas simples.
+Não use pessoas, mãos ou cenários realistas.
 
-NÃO FAÇA
-Sem locução ou voz. Sem slideshow. Sem pessoas ou mãos. Sem cenários realistas. Sem preço, promoção, slogan ou texto inventado. Sem deformar produtos. Sem alterar rótulos ou formatos.
+ÁUDIO
+Use SOMENTE TRILHA INSTRUMENTAL.
+NÃO use locução.
+NÃO use narração.
+NÃO use diálogo.
+NÃO use voz.
+NÃO use canto.
+NÃO use palavras faladas.
+Direção musical: ${style.music}.
+A trilha deve correr CONTINUAMENTE durante os 10 segundos e os cortes/movimentos devem acompanhar a mesma pulsação do início ao fim.
 
-FORMATO FINAL
-9:16, exatamente 10 segundos, alta legibilidade no celular, acabamento comercial, stop motion artesanal premium e forte retenção.${idea?'\n\nDIREÇÃO ADICIONAL DO CRIADOR:\n'+idea:''}`;
-}
+ESTRUTURA OBRIGATÓRIA
 
-function openingPrompt(){
-  if(!campaign)newCampaign();
-  return `Crie a ABERTURA da campanha Dona Antônia para Instagram Reels, vertical 9:16, com EXATAMENTE 4 segundos. Vou anexar a LOGO oficial como Ingredient.
+0–2 SEGUNDOS — ABERTURA
+A IA deve CRIAR a chamada inicial.
+A chamada precisa ser curta, inteligente, clara e chamativa, comunicando rapidamente a ideia de variedade / "aqui tem".
+Não usar a logo.
+Não colocar texto demais.
+O primeiro frame já deve chamar atenção; sem fade-in e sem introdução lenta.
 
-${sharedDirection()}
+2–8 SEGUNDOS — PRODUTOS
+Mostrar os 8 produtos das duas referências em animação stop motion.
+Distribuir os produtos ao longo desses 6 segundos; não mostrar todos simultaneamente.
+Variar entre produto individual, duplas, trios e pequenos grupos.
+Produtos grandes, reconhecíveis e legíveis.
+Use movimentos curtos, secos e sincronizados à trilha.
+NÃO modificar nenhum rótulo, embalagem ou formato.
 
-${logoFidelity()}
-
-OBJETIVO — MÁXIMA CLAREZA
-A abertura deve ser simples, rápida e impossível de confundir. Comunique APENAS duas ideias:
-1. "Aqui tem!"
-2. "Delivery em Cuiabá e VG"
-
-Não acrescente outras frases, preços, promoções ou informações. Texto grande, correto e legível no celular.
-
-ANIMAÇÃO
-Use stop motion com recortes de papel, formas geométricas simples e a logo intacta como peça física. Primeiro frame já impactante: ${campaign.hook}. A logo pode saltar, deslizar ou entrar por snap cut, mas jamais ser redesenhada.
-
-RITMO MUSICAL DESTE CLIPE
-Este é o início da peça de 20 segundos: compassos 1 e 2 da MESMA trilha a 120 BPM. São exatamente 8 batidas em 4 segundos. Comece com música já no primeiro frame. No final do 4º segundo, use ${campaign.bridge} como ponte visual para o vídeo dos produtos, sem encerrar a sensação musical.
-
-ESTRUTURA
-0–1s: gancho visual + "Aqui tem!"
-1–3s: revelar "Delivery em Cuiabá e VG" com clareza.
-3–4s: logo forte + ponte para o vídeo principal.
-
-NÃO FAÇA
-Sem locução, voz ou narração. Sem excesso de elementos. Sem texto pequeno. Sem cenas realistas. Sem alterar a logo. A abertura deve ser divertida, porém MUITO clara.
-
-FORMATO FINAL
-9:16, exatamente 4 segundos, mesma estética, paleta, trilha e pulsação do vídeo principal.`;
-}
-
-function ctaPrompt(){
-  if(!campaign)newCampaign();
-  return `Crie o ENCERRAMENTO / CTA da campanha Dona Antônia para Instagram Reels, vertical 9:16, com EXATAMENTE 6 segundos. Vou anexar a LOGO oficial e um PRINT REAL DO APP como Ingredients.
-
-${sharedDirection()}
-
-${logoFidelity()}
-
-REGRA ABSOLUTA — PRINT DO APP
-Use o print anexado como referência fiel. NÃO recrie, redesenhe ou invente outra interface. Não altere textos, ícones ou estrutura essencial do print. Trate-o como uma peça visual física intacta dentro do stop motion.
-
-OBJETIVO — CTA MUITO CLARO
-O CTA NÃO pode ser confuso. Mostre somente estas informações, escritas EXATAMENTE:
+8–10 SEGUNDOS — CTA
+Apenas aqui use a LOGO oficial.
+O CTA deve ser extremamente simples, claro e legível no celular.
+Mostrar exatamente:
 "Entrega grátis em Cuiabá e VG"
 "donaantonia.com.br"
 "WhatsApp 98449-1018"
 
-A logo também deve aparecer. Não invente outras ofertas, preços, slogans, números ou endereços.
+Não invente número, endereço, preço, desconto, promoção ou slogan adicional.
+Dê prioridade visual à logo e ao WhatsApp 98449-1018 sem poluir a tela.
 
-HIERARQUIA
-Primeiro destaque "Entrega grátis em Cuiabá e VG".
-Depois mostre o print do app de forma reconhecível.
-Finalize com logo + "donaantonia.com.br" + "WhatsApp 98449-1018" grandes e fáceis de ler. Não coloque todas as informações competindo ao mesmo tempo.
-
-RITMO MUSICAL DESTE CLIPE
-Este é o fechamento da mesma peça de 20 segundos: compassos 8 a 10 da MESMA trilha a 120 BPM. São exatamente 12 batidas em 6 segundos. Comece pegando diretamente a ponte visual ${campaign.bridge} deixada pelo vídeo principal. Não reinicie a música, não troque bateria, não mude o groove e não introduza nova melodia.
-
-ESTRUTURA
-0–2s: continuidade imediata + "Entrega grátis em Cuiabá e VG".
-2–4s: print do app com movimento stop motion simples e claro.
-4–6s: logo + donaantonia.com.br + WhatsApp 98449-1018, com tempo real de leitura.
+OBJETIVO
+Criar um Reel de 10 segundos com alta retenção, ritmo forte, clareza visual e aparência de stop motion profissional. A abertura deve chamar atenção, os produtos devem dominar o miolo e o CTA deve fechar de forma simples e memorável.
 
 NÃO FAÇA
-Sem locução, voz ou narração. Sem texto excessivo. Sem mockup 3D genérico. Sem pessoas. Sem cenas realistas. Sem alterar logo ou app. Sem encerrar com tela poluída.
+Não altere a logo.
+Não use a logo antes do CTA.
+Não altere produtos, rótulos ou formatos.
+Não invente produtos.
+Não use slideshow simples.
+Não use voz ou locução.
+Não deixe o CTA confuso.
+Não coloque informação demais na tela.
 
 FORMATO FINAL
-9:16, exatamente 6 segundos, mesmo conceito visual, mesma paleta, mesma trilha a 120 BPM e mesma linguagem do restante da campanha.`;
-}
-
-function renderCampaign(){
-  $('prompt').textContent=makePrompt();
-  $('openingPrompt').textContent=openingPrompt();
-  $('ctaPrompt').textContent=ctaPrompt();
-  const c=campaign;
-  const meta=$('campaignMeta');
-  if(meta)meta.textContent=`${c.concept[0]} · ${c.audio[0]} · 120 BPM · 4/4 · sequência 4s + 10s + 6s`;
+9:16, exatamente 10 segundos, alta legibilidade no celular, stop motion energético, visual limpo e acabamento comercial.${idea?'\n\nDIREÇÃO ADICIONAL DO CRIADOR:\n'+idea:''}`;
 }
 
 async function generate(){
   try{
-    $('status').textContent='Sorteando e carregando 40 produtos…';
-    let d=await api({action:'random_products',limit:70}),
-        a=(await Promise.all((d.products||[]).filter(p=>p.image_url).slice(0,55).map(load))).filter(Boolean).slice(0,40);
-    if(a.length<40)throw Error('Carregaram apenas '+a.length+' produtos; tente novamente.');
-    products=a.map(o=>o.p);shots=[];$('grid').innerHTML='';
-    for(let n=0;n<10;n++){
-      let c=scene(a.slice(n*4,n*4+4),n);shots.push(c);
-      let wrap=document.createElement('div');wrap.style.margin='12px 0';wrap.append(c);
+    $('status').textContent='Sorteando e carregando 8 produtos…';
+    const d=await api({action:'random_products',limit:24});
+    const candidates=(d.products||[]).filter(p=>p.image_url).slice(0,18);
+    const loaded=(await Promise.all(candidates.map(load))).filter(Boolean).slice(0,8);
+    if(loaded.length<8)throw Error('Carregaram apenas '+loaded.length+' produtos; tente novamente.');
+
+    products=loaded.map(o=>o.p);
+    shots=[];
+    $('grid').innerHTML='';
+
+    for(let n=0;n<2;n++){
+      const c=scene(loaded.slice(n*4,n*4+4),n);
+      shots.push(c);
+      const wrap=document.createElement('div');
+      wrap.style.margin='12px 0';
       c.style='width:100%;max-width:360px;aspect-ratio:9/16;object-fit:contain';
-      let p=document.createElement('p');p.textContent=String(n+1).padStart(2,'0')+' · '+products.slice(n*4,n*4+4).map(v=>v.name).join(' · ');
-      wrap.append(p);$('grid').append(wrap);
+      wrap.append(c);
+      const p=document.createElement('p');
+      p.textContent='Imagem '+(n+1)+' · '+products.slice(n*4,n*4+4).map(v=>v.name).join(' · ');
+      wrap.append(p);
+      $('grid').append(wrap);
     }
-    newCampaign();renderCampaign();
-    $('status').textContent='Pronto: 40 produtos + sequência coordenada 4s / 10s / 6s.';
-  }catch(e){$('status').textContent='Erro: '+e.message}
+
+    $('prompt').textContent=makePrompt();
+    $('status').textContent='Pronto: 8 produtos em 2 imagens + 1 prompt de vídeo de 10 s.';
+  }catch(e){
+    $('status').textContent='Erro: '+e.message;
+  }
 }
 
 async function download(){
-  if(shots.length!==10)return;
-  for(let i=0;i<10;i++){
-    let blob=await new Promise(r=>shots[i].toBlob(r,'image/jpeg',.94)),u=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=u;a.download='gemini-stopmotion-'+String(i+1).padStart(2,'0')+'.jpg';a.click();
-    setTimeout(()=>URL.revokeObjectURL(u),2000);await new Promise(r=>setTimeout(r,220));
+  if(shots.length!==2)return;
+  $('status').textContent='Baixando 2 imagens…';
+  for(let i=0;i<2;i++){
+    const blob=await new Promise(r=>shots[i].toBlob(r,'image/jpeg',.94));
+    const u=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=u;
+    a.download='gemini-stopmotion-produtos-'+String(i+1).padStart(2,'0')+'.jpg';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(u),2000);
+    await new Promise(r=>setTimeout(r,220));
   }
+  $('status').textContent='2 imagens enviadas para download.';
 }
 
 $('generate').onclick=generate;
 $('download').onclick=download;
-$('newPrompt').onclick=()=>{newCampaign();renderCampaign()};
-$('idea').oninput=()=>renderCampaign();
+$('newPrompt').onclick=()=>{$('prompt').textContent=makePrompt()};
+$('idea').oninput=()=>{$('prompt').textContent=makePrompt()};
 $('copy').onclick=()=>navigator.clipboard.writeText($('prompt').textContent);
-$('copyOpening').onclick=()=>navigator.clipboard.writeText($('openingPrompt').textContent);
-$('copyCta').onclick=()=>navigator.clipboard.writeText($('ctaPrompt').textContent);
 generate();
