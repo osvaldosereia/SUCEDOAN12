@@ -101,4 +101,4 @@ $$;
 drop trigger if exists trg_identity_review_transition_audit on public.customer_identity_resolution_evaluations;
 create trigger trg_identity_review_transition_audit
 after update of review_status on public.customer_identity_resolution_evaluations
-for each row execute function public.audit_identity_review_transition_audit_v1();
+for each row execute function public.audit_identity_review_transition_v1();
