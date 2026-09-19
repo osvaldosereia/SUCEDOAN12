@@ -76,16 +76,17 @@ Deno.serve(async(req:Request)=>{
     const instructions=`Você é diretor criativo especialista em vídeos curtos de varejo para Instagram Reels e em prompts para Google Flow / Gemini Omni Flash 1.1.
 Sua tarefa é produzir SOMENTE o prompt final do vídeo, em português, pronto para copiar no Flow.
 O vídeo é sempre UM ÚNICO vídeo vertical 9:16 de EXATAMENTE 10 segundos.
-Estrutura fixa e obrigatória: 0–1s abertura; 1–6s produtos; 6–10s CTA.
+Estrutura fixa e obrigatória: 0–2s abertura; 2–10s produtos. NÃO EXISTE CTA neste vídeo.
 A abertura deve ter uma chamada curtíssima criada por você e completamente ligada ao TEMA recebido.
-Os 5 segundos de produtos devem usar as 4 imagens anexadas apenas como referências dos produtos, nunca como slideshow.
-O CTA final deve ser simples e muito legível e mostrar exatamente: "Entrega grátis em Cuiabá e VG", "donaantonia.com.br", "WhatsApp 98449-1018".
-A logo oficial será anexada separadamente. Ela deve aparecer SOMENTE no CTA entre 6 e 10 segundos. Reforce de forma explícita e repetida que a logo não pode ser redesenhada, recriada, deformada, recolorida, reescrita, reinterpretada ou usada antes do CTA.
+Os 8 segundos de produtos devem usar as 4 imagens anexadas apenas como referências dos produtos, nunca como slideshow.
+Use os 8 segundos de produtos para apresentar os 16 produtos com ritmo alto, alternando produto individual, duplas, trios e pequenos grupos, sem precisar mostrar todos ao mesmo tempo.
+NÃO inclua CTA, tela final de venda, telefone, WhatsApp, site, preço, promoção, chamada para comprar ou mensagem de encerramento comercial.
+NÃO use nem solicite a logo da Dona Antônia. O vídeo deve terminar ainda dentro da apresentação criativa dos produtos, sem cartela final.
 Reforce de forma explícita e repetida que os produtos precisam permanecer visualmente idênticos: não alterar rótulo, texto, marca, logotipo, embalagem, formato, proporção, tampa, cor, ilustração ou qualquer detalhe. Se as fotos tiverem fundo cinza, branco ou colorido, remova somente esse fundo e preserve o produto intacto.
 Áudio: SOMENTE trilha instrumental. Proibido locução, narração, voz, canto, diálogo, vocal chop, sussurro ou palavra falada.
 O criativo inteiro — chamada, direção de arte, movimentos, paleta, elementos gráficos, ritmo e metáforas visuais — deve ser adaptado ao TEMA. Se o tema for uma marca, use os produtos da referência como verdade visual e não invente novo logotipo, slogan ou identidade da marca.
 As orientações adicionais são preferências do usuário: incorpore-as quando existirem sem violar as regras fixas.
-Faça um prompt forte para retenção em Reels: primeiro frame impactante, mudanças visuais frequentes, stop motion com recortes físicos, movimentos secos, snaps, saltos curtos e match cuts. Evite poluição visual.
+Faça um prompt forte para retenção em Reels: primeiro frame impactante, mudanças visuais frequentes, stop motion com recortes físicos, movimentos secos, snaps, saltos curtos e match cuts. Evite poluição visual. O último segundo também deve manter produto e movimento; não converta o final em CTA, logo ou cartela.
 Não enumere os nomes dos 16 produtos no prompt final; use os metadados apenas para entender o tema e o mix.
 A cada variation diferente, mude de verdade o conceito criativo, gancho, direção visual e direção musical, mantendo todas as regras fixas.`;
 
@@ -94,7 +95,7 @@ A cada variation diferente, mude de verdade o conceito criativo, gancho, direç�
       directions:directions||null,
       variation,
       products,
-      fixed:{duration_seconds:10,opening_seconds:1,products_seconds:5,cta_seconds:4,whatsapp:'98449-1018',site:'donaantonia.com.br',free_delivery:'Cuiabá e VG'}
+      fixed:{duration_seconds:10,opening_seconds:2,products_seconds:8,cta_seconds:0,no_cta:true,no_logo:true}
     });
 
     const response=await fetch('https://api.openai.com/v1/responses',{
