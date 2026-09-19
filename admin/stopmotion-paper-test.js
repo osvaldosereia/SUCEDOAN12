@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const $=id=>document.getElementById(id),cfg=window.DA_ADMIN_CONFIG||{},URL=cfg.supabaseUrl,KEY=cfg.supabasePublishableKey,FN='stopmotion-test-products';
+const $=id=>document.getElementById(id),cfg=window.DA_ADMIN_CONFIG||{},URL=cfg.supabaseUrl,KEY=cfg.supabasePublishableKey,FN='creative-storyboard-projects';
 const canvas=$('stage'),ctx=canvas.getContext('2d'),palette=['#FF3158','#FF7A00','#FFD400','#00D47E','#00A8FF','#7657FF','#E23DFF','#00D6D6','#FF4FB3','#A8E600'];
 let products=[],images=[],playing=false,audio=null,start=0,raf=0,lastProd=-1,lastBg=-1;
 async function invoke(body){const r=await fetch(URL+'/functions/v1/'+FN,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw Error(d.detail||d.error||'Falha ao carregar produtos');return d}
