@@ -4,6 +4,9 @@ export type HomologationAction =
   | 'simulate_checkout'
   | 'simulate_push'
   | 'simulate_media'
+  | 'secure_session_read'
+  | 'secure_session_write'
+  | 'secure_session_clear'
   | 'hml_network'
   | 'production_order'
   | 'production_push'
@@ -38,6 +41,9 @@ const RESOURCE_ACTIONS = new Set<HomologationAction>([
   'simulate_checkout',
   'simulate_push',
   'simulate_media',
+  'secure_session_read',
+  'secure_session_write',
+  'secure_session_clear',
   'hml_network',
 ]);
 
