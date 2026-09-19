@@ -33,8 +33,11 @@ Auditoria estática cobre 320px, 44px, foco/ARIA, contraste/reduced motion, esta
 ## Rodada A8 — Release/store/native readiness ✅ ESGOTADA DOCUMENTALMENTE ATÉ LIMITE NATIVO/HUMANO
 Preflight nativo existente permanece fail-closed. `STORE-RELEASE-READINESS.md` consolida gates Android/iOS, assinatura, metadata, reviewer TEST, privacy/data-safety, artefatos e regras de bloqueio. Nenhum build, console, listing, tester, TestFlight ou submissão foi executado. Android/iOS permanecem não homologados.
 
-## Rodada A9 — Fechamento autônomo total — PRÓXIMA
-- auditar branch; executar tudo possível; confirmar `comprar/` intocado e efeitos reais OFF; corrigir trabalho seguro restante; criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; atualizar checkpoints; marcar `PROGRAMMATIC_COMPLETE=true` somente se não restar tarefa segura/independente.
+## Rodada A9 — Fechamento autônomo total ✅ CONCLUÍDA
+Auditoria final confirmou o PR aberto/Draft/não mergeado, efeitos reais OFF e bloqueios remanescentes dependentes de runner/toolchain, quota, credenciais, console, aparelho ou ação humana. Foram criados `HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`.
+
+**PROGRAMMATIC_COMPLETE=true** — não resta tarefa segura e independente dentro de A1–A9. Isto não equivale a homologação nativa, deploy backend, publicação ou autorização de produção. A branch está divergente de `main`; sincronização/rebase/merge não é feito autonomamente para não arriscar trabalho paralelo nem `comprar/`.
 
 ## Travamentos permanentes
-- `comprar/` intocado; PR #396 Draft/não mergeado; produção/pedidos/push/executores reais OFF; sem Meta/PapoAI/Bling/logística/dados reais; sem apagar Edge Functions ou aumentar plano; sem publicação; sem declarar Android/iOS homologados sem build/teste real.
+- `comprar/` intocado por este escopo; PR #396 Draft/não mergeado; produção/pedidos/push/executores reais OFF; sem Meta/PapoAI/Bling/logística/dados reais; sem apagar Edge Functions ou aumentar plano; sem publicação; sem declarar Android/iOS homologados sem build/teste real.
+- depois da A9 não criar novo escopo autônomo; executar apenas ações humanas documentadas ou novo escopo explícito.
