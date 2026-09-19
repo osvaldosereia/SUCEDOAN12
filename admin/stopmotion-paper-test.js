@@ -1,10 +1,8 @@
 (()=>{'use strict';
-const $=id=>document.getElementById(id),cfg=window.DA_ADMIN_CONFIG||{},URL=cfg.supabaseUrl,KEY=cfg.supabasePublishableKey,FN='creative-storyboard-projects';
+const $=id=>document.getElementById(id),cfg=window.DA_ADMIN_CONFIG||{},URL=cfg.supabaseUrl,KEY=cfg.supabasePublishableKey,FN='stopmotion-test-products';
 const canvas=$('stage'),ctx=canvas.getContext('2d'),palette=['#FF3158','#FF7A00','#FFD400','#00D47E','#00A8FF','#7657FF','#E23DFF','#00D6D6','#FF4FB3','#A8E600'];
 let products=[],images=[],playing=false,audio=null,start=0,raf=0,lastProd=-1,lastBg=-1;
-const auth=()=>{try{return JSON.parse(localStorage.getItem('da_admin_auth')||'null')||{}}catch{return{}}};
-async function refresh(){const a=auth(),r=await fetch(URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:a.refresh_token})}),d=await r.json();if(!d.access_token)throw Error('Entre no Admin novamente.');localStorage.setItem('da_admin_auth',JSON.stringify(d));return d}
-async function invoke(body,retry=true){let a=auth();if(!a.access_token&&a.refresh_token)a=await refresh();const r=await fetch(URL+'/functions/v1/'+FN,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+a.access_token,'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(r.status===401&&retry){await refresh();return invoke(body,false)}if(!r.ok||d.ok===false)throw Error(d.detail||d.error||'Falha');return d}
+async function invoke(body){const r=await fetch(URL+'/functions/v1/'+FN,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw Error(d.detail||d.error||'Falha ao carregar produtos');return d}
 const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
 async function load(){
  $('load').disabled=true;$('play').disabled=true;$('status').textContent='Sorteando produtos com foto…';
