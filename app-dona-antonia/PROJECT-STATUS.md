@@ -955,3 +955,20 @@ Consequência:
 - R10/R11 permanecem bloqueadas e não foram artificialmente avançadas.
 
 Documento: `docs/homologation/NATIVE-TOOLCHAIN-PREFLIGHT.md`.
+
+---
+
+# AUTONOMOUS A1 — BASELINE / REPRODUTIBILIDADE
+
+Estado: **PROGRAMATICAMENTE CONCLUÍDA**.
+
+Entregas:
+- `scripts/verify-test-layout.mjs`;
+- `npm run verify:test-layout`;
+- `npm run validate:programmatic` como comando consolidado;
+- auditoria estrutural: 53 arquivos em tests, 51 executáveis, 0 uncovered;
+- grupos cobertos: 37 unit, 4 contract, 6 security, 3 e2e, 1 isolation.
+
+Limitação honesta:
+- o comando integral não foi declarado verde sem runner/dependências reais associados ao HEAD;
+- a próxima rodada deve continuar A2, sem reabrir A1 salvo regressão.
