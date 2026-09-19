@@ -19,7 +19,8 @@
 **Concluídas:** R0–R9 e R20.  
 **Parciais seguras:** R12–R19 e R21–R24.  
 **Bloqueios:** R10/R11 toolchain/build nativo; R13 deploy por quota; R25 produção proibida.  
-**PR:** #396 Draft — NÃO MERGEAR.
+**PR:** #396 Draft — NÃO MERGEAR.  
+**PROGRAMMATIC_COMPLETE=true** para o plano autônomo A1–A9.
 
 ## Plano autônomo A1–A9
 - A1 baseline/suíte: concluída programaticamente; execução integral depende de runner/dependências.
@@ -30,13 +31,17 @@
 - A6 HML/backend: esgotada programaticamente sem deploy.
 - A7 UX/acessibilidade/offline/desempenho: esgotada programaticamente até limite de browser/aparelho.
 - A8 release/store/native readiness: esgotada documentalmente até limite nativo/humano.
-- A9 auditoria final: **próxima**.
+- A9 auditoria final: concluída; ações humanas e checklist final documentados.
 
-## Checkpoint A8 — 19/09/2026
-A auditoria estática A7 não deixou tarefa independente adicional identificada; medições e acessibilidade restantes exigem browser/aparelho real. A8 consolidou `STORE-RELEASE-READINESS.md` com gates Android/iOS, assinatura, metadata, reviewer TEST, privacy/data-safety e evidências exigidas. O preflight nativo continua fail-closed e Android/iOS continuam explicitamente não homologados.
+## Checkpoint A9 — 19/09/2026
+A auditoria final não identificou tarefa segura e independente adicional dentro do plano. O PR permanece aberto, Draft e não mergeado. A branch divergiu de `main`; sincronização/rebase/merge foi deliberadamente deixada para coordenação humana para não arriscar trabalho paralelo nem `comprar/`.
+
+Foram criados:
+- `docs/homologation/HUMAN-ACTIONS-FINAL.md`;
+- `docs/homologation/FINAL-AUTONOMOUS-CHECKLIST.md`.
 
 ### Validação honesta
-Testes/typecheck não são declarados verdes sem runner associado ao HEAD. Nenhum build Gradle/Xcode, APK/AAB/IPA, console de loja, TestFlight, publicação, deploy, pedido, push ou integração externa foi acionado.
+`PROGRAMMATIC_COMPLETE=true` significa somente que A1–A9 foram esgotadas dentro dos limites autorizados. Testes/typecheck não são declarados verdes sem runner associado ao HEAD. Android/iOS continuam não homologados. Nenhum build Gradle/Xcode, APK/AAB/IPA, console de loja, TestFlight, publicação, deploy, pedido, push ou integração externa foi acionado.
 
-## Próximo trabalho seguro
-Executar A9: auditoria final da branch e dos gates, corrigir qualquer restante seguro, criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md` e somente então avaliar `PROGRAMMATIC_COMPLETE=true`.
+## Próximo passo
+Não criar A10 nem novo escopo. As únicas pendências são ações humanas/nativas/operacionais registradas em `HUMAN-ACTIONS-FINAL.md` ou um novo escopo explicitamente autorizado no futuro.
