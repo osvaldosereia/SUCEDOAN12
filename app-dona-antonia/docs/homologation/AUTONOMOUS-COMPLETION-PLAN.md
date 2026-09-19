@@ -15,9 +15,8 @@ Baseline programático consolidado: 53 arquivos em `tests/`, 51 testes executáv
 ## Rodada A2 — Guard central e fail-closed total ✅ PROGRAMATICAMENTE CONCLUÍDA
 Barreira central cobre HML network, push, mídia, secure session e telemetry sink. Todos exigem homologação, `productionEnabled=false` e recurso `TEST-*` antes de qualquer efeito. Ações de produção/executor externo permanecem bloqueadas incondicionalmente. Telemetria mantém registry fechado e rejeição de PII/advertising IDs; agora também falha fechado antes do sink em production, flag de produção ou resource não-TEST. Testes de segurança foram ampliados; não são declarados verdes sem runner real.
 
-## Rodada A3 — Sessão, identidade e pairing
-- fechar contratos locais de sessão; expiração/revogação/replay; limites de tentativas; pairing de uso único; contratos nativos/backend; testes de abuso/concorrência possíveis sem backend real.
-**Saída esperada:** R12/R14 esgotadas até o limite não nativo.
+## Rodada A3 — Sessão, identidade e pairing ✅ PROGRAMATICAMENTE CONCLUÍDA ATÉ O LIMITE NÃO NATIVO
+Pairing sintético fechado com challenge `TEST-PAIR-*`, segredo aleatório, código humano, expiração, comparação de segredo sem early return, limites de polling/confirmação, confirmação humana de uso único e consumo após emissão. Session token retornado pelo fixture agora é obrigatoriamente `TEST-SESSION-*`; token não sintético falha antes de consumir o challenge. Cobertura adicional valida replay, reconfirmação, token real e rate limit. Secure session continua fail-closed e o restante depende de Keychain/Keystore/backend real.
 
 ## Rodada A4 — Deep links e notificações
 - fechar policy de URLs/deep links; allowlist HTTPS; payloads opacos sem PII; roteamento determinístico; push HML sintético; preferências; validation/deduplicação; configs nativas preparatórias.
