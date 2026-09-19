@@ -25,15 +25,15 @@ Deep links mantêm roteamento determinístico e allowlist explícita; URLs absol
 Cofre efêmero de metadados HML, IDs `TEST-MEDIA-*`, MIME/tamanho/TTL/retention fechados; política de EXIF e direitos locais sintéticos. Permissões/pickers e stripping EXIF efetivo dependem de build/teste nativo.
 
 ## Rodada A6 — HML/backend preparado para deploy ✅ ESGOTADA PROGRAMATICAMENTE SEM DEPLOY
-Preflight, segurança de request/idempotência, bootstrap/catalog/checkout e fronteiras de pairing/telemetria/privacidade estão fechadas por contratos sintéticos fail-closed. Pairing exige challenge/sessão TEST, frescor e uso único; telemetria proíbe PII/texto livre/ad ID/sink externo; privacidade limita acesso/exclusão ao mesmo subject TEST e zero escrita externa. Testes unitários foram versionados. Deploy/migrations reais continuam bloqueados por quota/ação operacional e não foram executados; não apagar Edge Functions nem aumentar plano.
+Preflight, segurança de request/idempotência, bootstrap/catalog/checkout e fronteiras de pairing/telemetria/privacidade estão fechadas por contratos sintéticos fail-closed. Deploy/migrations reais continuam bloqueados por quota/ação operacional e não foram executados; não apagar Edge Functions nem aumentar plano.
 
-## Rodada A7 — UX, acessibilidade, offline e desempenho — PRÓXIMA
-- auditoria 320px/44px/teclado/foco/ARIA/contraste/reduced motion; loading/empty/error/offline; recovery; budgets; testes automatizáveis.
+## Rodada A7 — UX, acessibilidade, offline e desempenho ✅ ESGOTADA PROGRAMATICAMENTE ATÉ LIMITE DE BROWSER/APARELHO
+Auditoria estática cobre 320px, 44px, foco/ARIA, contraste/reduced motion, estados loading/empty/error/offline, recovery e budgets. Restante exige browser/aparelho/medição real e está listado em `UX-CHECKLIST.md`.
 
-## Rodada A8 — Release/store/native readiness
-- preflight Android/iOS; configs Capacitor; APK/AAB/IPA checklist; metadata; reviewer TEST; privacy/data-safety; release readiness; runbooks; sem listing/tester/build/submissão real.
+## Rodada A8 — Release/store/native readiness ✅ ESGOTADA DOCUMENTALMENTE ATÉ LIMITE NATIVO/HUMANO
+Preflight nativo existente permanece fail-closed. `STORE-RELEASE-READINESS.md` consolida gates Android/iOS, assinatura, metadata, reviewer TEST, privacy/data-safety, artefatos e regras de bloqueio. Nenhum build, console, listing, tester, TestFlight ou submissão foi executado. Android/iOS permanecem não homologados.
 
-## Rodada A9 — Fechamento autônomo total
+## Rodada A9 — Fechamento autônomo total — PRÓXIMA
 - auditar branch; executar tudo possível; confirmar `comprar/` intocado e efeitos reais OFF; corrigir trabalho seguro restante; criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; atualizar checkpoints; marcar `PROGRAMMATIC_COMPLETE=true` somente se não restar tarefa segura/independente.
 
 ## Travamentos permanentes
