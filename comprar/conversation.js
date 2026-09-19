@@ -292,22 +292,51 @@
   function openSavedWhatsApp(){if(isAdminTest()||!checkoutFlow.whatsappUrl)return;if(checkoutFlow.handoffWindow&&!checkoutFlow.handoffWindow.closed){try{checkoutFlow.handoffWindow.location.replace(checkoutFlow.whatsappUrl);checkoutFlow.handoffWindow=null;return}catch{}}location.replace(checkoutFlow.whatsappUrl)}
 
   async function confirmAndSend(button){
-    if(checkoutFlow.orderSaved){openSavedWhatsApp();return}if(button?.dataset.busy==='1'||!checkoutFlow.form||!checkoutFlow.payment)return;
-    const status=checkoutBody()?.querySelector('[data-confirm-status]');checkoutFlow.handoffWindow=reserveWhatsAppWindow();button.dataset.busy='1';button.disabled=true;button.textContent='Salvando pedido…';if(status)status.textContent='Salvando cadastro, endereço e pedido…';
+    if(checkoutFlow.orderSaved){openSavedWhatsApp();return}
+    const status=checkoutBody()?.querySelector('[data-confirm-status]');
+    if(button?.dataset.busy==='1')return;
+    if(!checkoutFlow.form||!checkoutFlow.payment){
+      const message='Confira o endereço e a forma de pagamento antes de confirmar.';
+      if(status)status.textContent=message;toast(message);return;
+    }
+    checkoutFlow.handoffWindow=reserveWhatsAppWindow();
+    button.dataset.busy='1';button.disabled=true;button.textContent='Salvando pedido…';
+    if(status)status.textContent='Confirmando seu pedido…';
     try{
       const form=checkoutFlow.form;
-      const data=await workWithTyping(async()=>{
-        const customerResult=await customerApi('commit_customer',{customer_id:checkoutFlow.profile?.customer_id||null,name:form.name,phone:form.phone});state.checkout=customerResult.checkout||state.checkout;state.customer=customerResult.customer||state.customer;
-        const addressResult=await checkoutApi('save_address',{delivery_address:form.address,mode:checkoutFlow.selectedAddressId?'replace':'add',address_id:checkoutFlow.selectedAddressId||null});state.checkout=addressResult.checkout||state.checkout;
-        const paymentResult=await api('set_payment',{payment_method:checkoutFlow.payment});state.payment=paymentResult.payment_method||checkoutFlow.payment;
-        const payload={payment_method:state.payment,delivery_address:form.address,save_address:true,...(checkoutFlow.locator?{delivery_locator:checkoutFlow.locator}:{})};return app.confirmOrder(payload);
-      },{label:'Ana está confirmando seu pedido…'});
-      const simulated=data.admin_test===true||isAdminTest();if(!simulated&&!data?.order?.order_id&&!data?.order?.order_number)throw new Error('Não consegui confirmar o número do pedido.');
-      checkoutFlow.orderSaved=true;checkoutFlow.whatsappUrl=simulated?'':(data.whatsapp_url||buildWhatsAppUrl(data,form));renderSuccess(data);if(!simulated)openSavedWhatsApp();else closeReservedWindow();
-    }catch(error){closeReservedWindow();if(status)status.textContent=error.message;button.dataset.busy='0';button.disabled=false;button.textContent='Confirmar pedido'}
+      const payload={
+        customer_id:checkoutFlow.profile?.customer_id||null,
+        name:form.name,
+        phone:form.phone,
+        payment_method:checkoutFlow.payment,
+        delivery_address:form.address,
+        address_mode:checkoutFlow.selectedAddressId?'replace':'add',
+        address_id:checkoutFlow.selectedAddressId||null,
+        ...(checkoutFlow.locator?{delivery_locator:checkoutFlow.locator}:{})
+      };
+      const data=await workWithTyping(
+        ()=>isAdminTest()?app.confirmOrder(payload):checkoutApi('finalize_order',payload),
+        {label:'Ana está confirmando seu pedido…'}
+      );
+      const simulated=data.admin_test===true||isAdminTest();
+      if(!simulated&&!data?.order?.order_id&&!data?.order?.order_number)throw new Error('Não consegui confirmar o número do pedido.');
+      if(!simulated)app.markOrderCompleted(data);
+      state.payment=data.payment_method||checkoutFlow.payment;
+      state.customer=data.customer||state.customer;
+      checkoutFlow.orderSaved=true;
+      checkoutFlow.whatsappUrl=simulated?'':(data.whatsapp_url||buildWhatsAppUrl(data,form));
+      renderSuccess(data);
+      if(!simulated)openSavedWhatsApp();else closeReservedWindow();
+    }catch(error){
+      closeReservedWindow();
+      const message=error?.message||'Não consegui confirmar seu pedido. Tente novamente.';
+      if(status)status.textContent=message;
+      toast(message);
+      button.dataset.busy='0';button.disabled=false;button.textContent='Confirmar pedido';
+    }
   }
 
-  function renderSuccess(data={}){ui.checkoutStep='success';clearPrompt();if(!checkoutFlow.stage)return;const order=data.order||{},simulated=data.admin_test===true||isAdminTest();checkoutFlow.stage.innerHTML=`<div class="checkout-card success ${simulated?'admin-test-success':''}"><div class="check">${simulated?'🧪':'✓'}</div><h2>${simulated?'Teste concluído':'Pedido confirmado!'}</h2><p>${order.order_number?`Pedido <strong>#${escapeHtml(order.order_number)}</strong> salvo com sucesso.`:'Seu pedido foi salvo com sucesso.'}</p>${simulated?'<small>Modo de teste: nenhum pedido real foi criado e o WhatsApp não será aberto.</small>':'<small>Vamos abrir o WhatsApp para você enviar a confirmação à equipe.</small>'}</div>`;state.modules.help?.setCheckoutMode?.(false);app.scrollTo(checkoutFlow.stage,{block:'center'})}
+  function renderSuccess(data={}){ui.checkoutStep='success';clearPrompt();if(!checkoutFlow.stage)return;const order=data.order||{},simulated=data.admin_test===true||isAdminTest();checkoutFlow.stage.innerHTML=`<div class="checkout-card success ${simulated?'admin-test-success':''}"><div class="check">${simulated?'🧪':'✓'}</div><h2>${simulated?'Teste concluído':'Pedido confirmado!'}</h2><p>${order.order_number?`Pedido <strong>#${escapeHtml(order.order_number)}</strong> salvo com sucesso.`:'Seu pedido foi salvo com sucesso.'}</p>${simulated?'<small>Modo de teste: nenhum pedido real foi criado e o WhatsApp não será aberto.</small>':'<small>Vamos abrir o WhatsApp para você enviar a confirmação à equipe.</small><button type="button" class="primary" data-open-saved-whatsapp>Abrir WhatsApp</button>'}</div>`;const whatsappButton=checkoutFlow.stage.querySelector('[data-open-saved-whatsapp]');if(whatsappButton)whatsappButton.onclick=openSavedWhatsApp;state.modules.help?.setCheckoutMode?.(false);app.scrollTo(checkoutFlow.stage,{block:'center'})}
 
   function interceptSemanticClicks(event){
     const button=event.target.closest?.('button');if(!button)return;
