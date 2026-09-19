@@ -69,10 +69,10 @@ function makePrompt(){
   return `Crie UM ÚNICO vídeo publicitário vertical 9:16 de EXATAMENTE 10 segundos para Instagram Reels, usando Gemini Omni Flash 1.1.
 
 Vou anexar como referências:
-- DUAS imagens contendo 8 produtos no total, 4 produtos em cada imagem;
+- QUATRO imagens contendo 16 produtos no total, 4 produtos em cada imagem;
 - a LOGO oficial da Dona Antônia.
 
-As duas imagens de produtos servem SOMENTE para identificar visualmente os produtos. NÃO copie a composição das referências e NÃO transforme as duas imagens em slideshow.
+As quatro imagens de produtos servem SOMENTE para identificar visualmente os produtos. NÃO copie a composição das referências e NÃO transforme as duas imagens em slideshow.
 
 REGRA ABSOLUTA — FIDELIDADE DOS PRODUTOS
 Cada produto deve permanecer VISUALMENTE IDÊNTICO à referência durante todo o vídeo.
@@ -110,7 +110,7 @@ NÃO usar a logo.
 Primeiro frame já forte. Sem fade-in, sem introdução lenta e sem excesso de texto.
 
 2–8 SEGUNDOS — PRODUTOS
-Mostrar os 8 produtos das referências em stop motion.
+Mostrar os 16 produtos das referências em stop motion.
 Distribuir os 8 produtos ao longo dos 6 segundos; não mostrar todos simultaneamente.
 Variar produto individual, duplas, trios e pequenos grupos.
 Produtos grandes, claros e reconhecíveis.
@@ -152,14 +152,19 @@ function renderPrompt(){
 async function generate(){
   try{
     $('generate').disabled=true;$('download').disabled=true;
-    $('status').textContent='Sorteando e carregando 8 produtos…';
-    const d=await api({action:'random_products',limit:24});
-    const candidates=(d.products||[]).filter(p=>p.image_url).slice(0,18);
-    const loaded=(await Promise.all(candidates.map(loadImage))).filter(Boolean).slice(0,8);
-    if(loaded.length<8)throw Error('Carregaram apenas '+loaded.length+' produtos. Tente novamente.');
+    $('status').textContent='Sorteando e carregando 16 produtos…';
+    const d=await api({action:'random_products',limit:40});
+    const candidates=(d.products||[]).filter(p=>p.image_url).slice(0,32);
+    const loaded=(await Promise.all(candidates.map(loadImage))).filter(Boolean).slice(0,16);
+    if(loaded.length<16)throw Error('Carregaram apenas '+loaded.length+' produtos. Tente novamente.');
 
     products=loaded.map(o=>o.p);
-    shots=[drawReference(loaded.slice(0,4),0),drawReference(loaded.slice(4,8),1)];
+    shots=[
+      drawReference(loaded.slice(0,4),0),
+      drawReference(loaded.slice(4,8),1),
+      drawReference(loaded.slice(8,12),2),
+      drawReference(loaded.slice(12,16),3)
+    ];
 
     $('grid').innerHTML='';
     shots.forEach((canvas,i)=>{
@@ -172,7 +177,7 @@ async function generate(){
     selectStyle();
     renderPrompt();
     $('download').disabled=false;
-    $('status').textContent='Pronto: 8 produtos, 2 referências e 1 prompt.';
+    $('status').textContent='Pronto: 16 produtos, 4 referências e 1 prompt.';
   }catch(e){
     $('status').textContent='Erro: '+e.message;
   }finally{
@@ -181,10 +186,10 @@ async function generate(){
 }
 
 async function download(){
-  if(shots.length!==2)return;
+  if(shots.length!==4)return;
   $('download').disabled=true;
-  $('status').textContent='Baixando as 2 imagens…';
-  for(let i=0;i<2;i++){
+  $('status').textContent='Baixando as 4 imagens…';
+  for(let i=0;i<4;i++){
     const blob=await new Promise(r=>shots[i].toBlob(r,'image/jpeg',.96));
     const url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='dona-antonia-video-produtos-'+String(i+1).padStart(2,'0')+'.jpg';
@@ -192,7 +197,7 @@ async function download(){
     setTimeout(()=>URL.revokeObjectURL(url),2500);
     await new Promise(r=>setTimeout(r,250));
   }
-  $('status').textContent='As 2 imagens foram enviadas para download.';
+  $('status').textContent='As 4 imagens foram enviadas para download.';
   $('download').disabled=false;
 }
 
