@@ -1,6 +1,6 @@
 # App Dona Antônia — Plano de Conclusão Autônoma
 
-**Data:** 18/09/2026
+**Data:** 19/09/2026
 **Limite:** no máximo 9 rodadas adicionais
 **Branch:** `app-dona-antonia-r0-isolation`
 **PR:** #396 — Draft — NÃO MERGEAR
@@ -21,16 +21,13 @@ Pairing/session sintéticos fechados com TEST IDs/tokens, expiração, uso únic
 ## Rodada A4 — Deep links e notificações ✅ PROGRAMATICAMENTE CONCLUÍDA ATÉ O LIMITE NÃO NATIVO
 Deep links mantêm roteamento determinístico e allowlist explícita; URLs absolutas exigem HTTPS. PII, credenciais e material de sessão falham fechado. Router sintético de notificações usa IDs `TEST-NOTIFICATION-*`, valida link antes do consumo e deduplica em memória. Push continua somente sintético.
 
-## Rodada A5 — Mídia, privacidade e dados locais — ESGOTADA PROGRAMATICAMENTE ATÉ LIMITE NATIVO
-Implementado cofre efêmero de metadados HML, IDs `TEST-MEDIA-*`, MIME/tamanho/TTL/retention fechados. A política pura `mediaPrivacyPolicy` valida origem/MIME, áudio <=120s e determina `strip-exif-before-boundary`, sem receber bytes, filename, URL ou texto do cliente. `LocalPrivacyRights` fornece acesso/eliminação somente para `TEST-SUBJECT-*` + `TEST-MEDIA-*`; metadados são imutáveis e correção exige apagar/recriar. Permissões/pickers e stripping EXIF efetivo continuam dependentes de implementação/build nativo em dispositivo.
+## Rodada A5 — Mídia, privacidade e dados locais ✅ ESGOTADA PROGRAMATICAMENTE ATÉ LIMITE NATIVO
+Cofre efêmero de metadados HML, IDs `TEST-MEDIA-*`, MIME/tamanho/TTL/retention fechados; política de EXIF e direitos locais sintéticos. Permissões/pickers e stripping EXIF efetivo dependem de build/teste nativo.
 
-## Rodada A6 — HML/backend preparado para deploy — EM ANDAMENTO SEGURO
-- migrations; integridade carrinho/total; idempotência/rate limit; bootstrap/catalog/checkout; contratos pairing/telemetria/privacidade; manifest/checklist; testes possíveis; sem apagar Edge Functions/aumentar plano.
-- implementados `hmlBackendPreflight.ts`, `hmlRequestSafety.ts` e `hmlBoundaryContracts.ts`.
-- bootstrap exige homologação sintética e zero requests externos; catálogo exige produtos `TEST-PRODUCT-*`, shape consistente e centavos válidos; checkout exige subject/cart/operação/idempotência/produtos sintéticos, carrinho não vazio e igualdade entre total apresentado e autoritativo.
-- testes unitários dos contratos foram versionados; não são declarados verdes sem runner/typecheck real.
+## Rodada A6 — HML/backend preparado para deploy ✅ ESGOTADA PROGRAMATICAMENTE SEM DEPLOY
+Preflight, segurança de request/idempotência, bootstrap/catalog/checkout e fronteiras de pairing/telemetria/privacidade estão fechadas por contratos sintéticos fail-closed. Pairing exige challenge/sessão TEST, frescor e uso único; telemetria proíbe PII/texto livre/ad ID/sink externo; privacidade limita acesso/exclusão ao mesmo subject TEST e zero escrita externa. Testes unitários foram versionados. Deploy/migrations reais continuam bloqueados por quota/ação operacional e não foram executados; não apagar Edge Functions nem aumentar plano.
 
-## Rodada A7 — UX, acessibilidade, offline e desempenho
+## Rodada A7 — UX, acessibilidade, offline e desempenho — PRÓXIMA
 - auditoria 320px/44px/teclado/foco/ARIA/contraste/reduced motion; loading/empty/error/offline; recovery; budgets; testes automatizáveis.
 
 ## Rodada A8 — Release/store/native readiness
