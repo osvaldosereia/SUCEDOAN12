@@ -18,29 +18,29 @@
 - R25: produção proibida sem autorização explícita.
 
 ## Último avanço seguro
-A barreira fail-closed central de `src/platform/homologationGuard.ts`, já aplicada ao cliente HML e push sintético, foi integrada também ao adapter de mídia em `src/platform/media.ts`.
+A barreira fail-closed central de `src/platform/homologationGuard.ts`, já aplicada ao cliente HML, push e mídia sintéticos, foi estendida ao adapter de sessão segura em `src/customer/nativeSecureSession.ts`.
 
 Proteções acumuladas:
 - HML exige recursos `TEST-*`, ambiente homologation e produção desabilitada antes de rede;
 - endpoints HML usam allowlist exata das Edge Functions declaradas;
 - push aceita somente `TEST-PUSH-*` e passa pelo guard antes de mutar estado;
-- mídia agora passa por `simulate_media` antes de consumir qualquer fixture;
-- `environment=production` e `productionEnabled=true` bloqueiam foto/áudio fail-closed;
-- mídia não-`TEST-*` é recusada pela barreira central antes da validação específica;
-- fixtures bloqueadas não são consumidas, permitindo comprovar que o bloqueio ocorre antes da mutação;
-- adapters de push/mídia permanecem sem I/O externo e reportam `externalRequestCount=0`.
+- mídia passa por `simulate_media` antes de consumir fixture e permanece sem upload/rede;
+- sessão segura agora possui ações explícitas `secure_session_read|write|clear` na barreira central;
+- ambiente de produção, `productionEnabled=true` e recurso não `TEST-*` bloqueiam sessão antes de qualquer chamada ao storage bridge;
+- `set()` aceita em homologação somente tokens `TEST-SESSION-*`, além da validação de valor não vazio;
+- o adapter não ganhou fallback web, rede ou logging e continua preparado para Keychain/Keystore reais somente após homologação nativa.
 
-Cobertura adicionada nesta rodada:
-- `tests/unit/mediaSafety.test.ts`: mídia sintética permitida em HML; ambiente de produção bloqueado; flag de produção bloqueada; recurso não TEST recusado; ausência de requests externos.
+Cobertura ampliada:
+- `tests/unit/nativeSecureSession.test.ts`: fluxo TEST permitido; token vazio/real recusado antes do bridge; ambiente de produção bloqueado; flag de produção bloqueada; recurso não TEST bloqueado; ausência de web persistence/logging/fetch.
 
-**Validação honesta:** código e testes foram implementados, porém não são declarados verdes sem execução real de runner/typecheck associada ao HEAD. Nenhuma homologação Android/iOS foi inferida.
+**Validação honesta:** o workflow disponível no PR continua sendo apenas o guard do Admin legado; ele não executa a suíte do App. Código e testes desta rodada foram implementados, mas não são declarados verdes sem runner/typecheck real da suíte do App associado ao HEAD. Nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
-1. Executar suíte/typecheck/isolation assim que houver runner disponível e corrigir regressões reais.
-2. Aplicar a barreira central aos demais adapters sintéticos com capacidade futura de I/O, priorizando sessão/armazenamento sem criar rede real.
-3. Continuar hardening R22/R24 e preflights nativos sem fingir homologação.
+1. Executar `npm test` e `npm run typecheck` em runner compatível com Node >=22.12 assim que houver runner da suíte do App e corrigir regressões reais.
+2. Continuar aplicando a barreira central a qualquer adapter sintético restante com capacidade futura de I/O, sem criar rede real.
+3. Continuar hardening R22/R24: revisar release readiness, política de URLs/deep links, telemetry redaction e preflights nativos.
 4. Manter R13 sem deploy enquanto a quota impedir Edge Functions; não apagar funções nem aumentar plano.
-5. Manter R25 fechado.
+5. Manter R10/R11 sem declaração de homologação até build/teste nativo real e R25 fechado.
 
 ## Regras soberanas
 - não modificar `comprar/`;
