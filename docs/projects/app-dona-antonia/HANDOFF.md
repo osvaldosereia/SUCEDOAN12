@@ -19,14 +19,12 @@
 - plano autônomo: A1–A4 concluídas; A5 esgotada programaticamente até o limite nativo; A6 em andamento seguro, sem deploy.
 
 ## Último avanço seguro — A6
-A5 não possui mais trabalho independente evidente sem implementação/build nativo: permissões, pickers e stripping EXIF efetivo permanecem bloqueios nativos explícitos.
-
-A6 já possui `docs/homologation/HML-BACKEND-DEPLOY-MANIFEST.md` e `src/platform/hmlBackendPreflight.ts`, mantendo deploy fail-closed para HML sintética e quota disponível. Nesta continuação foi adicionado `src/platform/hmlRequestSafety.ts`: contrato puro que bloqueia produção, IDs não `TEST-*`, chave de idempotência não sintética, totais monetários inválidos/divergentes e tentativas acima do limite. `SyntheticIdempotencyLedger` consome chaves `TEST-IDEMPOTENCY-*` uma única vez para exercitar replay sem backend ou I/O. `tests/unit/hmlRequestSafety.test.ts` cobre baseline, total server-authoritative, rate limit, replay e rejeição de recursos reais.
+Além do preflight backend e da segurança de request/idempotência, foi adicionado `src/platform/hmlBoundaryContracts.ts`, fechando contratos puramente sintéticos para bootstrap, catálogo e checkout. Bootstrap exige HML + `TEST-SUBJECT-*` + zero requests externos. Catálogo exige IDs `TEST-PRODUCT-*`, preços inteiros não negativos e shape consistente. Checkout exige `TEST-SUBJECT-*`, `TEST-CART-*`, `TEST-OP-*`, `TEST-IDEMPOTENCY-*`, produtos sintéticos, carrinho não vazio e igualdade entre total apresentado e autoritativo. `tests/unit/hmlBoundaryContracts.test.ts` cobre baseline e falhas fechadas de produção/recurso real/total divergente.
 
 **Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhum deploy/migration foi executado e nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
-1. Continuar A6 em contratos estáticos/sintéticos de bootstrap/catalog/checkout e checklist backend sem deploy.
+1. Continuar A6 nos contratos pairing/telemetria/privacidade e checklist backend sem deploy; revisar se resta qualquer fronteira HML programática.
 2. Quando A6 estiver esgotada programaticamente, avançar A7 UX/acessibilidade/offline/desempenho.
 3. Manter R10/R11 e R25 fechadas.
 
