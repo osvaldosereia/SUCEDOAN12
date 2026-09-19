@@ -2,30 +2,32 @@
 
 Leia primeiro `CURRENT-STATE.md`, `AUTONOMOUS-COMPLETION-PLAN.md`, `PROJECT-MASTER.md`, `ROADMAP.md`, `DECISIONS-AND-GUARDRAILS.md` e `TECHNICAL-INVENTORY.md`.
 
-## Branch canônica de desenvolvimento
+## Branch canônica
 `marketing-admin-round8-continue-20260918`
 
 ## Estado consolidado
-Fase `connection_homologation`, com desenvolvimento interno autônomo. Meta App ID `1547249776748513` validado com segredo no Vault via Graph `v26.0`; backend aceita somente Page `1928140920768577` e Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`. Meta ainda depende de App Domain/Valid OAuth Redirect URI e consentimento. Pinterest depende de App/Secret/board.
+Fase `connection_homologation`, com desenvolvimento interno autônomo. Meta App ID `1547249776748513` validado via Graph `v26.0`; backend aceita somente Page `1928140920768577` e Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`. Meta ainda depende de App Domain/Valid OAuth Redirect URI e consentimento. Pinterest depende de App/Secret/board.
 
 Publicação deve permanecer fechada: `enabled=false`, `execution_mode=off`, `kill_switch=true`, `publishing_enabled=false`, `max_daily_publications=0`, `attribution_recording_enabled=false`, channel gates=false. Sem canary sem autorização explícita. Make não é runtime novo.
 
-## Rodadas concluídas/absorvidas
-- Rodada 9 anterior: Agenda V1 `preview_only`, tracking UTM preview, Learning determinístico e Daily Plan dry-run.
-- Rodada 10 anterior: `marketing_observability_read_model_v1()` aplicada.
-- Rodada 11 do plano condensado: observabilidade + agenda.
+## Rodadas concluídas
+- Rodada 11 do plano condensado: Observabilidade + Agenda Editorial concluída.
 
-### Rodada 11 — checkpoint atual
-- `admin-marketing-insights-v1` v17 / ACTIVE / JWT=true expõe `observability` read-only;
-- `admin/marketing-api.js` expõe `getMarketingObservability()`;
-- `admin/marketing-observability-panel.js` monta automaticamente o painel Saúde e Confiança após autenticação, sem exigir edição concorrente de `marketing.js`;
-- validação fail-closed exige `observe_only`, `auto_action=false`, `auto_publish=false`, `auto_schedule=false`;
-- teste `tests/marketing-observability-admin-contract.mjs` protege o contrato do Admin;
-- Agenda permanece apenas sugestiva/preview, sem auto-schedule;
-- runtime revalidado: 0 published jobs e 0 external side effects; todos os gates externos OFF.
+## Rodada 12 — checkpoint
+Atribuição existente já fornece tracking UTM preview-only, touchpoints append-only, `evidence_key`, parent chain e read-model determinístico. Nesta rodada foi aplicada `marketing_round12_channel_metrics_v1` e salva a migration canônica no GitHub.
 
-## Próxima ação segura — Rodada 12
-Executar **Atribuição Comercial + Métricas de Canal** conforme `AUTONOMOUS-COMPLETION-PLAN.md`: integrar UTM aos assets/jobs, contratos click -> conversation -> order, dedupe/idempotency/evidence_key, fixtures sintéticas, read-models e snapshots/adapters de métricas Meta/Pinterest. Ingestão e coletores devem nascer OFF. Não fazer chamadas externas reais.
+Novo estado:
+- `marketing_channel_metric_snapshots` criada com RLS;
+- `anon/authenticated` sem acesso bruto;
+- service role pode inserir/ler evidência;
+- `evidence_key` único para dedupe;
+- providers permitidos: Meta/Pinterest;
+- `marketing_channel_metrics_read_model_v1()` service-role-only normaliza reach/impressions/views/engagement/saves/shares;
+- nenhum coletor externo existe ou está ativo;
+- read-model retorna `insufficient_data`, 0 snapshots, collection OFF e `external_side_effect=false`.
+
+## Próxima ação segura
+Continuar a Rodada 12 com adapters puros/fixtures sintéticas/testes e integração read-only do novo read-model ao backend/Admin. Não consultar Meta/Pinterest de verdade. Ao fechar o gate da Rodada 12, avançar à Rodada 13 no mesmo ciclo se houver tempo.
 
 ## Bloqueios humanos
 - Meta App Domains + Valid OAuth Redirect URI;
@@ -34,4 +36,4 @@ Executar **Atribuição Comercial + Métricas de Canal** conforme `AUTONOMOUS-CO
 - autorização explícita futura de canary.
 
 ## Plano autônomo condensado
-O plano canônico possui **9 rodadas amplas, da Rodada 11 à Rodada 19**. Esta regra substitui referências antigas a Rodadas 11–27. Após `PROGRAMMATIC_COMPLETE=true`, não criar novo escopo; apenas preservar os gates e aguardar `HUMAN-ACTIONS.md`.
+São 9 rodadas amplas, Rodada 11–19. Após `PROGRAMMATIC_COMPLETE=true`, não criar novo escopo; preservar gates e aguardar `HUMAN-ACTIONS.md`.
