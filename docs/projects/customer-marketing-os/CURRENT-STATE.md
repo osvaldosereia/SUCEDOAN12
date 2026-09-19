@@ -1,6 +1,6 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot canônico atualizado em **19/09/2026 ~04:20 America/Cuiaba**.
+Snapshot canônico atualizado em **19/09/2026 ~05:14 America/Cuiaba**.
 
 ## Estado geral
 
@@ -16,7 +16,7 @@ Snapshot canônico atualizado em **19/09/2026 ~04:20 America/Cuiaba**.
 
 - **2 Identity Resolver:** 2 conflitos reais; revisão humana obrigatória; nenhum auto-merge.
 - **7 Product View:** caminho técnico integralmente endurecido na Rodada 10; `product_view=0`; aguarda exclusivamente abertura real de produto.
-- **13 Opportunity Lifecycle:** 75 suppressed; dismissed=0, converted=0, expired=0; próxima expiração natural `2026-09-23T17:00:15.936202+00:00`.
+- **13 Opportunity Lifecycle:** Rodada 11 tecnicamente esgotada; 75 suppressed, dismissed=0, converted=0, expired=0, `clock_expired_still_open=0`; próxima expiração natural `2026-09-23T17:00:15.936202+00:00`.
 - **15 Marketing Brain SUGGEST:** capacidade pronta; gate OFF; briefs=0.
 - **18 AI cost measured:** ledger pronto; 0 execuções governadas e custo 0.
 
@@ -38,19 +38,19 @@ WABA e Phone Number ID presentes; Graph API `v26.0`; Flow health separado; Meta 
 
 ## Plano autônomo
 
-- Rodadas 06–10 — **concluídas**;
-- Rodada 11 — próxima;
-- Rodadas 12–14 — pendentes.
+- Rodadas 06–11 — **concluídas**;
+- Rodada 12 — próxima;
+- Rodadas 13–14 — pendentes.
 
-### Rodada 10 — Comprar / Product View / Event Collector
+### Rodada 11 — Opportunity Lifecycle
 
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-10.md`.
+Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-11.md`.
 
-Foi auditada a cadeia real `openDetail -> trackProductView -> productApi(track) -> shopping-chat-products-v1 -> record_catalog_interaction_v1`. Edge/RPC exigem room token/sessão válida, UUID e produto existente; dedupe Product View permanece 900 s; collector marca `external_side_effect=false`; RPC é service_role-only. O HTML versionado referencia `products.js?v=20260918-cm1-events-02`. Criados teste contratual Round 10 e CI dedicado. Nenhum evento operacional foi criado.
+Os RPCs canônicos foram reexecutados. A engine foi auditada nos cinco estados e a observabilidade temporal já expõe `next_expiry_at`, `clock_expired_still_open` e `lifecycle_closed_observed`. O critério 13 só promove com estado terminal real persistido. Criados teste contratual Round 11 e CI dedicado. Nenhuma oportunidade operacional foi alterada.
 
-## Próxima rodada — 11
+## Próxima rodada — 12
 
-**Opportunity Lifecycle e observabilidade temporal.** Revisar regras suggested/suppressed/dismissed/converted/expired, testar somente com fixtures não-operacionais, validar relógio/próxima expiração e hardenizar alerta/read model de oportunidade vencida ainda aberta. Não antecipar expiração real.
+**Marketing Brain e custo de IA sem ativar IA externa.** Validar OBSERVE/SUGGEST, budget, limite diário, kill switch, idempotência e ledger por contratos/mocks/fixtures não-operacionais. Manter `strategy_ai_enabled=false`, limites e orçamento em zero e não chamar IA externa.
 
 ## Ações humanas/orgânicas que permanecem
 
