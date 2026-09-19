@@ -6,66 +6,117 @@
   <meta name="theme-color" content="#0d0f12">
   <meta name="robots" content="noindex,nofollow">
   <title>VIDEO · Dona Antônia</title>
-  <link rel="stylesheet" href="/video/styles.css?v=1">
+  <link rel="stylesheet" href="/video/styles.css?v=3">
 </head>
 <body>
   <header class="topbar">
     <div>
       <strong>VIDEO</strong>
-      <small>Dona Antônia · 16 produtos · 10 segundos</small>
+      <small>Dona Antônia · busca + 16 produtos · vídeo 10 s</small>
     </div>
     <span class="ratio">9:16</span>
   </header>
 
   <main class="page">
-    <section class="card hero">
-      <div>
-        <h1>Gerador para Google Flow</h1>
-        <p>Sorteia 16 produtos, monta 4 referências com 4 produtos e cria um único prompt para um Reel de 10 segundos.</p>
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h1>Criar vídeo por tema</h1>
+          <p>Busque produtos, selecione 16, monte 4 referências e gere o prompt com IA.</p>
+        </div>
+        <span id="selectionBadge" class="badge">0 / 16</span>
       </div>
-      <div class="actions">
-        <button id="generate" class="primary">Sortear 16 produtos</button>
-        <button id="download" disabled>Baixar 4 imagens</button>
+
+      <div class="form-grid">
+        <label class="field">
+          <span>Buscar produtos</span>
+          <div class="search-row">
+            <input id="searchTerm" type="search" placeholder="Ex.: Omo, café, shampoo, limpeza…" autocomplete="off">
+            <button id="searchButton" class="primary">Buscar</button>
+          </div>
+          <small>Você pode fazer várias buscas. Os produtos já selecionados permanecem.</small>
+        </label>
+
+        <label class="field">
+          <span>Tema do vídeo</span>
+          <input id="theme" type="text" maxlength="100" placeholder="O tema é preenchido pela busca e pode ser editado">
+          <small>O criativo inteiro será adaptado a este tema.</small>
+        </label>
       </div>
-      <p id="status" class="status">Preparando produtos…</p>
+
+      <label class="field">
+        <span>Orientações adicionais <em>opcional</em></span>
+        <textarea id="directions" maxlength="800" placeholder="Ex.: mais premium, bem divertido, cores fortes, destacar sensação de limpeza…"></textarea>
+      </label>
+
+      <p id="searchStatus" class="status">Digite uma palavra-chave para buscar produtos.</p>
     </section>
 
     <section class="card">
       <div class="section-title">
         <div>
-          <h2>Prompt único · 10 s</h2>
-          <p>Abertura 2 s · Produtos 6 s · CTA 2 s</p>
+          <h2>Resultados da busca</h2>
+          <p>Toque nos produtos para selecionar ou remover.</p>
         </div>
-        <span id="styleBadge" class="badge">Criando direção…</span>
+        <span id="resultCount" class="badge">0 encontrados</span>
       </div>
+      <div id="results" class="product-grid empty-state">Faça uma busca para ver os produtos.</div>
+    </section>
 
-      <label class="field">
-        <span>Ideia opcional</span>
-        <textarea id="idea" placeholder="Ex.: mais divertido, cores fortes, mais acelerado…"></textarea>
-      </label>
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>Selecionados</h2>
+          <p>Selecione exatamente 16 produtos antes de montar as referências.</p>
+        </div>
+        <div class="actions compact">
+          <button id="clearSelection" disabled>Limpar</button>
+          <button id="build" class="primary" disabled>Montar 4 imagens + gerar prompt</button>
+        </div>
+      </div>
+      <div id="selected" class="selected-strip empty-state">Nenhum produto selecionado.</div>
+      <p id="status" class="status"></p>
+    </section>
 
+    <section id="outputSection" class="card hidden">
+      <div class="section-title">
+        <div>
+          <h2>Referências para o Google Flow</h2>
+          <p>4 imagens · 4 produtos por imagem</p>
+        </div>
+        <button id="download" disabled>Baixar 4 imagens</button>
+      </div>
+      <section id="grid" class="refs"></section>
+    </section>
+
+    <section id="promptSection" class="card hidden">
+      <div class="section-title">
+        <div>
+          <h2>Prompt IA · vídeo único de 10 s</h2>
+          <p>Abertura 1 s · Produtos 5 s · CTA 4 s</p>
+        </div>
+        <span id="styleBadge" class="badge">IA</span>
+      </div>
       <div class="actions">
-        <button id="newPrompt">Gerar nova variação</button>
+        <button id="newPrompt">Gerar nova variação com IA</button>
         <button id="copy">Copiar prompt</button>
       </div>
-
       <pre id="prompt" class="prompt"></pre>
     </section>
 
     <section class="card">
       <h2>Como usar no Google Flow</h2>
       <div class="steps">
-        <div><b>1</b><span>Baixe as 4 imagens abaixo.</span></div>
-        <div><b>2</b><span>No Flow use <strong>Gemini Omni Flash 1.1</strong>, Video, 9:16, 10 s.</span></div>
-        <div><b>3</b><span>Adicione as 4 imagens + a logo da Dona Antônia como Ingredients.</span></div>
-        <div><b>4</b><span>Cole o prompt e gere 1 saída.</span></div>
+        <div><b>1</b><span>Faça as buscas e selecione 16 produtos.</span></div>
+        <div><b>2</b><span>Clique em <strong>Montar 4 imagens + gerar prompt</strong>.</span></div>
+        <div><b>3</b><span>No Flow use <strong>Gemini Omni Flash 1.1</strong>, Vídeo, 9:16, 10 s.</span></div>
+        <div><b>4</b><span>Anexe as 4 imagens geradas + a logo oficial da Dona Antônia como Ingredients.</span></div>
+        <div><b>5</b><span>Cole o prompt gerado pela IA e gere 1 saída.</span></div>
       </div>
     </section>
-
-    <section id="grid" class="refs"></section>
   </main>
 
   <script src="/admin/config.js"></script>
-  <script src="/video/app.js?v=2"></script>
+  <script src="/video/app.js?v=3"></script>
 </body>
 </html>
