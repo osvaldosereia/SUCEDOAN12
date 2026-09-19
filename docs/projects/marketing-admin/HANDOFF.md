@@ -37,3 +37,10 @@ Agenda V1 `preview_only`, tracking UTM preview sem gravação, Learning Engine d
 - autorização explícita futura de canary.
 
 Se bloqueado externamente, continue tarefas internas. Não misture com Customer & Marketing OS.
+## Plano autônomo até conclusão programática
+
+A sequência canônica das próximas rodadas está em `docs/projects/marketing-admin/AUTONOMOUS-COMPLETION-PLAN.md`.
+
+Executar da Rodada 11 até a Rodada 27, sempre pulando o que já estiver concluído por implementação equivalente e avançando para a próxima tarefa segura. O objetivo é terminar toda programação que não depende do owner e só então marcar `PROGRAMMATIC_COMPLETE=true`.
+
+Após `PROGRAMMATIC_COMPLETE=true`, não inventar novo escopo: rodadas futuras devem apenas confirmar o gate, preservar segurança e aguardar as ações humanas descritas em `HUMAN-ACTIONS.md`.
