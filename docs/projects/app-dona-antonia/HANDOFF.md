@@ -16,18 +16,16 @@
 - R10/R11 bloqueadas até toolchain/build nativo real;
 - R13 deploy bloqueado por quota;
 - R25 produção proibida;
-- plano autônomo: A1–A4 concluídas; A5 avançada nesta rodada e permanece parcial até validação nativa de permissões/pickers.
+- plano autônomo: A1–A4 concluídas; A5 avançada e parcial até validação/implementação nativa de permissões, pickers e stripping efetivo de metadados.
 
 ## Último avanço seguro — A5
-Foi criado `src/platform/localMediaVault.ts`, cofre efêmero e somente de metadados para mídia HML. Ele nunca persiste bytes, texto do cliente, filename ou URL externa; aceita apenas `TEST-MEDIA-*`, MIME fechado, tamanho máximo de 8 MiB, TTL curto, limite de entradas, limpeza automática/explicita e passa pelo `homologationGuard` antes de aceitar registros.
+Além de `localMediaVault.ts`, foram adicionados `mediaPrivacyPolicy.ts` e `localPrivacyRights.ts`. A fronteira de mídia aceita apenas `TEST-MEDIA-*`, valida origem/MIME, tamanho e áudio de no máximo 120 s, e determina stripping de EXIF antes de qualquer futura fronteira nativa/backend. O contrato nunca recebe bytes, filename, URL ou texto do cliente. Direitos locais sintéticos de acesso e eliminação exigem `TEST-SUBJECT-*`; metadados de mídia são imutáveis e correção exige apagar/recriar.
 
-Foi adicionado `tests/unit/localMediaVault.test.ts`, cobrindo expiração, limite de retenção, limpeza explícita, produção/IDs reais fail-closed, MIME não permitido e tamanho excessivo. Isso reduz risco de retenção acidental enquanto Photo Picker/câmera/microfone e storage nativo aguardam build/teste em dispositivo.
-
-**Validação honesta:** código/testes foram adicionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhuma homologação Android/iOS foi inferida.
+Foram adicionados testes unitários para EXIF policy, source/MIME, duração, IDs reais fail-closed, acesso, eliminação e imutabilidade. **Validação honesta:** código/testes foram commitados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
-1. Continuar A5 em política de EXIF/anexos, revogação e contratos de acesso/correção/exclusão que possam ser testados sem dispositivo.
-2. Depois A6 — HML/backend preparado para deploy sem aumentar quota.
+1. Fechar o restante programático de A5 que não dependa de dispositivo; manter permissões/pickers/EXIF efetivo como bloqueio nativo explícito.
+2. Avançar A6 — HML/backend preparado para deploy sem aumentar quota e sem tocar produção.
 3. Manter R10/R11 e R25 fechadas.
 
 ## Regras soberanas
