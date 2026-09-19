@@ -1,11 +1,10 @@
 # CURRENT STATE — Customer & Marketing OS
 
-Snapshot canônico atualizado em **19/09/2026 ~02:16 America/Cuiaba**.
+Snapshot canônico atualizado em **19/09/2026 ~03:16 America/Cuiaba**.
 
 ## Estado geral
 
 - fase: `internal_homologation`;
-- CM-0 e CM-1.1 a CM-1.15 implementadas;
 - critérios: **20 = 15 verified / 5 implemented / 0 blocked**;
 - `ready_for_manual_canary=true`;
 - `cm1_complete=false`;
@@ -17,7 +16,7 @@ Snapshot canônico atualizado em **19/09/2026 ~02:16 America/Cuiaba**.
 
 - **2 Identity Resolver:** 2 conflitos reais; revisão humana obrigatória; nenhum auto-merge.
 - **7 Product View:** collector pronto; `product_view=0`; aguarda abertura real de produto.
-- **13 Opportunity Lifecycle:** 75 oportunidades suppressed; dismissed=0, converted=0, expired=0; próxima expiração natural `2026-09-23T17:00:15.936202+00:00`.
+- **13 Opportunity Lifecycle:** 75 suppressed; dismissed=0, converted=0, expired=0; próxima expiração natural `2026-09-23T17:00:15.936202+00:00`.
 - **15 Marketing Brain SUGGEST:** capacidade pronta; gate OFF; briefs=0.
 - **18 AI cost measured:** ledger pronto; 0 execuções governadas e custo 0.
 
@@ -26,62 +25,40 @@ Snapshot canônico atualizado em **19/09/2026 ~02:16 America/Cuiaba**.
 - PapoAI receipts=18;
 - customers=506;
 - `catalog_open=64`;
-- `catalog_search=31`;
+- `catalog_search=50`;
 - `product_view=0`;
-- carrinho=437;
+- carrinho=466;
 - pedidos=47;
-- timeline=1388;
-- customer_product_stats=699;
+- timeline=1436;
 - graph edges=526;
-- marketing events=144;
 - consentimento positivo de marketing=0.
 
 ## Runtime protegido
 
-- provider canônico: PapoAI inbound ativo / outbound desligado;
-- canonical outbound=false;
-- AI=false;
-- auto reply=false;
-- canary=0%;
-- marketing enabled=false / publishing=false / kill switch=true;
-- max daily publications=0;
-- max daily AI cost=0;
-- external effects marketing 7d=0;
-- external effects AI 7d=0.
+PapoAI inbound ativo/outbound desligado; canonical outbound=false; AI=false; auto reply=false; canary=0%; marketing enabled=false; publishing=false; kill switch=true; orçamento IA=0; efeitos externos marketing/IA 7d=0.
 
 ## Meta / WhatsApp Direct
 
-- WABA e Phone Number ID presentes;
-- Graph API `v26.0`;
-- Flow health funciona separadamente;
-- Meta Direct OFF / release_mode=off;
-- token `dona_antonia_whatsapp_access_token_v1` no Vault: ausente;
-- permissões WhatsApp: unverified;
-- callback específico Meta Direct: unverified;
-- `direct_ready_flag=false`;
-- blockers: `permissions_unverified_or_blocking`, `webhook_not_verified`, `direct_ready_flag_false`.
-
-## Rodada 08 — concluída tecnicamente
-
-Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-08.md`.
-
-Entregue:
-- confirmação do CI da Rodada 07: run `35423379708` SUCCESS;
-- auditoria completa do contrato `meta_diagnostics_readonly`;
-- confirmação de GET-only, scopes obrigatórios, callback exato, separação Flow health/Direct e ausência de mutação de gates;
-- novo contrato `scripts/test-cm-1-meta-preflight-fail-closed-v2.mjs`;
-- novo workflow `.github/workflows/test-customer-os-meta-preflight.yml`;
-- run inicial `35426161049` disparado e ainda `in_progress` no último check.
-
-Nenhuma Edge Function precisou ser alterada/deployada nesta rodada: o runtime já possuía o comportamento seguro requerido. A mudança foi hardening de teste/CI e documentação.
+WABA e Phone Number ID presentes; Graph API `v26.0`; Flow health separado; Meta Direct OFF; token WhatsApp read-only no Vault ausente; permissões e callback Direct unverified; `direct_ready_flag=false`.
 
 ## Plano autônomo
 
 - Rodada 06 — concluída;
 - Rodada 07 — concluída;
-- Rodada 08 — **concluída tecnicamente; confirmar CI dedicado no início da próxima rodada**;
-- Rodada 09 — próxima: Identity Review, preparação final humana;
-- Rodadas 10–14 — pendentes conforme `AUTONOMOUS-COMPLETION-PLAN.md`.
+- Rodada 08 — concluída; CI dedicado `35426161049` confirmado SUCCESS;
+- Rodada 09 — **concluída**;
+- Rodada 10 — próxima;
+- Rodadas 11–14 — pendentes.
+
+### Rodada 09 — Identity Review
+
+Documento: `CM1-AUTONOMOUS-COMPLETION-ROUND-09.md`.
+
+A UI já exigia escolha explícita, justificativa e confirmação, mostrava dados sensíveis mascarados e declarava review-only/no-merge. Foi acrescentado ledger persistente `customer_identity_review_audit` com ACL service-role only, bloqueio de UPDATE/DELETE e trigger automático para registrar transições reais pending -> approved/rejected. Validação read-only confirmou os dois triggers ativos, anon/authenticated sem SELECT e zero registros — nenhum conflito real foi tocado.
+
+## Próxima rodada — 10
+
+**Comprar / Product View / Event Collector.** Provar frontend publicado, cache busting e caminho clique -> tracking -> Edge -> RPC por testes não-operacionais; cobrir deduplicação, room token, produto inexistente/reload/navegação. Não criar `product_view` artificial.
 
 ## Ações humanas/orgânicas que permanecem
 
@@ -90,9 +67,9 @@ Nenhuma Edge Function precisou ser alterada/deployada nesta rodada: o runtime j�
 - fornecer/configurar System User token WhatsApp no Vault;
 - executar diagnóstico Meta read-only autenticado;
 - validar PIN/interface no navegador;
-- aceitar Policy Registry como gate humano;
+- aceitar Policy Registry;
 - homologar callback Meta Direct;
-- decidir futuramente sobre execução real governada de SUGGEST/IA/custo;
+- decidir sobre execução real governada de SUGGEST/IA/custo;
 - autorizar separadamente qualquer ativação externa futura.
 
-Supabase é runtime/source of truth; Make somente histórico/auditoria. Não iniciar CM-2 antes do encerramento correto da CM-1.
+Supabase é runtime/source of truth; Make somente histórico/auditoria. Não iniciar CM-2.
