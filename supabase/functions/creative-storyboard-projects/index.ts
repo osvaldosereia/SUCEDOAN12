@@ -3,7 +3,10 @@ import {createClient} from 'npm:@supabase/supabase-js@2';
 
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,apikey,content-type'};
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});
-const cleanSearch=(v:unknown)=>String(v??'').replace(/[,%()]/g,' ').replace(/\s+/g,' ').trim().slice(0,100);\nconst cleanText=(v:unknown,n=800)=>String(v??'').replace(/\\s+/g,' ').trim().slice(0,n);\nconst arr=(v:unknown)=>Array.isArray(v)?v:[];\nfunction openAiText(data:any){return arr(data?.output).flatMap((x:any)=>arr(x?.content)).filter((x:any)=>x?.type==='output_text').map((x:any)=>String(x.text||'')).join('').trim()}
+const cleanSearch=(v:unknown)=>String(v??'').replace(/[,%()]/g,' ').replace(/\s+/g,' ').trim().slice(0,100);
+const cleanText=(v:unknown,n=800)=>String(v??'').replace(/\s+/g,' ').trim().slice(0,n);
+const arr=(v:unknown)=>Array.isArray(v)?v:[];
+function openAiText(data:any){return arr(data?.output).flatMap((x:any)=>arr(x?.content)).filter((x:any)=>x?.type==='output_text').map((x:any)=>String(x.text||'')).join('').trim()}
 function normalizeGeminiPackage(x:any,projectId:string,updatedAt?:string){
   const critical=String(x?.critical_reinforcement??'').trim();
   return {
