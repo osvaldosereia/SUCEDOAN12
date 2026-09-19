@@ -51,6 +51,13 @@ function sameSecret(left: string, right: string): boolean {
   return difference === 0;
 }
 
+function requireSyntheticSessionToken(token: string): string {
+  if (!token.startsWith('TEST-SESSION-')) {
+    throw new Error('pairing session token must remain synthetic in homologation');
+  }
+  return token;
+}
+
 export function createPairingChallenge(
   options: { now?: () => number } = {},
 ): PairingChallenge {
@@ -94,8 +101,7 @@ export function createPairingFixture(
     challenge: { ...challenge },
 
     confirmHumanCode(code: string): boolean {
-      if (expired() || consumed) return false;
-      if (humanConfirmed) return code === challenge.humanCode;
+      if (expired() || consumed || humanConfirmed) return false;
       if (confirmAttempts >= maxConfirmAttempts) return false;
 
       confirmAttempts += 1;
@@ -125,10 +131,11 @@ export function createPairingFixture(
 
       if (!humanConfirmed) return { state: 'pending' };
 
+      const sessionToken = requireSyntheticSessionToken(sessionTokenFactory());
       consumed = true;
       return {
         state: 'confirmed',
-        sessionToken: sessionTokenFactory(),
+        sessionToken,
       };
     },
   };
