@@ -22,7 +22,6 @@ Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `
 - `marketing_tracking_link_v1`: UTM/asset/channel sem gravação;
 - `marketing_learning_read_model_v1`: learning determinístico, sem IA e sem auto-otimização;
 - `marketing_daily_plan_preview_v1`: dry-run, sem criar campanha/job/agendamento/publicação;
-- `admin-marketing-insights-v1` v16 no último deploy conhecido;
 - migration `marketing_round9_autonomy_foundation_v1` aplicada.
 
 ## Rodada 10 — observabilidade
@@ -33,11 +32,10 @@ Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `
 
 ## Rodada 11 — integração segura da observabilidade
 - branch preservada: `marketing-admin-round8-continue-20260918`;
-- HEAD de entrada confirmado: `1fb5c99d260acf861d9f45cc4d153cb59252b575`;
-- `admin-marketing-insights-v1/index.ts` agora expõe ação read-only `observability` e recusa payload que não seja `observe_only` ou que indique auto_action/auto_publish/auto_schedule;
-- `admin/marketing-api.js` agora possui `getMarketingObservability()` para consumo do Admin;
-- nenhuma publicação, cron, Make ou gate externo foi ativado;
-- código ficou preparado para a próxima rodada integrar o painel visual sem duplicar lógica de segurança.
+- `admin-marketing-insights-v1/index.ts` expõe ação read-only `observability` e recusa payload que não seja `observe_only` ou que indique auto_action/auto_publish/auto_schedule;
+- `admin/marketing-api.js` possui `getMarketingObservability()` para consumo do Admin;
+- `admin-marketing-insights-v1` foi implantada em **v17 / ACTIVE / JWT=true** em 18/09/2026, ativando a action read-only no runtime sem abrir publicação;
+- nenhuma publicação, cron, Make ou gate externo foi ativado.
 
 ## Bloqueios humanos restantes
 1. Meta App Domains + Valid OAuth Redirect URI;
@@ -48,6 +46,6 @@ Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `
 ## Próximo ponto seguro
 1. integrar `getMarketingObservability()` ao `load()` e a um painel read-only de saúde/confiança no Admin;
 2. adicionar testes estruturais para action/client/UI e fail-closed;
-3. implantar nova versão de `admin-marketing-insights-v1` somente após os checks;
+3. validar a action v17 pelo fluxo autenticado do Admin;
 4. continuar métricas/agenda/learning/dry-run sem side effects;
 5. manter publicação externa totalmente OFF.
