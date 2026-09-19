@@ -18,7 +18,7 @@ Cada rodada deve:
 7. nunca modificar `comprar/`, nunca mergear o PR, nunca ativar produção;
 8. nunca inventar sucesso de Android/iOS/backend/lojas sem evidência real.
 
-## Rodada A1 — Baseline, suíte e reprodutibilidade
+## Rodada A1 — Baseline, suíte e reprodutibilidade ✅ PROGRAMATICAMENTE CONCLUÍDA
 
 - consolidar um comando de validação do App;
 - auditar todos os testes existentes e remover inconsistências;
@@ -28,7 +28,7 @@ Cada rodada deve:
 - corrigir regressões locais encontradas;
 - registrar claramente quais validações não podem rodar por ausência de runner/toolchain.
 
-**Saída esperada:** baseline programático confiável e reproduzível.
+**Saída alcançada:** baseline programático consolidado. Foram auditados 53 arquivos em `tests/`, sendo 51 testes executáveis: 37 unit, 4 contract, 6 security, 3 e2e e 1 isolation; 0 testes executáveis ficaram fora do layout coberto. Criado `scripts/verify-test-layout.mjs`, `npm run verify:test-layout` e o gate agregado `npm run validate:programmatic`. A execução integral do gate continua dependente de runner/dependências disponíveis e não é declarada verde sem evidência real.
 
 ## Rodada A2 — Guard central e fail-closed total
 
