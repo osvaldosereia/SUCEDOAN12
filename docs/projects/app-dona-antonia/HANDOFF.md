@@ -18,28 +18,26 @@
 - R25: produção proibida sem autorização explícita.
 
 ## Último avanço seguro
-A barreira fail-closed de `src/platform/homologationGuard.ts`, já integrada ao cliente HML, foi estendida ao adapter sintético de push em `src/notifications/pushClient.ts`.
+A barreira fail-closed central de `src/platform/homologationGuard.ts`, já aplicada ao cliente HML e push sintético, foi integrada também ao adapter de mídia em `src/platform/media.ts`.
 
 Proteções acumuladas:
-- `hml_network` exige recurso `TEST-*` e cliente HML habilitado passa pelo guard antes de rede;
-- `environment=production` e `productionEnabled=true` bloqueiam o cliente HML;
-- endpoints HML usam allowlist exata das três Edge Functions declaradas;
-- registro de push continua aceitando somente `TEST-PUSH-*`;
-- antes de registrar token sintético, o push client agora executa `simulate_push` no guard central;
-- `environment=production` ou `productionEnabled=true` bloqueiam registro de push antes de mutar estado;
-- adapter de push permanece sem I/O e com `externalRequestCount=0`.
+- HML exige recursos `TEST-*`, ambiente homologation e produção desabilitada antes de rede;
+- endpoints HML usam allowlist exata das Edge Functions declaradas;
+- push aceita somente `TEST-PUSH-*` e passa pelo guard antes de mutar estado;
+- mídia agora passa por `simulate_media` antes de consumir qualquer fixture;
+- `environment=production` e `productionEnabled=true` bloqueiam foto/áudio fail-closed;
+- mídia não-`TEST-*` é recusada pela barreira central antes da validação específica;
+- fixtures bloqueadas não são consumidas, permitindo comprovar que o bloqueio ocorre antes da mutação;
+- adapters de push/mídia permanecem sem I/O externo e reportam `externalRequestCount=0`.
 
 Cobertura adicionada nesta rodada:
-- `tests/unit/pushClientSafety.test.ts`: homologação sintética permitida, ambiente de produção bloqueado, flag de produção bloqueada e token real-looking recusado.
+- `tests/unit/mediaSafety.test.ts`: mídia sintética permitida em HML; ambiente de produção bloqueado; flag de produção bloqueada; recurso não TEST recusado; ausência de requests externos.
 
-**Validação honesta:** os testes foram implementados, porém não são declarados verdes sem execução real de runner/typecheck associada ao HEAD. Nenhuma homologação Android/iOS foi inferida.
-
-## HEAD desta retomada
-Código + testes antes deste checkpoint: `6702c0a27984b74a1f6bf0181d8d54e1b3d87793`.
+**Validação honesta:** código e testes foram implementados, porém não são declarados verdes sem execução real de runner/typecheck associada ao HEAD. Nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
 1. Executar suíte/typecheck/isolation assim que houver runner disponível e corrigir regressões reais.
-2. Aplicar a barreira central aos demais adapters sintéticos com capacidade futura de I/O, priorizando mídia/sessão sem criar rede real.
+2. Aplicar a barreira central aos demais adapters sintéticos com capacidade futura de I/O, priorizando sessão/armazenamento sem criar rede real.
 3. Continuar hardening R22/R24 e preflights nativos sem fingir homologação.
 4. Manter R13 sem deploy enquanto a quota impedir Edge Functions; não apagar funções nem aumentar plano.
 5. Manter R25 fechado.
