@@ -54,3 +54,13 @@ Cobertura ampliada:
 - sem aumento de plano/spend cap;
 - sem publicação/submissão em lojas;
 - sem declarar Android/iOS homologados sem build/teste nativo real.
+
+## Rodada A1 concluída agora — baseline/reprodutibilidade
+- HEAD de início: `30800fb1e7031b4fd1193d7147d44410874e89ac`;
+- criados `scripts/verify-test-layout.mjs` e scripts npm `verify:test-layout` + `validate:programmatic`;
+- auditoria estrutural no HEAD: 53 arquivos em `tests/`, 51 testes executáveis;
+- distribuição: 37 unit, 4 contract, 6 security, 3 e2e, 1 isolation;
+- testes executáveis fora dos globs previstos: 0;
+- gate agregado passa a exigir layout de testes + suíte + typecheck + preflight nativo;
+- não foi alegado `npm test` integral verde sem runner/dependências reais;
+- próxima rodada autônoma: A2 — guard central/fail-closed total.
