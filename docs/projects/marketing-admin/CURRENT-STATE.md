@@ -1,6 +1,6 @@
 # CURRENT STATE — Marketing Admin Dona Antônia
 
-Snapshot de continuidade: **18/09/2026**.
+Snapshot de continuidade: **19/09/2026**.
 
 ## Fase atual
 `connection_homologation` com desenvolvimento interno autônomo em paralelo. Publicação externa continua proibida.
@@ -17,38 +17,31 @@ Snapshot de continuidade: **18/09/2026**.
 ## Conexões
 Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `v26.0`. OAuth de usuário continua bloqueado pela configuração manual de App Domain/Valid OAuth Redirect URI no app Meta. Backend aceita somente Page `1928140920768577` e Instagram Business `17841451162237654` / `@dona_antonia_cuiaba`. Pinterest App/Secret/board continuam pendentes. Não contornar esses gates.
 
-## Rodada 9 — autonomia segura
-- `marketing_editorial_plan_v1`: agenda `preview_only`, sem auto-schedule;
-- `marketing_tracking_link_v1`: UTM/asset/channel sem gravação;
-- `marketing_learning_read_model_v1`: learning determinístico, sem IA e sem auto-otimização;
-- `marketing_daily_plan_preview_v1`: dry-run, sem criar campanha/job/agendamento/publicação;
-- migration `marketing_round9_autonomy_foundation_v1` aplicada.
+## Rodadas 9–11 concluídas
+- Agenda V1 `preview_only`, tracking UTM preview, Learning determinístico e Daily Plan dry-run;
+- `marketing_observability_read_model_v1()` aplicada;
+- `admin-marketing-insights-v1` v17 / ACTIVE / JWT=true com `observability` read-only;
+- painel Saúde e Confiança fail-closed no Admin;
+- agenda permanece apenas sugestiva/preview, sem auto-schedule.
 
-## Rodada 10 — observabilidade
-- migration/RPC `marketing_observability_read_model_v1` aplicada;
-- modelo é `observe_only`, determinístico, sem IA e sem ações automáticas;
-- confidence=`insufficient_data`; performance claims proibidos até pelo menos 3 publicações e 5 touchpoints reais.
+## Rodada 12 — Atribuição Comercial + Métricas de Canal — em andamento
+- a fundação de atribuição existente já cobre `marketing_tracking_link_v1`, `marketing_attribution_touchpoints`, `evidence_key`, cadeia pai e `marketing_attribution_read_model_v1`;
+- UTM permanece preview-only e `attribution_recording_enabled=false`;
+- criada e aplicada migration `marketing_round12_channel_metrics_v1`;
+- criada tabela `marketing_channel_metric_snapshots`, RLS ligada e sem acesso `anon/authenticated`; escrita/leitura bruta reservada a `service_role`;
+- `evidence_key` é único para dedupe/idempotência;
+- snapshots suportam providers `meta` e `pinterest`, mas nenhum coletor externo foi criado/ativado;
+- criada RPC service-role-only `marketing_channel_metrics_read_model_v1()`;
+- read-model normaliza `reach`, `impressions`, `views`, `engagement`, `saves`, `shares` por canal;
+- estado real atual é `insufficient_data`, 0 snapshots, `collection.enabled=false`, `automatic=false`, `external_side_effect=false`;
+- migration canônica também foi salva no GitHub em `supabase/migrations/20260919001500_marketing_round12_channel_metrics_v1.sql`.
 
-## Rodada 11 — Observabilidade + Agenda Editorial
-- `admin-marketing-insights-v1` permanece v17 / ACTIVE / JWT=true com action read-only `observability`;
-- `admin/marketing-api.js` mantém `getMarketingObservability()`;
-- novo `admin/marketing-observability-panel.js` monta no Painel a leitura de Saúde e Confiança após autenticação do Admin;
-- painel valida fail-closed `mode=observe_only`, `auto_action=false`, `auto_publish=false`, `auto_schedule=false` antes de renderizar;
-- painel mostra runtime, kill switch, publicações, touchpoints, stale scheduled e external side effects sem IA nem mutação;
-- refresh do Marketing também renova a leitura de observabilidade;
-- teste contratual `tests/marketing-observability-admin-contract.mjs` protege action, autenticação/no-store e ausência de operações de publicação/conexão no módulo;
-- agenda V1 continua `preview_only`, com conflitos e sugestões operacionais, sem auto-schedule.
-
-## Invariantes revalidados no Supabase após as mudanças
-- enabled=false;
-- execution_mode=off;
-- kill_switch=true;
-- publishing_enabled=false;
-- max_daily_publications=0;
-- attribution_recording_enabled=false;
-- Instagram/Facebook/Pinterest/WhatsApp publish gates=false;
-- published_jobs=0;
-- external_side_effect_events=0.
+## Invariantes revalidados
+- runtime permanece OFF/fail-closed;
+- attribution recording OFF;
+- coletores Meta/Pinterest OFF/inexistentes;
+- published jobs continuam 0;
+- external side effect events continuam 0.
 
 ## Bloqueios humanos restantes
 1. Meta App Domains + Valid OAuth Redirect URI;
@@ -57,7 +50,4 @@ Meta App ID `1547249776748513` validado contra o App Secret do Vault via Graph `
 4. autorização explícita futura para canary unitário.
 
 ## Próximo ponto seguro
-1. seguir a Rodada 12 do `AUTONOMOUS-COMPLETION-PLAN.md`: Atribuição Comercial + Métricas de Canal;
-2. preservar ingestão/coletores OFF e trabalhar com fixtures sintéticas;
-3. manter todos os gates externos fechados;
-4. não usar Make como runtime novo.
+Continuar a Rodada 12: adicionar contratos/adapters puros de normalização Meta/Pinterest, fixtures sintéticas, testes de dedupe/evidence e integrar o novo read-model ao backend/Admin sem criar coletor externo. Depois, se o gate da Rodada 12 estiver comprovado, avançar diretamente à Rodada 13 — Learning Engine + Memória Criativa + Daily Planner.
