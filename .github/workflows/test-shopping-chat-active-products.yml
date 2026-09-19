@@ -1,0 +1,25 @@
+name: Testar produtos ativos no Comprar
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/test-shopping-chat-active-products-v1.mjs'
+      - 'supabase/functions/shopping-chat-v1/**'
+      - 'supabase/functions/shopping-chat-products-v1/**'
+      - 'supabase/migrations/*web_shopping_room_active_product_eligibility*'
+      - '.github/workflows/test-shopping-chat-active-products.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Reproduzir regra de produto ativo
+        run: node scripts/test-shopping-chat-active-products-v1.mjs
