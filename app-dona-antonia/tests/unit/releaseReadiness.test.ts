@@ -5,9 +5,12 @@ import { evaluateInternalBetaReadiness } from '../../src/platform/releaseReadine
 
 const safeBase = {
   platform: 'android' as const,
+  appEnvironment: 'homologation' as const,
   nativeArtifactValidated: true,
   nativeSecureSessionValidated: true,
   nativeDeepLinksValidated: true,
+  isolationSuiteValidated: true,
+  typecheckValidated: true,
   securityReviewComplete: true,
   privacyReviewComplete: true,
   storeMetadataPrepared: true,
@@ -42,9 +45,10 @@ test('missing native artifact and native security boundaries block beta readines
   ]);
 });
 
-test('any production or real external effect blocks internal beta readiness', () => {
+test('production environment and any real external effect block internal beta readiness', () => {
   const result = evaluateInternalBetaReadiness({
     ...safeBase,
+    appEnvironment: 'production',
     productionEnabled: true,
     realOrdersEnabled: true,
     realPushEnabled: true,
@@ -53,10 +57,25 @@ test('any production or real external effect blocks internal beta readiness', ()
 
   assert.equal(result.ready, false);
   assert.deepEqual(result.blockers, [
+    'homologation_environment_required',
     'production_must_stay_off',
     'real_orders_must_stay_off',
     'real_push_must_stay_off',
     'external_executors_must_stay_off',
+  ]);
+});
+
+test('unexecuted isolation suite and typecheck are explicit fail-closed blockers', () => {
+  const result = evaluateInternalBetaReadiness({
+    ...safeBase,
+    isolationSuiteValidated: false,
+    typecheckValidated: false,
+  });
+
+  assert.equal(result.ready, false);
+  assert.deepEqual(result.blockers, [
+    'isolation_suite_unvalidated',
+    'typecheck_unvalidated',
   ]);
 });
 
