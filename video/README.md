@@ -22,11 +22,12 @@ Módulo isolado do `SUCEDOAN12` para preparar referências e prompts de vídeo p
 - 6–10 s: CTA.
 
 ## Regras fixas
-- logo oficial somente no CTA;
-- preservar integralmente logo, rótulos, embalagens e formatos;
+- não usar CTA;
+- não usar logo no vídeo;
+- preservar integralmente rótulos, embalagens e formatos;
 - remover somente fundos cinza/branco/colorido das fotos de produto;
 - somente trilha instrumental, sem voz/locução/narração;
-- CTA: Entrega grátis em Cuiabá e VG · donaantonia.com.br · WhatsApp 98449-1018.
+- usar os 10 segundos inteiros para abertura temática + apresentação dos produtos.
 
 ## Backend
 Reutiliza a Edge Function existente `creative-storyboard-projects`:
