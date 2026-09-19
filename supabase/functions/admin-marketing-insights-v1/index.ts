@@ -29,6 +29,15 @@ Deno.serve(async(req:Request)=>{
     return json({ok:true,observability:data,external_side_effect:false});
   }
 
+  if(action==="channel_metrics"){
+    const days=Number(b.days||30);if(![7,30,90].includes(days))return fail("invalid_channel_metrics_window","Use 7, 30 ou 90 dias");
+    const to=new Date(),from=new Date(to.getTime()-days*86400000);
+    const {data,error}=await sb.rpc("marketing_channel_metrics_read_model_v1",{p_from:from.toISOString(),p_to:to.toISOString()});
+    if(error)return fail("channel_metrics_failed",error.message||"Falha nas métricas de canal",500);
+    if(data?.external_side_effect!==false||data?.collection?.enabled!==false||data?.collection?.automatic!==false)return fail("unsafe_channel_metrics","Métricas de canal recusadas",500);
+    return json({ok:true,days,channel_metrics:data,external_side_effect:false});
+  }
+
   if(action==="metrics"){
     const days=Number(b.days||30);if(![7,30,90].includes(days))return fail("invalid_metric_window","Use 7, 30 ou 90 dias");
     const to=new Date(),from=new Date(to.getTime()-days*86400000);
