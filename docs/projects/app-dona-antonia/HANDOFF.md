@@ -21,12 +21,12 @@
 ## Último avanço seguro — A6
 A5 não possui mais trabalho independente evidente sem implementação/build nativo: permissões, pickers e stripping EXIF efetivo permanecem bloqueios nativos explícitos.
 
-A6 recebeu `docs/homologation/HML-BACKEND-DEPLOY-MANIFEST.md`, documentando invariantes de deploy HML, gate de migrations, rollback, integridade de carrinho/total, idempotência/rate limit, pairing, telemetria/privacidade e regra `BLOCKED_QUOTA` sem apagar Edge Functions ou aumentar custo. Foi criado `src/platform/hmlBackendPreflight.ts`, um preflight puro e fail-closed que só retorna ready para homologação sintética `TEST-PROJECT-*`, projeto alvo esperado, migrations revisadas, rollback documentado, suíte de isolamento/typecheck executados, quota disponível, nenhuma migration destrutiva e nenhum executor real. `tests/unit/hmlBackendPreflight.test.ts` cobre cada gate.
+A6 já possui `docs/homologation/HML-BACKEND-DEPLOY-MANIFEST.md` e `src/platform/hmlBackendPreflight.ts`, mantendo deploy fail-closed para HML sintética e quota disponível. Nesta continuação foi adicionado `src/platform/hmlRequestSafety.ts`: contrato puro que bloqueia produção, IDs não `TEST-*`, chave de idempotência não sintética, totais monetários inválidos/divergentes e tentativas acima do limite. `SyntheticIdempotencyLedger` consome chaves `TEST-IDEMPOTENCY-*` uma única vez para exercitar replay sem backend ou I/O. `tests/unit/hmlRequestSafety.test.ts` cobre baseline, total server-authoritative, rate limit, replay e rejeição de recursos reais.
 
 **Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhum deploy/migration foi executado e nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
-1. Continuar A6 em contratos estáticos/sintéticos de integridade, idempotência/rate limit e checklist backend sem deploy.
+1. Continuar A6 em contratos estáticos/sintéticos de bootstrap/catalog/checkout e checklist backend sem deploy.
 2. Quando A6 estiver esgotada programaticamente, avançar A7 UX/acessibilidade/offline/desempenho.
 3. Manter R10/R11 e R25 fechadas.
 
