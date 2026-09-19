@@ -16,17 +16,17 @@
 - R10/R11 bloqueadas até toolchain/build nativo real;
 - R13 deploy bloqueado por quota;
 - R25 produção proibida;
-- plano autônomo: A1–A4 programaticamente concluídas até o limite não nativo; próxima A5.
+- plano autônomo: A1–A4 concluídas; A5 avançada nesta rodada e permanece parcial até validação nativa de permissões/pickers.
 
-## Último avanço seguro — A4
-Deep links/notificações foram fechados sem rede real. `urlPolicy` agora rejeita qualquer URL absoluta que não seja HTTPS, além das proteções existentes contra credenciais, PII e material de sessão. `appLinks` continua exigindo allowlist explícita para host absoluto e roteia apenas destinos internos determinísticos.
+## Último avanço seguro — A5
+Foi criado `src/platform/localMediaVault.ts`, cofre efêmero e somente de metadados para mídia HML. Ele nunca persiste bytes, texto do cliente, filename ou URL externa; aceita apenas `TEST-MEDIA-*`, MIME fechado, tamanho máximo de 8 MiB, TTL curto, limite de entradas, limpeza automática/explicita e passa pelo `homologationGuard` antes de aceitar registros.
 
-Foi criado `notificationRouter.ts`: aceita apenas IDs opacos `TEST-NOTIFICATION-*`, valida o deep link antes de consumir o ID, deduplica mensagens aceitas com memória limitada e não executa rede/push. Foram adicionados `notificationRouter.test.ts` e `urlPolicySafety.test.ts`. Push permanece sintético (`TEST-PUSH-*`) com preferências locais transacional/marketing.
+Foi adicionado `tests/unit/localMediaVault.test.ts`, cobrindo expiração, limite de retenção, limpeza explícita, produção/IDs reais fail-closed, MIME não permitido e tamanho excessivo. Isso reduz risco de retenção acidental enquanto Photo Picker/câmera/microfone e storage nativo aguardam build/teste em dispositivo.
 
 **Validação honesta:** código/testes foram adicionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
-1. A5 — mídia, privacidade e dados locais: revisar contratos Photo Picker/câmera/microfone, EXIF, anexos, revogação/limpeza e direitos de acesso/correção/exclusão.
+1. Continuar A5 em política de EXIF/anexos, revogação e contratos de acesso/correção/exclusão que possam ser testados sem dispositivo.
 2. Depois A6 — HML/backend preparado para deploy sem aumentar quota.
 3. Manter R10/R11 e R25 fechadas.
 
