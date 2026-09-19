@@ -15,17 +15,17 @@
 - parciais seguras: R12–R19 e R21–R24;
 - R10/R11 bloqueadas até toolchain/build nativo real;
 - R13 deploy bloqueado por quota; R25 produção proibida;
-- plano autônomo: **A1–A6 esgotadas programaticamente dentro dos limites seguros; A7 é a próxima rodada**.
+- plano autônomo: **A1–A6 esgotadas; A7 avançada e em fechamento programático**.
 
-## Último avanço seguro — A6
-`hmlBoundaryContracts.ts` agora fecha também pairing, telemetria e privacidade. Pairing exige `TEST-PAIR-*` + `TEST-SESSION-*`, challenge fresco e não consumido. Telemetria exige `TEST-TELEMETRY-*` e rejeita PII, texto livre, advertising ID e qualquer sink externo. Privacidade exige `TEST-PRIVACY-*`, mesmo `TEST-SUBJECT-*` e zero escrita externa. A suíte unitária cobre os baselines e falhas fechadas correspondentes.
+## Último avanço seguro — A7
+A auditoria existente já cobre piso de 320px, alvos primários de 44px, foco visível, ARIA, contraste forçado e reduced motion. Foi adicionado `uxReadiness.ts` com contratos determinísticos para recovery offline/error, limite de tentativas, budgets de JS/CSS/imagem crítica e validação fail-closed de tamanho/label/alcance por teclado. `uxReadiness.test.ts` cobre limites e falhas fechadas. Estados loading/empty/error/offline já permanecem modelados no shell.
 
-**Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhum deploy/migration/executor/pedido/push foi executado e nenhuma homologação Android/iOS foi inferida.
+**Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Auditoria visual/nativa, leitor de tela e métricas em dispositivo continuam dependentes de execução real. Nenhum efeito externo foi acionado.
 
 ## Próximo trabalho seguro
-1. A7: UX/acessibilidade/offline/desempenho — 320px, 44px, teclado/foco/ARIA, reduced motion, estados loading/empty/error/offline/recovery e budgets/testes automatizáveis.
-2. Depois A8 somente preflight/documentação de release/store/native, sem build/submissão real.
-3. A9 auditoria final e documentos humanos/checklist; não criar novo escopo depois.
+1. Fechar A7 com qualquer auditoria estática restante que seja independente de runner/dispositivo.
+2. Entrar em A8 somente para preflight/documentação de release/store/native, sem build/submissão real.
+3. A9: auditoria final e documentos humanos/checklist; não criar novo escopo depois.
 
 ## Regras soberanas
 - não modificar `comprar/`; não mergear PR #396;
