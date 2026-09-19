@@ -2,34 +2,45 @@ const $=x=>document.getElementById(x),cfg=window.DA_ADMIN_CONFIG||{},BASE=cfg.su
 async function api(b){let r=await fetch(BASE+'/functions/v1/'+FN,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(b)}),d=await r.json();if(!r.ok||d.ok===false)throw Error(d.error||'Falha');return d}
 const load=p=>new Promise(ok=>{let i=new Image;i.crossOrigin='anonymous';i.onload=()=>ok({p,i});i.onerror=()=>ok(null);i.src=p.image_url});
 function scene(g,n){let c=document.createElement('canvas');c.width=540;c.height=960;let x=c.getContext('2d');x.fillStyle='#eeeeec';x.fillRect(0,0,540,960);let b=[[25,45,240,415],[275,45,240,415],[25,500,240,415],[275,500,240,415]];g.forEach((o,k)=>{let [bx,by,bw,bh]=b[k],im=o.i,r=Math.min((bw-12)/im.naturalWidth,(bh-12)/im.naturalHeight),w=im.naturalWidth*r,h=im.naturalHeight*r;x.drawImage(im,bx+(bw-w)/2,by+(bh-h)/2,w,h)});return c}
-function makePrompt(){let idea=$('idea').value.trim();return `Crie um vídeo publicitário vertical 9:16 de EXATAMENTE 10 segundos para Instagram Reels usando os produtos presentes nas 10 imagens de referência anexadas. As imagens são apenas referências visuais dos produtos: não copie o fundo nem a composição delas.
+let promptSerial=0;
+const CONCEPTS=[
+['Explosão de prateleira','Comece no primeiro frame com uma explosão gráfica de cor e 2–3 produtos entrando de direções opostas, como se tivessem sido lançados para o centro. Depois acelere em cascata com entradas secas, giros curtos, saltos e trocas surpreendentes.'],
+['Ímã visual','Abra com um único produto enorme avançando rapidamente para a câmera e travando no centro; imediatamente outros produtos surgem em batidas visuais sucessivas. Use zooms stop motion, snap cuts e composições que mudam antes de o olhar se acomodar.'],
+['Dominó pop','Comece com produtos entrando em sequência como um dominó visual, cada entrada empurrando a próxima composição. Transforme a sequência em uma coreografia rápida de grupos, fileiras, círculos e diagonais.'],
+['Portal de cores','Abra com uma mudança abrupta entre três fundos intensos enquanto produtos aparecem em posições diferentes a cada batida. Faça os produtos atravessarem círculos e formas gráficas como portais, sem jamais alterar a fotografia do produto.'],
+['Chuva de produtos','Comece com produtos caindo rapidamente de cima e parando com impacto no quadro. Em seguida use rebotes, deslocamentos laterais, agrupamentos e dispersões em ritmo crescente.'],
+['Batalha de lados','Abra com dois produtos entrando violentamente pelas laterais e parando frente a frente. Novos produtos substituem os anteriores em match cuts rápidos, criando uma disputa gráfica divertida e energética.'],
+['Esteira impossível','Comece com produtos atravessando o quadro em uma esteira visual muito rápida; alguns param abruptamente, crescem e viram protagonistas antes de sair e dar lugar aos próximos.'],
+['Pop sincronizado','Abra com flashes de fundos sólidos e produtos surgindo exatamente nas batidas imaginárias. Construa uma sequência de pops, pequenos saltos, rotações mínimas e mudanças de escala com sensação musical.']
+];
+function makePrompt(){let idea=$('idea').value.trim(),c=CONCEPTS[(promptSerial++)%CONCEPTS.length];return `Crie um vídeo publicitário vertical 9:16 de EXATAMENTE 10 segundos para Instagram Reels usando os produtos presentes nas imagens de referência anexadas. As imagens servem SOMENTE para identificar os produtos.
 
-OBJETIVO CRIATIVO
-Produza um stop motion publicitário moderno, energético, divertido e visualmente viciante, pensado para prender a atenção imediatamente e manter ritmo forte até o final. O resultado deve parecer uma produção profissional feita com fotografias reais dos produtos recortadas e animadas quadro a quadro.
+REGRA ABSOLUTA — FIDELIDADE DO PRODUTO
+O produto deve permanecer VISUALMENTE IDÊNTICO à fotografia de referência durante toda a animação. NÃO altere, reescreva, recrie, corrija, traduza, complete ou estilize absolutamente NADA do rótulo ou da embalagem. Preserve pixel visualmente: nome da marca, logotipo, textos, letras, números, cores, ilustrações, selos, códigos, formato, tampa e proporções. Não invente texto. Não substitua caracteres. Não faça morphing. Não misture dois produtos. Se algum detalhe do rótulo não puder ser preservado, mantenha a fotografia original do produto em vez de tentar reconstruí-lo.
 
-FIDELIDADE AOS PRODUTOS
-Use somente os produtos presentes nas referências. Preserve com máxima fidelidade embalagem, formato, marca, logotipo, rótulo, cores e proporções. Não invente produtos, não substitua embalagens, não altere textos dos rótulos e não transforme um produto em outro. Evite deformações, morphing, derretimento ou fusão entre objetos.
+CONCEITO CRIATIVO DESTA GERAÇÃO — ${c[0]}
+${c[1]}
+
+OBJETIVO DE ATENÇÃO
+O feed de Reels é extremamente competitivo. O primeiro frame já deve causar impacto e o primeiro segundo precisa funcionar como gancho visual, sem introdução lenta, fade-in, tela vazia ou espera. Faça alguma mudança visual relevante aproximadamente a cada 0,3–0,7 segundo. Crie surpresa, contraste, ritmo e curiosidade para evitar que a pessoa deslize para o próximo Reel.
+
+LINGUAGEM STOP MOTION
+Use as fotografias intactas dos produtos como recortes físicos animados quadro a quadro. Pode mover, girar levemente, aumentar, diminuir, saltar, deslizar, empurrar, entrar e sair do quadro, mas NUNCA redesenhar ou deformar o produto. Combine snap transitions, match cuts, mudanças bruscas de composição, pequenas imperfeições artesanais e movimentos secos.
 
 DIREÇÃO DE ARTE
-Os produtos são os protagonistas e devem aparecer grandes e claramente reconhecíveis. Use fundos lisos de cores fortes e variadas, com linguagem gráfica contemporânea. Você pode usar formas geométricas simples, linhas, círculos, estrelas, pequenos elementos gráficos e mudanças de cor para reforçar movimento, sem competir com os produtos. Não use cenários realistas, pessoas ou mãos.
+Fundos lisos, intensos e contrastantes, alternando com ritmo. Formas geométricas e elementos gráficos simples podem reagir ao movimento, mas nunca cobrir informações importantes do produto. Sem pessoas, mãos ou cenários realistas. Produtos grandes e reconhecíveis. Varie produto solo, duplas, trios e grupos pequenos; não coloque os 40 simultaneamente.
 
-MOVIMENTO STOP MOTION
-Anime os produtos como objetos físicos fotografados quadro a quadro: entradas rápidas pelas bordas, pequenos saltos, deslocamentos secos, giros curtos, aproximações, afastamentos, trocas de posição, empurrões, snap transitions e match cuts. Prefira movimentos curtos e intencionais. A pequena imperfeição característica do stop motion é desejável, mas o acabamento geral deve ser limpo e comercial.
+ESTRUTURA
+0–1s: gancho extremamente chamativo baseado no conceito desta geração.
+1–3s: aceleração e primeira surpresa visual.
+3–8,5s: sequência imprevisível, com composições e movimentos variados e nenhuma sensação de slideshow.
+8,5–10s: clímax visual e final que possa conectar naturalmente ao começo para estimular replay.
 
-RITMO
-0–1 s: gancho visual muito forte.
-1–3 s: acelere as entradas e trocas de produtos.
-3–8,5 s: mantenha variedade constante de composição, movimento e cores, criando pequenas surpresas visuais.
-8,5–10 s: fechamento forte e memorável, preferencialmente terminando de forma que permita um loop natural de volta ao primeiro segundo.
+NÃO FAÇA
+Não altere rótulos. Não gere novas versões das embalagens. Não use morphing ou deformação. Não invente preço, promoção, slogan, legenda ou narração. Não transforme as 10 referências em dez slides. Não deixe cenas longas ou estáticas.
 
-EDIÇÃO
-Faça cortes e mudanças visuais frequentes, sincronizáveis com uma trilha rítmica. Evite cenas paradas longas. Distribua os produtos ao longo dos 10 segundos; não tente manter todos simultaneamente na tela. Varie entre produto individual, duplas, trios e pequenos grupos para manter legibilidade. As referências podem ser usadas em qualquer ordem criativa.
-
-RESTRIÇÕES
-Não acrescente preços, promoções, slogans, legendas ou textos que não estejam nas próprias embalagens. Não crie narração. Não invente marcas ou elementos que pareçam parte das embalagens. Não transforme as imagens de referência em simples slideshow. O objetivo é criar uma animação stop motion nova usando os produtos como matéria-prima visual.
-
-FORMATO FINAL
-9:16 vertical, exatamente 10 segundos, enquadramento seguro para Reels, alta legibilidade em tela de celular, estética publicitária contemporânea, divertida e dinâmica.${idea?'\n\nDIREÇÃO ADICIONAL DO CRIADOR:\n'+idea:''}`}
-async function generate(){try{$('status').textContent='Sorteando e carregando 40 produtos…';let d=await api({action:'random_products',limit:70}),a=(await Promise.all((d.products||[]).filter(p=>p.image_url).slice(0,55).map(load))).filter(Boolean).slice(0,40);if(a.length<40)throw Error('Carregaram apenas '+a.length+' produtos; tente novamente.');products=a.map(o=>o.p);shots=[];$('grid').innerHTML='';for(let n=0;n<10;n++){let c=scene(a.slice(n*4,n*4+4),n);shots.push(c);let wrap=document.createElement('div');wrap.style.margin='12px 0';wrap.append(c);c.style='width:100%;max-width:360px;aspect-ratio:9/16;object-fit:contain';let p=document.createElement('p');p.textContent=String(n+1).padStart(2,'0')+' · '+products.slice(n*4,n*4+4).map(v=>v.name).join(' · ');wrap.append(p);$('grid').append(wrap)}$('prompt').textContent=makePrompt();$('status').textContent='Pronto: 40 produtos em 10 imagens.'}catch(e){$('status').textContent='Erro: '+e.message}}
+FORMATO
+Exatamente 10 segundos, 9:16, alta legibilidade no celular, ritmo de Reels, acabamento publicitário profissional e stop motion energético. Use as referências em qualquer ordem que produza o melhor vídeo.${idea?'\n\nDIREÇÃO ADICIONAL DO CRIADOR:\n'+idea:''}`}
+async function generate(){try{$('status').textContent='Sorteando e carregando 40 produtos…';let d=await api({action:'random_products',limit:70}),a=(await Promise.all((d.products||[]).filter(p=>p.image_url).slice(0,55).map(load))).filter(Boolean).slice(0,40);if(a.length<40)throw Error('Carregaram apenas '+a.length+' produtos; tente novamente.');products=a.map(o=>o.p);shots=[];$('grid').innerHTML='';for(let n=0;n<10;n++){let c=scene(a.slice(n*4,n*4+4),n);shots.push(c);let wrap=document.createElement('div');wrap.style.margin='12px 0';wrap.append(c);c.style='width:100%;max-width:360px;aspect-ratio:9/16;object-fit:contain';let p=document.createElement('p');p.textContent=String(n+1).padStart(2,'0')+' · '+products.slice(n*4,n*4+4).map(v=>v.name).join(' · ');wrap.append(p);$('grid').append(wrap)}$('prompt').textContent=makePrompt();$('status').textContent='Pronto: 40 produtos em 10 imagens. Prompt criativo gerado.'}catch(e){$('status').textContent='Erro: '+e.message}}
 async function download(){if(shots.length!==10)return;for(let i=0;i<10;i++){let blob=await new Promise(r=>shots[i].toBlob(r,'image/jpeg',.94)),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='gemini-stopmotion-'+String(i+1).padStart(2,'0')+'.jpg';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);await new Promise(r=>setTimeout(r,220))}}
 $('generate').onclick=generate;$('download').onclick=download;$('newPrompt').onclick=()=>$('prompt').textContent=makePrompt();$('idea').oninput=()=>$('prompt').textContent=makePrompt();$('copy').onclick=()=>navigator.clipboard.writeText($('prompt').textContent);generate();
