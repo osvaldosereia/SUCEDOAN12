@@ -35,12 +35,12 @@
 - A7–A9: pendentes.
 
 ## Checkpoint A6 — 19/09/2026
-Além do manifest e `hmlBackendPreflight.ts`, foi adicionado `src/platform/hmlRequestSafety.ts` para modelar de forma puramente sintética integridade server-authoritative, idempotência e rate limit. O contrato rejeita produção, IDs/chaves não `TEST-*`, centavos inválidos, divergência entre total apresentado e total autoritativo e tentativas fora do limite. `SyntheticIdempotencyLedger` rejeita replay e nunca registra chave real. `tests/unit/hmlRequestSafety.test.ts` cobre esses invariantes sem rede, backend ou efeitos externos.
+A6 possui preflight de backend, segurança de request/idempotência e agora contratos estáticos `hmlBoundaryContracts.ts` para bootstrap/catalog/checkout. Todos falham fechado fora de homologação ou diante de subject/recurso não `TEST-*`. Bootstrap proíbe request externo; catálogo valida shape, IDs e centavos; checkout exige carrinho/operação/idempotência/produtos sintéticos, carrinho não vazio e total autoritativo idêntico ao apresentado. Testes unitários correspondentes foram adicionados.
 
 ### Validação honesta
 Nenhum deploy, migration ou executor foi acionado. Os testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. A quota continua sendo bloqueio válido e não será contornada apagando funções ou aumentando custo.
 
 ## Próximo trabalho seguro
-1. continuar A6 em contratos/testes sintéticos de bootstrap/catalog/checkout sem deploy;
+1. continuar A6 em contratos pairing/telemetria/privacidade e revisão final das fronteiras HML sem deploy;
 2. esgotada A6, avançar A7, A8 e A9 sequencialmente;
 3. em A9 criar `docs/homologation/HUMAN-ACTIONS-FINAL.md` e `FINAL-AUTONOMOUS-CHECKLIST.md`; só definir `PROGRAMMATIC_COMPLETE=true` se nenhuma tarefa segura independente restar.
