@@ -7,6 +7,7 @@ export type HomologationAction =
   | 'secure_session_read'
   | 'secure_session_write'
   | 'secure_session_clear'
+  | 'telemetry_emit'
   | 'hml_network'
   | 'production_order'
   | 'production_push'
@@ -44,6 +45,7 @@ const RESOURCE_ACTIONS = new Set<HomologationAction>([
   'secure_session_read',
   'secure_session_write',
   'secure_session_clear',
+  'telemetry_emit',
   'hml_network',
 ]);
 
