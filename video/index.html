@@ -18,6 +18,11 @@
   </header>
 
   <main class="page">
+    <nav class="video-tabs" aria-label="Ferramentas VIDEO">
+      <button class="video-tab active" data-tab="generator">Gerador de prompt</button>
+      <button class="video-tab" data-tab="timeline">Linha do tempo</button>
+    </nav>
+    <div id="generatorTab">
     <section class="card">
       <div class="section-title">
         <div>
@@ -120,9 +125,45 @@
         <div><b>5</b><span>Cole o prompt gerado pela IA e gere 1 saída. O vídeo termina com os produtos em composição estável, sem CTA.</span></div>
       </div>
     </section>
+    </div>
+
+    <div id="timelineTab" class="hidden">
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h1>Linha do tempo</h1>
+            <p>Monte uma sequência de pequenos vídeos. Cada etapa gera somente o prompt para o Google Flow.</p>
+          </div>
+          <span id="timelineTotal" class="badge">0 etapas</span>
+        </div>
+        <div class="form-grid">
+          <label class="field">
+            <span>Quantidade inicial de etapas</span>
+            <div class="search-row">
+              <input id="timelineCount" type="number" min="1" max="20" value="1" inputmode="numeric">
+              <button id="createTimeline" class="primary">Criar linha</button>
+            </div>
+          </label>
+          <label class="field">
+            <span>Tema geral <em>opcional</em></span>
+            <input id="timelineTheme" type="text" maxlength="120" placeholder="Ex.: lavagem de roupas, café da manhã, Omo…">
+            <small>Ajuda a manter unidade entre todos os módulos.</small>
+          </label>
+        </div>
+        <p class="status">Durações disponíveis por módulo: 4, 6, 8 ou 10 segundos.</p>
+      </section>
+
+      <section id="timelineModules" class="timeline-list"></section>
+
+      <section class="card timeline-add">
+        <button id="addTimelineModule" class="primary">+ Adicionar módulo</button>
+        <span>Você pode parar em qualquer etapa, copiar o prompt e usar somente aquele módulo.</span>
+      </section>
+    </div>
   </main>
 
   <script src="/admin/config.js"></script>
-  <script src="/video/app.js?v=5"></script>
+  <script src="/video/app.js?v=6"></script>
+  <script src="/video/timeline.js?v=1"></script>
 </body>
 </html>
