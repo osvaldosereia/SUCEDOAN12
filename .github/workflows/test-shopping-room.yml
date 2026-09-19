@@ -11,6 +11,7 @@ on:
       - 'scripts/test-basket-preview-checkout-whatsapp-v1.mjs'
       - 'scripts/test-comprar-product-visual-v2.mjs'
       - 'scripts/test-comprar-order-admin-v1.mjs'
+      - 'scripts/test-comprar-confirm-order-resilience-v1.mjs'
       - 'scripts/test-comprar-checkout-profile-v1.mjs'
       - 'scripts/test-comprar-mobile-v1.mjs'
       - 'scripts/test-comprar-repeat-last-purchase-v1.mjs'
@@ -103,6 +104,7 @@ jobs:
           node --check comprar/baskets.js
           node --check comprar/products.js
           node --check comprar/checkout.js
+          node --check comprar/conversation.js
           node --check comprar/help.js
           node --check comprar/repeat-purchase-v1.js
           node --check comprar/frequent-purchases-v1.js
@@ -116,6 +118,7 @@ jobs:
           node scripts/test-basket-preview-checkout-whatsapp-v1.mjs
           node scripts/test-comprar-product-visual-v2.mjs
           node scripts/test-comprar-order-admin-v1.mjs
+          node scripts/test-comprar-confirm-order-resilience-v1.mjs
           node scripts/test-comprar-checkout-profile-v1.mjs
           node scripts/test-comprar-mobile-v1.mjs
           node scripts/test-comprar-repeat-last-purchase-v1.mjs
