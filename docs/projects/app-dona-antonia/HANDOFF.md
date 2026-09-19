@@ -16,16 +16,18 @@
 - R10/R11 bloqueadas até toolchain/build nativo real;
 - R13 deploy bloqueado por quota;
 - R25 produção proibida;
-- plano autônomo: A1–A4 concluídas; A5 avançada e parcial até validação/implementação nativa de permissões, pickers e stripping efetivo de metadados.
+- plano autônomo: A1–A4 concluídas; A5 esgotada programaticamente até o limite nativo; A6 em andamento seguro, sem deploy.
 
-## Último avanço seguro — A5
-Além de `localMediaVault.ts`, foram adicionados `mediaPrivacyPolicy.ts` e `localPrivacyRights.ts`. A fronteira de mídia aceita apenas `TEST-MEDIA-*`, valida origem/MIME, tamanho e áudio de no máximo 120 s, e determina stripping de EXIF antes de qualquer futura fronteira nativa/backend. O contrato nunca recebe bytes, filename, URL ou texto do cliente. Direitos locais sintéticos de acesso e eliminação exigem `TEST-SUBJECT-*`; metadados de mídia são imutáveis e correção exige apagar/recriar.
+## Último avanço seguro — A6
+A5 não possui mais trabalho independente evidente sem implementação/build nativo: permissões, pickers e stripping EXIF efetivo permanecem bloqueios nativos explícitos.
 
-Foram adicionados testes unitários para EXIF policy, source/MIME, duração, IDs reais fail-closed, acesso, eliminação e imutabilidade. **Validação honesta:** código/testes foram commitados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhuma homologação Android/iOS foi inferida.
+A6 recebeu `docs/homologation/HML-BACKEND-DEPLOY-MANIFEST.md`, documentando invariantes de deploy HML, gate de migrations, rollback, integridade de carrinho/total, idempotência/rate limit, pairing, telemetria/privacidade e regra `BLOCKED_QUOTA` sem apagar Edge Functions ou aumentar custo. Foi criado `src/platform/hmlBackendPreflight.ts`, um preflight puro e fail-closed que só retorna ready para homologação sintética `TEST-PROJECT-*`, projeto alvo esperado, migrations revisadas, rollback documentado, suíte de isolamento/typecheck executados, quota disponível, nenhuma migration destrutiva e nenhum executor real. `tests/unit/hmlBackendPreflight.test.ts` cobre cada gate.
+
+**Validação honesta:** arquivos/testes foram versionados, mas não são declarados verdes sem runner/typecheck real associado ao HEAD. Nenhum deploy/migration foi executado e nenhuma homologação Android/iOS foi inferida.
 
 ## Próximo trabalho seguro
-1. Fechar o restante programático de A5 que não dependa de dispositivo; manter permissões/pickers/EXIF efetivo como bloqueio nativo explícito.
-2. Avançar A6 — HML/backend preparado para deploy sem aumentar quota e sem tocar produção.
+1. Continuar A6 em contratos estáticos/sintéticos de integridade, idempotência/rate limit e checklist backend sem deploy.
+2. Quando A6 estiver esgotada programaticamente, avançar A7 UX/acessibilidade/offline/desempenho.
 3. Manter R10/R11 e R25 fechadas.
 
 ## Regras soberanas
