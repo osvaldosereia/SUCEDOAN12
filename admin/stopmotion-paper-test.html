@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow">
+<title>Dona Antônia · Stop Motion Papel</title><link rel="stylesheet" href="./stopmotion-paper-test.css?v=1"></head>
+<body><main class="app">
+<section class="controls"><div class="eyebrow">LAB · TESTE ISOLADO</div><h1>Stop Motion Papel</h1><p class="lead">Reels vertical de 10 segundos com produtos aleatórios da Dona Antônia.</p>
+<label>Quantidade de produtos<select id="count"><option>10</option><option selected>15</option><option>20</option><option>25</option><option>30</option></select></label>
+<label>Troca do fundo <output id="bgOut">0,18 s</output><input id="bgSpeed" type="range" min="80" max="700" value="180" step="10"></label>
+<label>Troca dos produtos <output id="prodOut">0,65 s</output><input id="prodSpeed" type="range" min="250" max="1500" value="650" step="50"></label>
+<label>Trilha<select id="music"><option value="pop">Pop percussivo</option><option value="click">Clicks de papel</option><option value="none">Sem trilha</option></select></label>
+<label class="check"><input id="sfx" type="checkbox" checked> Efeitos sonoros nas trocas</label>
+<div class="actions"><button id="load" class="secondary">Sortear produtos</button><button id="play" class="primary" disabled>▶ Assistir 10 s</button></div>
+<p id="status" class="status">Carregando o laboratório…</p><div id="picked" class="picked"></div>
+<p class="hint">O visual imita recortes impressos: produto grande, borda branca irregular, sombra seca e pequena rotação diferente a cada troca.</p></section>
+<section class="stageWrap"><div class="phone"><canvas id="stage" width="540" height="960"></canvas><div id="badge" class="badge">9:16 · 10 s</div></div></section>
+</main><script src="./config.js?v=20260915-1"></script><script src="./stopmotion-paper-test.js?v=1"></script></body></html>
