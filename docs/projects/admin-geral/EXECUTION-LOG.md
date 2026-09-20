@@ -49,8 +49,17 @@
 - preflight: branch 48 commits à frente e 0 atrás de `main`; merge-base = HEAD de main, sem divergência paralela;
 - Marketing migrado diretamente para Design System/Shell V2, com menu central gerado pelo Module Registry;
 - `marketing.css` e `marketing.js` preservados; autenticação PIN, tabs, DRAFT local, FAIL-CLOSED e `Submit Meta OFF` permanecem na interface;
-- criado `tests/admin-r3-marketing-shell-contract.test.mjs` para cobrir Shell V2 e ausência de ativação explícita de publishing;
-- criada camada `admin-context-nav-v2.js/css` para adicionar navegação administrativa sem substituir a navegação interna de workspaces especializados;
-- Relacionamento e Atendimento foram inspecionados e deliberadamente não receberam substituição de sidebar nesta execução: ambos têm navegação interna própria e gates/fluxos que não devem ser confundidos com o menu global;
-- próximo lote conecta o context nav de forma aditiva nessas duas superfícies e depois trata Inteligência/Aprendizados;
-- nenhuma publicação, outbound, canary, credencial, IA paga ou integração externa foi acionada.
+- criado `tests/admin-r3-marketing-shell-contract.test.mjs`;
+- criada camada `admin-context-nav-v2.js/css` para workspaces especializados.
+
+## 2026-09-20 — R3 lote 6 / conclusão + R4 lote 1
+- preflight: branch 55 commits à frente e 0 atrás de `main`; merge-base = HEAD de main;
+- context nav passou a ser self-mounting, idempotente e fail-safe, inferindo Relacionamento, Atendimento, Inteligência e Aprendizados pela página;
+- Relacionamento importa a navegação contextual pela camada de hardening, sem substituir `relationshipTabs` nem alterar o diagnóstico Meta read-only;
+- Atendimento importa a navegação contextual pela camada de teste, preservando `admin_test=1` e a garantia de não criar pedido real;
+- Inteligência e Aprendizados preservam a família visual antiga e recebem somente bootstrap allowlisted/fail-safe por `config.js`;
+- `tests/admin-r3-context-nav-contract.test.mjs` criado; R3 marcada DONE;
+- R4 promovida e iniciada com `admin-dashboard-v2.js/css`;
+- Início ganhou “Precisa da sua atenção”, usando somente métricas já renderizadas para sem estoque, sem foto e pedidos recentes, com navegação aos módulos e estado vazio;
+- `tests/admin-r4-dashboard-v2-contract.test.mjs` criado;
+- nenhuma chamada externa, publicação, outbound, canary, geração paga ou alteração de runtime/gates foi realizada.
