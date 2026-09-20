@@ -17,32 +17,26 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R8: IN_PROGRESS
 - R9–R16: PENDING
 
-## R1–R6 — concluídas
-- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine e Estoque/Gôndolas/Validade/Balanço concluídos com migração aditiva e contratos reais preservados.
+## R1–R7 — concluídas
+- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço e Cestas concluídos com migração aditiva e contratos reais preservados.
+- Central Comercial permanece dormente por `commercialTruthUiEnabled=false`.
 - Nenhum gate externo/runtime foi aberto pela migração.
 
-## R7 — concluída
-- preflight final partiu do HEAD `9c151f9cbe534cfe6c3832fda78a8019db832fb8`; branch estava 114 commits à frente e 0 atrás de `main`, com merge-base `c635df8` igual ao HEAD de main;
-- Cestas mantém os contratos reais `baskets`, `basket`, `save_basket`, `add_basket_item`, `update_basket_item` e `remove_basket_item`;
-- `admin-baskets-v2.js/css` mantém resumo DOM-only, cards mobile, labels contextuais, touch >=44px e safe-area;
-- `basket-editor.js` recebeu busy guard reutilizável para buscar/adicionar/atualizar/remover/salvar, bloqueando duplo acionamento sem alterar API; botões expõem `aria-busy` e feedback textual durante a operação;
-- composição passou a mostrar quantidade de produtos/unidades e deixa explícito que o preço comercial da cesta permanece separado dos componentes;
-- Central Comercial foi inventariada em read-only: código existente oferece dashboard/preview FEFO/preview margem/rascunhos DRAFT/kill switch, mas o mount continua condicionado a `commercialTruthUiEnabled=false`; nenhuma ativação foi feita;
-- teste `tests/admin-r7-baskets-v2-contract.test.mjs` ampliado para guardas, semântica DRAFT/preview e gate comercial fechado;
-- R7 concluída sem pedido, cesta, produto ou dado real usado como teste.
-
-## R8 — lote 1 iniciado
+## R8 — lotes 1–2 concluídos
+- preflight do lote 2 partiu do HEAD `aaace715e2509acee6c84a4ed6e1e7888ef6d0ce`; compare com `main` confirmou branch 124 commits à frente e 0 atrás, merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
 - inventário confirmou duas ferramentas especializadas existentes: `admin/nomes-produtos.html` para normalização/revisão de nomes e `admin/imagens-ia.html` para automação/triagem de imagens;
-- Nomes já possui comparação Era/Ficou, revisão humana e estados de fila; Imagens já possui triagem, comparação Original/Referência vs Gerada/Candidata e ações manuais;
-- criado `admin-catalog-quality-v2.js/css`, hub aditivo dentro de Produtos que organiza Nomes, Imagens e Cadastro sem executar fetch, persistência ou IA;
-- o hub declara explicitamente que ações com IA ou mutação continuam dependendo de comando humano nas ferramentas especializadas;
-- criado `tests/admin-r8-catalog-quality-v2-contract.test.mjs` para wiring, ausência de runtime paralelo, preservação do controle humano e responsividade;
-- validação desta execução foi estática/contratual pelo código versionado; nenhuma geração de imagem, normalização ou escrita real foi disparada.
+- Nomes mantém comparação Era/Ficou, revisão humana, estados de fila e consulta manual; Imagens mantém triagem, comparação Original/Referência vs Gerada/Candidata, sessão Admin e ações explícitas;
+- `admin-catalog-quality-v2.js/css` continua como hub aditivo dentro de Produtos, sem fetch, persistência ou IA próprios;
+- `product-name-management.css` foi endurecido para desktop estreito/mobile: filtros empilháveis, inputs 16px, ações >=44/48px, nomes longos sem overflow, cards/revisões em coluna e ações de decisão full-width no celular;
+- `image-automation.css` foi endurecido para touch/mobile: alvos >=44px, seleção maior, controles responsivos, textos/erros sem overflow e diálogo de reparo fullscreen com safe-area em telas pequenas;
+- nenhuma semântica de API, autenticação, custo ou geração foi alterada; `image-automation.js` continua autoridade funcional e já mantém `setBusy`/sessão/ações explícitas;
+- `tests/admin-r8-catalog-quality-v2-contract.test.mjs` permanece como contrato do hub; validação deste lote foi estática/contratual pelo código versionado;
+- nenhuma geração de imagem, normalização ou escrita real foi disparada.
 
 ## R8 — próximo lote
-1. revisar a experiência mobile/desktop real de `nomes-produtos.html` e `imagens-ia.html`, preservando suas APIs e custos sob comando explícito;
-2. reforçar estados busy/erro/seleção onde houver risco de acionamento repetido, sem rodar IA como teste;
-3. avaliar score/indicadores de completude somente com dados já disponíveis, sem inventar métricas/backend;
+1. revisar guardas contra repetição nas ações de Nomes e Imagens sem executar IA; adicionar apenas onde a autoridade funcional ainda permitir duplo acionamento;
+2. avaliar indicador de completude somente a partir de dados reais já carregados no Admin, sem criar backend ou score fictício;
+3. revisar contrato R8 para cobrir os novos requisitos mobile/touch e controle explícito de custo;
 4. quando os critérios seguros de R8 estiverem satisfeitos, marcar DONE e promover R9 — Pedidos.
 
 ## Não fazer
