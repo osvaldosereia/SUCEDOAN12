@@ -8,16 +8,25 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Gôndolas</title>
   <link rel="stylesheet" href="./styles.css?v=20260911-2">
+  <link rel="stylesheet" href="./admin-design-system-v2.css?v=20260920-r2">
+  <link rel="stylesheet" href="./admin-subpage-shell-v2.css?v=20260920-r3">
   <link rel="stylesheet" href="./gondolas-v1.css?v=20260916-1">
 </head>
-<body>
+<body class="da-v2">
   <header class="topbar">
+    <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">☰</button>
     <a class="brand" href="./#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Gôndolas</b></span></a>
-    <a class="view-storefront" href="./#products">Voltar ao Admin</a>
+    <a class="view-storefront" href="./#products">Voltar aos produtos</a>
   </header>
-  <main id="gondolaApp" class="content gondola-page" tabindex="-1"></main>
+  <div class="admin-layout">
+    <aside id="sidebar" class="sidebar" aria-label="Menu principal"><nav id="adminShellNavigation"></nav></aside>
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+    <main id="gondolaApp" class="content gondola-page" tabindex="-1"></main>
+  </div>
   <div id="toastRegion" class="toasts" aria-live="polite" aria-atomic="true"></div>
   <noscript><div class="noscript">Ative o JavaScript para usar esta página.</div></noscript>
+  <script src="./config.js?v=20260915-1"></script>
+  <script type="module" src="./admin-subpage-shell-v2.js?v=20260920-r3"></script>
   <script type="module" src="./gondolas-v1.js?v=20260916-1"></script>
 </body>
 </html>
