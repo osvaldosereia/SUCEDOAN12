@@ -1,5 +1,19 @@
 const BUY_URL='../comprar/';
 
+const SHELL_V2_AUTO_PAGES=new Set(['nomes-produtos.html','imagens-ia.html']);
+
+function currentPage(){return location.pathname.split('/').pop()||'index.html'}
+function ensureStylesheet(href,id){
+  if(document.getElementById(id)||document.querySelector(`link[href^="${href}"]`))return;
+  const link=document.createElement('link');link.id=id;link.rel='stylesheet';link.href=href;document.head.appendChild(link);
+}
+async function bootstrapSubpageShellV2(){
+  if(!SHELL_V2_AUTO_PAGES.has(currentPage()))return;
+  ensureStylesheet('./admin-design-system-v2.css?v=20260920-r3','daAdminDesignSystemV2');
+  ensureStylesheet('./admin-subpage-shell-v2.css?v=20260920-r3','daAdminSubpageShellV2');
+  try{await import('./admin-subpage-shell-v2.js?v=20260920-r3')}catch(error){console.warn('[Admin Shell V2] bootstrap preservou a página legada após falha:',error)}
+}
+
 function redirectLegacyHash(event){
   if(location.hash==='#storefront'){
     if(event)event.stopImmediatePropagation();
@@ -61,6 +75,7 @@ function apply(root=document){
 
 const start=()=>{
   apply(document);
+  bootstrapSubpageShellV2();
   const target=document.getElementById('app')||document.body;
   new MutationObserver(mutations=>{
     for(const mutation of mutations){
