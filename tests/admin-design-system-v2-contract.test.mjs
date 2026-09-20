@@ -23,4 +23,27 @@ test('dialog becomes fullscreen on small phones',()=>{
   assert.match(css,/\.da-dialog\{width:100%;max-width:none;height:100%;max-height:none;border-radius:0;margin:0\}/);
 });
 
+test('filters tabs and feedback have canonical components',()=>{
+  for(const selector of ['.da-toolbar{','.da-filter-chip{','.da-tabs{','.da-tab{','.da-alert{','.da-toast-region{'])assert.ok(css.includes(selector),selector);
+  assert.match(css,/\.da-filter-chip\[aria-pressed="true"\]/);
+  assert.match(css,/\.da-tab\[aria-selected="true"\]/);
+});
+
+test('drawer bottom sheet and sticky actions support responsive workflows',()=>{
+  for(const selector of ['.da-drawer-backdrop{','.da-drawer{','.da-bottom-sheet{','.da-sticky-actions{'])assert.ok(css.includes(selector),selector);
+  assert.match(css,/env\(safe-area-inset-bottom\)/);
+});
+
+test('form dirty state and help text are explicit',()=>{
+  assert.match(css,/\.da-form-dirty\{/);
+  assert.match(css,/\.da-field-help\{/);
+  assert.match(css,/aria-invalid/);
+});
+
+test('design system remains opt-in scoped',()=>{
+  assert.match(css,/\.da-v2\{/);
+  assert.doesNotMatch(css,/^body\s*\{/m);
+  assert.doesNotMatch(css,/^button\s*\{/m);
+});
+
 test('reduced motion is respected',()=>assert.match(css,/@media\(prefers-reduced-motion:reduce\)/));
