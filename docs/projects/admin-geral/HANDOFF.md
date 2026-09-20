@@ -27,6 +27,5 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 
 ## Ponto de retomada
 R1–R7 DONE. R8 IN_PROGRESS — Imagens, nomes e qualidade do catálogo.
-R7 foi fechada com Cestas responsivas e guardas contra duplo acionamento em busca/adicionar/atualizar/remover/salvar. A Central Comercial foi apenas inventariada em read-only e continua dormente por `commercialTruthUiEnabled=false`; nenhuma ativação foi feita.
-R8 lote 1 criou `admin-catalog-quality-v2.js/css` como hub DOM-only dentro de Produtos. Ele apenas organiza acesso ao cadastro oficial, `nomes-produtos.html` e `imagens-ia.html`; não possui fetch/storage/API/IA próprios. Nomes e Imagens continuam autoridades funcionais, e qualquer ação com custo ou mutação exige comando explícito nas ferramentas existentes. Teste: `tests/admin-r8-catalog-quality-v2-contract.test.mjs`.
-Próxima execução: revisar mobile/desktop e guardas das ferramentas Nomes/Imagens, preservar APIs/custos sob comando explícito e avaliar indicadores de completude somente com dados reais já disponíveis. Quando R8 estiver segura/completa, promover R9 — Pedidos.
+R8 lote 1 criou `admin-catalog-quality-v2.js/css` como hub DOM-only dentro de Produtos. Lote 2 reforçou `product-name-management.css` e `image-automation.css` para mobile/desktop estreito, touch >=44/48px, inputs 16px, overflow seguro e diálogo de reparo fullscreen com safe-area no celular. APIs, autenticação, persistência e semântica de custo/IA não foram alteradas; nenhuma geração/normalização real foi executada.
+Próxima execução: revisar guardas contra repetição nas ações funcionais de Nomes/Imagens sem executar IA, avaliar completude apenas com dados reais já carregados e ampliar contrato R8. Quando R8 estiver segura/completa, promover R9 — Pedidos.
