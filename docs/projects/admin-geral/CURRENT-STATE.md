@@ -2,7 +2,7 @@
 
 Atualizado: 2026-09-20
 Branch: `admin-geral-r1-r16-autonomous-20260919`
-Fase: R4 — Início e Central de Trabalho.
+Fase: R5 — Produtos, Categorias e Vitrine.
 Execução autônoma: autorizada.
 Efeitos externos novos: proibidos sem gate/evidência específica.
 
@@ -10,46 +10,47 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R1: DONE
 - R2: DONE
 - R3: DONE
-- R4: IN_PROGRESS
-- R5–R16: PENDING
+- R4: DONE
+- R5: IN_PROGRESS
+- R6–R16: PENDING
 
 ## R1 — concluída
 - inventário técnico e mapa de migração em `TECHNICAL-INVENTORY.md`;
 - `admin/module-registry.js` e `admin/navigation-contract.js` criados;
-- contratos de navegação/gates cobertos por teste;
-- rotas e gates preservados.
+- contratos de navegação/gates cobertos por teste; rotas e gates preservados.
 
 ## R2 — concluída
-- `admin/admin-design-system-v2.css` entregue como Design System aditivo/opt-in;
-- tokens, componentes, estados, responsividade, touch, safe-area, acessibilidade e documentação em `DESIGN-SYSTEM-V2.md`;
-- contrato em `tests/admin-design-system-v2-contract.test.mjs`.
+- Design System V2 aditivo, responsivo e documentado;
+- tokens, componentes, estados, touch/safe-area e acessibilidade cobertos por contrato.
 
 ## R3 — concluída
-- preflight desta retomada: branch 55 commits à frente e 0 atrás de `main`; merge-base = HEAD de main;
-- Shell V2 principal e subpage shell consomem Module Registry/Navigation Contract;
-- Admin principal, Gôndolas, Estúdio Criativo, Pedidos e Marketing usam shell compartilhado preservando lógica local;
-- Nomes dos Produtos e Imagens IA usam bootstrap allowlisted/fail-safe;
-- `admin-context-nav-v2.js/css` tornou-se camada autônoma, idempotente e não invasiva para workspaces com navegação interna própria;
-- Relacionamento e Atendimento agora recebem navegação administrativa contextual sem substituir tabs/sidebars internas;
-- Inteligência e Aprendizados mantêm `style.css`/`mobile-priority.css` funcional e recebem apenas bootstrap contextual fail-safe via `config.js`;
-- context nav infere o módulo pela página, injeta seu CSS uma única vez e não cria links para rotas sem `href`;
-- contrato `tests/admin-r3-context-nav-contract.test.mjs` cobre as quatro superfícies especializadas e preserva o modo seguro do teste de Atendimento;
+- Shell V2 principal/subpáginas e context nav compartilhados;
+- superfícies modernas migradas progressivamente sem remover lógica/CSS funcional;
+- workspaces especializados preservam navegação interna e recebem retorno consistente ao Admin;
 - nenhum gate externo/runtime foi alterado.
 
-## R4 — iniciado
-- `admin/admin-dashboard-v2.js/css` adiciona camada operacional ao Início sem novo endpoint e sem escrita;
-- seção “Precisa da sua atenção” deriva prioridades dos dados já renderizados: sem estoque, sem foto e pedidos recentes;
-- cartões são ações reais e levam aos módulos correspondentes;
-- layout responde em desktop/tablet/mobile, com foco de teclado e estado vazio;
-- integração feita de forma aditiva em `admin/index.html`;
-- contrato `tests/admin-r4-dashboard-v2-contract.test.mjs` garante ausência de fetch/storage na camada e presença da responsividade.
+## R4 — concluída
+- preflight desta retomada: branch 67 commits à frente e 0 atrás de `main`; merge-base = HEAD de main;
+- `admin-dashboard-v2.js/css` entrega Central de Trabalho sem endpoint ou escrita adicional;
+- “Precisa da sua atenção” usa somente métricas reais já carregadas: sem estoque, sem foto e pedidos recentes;
+- “Acesso rápido” leva a Pedidos, Produtos, Cestas, Clientes e Vitrine sem duplicar lógica de navegação;
+- prioridade, vazio, desktop/tablet/mobile, teclado e touch >=44px cobertos;
+- período/comparação não foram inventados: permanecem fora até existir contrato backend real;
+- contrato R4 ampliado para garantir ausência de fetch/storage e rotas existentes.
 
-## R4 — próximo lote
-1. enriquecer a Central de Trabalho usando somente métricas/pendências já disponíveis no payload do dashboard ou endpoints read-only existentes;
-2. separar visualmente “Agora”, operação e acompanhamento sem transformar o Início em painel excessivamente denso;
-3. criar atalhos acionáveis para estoque, catálogo e pedidos, preservando o fluxo mobile-first;
-4. avaliar período/comparação somente se houver contrato backend real; não fabricar séries históricas no frontend;
-5. concluir R4 quando o Início responder claramente “o que precisa da minha atenção agora?” com loading/vazio/erro e navegação útil.
+## R5 — iniciado
+- `admin-products-v2.js/css` adiciona visualizações rápidas de Produtos usando exclusivamente o filtro backend já existente;
+- views iniciais: Todos, Ativos, Sem estoque, Ofertas, Destaques e Inativos;
+- os chips apenas atualizam o `select[name=status]` existente e submetem o formulário existente, sem novo fetch direto, storage ou escrita;
+- integração aditiva em `admin/index.html` e contrato em `tests/admin-r5-products-v2-contract.test.mjs`;
+- nenhuma view “Sem foto” foi simulada porque o contrato atual de listagem ainda não oferece esse status.
+
+## R5 — próximo lote
+1. mapear com precisão os campos já retornados por Produtos/Categorias/Vitrine e ampliar views apenas quando suportadas pelo backend;
+2. melhorar experiência mobile da lista de produtos sem remover edição rápida existente;
+3. evoluir ficha do produto de forma aditiva, preservando editores de gôndola/imagem já conectados;
+4. revisar Categorias para impacto/segurança antes de renomear e Vitrine para preview/ordenação sem publicar efeitos externos;
+5. manter qualquer edição em massa atrás de contrato explícito e validação, sem fabricar capacidade backend.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
