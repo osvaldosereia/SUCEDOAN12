@@ -31,4 +31,4 @@ O proprietário autorizou decisões técnicas autônomas e avanço até R16. Int
 
 ## Ponto de retomada
 R1 e R2 DONE. R3 IN_PROGRESS.
-Próximo lote: Shell V2 consumindo Module Registry/Navigation Contract, primeiro no `admin/index.html`, preservando hash routes, links, gates e conteúdo funcional existente. Criar teste de contrato antes de expandir o shell às subpáginas.
+Shell V2 já está integrado ao `admin/index.html`, gerando o menu principal pelo Module Registry. Próximo lote: revisar mounts gated/inicialização dinâmica, criar reutilização segura do shell nas subpáginas e migrar superfícies de baixo risco sem remover CSS funcional local. Manter R3 aberta até validar navegação principal/subpáginas em desktop, tablet e mobile.
