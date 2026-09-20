@@ -7,3 +7,11 @@
 - R1 marcada IN_PROGRESS;
 - nenhuma ativação externa realizada;
 - próximo passo: inventário técnico e Module Registry V1.
+
+## 2026-09-19 — R1 lote 1
+- `admin/module-registry.js` V1 criado;
+- grupos oficiais, rotas atuais/planejadas, estados e gates modelados;
+- validação estrutural do registry incluída;
+- nenhuma rota atual substituída e nenhum gate ativado;
+- execução autônoma horária configurada para ler o checkpoint antes de cada lote;
+- próximo lote: inventário/matriz de dependências + contrato de navegação e Shell compatível.
