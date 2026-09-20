@@ -23,26 +23,25 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - tokens, componentes, estados, responsividade, touch, safe-area, acessibilidade e documentação em `DESIGN-SYSTEM-V2.md`;
 - contrato em `tests/admin-design-system-v2-contract.test.mjs`.
 
-## R3 — realizado nesta retomada
-- comparação com `main`: branch 21 commits à frente e 0 atrás antes das edições; merge-base igual ao HEAD de main;
-- `admin/admin-shell-v2.js` criado consumindo `adminNavigationModel`/Module Registry;
-- `admin/admin-shell-v2.css` criado para desktop, tablet e drawer mobile;
-- `admin/index.html` integrado ao Design System + Shell V2 sem migrar a lógica funcional das telas;
-- menu manual principal removido e substituído por navegação agrupada gerada pelo registry;
-- hash routes, links de página e links externos preservados;
-- estado ativo, `aria-current`, `aria-expanded`, Escape e backdrop implementados;
-- `Clientes` corrigido no registry para continuar sempre visível como no legado; o gate Customer OS controla a experiência protegida, não a existência do módulo;
-- mounts funcionais existentes preservados no DOM;
-- `tests/admin-shell-v2-contract.test.mjs` criado para segurança, gates e responsividade;
+## R3 — estado acumulado
+- preflight mais recente: branch 29 commits à frente e 0 atrás de `main`; merge-base = HEAD de main;
+- `admin/admin-shell-v2.js` + `admin/admin-shell-v2.css` integram o Admin principal ao Module Registry;
+- menu principal manual substituído por navegação agrupada, preservando hash routes, pages, external links, gates e mounts;
+- `Clientes` permanece visível; Customer OS controla a experiência protegida, não a entrada básica;
+- novo `admin/admin-subpage-shell-v2.js` consome o mesmo Navigation Contract sem fetch/escrita/runtime side effect;
+- novo `admin/admin-subpage-shell-v2.css` adapta o shell a subpáginas: sidebar desktop, drawer mobile, touch targets, safe-area e reduced-motion;
+- `admin/gondolas.html` e `admin/creative-studio.html` migrados como primeiras superfícies de baixo risco, mantendo seus CSS/JS funcionais locais;
+- ambas usam menu central, backdrop, `aria-expanded`, Escape e Design System opt-in;
+- `tests/admin-subpage-shell-v2-contract.test.mjs` cobre contrato read-only, responsividade e preservação dos estilos funcionais;
 - nenhuma flag/runtime externo alterado.
 
 ## R3 — próximo lote
-1. revisar compatibilidade dos módulos mount gated com inicialização dinâmica antes de qualquer expansão;
-2. criar estratégia de Shell V2 reutilizável nas subpáginas sem duplicar menu;
-3. migrar primeiro um pequeno conjunto de subpáginas de baixo risco e validar coexistência com CSS local;
-4. padronizar topbar/estado ativo entre páginas e manter links/canaries;
-5. concluir contrato tablet/mobile e evitar dupla vinculação dos listeners legados;
-6. somente marcar R3 DONE após cobertura das superfícies principais sem regressão de navegação.
+1. revisar os módulos mount gated e definir navegação segura quando estiverem habilitados fora do index;
+2. migrar progressivamente `nomes-produtos.html`, `imagens-ia.html`, `pedidos.html` e demais subpáginas que já usam `styles.css`, sem reescrever sua lógica funcional;
+3. manter `inteligencia.html`/`aprendizados.html` para migração controlada por usarem a família visual antiga;
+4. validar ausência de dupla vinculação de menu/listeners em cada página migrada;
+5. ampliar contrato tablet/mobile e estado ativo de subpáginas;
+6. marcar R3 DONE somente quando as superfícies principais compartilharem navegação sem regressão; então promover R4.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
