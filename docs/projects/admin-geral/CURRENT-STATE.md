@@ -24,10 +24,12 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - auditoria visual/responsiva;
 - roadmap funcional e visual R1–R16 consolidado;
 - branch autônoma dedicada criada;
-- documentação canônica inicial criada.
+- documentação canônica inicial criada;
+- `admin/module-registry.js` V1 criado com grupos, rotas, estados, gates e validação estrutural;
+- execução horária autônoma configurada para retomar sempre pelo checkpoint.
 
 ## Próxima execução
-Continuar R1 a partir do inventário técnico real e implementar a primeira versão do Module Registry sem substituir rotas atuais.
+Continuar R1 pelo inventário técnico detalhado, matriz de dependências e contrato de navegação; integrar o Module Registry ao novo Shell somente de forma compatível, sem substituir rotas atuais antes da validação.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
