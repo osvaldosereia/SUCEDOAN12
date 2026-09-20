@@ -2,7 +2,7 @@
 
 Atualizado: 2026-09-20
 Branch: `admin-geral-r1-r16-autonomous-20260919`
-Fase: R8 — Imagens, nomes e qualidade do catálogo.
+Fase: R9 — Pedidos e operação de venda.
 Execução autônoma: autorizada.
 Efeitos externos novos: proibidos sem gate/evidência específica.
 
@@ -14,30 +14,31 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R5: DONE
 - R6: DONE
 - R7: DONE
-- R8: IN_PROGRESS
-- R9–R16: PENDING
+- R8: DONE
+- R9: IN_PROGRESS
+- R10–R16: PENDING
 
-## R1–R7 — concluídas
-- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço e Cestas concluídos com migração aditiva e contratos reais preservados.
+## R1–R8 — concluídas
+- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas e Qualidade do Catálogo concluídos com migração aditiva e contratos reais preservados.
 - Central Comercial permanece dormente por `commercialTruthUiEnabled=false`.
+- R8 consolidou Cadastro/Nomes/Imagens, mobile/touch e proteção de repetição em ações de Imagens; geração/custo continuam explícitos e nenhuma IA foi disparada para homologar UI.
 - Nenhum gate externo/runtime foi aberto pela migração.
 
-## R8 — lotes 1–2 concluídos
-- preflight do lote 2 partiu do HEAD `aaace715e2509acee6c84a4ed6e1e7888ef6d0ce`; compare com `main` confirmou branch 124 commits à frente e 0 atrás, merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
-- inventário confirmou duas ferramentas especializadas existentes: `admin/nomes-produtos.html` para normalização/revisão de nomes e `admin/imagens-ia.html` para automação/triagem de imagens;
-- Nomes mantém comparação Era/Ficou, revisão humana, estados de fila e consulta manual; Imagens mantém triagem, comparação Original/Referência vs Gerada/Candidata, sessão Admin e ações explícitas;
-- `admin-catalog-quality-v2.js/css` continua como hub aditivo dentro de Produtos, sem fetch, persistência ou IA próprios;
-- `product-name-management.css` foi endurecido para desktop estreito/mobile: filtros empilháveis, inputs 16px, ações >=44/48px, nomes longos sem overflow, cards/revisões em coluna e ações de decisão full-width no celular;
-- `image-automation.css` foi endurecido para touch/mobile: alvos >=44px, seleção maior, controles responsivos, textos/erros sem overflow e diálogo de reparo fullscreen com safe-area em telas pequenas;
-- nenhuma semântica de API, autenticação, custo ou geração foi alterada; `image-automation.js` continua autoridade funcional e já mantém `setBusy`/sessão/ações explícitas;
-- `tests/admin-r8-catalog-quality-v2-contract.test.mjs` permanece como contrato do hub; validação deste lote foi estática/contratual pelo código versionado;
-- nenhuma geração de imagem, normalização ou escrita real foi disparada.
+## R9 — lote 1 concluído
+- preflight partiu do HEAD `a98130ace18fdefb59883f1c6025bcf40d05b0b1`; compare com `main` confirmou branch 129 commits à frente e 0 atrás, merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
+- inventário confirmou `pedidos-v2.js` como autoridade funcional: list/detail, impressão completa, PDF via impressão do navegador, etiqueta, WhatsApp e leitura do estado/sync existentes;
+- criado `admin-orders-r9-v2.js/css` como camada DOM-only: referência visual Recebido → Separação → Conferência → Pronto → Rota → Entregue e transformação da tabela em cards no mobile;
+- ações existentes permanecem sob `pedidos-v2.js`; a camada R9 não possui fetch/storage/persistência próprios;
+- touch >=44px, inputs mobile >=16px e ações em grade foram adicionados sem alterar backend;
+- criado `tests/admin-r9-orders-v2-contract.test.mjs` para wiring, autoridade funcional, ausência de persistência paralela e contrato mobile;
+- nenhuma criação/alteração de pedido, WhatsApp outbound, Bling real ou outra integração externa foi executada.
 
-## R8 — próximo lote
-1. revisar guardas contra repetição nas ações de Nomes e Imagens sem executar IA; adicionar apenas onde a autoridade funcional ainda permitir duplo acionamento;
-2. avaliar indicador de completude somente a partir de dados reais já carregados no Admin, sem criar backend ou score fictício;
-3. revisar contrato R8 para cobrir os novos requisitos mobile/touch e controle explícito de custo;
-4. quando os critérios seguros de R8 estiverem satisfeitos, marcar DONE e promover R9 — Pedidos.
+## R9 — próximo lote
+1. revisar detalhe do pedido e estados operacionais reais disponíveis no backend antes de qualquer ação de mudança de status;
+2. reforçar guardas contra duplo acionamento em impressão/PDF/etiqueta e demais ações que permitam repetição acidental;
+3. melhorar filtros/visões salvas somente se puderem reutilizar os parâmetros reais list/status/source já suportados;
+4. manter Bling real e WhatsApp outbound protegidos; não criar transição fictícia de status;
+5. quando os critérios seguros de R9 estiverem satisfeitos, marcar DONE e promover R10 — Clientes / Customer 360.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
@@ -46,4 +47,4 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - não usar Make como novo runtime;
 - não alterar App Dona Antônia isolado;
 - não apagar módulos/CSS legados antes da migração e validação;
-- não criar pedido/cliente/publicação real como teste.
+- não criar ou alterar pedido/cliente/publicação real como teste.
