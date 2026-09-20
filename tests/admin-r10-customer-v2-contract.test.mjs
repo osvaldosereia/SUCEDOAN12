@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const js=fs.readFileSync('admin/admin-customer-r10-v2.js','utf8');
+const css=fs.readFileSync('admin/admin-customer-r10-v2.css','utf8');
+const html=fs.readFileSync('admin/index.html','utf8');
+const app=fs.readFileSync('admin/app.js','utf8');
+assert.doesNotMatch(js,/\bfetch\s*\(/,'R10 layer must not fetch');
+assert.doesNotMatch(js,/localStorage|sessionStorage/,'R10 layer must not persist');
+assert.match(js,/revisão humana/,'Identity conflicts must remain human-reviewed');
+assert.match(css,/min-height:44px/,'Touch targets must be first-class');
+assert.match(css,/safe-area-inset-bottom/,'Mobile safe area must be preserved');
+assert.match(app,/secureCustomersEnabled/,'Existing Customer OS gate must remain authority');
+assert.match(app,/authenticateCustomerOsWithPin/,'Existing protected authentication contract must remain');
+assert.match(html,/admin-customer-r10-v2\.js/,'R10 layer must be wired');
+assert.match(html,/admin-customer-r10-v2\.css/,'R10 styles must be wired');
+console.log('admin R10 customer contract ok');
