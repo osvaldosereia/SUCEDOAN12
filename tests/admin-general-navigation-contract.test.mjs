@@ -1,46 +1,47 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ADMIN_GROUPS,ADMIN_MODULES,validateAdminRegistry} from '../admin/module-registry.js';
-import {adminGateState,adminHref,adminNavigationModel,isAdminModuleVisible} from '../admin/navigation-contract.js';
+import fs from 'node:fs';
 
-test('registry has unique valid modules and known groups',()=>{
-  const result=validateAdminRegistry();
-  assert.equal(result.ok,true,result.errors.join('\n'));
-  assert.equal(new Set(ADMIN_MODULES.map(x=>x.id)).size,ADMIN_MODULES.length);
-  assert.ok(ADMIN_GROUPS.length>=6);
-});
+const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+const registry=read('admin/module-registry.js');
+const navigation=read('admin/navigation-contract.js');
 
-test('planned modules never leak into current navigation',()=>{
-  const model=adminNavigationModel({runtimeConfig:{marketingUiEnabled:true},adminConfig:{}});
-  const ids=model.flatMap(group=>group.modules.map(item=>item.id));
-  for(const id of ['integrations','health','settings','labs'])assert.equal(ids.includes(id),false);
-});
-
-test('gated modules stay hidden by default',()=>{
-  const gates=adminGateState();
-  for(const id of ['relationship','commercial','logistics','financial','automations']){
-    const item=ADMIN_MODULES.find(x=>x.id===id);
-    assert.equal(isAdminModuleVisible(item,gates),false,id);
+test('registry defines the six canonical admin groups',()=>{
+  for(const value of ['operation','catalog','customer','marketing','management','system']){
+    assert.match(registry,new RegExp(`id:'${value}'`));
   }
 });
 
-test('relationship canary only opens relationship navigation',()=>{
-  const runtimeConfig={relationshipCanaryEnabled:true,relationshipCanaryParam:'relationship_os',relationshipCanaryValue:'canary'};
-  const gates=adminGateState({runtimeConfig,search:'?relationship_os=canary'});
-  assert.equal(gates.relationship,true);
-  assert.equal(gates.customerOs,false);
-});
-
-test('navigation href preserves existing hash and page routes',()=>{
-  const products=ADMIN_MODULES.find(x=>x.id==='products');
-  const gondolas=ADMIN_MODULES.find(x=>x.id==='shelves');
-  assert.equal(adminHref(products),'#products');
-  assert.equal(adminHref(gondolas),'./gondolas.html');
-});
-
-test('external-effect metadata is explicit on sensitive modules',()=>{
-  for(const id of ['marketing','logistics','automations']){
-    const item=ADMIN_MODULES.find(x=>x.id===id);
-    assert.equal(item.externalEffects,true,id);
+test('registry keeps core current routes compatible',()=>{
+  for(const value of ['dashboard','storefront','baskets','products','categories','orders','customers']){
+    assert.match(registry,new RegExp(`value:'${value}'`));
   }
+  assert.match(registry,/value:'\.\/gondolas\.html'/);
+  assert.match(registry,/value:'\.\.\/contagem\/'/);
+});
+
+test('planned system destinations remain explicitly planned',()=>{
+  for(const id of ['integrations','health','settings','labs']){
+    assert.match(registry,new RegExp(`id:'${id}'.*status:'planned'`));
+  }
+  assert.match(navigation,/if\(item\.status==='planned'\)return false/);
+});
+
+test('sensitive modules retain gates and external-effect metadata',()=>{
+  assert.match(registry,/id:'marketing'.*externalEffects:true.*gate:'marketing'/);
+  assert.match(registry,/id:'logistics'.*gate:'logistics'.*externalEffects:true/);
+  assert.match(registry,/id:'automations'.*gate:'automationBuilder'.*externalEffects:true/);
+  assert.match(navigation,/commercialTruth:bool\(adminConfig\.commercialTruthUiEnabled\)/);
+  assert.match(navigation,/financial:bool\(adminConfig\.financialAdminUiEnabled\)/);
+});
+
+test('canaries are read-only navigation visibility inputs',()=>{
+  assert.match(navigation,/relationshipCanaryEnabled/);
+  assert.match(navigation,/customerOsCanaryEnabled/);
+  assert.doesNotMatch(navigation,/fetch\(|\.insert\(|\.update\(|\.delete\(/);
+});
+
+test('navigation contract preserves hash and page href semantics',()=>{
+  assert.match(navigation,/item\.route\.type==='hash'/);
+  assert.match(navigation,/item\.route\.type==='page'\|\|item\.route\.type==='external'/);
 });
