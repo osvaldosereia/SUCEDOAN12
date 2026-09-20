@@ -16,25 +16,25 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R7: IN_PROGRESS
 - R8–R16: PENDING
 
-## R1–R5 — concluídas
-- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho e Produtos/Categorias/Vitrine concluídos com migração aditiva e contratos reais preservados.
+## R1–R6 — concluídas
+- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine e Estoque/Gôndolas/Validade/Balanço concluídos com migração aditiva e contratos reais preservados.
 - Nenhum gate externo/runtime foi aberto pela migração.
 
-## R6 — concluída
-- preflight do lote final partiu do HEAD `bc660524`; compare com `main` confirmou merge-base `c635df8`, branch à frente e 0 atrás, sem mudança paralela relevante em main;
-- `admin-inventory-v2.js/css` mantém hub DOM-only em Produtos e agora expõe quatro fluxos reais: Balanço rápido, Gôndolas, Validades e ficha do produto;
-- Balanço continua usando `inventory-fast-balance-v3`, `scan_batch` e fila local; `contagem/r6-balance-safety.js` adiciona somente proteção de duplo acionamento manual, estado busy, acessibilidade e clareza offline, sem fetch/storage próprio;
-- Gôndolas continua usando `admin-gondolas-v1`/`scan_ean`; `admin/gondolas-r6-safety.js` adiciona confirmação para remover produto/desativar gôndola, busy guard e proteção curta contra acionamento duplicado, sem mudar API;
-- Validades existente foi tornada explicitamente acessível pelo hub como capacidade legada atual; não foi convertida em nova automação nem promovida a novo runtime;
-- ficha/listagem de Produtos permanecem como fluxo principal de estoque/validade no Admin, sem filtro ou endpoint inventado;
-- `tests/admin-r6-inventory-v2-contract.test.mjs` cobre wiring, contratos existentes, ausência de rede/storage nas camadas aditivas e guardas operacionais;
-- validação permaneceu estática/contratual; nenhuma leitura EAN, escrita de estoque, canary, publicação ou outbound foi executada.
+## R7 — lote 1 concluído
+- preflight partiu do HEAD `27e2eb416104670902d905f610c664ec220ab054`; compare com `main` confirmou branch 108 commits à frente e 0 atrás, merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
+- inventário confirmou Cestas como rota `#baskets` do Admin principal, persistida pelos contratos existentes `baskets`, `basket`, `save_basket`, `add_basket_item`, `update_basket_item` e `remove_basket_item`;
+- preço da cesta permanece comercial/próprio; composição continua separada e não foi criada exposição de preço individual dos componentes;
+- criado `admin-baskets-v2.js/css`: resumo DOM-only de total/ativas/destaques, identificação contextual de células, cards mobile, touch >=44px, composição responsiva e ações sticky com safe-area;
+- a camada R7 não possui fetch/storage/persistência própria; `basket-editor.js` continua autoridade funcional para edição;
+- Central Comercial foi confirmada como `commercialTruthUiEnabled: false`; mount/import continuam condicionados ao gate e NÃO foram ativados;
+- criado `tests/admin-r7-baskets-v2-contract.test.mjs` para wiring, contratos de cesta, ausência de persistência paralela, responsividade e preservação do gate comercial;
+- validação desta execução foi estática/contratual; nenhum pedido, cesta, produto ou dado real foi alterado.
 
-## R7 — ponto de retomada
-1. inventariar as superfícies reais de Cestas e Central Comercial antes de editar;
-2. preservar composição/edição atual das cestas e qualquer contrato de pedido/orçamento já existente;
-3. melhorar fluxo mobile/desktop, clareza de totais/ações e proteção contra alterações acidentais somente com capacidades reais;
-4. Central Comercial deve permanecer gated se ainda estiver protegida; código pronto não autoriza ativação.
+## R7 — próximo lote
+1. reforçar proteção contra duplo acionamento/salvamento acidental no editor de Cestas sem alterar contratos backend;
+2. melhorar clareza de composição e estado de edição, inclusive desktop estreito/mobile;
+3. inventariar a Central Comercial apenas em código/read-only e registrar o que pode ser preparado mantendo `commercialTruthUiEnabled=false`;
+4. quando os critérios seguros de R7 estiverem satisfeitos, marcar DONE e promover R8.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
