@@ -49,3 +49,14 @@
 - teste `admin-shell-v2-contract.test.mjs` adicionado;
 - nenhuma publicação, outbound, canary, credencial ou efeito externo foi ativado;
 - R3 permanece IN_PROGRESS para migração segura das subpáginas e revisão dos mounts gated.
+
+## 2026-09-20 — R3 lote 2
+- preflight: branch 29 commits à frente e 0 atrás de `main`; merge-base continua igual ao HEAD de main;
+- criado `admin-subpage-shell-v2.js`, reutilizando o Navigation Contract nas páginas independentes e sem qualquer fetch/escrita de runtime;
+- criado `admin-subpage-shell-v2.css` com sidebar desktop, drawer mobile, safe-area, touch target e reduced-motion;
+- `gondolas.html` migrado para o shell compartilhado, preservando `gondolas-v1.css/js`;
+- `creative-studio.html` migrado para o shell compartilhado, preservando toda a lógica e CSS/JS local do Estúdio;
+- as duas páginas agora recebem menu agrupado central, estado ativo, backdrop, Escape e atributos ARIA;
+- criado `tests/admin-subpage-shell-v2-contract.test.mjs` para verificar read-only, responsividade e coexistência com CSS funcional;
+- nenhum gate, publicação, outbound, canary ou integração real foi alterado;
+- R3 permanece IN_PROGRESS; próximo lote amplia migração para subpáginas modernas e trata mounts gated.
