@@ -6,6 +6,7 @@ const js=fs.readFileSync(new URL('../admin/admin-subpage-shell-v2.js',import.met
 const css=fs.readFileSync(new URL('../admin/admin-subpage-shell-v2.css',import.meta.url),'utf8');
 const gondolas=fs.readFileSync(new URL('../admin/gondolas.html',import.meta.url),'utf8');
 const studio=fs.readFileSync(new URL('../admin/creative-studio.html',import.meta.url),'utf8');
+const pedidos=fs.readFileSync(new URL('../admin/pedidos.html',import.meta.url),'utf8');
 
 test('subpage shell consumes canonical navigation contract and never changes runtime',()=>{
   assert.match(js,/adminNavigationModel/);
@@ -23,8 +24,8 @@ test('subpage shell preserves mobile drawer accessibility',()=>{
   assert.match(css,/prefers-reduced-motion/);
 });
 
-test('low-risk subpages use shared shell without dropping local functional CSS',()=>{
-  for(const html of [gondolas,studio]){
+test('migrated subpages use shared shell without dropping local functional CSS',()=>{
+  for(const html of [gondolas,studio,pedidos]){
     assert.match(html,/admin-design-system-v2\.css/);
     assert.match(html,/admin-subpage-shell-v2\.css/);
     assert.match(html,/admin-subpage-shell-v2\.js/);
@@ -33,4 +34,6 @@ test('low-risk subpages use shared shell without dropping local functional CSS',
   }
   assert.match(gondolas,/gondolas-v1\.css/);
   assert.match(studio,/creative-studio\.css/);
+  assert.match(pedidos,/pedidos-v2\.css/);
+  assert.match(pedidos,/pedidos-v2\.js/);
 });
