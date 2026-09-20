@@ -2,7 +2,7 @@
 
 Atualizado: 2026-09-20
 Branch: `admin-geral-r1-r16-autonomous-20260919`
-Fase: R9 — Pedidos e operação de venda.
+Fase: R10 — Clientes, identidade e Customer 360.
 Execução autônoma: autorizada.
 Efeitos externos novos: proibidos sem gate/evidência específica.
 
@@ -15,30 +15,30 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R6: DONE
 - R7: DONE
 - R8: DONE
-- R9: IN_PROGRESS
-- R10–R16: PENDING
+- R9: DONE
+- R10: IN_PROGRESS
+- R11–R16: PENDING
 
 ## R1–R8 — concluídas
 - Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas e Qualidade do Catálogo concluídos com migração aditiva e contratos reais preservados.
 - Central Comercial permanece dormente por `commercialTruthUiEnabled=false`.
-- R8 consolidou Cadastro/Nomes/Imagens, mobile/touch e proteção de repetição em ações de Imagens; geração/custo continuam explícitos e nenhuma IA foi disparada para homologar UI.
 - Nenhum gate externo/runtime foi aberto pela migração.
 
-## R9 — lote 1 concluído
-- preflight partiu do HEAD `a98130ace18fdefb59883f1c6025bcf40d05b0b1`; compare com `main` confirmou branch 129 commits à frente e 0 atrás, merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
-- inventário confirmou `pedidos-v2.js` como autoridade funcional: list/detail, impressão completa, PDF via impressão do navegador, etiqueta, WhatsApp e leitura do estado/sync existentes;
-- criado `admin-orders-r9-v2.js/css` como camada DOM-only: referência visual Recebido → Separação → Conferência → Pronto → Rota → Entregue e transformação da tabela em cards no mobile;
-- ações existentes permanecem sob `pedidos-v2.js`; a camada R9 não possui fetch/storage/persistência próprios;
-- touch >=44px, inputs mobile >=16px e ações em grade foram adicionados sem alterar backend;
-- criado `tests/admin-r9-orders-v2-contract.test.mjs` para wiring, autoridade funcional, ausência de persistência paralela e contrato mobile;
-- nenhuma criação/alteração de pedido, WhatsApp outbound, Bling real ou outra integração externa foi executada.
+## R9 — concluída
+- preflight do lote final: HEAD inicial `6b34ec1962bf09c51d5080e25feafbde5ccc69d1`; branch 138 commits à frente e 0 atrás de `main`; merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
+- `pedidos-v2.js` permanece autoridade funcional para listagem, detalhe, impressão completa, PDF via impressão do navegador, etiqueta e leitura de status/sync;
+- backend `admin-orders-comprar-v1` foi revisado: expõe somente `health`, `list` e `detail`; não existe contrato de mudança de status nessa função, portanto a UI não inventa transições;
+- `admin-orders-r9-v2.js/css` mantém referência visual do fluxo e cards mobile sem fetch/storage/persistência próprios;
+- ações repetíveis de abrir/imprimir/PDF/etiqueta/atualizar/paginar/buscar ganharam cooldown/busy guard puramente de UI contra duplo acionamento;
+- teste contratual R9 ampliado para proteger os guardas e ausência de transições fictícias;
+- Bling, WhatsApp outbound, criação/alteração de pedidos e demais efeitos externos não foram acionados.
 
-## R9 — próximo lote
-1. revisar detalhe do pedido e estados operacionais reais disponíveis no backend antes de qualquer ação de mudança de status;
-2. reforçar guardas contra duplo acionamento em impressão/PDF/etiqueta e demais ações que permitam repetição acidental;
-3. melhorar filtros/visões salvas somente se puderem reutilizar os parâmetros reais list/status/source já suportados;
-4. manter Bling real e WhatsApp outbound protegidos; não criar transição fictícia de status;
-5. quando os critérios seguros de R9 estiverem satisfeitos, marcar DONE e promover R10 — Clientes / Customer 360.
+## R10 — ponto de retomada
+1. inventariar superfícies reais de Clientes/Customer 360 e os contratos existentes de identidade antes de editar;
+2. preservar a separação do projeto Customer & Marketing OS e seus gates/canaries; Admin Geral pode melhorar shell/usabilidade sem assumir autoridade funcional indevida;
+3. não testar PIN, não resolver conflito de identidade real automaticamente e não fabricar consentimento/evidência;
+4. priorizar leitura segura, clareza de identidade, histórico e mobile/desktop sobre contratos existentes;
+5. manter qualquer mutação sensível ou efeito externo atrás dos gates existentes.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
@@ -47,4 +47,5 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - não usar Make como novo runtime;
 - não alterar App Dona Antônia isolado;
 - não apagar módulos/CSS legados antes da migração e validação;
-- não criar ou alterar pedido/cliente/publicação real como teste.
+- não criar ou alterar pedido/cliente/publicação real como teste;
+- não testar PIN administrativo nem resolver identidade real sem evidência/ação humana exigida.
