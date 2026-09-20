@@ -26,6 +26,7 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R6 DONE. R7 IN_PROGRESS — Cestas e Central Comercial.
-R6 foi fechada com quatro fluxos explícitos no hub de Conferência Física: Balanço rápido, Gôndolas, Validades e ficha do produto. Gôndolas recebeu camada aditiva de confirmação/busy/anti-duplo acionamento; Balanço recebeu camada aditiva de busy/cooldown, acessibilidade e clareza offline; contratos backend existentes permaneceram intactos. Validades foi apenas exposta como capacidade legada existente, sem criar novo runtime. Teste: `tests/admin-r6-inventory-v2-contract.test.mjs`. Nenhuma escrita real/canary/publishing/outbound foi usada para validar.
-Próxima execução: inventariar código real de Cestas e Central Comercial, confirmar gates da Central Comercial e iniciar melhorias mobile/desktop sem ativar o módulo gated nem alterar pedidos/dados reais.
+R1–R7 DONE. R8 IN_PROGRESS — Imagens, nomes e qualidade do catálogo.
+R7 foi fechada com Cestas responsivas e guardas contra duplo acionamento em busca/adicionar/atualizar/remover/salvar. A Central Comercial foi apenas inventariada em read-only e continua dormente por `commercialTruthUiEnabled=false`; nenhuma ativação foi feita.
+R8 lote 1 criou `admin-catalog-quality-v2.js/css` como hub DOM-only dentro de Produtos. Ele apenas organiza acesso ao cadastro oficial, `nomes-produtos.html` e `imagens-ia.html`; não possui fetch/storage/API/IA próprios. Nomes e Imagens continuam autoridades funcionais, e qualquer ação com custo ou mutação exige comando explícito nas ferramentas existentes. Teste: `tests/admin-r8-catalog-quality-v2-contract.test.mjs`.
+Próxima execução: revisar mobile/desktop e guardas das ferramentas Nomes/Imagens, preservar APIs/custos sob comando explícito e avaliar indicadores de completude somente com dados reais já disponíveis. Quando R8 estiver segura/completa, promover R9 — Pedidos.
