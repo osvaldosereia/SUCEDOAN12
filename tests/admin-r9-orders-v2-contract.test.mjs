@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const html=fs.readFileSync(new URL('../admin/pedidos.html',import.meta.url),'utf8');const js=fs.readFileSync(new URL('../admin/admin-orders-r9-v2.js',import.meta.url),'utf8');const css=fs.readFileSync(new URL('../admin/admin-orders-r9-v2.css',import.meta.url),'utf8');
+test('R9 orders layer is wired without parallel persistence',()=>{assert.match(html,/admin-orders-r9-v2\.css/);assert.match(html,/admin-orders-r9-v2\.js/);assert.doesNotMatch(js,/\bfetch\s*\(/);assert.doesNotMatch(js,/localStorage|sessionStorage/);});
+test('R9 preserves functional pedidos authority and real actions',()=>{assert.match(html,/pedidos-v2\.js/);assert.match(html,/refreshOrders/);assert.match(html,/orderRows/);assert.match(html,/orderDialog/);});
+test('R9 provides mobile cards and operational reference',()=>{assert.match(js,/Fluxo operacional/);assert.match(js,/Recebido/);assert.match(js,/Entregue/);assert.match(css,/@media\(max-width:760px\)/);assert.match(css,/attr\(data-label\)/);assert.match(css,/min-height:44px/);});
