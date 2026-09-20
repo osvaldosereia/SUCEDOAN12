@@ -41,3 +41,15 @@
 - teste R5 ampliado para preservar quick edit, teclado, touch e ausência de fetch/storage;
 - cache assets promovido para `r5-2`;
 - nenhum filtro inexistente, bulk edit, pedido, publicação ou efeito externo criado.
+
+## 2026-09-20 — R5 lote 3 / conclusão + promoção R6
+- preflight: HEAD confirmado em `0335518`; compare com main indicou 84 commits à frente, 0 atrás e merge-base `c635df8` = HEAD de main;
+- contratos backend reais revisados: `save_category`, RPC `rename_storefront_v3_category`, `storefront` e `save_storefront`; este último substitui os conjuntos completos de produtos/cestas destacados;
+- criado `admin-catalog-v2.js/css`, camada estritamente DOM-only, sem fetch/api/storage próprio;
+- Categorias ganhou explicação de impacto por quantidade real já renderizada e confirmação adicional antes do fluxo legado de renomear; cancelar interrompe o prompt/RPC existente;
+- Vitrine ganhou resumo read-only de visibilidade/início/destaques, ajuda de ordem e aviso explícito de persistência somente ao salvar;
+- mobile: categorias/vitrine refluem em cards/grades, inputs ficam com 16px e ações >=44px;
+- `tests/admin-r5-catalog-v2-contract.test.mjs` criado para preservar wiring, handlers backend reais e ausência de efeitos próprios;
+- assets conectados em `admin/index.html` como `r5-3`, mantendo scripts/editores especializados existentes e sua ordem funcional;
+- validação foi estática/contratual, sem executar escrita real, canary, publishing, outbound ou geração paga;
+- R5 marcada DONE e R6 promovida para IN_PROGRESS.
