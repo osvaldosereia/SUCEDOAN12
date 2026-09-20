@@ -30,27 +30,26 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - nenhum gate externo/runtime foi alterado.
 
 ## R4 — concluída
-- preflight desta retomada: branch 67 commits à frente e 0 atrás de `main`; merge-base = HEAD de main;
 - `admin-dashboard-v2.js/css` entrega Central de Trabalho sem endpoint ou escrita adicional;
 - “Precisa da sua atenção” usa somente métricas reais já carregadas: sem estoque, sem foto e pedidos recentes;
-- “Acesso rápido” leva a Pedidos, Produtos, Cestas, Clientes e Vitrine sem duplicar lógica de navegação;
-- prioridade, vazio, desktop/tablet/mobile, teclado e touch >=44px cobertos;
-- período/comparação não foram inventados: permanecem fora até existir contrato backend real;
-- contrato R4 ampliado para garantir ausência de fetch/storage e rotas existentes.
+- “Acesso rápido” leva a Pedidos, Produtos, Cestas, Clientes e Vitrine;
+- período/comparação não foram inventados: permanecem fora até existir contrato backend real.
 
-## R5 — iniciado
-- `admin-products-v2.js/css` adiciona visualizações rápidas de Produtos usando exclusivamente o filtro backend já existente;
-- views iniciais: Todos, Ativos, Sem estoque, Ofertas, Destaques e Inativos;
-- os chips apenas atualizam o `select[name=status]` existente e submetem o formulário existente, sem novo fetch direto, storage ou escrita;
-- integração aditiva em `admin/index.html` e contrato em `tests/admin-r5-products-v2-contract.test.mjs`;
-- nenhuma view “Sem foto” foi simulada porque o contrato atual de listagem ainda não oferece esse status.
+## R5 — andamento
+- preflight desta retomada: branch 77 commits à frente e 0 atrás de `main`; merge-base = HEAD de main (`c635df8`), sem divergência paralela a reconciliar;
+- `admin-products-v2.js/css` mantém views rápidas Todos/Ativos/Sem estoque/Ofertas/Destaques/Inativos usando exclusivamente o filtro backend existente;
+- lista de Produtos agora recebe semântica mobile aditiva: cada célula ganha rótulo contextual e as linhas viram cards em telas pequenas, preservando os inputs e ações rápidas originais;
+- toolbar reflowa em 2/1 colunas, inputs mantêm 16px no celular e ações possuem touch target >=44px;
+- ficha de produto recebeu melhoria aditiva de leitura e ação sticky/safe-area, sem remover campos, editores de gôndola/imagem ou mudar o contrato de `save_product`;
+- `tests/admin-r5-products-v2-contract.test.mjs` ampliado para garantir preservação de edição rápida, ausência de fetch/storage próprio e contratos mobile;
+- assets R5 promovidos para `r5-2` no Admin principal;
+- nenhuma view “Sem foto”, edição em massa ou capacidade backend foi simulada.
 
 ## R5 — próximo lote
-1. mapear com precisão os campos já retornados por Produtos/Categorias/Vitrine e ampliar views apenas quando suportadas pelo backend;
-2. melhorar experiência mobile da lista de produtos sem remover edição rápida existente;
-3. evoluir ficha do produto de forma aditiva, preservando editores de gôndola/imagem já conectados;
-4. revisar Categorias para impacto/segurança antes de renomear e Vitrine para preview/ordenação sem publicar efeitos externos;
-5. manter qualquer edição em massa atrás de contrato explícito e validação, sem fabricar capacidade backend.
+1. revisar Categorias contra handlers reais de salvar/renomear e adicionar proteção/explicação de impacto sem mudar backend;
+2. revisar Vitrine contra `storefront`/`save_storefront`, melhorando preview, hierarquia e ordenação de forma aditiva;
+3. validar coexistência dos editores especializados de produto com a ficha V2;
+4. concluir R5 somente quando Produtos/Categorias/Vitrine estiverem cobertos por contratos responsivos e sem regressão funcional.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
