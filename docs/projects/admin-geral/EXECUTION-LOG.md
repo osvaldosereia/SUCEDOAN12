@@ -32,3 +32,12 @@
 - R5 promovida e iniciada com `admin-products-v2.js/css`;
 - Produtos ganhou views rápidas Todos/Ativos/Sem estoque/Ofertas/Destaques/Inativos reutilizando exatamente o `select status` e submit existentes;
 - `tests/admin-r5-products-v2-contract.test.mjs` criado; nenhuma escrita, publicação, geração paga ou efeito externo acionado.
+
+## 2026-09-20 — R5 lote 2
+- preflight: branch 77 commits à frente e 0 atrás de `main`; merge-base `c635df8` = HEAD de main, sem divergência paralela;
+- contrato real de Produtos revisado em `app.js`: listagem possui nome/imagem/EAN-SKU/preço/estoque/categoria/status e ações Salvar/Editar; ficha possui nome/EAN/SKU/preço/custo/estoque/categoria/marca/embalagem/imagem/descrição e flags;
+- `admin-products-v2.js` passou a enriquecer as linhas existentes com rótulos mobile e a ficha existente com contexto visual, sem substituir handlers nem criar rede própria;
+- `admin-products-v2.css` converte tabela em cards no mobile, reorganiza toolbar, mantém inputs a 16px e ações >=44px, e adiciona footer sticky/safe-area à ficha;
+- teste R5 ampliado para preservar quick edit, teclado, touch e ausência de fetch/storage;
+- cache assets promovido para `r5-2`;
+- nenhum filtro inexistente, bulk edit, pedido, publicação ou efeito externo criado.
