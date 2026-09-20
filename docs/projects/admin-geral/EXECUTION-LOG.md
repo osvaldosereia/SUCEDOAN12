@@ -40,3 +40,11 @@
 - teste R6 ampliado para Validades, guardas de Gôndolas e Balanço, além dos contratos backend existentes;
 - nenhuma leitura EAN, escrita real, canary, publishing, outbound ou integração externa foi acionada;
 - R6 marcada DONE e R7 — Cestas e Central Comercial — promovida para IN_PROGRESS.
+
+## 2026-09-20 — R7 lote 1
+- preflight: HEAD inicial `27e2eb416104670902d905f610c664ec220ab054`; branch 108 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
+- inventário confirmou rota `#baskets` e editor funcional `basket-editor.js`, preservando `save_basket`, `add_basket_item`, `update_basket_item` e `remove_basket_item`;
+- `admin-baskets-v2.js/css` criado como camada DOM-only: resumo de cestas, cards mobile, labels contextuais, touch >=44px e safe-area nas ações do editor;
+- preço comercial próprio e composição das cestas permanecem separados; nenhum preço individual de componente foi exposto ao cliente;
+- Central Comercial confirmada gated por `commercialTruthUiEnabled: false`; import/mount permanecem condicionados e não foram ativados;
+- teste contratual `admin-r7-baskets-v2-contract.test.mjs` criado; nenhuma escrita real ou efeito externo foi usado para validar.
