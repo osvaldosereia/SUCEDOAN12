@@ -48,3 +48,13 @@
 - preço comercial próprio e composição das cestas permanecem separados; nenhum preço individual de componente foi exposto ao cliente;
 - Central Comercial confirmada gated por `commercialTruthUiEnabled: false`; import/mount permanecem condicionados e não foram ativados;
 - teste contratual `admin-r7-baskets-v2-contract.test.mjs` criado; nenhuma escrita real ou efeito externo foi usado para validar.
+
+## 2026-09-20 — R7 lote 2 / conclusão + R8 lote 1
+- preflight: HEAD inicial `9c151f9cbe534cfe6c3832fda78a8019db832fb8`; branch 114 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
+- `basket-editor.js` recebeu `setBusy/guarded`: busca e todas as mutações ficam protegidas contra duplo acionamento e exibem estado `aria-busy`/texto operacional;
+- composição passou a resumir produtos/unidades e explicar a separação entre composição e preço comercial;
+- inventário read-only de `commercial-truth.js` confirmou dashboard/preview/rascunhos DRAFT/kill switch; `commercialTruthUiEnabled=false` foi preservado e o módulo não foi montado;
+- contrato R7 ampliado; R7 marcada DONE;
+- R8 promovida e iniciado hub `admin-catalog-quality-v2.js/css` dentro de Produtos, ligando Cadastro, Nomes e Imagens sem fetch/storage/API/IA próprios;
+- inventário confirmou que Nomes já trabalha com Era/Ficou + revisão humana e Imagens já trabalha com Original/Referência vs Gerada/Candidata + triagem;
+- criado contrato `tests/admin-r8-catalog-quality-v2-contract.test.mjs`; nenhuma IA paga ou mutação real foi disparada.
