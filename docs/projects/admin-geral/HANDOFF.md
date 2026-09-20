@@ -26,7 +26,6 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R8 DONE. R9 IN_PROGRESS — Pedidos e operação de venda.
-R8 foi fechada preservando as autoridades funcionais de Nomes/Imagens, mobile/touch e ações de custo explícitas; `image-r8-safety.js` adiciona guarda UI contra repetição acidental sem API/storage próprios.
-R9 lote 1 criou `admin-orders-r9-v2.js/css`: camada DOM-only sobre `pedidos-v2.js`, com referência visual do fluxo operacional e cards mobile, sem criar transições de status nem persistência paralela. Teste: `tests/admin-r9-orders-v2-contract.test.mjs`.
-Próxima execução: inventariar detalhe/status reais do backend de Pedidos, reforçar guardas de ações repetíveis e melhorar filtros apenas sobre contratos já existentes. Bling/WhatsApp/outbound continuam sem ativação.
+R1–R9 DONE. R10 IN_PROGRESS — Clientes, identidade e Customer 360.
+R9 foi fechada preservando `pedidos-v2.js` e o backend read-only `admin-orders-comprar-v1` (`health/list/detail`), sem inventar mudança de status. A camada R9 adiciona apresentação responsiva e guardas de repetição, sem persistência paralela.
+Próxima execução: inventariar as superfícies reais de Clientes/Customer 360 e contratos de identidade; preservar integralmente os gates/canaries do projeto Customer & Marketing OS. Não testar PIN, não resolver conflitos reais automaticamente e não fabricar consentimento/evidência.
