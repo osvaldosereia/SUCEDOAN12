@@ -7,6 +7,7 @@ Branch oficial desta frente: `admin-geral-r1-r16-autonomous-20260919`
 Estado canônico: `docs/projects/admin-geral/CURRENT-STATE.md`
 Plano mestre: `docs/projects/admin-geral/ROADMAP-MASTER.md`
 Log: `docs/projects/admin-geral/EXECUTION-LOG.md`
+Design System: `docs/projects/admin-geral/DESIGN-SYSTEM-V2.md`
 
 ## Procedimento obrigatório por rodada
 1. Confirmar HEAD da branch e verificar mudanças paralelas relevantes em main.
@@ -21,7 +22,7 @@ Log: `docs/projects/admin-geral/EXECUTION-LOG.md`
 10. Se houver bloqueio humano, registrá-lo e continuar todo trabalho seguro independente.
 
 ## Autorização
-O proprietário autorizou decisões técnicas autônomas e avanço até R16. Pedir interação somente quando tecnicamente indispensável por credencial/ação humana, custo novo, produção real, efeito em clientes/dados reais ou operação destrutiva relevante. Isso não deve interromper tarefas seguras paralelas.
+O proprietário autorizou decisões técnicas autônomas e avanço até R16. Interação só é indispensável para credencial/ação humana, custo novo, produção real, efeito em clientes/dados reais ou operação destrutiva relevante. Isso não interrompe tarefas seguras paralelas.
 
 ## Isolamentos
 - App Dona Antônia: fora do escopo e não deve ser modificado.
@@ -29,4 +30,5 @@ O proprietário autorizou decisões técnicas autônomas e avanço até R16. Ped
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch e gates atuais até homologação própria.
 
 ## Ponto de retomada
-R1 IN_PROGRESS. Próximo lote: inventário técnico + Module Registry V1 + contratos de navegação.
+R1 e R2 DONE. R3 IN_PROGRESS.
+Próximo lote: Shell V2 consumindo Module Registry/Navigation Contract, primeiro no `admin/index.html`, preservando hash routes, links, gates e conteúdo funcional existente. Criar teste de contrato antes de expandir o shell às subpáginas.
