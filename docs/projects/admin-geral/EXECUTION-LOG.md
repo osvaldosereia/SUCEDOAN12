@@ -28,11 +28,15 @@
 ## 2026-09-20 — R6 lote 1
 - preflight: HEAD inicial `490bcb40`; compare com main = 91 commits à frente, 0 atrás; merge-base `c635df8` = HEAD de main;
 - inventário real confirmou Produtos, `admin/gondolas.html` e `contagem/` como superfícies operacionais complementares;
-- Balanço rápido revisado: `inventory-fast-balance-v3`, fila local, `scan_batch`, modos direto/quantidade e retry continuam intactos;
-- Gôndolas revisada: `admin-gondolas-v1`, `scan_ean`, mover/remover e foco de leitor continuam intactos;
-- criado `admin-inventory-v2.js/css`, hub aditivo e DOM-only em Produtos com atalhos para Balanço, Gôndolas e estoque/validade na ficha;
-- hub não possui fetch, storage ou escrita e deixa explícito que abrir atalhos não altera estoque;
-- `admin/index.html` conectado aos assets R6 sem remover qualquer editor/handler existente;
-- criado `tests/admin-r6-inventory-v2-contract.test.mjs` para wiring, no-network/no-storage, mobile/touch e preservação dos contratos físicos;
-- validação foi exclusivamente estática/contratual; nenhuma leitura real foi enviada e nenhuma escrita/canary/publishing/outbound foi executada;
-- R6 permanece IN_PROGRESS; próximo lote trata guardas de Gôndolas, ergonomia/duplo acionamento do Balanço e validade baseada somente em capacidades reais.
+- criado `admin-inventory-v2.js/css`, hub aditivo e DOM-only em Produtos;
+- contratos `inventory-fast-balance-v3`, `scan_batch`, `admin-gondolas-v1` e `scan_ean` preservados.
+
+## 2026-09-20 — R6 lote 2 / conclusão + promoção R7
+- preflight: HEAD inicial `bc660524`; branch seguia 0 atrás de `main`, merge-base `c635df8` = HEAD de main, sem divergência paralela relevante;
+- hub de Conferência Física passou a expor também `../validades/`, explicitamente como fluxo legado existente, sem novo runtime;
+- `admin/gondolas-r6-safety.js` conectado antes do handler funcional: confirmação para remover produto/desativar gôndola, busy guard e bloqueio curto de repetição; nenhuma API foi alterada;
+- `contagem/r6-balance-safety.js` conectado antes de `fast-mode.js`: botão de sincronização ganha busy/cooldown, confirmação de quantidade ganha proteção curta e estado offline explica preservação da fila local;
+- camadas R6 novas não possuem fetch, localStorage ou sessionStorage próprios; persistência continua exclusivamente nos fluxos existentes;
+- teste R6 ampliado para Validades, guardas de Gôndolas e Balanço, além dos contratos backend existentes;
+- nenhuma leitura EAN, escrita real, canary, publishing, outbound ou integração externa foi acionada;
+- R6 marcada DONE e R7 — Cestas e Central Comercial — promovida para IN_PROGRESS.
