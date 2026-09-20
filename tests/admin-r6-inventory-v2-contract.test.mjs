@@ -21,6 +21,12 @@ test('R6 gondola safety layer confirms destructive actions and blocks duplicate 
   assert.match(safety,/aria-busy/);assert.match(safety,/stopImmediatePropagation/);assert.match(safety,/scanLocked/);
   assert.doesNotMatch(safety,/\bfetch\s*\(/);assert.doesNotMatch(safety,/localStorage|sessionStorage/);
 });
+test('R6 balance safety layer preserves queue contract and guards repeated manual actions',async()=>{
+  const [html,safety]=await Promise.all([read('contagem/index.html'),read('contagem/r6-balance-safety.js')]);
+  assert.match(html,/r6-balance-safety\.js/);assert.match(safety,/fastFinishButton/);assert.match(safety,/aria-busy/);
+  assert.match(safety,/navigator\.onLine/);assert.match(safety,/fila local/);assert.match(safety,/stopImmediatePropagation/);
+  assert.doesNotMatch(safety,/\bfetch\s*\(/);assert.doesNotMatch(safety,/localStorage|sessionStorage/);
+});
 test('existing validity workflow remains explicit legacy capability, not a new runtime',async()=>{
   const validity=await read('validades/index.html');
   assert.match(validity,/Validades e estoque/);assert.match(validity,/validades\.js/);
