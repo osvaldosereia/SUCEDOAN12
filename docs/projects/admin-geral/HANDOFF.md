@@ -26,6 +26,7 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R7 DONE. R8 IN_PROGRESS — Imagens, nomes e qualidade do catálogo.
-R8 lote 1 criou `admin-catalog-quality-v2.js/css` como hub DOM-only dentro de Produtos. Lote 2 reforçou `product-name-management.css` e `image-automation.css` para mobile/desktop estreito, touch >=44/48px, inputs 16px, overflow seguro e diálogo de reparo fullscreen com safe-area no celular. APIs, autenticação, persistência e semântica de custo/IA não foram alteradas; nenhuma geração/normalização real foi executada.
-Próxima execução: revisar guardas contra repetição nas ações funcionais de Nomes/Imagens sem executar IA, avaliar completude apenas com dados reais já carregados e ampliar contrato R8. Quando R8 estiver segura/completa, promover R9 — Pedidos.
+R1–R8 DONE. R9 IN_PROGRESS — Pedidos e operação de venda.
+R8 foi fechada preservando as autoridades funcionais de Nomes/Imagens, mobile/touch e ações de custo explícitas; `image-r8-safety.js` adiciona guarda UI contra repetição acidental sem API/storage próprios.
+R9 lote 1 criou `admin-orders-r9-v2.js/css`: camada DOM-only sobre `pedidos-v2.js`, com referência visual do fluxo operacional e cards mobile, sem criar transições de status nem persistência paralela. Teste: `tests/admin-r9-orders-v2-contract.test.mjs`.
+Próxima execução: inventariar detalhe/status reais do backend de Pedidos, reforçar guardas de ações repetíveis e melhorar filtros apenas sobre contratos já existentes. Bling/WhatsApp/outbound continuam sem ativação.
