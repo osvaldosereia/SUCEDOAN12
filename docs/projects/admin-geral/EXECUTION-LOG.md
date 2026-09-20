@@ -30,12 +30,22 @@
 - `tests/admin-design-system-v2-contract.test.mjs` criado.
 
 ## 2026-09-20 — R2 lote 2 / conclusão
-- comparação com main refeita antes das edições: branch 15 commits à frente e 0 atrás; merge-base igual ao HEAD de main, portanto sem mudança paralela nova a reconciliar;
+- comparação com main refeita antes das edições: branch 15 commits à frente e 0 atrás; merge-base igual ao HEAD de main;
 - Design System ampliado com toolbar, busca, filtros/chips, tabs, alertas, toasts, ajuda/erro/dirty state, drawer, bottom-sheet, sticky actions e utilitários responsivos;
 - estados interativos usam `aria-pressed`, `aria-selected` e `aria-invalid` como contratos de acessibilidade;
 - mobile preserva safe-area, inputs 16px, ações 48px e representação própria;
 - `DESIGN-SYSTEM-V2.md` documenta uso e coexistência com CSS legado;
 - teste de contrato ampliado para os novos componentes e para garantir escopo opt-in `.da-v2` sem regras globais de `body`/`button`;
-- revisão textual dos contratos confirma seletores/tokens esperados; nenhuma execução externa ou alteração de runtime foi necessária;
-- R2 concluída e R3 promovida para IN_PROGRESS;
-- próximo lote: Shell V2 + navegação gerada pelo registry, inicialmente no Admin principal.
+- R2 concluída e R3 promovida para IN_PROGRESS.
+
+## 2026-09-20 — R3 lote 1
+- preflight: branch 21 commits à frente e 0 atrás de `main`; merge-base = HEAD de main;
+- `admin-shell-v2.js` criado como consumidor do Navigation Contract, sem fetch ou alteração de runtime;
+- `admin-shell-v2.css` criado com sidebar desktop, tablet compacto e drawer mobile;
+- `admin/index.html` passou a usar Design System/Shell V2 e menu gerado, preservando mounts e scripts funcionais;
+- removida a duplicação manual do menu principal e o script específico de visibilidade do Relacionamento; a mesma regra agora vem do Navigation Contract;
+- corrigida uma regressão detectada durante revisão: `Clientes` deve permanecer visível no modo legado; o gate Customer OS muda a experiência segura, não a navegação básica;
+- acessibilidade do shell inclui `aria-controls`, `aria-expanded`, `aria-current`, Escape e backdrop;
+- teste `admin-shell-v2-contract.test.mjs` adicionado;
+- nenhuma publicação, outbound, canary, credencial ou efeito externo foi ativado;
+- R3 permanece IN_PROGRESS para migração segura das subpáginas e revisão dos mounts gated.
