@@ -26,5 +26,5 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R4 DONE. R5 IN_PROGRESS.
-Produtos já possui views rápidas suportadas pelo backend e, no lote r5-2, lista mobile em cards, toolbar responsiva e ficha com ação sticky/safe-area, tudo aditivo sobre os controles existentes. O preflight mais recente encontrou a branch 77 commits à frente e 0 atrás de main. Próximo lote: revisar os handlers reais de Categorias (salvar/renomear) e Vitrine (`storefront`/`save_storefront`) antes de acrescentar proteção de impacto, preview/hierarquia/ordenação. Não criar filtro, bulk edit, drag/drop persistente ou preview que implique capacidade backend inexistente.
+R1–R5 DONE. R6 IN_PROGRESS.
+R5 fechou Produtos/Categorias/Vitrine com camadas aditivas e contratos reais preservados. `admin-catalog-v2.js/css` protege o renomear de categoria com confirmação de impacto e adiciona resumo read-only/ajuda operacional à Vitrine sem rede própria; `save_storefront` continua sendo a única persistência e nenhum drag/drop/capacidade inexistente foi criado. Preflight do fechamento: branch 84 commits à frente e 0 atrás de main, merge-base = HEAD de main (`c635df8`). Próximo lote: inventariar primeiro as superfícies e contratos reais de Estoque, Gôndolas, Validade e Balanço; preservar leitura EAN/câmera e writes existentes, sem canary ou escrita real de teste.
