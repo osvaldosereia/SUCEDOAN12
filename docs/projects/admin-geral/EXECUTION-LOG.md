@@ -69,3 +69,13 @@
 - revisão do Navigation Contract confirmou comportamento seguro dos módulos `mount`: aparecem no modelo apenas quando seus gates estão ativos e são omitidos pelo shell de subpáginas por não possuírem href, evitando navegação quebrada;
 - nenhuma flag, canary, publicação, outbound, pedido real ou integração externa foi acionada;
 - R3 permanece IN_PROGRESS para migração das subpáginas modernas restantes.
+
+## 2026-09-20 — R3 lote 4
+- preflight: branch 43 commits à frente e 0 atrás de `main`; merge-base = HEAD de main, sem divergência paralela;
+- `comprar-ui.js` ganhou bootstrap explícito/allowlisted do Shell V2 apenas para `nomes-produtos.html` e `imagens-ia.html`;
+- bootstrap injeta `admin-design-system-v2.css` e `admin-subpage-shell-v2.css` e importa o shell comum sem alterar endpoints ou lógica funcional dessas páginas;
+- import é fail-safe: em falha, registra warning e mantém a página legada funcional;
+- Nomes e Imagens preservam seus CSS funcionais locais e suas operações atuais;
+- teste de contrato ampliado para cobrir allowlist, import, folhas V2 e preservação de `product-name-management.css`/`image-automation.css`;
+- nenhuma flag, geração real, publishing, outbound, canary ou integração externa foi acionada;
+- R3 segue IN_PROGRESS para Marketing, Relacionamento, Atendimento e migração controlada da família visual antiga.
