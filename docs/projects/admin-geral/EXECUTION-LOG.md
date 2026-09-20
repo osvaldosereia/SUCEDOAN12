@@ -46,3 +46,11 @@
 - `admin-orders-r9-v2.js/css` adiciona fluxo operacional apenas visual e cards mobile; não cria mudança fictícia de status;
 - `tests/admin-r9-orders-v2-contract.test.mjs` criado para wiring/mobile/ausência de persistência paralela;
 - nenhuma criação/alteração de pedido, Bling real, WhatsApp outbound, canary ou publishing foi executada.
+
+## 2026-09-20 — R9 lote 2 / conclusão + promoção R10
+- preflight: HEAD inicial `6b34ec1962bf09c51d5080e25feafbde5ccc69d1`; branch 138 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
+- backend `supabase/functions/admin-orders-comprar-v1/index.ts` auditado: contratos disponíveis são `health`, `list` e `detail`; não há contrato de mudança de status nessa função, então nenhuma transição operacional foi inventada;
+- `admin-orders-r9-v2.js` ganhou busy/cooldown de UI para abrir, imprimir, PDF, etiqueta, atualizar, paginar e buscar, sem fetch/storage/API próprios;
+- teste contratual R9 ampliado para proteger os guardas e ausência de transições fictícias;
+- R9 marcada DONE e R10 — Clientes, identidade e Customer 360 — promovida para IN_PROGRESS;
+- nenhum pedido real, Bling, WhatsApp outbound, publishing, canary ou dado de cliente foi alterado para validar.
