@@ -35,7 +35,14 @@
 
 ## 2026-09-20 — R8 lote 2
 - preflight: HEAD inicial `aaace715e2509acee6c84a4ed6e1e7888ef6d0ce`; branch 124 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
-- `product-name-management.css` reforçado para desktop estreito/mobile: filtros empilháveis, inputs 16px, touch >=44/48px, overflow seguro e decisões full-width no celular;
-- `image-automation.css` reforçado para touch/mobile: controles >=44px, seleção ampliada, triagem responsiva, erros sem overflow e reparo fullscreen com safe-area em telas pequenas;
-- contratos funcionais, autenticação e APIs permaneceram intactos; nenhum comando de IA, geração paga, normalização ou escrita real foi executado;
-- R8 permanece IN_PROGRESS para revisar guardas funcionais e completude baseada somente em dados reais antes de promover R9.
+- `product-name-management.css` e `image-automation.css` reforçados para desktop estreito/mobile, touch e safe-area;
+- contratos funcionais, autenticação e APIs permaneceram intactos; nenhum comando de IA, geração paga, normalização ou escrita real foi executado.
+
+## 2026-09-20 — R8 lote 3 / conclusão + R9 lote 1
+- preflight: HEAD inicial `a98130ace18fdefb59883f1c6025bcf40d05b0b1`; branch 129 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
+- `image-r8-safety.js` conectado à tela Imagens IA para bloquear repetição acidental de ações sensíveis sem criar API/storage/persistência paralelos;
+- R8 marcada DONE sem executar IA paga, normalização ou escrita real para teste;
+- R9 iniciada após inventário de `pedidos.html`/`pedidos-v2.js`; autoridade funcional e contratos list/detail/print/PDF/etiqueta foram preservados;
+- `admin-orders-r9-v2.js/css` adiciona fluxo operacional apenas visual e cards mobile; não cria mudança fictícia de status;
+- `tests/admin-r9-orders-v2-contract.test.mjs` criado para wiring/mobile/ausência de persistência paralela;
+- nenhuma criação/alteração de pedido, Bling real, WhatsApp outbound, canary ou publishing foi executada.
