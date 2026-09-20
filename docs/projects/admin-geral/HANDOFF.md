@@ -31,4 +31,4 @@ O proprietário autorizou decisões técnicas autônomas e avanço até R16. Int
 
 ## Ponto de retomada
 R1 e R2 DONE. R3 IN_PROGRESS.
-Shell V2 já está integrado ao `admin/index.html`, gerando o menu principal pelo Module Registry. Próximo lote: revisar mounts gated/inicialização dinâmica, criar reutilização segura do shell nas subpáginas e migrar superfícies de baixo risco sem remover CSS funcional local. Manter R3 aberta até validar navegação principal/subpáginas em desktop, tablet e mobile.
+Shell V2 do Admin principal está integrado e o adaptador reutilizável de subpáginas foi criado. `gondolas.html` e `creative-studio.html` são as primeiras páginas migradas sem remoção de CSS/JS funcional. Próximo lote: revisar mounts gated e migrar gradualmente subpáginas modernas (`nomes-produtos`, `imagens-ia`, `pedidos` etc.), evitando dupla vinculação de menu. `inteligencia.html` e `aprendizados.html` continuam para uma etapa controlada por usarem a família visual antiga. Manter R3 aberta até cobertura segura das superfícies principais em desktop/tablet/mobile.
