@@ -2,7 +2,7 @@
 
 Atualizado: 2026-09-20
 Branch: `admin-geral-r1-r16-autonomous-20260919`
-Fase: R5 — Produtos, Categorias e Vitrine.
+Fase: R6 — Estoque, Gôndolas, Validade e Balanço.
 Execução autônoma: autorizada.
 Efeitos externos novos: proibidos sem gate/evidência específica.
 
@@ -11,8 +11,9 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R2: DONE
 - R3: DONE
 - R4: DONE
-- R5: IN_PROGRESS
-- R6–R16: PENDING
+- R5: DONE
+- R6: IN_PROGRESS
+- R7–R16: PENDING
 
 ## R1 — concluída
 - inventário técnico e mapa de migração em `TECHNICAL-INVENTORY.md`;
@@ -35,21 +36,23 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - “Acesso rápido” leva a Pedidos, Produtos, Cestas, Clientes e Vitrine;
 - período/comparação não foram inventados: permanecem fora até existir contrato backend real.
 
-## R5 — andamento
-- preflight desta retomada: branch 77 commits à frente e 0 atrás de `main`; merge-base = HEAD de main (`c635df8`), sem divergência paralela a reconciliar;
-- `admin-products-v2.js/css` mantém views rápidas Todos/Ativos/Sem estoque/Ofertas/Destaques/Inativos usando exclusivamente o filtro backend existente;
-- lista de Produtos agora recebe semântica mobile aditiva: cada célula ganha rótulo contextual e as linhas viram cards em telas pequenas, preservando os inputs e ações rápidas originais;
-- toolbar reflowa em 2/1 colunas, inputs mantêm 16px no celular e ações possuem touch target >=44px;
-- ficha de produto recebeu melhoria aditiva de leitura e ação sticky/safe-area, sem remover campos, editores de gôndola/imagem ou mudar o contrato de `save_product`;
-- `tests/admin-r5-products-v2-contract.test.mjs` ampliado para garantir preservação de edição rápida, ausência de fetch/storage próprio e contratos mobile;
-- assets R5 promovidos para `r5-2` no Admin principal;
-- nenhuma view “Sem foto”, edição em massa ou capacidade backend foi simulada.
+## R5 — concluída
+- preflight do fechamento: branch 84 commits à frente e 0 atrás de `main`; merge-base = HEAD de main (`c635df8`), sem divergência paralela a reconciliar;
+- `admin-products-v2.js/css` mantém views rápidas Todos/Ativos/Sem estoque/Ofertas/Destaques/Inativos usando exclusivamente filtros backend existentes;
+- lista de Produtos recebe semântica mobile aditiva em cards, toolbar responsiva, inputs seguros e ações >=44px;
+- ficha de produto mantém os editores especializados e handlers originais, com hierarquia e ação sticky/safe-area sem mudar `save_product`;
+- `admin-catalog-v2.js/css` adiciona proteção de impacto para renomear Categorias, explicação de visibilidade/início/ordem e layout mobile sem criar rede/storage próprio;
+- Vitrine ganhou resumo read-only de categorias visíveis/no início/produtos/cestas em destaque e explicação explícita de que alterações só entram em vigor ao salvar;
+- a camada Vitrine usa exclusivamente controles já existentes de `storefront`/`save_storefront`; não inventa drag/drop, preview persistente ou nova capacidade backend;
+- contrato `tests/admin-r5-catalog-v2-contract.test.mjs` cobre wiring, ausência de fetch/storage próprio, handlers reais e responsividade/touch;
+- contratos reais revisados em `supabase/functions/admin-core-v1/index.ts`: `save_storefront` salva conjuntos completos de destaques e `rename_category` delega à RPC existente;
+- nenhuma escrita real foi executada durante validação e nenhum efeito externo foi ativado.
 
-## R5 — próximo lote
-1. revisar Categorias contra handlers reais de salvar/renomear e adicionar proteção/explicação de impacto sem mudar backend;
-2. revisar Vitrine contra `storefront`/`save_storefront`, melhorando preview, hierarquia e ordenação de forma aditiva;
-3. validar coexistência dos editores especializados de produto com a ficha V2;
-4. concluir R5 somente quando Produtos/Categorias/Vitrine estiverem cobertos por contratos responsivos e sem regressão funcional.
+## R6 — ponto de retomada
+1. inventariar as superfícies reais de Estoque, Gôndolas, Validade e Balanço antes de editar;
+2. preservar leitura EAN/câmera, edição unitária e contratos de estoque já existentes;
+3. melhorar operação mobile/desktop, estados de conferência, filtros e segurança contra alterações acidentais somente sobre capacidades reais;
+4. não executar canary/escrita real para validar; usar contratos estáticos/testes disponíveis.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
