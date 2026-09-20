@@ -2,39 +2,46 @@
 
 Atualizado: 2026-09-20
 Branch: `admin-geral-r1-r16-autonomous-20260919`
-Fase: R2 — Design System Admin 2.0.
+Fase: R3 — Shell, menu e responsividade global.
 Execução autônoma: autorizada.
 Efeitos externos novos: proibidos sem gate/evidência específica.
 
 ## Estado das rodadas
 - R1: DONE
-- R2: IN_PROGRESS
-- R3–R16: PENDING
+- R2: DONE
+- R3: IN_PROGRESS
+- R4–R16: PENDING
 
 ## R1 — concluída
-- inventário técnico e mapa de migração documentados em `TECHNICAL-INVENTORY.md`;
-- fronteiras oficiais entre Operação, Catálogo/Estoque, Atendimento/Relacionamento, Marketing/Criativos, Gestão e Sistema definidas;
-- `admin/module-registry.js` V1 criado com grupos, rotas, estados, gates, prioridade mobile e marcação de efeitos externos;
-- `admin/navigation-contract.js` criado para resolver visibilidade/hrefs sem mutar runtime;
-- teste de contrato `tests/admin-general-navigation-contract.test.mjs` criado de forma portátil, sem dependência de package `type=module`;
-- estratégia de coexistência/migração de CSS e shells legados documentada;
-- nenhuma rota atual substituída e nenhum gate ativado.
+- inventário técnico e mapa de migração em `TECHNICAL-INVENTORY.md`;
+- `admin/module-registry.js` e `admin/navigation-contract.js` criados;
+- contratos de navegação/gates cobertos por teste;
+- rotas e gates preservados.
 
-## R2 — em andamento
-Primeiro lote criado em `admin/admin-design-system-v2.css`:
-- tokens de cor, tipografia, espaçamento, raio, conteúdo e touch target;
-- botões, campos, badges, cards, grid, tabela, estados vazio/loading, skeleton e dialog;
-- tabela desktop/lista mobile como contrato visual;
-- dialog fullscreen em celular;
-- inputs 16px e ações 48px em telas pequenas;
-- safe-area no footer de dialog;
-- suporte a `prefers-reduced-motion`;
-- teste `tests/admin-design-system-v2-contract.test.mjs` criado.
+## R2 — concluída
+`admin/admin-design-system-v2.css` permanece uma camada opt-in, ainda sem aplicação global. Entregue:
+- tokens de cor, tipografia, espaçamento, raio, conteúdo, z-index e touch target;
+- layout, cards, botões, formulários, ajuda/erro/dirty state, badges e alertas;
+- toolbar, busca, filtros/chips e tabs com estados ARIA;
+- tabela desktop + contrato de lista mobile;
+- estados vazio/loading, skeleton e feedback/toasts;
+- dialogs, drawer, bottom-sheet e sticky actions;
+- fullscreen de editor no telefone, safe-area, inputs 16px e ações 48px;
+- utilitários desktop/mobile e breakpoints de referência;
+- foco visível e `prefers-reduced-motion`;
+- documentação de coexistência/migração em `DESIGN-SYSTEM-V2.md`;
+- contrato de teste ampliado em `tests/admin-design-system-v2-contract.test.mjs`.
 
-A folha V2 ainda NÃO foi ligada globalmente; isso é intencional para evitar regressão antes da camada de compatibilidade.
+A folha não contém regras globais de `body`/`button` e não substitui CSS legado prematuramente.
 
-## Próxima execução
-Continuar R2 com componentes de toolbar/filtros, navegação/tabs, feedback/toasts, drawer/bottom-sheet, estados de formulário, utilitários responsivos e documentação de uso. Depois validar coexistência com `styles.css`, `style.css` e `mobile-priority.css` antes de promover R3.
+## R3 — próximo lote
+1. criar Shell V2 como consumidor controlado do Design System;
+2. gerar navegação a partir do Module Registry/Navigation Contract;
+3. preservar hash routes e links atuais;
+4. desktop: sidebar agrupada/recolhível; tablet: compacta; mobile: drawer;
+5. topbar e estado ativo consistentes;
+6. integrar primeiro no `admin/index.html` sem migrar conteúdo funcional das telas;
+7. criar contrato/testes de shell antes de expandir às subpáginas.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
