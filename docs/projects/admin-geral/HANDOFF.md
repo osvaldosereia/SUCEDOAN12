@@ -26,5 +26,6 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R5 DONE. R6 IN_PROGRESS.
-R6 lote 1 inventariou as superfícies reais e criou `admin-inventory-v2.js/css`: hub DOM-only na rota Produtos apontando para `contagem/`, `admin/gondolas.html` e ficha de Produtos, sem fetch/storage/escrita própria. Balanço mantém `inventory-fast-balance-v3` + `scan_batch`/fila local; Gôndolas mantém `admin-gondolas-v1` + `scan_ean`. Contrato novo em `tests/admin-r6-inventory-v2-contract.test.mjs`. Preflight: HEAD inicial `490bcb40`, branch 91 à frente/0 atrás, merge-base = main `c635df8`. Próximo lote: guardas contra ações acidentais em Gôndolas, ergonomia/duplo acionamento do Balanço e revisão de validade usando somente contratos reais; nenhuma escrita real/canary deve ser usada para validar.
+R1–R6 DONE. R7 IN_PROGRESS — Cestas e Central Comercial.
+R6 foi fechada com quatro fluxos explícitos no hub de Conferência Física: Balanço rápido, Gôndolas, Validades e ficha do produto. Gôndolas recebeu camada aditiva de confirmação/busy/anti-duplo acionamento; Balanço recebeu camada aditiva de busy/cooldown, acessibilidade e clareza offline; contratos backend existentes permaneceram intactos. Validades foi apenas exposta como capacidade legada existente, sem criar novo runtime. Teste: `tests/admin-r6-inventory-v2-contract.test.mjs`. Nenhuma escrita real/canary/publishing/outbound foi usada para validar.
+Próxima execução: inventariar código real de Cestas e Central Comercial, confirmar gates da Central Comercial e iniciar melhorias mobile/desktop sem ativar o módulo gated nem alterar pedidos/dados reais.
