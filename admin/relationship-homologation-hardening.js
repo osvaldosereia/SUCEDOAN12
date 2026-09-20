@@ -66,6 +66,7 @@ function refreshEnhancements(){enhanceStatus();syncTabs();classifyAcceptance();e
 
 function init(){
   enhanceStatus();enhanceTabs();refreshEnhancements();
+  import('./admin-context-nav-v2.js?v=20260920-2').catch(error=>console.warn('[admin-context-nav] navegação contextual indisponível; workspace preservado',error));
   const app=$('#relationshipApp');
   if(app){new MutationObserver(()=>refreshEnhancements()).observe(app,{subtree:true,childList:true})}
   const refresh=$('#refreshRelationship');
