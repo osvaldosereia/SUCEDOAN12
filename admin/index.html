@@ -8,42 +8,27 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Admin</title>
   <link rel="stylesheet" href="./styles.css?v=20260911-2">
+  <link rel="stylesheet" href="./admin-design-system-v2.css?v=20260920-r2">
+  <link rel="stylesheet" href="./admin-shell-v2.css?v=20260920-r3">
   <link rel="stylesheet" href="./products-inline-controls-v4.css?v=20260916-4">
   <link rel="stylesheet" href="./product-image-editor-v1.css?v=20260916-1">
   <link rel="stylesheet" href="./customer-360-v2.css?v=20260918-8">
 </head>
-<body>
+<body class="da-v2">
   <header class="topbar">
-    <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button>
+    <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false">☰</button>
     <a class="brand" href="#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin</b></span></a>
     <a class="view-storefront" href="../comprar/" target="_blank" rel="noopener">Abrir Comprar</a>
   </header>
   <div class="admin-layout">
     <aside id="sidebar" class="sidebar" aria-label="Menu principal">
-      <nav>
-        <button type="button" data-route="dashboard">Início</button>
-        <a href="../comprar/" target="_blank" rel="noopener">Comprar</a>
-        <button type="button" data-route="baskets">Cestas</button>
-        <button type="button" data-route="products">Produtos</button>
-        <a href="./gondolas.html">Gôndolas</a>
-        <a href="./nomes-produtos.html">Nomes dos produtos</a>
-        <a href="./imagens-ia.html">Imagens IA</a>
-        <a href="./creative-studio.html">Estúdio Criativo</a>
-        <a href="./marketing.html">Marketing</a>
-        <a id="relationshipNav" href="./relacionamento.html" hidden>Central de Relacionamento</a>
-        <button type="button" data-route="categories">Categorias</button>
-        <button type="button" data-route="orders">Pedidos</button>
-        <button type="button" data-route="customers">Clientes</button>
-        <a href="./atendimento.html">Atendimento</a>
-        <a href="../contagem/">Balanço rápido</a>
-        <button id="commercialTruthNav" class="nav hidden" type="button" hidden aria-hidden="true">Central comercial</button>
-        <button id="logisticsNav" class="nav hidden" type="button" hidden aria-hidden="true">Logística</button>
-      </nav>
+      <nav id="adminShellNavigation" class="da-shell-nav" aria-label="Módulos do Admin"></nav>
     </aside>
-    <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
+    <div id="sidebarBackdrop" class="sidebar-backdrop hidden" aria-hidden="true"></div>
     <main id="app" class="content" tabindex="-1"></main>
     <section id="commercialTruthMount" hidden aria-hidden="true"></section>
     <section id="logisticsMount" hidden aria-hidden="true"></section>
+    <section id="financialAdminMount" hidden aria-hidden="true"></section>
     <section id="automationBuilderMount" hidden aria-hidden="true"></section>
   </div>
   <dialog id="editorDialog" class="editor-dialog"><div id="editorBody"></div></dialog>
@@ -55,23 +40,13 @@
     if(window.DA_ADMIN_CONFIG?.logisticsUiEnabled){import('./logistics.js')}
     if(window.DA_ADMIN_CONFIG?.automationBuilderUiEnabled){import('./automation-builder.js')}
   </script>
+  <script type="module" src="./admin-shell-v2.js?v=20260920-r3"></script>
   <script type="module" src="./comprar-ui.js?v=20260914-1"></script>
   <script type="module" src="./app.js?v=20260919-orders-actions-1"></script>
   <script type="module" src="./orders-integrated-v2.js?v=20260919-print-pdf-3"></script>
   <script type="module" src="./products-inline-controls-v4.js?v=20260916-4"></script>
   <script type="module" src="./product-gondola-editor-v1.js?v=20260916-1"></script>
   <script type="module" src="./product-image-editor-v1.js?v=20260916-1"></script>
-  <script type="module" src="./nav-fix.js?v=20260911-3"></script>
   <script type="module" src="./basket-editor.js?v=20260911-2"></script>
-  <script type="module">
-    import {CONFIG} from './runtime-config.js?v=20260918-cm115-1';
-    const nav=document.getElementById('relationshipNav');
-    const params=new URLSearchParams(location.search);
-    const canary=CONFIG.relationshipCanaryEnabled===true&&params.get(CONFIG.relationshipCanaryParam)===CONFIG.relationshipCanaryValue;
-    if(nav&&(CONFIG.relationshipUiEnabled===true||canary)){
-      nav.hidden=false;
-      if(canary&&!CONFIG.relationshipUiEnabled)nav.href='./relacionamento.html?'+encodeURIComponent(CONFIG.relationshipCanaryParam)+'='+encodeURIComponent(CONFIG.relationshipCanaryValue);
-    }
-  </script>
 </body>
 </html>
