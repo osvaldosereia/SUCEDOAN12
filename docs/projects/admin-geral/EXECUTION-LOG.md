@@ -19,37 +19,20 @@
 - Marketing manteve DRAFT/FAIL-CLOSED/Submit Meta OFF; Atendimento manteve modo de teste sem pedido real;
 - R3 concluída sem alterar runtime/gates externos.
 
-## 2026-09-20 — R4 lote 1
-- `admin-dashboard-v2.js/css` iniciou Central de Trabalho com prioridades derivadas de métricas já carregadas: sem estoque, sem foto e pedidos recentes.
+## 2026-09-20 — R4 / conclusão
+- Central de Trabalho concluída com prioridades e atalhos derivados apenas de dados já carregados; sem métricas inventadas ou escrita adicional.
 
-## 2026-09-20 — R4 lote 2 / conclusão + R5 lote 1
-- preflight: branch 67 commits à frente e 0 atrás de `main`; merge-base = HEAD de main;
-- Central de Trabalho ganhou seção de acesso rápido para Pedidos, Produtos, Cestas, Clientes e Vitrine;
-- mobile reduz para uma coluna, touch >=44px e foco visível; estado vazio preservado;
-- não foram criados período/comparação sem contrato backend real;
-- contrato R4 ampliado para garantir uso somente de DOM/dados carregados e ausência de fetch/storage;
-- R4 marcada DONE;
-- R5 promovida e iniciada com `admin-products-v2.js/css`;
-- Produtos ganhou views rápidas Todos/Ativos/Sem estoque/Ofertas/Destaques/Inativos reutilizando exatamente o `select status` e submit existentes;
-- `tests/admin-r5-products-v2-contract.test.mjs` criado; nenhuma escrita, publicação, geração paga ou efeito externo acionado.
+## 2026-09-20 — R5 / conclusão
+- Produtos/Categorias/Vitrine concluídos com views reais, mobile cards, proteção de renomear e resumo read-only da Vitrine; persistências originais preservadas.
 
-## 2026-09-20 — R5 lote 2
-- preflight: branch 77 commits à frente e 0 atrás de `main`; merge-base `c635df8` = HEAD de main, sem divergência paralela;
-- contrato real de Produtos revisado em `app.js`: listagem possui nome/imagem/EAN-SKU/preço/estoque/categoria/status e ações Salvar/Editar; ficha possui nome/EAN/SKU/preço/custo/estoque/categoria/marca/embalagem/imagem/descrição e flags;
-- `admin-products-v2.js` passou a enriquecer as linhas existentes com rótulos mobile e a ficha existente com contexto visual, sem substituir handlers nem criar rede própria;
-- `admin-products-v2.css` converte tabela em cards no mobile, reorganiza toolbar, mantém inputs a 16px e ações >=44px, e adiciona footer sticky/safe-area à ficha;
-- teste R5 ampliado para preservar quick edit, teclado, touch e ausência de fetch/storage;
-- cache assets promovido para `r5-2`;
-- nenhum filtro inexistente, bulk edit, pedido, publicação ou efeito externo criado.
-
-## 2026-09-20 — R5 lote 3 / conclusão + promoção R6
-- preflight: HEAD confirmado em `0335518`; compare com main indicou 84 commits à frente, 0 atrás e merge-base `c635df8` = HEAD de main;
-- contratos backend reais revisados: `save_category`, RPC `rename_storefront_v3_category`, `storefront` e `save_storefront`; este último substitui os conjuntos completos de produtos/cestas destacados;
-- criado `admin-catalog-v2.js/css`, camada estritamente DOM-only, sem fetch/api/storage próprio;
-- Categorias ganhou explicação de impacto por quantidade real já renderizada e confirmação adicional antes do fluxo legado de renomear; cancelar interrompe o prompt/RPC existente;
-- Vitrine ganhou resumo read-only de visibilidade/início/destaques, ajuda de ordem e aviso explícito de persistência somente ao salvar;
-- mobile: categorias/vitrine refluem em cards/grades, inputs ficam com 16px e ações >=44px;
-- `tests/admin-r5-catalog-v2-contract.test.mjs` criado para preservar wiring, handlers backend reais e ausência de efeitos próprios;
-- assets conectados em `admin/index.html` como `r5-3`, mantendo scripts/editores especializados existentes e sua ordem funcional;
-- validação foi estática/contratual, sem executar escrita real, canary, publishing, outbound ou geração paga;
-- R5 marcada DONE e R6 promovida para IN_PROGRESS.
+## 2026-09-20 — R6 lote 1
+- preflight: HEAD inicial `490bcb40`; compare com main = 91 commits à frente, 0 atrás; merge-base `c635df8` = HEAD de main;
+- inventário real confirmou Produtos, `admin/gondolas.html` e `contagem/` como superfícies operacionais complementares;
+- Balanço rápido revisado: `inventory-fast-balance-v3`, fila local, `scan_batch`, modos direto/quantidade e retry continuam intactos;
+- Gôndolas revisada: `admin-gondolas-v1`, `scan_ean`, mover/remover e foco de leitor continuam intactos;
+- criado `admin-inventory-v2.js/css`, hub aditivo e DOM-only em Produtos com atalhos para Balanço, Gôndolas e estoque/validade na ficha;
+- hub não possui fetch, storage ou escrita e deixa explícito que abrir atalhos não altera estoque;
+- `admin/index.html` conectado aos assets R6 sem remover qualquer editor/handler existente;
+- criado `tests/admin-r6-inventory-v2-contract.test.mjs` para wiring, no-network/no-storage, mobile/touch e preservação dos contratos físicos;
+- validação foi exclusivamente estática/contratual; nenhuma leitura real foi enviada e nenhuma escrita/canary/publishing/outbound foi executada;
+- R6 permanece IN_PROGRESS; próximo lote trata guardas de Gôndolas, ergonomia/duplo acionamento do Balanço e validade baseada somente em capacidades reais.
