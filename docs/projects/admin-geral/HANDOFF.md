@@ -1,0 +1,32 @@
+# HANDOFF — Admin Geral R1–R16
+
+Leia este arquivo PRIMEIRO em toda retomada automática ou nova conversa.
+
+Repositório: `osvaldosereia/SUCEDOAN12`
+Branch oficial desta frente: `admin-geral-r1-r16-autonomous-20260919`
+Estado canônico: `docs/projects/admin-geral/CURRENT-STATE.md`
+Plano mestre: `docs/projects/admin-geral/ROADMAP-MASTER.md`
+Log: `docs/projects/admin-geral/EXECUTION-LOG.md`
+
+## Procedimento obrigatório por rodada
+1. Confirmar HEAD da branch e verificar mudanças paralelas relevantes em main.
+2. Ler CURRENT-STATE.md.
+3. Ler a seção da rodada corrente em ROADMAP-MASTER.md.
+4. Inspecionar código real antes de editar; não presumir arquitetura antiga.
+5. Implementar um lote amplo, coerente e reversível.
+6. Validar sintaxe/contratos/testes disponíveis.
+7. Não abrir efeitos externos para “testar”.
+8. Atualizar CURRENT-STATE.md e EXECUTION-LOG.md no fim.
+9. Se a rodada concluir, marcar DONE e promover a próxima.
+10. Se houver bloqueio humano, registrá-lo e continuar todo trabalho seguro independente.
+
+## Autorização
+O proprietário autorizou decisões técnicas autônomas e avanço até R16. Pedir interação somente quando tecnicamente indispensável por credencial/ação humana, custo novo, produção real, efeito em clientes/dados reais ou operação destrutiva relevante. Isso não deve interromper tarefas seguras paralelas.
+
+## Isolamentos
+- App Dona Antônia: fora do escopo e não deve ser modificado.
+- Customer & Marketing OS: preservar seus gates e documentação.
+- Marketing Admin / Organic Social: preservar publishing OFF/kill switch e gates atuais até homologação própria.
+
+## Ponto de retomada
+R1 IN_PROGRESS. Próximo lote: inventário técnico + Module Registry V1 + contratos de navegação.
