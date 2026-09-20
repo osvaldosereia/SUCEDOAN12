@@ -60,3 +60,12 @@
 - criado `tests/admin-subpage-shell-v2-contract.test.mjs` para verificar read-only, responsividade e coexistência com CSS funcional;
 - nenhum gate, publicação, outbound, canary ou integração real foi alterado;
 - R3 permanece IN_PROGRESS; próximo lote amplia migração para subpáginas modernas e trata mounts gated.
+
+## 2026-09-20 — R3 lote 3
+- preflight: branch 37 commits à frente e 0 atrás de `main`; merge-base = HEAD de main, sem divergência paralela;
+- `admin/pedidos.html` migrado para Design System/Shell V2 compartilhado, preservando `pedidos-v2.css` e `pedidos-v2.js`;
+- adicionados menu mobile, mount canônico `adminShellNavigation`, backdrop e metadados de módulo sem tocar nas operações de pedidos;
+- teste de subpáginas ampliado para garantir que Pedidos mantém CSS/JS funcional e usa o shell comum;
+- revisão do Navigation Contract confirmou comportamento seguro dos módulos `mount`: aparecem no modelo apenas quando seus gates estão ativos e são omitidos pelo shell de subpáginas por não possuírem href, evitando navegação quebrada;
+- nenhuma flag, canary, publicação, outbound, pedido real ou integração externa foi acionada;
+- R3 permanece IN_PROGRESS para migração das subpáginas modernas restantes.
