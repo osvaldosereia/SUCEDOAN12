@@ -33,6 +33,7 @@ async function requestHash(value:string){
 Deno.serve(async(req:Request)=>{
   const started=Date.now();
   const correlationId=crypto.randomUUID();
+  if(req.method==='GET')return jsonResponse({ok:true,service:'papo-external-agent-v1',mode:'r0a_lab'});
   if(req.method!=='POST')return jsonResponse({error:'method_not_allowed',correlation_id:correlationId},405);
 
   let body:any;
