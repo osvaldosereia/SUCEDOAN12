@@ -449,16 +449,13 @@ export class CollectionsModule {
 
   async deleteCollection(id) {
     const target = this.currentList().find(collection => text(collection.id) === String(id));
-    if (!target || !confirm(`Excluir ${target.nome || target.codigo}?`)) return;
-    const config = this.reloadConfig();
-    const list = this.currentList().filter(collection => text(collection.id) !== String(id));
+    if (!target || !confirm(`Arquivar/inativar ${target.nome || target.codigo}? O histórico será preservado no Supabase.`)) return;
     try {
-      const saved = await saveCollectionList(config, this.type, list, this.store.state.products, this.store.state.queue, {
-        deletedId: text(id),
-        preserveInvalidExisting: true,
-      });
-      this.setCurrentList(saved.list);
-      this.onToast('Cadastro removido e arquivo atualizado.', 'success');
+      await ensureAdminAuthenticated();
+      const action = this.type === 'kit' ? 'archive_kit' : 'archive_basket';
+      const saved = await adminProductsApi(action, { id: text(id) });
+      this.setCurrentList(this.type === 'kit' ? (saved.kits || []) : (saved.baskets || []));
+      this.onToast('Cadastro arquivado no Supabase.', 'success');
       await this.onReload();
     } catch (error) {
       this.onToast(error?.message || String(error), 'error');
