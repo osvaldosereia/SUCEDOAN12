@@ -143,6 +143,4 @@ $('restoreProduct').addEventListener('click',async()=>{const p=state.current;if(
 
 $('unlockForm').addEventListener('submit',async e=>{e.preventDefault();const pin=String($('pinInput').value||'').replace(/\D/g,'').slice(0,6);if(pin.length!==6){$('unlockStatus').textContent='Digite os 6 números.';return}try{$('unlockStatus').textContent='Abrindo…';await unlock(pin);$('unlockStatus').textContent='';await load()}catch(err){$('unlockStatus').textContent=err.message}});
 $('pinInput').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,'').slice(0,6));
-$('menuButton').addEventListener('click',()=>{$('sidebar').classList.toggle('open');$('sidebarBackdrop').classList.toggle('hidden')});$('sidebarBackdrop').addEventListener('click',()=>{$('sidebar').classList.remove('open');$('sidebarBackdrop').classList.add('hidden')});
-
 load();
