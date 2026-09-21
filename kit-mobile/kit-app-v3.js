@@ -380,7 +380,7 @@ function buildKitContext() {
     raw,
     normalized,
     audit: normalizedResult.audit,
-    kit: compactKitForMake(normalized, state.products),
+    kit: normalized,
     financials: f,
   };
 }
@@ -403,34 +403,7 @@ function textInstructions(context) {
   return `Crie um nome curto, criativo, comercial e chamativo para um kit de supermercado. Analise os produtos reais e identifique a ocasião de uso ou benefício comum. O nome deve ter de 2 a 6 palavras além da palavra Kit, no máximo 48 caracteres, ser fácil de entender e não pode ser genérico. Não use preço, percentual, emoji, aspas, código ou a expressão Novo Kit Promocional. Produtos: ${productLines}. Para a descrição, escreva somente uma introdução comercial curta de 1 ou 2 frases. Não calcule nem mencione preços na introdução. Os valores oficiais, que não podem ser alterados, são: valor separado ${f.preco_original_formatado}; preço promocional ${f.preco_promocional_formatado}; economia ${f.economia_formatada}; desconto ${f.desconto_formatado}. Responda em JSON válido com os campos nome e descricao.`;
 }
 async function generateText() {
-  const errors = operationalErrors({ requireGithub: false, requireTextWebhook: true, requireImageWebhook: false });
-  if (errors.length) throw new Error(errors.join(' · '));
-  const context = buildKitContext();
-  const payload = {
-    acao: 'gerar_descricao_kit',
-    origem: 'kit_mobile_dona_antonia',
-    versao_contrato: CONTRACT_VERSION,
-    kit: context.kit,
-    kit_detalhado: context.normalized,
-    dados_financeiros: context.financials,
-    produtos_identificados: productBrief(),
-    regras_nome: {
-      obrigatorio: true, curto: true, criativo: true, comercial: true,
-      maximo_caracteres: 48, maximo_palavras_sem_kit: 6,
-      proibidos: ['Novo kit promocional', 'Kit promocional', 'preços', 'percentuais', 'emojis'],
-    },
-    instrucoes: textInstructions(context),
-    resposta_obrigatoria: { formato: 'json', campos: ['nome', 'descricao'] },
-  };
-  const result = unwrapMakeResult(await callMake(state.config, 'text', payload));
-  const returnedDescription = result.descricao || result.description || result.texto || result.copy || '';
-  const returnedName = result.nome_sugerido || result.nome_curto || result.nome || result.name || result.titulo || '';
-  state.content.name = cleanAiName(returnedName);
-  state.content.description = canonicalDescription(returnedDescription);
-  state.textSignature = compositionSignature();
-  invalidateImage();
-  syncStateToEditor();
-  renderAll();
+  throw new Error('A geração automática de texto está pausada. Escreva o título e a descrição manualmente; o kit pode ser salvo normalmente no Supabase.');
 }
 
 function syncEditorToState() {
@@ -450,45 +423,7 @@ function coverInstructions(context) {
   return `Crie a imagem FINAL quadrada de e-commerce para este kit promocional da Dona Antônia. Use as fotos reais dos produtos e não invente embalagens. Produtos: ${products}. Título obrigatório e exato: "${state.content.name}". A descrição abaixo serve como contexto visual e não deve ser impressa inteira na arte: "${state.content.description}". Escreva na imagem exatamente, sem recalcular e sem alterar nenhum caractere dos valores: DE ${f.preco_original_formatado}; POR ${f.preco_promocional_formatado}; ECONOMIZE ${f.economia_formatada}; ${f.desconto_formatado} OFF. O preço promocional deve ser o maior destaque. Não use nenhum outro preço ou percentual. Não adicione textos promocionais além do título e desses quatro dados financeiros. Resultado final limpo, profissional, legível no celular, sem moldura ou máscara adicionada posteriormente.`;
 }
 async function generateCover() {
-  syncEditorToState();
-  if (!contentReady()) throw new Error('Gere ou preencha o título e a descrição antes de criar a capa.');
-  const errors = operationalErrors({ requireGithub: true, requireTextWebhook: false, requireImageWebhook: true });
-  if (errors.length) throw new Error(errors.join(' · '));
-  const context = buildKitContext();
-  if (!context.kit.referencias_imagens.length) throw new Error('Os produtos precisam ter imagens públicas para gerar a capa.');
-  const finalPath = `${text(state.config.githubKitImagesPath || 'site/img/kits').replace(/\/+$/, '')}/${slug(context.normalized.codigo)}.webp`;
-  const prompt = coverInstructions(context);
-  const result = await callMake(state.config, 'image', {
-    acao: 'gerar_capa_kit',
-    origem: 'kit_mobile_dona_antonia',
-    versao_contrato: CONTRACT_VERSION,
-    quantidade_imagens: 1,
-    kit: context.kit,
-    kit_detalhado: { ...context.normalized, nome: state.content.name, descricao: state.content.description },
-    dados_financeiros: context.financials,
-    titulo_final: state.content.name,
-    descricao_final: state.content.description,
-    imagem_path: finalPath,
-    storage_destino: 'github',
-    layout_sem_texto: false,
-    renderizar_precos: true,
-    renderizar_textos: true,
-    usar_imagem_ia_sem_mascara: true,
-    instrucoes: prompt,
-    prompt,
-  });
-  const aiImage = extractMakeImage(result);
-  if (!aiImage) throw new Error('O Make não retornou a imagem final do kit.');
-  if (/^data:image\//i.test(aiImage)) {
-    const uploaded = await upsertBase64File(state.config, finalPath, aiImage, `Cria capa por IA do kit ${state.content.name} pelo Kit Mobile`);
-    state.content.image = uploaded.url;
-    state.content.imagePath = finalPath;
-  } else {
-    state.content.image = aiImage;
-    state.content.imagePath = text(result.imagem_path || result.image_path || result.path || finalPath);
-  }
-  state.imageSignature = coverSignature();
-  renderAll();
+  throw new Error('A geração automática de capa está pausada. O kit pode ser salvo no Supabase sem executar Make ou IA.');
 }
 
 function operationalErrors({ requireGithub = true, requireTextWebhook = true, requireImageWebhook = true } = {}) {
