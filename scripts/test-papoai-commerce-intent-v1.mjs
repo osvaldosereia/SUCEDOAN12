@@ -17,4 +17,7 @@ assert.equal(deterministicCommerceIntent('cartão alimentação').intent,'set_pa
 assert.equal(deterministicCommerceIntent('quero repetir minha última cesta').intent,'repeat_last_purchase');
 assert.equal(deterministicCommerceIntent('oi').intent,'greeting');
 assert.equal(deterministicCommerceIntent('boa tarde').intent,'greeting');
+assert.equal(deterministicCommerceIntent('1').intent,'select_product_choice');
+assert.equal(deterministicCommerceIntent('o segundo').quantity,2);
+assert.equal(deterministicCommerceIntent('terceiro').quantity,3);
 console.log('PASS: PapoAI commerce intent deterministic router');
