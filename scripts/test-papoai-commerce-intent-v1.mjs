@@ -10,4 +10,8 @@ assert.equal(deterministicCommerceIntent('cancela').intent,'cancel_pending');
 assert.equal(deterministicCommerceIntent('quero finalizar o pedido').intent,'checkout_readiness');
 assert.equal(deterministicCommerceIntent('como ficou meu pedido?').intent,'cart_summary');
 assert.equal(deterministicCommerceIntent('preciso de shampoo'),null);
+assert.equal(deterministicCommerceIntent('pix').intent,'set_payment_method');
+assert.equal(deterministicCommerceIntent('dinheiro').intent,'set_payment_method');
+assert.equal(deterministicCommerceIntent('cartão de crédito').intent,'set_payment_method');
+assert.equal(deterministicCommerceIntent('cartão alimentação').intent,'set_payment_method');
 console.log('PASS: PapoAI commerce intent deterministic router');
