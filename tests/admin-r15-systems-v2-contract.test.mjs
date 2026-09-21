@@ -14,7 +14,7 @@ assert.doesNotMatch(js,/localStorage|sessionStorage|supabase/i,'R15 UX layer mus
 assert.match(js,/aria-busy/,'busy state required');
 assert.match(css,/min-height:44px/,'touch target contract required');
 assert.match(css,/safe-area-inset-bottom/,'mobile safe area required');
-assert.match(builder,/runtime.*dormente/i,'builder must explain dormant runtime');
+assert.match(builder,/modo\s+dormente[\s\S]{0,160}runtime/i,'builder must explain dormant runtime');
 assert.match(builder,/Simular sem efeitos/,'builder simulation must remain side-effect free');
 assert.match(copilot,/Nenhuma sugestão é enviada automaticamente/,'copilot must remain assistive only');
 assert.match(relationship,/data-admin-integration/,'integration read model must opt into R15 safe UX');
