@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+test('R12 safety layer is UI-only and wired into VIDEO',()=>{const js=read('admin/admin-r12-creative-v2.js'),html=read('video/index.html');assert.match(html,/admin-r12-creative-v2\.css/);assert.match(html,/admin-r12-creative-v2\.js/);assert.doesNotMatch(js,/\bfetch\s*\(/);assert.doesNotMatch(js,/localStorage|sessionStorage/);assert.match(js,/aria-busy/);assert.match(js,/Gerar conteúdo pode usar IA\/custo/)});
+test('VIDEO preserves explicit generation and timeline contracts',()=>{const app=read('video/app.js'),timeline=read('video/timeline.js');assert.match(app,/creative-storyboard-projects/);assert.match(timeline,/video_timeline_prompt/);assert.match(timeline,/\[4,6,8,10\]/);assert.match(timeline,/useProducts/)});
