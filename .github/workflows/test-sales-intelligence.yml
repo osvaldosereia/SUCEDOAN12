@@ -50,7 +50,8 @@ jobs:
           grep -q "customerOsFunction:'customer-intelligence-v1'" admin/runtime-config.js
           grep -q "customer_360" admin/app.js
           grep -q "Produtos mais recorrentes" admin/app.js
-          grep -q 'data-route="customers"' admin/index.html
+          grep -q "id:'customers'" admin/module-registry.js
+          grep -q "route:{type:'hash',value:'customers'}" admin/module-registry.js
           grep -q "create_catalog" supabase/functions/customer-intelligence-v1/index.ts
       - name: Validar backend versionado
         run: |
