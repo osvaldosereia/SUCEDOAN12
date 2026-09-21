@@ -13,25 +13,25 @@ security definer
 set search_path=public,extensions,pg_temp
 as $$
 declare
-  v_source jsonb;
+  v_source_match jsonb;
   v_source_id uuid;
-  v_source public.products%rowtype;
+  v_source_product public.products%rowtype;
   v_limit integer:=greatest(1,least(coalesce(p_limit,5),8));
   v_items jsonb;
 begin
-  v_source:=public.resolve_papoai_commerce_cart_item_v1(p_conversation_id,p_source_query);
-  if not coalesce((v_source->>'found')::boolean,false) then
+  v_source_match:=public.resolve_papoai_commerce_cart_item_v1(p_conversation_id,p_source_query);
+  if not coalesce((v_source_match->>'found')::boolean,false) then
     return jsonb_build_object(
       'ok',false,
       'needs_clarification',true,
-      'reason',coalesce(v_source->>'reason','source_not_found'),
-      'source_candidates',coalesce(v_source->'candidates','[]'::jsonb),
+      'reason',coalesce(v_source_match->>'reason','source_not_found'),
+      'source_candidates',coalesce(v_source_match->'candidates','[]'::jsonb),
       'replacement_candidates','[]'::jsonb
     );
   end if;
 
-  v_source_id:=(v_source->>'product_id')::uuid;
-  select * into v_source from public.products where id=v_source_id;
+  v_source_id:=(v_source_match->>'product_id')::uuid;
+  select * into v_source_product from public.products where id=v_source_id;
   if not found then
     return jsonb_build_object('ok',false,'reason','source_product_missing','replacement_candidates','[]'::jsonb);
   end if;
@@ -43,9 +43,9 @@ begin
            coalesce(p.image_url,p.image_ai_url,p.image_source_url) image_url,
            s.score,s.match_mode,
            case
-             when coalesce(p.subcategory,'')<>'' and lower(p.subcategory)=lower(coalesce(v_source.subcategory,'')) then 3
-             when lower(coalesce(p.category,''))=lower(coalesce(v_source.category,'')) then 2
-             when coalesce(p.customer_subcategory,'')<>'' and lower(p.customer_subcategory)=lower(coalesce(v_source.customer_subcategory,'')) then 1
+             when coalesce(p.subcategory,'')<>'' and lower(p.subcategory)=lower(coalesce(v_source_product.subcategory,'')) then 3
+             when lower(coalesce(p.category,''))=lower(coalesce(v_source_product.category,'')) then 2
+             when coalesce(p.customer_subcategory,'')<>'' and lower(p.customer_subcategory)=lower(coalesce(v_source_product.customer_subcategory,'')) then 1
              else 0
            end compatibility
     from public.search_whatsapp_sellable_products_agent_v1(p_replacement_query,greatest(v_limit*4,12)) s
@@ -85,10 +85,10 @@ begin
   return jsonb_build_object(
     'ok',true,
     'source',jsonb_build_object(
-      'product_id',v_source.id,
-      'name',v_source.name,
-      'category',v_source.category,
-      'subcategory',v_source.subcategory
+      'product_id',v_source_product.id,
+      'name',v_source_product.name,
+      'category',v_source_product.category,
+      'subcategory',v_source_product.subcategory
     ),
     'replacement_candidates',v_items,
     'count',jsonb_array_length(v_items),
