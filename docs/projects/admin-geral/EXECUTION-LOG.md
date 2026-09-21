@@ -55,3 +55,12 @@
 - contrato R12 ampliado para wiring em VIDEO + Estúdio, UI-only, aprovações em etapas e feedback acessível;
 - nenhuma IA paga, publicação, outbound, Meta, WhatsApp, canary ou dado real foi acionado;
 - R12 marcada DONE; R13 Marketing completo promovida para IN_PROGRESS.
+
+## 2026-09-21 — R13 / conclusão + promoção R14
+- preflight confirmou HEAD `aaf784be88fad5a33dea521f94b9b0cf3e1d08dc`; comparação com `main` mostrou somente divergência paralela de SEO/dados públicos de cestas, não incorporada;
+- documentação canônica do Marketing Admin / Organic Social auditada: publishing OFF, execution_mode off, kill_switch true, limite diário 0 e channel gates false; homologação de credenciais/canary continua bloqueio externo próprio;
+- `admin/marketing.html` e runtime existente foram inventariados antes da edição; autoridades funcionais permaneceram intactas;
+- criada e conectada camada `admin-r13-marketing-v2.js/css`, UI-only, com aviso fail-closed, tabs acessíveis, `aria-live`, touch >=44 px, safe-area, mobile estreito e busy guard contra duplo acionamento;
+- criado `tests/admin-r13-marketing-v2-contract.test.mjs` para proteger wiring, ausência de fetch/storage paralelo, linguagem fail-closed e requisitos mobile;
+- nenhuma publicação, outbound, Meta, Pinterest, WhatsApp, canary, IA paga ou dado real foi acionado;
+- R13 marcada DONE; R14 Logística, Financeiro, Bling e Fiscal promovida para IN_PROGRESS.
