@@ -6,7 +6,7 @@ Homologar o transporte PapoAI → Supabase → PapoAI sem tocar em clientes reai
 
 ## Endpoint
 
-`https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/papoai-agent-external-lab-v1`
+`https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/papo-external-agent-v1`
 
 - método: `POST`
 - conteúdo: JSON
