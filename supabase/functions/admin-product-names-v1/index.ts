@@ -38,23 +38,29 @@ Deno.serve(async(req:Request)=>{
     const status=JOB_STATUSES.has(requestedStatus)?requestedStatus:"";
     const limit=Math.min(100,Math.max(20,Number.parseInt(String(body?.limit??80),10)||80));
 
-    const [statusResult,totalProductsResult,runsResult,reviewsResult,recentResult]=await Promise.all([
-      sb.from("product_name_normalization_jobs").select("status").limit(5000),
+    const statusKeys=["queued","processing","applied","unchanged","review","error","skipped"] as const;
+    const [statusCounts,totalProductsResult,runsResult,reviewsResult,recentResult]=await Promise.all([
+      Promise.all(statusKeys.map(async(status)=>{
+        const result=await sb.from("product_name_normalization_jobs").select("id",{count:"exact",head:true}).eq("status",status);
+        return {status,count:result.count||0,error:result.error};
+      })),
       sb.from("products").select("id",{count:"exact",head:true}),
       sb.from("product_name_normalization_runs").select("id,normalization_version,model,batch_size,processed,applied,unchanged,review,failed,ean_lookups,batch_input_tokens,batch_output_tokens,batch_total_tokens,ean_input_tokens,ean_output_tokens,ean_total_tokens,metadata,started_at,finished_at").order("started_at",{ascending:false}).limit(12),
       sb.from("product_name_normalization_jobs").select("id,product_id,normalization_version,original_name,proposed_name,status,confidence,identity_preserved,used_ean_lookup,ean_lookup_reason,model,explanation,issues,error,claimed_at,processed_at,applied_at,created_at,updated_at,response_snapshot,product:products(id,name,gtin,brand,packaging,image_url,category)").eq("status","review").order("updated_at",{ascending:false}).limit(40),
-      sb.from("product_name_normalization_jobs").select("id,product_id,normalization_version,original_name,proposed_name,status,confidence,identity_preserved,used_ean_lookup,ean_lookup_reason,model,explanation,issues,error,claimed_at,processed_at,applied_at,created_at,updated_at,response_snapshot,product:products(id,name,gtin,brand,packaging,image_url,category)").in("status",["applied","unchanged","review","error","skipped"]).order("updated_at",{ascending:false}).limit(120)
+      sb.from("product_name_normalization_jobs").select("id,product_id,normalization_version,original_name,proposed_name,status,confidence,identity_preserved,used_ean_lookup,ean_lookup_reason,model,explanation,issues,error,claimed_at,processed_at,applied_at,created_at,updated_at,response_snapshot,product:products(id,name,gtin,brand,packaging,image_url,category)").in("status",["applied","unchanged","review","error","skipped"]).order("updated_at",{ascending:false}).limit(80)
     ]);
 
-    if(statusResult.error)return respond({ok:false,error:"normalization_counts_failed",detail:statusResult.error.message},400);
+    const countError=statusCounts.find(row=>row.error)?.error;
+    if(countError)return respond({ok:false,error:"normalization_counts_failed",detail:countError.message},400);
+    if(totalProductsResult.error)return respond({ok:false,error:"normalization_products_count_failed",detail:totalProductsResult.error.message},400);
     if(runsResult.error)return respond({ok:false,error:"normalization_runs_failed",detail:runsResult.error.message},400);
     if(reviewsResult.error)return respond({ok:false,error:"normalization_reviews_failed",detail:reviewsResult.error.message},400);
     if(recentResult.error)return respond({ok:false,error:"normalization_recent_failed",detail:recentResult.error.message},400);
 
     const counts:{[key:string]:number}={queued:0,processing:0,applied:0,unchanged:0,review:0,error:0,skipped:0};
-    for(const row of statusResult.data||[])if(row.status in counts)counts[row.status]++;
+    for(const row of statusCounts)counts[row.status]=row.count;
     const totalProducts=totalProductsResult.count||0;
-    const tracked=(statusResult.data||[]).length;
+    const tracked=statusCounts.reduce((sum,row)=>sum+row.count,0);
     counts.untracked=Math.max(0,totalProducts-tracked);
     counts.total_products=totalProducts;
     counts.tracked_jobs=tracked;
