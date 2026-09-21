@@ -1,0 +1,18 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const js=fs.readFileSync('admin/admin-r15-systems-v2.js','utf8');
+const css=fs.readFileSync('admin/admin-r15-systems-v2.css','utf8');
+const config=fs.readFileSync('admin/config.js','utf8');
+const builder=fs.readFileSync('admin/automation-builder.js','utf8');
+const copilot=fs.readFileSync('admin/human-copilot-panel.js','utf8');
+assert.match(config,/automationBuilderUiEnabled:\s*false/,'Automation Builder must remain dormant');
+assert.match(config,/humanCopilotEnabled:\s*false/,'Human Copilot must remain dormant');
+assert.doesNotMatch(js,/\bfetch\s*\(/,'R15 UX layer must not add transport');
+assert.doesNotMatch(js,/localStorage|sessionStorage|supabase/i,'R15 UX layer must not add persistence');
+assert.match(js,/aria-busy/,'busy state required');
+assert.match(css,/min-height:44px/,'touch target contract required');
+assert.match(css,/safe-area-inset-bottom/,'mobile safe area required');
+assert.match(builder,/runtime.*dormente/i,'builder must explain dormant runtime');
+assert.match(builder,/Simular sem efeitos/,'builder simulation must remain side-effect free');
+assert.match(copilot,/Nenhuma sugestão é enviada automaticamente/,'copilot must remain assistive only');
+console.log('admin R15 systems contract: ok');
