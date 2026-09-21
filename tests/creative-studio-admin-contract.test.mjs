@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
 
-test('Admin publica Estúdio Criativo',()=>{const h=read('admin/index.html');assert.match(h,/creative-studio\.html/);assert.match(h,/Estúdio Criativo/)});
+test('Admin publica Estúdio Criativo',()=>{const h=read('admin/index.html'),registry=read('admin/module-registry.js');assert.match(h,/admin-shell-v2\.js/);assert.match(registry,/id:'creativeStudio'[\s\S]*?label:'Estúdio Criativo'[\s\S]*?value:'\.\/creative-studio\.html'/)});
 test('briefing oferece somente completo rápido e institucional',()=>{const h=read('admin/creative-studio.html');for(const s of ['productionMode','referenceUpload','institutionalGoal'])assert.match(h,new RegExp(`id="${s}"`));for(const v of ['full','product_only','institutional'])assert.match(h,new RegExp(`value="${v}"`));assert.doesNotMatch(h,/mosaic_6x6|creative-studio-mosaic\.js/)});
 test('todos os segmentos Gemini são de 10 segundos',()=>{const d=read('supabase/functions/creative-storyboard-director/index.ts');assert.match(d,/length:d\/10/);assert.match(d,/end_second:i\*10\+10/)});
 test('modo rápido não exige geração visual',()=>{const j=read('admin/creative-studio.js');assert.match(j,/production_mode/);assert.match(j,/product_only/);assert.match(j,/skip_visual_generation/)});
