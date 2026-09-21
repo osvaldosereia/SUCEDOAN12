@@ -17,10 +17,6 @@ const text = (value: unknown, max = 240) => String(value ?? "")
   .trim()
   .slice(0, max);
 const digits = (value: unknown, max = 32) => String(value ?? "").replace(/\D/g, "").slice(0, max);
-  if (!raw) return null;
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)?.[0] || null;
-  return iso;
-};
 
 const PRODUCT_FIELDS = "id,firebase_key,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,subsubcategory,packaging,supplier,unit,validity_date,gondola,shelf,is_active,is_whatsapp_active,physically_verified,updated_at";
 
