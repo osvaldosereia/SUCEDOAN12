@@ -8,6 +8,7 @@ import {
   buildLabHandoffResponse,
   buildLabSilentResponse,
 } from "../_shared/papoai-agent-external-contract-v1.mjs";
+import {runPapoAiCommerceTurn} from "../_shared/papoai-commerce-runtime-v1.mjs";
 
 const PROVIDER_KEY='papoai';
 const CHANNEL='whatsapp';
@@ -106,18 +107,46 @@ Deno.serve(async(req:Request)=>{
     }),200,responseBearer);
   }
 
-  if(lab.enabled!==true){
-    return jsonResponse(buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'lab_disabled'}),200,responseBearer);
+  const occurredBucket=normalized.providerSentAt||new Date(Math.floor(Date.now()/60000)*60000).toISOString();
+  const providerEventKey=await stableProviderEventKey({...normalized,occurredBucket});
+
+  try{
+    const commerce=await runPapoAiCommerceTurn({
+      sb,normalized,adapter,correlationId,providerEventKey,startedAt:started
+    });
+    if(commerce?.body)return jsonResponse(commerce.body,200,responseBearer);
+  }catch{
+    return jsonResponse(buildLabHandoffResponse({
+      text:'Tive um problema para continuar seu pedido. Vou deixar o atendimento com uma pessoa da nossa equipe.',
+      sessionKey:normalized.sessionKey,
+      correlationId,
+      reason:'commerce_runtime_error'
+    }),200,responseBearer);
   }
 
-  const occurredBucket=new Date(Math.floor(Date.now()/60000)*60000).toISOString();
-  const providerEventKey=await stableProviderEventKey({...normalized,occurredBucket});
+  if(lab.enabled!==true){
+    return jsonResponse(buildLabSilentResponse({
+      sessionKey:normalized.sessionKey,
+      correlationId,
+      reason:'lab_disabled',
+      handoff:false
+    }),200,responseBearer);
+  }
   const {data:prior}=await sb.from('channel_provider_agent_lab_calls')
     .select('response_body').eq('adapter_id',adapter.id).eq('provider_event_key',providerEventKey).maybeSingle();
   if(prior?.response_body)return jsonResponse(prior.response_body,200,responseBearer);
 
-  const {data:waAccount,error:waError}=await sb.from('whatsapp_accounts')
-    .select('id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+  let waAccount:any=null,waError:any=null;
+  if(normalized.channelPhoneE164){
+    const lookup=await sb.from('whatsapp_accounts')
+      .select('id').eq('is_active',true).eq('phone_e164',normalized.channelPhoneE164).maybeSingle();
+    waAccount=lookup.data;waError=lookup.error;
+  }
+  if(!waAccount?.id){
+    const fallback=await sb.from('whatsapp_accounts')
+      .select('id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+    waAccount=fallback.data;waError=fallback.error;
+  }
   if(waError||!waAccount?.id)return jsonResponse({error:'whatsapp_account_unavailable',correlation_id:correlationId},503);
 
   const {data:ingested,error:ingestError}=await sb.rpc('ingest_channel_adapter_event_v1',{
