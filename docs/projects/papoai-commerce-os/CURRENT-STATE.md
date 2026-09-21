@@ -4,94 +4,63 @@ Atualizado: 2026-09-21
 
 ## Estado atual
 
-- fase: `r0a_deployed_dormant_waiting_papoai_physical_test`
+- fase: `r0a_core_transport_verified_waiting_handoff_silent`
 - projeto Supabase: `ssbesxgaijknwsjbsbcz`
 - branch GitHub: `papoai-commerce-os-r0a-spec-20260921`
-- Edge Function usada: `papo-external-agent-v1`
-- versão Supabase implantada: **v2**
+- Edge Function: `papo-external-agent-v1`
+- versão implantada: **v6**
 - lab: **desabilitado**
 - efeitos externos comerciais: **false**
 - OpenAI: **off na R0-A**
-- pedidos: **off**
-- Bling: **off**
-- marketing/campanhas/templates: **off**
-- Meta Direct: **não alterado**
+- pedidos/Bling/marketing: **off**
 - PapoAI outbound canônico: **disabled**
 
-## Evidência já obtida
+## Evidência física PapoAI
 
-1. O painel do PapoAI mostra explicitamente **Agente Externo** com endpoint HTTPS próprio.
-2. Migration `papoai_agent_external_lab_core_v1` aplicada com sucesso.
-3. As quatro tabelas da R0-A estão com RLS habilitado e acesso concedido somente a `service_role`.
-4. `papo-external-agent-v1` foi redeployada como v2 usando o contrato R0-A.
-5. POST sem a chave do laboratório retornou **401 unauthorized**.
-6. POST autenticado com o lab desligado retornou **200** com:
-   - `message: null`
-   - `silent: true`
-   - `handoff: true`
-   - `reason: "lab_disabled"`
-7. Após esses testes:
-   - `channel_provider_agent_lab_sessions = 0`
-   - `channel_provider_agent_lab_calls = 0`
-   - nenhuma capacidade foi promovida por inferência.
-8. Estados principais permanecem:
-   - `agent_external.request = observed_ui`
-   - `agent_external.text_reply = unknown`
-   - `agent_external.session = unknown`
-   - `agent_external.handoff = unknown`
-   - `agent_external.silent = unknown`
+O teste do construtor de **Agente Externo** do PapoAI foi aceito com:
 
-## Ruling de implementação
+- HTTP 200;
+- resposta interpretada com sucesso;
+- `message.text = "Teste Dona Antônia concluído. Recebi sua mensagem corretamente."`;
+- sessão `sessao_teste_123`;
+- resposta total exibida pelo PapoAI em aproximadamente 2876 ms;
+- backend interno registrou a chamada final em aproximadamente 1216 ms;
+- nenhuma ação comercial externa.
 
-O projeto Supabase atingiu o limite de Edge Functions. A tentativa de criar `papoai-agent-external-lab-v1` foi recusada pelo Supabase por limite do plano.
+Sessão de laboratório:
+- `provider_session_key=sessao_teste_123`
+- `message_count=3`
+- status `active`
 
-Já existia `papo-external-agent-v1` v1. Antes da alteração foi verificado no banco que ela tinha **zero sessões registradas** em `catalog_sessions` com `entry_source='papoai_external_agent'`.
+## Capability Registry
 
-Decisão:
-- preservar a função antiga no histórico do GitHub;
-- reutilizar o mesmo slug;
-- implantar a R0-A como v2;
-- não criar função adicional nem gerar custo de upgrade.
+Verificado em laboratório:
+- `agent_external.request = verified_lab`
+- `agent_external.text_reply = verified_lab`
+- `agent_external.session = verified_lab`
 
-O código exato da função antiga foi capturado no commit:
-`95ddf7822e7958e8eca2d91bded7434c0d03802a`.
+Observado na interface:
+- `agent_external.media_reply = observed_ui` — resposta aceita `message.media_url` ou `url`.
 
-A conversão para o laboratório foi feita no commit:
-`18081c401eb7af17bde039e26a2fa867af28040f`.
+Ainda não comprovado:
+- `agent_external.handoff = unknown`
+- `agent_external.silent = unknown`
+- botões/listas/Flow pela resposta do Agente Externo permanecem `unknown`.
 
-## Gates de produção observados antes do deploy
+## Autenticação homologada
 
-Permaneciam todos desligados:
-- `automation_enabled=false`
-- `ai_enabled=false`
-- `outbound_enabled=false`
-- `whatsapp_inbound_enabled=false`
-- `whatsapp_auto_reply_enabled=false`
-- `whatsapp_release_mode='off'`
-- `whatsapp_live_canary_percent=0`
-- `experience_orchestrator_enabled=false`
-- `whatsapp_flow_data_exchange_enabled=false`
-- `whatsapp_flow_send_enabled=false`
-- `bling_order_sync_enabled=false`
-- `whatsapp_sales_order_submit_enabled=false`
-- `whatsapp_sales_bling_submit_enabled=false`
-- `whatsapp_flow_commercial_write_enabled=false`
+Duas credenciais separadas:
+1. `X-API-Key` — chave de entrada definida pela Dona Antônia e validada contra Vault.
+2. `X-Papo-Response-Token` — Bearer gerado pelo PapoAI e ecoado pelo endpoint em `Authorization: Bearer <token>`.
+
+Essa separação corrigiu o erro `EXTERNAL_AGENT_AUTH_INVALID`.
 
 ## Próximo gate
 
-Falta apenas a **prova física pelo PapoAI**.
+Avançar no wizard do PapoAI para **Transferência** e provar:
+1. handoff explícito;
+2. silêncio/IA pausada após transferência.
 
-Não ativar o laboratório até haver um Agente Externo isolado de homologação apontando para:
+Somente depois disso a R0-A é encerrada e a R0-B Commerce Brain começa.
 
-`https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/papo-external-agent-v1`
-
-Depois da configuração física:
-1. habilitar o lab por poucos minutos;
-2. testar texto normal;
-3. testar segunda mensagem na mesma sessão;
-4. testar `TESTE_HANDOFF_DONA_ANTONIA`;
-5. testar pausa/silêncio;
-6. desabilitar novamente;
-7. promover somente as capacidades realmente observadas.
-
-A R0-B (Commerce Brain) só é liberada depois de `request + text_reply + session` estarem comprovadas no laboratório.
+O laboratório deve permanecer desligado fora dos testes.
