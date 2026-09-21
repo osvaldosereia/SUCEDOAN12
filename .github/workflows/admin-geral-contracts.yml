@@ -64,3 +64,5 @@ jobs:
         run: node tests/admin-visual-standard-v3-contract.test.mjs
       - name: Global shell V3
         run: node tests/admin-global-shell-v3-contract.test.mjs
+      - name: Order separation print
+        run: node tests/admin-order-separation-print-v1-contract.test.mjs

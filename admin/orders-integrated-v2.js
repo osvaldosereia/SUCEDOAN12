@@ -1,5 +1,6 @@
 import {api} from './api.js';
 import {requestOrderLabelPrint} from './order-label-print-v1.js';
+import {requestOrderSeparationPrint} from './order-separation-print-v1.js';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -22,6 +23,7 @@ function field(label,value){return `<div><strong>${esc(label)}</strong><div clas
 
 async function loadOrder(id){const data=await api('order',{id});return data.order||{}}
 async function printIntegratedOrder(id){const order=await loadOrder(id);requestOrderLabelPrint(order)}
+async function printSeparationIntegratedOrder(id){const data=await api('order',{id});requestOrderSeparationPrint(data.order||{},data.items||[])}
 function printableIntegratedOrder(o={},items=[]){
   const customer=o.customer_snapshot||o.checkout_snapshot?.customer||{},address=o.delivery_address||o.checkout_snapshot?.delivery_address||{};
   const logo=new URL('../img/logoantonia5.png',location.href).href;
@@ -44,7 +46,7 @@ async function openIntegratedOrder(id){
   if(!dialog.open)dialog.showModal();
   try{
     const data=await api('order',{id}),o=data.order||{},customer=o.customer_snapshot||o.checkout_snapshot?.customer||{},address=o.delivery_address||o.checkout_snapshot?.delivery_address||{},groups=groupItems(data.items||[]);
-    body.innerHTML=`<div class="editor-shell"><div class="editor-head"><div><h2>Pedido ${esc(o.order_number||'')}</h2><div class="muted">${date(o.created_at)} · ${esc(sourceLabel(o.source))}</div></div><div class="row-actions"><button class="secondary" type="button" data-print-full-integrated="${esc(o.id)}">Imprimir pedido</button><button class="secondary" type="button" data-pdf-integrated="${esc(o.id)}">Baixar PDF</button><button class="close-dialog" type="button" data-close-integrated-order>×</button></div></div>
+    body.innerHTML=`<div class="editor-shell"><div class="editor-head"><div><h2>Pedido ${esc(o.order_number||'')}</h2><div class="muted">${date(o.created_at)} · ${esc(sourceLabel(o.source))}</div></div><div class="row-actions"><details class="order-print-menu"><summary>IMPRIMIR</summary><div class="order-print-menu-popover"><button type="button" data-print-full-integrated="${esc(o.id)}">Pedido</button><button type="button" data-print-label-integrated="${esc(o.id)}">Etiqueta</button><button type="button" data-print-separation-integrated="${esc(o.id)}">Separação</button></div></details><button class="secondary" type="button" data-pdf-integrated="${esc(o.id)}">Baixar PDF</button><button class="close-dialog" type="button" data-close-integrated-order>×</button></div></div>
       <section class="panel"><h3>${money(o.total)}</h3><div class="detail-grid">${field('Status',o.status)}${field('Forma de pagamento',paymentLabel(o.payment_method))}${field('Cesta',o.basket_name_snapshot||'Sem cesta')}${field('Sincronização',o.sync_status||'—')}</div></section>
       <section class="panel"><h3>Cliente</h3><div class="detail-grid">${field('Nome',customer.name)}${field('WhatsApp',o.phone_e164||customer.phone)}${field('CPF/CNPJ',customer.cpf_cnpj)}</div>${o.phone_e164?`<p><a class="primary maps-link" href="${wa(o.phone_e164)}" target="_blank" rel="noopener">Abrir WhatsApp</a></p>`:''}</section>
       <section class="panel"><h3>Endereço de entrega</h3><p><strong>${esc(addressLine(address))}</strong></p>${address.complement?`<p>Complemento: ${esc(address.complement)}</p>`:''}${address.reference?`<p>Referência: ${esc(address.reference)}</p>`:''}${address.postal_code?`<p>CEP: ${esc(address.postal_code)}</p>`:''}</section>
@@ -59,20 +61,14 @@ async function openIntegratedOrder(id){
 document.addEventListener('click',async event=>{
   const element=event.target instanceof Element?event.target:null;
   if(!element)return;
-  const fullPrint=element.closest('[data-print-full-integrated]');if(fullPrint){event.preventDefault();event.stopImmediatePropagation();try{await printFullIntegratedOrder(fullPrint.dataset.printFullIntegrated)}catch(error){window.alert(error?.message||'Não foi possível imprimir o pedido.')}return}
+  const fullPrint=element.closest('[data-print-full-integrated]');if(fullPrint){event.preventDefault();event.stopImmediatePropagation();fullPrint.closest('details')?.removeAttribute('open');try{await printFullIntegratedOrder(fullPrint.dataset.printFullIntegrated)}catch(error){window.alert(error?.message||'Não foi possível imprimir o pedido.')}return}
+  const labelPrint=element.closest('[data-print-label-integrated]');if(labelPrint){event.preventDefault();event.stopImmediatePropagation();labelPrint.closest('details')?.removeAttribute('open');try{await printIntegratedOrder(labelPrint.dataset.printLabelIntegrated)}catch(error){window.alert(error?.message||'Não foi possível preparar a etiqueta.')}return}
+  const separationPrint=element.closest('[data-print-separation-integrated]');if(separationPrint){event.preventDefault();event.stopImmediatePropagation();separationPrint.closest('details')?.removeAttribute('open');try{await printSeparationIntegratedOrder(separationPrint.dataset.printSeparationIntegrated)}catch(error){window.alert(error?.message||'Não foi possível preparar a separação.')}return}
   const pdf=element.closest('[data-pdf-integrated]');if(pdf){event.preventDefault();event.stopImmediatePropagation();try{await pdfIntegratedOrder(pdf.dataset.pdfIntegrated)}catch(error){window.alert(error?.message||'Não foi possível preparar o PDF.')}return}
-  const printLink=element.closest('.data-table tr:has([data-view-order]) .row-actions a[href^="https://wa.me/"]');
-  if(printLink){
-    const row=printLink.closest('tr'),viewButton=row?.querySelector('[data-view-order]'),id=viewButton?.dataset.viewOrder;
-    if(!id)return;
-    event.preventDefault();event.stopImmediatePropagation();
-    try{await printIntegratedOrder(id)}catch(error){window.alert(error?.message||'Não foi possível preparar a etiqueta.')}
-    return;
-  }
   const target=element.closest('[data-view-order]');
   if(!target)return;
   event.preventDefault();event.stopImmediatePropagation();
   openIntegratedOrder(target.dataset.viewOrder);
 },true);
 
-export {openIntegratedOrder,printIntegratedOrder,printFullIntegratedOrder,pdfIntegratedOrder};
+export {openIntegratedOrder,printIntegratedOrder,printSeparationIntegratedOrder,printFullIntegratedOrder,pdfIntegratedOrder};

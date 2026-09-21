@@ -28,7 +28,7 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json(origin,{ok:false,error:'invalid_json'},400)}
   const action=clean(body?.action||'list',30).toLowerCase();
 
-  if(action==='health')return json(origin,{ok:true,version:3,sources:supportedSources});
+  if(action==='health')return json(origin,{ok:true,version:4,sources:supportedSources,order_item_product_snapshot:true});
 
   if(action==='list'){
     const page=integer(body?.page,1,100000),limit=integer(body?.limit,10,100),from=(page-1)*limit,to=from+limit-1;
@@ -49,7 +49,31 @@ Deno.serve(async(req:Request)=>{
     if(error||!order)return json(origin,{ok:false,error:'order_not_found'},404);
     const {data:items,error:itemsError}=await sb.from('order_items').select('id,product_id,sku_snapshot,name_snapshot,quantity,unit_price,line_total,metadata,created_at').eq('order_id',id).order('created_at',{ascending:true});
     if(itemsError)return json(origin,{ok:false,error:'order_items_failed',detail:itemsError.message},400);
-    return json(origin,{ok:true,order:sanitizeOrder(order),items:items||[]});
+
+    // Separation print needs only current catalog media + physical location.
+    // Keep the persisted order immutable and expose a compact read-only product snapshot.
+    const productIds=[...new Set((items||[]).map((item:any)=>clean(item?.product_id,80)).filter((value:string)=>validUuid(value)))];
+    const productMap=new Map<string,any>();
+    if(productIds.length){
+      const {data:products,error:productsError}=await sb.from('products')
+        .select('id,gtin,image_url,image_ai_url,image_original_url,image_firebase_source_url,gondola,shelf,firebase_snapshot')
+        .in('id',productIds);
+      if(productsError)return json(origin,{ok:false,error:'order_products_failed',detail:productsError.message},400);
+      for(const product of products||[])productMap.set(String(product.id),product);
+    }
+
+    const enrichedItems=(items||[]).map((item:any)=>{
+      const product=productMap.get(String(item?.product_id||''))||{};
+      const legacy=product?.firebase_snapshot&&typeof product.firebase_snapshot==='object'?product.firebase_snapshot:{};
+      const productSnapshot={
+        gtin:clean(product?.gtin||legacy?.gtin||legacy?.ean,40),
+        image_url:clean(product?.image_url||product?.image_ai_url||product?.image_original_url||product?.image_firebase_source_url||legacy?.imagem_url||legacy?.url_imagem||legacy?.imagem,900),
+        gondola:clean(product?.gondola||legacy?.gondola||legacy?.localizacao,40),
+        shelf:clean(product?.shelf||legacy?.prateleira,40)
+      };
+      return {...item,product_snapshot:productSnapshot};
+    });
+    return json(origin,{ok:true,order:sanitizeOrder(order),items:enrichedItems});
   }
 
   return json(origin,{ok:false,error:'unknown_action'},400);

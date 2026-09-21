@@ -20,7 +20,7 @@
   }
 
   // Capture guard only prevents accidental repeated clicks. It never calls APIs or changes order state.
-  const guardedSelector='[data-print-full-order],[data-pdf-order],[data-print-order],[data-order-id],#refreshOrders,#prevPage,#nextPage,#filterForm button[type="submit"]';
+  const guardedSelector='[data-print-full-order],[data-pdf-order],[data-print-order],[data-print-separation-order],[data-order-id],#refreshOrders,#prevPage,#nextPage,#filterForm button[type="submit"]';
   const cooldown=new WeakMap();
   document.addEventListener('click',event=>{
     const button=event.target.closest?.(guardedSelector);

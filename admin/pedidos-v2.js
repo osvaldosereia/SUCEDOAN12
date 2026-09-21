@@ -1,4 +1,5 @@
 import {requestOrderLabelPrint} from './order-label-print-v1.js';
+import {requestOrderSeparationPrint} from './order-separation-print-v1.js';
 
 const ENDPOINT='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-orders-comprar-v1';
 const $=id=>document.getElementById(id);
@@ -32,7 +33,7 @@ function renderRows(rows=[]){
     <td>${money(o.total)}</td>
     <td>${esc(payment(o.payment_method))}</td>
     <td><span class="badge">${esc(status(o.status))}</span></td>
-    <td><div class="row-actions"><button type="button" data-order-id="${esc(o.id)}">Ver pedido</button><button type="button" data-print-full-order="${esc(o.id)}">Imprimir pedido</button><button type="button" data-pdf-order="${esc(o.id)}">Baixar PDF</button><button type="button" data-print-order="${esc(o.id)}">Etiqueta</button></div></td>
+    <td><div class="row-actions"><button type="button" data-order-id="${esc(o.id)}">Ver pedido</button><details class="order-print-menu"><summary>IMPRIMIR</summary><div class="order-print-menu-popover"><button type="button" data-print-full-order="${esc(o.id)}">Pedido</button><button type="button" data-print-order="${esc(o.id)}">Etiqueta</button><button type="button" data-print-separation-order="${esc(o.id)}">Separação</button></div></details><button type="button" data-pdf-order="${esc(o.id)}">Baixar PDF</button></div></td>
   </tr>`}).join('');
 }
 
@@ -76,6 +77,10 @@ async function printOrder(id){
   try{const d=await api('detail',{id});requestOrderLabelPrint(d.order||{})}
   catch(e){toast(e.message)}
 }
+async function printSeparationOrder(id){
+  try{const d=await api('detail',{id});requestOrderSeparationPrint(d.order||{},d.items||[])}
+  catch(e){toast(e.message)}
+}
 
 async function openOrder(id){
   const dialog=$('orderDialog'),body=$('orderDialogBody');body.innerHTML='<div class="loading">Carregando pedido…</div>';if(!dialog.open)dialog.showModal();
@@ -84,7 +89,7 @@ async function openOrder(id){
     const basketItems=items.filter(i=>['basket','substitution'].includes(String(i?.metadata?.source||'')));
     const extras=items.filter(i=>String(i?.metadata?.source||'')==='addon'||!['basket','substitution'].includes(String(i?.metadata?.source||'')));
     body.innerHTML=`<div class="editor-shell order-detail-shell">
-      <div class="editor-head"><div><div class="eyebrow">${esc(source(o.source))}</div><h2>Pedido ${esc(o.order_number||o.id)}</h2><div class="muted">${esc(date(o.created_at))}</div></div><div class="order-dialog-actions"><button class="secondary" type="button" data-print-full-order="${esc(o.id)}">Imprimir pedido</button><button class="secondary" type="button" data-pdf-order="${esc(o.id)}">Baixar PDF</button><button class="close-dialog" type="button" data-close-order>×</button></div></div>
+      <div class="editor-head"><div><div class="eyebrow">${esc(source(o.source))}</div><h2>Pedido ${esc(o.order_number||o.id)}</h2><div class="muted">${esc(date(o.created_at))}</div></div><div class="order-dialog-actions"><details class="order-print-menu"><summary>IMPRIMIR</summary><div class="order-print-menu-popover"><button type="button" data-print-full-order="${esc(o.id)}">Pedido</button><button type="button" data-print-order="${esc(o.id)}">Etiqueta</button><button type="button" data-print-separation-order="${esc(o.id)}">Separação</button></div></details><button class="secondary" type="button" data-pdf-order="${esc(o.id)}">Baixar PDF</button><button class="close-dialog" type="button" data-close-order>×</button></div></div>
       <div class="order-detail-grid">
         <section class="panel"><h3>Cliente</h3><p><strong>${esc(customer.name||'Cliente')}</strong></p><p>${esc(o.phone_e164||customer.phone||'—')}</p>${phoneLink(o.phone_e164||customer.phone)?`<a class="secondary maps-link" href="${phoneLink(o.phone_e164||customer.phone)}" target="_blank" rel="noopener">Abrir WhatsApp</a>`:''}</section>
         <section class="panel"><h3>Entrega</h3><p>${esc(addressText(addr))}</p>${addr.locator&&typeof addr.locator==='object'?`<p class="muted">Localização recebida do aparelho.</p>`:''}</section>
@@ -100,11 +105,11 @@ async function openOrder(id){
 }
 
 $('filterForm').addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(e.currentTarget);state.q=String(fd.get('q')||'').trim();state.status=String(fd.get('status')||'');state.source=String(fd.get('source')||'');state.page=1;load()});
-$('orderRows').addEventListener('click',e=>{const full=e.target.closest('[data-print-full-order]');if(full){printFullOrder(full.dataset.printFullOrder);return}const pdf=e.target.closest('[data-pdf-order]');if(pdf){downloadOrderPdf(pdf.dataset.pdfOrder);return}const print=e.target.closest('[data-print-order]');if(print){printOrder(print.dataset.printOrder);return}const b=e.target.closest('[data-order-id]');if(b)openOrder(b.dataset.orderId)});
+$('orderRows').addEventListener('click',e=>{const full=e.target.closest('[data-print-full-order]');if(full){full.closest('details')?.removeAttribute('open');printFullOrder(full.dataset.printFullOrder);return}const pdf=e.target.closest('[data-pdf-order]');if(pdf){downloadOrderPdf(pdf.dataset.pdfOrder);return}const print=e.target.closest('[data-print-order]');if(print){print.closest('details')?.removeAttribute('open');printOrder(print.dataset.printOrder);return}const separation=e.target.closest('[data-print-separation-order]');if(separation){separation.closest('details')?.removeAttribute('open');printSeparationOrder(separation.dataset.printSeparationOrder);return}const b=e.target.closest('[data-order-id]');if(b)openOrder(b.dataset.orderId)});
 $('prevPage').onclick=()=>{if(state.page>1){state.page--;load()}};
 $('nextPage').onclick=()=>{const pages=Math.max(1,Math.ceil(state.total/state.limit));if(state.page<pages){state.page++;load()}};
 $('refreshOrders').onclick=load;
-$('orderDialog').addEventListener('click',e=>{const full=e.target.closest('[data-print-full-order]');if(full){printFullOrder(full.dataset.printFullOrder);return}const pdf=e.target.closest('[data-pdf-order]');if(pdf){downloadOrderPdf(pdf.dataset.pdfOrder);return}if(e.target.matches('[data-close-order]'))$('orderDialog').close()});
+$('orderDialog').addEventListener('click',e=>{const full=e.target.closest('[data-print-full-order]');if(full){full.closest('details')?.removeAttribute('open');printFullOrder(full.dataset.printFullOrder);return}const label=e.target.closest('[data-print-order]');if(label){label.closest('details')?.removeAttribute('open');printOrder(label.dataset.printOrder);return}const separation=e.target.closest('[data-print-separation-order]');if(separation){separation.closest('details')?.removeAttribute('open');printSeparationOrder(separation.dataset.printSeparationOrder);return}const pdf=e.target.closest('[data-pdf-order]');if(pdf){downloadOrderPdf(pdf.dataset.pdfOrder);return}if(e.target.matches('[data-close-order]'))$('orderDialog').close()});
 $('orderDialog').addEventListener('cancel',()=>{});
 
 load().catch(e=>toast(e.message));
