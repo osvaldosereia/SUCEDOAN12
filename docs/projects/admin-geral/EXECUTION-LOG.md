@@ -68,5 +68,12 @@
 - Copiloto humano auditado: `humanCopilotEnabled=false`; modo é assistivo, rascunho é editável e nenhuma sugestão é enviada automaticamente;
 - criada e conectada camada `admin-r15-systems-v2.js/css` para responsividade, touch >=44 px, safe-area, aria-live e busy guard, sem fetch/storage/persistência próprios;
 - criado `tests/admin-r15-systems-v2-contract.test.mjs` protegendo gates OFF e contratos seguros;
-- nenhum Builder/Copiloto foi ativado, nenhuma IA paga, automação, provider, outbound, canary ou dado real foi acionado;
-- R15 permanece IN_PROGRESS para inventário/integração segura das superfícies restantes de integrações e saúde/observabilidade.
+- nenhum Builder/Copiloto foi ativado, nenhuma IA paga, automação, provider, outbound, canary ou dado real foi acionado.
+
+## 2026-09-21 — R15 lote 2 / conclusão + promoção R16
+- preflight confirmou HEAD inicial `a2e43a19ce764bff6a722384bf822eed28a74a25`; branch 198 commits à frente e 1 atrás de `main`; divergência paralela permanece somente no SEO/dados públicos de cestas e não foi incorporada;
+- superfícies restantes de integração/saúde foram inventariadas: Central de Relacionamento já concentra Meta Foundation, integrações, homologação, qualidade e auditoria em leitura protegida; diagnóstico V2 legado lê Firebase/GitHub e descreve integrações sem disparar webhooks/providers;
+- Central de Relacionamento recebeu marcadores `data-admin-integration` e `data-admin-health` e passou a carregar a camada R15 para UX/mobile/busy guard; textos deixam explícito que a visão não ativa provider/gate;
+- contrato R15 ampliado para exigir wiring de integração/saúde, ações externas OFF e `tested:false` nos diagnósticos externos; Make permanece apenas legado/consulta e não foi adotado como runtime novo;
+- nenhum probe destrutivo, webhook Make, Bling, Meta, IA paga, outbound, canary ou dado real foi acionado;
+- critérios programáveis da R15 satisfeitos; R15 marcada DONE e R16 Segurança, QA, homologação e limpeza final promovida para IN_PROGRESS.
