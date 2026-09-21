@@ -426,31 +426,28 @@ async function generateCover() {
   throw new Error('A geração automática de capa está pausada. O kit pode ser salvo no Supabase sem executar Make ou IA.');
 }
 
-function operationalErrors({ requireGithub = true, requireTextWebhook = true, requireImageWebhook = true } = {}) {
+function operationalErrors() {
   const errors = [];
   if (!state.items.length) errors.push('Adicione ao menos um produto');
   state.items.forEach(row => {
     if (number(row.product.preco) <= 0) errors.push(`${productName(row.product)} está sem preço`);
     if (number(row.product.estoque) < row.qty) errors.push(`${productName(row.product)} sem estoque suficiente`);
   });
-  if (requireGithub && !text(state.config.githubToken)) errors.push('Configure o token GitHub');
-  if (requireTextWebhook && !text(state.config.makeTextWebhookUrl || state.config.makeAiWebhookUrl)) errors.push('Configure o webhook de textos do Make');
-  if (requireImageWebhook && !text(state.config.makeImageWebhookUrl || state.config.makeAiWebhookUrl)) errors.push('Configure o webhook de imagens do Make');
   return [...new Set(errors)];
 }
 function publishErrors() {
-  const errors = operationalErrors({ requireGithub: true, requireTextWebhook: false, requireImageWebhook: false });
-  if (!contentReady()) errors.push('Gere ou preencha o título e a descrição');
-  if (!text(state.content.image)) errors.push('Gere a capa pela IA');
-  if (state.imageSignature && state.imageSignature !== coverSignature()) errors.push('A capa está desatualizada; gere novamente');
+  const errors = operationalErrors();
+  if (!text(state.content.name)) errors.push('Preencha o título do kit');
+  if (!text(state.content.description)) errors.push('Preencha a descrição do kit');
   return [...new Set(errors)];
 }
 async function publish() {
   syncEditorToState();
   const errors = publishErrors();
   if (errors.length) throw new Error(errors.join(' · '));
-  setBusy(true, 'Publicando o kit pronto…', 'Salvando exatamente o título, a descrição e a imagem exibidos nesta tela.');
+  setBusy(true, 'Salvando kit…', 'Gravando composição e valores no Supabase.');
   try {
+    await ensureAdminAuthenticated();
     const context = buildKitContext();
     const current = {
       ...context.normalized,
@@ -460,7 +457,7 @@ async function publish() {
       imagem_path: state.content.imagePath,
       atualizado_em: new Date().toISOString(),
     };
-    const normalizedResult = normalizeCollectionForPublish(current, 'kit', state.products, state.queue);
+    const normalizedResult = normalizeCollectionForPublish(current, 'kit', state.products, []);
     if (normalizedResult.audit.errors.length) throw new Error(normalizedResult.audit.errors.join(' · '));
     const normalized = {
       ...normalizedResult.normalized,
@@ -468,16 +465,10 @@ async function publish() {
       produtos: normalizedResult.normalized.produtos,
       dados_financeiros: financials(),
     };
-    const list = state.kits.filter(kit => text(kit.id) !== text(normalized.id));
-    list.push(normalized);
-    const saved = await saveCollectionList(state.config, 'kit', list, state.products, state.queue, {
-      preserveInvalidExisting: true,
-      changedId: normalized.id,
-      changedFields: Object.keys(normalized),
-    });
-    state.kits = saved.list || list;
+    const saved = await adminProductsApi('save_kit', { kit: normalized });
+    state.kits = saved.kits || [];
     $('#kitsChip').textContent = `${state.kits.length} kits`;
-    toast(`Kit “${normalized.nome}” publicado com sucesso.`, 'success');
+    toast(`Kit “${normalized.nome}” salvo no Supabase.`, 'success');
     reset();
   } finally {
     setBusy(false);
