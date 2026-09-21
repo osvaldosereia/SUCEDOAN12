@@ -1,12 +1,10 @@
 import { clone, money, number, productCode, productImage, productKey, productName, text } from '../producao-v2/js/core/utils.js';
 import { normalizeCollectionForPublish } from '../producao-v2/js/core/collections.js?admin_build=20260814-cestas-limites-v1';
-import { loadProducts } from '../producao-v2/js/services/firebase.js';
 import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js?admin_build=20260814-cestas-limites-v1';
+import { adminProductsApi, ensureAdminAuthenticated } from '../admin/admin-secure-api-v1.js';
 
 const STORAGE_KEY = 'da_admin_v2_config';
 const DEFAULT_CONFIG = {
-  firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
-  productsNode: 'produtos',
   writeMode: true,
   collectionsWriteMode: true,
   githubToken: '',
@@ -36,6 +34,33 @@ function loadConfig() {
 function saveConfig(patch) {
   state.config = { ...loadConfig(), ...(patch || {}), writeMode: true, collectionsWriteMode: true };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
+}
+
+function adaptSupabaseProduct(p = {}) {
+  return {
+    ...p,
+    firebaseKey: '',
+    codigo: text(p.sku || p.gtin || p.id),
+    nome: text(p.name),
+    preco: number(p.price),
+    preco_custo: number(p.cost),
+    estoque: number(p.stock),
+    url_imagem: text(p.image_url),
+    marca: text(p.brand),
+    categoria: text(p.category),
+    subcategoria: text(p.subcategory),
+    subsubcategoria: text(p.subsubcategory),
+    embalagem: text(p.packaging),
+    gondola: text(p.gondola),
+    prateleira: text(p.shelf),
+    validade: text(p.validity_date),
+    situacao: p.is_active === false ? 'I' : 'A',
+    ativo: p.is_active !== false,
+  };
+}
+async function loadProductsFromSupabase() {
+  const data = await adminProductsApi('catalog', { limit: 2500 });
+  return (data.products || []).map(adaptSupabaseProduct);
 }
 
 function escapeHtml(value = '') {
@@ -401,7 +426,7 @@ async function loadData() {
   setConnection('Atualizando dados…', 'warn');
   try {
     const [products, collections] = await Promise.all([
-      loadProducts(state.config),
+      loadProductsFromSupabase(),
       loadCollections(state.config),
     ]);
     state.products = products || [];
@@ -477,8 +502,6 @@ async function scanPhoto(file) {
 function openSettings() {
   const config = loadConfig();
   $('#githubToken').value = config.githubToken || '';
-  $('#firebaseUrl').value = config.firebaseUrl || DEFAULT_CONFIG.firebaseUrl;
-  $('#productsNode').value = config.productsNode || 'produtos';
   $('#basketsPath').value = config.basketsPath || DEFAULT_CONFIG.basketsPath;
   $('#settingsBackdrop').hidden = false;
   $('#settingsDrawer').classList.add('open');
@@ -553,8 +576,6 @@ function bind() {
   $('#saveSettingsButton').addEventListener('click', async () => {
     saveConfig({
       githubToken: text($('#githubToken').value),
-      firebaseUrl: text($('#firebaseUrl').value) || DEFAULT_CONFIG.firebaseUrl,
-      productsNode: text($('#productsNode').value) || 'produtos',
       basketsPath: text($('#basketsPath').value) || DEFAULT_CONFIG.basketsPath,
     });
     closeSettings();
@@ -568,6 +589,7 @@ async function start() {
   bind();
   renderItems();
   await initDetector();
+  await ensureAdminAuthenticated();
   await loadData();
 }
 
