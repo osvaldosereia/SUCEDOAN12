@@ -52,3 +52,6 @@ assert.match(edge,/cart_changed_reconfirm/);
 assert.match(edge,/repeat_last_purchase/);
 assert.match(edge,/preview_papoai_commerce_repeat_last_purchase_v1/);
 assert.match(edge,/historical_substitution_count/);
+assert.ok(edge.includes("intent.intent==='greeting'"));
+assert.ok(edge.includes("get_papoai_commerce_customer_snapshot_v2"));
+assert.ok(edge.includes("Bem-vindo à Dona Antônia"));
