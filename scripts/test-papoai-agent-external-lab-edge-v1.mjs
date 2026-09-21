@@ -45,3 +45,7 @@ assert.match(edge,/confirm_pending/);
 assert.match(edge,/checkout_readiness/);
 assert.match(edge,/set_addon_quantity/);
 assert.match(edge,/get_papoai_commerce_pending_action_v1/);
+assert.match(edge,/prepare_order_confirmation/);
+assert.match(edge,/set_payment_method/);
+assert.match(edge,/confirm_order/);
+assert.match(edge,/cart_changed_reconfirm/);
