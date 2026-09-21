@@ -9,7 +9,11 @@ const pages=[
   ['intelligence','admin/inteligencia.html'],
   ['learning','admin/aprendizados.html'],
   ['video','video/index.html'],
-  ['count','contagem/index.html']
+  ['count','contagem/index.html'],
+  ['registration','cadastro/index.html'],
+  ['expiries','validades/index.html'],
+  ['fast-baskets','cesta-mobile/index.html'],
+  ['kits','kit-mobile/index.html']
 ];
 assert.doesNotMatch(shell,/fetch\s*\(/,'global shell must not create transport');
 assert.doesNotMatch(shell,/localStorage|sessionStorage/,'global shell must not create persistence');
@@ -19,6 +23,7 @@ assert.match(css,/\.da-global-topbar/,'global header must be shared');
 assert.match(css,/\.da-global-sidebar/,'global sidebar must be shared');
 assert.match(css,/body\[data-admin-module="video"\]/,'VIDEO must be visually integrated');
 assert.match(css,/body\[data-admin-module="stockCount"\]/,'quick count must be visually integrated');
+assert.match(css,/\.da-ops-secondary-nav/,'operational tools must retain a secondary tool switcher');
 assert.match(css,/@media\(max-width:900px\)/,'global shell must collapse to mobile drawer');
 for(const [label,path] of pages){
   const html=read(path);
