@@ -13,6 +13,7 @@ function finalText(data){
 export function deterministicCommerceIntent(message){
   const m=clean(message,500).toLowerCase();
   if(!m)return null;
+  if(/^(oi+|ol[aá]|opa|bom dia|boa tarde|boa noite|e a[ií]|ei|hello|hey)([!,. ]*)$/i.test(m))return {intent:'greeting',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   if(/^(sim|s|pode|pode sim|confirmo|confirma|isso|isso mesmo|ok|okay|beleza|pode trocar|troca)$/i.test(m))return {intent:'confirm_pending',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   if(/\bpix\b/.test(m))return {intent:'set_payment_method',basket:'',query:'pix',source_query:'',replacement_query:'',quantity:0};
   if(/\b(dinheiro|cash)\b/.test(m))return {intent:'set_payment_method',basket:'',query:'dinheiro',source_query:'',replacement_query:'',quantity:0};
@@ -40,7 +41,7 @@ export async function classifyCommerceIntent({message,history,apiKey,model='gpt-
   const schema={
     type:'object',additionalProperties:false,
     properties:{
-      intent:{type:'string',enum:['list_baskets','basket_detail','start_basket','repeat_last_purchase','search_products','offers','cart_state','cart_summary','checkout_readiness','customer_context','set_basket_quantity','set_addon_quantity','replace_basket_item','set_payment_method','confirm_pending','cancel_pending','handoff','general']},
+      intent:{type:'string',enum:['greeting','list_baskets','basket_detail','start_basket','repeat_last_purchase','search_products','offers','cart_state','cart_summary','checkout_readiness','customer_context','set_basket_quantity','set_addon_quantity','replace_basket_item','set_payment_method','confirm_pending','cancel_pending','handoff','general']},
       basket:{type:'string'},
       query:{type:'string'},
       source_query:{type:'string'},
@@ -57,6 +58,7 @@ export async function classifyCommerceIntent({message,history,apiKey,model='gpt-
       instructions:[
         'Você classifica mensagens de clientes do mercado Dona Antônia.',
         'Sua função é SOMENTE extrair intenção e entidades. Nunca calcule preços, totais, descontos ou estoque.',
+        'Para uma saudação simples use greeting.',
         'Para perguntas de produto use search_products e coloque em query o que o cliente procura.',
         'Para conteúdo de cesta use basket_detail. Para escolher cesta use start_basket.',
         'Para repetir a última compra ou última cesta do cliente use repeat_last_purchase.',
