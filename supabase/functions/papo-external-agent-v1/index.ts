@@ -73,6 +73,14 @@ Deno.serve(async(req:Request)=>{
     return jsonResponse({error:code,correlation_id:correlationId},400);
   }
 
+  if(normalized.triggerRole!=='user'){
+    return jsonResponse(buildLabSilentResponse({
+      sessionKey:normalized.sessionKey,
+      correlationId,
+      reason:'non_user_trigger'
+    }),200,responseBearer);
+  }
+
   const {data:adapter,error:adapterError}=await sb.from('channel_provider_adapters')
     .select('id,channel_account_id,status,inbound_mode,outbound_mode')
     .eq('provider_key',PROVIDER_KEY).eq('channel',CHANNEL)
