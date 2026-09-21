@@ -265,6 +265,36 @@ Deno.serve(async(req:Request)=>{
       const q=await sb.rpc('format_papoai_commerce_basket_message_v1',{p_basket_query:intent.basket||intent.query});
       result=q.data;
       text=result?.message_text||'Não consegui localizar essa cesta. Me diga o nome dela que eu verifico.';
+    }else if(intent.intent==='repeat_last_purchase'&&conversationId){
+      if(commerceCfg?.write_enabled===true){
+        const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+          p_conversation_id:conversationId,
+          p_command:{type:'repeat_last_purchase'}
+        });
+        if(q.error)throw q.error;
+        result=q.data;
+        if(result?.available===false){
+          if(result?.reason==='no_purchase_history')text='Ainda não encontrei uma compra anterior para repetir. Posso te mostrar nossas cestas.';
+          else if(result?.reason==='basket_not_available')text='Sua última cesta não está disponível atualmente. Posso te mostrar as cestas disponíveis hoje.';
+          else text='Não consegui preparar sua última compra para repetição agora.';
+        }else{
+          const preview=result?.preview||{};
+          const basket=preview?.basket||{};
+          const warnings=[];
+          if(Number(preview?.unavailable_addon_count||0)>0)warnings.push(`${preview.unavailable_addon_count} adicional(is) não está(ão) disponível(is) hoje`);
+          if(Number(preview?.adjusted_addon_count||0)>0)warnings.push(`${preview.adjusted_addon_count} adicional(is) precisaria(m) de ajuste de quantidade`);
+          if(Number(preview?.historical_substitution_count||0)>0)warnings.push('trocas antigas não serão repetidas automaticamente');
+          text=`Encontrei sua última compra 😊\n\nCesta: **${basket.name||'cesta básica'}**\nValor daquela compra: **${moneyBR(preview?.historical_total)}**\nEstimativa com preços e disponibilidade de hoje: **${moneyBR(preview?.current_estimate)}**`
+            +(warnings.length?`\n\nObservação: ${warnings.join('; ')}.`:'')
+            +'\n\nQuer que eu monte novamente com as condições de hoje?';
+        }
+      }else{
+        const q=await sb.rpc('preview_papoai_commerce_repeat_last_purchase_v1',{p_conversation_id:conversationId});
+        result=q.data;
+        if(result?.available){
+          text=`Sua última cesta foi **${result?.basket?.name||'cesta básica'}**. Pelas condições atuais, a estimativa seria **${moneyBR(result?.current_estimate)}**. A montagem do carrinho ainda está desativada nesta homologação.`;
+        }else text='Não encontrei uma compra anterior disponível para repetir.';
+      }
     }else if(intent.intent==='search_products'){
       const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:commerceCfg?.max_product_results||6});
       result=q.data;
@@ -323,6 +353,10 @@ Deno.serve(async(req:Request)=>{
         }else if(result?.confirmed&&result?.action_type==='confirm_order'){
           const order=result?.result||{};
           text=`Pedido confirmado ✅\n\nNúmero: **${order.order_number||''}**\nTotal: **${moneyBR(order.total)}**\nPagamento: **${order.payment_label||order.payment_method||''}**\n\nAgora vamos seguir com a separação e entrega.`;
+        }else if(result?.confirmed&&result?.action_type==='repeat_last_purchase'){
+          const repeated=result?.result||{};
+          text=(repeated?.summary?.message_text||`Montei novamente sua ${repeated?.basket_name||'última cesta'}.`)
+            +'\n\nQuer alterar alguma coisa ou podemos seguir para finalizar?';
         }else if(result?.reason==='cart_changed_reconfirm'){
           text=(result?.summary?.message_text||'Seu pedido mudou desde a última confirmação.')
             +'\n\nO carrinho mudou antes da confirmação, então não finalizei. Confira o novo resumo e me diga a forma de pagamento novamente.';
