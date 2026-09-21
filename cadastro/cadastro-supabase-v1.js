@@ -1,0 +1,25 @@
+import {adminProductsApi,ensureAdminAuthenticated} from '../admin/admin-secure-api-v1.js';
+
+const $=s=>document.querySelector(s);
+const text=v=>String(v??'').trim();
+const digits=v=>String(v??'').replace(/\D/g,'');
+const number=v=>Math.max(0,Number(v)||0);
+let busy=false,current=null,frontPhoto='';
+
+function msg(value,type=''){const n=$('#message');n.textContent=value;n.className=`message show ${type}`.trim()}
+function validGtin(value){const g=digits(value);if(![8,12,13,14].includes(g.length))return false;let sum=0;for(let i=g.length-2,o=0;i>=0;i--,o++)sum+=Number(g[i])*(o%2===0?3:1);return(10-sum%10)%10===Number(g.at(-1))}
+function mode(name){$('#existingProductPanel').hidden=name!=='existing';$('#newProductPanel').hidden=name!=='new'&&name!=='result'}
+function productImage(p){return text(p?.image_url)||'../img/logoantonia5.png'}
+function showExisting(p){current=p;mode('existing');$('#existingProductImage').src=productImage(p);$('#existingProductName').textContent=p.name||'Produto';$('#existingProductMeta').textContent=[p.gtin,p.brand,p.packaging].filter(Boolean).join(' · ');$('#existingCurrentStock').textContent=String(Number(p.stock)||0);$('#existingStockInput').value=Number(p.stock)||0;msg('Produto encontrado no Supabase.','ok')}
+function showNew(ean){current=null;mode('new');$('#productNameInput').value='';$('#stockInput').value='0';msg(`EAN ${ean} não encontrado. Complete os dados para criar o produto inativo.`,`ok`)}
+async function consult(){if(busy)return;const code=digits($('#eanInput').value);$('#eanInput').value=code;if(!validGtin(code))return msg('Informe um EAN válido.','error');busy=true;try{await ensureAdminAuthenticated();const r=await adminProductsApi('lookup',{code});r.product?showExisting(r.product):showNew(code)}catch(e){msg(e.message||'Falha ao consultar Supabase.','error')}finally{busy=false}}
+async function updateStock(){if(busy||!current)return;busy=true;try{await ensureAdminAuthenticated();const stock=number($('#existingStockInput').value);const r=await adminProductsApi('save_product',{id:current.id,patch:{stock}});current=r.product;$('#existingCurrentStock').textContent=String(Number(current.stock)||0);msg('Estoque atualizado no Supabase.','ok')}catch(e){msg(e.message||'Falha ao salvar.','error')}finally{busy=false}}
+async function createProduct(){if(busy)return;const gtin=digits($('#eanInput').value);const name=text($('#productNameInput').value);if(!name)return msg('Informe o nome do produto.','error');busy=true;try{await ensureAdminAuthenticated();const product={name,gtin,brand:text($('#brandInput').value)||null,supplier:text($('#supplierInput').value)||null,stock:number($('#stockInput').value),cost:number($('#costInput').value)||null,validity_date:$('#validityInput').value||null,gondola:text($('#gondolaInput').value)||null,shelf:text($('#shelfInput').value)||null,description_short:text($('#notesInput').value)||null,is_active:false,physically_verified:true};const r=await adminProductsApi('create_product',{product});current=r.product;$('#resultImage').src=productImage(current);$('#resultName').textContent=current.name;$('#resultKey').textContent=`Supabase · ${current.id}`;$('#resultPrice').textContent=current.price?Number(current.price).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';$('#resultNcm').textContent=current.ncm||'—';$('#resultEan').textContent=current.gtin||'—';mode('result');msg('Produto criado no Supabase como inativo para revisão.','ok')}catch(e){msg(e.message||'Falha ao cadastrar.','error')}finally{busy=false}}
+function reset(){current=null;frontPhoto='';$('#eanInput').value='';mode('lookup');msg('Pronto para consultar o próximo produto.')}
+
+$('#checkEanButton')?.addEventListener('click',consult);$('#eanInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();consult()}});$('#updateStockButton')?.addEventListener('click',updateStock);$('#existingAnotherButton')?.addEventListener('click',reset);$('#submitButton')?.addEventListener('click',createProduct);$('#againButton')?.addEventListener('click',reset);$('#resetButton')?.addEventListener('click',reset);
+$('[data-photo="frente"]')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;const u=URL.createObjectURL(f);const p=$('[data-preview="frente"]');p.src=u;p.hidden=false;p.onload=()=>URL.revokeObjectURL(u);frontPhoto=f.name;msg('Foto mantida apenas para conferência local; nenhuma imagem foi enviada automaticamente.','ok')});
+$('#openScannerButton')?.addEventListener('click',()=>$('#barcodePhotoInput')?.click());$('#barcodePhotoInput')?.addEventListener('change',()=>msg('Digite o EAN exibido na foto. A leitura automática será reintroduzida sem dependência externa em uma etapa posterior.'));
+$('#settingsButton')?.addEventListener('click',()=>msg('Cadastro Supabase-only não exige Firebase, Make, token GitHub ou configuração local.','ok'));
+$('#deleteRegistrationButton')?.addEventListener('click',()=>msg('Exclusão destrutiva foi desativada. Desative o produto pelo Admin após revisão.','error'));
+mode('lookup');ensureAdminAuthenticated().catch(()=>{});
