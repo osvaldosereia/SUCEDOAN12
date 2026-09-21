@@ -120,3 +120,38 @@ body.da-standard-page .row-actions>button{min-height:42px}
 @media(prefers-reduced-motion:reduce){
   body.da-standard-page *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
 }
+
+
+/* Specialized Admin workspaces keep their local navigation but share the same visual language. */
+body.da-standard-page .relationship-main,
+body.da-standard-page .si-shell,
+body.da-standard-page .al-shell{width:min(100%,var(--da-v3-content));margin:0 auto;padding:24px clamp(14px,2vw,28px) 48px}
+body.da-standard-page .relationship-head,
+body.da-standard-page .si-topbar,
+body.da-standard-page .al-topbar{background:#fff;border-bottom:1px solid var(--da-v3-border)}
+body.da-standard-page .relationship-head{border:1px solid var(--da-v3-border);border-radius:var(--da-v3-radius);padding:18px;margin-bottom:16px}
+body.da-standard-page .si-topbar,
+body.da-standard-page .al-topbar{min-height:64px;padding:12px clamp(14px,2vw,24px)}
+body.da-standard-page .relationship-sidebar{background:#fff;border-right:1px solid var(--da-v3-border)}
+body.da-standard-page .relationship-sidebar button{min-height:44px;border-radius:10px}
+body.da-standard-page .relationship-sidebar button.active{background:var(--da-v3-soft);color:var(--da-v3-brand-strong)}
+body.da-standard-page .si-topbar h1,
+body.da-standard-page .al-topbar h1,
+body.da-standard-page .relationship-head h1{letter-spacing:-.02em}
+body.da-standard-page .button,
+body.da-standard-page .primary-link,
+body.da-standard-page .inline-link{min-height:44px}
+body.da-standard-page .metrics{gap:12px}
+body.da-standard-page .si-grid,
+body.da-standard-page .al-layout{gap:14px}
+@media(max-width:900px){
+  body.da-standard-page .relationship-main,
+  body.da-standard-page .si-shell,
+  body.da-standard-page .al-shell{padding:16px 12px 38px}
+}
+@media(max-width:620px){
+  body.da-standard-page .si-topbar,
+  body.da-standard-page .al-topbar{padding:10px 12px;gap:10px}
+  body.da-standard-page .relationship-head{padding:14px}
+  body.da-standard-page .relationship-head-actions{width:100%;display:flex;flex-wrap:wrap;gap:8px}
+}
