@@ -2,6 +2,7 @@ import { auditCollection } from '../producao-v2/js/core/collections.js';
 import { text } from '../producao-v2/js/core/utils.js';
 import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js';
 import { callMake, compactKitForMake, unwrapMakeResult } from '../producao-v2/js/services/make.js?build=20260805-kit-auto-carousel-v2';
+import { adminProductsApi } from '../admin/admin-secure-api-v1.js';
 import {
   kitInstagramOperationalState,
   latestKitQueueEntry,
@@ -101,13 +102,22 @@ function fingerprint(value) {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-async function loadProducts(config) {
-  const firebaseBase = text(config.firebaseUrl || 'https://cedar-chemist-310801-default-rtdb.firebaseio.com').replace(/\/+$/, '');
-  const node = text(config.productsNode || 'produtos');
-  const response = await fetch(`${firebaseBase}/${encodeURIComponent(node)}.json?_=${Date.now()}`, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Firebase retornou ${response.status} ao preparar o Instagram.`);
-  const raw = await response.json();
-  return Object.entries(raw || {}).map(([firebaseKey, value]) => ({ ...(value || {}), firebaseKey, _key: firebaseKey }));
+async function loadProducts() {
+  const data = await adminProductsApi('catalog', { limit: 2500 });
+  return (data.products || []).map(p => ({
+    ...p,
+    firebaseKey: '',
+    codigo: text(p.sku || p.gtin || p.id),
+    nome: text(p.name),
+    preco: Number(p.price || 0),
+    estoque: Number(p.stock || 0),
+    url_imagem: text(p.image_url),
+    marca: text(p.brand),
+    categoria: text(p.category),
+    embalagem: text(p.packaging),
+    situacao: p.is_active === false ? 'I' : 'A',
+    ativo: p.is_active !== false,
+  }));
 }
 
 function latestQueueEntry(code) {
@@ -196,7 +206,7 @@ async function refreshCollections(snapshot = null) {
 
   const [collections, products] = await Promise.all([
     loadCollections(config),
-    state.products.length ? Promise.resolve(state.products) : loadProducts(config),
+    state.products.length ? Promise.resolve(state.products) : loadProducts(),
   ]);
   state.kits = collections.kits || [];
   state.queue = collections.queue || [];
@@ -285,7 +295,7 @@ async function queueInstagram({ automatic = false, forceRegeneration = false } =
   if (!state.kit) await refreshCollections();
   if (!state.kit) throw new Error('Nenhum kit publicado foi encontrado.');
 
-  if (!state.products.length) state.products = await loadProducts(config);
+  if (!state.products.length) state.products = await loadProducts();
   const audit = auditCollection(state.kit, 'kit', state.products, state.queue);
   if (audit.errors.length) throw new Error(`Revise o kit antes de gerar o Instagram: ${audit.errors.join(' · ')}.`);
 
