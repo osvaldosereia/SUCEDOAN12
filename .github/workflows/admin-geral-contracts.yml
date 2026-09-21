@@ -30,12 +30,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run Admin Geral static contracts
-        shell: bash
-        run: |
-          set -euo pipefail
-          for test_file in tests/admin-*.test.mjs; do
-            echo "::group::$test_file"
-            node "$test_file"
-            echo "::endgroup::"
-          done
+      - name: R2 design system
+        run: node tests/admin-design-system-v2-contract.test.mjs
+      - name: R1 navigation
+        run: node tests/admin-general-navigation-contract.test.mjs
+      - name: R3 context navigation
+        run: node tests/admin-r3-context-nav-contract.test.mjs
+      - name: R10 customer
+        run: node tests/admin-r10-customer-v2-contract.test.mjs
+      - name: R11 operations
+        run: node tests/admin-r11-operations-v2-contract.test.mjs
+      - name: R12 creative
+        run: node tests/admin-r12-creative-v2-contract.test.mjs
+      - name: R13 marketing
+        run: node tests/admin-r13-marketing-v2-contract.test.mjs
+      - name: R14 operations
+        run: node tests/admin-r14-operations-v2-contract.test.mjs
+      - name: R15 systems
+        run: node tests/admin-r15-systems-v2-contract.test.mjs
+      - name: R16 final fail-closed audit
+        run: node tests/admin-r16-final-contract.test.mjs
