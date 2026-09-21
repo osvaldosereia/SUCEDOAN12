@@ -26,7 +26,7 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R11 DONE. R12 IN_PROGRESS — Estúdio Criativo e VIDEO.
-R11 fechou Relacionamento, Atendimento, Inteligência e Aprendizados com camada UI-only compartilhada, responsividade/touch/safe-area e busy guards; autoridades funcionais, revisão humana, no-autopublish, modo de teste e gates externos foram preservados.
-`main` possui um commit paralelo novo de SEO/dados públicos de cestas (`be2b3d54`), fora do escopo R11; não foi incorporado automaticamente.
-Próxima execução: inventariar Estúdio Criativo e VIDEO reais antes de editar; preservar timeline, prompts/orientações, exportações e contratos; melhorar mobile/desktop e guardas sem disparar IA paga, publishing ou qualquer efeito externo.
+R1–R12 DONE. R13 IN_PROGRESS — Marketing completo.
+R12 fechou Estúdio Criativo + VIDEO com camada UI-only compartilhada, responsividade/touch/safe-area, busy guards e feedback acessível; `/video/` permanece canônico, Estúdio preserva lógica/persistência existente e nenhuma geração paga ou efeito externo foi usado para validar.
+`main` permanece 1 commit à frente da base desta branch por SEO/dados públicos de cestas (`be2b3d54`), fora do escopo atual; não incorporar automaticamente.
+Próxima execução: ler primeiro a documentação canônica de Marketing Admin / Organic Social e inventariar `admin/marketing.html` + runtime real. Preservar publishing OFF, kill switch, channel gates, Meta/outbound/canary e separação de Customer & Marketing OS. Melhorar apenas o que for seguro, aditivo e validável sem publicação real.
