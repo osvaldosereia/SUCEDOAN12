@@ -13,6 +13,10 @@ function finalText(data){
 export function deterministicCommerceIntent(message){
   const m=clean(message,500).toLowerCase();
   if(!m)return null;
+  if(/^(sim|s|pode|pode sim|confirmo|confirma|isso|isso mesmo|ok|okay|beleza|pode trocar|troca)$/i.test(m))return {intent:'confirm_pending',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+  if(/^(n[aã]o|nao|n|cancela|cancelar|deixa|deixa pra l[aá]|esquece)$/i.test(m))return {intent:'cancel_pending',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+  if(/\b(fechar|finalizar|concluir|confirmar)\b.*\b(pedido|compra)\b|\b(pedido|compra)\b.*\b(fechar|finalizar|concluir)\b/.test(m))return {intent:'checkout_readiness',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+  if(/\b(resumo|como ficou|quanto ficou|ver pedido|meu pedido)\b/.test(m))return {intent:'cart_summary',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   if(/\b(atendente|humano|pessoa|falar com algu[eé]m)\b/.test(m))return {intent:'handoff',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   if(/\b(quais|qual|ver|mostrar|tem|t[eê]m)\b.*\bcestas?\b|\bcestas?\b.*\b(quais|ver|mostrar|tem|t[eê]m)\b/.test(m))return {intent:'list_baskets',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   const basketMatch=m.match(/\b(econ[oô]mica|mini|pequena|m[eé]dia|grande)\s+bonini\b/);
@@ -31,7 +35,7 @@ export async function classifyCommerceIntent({message,history,apiKey,model='gpt-
   const schema={
     type:'object',additionalProperties:false,
     properties:{
-      intent:{type:'string',enum:['list_baskets','basket_detail','start_basket','search_products','offers','cart_state','customer_context','set_basket_quantity','set_addon_quantity','replace_basket_item','handoff','general']},
+      intent:{type:'string',enum:['list_baskets','basket_detail','start_basket','search_products','offers','cart_state','cart_summary','checkout_readiness','customer_context','set_basket_quantity','set_addon_quantity','replace_basket_item','confirm_pending','cancel_pending','handoff','general']},
       basket:{type:'string'},
       query:{type:'string'},
       source_query:{type:'string'},
@@ -50,8 +54,11 @@ export async function classifyCommerceIntent({message,history,apiKey,model='gpt-
         'Sua função é SOMENTE extrair intenção e entidades. Nunca calcule preços, totais, descontos ou estoque.',
         'Para perguntas de produto use search_products e coloque em query o que o cliente procura.',
         'Para conteúdo de cesta use basket_detail. Para escolher cesta use start_basket.',
-        'Para retirar/aumentar item de uma cesta use set_basket_quantity: source_query é o produto e quantity é a quantidade final desejada.',
+        'Para retirar/aumentar item que já faz parte da cesta use set_basket_quantity: source_query é o produto e quantity é a quantidade final desejada.',
+        'Para adicionar um produto novo ao pedido use set_addon_quantity: query é o produto desejado e quantity é a quantidade final pedida.',
         'Para trocar produto use replace_basket_item: source_query é o item atual e replacement_query é o desejado.',
+        'Se o cliente estiver confirmando uma ação pendente use confirm_pending; se estiver recusando/cancelando use cancel_pending.',
+        'Se pedir para fechar/finalizar a compra use checkout_readiness. Se pedir como ficou o pedido use cart_summary.',
         'Se pedir pessoa/atendente use handoff. Se não souber, general.'
       ].join(' '),
       input:[{role:'user',content:[{type:'input_text',text:JSON.stringify({message:clean(message,1000),history:recent})}]}],
