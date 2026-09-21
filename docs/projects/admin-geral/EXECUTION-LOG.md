@@ -46,34 +46,25 @@
 - nenhuma IA paga/publicação/outbound acionada; R12 DONE; R13 promovida.
 
 ## 2026-09-21 — R13 / conclusão + promoção R14
-- preflight confirmou HEAD `aaf784be88fad5a33dea521f94b9b0cf3e1d08dc`; comparação com `main` mostrou somente divergência paralela de SEO/dados públicos de cestas, não incorporada;
 - Marketing Admin auditado com publishing/execution/channel gates OFF e kill switch ativo;
 - criada camada R13 UI-only com acessibilidade/mobile/busy guard e contrato próprio; nenhuma publicação/canary/IA paga acionada;
 - R13 DONE; R14 promovida.
 
 ## 2026-09-21 — R14 / conclusão + promoção R15
-- preflight confirmou HEAD inicial `81c046db23f7ffd6d7b5b2d77c45b68fde349d6b`; branch estava 184 commits à frente e 1 atrás de `main`; único commit paralelo em `main` continua sendo SEO/dados públicos de cestas e não foi incorporado;
-- Logística auditada: `admin-logistics-v1` exige JWT; dashboard/preview e rascunhos internos preservados; publicação de rota/provider externo/runtime continuam indisponíveis e `logisticsUiEnabled=false`;
-- Financeiro auditado: Central Financeira existente é read model; ledger append-only/server-only e gates de receipt/reversal/route close/reconciliation/fiscal projection/external reconciliation permanecem OFF; `financialAdminUiEnabled=false` preservado;
-- corrigido wiring condicionado de `financial-admin.js` no Admin, sem ativar a flag;
-- Bling continua protegido por `bling_order_sync_enabled=false` e gates próprios; nenhuma sincronização real executada;
-- criada camada `admin-r14-operations-v2.js/css`, sem transporte/persistência próprios, com touch >=44 px, safe-area, responsividade, aria-live e busy guard;
-- criado `tests/admin-r14-operations-v2-contract.test.mjs` para proteger gates OFF, wiring condicionado e ausência de transporte/persistência paralela;
-- nenhuma rota real, GPS, provider, financeiro real, SEFAZ, Bling, outbound, canary ou dado real foi acionado;
-- R14 marcada DONE; R15 Automações, Copiloto, Integrações e Saúde promovida para IN_PROGRESS.
+- Logística auditada: JWT obrigatório, rascunhos internos preservados e `logisticsUiEnabled=false`;
+- Financeiro auditado: read model, ledger append-only/server-only e `financialAdminUiEnabled=false`; wiring condicionado corrigido sem ativar flag;
+- Bling/fiscal real permaneceram protegidos; camada R14 e contrato adicionados; R14 DONE; R15 promovida.
 
-## 2026-09-21 — R15 lote 1
-- preflight confirmou HEAD inicial `24c317faddcf16862ba0e19eaa4234e207a7b3e9`; branch 191 commits à frente e 1 atrás de `main`; divergência paralela segue restrita a SEO/dados públicos de cestas e não foi incorporada;
-- Automation Builder auditado: `automationBuilderUiEnabled=false`; runtime live não é ativável pela superfície, simulação permanece sem efeitos e OpenAI requer escolha explícita/gates próprios;
-- Copiloto humano auditado: `humanCopilotEnabled=false`; modo é assistivo, rascunho é editável e nenhuma sugestão é enviada automaticamente;
-- criada e conectada camada `admin-r15-systems-v2.js/css` para responsividade, touch >=44 px, safe-area, aria-live e busy guard, sem fetch/storage/persistência próprios;
-- criado `tests/admin-r15-systems-v2-contract.test.mjs` protegendo gates OFF e contratos seguros;
-- nenhum Builder/Copiloto foi ativado, nenhuma IA paga, automação, provider, outbound, canary ou dado real foi acionado.
+## 2026-09-21 — R15 lotes 1–2 / conclusão + promoção R16
+- Automation Builder e Copiloto preservados dormentes por flags `false`; simulação sem efeitos e sugestões sem envio automático;
+- camada R15 adicionada sem fetch/storage/persistência próprios; Integrações/Meta Foundation/Homologação/Qualidade/Auditoria integradas em leitura segura;
+- diagnóstico legado mantém probes externos `tested:false`, não chama webhook Make, IA ou Bling; Make não virou runtime novo;
+- contratos ampliados; nenhum provider/outbound/canary acionado; R15 DONE; R16 promovida.
 
-## 2026-09-21 — R15 lote 2 / conclusão + promoção R16
-- preflight confirmou HEAD inicial `a2e43a19ce764bff6a722384bf822eed28a74a25`; branch 198 commits à frente e 1 atrás de `main`; divergência paralela permanece somente no SEO/dados públicos de cestas e não foi incorporada;
-- superfícies restantes de integração/saúde foram inventariadas: Central de Relacionamento já concentra Meta Foundation, integrações, homologação, qualidade e auditoria em leitura protegida; diagnóstico V2 legado lê Firebase/GitHub e descreve integrações sem disparar webhooks/providers;
-- Central de Relacionamento recebeu marcadores `data-admin-integration` e `data-admin-health` e passou a carregar a camada R15 para UX/mobile/busy guard; textos deixam explícito que a visão não ativa provider/gate;
-- contrato R15 ampliado para exigir wiring de integração/saúde, ações externas OFF e `tested:false` nos diagnósticos externos; Make permanece apenas legado/consulta e não foi adotado como runtime novo;
-- nenhum probe destrutivo, webhook Make, Bling, Meta, IA paga, outbound, canary ou dado real foi acionado;
-- critérios programáveis da R15 satisfeitos; R15 marcada DONE e R16 Segurança, QA, homologação e limpeza final promovida para IN_PROGRESS.
+## 2026-09-21 — R16 lote 1 — auditoria transversal/CI
+- preflight obrigatório executado: HEAD inicial `e55cca468503d19a90d221e0bec28c9e4035e318`; branch 203 commits à frente e 1 atrás de `main`; único commit paralelo continua `be2b3d54` (SEO/dados públicos de cestas), não incorporado;
+- `admin/config.js` revalidado com gates sensíveis fail-closed (`humanServiceCenterUiEnabled`, `humanCopilotEnabled`, `financialAdminUiEnabled`, `experienceOrchestratorUiEnabled`, `automationBuilderUiEnabled`, `logisticsUiEnabled`, `commercialTruthUiEnabled` todos `false`);
+- criado `tests/admin-r16-final-contract.test.mjs` para amarrar contratos R1–R15 e princípios permanentes de segurança/isolamento;
+- criado workflow `.github/workflows/admin-geral-contracts.yml`, read-only e sem secrets/deploy, para executar todos os `tests/admin-*.test.mjs` com Node 22;
+- primeira execução do CI iniciada pelo push; ainda em andamento no fechamento deste lote, portanto R16 permanece IN_PROGRESS e não há homologação fictícia;
+- nenhum Meta, publishing, outbound, canary, IA paga, Make runtime, Bling/SEFAZ, logística/financeiro real, PIN, cliente, pedido, identidade ou consentimento real foi acionado.
