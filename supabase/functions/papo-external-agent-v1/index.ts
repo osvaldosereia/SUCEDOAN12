@@ -9,6 +9,7 @@ import {
   buildLabSilentResponse,
 } from "../_shared/papoai-agent-external-contract-v1.mjs";
 import {classifyCommerceIntent} from "../_shared/papoai-commerce-intent-v1.mjs";
+import {buildGovernorTopicKey,decideConversationAction} from "../_shared/papoai-conversation-governor-v1.mjs";
 
 const PROVIDER_KEY='papoai';
 const CHANNEL='whatsapp';
@@ -319,20 +320,90 @@ Deno.serve(async(req:Request)=>{
         }else text='Não encontrei uma compra anterior disponível para repetir.';
       }
     }else if(intent.intent==='search_products'&&conversationId){
-      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
-        p_conversation_id:conversationId,
-        p_command:{type:'propose_product_choice',query:intent.query||normalized.messageText,limit:3}
-      });
-      if(q.error)throw q.error;
-      const choices=Array.isArray(q.data?.candidates)?q.data.candidates:[];
-      result={...(q.data||{}),items:choices};
-      if(!choices.length){
-        text='Não encontrei um produto disponível que combine bem com o que você pediu.';
-      }else if(choices.length===1){
-        const p=choices[0];
-        text=`Encontrei **${p.name}** por **${moneyBR(p.commercial_price)}**. Quer que eu adicione ao pedido?`;
+      const governorEnabled=commerceCfg?.metadata?.conversation_governor_enabled===true;
+      const productQuery=intent.query||normalized.messageText;
+
+      if(governorEnabled){
+        const broadQ=await sb.rpc('search_papoai_commerce_products_v1',{
+          p_query:productQuery,
+          p_limit:12
+        });
+        if(broadQ.error)throw broadQ.error;
+        const broadItems=Array.isArray(broadQ.data?.items)?broadQ.data.items:[];
+        const topicKey=buildGovernorTopicKey({intent:'search_products',query:productQuery});
+        const stateQ=await sb.rpc('get_papoai_conversation_governor_state_v1',{
+          p_conversation_id:conversationId,
+          p_topic_key:topicKey
+        });
+        const governor=decideConversationAction({
+          intent:'search_products',
+          message:normalized.messageText,
+          query:productQuery,
+          items:broadItems,
+          candidateCount:broadItems.length,
+          resultLimit:12,
+          clarificationCount:Number(stateQ.data?.clarification_count||0)
+        });
+
+        const recorded=await sb.rpc('record_papoai_conversation_governor_decision_v1',{
+          p_conversation_id:conversationId,
+          p_topic_key:governor.topicKey,
+          p_intent:'search_products',
+          p_action:governor.action,
+          p_reason:governor.reason,
+          p_candidate_count:broadItems.length,
+          p_delegated:Boolean(governor.delegated),
+          p_question_key:governor.questionKey||null,
+          p_metadata:{
+            result_limit:12,
+            candidate_sample_count:broadItems.length,
+            governor_version:'v1'
+          }
+        });
+        const finalAction=recorded.data?.action||governor.action;
+
+        if(finalAction==='ASK'){
+          result={governor:recorded.data||governor,items:[]};
+          text=governor.question||'Posso fazer uma pergunta rápida para encontrar opções melhores para você?';
+        }else if(finalAction==='RECOMMEND'){
+          const recommendations=broadItems.slice(0,3);
+          result={governor:recorded.data||governor,items:recommendations};
+          text=recommendations.length
+            ? `Eu escolheria estas opções para você:\n\n${numberedProductsText(recommendations)}\n\nSe quiser, pode responder **1, 2 ou 3**.`
+            : 'Não encontrei uma opção segura para recomendar agora.';
+        }else{
+          const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+            p_conversation_id:conversationId,
+            p_command:{type:'propose_product_choice',query:productQuery,limit:3}
+          });
+          if(q.error)throw q.error;
+          const choices=Array.isArray(q.data?.candidates)?q.data.candidates:[];
+          result={...(q.data||{}),governor:recorded.data||governor,items:choices};
+          if(!choices.length){
+            text='Não encontrei um produto disponível que combine bem com o que você pediu.';
+          }else if(choices.length===1){
+            const p=choices[0];
+            text=`Encontrei **${p.name}** por **${moneyBR(p.commercial_price)}**. Quer que eu adicione ao pedido?`;
+          }else{
+            text=`Encontrei estas opções:\n\n${numberedProductsText(choices)}\n\nQual você prefere? Pode responder **1, 2 ou 3**.`;
+          }
+        }
       }else{
-        text=`Encontrei estas opções:\n\n${numberedProductsText(choices)}\n\nQual você prefere? Pode responder **1, 2 ou 3**.`;
+        const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+          p_conversation_id:conversationId,
+          p_command:{type:'propose_product_choice',query:productQuery,limit:3}
+        });
+        if(q.error)throw q.error;
+        const choices=Array.isArray(q.data?.candidates)?q.data.candidates:[];
+        result={...(q.data||{}),items:choices};
+        if(!choices.length){
+          text='Não encontrei um produto disponível que combine bem com o que você pediu.';
+        }else if(choices.length===1){
+          const p=choices[0];
+          text=`Encontrei **${p.name}** por **${moneyBR(p.commercial_price)}**. Quer que eu adicione ao pedido?`;
+        }else{
+          text=`Encontrei estas opções:\n\n${numberedProductsText(choices)}\n\nQual você prefere? Pode responder **1, 2 ou 3**.`;
+        }
       }
     }else if(intent.intent==='search_products'){
       const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:3});
