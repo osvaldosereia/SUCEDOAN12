@@ -420,11 +420,26 @@ async function loadData() {
 }
 
 function activateWorkspace(name) {
-  const listMode = name === 'list';
-  $('#editorWorkspace').hidden = listMode;
-  $('#listWorkspace').hidden = !listMode;
-  document.querySelectorAll('[data-workspace]').forEach(button => button.classList.toggle('active', button.dataset.workspace === name));
-  if (listMode) renderBasketList();
+  const workspace = name === 'list' ? 'list' : 'editor';
+  const listMode = workspace === 'list';
+  const editor = $('#editorWorkspace');
+  const list = $('#listWorkspace');
+
+  editor.hidden = listMode;
+  list.hidden = !listMode;
+  editor.setAttribute('aria-hidden', String(listMode));
+  list.setAttribute('aria-hidden', String(!listMode));
+
+  document.querySelectorAll('[data-workspace]').forEach(button => {
+    const active = button.dataset.workspace === workspace;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
+
+  if (listMode) {
+    renderBasketList();
+    $('#basketFilter')?.focus({ preventScroll: true });
+  }
 }
 
 async function initDetector() {
@@ -477,7 +492,12 @@ function closeSettings() {
 }
 
 function bind() {
-  document.querySelectorAll('[data-workspace]').forEach(button => button.addEventListener('click', () => activateWorkspace(button.dataset.workspace)));
+  $('.workspace-tabs').addEventListener('click', event => {
+    const button = event.target.closest('[data-workspace]');
+    if (!button) return;
+    event.preventDefault();
+    activateWorkspace(button.dataset.workspace);
+  });
   $('#productSearch').addEventListener('input', () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(renderSearchResults, 140);
