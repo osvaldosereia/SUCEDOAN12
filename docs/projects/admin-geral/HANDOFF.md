@@ -33,3 +33,13 @@ Credenciais, Meta, publishing, outbound, canary, IA paga, Bling/fiscal, provider
 
 ## Regra após conclusão
 Não realizar novas alterações autônomas apenas para continuar programando. Se uma automação desta frente ainda estiver ativa, ela pode ser encerrada. Retomar código somente diante de nova demanda explícita, regressão comprovada ou etapa de homologação humana específica.
+
+## Pós-R16 — homologação visual
+Nova demanda explícita em 21/09/2026 autorizou corrigir inconsistências visuais/usabilidade vistas em telas reais.
+- Visual Standard V3 criado e conectado às principais superfícies do Admin;
+- Nomes dos produtos e Imagens IA usam Shell canônico;
+- Atendimento usa Shell canônico preservando a lógica local;
+- Balanço rápido continua mobile-first, com layout desktop responsivo e legibilidade ampliada;
+- `admin-product-names-v1` v2 foi implantada no Supabase para reduzir a carga da consulta que estava excedendo 20 s;
+- CI com contrato Visual Standard V3 passou;
+- frontend ainda está na branch desta frente; integrar com `main` somente de forma deliberada, preservando o commit paralelo de SEO/cestas.
