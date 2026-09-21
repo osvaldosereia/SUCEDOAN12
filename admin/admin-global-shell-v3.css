@@ -107,9 +107,37 @@ html[data-admin-global-shell="v3"] body[data-admin-module="stockCount"] .fast-ac
 
 /* Operational suite: same Admin shell, with its local tool switcher as secondary navigation. */
 .da-ops-secondary-nav{display:flex;gap:8px;overflow-x:auto;max-width:1440px;margin:0 auto;padding:18px 24px 2px;scrollbar-width:thin}
-.da-ops-secondary-nav a{flex:0 0 auto;min-height:42px;display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--da-global-border);border-radius:999px;background:#fff;color:var(--da-global-text);font-size:13px;font-weight:700;text-decoration:none}
-.da-ops-secondary-nav a.active{background:var(--da-global-brand-soft);border-color:#cce1d4;color:var(--da-global-brand-strong)}
-.da-ops-secondary-nav .ops-app-nav-icon{font-size:14px}
+/* Higher specificity than the original dark-header .ops-app-nav rules.
+   The cloned switcher lives on the light Admin canvas, so inactive tools need a real surface and dark text. */
+html[data-admin-global-shell="v3"] body.ops-suite .da-ops-secondary-nav a{
+  flex:1 0 150px;
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:8px 12px;
+  border:1px solid var(--da-global-border)!important;
+  border-radius:12px;
+  background:#fff!important;
+  color:var(--da-global-text)!important;
+  font-size:13px;
+  font-weight:750;
+  text-decoration:none;
+  box-shadow:0 1px 2px rgba(16,35,23,.04);
+}
+html[data-admin-global-shell="v3"] body.ops-suite .da-ops-secondary-nav a:hover{
+  background:var(--da-global-soft)!important;
+  border-color:#cbd8ce!important;
+}
+html[data-admin-global-shell="v3"] body.ops-suite .da-ops-secondary-nav a.active,
+html[data-admin-global-shell="v3"] body.ops-suite .da-ops-secondary-nav a[aria-current="page"]{
+  background:var(--ops-gold-soft,#fff7e4)!important;
+  border-color:#e2c56f!important;
+  color:#6f500e!important;
+  box-shadow:0 4px 12px rgba(16,35,23,.08);
+}
+html[data-admin-global-shell="v3"] body.ops-suite .da-ops-secondary-nav .ops-app-nav-icon{opacity:1;color:inherit;font-size:14px}
 html[data-admin-global-shell="v3"] body.ops-suite{background:var(--da-global-bg)}
 html[data-admin-global-shell="v3"] body.ops-suite .validity-main,
 html[data-admin-global-shell="v3"] body.ops-suite .basket-main,
