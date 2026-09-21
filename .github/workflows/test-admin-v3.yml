@@ -73,6 +73,7 @@ on:
       - 'scripts/test-papoai-commerce-personalization-preview-v1.mjs'
       - 'scripts/test-papoai-commerce-cart-reference-resolver-v1.mjs'
       - 'scripts/test-papoai-pending-executor-checkout-v1.mjs'
+      - 'scripts/test-papoai-order-confirmation-v1.mjs'
       - 'scripts/test-papoai-pending-replacement-confirmation-v1.mjs'
       - 'scripts/test-harden-papoai-addon-resolution-v1.mjs'
       - 'scripts/test-fix-papoai-cart-item-resolver-v1.mjs'
@@ -291,6 +292,8 @@ jobs:
         run: node scripts/test-papoai-pending-replacement-confirmation-v1.mjs
       - name: Validar executor pendente e checkout
         run: node scripts/test-papoai-pending-executor-checkout-v1.mjs
+      - name: Validar confirmação final do pedido PapoAI
+        run: node scripts/test-papoai-order-confirmation-v1.mjs
       - name: Validar Central de Relacionamento
         run: node scripts/test-cm-1-15-relationship-command-center.mjs
       - name: Validar readiness da homologação CM-1
