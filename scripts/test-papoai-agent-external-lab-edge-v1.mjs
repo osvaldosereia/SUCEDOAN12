@@ -49,3 +49,6 @@ assert.match(edge,/prepare_order_confirmation/);
 assert.match(edge,/set_payment_method/);
 assert.match(edge,/confirm_order/);
 assert.match(edge,/cart_changed_reconfirm/);
+assert.match(edge,/repeat_last_purchase/);
+assert.match(edge,/preview_papoai_commerce_repeat_last_purchase_v1/);
+assert.match(edge,/historical_substitution_count/);
