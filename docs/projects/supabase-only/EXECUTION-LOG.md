@@ -17,3 +17,9 @@
 - Validades convertida para Supabase autenticado;
 - documentação e CI anti-regressão iniciados;
 - próximas execuções: R2, R3 e R4 agendadas de hora em hora.
+
+- Cestas mobile agora usam o catálogo autenticado do Supabase; configurações Firebase removidas da UI ativa;
+- Kits mobile e o módulo de carrossel deixam de buscar produtos no Firebase e passam a usar o catálogo Supabase;
+- publicados em produção os runtimes Supabase-only de inventário, API administrativa e imagens;
+- verificação final de pausa: 0 pg_cron ativos, 0 ai_jobs abertos, 0 outbound_jobs abertos, 0 automation_workflows habilitados e image automation OFF;
+- cancelado, sem exclusão de histórico, um outbound_job antigo travado em processing.
