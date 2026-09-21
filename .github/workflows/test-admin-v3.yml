@@ -75,6 +75,9 @@ on:
       - 'scripts/test-papoai-pending-executor-checkout-v1.mjs'
       - 'scripts/test-papoai-executor-repeat-bling-v1.mjs'
       - 'scripts/test-papoai-product-choice-executor-v1.mjs'
+      - 'scripts/test-enforce-papoai-governor-question-cap-v1.mjs'
+      - 'scripts/test-papoai-conversation-governor-state-v1.mjs'
+      - 'scripts/test-papoai-conversation-governor-v1.mjs'
       - 'scripts/test-papoai-product-search-ranking-v1.mjs'
       - 'scripts/test-papoai-product-choice-standalone-cart-v1.mjs'
       - 'scripts/test-papoai-repeat-last-purchase-v1.mjs'
@@ -310,6 +313,12 @@ jobs:
         run: node scripts/test-papoai-product-search-ranking-v1.mjs
       - name: Validar executor de escolha de produto
         run: node scripts/test-papoai-product-choice-executor-v1.mjs
+      - name: Validar Governador de Conversa
+        run: node scripts/test-papoai-conversation-governor-v1.mjs
+      - name: Validar estado do Governador
+        run: node scripts/test-papoai-conversation-governor-state-v1.mjs
+      - name: Validar limite de perguntas do Governador
+        run: node scripts/test-enforce-papoai-governor-question-cap-v1.mjs
       - name: Validar confirmação final do pedido PapoAI
         run: node scripts/test-papoai-order-confirmation-v1.mjs
       - name: Validar Central de Relacionamento
