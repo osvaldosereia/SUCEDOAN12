@@ -1,0 +1,41 @@
+name: Admin Geral contracts
+
+on:
+  push:
+    branches:
+      - admin-geral-r1-r16-autonomous-20260919
+    paths:
+      - 'admin/**'
+      - 'video/**'
+      - 'tests/admin-*.test.mjs'
+      - 'docs/projects/admin-geral/**'
+      - '.github/workflows/admin-geral-contracts.yml'
+  pull_request:
+    paths:
+      - 'admin/**'
+      - 'video/**'
+      - 'tests/admin-*.test.mjs'
+      - 'docs/projects/admin-geral/**'
+      - '.github/workflows/admin-geral-contracts.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Admin Geral static contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in tests/admin-*.test.mjs; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
