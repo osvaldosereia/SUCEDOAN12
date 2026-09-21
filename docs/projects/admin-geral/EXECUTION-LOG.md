@@ -62,3 +62,12 @@
 - `admin-customer-r10-v2.js/css` criado e conectado como camada DOM-only para acessibilidade, touch >=44px, safe-area e aviso contextual de identidade protegida;
 - `tests/admin-r10-customer-v2-contract.test.mjs` criado para proteger gates e ausência de fetch/storage/persistência paralela;
 - nenhuma mutação de cliente, consentimento, proteção, outbound, canary ou dado real foi usada na validação estática/contratual.
+
+## 2026-09-20 — R10 lote 2 / conclusão + promoção R11
+- preflight: branch 150 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main, sem divergência paralela relevante;
+- `admin-customer-r10-v2.js` passou a marcar loading/vazios com semântica acessível e a proteger `data-identity-approve`/`data-identity-reject` contra duplo clique por captura + `aria-busy`, sem API/storage próprios;
+- confirmação e contrato funcional `customerOsApi('identity_review', ...)` permanecem em `app.js`; revisão registra decisão humana e explicitamente não faz merge automático;
+- `admin-customer-r10-v2.css` refinado para desktop estreito e Customer 360 full-height no mobile, com grids em uma coluna, tabs roláveis, touch >=44px e safe-area;
+- teste R10 ampliado para fail-closed sem token, limpeza de sessão 401, no-merge, guardas e responsividade;
+- nenhuma ação real de identidade, PIN, consentimento, suppressão, outbound ou canary foi executada;
+- R10 marcada DONE; R11 — Relacionamento, Atendimento, Inteligência e Aprendizados — promovida para IN_PROGRESS.
