@@ -422,29 +422,27 @@ export class CollectionsModule {
 
   async saveDraft() {
     if (!this.draft) return;
-    const config = this.reloadConfig();
     const result = normalizeCollectionForPublish(this.draft, this.type, this.store.state.products, this.store.state.queue);
     if (result.audit.errors.length) {
       this.onToast(result.audit.errors.join(' · '), 'error');
       return;
     }
-    const list = clone(this.currentList());
-    const index = this.originalId ? list.findIndex(collection => text(collection.id) === this.originalId) : -1;
-    if (index >= 0) list[index] = result.normalized;
-    else list.push(result.normalized);
     this.elements.collectionSave.disabled = true;
     this.elements.collectionSave.textContent = 'Salvando…';
     try {
-      const saved = await saveCollectionList(config, this.type, list, this.store.state.products, this.store.state.queue);
-      this.setCurrentList(saved.list);
-      this.onToast(`${this.type === 'kit' ? 'Kit' : 'Cesta'} salvo(a) no GitHub.`, 'success');
+      await ensureAdminAuthenticated();
+      const action = this.type === 'kit' ? 'save_kit' : 'save_basket';
+      const payload = this.type === 'kit' ? { kit: result.normalized } : { basket: result.normalized };
+      const saved = await adminProductsApi(action, payload);
+      this.setCurrentList(this.type === 'kit' ? (saved.kits || []) : (saved.baskets || []));
+      this.onToast(`${this.type === 'kit' ? 'Kit' : 'Cesta'} salvo(a) no Supabase.`, 'success');
       this.closeEditor();
       await this.onReload();
     } catch (error) {
       console.error(error);
       this.onToast(error?.message || String(error), 'error');
     } finally {
-      this.elements.collectionSave.textContent = 'Salvar e publicar';
+      this.elements.collectionSave.textContent = 'Salvar';
       this.render();
     }
   }
