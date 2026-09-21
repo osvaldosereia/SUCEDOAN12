@@ -46,13 +46,9 @@ function workspaceRoot(){
     document.querySelector('.relationship-shell,.si-page,.al-page,main.page,main.shell');
 }
 
-function markLocalHeaders(root){
-  const candidates=[
-    document.querySelector('body > header.topbar'),
-    root?.querySelector(':scope > header.si-topbar'),
-    root?.querySelector(':scope > header.al-topbar')
-  ];
-  candidates.filter(Boolean).forEach(node=>node.classList.add('da-local-module-header'));
+function markLocalHeaders(){
+  const header=document.querySelector('body > header.topbar');
+  if(header)header.classList.add('da-local-module-header');
 }
 
 function setMenu(open){
@@ -70,7 +66,7 @@ function mount(){
   if(document.documentElement.dataset.adminGlobalShell==='v3')return;
   const root=workspaceRoot();
   if(!root)return;
-  markLocalHeaders(root);
+  markLocalHeaders();
 
   const header=document.createElement('header');
   header.className='da-global-topbar';
