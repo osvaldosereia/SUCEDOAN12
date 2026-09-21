@@ -40,27 +40,24 @@
 - `main` avançou com SEO/dados públicos de cestas; mudança paralela não foi incorporada;
 - Relacionamento, Atendimento, Inteligência e Aprendizados receberam camada UI-only compartilhada, touch/mobile/safe-area e busy guards; revisão humana e gates preservados; R11 DONE; R12 promovida.
 
-## 2026-09-21 — R12 lote 1
+## 2026-09-21 — R12 lotes 1–2 / conclusão + promoção R13
 - Estúdio Criativo e VIDEO inventariados; `/video/` confirmado como superfície canônica e redirect legado preservado;
-- contratos VIDEO de busca/seleção, referências, prompt e timeline 4/6/8/10 s preservados;
-- criado `admin-r12-creative-v2.js/css`, UI-only, com touch/foco/safe-area e guarda curta contra repetição de ações de geração/criação/salvamento/publicação;
-- camada conectada ao VIDEO com aviso explícito de custo/IA e separação dos gates de publishing/outbound;
-- criado `tests/admin-r12-creative-v2-contract.test.mjs`;
-- nenhuma geração paga, publicação, outbound, Meta, WhatsApp, canary ou dado real foi acionado.
-
-## 2026-09-21 — R12 lote 2 / conclusão + promoção R13
-- preflight: branch divergiu apenas pelo commit paralelo `be2b3d54` de SEO/cestas em `main`; permaneceu fora do escopo e não foi incorporado;
-- camada `admin-r12-creative-v2.js/css` conectada ao Estúdio Criativo de forma aditiva, preservando `creative-studio.js`, helpers e persistência existentes;
-- feedbacks de criação/progresso/storyboard receberam `aria-live=polite`, mantendo aprovações explícitas antes da geração;
-- contrato R12 ampliado para wiring em VIDEO + Estúdio, UI-only, aprovações em etapas e feedback acessível;
-- nenhuma IA paga, publicação, outbound, Meta, WhatsApp, canary ou dado real foi acionado;
-- R12 marcada DONE; R13 Marketing completo promovida para IN_PROGRESS.
+- camada R12 UI-only conectada a VIDEO e Estúdio com touch/foco/safe-area, guardas e feedback acessível; aprovações explícitas antes de geração preservadas;
+- nenhuma IA paga/publicação/outbound acionada; R12 DONE; R13 promovida.
 
 ## 2026-09-21 — R13 / conclusão + promoção R14
 - preflight confirmou HEAD `aaf784be88fad5a33dea521f94b9b0cf3e1d08dc`; comparação com `main` mostrou somente divergência paralela de SEO/dados públicos de cestas, não incorporada;
-- documentação canônica do Marketing Admin / Organic Social auditada: publishing OFF, execution_mode off, kill_switch true, limite diário 0 e channel gates false; homologação de credenciais/canary continua bloqueio externo próprio;
-- `admin/marketing.html` e runtime existente foram inventariados antes da edição; autoridades funcionais permaneceram intactas;
-- criada e conectada camada `admin-r13-marketing-v2.js/css`, UI-only, com aviso fail-closed, tabs acessíveis, `aria-live`, touch >=44 px, safe-area, mobile estreito e busy guard contra duplo acionamento;
-- criado `tests/admin-r13-marketing-v2-contract.test.mjs` para proteger wiring, ausência de fetch/storage paralelo, linguagem fail-closed e requisitos mobile;
-- nenhuma publicação, outbound, Meta, Pinterest, WhatsApp, canary, IA paga ou dado real foi acionado;
-- R13 marcada DONE; R14 Logística, Financeiro, Bling e Fiscal promovida para IN_PROGRESS.
+- Marketing Admin auditado com publishing/execution/channel gates OFF e kill switch ativo;
+- criada camada R13 UI-only com acessibilidade/mobile/busy guard e contrato próprio; nenhuma publicação/canary/IA paga acionada;
+- R13 DONE; R14 promovida.
+
+## 2026-09-21 — R14 / conclusão + promoção R15
+- preflight confirmou HEAD inicial `81c046db23f7ffd6d7b5b2d77c45b68fde349d6b`; branch estava 184 commits à frente e 1 atrás de `main`; único commit paralelo em `main` continua sendo SEO/dados públicos de cestas e não foi incorporado;
+- Logística auditada: `admin-logistics-v1` exige JWT; dashboard/preview e rascunhos internos preservados; publicação de rota/provider externo/runtime continuam indisponíveis e `logisticsUiEnabled=false`;
+- Financeiro auditado: Central Financeira existente é read model; ledger append-only/server-only e gates de receipt/reversal/route close/reconciliation/fiscal projection/external reconciliation permanecem OFF; `financialAdminUiEnabled=false` preservado;
+- corrigido wiring condicionado de `financial-admin.js` no Admin, sem ativar a flag;
+- Bling continua protegido por `bling_order_sync_enabled=false` e gates próprios; nenhuma sincronização real executada;
+- criada camada `admin-r14-operations-v2.js/css`, sem transporte/persistência próprios, com touch >=44 px, safe-area, responsividade, aria-live e busy guard;
+- criado `tests/admin-r14-operations-v2-contract.test.mjs` para proteger gates OFF, wiring condicionado e ausência de transporte/persistência paralela;
+- nenhuma rota real, GPS, provider, financeiro real, SEFAZ, Bling, outbound, canary ou dado real foi acionado;
+- R14 marcada DONE; R15 Automações, Copiloto, Integrações e Saúde promovida para IN_PROGRESS.
