@@ -65,6 +65,14 @@
 - preflight obrigatório executado: HEAD inicial `e55cca468503d19a90d221e0bec28c9e4035e318`; branch 203 commits à frente e 1 atrás de `main`; único commit paralelo continua `be2b3d54` (SEO/dados públicos de cestas), não incorporado;
 - `admin/config.js` revalidado com gates sensíveis fail-closed (`humanServiceCenterUiEnabled`, `humanCopilotEnabled`, `financialAdminUiEnabled`, `experienceOrchestratorUiEnabled`, `automationBuilderUiEnabled`, `logisticsUiEnabled`, `commercialTruthUiEnabled` todos `false`);
 - criado `tests/admin-r16-final-contract.test.mjs` para amarrar contratos R1–R15 e princípios permanentes de segurança/isolamento;
-- criado workflow `.github/workflows/admin-geral-contracts.yml`, read-only e sem secrets/deploy, para executar todos os `tests/admin-*.test.mjs` com Node 22;
-- primeira execução do CI iniciada pelo push; ainda em andamento no fechamento deste lote, portanto R16 permanece IN_PROGRESS e não há homologação fictícia;
+- criado workflow `.github/workflows/admin-geral-contracts.yml`, read-only e sem secrets/deploy, para executar contratos do roadmap com Node 22;
+- primeira execução revelou uma asserção textual R15 com ordem incorreta; o contrato foi corrigido sem relaxar o requisito de runtime dormente;
 - nenhum Meta, publishing, outbound, canary, IA paga, Make runtime, Bling/SEFAZ, logística/financeiro real, PIN, cliente, pedido, identidade ou consentimento real foi acionado.
+
+## 2026-09-21 — R16 lote final / conclusão do roadmap
+- preflight final: HEAD `d4ebe785c1699b7ddea9a28e8e31e5319f250574`; branch 210 commits à frente e 1 atrás de `main`; divergência de `main` continua somente `be2b3d54`, não incorporada;
+- workflow `Admin Geral contracts` run `35581711967` concluiu `success` no HEAD `d4ebe785...`;
+- job `contracts` aprovou R2 Design System, R1 Navigation, R3 Context Navigation, R10 Customer, R11 Operations, R12 Creative, R13 Marketing, R14 Operations, R15 Systems e R16 final fail-closed audit;
+- gates externos permanecem fechados e nenhuma evidência/credencial/consentimento/canary foi fabricado;
+- pendências de Meta/Pinterest/WhatsApp, publishing/outbound, IA paga, Bling/SEFAZ, logística/financeiro real e dados reais permanecem explicitamente fora do DONE programável e exigem ação/evidência humana própria;
+- R16 marcada DONE; roadmap autônomo R1–R16 encerrado. Novas mudanças exigem nova demanda, regressão comprovada ou homologação humana específica.
