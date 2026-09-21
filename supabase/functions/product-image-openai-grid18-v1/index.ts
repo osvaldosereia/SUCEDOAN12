@@ -144,12 +144,12 @@ async function ensureBatch(sb){
   return q.data;
 }
 
-async function bestSource(sb,supabaseUrl,key,product,fb){
+async function bestSource(sb,supabaseUrl,key,product){
   let source=null,inspection=null;
   const forceResearch=product.image_ai_status==='source_rejected';
   if(!forceResearch){
     try{
-      source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product,fb);
+      source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product);
       const checked=await inspectSource(key,product,source);
       inspection=checked.inspection;
       if(checked.accepted)return{...source,inspection};
@@ -170,12 +170,10 @@ async function bestSource(sb,supabaseUrl,key,product,fb){
 }
 
 async function prepareOne(sb,supabaseUrl,key,batch,item,product){
-  if(!product)return{ok:false,item,error:'product_not_found',firebaseInactive:false};
+  if(!product)return{ok:false,item,error:'product_not_found'};
+  if(product.is_active!==true)return{ok:false,item,product,error:'product_inactive'};
   try{
-    const fb=await resolveFirebaseProduct(product);
-    if(!fb.active)return{ok:false,item,product,error:'firebase_inactive',firebaseInactive:true};
-    if(product.is_active!==true)await sb.from('products').update({is_active:true,updated_at:new Date().toISOString()}).eq('id',product.id);
-    const source=await bestSource(sb,supabaseUrl,key,product,fb);
+    const source=await bestSource(sb,supabaseUrl,key,product);
     await persistSource(sb,product,source,String(item.job_id),String(item.id),item.is_filler===true);
     const cell=await prepareCell(source);
     const path=`grid18/v2/prepared/${batch.id}/p${String(item.position).padStart(2,'0')}.png`;
@@ -187,7 +185,7 @@ async function prepareOne(sb,supabaseUrl,key,batch,item,product){
     }).eq('id',item.id);
     return{ok:true,item,product,result:{position:item.position,ok:true,filler:item.is_filler===true,source_origin:source.origin}};
   }catch(e){
-    return{ok:false,item,product,error:clean(e instanceof Error?e.message:e,260),firebaseInactive:false};
+    return{ok:false,item,product,error:clean(e instanceof Error?e.message:e,260)};
   }
 }
 
@@ -201,7 +199,7 @@ async function prepareStage(sb,supabaseUrl,key,batch,items){
   const outcomes=await Promise.all(todo.map(item=>prepareOne(sb,supabaseUrl,key,batch,item,products.get(String(item.product_id)))));
   const failed=outcomes.find(x=>!x.ok);
   if(failed){
-    await releaseBatchForMember(sb,batch,items,failed.item,failed.error,{firebaseInactive:failed.firebaseInactive===true});
+    await releaseBatchForMember(sb,batch,items,failed.item,failed.error);
     return{stage:'error',error:failed.error,product_id:failed.product?.id||failed.item.product_id};
   }
   const q=await sb.from('product_image_batch_items').select('id',{count:'exact',head:true}).eq('batch_id',batch.id).eq('status','prepared');
