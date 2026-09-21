@@ -14,6 +14,10 @@ export function deterministicCommerceIntent(message){
   const m=clean(message,500).toLowerCase();
   if(!m)return null;
   if(/^(sim|s|pode|pode sim|confirmo|confirma|isso|isso mesmo|ok|okay|beleza|pode trocar|troca)$/i.test(m))return {intent:'confirm_pending',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+  if(/\bpix\b/.test(m))return {intent:'set_payment_method',basket:'',query:'pix',source_query:'',replacement_query:'',quantity:0};
+  if(/\b(dinheiro|cash)\b/.test(m))return {intent:'set_payment_method',basket:'',query:'dinheiro',source_query:'',replacement_query:'',quantity:0};
+  if(/\b(cart[aã]o de cr[eé]dito|cr[eé]dito|cart[aã]o)\b/.test(m)&&!/\b(alimenta[cç][aã]o|refei[cç][aã]o)\b/.test(m))return {intent:'set_payment_method',basket:'',query:'cartao de credito',source_query:'',replacement_query:'',quantity:0};
+  if(/\b(cart[aã]o.*alimenta[cç][aã]o|cart[aã]o.*refei[cç][aã]o|alimenta[cç][aã]o|refei[cç][aã]o)\b/.test(m))return {intent:'set_payment_method',basket:'',query:'cartao alimentacao',source_query:'',replacement_query:'',quantity:0};
   if(/^(n[aã]o|nao|n|cancela|cancelar|deixa|deixa pra l[aá]|esquece)$/i.test(m))return {intent:'cancel_pending',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   if(/\b(fechar|finalizar|concluir|confirmar)\b.*\b(pedido|compra)\b|\b(pedido|compra)\b.*\b(fechar|finalizar|concluir)\b/.test(m))return {intent:'checkout_readiness',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   if(/\b(resumo|como ficou|quanto ficou|ver pedido|meu pedido)\b/.test(m))return {intent:'cart_summary',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
@@ -35,7 +39,7 @@ export async function classifyCommerceIntent({message,history,apiKey,model='gpt-
   const schema={
     type:'object',additionalProperties:false,
     properties:{
-      intent:{type:'string',enum:['list_baskets','basket_detail','start_basket','search_products','offers','cart_state','cart_summary','checkout_readiness','customer_context','set_basket_quantity','set_addon_quantity','replace_basket_item','confirm_pending','cancel_pending','handoff','general']},
+      intent:{type:'string',enum:['list_baskets','basket_detail','start_basket','search_products','offers','cart_state','cart_summary','checkout_readiness','customer_context','set_basket_quantity','set_addon_quantity','replace_basket_item','set_payment_method','confirm_pending','cancel_pending','handoff','general']},
       basket:{type:'string'},
       query:{type:'string'},
       source_query:{type:'string'},
@@ -57,6 +61,7 @@ export async function classifyCommerceIntent({message,history,apiKey,model='gpt-
         'Para retirar/aumentar item que já faz parte da cesta use set_basket_quantity: source_query é o produto e quantity é a quantidade final desejada.',
         'Para adicionar um produto novo ao pedido use set_addon_quantity: query é o produto desejado e quantity é a quantidade final pedida.',
         'Para trocar produto use replace_basket_item: source_query é o item atual e replacement_query é o desejado.',
+        'Se o cliente informar forma de pagamento use set_payment_method e coloque em query exatamente uma destas ideias: pix, dinheiro, cartao de credito ou cartao alimentacao.',
         'Se o cliente estiver confirmando uma ação pendente use confirm_pending; se estiver recusando/cancelando use cancel_pending.',
         'Se pedir para fechar/finalizar a compra use checkout_readiness. Se pedir como ficou o pedido use cart_summary.',
         'Se pedir pessoa/atendente use handoff. Se não souber, general.'
