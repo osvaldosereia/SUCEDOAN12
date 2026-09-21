@@ -54,3 +54,5 @@ jobs:
         run: node tests/admin-r16-final-contract.test.mjs
       - name: Visual standard V3
         run: node tests/admin-visual-standard-v3-contract.test.mjs
+      - name: Global shell V3
+        run: node tests/admin-global-shell-v3-contract.test.mjs
