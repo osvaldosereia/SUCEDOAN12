@@ -52,6 +52,67 @@ function validGtin(value: unknown) {
   return (10 - (sum % 10)) % 10 === expected;
 }
 
+async function basketCatalog(sb: any) {
+  const { data: templates, error } = await sb.from("basket_templates")
+    .select("id,sku,name,description,image_url,base_price,is_active,sort_order,rules,updated_at")
+    .order("sort_order",{ascending:true}).order("name",{ascending:true});
+  if (error) throw new Error("basket_catalog_failed:" + error.message);
+  const ids=(templates||[]).map((x:any)=>x.id);
+  let items:any[]=[];
+  if(ids.length){
+    const result=await sb.from("basket_template_items")
+      .select("basket_id,quantity,removable,quantity_editable,min_quantity,max_quantity,substitution_group,pricing_rule,sort_order,product:products(id,sku,gtin,name,price,image_url,brand,packaging,is_active)")
+      .in("basket_id",ids).order("sort_order",{ascending:true});
+    if(result.error)throw new Error("basket_items_failed:"+result.error.message);
+    items=result.data||[];
+  }
+  return (templates||[]).map((t:any)=>{
+    const rules=t.rules&&typeof t.rules==="object"?t.rules:{};
+    return {
+      id:text(rules.legacy_id||t.sku,160),codigo:text(t.sku,160),nome:text(t.name,300),
+      descricao:text(t.description,1200),preco:Number(t.base_price||0),imagem:text(t.image_url,1200),
+      ativo:t.is_active!==false,ordem:Number(t.sort_order||0),updated_at:t.updated_at,
+      produtos:items.filter((i:any)=>i.basket_id===t.id).map((i:any)=>{
+        const p=Array.isArray(i.product)?i.product[0]:i.product||{};
+        const snapshot=i.pricing_rule&&typeof i.pricing_rule==="object"?i.pricing_rule:{};
+        return {...snapshot,qtd:Number(i.quantity||1),codigo:text(p.sku||p.gtin||p.id,160),
+          trocas_permitidas:Array.isArray(snapshot.trocas_permitidas)?snapshot.trocas_permitidas:[]};
+      })
+    };
+  });
+}
+async function kitCatalog(sb:any){
+  const {data:templates,error}=await sb.from("kit_templates")
+    .select("id,legacy_id,sku,name,description,image_url,price,previous_price,discount_percent,stock_limit,stock_available,starts_on,ends_on,is_active,active_until_stock_zero,metadata,sort_order,updated_at")
+    .order("sort_order",{ascending:true}).order("name",{ascending:true});
+  if(error)throw new Error("kit_catalog_failed:"+error.message);
+  const ids=(templates||[]).map((x:any)=>x.id);let items:any[]=[];
+  if(ids.length){
+    const result=await sb.from("kit_template_items")
+      .select("kit_id,quantity,substitute_product_codes,pricing_snapshot,sort_order,product:products(id,sku,gtin,name,price,image_url,brand,packaging,is_active)")
+      .in("kit_id",ids).order("sort_order",{ascending:true});
+    if(result.error)throw new Error("kit_items_failed:"+result.error.message);
+    items=result.data||[];
+  }
+  return (templates||[]).map((t:any)=>{
+    const meta=t.metadata&&typeof t.metadata==="object"?t.metadata:{};
+    const base=meta.admin_payload&&typeof meta.admin_payload==="object"?meta.admin_payload:{};
+    return {...base,id:text(t.legacy_id,160),codigo:text(t.sku,160),nome:text(t.name,300),
+      descricao:text(t.description,4000),imagem:text(t.image_url,1200),preco:Number(t.price||0),
+      preco_novo:Number(t.price||0),preco_anterior:t.previous_price==null?null:Number(t.previous_price),
+      desconto_percentual:t.discount_percent==null?null:Number(t.discount_percent),
+      limite_kits:t.stock_limit,estoque_disponivel:t.stock_available,data_inicio:t.starts_on||"",
+      data_fim:t.ends_on||"",ativo:t.is_active===true,ativo_ate_estoque_zero:t.active_until_stock_zero===true,
+      atualizado_em:t.updated_at,
+      produtos:items.filter((i:any)=>i.kit_id===t.id).map((i:any)=>{
+        const p=Array.isArray(i.product)?i.product[0]:i.product||{};
+        const snap=i.pricing_snapshot&&typeof i.pricing_snapshot==="object"?i.pricing_snapshot:{};
+        return {...snap,qtd:Number(i.quantity||1),codigo:text(p.sku||p.gtin||p.id,160),
+          substitutos:Array.isArray(i.substitute_product_codes)?i.substitute_product_codes:[]};
+      })};
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
@@ -79,7 +140,7 @@ Deno.serve(async (req: Request) => {
   const action = text(body?.action || "products", 40).toLowerCase();
   const writable = admin.role !== "viewer";
 
-  if (action === "health") return json({ ok: true, source: "supabase_only", version: 2, authenticated: true });
+  if (action === "health") return json({ ok: true, source: "supabase_only", version: 3, authenticated: true, collections: "supabase" });
 
   if (action === "catalog") {
     const limit = int(body?.limit, 1, 2500);
@@ -112,6 +173,54 @@ Deno.serve(async (req: Request) => {
       product = data || null;
     }
     return json({ ok: true, source: "supabase", product });
+  }
+
+  if (action === "basket_catalog") {
+    try { return json({ok:true,source:"supabase",baskets:await basketCatalog(sb)}); }
+    catch(error){return json({ok:false,error:"basket_catalog_failed",detail:String((error as Error)?.message||error)},400);}
+  }
+
+  if (action === "kit_catalog") {
+    try { return json({ok:true,source:"supabase",kits:await kitCatalog(sb)}); }
+    catch(error){return json({ok:false,error:"kit_catalog_failed",detail:String((error as Error)?.message||error)},400);}
+  }
+
+  if (action === "save_basket") {
+    if(!writable)return json({ok:false,error:"read_only"},403);
+    const payload=body?.basket&&typeof body.basket==="object"?body.basket:null;
+    if(!payload)return json({ok:false,error:"basket_required"},400);
+    const result=await sb.rpc("admin_save_basket_template_v1",{p_payload:payload,p_user_id:userData.user.id});
+    if(result.error)return json({ok:false,error:"basket_save_failed",detail:result.error.message},400);
+    return json({ok:true,source:"supabase",id:result.data,baskets:await basketCatalog(sb)});
+  }
+
+  if (action === "save_kit") {
+    if(!writable)return json({ok:false,error:"read_only"},403);
+    const payload=body?.kit&&typeof body.kit==="object"?body.kit:null;
+    if(!payload)return json({ok:false,error:"kit_required"},400);
+    const result=await sb.rpc("admin_save_kit_template_v1",{p_payload:payload,p_user_id:userData.user.id});
+    if(result.error)return json({ok:false,error:"kit_save_failed",detail:result.error.message},400);
+    return json({ok:true,source:"supabase",id:result.data,kits:await kitCatalog(sb)});
+  }
+
+  if (action === "archive_basket") {
+    if(!writable)return json({ok:false,error:"read_only"},403);
+    const identity=text(body?.id,160);if(!identity)return json({ok:false,error:"id_required"},400);
+    const catalog=await basketCatalog(sb);const found=catalog.find((x:any)=>x.id===identity||x.codigo===identity);
+    if(!found)return json({ok:false,error:"basket_not_found"},404);
+    const lookup=await sb.from("basket_templates").select("id").eq("sku",found.codigo).maybeSingle();
+    if(lookup.error||!lookup.data)return json({ok:false,error:"basket_not_found"},404);
+    const saved=await sb.from("basket_templates").update({is_active:false,updated_by:userData.user.id,updated_at:new Date().toISOString()}).eq("id",lookup.data.id);
+    if(saved.error)return json({ok:false,error:"basket_archive_failed",detail:saved.error.message},400);
+    return json({ok:true,source:"supabase",baskets:await basketCatalog(sb)});
+  }
+
+  if (action === "archive_kit") {
+    if(!writable)return json({ok:false,error:"read_only"},403);
+    const identity=text(body?.id,160);if(!identity)return json({ok:false,error:"id_required"},400);
+    const saved=await sb.from("kit_templates").update({is_active:false,updated_by:userData.user.id,updated_at:new Date().toISOString()}).eq("legacy_id",identity);
+    if(saved.error)return json({ok:false,error:"kit_archive_failed",detail:saved.error.message},400);
+    return json({ok:true,source:"supabase",kits:await kitCatalog(sb)});
   }
 
   if (action === "taxonomy") {
