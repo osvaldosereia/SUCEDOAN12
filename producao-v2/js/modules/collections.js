@@ -2,9 +2,7 @@ import {
   auditCollection, auditCollections, collectionSearch, normalizeCollectionForPublish, resolveCollectionItem,
 } from '../core/collections.js?admin_build=20260814-cestas-limites-v1';
 import { clone, debounce, escapeHtml, money, number, productCode, productKey, productName, text } from '../core/utils.js';
-import { saveCollectionList } from '../services/collections.js?admin_build=20260814-cestas-limites-v1';
-import { upsertBase64File } from '../services/github-binary.js';
-import { callMake, compactKitForMake, extractMakeImage, unwrapMakeResult } from '../services/make.js';
+import { adminProductsApi, ensureAdminAuthenticated } from '../../../admin/admin-secure-api-v1.js';
 
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" fill="#f1f2ef"/><text x="50%" y="53%" text-anchor="middle" fill="#899087" font-family="Arial" font-size="12">sem imagem</text></svg>')}`;
 const LOW_STOCK_LIMIT = 30;
