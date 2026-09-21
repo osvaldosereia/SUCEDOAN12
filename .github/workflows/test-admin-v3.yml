@@ -12,6 +12,7 @@ on:
       - 'supabase/functions/papo-comprar-webhook-v1/**'
       - 'supabase/functions/papo-external-agent-v1/**'
       - 'supabase/functions/_shared/papoai-agent-external-contract-v1.mjs'
+      - 'supabase/functions/_shared/papoai-commerce-intent-v1.mjs'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
       - 'supabase/functions/whatsapp-meta-direct-v1/**'
@@ -67,6 +68,8 @@ on:
       - 'scripts/test-papoai-agent-external-contract-v1.mjs'
       - 'scripts/test-papoai-agent-external-lab-db-v1.mjs'
       - 'scripts/test-papoai-agent-external-lab-edge-v1.mjs'
+      - 'scripts/test-papoai-commerce-intent-v1.mjs'
+      - 'scripts/test-papoai-commerce-brain-round1-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -87,6 +90,7 @@ on:
       - 'supabase/functions/papo-comprar-webhook-v1/**'
       - 'supabase/functions/papo-external-agent-v1/**'
       - 'supabase/functions/_shared/papoai-agent-external-contract-v1.mjs'
+      - 'supabase/functions/_shared/papoai-commerce-intent-v1.mjs'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
       - 'supabase/functions/whatsapp-meta-direct-v1/**'
@@ -142,6 +146,8 @@ on:
       - 'scripts/test-papoai-agent-external-contract-v1.mjs'
       - 'scripts/test-papoai-agent-external-lab-db-v1.mjs'
       - 'scripts/test-papoai-agent-external-lab-edge-v1.mjs'
+      - 'scripts/test-papoai-commerce-intent-v1.mjs'
+      - 'scripts/test-papoai-commerce-brain-round1-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -258,6 +264,10 @@ jobs:
         run: node scripts/test-papoai-agent-external-lab-db-v1.mjs
       - name: Validar isolamento do endpoint Agente Externo
         run: node scripts/test-papoai-agent-external-lab-edge-v1.mjs
+      - name: Validar roteador Commerce Brain
+        run: node scripts/test-papoai-commerce-intent-v1.mjs
+      - name: Validar motor comercial PapoAI
+        run: node scripts/test-papoai-commerce-brain-round1-v1.mjs
       - name: Validar Central de Relacionamento
         run: node scripts/test-cm-1-15-relationship-command-center.mjs
       - name: Validar readiness da homologação CM-1
