@@ -3,13 +3,12 @@ import { money, number, productCode, productImage, productKey, productName, text
 import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js';
 import { callMake, compactKitForMake, extractMakeImage, unwrapMakeResult } from '../producao-v2/js/services/make.js?build=20260805-kit-editor-v4';
 import { upsertBase64File } from '../producao-v2/js/services/github-binary.js';
+import { adminProductsApi, ensureAdminAuthenticated } from '../admin/admin-secure-api-v1.js';
 
 const STORAGE_KEY = 'da_admin_v2_config';
 const CONTRACT_VERSION = '2026-08-05-kit-editor-v4';
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="#f1f3f0"/><text x="50%" y="52%" text-anchor="middle" fill="#879087" font-family="Arial" font-size="28">capa ainda não gerada</text></svg>')}`;
 const DEFAULT_CONFIG = {
-  firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
-  productsNode: 'produtos',
   writeMode: true,
   collectionsWriteMode: true,
   githubToken: '',
@@ -50,6 +49,32 @@ function saveConfig(next) {
   state.config = { ...getConfig(), ...next };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
 }
+function adaptSupabaseProduct(p = {}) {
+  return {
+    ...p,
+    firebaseKey: '',
+    codigo: text(p.sku || p.gtin || p.id),
+    nome: text(p.name),
+    preco: number(p.price),
+    preco_custo: number(p.cost),
+    estoque: number(p.stock),
+    url_imagem: text(p.image_url),
+    marca: text(p.brand),
+    categoria: text(p.category),
+    subcategoria: text(p.subcategory),
+    embalagem: text(p.packaging),
+    gondola: text(p.gondola),
+    prateleira: text(p.shelf),
+    validade: text(p.validity_date),
+    situacao: p.is_active === false ? 'I' : 'A',
+    ativo: p.is_active !== false,
+  };
+}
+async function loadProductsFromSupabase() {
+  const data = await adminProductsApi('catalog', { limit: 2500 });
+  return (data.products || []).map(adaptSupabaseProduct);
+}
+
 function round(value) { return Math.round(number(value) * 100) / 100; }
 function brl(value) { return round(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\u00a0/g, ' '); }
 function localDate() {
@@ -165,11 +190,7 @@ async function loadData() {
   $('#connectionChip').textContent = 'Atualizando dados…';
   $('#connectionChip').className = 'chip warn';
   try {
-    const firebaseBase = text(state.config.firebaseUrl).replace(/\/+$/, '');
-    const response = await fetch(`${firebaseBase}/${encodeURIComponent(state.config.productsNode || 'produtos')}.json?_=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`Firebase retornou ${response.status}`);
-    const raw = await response.json();
-    state.products = Object.entries(raw || {}).map(([firebaseKey, value]) => ({ ...(value || {}), firebaseKey, _key: firebaseKey }));
+    state.products = await loadProductsFromSupabase();
     if (text(state.config.githubToken)) {
       const collections = await loadCollections(state.config);
       state.kits = collections.kits || [];
@@ -757,4 +778,5 @@ state.config = getConfig();
 syncStateToEditor();
 renderAll();
 await initDetector();
+await ensureAdminAuthenticated();
 await loadData();
