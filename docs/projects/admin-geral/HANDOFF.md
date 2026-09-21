@@ -27,6 +27,6 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 
 ## Ponto de retomada
 R1–R14 DONE. R15 IN_PROGRESS — Automações, Copiloto, Integrações e Saúde.
-R14 integrou de forma segura as superfícies dormentes de Logística e Financeiro, corrigiu o wiring condicionado da Central Financeira e adicionou camada UX/contrato sem ativar runtime. Logística/Driver App/GPS/provider, financeiro real/conciliação externa/fiscal e Bling permanecem atrás de gates OFF e ações humanas próprias.
+R15 lote 1 inventariou Automation Builder e Copiloto, preservando `automationBuilderUiEnabled=false` e `humanCopilotEnabled=false`; criou `admin-r15-systems-v2.js/css` e contrato próprio para UX/mobile/busy guard sem transporte ou persistência paralela. Nenhum runtime, IA paga ou outbound foi acionado.
 `main` permanece divergente apenas por SEO/dados públicos de cestas, fora do escopo atual; não incorporar automaticamente.
-Próxima execução: inventariar Automation Builder, Copiloto, integrações e saúde reais. Preservar `automationBuilderUiEnabled=false`, `humanCopilotEnabled=false`, IA paga, outbound e providers externos. Melhorar somente UX, observabilidade e contratos seguros sem executar automações ou atingir clientes/dados reais.
+Próxima execução: inventariar superfícies restantes de integrações e saúde/observabilidade, seus gates e contratos. Integrar apenas UX/observabilidade segura, sem probes destrutivos, providers reais, IA paga, outbound ou clientes/dados reais. Se os critérios programáveis da R15 forem satisfeitos, marcar DONE e promover R16.
