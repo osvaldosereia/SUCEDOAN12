@@ -24,6 +24,10 @@ Atualizado: 2026-09-21
 
 ## Próximo gate
 
-Aplicar a migration e deployar `papoai-agent-external-lab-v1` dormente. Depois configurar um Agente Externo isolado no PapoAI e fazer a prova física.
+Aplicar a migration e deployar `papo-external-agent-v1` dormente. Depois configurar um Agente Externo isolado no PapoAI e fazer a prova física.
 
 Nenhuma capacidade será marcada `verified_lab` por inferência.
+
+## Ruling de implementação
+
+O projeto Supabase atingiu o limite de Edge Functions. Como `papo-external-agent-v1` já existia e apresentou zero sessões gravadas, a R0-A reutiliza esse slug em vez de criar uma função adicional. A versão implantada anterior foi capturada no GitHub antes da mudança e pode ser restaurada pelo histórico.
