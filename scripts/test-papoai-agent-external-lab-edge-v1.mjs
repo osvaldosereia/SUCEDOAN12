@@ -55,3 +55,8 @@ assert.match(edge,/historical_substitution_count/);
 assert.ok(edge.includes("intent.intent==='greeting'"));
 assert.ok(edge.includes("get_papoai_commerce_customer_snapshot_v2"));
 assert.ok(edge.includes("Bem-vindo à Dona Antônia"));
+assert.ok(edge.includes("propose_product_choice"));
+assert.ok(edge.includes("select_product_choice"));
+assert.ok(edge.includes("numberedProductsText"));
+assert.ok(edge.includes("selection_out_of_range"));
+assert.ok(edge.includes("product_selection_required"));
