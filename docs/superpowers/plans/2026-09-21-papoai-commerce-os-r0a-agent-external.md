@@ -4,7 +4,7 @@
 
 **Goal:** Build and deploy a fail-closed laboratory endpoint that proves PapoAI Agent External can call Dona Antônia's Supabase backend and receive a deterministic response, without invoking OpenAI, commerce, orders, campaigns, Meta Direct, or Bling.
 
-**Architecture:** A new provider-specific Edge Function `papoai-agent-external-lab-v1` parses the PapoAI Agent External contract through a pure shared module, reuses the existing canonical adapter ingest for identity/conversation, and stores only lab state/evidence in new server-only tables. Provider capabilities are promoted only from observed evidence; all unknown features remain disabled.
+**Architecture:** A new provider-specific Edge Function `papo-external-agent-v1` parses the PapoAI Agent External contract through a pure shared module, reuses the existing canonical adapter ingest for identity/conversation, and stores only lab state/evidence in new server-only tables. Provider capabilities are promoted only from observed evidence; all unknown features remain disabled.
 
 **Tech Stack:** Supabase PostgreSQL, Supabase Vault, Supabase Edge Functions/Deno 2, `@supabase/supabase-js@2.112.3`, Node.js 22 tests, PGlite database tests, GitHub Actions.
 
@@ -41,7 +41,7 @@
 - Create `scripts/test-papoai-agent-external-contract-v1.mjs` — unit tests for the shared contract.
 - Create `supabase/migrations/20260921174500_papoai_agent_external_lab_core_v1.sql` — capability evidence, lab config, session/call ledger, Vault secret getter, service-role functions.
 - Create `scripts/test-papoai-agent-external-lab-db-v1.mjs` — PGlite tests for fail-closed DB defaults, RLS-facing contract, idempotency, capability transitions.
-- Create `supabase/functions/papoai-agent-external-lab-v1/index.ts` — external Agent lab endpoint.
+- Create `supabase/functions/papo-external-agent-v1/index.ts` — external Agent lab endpoint.
 - Create `scripts/test-papoai-agent-external-lab-edge-v1.mjs` — source/contract tests for the Edge Function.
 - Modify `supabase/config.toml` — explicit `verify_jwt=false` entry for the custom-auth webhook.
 - Modify `.github/workflows/test-admin-v3.yml` — CI path triggers, Deno check, and three new test commands.
@@ -447,7 +447,7 @@ git commit -m "feat: add PapoAI external agent lab core"
 ### Task 3: Isolated Edge Function for PapoAI Agent External
 
 **Files:**
-- Create: `supabase/functions/papoai-agent-external-lab-v1/index.ts`
+- Create: `supabase/functions/papo-external-agent-v1/index.ts`
 - Create: `scripts/test-papoai-agent-external-lab-edge-v1.mjs`
 - Modify: `supabase/config.toml`
 
@@ -457,7 +457,7 @@ git commit -m "feat: add PapoAI external agent lab core"
   - Task 2 lab config/capability tables and Vault getter;
   - existing `ingest_channel_adapter_event_v1`.
 - Produces:
-  - HTTP POST endpoint `papoai-agent-external-lab-v1`;
+  - HTTP POST endpoint `papo-external-agent-v1`;
   - 401 invalid secret;
   - 400 invalid JSON/message/phone;
   - 200 deterministic lab text, handoff, or silent response;
@@ -472,7 +472,7 @@ Create `scripts/test-papoai-agent-external-lab-edge-v1.mjs` that reads the sourc
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
-const edge=fs.readFileSync('supabase/functions/papoai-agent-external-lab-v1/index.ts','utf8');
+const edge=fs.readFileSync('supabase/functions/papo-external-agent-v1/index.ts','utf8');
 const config=fs.readFileSync('supabase/config.toml','utf8');
 
 assert.match(edge,/papoai-agent-external-contract-v1\.mjs/);
@@ -494,7 +494,7 @@ assert.doesNotMatch(edge,/room_start_for_conversation_v1/);
 assert.doesNotMatch(edge,/orders|bling_commands|marketing_campaign/i);
 assert.doesNotMatch(edge,/service[_-]?role.*console|console\.log\([^)]*token/i);
 
-assert.match(config,/\[functions\.papoai-agent-external-lab-v1\][\s\S]*verify_jwt\s*=\s*false/);
+assert.match(config,/\[functions\.papo-external-agent-v1\][\s\S]*verify_jwt\s*=\s*false/);
 
 console.log('PASS: PapoAI Agent External Edge contract is isolated');
 ```
@@ -519,7 +519,7 @@ Expected: FAIL because the Edge Function does not exist.
 
 - [ ] **Step 3: Implement the Edge Function**
 
-Create `supabase/functions/papoai-agent-external-lab-v1/index.ts`.
+Create `supabase/functions/papo-external-agent-v1/index.ts`.
 
 Required request sequence:
 
@@ -567,7 +567,7 @@ Update `supabase/config.toml`:
 
 ```toml
 # PapoAI Agent External lab: public provider webhook with dedicated Vault secret checked inside the handler.
-[functions.papoai-agent-external-lab-v1]
+[functions.papo-external-agent-v1]
 verify_jwt = false
 ```
 
@@ -576,7 +576,7 @@ verify_jwt = false
 Run:
 
 ```bash
-deno check supabase/functions/papoai-agent-external-lab-v1/index.ts
+deno check supabase/functions/papo-external-agent-v1/index.ts
 node scripts/test-papoai-agent-external-contract-v1.mjs
 node scripts/test-papoai-agent-external-lab-edge-v1.mjs
 ```
@@ -586,7 +586,7 @@ Expected: all PASS / no Deno errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/functions/papoai-agent-external-lab-v1/index.ts supabase/config.toml scripts/test-papoai-agent-external-lab-edge-v1.mjs
+git add supabase/functions/papo-external-agent-v1/index.ts supabase/config.toml scripts/test-papoai-agent-external-lab-edge-v1.mjs
 git commit -m "feat: add PapoAI external agent lab endpoint"
 ```
 
@@ -609,12 +609,12 @@ git commit -m "feat: add PapoAI external agent lab endpoint"
 Extend `scripts/test-papoai-agent-external-lab-edge-v1.mjs` to load `.github/workflows/test-admin-v3.yml` and assert it contains:
 
 ```js
-assert.match(ci,/supabase\/functions\/papoai-agent-external-lab-v1\/\*\*/);
+assert.match(ci,/supabase\/functions\/papo-external-agent-v1\/\*\*/);
 assert.match(ci,/supabase\/migrations\/\*papoai_agent_external_lab\*/);
 assert.match(ci,/scripts\/test-papoai-agent-external-contract-v1\.mjs/);
 assert.match(ci,/scripts\/test-papoai-agent-external-lab-db-v1\.mjs/);
 assert.match(ci,/scripts\/test-papoai-agent-external-lab-edge-v1\.mjs/);
-assert.match(ci,/deno check supabase\/functions\/papoai-agent-external-lab-v1\/index\.ts/);
+assert.match(ci,/deno check supabase\/functions\/papo-external-agent-v1\/index\.ts/);
 ```
 
 - [ ] **Step 2: Run the test to verify RED**
@@ -630,14 +630,14 @@ Expected: FAIL on missing CI paths/commands.
 - [ ] **Step 3: Update CI**
 
 In both `push.paths` and `pull_request.paths`, add:
-- `supabase/functions/papoai-agent-external-lab-v1/**`;
+- `supabase/functions/papo-external-agent-v1/**`;
 - `supabase/functions/_shared/papoai-agent-external-contract-v1.mjs`;
 - `supabase/migrations/*papoai_agent_external_lab*`;
 - the three new test scripts.
 
 In `Validar sintaxe do Admin oficial`, add:
 ```bash
-deno check supabase/functions/papoai-agent-external-lab-v1/index.ts
+deno check supabase/functions/papo-external-agent-v1/index.ts
 ```
 
 Add three explicit steps:
@@ -672,7 +672,7 @@ Add three explicit steps:
 
 `R0-A-AGENT-EXTERNAL-RUNBOOK.md` must contain:
 1. deploy prerequisites;
-2. exact function URL shape `https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/papoai-agent-external-lab-v1`;
+2. exact function URL shape `https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/papo-external-agent-v1`;
 3. PapoAI Agent External setup fields to inspect;
 4. configure POST + `X-API-Key`;
 5. enable lab only immediately before the authorized physical test;
@@ -693,7 +693,7 @@ Run:
 node scripts/test-papoai-agent-external-contract-v1.mjs
 node scripts/test-papoai-agent-external-lab-db-v1.mjs
 node scripts/test-papoai-agent-external-lab-edge-v1.mjs
-deno check supabase/functions/papoai-agent-external-lab-v1/index.ts
+deno check supabase/functions/papo-external-agent-v1/index.ts
 node scripts/test-cm-1-14-papoai-adapter.mjs
 ```
 
@@ -774,7 +774,7 @@ Also verify no anon/authenticated privileges on the four tables.
 
 - [ ] **Step 4: Deploy the Edge Function dormant**
 
-Deploy `papoai-agent-external-lab-v1` with `verify_jwt=false`.
+Deploy `papo-external-agent-v1` with `verify_jwt=false`.
 
 Do not enable the DB lab flag yet.
 
@@ -860,7 +860,7 @@ node scripts/test-papoai-agent-external-contract-v1.mjs
 node scripts/test-papoai-agent-external-lab-db-v1.mjs
 node scripts/test-papoai-agent-external-lab-edge-v1.mjs
 node scripts/test-cm-1-14-papoai-adapter.mjs
-deno check supabase/functions/papoai-agent-external-lab-v1/index.ts
+deno check supabase/functions/papo-external-agent-v1/index.ts
 ```
 
 Then verify in Supabase:
