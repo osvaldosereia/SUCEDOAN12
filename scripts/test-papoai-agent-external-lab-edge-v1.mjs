@@ -4,7 +4,7 @@ const edgePath='supabase/functions/papo-external-agent-v1/index.ts';
 assert.ok(fs.existsSync(edgePath),'edge function must exist');
 const edge=fs.readFileSync(edgePath,'utf8');
 const config=fs.readFileSync('supabase/config.toml','utf8');
-assert.match(edge,/papoai-agent-external-contract-v1\.mjs/);
+assert.match(edge,/papoai-agent-external-contract-v1\.mjs/);\nassert.match(edge,/papoai-commerce-runtime-v1\.mjs/);\nassert.match(edge,/runPapoAiCommerceTurn/);
 assert.match(edge,/get_papoai_agent_external_lab_key_v1/);
 assert.match(edge,/x-api-key/i);
 assert.match(edge,/safeEqual/);
