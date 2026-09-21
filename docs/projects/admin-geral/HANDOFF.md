@@ -27,5 +27,5 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 
 ## Ponto de retomada
 R1–R9 DONE. R10 IN_PROGRESS — Clientes, identidade e Customer 360.
-R9 foi fechada preservando `pedidos-v2.js` e o backend read-only `admin-orders-comprar-v1` (`health/list/detail`), sem inventar mudança de status. A camada R9 adiciona apresentação responsiva e guardas de repetição, sem persistência paralela.
-Próxima execução: inventariar as superfícies reais de Clientes/Customer 360 e contratos de identidade; preservar integralmente os gates/canaries do projeto Customer & Marketing OS. Não testar PIN, não resolver conflitos reais automaticamente e não fabricar consentimento/evidência.
+R10 lote 1 inventariou o Customer 360 real e adicionou `admin-customer-r10-v2.js/css` como camada DOM-only de acessibilidade/mobile, sem API ou persistência paralela. `secureCustomersEnabled()`, PIN e Customer OS continuam autoridades existentes; conflitos seguem sob revisão humana.
+Próxima execução: revisar ações mutáveis já existentes do Customer 360 e reforçar busy/cooldown somente na UI; melhorar estados vazios/erro e mobile/desktop estreito; preservar integralmente consentimento, proteção, identidade, canary e outbound fail-closed. Não testar PIN nem alterar dados reais para validar.
