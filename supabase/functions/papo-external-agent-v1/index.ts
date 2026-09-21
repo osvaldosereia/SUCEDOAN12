@@ -295,7 +295,8 @@ Deno.serve(async(req:Request)=>{
       if(q.error)throw q.error;
       result=q.data;
       if(result?.ready){
-        text=result?.summary?.message_text||'Seu pedido está pronto para a confirmação final.';
+        text=(result?.summary?.message_text||'Seu pedido está pronto para a confirmação final.')
+          +'\n\nComo você prefere pagar? Pode ser **Pix, dinheiro, cartão de crédito ou cartão alimentação/refeição**.';
       }else{
         const missing=Array.isArray(result?.missing)?result.missing:[];
         if(missing.includes('cart'))text='Você ainda não começou um pedido. Posso te mostrar as cestas.';
@@ -316,10 +317,35 @@ Deno.serve(async(req:Request)=>{
         if(q.error)throw q.error;
         result=q.data;
         if(result?.cancelled)text='Tudo bem 😊 Não fiz a alteração.';
-        else if(result?.confirmed){
+        else if(result?.confirmed&&result?.action_type==='replace_basket_item'){
           const total=result?.result?.cart?.total;
           text=`Pronto 😊 Fiz a troca. O valor atual do pedido é ${moneyBR(total)}.`;
-        }else text='Não consegui confirmar essa alteração. Vou precisar que você me diga novamente o que deseja mudar.';
+        }else if(result?.confirmed&&result?.action_type==='confirm_order'){
+          const order=result?.result||{};
+          text=`Pedido confirmado ✅\n\nNúmero: **${order.order_number||''}**\nTotal: **${moneyBR(order.total)}**\nPagamento: **${order.payment_label||order.payment_method||''}**\n\nAgora vamos seguir com a separação e entrega.`;
+        }else if(result?.reason==='cart_changed_reconfirm'){
+          text=(result?.summary?.message_text||'Seu pedido mudou desde a última confirmação.')
+            +'\n\nO carrinho mudou antes da confirmação, então não finalizei. Confira o novo resumo e me diga a forma de pagamento novamente.';
+        }else text='Não consegui confirmar essa alteração. Vou precisar que você me diga novamente o que deseja fazer.';
+      }
+    }else if(intent.intent==='set_payment_method'&&conversationId&&commerceCfg?.write_enabled===true){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,
+        p_command:{type:'prepare_order_confirmation',payment_method:intent.query}
+      });
+      if(q.error)throw q.error;
+      result=q.data;
+      if(result?.needs_payment_method){
+        text='Qual forma de pagamento você prefere? Pode ser Pix, dinheiro, cartão de crédito ou cartão alimentação/refeição.';
+      }else if(result?.checkout_not_ready){
+        const missing=Array.isArray(result?.missing)?result.missing:[];
+        if(missing.includes('delivery_address'))text='Antes de confirmar, preciso completar seus dados de entrega.';
+        else text='Seu pedido ainda precisa de uma validação antes da confirmação.';
+      }else if(result?.ok){
+        text=(result?.summary?.message_text||`Total do pedido: ${moneyBR(result?.total)}`)
+          +`\n\nPagamento: **${result?.payment_label||intent.query}**\n\nEstá tudo certo? Posso confirmar o pedido?`;
+      }else{
+        text='Não consegui preparar a confirmação do pedido agora. Vou precisar revisar os dados com você.';
       }
     }else if(intent.intent==='start_basket'&&conversationId&&commerceCfg?.write_enabled===true){
       const q=await sb.rpc('execute_papoai_commerce_command_v1',{p_conversation_id:conversationId,p_command:{type:'start_basket',basket:intent.basket}});
