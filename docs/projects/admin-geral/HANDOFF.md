@@ -26,6 +26,7 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R10 DONE. R11 IN_PROGRESS — Relacionamento, Atendimento, Inteligência e Aprendizados.
-R10 fechou Customer 360 com camada DOM-only responsiva/acessível e busy/cooldown para revisão humana de conflitos; PIN, identidade, consentimentos e Customer OS continuam protegidos pelos contratos/gates existentes e nenhum dado real foi alterado para validar.
-Próxima execução: inventariar primeiro as quatro superfícies reais de R11, preservar a context nav criada na R3 e suas autoridades funcionais; então aplicar melhorias aditivas de mobile/desktop, estados e guardas de UI sem ativar outbound, canary, IA externa, publishing ou automações reais.
+R1–R11 DONE. R12 IN_PROGRESS — Estúdio Criativo e VIDEO.
+R11 fechou Relacionamento, Atendimento, Inteligência e Aprendizados com camada UI-only compartilhada, responsividade/touch/safe-area e busy guards; autoridades funcionais, revisão humana, no-autopublish, modo de teste e gates externos foram preservados.
+`main` possui um commit paralelo novo de SEO/dados públicos de cestas (`be2b3d54`), fora do escopo R11; não foi incorporado automaticamente.
+Próxima execução: inventariar Estúdio Criativo e VIDEO reais antes de editar; preservar timeline, prompts/orientações, exportações e contratos; melhorar mobile/desktop e guardas sem disparar IA paga, publishing ou qualquer efeito externo.
