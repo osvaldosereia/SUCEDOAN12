@@ -74,6 +74,9 @@ on:
       - 'scripts/test-papoai-commerce-cart-reference-resolver-v1.mjs'
       - 'scripts/test-papoai-pending-executor-checkout-v1.mjs'
       - 'scripts/test-papoai-executor-repeat-bling-v1.mjs'
+      - 'scripts/test-papoai-product-choice-executor-v1.mjs'
+      - 'scripts/test-papoai-product-search-ranking-v1.mjs'
+      - 'scripts/test-papoai-product-choice-standalone-cart-v1.mjs'
       - 'scripts/test-papoai-repeat-last-purchase-v1.mjs'
       - 'scripts/test-papoai-bling-queue-guard-v1.mjs'
       - 'scripts/test-papoai-order-confirmation-v1.mjs'
@@ -301,6 +304,12 @@ jobs:
         run: node scripts/test-papoai-repeat-last-purchase-v1.mjs
       - name: Validar executor de repetição e gate Bling
         run: node scripts/test-papoai-executor-repeat-bling-v1.mjs
+      - name: Validar carrinho avulso e escolha de produto
+        run: node scripts/test-papoai-product-choice-standalone-cart-v1.mjs
+      - name: Validar ranking de busca de produto
+        run: node scripts/test-papoai-product-search-ranking-v1.mjs
+      - name: Validar executor de escolha de produto
+        run: node scripts/test-papoai-product-choice-executor-v1.mjs
       - name: Validar confirmação final do pedido PapoAI
         run: node scripts/test-papoai-order-confirmation-v1.mjs
       - name: Validar Central de Relacionamento
