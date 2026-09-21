@@ -10,7 +10,7 @@ on:
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/functions/admin-pin-auth-v1/**'
       - 'supabase/functions/papo-comprar-webhook-v1/**'
-      - 'supabase/functions/papoai-agent-external-lab-v1/**'
+      - 'supabase/functions/papo-external-agent-v1/**'
       - 'supabase/functions/_shared/papoai-agent-external-contract-v1.mjs'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
@@ -85,7 +85,7 @@ on:
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/functions/admin-pin-auth-v1/**'
       - 'supabase/functions/papo-comprar-webhook-v1/**'
-      - 'supabase/functions/papoai-agent-external-lab-v1/**'
+      - 'supabase/functions/papo-external-agent-v1/**'
       - 'supabase/functions/_shared/papoai-agent-external-contract-v1.mjs'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
@@ -193,7 +193,7 @@ jobs:
           deno check supabase/functions/customer-intelligence-v1/index.ts
           deno check supabase/functions/admin-pin-auth-v1/index.ts
           deno check supabase/functions/papo-comprar-webhook-v1/index.ts
-          deno check supabase/functions/papoai-agent-external-lab-v1/index.ts
+          deno check supabase/functions/papo-external-agent-v1/index.ts
           deno check supabase/functions/admin-marketing-brain-v1/index.ts
           deno check supabase/functions/admin-whatsapp-direct-v1/index.ts
           deno check supabase/functions/whatsapp-meta-direct-v1/index.ts
