@@ -76,3 +76,12 @@
 - gates externos permanecem fechados e nenhuma evidência/credencial/consentimento/canary foi fabricado;
 - pendências de Meta/Pinterest/WhatsApp, publishing/outbound, IA paga, Bling/SEFAZ, logística/financeiro real e dados reais permanecem explicitamente fora do DONE programável e exigem ação/evidência humana própria;
 - R16 marcada DONE; roadmap autônomo R1–R16 encerrado. Novas mudanças exigem nova demanda, regressão comprovada ou homologação humana específica.
+
+## 2026-09-21 — Pós-R16 — Visual Standard V3 / correções da homologação
+- screenshots reais mostraram inconsistência entre Admin principal, Nomes dos produtos, Atendimento e Balanço rápido;
+- criado padrão compartilhado V3 e aplicado às superfícies principais e workspaces especializados, preservando lógica funcional;
+- Nomes e Imagens IA migrados para navegação canônica; Atendimento incorporado ao Shell; Balanço mantido mobile-first com desktop responsivo;
+- timeout de Nomes corrigido em frontend e otimização implantada em `admin-product-names-v1` v2 no Supabase;
+- contrato `tests/admin-visual-standard-v3-contract.test.mjs` criado e incluído no CI;
+- workflow run 35601154154: success, inclusive Visual standard V3;
+- frontend não foi mergeado em `main`; mudança paralela de SEO/cestas continua preservada e precisa ser reconciliada na integração final.
