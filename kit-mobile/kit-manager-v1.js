@@ -3,7 +3,6 @@ import '../producao-v2/js/collection-concurrency.js?mobile_build=20260805-kit-ma
 import { installCollectionImageResolver } from '../producao-v2/js/collection-image-resolver.js';
 import { CollectionsModule } from '../producao-v2/js/modules/collections.js';
 import { adminProductsApi, ensureAdminAuthenticated } from '../admin/admin-secure-api-v1.js';
-import { loadCollections } from '../producao-v2/js/services/collections.js';
 
 const STORAGE_KEY = 'da_admin_v2_config';
 const BUILD = '2026-08-05-kit-manager-v1';
@@ -89,7 +88,7 @@ function toast(message, type = '') {
 function managerMarkup() {
   return `<section class="kit-manager-shell collections-workspace" data-build="${BUILD}">
     <header class="kit-manager-head">
-      <div><span class="eyebrow">Gerenciamento completo</span><h2>Todos os kits promocionais</h2><p>Edite os mesmos campos, produtos, substitutos, preços, validade, estoque, IA e Instagram disponíveis no Admin Produção V2.</p></div>
+      <div><span class="eyebrow">Gerenciamento completo</span><h2>Todos os kits promocionais</h2><p>Edite composição, preços, validade e estoque usando o cadastro canônico do Supabase. IA e Instagram permanecem pausados.</p></div>
       <span class="badge warning" id="collectionDataStatus">Carregando…</span>
     </header>
     <div class="collection-tabs" id="collectionTabs" aria-label="Tipo de coleção">
@@ -138,12 +137,12 @@ async function reload() {
   loadingPromise = (async () => {
     try {
       const config = loadConfig();
-      const [products, data] = await Promise.all([loadProductsFromSupabase(), loadCollections(config)]);
+      const [products, data] = await Promise.all([loadProductsFromSupabase(), adminProductsApi('kit_catalog')]);
       const store = moduleInstance.store;
       store.state.products = products;
-      store.state.baskets = data.baskets || [];
+      store.state.baskets = [];
       store.state.kits = data.kits || [];
-      store.state.queue = data.queue || [];
+      store.state.queue = [];
       moduleInstance.type = 'kit';
       moduleInstance.render();
       loadedOnce = true;
