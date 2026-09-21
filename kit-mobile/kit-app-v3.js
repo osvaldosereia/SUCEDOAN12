@@ -542,23 +542,23 @@ function renderStaleNotice() {
   else if (imageStale) notice.textContent = 'O título ou a descrição mudou. Gere a capa novamente para usar os textos editados.';
 }
 function renderActions() {
-  const textErrors = operationalErrors({ requireGithub: false, requireTextWebhook: true, requireImageWebhook: false });
-  $('#generateText').disabled = Boolean(state.busy || textErrors.length);
-  const coverErrors = operationalErrors({ requireGithub: true, requireTextWebhook: false, requireImageWebhook: true });
-  $('#generateCover').disabled = Boolean(state.busy || coverErrors.length || !contentReady());
-  $('#generateCover').textContent = state.content.image ? 'Gerar nova capa com os textos atuais' : 'Gerar capa com os textos atuais';
+  $('#generateText').disabled = true;
+  $('#generateCover').disabled = true;
+  $('#generateText').title = 'Automação pausada';
+  $('#generateCover').title = 'Automação pausada';
+  $('#generateCover').textContent = 'Geração de capa pausada';
 }
 function renderPublish() {
   const errors = publishErrors();
   const button = $('#publishButton');
   button.disabled = Boolean(errors.length || state.busy);
-  button.textContent = state.busy ? 'Processando…' : 'Publicar kit pronto';
+  button.textContent = state.busy ? 'Processando…' : 'Salvar kit no Supabase';
   const notice = $('#publishNotice');
   if (errors.length) {
     notice.textContent = errors.join(' · ');
     notice.className = 'notice danger';
   } else {
-    notice.textContent = `Tudo pronto para publicar. Estoque atual permite ${availableKits()} kit(s).`;
+    notice.textContent = `Pronto para salvar no Supabase. Estoque atual permite ${availableKits()} kit(s).`;
     notice.className = 'notice';
   }
 }
@@ -572,13 +572,6 @@ function renderAll() {
 }
 
 function openSettings() {
-  const config = getConfig();
-  $('#cfgToken').value = config.githubToken || '';
-  $('#cfgTextWebhook').value = config.makeTextWebhookUrl || config.makeAiWebhookUrl || '';
-  $('#cfgImageWebhook').value = config.makeImageWebhookUrl || config.makeAiWebhookUrl || '';
-  $('#cfgOwner').value = config.githubOwner || 'osvaldosereia';
-  $('#cfgRepo').value = config.githubRepo || 'SUCEDOAN12';
-  $('#cfgBranch').value = config.githubBranch || 'main';
   $('#settingsDrawer').classList.add('open');
   $('#settingsDrawer').setAttribute('aria-hidden', 'false');
 }
@@ -586,24 +579,12 @@ function closeSettings() {
   $('#settingsDrawer').classList.remove('open');
   $('#settingsDrawer').setAttribute('aria-hidden', 'true');
 }
-
 $('#settingsOpen').addEventListener('click', openSettings);
 $('#settingsClose').addEventListener('click', closeSettings);
 $('#settingsDrawer').addEventListener('click', event => { if (event.target.id === 'settingsDrawer') closeSettings(); });
-$('#settingsSave').addEventListener('click', async () => {
-  saveConfig({
-    githubToken: $('#cfgToken').value.trim(),
-    makeTextWebhookUrl: $('#cfgTextWebhook').value.trim(),
-    makeImageWebhookUrl: $('#cfgImageWebhook').value.trim(),
-    githubOwner: $('#cfgOwner').value.trim() || 'osvaldosereia',
-    githubRepo: $('#cfgRepo').value.trim() || 'SUCEDOAN12',
-    githubBranch: $('#cfgBranch').value.trim() || 'main',
-    writeMode: true,
-    collectionsWriteMode: true,
-  });
+$('#settingsSave').addEventListener('click', () => {
   closeSettings();
-  toast('Configurações salvas.', 'success');
-  await loadData();
+  toast('Kits usam somente o Supabase; não há credenciais locais para configurar.', 'success');
 });
 $('#photoButton').addEventListener('click', () => $('#photoInput').click());
 $('#photoInput').addEventListener('change', event => detectPhoto(event.target.files?.[0]).catch(error => toast(error?.message || String(error), 'error')));
