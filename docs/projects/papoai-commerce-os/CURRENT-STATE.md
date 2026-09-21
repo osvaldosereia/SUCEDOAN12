@@ -143,3 +143,35 @@ Os gates continuam:
 - `channel_provider_agent_labs.enabled=false`
 
 Portanto nenhuma alteração comercial real está ativa.
+
+
+## Rodada pequena — produtos avulsos e escolha numerada (v16)
+
+Concluído:
+- carrinho avulso sem cesta via `ensure_papoai_commerce_draft_cart_v1`;
+- busca de produtos com ranking por termos, marca e relevância;
+- `shampoo seda` agora prioriza produtos Seda antes de marcas não solicitadas;
+- memória temporária de opções via `product_choice`;
+- cliente pode responder `1`, `2`, `primeiro`, `o segundo` etc.;
+- seleção é revalidada no Supabase antes de adicionar;
+- produto selecionado pode retornar imagem;
+- se houver uma única opção, `sim` confirma;
+- lista expira e seleção fora da faixa é recusada;
+- fluxo testado em transação com rollback:
+  `shampoo seda -> opção 1 -> Shampoo Cachos Definidos Seda 325 ml -> carrinho avulso R$ 16,90`.
+
+Edge Function:
+- `papo-external-agent-v1` v16.
+
+Gates após deploy:
+- Commerce Brain: OFF
+- escrita: OFF
+- IA: OFF
+- laboratório: OFF
+- fila Bling PapoAI: OFF
+
+Readiness:
+- 9 cestas ativas;
+- 306 produtos vendáveis;
+- 306 com imagem;
+- 0 divergências de hidden_adjustment.
