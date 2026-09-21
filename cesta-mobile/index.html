@@ -105,11 +105,9 @@
 
 <div id="settingsBackdrop" class="drawer-backdrop" hidden></div>
 <aside id="settingsDrawer" class="settings-drawer" aria-hidden="true">
-  <header><div><strong>Configurações</strong><small>Compartilhadas com o Produção Admin e o Criador de Kits.</small></div><button id="closeSettingsButton" type="button" aria-label="Fechar">×</button></header>
+  <header><div><strong>Configurações</strong><small>Catálogo no Supabase. Publicação das cestas ainda usa a configuração atual até a próxima etapa.</small></div><button id="closeSettingsButton" type="button" aria-label="Fechar">×</button></header>
   <div class="settings-body">
     <label>Token GitHub<input id="githubToken" class="field" type="password" autocomplete="off"></label>
-    <label>Firebase URL<input id="firebaseUrl" class="field" type="url"></label>
-    <label>Nó de produtos<input id="productsNode" class="field"></label>
     <label>Arquivo oficial das cestas<input id="basketsPath" class="field"></label>
     <button id="saveSettingsButton" class="btn primary" type="button">Salvar configurações</button>
   </div>
@@ -120,6 +118,6 @@
 
 <script src="../admin/config.js?v=20260920-r3-context"></script>
 <script type="module" src="../admin/admin-global-shell-v3.js?v=20260921-2"></script>
-<script type="module" src="./cesta-mobile.js?v=20260921-tabfix-1"></script>
+<script type="module" src="./cesta-mobile.js?v=20260921-supabase-1"></script>
 </body>
 </html>
