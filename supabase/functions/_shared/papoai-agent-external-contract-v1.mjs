@@ -95,6 +95,11 @@ export function normalizeExternalAgentPayload(body={}){
   const externalMessageId=pick(body,['message_id','messageId','message.id','data.message.id','payload.message.id'],300)||null;
   const externalEventId=pick(body,['event_id','eventId','event.id','data.event.id','payload.event.id'],300)||null;
   const messageType=(pick(body,['message_type','type','message.type','data.message.type'],80)||'text').toLowerCase();
+  const channelPhoneE164=normalizePhoneBR(pick(body,['channel.phone_number','channel.phone','channel.number'],120))||null;
+  const channelId=pick(body,['channel.id','channel.connection_id'],120)||null;
+  const channelName=pick(body,['channel.name'],200)||null;
+  const agentId=pick(body,['agent.id'],120)||null;
+  const agentName=pick(body,['agent.name'],200)||null;
   const hasMedia=scanObject(body,(key,val)=>{
     const k=String(key).toLowerCase();
     if(['url','mimetype','mime_type','base64'].includes(k)&&val) return true;
@@ -104,8 +109,12 @@ export function normalizeExternalAgentPayload(body={}){
 
   return {
     phoneE164,displayName,sessionKey,messageText,history,externalMessageId,externalEventId,messageType,
-    triggerRole,triggerText,
-    providerContext:{history_count:history.length,has_media:hasMedia,has_reply:hasReply,trigger_role:triggerRole}
+    triggerRole,triggerText,channelPhoneE164,channelId,channelName,agentId,agentName,
+    providerContext:{
+      history_count:history.length,has_media:hasMedia,has_reply:hasReply,trigger_role:triggerRole,
+      channel_phone_e164:channelPhoneE164,channel_id:channelId,channel_name:channelName,
+      agent_id:agentId,agent_name:agentName
+    }
   };
 }
 
