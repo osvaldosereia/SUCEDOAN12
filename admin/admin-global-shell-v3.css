@@ -103,3 +103,33 @@ html[data-admin-global-shell="v3"] body[data-admin-module="stockCount"] .fast-ac
   html[data-admin-global-shell="v3"] body[data-admin-module="video"] .page{padding-inline:8px}
 }
 @media(prefers-reduced-motion:reduce){.da-global-sidebar{transition:none}}
+
+
+/* Operational suite: same Admin shell, with its local tool switcher as secondary navigation. */
+.da-ops-secondary-nav{display:flex;gap:8px;overflow-x:auto;max-width:1440px;margin:0 auto;padding:18px 24px 2px;scrollbar-width:thin}
+.da-ops-secondary-nav a{flex:0 0 auto;min-height:42px;display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--da-global-border);border-radius:999px;background:#fff;color:var(--da-global-text);font-size:13px;font-weight:700;text-decoration:none}
+.da-ops-secondary-nav a.active{background:var(--da-global-brand-soft);border-color:#cce1d4;color:var(--da-global-brand-strong)}
+.da-ops-secondary-nav .ops-app-nav-icon{font-size:14px}
+html[data-admin-global-shell="v3"] body.ops-suite{background:var(--da-global-bg)}
+html[data-admin-global-shell="v3"] body.ops-suite .validity-main,
+html[data-admin-global-shell="v3"] body.ops-suite .basket-main,
+html[data-admin-global-shell="v3"] body.ops-suite.ops-cadastro main,
+html[data-admin-global-shell="v3"] body.ops-suite.ops-kits .app>main{width:min(100%,1180px);max-width:1180px;margin:0 auto;padding:18px 24px 48px}
+html[data-admin-global-shell="v3"] body.ops-suite.ops-kits .app{background:transparent;min-height:0}
+html[data-admin-global-shell="v3"] body.ops-suite .panel,
+html[data-admin-global-shell="v3"] body.ops-suite .card{border-color:var(--da-global-border);box-shadow:none}
+html[data-admin-global-shell="v3"] body.ops-suite .btn,
+html[data-admin-global-shell="v3"] body.ops-suite .ops-icon-button{min-height:44px}
+html[data-admin-global-shell="v3"] body.ops-suite input,
+html[data-admin-global-shell="v3"] body.ops-suite select,
+html[data-admin-global-shell="v3"] body.ops-suite textarea{font-size:16px}
+html[data-admin-global-shell="v3"] body.ops-suite .bottom{left:var(--da-global-sidebar);right:0}
+@media(max-width:1100px) and (min-width:901px){html[data-admin-global-shell="v3"] body.ops-suite .bottom{left:220px}}
+@media(max-width:900px){
+  .da-ops-secondary-nav{padding:12px 10px 0}
+  html[data-admin-global-shell="v3"] body.ops-suite .validity-main,
+  html[data-admin-global-shell="v3"] body.ops-suite .basket-main,
+  html[data-admin-global-shell="v3"] body.ops-suite.ops-cadastro main,
+  html[data-admin-global-shell="v3"] body.ops-suite.ops-kits .app>main{padding:12px 10px 34px}
+  html[data-admin-global-shell="v3"] body.ops-suite .bottom{left:0}
+}
