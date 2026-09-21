@@ -73,7 +73,7 @@ async function loadItems(sb,batchId){
 }
 async function loadProducts(sb,ids){
   if(!ids.length)return new Map();
-  const q=await sb.from('products').select('id,name,brand,packaging,gtin,sku,firebase_key,image_url,image_original_url,image_source_url,image_source_origin,image_ai_status,image_ai_attempts,image_ai_pipeline_version,is_active').in('id',ids);
+  const q=await sb.from('products').select('id,name,brand,packaging,gtin,sku,image_url,image_original_url,image_firebase_source_url,image_source_url,image_source_origin,image_ai_status,image_ai_attempts,image_ai_pipeline_version,is_active').in('id',ids);
   if(q.error)throw new Error(`products_${clean(q.error.message,150)}`);
   return new Map(arr(q.data).map(p=>[String(p.id),p]));
 }
@@ -89,7 +89,7 @@ async function requeueWithoutConsumingAttempt(sb,item,errorMessage=null){
   }).eq('id',item.job_id);
 }
 
-async function releaseBatchForMember(sb,batch,items,bad,message,{firebaseInactive=false}={}){
+async function releaseBatchForMember(sb,batch,items,bad,message){
   const now=new Date().toISOString();
   for(const item of items){
     const filler=item.is_filler===true;
@@ -108,7 +108,6 @@ async function releaseBatchForMember(sb,batch,items,bad,message,{firebaseInactiv
         image_ai_status:terminal?'rejected':'source_rejected',
         image_ai_error:terminal?`manual_review:${message}`:message,updated_at:now,
       };
-      if(firebaseInactive){update.is_active=false;update.image_ai_status='error';update.image_ai_error='firebase_inactive';}
       await sb.from('products').update(update).eq('id',item.product_id);
     }else{
       await requeueWithoutConsumingAttempt(sb,item,null);
