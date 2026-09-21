@@ -8,6 +8,7 @@ import {
   buildLabHandoffResponse,
   buildLabSilentResponse,
 } from "../_shared/papoai-agent-external-contract-v1.mjs";
+import {classifyCommerceIntent} from "../_shared/papoai-commerce-intent-v1.mjs";
 
 const PROVIDER_KEY='papoai';
 const CHANNEL='whatsapp';
@@ -24,6 +25,31 @@ function safeEqual(a:string,b:string){
   const x=new TextEncoder().encode(a),y=new TextEncoder().encode(b);
   if(x.length!==y.length)return false;
   let diff=0;for(let i=0;i<x.length;i++)diff|=x[i]^y[i];return diff===0;
+}
+
+
+function moneyBR(value:any){
+  const n=Number(value||0);
+  return 'R$ '+n.toFixed(2).replace('.',',');
+}
+function commerceTextResponse({text,mediaUrl,sessionKey,correlationId,handoff=false,reason=null}:any){
+  const message:any={text:String(text||'').trim()};
+  if(mediaUrl)message.media_url=String(mediaUrl);
+  return {message,handoff:Boolean(handoff),reason,session_id:sessionKey,correlation_id:correlationId};
+}
+async function resolveOpenAiKey(sb:any){
+  let key=Deno.env.get('OPENAI_API_KEY')||'';
+  if(!key){try{const q=await sb.rpc('get_conversation_worker_provider_secret_v1');if(typeof q.data==='string')key=q.data}catch{}}
+  return key;
+}
+function basketsText(items:any[]){
+  const lines=(Array.isArray(items)?items:[]).map((b:any)=>`• ${b.display_name||b.name} — ${moneyBR(b.commercial_price)}`);
+  return lines.length?`Estas são nossas cestas disponíveis:\n\n${lines.join('\n')}\n\nSe quiser, me diga o nome de uma delas que eu mando a lista completa do que vem.`:'Não encontrei cestas disponíveis agora.';
+}
+function productsText(items:any[]){
+  const list=(Array.isArray(items)?items:[]).slice(0,6);
+  if(!list.length)return 'Não encontrei um produto disponível que combine com esse pedido agora.';
+  return list.map((p:any)=>`• ${p.name} — ${moneyBR(p.commercial_price??p.offer_price??p.regular_price)}${p.is_offer?' (oferta)':''}`).join('\n');
 }
 
 async function requestHash(value:string){
@@ -106,8 +132,10 @@ Deno.serve(async(req:Request)=>{
     }),200,responseBearer);
   }
 
-  if(lab.enabled!==true){
-    return jsonResponse(buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'lab_disabled'}),200,responseBearer);
+  const {data:commerceCfg}=await sb.rpc('get_papoai_commerce_brain_config_v1');
+  const commerceEnabled=commerceCfg?.enabled===true;
+  if(lab.enabled!==true&&!commerceEnabled){
+    return jsonResponse(buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'all_brains_disabled',handoff:false}),200,responseBearer);
   }
 
   const occurredBucket=new Date(Math.floor(Date.now()/60000)*60000).toISOString();
@@ -202,15 +230,75 @@ Deno.serve(async(req:Request)=>{
 
   if(humanActive){
     processingStatus='silent';responseKind='silent';
-    responseBody=buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'human_active',pausedUntil:freshSession?.paused_until||null});
-  }else if(isReservedLabHandoff(normalized.messageText)&&normalized.messageText.toUpperCase()===RESERVED_HANDOFF_COMMAND){
-    processingStatus='handoff';responseKind='handoff';
-    responseBody=buildLabHandoffResponse({text:'Vou transferir este teste para atendimento humano.',sessionKey:normalized.sessionKey,correlationId,reason:'lab_reserved_command'});
-  }else if(elapsed>=timeoutMs){
-    processingStatus='handoff';responseKind='handoff';
-    responseBody=buildLabHandoffResponse({text:'O teste demorou além do limite. Vou transferir para atendimento humano.',sessionKey:normalized.sessionKey,correlationId,reason:'lab_timeout'});
+    responseBody=buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'human_active',pausedUntil:freshSession?.paused_until||null,handoff:false});
+  }else if(lab.enabled===true){
+    if(isReservedLabHandoff(normalized.messageText)&&normalized.messageText.toUpperCase()===RESERVED_HANDOFF_COMMAND){
+      processingStatus='handoff';responseKind='handoff';
+      responseBody=buildLabHandoffResponse({text:'Vou transferir este teste para atendimento humano.',sessionKey:normalized.sessionKey,correlationId,reason:'lab_reserved_command'});
+    }else if(elapsed>=timeoutMs){
+      processingStatus='handoff';responseKind='handoff';
+      responseBody=buildLabHandoffResponse({text:'O teste demorou além do limite. Vou transferir para atendimento humano.',sessionKey:normalized.sessionKey,correlationId,reason:'lab_timeout'});
+    }else{
+      responseBody=buildLabTextResponse({text:String(lab.fixed_response_text),sessionKey:normalized.sessionKey,correlationId});
+    }
   }else{
-    responseBody=buildLabTextResponse({text:String(lab.fixed_response_text),sessionKey:normalized.sessionKey,correlationId});
+    const historyLimit=Math.max(1,Math.min(20,Number(commerceCfg?.max_history_messages||12)));
+    const apiKey=commerceCfg?.ai_enabled===true?await resolveOpenAiKey(sb):'';
+    const intent=await classifyCommerceIntent({
+      message:normalized.messageText,
+      history:normalized.history.slice(-historyLimit),
+      apiKey,
+      model:(Deno.env.get('OPENAI_CONVERSATION_MODEL')||'gpt-5.6-luna')
+    });
+    const conversationId=ingested?.conversation_id||null;
+    let result:any=null;
+    let text='';
+
+    if(intent.intent==='handoff'){
+      processingStatus='handoff';responseKind='handoff';
+      responseBody=commerceTextResponse({text:'Claro 😊 Vou chamar alguém da nossa equipe para continuar com você.',sessionKey:normalized.sessionKey,correlationId,handoff:true,reason:'customer_requested_human'});
+    }else if(intent.intent==='list_baskets'){
+      const q=await sb.rpc('get_papoai_commerce_basket_catalog_v1');
+      result=q.data;
+      text=basketsText(result);
+    }else if(intent.intent==='basket_detail'){
+      const q=await sb.rpc('format_papoai_commerce_basket_message_v1',{p_basket_query:intent.basket||intent.query});
+      result=q.data;
+      text=result?.message_text||'Não consegui localizar essa cesta. Me diga o nome dela que eu verifico.';
+    }else if(intent.intent==='search_products'){
+      const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:commerceCfg?.max_product_results||6});
+      result=q.data;
+      text=productsText(result?.items||[]);
+    }else if(intent.intent==='offers'&&conversationId){
+      const q=await sb.rpc('get_papoai_commerce_offers_v1',{p_conversation_id:conversationId,p_limit:4});
+      result=q.data;
+      text=result?.items?.length?`Separei estas ofertas para você:\n\n${productsText(result.items)}`:'Não encontrei uma oferta personalizada disponível agora.';
+    }else if(intent.intent==='customer_context'&&conversationId){
+      const q=await sb.rpc('get_papoai_commerce_customer_context_v1',{p_conversation_id:conversationId});
+      result=q.data;
+      text=result?.known&&result?.name?`Encontrei seu cadastro, ${result.name}. Como posso ajudar hoje?`:'Posso te ajudar com cestas, produtos e ofertas.';
+    }else if(intent.intent==='cart_state'&&conversationId){
+      const q=await sb.rpc('get_papoai_commerce_cart_state_v1',{p_conversation_id:conversationId});
+      result=q.data;
+      text=result?.has_cart?`Seu pedido está em ${moneyBR(result.total)}.`:'Você ainda não começou um pedido.';
+    }else if(intent.intent==='start_basket'&&conversationId&&commerceCfg?.write_enabled===true){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{p_conversation_id:conversationId,p_command:{type:'start_basket',basket:intent.basket}});
+      if(q.error)throw q.error;
+      result=q.data;
+      text=`Certo 😊 Comecei a ${result?.basket?.display_name||result?.basket?.name||intent.basket}. O valor atual é ${moneyBR(result?.cart?.total)}. Você quer receber assim ou personalizar algum item?`;
+    }else if(['set_basket_quantity','set_addon_quantity','replace_basket_item'].includes(intent.intent)){
+      text='Entendi a alteração. Ainda estou validando exatamente qual item você quer mudar para não mexer no produto errado. Me diga o nome completo do produto.';
+    }else{
+      const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:3});
+      result=q.data;
+      if(result?.items?.length)text=productsText(result.items);
+      else text='Posso te ajudar com nossas cestas, produtos, ofertas ou com um pedido. O que você está procurando?';
+    }
+
+    if(!responseBody){
+      const mediaUrl=(result?.items?.length===1?result.items[0]?.image_url:null)||null;
+      responseBody=commerceTextResponse({text,mediaUrl,sessionKey:normalized.sessionKey,correlationId});
+    }
   }
 
   await sb.from('channel_provider_agent_lab_calls').update({
