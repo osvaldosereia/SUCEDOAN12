@@ -26,7 +26,7 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R14 DONE. R15 IN_PROGRESS — Automações, Copiloto, Integrações e Saúde.
-R15 lote 1 inventariou Automation Builder e Copiloto, preservando `automationBuilderUiEnabled=false` e `humanCopilotEnabled=false`; criou `admin-r15-systems-v2.js/css` e contrato próprio para UX/mobile/busy guard sem transporte ou persistência paralela. Nenhum runtime, IA paga ou outbound foi acionado.
+R1–R15 DONE. R16 IN_PROGRESS — Segurança, QA, homologação e limpeza final.
+R15 fechou Automation Builder, Copiloto, Integrações e Saúde com gates dormentes preservados, camada UX sem transporte/persistência paralela e integração read-only das superfícies de Meta Foundation, homologação, qualidade e auditoria. Diagnósticos externos continuam não destrutivos/`tested:false`; nenhum provider foi acionado.
 `main` permanece divergente apenas por SEO/dados públicos de cestas, fora do escopo atual; não incorporar automaticamente.
-Próxima execução: inventariar superfícies restantes de integrações e saúde/observabilidade, seus gates e contratos. Integrar apenas UX/observabilidade segura, sem probes destrutivos, providers reais, IA paga, outbound ou clientes/dados reais. Se os critérios programáveis da R15 forem satisfeitos, marcar DONE e promover R16.
+Próxima execução: executar auditoria final R1–R15, contratos e wiring; revisar segurança, gates OFF, rotas/capacidades, mobile/desktop, acessibilidade e limpeza apenas do que for comprovadamente seguro. Não confundir conclusão programável com homologação externa: credenciais, Meta, publishing, outbound, canary, IA paga, Bling/fiscal, providers e dados reais continuam exigindo gates/evidência humana próprios. Se todos os critérios programáveis da R16 estiverem satisfeitos, registrar DONE e encerrar o roadmap autônomo.
