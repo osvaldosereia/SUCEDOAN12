@@ -54,3 +54,11 @@
 - teste contratual R9 ampliado para proteger os guardas e ausência de transições fictícias;
 - R9 marcada DONE e R10 — Clientes, identidade e Customer 360 — promovida para IN_PROGRESS;
 - nenhum pedido real, Bling, WhatsApp outbound, publishing, canary ou dado de cliente foi alterado para validar.
+
+## 2026-09-20 — R10 lote 1
+- preflight: HEAD inicial `cf0fcbdac2605df45e3e1111c7d398e7bacdd2a7`; branch 143 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
+- inventário confirmou diretório de Clientes e Customer 360 já maduros, incluindo navegação Resumo/Compras/Preferências/Conversas/Proteção/Linha do tempo;
+- `secureCustomersEnabled()`, autenticação por PIN, Customer OS API e revisão humana de conflitos permanecem autoridades existentes; PIN não foi testado e nenhum conflito foi resolvido;
+- `admin-customer-r10-v2.js/css` criado e conectado como camada DOM-only para acessibilidade, touch >=44px, safe-area e aviso contextual de identidade protegida;
+- `tests/admin-r10-customer-v2-contract.test.mjs` criado para proteger gates e ausência de fetch/storage/persistência paralela;
+- nenhuma mutação de cliente, consentimento, proteção, outbound, canary ou dado real foi usada na validação estática/contratual.
