@@ -19,26 +19,25 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R10: IN_PROGRESS
 - R11–R16: PENDING
 
-## R1–R8 — concluídas
-- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas e Qualidade do Catálogo concluídos com migração aditiva e contratos reais preservados.
+## R1–R9 — concluídas
+- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas, Qualidade do Catálogo e Pedidos concluídos com migração aditiva e contratos reais preservados.
 - Central Comercial permanece dormente por `commercialTruthUiEnabled=false`.
 - Nenhum gate externo/runtime foi aberto pela migração.
 
-## R9 — concluída
-- preflight do lote final: HEAD inicial `6b34ec1962bf09c51d5080e25feafbde5ccc69d1`; branch 138 commits à frente e 0 atrás de `main`; merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
-- `pedidos-v2.js` permanece autoridade funcional para listagem, detalhe, impressão completa, PDF via impressão do navegador, etiqueta e leitura de status/sync;
-- backend `admin-orders-comprar-v1` foi revisado: expõe somente `health`, `list` e `detail`; não existe contrato de mudança de status nessa função, portanto a UI não inventa transições;
-- `admin-orders-r9-v2.js/css` mantém referência visual do fluxo e cards mobile sem fetch/storage/persistência próprios;
-- ações repetíveis de abrir/imprimir/PDF/etiqueta/atualizar/paginar/buscar ganharam cooldown/busy guard puramente de UI contra duplo acionamento;
-- teste contratual R9 ampliado para proteger os guardas e ausência de transições fictícias;
-- Bling, WhatsApp outbound, criação/alteração de pedidos e demais efeitos externos não foram acionados.
+## R10 — lote 1 concluído
+- preflight: HEAD inicial `cf0fcbdac2605df45e3e1111c7d398e7bacdd2a7`; branch 143 commits à frente e 0 atrás de `main`; merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
+- inventário confirmou que Clientes já possui diretório profissional e Customer 360 dedicado, com Resumo, Compras, Preferências, Conversas, Proteção e Linha do tempo;
+- autoridade funcional permanece em `app.js`, `customer-os-api.js`, `customer-os-auth.js` e `customer-360-view.js`; `secureCustomersEnabled()` e autenticação por PIN continuam sendo gates existentes e não foram contornados/testados;
+- conflitos de identidade continuam explicitamente sob revisão humana; nenhuma resolução/merge automático foi introduzido;
+- criado `admin-customer-r10-v2.js/css` como camada DOM-only: reforço de acessibilidade, touch >=44px, safe-area mobile e aviso contextual de identidade protegida; sem fetch/storage/persistência próprios;
+- criado `tests/admin-r10-customer-v2-contract.test.mjs` para proteger ausência de persistência paralela, gates existentes, revisão humana e wiring;
+- nenhum PIN, cliente real, consentimento, conflito, suppressão, outbound, canary ou dado sensível foi alterado para validar.
 
-## R10 — ponto de retomada
-1. inventariar superfícies reais de Clientes/Customer 360 e os contratos existentes de identidade antes de editar;
-2. preservar a separação do projeto Customer & Marketing OS e seus gates/canaries; Admin Geral pode melhorar shell/usabilidade sem assumir autoridade funcional indevida;
-3. não testar PIN, não resolver conflito de identidade real automaticamente e não fabricar consentimento/evidência;
-4. priorizar leitura segura, clareza de identidade, histórico e mobile/desktop sobre contratos existentes;
-5. manter qualquer mutação sensível ou efeito externo atrás dos gates existentes.
+## R10 — próximo lote
+1. revisar ações mutáveis já existentes do Customer 360 e reforçar guardas de UI contra duplo acionamento sem mudar contratos;
+2. melhorar estados vazios/erro e legibilidade do diretório/perfil em desktop estreito e mobile apenas sobre dados existentes;
+3. confirmar por contrato que consentimento/proteção/identidade continuam fail-closed e dependentes de evidência/ação humana onde exigido;
+4. quando os critérios seguros da R10 estiverem satisfeitos, marcar DONE e promover R11.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
