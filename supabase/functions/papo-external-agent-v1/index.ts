@@ -81,18 +81,6 @@ Deno.serve(async(req:Request)=>{
     }),200,responseBearer);
   }
 
-  const internalPhones=new Set([
-    '+556598150975',
-    '+5565984491018'
-  ]);
-  if(internalPhones.has(normalized.phoneE164)){
-    return jsonResponse(buildLabSilentResponse({
-      sessionKey:normalized.sessionKey,
-      correlationId,
-      reason:'internal_company_number'
-    }),200,responseBearer);
-  }
-
   const {data:adapter,error:adapterError}=await sb.from('channel_provider_adapters')
     .select('id,channel_account_id,status,inbound_mode,outbound_mode')
     .eq('provider_key',PROVIDER_KEY).eq('channel',CHANNEL)
@@ -102,6 +90,19 @@ Deno.serve(async(req:Request)=>{
 
   const {data:lab,error:labError}=await sb.rpc('get_papoai_agent_external_lab_config_v1',{p_adapter_id:adapter.id});
   if(labError||!lab)return jsonResponse({error:'lab_not_configured',correlation_id:correlationId},503);
+
+  const internalPhones=new Set(
+    Array.isArray(lab?.metadata?.blocked_internal_phones)
+      ? lab.metadata.blocked_internal_phones.map((value:string)=>String(value))
+      : []
+  );
+  if(internalPhones.has(normalized.phoneE164)){
+    return jsonResponse(buildLabSilentResponse({
+      sessionKey:normalized.sessionKey,
+      correlationId,
+      reason:'internal_company_number'
+    }),200,responseBearer);
+  }
 
   if(lab.enabled!==true){
     return jsonResponse(buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'lab_disabled'}),200,responseBearer);
