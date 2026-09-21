@@ -1,21 +1,20 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {createClient} from 'npm:@supabase/supabase-js@2.112.3';
 import {
-  TerminalError,arr,clean,resolveTrustedSource,resolveFirebaseProduct,sha256Text,
+  TerminalError,arr,clean,resolveTrustedSource,sha256Text,
 } from './source.mjs';
 import {
   MODEL,VALIDATOR_MODEL,composeSheet,cropCell,generateGrid,generationCost,
   prepareCell,proratedGenerationUsage,inspectSource,validateGenerated,
 } from './image.mjs';
 import {
-  PIPELINE_VERSION,firebaseProductActive,sourceRecoverableForGrid,
+  PIPELINE_VERSION,sourceRecoverableForGrid,
 } from './policy.mjs';
 import {findReplacementSource} from './research.mjs';
 
 const PROJECT_HOST='ssbesxgaijknwsjbsbcz.supabase.co';
 const PUBLIC_BUCKET='product-images';
 const BATCH_BUCKET='product-image-batches';
-const FIREBASE_PRODUCTS='https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json';
 const STAGE_CHUNK=6;
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
 const extFor=t=>t==='image/png'?'png':t==='image/jpeg'?'jpg':'webp';
