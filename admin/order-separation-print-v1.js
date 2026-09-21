@@ -76,8 +76,9 @@ function separationDocument(order={},items=[]){
   '</body></html>';
 }
 function requestOrderSeparationPrint(order={},items=[]){
-  const win=window.open('','_blank','noopener,noreferrer');
+  const win=window.open('','_blank');
   if(!win)throw new Error('O navegador bloqueou a impressão de separação. Libere pop-ups para o Admin.');
+  win.opener=null;
   win.document.open();
   win.document.write(separationDocument(order,items));
   win.document.close();
