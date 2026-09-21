@@ -72,7 +72,7 @@ O atual `papo-comprar-webhook-v1` permanece intacto durante a R0-A.
 
 Criar Edge Function isolada:
 
-`papoai-agent-external-lab-v1`
+`papo-external-agent-v1`
 
 ### 4.1 Entrada
 
