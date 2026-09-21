@@ -254,6 +254,24 @@ Deno.serve(async(req:Request)=>{
     let result:any=null;
     let text='';
 
+    if(intent.intent==='greeting'&&conversationId){
+      const [customerQ,repeatQ]=await Promise.all([
+        sb.rpc('get_papoai_commerce_customer_snapshot_v2',{p_conversation_id:conversationId}),
+        sb.rpc('preview_papoai_commerce_repeat_last_purchase_v1',{p_conversation_id:conversationId})
+      ]);
+      const customer=customerQ.data||{};
+      const repeat=repeatQ.data||{};
+      result={customer,repeat};
+      if(customer?.known_customer){
+        const name=customer?.person_name||customer?.name||'';
+        if(repeat?.available){
+          text=`Oi${name?', '+name:''} 😊 Que bom falar com você de novo. Se quiser, posso repetir sua última cesta com os preços de hoje, mostrar nossas cestas ou ver as ofertas.`;
+        }else{
+          text=`Oi${name?', '+name:''} 😊 Que bom falar com você. Posso te ajudar com cestas, produtos ou ofertas.`;
+        }
+      }else{
+        text='Oi 😊 Bem-vindo à Dona Antônia. Posso te ajudar com cestas básicas, produtos do mercado ou ofertas. O que você precisa hoje?';
+      }
     if(intent.intent==='handoff'){
       processingStatus='handoff';responseKind='handoff';
       responseBody=commerceTextResponse({text:'Claro 😊 Vou chamar alguém da nossa equipe para continuar com você.',sessionKey:normalized.sessionKey,correlationId,handoff:true,reason:'customer_requested_human'});
