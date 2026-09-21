@@ -61,3 +61,12 @@
 - criado `tests/admin-r14-operations-v2-contract.test.mjs` para proteger gates OFF, wiring condicionado e ausência de transporte/persistência paralela;
 - nenhuma rota real, GPS, provider, financeiro real, SEFAZ, Bling, outbound, canary ou dado real foi acionado;
 - R14 marcada DONE; R15 Automações, Copiloto, Integrações e Saúde promovida para IN_PROGRESS.
+
+## 2026-09-21 — R15 lote 1
+- preflight confirmou HEAD inicial `24c317faddcf16862ba0e19eaa4234e207a7b3e9`; branch 191 commits à frente e 1 atrás de `main`; divergência paralela segue restrita a SEO/dados públicos de cestas e não foi incorporada;
+- Automation Builder auditado: `automationBuilderUiEnabled=false`; runtime live não é ativável pela superfície, simulação permanece sem efeitos e OpenAI requer escolha explícita/gates próprios;
+- Copiloto humano auditado: `humanCopilotEnabled=false`; modo é assistivo, rascunho é editável e nenhuma sugestão é enviada automaticamente;
+- criada e conectada camada `admin-r15-systems-v2.js/css` para responsividade, touch >=44 px, safe-area, aria-live e busy guard, sem fetch/storage/persistência próprios;
+- criado `tests/admin-r15-systems-v2-contract.test.mjs` protegendo gates OFF e contratos seguros;
+- nenhum Builder/Copiloto foi ativado, nenhuma IA paga, automação, provider, outbound, canary ou dado real foi acionado;
+- R15 permanece IN_PROGRESS para inventário/integração segura das superfícies restantes de integrações e saúde/observabilidade.
