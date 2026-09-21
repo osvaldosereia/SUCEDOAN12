@@ -140,8 +140,8 @@ export function buildLabHandoffResponse({text,sessionKey,correlationId,reason}){
   return {message:{text:sanitizeOutboundText(text)},handoff:true,reason,session_id:sessionKey,correlation_id:correlationId};
 }
 
-export function buildLabSilentResponse({sessionKey,correlationId,reason,pausedUntil=null}){
-  const out={message:null,silent:true,handoff:true,reason,session_id:sessionKey,correlation_id:correlationId};
+export function buildLabSilentResponse({sessionKey,correlationId,reason,pausedUntil=null,handoff=true}){
+  const out={message:null,silent:true,handoff:Boolean(handoff),reason,session_id:sessionKey,correlation_id:correlationId};
   if(pausedUntil) out.paused_until=pausedUntil;
   return out;
 }
