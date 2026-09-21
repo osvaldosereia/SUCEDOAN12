@@ -32,8 +32,8 @@ async function jsonRequest(url,options={}){
 export function clearAdminSession(){write(null)}
 export async function adminSession(){
   let session=read();
-  if(!session?.access_token)return null;
-  if(expMs(session.access_token)>Date.now()+CLOCK_SKEW_MS)return session;
+  if(!session)return null;
+  if(session.access_token&&expMs(session.access_token)>Date.now()+CLOCK_SKEW_MS)return session;
   if(!session.refresh_token){clearAdminSession();return null}
   try{
     const fresh=await jsonRequest(`${CONFIG.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,{
