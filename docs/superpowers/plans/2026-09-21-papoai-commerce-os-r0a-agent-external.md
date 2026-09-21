@@ -20,6 +20,7 @@
 - New tables are server-only: RLS enabled, public/anon/authenticated revoked, service_role only.
 - New webhook is `verify_jwt=false` only because it implements its own secret validation and is fail-closed.
 - A capability remains `unknown` until real evidence exists; UI screenshots may seed only `observed_ui`.
+- The existing generic `lib/omnichannel/channel-runtime-v1.mjs` `CAPABILITY_REGISTRY` describes channel rendering possibilities and MUST NOT be treated as evidence that the PapoAI provider supports a specific rich response.
 - The laboratory database kill switch defaults to disabled.
 - The lab response is deterministic and fixed; no model-generated text.
 - Secrets never enter browser code, repository files, response bodies, or logs.
@@ -262,7 +263,17 @@ Create `scripts/test-papoai-agent-external-lab-db-v1.mjs`. Bootstrap only the mi
 
 ```js
 const {PGlite}=require('@electric-sql/pglite');
+const fs=require('node:fs');
+const assert=require('node:assert/strict');
 const db=new PGlite();
+const one=async sql=>(await db.query(sql)).rows?.[0]||null;
+const migration=fs.readFileSync('supabase/migrations/20260921174500_papoai_agent_external_lab_core_v1.sql','utf8');
+const migrationWithoutVaultDoBlockForPglite=migration
+  .replace(/do \\$\\$[\\s\\S]*?dona_antonia_papoai_agent_external_lab_key_v1[\\s\\S]*?end \\$\\$;/i,'')
+  .replace(/create or replace function public\\.get_papoai_agent_external_lab_key_v1\\(\\)[\\s\\S]*?grant execute on function public\\.get_papoai_agent_external_lab_key_v1\\(\\) to service_role;/i,'');
+assert.match(migration,/vault\\.create_secret/);
+assert.match(migration,/vault\\.decrypted_secrets/);
+assert.match(migration,/grant execute on function public\\.get_papoai_agent_external_lab_key_v1\\(\\) to service_role/);
 
 await db.exec(`
   create role anon;
@@ -643,6 +654,7 @@ Add three explicit steps:
 
 `docs/projects/papoai-commerce-os/README.md` must state:
 - PapoAI Commerce OS is separate from Customer & Marketing OS;
+- provider-specific capability evidence in `channel_provider_capability_evidence` overrides assumptions from the generic channel renderer registry when deciding whether PapoAI may use a rich response;
 - PapoAI is transport/CRM/execution;
 - Supabase is commercial truth and orchestration;
 - R0-A is transport-only;
