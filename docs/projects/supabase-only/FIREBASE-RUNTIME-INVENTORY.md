@@ -31,15 +31,16 @@ Regra: migrar a entrada ativa; versões antigas devem ser marcadas como legado e
 
 ### Cestas rápidas
 Entrada ativa: `cesta-mobile/index.html`.
-- `cesta-mobile/cesta-mobile.js` lê produtos via serviço Firebase.
+- catálogo ativo já migrado para Supabase na Rodada 1.
+- persistência das cestas ainda precisa deixar GitHub JSON e consolidar `basket_templates` / `basket_template_items`.
 
-Regra: catálogo e persistência canônica passam para Supabase (`products`, `basket_templates`, `basket_template_items`). GitHub JSON deixa de ser fonte de verdade.
+Regra: Supabase passa a ser também a fonte canônica das próprias cestas; GitHub JSON fica apenas como artefato de publicação enquanto necessário.
 
 ### Kits
 Entrada ativa: `kit-mobile/index.html`.
-- `kit-mobile/kit-app-v3.js` lê catálogo do Firebase.
-- `kit-mobile/kit-manager-v1.js` ainda contém configuração Firebase.
-- `kit-mobile/kit-instagram-queue.js` lê produtos do Firebase.
+- `kit-mobile/kit-app-v3.js` já carrega catálogo pelo Supabase.
+- `kit-mobile/kit-instagram-queue.js` já carrega produtos pelo Supabase.
+- `kit-mobile/kit-manager-v1.js` ainda contém configuração/legado Firebase e precisa ser revisado.
 
 Versão antiga:
 - `kit-mobile/kit-app-v2.js`.
