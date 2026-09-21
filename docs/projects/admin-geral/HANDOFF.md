@@ -26,7 +26,7 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R13 DONE. R14 IN_PROGRESS — Logística, Financeiro, Bling e Fiscal.
-R13 integrou Marketing ao Admin Geral apenas por camada UI-only aditiva; publishing, execution mode, channel gates, canary e credenciais continuam sob autoridade/gates do projeto Marketing Admin. Homologação externa permanece bloqueio próprio e não impede a conclusão segura da integração de interface do Admin Geral.
+R1–R14 DONE. R15 IN_PROGRESS — Automações, Copiloto, Integrações e Saúde.
+R14 integrou de forma segura as superfícies dormentes de Logística e Financeiro, corrigiu o wiring condicionado da Central Financeira e adicionou camada UX/contrato sem ativar runtime. Logística/Driver App/GPS/provider, financeiro real/conciliação externa/fiscal e Bling permanecem atrás de gates OFF e ações humanas próprias.
 `main` permanece divergente apenas por SEO/dados públicos de cestas, fora do escopo atual; não incorporar automaticamente.
-Próxima execução: inventariar as superfícies reais de Logística, Financeiro, Bling e Fiscal, incluindo contratos existentes e rotas do Admin. Preservar qualquer emissão fiscal, sincronização Bling, mutação financeira e operação real atrás dos gates/ações humanas já existentes. Melhorar apenas o que for seguro, aditivo e validável sem atingir pedidos/clientes/dados reais.
+Próxima execução: inventariar Automation Builder, Copiloto, integrações e saúde reais. Preservar `automationBuilderUiEnabled=false`, `humanCopilotEnabled=false`, IA paga, outbound e providers externos. Melhorar somente UX, observabilidade e contratos seguros sem executar automações ou atingir clientes/dados reais.
