@@ -81,6 +81,18 @@ Deno.serve(async(req:Request)=>{
     }),200,responseBearer);
   }
 
+  const internalPhones=new Set([
+    '+556598150975',
+    '+5565984491018'
+  ]);
+  if(internalPhones.has(normalized.phoneE164)){
+    return jsonResponse(buildLabSilentResponse({
+      sessionKey:normalized.sessionKey,
+      correlationId,
+      reason:'internal_company_number'
+    }),200,responseBearer);
+  }
+
   const {data:adapter,error:adapterError}=await sb.from('channel_provider_adapters')
     .select('id,channel_account_id,status,inbound_mode,outbound_mode')
     .eq('provider_key',PROVIDER_KEY).eq('channel',CHANNEL)
