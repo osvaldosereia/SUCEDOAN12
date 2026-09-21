@@ -59,3 +59,17 @@ O roadmap autônomo R1–R16 terminou. Novas alterações nesta frente só devem
 - workflow `Admin Geral contracts` run 35601154154 passou com sucesso, incluindo o novo passo `Visual standard V3` e todos os contratos R1–R16;
 - nenhuma flag externa, publishing, outbound, canary, Bling/fiscal, logística/financeiro real ou IA paga foi ativada;
 - frontend V3 permanece na branch do Admin até a integração deliberada com `main`; não declarar o visual novo como publicado antes dessa integração.
+
+## Pós-R16 — Admin como produto único / Global Shell V3 (21/09/2026)
+- screenshots reais confirmaram que o usuário ainda percebia Atendimento, Relacionamento, Marketing, Balanço e outras ferramentas como aplicativos diferentes;
+- critério corrigido: separação técnica por módulos não pode aparecer como separação de produto;
+- criado `admin/admin-global-shell-v3.js/css`, que fornece cabeçalho global, navegação canônica, menu lateral desktop, drawer mobile, estado ativo e acesso ao Comprar para módulos especializados;
+- Relacionamento agora mantém seus painéis como navegação secundária dentro do Admin, não como sidebar concorrente;
+- Inteligência e Aprendizados mantêm seus cabeçalhos de página dentro do shell global;
+- VIDEO foi convertido visualmente do tema standalone escuro para a linguagem visual do Admin, preservando seu workflow;
+- Balanço rápido passou a abrir dentro do shell global mantendo operação mobile-first;
+- ferramentas operacionais externas ao diretório /admin também foram integradas: Cadastro rápido, Validades, Cestas rápidas e Kits;
+- o Module Registry agora inclui Cadastro rápido, Validades e Kits como módulos canônicos; Cestas rápidas usa o módulo Cestas;
+- a navegação operacional Contagem/Cadastro/Validades/Cestas/Kits permanece como navegação secundária contextual;
+- nenhum runtime, gate externo, Make legado, publicação, outbound, Bling/fiscal ou dado real foi alterado por esta unificação visual;
+- testes `admin-global-shell-v3-contract.test.mjs` e Visual Standard V3 estão no CI.
