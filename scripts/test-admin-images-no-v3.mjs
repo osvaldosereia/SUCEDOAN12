@@ -2,8 +2,9 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const index=fs.readFileSync('admin/index.html','utf8');
+const registry=fs.readFileSync('admin/module-registry.js','utf8');
 assert.doesNotMatch(index,/admin-v3\/imagens-ia\.html/,'Admin oficial não deve enviar Imagens IA para /admin-v3');
-assert.match(index,/href=["'](?:\.\/)?imagens-ia\.html["']/,'Admin oficial deve abrir Imagens IA dentro de /admin');
+assert.match(registry,/id:'productImages'[\s\S]*?value:'\.\/imagens-ia\.html'/,'Admin oficial deve registrar Imagens IA dentro de /admin');
 
 for(const file of [
   'admin/imagens-ia.html',

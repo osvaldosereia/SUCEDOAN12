@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {buildCommercialSnapshot} from '../lib/commercial/commercial-snapshot-v1.mjs';
 const [cfg,html,js]=await Promise.all([readFile('admin/config.js','utf8'),readFile('admin/index.html','utf8'),readFile('admin/commercial-truth.js','utf8')]);
 assert.match(cfg,/commercialTruthUiEnabled:\s*false/,'commercial truth UI must stay dormant');
-assert.match(html,/id="commercialTruthNav" class="nav hidden"/,'commercial nav must be hidden by default');
+assert.match(html,/id="commercialTruthMount" hidden aria-hidden="true"/,'commercial mount must stay hidden by default');
 assert.match(html,/if\(window\.DA_ADMIN_CONFIG\?\.commercialTruthUiEnabled\)/,'mount must require feature flag');
 assert.doesNotMatch(js,/api\(['"](?:enable|activate|publish|go_live)/i,'UI must not expose activation API');
 for(const action of ['dashboard','search_products','preview_fefo','preview_margin','create_lot_draft','create_policy_draft','kill'])assert.match(js,new RegExp(`api\\(['\"]${action}`),`expected safe action ${action}`);

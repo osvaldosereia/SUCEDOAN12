@@ -1,3 +1,5 @@
+import('./admin-context-nav-v2.js?v=20260920-2').catch(error=>console.warn('[admin-context-nav] navegação contextual indisponível; atendimento preservado',error));
+
 const AUTH_KEY='da_admin_auth';
 const frame=document.getElementById('testChatFrame');
 const diagnostics=document.getElementById('testDiagnostics');

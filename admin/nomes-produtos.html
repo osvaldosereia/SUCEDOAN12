@@ -7,15 +7,18 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>Dona Antônia · Nomes dos produtos · Admin</title>
   <link rel="stylesheet" href="./styles.css?v=20260914-3">
-  <link rel="stylesheet" href="./product-name-management.css?v=20260914-3">
+  <link rel="stylesheet" href="./admin-design-system-v2.css?v=20260920-r2">
+  <link rel="stylesheet" href="./admin-subpage-shell-v2.css?v=20260920-r3">
+  <link rel="stylesheet" href="./product-name-management.css?v=20260921-visual-1">
   <style>
     .runtime-state{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px}
     .runtime-state strong{font-size:14px}
     .runtime-ok{color:#137333}.runtime-busy{color:#7a4b00}.runtime-error{color:#b3261e}
     .name-normalization-load-error{display:grid;gap:10px}
   </style>
+  <link rel="stylesheet" href="./admin-visual-standard-v3.css?v=20260921-1">
 </head>
-<body>
+<body class="da-v2 da-standard-page" data-admin-module="productNames">
   <header class="topbar">
     <button id="menuButton" class="menu-button" type="button" aria-label="Abrir menu">☰</button>
     <a class="brand" href="./#dashboard"><img src="../img/logoantonia5.png" alt="" width="44" height="44"><span><strong>Dona Antônia</strong><b>Admin</b></span></a>
@@ -23,11 +26,7 @@
   </header>
 
   <div class="admin-layout">
-    <aside id="sidebar" class="sidebar" aria-label="Menu principal"><nav>
-      <a href="./#dashboard">Início</a><a href="../comprar/" target="_blank" rel="noopener">Comprar</a><a href="./#baskets">Cestas</a><a href="./#products">Produtos</a>
-      <a class="active" href="./nomes-produtos.html">Nomes dos produtos</a><a href="./imagens-ia.html">Imagens IA</a>
-      <a href="./#categories">Categorias</a><a href="./#orders">Pedidos</a><a href="./#customers">Clientes</a><a href="./atendimento.html">Atendimento</a><a href="../contagem/">Balanço rápido</a>
-    </nav></aside>
+    <aside id="sidebar" class="sidebar" aria-label="Menu principal"><nav id="adminShellNavigation"></nav></aside>
     <div id="sidebarBackdrop" class="sidebar-backdrop hidden"></div>
 
     <main class="content">
@@ -59,6 +58,8 @@
 
   <dialog id="productDialog" class="editor-dialog"><div id="productEditorBody"></div></dialog><div id="toastRegion" class="toasts" aria-live="polite" aria-atomic="true"></div>
 
+  <script src="./config.js?v=20260920-r3-context"></script>
+  <script type="module" src="./admin-subpage-shell-v2.js?v=20260921-visual-1"></script>
   <script type="module" src="./comprar-ui.js?v=20260914-1"></script>
   <script>
   (function(){
@@ -84,13 +85,13 @@
     async function parseResponse(response){const text=await response.text();if(!text)return {};try{return JSON.parse(text)}catch{throw new Error(`Resposta inválida da API (${response.status}).`)}}
 
     async function namesApi(action,payload={}){
-      const controller=new AbortController(),timer=window.setTimeout(()=>controller.abort(),20000);
+      const controller=new AbortController(),timer=window.setTimeout(()=>controller.abort(),60000);
       try{
-        const response=await fetch(NAMES_ENDPOINT,{method:'POST',body:JSON.stringify({action,...payload}),cache:'no-store',credentials:'omit',signal:controller.signal});
+        const response=await fetch(NAMES_ENDPOINT,{method:'POST',headers:{apikey:SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({action,...payload}),cache:'no-store',credentials:'omit',signal:controller.signal});
         const data=await parseResponse(response);
         if(!response.ok||data.ok===false){const error=new Error(data.detail||data.error||`Falha ao consultar a API (${response.status}).`);error.code=data.error;error.data=data;throw error}
         return data;
-      }catch(error){if(error?.name==='AbortError')throw new Error('A consulta demorou mais de 20 segundos.');throw error}finally{window.clearTimeout(timer)}
+      }catch(error){if(error?.name==='AbortError')throw new Error('A consulta demorou mais de 60 segundos. Tente novamente; a automação continua funcionando em segundo plano.');throw error}finally{window.clearTimeout(timer)}
     }
 
     async function adminApi(action,payload={}){
@@ -112,7 +113,7 @@
     function renderStats(counts={}){$('statTotal').textContent=number(counts.total_products);$('statApplied').textContent=number(counts.applied);$('statReview').textContent=number(counts.review);$('statQueued').textContent=number(Number(counts.queued||0)+Number(counts.untracked||0));$('statUnchanged').textContent=number(counts.unchanged);$('statError').textContent=number(counts.error);$('statSkipped').textContent=number(counts.skipped);$('statProcessing').textContent=number(counts.processing)}
     function renderLoadError(error){const detail=esc(error?.message||'Falha de conexão.'),markup=`<div class="empty name-normalization-load-error"><strong>Não foi possível carregar os dados.</strong><div class="muted">${detail}</div><div class="row-actions"><button class="secondary" type="button" data-retry-load>Tentar novamente</button></div></div>`;$('reviewList').innerHTML=markup;$('roundsList').innerHTML=markup;$('historyList').innerHTML=markup;$('historySummary').textContent='Não foi possível carregar os dados da automação.';$('lastUpdated').textContent='A automação continua independente desta tela. Você pode tentar novamente manualmente.';setRuntimeState('Falha na consulta.','error')}
 
-    async function loadData(){const button=$('refreshData');button.disabled=true;button.textContent='Atualizando…';setRuntimeState('Consultando o Supabase…','busy');try{const data=await namesApi('product_name_normalization',{q:filters.q,status:filters.status,limit:80});renderStats(data.counts||{});renderReviews(data.review_jobs||[]);renderRounds(data.runs||[],data.recent_jobs||[]);renderHistory(data.jobs||[]);$('lastUpdated').textContent=`Atualizado em ${date(data.generated_at)}. Para consultar novamente, clique em Atualizar.`;setRuntimeState('Conectado.','ok')}catch(error){renderLoadError(error);toast(error.message,'error')}finally{button.disabled=false;button.textContent='Atualizar'}}
+    async function loadData(){const button=$('refreshData');button.disabled=true;button.textContent='Atualizando…';setRuntimeState('Consultando o Supabase…','busy');const slowNotice=window.setTimeout(()=>{setRuntimeState('Ainda consultando — alguns históricos podem levar mais tempo.','busy');$('lastUpdated').textContent='A consulta continua em andamento. Você pode permanecer nesta tela; nada será alterado automaticamente.'},12000);try{const data=await namesApi('product_name_normalization',{q:filters.q,status:filters.status,limit:80});renderStats(data.counts||{});renderReviews(data.review_jobs||[]);renderRounds(data.runs||[],data.recent_jobs||[]);renderHistory(data.jobs||[]);$('lastUpdated').textContent=`Atualizado em ${date(data.generated_at)}. Para consultar novamente, clique em Atualizar.`;setRuntimeState('Conectado.','ok')}catch(error){renderLoadError(error);toast(error.message,'error')}finally{button.disabled=false;button.textContent='Atualizar'}}
     async function processNow(button){button.disabled=true;button.textContent='Solicitando…';setRuntimeState('Solicitando nova rodada…','busy');try{const data=await namesApi('product_name_normalization_process_now'),dispatch=data.dispatch||{};if(dispatch.dispatched===false){const msg=dispatch.reason==='queue_empty'?'Não há produtos pendentes para processar.':`Não foi possível iniciar: ${dispatch.reason||'sem detalhe'}.`;toast(msg,'error');setRuntimeState(msg,'error')}else{toast('Rodada solicitada. Clique em Atualizar quando quiser ver o resultado.','success');setRuntimeState('Rodada solicitada.','ok')}}catch(error){toast(error.message,'error');setRuntimeState('Falha ao solicitar rodada.','error')}finally{button.disabled=false;button.textContent='Processar agora'}}
     async function reviewJob(jobId,decision,button){const card=button.closest('[data-review-job]'),name=card?.querySelector('[data-review-name]')?.value.trim()||'';if(decision==='keep'&&!confirm('Manter o nome atual e encerrar esta revisão?'))return;if(decision==='edit_apply'&&!name){toast('Digite o nome que deseja aplicar.','error');return}button.disabled=true;try{await namesApi('product_name_normalization_review',{job_id:jobId,decision,name});toast(decision==='keep'?'Nome atual mantido.':'Nome aprovado e aplicado.','success');await loadData()}catch(error){if(error.code==='product_name_changed')toast(`O produto foi alterado depois da revisão. Nome atual: ${error.data?.current_name||'consulte o produto'}.`,'error');else toast(error.message,'error')}finally{button.disabled=false}}
 
@@ -125,7 +126,6 @@
     document.addEventListener('click',async event=>{const target=event.target.closest('button');if(!target)return;if(target.matches('[data-edit-product]')){await openProductEditor(target.dataset.editProduct);return}if(target.matches('[data-review-action]')){await reviewJob(target.dataset.jobId,target.dataset.reviewAction,target);return}if(target.matches('[data-retry-load]')){await loadData();return}if(target.matches('[data-close-product-editor]')){closeProductEditor();return}});
     productEditorBody.addEventListener('submit',async event=>{const form=event.target;if(form.id!=='nameProductEditorForm')return;event.preventDefault();const d=formDataObject(form),id=form.dataset.id,patch={name:d.name,gtin:d.gtin,sku:d.sku,price:d.price,cost:d.cost,stock:d.stock,category:d.category,brand:d.brand,packaging:d.packaging,image_url:d.image_url,description_short:d.description_short,is_active:form.elements.is_active.checked,is_offer:form.elements.is_offer.checked,storefront_featured:form.elements.storefront_featured.checked};try{await adminApi('save_product',{id,patch});closeProductEditor();toast('Produto salvo. Clique em Atualizar para recarregar a gestão de nomes.','success')}catch(error){toast(error.message,'error')}});
     productDialog.addEventListener('click',event=>{if(event.target===productDialog)closeProductEditor()});
-    const sidebar=$('sidebar'),sidebarBackdrop=$('sidebarBackdrop'),closeMenu=()=>{sidebar.classList.remove('open');sidebarBackdrop.classList.add('hidden')};$('menuButton').addEventListener('click',()=>{const open=sidebar.classList.toggle('open');sidebarBackdrop.classList.toggle('hidden',!open)});sidebarBackdrop.addEventListener('click',closeMenu);
   })();
   </script>
 </body>

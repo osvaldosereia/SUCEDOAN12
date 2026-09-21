@@ -9,8 +9,9 @@
   <title>Criador rápido de cestas · Dona Antônia</title>
   <link rel="stylesheet" href="../operacoes-mobile.css?v=20260814-suite-cestas-v1">
   <link rel="stylesheet" href="./cesta-mobile.css?v=20260814-cestas-v1">
+  <link rel="stylesheet" href="../admin/admin-global-shell-v3.css?v=20260921-2">
 </head>
-<body class="ops-suite ops-cestas">
+<body class="ops-suite ops-cestas" data-admin-module="baskets">
 <header class="ops-topbar">
   <div class="ops-topbar-inner">
     <div class="ops-topbar-main">
@@ -117,6 +118,8 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div id="busy" class="busy" hidden><div><strong id="busyTitle">Processando…</strong><span id="busyText">Aguarde.</span></div></div>
 
+<script src="../admin/config.js?v=20260920-r3-context"></script>
+<script type="module" src="../admin/admin-global-shell-v3.js?v=20260921-2"></script>
 <script type="module" src="./cesta-mobile.js?v=20260814-cestas-v1"></script>
 </body>
 </html>

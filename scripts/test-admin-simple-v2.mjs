@@ -2,11 +2,12 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 const html=fs.readFileSync('admin/index.html','utf8');
+const registry=fs.readFileSync('admin/module-registry.js','utf8');
 const app=fs.readFileSync('admin/app-lite.js','utf8');
 const api=fs.readFileSync('supabase/functions/admin-simple-v2/index.ts','utf8');
 
 for (const route of ['products','baskets','customers']) {
-  assert.match(html,new RegExp(`data-route="${route}"`));
+  assert.match(registry,new RegExp(`id:'${route}'[\\s\\S]*?route:\\{type:'hash',value:'${route}'\\}`),`módulo ${route} ausente do registry canônico`);
 }
 
 for (const forbidden of [

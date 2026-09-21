@@ -12,8 +12,10 @@
   <link rel="stylesheet" href="../contagem-v2/style.css?v=20260914-fast-two-modes-1">
   <link rel="stylesheet" href="./fast-mode.css?v=20260914-fast-two-modes-1">
   <link rel="stylesheet" href="./fast-balance-v3.css?v=20260914-fast-two-modes-1">
+  <link rel="stylesheet" href="./admin-visual-v3.css?v=20260921-1">
+  <link rel="stylesheet" href="../admin/admin-global-shell-v3.css?v=20260921-1">
 </head>
-<body>
+<body data-admin-module="stockCount">
   <header class="topbar">
     <div class="brand"><span class="brand-mark">DA</span><div><strong>Dona Antônia</strong><small>Balanço rápido · Supabase</small></div></div>
     <div class="top-actions"><a class="ghost" href="../admin/" style="text-decoration:none">Admin</a></div>
@@ -65,7 +67,10 @@
   </main>
 
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+  <script src="../admin/config.js?v=20260920-r3-context"></script>
+  <script type="module" src="../admin/admin-global-shell-v3.js?v=20260921-1"></script>
   <script src="../contagem-v2/config.js?v=20260914-fast-two-modes-1"></script>
+  <script src="./r6-balance-safety.js?v=20260920-r6-2"></script>
   <script src="./fast-mode.js?v=20260914-fast-two-modes-1"></script>
 </body>
 </html>

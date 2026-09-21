@@ -9,13 +9,14 @@ for(const path of ['admin/gondolas.html','admin/gondolas-v1.js','admin/gondolas-
 }
 
 const html=read('admin/index.html');
+const registry=read('admin/module-registry.js');
 const page=read('admin/gondolas.html');
 const gondolas=read('admin/gondolas-v1.js');
 const editor=read('admin/product-gondola-editor-v1.js');
 const backend=read('supabase/functions/admin-gondolas-v1/index.ts');
 const config=read('supabase/config.toml');
 
-assert.match(html,/href=["']\.\/gondolas\.html["'][^>]*>Gôndolas</,'atalho Gôndolas ausente no Admin');
+assert.match(registry,/id:'shelves'[\s\S]*?label:'Gôndolas'[\s\S]*?value:'\.\/gondolas\.html'/,'atalho Gôndolas ausente no registry canônico');
 assert.match(html,/product-gondola-editor-v1\.js/,'integração da gôndola no editor de produto não carregada');
 assert.match(page,/gondolas-v1\.css/,'CSS da página de gôndolas não carregado');
 assert.match(page,/gondolas-v1\.js/,'JS da página de gôndolas não carregado');

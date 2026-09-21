@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const required=[
   'admin/index.html',
+  'admin/module-registry.js',
   'admin/nomes-produtos.html',
   'admin/product-name-management.css',
   'supabase/functions/admin-product-names-v1/index.ts'
@@ -10,12 +11,12 @@ const required=[
 for(const file of required) assert.ok(fs.existsSync(file),`faltando ${file}`);
 
 const index=fs.readFileSync('admin/index.html','utf8');
+const registry=fs.readFileSync('admin/module-registry.js','utf8');
 const page=fs.readFileSync('admin/nomes-produtos.html','utf8');
 const css=fs.readFileSync('admin/product-name-management.css','utf8');
 const edge=fs.readFileSync('supabase/functions/admin-product-names-v1/index.ts','utf8');
 
-assert.match(index,/nomes-produtos\.html/,'menu do Admin deve apontar para Nomes dos produtos');
-assert.match(index,/Nomes dos produtos/,'rótulo do menu ausente');
+assert.match(registry,/id:'productNames'[\s\S]*?label:'Nomes dos produtos'[\s\S]*?value:'\.\/nomes-produtos\.html'/,'registry do Admin deve apontar para Nomes dos produtos');
 assert.match(page,/Atualizar/,'tela deve ter atualização manual explícita');
 assert.match(page,/Processar agora/,'gestor deve poder solicitar uma rodada imediata');
 assert.match(page,/Clique em Atualizar para consultar/,'tela não deve iniciar travada em Carregando');

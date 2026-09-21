@@ -123,7 +123,8 @@ assert.doesNotMatch(driverFn,/confirm_order_payment_v1/,'driver transport must n
 assert.doesNotMatch(driverFn,/bling|sefaz/i,'driver transport must not call fiscal providers');
 
 assert.match(adminConfig,/logisticsUiEnabled:\s*false/);
-assert.match(adminHtml,/id="logisticsNav" class="nav hidden"/);
+assert.match(adminHtml,/id="logisticsMount" hidden aria-hidden="true"/,'logistics mount must stay hidden by default');
+assert.match(adminHtml,/if\(window\.DA_ADMIN_CONFIG\?\.logisticsUiEnabled\)\{import\('\.\/logistics\.js'\)\}/,'logistics UI import must stay behind its feature flag');
 assert.match(adminHtml,/id="logisticsMount"/);
 assert.match(driverConfig,/enabled:false/);
 assert.match(driverConfig,/gpsEnabled:false/);

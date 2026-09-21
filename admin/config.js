@@ -24,7 +24,12 @@ window.DA_ADMIN_CONFIG = Object.freeze({
   build: '20260915-admin-simple-v2-no-auth-safety-flags'
 });
 
-
 (function loadHumanServiceCenter(cfg){
   if(!cfg?.humanServiceCenterUiEnabled)return;
 })(window.DA_ADMIN_CONFIG);
+
+(function loadAdminContextNavigation(){
+  const page=location.pathname.split('/').filter(Boolean).pop()||'';
+  if(!new Set(['inteligencia.html','aprendizados.html']).has(page))return;
+  import('./admin-context-nav-v2.js?v=20260920-2').catch(error=>console.warn('[admin-context-nav] fallback legado preservado',error));
+})();

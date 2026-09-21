@@ -9,6 +9,7 @@ const js=fs.readFileSync('admin/relacionamento.js','utf8');
 const api=fs.readFileSync('admin/relationship-api.js','utf8');
 const css=fs.readFileSync('admin/relacionamento.css','utf8');
 const index=fs.readFileSync('admin/index.html','utf8');
+const registry=fs.readFileSync('admin/module-registry.js','utf8');
 
 for(const token of [
   'relationship_brand_summary_v1',
@@ -73,7 +74,7 @@ assert.match(js,/Nenhum candidato é seguro/);
 assert.match(js,/sem mesclar cadastros/);
 assert.match(css,/relationship-shell/);
 assert.match(css,/identity-review-card/);
-assert.match(index,/id="relationshipNav"/);
-assert.match(index,/relationshipCanaryEnabled/);
+assert.match(registry,/id:'relationship'[\s\S]*?label:'Central de Relacionamento'[\s\S]*?gate:'relationship'/,'Central de Relacionamento must remain in canonical gated navigation');
+assert.match(index,/admin-shell-v2\.js/,'Admin must load canonical shell navigation');
 
 console.log('cm-1.15 relationship command center contract ok');
