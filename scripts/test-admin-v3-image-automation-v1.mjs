@@ -8,7 +8,7 @@ const js=r('admin/image-automation.js');
 const edge=r('supabase/functions/admin-product-images-v1/index.ts');
 const migration=r('supabase/migrations/20260912153813_admin_product_image_automation_controls_v1.sql');
 assert.match(registry,/id:'productImages'[\s\S]*?value:'\.\/imagens-ia\.html'/);
-assert.match(index,/Imagens IA/);
+assert.match(registry,/id:'productImages'[\s\S]*?label:'Imagens IA'/);
 assert.match(page,/18 produtos/);
 for(const id of ['runNow','automationToggle','intervalSelect','saveFrequency','refreshData','recentResults','statBadImages','repairManualPrompt','generateIndividualManual']) assert.match(page,new RegExp(`id=["']${id}["']`));
 assert.match(js,/Authorization/);assert.match(js,/Bearer/);assert.match(js,/admin-product-images-v1/);
