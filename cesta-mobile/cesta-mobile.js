@@ -464,9 +464,6 @@ async function scanPhoto(file) {
 }
 
 function openSettings() {
-  const config = loadConfig();
-  $('#githubToken').value = config.githubToken || '';
-  $('#basketsPath').value = config.basketsPath || DEFAULT_CONFIG.basketsPath;
   $('#settingsBackdrop').hidden = false;
   $('#settingsDrawer').classList.add('open');
   $('#settingsDrawer').setAttribute('aria-hidden', 'false');
@@ -537,14 +534,9 @@ function bind() {
   $('#settingsButton').addEventListener('click', openSettings);
   $('#closeSettingsButton').addEventListener('click', closeSettings);
   $('#settingsBackdrop').addEventListener('click', closeSettings);
-  $('#saveSettingsButton').addEventListener('click', async () => {
-    saveConfig({
-      githubToken: text($('#githubToken').value),
-      basketsPath: text($('#basketsPath').value) || DEFAULT_CONFIG.basketsPath,
-    });
+  $('#saveSettingsButton').addEventListener('click', () => {
     closeSettings();
-    showToast('Configurações salvas.', 'success');
-    await loadData();
+    showToast('Cestas usam somente o Supabase; nenhuma configuração local é necessária.', 'success');
   });
 }
 
