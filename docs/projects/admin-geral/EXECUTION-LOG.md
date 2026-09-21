@@ -48,26 +48,20 @@
 - nenhuma criação/alteração de pedido, Bling real, WhatsApp outbound, canary ou publishing foi executada.
 
 ## 2026-09-20 — R9 lote 2 / conclusão + promoção R10
-- preflight: HEAD inicial `6b34ec1962bf09c51d5080e25feafbde5ccc69d1`; branch 138 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
-- backend `supabase/functions/admin-orders-comprar-v1/index.ts` auditado: contratos disponíveis são `health`, `list` e `detail`; não há contrato de mudança de status nessa função, então nenhuma transição operacional foi inventada;
-- `admin-orders-r9-v2.js` ganhou busy/cooldown de UI para abrir, imprimir, PDF, etiqueta, atualizar, paginar e buscar, sem fetch/storage/API próprios;
-- teste contratual R9 ampliado para proteger os guardas e ausência de transições fictícias;
-- R9 marcada DONE e R10 — Clientes, identidade e Customer 360 — promovida para IN_PROGRESS;
-- nenhum pedido real, Bling, WhatsApp outbound, publishing, canary ou dado de cliente foi alterado para validar.
+- backend `admin-orders-comprar-v1` auditado: somente health/list/detail; nenhuma transição operacional fictícia criada;
+- Pedidos ganhou busy/cooldown de UI sem fetch/storage/API próprios; R9 marcada DONE; R10 promovida.
 
-## 2026-09-20 — R10 lote 1
-- preflight: HEAD inicial `cf0fcbdac2605df45e3e1111c7d398e7bacdd2a7`; branch 143 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main;
-- inventário confirmou diretório de Clientes e Customer 360 já maduros, incluindo navegação Resumo/Compras/Preferências/Conversas/Proteção/Linha do tempo;
-- `secureCustomersEnabled()`, autenticação por PIN, Customer OS API e revisão humana de conflitos permanecem autoridades existentes; PIN não foi testado e nenhum conflito foi resolvido;
-- `admin-customer-r10-v2.js/css` criado e conectado como camada DOM-only para acessibilidade, touch >=44px, safe-area e aviso contextual de identidade protegida;
-- `tests/admin-r10-customer-v2-contract.test.mjs` criado para proteger gates e ausência de fetch/storage/persistência paralela;
-- nenhuma mutação de cliente, consentimento, proteção, outbound, canary ou dado real foi usada na validação estática/contratual.
+## 2026-09-20 — R10 lotes 1–2 / conclusão + promoção R11
+- diretório de Clientes e Customer 360 inventariados; autenticação, Customer OS API e revisão humana preservados;
+- `admin-customer-r10-v2.js/css` adicionou acessibilidade, mobile, safe-area e guardas de revisão humana sem persistência paralela;
+- nenhum PIN, conflito, consentimento, suppressão, outbound ou canary real foi acionado; R10 marcada DONE; R11 promovida.
 
-## 2026-09-20 — R10 lote 2 / conclusão + promoção R11
-- preflight: branch 150 commits à frente e 0 atrás de main; merge-base `c635df8` = HEAD de main, sem divergência paralela relevante;
-- `admin-customer-r10-v2.js` passou a marcar loading/vazios com semântica acessível e a proteger `data-identity-approve`/`data-identity-reject` contra duplo clique por captura + `aria-busy`, sem API/storage próprios;
-- confirmação e contrato funcional `customerOsApi('identity_review', ...)` permanecem em `app.js`; revisão registra decisão humana e explicitamente não faz merge automático;
-- `admin-customer-r10-v2.css` refinado para desktop estreito e Customer 360 full-height no mobile, com grids em uma coluna, tabs roláveis, touch >=44px e safe-area;
-- teste R10 ampliado para fail-closed sem token, limpeza de sessão 401, no-merge, guardas e responsividade;
-- nenhuma ação real de identidade, PIN, consentimento, suppressão, outbound ou canary foi executada;
-- R10 marcada DONE; R11 — Relacionamento, Atendimento, Inteligência e Aprendizados — promovida para IN_PROGRESS.
+## 2026-09-21 — R11 / conclusão + promoção R12
+- preflight: `main` avançou um commit para `be2b3d54` (SEO/dados públicos de cestas); branch estava 156 à frente e 1 atrás, merge-base anterior preservado. Mudança paralela é fora das superfícies R11 e não foi incorporada automaticamente;
+- inventariadas Relacionamento, Atendimento, Inteligência e Aprendizados e suas autoridades funcionais/gates reais;
+- criado `admin-r11-operations-v2.js/css`, camada UI-only compartilhada, conectada às quatro superfícies e sem fetch/storage/persistência próprios;
+- reforçados touch >=44px, formulários mobile, layouts estreitos, safe-area, estados acessíveis e busy/cooldown para ações mutáveis existentes;
+- revisão de Aprendizados continua humana em duas etapas, sem autopublicação; Relacionamento continua sem fabricar evidência; Atendimento mantém teste sem pedido real;
+- criado `tests/admin-r11-operations-v2-contract.test.mjs` para wiring, UI-only, guardas e responsividade;
+- nenhuma ação externa, IA paga, outbound, Meta Direct, publishing, canary, aprendizado real ou dado de cliente foi usada para validar;
+- R11 marcada DONE; R12 — Estúdio Criativo e VIDEO — promovida para IN_PROGRESS.
