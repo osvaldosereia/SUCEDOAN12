@@ -358,43 +358,12 @@ async function advance(sb,supabaseUrl,key){
   return{stage:batch.status};
 }
 
-function firebaseSourceUrl(p){return clean(p?.imagem||p?.imagem_url||p?.url_imagem||p?.imagem_anterior,1800)||null;}
-function firebaseGtin(p){return clean(p?.gtin||p?.ean,40).replace(/\D/g,'');}
-async function syncFirebaseCatalog(sb){
-  const r=await fetch(FIREBASE_PRODUCTS,{headers:{Accept:'application/json','User-Agent':'DonaAntonia-Grid18/2.0'},signal:AbortSignal.timeout(45000)});
-  if(!r.ok)throw new Error(`firebase_catalog_http_${r.status}`);
-  const raw=await r.json().catch(()=>null);
-  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('firebase_catalog_invalid');
-  const byKey=new Map(Object.entries(raw)),byGtin=new Map();
-  for(const [key,p] of byKey){
-    if(!p||typeof p!=='object')continue;
-    const g=firebaseGtin(p);if(g&&!byGtin.has(g))byGtin.set(g,{key,product:p});
-  }
-  const rows=[];
-  for(let from=0;from<5000;from+=1000){
-    const q=await sb.from('products').select('id,firebase_key,gtin,is_active,image_firebase_source_url,image_ai_pipeline_version').order('id').range(from,from+999);
-    if(q.error)throw new Error(`product_sync_read_${clean(q.error.message,140)}`);
-    rows.push(...arr(q.data));if((q.data||[]).length<1000)break;
-  }
-  const changes=[];let matched=0,active=0;
-  for(const p of rows){
-    let key=clean(p.firebase_key,180),fb=key?byKey.get(key):null;
-    if(!fb){const g=clean(p.gtin,40).replace(/\D/g,'');const m=g?byGtin.get(g):null;if(m){key=m.key;fb=m.product;}}
-    const isActive=fb?firebaseProductActive(fb):false,sourceUrl=fb?firebaseSourceUrl(fb):null;
-    if(fb)matched++;if(isActive)active++;
-    if(Boolean(p.is_active)!==isActive||clean(p.image_firebase_source_url,1800)!==clean(sourceUrl,1800)){
-      changes.push({id:p.id,firebase_key:key||null,active:isActive,source_url:sourceUrl});
-    }
-  }
-  let changed=0;
-  if(changes.length){
-    const q=await sb.rpc('sync_product_image_firebase_v2',{p_changes:changes});
-    if(q.error)throw new Error(`firebase_sync_rpc_${clean(q.error.message,180)}`);
-    changed=Number(q.data||0);
-  }
+async function maintainSupabaseCatalog(sb){
+  const activeResult=await sb.from('products').select('id',{count:'exact',head:true}).eq('is_active',true);
+  if(activeResult.error)throw new Error(`product_maintenance_read_${clean(activeResult.error.message,140)}`);
   const enq=await sb.rpc('enqueue_product_image_jobs_v3',{p_limit:500});
   if(enq.error)throw new Error(`enqueue_v3_${clean(enq.error.message,180)}`);
-  return{firebase_records:byKey.size,supabase_products:rows.length,matched,active,changed,enqueued:Number(enq.data||0)};
+  return{source:'supabase',active_products:Number(activeResult.count||0),enqueued:Number(enq.data||0)};
 }
 
 async function authorized(sb,supplied){
@@ -410,7 +379,7 @@ Deno.serve(async req=>{
   const sb=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
   if(!(await authorized(sb,req.headers.get('x-da-product-image-key')||'')))return json({ok:false,error:'unauthorized'},401);
   let body={};try{body=await req.json();}catch{return json({ok:false,error:'invalid_json'},400);}
-  if(body?.event==='healthcheck')return json({ok:true,pipeline_version:PIPELINE_VERSION,model:MODEL,validator_model:VALIDATOR_MODEL,grid:'3x6/18',individual_generation:false,stage_chunk:STAGE_CHUNK});
+  if(body?.event==='healthcheck')return json({ok:true,pipeline_version:PIPELINE_VERSION,model:MODEL,validator_model:VALIDATOR_MODEL,grid:'3x6/18',individual_generation:false,stage_chunk:STAGE_CHUNK,product_source:'supabase_only'});
   if(body?.event==='fallback')return json({ok:false,error:'individual_generation_disabled',pipeline_version:PIPELINE_VERSION},409);
   if(!['advance','maintenance'].includes(body?.event))return json({ok:false,error:'unknown_event'},400);
 
@@ -423,7 +392,7 @@ Deno.serve(async req=>{
     let key=Deno.env.get('OPENAI_API_KEY')||'';
     if(!key){try{const q=await sb.rpc('get_conversation_worker_provider_secret_v1');if(typeof q.data==='string')key=q.data;}catch{}}
     if(body?.event==='maintenance'){
-      const result=await syncFirebaseCatalog(sb);
+      const result=await maintainSupabaseCatalog(sb);
       return json({ok:true,event:'maintenance',pipeline_version:PIPELINE_VERSION,...result});
     }
     if(!key)return json({ok:false,error:'openai_key_missing'},500);
