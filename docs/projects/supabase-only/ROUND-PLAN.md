@@ -38,8 +38,8 @@ Objetivos:
 - Cadastro rápido: lookup/criação/edição somente Supabase;
 - retirar Make e Firebase do runtime do Cadastro;
 - produto novo nasce controlado/inativo quando pesquisa automática não for comprovada;
-- Cestas rápidas: catálogo de produtos do Supabase e persistência canônica em basket_templates;
-- Kits: catálogo Supabase; remover leitura Firebase;
+- Cestas rápidas: concluir persistência canônica em basket_templates/basket_template_items (catálogo já Supabase-only);
+- Kits: concluir persistência Supabase e retirar legado remanescente (catálogo já Supabase-only);
 - preservar UX móvel existente;
 - testes de contratos e autenticação.
 
