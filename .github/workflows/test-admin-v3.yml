@@ -259,18 +259,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q './app.js?v=20260918-cm110-7' admin/index.html
+          grep -q './app.js?v=' admin/index.html
           grep -q './runtime-config.js' admin/app.js
           grep -q "adminFunction:'admin-core-v1'" admin/runtime-config.js
-          grep -q 'data-route="products"' admin/index.html
-          grep -q 'data-route="baskets"' admin/index.html
-          grep -q 'data-route="orders"' admin/index.html
-          grep -q 'data-route="customers"' admin/index.html
-          grep -q './gondolas.html' admin/index.html
+          grep -q "id:'products'" admin/module-registry.js
+          grep -q "id:'baskets'" admin/module-registry.js
+          grep -q "id:'orders'" admin/module-registry.js
+          grep -q "id:'customers'" admin/module-registry.js
+          grep -q "id:'shelves'" admin/module-registry.js
+          grep -q "value:'./gondolas.html'" admin/module-registry.js
           grep -q 'product-gondola-editor-v1.js' admin/index.html
           grep -q 'orders-integrated-v2.js' admin/index.html
-          grep -q 'Balanço rápido' admin/index.html
-          grep -q '../contagem/' admin/index.html
+          grep -q "id:'stockCount'" admin/module-registry.js
+          grep -q "value:'../contagem/'" admin/module-registry.js
       - name: Bloquear segredos no navegador
         shell: bash
         run: |
