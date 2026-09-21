@@ -12,6 +12,7 @@ const checkoutApi=readFileSync('supabase/functions/shopping-checkout-v2/index.ts
 const checkout=readFileSync('comprar/checkout.js','utf8');
 const app=readFileSync('comprar/app.js','utf8');
 const adminOfficial=readFileSync('admin/index.html','utf8');
+const adminRegistry=readFileSync('admin/module-registry.js','utf8');
 const adminLatestApp=readFileSync('admin/app.js','utf8');
 const adminApiClient=readFileSync('admin/api.js','utf8');
 const adminConfig=readFileSync('admin/runtime-config.js','utf8');
@@ -50,7 +51,7 @@ assert.match(app,/async function confirmOrder\(payload=\{\}\)/);assert.match(app
 
 assert.match(adminOfficial,/\.\/app\.js\?v=[^\"']+/,'Admin oficial deve carregar o app local versionado');
 assert.doesNotMatch(adminOfficial,/\/admin-v3\//,'Admin oficial não deve carregar o legado V3');
-assert.match(adminOfficial,/data-route=["']orders["']/);
+assert.match(adminRegistry,/id:'orders'[\s\S]*?route:\{type:'hash',value:'orders'\}/,'Pedidos deve permanecer na navegação canônica do Admin');
 assert.match(adminLatestApp,/async function loadOrders\(/);assert.match(adminLatestApp,/async function openOrder\(/);
 assert.match(adminConfig,/adminOrdersFunction:\s*['"]admin-orders-comprar-v1['"]/);assert.match(adminApiClient,/orderActions\s*=\s*\{orders:['"]list['"],order:['"]detail['"]\}/);assert.match(adminApiClient,/CONFIG\.adminOrdersFunction/);
 assert.match(adminOfficial,/orders-integrated-v2\.js\?v=20260919-print-pdf-3/);assert.match(integratedOrders,/data-view-order/);assert.match(integratedOrders,/stopImmediatePropagation\(\)/);
