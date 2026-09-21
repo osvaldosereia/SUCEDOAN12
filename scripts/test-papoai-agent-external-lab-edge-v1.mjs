@@ -60,3 +60,8 @@ assert.ok(edge.includes("select_product_choice"));
 assert.ok(edge.includes("numberedProductsText"));
 assert.ok(edge.includes("selection_out_of_range"));
 assert.ok(edge.includes("product_selection_required"));
+assert.ok(edge.includes("papoai-conversation-governor-v1.mjs"));
+assert.ok(edge.includes("conversation_governor_enabled"));
+assert.ok(edge.includes("get_papoai_conversation_governor_state_v1"));
+assert.ok(edge.includes("record_papoai_conversation_governor_decision_v1"));
+assert.ok(edge.includes("candidate_set_too_broad"));
