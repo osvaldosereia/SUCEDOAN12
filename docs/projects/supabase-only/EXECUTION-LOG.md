@@ -5,21 +5,22 @@
 - criada branch `supabase-only-admin-migration-20260921`;
 - auditados Supabase, Storage, pg_cron, advisors, tabelas, funções e dependências Firebase;
 - aplicado backfill seguro de localização/fonte de imagem já existente no Supabase;
-- 9/9 pg_cron pausados por `cron.alter_job(..., active => false)`;
-- gatilhos `ai_job_event_dispatch_v3`, `outbound_jobs_whatsapp_event_dispatch`, `trg_queue_order_for_bling` e `trg_queue_order_outbound_job` desabilitados;
-- `automation_config` global colocado em OFF;
-- atendimento automático simples, Agent Core e automação de imagens colocados em OFF;
-- gatilhos de integridade/auditoria mantidos ativos;
-- Balanço rápido e inventory-fast sem fallback Firebase na branch;
-- workers de imagem Grid18 e individual convertidos para fontes Supabase/cache histórico, sem autoridade live Firebase;
-- criada API `admin-products-live-v1` consolidada/autenticada para catálogo, lookup, taxonomia, criação e edição;
-- criado cliente seguro `admin/admin-secure-api-v1.js`;
-- Validades convertida para Supabase autenticado;
-- documentação e CI anti-regressão iniciados;
-- próximas execuções: R2, R3 e R4 agendadas de hora em hora.
+- 9/9 pg_cron pausados;
+- dispatch automático de IA/outbound/Bling pausado e automações globais em OFF;
+- Balanço rápido, Validades, Cestas mobile, Kits mobile e workers principais migrados para catálogo Supabase-only;
+- criada API administrativa consolidada `admin-products-live-v1` e cliente seguro `admin-secure-api-v1.js`;
+- runtimes Supabase-only principais publicados e filas abertas zeradas.
 
-- Cestas mobile agora usam o catálogo autenticado do Supabase; configurações Firebase removidas da UI ativa;
-- Kits mobile e o módulo de carrossel deixam de buscar produtos no Firebase e passam a usar o catálogo Supabase;
-- publicados em produção os runtimes Supabase-only de inventário, API administrativa e imagens;
-- verificação final de pausa: 0 pg_cron ativos, 0 ai_jobs abertos, 0 outbound_jobs abertos, 0 automation_workflows habilitados e image automation OFF;
-- cancelado, sem exclusão de histórico, um outbound_job antigo travado em processing.
+## 2026-09-21 — Rodada 2
+
+- relidos ARCHITECTURE, CURRENT-STATE, DECOMMISSION-FIREBASE e COST-SECURITY-AUDIT antes de editar;
+- confirmado que `basket_templates` e `basket_template_items` existem e contêm 9 templates;
+- Cadastro rápido migrado no branch para runtime Supabase-only;
+- commit `1280a570a70905d8d948528842ac39013979aa65`: novo `cadastro/cadastro-supabase-v1.js`;
+- commit `d7637a131ad04b1c358e8b6f47866eadfbb31e5b`: `cadastro-v10.js` deixa de executar Firebase/Make e vira bootstrap de compatibilidade;
+- commit `c0b52af5e006f6a10bb4a3f0a55aa264aefdd396`: compatibilidade do novo Cadastro com o formulário atual;
+- Cadastro agora consulta EAN, atualiza estoque e cria produto exclusivamente via API administrativa autenticada do Supabase;
+- produto novo nasce inativo para revisão; exclusão destrutiva e upload/IA automática ficam bloqueados enquanto automações estão pausadas;
+- nenhum endpoint/Edge Function duplicado criado;
+- verificação de filas confirmou `ai_jobs` abertos = 0; nenhum cron foi reativado;
+- persistência de Cestas/Kits não foi trocada às cegas: as tabelas canônicas foram verificadas e a migração transacional fica explicitamente como primeira tarefa da R3.
