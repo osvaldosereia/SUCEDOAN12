@@ -168,6 +168,6 @@ verify_jwt = false
 verify_jwt = false
 
 
-# PapoAI Agent External lab: public provider webhook with dedicated Vault secret checked inside the handler.
-[functions.papoai-agent-external-lab-v1]
+# PapoAI Agent External R0-A: reuses the existing external-agent slot; custom Vault secret is checked inside the handler.
+[functions.papo-external-agent-v1]
 verify_jwt = false
