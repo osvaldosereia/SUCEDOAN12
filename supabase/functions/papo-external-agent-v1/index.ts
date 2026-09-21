@@ -77,7 +77,8 @@ Deno.serve(async(req:Request)=>{
     return jsonResponse(buildLabSilentResponse({
       sessionKey:normalized.sessionKey,
       correlationId,
-      reason:'non_user_trigger'
+      reason:'non_user_trigger',
+      handoff:false
     }),200,responseBearer);
   }
 
@@ -100,7 +101,8 @@ Deno.serve(async(req:Request)=>{
     return jsonResponse(buildLabSilentResponse({
       sessionKey:normalized.sessionKey,
       correlationId,
-      reason:'internal_company_number'
+      reason:'internal_company_number',
+      handoff:false
     }),200,responseBearer);
   }
 
