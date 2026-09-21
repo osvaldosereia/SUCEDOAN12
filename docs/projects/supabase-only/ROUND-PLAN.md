@@ -82,4 +82,5 @@ Gate final:
 - zero automação Supabase reativada sem decisão explícita;
 - testes verdes;
 - backup/histórico preservado;
-- somente então bloquear/revogar Firebase no console.
+- somente então encerrar a dependência Firebase da Dona Antônia;
+- desligamento físico do projeto `cedar-chemist-310801` exige também zero dependência de Caneca Fácil/outros consumidores compartilhados.
