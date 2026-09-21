@@ -146,6 +146,8 @@ export function parseDeterministicIntent(message,baskets=[],hasCart=false){
 
   if(basketQuery&&(/\b(o que|que).*\b(vem|tem)\b|\b(produtos|itens)\b|\bvem na\b|\btem na\b/.test(q)))
     return {intent:'basket_contents',basketQuery};
+  if(hasCart&&/\b(o que|que).*\b(vem|tem)\b.*\bcesta\b|\b(produtos|itens)\b.*\b(dessa|da minha|na)\s+cesta\b/.test(q))
+    return {intent:'basket_contents',basketQuery:''};
 
   if(basketQuery&&/\b(quero|escolho|vou querer|pode ser|pego|levo|adiciona)\b/.test(q))
     return {intent:'choose_basket',basketQuery};
