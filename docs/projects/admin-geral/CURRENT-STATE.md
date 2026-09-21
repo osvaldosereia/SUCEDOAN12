@@ -1,8 +1,8 @@
 # CURRENT STATE — Admin Geral
 
-Atualizado: 2026-09-20
+Atualizado: 2026-09-21
 Branch: `admin-geral-r1-r16-autonomous-20260919`
-Fase: R11 — Relacionamento, Atendimento, Inteligência e Aprendizados.
+Fase: R12 — Estúdio Criativo e VIDEO.
 Execução autônoma: autorizada.
 Efeitos externos novos: proibidos sem gate/evidência específica.
 
@@ -17,30 +17,34 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R8: DONE
 - R9: DONE
 - R10: DONE
-- R11: IN_PROGRESS
-- R12–R16: PENDING
+- R11: DONE
+- R12: IN_PROGRESS
+- R13–R16: PENDING
 
-## R1–R9 — concluídas
-- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas, Qualidade do Catálogo e Pedidos concluídos com migração aditiva e contratos reais preservados.
+## R1–R10 — concluídas
+- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas, Qualidade do Catálogo, Pedidos e Customer 360 concluídos com migração aditiva e contratos reais preservados.
 - Central Comercial permanece dormente por `commercialTruthUiEnabled=false`.
 - Nenhum gate externo/runtime foi aberto pela migração.
 
-## R10 — concluída
-- lote 1 inventariou diretório de Clientes e Customer 360 real; `secureCustomersEnabled()`, autenticação por PIN, Customer OS API e revisão humana de conflitos permaneceram autoridades existentes;
-- `admin-customer-r10-v2.js/css` permanece camada DOM-only, sem fetch/storage/persistência próprios;
-- lote 2 adicionou semântica acessível para loading/vazios, refinou Customer 360 para desktop estreito/mobile e adicionou busy/cooldown em captura para `data-identity-approve` e `data-identity-reject`, antes do handler funcional existente;
-- revisão continua exigindo confirmação humana e usa o contrato existente `customerOsApi('identity_review', ...)`; não há merge automático de clientes;
-- `customer-os-api.js` continua fail-closed sem token e limpa sessão em 401;
-- teste contratual R10 ampliado para guardas, no-merge, autenticação, fail-closed, mobile e ausência de persistência paralela;
-- preflight desta execução: branch 150 commits à frente e 0 atrás de `main`; merge-base `c635df8` igual ao HEAD de main, sem divergência paralela relevante;
-- nenhum PIN, cliente real, consentimento, conflito, suppressão, outbound, canary ou dado sensível foi alterado para validar.
+## R11 — concluída
+- inventariadas as quatro superfícies reais: Relacionamento, Atendimento, Inteligência e Aprendizados;
+- autoridades funcionais existentes foram preservadas: Customer & Marketing OS/homologação em Relacionamento, Chat Comprar em Atendimento, `admin-service-intelligence-simple-v1` em Inteligência e `admin-agent-learning-v1` em Aprendizados;
+- `admin-r11-operations-v2.js/css` criado como camada UI-only compartilhada, sem fetch/storage/persistência próprios;
+- camada conectada às quatro superfícies, preservando a context nav da R3;
+- touch >=44px, prevenção de zoom em formulários mobile, layouts de uma coluna, ações sticky/safe-area e estados acessíveis reforçados;
+- busy/cooldown protege refresh/salvar/publicar/arquivar/testes e revisão humana de aprendizados contra duplo acionamento; contratos funcionais continuam autoridade;
+- Aprendizados mantém revisão humana em duas etapas e autopublicação bloqueada; nenhum candidato foi aprovado/rejeitado para validar;
+- Relacionamento continua somente leitura para evidências/gates e não fabrica eventos; Atendimento mantém teste sem pedido real;
+- teste contratual `tests/admin-r11-operations-v2-contract.test.mjs` criado para wiring, UI-only, guardas e mobile;
+- preflight detectou uma mudança nova em `main` (`be2b3d54`, SEO/dados públicos de cestas); branch ficou 156 commits à frente e 1 atrás. A mudança é fora das superfícies R11 e não foi incorporada automaticamente para evitar mistura de trabalho paralelo;
+- nenhum outbound, Meta Direct, publishing, canary, IA externa, aprendizado real, pedido ou dado de cliente foi acionado.
 
-## R11 — próximo lote
-1. inventariar as superfícies reais de Relacionamento, Atendimento, Inteligência e Aprendizados antes de editar;
-2. preservar context nav já criada na R3 e identificar autoridades funcionais/gates de cada superfície;
-3. melhorar usabilidade/responsividade de forma aditiva, sem abrir outbound, IA externa, canary ou automações reais;
-4. proteger ações mutáveis existentes contra duplo acionamento quando isso puder ser feito apenas na UI;
-5. manter decisões sensíveis, evidências e ativações dependentes de ação humana/gates existentes.
+## R12 — próximo lote
+1. inventariar Estúdio Criativo e a superfície VIDEO real antes de editar;
+2. preservar geradores, timeline, exportações e contratos existentes, sem disparar IA paga ou publicação;
+3. reforçar mobile/desktop, estados de geração/exportação e guardas contra duplo acionamento;
+4. manter prompts/orientações editáveis e custos/gates explícitos;
+5. não transformar código pronto em autorização de publishing ou geração paga.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
