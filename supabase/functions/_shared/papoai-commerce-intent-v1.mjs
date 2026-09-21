@@ -1,0 +1,67 @@
+const clean=(v,max=500)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+const arr=(v)=>Array.isArray(v)?v:[];
+
+function finalText(data){
+  return arr(data?.output)
+    .flatMap(x=>arr(x?.content))
+    .filter(x=>x?.type==='output_text')
+    .map(x=>String(x.text||''))
+    .join('')
+    .trim();
+}
+
+export function deterministicCommerceIntent(message){
+  const m=clean(message,500).toLowerCase();
+  if(!m)return null;
+  if(/\b(atendente|humano|pessoa|falar com algu[eé]m)\b/.test(m))return {intent:'handoff',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+  if(/\b(quais|qual|ver|mostrar|tem|t[eê]m)\b.*\bcestas?\b|\bcestas?\b.*\b(quais|ver|mostrar|tem|t[eê]m)\b/.test(m))return {intent:'list_baskets',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+  const basketMatch=m.match(/\b(econ[oô]mica|mini|pequena|m[eé]dia|grande)\s+bonini\b/);
+  if(basketMatch&&/\b(vem|cont[eé]m|produtos?|itens?|dentro)\b/.test(m))return {intent:'basket_detail',basket:basketMatch[0],query:'',source_query:'',replacement_query:'',quantity:0};
+  if(basketMatch&&/\b(quero|escolho|vou querer|pegar|comprar)\b/.test(m))return {intent:'start_basket',basket:basketMatch[0],query:'',source_query:'',replacement_query:'',quantity:0};
+  if(/\b(ofertas?|promo[cç][aã]o|promo[cç][oõ]es)\b/.test(m))return {intent:'offers',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+  return null;
+}
+
+export async function classifyCommerceIntent({message,history,apiKey,model='gpt-5.6-luna'}){
+  const det=deterministicCommerceIntent(message);
+  if(det)return {...det,source:'deterministic'};
+  if(!apiKey)return {intent:'general',basket:'',query:clean(message,160),source_query:'',replacement_query:'',quantity:0,source:'fallback'};
+
+  const recent=arr(history).slice(-12).map(x=>({role:x.role,content:clean(x.content,600)}));
+  const schema={
+    type:'object',additionalProperties:false,
+    properties:{
+      intent:{type:'string',enum:['list_baskets','basket_detail','start_basket','search_products','offers','cart_state','customer_context','set_basket_quantity','set_addon_quantity','replace_basket_item','handoff','general']},
+      basket:{type:'string'},
+      query:{type:'string'},
+      source_query:{type:'string'},
+      replacement_query:{type:'string'},
+      quantity:{type:'number'}
+    },
+    required:['intent','basket','query','source_query','replacement_query','quantity']
+  };
+  const response=await fetch('https://api.openai.com/v1/responses',{
+    method:'POST',
+    headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model,store:false,max_output_tokens:180,reasoning:{effort:'low'},
+      instructions:[
+        'Você classifica mensagens de clientes do mercado Dona Antônia.',
+        'Sua função é SOMENTE extrair intenção e entidades. Nunca calcule preços, totais, descontos ou estoque.',
+        'Para perguntas de produto use search_products e coloque em query o que o cliente procura.',
+        'Para conteúdo de cesta use basket_detail. Para escolher cesta use start_basket.',
+        'Para retirar/aumentar item de uma cesta use set_basket_quantity: source_query é o produto e quantity é a quantidade final desejada.',
+        'Para trocar produto use replace_basket_item: source_query é o item atual e replacement_query é o desejado.',
+        'Se pedir pessoa/atendente use handoff. Se não souber, general.'
+      ].join(' '),
+      input:[{role:'user',content:[{type:'input_text',text:JSON.stringify({message:clean(message,1000),history:recent})}]}],
+      text:{verbosity:'low',format:{type:'json_schema',name:'commerce_intent',strict:true,schema}}
+    }),
+    signal:AbortSignal.timeout(12000)
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)return {intent:'general',basket:'',query:clean(message,160),source_query:'',replacement_query:'',quantity:0,source:'ai_error'};
+  try{return {...JSON.parse(finalText(data)||'{}'),source:'openai'}}catch{
+    return {intent:'general',basket:'',query:clean(message,160),source_query:'',replacement_query:'',quantity:0,source:'parse_error'};
+  }
+}
