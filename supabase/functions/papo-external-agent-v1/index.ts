@@ -48,10 +48,13 @@ Deno.serve(async(req:Request)=>{
 
   const {data:expected,error:keyError}=await sb.rpc('get_papoai_agent_external_lab_key_v1');
   if(keyError||!expected)return jsonResponse({error:'webhook_not_configured',correlation_id:correlationId},503);
-  const supplied=(req.headers.get('x-api-key')||'').trim();
-  if(!supplied||!safeEqual(supplied,String(expected)))return jsonResponse({error:'unauthorized',correlation_id:correlationId},401);
-  const responseBearer=(req.headers.get('x-papo-response-token')||'').trim().slice(0,1000);
-  if(!responseBearer)return jsonResponse({error:'response_bearer_missing',correlation_id:correlationId},400);
+  const suppliedValues=(req.headers.get('x-api-key')||'')
+    .split(',')
+    .map((value)=>value.trim())
+    .filter(Boolean);
+  const authorized=suppliedValues.some((value)=>safeEqual(value,String(expected)));
+  if(!authorized)return jsonResponse({error:'unauthorized',correlation_id:correlationId},401);
+  const responseBearer=String(expected);
 
   let normalized:any;
   try{normalized=normalizeExternalAgentPayload(body);}
