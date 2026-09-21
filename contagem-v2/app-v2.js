@@ -17,8 +17,7 @@
 
   let auth = read(K.auth, null);
   let product = null;
-  let firebaseKey = '';
-  let catalog = null;
+  let productRef = '';
   let stream = null;
   let detector = null;
   let timer = null;
@@ -106,46 +105,53 @@
     }
     return [...new Set(out)];
   }
-  function firebaseProductUrl(key) {
-    const base = String(C.firebaseUrl || '').replace(/\/+$/, '');
-    const node = String(C.firebaseProductsNode || 'produtos').replace(/^\/+|\/+$/g, '');
-    return `${base}/${node}/${encodeURIComponent(key)}.json`;
+  async function adminProductApi(action, payload = {}, retry = true) {
+    if (!auth?.access_token) throw new Error('Faça login.');
+    const r = await fetch(`${C.supabaseUrl}/functions/v1/admin-products-live-v1`, {
+      method: 'POST',
+      headers: { apikey: C.supabasePublishableKey, Authorization: `Bearer ${auth.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload }),
+      cache: 'no-store'
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401 && retry) { await refresh(); return adminProductApi(action, payload, false); }
+    if (!r.ok || data.ok === false) { const e = new Error(data.detail || data.error || `Erro ${r.status}`); e.status = r.status; e.code = data.error; throw e; }
+    return data;
   }
-  async function getJson(url) {
-    const r = await fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } });
-    if (!r.ok) throw new Error(`Consulta ${r.status}`);
-    return r.json();
-  }
-  async function loadCatalog() {
-    if (catalog) return catalog;
-    const r = await fetch(`${C.fallbackCatalogUrl}?v=${Date.now()}`, { cache: 'no-store' });
-    if (!r.ok) throw new Error('Catálogo de apoio indisponível.');
-    catalog = await r.json();
-    return catalog || {};
-  }
-  function match(p, key, variants) {
-    return [key, p?.firebaseKey, p?.id, p?.gtin, p?.ean, p?.codigo, p?.sku]
-      .map(v => txt(v).toUpperCase()).filter(Boolean)
-      .some(v => variants.includes(v) || variants.includes(dig(v)));
+  function adaptSupabaseProduct(p = {}) {
+    return {
+      ...p,
+      id: txt(p.id),
+      codigo: txt(p.sku || p.gtin || p.id),
+      sku: txt(p.sku),
+      nome: txt(p.name),
+      gtin: dig(p.gtin),
+      ean: dig(p.gtin),
+      ncm: dig(p.ncm),
+      marca: txt(p.brand),
+      fornecedor: txt(p.supplier),
+      embalagem: txt(p.packaging),
+      unidade: txt(p.unit),
+      categoria: txt(p.category),
+      subcategoria: txt(p.subcategory),
+      subsubcategoria: txt(p.subsubcategory),
+      gondola: txt(p.gondola),
+      prateleira: txt(p.shelf),
+      validade: txt(p.validity_date),
+      url_imagem: txt(p.image_url),
+      estoque: num(p.stock),
+      preco: num(p.price),
+      preco_custo: num(p.cost),
+      situacao: p.is_active === false ? 'I' : 'A',
+      ativo: p.is_active !== false,
+      tags: Array.isArray(p.tags) ? p.tags : []
+    };
   }
   async function findProduct(code) {
-    const variants = codeVariants(code);
-    for (const v of variants) {
-      try {
-        const p = await getJson(firebaseProductUrl(v));
-        if (p && typeof p === 'object') return { key: v, product: p };
-      } catch {}
-    }
-    const all = await loadCatalog();
-    for (const [key, p] of Object.entries(all)) {
-      if (!p || typeof p !== 'object' || !match(p, key, variants)) continue;
-      try {
-        const fresh = await getJson(firebaseProductUrl(key));
-        if (fresh && typeof fresh === 'object') return { key, product: fresh };
-      } catch {}
-      return { key, product: p };
-    }
-    return null;
+    const data = await adminProductApi('lookup', { code: txt(code) });
+    if (!data?.product) return null;
+    const product = adaptSupabaseProduct(data.product);
+    return { key: product.id, product };
   }
 
   function nameOf(p) { return txt(p?.nome || p?.name || p?.titulo || p?.codigo) || 'Produto sem nome'; }
@@ -176,7 +182,7 @@
       if (!found) {
         $('notFoundCode').textContent = code; $('notFoundCard').classList.remove('hidden'); lookupStatus('Produto não encontrado.', 'error'); return;
       }
-      firebaseKey = found.key; product = found.product; showProduct(); lookupStatus('Encontrado no Firebase. Conte fisicamente.', 'success');
+      productRef = found.key; product = found.product; showProduct(); lookupStatus('Encontrado no Supabase. Conte fisicamente.', 'success');
     } catch (e) { lookupStatus(e.message || 'Falha na consulta.', 'error'); }
   }
   function showProduct() {
@@ -190,14 +196,14 @@
     $('stockInput').value = num(product?.estoque) ?? '';
     $('validityInput').value = brDate(product?.validade || product?.data_validade);
     $('gondolaInput').value = txt(product?.gondola || product?.['gôndola']); $('shelfInput').value = txt(product?.prateleira);
-    $('eanInput').value = codeOf(product) || firebaseKey;
+    $('eanInput').value = codeOf(product) || productRef;
     saveStatus('Confirme quantidade e validade.');
     setTimeout(() => { $('stockInput').focus(); $('stockInput').select(); }, 60);
   }
 
   function sourcePayload() {
     return {
-      firebaseKey, codigo: txt(product?.codigo || product?.sku), sku: txt(product?.sku || product?.codigo), nome: nameOf(product),
+      id: productRef || txt(product?.id), codigo: txt(product?.codigo || product?.sku), sku: txt(product?.sku || product?.codigo), nome: nameOf(product),
       gtin: dig(product?.gtin || product?.ean || $('eanInput').value), ean: dig(product?.ean || product?.gtin || $('eanInput').value),
       ncm: dig(product?.ncm), marca: txt(product?.marca), fornecedor: txt(product?.fornecedor), embalagem: txt(product?.embalagem), unidade: txt(product?.unidade),
       categoria: txt(product?.categoria), subcategoria: txt(product?.subcategoria), subsubcategoria: txt(product?.subsubcategoria),
@@ -210,7 +216,7 @@
     if (!product) throw new Error('Nenhum produto carregado.');
     const stock = num($('stockInput').value); if (stock === null || stock < 0 || !Number.isInteger(stock)) throw new Error('Estoque precisa ser um número inteiro igual ou maior que zero.');
     const rawDate = txt($('validityInput').value); const validity = rawDate ? isoDate(rawDate) : null; if (rawDate && !validity) throw new Error('Validade inválida. Use dd/mm/aaaa.');
-    return { local_id: uid(), inventory_count_id: localStorage.getItem(K.session), firebase_key: firebaseKey, product: sourcePayload(), counted_stock: stock, validity_date: validity, gondola: txt($('gondolaInput').value), shelf: txt($('shelfInput').value), queued_at: new Date().toISOString() };
+    return { local_id: uid(), inventory_count_id: localStorage.getItem(K.session), product: sourcePayload(), counted_stock: stock, validity_date: validity, gondola: txt($('gondolaInput').value), shelf: txt($('shelfInput').value), queued_at: new Date().toISOString() };
   }
 
   function queue() { return read(K.queue, []); }
@@ -259,7 +265,7 @@
   }
 
   function reset(camera = false) {
-    product = null; firebaseKey = ''; $('productCard').classList.add('hidden'); $('notFoundCard').classList.add('hidden'); $('eanInput').value = ''; lookupStatus('Pronto para o próximo produto.');
+    product = null; productRef = ''; $('productCard').classList.add('hidden'); $('notFoundCard').classList.add('hidden'); $('eanInput').value = ''; lookupStatus('Pronto para o próximo produto.');
     setTimeout(() => camera ? startCamera() : $('eanInput').focus(), 150);
   }
 
