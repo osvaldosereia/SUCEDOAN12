@@ -463,25 +463,18 @@ export class CollectionsModule {
   }
 
   async toggleCollection(id) {
-    if (this.type !== 'basket') return;
     const target = this.currentList().find(collection => text(collection.id) === String(id));
     if (!target) return;
-    const nextActive = target.ativo === false;
-    const list = clone(this.currentList());
-    const index = list.findIndex(collection => text(collection.id) === String(id));
-    list[index] = { ...list[index], ativo: nextActive, atualizado_em: new Date().toISOString() };
+    const next = { ...clone(target), ativo: target.ativo === false, atualizado_em: new Date().toISOString() };
     try {
-      const saved = await saveCollectionList(this.reloadConfig(), this.type, list, this.store.state.products, this.store.state.queue, {
-        changedId: text(id),
-        previousId: text(id),
-        originalCollection: target,
-        preserveInvalidExisting: true,
-      });
-      this.setCurrentList(saved.list);
-      this.onToast(`Cesta ${nextActive ? 'ativada' : 'desativada'} e publicada.`, 'success');
+      await ensureAdminAuthenticated();
+      const action = this.type === 'kit' ? 'save_kit' : 'save_basket';
+      const payload = this.type === 'kit' ? { kit: next } : { basket: next };
+      const saved = await adminProductsApi(action, payload);
+      this.setCurrentList(this.type === 'kit' ? (saved.kits || []) : (saved.baskets || []));
+      this.onToast(`${this.type === 'kit' ? 'Kit' : 'Cesta'} ${next.ativo ? 'ativado(a)' : 'desativado(a)'} no Supabase.`, 'success');
       await this.onReload();
     } catch (error) {
       this.onToast(error?.message || String(error), 'error');
     }
-  }
-}
+  }}
