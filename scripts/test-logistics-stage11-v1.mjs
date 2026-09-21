@@ -13,6 +13,7 @@ const driverFn=fs.readFileSync('supabase/functions/driver-logistics-v1/index.ts'
 const sbConfig=fs.readFileSync('supabase/config.toml','utf8');
 const adminConfig=fs.readFileSync('admin/config.js','utf8');
 const adminHtml=fs.readFileSync('admin/index.html','utf8');
+const registry=fs.readFileSync('admin/module-registry.js','utf8');
 const driverConfig=fs.readFileSync('driver-app/config.js','utf8');
 const driverApp=fs.readFileSync('driver-app/app.js','utf8');
 const sw=fs.readFileSync('driver-app/sw.js','utf8');
@@ -123,7 +124,7 @@ assert.doesNotMatch(driverFn,/confirm_order_payment_v1/,'driver transport must n
 assert.doesNotMatch(driverFn,/bling|sefaz/i,'driver transport must not call fiscal providers');
 
 assert.match(adminConfig,/logisticsUiEnabled:\s*false/);
-assert.match(adminHtml,/id="logisticsNav" class="nav hidden"/);
+assert.match(registry,/id:'logistics'[\s\S]*?status:'gated'[\s\S]*?gate:'logistics'/,'logistics must stay gated in the canonical registry');
 assert.match(adminHtml,/id="logisticsMount"/);
 assert.match(driverConfig,/enabled:false/);
 assert.match(driverConfig,/gpsEnabled:false/);
