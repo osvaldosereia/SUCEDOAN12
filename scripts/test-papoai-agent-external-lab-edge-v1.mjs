@@ -16,6 +16,8 @@ assert.match(edge,/set_channel_provider_capability_state_v1/);
 assert.match(edge,/TESTE_HANDOFF_DONA_ANTONIA/);
 assert.match(edge,/paused_until/);
 assert.match(edge,/lab_disabled/);
+assert.match(edge,/req\.method==='GET'/);
+assert.match(edge,/service:'papo-external-agent-v1'/);
 assert.match(edge,/external_side_effect:false/);
 assert.doesNotMatch(edge,/OPENAI_API_KEY|openai|gpt-|gemini/i);
 assert.doesNotMatch(edge,/room_start_for_conversation_v1/);
