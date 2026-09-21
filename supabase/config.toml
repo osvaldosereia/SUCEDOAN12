@@ -166,3 +166,8 @@ verify_jwt = false
 # Ame Mais 2 é uma rota evolutiva pública e isolada da v1.
 [functions.ame-mais-analyze-v2]
 verify_jwt = false
+
+
+# PapoAI Agent External lab: public provider webhook with dedicated Vault secret checked inside the handler.
+[functions.papoai-agent-external-lab-v1]
+verify_jwt = false
