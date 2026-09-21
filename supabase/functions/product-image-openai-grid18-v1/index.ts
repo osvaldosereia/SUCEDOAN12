@@ -271,15 +271,14 @@ async function validateOne(sb,supabaseUrl,key,batch,item,product,grid,shared){
     return{position:item.position,filler:true,accepted:true};
   }
   try{
-    const fb=await resolveFirebaseProduct(product);
-    if(!fb.active){
+    if(product.is_active!==true){
       const now=new Date().toISOString();
-      await sb.from('product_image_batch_items').update({status:'error',error_message:'firebase_inactive',updated_at:now}).eq('id',item.id);
-      await sb.from('product_image_jobs').update({status:'rejected',force_individual:false,error_message:'firebase_inactive',processed_at:now,updated_at:now}).eq('id',item.job_id);
-      await sb.from('products').update({is_active:false,image_ai_status:'error',image_ai_error:'firebase_inactive',updated_at:now}).eq('id',product.id);
-      return{position:item.position,accepted:false,error:'firebase_inactive'};
+      await sb.from('product_image_batch_items').update({status:'error',error_message:'product_inactive',updated_at:now}).eq('id',item.id);
+      await sb.from('product_image_jobs').update({status:'rejected',force_individual:false,error_message:'product_inactive',processed_at:now,updated_at:now}).eq('id',item.job_id);
+      await sb.from('products').update({image_ai_status:'error',image_ai_error:'product_inactive',updated_at:now}).eq('id',product.id);
+      return{position:item.position,accepted:false,error:'product_inactive'};
     }
-    const source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product,fb);
+    const source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product);
     const crop=await cropCell(grid,item.position);
     const check=await validateGenerated(key,source,crop);
     const now=new Date().toISOString();
