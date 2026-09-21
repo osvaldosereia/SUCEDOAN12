@@ -14,8 +14,10 @@ const CHANNEL='whatsapp';
 const RESERVED_HANDOFF_COMMAND='TESTE_HANDOFF_DONA_ANTONIA';
 const LAB_GUARD={external_side_effect:false};
 
-function jsonResponse(body:unknown,status=200){
-  return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
+function jsonResponse(body:unknown,status=200,responseBearer=''){
+  const headers:Record<string,string>={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'};
+  if(responseBearer) headers['Authorization']=`Bearer ${responseBearer}`;
+  return new Response(JSON.stringify(body),{status,headers});
 }
 
 function safeEqual(a:string,b:string){
@@ -48,6 +50,8 @@ Deno.serve(async(req:Request)=>{
   if(keyError||!expected)return jsonResponse({error:'webhook_not_configured',correlation_id:correlationId},503);
   const supplied=(req.headers.get('x-api-key')||'').trim();
   if(!supplied||!safeEqual(supplied,String(expected)))return jsonResponse({error:'unauthorized',correlation_id:correlationId},401);
+  const responseBearer=(req.headers.get('x-papo-response-token')||'').trim().slice(0,1000);
+  if(!responseBearer)return jsonResponse({error:'response_bearer_missing',correlation_id:correlationId},400);
 
   let normalized:any;
   try{normalized=normalizeExternalAgentPayload(body);}
@@ -67,14 +71,14 @@ Deno.serve(async(req:Request)=>{
   if(labError||!lab)return jsonResponse({error:'lab_not_configured',correlation_id:correlationId},503);
 
   if(lab.enabled!==true){
-    return jsonResponse(buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'lab_disabled'}));
+    return jsonResponse(buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'lab_disabled'}),200,responseBearer);
   }
 
   const occurredBucket=new Date(Math.floor(Date.now()/60000)*60000).toISOString();
   const providerEventKey=await stableProviderEventKey({...normalized,occurredBucket});
   const {data:prior}=await sb.from('channel_provider_agent_lab_calls')
     .select('response_body').eq('adapter_id',adapter.id).eq('provider_event_key',providerEventKey).maybeSingle();
-  if(prior?.response_body)return jsonResponse(prior.response_body);
+  if(prior?.response_body)return jsonResponse(prior.response_body,200,responseBearer);
 
   const {data:waAccount,error:waError}=await sb.from('whatsapp_accounts')
     .select('id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
@@ -140,7 +144,7 @@ Deno.serve(async(req:Request)=>{
   if(callError){
     const {data:raced}=await sb.from('channel_provider_agent_lab_calls').select('response_body')
       .eq('adapter_id',adapter.id).eq('provider_event_key',providerEventKey).maybeSingle();
-    if(raced?.response_body)return jsonResponse(raced.response_body);
+    if(raced?.response_body)return jsonResponse(raced.response_body,200,responseBearer);
     return jsonResponse({error:'lab_call_failed',correlation_id:correlationId},500);
   }
 
@@ -179,5 +183,5 @@ Deno.serve(async(req:Request)=>{
     response_body:responseBody,updated_at:new Date().toISOString()
   }).eq('correlation_id',correlationId);
 
-  return jsonResponse(responseBody);
+  return jsonResponse(responseBody,200,responseBearer);
 });
