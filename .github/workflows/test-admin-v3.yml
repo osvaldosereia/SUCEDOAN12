@@ -72,6 +72,11 @@ on:
       - 'scripts/test-papoai-commerce-brain-round1-v1.mjs'
       - 'scripts/test-papoai-commerce-personalization-preview-v1.mjs'
       - 'scripts/test-papoai-commerce-cart-reference-resolver-v1.mjs'
+      - 'scripts/test-papoai-pending-executor-checkout-v1.mjs'
+      - 'scripts/test-papoai-pending-replacement-confirmation-v1.mjs'
+      - 'scripts/test-harden-papoai-addon-resolution-v1.mjs'
+      - 'scripts/test-fix-papoai-cart-item-resolver-v1.mjs'
+      - 'scripts/test-papoai-commerce-round2-swap-checkout-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -276,6 +281,16 @@ jobs:
         run: node scripts/test-papoai-commerce-personalization-preview-v1.mjs
       - name: Validar resolvedor de referências do carrinho
         run: node scripts/test-papoai-commerce-cart-reference-resolver-v1.mjs
+      - name: Validar trocas e checkout PapoAI
+        run: node scripts/test-papoai-commerce-round2-swap-checkout-v1.mjs
+      - name: Validar correção do resolvedor UUID
+        run: node scripts/test-fix-papoai-cart-item-resolver-v1.mjs
+      - name: Validar resolução segura de adicionais
+        run: node scripts/test-harden-papoai-addon-resolution-v1.mjs
+      - name: Validar confirmação pendente de troca
+        run: node scripts/test-papoai-pending-replacement-confirmation-v1.mjs
+      - name: Validar executor pendente e checkout
+        run: node scripts/test-papoai-pending-executor-checkout-v1.mjs
       - name: Validar Central de Relacionamento
         run: node scripts/test-cm-1-15-relationship-command-center.mjs
       - name: Validar readiness da homologação CM-1
