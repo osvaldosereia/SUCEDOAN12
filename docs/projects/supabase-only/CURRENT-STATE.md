@@ -38,6 +38,10 @@ Gatilhos internos de integridade, segurança, auditoria e updated_at permanecem 
 - `admin-products-live-v1` ampliada como API administrativa segura e consolidada;
 - cliente compartilhado `admin-secure-api-v1.js` criado;
 - Validades convertida para Supabase autenticado;
+- Cestas mobile agora carregam catálogo de produtos pela API segura do Supabase;
+- Kits mobile e fila de Instagram agora carregam catálogo de produtos pelo Supabase;
+- backend Supabase-only publicado em produção: `inventory-fast-v1` v7, `inventory-fast-balance-v3` v9, `admin-products-live-v1` v7, `product-image-openai-v2` v4 e `product-image-openai-grid18-v1` v16;
+- um job outbound antigo preso em `processing` foi cancelado de forma auditável; filas abertas agora = 0;
 - contratos anti-regressão Firebase adicionados;
 - plano de 4 rodadas e log de execução criados.
 
@@ -71,8 +75,8 @@ Nenhuma remoção em massa de tabela, função ou índice foi feita.
 ## Próxima execução — R2
 
 1. migrar Cadastro rápido para Supabase-only e retirar Make/Firebase do runtime;
-2. migrar Cestas rápidas para catálogo/persistência Supabase;
-3. migrar Kits para catálogo Supabase;
+2. concluir persistência canônica das Cestas em `basket_templates` / `basket_template_items`;
+3. concluir persistência canônica dos Kits no Supabase e retirar dependências GitHub/Make que ainda forem runtime;
 4. preservar UX móvel e autenticação;
 5. ampliar contracts zero-Firebase desses três módulos;
 6. atualizar este checkpoint e EXECUTION-LOG.
