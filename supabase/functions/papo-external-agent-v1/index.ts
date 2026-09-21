@@ -1,10 +1,22 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.112.3";
+import {
+  normalizeExternalAgentPayload,
+  stableProviderEventKey,
+  isReservedLabHandoff,
+  buildLabTextResponse,
+  buildLabHandoffResponse,
+  buildLabSilentResponse,
+} from "../_shared/papoai-agent-external-contract-v1.mjs";
 
-const JSON_HEADERS={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'};
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:JSON_HEADERS});
-const clean=(value:unknown,max=1000)=>String(value??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
-const digits=(value:unknown)=>String(value??'').replace(/\D/g,'');
+const PROVIDER_KEY='papoai';
+const CHANNEL='whatsapp';
+const RESERVED_HANDOFF_COMMAND='TESTE_HANDOFF_DONA_ANTONIA';
+const LAB_GUARD={external_side_effect:false};
+
+function jsonResponse(body:unknown,status=200){
+  return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
+}
 
 function safeEqual(a:string,b:string){
   const x=new TextEncoder().encode(a),y=new TextEncoder().encode(b);
@@ -12,217 +24,160 @@ function safeEqual(a:string,b:string){
   let diff=0;for(let i=0;i<x.length;i++)diff|=x[i]^y[i];return diff===0;
 }
 
-function normalizePhone(value:unknown){
-  let d=digits(value);
-  if(d.startsWith('00'))d=d.slice(2);
-  if(d.startsWith('0')&&(d.length===11||d.length===12))d=d.slice(1);
-  if(d.length===10||d.length===11)d=`55${d}`;
-  if(!d.startsWith('55')||(d.length!==12&&d.length!==13))return '';
-  return `+${d}`;
-}
-
-function lastUserMessage(messages:unknown){
-  const list=Array.isArray(messages)?messages:[];
-  for(let i=list.length-1;i>=0;i--){
-    const row:any=list[i];
-    if(clean(row?.role,40).toLowerCase()==='user')return clean(row?.content,4000);
-  }
-  return '';
-}
-
-function firstName(value:unknown){
-  return clean(value,160).split(/\s+/).filter(Boolean)[0]?.slice(0,40)||'';
-}
-
-async function authenticate(req:Request,sb:any,body:any){
-  const {data:expected,error}=await sb.rpc('get_dona_antonia_papo_comprar_webhook_token_v1');
-  if(error||!expected)return {ok:false,status:503,error:'agent_auth_unconfigured'};
-  const url=new URL(req.url);
-  const bearer=(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
-  const supplied=clean(
-    req.headers.get('x-papo-webhook-token')||
-    req.headers.get('x-dona-antonia-agent-key')||
-    url.searchParams.get('webhook_token')||
-    body?.webhook_token||
-    bearer,
-    200
-  );
-  if(!supplied||!safeEqual(supplied,String(expected)))return {ok:false,status:401,error:'unauthorized'};
-  return {ok:true,status:200,error:null};
-}
-
-async function upsertConversation(sb:any,accountId:string,phone:string,customerId:string|null,contact:any,receivedAt:string){
-  const {data:open,error:lookupError}=await sb.from('conversations')
-    .select('id,customer_id,referral')
-    .eq('whatsapp_account_id',accountId)
-    .eq('wa_contact_e164',phone)
-    .neq('status','closed')
-    .order('updated_at',{ascending:false})
-    .limit(1)
-    .maybeSingle();
-  if(lookupError)throw new Error('conversation_lookup_failed');
-
-  const referral={
-    ...((open?.referral&&typeof open.referral==='object')?open.referral:{}),
-    provider:'papoai',
-    papo_contact_id:clean(contact?.id,200)||null,
-    papo_contact_name:clean(contact?.complete_name||contact?.name,180)||null,
-    papo_external_agent:true,
-    papo_last_seen_at:receivedAt
-  };
-  const resolvedCustomerId=customerId||open?.customer_id||null;
-  if(open?.id){
-    const {error}=await sb.from('conversations').update({
-      customer_id:resolvedCustomerId,
-      external_user_id:clean(contact?.id,200)||phone,
-      referral,
-      last_inbound_at:receivedAt,
-      updated_at:receivedAt
-    }).eq('id',open.id);
-    if(error)throw new Error('conversation_update_failed');
-    return {id:open.id,customerId:resolvedCustomerId};
-  }
-
-  const {data:created,error}=await sb.from('conversations').insert({
-    whatsapp_account_id:accountId,
-    customer_id:resolvedCustomerId,
-    wa_contact_e164:phone,
-    source:'organic',
-    channel:'whatsapp',
-    external_user_id:clean(contact?.id,200)||phone,
-    last_inbound_at:receivedAt,
-    referral,
-    context_summary:'Contato atendido pelo agente externo PapoAI via Supabase'
-  }).select('id').single();
-  if(error||!created?.id)throw new Error('conversation_create_failed');
-  return {id:created.id,customerId:resolvedCustomerId};
-}
-
-async function synthesizeAudio(sb:any,text:string,sessionId:string){
-  const [{data:key,error:keyError},{data:profile,error:profileError}]=await Promise.all([
-    sb.rpc('get_conversation_worker_provider_secret_v1'),
-    sb.from('ai_voice_profiles').select('id,model,voice,speed,instructions,output_format,is_active').eq('id','dona_antonia_marin_b_v1').maybeSingle()
-  ]);
-  if(keyError||!key||profileError||!profile?.is_active)return {audio_url:null,audio_error:'tts_unavailable'};
-
-  const format=clean(profile.output_format||'mp3',20)||'mp3';
-  const tts=await fetch('https://api.openai.com/v1/audio/speech',{
-    method:'POST',
-    headers:{Authorization:`Bearer ${String(key)}`,'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:clean(profile.model||'gpt-4o-mini-tts',80),
-      voice:clean(profile.voice||'marin',80),
-      input:text.slice(0,3500),
-      instructions:clean(profile.instructions,1200)||undefined,
-      speed:Number(profile.speed||1),
-      response_format:format
-    })
-  });
-  if(!tts.ok)return {audio_url:null,audio_error:`tts_http_${tts.status}`};
-  const bytes=new Uint8Array(await tts.arrayBuffer());
-  if(!bytes.length||bytes.length>8*1024*1024)return {audio_url:null,audio_error:'tts_invalid_size'};
-
-  const path=`papo-agent/${sessionId}/${crypto.randomUUID()}.${format}`;
-  const contentType=format==='mp3'?'audio/mpeg':format==='wav'?'audio/wav':'audio/ogg';
-  const upload=await sb.storage.from('shopping-room-media').upload(path,bytes,{contentType,upsert:false});
-  if(upload.error)return {audio_url:null,audio_error:'audio_upload_failed'};
-  const signed=await sb.storage.from('shopping-room-media').createSignedUrl(path,60*30);
-  if(signed.error||!signed.data?.signedUrl)return {audio_url:null,audio_error:'audio_sign_failed'};
-  return {audio_url:signed.data.signedUrl,audio_error:null};
+async function requestHash(value:string){
+  const bytes=new TextEncoder().encode(value);
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
 Deno.serve(async(req:Request)=>{
-  if(req.method==='GET')return json({ok:true,service:'papo-external-agent-v1',protocol:'conversation.message',make:false});
-  if(req.method!=='POST')return json({ok:false,error:'method_not_allowed'},405);
+  const started=Date.now();
+  const correlationId=crypto.randomUUID();
+  if(req.method!=='POST')return jsonResponse({error:'method_not_allowed',correlation_id:correlationId},405);
 
-  const supabaseUrl=Deno.env.get('SUPABASE_URL')||'';
-  const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'';
-  if(!supabaseUrl||!serviceKey)return json({ok:false,error:'server_config'},500);
+  let body:any;
+  try{body=await req.json();}
+  catch{return jsonResponse({error:'invalid_json',correlation_id:correlationId},400);}
+
+  const supabaseUrl=Deno.env.get('SUPABASE_URL');
+  const serviceKey=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if(!supabaseUrl||!serviceKey)return jsonResponse({error:'server_config',correlation_id:correlationId},500);
   const sb=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 
-  let body:any={};
-  try{body=await req.json()}catch{return json({ok:false,error:'invalid_json'},400)}
-  const auth=await authenticate(req,sb,body);
-  if(!auth.ok)return json({ok:false,error:auth.error},auth.status);
+  const {data:expected,error:keyError}=await sb.rpc('get_papoai_agent_external_lab_key_v1');
+  if(keyError||!expected)return jsonResponse({error:'webhook_not_configured',correlation_id:correlationId},503);
+  const supplied=(req.headers.get('x-api-key')||'').trim();
+  if(!supplied||!safeEqual(supplied,String(expected)))return jsonResponse({error:'unauthorized',correlation_id:correlationId},401);
 
-  const event=clean(body?.event,80);
-  if(event&&event!=='conversation.message')return json({ok:false,error:'unsupported_event'},400);
-  const contact=body?.contact&&typeof body.contact==='object'?body.contact:{};
-  const phone=normalizePhone(contact?.phone_number||contact?.phone_number_formatted);
-  if(!phone)return json({ok:false,error:'invalid_phone'},400);
-  const userMessage=lastUserMessage(body?.messages);
-  const receivedAt=new Date().toISOString();
-
-  const {data:lookup,error:lookupError}=await sb.rpc('lookup_customer_by_phone',{p_phone:phone});
-  if(lookupError)return json({ok:false,error:'customer_lookup_failed'},500);
-  const match=Array.isArray(lookup)?lookup[0]:lookup;
-  const matchedCustomerId=match?.customer_id||null;
-
-  const {data:account,error:accountError}=await sb.from('whatsapp_accounts')
-    .select('id,phone_number_id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
-  if(accountError||!account?.id)return json({ok:false,error:'whatsapp_account_unavailable'},503);
-
-  let conversation;
-  try{conversation=await upsertConversation(sb,account.id,phone,matchedCustomerId,contact,receivedAt)}
-  catch(error){return json({ok:false,error:clean((error as Error)?.message,120)||'conversation_failed'},500)}
-
-  const {data:room,error:roomError}=await sb.rpc('room_start_for_conversation_v1',{
-    p_conversation_id:conversation.id,
-    p_entry_intent:'home',
-    p_entry_message:userMessage
-  });
-  if(roomError||!room?.session_id||!room?.url)return json({ok:false,error:'shopping_room_failed'},500);
-
-  let customer:any=null;
-  if(conversation.customerId){
-    const {data}=await sb.from('customers').select('id,name,primary_whatsapp_e164,preferred_reply').eq('id',conversation.customerId).maybeSingle();
-    customer=data||null;
-  }
-  const known=Boolean(customer?.id);
-  const name=clean(customer?.name||match?.customer_name||contact?.complete_name||contact?.name,160);
-  const first=firstName(name);
-  const shoppingUrl=String(room.url);
-  const replyText=known
-    ?`${first?`Oi, ${first}! `:'Oi! '}Já reconheci seu cadastro. Para continuar sua compra sem preencher o telefone de novo, abra aqui: ${shoppingUrl}`
-    :`${first?`Oi, ${first}! `:'Oi! '}Para continuar sua compra, abra aqui: ${shoppingUrl}`;
-
-  const preferred=clean(customer?.preferred_reply||'auto',20).toLowerCase();
-  const replyMode=known&&preferred==='audio'?'audio':'text';
-  let audioUrl:string|null=null,audioError:string|null=null;
-  if(replyMode==='audio'){
-    const audio=await synthesizeAudio(sb,replyText,room.session_id);
-    audioUrl=audio.audio_url;audioError=audio.audio_error;
+  let normalized:any;
+  try{normalized=normalizeExternalAgentPayload(body);}
+  catch(error){
+    const code=String((error as Error)?.message||'invalid_payload');
+    return jsonResponse({error:code,correlation_id:correlationId},400);
   }
 
-  const {data:session}=await sb.from('catalog_sessions').select('metadata').eq('id',room.session_id).maybeSingle();
-  await sb.from('catalog_sessions').update({metadata:{
-    ...((session?.metadata&&typeof session.metadata==='object')?session.metadata:{}),
-    entry_source:'papoai_external_agent',
-    papo_external_session_uid:clean(body?.session?.uid,200)||null,
-    papo_external_agent_id:body?.agent?.id??null,
-    papo_contact_id:clean(contact?.id,200)||null,
-    papo_phone:phone,
-    papo_customer_found:known,
-    papo_reply_mode:replyMode,
-    papo_received_at:receivedAt
-  }}).eq('id',room.session_id);
+  const {data:adapter,error:adapterError}=await sb.from('channel_provider_adapters')
+    .select('id,channel_account_id,status,inbound_mode,outbound_mode')
+    .eq('provider_key',PROVIDER_KEY).eq('channel',CHANNEL)
+    .in('status',['temporary_active','active'])
+    .order('updated_at',{ascending:false}).limit(1).maybeSingle();
+  if(adapterError||!adapter?.id)return jsonResponse({error:'adapter_unavailable',correlation_id:correlationId},503);
 
-  const assistantMessage={role:'assistant',content:replyText};
-  return json({
-    ok:true,
-    response:replyText,
-    message:replyText,
-    content:replyText,
-    messages:[assistantMessage],
-    reply:{type:replyMode,text:replyText,audio_url:audioUrl},
-    reply_mode:replyMode,
-    audio_url:audioUrl,
-    audio_error:audioError,
-    shopping_url:shoppingUrl,
-    customer_found:known,
-    customer:known?{id:customer.id,name:customer.name,phone,preferred_reply:preferred}:null,
-    contact:{id:clean(contact?.id,200)||null,name:name||null,phone},
-    session:{uid:clean(body?.session?.uid,200)||null,shopping_session_id:room.session_id},
-    conversation_id:conversation.id
+  const {data:lab,error:labError}=await sb.rpc('get_papoai_agent_external_lab_config_v1',{p_adapter_id:adapter.id});
+  if(labError||!lab)return jsonResponse({error:'lab_not_configured',correlation_id:correlationId},503);
+
+  if(lab.enabled!==true){
+    return jsonResponse(buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'lab_disabled'}));
+  }
+
+  const occurredBucket=new Date(Math.floor(Date.now()/60000)*60000).toISOString();
+  const providerEventKey=await stableProviderEventKey({...normalized,occurredBucket});
+  const {data:prior}=await sb.from('channel_provider_agent_lab_calls')
+    .select('response_body').eq('adapter_id',adapter.id).eq('provider_event_key',providerEventKey).maybeSingle();
+  if(prior?.response_body)return jsonResponse(prior.response_body);
+
+  const {data:waAccount,error:waError}=await sb.from('whatsapp_accounts')
+    .select('id').eq('is_active',true).order('updated_at',{ascending:false}).limit(1).maybeSingle();
+  if(waError||!waAccount?.id)return jsonResponse({error:'whatsapp_account_unavailable',correlation_id:correlationId},503);
+
+  const {data:ingested,error:ingestError}=await sb.rpc('ingest_channel_adapter_event_v1',{
+    p_provider_key:PROVIDER_KEY,
+    p_channel:CHANNEL,
+    p_channel_account_id:adapter.channel_account_id,
+    p_whatsapp_account_id:waAccount.id,
+    p_external_user_id:normalized.phoneE164,
+    p_external_contact_id:null,
+    p_phone:normalized.phoneE164,
+    p_display_name:normalized.displayName,
+    p_external_message_id:normalized.externalMessageId,
+    p_external_event_id:normalized.externalEventId,
+    p_direction:'inbound',
+    p_message_type:normalized.messageType||'text',
+    p_body_text:normalized.messageText,
+    p_media_refs:[],
+    p_tags:[],
+    p_provider_context:{...normalized.providerContext,agent_external:true,session_key:normalized.sessionKey},
+    p_referral:{provider_adapter:PROVIDER_KEY,agent_external_lab:true},
+    p_occurred_at:new Date().toISOString()
   });
+  if(ingestError)return jsonResponse({error:'adapter_ingest_failed',correlation_id:correlationId},500);
+
+  const {data:existingSession}=await sb.from('channel_provider_agent_lab_sessions')
+    .select('id,status,paused_until,message_count').eq('adapter_id',adapter.id).eq('provider_session_key',normalized.sessionKey).maybeSingle();
+  const sessionPayload={
+    adapter_id:adapter.id,
+    provider_session_key:normalized.sessionKey,
+    phone_e164:normalized.phoneE164,
+    conversation_id:ingested?.conversation_id||null,
+    customer_id:ingested?.customer_id||null,
+    message_count:Number(existingSession?.message_count||0)+1,
+    last_correlation_id:correlationId,
+    last_external_message_id:normalized.externalMessageId,
+    last_external_event_id:normalized.externalEventId,
+    last_seen_at:new Date().toISOString(),
+    updated_at:new Date().toISOString()
+  };
+  const {data:labSession,error:sessionError}=await sb.from('channel_provider_agent_lab_sessions')
+    .upsert(sessionPayload,{onConflict:'adapter_id,provider_session_key'}).select('id').single();
+  if(sessionError||!labSession?.id)return jsonResponse({error:'lab_session_failed',correlation_id:correlationId},500);
+
+  const reqSummary={
+    message_length:normalized.messageText.length,
+    history_count:normalized.history.length,
+    has_media:Boolean(normalized.providerContext?.has_media),
+    has_reply:Boolean(normalized.providerContext?.has_reply),
+    phone:normalized.phoneE164,
+    session_key:normalized.sessionKey,
+    external_side_effect:false
+  };
+  const callInsert={
+    correlation_id:correlationId,adapter_id:adapter.id,lab_session_id:labSession.id,
+    provider_event_key:providerEventKey,external_message_id:normalized.externalMessageId,
+    external_event_id:normalized.externalEventId,request_hash:await requestHash(normalized.messageText),
+    processing_status:'normalized',request_summary:reqSummary
+  };
+  const {error:callError}=await sb.from('channel_provider_agent_lab_calls').insert(callInsert);
+  if(callError){
+    const {data:raced}=await sb.from('channel_provider_agent_lab_calls').select('response_body')
+      .eq('adapter_id',adapter.id).eq('provider_event_key',providerEventKey).maybeSingle();
+    if(raced?.response_body)return jsonResponse(raced.response_body);
+    return jsonResponse({error:'lab_call_failed',correlation_id:correlationId},500);
+  }
+
+  await sb.rpc('set_channel_provider_capability_state_v1',{
+    p_adapter_id:adapter.id,p_capability_key:'agent_external.request',p_state:'verified_lab',
+    p_evidence_source:'lab_http',p_evidence:{correlation_id:correlationId,normalized_event_id:ingested?.normalized_event_id||null}
+  });
+
+  const {data:freshSession}=await sb.from('channel_provider_agent_lab_sessions')
+    .select('id,status,paused_until,message_count').eq('adapter_id',adapter.id).eq('provider_session_key',normalized.sessionKey).maybeSingle();
+
+  let responseBody:any;
+  let processingStatus='responded';
+  let responseKind='text';
+  const pausedUntil=freshSession?.paused_until?new Date(freshSession.paused_until):null;
+  const humanActive=freshSession?.status==='paused'&&(!pausedUntil||pausedUntil.getTime()>Date.now());
+  const elapsed=Date.now()-started;
+  const timeoutMs=Math.max(1000,Number(lab.response_timeout_seconds||20)*1000);
+
+  if(humanActive){
+    processingStatus='silent';responseKind='silent';
+    responseBody=buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'human_active',pausedUntil:freshSession?.paused_until||null});
+  }else if(isReservedLabHandoff(normalized.messageText)&&normalized.messageText.toUpperCase()===RESERVED_HANDOFF_COMMAND){
+    processingStatus='handoff';responseKind='handoff';
+    responseBody=buildLabHandoffResponse({text:'Vou transferir este teste para atendimento humano.',sessionKey:normalized.sessionKey,correlationId,reason:'lab_reserved_command'});
+  }else if(elapsed>=timeoutMs){
+    processingStatus='handoff';responseKind='handoff';
+    responseBody=buildLabHandoffResponse({text:'O teste demorou além do limite. Vou transferir para atendimento humano.',sessionKey:normalized.sessionKey,correlationId,reason:'lab_timeout'});
+  }else{
+    responseBody=buildLabTextResponse({text:String(lab.fixed_response_text),sessionKey:normalized.sessionKey,correlationId});
+  }
+
+  await sb.from('channel_provider_agent_lab_calls').update({
+    processing_status:processingStatus,response_kind:responseKind,http_status:200,duration_ms:Date.now()-started,
+    response_summary:{handoff:Boolean(responseBody?.handoff),silent:Boolean(responseBody?.silent),reason:responseBody?.reason||null,...LAB_GUARD},
+    response_body:responseBody,updated_at:new Date().toISOString()
+  }).eq('correlation_id',correlationId);
+
+  return jsonResponse(responseBody);
 });
