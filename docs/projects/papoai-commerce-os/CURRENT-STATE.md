@@ -175,3 +175,39 @@ Readiness:
 - 306 produtos vendáveis;
 - 306 com imagem;
 - 0 divergências de hidden_adjustment.
+
+
+## Rodada pequena — Governador de Conversa v1 (Edge v17)
+
+Objetivo: fazer a IA decidir de forma explícita quando responder, perguntar, recomendar ou agir.
+
+Implementado:
+- módulo `papoai-conversation-governor-v1.mjs`;
+- decisões: `RESPOND`, `ASK`, `RECOMMEND`, `ACT`;
+- detecção de delegação do cliente, como `você decide`;
+- conjunto gerenciável: até 10 resultados;
+- no máximo 2 perguntas segmentadoras por assunto;
+- após 2 perguntas, tentativa de nova pergunta é convertida pelo banco em `RECOMMEND`;
+- escolha automática da pergunta segmentadora por marca/tipo/faixa;
+- estado curto por conversa em `papoai_conversation_governor_state`;
+- auditoria de decisões em `papoai_conversation_governor_audit`;
+- produto genérico pode consultar até 12 candidatos para decidir se deve perguntar;
+- Governador conectado à Edge Function, mas atrás de gate.
+
+Teste de segurança:
+- 1ª pergunta -> clarification_count 1;
+- 2ª pergunta -> clarification_count 2;
+- 3ª tentativa -> `RECOMMEND`, reason `clarification_limit_enforced`, sem question_key.
+
+Estado após deploy:
+- Edge `papo-external-agent-v1`: v17;
+- Commerce Brain: OFF;
+- escrita: OFF;
+- IA: OFF;
+- laboratório: OFF;
+- Bling: OFF;
+- Governador: OFF.
+
+Próxima rodada recomendada:
+- qualificação inteligente por produto, fazendo respostas diretas para conjuntos pequenos e perguntas segmentadoras só para buscas realmente amplas;
+- depois, substituição inteligente por valor aproximado quando o cliente delega a escolha.
