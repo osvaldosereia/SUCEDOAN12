@@ -415,84 +415,9 @@ export class CollectionsModule {
   }
 
   async runKitAutomation(action) {
-    if (!this.draft || this.type !== 'kit' || this.makeBusy) return;
-    const config = this.reloadConfig();
-    const kit = compactKitForMake(this.draft, this.store.state.products);
-    if (!kit.produtos.length) throw new Error('Adicione produtos ao kit antes de executar a automação.');
-    if (action === 'instagram') {
-      const audit = auditCollection(this.draft, 'kit', this.store.state.products, this.store.state.queue);
-      if (audit.errors.length) throw new Error(`Revise o kit antes de gerar a fila: ${audit.errors.join(' · ')}.`);
-      if (!confirm(`Gerar o carrossel do kit “${this.draft.nome}” e enviar para a fila do Instagram?`)) return;
-    }
-    this.makeBusy = true;
-    this.elements.collectionForm.innerHTML = this.formHtml();
-    try {
-      if (action === 'description') {
-        this.onToast('Make: gerando nome e descrição do kit…');
-        const result = unwrapMakeResult(await callMake(config, 'text', { acao: 'gerar_descricao_kit', kit }));
-        const description = result.descricao || result.description || result.texto;
-        const name = result.nome_sugerido || result.nome_curto || result.nome || result.name;
-        if (!text(description) && !text(name)) throw new Error('O Make não retornou nome ou descrição para o kit.');
-        if (text(description)) this.draft.descricao = text(description);
-        if (text(name)) this.draft.nome = text(name).slice(0, 80);
-        this.onToast('Descrição do kit aplicada. Revise e salve.', 'success');
-      }
-      if (action === 'cover') {
-        if (!kit.referencias_imagens.length) throw new Error('Os produtos do kit precisam ter imagens públicas para gerar a capa.');
-        this.onToast('Make: gerando a capa do kit…');
-        const result = await callMake(config, 'image', {
-          acao: 'gerar_capa_kit',
-          quantidade_imagens: 1,
-          kit,
-          imagem_path: `${text(config.githubKitImagesPath || 'site/img/kits').replace(/\/+$/, '')}/${slug(this.draft.codigo || this.draft.nome)}.webp`,
-          storage_destino: 'github',
-          instrucoes: 'Criar uma única capa quadrada de e-commerce com as fotos reais dos produtos, nome do kit, preço anterior, preço promocional e economia. Não inventar embalagens.',
-        });
-        let image = extractMakeImage(result);
-        if (!image) throw new Error('O Make não retornou a capa do kit.');
-        if (/^data:image\//i.test(image)) {
-          const path = `${text(config.githubKitImagesPath || 'site/img/kits').replace(/^\/+|\/+$/g, '')}/${slug(this.draft.codigo || this.draft.nome)}-${Date.now()}.webp`;
-          const uploaded = await upsertBase64File(config, path, image, `Atualiza capa IA do kit ${this.draft.nome} pelo Admin V2`);
-          image = uploaded.url;
-          this.draft.imagem_path = path;
-        }
-        this.draft.imagem = image;
-        this.draft.imagem_url = image;
-        this.draft.imagem_origem = 'ia_make';
-        this.draft.imagem_gerada_em = new Date().toISOString();
-        this.onToast('Capa do kit aplicada. Revise e salve.', 'success');
-      }
-      if (action === 'instagram') {
-        this.onToast('Make: gerando carrossel e fila do Instagram…');
-        const result = unwrapMakeResult(await callMake(config, 'instagram-kit', {
-          acao: 'gerar_kit_instagram_fila',
-          modo_publicacao: 'fila_github',
-          origem: 'admin_v2_dona_antonia',
-          criado_em: new Date().toISOString(),
-          formato: 'instagram_carrossel_4_5',
-          total_paginas: 2 + kit.produtos.length,
-          regra_paginas: 'capa + uma página por produto + CTA final',
-          kit,
-          produtos: kit.produtos,
-        }));
-        this.draft.instagram_status = text(result.status || result.fila_status || 'novo');
-        this.draft.instagram_enviado_em = new Date().toISOString();
-        this.draft.instagram_post_id = text(result.instagram_id || result.instagram_post_id || result.id);
-        this.draft.instagram_carrossel_id = text(result.id_carrossel || result.carrossel_id);
-        this.draft.instagram_imagens = result.imagens || result.urls_imagens || [];
-        this.draft.instagram_dados_json = text(result.dados_json);
-        this.draft.instagram_fila_json = text(result.fila_json);
-        this.onToast('Carrossel criado e enviado para a fila. Salve o kit para registrar o status.', 'success');
-      }
-    } finally {
-      this.makeBusy = false;
-      if (this.draft) {
-        this.elements.collectionEditorTitle.textContent = this.draft.nome || 'Kit promocional';
-        this.elements.collectionForm.innerHTML = this.formHtml();
-        this.renderItems();
-        this.renderAudit();
-      }
-    }
+    if (this.type !== 'kit') return;
+    const labels = { description: 'Descrição por IA', cover: 'Capa por IA', instagram: 'Carrossel do Instagram' };
+    this.onToast(`${labels[action] || 'Automação'} está pausada. O kit continua editável e salvável no Supabase.`, 'warning');
   }
 
   async saveDraft() {
