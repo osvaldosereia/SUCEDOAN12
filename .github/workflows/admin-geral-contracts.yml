@@ -50,3 +50,5 @@ jobs:
         run: node tests/admin-r15-systems-v2-contract.test.mjs
       - name: R16 final fail-closed audit
         run: node tests/admin-r16-final-contract.test.mjs
+      - name: Visual standard V3
+        run: node tests/admin-visual-standard-v3-contract.test.mjs
