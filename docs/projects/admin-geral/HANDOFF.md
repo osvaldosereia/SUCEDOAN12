@@ -26,7 +26,7 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R12 DONE. R13 IN_PROGRESS — Marketing completo.
-R12 fechou Estúdio Criativo + VIDEO com camada UI-only compartilhada, responsividade/touch/safe-area, busy guards e feedback acessível; `/video/` permanece canônico, Estúdio preserva lógica/persistência existente e nenhuma geração paga ou efeito externo foi usado para validar.
-`main` permanece 1 commit à frente da base desta branch por SEO/dados públicos de cestas (`be2b3d54`), fora do escopo atual; não incorporar automaticamente.
-Próxima execução: ler primeiro a documentação canônica de Marketing Admin / Organic Social e inventariar `admin/marketing.html` + runtime real. Preservar publishing OFF, kill switch, channel gates, Meta/outbound/canary e separação de Customer & Marketing OS. Melhorar apenas o que for seguro, aditivo e validável sem publicação real.
+R1–R13 DONE. R14 IN_PROGRESS — Logística, Financeiro, Bling e Fiscal.
+R13 integrou Marketing ao Admin Geral apenas por camada UI-only aditiva; publishing, execution mode, channel gates, canary e credenciais continuam sob autoridade/gates do projeto Marketing Admin. Homologação externa permanece bloqueio próprio e não impede a conclusão segura da integração de interface do Admin Geral.
+`main` permanece divergente apenas por SEO/dados públicos de cestas, fora do escopo atual; não incorporar automaticamente.
+Próxima execução: inventariar as superfícies reais de Logística, Financeiro, Bling e Fiscal, incluindo contratos existentes e rotas do Admin. Preservar qualquer emissão fiscal, sincronização Bling, mutação financeira e operação real atrás dos gates/ações humanas já existentes. Melhorar apenas o que for seguro, aditivo e validável sem atingir pedidos/clientes/dados reais.
