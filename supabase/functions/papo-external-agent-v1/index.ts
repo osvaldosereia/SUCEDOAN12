@@ -272,7 +272,7 @@ Deno.serve(async(req:Request)=>{
       }else{
         text='Oi 😊 Bem-vindo à Dona Antônia. Posso te ajudar com cestas básicas, produtos do mercado ou ofertas. O que você precisa hoje?';
       }
-    if(intent.intent==='handoff'){
+    }else if(intent.intent==='handoff'){
       processingStatus='handoff';responseKind='handoff';
       responseBody=commerceTextResponse({text:'Claro 😊 Vou chamar alguém da nossa equipe para continuar com você.',sessionKey:normalized.sessionKey,correlationId,handoff:true,reason:'customer_requested_human'});
     }else if(intent.intent==='list_baskets'){
