@@ -51,6 +51,11 @@ function productsText(items:any[]){
   if(!list.length)return 'Não encontrei um produto disponível que combine com esse pedido agora.';
   return list.map((p:any)=>`• ${p.name} — ${moneyBR(p.commercial_price??p.offer_price??p.regular_price)}${p.is_offer?' (oferta)':''}`).join('\n');
 }
+function numberedProductsText(items:any[]){
+  const list=(Array.isArray(items)?items:[]).slice(0,3);
+  if(!list.length)return '';
+  return list.map((p:any,index:number)=>`${index+1}. ${p.name} — ${moneyBR(p.commercial_price??p.offer_price??p.regular_price)}${p.is_offer?' (oferta)':''}`).join('\n');
+}
 
 async function requestHash(value:string){
   const bytes=new TextEncoder().encode(value);
@@ -313,10 +318,47 @@ Deno.serve(async(req:Request)=>{
           text=`Sua última cesta foi **${result?.basket?.name||'cesta básica'}**. Pelas condições atuais, a estimativa seria **${moneyBR(result?.current_estimate)}**. A montagem do carrinho ainda está desativada nesta homologação.`;
         }else text='Não encontrei uma compra anterior disponível para repetir.';
       }
+    }else if(intent.intent==='search_products'&&conversationId){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,
+        p_command:{type:'propose_product_choice',query:intent.query||normalized.messageText,limit:3}
+      });
+      if(q.error)throw q.error;
+      const choices=Array.isArray(q.data?.candidates)?q.data.candidates:[];
+      result={...(q.data||{}),items:choices};
+      if(!choices.length){
+        text='Não encontrei um produto disponível que combine bem com o que você pediu.';
+      }else if(choices.length===1){
+        const p=choices[0];
+        text=`Encontrei **${p.name}** por **${moneyBR(p.commercial_price)}**. Quer que eu adicione ao pedido?`;
+      }else{
+        text=`Encontrei estas opções:\n\n${numberedProductsText(choices)}\n\nQual você prefere? Pode responder **1, 2 ou 3**.`;
+      }
     }else if(intent.intent==='search_products'){
-      const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:commerceCfg?.max_product_results||6});
+      const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:3});
       result=q.data;
       text=productsText(result?.items||[]);
+    }else if(intent.intent==='select_product_choice'&&conversationId){
+      if(commerceCfg?.write_enabled!==true){
+        text='A escolha foi entendida, mas a gravação do carrinho ainda está desativada nesta homologação.';
+      }else{
+        const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+          p_conversation_id:conversationId,
+          p_command:{type:'select_product_choice',selection:intent.quantity,quantity:1}
+        });
+        if(q.error)throw q.error;
+        const selected=q.data?.selected||null;
+        result={...(q.data||{}),items:selected?[selected]:[]};
+        if(q.data?.ok&&selected){
+          text=`Pronto 😊 Adicionei **${selected.name}**. O total atual do pedido é **${moneyBR(q.data?.cart?.total)}**.`;
+        }else if(q.data?.reason==='product_choice_expired'||q.data?.reason==='no_pending_product_choice'){
+          text='Essas opções já não estão mais ativas. Me diga novamente qual produto você procura que eu atualizo a busca.';
+        }else if(q.data?.reason==='selection_out_of_range'){
+          text=`Essa opção não existe nessa lista. Escolha um número de 1 a ${q.data?.candidate_count||3}.`;
+        }else{
+          text='Não consegui aplicar essa escolha com segurança. Me diga novamente qual produto você quer.';
+        }
+      }
     }else if(intent.intent==='offers'&&conversationId){
       const q=await sb.rpc('get_papoai_commerce_offers_v1',{p_conversation_id:conversationId,p_limit:4});
       result=q.data;
@@ -375,6 +417,17 @@ Deno.serve(async(req:Request)=>{
           const repeated=result?.result||{};
           text=(repeated?.summary?.message_text||`Montei novamente sua ${repeated?.basket_name||'última cesta'}.`)
             +'\n\nQuer alterar alguma coisa ou podemos seguir para finalizar?';
+        }else if(result?.confirmed&&result?.action_type==='product_choice'){
+          const selected=result?.result?.selected||null;
+          const cart=result?.result?.cart||{};
+          result={...result,items:selected?[selected]:[]};
+          text=selected
+            ? `Pronto 😊 Adicionei **${selected.name}**. O total atual do pedido é **${moneyBR(cart.total)}**.`
+            : 'Pronto 😊 Adicionei o produto ao pedido.';
+        }else if(result?.reason==='product_selection_required'){
+          const candidates=Array.isArray(result?.candidates)?result.candidates:[];
+          result={...result,items:candidates};
+          text=`Tenho mais de uma opção:\n\n${numberedProductsText(candidates)}\n\nQual você prefere? Responda **1, 2 ou 3**.`;
         }else if(result?.reason==='cart_changed_reconfirm'){
           text=(result?.summary?.message_text||'Seu pedido mudou desde a última confirmação.')
             +'\n\nO carrinho mudou antes da confirmação, então não finalizei. Confira o novo resumo e me diga a forma de pagamento novamente.';
