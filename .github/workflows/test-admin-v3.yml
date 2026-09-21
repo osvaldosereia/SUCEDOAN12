@@ -10,6 +10,8 @@ on:
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/functions/admin-pin-auth-v1/**'
       - 'supabase/functions/papo-comprar-webhook-v1/**'
+      - 'supabase/functions/papoai-agent-external-lab-v1/**'
+      - 'supabase/functions/_shared/papoai-agent-external-contract-v1.mjs'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
       - 'supabase/functions/whatsapp-meta-direct-v1/**'
@@ -35,6 +37,7 @@ on:
       - 'supabase/migrations/*cm_1_14*'
       - 'supabase/migrations/*cm_1_15*'
       - 'supabase/migrations/*cm_1_homologation*'
+      - 'supabase/migrations/*papoai_agent_external_lab*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -61,6 +64,9 @@ on:
       - 'scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs'
       - 'scripts/test-cm-1-13-template-draft-assistant.mjs'
       - 'scripts/test-cm-1-14-papoai-adapter.mjs'
+      - 'scripts/test-papoai-agent-external-contract-v1.mjs'
+      - 'scripts/test-papoai-agent-external-lab-db-v1.mjs'
+      - 'scripts/test-papoai-agent-external-lab-edge-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -79,6 +85,8 @@ on:
       - 'supabase/functions/customer-intelligence-v1/**'
       - 'supabase/functions/admin-pin-auth-v1/**'
       - 'supabase/functions/papo-comprar-webhook-v1/**'
+      - 'supabase/functions/papoai-agent-external-lab-v1/**'
+      - 'supabase/functions/_shared/papoai-agent-external-contract-v1.mjs'
       - 'supabase/functions/admin-marketing-brain-v1/**'
       - 'supabase/functions/admin-whatsapp-direct-v1/**'
       - 'supabase/functions/whatsapp-meta-direct-v1/**'
@@ -104,6 +112,7 @@ on:
       - 'supabase/migrations/*cm_1_14*'
       - 'supabase/migrations/*cm_1_15*'
       - 'supabase/migrations/*cm_1_homologation*'
+      - 'supabase/migrations/*papoai_agent_external_lab*'
       - 'supabase/config.toml'
       - 'scripts/test-admin-simple-v2.mjs'
       - 'scripts/test-admin-v3-contract.mjs'
@@ -130,6 +139,9 @@ on:
       - 'scripts/test-cm-1-meta-direct-unified-ingress-v1.mjs'
       - 'scripts/test-cm-1-13-template-draft-assistant.mjs'
       - 'scripts/test-cm-1-14-papoai-adapter.mjs'
+      - 'scripts/test-papoai-agent-external-contract-v1.mjs'
+      - 'scripts/test-papoai-agent-external-lab-db-v1.mjs'
+      - 'scripts/test-papoai-agent-external-lab-edge-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -181,6 +193,7 @@ jobs:
           deno check supabase/functions/customer-intelligence-v1/index.ts
           deno check supabase/functions/admin-pin-auth-v1/index.ts
           deno check supabase/functions/papo-comprar-webhook-v1/index.ts
+          deno check supabase/functions/papoai-agent-external-lab-v1/index.ts
           deno check supabase/functions/admin-marketing-brain-v1/index.ts
           deno check supabase/functions/admin-whatsapp-direct-v1/index.ts
           deno check supabase/functions/whatsapp-meta-direct-v1/index.ts
@@ -239,6 +252,12 @@ jobs:
         run: node scripts/test-cm-1-13-template-draft-assistant.mjs
       - name: Validar PapoAI Adapter
         run: node scripts/test-cm-1-14-papoai-adapter.mjs
+      - name: Validar contrato do Agente Externo PapoAI
+        run: node scripts/test-papoai-agent-external-contract-v1.mjs
+      - name: Validar banco do laboratório Agente Externo
+        run: node scripts/test-papoai-agent-external-lab-db-v1.mjs
+      - name: Validar isolamento do endpoint Agente Externo
+        run: node scripts/test-papoai-agent-external-lab-edge-v1.mjs
       - name: Validar Central de Relacionamento
         run: node scripts/test-cm-1-15-relationship-command-center.mjs
       - name: Validar readiness da homologação CM-1
