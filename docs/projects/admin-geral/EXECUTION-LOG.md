@@ -46,4 +46,12 @@
 - criado `admin-r12-creative-v2.js/css`, UI-only, com touch/foco/safe-area e guarda curta contra repetição de ações de geração/criação/salvamento/publicação;
 - camada conectada ao VIDEO com aviso explícito de custo/IA e separação dos gates de publishing/outbound;
 - criado `tests/admin-r12-creative-v2-contract.test.mjs`;
-- nenhuma geração paga, publicação, outbound, Meta, WhatsApp, canary ou dado real foi acionado; R12 permanece IN_PROGRESS para conexão/refino do Estúdio e validação contratual final.
+- nenhuma geração paga, publicação, outbound, Meta, WhatsApp, canary ou dado real foi acionado.
+
+## 2026-09-21 — R12 lote 2 / conclusão + promoção R13
+- preflight: branch divergiu apenas pelo commit paralelo `be2b3d54` de SEO/cestas em `main`; permaneceu fora do escopo e não foi incorporado;
+- camada `admin-r12-creative-v2.js/css` conectada ao Estúdio Criativo de forma aditiva, preservando `creative-studio.js`, helpers e persistência existentes;
+- feedbacks de criação/progresso/storyboard receberam `aria-live=polite`, mantendo aprovações explícitas antes da geração;
+- contrato R12 ampliado para wiring em VIDEO + Estúdio, UI-only, aprovações em etapas e feedback acessível;
+- nenhuma IA paga, publicação, outbound, Meta, WhatsApp, canary ou dado real foi acionado;
+- R12 marcada DONE; R13 Marketing completo promovida para IN_PROGRESS.
