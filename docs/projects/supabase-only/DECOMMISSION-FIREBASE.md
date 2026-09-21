@@ -1,5 +1,14 @@
 # Plano de desativação do Firebase
 
+## Gate de projeto compartilhado
+
+O Firebase `cedar-chemist-310801` ainda é referenciado por código do projeto separado **Caneca Fácil**. Portanto:
+
+- o gate destas quatro rodadas é zerar o runtime Firebase da **Dona Antônia**;
+- isso permite deixar Dona Antônia totalmente Supabase-only;
+- o projeto Firebase físico NÃO pode ser excluído/revogado globalmente enquanto Caneca Fácil ou qualquer outro consumidor ainda depender dele;
+- a Rodada 4 deve emitir também a lista de consumidores externos ao escopo para o corte físico posterior.
+
 ## Gate de desligamento
 
 Firebase só pode ser desligado quando TODOS os itens abaixo forem verdadeiros:
@@ -40,7 +49,7 @@ Desativar workflows Firebase e eliminar secrets/credenciais não usados.
 Retenção de objetos intermediários, revisão de cron, índices duplicados e funções/tabelas obsoletas com evidência.
 
 ### F7 — Desligamento humano
-Após relatório zero-Firebase:
+Após relatório zero-Firebase da Dona Antônia **e** confirmação de zero consumidores do projeto Firebase compartilhado:
 1. revogar service account/tokens Firebase;
 2. bloquear RTDB para escrita/leitura;
 3. manter backup exportado por período definido;
