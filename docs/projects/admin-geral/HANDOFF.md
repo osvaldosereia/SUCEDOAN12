@@ -26,6 +26,6 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
 ## Ponto de retomada
-R1–R9 DONE. R10 IN_PROGRESS — Clientes, identidade e Customer 360.
-R10 lote 1 inventariou o Customer 360 real e adicionou `admin-customer-r10-v2.js/css` como camada DOM-only de acessibilidade/mobile, sem API ou persistência paralela. `secureCustomersEnabled()`, PIN e Customer OS continuam autoridades existentes; conflitos seguem sob revisão humana.
-Próxima execução: revisar ações mutáveis já existentes do Customer 360 e reforçar busy/cooldown somente na UI; melhorar estados vazios/erro e mobile/desktop estreito; preservar integralmente consentimento, proteção, identidade, canary e outbound fail-closed. Não testar PIN nem alterar dados reais para validar.
+R1–R10 DONE. R11 IN_PROGRESS — Relacionamento, Atendimento, Inteligência e Aprendizados.
+R10 fechou Customer 360 com camada DOM-only responsiva/acessível e busy/cooldown para revisão humana de conflitos; PIN, identidade, consentimentos e Customer OS continuam protegidos pelos contratos/gates existentes e nenhum dado real foi alterado para validar.
+Próxima execução: inventariar primeiro as quatro superfícies reais de R11, preservar a context nav criada na R3 e suas autoridades funcionais; então aplicar melhorias aditivas de mobile/desktop, estados e guardas de UI sem ativar outbound, canary, IA externa, publishing ou automações reais.
