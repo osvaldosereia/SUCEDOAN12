@@ -1,8 +1,5 @@
 import { normalizeCollectionForPublish } from '../producao-v2/js/core/collections.js';
 import { money, number, productCode, productImage, productKey, productName, text } from '../producao-v2/js/core/utils.js';
-import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js';
-import { callMake, compactKitForMake, extractMakeImage, unwrapMakeResult } from '../producao-v2/js/services/make.js?build=20260805-kit-editor-v4';
-import { upsertBase64File } from '../producao-v2/js/services/github-binary.js';
 import { adminProductsApi, ensureAdminAuthenticated } from '../admin/admin-secure-api-v1.js';
 
 const STORAGE_KEY = 'da_admin_v2_config';
@@ -11,18 +8,6 @@ const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg
 const DEFAULT_CONFIG = {
   writeMode: true,
   collectionsWriteMode: true,
-  githubToken: '',
-  githubOwner: 'osvaldosereia',
-  githubRepo: 'SUCEDOAN12',
-  githubBranch: 'main',
-  kitsPath: 'site/kits.json',
-  basketsPath: 'site/produtos-cesta-basica.json',
-  kitQueuePath: 'carrosseis-kits/fila.json',
-  catalogVersionPath: 'catalog-version.json',
-  githubKitImagesPath: 'site/img/kits',
-  makeTextWebhookUrl: '',
-  makeImageWebhookUrl: '',
-  makeAiWebhookUrl: '',
 };
 
 const $ = selector => document.querySelector(selector);
@@ -111,9 +96,7 @@ function availableKits() {
   if (!state.items.length) return 0;
   return Math.max(0, Math.min(...state.items.map(row => Math.floor(Math.max(0, number(row.product.estoque)) / Math.max(1, row.qty)))));
 }
-function configReady() {
-  return Boolean(text(state.config.githubToken) && text(state.config.makeTextWebhookUrl || state.config.makeAiWebhookUrl) && text(state.config.makeImageWebhookUrl || state.config.makeAiWebhookUrl));
-}
+function configReady() { return true; }
 function ensureIdentity() {
   if (!state.content.id) state.content.id = `kit${Date.now()}${Math.floor(100 + Math.random() * 900)}`;
   if (!state.content.code) state.content.code = uniqueCode();
@@ -190,15 +173,14 @@ async function loadData() {
   $('#connectionChip').textContent = 'Atualizando dados…';
   $('#connectionChip').className = 'chip warn';
   try {
-    state.products = await loadProductsFromSupabase();
-    if (text(state.config.githubToken)) {
-      const collections = await loadCollections(state.config);
-      state.kits = collections.kits || [];
-      state.queue = collections.queue || [];
-    } else {
-      state.kits = [];
-      state.queue = [];
-    }
+    await ensureAdminAuthenticated();
+    const [products, collections] = await Promise.all([
+      loadProductsFromSupabase(),
+      adminProductsApi('kit_catalog'),
+    ]);
+    state.products = products;
+    state.kits = collections.kits || [];
+    state.queue = [];
     $('#connectionChip').textContent = 'Dados atualizados';
     $('#connectionChip').className = 'chip ok';
     $('#productsChip').textContent = `${state.products.length} produtos`;
