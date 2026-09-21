@@ -70,6 +70,7 @@ on:
       - 'scripts/test-papoai-agent-external-lab-edge-v1.mjs'
       - 'scripts/test-papoai-commerce-intent-v1.mjs'
       - 'scripts/test-papoai-commerce-brain-round1-v1.mjs'
+      - 'scripts/test-papoai-commerce-personalization-preview-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -148,6 +149,7 @@ on:
       - 'scripts/test-papoai-agent-external-lab-edge-v1.mjs'
       - 'scripts/test-papoai-commerce-intent-v1.mjs'
       - 'scripts/test-papoai-commerce-brain-round1-v1.mjs'
+      - 'scripts/test-papoai-commerce-personalization-preview-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -268,6 +270,8 @@ jobs:
         run: node scripts/test-papoai-commerce-intent-v1.mjs
       - name: Validar motor comercial PapoAI
         run: node scripts/test-papoai-commerce-brain-round1-v1.mjs
+      - name: Validar prévia de personalização de cesta
+        run: node scripts/test-papoai-commerce-personalization-preview-v1.mjs
       - name: Validar Central de Relacionamento
         run: node scripts/test-cm-1-15-relationship-command-center.mjs
       - name: Validar readiness da homologação CM-1
