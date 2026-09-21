@@ -286,8 +286,21 @@ Deno.serve(async(req:Request)=>{
       if(q.error)throw q.error;
       result=q.data;
       text=`Certo 😊 Comecei a ${result?.basket?.display_name||result?.basket?.name||intent.basket}. O valor atual é ${moneyBR(result?.cart?.total)}. Você quer receber assim ou personalizar algum item?`;
+    }else if(intent.intent==='set_basket_quantity'&&conversationId&&commerceCfg?.write_enabled===true){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,
+        p_command:{type:'set_basket_quantity',source_query:intent.source_query,quantity:intent.quantity}
+      });
+      if(q.error)throw q.error;
+      result=q.data;
+      if(result?.needs_clarification){
+        const names=(Array.isArray(result?.candidates)?result.candidates:[]).slice(0,3).map((x:any)=>x.name).filter(Boolean);
+        text=names.length?`Encontrei mais de uma possibilidade: ${names.join(', ')}. Qual deles você quer alterar?`:'Não consegui identificar com segurança qual item você quer alterar.';
+      }else{
+        text=`Pronto 😊 Atualizei o item. O valor atual da cesta ficou em ${moneyBR(result?.cart?.total)}.`;
+      }
     }else if(['set_basket_quantity','set_addon_quantity','replace_basket_item'].includes(intent.intent)){
-      text='Entendi a alteração. Ainda estou validando exatamente qual item você quer mudar para não mexer no produto errado. Me diga o nome completo do produto.';
+      text='Entendi a alteração. Antes de mexer no pedido, preciso confirmar exatamente o produto para não alterar o item errado.';
     }else{
       const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:3});
       result=q.data;
