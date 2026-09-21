@@ -2,65 +2,124 @@
 
 Atualizado: 2026-09-21
 
-## Estado atual
+## Estado geral
 
-- fase: `r0a_core_transport_verified_waiting_handoff_silent`
-- projeto Supabase: `ssbesxgaijknwsjbsbcz`
-- branch GitHub: `papoai-commerce-os-r0a-spec-20260921`
-- Edge Function: `papo-external-agent-v1`
-- versão implantada: **v6**
-- lab: **desabilitado**
-- efeitos externos comerciais: **false**
-- OpenAI: **off na R0-A**
-- pedidos/Bling/marketing: **off**
-- PapoAI outbound canônico: **disabled**
+- R0-A transporte PapoAI → Supabase: comprovado em laboratório.
+- Agente `Dona Antônia — Homologação`: criado no PapoAI.
+- Loop entre os dois números internos: identificado e bloqueado na Edge Function.
+- Edge Function `papo-external-agent-v1`: **v10**, ativa tecnicamente, mas os cérebros estão desligados.
+- `channel_provider_agent_labs.enabled=false`
+- `papoai_commerce_brain_config.enabled=false`
+- `papoai_commerce_brain_config.write_enabled=false`
+- `papoai_commerce_brain_config.ai_enabled=false`
 
-## Evidência física PapoAI
+Nenhum atendimento comercial real foi ativado nesta rodada.
 
-O teste do construtor de **Agente Externo** do PapoAI foi aceito com:
+## R0-B — Commerce Brain: base programada
 
-- HTTP 200;
-- resposta interpretada com sucesso;
-- `message.text = "Teste Dona Antônia concluído. Recebi sua mensagem corretamente."`;
-- sessão `sessao_teste_123`;
-- resposta total exibida pelo PapoAI em aproximadamente 2876 ms;
-- backend interno registrou a chamada final em aproximadamente 1216 ms;
-- nenhuma ação comercial externa.
+### Fonte de verdade
+Supabase é autoridade para:
+- cestas;
+- produtos;
+- estoque;
+- preços;
+- ofertas;
+- carrinho;
+- cálculos;
+- personalização;
+- valor oculto;
+- histórico e cliente.
 
-Sessão de laboratório:
-- `provider_session_key=sessao_teste_123`
-- `message_count=3`
-- status `active`
+A IA nunca calcula preço/total e nunca altera carrinho diretamente.
 
-## Capability Registry
+### Cestas
+Readiness atual:
+- 9 cestas ativas no WhatsApp;
+- 0 cestas vazias;
+- 0 divergências de `hidden_adjustment`;
+- política: lista completa em uma única mensagem, agrupada por categoria;
+- preço individual de componente: oculto;
+- `hidden_adjustment`: oculto ao cliente.
 
-Verificado em laboratório:
-- `agent_external.request = verified_lab`
-- `agent_external.text_reply = verified_lab`
-- `agent_external.session = verified_lab`
+A função `format_papoai_commerce_basket_message_v1` já produz a lista completa da cesta.
 
-Observado na interface:
-- `agent_external.media_reply = observed_ui` — resposta aceita `message.media_url` ou `url`.
+### Produtos
+- 306 produtos vendáveis;
+- 306/306 com imagem;
+- busca comercial `search_papoai_commerce_products_v1`;
+- retorna preço comercial/oferta e imagem, sem delegar preço à IA.
 
-Ainda não comprovado:
-- `agent_external.handoff = unknown`
-- `agent_external.silent = unknown`
-- botões/listas/Flow pela resposta do Agente Externo permanecem `unknown`.
+### Personalização
+Funções existentes reaproveitadas:
+- `start_papoai_commerce_basket_v1`
+- `set_papoai_commerce_basket_quantity_v1`
+- `set_papoai_commerce_addon_quantity_v1`
+- `replace_papoai_commerce_basket_item_v1`
+- `recalculate_papoai_commerce_cart_v1`
 
-## Autenticação homologada
+Correção aplicada:
+- ao iniciar cesta, o `hidden_adjustment` oficial é atualizado e copiado para o carrinho antes do recálculo.
 
-Duas credenciais separadas:
-1. `X-API-Key` — chave de entrada definida pela Dona Antônia e validada contra Vault.
-2. `X-Papo-Response-Token` — Bearer gerado pelo PapoAI e ecoado pelo endpoint em `Authorization: Bearer <token>`.
+Nova função:
+- `preview_papoai_commerce_basket_personalization_v1`
 
-Essa separação corrigiu o erro `EXTERNAL_AGENT_AUTH_INVALID`.
+Ela simula mudanças sem gravar dados.
 
-## Próximo gate
+Teste real de cálculo:
+- Mini Bonini: R$ 175,00;
+- Feijão: quantidade 2 → 1;
+- Óleo: quantidade 2 → 3;
+- delta comercial: -R$ 1,70;
+- novo total: **R$ 173,30**;
+- `writes_performed=false`.
 
-Avançar no wizard do PapoAI para **Transferência** e provar:
-1. handoff explícito;
-2. silêncio/IA pausada após transferência.
+### Executor de comandos
+Criado `execute_papoai_commerce_command_v1`.
 
-Somente depois disso a R0-A é encerrada e a R0-B Commerce Brain começa.
+Comandos previstos:
+- list_baskets
+- basket_detail
+- customer_context
+- search_products
+- offers
+- cart_state
+- start_basket
+- set_basket_quantity
+- set_addon_quantity
+- replace_basket_item
 
-O laboratório deve permanecer desligado fora dos testes.
+Toda execução passa pelo Supabase e é auditável em `papoai_commerce_command_audit`.
+
+### Inteligência
+Criado `papoai-commerce-intent-v1.mjs`.
+
+Estratégia:
+1. regras determinísticas para intenções óbvias;
+2. GPT-5.6 Luna apenas quando necessário;
+3. IA extrai intenção/entidades;
+4. Supabase executa e valida;
+5. histórico enviado à IA limitado a 12 mensagens.
+
+A v10 do Agente Externo já contém esse roteador, mas ele está dormente enquanto `papoai_commerce_brain_config.enabled=false`.
+
+## Proteções contra loop
+
+Os dois números internos estão em:
+`channel_provider_agent_labs.metadata.blocked_internal_phones`.
+
+Eventos originados por número interno ou pela própria IA:
+- `silent=true`;
+- `handoff=false`;
+- não geram resposta comercial.
+
+## Próxima rodada
+
+Prioridade recomendada:
+1. resolver automaticamente referências de produto dentro do carrinho ("tira um feijão", "coloca mais dois óleos");
+2. resolver substituições com segurança ("troca OMO por outro sabão");
+3. gerar resposta final da personalização em linguagem natural;
+4. incorporar identificação do cliente/última compra;
+5. preparar checkout determinístico;
+6. só depois ativar `enabled`, primeiro sem escrita e em homologação.
+
+Nenhum gate de produção deve ser ativado automaticamente.
