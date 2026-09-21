@@ -25,8 +25,11 @@ O proprietário autorizou decisões técnicas autônomas até R16. Interação s
 - Customer & Marketing OS: preservar gates/documentação.
 - Marketing Admin / Organic Social: preservar publishing OFF/kill switch até homologação própria.
 
-## Ponto de retomada
-R1–R15 DONE. R16 IN_PROGRESS — Segurança, QA, homologação e limpeza final.
-R16 lote 1 criou o contrato transversal `tests/admin-r16-final-contract.test.mjs` e o workflow read-only `.github/workflows/admin-geral-contracts.yml`, que executa os contratos `tests/admin-*.test.mjs` sem secrets/deploy/providers. A primeira execução do CI foi iniciada e ainda estava em andamento no fechamento do lote.
-`main` permanece divergente apenas por SEO/dados públicos de cestas (`be2b3d54`), fora do escopo atual; não incorporar automaticamente.
-Próxima execução: fazer o preflight novamente, inspecionar o resultado do workflow Admin Geral contracts e corrigir qualquer falha programável real. Se todos os contratos passarem e não houver regressão nova de gates/rotas/capacidades, registrar a evidência final, marcar R16 DONE e encerrar o roadmap autônomo. Homologação externa não faz parte desse DONE programável: credenciais, Meta, publishing, outbound, canary, IA paga, Bling/fiscal, providers e dados reais continuam exigindo gates/evidência humana próprios.
+## Ponto terminal
+R1–R16 DONE programavelmente.
+O workflow `Admin Geral contracts` run `35581711967` passou integralmente no HEAD funcional `d4ebe785c1699b7ddea9a28e8e31e5319f250574`, incluindo `R16 final fail-closed audit`.
+`main` permanece divergente apenas por SEO/dados públicos de cestas (`be2b3d54`), fora do escopo desta frente e não incorporado.
+Credenciais, Meta, publishing, outbound, canary, IA paga, Bling/fiscal, providers, logística/financeiro real e dados reais continuam dependendo de gates/evidência humana próprios; o DONE acima não significa homologação externa.
+
+## Regra após conclusão
+Não realizar novas alterações autônomas apenas para continuar programando. Se uma automação desta frente ainda estiver ativa, ela pode ser encerrada. Retomar código somente diante de nova demanda explícita, regressão comprovada ou etapa de homologação humana específica.
