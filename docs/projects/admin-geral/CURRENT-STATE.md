@@ -46,3 +46,16 @@ O roadmap autônomo R1–R16 terminou. Novas alterações nesta frente só devem
 - não criar ou alterar pedido/cliente/publicação real como teste;
 - não testar PIN administrativo nem resolver identidade real sem evidência/ação humana exigida;
 - não emitir documento fiscal, sincronizar Bling real, publicar rota ou alterar financeiro real apenas para homologar interface.
+
+## Pós-R16 — correção visual e usabilidade da homologação (21/09/2026)
+- demanda explícita recebida após análise de telas reais em produção; R1–R16 continuam DONE e esta é uma correção de homologação, não uma R17;
+- criado `admin/admin-visual-standard-v3.css` como camada visual comum para o Admin: conteúdo, painéis, tipografia, botões, inputs, touch targets, tablet/mobile e workspaces especializados;
+- Admin principal/Cestas, Nomes dos produtos, Atendimento, Gôndolas, Pedidos, Imagens IA, Estúdio Criativo, Marketing, Relacionamento, Inteligência e Aprendizados passaram a carregar o padrão V3;
+- Nomes dos produtos e Imagens IA passaram a usar o Shell/Subpage Navigation canônico em vez de menu manual duplicado;
+- Atendimento foi integrado ao Shell canônico, mantendo suas tabs e lógica local;
+- Balanço rápido recebeu `contagem/admin-visual-v3.css`: continua mobile-first, mas usa melhor a largura no desktop, aumenta legibilidade e mantém ações grandes/sticky;
+- problema real de timeout em Nomes dos produtos tratado: frontend preparado para consulta de até 60 s com feedback após 12 s e endpoint `admin-product-names-v1` otimizado para contagens por status sem carregar até 5.000 linhas apenas para contar;
+- Edge Function `admin-product-names-v1` v2 foi implantada no Supabase mantendo `verify_jwt=false` como na versão anterior e sem alterar contratos de revisão/processamento;
+- workflow `Admin Geral contracts` run 35601154154 passou com sucesso, incluindo o novo passo `Visual standard V3` e todos os contratos R1–R16;
+- nenhuma flag externa, publishing, outbound, canary, Bling/fiscal, logística/financeiro real ou IA paga foi ativada;
+- frontend V3 permanece na branch do Admin até a integração deliberada com `main`; não declarar o visual novo como publicado antes dessa integração.
