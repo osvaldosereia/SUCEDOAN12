@@ -85,3 +85,12 @@
 - contrato `tests/admin-visual-standard-v3-contract.test.mjs` criado e incluído no CI;
 - workflow run 35601154154: success, inclusive Visual standard V3;
 - frontend não foi mergeado em `main`; mudança paralela de SEO/cestas continua preservada e precisa ser reconciliada na integração final.
+
+## 2026-09-21 — Pós-R16 — One Product / Global Shell V3
+- requisito de produto reforçado: para o usuário existe um único Admin Dona Antônia;
+- implementado shell global único para workspaces especializados e ferramentas operacionais fora de /admin;
+- Relacionamento: sidebar interna virou navegação secundária;
+- VIDEO: integrado visualmente ao Admin;
+- Balanço, Cadastro, Validades, Cestas rápidas e Kits: integrados ao mesmo cabeçalho/menu global, preservando layouts mobile-first;
+- Module Registry ampliado com Cadastro rápido, Validades e Kits;
+- CI passou nas execuções de integração operacional; última execução deve permanecer verde antes de qualquer integração em main.
