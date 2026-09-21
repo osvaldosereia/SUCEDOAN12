@@ -2,54 +2,58 @@
 
 Data do checkpoint: 2026-09-21
 Branch: `supabase-only-admin-migration-20260921`
-Rodada atual: R2 EXECUTADA → próxima R3
+Rodada atual: R3 EXECUTADA → próxima R4 final
 
 ## Estado geral
 
-Migração controlada para Supabase-only em andamento. `public.products` é a única fonte operacional autorizada para produtos Dona Antônia. Firebase ainda NÃO deve ser desligado fisicamente: há runtimes legados fora do escopo concluído e o projeto Firebase também possui consumidores do projeto separado Caneca Fácil.
+Migração controlada para Supabase-only em andamento. `public.products` é a única fonte operacional autorizada para produtos Dona Antônia. Firebase ainda NÃO deve ser desligado fisicamente: o gate zero-runtime ainda precisa da auditoria final e o projeto Firebase possui consumidores do projeto separado Caneca Fácil, que está explicitamente fora deste trabalho.
 
 ## Automações Supabase
 
-Estado solicitado pelo proprietário: PAUSADAS. Verificação desta rodada manteve filas de IA abertas em zero; nenhum cron foi reativado. Os 9 pg_cron preservados permanecem definidos para retomada seletiva posterior, não para execução agora. Gatilhos internos de integridade, segurança, auditoria e updated_at permanecem ativos.
+Estado solicitado pelo proprietário: PAUSADAS. Nenhum pg_cron foi reativado nesta rodada. Os 9 jobs preservados continuam definidos somente para eventual retomada seletiva posterior. Gatilhos internos de integridade, segurança, auditoria e `updated_at` não são automações de negócio e permanecem preservados.
 
-## Concluído até R2
+## Concluído até R3
 
 ### R1
-- auditoria real de GitHub + Supabase;
-- `public.products` definido como fonte única operacional;
-- backfill seguro de gôndola/prateleira e fonte de imagem a partir do histórico Supabase;
-- inventory-fast, Balanço rápido, Validades, Cestas mobile, Kits mobile e workers de imagem principais convertidos para catálogo Supabase-only;
+- auditoria GitHub + Supabase e congelamento da autoridade em `public.products`;
+- inventory-fast, Balanço rápido, Validades, Cestas mobile, Kits mobile e workers principais convertidos para catálogo Supabase-only;
 - `admin-products-live-v1` consolidada como API administrativa autenticada;
-- cliente compartilhado `admin-secure-api-v1.js` criado;
 - automações, cron, outbound e IA automática pausados.
 
 ### R2
-- Cadastro rápido deixou de executar o runtime Firebase/Make: `cadastro-v10.js` agora é somente bootstrap de compatibilidade para `cadastro-supabase-v1.js`;
-- consulta de EAN usa `admin-products-live-v1/lookup`;
-- atualização de estoque usa `save_product` no Supabase;
-- criação usa `create_product`, nasce inativa e fisicamente verificada, exigindo revisão antes de publicação;
-- autenticação usa a sessão administrativa compartilhada e `admin_users`;
-- token Firebase, webhook Make e token GitHub deixam de participar do runtime novo;
-- exclusão destrutiva no Cadastro foi deliberadamente bloqueada; desativação/revisão deve ocorrer pelo Admin auditável;
-- foto capturada no Cadastro permanece somente como conferência local enquanto automações de IA/imagem estão pausadas, evitando custo e upload acidental;
-- `basket_templates` e `basket_template_items` foram confirmadas existentes no Supabase (9 templates atuais); persistência canônica completa das Cestas permanece para R3 para não substituir publicação GitHub sem migração transacional e teste de compatibilidade.
+- Cadastro rápido convertido para sessão Supabase + `admin_users` e `admin-products-live-v1`;
+- criação/edição não usa Firebase, Make nem token GitHub no runtime novo;
+- produto novo nasce inativo para revisão;
+- `basket_templates` / `basket_template_items` confirmados como estrutura canônica já existente.
 
-## Inventário de referência
-
-- 1.814 produtos no checkpoint R1;
-- 1.746 ainda guardavam `firebase_key`/snapshot histórico — estes campos são somente auditoria, não autoridade;
-- `basket_templates` / `basket_template_items` existem e já possuem dados;
-- bucket `product-image-batches` permanece alvo de retenção econômica, sem limpeza destrutiva automática nesta fase.
+### R3
+- configuração da Contagem v2 deixou de expor URL/nó Firebase e declara explicitamente `catalogAuthority: supabase` (commit `ba1aee6`);
+- configuração do Admin/Produção v2 deixou de instalar Firebase como fonte oficial e passou a declarar Supabase + `admin-products-live-v1` como autoridade (commit `d526aa9`);
+- ativação do Admin agora descarta coordenadas Firebase e webhooks Make eventualmente persistidos no `localStorage`, evitando que configuração histórica volte a participar do runtime;
+- rótulos do Admin foram corrigidos para não afirmar que Firebase é fonte oficial;
+- integração Bling no config legado passa a apontar para Supabase, sem reativar automações;
+- auditoria encontrou referências Firebase ainda presentes em módulos legados de Contagem, scripts antigos e consumidores Caneca Fácil. Referências Caneca Fácil foram apenas classificadas e NÃO alteradas.
 
 ## Segurança / economia
 
-Cadastro agora herda o gate sessão Supabase + `admin_users`; service role continua somente server-side. Nenhuma nova Edge Function foi criada: foi reutilizada a API administrativa consolidada. IA/imagens automáticas continuam pausadas, portanto o Cadastro não dispara custo de IA nesta fase.
+- nenhuma Edge Function nova foi criada nesta rodada;
+- configuração antiga deixa de reintroduzir credenciais/endpoints Firebase/Make no runtime;
+- publishable key continua client-side; service role permanece server-side;
+- IA/imagens e cron continuam pausados, evitando consumo automático;
+- não houve limpeza destrutiva de Storage, tabelas, campos históricos ou Firebase.
 
-## Próxima execução — R3
+## Gate e bloqueadores para R4
 
-1. migrar persistência de Cestas para `basket_templates` / `basket_template_items` com escrita transacional/autenticada e compatibilidade de leitura;
-2. concluir persistência canônica dos Kits no Supabase sem tocar Caneca Fácil;
-3. auditar e retirar Firebase dos runtimes Dona Antônia restantes (Contagem legada, Produção/Admin antigo, Compra Rápida, Estoque, Orçamento conforme aplicável);
-4. ampliar contracts zero-Firebase;
-5. manter todos os cron/automação pausados;
-6. testar e atualizar checkpoint antes da R4.
+R4 deve executar a auditoria final por escopo e distinguir: (a) runtime Dona Antônia realmente carregado; (b) arquivos históricos/compatibilidade não carregados; (c) Caneca Fácil, que deve permanecer intocado. Antes de declarar zero-Firebase, revisar especialmente `contagem/`, `producao-v2/` módulos que ainda leem chaves antigas, Compra Rápida/Estoque/Orçamento e workflows/scripts Firebase. Remover ou neutralizar somente dependências operacionais Dona Antônia comprovadas.
+
+Persistência de Cestas/Kits já possui estrutura Supabase e leitura de catálogo Supabase-only, mas qualquer troca de escrita/publicação GitHub deve continuar transacional e compatível; não substituir fluxo em produção sem evidência de equivalência.
+
+## Próxima execução — R4 final
+
+1. auditoria zero-Firebase por runtime Dona Antônia e contracts;
+2. neutralizar referências operacionais restantes sem tocar Caneca Fácil/App Dona Antônia isolado;
+3. classificar/arquivar workflows e scripts Firebase legados em vez de executar exclusão destrutiva;
+4. revisar segurança/custo/Storage e registrar política recomendada;
+5. manter todos os pg_cron/IA/outbound pausados;
+6. executar smoke/contracts disponíveis;
+7. somente se o gate zero-runtime passar, documentar ação humana exata para desligamento físico — sem desligar o projeto compartilhado enquanto houver consumidor Caneca Fácil.
