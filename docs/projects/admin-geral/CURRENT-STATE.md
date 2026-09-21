@@ -2,7 +2,7 @@
 
 Atualizado: 2026-09-21
 Branch: `admin-geral-r1-r16-autonomous-20260919`
-Fase: R12 — Estúdio Criativo e VIDEO.
+Fase: R13 — Marketing completo.
 Execução autônoma: autorizada.
 Efeitos externos novos: proibidos sem gate/evidência específica.
 
@@ -18,28 +18,33 @@ Efeitos externos novos: proibidos sem gate/evidência específica.
 - R9: DONE
 - R10: DONE
 - R11: DONE
-- R12: IN_PROGRESS
-- R13–R16: PENDING
+- R12: DONE
+- R13: IN_PROGRESS
+- R14–R16: PENDING
 
-## R1–R11 — concluídas
-- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas, Qualidade do Catálogo, Pedidos, Customer 360 e Operações/Aprendizados concluídos com migração aditiva e contratos reais preservados.
+## R1–R12 — concluídas
+- Fundação/inventário, Design System V2, Shell/responsividade, Central de Trabalho, Produtos/Categorias/Vitrine, Estoque/Gôndolas/Validade/Balanço, Cestas, Qualidade do Catálogo, Pedidos, Customer 360, Operações/Aprendizados e Estúdio Criativo/VIDEO concluídos com migração aditiva e contratos reais preservados.
 - Central Comercial permanece dormente por `commercialTruthUiEnabled=false`.
 - Nenhum gate externo/runtime foi aberto pela migração.
 
-## R12 — lote 1 concluído
-- preflight confirmou R12 como rodada corrente; a mudança paralela de SEO/cestas em `main` permanece fora do escopo e não foi incorporada automaticamente;
-- inventário confirmou Estúdio Criativo em `admin/creative-studio.html` e VIDEO canônico em `/video/`; o redirect legado `admin/stopmotion-paper-test.html` continua apontando para `/video/`;
+## R12 — conclusão
+- `/video/` permanece superfície canônica e o redirect legado foi preservado;
 - VIDEO preserva busca/seleção de 1–16 produtos, referências, prompt único e timeline com módulos de 4/6/8/10 s, orientação editável e opção de usar produtos;
-- criado `admin-r12-creative-v2.js/css`, camada UI-only sem fetch/storage/persistência próprios, com touch >=44px, foco visível, safe-area/mobile e proteção curta contra duplo acionamento de ações de geração/criação/salvamento/publicação;
-- camada R12 conectada ao `/video/`; aviso deixa explícito que geração pode usar IA/custo e que publishing/outbound dependem dos gates próprios;
-- `tests/admin-r12-creative-v2-contract.test.mjs` criado para wiring, ausência de persistência paralela e preservação dos contratos VIDEO;
+- `admin-r12-creative-v2.js/css` permanece UI-only, sem fetch/storage/persistência próprios, com touch >=44px, foco, safe-area e busy guard;
+- a camada R12 foi conectada também ao Estúdio Criativo, sem substituir `creative-studio.js`, helpers ou persistência existentes;
+- estados de criação/progresso/storyboard do Estúdio receberam `aria-live=polite`; aprovações continuam explícitas antes das etapas de geração;
+- contrato R12 ampliado para exigir wiring em VIDEO + Estúdio, ausência de persistência paralela, aprovações em etapas e feedback acessível;
 - nenhuma geração paga, publicação, outbound, Meta, WhatsApp, canary ou dado real foi acionado.
 
-## R12 — próximo lote
-1. conectar/refinar a camada R12 no Estúdio Criativo sem substituir a lógica funcional existente;
-2. reforçar estados de geração/exportação e feedback de erro/sucesso onde a superfície já expõe essas ações;
-3. revisar VIDEO em desktop estreito/mobile e corrigir qualquer regressão de timeline/seleção sem executar IA paga;
-4. ampliar contrato R12 e, quando os critérios seguros estiverem satisfeitos, marcar DONE e promover R13.
+## R13 — próximo lote
+1. inventariar Marketing Admin real e documentação canônica do projeto Marketing Admin / Organic Social antes de editar;
+2. preservar `publishing_enabled=false`, kill switch e channel gates OFF conforme estado canônico;
+3. melhorar integração visual/usabilidade no Admin Geral sem fundir autoridades funcionais de Marketing com Customer & Marketing OS;
+4. reforçar mobile/desktop, estados, guardas e contratos sem publicação/canary/side effects externos;
+5. quando critérios seguros estiverem satisfeitos, marcar R13 DONE e promover R14.
+
+## Mudança paralela em main
+- `main` está 1 commit à frente da base desta branch por `be2b3d54` (SEO/dados públicos de cestas); não incorporar automaticamente enquanto não for necessário ao escopo corrente.
 
 ## Não fazer
 - não ativar Meta/WhatsApp/Marketing publishing;
