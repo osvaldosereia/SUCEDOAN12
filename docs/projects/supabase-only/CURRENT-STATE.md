@@ -1,21 +1,45 @@
 # Supabase Only — Current State
 
 Data do checkpoint: 2026-09-21
+Branch: `supabase-only-admin-migration-20260921`
+Rodada atual: R1 DONE → próxima R2
 
 ## Estado geral
 
-Migração em andamento. Firebase ainda NÃO pode ser desligado fisicamente porque algumas telas legadas continuam dependentes.
+Migração controlada para Supabase-only em andamento. Firebase ainda NÃO deve ser desligado fisicamente porque Cadastro rápido, Cestas/Kits e outros legados Dona Antônia ainda precisam ser migrados.
 
-## Concluído nesta fase
+## Automações Supabase
+
+Estado solicitado pelo proprietário: PAUSADAS.
+
+- pg_cron: 0 ativos / 9 preservados;
+- dispatch automático de ai_jobs: pausado;
+- dispatch automático de outbound_jobs/WhatsApp: pausado;
+- fila automática de pedido → Bling: pausada;
+- fila automática de pedido → outbound: pausada;
+- automation_config: automation OFF / AI OFF / outbound OFF / WhatsApp inbound OFF / auto reply OFF / canary 0;
+- Agent Core: OFF;
+- Service Simple automático: OFF;
+- product_image_automation_settings: OFF;
+- automation_workflows: OFF + kill switch ON.
+
+Gatilhos internos de integridade, segurança, auditoria e updated_at permanecem ativos.
+
+## Concluído na Rodada 1
 
 - auditoria real de GitHub + Supabase;
 - `public.products` definido como fonte única operacional;
 - backfill seguro de gôndola/prateleira e fonte de imagem a partir do histórico já armazenado no Supabase;
 - `inventory-fast-balance-v3` convertido para busca Supabase-only na branch;
 - `inventory-fast-v1` convertido para busca Supabase-only na branch;
-- resolver de fontes do Grid18 convertido para fontes Supabase/cache local, sem chamada Firebase;
-- worker individual `product-image-openai-v2` preparado sem consulta Firebase;
-- worker Grid18 em conversão para retirar autoridade Firebase.
+- resolver de fontes do Grid18 convertido para fontes Supabase/cache local, sem chamada live Firebase;
+- worker individual `product-image-openai-v2` convertido sem consulta live Firebase;
+- Grid18 não usa Firebase para decidir ativo/inativo;
+- `admin-products-live-v1` ampliada como API administrativa segura e consolidada;
+- cliente compartilhado `admin-secure-api-v1.js` criado;
+- Validades convertida para Supabase autenticado;
+- contratos anti-regressão Firebase adicionados;
+- plano de 4 rodadas e log de execução criados.
 
 ## Inventário auditado
 
@@ -28,7 +52,7 @@ Migração em andamento. Firebase ainda NÃO pode ser desligado fisicamente porq
 - 288 tabelas públicas;
 - 979 funções SQL públicas;
 - 100 Edge Functions ativas;
-- 9 cron jobs ativos;
+- 9 pg_cron preservados, todos inativos;
 - bucket `product-image-batches`: ~1,09 GB / 7.650 objetos.
 
 ## Segurança / performance
@@ -42,16 +66,13 @@ Pendências detectadas:
 - 189 FKs sem índice;
 - 130 índices sem uso observado.
 
-Nenhuma remoção em massa de índice/tabela foi feita.
+Nenhuma remoção em massa de tabela, função ou índice foi feita.
 
-## Próxima sequência
+## Próxima execução — R2
 
-1. concluir e validar workers de imagem Supabase-only;
-2. migrar Validades;
-3. migrar Cadastro rápido;
-4. migrar Cestas rápidas;
-5. migrar Kits;
-6. retirar workflows/secrets Firebase;
-7. otimizar storage/cron/índices e segurança;
-8. executar auditoria final zero-Firebase;
-9. ação humana: desligar Firebase.
+1. migrar Cadastro rápido para Supabase-only e retirar Make/Firebase do runtime;
+2. migrar Cestas rápidas para catálogo/persistência Supabase;
+3. migrar Kits para catálogo Supabase;
+4. preservar UX móvel e autenticação;
+5. ampliar contracts zero-Firebase desses três módulos;
+6. atualizar este checkpoint e EXECUTION-LOG.
