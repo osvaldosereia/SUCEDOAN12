@@ -39,3 +39,9 @@ assert.match(ci,/scripts\/test-papoai-agent-external-lab-db-v1\.mjs/);
 assert.match(ci,/scripts\/test-papoai-agent-external-lab-edge-v1\.mjs/);
 assert.match(ci,/deno check supabase\/functions\/papo-external-agent-v1\/index\.ts/);
 console.log('PASS: PapoAI Agent External Edge contract is isolated');
+
+assert.match(edge,/propose_replacement/);
+assert.match(edge,/confirm_pending/);
+assert.match(edge,/checkout_readiness/);
+assert.match(edge,/set_addon_quantity/);
+assert.match(edge,/get_papoai_commerce_pending_action_v1/);
