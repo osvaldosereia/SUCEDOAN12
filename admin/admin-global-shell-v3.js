@@ -43,12 +43,26 @@ function navMarkup(){
 
 function workspaceRoot(){
   return document.querySelector('[data-admin-workspace]')||
-    document.querySelector('.relationship-shell,.si-page,.al-page,main.page,main.shell');
+    document.querySelector('.relationship-shell,.si-page,.al-page,main.page,main.shell,.validity-main,.basket-main,.ops-cadastro main,.ops-kits .app');
 }
 
-function markLocalHeaders(){
-  const header=document.querySelector('body > header.topbar');
-  if(header)header.classList.add('da-local-module-header');
+function markLocalHeaders(root){
+  const candidates=[
+    document.querySelector('body > header.topbar'),
+    document.querySelector('body > header.ops-topbar'),
+    root?.querySelector(':scope > header.ops-topbar')
+  ];
+  candidates.filter(Boolean).forEach(header=>header.classList.add('da-local-module-header'));
+}
+
+function cloneOperationalNav(){
+  const source=document.querySelector('.ops-app-nav');
+  if(!source)return null;
+  const nav=source.cloneNode(true);
+  nav.classList.add('da-ops-secondary-nav');
+  nav.removeAttribute('aria-current');
+  nav.querySelectorAll('[aria-current]').forEach(node=>node.removeAttribute('aria-current'));
+  return nav;
 }
 
 function setMenu(open){
@@ -66,7 +80,8 @@ function mount(){
   if(document.documentElement.dataset.adminGlobalShell==='v3')return;
   const root=workspaceRoot();
   if(!root)return;
-  markLocalHeaders();
+  markLocalHeaders(root);
+  const operationalNav=cloneOperationalNav();
 
   const header=document.createElement('header');
   header.className='da-global-topbar';
@@ -92,6 +107,7 @@ function mount(){
   root.parentNode.insertBefore(header,root);
   root.parentNode.insertBefore(layout,root);
   layout.append(sidebar,backdrop,content);
+  if(operationalNav)content.appendChild(operationalNav);
   content.appendChild(root);
 
   document.documentElement.dataset.adminGlobalShell='v3';
