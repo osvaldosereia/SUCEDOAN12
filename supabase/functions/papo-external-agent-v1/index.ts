@@ -274,13 +274,53 @@ Deno.serve(async(req:Request)=>{
       result=q.data;
       text=result?.items?.length?`Separei estas ofertas para você:\n\n${productsText(result.items)}`:'Não encontrei uma oferta personalizada disponível agora.';
     }else if(intent.intent==='customer_context'&&conversationId){
-      const q=await sb.rpc('get_papoai_commerce_customer_context_v1',{p_conversation_id:conversationId});
+      const q=await sb.rpc('get_papoai_commerce_customer_snapshot_v2',{p_conversation_id:conversationId});
       result=q.data;
-      text=result?.known&&result?.name?`Encontrei seu cadastro, ${result.name}. Como posso ajudar hoje?`:'Posso te ajudar com cestas, produtos e ofertas.';
+      text=result?.known_customer&&result?.person_name?`Encontrei seu cadastro, ${result.person_name}. Como posso ajudar hoje?`:'Posso te ajudar com cestas, produtos e ofertas.';
     }else if(intent.intent==='cart_state'&&conversationId){
       const q=await sb.rpc('get_papoai_commerce_cart_state_v1',{p_conversation_id:conversationId});
       result=q.data;
       text=result?.has_cart?`Seu pedido está em ${moneyBR(result.total)}.`:'Você ainda não começou um pedido.';
+    }else if(intent.intent==='cart_summary'&&conversationId){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,p_command:{type:'cart_summary'}
+      });
+      if(q.error)throw q.error;
+      result=q.data;
+      text=result?.message_text||'Você ainda não começou um pedido.';
+    }else if(intent.intent==='checkout_readiness'&&conversationId){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,p_command:{type:'checkout_readiness'}
+      });
+      if(q.error)throw q.error;
+      result=q.data;
+      if(result?.ready){
+        text=result?.summary?.message_text||'Seu pedido está pronto para a confirmação final.';
+      }else{
+        const missing=Array.isArray(result?.missing)?result.missing:[];
+        if(missing.includes('cart'))text='Você ainda não começou um pedido. Posso te mostrar as cestas.';
+        else if(missing.includes('delivery_address'))text='Seu pedido está montado. Antes de finalizar, preciso confirmar seus dados de entrega.';
+        else text='Seu pedido ainda precisa de uma validação antes da confirmação final.';
+      }
+    }else if((intent.intent==='confirm_pending'||intent.intent==='cancel_pending')&&conversationId){
+      const pending=await sb.rpc('get_papoai_commerce_pending_action_v1',{p_conversation_id:conversationId});
+      if(!pending.data?.has_pending){
+        text=intent.intent==='confirm_pending'?'Não tenho nenhuma alteração pendente para confirmar agora.':'Tudo certo. Não há nenhuma alteração pendente.';
+      }else if(commerceCfg?.write_enabled!==true){
+        text='A alteração está identificada, mas a gravação do pedido ainda está desativada.';
+      }else{
+        const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+          p_conversation_id:conversationId,
+          p_command:{type:'confirm_pending',confirm:intent.intent==='confirm_pending'}
+        });
+        if(q.error)throw q.error;
+        result=q.data;
+        if(result?.cancelled)text='Tudo bem 😊 Não fiz a alteração.';
+        else if(result?.confirmed){
+          const total=result?.result?.cart?.total;
+          text=`Pronto 😊 Fiz a troca. O valor atual do pedido é ${moneyBR(total)}.`;
+        }else text='Não consegui confirmar essa alteração. Vou precisar que você me diga novamente o que deseja mudar.';
+      }
     }else if(intent.intent==='start_basket'&&conversationId&&commerceCfg?.write_enabled===true){
       const q=await sb.rpc('execute_papoai_commerce_command_v1',{p_conversation_id:conversationId,p_command:{type:'start_basket',basket:intent.basket}});
       if(q.error)throw q.error;
@@ -299,8 +339,40 @@ Deno.serve(async(req:Request)=>{
       }else{
         text=`Pronto 😊 Atualizei o item. O valor atual da cesta ficou em ${moneyBR(result?.cart?.total)}.`;
       }
+    }else if(intent.intent==='set_addon_quantity'&&conversationId&&commerceCfg?.write_enabled===true){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,
+        p_command:{type:'set_addon_quantity',query:intent.query||normalized.messageText,quantity:intent.quantity||1}
+      });
+      if(q.error)throw q.error;
+      result=q.data;
+      if(result?.needs_clarification){
+        const candidates=(Array.isArray(result?.candidates)?result.candidates:[]).slice(0,4);
+        text=candidates.length?`Encontrei estas opções:\n\n${productsText(candidates)}\n\nQual delas você quer adicionar?`:'Não consegui identificar com segurança qual produto você quer adicionar.';
+      }else{
+        text=`Pronto 😊 Adicionei ${result?.resolved?.name||'o produto'}. O total atual é ${moneyBR(result?.cart?.total)}.`;
+      }
+    }else if(intent.intent==='replace_basket_item'&&conversationId&&commerceCfg?.write_enabled===true){
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,
+        p_command:{
+          type:'propose_replacement',
+          source_query:intent.source_query,
+          replacement_query:intent.replacement_query
+        }
+      });
+      if(q.error)throw q.error;
+      result=q.data;
+      if(result?.needs_clarification){
+        const candidates=(Array.isArray(result?.candidates)?result.candidates:[]).slice(0,4);
+        text=candidates.length?`Encontrei estas possibilidades para a troca:\n\n${productsText(candidates)}\n\nQual delas você quer?`:'Não encontrei uma troca segura para esses produtos. Me diga com mais detalhes qual produto você quer colocar no lugar.';
+      }else{
+        const from=result?.source?.name||intent.source_query;
+        const to=result?.replacement?.name||intent.replacement_query;
+        text=`Posso trocar **${from}** por **${to}**. Quer que eu faça essa troca?`;
+      }
     }else if(['set_basket_quantity','set_addon_quantity','replace_basket_item'].includes(intent.intent)){
-      text='Entendi a alteração. Antes de mexer no pedido, preciso confirmar exatamente o produto para não alterar o item errado.';
+      text='Entendi a alteração. A gravação do pedido ainda está desativada, então não vou mexer no carrinho agora.';
     }else{
       const q=await sb.rpc('search_papoai_commerce_products_v1',{p_query:intent.query||normalized.messageText,p_limit:3});
       result=q.data;
