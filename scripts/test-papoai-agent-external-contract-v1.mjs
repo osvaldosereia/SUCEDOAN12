@@ -36,6 +36,17 @@ assert.equal(alias.phoneE164,'+5565981509750');
 assert.equal(alias.sessionKey,'phone:+5565981509750');
 assert.equal(alias.messageText,'oi');
 
+const assistantTrigger=normalizeExternalAgentPayload({
+  messages:[
+    {role:'user',content:'quero a Mini Bonini'},
+    {role:'assistant',content:'Teste Dona Antônia concluído.'},
+  ],
+  contact:{phone_number:'5565981509750',name:'Maria'},
+  session:{uid:'loop-test'},
+});
+assert.equal(assistantTrigger.triggerRole,'assistant');
+assert.equal(assistantTrigger.messageText,'','assistant-triggered events must not reuse an old user message');
+
 assert.throws(()=>normalizeExternalAgentPayload({contact:{phone:'65981509750'}}),/empty_message/);
 assert.throws(()=>normalizeExternalAgentPayload({text:'oi',contact:{phone:'123'}}),/invalid_phone/);
 
