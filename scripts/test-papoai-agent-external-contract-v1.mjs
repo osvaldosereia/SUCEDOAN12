@@ -21,11 +21,17 @@ const full=normalizeExternalAgentPayload({
   ],
   contact:{phone_number:'5565981509750',name:'Maria'},
   session:{uid:'sess-1'},
+  channel:{id:123,name:'WhatsApp Homologação',phone_number:'5565984491018'},
+  agent:{id:456,name:'Dona Antônia — Homologação'},
 });
 assert.equal(full.phoneE164,'+5565981509750');
 assert.equal(full.displayName,'Maria');
 assert.equal(full.sessionKey,'sess-1');
 assert.equal(full.messageText,'quero a cesta mini');
+assert.equal(full.channelPhoneE164,'+5565984491018');
+assert.equal(full.channelId,'123');
+assert.equal(full.channelName,'WhatsApp Homologação');
+assert.equal(full.agentId,'456');
 assert.equal(full.history.some(m=>m.role==='system'),false);
 
 const alias=normalizeExternalAgentPayload({
