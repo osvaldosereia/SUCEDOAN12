@@ -1,0 +1,263 @@
+name: TEMP Live Comprar Address Test
+
+on:
+  push:
+    branches:
+      - 'test/live-comprar-address-20260922'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Confirmar assets publicados
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 3 --connect-timeout 15 https://donaantonia.com.br/comprar/ -o /tmp/comprar-live.html
+          grep -q 'checkout.js?v=20260915-05-address-hotfix-20260922' /tmp/comprar-live.html
+          grep -q 'conversation.js?v=20260922-01-address-hotfix' /tmp/comprar-live.html
+          echo "LIVE_ASSETS_OK"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Preparar navegador
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/live-comprar-test
+          cd /tmp/live-comprar-test
+          npm init -y >/dev/null 2>&1
+          npm install --silent puppeteer-core@24
+          command -v google-chrome
+
+      - name: Testar checkout de endereço no navegador
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/live-comprar-test/test.mjs <<'NODE'
+          import puppeteer from 'puppeteer-core';
+
+          const fail = message => { throw new Error(message); };
+          const token = 'a'.repeat(64);
+          const seenActions = [];
+
+          const browser = await puppeteer.launch({
+            headless: true,
+            executablePath: '/usr/bin/google-chrome',
+            args: ['--no-sandbox', '--disable-dev-shm-usage']
+          });
+
+          try {
+            const page = await browser.newPage();
+            page.setDefaultTimeout(30000);
+            await page.setRequestInterception(true);
+
+            page.on('request', async request => {
+              const url = request.url();
+              if (!url.includes('/functions/v1/')) {
+                request.continue();
+                return;
+              }
+
+              if (request.method() === 'OPTIONS') {
+                request.respond({
+                  status: 204,
+                  headers: {
+                    'access-control-allow-origin': '*',
+                    'access-control-allow-methods': 'POST, OPTIONS',
+                    'access-control-allow-headers': 'content-type, authorization, apikey'
+                  }
+                });
+                return;
+              }
+
+              if (request.method() !== 'POST') {
+                request.continue();
+                return;
+              }
+
+              let body = {};
+              try { body = JSON.parse(request.postData() || '{}'); } catch {}
+              const action = String(body.action || '');
+              seenActions.push(action);
+
+              const headers = {
+                'content-type': 'application/json',
+                'access-control-allow-origin': '*'
+              };
+
+              if (action === 'open') {
+                request.respond({
+                  status: 200,
+                  headers,
+                  body: JSON.stringify({
+                    ok: true,
+                    session: { id: 'session-test', status: 'open', current_view: 'home' },
+                    customer: null,
+                    baskets: [],
+                    cart: { items: [], total: 0, commercial_total: 0 }
+                  })
+                });
+                return;
+              }
+
+              if (action === 'checkout_preview') {
+                request.respond({
+                  status: 200,
+                  headers,
+                  body: JSON.stringify({
+                    ok: true,
+                    checkout: {
+                      customer: {
+                        id: 'customer-test',
+                        name: 'Cliente Teste',
+                        phone: '65999999999'
+                      },
+                      addresses: [{
+                        id: 'address-test',
+                        street: 'Rua Teste',
+                        number: '',
+                        neighborhood: 'Centro',
+                        complement: '',
+                        reference: '',
+                        city: 'Cuiabá',
+                        state: 'MT',
+                        postal_code: '78000000',
+                        is_default: true
+                      }],
+                      cart: { total: 10, commercial_total: 10 },
+                      items: [{ quantity: 1, name: 'Produto Teste' }]
+                    },
+                    payment_method: null
+                  })
+                });
+                return;
+              }
+
+              if (action === 'finalize_order' || action === 'confirm_order') {
+                request.respond({
+                  status: 500,
+                  headers,
+                  body: JSON.stringify({ ok: false, error: 'ORDER_ACTION_MUST_NOT_RUN_IN_THIS_TEST' })
+                });
+                return;
+              }
+
+              request.respond({
+                status: 200,
+                headers,
+                body: JSON.stringify({ ok: true, products: [], baskets: [], items: [] })
+              });
+            });
+
+            const response = await page.goto(
+              'https://donaantonia.com.br/comprar/?s=' + token,
+              { waitUntil: 'networkidle2', timeout: 60000 }
+            );
+
+            if (!response || !response.ok()) {
+              fail('Página pública não abriu com HTTP 2xx.');
+            }
+
+            await page.waitForFunction(
+              () => window.DA_COMPRAR_APP && window.DA_COMPRAR_APP.state?.modules?.checkout,
+              { timeout: 30000 }
+            );
+
+            const resources = await page.evaluate(
+              () => performance.getEntriesByType('resource').map(entry => entry.name)
+            );
+            if (!resources.some(url => url.includes('conversation.js?v=20260922-01-address-hotfix'))) {
+              fail('conversation.js corrigido não foi carregado no navegador.');
+            }
+            if (!resources.some(url => url.includes('checkout.js?v=20260915-05-address-hotfix-20260922'))) {
+              fail('checkout.js corrigido não foi carregado no navegador.');
+            }
+
+            await page.evaluate(() => {
+              const app = window.DA_COMPRAR_APP;
+              app.setCart({
+                items: [{
+                  product_id: 'product-test',
+                  quantity: 1,
+                  source: 'addon',
+                  product: { name: 'Produto Teste' }
+                }],
+                total: 10,
+                commercial_total: 10
+              });
+              app.state.modules.checkout.open();
+            });
+
+            await page.waitForSelector('#conversationCheckoutNumber', { timeout: 30000 });
+
+            const incompleteMessage = await page.evaluate(() =>
+              document.body.innerText.includes('Seu endereço salvo precisa ser completado antes de finalizar. É rapidinho.')
+            );
+            if (!incompleteMessage) {
+              fail('Endereço salvo incompleto não abriu a correção obrigatória.');
+            }
+
+            const initial = await page.evaluate(() => ({
+              name: document.querySelector('#conversationCheckoutName')?.value,
+              phone: document.querySelector('#conversationCheckoutWhatsapp')?.value,
+              street: document.querySelector('#conversationCheckoutStreet')?.value,
+              number: document.querySelector('#conversationCheckoutNumber')?.value,
+              city: document.querySelector('#conversationCheckoutCity')?.value
+            }));
+
+            if (initial.name !== 'Cliente Teste') fail('Nome salvo não foi preservado.');
+            if (!String(initial.phone || '').includes('65999999999')) fail('WhatsApp salvo não foi preservado.');
+            if (initial.street !== 'Rua Teste') fail('Rua salva não foi preservada.');
+            if (initial.number !== '') fail('Número deveria iniciar vazio neste cenário.');
+            if (initial.city !== 'Cuiabá') fail('Cidade salva não foi preservada.');
+
+            await page.click('[data-address-continue]');
+            await new Promise(resolve => setTimeout(resolve, 400));
+
+            const validation = await page.evaluate(() => ({
+              status: document.querySelector('[data-address-status]')?.textContent?.trim() || '',
+              active: document.activeElement?.id || '',
+              invalid: document.querySelector('#conversationCheckoutNumber')?.getAttribute('aria-invalid')
+            }));
+
+            if (!validation.status.includes('Informe o número da casa. Se não houver número, digite S/N.')) {
+              fail('Mensagem específica para número ausente não apareceu.');
+            }
+            if (validation.active !== 'conversationCheckoutNumber') {
+              fail('Campo Número não recebeu foco após validação.');
+            }
+            if (validation.invalid !== 'true') {
+              fail('Campo Número não foi marcado como inválido.');
+            }
+
+            await page.type('#conversationCheckoutNumber', 'S/N');
+            await page.click('[data-address-continue]');
+
+            await page.waitForFunction(
+              () => document.body.innerText.includes('Como você prefere pagar na entrega?'),
+              { timeout: 15000 }
+            );
+
+            if (seenActions.includes('finalize_order') || seenActions.includes('confirm_order')) {
+              fail('O teste tentou confirmar um pedido real.');
+            }
+
+            console.log('LIVE_BROWSER_ADDRESS_CHECKOUT_OK');
+            console.log('ACTIONS=' + seenActions.join(','));
+          } finally {
+            await browser.close();
+          }
+          NODE
+
+          cd /tmp/live-comprar-test
+          node test.mjs
