@@ -52,8 +52,9 @@ function productsText(items:any[]){
   if(!list.length)return 'Não encontrei um produto disponível que combine com esse pedido agora.';
   return list.map((p:any)=>`• ${p.name} — ${moneyBR(p.commercial_price??p.offer_price??p.regular_price)}${p.is_offer?' (oferta)':''}`).join('\n');
 }
-function numberedProductsText(items:any[]){
-  const list=(Array.isArray(items)?items:[]).slice(0,3);
+function numberedProductsText(items:any[],maxItems=3){
+  const max=Math.max(1,Math.min(10,Number(maxItems)||3));
+  const list=(Array.isArray(items)?items:[]).slice(0,max);
   if(!list.length)return '';
   return list.map((p:any,index:number)=>`${index+1}. ${p.name} — ${moneyBR(p.commercial_price??p.offer_price??p.regular_price)}${p.is_offer?' (oferta)':''}`).join('\n');
 }
@@ -262,13 +263,45 @@ Deno.serve(async(req:Request)=>{
   }else{
     const historyLimit=Math.max(1,Math.min(20,Number(commerceCfg?.max_history_messages||12)));
     const apiKey=commerceCfg?.ai_enabled===true?await resolveOpenAiKey(sb):'';
-    const intent=await classifyCommerceIntent({
+    let intent=await classifyCommerceIntent({
       message:normalized.messageText,
       history:normalized.history.slice(-historyLimit),
       apiKey,
       model:(Deno.env.get('OPENAI_CONVERSATION_MODEL')||'gpt-5.6-luna')
     });
     const conversationId=ingested?.conversation_id||null;
+
+    if(
+      conversationId
+      && commerceCfg?.metadata?.conversation_governor_enabled===true
+      && intent.intent==='general'
+      && normalized.messageText.length<=80
+    ){
+      const {data:governorState}=await sb.from('papoai_conversation_governor_state')
+        .select('topic_key,clarification_count,last_question_key,last_action,last_reason,context,updated_at')
+        .eq('conversation_id',conversationId)
+        .maybeSingle();
+
+      const stateAgeMs=governorState?.updated_at
+        ? Date.now()-new Date(governorState.updated_at).getTime()
+        : Number.POSITIVE_INFINITY;
+      const originalQuery=String(governorState?.context?.original_query||'').trim();
+
+      if(
+        governorState?.last_action==='ASK'
+        && stateAgeMs<=15*60*1000
+        && originalQuery
+        && ['brand_preference','product_type','budget_or_recommendation'].includes(governorState?.last_question_key||'')
+      ){
+        intent={
+          ...intent,
+          intent:'search_products',
+          query:`${originalQuery} ${normalized.messageText}`.trim(),
+          source:'governor_followup'
+        };
+      }
+    }
+
     let result:any=null;
     let text='';
 
@@ -394,7 +427,8 @@ Deno.serve(async(req:Request)=>{
           p_metadata:{
             result_limit:12,
             candidate_sample_count:broadItems.length,
-            governor_version:'v1'
+            governor_version:'v1',
+            original_query:productQuery
           }
         });
         const finalAction=recorded.data?.action||governor.action;
@@ -403,15 +437,21 @@ Deno.serve(async(req:Request)=>{
           result={governor:recorded.data||governor,items:[]};
           text=governor.question||'Posso fazer uma pergunta rápida para encontrar opções melhores para você?';
         }else if(finalAction==='RECOMMEND'){
-          const recommendations=broadItems.slice(0,3);
-          result={governor:recorded.data||governor,items:recommendations};
-          text=recommendations.length
-            ? `Eu escolheria estas opções para você:\n\n${numberedProductsText(recommendations)}\n\nSe quiser, pode responder **1, 2 ou 3**.`
-            : 'Não encontrei uma opção segura para recomendar agora.';
-        }else{
           const q=await sb.rpc('execute_papoai_commerce_command_v1',{
             p_conversation_id:conversationId,
             p_command:{type:'propose_product_choice',query:productQuery,limit:3}
+          });
+          if(q.error)throw q.error;
+          const recommendations=Array.isArray(q.data?.candidates)?q.data.candidates:[];
+          result={...(q.data||{}),governor:recorded.data||governor,items:recommendations};
+          text=recommendations.length
+            ? `Eu escolheria estas opções para você:\n\n${numberedProductsText(recommendations,3)}\n\nSe quiser, pode responder **1, 2 ou 3**.`
+            : 'Não encontrei uma opção segura para recomendar agora.';
+        }else{
+          const responseLimit=Math.max(1,Math.min(10,Number(governor?.maxResults||3)));
+          const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+            p_conversation_id:conversationId,
+            p_command:{type:'propose_product_choice',query:productQuery,limit:responseLimit}
           });
           if(q.error)throw q.error;
           const choices=Array.isArray(q.data?.candidates)?q.data.candidates:[];
@@ -422,7 +462,7 @@ Deno.serve(async(req:Request)=>{
             const p=choices[0];
             text=`Encontrei **${p.name}** por **${moneyBR(p.commercial_price)}**. Quer que eu adicione ao pedido?`;
           }else{
-            text=`Encontrei estas opções:\n\n${numberedProductsText(choices)}\n\nQual você prefere? Pode responder **1, 2 ou 3**.`;
+            text=`Encontrei estas opções:\n\n${numberedProductsText(choices,responseLimit)}\n\nQual você prefere? Pode responder pelo **número da opção**.`;
           }
         }
       }else{
