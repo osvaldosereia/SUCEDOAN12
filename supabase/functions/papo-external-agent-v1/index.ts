@@ -57,6 +57,18 @@ function numberedProductsText(items:any[]){
   if(!list.length)return '';
   return list.map((p:any,index:number)=>`${index+1}. ${p.name} — ${moneyBR(p.commercial_price??p.offer_price??p.regular_price)}${p.is_offer?' (oferta)':''}`).join('\n');
 }
+function valueReplacementOptionsText(options:any[]){
+  const list=(Array.isArray(options)?options:[]).slice(0,3);
+  return list.map((option:any,index:number)=>{
+    const items=(Array.isArray(option?.items)?option.items:[]).map((item:any)=>{
+      const qty=Number(item?.quantity_increment||1);
+      return `${qty>1?qty+'× ':''}${item?.name||'Produto'}`;
+    }).join(' + ');
+    const diff=Number(option?.difference||0);
+    const diffText=Math.abs(diff)<0.01?'valor praticamente igual':(diff>0?`${moneyBR(Math.abs(diff))} a mais`:`${moneyBR(Math.abs(diff))} a menos`);
+    return `${index+1}. ${items} — ${moneyBR(option?.total_value)} (${diffText})`;
+  }).join('\n');
+}
 
 async function requestHash(value:string){
   const bytes=new TextEncoder().encode(value);
@@ -319,6 +331,31 @@ Deno.serve(async(req:Request)=>{
           text=`Sua última cesta foi **${result?.basket?.name||'cesta básica'}**. Pelas condições atuais, a estimativa seria **${moneyBR(result?.current_estimate)}**. A montagem do carrinho ainda está desativada nesta homologação.`;
         }else text='Não encontrei uma compra anterior disponível para repetir.';
       }
+    }else if(intent.intent==='delegated_value_replacement'&&conversationId){
+      const commandType=commerceCfg?.write_enabled===true?'propose_value_replacement':'recommend_value_replacement';
+      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+        p_conversation_id:conversationId,
+        p_command:{type:commandType,source_query:intent.source_query,limit:3}
+      });
+      if(q.error)throw q.error;
+      result=q.data||{};
+      const options=Array.isArray(result?.options)?result.options:[];
+      if(result?.needs_clarification){
+        const names=(Array.isArray(result?.source_candidates)?result.source_candidates:[])
+          .slice(0,3).map((x:any)=>x.name).filter(Boolean);
+        text=names.length
+          ? `Encontrei mais de um item parecido no seu pedido: ${names.join(', ')}. Qual deles você quer retirar?`
+          : 'Não consegui identificar com segurança qual item você quer retirar.';
+      }else if(!result?.ok||!options.length){
+        text='Não encontrei uma substituição segura e com valor próximo para esse item agora.';
+      }else{
+        const source=result?.source?.name||intent.source_query;
+        const budget=moneyBR(result?.replacement_budget);
+        text=`Posso escolher por você 😊 Se eu retirar **${source}**, tenho cerca de **${budget}** para substituir sem mudar muito o valor da cesta.\n\n${valueReplacementOptionsText(options)}\n\nQual dessas você prefere? Pode responder **1, 2 ou 3**.`;
+        if(commerceCfg?.write_enabled!==true){
+          text+='\n\n(Nesta homologação a aplicação da troca ainda está desativada.)';
+        }
+      }
     }else if(intent.intent==='search_products'&&conversationId){
       const governorEnabled=commerceCfg?.metadata?.conversation_governor_enabled===true;
       const productQuery=intent.query||normalized.messageText;
@@ -413,21 +450,38 @@ Deno.serve(async(req:Request)=>{
       if(commerceCfg?.write_enabled!==true){
         text='A escolha foi entendida, mas a gravação do carrinho ainda está desativada nesta homologação.';
       }else{
+        const pending=await sb.rpc('get_papoai_commerce_pending_action_v1',{p_conversation_id:conversationId});
+        const pendingType=pending.data?.action_type||'';
+        const command=pendingType==='value_replacement'
+          ? {type:'select_value_replacement',selection:intent.quantity}
+          : {type:'select_product_choice',selection:intent.quantity,quantity:1};
+
         const q=await sb.rpc('execute_papoai_commerce_command_v1',{
           p_conversation_id:conversationId,
-          p_command:{type:'select_product_choice',selection:intent.quantity,quantity:1}
+          p_command:command
         });
         if(q.error)throw q.error;
-        const selected=q.data?.selected||null;
-        result={...(q.data||{}),items:selected?[selected]:[]};
-        if(q.data?.ok&&selected){
-          text=`Pronto 😊 Adicionei **${selected.name}**. O total atual do pedido é **${moneyBR(q.data?.cart?.total)}**.`;
-        }else if(q.data?.reason==='product_choice_expired'||q.data?.reason==='no_pending_product_choice'){
-          text='Essas opções já não estão mais ativas. Me diga novamente qual produto você procura que eu atualizo a busca.';
-        }else if(q.data?.reason==='selection_out_of_range'){
-          text=`Essa opção não existe nessa lista. Escolha um número de 1 a ${q.data?.candidate_count||3}.`;
+        result=q.data||{};
+
+        if(pendingType==='value_replacement'&&q.data?.ok){
+          text=(q.data?.summary?.message_text||'Pronto 😊 Fiz a substituição escolhida.')
+            +`\n\nA substituição usou aproximadamente **${moneyBR(q.data?.replacement?.total_value)}** do valor retirado.`;
         }else{
-          text='Não consegui aplicar essa escolha com segurança. Me diga novamente qual produto você quer.';
+          const selected=q.data?.selected||null;
+          result={...(q.data||{}),items:selected?[selected]:[]};
+          if(q.data?.ok&&selected){
+            text=`Pronto 😊 Adicionei **${selected.name}**. O total atual do pedido é **${moneyBR(q.data?.cart?.total)}**.`;
+          }else if(q.data?.reason==='product_choice_expired'||q.data?.reason==='no_pending_product_choice'){
+            text='Essas opções já não estão mais ativas. Me diga novamente qual produto você procura que eu atualizo a busca.';
+          }else if(q.data?.reason==='value_replacement_expired'||q.data?.reason==='no_pending_value_replacement'){
+            text='Essas sugestões de troca já expiraram. Me diga novamente o item que quer retirar e eu recalculo com os preços atuais.';
+          }else if(q.data?.reason==='cart_changed_recommend_again'){
+            text='Seu pedido mudou desde que eu montei aquelas sugestões. Vou precisar recalcular a troca para não alterar o valor errado.';
+          }else if(q.data?.reason==='selection_out_of_range'){
+            text=`Essa opção não existe nessa lista. Escolha um número de 1 a ${q.data?.candidate_count||3}.`;
+          }else{
+            text='Não consegui aplicar essa escolha com segurança. Me diga novamente qual opção você quer.';
+          }
         }
       }
     }else if(intent.intent==='offers'&&conversationId){
