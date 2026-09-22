@@ -189,6 +189,37 @@ Deno.serve(async(req:Request)=>{
   });
   if(ingestError)return jsonResponse({error:'adapter_ingest_failed',correlation_id:correlationId},500);
 
+  let canonicalInboundMessageId:string|null=null;
+  if(
+    commerceEnabled
+    && commerceCfg?.canonical_message_persistence_enabled!==false
+    && ingested?.conversation_id
+  ){
+    try{
+      const persisted=await sb.rpc('persist_papoai_commerce_message_v1',{
+        p_conversation_id:ingested.conversation_id,
+        p_direction:'inbound',
+        p_message_type:normalized.messageType||'text',
+        p_body_text:normalized.messageText,
+        p_external_message_key:'in:'+providerEventKey,
+        p_metadata:{
+          correlation_id:correlationId,
+          provider_event_key:providerEventKey,
+          provider_session_key:normalized.sessionKey
+        }
+      });
+      canonicalInboundMessageId=persisted.data?.message_id||null;
+      if(canonicalInboundMessageId){
+        await sb.rpc('maybe_enqueue_papoai_commerce_learning_v1',{
+          p_conversation_id:ingested.conversation_id,
+          p_message_id:canonicalInboundMessageId
+        });
+      }
+    }catch{
+      canonicalInboundMessageId=null;
+    }
+  }
+
   const {data:existingSession}=await sb.from('channel_provider_agent_lab_sessions')
     .select('id,status,paused_until,message_count').eq('adapter_id',adapter.id).eq('provider_session_key',normalized.sessionKey).maybeSingle();
   const sessionPayload={
@@ -690,6 +721,32 @@ Deno.serve(async(req:Request)=>{
       const mediaUrl=(result?.items?.length===1?result.items[0]?.image_url:null)||null;
       responseBody=commerceTextResponse({text,mediaUrl,sessionKey:normalized.sessionKey,correlationId});
     }
+  }
+
+  if(
+    commerceEnabled
+    && commerceCfg?.canonical_message_persistence_enabled!==false
+    && ingested?.conversation_id
+    && responseBody?.message
+    && typeof responseBody.message.text==='string'
+    && responseBody.message.text.trim()
+  ){
+    try{
+      await sb.rpc('persist_papoai_commerce_message_v1',{
+        p_conversation_id:ingested.conversation_id,
+        p_direction:'outbound',
+        p_message_type:responseBody?.message?.media_url?'image':'text',
+        p_body_text:responseBody.message.text,
+        p_external_message_key:'out:'+providerEventKey,
+        p_metadata:{
+          correlation_id:correlationId,
+          provider_event_key:providerEventKey,
+          provider_session_key:normalized.sessionKey,
+          handoff:Boolean(responseBody?.handoff),
+          media:Boolean(responseBody?.message?.media_url)
+        }
+      });
+    }catch{}
   }
 
   await sb.from('channel_provider_agent_lab_calls').update({
