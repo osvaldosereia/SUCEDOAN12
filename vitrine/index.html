@@ -774,7 +774,7 @@
         '</div>'
       ).join('');
       return '<div class="checkout-basket">'+
-        '<div class="checkout-basket-head"><img src="'+esc(safeImage(item.image_url))+'" alt=""><div><strong>'+esc(item.name)+'</strong><span class="checkout-meta">'+money(Number(item.unit_cents||0)*Number(item.qty||1))+'</span></div>'+checkoutQtyControl(itemIndex,item.qty)+'</div>'+
+        '<div class="checkout-basket-head"><img src="'+esc(safeImage(item.image_url))+'" alt=""><div><strong>'+esc(item.name)+'</strong><span class="checkout-meta">Edite os produtos abaixo · '+money(Number(item.unit_cents||0)*Number(item.qty||1))+'</span></div>'+checkoutQtyControl(itemIndex,item.qty)+'</div>'+
         '<div class="checkout-basket-items">'+components+'</div>'+
       '</div>';
     }
@@ -846,7 +846,7 @@
         });
         item.unit_cents=Number(data.total_cents||0);
         saveCart();
-        if(overlay.classList.contains('open')&&sheetTitle.textContent==='Conferir e enviar')paintCheckout();
+        if(overlay.classList.contains('open')&&sheetTitle.textContent==='Seu pedido')paintCheckout();
       }catch{toast('Não consegui recalcular a cesta agora')}
     }
 
