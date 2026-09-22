@@ -71,23 +71,31 @@ async function activeOffersFor(productIds: string[]) {
 }
 
 async function home() {
-  const [{ data: baskets, error: bErr }, { data: offers, error: oErr }] = await Promise.all([
-    db.from("baskets")
-      .select("id,name,display_price_cents,image_url")
-      .eq("organization_id", ORG_ID)
-      .eq("active", true)
-      .order("display_price_cents", { ascending: true })
-      .order("name", { ascending: true }),
-    db.from("offers")
-      .select("id,product_id,title,sale_price_cents,starts_at,ends_at")
-      .eq("organization_id", ORG_ID)
-      .eq("active", true)
-      .limit(40)
-  ]);
-  if (bErr) throw bErr;
+  const { data: baskets, error } = await db.from("baskets")
+    .select("id,name,display_price_cents,image_url")
+    .eq("organization_id", ORG_ID)
+    .eq("active", true)
+    .order("display_price_cents", { ascending: true })
+    .order("name", { ascending: true });
+  if (error) throw error;
+
+  return {
+    ok: true,
+    version: "simple-storefront-v2-progressive",
+    baskets: baskets ?? [],
+    categories: CATEGORIES
+  };
+}
+
+async function offers() {
+  const { data: offerRows, error: oErr } = await db.from("offers")
+    .select("id,product_id,title,sale_price_cents,starts_at,ends_at")
+    .eq("organization_id", ORG_ID)
+    .eq("active", true)
+    .limit(40);
   if (oErr) throw oErr;
 
-  const currentOffers = (offers ?? []).filter(nowActive);
+  const currentOffers = (offerRows ?? []).filter(nowActive);
   const ids = [...new Set(currentOffers.map((x:any)=>x.product_id).filter(Boolean))];
   let products: any[] = [];
   if (ids.length) {
@@ -100,17 +108,18 @@ async function home() {
     if (error) throw error;
     products = data ?? [];
   }
+
   const pMap = new Map(products.map((p:any)=>[p.id,p]));
   const publicOffers = currentOffers
-    .map((o:any) => {
-      const p = pMap.get(o.product_id);
+    .map((offer:any) => {
+      const p = pMap.get(offer.product_id);
       if (!p) return null;
       return {
-        id: o.id,
+        id: offer.id,
         product_id: p.id,
         name: p.name,
         image_url: p.image_url,
-        price_cents: Number(o.sale_price_cents || 0),
+        price_cents: Number(offer.sale_price_cents || 0),
         regular_price_cents: Number(p.sale_price_cents || 0),
         packaging: p.metadata?.packaging ?? ""
       };
@@ -118,19 +127,13 @@ async function home() {
     .filter(Boolean)
     .sort((a:any,b:any)=>a.name.localeCompare(b.name,"pt-BR"));
 
-  return {
-    ok: true,
-    version: "simple-storefront-v1",
-    baskets: baskets ?? [],
-    offers: publicOffers,
-    categories: CATEGORIES
-  };
+  return { ok:true, offers:publicOffers };
 }
 
 async function products(url: URL) {
   const category = text(url.searchParams.get("category"), 48);
   const q = text(url.searchParams.get("q"), 60);
-  const limit = Math.floor(num(url.searchParams.get("limit") ?? 40, 1, 60));
+  const limit = Math.floor(num(url.searchParams.get("limit") ?? 24, 1, 36));
   const offset = Math.floor(num(url.searchParams.get("offset") ?? 0, 0, 5000));
 
   let query = db.from("products")
@@ -252,8 +255,9 @@ Deno.serve(async (req: Request) => {
     const url = new URL(req.url);
     const action = text(url.searchParams.get("action") || (req.method === "POST" ? "basket_quote" : "home"), 40);
     if (action === "health") return json({ok:true,service:"simple-storefront-v1"},200,{"Cache-Control":"no-store"});
-    if (req.method === "GET" && action === "home") return json(await home());
-    if (req.method === "GET" && action === "products") return json(await products(url));
+    if (req.method === "GET" && action === "home") return json(await home(),200,{"Cache-Control":"public, max-age=300, stale-while-revalidate=900"});
+    if (req.method === "GET" && action === "offers") return json(await offers(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
+    if (req.method === "GET" && action === "products") return json(await products(url),200,{"Cache-Control":"public, max-age=60, stale-while-revalidate=300"});
     if (req.method === "GET" && action === "basket") {
       const id = uuid(url.searchParams.get("basket_id"));
       if (!id) return json({ok:false,error:"invalid_basket"},400);
