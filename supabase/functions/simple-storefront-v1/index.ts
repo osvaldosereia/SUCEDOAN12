@@ -313,6 +313,26 @@ async function basketQuote(payload: any) {
 async function submitOrder(payload:any) {
   const payment=text(payload?.payment_method,80);
   const whatsappPhone=normalizeWhatsappPhone(payload?.whatsapp_phone);
+  const rawCustomer=payload?.customer_snapshot && typeof payload.customer_snapshot==="object" ? payload.customer_snapshot : null;
+  const a=rawCustomer?.address && typeof rawCustomer.address==="object" ? rawCustomer.address : {};
+  const customerSnapshot=rawCustomer?.found ? {
+    source_customer_id:uuid(rawCustomer.id)||null,
+    customer_status:"registered",
+    customer_name:text(rawCustomer.display_name,180)||null,
+    phone:whatsappPhone||null,
+    street:text(a.street,180)||null,
+    number:text(a.number,40)||null,
+    complement:text(a.complement,140)||null,
+    district:text(a.district,140)||null,
+    city:text(a.city,120)||null,
+    state:text(a.state,2)||null,
+    postal_code:text(a.postal_code,20)||null,
+    raw_text:text(a.raw_text,400)||null,
+    google_maps_url:text(a.google_maps_url,800)||null
+  } : {
+    customer_status:"new",
+    phone:whatsappPhone||null
+  };
   const allowedPayments=new Set(["PIX","Dinheiro","Cartão de crédito","Cartão alimentação/refeição"]);
   if (!allowedPayments.has(payment)) return {error:"invalid_payment",status:400};
 
@@ -490,7 +510,7 @@ async function submitOrder(payload:any) {
       discount_cents:0,
       delivery_cents:0,
       total_cents:total,
-      delivery_address_snapshot:null,
+      delivery_address_snapshot:customerSnapshot,
       payment_method_snapshot:{method:payment,label:payment,timing:"on_delivery",source:"vitrine"},
       confirmed_at:null,
       delivered_at:null
@@ -524,7 +544,7 @@ async function submitOrder(payload:any) {
     throw error;
   }
 
-  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone)};
+  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status};
 }
 
 Deno.serve(async (req: Request) => {
