@@ -95,6 +95,11 @@ export function normalizeExternalAgentPayload(body={}){
   const externalMessageId=pick(body,['message_id','messageId','message.id','data.message.id','payload.message.id'],300)||null;
   const externalEventId=pick(body,['event_id','eventId','event.id','data.event.id','payload.event.id'],300)||null;
   const messageType=(pick(body,['message_type','type','message.type','data.message.type'],80)||'text').toLowerCase();
+  const rawHumanRequired=getPath(body,'session.human_required')??getPath(body,'human_required');
+  const sessionHumanRequired=rawHumanRequired===true
+    || ['true','1','yes','sim'].includes(clean(rawHumanRequired,20).toLowerCase());
+  const sessionStatus=pick(body,['session.status','status'],80)||null;
+  const sessionHumanUserId=pick(body,['session.user_id','session.assigned_user_id','user_id'],160)||null;
   const hasMedia=scanObject(body,(key,val)=>{
     const k=String(key).toLowerCase();
     if(['url','mimetype','mime_type','base64'].includes(k)&&val) return true;
@@ -104,8 +109,16 @@ export function normalizeExternalAgentPayload(body={}){
 
   return {
     phoneE164,displayName,sessionKey,messageText,history,externalMessageId,externalEventId,messageType,
-    triggerRole,triggerText,
-    providerContext:{history_count:history.length,has_media:hasMedia,has_reply:hasReply,trigger_role:triggerRole}
+    triggerRole,triggerText,sessionHumanRequired,sessionStatus,sessionHumanUserId,
+    providerContext:{
+      history_count:history.length,
+      has_media:hasMedia,
+      has_reply:hasReply,
+      trigger_role:triggerRole,
+      session_human_required:sessionHumanRequired,
+      session_status:sessionStatus,
+      session_human_user_id:sessionHumanUserId
+    }
   };
 }
 
