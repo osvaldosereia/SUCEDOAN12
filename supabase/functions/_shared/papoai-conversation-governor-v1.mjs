@@ -56,7 +56,8 @@ export function decideConversationAction({
   candidateCount=null,
   resultLimit=null,
   clarificationCount=0,
-  hasPendingAction=false
+  hasPendingAction=false,
+  hasStrongPersonalization=false
 }={}){
   const delegated=detectCustomerDelegation(message);
   const count=Number.isFinite(Number(candidateCount))?Number(candidateCount):(Array.isArray(items)?items.length:0);
@@ -91,6 +92,18 @@ export function decideConversationAction({
     }
     if(delegated){
       return {action:'RECOMMEND',reason:'customer_delegated_choice',topicKey,delegated,shouldIncrementClarification:false,maxRecommendations:3,effectiveCandidateCount:count};
+    }
+
+    if(hasStrongPersonalization){
+      return {
+        action:'RECOMMEND',
+        reason:'strong_customer_preference_available',
+        topicKey,
+        delegated,
+        shouldIncrementClarification:false,
+        maxRecommendations:3,
+        effectiveCandidateCount:count
+      };
     }
 
     const list=Array.isArray(items)?items:[];
