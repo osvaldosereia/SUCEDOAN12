@@ -79,6 +79,7 @@ on:
       - 'scripts/test-unify-value-replacement-engine-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-v1.mjs'
       - 'scripts/test-papoai-offer-outcome-tracking-v1.mjs'
+      - 'scripts/test-papoai-pending-action-supersession-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-promotion-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-capture-v1.mjs'
       - 'scripts/test-papoai-delegated-replacement-apply-v1.mjs'
@@ -355,6 +356,8 @@ jobs:
         run: node scripts/test-papoai-checkout-profile-v1.mjs
       - name: Validar rastreamento de ofertas PapoAI
         run: node scripts/test-papoai-offer-outcome-tracking-v1.mjs
+      - name: Validar supersessão de ações pendentes
+        run: node scripts/test-papoai-pending-action-supersession-v1.mjs
       - name: Validar substituição delegada por valor
         run: node scripts/test-papoai-value-replacement-v1.mjs
       - name: Validar executor de substituição por valor
