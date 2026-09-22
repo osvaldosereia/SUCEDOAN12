@@ -74,3 +74,7 @@ assert.ok(edge.includes("governor_followup"));
 assert.ok(edge.includes("original_query"));
 assert.ok(edge.includes("responseLimit"));
 assert.ok(edge.includes("numberedProductsText(choices,responseLimit)"));
+assert.ok(edge.includes("governor_topic_key"));
+assert.ok(edge.includes("search_papoai_commerce_products_for_customer_v1"));
+assert.ok(edge.includes("hasStrongPersonalization"));
+assert.ok(edge.includes("strong_personalization"));
