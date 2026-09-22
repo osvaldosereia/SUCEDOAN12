@@ -82,6 +82,7 @@ on:
       - 'scripts/test-papoai-pending-action-supersession-v1.mjs'
       - 'scripts/test-fix-papoai-learning-enqueue-truth-v1.mjs'
       - 'scripts/test-fix-papoai-handoff-priority-type-v1.mjs'
+      - 'scripts/test-papoai-safe-ai-mode-claim-v1.mjs'
       - 'scripts/test-papoai-human-precedence-v1.mjs'
       - 'scripts/test-papoai-canonical-message-persistence-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-promotion-v1.mjs'
@@ -370,6 +371,8 @@ jobs:
         run: node scripts/test-papoai-human-precedence-v1.mjs
       - name: Validar tipagem do handoff PapoAI
         run: node scripts/test-fix-papoai-handoff-priority-type-v1.mjs
+      - name: Validar tomada segura do modo IA
+        run: node scripts/test-papoai-safe-ai-mode-claim-v1.mjs
       - name: Validar substituição delegada por valor
         run: node scripts/test-papoai-value-replacement-v1.mjs
       - name: Validar executor de substituição por valor
