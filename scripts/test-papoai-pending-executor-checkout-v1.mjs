@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
-const sql=fs.readFileSync('supabase/migrations/20260922005000_papoai_pending_executor_checkout_v1.sql','utf8');
+const sql=fs.readFileSync('supabase/migrations/20260921231737_papoai_pending_executor_checkout_v1.sql','utf8');
 for(const x of [
 "when 'pending_action'",
 "when 'confirm_pending'",
