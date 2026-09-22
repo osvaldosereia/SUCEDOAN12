@@ -77,6 +77,9 @@ on:
       - 'scripts/test-papoai-product-choice-executor-v1.mjs'
       - 'scripts/test-enforce-papoai-governor-question-cap-v1.mjs'
       - 'scripts/test-unify-value-replacement-engine-v1.mjs'
+      - 'scripts/test-papoai-checkout-profile-v1.mjs'
+      - 'scripts/test-papoai-checkout-profile-promotion-v1.mjs'
+      - 'scripts/test-papoai-checkout-profile-capture-v1.mjs'
       - 'scripts/test-papoai-delegated-replacement-apply-v1.mjs'
       - 'scripts/test-papoai-delegated-replacement-preferences-v3.mjs'
       - 'scripts/test-papoai-delegated-replacement-utility-v2.mjs'
@@ -343,6 +346,12 @@ jobs:
         run: node scripts/test-papoai-delegated-replacement-apply-v1.mjs
       - name: Validar unificação do motor de substituição
         run: node scripts/test-unify-value-replacement-engine-v1.mjs
+      - name: Validar captura de perfil de checkout
+        run: node scripts/test-papoai-checkout-profile-capture-v1.mjs
+      - name: Validar promoção de perfil no pedido
+        run: node scripts/test-papoai-checkout-profile-promotion-v1.mjs
+      - name: Validar parser de perfil de checkout
+        run: node scripts/test-papoai-checkout-profile-v1.mjs
       - name: Validar substituição delegada por valor
         run: node scripts/test-papoai-value-replacement-v1.mjs
       - name: Validar executor de substituição por valor
