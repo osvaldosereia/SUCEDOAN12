@@ -371,6 +371,10 @@ jobs:
         run: node scripts/test-papoai-checkout-profile-promotion-v1.mjs
       - name: Validar parser de perfil de checkout
         run: node scripts/test-papoai-checkout-profile-v1.mjs
+      - name: Validar Governador de ofertas PapoAI
+        run: node scripts/test-papoai-offer-governor-v1.mjs
+      - name: Validar segurança da escolha pendente de oferta PapoAI
+        run: node scripts/test-papoai-offer-choice-pending-safety-v1.mjs
       - name: Validar rastreamento de ofertas PapoAI
         run: node scripts/test-papoai-offer-outcome-tracking-v1.mjs
       - name: Validar supersessão de ações pendentes
