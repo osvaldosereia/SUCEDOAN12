@@ -88,23 +88,32 @@ async function home() {
 }
 
 async function offers() {
-  const { data, error } = await db.from("offers")
-    .select(`
-      id,product_id,title,sale_price_cents,starts_at,ends_at,
-      product:products!inner(
-        id,name,image_url,sale_price_cents,stock_quantity,metadata,active,organization_id
-      )
-    `)
+  const { data: offerRows, error: oErr } = await db.from("offers")
+    .select("id,product_id,title,sale_price_cents,starts_at,ends_at")
     .eq("organization_id", ORG_ID)
     .eq("active", true)
     .limit(40);
-  if (error) throw error;
+  if (oErr) throw oErr;
 
-  const publicOffers = (data ?? [])
-    .filter(nowActive)
+  const currentOffers = (offerRows ?? []).filter(nowActive);
+  const ids = [...new Set(currentOffers.map((x:any)=>x.product_id).filter(Boolean))];
+  let products: any[] = [];
+  if (ids.length) {
+    const { data, error } = await db.from("products")
+      .select("id,name,image_url,sale_price_cents,stock_quantity,metadata")
+      .eq("organization_id", ORG_ID)
+      .eq("active", true)
+      .gt("stock_quantity", 0)
+      .in("id", ids);
+    if (error) throw error;
+    products = data ?? [];
+  }
+
+  const pMap = new Map(products.map((p:any)=>[p.id,p]));
+  const publicOffers = currentOffers
     .map((offer:any) => {
-      const p = Array.isArray(offer.product) ? offer.product[0] : offer.product;
-      if (!p || p.organization_id !== ORG_ID || p.active !== true || Number(p.stock_quantity || 0) <= 0) return null;
+      const p = pMap.get(offer.product_id);
+      if (!p) return null;
       return {
         id: offer.id,
         product_id: p.id,
