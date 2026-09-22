@@ -1098,6 +1098,27 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
   const action=clean(body?.action||"dashboard",60).toLowerCase();
 
+  if(action==="vitrine_product_extra"){
+    const id=uuid(body?.id);
+    if(!id)return json({ok:false,error:"invalid_product"},400);
+    try{
+      const r=await sb.from("products")
+        .select("id,validity_date,brand,packaging")
+        .eq("id",id)
+        .maybeSingle();
+      if(r.error)throw r.error;
+      if(!r.data)return json({ok:true,product:null});
+      return json({ok:true,product:{
+        id:r.data.id,
+        validity_date:r.data.validity_date??null,
+        brand:r.data.brand??null,
+        packaging:r.data.packaging??null
+      }});
+    }catch(e){
+      return json({ok:false,error:"product_extra_unavailable",detail:clean((e as Error)?.message,300)},500);
+    }
+  }
+
   if(action==="vitrine_customers_list"){
     try{return json({ok:true,customers:await vitrineListCustomers(sb,body)})}
     catch(e){return json({ok:false,error:"customers_unavailable",detail:clean((e as Error)?.message,300)},500)}
