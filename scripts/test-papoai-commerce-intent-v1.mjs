@@ -28,4 +28,6 @@ assert.equal(deterministicCommerceIntent('o sexto').quantity,6);
 assert.equal(deterministicCommerceIntent('troca o arroz por outra coisa').intent,'replace_basket_item');
 assert.equal(deterministicCommerceIntent('troca o arroz por outra coisa').source_query,'arroz');
 assert.equal(deterministicCommerceIntent('tira o arroz, você decide').intent,'replace_basket_item');
+assert.equal(deterministicCommerceIntent('6').quantity,6);
+assert.equal(deterministicCommerceIntent('sétimo').quantity,7);
 console.log('PASS: PapoAI commerce intent deterministic router');
