@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
-const sql=fs.readFileSync('supabase/migrations/20260922021500_papoai_product_search_ranking_v1.sql','utf8');
+const sql=fs.readFileSync('supabase/migrations/20260921234800_papoai_product_search_ranking_v1.sql','utf8');
 for(const x of [
 'relevance_score',
 'brand_requested',

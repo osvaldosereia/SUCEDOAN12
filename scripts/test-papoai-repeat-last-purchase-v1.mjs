@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
-const sql=fs.readFileSync('supabase/migrations/20260922014000_papoai_repeat_last_purchase_v1.sql','utf8');
+const sql=fs.readFileSync('supabase/migrations/20260921233048_papoai_repeat_last_purchase_v1.sql','utf8');
 for(const x of [
 "'repeat_last_purchase'",
 'preview_papoai_commerce_repeat_last_purchase_v1',
