@@ -18,7 +18,7 @@
     button{cursor:pointer}
     img{display:block;max-width:100%}
     .wrap{width:min(100%,1180px);margin:auto;padding-inline:14px}
-    .top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+    .top{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line)}
     .top-row{height:64px;display:flex;align-items:center;gap:10px}
     .logo{width:88px;height:40px;object-fit:contain}
     .brand{min-width:0;flex:1}.brand strong{display:block;font-size:18px;line-height:1.1}.brand small{color:var(--muted);font-size:12px}
@@ -64,7 +64,7 @@
     .deferred-grid .loader{height:290px}
     .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
     @keyframes load{0%{background-position:100% 0}100%{background-position:0 0}}
-    .cartbar{position:fixed;z-index:25;left:0;right:0;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px);transform:translateY(120%);transition:.2s}
+    .cartbar{position:fixed;z-index:25;left:0;right:0;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line);transform:translateY(120%);transition:transform .18s ease}
     .cartbar.show{transform:none}.cartbar-inner{width:min(100%,980px);margin:auto;display:flex;align-items:center;gap:10px}.cartbar-copy{min-width:0;flex:1}.cartbar-copy small{display:block;color:var(--muted)}.cartbar-copy strong{font-size:17px}.cartbar button{border:0;border-radius:13px;background:var(--brand);color:#fff;font-weight:900;padding:13px 18px}
     .spacer{height:92px}
     .overlay{position:fixed;z-index:60;inset:0;background:rgba(8,18,12,.46);display:none;align-items:end}.overlay.open{display:flex}
