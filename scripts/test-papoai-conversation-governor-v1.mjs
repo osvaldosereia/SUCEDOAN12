@@ -61,4 +61,16 @@ assert.equal(chooseProductClarifier({
   items:[{brand:'Seda'},{brand:'Darling'}]
 }).key,'brand_preference');
 
+
+assert.equal(decideConversationAction({
+  intent:'search_products',
+  message:'quero shampoo',
+  query:'shampoo',
+  candidateCount:12,
+  resultLimit:12,
+  clarificationCount:0,
+  hasStrongPersonalization:true,
+  items:[]
+}).reason,'strong_customer_preference_available');
+
 console.log('PASS: intelligent conversation governor');
