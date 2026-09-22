@@ -409,6 +409,8 @@ jobs:
         run: node scripts/test-papoai-canonical-messages-learning-bridge-v1.mjs
       - name: Validar confirmação final do pedido PapoAI
         run: node scripts/test-papoai-order-confirmation-v1.mjs
+      - name: Validar cobertura automática dos testes PapoAI no CI
+        run: node scripts/test-papoai-ci-coverage-v1.mjs
       - name: Validar Central de Relacionamento
         run: node scripts/test-cm-1-15-relationship-command-center.mjs
       - name: Validar readiness da homologação CM-1
