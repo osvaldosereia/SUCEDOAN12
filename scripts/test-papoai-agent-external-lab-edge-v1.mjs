@@ -83,3 +83,6 @@ assert.ok(edge.includes("maybe_enqueue_papoai_commerce_learning_v1"));
 assert.ok(edge.includes("canonical_message_persistence_enabled"));
 assert.ok(edge.includes("canonicalInboundMessageId"));
 assert.ok(edge.includes("p_external_message_key:'out:'+providerEventKey"));
+assert.ok(edge.includes("detectCustomerDelegation"));
+assert.ok(edge.includes("replacementOptionText"));
+assert.ok(edge.includes("delegated_replacement"));
