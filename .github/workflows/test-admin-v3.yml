@@ -77,6 +77,7 @@ on:
       - 'scripts/test-papoai-product-choice-executor-v1.mjs'
       - 'scripts/test-enforce-papoai-governor-question-cap-v1.mjs'
       - 'scripts/test-papoai-value-replacement-executor-v1.mjs'
+      - 'scripts/test-papoai-product-choice-up-to-10-v1.mjs'
       - 'scripts/test-papoai-value-replacement-v1.mjs'
       - 'scripts/test-papoai-conversation-governor-state-v1.mjs'
       - 'scripts/test-papoai-conversation-governor-v1.mjs'
@@ -325,6 +326,8 @@ jobs:
         run: node scripts/test-papoai-value-replacement-v1.mjs
       - name: Validar executor de substituição por valor
         run: node scripts/test-papoai-value-replacement-executor-v1.mjs
+      - name: Validar até dez opções de produto
+        run: node scripts/test-papoai-product-choice-up-to-10-v1.mjs
       - name: Validar confirmação final do pedido PapoAI
         run: node scripts/test-papoai-order-confirmation-v1.mjs
       - name: Validar Central de Relacionamento
