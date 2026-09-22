@@ -70,3 +70,7 @@ assert.ok(edge.includes("propose_value_replacement"));
 assert.ok(edge.includes("select_value_replacement"));
 assert.ok(edge.includes("valueReplacementOptionsText"));
 assert.ok(edge.includes("cart_changed_recommend_again"));
+assert.ok(edge.includes("governor_followup"));
+assert.ok(edge.includes("original_query"));
+assert.ok(edge.includes("responseLimit"));
+assert.ok(edge.includes("numberedProductsText(choices,responseLimit)"));
