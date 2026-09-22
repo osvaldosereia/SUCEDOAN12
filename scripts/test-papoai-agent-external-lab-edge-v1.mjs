@@ -101,3 +101,8 @@ assert.ok(edge.includes("let result:any=null;"));
 assert.ok(edge.includes("supersede_papoai_commerce_pending_action_v1"));
 assert.ok(edge.includes("p_new_intent:intent.intent"));
 assert.ok(edge.includes("intent.intent!=='handled_checkout_profile'"));
+assert.ok(edge.includes("sessionHumanRequired"));
+assert.ok(edge.includes("get_papoai_commerce_human_precedence_v1"));
+assert.ok(edge.includes("queue_papoai_commerce_handoff_v1"));
+assert.ok(edge.includes("papoai_human_required"));
+assert.ok(edge.includes("canonicalHumanActive"));
