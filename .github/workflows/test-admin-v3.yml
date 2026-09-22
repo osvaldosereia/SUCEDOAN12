@@ -85,6 +85,8 @@ on:
       - 'scripts/test-papoai-safe-ai-mode-claim-v1.mjs'
       - 'scripts/test-papoai-human-precedence-v1.mjs'
       - 'scripts/test-papoai-canonical-message-persistence-v1.mjs'
+      - 'scripts/test-papoai-activation-readiness-v1.mjs'
+      - 'scripts/test-papoai-bling-identity-guard-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-promotion-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-capture-v1.mjs'
       - 'scripts/test-papoai-delegated-replacement-apply-v1.mjs'
@@ -191,6 +193,8 @@ on:
       - 'scripts/test-papoai-commerce-brain-round1-v1.mjs'
       - 'scripts/test-papoai-commerce-personalization-preview-v1.mjs'
       - 'scripts/test-papoai-commerce-cart-reference-resolver-v1.mjs'
+      - 'scripts/test-papoai-activation-readiness-v1.mjs'
+      - 'scripts/test-papoai-bling-identity-guard-v1.mjs'
       - 'scripts/test-cm-1-15-relationship-command-center.mjs'
       - 'scripts/test-cm-1-homologation-readiness.mjs'
       - 'scripts/test-cm-1-acceptance-checklist.mjs'
@@ -373,6 +377,10 @@ jobs:
         run: node scripts/test-fix-papoai-handoff-priority-type-v1.mjs
       - name: Validar tomada segura do modo IA
         run: node scripts/test-papoai-safe-ai-mode-claim-v1.mjs
+      - name: Validar readiness de ativação PapoAI
+        run: node scripts/test-papoai-activation-readiness-v1.mjs
+      - name: Validar proteção de identidade Bling PapoAI
+        run: node scripts/test-papoai-bling-identity-guard-v1.mjs
       - name: Validar substituição delegada por valor
         run: node scripts/test-papoai-value-replacement-v1.mjs
       - name: Validar executor de substituição por valor
