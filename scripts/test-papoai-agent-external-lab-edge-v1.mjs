@@ -78,3 +78,8 @@ assert.ok(edge.includes("governor_topic_key"));
 assert.ok(edge.includes("search_papoai_commerce_products_for_customer_v1"));
 assert.ok(edge.includes("hasStrongPersonalization"));
 assert.ok(edge.includes("strong_personalization"));
+assert.ok(edge.includes("persist_papoai_commerce_message_v1"));
+assert.ok(edge.includes("maybe_enqueue_papoai_commerce_learning_v1"));
+assert.ok(edge.includes("canonical_message_persistence_enabled"));
+assert.ok(edge.includes("canonicalInboundMessageId"));
+assert.ok(edge.includes("p_external_message_key:'out:'+providerEventKey"));
