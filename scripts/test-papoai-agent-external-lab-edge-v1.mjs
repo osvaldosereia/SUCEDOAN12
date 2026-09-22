@@ -97,3 +97,7 @@ assert.ok(edge.includes("maybeProactiveOffer"));
 assert.ok(edge.includes("propose_papoai_commerce_proactive_offer_choice_v1"));
 assert.ok(edge.includes("q.data?.offer_event?.recorded!==true"));
 assert.ok(edge.includes("numberedProductsText(offers,10)"));
+assert.ok(edge.includes("let result:any=null;"));
+assert.ok(edge.includes("supersede_papoai_commerce_pending_action_v1"));
+assert.ok(edge.includes("p_new_intent:intent.intent"));
+assert.ok(edge.includes("intent.intent!=='handled_checkout_profile'"));
