@@ -80,6 +80,7 @@ on:
       - 'scripts/test-papoai-product-choice-up-to-10-v1.mjs'
       - 'scripts/test-inventory-product-knowledge-drain-v1.mjs'
       - 'scripts/test-papoai-personalized-product-choice-v1.mjs'
+      - 'scripts/test-papoai-canonical-messages-learning-bridge-v1.mjs'
       - 'scripts/test-papoai-customer-context-v3.mjs'
       - 'scripts/test-product-knowledge-queue-guard-v1.mjs'
       - 'scripts/test-product-sales-knowledge-v1.mjs'
@@ -343,6 +344,8 @@ jobs:
         run: node scripts/test-papoai-customer-context-v3.mjs
       - name: Validar escolha personalizada de produto
         run: node scripts/test-papoai-personalized-product-choice-v1.mjs
+      - name: Validar ponte de histórico e aprendizado PapoAI
+        run: node scripts/test-papoai-canonical-messages-learning-bridge-v1.mjs
       - name: Validar confirmação final do pedido PapoAI
         run: node scripts/test-papoai-order-confirmation-v1.mjs
       - name: Validar Central de Relacionamento
