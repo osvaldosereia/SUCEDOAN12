@@ -92,3 +92,8 @@ assert.ok(edge.includes("parseCheckoutProfile"));
 assert.ok(edge.includes("checkoutProfileMissingPrompt"));
 assert.ok(edge.includes("begin_papoai_commerce_checkout_profile_v1"));
 assert.ok(edge.includes("checkout_profile_question_limit_reached"));
+assert.ok(edge.includes("propose_papoai_commerce_offer_choice_v1"));
+assert.ok(edge.includes("maybeProactiveOffer"));
+assert.ok(edge.includes("propose_papoai_commerce_proactive_offer_choice_v1"));
+assert.ok(edge.includes("q.data?.offer_event?.recorded!==true"));
+assert.ok(edge.includes("numberedProductsText(offers,10)"));
