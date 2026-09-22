@@ -714,16 +714,7 @@
         $('#goShop').onclick=()=>{closeSheet();renderHome()};
         return;
       }
-      sheetTitle.textContent='Seu pedido';
-      sheetBody.innerHTML='<div class="cart-list">'+state.cart.map((item,i)=>cartLine(item,i)).join('')+'</div>'+
-        '<div class="review-total" style="margin-top:14px"><span>Total</span><span>'+money(cartTotal())+'</span></div>';
-      sheetAction.innerHTML='<div class="action-stack"><button class="secondary" type="button" id="addMore">Adicionar mais produtos</button><button class="primary" type="button" id="goCheckout">Continuar</button></div>';
-      sheetBody.querySelectorAll('[data-cart-dec]').forEach(btn=>btn.onclick=()=>cartQty(Number(btn.dataset.cartDec),-1));
-      sheetBody.querySelectorAll('[data-cart-inc]').forEach(btn=>btn.onclick=()=>cartQty(Number(btn.dataset.cartInc),1));
-      sheetBody.querySelectorAll('[data-remove]').forEach(btn=>btn.onclick=()=>removeCart(Number(btn.dataset.remove)));
-      $('#addMore').onclick=closeSheet;
-      $('#goCheckout').onclick=renderCheckout;
-      overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+      renderCheckout();
     }
 
     function cartLine(item,i){
@@ -791,7 +782,7 @@
     async function renderCheckout(){
       if(!state.cart.length){renderCart();return}
       state.checkoutPayment=document.querySelector('input[name="payment"]:checked')?.value||state.checkoutPayment||'';
-      sheetTitle.textContent='Conferir e enviar';
+      sheetTitle.textContent='Seu pedido';
       sheetBody.innerHTML='<div class="loading">Preparando seu pedido…</div>';
       sheetAction.innerHTML='';
       await hydrateCheckoutBaskets();
@@ -800,7 +791,7 @@
 
     function paintCheckout(){
       if(!state.cart.length){renderCart();return}
-      sheetTitle.textContent='Conferir e enviar';
+      sheetTitle.textContent='Seu pedido';
       const rows=state.cart.map((item,i)=>item.type==='basket'?checkoutBasketBlock(item,i):checkoutProductRow(item,i)).join('');
       sheetBody.innerHTML=
         '<div class="checkout-list">'+rows+'<div class="checkout-total"><span>Total</span><span id="checkoutTotal">'+money(cartTotal())+'</span></div></div>'+
@@ -809,7 +800,7 @@
           pay('PIX','PIX')+pay('Dinheiro','Dinheiro')+pay('Cartão de crédito','Cartão de crédito')+pay('Cartão alimentação/refeição','Cartão alimentação/refeição')+
         '</div>'+
         '<p class="note">Pagamento na entrega. Nenhum dado de cartão é solicitado aqui.</p>';
-      sheetAction.innerHTML='<button class="primary" type="button" id="sendWhats">Enviar pedido para o WhatsApp</button>';
+      sheetAction.innerHTML='<div class="action-stack"><button class="secondary" type="button" id="addMoreCheckout">Adicionar mais produtos</button><button class="primary" type="button" id="sendWhats">Enviar pedido para o WhatsApp</button></div>';
 
       sheetBody.querySelectorAll('[data-checkout-dec]').forEach(btn=>btn.onclick=()=>checkoutItemQty(Number(btn.dataset.checkoutDec),-1));
       sheetBody.querySelectorAll('[data-checkout-inc]').forEach(btn=>btn.onclick=()=>checkoutItemQty(Number(btn.dataset.checkoutInc),1));
@@ -820,6 +811,7 @@
         input.onchange=()=>{state.checkoutPayment=input.value};
       });
       attachProductDetailHandlers(sheetBody);
+      $('#addMoreCheckout').onclick=closeSheet;
       $('#sendWhats').onclick=sendWhatsApp;
     }
 
