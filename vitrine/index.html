@@ -374,7 +374,8 @@
         const attrs=[
           ...(Array.isArray(p.characteristics)?p.characteristics:[]),
           ...(p.sku?[{label:'Código',value:p.sku}]:[]),
-          ...(p.gtin?[{label:'EAN',value:p.gtin}]:[])
+          ...(p.gtin?[{label:'EAN',value:p.gtin}]:[]),
+          ...(Number.isFinite(Number(p.stock_quantity))?[{label:'Estoque',value:formatQty(Number(p.stock_quantity))}]:[])
         ];
         sheetTitle.textContent=p.name;
         sheetBody.innerHTML=
