@@ -255,12 +255,217 @@ Deno.serve(async(req:Request)=>{
 
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
   if(!openaiKey){try{const {data:key}=await sb.rpc("get_conversation_worker_provider_secret_v1");if(typeof key==="string")openaiKey=key}catch{}}
-  if(body?.event==="healthcheck")return json({ok:true,provider_configured:Boolean(openaiKey),model:Deno.env.get("INVENTORY_PRODUCT_RESEARCH_MODEL")||"gpt-5.6-luna",rich_version:RICH_VERSION});
+  if(body?.event==="healthcheck")return json({
+    ok:true,
+    provider_configured:Boolean(openaiKey),
+    model:Deno.env.get("INVENTORY_PRODUCT_RESEARCH_MODEL")||"gpt-5.6-luna",
+    rich_version:RICH_VERSION,
+    knowledge_version:KNOWLEDGE_VERSION
+  });
+
+  const model=clean(Deno.env.get("INVENTORY_PRODUCT_RESEARCH_MODEL")||"gpt-5.6-luna",80);
+
+  if(body?.event==="knowledge_drain"){
+    if(!openaiKey)return json({ok:false,error:"openai_key_missing"},500);
+
+    const {data:cfg,error:cfgError}=await sb.from("product_knowledge_config")
+      .select("enabled,web_research_enabled,ai_enrichment_enabled,batch_size,max_daily_products,only_sellable_products")
+      .eq("id",1).maybeSingle();
+
+    if(cfgError)return json({
+      ok:false,error:"knowledge_config_failed",detail:clean(cfgError.message,180)
+    },500);
+
+    if(!cfg?.enabled||!cfg?.web_research_enabled||!cfg?.ai_enrichment_enabled){
+      return json({
+        ok:true,event:"knowledge_drain",disabled:true,processed:0,
+        gates:{
+          enabled:Boolean(cfg?.enabled),
+          web_research_enabled:Boolean(cfg?.web_research_enabled),
+          ai_enrichment_enabled:Boolean(cfg?.ai_enrichment_enabled)
+        },
+        knowledge_version:KNOWLEDGE_VERSION
+      });
+    }
+
+    const requested=Math.max(1,Math.min(10,Number(body?.limit||cfg?.batch_size||5)));
+    const {data:jobs,error:claimError}=await sb.rpc(
+      "claim_product_knowledge_enrichment_jobs_v1",
+      {p_limit:requested}
+    );
+    if(claimError)return json({
+      ok:false,error:"knowledge_claim_failed",detail:clean(claimError.message,180)
+    },500);
+
+    const knowledgeResults:any[]=[];
+
+    for(const rawJob of arr(jobs)){
+      const job=obj(rawJob);
+      const jobId=clean(job.id,80);
+      const productId=clean(job.product_id,80);
+      if(!jobId||!productId)continue;
+
+      try{
+        const {data:product,error:productError}=await sb.from("products")
+          .select("id,gtin,sku,name,brand,packaging,description_short,description_long,is_active,is_whatsapp_active,physically_verified,stock,price")
+          .eq("id",productId).maybeSingle();
+
+        if(productError||!product)throw new Error("knowledge_product_not_found");
+
+        const sellable=
+          product.is_active===true
+          && product.is_whatsapp_active===true
+          && product.physically_verified===true
+          && Number(product.stock||0)>0
+          && Number(product.price||0)>0;
+
+        if(cfg?.only_sellable_products!==false&&!sellable){
+          await sb.from("product_knowledge_enrichment_jobs").update({
+            status:"cancelled",
+            error_message:"product_no_longer_sellable",
+            updated_at:new Date().toISOString()
+          }).eq("id",jobId);
+          knowledgeResults.push({
+            product_id:productId,ok:false,cancelled:true,error:"product_no_longer_sellable"
+          });
+          continue;
+        }
+
+        const researched=await researchKnowledge(openaiKey,model,product);
+        const k=researched.result;
+
+        if(!k.identity_confirmed||k.confidence<0.55){
+          const terminal=Number(job.attempts||0)>=Number(job.max_attempts||3);
+          await sb.from("product_knowledge_enrichment_jobs").update({
+            status:terminal?"error":"pending",
+            error_message:"knowledge_identity_not_confirmed",
+            next_attempt_at:new Date(Date.now()+6*60*60*1000).toISOString(),
+            updated_at:new Date().toISOString()
+          }).eq("id",jobId);
+          knowledgeResults.push({
+            product_id:productId,
+            ok:false,
+            error:"identity_not_confirmed",
+            confidence:k.confidence,
+            retry:!terminal
+          });
+          continue;
+        }
+
+        const trusted=k.confidence>=0.72;
+
+        const knowledgePayload={
+          aliases:k.aliases,
+          use_cases:k.use_cases,
+          audiences:k.audiences,
+          search_terms:k.search_terms,
+          attributes:k.attributes,
+          cautions:k.cautions,
+          source_urls:researched.source_urls,
+          evidence:{
+            summary:k.evidence_summary,
+            response_id:researched.response_id,
+            usage:researched.usage,
+            gtin:digits(product.gtin),
+            identity_confirmed:k.identity_confirmed,
+            knowledge_version:KNOWLEDGE_VERSION
+          },
+          enrichment_status:trusted?"researched":"review_required",
+          confidence:k.confidence,
+          enrichment_model:model,
+          enrichment_cost_usd:0,
+          last_researched_at:new Date().toISOString(),
+          updated_at:new Date().toISOString()
+        };
+
+        const {error:knowledgeError}=await sb.from("product_sales_knowledge")
+          .update(knowledgePayload)
+          .eq("product_id",productId);
+
+        if(knowledgeError)throw new Error(
+          "knowledge_update_"+clean(knowledgeError.message,120)
+        );
+
+        let descriptionFilled=false;
+        if(trusted&&k.description_short&&!clean(product.description_short)){
+          const productUpdate:any={description_short:k.description_short};
+          if(!clean(product.description_long))productUpdate.description_long=k.description_short;
+
+          const {error:descriptionError}=await sb.from("products")
+            .update(productUpdate)
+            .eq("id",productId);
+
+          if(descriptionError)throw new Error(
+            "knowledge_description_update_"+clean(descriptionError.message,120)
+          );
+          descriptionFilled=true;
+        }
+
+        await sb.rpc("refresh_product_sales_knowledge_v1",{p_product_id:productId});
+
+        await sb.from("product_knowledge_enrichment_jobs").update({
+          status:"completed",
+          completed_at:new Date().toISOString(),
+          error_message:null,
+          metadata:{
+            ...obj(job.metadata),
+            confidence:k.confidence,
+            trusted,
+            response_id:researched.response_id,
+            usage:researched.usage,
+            source_count:researched.source_urls.length,
+            knowledge_version:KNOWLEDGE_VERSION
+          },
+          updated_at:new Date().toISOString()
+        }).eq("id",jobId);
+
+        knowledgeResults.push({
+          product_id:productId,
+          gtin:digits(product.gtin),
+          ok:true,
+          trusted,
+          confidence:k.confidence,
+          knowledge_status:trusted?"researched":"review_required",
+          description_filled:descriptionFilled,
+          sources:researched.source_urls.length,
+          usage:researched.usage
+        });
+      }catch(error){
+        const message=clean(
+          error instanceof Error?error.message:"knowledge_research_failed",
+          180
+        );
+        const terminal=Number(job.attempts||0)>=Number(job.max_attempts||3);
+
+        await sb.from("product_knowledge_enrichment_jobs").update({
+          status:terminal?"error":"pending",
+          error_message:message,
+          next_attempt_at:new Date(Date.now()+6*60*60*1000).toISOString(),
+          updated_at:new Date().toISOString()
+        }).eq("id",jobId);
+
+        knowledgeResults.push({
+          product_id:productId,ok:false,error:message,retry:!terminal
+        });
+      }
+    }
+
+    return json({
+      ok:true,
+      event:"knowledge_drain",
+      processed:knowledgeResults.length,
+      succeeded:knowledgeResults.filter(x=>x.ok).length,
+      failed:knowledgeResults.filter(x=>!x.ok).length,
+      model,
+      knowledge_version:KNOWLEDGE_VERSION,
+      results:knowledgeResults
+    });
+  }
+
   if(body?.event!=="drain")return json({ok:false,error:"unknown_event"},400);
   if(!openaiKey)return json({ok:false,error:"openai_key_missing"},500);
 
   const limit=Math.max(1,Math.min(10,Number(body?.limit||5)));
-  const model=clean(Deno.env.get("INVENTORY_PRODUCT_RESEARCH_MODEL")||"gpt-5.6-luna",80);
   const results:any[]=[];
 
   const {data:jobs,error:claimError}=await sb.rpc("claim_unresolved_product_eans_v1",{p_limit:limit});
