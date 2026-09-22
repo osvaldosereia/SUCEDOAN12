@@ -782,9 +782,7 @@
     async function renderCheckout(){
       if(!state.cart.length){renderCart();return}
       state.checkoutPayment=document.querySelector('input[name="payment"]:checked')?.value||state.checkoutPayment||'';
-      sheetTitle.textContent='Seu pedido';
-      sheetBody.innerHTML='<div class="loading">Preparando seu pedido…</div>';
-      sheetAction.innerHTML='';
+      openSheet('Seu pedido','<div class="loading">Preparando seu pedido…</div>','');
       await hydrateCheckoutBaskets();
       paintCheckout();
     }
