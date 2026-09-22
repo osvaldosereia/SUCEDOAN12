@@ -87,27 +87,42 @@ export function decideConversationAction({
 
   if(intent==='search_products'){
     if(count===0){
-      return {action:'RESPOND',reason:'no_candidates',topicKey,delegated,shouldIncrementClarification:false};
+      return {action:'RESPOND',reason:'no_candidates',topicKey,delegated,shouldIncrementClarification:false,effectiveCandidateCount:0};
     }
     if(delegated){
-      return {action:'RECOMMEND',reason:'customer_delegated_choice',topicKey,delegated,shouldIncrementClarification:false,maxRecommendations:3};
+      return {action:'RECOMMEND',reason:'customer_delegated_choice',topicKey,delegated,shouldIncrementClarification:false,maxRecommendations:3,effectiveCandidateCount:count};
     }
 
-    const top=Array.isArray(items)&&items.length?items[0]:null;
-    const topCoverage=top&&Number(top.total_tokens)>0
-      ? Number(top.token_hits||0)/Number(top.total_tokens)
-      : 0;
+    const list=Array.isArray(items)?items:[];
+    const top=list.length?list[0]:null;
+    const totalTokens=Number(top?.total_tokens||0);
+    const fullyQualified=totalTokens>=2
+      ? list.filter((item)=>Number(item?.total_tokens||0)===totalTokens&&Number(item?.token_hits||0)>=totalTokens)
+      : [];
+    const effectiveCount=fullyQualified.length>0?fullyQualified.length:count;
+
+    if(totalTokens>=2&&fullyQualified.length>0&&fullyQualified.length<=10){
+      return {
+        action:'RESPOND',
+        reason:'query_well_qualified',
+        topicKey,delegated,shouldIncrementClarification:false,
+        maxResults:Math.min(10,fullyQualified.length),
+        effectiveCandidateCount:fullyQualified.length
+      };
+    }
 
     if(count<=10&&!saturated){
-      return {action:'RESPOND',reason:'manageable_candidate_set',topicKey,delegated,shouldIncrementClarification:false,maxResults:10};
-    }
-
-    if(topCoverage>=1&&count<=10){
-      return {action:'RESPOND',reason:'query_well_qualified',topicKey,delegated,shouldIncrementClarification:false,maxResults:10};
+      return {
+        action:'RESPOND',
+        reason:'manageable_candidate_set',
+        topicKey,delegated,shouldIncrementClarification:false,
+        maxResults:Math.min(10,count),
+        effectiveCandidateCount:count
+      };
     }
 
     if(asked>=2){
-      return {action:'RECOMMEND',reason:'clarification_limit_reached',topicKey,delegated,shouldIncrementClarification:false,maxRecommendations:3};
+      return {action:'RECOMMEND',reason:'clarification_limit_reached',topicKey,delegated,shouldIncrementClarification:false,maxRecommendations:3,effectiveCandidateCount:effectiveCount};
     }
 
     const clarifier=chooseProductClarifier({query,items});
@@ -118,7 +133,8 @@ export function decideConversationAction({
       delegated,
       questionKey:clarifier.key,
       question:clarifier.question,
-      shouldIncrementClarification:true
+      shouldIncrementClarification:true,
+      effectiveCandidateCount:effectiveCount
     };
   }
 
