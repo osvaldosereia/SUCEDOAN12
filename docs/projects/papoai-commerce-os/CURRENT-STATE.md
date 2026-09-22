@@ -8,8 +8,13 @@ Repositório: `osvaldosereia/SUCEDOAN12`
 
 Branch obrigatória: `papoai-commerce-os-r0a-spec-20260921`
 
-HEAD confirmado no início desta retomada:
+HEAD esperado informado no checkpoint:
 `0db4c6977d7331bd04080330ea4efeecdf087eb8`
+
+HEAD real confirmado após auditar a branch e continuar a rodada:
+`6d70bf123af552f21e72877c2aef50794bc7600b`
+
+A branch já havia avançado 14 commits além do HEAD esperado antes desta retomada; o histórico foi preservado e auditado, sem reset ou sobrescrita.
 
 O estado deste documento substitui os checkpoints antigos que terminavam na Edge v17.
 
@@ -188,6 +193,13 @@ Também foram adicionados gatilhos amplos e futuros para:
 - `supabase/migrations/*papoai*.sql`
 - `scripts/*papoai*.mjs`
 
+Foi criado `scripts/test-papoai-ci-coverage-v1.mjs`, que compara automaticamente todos os arquivos `test-*papoai*.mjs` existentes com o workflow e falha caso algum teste novo fique fora do CI. A primeira verificação encontrou e corrigiu duas lacunas reais:
+
+- `scripts/test-papoai-offer-governor-v1.mjs`
+- `scripts/test-papoai-offer-choice-pending-safety-v1.mjs`
+
+Cobertura estática atual: **50 testes PapoAI encontrados; 0 ausentes do workflow**.
+
 Isso corrige a assimetria encontrada entre `push` e `pull_request`: o bloco de PR observava apenas parte dos arquivos PapoAI recentes.
 
 Os contratos de activation readiness e Bling identity guard foram verificados diretamente contra as migrations e passaram.
@@ -213,6 +225,8 @@ Não reaplicar:
 
 Além delas, toda a sequência PapoAI anterior de carrinho, Governador, substituição, contexto do cliente, ofertas e checkout também está registrada na migration history do projeto.
 
+A branch também foi alinhada com os **versions reais** já registrados no Supabase para as migrations PapoAI antigas, evitando que renomes artificiais pareçam migrations novas. A migration `20260922014901_papoai_product_family_search_path_hardening_v1.sql` está aplicada e fixa `search_path=pg_catalog` no helper imutável de família de produto.
+
 ## Commits desta retomada
 
 - `ce8720e2b38d7a9109eb8e5604418a1d2325f3c7`
@@ -225,6 +239,16 @@ Além delas, toda a sequência PapoAI anterior de carrinho, Governador, substitu
   teste de regressão do renderer
 - `bdb01bf5bb3ff6f79f2a493c52248ff823d5062b`
   CI: executa regressão do renderer
+- `a90eae7fb0f99e40b7ca3871b98326ab6065f374`
+  security: fixa search_path da família de produtos PapoAI
+- `0cf2321ecc81ecba06dd5a317f7a648c4c547f0f`
+  chore: conclui alinhamento dos versions das migrations PapoAI com o Supabase
+- `192c9856a6a28d6963c15ba02cb4c3102413ef76`
+  test: adiciona metateste de cobertura do CI PapoAI
+- `6836d1477aa1613e7165f7852cda8c6a949b3059`
+  ci: executa metateste de registro dos testes PapoAI
+- `6d70bf123af552f21e72877c2aef50794bc7600b`
+  ci: adiciona regressões do Governador de ofertas ao workflow
 
 ## Regras arquiteturais obrigatórias
 
@@ -242,6 +266,15 @@ Além delas, toda a sequência PapoAI anterior de carrinho, Governador, substitu
 12. não ativar Bling automaticamente;
 13. não ativar Commerce Brain automaticamente;
 14. não reduzir ou remover os bloqueios externos do readiness.
+
+
+## Auditoria de segurança desta retomada
+
+- Todas as funções públicas cujo nome contém `papoai` foram inspecionadas no catálogo PostgreSQL.
+- As funções `SECURITY DEFINER` relevantes estão com `search_path` explicitamente configurado.
+- ACL das funções PapoAI está restrita a `postgres` e `service_role`; não foi encontrado grant para `anon` ou `authenticated` no conjunto auditado.
+- Nenhum gate foi alterado durante essa auditoria.
+- O advisor global do Supabase ainda lista avisos de segurança/performance de outras áreas do projeto; eles não foram corrigidos em massa nesta rodada para evitar mudanças fora do escopo PapoAI.
 
 ## Próximo limite externo
 
