@@ -65,3 +65,8 @@ assert.ok(edge.includes("conversation_governor_enabled"));
 assert.ok(edge.includes("get_papoai_conversation_governor_state_v1"));
 assert.ok(edge.includes("record_papoai_conversation_governor_decision_v1"));
 assert.ok(edge.includes("candidate_set_too_broad"));
+assert.ok(edge.includes("delegated_value_replacement"));
+assert.ok(edge.includes("propose_value_replacement"));
+assert.ok(edge.includes("select_value_replacement"));
+assert.ok(edge.includes("valueReplacementOptionsText"));
+assert.ok(edge.includes("cart_changed_recommend_again"));
