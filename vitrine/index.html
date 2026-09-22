@@ -527,7 +527,7 @@
       sheetBody.innerHTML=
         '<div class="basket-hero"><img src="'+esc(safeImage(b.image_url))+'" alt=""><div><h3>'+esc(basketName(b.name))+'</h3><div class="basket-total" id="basketTotal">'+money(d.total_cents)+'</div><small>Você pode retirar, reduzir ou aumentar os itens.</small></div></div>'+
         '<div class="items">'+d.items.map((x,i)=>'<div class="item-row"><strong>'+esc(x.name)+'</strong><div class="qty"><button type="button" data-b-dec="'+i+'">−</button><b id="bq'+i+'">'+formatQty(x.quantity)+'</b><button type="button" data-b-inc="'+i+'">+</button></div></div>').join('')+'</div>'+
-        '<p class="note">Os valores individuais dos produtos não são exibidos. O total da cesta é recalculado mantendo a composição comercial da cesta.</p>';
+        '';
       sheetAction.innerHTML='<button class="primary" type="button" id="addBasket">Adicionar cesta ao pedido</button>';
       sheetBody.querySelectorAll('[data-b-dec]').forEach(btn=>btn.onclick=()=>changeBasketQty(Number(btn.dataset.bDec),-1));
       sheetBody.querySelectorAll('[data-b-inc]').forEach(btn=>btn.onclick=()=>changeBasketQty(Number(btn.dataset.bInc),1));
