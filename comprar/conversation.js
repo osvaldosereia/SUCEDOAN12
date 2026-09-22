@@ -186,6 +186,19 @@
   }
 
   function addressLine(address={}){return [address.street,address.number&&`nº ${address.number}`,address.neighborhood,address.city,address.state].filter(Boolean).join(' · ')}
+  function addressIssue(address={},prefix='conversationCheckout'){
+    if(!text(address.street))return {id:`${prefix}Street`,message:'Informe a rua.'};
+    if(!text(address.number))return {id:`${prefix}Number`,message:'Informe o número da casa. Se não houver número, digite S/N.'};
+    if(!text(address.city))return {id:`${prefix}City`,message:'Informe a cidade.'};
+    return null;
+  }
+  function focusCheckoutIssue(issue,status){
+    if(!issue)return;
+    if(status)status.textContent=issue.message;
+    toast(issue.message);
+    const input=document.getElementById(issue.id);
+    if(input){input.setAttribute('aria-invalid','true');input.focus({preventScroll:true});app.scrollTo(input,{block:'center'});}
+  }
   function maskPhone(value=''){const digits=String(value).replace(/\D/g,'');if(digits.length<4)return 'meu número';const tail=digits.slice(-4),ddd=digits.length>=10?digits.slice(-11,-9):'';return ddd?`(${ddd}) *****-${tail}`:`*****-${tail}`}
 
   function resetCheckoutFlow(){Object.assign(checkoutFlow,{stage:null,phone:'',profile:null,selectedAddressId:null,form:null,payment:state.payment||'',locator:null,opening:false,orderSaved:false,whatsappUrl:'',handoffWindow:null});ui.checkoutStep='idle'}
@@ -236,41 +249,64 @@
     ui.checkoutStep='address';const host=checkoutBody();if(!host)return;
     const profile=checkoutFlow.profile||{customer_id:null,name:'',phone:checkoutFlow.phone,addresses:[]};
     const saved=(profile.addresses||[]).find(item=>String(item.id)===String(checkoutFlow.selectedAddressId))||(profile.addresses||[]).find(item=>item.is_default)||(profile.addresses||[])[0]||null;
-    if(saved&&!forceNew){
+    const savedIssue=saved?addressIssue(saved):null;
+    if(saved&&!forceNew&&!savedIssue){
       await revealTool(()=>{host.innerHTML=`<section class="checkout-address-preview"><small>Endereço salvo</small><strong>${escapeHtml(addressLine(saved))}</strong>${saved.complement?`<span>${escapeHtml(saved.complement)}</span>`:''}</section>`;return host},{label:'Ana está conferindo seu endereço…'});
       await ask({text:'Posso entregar neste endereço?',options:[
         {label:'Sim, usar este endereço',onChoose:()=>{checkoutFlow.form={name:profile.name||'',phone:profile.phone||checkoutFlow.phone,address:{...saved}};checkoutFlow.selectedAddressId=saved.id||null;renderAddressSummary();return renderPaymentStep()}},
         {label:'Usar outro endereço',onChoose:()=>renderAddressStep(true)}
       ]});return;
     }
-    await renderAddressForm(forceNew?{city:'Cuiabá',state:'MT'}:(saved||{city:'Cuiabá',state:'MT'}));
+    if(saved&&!forceNew&&savedIssue)await say('Seu endereço salvo precisa ser completado antes de finalizar. É rapidinho.');
+    await renderAddressForm(forceNew?{city:'Cuiabá',state:'MT'}:(saved||{city:'Cuiabá',state:'MT'}),{preserveAddressId:Boolean(saved&&!forceNew)});
   }
 
-  async function renderAddressForm(address={}){
+  async function renderAddressForm(address={},options={}){
     ui.checkoutStep='address';const host=checkoutBody();if(!host)return;const profile=checkoutFlow.profile||{};
     await say('Confira seus dados de entrega.');
     await revealTool(()=>{host.innerHTML=`<section class="checkout-turn-card checkout-address-form"><div class="checkout-form-grid"><label class="wide"><span>Nome</span><input id="conversationCheckoutName" autocomplete="name" value="${escapeHtml(profile.name||'')}"></label><label class="wide"><span>WhatsApp</span><input id="conversationCheckoutWhatsapp" inputmode="tel" autocomplete="tel" value="${escapeHtml(profile.phone||checkoutFlow.phone||'')}"></label><label class="wide"><span>Rua</span><input id="conversationCheckoutStreet" value="${escapeHtml(address.street||'')}"></label><label><span>Número</span><input id="conversationCheckoutNumber" value="${escapeHtml(address.number||'')}"></label><label><span>Bairro</span><input id="conversationCheckoutNeighborhood" value="${escapeHtml(address.neighborhood||'')}"></label><label class="wide"><span>Complemento</span><input id="conversationCheckoutComplement" value="${escapeHtml(address.complement||'')}"></label><label class="wide"><span>Referência</span><input id="conversationCheckoutReference" value="${escapeHtml(address.reference||'')}"></label><label><span>Cidade</span><input id="conversationCheckoutCity" value="${escapeHtml(address.city||'Cuiabá')}"></label><label><span>UF</span><input id="conversationCheckoutState" maxlength="2" value="${escapeHtml(address.state||'MT')}"></label><label class="wide"><span>CEP</span><input id="conversationCheckoutPostal" inputmode="numeric" value="${escapeHtml(address.postal_code||'')}"></label></div><div class="checkout-address-actions"><button type="button" class="secondary" data-use-location>📍 Usar minha localização</button><button type="button" class="primary" data-address-continue>Continuar para pagamento</button></div><small data-address-status class="muted"></small></section>`;return host},{label:'Ana está preparando os campos…'});
     const status=host.querySelector('[data-address-status]');
     host.querySelector('[data-use-location]').onclick=()=>requestLocation(status);
+    host.querySelectorAll('input').forEach(input=>input.addEventListener('input',()=>input.removeAttribute('aria-invalid')));
     host.querySelector('[data-address-continue]').onclick=()=>{
-      try{checkoutFlow.form=readAddressForm();validateAddressForm(checkoutFlow.form);checkoutFlow.selectedAddressId=null;choose('Usar este endereço',{onChoose:()=>{renderAddressSummary();return renderPaymentStep()}})}catch(error){status.textContent=error.message}
+      try{
+        checkoutFlow.form=readAddressForm();
+        validateAddressForm(checkoutFlow.form);
+        if(!options.preserveAddressId)checkoutFlow.selectedAddressId=null;
+        choose('Usar este endereço',{onChoose:()=>{renderAddressSummary();return renderPaymentStep()}});
+      }catch(error){
+        const issue=error?.checkoutIssue||null;
+        if(issue)focusCheckoutIssue(issue,status);else{status.textContent=error.message;toast(error.message);}
+      }
     };
     app.scrollTo(host,{block:'start'});
   }
 
   function readAddressForm(){return {name:text(document.getElementById('conversationCheckoutName')?.value),phone:text(document.getElementById('conversationCheckoutWhatsapp')?.value),address:{street:text(document.getElementById('conversationCheckoutStreet')?.value),number:text(document.getElementById('conversationCheckoutNumber')?.value),neighborhood:text(document.getElementById('conversationCheckoutNeighborhood')?.value),complement:text(document.getElementById('conversationCheckoutComplement')?.value),reference:text(document.getElementById('conversationCheckoutReference')?.value),city:text(document.getElementById('conversationCheckoutCity')?.value),state:text(document.getElementById('conversationCheckoutState')?.value).toUpperCase()||'MT',postal_code:text(document.getElementById('conversationCheckoutPostal')?.value)}}}
-  function validateAddressForm(form){if(!form.name||form.name.length<2)throw new Error('Informe seu nome.');if(form.phone.replace(/\D/g,'').length<10)throw new Error('Informe seu WhatsApp com DDD.');if(!form.address.street||!form.address.number||!form.address.city)throw new Error('Informe rua, número e cidade.')}
+  function checkoutValidationError(message,id){const error=new Error(message);error.checkoutIssue={message,id};return error}
+  function validateAddressForm(form){
+    if(!form.name||form.name.length<2)throw checkoutValidationError('Informe seu nome.','conversationCheckoutName');
+    if(form.phone.replace(/\D/g,'').length<10)throw checkoutValidationError('Informe seu WhatsApp com DDD.','conversationCheckoutWhatsapp');
+    const issue=addressIssue(form.address);if(issue)throw checkoutValidationError(issue.message,issue.id);
+  }
   function renderAddressSummary(){const host=checkoutBody();if(!host||!checkoutFlow.form)return;host.innerHTML='';host.appendChild(app.compactToolSummary({className:'checkout-address-compact',title:'Entrega',meta:addressLine(checkoutFlow.form.address),actions:[{label:'Alterar',onClick:()=>renderAddressStep(true)}]}))}
 
   async function requestLocation(status){
     if(!navigator.geolocation){status.textContent='Localização indisponível neste aparelho.';return}status.textContent='Localizando…';
     navigator.geolocation.getCurrentPosition(async position=>{
       checkoutFlow.locator={latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy_m:Math.round(position.coords.accuracy||0),captured_at:new Date().toISOString()};
-      try{const data=await customerApi('reverse_geocode',{latitude:checkoutFlow.locator.latitude,longitude:checkoutFlow.locator.longitude});fillAddressInputs(data.address||{});status.textContent='Endereço localizado. Confira antes de continuar.'}catch{status.textContent='Localização recebida. Complete o endereço manualmente.'}
+      try{
+        const data=await customerApi('reverse_geocode',{latitude:checkoutFlow.locator.latitude,longitude:checkoutFlow.locator.longitude});
+        fillAddressInputs(data.address||{});
+        const form=readAddressForm(),issue=addressIssue(form.address);
+        if(issue?.id==='conversationCheckoutNumber'){status.textContent='Localizei a rua. Digite o número da casa para continuar.';focusCheckoutIssue(issue,status);}
+        else if(issue){status.textContent='Localização recebida. Complete o endereço manualmente.';focusCheckoutIssue(issue,status);}
+        else status.textContent='Endereço localizado. Confira antes de continuar.';
+      }catch{status.textContent='Localização recebida. Complete o endereço manualmente.'}
     },()=>{status.textContent='Não consegui obter sua localização. Preencha manualmente.'},{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
   }
 
-  function fillAddressInputs(address={}){const map=[['conversationCheckoutStreet','street',''],['conversationCheckoutNumber','number',''],['conversationCheckoutNeighborhood','neighborhood',''],['conversationCheckoutComplement','complement',''],['conversationCheckoutReference','reference',''],['conversationCheckoutCity','city','Cuiabá'],['conversationCheckoutState','state','MT'],['conversationCheckoutPostal','postal_code','']];for(const [id,key,fallback] of map){const input=document.getElementById(id);if(input)input.value=address[key]||fallback}}
+  function fillAddressInputs(address={}){const map=[['conversationCheckoutStreet','street',''],['conversationCheckoutNumber','number',''],['conversationCheckoutNeighborhood','neighborhood',''],['conversationCheckoutComplement','complement',''],['conversationCheckoutReference','reference',''],['conversationCheckoutCity','city','Cuiabá'],['conversationCheckoutState','state','MT'],['conversationCheckoutPostal','postal_code','']];for(const [id,key,fallback] of map){const input=document.getElementById(id);if(!input)continue;const incoming=text(address[key]);if(incoming)input.value=incoming;else if(!text(input.value)&&fallback)input.value=fallback}}
 
   function renderPaymentStep(){ui.checkoutStep='payment';return ask({text:'Como você prefere pagar na entrega?',options:Object.entries(paymentLabels).map(([key,label])=>({label,onChoose:()=>{checkoutFlow.payment=key;state.payment=key;return renderConfirmationStep()}}))})}
 
