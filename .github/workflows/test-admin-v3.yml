@@ -79,6 +79,10 @@ on:
       - 'scripts/test-papoai-value-replacement-executor-v1.mjs'
       - 'scripts/test-papoai-product-choice-up-to-10-v1.mjs'
       - 'scripts/test-inventory-product-knowledge-drain-v1.mjs'
+      - 'scripts/test-papoai-personalized-product-choice-v1.mjs'
+      - 'scripts/test-papoai-customer-context-v3.mjs'
+      - 'scripts/test-product-knowledge-queue-guard-v1.mjs'
+      - 'scripts/test-product-sales-knowledge-v1.mjs'
       - 'scripts/test-papoai-value-replacement-v1.mjs'
       - 'scripts/test-papoai-conversation-governor-state-v1.mjs'
       - 'scripts/test-papoai-conversation-governor-v1.mjs'
@@ -331,6 +335,14 @@ jobs:
         run: node scripts/test-papoai-product-choice-up-to-10-v1.mjs
       - name: Validar enriquecimento semântico de produto
         run: node scripts/test-inventory-product-knowledge-drain-v1.mjs
+      - name: Validar base de conhecimento de produtos
+        run: node scripts/test-product-sales-knowledge-v1.mjs
+      - name: Validar proteção da fila de conhecimento
+        run: node scripts/test-product-knowledge-queue-guard-v1.mjs
+      - name: Validar contexto comercial seguro do cliente
+        run: node scripts/test-papoai-customer-context-v3.mjs
+      - name: Validar escolha personalizada de produto
+        run: node scripts/test-papoai-personalized-product-choice-v1.mjs
       - name: Validar confirmação final do pedido PapoAI
         run: node scripts/test-papoai-order-confirmation-v1.mjs
       - name: Validar Central de Relacionamento
