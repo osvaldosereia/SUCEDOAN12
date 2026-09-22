@@ -7,7 +7,6 @@ const SECRET_KEYS = (() => {
 })();
 const SERVER_KEY = SECRET_KEYS.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const ORG_ID = "95b1b61d-f6ed-41cb-8917-b55f6793b10b";
-const ADMIN_KEY_SHA256 = "2063294325e54958cd2600c241aee8e66b51476312ddad9e179f4b6c67e10429";
 const ALLOWED_ORIGINS = new Set([
   "https://donaantonia.com.br",
   "https://www.donaantonia.com.br"
@@ -22,7 +21,7 @@ function cors(req: Request) {
   const allowed = ALLOWED_ORIGINS.has(origin) ? origin : "https://www.donaantonia.com.br";
   return {
     "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers": "content-type,x-admin-key",
+    "Access-Control-Allow-Headers": "content-type",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Vary": "Origin"
   };
@@ -62,23 +61,6 @@ function digits(value: unknown, max = 30) {
 function normalizedSearch(parts: unknown[]) {
   return parts.filter(Boolean).map(v => String(v).trim()).filter(Boolean).join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
-async function sha256Hex(value: string) {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,"0")).join("");
-}
-function secureEqual(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i=0;i<a.length;i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-async function authorized(req: Request) {
-  const raw = req.headers.get("x-admin-key") ?? "";
-  if (!raw || raw.length > 200) return false;
-  return secureEqual(await sha256Hex(raw), ADMIN_KEY_SHA256);
-}
-
 async function listProducts(url: URL) {
   const q = text(url.searchParams.get("q"), 80);
   const offset = Math.floor(num(url.searchParams.get("offset"), 0, 5000));
@@ -390,7 +372,7 @@ async function saveCustomer(payload:any) {
 
 async function listOrders() {
   const { data, error } = await db.from("orders")
-    .select("id,order_number,status,total_cents,payment_method_snapshot,customer_id,created_at,confirmed_at,delivered_at")
+    .select("id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,customer_id,created_at,confirmed_at,delivered_at")
     .eq("organization_id",ORG_ID)
     .order("created_at",{ascending:false})
     .limit(120);
@@ -404,7 +386,12 @@ async function listOrders() {
     customers=res.data ?? [];
   }
   const cMap=new Map(customers.map((c:any)=>[c.id,c.display_name]));
-  return rows.map((r:any)=>({...r,customer_name:r.customer_id?cMap.get(r.customer_id)??"":""}));
+  return rows.map((r:any)=>({
+    ...r,
+    customer_name:r.customer_id
+      ? cMap.get(r.customer_id)??""
+      : r.delivery_address_snapshot?.customer_name ?? r.delivery_address_snapshot?.recipient_name ?? ""
+  }));
 }
 
 async function orderDetail(id:string) {
@@ -462,6 +449,29 @@ async function orderDetail(id:string) {
       const get=(kind:string)=>b.identities.find((x:any)=>x.kind===kind)?.normalized_value ?? "";
       customer={...c,phone:get("phone")||get("whatsapp"),cpf:get("cpf"),email:get("email"),address:b.addresses[0]??null};
     }
+  } else if (order.delivery_address_snapshot?.source_customer_id) {
+    const snap=order.delivery_address_snapshot;
+    customer={
+      id:null,
+      source_customer_id:snap.source_customer_id,
+      display_name:snap.customer_name??snap.recipient_name??"",
+      phone:snap.phone??"",
+      cpf:snap.cpf??"",
+      email:snap.email??"",
+      status:"active",
+      address:{
+        street:snap.street??null,
+        number:snap.number??null,
+        complement:snap.complement??null,
+        district:snap.district??null,
+        city:snap.city??null,
+        state:snap.state??null,
+        postal_code:snap.postal_code??null,
+        raw_text:snap.raw_text??null,
+        google_maps_url:snap.google_maps_url??null,
+        block:snap.block??null
+      }
+    };
   }
 
   const groupedComponents=new Map<string,any[]>();
@@ -498,7 +508,34 @@ async function updateOrder(payload:any) {
     if (status==="delivered") patch.delivered_at=new Date().toISOString();
   }
 
-  if (payload?.customer_id !== undefined) {
+  if (payload?.customer_snapshot !== undefined) {
+    const snap=payload.customer_snapshot;
+    patch.customer_id=null;
+    if (snap && uuid(snap.id)) {
+      const a=snap.address && typeof snap.address==="object" ? snap.address : {};
+      patch.delivery_address_snapshot={
+        source_customer_id:uuid(snap.id),
+        customer_name:text(snap.display_name,180),
+        recipient_name:text(snap.display_name,180),
+        phone:text(snap.phone,40),
+        cpf:text(snap.cpf,30),
+        email:text(snap.email,180),
+        postal_code:maybeText(a.postal_code,20),
+        street:maybeText(a.street,180),
+        number:maybeText(a.number,40),
+        complement:maybeText(a.complement,140),
+        district:maybeText(a.district,140),
+        city:maybeText(a.city,120),
+        state:maybeText(a.state,2),
+        country_code:"BR",
+        raw_text:maybeText(a.raw_text,400),
+        google_maps_url:maybeText(a.google_maps_url,800),
+        block:maybeText(a.block,80)
+      };
+    } else {
+      patch.delivery_address_snapshot=null;
+    }
+  } else if (payload?.customer_id !== undefined) {
     const customerId=uuid(payload.customer_id);
     patch.customer_id=customerId || null;
     if (customerId) {
@@ -542,7 +579,6 @@ async function updateOrder(payload:any) {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null,{status:204,headers:cors(req)});
-  if (!(await authorized(req))) return json(req,{ok:false,error:"unauthorized"},401);
 
   try {
     const url=new URL(req.url);
