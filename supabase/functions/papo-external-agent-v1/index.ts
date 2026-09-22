@@ -293,13 +293,52 @@ Deno.serve(async(req:Request)=>{
   let processingStatus='responded';
   let responseKind='text';
   const pausedUntil=freshSession?.paused_until?new Date(freshSession.paused_until):null;
-  const humanActive=freshSession?.status==='paused'&&(!pausedUntil||pausedUntil.getTime()>Date.now());
+  const labHumanActive=freshSession?.status==='paused'&&(!pausedUntil||pausedUntil.getTime()>Date.now());
+
+  if(
+    commerceEnabled
+    && ingested?.conversation_id
+    && normalized.sessionHumanRequired===true
+  ){
+    await sb.rpc('queue_papoai_commerce_handoff_v1',{
+      p_conversation_id:ingested.conversation_id,
+      p_reason:'papoai_session_human_required',
+      p_summary:'PapoAI informou sessão com atendimento humano ativo.',
+      p_priority:2
+    });
+  }
+
+  const humanPrecedence=ingested?.conversation_id
+    ? await sb.rpc('get_papoai_commerce_human_precedence_v1',{
+        p_conversation_id:ingested.conversation_id
+      })
+    : {data:null};
+
+  const canonicalHumanActive=humanPrecedence.data?.human_active===true;
+  const humanActive=
+    normalized.sessionHumanRequired===true
+    || canonicalHumanActive
+    || labHumanActive;
+  const humanReason=normalized.sessionHumanRequired===true
+    ? 'papoai_human_required'
+    : canonicalHumanActive
+      ? String(humanPrecedence.data?.reason||'canonical_human_active')
+      : labHumanActive
+        ? 'lab_session_paused'
+        : null;
+
   const elapsed=Date.now()-started;
   const timeoutMs=Math.max(1000,Number(lab.response_timeout_seconds||20)*1000);
 
   if(humanActive){
     processingStatus='silent';responseKind='silent';
-    responseBody=buildLabSilentResponse({sessionKey:normalized.sessionKey,correlationId,reason:'human_active',pausedUntil:freshSession?.paused_until||null,handoff:false});
+    responseBody=buildLabSilentResponse({
+      sessionKey:normalized.sessionKey,
+      correlationId,
+      reason:humanReason||'human_active',
+      pausedUntil:freshSession?.paused_until||null,
+      handoff:false
+    });
   }else if(lab.enabled===true){
     if(isReservedLabHandoff(normalized.messageText)&&normalized.messageText.toUpperCase()===RESERVED_HANDOFF_COMMAND){
       processingStatus='handoff';responseKind='handoff';
@@ -491,8 +530,24 @@ Deno.serve(async(req:Request)=>{
         text='Oi 😊 Bem-vindo à Dona Antônia. Posso te ajudar com cestas básicas, produtos do mercado ou ofertas. O que você precisa hoje?';
       }
     }else if(intent.intent==='handoff'){
+      if(conversationId){
+        const queued=await sb.rpc('queue_papoai_commerce_handoff_v1',{
+          p_conversation_id:conversationId,
+          p_reason:'customer_requested_human',
+          p_summary:'Cliente pediu atendimento humano durante conversa no WhatsApp.',
+          p_priority:2
+        });
+        if(queued.error)throw queued.error;
+        result=queued.data;
+      }
       processingStatus='handoff';responseKind='handoff';
-      responseBody=commerceTextResponse({text:'Claro 😊 Vou chamar alguém da nossa equipe para continuar com você.',sessionKey:normalized.sessionKey,correlationId,handoff:true,reason:'customer_requested_human'});
+      responseBody=commerceTextResponse({
+        text:'Claro 😊 Vou chamar alguém da nossa equipe para continuar com você.',
+        sessionKey:normalized.sessionKey,
+        correlationId,
+        handoff:true,
+        reason:'customer_requested_human'
+      });
     }else if(intent.intent==='list_baskets'){
       const q=await sb.rpc('get_papoai_commerce_basket_catalog_v1');
       result=q.data;
