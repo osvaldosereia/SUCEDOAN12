@@ -76,6 +76,11 @@ on:
       - 'scripts/test-papoai-executor-repeat-bling-v1.mjs'
       - 'scripts/test-papoai-product-choice-executor-v1.mjs'
       - 'scripts/test-enforce-papoai-governor-question-cap-v1.mjs'
+      - 'scripts/test-unify-value-replacement-engine-v1.mjs'
+      - 'scripts/test-papoai-delegated-replacement-apply-v1.mjs'
+      - 'scripts/test-papoai-delegated-replacement-preferences-v3.mjs'
+      - 'scripts/test-papoai-delegated-replacement-utility-v2.mjs'
+      - 'scripts/test-papoai-delegated-replacement-preview-v1.mjs'
       - 'scripts/test-papoai-value-replacement-executor-v1.mjs'
       - 'scripts/test-papoai-product-choice-up-to-10-v1.mjs'
       - 'scripts/test-inventory-product-knowledge-drain-v1.mjs'
@@ -328,6 +333,16 @@ jobs:
         run: node scripts/test-papoai-conversation-governor-state-v1.mjs
       - name: Validar limite de perguntas do Governador
         run: node scripts/test-enforce-papoai-governor-question-cap-v1.mjs
+      - name: Validar prévia de substituição delegada
+        run: node scripts/test-papoai-delegated-replacement-preview-v1.mjs
+      - name: Validar utilidade da substituição delegada
+        run: node scripts/test-papoai-delegated-replacement-utility-v2.mjs
+      - name: Validar preferências da substituição delegada
+        run: node scripts/test-papoai-delegated-replacement-preferences-v3.mjs
+      - name: Validar aplicação da substituição delegada
+        run: node scripts/test-papoai-delegated-replacement-apply-v1.mjs
+      - name: Validar unificação do motor de substituição
+        run: node scripts/test-unify-value-replacement-engine-v1.mjs
       - name: Validar substituição delegada por valor
         run: node scripts/test-papoai-value-replacement-v1.mjs
       - name: Validar executor de substituição por valor
