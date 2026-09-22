@@ -2,9 +2,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SECRET_KEYS = (() => {
+  try { return JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}"); }
+  catch { return {}; }
+})();
+const SERVER_KEY = SECRET_KEYS.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const ORG_ID = "95b1b61d-f6ed-41cb-8917-b55f6793b10b";
-const db = createClient(SUPABASE_URL, SERVICE_ROLE, {
+const db = createClient(SUPABASE_URL, SERVER_KEY, {
   auth: { persistSession: false, autoRefreshToken: false }
 });
 
