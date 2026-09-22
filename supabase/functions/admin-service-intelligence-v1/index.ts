@@ -1119,6 +1119,33 @@ Deno.serve(async(req:Request)=>{
     }
   }
 
+  if(action==="vitrine_customer_lookup_phone"){
+    const suffix=vitrineDigits(body?.phone_suffix,8).slice(-8);
+    if(suffix.length!==8)return json({ok:false,error:"phone_suffix_required"},400);
+    try{
+      const q=await sb.from("customers")
+        .select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,birthday_day,birthday_month,order_count,lifetime_value,created_at,updated_at")
+        .ilike("primary_whatsapp_e164","%"+suffix)
+        .order("is_active",{ascending:false})
+        .order("updated_at",{ascending:false})
+        .limit(3);
+      if(q.error)throw q.error;
+      const rows=q.data||[];
+      if(!rows.length)return json({ok:true,found:false,customer:null});
+      const chosen=rows[0];
+      const bundles=await vitrineCustomerBundles(sb,[chosen.id]);
+      const full=vitrinePublicCustomer(chosen,bundles.get(chosen.id));
+      return json({ok:true,found:true,customer:{
+        id:full.id,
+        display_name:full.display_name,
+        phone:full.phone,
+        address:full.address
+      },matches:rows.length});
+    }catch(e){
+      return json({ok:false,error:"customer_lookup_failed",detail:clean((e as Error)?.message,300)},500);
+    }
+  }
+
   if(action==="vitrine_customers_list"){
     try{return json({ok:true,customers:await vitrineListCustomers(sb,body)})}
     catch(e){return json({ok:false,error:"customers_unavailable",detail:clean((e as Error)?.message,300)},500)}
