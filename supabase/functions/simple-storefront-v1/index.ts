@@ -46,6 +46,14 @@ const num = (v: unknown, min = 0, max = 999) => {
   return Math.min(max, Math.max(min, n));
 };
 
+const normalizeWhatsappPhone = (v: unknown) => {
+  let digits = String(v ?? "").replace(/\D+/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) return "+" + digits;
+  if (digits.length === 10 || digits.length === 11) return "+55" + digits;
+  return "";
+};
+
 const nowActive = (o: any) => {
   const now = Date.now();
   const starts = o?.starts_at ? Date.parse(o.starts_at) : 0;
@@ -304,6 +312,7 @@ async function basketQuote(payload: any) {
 
 async function submitOrder(payload:any) {
   const payment=text(payload?.payment_method,80);
+  const whatsappPhone=normalizeWhatsappPhone(payload?.whatsapp_phone);
   const allowedPayments=new Set(["PIX","Dinheiro","Cartão de crédito","Cartão alimentação/refeição"]);
   if (!allowedPayments.has(payment)) return {error:"invalid_payment",status:400};
 
@@ -473,6 +482,7 @@ async function submitOrder(payload:any) {
     const res=await db.from("orders").insert({
       organization_id:ORG_ID,
       customer_id:null,
+      whatsapp_phone_e164:whatsappPhone||null,
       order_number:orderNumber,
       status:"created",
       currency:"BRL",
@@ -514,7 +524,7 @@ async function submitOrder(payload:any) {
     throw error;
   }
 
-  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents};
+  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone)};
 }
 
 Deno.serve(async (req: Request) => {
