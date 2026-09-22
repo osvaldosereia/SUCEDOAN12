@@ -363,8 +363,9 @@
     async function openProductDetail(id,returnTo=''){
       if(!id)return;
       state.detailReturn=returnTo;
-      openSheet('Produto','<div class="loader"></div>',returnTo==='checkout'?'<button class="secondary" type="button" id="backToCheckout">Voltar ao pedido</button>':'');
-      if($('#backToCheckout'))$('#backToCheckout').onclick=renderCheckout;
+      const returnLabel=returnTo==='checkout'?'Voltar ao pedido':returnTo==='basket'?'Voltar à cesta':'';
+      openSheet('Produto','<div class="loader"></div>',returnLabel?'<button class="secondary" type="button" id="backFromDetail">'+returnLabel+'</button>':'');
+      if($('#backFromDetail'))$('#backFromDetail').onclick=()=>returnTo==='checkout'?renderCheckout():paintBasketSheet();
       try{
         const data=await api('product',{product_id:id});
         const p=data.product;
@@ -382,17 +383,17 @@
           '<div class="detail-price">'+money(p.price_cents)+old+'</div>'+
           (p.description?'<p class="detail-description">'+esc(p.description)+'</p>':'')+
           (attrs.length?'<div class="detail-grid">'+attrs.map(a=>'<div class="detail-attr"><small>'+esc(a.label)+'</small><strong>'+esc(a.value)+'</strong></div>').join('')+'</div>':'');
-        sheetAction.innerHTML=returnTo==='checkout'
-          ? '<button class="primary" type="button" id="backToCheckout">Voltar ao pedido</button>'
+        sheetAction.innerHTML=returnLabel
+          ? '<button class="primary" type="button" id="backFromDetail">'+returnLabel+'</button>'
           : '<button class="primary" type="button" id="closeDetail">Fechar</button>';
-        if($('#backToCheckout'))$('#backToCheckout').onclick=renderCheckout;
+        if($('#backFromDetail'))$('#backFromDetail').onclick=()=>returnTo==='checkout'?renderCheckout():paintBasketSheet();
         if($('#closeDetail'))$('#closeDetail').onclick=closeSheet;
       }catch{
         sheetBody.innerHTML='<div class="empty">Não consegui carregar os detalhes deste produto agora.</div>';
-        sheetAction.innerHTML=returnTo==='checkout'
-          ? '<button class="primary" type="button" id="backToCheckout">Voltar ao pedido</button>'
+        sheetAction.innerHTML=returnLabel
+          ? '<button class="primary" type="button" id="backFromDetail">'+returnLabel+'</button>'
           : '<button class="primary" type="button" id="closeDetail">Fechar</button>';
-        if($('#backToCheckout'))$('#backToCheckout').onclick=renderCheckout;
+        if($('#backFromDetail'))$('#backFromDetail').onclick=()=>returnTo==='checkout'?renderCheckout():paintBasketSheet();
         if($('#closeDetail'))$('#closeDetail').onclick=closeSheet;
       }
     }
@@ -612,7 +613,7 @@
       sheetTitle.textContent=basketName(b.name);
       sheetBody.innerHTML=
         '<div class="basket-hero"><img src="'+esc(safeImage(b.image_url))+'" alt=""><div><h3>'+esc(basketName(b.name))+'</h3><div class="basket-total" id="basketTotal">'+money(d.total_cents)+'</div><small>Você pode retirar, reduzir ou aumentar os itens.</small></div></div>'+
-        '<div class="items">'+d.items.map((x,i)=>'<div class="item-row"><button type="button" class="product-open checkout-name" data-product-detail="'+esc(x.product_id)+'">'+esc(x.name)+'</button><div class="qty"><button type="button" data-b-dec="'+i+'">−</button><b id="bq'+i+'">'+formatQty(x.quantity)+'</b><button type="button" data-b-inc="'+i+'">+</button></div></div>').join('')+'</div>'+
+        '<div class="items">'+d.items.map((x,i)=>'<div class="item-row"><button type="button" class="product-open checkout-name" data-product-detail="'+esc(x.product_id)+'" data-detail-return="basket">'+esc(x.name)+'</button><div class="qty"><button type="button" data-b-dec="'+i+'">−</button><b id="bq'+i+'">'+formatQty(x.quantity)+'</b><button type="button" data-b-inc="'+i+'">+</button></div></div>').join('')+'</div>'+
         '';
       sheetAction.innerHTML='<button class="primary" type="button" id="addBasket">Adicionar cesta ao pedido</button>';
       sheetBody.querySelectorAll('[data-b-dec]').forEach(btn=>btn.onclick=()=>changeBasketQty(Number(btn.dataset.bDec),-1));
