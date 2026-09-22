@@ -298,6 +298,17 @@ Deno.serve(async(req:Request)=>{
   if(
     commerceEnabled
     && ingested?.conversation_id
+    && normalized.sessionHumanRequired!==true
+  ){
+    const aiMode=await sb.rpc('activate_papoai_commerce_ai_mode_v1',{
+      p_conversation_id:ingested.conversation_id
+    });
+    if(aiMode.error)throw aiMode.error;
+  }
+
+  if(
+    commerceEnabled
+    && ingested?.conversation_id
     && normalized.sessionHumanRequired===true
   ){
     await sb.rpc('queue_papoai_commerce_handoff_v1',{
