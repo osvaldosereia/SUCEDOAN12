@@ -266,42 +266,6 @@ async function saveCustomer(payload:any) {
   const lastName=parts.join(" ") || null;
   const now=new Date().toISOString();
 
-  let customerId=id;
-  if (id) {
-    const { data, error } = await db.from("customers")
-      .update({
-        display_name:displayName,
-        first_name:firstName,
-        last_name:lastName,
-        status,
-        birth_date: maybeText(payload?.birth_date,10),
-        metadata:{ notes:text(payload?.notes,1000) },
-        updated_at:now
-      })
-      .eq("organization_id",ORG_ID)
-      .eq("id",id)
-      .select("id")
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return { error:"customer_not_found", status:404 };
-  } else {
-    const { data, error } = await db.from("customers")
-      .insert({
-        organization_id:ORG_ID,
-        display_name:displayName,
-        first_name:firstName,
-        last_name:lastName,
-        status,
-        birth_date:maybeText(payload?.birth_date,10),
-        metadata:{ notes:text(payload?.notes,1000) },
-        updated_at:now
-      })
-      .select("id")
-      .single();
-    if (error) throw error;
-    customerId=data.id;
-  }
-
   const wanted = [
     {kind:"phone", value:digits(payload?.phone,20)},
     {kind:"cpf", value:digits(payload?.cpf,14)},
@@ -316,9 +280,47 @@ async function saveCustomer(payload:any) {
       .eq("normalized_value",item.value)
       .maybeSingle();
     if (error) throw error;
-    if (data && data.customer_id !== customerId) {
+    if (data && (!id || data.customer_id !== id)) {
       return { error:`${item.kind}_already_in_use`, status:409 };
     }
+  }
+
+  let previousMetadata:any={};
+  if (id) {
+    const {data,error}=await db.from("customers")
+      .select("id,metadata")
+      .eq("organization_id",ORG_ID)
+      .eq("id",id)
+      .maybeSingle();
+    if(error) throw error;
+    if(!data) return {error:"customer_not_found",status:404};
+    previousMetadata=data.metadata??{};
+  }
+
+  let customerId=id;
+  const customerRow:any = {
+    display_name:displayName,
+    first_name:firstName,
+    last_name:lastName,
+    status,
+    birth_date: maybeText(payload?.birth_date,10),
+    metadata:{...previousMetadata,notes:text(payload?.notes,1000)},
+    updated_at:now
+  };
+
+  if (id) {
+    const { error } = await db.from("customers")
+      .update(customerRow)
+      .eq("organization_id",ORG_ID)
+      .eq("id",id);
+    if (error) throw error;
+  } else {
+    const { data, error } = await db.from("customers")
+      .insert({organization_id:ORG_ID,...customerRow})
+      .select("id")
+      .single();
+    if (error) throw error;
+    customerId=data.id;
   }
 
   const { error: deleteIdentityError } = await db.from("customer_identities")
@@ -342,13 +344,15 @@ async function saveCustomer(payload:any) {
 
   const address:any = payload?.address ?? {};
   const hasAddress=[address.street,address.number,address.district,address.city,address.postal_code,address.raw_text].some(Boolean);
-  const { data: existingAddress, error: addrFindError } = await db.from("customer_addresses")
+  const { data: addressRows, error: addrFindError } = await db.from("customer_addresses")
     .select("id")
     .eq("organization_id",ORG_ID)
     .eq("customer_id",customerId)
     .eq("is_default",true)
-    .maybeSingle();
+    .order("updated_at",{ascending:false})
+    .limit(1);
   if (addrFindError) throw addrFindError;
+  const existingAddress=addressRows?.[0]??null;
 
   if (hasAddress) {
     const addressRow:any = {
