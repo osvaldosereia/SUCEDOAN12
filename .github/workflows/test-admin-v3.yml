@@ -361,6 +361,8 @@ jobs:
         run: node scripts/test-papoai-delegated-replacement-apply-v1.mjs
       - name: Validar unificação do motor de substituição
         run: node scripts/test-unify-value-replacement-engine-v1.mjs
+      - name: Validar renderização da substituição delegada PapoAI
+        run: node scripts/test-papoai-delegated-replacement-render-v1.mjs
       - name: Validar captura de perfil de checkout
         run: node scripts/test-papoai-checkout-profile-capture-v1.mjs
       - name: Validar promoção de perfil no pedido
