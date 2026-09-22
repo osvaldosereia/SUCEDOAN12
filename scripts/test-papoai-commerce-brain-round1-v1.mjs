@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const path='supabase/migrations/20260921224500_papoai_commerce_brain_round1_v1.sql';
+const path='supabase/migrations/20260921230105_papoai_commerce_brain_round1_v1.sql';
 assert.ok(fs.existsSync(path));
 const sql=fs.readFileSync(path,'utf8');
 for(const token of [
