@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';
-const sql=fs.readFileSync('supabase/migrations/20260922001000_papoai_commerce_round2_swap_checkout_v1.sql','utf8');
+const sql=fs.readFileSync('supabase/migrations/20260921231217_papoai_commerce_round2_swap_checkout_v1.sql','utf8');
 for(const token of [
 'resolve_papoai_commerce_replacement_candidates_v1',
 'replace_papoai_commerce_basket_item_v2',
