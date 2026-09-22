@@ -249,6 +249,222 @@ async function basketQuote(payload: any) {
   return json({ok:true,total_cents:total});
 }
 
+
+async function submitOrder(payload:any) {
+  const payment=text(payload?.payment_method,80);
+  const allowedPayments=new Set(["PIX","Dinheiro","Cartão de crédito","Cartão alimentação/refeição"]);
+  if (!allowedPayments.has(payment)) return {error:"invalid_payment",status:400};
+
+  const cart=Array.isArray(payload?.items)?payload.items.slice(0,80):[];
+  if (!cart.length) return {error:"empty_cart",status:400};
+
+  const normalized=cart.map((raw:any,index:number)=>({
+    index,
+    type:raw?.type==="basket"?"basket":"product",
+    id:uuid(raw?.id),
+    qty:Math.round(num(raw?.qty,1,30)*1000)/1000,
+    components:Array.isArray(raw?.components)?raw.components.slice(0,100):[]
+  })).filter((x:any)=>x.id&&x.qty>0);
+  if (!normalized.length) return {error:"empty_cart",status:400};
+
+  const productIds=[...new Set(normalized.filter((x:any)=>x.type==="product").map((x:any)=>x.id))];
+  const basketIds=[...new Set(normalized.filter((x:any)=>x.type==="basket").map((x:any)=>x.id))];
+
+  let productRows:any[]=[];
+  if (productIds.length) {
+    const {data,error}=await db.from("products")
+      .select("id,sku,name,image_url,sale_price_cents,stock_quantity")
+      .eq("organization_id",ORG_ID)
+      .eq("active",true)
+      .gt("stock_quantity",0)
+      .in("id",productIds);
+    if(error) throw error;
+    productRows=data??[];
+  }
+  const pMap=new Map(productRows.map((p:any)=>[p.id,p]));
+  const offerMap=await activeOffersFor(productRows.map((p:any)=>p.id));
+
+  let basketRows:any[]=[];
+  if (basketIds.length) {
+    const {data,error}=await db.from("baskets")
+      .select("id,name,display_price_cents,image_url")
+      .eq("organization_id",ORG_ID)
+      .eq("active",true)
+      .in("id",basketIds);
+    if(error) throw error;
+    basketRows=data??[];
+  }
+  const bMap=new Map(basketRows.map((b:any)=>[b.id,b]));
+
+  let basketItemRows:any[]=[];
+  if (basketIds.length) {
+    const {data,error}=await db.from("basket_items")
+      .select("basket_id,product_id,quantity,sort_order")
+      .in("basket_id",basketIds)
+      .order("sort_order",{ascending:true});
+    if(error) throw error;
+    basketItemRows=data??[];
+  }
+  const basketProductIds=[...new Set(basketItemRows.map((x:any)=>x.product_id).filter(Boolean))];
+  let basketProducts:any[]=[];
+  if (basketProductIds.length) {
+    const {data,error}=await db.from("products")
+      .select("id,sku,name,image_url,sale_price_cents")
+      .eq("organization_id",ORG_ID)
+      .in("id",basketProductIds);
+    if(error) throw error;
+    basketProducts=data??[];
+  }
+  const bpMap=new Map(basketProducts.map((p:any)=>[p.id,p]));
+  const baseByBasket=new Map<string,any[]>();
+  for (const row of basketItemRows) {
+    if(!baseByBasket.has(row.basket_id)) baseByBasket.set(row.basket_id,[]);
+    baseByBasket.get(row.basket_id)!.push(row);
+  }
+
+  const orderItems:any[]=[];
+  const componentPlans:any[]=[];
+  let total=0;
+
+  for (const line of normalized) {
+    const lineKey=`l${line.index}`;
+    if(line.type==="product") {
+      const p=pMap.get(line.id);
+      if(!p) return {error:"product_unavailable",status:409};
+      const offer=offerMap.get(p.id);
+      const unit=Math.max(0,Number(offer?.sale_price_cents??p.sale_price_cents??0));
+      const lineTotal=Math.round(unit*line.qty);
+      total+=lineTotal;
+      orderItems.push({
+        organization_id:ORG_ID,
+        item_kind:"product",
+        product_id:p.id,
+        basket_id:null,
+        name_snapshot:p.name,
+        sku_snapshot:p.sku??null,
+        quantity:line.qty,
+        unit_price_cents:unit,
+        total_cents:lineTotal,
+        metadata:{source:"vitrine",line_key:lineKey,image_url:p.image_url??""}
+      });
+      continue;
+    }
+
+    const basket=bMap.get(line.id);
+    if(!basket) return {error:"basket_unavailable",status:409};
+    const baseItems=baseByBasket.get(basket.id)??[];
+    if(!baseItems.length) return {error:"basket_empty",status:409};
+
+    const baseQty=new Map<string,number>();
+    let baseSubtotal=0;
+    for(const bi of baseItems) {
+      const p=bpMap.get(bi.product_id);
+      const qty=Number(bi.quantity||0);
+      baseQty.set(bi.product_id,qty);
+      baseSubtotal+=Number(p?.sale_price_cents??0)*qty;
+    }
+
+    const supplied=line.components
+      .map((c:any)=>({product_id:uuid(c?.product_id),quantity:Math.round(num(c?.quantity,0,30)*1000)/1000}))
+      .filter((c:any)=>c.product_id&&baseQty.has(c.product_id));
+    const hasComponentIds=supplied.length>0;
+    const editedQty=new Map(baseQty);
+    if(hasComponentIds) {
+      for(const id of editedQty.keys()) editedQty.set(id,0);
+      for(const c of supplied) editedQty.set(c.product_id,c.quantity);
+    }
+
+    let editedSubtotal=0;
+    for(const [id,qty] of editedQty) editedSubtotal+=Number(bpMap.get(id)?.sale_price_cents??0)*qty;
+    const hiddenDelta=Number(basket.display_price_cents||0)-baseSubtotal;
+    const unit=Math.max(0,Math.round(hiddenDelta+editedSubtotal));
+    const lineTotal=Math.round(unit*line.qty);
+    total+=lineTotal;
+
+    orderItems.push({
+      organization_id:ORG_ID,
+      item_kind:"basket",
+      product_id:null,
+      basket_id:basket.id,
+      name_snapshot:basket.name,
+      sku_snapshot:null,
+      quantity:line.qty,
+      unit_price_cents:unit,
+      total_cents:lineTotal,
+      metadata:{source:"vitrine",line_key:lineKey,image_url:basket.image_url??"",customized:hasComponentIds}
+    });
+
+    componentPlans.push({
+      line_key:lineKey,
+      rows:[...editedQty.entries()]
+        .filter(([,qty])=>Number(qty)>0)
+        .map(([productId,qty])=>{
+          const p=bpMap.get(productId);
+          return {
+            organization_id:ORG_ID,
+            product_id:productId,
+            name_snapshot:p?.name??"Produto",
+            sku_snapshot:p?.sku??null,
+            quantity:qty,
+            metadata:{source:"vitrine",image_url:p?.image_url??""}
+          };
+        })
+    });
+  }
+
+  if(!orderItems.length) return {error:"empty_cart",status:400};
+
+  let order:any=null;
+  let orderError:any=null;
+  for(let attempt=0;attempt<4;attempt++) {
+    const orderNumber=Date.now()+attempt;
+    const res=await db.from("orders").insert({
+      organization_id:ORG_ID,
+      customer_id:null,
+      order_number:orderNumber,
+      status:"created",
+      currency:"BRL",
+      subtotal_cents:total,
+      discount_cents:0,
+      delivery_cents:0,
+      total_cents:total,
+      delivery_address_snapshot:null,
+      payment_method_snapshot:{method:payment,label:payment,timing:"on_delivery",source:"vitrine"},
+      confirmed_at:null,
+      delivered_at:null
+    }).select("id,order_number,total_cents").single();
+    if(!res.error){order=res.data;orderError=null;break}
+    orderError=res.error;
+    if(res.error.code!=="23505") break;
+  }
+  if(!order) throw orderError??new Error("order_insert_failed");
+
+  try {
+    const withOrder=orderItems.map(row=>({...row,order_id:order.id}));
+    const {data:inserted,error:itemError}=await db.from("order_items")
+      .insert(withOrder)
+      .select("id,metadata");
+    if(itemError) throw itemError;
+    const byLine=new Map((inserted??[]).map((x:any)=>[x.metadata?.line_key,x.id]));
+
+    const components:any[]=[];
+    for(const plan of componentPlans) {
+      const orderItemId=byLine.get(plan.line_key);
+      if(!orderItemId) continue;
+      for(const row of plan.rows) components.push({...row,order_item_id:orderItemId});
+    }
+    if(components.length) {
+      const {error}=await db.from("order_item_components").insert(components);
+      if(error) throw error;
+    }
+  } catch(error) {
+    await db.from("orders").delete().eq("id",order.id);
+    throw error;
+  }
+
+  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents};
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null,{status:204,headers:cors});
   try {
@@ -266,6 +482,12 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "basket_quote") {
       const payload = await req.json().catch(()=>({}));
       return await basketQuote(payload);
+    }
+    if (req.method === "POST" && action === "submit_order") {
+      const payload = await req.json().catch(()=>({}));
+      const result=await submitOrder(payload);
+      if(result.error) return json({ok:false,error:result.error},result.status,{"Cache-Control":"no-store"});
+      return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
     return json({ok:false,error:"not_found"},404);
   } catch (error) {
