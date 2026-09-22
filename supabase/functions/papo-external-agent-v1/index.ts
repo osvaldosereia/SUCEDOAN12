@@ -9,7 +9,7 @@ import {
   buildLabSilentResponse,
 } from "../_shared/papoai-agent-external-contract-v1.mjs";
 import {classifyCommerceIntent} from "../_shared/papoai-commerce-intent-v1.mjs";
-import {buildGovernorTopicKey,decideConversationAction} from "../_shared/papoai-conversation-governor-v1.mjs";
+import {buildGovernorTopicKey,decideConversationAction,detectCustomerDelegation} from "../_shared/papoai-conversation-governor-v1.mjs";
 
 const PROVIDER_KEY='papoai';
 const CHANNEL='whatsapp';
@@ -623,6 +623,10 @@ Deno.serve(async(req:Request)=>{
           const repeated=result?.result||{};
           text=(repeated?.summary?.message_text||`Montei novamente sua ${repeated?.basket_name||'última cesta'}.`)
             +'\n\nQuer alterar alguma coisa ou podemos seguir para finalizar?';
+        }else if(result?.confirmed&&result?.action_type==='delegated_replacement'){
+          const applied=result?.result||{};
+          text=(applied?.summary?.message_text||'Pronto 😊 Fiz a substituição.')
+            +'\n\nA troca foi aplicada e o total já foi recalculado.';
         }else if(result?.confirmed&&result?.action_type==='product_choice'){
           const selected=result?.result?.selected||null;
           const cart=result?.result?.cart||{};
@@ -690,23 +694,58 @@ Deno.serve(async(req:Request)=>{
         text=`Pronto 😊 Adicionei ${result?.resolved?.name||'o produto'}. O total atual é ${moneyBR(result?.cart?.total)}.`;
       }
     }else if(intent.intent==='replace_basket_item'&&conversationId&&commerceCfg?.write_enabled===true){
-      const q=await sb.rpc('execute_papoai_commerce_command_v1',{
-        p_conversation_id:conversationId,
-        p_command:{
-          type:'propose_replacement',
-          source_query:intent.source_query,
-          replacement_query:intent.replacement_query
+      const delegated=detectCustomerDelegation(normalized.messageText)
+        || !String(intent.replacement_query||'').trim()
+        || /^(outra coisa|algo diferente)$/i.test(String(intent.replacement_query||'').trim());
+
+      if(delegated){
+        const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+          p_conversation_id:conversationId,
+          p_command:{
+            type:'propose_value_replacement',
+            source_query:intent.source_query
+          }
+        });
+        if(q.error)throw q.error;
+        result=q.data;
+
+        if(result?.needs_clarification){
+          const sourceCandidates=Array.isArray(result?.source_candidates)?result.source_candidates:[];
+          text=sourceCandidates.length
+            ? `Quero ter certeza de qual item você quer tirar. Encontrei: ${sourceCandidates.slice(0,3).map((x:any)=>x.name).join(', ')}. Qual deles é?`
+            : 'Qual item da cesta você quer tirar?';
+        }else if(result?.ok){
+          const option=result?.selected_option||result?.options?.[0]||null;
+          const sourceName=result?.source?.name||intent.source_query||'esse item';
+          const diff=Number(option?.difference_value??option?.difference??0);
+          const diffText=Math.abs(diff)<=0.01
+            ? 'o valor fica praticamente igual'
+            : diff>0
+              ? `a diferença fica em **+${moneyBR(diff)}**`
+              : `a diferença fica em **-${moneyBR(Math.abs(diff))}**`;
+          text=`Eu faria assim: tiro **${sourceName}** e coloco **${replacementOptionText(option)}**. ${diffText}. Quer que eu faça?`;
+        }else{
+          text='Não encontrei uma combinação segura e próxima do valor para substituir esse item. Posso tentar outra ideia se você me disser o que prefere manter na cesta.';
         }
-      });
-      if(q.error)throw q.error;
-      result=q.data;
-      if(result?.needs_clarification){
-        const candidates=(Array.isArray(result?.candidates)?result.candidates:[]).slice(0,4);
-        text=candidates.length?`Encontrei estas possibilidades para a troca:\n\n${productsText(candidates)}\n\nQual delas você quer?`:'Não encontrei uma troca segura para esses produtos. Me diga com mais detalhes qual produto você quer colocar no lugar.';
       }else{
-        const from=result?.source?.name||intent.source_query;
-        const to=result?.replacement?.name||intent.replacement_query;
-        text=`Posso trocar **${from}** por **${to}**. Quer que eu faça essa troca?`;
+        const q=await sb.rpc('execute_papoai_commerce_command_v1',{
+          p_conversation_id:conversationId,
+          p_command:{
+            type:'propose_replacement',
+            source_query:intent.source_query,
+            replacement_query:intent.replacement_query
+          }
+        });
+        if(q.error)throw q.error;
+        result=q.data;
+        if(result?.needs_clarification){
+          const candidates=(Array.isArray(result?.candidates)?result.candidates:[]).slice(0,4);
+          text=candidates.length?`Encontrei estas possibilidades para a troca:\n\n${productsText(candidates)}\n\nQual delas você quer?`:'Não encontrei uma troca segura para esses produtos. Me diga com mais detalhes qual produto você quer colocar no lugar.';
+        }else{
+          const from=result?.source?.name||intent.source_query;
+          const to=result?.replacement?.name||intent.replacement_query;
+          text=`Posso trocar **${from}** por **${to}**. Quer que eu faça essa troca?`;
+        }
       }
     }else if(['set_basket_quantity','set_addon_quantity','replace_basket_item'].includes(intent.intent)){
       text='Entendi a alteração. A gravação do pedido ainda está desativada, então não vou mexer no carrinho agora.';
