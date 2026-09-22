@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const PROJECT_HOST="ssbesxgaijknwsjbsbcz.supabase.co";
 const OPENAI_URL="https://api.openai.com/v1/responses";
 const RICH_VERSION="v2";
+const KNOWLEDGE_VERSION="v1";
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=800)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const arr=(v:unknown)=>Array.isArray(v)?v:[];
@@ -42,6 +43,147 @@ const productSchema={
   },
   required:["found","confidence","name","brand","manufacturer","packaging","unit","category","subcategory","description","net_content","gross_weight","dimensions","ncm","ncm_confidence","ncm_evidence_summary","image_url","image_source_page_url","image_confidence","evidence_summary"]
 };
+
+
+const knowledgeSchema={
+  type:"object",additionalProperties:false,
+  properties:{
+    identity_confirmed:{type:"boolean"},
+    confidence:{type:"number",minimum:0,maximum:1},
+    description_short:{type:"string",maxLength:600},
+    aliases:{type:"array",maxItems:12,items:{type:"string",maxLength:100}},
+    use_cases:{type:"array",maxItems:12,items:{type:"string",maxLength:120}},
+    audiences:{type:"array",maxItems:8,items:{type:"string",maxLength:100}},
+    search_terms:{type:"array",maxItems:20,items:{type:"string",maxLength:100}},
+    attributes:{
+      type:"object",additionalProperties:false,
+      properties:{
+        benefits:{type:"array",maxItems:12,items:{type:"string",maxLength:120}},
+        features:{type:"array",maxItems:12,items:{type:"string",maxLength:120}},
+        hair_types:{type:"array",maxItems:10,items:{type:"string",maxLength:80}},
+        skin_types:{type:"array",maxItems:10,items:{type:"string",maxLength:80}},
+        fragrances_flavors:{type:"array",maxItems:10,items:{type:"string",maxLength:80}},
+        usage_contexts:{type:"array",maxItems:10,items:{type:"string",maxLength:100}},
+        dietary_or_label_claims:{type:"array",maxItems:10,items:{type:"string",maxLength:120}},
+        variant:{type:"string",maxLength:120},
+        form:{type:"string",maxLength:80}
+      },
+      required:["benefits","features","hair_types","skin_types","fragrances_flavors","usage_contexts","dietary_or_label_claims","variant","form"]
+    },
+    cautions:{type:"array",maxItems:8,items:{type:"string",maxLength:140}},
+    evidence_summary:{type:"string",maxLength:700}
+  },
+  required:["identity_confirmed","confidence","description_short","aliases","use_cases","audiences","search_terms","attributes","cautions","evidence_summary"]
+};
+
+const KNOWLEDGE_INSTRUCTIONS=[
+  "Você pesquisa um produto de varejo brasileiro para melhorar busca e atendimento comercial da Dona Antônia.",
+  "Confirme primeiro que o GTIN/EAN informado corresponde ao MESMO produto/apresentação. Priorize fabricante, página oficial, ficha técnica, distribuidores confiáveis e grandes varejistas que exibam claramente o mesmo produto.",
+  "Não invente correspondência, benefício, público, uso, indicação ou característica. Se a identidade não estiver suficientemente comprovada, identity_confirmed=false.",
+  "Retorne uma descrição factual curta e termos que ajudem um cliente comum a encontrar o produto por necessidade, uso, benefício ou característica REALMENTE sustentada pelas fontes.",
+  "aliases são nomes alternativos ou formas comuns de procurar o mesmo produto. use_cases descreve usos comerciais objetivos.",
+  "audiences descreve apenas público de uso explicitamente associado ao produto, como bebês ou cabelos cacheados; nunca infira atributos sensíveis de pessoas.",
+  "search_terms deve conter expressões curtas e naturais de busca do consumidor, sem repetir palavras irrelevantes.",
+  "attributes deve separar benefícios, características, tipos de cabelo/pele quando explicitamente suportados, fragrância/sabor, contextos de uso, alegações de rótulo, variante e forma.",
+  "cautions só deve conter restrições ou cuidados claramente publicados. Não crie alegações médicas, terapêuticas ou de segurança.",
+  "Não invente preço, estoque, custo, promoção, NCM, endereço ou disponibilidade da Dona Antônia.",
+  "Escreva em português do Brasil, de forma factual, sem propaganda exagerada e sem URLs no texto."
+].join(" ");
+
+function uniqueList(v:unknown,maxItems:number,maxLen:number){
+  const seen=new Set<string>(),out:string[]=[];
+  for(const raw of arr(v)){
+    const value=clean(raw,maxLen);
+    const key=value.toLowerCase();
+    if(!value||seen.has(key))continue;
+    seen.add(key);out.push(value);
+    if(out.length>=maxItems)break;
+  }
+  return out;
+}
+
+function citationUrls(data:any){
+  const urls:string[]=[];
+  for(const output of arr(data?.output)){
+    for(const content of arr(output?.content)){
+      for(const ann of arr(content?.annotations)){
+        const url=safeHttpUrl(ann?.url);
+        if(url)urls.push(url);
+      }
+    }
+  }
+  return [...new Set(urls)].slice(0,12);
+}
+
+async function researchKnowledge(openaiKey:string,model:string,product:any){
+  const ean=digits(product?.gtin);
+  if(!ean)throw new Error("knowledge_gtin_missing");
+  const known=[
+    product?.name?"Nome atual: "+clean(product.name,300):"",
+    product?.brand?"Marca atual: "+clean(product.brand,160):"",
+    product?.packaging?"Embalagem atual: "+clean(product.packaging,160):""
+  ].filter(Boolean).join("\n");
+
+  const prompt=[
+    "Pesquise profundamente o produto correspondente ao GTIN/EAN "+ean+".",
+    known,
+    "Confirme a identidade e extraia somente conhecimento comercial verificável que ajude um atendente a responder perguntas e encontrar o produto por necessidade."
+  ].filter(Boolean).join("\n");
+
+  const body={
+    model,store:false,max_output_tokens:1200,reasoning:{effort:"low"},
+    instructions:KNOWLEDGE_INSTRUCTIONS,
+    tools:[{type:"web_search"}],tool_choice:"auto",
+    input:[{role:"user",content:[{type:"input_text",text:prompt}]}],
+    text:{format:{type:"json_schema",name:"product_sales_knowledge_v1",strict:true,schema:knowledgeSchema}}
+  };
+
+  const r=await fetch(OPENAI_URL,{
+    method:"POST",
+    headers:{Authorization:"Bearer "+openaiKey,"Content-Type":"application/json"},
+    body:JSON.stringify(body),
+    signal:AbortSignal.timeout(110000)
+  });
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error("openai_http_"+r.status);
+  const output=finalText(data);
+  if(!output)throw new Error("empty_model_output");
+  let parsed:any;
+  try{parsed=JSON.parse(output)}catch{throw new Error("invalid_model_json")}
+
+  const raw=obj(parsed),attrs=obj(raw.attributes);
+  return {
+    result:{
+      identity_confirmed:raw.identity_confirmed===true,
+      confidence:score(raw.confidence),
+      description_short:commercialDescription(raw.description_short)||null,
+      aliases:uniqueList(raw.aliases,12,100),
+      use_cases:uniqueList(raw.use_cases,12,120),
+      audiences:uniqueList(raw.audiences,8,100),
+      search_terms:uniqueList(raw.search_terms,20,100),
+      attributes:{
+        benefits:uniqueList(attrs.benefits,12,120),
+        features:uniqueList(attrs.features,12,120),
+        hair_types:uniqueList(attrs.hair_types,10,80),
+        skin_types:uniqueList(attrs.skin_types,10,80),
+        fragrances_flavors:uniqueList(attrs.fragrances_flavors,10,80),
+        usage_contexts:uniqueList(attrs.usage_contexts,10,100),
+        dietary_or_label_claims:uniqueList(attrs.dietary_or_label_claims,10,120),
+        variant:clean(attrs.variant,120),
+        form:clean(attrs.form,80)
+      },
+      cautions:uniqueList(raw.cautions,8,140),
+      evidence_summary:clean(raw.evidence_summary,700)||null
+    },
+    response_id:clean(data?.id,180),
+    source_urls:citationUrls(data),
+    usage:{
+      input_tokens:Number(data?.usage?.input_tokens||0),
+      output_tokens:Number(data?.usage?.output_tokens||0),
+      total_tokens:Number(data?.usage?.total_tokens||0)
+    }
+  };
+}
 
 const INSTRUCTIONS=`Você pesquisa produtos de varejo brasileiro a partir de EAN/GTIN para cadastro interno da Dona Antônia.
 Use busca na web e confirme primeiro que o EAN/GTIN pertence ao produto. Priorize fabricante, documentos técnicos/fiscais, distribuidores confiáveis e grandes varejistas que mostrem explicitamente o código.
