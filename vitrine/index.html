@@ -565,7 +565,7 @@
       state.cart.push({
         type:'basket',id:d.basket.id,name:basketName(d.basket.name),image_url:d.basket.image_url||'',
         unit_cents:Number(d.total_cents||0),qty:1,changed,
-        components:d.items.filter(x=>Number(x.quantity)>0).map(x=>({name:x.name,quantity:Number(x.quantity)}))
+        components:d.items.filter(x=>Number(x.quantity)>0).map(x=>({product_id:x.product_id,name:x.name,quantity:Number(x.quantity)}))
       });
       saveCart();closeSheet();toast('Cesta adicionada');
     }
@@ -625,18 +625,45 @@
     }
     function pay(value,label){return '<label class="pay"><input type="radio" name="payment" value="'+esc(value)+'"><strong>'+esc(label)+'</strong></label>'}
 
-    function sendWhatsApp(){
+    async function sendWhatsApp(){
       const selected=document.querySelector('input[name="payment"]:checked');
       if(!selected){toast('Escolha a forma de pagamento');return}
-      const lines=['Olá! Quero confirmar este pedido da vitrine Dona Antônia:',''];
+      const btn=$('#sendWhats');
+      if(btn){btn.disabled=true;btn.textContent='Registrando pedido…'}
+      let saved=null;
+      try{
+        saved=await api('submit_order',{},{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            payment_method:selected.value,
+            items:state.cart.map(item=>({
+              type:item.type,
+              id:item.id,
+              qty:Number(item.qty||1),
+              components:item.type==='basket'?(item.components||[]):[]
+            }))
+          })
+        });
+      }catch(e){
+        if(btn){btn.disabled=false;btn.textContent='Enviar pedido para o WhatsApp'}
+        toast('Não consegui registrar. Tente novamente.');
+        return;
+      }
+
+      const lines=['Olá! Quero confirmar este pedido da vitrine Dona Antônia:'];
+      if(saved?.order_number)lines.push('Pedido #'+String(saved.order_number).slice(-8));
+      lines.push('');
       for(const item of state.cart){
         lines.push(formatQty(item.qty)+'x '+item.name);
         if(item.type==='basket'&&item.components?.length){
           for(const c of item.components)lines.push('  • '+formatQty(Number(c.quantity)*Number(item.qty||1))+'x '+c.name);
         }
       }
-      lines.push('','Total: '+money(cartTotal()),'Pagamento: '+selected.value,'','Entrega em Cuiabá/Várzea Grande. Pode confirmar meu pedido?');
+      lines.push('','Total: '+money(saved?.total_cents??cartTotal()),'Pagamento: '+selected.value,'','Entrega em Cuiabá/Várzea Grande. Pode confirmar meu pedido?');
       const url='https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(lines.join('\n'));
+      state.cart=[];
+      saveCart();
       window.location.href=url;
     }
 
