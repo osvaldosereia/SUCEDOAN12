@@ -72,6 +72,15 @@ function valueReplacementOptionsText(options:any[]){
   }).join('\n');
 }
 
+function replacementOptionText(option:any){
+  const items=Array.isArray(option?.items)?option.items:[];
+  const text=items.map((item:any)=>{
+    const qty=Math.max(1,Number(item?.quantity_increment||1));
+    return `${qty>1?qty+'× ':''}${String(item?.name||'Produto').trim()||'Produto'}`;
+  }).join(' + ');
+  return text||'uma opção equivalente';
+}
+
 async function maybeProactiveOffer(sb:any,conversationId:string){
   const q=await sb.rpc('propose_papoai_commerce_proactive_offer_choice_v1',{
     p_conversation_id:conversationId
