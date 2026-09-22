@@ -106,3 +106,6 @@ assert.ok(edge.includes("get_papoai_commerce_human_precedence_v1"));
 assert.ok(edge.includes("queue_papoai_commerce_handoff_v1"));
 assert.ok(edge.includes("papoai_human_required"));
 assert.ok(edge.includes("canonicalHumanActive"));
+assert.ok(edge.includes("activate_papoai_commerce_ai_mode_v1"));
+assert.ok(edge.includes("normalized.sessionHumanRequired!==true"));
+assert.ok(edge.includes("normalized.sessionHumanRequired===true"));
