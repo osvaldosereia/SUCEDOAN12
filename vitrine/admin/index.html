@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Dona Antônia · Admin da Vitrine</title>
+  <link rel="preload" href="/img/logoantonia5.png" as="image">
+  <link rel="preconnect" href="https://qxstkwshuvplmmftrctj.supabase.co" crossorigin>
+  <style>
+    :root{--ink:#18221c;--muted:#66716a;--line:#e5e9e6;--soft:#f5f7f5;--brand:#176b43;--brand2:#0f5836;--danger:#9d2235;--warn:#96650b;--radius:14px}
+    *{box-sizing:border-box}
+    html{background:#f7f8f7}
+    body{margin:0;color:var(--ink);font:14px/1.35 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f8f7;-webkit-font-smoothing:antialiased}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    img{display:block;max-width:100%}
+    .wrap{width:min(100%,1180px);margin:auto;padding-inline:14px}
+    .top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
+    .top-row{height:64px;display:flex;align-items:center;gap:10px}
+    .logo{width:88px;height:40px;object-fit:contain}
+    .brand{min-width:0;flex:1}.brand strong{font-size:18px;display:block}.brand small{color:var(--muted)}
+    .store-link{min-height:42px;display:inline-flex;align-items:center;text-decoration:none;color:var(--brand);font-weight:800;padding:0 10px}
+    .tabs{display:flex;gap:7px;overflow:auto;padding:0 14px 10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+    .tab{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 16px;font-weight:850;color:var(--ink);white-space:nowrap}
+    .tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
+    main{padding-block:16px 80px}
+    .page-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .page-head h1{font-size:24px;margin:0;letter-spacing:-.03em}.page-head p{margin:3px 0 0;color:var(--muted)}
+    .toolbar{display:flex;gap:8px;margin-bottom:12px}.toolbar input{min-width:0;flex:1}
+    .field,input,select,textarea{width:100%}
+    input,select,textarea{border:1px solid #dce2de;background:#fff;color:var(--ink);border-radius:11px;min-height:44px;padding:10px 11px;outline:none}
+    textarea{min-height:86px;resize:vertical}
+    input:focus,select:focus,textarea:focus{border-color:#86a996;box-shadow:0 0 0 3px #eaf3ed}
+    button.primary,.primary{border:0;background:var(--brand);color:#fff;border-radius:11px;min-height:44px;padding:0 15px;font-weight:900}
+    button.primary:hover{background:var(--brand2)}
+    button.secondary{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:11px;min-height:44px;padding:0 14px;font-weight:850}
+    button.text{border:0;background:transparent;color:var(--brand);min-height:40px;padding:0 8px;font-weight:850}
+    button.danger{color:var(--danger)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+    .list-head,.list-row{display:grid;align-items:center;gap:10px;padding:10px 12px}
+    .list-head{background:var(--soft);color:var(--muted);font-size:12px;font-weight:800;border-bottom:1px solid var(--line)}
+    .list-row{border-bottom:1px solid #eef1ef}.list-row:last-child{border-bottom:0}.list-row:hover{background:#fbfcfb}
+    .products-layout{grid-template-columns:54px minmax(220px,1.7fr) minmax(110px,.6fr) minmax(100px,.5fr) minmax(95px,.45fr) 82px}
+    .customers-layout{grid-template-columns:minmax(180px,1.3fr) minmax(130px,.8fr) minmax(110px,.7fr) minmax(150px,1fr) 82px}
+    .orders-layout{grid-template-columns:95px 130px minmax(170px,1.2fr) 120px 150px 115px 82px}
+    .thumb{width:48px;height:48px;border-radius:9px;border:1px solid var(--line);object-fit:contain;background:#fff}
+    .row-title{font-weight:850}.sub{display:block;color:var(--muted);font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .money{font-weight:900;font-size:15px}.muted{color:var(--muted)}
+    .pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;background:#edf5f0;color:#135938;font-size:11px;font-weight:900}
+    .pill.off{background:#f1f1f1;color:#6f6f6f}.pill.warn{background:#fff5dd;color:#7c5407}.pill.danger{background:#fff0f2;color:#912035}
+    .empty{padding:32px 18px;text-align:center;color:var(--muted)}
+    .loading{padding:24px;text-align:center;color:var(--muted)}
+    .more{padding:12px;text-align:center}
+    dialog{width:min(96vw,760px);max-height:92vh;border:0;padding:0;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.22);color:var(--ink)}
+    dialog::backdrop{background:rgba(15,23,18,.48)}
+    .modal-head{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:12px 14px}
+    .modal-head strong{font-size:18px;flex:1}.close{width:44px;height:44px;border:0;border-radius:50%;background:var(--soft);font-size:20px}
+    .modal-body{padding:14px;overflow:auto}.modal-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;padding:12px 14px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.span-2{grid-column:1/-1}
+    label>span{display:block;font-size:12px;font-weight:800;color:#465149;margin-bottom:5px}
+    .check{display:flex;align-items:center;gap:8px;min-height:44px}.check input{width:20px;height:20px;min-height:0}
+    .section-title{font-size:15px;font-weight:900;margin:18px 0 8px;padding-top:12px;border-top:1px solid var(--line)}
+    .order-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.summary-box{background:var(--soft);border-radius:12px;padding:10px}.summary-box small{display:block;color:var(--muted)}.summary-box strong{font-size:16px}
+    .order-items{display:grid;gap:8px}.order-item{border:1px solid var(--line);border-radius:12px;padding:10px}.order-item-head{display:flex;justify-content:space-between;gap:10px}.composition{color:var(--muted);font-size:12px;margin-top:6px;padding-left:10px;border-left:2px solid var(--line)}
+    .print-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.print-actions button{min-height:52px}
+    .access-box{width:min(92vw,440px);margin:80px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px}.access-box h1{font-size:20px;margin:0 0 5px}.access-box p{color:var(--muted)}.access-box form{display:flex;gap:8px}.access-box input{flex:1}
+    .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:780px){
+      .wrap{padding-inline:10px}.top-row{height:58px}.logo{width:72px;height:34px}.store-link{font-size:12px}
+      .page-head h1{font-size:21px}.toolbar{flex-wrap:wrap}.toolbar input{flex-basis:100%}
+      .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
+      .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
+      .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
+      .order-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div id="app" hidden>
+    <header class="top">
+      <div class="top-row wrap">
+        <img class="logo" src="/img/logoantonia5.png" width="88" height="40" alt="Dona Antônia" fetchpriority="high">
+        <div class="brand"><strong>Admin da Vitrine</strong><small>Rápido e direto</small></div>
+        <a class="store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
+      </div>
+      <nav class="tabs wrap" aria-label="Admin">
+        <button class="tab" data-tab="orders" type="button">Pedidos</button>
+        <button class="tab" data-tab="products" type="button">Produtos</button>
+        <button class="tab" data-tab="customers" type="button">Clientes</button>
+      </nav>
+    </header>
+    <main class="wrap" id="content"></main>
+  </div>
+
+  <div id="access" hidden></div>
+  <div class="toast" id="toast"></div>
+
+  <dialog id="editor">
+    <div class="modal-head"><strong id="editorTitle">Editar</strong><button class="close" id="closeEditor" type="button" aria-label="Fechar">×</button></div>
+    <div class="modal-body" id="editorBody"></div>
+    <div class="modal-actions" id="editorActions"></div>
+  </dialog>
+
+<script>
+(()=>{
+  const API='https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/vitrine-admin-v1';
+  const KEY_STORAGE='da_vitrine_admin_key_v1';
+  const $=s=>document.querySelector(s);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
+  const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
+  const state={tab:'orders',key:'',products:[],productOffset:0,productNext:null,customers:[],orders:[],currentOrder:null};
+
+  function bootstrapKey(){
+    const u=new URL(location.href);
+    const fromUrl=u.searchParams.get('k');
+    if(fromUrl){
+      localStorage.setItem(KEY_STORAGE,fromUrl);
+      u.searchParams.delete('k');
+      history.replaceState(null,'',u.pathname+u.search+u.hash);
+    }
+    state.key=localStorage.getItem(KEY_STORAGE)||'';
+  }
+  function toast(msg){
+    const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
+  }
+  async function api(action,params={},options={}){
+    const u=new URL(API);u.searchParams.set('action',action);
+    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    const response=await fetch(u,{...options,headers:{'x-admin-key':state.key,...(options.headers||{})},cache:'no-store'});
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401){localStorage.removeItem(KEY_STORAGE);state.key='';showAccess();throw new Error('unauthorized')}
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
+  function showAccess(message=''){
+    $('#app').hidden=true;const host=$('#access');host.hidden=false;
+    host.innerHTML='<div class="access-box"><h1>Acesso privado</h1><p>'+esc(message||'Abra pelo link privado do Admin. Se precisar, cole aqui a chave de acesso uma única vez.')+'</p><form id="keyForm"><input id="keyInput" autocomplete="off" placeholder="Chave privada"><button class="primary">Entrar</button></form></div>';
+    $('#keyForm').onsubmit=e=>{e.preventDefault();const key=$('#keyInput').value.trim();if(!key)return;localStorage.setItem(KEY_STORAGE,key);state.key=key;start()};
+  }
+  function showApp(){
+    $('#access').hidden=true;$('#app').hidden=false;
+  }
+  function setTab(tab){
+    state.tab=tab;
+    document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    if(tab==='products')renderProducts();
+    if(tab==='customers')renderCustomers();
+    if(tab==='orders')renderOrders();
+  }
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
+  function statusPill(status){
+    const map={created:'Novo',confirmed:'Confirmado',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado'};
+    const cls=status==='cancelled'?'danger':status==='created'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
+  }
+
+  async function renderProducts(q=''){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Produtos</h1><p>Editar e cadastrar produtos da vitrine.</p></div><button class="primary" id="newProduct">+ Produto</button></div>'+
+      '<div class="toolbar"><input id="productSearch" type="search" placeholder="Buscar nome, EAN, código…"><button class="secondary" id="productSearchBtn">Buscar</button></div>'+
+      '<div class="panel"><div class="list-head products-layout"><span></span><span>Produto</span><span>Preço</span><span>Estoque</span><span>Status</span><span></span></div><div id="productRows"><div class="loading">Carregando…</div></div><div class="more" id="productMore"></div></div>';
+    $('#newProduct').onclick=()=>openProductEditor();
+    $('#productSearch').value=q;
+    $('#productSearchBtn').onclick=()=>loadProducts($('#productSearch').value.trim(),false);
+    $('#productSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadProducts(e.currentTarget.value.trim(),false)}};
+    await loadProducts(q,false);
+  }
+  async function loadProducts(q='',append=false){
+    const host=$('#productRows');if(!append)host.innerHTML='<div class="loading">Carregando…</div>';
+    try{
+      const offset=append?state.productNext||0:0;
+      const data=await api('products',{q,offset,limit:60});
+      state.products=append?[...state.products,...data.products]:data.products;
+      state.productNext=data.next_offset;
+      host.innerHTML=state.products.length?state.products.map(productRow).join(''):'<div class="empty">Nenhum produto encontrado.</div>';
+      host.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>p.id===b.dataset.editProduct)));
+      const more=$('#productMore');more.innerHTML=state.productNext!=null?'<button class="secondary" id="moreProducts">Mostrar mais</button>':'';
+      if($('#moreProducts'))$('#moreProducts').onclick=()=>loadProducts(q,true);
+    }catch(e){host.innerHTML='<div class="empty">Erro ao carregar produtos. <button class="text" id="retryProducts">Tentar novamente</button></div>';if($('#retryProducts'))$('#retryProducts').onclick=()=>loadProducts(q,false)}
+  }
+  function productRow(p){
+    return '<div class="list-row products-layout">'+
+      '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
+      '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc([p.sku,p.gtin,p.packaging].filter(Boolean).join(' · '))+'</span></div>'+
+      '<span class="money mobile-wide">'+money(p.sale_price_cents)+'</span>'+
+      '<span class="desktop-extra">'+esc(fmtQty(p.stock_quantity||0))+'</span>'+
+      '<span class="desktop-extra">'+(p.active?'<span class="pill">Ativo</span>':'<span class="pill off">Inativo</span>')+'</span>'+
+      '<button class="text" data-edit-product="'+esc(p.id)+'">Editar</button></div>';
+  }
+  function openProductEditor(p=null){
+    $('#editorTitle').textContent=p?'Editar produto':'Novo produto';
+    $('#editorBody').innerHTML='<form id="productForm" class="form-grid">'+
+      '<label class="span-2"><span>Nome *</span><input name="name" required value="'+esc(p?.name||'')+'"></label>'+
+      '<label><span>Código / SKU</span><input name="sku" value="'+esc(p?.sku||'')+'"></label>'+
+      '<label><span>EAN / GTIN</span><input name="gtin" inputmode="numeric" value="'+esc(p?.gtin||'')+'"></label>'+
+      '<label><span>Preço de venda</span><input name="price" inputmode="decimal" value="'+esc(((Number(p?.sale_price_cents||0)/100).toFixed(2)).replace('.',','))+'"></label>'+
+      '<label><span>Estoque</span><input name="stock" inputmode="decimal" value="'+esc(fmtQty(p?.stock_quantity||0))+'"></label>'+
+      '<label><span>Categoria da vitrine</span><select name="category">'+categoryOptions(p?.category||'')+'</select></label>'+
+      '<label><span>Subcategoria</span><input name="subcategory" value="'+esc(p?.subcategory||'')+'"></label>'+
+      '<label><span>Embalagem</span><input name="packaging" value="'+esc(p?.packaging||'')+'"></label>'+
+      '<label class="span-2"><span>URL da imagem</span><input name="image_url" value="'+esc(p?.image_url||'')+'"></label>'+
+      '<label class="span-2"><span>Descrição</span><textarea name="description">'+esc(p?.description||'')+'</textarea></label>'+
+      '<label class="check span-2"><input name="active" type="checkbox" '+(p?.active!==false?'checked':'')+'><strong>Produto ativo na vitrine</strong></label>'+
+      '</form>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button><button class="primary" id="saveProduct">Salvar produto</button>';
+    $('#cancelEditor').onclick=()=>$('#editor').close();
+    $('#saveProduct').onclick=()=>saveProduct(p?.id||'');
+    $('#editor').showModal();
+  }
+  function categoryOptions(current){
+    const cats=[['','Sem categoria'],['mercearia','Mercearia'],['limpeza_lavanderia','Limpeza e lavanderia'],['higiene_beleza','Higiene e beleza'],['casa_pet','Casa e pet']];
+    return cats.map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+  }
+  function centsFromInput(v){
+    const clean=String(v||'0').replace(/\./g,'').replace(',','.');
+    const n=Number(clean);return Number.isFinite(n)?Math.max(0,Math.round(n*100)):0;
+  }
+  async function saveProduct(id){
+    const form=new FormData($('#productForm')),btn=$('#saveProduct');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      await api('product_save',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,name:form.get('name'),sku:form.get('sku'),gtin:form.get('gtin'),sale_price_cents:centsFromInput(form.get('price')),stock_quantity:Number(String(form.get('stock')||0).replace(',','.'))||0,category:form.get('category'),subcategory:form.get('subcategory'),packaging:form.get('packaging'),image_url:form.get('image_url'),description:form.get('description'),active:form.get('active')==='on'})
+      });
+      $('#editor').close();toast('Produto salvo');renderProducts($('#productSearch')?.value.trim()||'');
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar produto'}
+  }
+
+  async function renderCustomers(q=''){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Clientes</h1><p>Cadastro simples para entrega e pedidos.</p></div><button class="primary" id="newCustomer">+ Cliente</button></div>'+
+      '<div class="toolbar"><input id="customerSearch" type="search" placeholder="Buscar nome, telefone, CPF…"><button class="secondary" id="customerSearchBtn">Buscar</button></div>'+
+      '<div class="panel"><div class="list-head customers-layout"><span>Cliente</span><span>Telefone</span><span>CPF</span><span>Endereço</span><span></span></div><div id="customerRows"><div class="loading">Carregando…</div></div></div>';
+    $('#newCustomer').onclick=()=>openCustomerEditor();
+    $('#customerSearch').value=q;
+    $('#customerSearchBtn').onclick=()=>loadCustomers($('#customerSearch').value.trim());
+    $('#customerSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadCustomers(e.currentTarget.value.trim())}};
+    await loadCustomers(q);
+  }
+  async function loadCustomers(q=''){
+    const host=$('#customerRows');host.innerHTML='<div class="loading">Carregando…</div>';
+    try{
+      const data=await api('customers',{q,limit:120});state.customers=data.customers||[];
+      host.innerHTML=state.customers.length?state.customers.map(customerRow).join(''):'<div class="empty">Nenhum cliente cadastrado.</div>';
+      host.querySelectorAll('[data-edit-customer]').forEach(b=>b.onclick=()=>openCustomerEditor(state.customers.find(c=>c.id===b.dataset.editCustomer)));
+    }catch(e){host.innerHTML='<div class="empty">Erro ao carregar clientes.</div>'}
+  }
+  function customerRow(c){
+    const a=c.address||{};const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ');
+    return '<div class="list-row customers-layout">'+
+      '<div><span class="row-title">'+esc(c.display_name||'Sem nome')+'</span><span class="sub">'+esc(c.email||'')+'</span></div>'+
+      '<span class="mobile-wide">'+esc(formatPhone(c.phone))+'</span>'+
+      '<span class="desktop-extra">'+esc(formatCpf(c.cpf))+'</span>'+
+      '<span class="desktop-extra">'+esc(address||'—')+'</span>'+
+      '<button class="text" data-edit-customer="'+esc(c.id)+'">Editar</button></div>';
+  }
+  function openCustomerEditor(c=null){
+    const a=c?.address||{};
+    $('#editorTitle').textContent=c?'Editar cliente':'Novo cliente';
+    $('#editorBody').innerHTML='<form id="customerForm" class="form-grid">'+
+      '<label class="span-2"><span>Nome *</span><input name="display_name" required value="'+esc(c?.display_name||'')+'"></label>'+
+      '<label><span>WhatsApp / telefone</span><input name="phone" inputmode="tel" value="'+esc(formatPhone(c?.phone||''))+'"></label>'+
+      '<label><span>CPF</span><input name="cpf" inputmode="numeric" value="'+esc(formatCpf(c?.cpf||''))+'"></label>'+
+      '<label><span>E-mail</span><input name="email" type="email" value="'+esc(c?.email||'')+'"></label>'+
+      '<label><span>Nascimento</span><input name="birth_date" type="date" value="'+esc(c?.birth_date||'')+'"></label>'+
+      '<label><span>Status</span><select name="status">'+customerStatusOptions(c?.status||'active')+'</select></label>'+
+      '<label class="span-2"><span>Observações</span><textarea name="notes">'+esc(c?.metadata?.notes||'')+'</textarea></label>'+
+      '<div class="section-title span-2">Endereço de entrega</div>'+
+      '<label><span>CEP</span><input name="postal_code" inputmode="numeric" value="'+esc(a.postal_code||'')+'"></label>'+
+      '<label><span>Cidade</span><input name="city" value="'+esc(a.city||'Cuiabá')+'"></label>'+
+      '<label class="span-2"><span>Rua / avenida</span><input name="street" value="'+esc(a.street||'')+'"></label>'+
+      '<label><span>Número</span><input name="number" value="'+esc(a.number||'')+'"></label>'+
+      '<label><span>Bairro</span><input name="district" value="'+esc(a.district||'')+'"></label>'+
+      '<label><span>Complemento</span><input name="complement" value="'+esc(a.complement||'')+'"></label>'+
+      '<label><span>UF</span><input name="state" maxlength="2" value="'+esc(a.state||'MT')+'"></label>'+
+      '<label class="span-2"><span>Endereço livre / referência</span><input name="raw_text" value="'+esc(a.raw_text||'')+'"></label>'+
+      '</form>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button><button class="primary" id="saveCustomer">Salvar cliente</button>';
+    $('#cancelEditor').onclick=()=>$('#editor').close();
+    $('#saveCustomer').onclick=()=>saveCustomer(c?.id||'');
+    $('#editor').showModal();
+  }
+  function customerStatusOptions(current){
+    return [['active','Ativo'],['lead','Lead'],['inactive','Inativo'],['blocked','Bloqueado']].map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+  }
+  async function saveCustomer(id){
+    const f=new FormData($('#customerForm')),btn=$('#saveCustomer');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      await api('customer_save',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,display_name:f.get('display_name'),phone:f.get('phone'),cpf:f.get('cpf'),email:f.get('email'),birth_date:f.get('birth_date'),status:f.get('status'),notes:f.get('notes'),address:{postal_code:f.get('postal_code'),street:f.get('street'),number:f.get('number'),district:f.get('district'),complement:f.get('complement'),city:f.get('city'),state:f.get('state'),raw_text:f.get('raw_text')}})
+      });
+      $('#editor').close();toast('Cliente salvo');renderCustomers($('#customerSearch')?.value.trim()||'');
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar cliente'}
+  }
+
+  async function renderOrders(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Conferir, vincular cliente e imprimir.</p></div><button class="secondary" id="refreshOrders">Atualizar</button></div>'+
+      '<div class="panel"><div class="list-head orders-layout"><span>Pedido</span><span>Data</span><span>Cliente</span><span>Total</span><span>Pagamento</span><span>Status</span><span></span></div><div id="orderRows"><div class="loading">Carregando…</div></div></div>';
+    $('#refreshOrders').onclick=loadOrders;
+    await loadOrders();
+  }
+  async function loadOrders(){
+    const host=$('#orderRows');host.innerHTML='<div class="loading">Carregando…</div>';
+    try{
+      const data=await api('orders');state.orders=data.orders||[];
+      host.innerHTML=state.orders.length?state.orders.map(orderRow).join(''):'<div class="empty">Ainda não há pedidos da nova vitrine.</div>';
+      host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));
+    }catch(e){host.innerHTML='<div class="empty">Erro ao carregar pedidos. <button class="text" id="retryOrders">Tentar novamente</button></div>';if($('#retryOrders'))$('#retryOrders').onclick=loadOrders}
+  }
+  function orderRow(o){
+    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
+    return '<div class="list-row orders-layout">'+
+      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span></div>'+
+      '<span class="desktop-extra">'+esc(dateTime(o.created_at))+'</span>'+
+      '<div class="mobile-wide"><span class="row-title">'+esc(o.customer_name||'Sem cliente')+'</span><span class="sub">'+esc(payment)+'</span></div>'+
+      '<span class="money">'+money(o.total_cents)+'</span>'+
+      '<span class="desktop-extra">'+esc(payment)+'</span>'+
+      '<span class="desktop-extra">'+statusPill(o.status)+'</span>'+
+      '<button class="text" data-open-order="'+esc(o.id)+'">Abrir</button></div>';
+  }
+  async function openOrder(id){
+    $('#editorTitle').textContent='Pedido';
+    $('#editorBody').innerHTML='<div class="loading">Carregando pedido…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button>';
+    $('#cancelEditor').onclick=()=>$('#editor').close();
+    $('#editor').showModal();
+    try{
+      const data=await api('order',{id});state.currentOrder=data;
+      if(!state.customers.length){try{const c=await api('customers',{limit:120});state.customers=c.customers||[]}catch{}}
+      paintOrderDetail();
+    }catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
+  }
+  function paintOrderDetail(){
+    const d=state.currentOrder,o=d.order,c=d.customer||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'';
+    $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
+    $('#editorBody').innerHTML=
+      '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
+      '<div class="form-grid">'+
+        '<label><span>Status</span><select id="orderStatus">'+orderStatusOptions(o.status)+'</select></label>'+
+        '<label><span>Forma de pagamento</span><select id="orderPayment">'+paymentOptions(payment)+'</select></label>'+
+        '<label class="span-2"><span>Cliente</span><select id="orderCustomer"><option value="">Sem cliente vinculado</option>'+customerOptions(o.customer_id)+'</select></label>'+
+      '</div>'+
+      '<div class="section-title">Itens do pedido</div>'+
+      '<div class="order-items">'+(d.items||[]).map(orderItemHtml).join('')+'</div>'+
+      '<div class="section-title">Cliente / entrega</div>'+
+      '<div>'+customerSummary(c,o.delivery_address_snapshot)+'</div>'+
+      '<div class="print-actions"><button class="primary" id="printSeparation">Imprimir separação 80 mm</button><button class="secondary" id="printDelivery">Imprimir via do entregador</button></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar pedido</button>';
+    $('#cancelEditor').onclick=()=>$('#editor').close();
+    $('#saveOrder').onclick=saveOrder;
+    $('#printSeparation').onclick=()=>printSeparation(d);
+    $('#printDelivery').onclick=()=>printDelivery(d);
+  }
+  function orderItemHtml(i){
+    const comp=i.components?.length?'<div class="composition">'+i.components.map(c=>fmtQty(Number(c.quantity)*Number(i.quantity))+'× '+esc(c.name_snapshot)).join('<br>')+'</div>':'';
+    return '<div class="order-item"><div class="order-item-head"><strong>'+fmtQty(i.quantity)+'× '+esc(i.name_snapshot)+'</strong><b>'+money(i.total_cents)+'</b></div>'+comp+'</div>';
+  }
+  function customerOptions(current){
+    return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+'</option>').join('');
+  }
+  function orderStatusOptions(current){
+    return [['created','Novo'],['confirmed','Confirmado'],['processing','Separando'],['ready','Pronto'],['out_for_delivery','Em entrega'],['delivered','Entregue'],['cancelled','Cancelado']].map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+  }
+  function paymentOptions(current){
+    return ['PIX','Dinheiro','Cartão de crédito','Cartão alimentação/refeição'].map(v=>'<option value="'+esc(v)+'" '+(v===current?'selected':'')+'>'+esc(v)+'</option>').join('');
+  }
+  async function saveOrder(){
+    const btn=$('#saveOrder');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      const id=state.currentOrder.order.id;
+      await api('order_update',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,status:$('#orderStatus').value,payment_method:$('#orderPayment').value,customer_id:$('#orderCustomer').value})
+      });
+      const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail();toast('Pedido salvo');loadOrders();
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar pedido'}
+  }
+
+  function customerSummary(c,snapshot){
+    const a=c?.address||snapshot||{};
+    if(!c?.id&&!snapshot)return '<span class="muted">Cliente ainda não vinculado. Cadastre em Clientes e selecione acima.</span>';
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
+    return '<strong>'+esc(c.display_name||a.recipient_name||'Cliente')+'</strong><br>'+
+      (c.phone?'Telefone: '+esc(formatPhone(c.phone))+'<br>':'')+
+      (c.cpf?'CPF: '+esc(formatCpf(c.cpf))+'<br>':'')+
+      (c.email?'E-mail: '+esc(c.email)+'<br>':'')+
+      'Endereço: '+esc(address);
+  }
+
+  function separationItems(detail){
+    const map=new Map();
+    const add=(key,name,qty,image)=>{
+      const k=key||name;const old=map.get(k);
+      if(old)old.quantity+=Number(qty||0);
+      else map.set(k,{name,quantity:Number(qty||0),image_url:image||'/img/logoantonia5.png'});
+    };
+    for(const item of detail.items||[]){
+      if(item.item_kind==='basket'&&item.components?.length){
+        for(const c of item.components)add(c.product_id||c.name_snapshot,c.name_snapshot,Number(c.quantity)*Number(item.quantity),c.image_url);
+      }else add(item.product_id||item.name_snapshot,item.name_snapshot,item.quantity,item.image_url);
+    }
+    return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  }
+  function printSeparation(detail){
+    const items=separationItems(detail),o=detail.order;
+    const cards=items.map(i=>'<div class="sep-card"><img src="'+esc(i.image_url||'/img/logoantonia5.png')+'" alt=""><div class="sep-name">'+esc(i.name)+'</div><div class="sep-qty">'+esc(fmtQty(i.quantity))+'×</div></div>').join('');
+    const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div><div class="sep-grid">'+cards+'</div><div class="foot">'+items.length+' produtos diferentes</div>';
+    openPrint('Separação #'+shortOrder(o.order_number),body,'separation');
+  }
+  function printDelivery(detail){
+    const o=detail.order,c=detail.customer||{},a=c.address||o.delivery_address_snapshot||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
+    const products=separationItems(detail).map(i=>'<div class="delivery-item"><b>'+esc(fmtQty(i.quantity))+'×</b><span>'+esc(i.name)+'</span></div>').join('');
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'NÃO INFORMADO';
+    const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>ENTREGA · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+
+      '<div class="block"><b>CLIENTE</b><div>'+esc(c.display_name||a.recipient_name||'NÃO VINCULADO')+'</div>'+(c.phone?'<div>Tel: '+esc(formatPhone(c.phone))+'</div>':'')+(c.cpf?'<div>CPF: '+esc(formatCpf(c.cpf))+'</div>':'')+'</div>'+
+      '<div class="block"><b>ENDEREÇO</b><div>'+esc(address)+'</div>'+(a.postal_code?'<div>CEP: '+esc(a.postal_code)+'</div>':'')+'</div>'+
+      '<div class="block"><b>PAGAMENTO</b><div>'+esc(payment)+'</div><div class="big-total">TOTAL: '+money(o.total_cents)+'</div></div>'+
+      '<div class="block"><b>PRODUTOS</b>'+products+'</div>'+
+      '<div class="block lines"><div>Observações:</div><br><br><div>Recebido por: __________________</div></div>';
+    openPrint('Entrega #'+shortOrder(o.order_number),body,'delivery');
+  }
+  function openPrint(title,body,mode){
+    const w=window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return}
+    const css='@page{size:80mm auto;margin:2mm}*{box-sizing:border-box}html,body{margin:0;padding:0;width:76mm;background:#fff;color:#000;font-family:Arial,sans-serif}body{font-size:10px}.ticket-head{text-align:center;border-bottom:1px dashed #000;padding:1mm 0 2mm;margin-bottom:2mm}.ticket-head strong{display:block;font-size:15px}.ticket-head span{display:block;font-weight:700;font-size:11px;margin-top:1mm}.ticket-head small{display:block;margin-top:.6mm}.sep-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.8mm}.sep-card{border:1px solid #000;padding:1mm;min-height:48mm;display:flex;flex-direction:column;align-items:center;text-align:center;break-inside:avoid}.sep-card img{width:32mm;height:26mm;object-fit:contain;filter:grayscale(1);margin:auto}.sep-name{font-weight:700;font-size:9px;line-height:1.15;min-height:10mm}.sep-qty{font-weight:900;font-size:20px;line-height:1}.foot{text-align:center;border-top:1px dashed #000;margin-top:2mm;padding-top:1.5mm}.block{border-bottom:1px dashed #000;padding:2mm 0}.block>b{display:block;font-size:10px;margin-bottom:1mm}.big-total{font-size:15px;font-weight:900;margin-top:1mm}.delivery-item{display:grid;grid-template-columns:9mm 1fr;gap:1mm;padding:1mm 0;border-bottom:1px dotted #777}.delivery-item b{font-size:11px}.lines{min-height:28mm}@media print{button{display:none!important}}';
+    w.document.open();
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body class="'+esc(mode)+'">'+body+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),350));<\/script></body></html>');
+    w.document.close();
+  }
+
+  function shortOrder(n){const s=String(n||'');return s.length>8?s.slice(-8):s}
+  function formatPhone(v){
+    const d=String(v||'').replace(/\D/g,'');
+    const local=d.startsWith('55')?d.slice(2):d;
+    if(local.length===11)return '('+local.slice(0,2)+') '+local.slice(2,7)+'-'+local.slice(7);
+    if(local.length===10)return '('+local.slice(0,2)+') '+local.slice(2,6)+'-'+local.slice(6);
+    return v||'';
+  }
+  function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
+  function errorMessage(code){
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.'};
+    return map[code]||'Não consegui salvar agora.';
+  }
+
+  $('#closeEditor').onclick=()=>$('#editor').close();
+  $('#editor').addEventListener('click',e=>{if(e.target===$('#editor'))$('#editor').close()});
+
+  async function start(){
+    bootstrapKey();
+    if(!state.key){showAccess();return}
+    try{
+      await api('health');
+      showApp();
+      setTab('orders');
+    }catch(e){
+      if(state.key)showAccess('A chave privada não foi aceita.');
+    }
+  }
+  start();
+})();
+</script>
+</body>
+</html>
