@@ -138,7 +138,10 @@ async function products(url: URL) {
     .range(offset, offset + limit - 1);
 
   if (category) query = query.contains("metadata", { sales_category: category });
-  if (q) query = query.ilike("name", `%${q.replace(/[%_]/g,"")}%`);
+  if (q) {
+    const terms = q.replace(/[%_]/g," ").split(/\s+/).map(x=>x.trim()).filter(Boolean).slice(0,4);
+    for (const term of terms) query = query.ilike("search_text", `%${term}%`);
+  }
 
   const { data, error } = await query;
   if (error) throw error;
