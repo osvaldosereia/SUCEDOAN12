@@ -259,14 +259,21 @@
     function renderHome(){
       state.view='home';state.category=null;state.query='';renderNav();
       const baskets=state.home?.baskets||[];
+      const offers=state.home?.offers||[];
       const categories=state.home?.categories||[];
+      const featuredOffers=offers.slice(0,8);
       content.innerHTML=
         section('Cestas básicas','As 9 cestas Dona Antônia. Toque para conferir e ajustar.',
           '<div class="grid" id="basketGrid">'+baskets.map(basketCard).join('')+'</div>')+
+        section('Ofertas','Preços promocionais ativos agora.',
+          '<div class="grid" id="homeOfferGrid">'+(featuredOffers.length?featuredOffers.map(p=>productCard(p,true)).join(''):'<div class="empty">Nenhuma oferta ativa agora.</div>')+'</div>'+
+          (offers.length>featuredOffers.length?'<button class="text-btn" type="button" id="allOffers">Ver todas as ofertas</button>':''))+
         section('Categorias','Para achar rápido o que você precisa.',
           '<div class="category-list">'+categories.map(c=>'<button class="category" type="button" data-category="'+esc(c.key)+'">'+esc(c.label)+'<span>›</span></button>').join('')+'</div>');
       content.querySelectorAll('[data-basket]').forEach(btn=>btn.onclick=()=>openBasket(btn.dataset.basket));
-      content.querySelectorAll('[data-category]').forEach(btn=>renderCategory.bind(null,btn.dataset.category,btn.textContent.replace('›','').trim()) && (btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim())));
+      attachProductButtons(content,featuredOffers);
+      if($('#allOffers'))$('#allOffers').onclick=renderOffers;
+      content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
@@ -311,8 +318,8 @@
           const grid=$('#productGrid');
           const temp=document.createElement('div');
           temp.innerHTML=data.products.map(p=>productCard(p)).join('');
+          attachProductButtons(temp,data.products);
           [...temp.children].forEach(n=>grid.appendChild(n));
-          attachProductButtons(grid,data.products);
           if(state.nextOffset==null)host.innerHTML='';
           else{btn.disabled=false;btn.textContent='Mostrar mais'}
         }catch{btn.disabled=false;btn.textContent='Tentar novamente'}
