@@ -701,9 +701,16 @@ Deno.serve(async(req:Request)=>{
           +'\n\nComo você prefere pagar? Pode ser **Pix, dinheiro, cartão de crédito ou cartão alimentação/refeição**.';
       }else{
         const missing=Array.isArray(result?.missing)?result.missing:[];
-        if(missing.includes('cart'))text='Você ainda não começou um pedido. Posso te mostrar as cestas.';
-        else if(missing.includes('delivery_address'))text='Seu pedido está montado. Antes de finalizar, preciso confirmar seus dados de entrega.';
-        else text='Seu pedido ainda precisa de uma validação antes da confirmação final.';
+        if(missing.includes('cart')){
+          text='Você ainda não começou um pedido. Posso te mostrar as cestas.';
+        }else if(missing.includes('checkout_profile')){
+          const profileQ=await sb.rpc('begin_papoai_commerce_checkout_profile_v1',{p_conversation_id:conversationId});
+          if(profileQ.error)throw profileQ.error;
+          result={...result,checkout_profile:profileQ.data};
+          text=profileQ.data?.prompt||'Para finalizar, preciso confirmar seu nome e endereço de entrega.';
+        }else{
+          text='Seu pedido ainda precisa de uma validação antes da confirmação final.';
+        }
       }
     }else if((intent.intent==='confirm_pending'||intent.intent==='cancel_pending')&&conversationId){
       const pending=await sb.rpc('get_papoai_commerce_pending_action_v1',{p_conversation_id:conversationId});
@@ -760,8 +767,14 @@ Deno.serve(async(req:Request)=>{
         text='Qual forma de pagamento você prefere? Pode ser Pix, dinheiro, cartão de crédito ou cartão alimentação/refeição.';
       }else if(result?.checkout_not_ready){
         const missing=Array.isArray(result?.missing)?result.missing:[];
-        if(missing.includes('delivery_address'))text='Antes de confirmar, preciso completar seus dados de entrega.';
-        else text='Seu pedido ainda precisa de uma validação antes da confirmação.';
+        if(missing.includes('checkout_profile')){
+          const profileQ=await sb.rpc('begin_papoai_commerce_checkout_profile_v1',{p_conversation_id:conversationId});
+          if(profileQ.error)throw profileQ.error;
+          result={...result,checkout_profile:profileQ.data};
+          text=profileQ.data?.prompt||'Antes de confirmar, preciso completar seus dados de entrega.';
+        }else{
+          text='Seu pedido ainda precisa de uma validação antes da confirmação.';
+        }
       }else if(result?.ok){
         text=(result?.summary?.message_text||`Total do pedido: ${moneyBR(result?.total)}`)
           +`\n\nPagamento: **${result?.payment_label||intent.query}**\n\nEstá tudo certo? Posso confirmar o pedido?`;
