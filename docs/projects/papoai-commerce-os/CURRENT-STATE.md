@@ -1,213 +1,250 @@
 # PapoAI Commerce OS — Current State
 
-Atualizado: 2026-09-21
+Atualizado: 2026-09-21 (America/Cuiaba)
 
-## Estado geral
+## Checkpoint canônico
 
-- R0-A transporte PapoAI → Supabase: comprovado em laboratório.
-- Agente `Dona Antônia — Homologação`: criado no PapoAI.
-- Loop entre os dois números internos: identificado e bloqueado na Edge Function.
-- Edge Function `papo-external-agent-v1`: **v11**, ativa tecnicamente, mas os cérebros estão desligados.
-- `channel_provider_agent_labs.enabled=false`
-- `papoai_commerce_brain_config.enabled=false`
-- `papoai_commerce_brain_config.write_enabled=false`
-- `papoai_commerce_brain_config.ai_enabled=false`
+Repositório: `osvaldosereia/SUCEDOAN12`
 
-Nenhum atendimento comercial real foi ativado nesta rodada.
+Branch obrigatória: `papoai-commerce-os-r0a-spec-20260921`
 
-## R0-B — Commerce Brain: base programada
+HEAD confirmado no início desta retomada:
+`0db4c6977d7331bd04080330ea4efeecdf087eb8`
 
-### Fonte de verdade
-Supabase é autoridade para:
-- cestas;
-- produtos;
-- estoque;
-- preços;
-- ofertas;
-- carrinho;
-- cálculos;
-- personalização;
-- valor oculto;
-- histórico e cliente.
+O estado deste documento substitui os checkpoints antigos que terminavam na Edge v17.
 
-A IA nunca calcula preço/total e nunca altera carrinho diretamente.
+## Runtime real
 
-### Cestas
-Readiness atual:
-- 9 cestas ativas no WhatsApp;
-- 0 cestas vazias;
-- 0 divergências de `hidden_adjustment`;
-- política: lista completa em uma única mensagem, agrupada por categoria;
-- preço individual de componente: oculto;
-- `hidden_adjustment`: oculto ao cliente.
+- Supabase: `ssbesxgaijknwsjbsbcz`
+- Edge Function `papo-external-agent-v1`: **v28**
+- status da Edge: **ACTIVE**
+- `verify_jwt=false`: mantido porque o endpoint usa autenticação própria do PapoAI por API key e response bearer
+- PapoAI Adapter: presente, `temporary_active`
+- inbound do adapter: `active`
+- outbound do adapter: `disabled`
 
-A função `format_papoai_commerce_basket_message_v1` já produz a lista completa da cesta.
+A v28 é um hotfix sobre a v27: foi definido o helper `replacementOptionText(...)`, que era chamado no fluxo de substituição delegada mas não existia. Isso eliminou um erro de runtime possível nesse caminho sem alterar regra comercial, preço ou gate.
 
-### Produtos
-- 306 produtos vendáveis;
-- 306/306 com imagem;
-- busca comercial `search_papoai_commerce_products_v1`;
-- retorna preço comercial/oferta e imagem, sem delegar preço à IA.
+## Gates — continuam desligados
 
-### Personalização
-Funções existentes reaproveitadas:
-- `start_papoai_commerce_basket_v1`
-- `set_papoai_commerce_basket_quantity_v1`
-- `set_papoai_commerce_addon_quantity_v1`
-- `replace_papoai_commerce_basket_item_v1`
-- `recalculate_papoai_commerce_cart_v1`
+Estado confirmado diretamente no banco:
 
-Correção aplicada:
-- ao iniciar cesta, o `hidden_adjustment` oficial é atualizado e copiado para o carrinho antes do recálculo.
+- Commerce Brain `enabled=false`
+- `write_enabled=false`
+- `ai_enabled=false`
+- Conversation Governor `conversation_governor_enabled=false`
+- Bling queue `bling_queue_enabled=false`
+- learning enqueue `learning_enqueue_enabled=false`
+- Agent learning write: OFF
+- laboratório PapoAI: OFF
 
-Nova função:
-- `preview_papoai_commerce_basket_personalization_v1`
+`canonical_message_persistence_enabled=true` continua instalado, mas a persistência canônica comercial só entra no caminho ativo quando o Commerce Brain estiver habilitado.
 
-Ela simula mudanças sem gravar dados.
+Nenhum gate foi ativado nesta retomada.
 
-Teste real de cálculo:
-- Mini Bonini: R$ 175,00;
-- Feijão: quantidade 2 → 1;
-- Óleo: quantidade 2 → 3;
-- delta comercial: -R$ 1,70;
-- novo total: **R$ 173,30**;
-- `writes_performed=false`.
+## Readiness formal
 
-### Executor de comandos
-Criado `execute_papoai_commerce_command_v1`.
+Consulta canônica:
 
-Comandos previstos:
-- list_baskets
-- basket_detail
-- customer_context
-- search_products
-- offers
-- cart_state
-- start_basket
-- set_basket_quantity
-- set_addon_quantity
-- replace_basket_item
+`select public.get_papoai_commerce_activation_readiness_v1();`
 
-Toda execução passa pelo Supabase e é auditável em `papoai_commerce_command_audit`.
+Estado confirmado:
 
-### Inteligência
-Criado `papoai-commerce-intent-v1.mjs`.
+- `data_ready=true`
+- `safety_ready=true`
+- `transport_ready=true`
+- `ready_for_external_homologation_test=true`
+- `ready_for_production=false`
 
-Estratégia:
-1. regras determinísticas para intenções óbvias;
-2. GPT-5.6 Luna apenas quando necessário;
-3. IA extrai intenção/entidades;
-4. Supabase executa e valida;
-5. histórico enviado à IA limitado a 12 mensagens.
+Catálogo:
 
-A v10 do Agente Externo já contém esse roteador, mas ele está dormente enquanto `papoai_commerce_brain_config.enabled=false`.
+- 9 cestas ativas
+- 0 cestas vazias
+- 306 produtos vendáveis
+- 306/306 com imagem
+- 0 divergências de `hidden_adjustment`
 
-## Proteções contra loop
+Capacidades de transporte:
 
-Os dois números internos estão em:
-`channel_provider_agent_labs.metadata.blocked_internal_phones`.
+- request: `verified_lab`
+- session: `verified_lab`
+- text reply: `verified_lab`
+- media reply: `observed_ui`
 
-Eventos originados por número interno ou pela própria IA:
-- `silent=true`;
-- `handoff=false`;
-- não geram resposta comercial.
+Warning ainda aberto:
 
-## Próxima rodada
+- `media_reply_observed_in_ui_but_not_physically_verified`
 
-Prioridade recomendada:
-1. resolver automaticamente referências de produto dentro do carrinho ("tira um feijão", "coloca mais dois óleos");
-2. resolver substituições com segurança ("troca OMO por outro sabão");
-3. gerar resposta final da personalização em linguagem natural;
-4. incorporar identificação do cliente/última compra;
-5. preparar checkout determinístico;
-6. só depois ativar `enabled`, primeiro sem escrita e em homologação.
+Bloqueios externos obrigatórios:
 
-Nenhum gate de produção deve ser ativado automaticamente.
+- `external_customer_e2e_test_pending`
+- `rotate_exposed_homologation_api_key`
+- `confirm_current_papoai_channel_agent_link`
+- `production_activation_not_authorized`
 
+Esses bloqueios NÃO devem ser contornados por código.
 
-## Complemento da rodada ampla
+## Capacidades comerciais já programadas
 
-Foi adicionado o resolvedor natural de itens do carrinho:
+### Transporte, segurança e precedência humana
 
-- `resolve_papoai_commerce_cart_item_v1`
-- `set_papoai_commerce_basket_quantity_by_query_v1`
+- PapoAI Agente Externo → Supabase
+- proteção contra loop entre números internos
+- idempotência de turn/evento
+- persistência canônica de mensagens
+- learning atrás de double gate
+- precedência humana canônica
+- IA silenciosa quando há sinal humano/handoff
+- safe AI mode claim
+- activation readiness formal
 
-Ele permite que frases como "tira um feijão" ou "deixa 3 óleos" sejam resolvidas contra os itens realmente presentes no carrinho. Quando houver ambiguidade, a operação não é aplicada: o sistema devolve candidatos e exige confirmação.
+### Atendimento e Governador
 
-A v11 do Agente Externo já usa esse resolvedor para alterações de quantidade quando `write_enabled=true`.
+- decisões explícitas: `RESPOND / ASK / RECOMMEND / ACT`
+- no máximo 2 perguntas segmentadoras por assunto
+- pergunta somente quando o conjunto realmente exige qualificação
+- `você decide` tratado como delegação
+- após o limite de perguntas, prefere recomendar/agir em vez de continuar interrogando
+- histórico limitado
+- fallback determinístico quando IA está desligada
 
-Os gates continuam:
-- `papoai_commerce_brain_config.enabled=false`
-- `papoai_commerce_brain_config.write_enabled=false`
-- `papoai_commerce_brain_config.ai_enabled=false`
-- `channel_provider_agent_labs.enabled=false`
+### Cestas, produtos e carrinho
 
-Portanto nenhuma alteração comercial real está ativa.
+- lista completa da cesta em uma única mensagem
+- personalização de cesta
+- `hidden_adjustment` protegido
+- carrinho avulso
+- busca de produtos
+- ranking comercial
+- seleção numerada de produtos, até 10 opções
+- imagens disponíveis para produto específico quando útil
+- repetição da última compra com condições atuais e sem repetir trocas históricas automaticamente
 
+### Substituições
 
-## Rodada pequena — produtos avulsos e escolha numerada (v16)
+- substituição explícita com confirmação
+- substituição delegada por valor
+- motor único de substituição delegada
+- ranking por utilidade + proximidade de valor
+- preferência por mesma família/categoria e itens já presentes quando seguro
+- no máximo 3 opções
+- no máximo 2 produtos distintos na combinação
+- diferença máxima configurada de 15%
+- Supabase é autoridade de cálculo
+- confirmação obrigatória antes de aplicar
+- proteção contra carrinho alterado/stale
 
-Concluído:
-- carrinho avulso sem cesta via `ensure_papoai_commerce_draft_cart_v1`;
-- busca de produtos com ranking por termos, marca e relevância;
-- `shampoo seda` agora prioriza produtos Seda antes de marcas não solicitadas;
-- memória temporária de opções via `product_choice`;
-- cliente pode responder `1`, `2`, `primeiro`, `o segundo` etc.;
-- seleção é revalidada no Supabase antes de adicionar;
-- produto selecionado pode retornar imagem;
-- se houver uma única opção, `sim` confirma;
-- lista expira e seleção fora da faixa é recusada;
-- fluxo testado em transação com rollback:
-  `shampoo seda -> opção 1 -> Shampoo Cachos Definidos Seda 325 ml -> carrinho avulso R$ 16,90`.
+Exemplo já validado:
+retirar arroz de R$ 21,90 → +2 óleos +1 feijão → diferença R$ 0,17.
 
-Edge Function:
-- `papo-external-agent-v1` v16.
+### Cliente, histórico e ofertas
 
-Gates após deploy:
-- Commerce Brain: OFF
-- escrita: OFF
-- IA: OFF
-- laboratório: OFF
-- fila Bling PapoAI: OFF
+- customer context v3
+- preferências declaradas e inferidas
+- inferência somente com evidência/confiança mínimas
+- histórico e produtos frequentes
+- ofertas explícitas
+- oferta proativa somente com sinal forte
+- no máximo 1 oferta proativa por carrinho
+- cooldown de 7 dias após rejeição
+- rastreamento de aceitação/rejeição
 
-Readiness:
-- 9 cestas ativas;
-- 306 produtos vendáveis;
-- 306 com imagem;
-- 0 divergências de hidden_adjustment.
+### Checkout e pedido
 
+- checkout profile pendente
+- coleta de nome/endereço em uma mensagem
+- no máximo 2 perguntas para completar checkout
+- cliente novo só é promovido/persistido definitivamente na confirmação final
+- `customer_id` propagado para conversa, carrinho e pedido
+- confirmação final em duas etapas/snapshot
+- revalidação quando carrinho muda
 
-## Rodada pequena — Governador de Conversa v1 (Edge v17)
+### Bling
 
-Objetivo: fazer a IA decidir de forma explícita quando responder, perguntar, recomendar ou agir.
+Migration instalada:
+`papoai_bling_identity_guard_v1`
 
-Implementado:
-- módulo `papoai-conversation-governor-v1.mjs`;
-- decisões: `RESPOND`, `ASK`, `RECOMMEND`, `ACT`;
-- detecção de delegação do cliente, como `você decide`;
-- conjunto gerenciável: até 10 resultados;
-- no máximo 2 perguntas segmentadoras por assunto;
-- após 2 perguntas, tentativa de nova pergunta é convertida pelo banco em `RECOMMEND`;
-- escolha automática da pergunta segmentadora por marca/tipo/faixa;
-- estado curto por conversa em `papoai_conversation_governor_state`;
-- auditoria de decisões em `papoai_conversation_governor_audit`;
-- produto genérico pode consultar até 12 candidatos para decidir se deve perguntar;
-- Governador conectado à Edge Function, mas atrás de gate.
+Função:
+`get_papoai_commerce_bling_identity_readiness_v1(order_id)`
 
-Teste de segurança:
-- 1ª pergunta -> clarification_count 1;
-- 2ª pergunta -> clarification_count 2;
-- 3ª tentativa -> `RECOMMEND`, reason `clarification_limit_enforced`, sem question_key.
+Política:
 
-Estado após deploy:
-- Edge `papo-external-agent-v1`: v17;
-- Commerce Brain: OFF;
-- escrita: OFF;
-- IA: OFF;
-- laboratório: OFF;
-- Bling: OFF;
-- Governador: OFF.
+- se já existe `bling_contact_id`, a identidade pode ser reutilizada;
+- sem `bling_contact_id`, precisa existir CPF/CNPJ resolvível;
+- telefone sozinho NÃO é identidade suficiente para Bling;
+- snapshot do pedido deve ser atualizado antes do queue;
+- fila Bling permanece atrás de gate explícito.
 
-Próxima rodada recomendada:
-- qualificação inteligente por produto, fazendo respostas diretas para conjuntos pequenos e perguntas segmentadoras só para buscas realmente amplas;
-- depois, substituição inteligente por valor aproximado quando o cliente delega a escolha.
+## CI — estado desta retomada
+
+Foram adicionados ao `.github/workflows/test-admin-v3.yml`:
+
+- `scripts/test-papoai-activation-readiness-v1.mjs`
+- `scripts/test-papoai-bling-identity-guard-v1.mjs`
+- `scripts/test-papoai-delegated-replacement-render-v1.mjs`
+
+Também foram adicionados gatilhos amplos e futuros para:
+
+- `supabase/migrations/*papoai*.sql`
+- `scripts/*papoai*.mjs`
+
+Isso corrige a assimetria encontrada entre `push` e `pull_request`: o bloco de PR observava apenas parte dos arquivos PapoAI recentes.
+
+Os contratos de activation readiness e Bling identity guard foram verificados diretamente contra as migrations e passaram.
+
+GitHub Actions não executou automaticamente nesta branch porque:
+
+- `push` do workflow está restrito a `main`;
+- não existe PR aberto para esta branch.
+
+Não considerar isso como CI verde; considerar apenas **contratos verificados localmente pela inspeção de fonte/banco** até existir um run real.
+
+## Migrations recentes confirmadas como já aplicadas
+
+Não reaplicar:
+
+- `papoai_canonical_message_persistence_v1`
+- `fix_papoai_learning_enqueue_truth_v1`
+- `papoai_human_precedence_v1`
+- `fix_papoai_handoff_priority_type_v1`
+- `papoai_safe_ai_mode_claim_v1`
+- `papoai_activation_readiness_v1`
+- `papoai_bling_identity_guard_v1`
+
+Além delas, toda a sequência PapoAI anterior de carrinho, Governador, substituição, contexto do cliente, ofertas e checkout também está registrada na migration history do projeto.
+
+## Commits desta retomada
+
+- `ce8720e2b38d7a9109eb8e5604418a1d2325f3c7`
+  CI: activation readiness + Bling identity guard
+- `cbef6ce8ba9647a302c4f8bf35eb6a98e7f9914a`
+  CI: gatilhos amplos para migrations/testes PapoAI
+- `2b4095d87989a921529a1471a4bf00835a634c80`
+  fix: renderer da substituição delegada
+- `d7d8e0942854d56a490f251f3521b822d816963e`
+  teste de regressão do renderer
+- `bdb01bf5bb3ff6f79f2a493c52248ff823d5062b`
+  CI: executa regressão do renderer
+
+## Regras arquiteturais obrigatórias
+
+1. simplicidade para o cliente;
+2. atendimento humano, curto e contextual;
+3. responder diretamente quando já houver informação suficiente;
+4. no máximo 2 perguntas segmentadoras quando realmente necessárias;
+5. Supabase é a fonte de verdade;
+6. IA interpreta/conversa, mas não calcula preço, total, estoque ou regra comercial;
+7. cálculos e regras comerciais são determinísticos;
+8. segurança, idempotência e precedência humana são obrigatórias;
+9. baixo custo;
+10. não duplicar infraestrutura existente;
+11. não ativar produção automaticamente;
+12. não ativar Bling automaticamente;
+13. não ativar Commerce Brain automaticamente;
+14. não reduzir ou remover os bloqueios externos do readiness.
+
+## Próximo limite externo
+
+A base de código pode continuar recebendo hardening, testes e observabilidade sem ativação.
+
+A homologação real exige ação externa para resolver os quatro blockers do readiness. Produção continua proibida até autorização explícita posterior.
