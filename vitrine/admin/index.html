@@ -66,7 +66,6 @@
     .order-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.summary-box{background:var(--soft);border-radius:12px;padding:10px}.summary-box small{display:block;color:var(--muted)}.summary-box strong{font-size:16px}
     .order-items{display:grid;gap:8px}.order-item{border:1px solid var(--line);border-radius:12px;padding:10px}.order-item-head{display:flex;justify-content:space-between;gap:10px}.composition{color:var(--muted);font-size:12px;margin-top:6px;padding-left:10px;border-left:2px solid var(--line)}
     .print-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.print-actions button{min-height:52px}
-    .access-box{width:min(92vw,440px);margin:80px auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px}.access-box h1{font-size:20px;margin:0 0 5px}.access-box p{color:var(--muted)}.access-box form{display:flex;gap:8px}.access-box input{flex:1}
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
       .wrap{padding-inline:10px}.top-row{height:58px}.logo{width:72px;height:34px}.store-link{font-size:12px}
@@ -79,7 +78,7 @@
   </style>
 </head>
 <body>
-  <div id="app" hidden>
+  <div id="app">
     <header class="top">
       <div class="top-row wrap">
         <img class="logo" src="/img/logoantonia5.png" width="88" height="40" alt="Dona Antônia" fetchpriority="high">
@@ -95,7 +94,6 @@
     <main class="wrap" id="content"></main>
   </div>
 
-  <div id="access" hidden></div>
   <div class="toast" id="toast"></div>
 
   <dialog id="editor">
@@ -107,43 +105,34 @@
 <script>
 (()=>{
   const API='https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/vitrine-admin-v1';
-  const KEY_STORAGE='da_vitrine_admin_key_v1';
+  const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1';
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
-  const state={tab:'orders',key:'',products:[],productOffset:0,productNext:null,customers:[],orders:[],currentOrder:null};
-
-  function bootstrapKey(){
-    const u=new URL(location.href);
-    const fromUrl=u.searchParams.get('k');
-    if(fromUrl){
-      localStorage.setItem(KEY_STORAGE,fromUrl);
-      u.searchParams.delete('k');
-      history.replaceState(null,'',u.pathname+u.search+u.hash);
-    }
-    state.key=localStorage.getItem(KEY_STORAGE)||'';
-  }
+  const state={tab:'orders',products:[],productOffset:0,productNext:null,customers:[],orders:[],currentOrder:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
   async function api(action,params={},options={}){
     const u=new URL(API);u.searchParams.set('action',action);
     Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
-    const response=await fetch(u,{...options,headers:{'x-admin-key':state.key,...(options.headers||{})},cache:'no-store'});
+    const response=await fetch(u,{...options,headers:{...(options.headers||{})},cache:'no-store'});
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
-    if(response.status===401){localStorage.removeItem(KEY_STORAGE);state.key='';showAccess();throw new Error('unauthorized')}
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
     return data;
   }
-  function showAccess(message=''){
-    $('#app').hidden=true;const host=$('#access');host.hidden=false;
-    host.innerHTML='<div class="access-box"><h1>Acesso privado</h1><p>'+esc(message||'Abra pelo link privado do Admin. Se precisar, cole aqui a chave de acesso uma única vez.')+'</p><form id="keyForm"><input id="keyInput" autocomplete="off" placeholder="Chave privada"><button class="primary">Entrar</button></form></div>';
-    $('#keyForm').onsubmit=e=>{e.preventDefault();const key=$('#keyInput').value.trim();if(!key)return;localStorage.setItem(KEY_STORAGE,key);state.key=key;start()};
-  }
-  function showApp(){
-    $('#access').hidden=true;$('#app').hidden=false;
+  async function customerApi(action,payload={}){
+    const response=await fetch(CUSTOMER_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action,...payload}),
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
   }
   function setTab(tab){
     state.tab=tab;
@@ -234,7 +223,7 @@
 
   async function renderCustomers(q=''){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Clientes</h1><p>Cadastro simples para entrega e pedidos.</p></div><button class="primary" id="newCustomer">+ Cliente</button></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Clientes</h1><p>Base oficial de clientes da Dona Antônia no Supabase.</p></div><button class="primary" id="newCustomer">+ Cliente</button></div>'+
       '<div class="toolbar"><input id="customerSearch" type="search" placeholder="Buscar nome, telefone, CPF…"><button class="secondary" id="customerSearchBtn">Buscar</button></div>'+
       '<div class="panel"><div class="list-head customers-layout"><span>Cliente</span><span>Telefone</span><span>CPF</span><span>Endereço</span><span></span></div><div id="customerRows"><div class="loading">Carregando…</div></div></div>';
     $('#newCustomer').onclick=()=>openCustomerEditor();
@@ -246,15 +235,15 @@
   async function loadCustomers(q=''){
     const host=$('#customerRows');host.innerHTML='<div class="loading">Carregando…</div>';
     try{
-      const data=await api('customers',{q,limit:120});state.customers=data.customers||[];
-      host.innerHTML=state.customers.length?state.customers.map(customerRow).join(''):'<div class="empty">Nenhum cliente cadastrado.</div>';
+      const data=await customerApi('vitrine_customers_list',{q,limit:120});state.customers=data.customers||[];
+      host.innerHTML=state.customers.length?state.customers.map(customerRow).join(''):'<div class="empty">Nenhum cliente encontrado.</div>';
       host.querySelectorAll('[data-edit-customer]').forEach(b=>b.onclick=()=>openCustomerEditor(state.customers.find(c=>c.id===b.dataset.editCustomer)));
-    }catch(e){host.innerHTML='<div class="empty">Erro ao carregar clientes.</div>'}
+    }catch(e){host.innerHTML='<div class="empty">Erro ao carregar clientes. <button class="text" id="retryCustomers">Tentar novamente</button></div>';if($('#retryCustomers'))$('#retryCustomers').onclick=()=>loadCustomers(q)}
   }
   function customerRow(c){
     const a=c.address||{};const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ');
     return '<div class="list-row customers-layout">'+
-      '<div><span class="row-title">'+esc(c.display_name||'Sem nome')+'</span><span class="sub">'+esc(c.email||'')+'</span></div>'+
+      '<div><span class="row-title">'+esc(c.display_name||'Sem nome')+'</span><span class="sub">'+esc(c.email||'')+(Number(c.orders_count||0)>0?' · '+esc(c.orders_count)+' pedidos':'')+'</span></div>'+
       '<span class="mobile-wide">'+esc(formatPhone(c.phone))+'</span>'+
       '<span class="desktop-extra">'+esc(formatCpf(c.cpf))+'</span>'+
       '<span class="desktop-extra">'+esc(address||'—')+'</span>'+
@@ -267,10 +256,10 @@
       '<label class="span-2"><span>Nome *</span><input name="display_name" required value="'+esc(c?.display_name||'')+'"></label>'+
       '<label><span>WhatsApp / telefone</span><input name="phone" inputmode="tel" value="'+esc(formatPhone(c?.phone||''))+'"></label>'+
       '<label><span>CPF</span><input name="cpf" inputmode="numeric" value="'+esc(formatCpf(c?.cpf||''))+'"></label>'+
-      '<label><span>E-mail</span><input name="email" type="email" value="'+esc(c?.email||'')+'"></label>'+
-      '<label><span>Nascimento</span><input name="birth_date" type="date" value="'+esc(c?.birth_date||'')+'"></label>'+
-      '<label><span>Status</span><select name="status">'+customerStatusOptions(c?.status||'active')+'</select></label>'+
-      '<label class="span-2"><span>Observações</span><textarea name="notes">'+esc(c?.metadata?.notes||'')+'</textarea></label>'+
+      '<label class="span-2"><span>E-mail</span><input name="email" type="email" value="'+esc(c?.email||'')+'"></label>'+
+      '<label><span>Aniversário · dia</span><input name="birthday_day" type="number" inputmode="numeric" min="1" max="31" value="'+esc(c?.birthday_day??'')+'"></label>'+
+      '<label><span>Aniversário · mês</span><input name="birthday_month" type="number" inputmode="numeric" min="1" max="12" value="'+esc(c?.birthday_month??'')+'"></label>'+
+      '<label class="span-2"><span>Status</span><select name="status">'+customerStatusOptions(c?.status||'active')+'</select></label>'+
       '<div class="section-title span-2">Endereço de entrega</div>'+
       '<label><span>CEP</span><input name="postal_code" inputmode="numeric" value="'+esc(a.postal_code||'')+'"></label>'+
       '<label><span>Cidade</span><input name="city" value="'+esc(a.city||'Cuiabá')+'"></label>'+
@@ -279,7 +268,7 @@
       '<label><span>Bairro</span><input name="district" value="'+esc(a.district||'')+'"></label>'+
       '<label><span>Complemento</span><input name="complement" value="'+esc(a.complement||'')+'"></label>'+
       '<label><span>UF</span><input name="state" maxlength="2" value="'+esc(a.state||'MT')+'"></label>'+
-      '<label class="span-2"><span>Endereço livre / referência</span><input name="raw_text" value="'+esc(a.raw_text||'')+'"></label>'+
+      '<label class="span-2"><span>Referência</span><input name="raw_text" value="'+esc(a.raw_text||'')+'"></label>'+
       '</form>';
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Cancelar</button><button class="primary" id="saveCustomer">Salvar cliente</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
@@ -287,16 +276,27 @@
     $('#editor').showModal();
   }
   function customerStatusOptions(current){
-    return [['active','Ativo'],['lead','Lead'],['inactive','Inativo'],['blocked','Bloqueado']].map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+    return [['active','Ativo'],['inactive','Inativo']].map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
   async function saveCustomer(id){
     const f=new FormData($('#customerForm')),btn=$('#saveCustomer');btn.disabled=true;btn.textContent='Salvando…';
     try{
-      await api('customer_save',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id,display_name:f.get('display_name'),phone:f.get('phone'),cpf:f.get('cpf'),email:f.get('email'),birth_date:f.get('birth_date'),status:f.get('status'),notes:f.get('notes'),address:{postal_code:f.get('postal_code'),street:f.get('street'),number:f.get('number'),district:f.get('district'),complement:f.get('complement'),city:f.get('city'),state:f.get('state'),raw_text:f.get('raw_text')}})
+      await customerApi('vitrine_customer_save',{
+        id,
+        display_name:f.get('display_name'),
+        phone:f.get('phone'),
+        cpf:f.get('cpf'),
+        email:f.get('email'),
+        birthday_day:f.get('birthday_day'),
+        birthday_month:f.get('birthday_month'),
+        status:f.get('status'),
+        address:{
+          postal_code:f.get('postal_code'),street:f.get('street'),number:f.get('number'),
+          district:f.get('district'),complement:f.get('complement'),city:f.get('city'),
+          state:f.get('state'),raw_text:f.get('raw_text')
+        }
       });
-      $('#editor').close();toast('Cliente salvo');renderCustomers($('#customerSearch')?.value.trim()||'');
+      $('#editor').close();toast('Cliente salvo na base oficial');renderCustomers($('#customerSearch')?.value.trim()||'');
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar cliente'}
   }
 
@@ -334,19 +334,24 @@
     $('#editor').showModal();
     try{
       const data=await api('order',{id});state.currentOrder=data;
-      if(!state.customers.length){try{const c=await api('customers',{limit:120});state.customers=c.customers||[]}catch{}}
+      if(!state.customers.length){try{const c=await customerApi('vitrine_customers_list',{limit:150});state.customers=c.customers||[]}catch{}}
+      const sourceId=data.customer?.source_customer_id||data.order?.delivery_address_snapshot?.source_customer_id||'';
+      if(sourceId&&!state.customers.some(c=>c.id===sourceId)){
+        try{const one=await customerApi('vitrine_customer_get',{id:sourceId});if(one.customer)state.customers.push(one.customer)}catch{}
+      }
       paintOrderDetail();
     }catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
   }
   function paintOrderDetail(){
     const d=state.currentOrder,o=d.order,c=d.customer||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'';
+    const currentCustomerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
     $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
     $('#editorBody').innerHTML=
       '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
       '<div class="form-grid">'+
         '<label><span>Status</span><select id="orderStatus">'+orderStatusOptions(o.status)+'</select></label>'+
         '<label><span>Forma de pagamento</span><select id="orderPayment">'+paymentOptions(payment)+'</select></label>'+
-        '<label class="span-2"><span>Cliente</span><select id="orderCustomer"><option value="">Sem cliente vinculado</option>'+customerOptions(o.customer_id)+'</select></label>'+
+        '<label class="span-2"><span>Cliente</span><select id="orderCustomer"><option value="">Sem cliente vinculado</option>'+customerOptions(currentCustomerId)+'</select></label>'+
       '</div>'+
       '<div class="section-title">Itens do pedido</div>'+
       '<div class="order-items">'+(d.items||[]).map(orderItemHtml).join('')+'</div>'+
@@ -376,9 +381,11 @@
     const btn=$('#saveOrder');btn.disabled=true;btn.textContent='Salvando…';
     try{
       const id=state.currentOrder.order.id;
+      const selectedId=$('#orderCustomer').value;
+      const selectedCustomer=state.customers.find(c=>c.id===selectedId)||null;
       await api('order_update',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id,status:$('#orderStatus').value,payment_method:$('#orderPayment').value,customer_id:$('#orderCustomer').value})
+        body:JSON.stringify({id,status:$('#orderStatus').value,payment_method:$('#orderPayment').value,customer_snapshot:selectedCustomer})
       });
       const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail();toast('Pedido salvo');loadOrders();
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar pedido'}
@@ -454,14 +461,12 @@
   $('#editor').addEventListener('click',e=>{if(e.target===$('#editor'))$('#editor').close()});
 
   async function start(){
-    bootstrapKey();
-    if(!state.key){showAccess();return}
     try{
       await api('health');
-      showApp();
       setTab('orders');
     }catch(e){
-      if(state.key)showAccess('A chave privada não foi aceita.');
+      $('#content').innerHTML='<div class="empty">Não consegui abrir o Admin agora. <button class="text" id="retryAdmin">Tentar novamente</button></div>';
+      if($('#retryAdmin'))$('#retryAdmin').onclick=()=>location.reload();
     }
   }
   start();
