@@ -30,10 +30,10 @@
     .global-search input{min-width:0;flex:1;min-height:44px;border:0;background:transparent;padding:0 10px;outline:none;font-size:16px}
     .global-search button{min-width:68px;min-height:44px;border:0;border-radius:10px;background:var(--ink);color:#fff;font-weight:850}
     .nav-shell{overflow:auto;scrollbar-width:none;border-top:1px solid #f3f4f3}.nav-shell::-webkit-scrollbar{display:none}
-    .nav{display:flex;gap:8px;padding:8px 14px 10px;width:max-content;min-width:100%}
+    .nav-wrap{min-width:0}
+    .nav{display:flex;gap:8px;padding:8px 0 10px;width:max-content;min-width:100%}
     .chip{min-height:44px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:999px;padding:9px 13px;font-weight:750;white-space:nowrap}
     .chip.active{background:var(--ink);border-color:var(--ink);color:#fff}
-    .store-note{display:flex;gap:5px;align-items:center;padding:14px 0 2px;color:var(--muted);font-size:13px}.store-note strong{color:var(--ink)}
     .section{padding:20px 0;content-visibility:auto;contain-intrinsic-size:500px}
     .section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
     .section-head h2{font-size:21px;letter-spacing:-.02em;margin:0}.section-head p{margin:3px 0 0;color:var(--muted);font-size:13px}
@@ -82,8 +82,22 @@
     .note{font-size:12px;color:var(--muted);margin:10px 0 0}
     .toast{position:fixed;z-index:90;left:50%;bottom:96px;transform:translate(-50%,20px);background:#18221c;color:#fff;padding:10px 13px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s;font-weight:750;font-size:13px}.toast.show{opacity:1;transform:translate(-50%,0)}
     footer{border-top:1px solid var(--line);padding:22px 0 110px;color:var(--muted);font-size:12px}
-    @media(min-width:760px){.grid,.deferred-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.sheet{border-radius:22px 22px 0 0}.category-list{grid-template-columns:repeat(2,1fr)}}
-    @media(min-width:1080px){.grid,.deferred-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}}
+    @media(min-width:760px){
+      .top-row{height:56px}
+      .top-search{padding-bottom:6px}
+      .nav{padding-top:6px;padding-bottom:8px}
+      .section{padding:14px 0}
+      .section-head{margin-bottom:9px}
+      .grid,.deferred-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+      .basket-card .card-body{padding:8px}
+      .basket-card .name{font-size:14px;min-height:34px}
+      .basket-card .price{margin-top:4px}
+      .basket-card .add{min-height:44px;padding:8px}
+      .sheet{border-radius:22px 22px 0 0}
+      .category-list{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(min-width:1080px){.grid,.deferred-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}}
+    @media(min-width:1200px){.grid,.deferred-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
   </style>
 </head>
@@ -100,11 +114,10 @@
         <button type="submit">Buscar</button>
       </div>
     </form>
-    <div class="nav-shell"><nav class="nav wrap" id="nav" aria-label="Seções da vitrine"></nav></div>
+    <div class="nav-shell"><div class="nav-wrap wrap"><nav class="nav" id="nav" aria-label="Seções da vitrine"></nav></div></div>
   </header>
 
   <main class="wrap">
-    <div class="store-note"><strong>Compra simples:</strong><span>escolha, confira e envie o pedido no WhatsApp.</span></div>
     <div id="content">
       <section class="section"><div class="grid"><div class="loader"></div><div class="loader"></div></div></section>
     </div>
@@ -410,7 +423,7 @@
       const baskets=state.home?.baskets||[];
       const categories=state.home?.categories?.length?state.home.categories:STATIC_CATEGORIES;
       content.innerHTML=
-        section('Cestas básicas','As 9 cestas Dona Antônia. Toque para conferir e ajustar.',
+        section('Cestas básicas','Escolha uma cesta para conferir e ajustar.',
           '<div class="grid" id="basketGrid">'+(baskets.length?baskets.map((b,i)=>basketCard(b,i)).join(''):offersSkeleton())+'</div>')+
         section('Ofertas','Preços promocionais ativos agora.',
           '<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>')+
