@@ -62,7 +62,7 @@
     .loader{height:220px;border-radius:var(--radius);background:linear-gradient(90deg,#f5f6f5 25%,#fafbfa 37%,#f5f6f5 63%);background-size:400% 100%;animation:load 1.1s infinite}
     .deferred-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .deferred-grid .loader{height:290px}
-    .loading-note{grid-column:1/-1;color:var(--muted);font-size:12px;margin-top:-2px}
+    .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
     @keyframes load{0%{background-position:100% 0}100%{background-position:0 0}}
     .cartbar{position:fixed;z-index:25;left:0;right:0;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px);transform:translateY(120%);transition:.2s}
     .cartbar.show{transform:none}.cartbar-inner{width:min(100%,980px);margin:auto;display:flex;align-items:center;gap:10px}.cartbar-copy{min-width:0;flex:1}.cartbar-copy small{display:block;color:var(--muted)}.cartbar-copy strong{font-size:17px}.cartbar button{border:0;border-radius:13px;background:var(--brand);color:#fff;font-weight:900;padding:13px 18px}
@@ -334,7 +334,7 @@
     }
 
     function offersSkeleton(){
-      return '<div class="deferred-grid"><div class="loader"></div><div class="loader"></div><div class="loader"></div><div class="loader"></div><div class="loading-note">As ofertas carregam depois das cestas para a vitrine abrir mais rápido.</div></div>';
+      return '<div class="deferred-grid" aria-busy="true"><span class="sr-only">Carregando ofertas</span><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>';
     }
 
     function paintHomeOffers(){
@@ -394,6 +394,17 @@
       return state.offersPromise;
     }
 
+    function renderInitialShell(){
+      state.view='home';renderNav();
+      const categories=STATIC_CATEGORIES;
+      content.innerHTML=
+        section('Cestas básicas','Escolha uma cesta para conferir.',
+          '<div class="grid" aria-busy="true"><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div><div class="loader" aria-hidden="true"></div></div>')+
+        section('Categorias','Você já pode entrar direto em uma categoria.',
+          '<div class="category-list">'+categories.map(c=>'<button class="category" type="button" data-category="'+esc(c.key)+'">'+esc(c.label)+'<span>›</span></button>').join('')+'</div>');
+      content.querySelectorAll('[data-category]').forEach(btn=>btn.onclick=()=>renderCategory(btn.dataset.category,btn.textContent.replace('›','').trim()));
+    }
+
     function renderHome(){
       state.view='home';state.category=null;state.query='';renderNav();$('#globalSearchInput').value='';
       const baskets=state.home?.baskets||[];
@@ -401,7 +412,7 @@
       content.innerHTML=
         section('Cestas básicas','As 9 cestas Dona Antônia. Toque para conferir e ajustar.',
           '<div class="grid" id="basketGrid">'+(baskets.length?baskets.map((b,i)=>basketCard(b,i)).join(''):offersSkeleton())+'</div>')+
-        section('Ofertas','Carregadas depois do conteúdo principal para não travar a abertura.',
+        section('Ofertas','Preços promocionais ativos agora.',
           '<div id="homeOffersMount">'+(state.offersLoaded?'':offersSkeleton())+'</div>')+
         section('Categorias','Para achar rápido o que você precisa.',
           '<div class="category-list">'+categories.map(c=>'<button class="category" type="button" data-category="'+esc(c.key)+'">'+esc(c.label)+'<span>›</span></button>').join('')+'</div>');
@@ -637,10 +648,11 @@
 
     async function start(){
       paintCart();
-      renderNav();
+      renderInitialShell();
 
       const cachedHome=readCache(HOME_CACHE_KEY,5*60*1000);
-      if(cachedHome?.baskets?.length){
+      const hadCached=Boolean(cachedHome?.baskets?.length);
+      if(hadCached){
         state.home={...state.home,...cachedHome,categories:cachedHome.categories?.length?cachedHome.categories:STATIC_CATEGORIES};
         renderHome();
       }
@@ -649,7 +661,7 @@
         const fresh=await api('home');
         state.home={...state.home,...fresh,categories:fresh.categories?.length?fresh.categories:STATIC_CATEGORIES};
         writeCache(HOME_CACHE_KEY,state.home);
-        if(state.view==='home')renderHome();
+        if(state.view==='home'&&!hadCached)renderHome();
       }catch(e){
         if(!state.home?.baskets?.length){
           renderNav();
