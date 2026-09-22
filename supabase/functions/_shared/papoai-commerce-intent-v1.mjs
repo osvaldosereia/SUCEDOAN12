@@ -45,6 +45,27 @@ export function deterministicCommerceIntent(message){
   if(basketMatch&&/\b(vem|cont[eé]m|produtos?|itens?|dentro)\b/.test(m))return {intent:'basket_detail',basket:basketMatch[0],query:'',source_query:'',replacement_query:'',quantity:0};
   if(basketMatch&&/\b(quero|escolho|vou querer|pegar|comprar)\b/.test(m))return {intent:'start_basket',basket:basketMatch[0],query:'',source_query:'',replacement_query:'',quantity:0};
   if(/\b(ofertas?|promo[cç][aã]o|promo[cç][oõ]es)\b/.test(m))return {intent:'offers',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
+
+  const delegatedReplacement=m.match(/\b(?:troca|trocar|tira|tirar|retira|retirar|remove|remover)\s+(?:o|a|os|as)?\s*([^,.!?]+?)\s+(?:por|e coloca|e poe|e põe)\s+(?:outra coisa|algo diferente|o que voce quiser|o que você quiser)\b/);
+  if(delegatedReplacement)return {
+    intent:'replace_basket_item',
+    basket:'',
+    query:'',
+    source_query:delegatedReplacement[1].trim(),
+    replacement_query:'',
+    quantity:0
+  };
+
+  const delegatedReplacementShort=m.match(/\b(?:troca|trocar|tira|tirar|retira|retirar|remove|remover)\s+(?:o|a|os|as)?\s*([^,.!?]+?)(?:,|\s+e)?\s+(?:voce decide|você decide|pode escolher|escolhe pra mim)\b/);
+  if(delegatedReplacementShort)return {
+    intent:'replace_basket_item',
+    basket:'',
+    query:'',
+    source_query:delegatedReplacementShort[1].trim(),
+    replacement_query:'',
+    quantity:0
+  };
+
   return null;
 }
 
