@@ -672,9 +672,18 @@ Deno.serve(async(req:Request)=>{
         }
       }
     }else if(intent.intent==='offers'&&conversationId){
-      const q=await sb.rpc('get_papoai_commerce_offers_v1',{p_conversation_id:conversationId,p_limit:4});
-      result=q.data;
-      text=result?.items?.length?`Separei estas ofertas para você:\n\n${productsText(result.items)}`:'Não encontrei uma oferta personalizada disponível agora.';
+      const q=await sb.rpc('propose_papoai_commerce_offer_choice_v1',{
+        p_conversation_id:conversationId,
+        p_limit:10
+      });
+      if(q.error)throw q.error;
+      const offers=Array.isArray(q.data?.candidates)?q.data.candidates:[];
+      result={...(q.data||{}),items:offers};
+      if(!offers.length){
+        text='Não encontrei ofertas ativas para te mostrar agora.';
+      }else{
+        text=`Estas são as ofertas disponíveis:\n\n${numberedProductsText(offers,10)}\n\nSe quiser alguma, pode responder pelo número.`;
+      }
     }else if(intent.intent==='customer_context'&&conversationId){
       const q=await sb.rpc('get_papoai_commerce_customer_snapshot_v2',{p_conversation_id:conversationId});
       result=q.data;
