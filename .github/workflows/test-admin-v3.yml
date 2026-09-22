@@ -81,6 +81,8 @@ on:
       - 'scripts/test-papoai-offer-outcome-tracking-v1.mjs'
       - 'scripts/test-papoai-pending-action-supersession-v1.mjs'
       - 'scripts/test-fix-papoai-learning-enqueue-truth-v1.mjs'
+      - 'scripts/test-fix-papoai-handoff-priority-type-v1.mjs'
+      - 'scripts/test-papoai-human-precedence-v1.mjs'
       - 'scripts/test-papoai-canonical-message-persistence-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-promotion-v1.mjs'
       - 'scripts/test-papoai-checkout-profile-capture-v1.mjs'
@@ -364,6 +366,10 @@ jobs:
         run: node scripts/test-papoai-canonical-message-persistence-v1.mjs
       - name: Validar resultado real da fila de aprendizado
         run: node scripts/test-fix-papoai-learning-enqueue-truth-v1.mjs
+      - name: Validar precedência humana PapoAI
+        run: node scripts/test-papoai-human-precedence-v1.mjs
+      - name: Validar tipagem do handoff PapoAI
+        run: node scripts/test-fix-papoai-handoff-priority-type-v1.mjs
       - name: Validar substituição delegada por valor
         run: node scripts/test-papoai-value-replacement-v1.mjs
       - name: Validar executor de substituição por valor
