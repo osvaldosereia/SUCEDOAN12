@@ -172,6 +172,53 @@ async function products(url: URL) {
   };
 }
 
+async function productDetail(id: string) {
+  const { data: p, error } = await db.from("products")
+    .select("id,sku,gtin,name,description,image_url,sale_price_cents,stock_quantity,metadata")
+    .eq("organization_id", ORG_ID)
+    .eq("active", true)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!p) return json({ ok:false, error:"product_not_found" },404);
+
+  const offerMap = await activeOffersFor([p.id]);
+  const offer = offerMap.get(p.id);
+  const meta = p.metadata ?? {};
+  const characteristics = [
+    ["Marca", meta.brand],
+    ["Embalagem", meta.packaging],
+    ["Unidade", meta.unit],
+    ["Categoria", meta.category],
+    ["Subcategoria", meta.subcategory],
+    ["Tipo", meta.subsubcategory]
+  ]
+    .filter(([,value]) => value != null && String(value).trim() !== "")
+    .map(([label,value]) => ({ label, value:String(value) }));
+
+  return json({
+    ok:true,
+    product:{
+      id:p.id,
+      sku:p.sku ?? "",
+      gtin:p.gtin ?? "",
+      name:p.name,
+      description:p.description ?? "",
+      image_url:p.image_url ?? "",
+      price_cents:Number(offer?.sale_price_cents ?? p.sale_price_cents ?? 0),
+      regular_price_cents:offer ? Number(p.sale_price_cents ?? 0) : null,
+      stock_quantity:Number(p.stock_quantity ?? 0),
+      packaging:meta.packaging ?? "",
+      brand:meta.brand ?? "",
+      category:meta.category ?? "",
+      subcategory:meta.subcategory ?? "",
+      subsubcategory:meta.subsubcategory ?? "",
+      unit:meta.unit ?? "",
+      characteristics
+    }
+  });
+}
+
 async function basketDetail(id: string) {
   const { data: basket, error: bErr } = await db.from("baskets")
     .select("id,name,display_price_cents,image_url")
@@ -189,18 +236,23 @@ async function basketDetail(id: string) {
   if (iErr) throw iErr;
   const ids = (items ?? []).map((x:any)=>x.product_id);
   const { data: productsData, error: pErr } = ids.length
-    ? await db.from("products").select("id,name").in("id",ids)
+    ? await db.from("products").select("id,name,image_url,metadata").in("id",ids)
     : { data: [], error: null };
   if (pErr) throw pErr;
-  const names = new Map((productsData ?? []).map((p:any)=>[p.id,p.name]));
+  const products = new Map((productsData ?? []).map((p:any)=>[p.id,p]));
   return json({
     ok:true,
     basket,
-    items:(items ?? []).map((x:any)=>({
-      product_id:x.product_id,
-      name:names.get(x.product_id) ?? "Produto",
-      quantity:Number(x.quantity || 0)
-    }))
+    items:(items ?? []).map((x:any)=>{
+      const p=products.get(x.product_id);
+      return {
+        product_id:x.product_id,
+        name:p?.name ?? "Produto",
+        image_url:p?.image_url ?? "",
+        packaging:p?.metadata?.packaging ?? "",
+        quantity:Number(x.quantity || 0)
+      };
+    })
   });
 }
 
@@ -474,6 +526,11 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET" && action === "home") return json(await home(),200,{"Cache-Control":"public, max-age=300, stale-while-revalidate=900"});
     if (req.method === "GET" && action === "offers") return json(await offers(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if (req.method === "GET" && action === "products") return json(await products(url),200,{"Cache-Control":"public, max-age=60, stale-while-revalidate=300"});
+    if (req.method === "GET" && action === "product") {
+      const id = uuid(url.searchParams.get("product_id"));
+      if (!id) return json({ok:false,error:"invalid_product"},400);
+      return await productDetail(id);
+    }
     if (req.method === "GET" && action === "basket") {
       const id = uuid(url.searchParams.get("basket_id"));
       if (!id) return json({ok:false,error:"invalid_basket"},400);
