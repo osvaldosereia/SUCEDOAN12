@@ -72,6 +72,24 @@ function valueReplacementOptionsText(options:any[]){
   }).join('\n');
 }
 
+async function maybeProactiveOffer(sb:any,conversationId:string){
+  const q=await sb.rpc('propose_papoai_commerce_proactive_offer_choice_v1',{
+    p_conversation_id:conversationId
+  });
+  if(q.error||!q.data?.eligible||!q.data?.offer)return null;
+  const offer=q.data.offer;
+  const reason=String(q.data?.reason||'');
+  const lead=reason==='customer_bought_before'
+    ? 'Aproveitando: você já comprou este produto antes'
+    : 'Aproveitando: encontrei uma oferta que pode valer a pena';
+  return {
+    text:`${lead}: **${offer.name}** por **${moneyBR(offer.commercial_price??offer.offer_price??offer.regular_price)}**. Quer adicionar?`,
+    offer,
+    reason,
+    pending_action_id:q.data?.pending_action_id||null
+  };
+}
+
 async function requestHash(value:string){
   const bytes=new TextEncoder().encode(value);
   const digest=await crypto.subtle.digest('SHA-256',bytes);
@@ -658,6 +676,13 @@ Deno.serve(async(req:Request)=>{
           result={...(q.data||{}),items:selected?[selected]:[]};
           if(q.data?.ok&&selected){
             text=`Pronto 😊 Adicionei **${selected.name}**. O total atual do pedido é **${moneyBR(q.data?.cart?.total)}**.`;
+            if(q.data?.offer_event?.recorded!==true){
+              const proactive=await maybeProactiveOffer(sb,conversationId);
+              if(proactive){
+                result={...result,proactive_offer:proactive,items:[selected,proactive.offer]};
+                text+=`\n\n${proactive.text}`;
+              }
+            }
           }else if(q.data?.reason==='product_choice_expired'||q.data?.reason==='no_pending_product_choice'){
             text='Essas opções já não estão mais ativas. Me diga novamente qual produto você procura que eu atualizo a busca.';
           }else if(q.data?.reason==='value_replacement_expired'||q.data?.reason==='no_pending_value_replacement'){
@@ -795,6 +820,11 @@ Deno.serve(async(req:Request)=>{
       if(q.error)throw q.error;
       result=q.data;
       text=`Certo 😊 Comecei a ${result?.basket?.display_name||result?.basket?.name||intent.basket}. O valor atual é ${moneyBR(result?.cart?.total)}. Você quer receber assim ou personalizar algum item?`;
+      const proactive=await maybeProactiveOffer(sb,conversationId);
+      if(proactive){
+        result={...result,proactive_offer:proactive,items:[proactive.offer]};
+        text+=`\n\n${proactive.text}`;
+      }
     }else if(intent.intent==='set_basket_quantity'&&conversationId&&commerceCfg?.write_enabled===true){
       const q=await sb.rpc('execute_papoai_commerce_command_v1',{
         p_conversation_id:conversationId,
@@ -820,6 +850,11 @@ Deno.serve(async(req:Request)=>{
         text=candidates.length?`Encontrei estas opções:\n\n${productsText(candidates)}\n\nQual delas você quer adicionar?`:'Não consegui identificar com segurança qual produto você quer adicionar.';
       }else{
         text=`Pronto 😊 Adicionei ${result?.resolved?.name||'o produto'}. O total atual é ${moneyBR(result?.cart?.total)}.`;
+        const proactive=await maybeProactiveOffer(sb,conversationId);
+        if(proactive){
+          result={...result,proactive_offer:proactive,items:[proactive.offer]};
+          text+=`\n\n${proactive.text}`;
+        }
       }
     }else if(intent.intent==='replace_basket_item'&&conversationId&&commerceCfg?.write_enabled===true){
       const delegated=detectCustomerDelegation(normalized.messageText)
