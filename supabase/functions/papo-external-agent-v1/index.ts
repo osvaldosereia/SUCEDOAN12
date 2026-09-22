@@ -297,7 +297,8 @@ Deno.serve(async(req:Request)=>{
           ...intent,
           intent:'search_products',
           query:`${originalQuery} ${normalized.messageText}`.trim(),
-          source:'governor_followup'
+          source:'governor_followup',
+          governor_topic_key:governorState.topic_key
         };
       }
     }
@@ -394,13 +395,19 @@ Deno.serve(async(req:Request)=>{
       const productQuery=intent.query||normalized.messageText;
 
       if(governorEnabled){
-        const broadQ=await sb.rpc('search_papoai_commerce_products_v1',{
+        const broadQ=await sb.rpc('search_papoai_commerce_products_for_customer_v1',{
+          p_conversation_id:conversationId,
           p_query:productQuery,
           p_limit:12
         });
         if(broadQ.error)throw broadQ.error;
         const broadItems=Array.isArray(broadQ.data?.items)?broadQ.data.items:[];
-        const topicKey=buildGovernorTopicKey({intent:'search_products',query:productQuery});
+        const hasStrongPersonalization=broadItems.some((item:any)=>
+          Number(item?.personalization?.direct_bonus||0)>0
+          || Number(item?.personalization?.frequent_bonus||0)>0
+        );
+        const topicKey=intent?.governor_topic_key
+          || buildGovernorTopicKey({intent:'search_products',query:productQuery});
         const stateQ=await sb.rpc('get_papoai_conversation_governor_state_v1',{
           p_conversation_id:conversationId,
           p_topic_key:topicKey
@@ -412,7 +419,8 @@ Deno.serve(async(req:Request)=>{
           items:broadItems,
           candidateCount:broadItems.length,
           resultLimit:12,
-          clarificationCount:Number(stateQ.data?.clarification_count||0)
+          clarificationCount:Number(stateQ.data?.clarification_count||0),
+          hasStrongPersonalization
         });
 
         const recorded=await sb.rpc('record_papoai_conversation_governor_decision_v1',{
@@ -428,7 +436,9 @@ Deno.serve(async(req:Request)=>{
             result_limit:12,
             candidate_sample_count:broadItems.length,
             governor_version:'v1',
-            original_query:productQuery
+            original_query:String(stateQ.data?.context?.original_query||productQuery),
+            strong_personalization:hasStrongPersonalization,
+            search_personalized:Boolean(broadQ.data?.personalized)
           }
         });
         const finalAction=recorded.data?.action||governor.action;
