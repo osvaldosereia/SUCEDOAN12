@@ -360,6 +360,43 @@
         btn.addEventListener('click',()=>openProductDetail(btn.dataset.productDetail,btn.dataset.detailReturn||''));
       });
     }
+    async function openProductDetail(id,returnTo=''){
+      if(!id)return;
+      state.detailReturn=returnTo;
+      openSheet('Produto','<div class="loader"></div>',returnTo==='checkout'?'<button class="secondary" type="button" id="backToCheckout">Voltar ao pedido</button>':'');
+      if($('#backToCheckout'))$('#backToCheckout').onclick=renderCheckout;
+      try{
+        const data=await api('product',{product_id:id});
+        const p=data.product;
+        const old=Number(p.regular_price_cents||0)>Number(p.price_cents||0)
+          ? '<span class="old">'+money(p.regular_price_cents)+'</span>' : '';
+        const attrs=[
+          ...(Array.isArray(p.characteristics)?p.characteristics:[]),
+          ...(p.sku?[{label:'Código',value:p.sku}]:[]),
+          ...(p.gtin?[{label:'EAN',value:p.gtin}]:[])
+        ];
+        sheetTitle.textContent=p.name;
+        sheetBody.innerHTML=
+          '<div class="detail-photo"><img src="'+esc(safeImage(p.image_url))+'" alt="'+esc(p.name)+'"></div>'+
+          '<h2 class="detail-title">'+esc(p.name)+'</h2>'+
+          '<div class="detail-price">'+money(p.price_cents)+old+'</div>'+
+          (p.description?'<p class="detail-description">'+esc(p.description)+'</p>':'')+
+          (attrs.length?'<div class="detail-grid">'+attrs.map(a=>'<div class="detail-attr"><small>'+esc(a.label)+'</small><strong>'+esc(a.value)+'</strong></div>').join('')+'</div>':'');
+        sheetAction.innerHTML=returnTo==='checkout'
+          ? '<button class="primary" type="button" id="backToCheckout">Voltar ao pedido</button>'
+          : '<button class="primary" type="button" id="closeDetail">Fechar</button>';
+        if($('#backToCheckout'))$('#backToCheckout').onclick=renderCheckout;
+        if($('#closeDetail'))$('#closeDetail').onclick=closeSheet;
+      }catch{
+        sheetBody.innerHTML='<div class="empty">Não consegui carregar os detalhes deste produto agora.</div>';
+        sheetAction.innerHTML=returnTo==='checkout'
+          ? '<button class="primary" type="button" id="backToCheckout">Voltar ao pedido</button>'
+          : '<button class="primary" type="button" id="closeDetail">Fechar</button>';
+        if($('#backToCheckout'))$('#backToCheckout').onclick=renderCheckout;
+        if($('#closeDetail'))$('#closeDetail').onclick=closeSheet;
+      }
+    }
+
     function refreshAllProductControls(){
       document.querySelectorAll('[data-product-control]').forEach(host=>{
         renderProductControl(host,state.productsById.get(host.dataset.productControl));
@@ -575,11 +612,12 @@
       sheetTitle.textContent=basketName(b.name);
       sheetBody.innerHTML=
         '<div class="basket-hero"><img src="'+esc(safeImage(b.image_url))+'" alt=""><div><h3>'+esc(basketName(b.name))+'</h3><div class="basket-total" id="basketTotal">'+money(d.total_cents)+'</div><small>Você pode retirar, reduzir ou aumentar os itens.</small></div></div>'+
-        '<div class="items">'+d.items.map((x,i)=>'<div class="item-row"><strong>'+esc(x.name)+'</strong><div class="qty"><button type="button" data-b-dec="'+i+'">−</button><b id="bq'+i+'">'+formatQty(x.quantity)+'</b><button type="button" data-b-inc="'+i+'">+</button></div></div>').join('')+'</div>'+
+        '<div class="items">'+d.items.map((x,i)=>'<div class="item-row"><button type="button" class="product-open checkout-name" data-product-detail="'+esc(x.product_id)+'">'+esc(x.name)+'</button><div class="qty"><button type="button" data-b-dec="'+i+'">−</button><b id="bq'+i+'">'+formatQty(x.quantity)+'</b><button type="button" data-b-inc="'+i+'">+</button></div></div>').join('')+'</div>'+
         '';
       sheetAction.innerHTML='<button class="primary" type="button" id="addBasket">Adicionar cesta ao pedido</button>';
       sheetBody.querySelectorAll('[data-b-dec]').forEach(btn=>btn.onclick=()=>changeBasketQty(Number(btn.dataset.bDec),-1));
       sheetBody.querySelectorAll('[data-b-inc]').forEach(btn=>btn.onclick=()=>changeBasketQty(Number(btn.dataset.bInc),1));
+      attachProductDetailHandlers(sheetBody);
       $('#addBasket').onclick=addBasketDraft;
     }
 
@@ -650,33 +688,141 @@
     }
     function removeCart(i){state.cart.splice(i,1);saveCart();if(state.cart.length)renderCart();else closeSheet()}
 
-    function reviewLines(){
-      return state.cart.map(item=>{
-        const head='<div class="review-line"><strong>'+formatQty(item.qty)+'× '+esc(item.name)+'</strong>';
-        const sub=item.type==='basket'&&item.components?.length
-          ? '<div class="review-sub">'+item.components.map(c=>formatQty(Number(c.quantity)*Number(item.qty||1))+'× '+esc(c.name)).join('<br>')+'</div>'
-          : '';
-        return head+sub+'</div>';
-      }).join('');
+    async function hydrateCheckoutBaskets(){
+      const baskets=state.cart.filter(item=>item.type==='basket'&&!item.checkout_hydrated);
+      if(!baskets.length)return;
+      await Promise.all(baskets.map(async item=>{
+        try{
+          const data=await api('basket',{basket_id:item.id});
+          const current=new Map((item.components||[]).map(c=>[c.product_id,c]));
+          item.components=(data.items||[]).map(x=>{
+            const old=current.get(x.product_id);
+            return {
+              product_id:x.product_id,
+              name:x.name,
+              image_url:x.image_url||old?.image_url||'',
+              packaging:x.packaging||old?.packaging||'',
+              quantity:old?Number(old.quantity||0):0
+            };
+          });
+          item.checkout_hydrated=true;
+        }catch{}
+      }));
+      saveCart();
     }
 
-    function renderCheckout(){
+    function checkoutQtyControl(itemIndex,qty){
+      return '<div class="checkout-qty"><button type="button" data-checkout-dec="'+itemIndex+'" aria-label="Diminuir">−</button><b>'+formatQty(qty)+'</b><button type="button" data-checkout-inc="'+itemIndex+'" aria-label="Aumentar">+</button></div>';
+    }
+    function checkoutComponentQtyControl(itemIndex,componentIndex,qty){
+      return '<div class="checkout-qty"><button type="button" data-checkout-component-dec="'+itemIndex+':'+componentIndex+'" aria-label="Diminuir">−</button><b>'+formatQty(qty)+'</b><button type="button" data-checkout-component-inc="'+itemIndex+':'+componentIndex+'" aria-label="Aumentar">+</button></div>';
+    }
+    function checkoutProductRow(item,itemIndex){
+      return '<div class="checkout-item-row">'+
+        '<button type="button" class="checkout-thumb" data-product-detail="'+esc(item.id)+'" data-detail-return="checkout"><img src="'+esc(safeImage(item.image_url))+'" alt=""></button>'+
+        '<div class="checkout-copy"><button type="button" class="checkout-name" data-product-detail="'+esc(item.id)+'" data-detail-return="checkout">'+esc(item.name)+'</button><span class="checkout-meta">'+money(Number(item.unit_cents||0)*Number(item.qty||1))+'</span></div>'+
+        checkoutQtyControl(itemIndex,item.qty)+'</div>';
+    }
+    function checkoutBasketBlock(item,itemIndex){
+      const components=(item.components||[]).map((c,componentIndex)=>
+        '<div class="checkout-item-row">'+
+          '<button type="button" class="checkout-thumb" data-product-detail="'+esc(c.product_id)+'" data-detail-return="checkout"><img src="'+esc(safeImage(c.image_url))+'" alt=""></button>'+
+          '<div class="checkout-copy"><button type="button" class="checkout-name" data-product-detail="'+esc(c.product_id)+'" data-detail-return="checkout">'+esc(c.name)+'</button><span class="checkout-meta">'+esc(c.packaging||'Item da cesta')+'</span></div>'+
+          checkoutComponentQtyControl(itemIndex,componentIndex,c.quantity)+
+        '</div>'
+      ).join('');
+      return '<div class="checkout-basket">'+
+        '<div class="checkout-basket-head"><img src="'+esc(safeImage(item.image_url))+'" alt=""><div><strong>'+esc(item.name)+'</strong><span class="checkout-meta">'+money(Number(item.unit_cents||0)*Number(item.qty||1))+'</span></div>'+checkoutQtyControl(itemIndex,item.qty)+'</div>'+
+        '<div class="checkout-basket-items">'+components+'</div>'+
+      '</div>';
+    }
+
+    async function renderCheckout(){
+      if(!state.cart.length){renderCart();return}
+      state.checkoutPayment=document.querySelector('input[name="payment"]:checked')?.value||state.checkoutPayment||'';
       sheetTitle.textContent='Conferir e enviar';
+      sheetBody.innerHTML='<div class="loading">Preparando seu pedido…</div>';
+      sheetAction.innerHTML='';
+      await hydrateCheckoutBaskets();
+      paintCheckout();
+    }
+
+    function paintCheckout(){
+      if(!state.cart.length){renderCart();return}
+      sheetTitle.textContent='Conferir e enviar';
+      const rows=state.cart.map((item,i)=>item.type==='basket'?checkoutBasketBlock(item,i):checkoutProductRow(item,i)).join('');
       sheetBody.innerHTML=
-        '<div class="review">'+reviewLines()+'<div class="review-total"><span>Total</span><span>'+money(cartTotal())+'</span></div></div>'+
+        '<div class="checkout-list">'+rows+'<div class="checkout-total"><span>Total</span><span id="checkoutTotal">'+money(cartTotal())+'</span></div></div>'+
         '<h3 class="checkout-title">Como você vai pagar?</h3>'+
         '<div class="payments">'+
           pay('PIX','PIX')+pay('Dinheiro','Dinheiro')+pay('Cartão de crédito','Cartão de crédito')+pay('Cartão alimentação/refeição','Cartão alimentação/refeição')+
         '</div>'+
-        '<p class="note">Pagamento na entrega. Nenhum dado de cartão é solicitado aqui. O pedido será enviado como uma mensagem no WhatsApp e confirmado pela nossa equipe.</p>';
+        '<p class="note">Pagamento na entrega. Nenhum dado de cartão é solicitado aqui.</p>';
       sheetAction.innerHTML='<button class="primary" type="button" id="sendWhats">Enviar pedido para o WhatsApp</button>';
+
+      sheetBody.querySelectorAll('[data-checkout-dec]').forEach(btn=>btn.onclick=()=>checkoutItemQty(Number(btn.dataset.checkoutDec),-1));
+      sheetBody.querySelectorAll('[data-checkout-inc]').forEach(btn=>btn.onclick=()=>checkoutItemQty(Number(btn.dataset.checkoutInc),1));
+      sheetBody.querySelectorAll('[data-checkout-component-dec]').forEach(btn=>btn.onclick=()=>checkoutComponentQty(btn.dataset.checkoutComponentDec,-1));
+      sheetBody.querySelectorAll('[data-checkout-component-inc]').forEach(btn=>btn.onclick=()=>checkoutComponentQty(btn.dataset.checkoutComponentInc,1));
+      sheetBody.querySelectorAll('input[name="payment"]').forEach(input=>{
+        input.checked=input.value===state.checkoutPayment;
+        input.onchange=()=>{state.checkoutPayment=input.value};
+      });
+      attachProductDetailHandlers(sheetBody);
       $('#sendWhats').onclick=sendWhatsApp;
     }
-    function pay(value,label){return '<label class="pay"><input type="radio" name="payment" value="'+esc(value)+'"><strong>'+esc(label)+'</strong></label>'}
+
+    function checkoutItemQty(index,delta){
+      const item=state.cart[index];if(!item)return;
+      const next=Math.max(0,Math.min(30,Number(item.qty||1)+delta));
+      if(next<=0)state.cart.splice(index,1);else item.qty=next;
+      saveCart();
+      paintCheckout();
+    }
+
+    function checkoutComponentQty(key,delta){
+      const [itemIndex,componentIndex]=String(key).split(':').map(Number);
+      const item=state.cart[itemIndex],component=item?.components?.[componentIndex];
+      if(!item||!component)return;
+      component.quantity=Math.max(0,Math.min(30,Number(component.quantity||0)+delta));
+      saveCart();
+      paintCheckout();
+      const old=state.checkoutQuoteTimers.get(itemIndex);
+      if(old)clearTimeout(old);
+      state.checkoutQuoteTimers.set(itemIndex,setTimeout(()=>requoteCheckoutBasket(itemIndex),160));
+    }
+
+    async function requoteCheckoutBasket(itemIndex){
+      const item=state.cart[itemIndex];
+      if(!item||item.type!=='basket')return;
+      try{
+        const data=await api('basket_quote',{},{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({basket_id:item.id,items:(item.components||[]).map(c=>({product_id:c.product_id,quantity:Number(c.quantity||0)}))})
+        });
+        item.unit_cents=Number(data.total_cents||0);
+        saveCart();
+        if(overlay.classList.contains('open')&&sheetTitle.textContent==='Conferir e enviar')paintCheckout();
+      }catch{toast('Não consegui recalcular a cesta agora')}
+    }
+
+    function pay(value,label){
+      return '<label class="pay"><input type="radio" name="payment" value="'+esc(value)+'"><strong>'+esc(label)+'</strong></label>';
+    }
+
+    function formatOrderDateCuiaba(){
+      const parts=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Cuiaba',day:'numeric',month:'long',year:'numeric'}).formatToParts(new Date());
+      const get=type=>parts.find(p=>p.type===type)?.value||'';
+      const month=get('month');
+      const monthTitle=month?month.charAt(0).toUpperCase()+month.slice(1):'';
+      return get('day')+' de '+monthTitle+' de '+get('year');
+    }
 
     async function sendWhatsApp(){
       const selected=document.querySelector('input[name="payment"]:checked');
       if(!selected){toast('Escolha a forma de pagamento');return}
+      state.checkoutPayment=selected.value
       const btn=$('#sendWhats');
       if(btn){btn.disabled=true;btn.textContent='Registrando pedido…'}
       let saved=null;
@@ -701,12 +847,16 @@
       }
 
       const lines=['Olá! Quero confirmar este pedido da vitrine Dona Antônia:'];
-      if(saved?.order_number)lines.push('Pedido #'+String(saved.order_number).slice(-8));
+      lines.push('Pedido: "'+formatOrderDateCuiaba()+'"');
+      if(saved?.order_number)lines.push('Nº: '+String(saved.order_number).slice(-8));
       lines.push('');
       for(const item of state.cart){
         lines.push(formatQty(item.qty)+'x '+item.name);
         if(item.type==='basket'&&item.components?.length){
-          for(const c of item.components)lines.push('  • '+formatQty(Number(c.quantity)*Number(item.qty||1))+'x '+c.name);
+          for(const c of item.components){
+            const qty=Number(c.quantity)*Number(item.qty||1);
+            if(qty>0)lines.push('  • '+formatQty(qty)+'x '+c.name);
+          }
         }
       }
       lines.push('','Total: '+money(saved?.total_cents??cartTotal()),'Pagamento: '+selected.value,'','Entrega em Cuiabá/Várzea Grande. Pode confirmar meu pedido?');
