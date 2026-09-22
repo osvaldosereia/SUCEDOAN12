@@ -66,4 +66,13 @@ assert.equal(buildLabHandoffResponse({text:'Transferindo',sessionKey:'s1',correl
 const silent=buildLabSilentResponse({sessionKey:'s1',correlationId:'c1',reason:'human_active'});
 assert.equal(silent.message,null); assert.equal(silent.silent,true); assert.equal(silent.handoff,true);
 assert.equal(sanitizeOutboundText('[HANDOFF] {"tool":"x"} Olá\u0000 mundo'),'Olá mundo');
+const humanSession=normalizeExternalAgentPayload({
+  messages:[{role:'user',content:'preciso de ajuda'}],
+  session:{uid:'human-test',human_required:true,status:'ACTIVE',user_id:'operator-1'},
+  contact:{phone_number:'5565999999998',name:'Teste Humano'}
+});
+assert.equal(humanSession.sessionHumanRequired,true);
+assert.equal(humanSession.providerContext.session_human_required,true);
+assert.equal(humanSession.sessionHumanUserId,'operator-1');
+
 console.log('PASS: PapoAI Agent External pure contract');
