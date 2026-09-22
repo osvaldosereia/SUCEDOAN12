@@ -320,6 +320,8 @@ Deno.serve(async(req:Request)=>{
       model:(Deno.env.get('OPENAI_CONVERSATION_MODEL')||'gpt-5.6-luna')
     });
     const conversationId=ingested?.conversation_id||null;
+    let result:any=null;
+    let text='';
 
     if(conversationId){
       const salesStateQ=await sb.from('whatsapp_sales_state')
@@ -456,8 +458,17 @@ Deno.serve(async(req:Request)=>{
       }
     }
 
-    let result:any=null;
-    let text='';
+    if(
+      conversationId
+      && commerceCfg?.write_enabled===true
+      && intent.intent!=='handled_checkout_profile'
+    ){
+      const supersede=await sb.rpc('supersede_papoai_commerce_pending_action_v1',{
+        p_conversation_id:conversationId,
+        p_new_intent:intent.intent
+      });
+      if(supersede.error)throw supersede.error;
+    }
 
     if(intent.intent==='handled_checkout_profile'){
       // text/responseBody already prepared above.
