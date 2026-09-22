@@ -1134,7 +1134,13 @@ Deno.serve(async(req:Request)=>{
       if(!rows.length)return json({ok:true,found:false,customer:null});
       const chosen=rows[0];
       const bundles=await vitrineCustomerBundles(sb,[chosen.id]);
-      return json({ok:true,found:true,customer:vitrinePublicCustomer(chosen,bundles.get(chosen.id)),matches:rows.length});
+      const full=vitrinePublicCustomer(chosen,bundles.get(chosen.id));
+      return json({ok:true,found:true,customer:{
+        id:full.id,
+        display_name:full.display_name,
+        phone:full.phone,
+        address:full.address
+      },matches:rows.length});
     }catch(e){
       return json({ok:false,error:"customer_lookup_failed",detail:clean((e as Error)?.message,300)},500);
     }
