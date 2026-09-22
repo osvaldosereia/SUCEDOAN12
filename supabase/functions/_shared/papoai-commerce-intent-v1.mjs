@@ -19,6 +19,11 @@ export function deterministicCommerceIntent(message){
   if(/^(3|terceiro|terceira|o terceiro|a terceira)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:3};
   if(/^(4|quarto|quarta|o quarto|a quarta)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:4};
   if(/^(5|quinto|quinta|o quinto|a quinta)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:5};
+  if(/^(6|sexto|sexta|o sexto|a sexta)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:6};
+  if(/^(7|setimo|sétimo|setima|sétima|o setimo|o sétimo|a setima|a sétima)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:7};
+  if(/^(8|oitavo|oitava|o oitavo|a oitava)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:8};
+  if(/^(9|nono|nona|o nono|a nona)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:9};
+  if(/^(10|decimo|décimo|decima|décima|o decimo|o décimo|a decima|a décima)$/i.test(m))return {intent:'select_product_choice',basket:'',query:'',source_query:'',replacement_query:'',quantity:10};
   if(/^(sim|s|pode|pode sim|confirmo|confirma|isso|isso mesmo|ok|okay|beleza|pode trocar|troca)$/i.test(m))return {intent:'confirm_pending',basket:'',query:'',source_query:'',replacement_query:'',quantity:0};
   if(/\bpix\b/.test(m))return {intent:'set_payment_method',basket:'',query:'pix',source_query:'',replacement_query:'',quantity:0};
   if(/\b(dinheiro|cash)\b/.test(m))return {intent:'set_payment_method',basket:'',query:'dinheiro',source_query:'',replacement_query:'',quantity:0};
