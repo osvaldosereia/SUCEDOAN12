@@ -10,6 +10,7 @@ import {
 } from "../_shared/papoai-agent-external-contract-v1.mjs";
 import {classifyCommerceIntent} from "../_shared/papoai-commerce-intent-v1.mjs";
 import {buildGovernorTopicKey,decideConversationAction,detectCustomerDelegation} from "../_shared/papoai-conversation-governor-v1.mjs";
+import {parseCheckoutProfile,missingCheckoutProfileFields,checkoutProfileMissingPrompt} from "../_shared/papoai-checkout-profile-v1.mjs";
 
 const PROVIDER_KEY='papoai';
 const CHANNEL='whatsapp';
@@ -302,8 +303,111 @@ Deno.serve(async(req:Request)=>{
     });
     const conversationId=ingested?.conversation_id||null;
 
+    if(conversationId){
+      const salesStateQ=await sb.from('whatsapp_sales_state')
+        .select('awaiting,pending_name,pending_delivery_address')
+        .eq('conversation_id',conversationId)
+        .maybeSingle();
+
+      if(salesStateQ.data?.awaiting==='checkout_profile'){
+        const currentProfileQ=await sb.rpc('get_papoai_commerce_checkout_profile_v1',{
+          p_conversation_id:conversationId
+        });
+        const currentProfile=currentProfileQ.data||{};
+        const needName=!String(currentProfile?.name||'').trim();
+
+        const parsed=await parseCheckoutProfile({
+          message:normalized.messageText,
+          apiKey,
+          model:(Deno.env.get('OPENAI_CONVERSATION_MODEL')||'gpt-5.6-luna'),
+          needName
+        });
+        const missing=missingCheckoutProfileFields(parsed,{needName});
+        const topicKey='checkout_profile:delivery';
+        const governorStateQ=await sb.rpc('get_papoai_conversation_governor_state_v1',{
+          p_conversation_id:conversationId,
+          p_topic_key:topicKey
+        });
+        const asked=Number(governorStateQ.data?.clarification_count||0);
+
+        if(missing.length){
+          if(asked>=2){
+            await sb.rpc('record_papoai_conversation_governor_decision_v1',{
+              p_conversation_id:conversationId,
+              p_topic_key:topicKey,
+              p_intent:'checkout_profile',
+              p_action:'ACT',
+              p_reason:'checkout_profile_question_limit_reached',
+              p_candidate_count:null,
+              p_delegated:false,
+              p_question_key:null,
+              p_metadata:{missing,parser_source:parsed.source}
+            });
+            processingStatus='handoff';responseKind='handoff';
+            responseBody=commerceTextResponse({
+              text:'Pra não te prender aqui com mais perguntas, vou chamar alguém da nossa equipe para confirmar seus dados de entrega.',
+              sessionKey:normalized.sessionKey,
+              correlationId,
+              handoff:true,
+              reason:'checkout_profile_question_limit_reached'
+            });
+          }else{
+            await sb.rpc('record_papoai_conversation_governor_decision_v1',{
+              p_conversation_id:conversationId,
+              p_topic_key:topicKey,
+              p_intent:'checkout_profile',
+              p_action:'ASK',
+              p_reason:'checkout_profile_incomplete',
+              p_candidate_count:null,
+              p_delegated:false,
+              p_question_key:'missing_checkout_profile_fields',
+              p_metadata:{missing,parser_source:parsed.source}
+            });
+            intent={intent:'handled_checkout_profile',source:'system'};
+            text=checkoutProfileMissingPrompt(missing);
+            result={profile:parsed,missing};
+          }
+        }else{
+          const saved=await sb.rpc('save_papoai_commerce_checkout_profile_pending_v1',{
+            p_conversation_id:conversationId,
+            p_name:parsed.name||currentProfile?.name||'',
+            p_street:parsed.street,
+            p_number:parsed.number,
+            p_complement:parsed.complement||'',
+            p_neighborhood:parsed.neighborhood,
+            p_city:parsed.city,
+            p_postal_code:parsed.postal_code||null,
+            p_reference:parsed.reference||null
+          });
+          if(saved.error)throw saved.error;
+          result=saved.data;
+          intent={intent:'handled_checkout_profile',source:'system'};
+          if(result?.ok){
+            await sb.rpc('record_papoai_conversation_governor_decision_v1',{
+              p_conversation_id:conversationId,
+              p_topic_key:topicKey,
+              p_intent:'checkout_profile',
+              p_action:'ACT',
+              p_reason:'checkout_profile_captured',
+              p_candidate_count:null,
+              p_delegated:false,
+              p_question_key:null,
+              p_metadata:{parser_source:parsed.source}
+            });
+            text='Perfeito 😊 Já tenho seus dados de entrega. Como você prefere pagar? Pode ser **Pix, dinheiro, cartão de crédito ou cartão alimentação/refeição**.';
+          }else if(result?.reason==='delivery_city_not_supported'){
+            text='No momento entregamos em **Cuiabá e Várzea Grande**. Qual dessas duas cidades é o endereço de entrega?';
+          }else{
+            text='Ainda faltou algum dado do endereço. Pode me mandar rua, número, bairro e cidade em uma única mensagem?';
+          }
+        }
+      }
+    }
+
     if(
-      conversationId
+      !responseBody
+      && intent.intent!=='handled_checkout_profile'
+      && conversationId
       && commerceCfg?.metadata?.conversation_governor_enabled===true
       && intent.intent==='general'
       && normalized.messageText.length<=80
@@ -337,7 +441,9 @@ Deno.serve(async(req:Request)=>{
     let result:any=null;
     let text='';
 
-    if(intent.intent==='greeting'&&conversationId){
+    if(intent.intent==='handled_checkout_profile'){
+      // text/responseBody already prepared above.
+    }else if(intent.intent==='greeting'&&conversationId){
       const [customerQ,repeatQ]=await Promise.all([
         sb.rpc('get_papoai_commerce_customer_snapshot_v2',{p_conversation_id:conversationId}),
         sb.rpc('preview_papoai_commerce_repeat_last_purchase_v1',{p_conversation_id:conversationId})
