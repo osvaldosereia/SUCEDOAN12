@@ -97,6 +97,11 @@
     .checkout-basket-items .checkout-item-row{grid-template-columns:44px minmax(0,1fr) auto;min-height:58px;border-left:2px solid #e2e9e4}
     .checkout-basket-items .checkout-thumb{width:44px;height:44px}
     .checkout-total{display:flex;justify-content:space-between;padding:11px 12px;background:var(--soft);font-weight:950;font-size:16px}
+    .wa-lookup{border:1px solid var(--line);border-radius:12px;padding:9px;background:var(--soft)}
+    .wa-grid{display:grid;grid-template-columns:64px minmax(120px,1fr) auto;gap:7px;align-items:end}
+    .wa-field span{display:block;color:var(--muted);font-size:10px;font-weight:800;margin:0 0 3px}.wa-field input{width:100%;height:42px;border:1px solid #d7dfd9;border-radius:9px;background:#fff;padding:0 9px;outline:none;font-size:14px}.wa-field input:focus{border-color:#8bad98;box-shadow:0 0 0 2px #e9f3ec}
+    .wa-consult{height:42px;border:0;border-radius:9px;background:var(--ink);color:#fff;padding:0 11px;font-size:11px;font-weight:900;white-space:nowrap}
+    .wa-result{min-height:16px;margin-top:7px;font-size:11px;line-height:1.3;color:var(--muted)}.wa-result.found{color:#135938;font-weight:750}.wa-result.new{color:#7a570c;font-weight:750}
     .payments{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pay{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;padding:9px;font-size:12px;min-height:44px}.pay input{width:17px;height:17px;accent-color:var(--brand);flex:0 0 auto}
     .note{font-size:11px;color:var(--muted);margin:9px 0 0}
     .product-open{border:0;background:transparent;padding:0;display:block;width:100%;text-align:inherit;color:inherit}
@@ -123,6 +128,7 @@
     }
     @media(min-width:1080px){.grid,.deferred-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}}
     @media(min-width:1200px){.grid,.deferred-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}}
+    @media(max-width:420px){.wa-grid{grid-template-columns:58px minmax(110px,1fr)}.wa-consult{grid-column:1/-1}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
   </style>
 </head>
@@ -210,7 +216,10 @@
       checkoutQuoteTimers: new Map(),
       detailReturn: '',
       lastFocus: null,
-      whatsappPhone: ''
+      whatsappPhone: '',
+      checkoutDdd: '65',
+      checkoutPhone: '9',
+      customerLookup: {status:'idle',phoneKey:'',customer:null}
     };
 
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -323,6 +332,74 @@
         const data=await response.json().catch(()=>({ok:false}));
         return response.ok&&data.ok!==false?(data.product||null):null;
       }catch{return null}
+    }
+
+    async function customerLookupApi(phoneSuffix){
+      const response=await fetch(LEGACY_PRODUCT_API,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'vitrine_customer_lookup_phone',phone_suffix:phoneSuffix}),
+        cache:'no-store'
+      });
+      const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+      if(!response.ok||data.ok===false)throw new Error(data.error||'customer_lookup_failed');
+      return data;
+    }
+
+    function phoneDigits(value,max=20){return String(value??'').replace(/\D+/g,'').slice(0,max)}
+    function checkoutPhoneData(){
+      const ddd=phoneDigits(state.checkoutDdd,2);
+      let mobile=phoneDigits(state.checkoutPhone,9);
+      if(mobile.length===8)mobile='9'+mobile;
+      const valid=ddd.length===2&&mobile.length===9&&mobile.startsWith('9');
+      return {ddd,mobile,valid,full:valid?'+55'+ddd+mobile:'',suffix:mobile.slice(-8),key:ddd+mobile};
+    }
+    function formatPhoneBr(value){
+      const d=phoneDigits(value,20).replace(/^55/,'');
+      return d.length===11?'('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7):String(value||'');
+    }
+    function resetCustomerLookup(){
+      state.customerLookup={status:'idle',phoneKey:'',customer:null};
+      updateCustomerLookupResult();
+    }
+    function customerLookupResultHtml(){
+      const lookup=state.customerLookup;
+      if(lookup.status==='loading')return '<span>Consultando cadastro…</span>';
+      if(lookup.status==='found'){
+        const c=lookup.customer||{},a=c.address||{};
+        const location=[a.district,a.city].filter(Boolean).join(' · ');
+        return '<span>✓ Cadastro encontrado: '+esc(c.display_name||'Cliente')+(location?' · '+esc(location):'')+'</span>';
+      }
+      if(lookup.status==='new')return '<span>Cliente novo — o pedido será identificado assim no WhatsApp.</span>';
+      if(lookup.status==='error')return '<span>Não foi possível consultar. Tente novamente.</span>';
+      return '<span>Digite o WhatsApp e consulte o cadastro.</span>';
+    }
+    function updateCustomerLookupResult(){
+      const host=$('#customerLookupResult');if(!host)return;
+      host.className='wa-result '+(state.customerLookup.status==='found'?'found':state.customerLookup.status==='new'?'new':'');
+      host.innerHTML=customerLookupResultHtml();
+    }
+    async function lookupCheckoutCustomer(){
+      const info=checkoutPhoneData();
+      if(!info.valid){toast('Informe DDD e WhatsApp com 9 dígitos');return null}
+      state.checkoutDdd=info.ddd;state.checkoutPhone=info.mobile;state.whatsappPhone=info.full;
+      if(state.customerLookup.phoneKey===info.key&&['found','new'].includes(state.customerLookup.status))return state.customerLookup;
+      state.customerLookup={status:'loading',phoneKey:info.key,customer:null};
+      updateCustomerLookupResult();
+      try{
+        const data=await customerLookupApi(info.suffix);
+        state.customerLookup=data.found
+          ? {status:'found',phoneKey:info.key,customer:data.customer}
+          : {status:'new',phoneKey:info.key,customer:null};
+        try{sessionStorage.setItem(WHATSAPP_PHONE_KEY,info.full)}catch{}
+        updateCustomerLookupResult();
+        return state.customerLookup;
+      }catch{
+        state.customerLookup={status:'error',phoneKey:info.key,customer:null};
+        updateCustomerLookupResult();
+        toast('Não consegui consultar o cadastro');
+        return null;
+      }
     }
 
     function formatValidityDate(value){
@@ -793,6 +870,12 @@
       const rows=state.cart.map((item,i)=>item.type==='basket'?checkoutBasketBlock(item,i):checkoutProductRow(item,i)).join('');
       sheetBody.innerHTML=
         '<div class="checkout-list">'+rows+'<div class="checkout-total"><span>Total</span><span id="checkoutTotal">'+money(cartTotal())+'</span></div></div>'+
+        '<h3 class="checkout-title">Seu WhatsApp</h3>'+
+        '<div class="wa-lookup"><div class="wa-grid">'+
+          '<label class="wa-field"><span>DDD</span><input id="checkoutDdd" inputmode="numeric" maxlength="2" value="'+esc(state.checkoutDdd)+'"></label>'+
+          '<label class="wa-field"><span>WhatsApp</span><input id="checkoutPhone" inputmode="numeric" maxlength="9" value="'+esc(state.checkoutPhone)+'"></label>'+
+          '<button class="wa-consult" type="button" id="lookupCustomer">Consultar cadastro</button>'+
+        '</div><div class="wa-result" id="customerLookupResult">'+customerLookupResultHtml()+'</div></div>'+
         '<h3 class="checkout-title">Como você vai pagar?</h3>'+
         '<div class="payments">'+
           pay('PIX','PIX')+pay('Dinheiro','Dinheiro')+pay('Cartão de crédito','Cartão de crédito')+pay('Cartão alimentação/refeição','Cartão alimentação/refeição')+
@@ -804,6 +887,15 @@
       sheetBody.querySelectorAll('[data-checkout-inc]').forEach(btn=>btn.onclick=()=>checkoutItemQty(Number(btn.dataset.checkoutInc),1));
       sheetBody.querySelectorAll('[data-checkout-component-dec]').forEach(btn=>btn.onclick=()=>checkoutComponentQty(btn.dataset.checkoutComponentDec,-1));
       sheetBody.querySelectorAll('[data-checkout-component-inc]').forEach(btn=>btn.onclick=()=>checkoutComponentQty(btn.dataset.checkoutComponentInc,1));
+      const dddInput=$('#checkoutDdd'),phoneInput=$('#checkoutPhone');
+      if(dddInput)dddInput.oninput=()=>{
+        state.checkoutDdd=phoneDigits(dddInput.value,2);dddInput.value=state.checkoutDdd;resetCustomerLookup();
+      };
+      if(phoneInput)phoneInput.oninput=()=>{
+        state.checkoutPhone=phoneDigits(phoneInput.value,9);phoneInput.value=state.checkoutPhone;resetCustomerLookup();
+      };
+      if($('#lookupCustomer'))$('#lookupCustomer').onclick=lookupCheckoutCustomer;
+      updateCustomerLookupResult();
       sheetBody.querySelectorAll('input[name="payment"]').forEach(input=>{
         input.checked=input.value===state.checkoutPayment;
         input.onchange=()=>{state.checkoutPayment=input.value};
@@ -852,18 +944,40 @@
       return '<label class="pay"><input type="radio" name="payment" value="'+esc(value)+'"><strong>'+esc(label)+'</strong></label>';
     }
 
-    function formatOrderDateCuiaba(){
-      const parts=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Cuiaba',day:'numeric',month:'long',year:'numeric'}).formatToParts(new Date());
-      const get=type=>parts.find(p=>p.type===type)?.value||'';
-      const month=get('month');
+    function orderDatePartsCuiaba(){
+      const longParts=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Cuiaba',day:'numeric',month:'long',year:'numeric'}).formatToParts(new Date());
+      const numericParts=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Cuiaba',day:'2-digit',month:'2-digit',year:'numeric'}).formatToParts(new Date());
+      const get=(parts,type)=>parts.find(p=>p.type===type)?.value||'';
+      const month=get(longParts,'month');
       const monthTitle=month?month.charAt(0).toUpperCase()+month.slice(1):'';
-      return get('day')+' de '+monthTitle+' de '+get('year');
+      return {
+        long:get(longParts,'day')+' de '+monthTitle+' de '+get(longParts,'year'),
+        month:monthTitle,
+        numeric:get(numericParts,'day')+'/'+get(numericParts,'month')+'/'+get(numericParts,'year')
+      };
+    }
+    function formatOrderDateCuiaba(){return orderDatePartsCuiaba().long}
+    function customerMessageData(){
+      const lookup=state.customerLookup;
+      const c=lookup.status==='found'?lookup.customer:null;
+      const a=c?.address||{};
+      return {
+        status:c?'CADASTRADO':'NOVO',
+        name:c?.display_name||'NAO CADASTRADO',
+        address:[a.street,a.number,a.complement].filter(Boolean).join(', ')||'NAO INFORMADO',
+        district:a.district||'NAO INFORMADO',
+        city:a.city||'NAO INFORMADA'
+      };
     }
 
     async function sendWhatsApp(){
       const selected=document.querySelector('input[name="payment"]:checked');
       if(!selected){toast('Escolha a forma de pagamento');return}
-      state.checkoutPayment=selected.value
+      const info=checkoutPhoneData();
+      if(!info.valid){toast('Informe seu WhatsApp antes de enviar');return}
+      const lookup=await lookupCheckoutCustomer();
+      if(!lookup)return;
+      state.checkoutPayment=selected.value;
       const btn=$('#sendWhats');
       if(btn){btn.disabled=true;btn.textContent='Registrando pedido…'}
       let saved=null;
@@ -874,6 +988,9 @@
           body:JSON.stringify({
             payment_method:selected.value,
             whatsapp_phone:state.whatsappPhone||null,
+            customer_snapshot:state.customerLookup.status==='found'
+              ? {found:true,id:state.customerLookup.customer.id,display_name:state.customerLookup.customer.display_name,address:state.customerLookup.customer.address||null}
+              : {found:false},
             items:state.cart.map(item=>({
               type:item.type,
               id:item.id,
@@ -888,20 +1005,41 @@
         return;
       }
 
-      const lines=['Olá! Quero confirmar este pedido da vitrine Dona Antônia:'];
-      lines.push('Pedido: "'+formatOrderDateCuiaba()+'"');
-      if(saved?.order_number)lines.push('Nº: '+String(saved.order_number).slice(-8));
-      lines.push('');
+      const date=orderDatePartsCuiaba();
+      const customer=customerMessageData();
+      const lines=[
+        'PEDIDO DONA ANTONIA',
+        'Pedido: "'+date.long+'"',
+        'MES: '+date.month,
+        'DATA: '+date.numeric,
+        saved?.order_number?'NUMERO: '+String(saved.order_number).slice(-8):'',
+        'CLIENTE: '+customer.status,
+        'NOME: '+customer.name,
+        'WHATSAPP: '+formatPhoneBr(state.whatsappPhone),
+        'ENDERECO: '+customer.address,
+        'BAIRRO: '+customer.district,
+        'CIDADE: '+customer.city,
+        ''
+      ].filter(line=>line!=='');
+      const baskets=state.cart.filter(item=>item.type==='basket'&&Number(item.qty||0)>0);
+      if(baskets.length){
+        for(const item of baskets)lines.push('CESTA: '+formatQty(item.qty)+'x '+item.name);
+      }else{
+        lines.push('CESTA: NENHUMA');
+      }
+      lines.push('','PRODUTOS:');
       for(const item of state.cart){
-        lines.push(formatQty(item.qty)+'x '+item.name);
+        if(item.type==='product'&&Number(item.qty||0)>0){
+          lines.push(formatQty(item.qty)+'x '+item.name);
+        }
         if(item.type==='basket'&&item.components?.length){
           for(const c of item.components){
             const qty=Number(c.quantity)*Number(item.qty||1);
-            if(qty>0)lines.push('  • '+formatQty(qty)+'x '+c.name);
+            if(qty>0)lines.push(formatQty(qty)+'x '+c.name);
           }
         }
       }
-      lines.push('','Total: '+money(saved?.total_cents??cartTotal()),'Pagamento: '+selected.value,'','Entrega em Cuiabá/Várzea Grande. Pode confirmar meu pedido?');
+      lines.push('','TOTAL: '+money(saved?.total_cents??cartTotal()),'PAGAMENTO: '+selected.value);
       const url='https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(lines.join('\n'));
       state.cart=[];
       saveCart();
@@ -916,6 +1054,10 @@
 
     async function start(){
       state.whatsappPhone=captureWhatsappPhone();
+      if(state.whatsappPhone){
+        const d=phoneDigits(state.whatsappPhone).replace(/^55/,'');
+        if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}
+      }
       paintCart();
       renderInitialShell();
 
