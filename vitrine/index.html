@@ -176,6 +176,7 @@
     const API = 'https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1';
     const WHATSAPP = '5565998150975';
     const STORAGE_KEY = 'da_simple_storefront_cart_v2';
+    const WHATSAPP_PHONE_KEY = 'da_vitrine_whatsapp_phone_v1';
     const HOME_CACHE_KEY = 'da_storefront_home_v2';
     const OFFERS_CACHE_KEY = 'da_storefront_offers_v2';
     const STATIC_CATEGORIES = [
@@ -207,13 +208,35 @@
       checkoutPayment: '',
       checkoutQuoteTimers: new Map(),
       detailReturn: '',
-      lastFocus: null
+      lastFocus: null,
+      whatsappPhone: ''
     };
 
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const money = cents => (Number(cents || 0) / 100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const basketName = name => name === 'Economica Bonini' ? 'Econômica com Arroz Tio Bonini' : String(name || 'Cesta básica');
     const safeImage = url => url || '/img/logoantonia5.png';
+
+    function normalizeWhatsappPhone(value){
+      let digits=String(value??'').replace(/\D+/g,'');
+      if(digits.startsWith('00'))digits=digits.slice(2);
+      if(digits.startsWith('55')&&(digits.length===12||digits.length===13))return '+'+digits;
+      if(digits.length===10||digits.length===11)return '+55'+digits;
+      return '';
+    }
+    function captureWhatsappPhone(){
+      const params=new URLSearchParams(location.search);
+      const raw=params.get('wa')||params.get('whatsapp')||params.get('phone')||params.get('telefone')||'';
+      const fromUrl=normalizeWhatsappPhone(raw);
+      if(fromUrl){
+        try{sessionStorage.setItem(WHATSAPP_PHONE_KEY,fromUrl)}catch{}
+        for(const key of ['wa','whatsapp','phone','telefone'])params.delete(key);
+        const qs=params.toString();
+        history.replaceState(null,'',location.pathname+(qs?'?'+qs:'')+location.hash);
+        return fromUrl;
+      }
+      try{return normalizeWhatsappPhone(sessionStorage.getItem(WHATSAPP_PHONE_KEY)||'')}catch{return ''}
+    }
 
     function loadCart(){
       try{
@@ -834,6 +857,7 @@
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
             payment_method:selected.value,
+            whatsapp_phone:state.whatsappPhone||null,
             items:state.cart.map(item=>({
               type:item.type,
               id:item.id,
@@ -875,6 +899,7 @@
     };
 
     async function start(){
+      state.whatsappPhone=captureWhatsappPhone();
       paintCart();
       renderInitialShell();
 
