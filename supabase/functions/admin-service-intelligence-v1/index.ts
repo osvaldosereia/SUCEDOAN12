@@ -996,17 +996,21 @@ const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 async function blingHubReadinessExtended(sb:any){
   const r=await sb.rpc("bling_hub_readiness_v2");
   if(r.error)throw r.error;
-  const [links,customerLinks]=await Promise.all([
+  const [links,customerLinks,orderLinks]=await Promise.all([
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000),
-    sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000)
+    sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000),
+    sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000)
   ]);
   if(links.error)throw links.error;
   if(customerLinks.error)throw customerLinks.error;
+  if(orderLinks.error)throw orderLinks.error;
   const counts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const customerCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
+  const orderCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   for(const row of links.data||[]){counts.total++;counts[row.status]=(counts[row.status]||0)+1;}
   for(const row of customerLinks.data||[]){customerCounts.total++;customerCounts[row.status]=(customerCounts[row.status]||0)+1;}
-  return {...(r.data||{}),product_links:counts,customer_links:customerCounts};
+  for(const row of orderLinks.data||[]){orderCounts.total++;orderCounts[row.status]=(orderCounts[row.status]||0)+1;}
+  return {...(r.data||{}),product_links:counts,customer_links:customerCounts,order_links:orderCounts};
 }
 async function blingHubAuthorized(sb:any,req:Request){
   const supplied=clean(req.headers.get("x-dona-antonia-bling-hub-key"),200);
@@ -1884,6 +1888,19 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   }
 
   const uniqueBlockers=[...new Set(blockers)];
+  const operationalBlockers:string[]=[];
+  const queueReason=clean(payload?.queue_reason,80);
+  const payment=payload?.payment&&typeof payload.payment==="object"?payload.payment:{};
+  const separationStarted=queueReason==="first_separation";
+  const physicalStockHandled=payment?.stock_consumed===true || (separationStarted && payment?.stock_reserved===true);
+  const orderStatus=clean(payload?.status,40).toLowerCase();
+
+  if(!separationStarted)operationalBlockers.push("first_separation_required");
+  if(!physicalStockHandled)operationalBlockers.push("stock_not_consumed");
+  if(orderStatus==="cancelled")operationalBlockers.push("order_cancelled");
+  if(Number.isFinite(orderTotal)&&orderTotal<7500)operationalBlockers.push("minimum_order_not_met");
+
+  const writeBlockers=[...new Set([...uniqueBlockers,...operationalBlockers])];
   const otherExpenses=Math.max(0,Number.isFinite(delta)?delta:0);
   const discount=Math.max(0,Number.isFinite(delta)?-delta:0);
   const externalKey="VITRINE-"+sourceOrderId.replace(/-/g,"").slice(0,28);
@@ -1925,6 +1942,10 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
     source_order_id:sourceOrderId,
     ready:uniqueBlockers.length===0,
     blockers:uniqueBlockers,
+    write_eligible:writeBlockers.length===0,
+    write_blockers:writeBlockers,
+    separation_started:separationStarted,
+    stock_handled:physicalStockHandled,
     unresolved_products:unresolved,
     resolved_items_count:resolved.length,
     customer_linked:Boolean(contactId),
@@ -1959,11 +1980,17 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
       }
 
       const preview=await blingHubPreviewOrderSync(sb,job.payload);
-      if(!preview.ok||!preview.ready){
+      if(!preview.ok||!preview.write_eligible){
         await sb.rpc("finish_bling_hub_job_v2",{
           p_job_id:job.id,p_status:"review_required",
-          p_result:{blockers:preview.blockers||[],unresolved_products:preview.unresolved_products||[],totals:preview.totals||{}},
-          p_error_code:"order_not_ready",p_error_message:"Order snapshot failed Bling readiness checks",
+          p_result:{
+            blockers:preview.blockers||[],
+            write_blockers:preview.write_blockers||[],
+            unresolved_products:preview.unresolved_products||[],
+            totals:preview.totals||{}
+          },
+          p_error_code:"order_not_write_eligible",
+          p_error_message:"Order snapshot is not eligible for Bling write",
           p_http_status:null,p_retry_seconds:120,p_provider_id:null
         });
         summary.review_required++;continue;
