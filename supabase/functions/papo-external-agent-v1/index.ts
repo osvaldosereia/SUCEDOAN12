@@ -905,7 +905,8 @@ async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactN
       papoai_contact_phone:papoContactPhone,
       storefront_phone:sitePhone,
       expires_at:String(issued.expires_at||''),
-      papoai_http_status:papoResponse.status
+      papoai_http_status:papoResponse.status,
+      papoai_response:responseText
     };
   }catch(error){
     return {ok:false,reason:String(error?.message||error).slice(0,180)};
