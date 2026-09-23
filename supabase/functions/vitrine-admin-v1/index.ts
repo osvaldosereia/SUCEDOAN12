@@ -181,17 +181,35 @@ async function saveProduct(payload: any) {
       .update(row)
       .eq("organization_id",ORG_ID)
       .eq("id",id)
-      .select("id")
+      .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,updated_at")
       .single();
     if (error) throw error;
-    return { product_id:data.id };
+    let blingQueued=false;
+    try{
+      const queued=await blingHubControl("enqueue_job",{
+        domain:"product",operation:"sync_product",source_id:data.id,
+        idempotency_key:"vitrine_qx:product:"+data.id+":"+String(data.updated_at),
+        payload:{product:data}
+      });
+      blingQueued=!(queued as any).error;
+    }catch{}
+    return { product_id:data.id,bling_queued:blingQueued };
   }
   const { data, error } = await db.from("products")
     .insert(row)
-    .select("id")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,updated_at")
     .single();
   if (error) throw error;
-  return { product_id:data.id };
+  let blingQueued=false;
+  try{
+    const queued=await blingHubControl("enqueue_job",{
+      domain:"product",operation:"sync_product",source_id:data.id,
+      idempotency_key:"vitrine_qx:product:"+data.id+":"+String(data.updated_at),
+      payload:{product:data}
+    });
+    blingQueued=!(queued as any).error;
+  }catch{}
+  return { product_id:data.id,bling_queued:blingQueued };
 }
 
 
@@ -268,15 +286,27 @@ async function balanceConfirm(payload:any) {
   if (error) throw error;
   const row=Array.isArray(data)?data[0]:data;
   const locations=await productLocationMap([product.id]);
+  const currentStock=Number(row?.counted_quantity??quantity);
+  let blingQueued=false;
+  try{
+    const stamp=new Date().toISOString();
+    const queued=await blingHubControl("enqueue_job",{
+      domain:"stock",operation:"set_stock",source_id:product.id,
+      idempotency_key:"vitrine_qx:stock:"+product.id+":"+stamp,
+      payload:{product_id:product.id,gtin:product.gtin??ean,stock_quantity:currentStock,reason:"inventory_balance",occurred_at:stamp}
+    });
+    blingQueued=!(queued as any).error;
+  }catch{}
   return {
     product:{
       id:product.id,
       gtin:product.gtin??ean,
       name:row?.product_name??product.name,
       previous_quantity:Number(row?.previous_quantity??product.stock_quantity??0),
-      stock_quantity:Number(row?.counted_quantity??quantity),
+      stock_quantity:currentStock,
       gondola_number:locations.get(product.id)??null
-    }
+    },
+    bling_queued:blingQueued
   };
 }
 
@@ -875,7 +905,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","enqueue_job"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
