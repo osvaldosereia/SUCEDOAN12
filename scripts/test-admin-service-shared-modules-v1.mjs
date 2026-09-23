@@ -11,7 +11,7 @@ assert.match(planner,/export function normalizePapoAiCommercialPlan/);
 assert.match(planner,/export async function planPapoAiTurn|export function planPapoAiTurn/);
 assert.match(commerce,/export async function contextualCommerceIntent|export function contextualCommerceIntent/);
 assert.match(commerce,/export function deterministicCommerceIntent/);
-assert.match(commerce,/export function classifyCommerceIntent/);
+assert.match(commerce,/export async function classifyCommerceIntent|export function classifyCommerceIntent/);
 assert.ok(planner.length>9000,'planner compartilhado parece incompleto');
 assert.ok(commerce.length>20000,'commerce intent compartilhado parece incompleto');
 
