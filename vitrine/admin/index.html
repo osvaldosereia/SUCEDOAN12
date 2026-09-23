@@ -153,7 +153,7 @@
   const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
-  const state={tab:'orders',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'orders',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -501,8 +501,8 @@
 
   async function renderBling(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Integração Bling</h1><p>Conexão direta Supabase → Bling. Make não participa desta integração.</p></div><button class="secondary" id="refreshBling">Atualizar</button></div>'+
-      '<div class="bling-banner"><strong>Etapa atual: fundação e diagnóstico somente leitura</strong><small>Nenhuma atualização de produto, estoque, cliente, pedido ou nota fiscal está liberada. As filas antigas estão congeladas para impedir disparos acidentais.</small></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Integração Bling</h1><p>Novo fluxo direto Supabase → Bling. Os cenários antigos do Make permanecem preservados, mas não participam deste fluxo.</p></div><button class="secondary" id="refreshBling">Atualizar</button></div>'+
+      '<div class="bling-banner"><strong>Homologação controlada · escritas globais bloqueadas</strong><small>Produtos, estoque, clientes e pedidos usam filas versionadas e canários. Fiscal permanece desligado. As filas antigas e o Make continuam preservados.</small></div>'+
       '<div id="blingStatus"><div class="loading">Carregando status…</div></div>';
     $('#refreshBling').onclick=()=>loadBlingStatus();
     await loadBlingStatus();
@@ -527,7 +527,7 @@
 
   function paintBling(){
     const host=$('#blingStatus');if(!host)return;
-    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{};
+    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{},orderLinks=b.order_links||{};
     const probes=probe.probes||{};
     const scope=(key,label)=>{
       const p=probes[key];
@@ -543,6 +543,7 @@
         '<div class="bling-card"><small>Novo Hub</small><strong>'+esc(String(b.mode||'observe').toUpperCase())+'</strong><span class="sub">'+esc(queue.pending||0)+' pendentes · '+esc(queue.processing||0)+' processando</span></div>'+
         '<div class="bling-card"><small>Produtos vinculados</small><strong>'+esc(links.matched||0)+' / '+esc(links.total||0)+'</strong><span class="sub">'+esc(links.not_found||0)+' não encontrados · '+esc((links.ambiguous||0)+(links.review_required||0))+' revisar</span></div>'+
         '<div class="bling-card"><small>Clientes vinculados</small><strong>'+esc(customerLinks.matched||0)+' / '+esc(customerLinks.total||0)+'</strong><span class="sub">'+esc(customerLinks.not_found||0)+' não encontrados · '+esc((customerLinks.ambiguous||0)+(customerLinks.review_required||0))+' revisar</span></div>'+
+        '<div class="bling-card"><small>Pedidos vinculados</small><strong>'+esc(orderLinks.matched||0)+' / '+esc(orderLinks.total||0)+'</strong><span class="sub">'+esc(orderLinks.review_required||0)+' para revisar</span></div>'+
         '<div class="bling-card"><small>Escritas externas</small><strong class="'+(b.hub_enabled?'danger-text':'ok-text')+'">'+(b.hub_enabled?'Habilitadas':'Bloqueadas')+'</strong><span class="sub">Produtos '+(domains.products?'ON':'OFF')+' · Clientes '+(domains.customers?'ON':'OFF')+' · Pedidos '+(domains.orders?'ON':'OFF')+' · Fiscal '+(domains.fiscal?'ON':'OFF')+'</span></div>'+
       '</div>'+
       '<div class="panel"><div class="history-title"><strong>Permissões e leitura da API</strong><span class="muted">teste sem alterar dados</span></div>'+
@@ -831,7 +832,7 @@
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#editor').showModal();
     try{
-      const data=await api('order',{id});state.currentOrder=data;
+      const data=await api('order',{id});state.currentOrder=data;state.currentOrderBlingPreview=null;
       if(!state.customers.length){try{const c=await customerApi('vitrine_customers_list',{limit:150});state.customers=c.customers||[]}catch{}}
       const sourceId=data.customer?.source_customer_id||data.order?.delivery_address_snapshot?.source_customer_id||'';
       if(sourceId&&!state.customers.some(c=>c.id===sourceId)){
@@ -857,13 +858,70 @@
       '<div class="order-items">'+(d.items||[]).map(orderItemHtml).join('')+'</div>'+
       '<div class="section-title">Cliente / entrega</div>'+
       '<div>'+customerSummary(c,o.delivery_address_snapshot)+'</div>'+
+      '<div class="section-title">Bling</div>'+
+      '<div id="orderBlingPreview">'+orderBlingPreviewHtml(state.currentOrderBlingPreview)+'</div>'+
+      '<div class="print-actions"><button class="secondary" id="previewBlingOrder">Verificar prévia Bling</button></div>'+
       '<div class="print-actions"><button class="primary" id="printSeparation">Imprimir separação 80 mm</button><button class="secondary" id="printDelivery">Imprimir via do entregador</button></div>';
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar pedido</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
     $('#printSeparation').onclick=()=>printSeparation(d);
     $('#printDelivery').onclick=()=>printDelivery(d);
+    $('#previewBlingOrder').onclick=previewCurrentOrderBling;
     if($('#retryHistorySync'))$('#retryHistorySync').onclick=retryHistorySync;
+  }
+
+  function blingOrderBlockerLabel(code){
+    const map={
+      first_separation_required:'A separação ainda não começou',
+      stock_not_consumed:'Estoque ainda não foi tratado na separação',
+      order_cancelled:'Pedido cancelado',
+      minimum_order_not_met:'Pedido abaixo do mínimo de R$ 75',
+      customer_not_linked:'Cliente ainda não vinculado',
+      customer_not_found:'Cliente não encontrado',
+      customer_missing_bling_contact_id:'Cliente sem vínculo seguro com o Bling',
+      customer_inactive:'Cliente inativo',
+      unresolved_products:'Há produto sem vínculo seguro com o Bling',
+      product_total_mismatch:'Subtotal dos produtos não confere',
+      commercial_delta_mismatch:'Diferença comercial não confere',
+      invalid_order_total:'Total do pedido inválido',
+      order_without_items:'Pedido sem itens',
+      delivery_street_required:'Rua de entrega ausente',
+      delivery_number_required:'Número de entrega ausente',
+      delivery_city_required:'Cidade de entrega ausente',
+      delivery_state_required:'UF de entrega ausente'
+    };
+    return map[code]||String(code||'').replaceAll('_',' ');
+  }
+
+  function orderBlingPreviewHtml(p){
+    if(!p)return '<div class="rule-notice"><strong>Prévia ainda não verificada</strong><div>Use o botão abaixo para conferir o pedido. Esta verificação não envia nem altera nada no Bling.</div></div>';
+    const totals=p.totals||{};
+    const blockers=Array.isArray(p.write_blockers)&&p.write_blockers.length?p.write_blockers:(p.blockers||[]);
+    const stateText=p.write_eligible?'Apto tecnicamente':'Envio bloqueado com segurança';
+    const stateClass=p.write_eligible?'ok-text':'warn-text';
+    return '<div class="rule-notice">'+
+      '<strong class="'+stateClass+'">'+esc(stateText)+'</strong>'+
+      '<div>'+esc(p.resolved_items_count||0)+' itens individualizados · Produtos '+money(totals.product_lines_cents||0)+' · Ajuste '+money((totals.other_expenses_cents||0)-(totals.discount_cents||0))+' · Total '+money(totals.order_total_cents||0)+'</div>'+
+      (blockers.length?'<div class="sub" style="margin-top:6px">'+blockers.map(x=>'• '+esc(blingOrderBlockerLabel(x))).join('<br>')+'</div>':'<div class="sub" style="margin-top:6px">Sem bloqueios de dados. O processamento continua controlado pelo Hub Bling.</div>')+
+      '<div class="sub" style="margin-top:6px">Somente prévia: nenhuma alteração externa é feita por esta tela.</div>'+
+    '</div>';
+  }
+
+  async function previewCurrentOrderBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#previewBlingOrder');if(btn){btn.disabled=true;btn.textContent='Verificando…'}
+    try{
+      const data=await api('bling_preview_order_sync',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data;
+      paintOrderDetail();
+      toast(data.write_eligible?'Pedido apto para o fluxo Bling':'Prévia conferida · envio continua bloqueado');
+    }catch(e){
+      toast('Não consegui verificar a prévia do Bling agora');
+      if(btn){btn.disabled=false;btn.textContent='Verificar prévia Bling'}
+    }
   }
 
   async function retryHistorySync(){
