@@ -193,6 +193,7 @@ async function saveProduct(payload: any) {
       });
       blingQueued=!(queued as any).error;
     }catch{}
+    try{await queueBlingStockSnapshots([data.id],"product_save")}catch{}
     return { product_id:data.id,bling_queued:blingQueued };
   }
   const { data, error } = await db.from("products")
@@ -209,6 +210,7 @@ async function saveProduct(payload: any) {
     });
     blingQueued=!(queued as any).error;
   }catch{}
+  try{await queueBlingStockSnapshots([data.id],"product_create")}catch{}
   return { product_id:data.id,bling_queued:blingQueued };
 }
 
@@ -288,15 +290,7 @@ async function balanceConfirm(payload:any) {
   const locations=await productLocationMap([product.id]);
   const currentStock=Number(row?.counted_quantity??quantity);
   let blingQueued=false;
-  try{
-    const stamp=new Date().toISOString();
-    const queued=await blingHubControl("enqueue_job",{
-      domain:"stock",operation:"set_stock",source_id:product.id,
-      idempotency_key:"vitrine_qx:stock:"+product.id+":"+stamp,
-      payload:{product_id:product.id,gtin:product.gtin??ean,stock_quantity:currentStock,reason:"inventory_balance",occurred_at:stamp}
-    });
-    blingQueued=!(queued as any).error;
-  }catch{}
+  try{blingQueued=await queueBlingStockSnapshots([product.id],"inventory_balance")}catch{}
   return {
     product:{
       id:product.id,
@@ -870,6 +864,8 @@ async function consumeOrderStock(payload:any) {
       .update({payment_method_snapshot:nextPayment,status:order.status==="created"?"processing":order.status})
       .eq("organization_id",ORG_ID).eq("id",id);
     if(uErr)throw uErr;
+    const stockItems=await orderStockReservationItems(id);
+    try{await queueBlingStockSnapshots(stockItems.map((x:any)=>x.product_id),"order_separation")}catch{}
     const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
     return {order_id:id,stock_status:"consumed",already_consumed:Boolean(consumed.already_consumed),history_synced:Boolean(historySync.ok)};
   }
@@ -900,12 +896,13 @@ async function consumeOrderStock(payload:any) {
     .eq("organization_id",ORG_ID).eq("id",id);
   if(uErr)throw uErr;
 
+  try{await queueBlingStockSnapshots(stockItems.map((x:any)=>x.product_id),"order_separation")}catch{}
   const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
   return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok)};
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","enqueue_job"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -966,6 +963,22 @@ async function reconcileBlingProductsReadonly(payload:any){
     offset,limit,
     next_offset:items.length===limit?offset+items.length:null
   };
+}
+async function queueBlingStockSnapshots(productIds:string[],reason:string){
+  const ids=[...new Set((productIds||[]).filter(Boolean))];
+  if(!ids.length)return false;
+  const q=await db.from("products").select("id,gtin,sku,name,stock_quantity,updated_at")
+    .eq("organization_id",ORG_ID).in("id",ids);
+  if(q.error)throw q.error;
+  const stamp=new Date().toISOString();
+  const jobs=(q.data||[]).map((p:any)=>({
+    domain:"stock",operation:"set_stock",source_id:p.id,
+    idempotency_key:"vitrine_qx:stock:"+p.id+":"+stamp,
+    payload:{product_id:p.id,gtin:p.gtin||"",sku:p.sku||"",name:p.name||"",stock_quantity:Number(p.stock_quantity||0),reason,occurred_at:stamp}
+  }));
+  if(!jobs.length)return false;
+  const result=await blingHubControl("enqueue_jobs",{jobs});
+  return !(result as any).error;
 }
 async function retryHistorySync(payload:any) {
   const id=uuid(payload?.id);
@@ -1116,6 +1129,12 @@ async function updateOrder(payload:any) {
     .maybeSingle();
   if (error) throw error;
   if (!data) return {error:"order_not_found",status:404};
+  if(stockReleasedChange===true){
+    try{
+      const stockItems=await orderStockReservationItems(data.id);
+      await queueBlingStockSnapshots(stockItems.map((x:any)=>x.product_id),"order_cancelled");
+    }catch{}
+  }
   const historySync=await syncVitrineOrderHistory(db,data.id,ORG_ID);
   return {order_id:data.id,stock_released:stockReleasedChange,history_synced:Boolean(historySync.ok)};
 }
