@@ -102,19 +102,17 @@ async function productFacets(categoryRaw:unknown="") {
   const pageSize=1000;
 
   while(true){
-    let query=db.from("products")
+    const {data,error}=await db.from("products")
       .select("metadata")
       .eq("organization_id",ORG_ID)
       .range(from,from+pageSize-1);
-    if(category)query=query.contains("metadata",{sales_category:category});
-    const {data,error}=await query;
     if(error)throw error;
     const rows=data??[];
     for(const row of rows){
       const cat=text(row?.metadata?.sales_category??row?.metadata?.storefront_category,48);
       const sub=text(row?.metadata?.subsubcategory,100);
       if(cat)categoryMap.set(cat,(categoryMap.get(cat)??0)+1);
-      if(sub)subcategoryMap.set(sub,(subcategoryMap.get(sub)??0)+1);
+      if(sub&&(!category||cat===category))subcategoryMap.set(sub,(subcategoryMap.get(sub)??0)+1);
     }
     if(rows.length<pageSize)break;
     from+=pageSize;
