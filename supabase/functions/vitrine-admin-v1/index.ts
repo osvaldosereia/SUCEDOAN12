@@ -240,8 +240,8 @@ async function saveProduct(payload: any) {
   let blingQueued=false;
   try{
     const queued=await blingHubControl("enqueue_job",{
-      domain:"product",operation:"sync_product",source_id:data.id,
-      idempotency_key:"vitrine_qx:product:"+data.id+":"+String(data.updated_at),
+      domain:"product",operation:"create_product",source_id:data.id,
+      idempotency_key:"vitrine_qx:product:create:"+data.id+":"+String(data.updated_at),
       payload:{product:data}
     });
     blingQueued=!(queued as any).error;
