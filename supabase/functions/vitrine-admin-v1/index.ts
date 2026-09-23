@@ -1855,6 +1855,24 @@ async function updateOrder(payload:any) {
       }
     };
   }
+  if(requestedStatus==="ready"&&currentOrder.status==="out_for_delivery"){
+    const deliveryReturnReason=text(payload?.delivery_return_reason,120)||"Não informado";
+    const deliveryReturnNote=text(payload?.delivery_return_note,500);
+    const basePayment=patch.payment_method_snapshot??currentPayment;
+    const previousAttempts=Array.isArray(basePayment.delivery_attempts)?basePayment.delivery_attempts:[];
+    const attempt={
+      result:"not_delivered",
+      reason:deliveryReturnReason,
+      note:deliveryReturnNote||null,
+      at:new Date().toISOString(),
+      source:"vitrine_admin"
+    };
+    patch.payment_method_snapshot={
+      ...basePayment,
+      delivery_attempts:[...previousAttempts,attempt].slice(-20),
+      last_delivery_failure:attempt
+    };
+  }
 
   if(requestedStatus&&["confirmed","processing","ready","out_for_delivery","delivered"].includes(requestedStatus)){
     const candidateDelivery=Object.prototype.hasOwnProperty.call(patch,"delivery_address_snapshot")
