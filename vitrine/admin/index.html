@@ -527,7 +527,7 @@
 
   function paintBling(){
     const host=$('#blingStatus');if(!host)return;
-    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{};
+    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{};
     const probes=probe.probes||{};
     const scope=(key,label)=>{
       const p=probes[key];
@@ -541,14 +541,30 @@
         '<div class="bling-card"><small>Credenciais OAuth</small><strong>'+yesNo(cred.ready,'Configuradas','Incompletas')+'</strong><span class="sub">Client ID · Secret · Refresh token</span></div>'+
         '<div class="bling-card"><small>Filas antigas</small><strong>'+yesNo(b.legacy_queues_frozen,'Congeladas','ATENÇÃO')+'</strong><span class="sub">'+esc(legacy.bling_commands_pending||0)+' comandos · '+esc(legacy.order_sync_pending_or_error||0)+' pedidos</span></div>'+
         '<div class="bling-card"><small>Novo Hub</small><strong>'+esc(String(b.mode||'observe').toUpperCase())+'</strong><span class="sub">'+esc(queue.pending||0)+' pendentes · '+esc(queue.processing||0)+' processando</span></div>'+
+        '<div class="bling-card"><small>Produtos vinculados</small><strong>'+esc(links.matched||0)+' / '+esc(links.total||0)+'</strong><span class="sub">'+esc(links.not_found||0)+' não encontrados · '+esc((links.ambiguous||0)+(links.review_required||0))+' revisar</span></div>'+
         '<div class="bling-card"><small>Escritas externas</small><strong class="'+(b.hub_enabled?'danger-text':'ok-text')+'">'+(b.hub_enabled?'Habilitadas':'Bloqueadas')+'</strong><span class="sub">Produtos '+(domains.products?'ON':'OFF')+' · Pedidos '+(domains.orders?'ON':'OFF')+' · Fiscal '+(domains.fiscal?'ON':'OFF')+'</span></div>'+
       '</div>'+
       '<div class="panel"><div class="history-title"><strong>Permissões e leitura da API</strong><span class="muted">teste sem alterar dados</span></div>'+
         '<div class="bling-scopes">'+scope('products','Produtos')+scope('contacts','Clientes')+scope('sales_orders','Pedidos')+scope('deposits','Depósitos')+scope('invoice','NF-e')+'</div>'+
         (Array.isArray(probe.deposit_candidates)&&probe.deposit_candidates.length?'<div class="rule-notice"><strong>Depósitos encontrados</strong>'+probe.deposit_candidates.map(d=>esc((d.default?'★ ':'')+(d.name||'Depósito')+' #'+d.id)).join(' · ')+'</div>':'')+
-        '<div class="bling-actions"><button class="primary" id="probeBling">Verificar conexão com o Bling</button></div>'+
+        '<div class="bling-actions"><button class="secondary" id="reconcileBlingCatalog">Reconciliar produtos</button><button class="primary" id="probeBling">Verificar conexão com o Bling</button></div>'+
       '</div>';
     if($('#probeBling'))$('#probeBling').onclick=probeBlingReadonly;
+    if($('#reconcileBlingCatalog'))$('#reconcileBlingCatalog').onclick=reconcileBlingCatalogReadonly;
+  }
+
+  async function reconcileBlingCatalogReadonly(){
+    const btn=$('#reconcileBlingCatalog');if(btn){btn.disabled=true;btn.textContent='Reconciliando…'}
+    try{
+      const data=await api('bling_reconcile_catalog_readonly',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
+      });
+      toast('Produtos: '+Number(data.summary?.matched||0)+' vinculados · '+Number(data.summary?.not_found||0)+' não encontrados');
+      await loadBlingStatus();
+    }catch(e){
+      toast('Não consegui reconciliar os produtos agora');
+      if(btn){btn.disabled=false;btn.textContent='Reconciliar produtos'}
+    }
   }
 
   async function probeBlingReadonly(){
