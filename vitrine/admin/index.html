@@ -752,7 +752,7 @@
 
   async function renderBling(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Integração Bling · Técnico</h1><p>Diagnóstico da integração. A operação normal de pedidos, produtos e clientes não deve depender desta tela.</p></div><button class="secondary" id="refreshBling">Atualizar</button></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Integração Bling · Técnico</h1><p>Diagnóstico da integração. A operação normal de pedidos, produtos e clientes não deve depender desta tela. Os cenários antigos do Make permanecem preservados, mas ficam fora do novo runtime.</p></div><button class="secondary" id="refreshBling">Atualizar</button></div>'+
       '<div class="bling-banner" id="blingRuntimeBanner"><strong>Carregando estado do Hub…</strong><small>Consultando quais domínios estão ativos e quais continuam bloqueados.</small></div>'+
       '<div id="blingStatus"><div class="loading">Carregando status…</div></div>';
     $('#refreshBling').onclick=()=>loadBlingStatus();
@@ -1154,7 +1154,7 @@
       '<details class="integration-details"><summary>ERP / Bling '+(linked?'✓':'')+'</summary><div class="integration-body">'+
         '<div id="orderBlingLink">'+orderBlingLinkHtml(d.bling_link)+'</div>'+
         '<div id="orderBlingPreview">'+orderBlingPreviewHtml(state.currentOrderBlingPreview)+'</div>'+
-        '<div class="print-actions"><button class="secondary" id="previewBlingOrder">Diagnóstico da integração</button></div>'+
+        '<div class="print-actions"><button class="secondary" id="previewBlingOrder" aria-label="Verificar prévia Bling">Diagnóstico da integração</button></div>'+
       '</div></details>'+
       '<div class="section-title">Fiscal / NF-e</div>'+
       '<div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+
