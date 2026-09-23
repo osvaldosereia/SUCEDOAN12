@@ -678,6 +678,64 @@ async function submitOrder(payload:any) {
   return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery,history_synced:Boolean(historySync.ok)};
 }
 
+
+async function vitrineHistoryBridgeAuthorized(req:Request){
+  const supplied=String(req.headers.get('x-vitrine-history-key')||'').trim();
+  if(!supplied)return false;
+  const q=await db.from('internal_integration_secrets')
+    .select('secret_value')
+    .eq('integration_key','vitrine_history_bridge')
+    .maybeSingle();
+  if(q.error||!q.data?.secret_value)return false;
+  return supplied===String(q.data.secret_value);
+}
+
+async function reconcileCrmCustomer(payload:any){
+  const orderId=uuid(payload?.source_order_id);
+  const crmCustomerId=uuid(payload?.crm_customer_id);
+  if(!orderId||!crmCustomerId)return {error:'invalid_reconciliation_payload',status:400};
+
+  const {data:order,error}=await db.from('orders')
+    .select('id,delivery_address_snapshot,whatsapp_phone_e164')
+    .eq('organization_id',ORG_ID)
+    .eq('id',orderId)
+    .maybeSingle();
+  if(error)throw error;
+  if(!order)return {error:'order_not_found',status:404};
+
+  const customer=payload?.customer&&typeof payload.customer==='object'?payload.customer:{};
+  const address=payload?.address&&typeof payload.address==='object'?payload.address:{};
+  const old=order.delivery_address_snapshot&&typeof order.delivery_address_snapshot==='object'
+    ? order.delivery_address_snapshot:{};
+
+  const next:any={
+    ...old,
+    source_customer_id:crmCustomerId,
+    customer_status:'registered',
+    customer_name:text(customer?.name,180)||old.customer_name||old.recipient_name||null,
+    phone:normalizeWhatsappPhone(customer?.phone)||order.whatsapp_phone_e164||old.phone||null,
+    cpf:String(customer?.cpf??'').replace(/\D+/g,'').slice(0,14)||old.cpf||null
+  };
+  for(const key of ['street','number','complement','neighborhood','city','state','postal_code','reference','google_maps_url']){
+    const value=text(address?.[key],key==='google_maps_url'?800:300);
+    if(value)next[key]=value;
+  }
+
+  const upd=await db.from('orders').update({
+    crm_customer_id:crmCustomerId,
+    delivery_address_snapshot:next
+  }).eq('organization_id',ORG_ID).eq('id',orderId);
+  if(upd.error)throw upd.error;
+
+  const outbox=await db.from('vitrine_history_sync_outbox').update({
+    remote_customer_id:crmCustomerId,
+    updated_at:new Date().toISOString()
+  }).eq('order_id',orderId);
+  if(outbox.error)throw outbox.error;
+
+  return {order_id:orderId,crm_customer_id:crmCustomerId,customer_name:next.customer_name||null};
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null,{status:204,headers:cors});
   try {
@@ -701,6 +759,13 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "basket_quote") {
       const payload = await req.json().catch(()=>({}));
       return await basketQuote(payload);
+    }
+    if (req.method === "POST" && action === "reconcile_customer") {
+      if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
+      const payload = await req.json().catch(()=>({}));
+      const result=await reconcileCrmCustomer(payload);
+      if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
+      return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
     if (req.method === "POST" && action === "submit_order") {
       const payload = await req.json().catch(()=>({}));
