@@ -19,6 +19,7 @@ on:
       - 'scripts/test-vitrine-admin-priority-queue-v1.mjs'
       - 'scripts/test-vitrine-admin-delivery-editor-v1.mjs'
       - 'scripts/test-vitrine-admin-today-semantics-v1.mjs'
+      - 'scripts/test-vitrine-admin-closure-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
       - 'scripts/test-bling-hub-data-safety-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
@@ -49,6 +50,7 @@ on:
       - 'scripts/test-vitrine-admin-priority-queue-v1.mjs'
       - 'scripts/test-vitrine-admin-delivery-editor-v1.mjs'
       - 'scripts/test-vitrine-admin-today-semantics-v1.mjs'
+      - 'scripts/test-vitrine-admin-closure-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
       - 'scripts/test-bling-hub-data-safety-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
@@ -89,5 +91,6 @@ jobs:
           node scripts/test-vitrine-admin-priority-queue-v1.mjs
           node scripts/test-vitrine-admin-delivery-editor-v1.mjs
           node scripts/test-vitrine-admin-today-semantics-v1.mjs
+          node scripts/test-vitrine-admin-closure-v1.mjs
           node scripts/test-vitrine-admin-bling-preflight-v1.mjs
           node scripts/test-bling-hub-data-safety-v1.mjs
