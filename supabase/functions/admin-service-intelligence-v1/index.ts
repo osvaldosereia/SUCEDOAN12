@@ -1465,14 +1465,15 @@ async function blingHubVitrineConfirmFiscalPayment(sb:any,sourceOrderIdRaw:any,p
 async function blingHubReadinessExtended(sb:any){
   const r=await sb.rpc("bling_hub_readiness_v2");
   if(r.error)throw r.error;
-  const [links,customerLinks,orderLinks,webhookInbox,fiscalConfig,fiscalControls,fiscalJobs]=await Promise.all([
+  const [links,customerLinks,orderLinks,webhookInbox,fiscalConfig,fiscalControls,fiscalJobs,runtimeMeta]=await Promise.all([
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000),
     sb.from("bling_webhook_inbox_v2").select("status").limit(5000),
     sb.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent").eq("id",1).maybeSingle(),
     sb.from("order_fiscal_controls").select("fiscal_status").limit(5000),
-    sb.from("fiscal_issue_jobs").select("status,external_side_effect").limit(5000)
+    sb.from("fiscal_issue_jobs").select("status,external_side_effect").limit(5000),
+    sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle()
   ]);
   if(links.error)throw links.error;
   if(customerLinks.error)throw customerLinks.error;
@@ -1481,6 +1482,7 @@ async function blingHubReadinessExtended(sb:any){
   if(fiscalConfig.error)throw fiscalConfig.error;
   if(fiscalControls.error)throw fiscalControls.error;
   if(fiscalJobs.error)throw fiscalJobs.error;
+  if(runtimeMeta.error)throw runtimeMeta.error;
   const counts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const customerCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const orderCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
@@ -1514,6 +1516,7 @@ async function blingHubReadinessExtended(sb:any){
     product_links:counts,
     customer_links:customerCounts,
     order_links:orderCounts,
+    order_status_catalog:runtimeMeta.data?.metadata?.order_status_catalog||{state:"unknown",status_updates_enabled:false},
     webhook_inbox:webhookCounts,
     fiscal_readiness:fiscalReadiness
   };
