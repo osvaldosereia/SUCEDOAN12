@@ -240,8 +240,10 @@
   function orderProblemReasons(o){
     const reasons=[];
     if(o?.history_sync?.state==='failed')reasons.push('Histórico do cliente pendente');
-    if(!String(o?.customer_name||'').trim())reasons.push('Cliente não identificado');
+    if(['delivered','cancelled'].includes(o?.status))return reasons;
     const a=o?.delivery_address_snapshot||{};
+    const customerName=o?.customer_name||a.customer_name||a.recipient_name||'';
+    if(!String(customerName).trim())reasons.push('Cliente não identificado');
     if(!String(a.street||'').trim()||!String(a.number||'').trim()||!String(a.city||'').trim()||!String(a.state||'').trim())reasons.push('Endereço incompleto');
     const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
     if(!String(payment).trim())reasons.push('Pagamento não informado');
@@ -1397,14 +1399,17 @@
 
   function orderActionButtonsHtml(o){
     const consumed=o.payment_method_snapshot?.stock_consumed===true;
+    const problems=orderProblemReasons(o);
+    const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o.status);
     let primary='';
-    if(o.status==='created')primary='<button class="primary" id="advanceOrder" data-next="confirmed" type="button">Confirmar pedido</button>';
-    else if(o.status==='confirmed'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Iniciar separação</button>';
-    else if(o.status==='confirmed'&&consumed)primary='<button class="primary" id="advanceOrder" data-next="processing" type="button">Continuar separação</button>';
+    if(mustFix)primary='<button class="primary" type="button" disabled>Corrija os dados antes de avançar</button>';
+    if(!mustFix&&o.status==='created')primary='<button class="primary" id="advanceOrder" data-next="confirmed" type="button">Confirmar pedido</button>';
+    else if(!mustFix&&o.status==='confirmed'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Iniciar separação</button>';
+    else if(!mustFix&&o.status==='confirmed'&&consumed)primary='<button class="primary" id="advanceOrder" data-next="processing" type="button">Continuar separação</button>';
     else if(o.status==='processing'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Regularizar separação</button>';
     else if(o.status==='processing')primary='<button class="primary" id="advanceOrder" data-next="ready" type="button">Finalizar separação</button>';
-    else if(o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
-    else if(o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
+    else if(!mustFix&&o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
+    else if(!mustFix&&o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
     const docs=[];
     if(consumed)docs.push('<button class="secondary" id="reprintSeparation" type="button">Reimprimir separação</button>');
     if(['ready','out_for_delivery','delivered'].includes(o.status))docs.push('<button class="secondary" id="printDelivery" type="button">Imprimir via do entregador</button>');
