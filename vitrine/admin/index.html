@@ -78,7 +78,8 @@
     .order-stage{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:11px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.order-stage>span{font-size:12px;color:var(--muted);font-weight:700}.order-stage b{font-size:13px}
     .order-action-zone{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:12px;margin-top:10px}.order-action-zone strong{display:block;margin-bottom:4px}.order-action-zone small{display:block;color:var(--muted);line-height:1.4}
     .integration-details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px}.integration-details summary{cursor:pointer;padding:12px 0;font-weight:700}.integration-details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}.integration-details .integration-body{padding-bottom:12px}
-    .dispatch-grid{display:grid;gap:14px}.dispatch-section{overflow:hidden}.dispatch-head{padding:13px 14px;margin:0;border-bottom:1px solid var(--line)}.dispatch-head>div{min-width:0}.dispatch-head span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-head>b{font-size:20px}.dispatch-row{grid-template-columns:90px minmax(0,1.5fr) minmax(120px,.6fr) 105px minmax(190px,.8fr);cursor:default}.dispatch-row:hover{background:#f8fbff}.dispatch-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}.quick-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#1967d2;text-decoration:none;font-weight:700;font-size:12px}.quick-link:hover{background:#f1f3f4}.quick-link.primary-link{background:#e8f0fe;border-color:#d2e3fc}.age-text{font-size:11px;color:var(--muted);font-weight:600}
+    .dispatch-grid{display:grid;gap:14px}.dispatch-section{overflow:hidden}.dispatch-head{padding:13px 14px;margin:0;border-bottom:1px solid var(--line)}.dispatch-head>div{min-width:0}.dispatch-head span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-head>b{font-size:20px}.dispatch-row{grid-template-columns:90px minmax(0,1.5fr) minmax(120px,.6fr) 105px minmax(190px,.8fr);cursor:default}.dispatch-row:hover{background:#f8fbff}
+    .closure-grid{display:grid;gap:14px}.closure-row{display:grid;grid-template-columns:90px minmax(0,1.4fr) 130px minmax(180px,.8fr) 90px;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}.closure-row:last-child{border-bottom:0}.closure-status strong{display:block;font-size:12px}.closure-status small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}.quick-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#1967d2;text-decoration:none;font-weight:700;font-size:12px}.quick-link:hover{background:#f1f3f4}.quick-link.primary-link{background:#e8f0fe;border-color:#d2e3fc}.age-text{font-size:11px;color:var(--muted);font-weight:600}
     .today-order-row{grid-template-columns:90px minmax(0,1fr) 150px 80px}
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
@@ -87,7 +88,7 @@
       .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
       .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
-      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:72px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.dispatch-row .dispatch-actions{grid-column:2/4;justify-content:flex-start}.quick-link{min-height:40px}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
+      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:72px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.dispatch-row .dispatch-actions{grid-column:2/4;justify-content:flex-start}.closure-row{grid-template-columns:72px minmax(0,1fr) auto}.closure-row>:nth-child(3),.closure-row>:nth-child(4){grid-column:2}.closure-row>:nth-child(5){grid-column:3;grid-row:1/4}.quick-link{min-height:40px}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
     }
   
     /* Material-like operational shell */
@@ -164,6 +165,7 @@
         <button class="tab" data-tab="today" type="button">Hoje</button>
         <button class="tab" data-tab="orders" type="button">Pedidos</button>
         <button class="tab" data-tab="expedition" type="button">Expedição</button>
+        <button class="tab" data-tab="closure" type="button">Fechamento</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
         <button class="tab" data-tab="expiry" type="button">Validades</button>
         <button class="tab" data-tab="balance" type="button">Balanço</button>
@@ -193,7 +195,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderQuery:'',expeditionQuery:'',orderCustomerSearchTimer:null,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderQuery:'',expeditionQuery:'',orderCustomerSearchTimer:null,fiscalByOrder:{},products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -228,6 +230,7 @@
     if(tab==='bling')renderBling();
     if(tab==='orders')renderOrders();
     if(tab==='expedition')renderExpedition();
+    if(tab==='closure')renderClosure();
     if(tab==='more')renderMore();
   }
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
@@ -427,6 +430,75 @@
     }catch(e){
       $('#expeditionBody').innerHTML='<div class="empty">Não consegui carregar a expedição. <button class="text" id="retryExpedition">Tentar novamente</button></div>';
       if($('#retryExpedition'))$('#retryExpedition').onclick=renderExpedition;
+    }
+  }
+
+  function fiscalClosureLabel(f){
+    if(!f||f.error)return {title:'Verificar',detail:'Controle fiscal indisponível',kind:'warn'};
+    if(f.payment_status!=='confirmed')return {title:'Pagamento pendente',detail:'Confirmar recebimento',kind:'warn'};
+    if(f.fiscal_status==='issued'||f.bling_invoice_id)return {title:'Concluído',detail:f.bling_invoice_number?'NF-e '+f.bling_invoice_number:'Fiscal concluído',kind:'ok'};
+    if(f.fiscal_status==='review_required')return {title:'Precisa de revisão',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Revisar fiscal',kind:'warn'};
+    if(f.fiscal_status==='ready')return {title:'Fiscal pronto',detail:f.config?.send_enabled?'Pronto para emissão':'Emissão permanece desligada',kind:'ok'};
+    return {title:'Fiscal bloqueado',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Aguardando requisitos',kind:'warn'};
+  }
+  function closurePriority(o){
+    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f);
+    if(label.title==='Pagamento pendente')return 0;
+    if(label.title==='Precisa de revisão'||label.title==='Verificar')return 1;
+    if(label.title==='Fiscal pronto'||label.title==='Fiscal bloqueado')return 2;
+    return 3;
+  }
+  function closureRow(o){
+    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f);
+    const cls=label.kind==='ok'?'ok-text':'warn-text';
+    return '<div class="closure-row">'+
+      '<div><strong>#'+esc(shortOrder(o.order_number))+'</strong><span class="sub">'+esc(dateTime(o.delivered_at))+'</span></div>'+
+      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div>'+
+      '<strong>'+money(o.total_cents)+'</strong>'+
+      '<div class="closure-status"><strong class="'+cls+'">'+esc(label.title)+'</strong><small>'+esc(label.detail)+'</small></div>'+
+      '<button class="text" type="button" data-closure-order="'+esc(o.id)+'">Abrir</button>'+
+    '</div>';
+  }
+  async function loadFiscalForOrders(rows){
+    const queue=(rows||[]).slice(0,30);
+    let cursor=0;
+    async function worker(){
+      while(cursor<queue.length){
+        const o=queue[cursor++];
+        if(state.fiscalByOrder[o.id])continue;
+        try{
+          state.fiscalByOrder[o.id]=await api('order_fiscal_status',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id})
+          });
+        }catch(e){
+          state.fiscalByOrder[o.id]={error:String(e?.message||'fiscal_unavailable')};
+        }
+      }
+    }
+    await Promise.all([worker(),worker(),worker()]);
+  }
+  async function renderClosure(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Fechamento</h1><p>Entregas concluídas que precisam de recebimento, revisão fiscal ou conferência final.</p></div><button class="secondary" id="refreshClosure">Atualizar</button></div><div id="closureBody"><div class="loading">Carregando fechamento…</div></div>';
+    $('#refreshClosure').onclick=()=>{state.fiscalByOrder={};renderClosure()};
+    try{
+      const data=await api('orders');state.orders=data.orders||[];
+      const delivered=state.orders.filter(o=>o.status==='delivered').slice(0,30);
+      await loadFiscalForOrders(delivered);
+      delivered.sort((a,b)=>closurePriority(a)-closurePriority(b)||((Date.parse(b.delivered_at||0)||0)-(Date.parse(a.delivered_at||0)||0)));
+      const pending=delivered.filter(o=>closurePriority(o)<3);
+      const complete=delivered.filter(o=>closurePriority(o)===3);
+      $('#closureBody').innerHTML='<div class="ops-cards">'+
+        '<div class="ops-card warn"><small>Precisa finalizar</small><strong>'+pending.length+'</strong><span>Pagamento, revisão ou fiscal</span></div>'+
+        '<div class="ops-card"><small>Concluídos</small><strong>'+complete.length+'</strong><span>Fechamento encerrado</span></div>'+
+      '</div><div class="closure-grid">'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Precisa finalizar</strong><span>ações pendentes depois da entrega</span></div><b>'+pending.length+'</b></div>'+(pending.length?pending.map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento pendente.</div>')+'</section>'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Concluídos recentes</strong><span>pagamento e fiscal conferidos</span></div><b>'+complete.length+'</b></div>'+(complete.length?complete.slice(0,10).map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento concluído recente.</div>')+'</section>'+
+      '</div>';
+      document.querySelectorAll('[data-closure-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.closureOrder));
+    }catch(e){
+      $('#closureBody').innerHTML='<div class="empty">Não consegui carregar os fechamentos. <button class="text" id="retryClosure">Tentar novamente</button></div>';
+      if($('#retryClosure'))$('#retryClosure').onclick=renderClosure;
     }
   }
 
