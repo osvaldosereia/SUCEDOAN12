@@ -1749,10 +1749,14 @@
     const linked=d.bling_link?.linked===true;
     const delivery=o.delivery_address_snapshot||c.address||{};
     const deliveryProblems=orderProblemReasons(o).some(x=>['Cliente não identificado','Endereço incompleto'].includes(x));
+    const cancellation=o.payment_method_snapshot?.cancellation||null;
+    const cancellationAlert=cancellation&&o.status==='cancelled'
+      ? '<div class="rule-notice warn"><strong>Pedido cancelado · '+esc(cancellation.reason||'Motivo não informado')+'</strong><div>'+(cancellation.note?esc(cancellation.note)+' · ':'')+(cancellation.at?esc(dateTime(cancellation.at)):'')+'</div></div>'
+      : '';
     const suggestedCustomer=state.orderCustomerSuggestion?state.customers.find(x=>x.id===state.orderCustomerSuggestion):null;
     const customerSuggestion=suggestedCustomer?'<div class="sync-alert" style="border-color:#c7dccd;background:#f7fbf8"><div><strong style="color:#176b43">Cadastro com o mesmo telefone encontrado</strong><small>'+esc(suggestedCustomer.display_name||'Cliente')+(suggestedCustomer.address?.street?' · '+esc([suggestedCustomer.address.street,suggestedCustomer.address.number,suggestedCustomer.address.district].filter(Boolean).join(', ')):' · sem endereço completo no cadastro')+'</small></div><button class="secondary" type="button" id="useSuggestedCustomer">Usar cadastro</button></div>':'';
     $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
-    $('#editorBody').innerHTML=syncAlert+customerSuggestion+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
+    $('#editorBody').innerHTML=syncAlert+cancellationAlert+customerSuggestion+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
       '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
       '<div class="form-grid">'+
         '<div class="span-2 order-stage"><span>Situação atual</span>'+statusPill(o.status)+'<b>Próxima ação: '+esc(orderNextAction(o))+'</b></div>'+
@@ -2249,8 +2253,8 @@
     if(status)payload.status=status;
     return payload;
   }
-  async function persistCurrentOrder(status){
-    const payload=currentOrderEditablePayload(status);
+  async function persistCurrentOrder(status,extra={}){
+    const payload={...currentOrderEditablePayload(status),...(extra&&typeof extra==='object'?extra:{})};
     await api('order_update',{},{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
@@ -2273,12 +2277,31 @@
   }
   async function cancelCurrentOrder(){
     const linked=state.currentOrder?.bling_link?.linked===true;
+    const choice=prompt(
+      'Motivo do cancelamento:\n\n1 - Cliente desistiu\n2 - Produto indisponível\n3 - Endereço / área de entrega\n4 - Pedido duplicado\n5 - Problema de pagamento\n6 - Erro no pedido\n7 - Outro\n\nDigite o número ou escreva o motivo:'
+    );
+    if(choice===null)return;
+    const value=String(choice||'').trim();
+    const reasons={
+      '1':'Cliente desistiu',
+      '2':'Produto indisponível',
+      '3':'Endereço / área de entrega',
+      '4':'Pedido duplicado',
+      '5':'Problema de pagamento',
+      '6':'Erro no pedido',
+      '7':'Outro'
+    };
+    const reason=reasons[value]||value;
+    if(!reason){toast('Informe o motivo do cancelamento');return}
+    const noteInput=prompt('Observação opcional sobre o cancelamento:', '');
+    if(noteInput===null)return;
+    const note=String(noteInput||'').trim();
     const message=linked
-      ? 'Cancelar este pedido?\n\nO estoque reservado será devolvido quando aplicável. Como o pedido já está vinculado ao Bling, qualquer status que não puder ser atualizado automaticamente ficará registrado como pendência para revisão.'
-      : 'Cancelar este pedido? O estoque reservado será devolvido quando aplicável.';
+      ? 'Cancelar este pedido por "'+reason+'"?\n\nO estoque reservado será devolvido quando aplicável. Como o pedido já está vinculado ao Bling, qualquer situação que não puder ser atualizada automaticamente ficará registrada para revisão.'
+      : 'Cancelar este pedido por "'+reason+'"? O estoque reservado será devolvido quando aplicável.';
     if(!confirm(message))return;
     try{
-      await persistCurrentOrder('cancelled');
+      await persistCurrentOrder('cancelled',{cancellation_reason:reason,cancellation_note:note});
       paintOrderDetail();loadOrders();
       toast(linked?'Pedido cancelado · Bling será conferido':'Pedido cancelado');
     }catch(e){toast(errorMessage(e.message))}
