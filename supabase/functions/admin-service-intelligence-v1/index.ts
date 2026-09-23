@@ -1751,7 +1751,12 @@ async function blingHubPreviewCustomerSync(sb:any,customerIdRaw:any){
     ok:true,readonly:true,external_write:false,source_id:customerId,bling_id:blingId,
     change_count:Object.keys(changes).length,changes,
     current_shape,
-    desired_keys:Object.keys(payload).sort()
+    desired_keys:Object.keys(payload).sort(),
+    phone_shape:{
+      current_digits:blingHubDigits(current?.celular).length,
+      local_digits:blingHubDigits(local?.primary_whatsapp_e164).length,
+      desired_digits:blingHubDigits(payload?.celular).length
+    }
   };
 }
 async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
