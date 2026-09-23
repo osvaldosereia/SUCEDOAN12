@@ -1585,6 +1585,15 @@ async function blingHubOauth(sb:any){
     await sb.rpc("release_bling_hub_oauth_lock_v2",{p_owner:owner});
   }
 }
+function blingHubProviderDetails(data:any){
+  return Array.isArray(data?.error?.fields)
+    ? data.error.fields.slice(0,20).map((x:any)=>({
+        field:clean(x?.field||x?.name||x?.path||x?.element||x?.namespace,120),
+        message:clean(x?.message||x?.description||x?.error||x?.msg||(x?.code!=null?String(x.code):""),240)
+      }))
+    : [];
+}
+
 async function blingHubWriteIdempotent(sb:any,token:string,path:string,method:string,payload:any){
   let lastStatus=0,lastError="";
   for(let attempt=1;attempt<=4;attempt++){
@@ -1602,13 +1611,8 @@ async function blingHubWriteIdempotent(sb:any,token:string,path:string,method:st
       if(r.ok)return {ok:true,status:r.status,data};
       const retryable=r.status===429||r.status>=500;
       lastError=clean(data?.error?.message||data?.error?.description||data?.error||raw,500);
-      const providerDetails=Array.isArray(data?.error?.fields)
-        ? data.error.fields.slice(0,20).map((x:any)=>({
-            field:clean(x?.field||x?.name||x?.path,120),
-            message:clean(x?.message||x?.description||x?.error,240)
-          }))
-        : [];
-      if(!retryable||attempt===4)return {ok:false,status:r.status,error:lastError,provider_details:providerDetails};
+      const providerDetails=blingHubProviderDetails(data);
+      if(!retryable||attempt===4)return {ok:false,status:r.status,error:lastError,provider_details:providerDetails,provider_error:clean(JSON.stringify(data?.error||data||{}),1600)};
       const retryAfter=Number(r.headers.get("retry-after"));
       await sleep(Number.isFinite(retryAfter)&&retryAfter>0?retryAfter*1000:attempt*attempt*1000);
     }catch(e){
@@ -1839,9 +1843,7 @@ async function blingHubCreateProductOnce(sb:any,token:string,payload:any){
       signal:AbortSignal.timeout(15000)
     });
     const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
-    const providerDetails=Array.isArray(data?.error?.fields)
-      ? data.error.fields.slice(0,20).map((x:any)=>({field:clean(x?.field||x?.name||x?.path,120),message:clean(x?.message||x?.description||x?.error,240)}))
-      : [];
+    const providerDetails=blingHubProviderDetails(data);
     return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,provider_error:clean(JSON.stringify(data?.error||data||{}),1600),uncertain:false};
   }catch(e){
     return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
@@ -2312,6 +2314,17 @@ function blingHubBrazilPhone(v:any){
   if((d.length===12||d.length===13)&&d.startsWith("55"))d=d.slice(2);
   return d.slice(0,11);
 }
+function blingHubSuspiciousPersonName(local:any){
+  const doc=blingHubDigits(local?.cpf_cnpj);
+  if(doc.length!==11)return false;
+  const raw=clean(local?.name,220);
+  if(!raw)return true;
+  const normalized=raw.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+  const tokens=normalized.split(" ").filter(Boolean);
+  if(tokens.length<2)return true;
+  const locationPrefixes=new Set(["jd","jardim","bairro","setor","residencial","condominio","cond","rua","avenida","av","travessa","tv","lote","quadra","chacara"]);
+  return locationPrefixes.has(tokens[0]);
+}
 function blingHubCustomerPayload(current:any,local:any){
   const payload:any={};
   const preserve=[
@@ -2323,7 +2336,9 @@ function blingHubCustomerPayload(current:any,local:any){
     if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=structuredClone(current[key]);
   }
 
-  const name=clean(local?.name,220);if(name)payload.nome=name;
+  const name=clean(local?.name,220);
+  const currentName=clean(current?.nome,220);
+  if(name&&!(currentName&&blingHubSuspiciousPersonName(local)))payload.nome=name;
   const doc=blingHubDigits(local?.cpf_cnpj);
   if(doc){payload.numeroDocumento=doc;payload.tipo=doc.length===14?"J":"F";}
   payload.situacao=local?.is_active===false?"I":"A";
@@ -2472,12 +2487,7 @@ async function blingHubCreateOrderOnce(sb:any,token:string,payload:any){
       signal:AbortSignal.timeout(15000)
     });
     const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
-    const providerDetails=Array.isArray(data?.error?.fields)
-      ? data.error.fields.slice(0,20).map((x:any)=>({
-          field:clean(x?.field||x?.name||x?.path,120),
-          message:clean(x?.message||x?.description||x?.error,240)
-        }))
-      : [];
+    const providerDetails=blingHubProviderDetails(data);
     return {
       ok:r.ok,status:r.status,data,
       error:clean(data?.error?.message||data?.error?.description||data?.error||raw,500),
@@ -2924,9 +2934,7 @@ async function blingHubCreateContactOnce(sb:any,token:string,payload:any){
       signal:AbortSignal.timeout(15000)
     });
     const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
-    const providerDetails=Array.isArray(data?.error?.fields)
-      ? data.error.fields.slice(0,20).map((x:any)=>({field:clean(x?.field||x?.name||x?.path,120),message:clean(x?.message||x?.description||x?.error,240)}))
-      : [];
+    const providerDetails=blingHubProviderDetails(data);
     return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,provider_error:clean(JSON.stringify(data?.error||data||{}),1600),uncertain:false};
   }catch(e){
     return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
@@ -3034,7 +3042,7 @@ async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
       const write=await blingHubWriteIdempotent(sb,token,"/contatos/"+encodeURIComponent(String(blingId)),"PUT",desired);
       if(!write.ok){
         const status=write.status===429||write.status>=500||write.status===0?"retry":"review_required";
-        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{changes,provider_details:write.provider_details||[]},p_error_code:"contact_put_http_"+write.status,p_error_message:write.error||"Bling contact update failed",p_http_status:write.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{changes,provider_details:write.provider_details||[],provider_error:write.provider_error||null},p_error_code:"contact_put_http_"+write.status,p_error_message:write.error||"Bling contact update failed",p_http_status:write.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
         summary[status]++;continue;
       }
       const after=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
