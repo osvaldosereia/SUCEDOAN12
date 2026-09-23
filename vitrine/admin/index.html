@@ -238,6 +238,16 @@
     return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
   }
 
+  function cuiabaDayKey(v){
+    const d=v instanceof Date?v:new Date(v||Date.now());
+    if(!Number.isFinite(d.getTime()))return '';
+    const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Cuiaba',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+    return map.year+'-'+map.month+'-'+map.day;
+  }
+  function deliveredToday(o){
+    return o?.status==='delivered'&&Boolean(o?.delivered_at)&&cuiabaDayKey(o.delivered_at)===cuiabaDayKey(new Date());
+  }
   function relativeAge(v){
     if(!v)return '';
     const ms=Date.now()-new Date(v).getTime();
@@ -329,7 +339,7 @@
     if(filter==='separate')return ['confirmed','processing'].includes(o.status);
     if(filter==='ready')return o.status==='ready';
     if(filter==='delivery')return o.status==='out_for_delivery';
-    if(filter==='delivered')return o.status==='delivered';
+    if(filter==='delivered')return deliveredToday(o);
     if(filter==='problems')return orderProblemReasons(o).length>0;
     return true;
   }
@@ -340,7 +350,7 @@
       ['separate','Separação','Pedidos para separar'],
       ['ready','Prontos','Aguardando saída'],
       ['delivery','Em entrega','Pedidos na rua'],
-      ['delivered','Entregues','Conferir fechamento'],
+      ['delivered','Entregues hoje','Conferir fechamento'],
       ['problems','Precisa de você','Pendências operacionais']
     ];
     return '<div class="ops-cards">'+cards.map(([key,label,sub])=>'<button class="ops-card '+(key==='problems'&&orderFilterCount(key)?'danger':'')+'" type="button" data-today-filter="'+key+'"><small>'+esc(label)+'</small><strong>'+orderFilterCount(key)+'</strong><span>'+esc(sub)+'</span></button>').join('')+'</div>';
@@ -390,16 +400,16 @@
     const visible=state.orders.filter(o=>orderSearchMatch(o,state.expeditionQuery));
     const ready=visible.filter(o=>o.status==='ready');
     const delivery=visible.filter(o=>o.status==='out_for_delivery');
-    const delivered=visible.filter(o=>o.status==='delivered').slice(0,10);
+    const delivered=visible.filter(deliveredToday).slice(0,10);
     host.innerHTML='<div class="ops-cards">'+
         '<div class="ops-card"><small>Aguardando saída</small><strong>'+ready.length+'</strong><span>Pedidos já separados</span></div>'+
         '<div class="ops-card"><small>Em entrega</small><strong>'+delivery.length+'</strong><span>Pedidos na rua</span></div>'+
-        '<div class="ops-card"><small>Entregues</small><strong>'+visible.filter(o=>o.status==='delivered').length+'</strong><span>Fechamento e fiscal</span></div>'+
+        '<div class="ops-card"><small>Entregues hoje</small><strong>'+visible.filter(deliveredToday).length+'</strong><span>Fechamento e fiscal</span></div>'+
       '</div>'+
       '<div class="dispatch-grid">'+
         expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
         expeditionSection('Em entrega','acompanhar até a confirmação',delivery,'Nenhum pedido em entrega.')+
-        expeditionSection('Últimos entregues','pagamento e fiscal',delivered,'Nenhuma entrega concluída.')+
+        expeditionSection('Entregues hoje','Últimos entregues do dia · pagamento e fiscal',delivered,'Nenhuma entrega concluída hoje.')+
       '</div>';
     document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
   }
@@ -1217,7 +1227,7 @@
   }
   function paintOrderFilters(){
     const host=$('#orderFilters');if(!host)return;
-    const filters=[['all','Todos'],['new','Novos'],['separate','Separar'],['ready','Prontos'],['delivery','Em entrega'],['delivered','Entregues'],['problems','Problemas']];
+    const filters=[['all','Todos'],['new','Novos'],['separate','Separar'],['ready','Prontos'],['delivery','Em entrega'],['delivered','Entregues hoje'],['problems','Problemas']];
     host.innerHTML=filters.map(([key,label])=>'<button class="filter-chip '+(state.orderFilter===key?'active':'')+'" type="button" data-order-filter="'+key+'">'+esc(label)+' · '+orderFilterCount(key)+'</button>').join('');
     host.querySelectorAll('[data-order-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.orderFilter;paintOrderFilters();paintOrderRows()});
   }
