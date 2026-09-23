@@ -825,6 +825,93 @@ function extractPapoAiContactName(body:any){
   return '';
 }
 
+
+function storefrontPhoneFromPapoAiPhone(value:any){
+  const normalized=normalizePapoAiFlowPhone(value);
+  let digits=String(normalized||'').replace(/\D+/g,'');
+  if(/^55\d{2}[6-9]\d{7}$/.test(digits)){
+    digits=digits.slice(0,4)+'9'+digits.slice(4);
+  }
+  return normalizePapoAiFlowPhone(digits)||normalized;
+}
+
+async function canonicalStorefrontPhoneFromCrm(sb:any,papoPhone:string){
+  const fallback=storefrontPhoneFromPapoAiPhone(papoPhone);
+  try{
+    const lookup=await sb.rpc('lookup_customer_by_phone',{p_phone:papoPhone});
+    if(lookup.error)return fallback;
+    const row=Array.isArray(lookup.data)?lookup.data[0]:lookup.data;
+    const customerId=String(row?.customer_id||'');
+    if(!customerId)return fallback;
+    const q=await sb.from('customers')
+      .select('primary_whatsapp_e164')
+      .eq('id',customerId)
+      .maybeSingle();
+    if(q.error||!q.data?.primary_whatsapp_e164)return fallback;
+    return storefrontPhoneFromPapoAiPhone(q.data.primary_whatsapp_e164)||fallback;
+  }catch{
+    return fallback;
+  }
+}
+
+async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactName:string){
+  const papoContactPhone=normalizePapoAiFlowPhone(papoPhone);
+  if(!papoContactPhone)return {ok:false,reason:'phone_missing'};
+
+  try{
+    const sitePhone=await canonicalStorefrontPhoneFromCrm(sb,papoContactPhone);
+    if(!sitePhone)return {ok:false,reason:'site_phone_missing'};
+
+    const secretQ=await sb.from('internal_integration_secrets')
+      .select('integration_key,secret_value')
+      .in('integration_key',['vitrine_history_bridge','papoai_storefront_inbound_webhook_v1']);
+    if(secretQ.error)throw secretQ.error;
+    const secrets=new Map((secretQ.data||[]).map((row:any)=>[String(row.integration_key),String(row.secret_value||'')]));
+    const bridgeKey=String(secrets.get('vitrine_history_bridge')||'');
+    const papoWebhookUrl=String(secrets.get('papoai_storefront_inbound_webhook_v1')||'');
+    if(!bridgeKey||!papoWebhookUrl)return {ok:false,reason:'integration_secret_missing'};
+
+    const issueResponse=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=issue_identity_link',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-vitrine-history-key':bridgeKey
+      },
+      body:JSON.stringify({phone:sitePhone,name:contactName||null}),
+      signal:AbortSignal.timeout(4500)
+    });
+    const issued=await issueResponse.json().catch(()=>({ok:false,error:'invalid_identity_link_response'}));
+    if(!issueResponse.ok||issued?.ok!==true||!issued?.shopping_url){
+      return {ok:false,reason:String(issued?.error||('identity_link_http_'+issueResponse.status)).slice(0,160)};
+    }
+
+    const papoPayload:any={
+      customer:{phone:papoContactPhone,name:contactName||'Cliente'},
+      shopping_url:String(issued.shopping_url)
+    };
+    const papoResponse=await fetch(papoWebhookUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(papoPayload),
+      signal:AbortSignal.timeout(4500)
+    });
+    const responseText=(await papoResponse.text()).slice(0,500);
+    if(!papoResponse.ok){
+      return {ok:false,reason:'papoai_inbound_http_'+papoResponse.status,response:responseText};
+    }
+
+    return {
+      ok:true,
+      papoai_contact_phone:papoContactPhone,
+      storefront_phone:sitePhone,
+      expires_at:String(issued.expires_at||''),
+      papoai_http_status:papoResponse.status
+    };
+  }catch(error){
+    return {ok:false,reason:String(error?.message||error).slice(0,180)};
+  }
+}
+
 async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlationId:string){
   try{
     const contactName=extractPapoAiContactName(body);
@@ -865,8 +952,26 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
         detected_flow_data:Object.keys(flat).length?flat:null
       },
       status:'outbound_probe'
-    });
+    }).select('id').single();
     if(ins.error)throw ins.error;
+
+    const storefrontLinkSync=phone
+      ? await syncPapoAiStorefrontIdentityLink(sb,phone,contactName)
+      : {ok:false,reason:'phone_missing'};
+    if(ins.data?.id){
+      try{
+        await sb.from('papoai_flow_customer_webhook_events').update({
+          parsed_data:{
+            probe:true,
+            event_type:eventType||null,
+            message_type:messageType||null,
+            message_text:messageText||null,
+            detected_flow_data:Object.keys(flat).length?flat:null,
+            storefront_link_sync:storefrontLinkSync
+          }
+        }).eq('id',ins.data.id);
+      }catch{}
+    }
 
     const flowLike=
       /data_sharing_consent\s*:/i.test(messageText)
