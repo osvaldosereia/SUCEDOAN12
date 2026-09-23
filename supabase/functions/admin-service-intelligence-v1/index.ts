@@ -1368,6 +1368,25 @@ async function blingHubGet(sb:any,token:string,path:string){
   return {ok:r.ok,status:r.status,data};
 }
 function blingHubDigits(v:any){return String(v??"").replace(/\D/g,"")}
+function blingHubValidCpfCnpj(v:any){
+  const d=blingHubDigits(v);
+  if(![11,14].includes(d.length)||/^(\d)\1+$/.test(d))return false;
+  const digit=(base:string,weights:number[])=>{
+    let sum=0;
+    for(let i=0;i<weights.length;i++)sum+=Number(base[i])*weights[i];
+    const mod=sum%11;
+    return mod<2?0:11-mod;
+  };
+  if(d.length===11){
+    const d1=digit(d.slice(0,9),[10,9,8,7,6,5,4,3,2]);
+    const d2=digit(d.slice(0,10),[11,10,9,8,7,6,5,4,3,2]);
+    return d===d.slice(0,9)+String(d1)+String(d2);
+  }
+  const d1=digit(d.slice(0,12),[5,4,3,2,9,8,7,6,5,4,3,2]);
+  const d2=digit(d.slice(0,13),[6,5,4,3,2,9,8,7,6,5,4,3,2]);
+  return d===d.slice(0,12)+String(d1)+String(d2);
+}
+
 function blingHubValidGtin(v:any){
   const g=blingHubDigits(v);if(![8,12,13,14].includes(g.length))return false;
   const expected=Number(g[g.length-1]);let sum=0;
@@ -1511,6 +1530,46 @@ async function blingHubProcessStockJobs(sb:any,limitRaw:any){
   }
   return summary;
 }
+async function blingHubLookupProductByExactGtin(sb:any,token:string,gtinRaw:any){
+  const gtin=blingHubDigits(gtinRaw);
+  if(!blingHubValidGtin(gtin))return {status:"review_required",reason:"invalid_gtin",bling_id:null,candidates:[]};
+  const q=new URLSearchParams({pagina:"1",limite:"20"});q.append("gtins[]",gtin);
+  const r=await blingHubGet(sb,token,"/produtos?"+q.toString());
+  if(!r.ok)return {status:"review_required",reason:"product_lookup_http_"+r.status,bling_id:null,candidates:[]};
+  const rows=Array.isArray(r.data?.data)?r.data.data:[];
+  const exact=rows.filter((p:any)=>[p?.gtin,p?.gtinEmbalagem].map((x:any)=>blingHubDigits(x)).includes(gtin));
+  const ids=[...new Set(exact.map((p:any)=>Number(p?.id||0)).filter((x:number)=>x>0))];
+  if(ids.length===1)return {status:"matched",reason:"gtin_exact",bling_id:ids[0],candidates:ids};
+  if(ids.length>1)return {status:"ambiguous",reason:"multiple_exact_gtin",bling_id:null,candidates:ids};
+  return {status:"not_found",reason:"gtin_not_found",bling_id:null,candidates:[]};
+}
+async function blingHubCreateProductOnce(sb:any,token:string,payload:any){
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(BLING_API_BASE+"/produtos",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},
+      body:JSON.stringify(payload),
+      signal:AbortSignal.timeout(15000)
+    });
+    const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    const providerDetails=Array.isArray(data?.error?.fields)
+      ? data.error.fields.slice(0,20).map((x:any)=>({field:clean(x?.field||x?.name||x?.path,120),message:clean(x?.message||x?.description||x?.error,240)}))
+      : [];
+    return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,uncertain:false};
+  }catch(e){
+    return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
+  }
+}
+async function blingHubBindProductLink(sb:any,sourceSystem:string,sourceId:string,blingId:number,gtin:string,method:string){
+  const now=new Date().toISOString();
+  const up=await sb.from("bling_hub_entity_links_v2").upsert({
+    source_system:sourceSystem,entity_type:"product",source_id:sourceId,bling_id:blingId,
+    identity_kind:"gtin",identity_value:gtin,status:"matched",last_verified_at:now,updated_at:now,
+    metadata:{method,gtin,verified:true,make_used:false}
+  },{onConflict:"source_system,entity_type,source_id"});
+  if(up.error)throw up.error;
+}
 async function blingHubProcessProductJobs(sb:any,limitRaw:any){
   const worker="bling-hub-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
@@ -1523,7 +1582,7 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
   for(const job of jobs){
     summary.processed++;
     try{
-      if(job.operation!=="sync_product"){
+      if(!["sync_product","create_product"].includes(job.operation)){
         await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"unsupported_operation",p_error_message:"Unsupported product operation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
         summary.review_required++;continue;
       }
@@ -1534,11 +1593,69 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
       }
       const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system",job.source_system).eq("entity_type","product").eq("source_id",job.source_id).maybeSingle();
       if(link.error)throw link.error;
-      if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id)){
+
+      let blingId=Number(link.data?.bling_id||0)||0;
+      if(job.operation==="create_product"&&!blingId){
+        const gtin=blingHubDigits(local?.gtin);
+        if(!blingHubValidGtin(gtin)){
+          await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"valid_gtin_required",p_error_message:"A valid GTIN is required to create a Bling product safely",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+          summary.review_required++;continue;
+        }
+
+        const fresh=await blingHubLookupProductByExactGtin(sb,token,gtin);
+        if(fresh.status==="matched"&&fresh.bling_id){
+          blingId=Number(fresh.bling_id);
+          await blingHubBindProductLink(sb,job.source_system,job.source_id,blingId,gtin,"gtin_exact_before_create");
+        }else if(fresh.status!=="not_found"){
+          await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{candidate_ids:fresh.candidates||[]},p_error_code:fresh.reason||"product_identity_unsafe",p_error_message:"Product identity is not safe for creation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+          summary.review_required++;continue;
+        }else{
+          const createPayload=blingHubProductPayload({},local);
+          createPayload.unidade=clean(createPayload.unidade,20)||"UN";
+          createPayload.codigo=clean(createPayload.codigo,120)||gtin;
+          createPayload.gtin=gtin;
+          createPayload.tipo=clean(createPayload.tipo,10)||"P";
+          createPayload.formato=clean(createPayload.formato,10)||"S";
+          if(!clean(createPayload.nome,220)){
+            await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"product_name_required",p_error_message:"Product name is required",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+            summary.review_required++;continue;
+          }
+
+          const created=await blingHubCreateProductOnce(sb,token,createPayload);
+          if(created.ok)blingId=Number(created.data?.data?.id||0)||0;
+
+          if(!created.ok||!blingId){
+            await sleep(1200);
+            const recovery=await blingHubLookupProductByExactGtin(sb,token,gtin);
+            if(recovery.status==="matched"&&recovery.bling_id){
+              blingId=Number(recovery.bling_id);
+            }else{
+              await sb.rpc("finish_bling_hub_job_v2",{
+                p_job_id:job.id,p_status:"review_required",
+                p_result:{provider_details:created.provider_details||[],creation_uncertain:Boolean(created.uncertain||created.status>=500),candidate_ids:recovery.candidates||[]},
+                p_error_code:created.uncertain||created.status>=500?"product_creation_uncertain":"product_create_http_"+created.status,
+                p_error_message:created.error||"Bling product creation failed",
+                p_http_status:created.status||null,p_retry_seconds:120,p_provider_id:null
+              });
+              summary.review_required++;continue;
+            }
+          }
+
+          const verify=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
+          if(!verify.ok||![verify.data?.data?.gtin,verify.data?.data?.gtinEmbalagem].map((x:any)=>blingHubDigits(x)).includes(gtin)){
+            await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{bling_id:blingId},p_error_code:"created_product_verify_failed",p_error_message:"Created Bling product could not be verified by GTIN",p_http_status:verify.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
+            summary.review_required++;continue;
+          }
+          await blingHubBindProductLink(sb,job.source_system,job.source_id,blingId,gtin,"created_by_hub_v2");
+          await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,created:true,verified:true,gtin},p_error_code:null,p_error_message:null,p_http_status:created.status||200,p_retry_seconds:120,p_provider_id:String(blingId)});
+          summary.synced++;continue;
+        }
+      }
+
+      if(!blingId){
         await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"product_not_linked",p_error_message:"Product is not safely linked to Bling",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
         summary.review_required++;continue;
       }
-      const blingId=Number(link.data.bling_id);
       const before=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
       if(!before.ok){
         const status=before.status===429||before.status>=500?"retry":"review_required";
@@ -1549,7 +1666,7 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
       const desired=blingHubProductPayload(current,local);
       const changes=blingHubManagedProductDiff(current,desired);
       if(!Object.keys(changes).length){
-        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:false,verified:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:false,verified:true,created:createdContact},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
         summary.synced++;continue;
       }
       const write=await blingHubWriteIdempotent(sb,token,"/produtos/"+encodeURIComponent(String(blingId)),"PUT",desired);
@@ -1569,7 +1686,7 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
         await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{changes,remaining},p_error_code:"post_write_mismatch",p_error_message:"Bling product differs after update",p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
         summary.review_required++;continue;
       }
-      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:true,changes,verified:true},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:true,changes,verified:true,created:createdContact},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});
       summary.synced++;
     }catch(e){
       const msg=clean((e as Error)?.message||e,500);
@@ -2332,6 +2449,35 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
   return summary;
 }
 
+async function blingHubCreateContactOnce(sb:any,token:string,payload:any){
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(BLING_API_BASE+"/contatos",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},
+      body:JSON.stringify(payload),
+      signal:AbortSignal.timeout(15000)
+    });
+    const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    const providerDetails=Array.isArray(data?.error?.fields)
+      ? data.error.fields.slice(0,20).map((x:any)=>({field:clean(x?.field||x?.name||x?.path,120),message:clean(x?.message||x?.description||x?.error,240)}))
+      : [];
+    return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,uncertain:false};
+  }catch(e){
+    return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
+  }
+}
+async function blingHubBindCustomer(sb:any,customerId:string,blingId:number,doc:string,method:string){
+  const now=new Date().toISOString();
+  const bind=await sb.from("customers").update({bling_contact_id:blingId,last_bling_sync_at:now}).eq("id",customerId);
+  if(bind.error)throw bind.error;
+  const up=await sb.from("bling_hub_entity_links_v2").upsert({
+    source_system:"canonical_ssbes",entity_type:"customer",source_id:customerId,bling_id:blingId,
+    identity_kind:"cpf_cnpj",identity_value:doc,status:"matched",last_verified_at:now,updated_at:now,
+    metadata:{method,verified:true,make_used:false}
+  },{onConflict:"source_system,entity_type,source_id"});
+  if(up.error)throw up.error;
+}
 async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
   const worker="bling-customer-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
@@ -2354,10 +2500,57 @@ async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
         await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"customer_not_found",p_error_message:"Customer no longer exists",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
         summary.review_required++;continue;
       }
-      const blingId=Number(local.bling_contact_id||0);
+      let blingId=Number(local.bling_contact_id||0)||0;
+      let createdContact=false;
       if(!blingId){
-        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"customer_not_linked",p_error_message:"Customer is not safely linked to Bling",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
-        summary.review_required++;continue;
+        const doc=blingHubDigits(local.cpf_cnpj);
+        if(!blingHubValidCpfCnpj(doc)){
+          await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"valid_document_required",p_error_message:"Valid CPF/CNPJ is required for safe Bling contact creation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+          summary.review_required++;continue;
+        }
+
+        const found=await blingHubFindContactByDocument(sb,token,doc);
+        if(found.status==="matched"&&found.bling_id){
+          blingId=Number(found.bling_id);
+          await blingHubBindCustomer(sb,local.id,blingId,doc,"cpf_cnpj_exact_before_create");
+        }else if(found.status!=="not_found"){
+          await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{candidate_ids:found.candidates||[]},p_error_code:found.reason||"customer_identity_unsafe",p_error_message:"Customer identity is not safe for creation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+          summary.review_required++;continue;
+        }else if(job.payload?.allow_create===true){
+          const desired=blingHubCustomerPayload({},local);
+          if(!clean(desired.nome,220)||!blingHubValidCpfCnpj(desired.numeroDocumento)){
+            await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"customer_create_payload_invalid",p_error_message:"Customer create payload is incomplete",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+            summary.review_required++;continue;
+          }
+          const created=await blingHubCreateContactOnce(sb,token,desired);
+          if(created.ok)blingId=Number(created.data?.data?.id||0)||0;
+          if(!created.ok||!blingId){
+            await sleep(1200);
+            const recovery=await blingHubFindContactByDocument(sb,token,doc);
+            if(recovery.status==="matched"&&recovery.bling_id){
+              blingId=Number(recovery.bling_id);
+            }else{
+              await sb.rpc("finish_bling_hub_job_v2",{
+                p_job_id:job.id,p_status:"review_required",
+                p_result:{provider_details:created.provider_details||[],creation_uncertain:Boolean(created.uncertain||created.status>=500),candidate_ids:recovery.candidates||[]},
+                p_error_code:created.uncertain||created.status>=500?"customer_creation_uncertain":"contact_create_http_"+created.status,
+                p_error_message:created.error||"Bling contact creation failed",
+                p_http_status:created.status||null,p_retry_seconds:120,p_provider_id:null
+              });
+              summary.review_required++;continue;
+            }
+          }
+          const verify=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
+          if(!verify.ok||blingHubDigits(verify.data?.data?.numeroDocumento)!==doc){
+            await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{bling_id:blingId},p_error_code:"created_contact_verify_failed",p_error_message:"Created Bling contact could not be verified by document",p_http_status:verify.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
+            summary.review_required++;continue;
+          }
+          await blingHubBindCustomer(sb,local.id,blingId,doc,"created_by_hub_v2");
+          createdContact=true;
+        }else{
+          await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"customer_create_not_authorized",p_error_message:"Customer creation requires explicit authorization",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+          summary.review_required++;continue;
+        }
       }
       const before=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
       if(!before.ok){
@@ -2506,7 +2699,7 @@ async function vitrineSaveCustomer(sb:any,body:any){
     const q=await sb.rpc("enqueue_bling_hub_job_v2",{
       p_domain:"customer",p_operation:"sync_customer",p_source_system:"canonical_ssbes",p_source_id:customerId,
       p_idempotency_key:"canonical_ssbes:customer:"+customerId+":"+String(snapshot?.updated_at||new Date().toISOString()),
-      p_payload:{customer_id:customerId},p_payload_version:1
+      p_payload:{customer_id:customerId,allow_create:blingHubValidCpfCnpj(snapshot?.cpf_cnpj)},p_payload_version:1
     });
     if(q.error)throw q.error;
   }catch(e){
@@ -2622,7 +2815,7 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="enqueue_job"){
         const domain=clean(body?.domain,40),operation=clean(body?.operation,80),sourceId=clean(body?.source_id,160),key=clean(body?.idempotency_key,240);
         const allowedDomains=new Set(["product","stock","customer","order","fiscal"]);
-        const allowedOperations=new Set(["sync_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
+        const allowedOperations=new Set(["sync_product","create_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
         if(!allowedDomains.has(domain)||!allowedOperations.has(operation)||!sourceId||!key)return json({ok:false,error:"invalid_job"},400);
         const q=await sb.rpc("enqueue_bling_hub_job_v2",{
           p_domain:domain,p_operation:operation,p_source_system:"vitrine_qx",p_source_id:sourceId,
