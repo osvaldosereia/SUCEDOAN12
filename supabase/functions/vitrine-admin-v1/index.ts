@@ -194,6 +194,7 @@ async function saveProduct(payload: any) {
       blingQueued=!(queued as any).error;
     }catch{}
     try{await queueBlingStockSnapshots([data.id],"product_save")}catch{}
+    try{await queueBlingStockSnapshots([data.id],"product_save")}catch{}
     return { product_id:data.id,bling_queued:blingQueued };
   }
   const { data, error } = await db.from("products")
@@ -210,6 +211,7 @@ async function saveProduct(payload: any) {
     });
     blingQueued=!(queued as any).error;
   }catch{}
+  try{await queueBlingStockSnapshots([data.id],"product_create")}catch{}
   try{await queueBlingStockSnapshots([data.id],"product_create")}catch{}
   return { product_id:data.id,bling_queued:blingQueued };
 }
