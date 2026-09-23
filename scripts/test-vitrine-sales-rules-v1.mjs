@@ -7,6 +7,9 @@ const edge=fs.readFileSync('supabase/functions/simple-storefront-v1/index.ts','u
 const migration=fs.readFileSync('supabase/migrations/20260923044336_storefront_stock_reservation_v1.sql','utf8');
 
 assert.equal(root,vitrine,'root and /vitrine must stay identical');
+const inlineScript=root.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)?.[1]||'';
+assert.ok(inlineScript,'inline storefront script must exist');
+assert.doesNotThrow(()=>new Function(inlineScript),'storefront inline JavaScript must parse');
 for(const source of [root,edge]){
   assert.match(source,/MINIMUM_ORDER_CENTS\s*=\s*7500/);
   assert.match(source,/America\/Cuiaba/);
