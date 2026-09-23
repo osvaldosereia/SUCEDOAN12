@@ -8,6 +8,7 @@ const dispatch=fs.readFileSync('supabase/migrations/20260923151500_bling_hub_v2_
 const canary=fs.readFileSync('supabase/migrations/20260923134500_bling_hub_v2_canary_gate.sql','utf8');
 const webhook=fs.readFileSync('supabase/migrations/20260923153000_bling_hub_v2_webhook_inbox.sql','utf8');
 const stockCoalesce=fs.readFileSync('supabase/migrations/20260923154000_bling_hub_v2_stock_queue_coalesce.sql','utf8');
+const fiscalDelivery=fs.readFileSync('supabase/migrations/20260923181500_sync_vitrine_order_fiscal_delivery_v1.sql','utf8');
 
 assert.match(admin,/Make permanecem preservados/,'admin deve informar que Make foi preservado');
 assert.match(admin,/Verificar prévia Bling/,'pedido deve ter prévia Bling');
@@ -15,6 +16,11 @@ assert.match(admin,/bling_preview_order_sync/,'admin deve chamar preview somente
 assert.match(admin,/Pedidos vinculados/,'painel Bling deve exibir pedidos vinculados');
 assert.match(admin,/Webhooks Bling/,'painel deve exibir caixa de entrada de webhooks');
 assert.match(admin,/Fiscal \/ NF-e/,'painel deve exibir readiness fiscal');
+assert.match(admin,/Confirmar pagamento recebido/,'pedido entregue deve permitir confirmação explícita do pagamento');
+assert.match(admin,/Emissão de NF-e permanece desligada/,'UI deve deixar claro que emissão continua desligada');
+assert.match(admin,/order_fiscal_status/);
+assert.match(admin,/order_fiscal_confirm_payment/);
+assert.doesNotMatch(admin,/Emitir NF-e/i,'não deve existir botão de emissão nesta fase');
 assert.doesNotMatch(admin,/Enviar (?:pedido )?ao Bling/i,'admin não deve oferecer envio manual nesta fase');
 
 assert.match(vitrineAdmin,/async function buildBlingOrderSnapshot/);
@@ -23,6 +29,9 @@ assert.match(vitrineAdmin,/catalog_at_separation/,'snapshot deve registrar orige
 assert.match(vitrineAdmin,/queue_reason:reason/);
 assert.match(vitrineAdmin,/first_separation/);
 assert.match(vitrineAdmin,/preview_order_sync/);
+assert.match(vitrineAdmin,/fiscal_status/);
+assert.match(vitrineAdmin,/fiscal_confirm_payment/);
+assert.match(vitrineAdmin,/fiscal_synced/);
 assert.match(vitrineAdmin,/syncVitrineOrderHistory\(db,id,ORG_ID\)[\s\S]{0,500}queueBlingOrderSnapshot/,'cliente deve ser resolvido antes de enfileirar pedido');
 
 assert.match(hub,/async function blingHubPreviewOrderSync/);
@@ -53,6 +62,12 @@ assert.match(hub,/local_mutation:false/);
 assert.match(hub,/fiscal_readiness/);
 assert.match(hub,/bling_invoice_prepare_enabled/);
 assert.match(hub,/bling_invoice_send_enabled/);
+assert.match(hub,/async function blingHubVitrineFiscalStatus/);
+assert.match(hub,/async function blingHubVitrineConfirmFiscalPayment/);
+assert.match(hub,/sync_vitrine_order_fiscal_delivery_v1/);
+assert.match(hub,/delivery_required_before_payment_confirmation/);
+assert.match(hub,/p_payment_source:"vitrine_admin"/);
+assert.match(hub,/invoice_issue_available/);
 assert.match(hub,/external_side_effect/);
 
 assert.match(canary,/bling_hub_canary_allowlist_v2/);
@@ -74,6 +89,10 @@ assert.match(stockCoalesce,/p_domain='stock' and trim\(p_operation\)='set_stock'
 assert.match(stockCoalesce,/superseded_stock_snapshot/);
 assert.match(stockCoalesce,/status='pending'/);
 assert.match(stockCoalesce,/attempts=0/);
+
+assert.match(fiscalDelivery,/sync_vitrine_order_fiscal_delivery_v1/);
+assert.match(fiscalDelivery,/refresh_order_fiscal_readiness_v1/);
+assert.match(fiscalDelivery,/grant execute on function public\.sync_vitrine_order_fiscal_delivery_v1\(uuid\) to service_role/);
 
 const match=admin.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 assert.ok(match,'script inline do admin não encontrado');
