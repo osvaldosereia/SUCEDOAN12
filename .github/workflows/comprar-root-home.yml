@@ -46,6 +46,7 @@ on:
       - 'scripts/test-vitrine-admin-create-order-products-v1.mjs'
       - 'scripts/test-vitrine-admin-create-order-customer-v1.mjs'
       - 'scripts/test-vitrine-admin-backend-bling-gate-v1.mjs'
+      - 'scripts/test-vitrine-admin-separation-state-gate-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -106,6 +107,7 @@ on:
       - 'scripts/test-vitrine-admin-create-order-products-v1.mjs'
       - 'scripts/test-vitrine-admin-create-order-customer-v1.mjs'
       - 'scripts/test-vitrine-admin-backend-bling-gate-v1.mjs'
+      - 'scripts/test-vitrine-admin-separation-state-gate-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -176,6 +178,7 @@ jobs:
           node scripts/test-vitrine-admin-create-order-products-v1.mjs
           node scripts/test-vitrine-admin-create-order-customer-v1.mjs
           node scripts/test-vitrine-admin-backend-bling-gate-v1.mjs
+          node scripts/test-vitrine-admin-separation-state-gate-v1.mjs
           node scripts/test-admin-service-shared-modules-v1.mjs
           node scripts/test-vitrine-bling-cancel-status-v1.mjs
           node scripts/test-vitrine-admin-bling-preflight-v1.mjs
