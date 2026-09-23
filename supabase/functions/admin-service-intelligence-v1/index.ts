@@ -1765,6 +1765,144 @@ async function blingHubPreviewCustomerSync(sb:any,customerIdRaw:any){
     }
   };
 }
+async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
+  const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
+  const sourceOrderId=clean(payload?.source_order_id,80);
+  if(!uuid(sourceOrderId))return {ok:false,error:"invalid_order_snapshot"};
+
+  const blockers:string[]=[];
+  const issues=Array.isArray(payload?.issues)?payload.issues.map((x:any)=>clean(x,180)).filter(Boolean):[];
+  if(issues.length)blockers.push(...issues);
+
+  const customerId=uuid(payload?.customer?.source_customer_id);
+  let contactId:number|null=null;
+  if(!customerId){
+    blockers.push("customer_not_linked");
+  }else{
+    const cq=await sb.from("customers").select("id,bling_contact_id,is_active").eq("id",customerId).maybeSingle();
+    if(cq.error)throw cq.error;
+    contactId=Number(cq.data?.bling_contact_id||0)||null;
+    if(!cq.data)blockers.push("customer_not_found");
+    else if(!contactId)blockers.push("customer_missing_bling_contact_id");
+    else if(cq.data.is_active===false)blockers.push("customer_inactive");
+  }
+
+  const items=(Array.isArray(payload?.items)?payload.items:[]).slice(0,500);
+  if(!items.length)blockers.push("order_without_items");
+  const sourceIds=[...new Set(items.map((x:any)=>uuid(x?.product_id)).filter(Boolean))] as string[];
+  const linkMap=new Map<string,any>();
+  if(sourceIds.length){
+    const links=await sb.from("bling_hub_entity_links_v2")
+      .select("source_id,bling_id,status")
+      .eq("source_system","vitrine_qx")
+      .eq("entity_type","product")
+      .in("source_id",sourceIds);
+    if(links.error)throw links.error;
+    for(const row of links.data||[])linkMap.set(row.source_id,row);
+  }
+
+  const unresolved:any[]=[];
+  const resolved:any[]=[];
+  let lineSum=0;
+  for(const item of items){
+    const productId=uuid(item?.product_id);
+    const qty=Number(item?.quantity);
+    const unit=Number(item?.unit_price_cents);
+    if(!productId||!Number.isFinite(qty)||qty<=0||!Number.isFinite(unit)||unit<0){
+      unresolved.push({product_id:productId||null,reason:"invalid_item_snapshot"});
+      continue;
+    }
+    const link=linkMap.get(productId);
+    if(!link||link.status!=="matched"||!Number(link.bling_id)){
+      unresolved.push({product_id:productId,reason:"product_not_linked"});
+      continue;
+    }
+    const lineTotal=Math.round(qty*unit);
+    lineSum+=lineTotal;
+    resolved.push({
+      product_id:productId,
+      bling_product_id:Number(link.bling_id),
+      sku:clean(item?.sku,120),
+      name:clean(item?.name,220),
+      quantity:Math.round(qty*1000)/1000,
+      unit_price_cents:Math.round(unit),
+      line_total_cents:lineTotal,
+      source_kind:clean(item?.source_kind,40)
+    });
+  }
+  if(unresolved.length)blockers.push("unresolved_products");
+
+  const totals=payload?.totals&&typeof payload.totals==="object"?payload.totals:{};
+  const expectedProducts=Number(totals?.individual_products_cents);
+  const orderTotal=Number(totals?.commercial_order_cents);
+  const expectedDelta=Number(totals?.commercial_delta_cents);
+  if(!Number.isFinite(orderTotal)||orderTotal<0)blockers.push("invalid_order_total");
+  if(!Number.isFinite(expectedProducts)||Math.abs(expectedProducts-lineSum)>1)blockers.push("product_total_mismatch");
+  const delta=Number.isFinite(orderTotal)?orderTotal-lineSum:NaN;
+  if(!Number.isFinite(expectedDelta)||!Number.isFinite(delta)||Math.abs(expectedDelta-delta)>1)blockers.push("commercial_delta_mismatch");
+
+  const delivery=payload?.delivery&&typeof payload.delivery==="object"?payload.delivery:{};
+  for(const [key,label] of [["street","street"],["number","number"],["city","city"],["state","state"]]){
+    if(!clean(delivery?.[key],180))blockers.push("delivery_"+label+"_required");
+  }
+
+  const uniqueBlockers=[...new Set(blockers)];
+  const otherExpenses=Math.max(0,Number.isFinite(delta)?delta:0);
+  const discount=Math.max(0,Number.isFinite(delta)?-delta:0);
+  const externalKey="VITRINE-"+sourceOrderId.replace(/-/g,"").slice(0,28);
+  const createdAt=payload?.created_at?new Date(payload.created_at):new Date();
+  const dateCuiaba=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).format(createdAt);
+
+  const orderPayload={
+    contato:contactId?{id:contactId}:null,
+    data:dateCuiaba,
+    numeroLoja:externalKey,
+    totalProdutos:Math.round(lineSum)/100,
+    total:Number.isFinite(orderTotal)?Math.round(orderTotal)/100:0,
+    outrasDespesas:Math.round(otherExpenses)/100,
+    desconto:{valor:Math.round(discount)/100,unidade:"REAL"},
+    itens:resolved.map((i:any)=>({
+      produto:{id:i.bling_product_id},
+      codigo:i.sku||undefined,
+      descricao:i.name,
+      quantidade:i.quantity,
+      valor:i.unit_price_cents/100
+    })),
+    transporte:{etiqueta:{
+      nome:clean(payload?.customer?.name,180)||"Cliente Dona Antônia",
+      endereco:clean(delivery?.street,180),
+      numero:clean(delivery?.number,40),
+      complemento:clean([delivery?.complement,delivery?.raw_text].filter(Boolean).join(" · "),220),
+      municipio:clean(delivery?.city,120),
+      uf:clean(delivery?.state,2).toUpperCase(),
+      cep:blingHubDigits(delivery?.postal_code),
+      bairro:clean(delivery?.district||delivery?.neighborhood,140)
+    }},
+    observacoes:"Pedido Vitrine Dona Antônia · "+externalKey+" · Pagamento: "+clean(payload?.payment?.label||payload?.payment?.method,100)
+  };
+
+  return {
+    ok:true,
+    readonly:true,
+    external_write:false,
+    source_order_id:sourceOrderId,
+    ready:uniqueBlockers.length===0,
+    blockers:uniqueBlockers,
+    unresolved_products:unresolved,
+    resolved_items_count:resolved.length,
+    customer_linked:Boolean(contactId),
+    external_key:externalKey,
+    totals:{
+      product_lines_cents:lineSum,
+      order_total_cents:Number.isFinite(orderTotal)?Math.round(orderTotal):null,
+      other_expenses_cents:Math.round(otherExpenses),
+      discount_cents:Math.round(discount),
+      balances:Boolean(Number.isFinite(orderTotal)&&Math.abs((lineSum+otherExpenses-discount)-orderTotal)<=1)
+    },
+    desired_order:orderPayload
+  };
+}
+
 async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
   const worker="bling-customer-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
@@ -2016,6 +2154,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="process_customer_jobs"){
         const result=await blingHubProcessCustomerJobs(sb,body?.limit);
         return json(result,200);
+      }
+      if(subaction==="preview_order_sync"){
+        const result=await blingHubPreviewOrderSync(sb,body?.payload);
+        return json(result,result.ok?200:409);
       }
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
