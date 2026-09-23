@@ -2648,12 +2648,18 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
     const qty=Number(item?.quantity);
     const unit=Number(item?.unit_price_cents);
     if(!productId||!Number.isFinite(qty)||qty<=0||!Number.isFinite(unit)||unit<0){
-      unresolved.push({product_id:productId||null,reason:"invalid_item_snapshot"});
+      unresolved.push({
+        product_id:productId||null,reason:"invalid_item_snapshot",
+        sku:clean(item?.sku,120),gtin:blingHubDigits(item?.gtin),name:clean(item?.name,220)
+      });
       continue;
     }
     const link=linkMap.get(productId);
     if(!link||link.status!=="matched"||!Number(link.bling_id)){
-      unresolved.push({product_id:productId,reason:"product_not_linked"});
+      unresolved.push({
+        product_id:productId,reason:"product_not_linked",
+        sku:clean(item?.sku,120),gtin:blingHubDigits(item?.gtin),name:clean(item?.name,220)
+      });
       continue;
     }
     const lineTotal=Math.round(qty*unit);

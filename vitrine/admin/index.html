@@ -1761,6 +1761,7 @@
     if($('#resolveBlingDependencies'))$('#resolveBlingDependencies').onclick=resolveCurrentOrderBlingDependencies;
     if($('#focusOrderCustomer'))$('#focusOrderCustomer').onclick=focusOrderCustomerForBling;
     if($('#completeCustomerDocument'))$('#completeCustomerDocument').onclick=completeCurrentOrderCustomerDocument;
+    if($('#createBlingOrderProducts'))$('#createBlingOrderProducts').onclick=createCurrentOrderProductsInBling;
     if($('#useSuggestedCustomer'))$('#useSuggestedCustomer').onclick=()=>{
       const select=$('#orderCustomer');if(!select||!state.orderCustomerSuggestion)return;
       select.value=state.orderCustomerSuggestion;
@@ -1802,7 +1803,9 @@
     const canReconcile=blockers.some(x=>['customer_missing_bling_contact_id','unresolved_products'].includes(x));
     const needsCustomer=blockers.includes('customer_not_linked');
     const needsDocument=blockers.includes('customer_document_required');
+    const needsProducts=blockers.includes('unresolved_products');
     const actions=(needsDocument?'<button class="secondary" id="completeCustomerDocument" type="button">Completar CPF</button>':'')+
+      (needsProducts?'<button class="secondary" id="createBlingOrderProducts" type="button">Cadastrar produtos no Bling</button>':'')+
       (canReconcile?'<button class="secondary" id="resolveBlingDependencies" type="button">Tentar resolver vínculos</button>':'')+
       (needsCustomer?'<button class="secondary" id="focusOrderCustomer" type="button">Vincular cliente</button>':'');
     return '<div class="sync-alert"><div><strong>Antes de separar, revise o Bling</strong><small>'+blockers.slice(0,3).map(blingOrderBlockerLabel).map(esc).join(' · ')+(blockers.length>3?' · +'+(blockers.length-3):'')+'</small></div><div class="dispatch-actions">'+actions+'<span class="pill warn">Somente leitura</span></div></div>';
@@ -1959,6 +1962,7 @@
       '<strong class="'+stateClass+'">'+esc(stateText)+'</strong>'+
       '<div>'+esc(p.resolved_items_count||0)+' itens individualizados · Produtos '+money(totals.product_lines_cents||0)+' · Ajuste '+money((totals.other_expenses_cents||0)-(totals.discount_cents||0))+' · Total '+money(totals.order_total_cents||0)+'</div>'+
       (blockers.length?'<div class="sub" style="margin-top:6px">'+blockers.map(x=>'• '+esc(blingOrderBlockerLabel(x))).join('<br>')+'</div>':'<div class="sub" style="margin-top:6px">Sem bloqueios de dados. O processamento continua controlado pelo Hub Bling.</div>')+
+      ((p.unresolved_products||[]).length?'<div class="sub" style="margin-top:6px"><b>Produtos sem vínculo:</b> '+(p.unresolved_products||[]).slice(0,5).map(x=>esc(x.name||x.sku||x.gtin||'Produto')).join(' · ')+((p.unresolved_products||[]).length>5?' · +'+((p.unresolved_products||[]).length-5):'')+'</div>':'')+
       '<div class="sub" style="margin-top:6px">Somente prévia: nenhuma alteração externa é feita por esta tela.</div>'+
     '</div>';
   }
@@ -1976,6 +1980,37 @@
     }catch(e){
       toast('Não consegui verificar a prévia do Bling agora');
       if(btn){btn.disabled=false;btn.textContent='Verificar prévia Bling'}
+    }
+  }
+
+  async function createCurrentOrderProductsInBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    let preview=state.currentOrderBlingPreview;
+    if(!preview||preview.error){
+      try{
+        preview=await api('bling_preview_order_sync',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+        });
+        state.currentOrderBlingPreview=preview;
+      }catch{toast('Não consegui conferir os produtos agora');return}
+    }
+    const missing=(preview.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
+    if(!missing.length){toast('Nenhum produto precisa ser cadastrado no Bling');return}
+    const names=missing.slice(0,5).map(x=>'• '+(x.name||x.sku||x.gtin||'Produto')).join('\n');
+    const extra=missing.length>5?'\n• +'+(missing.length-5)+' produto(s)':'';
+    if(!confirm('Cadastrar '+missing.length+' produto(s) ausente(s) no Bling?\n\n'+names+extra+'\n\nO Hub verifica GTIN/código antes de criar para evitar duplicidade.'))return;
+    const btn=$('#createBlingOrderProducts');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
+    try{
+      const data=await api('bling_create_order_products',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      paintOrderDetail();
+      const remaining=(state.currentOrderBlingPreview?.unresolved_products||[]).filter(x=>x?.reason==='product_not_linked');
+      toast(remaining.length?'Cadastro solicitado · ainda há produto(s) pendente(s)':'Produtos vinculados · pedido revalidado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Cadastrar produtos no Bling'}
     }
   }
 
