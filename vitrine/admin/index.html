@@ -1056,6 +1056,7 @@
       '<div class="section-title">Cliente / entrega</div>'+
       '<div>'+customerSummary(c,o.delivery_address_snapshot)+'</div>'+
       '<div class="section-title">Bling</div>'+
+      '<div id="orderBlingLink">'+orderBlingLinkHtml(d.bling_link)+'</div>'+
       '<div id="orderBlingPreview">'+orderBlingPreviewHtml(state.currentOrderBlingPreview)+'</div>'+
       '<div class="print-actions"><button class="secondary" id="previewBlingOrder">Verificar prévia Bling</button></div>'+
       '<div class="section-title">Fiscal / NF-e</div>'+
@@ -1142,6 +1143,34 @@
       toast(errorMessage(e.message));
       if(btn){btn.disabled=false;btn.textContent='Confirmar pagamento recebido'}
     }
+  }
+
+  function orderBlingLinkHtml(link){
+    if(!link)return '<div class="rule-notice"><strong>Aguardando primeira separação</strong><div>O pedido ainda não foi enviado ao Bling. O envio acontece automaticamente quando a separação começar e todas as validações estiverem corretas.</div></div>';
+    if(link.linked){
+      return '<div class="rule-notice"><strong class="ok-text">Bling #'+esc(link.bling_order_id)+' ✓</strong><div>Pedido vinculado e verificado'+(link.last_verified_at?' · '+esc(dateTime(link.last_verified_at)):'')+'.</div></div>';
+    }
+    const job=link.job||{};
+    if(job.status==='pending'||job.status==='processing'||job.status==='retry'){
+      return '<div class="rule-notice"><strong>Sincronização Bling em andamento</strong><div>Status: '+esc(job.status||'pendente')+'.</div></div>';
+    }
+    if(job.status==='review_required'||job.status==='failed'){
+      return '<div class="rule-notice warn"><strong>Bling precisa de revisão</strong><div>'+esc(blingOrderJobErrorLabel(job.error_code))+'</div></div>';
+    }
+    return '<div class="rule-notice"><strong>Ainda não vinculado</strong><div>Será processado automaticamente após a primeira separação elegível.</div></div>';
+  }
+
+  function blingOrderJobErrorLabel(code){
+    const map={
+      order_not_write_eligible:'Pedido ainda não estava apto para envio',
+      duplicate_external_order_key:'Foi encontrado mais de um pedido com a mesma chave no Bling',
+      order_creation_uncertain:'O resultado da criação precisa ser conferido',
+      bling_order_id_missing:'O Bling não retornou um identificador seguro',
+      post_create_order_mismatch:'O pedido criado no Bling não conferiu com o total local',
+      customer_not_linked:'Cliente ainda não vinculado ao Bling',
+      unresolved_products:'Há produtos sem vínculo com o Bling'
+    };
+    return map[code]||'A sincronização foi interrompida com segurança.';
   }
 
   function blingOrderBlockerLabel(code){
