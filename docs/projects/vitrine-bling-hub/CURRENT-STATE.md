@@ -129,6 +129,15 @@ Cobertura:
 - assinatura/inbox de webhook
 - readiness fiscal sem emissão
 
+## Validações adicionais desta rodada
+- dois previews reais de pedido (cesta pura e misto) continuam fechando total exato;
+- preview estrutural pode estar pronto, mas escrita fica bloqueada por `first_separation_required` e `stock_not_consumed` antes da separação;
+- runtime novo Vitrine/Admin/Hub foi verificado sem URLs Make;
+- CI corrigido em 2026-09-23 após atualização do gate centralizado de canário; workflow `Vitrine na raiz` passou;
+- GitHub Pages passou;
+- inventário de limpeza seguro salvo em `SUPABASE-CLEANUP-INVENTORY.md`;
+- objetos Bling V1 vazios ainda dependentes foram mantidos como DEPRECATE, não apagados.
+
 ## Próximos passos seguros
 1. Aguardar a primeira separação real para observar o canário automático de Pedido.
 2. Manter Webhooks OFF até a URL ser cadastrada no painel Bling.
