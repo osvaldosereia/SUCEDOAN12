@@ -30,6 +30,7 @@ declare
   v_source_order_id uuid;
   v_snapshot jsonb;
   v_delivery jsonb;
+  v_effective_phone text;
 begin
   select * into v_customer from public.customers where id=p_customer_id;
   if not found then
@@ -84,10 +85,50 @@ begin
     return jsonb_build_object('ok',true,'linked',false,'reason','order_not_found');
   end if;
 
+  v_effective_phone:=coalesce(nullif(v_order.phone_e164,''),nullif(p_phone,''),v_customer.primary_whatsapp_e164);
+
+  if nullif(v_order.phone_e164,'') is not null
+     and nullif(coalesce(p_phone,v_customer.primary_whatsapp_e164),'') is not null
+     and public.normalize_phone_digits(v_order.phone_e164)=any(public.phone_variants_br(coalesce(p_phone,v_customer.primary_whatsapp_e164)))
+     and not exists(
+       select 1 from public.customers c
+       where c.id<>p_customer_id
+         and public.normalize_phone_digits(c.primary_whatsapp_e164)=public.normalize_phone_digits(v_order.phone_e164)
+     )
+     and not exists(
+       select 1 from public.customer_phones cp
+       where cp.customer_id<>p_customer_id
+         and public.normalize_phone_digits(cp.phone_e164)=public.normalize_phone_digits(v_order.phone_e164)
+     )
+  then
+    update public.customers
+       set primary_whatsapp_e164=v_order.phone_e164,
+           updated_at=now()
+     where id=p_customer_id;
+
+    update public.customer_phones
+       set is_primary=false
+     where customer_id=p_customer_id;
+
+    insert into public.customer_phones(customer_id,phone_e164,source,is_primary,verified_at)
+    select p_customer_id,v_order.phone_e164,'papoai_flow',true,now()
+    where not exists(
+      select 1 from public.customer_phones cp where cp.phone_e164=v_order.phone_e164
+    );
+
+    update public.customer_phones
+       set is_primary=true,
+           verified_at=coalesce(verified_at,now())
+     where customer_id=p_customer_id
+       and phone_e164=v_order.phone_e164;
+
+    v_customer.primary_whatsapp_e164:=v_order.phone_e164;
+  end if;
+
   v_snapshot:=coalesce(v_order.customer_snapshot,'{}'::jsonb)||jsonb_strip_nulls(jsonb_build_object(
     'source_customer_id',p_customer_id,
     'name',v_customer.name,
-    'phone',coalesce(nullif(p_phone,''),v_customer.primary_whatsapp_e164),
+    'phone',v_effective_phone,
     'cpf',v_customer.cpf_cnpj
   ));
 
@@ -97,7 +138,7 @@ begin
       'source_customer_id',p_customer_id,
       'customer_status','registered',
       'customer_name',v_customer.name,
-      'phone',coalesce(nullif(p_phone,''),v_customer.primary_whatsapp_e164),
+      'phone',v_effective_phone,
       'cpf',v_customer.cpf_cnpj
     ));
 
@@ -122,7 +163,8 @@ begin
     'order_id',v_order.id,
     'order_number',v_order.order_number,
     'source_order_id',v_source_order_id,
-    'customer_id',p_customer_id
+    'customer_id',p_customer_id,
+    'effective_phone',v_effective_phone
   );
 end
 $$;
