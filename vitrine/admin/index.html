@@ -193,7 +193,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderQuery:'',expeditionQuery:'',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderQuery:'',expeditionQuery:'',orderCustomerSearchTimer:null,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -1242,10 +1242,10 @@
     $('#editor').showModal();
     try{
       const data=await api('order',{id});state.currentOrder=data;state.currentOrderBlingPreview=null;state.currentOrderFiscal=null;
-      if(!state.customers.length){try{const c=await customerApi('vitrine_customers_list',{limit:150});state.customers=c.customers||[]}catch{}}
+      state.customers=[];
       const sourceId=data.customer?.source_customer_id||data.order?.delivery_address_snapshot?.source_customer_id||'';
-      if(sourceId&&!state.customers.some(c=>c.id===sourceId)){
-        try{const one=await customerApi('vitrine_customer_get',{id:sourceId});if(one.customer)state.customers.push(one.customer)}catch{}
+      if(sourceId){
+        try{const one=await customerApi('vitrine_customer_get',{id:sourceId});if(one.customer)state.customers=[one.customer]}catch{}
       }
       await loadCurrentOrderFiscal(false);
       paintOrderDetail();
@@ -1264,7 +1264,8 @@
       '<div class="form-grid">'+
         '<div class="span-2 order-stage"><span>Situação atual</span>'+statusPill(o.status)+'<b>Próxima ação: '+esc(orderNextAction(o))+'</b></div>'+
         '<label><span>Forma de pagamento</span><select id="orderPayment">'+paymentOptions(payment)+'</select></label>'+
-        '<label><span>Cliente</span><select id="orderCustomer"><option value="">Sem cliente vinculado</option>'+customerOptions(currentCustomerId)+'</select></label>'+
+        '<label><span>Cliente vinculado</span><select id="orderCustomer"><option value="">Sem cliente vinculado</option>'+customerOptions(currentCustomerId)+'</select></label>'+
+        '<label class="span-2"><span>Buscar cliente por nome, telefone ou CPF</span><input id="orderCustomerSearch" type="search" autocomplete="off" placeholder="Digite para localizar o cliente…"><small class="sub" id="orderCustomerSearchHint">Digite pelo menos 2 caracteres. A busca consulta a base oficial.</small></label>'+
       '</div>'+
       '<div class="section-title">Operação</div>'+
       orderActionButtonsHtml(o)+
@@ -1285,6 +1286,7 @@
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar dados</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
+    if($('#orderCustomerSearch'))$('#orderCustomerSearch').oninput=e=>scheduleOrderCustomerSearch(e.target.value);
     if($('#advanceOrder'))$('#advanceOrder').onclick=()=>advanceCurrentOrder($('#advanceOrder').dataset.next);
     if($('#startSeparation'))$('#startSeparation').onclick=()=>printSeparation(d,true);
     if($('#reprintSeparation'))$('#reprintSeparation').onclick=()=>printSeparation(d,false);
@@ -1487,7 +1489,39 @@
     return '<div class="order-item"><div class="order-item-head"><strong>'+fmtQty(i.quantity)+'× '+esc(i.name_snapshot)+'</strong><b>'+money(i.total_cents)+'</b></div>'+comp+'</div>';
   }
   function customerOptions(current){
-    return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+'</option>').join('');
+    return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'</option>').join('');
+  }
+  function mergeOrderCustomerResults(rows,currentId){
+    const current=state.customers.find(c=>c.id===currentId)||null;
+    const map=new Map();
+    if(current)map.set(current.id,current);
+    for(const c of rows||[])if(c?.id)map.set(c.id,c);
+    state.customers=[...map.values()];
+  }
+  function scheduleOrderCustomerSearch(value){
+    clearTimeout(state.orderCustomerSearchTimer);
+    const q=String(value||'').trim();
+    const hint=$('#orderCustomerSearchHint');
+    if(q.length<2){
+      if(hint)hint.textContent='Digite pelo menos 2 caracteres. A busca consulta a base oficial.';
+      return;
+    }
+    if(hint)hint.textContent='Buscando…';
+    state.orderCustomerSearchTimer=setTimeout(()=>searchOrderCustomers(q),250);
+  }
+  async function searchOrderCustomers(q){
+    const select=$('#orderCustomer');if(!select)return;
+    const selectedId=select.value;
+    const hint=$('#orderCustomerSearchHint');
+    try{
+      const data=await customerApi('vitrine_customers_list',{q,limit:30});
+      mergeOrderCustomerResults(data.customers||[],selectedId);
+      select.innerHTML='<option value="">Sem cliente vinculado</option>'+customerOptions(selectedId);
+      if(selectedId)select.value=selectedId;
+      if(hint)hint.textContent=(data.customers||[]).length+' cliente(s) encontrado(s). Selecione acima.';
+    }catch(e){
+      if(hint)hint.textContent='Não consegui buscar agora. Tente novamente.';
+    }
   }
   function paymentOptions(current){
     const standard=['PIX','Dinheiro','Cartão de crédito','Cartão alimentação/refeição'];
