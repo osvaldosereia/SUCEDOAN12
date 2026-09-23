@@ -1228,6 +1228,96 @@ function blingHubFiscalPaymentMethod(raw:any){
   if(v.includes("link"))return "payment_link";
   return "other";
 }
+async function blingHubOrderStatusCatalog(sb:any){
+  const token=await blingHubOauth(sb);
+  const modules=await blingHubGet(sb,token,"/situacoes/modulos");
+  if(!modules.ok)return {ok:false,error:"status_modules_http_"+modules.status,status:modules.status};
+
+  const allModules=Array.isArray(modules.data?.data)?modules.data.data:[];
+  const candidates=allModules.filter((m:any)=>{
+    const name=(clean(m?.nome,160)+" "+clean(m?.descricao,220)).toLowerCase();
+    return name.includes("pedido")&&name.includes("venda");
+  });
+
+  if(candidates.length!==1){
+    return {
+      ok:false,error:"sales_order_status_module_ambiguous",status:409,
+      candidates:candidates.map((m:any)=>({id:Number(m?.id||0)||null,nome:clean(m?.nome,160),descricao:clean(m?.descricao,220)})),
+      available_modules:allModules.map((m:any)=>({id:Number(m?.id||0)||null,nome:clean(m?.nome,160),descricao:clean(m?.descricao,220)})).slice(0,100),
+      external_write:false
+    };
+  }
+
+  const moduleId=Number(candidates[0]?.id||0);
+  if(!moduleId)return {ok:false,error:"sales_order_status_module_invalid",status:409,external_write:false};
+
+  const [statuses,transitions]=await Promise.all([
+    blingHubGet(sb,token,"/situacoes/modulos/"+encodeURIComponent(String(moduleId))),
+    blingHubGet(sb,token,"/situacoes/modulos/"+encodeURIComponent(String(moduleId))+"/transicoes")
+  ]);
+  if(!statuses.ok)return {ok:false,error:"sales_order_statuses_http_"+statuses.status,status:statuses.status,external_write:false};
+
+  const statusRows=(Array.isArray(statuses.data?.data)?statuses.data.data:[]).map((x:any)=>({
+    id:Number(x?.id||0)||null,
+    nome:clean(x?.nome,180),
+    id_herdado:Number(x?.idHerdado||0)||null,
+    cor:clean(x?.cor,40)
+  })).filter((x:any)=>x.id);
+
+  const transitionRows=(transitions.ok&&Array.isArray(transitions.data?.data)?transitions.data.data:[]).map((x:any)=>({
+    id:Number(x?.id||0)||null,
+    origem:{
+      id:Number(x?.situacaoOrigem?.id||0)||null,
+      nome:clean(x?.situacaoOrigem?.nome,180)
+    },
+    destino:{
+      id:Number(x?.situacaoDestino?.id||0)||null,
+      nome:clean(x?.situacaoDestino?.nome,180)
+    },
+    ativo:x?.ativo!==false,
+    acoes:Array.isArray(x?.acoes)?x.acoes.slice(0,50):[]
+  }));
+
+  const now=new Date().toISOString();
+  const runtime=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const metadata=runtime.data?.metadata&&typeof runtime.data.metadata==="object"?runtime.data.metadata:{};
+  const snapshot={
+    module_id:moduleId,
+    module_name:clean(candidates[0]?.nome,160),
+    statuses:statusRows,
+    transitions:transitionRows,
+    refreshed_at:now
+  };
+  const update=await sb.from("bling_hub_runtime_v2").update({
+    metadata:{...metadata,order_status_catalog:snapshot},
+    updated_at:now
+  }).eq("id",1);
+  if(update.error)throw update.error;
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"order_status_catalog_refreshed",
+    severity:"info",
+    domain:"order",
+    details:{
+      module_id:moduleId,
+      module_name:snapshot.module_name,
+      status_count:statusRows.length,
+      transition_count:transitionRows.length,
+      external_write:false,
+      make_used:false
+    }
+  });
+
+  return {
+    ok:true,
+    module:{id:moduleId,nome:snapshot.module_name},
+    statuses:statusRows,
+    transitions:transitionRows,
+    external_write:false
+  };
+}
+
 async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
   const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
   if(!resolved.ok)return resolved;
@@ -3112,6 +3202,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="process_customer_jobs"){
         const result=await blingHubProcessCustomerJobs(sb,body?.limit);
         return json(result,200);
+      }
+      if(subaction==="order_status_catalog"){
+        const result=await blingHubOrderStatusCatalog(sb);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="preview_order_sync"){
         const result=await blingHubPreviewOrderSync(sb,body?.payload);
