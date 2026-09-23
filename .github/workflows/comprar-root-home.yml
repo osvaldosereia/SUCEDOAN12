@@ -42,6 +42,7 @@ on:
       - 'scripts/test-vitrine-admin-closure-buckets-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-pending-v1.mjs'
       - 'scripts/test-vitrine-admin-today-closure-v1.mjs'
+      - 'scripts/test-vitrine-admin-customer-document-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -98,6 +99,7 @@ on:
       - 'scripts/test-vitrine-admin-closure-buckets-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-pending-v1.mjs'
       - 'scripts/test-vitrine-admin-today-closure-v1.mjs'
+      - 'scripts/test-vitrine-admin-customer-document-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -164,6 +166,7 @@ jobs:
           node scripts/test-vitrine-admin-closure-buckets-v1.mjs
           node scripts/test-vitrine-admin-closure-pending-v1.mjs
           node scripts/test-vitrine-admin-today-closure-v1.mjs
+          node scripts/test-vitrine-admin-customer-document-v1.mjs
           node scripts/test-admin-service-shared-modules-v1.mjs
           node scripts/test-vitrine-bling-cancel-status-v1.mjs
           node scripts/test-vitrine-admin-bling-preflight-v1.mjs
