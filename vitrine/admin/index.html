@@ -2086,6 +2086,27 @@
       return ga-gb||a.name.localeCompare(b.name,'pt-BR');
     });
   }
+  async function validateBlingBeforeSeparation(orderId){
+    try{
+      const preview=await api('bling_preview_order_sync',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})
+      });
+      state.currentOrderBlingPreview=preview;
+      const blockers=blingPreflightOperationalBlockers(preview);
+      if(blockers.length){
+        paintOrderDetail();
+        toast('Corrija as pendências da integração antes de separar');
+        return false;
+      }
+      return true;
+    }catch(e){
+      state.currentOrderBlingPreview={error:String(e?.message||'bling_preview_unavailable')};
+      paintOrderDetail();
+      toast('Não consegui validar o Bling · separação não iniciada');
+      return false;
+    }
+  }
+
   async function printSeparation(detail,consumeStock=false){
     const o=detail.order;
     const w=window.open('','_blank','width=420,height=700');
@@ -2098,6 +2119,11 @@
       let consumed={already_consumed:true};
       if(consumeStock){
         await persistCurrentOrder();
+        const blingReady=await validateBlingBeforeSeparation(o.id);
+        if(!blingReady){
+          try{w.close()}catch{}
+          return;
+        }
         consumed=await api('order_consume_stock',{},{
           method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id})
         });
