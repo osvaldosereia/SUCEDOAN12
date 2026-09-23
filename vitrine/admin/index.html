@@ -295,6 +295,19 @@
     if(!String(payment).trim())reasons.push('Pagamento não informado');
     return reasons;
   }
+  function orderOperationalPriority(o){
+    if(orderProblemReasons(o).length)return 0;
+    const rank={created:1,confirmed:2,processing:3,ready:4,out_for_delivery:5,delivered:6,cancelled:7};
+    return rank[o?.status]??8;
+  }
+  function sortOperationalOrders(rows){
+    return [...rows].sort((a,b)=>{
+      const p=orderOperationalPriority(a)-orderOperationalPriority(b);
+      if(p!==0)return p;
+      const at=Date.parse(a?.created_at||0)||0,bt=Date.parse(b?.created_at||0)||0;
+      return at-bt;
+    });
+  }
   function orderNextAction(o){
     const problems=orderProblemReasons(o);
     if(problems.length)return 'Corrigir: '+problems[0];
@@ -340,9 +353,9 @@
       const data=await api('orders');state.orders=data.orders||[];
       const host=$('#todayBody');
       host.innerHTML=renderTodayCards()+
-        '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">prioridade para trabalho pendente</span></div><div id="todayOrders"></div></div>';
+        '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
       host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;setTab('orders')});
-      const pending=state.orders.filter(o=>!['delivered','cancelled'].includes(o.status)).slice(0,8);
+      const pending=sortOperationalOrders(state.orders.filter(o=>!['delivered','cancelled'].includes(o.status))).slice(0,8);
       $('#todayOrders').innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(shortOrder(o.order_number))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
       host.querySelectorAll('[data-today-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.todayOrder));
     }catch(e){
@@ -1210,7 +1223,8 @@
   }
   function paintOrderRows(){
     const host=$('#orderRows');if(!host)return;
-    const rows=state.orders.filter(o=>orderFilterMatch(o,state.orderFilter)&&orderSearchMatch(o,state.orderQuery));
+    let rows=state.orders.filter(o=>orderFilterMatch(o,state.orderFilter)&&orderSearchMatch(o,state.orderQuery));
+    if(!['delivered'].includes(state.orderFilter))rows=sortOperationalOrders(rows);
     host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">Nenhum pedido nesta etapa.</div>';
     host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));
   }
@@ -1226,7 +1240,7 @@
     const problems=orderProblemReasons(o);
     const next=orderNextAction(o);
     return '<div class="list-row orders-layout">'+
-      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+'</span>':'')+'</div>'+
+      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+(problems.length>1?' · +'+(problems.length-1):'')+'</span>':'')+'</div>'+
       '<div class="desktop-extra"><span>'+esc(dateTime(o.created_at))+'</span><span class="sub age-text">'+esc(relativeAge(o.created_at))+'</span></div>'+
       '<div class="mobile-wide"><span class="row-title">'+esc(o.customer_name||'Sem cliente')+'</span><span class="sub">'+esc(payment)+' · '+esc(next)+' · '+esc(relativeAge(o.created_at))+'</span></div>'+
       '<span class="money">'+money(o.total_cents)+'</span>'+
