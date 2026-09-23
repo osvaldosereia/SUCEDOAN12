@@ -2314,6 +2314,15 @@ Deno.serve(async(req:Request)=>{
         const result=await blingHubProcessOrderJobs(sb,body?.limit);
         return json(result,200);
       }
+      if(subaction==="process_cycle"){
+        const limit=Math.max(1,Math.min(10,Number(body?.limit||3)||3));
+        const results:any={};
+        results.products=await blingHubProcessProductJobs(sb,limit);
+        results.stock=await blingHubProcessStockJobs(sb,limit);
+        results.customers=await blingHubProcessCustomerJobs(sb,limit);
+        results.orders=await blingHubProcessOrderJobs(sb,Math.min(limit,3));
+        return json({ok:true,cycle:true,results},200);
+      }
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
         return json(result,result.ok?200:409);
