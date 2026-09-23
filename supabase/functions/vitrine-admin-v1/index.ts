@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import { syncVitrineOrderHistory } from "../_shared/vitrine-history-sync-v1.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SECRET_KEYS = (() => {
@@ -821,7 +822,8 @@ async function consumeOrderStock(payload:any) {
       .update({payment_method_snapshot:nextPayment,status:order.status==="created"?"processing":order.status})
       .eq("organization_id",ORG_ID).eq("id",id);
     if(uErr)throw uErr;
-    return {order_id:id,stock_status:"consumed",already_consumed:Boolean(consumed.already_consumed)};
+    const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
+    return {order_id:id,stock_status:"consumed",already_consumed:Boolean(consumed.already_consumed),history_synced:Boolean(historySync.ok)};
   }
 
   if(payment.stock_reserved===true){
@@ -850,7 +852,8 @@ async function consumeOrderStock(payload:any) {
     .eq("organization_id",ORG_ID).eq("id",id);
   if(uErr)throw uErr;
 
-  return {order_id:id,stock_status:"consumed",already_consumed:false};
+  const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
+  return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok)};
 }
 
 async function updateOrder(payload:any) {
@@ -987,7 +990,8 @@ async function updateOrder(payload:any) {
     .maybeSingle();
   if (error) throw error;
   if (!data) return {error:"order_not_found",status:404};
-  return {order_id:data.id,stock_released:stockReleasedChange};
+  const historySync=await syncVitrineOrderHistory(db,data.id,ORG_ID);
+  return {order_id:data.id,stock_released:stockReleasedChange,history_synced:Boolean(historySync.ok)};
 }
 
 Deno.serve(async (req: Request) => {
