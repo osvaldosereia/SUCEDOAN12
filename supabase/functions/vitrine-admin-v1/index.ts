@@ -873,8 +873,21 @@ async function consumeOrderStock(payload:any) {
   }
 
   if(payment.stock_reserved===true){
-    // Legacy model already deducted physical stock when the order was created.
-    return {order_id:id,stock_status:"legacy_already_deducted",already_consumed:true};
+    // Legacy model deducted physical stock when the order was created.
+    // At first separation we do not deduct again; we only publish the current absolute stock
+    // and queue the immutable Bling order snapshot.
+    const stockItems=await orderStockReservationItems(id);
+    try{await queueBlingStockSnapshots(stockItems.map((x:any)=>x.product_id),"legacy_order_separation")}catch{}
+    const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
+    let blingOrderQueued=false;
+    try{blingOrderQueued=await queueBlingOrderSnapshot(id,"first_separation")}catch(e){console.error("bling_order_enqueue_failed",String((e as Error)?.message||e))}
+    return {
+      order_id:id,
+      stock_status:"legacy_already_deducted",
+      already_consumed:true,
+      history_synced:Boolean(historySync.ok),
+      bling_order_queued:blingOrderQueued
+    };
   }
 
   const stockItems=await orderStockReservationItems(id);
