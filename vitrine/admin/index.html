@@ -279,6 +279,21 @@
     if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
     return d.length>=12?'https://wa.me/'+d:'';
   }
+  function whatsappMessageHref(value,message){
+    const base=whatsappHref(value);
+    return base?base+'?text='+encodeURIComponent(String(message||'')):'';
+  }
+  function orderAddressRequestHref(o){
+    if(!orderProblemReasons(o).includes('Endereço incompleto'))return '';
+    const a=o?.delivery_address_snapshot||{};
+    const phone=o?.whatsapp_phone_e164||a.phone||'';
+    if(!whatsappHref(phone))return '';
+    const rawName=String(o?.customer_name||a.customer_name||a.recipient_name||'').trim();
+    const firstName=rawName?rawName.split(/\s+/)[0]:'';
+    const greeting=firstName?'Olá, '+firstName+'!':'Olá!';
+    const message=greeting+' Para concluirmos seu pedido #'+shortOrder(o?.order_number)+' da Dona Antônia, pode me enviar seu endereço completo (rua, número, bairro e uma referência)? Se preferir, envie sua localização pelo WhatsApp.';
+    return whatsappMessageHref(phone,message);
+  }
   function mapsHrefFromAddress(a){
     const data=a&&typeof a==='object'?a:{};
     const provided=String(data.google_maps_url||'').trim();
@@ -289,10 +304,11 @@
   function orderContactActionsHtml(o,c={}){
     const a=o?.delivery_address_snapshot||c?.address||{};
     const phone=c?.phone||o?.whatsapp_phone_e164||a.phone||'';
-    const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a);
-    if(!wa&&!maps)return '';
+    const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a),addressRequest=orderAddressRequestHref(o);
+    if(!wa&&!maps&&!addressRequest)return '';
     return '<div class="dispatch-actions" style="justify-content:flex-start;margin-top:10px">'+
-      (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+      (addressRequest?'<a class="quick-link primary-link" href="'+esc(addressRequest)+'" target="_blank" rel="noopener">Pedir endereço</a>':'')+
+      (wa?'<a class="quick-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
       (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Abrir no Maps</a>':'')+
     '</div>';
   }
@@ -1660,6 +1676,7 @@
   function orderRow(o){
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
     const problems=orderProblemReasons(o);
+    const addressRequest=orderAddressRequestHref(o);
     const next=orderNextAction(o);
     return '<div class="list-row orders-layout">'+
       '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+(problems.length>1?' · +'+(problems.length-1):'')+'</span>':'')+'</div>'+
@@ -1669,6 +1686,7 @@
       '<span class="desktop-extra">'+esc(payment)+'</span>'+
       '<div class="desktop-extra"><span class="next-action '+(o.status==='cancelled'?'muted-action':'')+'">'+esc(next)+'</span><span class="sub">'+statusPill(o.status)+'</span></div>'+
       '<div class="customer-row-actions">'+
+        (addressRequest?'<a class="text" href="'+esc(addressRequest)+'" target="_blank" rel="noopener">Pedir endereço</a>':'')+
         (o.status==='created'&&!problems.length?'<button class="text" data-quick-confirm="'+esc(o.id)+'">Confirmar</button>':'')+
         '<button class="text" data-open-order="'+esc(o.id)+'">Abrir</button>'+
       '</div></div>';
