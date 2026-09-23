@@ -8,7 +8,8 @@ assert.match(html,/Confirmar entrega/);
 assert.match(html,/async function confirmDeliveryFromExpedition\(id\)/);
 assert.match(html,/o\.status!=='out_for_delivery'/);
 assert.match(html,/status:'delivered'/);
-assert.match(html,/pedido enviado ao Fechamento/);
+assert.match(html,/Entrega confirmada · pagamento pendente no Fechamento/);
+assert.match(html,/Entrega e recebimento confirmados/);
 assert.match(html,/dataset\.confirmDelivery/);
 
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
