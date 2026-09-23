@@ -883,7 +883,7 @@ async function saveCustomer(payload:any) {
 
 async function listOrders() {
   const { data, error } = await db.from("orders")
-    .select("id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,customer_id,created_at,confirmed_at,delivered_at")
+    .select("id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at")
     .eq("organization_id",ORG_ID)
     .order("created_at",{ascending:false})
     .limit(120);
