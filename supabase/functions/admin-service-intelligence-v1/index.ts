@@ -1616,13 +1616,18 @@ async function blingHubCustomerSnapshot(sb:any,customerId:string){
 }
 function blingHubCustomerPayload(current:any,local:any){
   const payload:any={};
-  const preserve=["codigo","tipoContato","fantasia","indicadorIe","ie","rg","orgaoEmissor","contribuinte","sexo","dataNascimento","naturalidade","limiteCredito","pais","vendedor","dadosAdicionais"];
-  for(const key of preserve)if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=current[key];
+  const preserve=[
+    "codigo","tipoContato","fantasia","indicadorIe","ie","rg","orgaoEmissor","contribuinte","sexo",
+    "dataNascimento","naturalidade","limiteCredito","pais","vendedor","dadosAdicionais",
+    "nome","numeroDocumento","tipo","situacao","fone","celular","email","emailNotaFiscal","endereco"
+  ];
+  for(const key of preserve){
+    if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=structuredClone(current[key]);
+  }
 
+  const name=clean(local?.name,220);if(name)payload.nome=name;
   const doc=blingHubDigits(local?.cpf_cnpj);
-  payload.nome=clean(local?.name,220);
-  if(doc)payload.numeroDocumento=doc;
-  payload.tipo=doc.length===14?"J":"F";
+  if(doc){payload.numeroDocumento=doc;payload.tipo=doc.length===14?"J":"F";}
   payload.situacao=local?.is_active===false?"I":"A";
   const phone=blingHubDigits(local?.primary_whatsapp_e164);
   if(phone)payload.celular=phone;
@@ -1639,7 +1644,7 @@ function blingHubCustomerPayload(current:any,local:any){
     if(clean(a.city,120))geral.municipio=clean(a.city,120);
     if(clean(a.state,2))geral.uf=clean(a.state,2).toUpperCase();
     const cep=blingHubDigits(a.postal_code);if(cep)geral.cep=cep;
-    if(Object.keys(geral).length)payload.endereco={...(current?.endereco||{}),geral:{...(current?.endereco?.geral||{}),...geral}};
+    if(Object.keys(geral).length)payload.endereco={...(payload.endereco||{}),geral:{...(payload.endereco?.geral||{}),...geral}};
   }
   return payload;
 }
