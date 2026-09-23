@@ -8,10 +8,14 @@ on:
       - 'scripts/test-comprar-root-home-v1.mjs'
       - 'scripts/test-vitrine-whatsapp-handoff-v1.mjs'
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
+      - 'scripts/test-vitrine-customer-history-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
+      - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/**'
       - 'supabase/migrations/*stock*'
-      - 'scripts/test-vitrine-customer-history-v1.mjs'\n      - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'\n      - 'supabase/functions/admin-service-intelligence-v1/**'\n      - 'supabase/migrations/*vitrine_history*'\n      - '.github/workflows/comprar-root-home.yml'
+      - 'supabase/migrations/*vitrine_history*'
+      - '.github/workflows/comprar-root-home.yml'
   push:
     branches: [main]
     paths:
@@ -20,10 +24,14 @@ on:
       - 'scripts/test-comprar-root-home-v1.mjs'
       - 'scripts/test-vitrine-whatsapp-handoff-v1.mjs'
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
+      - 'scripts/test-vitrine-customer-history-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
+      - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
+      - 'supabase/functions/admin-service-intelligence-v1/**'
       - 'supabase/migrations/*stock*'
-      - 'scripts/test-vitrine-customer-history-v1.mjs'\n      - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'\n      - 'supabase/functions/admin-service-intelligence-v1/**'\n      - 'supabase/migrations/*vitrine_history*'\n      - '.github/workflows/comprar-root-home.yml'
+      - 'supabase/migrations/*vitrine_history*'
+      - '.github/workflows/comprar-root-home.yml'
 
 permissions:
   contents: read
@@ -37,8 +45,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Validar Vitrine pública e handoff do WhatsApp
+      - name: Validar Vitrine pública, WhatsApp, regras e histórico
         run: |
           node scripts/test-comprar-root-home-v1.mjs
           node scripts/test-vitrine-whatsapp-handoff-v1.mjs
-          node scripts/test-vitrine-sales-rules-v1.mjs\n          node scripts/test-vitrine-customer-history-v1.mjs
+          node scripts/test-vitrine-sales-rules-v1.mjs
+          node scripts/test-vitrine-customer-history-v1.mjs
