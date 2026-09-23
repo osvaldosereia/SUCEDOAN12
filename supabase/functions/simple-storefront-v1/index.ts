@@ -94,6 +94,34 @@ function deliveryPlanCuiaba(now = new Date()) {
   return {date:isoLocalDate(target),label,notice,reason,time_zone:BUSINESS_TIME_ZONE,cutoff_hour:12};
 }
 
+async function availableStockMap(productIds:string[]) {
+  const ids=[...new Set(productIds.filter(Boolean))];
+  const result=new Map<string,number>();
+  if(!ids.length)return result;
+
+  const [{data:products,error:pErr},{data:reservations,error:rErr}]=await Promise.all([
+    db.from("products")
+      .select("id,stock_quantity,active")
+      .eq("organization_id",ORG_ID)
+      .in("id",ids),
+    db.from("order_stock_reservations")
+      .select("product_id,quantity")
+      .eq("organization_id",ORG_ID)
+      .eq("status","reserved")
+      .in("product_id",ids)
+  ]);
+  if(pErr)throw pErr;
+  if(rErr)throw rErr;
+
+  const reserved=new Map<string,number>();
+  for(const row of reservations??[])reserved.set(row.product_id,(reserved.get(row.product_id)??0)+Number(row.quantity||0));
+  for(const p of products??[]){
+    const physical=p.active===false?0:Number(p.stock_quantity||0);
+    result.set(p.id,Math.max(0,physical-(reserved.get(p.id)??0)));
+  }
+  return result;
+}
+
 async function activeOffersFor(productIds: string[]) {
   if (!productIds.length) return new Map<string, any>();
   const { data, error } = await db
@@ -151,6 +179,7 @@ async function offers() {
   }
 
   const pMap = new Map(products.map((p:any)=>[p.id,p]));
+  const available=await availableStockMap(products.map((p:any)=>p.id));
   const publicOffers = currentOffers
     .map((offer:any) => {
       const p = pMap.get(offer.product_id);
@@ -163,10 +192,10 @@ async function offers() {
         price_cents: Number(offer.sale_price_cents || 0),
         regular_price_cents: Number(p.sale_price_cents || 0),
         packaging: p.metadata?.packaging ?? "",
-        stock_quantity: Number(p.stock_quantity ?? 0)
+        stock_quantity: Number(available.get(p.id) ?? 0)
       };
     })
-    .filter(Boolean)
+    .filter((x:any)=>x&&Number(x.stock_quantity)>0)
     .sort((a:any,b:any)=>a.name.localeCompare(b.name,"pt-BR"));
 
   return { ok:true, offers:publicOffers };
@@ -228,9 +257,8 @@ async function products(url: URL) {
   if (error) throw error;
   const rows = data ?? [];
   const offerMap = await activeOffersFor(rows.map((p:any)=>p.id));
-  return {
-    ok: true,
-    products: rows.map((p:any) => {
+  const available=await availableStockMap(rows.map((p:any)=>p.id));
+  const publicRows=rows.map((p:any) => {
       const offer = offerMap.get(p.id);
       return {
         id: p.id,
@@ -240,9 +268,12 @@ async function products(url: URL) {
         regular_price_cents: offer ? Number(p.sale_price_cents ?? 0) : null,
         packaging: p.metadata?.packaging ?? "",
         subcategory: p.metadata?.subcategory ?? "",
-        stock_quantity: Number(p.stock_quantity ?? 0)
+        stock_quantity: Number(available.get(p.id) ?? 0)
       };
-    }),
+    }).filter((p:any)=>p.stock_quantity>0);
+  return {
+    ok:true,
+    products:publicRows,
     next_offset: rows.length === limit ? offset + limit : null
   };
 }
@@ -259,6 +290,7 @@ async function productDetail(id: string) {
 
   const offerMap = await activeOffersFor([p.id]);
   const offer = offerMap.get(p.id);
+  const available=await availableStockMap([p.id]);
   const meta = p.metadata ?? {};
   const characteristics = [
     ["Marca", meta.brand],
@@ -282,7 +314,7 @@ async function productDetail(id: string) {
       image_url:p.image_url ?? "",
       price_cents:Number(offer?.sale_price_cents ?? p.sale_price_cents ?? 0),
       regular_price_cents:offer ? Number(p.sale_price_cents ?? 0) : null,
-      stock_quantity:Number(p.stock_quantity ?? 0),
+      stock_quantity:Number(available.get(p.id) ?? 0),
       packaging:meta.packaging ?? "",
       brand:meta.brand ?? "",
       category:meta.category ?? "",
@@ -315,6 +347,7 @@ async function basketDetail(id: string) {
     : { data: [], error: null };
   if (pErr) throw pErr;
   const products = new Map((productsData ?? []).map((p:any)=>[p.id,p]));
+  const available=await availableStockMap(ids);
   return json({
     ok:true,
     basket,
@@ -325,7 +358,7 @@ async function basketDetail(id: string) {
         name:p?.name ?? "Produto",
         image_url:p?.image_url ?? "",
         packaging:p?.metadata?.packaging ?? "",
-        stock_quantity:p?.active===false?0:Number(p?.stock_quantity ?? 0),
+        stock_quantity:Number(available.get(x.product_id) ?? 0),
         quantity:Number(x.quantity || 0)
       };
     })
@@ -366,12 +399,12 @@ async function basketQuote(payload: any) {
     editedQty.set(id, Math.round(num(row?.quantity,0,30)*1000)/1000);
   }
 
-  const stocks = new Map((productRows ?? []).map((p:any)=>[p.id,p.active===false?0:Number(p.stock_quantity||0)]));
+  const available=await availableStockMap(ids);
   let baseSubtotal = 0;
   let editedSubtotal = 0;
   for (const id of ids) {
-    const price=prices.get(id)??0,requestedQty=editedQty.get(id)??0,available=stocks.get(id)??0;
-    if(requestedQty>available)return json({ok:false,error:"insufficient_stock",product_id:id,available,requested:requestedQty},409,{"Cache-Control":"no-store"});
+    const price=prices.get(id)??0,requestedQty=editedQty.get(id)??0,availableQty=available.get(id)??0;
+    if(requestedQty>availableQty)return json({ok:false,error:"insufficient_stock",product_id:id,available:availableQty,requested:requestedQty},409,{"Cache-Control":"no-store"});
     baseSubtotal+=price*(baseQty.get(id)??0); editedSubtotal+=price*requestedQty;
   }
   const hiddenDelta = Number(basket.display_price_cents || 0) - baseSubtotal;
@@ -593,7 +626,7 @@ async function submitOrder(payload:any) {
       delivery_cents:0,
       total_cents:total,
       delivery_address_snapshot:{...customerSnapshot,delivery_date:delivery.date,delivery_label:delivery.label,delivery_reason:delivery.reason,delivery_time_zone:delivery.time_zone,delivery_cutoff_hour:delivery.cutoff_hour},
-      payment_method_snapshot:{method:payment,label:payment,timing:"on_delivery",source:"vitrine",stock_reserved:true,stock_released:false},
+      payment_method_snapshot:{method:payment,label:payment,timing:"on_delivery",source:"vitrine",stock_reserved:true,stock_consumed:false,stock_released:false,stock_model:"reservation_v2"},
       confirmed_at:null,
       delivered_at:null
     }).select("id,order_number,total_cents").single();
@@ -604,7 +637,7 @@ async function submitOrder(payload:any) {
   if(!order) throw orderError??new Error("order_insert_failed");
   let stockReserved=false;
   if(stockItems.length){
-    const {data:reservation,error:reservationError}=await db.rpc("reserve_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
+    const {data:reservation,error:reservationError}=await db.rpc("reserve_storefront_order_stock_v2",{p_organization_id:ORG_ID,p_order_id:order.id,p_items:stockItems});
     if(reservationError){await db.from("orders").delete().eq("id",order.id);throw reservationError}
     if(!reservation?.ok){await db.from("orders").delete().eq("id",order.id);return {error:String(reservation?.error||"insufficient_stock"),status:409,product_id:reservation?.product_id??null,available:Number(reservation?.available??0),requested:Number(reservation?.requested??0)}}
     stockReserved=true;
@@ -629,7 +662,7 @@ async function submitOrder(payload:any) {
       if(error) throw error;
     }
   } catch(error) {
-    if(stockReserved&&stockItems.length){const released=await db.rpc("release_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});if(released.error)console.error("stock_release_failed",released.error)}
+    if(stockReserved&&stockItems.length){const released=await db.rpc("release_storefront_order_stock_v2",{p_organization_id:ORG_ID,p_order_id:order.id});if(released.error)console.error("stock_release_failed",released.error)}
     await db.from("orders").delete().eq("id",order.id);
     throw error;
   }
