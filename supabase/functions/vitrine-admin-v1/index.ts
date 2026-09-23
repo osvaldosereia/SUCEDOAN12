@@ -1634,6 +1634,28 @@ async function updateOrder(payload:any) {
     }catch{}
   }
   const historySync=await syncVitrineOrderHistory(db,data.id,ORG_ID);
+  let blingStatusAttentionQueued=false;
+  if(patch.status==="cancelled"){
+    try{
+      const link=await blingHubControl("order_link_status",{source_order_id:data.id});
+      if(!(link as any).error&&(link as any).data?.linked===true){
+        const stamp=new Date().toISOString();
+        const queued=await blingHubControl("enqueue_job",{
+          domain:"order",operation:"sync_order_status",source_id:data.id,
+          idempotency_key:"vitrine_qx:order_status:"+data.id+":cancelled:"+stamp,
+          payload:{
+            source_order_id:data.id,
+            local_status:"cancelled",
+            reason:"order_cancelled_in_vitrine",
+            queued_at:stamp
+          }
+        });
+        blingStatusAttentionQueued=!(queued as any).error;
+      }
+    }catch(e){
+      console.error("bling_order_status_attention_enqueue_failed",String((e as Error)?.message||e));
+    }
+  }
   let blingOrderQueued=false;
   const effectivePayment=patch.payment_method_snapshot??currentPayment;
   const effectiveStatus=String(patch.status??currentOrder.status??"");
@@ -1663,6 +1685,7 @@ async function updateOrder(payload:any) {
     stock_released:stockReleasedChange,
     history_synced:Boolean(historySync.ok),
     bling_order_queued:blingOrderQueued,
+    bling_status_attention_queued:blingStatusAttentionQueued,
     fiscal_synced:fiscalSynced
   };
 }
