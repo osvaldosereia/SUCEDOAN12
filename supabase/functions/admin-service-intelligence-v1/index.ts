@@ -1279,9 +1279,6 @@ async function blingHubOrderStatusCatalog(sb:any){
   }));
 
   const now=new Date().toISOString();
-  const runtime=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
-  if(runtime.error)throw runtime.error;
-  const metadata=runtime.data?.metadata&&typeof runtime.data.metadata==="object"?runtime.data.metadata:{};
   const snapshot={
     module_id:moduleId,
     module_name:clean(candidates[0]?.nome,160),
@@ -1289,10 +1286,9 @@ async function blingHubOrderStatusCatalog(sb:any){
     transitions:transitionRows,
     refreshed_at:now
   };
-  const update=await sb.from("bling_hub_runtime_v2").update({
-    metadata:{...metadata,order_status_catalog:snapshot},
-    updated_at:now
-  }).eq("id",1);
+  const update=await sb.rpc("merge_bling_hub_runtime_metadata_v2",{
+    p_patch:{order_status_catalog:snapshot}
+  });
   if(update.error)throw update.error;
 
   await sb.from("bling_hub_audit_v2").insert({
@@ -1704,8 +1700,14 @@ async function blingHubResolveDepositId(sb:any,token:string){
   const preferred=rows.find((d:any)=>d?.padrao===true||d?.padrao===1||d?.padrao==="true");
   const id=Number(preferred?.id||(rows.length===1?rows[0]?.id:0));
   if(!id)throw new Error("default_deposit_not_resolved");
-  const nextMeta={...(rt.data?.metadata||{}),selected_deposit_id:id,selected_deposit_name:clean(preferred?.descricao||preferred?.nome||rows[0]?.descricao||rows[0]?.nome,120)||null,deposit_resolved_at:new Date().toISOString()};
-  await sb.from("bling_hub_runtime_v2").update({metadata:nextMeta,updated_at:new Date().toISOString()}).eq("id",1);
+  const merged=await sb.rpc("merge_bling_hub_runtime_metadata_v2",{
+    p_patch:{
+      selected_deposit_id:id,
+      selected_deposit_name:clean(preferred?.descricao||preferred?.nome||rows[0]?.descricao||rows[0]?.nome,120)||null,
+      deposit_resolved_at:new Date().toISOString()
+    }
+  });
+  if(merged.error)throw merged.error;
   return id;
 }
 async function blingHubReadStock(sb:any,token:string,blingProductId:number,depositId:number){
@@ -2148,10 +2150,16 @@ async function blingHubProbeReadonly(sb:any){
     }
   }
   const now=new Date().toISOString();
-  await sb.from("bling_hub_runtime_v2").update({
-    last_readonly_ok_at:allCore?now:null,last_readonly_error:allCore?null:"one_or_more_core_probes_failed",
-    metadata:{readonly_probe_version:1,probes:results,deposit_candidates:deposits,probed_at:now},updated_at:now
+  const runtimeUpdate=await sb.from("bling_hub_runtime_v2").update({
+    last_readonly_ok_at:allCore?now:null,
+    last_readonly_error:allCore?null:"one_or_more_core_probes_failed",
+    updated_at:now
   }).eq("id",1);
+  if(runtimeUpdate.error)throw runtimeUpdate.error;
+  const metaUpdate=await sb.rpc("merge_bling_hub_runtime_metadata_v2",{
+    p_patch:{readonly_probe_version:1,probes:results,deposit_candidates:deposits,probed_at:now}
+  });
+  if(metaUpdate.error)throw metaUpdate.error;
   await sb.from("bling_hub_audit_v2").insert({event_type:"readonly_probe",severity:allCore?"info":"warning",details:{probes:results,deposit_candidates:deposits,external_write:false,make_used:false}});
   const readiness=await blingHubReadinessExtended(sb);
   return {ok:allCore,readonly:true,external_write:false,probes:results,deposit_candidates:deposits,readiness};
@@ -2857,22 +2865,19 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
   }
 
   if(firstOrderCanary&&canaryWriteAttempted){
-    const cfg=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
-    if(cfg.error)throw cfg.error;
-    const baseMetadata=cfg.data?.metadata&&typeof cfg.data.metadata==="object"?cfg.data.metadata:{};
     const now=new Date().toISOString();
 
     if(summary.canary_passed){
-      await sb.from("bling_hub_runtime_v2").update({
-        metadata:{
-          ...baseMetadata,
-          order_rollout:{
-            state:"canary_passed",passed_at:now,
-            job_id:jobs[0]?.id||null,source_id:jobs[0]?.source_id||null
-          }
+      const rollout=await sb.rpc("set_bling_hub_order_rollout_v2",{
+        p_state:"canary_passed",
+        p_details:{
+          passed_at:now,
+          job_id:jobs[0]?.id||null,
+          source_id:jobs[0]?.source_id||null
         },
-        updated_at:now
-      }).eq("id",1);
+        p_disable_orders:false
+      });
+      if(rollout.error)throw rollout.error;
 
       await sb.from("bling_hub_audit_v2").insert({
         event_type:"order_canary_passed",severity:"info",domain:"order",
@@ -2882,17 +2887,16 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
         }
       });
     }else if(canaryWriteFailed){
-      await sb.from("bling_hub_runtime_v2").update({
-        orders_enabled:false,
-        metadata:{
-          ...baseMetadata,
-          order_rollout:{
-            state:"paused_after_canary_failure",paused_at:now,
-            job_id:jobs[0]?.id||null,source_id:jobs[0]?.source_id||null
-          }
+      const rollout=await sb.rpc("set_bling_hub_order_rollout_v2",{
+        p_state:"paused_after_canary_failure",
+        p_details:{
+          paused_at:now,
+          job_id:jobs[0]?.id||null,
+          source_id:jobs[0]?.source_id||null
         },
-        updated_at:now
-      }).eq("id",1);
+        p_disable_orders:true
+      });
+      if(rollout.error)throw rollout.error;
 
       await sb.from("bling_hub_audit_v2").insert({
         event_type:"order_canary_paused",severity:"error",domain:"order",
