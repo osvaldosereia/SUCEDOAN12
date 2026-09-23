@@ -1149,6 +1149,102 @@ async function blingHubPreviewProductSync(sb:any,item:any){
   const diff=blingHubManagedProductDiff(current,payload);
   return {ok:true,readonly:true,external_write:false,source_id:sourceId,bling_id:Number(link.data.bling_id),changes:diff,change_count:Object.keys(diff).length,current:{nome:current?.nome||"",codigo:current?.codigo||"",preco:current?.preco??null,gtin:current?.gtin||"",unidade:current?.unidade||"",marca:current?.marca||"",situacao:current?.situacao||""},desired:{nome:payload?.nome||"",codigo:payload?.codigo||"",preco:payload?.preco??null,gtin:payload?.gtin||"",unidade:payload?.unidade||"",marca:payload?.marca||"",situacao:payload?.situacao||""}};
 }
+async function blingHubResolveDepositId(sb:any,token:string){
+  const rt=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
+  if(rt.error)throw rt.error;
+  const configured=Number(rt.data?.metadata?.selected_deposit_id||0);
+  if(configured>0)return configured;
+  const r=await blingHubGet(sb,token,"/depositos?pagina=1&limite=100&situacao=1");
+  if(!r.ok)throw new Error("deposits_http_"+r.status);
+  const rows=Array.isArray(r.data?.data)?r.data.data:[];
+  const preferred=rows.find((d:any)=>d?.padrao===true||d?.padrao===1||d?.padrao==="true");
+  const id=Number(preferred?.id||(rows.length===1?rows[0]?.id:0));
+  if(!id)throw new Error("default_deposit_not_resolved");
+  const nextMeta={...(rt.data?.metadata||{}),selected_deposit_id:id,selected_deposit_name:clean(preferred?.descricao||preferred?.nome||rows[0]?.descricao||rows[0]?.nome,120)||null,deposit_resolved_at:new Date().toISOString()};
+  await sb.from("bling_hub_runtime_v2").update({metadata:nextMeta,updated_at:new Date().toISOString()}).eq("id",1);
+  return id;
+}
+async function blingHubReadStock(sb:any,token:string,blingProductId:number,depositId:number){
+  const q=new URLSearchParams();q.append("idsProdutos[]",String(blingProductId));
+  const r=await blingHubGet(sb,token,"/estoques/saldos?"+q.toString());
+  if(!r.ok)return {ok:false,status:r.status,stock:null};
+  const rows=Array.isArray(r.data?.data)?r.data.data:[];
+  const row=rows.find((x:any)=>Number(x?.produto?.id||0)===blingProductId)||rows[0];
+  const dep=(Array.isArray(row?.depositos)?row.depositos:[]).find((d:any)=>Number(d?.id||0)===depositId);
+  return {ok:true,status:r.status,stock:Number(dep?.saldoFisico??0)};
+}
+async function blingHubPreviewStockSync(sb:any,item:any){
+  const sourceId=uuid(item?.source_id);if(!sourceId)return {ok:false,error:"invalid_product"};
+  const target=Number(item?.stock_quantity);if(!Number.isFinite(target)||target<0)return {ok:false,error:"invalid_stock"};
+  const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system","vitrine_qx").eq("entity_type","product").eq("source_id",sourceId).maybeSingle();
+  if(link.error)throw link.error;
+  if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id))return {ok:false,error:"product_not_linked"};
+  const token=await blingHubOauth(sb);
+  const depositId=await blingHubResolveDepositId(sb,token);
+  const current=await blingHubReadStock(sb,token,Number(link.data.bling_id),depositId);
+  if(!current.ok)return {ok:false,error:"bling_stock_http_"+current.status};
+  return {ok:true,readonly:true,external_write:false,source_id:sourceId,bling_id:Number(link.data.bling_id),deposit_id:depositId,current_stock:current.stock,target_stock:target,change_required:Number(current.stock)!==target};
+}
+async function blingHubPostStockOnce(sb:any,token:string,body:any){
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(BLING_API_BASE+"/estoques",{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
+    const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500)};
+  }catch(e){return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500)};}
+}
+async function blingHubProcessStockJobs(sb:any,limitRaw:any){
+  const worker="bling-stock-edge-"+crypto.randomUUID();
+  const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
+  const claim=await sb.rpc("claim_bling_hub_jobs_v2",{p_worker:worker,p_domains:["stock"],p_limit:limit,p_lease_seconds:300});
+  if(claim.error)throw claim.error;
+  const jobs=claim.data||[];
+  const summary:any={ok:true,claimed:jobs.length,processed:0,synced:0,review_required:0,retry:0,failed:0};
+  if(!jobs.length)return summary;
+  const token=await blingHubOauth(sb);
+  const depositId=await blingHubResolveDepositId(sb,token);
+  for(const job of jobs){
+    summary.processed++;
+    try{
+      if(job.operation!=="set_stock"){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"unsupported_operation",p_error_message:"Unsupported stock operation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});summary.review_required++;continue;
+      }
+      const target=Number(job.payload?.stock_quantity);
+      if(!Number.isFinite(target)||target<0){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"invalid_stock",p_error_message:"Invalid stock quantity",p_http_status:null,p_retry_seconds:120,p_provider_id:null});summary.review_required++;continue;
+      }
+      const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system",job.source_system).eq("entity_type","product").eq("source_id",job.source_id).maybeSingle();
+      if(link.error)throw link.error;
+      if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id)){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"product_not_linked",p_error_message:"Product is not safely linked",p_http_status:null,p_retry_seconds:120,p_provider_id:null});summary.review_required++;continue;
+      }
+      const blingId=Number(link.data.bling_id);
+      const before=await blingHubReadStock(sb,token,blingId,depositId);
+      if(!before.ok){
+        const st=before.status===429||before.status>=500?"retry":"review_required";
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:st,p_result:{},p_error_code:"stock_read_http_"+before.status,p_error_message:"Could not read stock",p_http_status:before.status,p_retry_seconds:120,p_provider_id:String(blingId)});summary[st]++;continue;
+      }
+      if(Number(before.stock)===target){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,deposit_id:depositId,changed:false,stock:target,verified:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});summary.synced++;continue;
+      }
+      const write=await blingHubPostStockOnce(sb,token,{deposito:{id:depositId},operacao:"B",produto:{id:blingId},quantidade:target,observacoes:"Dona Antônia · saldo operacional Vitrine · "+job.id});
+      if(!write.ok){
+        const st=write.status===429?"retry":"review_required";
+        const code=write.status===0||write.status>=500?"stock_delivery_uncertain":"stock_post_http_"+write.status;
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:st,p_result:{target_stock:target,previous_stock:before.stock},p_error_code:code,p_error_message:write.error||"Stock update failed",p_http_status:write.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});summary[st]++;continue;
+      }
+      const after=await blingHubReadStock(sb,token,blingId,depositId);
+      if(!after.ok||Number(after.stock)!==target){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{write_ok:true,target_stock:target,observed_stock:after.stock},p_error_code:"stock_post_write_mismatch",p_error_message:"Stock write was not verified",p_http_status:after.status||200,p_retry_seconds:120,p_provider_id:String(blingId)});summary.review_required++;continue;
+      }
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,deposit_id:depositId,changed:true,previous_stock:before.stock,stock:target,verified:true},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});summary.synced++;
+    }catch(e){
+      const msg=clean((e as Error)?.message||e,500);
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"retry",p_result:{},p_error_code:"worker_exception",p_error_message:msg,p_http_status:null,p_retry_seconds:120,p_provider_id:null});summary.retry++;
+    }
+  }
+  return summary;
+}
 async function blingHubProcessProductJobs(sb:any,limitRaw:any){
   const worker="bling-hub-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
@@ -1654,6 +1750,14 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="process_product_jobs"){
         const result=await blingHubProcessProductJobs(sb,body?.limit);
+        return json(result,200);
+      }
+      if(subaction==="preview_stock_sync"){
+        const result=await blingHubPreviewStockSync(sb,body);
+        return json(result,result.ok?200:409);
+      }
+      if(subaction==="process_stock_jobs"){
+        const result=await blingHubProcessStockJobs(sb,body?.limit);
         return json(result,200);
       }
       if(subaction==="enqueue_job"){
