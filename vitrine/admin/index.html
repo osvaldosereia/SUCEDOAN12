@@ -246,7 +246,7 @@
     return map.year+'-'+map.month+'-'+map.day;
   }
   function deliveredToday(o){
-    return o?.status==='delivered'&&cuiabaDayKey(o?.delivered_at||o?.created_at)===cuiabaDayKey(new Date());
+    return o?.status==='delivered'&&Boolean(o?.delivered_at)&&cuiabaDayKey(o.delivered_at)===cuiabaDayKey(new Date());
   }
   function relativeAge(v){
     if(!v)return '';
@@ -1227,7 +1227,7 @@
   }
   function paintOrderFilters(){
     const host=$('#orderFilters');if(!host)return;
-    const filters=[['all','Todos'],['new','Novos'],['separate','Separar'],['ready','Prontos'],['delivery','Em entrega'],['delivered','Entregues'],['problems','Problemas']];
+    const filters=[['all','Todos'],['new','Novos'],['separate','Separar'],['ready','Prontos'],['delivery','Em entrega'],['delivered','Entregues hoje'],['problems','Problemas']];
     host.innerHTML=filters.map(([key,label])=>'<button class="filter-chip '+(state.orderFilter===key?'active':'')+'" type="button" data-order-filter="'+key+'">'+esc(label)+' · '+orderFilterCount(key)+'</button>').join('');
     host.querySelectorAll('[data-order-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.orderFilter;paintOrderFilters();paintOrderRows()});
   }
