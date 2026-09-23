@@ -993,6 +993,16 @@ const BLING_API_BASE="https://api.bling.com.br/Api/v3";
 const BLING_OAUTH_URLS=["https://api.bling.com.br/oauth/token","https://api.bling.com.br/Api/v3/oauth/token"];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 
+async function blingHubReadinessExtended(sb:any){
+  const r=await sb.rpc("bling_hub_readiness_v2");
+  if(r.error)throw r.error;
+  const links=await sb.from("bling_hub_entity_links_v2").select("status")
+    .eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000);
+  if(links.error)throw links.error;
+  const counts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
+  for(const row of links.data||[]){counts.total++;counts[row.status]=(counts[row.status]||0)+1;}
+  return {...(r.data||{}),product_links:counts};
+}
 async function blingHubAuthorized(sb:any,req:Request){
   const supplied=clean(req.headers.get("x-dona-antonia-bling-hub-key"),200);
   if(!supplied)return false;
@@ -1103,7 +1113,7 @@ async function blingHubReconcileProductCatalogReadonly(sb:any,itemsRaw:any){
       else if(candidates.length>1){status="ambiguous";reason="multiple_exact_gtin";}
       else if(sku){
         const skuIds=[...(skuMap.get(sku)||new Set<number>())];
-        if(skuIds.length===1){status="review_required";reason="sku_matches_but_gtin_does_not";candidates=skuIds;}
+        if(skuIds.length===1){status="matched";blingId=skuIds[0];method="sku_exact_after_gtin_lookup";candidates=skuIds;}
         else if(skuIds.length>1){status="ambiguous";reason="multiple_exact_sku";candidates=skuIds;}
       }
     }else if(sku){
@@ -1216,8 +1226,8 @@ async function blingHubProbeReadonly(sb:any){
     metadata:{readonly_probe_version:1,probes:results,deposit_candidates:deposits,probed_at:now},updated_at:now
   }).eq("id",1);
   await sb.from("bling_hub_audit_v2").insert({event_type:"readonly_probe",severity:allCore?"info":"warning",details:{probes:results,deposit_candidates:deposits,external_write:false,make_used:false}});
-  const readiness=await sb.rpc("bling_hub_readiness_v2");
-  return {ok:allCore,readonly:true,external_write:false,probes:results,deposit_candidates:deposits,readiness:readiness.data||null};
+  const readiness=await blingHubReadinessExtended(sb);
+  return {ok:allCore,readonly:true,external_write:false,probes:results,deposit_candidates:deposits,readiness};
 }
 
 async function vitrineHistoryAuthorized(sb:any,req:Request){
@@ -1480,9 +1490,7 @@ Deno.serve(async(req:Request)=>{
     const subaction=clean(body?.subaction||"readiness",60).toLowerCase();
     try{
       if(subaction==="readiness"){
-        const r=await sb.rpc("bling_hub_readiness_v2");
-        if(r.error)throw r.error;
-        return json({ok:true,readiness:r.data});
+        return json({ok:true,readiness:await blingHubReadinessExtended(sb)});
       }
       if(subaction==="probe_readonly"){
         const result=await blingHubProbeReadonly(sb);
