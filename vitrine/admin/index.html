@@ -527,7 +527,7 @@
 
   function paintBling(){
     const host=$('#blingStatus');if(!host)return;
-    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{},orderLinks=b.order_links||{},webhooks=b.webhook_inbox||{};
+    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{},orderLinks=b.order_links||{},webhooks=b.webhook_inbox||{},fiscal=b.fiscal_readiness||{},fiscalCfg=fiscal.config||{},fiscalControls=fiscal.controls||{},fiscalJobs=fiscal.jobs||{};
     const probes=probe.probes||{};
     const scope=(key,label)=>{
       const p=probes[key];
@@ -545,6 +545,7 @@
         '<div class="bling-card"><small>Clientes vinculados</small><strong>'+esc(customerLinks.matched||0)+' / '+esc(customerLinks.total||0)+'</strong><span class="sub">'+esc(customerLinks.not_found||0)+' não encontrados · '+esc((customerLinks.ambiguous||0)+(customerLinks.review_required||0))+' revisar</span></div>'+
         '<div class="bling-card"><small>Pedidos vinculados</small><strong>'+esc(orderLinks.matched||0)+' / '+esc(orderLinks.total||0)+'</strong><span class="sub">'+esc(orderLinks.review_required||0)+' para revisar</span></div>'+
         '<div class="bling-card"><small>Webhooks Bling</small><strong>'+esc(domains.webhooks?'ON':'OFF')+'</strong><span class="sub">'+esc(webhooks.held||0)+' aguardando · '+esc(webhooks.review_required||0)+' revisar · '+esc(webhooks.processed||0)+' processados</span></div>'+
+        '<div class="bling-card"><small>Fiscal / NF-e</small><strong class="'+(fiscal.safe_off?'ok-text':'warn-text')+'">'+(fiscal.safe_off?'OFF seguro':esc(String(fiscalCfg.execution_mode||'off').toUpperCase()))+'</strong><span class="sub">'+esc(fiscalControls.ready||0)+' prontos · '+esc(fiscalJobs.total||0)+' jobs · emissão '+(fiscalCfg.bling_invoice_send_enabled?'ON':'OFF')+'</span></div>'+
         '<div class="bling-card"><small>Escritas externas</small><strong class="'+(b.hub_enabled?'danger-text':'ok-text')+'">'+(b.hub_enabled?'Habilitadas':'Bloqueadas')+'</strong><span class="sub">Produtos '+(domains.products?'ON':'OFF')+' · Clientes '+(domains.customers?'ON':'OFF')+' · Pedidos '+(domains.orders?'ON':'OFF')+' · Fiscal '+(domains.fiscal?'ON':'OFF')+'</span></div>'+
       '</div>'+
       '<div class="panel"><div class="history-title"><strong>Permissões e leitura da API</strong><span class="muted">teste sem alterar dados</span></div>'+
