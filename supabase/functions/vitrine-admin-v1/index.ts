@@ -902,7 +902,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","preview_customer_sync","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -1234,6 +1234,18 @@ Deno.serve(async (req: Request) => {
         const result=await previewBlingProductSync(payload);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...result});
+      }
+      if (action==="bling_reconcile_customers_readonly") {
+        const result=await blingHubControl("reconcile_customers_readonly",{limit:payload?.limit??650});
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...((result as any).data||{})});
+      }
+      if (action==="bling_preview_customer_sync") {
+        const id=uuid(payload?.customer_id);
+        if(!id)return json(req,{ok:false,error:"invalid_customer"},400);
+        const result=await blingHubControl("preview_customer_sync",{customer_id:id});
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...((result as any).data||{})});
       }
       if (action==="balance_confirm") {
         const result=await balanceConfirm(payload);
