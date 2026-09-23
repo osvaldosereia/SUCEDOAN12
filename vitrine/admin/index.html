@@ -177,7 +177,7 @@
   const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
-  const state={tab:'orders',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'orders',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -1028,12 +1028,13 @@
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#editor').showModal();
     try{
-      const data=await api('order',{id});state.currentOrder=data;state.currentOrderBlingPreview=null;
+      const data=await api('order',{id});state.currentOrder=data;state.currentOrderBlingPreview=null;state.currentOrderFiscal=null;
       if(!state.customers.length){try{const c=await customerApi('vitrine_customers_list',{limit:150});state.customers=c.customers||[]}catch{}}
       const sourceId=data.customer?.source_customer_id||data.order?.delivery_address_snapshot?.source_customer_id||'';
       if(sourceId&&!state.customers.some(c=>c.id===sourceId)){
         try{const one=await customerApi('vitrine_customer_get',{id:sourceId});if(one.customer)state.customers.push(one.customer)}catch{}
       }
+      await loadCurrentOrderFiscal(false);
       paintOrderDetail();
     }catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
   }
@@ -1057,6 +1058,9 @@
       '<div class="section-title">Bling</div>'+
       '<div id="orderBlingPreview">'+orderBlingPreviewHtml(state.currentOrderBlingPreview)+'</div>'+
       '<div class="print-actions"><button class="secondary" id="previewBlingOrder">Verificar prévia Bling</button></div>'+
+      '<div class="section-title">Fiscal / NF-e</div>'+
+      '<div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+
+      '<div class="print-actions"><button class="primary" id="confirmFiscalPayment" style="display:none">Confirmar pagamento recebido</button></div>'+
       '<div class="print-actions"><button class="primary" id="printSeparation">Imprimir separação 80 mm</button><button class="secondary" id="printDelivery">Imprimir via do entregador</button></div>';
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar pedido</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
@@ -1064,7 +1068,80 @@
     $('#printSeparation').onclick=()=>printSeparation(d);
     $('#printDelivery').onclick=()=>printDelivery(d);
     $('#previewBlingOrder').onclick=previewCurrentOrderBling;
+    const fiscalBtn=$('#confirmFiscalPayment');
+    if(fiscalBtn){
+      const fiscal=state.currentOrderFiscal||{};
+      const canConfirm=o.status==='delivered'&&fiscal.payment_status!=='confirmed'&&!fiscal.error;
+      fiscalBtn.style.display=canConfirm?'block':'none';
+      if(canConfirm)fiscalBtn.onclick=confirmCurrentOrderPayment;
+    }
     if($('#retryHistorySync'))$('#retryHistorySync').onclick=retryHistorySync;
+  }
+
+  function fiscalBlockReasonLabel(code){
+    const map={
+      delivery_not_confirmed:'Aguardando confirmação da entrega',
+      payment_not_confirmed:'Aguardando confirmação do pagamento',
+      payment_review_required:'Pagamento precisa de revisão',
+      settled_amount_missing:'Valor recebido não informado',
+      settled_amount_mismatch:'Valor recebido diferente do pedido',
+      order_cancelled:'Pedido cancelado',
+      order_returned:'Pedido devolvido',
+      fiscal_control_missing:'Controle fiscal ainda não iniciado'
+    };
+    return map[code]||String(code||'').replaceAll('_',' ');
+  }
+
+  function orderFiscalHtml(f,o){
+    if(!f)return '<div class="rule-notice"><strong>Carregando controle fiscal…</strong><div>Esta etapa não emite nota.</div></div>';
+    if(f.error)return '<div class="rule-notice warn"><strong>Controle fiscal indisponível</strong><div>O pedido continua normal. Tente novamente depois.</div></div>';
+
+    const delivered=f.delivery_status==='delivered';
+    const paid=f.payment_status==='confirmed';
+    const ready=f.fiscal_status==='ready';
+    const issued=f.fiscal_status==='issued'||Boolean(f.bling_invoice_id);
+    const fiscalLabel=issued?'Emitida':ready?'Pronto':f.fiscal_status==='review_required'?'Revisar':'Bloqueado';
+    const reason=f.fiscal_block_reason?'<div class="sub" style="margin-top:5px">'+esc(fiscalBlockReasonLabel(f.fiscal_block_reason))+'</div>':'';
+    const emissionOff=!f.config?.send_enabled;
+
+    return '<div class="rule-notice">'+
+      '<strong>Entrega '+(delivered?'✓':'pendente')+' · Pagamento '+(paid?'✓':'pendente')+' · Fiscal '+esc(fiscalLabel)+'</strong>'+
+      '<div style="margin-top:5px">Total fiscal: '+money(f.total_cents||o.total_cents||0)+(paid&&f.settled_amount_cents!=null?' · Recebido: '+money(f.settled_amount_cents):'')+'</div>'+
+      reason+
+      (emissionOff?'<div class="sub" style="margin-top:5px">Emissão de NF-e permanece desligada nesta etapa. Nenhuma nota é enviada ao Bling automaticamente.</div>':'')+
+      (issued&&f.bling_invoice_number?'<div class="sub" style="margin-top:5px">NF-e '+esc(f.bling_invoice_number)+'</div>':'')+
+    '</div>';
+  }
+
+  async function loadCurrentOrderFiscal(repaint=true){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    try{
+      state.currentOrderFiscal=await api('order_fiscal_status',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+    }catch(e){
+      state.currentOrderFiscal={error:String(e?.message||'fiscal_unavailable')};
+    }
+    if(repaint)paintOrderDetail();
+  }
+
+  async function confirmCurrentOrderPayment(){
+    const o=state.currentOrder?.order;if(!o)return;
+    if(o.status!=='delivered'){toast('Confirme a entrega antes do pagamento');return}
+    const btn=$('#confirmFiscalPayment');
+    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    try{
+      const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'';
+      state.currentOrderFiscal=await api('order_fiscal_confirm_payment',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id,payment_method:payment})
+      });
+      paintOrderDetail();
+      toast(state.currentOrderFiscal?.fiscal_status==='ready'?'Pagamento confirmado · fiscal pronto':'Pagamento confirmado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Confirmar pagamento recebido'}
+    }
   }
 
   function blingOrderBlockerLabel(code){
@@ -1158,7 +1235,9 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id,status:$('#orderStatus').value,payment_method:$('#orderPayment').value,customer_snapshot:selectedCustomer})
       });
-      const fresh=await api('order',{id});state.currentOrder=fresh;paintOrderDetail();toast('Pedido salvo');loadOrders();
+      const fresh=await api('order',{id});state.currentOrder=fresh;
+      await loadCurrentOrderFiscal(false);
+      paintOrderDetail();toast('Pedido salvo');loadOrders();
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar pedido'}
   }
 
@@ -1215,7 +1294,9 @@
       openPrint('Separação #'+shortOrder(o.order_number),body,'separation',w);
       if(!consumed.already_consumed)toast('Estoque baixado e separação liberada');
       else toast('Separação reimpressa · estoque já estava baixado');
-      const fresh=await api('order',{id:o.id});state.currentOrder=fresh;paintOrderDetail();loadOrders();
+      const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
+      await loadCurrentOrderFiscal(false);
+      paintOrderDetail();loadOrders();
     }catch(e){
       try{w.close()}catch{}
       toast(errorMessage(e.message));
