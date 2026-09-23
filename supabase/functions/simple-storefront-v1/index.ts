@@ -679,6 +679,71 @@ async function submitOrder(payload:any) {
 }
 
 
+
+function randomStorefrontToken(byteLength=24){
+  const bytes=new Uint8Array(byteLength);
+  crypto.getRandomValues(bytes);
+  let binary='';
+  for(const b of bytes)binary+=String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function sha256Hex(value:string){
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function issueStorefrontIdentityLink(payload:any){
+  const phone=normalizeWhatsappPhone(payload?.phone);
+  if(!phone)return {error:'invalid_phone',status:400};
+  const contactName=text(payload?.name,180)||null;
+  const token=randomStorefrontToken(24);
+  const tokenHash=await sha256Hex(token);
+  const expiresAt=new Date(Date.now()+24*60*60*1000).toISOString();
+
+  try{
+    await db.from('storefront_identity_tokens')
+      .delete()
+      .lt('expires_at',new Date(Date.now()-7*24*60*60*1000).toISOString());
+  }catch{}
+
+  const ins=await db.from('storefront_identity_tokens').insert({
+    token_hash:tokenHash,
+    phone_e164:phone,
+    contact_name:contactName,
+    source:'papoai',
+    expires_at:expiresAt
+  });
+  if(ins.error)throw ins.error;
+
+  return {
+    phone_e164:phone,
+    shopping_url:'https://www.donaantonia.com.br/?c='+encodeURIComponent(token),
+    expires_at:expiresAt
+  };
+}
+
+async function resolveStorefrontIdentityToken(tokenValue:any){
+  const token=String(tokenValue??'').trim();
+  if(!/^[A-Za-z0-9_-]{24,160}$/.test(token))return {error:'invalid_token',status:400};
+  const tokenHash=await sha256Hex(token);
+  const nowIso=new Date().toISOString();
+  const q=await db.from('storefront_identity_tokens')
+    .select('id,phone_e164,expires_at,use_count')
+    .eq('token_hash',tokenHash)
+    .gt('expires_at',nowIso)
+    .maybeSingle();
+  if(q.error)throw q.error;
+  if(!q.data)return {error:'token_expired_or_invalid',status:404};
+
+  await db.from('storefront_identity_tokens').update({
+    last_used_at:nowIso,
+    use_count:Number(q.data.use_count||0)+1
+  }).eq('id',q.data.id);
+
+  return {phone_e164:q.data.phone_e164,expires_at:q.data.expires_at};
+}
+
 async function vitrineHistoryBridgeAuthorized(req:Request){
   const supplied=String(req.headers.get('x-vitrine-history-key')||'').trim();
   if(!supplied)return false;
@@ -759,6 +824,18 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "basket_quote") {
       const payload = await req.json().catch(()=>({}));
       return await basketQuote(payload);
+    }
+    if (req.method === "POST" && action === "issue_identity_link") {
+      if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
+      const payload=await req.json().catch(()=>({}));
+      const result=await issueStorefrontIdentityLink(payload);
+      if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
+      return json({ok:true,...result},200,{"Cache-Control":"no-store"});
+    }
+    if (req.method === "GET" && action === "resolve_identity_token") {
+      const result=await resolveStorefrontIdentityToken(url.searchParams.get("token"));
+      if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
+      return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
     if (req.method === "POST" && action === "reconcile_customer") {
       if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
