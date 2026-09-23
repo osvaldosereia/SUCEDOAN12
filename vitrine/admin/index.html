@@ -78,6 +78,7 @@
     .order-stage{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:11px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.order-stage>span{font-size:12px;color:var(--muted);font-weight:700}.order-stage b{font-size:13px}
     .order-action-zone{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:12px;margin-top:10px}.order-action-zone strong{display:block;margin-bottom:4px}.order-action-zone small{display:block;color:var(--muted);line-height:1.4}
     .integration-details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px}.integration-details summary{cursor:pointer;padding:12px 0;font-weight:700}.integration-details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}.integration-details .integration-body{padding-bottom:12px}
+    .today-order-row{grid-template-columns:90px minmax(0,1fr) 150px 80px}
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
       .wrap{padding-inline:10px}.top-row{height:58px}.logo{width:72px;height:34px}.store-link{font-size:12px}
@@ -85,7 +86,7 @@
       .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
       .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
-      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
+      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
     }
   
     /* Material-like operational shell */
@@ -280,7 +281,7 @@
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">prioridade para trabalho pendente</span></div><div id="todayOrders"></div></div>';
       host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;setTab('orders')});
       const pending=state.orders.filter(o=>!['delivered','cancelled'].includes(o.status)).slice(0,8);
-      $('#todayOrders').innerHTML=pending.length?pending.map(o=>'<button class="history-row" style="grid-template-columns:90px minmax(0,1fr) 150px 80px" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(shortOrder(o.order_number))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span>'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
+      $('#todayOrders').innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(shortOrder(o.order_number))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
       host.querySelectorAll('[data-today-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.todayOrder));
     }catch(e){
       $('#todayBody').innerHTML='<div class="empty">Não consegui carregar o resumo operacional. <button class="text" id="retryToday">Tentar novamente</button></div>';
@@ -1362,13 +1363,20 @@
     return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+'</option>').join('');
   }
   function paymentOptions(current){
-    return ['PIX','Dinheiro','Cartão de crédito','Cartão alimentação/refeição'].map(v=>'<option value="'+esc(v)+'" '+(v===current?'selected':'')+'>'+esc(v)+'</option>').join('');
+    const standard=['PIX','Dinheiro','Cartão de crédito','Cartão alimentação/refeição'];
+    const values=current&&!standard.includes(current)?[current,...standard]:standard;
+    return values.map(v=>'<option value="'+esc(v)+'" '+(v===current?'selected':'')+'>'+esc(v)+'</option>').join('');
   }
   function currentOrderEditablePayload(status){
-    const id=state.currentOrder?.order?.id;
+    const order=state.currentOrder?.order||{};
+    const currentCustomer=state.currentOrder?.customer||{};
+    const currentCustomerId=currentCustomer.source_customer_id||order.delivery_address_snapshot?.source_customer_id||order.customer_id||'';
+    const id=order.id;
     const selectedId=$('#orderCustomer')?.value||'';
     const selectedCustomer=state.customers.find(c=>c.id===selectedId)||null;
-    const payload={id,payment_method:$('#orderPayment')?.value||'',customer_snapshot:selectedCustomer};
+    const payload={id,payment_method:$('#orderPayment')?.value||''};
+    if(selectedCustomer)payload.customer_snapshot=selectedCustomer;
+    else if(!currentCustomerId)payload.customer_snapshot=null;
     if(status)payload.status=status;
     return payload;
   }
