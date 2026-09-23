@@ -1504,6 +1504,18 @@ Deno.serve(async(req:Request)=>{
         const result=await blingHubReconcileProductCatalogReadonly(sb,body?.items);
         return json(result,200);
       }
+      if(subaction==="enqueue_job"){
+        const domain=clean(body?.domain,40),operation=clean(body?.operation,80),sourceId=clean(body?.source_id,160),key=clean(body?.idempotency_key,240);
+        const allowedDomains=new Set(["product","stock","customer","order","fiscal"]);
+        const allowedOperations=new Set(["sync_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
+        if(!allowedDomains.has(domain)||!allowedOperations.has(operation)||!sourceId||!key)return json({ok:false,error:"invalid_job"},400);
+        const q=await sb.rpc("enqueue_bling_hub_job_v2",{
+          p_domain:domain,p_operation:operation,p_source_system:"vitrine_qx",p_source_id:sourceId,
+          p_idempotency_key:key,p_payload:obj(body?.payload),p_payload_version:1
+        });
+        if(q.error)throw q.error;
+        return json({ok:true,job_id:q.data,queued:true,external_write:false});
+      }
       return json({ok:false,error:"writes_disabled",mode:"observe"},409);
     }catch(e){
       const message=clean((e as Error)?.message||e,300);
