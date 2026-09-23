@@ -1746,14 +1746,14 @@ async function blingHubReconcileProductCatalogReadonly(sb:any,itemsRaw:any){
   if(!items.length)return {ok:true,processed:0,summary:{},bling_catalog_count:0,exceptions:[]};
   const token=await blingHubOauth(sb);
   const catalog:any[]=[];
-  for(let page=1;page<=1000;page++){
-    const q=new URLSearchParams({pagina:String(page),limite:"100",criterio:"5",tipo:"T"});
+  for(let page=1;page<=100;page++){
+    const q=new URLSearchParams({pagina:String(page),limite:"100"});
     const r=await blingHubGet(sb,token,"/produtos?"+q.toString());
     if(!r.ok)throw new Error("bling_catalog_http_"+r.status);
     const rows=Array.isArray(r.data?.data)?r.data.data:[];
     catalog.push(...rows);
     if(rows.length<100)break;
-    if(page===1000)throw new Error("bling_catalog_page_guard");
+    if(page===100)throw new Error("bling_catalog_page_guard");
   }
 
   const gtinMap=new Map<string,Set<number>>();
