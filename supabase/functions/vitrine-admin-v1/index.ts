@@ -63,6 +63,8 @@ function normalizedSearch(parts: unknown[]) {
 }
 async function listProducts(url: URL) {
   const q = text(url.searchParams.get("q"), 80);
+  const category = text(url.searchParams.get("category"), 48);
+  const subcategory = text(url.searchParams.get("subcategory"), 100);
   const offset = Math.floor(num(url.searchParams.get("offset"), 0, 5000));
   const limit = Math.floor(num(url.searchParams.get("limit") ?? 60, 1, 100));
 
@@ -71,6 +73,8 @@ async function listProducts(url: URL) {
     .eq("organization_id", ORG_ID)
     .order("name", { ascending: true })
     .range(offset, offset + limit - 1);
+  if (category) query=query.contains("metadata",{sales_category:category});
+  if (subcategory) query=query.contains("metadata",{subsubcategory:subcategory});
   if (q) {
     const terms = q.replace(/[%_]/g," ").split(/\s+/).filter(Boolean).slice(0,4);
     for (const term of terms) query = query.ilike("search_text", `%${term}%`);
@@ -83,9 +87,48 @@ async function listProducts(url: URL) {
       ...p,
       packaging: p.metadata?.packaging ?? "",
       subcategory: p.metadata?.subcategory ?? "",
+      detailed_subcategory: p.metadata?.subsubcategory ?? "",
       category: p.metadata?.sales_category ?? p.metadata?.storefront_category ?? ""
     })),
     next_offset: rows.length === limit ? offset + limit : null
+  };
+}
+
+async function productFacets(categoryRaw:unknown="") {
+  const category=text(categoryRaw,48);
+  const categoryMap=new Map<string,number>();
+  const subcategoryMap=new Map<string,number>();
+  let from=0;
+  const pageSize=1000;
+
+  while(true){
+    let query=db.from("products")
+      .select("metadata")
+      .eq("organization_id",ORG_ID)
+      .range(from,from+pageSize-1);
+    if(category)query=query.contains("metadata",{sales_category:category});
+    const {data,error}=await query;
+    if(error)throw error;
+    const rows=data??[];
+    for(const row of rows){
+      const cat=text(row?.metadata?.sales_category??row?.metadata?.storefront_category,48);
+      const sub=text(row?.metadata?.subsubcategory,100);
+      if(cat)categoryMap.set(cat,(categoryMap.get(cat)??0)+1);
+      if(sub)subcategoryMap.set(sub,(subcategoryMap.get(sub)??0)+1);
+    }
+    if(rows.length<pageSize)break;
+    from+=pageSize;
+    if(from>10000)break;
+  }
+
+  const labels:any={mercearia:"Mercearia",limpeza_lavanderia:"Limpeza e lavanderia",higiene_beleza:"Higiene e beleza",casa_pet:"Casa e pet"};
+  return {
+    categories:[...categoryMap.entries()]
+      .map(([value,count])=>({value,label:labels[value]??value,count}))
+      .sort((a,b)=>a.label.localeCompare(b.label,"pt-BR")),
+    subcategories:[...subcategoryMap.entries()]
+      .map(([value,count])=>({value,label:value,count}))
+      .sort((a,b)=>a.label.localeCompare(b.label,"pt-BR"))
   };
 }
 
@@ -752,6 +795,66 @@ async function orderStockReservationItems(orderId:string) {
   return [...demand.entries()].map(([product_id,quantity])=>({product_id,quantity})).sort((a,b)=>a.product_id.localeCompare(b.product_id));
 }
 
+async function consumeOrderStock(payload:any) {
+  const id=uuid(payload?.id);
+  if(!id)return {error:"invalid_order",status:400};
+
+  const {data:order,error:oErr}=await db.from("orders")
+    .select("id,status,payment_method_snapshot")
+    .eq("organization_id",ORG_ID)
+    .eq("id",id)
+    .maybeSingle();
+  if(oErr)throw oErr;
+  if(!order)return {error:"order_not_found",status:404};
+  if(order.status==="cancelled")return {error:"order_cancelled",status:409};
+
+  const payment=order.payment_method_snapshot&&typeof order.payment_method_snapshot==="object"
+    ? order.payment_method_snapshot : {};
+
+  if(payment.stock_model==="reservation_v2"){
+    const {data:consumed,error}=await db.rpc("consume_storefront_order_stock_v2",{
+      p_organization_id:ORG_ID,p_order_id:id
+    });
+    if(error)throw error;
+    if(!consumed?.ok)return {error:String(consumed?.error||"stock_consume_failed"),status:409,...consumed};
+
+    const nextPayment={...payment,stock_reserved:true,stock_consumed:true,stock_released:false,stock_consumed_at:new Date().toISOString()};
+    const {error:uErr}=await db.from("orders")
+      .update({payment_method_snapshot:nextPayment,status:order.status==="created"?"processing":order.status})
+      .eq("organization_id",ORG_ID).eq("id",id);
+    if(uErr)throw uErr;
+    return {order_id:id,stock_status:"consumed",already_consumed:Boolean(consumed.already_consumed)};
+  }
+
+  if(payment.stock_reserved===true){
+    // Legacy model already deducted physical stock when the order was created.
+    return {order_id:id,stock_status:"legacy_already_deducted",already_consumed:true};
+  }
+
+  const stockItems=await orderStockReservationItems(id);
+  if(!stockItems.length)return {error:"empty_order_stock",status:409};
+
+  const {data:reserved,error:rErr}=await db.rpc("reserve_storefront_order_stock_v2",{
+    p_organization_id:ORG_ID,p_order_id:id,p_items:stockItems
+  });
+  if(rErr)throw rErr;
+  if(!reserved?.ok)return {error:String(reserved?.error||"insufficient_stock"),status:409,...reserved};
+
+  const {data:consumed,error:cErr}=await db.rpc("consume_storefront_order_stock_v2",{
+    p_organization_id:ORG_ID,p_order_id:id
+  });
+  if(cErr)throw cErr;
+  if(!consumed?.ok)return {error:String(consumed?.error||"stock_consume_failed"),status:409,...consumed};
+
+  const nextPayment={...payment,stock_reserved:true,stock_consumed:true,stock_released:false,stock_model:"reservation_v2",stock_consumed_at:new Date().toISOString()};
+  const {error:uErr}=await db.from("orders")
+    .update({payment_method_snapshot:nextPayment,status:order.status==="created"?"processing":order.status})
+    .eq("organization_id",ORG_ID).eq("id",id);
+  if(uErr)throw uErr;
+
+  return {order_id:id,stock_status:"consumed",already_consumed:false};
+}
+
 async function updateOrder(payload:any) {
   const id=uuid(payload?.id);
   if (!id) return { error:"invalid_order",status:400 };
@@ -775,20 +878,34 @@ async function updateOrder(payload:any) {
 
     const storefrontReserved=currentPayment.source==="vitrine"&&currentPayment.stock_reserved===true;
     const alreadyReleased=currentPayment.stock_released===true;
+    const reservationV2=currentPayment.stock_model==="reservation_v2";
+
     if(storefrontReserved&&status==="cancelled"&&currentOrder.status!=="cancelled"&&!alreadyReleased){
-      const stockItems=await orderStockReservationItems(id);
-      if(stockItems.length){
-        const {data:released,error}=await db.rpc("release_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
+      if(reservationV2){
+        const {data:released,error}=await db.rpc("release_storefront_order_stock_v2",{p_organization_id:ORG_ID,p_order_id:id});
         if(error)throw error;
         if(!released?.ok)return {error:String(released?.error||"stock_release_failed"),status:409};
+      }else{
+        const stockItems=await orderStockReservationItems(id);
+        if(stockItems.length){
+          const {data:released,error}=await db.rpc("release_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
+          if(error)throw error;
+          if(!released?.ok)return {error:String(released?.error||"stock_release_failed"),status:409};
+        }
       }
       stockReleasedChange=true;
     }else if(storefrontReserved&&currentOrder.status==="cancelled"&&status!=="cancelled"&&alreadyReleased){
       const stockItems=await orderStockReservationItems(id);
       if(stockItems.length){
-        const {data:reserved,error}=await db.rpc("reserve_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
-        if(error)throw error;
-        if(!reserved?.ok)return {error:String(reserved?.error||"insufficient_stock"),status:409};
+        if(reservationV2){
+          const {data:reserved,error}=await db.rpc("reserve_storefront_order_stock_v2",{p_organization_id:ORG_ID,p_order_id:id,p_items:stockItems});
+          if(error)throw error;
+          if(!reserved?.ok)return {error:String(reserved?.error||"insufficient_stock"),status:409};
+        }else{
+          const {data:reserved,error}=await db.rpc("reserve_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
+          if(error)throw error;
+          if(!reserved?.ok)return {error:String(reserved?.error||"insufficient_stock"),status:409};
+        }
       }
       stockReleasedChange=false;
     }
@@ -857,7 +974,11 @@ async function updateOrder(payload:any) {
     patch.payment_method_snapshot={...currentPayment,method:payment,label:payment,timing:"on_delivery",source:currentPayment.source||"admin"};
   }
   if(stockReleasedChange!==null){
-    patch.payment_method_snapshot={...(patch.payment_method_snapshot??currentPayment),stock_released:stockReleasedChange};
+    patch.payment_method_snapshot={
+      ...(patch.payment_method_snapshot??currentPayment),
+      stock_released:stockReleasedChange,
+      ...(currentPayment.stock_model==="reservation_v2"&&stockReleasedChange===true?{stock_consumed:false}: {})
+    };
   }
 
   const { data,error }=await db.from("orders")
@@ -880,6 +1001,7 @@ Deno.serve(async (req: Request) => {
 
     if (req.method==="GET" && action==="health") return json(req,{ok:true,service:"vitrine-admin-v1"});
     if (req.method==="GET" && action==="products") return json(req,{ok:true,...await listProducts(url)});
+    if (req.method==="GET" && action==="product_facets") return json(req,{ok:true,...await productFacets(url.searchParams.get("category"))});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
     if (req.method==="GET" && action==="ean_lookup") {
@@ -916,6 +1038,11 @@ Deno.serve(async (req: Request) => {
       if (action==="order_update") {
         const result=await updateOrder(payload);
         if (result.error) return json(req,{ok:false,error:result.error},result.status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="order_consume_stock") {
+        const result=await consumeOrderStock(payload);
+        if (result.error) return json(req,{ok:false,...result},result.status);
         return json(req,{ok:true,...result});
       }
       if (action==="balance_confirm") {
