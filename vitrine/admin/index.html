@@ -64,6 +64,7 @@
     .check{display:flex;align-items:center;gap:8px;min-height:44px}.check input{width:20px;height:20px;min-height:0}
     .section-title{font-size:15px;font-weight:900;margin:18px 0 8px;padding-top:12px;border-top:1px solid var(--line)}
     .order-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.summary-box{background:var(--soft);border-radius:12px;padding:10px}.summary-box small{display:block;color:var(--muted)}.summary-box strong{font-size:16px}
+    .customer-profile-head{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;margin-bottom:14px}.customer-profile-head h2{font-size:20px;margin:0 0 4px}.customer-profile-meta{color:var(--muted);font-size:12px;line-height:1.5}.customer-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}.history-section{margin-top:16px}.history-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.history-title strong{font-size:15px}.history-list{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}.history-row{display:grid;grid-template-columns:110px minmax(0,1fr) 110px 100px 86px;gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line);background:#fff}.history-row:last-child{border-bottom:0}.history-row:hover{background:#f8fbff}.history-main strong{display:block;font-size:13px}.history-main small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.history-source{font-size:11px;color:var(--muted)}.history-value{font-weight:700;text-align:right}.history-products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.history-product{border:1px solid var(--line);border-radius:9px;padding:10px}.history-product strong{display:block;font-size:12px}.history-product small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.history-detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.history-detail-meta{color:var(--muted);font-size:12px;line-height:1.45}.history-items{display:grid;gap:7px}.history-item{border:1px solid var(--line);border-radius:10px;padding:10px}.history-item-line{display:flex;justify-content:space-between;gap:12px}.history-item-name{font-weight:700;font-size:13px}.history-item-meta{color:var(--muted);font-size:11px;margin-top:3px}.history-components{margin-top:8px;padding-left:12px;border-left:2px solid #d2e3fc}.history-component{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:11px;color:#4f5b55}.customer-row-actions{display:flex;justify-content:flex-end;gap:4px}
     .order-items{display:grid;gap:8px}.order-item{border:1px solid var(--line);border-radius:12px;padding:10px}.order-item-head{display:flex;justify-content:space-between;gap:10px}.composition{color:var(--muted);font-size:12px;margin-top:6px;padding-left:10px;border-left:2px solid var(--line)}
     .print-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.print-actions button{min-height:52px}
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
@@ -73,7 +74,7 @@
       .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
       .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
-      .order-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}
+      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.history-row{grid-template-columns:82px 1fr auto}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}
     }
   
     /* Material-like operational shell */
@@ -151,7 +152,7 @@
   const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
-  const state={tab:'orders',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},customers:[],orders:[],currentOrder:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:''};
+  const state={tab:'orders',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:''};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -186,7 +187,7 @@
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 
   function statusPill(status){
-    const map={created:'Novo',confirmed:'Confirmado',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado'};
+    const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
     const cls=status==='cancelled'?'danger':status==='created'?'warn':'';
     return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
   }
@@ -512,18 +513,125 @@
     try{
       const data=await customerApi('vitrine_customers_list',{q,limit:120});state.customers=data.customers||[];
       host.innerHTML=state.customers.length?state.customers.map(customerRow).join(''):'<div class="empty">Nenhum cliente encontrado.</div>';
+      host.querySelectorAll('[data-history-customer]').forEach(b=>b.onclick=()=>openCustomerProfile(state.customers.find(c=>c.id===b.dataset.historyCustomer)));
       host.querySelectorAll('[data-edit-customer]').forEach(b=>b.onclick=()=>openCustomerEditor(state.customers.find(c=>c.id===b.dataset.editCustomer)));
     }catch(e){host.innerHTML='<div class="empty">Erro ao carregar clientes. <button class="text" id="retryCustomers">Tentar novamente</button></div>';if($('#retryCustomers'))$('#retryCustomers').onclick=()=>loadCustomers(q)}
   }
   function customerRow(c){
     const a=c.address||{};const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ');
+    const orders=Number(c.orders_count||0),ltv=Math.round(Number(c.lifetime_value||0)*100);
     return '<div class="list-row customers-layout">'+
-      '<div><span class="row-title">'+esc(c.display_name||'Sem nome')+'</span><span class="sub">'+esc(c.email||'')+(Number(c.orders_count||0)>0?' · '+esc(c.orders_count)+' pedidos':'')+'</span></div>'+
+      '<div><span class="row-title">'+esc(c.display_name||'Sem nome')+'</span><span class="sub">'+esc(c.email||'')+(orders>0?' · '+esc(orders)+' compras · '+money(ltv):' · sem compras')+'</span></div>'+
       '<span class="mobile-wide">'+esc(formatPhone(c.phone))+'</span>'+
       '<span class="desktop-extra">'+esc(formatCpf(c.cpf))+'</span>'+
       '<span class="desktop-extra">'+esc(address||'—')+'</span>'+
-      '<button class="text" data-edit-customer="'+esc(c.id)+'">Editar</button></div>';
+      '<div class="customer-row-actions"><button class="text" data-history-customer="'+esc(c.id)+'">Histórico</button><button class="text" data-edit-customer="'+esc(c.id)+'">Editar</button></div></div>';
   }
+
+  function historySourceLabel(source){
+    const map={vitrine:'Vitrine',whatsapp:'WhatsApp',papoai:'WhatsApp',bling:'Bling',manual:'Manual',storefront:'Site'};
+    return map[String(source||'').toLowerCase()]||String(source||'—');
+  }
+
+  async function openCustomerProfile(c){
+    if(!c)return;
+    state.customerProfile={customer:c,summary:null,orders:[],top_products:[],next_offset:null};
+    state.customerHistoryOffset=0;
+    $('#editorTitle').textContent='Cliente';
+    $('#editorBody').innerHTML='<div class="loading">Carregando histórico…</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="profileClose">Fechar</button><button class="primary" id="profileEdit">Editar cliente</button>';
+    $('#profileClose').onclick=()=>$('#editor').close();
+    $('#profileEdit').onclick=()=>openCustomerEditor(c);
+    $('#editor').showModal();
+    await loadCustomerHistory(c.id,false);
+  }
+
+  async function loadCustomerHistory(customerId,append=false){
+    const offset=append?state.customerHistoryOffset:0;
+    try{
+      const data=await customerApi('vitrine_customer_history',{id:customerId,limit:20,offset});
+      if(!append){
+        state.customerProfile={customer:data.customer,summary:data.summary,orders:data.orders||[],top_products:data.top_products||[],next_offset:data.pagination?.next_offset??null};
+      }else{
+        state.customerProfile.orders=[...(state.customerProfile.orders||[]),...(data.orders||[])];
+        state.customerProfile.next_offset=data.pagination?.next_offset??null;
+      }
+      state.customerHistoryOffset=data.pagination?.next_offset??offset;
+      paintCustomerProfile();
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui carregar o histórico deste cliente.<br><button class="text" id="retryCustomerHistory">Tentar novamente</button></div>';
+      if($('#retryCustomerHistory'))$('#retryCustomerHistory').onclick=()=>loadCustomerHistory(customerId,false);
+    }
+  }
+
+  function paintCustomerProfile(){
+    const p=state.customerProfile;if(!p)return;
+    const c=p.customer||{},a=c.address||{},s=p.summary||{};
+    const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ');
+    const summary='<div class="customer-summary">'+
+      '<div class="summary-box"><small>Compras</small><strong>'+esc(s.order_count||0)+'</strong></div>'+
+      '<div class="summary-box"><small>Total comprado</small><strong>'+money(s.lifetime_value_cents||0)+'</strong></div>'+
+      '<div class="summary-box"><small>Ticket médio</small><strong>'+money(s.average_ticket_cents||0)+'</strong></div>'+
+      '<div class="summary-box"><small>Última compra</small><strong>'+esc(s.last_order_at?new Date(s.last_order_at).toLocaleDateString('pt-BR'):'—')+'</strong></div>'+
+    '</div>';
+    const products=(p.top_products||[]).length
+      ? '<div class="history-products">'+p.top_products.map(x=>'<div class="history-product"><strong>'+esc(x.name)+'</strong><small>'+esc(fmtQty(x.total_quantity))+' un · '+esc(x.purchase_count)+' compras · última '+esc(x.last_purchase_at?new Date(x.last_purchase_at).toLocaleDateString('pt-BR'):'—')+'</small></div>').join('')+'</div>'
+      : '<div class="history-empty">Ainda não há produtos recorrentes.</div>';
+    const orders=(p.orders||[]).length
+      ? '<div class="history-list">'+p.orders.map(historyOrderRow).join('')+'</div>'
+      : '<div class="history-empty">Este cliente ainda não possui compras registradas.</div>';
+    $('#editorBody').innerHTML=
+      '<div class="customer-profile-head"><div><h2>'+esc(c.display_name||'Sem nome')+'</h2><div class="customer-profile-meta">'+esc(formatPhone(c.phone)||'Sem telefone')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'<br>'+esc(address||'Sem endereço cadastrado')+'</div></div>'+statusPill(c.status==='inactive'?'inactive':'active')+'</div>'+
+      summary+
+      '<div class="history-section"><div class="history-title"><strong>Histórico de compras</strong><span class="muted">'+esc((p.orders||[]).length)+' carregadas</span></div>'+orders+'<div class="more" id="historyMore">'+(p.next_offset!=null?'<button class="secondary" id="loadMoreHistory">Mostrar mais</button>':'')+'</div></div>'+
+      '<div class="history-section"><div class="history-title"><strong>Produtos mais comprados</strong><span class="muted">por quantidade</span></div>'+products+'</div>';
+    document.querySelectorAll('[data-history-order]').forEach(b=>b.onclick=()=>openCustomerHistoryOrder(c.id,b.dataset.historyOrder));
+    if($('#loadMoreHistory'))$('#loadMoreHistory').onclick=()=>loadCustomerHistory(c.id,true);
+  }
+
+  function historyOrderRow(o){
+    return '<button type="button" class="history-row" data-history-order="'+esc(o.order_id)+'">'+
+      '<span>'+esc(new Date(o.confirmed_at||o.created_at).toLocaleDateString('pt-BR'))+'</span>'+
+      '<span class="history-main"><strong>#'+esc(o.order_number||'—')+(o.basket_name?' · '+esc(o.basket_name):'')+'</strong><small>'+esc(o.item_count)+' itens'+(!o.counts_as_purchase?' · não soma nas métricas':'')+'</small></span>'+
+      '<span class="history-source">'+esc(historySourceLabel(o.source))+'</span>'+
+      '<span class="history-status">'+statusPill(o.status)+'</span>'+
+      '<span class="history-value">'+money(o.total_cents)+'</span></button>';
+  }
+
+  async function openCustomerHistoryOrder(customerId,orderId){
+    $('#editorBody').innerHTML='<div class="loading">Carregando pedido…</div>';
+    try{
+      const data=await customerApi('vitrine_customer_order_detail',{customer_id:customerId,order_id:orderId});
+      paintCustomerHistoryOrder(data);
+    }catch(e){
+      $('#editorBody').innerHTML='<div class="empty">Não consegui abrir esta compra.<br><button class="text" id="backCustomerHistory">Voltar ao histórico</button></div>';
+      if($('#backCustomerHistory'))$('#backCustomerHistory').onclick=paintCustomerProfile;
+    }
+  }
+
+  function paintCustomerHistoryOrder(data){
+    const o=data.order||{},items=data.items||[];
+    const components=items.filter(i=>i.metadata?.history_kind==='basket_component');
+    const visible=items.filter(i=>i.metadata?.history_kind!=='basket_component');
+    const itemHtml=visible.map(i=>{
+      const nested=i.metadata?.history_kind==='basket'
+        ? components.filter(c=>c.metadata?.parent_basket_name===i.name)
+        : [];
+      return '<div class="history-item"><div class="history-item-line"><div><div class="history-item-name">'+esc(i.name)+'</div><div class="history-item-meta">'+esc(fmtQty(i.quantity))+' × '+money(i.unit_price_cents)+'</div></div><strong>'+money(i.line_total_cents)+'</strong></div>'+
+        (nested.length?'<div class="history-components">'+nested.map(c=>'<div class="history-component"><span>'+esc(c.name)+'</span><strong>'+esc(fmtQty(c.quantity))+'×</strong></div>').join('')+'</div>':'')+
+      '</div>';
+    }).join('');
+    const d=o.delivery_address||{};
+    const address=[d.street,d.number,d.complement,d.district||d.neighborhood,d.city,d.state].filter(Boolean).join(', ');
+    $('#editorBody').innerHTML=
+      '<div class="history-detail-head"><div><strong>Pedido #'+esc(o.order_number||'—')+'</strong><div class="history-detail-meta">'+esc(dateTime(o.confirmed_at||o.created_at))+' · '+esc(historySourceLabel(o.source))+' · '+esc(o.payment_method||'Pagamento não informado')+(address?'<br>'+esc(address):'')+'</div></div><div>'+statusPill(o.status)+'</div></div>'+
+      '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(visible.length)+'</strong></div><div class="summary-box"><small>Conta nas métricas</small><strong>'+(o.counts_as_purchase?'Sim':'Não')+'</strong></div></div>'+
+      '<div class="history-items">'+(itemHtml||'<div class="history-empty">Sem itens.</div>')+'</div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="backCustomerHistory">Voltar ao histórico</button><button class="primary" id="historyEditCustomer">Editar cliente</button>';
+    $('#backCustomerHistory').onclick=paintCustomerProfile;
+    $('#historyEditCustomer').onclick=()=>openCustomerEditor(state.customerProfile?.customer);
+  }
+
   function openCustomerEditor(c=null){
     const a=c?.address||{};
     $('#editorTitle').textContent=c?'Editar cliente':'Novo cliente';
