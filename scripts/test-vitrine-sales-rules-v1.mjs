@@ -7,6 +7,7 @@ const adminHtml=fs.readFileSync('vitrine/admin/index.html','utf8');
 const edge=fs.readFileSync('supabase/functions/simple-storefront-v1/index.ts','utf8');
 const admin=fs.readFileSync('supabase/functions/vitrine-admin-v1/index.ts','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260923050224_order_stock_reservations_v2.sql','utf8');
+const consumeLockMigration=fs.readFileSync('supabase/migrations/20260923051012_order_stock_reservations_consume_lock.sql','utf8');
 
 assert.equal(root,vitrine,'root and /vitrine must stay identical');
 
@@ -67,6 +68,7 @@ assert.match(migration,/consume_storefront_order_stock_v2/);
 assert.match(migration,/release_storefront_order_stock_v2/);
 assert.match(migration,/stock_quantity=stock_quantity-v_row\.quantity/);
 assert.match(migration,/already_consumed/);
+assert.match(consumeLockMigration,/order by r\.product_id\s+for update/i,'concurrent separation prints must lock reservation rows');
 assert.match(migration,/revoke all on function public\.reserve_storefront_order_stock_v2[\s\S]*public, anon, authenticated/);
 
 console.log('vitrine_sales_rules_v2_ok');
