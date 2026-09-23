@@ -1273,6 +1273,7 @@
       }
       await loadCurrentOrderFiscal(false);
       paintOrderDetail();
+      loadCurrentOrderBlingPreview(true);
     }catch(e){$('#editorBody').innerHTML='<div class="empty">Não consegui abrir este pedido.</div>'}
   }
   function paintOrderDetail(){
@@ -1285,7 +1286,7 @@
     const delivery=o.delivery_address_snapshot||c.address||{};
     const deliveryProblems=orderProblemReasons(o).some(x=>['Cliente não identificado','Endereço incompleto'].includes(x));
     $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
-    $('#editorBody').innerHTML=syncAlert+
+    $('#editorBody').innerHTML=syncAlert+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
       '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
       '<div class="form-grid">'+
         '<div class="span-2 order-stage"><span>Situação atual</span>'+statusPill(o.status)+'<b>Próxima ação: '+esc(orderNextAction(o))+'</b></div>'+
@@ -1341,6 +1342,29 @@
       if(canConfirm)fiscalBtn.onclick=confirmCurrentOrderPayment;
     }
     if($('#retryHistorySync'))$('#retryHistorySync').onclick=retryHistorySync;
+  }
+
+  function blingPreflightOperationalBlockers(p){
+    if(!p||p.error)return [];
+    const expected=new Set(['first_separation_required','stock_not_consumed']);
+    const blockers=Array.isArray(p.write_blockers)&&p.write_blockers.length?p.write_blockers:(p.blockers||[]);
+    return [...new Set(blockers)].filter(code=>!expected.has(code));
+  }
+  function blingPreflightAlertHtml(p){
+    const blockers=blingPreflightOperationalBlockers(p);
+    if(!blockers.length)return '';
+    return '<div class="sync-alert"><div><strong>Antes de separar, revise o Bling</strong><small>'+blockers.slice(0,3).map(blingOrderBlockerLabel).map(esc).join(' · ')+(blockers.length>3?' · +'+(blockers.length-3):'')+'</small></div><span class="pill warn">Somente leitura</span></div>';
+  }
+  async function loadCurrentOrderBlingPreview(repaint=true){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    try{
+      state.currentOrderBlingPreview=await api('bling_preview_order_sync',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+    }catch(e){
+      state.currentOrderBlingPreview={error:String(e?.message||'bling_preview_unavailable')};
+    }
+    if(repaint&&state.currentOrder?.order?.id===id&&$('#editor')?.open)paintOrderDetail();
   }
 
   function fiscalBlockReasonLabel(code){
@@ -1621,6 +1645,7 @@
     });
     const fresh=await api('order',{id:payload.id});state.currentOrder=fresh;
     await loadCurrentOrderFiscal(false);
+    await loadCurrentOrderBlingPreview(false);
     return fresh;
   }
   async function advanceCurrentOrder(next){
