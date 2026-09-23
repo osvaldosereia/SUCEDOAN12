@@ -13,6 +13,7 @@ assert.match(admin,/Verificar prévia Bling/,'pedido deve ter prévia Bling');
 assert.match(admin,/bling_preview_order_sync/,'admin deve chamar preview somente leitura');
 assert.match(admin,/Pedidos vinculados/,'painel Bling deve exibir pedidos vinculados');
 assert.match(admin,/Webhooks Bling/,'painel deve exibir caixa de entrada de webhooks');
+assert.match(admin,/Fiscal \/ NF-e/,'painel deve exibir readiness fiscal');
 assert.doesNotMatch(admin,/Enviar (?:pedido )?ao Bling/i,'admin não deve oferecer envio manual nesta fase');
 
 assert.match(vitrineAdmin,/async function buildBlingOrderSnapshot/);
@@ -42,6 +43,10 @@ assert.match(hub,/bling-webhook-v2/);
 assert.match(hub,/claim_bling_webhook_inbox_v2/);
 assert.match(hub,/self_generated_observed/);
 assert.match(hub,/local_mutation:false/);
+assert.match(hub,/fiscal_readiness/);
+assert.match(hub,/bling_invoice_prepare_enabled/);
+assert.match(hub,/bling_invoice_send_enabled/);
+assert.match(hub,/external_side_effect/);
 
 assert.match(canary,/bling_hub_canary_allowlist_v2/);
 assert.match(canary,/v_runtime\.mode='homologation'/);
