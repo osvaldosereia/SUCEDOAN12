@@ -258,11 +258,14 @@ async function listExpirations() {
   const today=cuiabaDateKey();
   const horizon=addDateDays(today,90);
 
-  const {data:allRows,error:allErr}=await db.from("products")
-    .select("id,expiration_date,auto_expiry_offer_enabled")
-    .eq("organization_id",ORG_ID)
-    .range(0,4999);
-  if(allErr)throw allErr;
+  const [totalRes,withoutRes,autoRes]=await Promise.all([
+    db.from("products").select("id",{count:"exact",head:true}).eq("organization_id",ORG_ID),
+    db.from("products").select("id",{count:"exact",head:true}).eq("organization_id",ORG_ID).is("expiration_date",null),
+    db.from("products").select("id",{count:"exact",head:true}).eq("organization_id",ORG_ID).eq("auto_expiry_offer_enabled",true)
+  ]);
+  if(totalRes.error)throw totalRes.error;
+  if(withoutRes.error)throw withoutRes.error;
+  if(autoRes.error)throw autoRes.error;
 
   const {data:rows,error}=await db.from("products")
     .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
@@ -304,8 +307,9 @@ async function listExpirations() {
     under_30:products.filter((p:any)=>p.days_left>=0&&p.days_left<30).length,
     days_30_59:products.filter((p:any)=>p.days_left>=30&&p.days_left<60).length,
     days_60_90:products.filter((p:any)=>p.days_left>=60&&p.days_left<=90).length,
-    without_expiration:(allRows??[]).filter((p:any)=>!p.expiration_date).length,
-    auto_enabled:(allRows??[]).filter((p:any)=>p.auto_expiry_offer_enabled===true).length
+    without_expiration:Number(withoutRes.count??0),
+    auto_enabled:Number(autoRes.count??0),
+    total_products:Number(totalRes.count??0)
   };
   return {today,horizon,summary,products,reconcile:reconcile.data??null};
 }
