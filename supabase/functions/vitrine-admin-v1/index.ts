@@ -882,13 +882,33 @@ async function saveCustomer(payload:any) {
 }
 
 async function listOrders() {
-  const { data, error } = await db.from("orders")
-    .select("id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at")
+  const selectFields="id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at";
+  const openRows:any[]=[];
+  const pageSize=1000;
+  let from=0;
+  while(true){
+    const page=await db.from("orders")
+      .select(selectFields)
+      .eq("organization_id",ORG_ID)
+      .not("status","in",'("delivered","cancelled")')
+      .order("created_at",{ascending:false})
+      .range(from,from+pageSize-1);
+    if(page.error)throw page.error;
+    const batch=page.data??[];
+    openRows.push(...batch);
+    if(batch.length<pageSize)break;
+    from+=pageSize;
+  }
+  const closed=await db.from("orders")
+    .select(selectFields)
     .eq("organization_id",ORG_ID)
+    .in("status",["delivered","cancelled"])
     .order("created_at",{ascending:false})
     .limit(120);
-  if (error) throw error;
-  const rows=data ?? [];
+  if(closed.error)throw closed.error;
+  const byId=new Map<string,any>();
+  for(const row of [...openRows,...(closed.data??[])])byId.set(row.id,row);
+  const rows=[...byId.values()].sort((a:any,b:any)=>(Date.parse(b.created_at||0)||0)-(Date.parse(a.created_at||0)||0));
   const ids=[...new Set(rows.map((r:any)=>r.customer_id).filter(Boolean))];
   let customers:any[]=[];
   if (ids.length) {
