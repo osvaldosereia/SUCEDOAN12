@@ -1,173 +1,227 @@
-# Implementation Plan — Vitrine/Admin + Bling direto, sem Make
+# Plano de Implementação — Vitrine/Admin + Bling direto, sem Make no runtime
 
-**Data:** 2026-09-23  
-**Design:** `docs/superpowers/specs/2026-09-23-vitrine-admin-bling-direct-no-make-design.md`
+**Data:** 2026-09-23
+**Status:** aprovado para execução
+**Regra adicional:** não apagar nada no Make nesta fase.
 
-## Regra de execução
+## Princípios de execução
 
-- Make não será usado no novo runtime.
-- Nada será apagado dentro do Make nesta fase.
-- Objetos antigos do Supabase só serão removidos após migração, prova de zero dependência e janela de observação.
-- Toda escrita externa no Bling começa desligada.
-- Filas antigas Bling serão congeladas antes de qualquer ativação nova.
-- Cada fase termina com teste, advisor e checkpoint no GitHub.
+- Nenhuma escrita externa no Bling durante a Fase A.
+- Make permanece intacto; apenas deixa de ser parte da arquitetura nova.
+- Filas antigas Bling ficam isoladas antes de qualquer worker novo.
+- Supabase antigo só será limpo depois de prova de não uso.
+- Cada fase deve terminar com testes, advisor e rollback claro.
+- O `vitrine/admin` será a superfície operacional; segredos nunca irão ao navegador.
 
-## Fase A — Fundação e isolamento
+## Fase A — Fundação e isolamento (executar primeiro)
 
-### A1. Congelar filas Bling antigas
-Arquivos:
-- nova migration `supabase/migrations/*_bling_hub_v2_foundation.sql`
+### A1. Snapshot e classificação das filas legadas
+- Inventariar `bling_commands` e `order_sync_jobs`.
+- Criar marca explícita de geração/legado sem executar jobs.
+- Criar uma nova fila versionada para o Hub V2.
+- Criar read model de status de integração.
+- Não tocar em comandos legados.
 
-Ações:
-- criar singleton `bling_hub_runtime_v2`;
-- `legacy_queues_frozen=true` por padrão;
-- manter `products_enabled=false`;
-- manter `stock_enabled=false`;
-- manter `customers_enabled=false`;
-- manter `orders_enabled=false`;
-- manter `fiscal_enabled=false`;
-- substituir `claim_bling_commands_by_types` para retornar erro fail-closed quando legado estiver congelado;
-- substituir `claim_order_sync_jobs` para não reclamar jobs quando legado estiver congelado;
-- não alterar os 330 comandos e 25 jobs existentes.
+### A2. Runtime config V2
+Criar `bling_integration_runtime_v2` com kill switches independentes:
+- master_enabled
+- reads_enabled
+- product_writes_enabled
+- stock_writes_enabled
+- customer_writes_enabled
+- order_writes_enabled
+- webhook_enabled
+- fiscal_enabled
+- invoice_issue_enabled
+- homologation_only
 
-Teste:
-- contagens antes/depois idênticas;
-- claims retornam zero/erro controlado;
-- nenhuma linha muda para processing.
+Padrão inicial:
+- master_enabled=false
+- reads_enabled=true
+- demais writes=false
+- homologation_only=true
 
-### A2. Criar fila nova versionada
-Criar:
-- `bling_hub_jobs_v2`;
-- `bling_hub_entity_links_v2`;
-- `bling_hub_audit_v2`;
-- índices e RLS;
-- RPC de enqueue idempotente;
-- RPC de claim com `FOR UPDATE SKIP LOCKED`;
-- RPC de finish/retry/review;
-- nenhum worker ativo ainda.
+### A3. Fila V2
+Criar `bling_integration_jobs_v2`:
+- id
+- entity_type
+- entity_id
+- operation
+- idempotency_key
+- payload_version
+- payload
+- status
+- attempt_count
+- max_attempts
+- not_before
+- locked_by
+- locked_until
+- correlation_id
+- provider_id
+- response_summary
+- last_error
+- created_at
+- updated_at
+- completed_at
 
-### A3. Cliente Bling server-side
-Criar:
-- `supabase/functions/bling-hub-v2/index.ts`;
-- módulo compartilhado de OAuth/rate-limit;
-- leitura de credenciais pelo RPC `get_bling_api_credentials_v1`;
-- refresh JWT com `enable-jwt: 1`;
-- persistência do refresh token rotacionado;
-- limite global conservador;
-- health/readiness sem escrita em cadastro do Bling;
-- endpoints de escrita bloqueados pelos flags do runtime.
+Estados:
+- pending
+- processing
+- synced
+- retry
+- review_required
+- failed
+- cancelled
 
-### A4. Readiness no admin
-Adicionar no `vitrine/admin`:
-- aba/área Integrações → Bling;
-- conexão;
-- credenciais presentes;
-- filas antigas congeladas;
-- filas novas;
-- switches somente leitura inicialmente;
-- nenhum botão de escrita externa nesta fase.
+Índice único por idempotency_key.
+
+### A4. Read model V2
+Criar `bling_integration_state_v2`:
+- entity_type
+- entity_id
+- local_version
+- desired_operation
+- sync_status
+- bling_id
+- last_attempt_at
+- last_success_at
+- last_error
+- needs_action
+- metadata
+
+Chave composta `entity_type + entity_id`.
+
+### A5. OAuth/health server-side
+Criar Edge Function `bling-hub-v2` com ações inicialmente somente read-only:
+- health
+- oauth_status
+- product_lookup_by_gtin
+- contact_lookup_by_document
+- order_lookup_by_external_key
+- deposit_list
+- business_unit_list
+- order_status_list
+- fiscal_readiness
+
+Nenhuma ação write exposta na Fase A.
+
+### A6. Token storage e lock
+- Reutilizar secrets Bling já existentes no Vault.
+- Não duplicar segredos.
+- Criar lock server-side para refresh token.
+- Registrar somente metadata segura do refresh, nunca token em log.
+- Se o token atual não puder ser validado sem refresh, retornar estado de configuração sem alterar Bling.
+
+### A7. Throttle global
+Criar `bling_rate_limit_v2` / RPC de lease global:
+- máximo conservador <= 2 req/s na primeira homologação;
+- respeitar 429 / Retry-After;
+- limite compartilhado por todos os domínios.
+
+### A8. Admin — painel Bling inicial
+No `vitrine/admin`, adicionar aba/área `Bling` somente leitura mostrando:
+- Conexão
+- OAuth
+- Modo homologação
+- Escritas bloqueadas
+- Filas V2
+- Filas legadas isoladas
+- Produtos sem vínculo
+- Clientes sem vínculo
+- Pedidos sem vínculo
+- Fiscal OFF
+- Make: `Legado — não usado pelo novo runtime`
+
+Sem botão de escrita na Fase A.
 
 ## Fase B — Produtos e estoque
 
-### B1. Reconciliação read-only de produtos
-- exportar GTIN/SKU dos produtos ativos qxst;
-- consultar Bling por GTIN exato;
-- preencher `bling_hub_entity_links_v2`;
-- estados: matched, not_found, ambiguous, review;
-- nunca criar produto automaticamente.
+### B1. Reconciliação read-only
+- cruzar 1.670 produtos Vitrine com Bling por GTIN exato;
+- classificar matched / missing / ambiguous;
+- salvar somente IDs externos confirmados;
+- nenhum produto novo criado automaticamente.
 
-### B2. Atualização de produto canário
-- montar payload mínimo;
-- preservar campos fiscais não administrados pela Vitrine;
-- um produto allowlisted;
-- PUT no Bling;
-- GET de confirmação;
-- auditoria.
+### B2. Produto update
+- ao salvar produto no Vitrine, enqueue `product_update`;
+- writer server-side no Hub;
+- preservar campos fiscais do Bling não administrados;
+- NCM/tributação tratados conforme payload atual.
 
-### B3. Cadastro de produto novo
-- ação manual "Cadastrar no Bling";
-- validação de GTIN duplicado;
-- POST idempotente por reconciliação;
-- vincular ID retornado.
+### B3. Produto create
+- ação explícita no admin;
+- somente item sem match;
+- preview antes de enviar;
+- canário individual.
 
 ### B4. Estoque
-- saldo qxst é autoridade operacional;
-- mapear depósito;
-- enviar saldo absoluto;
-- consolidar jobs do mesmo produto;
-- canário de um produto;
-- webhook/divergência depois.
+- saldo absoluto do qxst é fonte operacional;
+- balanço/separação/cancelamento geram `stock_set`;
+- coalescer pendências por produto;
+- canário por 1 produto.
 
 ## Fase C — Clientes
 
-- usar CRM canônico ssbes;
-- vincular por bling_contact_id, depois CPF/CNPJ exato;
-- create/update;
-- endereço;
-- emailNotaFiscal;
-- estados de sync no admin;
-- canário.
+- usar clientes do ssbes;
+- vínculo por bling_contact_id; depois CPF/CNPJ exato;
+- create/update assíncrono;
+- endereço e dados fiscais;
+- status no admin.
 
 ## Fase D — Pedidos
 
-- bridge qxst → Hub;
-- criar job na primeira separação;
-- resolver cliente/produtos;
-- draft validado;
-- idempotency/external key;
-- POST;
-- reconciliação após timeout;
-- update/cancel;
-- mostrar Bling ID no pedido.
+- primeira separação materializa pedido para o Bling;
+- exige cliente + produtos vinculados + total consistente;
+- idempotency key baseada no UUID Vitrine;
+- cestas desmembradas em componentes;
+- diferença comercial em desconto/outras despesas;
+- cancelamento e alteração controlados.
 
 ## Fase E — Webhooks
 
 - endpoint dedicado;
-- HMAC X-Bling-Signature-256;
-- inbox;
-- dedupe;
+- assinatura HMAC;
+- inbox idempotente;
 - processamento assíncrono;
-- produto/estoque/pedido/NF-e;
-- evitar loops.
+- eventos de produto, estoque, pedido e fiscal;
+- proteção anti-loop.
 
 ## Fase F — Fiscal
 
-- descobrir/configurar modelo, série, natureza, unidade, regras tributárias;
+- leitura de configuração fiscal;
 - readiness;
 - preview;
-- emissão manual;
-- autorização;
-- captura status/chave/PDF/XML;
-- canário real único.
+- botão manual Emitir nota;
+- homologação canário;
+- depois autorização automatizável.
 
-## Fase G — Make zero
+## Fase G — Make zero no código/runtime
 
-Somente depois do runtime substituto validado:
-- retirar chamadas Make do código ativo;
-- migrar/adaptar qualquer fluxo ainda dependente;
-- manter Make externo intocado até decisão explícita;
-- depois remover apenas referências locais seguras.
+**Não apagar Make na plataforma nesta fase sem solicitação futura.**
+
+- remover dependências ativas do código;
+- migrar adapters necessários;
+- remover secrets/colunas Make do Supabase somente quando não usados;
+- manter documentação histórica;
+- deixar cenários Make existentes intocados na conta.
 
 ## Fase H — Limpeza Supabase
 
-Para cada candidato:
-1. busca GitHub;
-2. dependências SQL;
-3. triggers;
-4. cron;
-5. Edge Functions;
-6. configurações;
-7. contagem/dado histórico;
-8. classificação KEEP/MIGRATE/DEPRECATE/DELETE/ARCHIVE_DATA;
-9. migration com RESTRICT;
-10. regressão + advisors.
+- inventário completo;
+- classificar KEEP/MIGRATE/DEPRECATE/DELETE/ARCHIVE_DATA;
+- remover apenas objetos DELETE comprovados;
+- migrations sem CASCADE;
+- regressão total após cada grupo;
+- advisors finais.
 
-Nunca usar DROP CASCADE na limpeza operacional.
+## Critérios de conclusão da Fase A
 
-## Ordem da execução desta rodada
-
-1. A1 foundation + congelamento.
-2. A2 fila v2.
-3. A3 edge Bling Hub somente health/readiness.
-4. A4 status no vitrine/admin.
-5. testes e checkpoint.
+- nenhuma escrita no Bling;
+- filas antigas não podem ser executadas pelo Hub V2;
+- fila/read model V2 criados;
+- runtime V2 com writes OFF;
+- Edge Hub V2 read-only;
+- painel Bling no admin;
+- testes/CI;
+- advisors sem alerta novo crítico;
+- documentação de rollback.
