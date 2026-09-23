@@ -875,7 +875,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -892,13 +892,31 @@ async function blingHubControl(subaction:string,extra:any={}) {
       "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
     },
     body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),
-    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly"].includes(subaction)?65000:10000)
+    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly"].includes(subaction)?120000:10000)
   });
   const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
   if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
   return {data};
 }
 
+async function reconcileBlingProductCatalogReadonly(){
+  const all:any[]=[];
+  for(let offset=0;offset<3000;offset+=1000){
+    const q=await db.from("products")
+      .select("id,sku,gtin,name")
+      .eq("organization_id",ORG_ID)
+      .eq("active",true)
+      .order("id",{ascending:true})
+      .range(offset,offset+999);
+    if(q.error)throw q.error;
+    all.push(...(q.data||[]));
+    if((q.data||[]).length<1000)break;
+  }
+  const items=all.map((p:any)=>({source_id:p.id,sku:p.sku||"",gtin:p.gtin||"",name:p.name||""}));
+  const remote=await blingHubControl("reconcile_product_catalog_readonly",{items});
+  if((remote as any).error)return remote;
+  return (remote as any).data;
+}
 async function reconcileBlingProductsReadonly(payload:any){
   const offset=Math.max(0,Math.min(100000,Math.floor(Number(payload?.offset||0))));
   const limit=Math.max(1,Math.min(25,Math.floor(Number(payload?.limit||20))));
@@ -1142,6 +1160,11 @@ Deno.serve(async (req: Request) => {
       }
       if (action==="bling_reconcile_products_readonly") {
         const result=await reconcileBlingProductsReadonly(payload);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="bling_reconcile_catalog_readonly") {
+        const result=await reconcileBlingProductCatalogReadonly();
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...result});
       }
