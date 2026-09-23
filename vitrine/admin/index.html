@@ -78,7 +78,7 @@
     .order-stage{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:11px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.order-stage>span{font-size:12px;color:var(--muted);font-weight:700}.order-stage b{font-size:13px}
     .order-action-zone{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:12px;margin-top:10px}.order-action-zone strong{display:block;margin-bottom:4px}.order-action-zone small{display:block;color:var(--muted);line-height:1.4}
     .integration-details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px}.integration-details summary{cursor:pointer;padding:12px 0;font-weight:700}.integration-details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}.integration-details .integration-body{padding-bottom:12px}
-    .dispatch-grid{display:grid;gap:14px}.dispatch-section{overflow:hidden}.dispatch-head{padding:13px 14px;margin:0;border-bottom:1px solid var(--line)}.dispatch-head>div{min-width:0}.dispatch-head span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-head>b{font-size:20px}.dispatch-row{grid-template-columns:90px minmax(0,1.5fr) minmax(120px,.6fr) 105px}.dispatch-row:hover{background:#f8fbff}
+    .dispatch-grid{display:grid;gap:14px}.dispatch-section{overflow:hidden}.dispatch-head{padding:13px 14px;margin:0;border-bottom:1px solid var(--line)}.dispatch-head>div{min-width:0}.dispatch-head span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-head>b{font-size:20px}.dispatch-row{grid-template-columns:90px minmax(0,1.5fr) minmax(120px,.6fr) 105px minmax(190px,.8fr);cursor:default}.dispatch-row:hover{background:#f8fbff}.dispatch-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}.quick-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#1967d2;text-decoration:none;font-weight:700;font-size:12px}.quick-link:hover{background:#f1f3f4}.quick-link.primary-link{background:#e8f0fe;border-color:#d2e3fc}.age-text{font-size:11px;color:var(--muted);font-weight:600}
     .today-order-row{grid-template-columns:90px minmax(0,1fr) 150px 80px}
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
@@ -87,7 +87,7 @@
       .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
       .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
-      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:72px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
+      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:72px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.dispatch-row .dispatch-actions{grid-column:2/4;justify-content:flex-start}.quick-link{min-height:40px}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
     }
   
     /* Material-like operational shell */
@@ -192,7 +192,8 @@
   const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
-  const state={tab:'today',orderFilter:'all',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const state={tab:'today',orderFilter:'all',orderQuery:'',expeditionQuery:'',products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -235,6 +236,51 @@
     const map={created:'Novo',storefront_received:'Recebido',confirmed:'Confirmado',sent_to_bling:'Bling',processing:'Separando',ready:'Pronto',out_for_delivery:'Em entrega',delivered:'Entregue',cancelled:'Cancelado',returned:'Devolvido'};
     const cls=status==='cancelled'?'danger':status==='created'?'warn':'';
     return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
+  }
+
+  function relativeAge(v){
+    if(!v)return '';
+    const ms=Date.now()-new Date(v).getTime();
+    if(!Number.isFinite(ms)||ms<0)return '';
+    const min=Math.floor(ms/60000);
+    if(min<1)return 'agora';
+    if(min<60)return 'há '+min+' min';
+    const hours=Math.floor(min/60);
+    if(hours<24)return 'há '+hours+' h';
+    return 'há '+Math.floor(hours/24)+' d';
+  }
+  function orderSearchMatch(o,q){
+    const needle=normalize(q);
+    if(!needle)return true;
+    const a=o?.delivery_address_snapshot||{};
+    const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+    const haystack=[
+      o?.order_number,o?.customer_name,o?.whatsapp_phone_e164,a.phone,a.customer_name,a.recipient_name,
+      a.street,a.number,a.district,a.city,a.state,payment
+    ].map(normalize).join(' ');
+    return haystack.includes(needle);
+  }
+  function whatsappHref(value){
+    let d=String(value||'').replace(/\D/g,'');
+    if((d.length===10||d.length===11)&&!d.startsWith('55'))d='55'+d;
+    return d.length>=12?'https://wa.me/'+d:'';
+  }
+  function mapsHrefFromAddress(a){
+    const data=a&&typeof a==='object'?a:{};
+    const provided=String(data.google_maps_url||'').trim();
+    if(/^https:\/\/(?:www\.)?google\.(?:com|com\.br)\/maps/i.test(provided)||/^https:\/\/maps\.app\.goo\.gl\//i.test(provided))return provided;
+    const parts=[data.street,data.number,data.district,data.city,data.state].filter(Boolean);
+    return parts.length>=3?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(parts.join(', ')):'';
+  }
+  function orderContactActionsHtml(o,c={}){
+    const a=c?.address||o?.delivery_address_snapshot||{};
+    const phone=c?.phone||o?.whatsapp_phone_e164||a.phone||'';
+    const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a);
+    if(!wa&&!maps)return '';
+    return '<div class="dispatch-actions" style="justify-content:flex-start;margin-top:10px">'+
+      (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+      (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Abrir no Maps</a>':'')+
+    '</div>';
   }
 
   function orderProblemReasons(o){
@@ -308,37 +354,53 @@
     const a=o.delivery_address_snapshot||{};
     const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
-    return '<button class="history-row dispatch-row" type="button" data-expedition-order="'+esc(o.id)+'">'+
-      '<strong>#'+esc(shortOrder(o.order_number))+'</strong>'+
+    const wa=whatsappHref(o.whatsapp_phone_e164||a.phone||'');
+    const maps=mapsHrefFromAddress(a);
+    return '<div class="history-row dispatch-row">'+
+      '<div><strong>#'+esc(shortOrder(o.order_number))+'</strong><span class="sub">'+esc(relativeAge(o.created_at))+'</span></div>'+
       '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small></div>'+
       '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small></div>'+
       '<span>'+statusPill(o.status)+'</span>'+
-    '</button>';
+      '<div class="dispatch-actions">'+
+        (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
+        (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
+        '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
+      '</div>'+
+    '</div>';
   }
   function expeditionSection(title,subtitle,rows,empty){
     return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
       '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
   }
-  async function renderExpedition(){
-    const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Expedição</h1><p>Pedidos prontos, em entrega e entregues em uma única fila operacional.</p></div><button class="secondary" id="refreshExpedition">Atualizar</button></div><div id="expeditionBody"><div class="loading">Carregando expedição…</div></div>';
-    $('#refreshExpedition').onclick=renderExpedition;
-    try{
-      const data=await api('orders');state.orders=data.orders||[];
-      const ready=state.orders.filter(o=>o.status==='ready');
-      const delivery=state.orders.filter(o=>o.status==='out_for_delivery');
-      const delivered=state.orders.filter(o=>o.status==='delivered').slice(0,10);
-      $('#expeditionBody').innerHTML='<div class="ops-cards">'+
+  function paintExpeditionBody(){
+    const host=$('#expeditionBody');if(!host)return;
+    const visible=state.orders.filter(o=>orderSearchMatch(o,state.expeditionQuery));
+    const ready=visible.filter(o=>o.status==='ready');
+    const delivery=visible.filter(o=>o.status==='out_for_delivery');
+    const delivered=visible.filter(o=>o.status==='delivered').slice(0,10);
+    host.innerHTML='<div class="ops-cards">'+
         '<div class="ops-card"><small>Aguardando saída</small><strong>'+ready.length+'</strong><span>Pedidos já separados</span></div>'+
         '<div class="ops-card"><small>Em entrega</small><strong>'+delivery.length+'</strong><span>Pedidos na rua</span></div>'+
-        '<div class="ops-card"><small>Entregues</small><strong>'+state.orders.filter(o=>o.status==='delivered').length+'</strong><span>Fechamento e fiscal</span></div>'+
+        '<div class="ops-card"><small>Entregues</small><strong>'+visible.filter(o=>o.status==='delivered').length+'</strong><span>Fechamento e fiscal</span></div>'+
       '</div>'+
       '<div class="dispatch-grid">'+
         expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
         expeditionSection('Em entrega','acompanhar até a confirmação',delivery,'Nenhum pedido em entrega.')+
         expeditionSection('Últimos entregues','pagamento e fiscal',delivered,'Nenhuma entrega concluída.')+
       '</div>';
-      document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
+    document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
+  }
+  async function renderExpedition(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Expedição</h1><p>Pedidos prontos, em entrega e entregues em uma única fila operacional.</p></div><button class="secondary" id="refreshExpedition">Atualizar</button></div>'+
+      '<div class="toolbar"><input id="expeditionSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.expeditionQuery)+'"><button class="secondary" id="clearExpeditionSearch" type="button">Limpar</button></div>'+
+      '<div id="expeditionBody"><div class="loading">Carregando expedição…</div></div>';
+    $('#refreshExpedition').onclick=renderExpedition;
+    $('#expeditionSearch').oninput=e=>{state.expeditionQuery=e.target.value;paintExpeditionBody()};
+    $('#clearExpeditionSearch').onclick=()=>{state.expeditionQuery='';$('#expeditionSearch').value='';paintExpeditionBody()};
+    try{
+      const data=await api('orders');state.orders=data.orders||[];
+      paintExpeditionBody();
     }catch(e){
       $('#expeditionBody').innerHTML='<div class="empty">Não consegui carregar a expedição. <button class="text" id="retryExpedition">Tentar novamente</button></div>';
       if($('#retryExpedition'))$('#retryExpedition').onclick=renderExpedition;
@@ -1132,9 +1194,12 @@
   async function renderOrders(){
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Trabalhe pela próxima ação. O sistema cuida das integrações por trás.</p></div><button class="secondary" id="refreshOrders">Atualizar</button></div>'+
+      '<div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery)+'"><button class="secondary" id="clearOrderSearch" type="button">Limpar</button></div>'+
       '<div class="order-filters" id="orderFilters"></div>'+
       '<div class="panel"><div class="list-head orders-layout"><span>Pedido</span><span>Data</span><span>Cliente</span><span>Total</span><span>Pagamento</span><span>Próxima ação</span><span></span></div><div id="orderRows"><div class="loading">Carregando…</div></div></div>';
     $('#refreshOrders').onclick=loadOrders;
+    $('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};
+    $('#clearOrderSearch').onclick=()=>{state.orderQuery='';$('#orderSearch').value='';paintOrderRows()};
     await loadOrders();
   }
   function paintOrderFilters(){
@@ -1145,7 +1210,7 @@
   }
   function paintOrderRows(){
     const host=$('#orderRows');if(!host)return;
-    const rows=state.orders.filter(o=>orderFilterMatch(o,state.orderFilter));
+    const rows=state.orders.filter(o=>orderFilterMatch(o,state.orderFilter)&&orderSearchMatch(o,state.orderQuery));
     host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">Nenhum pedido nesta etapa.</div>';
     host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));
   }
@@ -1162,8 +1227,8 @@
     const next=orderNextAction(o);
     return '<div class="list-row orders-layout">'+
       '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+'</span>':'')+'</div>'+
-      '<span class="desktop-extra">'+esc(dateTime(o.created_at))+'</span>'+
-      '<div class="mobile-wide"><span class="row-title">'+esc(o.customer_name||'Sem cliente')+'</span><span class="sub">'+esc(payment)+' · '+esc(next)+'</span></div>'+
+      '<div class="desktop-extra"><span>'+esc(dateTime(o.created_at))+'</span><span class="sub age-text">'+esc(relativeAge(o.created_at))+'</span></div>'+
+      '<div class="mobile-wide"><span class="row-title">'+esc(o.customer_name||'Sem cliente')+'</span><span class="sub">'+esc(payment)+' · '+esc(next)+' · '+esc(relativeAge(o.created_at))+'</span></div>'+
       '<span class="money">'+money(o.total_cents)+'</span>'+
       '<span class="desktop-extra">'+esc(payment)+'</span>'+
       '<div class="desktop-extra"><span class="next-action '+(o.status==='cancelled'?'muted-action':'')+'">'+esc(next)+'</span><span class="sub">'+statusPill(o.status)+'</span></div>'+
@@ -1207,6 +1272,7 @@
       '<div class="order-items">'+(d.items||[]).map(orderItemHtml).join('')+'</div>'+
       '<div class="section-title">Cliente / entrega</div>'+
       '<div>'+customerSummary(c,o.delivery_address_snapshot)+'</div>'+
+      orderContactActionsHtml(o,c)+
       '<div class="section-title">Integração</div>'+
       '<details class="integration-details"><summary>ERP / Bling '+(linked?'✓':'')+'</summary><div class="integration-body">'+
         '<div id="orderBlingLink">'+orderBlingLinkHtml(d.bling_link)+'</div>'+
