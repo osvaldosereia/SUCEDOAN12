@@ -874,8 +874,8 @@ async function consumeOrderStock(payload:any) {
   return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok)};
 }
 
-async function blingHubControl(subaction:string) {
-  const allowed=new Set(["readiness","probe_readonly"]);
+async function blingHubControl(subaction:string,extra:any={}) {
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -891,14 +891,34 @@ async function blingHubControl(subaction:string) {
       "Content-Type":"application/json",
       "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
     },
-    body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction}),
-    signal:AbortSignal.timeout(subaction==="probe_readonly"?65000:10000)
+    body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),
+    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly"].includes(subaction)?65000:10000)
   });
   const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
   if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
   return {data};
 }
 
+async function reconcileBlingProductsReadonly(payload:any){
+  const offset=Math.max(0,Math.min(100000,Math.floor(Number(payload?.offset||0))));
+  const limit=Math.max(1,Math.min(25,Math.floor(Number(payload?.limit||20))));
+  const rows=await db.from("products")
+    .select("id,sku,gtin,name")
+    .eq("organization_id",ORG_ID)
+    .eq("active",true)
+    .order("id",{ascending:true})
+    .range(offset,offset+limit-1);
+  if(rows.error)throw rows.error;
+  const items=(rows.data||[]).map((p:any)=>({source_id:p.id,sku:p.sku||"",gtin:p.gtin||"",name:p.name||""}));
+  if(!items.length)return {processed:0,results:[],next_offset:null};
+  const remote=await blingHubControl("reconcile_products_readonly",{items});
+  if((remote as any).error)return remote;
+  return {
+    ...(remote as any).data,
+    offset,limit,
+    next_offset:items.length===limit?offset+items.length:null
+  };
+}
 async function retryHistorySync(payload:any) {
   const id=uuid(payload?.id);
   if(!id)return {error:"invalid_order",status:400};
@@ -1119,6 +1139,11 @@ Deno.serve(async (req: Request) => {
         const result=await blingHubControl("probe_readonly");
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,probe:(result as any).data});
+      }
+      if (action==="bling_reconcile_products_readonly") {
+        const result=await reconcileBlingProductsReadonly(payload);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...result});
       }
       if (action==="balance_confirm") {
         const result=await balanceConfirm(payload);
