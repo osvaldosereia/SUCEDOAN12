@@ -1556,7 +1556,7 @@ async function blingHubCreateProductOnce(sb:any,token:string,payload:any){
     const providerDetails=Array.isArray(data?.error?.fields)
       ? data.error.fields.slice(0,20).map((x:any)=>({field:clean(x?.field||x?.name||x?.path,120),message:clean(x?.message||x?.description||x?.error,240)}))
       : [];
-    return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,uncertain:false};
+    return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,provider_error:clean(JSON.stringify(data?.error||data||{}),1600),uncertain:false};
   }catch(e){
     return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
   }
@@ -1634,7 +1634,7 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
             }else{
               await sb.rpc("finish_bling_hub_job_v2",{
                 p_job_id:job.id,p_status:"review_required",
-                p_result:{provider_details:created.provider_details||[],creation_uncertain:Boolean(created.uncertain||created.status>=500),candidate_ids:recovery.candidates||[]},
+                p_result:{provider_details:created.provider_details||[],provider_error:created.provider_error||null,creation_uncertain:Boolean(created.uncertain||created.status>=500),candidate_ids:recovery.candidates||[]},
                 p_error_code:created.uncertain||created.status>=500?"product_creation_uncertain":"product_create_http_"+created.status,
                 p_error_message:created.error||"Bling product creation failed",
                 p_http_status:created.status||null,p_retry_seconds:120,p_provider_id:null
@@ -2464,7 +2464,7 @@ async function blingHubCreateContactOnce(sb:any,token:string,payload:any){
     const providerDetails=Array.isArray(data?.error?.fields)
       ? data.error.fields.slice(0,20).map((x:any)=>({field:clean(x?.field||x?.name||x?.path,120),message:clean(x?.message||x?.description||x?.error,240)}))
       : [];
-    return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,uncertain:false};
+    return {ok:r.ok,status:r.status,data,error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),provider_details:providerDetails,provider_error:clean(JSON.stringify(data?.error||data||{}),1600),uncertain:false};
   }catch(e){
     return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
   }
@@ -2534,7 +2534,7 @@ async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
             }else{
               await sb.rpc("finish_bling_hub_job_v2",{
                 p_job_id:job.id,p_status:"review_required",
-                p_result:{provider_details:created.provider_details||[],creation_uncertain:Boolean(created.uncertain||created.status>=500),candidate_ids:recovery.candidates||[]},
+                p_result:{provider_details:created.provider_details||[],provider_error:created.provider_error||null,creation_uncertain:Boolean(created.uncertain||created.status>=500),candidate_ids:recovery.candidates||[]},
                 p_error_code:created.uncertain||created.status>=500?"customer_creation_uncertain":"contact_create_http_"+created.status,
                 p_error_message:created.error||"Bling contact creation failed",
                 p_http_status:created.status||null,p_retry_seconds:120,p_provider_id:null
