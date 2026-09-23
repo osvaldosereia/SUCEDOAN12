@@ -2477,14 +2477,14 @@ async function blingHubEnsureCustomerNow(sb:any,customerIdRaw:any){
     p_operation:"sync_customer",
     p_source_system:"canonical_ssbes",
     p_source_id:customerId,
-    p_idempotency_key:"canonical_ssbes:customer:order_preflight:"+customerId+":"+stamp,
+    p_idempotency_key:"canonical_ssbes:customer:"+customerId+":"+stamp,
     p_payload:{customer_id:customerId,allow_create:true,requested_from:"order_preflight"},
     p_payload_version:1
   });
   if(queued.error)throw queued.error;
 
   let processed:any=null;
-  try{processed=await blingHubProcessCustomerJobs(sb,Math.min(10,3));}catch{}
+  try{processed=await blingHubProcessCustomerJobs(sb,1);}catch{}
 
   const fresh=await blingHubCustomerSnapshot(sb,customerId);
   return {
