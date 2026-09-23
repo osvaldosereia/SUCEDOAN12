@@ -1765,6 +1765,43 @@ async function blingHubPreviewCustomerSync(sb:any,customerIdRaw:any){
     }
   };
 }
+async function blingHubFindOrderByExternalKey(sb:any,token:string,externalKey:string){
+  const q=new URLSearchParams({pagina:"1",limite:"20"});
+  q.append("numerosLojas[]",externalKey);
+  const r=await blingHubGet(sb,token,"/pedidos/vendas?"+q.toString());
+  if(!r.ok)return {ok:false,status:r.status,match:null,matches:[]};
+  const rows=(Array.isArray(r.data?.data)?r.data.data:[])
+    .filter((x:any)=>clean(x?.numeroLoja,120)===externalKey);
+  if(rows.length===1)return {ok:true,status:r.status,match:rows[0],matches:rows};
+  return {ok:true,status:r.status,match:null,matches:rows};
+}
+async function blingHubCreateOrderOnce(sb:any,token:string,payload:any){
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(BLING_API_BASE+"/pedidos/vendas",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},
+      body:JSON.stringify(payload),
+      signal:AbortSignal.timeout(15000)
+    });
+    const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    const providerDetails=Array.isArray(data?.error?.fields)
+      ? data.error.fields.slice(0,20).map((x:any)=>({
+          field:clean(x?.field||x?.name||x?.path,120),
+          message:clean(x?.message||x?.description||x?.error,240)
+        }))
+      : [];
+    return {
+      ok:r.ok,status:r.status,data,
+      error:clean(data?.error?.message||data?.error?.description||data?.error||raw,500),
+      provider_details:providerDetails,
+      uncertain:false
+    };
+  }catch(e){
+    return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
+  }
+}
+
 async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
   const sourceOrderId=clean(payload?.source_order_id,80);
@@ -1901,6 +1938,120 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
     },
     desired_order:orderPayload
   };
+}
+
+async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
+  const worker="bling-order-edge-"+crypto.randomUUID();
+  const limit=Math.max(1,Math.min(5,Number(limitRaw||1)||1));
+  const claim=await sb.rpc("claim_bling_hub_jobs_v2",{p_worker:worker,p_domains:["order"],p_limit:limit,p_lease_seconds:300});
+  if(claim.error)throw claim.error;
+  const jobs=claim.data||[];
+  const summary:any={ok:true,claimed:jobs.length,processed:0,synced:0,review_required:0,retry:0,failed:0,existing:0,created:0};
+  if(!jobs.length)return summary;
+  const token=await blingHubOauth(sb);
+
+  for(const job of jobs){
+    summary.processed++;
+    try{
+      if(job.operation!=="sync_order"){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"unsupported_operation",p_error_message:"Unsupported order operation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+
+      const preview=await blingHubPreviewOrderSync(sb,job.payload);
+      if(!preview.ok||!preview.ready){
+        await sb.rpc("finish_bling_hub_job_v2",{
+          p_job_id:job.id,p_status:"review_required",
+          p_result:{blockers:preview.blockers||[],unresolved_products:preview.unresolved_products||[],totals:preview.totals||{}},
+          p_error_code:"order_not_ready",p_error_message:"Order snapshot failed Bling readiness checks",
+          p_http_status:null,p_retry_seconds:120,p_provider_id:null
+        });
+        summary.review_required++;continue;
+      }
+
+      const externalKey=String(preview.external_key);
+      const existing=await blingHubFindOrderByExternalKey(sb,token,externalKey);
+      if(!existing.ok){
+        const st=existing.status===429||existing.status>=500?"retry":"review_required";
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:st,p_result:{external_key:externalKey},p_error_code:"order_reconcile_http_"+existing.status,p_error_message:"Could not reconcile Bling order before create",p_http_status:existing.status,p_retry_seconds:120,p_provider_id:null});
+        summary[st]++;continue;
+      }
+      if(existing.matches.length>1){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{external_key:externalKey,match_count:existing.matches.length},p_error_code:"duplicate_external_order_key",p_error_message:"More than one Bling order has the same external key",p_http_status:200,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+
+      let blingOrderId=Number(existing.match?.id||0)||null;
+      let creationResult:any=null;
+      if(!blingOrderId){
+        creationResult=await blingHubCreateOrderOnce(sb,token,preview.desired_order);
+        if(!creationResult.ok){
+          if(creationResult.status===429){
+            await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"retry",p_result:{external_key:externalKey},p_error_code:"order_create_rate_limited",p_error_message:creationResult.error||"Bling rate limited order creation",p_http_status:429,p_retry_seconds:120,p_provider_id:null});
+            summary.retry++;continue;
+          }
+          // POST creation is not blindly retried. Reconcile first because the outcome may be ambiguous.
+          await sleep(1200);
+          const recovery=await blingHubFindOrderByExternalKey(sb,token,externalKey);
+          if(recovery.ok&&recovery.matches.length===1){
+            blingOrderId=Number(recovery.match?.id||0)||null;
+          }else{
+            await sb.rpc("finish_bling_hub_job_v2",{
+              p_job_id:job.id,p_status:"review_required",
+              p_result:{external_key:externalKey,provider_details:creationResult.provider_details||[],creation_uncertain:Boolean(creationResult.uncertain||creationResult.status>=500)},
+              p_error_code:creationResult.uncertain||creationResult.status>=500?"order_creation_uncertain":"order_create_http_"+creationResult.status,
+              p_error_message:creationResult.error||"Bling order creation failed",
+              p_http_status:creationResult.status||null,p_retry_seconds:120,p_provider_id:null
+            });
+            summary.review_required++;continue;
+          }
+        }else{
+          blingOrderId=Number(creationResult.data?.data?.id||0)||null;
+          if(!blingOrderId){
+            await sleep(1200);
+            const recovery=await blingHubFindOrderByExternalKey(sb,token,externalKey);
+            if(recovery.ok&&recovery.matches.length===1)blingOrderId=Number(recovery.match?.id||0)||null;
+          }
+        }
+      }
+
+      if(!blingOrderId){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{external_key:externalKey},p_error_code:"bling_order_id_missing",p_error_message:"Bling order outcome could not be identified safely",p_http_status:creationResult?.status||null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+
+      const detail=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+      if(!detail.ok){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{external_key:externalKey,bling_order_id:blingOrderId},p_error_code:"post_create_verify_http_"+detail.status,p_error_message:"Bling order exists but verification failed",p_http_status:detail.status,p_retry_seconds:120,p_provider_id:String(blingOrderId)});
+        summary.review_required++;continue;
+      }
+      const remote=detail.data?.data||{};
+      const remoteKey=clean(remote?.numeroLoja,120);
+      const remoteTotal=Math.round(Number(remote?.total||0)*100);
+      const expectedTotal=Number(preview.totals?.order_total_cents||0);
+      if(remoteKey!==externalKey||Math.abs(remoteTotal-expectedTotal)>1){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{external_key:externalKey,bling_order_id:blingOrderId,remote_key_matches:remoteKey===externalKey,total_matches:Math.abs(remoteTotal-expectedTotal)<=1},p_error_code:"post_create_order_mismatch",p_error_message:"Bling order verification did not match local snapshot",p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingOrderId)});
+        summary.review_required++;continue;
+      }
+
+      const now=new Date().toISOString();
+      const link=await sb.from("bling_hub_entity_links_v2").upsert({
+        source_system:"vitrine_qx",entity_type:"order",source_id:job.source_id,bling_id:blingOrderId,
+        identity_kind:"numeroLoja",identity_value:externalKey,status:"matched",last_verified_at:now,updated_at:now,
+        metadata:{verified:true,total_cents:expectedTotal,created_by_hub:!existing.match,make_used:false}
+      },{onConflict:"source_system,entity_type,source_id"});
+      if(link.error)throw link.error;
+
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_order_id:blingOrderId,external_key:externalKey,verified:true,created:!existing.match},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingOrderId)});
+      summary.synced++;
+      if(existing.match){summary.existing++;}else{summary.created++;}
+    }catch(e){
+      const msg=clean((e as Error)?.message||e,500);
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"order_worker_exception",p_error_message:msg,p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+      summary.review_required++;
+    }
+  }
+  return summary;
 }
 
 async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
@@ -2158,6 +2309,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="preview_order_sync"){
         const result=await blingHubPreviewOrderSync(sb,body?.payload);
         return json(result,result.ok?200:409);
+      }
+      if(subaction==="process_order_jobs"){
+        const result=await blingHubProcessOrderJobs(sb,body?.limit);
+        return json(result,200);
       }
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
