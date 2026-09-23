@@ -1005,10 +1005,19 @@ async function orderDetail(id:string) {
     .maybeSingle();
   if(historySyncError)throw historySyncError;
 
+  let blingLink:any=null;
+  try{
+    const remote=await blingHubControl("order_link_status",{source_order_id:id});
+    if(!(remote as any).error)blingLink=(remote as any).data||null;
+  }catch(e){
+    console.error("bling_order_link_status_failed",String((e as Error)?.message||e));
+  }
+
   return {
     order,
     customer,
     history_sync:historySync??{state:"pending",attempt_count:0,last_error:null},
+    bling_link:blingLink,
     items:(items??[]).map((item:any)=>{
       const p=pMap.get(item.product_id);
       return {
@@ -1132,7 +1141,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","preview_customer_sync","preview_order_sync","fiscal_status","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
