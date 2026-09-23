@@ -1416,6 +1416,20 @@ async function retryHistorySync(payload:any) {
   return {order_id:id,history_synced:true,remote_order_id:result.order_id??null,remote_customer_id:result.customer_id??null};
 }
 
+function orderTransitionAllowed(current:string,next:string){
+  if(current===next)return true;
+  const allowed:Record<string,string[]>={
+    created:["confirmed","cancelled"],
+    confirmed:["processing","cancelled"],
+    processing:["ready","cancelled"],
+    ready:["out_for_delivery","cancelled"],
+    out_for_delivery:["delivered","cancelled"],
+    delivered:[],
+    cancelled:["created","confirmed"]
+  };
+  return (allowed[current]??[]).includes(next);
+}
+
 async function updateOrder(payload:any) {
   const id=uuid(payload?.id);
   if (!id) return { error:"invalid_order",status:400 };
@@ -1436,6 +1450,12 @@ async function updateOrder(payload:any) {
   if (payload?.status !== undefined) {
     const status=text(payload.status,40);
     if (!allowedStatuses.has(status)) return {error:"invalid_status",status:400};
+    if(!orderTransitionAllowed(String(currentOrder.status||""),status)){
+      return {error:"invalid_status_transition",status:409,current_status:currentOrder.status,requested_status:status};
+    }
+    if(["processing","ready"].includes(status)&&currentPayment.stock_consumed!==true){
+      return {error:"stock_not_consumed_for_status",status:409,current_status:currentOrder.status,requested_status:status};
+    }
 
     const storefrontReserved=currentPayment.source==="vitrine"&&currentPayment.stock_reserved===true;
     const alreadyReleased=currentPayment.stock_released===true;
