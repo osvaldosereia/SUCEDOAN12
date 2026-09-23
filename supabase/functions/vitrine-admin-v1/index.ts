@@ -724,14 +724,75 @@ async function orderDetail(id:string) {
   };
 }
 
+async function orderStockReservationItems(orderId:string) {
+  const {data:items,error:iErr}=await db.from("order_items")
+    .select("id,item_kind,product_id,quantity")
+    .eq("organization_id",ORG_ID)
+    .eq("order_id",orderId);
+  if(iErr)throw iErr;
+  const rows=items??[];
+  const basketItemIds=rows.filter((x:any)=>x.item_kind==="basket").map((x:any)=>x.id);
+  let components:any[]=[];
+  if(basketItemIds.length){
+    const {data,error}=await db.from("order_item_components")
+      .select("order_item_id,product_id,quantity")
+      .eq("organization_id",ORG_ID)
+      .in("order_item_id",basketItemIds);
+    if(error)throw error;
+    components=data??[];
+  }
+  const basketQty=new Map(rows.filter((x:any)=>x.item_kind==="basket").map((x:any)=>[x.id,Number(x.quantity||0)]));
+  const demand=new Map<string,number>();
+  const add=(productId:string,quantity:number)=>{
+    if(!productId||quantity<=0)return;
+    demand.set(productId,Math.round(((demand.get(productId)??0)+quantity)*1000)/1000);
+  };
+  for(const item of rows)if(item.item_kind==="product"&&item.product_id)add(item.product_id,Number(item.quantity||0));
+  for(const c of components)add(c.product_id,Number(c.quantity||0)*Number(basketQty.get(c.order_item_id)||0));
+  return [...demand.entries()].map(([product_id,quantity])=>({product_id,quantity})).sort((a,b)=>a.product_id.localeCompare(b.product_id));
+}
+
 async function updateOrder(payload:any) {
   const id=uuid(payload?.id);
   if (!id) return { error:"invalid_order",status:400 };
+
+  const {data:currentOrder,error:currentErr}=await db.from("orders")
+    .select("id,status,payment_method_snapshot,delivery_address_snapshot")
+    .eq("organization_id",ORG_ID)
+    .eq("id",id)
+    .maybeSingle();
+  if(currentErr)throw currentErr;
+  if(!currentOrder)return {error:"order_not_found",status:404};
+
   const patch:any={};
+  const currentPayment=currentOrder.payment_method_snapshot&&typeof currentOrder.payment_method_snapshot==="object"
+    ? currentOrder.payment_method_snapshot : {};
+  let stockReleasedChange:null|boolean=null;
   const allowedStatuses=new Set(["created","confirmed","processing","ready","out_for_delivery","delivered","cancelled"]);
   if (payload?.status !== undefined) {
     const status=text(payload.status,40);
     if (!allowedStatuses.has(status)) return {error:"invalid_status",status:400};
+
+    const storefrontReserved=currentPayment.source==="vitrine"&&currentPayment.stock_reserved===true;
+    const alreadyReleased=currentPayment.stock_released===true;
+    if(storefrontReserved&&status==="cancelled"&&currentOrder.status!=="cancelled"&&!alreadyReleased){
+      const stockItems=await orderStockReservationItems(id);
+      if(stockItems.length){
+        const {data:released,error}=await db.rpc("release_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
+        if(error)throw error;
+        if(!released?.ok)return {error:String(released?.error||"stock_release_failed"),status:409};
+      }
+      stockReleasedChange=true;
+    }else if(storefrontReserved&&currentOrder.status==="cancelled"&&status!=="cancelled"&&alreadyReleased){
+      const stockItems=await orderStockReservationItems(id);
+      if(stockItems.length){
+        const {data:reserved,error}=await db.rpc("reserve_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
+        if(error)throw error;
+        if(!reserved?.ok)return {error:String(reserved?.error||"insufficient_stock"),status:409};
+      }
+      stockReleasedChange=false;
+    }
+
     patch.status=status;
     if (status==="confirmed") patch.confirmed_at=new Date().toISOString();
     if (status==="delivered") patch.delivered_at=new Date().toISOString();
@@ -743,6 +804,7 @@ async function updateOrder(payload:any) {
     if (snap && uuid(snap.id)) {
       const a=snap.address && typeof snap.address==="object" ? snap.address : {};
       patch.delivery_address_snapshot={
+        ...(currentOrder.delivery_address_snapshot&&typeof currentOrder.delivery_address_snapshot==="object"?currentOrder.delivery_address_snapshot:{}),
         source_customer_id:uuid(snap.id),
         customer_name:text(snap.display_name,180),
         recipient_name:text(snap.display_name,180),
@@ -792,7 +854,10 @@ async function updateOrder(payload:any) {
 
   if (payload?.payment_method !== undefined) {
     const payment=text(payload.payment_method,80);
-    patch.payment_method_snapshot={method:payment,label:payment,timing:"on_delivery",source:"admin"};
+    patch.payment_method_snapshot={...currentPayment,method:payment,label:payment,timing:"on_delivery",source:currentPayment.source||"admin"};
+  }
+  if(stockReleasedChange!==null){
+    patch.payment_method_snapshot={...(patch.payment_method_snapshot??currentPayment),stock_released:stockReleasedChange};
   }
 
   const { data,error }=await db.from("orders")
@@ -803,7 +868,7 @@ async function updateOrder(payload:any) {
     .maybeSingle();
   if (error) throw error;
   if (!data) return {error:"order_not_found",status:404};
-  return {order_id:data.id};
+  return {order_id:data.id,stock_released:stockReleasedChange};
 }
 
 Deno.serve(async (req: Request) => {
