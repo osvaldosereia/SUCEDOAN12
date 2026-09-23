@@ -655,11 +655,21 @@ async function listOrders() {
     customers=res.data ?? [];
   }
   const cMap=new Map(customers.map((c:any)=>[c.id,c.display_name]));
+  const orderIds=rows.map((r:any)=>r.id);
+  const syncMap=new Map<string,any>();
+  if(orderIds.length){
+    const sync=await db.from("vitrine_history_sync_outbox")
+      .select("order_id,state,attempt_count,last_attempt_at,last_synced_at,last_error,remote_order_id,remote_customer_id")
+      .in("order_id",orderIds);
+    if(sync.error)throw sync.error;
+    for(const row of sync.data??[])syncMap.set(row.order_id,row);
+  }
   return rows.map((r:any)=>({
     ...r,
     customer_name:r.customer_id
       ? cMap.get(r.customer_id)??""
-      : r.delivery_address_snapshot?.customer_name ?? r.delivery_address_snapshot?.recipient_name ?? ""
+      : r.delivery_address_snapshot?.customer_name ?? r.delivery_address_snapshot?.recipient_name ?? "",
+    history_sync:syncMap.get(r.id)??{state:"pending",attempt_count:0,last_error:null}
   }));
 }
 
@@ -751,9 +761,16 @@ async function orderDetail(id:string) {
     groupedComponents.get(c.order_item_id)!.push({...c,image_url:p?.image_url??"",product_name:p?.name??c.name_snapshot,gondola_number:locationMap.get(c.product_id)??null});
   }
 
+  const {data:historySync,error:historySyncError}=await db.from("vitrine_history_sync_outbox")
+    .select("order_id,state,attempt_count,last_attempt_at,last_synced_at,last_error,remote_order_id,remote_customer_id")
+    .eq("order_id",id)
+    .maybeSingle();
+  if(historySyncError)throw historySyncError;
+
   return {
     order,
     customer,
+    history_sync:historySync??{state:"pending",attempt_count:0,last_error:null},
     items:(items??[]).map((item:any)=>{
       const p=pMap.get(item.product_id);
       return {
@@ -854,6 +871,21 @@ async function consumeOrderStock(payload:any) {
 
   const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
   return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok)};
+}
+
+async function retryHistorySync(payload:any) {
+  const id=uuid(payload?.id);
+  if(!id)return {error:"invalid_order",status:400};
+  const {data:order,error}=await db.from("orders")
+    .select("id")
+    .eq("organization_id",ORG_ID)
+    .eq("id",id)
+    .maybeSingle();
+  if(error)throw error;
+  if(!order)return {error:"order_not_found",status:404};
+  const result=await syncVitrineOrderHistory(db,id,ORG_ID);
+  if(!result.ok)return {error:"history_sync_failed",detail:result.error,status:502};
+  return {order_id:id,history_synced:true,remote_order_id:result.order_id??null,remote_customer_id:result.customer_id??null};
 }
 
 async function updateOrder(payload:any) {
@@ -1044,6 +1076,11 @@ Deno.serve(async (req: Request) => {
       }
       if (action==="order_consume_stock") {
         const result=await consumeOrderStock(payload);
+        if (result.error) return json(req,{ok:false,...result},result.status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="history_sync_retry") {
+        const result=await retryHistorySync(payload);
         if (result.error) return json(req,{ok:false,...result},result.status);
         return json(req,{ok:true,...result});
       }
