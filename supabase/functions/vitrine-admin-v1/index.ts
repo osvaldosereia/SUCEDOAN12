@@ -1141,6 +1141,9 @@ async function consumeOrderStock(payload:any) {
   const payment=order.payment_method_snapshot&&typeof order.payment_method_snapshot==="object"
     ? order.payment_method_snapshot : {};
 
+  const blingPreflight=await validateBlingBeforeStockMutation(id);
+  if(blingPreflight)return blingPreflight;
+
   if(payment.stock_model==="reservation_v2"){
     const {data:consumed,error}=await db.rpc("consume_storefront_order_stock_v2",{
       p_organization_id:ORG_ID,p_order_id:id
@@ -1426,6 +1429,49 @@ async function buildBlingOrderSnapshot(orderId:string){
     issues:[...new Set(issues)],
     payload_version:1
   };
+}
+
+function blingSeparationBlockingReasons(preview:any){
+  if(!preview||typeof preview!=="object")return ["preview_unavailable"];
+  const expected=new Set(["first_separation_required","stock_not_consumed"]);
+  const blockers=Array.isArray(preview.write_blockers)&&preview.write_blockers.length
+    ? preview.write_blockers
+    : (Array.isArray(preview.blockers)?preview.blockers:[]);
+  return [...new Set(blockers.map((x:any)=>String(x||"")).filter(Boolean))]
+    .filter((code:string)=>!expected.has(code));
+}
+
+async function validateBlingBeforeStockMutation(orderId:string){
+  try{
+    const preview=await previewBlingOrderSync(orderId);
+    if((preview as any)?.error){
+      return {
+        error:"bling_preflight_unavailable",
+        detail:String((preview as any).error||"bling_preflight_unavailable"),
+        status:Number((preview as any).status||503)
+      };
+    }
+    const blockers=blingSeparationBlockingReasons(preview);
+    if(blockers.length){
+      return {
+        error:"bling_preflight_blocked",
+        blockers,
+        status:409,
+        preview:{
+          source_order_id:(preview as any)?.source_order_id||orderId,
+          unresolved_products:(preview as any)?.unresolved_products||[],
+          customer_linked:Boolean((preview as any)?.customer_linked)
+        }
+      };
+    }
+    return null;
+  }catch(e){
+    return {
+      error:"bling_preflight_unavailable",
+      detail:String((e as Error)?.message||e),
+      status:503
+    };
+  }
 }
 
 async function previewBlingOrderSync(orderId:string){
