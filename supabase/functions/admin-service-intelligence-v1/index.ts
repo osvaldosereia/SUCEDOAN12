@@ -2686,8 +2686,36 @@ function blingHubOrderManagedProjection(order:any){
       descricao:clean(i?.descricao,220),
       quantidade:Math.round(Number(i?.quantidade||0)*1000)/1000,
       valor_cents:moneyCents(i?.valor)
-    }))
+    })).sort((a:any,b:any)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))
   };
+}
+function blingHubOrderPutPayload(current:any,desired:any){
+  const keep=["dataSaida","dataPrevista","numeroPedidoCompra","loja","vendedor","situacao","unidadeNegocio","categoria","tributacao","intermediador","taxas","parcelas"];
+  const payload:any={};
+  for(const key of keep){
+    if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=current[key];
+  }
+  Object.assign(payload,desired||{});
+  payload.transporte={
+    ...(current?.transporte&&typeof current.transporte==="object"?current.transporte:{}),
+    ...(desired?.transporte&&typeof desired.transporte==="object"?desired.transporte:{})
+  };
+  if(desired?.transporte?.etiqueta){
+    payload.transporte.etiqueta={
+      ...(current?.transporte?.etiqueta&&typeof current.transporte.etiqueta==="object"?current.transporte.etiqueta:{}),
+      ...desired.transporte.etiqueta
+    };
+  }
+  const currentItems=Array.isArray(current?.itens)?current.itens:[];
+  if(Array.isArray(desired?.itens)){
+    payload.itens=desired.itens.map((item:any)=>{
+      const productId=Number(item?.produto?.id||0);
+      const previous=currentItems.find((x:any)=>Number(x?.produto?.id||0)===productId);
+      return previous?.naturezaOperacao?{...item,naturezaOperacao:previous.naturezaOperacao}:item;
+    });
+  }
+  delete payload.id;
+  return payload;
 }
 function blingHubOrderManagedDiff(current:any,desired:any){
   const a=blingHubOrderManagedProjection(current),b=blingHubOrderManagedProjection(desired);
@@ -2888,8 +2916,9 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
             summary.review_required++;
             continue;
           }
+          const putPayload=blingHubOrderPutPayload(remote,preview.desired_order);
           const write=await blingHubWriteIdempotent(
-            sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)),"PUT",preview.desired_order
+            sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)),"PUT",putPayload
           );
           if(!write.ok){
             const st=write.status===429||write.status>=500||write.status===0?"retry":"review_required";
