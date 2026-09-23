@@ -11,7 +11,7 @@ on:
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/migrations/*stock*'
-      - '.github/workflows/comprar-root-home.yml'
+      - 'scripts/test-vitrine-customer-history-v1.mjs'\n      - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'\n      - 'supabase/functions/admin-service-intelligence-v1/**'\n      - 'supabase/migrations/*vitrine_history*'\n      - '.github/workflows/comprar-root-home.yml'
   push:
     branches: [main]
     paths:
@@ -23,7 +23,7 @@ on:
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/migrations/*stock*'
-      - '.github/workflows/comprar-root-home.yml'
+      - 'scripts/test-vitrine-customer-history-v1.mjs'\n      - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'\n      - 'supabase/functions/admin-service-intelligence-v1/**'\n      - 'supabase/migrations/*vitrine_history*'\n      - '.github/workflows/comprar-root-home.yml'
 
 permissions:
   contents: read
@@ -41,4 +41,4 @@ jobs:
         run: |
           node scripts/test-comprar-root-home-v1.mjs
           node scripts/test-vitrine-whatsapp-handoff-v1.mjs
-          node scripts/test-vitrine-sales-rules-v1.mjs
+          node scripts/test-vitrine-sales-rules-v1.mjs\n          node scripts/test-vitrine-customer-history-v1.mjs
