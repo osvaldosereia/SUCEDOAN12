@@ -1842,6 +1842,19 @@ async function updateOrder(payload:any) {
       ...(currentPayment.stock_model==="reservation_v2"&&stockReleasedChange===true?{stock_consumed:false}: {})
     };
   }
+  if(requestedStatus==="cancelled"&&currentOrder.status!=="cancelled"){
+    const cancellationReason=text(payload?.cancellation_reason,120)||"Não informado";
+    const cancellationNote=text(payload?.cancellation_note,500);
+    patch.payment_method_snapshot={
+      ...(patch.payment_method_snapshot??currentPayment),
+      cancellation:{
+        reason:cancellationReason,
+        note:cancellationNote||null,
+        at:new Date().toISOString(),
+        source:"vitrine_admin"
+      }
+    };
+  }
 
   if(requestedStatus&&["confirmed","processing","ready","out_for_delivery","delivered"].includes(requestedStatus)){
     const candidateDelivery=Object.prototype.hasOwnProperty.call(patch,"delivery_address_snapshot")
