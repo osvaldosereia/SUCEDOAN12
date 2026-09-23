@@ -1695,7 +1695,6 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
           await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,created:true,verified:true,gtin},p_error_code:null,p_error_message:null,p_http_status:created.status||200,p_retry_seconds:120,p_provider_id:String(blingId)});
           summary.synced++;continue;
         }
-        }
       }
 
       if(!blingId){
@@ -1712,7 +1711,7 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
       const desired=blingHubProductPayload(current,local);
       const changes=blingHubManagedProductDiff(current,desired);
       if(!Object.keys(changes).length){
-        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:false,verified:true,created:createdContact},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:false,verified:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
         summary.synced++;continue;
       }
       const write=await blingHubWriteIdempotent(sb,token,"/produtos/"+encodeURIComponent(String(blingId)),"PUT",desired);
@@ -1732,7 +1731,7 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
         await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{changes,remaining},p_error_code:"post_write_mismatch",p_error_message:"Bling product differs after update",p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
         summary.review_required++;continue;
       }
-      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:true,changes,verified:true,created:createdContact},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:true,changes,verified:true},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});
       summary.synced++;
     }catch(e){
       const msg=clean((e as Error)?.message||e,500);
