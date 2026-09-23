@@ -78,6 +78,7 @@
     .order-stage{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:11px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.order-stage>span{font-size:12px;color:var(--muted);font-weight:700}.order-stage b{font-size:13px}
     .order-action-zone{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:12px;margin-top:10px}.order-action-zone strong{display:block;margin-bottom:4px}.order-action-zone small{display:block;color:var(--muted);line-height:1.4}
     .integration-details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px}.integration-details summary{cursor:pointer;padding:12px 0;font-weight:700}.integration-details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}.integration-details .integration-body{padding-bottom:12px}
+    .dispatch-grid{display:grid;gap:14px}.dispatch-section{overflow:hidden}.dispatch-head{padding:13px 14px;margin:0;border-bottom:1px solid var(--line)}.dispatch-head>div{min-width:0}.dispatch-head span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-head>b{font-size:20px}.dispatch-row{grid-template-columns:90px minmax(0,1.5fr) minmax(120px,.6fr) 105px}.dispatch-row:hover{background:#f8fbff}
     .today-order-row{grid-template-columns:90px minmax(0,1fr) 150px 80px}
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
@@ -86,7 +87,7 @@
       .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
       .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
-      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
+      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:72px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
     }
   
     /* Material-like operational shell */
@@ -156,12 +157,13 @@
     <header class="top">
       <div class="top-row wrap">
         <img class="logo" src="/img/logoantonia5.png" width="88" height="40" alt="Dona Antônia" fetchpriority="high">
-        <div class="brand"><strong>Dona Antônia · Operação</strong><small>Vitrine, estoque e separação</small></div>
+        <div class="brand"><strong>Dona Antônia · Operação</strong><small>Pedidos, estoque, expedição e entrega</small></div>
         <a class="store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
       </div>
       <nav class="tabs wrap" aria-label="Admin">
         <button class="tab" data-tab="today" type="button">Hoje</button>
         <button class="tab" data-tab="orders" type="button">Pedidos</button>
+        <button class="tab" data-tab="expedition" type="button">Expedição</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
         <button class="tab" data-tab="expiry" type="button">Validades</button>
         <button class="tab" data-tab="balance" type="button">Balanço</button>
@@ -224,6 +226,7 @@
     if(tab==='customers')renderCustomers();
     if(tab==='bling')renderBling();
     if(tab==='orders')renderOrders();
+    if(tab==='expedition')renderExpedition();
     if(tab==='more')renderMore();
   }
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
@@ -234,8 +237,21 @@
     return '<span class="pill '+cls+'">'+esc(map[status]||status||'—')+'</span>';
   }
 
+  function orderProblemReasons(o){
+    const reasons=[];
+    if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
+    if(['delivered','cancelled'].includes(o?.status))return reasons;
+    const a=o?.delivery_address_snapshot||{};
+    const customerName=o?.customer_name||a.customer_name||a.recipient_name||'';
+    if(!String(customerName).trim())reasons.push('Cliente não identificado');
+    if(!String(a.street||'').trim()||!String(a.number||'').trim()||!String(a.city||'').trim()||!String(a.state||'').trim())reasons.push('Endereço incompleto');
+    const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
+    if(!String(payment).trim())reasons.push('Pagamento não informado');
+    return reasons;
+  }
   function orderNextAction(o){
-    if(o?.history_sync?.state==='failed')return 'Resolver sincronização';
+    const problems=orderProblemReasons(o);
+    if(problems.length)return 'Corrigir: '+problems[0];
     const consumed=o?.payment_method_snapshot?.stock_consumed===true;
     const map={
       created:'Confirmar pedido',
@@ -255,7 +271,7 @@
     if(filter==='ready')return o.status==='ready';
     if(filter==='delivery')return o.status==='out_for_delivery';
     if(filter==='delivered')return o.status==='delivered';
-    if(filter==='problems')return o?.history_sync?.state==='failed';
+    if(filter==='problems')return orderProblemReasons(o).length>0;
     return true;
   }
   function orderFilterCount(filter){return state.orders.filter(o=>orderFilterMatch(o,filter)).length}
@@ -288,6 +304,47 @@
       if($('#retryToday'))$('#retryToday').onclick=renderToday;
     }
   }
+  function expeditionRow(o){
+    const a=o.delivery_address_snapshot||{};
+    const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
+    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    return '<button class="history-row dispatch-row" type="button" data-expedition-order="'+esc(o.id)+'">'+
+      '<strong>#'+esc(shortOrder(o.order_number))+'</strong>'+
+      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small></div>'+
+      '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small></div>'+
+      '<span>'+statusPill(o.status)+'</span>'+
+    '</button>';
+  }
+  function expeditionSection(title,subtitle,rows,empty){
+    return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
+      '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
+  }
+  async function renderExpedition(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Expedição</h1><p>Pedidos prontos, em entrega e entregues em uma única fila operacional.</p></div><button class="secondary" id="refreshExpedition">Atualizar</button></div><div id="expeditionBody"><div class="loading">Carregando expedição…</div></div>';
+    $('#refreshExpedition').onclick=renderExpedition;
+    try{
+      const data=await api('orders');state.orders=data.orders||[];
+      const ready=state.orders.filter(o=>o.status==='ready');
+      const delivery=state.orders.filter(o=>o.status==='out_for_delivery');
+      const delivered=state.orders.filter(o=>o.status==='delivered').slice(0,10);
+      $('#expeditionBody').innerHTML='<div class="ops-cards">'+
+        '<div class="ops-card"><small>Aguardando saída</small><strong>'+ready.length+'</strong><span>Pedidos já separados</span></div>'+
+        '<div class="ops-card"><small>Em entrega</small><strong>'+delivery.length+'</strong><span>Pedidos na rua</span></div>'+
+        '<div class="ops-card"><small>Entregues</small><strong>'+state.orders.filter(o=>o.status==='delivered').length+'</strong><span>Fechamento e fiscal</span></div>'+
+      '</div>'+
+      '<div class="dispatch-grid">'+
+        expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
+        expeditionSection('Em entrega','acompanhar até a confirmação',delivery,'Nenhum pedido em entrega.')+
+        expeditionSection('Últimos entregues','pagamento e fiscal',delivered,'Nenhuma entrega concluída.')+
+      '</div>';
+      document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
+    }catch(e){
+      $('#expeditionBody').innerHTML='<div class="empty">Não consegui carregar a expedição. <button class="text" id="retryExpedition">Tentar novamente</button></div>';
+      if($('#retryExpedition'))$('#retryExpedition').onclick=renderExpedition;
+    }
+  }
+
   function renderMore(){
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Mais</h1><p>Configurações e ferramentas que não fazem parte da rotina principal.</p></div></div>'+
@@ -1101,10 +1158,10 @@
   }
   function orderRow(o){
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
-    const syncFailed=o.history_sync?.state==='failed';
+    const problems=orderProblemReasons(o);
     const next=orderNextAction(o);
     return '<div class="list-row orders-layout">'+
-      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(syncFailed?'<span class="sub" style="color:#b3261e">Histórico pendente · precisa de atenção</span>':'')+'</div>'+
+      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+'</span>':'')+'</div>'+
       '<span class="desktop-extra">'+esc(dateTime(o.created_at))+'</span>'+
       '<div class="mobile-wide"><span class="row-title">'+esc(o.customer_name||'Sem cliente')+'</span><span class="sub">'+esc(payment)+' · '+esc(next)+'</span></div>'+
       '<span class="money">'+money(o.total_cents)+'</span>'+
@@ -1342,14 +1399,17 @@
 
   function orderActionButtonsHtml(o){
     const consumed=o.payment_method_snapshot?.stock_consumed===true;
+    const problems=orderProblemReasons(o);
+    const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o.status);
     let primary='';
-    if(o.status==='created')primary='<button class="primary" id="advanceOrder" data-next="confirmed" type="button">Confirmar pedido</button>';
-    else if(o.status==='confirmed'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Iniciar separação</button>';
-    else if(o.status==='confirmed'&&consumed)primary='<button class="primary" id="advanceOrder" data-next="processing" type="button">Continuar separação</button>';
+    if(mustFix)primary='<button class="primary" type="button" disabled>Corrija os dados antes de avançar</button>';
+    if(!mustFix&&o.status==='created')primary='<button class="primary" id="advanceOrder" data-next="confirmed" type="button">Confirmar pedido</button>';
+    else if(!mustFix&&o.status==='confirmed'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Iniciar separação</button>';
+    else if(!mustFix&&o.status==='confirmed'&&consumed)primary='<button class="primary" id="advanceOrder" data-next="processing" type="button">Continuar separação</button>';
     else if(o.status==='processing'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Regularizar separação</button>';
     else if(o.status==='processing')primary='<button class="primary" id="advanceOrder" data-next="ready" type="button">Finalizar separação</button>';
-    else if(o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
-    else if(o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
+    else if(!mustFix&&o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
+    else if(!mustFix&&o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
     const docs=[];
     if(consumed)docs.push('<button class="secondary" id="reprintSeparation" type="button">Reimprimir separação</button>');
     if(['ready','out_for_delivery','delivered'].includes(o.status))docs.push('<button class="secondary" id="printDelivery" type="button">Imprimir via do entregador</button>');
