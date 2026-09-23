@@ -469,7 +469,8 @@
     const o=state.orders.find(x=>x.id===id);
     if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
     const name=o.customer_name||'Cliente';
-    const ok=confirm('Confirmar entrega do pedido #'+shortOrder(o.order_number)+'?\n\n'+name+' · '+money(o.total_cents));
+    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    const ok=confirm('Confirmar entrega do pedido #'+shortOrder(o.order_number)+'?\n\n'+name+' · '+money(o.total_cents)+' · '+payment);
     if(!ok)return;
     const btn=document.querySelector('[data-confirm-delivery="'+CSS.escape(id)+'"]');
     if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
@@ -478,10 +479,24 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id,status:'delivered'})
       });
+      let paymentConfirmed=false;
+      const confirmPayment=confirm('Entrega confirmada.\n\nO pagamento de '+money(o.total_cents)+' via '+payment+' também foi recebido?\n\nOK = confirmar recebimento agora.\nCancelar = deixar pagamento pendente no Fechamento.');
+      if(confirmPayment){
+        try{
+          state.fiscalByOrder[id]=await api('order_fiscal_confirm_payment',{},{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({id,payment_method:payment})
+          });
+          paymentConfirmed=true;
+        }catch(e){
+          delete state.fiscalByOrder[id];
+        }
+      }else{
+        delete state.fiscalByOrder[id];
+      }
       const data=await api('orders');state.orders=data.orders||[];
-      delete state.fiscalByOrder[id];
       paintExpeditionBody();
-      toast('Entrega confirmada · pedido enviado ao Fechamento');
+      toast(paymentConfirmed?'Entrega e recebimento confirmados':'Entrega confirmada · pagamento pendente no Fechamento');
     }catch(e){
       toast(errorMessage(e.message));
       if(btn){btn.disabled=false;btn.textContent='Confirmar entrega'}
