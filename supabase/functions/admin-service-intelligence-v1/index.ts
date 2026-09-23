@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "../_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "../_shared/papoai-commerce-intent-v1.mjs";
 
-const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-vitrine-history-key","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
+const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-vitrine-history-key,x-dona-antonia-bling-hub-key","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=2000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80))?clean(v,80):"";
@@ -989,6 +989,96 @@ async function vitrineGetCustomer(sb:any,id:string){
   return vitrinePublicCustomer(q.data,bundles.get(id));
 }
 
+const BLING_API_BASE="https://api.bling.com.br/Api/v3";
+const BLING_OAUTH_URL="https://api.bling.com.br/oauth/token";
+const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
+
+async function blingHubAuthorized(sb:any,req:Request){
+  const supplied=clean(req.headers.get("x-dona-antonia-bling-hub-key"),200);
+  if(!supplied)return false;
+  const q=await sb.rpc("get_bling_hub_key_v2");
+  if(q.error||!q.data)return false;
+  const a=new TextEncoder().encode(supplied),b=new TextEncoder().encode(String(q.data));
+  if(a.length!==b.length)return false;
+  let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];
+  return diff===0;
+}
+async function blingHubReserveSlot(sb:any){
+  const q=await sb.rpc("reserve_bling_hub_rate_slot_v2",{});
+  if(q.error)throw new Error("rate_slot_failed");
+  const wait=Math.max(0,Number(q.data||0));
+  if(wait)await sleep(wait);
+}
+async function blingHubOauth(sb:any){
+  const owner=crypto.randomUUID();
+  const lock=await sb.rpc("claim_bling_hub_oauth_lock_v2",{p_owner:owner,p_ttl_seconds:90});
+  if(lock.error)throw new Error("oauth_lock_failed");
+  if(lock.data!==true)throw new Error("oauth_busy");
+  try{
+    const c=await sb.rpc("get_bling_api_credentials_v1");
+    if(c.error)throw new Error("credentials_lookup_failed");
+    const clientId=clean(c.data?.client_id,500),clientSecret=clean(c.data?.client_secret,500),refreshToken=clean(c.data?.refresh_token,5000);
+    if(!clientId||!clientSecret||!refreshToken)throw new Error("bling_credentials_missing");
+    await sb.from("bling_hub_runtime_v2").update({last_oauth_check_at:new Date().toISOString(),last_oauth_error:null,updated_at:new Date().toISOString()}).eq("id",1);
+    const basic=btoa(`${clientId}:${clientSecret}`);
+    const body=new URLSearchParams({grant_type:"refresh_token",refresh_token:refreshToken});
+    const r=await fetch(BLING_OAUTH_URL,{method:"POST",headers:{Authorization:`Basic ${basic}`,"Content-Type":"application/x-www-form-urlencoded",Accept:"1.0","enable-jwt":"1"},body,signal:AbortSignal.timeout(10000)});
+    const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    if(!r.ok||!clean(data?.access_token,5000)){
+      await sb.from("bling_hub_runtime_v2").update({last_oauth_error:`oauth_http_${r.status}`,updated_at:new Date().toISOString()}).eq("id",1);
+      throw new Error(`bling_oauth_http_${r.status}`);
+    }
+    const rotated=clean(data?.refresh_token,5000);
+    if(rotated&&rotated!==refreshToken){
+      const save=await sb.rpc("set_bling_api_refresh_token_v1",{p_refresh_token:rotated});
+      if(save.error)throw new Error("refresh_token_persist_failed");
+    }
+    await sb.from("bling_hub_runtime_v2").update({last_oauth_ok_at:new Date().toISOString(),last_oauth_error:null,updated_at:new Date().toISOString()}).eq("id",1);
+    return clean(data.access_token,5000);
+  }finally{
+    await sb.rpc("release_bling_hub_oauth_lock_v2",{p_owner:owner});
+  }
+}
+async function blingHubGet(sb:any,token:string,path:string){
+  await blingHubReserveSlot(sb);
+  const r=await fetch(BLING_API_BASE+path,{headers:{Authorization:`Bearer ${token}`,Accept:"application/json","enable-jwt":"1"},signal:AbortSignal.timeout(10000)});
+  const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+  return {ok:r.ok,status:r.status,data};
+}
+async function blingHubProbeReadonly(sb:any){
+  const runtime=await sb.from("bling_hub_runtime_v2").select("mode,legacy_queues_frozen").eq("id",1).maybeSingle();
+  if(runtime.error||!runtime.data)throw new Error("runtime_unavailable");
+  if(!["observe","homologation","live"].includes(String(runtime.data.mode)))throw new Error("hub_off");
+  const now0=new Date().toISOString();
+  await sb.from("bling_hub_runtime_v2").update({last_readonly_check_at:now0,last_readonly_error:null,updated_at:now0}).eq("id",1);
+  const token=await blingHubOauth(sb);
+  const probes=[
+    {key:"products",path:"/produtos?pagina=1&limite=1"},
+    {key:"contacts",path:"/contatos?pagina=1&limite=1"},
+    {key:"sales_orders",path:"/pedidos/vendas?pagina=1&limite=1"},
+    {key:"deposits",path:"/depositos?pagina=1&limite=100&situacao=1"},
+    {key:"invoice",path:"/nfe?pagina=1&limite=1"}
+  ];
+  const results:any={};let allCore=true;let deposits:any[]=[];
+  for(const probe of probes){
+    const r=await blingHubGet(sb,token,probe.path);
+    results[probe.key]={ok:r.ok,http_status:r.status,insufficient_scope:r.status===403};
+    if(["products","contacts","sales_orders","deposits"].includes(probe.key)&&!r.ok)allCore=false;
+    if(probe.key==="deposits"&&r.ok){
+      const rows=Array.isArray(r.data?.data)?r.data.data:[];
+      deposits=rows.slice(0,20).map((d:any)=>({id:Number(d?.id||0)||null,name:clean(d?.descricao||d?.nome,120)||null,default:d?.padrao===true||d?.padrao===1||d?.padrao==="true"})).filter((d:any)=>d.id);
+    }
+  }
+  const now=new Date().toISOString();
+  await sb.from("bling_hub_runtime_v2").update({
+    last_readonly_ok_at:allCore?now:null,last_readonly_error:allCore?null:"one_or_more_core_probes_failed",
+    metadata:{readonly_probe_version:1,probes:results,deposit_candidates:deposits,probed_at:now},updated_at:now
+  }).eq("id",1);
+  await sb.from("bling_hub_audit_v2").insert({event_type:"readonly_probe",severity:allCore?"info":"warning",details:{probes:results,deposit_candidates:deposits,external_write:false,make_used:false}});
+  const readiness=await sb.rpc("bling_hub_readiness_v2");
+  return {ok:allCore,readonly:true,external_write:false,probes:results,deposit_candidates:deposits,readiness:readiness.data||null};
+}
+
 async function vitrineHistoryAuthorized(sb:any,req:Request){
   const supplied=clean(req.headers.get("x-vitrine-history-key"),200);
   if(!supplied)return false;
@@ -1241,6 +1331,27 @@ Deno.serve(async(req:Request)=>{
       }});
     }catch(e){
       return json({ok:false,error:"product_extra_unavailable",detail:clean((e as Error)?.message,300)},500);
+    }
+  }
+
+  if(action==="vitrine_bling_hub_internal"){
+    if(!(await blingHubAuthorized(sb,req)))return json({ok:false,error:"unauthorized"},401);
+    const subaction=clean(body?.subaction||"readiness",60).toLowerCase();
+    try{
+      if(subaction==="readiness"){
+        const r=await sb.rpc("bling_hub_readiness_v2");
+        if(r.error)throw r.error;
+        return json({ok:true,readiness:r.data});
+      }
+      if(subaction==="probe_readonly"){
+        const result=await blingHubProbeReadonly(sb);
+        return json(result,result.ok?200:207);
+      }
+      return json({ok:false,error:"writes_disabled",mode:"observe"},409);
+    }catch(e){
+      const message=clean((e as Error)?.message||e,300);
+      await sb.from("bling_hub_runtime_v2").update({last_readonly_error:message,updated_at:new Date().toISOString()}).eq("id",1);
+      return json({ok:false,error:message,readonly:true,external_write:false},502);
     }
   }
 
