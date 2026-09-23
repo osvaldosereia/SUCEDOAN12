@@ -409,7 +409,7 @@
       '<div class="dispatch-grid">'+
         expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
         expeditionSection('Em entrega','acompanhar até a confirmação',delivery,'Nenhum pedido em entrega.')+
-        expeditionSection('Entregues hoje','pagamento e fiscal',delivered,'Nenhuma entrega concluída hoje.')+
+        expeditionSection('Entregues hoje','Últimos entregues do dia · pagamento e fiscal',delivered,'Nenhuma entrega concluída hoje.')+
       '</div>';
     document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
   }
