@@ -17,6 +17,7 @@ on:
       - 'supabase/migrations/*stock*'
       - 'supabase/migrations/*vitrine_history*'
       - 'supabase/migrations/*bling_hub_v2*'
+      - 'supabase/migrations/*fiscal*'
       - '.github/workflows/comprar-root-home.yml'
   push:
     branches: [main]
@@ -35,6 +36,7 @@ on:
       - 'supabase/migrations/*stock*'
       - 'supabase/migrations/*vitrine_history*'
       - 'supabase/migrations/*bling_hub_v2*'
+      - 'supabase/migrations/*fiscal*'
       - '.github/workflows/comprar-root-home.yml'
 
 permissions:
