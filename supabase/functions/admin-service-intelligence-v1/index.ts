@@ -1746,7 +1746,13 @@ async function blingHubPreviewCustomerSync(sb:any,customerIdRaw:any){
   const current=detail.data?.data||{};
   const payload=blingHubCustomerPayload(current,local);
   const changes=blingHubManagedCustomerDiff(current,payload);
-  return {ok:true,readonly:true,external_write:false,source_id:customerId,bling_id:blingId,change_count:Object.keys(changes).length,changes};
+  const current_shape=Object.fromEntries(Object.entries(current).map(([k,v])=>[k,Array.isArray(v)?"array":(v===null?"null":typeof v)]));
+  return {
+    ok:true,readonly:true,external_write:false,source_id:customerId,bling_id:blingId,
+    change_count:Object.keys(changes).length,changes,
+    current_shape,
+    desired_keys:Object.keys(payload).sort()
+  };
 }
 async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
   const worker="bling-customer-edge-"+crypto.randomUUID();
