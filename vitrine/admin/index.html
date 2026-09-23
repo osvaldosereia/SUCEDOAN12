@@ -529,8 +529,18 @@
   }
 
   function historySourceLabel(source){
-    const map={vitrine:'Vitrine',whatsapp:'WhatsApp',papoai:'WhatsApp',bling:'Bling',manual:'Manual',storefront:'Site'};
-    return map[String(source||'').toLowerCase()]||String(source||'—');
+    const map={
+      vitrine:'Vitrine',
+      whatsapp:'WhatsApp',
+      papoai:'WhatsApp',
+      shopping_room:'WhatsApp',
+      bling:'Bling',
+      bling_import:'Bling',
+      manual:'Manual',
+      storefront:'Site',
+      storefront_v2:'Site antigo'
+    };
+    return map[String(source||'').toLowerCase()]||String(source||'—').replaceAll('_',' ');
   }
 
   async function openCustomerProfile(c){
