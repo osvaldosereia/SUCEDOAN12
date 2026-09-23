@@ -990,7 +990,7 @@ async function vitrineGetCustomer(sb:any,id:string){
 }
 
 const BLING_API_BASE="https://api.bling.com.br/Api/v3";
-const BLING_OAUTH_URL="https://api.bling.com.br/oauth/token";
+const BLING_OAUTH_URLS=["https://api.bling.com.br/oauth/token","https://api.bling.com.br/Api/v3/oauth/token"];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 
 async function blingHubAuthorized(sb:any,req:Request){
@@ -1020,13 +1020,31 @@ async function blingHubOauth(sb:any){
     const clientId=clean(c.data?.client_id,500),clientSecret=clean(c.data?.client_secret,500),refreshToken=clean(c.data?.refresh_token,5000);
     if(!clientId||!clientSecret||!refreshToken)throw new Error("bling_credentials_missing");
     await sb.from("bling_hub_runtime_v2").update({last_oauth_check_at:new Date().toISOString(),last_oauth_error:null,updated_at:new Date().toISOString()}).eq("id",1);
-    const basic=btoa(`${clientId}:${clientSecret}`);
-    const body=new URLSearchParams({grant_type:"refresh_token",refresh_token:refreshToken});
-    const r=await fetch(BLING_OAUTH_URL,{method:"POST",headers:{Authorization:`Basic ${basic}`,"Content-Type":"application/x-www-form-urlencoded",Accept:"1.0","enable-jwt":"1"},body,signal:AbortSignal.timeout(10000)});
-    const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
-    if(!r.ok||!clean(data?.access_token,5000)){
-      await sb.from("bling_hub_runtime_v2").update({last_oauth_error:`oauth_http_${r.status}`,updated_at:new Date().toISOString()}).eq("id",1);
-      throw new Error(`bling_oauth_http_${r.status}`);
+    const basic=btoa(clientId+":"+clientSecret);
+    let response:Response|null=null;
+    let data:any={};
+    let lastCode="";
+    for(const oauthUrl of BLING_OAUTH_URLS){
+      const body=new URLSearchParams({grant_type:"refresh_token",refresh_token:refreshToken});
+      const attempt=await fetch(oauthUrl,{
+        method:"POST",
+        headers:{Authorization:"Basic "+basic,"Content-Type":"application/x-www-form-urlencoded",Accept:"1.0","enable-jwt":"1"},
+        body,
+        signal:AbortSignal.timeout(10000)
+      });
+      const raw=await attempt.text();
+      let parsed:any={};
+      try{parsed=raw?JSON.parse(raw):{}}catch{}
+      response=attempt;
+      data=parsed;
+      lastCode=clean(parsed?.error||parsed?.error_description,120);
+      if(attempt.ok&&clean(parsed?.access_token,5000))break;
+      if(![403,404,405].includes(attempt.status))break;
+    }
+    if(!response?.ok||!clean(data?.access_token,5000)){
+      const errorLabel="oauth_http_"+String(response?.status||0)+(lastCode?":"+lastCode:"");
+      await sb.from("bling_hub_runtime_v2").update({last_oauth_error:errorLabel,updated_at:new Date().toISOString()}).eq("id",1);
+      throw new Error(errorLabel);
     }
     const rotated=clean(data?.refresh_token,5000);
     if(rotated&&rotated!==refreshToken){
