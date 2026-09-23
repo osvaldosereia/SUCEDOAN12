@@ -6,6 +6,8 @@ const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 assert.match(html,/function cuiabaDayKey\(v\)/);
 assert.match(html,/timeZone:'America\/Cuiaba'/);
 assert.match(html,/function deliveredToday\(o\)/);
+assert.match(html,/Boolean\(o\?\.delivered_at\)/);
+assert.match(html,/\['delivered','Entregues hoje'\]/);
 assert.match(html,/if\(filter==='delivered'\)return deliveredToday\(o\)/);
 assert.match(html,/Entregues hoje/);
 assert.match(html,/visible\.filter\(deliveredToday\)/);
