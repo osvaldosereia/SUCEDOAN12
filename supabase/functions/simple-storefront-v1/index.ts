@@ -8,6 +8,8 @@ const SECRET_KEYS = (() => {
 })();
 const SERVER_KEY = SECRET_KEYS.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const ORG_ID = "95b1b61d-f6ed-41cb-8917-b55f6793b10b";
+const MINIMUM_ORDER_CENTS = 7500;
+const BUSINESS_TIME_ZONE = "America/Cuiaba";
 const db = createClient(SUPABASE_URL, SERVER_KEY, {
   auth: { persistSession: false, autoRefreshToken: false }
 });
@@ -60,6 +62,37 @@ const nowActive = (o: any) => {
   const ends = o?.ends_at ? Date.parse(o.ends_at) : Number.POSITIVE_INFINITY;
   return (!Number.isFinite(starts) || starts <= now) && (!Number.isFinite(ends) || ends >= now);
 };
+
+type LocalDate = { year:number; month:number; day:number };
+function localDateTimeCuiaba(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {timeZone:BUSINESS_TIME_ZONE,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(now);
+  const get=(type:string)=>Number(parts.find(p=>p.type===type)?.value||0);
+  return {year:get("year"),month:get("month"),day:get("day"),hour:get("hour"),minute:get("minute")};
+}
+function addCalendarDays(date: LocalDate, days:number): LocalDate { const d=new Date(Date.UTC(date.year,date.month-1,date.day+days,12)); return {year:d.getUTCFullYear(),month:d.getUTCMonth()+1,day:d.getUTCDate()}; }
+function isoLocalDate(date: LocalDate) { return String(date.year).padStart(4,"0")+"-"+String(date.month).padStart(2,"0")+"-"+String(date.day).padStart(2,"0"); }
+function easterSunday(year:number): LocalDate {
+  const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  return {year,month:Math.floor((h+l-7*m+114)/31),day:((h+l-7*m+114)%31)+1};
+}
+function nationalHolidayName(date: LocalDate) {
+  const fixed=new Map([["01-01","Confraternização Universal"],["04-21","Tiradentes"],["05-01","Dia do Trabalho"],["09-07","Independência do Brasil"],["10-12","Nossa Senhora Aparecida"],["11-02","Finados"],["11-15","Proclamação da República"],["11-20","Dia Nacional de Zumbi e da Consciência Negra"],["12-25","Natal"]]);
+  const key=String(date.month).padStart(2,"0")+"-"+String(date.day).padStart(2,"0");
+  const fixedName=fixed.get(key); if(fixedName)return fixedName;
+  return isoLocalDate(addCalendarDays(easterSunday(date.year),-2))===isoLocalDate(date)?"Paixão de Cristo":"";
+}
+function isSunday(date: LocalDate) { return new Date(Date.UTC(date.year,date.month-1,date.day,12)).getUTCDay()===0; }
+function nextOpenDeliveryDate(from: LocalDate) { let date=from; for(let i=0;i<14;i++){if(!isSunday(date)&&!nationalHolidayName(date))return date;date=addCalendarDays(date,1)} return date; }
+function deliveryDateLabel(date: LocalDate) { return new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(Date.UTC(date.year,date.month-1,date.day,12))); }
+function deliveryPlanCuiaba(now = new Date()) {
+  const local=localDateTimeCuiaba(now),today={year:local.year,month:local.month,day:local.day},holiday=nationalHolidayName(today);
+  let reason="same_day",target=today;
+  if(isSunday(today)||holiday){reason="closed_day";target=nextOpenDeliveryDate(addCalendarDays(today,1))}
+  else if(local.hour>=12){reason="after_cutoff";target=nextOpenDeliveryDate(addCalendarDays(today,1))}
+  const label=deliveryDateLabel(target);
+  const notice=reason==="after_cutoff"?"Pedido após 12h de Cuiabá. Entrega prevista "+label+".":reason==="closed_day"?"Hoje não realizamos entregas"+(holiday?" ("+holiday+")":" (domingo)")+". Entrega prevista "+label+".":"Entrega prevista hoje, "+label+".";
+  return {date:isoLocalDate(target),label,notice,reason,time_zone:BUSINESS_TIME_ZONE,cutoff_hour:12};
+}
 
 async function activeOffersFor(productIds: string[]) {
   if (!productIds.length) return new Map<string, any>();
@@ -129,7 +162,8 @@ async function offers() {
         image_url: p.image_url,
         price_cents: Number(offer.sale_price_cents || 0),
         regular_price_cents: Number(p.sale_price_cents || 0),
-        packaging: p.metadata?.packaging ?? ""
+        packaging: p.metadata?.packaging ?? "",
+        stock_quantity: Number(p.stock_quantity ?? 0)
       };
     })
     .filter(Boolean)
@@ -205,7 +239,8 @@ async function products(url: URL) {
         price_cents: Number(offer?.sale_price_cents ?? p.sale_price_cents ?? 0),
         regular_price_cents: offer ? Number(p.sale_price_cents ?? 0) : null,
         packaging: p.metadata?.packaging ?? "",
-        subcategory: p.metadata?.subcategory ?? ""
+        subcategory: p.metadata?.subcategory ?? "",
+        stock_quantity: Number(p.stock_quantity ?? 0)
       };
     }),
     next_offset: rows.length === limit ? offset + limit : null
@@ -276,7 +311,7 @@ async function basketDetail(id: string) {
   if (iErr) throw iErr;
   const ids = (items ?? []).map((x:any)=>x.product_id);
   const { data: productsData, error: pErr } = ids.length
-    ? await db.from("products").select("id,name,image_url,metadata").in("id",ids)
+    ? await db.from("products").select("id,name,image_url,stock_quantity,active,metadata").eq("organization_id",ORG_ID).in("id",ids)
     : { data: [], error: null };
   if (pErr) throw pErr;
   const products = new Map((productsData ?? []).map((p:any)=>[p.id,p]));
@@ -290,6 +325,7 @@ async function basketDetail(id: string) {
         name:p?.name ?? "Produto",
         image_url:p?.image_url ?? "",
         packaging:p?.metadata?.packaging ?? "",
+        stock_quantity:p?.active===false?0:Number(p?.stock_quantity ?? 0),
         quantity:Number(x.quantity || 0)
       };
     })
@@ -316,7 +352,8 @@ async function basketQuote(payload: any) {
   if (iErr) throw iErr;
   const ids = (baseItems ?? []).map((x:any)=>x.product_id);
   const { data: productRows, error: pErr } = await db.from("products")
-    .select("id,sale_price_cents")
+    .select("id,sale_price_cents,stock_quantity,active")
+    .eq("organization_id",ORG_ID)
     .in("id", ids);
   if (pErr) throw pErr;
 
@@ -329,12 +366,13 @@ async function basketQuote(payload: any) {
     editedQty.set(id, Math.round(num(row?.quantity,0,30)*1000)/1000);
   }
 
+  const stocks = new Map((productRows ?? []).map((p:any)=>[p.id,p.active===false?0:Number(p.stock_quantity||0)]));
   let baseSubtotal = 0;
   let editedSubtotal = 0;
   for (const id of ids) {
-    const price = prices.get(id) ?? 0;
-    baseSubtotal += price * (baseQty.get(id) ?? 0);
-    editedSubtotal += price * (editedQty.get(id) ?? 0);
+    const price=prices.get(id)??0,requestedQty=editedQty.get(id)??0,available=stocks.get(id)??0;
+    if(requestedQty>available)return json({ok:false,error:"insufficient_stock",product_id:id,available,requested:requestedQty},409,{"Cache-Control":"no-store"});
+    baseSubtotal+=price*(baseQty.get(id)??0); editedSubtotal+=price*requestedQty;
   }
   const hiddenDelta = Number(basket.display_price_cents || 0) - baseSubtotal;
   const total = Math.max(0, Math.round(hiddenDelta + editedSubtotal));
@@ -422,7 +460,7 @@ async function submitOrder(payload:any) {
   let basketProducts:any[]=[];
   if (basketProductIds.length) {
     const {data,error}=await db.from("products")
-      .select("id,sku,name,image_url,sale_price_cents")
+      .select("id,sku,name,image_url,sale_price_cents,stock_quantity,active")
       .eq("organization_id",ORG_ID)
       .in("id",basketProductIds);
     if(error) throw error;
@@ -437,6 +475,8 @@ async function submitOrder(payload:any) {
 
   const orderItems:any[]=[];
   const componentPlans:any[]=[];
+  const stockDemand=new Map<string,number>();
+  const addStockDemand=(productId:string,quantity:number)=>{if(productId&&quantity>0)stockDemand.set(productId,Math.round(((stockDemand.get(productId)??0)+quantity)*1000)/1000)};
   let total=0;
 
   for (const line of normalized) {
@@ -448,6 +488,7 @@ async function submitOrder(payload:any) {
       const unit=Math.max(0,Number(offer?.sale_price_cents??p.sale_price_cents??0));
       const lineTotal=Math.round(unit*line.qty);
       total+=lineTotal;
+      addStockDemand(p.id,line.qty);
       orderItems.push({
         organization_id:ORG_ID,
         item_kind:"product",
@@ -487,8 +528,14 @@ async function submitOrder(payload:any) {
       for(const c of supplied) editedQty.set(c.product_id,c.quantity);
     }
 
+    if(![...editedQty.values()].some(qty=>Number(qty)>0)) return {error:"basket_unavailable",status:409};
     let editedSubtotal=0;
-    for(const [id,qty] of editedQty) editedSubtotal+=Number(bpMap.get(id)?.sale_price_cents??0)*qty;
+    for(const [id,qty] of editedQty){
+      const p=bpMap.get(id);
+      if(Number(qty)>0&&(!p||p.active===false))return {error:"product_unavailable",status:409,product_id:id};
+      editedSubtotal+=Number(p?.sale_price_cents??0)*qty;
+      addStockDemand(id,Number(qty)*Number(line.qty));
+    }
     const hiddenDelta=Number(basket.display_price_cents||0)-baseSubtotal;
     const unit=Math.max(0,Math.round(hiddenDelta+editedSubtotal));
     const lineTotal=Math.round(unit*line.qty);
@@ -526,6 +573,9 @@ async function submitOrder(payload:any) {
   }
 
   if(!orderItems.length) return {error:"empty_cart",status:400};
+  if(total<MINIMUM_ORDER_CENTS)return {error:"minimum_order",status:400,minimum_order_cents:MINIMUM_ORDER_CENTS,total_cents:total};
+  const delivery=deliveryPlanCuiaba();
+  const stockItems=[...stockDemand.entries()].map(([product_id,quantity])=>({product_id,quantity})).filter(x=>x.quantity>0).sort((a,b)=>a.product_id.localeCompare(b.product_id));
 
   let order:any=null;
   let orderError:any=null;
@@ -542,7 +592,7 @@ async function submitOrder(payload:any) {
       discount_cents:0,
       delivery_cents:0,
       total_cents:total,
-      delivery_address_snapshot:customerSnapshot,
+      delivery_address_snapshot:{...customerSnapshot,delivery_date:delivery.date,delivery_label:delivery.label,delivery_reason:delivery.reason,delivery_time_zone:delivery.time_zone,delivery_cutoff_hour:delivery.cutoff_hour},
       payment_method_snapshot:{method:payment,label:payment,timing:"on_delivery",source:"vitrine"},
       confirmed_at:null,
       delivered_at:null
@@ -552,6 +602,13 @@ async function submitOrder(payload:any) {
     if(res.error.code!=="23505") break;
   }
   if(!order) throw orderError??new Error("order_insert_failed");
+  let stockReserved=false;
+  if(stockItems.length){
+    const {data:reservation,error:reservationError}=await db.rpc("reserve_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});
+    if(reservationError){await db.from("orders").delete().eq("id",order.id);throw reservationError}
+    if(!reservation?.ok){await db.from("orders").delete().eq("id",order.id);return {error:String(reservation?.error||"insufficient_stock"),status:409,product_id:reservation?.product_id??null,available:Number(reservation?.available??0),requested:Number(reservation?.requested??0)}}
+    stockReserved=true;
+  }
 
   try {
     const withOrder=orderItems.map(row=>({...row,order_id:order.id}));
@@ -572,11 +629,12 @@ async function submitOrder(payload:any) {
       if(error) throw error;
     }
   } catch(error) {
+    if(stockReserved&&stockItems.length){const released=await db.rpc("release_storefront_stock_v1",{p_organization_id:ORG_ID,p_items:stockItems});if(released.error)console.error("stock_release_failed",released.error)}
     await db.from("orders").delete().eq("id",order.id);
     throw error;
   }
 
-  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status};
+  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery};
 }
 
 Deno.serve(async (req: Request) => {
@@ -586,18 +644,18 @@ Deno.serve(async (req: Request) => {
     const action = text(url.searchParams.get("action") || (req.method === "POST" ? "basket_quote" : "home"), 40);
     if (action === "health") return json({ok:true,service:"simple-storefront-v1"},200,{"Cache-Control":"no-store"});
     if (req.method === "GET" && action === "home") return json(await home(),200,{"Cache-Control":"public, max-age=300, stale-while-revalidate=900"});
-    if (req.method === "GET" && action === "offers") return json(await offers(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
+    if (req.method === "GET" && action === "offers") return json(await offers(),200,{"Cache-Control":"no-store"});
     if (req.method === "GET" && action === "subcategories") return json(await subcategories(url),200,{"Cache-Control":"public, max-age=300, stale-while-revalidate=900"});
-    if (req.method === "GET" && action === "products") return json(await products(url),200,{"Cache-Control":"public, max-age=60, stale-while-revalidate=300"});
+    if (req.method === "GET" && action === "products") return json(await products(url),200,{"Cache-Control":"no-store"});
     if (req.method === "GET" && action === "product") {
       const id = uuid(url.searchParams.get("product_id"));
       if (!id) return json({ok:false,error:"invalid_product"},400);
-      return await productDetail(id);
+      const response=await productDetail(id); response.headers.set("Cache-Control","no-store"); return response;
     }
     if (req.method === "GET" && action === "basket") {
       const id = uuid(url.searchParams.get("basket_id"));
       if (!id) return json({ok:false,error:"invalid_basket"},400);
-      return await basketDetail(id);
+      const response=await basketDetail(id); response.headers.set("Cache-Control","no-store"); return response;
     }
     if (req.method === "POST" && action === "basket_quote") {
       const payload = await req.json().catch(()=>({}));
@@ -606,7 +664,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === "POST" && action === "submit_order") {
       const payload = await req.json().catch(()=>({}));
       const result=await submitOrder(payload);
-      if(result.error) return json({ok:false,error:result.error},result.status,{"Cache-Control":"no-store"});
+      if(result.error) return json({ok:false,...result},result.status,{"Cache-Control":"no-store"});
       return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
     return json({ok:false,error:"not_found"},404);
