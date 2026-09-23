@@ -498,12 +498,30 @@
   async function returnOrderToExpedition(id,fromDetail=false){
     const o=(fromDetail?state.currentOrder?.order:null)||state.orders.find(x=>x.id===id);
     if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
-    const ok=confirm('Entrega não concluída do pedido #'+shortOrder(o.order_number)+'?\n\nO pedido voltará para Aguardando saída. O estoque continuará baixado.');
+    const choice=prompt(
+      'Por que a entrega não foi concluída?\n\n1 - Cliente ausente\n2 - Endereço não encontrado\n3 - Cliente pediu reagendamento\n4 - Problema no pagamento\n5 - Veículo / rota\n6 - Outro\n\nDigite o número ou escreva o motivo:'
+    );
+    if(choice===null)return;
+    const value=String(choice||'').trim();
+    const reasons={
+      '1':'Cliente ausente',
+      '2':'Endereço não encontrado',
+      '3':'Cliente pediu reagendamento',
+      '4':'Problema no pagamento',
+      '5':'Veículo / rota',
+      '6':'Outro'
+    };
+    const reason=reasons[value]||value;
+    if(!reason){toast('Informe o motivo da entrega não concluída');return}
+    const noteInput=prompt('Observação opcional sobre a tentativa de entrega:', '');
+    if(noteInput===null)return;
+    const note=String(noteInput||'').trim();
+    const ok=confirm('Registrar entrega não concluída por "'+reason+'"?\n\nO pedido voltará para Aguardando saída. O estoque continuará baixado.');
     if(!ok)return;
     try{
       await api('order_update',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id:o.id,status:'ready'})
+        body:JSON.stringify({id:o.id,status:'ready',delivery_return_reason:reason,delivery_return_note:note})
       });
       if(fromDetail){
         const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
@@ -514,7 +532,7 @@
         const data=await api('orders');state.orders=data.orders||[];
         paintExpeditionBody();
       }
-      toast('Pedido voltou para Aguardando saída · estoque mantido');
+      toast('Pedido voltou para Aguardando saída · motivo registrado');
     }catch(e){toast(errorMessage(e.message))}
   }
   function returnCurrentOrderToExpedition(){
@@ -1750,13 +1768,17 @@
     const delivery=o.delivery_address_snapshot||c.address||{};
     const deliveryProblems=orderProblemReasons(o).some(x=>['Cliente não identificado','Endereço incompleto'].includes(x));
     const cancellation=o.payment_method_snapshot?.cancellation||null;
+    const deliveryFailure=o.payment_method_snapshot?.last_delivery_failure||null;
+    const deliveryFailureAlert=deliveryFailure&&o.status==='ready'
+      ? '<div class="rule-notice warn"><strong>Última entrega não concluída · '+esc(deliveryFailure.reason||'Motivo não informado')+'</strong><div>'+(deliveryFailure.note?esc(deliveryFailure.note)+' · ':'')+(deliveryFailure.at?esc(dateTime(deliveryFailure.at)):'')+'</div></div>'
+      : '';
     const cancellationAlert=cancellation&&o.status==='cancelled'
       ? '<div class="rule-notice warn"><strong>Pedido cancelado · '+esc(cancellation.reason||'Motivo não informado')+'</strong><div>'+(cancellation.note?esc(cancellation.note)+' · ':'')+(cancellation.at?esc(dateTime(cancellation.at)):'')+'</div></div>'
       : '';
     const suggestedCustomer=state.orderCustomerSuggestion?state.customers.find(x=>x.id===state.orderCustomerSuggestion):null;
     const customerSuggestion=suggestedCustomer?'<div class="sync-alert" style="border-color:#c7dccd;background:#f7fbf8"><div><strong style="color:#176b43">Cadastro com o mesmo telefone encontrado</strong><small>'+esc(suggestedCustomer.display_name||'Cliente')+(suggestedCustomer.address?.street?' · '+esc([suggestedCustomer.address.street,suggestedCustomer.address.number,suggestedCustomer.address.district].filter(Boolean).join(', ')):' · sem endereço completo no cadastro')+'</small></div><button class="secondary" type="button" id="useSuggestedCustomer">Usar cadastro</button></div>':'';
     $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
-    $('#editorBody').innerHTML=syncAlert+cancellationAlert+customerSuggestion+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
+    $('#editorBody').innerHTML=syncAlert+cancellationAlert+deliveryFailureAlert+customerSuggestion+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
       '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
       '<div class="form-grid">'+
         '<div class="span-2 order-stage"><span>Situação atual</span>'+statusPill(o.status)+'<b>Próxima ação: '+esc(orderNextAction(o))+'</b></div>'+
