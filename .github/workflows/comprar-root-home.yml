@@ -10,7 +10,7 @@ on:
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
-      - 'supabase/migrations/*storefront_stock*'
+      - 'supabase/migrations/*stock*'
       - '.github/workflows/comprar-root-home.yml'
   push:
     branches: [main]
@@ -22,7 +22,7 @@ on:
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
-      - 'supabase/migrations/*storefront_stock*'
+      - 'supabase/migrations/*stock*'
       - '.github/workflows/comprar-root-home.yml'
 
 permissions:
