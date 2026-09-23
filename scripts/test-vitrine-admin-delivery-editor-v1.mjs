@@ -9,6 +9,9 @@ for(const id of ['orderDeliveryName','orderDeliveryPhone','orderDeliveryPostalCo
 }
 assert.match(html,/Estas alterações valem para este pedido/);
 assert.match(html,/payload\.delivery_address=/);
+assert.match(html,/function applySelectedCustomerToDelivery\(\)/);
+assert.match(html,/orderCustomer'\)\.onchange=applySelectedCustomerToDelivery/);
+assert.match(html,/Dados de entrega preenchidos pelo cliente selecionado/);
 assert.match(html,/const a=snapshot\|\|c\?\.address\|\|\{\}/);
 assert.match(html,/a=o\.delivery_address_snapshot\|\|c\.address\|\|\{\}/);
 assert.match(fn,/if\(payload\?\.delivery_address !== undefined\)/);
