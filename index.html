@@ -315,6 +315,33 @@
       try{return normalizeWhatsappPhone(sessionStorage.getItem(WHATSAPP_PHONE_KEY)||'')}catch{return ''}
     }
 
+    function clearQueryParam(name){
+      const params=new URLSearchParams(location.search);
+      params.delete(name);
+      const qs=params.toString();
+      history.replaceState(null,'',location.pathname+(qs?'?'+qs:'')+location.hash);
+    }
+
+    async function resolveEntryWhatsappPhone(){
+      const params=new URLSearchParams(location.search);
+      const token=String(params.get('c')||'').trim();
+      if(token){
+        try{
+          const data=await api('resolve_identity_token',{token});
+          const resolved=normalizeWhatsappPhone(data.phone_e164||'');
+          if(!resolved)throw new Error('identity_phone_missing');
+          try{sessionStorage.setItem(WHATSAPP_PHONE_KEY,resolved)}catch{}
+          clearQueryParam('c');
+          return resolved;
+        }catch{
+          try{sessionStorage.removeItem(WHATSAPP_PHONE_KEY)}catch{}
+          clearQueryParam('c');
+          return '';
+        }
+      }
+      return captureWhatsappPhone();
+    }
+
     function loadCart(){
       try{
         const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -1052,6 +1079,10 @@
       };
       if($('#lookupCustomer'))$('#lookupCustomer').onclick=lookupCheckoutCustomer;
       updateCustomerLookupResult();
+      if(state.whatsappPhone&&state.customerLookup.status==='idle'){
+        const info=checkoutPhoneData();
+        if(info.valid)setTimeout(()=>lookupCheckoutCustomer(),0);
+      }
       sheetBody.querySelectorAll('input[name="payment"]').forEach(input=>{
         input.checked=input.value===state.checkoutPayment;
         input.onchange=()=>{state.checkoutPayment=input.value};
@@ -1271,7 +1302,7 @@
     };
 
     async function start(){
-      state.whatsappPhone=captureWhatsappPhone();
+      state.whatsappPhone=await resolveEntryWhatsappPhone();
       if(state.whatsappPhone){
         const d=phoneDigits(state.whatsappPhone).replace(/^55/,'');
         if(d.length===11){state.checkoutDdd=d.slice(0,2);state.checkoutPhone=d.slice(2)}
