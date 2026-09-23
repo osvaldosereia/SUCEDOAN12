@@ -1507,6 +1507,26 @@
     if(!['delivered'].includes(state.orderFilter))rows=sortOperationalOrders(rows);
     host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">Nenhum pedido nesta etapa.</div>';
     host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));
+    host.querySelectorAll('[data-quick-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.quickConfirm,b));
+  }
+  async function quickConfirmOrder(id,btn){
+    const o=state.orders.find(x=>x.id===id);
+    if(!o||o.status!=='created'){toast('Este pedido não está mais aguardando confirmação');return}
+    const problems=orderProblemReasons(o);
+    if(problems.length){toast('Corrija os dados do pedido antes de confirmar');return}
+    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    try{
+      await api('order_update',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,status:'confirmed'})
+      });
+      const data=await api('orders');state.orders=data.orders||[];
+      paintOrderFilters();paintOrderRows();
+      toast('Pedido #'+shortOrder(o.order_number)+' confirmado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Confirmar'}
+    }
   }
   async function loadOrders(){
     const host=$('#orderRows');host.innerHTML='<div class="loading">Carregando…</div>';
@@ -1526,7 +1546,10 @@
       '<span class="money">'+money(o.total_cents)+'</span>'+
       '<span class="desktop-extra">'+esc(payment)+'</span>'+
       '<div class="desktop-extra"><span class="next-action '+(o.status==='cancelled'?'muted-action':'')+'">'+esc(next)+'</span><span class="sub">'+statusPill(o.status)+'</span></div>'+
-      '<button class="text" data-open-order="'+esc(o.id)+'">Abrir</button></div>';
+      '<div class="customer-row-actions">'+
+        (o.status==='created'&&!problems.length?'<button class="text" data-quick-confirm="'+esc(o.id)+'">Confirmar</button>':'')+
+        '<button class="text" data-open-order="'+esc(o.id)+'">Abrir</button>'+
+      '</div></div>';
   }
   async function openOrder(id){
     $('#editorTitle').textContent='Pedido';
