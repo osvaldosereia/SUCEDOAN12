@@ -7,6 +7,9 @@ on:
       - 'vitrine/**'
       - 'scripts/test-comprar-root-home-v1.mjs'
       - 'scripts/test-vitrine-whatsapp-handoff-v1.mjs'
+      - 'scripts/test-vitrine-sales-rules-v1.mjs'
+      - 'supabase/functions/simple-storefront-v1/**'
+      - 'supabase/migrations/*storefront_stock*'
       - '.github/workflows/comprar-root-home.yml'
   push:
     branches: [main]
@@ -33,3 +36,4 @@ jobs:
         run: |
           node scripts/test-comprar-root-home-v1.mjs
           node scripts/test-vitrine-whatsapp-handoff-v1.mjs
+          node scripts/test-vitrine-sales-rules-v1.mjs
