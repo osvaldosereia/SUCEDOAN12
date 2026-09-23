@@ -13,8 +13,12 @@ assert.match(vitrine,/bling_order_queued:blingOrderQueued/);
 
 assert.match(hub,/queueReason==="first_separation" \|\| payment\?\.stock_consumed===true/);
 assert.match(hub,/function blingHubOrderManagedProjection\(order:any\)/);
+assert.match(hub,/function blingHubOrderPutPayload\(current:any,desired:any\)/);
+assert.match(hub,/const keep=\["dataSaida","dataPrevista","numeroPedidoCompra","loja","vendedor","situacao","unidadeNegocio","categoria","tributacao","intermediador","taxas","parcelas"\]/);
+assert.match(hub,/naturezaOperacao/);
 assert.match(hub,/function blingHubOrderManagedDiff\(current:any,desired:any\)/);
-assert.match(hub,/\/pedidos\/vendas\/"\+encodeURIComponent\(String\(blingOrderId\)\),"PUT",preview\.desired_order/);
+assert.match(hub,/const putPayload=blingHubOrderPutPayload\(remote,preview\.desired_order\)/);
+assert.match(hub,/\/pedidos\/vendas\/"\+encodeURIComponent\(String\(blingOrderId\)\),"PUT",putPayload/);
 assert.match(hub,/order_has_invoice/);
 assert.match(hub,/post_update_order_mismatch/);
 assert.match(hub,/updated_by_hub:updatedExisting/);
