@@ -78,6 +78,7 @@
     .order-stage{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:11px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.order-stage>span{font-size:12px;color:var(--muted);font-weight:700}.order-stage b{font-size:13px}
     .order-action-zone{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:12px;margin-top:10px}.order-action-zone strong{display:block;margin-bottom:4px}.order-action-zone small{display:block;color:var(--muted);line-height:1.4}
     .integration-details{border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px}.integration-details summary{cursor:pointer;padding:12px 0;font-weight:700}.integration-details[open] summary{border-bottom:1px solid var(--line);margin-bottom:10px}.integration-details .integration-body{padding-bottom:12px}
+    .operational-alert{border:1px solid #f2c3bd;background:#fff8f7;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}.operational-alert strong{display:block;color:#b3261e}.operational-alert small{display:block;color:#6d4c48;margin-top:3px}.operational-alert button{white-space:nowrap}
     .dispatch-grid{display:grid;gap:14px}.dispatch-section{overflow:hidden}.dispatch-head{padding:13px 14px;margin:0;border-bottom:1px solid var(--line)}.dispatch-head>div{min-width:0}.dispatch-head span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-head>b{font-size:20px}.dispatch-row{grid-template-columns:90px minmax(0,1.5fr) minmax(120px,.6fr) 105px minmax(190px,.8fr);cursor:default}.dispatch-row:hover{background:#f8fbff}
     .closure-grid{display:grid;gap:14px}.closure-row{display:grid;grid-template-columns:90px minmax(0,1.4fr) 130px minmax(180px,.8fr) 90px;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}.closure-row:last-child{border-bottom:0}.closure-status strong{display:block;font-size:12px}.closure-status small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}.quick-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#1967d2;text-decoration:none;font-weight:700;font-size:12px}.quick-link:hover{background:#f1f3f4}.quick-link.primary-link{background:#e8f0fe;border-color:#d2e3fc}.age-text{font-size:11px;color:var(--muted);font-weight:600}
     .today-order-row{grid-template-columns:90px minmax(0,1fr) 150px 80px}
@@ -88,7 +89,7 @@
       .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
       .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
-      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:72px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.dispatch-row .dispatch-actions{grid-column:2/4;justify-content:flex-start}.closure-row{grid-template-columns:72px minmax(0,1fr) auto}.closure-row>:nth-child(3),.closure-row>:nth-child(4){grid-column:2}.closure-row>:nth-child(5){grid-column:3;grid-row:1/4}.quick-link{min-height:40px}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
+      .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.operational-alert{align-items:stretch;flex-direction:column}.operational-alert button{width:100%}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:72px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.dispatch-row .dispatch-actions{grid-column:2/4;justify-content:flex-start}.closure-row{grid-template-columns:72px minmax(0,1fr) auto}.closure-row>:nth-child(3),.closure-row>:nth-child(4){grid-column:2}.closure-row>:nth-child(5){grid-column:3;grid-row:1/4}.quick-link{min-height:40px}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
     }
   
     /* Material-like operational shell */
@@ -360,8 +361,9 @@
   }
   async function renderToday(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Hoje</h1><p>O que precisa ser feito agora, em ordem operacional.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div><div id="todayBody"><div class="loading">Carregando operação…</div></div>';
+    content.innerHTML='<div class="page-head"><div><h1>Hoje</h1><p>O que precisa ser feito agora, em ordem operacional.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div><div id="integrationOperationalAlert"></div><div id="todayBody"><div class="loading">Carregando operação…</div></div>';
     $('#refreshToday').onclick=renderToday;
+    loadOperationalIntegrationAlert();
     try{
       const data=await api('orders');state.orders=data.orders||[];
       const host=$('#todayBody');
@@ -499,6 +501,34 @@
     }catch(e){
       $('#closureBody').innerHTML='<div class="empty">Não consegui carregar os fechamentos. <button class="text" id="retryClosure">Tentar novamente</button></div>';
       if($('#retryClosure'))$('#retryClosure').onclick=renderClosure;
+    }
+  }
+
+  function blingOperationalIssues(b){
+    const issues=[];
+    const cred=b?.credentials||{},domains=b?.domains||{},queue=b?.hub_queue||{},orderLinks=b?.order_links||{};
+    if(cred.ready===false)issues.push('Credenciais do Bling precisam de atenção');
+    if(b?.hub_enabled===false)issues.push('Integração direta com o Bling está pausada');
+    if(b?.hub_enabled!==false&&domains.orders===false)issues.push('Envio de pedidos ao Bling está pausado');
+    const queueReview=Number(queue.review_required||0)+Number(queue.failed||0);
+    if(queueReview>0)issues.push(queueReview+' item(ns) da fila precisam de revisão');
+    const orderReview=Number(orderLinks.review_required||0);
+    if(orderReview>0)issues.push(orderReview+' pedido(s) precisam de revisão no Bling');
+    return [...new Set(issues)];
+  }
+  async function loadOperationalIntegrationAlert(){
+    const host=$('#integrationOperationalAlert');if(!host)return;
+    host.innerHTML='';
+    try{
+      const data=await api('bling_status');
+      state.bling=data.bling||{};
+      const issues=blingOperationalIssues(state.bling);
+      if(!issues.length)return;
+      host.innerHTML='<div class="operational-alert"><div><strong>Integração precisa de atenção</strong><small>'+issues.map(esc).join(' · ')+'</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
+    }catch(e){
+      host.innerHTML='<div class="operational-alert"><div><strong>Não consegui verificar a integração</strong><small>Os pedidos continuam visíveis. Abra o diagnóstico para conferir o Bling.</small></div><button class="secondary" id="openIntegrationIssue" type="button">Ver diagnóstico</button></div>';
+      $('#openIntegrationIssue').onclick=renderBling;
     }
   }
 
