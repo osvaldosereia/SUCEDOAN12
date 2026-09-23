@@ -1,11 +1,21 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
-const root=readFileSync('index.html','utf8'),comprar=readFileSync('comprar/index.html','utf8'),app=readFileSync('comprar/app.js','utf8');
-assert.match(root,/id="timeline" class="timeline"/);assert.match(root,/id="cartBar" class="cart-bar"/);
-assert.match(root,/src="\/comprar\/config\.js\?v=20260915-05-chat-\d+/);
-for(const file of ['app','baskets','products','upsell','checkout','help','admin-test-bridge'])assert.match(root,new RegExp(`src="\\/comprar\\/${file}\\.js\\?v=[^\"']+`),`root deve carregar ${file}`);
-assert.match(root,/href="\/comprar\/styles\.css\?v=20260915-05-chat-\d+/);
-for(const obsolete of ['chat-light-v2.js','chat-checkout-quantity-v1.js','checkout-final-v2.js','chat-helper-menu.js','phone-retry-v1.js'])assert.doesNotMatch(root,new RegExp(obsolete.replaceAll('.','\\.')));
-assert.match(root,/href="https:\/\/donaantonia\.com\.br\/"/);assert.match(root,/name="robots" content="index,follow/);assert.doesNotMatch(root,/noindex,nofollow/);assert.doesNotMatch(root,/\/app-next\//);assert.doesNotMatch(root,/http-equiv="refresh"/i);assert.match(comprar,/name="robots" content="noindex,nofollow"/);
-const roomUrl=app.match(/function roomUrl\(nextToken,resume=''\)[\s\S]*?(?=\n\s*async function createRoomToken)/)?.[0]||'';assert.match(roomUrl,/location\.pathname/);assert.match(roomUrl,/\?s=\$\{encodeURIComponent\(nextToken\)\}/);assert.match(app,/history\.replaceState\(\{\},'',roomUrl\(token\)\)/);
-console.log('comprar_root_home_v1_ok');
+
+const root=readFileSync('index.html','utf8');
+const vitrine=readFileSync('vitrine/index.html','utf8');
+
+assert.equal(root,vitrine,'a raiz e /vitrine devem publicar a mesma Vitrine rápida');
+assert.match(root,/<title>Dona Antônia · Vitrine rápida<\/title>/);
+assert.match(root,/simple-storefront-v1/);
+assert.match(root,/id="globalSearchForm"/);
+assert.match(root,/id="openCart"/);
+assert.match(root,/id="overlay"/);
+assert.match(root,/async function sendWhatsApp\(\)/);
+assert.match(root,/https:\/\/wa\.me\//);
+assert.match(root,/reserveWhatsAppHandoff\(\)/);
+assert.match(root,/renderWhatsAppHandoffSuccess\(url,saved\)/);
+assert.doesNotMatch(root,/whatsapp:\/\/send\?/i,'não depender de deep link customizado no navegador');
+assert.doesNotMatch(root,/http-equiv="refresh"/i);
+assert.doesNotMatch(root,/noindex,nofollow/i);
+
+console.log('vitrine_root_home_v2_ok');
