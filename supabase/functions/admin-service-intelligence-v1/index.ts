@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "../_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "../_shared/papoai-commerce-intent-v1.mjs";
 
-const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-vitrine-history-key,x-dona-antonia-bling-hub-key","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
+const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-vitrine-history-key,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=2000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80))?clean(v,80):"";
@@ -993,24 +993,242 @@ const BLING_API_BASE="https://api.bling.com.br/Api/v3";
 const BLING_OAUTH_URLS=["https://api.bling.com.br/oauth/token","https://api.bling.com.br/Api/v3/oauth/token"];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 
+async function blingWebhookHmacHex(secret:string,raw:string){
+  const key=await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    {name:"HMAC",hash:"SHA-256"},
+    false,
+    ["sign"]
+  );
+  const signature=await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(raw));
+  return [...new Uint8Array(signature)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function blingWebhookConstantTimeEqual(a:string,b:string){
+  if(a.length!==b.length)return false;
+  let diff=0;
+  for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);
+  return diff===0;
+}
+function blingWebhookProviderEntityId(resource:string,data:any){
+  const candidates=[
+    data?.id,
+    data?.produto?.id,
+    data?.product?.id,
+    data?.pedido?.id,
+    data?.order?.id,
+    data?.notaFiscal?.id,
+    data?.invoice?.id
+  ];
+  for(const value of candidates){
+    const v=clean(value,120);
+    if(v)return v;
+  }
+  return "";
+}
+async function blingWebhookReceive(sb:any,req:Request,rawBody:string){
+  const supplied=clean(req.headers.get("x-bling-signature-256"),100).toLowerCase();
+  if(!/^sha256=[0-9a-f]{64}$/.test(supplied)){
+    return json({ok:false,error:"invalid_signature"},401);
+  }
+
+  const credentials=await sb.rpc("get_bling_api_credentials_v1");
+  if(credentials.error)throw credentials.error;
+  const clientSecret=clean(credentials.data?.client_secret,1000);
+  if(!clientSecret)return json({ok:false,error:"webhook_secret_unavailable"},503);
+
+  const expected="sha256="+await blingWebhookHmacHex(clientSecret,rawBody);
+  if(!blingWebhookConstantTimeEqual(supplied,expected)){
+    return json({ok:false,error:"invalid_signature"},401);
+  }
+
+  let event:any={};
+  try{event=JSON.parse(rawBody)}catch{return json({ok:false,error:"invalid_json"},400)}
+
+  const rawHash=await r8Sha256Hex(rawBody);
+  const eventId=clean(event?.eventId,180)||("hash-"+rawHash);
+  const eventName=clean(event?.event,100).toLowerCase();
+  const [resource="",action=""]=eventName.split(".");
+  const supportedResources=new Set(["order","product","stock","virtual_stock","invoice","consumer_invoice"]);
+  const supportedActions=new Set(["created","updated","deleted"]);
+  const recognized=supportedResources.has(resource)&&supportedActions.has(action);
+  const eventAtRaw=clean(event?.date,80);
+  const eventAt=eventAtRaw&&!Number.isNaN(Date.parse(eventAtRaw))?new Date(eventAtRaw).toISOString():null;
+  const companyId=clean(event?.companyId,180)||null;
+  const version=clean(event?.version,40)||null;
+  const providerEntityId=blingWebhookProviderEntityId(resource,event?.data)||null;
+
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("mode,hub_enabled,webhooks_enabled")
+    .eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const processingEnabled=runtime.data?.hub_enabled===true
+    && runtime.data?.webhooks_enabled===true
+    && ["homologation","live"].includes(String(runtime.data?.mode||""));
+  const initialStatus=recognized?(processingEnabled?"received":"held"):"ignored";
+
+  const row={
+    event_id:eventId,
+    event_hash:rawHash,
+    event_name:eventName||"unknown",
+    resource:resource||"unknown",
+    action:action||"unknown",
+    company_id:companyId,
+    event_version:version,
+    event_at:eventAt,
+    provider_entity_id:providerEntityId,
+    payload:event,
+    signature_verified:true,
+    status:initialStatus,
+    updated_at:new Date().toISOString()
+  };
+  const inserted=await sb.from("bling_webhook_inbox_v2").insert(row).select("event_id,status").single();
+  if(inserted.error){
+    if(String(inserted.error.code)==="23505"){
+      const existing=await sb.from("bling_webhook_inbox_v2")
+        .select("event_hash,status")
+        .eq("event_id",eventId).maybeSingle();
+      if(existing.error)throw existing.error;
+      if(existing.data&&existing.data.event_hash!==rawHash){
+        await sb.from("bling_webhook_inbox_v2")
+          .update({status:"review_required",last_error:"event_id_payload_hash_mismatch",updated_at:new Date().toISOString()})
+          .eq("event_id",eventId);
+        return json({ok:true,duplicate:true,review_required:true},200);
+      }
+      return json({ok:true,duplicate:true,status:existing.data?.status||initialStatus},200);
+    }
+    throw inserted.error;
+  }
+
+  return json({
+    ok:true,
+    accepted:true,
+    duplicate:false,
+    status:initialStatus,
+    processing_enabled:processingEnabled
+  },200);
+}
+async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
+  const worker="bling-webhook-edge-"+crypto.randomUUID();
+  const limit=Math.max(1,Math.min(25,Number(limitRaw||10)||10));
+  const claim=await sb.rpc("claim_bling_webhook_inbox_v2",{
+    p_worker:worker,p_limit:limit,p_lease_seconds:300
+  });
+  if(claim.error)throw claim.error;
+  const events=claim.data||[];
+  const summary:any={ok:true,claimed:events.length,processed:0,review_required:0,ignored:0,retry:0,self_generated:0};
+  for(const event of events){
+    try{
+      const resource=clean(event.resource,40).toLowerCase();
+      const providerId=clean(event.provider_entity_id,120);
+      const linkType=resource==="order"?"order":(["product","stock","virtual_stock"].includes(resource)?"product":(resource.includes("invoice")?"invoice":""));
+      const domain=resource==="order"?"order":(["stock","virtual_stock"].includes(resource)?"stock":(resource==="product"?"product":(resource.includes("invoice")?"fiscal":"webhook")));
+      let linked=false;
+      let sourceId:string|null=null;
+      if(linkType&&providerId&&/^\d+$/.test(providerId)){
+        const links=await sb.from("bling_hub_entity_links_v2")
+          .select("source_id,status")
+          .eq("entity_type",linkType)
+          .eq("bling_id",Number(providerId))
+          .eq("status","matched")
+          .limit(2);
+        if(links.error)throw links.error;
+        if((links.data||[]).length===1){
+          linked=true;
+          sourceId=links.data![0].source_id;
+        }
+      }
+
+      let selfGenerated=false;
+      if(providerId&&domain!=="webhook"){
+        const eventTime=event.event_at?Date.parse(event.event_at):Date.parse(event.received_at);
+        const since=new Date((Number.isFinite(eventTime)?eventTime:Date.now())-10*60*1000).toISOString();
+        const recent=await sb.from("bling_hub_jobs_v2")
+          .select("id")
+          .eq("domain",domain)
+          .eq("provider_id",providerId)
+          .eq("status","synced")
+          .gte("finished_at",since)
+          .limit(1);
+        if(recent.error)throw recent.error;
+        selfGenerated=Boolean(recent.data?.length);
+      }
+
+      if(selfGenerated){
+        await sb.rpc("finish_bling_webhook_inbox_v2",{
+          p_event_id:event.event_id,p_status:"processed",
+          p_result:{classification:"self_generated_observed",linked,source_id:sourceId,local_mutation:false,anti_loop:true},
+          p_error:null,p_retry_seconds:120,p_self_generated:true
+        });
+        summary.processed++;summary.self_generated++;continue;
+      }
+
+      if(!["order","product","stock","virtual_stock","invoice","consumer_invoice"].includes(resource)){
+        await sb.rpc("finish_bling_webhook_inbox_v2",{
+          p_event_id:event.event_id,p_status:"ignored",
+          p_result:{classification:"unsupported_resource",local_mutation:false},
+          p_error:null,p_retry_seconds:120,p_self_generated:false
+        });
+        summary.ignored++;continue;
+      }
+
+      if(["product","stock","virtual_stock","order"].includes(resource)&&!linked){
+        await sb.rpc("finish_bling_webhook_inbox_v2",{
+          p_event_id:event.event_id,p_status:"review_required",
+          p_result:{classification:"external_change_unlinked",provider_entity_id:providerId||null,local_mutation:false},
+          p_error:"provider_entity_not_linked",p_retry_seconds:120,p_self_generated:false
+        });
+        summary.review_required++;continue;
+      }
+
+      await sb.rpc("finish_bling_webhook_inbox_v2",{
+        p_event_id:event.event_id,p_status:"review_required",
+        p_result:{
+          classification:"external_change_observed",
+          linked,source_id:sourceId,
+          action:event.action,
+          local_mutation:false,
+          anti_loop:true
+        },
+        p_error:"external_change_requires_reconciliation",
+        p_retry_seconds:120,p_self_generated:false
+      });
+      summary.review_required++;
+    }catch(e){
+      await sb.rpc("finish_bling_webhook_inbox_v2",{
+        p_event_id:event.event_id,p_status:"retry",
+        p_result:{local_mutation:false},
+        p_error:clean((e as Error)?.message||e,500),
+        p_retry_seconds:120,p_self_generated:false
+      });
+      summary.retry++;
+    }
+  }
+  return summary;
+}
+
 async function blingHubReadinessExtended(sb:any){
   const r=await sb.rpc("bling_hub_readiness_v2");
   if(r.error)throw r.error;
-  const [links,customerLinks,orderLinks]=await Promise.all([
+  const [links,customerLinks,orderLinks,webhookInbox]=await Promise.all([
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000),
-    sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000)
+    sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000),
+    sb.from("bling_webhook_inbox_v2").select("status").limit(5000)
   ]);
   if(links.error)throw links.error;
   if(customerLinks.error)throw customerLinks.error;
   if(orderLinks.error)throw orderLinks.error;
+  if(webhookInbox.error)throw webhookInbox.error;
   const counts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const customerCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const orderCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
+  const webhookCounts:any={total:0,held:0,received:0,processing:0,processed:0,ignored:0,review_required:0,retry:0,failed:0};
   for(const row of links.data||[]){counts.total++;counts[row.status]=(counts[row.status]||0)+1;}
   for(const row of customerLinks.data||[]){customerCounts.total++;customerCounts[row.status]=(customerCounts[row.status]||0)+1;}
   for(const row of orderLinks.data||[]){orderCounts.total++;orderCounts[row.status]=(orderCounts[row.status]||0)+1;}
-  return {...(r.data||{}),product_links:counts,customer_links:customerCounts,order_links:orderCounts};
+  for(const row of webhookInbox.data||[]){webhookCounts.total++;webhookCounts[row.status]=(webhookCounts[row.status]||0)+1;}
+  return {...(r.data||{}),product_links:counts,customer_links:customerCounts,order_links:orderCounts,webhook_inbox:webhookCounts};
 }
 async function blingHubAuthorized(sb:any,req:Request){
   const supplied=clean(req.headers.get("x-dona-antonia-bling-hub-key"),200);
@@ -2270,6 +2488,15 @@ Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");if(!url||!key)return json({ok:false,error:"server_config"},500);
   const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  const requestUrl=new URL(req.url);
+  if(requestUrl.searchParams.get("source")==="bling-webhook-v2"){
+    const rawBody=await req.text();
+    try{return await blingWebhookReceive(sb,req,rawBody)}
+    catch(e){
+      console.error("bling_webhook_receive",clean((e as Error)?.message||e,300));
+      return json({ok:false,error:"webhook_receive_failed"},500);
+    }
+  }
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
   const action=clean(body?.action||"dashboard",60).toLowerCase();
 
@@ -2348,6 +2575,7 @@ Deno.serve(async(req:Request)=>{
         results.stock=await blingHubProcessStockJobs(sb,limit);
         results.customers=await blingHubProcessCustomerJobs(sb,limit);
         results.orders=await blingHubProcessOrderJobs(sb,Math.min(limit,3));
+        results.webhooks=await blingHubProcessWebhookInbox(sb,limit);
         return json({ok:true,cycle:true,results},200);
       }
       if(subaction==="preview_stock_sync"){
