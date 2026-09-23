@@ -675,7 +675,7 @@
   async function renderBling(){
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Integração Bling</h1><p>Novo fluxo direto Supabase → Bling. Os cenários antigos do Make permanecem preservados, mas não participam deste fluxo.</p></div><button class="secondary" id="refreshBling">Atualizar</button></div>'+
-      '<div class="bling-banner"><strong>Homologação controlada · escritas globais bloqueadas</strong><small>Produtos, estoque, clientes e pedidos usam filas versionadas e canários. Fiscal permanece desligado. As filas antigas e o Make continuam preservados.</small></div>'+
+      '<div class="bling-banner" id="blingRuntimeBanner"><strong>Carregando estado do Hub…</strong><small>Consultando quais domínios estão ativos e quais continuam bloqueados.</small></div>'+
       '<div id="blingStatus"><div class="loading">Carregando status…</div></div>';
     $('#refreshBling').onclick=()=>loadBlingStatus();
     await loadBlingStatus();
@@ -702,6 +702,27 @@
     const host=$('#blingStatus');if(!host)return;
     const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{},orderLinks=b.order_links||{},webhooks=b.webhook_inbox||{},fiscal=b.fiscal_readiness||{},fiscalCfg=fiscal.config||{},fiscalControls=fiscal.controls||{},fiscalJobs=fiscal.jobs||{};
     const probes=probe.probes||{};
+    const banner=$('#blingRuntimeBanner');
+    if(banner){
+      const active=[
+        domains.products?'Produtos':null,
+        domains.stock?'Estoque':null,
+        domains.customers?'Clientes':null,
+        domains.orders?'Pedidos':null
+      ].filter(Boolean);
+      const firstOrderCanary=Boolean(domains.orders)&&Number(orderLinks.matched||0)===0;
+      const headline=b.hub_enabled
+        ? 'Integração direta Bling ativa'
+        : 'Integração direta Bling pausada';
+      const detail=[
+        active.length?'Ativos: '+active.join(', '):'Nenhum domínio de escrita ativo',
+        firstOrderCanary?'Pedidos aguardando o primeiro canário real':'',
+        domains.webhooks?'Webhooks ON':'Webhooks OFF',
+        domains.fiscal?'Fiscal ON':'Fiscal OFF',
+        'Make preservado e fora do novo runtime'
+      ].filter(Boolean).join(' · ');
+      banner.innerHTML='<strong>'+esc(headline)+'</strong><small>'+esc(detail)+'</small>';
+    }
     const scope=(key,label)=>{
       const p=probes[key];
       if(!p)return '<div class="bling-scope"><strong>'+esc(label)+'</strong><small>Ainda não verificado</small></div>';
@@ -719,7 +740,7 @@
         '<div class="bling-card"><small>Pedidos vinculados</small><strong>'+esc(orderLinks.matched||0)+' / '+esc(orderLinks.total||0)+'</strong><span class="sub">'+esc(orderLinks.review_required||0)+' para revisar</span></div>'+
         '<div class="bling-card"><small>Webhooks Bling</small><strong>'+esc(domains.webhooks?'ON':'OFF')+'</strong><span class="sub">'+esc(webhooks.held||0)+' aguardando · '+esc(webhooks.review_required||0)+' revisar · '+esc(webhooks.processed||0)+' processados</span></div>'+
         '<div class="bling-card"><small>Fiscal / NF-e</small><strong class="'+(fiscal.safe_off?'ok-text':'warn-text')+'">'+(fiscal.safe_off?'OFF seguro':esc(String(fiscalCfg.execution_mode||'off').toUpperCase()))+'</strong><span class="sub">'+esc(fiscalControls.ready||0)+' prontos · '+esc(fiscalJobs.total||0)+' jobs · emissão '+(fiscalCfg.bling_invoice_send_enabled?'ON':'OFF')+'</span></div>'+
-        '<div class="bling-card"><small>Escritas externas</small><strong class="'+(b.hub_enabled?'danger-text':'ok-text')+'">'+(b.hub_enabled?'Habilitadas':'Bloqueadas')+'</strong><span class="sub">Produtos '+(domains.products?'ON':'OFF')+' · Clientes '+(domains.customers?'ON':'OFF')+' · Pedidos '+(domains.orders?'ON':'OFF')+' · Fiscal '+(domains.fiscal?'ON':'OFF')+'</span></div>'+
+        '<div class="bling-card"><small>Escritas externas</small><strong class="'+(b.hub_enabled?'ok-text':'warn-text')+'">'+(b.hub_enabled?'Ativas com proteção':'Bloqueadas')+'</strong><span class="sub">Produtos '+(domains.products?'ON':'OFF')+' · Estoque '+(domains.stock?'ON':'OFF')+' · Clientes '+(domains.customers?'ON':'OFF')+' · Pedidos '+(domains.orders?'ON':'OFF')+' · Fiscal '+(domains.fiscal?'ON':'OFF')+'</span></div>'+
       '</div>'+
       '<div class="panel"><div class="history-title"><strong>Permissões e leitura da API</strong><span class="muted">teste sem alterar dados</span></div>'+
         '<div class="bling-scopes">'+scope('products','Produtos')+scope('contacts','Clientes')+scope('sales_orders','Pedidos')+scope('deposits','Depósitos')+scope('invoice','NF-e')+'</div>'+
