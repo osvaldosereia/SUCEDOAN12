@@ -63,6 +63,23 @@ function digits(value: unknown, max = 30) {
 function normalizedSearch(parts: unknown[]) {
   return parts.filter(Boolean).map(v => String(v).trim()).filter(Boolean).join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
+function validIsoDate(value: unknown) {
+  const v=text(value,10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : "";
+}
+function cuiabaDateKey() {
+  const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const values=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+function addDateDays(iso:string,days:number) {
+  const d=new Date(iso+"T00:00:00Z");
+  d.setUTCDate(d.getUTCDate()+days);
+  return d.toISOString().slice(0,10);
+}
+function dateDiffDays(fromIso:string,toIso:string) {
+  return Math.round((Date.parse(toIso+"T00:00:00Z")-Date.parse(fromIso+"T00:00:00Z"))/86400000);
+}
 async function listProducts(url: URL) {
   const q = text(url.searchParams.get("q"), 80);
   const category = text(url.searchParams.get("category"), 48);
@@ -71,7 +88,7 @@ async function listProducts(url: URL) {
   const limit = Math.floor(num(url.searchParams.get("limit") ?? 60, 1, 100));
 
   let query = db.from("products")
-    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,updated_at")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
     .eq("organization_id", ORG_ID)
     .order("name", { ascending: true })
     .range(offset, offset + limit - 1);
@@ -84,9 +101,20 @@ async function listProducts(url: URL) {
   const { data, error } = await query;
   if (error) throw error;
   const rows = data ?? [];
+  const ids=rows.map((p:any)=>p.id);
+  const offerMap=new Map<string,any>();
+  if(ids.length){
+    const {data:offerRows,error:oErr}=await db.from("offers")
+      .select("id,product_id,title,sale_price_cents,starts_at,ends_at,active,metadata,created_at")
+      .eq("organization_id",ORG_ID)
+      .in("product_id",ids);
+    if(oErr)throw oErr;
+    for(const offer of offerRows??[])offerMap.set(offer.product_id,offer);
+  }
   return {
     products: rows.map((p:any)=>({
       ...p,
+      offer: offerMap.get(p.id) ?? null,
       packaging: p.metadata?.packaging ?? "",
       subcategory: p.metadata?.subcategory ?? "",
       detailed_subcategory: p.metadata?.subsubcategory ?? "",
@@ -141,11 +169,15 @@ async function saveProduct(payload: any) {
   const subcategory = text(payload?.subcategory, 120);
   const description = text(payload?.description, 1800);
   const now = new Date().toISOString();
+  const hasExpiration=Object.prototype.hasOwnProperty.call(payload??{},"expiration_date");
+  const expirationRaw=hasExpiration ? text(payload?.expiration_date,10) : "";
+  if(expirationRaw && !validIsoDate(expirationRaw)) return {error:"invalid_expiration_date",status:400};
+  const hasAutoExpiry=Object.prototype.hasOwnProperty.call(payload??{},"auto_expiry_offer_enabled");
 
   let previous:any = null;
   if (id) {
     const { data, error } = await db.from("products")
-      .select("id,metadata")
+      .select("id,metadata,expiration_date,auto_expiry_offer_enabled")
       .eq("organization_id",ORG_ID)
       .eq("id",id)
       .maybeSingle();
@@ -170,6 +202,8 @@ async function saveProduct(payload: any) {
     active: payload?.active !== false,
     sale_price_cents: Math.round(num(payload?.sale_price_cents,0,100000000)),
     stock_quantity: Math.round(num(payload?.stock_quantity,0,1000000)*1000)/1000,
+    expiration_date: hasExpiration ? (expirationRaw || null) : (previous?.expiration_date ?? null),
+    auto_expiry_offer_enabled: hasAutoExpiry ? payload?.auto_expiry_offer_enabled===true : Boolean(previous?.auto_expiry_offer_enabled),
     image_url: maybeText(payload?.image_url,1200),
     metadata,
     search_text: normalizedSearch([name,payload?.sku,payload?.gtin,description,packaging,subcategory,category]),
@@ -181,9 +215,10 @@ async function saveProduct(payload: any) {
       .update(row)
       .eq("organization_id",ORG_ID)
       .eq("id",id)
-      .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,updated_at")
+      .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
       .single();
     if (error) throw error;
+    try{await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID})}catch{}
     let blingQueued=false;
     try{
       const queued=await blingHubControl("enqueue_job",{
@@ -198,9 +233,10 @@ async function saveProduct(payload: any) {
   }
   const { data, error } = await db.from("products")
     .insert(row)
-    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,updated_at")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
     .single();
   if (error) throw error;
+  try{await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID})}catch{}
   let blingQueued=false;
   try{
     const queued=await blingHubControl("enqueue_job",{
@@ -214,6 +250,183 @@ async function saveProduct(payload: any) {
   return { product_id:data.id,bling_queued:blingQueued };
 }
 
+
+
+async function listExpirations() {
+  const reconcile=await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID});
+  if(reconcile.error)throw reconcile.error;
+  const today=cuiabaDateKey();
+  const horizon=addDateDays(today,90);
+
+  const {data:allRows,error:allErr}=await db.from("products")
+    .select("id,expiration_date,auto_expiry_offer_enabled")
+    .eq("organization_id",ORG_ID)
+    .range(0,4999);
+  if(allErr)throw allErr;
+
+  const {data:rows,error}=await db.from("products")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
+    .eq("organization_id",ORG_ID)
+    .not("expiration_date","is",null)
+    .lte("expiration_date",horizon)
+    .order("expiration_date",{ascending:true})
+    .order("name",{ascending:true});
+  if(error)throw error;
+
+  const ids=(rows??[]).map((p:any)=>p.id);
+  const offerMap=new Map<string,any>();
+  if(ids.length){
+    const {data:offerRows,error:oErr}=await db.from("offers")
+      .select("id,product_id,title,sale_price_cents,starts_at,ends_at,active,metadata,created_at")
+      .eq("organization_id",ORG_ID)
+      .in("product_id",ids);
+    if(oErr)throw oErr;
+    for(const offer of offerRows??[])offerMap.set(offer.product_id,offer);
+  }
+
+  const products=(rows??[]).map((p:any)=>{
+    const days=dateDiffDays(today,String(p.expiration_date));
+    const suggested=days<0?0:days<30?40:days<60?20:10;
+    return {
+      ...p,
+      packaging:p.metadata?.packaging??"",
+      subcategory:p.metadata?.subcategory??"",
+      detailed_subcategory:p.metadata?.subsubcategory??"",
+      category:p.metadata?.sales_category??p.metadata?.storefront_category??"",
+      days_left:days,
+      suggested_discount_percent:suggested,
+      offer:offerMap.get(p.id)??null
+    };
+  });
+
+  const summary={
+    expired:products.filter((p:any)=>p.days_left<0).length,
+    under_30:products.filter((p:any)=>p.days_left>=0&&p.days_left<30).length,
+    days_30_59:products.filter((p:any)=>p.days_left>=30&&p.days_left<60).length,
+    days_60_90:products.filter((p:any)=>p.days_left>=60&&p.days_left<=90).length,
+    without_expiration:(allRows??[]).filter((p:any)=>!p.expiration_date).length,
+    auto_enabled:(allRows??[]).filter((p:any)=>p.auto_expiry_offer_enabled===true).length
+  };
+  return {today,horizon,summary,products,reconcile:reconcile.data??null};
+}
+
+async function saveExpiration(payload:any) {
+  const id=uuid(payload?.product_id);
+  if(!id)return {error:"invalid_product",status:400};
+  const expirationRaw=text(payload?.expiration_date,10);
+  if(expirationRaw&&!validIsoDate(expirationRaw))return {error:"invalid_expiration_date",status:400};
+  const autoEnabled=payload?.auto_expiry_offer_enabled===true;
+
+  const {data:before,error:bErr}=await db.from("products")
+    .select("id,stock_quantity")
+    .eq("organization_id",ORG_ID)
+    .eq("id",id)
+    .maybeSingle();
+  if(bErr)throw bErr;
+  if(!before)return {error:"product_not_found",status:404};
+
+  const {error}=await db.from("products")
+    .update({
+      expiration_date:expirationRaw||null,
+      auto_expiry_offer_enabled:autoEnabled,
+      updated_at:new Date().toISOString()
+    })
+    .eq("organization_id",ORG_ID)
+    .eq("id",id);
+  if(error)throw error;
+
+  const reconcile=await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID});
+  if(reconcile.error)throw reconcile.error;
+
+  const {data:fresh,error:fErr}=await db.from("products")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
+    .eq("organization_id",ORG_ID)
+    .eq("id",id)
+    .single();
+  if(fErr)throw fErr;
+
+  if(Number(before.stock_quantity||0)!==Number(fresh.stock_quantity||0)){
+    try{await queueBlingStockSnapshots([id],"expiration_reconcile")}catch{}
+  }
+
+  const {data:offer,error:oErr}=await db.from("offers")
+    .select("id,product_id,title,sale_price_cents,starts_at,ends_at,active,metadata,created_at")
+    .eq("organization_id",ORG_ID)
+    .eq("product_id",id)
+    .maybeSingle();
+  if(oErr)throw oErr;
+
+  return {product:{...fresh,offer:offer??null},reconcile:reconcile.data??null};
+}
+
+async function saveManualOffer(payload:any) {
+  const productId=uuid(payload?.product_id);
+  if(!productId)return {error:"invalid_product",status:400};
+
+  const {data:product,error:pErr}=await db.from("products")
+    .select("id,name,sale_price_cents,stock_quantity")
+    .eq("organization_id",ORG_ID)
+    .eq("id",productId)
+    .maybeSingle();
+  if(pErr)throw pErr;
+  if(!product)return {error:"product_not_found",status:404};
+
+  const active=payload?.active===true;
+  if(!active){
+    const {error}=await db.from("offers")
+      .update({
+        active:false,
+        metadata:{source:"manual",deactivated_reason:"admin",deactivated_at:new Date().toISOString()}
+      })
+      .eq("organization_id",ORG_ID)
+      .eq("product_id",productId);
+    if(error)throw error;
+    return {product_id:productId,active:false};
+  }
+
+  const regular=Math.max(0,Math.round(Number(product.sale_price_cents||0)));
+  let sale=Math.round(Number(payload?.sale_price_cents||0));
+  let discount=Number(payload?.discount_percent);
+  if((!Number.isFinite(sale)||sale<=0)&&Number.isFinite(discount)&&discount>0&&discount<100){
+    sale=Math.max(1,Math.round(regular*(100-discount)/100));
+  }
+  if(!Number.isFinite(sale)||sale<=0||sale>=regular)return {error:"invalid_offer_price",status:400};
+  if(!Number.isFinite(discount)||discount<=0||discount>=100){
+    discount=Math.round((1-sale/regular)*1000)/10;
+  }
+  const duration=text(payload?.duration,20)||"stock_zero";
+  if(!["stock_zero","5","10","15"].includes(duration))return {error:"invalid_offer_duration",status:400};
+  const endsAt=duration==="stock_zero"?null:new Date(Date.now()+Number(duration)*86400000).toISOString();
+  const now=new Date().toISOString();
+  const row={
+    organization_id:ORG_ID,
+    product_id:productId,
+    title:`Oferta · ${discount}%`,
+    sale_price_cents:sale,
+    starts_at:now,
+    ends_at:endsAt,
+    active:Number(product.stock_quantity||0)>0,
+    metadata:{
+      source:"manual",
+      discount_percent:discount,
+      duration_mode:duration,
+      managed_at:now
+    }
+  };
+  const {data,error}=await db.from("offers")
+    .upsert(row,{onConflict:"organization_id,product_id"})
+    .select("id,product_id,title,sale_price_cents,starts_at,ends_at,active,metadata,created_at")
+    .single();
+  if(error)throw error;
+
+  const {error:uErr}=await db.from("products")
+    .update({auto_expiry_offer_enabled:false,updated_at:now})
+    .eq("organization_id",ORG_ID)
+    .eq("id",productId);
+  if(uErr)throw uErr;
+
+  return {offer:data,product_id:productId,active:data.active};
+}
 
 async function productLocationMap(productIds:string[]) {
   const ids=[...new Set(productIds.filter(Boolean))];
@@ -947,7 +1160,7 @@ async function previewBlingProductSync(payload:any){
   const id=uuid(payload?.id);
   if(!id)return {error:"invalid_product",status:400};
   const q=await db.from("products")
-    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,updated_at")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
     .eq("organization_id",ORG_ID).eq("id",id).maybeSingle();
   if(q.error)throw q.error;
   if(!q.data)return {error:"product_not_found",status:404};
@@ -1344,6 +1557,7 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="health") return json(req,{ok:true,service:"vitrine-admin-v1"});
     if (req.method==="GET" && action==="products") return json(req,{ok:true,...await listProducts(url)});
     if (req.method==="GET" && action==="product_facets") return json(req,{ok:true,...await productFacets(url.searchParams.get("category"))});
+    if (req.method==="GET" && action==="expirations") return json(req,{ok:true,...await listExpirations()});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
     if (req.method==="GET" && action==="bling_status") {
@@ -1375,6 +1589,16 @@ Deno.serve(async (req: Request) => {
       if (action==="product_save") {
         const result=await saveProduct(payload);
         if (result.error) return json(req,{ok:false,error:result.error},result.status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="expiration_save") {
+        const result=await saveExpiration(payload);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="offer_save") {
+        const result=await saveManualOffer(payload);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
         return json(req,{ok:true,...result});
       }
       if (action==="customer_save") {
