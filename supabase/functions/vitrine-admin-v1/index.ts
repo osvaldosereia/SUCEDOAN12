@@ -866,8 +866,10 @@ async function consumeOrderStock(payload:any) {
     if(uErr)throw uErr;
     const stockItems=await orderStockReservationItems(id);
     try{await queueBlingStockSnapshots(stockItems.map((x:any)=>x.product_id),"order_separation")}catch{}
+    let blingOrderQueued=false;
+    try{blingOrderQueued=await queueBlingOrderSnapshot(id,"first_separation")}catch(e){console.error("bling_order_enqueue_failed",String((e as Error)?.message||e))}
     const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
-    return {order_id:id,stock_status:"consumed",already_consumed:Boolean(consumed.already_consumed),history_synced:Boolean(historySync.ok)};
+    return {order_id:id,stock_status:"consumed",already_consumed:Boolean(consumed.already_consumed),history_synced:Boolean(historySync.ok),bling_order_queued:blingOrderQueued};
   }
 
   if(payment.stock_reserved===true){
@@ -897,8 +899,10 @@ async function consumeOrderStock(payload:any) {
   if(uErr)throw uErr;
 
   try{await queueBlingStockSnapshots(stockItems.map((x:any)=>x.product_id),"order_separation")}catch{}
+  let blingOrderQueued=false;
+  try{blingOrderQueued=await queueBlingOrderSnapshot(id,"first_separation")}catch(e){console.error("bling_order_enqueue_failed",String((e as Error)?.message||e))}
   const historySync=await syncVitrineOrderHistory(db,id,ORG_ID);
-  return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok)};
+  return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok),bling_order_queued:blingOrderQueued};
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
@@ -977,6 +981,150 @@ async function reconcileBlingProductsReadonly(payload:any){
     next_offset:items.length===limit?offset+items.length:null
   };
 }
+async function buildBlingOrderSnapshot(orderId:string){
+  const {data:order,error:oErr}=await db.from("orders")
+    .select("id,order_number,status,subtotal_cents,discount_cents,delivery_cents,total_cents,delivery_address_snapshot,payment_method_snapshot,created_at,confirmed_at,delivered_at,whatsapp_phone_e164")
+    .eq("organization_id",ORG_ID).eq("id",orderId).maybeSingle();
+  if(oErr)throw oErr;
+  if(!order)throw new Error("order_not_found");
+
+  const {data:items,error:iErr}=await db.from("order_items")
+    .select("id,product_id,basket_id,item_kind,name_snapshot,sku_snapshot,quantity,unit_price_cents,total_cents,metadata")
+    .eq("organization_id",ORG_ID).eq("order_id",orderId).order("id",{ascending:true});
+  if(iErr)throw iErr;
+  const itemRows=items??[];
+  const itemIds=itemRows.map((x:any)=>x.id);
+
+  let components:any[]=[];
+  if(itemIds.length){
+    const c=await db.from("order_item_components")
+      .select("id,order_item_id,product_id,name_snapshot,sku_snapshot,quantity,metadata")
+      .eq("organization_id",ORG_ID).in("order_item_id",itemIds);
+    if(c.error)throw c.error;
+    components=c.data??[];
+  }
+
+  const productIds=[...new Set([
+    ...itemRows.map((x:any)=>x.product_id),
+    ...components.map((x:any)=>x.product_id)
+  ].filter(Boolean))];
+  let products:any[]=[];
+  if(productIds.length){
+    const p=await db.from("products")
+      .select("id,sku,gtin,name")
+      .eq("organization_id",ORG_ID).in("id",productIds);
+    if(p.error)throw p.error;
+    products=p.data??[];
+  }
+  const pMap=new Map(products.map((p:any)=>[p.id,p]));
+  const compMap=new Map<string,any[]>();
+  for(const c of components){
+    if(!compMap.has(c.order_item_id))compMap.set(c.order_item_id,[]);
+    compMap.get(c.order_item_id)!.push(c);
+  }
+
+  const issues:string[]=[];
+  const lines:any[]=[];
+  let individualSubtotal=0;
+
+  for(const item of itemRows){
+    if(item.item_kind==="product"){
+      const p=pMap.get(item.product_id);
+      const qty=Number(item.quantity||0);
+      const price=Number(item.unit_price_cents||0);
+      const lineTotal=Math.round(qty*price);
+      individualSubtotal+=lineTotal;
+      lines.push({
+        product_id:item.product_id,
+        sku:item.sku_snapshot||p?.sku||"",
+        gtin:p?.gtin||"",
+        name:item.name_snapshot||p?.name||"Produto",
+        quantity:qty,
+        unit_price_cents:price,
+        line_total_cents:lineTotal,
+        source_kind:"product"
+      });
+      continue;
+    }
+
+    if(item.item_kind==="basket"){
+      const basketQty=Number(item.quantity||0);
+      const rows=compMap.get(item.id)||[];
+      if(!rows.length)issues.push("basket_without_components:"+item.id);
+      for(const c of rows){
+        const p=pMap.get(c.product_id);
+        const rawPrice=c.metadata?.unit_price_cents;
+        if(rawPrice===undefined||rawPrice===null||!Number.isFinite(Number(rawPrice))){
+          issues.push("missing_component_price:"+c.id);
+          continue;
+        }
+        const qty=Math.round(Number(c.quantity||0)*basketQty*1000)/1000;
+        const price=Number(rawPrice);
+        const lineTotal=Math.round(qty*price);
+        individualSubtotal+=lineTotal;
+        lines.push({
+          product_id:c.product_id,
+          sku:c.sku_snapshot||p?.sku||"",
+          gtin:p?.gtin||"",
+          name:c.name_snapshot||p?.name||"Produto",
+          quantity:qty,
+          unit_price_cents:price,
+          line_total_cents:lineTotal,
+          source_kind:"basket_component",
+          basket_id:item.basket_id||null,
+          basket_name:item.name_snapshot||"Cesta"
+        });
+      }
+    }
+  }
+
+  const orderTotal=Number(order.total_cents||0);
+  const commercialDelta=orderTotal-individualSubtotal;
+  const delivery=order.delivery_address_snapshot&&typeof order.delivery_address_snapshot==="object"
+    ? order.delivery_address_snapshot:{};
+  const payment=order.payment_method_snapshot&&typeof order.payment_method_snapshot==="object"
+    ? order.payment_method_snapshot:{};
+
+  return {
+    source_order_id:order.id,
+    source_system:"vitrine_qx",
+    order_number:String(order.order_number||""),
+    status:String(order.status||"created"),
+    created_at:order.created_at,
+    confirmed_at:order.confirmed_at,
+    delivered_at:order.delivered_at,
+    customer:{
+      source_customer_id:delivery.source_customer_id||null,
+      name:delivery.customer_name||delivery.recipient_name||"",
+      phone:order.whatsapp_phone_e164||delivery.phone||"",
+      cpf:delivery.cpf||delivery.cpf_cnpj||""
+    },
+    delivery,
+    payment,
+    items:lines,
+    totals:{
+      individual_products_cents:individualSubtotal,
+      commercial_order_cents:orderTotal,
+      commercial_delta_cents:commercialDelta,
+      other_expenses_cents:Math.max(0,commercialDelta),
+      discount_cents:Math.max(0,-commercialDelta)
+    },
+    issues:[...new Set(issues)],
+    payload_version:1
+  };
+}
+
+async function queueBlingOrderSnapshot(orderId:string,reason:string){
+  const snapshot=await buildBlingOrderSnapshot(orderId);
+  const key="vitrine_qx:order:"+orderId+":v1";
+  const remote=await blingHubControl("enqueue_job",{
+    domain:"order",operation:"sync_order",source_id:orderId,idempotency_key:key,
+    payload:{...snapshot,queue_reason:reason,queued_at:new Date().toISOString()}
+  });
+  if((remote as any).error)return false;
+  return true;
+}
+
 async function queueBlingStockSnapshots(productIds:string[],reason:string){
   const ids=[...new Set((productIds||[]).filter(Boolean))];
   if(!ids.length)return false;
