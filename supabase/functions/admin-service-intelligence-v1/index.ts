@@ -996,12 +996,17 @@ const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 async function blingHubReadinessExtended(sb:any){
   const r=await sb.rpc("bling_hub_readiness_v2");
   if(r.error)throw r.error;
-  const links=await sb.from("bling_hub_entity_links_v2").select("status")
-    .eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000);
+  const [links,customerLinks]=await Promise.all([
+    sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000),
+    sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000)
+  ]);
   if(links.error)throw links.error;
+  if(customerLinks.error)throw customerLinks.error;
   const counts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
+  const customerCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   for(const row of links.data||[]){counts.total++;counts[row.status]=(counts[row.status]||0)+1;}
-  return {...(r.data||{}),product_links:counts};
+  for(const row of customerLinks.data||[]){customerCounts.total++;customerCounts[row.status]=(customerCounts[row.status]||0)+1;}
+  return {...(r.data||{}),product_links:counts,customer_links:customerCounts};
 }
 async function blingHubAuthorized(sb:any,req:Request){
   const supplied=clean(req.headers.get("x-dona-antonia-bling-hub-key"),200);
@@ -1594,6 +1599,214 @@ async function vitrineCustomerOrderDetail(sb:any,body:any){
   };
 }
 
+async function blingHubCustomerSnapshot(sb:any,customerId:string){
+  const customer=await sb.from("customers")
+    .select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,bling_contact_id,updated_at")
+    .eq("id",customerId).maybeSingle();
+  if(customer.error)throw customer.error;
+  if(!customer.data)return null;
+  const [email,address]=await Promise.all([
+    sb.from("customer_emails").select("email").eq("customer_id",customerId).eq("is_primary",true).order("updated_at",{ascending:false}).limit(1).maybeSingle(),
+    sb.from("customer_addresses").select("street,number,complement,neighborhood,city,state,postal_code,reference")
+      .eq("customer_id",customerId).eq("is_active",true).eq("is_default",true).order("updated_at",{ascending:false}).limit(1).maybeSingle()
+  ]);
+  if(email.error)throw email.error;
+  if(address.error)throw address.error;
+  return {...customer.data,email:email.data?.email||"",address:address.data||null};
+}
+function blingHubCustomerPayload(current:any,local:any){
+  const payload:any={};
+  const preserve=["codigo","tipoContato","fantasia","indicadorIe","ie","rg","orgaoEmissor","contribuinte","sexo","dataNascimento","naturalidade","limiteCredito","pais","vendedor","dadosAdicionais"];
+  for(const key of preserve)if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=current[key];
+
+  const doc=blingHubDigits(local?.cpf_cnpj);
+  payload.nome=clean(local?.name,220);
+  if(doc)payload.numeroDocumento=doc;
+  payload.tipo=doc.length===14?"J":"F";
+  payload.situacao=local?.is_active===false?"I":"A";
+  const phone=blingHubDigits(local?.primary_whatsapp_e164);
+  if(phone)payload.celular=phone;
+  const email=clean(local?.email,220);
+  if(email){payload.email=email;payload.emailNotaFiscal=email;}
+
+  const a=local?.address&&typeof local.address==="object"?local.address:null;
+  if(a){
+    const geral:any={};
+    if(clean(a.street,180))geral.endereco=clean(a.street,180);
+    if(clean(a.number,40))geral.numero=clean(a.number,40);
+    if(clean(a.complement,140)||clean(a.reference,220))geral.complemento=clean([a.complement,a.reference].filter(Boolean).join(" · "),220);
+    if(clean(a.neighborhood,140))geral.bairro=clean(a.neighborhood,140);
+    if(clean(a.city,120))geral.municipio=clean(a.city,120);
+    if(clean(a.state,2))geral.uf=clean(a.state,2).toUpperCase();
+    const cep=blingHubDigits(a.postal_code);if(cep)geral.cep=cep;
+    if(Object.keys(geral).length)payload.endereco={...(current?.endereco||{}),geral:{...(current?.endereco?.geral||{}),...geral}};
+  }
+  return payload;
+}
+function blingHubManagedCustomerDiff(current:any,payload:any){
+  const keys=["nome","numeroDocumento","tipo","situacao","celular","email","emailNotaFiscal"];
+  const diff:any={};
+  for(const key of keys){
+    const a=current?.[key]??null,b=payload?.[key]??null;
+    if(JSON.stringify(a)!==JSON.stringify(b))diff[key]={from:a,to:b};
+  }
+  const curAddr=current?.endereco?.geral||{},newAddr=payload?.endereco?.geral||{};
+  for(const key of ["endereco","numero","complemento","bairro","municipio","uf","cep"]){
+    const a=curAddr?.[key]??null,b=newAddr?.[key]??null;
+    if(JSON.stringify(a)!==JSON.stringify(b))diff["endereco."+key]={from:a,to:b};
+  }
+  return diff;
+}
+async function blingHubFindContactByDocument(sb:any,token:string,docRaw:any){
+  const doc=blingHubDigits(docRaw);
+  if(![11,14].includes(doc.length))return {status:"review_required",reason:"document_required",bling_id:null,candidates:[]};
+  const q=new URLSearchParams({pagina:"1",limite:"20",numeroDocumento:doc,criterio:"1"});
+  const r=await blingHubGet(sb,token,"/contatos?"+q.toString());
+  if(!r.ok)return {status:"review_required",reason:"contact_lookup_http_"+r.status,bling_id:null,candidates:[]};
+  const rows=Array.isArray(r.data?.data)?r.data.data:[];
+  if(!rows.length)return {status:"not_found",reason:"document_not_found",bling_id:null,candidates:[]};
+  const exact:number[]=[];
+  for(const row of rows.slice(0,10)){
+    const id=Number(row?.id||0);if(!id)continue;
+    const detail=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(id)));
+    if(detail.ok&&blingHubDigits(detail.data?.data?.numeroDocumento)===doc)exact.push(id);
+  }
+  const ids=[...new Set(exact)];
+  if(ids.length===1)return {status:"matched",reason:"cpf_cnpj_exact",bling_id:ids[0],candidates:ids};
+  if(ids.length>1)return {status:"ambiguous",reason:"duplicate_document",bling_id:null,candidates:ids};
+  return {status:"not_found",reason:"document_not_found",bling_id:null,candidates:[]};
+}
+async function blingHubReconcileCustomersReadonly(sb:any,limitRaw:any=650){
+  const limit=Math.max(1,Math.min(1000,Number(limitRaw||650)||650));
+  const rows=await sb.from("customers")
+    .select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,bling_contact_id,updated_at")
+    .order("updated_at",{ascending:false}).limit(limit);
+  if(rows.error)throw rows.error;
+  const customers=rows.data||[];
+  if(!customers.length)return {ok:true,processed:0,summary:{},exceptions:[],external_write:false};
+
+  const token=await blingHubOauth(sb);
+  const now=new Date().toISOString();
+  const summary:any={matched:0,not_found:0,ambiguous:0,review_required:0};
+  const exceptions:any[]=[];
+  for(const c of customers){
+    let status="review_required",reason="",blingId=Number(c.bling_contact_id||0)||null,method="";
+    let candidates:number[]=[];
+    if(blingId){
+      const detail=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
+      if(detail.ok){status="matched";method="existing_bling_contact_id";reason="";}
+      else{status="review_required";reason="existing_bling_contact_http_"+detail.status;blingId=null;}
+    }else{
+      const found=await blingHubFindContactByDocument(sb,token,c.cpf_cnpj);
+      status=found.status;reason=found.reason;blingId=found.bling_id;candidates=found.candidates;
+      if(status==="matched"&&blingId){
+        method="cpf_cnpj_exact";
+        const bind=await sb.from("customers").update({bling_contact_id:blingId,last_bling_sync_at:now,updated_at:c.updated_at}).eq("id",c.id).is("bling_contact_id",null);
+        if(bind.error)throw bind.error;
+      }
+    }
+    summary[status]=(summary[status]||0)+1;
+    if(status!=="matched"&&exceptions.length<200)exceptions.push({source_id:c.id,name:c.name||"",document:blingHubDigits(c.cpf_cnpj)||null,status,reason,candidate_ids:candidates.slice(0,5)});
+    const up=await sb.from("bling_hub_entity_links_v2").upsert({
+      source_system:"canonical_ssbes",entity_type:"customer",source_id:c.id,bling_id:blingId,
+      identity_kind:blingHubDigits(c.cpf_cnpj)?"cpf_cnpj":null,identity_value:blingHubDigits(c.cpf_cnpj)||null,
+      status,last_verified_at:now,updated_at:now,
+      metadata:{method:method||null,reason:reason||null,name:c.name||"",candidate_ids:candidates.slice(0,10),readonly:true}
+    },{onConflict:"source_system,entity_type,source_id"});
+    if(up.error)throw up.error;
+  }
+  await sb.from("bling_hub_audit_v2").insert({event_type:"customer_reconcile_readonly",severity:summary.ambiguous||summary.review_required?"warning":"info",domain:"customer",details:{processed:customers.length,summary,external_write:false,make_used:false}});
+  return {ok:true,processed:customers.length,summary,exceptions,external_write:false};
+}
+async function blingHubPreviewCustomerSync(sb:any,customerIdRaw:any){
+  const customerId=uuid(customerIdRaw);if(!customerId)return {ok:false,error:"invalid_customer"};
+  const local=await blingHubCustomerSnapshot(sb,customerId);
+  if(!local)return {ok:false,error:"customer_not_found"};
+  let blingId=Number(local.bling_contact_id||0)||null;
+  if(!blingId){
+    const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system","canonical_ssbes").eq("entity_type","customer").eq("source_id",customerId).maybeSingle();
+    if(link.error)throw link.error;
+    if(link.data?.status==="matched")blingId=Number(link.data.bling_id||0)||null;
+  }
+  if(!blingId)return {ok:false,error:"customer_not_linked"};
+  const token=await blingHubOauth(sb);
+  const detail=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
+  if(!detail.ok)return {ok:false,error:"bling_contact_http_"+detail.status};
+  const current=detail.data?.data||{};
+  const payload=blingHubCustomerPayload(current,local);
+  const changes=blingHubManagedCustomerDiff(current,payload);
+  return {ok:true,readonly:true,external_write:false,source_id:customerId,bling_id:blingId,change_count:Object.keys(changes).length,changes};
+}
+async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
+  const worker="bling-customer-edge-"+crypto.randomUUID();
+  const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
+  const claim=await sb.rpc("claim_bling_hub_jobs_v2",{p_worker:worker,p_domains:["customer"],p_limit:limit,p_lease_seconds:300});
+  if(claim.error)throw claim.error;
+  const jobs=claim.data||[];
+  const summary:any={ok:true,claimed:jobs.length,processed:0,synced:0,review_required:0,retry:0,failed:0};
+  if(!jobs.length)return summary;
+  const token=await blingHubOauth(sb);
+
+  for(const job of jobs){
+    summary.processed++;
+    try{
+      if(job.operation!=="sync_customer"){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"unsupported_operation",p_error_message:"Unsupported customer operation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+      const local=await blingHubCustomerSnapshot(sb,job.source_id);
+      if(!local){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"customer_not_found",p_error_message:"Customer no longer exists",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+      const blingId=Number(local.bling_contact_id||0);
+      if(!blingId){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"customer_not_linked",p_error_message:"Customer is not safely linked to Bling",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+      const before=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
+      if(!before.ok){
+        const status=before.status===429||before.status>=500?"retry":"review_required";
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{},p_error_code:"contact_read_http_"+before.status,p_error_message:"Could not read Bling contact",p_http_status:before.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary[status]++;continue;
+      }
+      const current=before.data?.data||{};
+      const desired=blingHubCustomerPayload(current,local);
+      const changes=blingHubManagedCustomerDiff(current,desired);
+      if(!Object.keys(changes).length){
+        await sb.from("customers").update({last_bling_sync_at:new Date().toISOString()}).eq("id",local.id);
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:false,verified:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary.synced++;continue;
+      }
+      const write=await blingHubWriteIdempotent(sb,token,"/contatos/"+encodeURIComponent(String(blingId)),"PUT",desired);
+      if(!write.ok){
+        const status=write.status===429||write.status>=500||write.status===0?"retry":"review_required";
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{changes},p_error_code:"contact_put_http_"+write.status,p_error_message:write.error||"Bling contact update failed",p_http_status:write.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary[status]++;continue;
+      }
+      const after=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
+      if(!after.ok){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{changes,write_ok:true},p_error_code:"post_write_verify_failed",p_error_message:"Contact write succeeded but verification failed",p_http_status:after.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary.review_required++;continue;
+      }
+      const verifyPayload=blingHubCustomerPayload(after.data?.data||{},local);
+      const remaining=blingHubManagedCustomerDiff(after.data?.data||{},verifyPayload);
+      if(Object.keys(remaining).length){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{changes,remaining},p_error_code:"post_write_mismatch",p_error_message:"Bling contact differs after update",p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary.review_required++;continue;
+      }
+      await sb.from("customers").update({last_bling_sync_at:new Date().toISOString()}).eq("id",local.id);
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:true,changes,verified:true},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+      summary.synced++;
+    }catch(e){
+      const msg=clean((e as Error)?.message||e,500);
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"retry",p_result:{},p_error_code:"worker_exception",p_error_message:msg,p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+      summary.retry++;
+    }
+  }
+  return summary;
+}
+
 async function vitrineSaveCustomer(sb:any,body:any){
   const id=uuid(body?.id);
   const name=clean(body?.display_name,180);
@@ -1692,7 +1905,19 @@ async function vitrineSaveCustomer(sb:any,body:any){
     }
   }
 
-  return {ok:true,customer_id:customerId,customer:await vitrineGetCustomer(sb,customerId)};
+  const savedCustomer=await vitrineGetCustomer(sb,customerId);
+  try{
+    const snapshot=await blingHubCustomerSnapshot(sb,customerId);
+    const q=await sb.rpc("enqueue_bling_hub_job_v2",{
+      p_domain:"customer",p_operation:"sync_customer",p_source_system:"canonical_ssbes",p_source_id:customerId,
+      p_idempotency_key:"canonical_ssbes:customer:"+customerId+":"+String(snapshot?.updated_at||new Date().toISOString()),
+      p_payload:{customer_id:customerId},p_payload_version:1
+    });
+    if(q.error)throw q.error;
+  }catch(e){
+    console.error("bling_customer_enqueue_failed",clean((e as Error)?.message||e,300));
+  }
+  return {ok:true,customer_id:customerId,customer:savedCustomer};
 }
 
 Deno.serve(async(req:Request)=>{
@@ -1750,6 +1975,18 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="process_product_jobs"){
         const result=await blingHubProcessProductJobs(sb,body?.limit);
+        return json(result,200);
+      }
+      if(subaction==="reconcile_customers_readonly"){
+        const result=await blingHubReconcileCustomersReadonly(sb,body?.limit);
+        return json(result,200);
+      }
+      if(subaction==="preview_customer_sync"){
+        const result=await blingHubPreviewCustomerSync(sb,body?.customer_id);
+        return json(result,result.ok?200:409);
+      }
+      if(subaction==="process_customer_jobs"){
+        const result=await blingHubProcessCustomerJobs(sb,body?.limit);
         return json(result,200);
       }
       if(subaction==="preview_stock_sync"){
