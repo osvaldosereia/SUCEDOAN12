@@ -1318,6 +1318,47 @@ async function blingHubOrderStatusCatalog(sb:any){
   };
 }
 
+async function blingHubVitrineOrderLinkStatus(sb:any,sourceOrderIdRaw:any){
+  const sourceOrderId=uuid(sourceOrderIdRaw);
+  if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400};
+
+  const link=await sb.from("bling_hub_entity_links_v2")
+    .select("bling_id,status,identity_kind,identity_value,last_verified_at,metadata,updated_at")
+    .eq("source_system","vitrine_qx")
+    .eq("entity_type","order")
+    .eq("source_id",sourceOrderId)
+    .maybeSingle();
+  if(link.error)throw link.error;
+
+  const job=await sb.from("bling_hub_jobs_v2")
+    .select("id,status,operation,attempts,error_code,error_message,provider_id,created_at,updated_at,finished_at")
+    .eq("domain","order")
+    .eq("source_system","vitrine_qx")
+    .eq("source_id",sourceOrderId)
+    .order("created_at",{ascending:false})
+    .limit(1)
+    .maybeSingle();
+  if(job.error)throw job.error;
+
+  const l=link.data;
+  const j=job.data;
+  return {
+    ok:true,
+    source_order_id:sourceOrderId,
+    linked:Boolean(l?.bling_id&&l?.status==="matched"),
+    bling_order_id:l?.bling_id||j?.provider_id||null,
+    link_status:l?.status||"not_linked",
+    external_key:l?.identity_value||null,
+    last_verified_at:l?.last_verified_at||null,
+    job:j?{
+      id:j.id,status:j.status,operation:j.operation,attempts:Number(j.attempts||0),
+      error_code:j.error_code||null,error_message:j.error_message||null,
+      created_at:j.created_at,updated_at:j.updated_at,finished_at:j.finished_at
+    }:null,
+    external_write:false
+  };
+}
+
 async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
   const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
   if(!resolved.ok)return resolved;
@@ -3210,6 +3251,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="preview_order_sync"){
         const result=await blingHubPreviewOrderSync(sb,body?.payload);
         return json(result,result.ok?200:409);
+      }
+      if(subaction==="order_link_status"){
+        const result=await blingHubVitrineOrderLinkStatus(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="fiscal_status"){
         const result=await blingHubVitrineFiscalStatus(sb,body?.source_order_id);
