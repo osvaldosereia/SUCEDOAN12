@@ -584,13 +584,39 @@
   function closureRow(o){
     const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f);
     const cls=label.kind==='ok'?'ok-text':'warn-text';
+    const canConfirmPayment=o.status==='delivered'&&f&&!f.error&&f.payment_status!=='confirmed';
     return '<div class="closure-row">'+
       '<div><strong>#'+esc(shortOrder(o.order_number))+'</strong><span class="sub">'+esc(dateTime(o.delivered_at))+'</span></div>'+
       '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div>'+
       '<strong>'+money(o.total_cents)+'</strong>'+
       '<div class="closure-status"><strong class="'+cls+'">'+esc(label.title)+'</strong><small>'+esc(label.detail)+'</small></div>'+
-      '<button class="text" type="button" data-closure-order="'+esc(o.id)+'">Abrir</button>'+
+      '<div class="dispatch-actions">'+
+        (canConfirmPayment?'<button class="quick-link primary-link" type="button" data-closure-payment="'+esc(o.id)+'">Confirmar recebimento</button>':'')+
+        '<button class="text" type="button" data-closure-order="'+esc(o.id)+'">Abrir</button>'+
+      '</div>'+
     '</div>';
+  }
+  async function confirmClosurePayment(id){
+    const o=state.orders.find(x=>x.id===id);
+    const f=state.fiscalByOrder[id];
+    if(!o||o.status!=='delivered'||!f||f.error||f.payment_status==='confirmed'){
+      toast('Este recebimento não está mais pendente');return;
+    }
+    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    if(!confirm('Confirmar recebimento de '+money(o.total_cents)+' via '+payment+'?\n\nPedido #'+shortOrder(o.order_number)))return;
+    const btn=document.querySelector('[data-closure-payment="'+CSS.escape(id)+'"]');
+    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    try{
+      state.fiscalByOrder[id]=await api('order_fiscal_confirm_payment',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,payment_method:payment})
+      });
+      renderClosure();
+      toast(state.fiscalByOrder[id]?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Confirmar recebimento'}
+    }
   }
   async function loadFiscalForOrders(rows){
     const queue=(rows||[]).slice(0,30);
@@ -629,6 +655,7 @@
         '<section class="panel"><div class="history-title dispatch-head"><div><strong>Concluídos recentes</strong><span>pagamento e fiscal conferidos</span></div><b>'+complete.length+'</b></div>'+(complete.length?complete.slice(0,10).map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento concluído recente.</div>')+'</section>'+
       '</div>';
       document.querySelectorAll('[data-closure-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.closureOrder));
+      document.querySelectorAll('[data-closure-payment]').forEach(b=>b.onclick=()=>confirmClosurePayment(b.dataset.closurePayment));
     }catch(e){
       $('#closureBody').innerHTML='<div class="empty">Não consegui carregar os fechamentos. <button class="text" id="retryClosure">Tentar novamente</button></div>';
       if($('#retryClosure'))$('#retryClosure').onclick=renderClosure;
