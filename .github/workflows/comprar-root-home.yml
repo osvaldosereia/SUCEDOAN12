@@ -9,6 +9,7 @@ on:
       - 'scripts/test-vitrine-whatsapp-handoff-v1.mjs'
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
+      - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/migrations/*storefront_stock*'
       - '.github/workflows/comprar-root-home.yml'
   push:
@@ -20,6 +21,7 @@ on:
       - 'scripts/test-vitrine-whatsapp-handoff-v1.mjs'
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
+      - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/migrations/*storefront_stock*'
       - '.github/workflows/comprar-root-home.yml'
 
