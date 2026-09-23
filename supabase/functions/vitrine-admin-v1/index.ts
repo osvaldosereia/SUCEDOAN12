@@ -1208,7 +1208,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","reconcile_customer_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -1225,7 +1225,7 @@ async function blingHubControl(subaction:string,extra:any={}) {
       "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
     },
     body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),
-    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly"].includes(subaction)?120000:10000)
+    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly","process_product_jobs"].includes(subaction)?120000:10000)
   });
   const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
   if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
@@ -1476,6 +1476,54 @@ async function reconcileBlingOrderDependenciesReadonly(orderId:string){
     product_reconcile:productReconcile,
     preview,
     external_write:false
+  };
+}
+
+async function createMissingBlingProductsForOrder(orderId:string){
+  const id=uuid(orderId);
+  if(!id)return {error:"invalid_order",status:400};
+
+  const snapshot=await buildBlingOrderSnapshot(id);
+  const beforeRemote=await blingHubControl("preview_order_sync",{payload:snapshot});
+  if((beforeRemote as any).error)return beforeRemote as any;
+  const before=(beforeRemote as any).data||{};
+  const unresolved=(Array.isArray(before.unresolved_products)?before.unresolved_products:[])
+    .filter((x:any)=>x?.reason==="product_not_linked"&&uuid(x?.product_id));
+
+  const ids=[...new Set(unresolved.map((x:any)=>uuid(x.product_id)).filter(Boolean))] as string[];
+  if(!ids.length)return {order_id:id,queued:0,processed:null,preview:before};
+
+  const rows=await db.from("products")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
+    .eq("organization_id",ORG_ID)
+    .in("id",ids);
+  if(rows.error)throw rows.error;
+
+  const products=rows.data||[];
+  const jobs=products.map((product:any)=>({
+    domain:"product",operation:"create_product",source_id:product.id,
+    idempotency_key:"vitrine_qx:product:create:"+product.id+":"+String(product.updated_at),
+    payload:{product,requested_from:"order_preflight",source_order_id:id}
+  }));
+  if(!jobs.length)return {order_id:id,queued:0,processed:null,preview:before};
+
+  const queued=await blingHubControl("enqueue_jobs",{jobs});
+  if((queued as any).error)return queued as any;
+
+  let processed:any=null;
+  try{
+    const run=await blingHubControl("process_product_jobs",{limit:Math.min(10,jobs.length)});
+    if(!(run as any).error)processed=(run as any).data||null;
+  }catch{}
+
+  const after=await previewBlingOrderSync(id);
+  if((after as any).error)return after as any;
+  return {
+    order_id:id,
+    queued:Number((queued as any).data?.queued||jobs.length),
+    requested_products:products.map((p:any)=>({id:p.id,name:p.name||"",gtin:p.gtin||"",sku:p.sku||""})),
+    processed,
+    preview:after
   };
 }
 
@@ -1913,6 +1961,13 @@ Deno.serve(async (req: Request) => {
         const id=uuid(payload?.id);
         if(!id)return json(req,{ok:false,error:"invalid_order"},400);
         const result=await reconcileBlingOrderDependenciesReadonly(id);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="bling_create_order_products") {
+        const id=uuid(payload?.id);
+        if(!id)return json(req,{ok:false,error:"invalid_order"},400);
+        const result=await createMissingBlingProductsForOrder(id);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...result});
       }
