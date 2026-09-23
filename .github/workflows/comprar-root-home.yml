@@ -13,6 +13,7 @@ on:
       - 'scripts/test-vitrine-admin-operational-ux-v1.mjs'
       - 'scripts/test-vitrine-admin-order-transitions-v1.mjs'
       - 'scripts/test-vitrine-admin-expedition-v1.mjs'
+      - 'scripts/test-vitrine-admin-order-prerequisites-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -35,6 +36,7 @@ on:
       - 'scripts/test-vitrine-admin-operational-ux-v1.mjs'
       - 'scripts/test-vitrine-admin-order-transitions-v1.mjs'
       - 'scripts/test-vitrine-admin-expedition-v1.mjs'
+      - 'scripts/test-vitrine-admin-order-prerequisites-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -67,3 +69,4 @@ jobs:
           node scripts/test-vitrine-admin-operational-ux-v1.mjs
           node scripts/test-vitrine-admin-order-transitions-v1.mjs
           node scripts/test-vitrine-admin-expedition-v1.mjs
+          node scripts/test-vitrine-admin-order-prerequisites-v1.mjs

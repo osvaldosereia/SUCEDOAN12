@@ -1416,6 +1416,20 @@ async function retryHistorySync(payload:any) {
   return {order_id:id,history_synced:true,remote_order_id:result.order_id??null,remote_customer_id:result.customer_id??null};
 }
 
+function orderOperationalDataBlockers(delivery:any,payment:any){
+  const blockers:string[]=[];
+  const address=delivery&&typeof delivery==="object"?delivery:{};
+  const pay=payment&&typeof payment==="object"?payment:{};
+  const customerName=text(address.customer_name??address.recipient_name,180);
+  if(!customerName)blockers.push("customer_required");
+  if(!text(address.street,180))blockers.push("delivery_street_required");
+  if(!text(address.number,40))blockers.push("delivery_number_required");
+  if(!text(address.city,120))blockers.push("delivery_city_required");
+  if(!text(address.state,2))blockers.push("delivery_state_required");
+  if(!text(pay.label??pay.method,80))blockers.push("payment_method_required");
+  return blockers;
+}
+
 function orderTransitionAllowed(current:string,next:string){
   if(current===next)return true;
   const allowed:Record<string,string[]>={
@@ -1446,9 +1460,11 @@ async function updateOrder(payload:any) {
   const currentPayment=currentOrder.payment_method_snapshot&&typeof currentOrder.payment_method_snapshot==="object"
     ? currentOrder.payment_method_snapshot : {};
   let stockReleasedChange:null|boolean=null;
+  let requestedStatus="";
   const allowedStatuses=new Set(["created","confirmed","processing","ready","out_for_delivery","delivered","cancelled"]);
   if (payload?.status !== undefined) {
     const status=text(payload.status,40);
+    requestedStatus=status;
     if (!allowedStatuses.has(status)) return {error:"invalid_status",status:400};
     if(!orderTransitionAllowed(String(currentOrder.status||""),status)){
       return {error:"invalid_status_transition",status:409,current_status:currentOrder.status,requested_status:status};
@@ -1560,6 +1576,17 @@ async function updateOrder(payload:any) {
       stock_released:stockReleasedChange,
       ...(currentPayment.stock_model==="reservation_v2"&&stockReleasedChange===true?{stock_consumed:false}: {})
     };
+  }
+
+  if(requestedStatus&&["confirmed","processing","ready","out_for_delivery","delivered"].includes(requestedStatus)){
+    const candidateDelivery=Object.prototype.hasOwnProperty.call(patch,"delivery_address_snapshot")
+      ? patch.delivery_address_snapshot
+      : currentOrder.delivery_address_snapshot;
+    const candidatePayment=patch.payment_method_snapshot??currentPayment;
+    const blockers=orderOperationalDataBlockers(candidateDelivery,candidatePayment);
+    if(blockers.length){
+      return {error:"order_operational_data_incomplete",status:409,blockers,current_status:currentOrder.status,requested_status:requestedStatus};
+    }
   }
 
   const { data,error }=await db.from("orders")
