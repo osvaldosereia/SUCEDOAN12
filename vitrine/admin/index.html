@@ -1104,7 +1104,7 @@
     const syncFailed=o.history_sync?.state==='failed';
     const next=orderNextAction(o);
     return '<div class="list-row orders-layout">'+
-      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(syncFailed?'<span class="sub" style="color:#b3261e">Precisa de atenção</span>':'')+'</div>'+
+      '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(syncFailed?'<span class="sub" style="color:#b3261e">Histórico pendente · precisa de atenção</span>':'')+'</div>'+
       '<span class="desktop-extra">'+esc(dateTime(o.created_at))+'</span>'+
       '<div class="mobile-wide"><span class="row-title">'+esc(o.customer_name||'Sem cliente')+'</span><span class="sub">'+esc(payment)+' · '+esc(next)+'</span></div>'+
       '<span class="money">'+money(o.total_cents)+'</span>'+
