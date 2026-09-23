@@ -1620,6 +1620,11 @@ async function blingHubCustomerSnapshot(sb:any,customerId:string){
   if(address.error)throw address.error;
   return {...customer.data,email:email.data?.email||"",address:address.data||null};
 }
+function blingHubBrazilPhone(v:any){
+  let d=blingHubDigits(v);
+  if((d.length===12||d.length===13)&&d.startsWith("55"))d=d.slice(2);
+  return d.slice(0,11);
+}
 function blingHubCustomerPayload(current:any,local:any){
   const payload:any={};
   const preserve=[
@@ -1635,7 +1640,7 @@ function blingHubCustomerPayload(current:any,local:any){
   const doc=blingHubDigits(local?.cpf_cnpj);
   if(doc){payload.numeroDocumento=doc;payload.tipo=doc.length===14?"J":"F";}
   payload.situacao=local?.is_active===false?"I":"A";
-  const phone=blingHubDigits(local?.primary_whatsapp_e164);
+  const phone=blingHubBrazilPhone(local?.primary_whatsapp_e164);
   if(phone)payload.celular=phone;
   const email=clean(local?.email,220);
   if(email){payload.email=email;payload.emailNotaFiscal=email;}
@@ -1755,6 +1760,7 @@ async function blingHubPreviewCustomerSync(sb:any,customerIdRaw:any){
     phone_shape:{
       current_digits:blingHubDigits(current?.celular).length,
       local_digits:blingHubDigits(local?.primary_whatsapp_e164).length,
+      normalized_local_digits:blingHubBrazilPhone(local?.primary_whatsapp_e164).length,
       desired_digits:blingHubDigits(payload?.celular).length
     }
   };
