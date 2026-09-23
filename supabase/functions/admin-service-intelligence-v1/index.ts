@@ -988,6 +988,120 @@ async function vitrineGetCustomer(sb:any,id:string){
   const bundles=await vitrineCustomerBundles(sb,[id]);
   return vitrinePublicCustomer(q.data,bundles.get(id));
 }
+
+function vitrineMoneyCents(v:any){const n=Number(v||0);return Number.isFinite(n)?Math.round(n*100):0}
+async function vitrineCustomerHistory(sb:any,body:any){
+  const customerId=uuid(body?.id);
+  if(!customerId)return {ok:false,error:"invalid_customer",status:400};
+  const limit=Math.max(1,Math.min(50,Number(body?.limit||20)||20));
+  const offset=Math.max(0,Math.min(5000,Number(body?.offset||0)||0));
+
+  const [customer,summary,history,topProducts]=await Promise.all([
+    vitrineGetCustomer(sb,customerId),
+    sb.from("customer_purchase_summary_v1").select("*").eq("customer_id",customerId).maybeSingle(),
+    sb.rpc("get_customer_purchase_history_v1",{p_customer_id:customerId,p_limit:limit,p_offset:offset}),
+    sb.rpc("get_customer_top_products_v1",{p_customer_id:customerId,p_limit:12})
+  ]);
+  if(!customer)return {ok:false,error:"customer_not_found",status:404};
+  if(summary.error)throw summary.error;
+  if(history.error)throw history.error;
+  if(topProducts.error)throw topProducts.error;
+
+  const sum=summary.data||{};
+  const orders=(history.data||[]).map((o:any)=>({
+    order_id:o.order_id,
+    order_number:o.order_number,
+    status:o.status,
+    source:o.source,
+    total_cents:vitrineMoneyCents(o.total),
+    payment_method:o.payment_method||"",
+    basket_id:o.basket_id||null,
+    basket_name:o.basket_name||"",
+    created_at:o.created_at,
+    confirmed_at:o.confirmed_at,
+    delivered_at:o.delivered_at,
+    item_count:Number(o.item_count||0),
+    counts_as_purchase:Boolean(o.counts_as_purchase)
+  }));
+  const products=(topProducts.data||[]).map((p:any)=>({
+    product_id:p.product_id,
+    name:p.name||"",
+    sku:p.sku||"",
+    gtin:p.gtin||"",
+    purchase_count:Number(p.purchase_count||0),
+    total_quantity:Number(p.total_quantity||0),
+    total_spent_cents:vitrineMoneyCents(p.total_spent),
+    first_purchase_at:p.first_purchase_at,
+    last_purchase_at:p.last_purchase_at
+  }));
+
+  return {
+    ok:true,
+    customer,
+    summary:{
+      order_count:Number(sum.order_count||0),
+      lifetime_value_cents:vitrineMoneyCents(sum.lifetime_value),
+      average_ticket_cents:vitrineMoneyCents(sum.average_ticket),
+      first_order_at:sum.first_order_at||null,
+      last_order_at:sum.last_order_at||null,
+      distinct_product_count:Number(sum.distinct_product_count||0),
+      last_order_id:sum.last_order_id||null,
+      last_order_number:sum.last_order_number||null,
+      last_order_status:sum.last_order_status||null,
+      last_basket_name:sum.last_basket_name||"",
+      last_payment_method:sum.last_payment_method||""
+    },
+    orders,
+    top_products:products,
+    pagination:{limit,offset,next_offset:orders.length===limit?offset+limit:null}
+  };
+}
+async function vitrineCustomerOrderDetail(sb:any,body:any){
+  const customerId=uuid(body?.customer_id);
+  const orderId=uuid(body?.order_id);
+  if(!customerId||!orderId)return {ok:false,error:"invalid_order",status:400};
+  const r=await sb.rpc("get_customer_order_detail_v1",{p_customer_id:customerId,p_order_id:orderId});
+  if(r.error)throw r.error;
+  const data=r.data||{};
+  if(!data?.order?.id)return {ok:false,error:"order_not_found",status:404};
+  const o=data.order;
+  return {
+    ok:true,
+    order:{
+      id:o.id,
+      order_number:o.order_number,
+      status:o.status,
+      source:o.source,
+      total_cents:vitrineMoneyCents(o.total),
+      subtotal_cents:vitrineMoneyCents(o.subtotal),
+      discount_cents:vitrineMoneyCents(o.discount),
+      other_expenses_cents:vitrineMoneyCents(o.other_expenses),
+      payment_method:o.payment_method||"",
+      basket_id:o.basket_id||null,
+      basket_name:o.basket_name||"",
+      delivery_address:o.delivery_address||{},
+      customer_snapshot:o.customer_snapshot||{},
+      checkout_snapshot:o.checkout_snapshot||{},
+      created_at:o.created_at,
+      confirmed_at:o.confirmed_at,
+      delivered_at:o.delivered_at,
+      cancelled_at:o.cancelled_at,
+      returned_at:o.returned_at,
+      counts_as_purchase:Boolean(o.counts_as_purchase)
+    },
+    items:(data.items||[]).map((i:any)=>({
+      id:i.id,
+      product_id:i.product_id||null,
+      sku:i.sku||"",
+      name:i.name||"",
+      quantity:Number(i.quantity||0),
+      unit_price_cents:vitrineMoneyCents(i.unit_price),
+      line_total_cents:vitrineMoneyCents(i.line_total),
+      metadata:i.metadata||{}
+    }))
+  };
+}
+
 async function vitrineSaveCustomer(sb:any,body:any){
   const id=uuid(body?.id);
   const name=clean(body?.display_name,180);
@@ -1162,6 +1276,23 @@ Deno.serve(async(req:Request)=>{
     }catch(e){
       const msg=clean((e as Error)?.message,300);
       return json({ok:false,error:msg.includes("duplicate key")?"duplicate_value":"customer_save_failed",detail:msg},msg.includes("duplicate key")?409:500);
+    }
+  }
+
+  if(action==="vitrine_customer_history"){
+    try{
+      const result=await vitrineCustomerHistory(sb,body);
+      return json(result,result.ok?200:Number(result.status||400));
+    }catch(e){
+      return json({ok:false,error:"customer_history_unavailable",detail:clean((e as Error)?.message,300)},500);
+    }
+  }
+  if(action==="vitrine_customer_order_detail"){
+    try{
+      const result=await vitrineCustomerOrderDetail(sb,body);
+      return json(result,result.ok?200:Number(result.status||400));
+    }catch(e){
+      return json({ok:false,error:"customer_order_unavailable",detail:clean((e as Error)?.message,300)},500);
     }
   }
 
