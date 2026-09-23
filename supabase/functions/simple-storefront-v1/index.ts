@@ -138,8 +138,37 @@ async function offers() {
   return { ok:true, offers:publicOffers };
 }
 
+async function subcategories(url: URL) {
+  const category = text(url.searchParams.get("category"), 48);
+  if (!category) return { ok:true, subcategories:[] };
+
+  const { data, error } = await db.from("products")
+    .select("metadata")
+    .eq("organization_id", ORG_ID)
+    .eq("active", true)
+    .gt("stock_quantity", 0)
+    .contains("metadata", { sales_category: category })
+    .range(0, 999);
+  if (error) throw error;
+
+  const counts = new Map<string,number>();
+  for (const row of data ?? []) {
+    const name = text(row?.metadata?.subsubcategory, 80);
+    if (!name) continue;
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+
+  return {
+    ok:true,
+    subcategories:[...counts.entries()]
+      .map(([name,count])=>({name,count}))
+      .sort((a,b)=>b.count-a.count || a.name.localeCompare(b.name,"pt-BR"))
+  };
+}
+
 async function products(url: URL) {
   const category = text(url.searchParams.get("category"), 48);
+  const subcategory = text(url.searchParams.get("subcategory"), 80);
   const q = text(url.searchParams.get("q"), 60);
   const limit = Math.floor(num(url.searchParams.get("limit") ?? 24, 1, 36));
   const offset = Math.floor(num(url.searchParams.get("offset") ?? 0, 0, 5000));
@@ -152,7 +181,10 @@ async function products(url: URL) {
     .order("name", { ascending: true })
     .range(offset, offset + limit - 1);
 
-  if (category) query = query.contains("metadata", { sales_category: category });
+  const metadataFilter:any = {};
+  if (category) metadataFilter.sales_category = category;
+  if (subcategory) metadataFilter.subsubcategory = subcategory;
+  if (Object.keys(metadataFilter).length) query = query.contains("metadata", metadataFilter);
   if (q) {
     const terms = q.replace(/[%_]/g," ").split(/\s+/).map(x=>x.trim()).filter(Boolean).slice(0,4);
     for (const term of terms) query = query.ilike("search_text", `%${term}%`);
@@ -555,6 +587,7 @@ Deno.serve(async (req: Request) => {
     if (action === "health") return json({ok:true,service:"simple-storefront-v1"},200,{"Cache-Control":"no-store"});
     if (req.method === "GET" && action === "home") return json(await home(),200,{"Cache-Control":"public, max-age=300, stale-while-revalidate=900"});
     if (req.method === "GET" && action === "offers") return json(await offers(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
+    if (req.method === "GET" && action === "subcategories") return json(await subcategories(url),200,{"Cache-Control":"public, max-age=300, stale-while-revalidate=900"});
     if (req.method === "GET" && action === "products") return json(await products(url),200,{"Cache-Control":"public, max-age=60, stale-while-revalidate=300"});
     if (req.method === "GET" && action === "product") {
       const id = uuid(url.searchParams.get("product_id"));
