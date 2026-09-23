@@ -31,6 +31,7 @@ on:
       - 'scripts/test-vitrine-admin-bling-status-attention-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-homologation-v1.mjs'
       - 'scripts/test-vitrine-admin-open-orders-v1.mjs'
+      - 'scripts/test-vitrine-admin-backlog-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -76,6 +77,7 @@ on:
       - 'scripts/test-vitrine-admin-bling-status-attention-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-homologation-v1.mjs'
       - 'scripts/test-vitrine-admin-open-orders-v1.mjs'
+      - 'scripts/test-vitrine-admin-backlog-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -131,6 +133,7 @@ jobs:
           node scripts/test-vitrine-admin-bling-status-attention-v1.mjs
           node scripts/test-vitrine-admin-bling-homologation-v1.mjs
           node scripts/test-vitrine-admin-open-orders-v1.mjs
+          node scripts/test-vitrine-admin-backlog-v1.mjs
           node scripts/test-admin-service-shared-modules-v1.mjs
           node scripts/test-vitrine-bling-cancel-status-v1.mjs
           node scripts/test-vitrine-admin-bling-preflight-v1.mjs
