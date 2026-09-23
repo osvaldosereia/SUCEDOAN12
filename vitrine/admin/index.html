@@ -1180,7 +1180,7 @@
 
   function paintBling(){
     const host=$('#blingStatus');if(!host)return;
-    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{},orderLinks=b.order_links||{},webhooks=b.webhook_inbox||{},fiscal=b.fiscal_readiness||{},fiscalCfg=fiscal.config||{},fiscalControls=fiscal.controls||{},fiscalJobs=fiscal.jobs||{};
+    const b=state.bling||{},cred=b.credentials||{},legacy=b.legacy||{},queue=b.hub_queue||{},domains=b.domains||{},probe=state.blingProbe||{},links=b.product_links||{},customerLinks=b.customer_links||{},orderLinks=b.order_links||{},rollout=b.order_rollout||{},statusCatalog=b.order_status_catalog||{},webhooks=b.webhook_inbox||{},fiscal=b.fiscal_readiness||{},fiscalCfg=fiscal.config||{},fiscalControls=fiscal.controls||{},fiscalJobs=fiscal.jobs||{};
     const probes=probe.probes||{};
     const banner=$('#blingRuntimeBanner');
     if(banner){
@@ -1190,7 +1190,7 @@
         domains.customers?'Clientes':null,
         domains.orders?'Pedidos':null
       ].filter(Boolean);
-      const firstOrderCanary=Boolean(domains.orders)&&Number(orderLinks.matched||0)===0;
+      const firstOrderCanary=Boolean(domains.orders)&&String(rollout.state||'')==='armed_first_canary';
       const headline=b.hub_enabled
         ? 'Integração direta Bling ativa'
         : 'Integração direta Bling pausada';
@@ -1218,6 +1218,8 @@
         '<div class="bling-card"><small>Produtos vinculados</small><strong>'+esc(links.matched||0)+' / '+esc(links.total||0)+'</strong><span class="sub">'+esc(links.not_found||0)+' não encontrados · '+esc((links.ambiguous||0)+(links.review_required||0))+' revisar</span></div>'+
         '<div class="bling-card"><small>Clientes vinculados</small><strong>'+esc(customerLinks.matched||0)+' / '+esc(customerLinks.total||0)+'</strong><span class="sub">'+esc(customerLinks.not_found||0)+' não encontrados · '+esc((customerLinks.ambiguous||0)+(customerLinks.review_required||0))+' revisar</span></div>'+
         '<div class="bling-card"><small>Pedidos vinculados</small><strong>'+esc(orderLinks.matched||0)+' / '+esc(orderLinks.total||0)+'</strong><span class="sub">'+esc(orderLinks.review_required||0)+' para revisar</span></div>'+
+        '<div class="bling-card"><small>Pedidos · homologação</small><strong class="'+(String(rollout.state||'')==='canary_passed'?'ok-text':String(rollout.state||'')==='paused_after_canary_failure'?'danger-text':'warn-text')+'">'+esc(String(rollout.state||'')==='canary_passed'?'Canário validado':String(rollout.state||'')==='paused_after_canary_failure'?'Pausado após falha':String(rollout.state||'')==='armed_first_canary'?'Aguardando 1º pedido real':'Ainda não validado')+'</strong><span class="sub">'+(String(rollout.state||'')==='armed_first_canary'?'O primeiro pedido elegível será processado sozinho e verificado antes de liberar a sequência.':String(rollout.state||'')==='canary_passed'?'Primeiro pedido real criado/verificado com segurança.':String(rollout.state||'')==='paused_after_canary_failure'?'Novos pedidos ficam protegidos até revisão técnica.':'Estado do rollout ainda não foi confirmado.')+'</span></div>'+
+        '<div class="bling-card"><small>Situações do pedido</small><strong class="'+(statusCatalog.status_updates_enabled===true?'ok-text':'warn-text')+'">'+(statusCatalog.status_updates_enabled===true?'Ativas':String(statusCatalog.state||'')==='scope_missing'?'Sem permissão':'Bloqueadas')+'</strong><span class="sub">'+(statusCatalog.status_updates_enabled===true?'Mapeamento de situações autorizado.':String(statusCatalog.state||'')==='scope_missing'?'Bling negou acesso a situações/modulos'+(statusCatalog.http_status?' · HTTP '+esc(statusCatalog.http_status):'')+'. Cancelamentos ficam sinalizados para conferência manual.':'Nenhum mapeamento de situações foi ativado.')+'</span></div>'+
         '<div class="bling-card"><small>Webhooks Bling</small><strong>'+esc(domains.webhooks?'ON':'OFF')+'</strong><span class="sub">'+esc(webhooks.held||0)+' aguardando · '+esc(webhooks.review_required||0)+' revisar · '+esc(webhooks.processed||0)+' processados</span></div>'+
         '<div class="bling-card"><small>Fiscal / NF-e</small><strong class="'+(fiscal.safe_off?'ok-text':'warn-text')+'">'+(fiscal.safe_off?'OFF seguro':esc(String(fiscalCfg.execution_mode||'off').toUpperCase()))+'</strong><span class="sub">'+esc(fiscalControls.ready||0)+' prontos · '+esc(fiscalJobs.total||0)+' jobs · emissão '+(fiscalCfg.bling_invoice_send_enabled?'ON':'OFF')+'</span></div>'+
         '<div class="bling-card"><small>Escritas externas</small><strong class="'+(b.hub_enabled?'ok-text':'warn-text')+'">'+(b.hub_enabled?'Ativas com proteção':'Bloqueadas')+'</strong><span class="sub">Produtos '+(domains.products?'ON':'OFF')+' · Estoque '+(domains.stock?'ON':'OFF')+' · Clientes '+(domains.customers?'ON':'OFF')+' · Pedidos '+(domains.orders?'ON':'OFF')+' · Fiscal '+(domains.fiscal?'ON':'OFF')+'</span></div>'+
