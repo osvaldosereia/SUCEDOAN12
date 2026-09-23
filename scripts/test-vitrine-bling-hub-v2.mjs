@@ -7,6 +7,7 @@ const hub=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/inde
 const dispatch=fs.readFileSync('supabase/migrations/20260923151500_bling_hub_v2_supabase_dispatch_cycle.sql','utf8');
 const canary=fs.readFileSync('supabase/migrations/20260923134500_bling_hub_v2_canary_gate.sql','utf8');
 const webhook=fs.readFileSync('supabase/migrations/20260923153000_bling_hub_v2_webhook_inbox.sql','utf8');
+const stockCoalesce=fs.readFileSync('supabase/migrations/20260923154000_bling_hub_v2_stock_queue_coalesce.sql','utf8');
 
 assert.match(admin,/Make permanecem preservados/,'admin deve informar que Make foi preservado');
 assert.match(admin,/Verificar prévia Bling/,'pedido deve ter prévia Bling');
@@ -62,6 +63,11 @@ assert.match(webhook,/event_id text primary key/);
 assert.match(webhook,/claim_bling_webhook_inbox_v2/);
 assert.match(webhook,/v_runtime\.webhooks_enabled is not true/);
 assert.match(webhook,/status in \('held','received','retry'\)/);
+
+assert.match(stockCoalesce,/p_domain='stock' and trim\(p_operation\)='set_stock'/);
+assert.match(stockCoalesce,/superseded_stock_snapshot/);
+assert.match(stockCoalesce,/status='pending'/);
+assert.match(stockCoalesce,/attempts=0/);
 
 const match=admin.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 assert.ok(match,'script inline do admin não encontrado');
