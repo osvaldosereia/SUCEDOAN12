@@ -8,6 +8,7 @@ const SECRET_KEYS = (() => {
 })();
 const SERVER_KEY = SECRET_KEYS.default ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const ORG_ID = "95b1b61d-f6ed-41cb-8917-b55f6793b10b";
+const CANONICAL_ADMIN_API = "https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1";
 const ALLOWED_ORIGINS = new Set([
   "https://donaantonia.com.br",
   "https://www.donaantonia.com.br"
@@ -873,6 +874,31 @@ async function consumeOrderStock(payload:any) {
   return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok)};
 }
 
+async function blingHubControl(subaction:string) {
+  const allowed=new Set(["readiness","probe_readonly"]);
+  if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
+
+  const secret=await db.from("internal_integration_secrets")
+    .select("secret_value")
+    .eq("integration_key","bling_hub_v2")
+    .maybeSingle();
+  if(secret.error)throw secret.error;
+  if(!secret.data?.secret_value)return {error:"bling_bridge_not_configured",status:503};
+
+  const response=await fetch(CANONICAL_ADMIN_API,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
+    },
+    body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction}),
+    signal:AbortSignal.timeout(subaction==="probe_readonly"?65000:10000)
+  });
+  const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
+  if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
+  return {data};
+}
+
 async function retryHistorySync(payload:any) {
   const id=uuid(payload?.id);
   if(!id)return {error:"invalid_order",status:400};
@@ -1038,6 +1064,11 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="product_facets") return json(req,{ok:true,...await productFacets(url.searchParams.get("category"))});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
+    if (req.method==="GET" && action==="bling_status") {
+      const result=await blingHubControl("readiness");
+      if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+      return json(req,{ok:true,bling:(result as any).data?.readiness??null});
+    }
     if (req.method==="GET" && action==="ean_lookup") {
       const result=await findProductByEan(url.searchParams.get("ean"));
       if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
@@ -1083,6 +1114,11 @@ Deno.serve(async (req: Request) => {
         const result=await retryHistorySync(payload);
         if (result.error) return json(req,{ok:false,...result},result.status);
         return json(req,{ok:true,...result});
+      }
+      if (action==="bling_probe_readonly") {
+        const result=await blingHubControl("probe_readonly");
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,probe:(result as any).data});
       }
       if (action==="balance_confirm") {
         const result=await balanceConfirm(payload);
