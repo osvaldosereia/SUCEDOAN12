@@ -1132,7 +1132,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","preview_customer_sync","preview_order_sync","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","preview_customer_sync","preview_order_sync","fiscal_status","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -1544,7 +1544,21 @@ async function updateOrder(payload:any) {
     }catch{}
   }
   const historySync=await syncVitrineOrderHistory(db,data.id,ORG_ID);
-  return {order_id:data.id,stock_released:stockReleasedChange,history_synced:Boolean(historySync.ok)};
+  let fiscalSynced=false;
+  if(historySync.ok && (patch.status==="delivered"||patch.status==="cancelled")){
+    try{
+      const fiscal=await blingHubControl("fiscal_status",{source_order_id:data.id});
+      fiscalSynced=!(fiscal as any).error;
+    }catch(e){
+      console.error("vitrine_fiscal_status_sync_failed",String((e as Error)?.message||e));
+    }
+  }
+  return {
+    order_id:data.id,
+    stock_released:stockReleasedChange,
+    history_synced:Boolean(historySync.ok),
+    fiscal_synced:fiscalSynced
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -1659,6 +1673,23 @@ Deno.serve(async (req: Request) => {
         const result=await previewBlingOrderSync(id);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...result});
+      }
+      if (action==="order_fiscal_status") {
+        const id=uuid(payload?.id);
+        if(!id)return json(req,{ok:false,error:"invalid_order"},400);
+        const result=await blingHubControl("fiscal_status",{source_order_id:id});
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...((result as any).data||{})});
+      }
+      if (action==="order_fiscal_confirm_payment") {
+        const id=uuid(payload?.id);
+        if(!id)return json(req,{ok:false,error:"invalid_order"},400);
+        const result=await blingHubControl("fiscal_confirm_payment",{
+          source_order_id:id,
+          payment_method:text(payload?.payment_method,80)
+        });
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...((result as any).data||{})});
       }
       if (action==="balance_confirm") {
         const result=await balanceConfirm(payload);
