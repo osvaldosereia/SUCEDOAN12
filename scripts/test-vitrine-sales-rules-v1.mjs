@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const root=fs.readFileSync('index.html','utf8');
 const vitrine=fs.readFileSync('vitrine/index.html','utf8');
 const edge=fs.readFileSync('supabase/functions/simple-storefront-v1/index.ts','utf8');
+const admin=fs.readFileSync('supabase/functions/vitrine-admin-v1/index.ts','utf8');
 const migration=fs.readFileSync('supabase/migrations/20260923044336_storefront_stock_reservation_v1.sql','utf8');
 
 assert.equal(root,vitrine,'root and /vitrine must stay identical');
@@ -23,6 +24,10 @@ assert.match(root,/Domingos e feriados nacionais não realizamos entregas/);
 assert.match(edge,/reserve_storefront_stock_v1/);
 assert.match(edge,/release_storefront_stock_v1/);
 assert.match(edge,/stockDemand/);
+assert.match(edge,/stock_reserved:true,stock_released:false/);
+assert.match(admin,/orderStockReservationItems/);
+assert.match(admin,/release_storefront_stock_v1/);
+assert.match(admin,/currentOrder\.status==="cancelled"/);
 assert.match(edge,/total<MINIMUM_ORDER_CENTS/);
 assert.match(edge,/stock_quantity:\s*Number\(p\.stock_quantity/);
 assert.match(migration,/for update/i);
