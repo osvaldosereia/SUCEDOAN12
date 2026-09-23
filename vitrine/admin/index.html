@@ -239,7 +239,7 @@
 
   function orderProblemReasons(o){
     const reasons=[];
-    if(o?.history_sync?.state==='failed')reasons.push('Histórico do cliente pendente');
+    if(o?.history_sync?.state==='failed')reasons.push('Histórico pendente do cliente');
     if(['delivered','cancelled'].includes(o?.status))return reasons;
     const a=o?.delivery_address_snapshot||{};
     const customerName=o?.customer_name||a.customer_name||a.recipient_name||'';
