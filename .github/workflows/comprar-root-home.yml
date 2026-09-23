@@ -1,20 +1,20 @@
-name: Comprar na raiz
+name: Vitrine na raiz
 
 on:
   pull_request:
     paths:
       - 'index.html'
-      - 'comprar/**'
+      - 'vitrine/**'
       - 'scripts/test-comprar-root-home-v1.mjs'
-      - 'scripts/test-comprar-clean-activation-v1.mjs'
+      - 'scripts/test-vitrine-whatsapp-handoff-v1.mjs'
       - '.github/workflows/comprar-root-home.yml'
   push:
     branches: [main]
     paths:
       - 'index.html'
-      - 'comprar/**'
+      - 'vitrine/**'
       - 'scripts/test-comprar-root-home-v1.mjs'
-      - 'scripts/test-comprar-clean-activation-v1.mjs'
+      - 'scripts/test-vitrine-whatsapp-handoff-v1.mjs'
       - '.github/workflows/comprar-root-home.yml'
 
 permissions:
@@ -29,13 +29,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Validar raiz usando Comprar
+      - name: Validar Vitrine pública e handoff do WhatsApp
         run: |
           node scripts/test-comprar-root-home-v1.mjs
-          node scripts/test-comprar-clean-activation-v1.mjs
-          node --check comprar/app.js
-          node --check comprar/baskets.js
-          node --check comprar/products.js
-          node --check comprar/checkout.js
-          node --check comprar/help.js
-          node --check comprar/admin-test-bridge.js
+          node scripts/test-vitrine-whatsapp-handoff-v1.mjs
