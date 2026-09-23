@@ -2828,7 +2828,7 @@ Deno.serve(async(req:Request)=>{
         const jobs=(Array.isArray(body?.jobs)?body.jobs:[]).slice(0,250);
         if(!jobs.length)return json({ok:true,queued:0,job_ids:[],external_write:false});
         const allowedDomains=new Set(["product","stock","customer","order","fiscal"]);
-        const allowedOperations=new Set(["sync_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
+        const allowedOperations=new Set(["sync_product","create_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
         const ids:any[]=[];
         for(const job of jobs){
           const domain=clean(job?.domain,40),operation=clean(job?.operation,80),sourceId=clean(job?.source_id,160),key=clean(job?.idempotency_key,240);
