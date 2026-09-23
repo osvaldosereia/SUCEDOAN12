@@ -1828,7 +1828,6 @@
     if($('#resolveBlingDependencies'))$('#resolveBlingDependencies').onclick=resolveCurrentOrderBlingDependencies;
     if($('#focusOrderCustomer'))$('#focusOrderCustomer').onclick=focusOrderCustomerForBling;
     if($('#completeCustomerDocument'))$('#completeCustomerDocument').onclick=completeCurrentOrderCustomerDocument;
-    if($('#createBlingOrderCustomer'))$('#createBlingOrderCustomer').onclick=createCurrentOrderCustomerInBling;
     if($('#createBlingOrderProducts'))$('#createBlingOrderProducts').onclick=createCurrentOrderProductsInBling;
     if($('#useSuggestedCustomer'))$('#useSuggestedCustomer').onclick=()=>{
       const select=$('#orderCustomer');if(!select||!state.orderCustomerSuggestion)return;
@@ -1868,17 +1867,19 @@
   function blingPreflightAlertHtml(p){
     const blockers=blingPreflightOperationalBlockers(p);
     if(!blockers.length)return '';
-    const canReconcile=blockers.some(x=>['customer_missing_bling_contact_id','unresolved_products'].includes(x));
     const needsCustomer=blockers.includes('customer_not_linked');
     const needsDocument=blockers.includes('customer_document_required');
     const needsBlingCustomer=blockers.includes('customer_missing_bling_contact_id');
     const needsProducts=blockers.includes('unresolved_products');
+    const canReconcile=needsProducts;
+    if(needsBlingCustomer&&blockers.length===1){
+      return '<div class="sync-alert" style="border-color:#c7dccd;background:#f7fbf8"><div><strong style="color:#176b43">Cliente será preparado automaticamente</strong><small>Ao iniciar a separação, o sistema confere o CPF no ERP e só cria o cadastro se não existir correspondência exata.</small></div><span class="pill">Automático</span></div>';
+    }
     const actions=(needsDocument?'<button class="secondary" id="completeCustomerDocument" type="button">Completar CPF</button>':'')+
-      (needsBlingCustomer?'<button class="secondary" id="createBlingOrderCustomer" type="button">Cadastrar cliente no Bling</button>':'')+
-      (needsProducts?'<button class="secondary" id="createBlingOrderProducts" type="button">Cadastrar produtos no Bling</button>':'')+
+      (needsProducts?'<button class="secondary" id="createBlingOrderProducts" type="button">Preparar produtos</button>':'')+
       (canReconcile?'<button class="secondary" id="resolveBlingDependencies" type="button">Tentar resolver vínculos</button>':'')+
       (needsCustomer?'<button class="secondary" id="focusOrderCustomer" type="button">Vincular cliente</button>':'');
-    return '<div class="sync-alert"><div><strong>Antes de separar, revise o Bling</strong><small>'+blockers.slice(0,3).map(blingOrderBlockerLabel).map(esc).join(' · ')+(blockers.length>3?' · +'+(blockers.length-3):'')+'</small></div><div class="dispatch-actions">'+actions+'<span class="pill warn">Somente leitura</span></div></div>';
+    return '<div class="sync-alert"><div><strong>Antes de separar, corrija os dados pendentes</strong><small>'+blockers.slice(0,3).map(blingOrderBlockerLabel).map(esc).join(' · ')+(blockers.length>3?' · +'+(blockers.length-3):'')+'</small></div><div class="dispatch-actions">'+actions+'<span class="pill warn">Ação necessária</span></div></div>';
   }
   async function loadCurrentOrderBlingPreview(repaint=true){
     const id=state.currentOrder?.order?.id;if(!id)return;
@@ -2371,21 +2372,34 @@
   }
   async function validateBlingBeforeSeparation(orderId){
     try{
-      const preview=await api('bling_preview_order_sync',{},{
+      let preview=await api('bling_preview_order_sync',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})
       });
       state.currentOrderBlingPreview=preview;
-      const blockers=blingPreflightOperationalBlockers(preview);
+      let blockers=blingPreflightOperationalBlockers(preview);
+
+      if(blockers.length===1&&blockers[0]==='customer_missing_bling_contact_id'){
+        toast('Preparando cadastro do cliente…');
+        const ensured=await api('bling_create_order_customer',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})
+        });
+        preview=ensured.preview||await api('bling_preview_order_sync',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})
+        });
+        state.currentOrderBlingPreview=preview;
+        blockers=blingPreflightOperationalBlockers(preview);
+      }
+
       if(blockers.length){
         paintOrderDetail();
-        toast('Corrija as pendências da integração antes de separar');
+        toast('Corrija os dados pendentes antes de separar');
         return false;
       }
       return true;
     }catch(e){
       state.currentOrderBlingPreview={error:String(e?.message||'bling_preview_unavailable')};
       paintOrderDetail();
-      toast('Não consegui validar o Bling · separação não iniciada');
+      toast('Não consegui preparar o pedido · separação não iniciada');
       return false;
     }
   }
