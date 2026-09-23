@@ -363,7 +363,7 @@
     };
     offerPriceEl.oninput=()=>{
       const base=centsFromInput(regularPrice.value),sale=centsFromInput(offerPriceEl.value);
-      if(base>0&&sale>0&&sale<base)discount.value=(Math.round((1-sale/base)*1000)/10).toString().replace('.',',');
+      if(base>0&&sale>0&&sale<base)discount.value=(Math.round((1-sale/base)*1000)/10).toString();
     };
     regularPrice.oninput=()=>{if(discount.value)discount.oninput()};
   }
