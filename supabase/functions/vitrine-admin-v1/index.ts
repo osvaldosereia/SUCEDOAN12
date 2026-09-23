@@ -1137,6 +1137,14 @@ async function consumeOrderStock(payload:any) {
   if(oErr)throw oErr;
   if(!order)return {error:"order_not_found",status:404};
   if(order.status==="cancelled")return {error:"order_cancelled",status:409};
+  if(!["confirmed","processing"].includes(String(order.status||""))){
+    return {
+      error:"order_not_ready_for_separation",
+      status:409,
+      current_status:order.status,
+      required_statuses:["confirmed","processing"]
+    };
+  }
 
   const payment=order.payment_method_snapshot&&typeof order.payment_method_snapshot==="object"
     ? order.payment_method_snapshot : {};
