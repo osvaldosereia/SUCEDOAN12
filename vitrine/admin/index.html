@@ -1725,6 +1725,8 @@
       order_creation_uncertain:'O resultado da criação precisa ser conferido',
       bling_order_id_missing:'O Bling não retornou um identificador seguro',
       post_create_order_mismatch:'O pedido criado no Bling não conferiu com o total local',
+      order_status_updates_disabled:'Status do pedido no Bling precisa de revisão manual',
+      order_status_mapping_not_approved:'Mapeamento de status do Bling ainda não foi aprovado',
       customer_not_linked:'Cliente ainda não vinculado ao Bling',
       unresolved_products:'Há produtos sem vínculo com o Bling'
     };
@@ -1931,10 +1933,15 @@
     }
   }
   async function cancelCurrentOrder(){
-    if(!confirm('Cancelar este pedido? O estoque reservado será devolvido quando aplicável.'))return;
+    const linked=state.currentOrder?.bling_link?.linked===true;
+    const message=linked
+      ? 'Cancelar este pedido?\n\nO estoque reservado será devolvido quando aplicável. Como o pedido já está vinculado ao Bling, qualquer status que não puder ser atualizado automaticamente ficará registrado como pendência para revisão.'
+      : 'Cancelar este pedido? O estoque reservado será devolvido quando aplicável.';
+    if(!confirm(message))return;
     try{
       await persistCurrentOrder('cancelled');
-      paintOrderDetail();loadOrders();toast('Pedido cancelado');
+      paintOrderDetail();loadOrders();
+      toast(linked?'Pedido cancelado · Bling será conferido':'Pedido cancelado');
     }catch(e){toast(errorMessage(e.message))}
   }
   async function saveOrder(){
