@@ -10,7 +10,8 @@ assert.match(html,/pode me enviar seu endereço completo/);
 assert.match(html,/envie sua localização pelo WhatsApp/);
 assert.match(html,/Pedir endereço/);
 assert.match(html,/target="_blank" rel="noopener"/);
-assert.match(html,/const addressRequest=orderAddressRequestHref\(o\)/);
+assert.match(html,/const dataRequest=orderMissingDataRequest\(o\)/);
+assert.match(html,/function orderAddressRequestHref\(o\)/);
 
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 for(const source of scripts)new Function(source);
