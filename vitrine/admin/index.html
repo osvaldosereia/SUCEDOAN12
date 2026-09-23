@@ -196,7 +196,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,fiscalByOrder:{},products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,fiscalByOrder:{},products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -314,6 +314,18 @@
     const created=cuiabaDayKey(o.created_at),today=cuiabaDayKey(new Date());
     return Boolean(created&&today&&created<today);
   }
+  function orderIssueMatch(o,key='all'){
+    const reasons=orderProblemReasons(o);
+    if(key==='all')return reasons.length>0;
+    const labels={
+      address:'Endereço incompleto',
+      customer:'Cliente não identificado',
+      payment:'Pagamento não informado',
+      history:'Histórico pendente do cliente'
+    };
+    return reasons.includes(labels[key]||'');
+  }
+  function orderIssueCount(key){return state.orders.filter(o=>orderIssueMatch(o,key)).length}
   function orderOperationalPriority(o){
     if(orderProblemReasons(o).length)return 0;
     if(isBacklogOrder(o))return 1;
@@ -351,10 +363,13 @@
     if(filter==='delivery')return o.status==='out_for_delivery';
     if(filter==='delivered')return deliveredToday(o);
     if(filter==='backlog')return isBacklogOrder(o);
-    if(filter==='problems')return orderProblemReasons(o).length>0;
+    if(filter==='problems')return orderIssueMatch(o,state.orderIssueFilter);
     return true;
   }
-  function orderFilterCount(filter){return state.orders.filter(o=>orderFilterMatch(o,filter)).length}
+  function orderFilterCount(filter){
+    if(filter==='problems')return state.orders.filter(o=>orderProblemReasons(o).length>0).length;
+    return state.orders.filter(o=>orderFilterMatch(o,filter)).length;
+  }
   function renderTodayCards(){
     const cards=[
       ['new','Novos','Pedidos para confirmar'],
@@ -365,7 +380,20 @@
       ['backlog','De dias anteriores','Não deixar pedido para trás'],
       ['problems','Precisa de você','Pendências operacionais']
     ];
-    return '<div class="ops-cards">'+cards.map(([key,label,sub])=>'<button class="ops-card '+((key==='problems'||key==='backlog')&&orderFilterCount(key)?'danger':'')+'" type="button" data-today-filter="'+key+'"><small>'+esc(label)+'</small><strong>'+orderFilterCount(key)+'</strong><span>'+esc(sub)+'</span></button>').join('')+'</div>';
+    return '<div class="ops-cards">'+cards.map(([key,label,sub])=>'<button class="ops-card '+((key==='problems'||key==='backlog')&&orderFilterCount(key)?'danger':'')+'" type="button" data-today-filter="'+key+'"><small>'+esc(label)+'</small><strong>'+orderFilterCount(key)+'</strong><span>'+esc(sub)+'</span></button>').join('')+'</div>'+
+      renderTodayIssueBreakdown();
+  }
+  function renderTodayIssueBreakdown(){
+    const issues=[
+      ['address','Endereço'],
+      ['customer','Cliente'],
+      ['payment','Pagamento'],
+      ['history','Histórico']
+    ].map(([key,label])=>[key,label,orderIssueCount(key)]).filter(([, ,count])=>count>0);
+    if(!issues.length)return '';
+    return '<div class="order-filters" style="margin:-2px 0 14px"><span class="filter-count">Pendências:</span>'+
+      issues.map(([key,label,count])=>'<button class="filter-chip danger" type="button" data-today-issue="'+key+'">'+esc(label)+' · '+count+'</button>').join('')+
+    '</div>';
   }
   async function renderToday(){
     const content=$('#content');
@@ -377,7 +405,8 @@
       const host=$('#todayBody');
       host.innerHTML=renderTodayCards()+
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
-      host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;setTab('orders')});
+      host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
+      host.querySelectorAll('[data-today-issue]').forEach(b=>b.onclick=()=>{state.orderFilter='problems';state.orderIssueFilter=b.dataset.todayIssue;setTab('orders')});
       const pending=sortOperationalOrders(state.orders.filter(o=>!['delivered','cancelled'].includes(o.status))).slice(0,8);
       $('#todayOrders').innerHTML=pending.length?pending.map(o=>'<button class="history-row today-order-row" type="button" data-today-order="'+esc(o.id)+'"><strong>#'+esc(shortOrder(o.order_number))+'</strong><div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+money(o.total_cents)+' · '+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div><span class="next-action">'+esc(orderNextAction(o))+'</span><span class="today-status">'+statusPill(o.status)+'</span></button>').join(''):'<div class="history-empty">Nenhum pedido pendente agora.</div>';
       host.querySelectorAll('[data-today-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.todayOrder));
@@ -1489,6 +1518,7 @@
     content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Trabalhe pela próxima ação. O sistema cuida das integrações por trás.</p></div><button class="secondary" id="refreshOrders">Atualizar</button></div>'+
       '<div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery)+'"><button class="secondary" id="clearOrderSearch" type="button">Limpar</button></div>'+
       '<div class="order-filters" id="orderFilters"></div>'+
+      '<div class="order-filters" id="orderIssueFilters" style="display:none"></div>'+
       '<div class="panel"><div class="list-head orders-layout"><span>Pedido</span><span>Data</span><span>Cliente</span><span>Total</span><span>Pagamento</span><span>Próxima ação</span><span></span></div><div id="orderRows"><div class="loading">Carregando…</div></div></div>';
     $('#refreshOrders').onclick=loadOrders;
     $('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};
@@ -1499,7 +1529,22 @@
     const host=$('#orderFilters');if(!host)return;
     const filters=[['all','Todos'],['new','Novos'],['separate','Separar'],['ready','Prontos'],['delivery','Em entrega'],['delivered','Entregues hoje'],['backlog','Dias anteriores'],['problems','Problemas']];
     host.innerHTML=filters.map(([key,label])=>'<button class="filter-chip '+(state.orderFilter===key?'active':'')+'" type="button" data-order-filter="'+key+'">'+esc(label)+' · '+orderFilterCount(key)+'</button>').join('');
-    host.querySelectorAll('[data-order-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.orderFilter;paintOrderFilters();paintOrderRows()});
+    host.querySelectorAll('[data-order-filter]').forEach(b=>b.onclick=()=>{
+      state.orderFilter=b.dataset.orderFilter;
+      if(state.orderFilter!=='problems')state.orderIssueFilter='all';
+      paintOrderFilters();paintOrderRows();
+    });
+    const issueHost=$('#orderIssueFilters');
+    if(issueHost){
+      if(state.orderFilter!=='problems'){
+        issueHost.style.display='none';issueHost.innerHTML='';
+      }else{
+        issueHost.style.display='flex';
+        const issues=[['all','Todas'],['address','Endereço'],['customer','Cliente'],['payment','Pagamento'],['history','Histórico']];
+        issueHost.innerHTML=issues.map(([key,label])=>'<button class="filter-chip '+(state.orderIssueFilter===key?'active':'')+'" type="button" data-order-issue="'+key+'">'+esc(label)+' · '+(key==='all'?state.orders.filter(o=>orderProblemReasons(o).length>0).length:orderIssueCount(key))+'</button>').join('');
+        issueHost.querySelectorAll('[data-order-issue]').forEach(b=>b.onclick=()=>{state.orderIssueFilter=b.dataset.orderIssue;paintOrderFilters();paintOrderRows()});
+      }
+    }
   }
   function paintOrderRows(){
     const host=$('#orderRows');if(!host)return;

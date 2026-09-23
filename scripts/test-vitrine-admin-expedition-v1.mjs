@@ -14,7 +14,7 @@ assert.match(html,/Endereço incompleto/);
 assert.match(html,/Pagamento não informado/);
 assert.match(html,/Corrija os dados antes de avançar/);
 assert.match(html,/\['delivered','cancelled'\]\.includes\(o\?\.status\)/);
-assert.match(html,/if\(filter==='problems'\)return orderProblemReasons\(o\)\.length>0/);
+assert.match(html,/if\(filter==='problems'\)return orderIssueMatch\(o,state\.orderIssueFilter\)/);
 
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 for(const source of scripts)new Function(source);
