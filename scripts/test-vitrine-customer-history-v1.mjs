@@ -19,6 +19,8 @@ assert.match(adminHtml,/vitrine_customer_order_detail/);
 assert.match(adminHtml,/Produtos mais comprados/);
 assert.match(adminHtml,/Ticket médio/);
 assert.match(adminHtml,/Mostrar mais/);
+assert.match(adminHtml,/history_sync_retry/);
+assert.match(adminHtml,/Histórico pendente/);
 
 assert.match(canonicalFn,/vitrineCustomerHistory/);
 assert.match(canonicalFn,/get_customer_purchase_history_v1/);
@@ -35,6 +37,8 @@ assert.doesNotMatch(bridge,/[0-9a-f]{64}/i,'bridge secret must not be hardcoded'
 
 assert.match(storefrontFn,/syncVitrineOrderHistory/);
 assert.match(adminFn,/syncVitrineOrderHistory/);
+assert.match(adminFn,/history_sync_retry/);
+assert.match(adminFn,/vitrine_history_sync_outbox/);
 
 assert.match(outboxMigration,/state text not null default 'pending'/);
 assert.match(outboxMigration,/internal_integration_secrets/);
