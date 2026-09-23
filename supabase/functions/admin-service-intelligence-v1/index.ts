@@ -1067,6 +1067,34 @@ async function blingHubOauth(sb:any){
     await sb.rpc("release_bling_hub_oauth_lock_v2",{p_owner:owner});
   }
 }
+async function blingHubWriteIdempotent(sb:any,token:string,path:string,method:string,payload:any){
+  let lastStatus=0,lastError="";
+  for(let attempt=1;attempt<=4;attempt++){
+    await blingHubReserveSlot(sb);
+    try{
+      const r=await fetch(BLING_API_BASE+path,{
+        method,
+        headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},
+        body:JSON.stringify(payload),
+        signal:AbortSignal.timeout(15000)
+      });
+      lastStatus=r.status;
+      const raw=await r.text();
+      let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+      if(r.ok)return {ok:true,status:r.status,data};
+      const retryable=r.status===429||r.status>=500;
+      lastError=clean(data?.error?.message||data?.error?.description||data?.error||raw,500);
+      if(!retryable||attempt===4)return {ok:false,status:r.status,error:lastError};
+      const retryAfter=Number(r.headers.get("retry-after"));
+      await sleep(Number.isFinite(retryAfter)&&retryAfter>0?retryAfter*1000:attempt*attempt*1000);
+    }catch(e){
+      lastError=clean((e as Error)?.message||e,500);
+      if(attempt===4)return {ok:false,status:lastStatus,error:lastError};
+      await sleep(attempt*attempt*1000);
+    }
+  }
+  return {ok:false,status:lastStatus,error:lastError||"bling_write_failed"};
+}
 async function blingHubGet(sb:any,token:string,path:string){
   await blingHubReserveSlot(sb);
   const r=await fetch(BLING_API_BASE+path,{headers:{Authorization:`Bearer ${token}`,Accept:"application/json","enable-jwt":"1"},signal:AbortSignal.timeout(10000)});
@@ -1120,6 +1148,74 @@ async function blingHubPreviewProductSync(sb:any,item:any){
   const payload=blingHubProductPayload(current,item?.product||{});
   const diff=blingHubManagedProductDiff(current,payload);
   return {ok:true,readonly:true,external_write:false,source_id:sourceId,bling_id:Number(link.data.bling_id),changes:diff,change_count:Object.keys(diff).length,current:{nome:current?.nome||"",codigo:current?.codigo||"",preco:current?.preco??null,gtin:current?.gtin||"",unidade:current?.unidade||"",marca:current?.marca||"",situacao:current?.situacao||""},desired:{nome:payload?.nome||"",codigo:payload?.codigo||"",preco:payload?.preco??null,gtin:payload?.gtin||"",unidade:payload?.unidade||"",marca:payload?.marca||"",situacao:payload?.situacao||""}};
+}
+async function blingHubProcessProductJobs(sb:any,limitRaw:any){
+  const worker="bling-hub-edge-"+crypto.randomUUID();
+  const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
+  const claim=await sb.rpc("claim_bling_hub_jobs_v2",{p_worker:worker,p_domains:["product"],p_limit:limit,p_lease_seconds:300});
+  if(claim.error)throw claim.error;
+  const jobs=claim.data||[];
+  if(!jobs.length)return {ok:true,claimed:0,processed:0,synced:0,review_required:0,retry:0,failed:0};
+  const token=await blingHubOauth(sb);
+  const summary:any={ok:true,claimed:jobs.length,processed:0,synced:0,review_required:0,retry:0,failed:0};
+  for(const job of jobs){
+    summary.processed++;
+    try{
+      if(job.operation!=="sync_product"){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"unsupported_operation",p_error_message:"Unsupported product operation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+      const local=job.payload?.product;
+      if(!local||typeof local!=="object"){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"product_payload_missing",p_error_message:"Product payload missing",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+      const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system",job.source_system).eq("entity_type","product").eq("source_id",job.source_id).maybeSingle();
+      if(link.error)throw link.error;
+      if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id)){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{},p_error_code:"product_not_linked",p_error_message:"Product is not safely linked to Bling",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+        summary.review_required++;continue;
+      }
+      const blingId=Number(link.data.bling_id);
+      const before=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
+      if(!before.ok){
+        const status=before.status===429||before.status>=500?"retry":"review_required";
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{},p_error_code:"product_read_http_"+before.status,p_error_message:"Could not read Bling product",p_http_status:before.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary[status]++;continue;
+      }
+      const current=before.data?.data||{};
+      const desired=blingHubProductPayload(current,local);
+      const changes=blingHubManagedProductDiff(current,desired);
+      if(!Object.keys(changes).length){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:false,verified:true},p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary.synced++;continue;
+      }
+      const write=await blingHubWriteIdempotent(sb,token,"/produtos/"+encodeURIComponent(String(blingId)),"PUT",desired);
+      if(!write.ok){
+        const status=write.status===429||write.status>=500||write.status===0?"retry":"review_required";
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{changes},p_error_code:"product_put_http_"+write.status,p_error_message:write.error||"Bling product update failed",p_http_status:write.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary[status]++;continue;
+      }
+      const after=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
+      if(!after.ok){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{changes,write_ok:true},p_error_code:"post_write_verify_failed",p_error_message:"Write succeeded but verification failed",p_http_status:after.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary.review_required++;continue;
+      }
+      const verifyPayload=blingHubProductPayload(after.data?.data||{},local);
+      const remaining=blingHubManagedProductDiff(after.data?.data||{},verifyPayload);
+      if(Object.keys(remaining).length){
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{changes,remaining},p_error_code:"post_write_mismatch",p_error_message:"Bling product differs after update",p_http_status:200,p_retry_seconds:120,p_provider_id:String(blingId)});
+        summary.review_required++;continue;
+      }
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,changed:true,changes,verified:true},p_error_code:null,p_error_message:null,p_http_status:write.status,p_retry_seconds:120,p_provider_id:String(blingId)});
+      summary.synced++;
+    }catch(e){
+      const msg=clean((e as Error)?.message||e,500);
+      await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"retry",p_result:{},p_error_code:"worker_exception",p_error_message:msg,p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+      summary.retry++;
+    }
+  }
+  return summary;
 }
 async function blingHubReconcileProductCatalogReadonly(sb:any,itemsRaw:any){
   const items=(Array.isArray(itemsRaw)?itemsRaw:[]).slice(0,3000);
@@ -1555,6 +1651,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="preview_product_sync"){
         const result=await blingHubPreviewProductSync(sb,body);
         return json(result,result.ok?200:409);
+      }
+      if(subaction==="process_product_jobs"){
+        const result=await blingHubProcessProductJobs(sb,body?.limit);
+        return json(result,200);
       }
       if(subaction==="enqueue_job"){
         const domain=clean(body?.domain,40),operation=clean(body?.operation,80),sourceId=clean(body?.source_id,160),key=clean(body?.idempotency_key,240);
