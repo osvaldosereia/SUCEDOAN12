@@ -1516,6 +1516,24 @@ Deno.serve(async(req:Request)=>{
         if(q.error)throw q.error;
         return json({ok:true,job_id:q.data,queued:true,external_write:false});
       }
+      if(subaction==="enqueue_jobs"){
+        const jobs=(Array.isArray(body?.jobs)?body.jobs:[]).slice(0,250);
+        if(!jobs.length)return json({ok:true,queued:0,job_ids:[],external_write:false});
+        const allowedDomains=new Set(["product","stock","customer","order","fiscal"]);
+        const allowedOperations=new Set(["sync_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
+        const ids:any[]=[];
+        for(const job of jobs){
+          const domain=clean(job?.domain,40),operation=clean(job?.operation,80),sourceId=clean(job?.source_id,160),key=clean(job?.idempotency_key,240);
+          if(!allowedDomains.has(domain)||!allowedOperations.has(operation)||!sourceId||!key)return json({ok:false,error:"invalid_job_batch"},400);
+          const q=await sb.rpc("enqueue_bling_hub_job_v2",{
+            p_domain:domain,p_operation:operation,p_source_system:"vitrine_qx",p_source_id:sourceId,
+            p_idempotency_key:key,p_payload:obj(job?.payload),p_payload_version:1
+          });
+          if(q.error)throw q.error;
+          ids.push(q.data);
+        }
+        return json({ok:true,queued:ids.length,job_ids:ids,external_write:false});
+      }
       return json({ok:false,error:"writes_disabled",mode:"observe"},409);
     }catch(e){
       const message=clean((e as Error)?.message||e,300);
