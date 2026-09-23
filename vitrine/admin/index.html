@@ -366,7 +366,10 @@
     if(filter==='problems')return orderIssueMatch(o,state.orderIssueFilter);
     return true;
   }
-  function orderFilterCount(filter){return state.orders.filter(o=>orderFilterMatch(o,filter)).length}
+  function orderFilterCount(filter){
+    if(filter==='problems')return state.orders.filter(o=>orderProblemReasons(o).length>0).length;
+    return state.orders.filter(o=>orderFilterMatch(o,filter)).length;
+  }
   function renderTodayCards(){
     const cards=[
       ['new','Novos','Pedidos para confirmar'],
