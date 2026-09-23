@@ -2755,6 +2755,56 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
   for(const job of jobs){
     summary.processed++;
     try{
+      if(job.operation==="sync_order_status"){
+        const localStatus=clean(job.payload?.local_status,40);
+        const [runtime,link]=await Promise.all([
+          sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle(),
+          sb.from("bling_hub_entity_links_v2")
+            .select("bling_id,status")
+            .eq("source_system","vitrine_qx")
+            .eq("entity_type","order")
+            .eq("source_id",job.source_id)
+            .maybeSingle()
+        ]);
+        if(runtime.error)throw runtime.error;
+        if(link.error)throw link.error;
+        if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id)){
+          await sb.rpc("finish_bling_hub_job_v2",{
+            p_job_id:job.id,p_status:"synced",
+            p_result:{local_status:localStatus,no_external_order:true,external_write:false},
+            p_error_code:null,p_error_message:null,p_http_status:null,p_retry_seconds:120,p_provider_id:null
+          });
+          summary.synced++;
+          continue;
+        }
+        const catalog=runtime.data?.metadata?.order_status_catalog||{};
+        if(catalog.status_updates_enabled!==true){
+          await sb.rpc("finish_bling_hub_job_v2",{
+            p_job_id:job.id,p_status:"review_required",
+            p_result:{
+              local_status:localStatus,
+              bling_order_id:Number(link.data.bling_id),
+              catalog_state:clean(catalog.state,80)||"unknown",
+              required_resource:clean(catalog.required_resource,120)||null,
+              external_write:false
+            },
+            p_error_code:"order_status_updates_disabled",
+            p_error_message:"Order status update is disabled until the Bling status catalog is authorized",
+            p_http_status:Number(catalog.http_status||0)||null,p_retry_seconds:120,p_provider_id:String(link.data.bling_id)
+          });
+          summary.review_required++;
+          continue;
+        }
+        await sb.rpc("finish_bling_hub_job_v2",{
+          p_job_id:job.id,p_status:"review_required",
+          p_result:{local_status:localStatus,bling_order_id:Number(link.data.bling_id),external_write:false},
+          p_error_code:"order_status_mapping_not_approved",
+          p_error_message:"Order status catalog is available but no approved local-to-Bling mapping is active",
+          p_http_status:null,p_retry_seconds:120,p_provider_id:String(link.data.bling_id)
+        });
+        summary.review_required++;
+        continue;
+      }
       if(job.operation!=="sync_order"){
         await sb.rpc("finish_bling_hub_job_v2",{
           p_job_id:job.id,p_status:"review_required",p_result:{},
