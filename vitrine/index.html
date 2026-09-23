@@ -124,7 +124,7 @@
     .wa-grid{display:grid;grid-template-columns:64px minmax(120px,1fr) auto;gap:7px;align-items:end}
     .wa-field span{display:block;color:var(--muted);font-size:10px;font-weight:800;margin:0 0 3px}.wa-field input{width:100%;height:42px;border:1px solid #d7dfd9;border-radius:9px;background:#fff;padding:0 9px;outline:none;font-size:14px}.wa-field input:focus{border-color:#8bad98;box-shadow:0 0 0 2px #e9f3ec}
     .wa-consult{height:42px;border:0;border-radius:9px;background:var(--ink);color:#fff;padding:0 11px;font-size:11px;font-weight:900;white-space:nowrap}
-    .wa-result{min-height:16px;margin-top:7px;font-size:11px;line-height:1.3;color:var(--muted)}.wa-result.found{color:#135938;font-weight:750}.wa-result.new{color:#7a570c;font-weight:750}
+    .wa-fallback{display:flex;align-items:center;justify-content:center;text-decoration:none}\n    .wa-result{min-height:16px;margin-top:7px;font-size:11px;line-height:1.3;color:var(--muted)}.wa-result.found{color:#135938;font-weight:750}.wa-result.new{color:#7a570c;font-weight:750}
     .payments{display:grid;grid-template-columns:1fr 1fr;gap:7px}.pay{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:11px;padding:9px;font-size:12px;min-height:44px}.pay input{width:17px;height:17px;accent-color:var(--brand);flex:0 0 auto}
     .note{font-size:11px;color:var(--muted);margin:9px 0 0}
     .product-open{border:0;background:transparent;padding:0;display:block;width:100%;text-align:inherit;color:inherit}
@@ -1034,13 +1034,58 @@
       };
     }
 
+    function reserveWhatsAppHandoff(){
+      try{
+        const handoffWindow=window.open('about:blank','_blank');
+        if(!handoffWindow)return null;
+        try{
+          handoffWindow.opener=null;
+          handoffWindow.document.title='Abrindo WhatsApp…';
+          handoffWindow.document.body.innerHTML='<main style="font:16px system-ui;padding:28px;text-align:center"><strong>Pedido registrado</strong><p>Abrindo o WhatsApp…</p></main>';
+        }catch{}
+        return handoffWindow;
+      }catch{
+        return null;
+      }
+    }
+
+    function cancelWhatsAppHandoff(handoffWindow){
+      try{if(handoffWindow&&!handoffWindow.closed)handoffWindow.close()}catch{}
+    }
+
+    function completeWhatsAppHandoff(url,handoffWindow){
+      if(handoffWindow&&!handoffWindow.closed){
+        try{handoffWindow.location.replace(url);return 'reserved-window'}catch{}
+      }
+      try{window.location.assign(url);return 'same-window'}catch{}
+      return '';
+    }
+
+    function renderWhatsAppHandoffSuccess(url,saved){
+      const orderNumber=saved?.order_number?String(saved.order_number).slice(-8):'';
+      sheetTitle.textContent='Pedido registrado';
+      sheetBody.innerHTML='<div class="empty"><strong>Pedido'+(orderNumber?' #'+esc(orderNumber):'')+' registrado.</strong><br><span class="muted">Estamos abrindo o WhatsApp com a mensagem pronta. Se ele não abrir automaticamente, use o botão abaixo.</span></div>';
+      sheetAction.innerHTML='<div class="action-stack"><a class="primary wa-fallback" href="'+esc(url)+'" target="_blank" rel="noopener">Abrir WhatsApp</a><button type="button" class="secondary" id="backToStore">Voltar à vitrine</button></div>';
+      $('#backToStore').onclick=closeSheet;
+    }
+
     async function sendWhatsApp(){
       const selected=document.querySelector('input[name="payment"]:checked');
       if(!selected){toast('Escolha a forma de pagamento');return}
       const info=checkoutPhoneData();
       if(!info.valid){toast('Informe seu WhatsApp antes de enviar');return}
+
+      // Reserve a browser window synchronously while the user's tap/click is still active.
+      // This avoids mobile/tablet popup blocking after the async customer lookup + order save.
+      const handoffWindow=reserveWhatsAppHandoff();
+
       const lookup=await lookupCheckoutCustomer();
-      if(!lookup)return;
+      if(!lookup){
+        // Customer enrichment is optional. A temporary lookup failure must never block checkout.
+        state.customerLookup={status:'new',phoneKey:info.key,customer:null};
+        updateCustomerLookupResult();
+      }
+
       state.checkoutPayment=selected.value;
       const btn=$('#sendWhats');
       if(btn){btn.disabled=true;btn.textContent='Registrando pedido…'}
@@ -1064,6 +1109,7 @@
           })
         });
       }catch(e){
+        cancelWhatsAppHandoff(handoffWindow);
         if(btn){btn.disabled=false;btn.textContent='Enviar pedido para o WhatsApp'}
         toast('Não consegui registrar. Tente novamente.');
         return;
@@ -1105,9 +1151,16 @@
       }
       lines.push('','TOTAL: '+money(saved?.total_cents??cartTotal()),'PAGAMENTO: '+selected.value);
       const url='https://wa.me/'+WHATSAPP+'?text='+encodeURIComponent(lines.join('\n'));
+
+      // Order is already persisted. Keep an explicit manual fallback visible before navigating.
       state.cart=[];
       saveCart();
-      window.location.href=url;
+      paintCart();
+      renderWhatsAppHandoffSuccess(url,saved);
+
+      const handoffMode=completeWhatsAppHandoff(url,handoffWindow);
+      if(handoffMode)toast('Pedido registrado. Abrindo WhatsApp…');
+      else toast('Pedido registrado. Toque em “Abrir WhatsApp”.');
     }
 
     $('#globalSearchForm').onsubmit=e=>{
