@@ -1316,6 +1316,7 @@
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
     if($('#orderCustomerSearch'))$('#orderCustomerSearch').oninput=e=>scheduleOrderCustomerSearch(e.target.value);
+    if($('#orderCustomer'))$('#orderCustomer').onchange=applySelectedCustomerToDelivery;
     if($('#advanceOrder'))$('#advanceOrder').onclick=()=>advanceCurrentOrder($('#advanceOrder').dataset.next);
     if($('#startSeparation'))$('#startSeparation').onclick=()=>printSeparation(d,true);
     if($('#reprintSeparation'))$('#reprintSeparation').onclick=()=>printSeparation(d,false);
@@ -1519,6 +1520,26 @@
   }
   function customerOptions(current){
     return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'</option>').join('');
+  }
+  function setOrderDeliveryField(id,value){
+    const el=$(id);if(el)el.value=value??'';
+  }
+  function applySelectedCustomerToDelivery(){
+    const id=$('#orderCustomer')?.value||'';
+    const customer=state.customers.find(c=>c.id===id);
+    if(!customer)return;
+    const a=customer.address||{};
+    setOrderDeliveryField('#orderDeliveryName',customer.display_name||'');
+    setOrderDeliveryField('#orderDeliveryPhone',formatPhone(customer.phone||''));
+    setOrderDeliveryField('#orderDeliveryPostalCode',a.postal_code||'');
+    setOrderDeliveryField('#orderDeliveryStreet',a.street||'');
+    setOrderDeliveryField('#orderDeliveryNumber',a.number||'');
+    setOrderDeliveryField('#orderDeliveryDistrict',a.district||'');
+    setOrderDeliveryField('#orderDeliveryComplement',a.complement||'');
+    setOrderDeliveryField('#orderDeliveryCity',a.city||'Cuiabá');
+    setOrderDeliveryField('#orderDeliveryState',a.state||'MT');
+    setOrderDeliveryField('#orderDeliveryRawText',a.raw_text||'');
+    toast('Dados de entrega preenchidos pelo cliente selecionado');
   }
   function mergeOrderCustomerResults(rows,currentId){
     const current=state.customers.find(c=>c.id===currentId)||null;
