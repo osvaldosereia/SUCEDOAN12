@@ -1073,6 +1073,54 @@ async function blingHubGet(sb:any,token:string,path:string){
   const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
   return {ok:r.ok,status:r.status,data};
 }
+function blingHubDigits(v:any){return String(v??"").replace(/\D/g,"")}
+function blingHubValidGtin(v:any){
+  const g=blingHubDigits(v);if(![8,12,13,14].includes(g.length))return false;
+  const expected=Number(g[g.length-1]);let sum=0;
+  for(let i=g.length-2,offset=0;i>=0;i--,offset++)sum+=Number(g[i])*(offset%2===0?3:1);
+  return (10-(sum%10))%10===expected;
+}
+function blingHubProductPayload(current:any,local:any){
+  const allowed=["nome","codigo","preco","tipo","formato","descricaoCurta","descricaoComplementar","dataValidade","unidade","pesoLiquido","pesoBruto","volumes","itensPorCaixa","gtin","gtinEmbalagem","tipoProducao","condicao","freteGratis","marca","observacoes","linkExterno","estoque","dimensoes","tributacao","midia","categoria"];
+  const payload:any={};
+  for(const key of allowed)if(current?.[key]!==undefined&&current?.[key]!==null)payload[key]=current[key];
+  const meta=local?.metadata&&typeof local.metadata==="object"?local.metadata:{};
+  if(clean(local?.name,220))payload.nome=clean(local.name,220);
+  if(clean(local?.sku,120))payload.codigo=clean(local.sku,120);
+  const price=Number(local?.sale_price_cents);if(Number.isFinite(price)&&price>=0)payload.preco=Math.round(price)/100;
+  const gtin=blingHubDigits(local?.gtin);if(gtin&&blingHubValidGtin(gtin))payload.gtin=gtin;
+  if(clean(meta?.unit,20))payload.unidade=clean(meta.unit,20);
+  if(clean(meta?.brand,120))payload.marca=clean(meta.brand,120);
+  if(clean(local?.description,1800))payload.descricaoComplementar=clean(local.description,1800);
+  payload.tipo=clean(payload.tipo||current?.tipo||"P",10)||"P";
+  payload.formato=clean(payload.formato||current?.formato||"S",10)||"S";
+  payload.situacao=local?.active===false?"I":"A";
+  delete payload.id;
+  return payload;
+}
+function blingHubManagedProductDiff(current:any,payload:any){
+  const keys=["nome","codigo","preco","gtin","unidade","marca","descricaoComplementar","situacao"];
+  const diff:any={};
+  for(const key of keys){
+    const a=current?.[key]??null,b=payload?.[key]??null;
+    if(JSON.stringify(a)!==JSON.stringify(b))diff[key]={from:a,to:b};
+  }
+  return diff;
+}
+async function blingHubPreviewProductSync(sb:any,item:any){
+  const sourceId=uuid(item?.source_id);if(!sourceId)return {ok:false,error:"invalid_product"};
+  const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status,metadata")
+    .eq("source_system","vitrine_qx").eq("entity_type","product").eq("source_id",sourceId).maybeSingle();
+  if(link.error)throw link.error;
+  if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id))return {ok:false,error:"product_not_linked"};
+  const token=await blingHubOauth(sb);
+  const detail=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(link.data.bling_id)));
+  if(!detail.ok)return {ok:false,error:"bling_product_http_"+detail.status};
+  const current=detail.data?.data||{};
+  const payload=blingHubProductPayload(current,item?.product||{});
+  const diff=blingHubManagedProductDiff(current,payload);
+  return {ok:true,readonly:true,external_write:false,source_id:sourceId,bling_id:Number(link.data.bling_id),changes:diff,change_count:Object.keys(diff).length,current:{nome:current?.nome||"",codigo:current?.codigo||"",preco:current?.preco??null,gtin:current?.gtin||"",unidade:current?.unidade||"",marca:current?.marca||"",situacao:current?.situacao||""},desired:{nome:payload?.nome||"",codigo:payload?.codigo||"",preco:payload?.preco??null,gtin:payload?.gtin||"",unidade:payload?.unidade||"",marca:payload?.marca||"",situacao:payload?.situacao||""}};
+}
 async function blingHubReconcileProductCatalogReadonly(sb:any,itemsRaw:any){
   const items=(Array.isArray(itemsRaw)?itemsRaw:[]).slice(0,3000);
   if(!items.length)return {ok:true,processed:0,summary:{},bling_catalog_count:0,exceptions:[]};
@@ -1503,6 +1551,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="reconcile_product_catalog_readonly"){
         const result=await blingHubReconcileProductCatalogReadonly(sb,body?.items);
         return json(result,200);
+      }
+      if(subaction==="preview_product_sync"){
+        const result=await blingHubPreviewProductSync(sb,body);
+        return json(result,result.ok?200:409);
       }
       if(subaction==="enqueue_job"){
         const domain=clean(body?.domain,40),operation=clean(body?.operation,80),sourceId=clean(body?.source_id,160),key=clean(body?.idempotency_key,240);
