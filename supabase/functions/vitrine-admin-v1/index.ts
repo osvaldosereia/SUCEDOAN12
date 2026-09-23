@@ -1566,6 +1566,30 @@ async function updateOrder(payload:any) {
     }
   }
 
+  if(payload?.delivery_address !== undefined){
+    const input=payload.delivery_address&&typeof payload.delivery_address==="object"?payload.delivery_address:{};
+    const base=(Object.prototype.hasOwnProperty.call(patch,"delivery_address_snapshot")
+      ? patch.delivery_address_snapshot
+      : currentOrder.delivery_address_snapshot);
+    const previous=base&&typeof base==="object"?base:{};
+    const name=text(input.customer_name??input.recipient_name??previous.customer_name??previous.recipient_name,180);
+    patch.delivery_address_snapshot={
+      ...previous,
+      customer_name:name,
+      recipient_name:name,
+      phone:maybeText(input.phone,40),
+      postal_code:maybeText(input.postal_code,20),
+      street:maybeText(input.street,180),
+      number:maybeText(input.number,40),
+      complement:maybeText(input.complement,140),
+      district:maybeText(input.district,140),
+      city:maybeText(input.city,120),
+      state:maybeText(String(input.state??"").toUpperCase(),2),
+      country_code:previous.country_code||"BR",
+      raw_text:maybeText(input.raw_text,400)
+    };
+  }
+
   if (payload?.payment_method !== undefined) {
     const payment=text(payload.payment_method,80);
     patch.payment_method_snapshot={...currentPayment,method:payment,label:payment,timing:"on_delivery",source:currentPayment.source||"admin"};
