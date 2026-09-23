@@ -56,6 +56,15 @@
     .basket-card .name{font-size:15px;font-weight:750;min-height:37px}
     .basket-card .price{margin-bottom:8px}
     .basket-card .add{margin-top:auto}
+    .subcategory-box{margin:0 0 12px;padding:10px;border:1px solid #eef1ef;border-radius:13px;background:#fbfcfb}
+    .subcategory-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+    .subcategory-top strong{font-size:12px;font-weight:800}.subcategory-top span{color:var(--muted);font-size:10px}
+    .subcategory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .subcategory-btn{min-height:44px;border:1px solid #e2e7e3;border-radius:10px;background:#fff;color:var(--ink);padding:8px 9px;text-align:left;font-size:12px;font-weight:700;line-height:1.2;display:flex;align-items:center;justify-content:space-between;gap:6px}
+    .subcategory-btn small{color:var(--muted);font-size:9px;font-weight:650;flex:0 0 auto}
+    .subcategory-btn.active{background:#edf6f0;border-color:#b9d3c2;color:var(--brand);font-weight:850}
+    .subcategory-more{width:100%;min-height:40px;margin-top:5px;border:0;background:transparent;color:var(--brand);font-size:11px;font-weight:800}
+    .subcategory-loading{color:var(--muted);font-size:11px}
     .category-list{display:grid;gap:9px}
     .category{width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;text-align:left;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px 16px;font-weight:850}
     .category span{color:var(--muted);font-size:19px}
@@ -127,6 +136,7 @@
       .basket-card .add{min-height:44px;padding:8px}
       .sheet{border-radius:22px 22px 0 0}
       .category-list{grid-template-columns:repeat(2,1fr)}
+      .subcategory-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
     }
     @media(min-width:1080px){.grid,.deferred-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}}
     @media(min-width:1200px){.grid,.deferred-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}}
@@ -221,7 +231,9 @@
       whatsappPhone: '',
       checkoutDdd: '65',
       checkoutPhone: '9',
-      customerLookup: {status:'idle',phoneKey:'',customer:null}
+      customerLookup: {status:'idle',phoneKey:'',customer:null},
+      categorySubcategories: {},
+      subcategoriesExpanded: {}
     };
 
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -658,22 +670,52 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    async function renderCategory(key,label){
-      state.view='cat:'+key;state.category={key,label};state.query='';renderNav();
+    function renderSubcategoryFilters(key,label,items,selected=''){
+      const host=$('#subcategoryArea');if(!host)return;
+      const list=Array.isArray(items)?items:[];
+      if(!list.length){host.innerHTML='';host.classList.remove('subcategory-box');return}
+      const expanded=Boolean(state.subcategoriesExpanded[key]);
+      const visible=expanded?list:list.slice(0,7);
+      host.className='subcategory-box';
+      host.innerHTML=
+        '<div class="subcategory-top"><strong>Escolha um tipo</strong><span>'+list.length+' opções</span></div>'+
+        '<div class="subcategory-grid">'+
+          '<button type="button" class="subcategory-btn '+(!selected?'active':'')+'" data-subcategory=""><span>Todos</span></button>'+
+          visible.map(x=>'<button type="button" class="subcategory-btn '+(selected===x.name?'active':'')+'" data-subcategory="'+esc(x.name)+'"><span>'+esc(x.name)+'</span><small>'+Number(x.count||0)+'</small></button>').join('')+
+        '</div>'+
+        (list.length>7?'<button type="button" class="subcategory-more" data-subcat-more>'+(expanded?'Mostrar menos':'Ver todas')+'</button>':'');
+      host.querySelectorAll('[data-subcategory]').forEach(btn=>btn.onclick=()=>renderCategory(key,label,btn.dataset.subcategory||''));
+      host.querySelector('[data-subcat-more]')?.addEventListener('click',()=>{
+        state.subcategoriesExpanded[key]=!expanded;
+        renderSubcategoryFilters(key,label,list,selected);
+      });
+    }
+
+    async function renderCategory(key,label,subcategory=''){
+      state.view='cat:'+key;state.category={key,label,subcategory};state.query='';renderNav();
       $('#globalSearchInput').value='';
-      content.innerHTML='<section class="section"><div class="section-head"><div><h2>'+esc(label)+'</h2><p>Produtos disponíveis agora</p></div><button class="text-btn" type="button" id="backHome">Voltar</button></div>'+
+      content.innerHTML='<section class="section"><div class="section-head"><div><h2>'+esc(label)+'</h2><p id="categorySubtitle">'+(subcategory?esc(subcategory):'Produtos disponíveis agora')+'</p></div><button class="text-btn" type="button" id="backHome">Voltar</button></div>'+
+        '<div class="subcategory-box subcategory-loading" id="subcategoryArea">Carregando tipos…</div>'+
         '<div class="grid" id="productGrid"><div class="loader"></div><div class="loader"></div></div><div id="moreHost"></div></section>';
       $('#backHome').onclick=renderHome;
       try{
-        const data=await api('products',{category:key,limit:24,offset:0});
+        const cached=state.categorySubcategories[key];
+        const [subData,data]=await Promise.all([
+          cached?Promise.resolve({subcategories:cached}):api('subcategories',{category:key}),
+          api('products',{category:key,subcategory,limit:24,offset:0})
+        ]);
+        const subcategories=subData.subcategories||[];
+        state.categorySubcategories[key]=subcategories;
+        renderSubcategoryFilters(key,label,subcategories,subcategory);
         state.nextOffset=data.next_offset;
         const grid=$('#productGrid');
         grid.innerHTML=data.products.length?data.products.map((p,i)=>productCard(p,false,i)).join(''):'<div class="empty">Não encontrei produtos aqui.</div>';
         attachProductControls(grid,data.products);
-        if(state.nextOffset!=null)renderMoreButton(key,label,'');
+        if(state.nextOffset!=null)renderMoreButton(key,label,'',subcategory);
       }catch(e){
+        const host=$('#subcategoryArea');if(host)host.innerHTML='';
         $('#productGrid').innerHTML='<div class="empty">Não consegui carregar agora. <button class="text-btn" id="retryCat">Tentar novamente</button></div>';
-        $('#retryCat').onclick=()=>renderCategory(key,label);
+        $('#retryCat').onclick=()=>renderCategory(key,label,subcategory);
       }
       window.scrollTo({top:0,behavior:'smooth'});
     }
@@ -692,7 +734,7 @@
         const grid=$('#productGrid');
         grid.innerHTML=data.products.length?data.products.map((p,i)=>productCard(p,false,i)).join(''):'<div class="empty">Não encontrei esse produto. Tente outro nome ou uma palavra mais curta.</div>';
         attachProductControls(grid,data.products);
-        if(state.nextOffset!=null)renderMoreButton('', 'Busca', term);
+        if(state.nextOffset!=null)renderMoreButton('', 'Busca', term, '');
       }catch(e){
         $('#productGrid').innerHTML='<div class="empty">Não consegui buscar agora. <button class="text-btn" id="retrySearch">Tentar novamente</button></div>';
         $('#retrySearch').onclick=()=>renderSearch(term);
@@ -700,13 +742,13 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    function renderMoreButton(key,label,q,current){
+    function renderMoreButton(key,label,q,subcategory=''){
       const host=$('#moreHost');
       host.innerHTML='<button class="primary" type="button" id="loadMore" style="margin-top:14px">Mostrar mais</button>';
       $('#loadMore').onclick=async()=>{
         const btn=$('#loadMore');btn.disabled=true;btn.textContent='Carregando…';
         try{
-          const data=await api('products',{category:key,q,limit:24,offset:state.nextOffset});
+          const data=await api('products',{category:key,subcategory:subcategory,q,limit:24,offset:state.nextOffset});
           state.nextOffset=data.next_offset;
           const grid=$('#productGrid');
           const temp=document.createElement('div');
