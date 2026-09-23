@@ -520,6 +520,18 @@
     state.expeditionSelected=[...ids];
     paintExpeditionBody();
   }
+  function dispatchPaymentSummary(rows){
+    const map=new Map();
+    for(const o of rows||[]){
+      const label=String(o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'Não informado').trim()||'Não informado';
+      map.set(label,(map.get(label)||0)+Number(o?.total_cents||0));
+    }
+    return [...map.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'pt-BR'));
+  }
+  function dispatchPaymentSummaryText(rows){
+    return dispatchPaymentSummary(rows).map(([label,total])=>label+': '+money(total)).join(' · ');
+  }
+
   function printDispatchManifest(){
     const selected=state.orders.filter(o=>o.status==='ready'&&state.expeditionSelected.includes(o.id));
     if(!selected.length){toast('Selecione ao menos um pedido pronto');return}
@@ -538,7 +550,8 @@
         '<td class="sign"></td>'+
       '</tr>';
     }).join('');
-    const body='<div class="manifest-head"><h1>Dona Antônia · Romaneio de saída</h1><div>Gerado em '+esc(dateTime(new Date().toISOString()))+'</div><div><b>'+selected.length+' pedido(s)</b> · Total '+money(total)+'</div></div>'+
+    const paymentSummary=dispatchPaymentSummaryText(selected);
+    const body='<div class="manifest-head"><h1>Dona Antônia · Romaneio de saída</h1><div>Gerado em '+esc(dateTime(new Date().toISOString()))+'</div><div><b>'+selected.length+' pedido(s)</b> · Total '+money(total)+'</div><div class="manifest-payments"><b>A receber:</b> '+esc(paymentSummary||'Nenhum pagamento informado')+'</div></div>'+
       '<table><thead><tr><th>#</th><th>Pedido / cliente</th><th>Endereço</th><th>Pagamento</th><th>Valor</th><th>Conferência</th></tr></thead><tbody>'+rows+'</tbody></table>'+
       '<div class="manifest-foot"><div>Motorista: ____________________________________</div><div>Saída: ____:____</div><div>Retorno: ____:____</div></div>';
     openManifestPrint('Romaneio de saída',body);
@@ -546,7 +559,7 @@
   function openManifestPrint(title,body){
     const w=window.open('','_blank','width=1000,height=760');
     if(!w){toast('Libere pop-ups para imprimir');return}
-    const css='@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{margin:0;color:#000;font:11px Arial,sans-serif}.manifest-head{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:end;margin-bottom:8mm;border-bottom:2px solid #000;padding-bottom:4mm}.manifest-head h1{grid-column:1/-1;margin:0;font-size:20px}.manifest-head div:last-child{text-align:right}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #000;padding:2.5mm;vertical-align:top}th{background:#eee;font-size:10px;text-align:left}th:nth-child(1),td:nth-child(1){width:6%}th:nth-child(2),td:nth-child(2){width:21%}th:nth-child(3),td:nth-child(3){width:30%}th:nth-child(4),td:nth-child(4){width:14%}th:nth-child(5),td:nth-child(5){width:12%}th:nth-child(6),td:nth-child(6){width:17%}.right{text-align:right}.sign{height:18mm}.manifest-foot{display:grid;grid-template-columns:1fr auto auto;gap:12mm;margin-top:8mm;padding-top:4mm;border-top:1px solid #000}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
+    const css='@page{size:A4 portrait;margin:10mm}*{box-sizing:border-box}body{margin:0;color:#000;font:11px Arial,sans-serif}.manifest-head{display:grid;grid-template-columns:1fr auto;gap:4px 16px;align-items:end;margin-bottom:8mm;border-bottom:2px solid #000;padding-bottom:4mm}.manifest-head h1{grid-column:1/-1;margin:0;font-size:20px}.manifest-head div:last-child{text-align:right}.manifest-payments{grid-column:1/-1;text-align:left!important;margin-top:2mm;padding-top:2mm;border-top:1px solid #000}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #000;padding:2.5mm;vertical-align:top}th{background:#eee;font-size:10px;text-align:left}th:nth-child(1),td:nth-child(1){width:6%}th:nth-child(2),td:nth-child(2){width:21%}th:nth-child(3),td:nth-child(3){width:30%}th:nth-child(4),td:nth-child(4){width:14%}th:nth-child(5),td:nth-child(5){width:12%}th:nth-child(6),td:nth-child(6){width:17%}.right{text-align:right}.sign{height:18mm}.manifest-foot{display:grid;grid-template-columns:1fr auto auto;gap:12mm;margin-top:8mm;padding-top:4mm;border-top:1px solid #000}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}';
     w.document.open();
     w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>'+css+'</style></head><body>'+body+'<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),300));<\/script></body></html>');
     w.document.close();
@@ -587,7 +600,12 @@
         '<div class="ops-card"><small>Em entrega</small><strong>'+delivery.length+'</strong><span>Pedidos na rua</span></div>'+
         '<div class="ops-card"><small>Entregues hoje</small><strong>'+visible.filter(deliveredToday).length+'</strong><span>Fechamento e fiscal</span></div>'+
       '</div>'+
-      (ready.length?'<div class="dispatch-bulk"><label class="check"><input id="selectAllReady" type="checkbox" '+(selectedDispatchOrders(ready).length===ready.length&&ready.length?'checked':'')+'><span>Selecionar todos os pedidos prontos desta lista</span></label><div class="dispatch-bulk-actions"><strong>'+selectedDispatchOrders(ready).length+' selecionado(s)</strong><button class="secondary" id="printDispatchManifest" type="button" '+(selectedDispatchOrders(ready).length?'':'disabled')+'>Imprimir romaneio</button><button class="primary" id="bulkDispatchBtn" type="button" '+(selectedDispatchOrders(ready).length?'':'disabled')+'>Marcar saída</button></div></div>':'')+
+      (ready.length?(()=>{
+        const selected=selectedDispatchOrders(ready);
+        const selectedTotal=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
+        const paymentSummary=dispatchPaymentSummaryText(selected);
+        return '<div class="dispatch-bulk"><label class="check"><input id="selectAllReady" type="checkbox" '+(selected.length===ready.length&&ready.length?'checked':'')+'><span>Selecionar todos os pedidos prontos desta lista</span></label><div class="dispatch-bulk-actions"><div><strong>'+selected.length+' selecionado(s) · '+money(selectedTotal)+'</strong>'+(paymentSummary?'<span class="sub">A receber: '+esc(paymentSummary)+'</span>':'')+'</div><button class="secondary" id="printDispatchManifest" type="button" '+(selected.length?'':'disabled')+'>Imprimir romaneio</button><button class="primary" id="bulkDispatchBtn" type="button" '+(selected.length?'':'disabled')+'>Marcar saída</button></div></div>';
+      })():'')+
       '<div class="dispatch-grid">'+
         expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
         expeditionSection('Em entrega','acompanhar até a confirmação',delivery,'Nenhum pedido em entrega.')+
