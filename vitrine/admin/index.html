@@ -1705,14 +1705,19 @@
 
   function orderBlingLinkHtml(link){
     if(!link)return '<div class="rule-notice"><strong>Aguardando primeira separação</strong><div>O pedido ainda não foi enviado ao Bling. O envio acontece automaticamente quando a separação começar e todas as validações estiverem corretas.</div></div>';
+    const job=link.job||{};
+    const jobAttention=job.status==='review_required'||job.status==='failed';
+    const statusAttention=job.operation==='sync_order_status'&&jobAttention;
+    if(link.linked&&statusAttention){
+      return '<div class="rule-notice warn"><strong>Pedido vinculado · situação pendente no Bling</strong><div>'+esc(blingOrderJobErrorLabel(job.error_code))+'</div><div class="sub" style="margin-top:6px">O pedido continua válido no Admin. Confira a situação no Bling enquanto essa permissão estiver indisponível.</div></div>';
+    }
     if(link.linked){
       return '<div class="rule-notice"><strong class="ok-text">Bling #'+esc(link.bling_order_id)+' ✓</strong><div>Pedido vinculado e verificado'+(link.last_verified_at?' · '+esc(dateTime(link.last_verified_at)):'')+'.</div></div>';
     }
-    const job=link.job||{};
     if(job.status==='pending'||job.status==='processing'||job.status==='retry'){
       return '<div class="rule-notice"><strong>Sincronização Bling em andamento</strong><div>Status: '+esc(job.status||'pendente')+'.</div></div>';
     }
-    if(job.status==='review_required'||job.status==='failed'){
+    if(jobAttention){
       return '<div class="rule-notice warn"><strong>Bling precisa de revisão</strong><div>'+esc(blingOrderJobErrorLabel(job.error_code))+'</div></div>';
     }
     return '<div class="rule-notice"><strong>Ainda não vinculado</strong><div>Será processado automaticamente após a primeira separação elegível.</div></div>';
@@ -1725,8 +1730,8 @@
       order_creation_uncertain:'O resultado da criação precisa ser conferido',
       bling_order_id_missing:'O Bling não retornou um identificador seguro',
       post_create_order_mismatch:'O pedido criado no Bling não conferiu com o total local',
-      order_status_updates_disabled:'Status do pedido no Bling precisa de revisão manual',
-      order_status_mapping_not_approved:'Mapeamento de status do Bling ainda não foi aprovado',
+      order_status_updates_disabled:'A situação foi atualizada no Admin, mas o aplicativo Bling ainda não tem permissão para alterar situações de pedidos',
+      order_status_mapping_not_approved:'A situação foi atualizada no Admin, mas o mapeamento de situações do Bling ainda não foi aprovado',
       customer_not_linked:'Cliente ainda não vinculado ao Bling',
       unresolved_products:'Há produtos sem vínculo com o Bling'
     };
