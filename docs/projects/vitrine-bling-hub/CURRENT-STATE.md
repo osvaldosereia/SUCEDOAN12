@@ -79,8 +79,15 @@ Teste real controlado:
 Ainda depende de ação humana no painel do aplicativo Bling para cadastrar/ativar a URL de webhook. Não ativar antes de revisão final dos recursos desejados.
 
 ## Fiscal / NF-e
-Contrato existente mantido:
+Contrato existente mantido e agora ligado ao fluxo da Vitrine **somente para readiness local**:
 - NF-e somente após entrega + pagamento confirmado + valor reconciliado.
+- `sync_vitrine_order_fiscal_delivery_v1` projeta status entregue/cancelado/devolvido no controle fiscal canônico.
+- No `vitrine/admin`, pedido entregue pode receber confirmação explícita de pagamento.
+- A confirmação usa o total canônico do pedido; o navegador não informa valor arbitrário.
+- Pedido não entregue não pode ter pagamento confirmado pelo fluxo fiscal.
+- Entrega + pagamento exato resultam em `fiscal_status=ready`.
+- A tela do pedido mostra Entrega / Pagamento / Fiscal e deixa explícito que emissão permanece desligada.
+- Não existe botão `Emitir NF-e` nesta etapa.
 - `fiscal_runtime_config.enabled=false`
 - execution_mode=`off`
 - prepare=false
@@ -89,7 +96,11 @@ Contrato existente mantido:
 - 0 fiscal jobs
 - 0 external side effects
 
-O painel Bling mostra readiness fiscal, mas nenhuma emissão/preparação foi ativada.
+Validações executadas:
+- pedido real não entregue → `delivery_not_confirmed`;
+- tentativa de confirmar pagamento antes da entrega → HTTP 409;
+- teste transacional com rollback: entregue + pagamento exato → fiscal ready e preview elegível;
+- o teste confirmou que nenhum `fiscal_issue_job` foi criado.
 
 ## Admin
 `vitrine/admin/index.html`:
@@ -121,6 +132,7 @@ Cobertura:
 ## Próximos passos seguros
 1. Aguardar a primeira separação real para observar o canário automático de Pedido.
 2. Manter Webhooks OFF até a URL ser cadastrada no painel Bling.
-3. Fiscal: somente após fluxo operacional de entrega/pagamento estar realmente em uso; primeiro preview, depois canário manual.
-4. Inventariar objetos legados para limpeza Supabase somente depois da estabilização de Pedidos.
-5. Make permanece intacto na plataforma, conforme decisão do usuário, mas não faz parte do novo runtime direto.
+3. Observar o novo readiness fiscal durante entregas reais; emissão continua OFF.
+4. Depois que o primeiro pedido Bling passar e houver entrega/pagamento real validado, preparar o primeiro preview de NF-e sem envio.
+5. Inventariar objetos legados para limpeza Supabase somente depois da estabilização de Pedidos.
+6. Make permanece intacto na plataforma, conforme decisão do usuário, mas não faz parte do novo runtime direto.
