@@ -393,7 +393,7 @@
       '<div class="dispatch-actions">'+
         (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
         (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
-        (o.status==='out_for_delivery'?'<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button>':'')+
+        (o.status==='out_for_delivery'?'<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button><button class="quick-link" type="button" data-return-expedition="'+esc(o.id)+'">Não entregou</button>':'')+
         '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
       '</div>'+
     '</div>';
@@ -402,6 +402,32 @@
     return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
       '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
   }
+  async function returnOrderToExpedition(id,fromDetail=false){
+    const o=(fromDetail?state.currentOrder?.order:null)||state.orders.find(x=>x.id===id);
+    if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
+    const ok=confirm('Entrega não concluída do pedido #'+shortOrder(o.order_number)+'?\n\nO pedido voltará para Aguardando saída. O estoque continuará baixado.');
+    if(!ok)return;
+    try{
+      await api('order_update',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:o.id,status:'ready'})
+      });
+      if(fromDetail){
+        const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
+        await loadCurrentOrderFiscal(false);
+        paintOrderDetail();
+        loadOrders();
+      }else{
+        const data=await api('orders');state.orders=data.orders||[];
+        paintExpeditionBody();
+      }
+      toast('Pedido voltou para Aguardando saída · estoque mantido');
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  function returnCurrentOrderToExpedition(){
+    const id=state.currentOrder?.order?.id;if(id)returnOrderToExpedition(id,true);
+  }
+
   async function confirmDeliveryFromExpedition(id){
     const o=state.orders.find(x=>x.id===id);
     if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
@@ -517,6 +543,7 @@
       '</div>';
     document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
     document.querySelectorAll('[data-confirm-delivery]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.confirmDelivery));
+    document.querySelectorAll('[data-return-expedition]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.returnExpedition,false));
     document.querySelectorAll('[data-dispatch-select]').forEach(el=>el.onchange=e=>toggleDispatchSelection(el.dataset.dispatchSelect,e.target.checked));
     if($('#selectAllReady'))$('#selectAllReady').onchange=e=>toggleAllReady(ready,e.target.checked);
     if($('#printDispatchManifest'))$('#printDispatchManifest').onclick=printDispatchManifest;
@@ -1535,6 +1562,7 @@
     if($('#orderCustomerSearch'))$('#orderCustomerSearch').oninput=e=>scheduleOrderCustomerSearch(e.target.value);
     if($('#orderCustomer'))$('#orderCustomer').onchange=applySelectedCustomerToDelivery;
     if($('#advanceOrder'))$('#advanceOrder').onclick=()=>advanceCurrentOrder($('#advanceOrder').dataset.next);
+    if($('#returnToExpedition'))$('#returnToExpedition').onclick=returnCurrentOrderToExpedition;
     if($('#startSeparation'))$('#startSeparation').onclick=()=>printSeparation(d,true);
     if($('#reprintSeparation'))$('#reprintSeparation').onclick=()=>printSeparation(d,false);
     if($('#printDelivery'))$('#printDelivery').onclick=()=>printDelivery(d);
@@ -1758,6 +1786,7 @@
     else if(!mustFix&&o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
     else if(!mustFix&&o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
     const docs=[];
+    if(o.status==='out_for_delivery')docs.push('<button class="secondary" id="returnToExpedition" type="button">Entrega não concluída</button>');
     if(consumed)docs.push('<button class="secondary" id="reprintSeparation" type="button">Reimprimir separação</button>');
     if(['ready','out_for_delivery','delivered'].includes(o.status))docs.push('<button class="secondary" id="printDelivery" type="button">Imprimir via do entregador</button>');
     const cancel=!['delivered','cancelled'].includes(o.status)?'<button class="text danger" id="cancelOrder" type="button">Cancelar pedido</button>':'';

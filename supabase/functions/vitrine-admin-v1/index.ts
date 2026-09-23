@@ -1437,7 +1437,7 @@ function orderTransitionAllowed(current:string,next:string){
     confirmed:["processing","cancelled"],
     processing:["ready","cancelled"],
     ready:["out_for_delivery","cancelled"],
-    out_for_delivery:["delivered","cancelled"],
+    out_for_delivery:["ready","delivered","cancelled"],
     delivered:[],
     cancelled:["created","confirmed"]
   };

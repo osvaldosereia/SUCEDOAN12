@@ -9,7 +9,7 @@ assert.match(fn,/created:\["confirmed","cancelled"\]/);
 assert.match(fn,/confirmed:\["processing","cancelled"\]/);
 assert.match(fn,/processing:\["ready","cancelled"\]/);
 assert.match(fn,/ready:\["out_for_delivery","cancelled"\]/);
-assert.match(fn,/out_for_delivery:\["delivered","cancelled"\]/);
+assert.match(fn,/out_for_delivery:\["ready","delivered","cancelled"\]/);
 assert.match(fn,/invalid_status_transition/);
 assert.match(fn,/stock_not_consumed_for_status/);
 assert.match(fn,/\["processing","ready"\]\.includes\(status\)/);
