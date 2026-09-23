@@ -19,10 +19,9 @@
     img{display:block;max-width:100%}
     .wrap{width:min(100%,1180px);margin:auto;padding-inline:14px}
     .top{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line)}
-    .top-row{height:64px;display:flex;align-items:center;gap:10px}
-    .logo{width:88px;height:40px;object-fit:contain}
-    .brand{min-width:0;flex:1}.brand strong{display:block;font-size:18px;line-height:1.1}.brand small{color:var(--muted);font-size:12px}
-    .cart-top{min-height:44px;border:0;background:var(--soft);color:var(--ink);border-radius:999px;padding:9px 12px;font-weight:850;display:flex;align-items:center;gap:7px}
+    .top-row{height:70px;display:flex;align-items:center;gap:12px}
+    .logo{width:164px;height:52px;object-fit:contain;object-position:left center;flex:0 0 auto}
+    .cart-top{margin-left:auto;min-height:44px;border:0;background:var(--soft);color:var(--ink);border-radius:999px;padding:9px 12px;font-weight:850;display:flex;align-items:center;gap:7px}
     .badge{min-width:24px;height:24px;border-radius:999px;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:12px;padding:0 6px}
     .top-search{padding-bottom:8px}
     .global-search{display:flex;gap:7px;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:4px}
@@ -113,7 +112,8 @@
     .toast{position:fixed;z-index:90;left:50%;bottom:96px;transform:translate(-50%,20px);background:#18221c;color:#fff;padding:10px 13px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s;font-weight:750;font-size:13px}.toast.show{opacity:1;transform:translate(-50%,0)}
     footer{border-top:1px solid var(--line);padding:22px 0 110px;color:var(--muted);font-size:12px}
     @media(min-width:760px){
-      .top-row{height:56px}
+      .top-row{height:64px}
+      .logo{width:176px;height:52px}
       .top-search{padding-bottom:6px}
       .nav{padding-top:6px;padding-bottom:8px}
       .section{padding:14px 0}
@@ -135,8 +135,7 @@
 <body>
   <header class="top">
     <div class="wrap top-row">
-      <img class="logo" src="/img/logoantonia5.png" width="88" height="40" alt="Dona Antônia" fetchpriority="high" decoding="async">
-      <div class="brand"><strong>Dona Antônia</strong><small>Entrega em Cuiabá e Várzea Grande</small></div>
+      <img class="logo" src="/img/logoantonia5.png" width="164" height="52" alt="Dona Antônia" fetchpriority="high" decoding="async">
       <button class="cart-top" id="cartTop" type="button" aria-label="Ver pedido">Pedido <span class="badge" id="cartBadge">0</span></button>
     </div>
     <form class="top-search wrap" id="globalSearchForm" role="search">
