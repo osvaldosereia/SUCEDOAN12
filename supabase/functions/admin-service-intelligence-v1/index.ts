@@ -1611,7 +1611,9 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
           summary.review_required++;continue;
         }else{
           const createPayload=blingHubProductPayload({},local);
-          createPayload.unidade=clean(createPayload.unidade,20)||"UN";
+          const rawUnit=clean(createPayload.unidade,20).toUpperCase();
+          const unitMap:any={PACOTE:"PCT",PCT:"PCT",UNIDADE:"UN",UN:"UN",CAIXA:"CX",CX:"CX",FARDO:"FD",FD:"FD",QUILO:"KG",KILO:"KG",KG:"KG",LITRO:"L",L:"L"};
+          createPayload.unidade=unitMap[rawUnit]||rawUnit.replace(/[^A-Z0-9]/g,"").slice(0,6)||"UN";
           createPayload.codigo=clean(createPayload.codigo,120)||gtin;
           createPayload.gtin=gtin;
           createPayload.tipo=clean(createPayload.tipo,10)||"P";
