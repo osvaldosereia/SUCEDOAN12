@@ -8,6 +8,7 @@ const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 assert.match(hub,/async function blingHubEnsureCustomerNow\(sb:any,customerIdRaw:any\)/);
 assert.match(hub,/if\(!blingHubValidCpfCnpj\(doc\)\)/);
 assert.match(hub,/p_source_system:"canonical_ssbes"/);
+assert.match(hub,/p_idempotency_key:"canonical_ssbes:customer:"\+customerId\+":"\+stamp/);
 assert.match(hub,/allow_create:true,requested_from:"order_preflight"/);
 assert.match(hub,/blingHubProcessCustomerJobs\(sb/);
 assert.match(hub,/subaction==="ensure_customer_now"/);
