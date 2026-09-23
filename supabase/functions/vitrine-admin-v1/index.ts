@@ -1208,7 +1208,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -1225,7 +1225,7 @@ async function blingHubControl(subaction:string,extra:any={}) {
       "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
     },
     body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),
-    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly","process_product_jobs"].includes(subaction)?120000:10000)
+    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly","ensure_customer_now","process_product_jobs"].includes(subaction)?120000:10000)
   });
   const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
   if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
@@ -1476,6 +1476,34 @@ async function reconcileBlingOrderDependenciesReadonly(orderId:string){
     product_reconcile:productReconcile,
     preview,
     external_write:false
+  };
+}
+
+async function ensureBlingCustomerForOrder(orderId:string){
+  const id=uuid(orderId);
+  if(!id)return {error:"invalid_order",status:400};
+  const snapshot=await buildBlingOrderSnapshot(id);
+  const customerId=uuid(snapshot?.customer?.source_customer_id);
+  if(!customerId)return {error:"customer_not_linked",status:409};
+
+  const before=await previewBlingOrderSync(id);
+  if((before as any).error)return before as any;
+  const blockers=Array.isArray((before as any).write_blockers)?(before as any).write_blockers:[];
+  if(!blockers.includes("customer_missing_bling_contact_id")){
+    return {order_id:id,customer_id:customerId,requested:false,preview:before};
+  }
+
+  const ensured=await blingHubControl("ensure_customer_now",{customer_id:customerId});
+  if((ensured as any).error)return ensured as any;
+
+  const after=await previewBlingOrderSync(id);
+  if((after as any).error)return after as any;
+  return {
+    order_id:id,
+    customer_id:customerId,
+    requested:true,
+    customer_sync:(ensured as any).data||null,
+    preview:after
   };
 }
 
@@ -1968,6 +1996,13 @@ Deno.serve(async (req: Request) => {
         const id=uuid(payload?.id);
         if(!id)return json(req,{ok:false,error:"invalid_order"},400);
         const result=await createMissingBlingProductsForOrder(id);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="bling_create_order_customer") {
+        const id=uuid(payload?.id);
+        if(!id)return json(req,{ok:false,error:"invalid_order"},400);
+        const result=await ensureBlingCustomerForOrder(id);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...result});
       }

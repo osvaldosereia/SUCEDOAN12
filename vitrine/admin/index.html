@@ -1761,6 +1761,7 @@
     if($('#resolveBlingDependencies'))$('#resolveBlingDependencies').onclick=resolveCurrentOrderBlingDependencies;
     if($('#focusOrderCustomer'))$('#focusOrderCustomer').onclick=focusOrderCustomerForBling;
     if($('#completeCustomerDocument'))$('#completeCustomerDocument').onclick=completeCurrentOrderCustomerDocument;
+    if($('#createBlingOrderCustomer'))$('#createBlingOrderCustomer').onclick=createCurrentOrderCustomerInBling;
     if($('#createBlingOrderProducts'))$('#createBlingOrderProducts').onclick=createCurrentOrderProductsInBling;
     if($('#useSuggestedCustomer'))$('#useSuggestedCustomer').onclick=()=>{
       const select=$('#orderCustomer');if(!select||!state.orderCustomerSuggestion)return;
@@ -1803,8 +1804,10 @@
     const canReconcile=blockers.some(x=>['customer_missing_bling_contact_id','unresolved_products'].includes(x));
     const needsCustomer=blockers.includes('customer_not_linked');
     const needsDocument=blockers.includes('customer_document_required');
+    const needsBlingCustomer=blockers.includes('customer_missing_bling_contact_id');
     const needsProducts=blockers.includes('unresolved_products');
     const actions=(needsDocument?'<button class="secondary" id="completeCustomerDocument" type="button">Completar CPF</button>':'')+
+      (needsBlingCustomer?'<button class="secondary" id="createBlingOrderCustomer" type="button">Cadastrar cliente no Bling</button>':'')+
       (needsProducts?'<button class="secondary" id="createBlingOrderProducts" type="button">Cadastrar produtos no Bling</button>':'')+
       (canReconcile?'<button class="secondary" id="resolveBlingDependencies" type="button">Tentar resolver vínculos</button>':'')+
       (needsCustomer?'<button class="secondary" id="focusOrderCustomer" type="button">Vincular cliente</button>':'');
@@ -1980,6 +1983,37 @@
     }catch(e){
       toast('Não consegui verificar a prévia do Bling agora');
       if(btn){btn.disabled=false;btn.textContent='Verificar prévia Bling'}
+    }
+  }
+
+  async function createCurrentOrderCustomerInBling(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const d=state.currentOrder||{},o=d.order||{},c=d.customer||{};
+    const customerId=c.source_customer_id||o.delivery_address_snapshot?.source_customer_id||o.customer_id||'';
+    let customer=state.customers.find(x=>x.id===customerId)||null;
+    if(!customer&&customerId){
+      try{
+        const one=await customerApi('vitrine_customer_get',{id:customerId});
+        customer=one.customer||null;
+        if(customer)state.customers=[customer];
+      }catch{}
+    }
+    const name=customer?.display_name||o.delivery_address_snapshot?.customer_name||o.delivery_address_snapshot?.recipient_name||'Cliente';
+    const cpf=customer?.cpf||o.delivery_address_snapshot?.cpf||'';
+    if(!cpf){toast('Informe o CPF do cliente antes de cadastrar no Bling');return}
+    if(!confirm('Cadastrar este cliente no Bling?\n\n'+name+' · CPF '+formatCpf(cpf)+'\n\nO Hub confere o CPF antes de criar para evitar duplicidade.'))return;
+    const btn=$('#createBlingOrderCustomer');if(btn){btn.disabled=true;btn.textContent='Cadastrando…'}
+    try{
+      const data=await api('bling_create_order_customer',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||state.currentOrderBlingPreview;
+      paintOrderDetail();
+      const blockers=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      toast(blockers.includes('customer_missing_bling_contact_id')?'Cadastro solicitado · vínculo ainda está processando':'Cliente vinculado ao Bling · pedido revalidado');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Cadastrar cliente no Bling'}
     }
   }
 
