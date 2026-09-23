@@ -600,7 +600,12 @@ async function submitOrder(payload:any) {
             name_snapshot:p?.name??"Produto",
             sku_snapshot:p?.sku??null,
             quantity:qty,
-            metadata:{source:"vitrine",image_url:p?.image_url??""}
+            metadata:{
+              source:"vitrine",
+              image_url:p?.image_url??"",
+              unit_price_cents:Number(p?.sale_price_cents??0),
+              price_snapshot_source:"product_sale_price_at_order"
+            }
           };
         })
     });
