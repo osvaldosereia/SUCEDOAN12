@@ -2453,6 +2453,52 @@ async function blingHubFindContactByDocument(sb:any,token:string,docRaw:any){
   if(ids.length>1)return {status:"ambiguous",reason:"duplicate_document",bling_id:null,candidates:ids};
   return {status:"not_found",reason:"document_not_found",bling_id:null,candidates:[]};
 }
+async function blingHubEnsureCustomerNow(sb:any,customerIdRaw:any){
+  const customerId=uuid(customerIdRaw);
+  if(!customerId)return {ok:false,error:"invalid_customer",status:400,external_write:false};
+  const local=await blingHubCustomerSnapshot(sb,customerId);
+  if(!local)return {ok:false,error:"customer_not_found",status:404,external_write:false};
+
+  const doc=blingHubDigits(local.cpf_cnpj);
+  if(!blingHubValidCpfCnpj(doc)){
+    return {ok:false,error:"valid_document_required",status:409,external_write:false};
+  }
+
+  if(Number(local.bling_contact_id||0)){
+    return {
+      ok:true,customer_id:customerId,bling_contact_id:Number(local.bling_contact_id),
+      already_linked:true,queued:false,external_write:false
+    };
+  }
+
+  const stamp=String(local.updated_at||new Date().toISOString());
+  const queued=await sb.rpc("enqueue_bling_hub_job_v2",{
+    p_domain:"customer",
+    p_operation:"sync_customer",
+    p_source_system:"canonical_ssbes",
+    p_source_id:customerId,
+    p_idempotency_key:"canonical_ssbes:customer:order_preflight:"+customerId+":"+stamp,
+    p_payload:{customer_id:customerId,allow_create:true,requested_from:"order_preflight"},
+    p_payload_version:1
+  });
+  if(queued.error)throw queued.error;
+
+  let processed:any=null;
+  try{processed=await blingHubProcessCustomerJobs(sb,Math.min(10,3));}catch{}
+
+  const fresh=await blingHubCustomerSnapshot(sb,customerId);
+  return {
+    ok:true,
+    customer_id:customerId,
+    bling_contact_id:Number(fresh?.bling_contact_id||0)||null,
+    already_linked:false,
+    queued:true,
+    job_id:queued.data||null,
+    processed,
+    external_write:Boolean(Number(fresh?.bling_contact_id||0))
+  };
+}
+
 async function blingHubReconcileCustomerReadonly(sb:any,customerIdRaw:any){
   const customerId=uuid(customerIdRaw);
   if(!customerId)return {ok:false,error:"invalid_customer",status:400,external_write:false};
@@ -3552,6 +3598,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="reconcile_customer_readonly"){
         const result=await blingHubReconcileCustomerReadonly(sb,body?.customer_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ensure_customer_now"){
+        const result=await blingHubEnsureCustomerNow(sb,body?.customer_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="preview_customer_sync"){
