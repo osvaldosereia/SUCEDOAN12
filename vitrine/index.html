@@ -120,6 +120,7 @@
     .checkout-basket-items .checkout-item-row{grid-template-columns:44px minmax(0,1fr) auto;min-height:58px;border-left:2px solid #e2e9e4}
     .checkout-basket-items .checkout-thumb{width:44px;height:44px}
     .checkout-total{display:flex;justify-content:space-between;padding:11px 12px;background:var(--soft);font-weight:950;font-size:16px}
+    .basket-edit-list{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}.basket-edit-list .checkout-item-row{min-height:70px}.basket-edit-list .checkout-thumb{background:#f7f9f7}.basket-edit-list .checkout-name{font-size:12.5px}.basket-action-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}.basket-action-price{min-width:0}.basket-action-price small{display:block;color:var(--muted);font-size:10px;font-weight:800}.basket-action-price strong{display:block;font-size:20px;line-height:1.1;margin-top:2px}.basket-add-btn{width:auto!important;min-width:190px;min-height:48px!important;padding:10px 16px!important}.basket-hero-compact{grid-template-columns:82px 1fr;margin-bottom:12px}.basket-hero-compact img{width:82px;height:82px}.basket-hero-compact h3{font-size:17px}.basket-hero-compact small{display:block;color:var(--muted);font-size:11px;line-height:1.35}
     .wa-lookup{border:1px solid var(--line);border-radius:12px;padding:9px;background:var(--soft)}
     .wa-grid{display:grid;grid-template-columns:64px minmax(120px,1fr) auto;gap:7px;align-items:end}
     .wa-field span{display:block;color:var(--muted);font-size:10px;font-weight:800;margin:0 0 3px}.wa-field input{width:100%;height:42px;border:1px solid #d7dfd9;border-radius:9px;background:#fff;padding:0 9px;outline:none;font-size:14px}.wa-field input:focus{border-color:#8bad98;box-shadow:0 0 0 2px #e9f3ec}
@@ -871,11 +872,20 @@
       const d=state.basketDraft;if(!d)return;
       const b=d.basket;
       sheetTitle.textContent=basketName(b.name);
+      const rows=d.items.map((x,i)=>{
+        const remaining=remainingStock(x.product_id,-1,x.stock_quantity);
+        const max=remaining===null?30:Math.max(0,remaining);
+        return '<div class="checkout-item-row">'+
+          '<button type="button" class="checkout-thumb" data-product-detail="'+esc(x.product_id)+'" data-detail-return="basket" aria-label="Ver '+esc(x.name)+'"><img src="'+esc(safeImage(x.image_url))+'" alt=""></button>'+
+          '<div class="checkout-copy"><button type="button" class="checkout-name" data-product-detail="'+esc(x.product_id)+'" data-detail-return="basket">'+esc(x.name)+'</button>'+
+            '<span class="checkout-meta">'+esc(x.packaging||'Item da cesta')+(remaining!==null?' · disponível '+formatQty(remaining):'')+'</span></div>'+
+          '<div class="checkout-qty"><button type="button" data-b-dec="'+i+'" aria-label="Diminuir">−</button><b id="bq'+i+'">'+formatQty(x.quantity)+'</b><button type="button" data-b-inc="'+i+'" aria-label="Aumentar" '+(Number(x.quantity)>=max?'disabled':'')+'>+</button></div>'+
+        '</div>';
+      }).join('');
       sheetBody.innerHTML=
-        '<div class="basket-hero"><img src="'+esc(safeImage(b.image_url))+'" alt=""><div><h3>'+esc(basketName(b.name))+'</h3><div class="basket-total" id="basketTotal">'+money(d.total_cents)+'</div><small>Você pode retirar, reduzir ou aumentar os itens.</small></div></div>'+
-        '<div class="items">'+d.items.map((x,i)=>'<div class="item-row"><button type="button" class="product-open checkout-name" data-product-detail="'+esc(x.product_id)+'" data-detail-return="basket">'+esc(x.name)+'</button><div class="qty"><button type="button" data-b-dec="'+i+'">−</button><b id="bq'+i+'">'+formatQty(x.quantity)+'</b><button type="button" data-b-inc="'+i+'">+</button></div></div>').join('')+'</div>'+
-        '';
-      sheetAction.innerHTML='<button class="primary" type="button" id="addBasket">Adicionar cesta ao pedido</button>';
+        '<div class="basket-hero basket-hero-compact"><img src="'+esc(safeImage(b.image_url))+'" alt=""><div><h3>'+esc(basketName(b.name))+'</h3><small>Você pode retirar, reduzir ou aumentar os produtos antes de adicionar a cesta.</small></div></div>'+
+        '<div class="basket-edit-list">'+rows+'</div>';
+      sheetAction.innerHTML='<div class="basket-action-bar"><div class="basket-action-price"><small>Valor da cesta</small><strong id="basketActionTotal">'+money(d.total_cents)+'</strong></div><button class="primary basket-add-btn" type="button" id="addBasket">Adicionar cesta</button></div>';
       sheetBody.querySelectorAll('[data-b-dec]').forEach(btn=>btn.onclick=()=>changeBasketQty(Number(btn.dataset.bDec),-1));
       sheetBody.querySelectorAll('[data-b-inc]').forEach(btn=>btn.onclick=()=>changeBasketQty(Number(btn.dataset.bInc),1));
       attachProductDetailHandlers(sheetBody);
@@ -889,12 +899,14 @@
       if(delta>0&&next===current){toast('Limite do estoque disponível.');return}
       d.items[index].quantity=next;
       const label=$('#bq'+index);if(label)label.textContent=formatQty(d.items[index].quantity);
+      const plus=sheetBody.querySelector('[data-b-inc="'+index+'"]');
+      if(plus)plus.disabled=remaining!==null&&Number(d.items[index].quantity)>=max;
       clearTimeout(d.quoteTimer);
       d.quoteTimer=setTimeout(quoteBasket,180);
     }
     async function quoteBasket(){
       const d=state.basketDraft;if(!d)return;
-      const total=$('#basketTotal');if(total)total.textContent='Calculando…';
+      const actionTotal=$('#basketActionTotal');if(actionTotal)actionTotal.textContent='Calculando…';
       try{
         const data=await api('basket_quote',{},{
           method:'POST',
@@ -902,10 +914,9 @@
           body:JSON.stringify({basket_id:d.basket.id,items:d.items.map(x=>({product_id:x.product_id,quantity:x.quantity}))})
         });
         d.total_cents=Number(data.total_cents||0);
-        if($('#basketTotal'))$('#basketTotal').textContent=money(d.total_cents);
+        if($('#basketActionTotal'))$('#basketActionTotal').textContent=money(d.total_cents);
       }catch{
-        d.total_cents=Number(d.basket.display_price_cents||0);
-        if($('#basketTotal'))$('#basketTotal').textContent=money(d.total_cents);
+        if($('#basketActionTotal'))$('#basketActionTotal').textContent=money(d.total_cents);
         toast('Não consegui recalcular agora');
       }
     }
