@@ -713,7 +713,7 @@ async function reconcileCrmCustomer(payload:any){
     source_customer_id:crmCustomerId,
     customer_status:'registered',
     customer_name:text(customer?.name,180)||old.customer_name||old.recipient_name||null,
-    phone:normalizeWhatsappPhone(customer?.phone)||order.whatsapp_phone_e164||old.phone||null,
+    phone:order.whatsapp_phone_e164||normalizeWhatsappPhone(customer?.phone)||old.phone||null,
     cpf:String(customer?.cpf??'').replace(/\D+/g,'').slice(0,14)||old.cpf||null
   };
   for(const key of ['street','number','complement','neighborhood','city','state','postal_code','reference','google_maps_url']){
