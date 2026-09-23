@@ -475,12 +475,17 @@
     const a=o.delivery_address_snapshot||{};
     const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    const attempts=Array.isArray(o.payment_method_snapshot?.delivery_attempts)?o.payment_method_snapshot.delivery_attempts:[];
+    const lastFailure=o.payment_method_snapshot?.last_delivery_failure||attempts[attempts.length-1]||null;
+    const redelivery=attempts.length&&lastFailure
+      ? '<small class="warn-text">Reentrega · '+attempts.length+' tentativa'+(attempts.length===1?'':'s')+' anterior'+(attempts.length===1?'':'es')+' · '+esc(lastFailure.reason||'Motivo não informado')+'</small>'
+      : '';
     const wa=whatsappHref(o.whatsapp_phone_e164||a.phone||'');
     const maps=mapsHrefFromAddress(a);
     const selected=state.expeditionSelected.includes(o.id);
     return '<div class="history-row dispatch-row">'+
       '<div>'+(o.status==='ready'?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(shortOrder(o.order_number))+'</label>':'<strong>#'+esc(shortOrder(o.order_number))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span></div>'+
-      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small></div>'+
+      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small>'+redelivery+'</div>'+
       '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small></div>'+
       '<span>'+statusPill(o.status)+'</span>'+
       '<div class="dispatch-actions">'+
