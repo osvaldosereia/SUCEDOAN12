@@ -1374,9 +1374,15 @@ async function previewBlingOrderSync(orderId:string){
   return (remote as any).data;
 }
 
+async function sha256Short(value:string){
+  const bytes=new TextEncoder().encode(value);
+  const hash=await crypto.subtle.digest("SHA-256",bytes);
+  return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,24);
+}
 async function queueBlingOrderSnapshot(orderId:string,reason:string){
   const snapshot=await buildBlingOrderSnapshot(orderId);
-  const key="vitrine_qx:order:"+orderId+":v1";
+  const digest=await sha256Short(JSON.stringify(snapshot));
+  const key="vitrine_qx:order:"+orderId+":v2:"+digest;
   const remote=await blingHubControl("enqueue_job",{
     domain:"order",operation:"sync_order",source_id:orderId,idempotency_key:key,
     payload:{...snapshot,queue_reason:reason,queued_at:new Date().toISOString()}
@@ -1628,6 +1634,21 @@ async function updateOrder(payload:any) {
     }catch{}
   }
   const historySync=await syncVitrineOrderHistory(db,data.id,ORG_ID);
+  let blingOrderQueued=false;
+  const effectivePayment=patch.payment_method_snapshot??currentPayment;
+  const effectiveStatus=String(patch.status??currentOrder.status??"");
+  const blingRelevantChange=
+    payload?.customer_snapshot!==undefined||
+    payload?.customer_id!==undefined||
+    payload?.delivery_address!==undefined||
+    payload?.payment_method!==undefined;
+  if(historySync.ok&&blingRelevantChange&&effectivePayment.stock_consumed===true&&["processing","ready","out_for_delivery"].includes(effectiveStatus)){
+    try{
+      blingOrderQueued=await queueBlingOrderSnapshot(data.id,"admin_order_update");
+    }catch(e){
+      console.error("bling_order_requeue_failed",String((e as Error)?.message||e));
+    }
+  }
   let fiscalSynced=false;
   if(historySync.ok && (patch.status==="delivered"||patch.status==="cancelled")){
     try{
@@ -1641,6 +1662,7 @@ async function updateOrder(payload:any) {
     order_id:data.id,
     stock_released:stockReleasedChange,
     history_synced:Boolean(historySync.ok),
+    bling_order_queued:blingOrderQueued,
     fiscal_synced:fiscalSynced
   };
 }
