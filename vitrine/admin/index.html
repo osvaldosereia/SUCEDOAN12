@@ -1394,7 +1394,7 @@
       '</div></details>'+
       '<div class="section-title">Fiscal / NF-e</div>'+
       '<div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+
-      '<div class="print-actions"><button class="primary" id="confirmFiscalPayment" style="display:none">Confirmar recebimento</button></div>';
+      '<div class="print-actions"><button class="primary" id="confirmFiscalPayment" aria-label="Confirmar pagamento recebido" style="display:none">Confirmar recebimento</button></div>';
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar dados</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
