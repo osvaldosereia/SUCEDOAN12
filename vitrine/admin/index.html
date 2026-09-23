@@ -273,7 +273,7 @@
     return parts.length>=3?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(parts.join(', ')):'';
   }
   function orderContactActionsHtml(o,c={}){
-    const a=c?.address||o?.delivery_address_snapshot||{};
+    const a=o?.delivery_address_snapshot||c?.address||{};
     const phone=c?.phone||o?.whatsapp_phone_e164||a.phone||'';
     const wa=whatsappHref(phone),maps=mapsHrefFromAddress(a);
     if(!wa&&!maps)return '';
@@ -1272,6 +1272,8 @@
     const syncAlert=syncFailed?'<div class="sync-alert"><div><strong>Histórico do cliente ainda não sincronizado</strong><small>'+esc(d.history_sync?.last_error||'Falha temporária de sincronização.')+'</small></div><button class="secondary" type="button" id="retryHistorySync">Tentar novamente</button></div>':'';
     const consumed=o.payment_method_snapshot?.stock_consumed===true;
     const linked=d.bling_link?.linked===true;
+    const delivery=o.delivery_address_snapshot||c.address||{};
+    const deliveryProblems=orderProblemReasons(o).some(x=>['Cliente não identificado','Endereço incompleto'].includes(x));
     $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
     $('#editorBody').innerHTML=syncAlert+
       '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
@@ -1281,6 +1283,19 @@
         '<label><span>Cliente vinculado</span><select id="orderCustomer"><option value="">Sem cliente vinculado</option>'+customerOptions(currentCustomerId)+'</select></label>'+
         '<label class="span-2"><span>Buscar cliente por nome, telefone ou CPF</span><input id="orderCustomerSearch" type="search" autocomplete="off" placeholder="Digite para localizar o cliente…"><small class="sub" id="orderCustomerSearchHint">Digite pelo menos 2 caracteres. A busca consulta a base oficial.</small></label>'+
       '</div>'+
+      '<details class="integration-details" style="margin-top:12px" '+(deliveryProblems?'open':'')+'><summary>Dados de entrega</summary><div class="integration-body form-grid">'+
+        '<label class="span-2"><span>Nome para entrega</span><input id="orderDeliveryName" value="'+esc(delivery.customer_name||delivery.recipient_name||c.display_name||'')+'"></label>'+
+        '<label><span>Telefone / WhatsApp</span><input id="orderDeliveryPhone" inputmode="tel" value="'+esc(formatPhone(delivery.phone||c.phone||o.whatsapp_phone_e164||''))+'"></label>'+
+        '<label><span>CEP</span><input id="orderDeliveryPostalCode" inputmode="numeric" value="'+esc(delivery.postal_code||'')+'"></label>'+
+        '<label class="span-2"><span>Rua / avenida</span><input id="orderDeliveryStreet" value="'+esc(delivery.street||'')+'"></label>'+
+        '<label><span>Número</span><input id="orderDeliveryNumber" value="'+esc(delivery.number||'')+'"></label>'+
+        '<label><span>Bairro</span><input id="orderDeliveryDistrict" value="'+esc(delivery.district||'')+'"></label>'+
+        '<label><span>Complemento</span><input id="orderDeliveryComplement" value="'+esc(delivery.complement||'')+'"></label>'+
+        '<label><span>Cidade</span><input id="orderDeliveryCity" value="'+esc(delivery.city||'Cuiabá')+'"></label>'+
+        '<label><span>UF</span><input id="orderDeliveryState" maxlength="2" value="'+esc(delivery.state||'MT')+'"></label>'+
+        '<label class="span-2"><span>Referência</span><input id="orderDeliveryRawText" value="'+esc(delivery.raw_text||'')+'"></label>'+
+        '<div class="offer-note">Estas alterações valem para este pedido. O cadastro principal do cliente não é alterado.</div>'+
+      '</div></details>'+
       '<div class="section-title">Operação</div>'+
       orderActionButtonsHtml(o)+
       '<div class="section-title">Itens do pedido</div>'+
@@ -1301,6 +1316,7 @@
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
     if($('#orderCustomerSearch'))$('#orderCustomerSearch').oninput=e=>scheduleOrderCustomerSearch(e.target.value);
+    if($('#orderCustomer'))$('#orderCustomer').onchange=applySelectedCustomerToDelivery;
     if($('#advanceOrder'))$('#advanceOrder').onclick=()=>advanceCurrentOrder($('#advanceOrder').dataset.next);
     if($('#startSeparation'))$('#startSeparation').onclick=()=>printSeparation(d,true);
     if($('#reprintSeparation'))$('#reprintSeparation').onclick=()=>printSeparation(d,false);
@@ -1505,6 +1521,26 @@
   function customerOptions(current){
     return state.customers.map(c=>'<option value="'+esc(c.id)+'" '+(c.id===current?'selected':'')+'>'+esc(c.display_name||'Sem nome')+(c.phone?' · '+esc(formatPhone(c.phone)):'')+(c.cpf?' · CPF '+esc(formatCpf(c.cpf)):'')+'</option>').join('');
   }
+  function setOrderDeliveryField(id,value){
+    const el=$(id);if(el)el.value=value??'';
+  }
+  function applySelectedCustomerToDelivery(){
+    const id=$('#orderCustomer')?.value||'';
+    const customer=state.customers.find(c=>c.id===id);
+    if(!customer)return;
+    const a=customer.address||{};
+    setOrderDeliveryField('#orderDeliveryName',customer.display_name||'');
+    setOrderDeliveryField('#orderDeliveryPhone',formatPhone(customer.phone||''));
+    setOrderDeliveryField('#orderDeliveryPostalCode',a.postal_code||'');
+    setOrderDeliveryField('#orderDeliveryStreet',a.street||'');
+    setOrderDeliveryField('#orderDeliveryNumber',a.number||'');
+    setOrderDeliveryField('#orderDeliveryDistrict',a.district||'');
+    setOrderDeliveryField('#orderDeliveryComplement',a.complement||'');
+    setOrderDeliveryField('#orderDeliveryCity',a.city||'Cuiabá');
+    setOrderDeliveryField('#orderDeliveryState',a.state||'MT');
+    setOrderDeliveryField('#orderDeliveryRawText',a.raw_text||'');
+    toast('Dados de entrega preenchidos pelo cliente selecionado');
+  }
   function mergeOrderCustomerResults(rows,currentId){
     const current=state.customers.find(c=>c.id===currentId)||null;
     const map=new Map();
@@ -1552,6 +1588,18 @@
     const payload={id,payment_method:$('#orderPayment')?.value||''};
     if(selectedCustomer)payload.customer_snapshot=selectedCustomer;
     else if(!currentCustomerId)payload.customer_snapshot=null;
+    if($('#orderDeliveryStreet'))payload.delivery_address={
+      customer_name:$('#orderDeliveryName')?.value||'',
+      phone:$('#orderDeliveryPhone')?.value||'',
+      postal_code:$('#orderDeliveryPostalCode')?.value||'',
+      street:$('#orderDeliveryStreet')?.value||'',
+      number:$('#orderDeliveryNumber')?.value||'',
+      district:$('#orderDeliveryDistrict')?.value||'',
+      complement:$('#orderDeliveryComplement')?.value||'',
+      city:$('#orderDeliveryCity')?.value||'',
+      state:$('#orderDeliveryState')?.value||'',
+      raw_text:$('#orderDeliveryRawText')?.value||''
+    };
     if(status)payload.status=status;
     return payload;
   }
@@ -1592,7 +1640,7 @@
   }
 
   function customerSummary(c,snapshot){
-    const a=c?.address||snapshot||{};
+    const a=snapshot||c?.address||{};
     if(!c?.id&&!snapshot)return '<span class="muted">Cliente ainda não vinculado. Cadastre em Clientes e selecione acima.</span>';
     const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'Endereço não informado';
     return '<strong>'+esc(c.display_name||a.recipient_name||'Cliente')+'</strong><br>'+
@@ -1661,7 +1709,7 @@
     }
   }
   function printDelivery(detail){
-    const o=detail.order,c=detail.customer||{},a=c.address||o.delivery_address_snapshot||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
+    const o=detail.order,c=detail.customer||{},a=o.delivery_address_snapshot||c.address||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
     const products=separationItems(detail).map(i=>'<div class="delivery-item"><b>'+esc(fmtQty(i.quantity))+'×</b><span>'+esc(i.name)+'</span></div>').join('');
     const address=[a.street,a.number,a.complement,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||'NÃO INFORMADO';
     const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>ENTREGA · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+
