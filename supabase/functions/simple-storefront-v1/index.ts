@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
+import { syncVitrineOrderHistory } from "../_shared/vitrine-history-sync-v1.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SECRET_KEYS = (() => {
@@ -667,7 +668,9 @@ async function submitOrder(payload:any) {
     throw error;
   }
 
-  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery};
+  const historySync=await syncVitrineOrderHistory(db,order.id,ORG_ID);
+  if(!historySync.ok)console.error("vitrine_history_sync_failed",historySync.error);
+  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery,history_synced:Boolean(historySync.ok)};
 }
 
 Deno.serve(async (req: Request) => {
