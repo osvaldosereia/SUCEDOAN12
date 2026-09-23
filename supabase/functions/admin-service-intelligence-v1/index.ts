@@ -1210,25 +1210,58 @@ async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
 async function blingHubReadinessExtended(sb:any){
   const r=await sb.rpc("bling_hub_readiness_v2");
   if(r.error)throw r.error;
-  const [links,customerLinks,orderLinks,webhookInbox]=await Promise.all([
+  const [links,customerLinks,orderLinks,webhookInbox,fiscalConfig,fiscalControls,fiscalJobs]=await Promise.all([
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000),
-    sb.from("bling_webhook_inbox_v2").select("status").limit(5000)
+    sb.from("bling_webhook_inbox_v2").select("status").limit(5000),
+    sb.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent").eq("id",1).maybeSingle(),
+    sb.from("order_fiscal_controls").select("fiscal_status").limit(5000),
+    sb.from("fiscal_issue_jobs").select("status,external_side_effect").limit(5000)
   ]);
   if(links.error)throw links.error;
   if(customerLinks.error)throw customerLinks.error;
   if(orderLinks.error)throw orderLinks.error;
   if(webhookInbox.error)throw webhookInbox.error;
+  if(fiscalConfig.error)throw fiscalConfig.error;
+  if(fiscalControls.error)throw fiscalControls.error;
+  if(fiscalJobs.error)throw fiscalJobs.error;
   const counts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const customerCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const orderCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const webhookCounts:any={total:0,held:0,received:0,processing:0,processed:0,ignored:0,review_required:0,retry:0,failed:0};
+  const fiscalCounts:any={total:0,blocked:0,ready:0,queued:0,issued:0,review_required:0,cancelled:0};
+  const fiscalJobCounts:any={total:0,held:0,ready:0,processing:0,issued:0,review_required:0,error:0,cancelled:0,external_side_effect:0};
   for(const row of links.data||[]){counts.total++;counts[row.status]=(counts[row.status]||0)+1;}
   for(const row of customerLinks.data||[]){customerCounts.total++;customerCounts[row.status]=(customerCounts[row.status]||0)+1;}
   for(const row of orderLinks.data||[]){orderCounts.total++;orderCounts[row.status]=(orderCounts[row.status]||0)+1;}
   for(const row of webhookInbox.data||[]){webhookCounts.total++;webhookCounts[row.status]=(webhookCounts[row.status]||0)+1;}
-  return {...(r.data||{}),product_links:counts,customer_links:customerCounts,order_links:orderCounts,webhook_inbox:webhookCounts};
+  for(const row of fiscalControls.data||[]){fiscalCounts.total++;fiscalCounts[row.fiscal_status]=(fiscalCounts[row.fiscal_status]||0)+1;}
+  for(const row of fiscalJobs.data||[]){
+    fiscalJobCounts.total++;
+    fiscalJobCounts[row.status]=(fiscalJobCounts[row.status]||0)+1;
+    if(row.external_side_effect===true)fiscalJobCounts.external_side_effect++;
+  }
+  const fiscalReadiness={
+    config:fiscalConfig.data||{
+      enabled:false,execution_mode:"off",bling_invoice_prepare_enabled:false,bling_invoice_send_enabled:false,
+      require_delivery_confirmation:true,require_payment_confirmation:true,canary_percent:0
+    },
+    controls:fiscalCounts,
+    jobs:fiscalJobCounts,
+    safe_off:!(fiscalConfig.data?.enabled)
+      && !(fiscalConfig.data?.bling_invoice_prepare_enabled)
+      && !(fiscalConfig.data?.bling_invoice_send_enabled)
+      && fiscalJobCounts.external_side_effect===0
+  };
+  return {
+    ...(r.data||{}),
+    product_links:counts,
+    customer_links:customerCounts,
+    order_links:orderCounts,
+    webhook_inbox:webhookCounts,
+    fiscal_readiness:fiscalReadiness
+  };
 }
 async function blingHubAuthorized(sb:any,req:Request){
   const supplied=clean(req.headers.get("x-dona-antonia-bling-hub-key"),200);
