@@ -59,7 +59,11 @@ Eventos sincronizados:
 - eventual devolução;
 - alterações de cliente quando o pedido for reconciliado.
 
-Falha de sincronização não pode impedir o fechamento do pedido na Vitrine. O pedido local continua sendo a fonte operacional imediata; a sincronização entra em fila/retry controlado e observável.
+Falha de sincronização não pode impedir o fechamento do pedido na Vitrine. O pedido local continua sendo a fonte operacional imediata.
+
+Será usada uma **outbox simples** no projeto operacional, com uma linha por pedido Vitrine e estados `pending | synced | failed`, número de tentativas, último erro e timestamps. Criação/alteração do pedido marca a outbox como pendente. O envio pode ocorrer imediatamente e também ser repetido com segurança pela mesma chave idempotente.
+
+Não haverá fila complexa nem novo serviço externo nesta etapa.
 
 ## Fonte de verdade do histórico
 
@@ -151,17 +155,23 @@ Essa área é informativa; não terá IA nem recomendações nesta etapa.
 
 Os pedidos da Vitrine hoje vivem no Supabase `qxstkwshuvplmmftrctj`.
 
-Será criado um sincronizador server-side no domínio canônico, com payload mínimo e validado. O Vitrine Admin não fará joins entre os dois bancos diretamente no navegador.
+O bridge será **server-to-server**, sem consulta cruzada feita pelo navegador e sem expor `service_role` de um projeto ao frontend.
 
-O sincronizador:
-1. recebe o ID do pedido Vitrine;
-2. lê pedido + itens + componentes no projeto operacional;
-3. resolve cliente;
-4. resolve produtos por GTIN/SKU;
-5. faz upsert do pedido canônico;
-6. substitui os itens do pedido canônico de forma transacional/idempotente;
-7. atualiza perfil de compras do cliente;
-8. grava resultado de sync e erro, se houver.
+Fluxo:
+1. o projeto operacional `qxst...` monta um payload normalizado a partir de `orders + order_items + order_item_components`;
+2. uma Edge Function interna envia esse payload para um endpoint de ingestão no projeto canônico `ssbes...`;
+3. a chamada usa um segredo compartilhado exclusivo dessa integração, armazenado somente no ambiente server-side;
+4. o projeto canônico valida origem, esquema e idempotency key;
+5. resolve cliente;
+6. resolve produtos por GTIN/SKU;
+7. faz upsert do pedido canônico;
+8. substitui os itens do pedido canônico de forma transacional/idempotente;
+9. atualiza o perfil de compras do cliente;
+10. registra resultado e erro de sincronização.
+
+A chave idempotente é `vitrine:<qx_order_uuid>`.
+
+Para evitar acoplamento excessivo, o projeto canônico nunca receberá credenciais administrativas do projeto operacional; recebe somente o payload necessário para o histórico.
 
 ## Backfill inicial
 
@@ -238,6 +248,16 @@ Regras:
 - unificação total dos dois Supabases.
 
 Esses recursos poderão consumir esta camada posteriormente.
+
+## Observabilidade
+
+No `vitrine/admin`, o histórico do cliente não exibirá detalhes técnicos da sincronização no fluxo normal.
+
+Para suporte:
+- pedidos com sync `failed` ficam identificáveis no backend;
+- registrar `last_attempt_at`, `attempt_count` e `last_error`;
+- disponibilizar retry administrativo server-side;
+- não duplicar pedido ao repetir retry.
 
 ## Critério de conclusão
 
