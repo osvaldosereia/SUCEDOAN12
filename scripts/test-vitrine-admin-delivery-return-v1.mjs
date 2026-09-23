@@ -10,7 +10,8 @@ assert.match(html,/data-return-expedition/);
 assert.match(html,/async function returnOrderToExpedition\(id,fromDetail=false\)/);
 assert.match(html,/status:'ready'/);
 assert.match(html,/estoque continuará baixado/);
-assert.match(html,/Pedido voltou para Aguardando saída · estoque mantido/);
+assert.match(html,/Pedido voltou para Aguardando saída · motivo registrado/);
+assert.match(html,/delivery_return_reason:reason/);
 assert.match(html,/id="returnToExpedition"/);
 
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
