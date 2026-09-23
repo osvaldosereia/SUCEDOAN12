@@ -644,6 +644,13 @@
     if(f.fiscal_status==='ready')return {title:'Fiscal pronto',detail:f.config?.send_enabled?'Pronto para emissão':'Emissão permanece desligada',kind:'ok'};
     return {title:'Fiscal bloqueado',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Aguardando requisitos',kind:'warn'};
   }
+  function closureBucket(o){
+    const f=state.fiscalByOrder[o.id];
+    if(!f||f.error)return 'fiscal';
+    if(f.payment_status!=='confirmed')return 'payment';
+    if(f.fiscal_status==='issued'||f.bling_invoice_id)return 'complete';
+    return 'fiscal';
+  }
   function closurePriority(o){
     const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f);
     if(label.title==='Pagamento pendente')return 0;
@@ -715,13 +722,16 @@
       const delivered=state.orders.filter(o=>o.status==='delivered').slice(0,30);
       await loadFiscalForOrders(delivered);
       delivered.sort((a,b)=>closurePriority(a)-closurePriority(b)||((Date.parse(b.delivered_at||0)||0)-(Date.parse(a.delivered_at||0)||0)));
-      const pending=delivered.filter(o=>closurePriority(o)<3);
-      const complete=delivered.filter(o=>closurePriority(o)===3);
+      const paymentPending=delivered.filter(o=>closureBucket(o)==='payment');
+      const fiscalPending=delivered.filter(o=>closureBucket(o)==='fiscal');
+      const complete=delivered.filter(o=>closureBucket(o)==='complete');
       $('#closureBody').innerHTML='<div class="ops-cards">'+
-        '<div class="ops-card warn"><small>Precisa finalizar</small><strong>'+pending.length+'</strong><span>Pagamento, revisão ou fiscal</span></div>'+
+        '<div class="ops-card warn"><small>Recebimento pendente</small><strong>'+paymentPending.length+'</strong><span>Confirmar o que foi recebido</span></div>'+
+        '<div class="ops-card warn"><small>Fiscal / revisão</small><strong>'+fiscalPending.length+'</strong><span>Pagamento já tratado · revisar fiscal</span></div>'+
         '<div class="ops-card"><small>Concluídos</small><strong>'+complete.length+'</strong><span>Fechamento encerrado</span></div>'+
       '</div><div class="closure-grid">'+
-        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Precisa finalizar</strong><span>ações pendentes depois da entrega</span></div><b>'+pending.length+'</b></div>'+(pending.length?pending.map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento pendente.</div>')+'</section>'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Recebimento pendente</strong><span>entregue, mas pagamento ainda não confirmado</span></div><b>'+paymentPending.length+'</b></div>'+(paymentPending.length?paymentPending.map(closureRow).join(''):'<div class="history-empty">Nenhum recebimento pendente.</div>')+'</section>'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Fiscal / revisão</strong><span>pagamento confirmado; falta concluir ou revisar o fiscal</span></div><b>'+fiscalPending.length+'</b></div>'+(fiscalPending.length?fiscalPending.map(closureRow).join(''):'<div class="history-empty">Nenhuma revisão fiscal pendente.</div>')+'</section>'+
         '<section class="panel"><div class="history-title dispatch-head"><div><strong>Concluídos recentes</strong><span>pagamento e fiscal conferidos</span></div><b>'+complete.length+'</b></div>'+(complete.length?complete.slice(0,10).map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento concluído recente.</div>')+'</section>'+
       '</div>';
       document.querySelectorAll('[data-closure-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.closureOrder));
