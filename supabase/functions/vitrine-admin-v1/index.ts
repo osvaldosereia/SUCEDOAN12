@@ -935,6 +935,49 @@ async function listOrders() {
   }));
 }
 
+async function listClosureOrders(){
+  const selectFields="id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at";
+  const pendingRemote=await blingHubControl("fiscal_pending_orders",{limit:5000});
+  const remoteRows=(pendingRemote as any).error?[]:((pendingRemote as any).data?.orders||[]);
+  const pendingIds=[...new Set(remoteRows.map((x:any)=>uuid(x?.source_order_id)).filter(Boolean))] as string[];
+
+  const pendingRows:any[]=[];
+  for(let i=0;i<pendingIds.length;i+=200){
+    const chunk=pendingIds.slice(i,i+200);
+    const q=await db.from("orders")
+      .select(selectFields)
+      .eq("organization_id",ORG_ID)
+      .eq("status","delivered")
+      .in("id",chunk);
+    if(q.error)throw q.error;
+    pendingRows.push(...(q.data||[]));
+  }
+
+  const recent=await db.from("orders")
+    .select(selectFields)
+    .eq("organization_id",ORG_ID)
+    .eq("status","delivered")
+    .order("delivered_at",{ascending:false})
+    .limit(30);
+  if(recent.error)throw recent.error;
+
+  const byId=new Map<string,any>();
+  for(const row of [...pendingRows,...(recent.data||[])])byId.set(row.id,row);
+  const orders=[...byId.values()].sort((a:any,b:any)=>(Date.parse(b.delivered_at||b.created_at||0)||0)-(Date.parse(a.delivered_at||a.created_at||0)||0));
+  const fiscal_by_order:any={};
+  for(const row of remoteRows){
+    const id=uuid(row?.source_order_id);if(id)fiscal_by_order[id]=row;
+  }
+
+  return {
+    orders,
+    fiscal_by_order,
+    pending_count:pendingIds.length,
+    pending_lookup_ok:!(pendingRemote as any).error,
+    pending_lookup_truncated:Boolean((pendingRemote as any).data?.truncated)
+  };
+}
+
 async function orderDetail(id:string) {
   const { data:order, error:oErr } = await db.from("orders")
     .select("*")
@@ -1165,7 +1208,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","reconcile_customer_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","reconcile_customer_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -1765,6 +1808,7 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="expirations") return json(req,{ok:true,...await listExpirations()});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
+    if (req.method==="GET" && action==="closure_orders") return json(req,{ok:true,...await listClosureOrders()});
     if (req.method==="GET" && action==="bling_status") {
       const result=await blingHubControl("readiness");
       if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);

@@ -1355,6 +1355,64 @@ async function blingHubVitrineOrderLinkStatus(sb:any,sourceOrderIdRaw:any){
   };
 }
 
+async function blingHubVitrinePendingClosures(sb:any,limitRaw:any=5000){
+  const limit=Math.max(1,Math.min(5000,Number(limitRaw||5000)||5000));
+  const controls=await sb.from("order_fiscal_controls")
+    .select("order_id,delivery_status,payment_status,payment_method,payment_source,settled_amount,payment_confirmed_at,fiscal_status,fiscal_block_reason,fiscal_ready_at,bling_invoice_id,bling_invoice_number,sefaz_status,issued_at")
+    .eq("delivery_status","delivered")
+    .limit(limit);
+  if(controls.error)throw controls.error;
+
+  const pending=(controls.data||[]).filter((c:any)=>{
+    const paid=c.payment_status==="confirmed";
+    const fiscalDone=c.fiscal_status==="issued"||c.fiscal_status==="cancelled"||Boolean(c.bling_invoice_id);
+    return !paid||!fiscalDone;
+  });
+  if(!pending.length)return {ok:true,orders:[],truncated:(controls.data||[]).length===limit,external_write:false};
+
+  const byCanonical=new Map(pending.map((c:any)=>[c.order_id,c]));
+  const canonicalIds=[...byCanonical.keys()];
+  const sourceRows:any[]=[];
+  for(let i=0;i<canonicalIds.length;i+=200){
+    const chunk=canonicalIds.slice(i,i+200);
+    const q=await sb.from("orders")
+      .select("id,idempotency_key,status,order_number,delivered_at")
+      .in("id",chunk)
+      .like("idempotency_key","vitrine:%");
+    if(q.error)throw q.error;
+    sourceRows.push(...(q.data||[]));
+  }
+
+  const orders=sourceRows.map((o:any)=>{
+    const c:any=byCanonical.get(o.id)||{};
+    const sourceOrderId=String(o.idempotency_key||"").startsWith("vitrine:")
+      ? String(o.idempotency_key).slice(8)
+      : "";
+    return {
+      source_order_id:uuid(sourceOrderId)||null,
+      canonical_order_id:o.id,
+      canonical_order_number:o.order_number||null,
+      order_status:o.status||null,
+      delivered_at:o.delivered_at||null,
+      delivery_status:c.delivery_status||"delivered",
+      payment_status:c.payment_status||"pending",
+      payment_method:c.payment_method||"",
+      payment_source:c.payment_source||null,
+      settled_amount_cents:c.settled_amount==null?null:Math.round(Number(c.settled_amount||0)*100),
+      payment_confirmed_at:c.payment_confirmed_at||null,
+      fiscal_status:c.fiscal_status||"blocked",
+      fiscal_block_reason:c.fiscal_block_reason||null,
+      fiscal_ready_at:c.fiscal_ready_at||null,
+      bling_invoice_id:c.bling_invoice_id||null,
+      bling_invoice_number:c.bling_invoice_number||null,
+      sefaz_status:c.sefaz_status||null,
+      issued_at:c.issued_at||null
+    };
+  }).filter((x:any)=>x.source_order_id);
+
+  return {ok:true,orders,truncated:(controls.data||[]).length===limit,external_write:false};
+}
+
 async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
   const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
   if(!resolved.ok)return resolved;
@@ -3512,6 +3570,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="fiscal_status"){
         const result=await blingHubVitrineFiscalStatus(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_pending_orders"){
+        const result=await blingHubVitrinePendingClosures(sb,body?.limit);
+        return json(result,200);
       }
       if(subaction==="fiscal_confirm_payment"){
         const result=await blingHubVitrineConfirmFiscalPayment(sb,body?.source_order_id,body?.payment_method);
