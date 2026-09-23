@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync('vitrine/admin/index.html','utf8');
+assert.match(html,/function blingPreflightOperationalBlockers\(p\)/);
+assert.match(html,/first_separation_required','stock_not_consumed/);
+assert.match(html,/function blingPreflightAlertHtml\(p\)/);
+assert.match(html,/Antes de separar, revise o Bling/);
+assert.match(html,/Somente leitura/);
+assert.match(html,/function loadCurrentOrderBlingPreview\(repaint=true\)/);
+assert.match(html,/loadCurrentOrderBlingPreview\(true\)/);
+assert.match(html,/await loadCurrentOrderBlingPreview\(false\)/);
+const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
+for(const source of scripts)new Function(source);
+console.log('OK · preflight automático Bling somente leitura');
