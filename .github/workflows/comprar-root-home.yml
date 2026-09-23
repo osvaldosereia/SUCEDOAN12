@@ -41,6 +41,7 @@ on:
       - 'scripts/test-vitrine-admin-dispatch-payment-summary-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-buckets-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-pending-v1.mjs'
+      - 'scripts/test-vitrine-admin-request-address-v1.mjs'
       - 'scripts/test-vitrine-admin-today-closure-v1.mjs'
       - 'scripts/test-vitrine-admin-customer-document-v1.mjs'
       - 'scripts/test-vitrine-admin-create-order-products-v1.mjs'
@@ -102,6 +103,7 @@ on:
       - 'scripts/test-vitrine-admin-dispatch-payment-summary-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-buckets-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-pending-v1.mjs'
+      - 'scripts/test-vitrine-admin-request-address-v1.mjs'
       - 'scripts/test-vitrine-admin-today-closure-v1.mjs'
       - 'scripts/test-vitrine-admin-customer-document-v1.mjs'
       - 'scripts/test-vitrine-admin-create-order-products-v1.mjs'
@@ -173,6 +175,7 @@ jobs:
           node scripts/test-vitrine-admin-dispatch-payment-summary-v1.mjs
           node scripts/test-vitrine-admin-closure-buckets-v1.mjs
           node scripts/test-vitrine-admin-closure-pending-v1.mjs
+          node scripts/test-vitrine-admin-request-address-v1.mjs
           node scripts/test-vitrine-admin-today-closure-v1.mjs
           node scripts/test-vitrine-admin-customer-document-v1.mjs
           node scripts/test-vitrine-admin-create-order-products-v1.mjs
