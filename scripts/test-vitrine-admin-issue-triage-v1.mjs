@@ -15,6 +15,7 @@ assert.match(html,/data-today-issue/);
 assert.match(html,/id="orderIssueFilters"/);
 assert.match(html,/data-order-issue/);
 assert.match(html,/if\(filter==='problems'\)return orderIssueMatch\(o,state\.orderIssueFilter\)/);
+assert.match(html,/if\(filter==='problems'\)return state\.orders\.filter\(o=>orderProblemReasons\(o\)\.length>0\)\.length/);
 
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 for(const source of scripts)new Function(source);
