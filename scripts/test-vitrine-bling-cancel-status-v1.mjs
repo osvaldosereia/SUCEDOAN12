@@ -19,7 +19,7 @@ assert.match(hub,/external_write:false/);
 
 assert.match(html,/Como o pedido já está vinculado ao Bling/);
 assert.match(html,/Bling será conferido/);
-assert.match(html,/Status do pedido no Bling precisa de revisão manual/);
+assert.match(html,/aplicativo Bling ainda não tem permissão para alterar situações de pedidos/);
 
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 for(const source of scripts)new Function(source);
