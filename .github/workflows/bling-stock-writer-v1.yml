@@ -50,6 +50,18 @@ jobs:
       - name: Validar sintaxe
         run: node --check scripts/bling-stock-writer-v1.mjs
 
+      - name: Bloquear writer legado em apply
+        if: inputs.mode == 'apply'
+        env:
+          LEGACY_BLING_WRITER_UNLOCK: ${{ secrets.LEGACY_BLING_WRITER_UNLOCK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${LEGACY_BLING_WRITER_UNLOCK:-}" = "true" || {
+            echo "Writer Bling legado bloqueado. Use o Hub V2; apply legado exige desbloqueio explícito." >&2
+            exit 1
+          }
+
       - name: Validar secrets obrigatórias
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
