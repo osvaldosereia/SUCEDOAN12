@@ -2617,12 +2617,13 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   if(!customerId){
     blockers.push("customer_not_linked");
   }else{
-    const cq=await sb.from("customers").select("id,bling_contact_id,is_active").eq("id",customerId).maybeSingle();
+    const cq=await sb.from("customers").select("id,bling_contact_id,is_active,cpf_cnpj").eq("id",customerId).maybeSingle();
     if(cq.error)throw cq.error;
     contactId=Number(cq.data?.bling_contact_id||0)||null;
     if(!cq.data)blockers.push("customer_not_found");
-    else if(!contactId)blockers.push("customer_missing_bling_contact_id");
     else if(cq.data.is_active===false)blockers.push("customer_inactive");
+    else if(!contactId&&!blingHubValidCpfCnpj(cq.data.cpf_cnpj))blockers.push("customer_document_required");
+    else if(!contactId)blockers.push("customer_missing_bling_contact_id");
   }
 
   const items=(Array.isArray(payload?.items)?payload.items:[]).slice(0,500);
