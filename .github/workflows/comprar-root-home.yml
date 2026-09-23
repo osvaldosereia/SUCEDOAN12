@@ -26,6 +26,7 @@ on:
       - 'scripts/test-vitrine-admin-quick-delivery-v1.mjs'
       - 'scripts/test-vitrine-admin-dispatch-manifest-v1.mjs'
       - 'scripts/test-vitrine-admin-delivery-return-v1.mjs'
+      - 'scripts/test-vitrine-admin-closure-payment-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
       - 'scripts/test-bling-hub-data-safety-v1.mjs'
       - 'scripts/test-vitrine-bling-product-create-v1.mjs'
@@ -64,6 +65,7 @@ on:
       - 'scripts/test-vitrine-admin-quick-delivery-v1.mjs'
       - 'scripts/test-vitrine-admin-dispatch-manifest-v1.mjs'
       - 'scripts/test-vitrine-admin-delivery-return-v1.mjs'
+      - 'scripts/test-vitrine-admin-closure-payment-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
       - 'scripts/test-bling-hub-data-safety-v1.mjs'
       - 'scripts/test-vitrine-bling-product-create-v1.mjs'
@@ -112,6 +114,7 @@ jobs:
           node scripts/test-vitrine-admin-quick-delivery-v1.mjs
           node scripts/test-vitrine-admin-dispatch-manifest-v1.mjs
           node scripts/test-vitrine-admin-delivery-return-v1.mjs
+          node scripts/test-vitrine-admin-closure-payment-v1.mjs
           node scripts/test-vitrine-admin-bling-preflight-v1.mjs
           node scripts/test-bling-hub-data-safety-v1.mjs
           node scripts/test-vitrine-bling-product-create-v1.mjs
