@@ -393,6 +393,7 @@
       '<div class="dispatch-actions">'+
         (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
         (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
+        (o.status==='out_for_delivery'?'<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button>':'')+
         '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
       '</div>'+
     '</div>';
@@ -401,6 +402,29 @@
     return '<section class="panel dispatch-section"><div class="history-title dispatch-head"><div><strong>'+esc(title)+'</strong><span>'+esc(subtitle)+'</span></div><b>'+rows.length+'</b></div>'+
       '<div>'+(rows.length?rows.map(expeditionRow).join(''):'<div class="history-empty">'+esc(empty)+'</div>')+'</div></section>';
   }
+  async function confirmDeliveryFromExpedition(id){
+    const o=state.orders.find(x=>x.id===id);
+    if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
+    const name=o.customer_name||'Cliente';
+    const ok=confirm('Confirmar entrega do pedido #'+shortOrder(o.order_number)+'?\n\n'+name+' · '+money(o.total_cents));
+    if(!ok)return;
+    const btn=document.querySelector('[data-confirm-delivery="'+CSS.escape(id)+'"]');
+    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    try{
+      await api('order_update',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id,status:'delivered'})
+      });
+      const data=await api('orders');state.orders=data.orders||[];
+      delete state.fiscalByOrder[id];
+      paintExpeditionBody();
+      toast('Entrega confirmada · pedido enviado ao Fechamento');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Confirmar entrega'}
+    }
+  }
+
   function selectedDispatchOrders(readyRows=null){
     const source=readyRows||state.orders.filter(o=>o.status==='ready');
     const ids=new Set(state.expeditionSelected);
@@ -460,6 +484,7 @@
         expeditionSection('Entregues hoje','Últimos entregues do dia · pagamento e fiscal',delivered,'Nenhuma entrega concluída hoje.')+
       '</div>';
     document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
+    document.querySelectorAll('[data-confirm-delivery]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.confirmDelivery));
     document.querySelectorAll('[data-dispatch-select]').forEach(el=>el.onchange=e=>toggleDispatchSelection(el.dataset.dispatchSelect,e.target.checked));
     if($('#selectAllReady'))$('#selectAllReady').onchange=e=>toggleAllReady(ready,e.target.checked);
     if($('#bulkDispatchBtn'))$('#bulkDispatchBtn').onclick=bulkDispatchSelected;
