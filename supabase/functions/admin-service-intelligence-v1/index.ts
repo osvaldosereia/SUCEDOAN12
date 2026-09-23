@@ -1516,6 +1516,7 @@ async function blingHubReadinessExtended(sb:any){
     product_links:counts,
     customer_links:customerCounts,
     order_links:orderCounts,
+    order_rollout:runtimeMeta.data?.metadata?.order_rollout||{state:"unknown"},
     order_status_catalog:runtimeMeta.data?.metadata?.order_status_catalog||{state:"unknown",status_updates_enabled:false},
     webhook_inbox:webhookCounts,
     fiscal_readiness:fiscalReadiness
