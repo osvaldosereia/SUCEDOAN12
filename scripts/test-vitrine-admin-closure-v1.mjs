@@ -10,7 +10,8 @@ assert.match(html,/order_fiscal_status/);
 assert.match(html,/Pagamento pendente/);
 assert.match(html,/Fiscal pronto/);
 assert.match(html,/Precisa de revisão/);
-assert.match(html,/Precisa finalizar/);
+assert.match(html,/Recebimento pendente/);
+assert.match(html,/Fiscal \/ revisão/);
 assert.match(html,/Concluídos recentes/);
 assert.match(html,/Promise\.all\(\[worker\(\),worker\(\),worker\(\)\]\)/);
 
