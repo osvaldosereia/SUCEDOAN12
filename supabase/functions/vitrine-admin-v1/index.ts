@@ -902,7 +902,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -924,6 +924,19 @@ async function blingHubControl(subaction:string,extra:any={}) {
   const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
   if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
   return {data};
+}
+
+async function previewBlingProductSync(payload:any){
+  const id=uuid(payload?.id);
+  if(!id)return {error:"invalid_product",status:400};
+  const q=await db.from("products")
+    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,updated_at")
+    .eq("organization_id",ORG_ID).eq("id",id).maybeSingle();
+  if(q.error)throw q.error;
+  if(!q.data)return {error:"product_not_found",status:404};
+  const remote=await blingHubControl("preview_product_sync",{source_id:id,product:q.data});
+  if((remote as any).error)return remote;
+  return (remote as any).data;
 }
 
 async function reconcileBlingProductCatalogReadonly(){
@@ -1214,6 +1227,11 @@ Deno.serve(async (req: Request) => {
       }
       if (action==="bling_reconcile_catalog_readonly") {
         const result=await reconcileBlingProductCatalogReadonly();
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="bling_preview_product_sync") {
+        const result=await previewBlingProductSync(payload);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...result});
       }
