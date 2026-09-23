@@ -6,11 +6,13 @@ const vitrineAdmin=fs.readFileSync('supabase/functions/vitrine-admin-v1/index.ts
 const hub=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/index.ts','utf8');
 const dispatch=fs.readFileSync('supabase/migrations/20260923151500_bling_hub_v2_supabase_dispatch_cycle.sql','utf8');
 const canary=fs.readFileSync('supabase/migrations/20260923134500_bling_hub_v2_canary_gate.sql','utf8');
+const webhook=fs.readFileSync('supabase/migrations/20260923153000_bling_hub_v2_webhook_inbox.sql','utf8');
 
 assert.match(admin,/Make permanecem preservados/,'admin deve informar que Make foi preservado');
 assert.match(admin,/Verificar prévia Bling/,'pedido deve ter prévia Bling');
 assert.match(admin,/bling_preview_order_sync/,'admin deve chamar preview somente leitura');
 assert.match(admin,/Pedidos vinculados/,'painel Bling deve exibir pedidos vinculados');
+assert.match(admin,/Webhooks Bling/,'painel deve exibir caixa de entrada de webhooks');
 assert.doesNotMatch(admin,/Enviar (?:pedido )?ao Bling/i,'admin não deve oferecer envio manual nesta fase');
 
 assert.match(vitrineAdmin,/async function buildBlingOrderSnapshot/);
@@ -33,6 +35,13 @@ assert.match(hub,/duplicate_external_order_key/);
 assert.match(hub,/order_creation_uncertain/);
 assert.match(hub,/post_create_order_mismatch/);
 assert.match(hub,/external_write:false/);
+assert.match(hub,/x-bling-signature-256/);
+assert.match(hub,/blingWebhookHmacHex/);
+assert.match(hub,/blingWebhookConstantTimeEqual/);
+assert.match(hub,/bling-webhook-v2/);
+assert.match(hub,/claim_bling_webhook_inbox_v2/);
+assert.match(hub,/self_generated_observed/);
+assert.match(hub,/local_mutation:false/);
 
 assert.match(canary,/bling_hub_canary_allowlist_v2/);
 assert.match(canary,/v_runtime\.mode='homologation'/);
@@ -42,6 +51,12 @@ assert.match(dispatch,/hub_enabled=true/,'cron deve falhar fechado se Hub estive
 assert.match(dispatch,/mode in \('homologation','live'\)/);
 assert.match(dispatch,/bling-hub-v2-cycle/);
 assert.match(dispatch,/\*\/2 \* \* \* \*/);
+
+assert.match(webhook,/create table if not exists public\.bling_webhook_inbox_v2/);
+assert.match(webhook,/event_id text primary key/);
+assert.match(webhook,/claim_bling_webhook_inbox_v2/);
+assert.match(webhook,/v_runtime\.webhooks_enabled is not true/);
+assert.match(webhook,/status in \('held','received','retry'\)/);
 
 const match=admin.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
 assert.ok(match,'script inline do admin não encontrado');
