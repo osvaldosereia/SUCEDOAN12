@@ -1,0 +1,1 @@
+-- Fresh installs already contain the corrected UUID phone-resolution expression in 20260923114414.\n-- Production required this tracked repair because the original live migration used min(uuid).\n
