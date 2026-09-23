@@ -1165,7 +1165,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","reconcile_customers_readonly","reconcile_customer_readonly","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -1182,7 +1182,7 @@ async function blingHubControl(subaction:string,extra:any={}) {
       "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
     },
     body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),
-    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly"].includes(subaction)?120000:10000)
+    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly"].includes(subaction)?120000:10000)
   });
   const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
   if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
@@ -1392,6 +1392,48 @@ async function previewBlingOrderSync(orderId:string){
   const remote=await blingHubControl("preview_order_sync",{payload:snapshot});
   if((remote as any).error)return remote;
   return (remote as any).data;
+}
+
+async function reconcileBlingOrderDependenciesReadonly(orderId:string){
+  const id=uuid(orderId);
+  if(!id)return {error:"invalid_order",status:400};
+  const snapshot=await buildBlingOrderSnapshot(id);
+
+  let customerReconcile:any=null;
+  const customerId=uuid(snapshot?.customer?.source_customer_id);
+  if(customerId){
+    const remote=await blingHubControl("reconcile_customer_readonly",{customer_id:customerId});
+    customerReconcile=(remote as any).error
+      ? {ok:false,error:(remote as any).error,detail:(remote as any).detail||null}
+      : ((remote as any).data||null);
+  }
+
+  const seen=new Set<string>();
+  const items:any[]=[];
+  for(const item of Array.isArray(snapshot?.items)?snapshot.items:[]){
+    const sourceId=uuid(item?.product_id);
+    if(!sourceId||seen.has(sourceId))continue;
+    seen.add(sourceId);
+    items.push({source_id:sourceId,sku:item?.sku||"",gtin:item?.gtin||"",name:item?.name||""});
+  }
+
+  let productReconcile:any=null;
+  if(items.length){
+    const remote=await blingHubControl("reconcile_products_readonly",{items});
+    productReconcile=(remote as any).error
+      ? {ok:false,error:(remote as any).error,detail:(remote as any).detail||null}
+      : ((remote as any).data||null);
+  }
+
+  const preview=await previewBlingOrderSync(id);
+  if((preview as any).error)return preview as any;
+  return {
+    order_id:id,
+    customer_reconcile:customerReconcile,
+    product_reconcile:productReconcile,
+    preview,
+    external_write:false
+  };
 }
 
 async function sha256Short(value:string){
@@ -1820,6 +1862,13 @@ Deno.serve(async (req: Request) => {
         const id=uuid(payload?.id);
         if(!id)return json(req,{ok:false,error:"invalid_order"},400);
         const result=await previewBlingOrderSync(id);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="bling_reconcile_order_dependencies_readonly") {
+        const id=uuid(payload?.id);
+        if(!id)return json(req,{ok:false,error:"invalid_order"},400);
+        const result=await reconcileBlingOrderDependenciesReadonly(id);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...result});
       }

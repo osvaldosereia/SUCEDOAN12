@@ -2395,6 +2395,51 @@ async function blingHubFindContactByDocument(sb:any,token:string,docRaw:any){
   if(ids.length>1)return {status:"ambiguous",reason:"duplicate_document",bling_id:null,candidates:ids};
   return {status:"not_found",reason:"document_not_found",bling_id:null,candidates:[]};
 }
+async function blingHubReconcileCustomerReadonly(sb:any,customerIdRaw:any){
+  const customerId=uuid(customerIdRaw);
+  if(!customerId)return {ok:false,error:"invalid_customer",status:400,external_write:false};
+  const local=await blingHubCustomerSnapshot(sb,customerId);
+  if(!local)return {ok:false,error:"customer_not_found",status:404,external_write:false};
+
+  const token=await blingHubOauth(sb);
+  const now=new Date().toISOString();
+  let status="review_required",reason="",blingId=Number(local.bling_contact_id||0)||null,method="";
+  let candidates:number[]=[];
+
+  if(blingId){
+    const detail=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
+    if(detail.ok){status="matched";method="existing_bling_contact_id";}
+    else{status="review_required";reason="existing_bling_contact_http_"+detail.status;blingId=null;}
+  }else{
+    const found=await blingHubFindContactByDocument(sb,token,local.cpf_cnpj);
+    status=found.status;reason=found.reason;blingId=found.bling_id;candidates=found.candidates||[];
+    if(status==="matched"&&blingId){
+      method="cpf_cnpj_exact";
+      const bind=await sb.from("customers")
+        .update({bling_contact_id:blingId,last_bling_sync_at:now})
+        .eq("id",customerId)
+        .is("bling_contact_id",null);
+      if(bind.error)throw bind.error;
+    }
+  }
+
+  const up=await sb.from("bling_hub_entity_links_v2").upsert({
+    source_system:"canonical_ssbes",entity_type:"customer",source_id:customerId,bling_id:blingId,
+    identity_kind:blingHubDigits(local.cpf_cnpj)?"cpf_cnpj":null,
+    identity_value:blingHubDigits(local.cpf_cnpj)||null,
+    status,last_verified_at:now,updated_at:now,
+    metadata:{method:method||null,reason:reason||null,name:local.name||"",candidate_ids:candidates.slice(0,10),readonly:true}
+  },{onConflict:"source_system,entity_type,source_id"});
+  if(up.error)throw up.error;
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"customer_reconcile_single_readonly",severity:status==="matched"?"info":"warning",domain:"customer",
+    details:{source_id:customerId,status,reason:reason||null,bling_id:blingId,external_write:false,make_used:false}
+  });
+
+  return {ok:true,customer_id:customerId,status,reason:reason||null,bling_id:blingId,candidate_ids:candidates.slice(0,5),external_write:false};
+}
+
 async function blingHubReconcileCustomersReadonly(sb:any,limitRaw:any=650){
   const limit=Math.max(1,Math.min(1000,Number(limitRaw||650)||650));
   const rows=await sb.from("customers")
@@ -3439,6 +3484,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="reconcile_customers_readonly"){
         const result=await blingHubReconcileCustomersReadonly(sb,body?.limit);
         return json(result,200);
+      }
+      if(subaction==="reconcile_customer_readonly"){
+        const result=await blingHubReconcileCustomerReadonly(sb,body?.customer_id);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="preview_customer_sync"){
         const result=await blingHubPreviewCustomerSync(sb,body?.customer_id);

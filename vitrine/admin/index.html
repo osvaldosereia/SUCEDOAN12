@@ -1681,6 +1681,8 @@
     $('#saveOrder').onclick=saveOrder;
     if($('#orderCustomerSearch'))$('#orderCustomerSearch').oninput=e=>scheduleOrderCustomerSearch(e.target.value);
     if($('#orderCustomer'))$('#orderCustomer').onchange=applySelectedCustomerToDelivery;
+    if($('#resolveBlingDependencies'))$('#resolveBlingDependencies').onclick=resolveCurrentOrderBlingDependencies;
+    if($('#focusOrderCustomer'))$('#focusOrderCustomer').onclick=focusOrderCustomerForBling;
     if($('#useSuggestedCustomer'))$('#useSuggestedCustomer').onclick=()=>{
       const select=$('#orderCustomer');if(!select||!state.orderCustomerSuggestion)return;
       select.value=state.orderCustomerSuggestion;
@@ -1719,7 +1721,11 @@
   function blingPreflightAlertHtml(p){
     const blockers=blingPreflightOperationalBlockers(p);
     if(!blockers.length)return '';
-    return '<div class="sync-alert"><div><strong>Antes de separar, revise o Bling</strong><small>'+blockers.slice(0,3).map(blingOrderBlockerLabel).map(esc).join(' · ')+(blockers.length>3?' · +'+(blockers.length-3):'')+'</small></div><span class="pill warn">Somente leitura</span></div>';
+    const canReconcile=blockers.some(x=>['customer_missing_bling_contact_id','unresolved_products'].includes(x));
+    const needsCustomer=blockers.includes('customer_not_linked');
+    const actions=(canReconcile?'<button class="secondary" id="resolveBlingDependencies" type="button">Tentar resolver vínculos</button>':'')+
+      (needsCustomer?'<button class="secondary" id="focusOrderCustomer" type="button">Vincular cliente</button>':'');
+    return '<div class="sync-alert"><div><strong>Antes de separar, revise o Bling</strong><small>'+blockers.slice(0,3).map(blingOrderBlockerLabel).map(esc).join(' · ')+(blockers.length>3?' · +'+(blockers.length-3):'')+'</small></div><div class="dispatch-actions">'+actions+'<span class="pill warn">Somente leitura</span></div></div>';
   }
   async function loadCurrentOrderBlingPreview(repaint=true){
     const id=state.currentOrder?.order?.id;if(!id)return;
@@ -1890,6 +1896,30 @@
       toast('Não consegui verificar a prévia do Bling agora');
       if(btn){btn.disabled=false;btn.textContent='Verificar prévia Bling'}
     }
+  }
+
+  async function resolveCurrentOrderBlingDependencies(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#resolveBlingDependencies');if(btn){btn.disabled=true;btn.textContent='Conferindo vínculos…'}
+    try{
+      const data=await api('bling_reconcile_order_dependencies_readonly',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      state.currentOrderBlingPreview=data.preview||null;
+      const remaining=blingPreflightOperationalBlockers(state.currentOrderBlingPreview);
+      paintOrderDetail();
+      toast(remaining.length?'Vínculos conferidos · ainda há pendências':'Vínculos conferidos · pedido apto para separar');
+    }catch(e){
+      toast('Não consegui conferir os vínculos agora');
+      if(btn){btn.disabled=false;btn.textContent='Tentar resolver vínculos'}
+    }
+  }
+  function focusOrderCustomerForBling(){
+    const input=$('#orderCustomerSearch');
+    if(!input)return;
+    input.focus();
+    input.scrollIntoView({behavior:'smooth',block:'center'});
+    toast('Localize e vincule o cliente correto');
   }
 
   async function retryHistorySync(){
