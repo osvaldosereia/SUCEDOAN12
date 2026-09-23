@@ -34,6 +34,7 @@ on:
       - 'scripts/test-vitrine-admin-backlog-v1.mjs'
       - 'scripts/test-vitrine-admin-quick-confirm-v1.mjs'
       - 'scripts/test-vitrine-admin-issue-triage-v1.mjs'
+      - 'scripts/test-vitrine-admin-customer-phone-suggestion-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -82,6 +83,7 @@ on:
       - 'scripts/test-vitrine-admin-backlog-v1.mjs'
       - 'scripts/test-vitrine-admin-quick-confirm-v1.mjs'
       - 'scripts/test-vitrine-admin-issue-triage-v1.mjs'
+      - 'scripts/test-vitrine-admin-customer-phone-suggestion-v1.mjs'
       - 'scripts/test-admin-service-shared-modules-v1.mjs'
       - 'scripts/test-vitrine-bling-cancel-status-v1.mjs'
       - 'scripts/test-vitrine-admin-bling-preflight-v1.mjs'
@@ -140,6 +142,7 @@ jobs:
           node scripts/test-vitrine-admin-backlog-v1.mjs
           node scripts/test-vitrine-admin-quick-confirm-v1.mjs
           node scripts/test-vitrine-admin-issue-triage-v1.mjs
+          node scripts/test-vitrine-admin-customer-phone-suggestion-v1.mjs
           node scripts/test-admin-service-shared-modules-v1.mjs
           node scripts/test-vitrine-bling-cancel-status-v1.mjs
           node scripts/test-vitrine-admin-bling-preflight-v1.mjs
