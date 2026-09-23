@@ -1089,7 +1089,13 @@ async function blingHubWriteIdempotent(sb:any,token:string,path:string,method:st
       if(r.ok)return {ok:true,status:r.status,data};
       const retryable=r.status===429||r.status>=500;
       lastError=clean(data?.error?.message||data?.error?.description||data?.error||raw,500);
-      if(!retryable||attempt===4)return {ok:false,status:r.status,error:lastError};
+      const providerDetails=Array.isArray(data?.error?.fields)
+        ? data.error.fields.slice(0,20).map((x:any)=>({
+            field:clean(x?.field||x?.name||x?.path,120),
+            message:clean(x?.message||x?.description||x?.error,240)
+          }))
+        : [];
+      if(!retryable||attempt===4)return {ok:false,status:r.status,error:lastError,provider_details:providerDetails};
       const retryAfter=Number(r.headers.get("retry-after"));
       await sleep(Number.isFinite(retryAfter)&&retryAfter>0?retryAfter*1000:attempt*attempt*1000);
     }catch(e){
@@ -1786,7 +1792,7 @@ async function blingHubProcessCustomerJobs(sb:any,limitRaw:any){
       const write=await blingHubWriteIdempotent(sb,token,"/contatos/"+encodeURIComponent(String(blingId)),"PUT",desired);
       if(!write.ok){
         const status=write.status===429||write.status>=500||write.status===0?"retry":"review_required";
-        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{changes},p_error_code:"contact_put_http_"+write.status,p_error_message:write.error||"Bling contact update failed",p_http_status:write.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
+        await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:status,p_result:{changes,provider_details:write.provider_details||[]},p_error_code:"contact_put_http_"+write.status,p_error_message:write.error||"Bling contact update failed",p_http_status:write.status||null,p_retry_seconds:120,p_provider_id:String(blingId)});
         summary[status]++;continue;
       }
       const after=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(blingId)));
