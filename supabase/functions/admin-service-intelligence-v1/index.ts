@@ -1543,6 +1543,28 @@ async function blingHubLookupProductByExactGtin(sb:any,token:string,gtinRaw:any)
   if(ids.length>1)return {status:"ambiguous",reason:"multiple_exact_gtin",bling_id:null,candidates:ids};
   return {status:"not_found",reason:"gtin_not_found",bling_id:null,candidates:[]};
 }
+async function blingHubLookupProductByExactCode(sb:any,token:string,codeRaw:any){
+  const code=clean(codeRaw,120);
+  if(!code)return {status:"not_found",reason:"code_missing",bling_id:null,candidates:[]};
+  const ids:number[]=[];
+  for(let page=1;page<=1000;page++){
+    const q=new URLSearchParams({pagina:String(page),limite:"100",criterio:"5",tipo:"T"});
+    const r=await blingHubGet(sb,token,"/produtos?"+q.toString());
+    if(!r.ok)return {status:"review_required",reason:"product_code_lookup_http_"+r.status,bling_id:null,candidates:[]};
+    const rows=Array.isArray(r.data?.data)?r.data.data:[];
+    for(const row of rows){
+      if(clean(row?.codigo,120)===code){
+        const id=Number(row?.id||0);if(id)ids.push(id);
+      }
+    }
+    if(rows.length<100)break;
+    if(page===1000)return {status:"review_required",reason:"product_code_page_guard",bling_id:null,candidates:[]};
+  }
+  const unique=[...new Set(ids)];
+  if(unique.length===1)return {status:"matched",reason:"code_exact",bling_id:unique[0],candidates:unique};
+  if(unique.length>1)return {status:"ambiguous",reason:"multiple_exact_code",bling_id:null,candidates:unique};
+  return {status:"not_found",reason:"code_not_found",bling_id:null,candidates:[]};
+}
 async function blingHubCreateProductOnce(sb:any,token:string,payload:any){
   await blingHubReserveSlot(sb);
   try{
@@ -1610,6 +1632,27 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
           await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{candidate_ids:fresh.candidates||[]},p_error_code:fresh.reason||"product_identity_unsafe",p_error_message:"Product identity is not safe for creation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
           summary.review_required++;continue;
         }else{
+          const code=clean(local?.sku,120)||gtin;
+          const byCode=await blingHubLookupProductByExactCode(sb,token,code);
+          if(byCode.status==="matched"&&byCode.bling_id){
+            const existingId=Number(byCode.bling_id);
+            const detail=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(existingId)));
+            const remote=detail.ok?(detail.data?.data||{}):{};
+            const remoteCode=clean(remote?.codigo,120);
+            const remoteGtins=[remote?.gtin,remote?.gtinEmbalagem].map((x:any)=>blingHubDigits(x)).filter(Boolean);
+            if(!detail.ok||remoteCode!==code||(remoteGtins.length&&!remoteGtins.includes(gtin))){
+              await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{candidate_ids:[existingId]},p_error_code:"code_match_identity_conflict",p_error_message:"Existing Bling product code conflicts with local identity",p_http_status:detail.status||null,p_retry_seconds:120,p_provider_id:String(existingId)});
+              summary.review_required++;continue;
+            }
+            blingId=existingId;
+            await blingHubBindProductLink(sb,job.source_system,job.source_id,blingId,gtin,"code_exact_before_create");
+          }else if(byCode.status!=="not_found"){
+            await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"review_required",p_result:{candidate_ids:byCode.candidates||[]},p_error_code:byCode.reason||"product_code_identity_unsafe",p_error_message:"Product code identity is not safe for creation",p_http_status:null,p_retry_seconds:120,p_provider_id:null});
+            summary.review_required++;continue;
+          }
+        }
+
+        if(!blingId){
           const createPayload=blingHubProductPayload({},local);
           const rawUnit=clean(createPayload.unidade,20).toUpperCase();
           const unitMap:any={PACOTE:"PCT",PCT:"PCT",UNIDADE:"UN",UN:"UN",CAIXA:"CX",CX:"CX",FARDO:"FD",FD:"FD",QUILO:"KG",KILO:"KG",KG:"KG",LITRO:"L",L:"L"};
@@ -1651,6 +1694,7 @@ async function blingHubProcessProductJobs(sb:any,limitRaw:any){
           await blingHubBindProductLink(sb,job.source_system,job.source_id,blingId,gtin,"created_by_hub_v2");
           await sb.rpc("finish_bling_hub_job_v2",{p_job_id:job.id,p_status:"synced",p_result:{bling_id:blingId,created:true,verified:true,gtin},p_error_code:null,p_error_message:null,p_http_status:created.status||200,p_retry_seconds:120,p_provider_id:String(blingId)});
           summary.synced++;continue;
+        }
         }
       }
 
@@ -1703,14 +1747,14 @@ async function blingHubReconcileProductCatalogReadonly(sb:any,itemsRaw:any){
   if(!items.length)return {ok:true,processed:0,summary:{},bling_catalog_count:0,exceptions:[]};
   const token=await blingHubOauth(sb);
   const catalog:any[]=[];
-  for(let page=1;page<=100;page++){
-    const q=new URLSearchParams({pagina:String(page),limite:"100"});
+  for(let page=1;page<=1000;page++){
+    const q=new URLSearchParams({pagina:String(page),limite:"100",criterio:"5",tipo:"T"});
     const r=await blingHubGet(sb,token,"/produtos?"+q.toString());
     if(!r.ok)throw new Error("bling_catalog_http_"+r.status);
     const rows=Array.isArray(r.data?.data)?r.data.data:[];
     catalog.push(...rows);
     if(rows.length<100)break;
-    if(page===100)throw new Error("bling_catalog_page_guard");
+    if(page===1000)throw new Error("bling_catalog_page_guard");
   }
 
   const gtinMap=new Map<string,Set<number>>();
