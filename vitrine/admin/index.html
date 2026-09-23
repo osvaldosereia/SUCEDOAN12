@@ -1394,7 +1394,7 @@
       '</div></details>'+
       '<div class="section-title">Fiscal / NF-e</div>'+
       '<div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+
-      '<div class="print-actions"><button class="primary" id="confirmFiscalPayment" style="display:none">Confirmar pagamento recebido</button></div>';
+      '<div class="print-actions"><button class="primary" id="confirmFiscalPayment" aria-label="Confirmar pagamento recebido" style="display:none">Confirmar recebimento</button></div>';
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar dados</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
@@ -1411,7 +1411,11 @@
       const fiscal=state.currentOrderFiscal||{};
       const canConfirm=o.status==='delivered'&&fiscal.payment_status!=='confirmed'&&!fiscal.error;
       fiscalBtn.style.display=canConfirm?'block':'none';
-      if(canConfirm)fiscalBtn.onclick=confirmCurrentOrderPayment;
+      if(canConfirm){
+        const method=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento';
+        fiscalBtn.textContent='Confirmar '+money(o.total_cents)+' recebido · '+method;
+        fiscalBtn.onclick=confirmCurrentOrderPayment;
+      }
     }
     if($('#retryHistorySync'))$('#retryHistorySync').onclick=retryHistorySync;
   }
@@ -1489,19 +1493,24 @@
   async function confirmCurrentOrderPayment(){
     const o=state.currentOrder?.order;if(!o)return;
     if(o.status!=='delivered'){toast('Confirme a entrega antes do pagamento');return}
+    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    const amount=money(o.total_cents);
+    const ok=confirm('Confirmar recebimento de '+amount+' via '+payment+'?\n\nEsta ação registra o pagamento do pedido #'+shortOrder(o.order_number)+'.');
+    if(!ok)return;
     const btn=$('#confirmFiscalPayment');
-    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    if(btn){btn.disabled=true;btn.textContent='Confirmando recebimento…'}
     try{
-      const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'';
       state.currentOrderFiscal=await api('order_fiscal_confirm_payment',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id:o.id,payment_method:payment})
       });
+      state.fiscalByOrder[o.id]=state.currentOrderFiscal;
       paintOrderDetail();
-      toast(state.currentOrderFiscal?.fiscal_status==='ready'?'Pagamento confirmado · fiscal pronto':'Pagamento confirmado');
+      if(state.tab==='closure')renderClosure();
+      toast(state.currentOrderFiscal?.fiscal_status==='ready'?'Recebimento confirmado · fiscal pronto':'Recebimento confirmado');
     }catch(e){
       toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Confirmar pagamento recebido'}
+      if(btn){btn.disabled=false;btn.textContent='Confirmar '+amount+' recebido · '+payment}
     }
   }
 
