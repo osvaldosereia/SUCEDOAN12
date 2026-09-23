@@ -593,7 +593,7 @@ async function submitOrder(payload:any) {
       delivery_cents:0,
       total_cents:total,
       delivery_address_snapshot:{...customerSnapshot,delivery_date:delivery.date,delivery_label:delivery.label,delivery_reason:delivery.reason,delivery_time_zone:delivery.time_zone,delivery_cutoff_hour:delivery.cutoff_hour},
-      payment_method_snapshot:{method:payment,label:payment,timing:"on_delivery",source:"vitrine"},
+      payment_method_snapshot:{method:payment,label:payment,timing:"on_delivery",source:"vitrine",stock_reserved:true,stock_released:false},
       confirmed_at:null,
       delivered_at:null
     }).select("id,order_number,total_cents").single();
