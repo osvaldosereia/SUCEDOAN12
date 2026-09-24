@@ -80,6 +80,42 @@ function addDateDays(iso:string,days:number) {
 function dateDiffDays(fromIso:string,toIso:string) {
   return Math.round((Date.parse(toIso+"T00:00:00Z")-Date.parse(fromIso+"T00:00:00Z"))/86400000);
 }
+
+let operationalCutoverCache:{live_orders_since:string,legacy_orders_read_only:boolean}|null=null;
+async function operationalCutover(){
+  if(operationalCutoverCache)return operationalCutoverCache;
+  const {data,error}=await db.from("vitrine_operational_cutover_config")
+    .select("live_orders_since,legacy_orders_read_only")
+    .eq("id",1).maybeSingle();
+  if(error)throw error;
+  operationalCutoverCache={
+    live_orders_since:text(data?.live_orders_since,80)||new Date(0).toISOString(),
+    legacy_orders_read_only:data?.legacy_orders_read_only!==false
+  };
+  return operationalCutoverCache;
+}
+async function orderOperationalAge(orderIdRaw:any){
+  const orderId=uuid(orderIdRaw);
+  if(!orderId)return {ok:false,error:"invalid_order",status:400,legacy:false};
+  const [{data:order,error},cfg]=await Promise.all([
+    db.from("orders").select("id,created_at").eq("organization_id",ORG_ID).eq("id",orderId).maybeSingle(),
+    operationalCutover()
+  ]);
+  if(error)throw error;
+  if(!order)return {ok:false,error:"order_not_found",status:404,legacy:false};
+  const legacy=cfg.legacy_orders_read_only===true
+    && (Date.parse(order.created_at||0)||0)<(Date.parse(cfg.live_orders_since||0)||0);
+  return {ok:true,order_id:orderId,created_at:order.created_at,live_orders_since:cfg.live_orders_since,legacy};
+}
+async function legacyOrderMutationGuard(orderIdRaw:any){
+  const age=await orderOperationalAge(orderIdRaw);
+  if(!age.ok)return age;
+  if(age.legacy)return {
+    ok:false,error:"legacy_order_read_only",status:409,
+    order_id:age.order_id,created_at:age.created_at,live_orders_since:age.live_orders_since
+  };
+  return {ok:true,...age};
+}
 async function listProducts(url: URL) {
   const q = text(url.searchParams.get("q"), 80);
   const category = text(url.searchParams.get("category"), 48);
@@ -921,6 +957,7 @@ async function saveCustomer(payload:any) {
 }
 
 async function listOrders() {
+  const cutover=await operationalCutover();
   const selectFields="id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at";
   const openRows:any[]=[];
   const pageSize=1000;
@@ -930,6 +967,7 @@ async function listOrders() {
       .select(selectFields)
       .eq("organization_id",ORG_ID)
       .not("status","in",'("delivered","cancelled")')
+      .gte("created_at",cutover.live_orders_since)
       .order("created_at",{ascending:false})
       .range(from,from+pageSize-1);
     if(page.error)throw page.error;
@@ -942,6 +980,7 @@ async function listOrders() {
     .select(selectFields)
     .eq("organization_id",ORG_ID)
     .in("status",["delivered","cancelled"])
+    .gte("created_at",cutover.live_orders_since)
     .order("created_at",{ascending:false})
     .limit(120);
   if(closed.error)throw closed.error;
@@ -977,6 +1016,7 @@ async function listOrders() {
 }
 
 async function listClosureOrders(){
+  const cutover=await operationalCutover();
   const selectFields="id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at";
   const pendingRemote=await blingHubControl("fiscal_pending_orders",{limit:5000});
   const remoteRows=(pendingRemote as any).error?[]:((pendingRemote as any).data?.orders||[]);
@@ -989,6 +1029,7 @@ async function listClosureOrders(){
       .select(selectFields)
       .eq("organization_id",ORG_ID)
       .eq("status","delivered")
+      .gte("created_at",cutover.live_orders_since)
       .in("id",chunk);
     if(q.error)throw q.error;
     pendingRows.push(...(q.data||[]));
@@ -998,6 +1039,7 @@ async function listClosureOrders(){
     .select(selectFields)
     .eq("organization_id",ORG_ID)
     .eq("status","delivered")
+    .gte("created_at",cutover.live_orders_since)
     .order("delivered_at",{ascending:false})
     .limit(30);
   if(recent.error)throw recent.error;
@@ -1005,15 +1047,16 @@ async function listClosureOrders(){
   const byId=new Map<string,any>();
   for(const row of [...pendingRows,...(recent.data||[])])byId.set(row.id,row);
   const orders=[...byId.values()].sort((a:any,b:any)=>(Date.parse(b.delivered_at||b.created_at||0)||0)-(Date.parse(a.delivered_at||a.created_at||0)||0));
+  const visibleIds=new Set(orders.map((o:any)=>o.id));
   const fiscal_by_order:any={};
   for(const row of remoteRows){
-    const id=uuid(row?.source_order_id);if(id)fiscal_by_order[id]=row;
+    const id=uuid(row?.source_order_id);if(id&&visibleIds.has(id))fiscal_by_order[id]=row;
   }
 
   return {
     orders,
     fiscal_by_order,
-    pending_count:pendingIds.length,
+    pending_count:pendingRows.length,
     pending_lookup_ok:!(pendingRemote as any).error,
     pending_lookup_truncated:Boolean((pendingRemote as any).data?.truncated)
   };
@@ -1308,12 +1351,14 @@ async function orderStockReadinessMap(orderIdsRaw:any[]){
 }
 
 async function listOrderStockShortages(){
+  const cutover=await operationalCutover();
   const orders:any[]=[];
   for(let from=0;from<10000;from+=1000){
     const q=await db.from("orders")
       .select("id,order_number,status,payment_method_snapshot")
       .eq("organization_id",ORG_ID)
       .in("status",["created","confirmed","processing"])
+      .gte("created_at",cutover.live_orders_since)
       .order("created_at",{ascending:true})
       .range(from,from+999);
     if(q.error)throw q.error;
@@ -2559,10 +2604,12 @@ async function crossSellShadowList(limitRaw:unknown=50) {
 }
 
 async function crossSellShadowPrepareRecent(payload:any) {
+  const cutover=await operationalCutover();
   const limit=Math.max(1,Math.min(50,Math.floor(Number(payload?.limit||20))));
   const {data:orders,error}=await db.from("orders")
     .select("id")
     .eq("organization_id",ORG_ID)
+    .gte("created_at",cutover.live_orders_since)
     .order("created_at",{ascending:false})
     .limit(limit);
   if(error)throw error;
@@ -2638,6 +2685,19 @@ Deno.serve(async (req: Request) => {
 
     if (req.method==="POST") {
       const payload=await req.json().catch(()=>({}));
+      const mutationOrderId=(()=>{
+        if(["order_update","order_consume_stock","history_sync_retry","bling_create_order_products","bling_create_order_customer","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment"].includes(action)){
+          return uuid(payload?.id);
+        }
+        if(["order_component_replace","cross_sell_shadow_prepare"].includes(action)){
+          return uuid(payload?.order_id);
+        }
+        return "";
+      })();
+      if(mutationOrderId){
+        const guard=await legacyOrderMutationGuard(mutationOrderId);
+        if(!guard.ok)return json(req,{ok:false,error:guard.error,created_at:(guard as any).created_at,live_orders_since:(guard as any).live_orders_since},Number((guard as any).status||409));
+      }
       if (action==="papoai_control_save") {
         const result=await papoAiAdminControl("save",{storefront_link_enabled:payload?.storefront_link_enabled===true});
         if((result as any).error)return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
