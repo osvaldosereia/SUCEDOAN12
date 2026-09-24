@@ -2840,7 +2840,9 @@ function blingHubOrderManagedProjection(order:any){
     itens:items.map((i:any)=>({
       produto_id:Number(i?.produto?.id||0)||null,
       codigo:clean(i?.codigo,120),
-      descricao:clean(i?.descricao,220),
+      // O Bling normaliza a descrição conforme o cadastro do produto.
+      // A identidade operacional da linha é produto/código/quantidade/valor;
+      // diferenças cosméticas de descrição não devem disparar PUT nem revisão.
       quantidade:Math.round(Number(i?.quantidade||0)*1000)/1000,
       valor_cents:moneyCents(i?.valor)
     })).sort((a:any,b:any)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))
