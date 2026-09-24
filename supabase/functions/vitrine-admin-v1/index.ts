@@ -2642,7 +2642,9 @@ Deno.serve(async (req: Request) => {
         return json(req,{ok:true,probe:(result as any).data});
       }
       if (action==="bling_finance_overview") {
-        const result=await blingHubControl("finance_overview");
+        const authorization=req.headers.get("Authorization")||"";
+        if(!/^Bearer\s+\S+/i.test(authorization))return json(req,{ok:false,error:"finance_auth_required"},401);
+        const result=await blingHubControl("finance_overview",{},authorization);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...((result as any).data||{})});
       }
