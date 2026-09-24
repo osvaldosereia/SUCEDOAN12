@@ -4319,67 +4319,6 @@ async function vitrineSaveCustomer(sb:any,body:any){
   return {ok:true,customer_id:customerId,customer:savedCustomer};
 }
 
-async function papoAiVitrineControlState(sb:any){
-  const [control,events]=await Promise.all([
-    sb.from("papoai_storefront_runtime_control_v1")
-      .select("storefront_link_enabled,updated_at,metadata")
-      .eq("id",1)
-      .maybeSingle(),
-    sb.from("papoai_flow_customer_webhook_events")
-      .select("received_at,status,error_code,parsed_data")
-      .eq("status","outbound_probe")
-      .order("received_at",{ascending:false})
-      .limit(80)
-  ]);
-  if(control.error)throw control.error;
-  if(events.error)throw events.error;
-  const rows=events.data||[];
-  const since24=Date.now()-24*60*60*1000;
-  let lastLinkSuccessAt:string|null=null;
-  let recentSyncErrors=0;
-  let eventCount24h=0;
-  for(const row of rows){
-    const ts=Date.parse(String(row?.received_at||""));
-    if(Number.isFinite(ts)&&ts>=since24)eventCount24h++;
-    const sync=row?.parsed_data?.storefront_link_sync;
-    if(!lastLinkSuccessAt&&sync?.ok===true)lastLinkSuccessAt=row.received_at;
-    if(sync&&sync.ok===false&&Number.isFinite(ts)&&ts>=since24)recentSyncErrors++;
-  }
-  return {
-    storefront_link_enabled:control.data?.storefront_link_enabled!==false,
-    updated_at:control.data?.updated_at||null,
-    health:{
-      last_event_at:rows[0]?.received_at||null,
-      last_link_success_at:lastLinkSuccessAt,
-      event_count_24h:eventCount24h,
-      sync_errors_24h:recentSyncErrors
-    },
-    external_settings:{
-      transfer:"managed_in_papoai",
-      follow_up:"managed_in_papoai",
-      model_prompt:"managed_in_papoai"
-    }
-  };
-}
-
-async function papoAiVitrineControlSave(sb:any,body:any){
-  if(typeof body?.storefront_link_enabled!=="boolean"){
-    return {ok:false,error:"invalid_storefront_link_enabled",status:400};
-  }
-  const now=new Date().toISOString();
-  const saved=await sb.from("papoai_storefront_runtime_control_v1")
-    .upsert({
-      id:1,
-      storefront_link_enabled:body.storefront_link_enabled,
-      updated_at:now,
-      metadata:{source:"vitrine_admin",version:1,updated_at:now}
-    },{onConflict:"id"})
-    .select("storefront_link_enabled,updated_at,metadata")
-    .single();
-  if(saved.error)throw saved.error;
-  return {ok:true,control:await papoAiVitrineControlState(sb)};
-}
-
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
   if(req.method==="GET")return Response.redirect("https://donaantonia.com.br/admin/commerce-os/",302);
@@ -4416,23 +4355,6 @@ Deno.serve(async(req:Request)=>{
       }});
     }catch(e){
       return json({ok:false,error:"product_extra_unavailable",detail:clean((e as Error)?.message,300)},500);
-    }
-  }
-
-  if(action==="vitrine_papoai_control_internal"){
-    if(!(await vitrineHistoryAuthorized(sb,req)))return json({ok:false,error:"unauthorized"},401);
-    const subaction=clean(body?.subaction||"get",40).toLowerCase();
-    try{
-      if(subaction==="get"||subaction==="health"){
-        return json({ok:true,control:await papoAiVitrineControlState(sb)});
-      }
-      if(subaction==="save"){
-        const result=await papoAiVitrineControlSave(sb,body);
-        return json(result,result.ok?200:Number(result.status||400));
-      }
-      return json({ok:false,error:"invalid_subaction"},400);
-    }catch(e){
-      return json({ok:false,error:"papoai_control_failed",detail:clean((e as Error)?.message||e,300)},500);
     }
   }
 
