@@ -20,7 +20,9 @@ assert.match(admin,/Confirmar pagamento recebido/,'pedido entregue deve permitir
 assert.match(admin,/Emissão de NF-e permanece desligada/,'UI deve deixar claro que emissão continua desligada');
 assert.match(admin,/order_fiscal_status/);
 assert.match(admin,/order_fiscal_confirm_payment/);
-assert.doesNotMatch(admin,/Emitir NF-e/i,'não deve existir botão de emissão nesta fase');
+assert.match(admin,/Emitir NF-e deste pedido/,'emissão só pode existir como canário fiscal explícito do pedido');
+assert.match(admin,/order_fiscal_dispatch_canary_execute/,'botão fiscal deve usar endpoint específico do canário humano');
+assert.match(admin,/Esta ação tem efeito fiscal real/,'UI deve exigir confirmação humana explícita antes da emissão');
 assert.doesNotMatch(admin,/Enviar (?:pedido )?ao Bling/i,'admin não deve oferecer envio manual nesta fase');
 
 assert.match(vitrineAdmin,/async function buildBlingOrderSnapshot/);
