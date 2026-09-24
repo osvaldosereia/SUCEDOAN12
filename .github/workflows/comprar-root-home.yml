@@ -65,6 +65,7 @@ on:
       - 'scripts/test-bling-hub-data-safety-v1.mjs'
       - 'scripts/test-vitrine-bling-product-create-v1.mjs'
       - 'scripts/test-vitrine-fiscal-dispatch-gate-v1.mjs'
+      - 'scripts/test-vitrine-fiscal-adapter-canary-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -139,6 +140,7 @@ on:
       - 'scripts/test-bling-hub-data-safety-v1.mjs'
       - 'scripts/test-vitrine-bling-product-create-v1.mjs'
       - 'scripts/test-vitrine-fiscal-dispatch-gate-v1.mjs'
+      - 'scripts/test-vitrine-fiscal-adapter-canary-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -223,3 +225,4 @@ jobs:
           node scripts/test-bling-hub-data-safety-v1.mjs
           node scripts/test-vitrine-bling-product-create-v1.mjs
           node scripts/test-vitrine-fiscal-dispatch-gate-v1.mjs
+          node scripts/test-vitrine-fiscal-adapter-canary-v1.mjs
