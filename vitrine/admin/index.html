@@ -197,7 +197,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -959,12 +959,43 @@
       body:JSON.stringify({operation,...payload})
     });
   }
+  async function loadFinanceCatalogs(force=false){
+    if(state.financeCatalogs&&!force)return state.financeCatalogs;
+    const data=await financeApi('catalogs');
+    state.financeCatalogs={
+      payment_methods:Array.isArray(data.payment_methods)?data.payment_methods:[],
+      categories:Array.isArray(data.categories)?data.categories:[],
+      financial_accounts:Array.isArray(data.financial_accounts)?data.financial_accounts:[],
+      truncated:Boolean(data.truncated)
+    };
+    return state.financeCatalogs;
+  }
   function financeFieldValue(v){
     return v==null?'':String(v);
   }
   function financeMoneyInput(v){
     const n=Number(v);
     return Number.isFinite(n)?n.toFixed(2).replace('.',','):'';
+  }
+  function financeSelectOptions(list,currentId,placeholder='Não informado'){
+    const current=Number(currentId||0);
+    const rows=(Array.isArray(list)?list:[]).filter(x=>Number(x?.id||0)>0);
+    const hasCurrent=current&&rows.some(x=>Number(x.id)===current);
+    const extra=current&&!hasCurrent?[{id:current,description:'Atual #'+current}]:[];
+    return '<option value="">'+esc(placeholder)+'</option>'+
+      [...extra,...rows].map(x=>'<option value="'+esc(x.id)+'" '+(Number(x.id)===current?'selected':'')+'>'+esc(x.description||x.name||('ID '+x.id))+'</option>').join('');
+  }
+  function financeCategoryRows(kind,catalogs){
+    return (catalogs?.categories||[]).filter(c=>{
+      const t=Number(c?.type||0);
+      return !t||t===3||(kind==='payable'&&t===1)||(kind==='receivable'&&t===2);
+    });
+  }
+  function financeCatalogDescription(area,id){
+    const n=Number(id||0);if(!n)return '';
+    const c=state.financeCatalogs||{};
+    const rows=area==='payment'?c.payment_methods:area==='account'?c.financial_accounts:c.categories;
+    return (rows||[]).find(x=>Number(x.id)===n)?.description||('#'+n);
   }
   function financeFormPayload(form){
     const value=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
@@ -990,6 +1021,7 @@
       vencimento:a.vencimento||'',
       valor:a.valor??'',
       contato_id:a.contato?.id||'',
+      contato_nome:a.contato?.nome||'',
       forma_pagamento_id:a.formaPagamento?.id||'',
       dataEmissao:a.dataEmissao||'',
       numeroDocumento:a.numeroDocumento||'',
@@ -1006,36 +1038,90 @@
     if($('#financeClose'))$('#financeClose').onclick=()=>$('#editor').close();
     $('#editor').showModal();
   }
+  function financeContactLabel(c){
+    const parts=[c?.name||'',c?.trade_name||'',c?.document||''].filter(Boolean);
+    return parts.join(' · ')||('Contato #'+String(c?.id||''));
+  }
+  function attachFinanceContactSearch(current={}){
+    const input=$('#financeContactSearch'),hidden=$('#financeContactId'),host=$('#financeContactResults');
+    if(!input||!hidden||!host)return;
+    hidden.value=financeFieldValue(current.contato_id);
+    if(current.contato_id){
+      state.financeSelectedContact={id:Number(current.contato_id),name:current.contato_nome||('Contato #'+current.contato_id)};
+      input.value=current.contato_nome||('Contato #'+current.contato_id);
+    }else state.financeSelectedContact=null;
+
+    input.oninput=()=>{
+      hidden.value='';
+      state.financeSelectedContact=null;
+      clearTimeout(state.financeContactSearchTimer);
+      const q=input.value.trim();
+      if(q.length<2){
+        host.innerHTML=q?'<small class="sub">Digite pelo menos 2 caracteres.</small>':'';
+        return;
+      }
+      host.innerHTML='<small class="sub">Buscando no Bling…</small>';
+      state.financeContactSearchTimer=setTimeout(async()=>{
+        try{
+          const data=await financeApi('contact_search',{query:q});
+          const contacts=Array.isArray(data.contacts)?data.contacts:[];
+          host.innerHTML=contacts.length
+            ?'<div class="panel" style="margin-top:6px;padding:6px">'+contacts.map(c=>'<button type="button" class="text" data-finance-contact-id="'+esc(c.id)+'" style="display:block;width:100%;text-align:left;padding:9px 8px">'+esc(financeContactLabel(c))+'</button>').join('')+'</div>'
+            :'<small class="sub">Nenhum contato encontrado.</small>';
+          host.querySelectorAll('[data-finance-contact-id]').forEach(btn=>btn.onclick=()=>{
+            const contact=contacts.find(c=>Number(c.id)===Number(btn.dataset.financeContactId));
+            if(!contact)return;
+            hidden.value=String(contact.id);
+            input.value=financeContactLabel(contact);
+            state.financeSelectedContact={id:Number(contact.id),name:financeContactLabel(contact)};
+            host.innerHTML='';
+          });
+        }catch(e){
+          host.innerHTML='<small class="danger-text">Não foi possível buscar contatos agora.</small>';
+        }
+      },320);
+    };
+  }
   async function openFinanceEditor(kind,id=0){
     const isReceive=kind==='receivable';
-    let current={};
-    if(id){
-      financeOpenDialog('Carregando…','<div class="loading">Consultando o Bling…</div>');
-      try{
+    let current={},catalogs={payment_methods:[],categories:[],financial_accounts:[]},catalogError=false;
+    financeOpenDialog('Carregando…','<div class="loading">Consultando o Bling…</div>');
+    try{
+      catalogs=await loadFinanceCatalogs();
+      if(id){
         const detail=await financeApi('detail',{kind,id});
         current=financeExtractDetail(kind,detail.account);
-      }catch(e){financeOpenDialog('Financeiro','<div class="empty">Não consegui carregar esse lançamento.</div>');return}
+      }
+    }catch(e){
+      if(id){financeOpenDialog('Financeiro','<div class="empty">Não consegui carregar esse lançamento.</div>');return}
+      catalogError=true;
     }
     const title=(id?'Editar ':'Novo ')+(isReceive?'conta a receber':'conta a pagar');
     const today=cuiabaDayKey(new Date());
+    const categories=financeCategoryRows(kind,catalogs);
     financeOpenDialog(title,
+      (catalogError?'<div class="rule-notice warn"><strong>Listas do Bling indisponíveis</strong><div>Tente novamente em instantes antes de salvar.</div></div>':'')+
+      (catalogs.truncated?'<div class="rule-notice warn"><strong>Lista grande</strong><div>Alguns cadastros podem não aparecer. Use a busca de contato e revise os dados antes de confirmar.</div></div>':'')+
       '<form id="financeForm" class="form-grid">'+
         '<label><span>Vencimento *</span><input name="vencimento" type="date" required value="'+esc(current.vencimento||today)+'"></label>'+
         '<label><span>Valor *</span><input name="valor" inputmode="decimal" required value="'+esc(financeMoneyInput(current.valor))+'"></label>'+
-        '<label><span>ID do contato no Bling *</span><input name="contato_id" inputmode="numeric" required value="'+esc(financeFieldValue(current.contato_id))+'"></label>'+
-        '<label><span>ID forma de pagamento</span><input name="forma_pagamento_id" inputmode="numeric" value="'+esc(financeFieldValue(current.forma_pagamento_id))+'"></label>'+
+        '<label class="span-2"><span>Contato no Bling *</span><input id="financeContactSearch" type="search" autocomplete="off" placeholder="Digite nome, CPF/CNPJ, e-mail ou código" value="'+esc(current.contato_nome||'')+'"><input id="financeContactId" name="contato_id" type="hidden" value="'+esc(financeFieldValue(current.contato_id))+'"><div id="financeContactResults"></div></label>'+
+        '<label><span>Forma de pagamento</span><select name="forma_pagamento_id">'+financeSelectOptions(catalogs.payment_methods,current.forma_pagamento_id,'Não informar')+'</select></label>'+
+        '<label><span>Conta financeira / portador</span><select name="portador_id">'+financeSelectOptions(catalogs.financial_accounts,current.portador_id,'Não informar')+'</select></label>'+
+        '<label><span>Categoria</span><select name="categoria_id">'+financeSelectOptions(categories,current.categoria_id,'Não informar')+'</select></label>'+
         '<label><span>Data de emissão</span><input name="dataEmissao" type="date" value="'+esc(current.dataEmissao||today)+'"></label>'+
         '<label><span>Nº documento</span><input name="numeroDocumento" value="'+esc(current.numeroDocumento||'')+'"></label>'+
         '<label><span>Competência</span><input name="competencia" type="date" value="'+esc(current.competencia||'')+'"></label>'+
-        '<label><span>ID conta financeira / portador</span><input name="portador_id" inputmode="numeric" value="'+esc(financeFieldValue(current.portador_id))+'"></label>'+
-        '<label><span>ID categoria</span><input name="categoria_id" inputmode="numeric" value="'+esc(financeFieldValue(current.categoria_id))+'"></label>'+
         '<label class="span-2"><span>Histórico</span><textarea name="historico">'+esc(current.historico||'')+'</textarea></label>'+
       '</form>',
       '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financePreview" type="button">Revisar antes de salvar</button>'
     );
+    attachFinanceContactSearch(current);
     $('#financeCancel').onclick=()=>$('#editor').close();
     $('#financePreview').onclick=async()=>{
-      const payload=financeFormPayload($('#financeForm'));
+      const form=$('#financeForm');
+      const payload=financeFormPayload(form);
+      if(!payload.contato_id){toast('Selecione um contato do Bling');return}
       try{
         const preview=await financeApi(id?'update_preview':'create_preview',{kind,id:id||undefined,payload});
         openFinanceConfirmation(preview,id?'update_execute':'create_execute',{kind,id:id||undefined,payload});
@@ -1044,14 +1130,19 @@
   }
   function financePreviewHtml(preview){
     const p=preview?.payload||{};
+    const contactId=Number(p.contato?.id||0);
+    const contactLabel=state.financeSelectedContact&&Number(state.financeSelectedContact.id)===contactId
+      ?state.financeSelectedContact.name
+      :(contactId?('Contato #'+contactId):'—');
     const rows=[
       ['Tipo',preview.kind==='receivable'?'Conta a receber':'Conta a pagar'],
       ['Operação',preview.operation==='settle'?'Baixa':preview.operation==='update'?'Edição':'Criação'],
       ['Vencimento',p.vencimento||'—'],
       ['Valor',p.valor!=null?Number(p.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'],
-      ['Contato',p.contato?.id||'—'],
-      ['Conta financeira',p.portador?.id||'—'],
-      ['Categoria',p.categoria?.id||'—'],
+      ['Contato',contactLabel],
+      ['Forma de pagamento',p.formaPagamento?.id?financeCatalogDescription('payment',p.formaPagamento.id):'—'],
+      ['Conta financeira',p.portador?.id?financeCatalogDescription('account',p.portador.id):'—'],
+      ['Categoria',p.categoria?.id?financeCatalogDescription('category',p.categoria.id):'—'],
       ['Data da baixa',p.data||'—']
     ];
     return '<div class="rule-notice warn"><strong>Confirmação obrigatória</strong><div>Confira os dados. Esta ação será enviada ao Bling somente após você digitar CONFIRMAR.</div></div>'+
@@ -1072,7 +1163,7 @@
       button.disabled=true;button.textContent='Enviando…';
       try{
         await financeApi(executeOperation,{...context,confirmation:'CONFIRMAR',idempotency_key:idempotencyKey});
-        $('#editor').close();toast('Operação registrada no Bling');await renderFinance();
+        $('#editor').close();toast('Operação registrada no Bling');state.finance=null;await renderFinance();
       }catch(e){
         button.disabled=false;button.textContent='Confirmar no Bling';
         const msg=String(e?.message||'Falha ao registrar');
@@ -1083,16 +1174,18 @@
   async function openFinanceSettlement(kind,id){
     financeOpenDialog('Baixa financeira','<div class="loading">Consultando o lançamento…</div>');
     try{
+      const catalogs=await loadFinanceCatalogs();
       const detail=await financeApi('detail',{kind,id});
       const a=financeExtractDetail(kind,detail.account);
       const today=cuiabaDayKey(new Date());
+      const categories=financeCategoryRows(kind,catalogs);
       financeOpenDialog(kind==='receivable'?'Registrar recebimento':'Registrar pagamento',
         '<div class="rule-notice warn"><strong>Baixa manual</strong><div>Isso registra a baixa no Bling. Não movimenta banco, PIX ou cartão.</div></div>'+
         '<form id="financeSettleForm" class="form-grid">'+
           '<label><span>Data da baixa *</span><input name="data" type="date" required value="'+esc(today)+'"></label>'+
           '<label><span>Valor recebido/pago</span><input name="valorRecebido" inputmode="decimal" value="'+esc(financeMoneyInput(detail.account?.valor))+'"></label>'+
-          '<label><span>ID conta financeira / portador</span><input name="portador_id" inputmode="numeric" value="'+esc(financeFieldValue(a.portador_id))+'"></label>'+
-          '<label><span>ID categoria</span><input name="categoria_id" inputmode="numeric" value="'+esc(financeFieldValue(a.categoria_id))+'"></label>'+
+          '<label><span>Conta financeira / portador *</span><select name="portador_id" required>'+financeSelectOptions(catalogs.financial_accounts,a.portador_id,'Selecione')+'</select></label>'+
+          '<label><span>Categoria *</span><select name="categoria_id" required>'+financeSelectOptions(categories,a.categoria_id,'Selecione')+'</select></label>'+
           '<label><span>Juros</span><input name="juros" inputmode="decimal"></label>'+
           '<label><span>Desconto</span><input name="desconto" inputmode="decimal"></label>'+
           '<label><span>Acréscimo</span><input name="acrescimo" inputmode="decimal"></label>'+
@@ -1106,8 +1199,10 @@
         const form=$('#financeSettleForm');
         const get=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
         const decimal=name=>{const v=get(name).replace(/\./g,'').replace(',','.');const n=Number(v);return v!==''&&Number.isFinite(n)&&n>=0?n:undefined};
+        const portadorId=Number(get('portador_id'))||0,categoriaId=Number(get('categoria_id'))||0;
+        if(!portadorId||!categoriaId){toast('Selecione conta financeira e categoria');return}
         const payload={
-          data:get('data'),usarDataVencimento:false,portador_id:Number(get('portador_id'))||undefined,categoria_id:Number(get('categoria_id'))||undefined,
+          data:get('data'),usarDataVencimento:false,portador_id:portadorId,categoria_id:categoriaId,
           historico:get('historico'),valorRecebido:decimal('valorRecebido'),juros:decimal('juros'),desconto:decimal('desconto'),acrescimo:decimal('acrescimo'),tarifa:decimal('tarifa')
         };
         Object.keys(payload).forEach(k=>payload[k]===undefined&&delete payload[k]);
