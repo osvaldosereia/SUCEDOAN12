@@ -1549,7 +1549,7 @@ async function consumeOrderStock(payload:any) {
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_dispatch_gate","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -2337,6 +2337,28 @@ async function updateOrder(payload:any) {
     const blockers=orderOperationalDataBlockers(candidateDelivery,candidatePayment);
     if(blockers.length){
       return {error:"order_operational_data_incomplete",status:409,blockers,current_status:currentOrder.status,requested_status:requestedStatus};
+    }
+  }
+  if(requestedStatus==="out_for_delivery"&&currentOrder.status==="ready"){
+    const remote=await blingHubControl("fiscal_dispatch_gate",{source_order_id:id});
+    if((remote as any).error){
+      return {
+        error:"fiscal_dispatch_gate_unavailable",
+        status:Number((remote as any).status||503),
+        detail:(remote as any).detail||null,
+        current_status:currentOrder.status,
+        requested_status:requestedStatus
+      };
+    }
+    const gate=(remote as any).data||{};
+    if(gate.allowed!==true){
+      return {
+        error:"fiscal_dispatch_not_authorized",
+        status:409,
+        fiscal_dispatch_gate:gate,
+        current_status:currentOrder.status,
+        requested_status:requestedStatus
+      };
     }
   }
   let confirmationReservationCreated=false;
