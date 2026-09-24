@@ -10,6 +10,7 @@ on:
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
       - 'scripts/test-vitrine-customer-history-v1.mjs'
       - 'scripts/test-vitrine-bling-hub-v2.mjs'
+      - 'scripts/test-vitrine-bling-finance-readonly-v1.mjs'
       - 'scripts/test-vitrine-admin-operational-ux-v1.mjs'
       - 'scripts/test-vitrine-admin-order-transitions-v1.mjs'
       - 'scripts/test-vitrine-admin-expedition-v1.mjs'
@@ -98,6 +99,7 @@ on:
       - 'scripts/test-vitrine-sales-rules-v1.mjs'
       - 'scripts/test-vitrine-customer-history-v1.mjs'
       - 'scripts/test-vitrine-bling-hub-v2.mjs'
+      - 'scripts/test-vitrine-bling-finance-readonly-v1.mjs'
       - 'scripts/test-vitrine-admin-operational-ux-v1.mjs'
       - 'scripts/test-vitrine-admin-order-transitions-v1.mjs'
       - 'scripts/test-vitrine-admin-expedition-v1.mjs'
@@ -199,6 +201,7 @@ jobs:
           node scripts/test-vitrine-sales-rules-v1.mjs
           node scripts/test-vitrine-customer-history-v1.mjs
           node scripts/test-vitrine-bling-hub-v2.mjs
+          node scripts/test-vitrine-bling-finance-readonly-v1.mjs
           node scripts/test-vitrine-admin-operational-ux-v1.mjs
           node scripts/test-vitrine-admin-order-transitions-v1.mjs
           node scripts/test-vitrine-admin-expedition-v1.mjs
