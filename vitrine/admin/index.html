@@ -341,6 +341,7 @@
     if(!String(a.street||'').trim()||!String(a.number||'').trim()||!String(a.city||'').trim()||!String(a.state||'').trim())reasons.push('Endereço incompleto');
     const payment=o?.payment_method_snapshot?.label||o?.payment_method_snapshot?.method||'';
     if(!String(payment).trim())reasons.push('Pagamento não informado');
+    if(o?.stock_readiness?.ok===false)reasons.push('Estoque insuficiente');
     return reasons;
   }
   function isBacklogOrder(o){
@@ -355,7 +356,8 @@
       address:'Endereço incompleto',
       customer:'Cliente não identificado',
       payment:'Pagamento não informado',
-      history:'Histórico pendente do cliente'
+      history:'Histórico pendente do cliente',
+      stock:'Estoque insuficiente'
     };
     return reasons.includes(labels[key]||'');
   }
@@ -432,7 +434,8 @@
       ['address','Endereço'],
       ['customer','Cliente'],
       ['payment','Pagamento'],
-      ['history','Histórico']
+      ['history','Histórico'],
+      ['stock','Estoque']
     ].map(([key,label])=>[key,label,orderIssueCount(key)]).filter(([, ,count])=>count>0);
     if(!issues.length)return '';
     return '<div class="order-filters" style="margin:-2px 0 14px"><span class="filter-count">Pendências:</span>'+
@@ -1696,7 +1699,7 @@
         issueHost.style.display='none';issueHost.innerHTML='';
       }else{
         issueHost.style.display='flex';
-        const issues=[['all','Todas'],['address','Endereço'],['customer','Cliente'],['payment','Pagamento'],['history','Histórico']];
+        const issues=[['all','Todas'],['address','Endereço'],['customer','Cliente'],['payment','Pagamento'],['history','Histórico'],['stock','Estoque']];
         issueHost.innerHTML=issues.map(([key,label])=>'<button class="filter-chip '+(state.orderIssueFilter===key?'active':'')+'" type="button" data-order-issue="'+key+'">'+esc(label)+' · '+(key==='all'?state.orders.filter(o=>orderProblemReasons(o).length>0).length:orderIssueCount(key))+'</button>').join('');
         issueHost.querySelectorAll('[data-order-issue]').forEach(b=>b.onclick=()=>{state.orderIssueFilter=b.dataset.orderIssue;paintOrderFilters();paintOrderRows()});
       }
@@ -1779,6 +1782,7 @@
     if(problems.includes('Cliente não identificado'))return ['customer','Vincular cliente'];
     if(problems.includes('Pagamento não informado'))return ['payment','Corrigir pagamento'];
     if(problems.includes('Histórico pendente do cliente'))return ['history','Revisar histórico'];
+    if(problems.includes('Estoque insuficiente'))return ['stock','Revisar estoque'];
     return null;
   }
   function orderRow(o){
@@ -1818,6 +1822,8 @@
       target=$('#orderPayment');
     }else if(issue==='history'){
       target=$('#retryHistorySync');
+    }else if(issue==='stock'){
+      target=$('#orderStockAlert');
     }
     if(target){
       target.scrollIntoView({behavior:'smooth',block:'center'});
@@ -1875,7 +1881,7 @@
     const suggestedCustomer=state.orderCustomerSuggestion?state.customers.find(x=>x.id===state.orderCustomerSuggestion):null;
     const customerSuggestion=suggestedCustomer?'<div class="sync-alert" style="border-color:#c7dccd;background:#f7fbf8"><div><strong style="color:#176b43">Cadastro com o mesmo telefone encontrado</strong><small>'+esc(suggestedCustomer.display_name||'Cliente')+(suggestedCustomer.address?.street?' · '+esc([suggestedCustomer.address.street,suggestedCustomer.address.number,suggestedCustomer.address.district].filter(Boolean).join(', ')):' · sem endereço completo no cadastro')+'</small></div><button class="secondary" type="button" id="useSuggestedCustomer">Usar cadastro</button></div>':'';
     $('#editorTitle').textContent='Pedido #'+shortOrder(o.order_number);
-    $('#editorBody').innerHTML=syncAlert+cancellationAlert+deliveryFailureAlert+customerSuggestion+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
+    $('#editorBody').innerHTML=syncAlert+cancellationAlert+deliveryFailureAlert+customerSuggestion+orderStockAlertHtml(d.stock_readiness)+blingPreflightAlertHtml(state.currentOrderBlingPreview)+
       '<div class="order-summary"><div class="summary-box"><small>Total</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Data</small><strong>'+esc(dateTime(o.created_at))+'</strong></div><div class="summary-box"><small>Itens</small><strong>'+esc(String(d.items?.length||0))+'</strong></div></div>'+
       '<div class="form-grid">'+
         '<div class="span-2 order-stage"><span>Situação atual</span>'+statusPill(o.status)+'<b>Próxima ação: '+esc(orderNextAction(o))+'</b></div>'+
@@ -1950,6 +1956,7 @@
       }
     }
     if($('#retryHistorySync'))$('#retryHistorySync').onclick=retryHistorySync;
+    if($('#openBalanceFromOrder'))$('#openBalanceFromOrder').onclick=()=>{$('#editor').close();setTab('balance');toast('Leia o EAN do produto para ajustar o estoque')};
   }
 
   function blingPreflightOperationalBlockers(p){
@@ -2054,6 +2061,15 @@
       toast(errorMessage(e.message));
       if(btn){btn.disabled=false;btn.textContent='Confirmar '+amount+' recebido · '+payment}
     }
+  }
+
+  function orderStockAlertHtml(readiness){
+    if(!readiness||readiness.ok!==false)return '';
+    const rows=Array.isArray(readiness.shortages)?readiness.shortages:[];
+    const detail=rows.length
+      ? rows.slice(0,4).map(x=>esc(x.name||'Produto')+' · precisa '+esc(fmtQty(x.requested||0))+' · disponível '+esc(fmtQty(x.available||0))).join('<br>')
+      : 'Não há estoque disponível suficiente para este pedido.';
+    return '<div class="sync-alert" id="orderStockAlert"><div><strong style="color:#b3261e">Estoque insuficiente</strong><small>'+detail+(Number(readiness.shortage_count||0)>4?'<br>+'+(Number(readiness.shortage_count)-4)+' item(ns)':'')+'</small></div><button class="secondary" id="openBalanceFromOrder" type="button">Abrir Balanço</button></div>';
   }
 
   function orderBlingLinkHtml(link){
@@ -2571,7 +2587,7 @@
   }
   function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
   function errorMessage(code){
-    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',gondola_not_found:'Gôndola não encontrada.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.'};
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',gondola_not_found:'Gôndola não encontrada.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.'};
     return map[code]||'Não consegui salvar agora.';
   }
 
