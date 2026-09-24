@@ -17,7 +17,7 @@ assert.match(hub,/async function blingHubFindNfeByExternalKey/);
 assert.match(hub,/numeroLoja:externalKey/);
 assert.match(hub,/async function blingHubVitrineDispatchFiscalPreview/);
 assert.match(hub,/async function blingHubVitrineDispatchFiscalCanary/);
-assert.match(hub,/fiscal_execution_mode_not_canary/);
+assert.match(hub,/fiscal_dispatch_canary_disabled/);
 assert.match(hub,/fiscal_canary_order_not_selected/);
 assert.match(hub,/fiscal_generation_gate_closed/);
 assert.match(hub,/fiscal_generation_already_attempted/);
