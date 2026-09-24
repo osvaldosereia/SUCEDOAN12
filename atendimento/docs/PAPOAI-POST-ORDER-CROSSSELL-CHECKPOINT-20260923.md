@@ -113,6 +113,14 @@ Teste real em subtransação:
 - nova aceitação da posição 2 foi recusada com `one_or_more_items_unavailable`;
 - rollback restaurou integralmente o pedido.
 
+### Gate de entrega com rollback
+- `delivery_contract_ready=false` + modo `test`: marcar como enviado foi recusado com `delivery_contract_not_ready`;
+- com o mesmo gate desligado, aceitar itens também foi recusado;
+- `delivery_contract_ready=true` + modo `test`: marcação e aceitação de `2 e 7` funcionaram;
+- rollback restaurou config, pedido, sessão e reservas;
+- estado final voltou a `mode=shadow` e `delivery_contract_ready=false`;
+- 0 item real de cross-sell persistido.
+
 ## Funções principais
 
 Storefront:
@@ -159,6 +167,10 @@ Somente leitura:
 
 Indicador:
 - Entrega PapoAI: PENDENTE / PRONTA.
+
+## Limite confirmado da integração PapoAI
+
+Em 23/09/2026 foi feita nova busca pública por documentação oficial/API do PapoAI. Não foi encontrada API administrativa pública documentada que permita criar/mapear campo personalizado ou editar o agente remotamente. Por isso o sistema não usa endpoint privado ou inferido.
 
 ## Único gate externo restante
 
