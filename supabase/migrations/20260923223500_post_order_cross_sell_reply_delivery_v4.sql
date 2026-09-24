@@ -89,7 +89,10 @@ begin
     and i.offered_price_cents>0
     and (
       i.expiration_date_snapshot is null
-      or p.expiration_date is not distinct from i.expiration_date_snapshot
+      or (
+        p.expiration_date is not distinct from i.expiration_date_snapshot
+        and p.expiration_date >= (timezone('America/Cuiaba',now()))::date
+      )
     );
 
   if v_items_count<>array_length(v_positions,1) then
@@ -185,7 +188,7 @@ begin
   );
 end;
 $function$
-
+;
 
 CREATE OR REPLACE FUNCTION public.cancel_post_order_cross_sell_for_separation_v1(p_order_id uuid)
  RETURNS jsonb
@@ -227,7 +230,7 @@ begin
   return jsonb_build_object('ok',true,'cancelled_sessions',v_cancelled);
 end;
 $function$
-
+;
 
 CREATE OR REPLACE FUNCTION public.decline_post_order_cross_sell_v1(p_session_id uuid)
  RETURNS jsonb
@@ -257,7 +260,46 @@ begin
   return jsonb_build_object('ok',true,'status','declined');
 end;
 $function$
+;
 
+CREATE OR REPLACE FUNCTION public.expire_post_order_cross_sell_sessions_v1(p_organization_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_count integer := 0;
+begin
+  with expired as (
+    update public.post_order_cross_sell_sessions s
+       set status='expired',
+           completed_at=coalesce(completed_at,now()),
+           metadata=coalesce(metadata,'{}'::jsonb)||jsonb_build_object(
+             'expired_reason','response_window_elapsed',
+             'expired_at',now()
+           ),
+           updated_at=now()
+     where s.status in ('sent','sent_test')
+       and s.expires_at is not null
+       and s.expires_at<=now()
+       and (p_organization_id is null or s.organization_id=p_organization_id)
+     returning s.organization_id,s.id,s.order_id
+  ),
+  events as (
+    insert into public.post_order_cross_sell_events(
+      organization_id,session_id,order_id,event_type,payload
+    )
+    select organization_id,id,order_id,'session_expired',
+           jsonb_build_object('reason','response_window_elapsed')
+    from expired
+    returning 1
+  )
+  select count(*) into v_count from events;
+
+  return jsonb_build_object('ok',true,'expired_sessions',v_count);
+end;
+$function$
+;
 
 CREATE OR REPLACE FUNCTION public.mark_post_order_cross_sell_sent_v1(p_session_id uuid, p_delivery_ref text DEFAULT NULL::text)
  RETURNS jsonb
@@ -306,7 +348,7 @@ begin
   return jsonb_build_object('ok',true,'session_id',p_session_id,'mode',v_cfg.mode);
 end;
 $function$
-
+;
 
 CREATE OR REPLACE FUNCTION public.parse_post_order_cross_sell_reply_v1(p_text text, p_max_position integer DEFAULT 10)
  RETURNS jsonb
@@ -350,15 +392,17 @@ begin
   return jsonb_build_object('intent','unknown','positions','[]'::jsonb,'normalized',trim(v_normalized));
 end;
 $function$
-
+;
 
 revoke all on function public.parse_post_order_cross_sell_reply_v1(text,integer) from public,anon,authenticated;
 revoke all on function public.mark_post_order_cross_sell_sent_v1(uuid,text) from public,anon,authenticated;
 revoke all on function public.decline_post_order_cross_sell_v1(uuid) from public,anon,authenticated;
 revoke all on function public.accept_post_order_cross_sell_v1(uuid,integer[]) from public,anon,authenticated;
 revoke all on function public.cancel_post_order_cross_sell_for_separation_v1(uuid) from public,anon,authenticated;
+revoke all on function public.expire_post_order_cross_sell_sessions_v1(uuid) from public,anon,authenticated;
 grant execute on function public.parse_post_order_cross_sell_reply_v1(text,integer) to service_role;
 grant execute on function public.mark_post_order_cross_sell_sent_v1(uuid,text) to service_role;
 grant execute on function public.decline_post_order_cross_sell_v1(uuid) to service_role;
 grant execute on function public.accept_post_order_cross_sell_v1(uuid,integer[]) to service_role;
 grant execute on function public.cancel_post_order_cross_sell_for_separation_v1(uuid) to service_role;
+grant execute on function public.expire_post_order_cross_sell_sessions_v1(uuid) to service_role;
