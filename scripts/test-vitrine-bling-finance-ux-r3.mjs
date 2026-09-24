@@ -34,6 +34,7 @@ assert.doesNotMatch(html,/ID do contato no Bling/);
 assert.doesNotMatch(html,/ID forma de pagamento/);
 assert.doesNotMatch(html,/ID conta financeira \/ portador/);
 assert.doesNotMatch(html,/ID categoria/);
+assert.match(html,/if\(!\$\('#editor'\)\.open\)\$\('#editor'\)\.showModal\(\)/);
 
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 assert.ok(scripts.length);

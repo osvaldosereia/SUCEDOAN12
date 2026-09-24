@@ -1036,7 +1036,7 @@
     $('#editorBody').innerHTML=body;
     $('#editorActions').innerHTML=actions||'<button class="secondary" id="financeClose" type="button">Fechar</button>';
     if($('#financeClose'))$('#financeClose').onclick=()=>$('#editor').close();
-    $('#editor').showModal();
+    if(!$('#editor').open)$('#editor').showModal();
   }
   function financeContactLabel(c){
     const parts=[c?.name||'',c?.trade_name||'',c?.document||''].filter(Boolean);
