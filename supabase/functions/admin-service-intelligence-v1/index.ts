@@ -2824,6 +2824,108 @@ async function blingHubFinanceCapabilities(sb:any,token:string){
   const actionsEnabled=Object.values(result).every((x:any)=>x.ok===true);
   return {ok:true,actions_enabled:actionsEnabled,readonly:!actionsEnabled,probes:result,external_write:false};
 }
+function blingHubFinanceBoletoStatus(v:any){
+  const n=Number(v||0);
+  return ({1:"open",2:"received",3:"partial",4:"returned",5:"partial_returned",6:"cancelled"} as any)[n]||"unknown";
+}
+async function blingHubFinanceBoletoPolicy(sb:any,token:string,kind:string,payload:any){
+  const formId=Number(payload?.formaPagamento?.id||0);
+  if(kind!=="receivable"||formId<=0){
+    return {ok:true,is_boleto:false,blocking:[],warnings:[],external_write:false};
+  }
+  const form=await blingHubGet(sb,token,"/formas-pagamentos/"+encodeURIComponent(String(formId)));
+  if(!form.ok){
+    return {ok:false,status:form.status||502,error:blingHubFinanceError(form.status),provider_details:blingHubProviderDetails(form.data),external_write:false};
+  }
+  const method=blingHubFinanceDetailData(form.data);
+  const isBoleto=Number(method?.tipoPagamento||0)===15;
+  if(!isBoleto){
+    return {
+      ok:true,is_boleto:false,payment_method_id:formId,
+      payment_method_description:clean(method?.descricao,180)||null,
+      blocking:[],warnings:[],external_write:false
+    };
+  }
+
+  const blocking:string[]=[];
+  const warnings:string[]=[];
+  if(!clean(payload?.historico,500))blocking.push("boleto_history_required");
+  if(!(Number(payload?.portador?.id)>0))blocking.push("boleto_financial_account_required");
+  const due=blingHubFinanceDate(payload?.vencimento);
+  const today=blingHubFinanceCuiabaDay(0);
+  if(due&&due<today)blocking.push("boleto_due_date_in_past");
+
+  let contactSummary:any=null;
+  const contactId=Number(payload?.contato?.id||0);
+  if(contactId>0){
+    const contact=await blingHubGet(sb,token,"/contatos/"+encodeURIComponent(String(contactId)));
+    if(!contact.ok){
+      return {ok:false,status:contact.status||502,error:blingHubFinanceError(contact.status),provider_details:blingHubProviderDetails(contact.data),external_write:false};
+    }
+    const c=blingHubFinanceDetailData(contact.data);
+    const email=clean(c?.email,220);
+    const billing=c?.endereco?.cobranca||{};
+    const general=c?.endereco?.geral||{};
+    const addr=(clean(billing?.endereco,180)||clean(billing?.cep,20))?billing:general;
+    const addressFields={
+      street:clean(addr?.endereco,180),
+      number:clean(addr?.numero,40),
+      district:clean(addr?.bairro,120),
+      city:clean(addr?.municipio,120),
+      state:clean(addr?.uf,8),
+      zip:clean(addr?.cep,20)
+    };
+    const missingAddress=Object.entries(addressFields).filter(([,v])=>!v).map(([k])=>k);
+    if(!email)blocking.push("boleto_contact_email_required");
+    if(missingAddress.length)blocking.push("boleto_contact_address_incomplete");
+    contactSummary={
+      id:contactId,
+      name:clean(c?.nome,180)||null,
+      has_email:Boolean(email),
+      address_complete:missingAddress.length===0,
+      missing_address_fields:missingAddress
+    };
+  }else blocking.push("boleto_contact_required");
+
+  let financialAccount:any=null;
+  const financialId=Number(payload?.portador?.id||0);
+  if(financialId>0){
+    const account=await blingHubGet(sb,token,"/contas-contabeis/"+encodeURIComponent(String(financialId)));
+    if(!account.ok){
+      return {ok:false,status:account.status||502,error:blingHubFinanceError(account.status),provider_details:blingHubProviderDetails(account.data),external_write:false};
+    }
+    const a=blingHubFinanceDetailData(account.data);
+    const type=clean(a?.tipo,80).toLowerCase();
+    const alias=clean(a?.aliasIntegracao,120)||null;
+    const knownEligible=type==="banco"||type==="integracao-pagamento";
+    const knownIneligible=type==="caixa"||type==="conta-bancaria";
+    if(knownIneligible)blocking.push("boleto_financial_account_not_eligible");
+    if(!type)warnings.push("boleto_financial_account_type_unavailable");
+    financialAccount={
+      id:financialId,
+      description:clean(a?.descricao,180)||null,
+      type:type||null,
+      integration_alias:alias,
+      boleto_eligible:knownEligible?true:(knownIneligible?false:null)
+    };
+  }
+
+  warnings.push("boleto_issuance_requires_bling_ui");
+  return {
+    ok:blocking.length===0,
+    status:blocking.length?400:200,
+    is_boleto:true,
+    payment_method_id:formId,
+    payment_method_description:clean(method?.descricao,180)||"Boleto",
+    blocking:[...new Set(blocking)],
+    warnings:[...new Set(warnings)],
+    contact:contactSummary,
+    financial_account:financialAccount,
+    issuance_mode:"manual_in_bling",
+    automatic_issuance:false,
+    external_write:false
+  };
+}
 async function blingHubFinanceReadPages(sb:any,token:string,pathBase:string,maxPages=3){
   const rows:any[]=[];let status=200;
   for(let page=1;page<=maxPages;page++){
@@ -2938,25 +3040,51 @@ async function blingHubFinanceAction(sb:any,body:any,actorUserId:string|null=nul
     }
     const token=await blingHubOauth(sb);
     const r=await blingHubGet(sb,token,"/contas/receber/boletos?"+qs.toString());
-    if(r.status===404)return {ok:true,boletos:[],external_write:false};
+    if(r.status===404)return {ok:true,boletos:[],summary:{count:0,total_cents:0},external_write:false};
     if(!r.ok)return {ok:false,status:r.status||502,error:blingHubFinanceError(r.status),provider_details:blingHubProviderDetails(r.data),external_write:false};
-    return {ok:true,boletos:Array.isArray(r.data?.data)?r.data.data:(r.data?.data??r.data??[]),external_write:false};
+    const rootData=r.data?.data??r.data??{};
+    const rawRows=Array.isArray(rootData)?rootData:(Array.isArray(rootData?.contas)?rootData.contas:[]);
+    const boletos=rawRows.map((b:any)=>({
+      id:Number(b?.id||0)||null,
+      external_number:clean(b?.numeroExterno,160)||null,
+      due_date:clean(b?.vencimento,20)||null,
+      amount_cents:blingHubFinanceCents(b?.valor),
+      status:Number(b?.situacao||0)||null,
+      status_label:blingHubFinanceBoletoStatus(b?.situacao)
+    })).filter((b:any)=>b.id);
+    return {
+      ok:true,boletos,
+      summary:{
+        count:boletos.length,
+        total_cents:blingHubFinanceCents(rootData?.valorTotal??boletos.reduce((acc:number,b:any)=>acc+Number(b.amount_cents||0),0)/100),
+        sale_number:clean(rootData?.venda?.numero,120)||null,
+        invoice_number:clean(rootData?.notaFiscal?.numero,120)||null
+      },
+      external_write:false
+    };
   }
 
   if(operation==="create_preview"||operation==="update_preview"){
     if(operation==="update_preview"&&id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
     const payload=blingHubFinanceSavePayload(kind,body?.payload);
     const missing=blingHubFinanceSaveMissing(payload);
-    let current:any=null;
-    if(operation==="update_preview"&&missing.length===0){
+    let current:any=null,boletoPolicy:any={ok:true,is_boleto:false,blocking:[],warnings:[],external_write:false};
+    if(missing.length===0){
       const token=await blingHubOauth(sb);
-      const detail=await blingHubGet(sb,token,root+"/"+encodeURIComponent(String(id)));
-      if(!detail.ok)return {ok:false,status:detail.status||502,error:blingHubFinanceError(detail.status),provider_details:blingHubProviderDetails(detail.data),external_write:false};
-      current=blingHubFinanceDetailData(detail.data);
+      boletoPolicy=await blingHubFinanceBoletoPolicy(sb,token,kind,payload);
+      if(!boletoPolicy.ok&&Number(boletoPolicy.status||0)>=500)return boletoPolicy;
+      if(operation==="update_preview"){
+        const detail=await blingHubGet(sb,token,root+"/"+encodeURIComponent(String(id)));
+        if(!detail.ok)return {ok:false,status:detail.status||502,error:blingHubFinanceError(detail.status),provider_details:blingHubProviderDetails(detail.data),external_write:false};
+        current=blingHubFinanceDetailData(detail.data);
+      }
     }
+    const boletoBlocking=Array.isArray(boletoPolicy?.blocking)?boletoPolicy.blocking:[];
+    const allMissing=[...missing,...boletoBlocking];
     return {
-      ok:missing.length===0,status:missing.length?400:200,preview:true,external_write:false,kind,
-      operation:operation==="create_preview"?"create":"update",id:id||null,current,payload,missing,
+      ok:allMissing.length===0,status:allMissing.length?400:200,preview:true,external_write:false,kind,
+      operation:operation==="create_preview"?"create":"update",id:id||null,current,payload,missing:allMissing,
+      boleto_policy:boletoPolicy,
       confirmation_required:true,confirmation_phrase:"CONFIRMAR"
     };
   }
@@ -3007,6 +3135,13 @@ async function blingHubFinanceAction(sb:any,body:any,actorUserId:string|null=nul
   }
 
   const token=await blingHubOauth(sb);
+  if(operation==="create_execute"||operation==="update_execute"){
+    const boletoPolicy=await blingHubFinanceBoletoPolicy(sb,token,kind,payload);
+    if(!boletoPolicy.ok){
+      if(Number(boletoPolicy.status||0)>=500)return boletoPolicy;
+      return {ok:false,status:400,error:"boleto_validation_failed",missing:boletoPolicy.blocking||[],boleto_policy:boletoPolicy,external_write:false};
+    }
+  }
   if(operation==="settle_execute"){
     if(id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
     const detail=await blingHubGet(sb,token,root+"/"+encodeURIComponent(String(id)));
