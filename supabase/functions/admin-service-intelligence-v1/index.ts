@@ -3695,6 +3695,124 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any){
     integrity_refresh_ok:!integrityRefresh.error
   };
 }
+async function blingHubProductFiscalCestBatch(sb:any,body:any){
+  const confirmation=clean(body?.confirmation,200);
+  if(confirmation!=="APLICAR_LOTE_CEST_VALIDADO"){
+    return {
+      ok:false,status:409,error:"confirmation_required",
+      required_confirmation:"APLICAR_LOTE_CEST_VALIDADO",
+      external_write:false
+    };
+  }
+
+  const limit=Math.max(1,Math.min(5,Number(body?.limit||5)||5));
+  const requireSupplierXml=body?.require_supplier_xml!==false;
+
+  let scanQuery=sb.from("product_fiscal_catalog_scan_v1")
+    .select("product_id,supplier_xml_cest_count")
+    .eq("is_active",true);
+  if(requireSupplierXml)scanQuery=scanQuery.gt("supplier_xml_cest_count",0);
+  const scan=await scanQuery
+    .order("supplier_xml_cest_count",{ascending:false})
+    .order("product_id",{ascending:true})
+    .limit(500);
+  if(scan.error)throw scan.error;
+
+  const candidateIds=(scan.data||[]).map((x:any)=>uuid(x.product_id)).filter(Boolean);
+  if(!candidateIds.length){
+    return {
+      ok:true,selected:0,processed:0,mutated:0,aligned:0,
+      stopped_on_error:false,results:[],external_write:false
+    };
+  }
+
+  const diff=await sb.from("product_fiscal_bling_diff_v1")
+    .select("product_id,name,canary_eligible,diff_status")
+    .in("product_id",candidateIds)
+    .eq("canary_eligible",true)
+    .eq("diff_status","cest_missing")
+    .order("product_id",{ascending:true})
+    .limit(limit);
+  if(diff.error)throw diff.error;
+
+  const rows=diff.data||[];
+  const results:any[]=[];
+  let mutated=0,aligned=0;
+  let stoppedOnError=false;
+
+  for(const row of rows){
+    const productId=uuid(row?.product_id);
+    if(!productId)continue;
+    try{
+      const result=await blingHubProductFiscalCestCanary(sb,{
+        product_id:productId,
+        confirmation:"APLICAR_CEST_CANARIO:"+productId
+      });
+      results.push(result);
+      mutated+=Number(result?.bling_mutations||0);
+      if(result?.already_aligned===true)aligned++;
+      if(result?.ok!==true){
+        stoppedOnError=true;
+        break;
+      }
+    }catch(e){
+      results.push({
+        ok:false,
+        product_id:productId,
+        error:"batch_item_exception",
+        detail:clean((e as Error)?.message||e,500),
+        external_write:"unknown_possible",
+        requires_verification:true
+      });
+      stoppedOnError=true;
+      break;
+    }
+  }
+
+  const qualityRefresh=await sb.rpc("refresh_product_fiscal_evidence_quality_v1");
+  const integrityRefresh=await sb.rpc("refresh_product_fiscal_rule_integrity_v1");
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"product_fiscal_cest_batch",
+    severity:stoppedOnError?"error":"info",
+    domain:"product",
+    source_system:"canonical",
+    details:{
+      selected:rows.length,
+      processed:results.length,
+      mutated,
+      aligned,
+      stopped_on_error:stoppedOnError,
+      require_supplier_xml:requireSupplierXml,
+      product_ids:rows.map((x:any)=>x.product_id),
+      results:results.map((x:any)=>({
+        product_id:x?.product_id||null,
+        ok:x?.ok===true,
+        verified:x?.verified===true,
+        already_aligned:x?.already_aligned===true,
+        bling_mutations:Number(x?.bling_mutations||0),
+        error:x?.error||null
+      })),
+      quality_refresh_ok:!qualityRefresh.error,
+      integrity_refresh_ok:!integrityRefresh.error,
+      external_write:mutated>0
+    }
+  });
+
+  return {
+    ok:!stoppedOnError,
+    selected:rows.length,
+    processed:results.length,
+    mutated,
+    aligned,
+    stopped_on_error:stoppedOnError,
+    results,
+    require_supplier_xml:requireSupplierXml,
+    quality_refresh_ok:!qualityRefresh.error,
+    integrity_refresh_ok:!integrityRefresh.error,
+    external_write:mutated>0
+  };
+}
 async function blingHubLookupProductByExactGtin(sb:any,token:string,gtinRaw:any){
   const gtin=blingHubDigits(gtinRaw);
   if(!blingHubValidGtin(gtin))return {status:"review_required",reason:"invalid_gtin",bling_id:null,candidates:[]};
@@ -5460,6 +5578,20 @@ Deno.serve(async(req:Request)=>{
           return json({
             ok:false,
             error:"product_fiscal_cest_canary_exception",
+            detail:clean((e as Error)?.message||e,500),
+            external_write:"unknown_possible",
+            requires_verification:true
+          },502);
+        }
+      }
+      if(subaction==="product_fiscal_cest_batch"){
+        try{
+          const result=await blingHubProductFiscalCestBatch(sb,body);
+          return json(result,result.ok?200:409);
+        }catch(e){
+          return json({
+            ok:false,
+            error:"product_fiscal_cest_batch_exception",
             detail:clean((e as Error)?.message||e,500),
             external_write:"unknown_possible",
             requires_verification:true
