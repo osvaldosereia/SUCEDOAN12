@@ -3522,6 +3522,23 @@ async function blingHubLookupProductByExactGtin(sb:any,token:string,gtinRaw:any)
   if(ids.length>1)return {status:"ambiguous",reason:"multiple_exact_gtin",bling_id:null,candidates:ids};
   return {status:"not_found",reason:"gtin_not_found",bling_id:null,candidates:[]};
 }
+async function blingHubProductGtinLookupReadonly(sb:any,gtinRaw:any){
+  const gtin=blingHubDigits(gtinRaw);
+  if(!blingHubValidGtin(gtin)){
+    return {ok:false,status:400,error:"invalid_gtin",gtin,external_write:false};
+  }
+  const token=await blingHubOauth(sb);
+  const lookup=await blingHubLookupProductByExactGtin(sb,token,gtin);
+  return {
+    ok:true,
+    gtin,
+    lookup_status:lookup.status,
+    bling_id:lookup.bling_id||null,
+    candidate_ids:lookup.candidates||[],
+    reason:lookup.reason||null,
+    external_write:false
+  };
+}
 async function blingHubLookupProductByExactCode(sb:any,token:string,codeRaw:any){
   const code=clean(codeRaw,120);
   if(!code)return {status:"not_found",reason:"code_missing",bling_id:null,candidates:[]};
@@ -5256,6 +5273,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="reconcile_product_catalog_readonly"){
         const result=await blingHubReconcileProductCatalogReadonly(sb,body?.items);
         return json(result,200);
+      }
+      if(subaction==="product_gtin_lookup_readonly"){
+        const result=await blingHubProductGtinLookupReadonly(sb,body?.gtin);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="preview_product_sync"){
         const result=await blingHubPreviewProductSync(sb,body);
