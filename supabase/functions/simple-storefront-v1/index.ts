@@ -868,6 +868,8 @@ async function vitrineHistoryBridgeAuthorized(req:Request){
 }
 
 async function postOrderCrossSellReply(payload:any){
+  // cross_sell_reply_expire_cleanup
+  try{await db.rpc('expire_post_order_cross_sell_sessions_v1',{p_organization_id:ORG_ID})}catch{}
   const phone=normalizeWhatsappPhone(payload?.phone);
   const message=String(payload?.message||'').trim().slice(0,500);
   if(!phone||!message)return {handled:false,reason:'missing_phone_or_message'};
@@ -951,6 +953,8 @@ async function postOrderCrossSellReply(payload:any){
 }
 
 async function postOrderCrossSellContext(payload:any){
+  // cross_sell_context_expire_cleanup
+  try{await db.rpc('expire_post_order_cross_sell_sessions_v1',{p_organization_id:ORG_ID})}catch{}
   const suffix=String(payload?.order_suffix??'').replace(/\D+/g,'').slice(-12);
   const phone=normalizeWhatsappPhone(payload?.phone);
   if(!suffix)return {error:'order_suffix_required',status:400};
