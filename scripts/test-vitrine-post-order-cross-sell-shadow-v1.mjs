@@ -8,6 +8,7 @@ const admin=fs.readFileSync('vitrine/admin/index.html','utf8');
 const expiryMigration=fs.readFileSync('supabase/migrations/20260923222000_post_order_cross_sell_expiry_quotes_v3.sql','utf8');
 const replyMigration=fs.readFileSync('supabase/migrations/20260923223500_post_order_cross_sell_reply_delivery_v4.sql','utf8');
 const finalGuards=fs.readFileSync('supabase/migrations/20260923230500_post_order_cross_sell_final_guards_v6.sql','utf8');
+const deliveryGateMigration=fs.readFileSync('supabase/migrations/20260923232000_post_order_cross_sell_delivery_gate_db_guard_v7.sql','utf8');
 const hardeningMigration=fs.readFileSync('supabase/migrations/20260923225000_post_order_cross_sell_hardening_v5.sql','utf8');
 
 assert.match(migration,/post_order_cross_sell_sessions/);
@@ -43,6 +44,9 @@ assert.match(replyMigration,/delivery_contract_ready/);
 assert.match(finalGuards,/separation_started/);
 assert.match(finalGuards,/oic\.product_id=i\.product_id/);
 assert.match(finalGuards,/post_order_cross_sell_sessions_open_idx/);
+assert.match(deliveryGateMigration,/delivery_contract_not_ready/);
+assert.match(deliveryGateMigration,/mark_post_order_cross_sell_sent_v1/);
+assert.match(deliveryGateMigration,/accept_post_order_cross_sell_v1/);
 assert.match(adminApi,/cancel_post_order_cross_sell_for_separation_v1/);
 assert.match(storefront,/post_order_cross_sell_context/);
 assert.match(storefront,/post_order_cross_sell_reply/);
