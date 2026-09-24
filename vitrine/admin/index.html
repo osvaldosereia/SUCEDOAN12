@@ -1649,12 +1649,13 @@
 
   async function renderOrders(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Trabalhe pela próxima ação. O sistema cuida das integrações por trás.</p></div><button class="secondary" id="refreshOrders">Atualizar</button></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Trabalhe pela próxima ação. O sistema cuida das integrações por trás.</p></div><div class="dispatch-actions"><button class="secondary" id="confirmReadyOrders" type="button">Confirmar aptos</button><button class="secondary" id="refreshOrders">Atualizar</button></div></div>'+
       '<div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery)+'"><button class="secondary" id="clearOrderSearch" type="button">Limpar</button></div>'+
       '<div class="order-filters" id="orderFilters"></div>'+
       '<div class="order-filters" id="orderIssueFilters" style="display:none"></div>'+
       '<div class="panel"><div class="list-head orders-layout"><span>Pedido</span><span>Data</span><span>Cliente</span><span>Total</span><span>Pagamento</span><span>Próxima ação</span><span></span></div><div id="orderRows"><div class="loading">Carregando…</div></div></div>';
     $('#refreshOrders').onclick=loadOrders;
+    $('#confirmReadyOrders').onclick=confirmAllReadyOrders;
     $('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};
     $('#clearOrderSearch').onclick=()=>{state.orderQuery='';$('#orderSearch').value='';paintOrderRows()};
     await loadOrders();
@@ -1689,6 +1690,43 @@
     host.querySelectorAll('[data-order-issue-open]').forEach(b=>b.onclick=()=>openOrderForIssue(b.dataset.orderIssueOpen,b.dataset.orderIssueKind));
     host.querySelectorAll('[data-quick-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.quickConfirm,b));
   }
+  function confirmableNewOrders(){
+    return state.orders.filter(o=>o.status==='created'&&orderProblemReasons(o).length===0);
+  }
+  function paintConfirmableOrdersButton(){
+    const btn=$('#confirmReadyOrders');if(!btn)return;
+    const rows=confirmableNewOrders();
+    const total=rows.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
+    btn.disabled=rows.length===0;
+    btn.textContent=rows.length?'Confirmar aptos · '+rows.length:'Nenhum apto';
+    btn.title=rows.length?rows.length+' pedido(s) · '+money(total):'Nenhum pedido novo sem pendências';
+  }
+  async function confirmAllReadyOrders(){
+    const rows=confirmableNewOrders();
+    if(!rows.length){toast('Nenhum pedido novo está apto para confirmar');return}
+    const total=rows.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
+    if(!confirm('Confirmar '+rows.length+' pedido(s) apto(s)?\n\nTotal: '+money(total)+'\n\nEsta ação NÃO baixa estoque e NÃO envia pedido ao Bling.'))return;
+    const btn=$('#confirmReadyOrders');
+    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
+    let ok=0;const failed=[];
+    for(const o of rows){
+      try{
+        await api('order_update',{},{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({id:o.id,status:'confirmed'})
+        });
+        ok++;
+      }catch(e){
+        failed.push('#'+shortOrder(o.order_number));
+      }
+    }
+    try{
+      const data=await api('orders');state.orders=data.orders||[];
+      paintOrderFilters();paintOrderRows();paintConfirmableOrdersButton();
+    }catch{}
+    if(failed.length)toast(ok+' confirmado(s) · '+failed.length+' precisa(m) revisão');
+    else toast(ok+' pedido(s) confirmado(s)');
+  }
   async function quickConfirmOrder(id,btn){
     const o=state.orders.find(x=>x.id===id);
     if(!o||o.status!=='created'){toast('Este pedido não está mais aguardando confirmação');return}
@@ -1701,7 +1739,7 @@
         body:JSON.stringify({id,status:'confirmed'})
       });
       const data=await api('orders');state.orders=data.orders||[];
-      paintOrderFilters();paintOrderRows();
+      paintOrderFilters();paintOrderRows();paintConfirmableOrdersButton();
       toast('Pedido #'+shortOrder(o.order_number)+' confirmado');
     }catch(e){
       toast(errorMessage(e.message));
@@ -1712,7 +1750,7 @@
     const host=$('#orderRows');host.innerHTML='<div class="loading">Carregando…</div>';
     try{
       const data=await api('orders');state.orders=data.orders||[];
-      paintOrderFilters();paintOrderRows();
+      paintOrderFilters();paintOrderRows();paintConfirmableOrdersButton();
     }catch(e){host.innerHTML='<div class="empty">Erro ao carregar pedidos. <button class="text" id="retryOrders">Tentar novamente</button></div>';if($('#retryOrders'))$('#retryOrders').onclick=loadOrders}
   }
   function orderIssueShortcut(problems){
