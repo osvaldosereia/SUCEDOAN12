@@ -2525,6 +2525,149 @@ async function blingHubGet(sb:any,token:string,path:string){
   const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
   return {ok:r.ok,status:r.status,data};
 }
+
+function blingHubFinanceCuiabaDay(offsetDays=0){
+  const d=new Date(Date.now()+offsetDays*86400000);
+  const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d);
+  const map:any={};for(const p of parts)map[p.type]=p.value;
+  return map.year+"-"+map.month+"-"+map.day;
+}
+function blingHubFinanceCents(v:any){
+  const n=Number(v??0);
+  return Number.isFinite(n)?Math.round(n*100):0;
+}
+function blingHubFinanceStatusLabel(v:any){
+  const n=Number(v||0);
+  return ({1:"open",2:"paid",3:"partial",4:"returned",5:"cancelled",6:"partial_returned",7:"confirmed"} as any)[n]||"unknown";
+}
+function blingHubFinanceNormalize(kind:"receivable"|"payable",row:any){
+  const contact=row?.contato||{};
+  const origin=row?.origem||{};
+  return {
+    id:Number(row?.id||0)||null,
+    kind,
+    status:Number(row?.situacao||0)||null,
+    status_label:blingHubFinanceStatusLabel(row?.situacao),
+    due_date:clean(row?.vencimento,20)||null,
+    issued_at:clean(row?.dataEmissao,20)||null,
+    amount_cents:blingHubFinanceCents(row?.valor),
+    contact_id:Number(contact?.id||0)||null,
+    contact_name:clean(contact?.nome,180)||null,
+    document_number:clean(row?.numeroDocumento,120)||null,
+    payment_method_id:Number(row?.formaPagamento?.id||0)||null,
+    payment_method_code:Number(row?.formaPagamento?.codigoFiscal||0)||null,
+    financial_account_id:Number(row?.contaContabil?.id||row?.portador?.id||0)||null,
+    financial_account_name:clean(row?.contaContabil?.descricao,180)||null,
+    origin_id:Number(origin?.id||0)||null,
+    origin_type:clean(origin?.tipoOrigem,80)||null,
+    origin_number:clean(origin?.numero,120)||null,
+    boleto_url:kind==="receivable"?clean(row?.linkBoleto,1200)||null:null,
+    pix_url:kind==="receivable"?clean(row?.linkQRCodePix,1200)||null:null
+  };
+}
+async function blingHubFinancePaged(sb:any,token:string,pathBase:string,maxPages=2){
+  const rows:any[]=[];let truncated=false;let httpStatus=200;
+  for(let page=1;page<=maxPages;page++){
+    const sep=pathBase.includes("?")?"&":"?";
+    const r=await blingHubGet(sb,token,pathBase+sep+"pagina="+page+"&limite=100");
+    httpStatus=r.status;
+    if(!r.ok)return {ok:false,status:r.status,rows:[],truncated:false,error:"bling_finance_http_"+r.status};
+    const pageRows=Array.isArray(r.data?.data)?r.data.data:[];
+    rows.push(...pageRows);
+    if(pageRows.length<100)return {ok:true,status:r.status,rows,truncated:false};
+    if(page===maxPages)truncated=true;
+  }
+  return {ok:true,status:httpStatus,rows,truncated};
+}
+function blingHubFinanceBucket(rows:any[],today:string,day7:string,day30:string){
+  const sum=(xs:any[])=>xs.reduce((acc,x)=>acc+Number(x.amount_cents||0),0);
+  const overdue=rows.filter(x=>x.due_date&&x.due_date<today);
+  const todayRows=rows.filter(x=>x.due_date===today);
+  const next7=rows.filter(x=>x.due_date&&x.due_date>today&&x.due_date<=day7);
+  const next30=rows.filter(x=>x.due_date&&x.due_date>today&&x.due_date<=day30);
+  return {
+    total_cents:sum(rows),count:rows.length,
+    overdue_cents:sum(overdue),overdue_count:overdue.length,
+    today_cents:sum(todayRows),today_count:todayRows.length,
+    next_7_cents:sum(next7),next_7_count:next7.length,
+    next_30_cents:sum(next30),next_30_count:next30.length
+  };
+}
+async function blingHubFinanceOverview(sb:any){
+  const token=await blingHubOauth(sb);
+  const today=blingHubFinanceCuiabaDay(0),past=blingHubFinanceCuiabaDay(-365),future=blingHubFinanceCuiabaDay(90);
+  const day7=blingHubFinanceCuiabaDay(7),day30=blingHubFinanceCuiabaDay(30);
+
+  const receivePast=new URLSearchParams({tipoFiltroData:"V",dataInicial:past,dataFinal:today});
+  receivePast.append("situacoes[]","1");
+  const receiveFuture=new URLSearchParams({tipoFiltroData:"V",dataInicial:today,dataFinal:future});
+  receiveFuture.append("situacoes[]","1");
+  const payablePast=new URLSearchParams({dataVencimentoInicial:past,dataVencimentoFinal:today,situacao:"1"});
+  const payableFuture=new URLSearchParams({dataVencimentoInicial:today,dataVencimentoFinal:future,situacao:"1"});
+
+  const receiveA=await blingHubFinancePaged(sb,token,"/contas/receber?"+receivePast.toString());
+  if(!receiveA.ok)return {ok:false,status:receiveA.status,error:receiveA.status===403?"bling_finance_scope_missing":receiveA.error,readonly:true,external_write:false};
+  const receiveB=await blingHubFinancePaged(sb,token,"/contas/receber?"+receiveFuture.toString());
+  if(!receiveB.ok)return {ok:false,status:receiveB.status,error:receiveB.status===403?"bling_finance_scope_missing":receiveB.error,readonly:true,external_write:false};
+  const payableA=await blingHubFinancePaged(sb,token,"/contas/pagar?"+payablePast.toString());
+  if(!payableA.ok)return {ok:false,status:payableA.status,error:payableA.status===403?"bling_finance_scope_missing":payableA.error,readonly:true,external_write:false};
+  const payableB=await blingHubFinancePaged(sb,token,"/contas/pagar?"+payableFuture.toString());
+  if(!payableB.ok)return {ok:false,status:payableB.status,error:payableB.status===403?"bling_finance_scope_missing":payableB.error,readonly:true,external_write:false};
+
+  const financialAccounts=await blingHubGet(sb,token,"/contas-contabeis?pagina=1&limite=100&ocultarInvisiveis=true&ordenacao=descricao");
+  const accountsOk=financialAccounts.ok;
+  const accountRows=accountsOk&&Array.isArray(financialAccounts.data?.data)?financialAccounts.data.data:[];
+
+  const unique=(rows:any[])=>{
+    const seen=new Set<string>();const out:any[]=[];
+    for(const row of rows){
+      const key=String(row?.id||"");
+      if(!key||seen.has(key))continue;seen.add(key);out.push(row);
+    }
+    return out;
+  };
+  const receivables=unique([...receiveA.rows,...receiveB.rows]).map(x=>blingHubFinanceNormalize("receivable",x));
+  const payables=unique([...payableA.rows,...payableB.rows]).map(x=>blingHubFinanceNormalize("payable",x));
+  const sortRows=(rows:any[])=>rows.sort((a,b)=>String(a.due_date||"9999-12-31").localeCompare(String(b.due_date||"9999-12-31"))||Number(b.amount_cents||0)-Number(a.amount_cents||0));
+  sortRows(receivables);sortRows(payables);
+  const receiveSummary=blingHubFinanceBucket(receivables,today,day7,day30);
+  const payableSummary=blingHubFinanceBucket(payables,today,day7,day30);
+  const priority=sortRows([...receivables,...payables]).slice(0,60);
+
+  const overview={
+    generated_at:new Date().toISOString(),
+    timezone:"America/Cuiaba",
+    window:{past,today,future,day_7:day7,day_30:day30},
+    receivable:receiveSummary,
+    payable:payableSummary,
+    projected_cents:receiveSummary.total_cents-payableSummary.total_cents,
+    overdue_net_cents:receiveSummary.overdue_cents-payableSummary.overdue_cents,
+    boleto_count:receivables.filter(x=>Boolean(x.boleto_url)).length,
+    pix_count:receivables.filter(x=>Boolean(x.pix_url)).length,
+    truncated:Boolean(receiveA.truncated||receiveB.truncated||payableA.truncated||payableB.truncated),
+    financial_accounts:accountRows.slice(0,100).map((x:any)=>({
+      id:Number(x?.id||0)||null,
+      description:clean(x?.descricao,180)||"",
+      type:clean(x?.tipo,80)||"",
+      integration_alias:clean(x?.aliasIntegracao,120)||null
+    })).filter((x:any)=>x.id),
+    financial_accounts_access:{ok:accountsOk,http_status:financialAccounts.status,insufficient_scope:financialAccounts.status===403},
+    receivables:receivables.slice(0,100),
+    payables:payables.slice(0,100),
+    priority
+  };
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"finance_readonly_overview",
+    severity:"info",
+    domain:"fiscal",
+    details:{
+      receivable_count:receivables.length,payable_count:payables.length,
+      projected_cents:overview.projected_cents,truncated:overview.truncated,
+      external_write:false,make_used:false
+    }
+  });
+  return {ok:true,readonly:true,external_write:false,finance:overview};
+}
 function blingHubDigits(v:any){return String(v??"").replace(/\D/g,"")}
 function blingHubValidCpfCnpj(v:any){
   const d=blingHubDigits(v);
@@ -3038,7 +3181,10 @@ async function blingHubProbeReadonly(sb:any){
     {key:"contacts",path:"/contatos?pagina=1&limite=1"},
     {key:"sales_orders",path:"/pedidos/vendas?pagina=1&limite=1"},
     {key:"deposits",path:"/depositos?pagina=1&limite=100&situacao=1"},
-    {key:"invoice",path:"/nfe?pagina=1&limite=1"}
+    {key:"invoice",path:"/nfe?pagina=1&limite=1"},
+    {key:"finance_receivables",path:"/contas/receber?pagina=1&limite=1&situacoes%5B%5D=1"},
+    {key:"finance_payables",path:"/contas/pagar?pagina=1&limite=1&situacao=1"},
+    {key:"finance_accounts",path:"/contas-contabeis?pagina=1&limite=1&ocultarInvisiveis=true"}
   ];
   const results:any={};let allCore=true;let deposits:any[]=[];
   for(const probe of probes){
@@ -4414,6 +4560,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="probe_readonly"){
         const result=await blingHubProbeReadonly(sb);
         return json(result,result.ok?200:207);
+      }
+      if(subaction==="finance_overview"){
+        const result=await blingHubFinanceOverview(sb);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="reconcile_products_readonly"){
         const result=await blingHubReconcileProductsReadonly(sb,body?.items);
