@@ -1527,9 +1527,6 @@ async function consumeOrderStock(payload:any) {
   const blingPreflight=await validateBlingBeforeStockMutation(id);
   if(blingPreflight)return blingPreflight;
 
-  const {data:crossSellClosed,error:crossSellCloseError}=await db.rpc("cancel_post_order_cross_sell_for_separation_v1",{p_order_id:id});
-  if(crossSellCloseError)throw crossSellCloseError;
-
   if(payment.stock_model==="reservation_v2"){
     const {data:consumed,error}=await db.rpc("consume_storefront_order_stock_v2",{
       p_organization_id:ORG_ID,p_order_id:id
@@ -1594,58 +1591,6 @@ async function consumeOrderStock(payload:any) {
   let blingOrderQueued=false;
   try{blingOrderQueued=await queueBlingOrderSnapshot(id,"first_separation")}catch(e){console.error("bling_order_enqueue_failed",String((e as Error)?.message||e))}
   return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok),bling_order_queued:blingOrderQueued};
-}
-
-async function papoAiAdminControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["get","health","save"]);
-  if(!allowed.has(subaction))return {error:"invalid_papoai_action",status:400};
-
-  const secret=await db.from("internal_integration_secrets")
-    .select("secret_value")
-    .eq("integration_key","vitrine_history_bridge")
-    .maybeSingle();
-  if(secret.error)throw secret.error;
-  if(!secret.data?.secret_value)return {error:"papoai_bridge_not_configured",status:503};
-
-  const response=await fetch(CANONICAL_ADMIN_API,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-vitrine-history-key":String(secret.data.secret_value)
-    },
-    body:JSON.stringify({action:"vitrine_papoai_control_internal",subaction,...extra}),
-    signal:AbortSignal.timeout(10000)
-  });
-  const data=await response.json().catch(()=>({ok:false,error:"invalid_papoai_response"}));
-  if(response.status>=400)return {error:String(data?.error||"papoai_control_unavailable"),status:response.status,detail:data?.detail||null};
-  return {data};
-}
-
-async function saveCrossSellConfig(payload:any){
-  const current=await db.from("post_order_cross_sell_config")
-    .select("*")
-    .eq("organization_id",ORG_ID)
-    .maybeSingle();
-  if(current.error)throw current.error;
-  const expiry=Math.max(0,Math.min(10,Math.floor(Number(payload?.expiry_offer_count??current.data?.expiry_offer_count??5))));
-  const regular=Math.max(0,Math.min(10,Math.floor(Number(payload?.regular_count??current.data?.regular_count??5))));
-  if(expiry+regular<1||expiry+regular>10)return {error:"invalid_product_split",status:400};
-  const enabled=typeof payload?.enabled==="boolean"?payload.enabled:Boolean(current.data?.enabled??true);
-  const row={
-    organization_id:ORG_ID,
-    enabled,
-    mode:String(current.data?.mode||"shadow"),
-    expiry_offer_count:expiry,
-    regular_count:regular,
-    total_limit:expiry+regular,
-    updated_at:new Date().toISOString()
-  };
-  const saved=await db.from("post_order_cross_sell_config")
-    .upsert(row,{onConflict:"organization_id"})
-    .select("*")
-    .single();
-  if(saved.error)throw saved.error;
-  return {config:saved.data};
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
@@ -2596,54 +2541,6 @@ async function updateOrder(payload:any) {
 }
 
 
-async function crossSellShadowList(limitRaw:unknown=50) {
-  const limit=Math.max(1,Math.min(100,Math.floor(Number(limitRaw||50))));
-  const [{data:config,error:cErr},{data,error}]=await Promise.all([
-    db.from("post_order_cross_sell_config")
-      .select("enabled,mode,expiry_offer_count,regular_count,total_limit,basket_similarity_min,max_component_changes,max_standalone_product_lines,max_basket_quantity,response_window_seconds,regular_item_max_order_ratio,delivery_contract_ready,updated_at")
-      .eq("organization_id",ORG_ID)
-      .maybeSingle(),
-    db.rpc("list_post_order_cross_sell_shadow_v1",{p_organization_id:ORG_ID,p_limit:limit})
-  ]);
-  if(cErr)throw cErr;
-  if(error)throw error;
-  return {config:config??null,...(data??{summary:{},sessions:[]})};
-}
-
-async function crossSellShadowPrepareRecent(payload:any) {
-  const cutover=await operationalCutover();
-  const limit=Math.max(1,Math.min(50,Math.floor(Number(payload?.limit||20))));
-  const {data:orders,error}=await db.from("orders")
-    .select("id")
-    .eq("organization_id",ORG_ID)
-    .gte("created_at",cutover.live_orders_since)
-    .order("created_at",{ascending:false})
-    .limit(limit);
-  if(error)throw error;
-  const results:any[]=[];
-  for(const order of orders??[]){
-    const {data,error:rErr}=await db.rpc("prepare_post_order_cross_sell_shadow_v1",{p_order_id:order.id});
-    if(rErr){
-      results.push({order_id:order.id,ok:false,error:text(rErr.message,180)});
-      continue;
-    }
-    results.push({order_id:order.id,...(data??{})});
-  }
-  return {
-    processed:results.length,
-    eligible:results.filter((r:any)=>r.eligible===true).length,
-    results
-  };
-}
-
-async function crossSellShadowPrepareOne(payload:any) {
-  const orderId=uuid(payload?.order_id);
-  if(!orderId)return {error:"invalid_order",status:400};
-  const {data,error}=await db.rpc("prepare_post_order_cross_sell_shadow_v1",{p_order_id:orderId});
-  if(error)throw error;
-  return data??{};
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null,{status:204,headers:cors(req)});
 
@@ -2657,13 +2554,6 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="expirations") return json(req,{ok:true,...await listExpirations()});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
-    if (req.method==="GET" && action==="papoai_control") {
-      const result=await papoAiAdminControl("get");
-      if((result as any).error)return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
-      return json(req,{ok:true,papoai:(result as any).data?.control??null});
-    }
-
-    if (req.method==="GET" && action==="cross_sell_shadow_list") return json(req,{ok:true,...await crossSellShadowList(url.searchParams.get("limit"))});
     if (req.method==="GET" && action==="order_stock_shortages") return json(req,{ok:true,...await listOrderStockShortages()});
     if (req.method==="GET" && action==="closure_orders") return json(req,{ok:true,...await listClosureOrders()});
     if (req.method==="GET" && action==="bling_status") {
@@ -2696,7 +2586,7 @@ Deno.serve(async (req: Request) => {
         if(["order_update","order_consume_stock","history_sync_retry","bling_create_order_products","bling_create_order_customer","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment"].includes(action)){
           return uuid(payload?.id);
         }
-        if(["order_component_replace","cross_sell_shadow_prepare"].includes(action)){
+        if(action==="order_component_replace"){
           return uuid(payload?.order_id);
         }
         return "";
@@ -2704,24 +2594,6 @@ Deno.serve(async (req: Request) => {
       if(mutationOrderId){
         const guard=await legacyOrderMutationGuard(mutationOrderId);
         if(!guard.ok)return json(req,{ok:false,error:guard.error,created_at:(guard as any).created_at,live_orders_since:(guard as any).live_orders_since},Number((guard as any).status||409));
-      }
-      if (action==="papoai_control_save") {
-        const result=await papoAiAdminControl("save",{storefront_link_enabled:payload?.storefront_link_enabled===true});
-        if((result as any).error)return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
-        return json(req,{ok:true,papoai:(result as any).data?.control??null});
-      }
-      if (action==="cross_sell_config_save") {
-        const result=await saveCrossSellConfig(payload);
-        if((result as any).error)return json(req,{ok:false,error:(result as any).error},(result as any).status);
-        return json(req,{ok:true,...result});
-      }
-      if (action==="cross_sell_shadow_prepare_recent") {
-        return json(req,{ok:true,...await crossSellShadowPrepareRecent(payload)});
-      }
-      if (action==="cross_sell_shadow_prepare") {
-        const result=await crossSellShadowPrepareOne(payload);
-        if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
-        return json(req,{ok:true,...result});
       }
       if (action==="product_save") {
         const result=await saveProduct(payload);
