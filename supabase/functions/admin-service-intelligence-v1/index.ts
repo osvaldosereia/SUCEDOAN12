@@ -2863,19 +2863,21 @@ async function blingHubFinanceBoletoPolicy(sb:any,token:string,kind:string,paylo
       return {ok:false,status:contact.status||502,error:blingHubFinanceError(contact.status),provider_details:blingHubProviderDetails(contact.data),external_write:false};
     }
     const c=blingHubFinanceDetailData(contact.data);
-    const email=clean(c?.email,220);
+    const email=clean(c?.email||c?.emailNotaFiscal,220);
     const billing=c?.endereco?.cobranca||{};
     const general=c?.endereco?.geral||{};
-    const addr=(clean(billing?.endereco,180)||clean(billing?.cep,20))?billing:general;
-    const addressFields={
+    const addressView=(addr:any)=>({
       street:clean(addr?.endereco,180),
       number:clean(addr?.numero,40),
       district:clean(addr?.bairro,120),
       city:clean(addr?.municipio,120),
       state:clean(addr?.uf,8),
       zip:clean(addr?.cep,20)
-    };
-    const missingAddress=Object.entries(addressFields).filter(([,v])=>!v).map(([k])=>k);
+    });
+    const billingFields=addressView(billing),generalFields=addressView(general);
+    const missing=(fields:any)=>Object.entries(fields).filter(([,v])=>!v).map(([k])=>k);
+    const billingMissing=missing(billingFields),generalMissing=missing(generalFields);
+    const missingAddress=billingMissing.length<=generalMissing.length?billingMissing:generalMissing;
     if(!email)blocking.push("boleto_contact_email_required");
     if(missingAddress.length)blocking.push("boleto_contact_address_incomplete");
     contactSummary={
