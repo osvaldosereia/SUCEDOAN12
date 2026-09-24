@@ -867,6 +867,97 @@ async function vitrineHistoryBridgeAuthorized(req:Request){
   return supplied===String(q.data.secret_value);
 }
 
+async function postOrderCrossSellContext(payload:any){
+  const suffix=String(payload?.order_suffix??'').replace(/\D+/g,'').slice(-12);
+  const phone=normalizeWhatsappPhone(payload?.phone);
+  if(!suffix)return {error:'order_suffix_required',status:400};
+
+  const since=new Date(Date.now()-24*60*60*1000).toISOString();
+  const q=await db.from('orders')
+    .select('id,order_number,status,total_cents,whatsapp_phone_e164,created_at')
+    .eq('organization_id',ORG_ID)
+    .gte('created_at',since)
+    .order('created_at',{ascending:false})
+    .limit(80);
+  if(q.error)throw q.error;
+
+  const phoneTail=String(phone||'').replace(/\D+/g,'').slice(-8);
+  const order=(q.data||[]).find((row:any)=>{
+    const number=String(row.order_number||'').replace(/\D+/g,'');
+    if(!number.endsWith(suffix))return false;
+    if(!phoneTail)return true;
+    return String(row.whatsapp_phone_e164||'').replace(/\D+/g,'').slice(-8)===phoneTail;
+  });
+  if(!order)return {error:'order_not_found',status:404};
+
+  const prep=await db.rpc('prepare_post_order_cross_sell_shadow_v1',{p_order_id:order.id});
+  if(prep.error)throw prep.error;
+
+  const [cfg,session]=await Promise.all([
+    db.from('post_order_cross_sell_config')
+      .select('enabled,mode,expiry_offer_count,regular_count,total_limit,response_window_seconds')
+      .eq('organization_id',ORG_ID)
+      .maybeSingle(),
+    db.from('post_order_cross_sell_sessions')
+      .select('id,eligible,basket_similarity,basket_classification,changed_lines,selected_count,ineligible_reason,status,updated_at')
+      .eq('order_id',order.id)
+      .eq('mode','shadow')
+      .maybeSingle()
+  ]);
+  if(cfg.error)throw cfg.error;
+  if(session.error)throw session.error;
+  if(!session.data)return {error:'cross_sell_session_missing',status:404};
+
+  const itemsQ=await db.from('post_order_cross_sell_items')
+    .select('position,product_id,source_kind,name_snapshot,regular_price_cents,offered_price_cents,discount_percent,expiration_date_snapshot,stock_snapshot,metadata')
+    .eq('session_id',session.data.id)
+    .order('position',{ascending:true});
+  if(itemsQ.error)throw itemsQ.error;
+  const items=itemsQ.data||[];
+
+  const moneyBr=(cents:any)=>Number(cents||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const lines:string[]=[];
+  if(session.data.eligible&&items.length){
+    const expiry=items.filter((i:any)=>i.source_kind==='expiry_offer');
+    const regular=items.filter((i:any)=>i.source_kind==='regular');
+    lines.push('Pedido recebido ✅','','Antes de fechar, se quiser aproveitar, separei algumas opções para acrescentar à sua cesta:');
+    if(expiry.length){
+      lines.push('','🔥 Ofertas especiais');
+      for(const i of expiry){
+        const regularPrice=Number(i.regular_price_cents||0),offerPrice=Number(i.offered_price_cents||0);
+        lines.push(String(i.position)+'. '+String(i.name_snapshot||'Produto')+' — '+(offerPrice<regularPrice?'de '+moneyBr(regularPrice)+' por ':'')+moneyBr(offerPrice));
+      }
+    }
+    if(regular.length){
+      lines.push('','🛒 Outras sugestões');
+      for(const i of regular){
+        lines.push(String(i.position)+'. '+String(i.name_snapshot||'Produto')+' — '+moneyBr(i.offered_price_cents));
+      }
+    }
+    lines.push('','Se quiser acrescentar, responda só os números. Ex.: 2 e 7','Se não quiser, pode responder “não”.');
+  }
+
+  const mode=String(cfg.data?.mode||'shadow');
+  const sendAllowed=cfg.data?.enabled===true&&['test','canary','live'].includes(mode)&&session.data.eligible&&items.length>0;
+  return {
+    order_id:order.id,
+    order_number:order.order_number,
+    order_status:order.status,
+    session_id:session.data.id,
+    eligible:session.data.eligible,
+    classification:session.data.basket_classification,
+    similarity:Number(session.data.basket_similarity||0),
+    changed_lines:Number(session.data.changed_lines||0),
+    reason:session.data.ineligible_reason||null,
+    selected_count:items.length,
+    mode,
+    send_allowed:sendAllowed,
+    response_window_seconds:Number(cfg.data?.response_window_seconds||180),
+    message:lines.join('\n'),
+    items
+  };
+}
+
 async function reconcileCrmCustomer(payload:any){
   const orderId=uuid(payload?.source_order_id);
   const crmCustomerId=uuid(payload?.crm_customer_id);
@@ -951,6 +1042,13 @@ Deno.serve(async (req: Request) => {
     }
     if (req.method === "GET" && action === "resolve_identity_token") {
       const result=await resolveLegacyStorefrontIdentityToken(url.searchParams.get("token"));
+      if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
+      return json({ok:true,...result},200,{"Cache-Control":"no-store"});
+    }
+    if (req.method === "POST" && action === "post_order_cross_sell_context") {
+      if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
+      const payload=await req.json().catch(()=>({}));
+      const result=await postOrderCrossSellContext(payload);
       if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
       return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
