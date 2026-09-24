@@ -1025,8 +1025,8 @@ async function postOrderCrossSellContext(payload:any){
   }
 
   const mode=String(cfg.data?.mode||'shadow');
-  const phoneTail=String(order.whatsapp_phone_e164||'').replace(/\D+/g,'').slice(-8);
-  const testAllowed=mode!=='test'||!cfg.data?.test_phone_suffix||phoneTail===String(cfg.data.test_phone_suffix);
+  const orderPhoneTail=String(order.whatsapp_phone_e164||'').replace(/\D+/g,'').slice(-8);
+  const testAllowed=mode!=='test'||!cfg.data?.test_phone_suffix||orderPhoneTail===String(cfg.data.test_phone_suffix);
   const sendAllowed=cfg.data?.enabled===true&&cfg.data?.delivery_contract_ready===true&&testAllowed&&['test','canary','live'].includes(mode)&&session.data.eligible&&items.length>0;
   return {
     order_id:order.id,
