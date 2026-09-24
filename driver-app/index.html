@@ -19,21 +19,12 @@
   <div class="sheet-card">
     <div class="sheet-head"><div><span class="eyebrow">Recebimento na entrega</span><h2 id="collectionTitle">Confirmar cobrança</h2></div><button id="cancelCollectionBtn" class="icon-btn" aria-label="Fechar">×</button></div>
     <div id="collectionOrderInfo" class="collection-order"></div>
-    <label>Forma recebida
-      <select id="collectionMethod">
-        <option value="cash">Dinheiro</option>
-        <option value="pix">Pix</option>
-        <option value="card">Cartão</option>
-        <option value="payment_link">Link de pagamento</option>
-        <option value="other">Outro</option>
-      </select>
-    </label>
-    <label>Valor da venda recebido<input id="collectionAmount" type="text" readonly></label>
-    <label id="cashTenderLabel">Valor entregue pelo cliente<input id="cashTender" type="number" min="0" step="0.01" inputmode="decimal"></label>
-    <div id="changePreview" class="change-preview"></div>
+    <div id="paymentRows" class="payment-rows"></div>
+    <button id="addPaymentBtn" type="button" class="add-payment">+ Adicionar outra forma de pagamento</button>
+    <div id="paymentTotals" class="payment-totals"></div>
     <div id="collectionStatus" class="status"></div>
-    <button id="confirmCollectionBtn" class="primary wide">Confirmar recebimento e entrega</button>
-    <p class="sheet-help">O registro do entregador é operacional. Pix/cartão/link continuam aguardando conciliação; nenhuma NF-e é liberada por este botão.</p>
+    <button id="confirmCollectionBtn" class="primary wide" disabled>Confirmar recebimentos e entrega</button>
+    <p class="sheet-help">Registre exatamente como o cliente pagou. Cartões e PIX ficam aguardando conciliação. Não informe número completo do cartão ou CVV. Este botão não confirma pagamento fiscal nem altera NF-e.</p>
   </div>
 </div>
 <script src="./config.js"></script><script type="module" src="./app.js"></script>
