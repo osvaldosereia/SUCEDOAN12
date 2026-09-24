@@ -152,6 +152,28 @@
       .expiry-row .expiry-edit{justify-self:start}
     }
 
+    .crosssell-banner{border:1px solid #f2d59a;background:#fffaf0;border-radius:8px;padding:12px 14px;margin-bottom:14px}
+    .crosssell-banner strong{display:block}.crosssell-banner small{display:block;color:var(--muted);margin-top:3px}
+    .crosssell-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px}
+    .crosssell-card{border:1px solid var(--line);background:#fff;border-radius:8px;padding:12px}
+    .crosssell-card small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase}.crosssell-card strong{display:block;font-size:20px;margin-top:4px}
+    .crosssell-list{display:grid;gap:10px}
+    .crosssell-session{border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+    .crosssell-session summary{list-style:none;cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:100px minmax(150px,1fr) 100px 120px 110px;gap:10px;align-items:center}
+    .crosssell-session summary::-webkit-details-marker{display:none}
+    .crosssell-session[open] summary{border-bottom:1px solid var(--line);background:#f8f9fa}
+    .crosssell-body{padding:12px 14px}
+    .crosssell-items{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .crosssell-item{border:1px solid var(--line);border-radius:7px;padding:9px 10px}
+    .crosssell-item strong{display:block;font-size:12px}.crosssell-item small{display:block;color:var(--muted);margin-top:3px}
+    .crosssell-preview{white-space:pre-wrap;background:#f8f9fa;border:1px solid var(--line);border-radius:7px;padding:10px;font:12px/1.45 system-ui;margin-top:10px}
+    @media(max-width:780px){
+      .crosssell-cards{grid-template-columns:1fr 1fr}
+      .crosssell-session summary{grid-template-columns:80px 1fr auto}
+      .crosssell-session summary>:nth-child(4),.crosssell-session summary>:nth-child(5){grid-column:2/4}
+      .crosssell-items{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -165,6 +187,7 @@
       <nav class="tabs wrap" aria-label="Admin">
         <button class="tab" data-tab="today" type="button">Hoje</button>
         <button class="tab" data-tab="orders" type="button">Pedidos</button>
+        <button class="tab" data-tab="crosssell" type="button">Pós-cesta</button>
         <button class="tab" data-tab="expedition" type="button">Expedição</button>
         <button class="tab" data-tab="closure" type="button">Fechamento</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
@@ -196,7 +219,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,crossSell:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -230,6 +253,7 @@
     if(tab==='customers')renderCustomers();
     if(tab==='bling')renderBling();
     if(tab==='orders')renderOrders();
+    if(tab==='crosssell')renderCrossSell();
     if(tab==='expedition')renderExpedition();
     if(tab==='closure')renderClosure();
     if(tab==='more')renderMore();
@@ -1709,6 +1733,101 @@
       if(returnOrderId)await openOrder(returnOrderId);
       else renderCustomers($('#customerSearch')?.value.trim()||'');
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar cliente'}
+  }
+
+
+  function crossSellReasonLabel(reason){
+    const map={
+      no_basket:'Sem cesta',
+      terminal_order:'Pedido já encerrado',
+      bulk_basket_quantity:'Quantidade de cestas acima do limite',
+      too_many_standalone_products:'Muitos produtos avulsos',
+      basket_standard_missing:'Composição padrão ausente',
+      basket_too_modified:'Cesta muito alterada',
+      automation_disabled:'Automação desligada'
+    };
+    return map[reason]||reason||'—';
+  }
+  function crossSellClassLabel(value){
+    return value==='normal'?'Normal':value==='near_normal'?'Quase normal':value==='modified'?'Muito alterada':'Não elegível';
+  }
+  function crossSellPreviewMessage(session){
+    const items=session.items||[];
+    if(!items.length)return 'Nenhuma mensagem seria enviada.';
+    const expiry=items.filter(i=>i.source_kind==='expiry_offer');
+    const regular=items.filter(i=>i.source_kind==='regular');
+    const lines=['Pedido recebido ✅','','Antes de fechar, se quiser aproveitar, separei algumas opções para acrescentar à sua cesta:'];
+    if(expiry.length){
+      lines.push('','🔥 Ofertas especiais');
+      expiry.forEach(i=>lines.push(i.position+'. '+i.name+' — '+(Number(i.offered_price_cents)<Number(i.regular_price_cents)?'de '+money(i.regular_price_cents)+' por ':'')+money(i.offered_price_cents)));
+    }
+    if(regular.length){
+      lines.push('','🛒 Outras sugestões');
+      regular.forEach(i=>lines.push(i.position+'. '+i.name+' — '+money(i.offered_price_cents)));
+    }
+    lines.push('','Se quiser acrescentar, responda só os números. Ex.: 2 e 7','Se não quiser, pode responder “não”.');
+    return lines.join('\n');
+  }
+  async function renderCrossSell(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Oferta após cesta</h1><p>Shadow: veja exatamente o que o sistema ofereceria sem enviar nada ao cliente.</p></div><div class="dispatch-actions"><button class="secondary" id="rebuildCrossSell">Recalcular últimos pedidos</button><button class="secondary" id="refreshCrossSell">Atualizar</button></div></div>'+
+      '<div class="crosssell-banner"><strong>SHADOW MODE · seguro</strong><small>Nenhuma mensagem é enviada, nenhum item é acrescentado e nenhum total de pedido é alterado.</small></div>'+
+      '<div id="crossSellBody"><div class="loading">Analisando pedidos…</div></div>';
+    $('#refreshCrossSell').onclick=()=>loadCrossSell(false);
+    $('#rebuildCrossSell').onclick=()=>loadCrossSell(true);
+    await loadCrossSell(true);
+  }
+  async function loadCrossSell(rebuild=false){
+    const host=$('#crossSellBody');if(!host)return;
+    host.innerHTML='<div class="loading">'+(rebuild?'Recalculando seleção…':'Carregando…')+'</div>';
+    try{
+      if(rebuild){
+        await api('cross_sell_shadow_prepare_recent',{},{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({limit:20})
+        });
+      }
+      state.crossSell=await api('cross_sell_shadow_list',{limit:50});
+      paintCrossSell();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não foi possível carregar o Shadow: '+esc(errorMessage(e.message))+'</div>';
+    }
+  }
+  function paintCrossSell(){
+    const host=$('#crossSellBody');if(!host)return;
+    const data=state.crossSell||{},sum=data.summary||{},cfg=data.config||{},sessions=data.sessions||[];
+    const cards='<div class="crosssell-cards">'+
+      '<div class="crosssell-card"><small>Avaliados</small><strong>'+esc(sum.evaluated||0)+'</strong></div>'+
+      '<div class="crosssell-card"><small>Elegíveis</small><strong>'+esc(sum.eligible||0)+'</strong></div>'+
+      '<div class="crosssell-card"><small>Normais</small><strong>'+esc(sum.normal||0)+'</strong></div>'+
+      '<div class="crosssell-card"><small>Quase normais</small><strong>'+esc(sum.near_normal||0)+'</strong></div>'+
+      '<div class="crosssell-card"><small>Média sugestões</small><strong>'+esc(sum.avg_selected||0)+'</strong></div>'+
+      '</div>';
+    const config='<div class="panel" style="padding:11px 12px;margin-bottom:12px"><strong>Regra atual</strong><span class="sub">Até '+esc(cfg.total_limit||10)+' produtos · '+esc(cfg.expiry_offer_count||5)+' prioritários por validade · similaridade mínima '+esc(cfg.basket_similarity_min||85)+'% · máximo '+esc(cfg.max_component_changes||3)+' alterações.</span></div>';
+    const rows=sessions.map(s=>{
+      const items=s.items||[];
+      const offerCount=items.filter(i=>i.source_kind==='expiry_offer').length;
+      const normalCount=items.filter(i=>i.source_kind==='regular').length;
+      const basket=(s.basket_names||[]).join(', ')||'Sem cesta';
+      const eligibility=s.eligible?'<span class="pill">Elegível</span>':'<span class="pill off">Não elegível</span>';
+      const itemHtml=items.length?'<div class="crosssell-items">'+items.map(i=>
+        '<div class="crosssell-item"><strong>'+esc(i.position+'. '+i.name)+'</strong>'+
+        '<small>'+(i.source_kind==='expiry_offer'?'Validade · '+esc(i.discount_percent||0)+'%':'Normal')+
+        ' · '+money(i.offered_price_cents)+(i.expiration_date?' · vence '+esc(i.expiration_date):'')+
+        ' · estoque '+esc(fmtQty(i.stock))+'</small></div>'
+      ).join('')+'</div>':'';
+      return '<details class="crosssell-session" '+(s.eligible?'':'')+'>'+
+        '<summary><strong>#'+esc(String(s.order_number||'').slice(-8))+'</strong><span><b>'+esc(basket)+'</b><small class="sub">'+crossSellClassLabel(s.basket_classification)+' · '+esc(s.basket_similarity||0)+'% similar</small></span>'+
+        eligibility+'<span>'+esc(s.selected_count||0)+' sugestões</span><span>'+dateTime(s.updated_at)+'</span></summary>'+
+        '<div class="crosssell-body">'+
+        (s.eligible?'<div><b>'+offerCount+'</b> por validade/oferta · <b>'+normalCount+'</b> normais · <b>'+esc(s.changed_lines||0)+'</b> alteração(ões) na cesta.</div>':
+        '<div><b>Motivo:</b> '+esc(crossSellReasonLabel(s.ineligible_reason))+'</div>')+
+        itemHtml+
+        (s.eligible?'<div class="crosssell-preview">'+esc(crossSellPreviewMessage(s))+'</div>':'')+
+        '</div></details>';
+    }).join('');
+    host.innerHTML=cards+config+'<div class="crosssell-list">'+(rows||'<div class="panel empty">Nenhum pedido avaliado ainda.</div>')+'</div>';
   }
 
   async function renderOrders(){
