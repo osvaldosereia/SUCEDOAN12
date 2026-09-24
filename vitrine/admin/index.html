@@ -196,7 +196,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -1686,6 +1686,7 @@
     if(!['delivered'].includes(state.orderFilter))rows=sortOperationalOrders(rows);
     host.innerHTML=rows.length?rows.map(orderRow).join(''):'<div class="empty">Nenhum pedido nesta etapa.</div>';
     host.querySelectorAll('[data-open-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.openOrder));
+    host.querySelectorAll('[data-order-issue-open]').forEach(b=>b.onclick=()=>openOrderForIssue(b.dataset.orderIssueOpen,b.dataset.orderIssueKind));
     host.querySelectorAll('[data-quick-confirm]').forEach(b=>b.onclick=()=>quickConfirmOrder(b.dataset.quickConfirm,b));
   }
   async function quickConfirmOrder(id,btn){
@@ -1714,10 +1715,18 @@
       paintOrderFilters();paintOrderRows();
     }catch(e){host.innerHTML='<div class="empty">Erro ao carregar pedidos. <button class="text" id="retryOrders">Tentar novamente</button></div>';if($('#retryOrders'))$('#retryOrders').onclick=loadOrders}
   }
+  function orderIssueShortcut(problems){
+    if(problems.includes('Endereço incompleto'))return ['address','Corrigir endereço'];
+    if(problems.includes('Cliente não identificado'))return ['customer','Vincular cliente'];
+    if(problems.includes('Pagamento não informado'))return ['payment','Corrigir pagamento'];
+    if(problems.includes('Histórico pendente do cliente'))return ['history','Revisar histórico'];
+    return null;
+  }
   function orderRow(o){
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
     const problems=orderProblemReasons(o);
     const dataRequest=orderMissingDataRequest(o);
+    const shortcut=orderIssueShortcut(problems);
     const next=orderNextAction(o);
     return '<div class="list-row orders-layout">'+
       '<div><span class="row-title">#'+esc(shortOrder(o.order_number))+'</span>'+(problems.length?'<span class="sub" style="color:#b3261e">'+esc(problems[0])+(problems.length>1?' · +'+(problems.length-1):'')+'</span>':'')+'</div>'+
@@ -1728,9 +1737,33 @@
       '<div class="desktop-extra"><span class="next-action '+(o.status==='cancelled'?'muted-action':'')+'">'+esc(next)+'</span><span class="sub">'+statusPill(o.status)+'</span></div>'+
       '<div class="customer-row-actions">'+
         (dataRequest?'<a class="text" href="'+esc(dataRequest.href)+'" target="_blank" rel="noopener">'+esc(dataRequest.label)+'</a>':'')+
+        (shortcut?'<button class="text" data-order-issue-open="'+esc(o.id)+'" data-order-issue-kind="'+esc(shortcut[0])+'">'+esc(shortcut[1])+'</button>':'')+
         (o.status==='created'&&!problems.length?'<button class="text" data-quick-confirm="'+esc(o.id)+'">Confirmar</button>':'')+
         '<button class="text" data-open-order="'+esc(o.id)+'">Abrir</button>'+
       '</div></div>';
+  }
+  function openOrderForIssue(id,issue){
+    state.orderFocusIssue=issue||null;
+    openOrder(id);
+  }
+  function focusRequestedOrderIssue(){
+    const issue=state.orderFocusIssue;if(!issue)return;
+    state.orderFocusIssue=null;
+    let target=null;
+    if(issue==='address'){
+      const details=$('#orderDeliveryDetails');if(details)details.open=true;
+      target=$('#orderDeliveryStreet')?.value?$('#orderDeliveryNumber'):$('#orderDeliveryStreet');
+    }else if(issue==='customer'){
+      target=$('#orderCustomerSearch');
+    }else if(issue==='payment'){
+      target=$('#orderPayment');
+    }else if(issue==='history'){
+      target=$('#retryHistorySync');
+    }
+    if(target){
+      target.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(()=>target.focus?.(),120);
+    }
   }
   async function openOrder(id){
     $('#editorTitle').textContent='Pedido';
@@ -1791,7 +1824,7 @@
         '<label><span>Cliente vinculado</span><select id="orderCustomer"><option value="">Sem cliente vinculado</option>'+customerOptions(currentCustomerId)+'</select></label>'+
         '<label class="span-2"><span>Buscar cliente por nome, telefone ou CPF</span><input id="orderCustomerSearch" type="search" autocomplete="off" placeholder="Digite para localizar o cliente…"><small class="sub" id="orderCustomerSearchHint">Digite pelo menos 2 caracteres. A busca consulta a base oficial.</small></label>'+
       '</div>'+
-      '<details class="integration-details" style="margin-top:12px" '+(deliveryProblems?'open':'')+'><summary>Dados de entrega</summary><div class="integration-body form-grid">'+
+      '<details class="integration-details" id="orderDeliveryDetails" style="margin-top:12px" '+(deliveryProblems?'open':'')+'><summary>Dados de entrega</summary><div class="integration-body form-grid">'+
         '<label class="span-2"><span>Nome para entrega</span><input id="orderDeliveryName" value="'+esc(delivery.customer_name||delivery.recipient_name||c.display_name||'')+'"></label>'+
         '<label><span>Telefone / WhatsApp</span><input id="orderDeliveryPhone" inputmode="tel" value="'+esc(formatPhone(delivery.phone||c.phone||o.whatsapp_phone_e164||''))+'"></label>'+
         '<label><span>CEP</span><input id="orderDeliveryPostalCode" inputmode="numeric" value="'+esc(delivery.postal_code||'')+'"></label>'+
@@ -1830,6 +1863,7 @@
     if($('#completeCustomerDocument'))$('#completeCustomerDocument').onclick=completeCurrentOrderCustomerDocument;
     if($('#createBlingOrderCustomer'))$('#createBlingOrderCustomer').onclick=createCurrentOrderCustomerInBling;
     if($('#createBlingOrderProducts'))$('#createBlingOrderProducts').onclick=createCurrentOrderProductsInBling;
+    setTimeout(focusRequestedOrderIssue,0);
     if($('#useSuggestedCustomer'))$('#useSuggestedCustomer').onclick=()=>{
       const select=$('#orderCustomer');if(!select||!state.orderCustomerSuggestion)return;
       select.value=state.orderCustomerSuggestion;
