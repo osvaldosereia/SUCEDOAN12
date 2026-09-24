@@ -33,7 +33,7 @@ assert.doesNotMatch(hub,/contas\/receber\/boletos\/cancelar/);
 
 assert.match(admin,/"finance_action"/);
 assert.match(admin,/action==="bling_finance_action"/);
-assert.match(admin,/blingHubControl\("finance_action",payload\|\|\{\}\)/);
+assert.match(admin,/blingHubControl\("finance_action",payload\|\|\{\},authorization\)/);
 
 assert.match(html,/\+ A pagar/);
 assert.match(html,/\+ A receber/);

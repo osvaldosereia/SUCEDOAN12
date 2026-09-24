@@ -23,7 +23,7 @@ function cors(req: Request) {
   const allowed = ALLOWED_ORIGINS.has(origin) ? origin : "https://www.donaantonia.com.br";
   return {
     "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers": "content-type",
+    "Access-Control-Allow-Headers": "content-type,authorization",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Vary": "Origin"
   };
@@ -1593,7 +1593,7 @@ async function consumeOrderStock(payload:any) {
   return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok),bling_order_queued:blingOrderQueued};
 }
 
-async function blingHubControl(subaction:string,extra:any={}) {
+async function blingHubControl(subaction:string,extra:any={},authorization='') {
   const allowed=new Set(["readiness","probe_readonly","finance_overview","finance_action","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_dispatch_gate","fiscal_dispatch_preview","fiscal_dispatch_canary_human_execute","fiscal_document_pdf","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
@@ -1608,7 +1608,8 @@ async function blingHubControl(subaction:string,extra:any={}) {
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
+      "x-dona-antonia-bling-hub-key":String(secret.data.secret_value),
+      ...(authorization?{"Authorization":authorization}:{})
     },
     body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),
     signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly","ensure_customer_now","process_product_jobs","fiscal_dispatch_canary_human_execute","fiscal_document_pdf"].includes(subaction)?120000:10000)
@@ -2646,7 +2647,9 @@ Deno.serve(async (req: Request) => {
         return json(req,{ok:true,...((result as any).data||{})});
       }
       if (action==="bling_finance_action") {
-        const result=await blingHubControl("finance_action",payload||{});
+        const authorization=req.headers.get("Authorization")||"";
+        if(!/^Bearer\s+\S+/i.test(authorization))return json(req,{ok:false,error:"finance_auth_required"},401);
+        const result=await blingHubControl("finance_action",payload||{},authorization);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...((result as any).data||{})});
       }
