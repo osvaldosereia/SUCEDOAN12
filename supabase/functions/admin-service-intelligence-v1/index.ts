@@ -1668,6 +1668,101 @@ async function blingHubVitrineDispatchFiscalDisarm(sb:any){
   return {ok:true,armed:false,source_order_id:sourceOrderId,external_write:false,external_side_effect:false};
 }
 
+async function blingHubVitrineDispatchFiscalHumanExecute(sb:any,sourceOrderIdRaw:any,confirmationRaw:any){
+  const confirmation=clean(confirmationRaw,40).toUpperCase();
+  if(confirmation!=="EMITIR_NFE"){
+    return {ok:false,error:"fiscal_human_confirmation_required",status:409,external_write:false};
+  }
+
+  const preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
+  if(!preview.ok)return preview;
+  if(preview.hard_blockers?.length){
+    return {ok:false,error:"fiscal_dispatch_not_eligible",status:409,preview,external_write:false};
+  }
+  if(preview.config?.canary_enabled!==true||preview.config?.canary_selected!==true){
+    return {ok:false,error:"fiscal_canary_not_armed_for_order",status:409,preview,external_write:false};
+  }
+
+  // Explicit human action opens only this order's write gates.
+  const now=new Date().toISOString();
+  const armed=await sb.from("fiscal_runtime_config").update({
+    dispatch_invoice_generate_enabled:true,
+    dispatch_invoice_authorize_enabled:true,
+    updated_at:now
+  }).eq("id",1).eq("dispatch_fiscal_canary_enabled",true).eq("dispatch_invoice_canary_source_order_id",preview.source_order_id)
+    .select("id").maybeSingle();
+  if(armed.error)throw armed.error;
+  if(!armed.data){
+    return {ok:false,error:"fiscal_canary_arm_race",status:409,external_write:false};
+  }
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"dispatch_fiscal_human_execute_confirmed",
+    severity:"warning",
+    domain:"fiscal",
+    details:{
+      source_order_id:preview.source_order_id,
+      canonical_order_id:preview.canonical_order_id,
+      bling_order_id:preview.bling_order_id,
+      confirmation:"EMITIR_NFE",
+      external_write:false,
+      make_used:false
+    }
+  });
+
+  const result=await blingHubVitrineDispatchFiscalCanary(sb,preview.source_order_id);
+
+  if(result?.authorized===true){
+    const finishedAt=new Date().toISOString();
+    const close=await sb.from("fiscal_runtime_config").update({
+      dispatch_fiscal_canary_enabled:false,
+      dispatch_fiscal_canary_armed_at:null,
+      dispatch_invoice_generate_enabled:false,
+      dispatch_invoice_authorize_enabled:false,
+      dispatch_invoice_canary_source_order_id:null,
+      dispatch_gate_mode:"enforce",
+      updated_at:finishedAt
+    }).eq("id",1);
+    if(close.error)throw close.error;
+    await sb.from("bling_hub_audit_v2").insert({
+      event_type:"dispatch_fiscal_canary_passed",
+      severity:"info",
+      domain:"fiscal",
+      details:{
+        source_order_id:preview.source_order_id,
+        canonical_order_id:preview.canonical_order_id,
+        bling_invoice_id:result?.invoice?.id||null,
+        external_write:true,
+        make_used:false
+      }
+    });
+    return {...result,canary_closed:true,dispatch_gate_mode:"enforce"};
+  }
+
+  if(result?.pending===true||result?.generated===true){
+    // Generation must never repeat after an invoice exists or authorization was sent.
+    const keep=await sb.from("fiscal_runtime_config").update({
+      dispatch_invoice_generate_enabled:false,
+      dispatch_invoice_authorize_enabled:true,
+      updated_at:new Date().toISOString()
+    }).eq("id",1).eq("dispatch_invoice_canary_source_order_id",preview.source_order_id);
+    if(keep.error)throw keep.error;
+    return {...result,canary_closed:false,reconcile_only_next:true};
+  }
+
+  // Fail closed after any non-pending failure. The job remains for review.
+  const stop=await sb.from("fiscal_runtime_config").update({
+    dispatch_fiscal_canary_enabled:false,
+    dispatch_fiscal_canary_armed_at:null,
+    dispatch_invoice_generate_enabled:false,
+    dispatch_invoice_authorize_enabled:false,
+    dispatch_gate_mode:"observe",
+    updated_at:new Date().toISOString()
+  }).eq("id",1);
+  if(stop.error)throw stop.error;
+  return {...result,canary_closed:true,fail_closed:true};
+}
+
 async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
   let preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
   if(!preview.ok)return preview;
@@ -4280,6 +4375,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_dispatch_canary_disarm"){
         const result=await blingHubVitrineDispatchFiscalDisarm(sb);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_dispatch_canary_human_execute"){
+        const result=await blingHubVitrineDispatchFiscalHumanExecute(sb,body?.source_order_id,body?.confirmation);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="fiscal_dispatch_canary"){
