@@ -931,7 +931,106 @@ async function papoAiStorefrontRuntimeControl(sb:any){
   }
 }
 
-async function fetchPostOrderCrossSellContext(sb:any,papoPhone:string,messageText:string){
+async function syncPapoAiOperationalMessage(sb:any,papoPhone:string,contactName:string,message:string,kind:string,sessionId:string){
+  const phone=normalizePapoAiFlowPhone(papoPhone);
+  if(!phone||!String(message||'').trim())return {ok:false,reason:'operational_message_missing'};
+  try{
+    const secretQ=await sb.from('internal_integration_secrets')
+      .select('secret_value')
+      .eq('integration_key','papoai_storefront_inbound_webhook_v1')
+      .maybeSingle();
+    if(secretQ.error||!secretQ.data?.secret_value)return {ok:false,reason:'papoai_inbound_secret_missing'};
+    const response=await fetch(String(secretQ.data.secret_value),{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        customer:{phone,name:contactName||'Cliente'},
+        system_message:String(message).slice(0,8000),
+        system_message_kind:String(kind||'').slice(0,80),
+        system_message_session_id:String(sessionId||'').slice(0,80)
+      }),
+      signal:AbortSignal.timeout(30000)
+    });
+    const body=(await response.text()).slice(0,500);
+    if(!response.ok)return {ok:false,reason:'papoai_inbound_http_'+response.status,response:body};
+    return {ok:true,http_status:response.status,response:body};
+  }catch(error){
+    return {ok:false,reason:String((error as Error)?.message||error).slice(0,180)};
+  }
+}
+
+async function markPostOrderCrossSellSent(sb:any,sessionId:string,deliveryRef:string){
+  if(!sessionId)return {ok:false,reason:'session_missing'};
+  try{
+    const secretQ=await sb.from('internal_integration_secrets')
+      .select('secret_value')
+      .eq('integration_key','vitrine_history_bridge')
+      .maybeSingle();
+    if(secretQ.error||!secretQ.data?.secret_value)return {ok:false,reason:'history_bridge_secret_missing'};
+    const response=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=post_order_cross_sell_mark_sent',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-vitrine-history-key':String(secretQ.data.secret_value)
+      },
+      body:JSON.stringify({session_id:sessionId,delivery_ref:deliveryRef||null}),
+      signal:AbortSignal.timeout(12000)
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_mark_sent_response'}));
+    return response.ok&&data?.ok===true?{ok:true,...data}:{ok:false,reason:data?.error||('mark_sent_http_'+response.status)};
+  }catch(error){
+    return {ok:false,reason:String((error as Error)?.message||error).slice(0,180)};
+  }
+}
+
+function looksLikePostOrderCrossSellReply(messageValue:any){
+  const raw=String(messageValue??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  if(!raw||raw.length>100)return false;
+  if(/^(nao|nao quero|pode fechar|pode finalizar|so isso|deixa assim|obrigado|obrigada)[.!]?$/.test(raw))return true;
+  return /^(?:(?:quero|queria)\s+(?:(?:o|os)\s+)?|(?:coloca|coloque|adiciona|adicione|adicionar)\s+(?:(?:o|os)\s+)?|(?:pode\s+(?:colocar|adicionar))\s+(?:(?:o|os)\s+)?)?(?:10|[1-9])(?:\s*(?:,|e)\s*(?:10|[1-9]))*\s*[.!]?$/.test(raw);
+}
+
+async function processPostOrderCrossSellReply(sb:any,papoPhone:string,contactName:string,messageText:string){
+  const phone=normalizePapoAiFlowPhone(papoPhone);
+  if(!phone||!looksLikePostOrderCrossSellReply(messageText))return {handled:false,reason:'not_candidate'};
+  try{
+    const sitePhone=await canonicalStorefrontPhoneFromCrm(sb,phone);
+    const secretQ=await sb.from('internal_integration_secrets')
+      .select('secret_value')
+      .eq('integration_key','vitrine_history_bridge')
+      .maybeSingle();
+    if(secretQ.error||!secretQ.data?.secret_value)return {handled:false,reason:'history_bridge_secret_missing'};
+    const response=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=post_order_cross_sell_reply',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-vitrine-history-key':String(secretQ.data.secret_value)
+      },
+      body:JSON.stringify({phone:sitePhone||phone,message:messageText}),
+      signal:AbortSignal.timeout(12000)
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_cross_sell_reply_response'}));
+    if(!response.ok||data?.ok!==true||data?.handled!==true){
+      return {handled:false,reason:data?.reason||data?.error||('cross_sell_reply_http_'+response.status)};
+    }
+    const delivery=await syncPapoAiOperationalMessage(
+      sb,phone,contactName,String(data.message||''),'post_order_cross_sell_reply',String(data.session_id||'')
+    );
+    return {
+      handled:true,
+      intent:data.intent||null,
+      session_id:data.session_id||null,
+      order_id:data.order_id||null,
+      positions:data.positions||[],
+      new_total_cents:data.new_total_cents||null,
+      delivery
+    };
+  }catch(error){
+    return {handled:false,reason:String((error as Error)?.message||error).slice(0,180)};
+  }
+}
+
+async function fetchPostOrderCrossSellContext(sb:any,papoPhone:string,contactName:string,messageText:string){
   const match=String(messageText||'').match(/PEDIDO\s+DONA\s+ANTONIA[\s\S]*?NUMERO:\s*([0-9]{6,20})/i);
   if(!match?.[1])return {ok:false,reason:'order_number_missing'};
   const papoContactPhone=normalizePapoAiFlowPhone(papoPhone);
@@ -960,8 +1059,22 @@ async function fetchPostOrderCrossSellContext(sb:any,papoPhone:string,messageTex
     if(!response.ok||data?.ok!==true){
       return {ok:false,reason:String(data?.error||('cross_sell_http_'+response.status)).slice(0,180)};
     }
+    let deliveryAttempt:any=null;
+    let markedSent:any=null;
+    if(data.send_allowed===true&&String(data.message||'').trim()){
+      deliveryAttempt=await syncPapoAiOperationalMessage(
+        sb,papoContactPhone,contactName,String(data.message||''),'post_order_cross_sell_offer',String(data.session_id||'')
+      );
+      if(deliveryAttempt?.ok===true){
+        markedSent=await markPostOrderCrossSellSent(
+          sb,String(data.session_id||''),'papoai_inbound:'+String(deliveryAttempt.http_status||'ok')
+        );
+      }
+    }
     return {
       ok:true,
+      delivery_attempt:deliveryAttempt,
+      marked_sent:markedSent,
       order_id:data.order_id||null,
       order_number:data.order_number||null,
       session_id:data.session_id||null,
@@ -1105,7 +1218,7 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
     if(orderLike){
       const captureCrossSell=async()=>{
         const postOrderContext=phone
-          ? await fetchPostOrderCrossSellContext(sb,phone,messageText)
+          ? await fetchPostOrderCrossSellContext(sb,phone,contactName,messageText)
           : {ok:false,reason:'phone_missing'};
         if(ins.data?.id){
           try{
@@ -1121,6 +1234,27 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
       const edgeRuntime=(globalThis as any)?.EdgeRuntime;
       if(edgeRuntime?.waitUntil)edgeRuntime.waitUntil(captureCrossSell());
       else await captureCrossSell();
+    }
+
+    if(!orderLike&&phone&&looksLikePostOrderCrossSellReply(messageText)){
+      const captureReply=async()=>{
+        const replyResult=await processPostOrderCrossSellReply(sb,phone,contactName,messageText);
+        if(ins.data?.id&&replyResult?.handled){
+          try{
+            const current=await sb.from('papoai_flow_customer_webhook_events')
+              .select('parsed_data').eq('id',ins.data.id).maybeSingle();
+            await sb.from('papoai_flow_customer_webhook_events').update({
+              parsed_data:{...(current.data?.parsed_data||baseParsedData),post_order_cross_sell_reply:replyResult}
+            }).eq('id',ins.data.id);
+          }catch(error){
+            console.error('papoai_post_order_cross_sell_reply_update_failed',correlationId,error);
+          }
+        }
+        return replyResult;
+      };
+      const edgeRuntime=(globalThis as any)?.EdgeRuntime;
+      if(edgeRuntime?.waitUntil)edgeRuntime.waitUntil(captureReply());
+      else await captureReply();
     }
 
     if(storefrontDecision.eligible){
