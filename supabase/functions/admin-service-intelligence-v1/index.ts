@@ -1500,7 +1500,7 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
 
   const [cfg,link,control,job,dispatchGate]=await Promise.all([
     sb.from("fiscal_runtime_config")
-      .select("enabled,execution_mode,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id")
+      .select("enabled,execution_mode,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_fiscal_human_issue_enabled,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id")
       .eq("id",1).maybeSingle(),
     sb.from("bling_hub_entity_links_v2")
       .select("bling_id,status,identity_value,last_verified_at,metadata")
@@ -1596,6 +1596,7 @@ async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any)
       dispatch_gate_mode:f.dispatch_gate_mode||"observe",
       canary_enabled:Boolean(f.dispatch_fiscal_canary_enabled),
       canary_armed_at:f.dispatch_fiscal_canary_armed_at||null,
+      human_issue_enabled:Boolean(f.dispatch_fiscal_human_issue_enabled),
       generate_enabled:Boolean(f.dispatch_invoice_generate_enabled),
       authorize_enabled:Boolean(f.dispatch_invoice_authorize_enabled),
       canary_source_order_id:selectedCanary||null,
@@ -1674,29 +1675,60 @@ async function blingHubVitrineDispatchFiscalHumanExecute(sb:any,sourceOrderIdRaw
     return {ok:false,error:"fiscal_human_confirmation_required",status:409,external_write:false};
   }
 
-  const preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
+  let preview=await blingHubVitrineDispatchFiscalPreview(sb,sourceOrderIdRaw);
   if(!preview.ok)return preview;
   if(preview.hard_blockers?.length){
     return {ok:false,error:"fiscal_dispatch_not_eligible",status:409,preview,external_write:false};
   }
-  if(preview.config?.canary_enabled!==true||preview.config?.canary_selected!==true){
-    return {ok:false,error:"fiscal_canary_not_armed_for_order",status:409,preview,external_write:false};
+
+  const selected=preview.config?.canary_enabled===true&&preview.config?.canary_selected===true;
+  const productionEligible=preview.config?.human_issue_enabled===true
+    && preview.config?.dispatch_gate_mode==="enforce";
+
+  if(!selected&&!productionEligible){
+    return {ok:false,error:"fiscal_human_issue_not_enabled",status:409,preview,external_write:false};
   }
 
   const now=new Date().toISOString();
-  const armed=await sb.from("fiscal_runtime_config").update({
-    dispatch_invoice_generate_enabled:true,
-    dispatch_invoice_authorize_enabled:true,
-    updated_at:now
-  }).eq("id",1).eq("dispatch_fiscal_canary_enabled",true).eq("dispatch_invoice_canary_source_order_id",preview.source_order_id)
-    .select("id").maybeSingle();
-  if(armed.error)throw armed.error;
-  if(!armed.data){
-    return {ok:false,error:"fiscal_canary_arm_race",status:409,external_write:false};
+  if(!selected){
+    const claim=await sb.from("fiscal_runtime_config").update({
+      dispatch_fiscal_canary_enabled:true,
+      dispatch_fiscal_canary_armed_at:now,
+      dispatch_invoice_canary_source_order_id:preview.source_order_id,
+      dispatch_invoice_generate_enabled:true,
+      dispatch_invoice_authorize_enabled:true,
+      updated_at:now
+    }).eq("id",1)
+      .eq("dispatch_fiscal_human_issue_enabled",true)
+      .eq("dispatch_gate_mode","enforce")
+      .eq("dispatch_fiscal_canary_enabled",false)
+      .select("id").maybeSingle();
+    if(claim.error)throw claim.error;
+    if(!claim.data){
+      return {ok:false,error:"fiscal_operation_in_progress",status:409,external_write:false};
+    }
+  }else{
+    const armed=await sb.from("fiscal_runtime_config").update({
+      dispatch_invoice_generate_enabled:true,
+      dispatch_invoice_authorize_enabled:true,
+      updated_at:now
+    }).eq("id",1)
+      .eq("dispatch_fiscal_canary_enabled",true)
+      .eq("dispatch_invoice_canary_source_order_id",preview.source_order_id)
+      .select("id").maybeSingle();
+    if(armed.error)throw armed.error;
+    if(!armed.data){
+      return {ok:false,error:"fiscal_operation_in_progress",status:409,external_write:false};
+    }
+  }
+
+  preview=await blingHubVitrineDispatchFiscalPreview(sb,preview.source_order_id);
+  if(preview.config?.canary_enabled!==true||preview.config?.canary_selected!==true){
+    return {ok:false,error:"fiscal_operation_lock_lost",status:409,external_write:false};
   }
 
   await sb.from("bling_hub_audit_v2").insert({
-    event_type:"dispatch_fiscal_human_execute_confirmed",
+    event_type:"dispatch_fiscal_human_issue_confirmed",
     severity:"warning",
     domain:"fiscal",
     details:{
@@ -1704,6 +1736,7 @@ async function blingHubVitrineDispatchFiscalHumanExecute(sb:any,sourceOrderIdRaw
       canonical_order_id:preview.canonical_order_id,
       bling_order_id:preview.bling_order_id,
       confirmation:"EMITIR_NFE",
+      production_mode:productionEligible,
       external_write:false,
       make_used:false
     }
@@ -1724,18 +1757,19 @@ async function blingHubVitrineDispatchFiscalHumanExecute(sb:any,sourceOrderIdRaw
     }).eq("id",1);
     if(close.error)throw close.error;
     await sb.from("bling_hub_audit_v2").insert({
-      event_type:"dispatch_fiscal_canary_passed",
+      event_type:productionEligible?"dispatch_fiscal_human_issue_authorized":"dispatch_fiscal_canary_passed",
       severity:"info",
       domain:"fiscal",
       details:{
         source_order_id:preview.source_order_id,
         canonical_order_id:preview.canonical_order_id,
         bling_invoice_id:result?.invoice?.id||null,
+        production_mode:productionEligible,
         external_write:true,
         make_used:false
       }
     });
-    return {...result,canary_closed:true,dispatch_gate_mode:"enforce"};
+    return {...result,operation_closed:true,dispatch_gate_mode:"enforce",production_mode:productionEligible};
   }
 
   if(result?.pending===true||result?.generated===true){
@@ -1745,7 +1779,7 @@ async function blingHubVitrineDispatchFiscalHumanExecute(sb:any,sourceOrderIdRaw
       updated_at:new Date().toISOString()
     }).eq("id",1).eq("dispatch_invoice_canary_source_order_id",preview.source_order_id);
     if(keep.error)throw keep.error;
-    return {...result,canary_closed:false,reconcile_only_next:true};
+    return {...result,operation_closed:false,reconcile_only_next:true,production_mode:productionEligible};
   }
 
   const stop=await sb.from("fiscal_runtime_config").update({
@@ -1753,11 +1787,12 @@ async function blingHubVitrineDispatchFiscalHumanExecute(sb:any,sourceOrderIdRaw
     dispatch_fiscal_canary_armed_at:null,
     dispatch_invoice_generate_enabled:false,
     dispatch_invoice_authorize_enabled:false,
-    dispatch_gate_mode:"observe",
+    dispatch_invoice_canary_source_order_id:null,
+    dispatch_gate_mode:"enforce",
     updated_at:new Date().toISOString()
   }).eq("id",1);
   if(stop.error)throw stop.error;
-  return {...result,canary_closed:true,fail_closed:true};
+  return {...result,operation_closed:true,fail_closed:true,production_mode:productionEligible};
 }
 
 async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
@@ -2037,7 +2072,7 @@ async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
       .eq("order_id",order.id).maybeSingle(),
     sb.rpc("preview_bling_invoice_eligibility_v1",{p_order_id:order.id}),
     sb.from("fiscal_runtime_config")
-      .select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id")
+      .select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_fiscal_human_issue_enabled,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id")
       .eq("id",1).maybeSingle(),
     sb.rpc("check_order_dispatch_fiscal_gate_v1",{p_order_id:order.id})
   ]);
@@ -2095,6 +2130,7 @@ async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
       require_fiscal_authorization_before_dispatch:f.require_fiscal_authorization_before_dispatch!==false,
       dispatch_fiscal_canary_enabled:Boolean(f.dispatch_fiscal_canary_enabled),
       dispatch_fiscal_canary_armed_at:f.dispatch_fiscal_canary_armed_at||null,
+      dispatch_fiscal_human_issue_enabled:Boolean(f.dispatch_fiscal_human_issue_enabled),
       dispatch_invoice_generate_enabled:Boolean(f.dispatch_invoice_generate_enabled),
       dispatch_invoice_authorize_enabled:Boolean(f.dispatch_invoice_authorize_enabled),
       dispatch_invoice_canary_source_order_id:uuid(f.dispatch_invoice_canary_source_order_id)||null
@@ -2161,7 +2197,7 @@ async function blingHubReadinessExtended(sb:any){
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000),
     sb.from("bling_webhook_inbox_v2").select("status").limit(5000),
-    sb.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id").eq("id",1).maybeSingle(),
+    sb.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_fiscal_human_issue_enabled,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id").eq("id",1).maybeSingle(),
     sb.from("order_fiscal_controls").select("fiscal_status").limit(5000),
     sb.from("fiscal_issue_jobs").select("status,external_side_effect").limit(5000),
     sb.from("dispatch_fiscal_jobs").select("status,external_side_effect").limit(5000),
@@ -2204,6 +2240,7 @@ async function blingHubReadinessExtended(sb:any){
       require_delivery_confirmation:true,require_payment_confirmation:true,canary_percent:0,
       dispatch_gate_mode:"observe",require_fiscal_authorization_before_dispatch:true,
       dispatch_fiscal_canary_enabled:false,dispatch_fiscal_canary_armed_at:null,
+      dispatch_fiscal_human_issue_enabled:false,
       dispatch_invoice_generate_enabled:false,dispatch_invoice_authorize_enabled:false,
       dispatch_invoice_canary_source_order_id:null
     },
@@ -2214,6 +2251,7 @@ async function blingHubReadinessExtended(sb:any){
       && !(fiscalConfig.data?.bling_invoice_prepare_enabled)
       && !(fiscalConfig.data?.bling_invoice_send_enabled)
       && !(fiscalConfig.data?.dispatch_fiscal_canary_enabled)
+      && !(fiscalConfig.data?.dispatch_fiscal_human_issue_enabled)
       && !(fiscalConfig.data?.dispatch_invoice_generate_enabled)
       && !(fiscalConfig.data?.dispatch_invoice_authorize_enabled)
       && fiscalJobCounts.external_side_effect===0

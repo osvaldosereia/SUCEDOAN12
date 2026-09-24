@@ -8,7 +8,9 @@ const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 assert.match(hub,/async function blingHubVitrineDispatchFiscalHumanExecute/);
 assert.match(hub,/confirmation!=="EMITIR_NFE"/);
 assert.match(hub,/fiscal_human_confirmation_required/);
-assert.match(hub,/fiscal_canary_not_armed_for_order/);
+assert.match(hub,/fiscal_human_issue_not_enabled/);
+assert.match(hub,/fiscal_operation_in_progress/);
+assert.match(hub,/dispatch_fiscal_human_issue_authorized/);
 assert.match(hub,/dispatch_invoice_generate_enabled:true/);
 assert.match(hub,/dispatch_invoice_authorize_enabled:true/);
 assert.match(hub,/dispatch_gate_mode:"enforce"/);
@@ -34,4 +36,4 @@ const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].m
 assert.ok(scripts.length);
 for(const source of scripts)new Function(source);
 
-console.log('OK · canário fiscal humano e fail-closed');
+console.log('OK · emissão fiscal humana serial e fail-closed');
