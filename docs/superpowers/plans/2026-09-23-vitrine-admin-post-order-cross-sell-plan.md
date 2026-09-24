@@ -24,9 +24,11 @@ Arquitetura atual preservada:
    - `auto_expiry_offer_enabled`
    - RPC existente `reconcile_expiry_offers`
 
-2. O cross-sell não recalcula desconto de validade.
-   - Grupo A só consome oferta vigente cujo `offers.metadata.source = 'expiry_auto'`.
-   - Assim não existe regra duplicada.
+2. O cross-sell usa a mesma regra central de desconto por validade.
+   - Funções canônicas: `expiry_discount_percent_v1` e `expiry_offer_price_cents_v1`.
+   - Grupo A pode criar um quote privado de Pós-cesta mesmo quando a oferta pública do produto estiver desligada.
+   - `auto_expiry_offer_enabled` continua controlando somente a oferta pública no catálogo.
+   - Assim não é necessário ativar em massa todos os produtos com validade cadastrada.
 
 3. Shadow Mode não envia WhatsApp e não altera `orders`/`order_items`.
 
@@ -140,12 +142,11 @@ Fluxo:
 Consulta somente:
 - product active;
 - stock > 0;
-- expiration_date >= America/Cuiaba current date;
-- auto_expiry_offer_enabled = true;
-- offer active;
-- offer vigente;
-- `offer.metadata.source='expiry_auto'`;
-- não está no conjunto de exclusão.
+- expiration_date entre hoje e 90 dias em America/Cuiaba;
+- não está no conjunto de exclusão;
+- preço válido;
+- se houver oferta vigente mais barata, usar esse preço;
+- caso contrário, calcular quote privado com a regra 10% / 20% / 40%.
 
 Ordenar:
 1. expiration_date asc;
@@ -195,7 +196,7 @@ Aprovado somente se:
 - produto da cesta nunca aparece;
 - estoque zero nunca aparece;
 - vencido nunca aparece;
-- Grupo A usa somente `expiry_auto`;
+- Grupo A usa a regra canônica de validade e nunca exige ativação pública em massa;
 - mesmo pedido retorna mesma lista quando catálogo não mudou.
 
 ---
