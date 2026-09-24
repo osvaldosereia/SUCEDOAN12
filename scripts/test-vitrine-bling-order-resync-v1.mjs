@@ -13,6 +13,14 @@ assert.match(vitrine,/bling_order_queued:blingOrderQueued/);
 
 assert.match(hub,/queueReason==="first_separation" \|\| payment\?\.stock_consumed===true/);
 assert.match(hub,/function blingHubOrderManagedProjection\(order:any\)/);
+const projectionStart=hub.indexOf('function blingHubOrderManagedProjection(order:any)');
+const projectionEnd=hub.indexOf('function blingHubOrderPutPayload',projectionStart);
+const projection=hub.slice(projectionStart,projectionEnd);
+assert.doesNotMatch(projection,/descricao:/,'descrição normalizada pelo Bling não deve fazer parte da comparação gerenciada');
+assert.match(projection,/produto_id:/);
+assert.match(projection,/codigo:/);
+assert.match(projection,/quantidade:/);
+assert.match(projection,/valor_cents:/);
 assert.match(hub,/function blingHubOrderPutPayload\(current:any,desired:any\)/);
 assert.match(hub,/const keep=\["dataSaida","dataPrevista","numeroPedidoCompra","loja","vendedor","situacao","unidadeNegocio","categoria","tributacao","intermediador","taxas","parcelas"\]/);
 assert.match(hub,/naturezaOperacao/);
