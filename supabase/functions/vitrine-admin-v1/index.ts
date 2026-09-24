@@ -1307,6 +1307,154 @@ async function orderStockReadinessMap(orderIdsRaw:any[]){
   return result;
 }
 
+async function listOrderStockShortages(){
+  const orders:any[]=[];
+  for(let from=0;from<10000;from+=1000){
+    const q=await db.from("orders")
+      .select("id,order_number,status,payment_method_snapshot")
+      .eq("organization_id",ORG_ID)
+      .in("status",["created","confirmed","processing"])
+      .order("created_at",{ascending:true})
+      .range(from,from+999);
+    if(q.error)throw q.error;
+    const batch=q.data||[];
+    orders.push(...batch);
+    if(batch.length<1000)break;
+  }
+  const eligible=orders.filter((o:any)=>{
+    const p=o.payment_method_snapshot&&typeof o.payment_method_snapshot==="object"?o.payment_method_snapshot:{};
+    return p.stock_consumed!==true;
+  });
+  if(!eligible.length)return {products:[],summary:{products:0,shortage_units:0,pending_orders:0}};
+
+  const orderIds=eligible.map((o:any)=>o.id);
+  const items:any[]=[];
+  for(let i=0;i<orderIds.length;i+=150){
+    const q=await db.from("order_items")
+      .select("id,order_id,item_kind,product_id,quantity")
+      .eq("organization_id",ORG_ID)
+      .in("order_id",orderIds.slice(i,i+150));
+    if(q.error)throw q.error;
+    items.push(...(q.data||[]));
+  }
+  const basketIds=items.filter((x:any)=>x.item_kind==="basket").map((x:any)=>x.id);
+  const components:any[]=[];
+  for(let i=0;i<basketIds.length;i+=250){
+    const q=await db.from("order_item_components")
+      .select("order_item_id,product_id,quantity")
+      .eq("organization_id",ORG_ID)
+      .in("order_item_id",basketIds.slice(i,i+250));
+    if(q.error)throw q.error;
+    components.push(...(q.data||[]));
+  }
+
+  const basketMeta=new Map(items.filter((x:any)=>x.item_kind==="basket").map((x:any)=>[x.id,{order_id:x.order_id,quantity:Number(x.quantity||0)}]));
+  const demand=new Map<string,Map<string,number>>();
+  const add=(orderId:string,productId:string,qty:number)=>{
+    if(!orderId||!productId||!Number.isFinite(qty)||qty<=0)return;
+    if(!demand.has(orderId))demand.set(orderId,new Map());
+    const m=demand.get(orderId)!;
+    m.set(productId,Math.round(((m.get(productId)||0)+qty)*1000)/1000);
+  };
+  for(const item of items){
+    if(item.item_kind==="product"&&item.product_id)add(item.order_id,item.product_id,Number(item.quantity||0));
+  }
+  for(const c of components){
+    const meta=basketMeta.get(c.order_item_id);
+    if(meta)add(meta.order_id,c.product_id,Number(c.quantity||0)*Number(meta.quantity||0));
+  }
+
+  const productIds=[...new Set([...demand.values()].flatMap(m=>[...m.keys()]))];
+  const products:any[]=[];
+  for(let i=0;i<productIds.length;i+=200){
+    const q=await db.from("products")
+      .select("id,name,sku,gtin,stock_quantity,active")
+      .eq("organization_id",ORG_ID)
+      .in("id",productIds.slice(i,i+200));
+    if(q.error)throw q.error;
+    products.push(...(q.data||[]));
+  }
+  const pMap=new Map(products.map((p:any)=>[p.id,p]));
+
+  const reservations:any[]=[];
+  for(let i=0;i<productIds.length;i+=200){
+    const q=await db.from("order_stock_reservations")
+      .select("order_id,product_id,quantity,status")
+      .eq("organization_id",ORG_ID)
+      .eq("status","reserved")
+      .in("product_id",productIds.slice(i,i+200));
+    if(q.error)throw q.error;
+    reservations.push(...(q.data||[]));
+  }
+  const reservationByProduct=new Map<string,any[]>();
+  for(const r of reservations){
+    if(!reservationByProduct.has(r.product_id))reservationByProduct.set(r.product_id,[]);
+    reservationByProduct.get(r.product_id)!.push(r);
+  }
+  const orderMap=new Map(eligible.map((o:any)=>[o.id,o]));
+  const pendingByProduct=new Map<string,{quantity:number,orders:Set<string>,order_numbers:Set<string>}>();
+
+  for(const [orderId,lines] of demand.entries()){
+    const order=orderMap.get(orderId);
+    if(!order)continue;
+    const pay=order.payment_method_snapshot&&typeof order.payment_method_snapshot==="object"?order.payment_method_snapshot:{};
+    const protectedLegacy=pay.stock_reserved===true&&pay.stock_released!==true&&pay.stock_model!=="reservation_v2";
+    if(protectedLegacy)continue;
+
+    for(const [productId,qty] of lines.entries()){
+      const own=(reservationByProduct.get(productId)||[]).some((r:any)=>r.order_id===orderId);
+      if(own)continue;
+      if(!pendingByProduct.has(productId))pendingByProduct.set(productId,{quantity:0,orders:new Set(),order_numbers:new Set()});
+      const row=pendingByProduct.get(productId)!;
+      row.quantity=Math.round((row.quantity+qty)*1000)/1000;
+      row.orders.add(orderId);
+      row.order_numbers.add(String(order.order_number||orderId).slice(-8));
+    }
+  }
+
+  const locations=await productLocationDetailsMap([...pendingByProduct.keys()]);
+  const result:any[]=[];
+  let shortageUnits=0;
+  const pendingOrderIds=new Set<string>();
+  for(const [productId,pending] of pendingByProduct.entries()){
+    const p=pMap.get(productId);
+    const rs=reservationByProduct.get(productId)||[];
+    const reserved=Math.round(rs.reduce((sum:number,r:any)=>sum+Number(r.quantity||0),0)*1000)/1000;
+    const physical=p&&p.active!==false?Number(p.stock_quantity||0):0;
+    const free=Math.max(0,Math.round((physical-reserved)*1000)/1000);
+    const shortage=Math.max(0,Math.round((pending.quantity-free)*1000)/1000);
+    if(shortage<=0)continue;
+    shortageUnits=Math.round((shortageUnits+shortage)*1000)/1000;
+    pending.orders.forEach(id=>pendingOrderIds.add(id));
+    const loc=locations.get(productId)||{};
+    result.push({
+      product_id:productId,
+      name:p?.name||"Produto indisponível",
+      sku:p?.sku||"",
+      gtin:p?.gtin||"",
+      active:Boolean(p?.active),
+      physical_stock:Math.max(0,physical),
+      reserved_stock:Math.max(0,reserved),
+      free_stock:free,
+      pending_demand:pending.quantity,
+      shortage,
+      pending_orders:pending.orders.size,
+      order_numbers:[...pending.order_numbers].slice(0,8),
+      gondola_number:Number.isFinite(loc.gondola_number)?Number(loc.gondola_number):null,
+      shelf_label:loc.shelf_label??null
+    });
+  }
+  result.sort((a,b)=>b.shortage-a.shortage||b.pending_orders-a.pending_orders||String(a.name).localeCompare(String(b.name),"pt-BR"));
+  return {
+    products:result,
+    summary:{
+      products:result.length,
+      shortage_units:shortageUnits,
+      pending_orders:pendingOrderIds.size
+    }
+  };
+}
+
 async function consumeOrderStock(payload:any) {
   const id=uuid(payload?.id);
   if(!id)return {error:"invalid_order",status:400};
@@ -2206,6 +2354,7 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="expirations") return json(req,{ok:true,...await listExpirations()});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
+    if (req.method==="GET" && action==="order_stock_shortages") return json(req,{ok:true,...await listOrderStockShortages()});
     if (req.method==="GET" && action==="closure_orders") return json(req,{ok:true,...await listClosureOrders()});
     if (req.method==="GET" && action==="bling_status") {
       const result=await blingHubControl("readiness");
