@@ -552,6 +552,30 @@ async function listGondolas() {
   return rows.map((g:any)=>({...g,product_count:counts.get(g.id)??0}));
 }
 
+async function gondolaCoverage() {
+  const [productsRes,assignmentsRes]=await Promise.all([
+    db.from("products").select("id").eq("organization_id",ORG_ID).eq("active",true),
+    db.from("product_gondola_assignments").select("product_id,shelf_label").eq("organization_id",ORG_ID)
+  ]);
+  if(productsRes.error)throw productsRes.error;
+  if(assignmentsRes.error)throw assignmentsRes.error;
+  const activeIds=new Set((productsRes.data??[]).map((p:any)=>p.id));
+  let located=0,withShelf=0;
+  for(const row of assignmentsRes.data??[]){
+    if(!activeIds.has(row.product_id))continue;
+    located++;
+    if(maybeText(row.shelf_label,24))withShelf++;
+  }
+  const total=activeIds.size;
+  return {
+    active_products:total,
+    located_products:located,
+    with_shelf:withShelf,
+    without_location:Math.max(0,total-located),
+    coverage_percent:total?Math.round(located*1000/total)/10:100
+  };
+}
+
 async function createGondola(payload:any) {
   const number=Math.floor(Number(payload?.number));
   if (!Number.isInteger(number) || number < 1 || number > 9999) return {error:"invalid_gondola",status:400};
@@ -2022,7 +2046,10 @@ Deno.serve(async (req: Request) => {
       if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
       return json(req,{ok:true,...result});
     }
-    if (req.method==="GET" && action==="gondolas") return json(req,{ok:true,gondolas:await listGondolas()});
+    if (req.method==="GET" && action==="gondolas") {
+      const [gondolas,coverage]=await Promise.all([listGondolas(),gondolaCoverage()]);
+      return json(req,{ok:true,gondolas,coverage});
+    }
     if (req.method==="GET" && action==="gondola") {
       const result=await getGondola(url.searchParams.get("id"));
       if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
