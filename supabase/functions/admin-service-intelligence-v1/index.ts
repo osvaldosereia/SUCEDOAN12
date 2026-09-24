@@ -2427,6 +2427,20 @@ async function blingHubAuthorized(sb:any,req:Request){
   let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];
   return diff===0;
 }
+async function blingHubFinanceAuthorizedUser(sb:any,req:Request){
+  const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
+  if(!token)return {ok:false,status:401,error:"finance_auth_required"};
+  const {data:userData,error:userError}=await sb.auth.getUser(token);
+  if(userError||!userData?.user?.id)return {ok:false,status:401,error:"finance_session_invalid"};
+  const {data:admin,error:adminError}=await sb.from("admin_users")
+    .select("role,is_active")
+    .eq("user_id",userData.user.id)
+    .maybeSingle();
+  if(adminError)return {ok:false,status:500,error:"finance_admin_lookup_failed"};
+  if(!admin?.is_active)return {ok:false,status:403,error:"finance_admin_not_authorized"};
+  if(admin.role!=="owner")return {ok:false,status:403,error:"finance_owner_required"};
+  return {ok:true,status:200,user_id:userData.user.id,role:admin.role};
+}
 async function blingHubReserveSlot(sb:any){
   const q=await sb.rpc("reserve_bling_hub_rate_slot_v2",{});
   if(q.error)throw new Error("rate_slot_failed");
@@ -2877,7 +2891,7 @@ async function blingHubFinanceContactSearch(sb:any,token:string,queryRaw:any){
     external_write:false
   };
 }
-async function blingHubFinanceAction(sb:any,body:any){
+async function blingHubFinanceAction(sb:any,body:any,actorUserId:string|null=null){
   const operation=clean(body?.operation||body?.finance_action,80).toLowerCase();
 
   if(operation==="capabilities"){
@@ -3004,7 +3018,7 @@ async function blingHubFinanceAction(sb:any,body:any){
   }
 
   await blingHubFinanceAudit(sb,"finance_action_attempt","warning",{
-    operation,kind,id:id||null,idempotency_key:idem,external_write:false
+    operation,kind,id:id||null,idempotency_key:idem,actor_user_id:actorUserId,external_write:false
   });
 
   const write=operation==="update_execute"
@@ -3014,7 +3028,7 @@ async function blingHubFinanceAction(sb:any,body:any){
   if(!write.ok){
     const uncertain=Boolean(write.uncertain||write.status===0||write.status>=500);
     await blingHubFinanceAudit(sb,uncertain?"finance_action_uncertain":"finance_action_failed",uncertain?"error":"warning",{
-      operation,kind,id:id||null,idempotency_key:idem,http_status:Number(write.status||0),external_write:false,manual_review_required:uncertain
+      operation,kind,id:id||null,idempotency_key:idem,actor_user_id:actorUserId,http_status:Number(write.status||0),external_write:false,manual_review_required:uncertain
     });
     return {
       ok:false,status:uncertain?409:(write.status||502),
@@ -3026,7 +3040,7 @@ async function blingHubFinanceAction(sb:any,body:any){
 
   const resultId=Number(write.data?.data?.id||write.data?.bordero?.id||write.data?.id||0)||null;
   await blingHubFinanceAudit(sb,"finance_action_succeeded","warning",{
-    operation,kind,id:id||null,idempotency_key:idem,http_status:write.status,result_id:resultId,external_write:true
+    operation,kind,id:id||null,idempotency_key:idem,actor_user_id:actorUserId,http_status:write.status,result_id:resultId,external_write:true
   });
   return {ok:true,status:write.status,http_status:write.status,result_id:resultId,result:write.data||null,external_write:true,automatic_retry:operation==="update_execute"};
 }
@@ -4929,7 +4943,9 @@ Deno.serve(async(req:Request)=>{
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="finance_action"){
-        const result=await blingHubFinanceAction(sb,body);
+        const financeUser=await blingHubFinanceAuthorizedUser(sb,req);
+        if(!financeUser.ok)return json({ok:false,error:financeUser.error},Number(financeUser.status||401));
+        const result=await blingHubFinanceAction(sb,body,financeUser.user_id||null);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="reconcile_products_readonly"){
