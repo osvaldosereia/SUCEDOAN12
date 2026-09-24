@@ -102,6 +102,7 @@ async function listProducts(url: URL) {
   if (error) throw error;
   const rows = data ?? [];
   const ids=rows.map((p:any)=>p.id);
+  const locationMap=await productLocationMap(ids);
   const offerMap=new Map<string,any>();
   if(ids.length){
     const {data:offerRows,error:oErr}=await db.from("offers")
@@ -118,7 +119,8 @@ async function listProducts(url: URL) {
       packaging: p.metadata?.packaging ?? "",
       subcategory: p.metadata?.subcategory ?? "",
       detailed_subcategory: p.metadata?.subsubcategory ?? "",
-      category: p.metadata?.sales_category ?? p.metadata?.storefront_category ?? ""
+      category: p.metadata?.sales_category ?? p.metadata?.storefront_category ?? "",
+      gondola_number: locationMap.get(p.id) ?? null
     })),
     next_offset: rows.length === limit ? offset + limit : null
   };
@@ -160,6 +162,41 @@ async function productFacets(categoryRaw:unknown="") {
   };
 }
 
+async function resolveConfiguredGondola(raw:any){
+  if(raw===null||raw===undefined||String(raw).trim()==="")return {gondola:null};
+  const number=Math.floor(Number(raw));
+  if(!Number.isInteger(number)||number<1||number>9999)return {error:"invalid_gondola",status:400};
+  const {data,error}=await db.from("warehouse_gondolas")
+    .select("id,number,active")
+    .eq("organization_id",ORG_ID)
+    .eq("number",number)
+    .eq("active",true)
+    .maybeSingle();
+  if(error)throw error;
+  if(!data)return {error:"gondola_not_found",status:404};
+  return {gondola:data};
+}
+
+async function setProductGondolaAssignment(productId:string,gondola:any|null){
+  if(!gondola){
+    const {error}=await db.from("product_gondola_assignments")
+      .delete()
+      .eq("organization_id",ORG_ID)
+      .eq("product_id",productId);
+    if(error)throw error;
+    return null;
+  }
+  const {error}=await db.from("product_gondola_assignments")
+    .upsert({
+      organization_id:ORG_ID,
+      product_id:productId,
+      gondola_id:gondola.id,
+      updated_at:new Date().toISOString()
+    },{onConflict:"product_id"});
+  if(error)throw error;
+  return Number(gondola.number);
+}
+
 async function saveProduct(payload: any) {
   const id = uuid(payload?.id);
   const name = text(payload?.name, 180);
@@ -173,6 +210,13 @@ async function saveProduct(payload: any) {
   const expirationRaw=hasExpiration ? text(payload?.expiration_date,10) : "";
   if(expirationRaw && !validIsoDate(expirationRaw)) return {error:"invalid_expiration_date",status:400};
   const hasAutoExpiry=Object.prototype.hasOwnProperty.call(payload??{},"auto_expiry_offer_enabled");
+  const hasGondola=Object.prototype.hasOwnProperty.call(payload??{},"gondola_number");
+  let configuredGondola:any=undefined;
+  if(hasGondola){
+    const resolved=await resolveConfiguredGondola(payload?.gondola_number);
+    if((resolved as any).error)return resolved as any;
+    configuredGondola=(resolved as any).gondola;
+  }
 
   let previous:any = null;
   if (id) {
@@ -218,6 +262,7 @@ async function saveProduct(payload: any) {
       .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
       .single();
     if (error) throw error;
+    if(hasGondola)await setProductGondolaAssignment(data.id,configuredGondola);
     try{await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID})}catch{}
     let blingQueued=false;
     try{
@@ -229,13 +274,14 @@ async function saveProduct(payload: any) {
       blingQueued=!(queued as any).error;
     }catch{}
     try{await queueBlingStockSnapshots([data.id],"product_save")}catch{}
-    return { product_id:data.id,bling_queued:blingQueued };
+    return { product_id:data.id,gondola_number:hasGondola?(configuredGondola?Number(configuredGondola.number):null):undefined,bling_queued:blingQueued };
   }
   const { data, error } = await db.from("products")
     .insert(row)
     .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
     .single();
   if (error) throw error;
+  if(hasGondola)await setProductGondolaAssignment(data.id,configuredGondola);
   try{await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID})}catch{}
   let blingQueued=false;
   try{
@@ -247,7 +293,7 @@ async function saveProduct(payload: any) {
     blingQueued=!(queued as any).error;
   }catch{}
   try{await queueBlingStockSnapshots([data.id],"product_create")}catch{}
-  return { product_id:data.id,bling_queued:blingQueued };
+  return { product_id:data.id,gondola_number:hasGondola?(configuredGondola?Number(configuredGondola.number):null):undefined,bling_queued:blingQueued };
 }
 
 
@@ -277,6 +323,7 @@ async function listExpirations() {
   if(error)throw error;
 
   const ids=(rows??[]).map((p:any)=>p.id);
+  const locationMap=await productLocationMap(ids);
   const offerMap=new Map<string,any>();
   if(ids.length){
     const {data:offerRows,error:oErr}=await db.from("offers")
@@ -296,6 +343,7 @@ async function listExpirations() {
       subcategory:p.metadata?.subcategory??"",
       detailed_subcategory:p.metadata?.subsubcategory??"",
       category:p.metadata?.sales_category??p.metadata?.storefront_category??"",
+      gondola_number:locationMap.get(p.id)??null,
       days_left:days,
       suggested_discount_percent:suggested,
       offer:offerMap.get(p.id)??null
@@ -432,40 +480,26 @@ async function saveManualOffer(payload:any) {
   return {offer:data,product_id:productId,active:data.active};
 }
 
-async function productLocationDetailsMap(productIds:string[]) {
+async function productLocationMap(productIds:string[]) {
   const ids=[...new Set(productIds.filter(Boolean))];
-  const result=new Map<string,{gondola_number:number|null,shelf_label:string|null}>();
+  const result=new Map<string,number>();
   if (!ids.length) return result;
   const {data:assignments,error}=await db.from("product_gondola_assignments")
-    .select("product_id,gondola_id,shelf_label")
+    .select("product_id,gondola_id")
     .eq("organization_id",ORG_ID)
     .in("product_id",ids);
   if (error) throw error;
   const gondolaIds=[...new Set((assignments??[]).map((x:any)=>x.gondola_id).filter(Boolean))];
-  const gMap=new Map<string,number>();
-  if (gondolaIds.length) {
-    const {data:gondolas,error:gErr}=await db.from("warehouse_gondolas")
-      .select("id,number")
-      .eq("organization_id",ORG_ID)
-      .in("id",gondolaIds);
-    if (gErr) throw gErr;
-    for(const g of gondolas??[])gMap.set(g.id,Number(g.number));
-  }
+  if (!gondolaIds.length) return result;
+  const {data:gondolas,error:gErr}=await db.from("warehouse_gondolas")
+    .select("id,number")
+    .eq("organization_id",ORG_ID)
+    .in("id",gondolaIds);
+  if (gErr) throw gErr;
+  const gMap=new Map((gondolas??[]).map((g:any)=>[g.id,Number(g.number)]));
   for (const row of assignments??[]) {
     const number=gMap.get(row.gondola_id);
-    result.set(row.product_id,{
-      gondola_number:Number.isFinite(number)?Number(number):null,
-      shelf_label:maybeText(row.shelf_label,24)
-    });
-  }
-  return result;
-}
-
-async function productLocationMap(productIds:string[]) {
-  const details=await productLocationDetailsMap(productIds);
-  const result=new Map<string,number>();
-  for(const [productId,location] of details){
-    if(Number.isFinite(location.gondola_number))result.set(productId,Number(location.gondola_number));
+    if (Number.isFinite(number)) result.set(row.product_id,Number(number));
   }
   return result;
 }
@@ -593,7 +627,7 @@ async function getGondola(rawId:unknown) {
   if (!gondola) return {error:"gondola_not_found",status:404};
 
   const {data:assignments,error:aErr}=await db.from("product_gondola_assignments")
-    .select("product_id,shelf_label,updated_at")
+    .select("product_id,updated_at")
     .eq("organization_id",ORG_ID)
     .eq("gondola_id",id)
     .order("updated_at",{ascending:false});
@@ -609,7 +643,7 @@ async function getGondola(rawId:unknown) {
   return {
     gondola,
     products:(assignments??[])
-      .map((a:any)=>({...byId.get(a.product_id),shelf_label:maybeText(a.shelf_label,24),assigned_at:a.updated_at}))
+      .map((a:any)=>({...byId.get(a.product_id),assigned_at:a.updated_at}))
       .filter((p:any)=>p.id)
   };
 }
@@ -632,7 +666,7 @@ async function assignGondolaProduct(payload:any) {
 
   let previousNumber:number|null=null;
   const {data:previous,error:prevErr}=await db.from("product_gondola_assignments")
-    .select("gondola_id,shelf_label")
+    .select("gondola_id")
     .eq("organization_id",ORG_ID)
     .eq("product_id",product.id)
     .maybeSingle();
@@ -647,19 +681,11 @@ async function assignGondolaProduct(payload:any) {
     previousNumber=prevG?Number(prevG.number):null;
   }
 
-  const shelfProvided=Object.prototype.hasOwnProperty.call(payload||{},"shelf_label");
-  const shelfLabel=shelfProvided
-    ? maybeText(payload?.shelf_label,24)
-    : previous?.gondola_id===gondolaId
-      ? maybeText(previous?.shelf_label,24)
-      : null;
-
   const {error}=await db.from("product_gondola_assignments")
     .upsert({
       organization_id:ORG_ID,
       product_id:product.id,
       gondola_id:gondolaId,
-      shelf_label:shelfLabel,
       updated_at:new Date().toISOString()
     },{onConflict:"product_id"});
   if (error) throw error;
@@ -667,25 +693,8 @@ async function assignGondolaProduct(payload:any) {
   return {
     gondola,
     previous_gondola_number:previousNumber,
-    product:{...product,gondola_number:Number(gondola.number),shelf_label:shelfLabel}
+    product:{...product,gondola_number:Number(gondola.number)}
   };
-}
-
-async function updateGondolaProductShelf(payload:any) {
-  const productId=uuid(payload?.product_id);
-  const gondolaId=uuid(payload?.gondola_id);
-  if(!productId||!gondolaId)return {error:"invalid_product",status:400};
-  const shelfLabel=maybeText(payload?.shelf_label,24);
-  const {data,error}=await db.from("product_gondola_assignments")
-    .update({shelf_label:shelfLabel,updated_at:new Date().toISOString()})
-    .eq("organization_id",ORG_ID)
-    .eq("product_id",productId)
-    .eq("gondola_id",gondolaId)
-    .select("product_id,gondola_id,shelf_label")
-    .maybeSingle();
-  if(error)throw error;
-  if(!data)return {error:"gondola_assignment_not_found",status:404};
-  return {product_id:productId,gondola_id:gondolaId,shelf_label:maybeText(data.shelf_label,24)};
 }
 
 async function removeGondolaProduct(payload:any) {
@@ -1057,9 +1066,7 @@ async function orderDetail(id:string) {
     products=res.data ?? [];
   }
   const pMap=new Map(products.map((p:any)=>[p.id,p]));
-  const locationDetailsMap=await productLocationDetailsMap(productIds);
-  const locationMap=new Map([...locationDetailsMap.entries()].filter(([,v])=>Number.isFinite(v.gondola_number)).map(([id,v])=>[id,Number(v.gondola_number)]));
-  const shelfMap=new Map([...locationDetailsMap.entries()].map(([id,v])=>[id,v.shelf_label??null]));
+  const locationMap=await productLocationMap(productIds);
 
   let customer:any=null;
   if (order.customer_id) {
@@ -1104,7 +1111,7 @@ async function orderDetail(id:string) {
   for (const c of components) {
     if (!groupedComponents.has(c.order_item_id)) groupedComponents.set(c.order_item_id,[]);
     const p=pMap.get(c.product_id);
-    groupedComponents.get(c.order_item_id)!.push({...c,image_url:p?.image_url??"",product_name:p?.name??c.name_snapshot,gondola_number:locationMap.get(c.product_id)??null,shelf_label:shelfMap.get(c.product_id)??null});
+    groupedComponents.get(c.order_item_id)!.push({...c,image_url:p?.image_url??"",product_name:p?.name??c.name_snapshot,gondola_number:locationMap.get(c.product_id)??null});
   }
 
   const {data:historySync,error:historySyncError}=await db.from("vitrine_history_sync_outbox")
@@ -1132,7 +1139,6 @@ async function orderDetail(id:string) {
         ...item,
         image_url:p?.image_url ?? item.metadata?.image_url ?? "",
         gondola_number:locationMap.get(item.product_id)??null,
-        shelf_label:shelfMap.get(item.product_id)??null,
         components:groupedComponents.get(item.id)??[]
       };
     })
@@ -2162,11 +2168,6 @@ Deno.serve(async (req: Request) => {
       }
       if (action==="gondola_assign") {
         const result=await assignGondolaProduct(payload);
-        if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
-        return json(req,{ok:true,...result});
-      }
-      if (action==="gondola_shelf_update") {
-        const result=await updateGondolaProductShelf(payload);
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
         return json(req,{ok:true,...result});
       }
