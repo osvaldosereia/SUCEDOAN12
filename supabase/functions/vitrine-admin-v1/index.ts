@@ -2684,6 +2684,19 @@ Deno.serve(async (req: Request) => {
 
     if (req.method==="POST") {
       const payload=await req.json().catch(()=>({}));
+      const mutationOrderId=(()=>{
+        if(["order_update","order_consume_stock","history_sync_retry","bling_create_order_products","bling_create_order_customer","order_fiscal_dispatch_canary_execute","order_fiscal_confirm_payment"].includes(action)){
+          return uuid(payload?.id);
+        }
+        if(["order_component_replace","cross_sell_shadow_prepare"].includes(action)){
+          return uuid(payload?.order_id);
+        }
+        return "";
+      })();
+      if(mutationOrderId){
+        const guard=await legacyOrderMutationGuard(mutationOrderId);
+        if(!guard.ok)return json(req,{ok:false,error:guard.error,created_at:(guard as any).created_at,live_orders_since:(guard as any).live_orders_since},Number((guard as any).status||409));
+      }
       if (action==="papoai_control_save") {
         const result=await papoAiAdminControl("save",{storefront_link_enabled:payload?.storefront_link_enabled===true});
         if((result as any).error)return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
