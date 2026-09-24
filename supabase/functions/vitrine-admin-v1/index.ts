@@ -2548,7 +2548,7 @@ async function crossSellShadowList(limitRaw:unknown=50) {
   const limit=Math.max(1,Math.min(100,Math.floor(Number(limitRaw||50))));
   const [{data:config,error:cErr},{data,error}]=await Promise.all([
     db.from("post_order_cross_sell_config")
-      .select("enabled,mode,expiry_offer_count,regular_count,total_limit,basket_similarity_min,max_component_changes,max_standalone_product_lines,max_basket_quantity,response_window_seconds,regular_item_max_order_ratio,updated_at")
+      .select("enabled,mode,expiry_offer_count,regular_count,total_limit,basket_similarity_min,max_component_changes,max_standalone_product_lines,max_basket_quantity,response_window_seconds,regular_item_max_order_ratio,delivery_contract_ready,updated_at")
       .eq("organization_id",ORG_ID)
       .maybeSingle(),
     db.rpc("list_post_order_cross_sell_shadow_v1",{p_organization_id:ORG_ID,p_limit:limit})
