@@ -978,7 +978,7 @@ async function postOrderCrossSellContext(payload:any){
 
   const [cfg,session]=await Promise.all([
     db.from('post_order_cross_sell_config')
-      .select('enabled,mode,expiry_offer_count,regular_count,total_limit,response_window_seconds')
+      .select('enabled,mode,expiry_offer_count,regular_count,total_limit,response_window_seconds,delivery_contract_ready,test_phone_suffix')
       .eq('organization_id',ORG_ID)
       .maybeSingle(),
     db.from('post_order_cross_sell_sessions')
@@ -1021,7 +1021,9 @@ async function postOrderCrossSellContext(payload:any){
   }
 
   const mode=String(cfg.data?.mode||'shadow');
-  const sendAllowed=cfg.data?.enabled===true&&['test','canary','live'].includes(mode)&&session.data.eligible&&items.length>0;
+  const phoneTail=String(order.whatsapp_phone_e164||'').replace(/\D+/g,'').slice(-8);
+  const testAllowed=mode!=='test'||!cfg.data?.test_phone_suffix||phoneTail===String(cfg.data.test_phone_suffix);
+  const sendAllowed=cfg.data?.enabled===true&&cfg.data?.delivery_contract_ready===true&&testAllowed&&['test','canary','live'].includes(mode)&&session.data.eligible&&items.length>0;
   return {
     order_id:order.id,
     order_number:order.order_number,
@@ -1036,6 +1038,7 @@ async function postOrderCrossSellContext(payload:any){
     mode,
     send_allowed:sendAllowed,
     response_window_seconds:Number(cfg.data?.response_window_seconds||180),
+    delivery_contract_ready:cfg.data?.delivery_contract_ready===true,
     message:lines.join('\n'),
     items
   };
@@ -1127,6 +1130,19 @@ Deno.serve(async (req: Request) => {
       const result=await resolveLegacyStorefrontIdentityToken(url.searchParams.get("token"));
       if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
       return json({ok:true,...result},200,{"Cache-Control":"no-store"});
+    }
+    if (req.method === "POST" && action === "post_order_cross_sell_mark_sent") {
+      if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
+      const payload=await req.json().catch(()=>({}));
+      const sessionId=uuid(payload?.session_id);
+      if(!sessionId)return json({ok:false,error:"invalid_session"},400,{"Cache-Control":"no-store"});
+      const marked=await db.rpc('mark_post_order_cross_sell_sent_v1',{
+        p_session_id:sessionId,
+        p_delivery_ref:String(payload?.delivery_ref||'').slice(0,300)||null
+      });
+      if(marked.error)throw marked.error;
+      if(marked.data?.ok!==true)return json({ok:false,...marked.data},409,{"Cache-Control":"no-store"});
+      return json({ok:true,...marked.data},200,{"Cache-Control":"no-store"});
     }
     if (req.method === "POST" && action === "post_order_cross_sell_reply") {
       if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
