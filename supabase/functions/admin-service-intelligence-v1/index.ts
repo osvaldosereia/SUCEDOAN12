@@ -3082,7 +3082,9 @@ async function blingHubFinanceAction(sb:any,body:any,actorUserId:string|null=nul
     const boletoBlocking=Array.isArray(boletoPolicy?.blocking)?boletoPolicy.blocking:[];
     const allMissing=[...missing,...boletoBlocking];
     return {
-      ok:allMissing.length===0,status:allMissing.length?400:200,preview:true,external_write:false,kind,
+      ok:allMissing.length===0,status:allMissing.length?400:200,
+      error:allMissing.length?(boletoBlocking.length?"boleto_validation_failed":"validation_failed"):undefined,
+      preview:true,external_write:false,kind,
       operation:operation==="create_preview"?"create":"update",id:id||null,current,payload,missing:allMissing,
       boleto_policy:boletoPolicy,
       confirmation_required:true,confirmation_phrase:"CONFIRMAR"
