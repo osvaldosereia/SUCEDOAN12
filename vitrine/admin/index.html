@@ -547,6 +547,7 @@
         (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
         (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
         (o.status==='ready'&&!fiscal.authorized?'<button class="quick-link primary-link" type="button" data-expedition-fiscal="'+esc(o.id)+'">Resolver fiscal</button>':'')+
+        (o.status==='ready'&&fiscal.authorized?'<button class="quick-link" type="button" data-expedition-danfe="'+esc(o.id)+'">Imprimir DANFE</button>':'')+
         (o.status==='out_for_delivery'?'<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button><button class="quick-link" type="button" data-return-expedition="'+esc(o.id)+'">Não entregou</button>':'')+
         '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
       '</div>'+
@@ -750,6 +751,10 @@
       '</div>';
     document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
     document.querySelectorAll('[data-expedition-fiscal]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionFiscal));
+    document.querySelectorAll('[data-expedition-danfe]').forEach(b=>b.onclick=()=>{
+      const o=state.orders.find(x=>x.id===b.dataset.expeditionDanfe);
+      if(o)openDanfeForOrder(o.id,o.order_number);
+    });
     document.querySelectorAll('[data-confirm-delivery]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.confirmDelivery));
     document.querySelectorAll('[data-return-expedition]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.returnExpedition,false));
     document.querySelectorAll('[data-dispatch-select]').forEach(el=>el.onchange=e=>toggleDispatchSelection(el.dataset.dispatchSelect,e.target.checked));
@@ -2469,13 +2474,8 @@
     }
   }
 
-  async function openCurrentDanfe(){
-    const o=state.currentOrder?.order;if(!o)return;
-    const fiscal=state.currentOrderFiscal||{};
-    const gate=fiscal.dispatch_gate||{};
-    if(gate.authorized!==true&&!fiscal.bling_invoice_id){
-      toast('A NF-e ainda não está autorizada');return;
-    }
+  async function openDanfeForOrder(id,orderNumber=''){
+    if(!id)return;
     const w=window.open('','_blank','width=900,height=900');
     if(!w){toast('Libere pop-ups para abrir o DANFE');return}
     try{
@@ -2483,7 +2483,7 @@
       w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>DANFE</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Carregando DANFE…</strong><p>Buscando o PDF oficial no Bling.</p></body></html>');
       w.document.close();
       const data=await api('order_fiscal_document_pdf',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id})
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
       const raw=atob(String(data.base64||''));
       if(!raw)throw new Error('fiscal_document_empty');
@@ -2493,11 +2493,20 @@
       const url=URL.createObjectURL(blob);
       w.location.replace(url);
       setTimeout(()=>URL.revokeObjectURL(url),120000);
-      toast('DANFE '+(data.invoice_number?data.invoice_number+' ':'')+'aberto para impressão');
+      toast('DANFE '+(data.invoice_number?data.invoice_number+' ':orderNumber?'#'+shortOrder(orderNumber)+' ':'')+'aberto para impressão');
     }catch(e){
       try{w.close()}catch{}
       toast(errorMessage(e?.message||'fiscal_document_download_failed'));
     }
+  }
+  async function openCurrentDanfe(){
+    const o=state.currentOrder?.order;if(!o)return;
+    const fiscal=state.currentOrderFiscal||{};
+    const gate=fiscal.dispatch_gate||{};
+    if(gate.authorized!==true&&!fiscal.bling_invoice_id){
+      toast('A NF-e ainda não está autorizada');return;
+    }
+    return openDanfeForOrder(o.id,o.order_number);
   }
 
   async function loadCurrentOrderFiscal(repaint=true){
