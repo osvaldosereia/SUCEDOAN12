@@ -1729,7 +1729,7 @@
     const rows=confirmableNewOrders();
     if(!rows.length){toast('Nenhum pedido novo está apto para confirmar');return}
     const total=rows.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
-    if(!confirm('Confirmar '+rows.length+' pedido(s) apto(s)?\n\nTotal: '+money(total)+'\n\nEsta ação NÃO baixa estoque e NÃO envia pedido ao Bling.'))return;
+    if(!confirm('Confirmar '+rows.length+' pedido(s) apto(s)?\n\nTotal: '+money(total)+'\n\nA confirmação reserva o estoque para estes pedidos, mas NÃO dá baixa física e NÃO envia pedido ao Bling.'))return;
     const btn=$('#confirmReadyOrders');
     if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
     let ok=0;const failed=[];
