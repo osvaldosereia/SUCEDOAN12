@@ -878,7 +878,7 @@ async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactN
         'x-vitrine-history-key':bridgeKey
       },
       body:JSON.stringify({phone:sitePhone,name:contactName||null}),
-      signal:AbortSignal.timeout(4500)
+      signal:AbortSignal.timeout(12000)
     });
     const issued=await issueResponse.json().catch(()=>({ok:false,error:'invalid_identity_link_response'}));
     if(!issueResponse.ok||issued?.ok!==true||!issued?.shopping_url){
