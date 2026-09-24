@@ -1492,6 +1492,109 @@ async function blingHubGetNfe(sb:any,token:string,invoiceId:any){
     data:r.data
   };
 }
+function blingHubBytesToBase64(bytes:Uint8Array){
+  let binary="";
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
+  }
+  return btoa(binary);
+}
+async function blingHubGetNfeDocumentPdf(sb:any,token:string,accessKeyRaw:any){
+  const accessKey=blingHubDigits(accessKeyRaw);
+  if(accessKey.length!==44)return {ok:false,status:400,error:"invalid_access_key",content:null};
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(
+      BLING_API_BASE+"/nfe/documento/"+encodeURIComponent(accessKey)+"?formato=pdf",
+      {
+        headers:{Authorization:"Bearer "+token,Accept:"application/pdf","enable-jwt":"1"},
+        signal:AbortSignal.timeout(20000)
+      }
+    );
+    if(!r.ok){
+      const raw=await r.text();
+      let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+      return {
+        ok:false,status:r.status,
+        error:clean(data?.error?.message||data?.error?.description||data?.error||raw||("HTTP "+r.status),700),
+        content:null
+      };
+    }
+    const buf=await r.arrayBuffer();
+    if(buf.byteLength<16)return {ok:false,status:502,error:"empty_danfe_document",content:null};
+    if(buf.byteLength>6*1024*1024)return {ok:false,status:413,error:"danfe_document_too_large",content:null};
+    const bytes=new Uint8Array(buf);
+    const header=String.fromCharCode(...bytes.subarray(0,5));
+    if(header!=="%PDF-")return {ok:false,status:502,error:"invalid_danfe_pdf",content:null};
+    return {
+      ok:true,status:r.status,
+      content_type:r.headers.get("content-type")||"application/pdf",
+      size_bytes:buf.byteLength,
+      content:blingHubBytesToBase64(bytes)
+    };
+  }catch(e){
+    return {ok:false,status:0,error:clean((e as Error)?.message||e,700),content:null};
+  }
+}
+async function blingHubVitrineDanfePdf(sb:any,sourceOrderIdRaw:any){
+  const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
+  if(!resolved.ok)return resolved;
+  const [control,job]=await Promise.all([
+    sb.from("order_fiscal_controls")
+      .select("dispatch_fiscal_status,bling_invoice_id,bling_invoice_number,sefaz_status")
+      .eq("order_id",resolved.order.id).maybeSingle(),
+    sb.from("dispatch_fiscal_jobs")
+      .select("status,bling_invoice_id,bling_invoice_number,access_key,sefaz_status")
+      .eq("order_id",resolved.order.id).eq("fiscal_version",1).maybeSingle()
+  ]);
+  if(control.error)throw control.error;
+  if(job.error)throw job.error;
+  const ctl=control.data||{};
+  const j=job.data||{};
+  if(ctl.dispatch_fiscal_status!=="authorized"&&j.status!=="authorized"){
+    return {ok:false,error:"fiscal_document_not_authorized",status:409,external_write:false};
+  }
+  const accessKey=blingHubDigits(j.access_key);
+  if(accessKey.length!==44){
+    return {ok:false,error:"fiscal_document_access_key_missing",status:409,external_write:false};
+  }
+  const token=await blingHubOauth(sb);
+  const doc=await blingHubGetNfeDocumentPdf(sb,token,accessKey);
+  if(!doc.ok){
+    return {ok:false,error:doc.error||"fiscal_document_download_failed",status:doc.status||502,external_write:false};
+  }
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"dispatch_danfe_pdf_opened",
+    severity:"info",
+    domain:"fiscal",
+    details:{
+      source_order_id:resolved.source_order_id,
+      canonical_order_id:resolved.order.id,
+      bling_invoice_id:Number(ctl.bling_invoice_id||j.bling_invoice_id||0)||null,
+      bling_invoice_number:clean(ctl.bling_invoice_number||j.bling_invoice_number,80)||null,
+      size_bytes:doc.size_bytes,
+      external_write:false,
+      make_used:false
+    }
+  });
+  return {
+    ok:true,
+    source_order_id:resolved.source_order_id,
+    canonical_order_id:resolved.order.id,
+    invoice_id:Number(ctl.bling_invoice_id||j.bling_invoice_id||0)||null,
+    invoice_number:clean(ctl.bling_invoice_number||j.bling_invoice_number,80)||null,
+    access_key:accessKey,
+    sefaz_status:clean(ctl.sefaz_status||j.sefaz_status,120)||"Autorizada",
+    content_type:"application/pdf",
+    size_bytes:doc.size_bytes,
+    filename:"DANFE-"+(clean(ctl.bling_invoice_number||j.bling_invoice_number,80)||accessKey.slice(-8))+".pdf",
+    base64:doc.content,
+    external_write:false,
+    external_side_effect:false
+  };
+}
+
 async function blingHubVitrineDispatchFiscalPreview(sb:any,sourceOrderIdRaw:any){
   const resolved=await blingHubResolveVitrineFiscalOrder(sb,sourceOrderIdRaw);
   if(!resolved.ok)return resolved;
@@ -4402,6 +4505,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_dispatch_preview"){
         const result=await blingHubVitrineDispatchFiscalPreview(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_document_pdf"){
+        const result=await blingHubVitrineDanfePdf(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="fiscal_dispatch_canary_arm"){
