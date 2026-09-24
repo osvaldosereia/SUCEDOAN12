@@ -1461,7 +1461,7 @@ async function blingHubPostOnce(sb:any,token:string,path:string,payload:any=unde
       ok:r.ok,status:r.status,data,
       error:clean(data?.error?.message||data?.error?.description||data?.error||raw,700),
       provider_details:blingHubProviderDetails(data),
-      uncertain:false
+      uncertain:r.status>=500
     };
   }catch(e){
     return {
@@ -1714,7 +1714,7 @@ async function blingHubVitrineDispatchFiscalCanary(sb:any,sourceOrderIdRaw:any){
         }
         if(!invoiceId){
           await sb.from("dispatch_fiscal_jobs").update({
-            status:"review_required",external_side_effect:generated.uncertain===true,
+            status:"review_required",external_side_effect:generated.ok===true||generated.uncertain===true,
             error_code:generated.uncertain?"invoice_generation_uncertain":"invoice_generation_failed",
             error_detail:generated.error||("HTTP "+generated.status),
             updated_at:new Date().toISOString()
