@@ -7,8 +7,12 @@ const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 
 assert.match(hub,/async function blingHubGetNfeDocumentPdf/);
 assert.match(hub,/\/nfe\/documento\/.*\?formato=pdf/);
-assert.match(hub,/Accept:"application\/pdf"/);
-assert.match(hub,/header!=="%PDF-"/);
+assert.match(hub,/Accept:"application\/json"/);
+assert.match(hub,/Array\.isArray\(payload\?\.data\)/);
+assert.match(hub,/doc\?\.conteudo/);
+assert.match(hub,/DecompressionStream\("gzip"\)/);
+assert.match(hub,/blingHubBase64ToBytes/);
+assert.match(hub,/blingHubIsPdf/);
 assert.match(hub,/danfe_document_too_large/);
 assert.match(hub,/async function blingHubVitrineDanfePdf/);
 assert.match(hub,/dispatch_fiscal_status!=="authorized"/);
