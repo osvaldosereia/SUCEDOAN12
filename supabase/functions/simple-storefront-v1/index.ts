@@ -1002,7 +1002,7 @@ async function postOrderCrossSellContext(payload:any){
   if(itemsQ.error)throw itemsQ.error;
   const items=itemsQ.data||[];
 
-  const moneyBr=(cents:any)=>Number(cents||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const moneyBr=(cents:any)=>(Number(cents||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const lines:string[]=[];
   if(session.data.eligible&&items.length){
     const expiry=items.filter((i:any)=>i.source_kind==='expiry_offer');
