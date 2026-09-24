@@ -1604,7 +1604,7 @@ async function saveCrossSellConfig(payload:any){
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_dispatch_gate","fiscal_dispatch_preview","fiscal_dispatch_canary_human_execute","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_dispatch_gate","fiscal_dispatch_preview","fiscal_dispatch_canary_human_execute","fiscal_document_pdf","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -1621,7 +1621,7 @@ async function blingHubControl(subaction:string,extra:any={}) {
       "x-dona-antonia-bling-hub-key":String(secret.data.secret_value)
     },
     body:JSON.stringify({action:"vitrine_bling_hub_internal",subaction,...extra}),
-    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly","ensure_customer_now","process_product_jobs","fiscal_dispatch_canary_human_execute"].includes(subaction)?120000:10000)
+    signal:AbortSignal.timeout(["probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","reconcile_customer_readonly","ensure_customer_now","process_product_jobs","fiscal_dispatch_canary_human_execute","fiscal_document_pdf"].includes(subaction)?120000:10000)
   });
   const data=await response.json().catch(()=>({ok:false,error:"invalid_bling_response"}));
   if(response.status>=400)return {error:String(data?.error||"bling_hub_unavailable"),status:response.status,detail:data?.detail||null};
@@ -2778,6 +2778,13 @@ Deno.serve(async (req: Request) => {
           source_order_id:id,
           confirmation:"EMITIR_NFE"
         });
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...((result as any).data||{})});
+      }
+      if (action==="order_fiscal_document_pdf") {
+        const id=uuid(payload?.id);
+        if(!id)return json(req,{ok:false,error:"invalid_order"},400);
+        const result=await blingHubControl("fiscal_document_pdf",{source_order_id:id});
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...((result as any).data||{})});
       }
