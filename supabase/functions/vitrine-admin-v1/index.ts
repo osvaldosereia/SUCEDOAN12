@@ -957,6 +957,7 @@ async function saveCustomer(payload:any) {
 }
 
 async function listOrders() {
+  const cutover=await operationalCutover();
   const selectFields="id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at";
   const openRows:any[]=[];
   const pageSize=1000;
@@ -966,6 +967,7 @@ async function listOrders() {
       .select(selectFields)
       .eq("organization_id",ORG_ID)
       .not("status","in",'("delivered","cancelled")')
+      .gte("created_at",cutover.live_orders_since)
       .order("created_at",{ascending:false})
       .range(from,from+pageSize-1);
     if(page.error)throw page.error;
@@ -978,6 +980,7 @@ async function listOrders() {
     .select(selectFields)
     .eq("organization_id",ORG_ID)
     .in("status",["delivered","cancelled"])
+    .gte("created_at",cutover.live_orders_since)
     .order("created_at",{ascending:false})
     .limit(120);
   if(closed.error)throw closed.error;
@@ -1013,6 +1016,7 @@ async function listOrders() {
 }
 
 async function listClosureOrders(){
+  const cutover=await operationalCutover();
   const selectFields="id,order_number,status,total_cents,payment_method_snapshot,delivery_address_snapshot,whatsapp_phone_e164,customer_id,created_at,confirmed_at,delivered_at";
   const pendingRemote=await blingHubControl("fiscal_pending_orders",{limit:5000});
   const remoteRows=(pendingRemote as any).error?[]:((pendingRemote as any).data?.orders||[]);
@@ -1025,6 +1029,7 @@ async function listClosureOrders(){
       .select(selectFields)
       .eq("organization_id",ORG_ID)
       .eq("status","delivered")
+      .gte("created_at",cutover.live_orders_since)
       .in("id",chunk);
     if(q.error)throw q.error;
     pendingRows.push(...(q.data||[]));
@@ -1034,6 +1039,7 @@ async function listClosureOrders(){
     .select(selectFields)
     .eq("organization_id",ORG_ID)
     .eq("status","delivered")
+    .gte("created_at",cutover.live_orders_since)
     .order("delivered_at",{ascending:false})
     .limit(30);
   if(recent.error)throw recent.error;
@@ -1344,12 +1350,14 @@ async function orderStockReadinessMap(orderIdsRaw:any[]){
 }
 
 async function listOrderStockShortages(){
+  const cutover=await operationalCutover();
   const orders:any[]=[];
   for(let from=0;from<10000;from+=1000){
     const q=await db.from("orders")
       .select("id,order_number,status,payment_method_snapshot")
       .eq("organization_id",ORG_ID)
       .in("status",["created","confirmed","processing"])
+      .gte("created_at",cutover.live_orders_since)
       .order("created_at",{ascending:true})
       .range(from,from+999);
     if(q.error)throw q.error;
@@ -2595,10 +2603,12 @@ async function crossSellShadowList(limitRaw:unknown=50) {
 }
 
 async function crossSellShadowPrepareRecent(payload:any) {
+  const cutover=await operationalCutover();
   const limit=Math.max(1,Math.min(50,Math.floor(Number(payload?.limit||20))));
   const {data:orders,error}=await db.from("orders")
     .select("id")
     .eq("organization_id",ORG_ID)
+    .gte("created_at",cutover.live_orders_since)
     .order("created_at",{ascending:false})
     .limit(limit);
   if(error)throw error;
