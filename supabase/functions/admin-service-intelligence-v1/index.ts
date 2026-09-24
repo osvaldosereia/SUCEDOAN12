@@ -3375,6 +3375,140 @@ async function blingHubProcessStockJobs(sb:any,limitRaw:any){
   }
   return summary;
 }
+async function blingHubProductFiscalAuditReadonly(sb:any,body:any){
+  const limit=Math.max(1,Math.min(50,Number(body?.limit||25)||25));
+  const minRisk=Math.max(0,Math.min(100,Number(body?.min_risk??0)||0));
+  const offset=Math.max(0,Number(body?.offset||0)||0);
+  const requestedIds=(Array.isArray(body?.product_ids)?body.product_ids:[])
+    .map((x:any)=>uuid(x)).filter(Boolean).slice(0,50);
+
+  const riskMap=new Map<string,any>();
+  let productIds:string[]=[];
+  if(requestedIds.length){
+    productIds=requestedIds;
+  }else{
+    const scan=await sb.from("product_fiscal_catalog_scan_v1")
+      .select("product_id,risk_code,risk_score")
+      .eq("is_active",true)
+      .gte("risk_score",minRisk)
+      .order("risk_score",{ascending:false})
+      .order("product_id",{ascending:true})
+      .range(offset,offset+limit-1);
+    if(scan.error)throw scan.error;
+    for(const row of scan.data||[]){
+      const id=uuid(row.product_id);if(!id)continue;
+      productIds.push(id);
+      riskMap.set(id,{risk_code:clean(row.risk_code,80),risk_score:Number(row.risk_score||0)});
+    }
+  }
+
+  if(!productIds.length){
+    return {ok:true,selected:0,read:0,evidence_written:0,failures:[],external_write:false,bling_mutations:0};
+  }
+
+  const pq=await sb.from("products")
+    .select("id,name,gtin,ncm,bling_product_id,is_active")
+    .in("id",productIds);
+  if(pq.error)throw pq.error;
+  const productMap=new Map<string,any>((pq.data||[]).map((p:any)=>[String(p.id),p]));
+
+  const missingLinkIds=(pq.data||[])
+    .filter((p:any)=>!Number(p.bling_product_id))
+    .map((p:any)=>String(p.id));
+  const linkMap=new Map<string,number>();
+  if(missingLinkIds.length){
+    const lq=await sb.from("bling_hub_entity_links_v2")
+      .select("source_id,bling_id,status")
+      .eq("entity_type","product")
+      .eq("status","matched")
+      .in("source_id",missingLinkIds);
+    if(lq.error)throw lq.error;
+    for(const row of lq.data||[]){
+      const id=Number(row.bling_id||0);
+      if(id>0)linkMap.set(String(row.source_id),id);
+    }
+  }
+
+  const token=await blingHubOauth(sb);
+  const evidence:any[]=[];
+  const failures:any[]=[];
+  let read=0;
+
+  for(const productId of productIds){
+    const p=productMap.get(productId);
+    if(!p){failures.push({product_id:productId,error:"product_not_found"});continue;}
+    const blingId=Number(p.bling_product_id||linkMap.get(productId)||0);
+    if(!blingId){failures.push({product_id:productId,error:"bling_product_not_linked"});continue;}
+
+    const detail=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
+    if(!detail.ok){
+      failures.push({product_id:productId,bling_product_id:blingId,error:"bling_product_http_"+detail.status});
+      continue;
+    }
+    read++;
+
+    const current=detail.data?.data||{};
+    const trib=current?.tributacao&&typeof current.tributacao==="object"?current.tributacao:{};
+    const ncmRaw=blingHubDigits(trib?.ncm??current?.ncm);
+    const cestRaw=blingHubDigits(trib?.cest??current?.cest);
+    const originValue=trib?.origem??current?.origem;
+    const originRaw=typeof originValue==="object"&&originValue!==null
+      ? (originValue.codigo??originValue.id??originValue.valor??originValue.value)
+      : originValue;
+    const originText=String(originRaw??"").trim();
+    const originCode=/^[0-8]$/.test(originText)?Number(originText):null;
+    const gtin=blingHubDigits(current?.gtin)||blingHubDigits(p.gtin)||null;
+    const taxGtin=blingHubDigits(current?.gtinEmbalagem??current?.gtinTributavel??current?.gtinTrib)||null;
+    const ncm=/^\d{8}$/.test(ncmRaw)?ncmRaw:null;
+    const cest=/^\d{7}$/.test(cestRaw)?cestRaw:null;
+    const evidenceKey=[
+      "bling_product_detail",String(blingId),ncm||"-",cest||"-",
+      originCode===null?"-":String(originCode),gtin||"-",taxGtin||"-"
+    ].join(":");
+
+    evidence.push({
+      evidence_key:evidenceKey,
+      product_id:productId,
+      evidence_type:"bling_product_detail",
+      source_name:"Bling ERP",
+      document_key:String(blingId),
+      gtin,
+      ncm,
+      cest,
+      origin_code:originCode,
+      fiscal_description:clean(current?.nome||p.name,500)||null,
+      observed_at:new Date().toISOString(),
+      evidence_payload:{
+        bling_product_id:blingId,
+        fetched_at:new Date().toISOString(),
+        tax_gtin:taxGtin,
+        tributacao:trib,
+        risk:riskMap.get(productId)||null,
+        read_only:true
+      }
+    });
+  }
+
+  if(evidence.length){
+    const up=await sb.from("product_fiscal_evidence").upsert(evidence,{onConflict:"evidence_key"});
+    if(up.error)throw up.error;
+  }
+
+  const candidateRefresh=await sb.rpc("refresh_product_fiscal_candidates_r0_3");
+  const reviewRefresh=await sb.rpc("refresh_product_fiscal_review_state_v1");
+
+  return {
+    ok:true,
+    selected:productIds.length,
+    read,
+    evidence_written:evidence.length,
+    failures:failures.slice(0,50),
+    candidate_refresh:candidateRefresh.error?{ok:false,error:clean(candidateRefresh.error.message,300)}:candidateRefresh.data,
+    review_refresh:reviewRefresh.error?{ok:false,error:clean(reviewRefresh.error.message,300)}:reviewRefresh.data,
+    external_write:false,
+    bling_mutations:0
+  };
+}
 async function blingHubLookupProductByExactGtin(sb:any,token:string,gtinRaw:any){
   const gtin=blingHubDigits(gtinRaw);
   if(!blingHubValidGtin(gtin))return {status:"review_required",reason:"invalid_gtin",bling_id:null,candidates:[]};
@@ -5110,6 +5244,10 @@ Deno.serve(async(req:Request)=>{
         if(!financeUser.ok)return json({ok:false,error:financeUser.error},Number(financeUser.status||401));
         const result=await blingHubFinanceAction(sb,body,financeUser.user_id||null);
         return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="product_fiscal_audit_readonly"){
+        const result=await blingHubProductFiscalAuditReadonly(sb,body);
+        return json(result,result.ok?200:207);
       }
       if(subaction==="reconcile_products_readonly"){
         const result=await blingHubReconcileProductsReadonly(sb,body?.items);
