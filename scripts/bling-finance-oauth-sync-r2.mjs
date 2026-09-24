@@ -1,3 +1,4 @@
+import { writeFileSync } from 'node:fs';
 const text=v=>String(v??'').trim();
 const required=n=>{const v=text(process.env[n]);if(!v)throw new Error(`missing_${n}`);return v};
 const API='https://api.bling.com.br/Api/v3';
@@ -18,7 +19,7 @@ let tokenData={};try{tokenData=tokenRaw?JSON.parse(tokenRaw):{}}catch{}
 if(!tokenRes.ok||!text(tokenData.access_token))throw new Error(`oauth_refresh_http_${tokenRes.status}`);
 const accessToken=text(tokenData.access_token);
 const nextRefresh=text(tokenData.refresh_token)||refreshToken;
-await Bun.write(process.env.BLING_REFRESH_TOKEN_FILE,nextRefresh);
+writeFileSync(process.env.BLING_REFRESH_TOKEN_FILE,nextRefresh,{encoding:'utf8',mode:0o600});
 
 const vaultRes=await fetch(`${supabaseUrl}/rest/v1/rpc/set_bling_api_refresh_token_v1`,{
   method:'POST',
