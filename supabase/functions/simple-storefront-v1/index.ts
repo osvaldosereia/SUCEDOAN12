@@ -1135,6 +1135,19 @@ Deno.serve(async (req: Request) => {
       if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
       return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
+    if (req.method === "POST" && action === "post_order_cross_sell_queue_delivery") {
+      if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
+      const payload=await req.json().catch(()=>({}));
+      const sessionId=uuid(payload?.session_id);
+      if(!sessionId)return json({ok:false,error:"invalid_session"},400,{"Cache-Control":"no-store"});
+      const queued=await db.rpc('queue_post_order_cross_sell_delivery_v1',{
+        p_session_id:sessionId,
+        p_delivery_ref:String(payload?.delivery_ref||'').slice(0,300)||null
+      });
+      if(queued.error)throw queued.error;
+      if(queued.data?.ok!==true)return json({ok:false,...queued.data},409,{"Cache-Control":"no-store"});
+      return json({ok:true,...queued.data},200,{"Cache-Control":"no-store"});
+    }
     if (req.method === "POST" && action === "post_order_cross_sell_mark_sent") {
       if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
       const payload=await req.json().catch(()=>({}));
