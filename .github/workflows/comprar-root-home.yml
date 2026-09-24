@@ -185,6 +185,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - name: Validar sintaxe da Edge Function pública
+        run: node --experimental-strip-types --check supabase/functions/simple-storefront-v1/index.ts
+
       - name: Validar Vitrine pública, WhatsApp, regras e histórico
         run: |
           node scripts/test-comprar-root-home-v1.mjs
