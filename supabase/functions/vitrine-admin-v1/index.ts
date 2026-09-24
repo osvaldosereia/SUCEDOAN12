@@ -1482,6 +1482,9 @@ async function consumeOrderStock(payload:any) {
   const blingPreflight=await validateBlingBeforeStockMutation(id);
   if(blingPreflight)return blingPreflight;
 
+  const {data:crossSellClosed,error:crossSellCloseError}=await db.rpc("cancel_post_order_cross_sell_for_separation_v1",{p_order_id:id});
+  if(crossSellCloseError)throw crossSellCloseError;
+
   if(payment.stock_model==="reservation_v2"){
     const {data:consumed,error}=await db.rpc("consume_storefront_order_stock_v2",{
       p_organization_id:ORG_ID,p_order_id:id
