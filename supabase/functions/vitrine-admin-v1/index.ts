@@ -1047,15 +1047,16 @@ async function listClosureOrders(){
   const byId=new Map<string,any>();
   for(const row of [...pendingRows,...(recent.data||[])])byId.set(row.id,row);
   const orders=[...byId.values()].sort((a:any,b:any)=>(Date.parse(b.delivered_at||b.created_at||0)||0)-(Date.parse(a.delivered_at||a.created_at||0)||0));
+  const visibleIds=new Set(orders.map((o:any)=>o.id));
   const fiscal_by_order:any={};
   for(const row of remoteRows){
-    const id=uuid(row?.source_order_id);if(id)fiscal_by_order[id]=row;
+    const id=uuid(row?.source_order_id);if(id&&visibleIds.has(id))fiscal_by_order[id]=row;
   }
 
   return {
     orders,
     fiscal_by_order,
-    pending_count:pendingIds.length,
+    pending_count:pendingRows.length,
     pending_lookup_ok:!(pendingRemote as any).error,
     pending_lookup_truncated:Boolean((pendingRemote as any).data?.truncated)
   };
