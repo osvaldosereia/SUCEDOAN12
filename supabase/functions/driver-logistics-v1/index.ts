@@ -6,7 +6,7 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 const clean=(v:unknown,max=300)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>{const s=clean(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
 const eventId=(v:unknown)=>{const s=clean(v,160);return /^[A-Za-z0-9._:-]{8,160}$/.test(s)?s:""};
-const paymentMethod=(v:unknown)=>{const s=clean(v,40).toLowerCase();return ['cash','pix','card','payment_link','other'].includes(s)?s:""};
+const paymentMethod=(v:unknown)=>{const s=clean(v,40).toLowerCase();return ['cash','pix','card','credit_card','food_card','meal_card','food_meal_card','payment_link','other'].includes(s)?s:""};
 const cents=(v:unknown)=>{const n=Number(v);return Number.isSafeInteger(n)&&n>0?n:null};
 const optionalCents=(v:unknown)=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isSafeInteger(n)&&n>=0?n:NaN};
 
@@ -56,12 +56,41 @@ Deno.serve(async(req:Request)=>{
     let collection:null|Record<string,unknown>=null;
     if(body?.collection!==null&&body?.collection!==undefined){
       if(typeof body.collection!=="object"||Array.isArray(body.collection))return json({ok:false,error:"invalid_collection_payload"},400);
-      const method=paymentMethod(body.collection.payment_method),amount=cents(body.collection.amount_cents),tender=optionalCents(body.collection.tender_amount_cents);
-      if(!method||amount===null||Number.isNaN(tender))return json({ok:false,error:"invalid_collection_payload"},400);
-      if(method!=="cash"&&tender!==null)return json({ok:false,error:"tender_amount_only_for_cash"},400);
-      collection={payment_method:method,amount_cents:amount,tender_amount_cents:tender};
+      const forbidden=['pan','card_number','cardNumber','full_card_number','cvv','cvc','security_code'];
+      const sanitizePayment=(raw:any)=>{
+        if(!raw||typeof raw!=="object"||Array.isArray(raw))return null;
+        if(forbidden.some(key=>Object.prototype.hasOwnProperty.call(raw,key)))return {error:"sensitive_card_data_forbidden"};
+        const method=paymentMethod(raw.payment_method??raw.method),amount=cents(raw.amount_cents),tender=optionalCents(raw.tender_amount_cents);
+        if(!method||amount===null||Number.isNaN(tender))return null;
+        if(method!=="cash"&&tender!==null)return {error:"tender_amount_only_for_cash"};
+        return {
+          payment_method:method,
+          amount_cents:amount,
+          tender_amount_cents:tender,
+          reference:clean(raw.reference,120)||null,
+          brand:clean(raw.brand,60)||null,
+          notes:clean(raw.notes,240)||null
+        };
+      };
+      if(Array.isArray((body.collection as any).payments)){
+        const incoming=(body.collection as any).payments;
+        if(incoming.length<1||incoming.length>8)return json({ok:false,error:"invalid_payment_count"},400);
+        const payments:any[]=[];
+        for(const raw of incoming){
+          const item:any=sanitizePayment(raw);
+          if(item?.error)return json({ok:false,error:item.error},400);
+          if(!item)return json({ok:false,error:"invalid_collection_payload"},400);
+          payments.push(item);
+        }
+        collection={payments};
+      }else{
+        const item:any=sanitizePayment(body.collection);
+        if(item?.error)return json({ok:false,error:item.error},400);
+        if(!item)return json({ok:false,error:"invalid_collection_payload"},400);
+        collection=item;
+      }
     }
-    const {data,error}=await sb.rpc("driver_deliver_stop_v3",{
+    const {data,error}=await sb.rpc("driver_deliver_stop_v4",{
       p_auth_user_id:userId,
       p_stop_id:stopId,
       p_client_event_id:clientEventId,
