@@ -137,7 +137,7 @@ Selecionar primeiro os produtos que atendem TODOS os critérios:
 - `stock_quantity > 0`;
 - `expiration_date is not null`;
 - `expiration_date >= current_date`;
-- `auto_expiry_offer_enabled = true`;
+- validade entre hoje e 90 dias;
 - não está na cesta/pedido atual;
 - não foi selecionado anteriormente para a mesma sessão;
 - preço válido;
@@ -155,9 +155,11 @@ Ordenação:
 - menos de 30 dias: 40%;
 - vencido: nunca oferecer; estoque deve ser zerado pelo controle de validade conforme regra do Vitrine/Admin.
 
-O preço enviado ao cliente deve vir de `offers` quando existir uma oferta vigente gerada pelo sistema.
+O preço do Pós-cesta usa a mesma regra central de validade do Vitrine/Admin. Se já existir uma oferta vigente menor, prevalece o menor preço. Se a oferta pública por validade estiver desligada, o sistema pode gerar apenas um **quote privado de Pós-cesta**, sem publicar a oferta para toda a vitrine.
 
-Nunca recalcular no WhatsApp.
+Isso preserva o controle individual de `auto_expiry_offer_enabled` e evita ativar em massa os produtos com validade cadastrada.
+
+Nunca recalcular no WhatsApp; preço e desconto são congelados no snapshot da sessão.
 
 ---
 
@@ -208,7 +210,7 @@ Nunca oferecer:
 - produto sem estoque;
 - produto inativo;
 - produto sem preço válido;
-- produto com oferta encerrada;
+- produto com oferta encerrada quando ela for necessária para aquele preço;
 - item já recusado naquela sessão;
 - item duplicado por SKU/GTIN/produto;
 - produto sem possibilidade operacional de venda.
