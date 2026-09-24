@@ -122,12 +122,12 @@
     .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.keypad button{height:58px;border:1px solid #dadce0;background:#fff;border-radius:8px;font-size:22px;font-weight:500;color:#202124}.keypad button:active{background:#e8f0fe}.keypad button.utility{font-size:16px;color:#5f6368;background:#f8f9fa}
     .confirm-wide{width:100%;height:58px;margin-top:10px;border:0;border-radius:8px;background:#188038;color:#fff;font-size:17px;font-weight:600}.confirm-wide:disabled,.keypad button:disabled{opacity:.4}
     .simple-list{display:grid}.simple-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #eceff1}.simple-row:last-child{border-bottom:0}.simple-main{min-width:0;flex:1}.simple-main strong{display:block;font-size:14px;font-weight:600}.simple-main small{display:block;color:#5f6368;margin-top:3px}.simple-number{font-variant-numeric:tabular-nums;font-weight:600}.shelf-control{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.shelf-control input{width:112px;min-height:38px;padding:7px 9px;border:1px solid #dadce0;border-radius:8px}.shelf-control button{min-height:38px}
-    .gondola-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:12px}.gondola-card{border:1px solid #dadce0;background:#fff;border-radius:8px;padding:16px;text-align:left;min-height:112px}.gondola-card:hover{border-color:#a8c7fa;background:#f8fbff}.gondola-card strong{display:block;font-size:22px;font-weight:600}.gondola-card span{display:block;color:#5f6368;margin-top:7px;font-size:12px}
+    .gondola-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:12px}.gondola-card{border:1px solid #dadce0;background:#fff;border-radius:8px;padding:16px;text-align:left;min-height:112px}.gondola-card:hover{border-color:#a8c7fa;background:#f8fbff}.gondola-card strong{display:block;font-size:22px;font-weight:600}.gondola-card span{display:block;color:#5f6368;margin-top:7px;font-size:12px}.gondola-shelf-batch{display:grid;grid-template-columns:minmax(160px,240px) 1fr;gap:10px;align-items:end;margin:12px 0}.gondola-shelf-batch input{min-height:44px}.shelf-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
     .gondola-workspace{margin-bottom:16px}.gondola-badge{display:inline-flex;align-items:center;background:#e8f0fe;color:#1967d2;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;margin-bottom:10px}
     .big-number{height:76px;border:1px solid #dadce0;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding:0 22px;font-size:38px;font-weight:500;margin:10px 0 12px}
     .history-empty{padding:26px;text-align:center;color:#5f6368}
     .gondola-title-print{font-weight:900;font-size:13px;border:2px solid #000;padding:1.5mm;margin:2mm 0 1.5mm;text-align:center}.shelf-title-print{font-weight:800;font-size:10px;border-bottom:1px solid #000;padding:1mm 0 .8mm;margin:1.5mm 0 1mm}
-    @media(max-width:780px){.wrap{padding-inline:10px}.tabs{padding-inline:10px}.tool-grid{grid-template-columns:1fr}.tool-card{padding:14px}.keypad button{height:62px}.scan-value{font-size:22px}}
+    @media(max-width:780px){.wrap{padding-inline:10px}.tabs{padding-inline:10px}.tool-grid{grid-template-columns:1fr}.tool-card{padding:14px}.keypad button{height:62px}.scan-value{font-size:22px}.gondola-shelf-batch{grid-template-columns:1fr}}
 
 
     .expiry-summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:14px}
@@ -196,7 +196,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],gondolas:[],gondola:null,gondolaProducts:[],gondolaCoverage:null,gondolaShelfBatch:'',gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -1220,7 +1220,7 @@
     content.innerHTML='<div class="page-head"><div><h1>Gôndolas</h1><p>Crie a gôndola e leia em sequência os EANs dos produtos que estão nela.</p></div><button class="primary" id="newGondola">+ Nova gôndola</button></div><div id="gondolaHost"><div class="panel loading">Carregando…</div></div>';
     $('#newGondola').onclick=openGondolaCreator;
     try{
-      const data=await api('gondolas');state.gondolas=data.gondolas||[];
+      const data=await api('gondolas');state.gondolas=data.gondolas||[];state.gondolaCoverage=data.coverage||null;
       if(state.gondola){
         const fresh=await api('gondola',{id:state.gondola.id});
         state.gondola=fresh.gondola;state.gondolaProducts=fresh.products||[];
@@ -1232,16 +1232,29 @@
   function paintGondolas(){
     if(state.tab!=='gondolas')return;
     const host=$('#gondolaHost');
+    const cov=state.gondolaCoverage||{};
+    const coverage='<div class="ops-cards">'+
+      '<div class="ops-card"><small>Produtos ativos</small><strong>'+esc(cov.active_products||0)+'</strong><span>catálogo operacional</span></div>'+
+      '<div class="ops-card"><small>Localizados</small><strong>'+esc(cov.located_products||0)+'</strong><span>'+esc(cov.coverage_percent||0)+'% do catálogo</span></div>'+
+      '<div class="ops-card '+((cov.without_location||0)?'warn':'')+'"><small>Sem localização</small><strong>'+esc(cov.without_location||0)+'</strong><span>ainda precisam ser lidos</span></div>'+
+      '<div class="ops-card"><small>Com prateleira</small><strong>'+esc(cov.with_shelf||0)+'</strong><span>separação mais precisa</span></div>'+
+    '</div>';
+    const shelves=[...new Set(state.gondolaProducts.map(p=>String(p.shelf_label||'').trim()).filter(Boolean))]
+      .sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true,sensitivity:'base'}));
     const workspace=state.gondola?'<section class="panel gondola-workspace tool-card">'+
       '<div class="gondola-badge">GÔNDOLA '+esc(state.gondola.number)+'</div>'+
-      '<div class="scanner-hero ready"><div class="scan-title"><span class="scan-dot"></span>LEITOR ATIVO</div><div class="scan-value">Leia os produtos da Gôndola '+esc(state.gondola.number)+'</div><div class="scan-sub">Cada leitura é salva automaticamente. Não precisa confirmar.</div></div>'+
+      '<div class="gondola-shelf-batch"><label><span>Prateleira atual · opcional</span><input id="gondolaShelfBatch" maxlength="24" value="'+esc(state.gondolaShelfBatch||'')+'" placeholder="Ex.: A1, B2"></label><div><small class="sub">Defina uma vez e escaneie vários produtos da mesma prateleira. Deixe vazio para não definir prateleira nas próximas leituras.</small><div class="shelf-chips">'+shelves.slice(0,16).map(s=>'<button class="filter-chip '+(state.gondolaShelfBatch===s?'active':'')+'" type="button" data-batch-shelf="'+esc(s)+'">'+esc(s)+'</button>').join('')+(state.gondolaShelfBatch?'<button class="text" id="clearBatchShelf" type="button">Limpar</button>':'')+'</div></div></div>'+
+      '<div class="scanner-hero ready"><div class="scan-title"><span class="scan-dot"></span>LEITOR ATIVO</div><div class="scan-value">Leia os produtos da Gôndola '+esc(state.gondola.number)+'</div><div class="scan-sub">'+(state.gondolaShelfBatch?'Próximas leituras: Prateleira '+esc(state.gondolaShelfBatch):'Cada leitura salva a gôndola automaticamente. Prateleira atual não definida.')+'</div></div>'+
       '<div class="section-title">Produtos nesta gôndola · '+esc(state.gondolaProducts.length)+'</div>'+
       '<div class="panel" id="gondolaProducts">'+(state.gondolaProducts.length?state.gondolaProducts.map(gondolaProductRow).join(''):'<div class="history-empty">Nenhum produto lido ainda.</div>')+'</div>'+
     '</section>':'';
     const cards=state.gondolas.length?'<section class="panel"><div class="gondola-grid">'+state.gondolas.map(g=>
       '<button class="gondola-card" type="button" data-open-gondola="'+esc(g.id)+'"><strong>Gôndola '+esc(g.number)+'</strong><span>'+esc(g.id===state.gondola?.id?state.gondolaProducts.length:g.product_count||0)+' produtos</span></button>'
     ).join('')+'</div></section>':'<section class="panel"><div class="history-empty">Nenhuma gôndola cadastrada. Clique em “Nova gôndola”.</div></section>';
-    host.innerHTML=workspace+cards;
+    host.innerHTML=coverage+workspace+cards;
+    if($('#gondolaShelfBatch'))$('#gondolaShelfBatch').oninput=e=>{state.gondolaShelfBatch=String(e.target.value||'').slice(0,24)};
+    host.querySelectorAll('[data-batch-shelf]').forEach(b=>b.onclick=()=>{state.gondolaShelfBatch=b.dataset.batchShelf;paintGondolas()});
+    if($('#clearBatchShelf'))$('#clearBatchShelf').onclick=()=>{state.gondolaShelfBatch='';paintGondolas()};
     host.querySelectorAll('[data-open-gondola]').forEach(b=>b.onclick=()=>openGondola(b.dataset.openGondola));
     host.querySelectorAll('[data-save-gondola-shelf]').forEach(b=>b.onclick=()=>saveGondolaShelf(b.dataset.saveGondolaShelf,b));
     host.querySelectorAll('[data-remove-gondola-product]').forEach(b=>b.onclick=()=>removeGondolaProduct(b.dataset.removeGondolaProduct));
@@ -1253,7 +1266,10 @@
 
   async function openGondola(id){
     try{
-      const data=await api('gondola',{id});state.gondola=data.gondola;state.gondolaProducts=data.products||[];paintGondolas();
+      const previousId=state.gondola?.id||'';
+      const data=await api('gondola',{id});
+      if(previousId!==data.gondola?.id)state.gondolaShelfBatch='';
+      state.gondola=data.gondola;state.gondolaProducts=data.products||[];paintGondolas();
     }catch(e){toast(errorMessage(e.message))}
   }
 
@@ -1283,7 +1299,7 @@
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({number:Number(state.gondolaCreateNumber)})
       });
-      $('#editor').close();state.gondola=data.gondola;state.gondolaProducts=[];toast('Gôndola '+data.gondola.number+' pronta');
+      $('#editor').close();state.gondola=data.gondola;state.gondolaProducts=[];state.gondolaShelfBatch='';toast('Gôndola '+data.gondola.number+' pronta');
       await renderGondolas();
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Criar gôndola'}
   }
@@ -1291,14 +1307,17 @@
   async function handleGondolaScan(ean){
     if(state.tab!=='gondolas'||!state.gondola){toast('Abra uma gôndola antes de ler os produtos.');return}
     try{
+      const payload={gondola_id:state.gondola.id,ean};
+      if(String(state.gondolaShelfBatch||'').trim())payload.shelf_label=String(state.gondolaShelfBatch).trim().slice(0,24);
       const data=await api('gondola_assign',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({gondola_id:state.gondola.id,ean})
+        body:JSON.stringify(payload)
       });
       state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==data.product.id);
       state.gondolaProducts.unshift(data.product);
       const moved=data.previous_gondola_number?' · movido da Gôndola '+data.previous_gondola_number:'';
-      toast(data.product.name+moved);
+      const shelf=data.product.shelf_label?' · Prateleira '+data.product.shelf_label:'';
+      toast(data.product.name+shelf+moved);
       paintGondolas();
     }catch(e){toast(errorMessage(e.message))}
   }
