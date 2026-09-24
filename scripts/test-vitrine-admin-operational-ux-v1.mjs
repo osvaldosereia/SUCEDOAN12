@@ -6,6 +6,11 @@ const html=fs.readFileSync(new URL('../vitrine/admin/index.html',import.meta.url
 assert.match(html,/data-tab="today"[^>]*>Hoje</,'Admin deve abrir pela operação do dia');
 assert.match(html,/function orderNextAction\(o\)/,'Pedidos devem ter próxima ação calculada');
 assert.match(html,/function orderActionButtonsHtml\(o\)/,'Pedido deve usar ações operacionais');
+assert.match(html,/function orderRowPrimaryActionHtml\(o,problems,shortcut\)/,'Lista deve transformar próxima ação em controle clicável');
+assert.match(html,/data-quick-separation/,'Separação deve ser acionável diretamente pela lista');
+assert.match(html,/function quickStartSeparation\(id,btn\)/,'Lista deve iniciar o fluxo seguro de separação');
+assert.match(html,/printSeparation\(detail,true,w\)/,'Ação da lista deve reutilizar o mesmo fluxo protegido de separação');
+assert.match(html,/async function printSeparation\(detail,consumeStock=false,existingWindow=null\)/,'Fluxo deve aceitar a janela aberta pelo clique da lista');
 assert.doesNotMatch(html,/id="orderStatus"/,'Status não pode ficar como seletor livre');
 assert.doesNotMatch(html,/data-tab="bling" type="button">Bling<\/button>/,'Bling técnico não deve ocupar o menu principal');
 assert.match(html,/printSeparation\(d,true\)/,'Iniciar separação deve ser ação explícita');
