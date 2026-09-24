@@ -931,6 +931,57 @@ async function papoAiStorefrontRuntimeControl(sb:any){
   }
 }
 
+async function fetchPostOrderCrossSellContext(sb:any,papoPhone:string,messageText:string){
+  const match=String(messageText||'').match(/PEDIDO\s+DONA\s+ANTONIA[\s\S]*?NUMERO:\s*([0-9]{6,20})/i);
+  if(!match?.[1])return {ok:false,reason:'order_number_missing'};
+  const papoContactPhone=normalizePapoAiFlowPhone(papoPhone);
+  if(!papoContactPhone)return {ok:false,reason:'phone_missing'};
+  try{
+    const sitePhone=await canonicalStorefrontPhoneFromCrm(sb,papoContactPhone);
+    const secretQ=await sb.from('internal_integration_secrets')
+      .select('secret_value')
+      .eq('integration_key','vitrine_history_bridge')
+      .maybeSingle();
+    if(secretQ.error||!secretQ.data?.secret_value)return {ok:false,reason:'history_bridge_secret_missing'};
+
+    const response=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=post_order_cross_sell_context',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-vitrine-history-key':String(secretQ.data.secret_value)
+      },
+      body:JSON.stringify({
+        order_suffix:String(match[1]).slice(-12),
+        phone:sitePhone||papoContactPhone
+      }),
+      signal:AbortSignal.timeout(12000)
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_cross_sell_response'}));
+    if(!response.ok||data?.ok!==true){
+      return {ok:false,reason:String(data?.error||('cross_sell_http_'+response.status)).slice(0,180)};
+    }
+    return {
+      ok:true,
+      order_id:data.order_id||null,
+      order_number:data.order_number||null,
+      session_id:data.session_id||null,
+      eligible:data.eligible===true,
+      classification:data.classification||null,
+      similarity:Number(data.similarity||0),
+      changed_lines:Number(data.changed_lines||0),
+      selected_count:Number(data.selected_count||0),
+      mode:data.mode||'shadow',
+      send_allowed:data.send_allowed===true,
+      response_window_seconds:Number(data.response_window_seconds||180),
+      message:String(data.message||'').slice(0,8000),
+      items:Array.isArray(data.items)?data.items.slice(0,10):[],
+      delivery_state:data.send_allowed===true?'awaiting_papoai_delivery_contract':'shadow_only'
+    };
+  }catch(error){
+    return {ok:false,reason:String((error as Error)?.message||error).slice(0,180)};
+  }
+}
+
 function storefrontLinkIntent(messageValue:any){
   const raw=String(messageValue??'').replace(/\s+/g,' ').trim();
   if(!raw)return {eligible:false,reason:'empty_message',kind:'none'};
@@ -1048,6 +1099,28 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
 
     if(flowLike){
       return await handlePapoAiFlowCustomerWebhook(sb,req,body,correlationId);
+    }
+
+    const orderLike=/PEDIDO\s+DONA\s+ANTONIA/i.test(messageText)&&/NUMERO:\s*[0-9]{6,20}/i.test(messageText);
+    if(orderLike){
+      const captureCrossSell=async()=>{
+        const postOrderContext=phone
+          ? await fetchPostOrderCrossSellContext(sb,phone,messageText)
+          : {ok:false,reason:'phone_missing'};
+        if(ins.data?.id){
+          try{
+            await sb.from('papoai_flow_customer_webhook_events').update({
+              parsed_data:{...baseParsedData,post_order_cross_sell_context:postOrderContext}
+            }).eq('id',ins.data.id);
+          }catch(error){
+            console.error('papoai_post_order_cross_sell_event_update_failed',correlationId,error);
+          }
+        }
+        return postOrderContext;
+      };
+      const edgeRuntime=(globalThis as any)?.EdgeRuntime;
+      if(edgeRuntime?.waitUntil)edgeRuntime.waitUntil(captureCrossSell());
+      else await captureCrossSell();
     }
 
     if(storefrontDecision.eligible){
