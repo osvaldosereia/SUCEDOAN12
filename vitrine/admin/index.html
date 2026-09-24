@@ -2121,6 +2121,7 @@
       '<strong class="'+gateKind+'">'+esc(gateTitle)+'</strong>'+
       '<div style="margin-top:5px">'+esc(gateDetail)+'</div>'+
       (gate.sefaz_status?'<div class="sub" style="margin-top:5px">SEFAZ: '+esc(gate.sefaz_status)+'</div>':'')+
+      (!f.config?.send_enabled?'<div class="sub" style="margin-top:5px">Emissão de NF-e permanece desligada nesta etapa. O gate está preparado, mas não envia nota automaticamente.</div>':'')+
       '</div>'+
       '<div class="rule-notice" style="margin-top:8px">'+
       '<strong>Fechamento: Entrega '+(delivered?'✓':'pendente')+' · Recebimento '+(paid?'✓':'pendente')+' · Fiscal '+esc(fiscalLabel)+'</strong>'+
