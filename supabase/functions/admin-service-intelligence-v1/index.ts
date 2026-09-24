@@ -4562,6 +4562,21 @@ Deno.serve(async(req:Request)=>{
         const allowedDomains=new Set(["product","stock","customer","order","fiscal"]);
         const allowedOperations=new Set(["sync_product","create_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
         if(!allowedDomains.has(domain)||!allowedOperations.has(operation)||!sourceId||!key)return json({ok:false,error:"invalid_job"},400);
+        if(domain==="order"&&operation==="sync_order_status"){
+          const runtime=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
+          if(runtime.error)throw runtime.error;
+          const catalog=runtime.data?.metadata?.order_status_catalog||{};
+          if(catalog.status_updates_enabled!==true){
+            return json({
+              ok:true,queued:false,skipped:true,
+              reason:"order_status_updates_disabled",
+              catalog_state:clean(catalog.state,80)||"unknown",
+              required_resource:clean(catalog.required_resource,120)||null,
+              http_status:Number(catalog.http_status||0)||null,
+              external_write:false
+            },200);
+          }
+        }
         const q=await sb.rpc("enqueue_bling_hub_job_v2",{
           p_domain:domain,p_operation:operation,p_source_system:"vitrine_qx",p_source_id:sourceId,
           p_idempotency_key:key,p_payload:obj(body?.payload),p_payload_version:1
@@ -4575,9 +4590,20 @@ Deno.serve(async(req:Request)=>{
         const allowedDomains=new Set(["product","stock","customer","order","fiscal"]);
         const allowedOperations=new Set(["sync_product","create_product","set_stock","sync_customer","sync_order","sync_order_status","prepare_fiscal"]);
         const ids:any[]=[];
+        let skippedStatusJobs=0;
+        let statusCatalog:any=null;
+        if(jobs.some((job:any)=>clean(job?.domain,40)==="order"&&clean(job?.operation,80)==="sync_order_status")){
+          const runtime=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
+          if(runtime.error)throw runtime.error;
+          statusCatalog=runtime.data?.metadata?.order_status_catalog||{};
+        }
         for(const job of jobs){
           const domain=clean(job?.domain,40),operation=clean(job?.operation,80),sourceId=clean(job?.source_id,160),key=clean(job?.idempotency_key,240);
           if(!allowedDomains.has(domain)||!allowedOperations.has(operation)||!sourceId||!key)return json({ok:false,error:"invalid_job_batch"},400);
+          if(domain==="order"&&operation==="sync_order_status"&&statusCatalog?.status_updates_enabled!==true){
+            skippedStatusJobs++;
+            continue;
+          }
           const q=await sb.rpc("enqueue_bling_hub_job_v2",{
             p_domain:domain,p_operation:operation,p_source_system:"vitrine_qx",p_source_id:sourceId,
             p_idempotency_key:key,p_payload:obj(job?.payload),p_payload_version:1
@@ -4585,7 +4611,12 @@ Deno.serve(async(req:Request)=>{
           if(q.error)throw q.error;
           ids.push(q.data);
         }
-        return json({ok:true,queued:ids.length,job_ids:ids,external_write:false});
+        return json({
+          ok:true,queued:ids.length,job_ids:ids,
+          skipped_status_jobs:skippedStatusJobs,
+          status_sync_skipped:skippedStatusJobs>0,
+          external_write:false
+        });
       }
       return json({ok:false,error:"writes_disabled",mode:"observe"},409);
     }catch(e){

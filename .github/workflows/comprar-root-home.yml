@@ -76,6 +76,7 @@ on:
       - 'scripts/test-vitrine-expedition-danfe-v1.mjs'
       - 'scripts/test-vitrine-operational-cutover-v1.mjs'
       - 'scripts/test-vitrine-legacy-bling-queue-guard-v1.mjs'
+      - 'scripts/test-bling-status-scope-noise-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -161,6 +162,7 @@ on:
       - 'scripts/test-vitrine-expedition-danfe-v1.mjs'
       - 'scripts/test-vitrine-operational-cutover-v1.mjs'
       - 'scripts/test-vitrine-legacy-bling-queue-guard-v1.mjs'
+      - 'scripts/test-bling-status-scope-noise-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -256,3 +258,4 @@ jobs:
           node scripts/test-vitrine-expedition-danfe-v1.mjs
           node scripts/test-vitrine-operational-cutover-v1.mjs
           node scripts/test-vitrine-legacy-bling-queue-guard-v1.mjs
+          node scripts/test-bling-status-scope-noise-v1.mjs
