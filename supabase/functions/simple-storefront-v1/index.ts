@@ -680,6 +680,12 @@ async function submitOrder(payload:any) {
 
 
 
+function randomFourDigitCode(){
+  const values=new Uint16Array(1);
+  do{crypto.getRandomValues(values)}while(values[0]>=60000);
+  return String(values[0]%10000).padStart(4,'0');
+}
+
 function randomStorefrontToken(byteLength=24){
   const bytes=new Uint8Array(byteLength);
   crypto.getRandomValues(bytes);
@@ -697,50 +703,143 @@ async function issueStorefrontIdentityLink(payload:any){
   const phone=normalizeWhatsappPhone(payload?.phone);
   if(!phone)return {error:'invalid_phone',status:400};
   const contactName=text(payload?.name,180)||null;
-  const token=randomStorefrontToken(24);
-  const tokenHash=await sha256Hex(token);
-  const expiresAt=new Date(Date.now()+24*60*60*1000).toISOString();
+  const nowIso=new Date().toISOString();
+  const expiresAt=new Date(Date.now()+30*60*1000).toISOString();
 
   try{
     await db.from('storefront_identity_tokens')
       .delete()
-      .lt('expires_at',new Date(Date.now()-7*24*60*60*1000).toISOString());
+      .or('expires_at.lt.'+nowIso+',redeemed_at.not.is.null');
+    await db.from('storefront_identity_resolve_attempts')
+      .delete()
+      .lt('attempted_at',new Date(Date.now()-24*60*60*1000).toISOString());
   }catch{}
 
-  const ins=await db.from('storefront_identity_tokens').insert({
-    token_hash:tokenHash,
-    phone_e164:phone,
-    contact_name:contactName,
-    source:'papoai',
-    expires_at:expiresAt
-  });
-  if(ins.error)throw ins.error;
+  const existing=await db.from('storefront_identity_tokens')
+    .select('short_code,expires_at')
+    .eq('phone_e164',phone)
+    .is('redeemed_at',null)
+    .gt('expires_at',nowIso)
+    .not('short_code','is',null)
+    .order('created_at',{ascending:false})
+    .limit(1)
+    .maybeSingle();
+  if(existing.error)throw existing.error;
+  if(existing.data?.short_code){
+    return {
+      phone_e164:phone,
+      shopping_url:'https://donaantonia.com.br/catalogo_'+String(existing.data.short_code),
+      expires_at:existing.data.expires_at,
+      reused:true
+    };
+  }
 
-  return {
-    phone_e164:phone,
-    shopping_url:'https://www.donaantonia.com.br/?c='+encodeURIComponent(token),
-    expires_at:expiresAt
-  };
+  for(let attempt=0;attempt<40;attempt++){
+    const code=randomFourDigitCode();
+    const tokenHash=await sha256Hex(code);
+    const ins=await db.from('storefront_identity_tokens').insert({
+      token_hash:tokenHash,
+      short_code:code,
+      phone_e164:phone,
+      contact_name:contactName,
+      source:'papoai_short_code_v2',
+      expires_at:expiresAt
+    });
+    if(!ins.error){
+      return {
+        phone_e164:phone,
+        shopping_url:'https://donaantonia.com.br/catalogo_'+code,
+        expires_at:expiresAt,
+        reused:false
+      };
+    }
+    if(String(ins.error.code||'')!=='23505')throw ins.error;
+  }
+  return {error:'short_code_pool_busy',status:503};
 }
 
-async function resolveStorefrontIdentityToken(tokenValue:any){
+function storefrontRequestIp(req:Request){
+  const candidates=[
+    req.headers.get('cf-connecting-ip'),
+    String(req.headers.get('x-forwarded-for')||'').split(',')[0],
+    req.headers.get('x-real-ip')
+  ];
+  for(const candidate of candidates){
+    const value=String(candidate||'').trim();
+    if(value)return value.slice(0,120);
+  }
+  return '';
+}
+
+async function storefrontResolveIpHash(req:Request){
+  const ip=storefrontRequestIp(req);
+  if(!ip)return '';
+  const salt=String(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')||'').slice(-48);
+  return sha256Hex('storefront-resolve-v2|'+ip+'|'+salt);
+}
+
+async function resolveStorefrontIdentityCode(req:Request,codeValue:any){
+  const code=String(codeValue??'').trim();
+  if(!/^\d{4}$/.test(code))return {error:'invalid_code',status:400};
+
+  const ipHash=await storefrontResolveIpHash(req);
+  if(ipHash){
+    const since=new Date(Date.now()-10*60*1000).toISOString();
+    const countQ=await db.from('storefront_identity_resolve_attempts')
+      .select('id',{count:'exact',head:true})
+      .eq('ip_hash',ipHash)
+      .gte('attempted_at',since);
+    if(countQ.error)throw countQ.error;
+    if(Number(countQ.count||0)>=12)return {error:'too_many_attempts',status:429};
+  }
+
+  const tokenHash=await sha256Hex(code);
+  const nowIso=new Date().toISOString();
+  const q=await db.from('storefront_identity_tokens')
+    .update({
+      redeemed_at:nowIso,
+      last_used_at:nowIso,
+      use_count:1
+    })
+    .eq('token_hash',tokenHash)
+    .eq('short_code',code)
+    .is('redeemed_at',null)
+    .gt('expires_at',nowIso)
+    .select('id,phone_e164,expires_at')
+    .maybeSingle();
+  if(q.error)throw q.error;
+
+  if(ipHash){
+    try{
+      await db.from('storefront_identity_resolve_attempts').insert({
+        ip_hash:ipHash,
+        success:Boolean(q.data)
+      });
+    }catch{}
+  }
+
+  if(!q.data)return {error:'code_expired_or_invalid',status:404};
+  return {phone_e164:q.data.phone_e164,expires_at:q.data.expires_at};
+}
+
+async function resolveLegacyStorefrontIdentityToken(tokenValue:any){
   const token=String(tokenValue??'').trim();
   if(!/^[A-Za-z0-9_-]{24,160}$/.test(token))return {error:'invalid_token',status:400};
   const tokenHash=await sha256Hex(token);
   const nowIso=new Date().toISOString();
   const q=await db.from('storefront_identity_tokens')
-    .select('id,phone_e164,expires_at,use_count')
+    .update({
+      redeemed_at:nowIso,
+      last_used_at:nowIso,
+      use_count:1
+    })
     .eq('token_hash',tokenHash)
+    .is('redeemed_at',null)
     .gt('expires_at',nowIso)
+    .select('id,phone_e164,expires_at')
     .maybeSingle();
   if(q.error)throw q.error;
   if(!q.data)return {error:'token_expired_or_invalid',status:404};
-
-  await db.from('storefront_identity_tokens').update({
-    last_used_at:nowIso,
-    use_count:Number(q.data.use_count||0)+1
-  }).eq('id',q.data.id);
-
   return {phone_e164:q.data.phone_e164,expires_at:q.data.expires_at};
 }
 
@@ -832,8 +931,13 @@ Deno.serve(async (req: Request) => {
       if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
       return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
+    if (req.method === "GET" && action === "resolve_identity_code") {
+      const result=await resolveStorefrontIdentityCode(req,url.searchParams.get("code"));
+      if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
+      return json({ok:true,...result},200,{"Cache-Control":"no-store"});
+    }
     if (req.method === "GET" && action === "resolve_identity_token") {
-      const result=await resolveStorefrontIdentityToken(url.searchParams.get("token"));
+      const result=await resolveLegacyStorefrontIdentityToken(url.searchParams.get("token"));
       if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
       return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
