@@ -22,6 +22,12 @@
     .logo{width:88px;height:40px;object-fit:contain}
     .brand{min-width:0;flex:1}.brand strong{font-size:18px;display:block}.brand small{color:var(--muted)}
     .store-link{min-height:42px;display:inline-flex;align-items:center;text-decoration:none;color:var(--brand);font-weight:800;padding:0 10px}
+    .operator-badge{border:1px solid var(--line);background:#fff;border-radius:999px;min-height:36px;padding:0 11px;font-weight:800;color:var(--ink);white-space:nowrap}
+    .operator-badge.unset{color:#b06000;border-color:#f2d59a;background:#fffaf0}
+    .expiry-alert-banner{border-color:#f2d59a;background:#fffaf0}
+    .expiry-alert-banner.danger{border-color:#f0b7b3;background:#fff8f7}
+    .audit-list{display:grid}.audit-row{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(160px,1fr) 150px;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);align-items:center}.audit-row:last-child{border-bottom:0}.audit-row strong{display:block;font-size:12px}.audit-row small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+    @media(max-width:780px){.operator-badge{max-width:130px;overflow:hidden;text-overflow:ellipsis}.audit-row{grid-template-columns:1fr}.audit-row .audit-time{justify-self:start}}
     .tabs{display:flex;gap:7px;overflow:auto;padding:0 14px 10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
     .tab{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 16px;font-weight:850;color:var(--ink);white-space:nowrap}
     .tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
@@ -164,6 +170,7 @@
       <div class="top-row wrap">
         <img class="logo" src="/img/logoantonia5.png" width="88" height="40" alt="Dona Antônia" fetchpriority="high">
         <div class="brand"><strong>Dona Antônia · Operação</strong><small>Pedidos, estoque, expedição e entrega</small></div>
+        <button class="operator-badge unset" id="operatorBadge" type="button" title="Identificação usada no histórico operacional">Operador: identificar</button>
         <a class="store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
       </div>
       <nav class="tabs wrap" aria-label="Admin">
@@ -204,10 +211,32 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
+  const OPERATOR_KEY='da_operator_name_v1';
+  function currentOperator(){return String(localStorage.getItem(OPERATOR_KEY)||'').trim().slice(0,80)}
+  function paintOperatorBadge(){
+    const b=$('#operatorBadge');if(!b)return;
+    const name=currentOperator();
+    b.textContent=name?'Operador: '+name:'Operador: identificar';
+    b.classList.toggle('unset',!name);
+  }
+  function changeOperator(){
+    const current=currentOperator();
+    const value=prompt('Nome do operador para registrar alterações de produtos e validade:',current);
+    if(value===null)return current;
+    const clean=String(value||'').trim().replace(/\s+/g,' ').slice(0,80);
+    if(!clean){localStorage.removeItem(OPERATOR_KEY);paintOperatorBadge();return ''}
+    localStorage.setItem(OPERATOR_KEY,clean);paintOperatorBadge();toast('Operador identificado: '+clean);return clean;
+  }
+  function requireOperator(){
+    const existing=currentOperator();
+    return existing||changeOperator();
+  }
+  if($('#operatorBadge'))$('#operatorBadge').onclick=changeOperator;
+  paintOperatorBadge();
   async function api(action,params={},options={}){
     const u=new URL(API);u.searchParams.set('action',action);
     Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
@@ -450,17 +479,32 @@
       issues.map(([key,label,count])=>'<button class="filter-chip danger" type="button" data-today-issue="'+key+'">'+esc(label)+' · '+count+'</button>').join('')+
     '</div>';
   }
+  function renderTodayExpiryAlert(){
+    const data=state.expiryAlerts||{},s=data.summary||{},total=Number(s.total||0);
+    if(!total)return '';
+    const urgent=Number(s.due_today||0)+Number(s.days_1_7||0);
+    const cls=urgent?' danger':'';
+    const parts=[];
+    if(Number(s.due_today||0))parts.push(s.due_today+' vence(m) hoje');
+    if(Number(s.days_1_7||0))parts.push(s.days_1_7+' em até 7 dias');
+    if(Number(s.days_8_15||0))parts.push(s.days_8_15+' em 8–15 dias');
+    if(Number(s.days_16_30||0))parts.push(s.days_16_30+' em 16–30 dias');
+    return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
+  }
+
   async function renderToday(){
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Hoje</h1><p>O que precisa ser feito agora, em ordem operacional.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div><div id="integrationOperationalAlert"></div><div id="todayBody"><div class="loading">Carregando operação…</div></div>';
     $('#refreshToday').onclick=renderToday;
     loadOperationalIntegrationAlert();
     try{
-      const [data,closureData]=await Promise.all([
+      const [data,closureData,expiryAlerts]=await Promise.all([
         api('orders'),
-        api('closure_orders').catch(()=>null)
+        api('closure_orders').catch(()=>null),
+        api('expiry_alerts').catch(()=>null)
       ]);
       state.orders=data.orders||[];
+      state.expiryAlerts=expiryAlerts||null;
       if(closureData){
         state.closureOrders=closureData.orders||[];
         state.closurePendingCount=Number(closureData.pending_count||0);
@@ -469,8 +513,9 @@
         state.closurePendingCount=0;
       }
       const host=$('#todayBody');
-      host.innerHTML=renderTodayCards()+
+      host.innerHTML=renderTodayExpiryAlert()+renderTodayCards()+
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
+      host.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
       host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
       host.querySelectorAll('[data-today-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.todayTab));
       host.querySelectorAll('[data-today-issue]').forEach(b=>b.onclick=()=>{state.orderFilter='problems';state.orderIssueFilter=b.dataset.todayIssue;setTab('orders')});
@@ -1548,6 +1593,7 @@
       return;
     }
     if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
+    const operator=requireOperator();if(!operator)return;
     btn.disabled=true;
     try{
       const data=await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
@@ -1556,7 +1602,7 @@
         expiration_date:product.expiration_date||null,
         auto_expiry_offer_enabled:product.auto_expiry_offer_enabled===true,
         category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
-        image_url:product.image_url||'',description:product.description||'',active:next
+        image_url:product.image_url||'',description:product.description||'',active:next,operator
       })});
       const saved=data.product;
       if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
@@ -1650,7 +1696,9 @@
       .map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
   }
   async function saveProduct(id){
-    const form=new FormData($('#productForm')),btn=$('#saveProduct');btn.disabled=true;btn.textContent='Salvando…';
+    const form=new FormData($('#productForm')),btn=$('#saveProduct');
+    const operator=requireOperator();if(!operator)return;
+    btn.disabled=true;btn.textContent='Salvando…';
     try{
       const autoExpiry=form.get('auto_expiry_offer_enabled')==='on';
       const data=await api('product_save',{},{
@@ -1662,7 +1710,7 @@
           expiration_date:form.get('expiration_date')||null,
           auto_expiry_offer_enabled:autoExpiry,
           category:form.get('category'),subcategory:form.get('subcategory'),packaging:form.get('packaging'),
-          image_url:form.get('image_url'),description:form.get('description'),active:form.get('active')==='on'
+          image_url:form.get('image_url'),description:form.get('description'),active:form.get('active')==='on',operator
         })
       });
       if(!autoExpiry&&document.querySelector('#productForm [name="offer_active"]')){
@@ -1723,9 +1771,12 @@
       '<div id="expirySummary">'+renderExpirySummary({})+'</div>'+
       '<div class="expiry-help"><strong>Regra de vencimento:</strong> ao vencer, o produto é desativado automaticamente, sai da vitrine, tem o estoque zerado e as ofertas desligadas. Produtos inativos não entram nos cálculos futuros de validade.</div>'+
       '<div id="expiryExpiredNotice"></div>'+
-      '<div class="panel"><div id="expiryRows"><div class="loading">Carregando validades…</div></div></div>';
+      '<div class="panel"><div id="expiryRows"><div class="loading">Carregando validades…</div></div></div>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title" style="padding:12px 12px 0"><div><strong>Histórico de validade e ativação</strong><span class="sub">Quem alterou, reativou ou foi desativado pela regra automática</span></div><button class="text" id="refreshExpiryAudit" type="button">Atualizar</button></div><div id="expiryAudit"><div class="loading">Carregando histórico…</div></div></section>';
     $('#refreshExpiry').onclick=loadExpirations;
+    $('#refreshExpiryAudit').onclick=loadExpiryAudit;
     await loadExpirations();
+    loadExpiryAudit();
   }
   function expiryRangeSummary(products,inventory={}){
     return {
@@ -1761,6 +1812,25 @@
     return '<div class="bling-banner" style="margin-bottom:14px"><strong>'+esc(total)+' produto(s) vencido(s) já foram desativados automaticamente</strong><small>Estão fora da vitrine, com estoque zerado e ofertas desligadas.'+(examples?' Recentes: '+examples+(total>rows.length?'…':''):'')+'</small></div>';
   }
 
+  function lifecycleEventLabel(event){
+    return {reactivated:'Reativado',manual_deactivated:'Desativado manualmente',auto_expired_deactivation:'Desativado por vencimento',expiration_changed:'Validade alterada'}[event]||event||'Alteração';
+  }
+  function lifecycleAuditRow(r){
+    const p=r.product||{},before=r.previous_expiration_date?dateOnly(r.previous_expiration_date):'sem validade',after=r.new_expiration_date?dateOnly(r.new_expiration_date):'sem validade';
+    const change=before!==after?'Validade: '+before+' → '+after:(r.previous_active!==r.new_active?(r.new_active?'Inativo → ativo':'Ativo → inativo'):'');
+    return '<div class="audit-row"><div><strong>'+esc(p.name||'Produto')+'</strong><small>'+esc(lifecycleEventLabel(r.event))+(change?' · '+esc(change):'')+'</small></div><div><strong>'+esc(r.actor_label||'Não identificado')+'</strong><small>'+(r.actor_type==='system'?'Automático':'Operador')+'</small></div><div class="audit-time"><strong>'+esc(dateTime(r.created_at))+'</strong><small>'+esc(p.gtin||p.sku||'')+'</small></div></div>';
+  }
+  async function loadExpiryAudit(){
+    const host=$('#expiryAudit');if(!host)return;
+    try{
+      const data=await api('product_lifecycle_audit',{limit:40});
+      state.productAudit=data.audit||[];
+      host.innerHTML=state.productAudit.length?'<div class="audit-list">'+state.productAudit.map(lifecycleAuditRow).join('')+'</div>':'<div class="empty">Ainda não há alterações registradas.</div>';
+    }catch(e){
+      host.innerHTML='<div class="empty">Não consegui carregar o histórico agora.</div>';
+    }
+  }
+
   async function loadExpirations(){
     const host=$('#expiryRows');
     try{
@@ -1788,11 +1858,12 @@
   async function saveExpiryRow(row){
     if(!row)return;
     const id=row.dataset.expiryRow,date=row.querySelector('[data-expiry-date]')?.value||'',auto=row.querySelector('[data-expiry-auto]')?.checked===true;
+    const operator=requireOperator();if(!operator)return;
     row.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     try{
       const data=await api('expiration_save',{},{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({product_id:id,expiration_date:date||null,auto_expiry_offer_enabled:auto})
+        body:JSON.stringify({product_id:id,expiration_date:date||null,auto_expiry_offer_enabled:auto,operator})
       });
       const p=data.product;
       if(p?.active===false&&p?.deactivation_reason==='expired')toast('Validade vencida · produto desativado automaticamente');
