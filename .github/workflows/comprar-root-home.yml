@@ -41,6 +41,7 @@ on:
       - 'scripts/test-vitrine-admin-dispatch-payment-summary-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-buckets-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-pending-v1.mjs'
+      - 'scripts/test-vitrine-admin-stock-readiness-v1.mjs'
       - 'scripts/test-vitrine-admin-issue-shortcuts-v1.mjs'
       - 'scripts/test-vitrine-admin-bulk-confirm-v1.mjs'
       - 'scripts/test-vitrine-admin-shelf-v1.mjs'
@@ -110,6 +111,7 @@ on:
       - 'scripts/test-vitrine-admin-dispatch-payment-summary-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-buckets-v1.mjs'
       - 'scripts/test-vitrine-admin-closure-pending-v1.mjs'
+      - 'scripts/test-vitrine-admin-stock-readiness-v1.mjs'
       - 'scripts/test-vitrine-admin-issue-shortcuts-v1.mjs'
       - 'scripts/test-vitrine-admin-bulk-confirm-v1.mjs'
       - 'scripts/test-vitrine-admin-shelf-v1.mjs'
@@ -189,6 +191,7 @@ jobs:
           node scripts/test-vitrine-admin-dispatch-payment-summary-v1.mjs
           node scripts/test-vitrine-admin-closure-buckets-v1.mjs
           node scripts/test-vitrine-admin-closure-pending-v1.mjs
+          node scripts/test-vitrine-admin-stock-readiness-v1.mjs
           node scripts/test-vitrine-admin-issue-shortcuts-v1.mjs
           node scripts/test-vitrine-admin-bulk-confirm-v1.mjs
           node scripts/test-vitrine-admin-shelf-v1.mjs

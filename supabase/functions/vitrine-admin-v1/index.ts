@@ -957,6 +957,7 @@ async function listOrders() {
   }
   const cMap=new Map(customers.map((c:any)=>[c.id,c.display_name]));
   const orderIds=rows.map((r:any)=>r.id);
+  const openStockMap=await orderStockReadinessMap(openRows.map((r:any)=>r.id));
   const syncMap=new Map<string,any>();
   if(orderIds.length){
     const sync=await db.from("vitrine_history_sync_outbox")
@@ -970,7 +971,8 @@ async function listOrders() {
     customer_name:r.customer_id
       ? cMap.get(r.customer_id)??""
       : r.delivery_address_snapshot?.customer_name ?? r.delivery_address_snapshot?.recipient_name ?? "",
-    history_sync:syncMap.get(r.id)??{state:"pending",attempt_count:0,last_error:null}
+    history_sync:syncMap.get(r.id)??{state:"pending",attempt_count:0,last_error:null},
+    stock_readiness:openStockMap.get(r.id)??null
   }));
 }
 
@@ -1113,6 +1115,8 @@ async function orderDetail(id:string) {
     .maybeSingle();
   if(historySyncError)throw historySyncError;
 
+  const stockReadiness=(await orderStockReadinessMap([id])).get(id)??{ok:true,shortage_count:0,shortages:[]};
+
   let blingLink:any=null;
   try{
     const remote=await blingHubControl("order_link_status",{source_order_id:id});
@@ -1125,6 +1129,7 @@ async function orderDetail(id:string) {
     order,
     customer,
     history_sync:historySync??{state:"pending",attempt_count:0,last_error:null},
+    stock_readiness:stockReadiness,
     bling_link:blingLink,
     items:(items??[]).map((item:any)=>{
       const p=pMap.get(item.product_id);
@@ -1165,6 +1170,115 @@ async function orderStockReservationItems(orderId:string) {
   for(const item of rows)if(item.item_kind==="product"&&item.product_id)add(item.product_id,Number(item.quantity||0));
   for(const c of components)add(c.product_id,Number(c.quantity||0)*Number(basketQty.get(c.order_item_id)||0));
   return [...demand.entries()].map(([product_id,quantity])=>({product_id,quantity})).sort((a,b)=>a.product_id.localeCompare(b.product_id));
+}
+
+async function orderStockReadinessMap(orderIdsRaw:any[]){
+  const orderIds=[...new Set((orderIdsRaw||[]).map(uuid).filter(Boolean))] as string[];
+  const result=new Map<string,any>();
+  for(const id of orderIds)result.set(id,{ok:true,shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0});
+  if(!orderIds.length)return result;
+
+  const items:any[]=[];
+  for(let i=0;i<orderIds.length;i+=150){
+    const q=await db.from("order_items")
+      .select("id,order_id,item_kind,product_id,quantity")
+      .eq("organization_id",ORG_ID)
+      .in("order_id",orderIds.slice(i,i+150));
+    if(q.error)throw q.error;
+    items.push(...(q.data||[]));
+  }
+
+  const basketIds=items.filter((x:any)=>x.item_kind==="basket").map((x:any)=>x.id);
+  const components:any[]=[];
+  for(let i=0;i<basketIds.length;i+=250){
+    const q=await db.from("order_item_components")
+      .select("order_item_id,product_id,quantity")
+      .eq("organization_id",ORG_ID)
+      .in("order_item_id",basketIds.slice(i,i+250));
+    if(q.error)throw q.error;
+    components.push(...(q.data||[]));
+  }
+
+  const basketMeta=new Map(items.filter((x:any)=>x.item_kind==="basket").map((x:any)=>[x.id,{order_id:x.order_id,quantity:Number(x.quantity||0)}]));
+  const demand=new Map<string,Map<string,number>>();
+  const add=(orderId:string,productId:string,qty:number)=>{
+    if(!orderId||!productId||!Number.isFinite(qty)||qty<=0)return;
+    if(!demand.has(orderId))demand.set(orderId,new Map());
+    const m=demand.get(orderId)!;
+    m.set(productId,Math.round(((m.get(productId)||0)+qty)*1000)/1000);
+  };
+  for(const item of items){
+    if(item.item_kind==="product"&&item.product_id)add(item.order_id,item.product_id,Number(item.quantity||0));
+  }
+  for(const c of components){
+    const meta=basketMeta.get(c.order_item_id);
+    if(meta)add(meta.order_id,c.product_id,Number(c.quantity||0)*Number(meta.quantity||0));
+  }
+
+  const productIds=[...new Set([...demand.values()].flatMap(m=>[...m.keys()]))];
+  const products:any[]=[];
+  for(let i=0;i<productIds.length;i+=200){
+    const q=await db.from("products")
+      .select("id,name,sku,stock_quantity,active")
+      .eq("organization_id",ORG_ID)
+      .in("id",productIds.slice(i,i+200));
+    if(q.error)throw q.error;
+    products.push(...(q.data||[]));
+  }
+  const pMap=new Map(products.map((p:any)=>[p.id,p]));
+
+  const reservations:any[]=[];
+  for(let i=0;i<productIds.length;i+=200){
+    const q=await db.from("order_stock_reservations")
+      .select("order_id,product_id,quantity,status")
+      .eq("organization_id",ORG_ID)
+      .eq("status","reserved")
+      .in("product_id",productIds.slice(i,i+200));
+    if(q.error)throw q.error;
+    reservations.push(...(q.data||[]));
+  }
+  const rMap=new Map<string,any[]>();
+  for(const r of reservations){
+    if(!rMap.has(r.product_id))rMap.set(r.product_id,[]);
+    rMap.get(r.product_id)!.push(r);
+  }
+
+  for(const orderId of orderIds){
+    const lines=demand.get(orderId)||new Map<string,number>();
+    const shortages:any[]=[];
+    let reservedLines=0;
+    for(const [productId,requested] of lines.entries()){
+      const p=pMap.get(productId);
+      const rs=rMap.get(productId)||[];
+      const reservedOther=rs.filter((x:any)=>x.order_id!==orderId).reduce((sum:number,x:any)=>sum+Number(x.quantity||0),0);
+      const ownReservation=rs.find((x:any)=>x.order_id===orderId);
+      if(ownReservation)reservedLines++;
+      const physical=p&&p.active!==false?Number(p.stock_quantity||0):0;
+      const available=Math.max(0,Math.round((physical-reservedOther)*1000)/1000);
+      if(!p||p.active===false||available+0.0001<requested){
+        shortages.push({
+          product_id:productId,
+          name:p?.name||"Produto indisponível",
+          sku:p?.sku||"",
+          requested:Math.round(requested*1000)/1000,
+          available,
+          physical:Math.max(0,physical),
+          reserved_other:Math.max(0,Math.round(reservedOther*1000)/1000),
+          own_reserved:Boolean(ownReservation),
+          reason:(!p||p.active===false)?"product_unavailable":"insufficient_stock"
+        });
+      }
+    }
+    result.set(orderId,{
+      ok:shortages.length===0&&lines.size>0,
+      shortage_count:shortages.length,
+      shortages:shortages.slice(0,8),
+      demand_lines:lines.size,
+      reserved_lines:reservedLines,
+      error:lines.size?"":"empty_order_stock"
+    });
+  }
+  return result;
 }
 
 async function consumeOrderStock(payload:any) {
@@ -1924,6 +2038,18 @@ async function updateOrder(payload:any) {
     const blockers=orderOperationalDataBlockers(candidateDelivery,candidatePayment);
     if(blockers.length){
       return {error:"order_operational_data_incomplete",status:409,blockers,current_status:currentOrder.status,requested_status:requestedStatus};
+    }
+  }
+  if(requestedStatus==="confirmed"&&currentOrder.status==="created"){
+    const stockReadiness=(await orderStockReadinessMap([id])).get(id);
+    if(!stockReadiness?.ok){
+      return {
+        error:"insufficient_stock",
+        status:409,
+        current_status:currentOrder.status,
+        requested_status:requestedStatus,
+        stock_readiness:stockReadiness??null
+      };
     }
   }
 

@@ -324,6 +324,23 @@
 
     async function resolveEntryWhatsappPhone(){
       const params=new URLSearchParams(location.search);
+      const code=String(params.get('catalogo')||'').trim();
+      if(/^\d{4}$/.test(code)){
+        try{
+          const data=await api('resolve_identity_code',{code});
+          const resolved=normalizeWhatsappPhone(data.phone_e164||'');
+          if(!resolved)throw new Error('identity_phone_missing');
+          try{sessionStorage.setItem(WHATSAPP_PHONE_KEY,resolved)}catch{}
+          clearQueryParam('catalogo');
+          return resolved;
+        }catch{
+          try{sessionStorage.removeItem(WHATSAPP_PHONE_KEY)}catch{}
+          clearQueryParam('catalogo');
+          return '';
+        }
+      }
+
+      // Compatibility with links issued before the short catalog-code rollout.
       const token=String(params.get('c')||'').trim();
       if(token){
         try{
@@ -457,11 +474,11 @@
       }catch{return null}
     }
 
-    async function customerLookupApi(phoneSuffix){
+    async function customerLookupApi(phoneValue){
       const response=await fetch(LEGACY_PRODUCT_API,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'vitrine_customer_lookup_phone',phone_suffix:phoneSuffix}),
+        body:JSON.stringify({action:'vitrine_customer_lookup_phone',phone:phoneValue,phone_suffix:String(phoneValue||'').replace(/\D+/g,'').slice(-8)}),
         cache:'no-store'
       });
       const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
@@ -510,7 +527,7 @@
       state.customerLookup={status:'loading',phoneKey:info.key,customer:null};
       updateCustomerLookupResult();
       try{
-        const data=await customerLookupApi(info.suffix);
+        const data=await customerLookupApi(info.full);
         state.customerLookup=data.found
           ? {status:'found',phoneKey:info.key,customer:data.customer}
           : {status:'new',phoneKey:info.key,customer:null};
