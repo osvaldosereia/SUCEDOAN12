@@ -5,6 +5,9 @@ const hub=fs.readFileSync('supabase/functions/admin-service-intelligence-v1/inde
 const admin=fs.readFileSync('supabase/functions/vitrine-admin-v1/index.ts','utf8');
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 
+assert.equal(fs.existsSync('supabase/functions/bling-finance-actions-v1/index.ts'),false,'R2 deve reutilizar o Hub existente, sem nova Edge Function');
+assert.equal(fs.existsSync('scripts/bling-finance-oauth-sync-r2.mjs'),false,'bootstrap OAuth temporário não deve permanecer');
+
 assert.match(hub,/async function blingHubFinanceAction\(/);
 assert.match(hub,/financial_account_detail/);
 assert.match(hub,/\/contas\/receber\/boletos\?/);
