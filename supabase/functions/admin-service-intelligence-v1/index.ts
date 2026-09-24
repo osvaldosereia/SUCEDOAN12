@@ -3376,11 +3376,11 @@ async function blingHubProcessStockJobs(sb:any,limitRaw:any){
   return summary;
 }
 async function blingHubProductFiscalAuditReadonly(sb:any,body:any){
-  const limit=Math.max(1,Math.min(50,Number(body?.limit||25)||25));
+  const limit=Math.max(1,Math.min(100,Number(body?.limit||50)||50));
   const minRisk=Math.max(0,Math.min(100,Number(body?.min_risk??0)||0));
   const offset=Math.max(0,Number(body?.offset||0)||0);
   const requestedIds=(Array.isArray(body?.product_ids)?body.product_ids:[])
-    .map((x:any)=>uuid(x)).filter(Boolean).slice(0,50);
+    .map((x:any)=>uuid(x)).filter(Boolean).slice(0,100);
 
   const riskMap=new Map<string,any>();
   let productIds:string[]=[];
