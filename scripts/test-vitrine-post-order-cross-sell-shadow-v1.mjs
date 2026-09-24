@@ -31,8 +31,6 @@ assert.match(admin,/SHADOW MODE/);
 assert.match(admin,/Recalcular últimos pedidos/);
 assert.match(admin,/crossSellPreviewMessage/);
 
-console.log('cross-sell shadow v1 contracts: OK');
-
 assert.match(expiryMigration,/expiry_discount_percent_v1/);
 assert.match(expiryMigration,/expiry_offer_price_cents_v1/);
 assert.match(expiryMigration,/private_cross_sell_quote/);
@@ -45,3 +43,5 @@ assert.match(storefront,/post_order_cross_sell_context/);
 assert.match(storefront,/post_order_cross_sell_reply/);
 assert.match(storefront,/post_order_cross_sell_mark_sent/);
 assert.match(admin,/Entrega PapoAI/);
+
+console.log('cross-sell shadow v1 contracts: OK');
