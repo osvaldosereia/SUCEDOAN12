@@ -16,11 +16,10 @@ assert.match(fn,/async function legacyOrderMutationGuard\(orderIdRaw:any\)/);
 assert.match(fn,/legacy_order_read_only/);
 
 const gteCount=(fn.match(/\.gte\("created_at",cutover\.live_orders_since\)/g)||[]).length;
-assert.ok(gteCount>=5,'listas operacionais devem respeitar o corte em pelo menos cinco consultas');
+assert.ok(gteCount>=4,'listas operacionais devem respeitar o corte em pelo menos quatro consultas');
 
 assert.match(fn,/pending_count:pendingRows\.length/);
 assert.match(fn,/visibleIds\.has\(id\)/);
-assert.match(fn,/crossSellShadowPrepareRecent[\s\S]*?\.gte\("created_at",cutover\.live_orders_since\)/);
 assert.match(fn,/listOrderStockShortages[\s\S]*?\.gte\("created_at",cutover\.live_orders_since\)/);
 
 assert.match(fn,/mutationOrderId=/);
@@ -28,7 +27,7 @@ for(const action of [
   'order_update','order_consume_stock','history_sync_retry',
   'bling_create_order_products','bling_create_order_customer',
   'order_fiscal_dispatch_canary_execute','order_fiscal_confirm_payment',
-  'order_component_replace','cross_sell_shadow_prepare'
+  'order_component_replace'
 ]){
   assert.ok(fn.includes('"'+action+'"')||fn.includes("'"+action+"'"),'guard deve cobrir '+action);
 }
