@@ -1601,7 +1601,7 @@ async function saveCrossSellConfig(payload:any){
 }
 
 async function blingHubControl(subaction:string,extra:any={}) {
-  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_dispatch_gate","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
+  const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_dispatch_gate","fiscal_dispatch_preview","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
 
   const secret=await db.from("internal_integration_secrets")
@@ -2757,6 +2757,13 @@ Deno.serve(async (req: Request) => {
         const id=uuid(payload?.id);
         if(!id)return json(req,{ok:false,error:"invalid_order"},400);
         const result=await blingHubControl("fiscal_status",{source_order_id:id});
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,...((result as any).data||{})});
+      }
+      if (action==="order_fiscal_dispatch_preview") {
+        const id=uuid(payload?.id);
+        if(!id)return json(req,{ok:false,error:"invalid_order"},400);
+        const result=await blingHubControl("fiscal_dispatch_preview",{source_order_id:id});
         if ((result as any).error) return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,...((result as any).data||{})});
       }
