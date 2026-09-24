@@ -80,6 +80,42 @@ function addDateDays(iso:string,days:number) {
 function dateDiffDays(fromIso:string,toIso:string) {
   return Math.round((Date.parse(toIso+"T00:00:00Z")-Date.parse(fromIso+"T00:00:00Z"))/86400000);
 }
+
+let operationalCutoverCache:{live_orders_since:string,legacy_orders_read_only:boolean}|null=null;
+async function operationalCutover(){
+  if(operationalCutoverCache)return operationalCutoverCache;
+  const {data,error}=await db.from("vitrine_operational_cutover_config")
+    .select("live_orders_since,legacy_orders_read_only")
+    .eq("id",1).maybeSingle();
+  if(error)throw error;
+  operationalCutoverCache={
+    live_orders_since:text(data?.live_orders_since,80)||new Date(0).toISOString(),
+    legacy_orders_read_only:data?.legacy_orders_read_only!==false
+  };
+  return operationalCutoverCache;
+}
+async function orderOperationalAge(orderIdRaw:any){
+  const orderId=uuid(orderIdRaw);
+  if(!orderId)return {ok:false,error:"invalid_order",status:400,legacy:false};
+  const [{data:order,error},cfg]=await Promise.all([
+    db.from("orders").select("id,created_at").eq("organization_id",ORG_ID).eq("id",orderId).maybeSingle(),
+    operationalCutover()
+  ]);
+  if(error)throw error;
+  if(!order)return {ok:false,error:"order_not_found",status:404,legacy:false};
+  const legacy=cfg.legacy_orders_read_only===true
+    && (Date.parse(order.created_at||0)||0)<(Date.parse(cfg.live_orders_since||0)||0);
+  return {ok:true,order_id:orderId,created_at:order.created_at,live_orders_since:cfg.live_orders_since,legacy};
+}
+async function legacyOrderMutationGuard(orderIdRaw:any){
+  const age=await orderOperationalAge(orderIdRaw);
+  if(!age.ok)return age;
+  if(age.legacy)return {
+    ok:false,error:"legacy_order_read_only",status:409,
+    order_id:age.order_id,created_at:age.created_at,live_orders_since:age.live_orders_since
+  };
+  return {ok:true,...age};
+}
 async function listProducts(url: URL) {
   const q = text(url.searchParams.get("q"), 80);
   const category = text(url.searchParams.get("category"), 48);
