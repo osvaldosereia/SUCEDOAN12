@@ -14,6 +14,7 @@ on:
       - 'scripts/test-vitrine-bling-finance-actions-r2.mjs'
       - 'scripts/test-vitrine-bling-finance-ux-r3.mjs'
       - 'scripts/test-vitrine-bling-finance-stepup-r4.mjs'
+      - 'scripts/test-vitrine-bling-finance-overview-auth-r5.mjs'
       - 'scripts/test-vitrine-admin-operational-ux-v1.mjs'
       - 'scripts/test-vitrine-admin-order-transitions-v1.mjs'
       - 'scripts/test-vitrine-admin-expedition-v1.mjs'
@@ -106,6 +107,7 @@ on:
       - 'scripts/test-vitrine-bling-finance-actions-r2.mjs'
       - 'scripts/test-vitrine-bling-finance-ux-r3.mjs'
       - 'scripts/test-vitrine-bling-finance-stepup-r4.mjs'
+      - 'scripts/test-vitrine-bling-finance-overview-auth-r5.mjs'
       - 'scripts/test-vitrine-admin-operational-ux-v1.mjs'
       - 'scripts/test-vitrine-admin-order-transitions-v1.mjs'
       - 'scripts/test-vitrine-admin-expedition-v1.mjs'
@@ -211,6 +213,7 @@ jobs:
           node scripts/test-vitrine-bling-finance-actions-r2.mjs
           node scripts/test-vitrine-bling-finance-ux-r3.mjs
           node scripts/test-vitrine-bling-finance-stepup-r4.mjs
+          node scripts/test-vitrine-bling-finance-overview-auth-r5.mjs
           node --experimental-strip-types --check supabase/functions/vitrine-admin-v1/index.ts
           node --experimental-strip-types --check supabase/functions/admin-service-intelligence-v1/index.ts
           node scripts/test-vitrine-admin-operational-ux-v1.mjs
