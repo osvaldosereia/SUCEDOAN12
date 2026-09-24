@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.116.0";
-import { syncVitrineOrderHistory, preloadPapoAiOperationalMessage } from "../_shared/vitrine-history-sync-v1.ts";
+import { syncVitrineOrderHistory } from "../_shared/vitrine-history-sync-v1.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SECRET_KEYS = (() => {
@@ -676,54 +676,17 @@ async function submitOrder(payload:any) {
   const historySync=await syncVitrineOrderHistory(db,order.id,ORG_ID);
   if(!historySync.ok)console.error("vitrine_history_sync_failed",historySync.error);
 
-  let crossSellPreloaded=false;
-  let crossSellEligible=false;
+  // post_order_cross_sell_shadow_schedule
+  // Shadow only: records eligibility and suggestions, never sends WhatsApp or changes the order.
+  const shadowWork=db.rpc("prepare_post_order_cross_sell_shadow_v1",{p_order_id:order.id})
+    .then(({error}:any)=>{if(error)console.error("cross_sell_shadow_prepare_failed",error.message||error)});
   try{
-    const prep=await db.rpc("prepare_post_order_cross_sell_shadow_v1",{p_order_id:order.id});
-    if(prep.error)throw prep.error;
+    const runtime=(globalThis as any).EdgeRuntime;
+    if(runtime?.waitUntil)runtime.waitUntil(shadowWork);
+    else await shadowWork;
+  }catch(e){console.error("cross_sell_shadow_schedule_failed",String((e as Error)?.message||e))}
 
-    if(whatsappPhone){
-      const context=await postOrderCrossSellContext({
-        order_suffix:String(order.order_number||"").slice(-12),
-        phone:whatsappPhone
-      });
-      crossSellEligible=context?.eligible===true;
-      if(context?.send_allowed===true&&String(context?.message||"").trim()){
-        const preload=await preloadPapoAiOperationalMessage(db,{
-          phone:whatsappPhone,
-          name:customerSnapshot.customer_name||"Cliente",
-          system_message:String(context.message),
-          system_message_kind:"post_order_cross_sell_offer",
-          system_message_session_id:String(context.session_id||"")
-        });
-        if(preload.ok){
-          const queued=await db.rpc("queue_post_order_cross_sell_delivery_v1",{
-            p_session_id:String(context.session_id||""),
-            p_delivery_ref:"checkout_preload"
-          });
-          if(queued.error)throw queued.error;
-          crossSellPreloaded=queued.data?.ok===true;
-        }else{
-          console.error("cross_sell_preload_failed",preload.error);
-        }
-      }
-    }
-  }catch(e){
-    console.error("cross_sell_checkout_preload_failed",String((e as Error)?.message||e));
-  }
-
-  return {
-    order_id:order.id,
-    order_number:order.order_number,
-    total_cents:order.total_cents,
-    phone_attached:Boolean(whatsappPhone),
-    customer_status:customerSnapshot.customer_status,
-    minimum_order_cents:MINIMUM_ORDER_CENTS,
-    delivery,
-    history_synced:Boolean(historySync.ok),
-    cross_sell_eligible:crossSellEligible,
-    cross_sell_preloaded:crossSellPreloaded
-  };
+  return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery,history_synced:Boolean(historySync.ok)};
 }
 
 
