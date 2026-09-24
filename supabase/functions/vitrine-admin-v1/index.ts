@@ -1548,6 +1548,58 @@ async function consumeOrderStock(payload:any) {
   return {order_id:id,stock_status:"consumed",already_consumed:false,history_synced:Boolean(historySync.ok),bling_order_queued:blingOrderQueued};
 }
 
+async function papoAiAdminControl(subaction:string,extra:any={}) {
+  const allowed=new Set(["get","health","save"]);
+  if(!allowed.has(subaction))return {error:"invalid_papoai_action",status:400};
+
+  const secret=await db.from("internal_integration_secrets")
+    .select("secret_value")
+    .eq("integration_key","vitrine_history_bridge")
+    .maybeSingle();
+  if(secret.error)throw secret.error;
+  if(!secret.data?.secret_value)return {error:"papoai_bridge_not_configured",status:503};
+
+  const response=await fetch(CANONICAL_ADMIN_API,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-vitrine-history-key":String(secret.data.secret_value)
+    },
+    body:JSON.stringify({action:"vitrine_papoai_control_internal",subaction,...extra}),
+    signal:AbortSignal.timeout(10000)
+  });
+  const data=await response.json().catch(()=>({ok:false,error:"invalid_papoai_response"}));
+  if(response.status>=400)return {error:String(data?.error||"papoai_control_unavailable"),status:response.status,detail:data?.detail||null};
+  return {data};
+}
+
+async function saveCrossSellConfig(payload:any){
+  const current=await db.from("post_order_cross_sell_config")
+    .select("*")
+    .eq("organization_id",ORG_ID)
+    .maybeSingle();
+  if(current.error)throw current.error;
+  const expiry=Math.max(0,Math.min(10,Math.floor(Number(payload?.expiry_offer_count??current.data?.expiry_offer_count??5))));
+  const regular=Math.max(0,Math.min(10,Math.floor(Number(payload?.regular_count??current.data?.regular_count??5))));
+  if(expiry+regular<1||expiry+regular>10)return {error:"invalid_product_split",status:400};
+  const enabled=typeof payload?.enabled==="boolean"?payload.enabled:Boolean(current.data?.enabled??true);
+  const row={
+    organization_id:ORG_ID,
+    enabled,
+    mode:String(current.data?.mode||"shadow"),
+    expiry_offer_count:expiry,
+    regular_count:regular,
+    total_limit:expiry+regular,
+    updated_at:new Date().toISOString()
+  };
+  const saved=await db.from("post_order_cross_sell_config")
+    .upsert(row,{onConflict:"organization_id"})
+    .select("*")
+    .single();
+  if(saved.error)throw saved.error;
+  return {config:saved.data};
+}
+
 async function blingHubControl(subaction:string,extra:any={}) {
   const allowed=new Set(["readiness","probe_readonly","reconcile_products_readonly","reconcile_product_catalog_readonly","preview_product_sync","process_product_jobs","reconcile_customers_readonly","reconcile_customer_readonly","ensure_customer_now","preview_customer_sync","preview_order_sync","order_link_status","fiscal_status","fiscal_dispatch_gate","fiscal_pending_orders","fiscal_confirm_payment","enqueue_job","enqueue_jobs"]);
   if(!allowed.has(subaction))return {error:"invalid_bling_action",status:400};
@@ -2548,6 +2600,12 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="expirations") return json(req,{ok:true,...await listExpirations()});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
+    if (req.method==="GET" && action==="papoai_control") {
+      const result=await papoAiAdminControl("get");
+      if((result as any).error)return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+      return json(req,{ok:true,papoai:(result as any).data?.control??null});
+    }
+
     if (req.method==="GET" && action==="cross_sell_shadow_list") return json(req,{ok:true,...await crossSellShadowList(url.searchParams.get("limit"))});
     if (req.method==="GET" && action==="order_stock_shortages") return json(req,{ok:true,...await listOrderStockShortages()});
     if (req.method==="GET" && action==="closure_orders") return json(req,{ok:true,...await listClosureOrders()});
@@ -2577,6 +2635,16 @@ Deno.serve(async (req: Request) => {
 
     if (req.method==="POST") {
       const payload=await req.json().catch(()=>({}));
+      if (action==="papoai_control_save") {
+        const result=await papoAiAdminControl("save",{storefront_link_enabled:payload?.storefront_link_enabled===true});
+        if((result as any).error)return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
+        return json(req,{ok:true,papoai:(result as any).data?.control??null});
+      }
+      if (action==="cross_sell_config_save") {
+        const result=await saveCrossSellConfig(payload);
+        if((result as any).error)return json(req,{ok:false,error:(result as any).error},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
       if (action==="cross_sell_shadow_prepare_recent") {
         return json(req,{ok:true,...await crossSellShadowPrepareRecent(payload)});
       }
