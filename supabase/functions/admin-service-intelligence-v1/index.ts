@@ -3528,7 +3528,7 @@ function blingHubSameExceptCest(before:any,after:any){
   delete a.cest;delete b.cest;
   return JSON.stringify(blingHubCanonicalValue(a))===JSON.stringify(blingHubCanonicalValue(b));
 }
-async function blingHubProductFiscalCestCanary(sb:any,body:any){
+async function blingHubProductFiscalCestCanary(sb:any,body:any,tokenOverride:any=null){
   const productId=uuid(body?.product_id);
   const confirmation=clean(body?.confirmation,200);
   if(!productId)return {ok:false,status:400,error:"product_id_required",external_write:false};
@@ -3550,7 +3550,7 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any){
   const blingId=Number(row.bling_product_id||0);
   if(!blingId)return {ok:false,status:409,error:"bling_product_not_linked",external_write:false};
 
-  const token=await blingHubOauth(sb);
+  const token=tokenOverride||await blingHubOauth(sb);
   const before=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
   if(!before.ok)return {ok:false,status:before.status,error:"bling_product_read_before_failed",external_write:false};
   const beforeProduct=before.data?.data||{};
@@ -3705,7 +3705,7 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
     };
   }
 
-  const limit=Math.max(1,Math.min(5,Number(body?.limit||5)||5));
+  const limit=Math.max(1,Math.min(10,Number(body?.limit||5)||5));
   const requireSupplierXml=body?.require_supplier_xml!==false;
   const cestFilter=blingHubDigits(body?.cest);
 
@@ -3767,6 +3767,7 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
   const results:any[]=[];
   let mutated=0,aligned=0;
   let stoppedOnError=false;
+  const sharedToken=rows.length?await blingHubOauth(sb):null;
 
   for(const row of rows){
     const productId=uuid(row?.product_id);
@@ -3775,7 +3776,7 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
       const result=await blingHubProductFiscalCestCanary(sb,{
         product_id:productId,
         confirmation:"APLICAR_CEST_CANARIO:"+productId
-      });
+      },sharedToken);
       results.push(result);
       mutated+=Number(result?.bling_mutations||0);
       if(result?.already_aligned===true)aligned++;
