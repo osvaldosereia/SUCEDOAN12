@@ -500,10 +500,36 @@
       if($('#retryToday'))$('#retryToday').onclick=renderToday;
     }
   }
+  function expeditionFiscalState(o){
+    if(o?.status!=='ready')return {authorized:true,title:'',detail:'',kind:'ok'};
+    const f=state.fiscalByOrder[o.id];
+    if(!f)return {authorized:false,title:'Fiscal carregando',detail:'Aguardando conferência',kind:'warn'};
+    if(f.error)return {authorized:false,title:'Fiscal indisponível',detail:'Abra o pedido para revisar',kind:'warn'};
+    const gate=f.dispatch_gate||{};
+    if(gate.authorized===true&&gate.allowed===true){
+      return {
+        authorized:true,
+        title:'Fiscal autorizado',
+        detail:(gate.bling_invoice_number?'NF-e '+gate.bling_invoice_number:'Liberado para saída'),
+        kind:'ok'
+      };
+    }
+    return {
+      authorized:false,
+      title:'Fiscal pendente',
+      detail:'Emitir NF-e antes da saída',
+      kind:'warn'
+    };
+  }
+  function fiscalAuthorizedForDispatch(o){
+    return expeditionFiscalState(o).authorized===true;
+  }
+
   function expeditionRow(o){
     const a=o.delivery_address_snapshot||{};
     const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    const fiscal=expeditionFiscalState(o);
     const attempts=Array.isArray(o.payment_method_snapshot?.delivery_attempts)?o.payment_method_snapshot.delivery_attempts:[];
     const lastFailure=o.payment_method_snapshot?.last_delivery_failure||attempts[attempts.length-1]||null;
     const redelivery=attempts.length&&lastFailure
@@ -513,13 +539,14 @@
     const maps=mapsHrefFromAddress(a);
     const selected=state.expeditionSelected.includes(o.id);
     return '<div class="history-row dispatch-row">'+
-      '<div>'+(o.status==='ready'?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(shortOrder(o.order_number))+'</label>':'<strong>#'+esc(shortOrder(o.order_number))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span></div>'+
+      '<div>'+(o.status==='ready'&&fiscal.authorized?'<label class="dispatch-select"><input type="checkbox" data-dispatch-select="'+esc(o.id)+'" '+(selected?'checked':'')+'>#'+esc(shortOrder(o.order_number))+'</label>':'<strong>#'+esc(shortOrder(o.order_number))+'</strong>')+'<span class="sub">'+esc(relativeAge(o.created_at))+'</span>'+(o.status==='ready'?'<span class="sub '+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.title)+'</span>':'')+'</div>'+
       '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(address)+'</small>'+redelivery+'</div>'+
-      '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small></div>'+
+      '<div class="history-main"><strong>'+money(o.total_cents)+'</strong><small>'+esc(payment)+'</small>'+(o.status==='ready'?'<small class="'+(fiscal.authorized?'ok-text':'warn-text')+'">'+esc(fiscal.detail)+'</small>':'')+'</div>'+
       '<span>'+statusPill(o.status)+'</span>'+
       '<div class="dispatch-actions">'+
         (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
         (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
+        (o.status==='ready'&&!fiscal.authorized?'<button class="quick-link primary-link" type="button" data-expedition-fiscal="'+esc(o.id)+'">Resolver fiscal</button>':'')+
         (o.status==='out_for_delivery'?'<button class="quick-link primary-link" type="button" data-confirm-delivery="'+esc(o.id)+'">Confirmar entrega</button><button class="quick-link" type="button" data-return-expedition="'+esc(o.id)+'">Não entregou</button>':'')+
         '<button class="quick-link" type="button" data-expedition-order="'+esc(o.id)+'">Abrir</button>'+
       '</div>'+
@@ -674,7 +701,7 @@
   }
 
   async function bulkDispatchSelected(){
-    const selected=state.orders.filter(o=>o.status==='ready'&&state.expeditionSelected.includes(o.id));
+    const selected=state.orders.filter(o=>o.status==='ready'&&fiscalAuthorizedForDispatch(o)&&state.expeditionSelected.includes(o.id));
     if(!selected.length){toast('Selecione ao menos um pedido pronto');return}
     const total=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
     if(!confirm('Marcar '+selected.length+' pedido(s) como saiu para entrega?\n\nTotal da saída: '+money(total)))return;
@@ -699,7 +726,9 @@
     const host=$('#expeditionBody');if(!host)return;
     const visible=state.orders.filter(o=>orderSearchMatch(o,state.expeditionQuery));
     const ready=visible.filter(o=>o.status==='ready');
-    const readyIds=new Set(ready.map(o=>o.id));
+    const dispatchableReady=ready.filter(fiscalAuthorizedForDispatch);
+    const fiscalPendingReady=ready.filter(o=>!fiscalAuthorizedForDispatch(o));
+    const readyIds=new Set(dispatchableReady.map(o=>o.id));
     state.expeditionSelected=state.expeditionSelected.filter(id=>readyIds.has(id));
     const delivery=visible.filter(o=>o.status==='out_for_delivery');
     const delivered=visible.filter(deliveredToday).slice(0,10);
@@ -709,10 +738,10 @@
         '<div class="ops-card"><small>Entregues hoje</small><strong>'+visible.filter(deliveredToday).length+'</strong><span>Fechamento e fiscal</span></div>'+
       '</div>'+
       (ready.length?(()=>{
-        const selected=selectedDispatchOrders(ready);
+        const selected=selectedDispatchOrders(dispatchableReady);
         const selectedTotal=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
         const paymentSummary=dispatchPaymentSummaryText(selected);
-        return '<div class="dispatch-bulk"><label class="check"><input id="selectAllReady" type="checkbox" '+(selected.length===ready.length&&ready.length?'checked':'')+'><span>Selecionar todos os pedidos prontos desta lista</span></label><div class="dispatch-bulk-actions"><div><strong>'+selected.length+' selecionado(s) · '+money(selectedTotal)+'</strong>'+(paymentSummary?'<span class="sub">A receber: '+esc(paymentSummary)+'</span>':'')+'</div><button class="secondary" id="printDispatchManifest" type="button" '+(selected.length?'':'disabled')+'>Imprimir romaneio</button><button class="primary" id="bulkDispatchBtn" type="button" '+(selected.length?'':'disabled')+'>Marcar saída</button></div></div>';
+        return '<div class="dispatch-bulk"><label class="check"><input id="selectAllReady" type="checkbox" '+(dispatchableReady.length&&selected.length===dispatchableReady.length?'checked':'')+' '+(dispatchableReady.length?'':'disabled')+'><span>Selecionar os fiscalmente liberados desta lista</span></label><div class="dispatch-bulk-actions"><div><strong>'+selected.length+' selecionado(s) · '+money(selectedTotal)+'</strong>'+(paymentSummary?'<span class="sub">A receber: '+esc(paymentSummary)+'</span>':'')+(fiscalPendingReady.length?'<span class="sub warn-text">'+fiscalPendingReady.length+' com fiscal pendente</span>':'')+'</div><button class="secondary" id="printDispatchManifest" type="button" '+(selected.length?'':'disabled')+'>Imprimir romaneio</button><button class="primary" id="bulkDispatchBtn" type="button" '+(selected.length?'':'disabled')+'>Marcar saída</button></div></div>';
       })():'')+
       '<div class="dispatch-grid">'+
         expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
@@ -720,10 +749,11 @@
         expeditionSection('Entregues hoje','Últimos entregues do dia · pagamento e fiscal',delivered,'Nenhuma entrega concluída hoje.')+
       '</div>';
     document.querySelectorAll('[data-expedition-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionOrder));
+    document.querySelectorAll('[data-expedition-fiscal]').forEach(b=>b.onclick=()=>openOrder(b.dataset.expeditionFiscal));
     document.querySelectorAll('[data-confirm-delivery]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.confirmDelivery));
     document.querySelectorAll('[data-return-expedition]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.returnExpedition,false));
     document.querySelectorAll('[data-dispatch-select]').forEach(el=>el.onchange=e=>toggleDispatchSelection(el.dataset.dispatchSelect,e.target.checked));
-    if($('#selectAllReady'))$('#selectAllReady').onchange=e=>toggleAllReady(ready,e.target.checked);
+    if($('#selectAllReady'))$('#selectAllReady').onchange=e=>toggleAllReady(dispatchableReady,e.target.checked);
     if($('#printDispatchManifest'))$('#printDispatchManifest').onclick=printDispatchManifest;
     if($('#bulkDispatchBtn'))$('#bulkDispatchBtn').onclick=bulkDispatchSelected;
   }
@@ -737,6 +767,8 @@
     $('#clearExpeditionSearch').onclick=()=>{state.expeditionQuery='';$('#expeditionSearch').value='';paintExpeditionBody()};
     try{
       const data=await api('orders');state.orders=data.orders||[];
+      const readyRows=state.orders.filter(o=>o.status==='ready');
+      await loadFiscalForOrders(readyRows);
       paintExpeditionBody();
     }catch(e){
       $('#expeditionBody').innerHTML='<div class="empty">Não consegui carregar a expedição. <button class="text" id="retryExpedition">Tentar novamente</button></div>';
@@ -2474,6 +2506,7 @@
       state.currentOrderFiscal=await api('order_fiscal_status',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
       });
+      state.fiscalByOrder[id]=state.currentOrderFiscal;
     }catch(e){
       state.currentOrderFiscal={error:String(e?.message||'fiscal_unavailable')};
     }
