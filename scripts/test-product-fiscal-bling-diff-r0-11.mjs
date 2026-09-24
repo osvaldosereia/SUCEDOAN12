@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const sql=fs.readFileSync('supabase/migrations/20260924224500_product_fiscal_bling_diff_r0_11.sql','utf8');
+assert.match(sql,/product_fiscal_bling_diff_v1/);
+assert.match(sql,/ncm_diff/);
+assert.match(sql,/origin_diff/);
+assert.match(sql,/cest_diff/);
+assert.match(sql,/cest_missing/);
+assert.match(sql,/canary_eligible/);
+assert.match(sql,/bling_observed_at >= now\(\)-interval '24 hours'/);
+assert.match(sql,/external_write',false/);
+assert.doesNotMatch(sql,/update public\.products/i);
+console.log('OK product fiscal Bling diff R0.11');
