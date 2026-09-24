@@ -914,6 +914,23 @@ async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactN
 }
 
 
+async function papoAiStorefrontRuntimeControl(sb:any){
+  try{
+    const q=await sb.from('papoai_storefront_runtime_control_v1')
+      .select('storefront_link_enabled,updated_at,metadata')
+      .eq('id',1)
+      .maybeSingle();
+    if(q.error)throw q.error;
+    return {
+      storefront_link_enabled:q.data?.storefront_link_enabled!==false,
+      updated_at:q.data?.updated_at||null
+    };
+  }catch(error){
+    console.error('papoai_storefront_runtime_control_read_failed',String((error as Error)?.message||error));
+    return {storefront_link_enabled:true,updated_at:null};
+  }
+}
+
 function storefrontLinkIntent(messageValue:any){
   const raw=String(messageValue??'').replace(/\s+/g,' ').trim();
   if(!raw)return {eligible:false,reason:'empty_message',kind:'none'};
@@ -997,9 +1014,18 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
     const flowLike=
       /data_sharing_consent\s*:/i.test(messageText)
       && /flow_token\s*:/i.test(messageText);
-    const storefrontDecision=flowLike
-      ? {eligible:false,reason:'flow_payload'}
+    let storefrontDecision:any=flowLike
+      ? {eligible:false,reason:'flow_payload',kind:'none'}
       : storefrontLinkIntent(messageText);
+    const storefrontRuntime=await papoAiStorefrontRuntimeControl(sb);
+    if(storefrontDecision.eligible && storefrontRuntime.storefront_link_enabled===false){
+      storefrontDecision={
+        eligible:false,
+        reason:'storefront_link_disabled_by_admin',
+        kind:storefrontDecision.kind||'none',
+        original_reason:storefrontDecision.reason||null
+      };
+    }
 
     const baseParsedData:any={
       probe:true,
