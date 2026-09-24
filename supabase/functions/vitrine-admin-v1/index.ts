@@ -120,6 +120,7 @@ async function listProducts(url: URL) {
   const q = text(url.searchParams.get("q"), 80);
   const category = text(url.searchParams.get("category"), 48);
   const subcategory = text(url.searchParams.get("subcategory"), 100);
+  const activeFilter = text(url.searchParams.get("active"), 12).toLowerCase();
   const offset = Math.floor(num(url.searchParams.get("offset"), 0, 5000));
   const limit = Math.floor(num(url.searchParams.get("limit") ?? 60, 1, 100));
 
@@ -130,6 +131,8 @@ async function listProducts(url: URL) {
     .range(offset, offset + limit - 1);
   if (category) query=query.contains("metadata",{sales_category:category});
   if (subcategory) query=query.contains("metadata",{subsubcategory:subcategory});
+  if (activeFilter==="true"||activeFilter==="active") query=query.eq("active",true);
+  else if (activeFilter==="false"||activeFilter==="inactive") query=query.eq("active",false);
   if (q) {
     const terms = q.replace(/[%_]/g," ").split(/\s+/).filter(Boolean).slice(0,4);
     for (const term of terms) query = query.ilike("search_text", `%${term}%`);
