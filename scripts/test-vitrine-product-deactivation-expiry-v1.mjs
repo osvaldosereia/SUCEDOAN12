@@ -6,6 +6,8 @@ const api=fs.readFileSync('supabase/functions/vitrine-admin-v1/index.ts','utf8')
 const migration=fs.readFileSync('supabase/migrations/20260924235900_vitrine_inactive_products_ignore_expiry_v1.sql','utf8');
 
 assert.match(admin,/data-product-active/);
+assert.match(admin,/mobile-product-active/);
+assert.match(admin,/Ativo · desativar/);
 assert.match(admin,/Produtos inativos ficam fora dos cálculos de validade/);
 assert.match(admin,/activeValidityInventorySummary/);
 assert.match(admin,/product_save/);

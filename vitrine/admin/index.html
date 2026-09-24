@@ -53,6 +53,7 @@
     .pill.off{background:#f1f1f1;color:#6f6f6f}.pill.warn{background:#fff5dd;color:#7c5407}.pill.danger{background:#fff0f2;color:#912035}
     .product-active-toggle{border:0;cursor:pointer;justify-content:center;min-height:30px;padding:5px 10px}
     .product-active-toggle:disabled{opacity:.5;cursor:wait}
+    .mobile-product-active{display:none}
     .empty{padding:32px 18px;text-align:center;color:var(--muted)}
     .loading{padding:24px;text-align:center;color:var(--muted)}
     .more{padding:12px;text-align:center}
@@ -90,6 +91,7 @@
       .page-head h1{font-size:21px}.toolbar{flex-wrap:wrap}.toolbar input{flex-basis:100%}.toolbar select{flex:1 1 46%;min-width:0}
       .list-head{display:none}.list-row{display:grid!important;grid-template-columns:52px 1fr auto!important;gap:8px}
       .list-row>*{min-width:0}.list-row .mobile-wide{grid-column:2/4}.list-row .desktop-extra{display:none}
+      .mobile-product-active{display:inline-flex;margin-top:7px}
       .form-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
       .order-summary,.customer-summary{grid-template-columns:1fr 1fr}.print-actions{grid-template-columns:1fr}.ops-cards{grid-template-columns:1fr 1fr}.operational-alert{align-items:stretch;flex-direction:column}.operational-alert button{width:100%}.history-row{grid-template-columns:82px 1fr auto}.today-order-row{grid-template-columns:72px minmax(0,1fr) auto}.today-order-row .next-action{grid-column:2/4}.today-order-row .today-status{display:none}.dispatch-row{grid-template-columns:92px minmax(0,1fr) auto}.dispatch-row>:nth-child(3){grid-column:2}.dispatch-row>:nth-child(4){grid-column:3;grid-row:1/3}.dispatch-row .dispatch-actions{grid-column:2/4;justify-content:flex-start}.dispatch-bulk{align-items:stretch;flex-direction:column}.dispatch-bulk-actions{justify-content:space-between}.dispatch-bulk-actions button{flex:1}.closure-row{grid-template-columns:72px minmax(0,1fr) auto}.closure-row>:nth-child(3),.closure-row>:nth-child(4){grid-column:2}.closure-row>:nth-child(5){grid-column:3;grid-row:1/4}.quick-link{min-height:40px}.history-row .history-source,.history-row .history-status{display:none}.history-products{grid-template-columns:1fr}.customer-profile-head{grid-template-columns:1fr}.customer-row-actions{grid-column:3;grid-row:1/3}.orders-layout .order-row-next{grid-column:2/4}.orders-layout .customer-row-actions{grid-column:2/4;grid-row:auto;justify-content:flex-start}.bling-grid{grid-template-columns:1fr 1fr}.bling-scopes{grid-template-columns:1fr 1fr}
     }
@@ -1517,7 +1519,7 @@
     const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
     return '<div class="list-row products-layout">'+
       '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
-      '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'</div>'+
+      '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<button class="pill product-active-toggle mobile-product-active '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+(p.active?'Clique para desativar':'Clique para ativar')+'">'+(p.active?'Ativo · desativar':'Inativo · ativar')+'</button></div>'+
       '<span class="money mobile-wide">'+money(p.sale_price_cents)+'</span>'+
       '<span class="desktop-extra">'+esc(fmtQty(p.stock_quantity||0))+'</span>'+
       '<span class="desktop-extra"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+(p.active?'Clique para desativar':'Clique para ativar')+'">'+(p.active?'Ativo':'Inativo')+'</button></span>'+
