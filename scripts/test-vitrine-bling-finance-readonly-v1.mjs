@@ -18,7 +18,7 @@ assert.match(hub,/finance_accounts/);
 
 assert.match(admin,/finance_overview/);
 assert.match(admin,/action==="bling_finance_overview"/);
-assert.match(admin,/blingHubControl\("finance_overview"\)/);
+assert.match(admin,/blingHubControl\("finance_overview",\{\},authorization\)/);
 
 assert.match(html,/Financeiro · Bling/);
 assert.match(html,/bling_finance_overview/);

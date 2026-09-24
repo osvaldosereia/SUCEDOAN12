@@ -1348,24 +1348,52 @@
     }catch(e){financeOpenDialog('Conta financeira','<div class="empty">Não consegui carregar essa conta financeira.</div>')}
   }
 
+  async function financeOverviewApi(token,retryAuth=true){
+    const u=new URL(API);u.searchParams.set('action','bling_finance_overview');
+    const response=await fetch(u,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:'{}',
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401&&retryAuth){
+      clearFinanceSession();
+      return await financeOverviewApi(await financeStepUp(),false);
+    }
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
+  }
   async function renderFinance(){
+    let token='';
+    try{
+      token=await financeStepUp();
+    }catch(e){
+      if(String(e?.message||'')==='finance_auth_cancelled'){
+        toast('Financeiro continua bloqueado');
+        renderMore();
+        return;
+      }
+      toast(String(e?.message||'Não foi possível liberar o financeiro'));
+      renderMore();
+      return;
+    }
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Bling é a fonte oficial. Inclusões, edições e baixas exigem prévia, PIN e confirmação humana.</p></div><div class="dispatch-actions"><button class="secondary" id="newPayable" type="button">+ A pagar</button><button class="secondary" id="newReceivable" type="button">+ A receber</button>'+(financeSessionToken()?'<button class="secondary" id="lockFinance" type="button">Bloquear financeiro</button>':'')+'<button class="secondary" id="refreshFinance">Atualizar</button></div></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Área protegida. Bling é a fonte oficial; inclusões, edições e baixas exigem prévia e confirmação humana.</p></div><div class="dispatch-actions"><button class="secondary" id="newPayable" type="button">+ A pagar</button><button class="secondary" id="newReceivable" type="button">+ A receber</button><button class="secondary" id="lockFinance" type="button">Bloquear financeiro</button><button class="secondary" id="refreshFinance">Atualizar</button></div></div>'+
       '<div class="rule-notice"><strong>Operação controlada</strong><div>Baixa apenas registra pagamento/recebimento no Bling. O sistema não faz transferência bancária e não cancela boletos automaticamente.</div></div>'+
       '<div id="financeBody"><div class="loading">Consultando financeiro no Bling…</div></div>';
     $('#refreshFinance').onclick=renderFinance;
-    if($('#lockFinance'))$('#lockFinance').onclick=()=>{clearFinanceSession();toast('Financeiro bloqueado');renderFinance()};
+    $('#lockFinance').onclick=()=>{clearFinanceSession();toast('Financeiro bloqueado');renderMore()};
     $('#newPayable').onclick=()=>openFinanceEditor('payable');
     $('#newReceivable').onclick=()=>openFinanceEditor('receivable');
     try{
-      const data=await api('bling_finance_overview',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
-      });
+      const data=await financeOverviewApi(token);
       state.finance=data.finance||{};
       paintFinance();
     }catch(e){
       const scope=String(e?.message||'')==='bling_finance_scope_missing';
-      $('#financeBody').innerHTML='<div class="empty">'+(scope?'A conexão atual do Bling ainda não possui permissão para o módulo financeiro.':'Não consegui carregar o financeiro do Bling agora.')+' <button class="text" id="retryFinance">Tentar novamente</button></div>';
+      const auth=['finance_auth_required','finance_session_invalid','finance_owner_required'].includes(String(e?.message||''));
+      $('#financeBody').innerHTML='<div class="empty">'+(scope?'A conexão atual do Bling ainda não possui permissão para o módulo financeiro.':auth?'A sessão financeira expirou ou não tem permissão.':'Não consegui carregar o financeiro do Bling agora.')+' <button class="text" id="retryFinance">Tentar novamente</button></div>';
       if($('#retryFinance'))$('#retryFinance').onclick=renderFinance;
     }
   }
