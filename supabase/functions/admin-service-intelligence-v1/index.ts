@@ -3513,6 +3513,188 @@ async function blingHubProductFiscalAuditReadonly(sb:any,body:any){
     bling_mutations:0
   };
 }
+function blingHubCanonicalValue(v:any):any{
+  if(Array.isArray(v))return v.map(blingHubCanonicalValue);
+  if(v&&typeof v==="object"){
+    const out:any={};
+    for(const k of Object.keys(v).sort())out[k]=blingHubCanonicalValue(v[k]);
+    return out;
+  }
+  return v;
+}
+function blingHubSameExceptCest(before:any,after:any){
+  const a={...(before&&typeof before==="object"?before:{})};
+  const b={...(after&&typeof after==="object"?after:{})};
+  delete a.cest;delete b.cest;
+  return JSON.stringify(blingHubCanonicalValue(a))===JSON.stringify(blingHubCanonicalValue(b));
+}
+async function blingHubProductFiscalCestCanary(sb:any,body:any){
+  const productId=uuid(body?.product_id);
+  const confirmation=clean(body?.confirmation,200);
+  if(!productId)return {ok:false,status:400,error:"product_id_required",external_write:false};
+  if(confirmation!==("APLICAR_CEST_CANARIO:"+productId)){
+    return {ok:false,status:409,error:"confirmation_required",required_confirmation:"APLICAR_CEST_CANARIO:"+productId,external_write:false};
+  }
+
+  const preview=await sb.from("product_fiscal_bling_diff_v1")
+    .select("product_id,name,gtin,bling_product_id,proposed_ncm,proposed_cest,proposed_origin_code,diff_status,canary_eligible,bling_observed_at")
+    .eq("product_id",productId)
+    .maybeSingle();
+  if(preview.error)throw preview.error;
+  const row=preview.data;
+  if(!row)return {ok:false,status:404,error:"fiscal_preview_not_found",external_write:false};
+  if(row.canary_eligible!==true||row.diff_status!=="cest_missing"){
+    return {ok:false,status:409,error:"canary_not_eligible",preview:row,external_write:false};
+  }
+
+  const blingId=Number(row.bling_product_id||0);
+  if(!blingId)return {ok:false,status:409,error:"bling_product_not_linked",external_write:false};
+
+  const token=await blingHubOauth(sb);
+  const before=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
+  if(!before.ok)return {ok:false,status:before.status,error:"bling_product_read_before_failed",external_write:false};
+  const beforeProduct=before.data?.data||{};
+  const beforeTrib=beforeProduct?.tributacao&&typeof beforeProduct.tributacao==="object"?beforeProduct.tributacao:{};
+  const beforeNcm=blingHubDigits(beforeTrib?.ncm??beforeProduct?.ncm);
+  const beforeCest=blingHubDigits(beforeTrib?.cest??beforeProduct?.cest);
+  const originValue=beforeTrib?.origem??beforeProduct?.origem;
+  const originRaw=typeof originValue==="object"&&originValue!==null?(originValue.codigo??originValue.id??originValue.valor??originValue.value):originValue;
+  const beforeOrigin=/^[0-8]$/.test(String(originRaw??"").trim())?Number(originRaw):null;
+
+  if(beforeNcm!==String(row.proposed_ncm||"")||beforeOrigin!==Number(row.proposed_origin_code)){
+    return {ok:false,status:409,error:"precondition_tax_identity_changed",before:{ncm:beforeNcm,origin:beforeOrigin,cest:beforeCest||null},preview:row,external_write:false};
+  }
+  if(beforeCest){
+    if(beforeCest===String(row.proposed_cest||"")){
+      return {ok:true,already_aligned:true,product_id:productId,bling_product_id:blingId,cest:beforeCest,external_write:false,bling_mutations:0};
+    }
+    return {ok:false,status:409,error:"precondition_cest_not_blank",before_cest:beforeCest,proposed_cest:row.proposed_cest,external_write:false};
+  }
+
+  const patchPayload={
+    tributacao:{
+      origem:beforeOrigin,
+      ncm:beforeNcm,
+      cest:String(row.proposed_cest||"")
+    }
+  };
+  const write=await blingHubWriteIdempotent(
+    sb,token,
+    "/produtos/"+encodeURIComponent(String(blingId)),
+    "PATCH",
+    patchPayload
+  );
+  if(!write.ok){
+    await sb.from("bling_hub_audit_v2").insert({
+      event_type:"product_fiscal_cest_canary",
+      severity:"error",
+      domain:"product",
+      source_system:"canonical",
+      source_id:productId,
+      bling_id:blingId,
+      details:{ok:false,stage:"patch",status:write.status,error:write.error||null,before_tributacao:beforeTrib,proposed_patch:patchPayload,external_write:true}
+    });
+    return {ok:false,status:Number(write.status||409),error:"bling_product_patch_failed",provider_error:write.error||null,external_write:true,bling_mutations:0};
+  }
+
+  const after=await blingHubGet(sb,token,"/produtos/"+encodeURIComponent(String(blingId)));
+  if(!after.ok){
+    await sb.from("bling_hub_audit_v2").insert({
+      event_type:"product_fiscal_cest_canary",
+      severity:"error",
+      domain:"product",
+      source_system:"canonical",
+      source_id:productId,
+      bling_id:blingId,
+      details:{ok:false,stage:"verify_read",status:after.status,before_tributacao:beforeTrib,proposed_patch:patchPayload,external_write:true}
+    });
+    return {ok:false,status:502,error:"bling_product_verify_read_failed",external_write:true,bling_mutations:1};
+  }
+
+  const afterProduct=after.data?.data||{};
+  const afterTrib=afterProduct?.tributacao&&typeof afterProduct.tributacao==="object"?afterProduct.tributacao:{};
+  const afterNcm=blingHubDigits(afterTrib?.ncm??afterProduct?.ncm);
+  const afterCest=blingHubDigits(afterTrib?.cest??afterProduct?.cest);
+  const afterOriginValue=afterTrib?.origem??afterProduct?.origem;
+  const afterOriginRaw=typeof afterOriginValue==="object"&&afterOriginValue!==null?(afterOriginValue.codigo??afterOriginValue.id??afterOriginValue.valor??afterOriginValue.value):afterOriginValue;
+  const afterOrigin=/^[0-8]$/.test(String(afterOriginRaw??"").trim())?Number(afterOriginRaw):null;
+  const otherTaxFieldsStable=blingHubSameExceptCest(beforeTrib,afterTrib);
+  const verified=afterNcm===beforeNcm
+    &&afterOrigin===beforeOrigin
+    &&afterCest===String(row.proposed_cest||"")
+    &&otherTaxFieldsStable;
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"product_fiscal_cest_canary",
+    severity:verified?"info":"error",
+    domain:"product",
+    source_system:"canonical",
+    source_id:productId,
+    bling_id:blingId,
+    details:{
+      ok:verified,
+      stage:"verified",
+      before_tributacao:beforeTrib,
+      after_tributacao:afterTrib,
+      proposed_patch:patchPayload,
+      other_tax_fields_stable:otherTaxFieldsStable,
+      external_write:true
+    }
+  });
+
+  if(!verified){
+    return {
+      ok:false,status:409,error:"post_write_verification_failed",
+      product_id:productId,bling_product_id:blingId,
+      before:{ncm:beforeNcm,cest:beforeCest||null,origin:beforeOrigin},
+      after:{ncm:afterNcm,cest:afterCest||null,origin:afterOrigin},
+      other_tax_fields_stable:otherTaxFieldsStable,
+      external_write:true,bling_mutations:1
+    };
+  }
+
+  const evidenceKey=[
+    "bling_product_detail",String(blingId),afterNcm||"-",afterCest||"-",
+    afterOrigin===null?"-":String(afterOrigin),blingHubDigits(afterProduct?.gtin)||"-",
+    blingHubDigits(afterProduct?.gtinEmbalagem??afterProduct?.gtinTributavel??afterProduct?.gtinTrib)||"-"
+  ].join(":");
+  const ev=await sb.from("product_fiscal_evidence").upsert({
+    evidence_key:evidenceKey,
+    product_id:productId,
+    evidence_type:"bling_product_detail",
+    source_name:"Bling ERP",
+    document_key:String(blingId),
+    gtin:blingHubDigits(afterProduct?.gtin)||blingHubDigits(row.gtin)||null,
+    ncm:afterNcm||null,
+    cest:afterCest||null,
+    origin_code:afterOrigin,
+    fiscal_description:clean(afterProduct?.nome||row.name,500)||null,
+    observed_at:new Date().toISOString(),
+    evidence_payload:{
+      bling_product_id:blingId,
+      fetched_at:new Date().toISOString(),
+      tributacao:afterTrib,
+      canary_write_verified:true,
+      read_only:false
+    }
+  },{onConflict:"evidence_key"});
+  if(ev.error)throw ev.error;
+
+  await sb.rpc("refresh_product_fiscal_evidence_quality_v1").catch(()=>{});
+  await sb.rpc("refresh_product_fiscal_rule_integrity_v1").catch(()=>{});
+
+  return {
+    ok:true,
+    product_id:productId,
+    product_name:row.name,
+    bling_product_id:blingId,
+    cest:afterCest,
+    other_tax_fields_stable:otherTaxFieldsStable,
+    external_write:true,
+    bling_mutations:1,
+    verified:true
+  };
+}
 async function blingHubLookupProductByExactGtin(sb:any,token:string,gtinRaw:any){
   const gtin=blingHubDigits(gtinRaw);
   if(!blingHubValidGtin(gtin))return {status:"review_required",reason:"invalid_gtin",bling_id:null,candidates:[]};
@@ -5269,6 +5451,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="product_fiscal_audit_readonly"){
         const result=await blingHubProductFiscalAuditReadonly(sb,body);
         return json(result,result.ok?200:207);
+      }
+      if(subaction==="product_fiscal_cest_canary"){
+        const result=await blingHubProductFiscalCestCanary(sb,body);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="reconcile_products_readonly"){
         const result=await blingHubReconcileProductsReadonly(sb,body?.items);
