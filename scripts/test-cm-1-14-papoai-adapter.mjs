@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const migration=fs.readFileSync('supabase/migrations/20260919030000_cm_1_14_papoai_adapter_core_v1.sql','utf8');
 const webhook=fs.readFileSync('supabase/functions/papo-comprar-webhook-v1/index.ts','utf8');
+const locationMigration=fs.readFileSync('supabase/migrations/20260924235958_papoai_customer_location_pin_v1.sql','utf8');
 
 for(const token of [
   'channel_provider_adapters',
@@ -49,5 +50,21 @@ assert.doesNotMatch(webhook,/resolve_customer_identity_v1|observe_customer_chann
 assert.doesNotMatch(webhook,/papo_contact_id|papo_contact_name|papo_phone|papo_customer_found|papo_received_at/,'Downstream session metadata must be provider-neutral');
 assert.doesNotMatch(webhook,/OPENAI_API_KEY|openai|gpt-|gemini/i,'Papo adapter must be deterministic');
 assert.match(webhook,/tags_write_verified:false/,'Tag write must remain unverified/fail-closed');
+assert.match(webhook,/function extractLocation\(body:any\)/,'Papo adapter must normalize location payloads');
+assert.match(webhook,/normalizedMessageType=location\?'location'/,'valid coordinates must normalize message type to location');
+assert.match(webhook,/coordinate_source:'customer_pin'/,'customer WhatsApp pin provenance must be explicit');
+assert.match(webhook,/capture_customer_location_pin_v1/,'customer pin must be persisted through a server-side RPC');
+assert.match(webhook,/location_persistence:locationPersistence/,'response must expose local persistence result for observability');
+assert.match(webhook,/location_pin:/,'shopping session must preserve the latest pin for downstream checkout');
 
-console.log('cm-1.14 papoai adapter contract ok');
+assert.match(locationMigration,/create or replace function public\.capture_customer_location_pin_v1/);
+assert.match(locationMigration,/p_latitude < -90 or p_latitude > 90/);
+assert.match(locationMigration,/p_longitude < -180 or p_longitude > 180/);
+assert.match(locationMigration,/'coordinate_source','customer_pin'/);
+assert.match(locationMigration,/'coordinate_confidence',1\.0/);
+assert.match(locationMigration,/catalog_session_id=p_catalog_session_id/);
+assert.match(locationMigration,/conversation_id=p_conversation_id/);
+assert.match(locationMigration,/revoke all on function public\.capture_customer_location_pin_v1/);
+assert.match(locationMigration,/grant execute on function public\.capture_customer_location_pin_v1.*service_role/s);
+
+console.log('cm-1.14 papoai adapter + customer location pin contract ok');
