@@ -1,5 +1,5 @@
 -- Final hardening for post-order cross-sell.
--- Includes response-window expiration and delivery-date validity guard.
+-- Includes response-window expiration, delivery-date validity and duplicate-at-accept guards.
 
 CREATE OR REPLACE FUNCTION public.accept_post_order_cross_sell_v1(p_session_id uuid, p_positions integer[])
  RETURNS jsonb
@@ -96,6 +96,19 @@ begin
     and p.active=true
     and coalesce(p.stock_quantity,0)>0
     and i.offered_price_cents>0
+    and not exists(
+      select 1
+      from public.order_items oi
+      where oi.order_id=v_session.order_id
+        and oi.product_id=i.product_id
+    )
+    and not exists(
+      select 1
+      from public.order_items oi
+      join public.order_item_components oic on oic.order_item_id=oi.id
+      where oi.order_id=v_session.order_id
+        and oic.product_id=i.product_id
+    )
     and (
       i.expiration_date_snapshot is null
       or (
@@ -479,6 +492,10 @@ begin
 end;
 $function$
 ;
+
+create index if not exists post_order_cross_sell_sessions_open_idx
+  on public.post_order_cross_sell_sessions(status,expires_at,sent_at desc)
+  where status in ('sent','sent_test');
 
 revoke all on function public.prepare_post_order_cross_sell_shadow_v1(uuid) from public,anon,authenticated;
 revoke all on function public.accept_post_order_cross_sell_v1(uuid,integer[]) from public,anon,authenticated;
