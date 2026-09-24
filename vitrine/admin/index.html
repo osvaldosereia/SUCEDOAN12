@@ -204,7 +204,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -1524,12 +1524,16 @@
   function productRow(p){
     const classification=[categoryLabel(p.category),p.detailed_subcategory||p.subcategory].filter(Boolean).join(' › ');
     const identity=[p.sku,p.gtin,p.packaging].filter(Boolean).join(' · ');
+    const expiredInactive=p.active===false&&p.deactivation_reason==='expired';
+    const statusTitle=p.active?'Clique para desativar':expiredInactive?'Vencido: corrija a validade antes de ativar':'Clique para ativar';
+    const desktopStatus=p.active?'Ativo':expiredInactive?'Vencido · inativo':'Inativo';
+    const mobileStatus=p.active?'Ativo · desativar':expiredInactive?'Vencido · corrigir validade':'Inativo · ativar';
     return '<div class="list-row products-layout">'+
       '<img class="thumb" src="'+esc(p.image_url||'/img/logoantonia5.png')+'" alt="" loading="lazy">'+
-      '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<button class="pill product-active-toggle mobile-product-active '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+(p.active?'Clique para desativar':'Clique para ativar')+'">'+(p.active?'Ativo · desativar':'Inativo · ativar')+'</button></div>'+
+      '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'<button class="pill product-active-toggle mobile-product-active '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(mobileStatus)+'</button></div>'+
       '<span class="money mobile-wide">'+money(p.sale_price_cents)+'</span>'+
       '<span class="desktop-extra">'+esc(fmtQty(p.stock_quantity||0))+'</span>'+
-      '<span class="desktop-extra"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+(p.active?'Clique para desativar':'Clique para ativar')+'">'+(p.active?'Ativo':'Inativo')+'</button></span>'+
+      '<span class="desktop-extra"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+esc(statusTitle)+'">'+esc(desktopStatus)+'</button></span>'+
       '<button class="text" data-edit-product="'+esc(p.id)+'">Editar</button></div>';
   }
 
@@ -1537,10 +1541,16 @@
     const product=state.products.find(p=>p.id===id);
     if(!product)return;
     const next=product.active===false;
+    const expired=Boolean(product.expiration_date&&String(product.expiration_date)<cuiabaDayKey(new Date()));
+    if(next&&expired){
+      toast('Produto vencido · corrija a validade antes de ativar');
+      openProductEditor(product);
+      return;
+    }
     if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
     btn.disabled=true;
     try{
-      await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      const data=await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
         sale_price_cents:Number(product.sale_price_cents||0),stock_quantity:Number(product.stock_quantity||0),
         expiration_date:product.expiration_date||null,
@@ -1548,7 +1558,12 @@
         category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
         image_url:product.image_url||'',description:product.description||'',active:next
       })});
-      toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
+      const saved=data.product;
+      if(next&&saved?.active===false&&saved?.deactivation_reason==='expired'){
+        toast('Produto vencido · permanece inativo');
+      }else{
+        toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
+      }
       await loadProducts($('#productSearch')?.value.trim()||'',false);
     }catch(e){
       toast(errorMessage(e.message));
@@ -1566,7 +1581,9 @@
     const offerPrice=manualOffer?((Number(manualOffer.sale_price_cents||0)/100).toFixed(2)).replace('.',','):'';
     const offerDuration=manualOffer?.metadata?.duration_mode||'stock_zero';
     $('#editorTitle').textContent=p?'Editar produto':'Novo produto';
+    const expiredLifecycle=p?.active===false&&p?.deactivation_reason==='expired';
     $('#editorBody').innerHTML='<form id="productForm" class="form-grid">'+
+      (expiredLifecycle?'<div class="offer-note span-2"><strong>Produto desativado automaticamente por vencimento.</strong><br>Corrija a data de validade antes de reativá-lo.</div>':'')+
       '<label class="span-2"><span>Nome *</span><input name="name" required value="'+esc(p?.name||'')+'"></label>'+
       '<label><span>Código / SKU</span><input name="sku" value="'+esc(p?.sku||'')+'"></label>'+
       '<label><span>EAN / GTIN</span><input name="gtin" inputmode="numeric" value="'+esc(p?.gtin||'')+'"></label>'+
@@ -1675,7 +1692,7 @@
   }
   function renderExpirySummary(summary={}){
     return '<div class="expiry-summary">'+
-      '<div class="expiry-card danger"><small>Vencidos</small><strong>'+esc(summary.expired||0)+'</strong></div>'+
+      '<div class="expiry-card danger"><small>Vencidos desativados</small><strong>'+esc(summary.expired_deactivated??summary.expired??0)+'</strong></div>'+
       '<div class="expiry-card danger"><small>Menos de 30 dias</small><strong>'+esc(summary.under_30||0)+'</strong></div>'+
       '<div class="expiry-card warn"><small>30 a 59 dias</small><strong>'+esc(summary.days_30_59||0)+'</strong></div>'+
       '<div class="expiry-card"><small>60 a 90 dias</small><strong>'+esc(summary.days_60_90||0)+'</strong></div>'+
@@ -1704,7 +1721,8 @@
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Validades</h1><p>Produtos ativos com vencimento até 90 dias, do mais próximo para o mais distante.</p></div><button class="secondary" id="refreshExpiry">Atualizar</button></div>'+
       '<div id="expirySummary">'+renderExpirySummary({})+'</div>'+
-      '<div class="expiry-help"><strong>Oferta automática:</strong> 60–90 dias = 10% · 30–59 dias = 20% · menos de 30 dias = 40%. Produto vencido ativo tem o estoque zerado e a oferta desligada automaticamente. Produtos inativos ficam fora dos cálculos de validade.</div>'+
+      '<div class="expiry-help"><strong>Regra de vencimento:</strong> ao vencer, o produto é desativado automaticamente, sai da vitrine, tem o estoque zerado e as ofertas desligadas. Produtos inativos não entram nos cálculos futuros de validade.</div>'+
+      '<div id="expiryExpiredNotice"></div>'+
       '<div class="panel"><div id="expiryRows"><div class="loading">Carregando validades…</div></div></div>';
     $('#refreshExpiry').onclick=loadExpirations;
     await loadExpirations();
@@ -1736,11 +1754,19 @@
     }
     return {total_products:total,without_expiration:without,auto_enabled:auto};
   }
+  function renderExpiredDeactivatedNotice(rows=[],summary={}){
+    const total=Number(summary.expired_deactivated??summary.expired??0);
+    if(!total)return '';
+    const examples=rows.slice(0,6).map(p=>esc(p.name)+' · '+esc(fmtDate(p.expiration_date))).join(' · ');
+    return '<div class="bling-banner" style="margin-bottom:14px"><strong>'+esc(total)+' produto(s) vencido(s) já foram desativados automaticamente</strong><small>Estão fora da vitrine, com estoque zerado e ofertas desligadas.'+(examples?' Recentes: '+examples+(total>rows.length?'…':''):'')+'</small></div>';
+  }
+
   async function loadExpirations(){
     const host=$('#expiryRows');
     try{
       const data=await api('expirations');
       state.expiryProducts=(data.products||[]).filter(p=>p.active!==false);
+      state.expiredDeactivated=data.expired_deactivated||[];
       if(data.active_only===true){
         state.expirySummary=data.summary||{};
       }else{
@@ -1749,6 +1775,7 @@
         state.expirySummary=expiryRangeSummary(state.expiryProducts,inventory);
       }
       $('#expirySummary').innerHTML=renderExpirySummary(state.expirySummary);
+      if($('#expiryExpiredNotice'))$('#expiryExpiredNotice').innerHTML=renderExpiredDeactivatedNotice(state.expiredDeactivated,state.expirySummary);
       host.innerHTML=state.expiryProducts.length?state.expiryProducts.map(expiryRow).join(''):'<div class="empty">Nenhum produto ativo com validade nos próximos 90 dias.</div>';
       host.querySelectorAll('[data-expiry-date]').forEach(el=>el.onchange=()=>saveExpiryRow(el.closest('[data-expiry-row]')));
       host.querySelectorAll('[data-expiry-auto]').forEach(el=>el.onchange=()=>saveExpiryRow(el.closest('[data-expiry-row]')));
@@ -1768,7 +1795,7 @@
         body:JSON.stringify({product_id:id,expiration_date:date||null,auto_expiry_offer_enabled:auto})
       });
       const p=data.product;
-      if(p&&Number(p.stock_quantity||0)===0&&date&&new Date(date+'T12:00:00Z')<new Date())toast('Produto vencido · estoque zerado');
+      if(p?.active===false&&p?.deactivation_reason==='expired')toast('Validade vencida · produto desativado automaticamente');
       else toast(auto?'Validade salva · oferta automática ligada':'Validade salva');
       await loadExpirations();
     }catch(e){
@@ -3527,7 +3554,7 @@
   }
   function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
   function errorMessage(code){
-    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',gondola_not_found:'Gôndola não encontrada.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',product_inactive:'Produto inativo não pode ter oferta ativa.',product_expired:'Produto vencido não pode ter oferta ativa.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',gondola_not_found:'Gôndola não encontrada.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
     return map[code]||'Não consegui salvar agora.';
   }
 
