@@ -2534,6 +2534,7 @@ async function updateOrder(payload:any) {
   }
   const historySync=await syncVitrineOrderHistory(db,data.id,ORG_ID);
   let blingStatusAttentionQueued=false;
+  let blingStatusSyncSkippedReason="";
   if(patch.status==="cancelled"){
     try{
       const link=await blingHubControl("order_link_status",{source_order_id:data.id});
@@ -2549,7 +2550,10 @@ async function updateOrder(payload:any) {
             queued_at:stamp
           }
         });
-        blingStatusAttentionQueued=!(queued as any).error;
+        blingStatusAttentionQueued=!(queued as any).error&&(queued as any).data?.queued===true;
+        if(!(queued as any).error&&(queued as any).data?.skipped===true){
+          blingStatusSyncSkippedReason=String((queued as any).data?.reason||"order_status_updates_disabled");
+        }
       }
     }catch(e){
       console.error("bling_order_status_attention_enqueue_failed",String((e as Error)?.message||e));
@@ -2586,6 +2590,7 @@ async function updateOrder(payload:any) {
     history_synced:Boolean(historySync.ok),
     bling_order_queued:blingOrderQueued,
     bling_status_attention_queued:blingStatusAttentionQueued,
+    bling_status_sync_skipped_reason:blingStatusSyncSkippedReason||null,
     fiscal_synced:fiscalSynced
   };
 }
