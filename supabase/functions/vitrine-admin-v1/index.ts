@@ -2015,6 +2015,131 @@ function orderTransitionAllowed(current:string,next:string){
   return (allowed[current]??[]).includes(next);
 }
 
+async function replaceOrderBasketComponent(payload:any){
+  const orderId=uuid(payload?.order_id);
+  const orderItemId=uuid(payload?.order_item_id);
+  const componentId=uuid(payload?.component_id);
+  const replacementProductId=uuid(payload?.replacement_product_id);
+  if(!orderId||!orderItemId||!componentId||!replacementProductId){
+    return {error:"invalid_component_replacement",status:400};
+  }
+
+  const {data:order,error:oErr}=await db.from("orders")
+    .select("id,status,payment_method_snapshot")
+    .eq("organization_id",ORG_ID)
+    .eq("id",orderId)
+    .maybeSingle();
+  if(oErr)throw oErr;
+  if(!order)return {error:"order_not_found",status:404};
+  if(order.status!=="created")return {error:"order_component_edit_requires_created",status:409};
+
+  const payment=order.payment_method_snapshot&&typeof order.payment_method_snapshot==="object"
+    ? order.payment_method_snapshot:{};
+  const protectedStock=payment.stock_reserved===true&&payment.stock_released!==true;
+  const {data:activeReservations,error:rErr}=await db.from("order_stock_reservations")
+    .select("id")
+    .eq("organization_id",ORG_ID)
+    .eq("order_id",orderId)
+    .eq("status","reserved")
+    .limit(1);
+  if(rErr)throw rErr;
+  if(protectedStock||(activeReservations||[]).length){
+    return {error:"order_stock_reserved_edit_forbidden",status:409};
+  }
+
+  const {data:item,error:iErr}=await db.from("order_items")
+    .select("id,order_id,item_kind,quantity,name_snapshot,total_cents")
+    .eq("organization_id",ORG_ID)
+    .eq("id",orderItemId)
+    .eq("order_id",orderId)
+    .maybeSingle();
+  if(iErr)throw iErr;
+  if(!item)return {error:"order_item_not_found",status:404};
+  if(item.item_kind!=="basket")return {error:"component_edit_requires_basket",status:409};
+
+  const {data:component,error:cErr}=await db.from("order_item_components")
+    .select("id,order_item_id,product_id,name_snapshot,sku_snapshot,quantity,metadata")
+    .eq("organization_id",ORG_ID)
+    .eq("id",componentId)
+    .eq("order_item_id",orderItemId)
+    .maybeSingle();
+  if(cErr)throw cErr;
+  if(!component)return {error:"order_component_not_found",status:404};
+  if(component.product_id===replacementProductId)return {error:"replacement_same_product",status:409};
+
+  const {data:duplicate,error:dErr}=await db.from("order_item_components")
+    .select("id")
+    .eq("organization_id",ORG_ID)
+    .eq("order_item_id",orderItemId)
+    .eq("product_id",replacementProductId)
+    .neq("id",componentId)
+    .limit(1);
+  if(dErr)throw dErr;
+  if((duplicate||[]).length)return {error:"replacement_duplicate_component",status:409};
+
+  const {data:replacement,error:pErr}=await db.from("products")
+    .select("id,sku,gtin,name,stock_quantity,active")
+    .eq("organization_id",ORG_ID)
+    .eq("id",replacementProductId)
+    .maybeSingle();
+  if(pErr)throw pErr;
+  if(!replacement||replacement.active===false)return {error:"replacement_product_unavailable",status:409};
+
+  const needed=Math.round(Number(component.quantity||0)*Number(item.quantity||0)*1000)/1000;
+  if(!Number.isFinite(needed)||needed<=0)return {error:"invalid_component_quantity",status:409};
+  const {data:reservedRows,error:rrErr}=await db.from("order_stock_reservations")
+    .select("quantity")
+    .eq("organization_id",ORG_ID)
+    .eq("product_id",replacementProductId)
+    .eq("status","reserved");
+  if(rrErr)throw rrErr;
+  const reserved=Math.round((reservedRows||[]).reduce((sum:number,r:any)=>sum+Number(r.quantity||0),0)*1000)/1000;
+  const physical=Math.max(0,Number(replacement.stock_quantity||0));
+  const available=Math.max(0,Math.round((physical-reserved)*1000)/1000);
+  if(available+0.0001<needed){
+    return {
+      error:"replacement_insufficient_stock",status:409,
+      needed,available,product_id:replacementProductId
+    };
+  }
+
+  const meta=component.metadata&&typeof component.metadata==="object"?component.metadata:{};
+  const history=Array.isArray(meta.replacement_history)?meta.replacement_history:[];
+  const event={
+    from_product_id:component.product_id||null,
+    from_name:component.name_snapshot||"",
+    to_product_id:replacement.id,
+    to_name:replacement.name,
+    at:new Date().toISOString(),
+    source:"vitrine_admin"
+  };
+  const {error:uErr}=await db.from("order_item_components")
+    .update({
+      product_id:replacement.id,
+      name_snapshot:replacement.name,
+      sku_snapshot:replacement.sku||null,
+      metadata:{...meta,replacement_history:[...history,event].slice(-10),last_replacement:event}
+    })
+    .eq("organization_id",ORG_ID)
+    .eq("id",componentId)
+    .eq("order_item_id",orderItemId);
+  if(uErr)throw uErr;
+
+  const historySync=await syncVitrineOrderHistory(db,orderId,ORG_ID);
+  const detail=await orderDetail(orderId);
+  return {
+    order_id:orderId,
+    order_item_id:orderItemId,
+    component_id:componentId,
+    replacement_product_id:replacement.id,
+    replacement_name:replacement.name,
+    basket_total_cents:Number(item.total_cents||0),
+    commercial_total_unchanged:true,
+    history_synced:Boolean(historySync.ok),
+    detail
+  };
+}
+
 async function updateOrder(payload:any) {
   const id=uuid(payload?.id);
   if (!id) return { error:"invalid_order",status:400 };
@@ -2405,6 +2530,11 @@ Deno.serve(async (req: Request) => {
       if (action==="order_update") {
         const result=await updateOrder(payload);
         if (result.error) return json(req,{ok:false,error:result.error},result.status);
+        return json(req,{ok:true,...result});
+      }
+      if (action==="order_component_replace") {
+        const result=await replaceOrderBasketComponent(payload);
+        if ((result as any).error) return json(req,{ok:false,...result},(result as any).status);
         return json(req,{ok:true,...result});
       }
       if (action==="order_consume_stock") {
