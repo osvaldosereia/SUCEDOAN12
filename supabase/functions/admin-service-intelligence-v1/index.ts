@@ -2610,7 +2610,7 @@ function blingHubFinanceBucket(rows:any[],today:string,day7:string,day30:string)
 async function blingHubFinanceOverview(sb:any){
   const token=await blingHubOauth(sb);
   const today=blingHubFinanceCuiabaDay(0),past=blingHubFinanceCuiabaDay(-365),future=blingHubFinanceCuiabaDay(90);
-  const day7=blingHubFinanceCuiabaDay(7),day30=blingHubFinanceCuiabaDay(30);
+  const day7=blingHubFinanceCuiabaDay(7),day30=blingHubFinanceCuiabaDay(30),past30=blingHubFinanceCuiabaDay(-30);
 
   const receivePast=new URLSearchParams({tipoFiltroData:"V",dataInicial:past,dataFinal:today});
   receivePast.append("situacoes[]","1");
@@ -2628,6 +2628,14 @@ async function blingHubFinanceOverview(sb:any){
   const payableB=await blingHubFinancePaged(sb,token,"/contas/pagar?"+payableFuture.toString());
   if(!payableB.ok)return {ok:false,status:payableB.status,error:payableB.status===403?"bling_finance_scope_missing":payableB.error,readonly:true,external_write:false};
 
+  const received30Params=new URLSearchParams({tipoFiltroData:"R",dataInicial:past30,dataFinal:today});
+  received30Params.append("situacoes[]","2");
+  const paid30Params=new URLSearchParams({dataPagamentoInicial:past30,dataPagamentoFinal:today,situacao:"2"});
+  const received30=await blingHubFinancePaged(sb,token,"/contas/receber?"+received30Params.toString(),3);
+  if(!received30.ok)return {ok:false,status:received30.status,error:received30.status===403?"bling_finance_scope_missing":received30.error,readonly:true,external_write:false};
+  const paid30=await blingHubFinancePaged(sb,token,"/contas/pagar?"+paid30Params.toString(),3);
+  if(!paid30.ok)return {ok:false,status:paid30.status,error:paid30.status===403?"bling_finance_scope_missing":paid30.error,readonly:true,external_write:false};
+
   const financialAccounts=await blingHubGet(sb,token,"/contas-contabeis?pagina=1&limite=100&ocultarInvisiveis=true&ordenacao=descricao");
   const accountsOk=financialAccounts.ok;
   const accountRows=accountsOk&&Array.isArray(financialAccounts.data?.data)?financialAccounts.data.data:[];
@@ -2642,6 +2650,10 @@ async function blingHubFinanceOverview(sb:any){
   };
   const receivables=unique([...receiveA.rows,...receiveB.rows]).map(x=>blingHubFinanceNormalize("receivable",x));
   const payables=unique([...payableA.rows,...payableB.rows]).map(x=>blingHubFinanceNormalize("payable",x));
+  const receivedRows=unique(received30.rows).map(x=>blingHubFinanceNormalize("receivable",x));
+  const paidRows=unique(paid30.rows).map(x=>blingHubFinanceNormalize("payable",x));
+  const realizedReceivedCents=receivedRows.reduce((acc,x)=>acc+Number(x.amount_cents||0),0);
+  const realizedPaidCents=paidRows.reduce((acc,x)=>acc+Number(x.amount_cents||0),0);
   const sortRows=(rows:any[])=>rows.sort((a,b)=>String(a.due_date||"9999-12-31").localeCompare(String(b.due_date||"9999-12-31"))||Number(b.amount_cents||0)-Number(a.amount_cents||0));
   sortRows(receivables);sortRows(payables);
   const receiveSummary=blingHubFinanceBucket(receivables,today,day7,day30);
@@ -2651,14 +2663,22 @@ async function blingHubFinanceOverview(sb:any){
   const overview={
     generated_at:new Date().toISOString(),
     timezone:"America/Cuiaba",
-    window:{past,today,future,day_7:day7,day_30:day30},
+    window:{past,past_30:past30,today,future,day_7:day7,day_30:day30},
     receivable:receiveSummary,
     payable:payableSummary,
     projected_cents:receiveSummary.total_cents-payableSummary.total_cents,
     overdue_net_cents:receiveSummary.overdue_cents-payableSummary.overdue_cents,
+    realized_30d:{
+      received_cents:realizedReceivedCents,
+      received_count:receivedRows.length,
+      paid_cents:realizedPaidCents,
+      paid_count:paidRows.length,
+      net_cents:realizedReceivedCents-realizedPaidCents,
+      truncated:Boolean(received30.truncated||paid30.truncated)
+    },
     boleto_count:receivables.filter(x=>Boolean(x.boleto_url)).length,
     pix_count:receivables.filter(x=>Boolean(x.pix_url)).length,
-    truncated:Boolean(receiveA.truncated||receiveB.truncated||payableA.truncated||payableB.truncated),
+    truncated:Boolean(receiveA.truncated||receiveB.truncated||payableA.truncated||payableB.truncated||received30.truncated||paid30.truncated),
     financial_accounts:accountRows.slice(0,100).map((x:any)=>({
       id:Number(x?.id||0)||null,
       description:clean(x?.descricao,180)||"",
@@ -2676,6 +2696,8 @@ async function blingHubFinanceOverview(sb:any){
     domain:"finance",
     details:{
       receivable_count:receivables.length,payable_count:payables.length,
+      received_30d_count:receivedRows.length,paid_30d_count:paidRows.length,
+      realized_net_30d_cents:overview.realized_30d.net_cents,
       projected_cents:overview.projected_cents,truncated:overview.truncated,
       external_write:false,make_used:false
     }
