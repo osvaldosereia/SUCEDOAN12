@@ -2466,6 +2466,53 @@ async function updateOrder(payload:any) {
   };
 }
 
+
+async function crossSellShadowList(limitRaw:unknown=50) {
+  const limit=Math.max(1,Math.min(100,Math.floor(Number(limitRaw||50))));
+  const [{data:config,error:cErr},{data,error}]=await Promise.all([
+    db.from("post_order_cross_sell_config")
+      .select("enabled,mode,expiry_offer_count,regular_count,total_limit,basket_similarity_min,max_component_changes,max_standalone_product_lines,max_basket_quantity,response_window_seconds,regular_item_max_order_ratio,updated_at")
+      .eq("organization_id",ORG_ID)
+      .maybeSingle(),
+    db.rpc("list_post_order_cross_sell_shadow_v1",{p_organization_id:ORG_ID,p_limit:limit})
+  ]);
+  if(cErr)throw cErr;
+  if(error)throw error;
+  return {config:config??null,...(data??{summary:{},sessions:[]})};
+}
+
+async function crossSellShadowPrepareRecent(payload:any) {
+  const limit=Math.max(1,Math.min(50,Math.floor(Number(payload?.limit||20))));
+  const {data:orders,error}=await db.from("orders")
+    .select("id")
+    .eq("organization_id",ORG_ID)
+    .order("created_at",{ascending:false})
+    .limit(limit);
+  if(error)throw error;
+  const results:any[]=[];
+  for(const order of orders??[]){
+    const {data,error:rErr}=await db.rpc("prepare_post_order_cross_sell_shadow_v1",{p_order_id:order.id});
+    if(rErr){
+      results.push({order_id:order.id,ok:false,error:text(rErr.message,180)});
+      continue;
+    }
+    results.push({order_id:order.id,...(data??{})});
+  }
+  return {
+    processed:results.length,
+    eligible:results.filter((r:any)=>r.eligible===true).length,
+    results
+  };
+}
+
+async function crossSellShadowPrepareOne(payload:any) {
+  const orderId=uuid(payload?.order_id);
+  if(!orderId)return {error:"invalid_order",status:400};
+  const {data,error}=await db.rpc("prepare_post_order_cross_sell_shadow_v1",{p_order_id:orderId});
+  if(error)throw error;
+  return data??{};
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null,{status:204,headers:cors(req)});
 
@@ -2479,6 +2526,7 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="expirations") return json(req,{ok:true,...await listExpirations()});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
+    if (req.method==="GET" && action==="cross_sell_shadow_list") return json(req,{ok:true,...await crossSellShadowList(url.searchParams.get("limit"))});
     if (req.method==="GET" && action==="order_stock_shortages") return json(req,{ok:true,...await listOrderStockShortages()});
     if (req.method==="GET" && action==="closure_orders") return json(req,{ok:true,...await listClosureOrders()});
     if (req.method==="GET" && action==="bling_status") {
@@ -2507,6 +2555,14 @@ Deno.serve(async (req: Request) => {
 
     if (req.method==="POST") {
       const payload=await req.json().catch(()=>({}));
+      if (action==="cross_sell_shadow_prepare_recent") {
+        return json(req,{ok:true,...await crossSellShadowPrepareRecent(payload)});
+      }
+      if (action==="cross_sell_shadow_prepare") {
+        const result=await crossSellShadowPrepareOne(payload);
+        if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
+        return json(req,{ok:true,...result});
+      }
       if (action==="product_save") {
         const result=await saveProduct(payload);
         if (result.error) return json(req,{ok:false,error:result.error},result.status);
