@@ -1887,7 +1887,7 @@ async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
       .eq("order_id",order.id).maybeSingle(),
     sb.rpc("preview_bling_invoice_eligibility_v1",{p_order_id:order.id}),
     sb.from("fiscal_runtime_config")
-      .select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch")
+      .select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id")
       .eq("id",1).maybeSingle(),
     sb.rpc("check_order_dispatch_fiscal_gate_v1",{p_order_id:order.id})
   ]);
@@ -1930,7 +1930,10 @@ async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
       require_payment_confirmation:f.require_payment_confirmation!==false,
       canary_percent:Number(f.canary_percent||0),
       dispatch_gate_mode:f.dispatch_gate_mode||"observe",
-      require_fiscal_authorization_before_dispatch:f.require_fiscal_authorization_before_dispatch!==false
+      require_fiscal_authorization_before_dispatch:f.require_fiscal_authorization_before_dispatch!==false,
+      dispatch_invoice_generate_enabled:Boolean(f.dispatch_invoice_generate_enabled),
+      dispatch_invoice_authorize_enabled:Boolean(f.dispatch_invoice_authorize_enabled),
+      dispatch_invoice_canary_source_order_id:uuid(f.dispatch_invoice_canary_source_order_id)||null
     },
     dispatch_gate:dispatchGate.data||null,
     invoice_issue_available:Boolean(f.enabled&&f.bling_invoice_prepare_enabled&&f.bling_invoice_send_enabled),
@@ -1993,7 +1996,7 @@ async function blingHubReadinessExtended(sb:any){
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000),
     sb.from("bling_webhook_inbox_v2").select("status").limit(5000),
-    sb.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch").eq("id",1).maybeSingle(),
+    sb.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id").eq("id",1).maybeSingle(),
     sb.from("order_fiscal_controls").select("fiscal_status").limit(5000),
     sb.from("fiscal_issue_jobs").select("status,external_side_effect").limit(5000),
     sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle()
@@ -2026,7 +2029,9 @@ async function blingHubReadinessExtended(sb:any){
     config:fiscalConfig.data||{
       enabled:false,execution_mode:"off",bling_invoice_prepare_enabled:false,bling_invoice_send_enabled:false,
       require_delivery_confirmation:true,require_payment_confirmation:true,canary_percent:0,
-      dispatch_gate_mode:"observe",require_fiscal_authorization_before_dispatch:true
+      dispatch_gate_mode:"observe",require_fiscal_authorization_before_dispatch:true,
+      dispatch_invoice_generate_enabled:false,dispatch_invoice_authorize_enabled:false,
+      dispatch_invoice_canary_source_order_id:null
     },
     controls:fiscalCounts,
     jobs:fiscalJobCounts,
@@ -4098,6 +4103,14 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="fiscal_dispatch_gate"){
         const result=await blingHubVitrineDispatchFiscalGate(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_dispatch_preview"){
+        const result=await blingHubVitrineDispatchFiscalPreview(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="fiscal_dispatch_canary"){
+        const result=await blingHubVitrineDispatchFiscalCanary(sb,body?.source_order_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="fiscal_pending_orders"){
