@@ -71,6 +71,7 @@ on:
       - 'scripts/test-vitrine-fiscal-human-canary-v1.mjs'
       - 'scripts/test-vitrine-fiscal-human-production-v1.mjs'
       - 'scripts/test-vitrine-fiscal-danfe-v1.mjs'
+      - 'scripts/test-fiscal-dispatch-db-gate-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -151,6 +152,7 @@ on:
       - 'scripts/test-vitrine-fiscal-human-canary-v1.mjs'
       - 'scripts/test-vitrine-fiscal-human-production-v1.mjs'
       - 'scripts/test-vitrine-fiscal-danfe-v1.mjs'
+      - 'scripts/test-fiscal-dispatch-db-gate-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
       - 'supabase/functions/vitrine-admin-v1/**'
       - 'supabase/functions/_shared/vitrine-history-sync-v1.ts'
@@ -241,3 +243,4 @@ jobs:
           node scripts/test-vitrine-fiscal-human-canary-v1.mjs
           node scripts/test-vitrine-fiscal-human-production-v1.mjs
           node scripts/test-vitrine-fiscal-danfe-v1.mjs
+          node scripts/test-fiscal-dispatch-db-gate-v1.mjs
