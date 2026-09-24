@@ -1500,6 +1500,26 @@ function blingHubBytesToBase64(bytes:Uint8Array){
   }
   return btoa(binary);
 }
+function blingHubBase64ToBytes(value:any){
+  const encoded=String(value??"").replace(/\s+/g,"");
+  if(!encoded)return new Uint8Array();
+  if(encoded.length>12*1024*1024)throw new Error("danfe_encoded_document_too_large");
+  const binary=atob(encoded);
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+function blingHubIsPdf(bytes:Uint8Array){
+  return bytes.length>=5&&String.fromCharCode(...bytes.subarray(0,5))==="%PDF-";
+}
+async function blingHubGunzipDocument(bytes:Uint8Array){
+  if(bytes.length<2)return bytes;
+  if(bytes[0]!==0x1f||bytes[1]!==0x8b)return bytes;
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  const buf=await new Response(stream).arrayBuffer();
+  if(buf.byteLength>6*1024*1024)throw new Error("danfe_document_too_large");
+  return new Uint8Array(buf);
+}
 async function blingHubGetNfeDocumentPdf(sb:any,token:string,accessKeyRaw:any){
   const accessKey=blingHubDigits(accessKeyRaw);
   if(accessKey.length!==44)return {ok:false,status:400,error:"invalid_access_key",content:null};
@@ -1508,12 +1528,14 @@ async function blingHubGetNfeDocumentPdf(sb:any,token:string,accessKeyRaw:any){
     const r=await fetch(
       BLING_API_BASE+"/nfe/documento/"+encodeURIComponent(accessKey)+"?formato=pdf",
       {
-        headers:{Authorization:"Bearer "+token,Accept:"application/pdf","enable-jwt":"1"},
+        headers:{Authorization:"Bearer "+token,Accept:"application/json","enable-jwt":"1"},
         signal:AbortSignal.timeout(20000)
       }
     );
+    const body=new Uint8Array(await r.arrayBuffer());
+    const bodyText=()=>new TextDecoder().decode(body);
     if(!r.ok){
-      const raw=await r.text();
+      const raw=bodyText();
       let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
       return {
         ok:false,status:r.status,
@@ -1521,17 +1543,41 @@ async function blingHubGetNfeDocumentPdf(sb:any,token:string,accessKeyRaw:any){
         content:null
       };
     }
-    const buf=await r.arrayBuffer();
-    if(buf.byteLength<16)return {ok:false,status:502,error:"empty_danfe_document",content:null};
-    if(buf.byteLength>6*1024*1024)return {ok:false,status:413,error:"danfe_document_too_large",content:null};
-    const bytes=new Uint8Array(buf);
-    const header=String.fromCharCode(...bytes.subarray(0,5));
-    if(header!=="%PDF-")return {ok:false,status:502,error:"invalid_danfe_pdf",content:null};
+
+    // Backward-compatible fallback if Bling ever returns the PDF bytes directly.
+    if(blingHubIsPdf(body)){
+      if(body.byteLength>6*1024*1024)return {ok:false,status:413,error:"danfe_document_too_large",content:null};
+      return {ok:true,status:r.status,content_type:"application/pdf",size_bytes:body.byteLength,content:blingHubBytesToBase64(body)};
+    }
+
+    let payload:any={};
+    try{payload=JSON.parse(bodyText()||"{}")}catch{
+      return {ok:false,status:502,error:"invalid_danfe_response",content:null};
+    }
+    const docs=Array.isArray(payload?.data)?payload.data:[];
+    const doc=docs.find((x:any)=>String(x?.nome||"").toLowerCase().endsWith(".pdf"))||docs[0];
+    if(!doc?.conteudo)return {ok:false,status:502,error:"empty_danfe_document",content:null};
+
+    let compressed:Uint8Array;
+    try{compressed=blingHubBase64ToBytes(doc.conteudo)}catch(e){
+      return {ok:false,status:502,error:clean((e as Error)?.message||"invalid_danfe_base64",700),content:null};
+    }
+    if(!compressed.byteLength)return {ok:false,status:502,error:"empty_danfe_document",content:null};
+
+    let bytes:Uint8Array;
+    try{bytes=await blingHubGunzipDocument(compressed)}catch(e){
+      return {ok:false,status:502,error:clean((e as Error)?.message||"invalid_danfe_gzip",700),content:null};
+    }
+    if(bytes.byteLength<16)return {ok:false,status:502,error:"empty_danfe_document",content:null};
+    if(bytes.byteLength>6*1024*1024)return {ok:false,status:413,error:"danfe_document_too_large",content:null};
+    if(!blingHubIsPdf(bytes))return {ok:false,status:502,error:"invalid_danfe_pdf",content:null};
+
     return {
       ok:true,status:r.status,
-      content_type:r.headers.get("content-type")||"application/pdf",
-      size_bytes:buf.byteLength,
-      content:blingHubBytesToBase64(bytes)
+      content_type:"application/pdf",
+      size_bytes:bytes.byteLength,
+      content:blingHubBytesToBase64(bytes),
+      provider_document_name:clean(doc?.nome,180)||null
     };
   }catch(e){
     return {ok:false,status:0,error:clean((e as Error)?.message||e,700),content:null};
