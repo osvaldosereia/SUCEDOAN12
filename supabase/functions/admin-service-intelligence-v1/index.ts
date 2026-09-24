@@ -3709,36 +3709,61 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
   const requireSupplierXml=body?.require_supplier_xml!==false;
   const cestFilter=blingHubDigits(body?.cest);
 
-  let scanQuery=sb.from("product_fiscal_catalog_scan_v1")
-    .select("product_id,supplier_xml_cest_count")
-    .eq("is_active",true);
-  if(requireSupplierXml)scanQuery=scanQuery.gt("supplier_xml_cest_count",0);
-  const scan=await scanQuery
-    .order("supplier_xml_cest_count",{ascending:false})
-    .order("product_id",{ascending:true})
-    .limit(500);
-  if(scan.error)throw scan.error;
-
-  const candidateIds=(scan.data||[]).map((x:any)=>uuid(x.product_id)).filter(Boolean);
-  if(!candidateIds.length){
+  let rows:any[]=[];
+  try{
+    if(requireSupplierXml){
+      let scanQuery=sb.from("product_fiscal_catalog_scan_v1")
+        .select("product_id,supplier_xml_cest_count")
+        .eq("is_active",true)
+        .gt("supplier_xml_cest_count",0);
+      const scan=await scanQuery
+        .order("supplier_xml_cest_count",{ascending:false})
+        .order("product_id",{ascending:true})
+        .limit(100);
+      if(scan.error)return {
+        ok:false,status:500,error:"batch_candidate_scan_failed",
+        detail:clean(scan.error.message,300),external_write:false,bling_mutations:0
+      };
+      const candidateIds=(scan.data||[]).map((x:any)=>uuid(x.product_id)).filter(Boolean);
+      if(!candidateIds.length){
+        return {
+          ok:true,selected:0,processed:0,mutated:0,aligned:0,
+          stopped_on_error:false,results:[],external_write:false
+        };
+      }
+      let diffQuery=sb.from("product_fiscal_bling_diff_v1")
+        .select("product_id,name,proposed_cest,canary_eligible,diff_status")
+        .in("product_id",candidateIds)
+        .eq("canary_eligible",true)
+        .eq("diff_status","cest_missing");
+      if(cestFilter)diffQuery=diffQuery.eq("proposed_cest",cestFilter);
+      const diff=await diffQuery.order("product_id",{ascending:true}).limit(limit);
+      if(diff.error)return {
+        ok:false,status:500,error:"batch_diff_query_failed",
+        detail:clean(diff.error.message,300),external_write:false,bling_mutations:0
+      };
+      rows=diff.data||[];
+    }else{
+      let diffQuery=sb.from("product_fiscal_bling_diff_v1")
+        .select("product_id,name,proposed_cest,canary_eligible,diff_status")
+        .eq("canary_eligible",true)
+        .eq("diff_status","cest_missing");
+      if(cestFilter)diffQuery=diffQuery.eq("proposed_cest",cestFilter);
+      const diff=await diffQuery.order("product_id",{ascending:true}).limit(limit);
+      if(diff.error)return {
+        ok:false,status:500,error:"batch_diff_query_failed",
+        detail:clean(diff.error.message,300),external_write:false,bling_mutations:0
+      };
+      rows=diff.data||[];
+    }
+  }catch(e){
     return {
-      ok:true,selected:0,processed:0,mutated:0,aligned:0,
-      stopped_on_error:false,results:[],external_write:false
+      ok:false,status:502,error:"batch_selection_exception",
+      detail:clean((e as Error)?.message||e,500),
+      external_write:false,bling_mutations:0
     };
   }
 
-  let diffQuery=sb.from("product_fiscal_bling_diff_v1")
-    .select("product_id,name,proposed_cest,canary_eligible,diff_status")
-    .in("product_id",candidateIds)
-    .eq("canary_eligible",true)
-    .eq("diff_status","cest_missing");
-  if(cestFilter)diffQuery=diffQuery.eq("proposed_cest",cestFilter);
-  const diff=await diffQuery
-    .order("product_id",{ascending:true})
-    .limit(limit);
-  if(diff.error)throw diff.error;
-
-  const rows=diff.data||[];
   const results:any[]=[];
   let mutated=0,aligned=0;
   let stoppedOnError=false;
