@@ -288,61 +288,6 @@ async function saveProduct(payload: any) {
 
 
 
-async function setProductActive(payload:any) {
-  const id=uuid(payload?.product_id ?? payload?.id);
-  if(!id)return {error:"invalid_product",status:400};
-  if(typeof payload?.active!=="boolean")return {error:"invalid_product_active",status:400};
-  const active=payload.active===true;
-
-  const {data:before,error:bErr}=await db.from("products")
-    .select("id,active,stock_quantity")
-    .eq("organization_id",ORG_ID)
-    .eq("id",id)
-    .maybeSingle();
-  if(bErr)throw bErr;
-  if(!before)return {error:"product_not_found",status:404};
-  if(before.active===active)return {product_id:id,active,unchanged:true};
-
-  const {error:uErr}=await db.from("products")
-    .update({active,updated_at:new Date().toISOString()})
-    .eq("organization_id",ORG_ID)
-    .eq("id",id);
-  if(uErr)throw uErr;
-
-  const reconcile=await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID});
-  if(reconcile.error)throw reconcile.error;
-
-  const {data:fresh,error:fErr}=await db.from("products")
-    .select("id,sku,gtin,name,description,active,sale_price_cents,stock_quantity,image_url,metadata,expiration_date,auto_expiry_offer_enabled,updated_at")
-    .eq("organization_id",ORG_ID)
-    .eq("id",id)
-    .single();
-  if(fErr)throw fErr;
-
-  let blingQueued=false;
-  try{
-    const queued=await blingHubControl("enqueue_job",{
-      domain:"product",operation:"sync_product",source_id:fresh.id,
-      idempotency_key:"vitrine_qx:product_active:"+fresh.id+":"+String(fresh.updated_at),
-      payload:{product:fresh}
-    });
-    blingQueued=!(queued as any).error;
-  }catch{}
-  if(Number(before.stock_quantity||0)!==Number(fresh.stock_quantity||0)){
-    try{await queueBlingStockSnapshots([fresh.id],"product_active_reconcile")}catch{}
-  }
-
-  return {
-    product_id:fresh.id,
-    active:fresh.active,
-    product:fresh,
-    bling_queued:blingQueued,
-    reconcile:reconcile.data??null
-  };
-}
-
-
-
 async function listExpirations() {
   const reconcile=await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID});
   if(reconcile.error)throw reconcile.error;
@@ -2655,11 +2600,6 @@ Deno.serve(async (req: Request) => {
       if (action==="product_save") {
         const result=await saveProduct(payload);
         if (result.error) return json(req,{ok:false,error:result.error},result.status);
-        return json(req,{ok:true,...result});
-      }
-      if (action==="product_active") {
-        const result=await setProductActive(payload);
-        if ((result as any).error) return json(req,{ok:false,error:(result as any).error},(result as any).status);
         return json(req,{ok:true,...result});
       }
       if (action==="expiration_save") {

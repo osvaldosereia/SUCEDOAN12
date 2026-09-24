@@ -1531,19 +1531,14 @@
     if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
     btn.disabled=true;
     try{
-      try{
-        await api('product_active',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,active:next})});
-      }catch(e){
-        if(String(e?.message||'')!=='not_found')throw e;
-        await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-          id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
-          sale_price_cents:Number(product.sale_price_cents||0),stock_quantity:Number(product.stock_quantity||0),
-          expiration_date:product.expiration_date||null,
-          auto_expiry_offer_enabled:product.auto_expiry_offer_enabled===true,
-          category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
-          image_url:product.image_url||'',description:product.description||'',active:next
-        })});
-      }
+      await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
+        sale_price_cents:Number(product.sale_price_cents||0),stock_quantity:Number(product.stock_quantity||0),
+        expiration_date:product.expiration_date||null,
+        auto_expiry_offer_enabled:product.auto_expiry_offer_enabled===true,
+        category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
+        image_url:product.image_url||'',description:product.description||'',active:next
+      })});
       toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
       await loadProducts($('#productSearch')?.value.trim()||'',false);
     }catch(e){
