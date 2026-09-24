@@ -8,10 +8,14 @@ const migration=fs.readFileSync('supabase/migrations/20260924235900_vitrine_inac
 assert.match(admin,/data-product-active/);
 assert.match(admin,/mobile-product-active/);
 assert.match(admin,/Ativo · desativar/);
+assert.match(admin,/id="productActive"/);
+assert.match(admin,/active:state\.productFilters\.active/);
 assert.match(admin,/Produtos inativos ficam fora dos cálculos de validade/);
 assert.match(admin,/activeValidityInventorySummary/);
 assert.match(admin,/product_save/);
 assert.match(api,/active_only:true/);
+assert.match(api,/const activeFilter = text\(url\.searchParams\.get\("active"\), 12\)\.toLowerCase\(\)/);
+assert.match(api,/activeFilter==="false"\|\|activeFilter==="inactive"/);
 
 const expiry=api.slice(api.indexOf('async function listExpirations()'),api.indexOf('async function saveExpiration'));
 assert.match(expiry,/eq\("active",true\)/);
