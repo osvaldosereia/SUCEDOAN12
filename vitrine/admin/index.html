@@ -190,6 +190,9 @@
 (()=>{
   const API='https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/vitrine-admin-v1';
   const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1';
+  const FINANCE_AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1';
+  const FINANCE_VERIFY_API='https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify';
+  const FINANCE_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -197,7 +200,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -953,11 +956,101 @@
     host.querySelectorAll('[data-finance-boleto]').forEach(b=>b.onclick=()=>openFinanceBoletos(Number(b.dataset.financeBoleto)));
     host.querySelectorAll('[data-financial-account-detail]').forEach(b=>b.onclick=()=>openFinancialAccountDetail(Number(b.dataset.financialAccountDetail)));
   }
-  async function financeApi(operation,payload={}){
-    return await api('bling_finance_action',{},{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({operation,...payload})
+  function financeTokenPayload(token){
+    try{
+      const raw=String(token||'').split('.')[1]||'';
+      const pad=raw.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-raw.length%4)%4);
+      return JSON.parse(atob(pad));
+    }catch{return {}}
+  }
+  function financeSessionToken(){
+    const token=sessionStorage.getItem('da_finance_access_token_v1')||'';
+    if(!token)return '';
+    const exp=Number(financeTokenPayload(token)?.exp||0);
+    if(!exp||exp<=Math.floor(Date.now()/1000)+60){
+      sessionStorage.removeItem('da_finance_access_token_v1');
+      return '';
+    }
+    return token;
+  }
+  function clearFinanceSession(){
+    sessionStorage.removeItem('da_finance_access_token_v1');
+    state.financeCatalogs=null;
+  }
+  async function financeStepUp(){
+    const existing=financeSessionToken();
+    if(existing)return existing;
+    if(state.financeAuthPromise)return await state.financeAuthPromise;
+    state.financeAuthPromise=new Promise((resolve,reject)=>{
+      financeOpenDialog('Acesso financeiro',
+        '<div class="rule-notice warn"><strong>Confirmação de segurança</strong><div>Para consultar detalhes ou alterar o financeiro, confirme o PIN administrativo. O restante do Admin continua abrindo normalmente.</div></div>'+
+        '<form id="financePinForm" class="form-grid" autocomplete="off">'+
+          '<label class="span-2"><span>PIN administrativo</span><input id="financePinInput" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="••••••" required></label>'+
+          '<div class="span-2"><small class="sub" id="financePinStatus">A sessão fica somente nesta aba e expira automaticamente.</small></div>'+
+        '</form>',
+        '<button class="secondary" id="financePinCancel" type="button">Cancelar</button><button class="primary" id="financePinSubmit" type="button">Liberar financeiro</button>'
+      );
+      const finish=(ok,value)=>{
+        state.financeAuthPromise=null;
+        if($('#editor')?.open)$('#editor').close();
+        ok?resolve(value):reject(value);
+      };
+      $('#financePinCancel').onclick=()=>finish(false,new Error('finance_auth_cancelled'));
+      const submit=async()=>{
+        const pin=$('#financePinInput').value.trim(),button=$('#financePinSubmit'),status=$('#financePinStatus');
+        if(!/^\d{6}$/.test(pin)){status.textContent='Digite os 6 números do PIN.';return}
+        button.disabled=true;status.textContent='Validando…';
+        try{
+          const authRes=await fetch(FINANCE_AUTH_API,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+            body:JSON.stringify({pin}),
+            cache:'no-store'
+          });
+          const auth=await authRes.json().catch(()=>({}));
+          if(!authRes.ok||!auth?.ok){
+            if(authRes.status===429)throw new Error('Muitas tentativas. Aguarde antes de tentar novamente.');
+            throw new Error(auth?.error==='invalid_pin'?'PIN inválido.':auth?.error||'Não foi possível validar o PIN.');
+          }
+          const verifyRes=await fetch(FINANCE_VERIFY_API,{
+            method:'POST',
+            headers:{'Content-Type':'application/json','apikey':FINANCE_PUBLIC_KEY},
+            body:JSON.stringify({token_hash:auth.token_hash,type:auth.verification_type||'email'}),
+            cache:'no-store'
+          });
+          const verified=await verifyRes.json().catch(()=>({}));
+          const token=verified?.access_token||verified?.session?.access_token||'';
+          if(!verifyRes.ok||!token)throw new Error(verified?.msg||verified?.error_description||verified?.error||'Não foi possível abrir a sessão financeira.');
+          sessionStorage.setItem('da_finance_access_token_v1',token);
+          finish(true,token);
+        }catch(e){
+          button.disabled=false;status.textContent=String(e?.message||'Não foi possível liberar o financeiro.');
+          $('#financePinInput').value='';
+          $('#financePinInput').focus();
+        }
+      };
+      $('#financePinSubmit').onclick=submit;
+      $('#financePinForm').onsubmit=e=>{e.preventDefault();submit()};
+      setTimeout(()=>$('#financePinInput')?.focus(),0);
     });
+    return await state.financeAuthPromise;
+  }
+  async function financeApi(operation,payload={},retryAuth=true){
+    const token=await financeStepUp();
+    const u=new URL(API);u.searchParams.set('action','bling_finance_action');
+    const response=await fetch(u,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({operation,...payload}),
+      cache:'no-store'
+    });
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(response.status===401&&retryAuth){
+      clearFinanceSession();
+      return await financeApi(operation,payload,false);
+    }
+    if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
+    return data;
   }
   async function loadFinanceCatalogs(force=false){
     if(state.financeCatalogs&&!force)return state.financeCatalogs;
@@ -1257,10 +1350,11 @@
 
   async function renderFinance(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Bling é a fonte oficial. Inclusões, edições e baixas exigem prévia e confirmação humana.</p></div><div class="dispatch-actions"><button class="secondary" id="newPayable" type="button">+ A pagar</button><button class="secondary" id="newReceivable" type="button">+ A receber</button><button class="secondary" id="refreshFinance">Atualizar</button></div></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Bling é a fonte oficial. Inclusões, edições e baixas exigem prévia, PIN e confirmação humana.</p></div><div class="dispatch-actions"><button class="secondary" id="newPayable" type="button">+ A pagar</button><button class="secondary" id="newReceivable" type="button">+ A receber</button>'+(financeSessionToken()?'<button class="secondary" id="lockFinance" type="button">Bloquear financeiro</button>':'')+'<button class="secondary" id="refreshFinance">Atualizar</button></div></div>'+
       '<div class="rule-notice"><strong>Operação controlada</strong><div>Baixa apenas registra pagamento/recebimento no Bling. O sistema não faz transferência bancária e não cancela boletos automaticamente.</div></div>'+
       '<div id="financeBody"><div class="loading">Consultando financeiro no Bling…</div></div>';
     $('#refreshFinance').onclick=renderFinance;
+    if($('#lockFinance'))$('#lockFinance').onclick=()=>{clearFinanceSession();toast('Financeiro bloqueado');renderFinance()};
     $('#newPayable').onclick=()=>openFinanceEditor('payable');
     $('#newReceivable').onclick=()=>openFinanceEditor('receivable');
     try{
