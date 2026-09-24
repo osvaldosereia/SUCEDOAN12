@@ -180,3 +180,31 @@ Após configurar:
 - envio arbitrário pela ação “Enviar mensagem” do webhook (ela exige template nesse ambiente);
 - ativação pública em massa das ofertas de validade;
 - live antes do gate de homologação.
+
+
+## Hardening final
+
+Proteções adicionais concluídas:
+- sessões `sent/sent_test` expiradas são fechadas automaticamente após a janela;
+- produto de validade precisa continuar válido no momento da aceitação;
+- produto não pode vencer antes da data prevista de entrega registrada no pedido;
+- se o mesmo produto for incluído manualmente no pedido enquanto a oferta estiver aberta, a automação recusa a duplicação;
+- índice dedicado para lookup de sessões abertas.
+
+Validação final:
+- 8 pedidos elegíveis em Shadow;
+- 80 sugestões atuais;
+- 40 por validade e 40 normais;
+- 0 produto sem estoque/inativo;
+- 0 vencido;
+- 0 repetido do pedido;
+- 0 vencendo antes da entrega prevista;
+- 0 item real de cross-sell gravado;
+- teste transacional normal passou com rollback;
+- teste de duplicação manual foi corretamente recusado;
+- teste da trava de separação passou com rollback;
+- contrato de arquivos do `main`: 21/21 verificações aprovadas.
+
+Estado seguro mantido:
+- `mode=shadow`;
+- `delivery_contract_ready=false`.
