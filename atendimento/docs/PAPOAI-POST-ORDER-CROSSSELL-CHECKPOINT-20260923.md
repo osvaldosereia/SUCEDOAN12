@@ -56,7 +56,8 @@ Caso contrário, o Pós-cesta usa um quote privado, sem publicar a oferta no cat
 - item já no pedido/cesta: não selecionar;
 - sessão vencida: não aceitar;
 - resposta ambígua: não interpretar;
-- separação iniciada: não aceitar;
+- separação iniciada: não preparar nem aceitar;
+- produto acrescentado manualmente enquanto a sessão está aberta: não duplicar;
 - uma sessão por pedido/modo;
 - alteração real somente após sessão marcada como enviada;
 - modo test/canary/live exigido para escrita real;
@@ -69,12 +70,14 @@ Caso contrário, o Pós-cesta usa um quote privado, sem publicar a oferta no cat
 
 ### Shadow
 Após recálculo dos Shadows atuais:
-- 8 pedidos elegíveis;
-- 80 itens selecionados;
-- 40 itens de validade;
-- 40 itens normais;
+- 7 pedidos elegíveis;
+- 1 pedido bloqueado porque a separação já havia começado;
+- 70 itens selecionados nos pedidos elegíveis;
+- 35 itens de validade;
+- 35 itens normais;
 - 0 item sem estoque/inativo;
 - 0 item vencido;
+- 0 item vencendo antes da data prevista de entrega;
 - 0 item já presente no pedido.
 
 ### Parser
@@ -103,6 +106,12 @@ Teste real em subtransação:
 - sessão aberta simulada;
 - início da separação cancelou a sessão;
 - rollback restaurou o estado original.
+
+### Duplicidade com rollback
+- aceitação normal de `2 e 7` continuou funcionando;
+- produto da posição 2 foi inserido manualmente no pedido durante o teste;
+- nova aceitação da posição 2 foi recusada com `one_or_more_items_unavailable`;
+- rollback restaurou integralmente o pedido.
 
 ## Funções principais
 
