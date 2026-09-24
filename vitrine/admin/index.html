@@ -2212,24 +2212,42 @@
   }
 
   function orderFiscalHtml(f,o){
-    if(!f)return '<div class="rule-notice"><strong>Carregando controle fiscal…</strong><div>Esta etapa não emite nota.</div></div>';
-    if(f.error)return '<div class="rule-notice warn"><strong>Controle fiscal indisponível</strong><div>O pedido continua normal. Tente novamente depois.</div></div>';
+    if(!f)return '<div class="rule-notice"><strong>Carregando controle fiscal…</strong><div>Consultando o gate de saída e o fechamento.</div></div>';
+    if(f.error)return '<div class="rule-notice warn"><strong>Controle fiscal indisponível</strong><div>A saída deve aguardar a conferência fiscal.</div></div>';
+
+    const gate=f.dispatch_gate||{};
+    const gateAuthorized=gate.authorized===true;
+    const gateEnforced=gate.enforced===true;
+    const gateObserve=gate.mode==='observe';
+    const gateTitle=gateAuthorized?'Documento fiscal autorizado':gateEnforced?'Fiscal pendente · saída bloqueada':gateObserve?'Fiscal em observação antes da saída':'Gate fiscal ainda desligado';
+    const gateKind=gateAuthorized?'ok-text':gateEnforced?'warn-text':'';
+    const gateDetail=gateAuthorized
+      ? ((gate.bling_invoice_number?'NF-e '+gate.bling_invoice_number+' · ':'')+'liberado para expedição')
+      : gateEnforced
+        ? 'A mercadoria não pode ser marcada como saída até existir autorização fiscal.'
+        : gateObserve
+          ? 'Estrutura pronta; nesta fase ainda não bloqueia a operação enquanto o canário fiscal não estiver ativo.'
+          : 'A autorização fiscal antes da saída ainda não está sendo exigida pelo sistema.';
 
     const delivered=f.delivery_status==='delivered';
     const paid=f.payment_status==='confirmed';
     const ready=f.fiscal_status==='ready';
     const issued=f.fiscal_status==='issued'||Boolean(f.bling_invoice_id);
-    const fiscalLabel=issued?'Emitida':ready?'Pronto':f.fiscal_status==='review_required'?'Revisar':'Bloqueado';
+    const fiscalLabel=issued?'Emitida':ready?'Pronto':f.fiscal_status==='review_required'?'Revisar':'Pendente';
     const reason=f.fiscal_block_reason?'<div class="sub" style="margin-top:5px">'+esc(fiscalBlockReasonLabel(f.fiscal_block_reason))+'</div>':'';
-    const emissionOff=!f.config?.send_enabled;
 
     return '<div class="rule-notice">'+
-      '<strong>Entrega '+(delivered?'✓':'pendente')+' · Pagamento '+(paid?'✓':'pendente')+' · Fiscal '+esc(fiscalLabel)+'</strong>'+
-      '<div style="margin-top:5px">Total fiscal: '+money(f.total_cents||o.total_cents||0)+(paid&&f.settled_amount_cents!=null?' · Recebido: '+money(f.settled_amount_cents):'')+'</div>'+
+      '<strong class="'+gateKind+'">'+esc(gateTitle)+'</strong>'+
+      '<div style="margin-top:5px">'+esc(gateDetail)+'</div>'+
+      (gate.sefaz_status?'<div class="sub" style="margin-top:5px">SEFAZ: '+esc(gate.sefaz_status)+'</div>':'')+
+      (!f.config?.send_enabled?'<div class="sub" style="margin-top:5px">Emissão de NF-e permanece desligada nesta etapa. O gate está preparado, mas não envia nota automaticamente.</div>':'')+
+      '</div>'+
+      '<div class="rule-notice" style="margin-top:8px">'+
+      '<strong>Fechamento: Entrega '+(delivered?'✓':'pendente')+' · Recebimento '+(paid?'✓':'pendente')+' · Fiscal '+esc(fiscalLabel)+'</strong>'+
+      '<div style="margin-top:5px">Total: '+money(f.total_cents||o.total_cents||0)+(paid&&f.settled_amount_cents!=null?' · Recebido: '+money(f.settled_amount_cents):'')+'</div>'+
       reason+
-      (emissionOff?'<div class="sub" style="margin-top:5px">Emissão de NF-e permanece desligada nesta etapa. Nenhuma nota é enviada ao Bling automaticamente.</div>':'')+
-      (issued&&f.bling_invoice_number?'<div class="sub" style="margin-top:5px">NF-e '+esc(f.bling_invoice_number)+'</div>':'')+
-    '</div>';
+      '<div class="sub" style="margin-top:5px">Entrega e recebimento continuam sendo fatos separados do documento exigido para a saída.</div>'+
+      '</div>';
   }
 
   async function loadCurrentOrderFiscal(repaint=true){
@@ -2306,6 +2324,8 @@
       post_create_order_mismatch:'O pedido criado no Bling não conferiu com o total local',
       order_status_updates_disabled:'A situação foi atualizada no Admin, mas o aplicativo Bling ainda não tem permissão para alterar situações de pedidos',
       order_status_mapping_not_approved:'A situação foi atualizada no Admin, mas o mapeamento de situações do Bling ainda não foi aprovado',
+      fiscal_dispatch_gate_unavailable:'Não consegui conferir o fiscal antes da saída. Tente novamente.',
+      fiscal_dispatch_not_authorized:'A saída está bloqueada até a autorização fiscal.',
       customer_not_linked:'Cliente ainda não vinculado ao Bling',
       unresolved_products:'Há produtos sem vínculo com o Bling'
     };
@@ -2489,6 +2509,8 @@
     const consumed=o.payment_method_snapshot?.stock_consumed===true;
     const problems=orderProblemReasons(o);
     const mustFix=problems.length>0&&['created','confirmed','ready','out_for_delivery'].includes(o.status);
+    const dispatchGate=state.currentOrderFiscal?.dispatch_gate||null;
+    const fiscalDispatchBlocked=o.status==='ready'&&dispatchGate?.enforced===true&&dispatchGate?.allowed!==true;
     let primary='';
     if(mustFix)primary='<button class="primary" type="button" disabled>Corrija os dados antes de avançar</button>';
     if(!mustFix&&o.status==='created')primary='<button class="primary" id="advanceOrder" data-next="confirmed" type="button">Confirmar pedido</button>';
@@ -2496,6 +2518,7 @@
     else if(!mustFix&&o.status==='confirmed'&&consumed)primary='<button class="primary" id="advanceOrder" data-next="processing" type="button">Continuar separação</button>';
     else if(o.status==='processing'&&!consumed)primary='<button class="primary" id="startSeparation" type="button">Regularizar separação</button>';
     else if(o.status==='processing')primary='<button class="primary" id="advanceOrder" data-next="ready" type="button">Finalizar separação</button>';
+    else if(!mustFix&&o.status==='ready'&&fiscalDispatchBlocked)primary='<button class="primary" type="button" disabled>Fiscal pendente antes da saída</button>';
     else if(!mustFix&&o.status==='ready')primary='<button class="primary" id="advanceOrder" data-next="out_for_delivery" type="button">Marcar saída para entrega</button>';
     else if(!mustFix&&o.status==='out_for_delivery')primary='<button class="primary" id="advanceOrder" data-next="delivered" type="button">Confirmar entrega</button>';
     const docs=[];
