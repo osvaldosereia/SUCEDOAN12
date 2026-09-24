@@ -1898,6 +1898,18 @@ async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
 
   const c=control.data||{};
   const f=cfg.data||{};
+  let dispatchPreview:any=null;
+  if(order.status==="ready"){
+    try{
+      dispatchPreview=await blingHubVitrineDispatchFiscalPreview(sb,resolved.source_order_id);
+    }catch(e){
+      dispatchPreview={
+        ok:false,error:"fiscal_dispatch_preview_unavailable",
+        detail:clean((e as Error)?.message||e,240),
+        external_write:false,external_side_effect:false
+      };
+    }
+  }
   return {
     ok:true,
     source_order_id:resolved.source_order_id,
@@ -1936,6 +1948,7 @@ async function blingHubVitrineFiscalStatus(sb:any,sourceOrderIdRaw:any){
       dispatch_invoice_canary_source_order_id:uuid(f.dispatch_invoice_canary_source_order_id)||null
     },
     dispatch_gate:dispatchGate.data||null,
+    dispatch_preview:dispatchPreview,
     invoice_issue_available:Boolean(f.enabled&&f.bling_invoice_prepare_enabled&&f.bling_invoice_send_enabled),
     external_write:false,
     external_side_effect:false
