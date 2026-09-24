@@ -3591,8 +3591,7 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any){
       domain:"product",
       source_system:"canonical",
       source_id:productId,
-      bling_id:blingId,
-      details:{ok:false,stage:"patch",status:write.status,error:write.error||null,before_tributacao:beforeTrib,proposed_patch:patchPayload,external_write:true}
+      details:{ok:false,stage:"patch",bling_product_id:blingId,status:write.status,error:write.error||null,before_tributacao:beforeTrib,proposed_patch:patchPayload,external_write:true}
     });
     return {ok:false,status:Number(write.status||409),error:"bling_product_patch_failed",provider_error:write.error||null,external_write:true,bling_mutations:0};
   }
@@ -3605,8 +3604,7 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any){
       domain:"product",
       source_system:"canonical",
       source_id:productId,
-      bling_id:blingId,
-      details:{ok:false,stage:"verify_read",status:after.status,before_tributacao:beforeTrib,proposed_patch:patchPayload,external_write:true}
+      details:{ok:false,stage:"verify_read",bling_product_id:blingId,status:after.status,before_tributacao:beforeTrib,proposed_patch:patchPayload,external_write:true}
     });
     return {ok:false,status:502,error:"bling_product_verify_read_failed",external_write:true,bling_mutations:1};
   }
@@ -3630,9 +3628,9 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any){
     domain:"product",
     source_system:"canonical",
     source_id:productId,
-    bling_id:blingId,
     details:{
       ok:verified,
+      bling_product_id:blingId,
       stage:"verified",
       before_tributacao:beforeTrib,
       after_tributacao:afterTrib,
@@ -3678,10 +3676,8 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any){
       read_only:false
     }
   },{onConflict:"evidence_key"});
-  if(ev.error)throw ev.error;
-
-  await sb.rpc("refresh_product_fiscal_evidence_quality_v1").catch(()=>{});
-  await sb.rpc("refresh_product_fiscal_rule_integrity_v1").catch(()=>{});
+  const qualityRefresh=await sb.rpc("refresh_product_fiscal_evidence_quality_v1");
+  const integrityRefresh=await sb.rpc("refresh_product_fiscal_rule_integrity_v1");
 
   return {
     ok:true,
@@ -3692,7 +3688,11 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any){
     other_tax_fields_stable:otherTaxFieldsStable,
     external_write:true,
     bling_mutations:1,
-    verified:true
+    verified:true,
+    evidence_persisted:!ev.error,
+    evidence_error:ev.error?clean(ev.error.message,300):null,
+    quality_refresh_ok:!qualityRefresh.error,
+    integrity_refresh_ok:!integrityRefresh.error
   };
 }
 async function blingHubLookupProductByExactGtin(sb:any,token:string,gtinRaw:any){
@@ -5453,8 +5453,18 @@ Deno.serve(async(req:Request)=>{
         return json(result,result.ok?200:207);
       }
       if(subaction==="product_fiscal_cest_canary"){
-        const result=await blingHubProductFiscalCestCanary(sb,body);
-        return json(result,result.ok?200:Number(result.status||409));
+        try{
+          const result=await blingHubProductFiscalCestCanary(sb,body);
+          return json(result,result.ok?200:Number(result.status||409));
+        }catch(e){
+          return json({
+            ok:false,
+            error:"product_fiscal_cest_canary_exception",
+            detail:clean((e as Error)?.message||e,500),
+            external_write:"unknown_possible",
+            requires_verification:true
+          },502);
+        }
       }
       if(subaction==="reconcile_products_readonly"){
         const result=await blingHubReconcileProductsReadonly(sb,body?.items);
