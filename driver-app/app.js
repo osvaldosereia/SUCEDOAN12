@@ -100,7 +100,7 @@ async function act(action,stopId,extra={}){try{const result=await dispatchOrQueu
 async function deliverCovered(stop){try{const result=await act('delivered',stop.id,{proof:{method:'driver_confirmation'}});if(result?.queued)showNotice('Entrega salva offline; nenhuma confirmação financeira foi antecipada.');else showNotice('Entrega registrada. O financeiro permanece separado da confirmação fiscal.')}catch{}}
 async function fail(stopId){const incident=prompt('Motivo: customer_absent, address_issue, payment_issue, vehicle_issue, delay, damage, safety ou other','customer_absent')||'other';const notes=prompt('Observação curta (opcional)','')||'';try{await dispatchOrQueue({action:'failed',stop_id:stopId,incident_type:incident,notes});await loadRoute()}catch(e){alert(`Falha ao registrar ocorrência: ${e.message}`)}}
 
-function parseMoneyInput(v){const normalized=String(v||'').trim().replace(/\s/g,'').replace(/\./g,'').replace(',','.');const n=Number(normalized);return Number.isFinite(n)&&n>=0?Math.round(n*100):null}
+function parseMoneyInput(v){let normalized=String(v||'').trim().replace(/\s/g,'');if(normalized.includes(',')&&normalized.includes('.'))normalized=normalized.replace(/\./g,'').replace(',','.');else if(normalized.includes(','))normalized=normalized.replace(',','.');const n=Number(normalized);return Number.isFinite(n)&&n>=0?Math.round(n*100):null}
 const centsInput=cents=>(Number(cents||0)/100).toFixed(2).replace('.',',');
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const paymentUiMethod=expected=>expected==='cash'?'cash':expected==='pix'?'pix':expected==='payment_link'?'payment_link':expected==='card'?'credit_card':'credit_card';
@@ -148,8 +148,13 @@ function renderPaymentRows(){
       ${row.method!=='cash'?`<label>Referência/NSU <span class="optional">(opcional)</span><input class="payment-reference" type="text" maxlength="120" value="${esc(row.reference)}" placeholder="Não informe número do cartão"></label>`:''}
     `;
     item.querySelector('.payment-method').onchange=e=>updatePaymentRow(row.id,'method',e.target.value);
-    item.querySelector('.payment-amount').oninput=e=>{row.amount=e.target.value;refreshPaymentTotals()};
-    item.querySelector('.payment-tender')?.addEventListener('input',e=>{row.tender=e.target.value;renderPaymentRows()});
+    const refreshRowChange=()=>{
+      const amountNow=paymentAmount(row)||0,tenderNow=row.method==='cash'?parseMoneyInput(row.tender):null;
+      const changeEl=item.querySelector('.payment-change');
+      if(changeEl)changeEl.innerHTML=tenderNow!=null?(tenderNow>=amountNow?`Troco: <b>${money(tenderNow-amountNow)}</b>`:'Valor entregue menor que esta parte do pagamento.'):'Informe o valor entregue se houver troco.';
+    };
+    item.querySelector('.payment-amount').oninput=e=>{row.amount=e.target.value;refreshRowChange();refreshPaymentTotals()};
+    item.querySelector('.payment-tender')?.addEventListener('input',e=>{row.tender=e.target.value;refreshRowChange();refreshPaymentTotals()});
     item.querySelector('.payment-reference')?.addEventListener('input',e=>{row.reference=e.target.value});
     item.querySelector('.remove-payment')?.addEventListener('click',()=>removePaymentRow(row.id));
     host.append(item);
