@@ -867,6 +867,89 @@ async function vitrineHistoryBridgeAuthorized(req:Request){
   return supplied===String(q.data.secret_value);
 }
 
+async function postOrderCrossSellReply(payload:any){
+  const phone=normalizeWhatsappPhone(payload?.phone);
+  const message=String(payload?.message||'').trim().slice(0,500);
+  if(!phone||!message)return {handled:false,reason:'missing_phone_or_message'};
+
+  const nowIso=new Date().toISOString();
+  const sessions=await db.from('post_order_cross_sell_sessions')
+    .select('id,order_id,status,expires_at,selected_count,sent_at')
+    .in('status',['sent','sent_test'])
+    .gt('expires_at',nowIso)
+    .order('sent_at',{ascending:false})
+    .limit(20);
+  if(sessions.error)throw sessions.error;
+  if(!(sessions.data||[]).length)return {handled:false,reason:'no_open_session'};
+
+  const orderIds=[...new Set((sessions.data||[]).map((s:any)=>s.order_id).filter(Boolean))];
+  const orders=await db.from('orders')
+    .select('id,whatsapp_phone_e164,total_cents,status')
+    .eq('organization_id',ORG_ID)
+    .in('id',orderIds);
+  if(orders.error)throw orders.error;
+  const orderMap=new Map((orders.data||[]).map((o:any)=>[o.id,o]));
+  const phoneTail=String(phone).replace(/\D+/g,'').slice(-8);
+
+  const session=(sessions.data||[]).find((s:any)=>{
+    const o=orderMap.get(s.order_id);
+    return o&&String(o.whatsapp_phone_e164||'').replace(/\D+/g,'').slice(-8)===phoneTail;
+  });
+  if(!session)return {handled:false,reason:'no_open_session_for_phone'};
+
+  const parsed=await db.rpc('parse_post_order_cross_sell_reply_v1',{
+    p_text:message,
+    p_max_position:Number(session.selected_count||10)
+  });
+  if(parsed.error)throw parsed.error;
+  const intent=String(parsed.data?.intent||'unknown');
+  if(intent==='unknown')return {handled:false,reason:'reply_not_recognized',session_id:session.id};
+
+  if(intent==='decline'){
+    const declined=await db.rpc('decline_post_order_cross_sell_v1',{p_session_id:session.id});
+    if(declined.error)throw declined.error;
+    if(declined.data?.ok!==true)return {handled:false,reason:declined.data?.error||'decline_failed',session_id:session.id};
+    return {
+      handled:true,
+      intent:'decline',
+      session_id:session.id,
+      message:'Tudo certo 😊 Vou manter seu pedido como está.'
+    };
+  }
+
+  const positions=Array.isArray(parsed.data?.positions)?parsed.data.positions.map((n:any)=>Number(n)).filter((n:any)=>Number.isInteger(n)):[];
+  const accepted=await db.rpc('accept_post_order_cross_sell_v1',{
+    p_session_id:session.id,
+    p_positions:positions
+  });
+  if(accepted.error)throw accepted.error;
+  if(accepted.data?.ok!==true){
+    const err=String(accepted.data?.error||'accept_failed');
+    const friendly=err==='session_expired'
+      ?'Essa seleção já expirou. Seu pedido original continua confirmado.'
+      :err==='separation_already_started'
+        ?'Seu pedido já entrou em separação, então não consigo acrescentar esses itens agora.'
+        :'Não consegui acrescentar esses itens agora. Seu pedido original continua confirmado.';
+    return {handled:true,intent:'select_failed',session_id:session.id,error:err,message:friendly};
+  }
+
+  try{await syncVitrineOrderHistory(db,session.order_id,ORG_ID)}catch{}
+  const count=Number(accepted.data?.added_count||positions.length||0);
+  const total=Number(accepted.data?.new_total_cents||0);
+  const list=positions.join(' e ');
+  return {
+    handled:true,
+    intent:'select',
+    session_id:session.id,
+    order_id:session.order_id,
+    positions,
+    added_count:count,
+    added_revenue_cents:Number(accepted.data?.added_revenue_cents||0),
+    new_total_cents:total,
+    message:'Pronto 😊 Acrescentei '+(positions.length===1?'o produto '+list:'os produtos '+list)+' ao seu pedido. Novo total: '+Number(total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+'.'
+  };
+}
+
 async function postOrderCrossSellContext(payload:any){
   const suffix=String(payload?.order_suffix??'').replace(/\D+/g,'').slice(-12);
   const phone=normalizeWhatsappPhone(payload?.phone);
@@ -1043,6 +1126,12 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET" && action === "resolve_identity_token") {
       const result=await resolveLegacyStorefrontIdentityToken(url.searchParams.get("token"));
       if(result.error)return json({ok:false,...result},result.status||400,{"Cache-Control":"no-store"});
+      return json({ok:true,...result},200,{"Cache-Control":"no-store"});
+    }
+    if (req.method === "POST" && action === "post_order_cross_sell_reply") {
+      if(!(await vitrineHistoryBridgeAuthorized(req)))return json({ok:false,error:"unauthorized"},401,{"Cache-Control":"no-store"});
+      const payload=await req.json().catch(()=>({}));
+      const result=await postOrderCrossSellReply(payload);
       return json({ok:true,...result},200,{"Cache-Control":"no-store"});
     }
     if (req.method === "POST" && action === "post_order_cross_sell_context") {
