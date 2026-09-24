@@ -61,6 +61,69 @@ function normalizeTags(body:any){
   return {present:true,source:found.path,tags};
 }
 
+function validCoordinate(value:any,min:number,max:number){
+  const n=Number(value);
+  return Number.isFinite(n)&&n>=min&&n<=max?n:null;
+}
+
+function normalizeLocationObject(value:any,sourcePath:string){
+  if(typeof value==='string'){
+    const raw=value.trim();
+    if(raw.startsWith('{')){
+      try{return normalizeLocationObject(JSON.parse(raw),sourcePath)}catch{}
+    }
+    const match=raw.match(/(-?\d{1,2}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)/);
+    if(match){
+      const latitude=validCoordinate(match[1],-90,90),longitude=validCoordinate(match[2],-180,180);
+      if(latitude!==null&&longitude!==null)return {latitude,longitude,source_path:sourcePath,name:null,address:null,accuracy_m:null};
+    }
+    return null;
+  }
+  if(!value||typeof value!=='object'||Array.isArray(value))return null;
+  const latitude=validCoordinate(value.latitude??value.lat??value.latitudeDegrees,-90,90);
+  const longitude=validCoordinate(value.longitude??value.lng??value.lon??value.long??value.longitudeDegrees,-180,180);
+  if(latitude===null||longitude===null)return null;
+  const accuracy=Number(value.accuracy??value.accuracy_m??value.horizontal_accuracy);
+  return {
+    latitude,longitude,source_path:sourcePath,
+    name:clean(value.name??value.title,180)||null,
+    address:clean(value.address??value.formatted_address,500)||null,
+    accuracy_m:Number.isFinite(accuracy)&&accuracy>=0?accuracy:null
+  };
+}
+
+function extractLocation(body:any){
+  for(const path of [
+    'location','message.location','data.message.location','payload.message.location',
+    'data.location','payload.location','message.data.location','event.message.location'
+  ]){
+    const location=normalizeLocationObject(getPath(body,path),path);
+    if(location)return location;
+  }
+  const pairs=[
+    ['latitude','longitude','root'],
+    ['lat','lng','root_short'],
+    ['message.latitude','message.longitude','message'],
+    ['data.latitude','data.longitude','data'],
+    ['data.message.latitude','data.message.longitude','data.message'],
+    ['payload.latitude','payload.longitude','payload'],
+    ['location.latitude','location.longitude','flat.location'],
+    ['message.location.latitude','message.location.longitude','flat.message.location'],
+    ['data.message.location.latitude','data.message.location.longitude','flat.data.message.location']
+  ];
+  for(const [latPath,lngPath,label] of pairs){
+    const latRaw=getPath(body,latPath)??body?.[latPath];
+    const lngRaw=getPath(body,lngPath)??body?.[lngPath];
+    const latitude=validCoordinate(latRaw,-90,90),longitude=validCoordinate(lngRaw,-180,180);
+    if(latitude!==null&&longitude!==null)return {latitude,longitude,source_path:label,name:null,address:null,accuracy_m:null};
+  }
+  return null;
+}
+
+const locationMapsUrl=(location:any)=>location
+  ?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(String(location.latitude)+','+String(location.longitude))}`
+  :'';
+
 async function parseBody(req:Request){
   const type=(req.headers.get('content-type')||'').toLowerCase();
   if(type.includes('application/json'))return await req.json().catch(()=>({}));
@@ -105,8 +168,9 @@ Deno.serve(async(req:Request)=>{
   const externalMessageId=pick(body,['message_id','messageId','message.id','data.message.id','payload.message.id']);
   const externalEventId=pick(body,['event_id','eventId','event.id','data.event.id','payload.event.id']);
   const rawMessageType=pick(body,['message_type','type','message.type','data.message.type']).toLowerCase();
+  const location=extractLocation(body);
   const allowedMessageTypes=new Set(['text','image','audio','video','document','location','reaction','button','quick_reply']);
-  const normalizedMessageType=allowedMessageTypes.has(rawMessageType)?rawMessageType:(message?'text':'unknown');
+  const normalizedMessageType=location?'location':allowedMessageTypes.has(rawMessageType)?rawMessageType:(message?'text':'unknown');
   const tagObservation=normalizeTags(body);
   const receivedAt=new Date().toISOString();
 
@@ -122,7 +186,17 @@ Deno.serve(async(req:Request)=>{
     event_type:rawMessageType||normalizedMessageType,
     tags_field_present:tagObservation.present,
     tags_source:tagObservation.source,
-    provider_contact_id:contactId||null
+    provider_contact_id:contactId||null,
+    location:location?{
+      latitude:location.latitude,
+      longitude:location.longitude,
+      accuracy_m:location.accuracy_m,
+      name:location.name,
+      address:location.address,
+      source_path:location.source_path,
+      google_maps_url:locationMapsUrl(location),
+      coordinate_source:'customer_pin'
+    }:null
   };
 
   const {data:ingested,error:ingestError}=await sb.rpc('ingest_channel_adapter_event_v1',{
@@ -187,13 +261,37 @@ Deno.serve(async(req:Request)=>{
     provider_external_user_id:phone,
     adapter_customer_found:Boolean(ingested?.customer_id),
     adapter_received_at:receivedAt,
-    adapter_version:ADAPTER_VERSION
+    adapter_version:ADAPTER_VERSION,
+    ...(location?{location_pin:{
+      latitude:location.latitude,
+      longitude:location.longitude,
+      accuracy_m:location.accuracy_m,
+      google_maps_url:locationMapsUrl(location),
+      coordinate_source:'customer_pin',
+      confirmed_at:receivedAt,
+      provider_message_id:externalMessageId||null
+    }}:{})
   }}).eq('id',room.session_id);
 
   let customer:any=null;
+  let locationPersistence:any=null;
   if(ingested?.customer_id){
     const customerR=await sb.from('customers').select('id,name,primary_whatsapp_e164').eq('id',ingested.customer_id).maybeSingle();
     customer=customerR.data||null;
+    if(location){
+      const persisted=await sb.rpc('capture_customer_location_pin_v1',{
+        p_customer_id:ingested.customer_id,
+        p_conversation_id:conversationId,
+        p_catalog_session_id:room.session_id,
+        p_latitude:location.latitude,
+        p_longitude:location.longitude,
+        p_provider_message_id:externalMessageId||null,
+        p_captured_at:receivedAt
+      });
+      locationPersistence=persisted.error
+        ?{ok:false,error:clean(persisted.error.message,300)}
+        :persisted.data;
+    }
   }
 
   return response({
@@ -207,6 +305,14 @@ Deno.serve(async(req:Request)=>{
     contact:{name:customer?.name||contactName||null,phone,contact_id:contactId||null},
     tags_observed:tagObservation.present,
     tag_count:tagObservation.tags.length,
+    location_received:Boolean(location),
+    location:location?{
+      latitude:location.latitude,
+      longitude:location.longitude,
+      google_maps_url:locationMapsUrl(location),
+      coordinate_source:'customer_pin'
+    }:null,
+    location_persistence:locationPersistence,
     shopping_url:room.url,
     session_id:room.session_id,
     conversation_id:conversationId,
