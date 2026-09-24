@@ -2064,7 +2064,7 @@ async function blingHubVitrineConfirmFiscalPayment(sb:any,sourceOrderIdRaw:any,p
 async function blingHubReadinessExtended(sb:any){
   const r=await sb.rpc("bling_hub_readiness_v2");
   if(r.error)throw r.error;
-  const [links,customerLinks,orderLinks,webhookInbox,fiscalConfig,fiscalControls,fiscalJobs,runtimeMeta]=await Promise.all([
+  const [links,customerLinks,orderLinks,webhookInbox,fiscalConfig,fiscalControls,fiscalJobs,dispatchFiscalJobs,runtimeMeta]=await Promise.all([
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","product").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","canonical_ssbes").eq("entity_type","customer").limit(5000),
     sb.from("bling_hub_entity_links_v2").select("status").eq("source_system","vitrine_qx").eq("entity_type","order").limit(5000),
@@ -2072,6 +2072,7 @@ async function blingHubReadinessExtended(sb:any){
     sb.from("fiscal_runtime_config").select("enabled,execution_mode,bling_invoice_prepare_enabled,bling_invoice_send_enabled,require_delivery_confirmation,require_payment_confirmation,canary_percent,dispatch_gate_mode,require_fiscal_authorization_before_dispatch,dispatch_fiscal_canary_enabled,dispatch_fiscal_canary_armed_at,dispatch_invoice_generate_enabled,dispatch_invoice_authorize_enabled,dispatch_invoice_canary_source_order_id").eq("id",1).maybeSingle(),
     sb.from("order_fiscal_controls").select("fiscal_status").limit(5000),
     sb.from("fiscal_issue_jobs").select("status,external_side_effect").limit(5000),
+    sb.from("dispatch_fiscal_jobs").select("status,external_side_effect").limit(5000),
     sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle()
   ]);
   if(links.error)throw links.error;
@@ -2081,6 +2082,7 @@ async function blingHubReadinessExtended(sb:any){
   if(fiscalConfig.error)throw fiscalConfig.error;
   if(fiscalControls.error)throw fiscalControls.error;
   if(fiscalJobs.error)throw fiscalJobs.error;
+  if(dispatchFiscalJobs.error)throw dispatchFiscalJobs.error;
   if(runtimeMeta.error)throw runtimeMeta.error;
   const counts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
   const customerCounts:any={total:0,matched:0,not_found:0,ambiguous:0,review_required:0,unresolved:0,inactive:0};
@@ -2088,6 +2090,7 @@ async function blingHubReadinessExtended(sb:any){
   const webhookCounts:any={total:0,held:0,received:0,processing:0,processed:0,ignored:0,review_required:0,retry:0,failed:0};
   const fiscalCounts:any={total:0,blocked:0,ready:0,queued:0,issued:0,review_required:0,cancelled:0};
   const fiscalJobCounts:any={total:0,held:0,ready:0,processing:0,issued:0,review_required:0,error:0,cancelled:0,external_side_effect:0};
+  const dispatchFiscalJobCounts:any={total:0,held:0,ready:0,generating:0,generated:0,authorizing:0,authorized:0,review_required:0,error:0,cancelled:0,external_side_effect:0};
   for(const row of links.data||[]){counts.total++;counts[row.status]=(counts[row.status]||0)+1;}
   for(const row of customerLinks.data||[]){customerCounts.total++;customerCounts[row.status]=(customerCounts[row.status]||0)+1;}
   for(const row of orderLinks.data||[]){orderCounts.total++;orderCounts[row.status]=(orderCounts[row.status]||0)+1;}
@@ -2097,6 +2100,11 @@ async function blingHubReadinessExtended(sb:any){
     fiscalJobCounts.total++;
     fiscalJobCounts[row.status]=(fiscalJobCounts[row.status]||0)+1;
     if(row.external_side_effect===true)fiscalJobCounts.external_side_effect++;
+  }
+  for(const row of dispatchFiscalJobs.data||[]){
+    dispatchFiscalJobCounts.total++;
+    dispatchFiscalJobCounts[row.status]=(dispatchFiscalJobCounts[row.status]||0)+1;
+    if(row.external_side_effect===true)dispatchFiscalJobCounts.external_side_effect++;
   }
   const fiscalReadiness={
     config:fiscalConfig.data||{
@@ -2109,10 +2117,15 @@ async function blingHubReadinessExtended(sb:any){
     },
     controls:fiscalCounts,
     jobs:fiscalJobCounts,
+    dispatch_jobs:dispatchFiscalJobCounts,
     safe_off:!(fiscalConfig.data?.enabled)
       && !(fiscalConfig.data?.bling_invoice_prepare_enabled)
       && !(fiscalConfig.data?.bling_invoice_send_enabled)
+      && !(fiscalConfig.data?.dispatch_fiscal_canary_enabled)
+      && !(fiscalConfig.data?.dispatch_invoice_generate_enabled)
+      && !(fiscalConfig.data?.dispatch_invoice_authorize_enabled)
       && fiscalJobCounts.external_side_effect===0
+      && dispatchFiscalJobCounts.external_side_effect===0
   };
   return {
     ...(r.data||{}),
