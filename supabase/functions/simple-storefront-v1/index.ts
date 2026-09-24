@@ -675,6 +675,17 @@ async function submitOrder(payload:any) {
 
   const historySync=await syncVitrineOrderHistory(db,order.id,ORG_ID);
   if(!historySync.ok)console.error("vitrine_history_sync_failed",historySync.error);
+
+  // post_order_cross_sell_shadow_schedule
+  // Shadow only: records eligibility and suggestions, never sends WhatsApp or changes the order.
+  const shadowWork=db.rpc("prepare_post_order_cross_sell_shadow_v1",{p_order_id:order.id})
+    .then(({error}:any)=>{if(error)console.error("cross_sell_shadow_prepare_failed",error.message||error)});
+  try{
+    const runtime=(globalThis as any).EdgeRuntime;
+    if(runtime?.waitUntil)runtime.waitUntil(shadowWork);
+    else await shadowWork;
+  }catch(e){console.error("cross_sell_shadow_schedule_failed",String((e as Error)?.message||e))}
+
   return {order_id:order.id,order_number:order.order_number,total_cents:order.total_cents,phone_attached:Boolean(whatsappPhone),customer_status:customerSnapshot.customer_status,minimum_order_cents:MINIMUM_ORDER_CENTS,delivery,history_synced:Boolean(historySync.ok)};
 }
 
