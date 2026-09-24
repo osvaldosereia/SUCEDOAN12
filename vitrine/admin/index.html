@@ -1531,7 +1531,19 @@
     if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
     btn.disabled=true;
     try{
-      await api('product_active',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,active:next})});
+      try{
+        await api('product_active',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,active:next})});
+      }catch(e){
+        if(String(e?.message||'')!=='not_found')throw e;
+        await api('product_save',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          id:product.id,name:product.name,sku:product.sku,gtin:product.gtin,
+          sale_price_cents:Number(product.sale_price_cents||0),stock_quantity:Number(product.stock_quantity||0),
+          expiration_date:product.expiration_date||null,
+          auto_expiry_offer_enabled:product.auto_expiry_offer_enabled===true,
+          category:product.category||'',subcategory:product.subcategory||'',packaging:product.packaging||'',
+          image_url:product.image_url||'',description:product.description||'',active:next
+        })});
+      }
       toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
       await loadProducts($('#productSearch')?.value.trim()||'',false);
     }catch(e){
@@ -1693,13 +1705,47 @@
     $('#refreshExpiry').onclick=loadExpirations;
     await loadExpirations();
   }
+  function expiryRangeSummary(products,inventory={}){
+    return {
+      expired:products.filter(p=>Number(p.days_left)<0).length,
+      under_30:products.filter(p=>Number(p.days_left)>=0&&Number(p.days_left)<30).length,
+      days_30_59:products.filter(p=>Number(p.days_left)>=30&&Number(p.days_left)<60).length,
+      days_60_90:products.filter(p=>Number(p.days_left)>=60&&Number(p.days_left)<=90).length,
+      without_expiration:inventory.without_expiration??'—',
+      auto_enabled:inventory.auto_enabled??'—',
+      total_products:inventory.total_products??'—'
+    };
+  }
+  async function activeValidityInventorySummary(){
+    let offset=0,pages=0,total=0,without=0,auto=0;
+    while(offset!=null&&pages<100){
+      const page=await api('products',{offset,limit:100});
+      const rows=page.products||[];
+      for(const p of rows){
+        if(p.active===false)continue;
+        total++;
+        if(!p.expiration_date)without++;
+        if(p.auto_expiry_offer_enabled===true)auto++;
+      }
+      offset=page.next_offset;
+      pages++;
+    }
+    return {total_products:total,without_expiration:without,auto_enabled:auto};
+  }
   async function loadExpirations(){
     const host=$('#expiryRows');
     try{
       const data=await api('expirations');
-      state.expiryProducts=data.products||[];state.expirySummary=data.summary||{};
+      state.expiryProducts=(data.products||[]).filter(p=>p.active!==false);
+      if(data.active_only===true){
+        state.expirySummary=data.summary||{};
+      }else{
+        let inventory={};
+        try{inventory=await activeValidityInventorySummary()}catch{}
+        state.expirySummary=expiryRangeSummary(state.expiryProducts,inventory);
+      }
       $('#expirySummary').innerHTML=renderExpirySummary(state.expirySummary);
-      host.innerHTML=state.expiryProducts.length?state.expiryProducts.map(expiryRow).join(''):'<div class="empty">Nenhum produto com validade nos próximos 90 dias.</div>';
+      host.innerHTML=state.expiryProducts.length?state.expiryProducts.map(expiryRow).join(''):'<div class="empty">Nenhum produto ativo com validade nos próximos 90 dias.</div>';
       host.querySelectorAll('[data-expiry-date]').forEach(el=>el.onchange=()=>saveExpiryRow(el.closest('[data-expiry-row]')));
       host.querySelectorAll('[data-expiry-auto]').forEach(el=>el.onchange=()=>saveExpiryRow(el.closest('[data-expiry-row]')));
       host.querySelectorAll('[data-expiry-edit]').forEach(btn=>btn.onclick=()=>openProductEditor(state.expiryProducts.find(p=>p.id===btn.dataset.expiryEdit)));

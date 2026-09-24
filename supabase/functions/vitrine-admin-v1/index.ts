@@ -403,7 +403,7 @@ async function listExpirations() {
     auto_enabled:Number(autoRes.count??0),
     total_products:Number(totalRes.count??0)
   };
-  return {today,horizon,summary,products,reconcile:reconcile.data??null};
+  return {today,horizon,active_only:true,summary,products,reconcile:reconcile.data??null};
 }
 
 async function saveExpiration(payload:any) {

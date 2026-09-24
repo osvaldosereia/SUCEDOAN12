@@ -7,7 +7,10 @@ const migration=fs.readFileSync('supabase/migrations/20260924235900_vitrine_inac
 
 assert.match(admin,/data-product-active/);
 assert.match(admin,/Produtos inativos ficam fora dos cálculos de validade/);
+assert.match(admin,/activeValidityInventorySummary/);
+assert.match(admin,/product_save/);
 assert.match(api,/product_active/);
+assert.match(api,/active_only:true/);
 assert.match(api,/async function setProductActive/);
 
 const expiry=api.slice(api.indexOf('async function listExpirations()'),api.indexOf('async function saveExpiration'));
