@@ -913,6 +913,34 @@ async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactN
   }
 }
 
+
+function storefrontLinkIntent(messageValue:any){
+  const raw=String(messageValue??'').replace(/\s+/g,' ').trim();
+  if(!raw)return {eligible:false,reason:'empty_message'};
+  const text=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+  if(/nao foi possivel exibir esta mensagem no papoai|abra o whatsapp no seu celular/i.test(text)){
+    return {eligible:false,reason:'papoai_placeholder'};
+  }
+  if(/\bteste\s+link\b/.test(text)){
+    return {eligible:true,reason:'explicit_test'};
+  }
+  if(/\b(catalogo|vitrine)\b/.test(text)){
+    return {eligible:true,reason:'catalog_or_storefront'};
+  }
+  if(/\b(cesta|cestas|oferta|ofertas|promocao|promocoes)\b/.test(text)){
+    return {eligible:true,reason:'basket_or_offer'};
+  }
+  if(/\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|abrir|acessar)\b.{0,55}\b(produto|produtos|opcao|opcoes|loja|comprar|compra)\b/.test(text)
+     || /\b(produto|produtos|opcao|opcoes|loja)\b.{0,55}\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|abrir|acessar)\b/.test(text)){
+    return {eligible:true,reason:'browse_intent'};
+  }
+  if(/\b(quero|queria|gostaria|vou|preciso)\s+(comprar|fazer\s+(uma\s+)?compra|pedir|fazer\s+(um\s+)?pedido)\b/.test(text)){
+    return {eligible:true,reason:'purchase_intent'};
+  }
+  return {eligible:false,reason:'no_storefront_intent'};
+}
+
 async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlationId:string){
   try{
     const contactName=extractPapoAiContactName(body);
@@ -940,12 +968,20 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
       || ''
     ).slice(0,120);
 
+    const flowLike=
+      /data_sharing_consent\s*:/i.test(messageText)
+      && /flow_token\s*:/i.test(messageText);
+    const storefrontDecision=flowLike
+      ? {eligible:false,reason:'flow_payload'}
+      : storefrontLinkIntent(messageText);
+
     const baseParsedData:any={
       probe:true,
       event_type:eventType||null,
       message_type:messageType||null,
       message_text:messageText||null,
-      detected_flow_data:Object.keys(flat).length?flat:null
+      detected_flow_data:Object.keys(flat).length?flat:null,
+      storefront_link_decision:storefrontDecision
     };
 
     const ins=await sb.from('papoai_flow_customer_webhook_events').insert({
@@ -958,41 +994,40 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
     }).select('id').single();
     if(ins.error)throw ins.error;
 
-    const syncAndPersist=async()=>{
-      const storefrontLinkSync=phone
-        ? await syncPapoAiStorefrontIdentityLink(sb,phone,contactName)
-        : {ok:false,reason:'phone_missing'};
-      if(ins.data?.id){
-        try{
-          await sb.from('papoai_flow_customer_webhook_events').update({
-            parsed_data:{...baseParsedData,storefront_link_sync:storefrontLinkSync}
-          }).eq('id',ins.data.id);
-        }catch(error){
-          console.error('papoai_storefront_link_event_update_failed',correlationId,error);
-        }
-      }
-      return storefrontLinkSync;
-    };
-
-    const edgeRuntime=(globalThis as any)?.EdgeRuntime;
-    if(edgeRuntime?.waitUntil){
-      edgeRuntime.waitUntil(syncAndPersist());
-    }else{
-      // Fallback for local/non-Supabase runtimes.
-      await syncAndPersist();
-    }
-
-    const flowLike=
-      /data_sharing_consent\s*:/i.test(messageText)
-      && /flow_token\s*:/i.test(messageText);
     if(flowLike){
       return await handlePapoAiFlowCustomerWebhook(sb,req,body,correlationId);
+    }
+
+    if(storefrontDecision.eligible){
+      const syncAndPersist=async()=>{
+        const storefrontLinkSync=phone
+          ? await syncPapoAiStorefrontIdentityLink(sb,phone,contactName)
+          : {ok:false,reason:'phone_missing'};
+        if(ins.data?.id){
+          try{
+            await sb.from('papoai_flow_customer_webhook_events').update({
+              parsed_data:{...baseParsedData,storefront_link_sync:storefrontLinkSync}
+            }).eq('id',ins.data.id);
+          }catch(error){
+            console.error('papoai_storefront_link_event_update_failed',correlationId,error);
+          }
+        }
+        return storefrontLinkSync;
+      };
+
+      const edgeRuntime=(globalThis as any)?.EdgeRuntime;
+      if(edgeRuntime?.waitUntil){
+        edgeRuntime.waitUntil(syncAndPersist());
+      }else{
+        await syncAndPersist();
+      }
     }
 
     return jsonResponse({
       ok:true,
       probe:true,
-      storefront_link_sync:'scheduled',
+      storefront_link_sync:storefrontDecision.eligible?'scheduled':'skipped',
+      storefront_link_reason:storefrontDecision.reason,
       ignored_non_flow:true,
       correlation_id:correlationId
     });
