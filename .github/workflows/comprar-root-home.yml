@@ -75,6 +75,7 @@ on:
       - 'scripts/test-vitrine-expedition-fiscal-ready-v1.mjs'
       - 'scripts/test-vitrine-expedition-danfe-v1.mjs'
       - 'scripts/test-vitrine-operational-cutover-v1.mjs'
+      - 'scripts/test-vitrine-operational-only-final-v1.mjs'
       - 'scripts/test-vitrine-legacy-bling-queue-guard-v1.mjs'
       - 'scripts/test-bling-status-scope-noise-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
@@ -83,6 +84,7 @@ on:
       - 'supabase/functions/admin-service-intelligence-v1/**'
       - 'supabase/migrations/*stock*'
       - 'supabase/migrations/*vitrine_history*'
+      - 'supabase/migrations/*post_order_cross_sell*'
       - 'supabase/migrations/*bling_hub_v2*'
       - 'supabase/migrations/*fiscal*'
       - '.github/workflows/comprar-root-home.yml'
@@ -161,6 +163,7 @@ on:
       - 'scripts/test-vitrine-expedition-fiscal-ready-v1.mjs'
       - 'scripts/test-vitrine-expedition-danfe-v1.mjs'
       - 'scripts/test-vitrine-operational-cutover-v1.mjs'
+      - 'scripts/test-vitrine-operational-only-final-v1.mjs'
       - 'scripts/test-vitrine-legacy-bling-queue-guard-v1.mjs'
       - 'scripts/test-bling-status-scope-noise-v1.mjs'
       - 'supabase/functions/simple-storefront-v1/**'
@@ -169,6 +172,7 @@ on:
       - 'supabase/functions/admin-service-intelligence-v1/**'
       - 'supabase/migrations/*stock*'
       - 'supabase/migrations/*vitrine_history*'
+      - 'supabase/migrations/*post_order_cross_sell*'
       - 'supabase/migrations/*bling_hub_v2*'
       - 'supabase/migrations/*fiscal*'
       - '.github/workflows/comprar-root-home.yml'
@@ -260,5 +264,6 @@ jobs:
           node scripts/test-vitrine-expedition-fiscal-ready-v1.mjs
           node scripts/test-vitrine-expedition-danfe-v1.mjs
           node scripts/test-vitrine-operational-cutover-v1.mjs
+          node scripts/test-vitrine-operational-only-final-v1.mjs
           node scripts/test-vitrine-legacy-bling-queue-guard-v1.mjs
           node scripts/test-bling-status-scope-noise-v1.mjs
