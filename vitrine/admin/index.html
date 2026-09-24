@@ -195,8 +195,9 @@
   const money=c=>(Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
+  const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -895,9 +896,69 @@
     const content=$('#content');
     content.innerHTML='<div class="page-head"><div><h1>Mais</h1><p>Configurações e ferramentas que não fazem parte da rotina principal.</p></div></div>'+
       '<div class="ops-cards">'+
-        '<button class="ops-card" id="openBlingAdmin" type="button"><small>Integrações</small><strong style="font-size:18px">Bling</strong><span>Saúde, vínculos, filas e diagnóstico técnico.</span></button>'+
+        '<button class="ops-card" id="openFinanceAdmin" type="button"><small>Bling</small><strong style="font-size:18px">Financeiro</strong><span>Contas a pagar, receber, vencimentos e caixa projetado.</span></button>'+
+        '<button class="ops-card" id="openBlingAdmin" type="button"><small>Integrações</small><strong style="font-size:18px">Bling técnico</strong><span>Saúde, vínculos, filas e diagnóstico técnico.</span></button>'+
       '</div>';
+    $('#openFinanceAdmin').onclick=renderFinance;
     $('#openBlingAdmin').onclick=renderBling;
+  }
+
+  function financeSummaryCard(label,value,detail,kind=''){
+    return '<div class="bling-card '+esc(kind)+'"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span class="sub">'+esc(detail)+'</span></div>';
+  }
+  function financePriorityRow(r,today){
+    const isReceive=r.kind==='receivable';
+    const overdue=Boolean(r.due_date&&r.due_date<today);
+    const title=r.contact_name||r.document_number||r.origin_number||('Lançamento #'+String(r.id||''));
+    const detail=[r.document_number?'Doc. '+r.document_number:'',r.origin_number?'Origem '+r.origin_number:'',r.boleto_url?'Boleto emitido':'',r.pix_url?'PIX disponível':''].filter(Boolean).join(' · ');
+    return '<div class="closure-row">'+
+      '<div><strong class="'+(isReceive?'ok-text':'warn-text')+'">'+(isReceive?'Receber':'Pagar')+'</strong><span class="sub">'+(overdue?'<span class="danger-text">Vencido</span>':'Em aberto')+'</span></div>'+
+      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small></div>'+
+      '<div><strong>'+esc(dateOnly(r.due_date))+'</strong><span class="sub">'+(r.due_date===today?'Vence hoje':'Vencimento')+'</span></div>'+
+      '<strong>'+money(r.amount_cents)+'</strong>'+
+      '<span class="pill '+(overdue?'danger':'')+'">'+(r.boleto_url?'Boleto':r.pix_url?'PIX':'Aberto')+'</span>'+
+    '</div>';
+  }
+  function paintFinance(){
+    const host=$('#financeBody');if(!host)return;
+    const f=state.finance||{},rec=f.receivable||{},pay=f.payable||{},today=f.window?.today||'';
+    const priorities=Array.isArray(f.priority)?f.priority:[];
+    const accounts=Array.isArray(f.financial_accounts)?f.financial_accounts:[];
+    host.innerHTML=
+      (f.truncated?'<div class="rule-notice warn"><strong>Volume alto de lançamentos</strong><div>O painel exibiu o limite seguro desta primeira versão. Nenhum dado foi alterado.</div></div>':'')+
+      '<div class="bling-grid">'+
+        financeSummaryCard('A receber',money(rec.total_cents),String(rec.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('A pagar',money(pay.total_cents),String(pay.count||0)+' conta(s) em aberto')+
+        financeSummaryCard('Saldo projetado',money(f.projected_cents),(Number(f.projected_cents||0)>=0?'Recebimentos acima dos pagamentos':'Pagamentos acima dos recebimentos'),Number(f.projected_cents||0)<0?'danger':'')+
+        financeSummaryCard('Vencidos a receber',money(rec.overdue_cents),String(rec.overdue_count||0)+' vencido(s)',Number(rec.overdue_count||0)>0?'warn':'')+
+        financeSummaryCard('Vencidos a pagar',money(pay.overdue_cents),String(pay.overdue_count||0)+' vencido(s)',Number(pay.overdue_count||0)>0?'danger':'')+
+        financeSummaryCard('Próximos 7 dias',money(Number(rec.next_7_cents||0)-Number(pay.next_7_cents||0)),String(rec.next_7_count||0)+' a receber · '+String(pay.next_7_count||0)+' a pagar')+
+        financeSummaryCard('Boletos',String(f.boleto_count||0),String(f.pix_count||0)+' conta(s) também com PIX')+
+        financeSummaryCard('Contas financeiras',String(accounts.length),f.financial_accounts_access?.ok?'Acesso confirmado':'Acesso parcial')+
+      '</div>'+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Prioridades financeiras</strong><span>vencidos primeiro, depois próximos vencimentos · somente leitura</span></div><b>'+priorities.length+'</b></div>'+
+        (priorities.length?priorities.map(r=>financePriorityRow(r,today)).join(''):'<div class="history-empty">Nenhuma conta em aberto no período consultado.</div>')+
+      '</section>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Contas financeiras do Bling</strong><span>bancos, caixas e integrações disponíveis</span></div><b>'+accounts.length+'</b></div>'+
+        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<span class="pill" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</span>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
+      '</section>';
+  }
+  async function renderFinance(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Visão direta das contas a pagar e receber. Esta primeira rodada é somente leitura.</p></div><button class="secondary" id="refreshFinance">Atualizar</button></div>'+
+      '<div id="financeBody"><div class="loading">Consultando financeiro no Bling…</div></div>';
+    $('#refreshFinance').onclick=renderFinance;
+    try{
+      const data=await api('bling_finance_overview',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
+      });
+      state.finance=data.finance||{};
+      paintFinance();
+    }catch(e){
+      const scope=String(e?.message||'')==='bling_finance_scope_missing';
+      $('#financeBody').innerHTML='<div class="empty">'+(scope?'A conexão atual do Bling ainda não possui permissão para o módulo financeiro.':'Não consegui carregar o financeiro do Bling agora.')+' <button class="text" id="retryFinance">Tentar novamente</button></div>';
+      if($('#retryFinance'))$('#retryFinance').onclick=renderFinance;
+    }
   }
 
   async function renderProducts(q=''){
@@ -2922,7 +2983,7 @@
   }
   function formatCpf(v){const d=String(v||'').replace(/\D/g,'');return d.length===11?d.slice(0,3)+'.'+d.slice(3,6)+'.'+d.slice(6,9)+'-'+d.slice(9):v||''}
   function errorMessage(code){
-    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',gondola_not_found:'Gôndola não encontrada.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
+    const map={name_required:'Informe o nome.',phone_already_in_use:'Telefone já pertence a outro cliente.',cpf_already_in_use:'CPF já pertence a outro cliente.',email_already_in_use:'E-mail já pertence a outro cliente.',duplicate_value:'Código, EAN ou outro valor já está em uso.',invalid_ean:'EAN inválido.',product_not_found:'Produto não encontrado para este EAN.',duplicate_ean:'Há mais de um produto com este EAN.',invalid_quantity:'Quantidade inválida.',invalid_expiration_date:'Data de validade inválida.',invalid_offer_price:'O valor da oferta deve ser menor que o preço normal.',invalid_offer_duration:'Validade da oferta inválida.',invalid_gondola:'Número de gôndola inválido.',gondola_not_found:'Gôndola não encontrada.',order_cancelled:'Pedido cancelado não pode ser separado.',order_not_ready_for_separation:'Confirme o pedido antes de iniciar a separação.',invalid_component_replacement:'Não consegui identificar a troca.',order_component_edit_requires_created:'Só é possível substituir item enquanto o pedido está Novo.',order_stock_reserved_edit_forbidden:'Este pedido já tem estoque reservado. Cancele/reabra com cuidado antes de alterar itens.',component_edit_requires_basket:'Esta troca é permitida apenas dentro de uma cesta.',order_component_not_found:'Item da cesta não encontrado.',replacement_same_product:'Escolha um produto diferente.',replacement_duplicate_component:'Esse produto já existe nesta cesta.',replacement_product_unavailable:'O produto escolhido não está disponível.',replacement_insufficient_stock:'O produto escolhido também não tem estoque livre suficiente.',invalid_component_quantity:'Quantidade do item da cesta inválida.',insufficient_stock:'Estoque disponível insuficiente para confirmar este pedido. Faça um balanço ou ajuste o estoque.',insufficient_physical_stock:'Estoque físico insuficiente para separar este pedido. Faça um balanço ou ajuste o pedido.',stock_reservation_released:'A reserva deste pedido foi liberada. Reabra o pedido antes de separar.',stock_reservation_not_found:'Não encontrei a reserva de estoque deste pedido.',stock_consume_failed:'Não consegui dar baixa no estoque.',invalid_status_transition:'Este pedido precisa seguir a ordem normal das etapas.',stock_not_consumed_for_status:'Inicie ou regularize a separação antes de avançar.',order_operational_data_incomplete:'Complete cliente, endereço e pagamento antes de avançar.',legacy_order_read_only:'Este pedido é anterior ao corte operacional e ficou somente leitura.',fiscal_human_confirmation_required:'Confirme explicitamente a emissão fiscal.',fiscal_canary_not_armed_for_order:'Este pedido não está armado para emissão fiscal.',fiscal_canary_arm_race:'O canário fiscal mudou durante a operação. Atualize e tente novamente.',fiscal_human_issue_not_enabled:'A emissão fiscal humana ainda não está habilitada.',fiscal_operation_in_progress:'Outra emissão fiscal está em andamento. Aguarde e atualize.',fiscal_operation_lock_lost:'A trava de emissão fiscal mudou. Atualize antes de tentar novamente.',fiscal_dispatch_not_eligible:'O pedido ainda não está apto para emissão fiscal.',fiscal_generation_gate_closed:'A geração da NF-e está bloqueada pelo gate fiscal.',fiscal_generation_already_attempted:'A geração já foi tentada. O sistema não repetirá automaticamente.',invoice_generation_failed:'O Bling recusou a geração da NF-e. Revise os dados fiscais.',invoice_generation_uncertain:'O resultado da geração ficou incerto. O sistema não fará nova tentativa automática.',invoice_authorization_failed:'A NF-e foi gerada, mas a autorização precisa de revisão.',fiscal_document_not_authorized:'O DANFE só fica disponível depois da autorização da NF-e.',fiscal_document_access_key_missing:'A NF-e está autorizada, mas a chave de acesso ainda não foi localizada.',fiscal_document_download_failed:'Não consegui baixar o DANFE do Bling agora.',empty_danfe_document:'O Bling retornou um DANFE vazio.',invalid_danfe_pdf:'O documento retornado pelo Bling não é um PDF válido.',danfe_document_too_large:'O DANFE retornado é maior que o limite de segurança.',fiscal_document_empty:'O DANFE retornado está vazio.',bling_finance_scope_missing:'A autorização atual do Bling não liberou o módulo financeiro.',bling_finance_unavailable:'Não consegui consultar o financeiro do Bling agora.',fiscal_canary_failed:'O canário fiscal foi interrompido com segurança.'};
     return map[code]||'Não consegui salvar agora.';
   }
 
