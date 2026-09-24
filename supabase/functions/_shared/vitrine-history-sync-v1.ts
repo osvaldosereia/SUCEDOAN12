@@ -129,3 +129,45 @@ export async function syncVitrineOrderHistory(db:any,orderId:string,organization
     return {ok:false,error:msg};
   }
 }
+
+
+export async function preloadPapoAiOperationalMessage(
+  db:any,
+  payload:{
+    phone:string;
+    name?:string|null;
+    system_message:string;
+    system_message_kind?:string|null;
+    system_message_session_id?:string|null;
+  }
+){
+  try{
+    const secretQ=await db.from("internal_integration_secrets").select("secret_value")
+      .eq("integration_key","vitrine_history_bridge").maybeSingle();
+    if(secretQ.error||!secretQ.data?.secret_value)throw new Error("history_bridge_secret_missing");
+
+    const response=await fetch(HISTORY_ENDPOINT,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-vitrine-history-key":String(secretQ.data.secret_value)
+      },
+      body:JSON.stringify({
+        action:"vitrine_papoai_operational_preload_internal",
+        phone:String(payload.phone||""),
+        name:String(payload.name||"Cliente"),
+        system_message:String(payload.system_message||"").slice(0,8000),
+        system_message_kind:String(payload.system_message_kind||"post_order_cross_sell_offer").slice(0,80),
+        system_message_session_id:String(payload.system_message_session_id||"").slice(0,100)
+      }),
+      signal:AbortSignal.timeout(15000)
+    });
+    const data=await response.json().catch(()=>({ok:false,error:"invalid_papoai_preload_response"}));
+    if(!response.ok||data?.ok!==true){
+      throw new Error(clean(data?.error||data?.detail||("papoai_preload_http_"+response.status),500));
+    }
+    return {ok:true,...data};
+  }catch(e){
+    return {ok:false,error:clean((e as Error)?.message,500)||"papoai_preload_failed"};
+  }
+}
