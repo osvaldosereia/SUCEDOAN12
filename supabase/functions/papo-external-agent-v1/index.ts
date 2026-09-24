@@ -940,38 +940,46 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
       || ''
     ).slice(0,120);
 
+    const baseParsedData:any={
+      probe:true,
+      event_type:eventType||null,
+      message_type:messageType||null,
+      message_text:messageText||null,
+      detected_flow_data:Object.keys(flat).length?flat:null
+    };
+
     const ins=await sb.from('papoai_flow_customer_webhook_events').insert({
       correlation_id:correlationId,
       contact_phone_e164:phone||null,
       contact_name:contactName||null,
       payload:body||{},
-      parsed_data:{
-        probe:true,
-        event_type:eventType||null,
-        message_type:messageType||null,
-        message_text:messageText||null,
-        detected_flow_data:Object.keys(flat).length?flat:null
-      },
+      parsed_data:baseParsedData,
       status:'outbound_probe'
     }).select('id').single();
     if(ins.error)throw ins.error;
 
-    const storefrontLinkSync=phone
-      ? await syncPapoAiStorefrontIdentityLink(sb,phone,contactName)
-      : {ok:false,reason:'phone_missing'};
-    if(ins.data?.id){
-      try{
-        await sb.from('papoai_flow_customer_webhook_events').update({
-          parsed_data:{
-            probe:true,
-            event_type:eventType||null,
-            message_type:messageType||null,
-            message_text:messageText||null,
-            detected_flow_data:Object.keys(flat).length?flat:null,
-            storefront_link_sync:storefrontLinkSync
-          }
-        }).eq('id',ins.data.id);
-      }catch{}
+    const syncAndPersist=async()=>{
+      const storefrontLinkSync=phone
+        ? await syncPapoAiStorefrontIdentityLink(sb,phone,contactName)
+        : {ok:false,reason:'phone_missing'};
+      if(ins.data?.id){
+        try{
+          await sb.from('papoai_flow_customer_webhook_events').update({
+            parsed_data:{...baseParsedData,storefront_link_sync:storefrontLinkSync}
+          }).eq('id',ins.data.id);
+        }catch(error){
+          console.error('papoai_storefront_link_event_update_failed',correlationId,error);
+        }
+      }
+      return storefrontLinkSync;
+    };
+
+    const edgeRuntime=(globalThis as any)?.EdgeRuntime;
+    if(edgeRuntime?.waitUntil){
+      edgeRuntime.waitUntil(syncAndPersist());
+    }else{
+      // Fallback for local/non-Supabase runtimes.
+      await syncAndPersist();
     }
 
     const flowLike=
@@ -981,7 +989,13 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
       return await handlePapoAiFlowCustomerWebhook(sb,req,body,correlationId);
     }
 
-    return jsonResponse({ok:true,probe:true,ignored_non_flow:true,correlation_id:correlationId});
+    return jsonResponse({
+      ok:true,
+      probe:true,
+      storefront_link_sync:'scheduled',
+      ignored_non_flow:true,
+      correlation_id:correlationId
+    });
   }catch(error){
     console.error('papoai_outbound_probe_error',correlationId,error);
     return jsonResponse({ok:false,error:'probe_store_failed',correlation_id:correlationId},500);
