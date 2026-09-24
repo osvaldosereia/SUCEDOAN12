@@ -893,7 +893,7 @@ async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactN
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(papoPayload),
-      signal:AbortSignal.timeout(4500)
+      signal:AbortSignal.timeout(12000)
     });
     const responseText=(await papoResponse.text()).slice(0,500);
     if(!papoResponse.ok){
