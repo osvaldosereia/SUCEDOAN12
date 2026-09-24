@@ -1621,43 +1621,6 @@ async function papoAiAdminControl(subaction:string,extra:any={}) {
   return {data};
 }
 
-async function setCrossSellHomologationMode(enable:boolean){
-  const current=await db.from("post_order_cross_sell_config")
-    .select("*")
-    .eq("organization_id",ORG_ID)
-    .maybeSingle();
-  if(current.error)throw current.error;
-  if(!current.data)return {error:"cross_sell_config_missing",status:404};
-
-  if(enable){
-    const suffix=String(current.data.test_phone_suffix||"").trim();
-    if(!suffix)return {error:"test_phone_not_configured",status:409};
-    const saved=await db.from("post_order_cross_sell_config")
-      .update({
-        mode:"test",
-        delivery_contract_ready:true,
-        updated_at:new Date().toISOString()
-      })
-      .eq("organization_id",ORG_ID)
-      .select("*")
-      .single();
-    if(saved.error)throw saved.error;
-    return {config:saved.data,homologation:true};
-  }
-
-  const saved=await db.from("post_order_cross_sell_config")
-    .update({
-      mode:"shadow",
-      delivery_contract_ready:false,
-      updated_at:new Date().toISOString()
-    })
-    .eq("organization_id",ORG_ID)
-    .select("*")
-    .single();
-  if(saved.error)throw saved.error;
-  return {config:saved.data,homologation:false};
-}
-
 async function saveCrossSellConfig(payload:any){
   const current=await db.from("post_order_cross_sell_config")
     .select("*")
@@ -2746,11 +2709,6 @@ Deno.serve(async (req: Request) => {
         const result=await papoAiAdminControl("save",{storefront_link_enabled:payload?.storefront_link_enabled===true});
         if((result as any).error)return json(req,{ok:false,error:(result as any).error,detail:(result as any).detail},(result as any).status);
         return json(req,{ok:true,papoai:(result as any).data?.control??null});
-      }
-      if (action==="cross_sell_homologation") {
-        const result=await setCrossSellHomologationMode(payload?.enabled===true);
-        if((result as any).error)return json(req,{ok:false,error:(result as any).error},(result as any).status);
-        return json(req,{ok:true,...result});
       }
       if (action==="cross_sell_config_save") {
         const result=await saveCrossSellConfig(payload);
