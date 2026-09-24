@@ -1175,6 +1175,17 @@
       },320);
     };
   }
+  function financeActionErrorMessage(error){
+    const code=String(error?.message||error||'');
+    const map={
+      boleto_validation_failed:'Para usar boleto, informe histórico, selecione uma conta financeira apta, use vencimento de hoje em diante e mantenha o contato do Bling com e-mail e endereço completos.',
+      validation_failed:'Revise os campos obrigatórios antes de continuar.',
+      bling_finance_write_uncertain:'Resultado incerto. Não tente novamente sem revisar o lançamento no Bling.',
+      finance_owner_required:'Somente o proprietário pode operar o financeiro.',
+      finance_session_invalid:'A sessão financeira expirou. Informe o PIN novamente.'
+    };
+    return map[code]||code||'Não foi possível concluir a operação.';
+  }
   async function openFinanceEditor(kind,id=0){
     const isReceive=kind==='receivable';
     let current={},catalogs={payment_methods:[],categories:[],financial_accounts:[]},catalogError=false;
@@ -1199,17 +1210,32 @@
         '<label><span>Vencimento *</span><input name="vencimento" type="date" required value="'+esc(current.vencimento||today)+'"></label>'+
         '<label><span>Valor *</span><input name="valor" inputmode="decimal" required value="'+esc(financeMoneyInput(current.valor))+'"></label>'+
         '<label class="span-2"><span>Contato no Bling *</span><input id="financeContactSearch" type="search" autocomplete="off" placeholder="Digite nome, CPF/CNPJ, e-mail ou código" value="'+esc(current.contato_nome||'')+'"><input id="financeContactId" name="contato_id" type="hidden" value="'+esc(financeFieldValue(current.contato_id))+'"><div id="financeContactResults"></div></label>'+
-        '<label><span>Forma de pagamento</span><select name="forma_pagamento_id">'+financeSelectOptions(catalogs.payment_methods,current.forma_pagamento_id,'Não informar')+'</select></label>'+
-        '<label><span>Conta financeira / portador</span><select name="portador_id">'+financeSelectOptions(catalogs.financial_accounts,current.portador_id,'Não informar')+'</select></label>'+
+        '<label><span>Forma de pagamento</span><select id="financePaymentMethod" name="forma_pagamento_id">'+financeSelectOptions(catalogs.payment_methods,current.forma_pagamento_id,'Não informar')+'</select></label>'+
+        '<label><span>Conta financeira / portador</span><select id="financePortador" name="portador_id">'+financeSelectOptions(catalogs.financial_accounts,current.portador_id,'Não informar')+'</select></label>'+
         '<label><span>Categoria</span><select name="categoria_id">'+financeSelectOptions(categories,current.categoria_id,'Não informar')+'</select></label>'+
         '<label><span>Data de emissão</span><input name="dataEmissao" type="date" value="'+esc(current.dataEmissao||today)+'"></label>'+
         '<label><span>Nº documento</span><input name="numeroDocumento" value="'+esc(current.numeroDocumento||'')+'"></label>'+
         '<label><span>Competência</span><input name="competencia" type="date" value="'+esc(current.competencia||'')+'"></label>'+
-        '<label class="span-2"><span>Histórico</span><textarea name="historico">'+esc(current.historico||'')+'</textarea></label>'+
+        '<label class="span-2"><span>Histórico</span><textarea id="financeHistory" name="historico">'+esc(current.historico||'')+'</textarea></label>'+
+        '<div class="span-2 rule-notice warn" id="financeBoletoNote" style="display:none"><strong>Boleto exige conferência extra</strong><div>O contato precisa ter e-mail e endereço completos no Bling, o vencimento não pode estar no passado, e deve existir uma conta financeira apta para boleto. Salvar a conta não emite o boleto: a emissão continua sendo feita no Bling.</div></div>'+
       '</form>',
       '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financePreview" type="button">Revisar antes de salvar</button>'
     );
     attachFinanceContactSearch(current);
+    const paymentSelect=$('#financePaymentMethod'),portadorSelect=$('#financePortador'),historyField=$('#financeHistory'),dueField=$('#financeForm [name="vencimento"]'),boletoNote=$('#financeBoletoNote');
+    const syncBoletoUi=()=>{
+      const selected=(catalogs.payment_methods||[]).find(x=>Number(x.id)===Number(paymentSelect?.value||0));
+      const boleto=Number(selected?.type||0)===15;
+      if(boletoNote)boletoNote.style.display=boleto?'block':'none';
+      if(portadorSelect)portadorSelect.required=boleto;
+      if(historyField)historyField.required=boleto;
+      if(dueField){
+        if(boleto)dueField.min=today;
+        else dueField.removeAttribute('min');
+      }
+    };
+    if(paymentSelect)paymentSelect.onchange=syncBoletoUi;
+    syncBoletoUi();
     $('#financeCancel').onclick=()=>$('#editor').close();
     $('#financePreview').onclick=async()=>{
       const form=$('#financeForm');
@@ -1218,7 +1244,7 @@
       try{
         const preview=await financeApi(id?'update_preview':'create_preview',{kind,id:id||undefined,payload});
         openFinanceConfirmation(preview,id?'update_execute':'create_execute',{kind,id:id||undefined,payload});
-      }catch(e){toast(String(e?.message||'Não foi possível validar'))}
+      }catch(e){toast(financeActionErrorMessage(e))}
     };
   }
   function financePreviewHtml(preview){
@@ -1238,7 +1264,9 @@
       ['Categoria',p.categoria?.id?financeCatalogDescription('category',p.categoria.id):'—'],
       ['Data da baixa',p.data||'—']
     ];
+    const boleto=preview?.boleto_policy?.is_boleto===true;
     return '<div class="rule-notice warn"><strong>Confirmação obrigatória</strong><div>Confira os dados. Esta ação será enviada ao Bling somente após você digitar CONFIRMAR.</div></div>'+
+      (boleto?'<div class="rule-notice"><strong>Boleto preparado, não emitido</strong><div>Esta confirmação salva a conta a receber. A emissão do boleto é uma etapa separada no Bling e não será executada automaticamente por este Admin.</div></div>':'')+
       '<div class="panel" style="padding:12px">'+rows.filter(x=>x[1]!=='—').map(x=>'<div class="history-title"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong></div>').join('')+'</div>'+
       (preview.warning?'<div class="rule-notice"><strong>Atenção</strong><div>'+esc(preview.warning)+'</div></div>':'')+
       '<label style="display:block;margin-top:12px"><span>Digite CONFIRMAR</span><input id="financeConfirmText" autocomplete="off"></label>';
@@ -1259,8 +1287,7 @@
         $('#editor').close();toast('Operação registrada no Bling');state.finance=null;await renderFinance();
       }catch(e){
         button.disabled=false;button.textContent='Confirmar no Bling';
-        const msg=String(e?.message||'Falha ao registrar');
-        toast(msg==='bling_finance_write_uncertain'?'Resultado incerto. Não tente novamente sem revisar.':msg);
+        toast(financeActionErrorMessage(e));
       }
     };
   }
@@ -1327,13 +1354,20 @@
       $('#financeSettleFromDetail').onclick=()=>openFinanceSettlement(kind,id);
     }catch(e){financeOpenDialog('Detalhes financeiros','<div class="empty">Não consegui carregar os detalhes.</div>')}
   }
+  function financeBoletoStatusLabel(v){
+    return ({open:'Em aberto',received:'Recebido',partial:'Parcialmente recebido',returned:'Devolvido',partial_returned:'Parcialmente devolvido',cancelled:'Cancelado',unknown:'Situação não identificada'})[v]||v||'—';
+  }
   async function openFinanceBoletos(originId){
     financeOpenDialog('Boletos','<div class="loading">Consultando o Bling…</div>');
     try{
       const d=await financeApi('boletos',{kind:'receivable',origin_id:originId});
-      const rows=Array.isArray(d.boletos)?d.boletos:[];
+      const rows=Array.isArray(d.boletos)?d.boletos:[],summary=d.summary||{};
       financeOpenDialog('Boletos vinculados',
-        rows.length?'<div class="panel" style="padding:14px">'+rows.map((b,i)=>'<div class="history-title"><span>Boleto '+(i+1)+'</span><strong>'+esc(b?.situacao?.descricao||b?.situacao||b?.id||'Encontrado')+'</strong></div>').join('')+'</div>':'<div class="empty">Nenhum boleto retornado para essa origem.</div>'
+        '<div class="rule-notice"><strong>Somente consulta</strong><div>Este Admin não emite nem cancela boletos. Emissão e cancelamento continuam no Bling.</div></div>'+
+        (rows.length?'<div class="panel" style="padding:14px">'+
+          (summary.total_cents?'<div class="history-title"><span>Total</span><strong>'+money(summary.total_cents)+'</strong></div>':'')+
+          rows.map((b,i)=>'<div class="history-title" style="align-items:flex-start"><div><strong>Boleto '+(i+1)+'</strong><span class="sub">'+esc(b.external_number?'Código '+b.external_number:'ID '+(b.id||'—'))+'</span></div><div style="text-align:right"><strong>'+money(b.amount_cents)+'</strong><span class="sub">'+esc(dateOnly(b.due_date))+' · '+esc(financeBoletoStatusLabel(b.status_label))+'</span></div></div>').join('')+
+        '</div>':'<div class="empty">Nenhum boleto retornado para essa origem.</div>')
       );
     }catch(e){financeOpenDialog('Boletos','<div class="empty">Não consegui consultar os boletos.</div>')}
   }
