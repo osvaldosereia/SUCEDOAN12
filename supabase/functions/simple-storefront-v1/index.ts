@@ -707,9 +707,11 @@ async function issueStorefrontIdentityLink(payload:any){
   const expiresAt=new Date(Date.now()+30*60*1000).toISOString();
 
   try{
+    // Keep retired 4-digit codes quarantined for 24h so an old WhatsApp
+    // message cannot accidentally identify a different customer later.
     await db.from('storefront_identity_tokens')
       .delete()
-      .or('expires_at.lt.'+nowIso+',redeemed_at.not.is.null');
+      .lt('created_at',new Date(Date.now()-24*60*60*1000).toISOString());
     await db.from('storefront_identity_resolve_attempts')
       .delete()
       .lt('attempted_at',new Date(Date.now()-24*60*60*1000).toISOString());
