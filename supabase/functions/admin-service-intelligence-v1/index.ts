@@ -3387,10 +3387,14 @@ async function blingHubProductFiscalAuditReadonly(sb:any,body:any){
   if(requestedIds.length){
     productIds=requestedIds;
   }else{
-    const scan=await sb.from("product_fiscal_catalog_scan_v1")
-      .select("product_id,risk_code,risk_score")
+    let scanQuery=sb.from("product_fiscal_catalog_scan_v1")
+      .select("product_id,risk_code,risk_score,bling_evidence_count")
       .eq("is_active",true)
-      .gte("risk_score",minRisk)
+      .gte("risk_score",minRisk);
+    const riskCode=clean(body?.risk_code,80);
+    if(riskCode)scanQuery=scanQuery.eq("risk_code",riskCode);
+    if(body?.only_unseen_bling===true)scanQuery=scanQuery.eq("bling_evidence_count",0);
+    const scan=await scanQuery
       .order("risk_score",{ascending:false})
       .order("product_id",{ascending:true})
       .range(offset,offset+limit-1);
