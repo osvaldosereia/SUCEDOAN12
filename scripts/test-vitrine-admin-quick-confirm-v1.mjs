@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 const html=fs.readFileSync('vitrine/admin/index.html','utf8');
 
 assert.match(html,/data-quick-confirm/);
-assert.match(html,/o\.status==='created'&&!problems\.length/);
+assert.match(html,/if\(problems\.length&&shortcut\)/);
+assert.match(html,/if\(o\.status==='created'\)/);
 assert.match(html,/async function quickConfirmOrder\(id,btn\)/);
 assert.match(html,/if\(problems\.length\)\{toast\('Corrija os dados do pedido antes de confirmar'\)/);
 assert.match(html,/status:'confirmed'/);
