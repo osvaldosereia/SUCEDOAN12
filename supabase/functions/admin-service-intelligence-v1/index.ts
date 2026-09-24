@@ -3710,17 +3710,34 @@ Deno.serve(async(req:Request)=>{
   }
 
   if(action==="vitrine_customer_lookup_phone"){
-    const suffix=vitrineDigits(body?.phone_suffix,8).slice(-8);
-    if(suffix.length!==8)return json({ok:false,error:"phone_suffix_required"},400);
+    const rawPhone=clean(body?.phone,40);
+    const suffix=vitrineDigits(body?.phone_suffix||rawPhone,8).slice(-8);
+    if(!rawPhone&&suffix.length!==8)return json({ok:false,error:"phone_required"},400);
     try{
-      const q=await sb.from("customers")
-        .select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,birthday_day,birthday_month,order_count,lifetime_value,created_at,updated_at")
-        .ilike("primary_whatsapp_e164","%"+suffix)
-        .order("is_active",{ascending:false})
-        .order("updated_at",{ascending:false})
-        .limit(3);
-      if(q.error)throw q.error;
-      const rows=q.data||[];
+      let rows:any[]=[];
+      if(vitrineDigits(rawPhone,20).length>=10){
+        const resolved=await sb.rpc("lookup_customer_by_phone",{p_phone:rawPhone});
+        if(resolved.error)throw resolved.error;
+        const customerId=uuid(resolved.data?.[0]?.customer_id);
+        if(customerId){
+          const exact=await sb.from("customers")
+            .select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,birthday_day,birthday_month,order_count,lifetime_value,created_at,updated_at")
+            .eq("id",customerId)
+            .maybeSingle();
+          if(exact.error)throw exact.error;
+          if(exact.data)rows=[exact.data];
+        }
+      }
+      if(!rows.length&&suffix.length===8){
+        const q=await sb.from("customers")
+          .select("id,name,cpf_cnpj,primary_whatsapp_e164,is_active,birthday_day,birthday_month,order_count,lifetime_value,created_at,updated_at")
+          .ilike("primary_whatsapp_e164","%"+suffix)
+          .order("is_active",{ascending:false})
+          .order("updated_at",{ascending:false})
+          .limit(3);
+        if(q.error)throw q.error;
+        rows=q.data||[];
+      }
       if(!rows.length)return json({ok:true,found:false,customer:null});
       const chosen=rows[0];
       const bundles=await vitrineCustomerBundles(sb,[chosen.id]);
