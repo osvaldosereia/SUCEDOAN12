@@ -80,6 +80,51 @@ function addDateDays(iso:string,days:number) {
 function dateDiffDays(fromIso:string,toIso:string) {
   return Math.round((Date.parse(toIso+"T00:00:00Z")-Date.parse(fromIso+"T00:00:00Z"))/86400000);
 }
+function operatorLabel(payload:any) {
+  return text(payload?.operator,80)||"Operador não identificado";
+}
+async function writeProductLifecycleAudit(before:any,after:any,payload:any,source:string) {
+  if(!before?.id||!after?.id)return;
+  const activeChanged=Boolean(before.active)!==Boolean(after.active);
+  const expirationChanged=String(before.expiration_date||"")!==String(after.expiration_date||"");
+  if(!activeChanged&&!expirationChanged)return;
+
+  let event="expiration_changed";
+  let actorType="operator";
+  let actor=operatorLabel(payload);
+  const details:any={source};
+  if(activeChanged&&before.active===false&&after.active===true){
+    event="reactivated";
+  }else if(activeChanged&&before.active===true&&after.active===false){
+    if(after.deactivation_reason==="expired"){
+      event="auto_expired_deactivation";
+      actorType="system";
+      details.initiated_by=actor;
+      actor="Sistema · regra de validade";
+    }else{
+      event="manual_deactivated";
+    }
+  }
+  if(expirationChanged)details.expiration_changed=true;
+  if(Number(before.stock_quantity||0)!==Number(after.stock_quantity||0)){
+    details.stock_before=Number(before.stock_quantity||0);
+    details.stock_after=Number(after.stock_quantity||0);
+  }
+
+  const {error}=await db.from("product_lifecycle_audit").insert({
+    organization_id:ORG_ID,
+    product_id:after.id,
+    event,
+    actor_type:actorType,
+    actor_label:actor,
+    previous_active:Boolean(before.active),
+    new_active:Boolean(after.active),
+    previous_expiration_date:before.expiration_date||null,
+    new_expiration_date:after.expiration_date||null,
+    details
+  });
+  if(error)console.error("product_lifecycle_audit_failed",String(error.message||error));
+}
 
 let operationalCutoverCache:{live_orders_since:string,legacy_orders_read_only:boolean}|null=null;
 async function operationalCutover(){
@@ -217,7 +262,7 @@ async function saveProduct(payload: any) {
   let previous:any = null;
   if (id) {
     const { data, error } = await db.from("products")
-      .select("id,metadata,expiration_date,auto_expiry_offer_enabled,active,stock_quantity")
+      .select("id,metadata,expiration_date,auto_expiry_offer_enabled,active,stock_quantity,deactivation_reason,deactivated_at")
       .eq("organization_id",ORG_ID)
       .eq("id",id)
       .maybeSingle();
@@ -270,6 +315,7 @@ async function saveProduct(payload: any) {
       .eq("id",id)
       .single();
     if(fErr)throw fErr;
+    await writeProductLifecycleAudit(previous,fresh,payload,"product_save");
 
     let blingQueued=false;
     try{
@@ -398,6 +444,54 @@ async function listExpirations() {
   return {today,horizon,active_only:true,summary,products,expired_deactivated:expiredDeactivated,reconcile:reconcile.data??null};
 }
 
+async function listExpiryAlerts() {
+  const reconcile=await db.rpc("reconcile_expiry_offers",{p_organization_id:ORG_ID});
+  if(reconcile.error)throw reconcile.error;
+  const today=cuiabaDateKey();
+  const horizon=addDateDays(today,30);
+  const {data,error}=await db.from("products")
+    .select("id,sku,gtin,name,image_url,expiration_date,stock_quantity,auto_expiry_offer_enabled")
+    .eq("organization_id",ORG_ID)
+    .eq("active",true)
+    .not("expiration_date","is",null)
+    .gte("expiration_date",today)
+    .lte("expiration_date",horizon)
+    .order("expiration_date",{ascending:true})
+    .order("name",{ascending:true});
+  if(error)throw error;
+  const products=(data??[]).map((p:any)=>({...p,days_left:dateDiffDays(today,String(p.expiration_date))}));
+  return {
+    today,
+    horizon,
+    summary:{
+      due_today:products.filter((p:any)=>p.days_left===0).length,
+      days_1_7:products.filter((p:any)=>p.days_left>=1&&p.days_left<=7).length,
+      days_8_15:products.filter((p:any)=>p.days_left>=8&&p.days_left<=15).length,
+      days_16_30:products.filter((p:any)=>p.days_left>=16&&p.days_left<=30).length,
+      total:products.length
+    },
+    products:products.slice(0,20)
+  };
+}
+
+async function listProductLifecycleAudit(limitRaw:any) {
+  const limit=Math.floor(num(limitRaw??40,1,100));
+  const {data,error}=await db.from("product_lifecycle_audit")
+    .select("id,product_id,event,actor_type,actor_label,previous_active,new_active,previous_expiration_date,new_expiration_date,details,created_at")
+    .eq("organization_id",ORG_ID)
+    .order("created_at",{ascending:false})
+    .limit(limit);
+  if(error)throw error;
+  const ids=[...new Set((data??[]).map((r:any)=>r.product_id).filter(Boolean))];
+  const names=new Map<string,any>();
+  if(ids.length){
+    const q=await db.from("products").select("id,name,sku,gtin").eq("organization_id",ORG_ID).in("id",ids);
+    if(q.error)throw q.error;
+    for(const p of q.data??[])names.set(p.id,p);
+  }
+  return (data??[]).map((r:any)=>({...r,product:names.get(r.product_id)??null}));
+}
+
 async function saveExpiration(payload:any) {
   const id=uuid(payload?.product_id);
   if(!id)return {error:"invalid_product",status:400};
@@ -406,7 +500,7 @@ async function saveExpiration(payload:any) {
   const autoEnabled=payload?.auto_expiry_offer_enabled===true;
 
   const {data:before,error:bErr}=await db.from("products")
-    .select("id,stock_quantity,active")
+    .select("id,stock_quantity,active,expiration_date,deactivation_reason,deactivated_at")
     .eq("organization_id",ORG_ID)
     .eq("id",id)
     .maybeSingle();
@@ -432,6 +526,7 @@ async function saveExpiration(payload:any) {
     .eq("id",id)
     .single();
   if(fErr)throw fErr;
+  await writeProductLifecycleAudit(before,fresh,payload,"expiration_save");
 
   if(Number(before.stock_quantity||0)!==Number(fresh.stock_quantity||0)){
     try{await queueBlingStockSnapshots([id],"expiration_reconcile")}catch{}
@@ -2616,6 +2711,8 @@ Deno.serve(async (req: Request) => {
     if (req.method==="GET" && action==="products") return json(req,{ok:true,...await listProducts(url)});
     if (req.method==="GET" && action==="product_facets") return json(req,{ok:true,...await productFacets(url.searchParams.get("category"))});
     if (req.method==="GET" && action==="expirations") return json(req,{ok:true,...await listExpirations()});
+    if (req.method==="GET" && action==="expiry_alerts") return json(req,{ok:true,...await listExpiryAlerts()});
+    if (req.method==="GET" && action==="product_lifecycle_audit") return json(req,{ok:true,audit:await listProductLifecycleAudit(url.searchParams.get("limit"))});
     if (req.method==="GET" && action==="customers") return json(req,{ok:true,customers:await listCustomers(url)});
     if (req.method==="GET" && action==="orders") return json(req,{ok:true,orders:await listOrders()});
     if (req.method==="GET" && action==="order_stock_shortages") return json(req,{ok:true,...await listOrderStockShortages()});
