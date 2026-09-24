@@ -100,7 +100,12 @@ select
     when nullif(regexp_replace(coalesce(p.gtin,''),'\D','','g'),'') is null then 45
     when coalesce(c.evidence_count,0)=0 then 40
     else 20
-  end as risk_score
+  end as risk_score,
+  case
+    when nullif(regexp_replace(coalesce(p.gtin,''),'\\D','','g'),'') is null then 'missing'
+    when public.fiscal_valid_gtin_v1(p.gtin) then 'valid'
+    else 'invalid'
+  end as gtin_status
 from public.products p
 join public.product_fiscal_profiles pf on pf.product_id=p.id
 left join public.product_fiscal_evidence_consensus_v1 c on c.product_id=p.id
