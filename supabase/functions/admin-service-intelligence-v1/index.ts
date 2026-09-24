@@ -4939,6 +4939,8 @@ Deno.serve(async(req:Request)=>{
         return json(result,result.ok?200:207);
       }
       if(subaction==="finance_overview"){
+        const financeUser=await blingHubFinanceAuthorizedUser(sb,req);
+        if(!financeUser.ok)return json({ok:false,error:financeUser.error},Number(financeUser.status||401));
         const result=await blingHubFinanceOverview(sb);
         return json(result,result.ok?200:Number(result.status||409));
       }
