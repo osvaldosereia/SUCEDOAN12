@@ -188,7 +188,7 @@
         <button class="tab" data-tab="today" type="button">Hoje</button>
         <button class="tab" data-tab="orders" type="button">Pedidos</button>
         <button class="tab" data-tab="crosssell" type="button">Pós-cesta</button>
-        <button class="tab" data-tab="ai-control" type="button">Atendimento IA</button>
+        <button class="tab" data-tab="ai-control" type="button">PapoAI</button>
         <button class="tab" data-tab="expedition" type="button">Expedição</button>
         <button class="tab" data-tab="closure" type="button">Fechamento</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
@@ -1777,8 +1777,8 @@
 
   async function renderAiControl(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Atendimento IA</h1><p>Somente controles que realmente influenciam o atendimento da Dona Antônia.</p></div><button class="secondary" id="refreshAiControl" type="button">Atualizar</button></div>'+
-      '<div id="aiControlBody"><div class="loading">Carregando controles…</div></div>';
+    content.innerHTML='<div class="page-head"><div><h1>PapoAI / Vitrine</h1><p>Integrações silenciosas. O PapoAI continua responsável pela conversa com o cliente.</p></div><button class="secondary" id="refreshAiControl" type="button">Atualizar</button></div>'+
+      '<div id="aiControlBody"><div class="loading">Carregando integração…</div></div>';
     $('#refreshAiControl').onclick=loadAiControl;
     await loadAiControl();
   }
@@ -1786,49 +1786,44 @@
     const host=$('#aiControlBody');if(!host)return;
     host.innerHTML='<div class="loading">Carregando…</div>';
     try{
-      const [papo,cross]=await Promise.all([
-        api('papoai_control'),
-        api('cross_sell_shadow_list',{limit:1})
-      ]);
-      state.papoAiControl={papo:papo.papoai||{},cross:cross.config||{}};
+      const papo=await api('papoai_control');
+      state.papoAiControl={papo:papo.papoai||{}};
       paintAiControl();
     }catch(e){
-      host.innerHTML='<div class="empty">Não foi possível carregar o controle do atendimento: '+esc(errorMessage(e.message))+'</div>';
+      host.innerHTML='<div class="empty">Não foi possível carregar a integração: '+esc(errorMessage(e.message))+'</div>';
     }
   }
   function paintAiControl(){
     const host=$('#aiControlBody');if(!host)return;
-    const data=state.papoAiControl||{},p=data.papo||{},c=data.cross||{},h=p.health||{};
+    const p=state.papoAiControl?.papo||{},h=p.health||{};
     const bridgeRecent=h.last_event_at && (Date.now()-new Date(h.last_event_at).getTime())<24*60*60*1000;
     host.innerHTML=
       '<div class="bling-grid">'+
         '<div class="bling-card"><small>Ponte PapoAI</small><strong class="'+(bridgeRecent?'ok-text':'warn-text')+'">'+(bridgeRecent?'ATIVA':'SEM EVENTO RECENTE')+'</strong><span class="sub">Último evento: '+dateTime(h.last_event_at)+'</span></div>'+
-        '<div class="bling-card"><small>Último link confirmado</small><strong>'+esc(h.last_link_success_at?'OK':'—')+'</strong><span class="sub">'+dateTime(h.last_link_success_at)+'</span></div>'+
+        '<div class="bling-card"><small>Último link identificado</small><strong>'+esc(h.last_link_success_at?'OK':'—')+'</strong><span class="sub">'+dateTime(h.last_link_success_at)+'</span></div>'+
         '<div class="bling-card"><small>Eventos 24h</small><strong>'+esc(h.event_count_24h||0)+'</strong><span class="sub">mensagens observadas</span></div>'+
-        '<div class="bling-card"><small>Erros de link 24h</small><strong class="'+(Number(h.sync_errors_24h||0)>0?'danger-text':'ok-text')+'">'+esc(h.sync_errors_24h||0)+'</strong><span class="sub">sincronização com a vitrine</span></div>'+
+        '<div class="bling-card"><small>Erros de identificação 24h</small><strong class="'+(Number(h.sync_errors_24h||0)>0?'danger-text':'ok-text')+'">'+esc(h.sync_errors_24h||0)+'</strong><span class="sub">sincronização com a vitrine</span></div>'+
       '</div>'+
       '<div class="panel" style="padding:14px;margin-bottom:14px">'+
-        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Vitrine contextual no WhatsApp</div>'+
+        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Identificação automática na vitrine</div>'+
         '<div class="form-grid">'+
-          '<label class="check span-2"><input id="aiStorefrontEnabled" type="checkbox" '+(p.storefront_link_enabled!==false?'checked':'')+'><span><strong>Permitir geração automática do Link da Vitrine</strong><small class="sub">Só em intenção comercial. Pós-venda e suporte continuam bloqueados por regra fixa.</small></span></label>'+
-          '<div class="span-2" style="display:flex;justify-content:flex-end"><button class="primary" id="saveAiStorefront" type="button">Salvar vitrine contextual</button></div>'+
+          '<label class="check span-2"><input id="aiStorefrontEnabled" type="checkbox" '+(p.storefront_link_enabled!==false?'checked':'')+'><span><strong>Reconhecer cliente e gerar Link da Vitrine identificado</strong><small class="sub">O telefone acompanha o link de forma segura para a vitrine reconhecer o cliente. Isso não controla a resposta da IA.</small></span></label>'+
+          '<div class="span-2" style="display:flex;justify-content:flex-end"><button class="primary" id="saveAiStorefront" type="button">Salvar</button></div>'+
         '</div>'+
       '</div>'+
       '<div class="panel" style="padding:14px;margin-bottom:14px">'+
-        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Oferta após cesta</div>'+
-        '<div class="form-grid">'+
-          '<label class="check span-2"><input id="aiCrossSellEnabled" type="checkbox" '+(c.enabled!==false?'checked':'')+'><span><strong>Analisar pedidos para oferta pós-cesta</strong><small class="sub">Modo atual: '+esc(String(c.mode||'shadow').toUpperCase())+'. No Shadow nada é enviado ao cliente.</small></span></label>'+
-          '<div class="span-2 offer-note"><strong>Entrega PapoAI:</strong> '+(c.delivery_contract_ready===true?'<span class="pill">PRONTA</span>':'<span class="pill off">PENDENTE</span>')+' <span class="sub">A ativação real permanece bloqueada até esse gate ficar pronto.</span></div>'+      '</div>'+
-      '<div class="panel" style="padding:14px">'+
-        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Configurações nativas do PapoAI</div>'+
+        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">O que continua integrado</div>'+
         '<div class="history-list">'+
-          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Transferência humana</strong><span class="sub">Quem assume e quando a IA para</span></div><span class="pill off">Gerenciado no PapoAI</span></div>'+
-          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Follow-up nativo</strong><span class="sub">Temporização e execução da mensagem</span></div><span class="pill off">Gerenciado no PapoAI</span></div>'+
-          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Modelo, raciocínio e prompt-base</strong><span class="sub">Não duplicamos controles que não conseguimos sincronizar por API</span></div><span class="pill off">Gerenciado no PapoAI</span></div>'+
+          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Identidade do cliente</strong><span class="sub">Telefone identifica o cliente e preenche a entrada da vitrine</span></div><span class="pill">ATIVO</span></div>'+
+          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Cadastro via Flow</strong><span class="sub">Dados recebidos do PapoAI podem atualizar o cadastro sem decidir respostas</span></div><span class="pill">ATIVO</span></div>'+
+          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Pós-cesta</strong><span class="sub">Permanece apenas como análise interna em Shadow no Admin</span></div><button class="secondary" id="openCrossSell" type="button">Ver Shadow</button></div>'+
         '</div>'+
+      '</div>'+
+      '<div class="panel" style="padding:14px">'+
+        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Conversa com o cliente</div>'+
+        '<div class="offer-note"><strong>Controlada no PapoAI.</strong> O Vitrine/Admin não envia Mensagem Operacional, não escolhe a resposta da Ana, não interpreta “2 e 7” e não altera transferência ou follow-up.</div>'+
       '</div>';
     $('#saveAiStorefront').onclick=saveAiStorefrontControl;
-    $('#saveAiCrossSell').onclick=saveAiCrossSellControl;
     $('#openCrossSell').onclick=()=>setTab('crosssell');
   }
   async function saveAiStorefrontControl(){
@@ -1840,29 +1835,13 @@
         body:JSON.stringify({storefront_link_enabled:$('#aiStorefrontEnabled').checked})
       });
       state.papoAiControl.papo=data.papoai||state.papoAiControl.papo;
-      toast('Controle da vitrine atualizado');
+      toast('Identificação da vitrine atualizada');
       paintAiControl();
-    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar vitrine contextual'}
-  }
-  async function saveAiCrossSellControl(){
-    const expiry=Math.max(0,Math.min(10,Number($('#aiExpiryCount').value||0)));
-    const regular=Math.max(0,Math.min(10,Number($('#aiRegularCount').value||0)));
-    if(expiry+regular<1||expiry+regular>10){toast('A soma deve ficar entre 1 e 10 produtos');return}
-    const btn=$('#saveAiCrossSell');btn.disabled=true;btn.textContent='Salvando…';
-    try{
-      const data=await api('cross_sell_config_save',{},{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          enabled:$('#aiCrossSellEnabled').checked,
-          expiry_offer_count:Math.floor(expiry),
-          regular_count:Math.floor(regular)
-        })
-      });
-      state.papoAiControl.cross=data.config||state.papoAiControl.cross;
-      toast('Configuração pós-cesta atualizada');
-      paintAiControl();
-    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar pós-cesta'}
+    }catch(e){
+      toast(errorMessage(e.message));
+      btn.disabled=false;
+      btn.textContent='Salvar';
+    }
   }
 
   function crossSellReasonLabel(reason){
