@@ -959,7 +959,7 @@ async function syncPapoAiOperationalMessage(sb:any,papoPhone:string,contactName:
   }
 }
 
-async function markPostOrderCrossSellSent(sb:any,sessionId:string,deliveryRef:string){
+async function queuePostOrderCrossSellDelivery(sb:any,sessionId:string,deliveryRef:string){
   if(!sessionId)return {ok:false,reason:'session_missing'};
   try{
     const secretQ=await sb.from('internal_integration_secrets')
@@ -967,7 +967,7 @@ async function markPostOrderCrossSellSent(sb:any,sessionId:string,deliveryRef:st
       .eq('integration_key','vitrine_history_bridge')
       .maybeSingle();
     if(secretQ.error||!secretQ.data?.secret_value)return {ok:false,reason:'history_bridge_secret_missing'};
-    const response=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=post_order_cross_sell_mark_sent',{
+    const response=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=post_order_cross_sell_queue_delivery',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
@@ -976,8 +976,8 @@ async function markPostOrderCrossSellSent(sb:any,sessionId:string,deliveryRef:st
       body:JSON.stringify({session_id:sessionId,delivery_ref:deliveryRef||null}),
       signal:AbortSignal.timeout(12000)
     });
-    const data=await response.json().catch(()=>({ok:false,error:'invalid_mark_sent_response'}));
-    return response.ok&&data?.ok===true?{ok:true,...data}:{ok:false,reason:data?.error||('mark_sent_http_'+response.status)};
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_queue_delivery_response'}));
+    return response.ok&&data?.ok===true?{ok:true,...data}:{ok:false,reason:data?.error||('queue_delivery_http_'+response.status)};
   }catch(error){
     return {ok:false,reason:String((error as Error)?.message||error).slice(0,180)};
   }
@@ -1060,13 +1060,13 @@ async function fetchPostOrderCrossSellContext(sb:any,papoPhone:string,contactNam
       return {ok:false,reason:String(data?.error||('cross_sell_http_'+response.status)).slice(0,180)};
     }
     let deliveryAttempt:any=null;
-    let markedSent:any=null;
+    let queuedDelivery:any=null;
     if(data.send_allowed===true&&String(data.message||'').trim()){
       deliveryAttempt=await syncPapoAiOperationalMessage(
         sb,papoContactPhone,contactName,String(data.message||''),'post_order_cross_sell_offer',String(data.session_id||'')
       );
       if(deliveryAttempt?.ok===true){
-        markedSent=await markPostOrderCrossSellSent(
+        queuedDelivery=await queuePostOrderCrossSellDelivery(
           sb,String(data.session_id||''),'papoai_inbound:'+String(deliveryAttempt.http_status||'ok')
         );
       }
@@ -1074,7 +1074,7 @@ async function fetchPostOrderCrossSellContext(sb:any,papoPhone:string,contactNam
     return {
       ok:true,
       delivery_attempt:deliveryAttempt,
-      marked_sent:markedSent,
+      delivery_queued:queuedDelivery,
       order_id:data.order_id||null,
       order_number:data.order_number||null,
       session_id:data.session_id||null,
@@ -1088,7 +1088,7 @@ async function fetchPostOrderCrossSellContext(sb:any,papoPhone:string,contactNam
       response_window_seconds:Number(data.response_window_seconds||180),
       message:String(data.message||'').slice(0,8000),
       items:Array.isArray(data.items)?data.items.slice(0,10):[],
-      delivery_state:data.send_allowed===true?'awaiting_papoai_delivery_contract':'shadow_only'
+      delivery_state:data.send_allowed===true?'papoai_update_queued_unconfirmed':'shadow_only'
     };
   }catch(error){
     return {ok:false,reason:String((error as Error)?.message||error).slice(0,180)};
