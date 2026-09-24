@@ -916,29 +916,55 @@ async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactN
 
 function storefrontLinkIntent(messageValue:any){
   const raw=String(messageValue??'').replace(/\s+/g,' ').trim();
-  if(!raw)return {eligible:false,reason:'empty_message'};
+  if(!raw)return {eligible:false,reason:'empty_message',kind:'none'};
   const text=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
   if(/nao foi possivel exibir esta mensagem no papoai|abra o whatsapp no seu celular/i.test(text)){
-    return {eligible:false,reason:'papoai_placeholder'};
+    return {eligible:false,reason:'papoai_placeholder',kind:'none'};
   }
+
+  // Pós-venda, suporte e problemas com pedido não devem receber vitrine automaticamente.
+  const supportContext=
+    /\b(meu|minha|o meu|a minha)\s+(pedido|compra|cesta)\b.{0,70}\b(nao chegou|nao recebi|atras|demor|falt|errad|problema|cancel|troca|trocar|devol|reembolso|status|onde|cade)\b/.test(text)
+    || /\b(nao chegou|nao recebi|atrasou|atrasado|faltou|veio errado|produto errado|problema|cancelar|cancelamento|trocar|troca|devolver|devolucao|reembolso|rastrear|rastreamento|cade meu pedido|onde esta meu pedido|status do pedido|nota fiscal|segunda via)\b/.test(text);
+  if(supportContext){
+    return {eligible:false,reason:'support_or_post_sale',kind:'support'};
+  }
+
   if(/\bteste\s+link\b/.test(text)){
-    return {eligible:true,reason:'explicit_test'};
+    return {eligible:true,reason:'explicit_test',kind:'test'};
   }
+
   if(/\b(catalogo|vitrine)\b/.test(text)){
-    return {eligible:true,reason:'catalog_or_storefront'};
+    return {eligible:true,reason:'catalog_or_storefront',kind:'catalog'};
   }
-  if(/\b(cesta|cestas|oferta|ofertas|promocao|promocoes)\b/.test(text)){
-    return {eligible:true,reason:'basket_or_offer'};
+
+  const basketIntent=
+    /\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|escolher|comprar|tem|quais|opcoes?|precos?)\b.{0,55}\b(cesta|cestas|cesta basica|cestas basicas)\b/.test(text)
+    || /\b(cesta|cestas|cesta basica|cestas basicas)\b.{0,55}\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|escolher|comprar|tem|quais|opcoes?|precos?)\b/.test(text);
+  if(basketIntent){
+    return {eligible:true,reason:'basket_browse_intent',kind:'baskets'};
   }
-  if(/\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|abrir|acessar)\b.{0,55}\b(produto|produtos|opcao|opcoes|loja|comprar|compra)\b/.test(text)
-     || /\b(produto|produtos|opcao|opcoes|loja)\b.{0,55}\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|abrir|acessar)\b/.test(text)){
-    return {eligible:true,reason:'browse_intent'};
+
+  const offerIntent=
+    /\b(oferta|ofertas|promocao|promocoes|desconto|descontos)\b/.test(text)
+    && !/\b(reclamar|reclamacao|erro|problema)\b/.test(text);
+  if(offerIntent){
+    return {eligible:true,reason:'offer_browse_intent',kind:'offers'};
   }
+
+  const browseIntent=
+    /\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|abrir|acessar|escolher)\b.{0,55}\b(produto|produtos|opcao|opcoes|loja|comprar|compra)\b/.test(text)
+    || /\b(produto|produtos|opcao|opcoes|loja)\b.{0,55}\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|abrir|acessar|escolher)\b/.test(text);
+  if(browseIntent){
+    return {eligible:true,reason:'browse_intent',kind:'products'};
+  }
+
   if(/\b(quero|queria|gostaria|vou|preciso)\s+(comprar|fazer\s+(uma\s+)?compra|pedir|fazer\s+(um\s+)?pedido)\b/.test(text)){
-    return {eligible:true,reason:'purchase_intent'};
+    return {eligible:true,reason:'purchase_intent',kind:'purchase'};
   }
-  return {eligible:false,reason:'no_storefront_intent'};
+
+  return {eligible:false,reason:'no_storefront_intent',kind:'none'};
 }
 
 async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlationId:string){
