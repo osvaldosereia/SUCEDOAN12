@@ -3707,6 +3707,7 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
 
   const limit=Math.max(1,Math.min(5,Number(body?.limit||5)||5));
   const requireSupplierXml=body?.require_supplier_xml!==false;
+  const cestFilter=blingHubDigits(body?.cest);
 
   let scanQuery=sb.from("product_fiscal_catalog_scan_v1")
     .select("product_id,supplier_xml_cest_count")
@@ -3726,11 +3727,13 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
     };
   }
 
-  const diff=await sb.from("product_fiscal_bling_diff_v1")
-    .select("product_id,name,canary_eligible,diff_status")
+  let diffQuery=sb.from("product_fiscal_bling_diff_v1")
+    .select("product_id,name,proposed_cest,canary_eligible,diff_status")
     .in("product_id",candidateIds)
     .eq("canary_eligible",true)
-    .eq("diff_status","cest_missing")
+    .eq("diff_status","cest_missing");
+  if(cestFilter)diffQuery=diffQuery.eq("proposed_cest",cestFilter);
+  const diff=await diffQuery
     .order("product_id",{ascending:true})
     .limit(limit);
   if(diff.error)throw diff.error;
@@ -3784,6 +3787,7 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
       aligned,
       stopped_on_error:stoppedOnError,
       require_supplier_xml:requireSupplierXml,
+      cest_filter:cestFilter||null,
       product_ids:rows.map((x:any)=>x.product_id),
       results:results.map((x:any)=>({
         product_id:x?.product_id||null,
@@ -3808,6 +3812,7 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
     stopped_on_error:stoppedOnError,
     results,
     require_supplier_xml:requireSupplierXml,
+    cest_filter:cestFilter||null,
     quality_refresh_ok:!qualityRefresh.error,
     integrity_refresh_ok:!integrityRefresh.error,
     external_write:mutated>0
