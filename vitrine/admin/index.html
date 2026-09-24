@@ -220,7 +220,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,crossSell:null,papoAiControl:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,crossSell:null,papoAiControl:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,currentOrderFiscalPreview:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2137,7 +2137,7 @@
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#editor').showModal();
     try{
-      const data=await api('order',{id});state.currentOrder=data;state.currentOrderBlingPreview=null;state.currentOrderFiscal=null;
+      const data=await api('order',{id});state.currentOrder=data;state.currentOrderBlingPreview=null;state.currentOrderFiscal=null;state.currentOrderFiscalPreview=null;
       state.customers=[];state.orderCustomerSuggestion=null;
       const sourceId=data.customer?.source_customer_id||data.order?.delivery_address_snapshot?.source_customer_id||'';
       if(sourceId){
@@ -2218,7 +2218,11 @@
       '</div></details>'+
       '<div class="section-title">Fiscal / NF-e</div>'+
       '<div id="orderFiscalStatus">'+orderFiscalHtml(state.currentOrderFiscal,o)+'</div>'+
-      '<div class="print-actions"><button class="primary" id="confirmFiscalPayment" aria-label="Confirmar pagamento recebido" style="display:none">Confirmar recebimento</button></div>';
+      fiscalDispatchPreviewHtml(state.currentOrderFiscalPreview)+
+      '<div class="print-actions">'+
+        (o.status==='ready'?'<button class="secondary" id="previewFiscalDispatch" type="button">Verificar fiscal de saída</button>':'')+
+        '<button class="primary" id="confirmFiscalPayment" aria-label="Confirmar pagamento recebido" style="display:none">Confirmar recebimento</button>'+
+      '</div>';
     $('#editorActions').innerHTML='<button class="secondary" id="cancelEditor">Fechar</button><button class="primary" id="saveOrder">Salvar dados</button>';
     $('#cancelEditor').onclick=()=>$('#editor').close();
     $('#saveOrder').onclick=saveOrder;
@@ -2245,6 +2249,7 @@
     if($('#printDelivery'))$('#printDelivery').onclick=()=>printDelivery(d);
     if($('#cancelOrder'))$('#cancelOrder').onclick=cancelCurrentOrder;
     $('#previewBlingOrder').onclick=previewCurrentOrderBling;
+    if($('#previewFiscalDispatch'))$('#previewFiscalDispatch').onclick=previewCurrentOrderFiscalDispatch;
     const fiscalBtn=$('#confirmFiscalPayment');
     if(fiscalBtn){
       const fiscal=state.currentOrderFiscal||{};
@@ -2345,6 +2350,47 @@
       reason+
       '<div class="sub" style="margin-top:5px">Entrega e recebimento continuam sendo fatos separados do documento exigido para a saída.</div>'+
       '</div>';
+  }
+
+  function fiscalDispatchPreviewHtml(p){
+    if(!p)return '';
+    if(p.error)return '<div class="rule-notice warn" style="margin-top:8px"><strong>Prévia fiscal indisponível</strong><div>Não foi possível conferir o Bling agora. Nenhuma emissão foi feita.</div></div>';
+    const inv=p.invoice||null;
+    const blockers=Array.isArray(p.hard_blockers)?p.hard_blockers:[];
+    const labels={
+      order_not_ready_for_fiscal_dispatch:'Pedido ainda não está pronto para expedição',
+      bling_order_not_linked:'Pedido ainda não está vinculado ao Bling',
+      external_order_key_missing:'Chave externa do pedido não encontrada',
+      multiple_invoices_for_external_key:'Mais de uma NF-e encontrada para o mesmo pedido',
+      invoice_terminal_state:'A NF-e encontrada está em situação que precisa de revisão'
+    };
+    if(inv?.situation?.authorized){
+      return '<div class="rule-notice" style="margin-top:8px"><strong class="ok-text">NF-e localizada e autorizada ✓</strong><div>'+(inv.numero?'NF-e '+esc(inv.numero)+' · ':'')+esc(inv.situation.label||'Autorizada')+'</div>'+(inv.chaveAcesso?'<div class="sub" style="margin-top:4px">Chave: '+esc(inv.chaveAcesso)+'</div>':'')+'</div>';
+    }
+    if(inv){
+      return '<div class="rule-notice warn" style="margin-top:8px"><strong>NF-e localizada · '+esc(inv.situation?.label||'situação pendente')+'</strong><div>O sistema apenas consultou o Bling. Nenhum envio à SEFAZ foi feito por esta ação.</div></div>';
+    }
+    if(blockers.length){
+      return '<div class="rule-notice warn" style="margin-top:8px"><strong>Prévia fiscal precisa de revisão</strong><div>'+blockers.map(x=>esc(labels[x]||String(x).replaceAll('_',' '))).join(' · ')+'</div></div>';
+    }
+    return '<div class="rule-notice" style="margin-top:8px"><strong>Nenhuma NF-e encontrada para este pedido</strong><div>Pedido Bling identificado. O canário de emissão continua desligado e esta consulta não gera nota.</div></div>';
+  }
+
+  async function previewCurrentOrderFiscalDispatch(){
+    const id=state.currentOrder?.order?.id;if(!id)return;
+    const btn=$('#previewFiscalDispatch');if(btn){btn.disabled=true;btn.textContent='Verificando fiscal…'}
+    try{
+      state.currentOrderFiscalPreview=await api('order_fiscal_dispatch_preview',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})
+      });
+      paintOrderDetail();
+      const inv=state.currentOrderFiscalPreview?.invoice;
+      toast(inv?.situation?.authorized?'NF-e autorizada localizada':inv?'NF-e localizada no Bling':'Prévia fiscal conferida · nenhuma NF-e encontrada');
+    }catch(e){
+      state.currentOrderFiscalPreview={error:String(e?.message||'fiscal_preview_unavailable')};
+      paintOrderDetail();
+      toast('Não consegui conferir o fiscal agora');
+    }
   }
 
   async function loadCurrentOrderFiscal(repaint=true){
