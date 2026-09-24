@@ -2659,7 +2659,7 @@ async function blingHubFinanceOverview(sb:any){
   await sb.from("bling_hub_audit_v2").insert({
     event_type:"finance_readonly_overview",
     severity:"info",
-    domain:"fiscal",
+    domain:"finance",
     details:{
       receivable_count:receivables.length,payable_count:payables.length,
       projected_cents:overview.projected_cents,truncated:overview.truncated,
@@ -2668,6 +2668,285 @@ async function blingHubFinanceOverview(sb:any){
   });
   return {ok:true,readonly:true,external_write:false,finance:overview};
 }
+
+function blingHubFinanceKind(v:any){
+  const k=clean(v,30).toLowerCase();
+  return k==="payable"?"payable":k==="receivable"?"receivable":"";
+}
+function blingHubFinanceRoot(kind:string){
+  return kind==="payable"?"/contas/pagar":"/contas/receber";
+}
+function blingHubFinanceDate(v:any){
+  const s=clean(v,10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:"";
+}
+function blingHubFinancePositiveNumber(v:any){
+  const n=Number(v);
+  return Number.isFinite(n)&&n>0?n:null;
+}
+function blingHubFinanceNonNegativeNumber(v:any){
+  const n=Number(v);
+  return Number.isFinite(n)&&n>=0?n:null;
+}
+function blingHubFinanceSavePayload(kind:string,input:any){
+  const p=obj(input),out:any={};
+  const vencimento=blingHubFinanceDate(p.vencimento);
+  const valor=blingHubFinancePositiveNumber(p.valor);
+  const contatoId=Number(p?.contato?.id??p?.contato_id??0);
+  const formaId=Number(p?.formaPagamento?.id??p?.forma_pagamento_id??0);
+  const portadorId=Number(p?.portador?.id??p?.portador_id??0);
+  const categoriaId=Number(p?.categoria?.id??p?.categoria_id??0);
+  const emissao=blingHubFinanceDate(p.dataEmissao);
+  const competencia=blingHubFinanceDate(p.competencia);
+  if(vencimento)out.vencimento=vencimento;
+  if(valor!==null)out.valor=valor;
+  if(contatoId>0)out.contato={id:contatoId};
+  if(formaId>0)out.formaPagamento={id:formaId};
+  if(portadorId>0)out.portador={id:portadorId};
+  if(categoriaId>0)out.categoria={id:categoriaId};
+  if(emissao)out.dataEmissao=emissao;
+  if(competencia)out.competencia=competencia;
+  const numeroDocumento=clean(p.numeroDocumento,120);
+  const historico=clean(p.historico,500);
+  if(numeroDocumento)out.numeroDocumento=numeroDocumento;
+  if(historico)out.historico=historico;
+  return out;
+}
+function blingHubFinanceSaveMissing(payload:any){
+  const missing:string[]=[];
+  if(!payload?.vencimento)missing.push("vencimento");
+  if(!(Number(payload?.valor)>0))missing.push("valor");
+  if(!(Number(payload?.contato?.id)>0))missing.push("contato.id");
+  return missing;
+}
+function blingHubFinanceDetailData(data:any){
+  return data?.data&&typeof data.data==="object"&&!Array.isArray(data.data)?data.data:(data||{});
+}
+function blingHubFinanceSettlementPayload(input:any,current:any){
+  const p=obj(input),c=obj(current),out:any={};
+  const paymentDate=blingHubFinanceDate(p.data);
+  const useDue=typeof p.usarDataVencimento==="boolean"?p.usarDataVencimento:false;
+  const portadorId=Number(p?.portador?.id??p?.portador_id??c?.portador?.id??c?.contaContabil?.id??0);
+  const categoriaId=Number(p?.categoria?.id??p?.categoria_id??c?.categoria?.id??0);
+  if(paymentDate)out.data=paymentDate;
+  out.usarDataVencimento=useDue;
+  if(portadorId>0)out.portador={id:portadorId};
+  if(categoriaId>0)out.categoria={id:categoriaId};
+  out.historico=clean(p.historico??c.historico??"",500);
+  for(const key of ["juros","desconto","acrescimo","valorRecebido","tarifa"]){
+    const n=blingHubFinanceNonNegativeNumber(p?.[key]);
+    if(n!==null)out[key]=n;
+  }
+  return out;
+}
+function blingHubFinanceSettlementMissing(payload:any){
+  const missing:string[]=[];
+  if(!payload?.data)missing.push("data");
+  if(typeof payload?.usarDataVencimento!=="boolean")missing.push("usarDataVencimento");
+  if(!(Number(payload?.portador?.id)>0))missing.push("portador.id");
+  if(!(Number(payload?.categoria?.id)>0))missing.push("categoria.id");
+  if(typeof payload?.historico!=="string")missing.push("historico");
+  return missing;
+}
+function blingHubFinanceError(status:number){
+  if(status===401)return "bling_oauth_unauthorized";
+  if(status===403)return "bling_finance_scope_missing";
+  if(status===429)return "bling_rate_limited";
+  return "bling_finance_provider_error";
+}
+async function blingHubFinanceAudit(sb:any,eventType:string,severity:string,details:any){
+  const q=await sb.from("bling_hub_audit_v2").insert({
+    event_type:eventType,severity,domain:"finance",
+    details:{...obj(details),make_used:false}
+  });
+  if(q.error)throw q.error;
+}
+async function blingHubFinanceIdempotencyState(sb:any,key:string){
+  const q=await sb.from("bling_hub_audit_v2")
+    .select("id,event_type,created_at,details")
+    .eq("domain","finance")
+    .contains("details",{idempotency_key:key})
+    .order("created_at",{ascending:false})
+    .limit(10);
+  if(q.error)throw q.error;
+  const rows=q.data||[];
+  const success=rows.find((x:any)=>x.event_type==="finance_action_succeeded");
+  if(success)return {state:"succeeded",event:success};
+  if(rows.length)return {state:"used",event:rows[0]};
+  return {state:"unused",event:null};
+}
+async function blingHubFinanceWriteOnce(sb:any,token:string,path:string,method:string,payload:any){
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(BLING_API_BASE+path,{
+      method,
+      headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},
+      body:JSON.stringify(payload),
+      signal:AbortSignal.timeout(15000)
+    });
+    const raw=await r.text();
+    let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    return {
+      ok:r.ok,status:r.status,data,
+      error:clean(data?.error?.message||data?.error?.description||data?.error||raw,700),
+      provider_details:blingHubProviderDetails(data),
+      uncertain:r.status>=500
+    };
+  }catch(e){
+    return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,700),provider_details:[],uncertain:true};
+  }
+}
+async function blingHubFinanceCapabilities(sb:any,token:string){
+  const probes:any={
+    receivables:"/contas/receber?pagina=1&limite=1&situacoes%5B%5D=1",
+    payables:"/contas/pagar?pagina=1&limite=1&situacao=1",
+    financial_accounts:"/contas-contabeis?pagina=1&limite=1&ocultarInvisiveis=true"
+  };
+  const result:any={};
+  for(const [name,path] of Object.entries(probes)){
+    const r=await blingHubGet(sb,token,String(path));
+    result[name]={ok:r.ok,http_status:r.status,scope_missing:r.status===403};
+  }
+  const actionsEnabled=Object.values(result).every((x:any)=>x.ok===true);
+  return {ok:true,actions_enabled:actionsEnabled,readonly:!actionsEnabled,probes:result,external_write:false};
+}
+async function blingHubFinanceAction(sb:any,body:any){
+  const operation=clean(body?.operation||body?.finance_action,80).toLowerCase();
+  const token=await blingHubOauth(sb);
+
+  if(operation==="capabilities")return await blingHubFinanceCapabilities(sb,token);
+
+  if(operation==="financial_account_detail"){
+    const id=Math.trunc(Number(body?.id||0));
+    if(id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
+    const r=await blingHubGet(sb,token,"/contas-contabeis/"+encodeURIComponent(String(id)));
+    if(!r.ok)return {ok:false,status:r.status||502,error:blingHubFinanceError(r.status),provider_details:blingHubProviderDetails(r.data),external_write:false};
+    return {ok:true,financial_account:blingHubFinanceDetailData(r.data),external_write:false};
+  }
+
+  const kind=blingHubFinanceKind(body?.kind);
+  if(!kind)return {ok:false,status:400,error:"invalid_kind",external_write:false};
+  const root=blingHubFinanceRoot(kind);
+  const id=Math.trunc(Number(body?.id||0));
+
+  if(operation==="detail"){
+    if(id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
+    const r=await blingHubGet(sb,token,root+"/"+encodeURIComponent(String(id)));
+    if(!r.ok)return {ok:false,status:r.status||502,error:blingHubFinanceError(r.status),provider_details:blingHubProviderDetails(r.data),external_write:false};
+    return {ok:true,kind,account:blingHubFinanceDetailData(r.data),external_write:false};
+  }
+
+  if(operation==="boletos"){
+    if(kind!=="receivable")return {ok:false,status:400,error:"boletos_receivable_only",external_write:false};
+    const originId=Math.trunc(Number(body?.origin_id||0));
+    if(originId<=0)return {ok:false,status:400,error:"invalid_origin_id",external_write:false};
+    const qs=new URLSearchParams({idOrigem:String(originId)});
+    for(const s of (Array.isArray(body?.situacoes)?body.situacoes:[]).slice(0,20)){
+      const n=Math.trunc(Number(s));if(Number.isFinite(n))qs.append("situacoes[]",String(n));
+    }
+    const r=await blingHubGet(sb,token,"/contas/receber/boletos?"+qs.toString());
+    if(r.status===404)return {ok:true,boletos:[],external_write:false};
+    if(!r.ok)return {ok:false,status:r.status||502,error:blingHubFinanceError(r.status),provider_details:blingHubProviderDetails(r.data),external_write:false};
+    return {ok:true,boletos:Array.isArray(r.data?.data)?r.data.data:(r.data?.data??r.data??[]),external_write:false};
+  }
+
+  if(operation==="create_preview"||operation==="update_preview"){
+    if(operation==="update_preview"&&id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
+    const payload=blingHubFinanceSavePayload(kind,body?.payload);
+    const missing=blingHubFinanceSaveMissing(payload);
+    let current:any=null;
+    if(operation==="update_preview"&&missing.length===0){
+      const detail=await blingHubGet(sb,token,root+"/"+encodeURIComponent(String(id)));
+      if(!detail.ok)return {ok:false,status:detail.status||502,error:blingHubFinanceError(detail.status),provider_details:blingHubProviderDetails(detail.data),external_write:false};
+      current=blingHubFinanceDetailData(detail.data);
+    }
+    return {
+      ok:missing.length===0,status:missing.length?400:200,preview:true,external_write:false,kind,
+      operation:operation==="create_preview"?"create":"update",id:id||null,current,payload,missing,
+      confirmation_required:true,confirmation_phrase:"CONFIRMAR"
+    };
+  }
+
+  if(operation==="settle_preview"){
+    if(id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
+    const detail=await blingHubGet(sb,token,root+"/"+encodeURIComponent(String(id)));
+    if(!detail.ok)return {ok:false,status:detail.status||502,error:blingHubFinanceError(detail.status),provider_details:blingHubProviderDetails(detail.data),external_write:false};
+    const current=blingHubFinanceDetailData(detail.data);
+    const payload=blingHubFinanceSettlementPayload(body?.payload,current);
+    const missing=blingHubFinanceSettlementMissing(payload);
+    return {
+      ok:missing.length===0,status:missing.length?400:200,preview:true,external_write:false,kind,
+      operation:"settle",id,current,payload,missing,
+      confirmation_required:true,confirmation_phrase:"CONFIRMAR",
+      warning:"A baixa registra o pagamento ou recebimento somente no Bling. Nenhuma transferência bancária é executada."
+    };
+  }
+
+  if(!["create_execute","update_execute","settle_execute"].includes(operation)){
+    return {ok:false,status:404,error:"unknown_finance_action",external_write:false};
+  }
+  if(clean(body?.confirmation,40)!=="CONFIRMAR"){
+    return {ok:false,status:409,error:"human_confirmation_required",external_write:false};
+  }
+  const idem=clean(body?.idempotency_key,160);
+  if(idem.length<16)return {ok:false,status:400,error:"idempotency_key_required",external_write:false};
+  const idemState=await blingHubFinanceIdempotencyState(sb,idem);
+  if(idemState.state==="succeeded"){
+    return {ok:true,idempotent_replay:true,previous_event_id:idemState.event?.id||null,external_write:false};
+  }
+  if(idemState.state==="used"){
+    return {ok:false,status:409,error:"idempotency_key_already_used",manual_review_required:true,previous_event_id:idemState.event?.id||null,external_write:false};
+  }
+
+  let path=root,method="POST",payload:any={};
+  if(operation==="create_execute"){
+    payload=blingHubFinanceSavePayload(kind,body?.payload);
+    const missing=blingHubFinanceSaveMissing(payload);
+    if(missing.length)return {ok:false,status:400,error:"validation_failed",missing,external_write:false};
+  }else if(operation==="update_execute"){
+    if(id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
+    path=root+"/"+encodeURIComponent(String(id));method="PUT";
+    payload=blingHubFinanceSavePayload(kind,body?.payload);
+    const missing=blingHubFinanceSaveMissing(payload);
+    if(missing.length)return {ok:false,status:400,error:"validation_failed",missing,external_write:false};
+  }else{
+    if(id<=0)return {ok:false,status:400,error:"invalid_id",external_write:false};
+    const detail=await blingHubGet(sb,token,root+"/"+encodeURIComponent(String(id)));
+    if(!detail.ok)return {ok:false,status:detail.status||502,error:blingHubFinanceError(detail.status),provider_details:blingHubProviderDetails(detail.data),external_write:false};
+    payload=blingHubFinanceSettlementPayload(body?.payload,blingHubFinanceDetailData(detail.data));
+    const missing=blingHubFinanceSettlementMissing(payload);
+    if(missing.length)return {ok:false,status:400,error:"validation_failed",missing,external_write:false};
+    path=root+"/"+encodeURIComponent(String(id))+"/baixar";
+  }
+
+  await blingHubFinanceAudit(sb,"finance_action_attempt","warning",{
+    operation,kind,id:id||null,idempotency_key:idem,external_write:false
+  });
+
+  const write=operation==="update_execute"
+    ? await blingHubWriteIdempotent(sb,token,path,method,payload)
+    : await blingHubFinanceWriteOnce(sb,token,path,method,payload);
+
+  if(!write.ok){
+    const uncertain=Boolean(write.uncertain||write.status===0||write.status>=500);
+    await blingHubFinanceAudit(sb,uncertain?"finance_action_uncertain":"finance_action_failed",uncertain?"error":"warning",{
+      operation,kind,id:id||null,idempotency_key:idem,http_status:Number(write.status||0),external_write:false,manual_review_required:uncertain
+    });
+    return {
+      ok:false,status:uncertain?409:(write.status||502),
+      error:uncertain?"bling_finance_write_uncertain":blingHubFinanceError(write.status),
+      http_status:Number(write.status||0),provider_details:write.provider_details||[],
+      manual_review_required:uncertain,automatic_retry:false,external_write:false
+    };
+  }
+
+  const resultId=Number(write.data?.data?.id||write.data?.bordero?.id||write.data?.id||0)||null;
+  await blingHubFinanceAudit(sb,"finance_action_succeeded","warning",{
+    operation,kind,id:id||null,idempotency_key:idem,http_status:write.status,result_id:resultId,external_write:true
+  });
+  return {ok:true,status:write.status,http_status:write.status,result_id:resultId,result:write.data||null,external_write:true,automatic_retry:operation==="update_execute"};
+}
+
 function blingHubDigits(v:any){return String(v??"").replace(/\D/g,"")}
 function blingHubValidCpfCnpj(v:any){
   const d=blingHubDigits(v);
@@ -4563,6 +4842,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="finance_overview"){
         const result=await blingHubFinanceOverview(sb);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="finance_action"){
+        const result=await blingHubFinanceAction(sb,body);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="reconcile_products_readonly"){

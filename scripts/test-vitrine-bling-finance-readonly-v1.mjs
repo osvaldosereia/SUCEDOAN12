@@ -22,7 +22,7 @@ assert.match(admin,/blingHubControl\("finance_overview"\)/);
 
 assert.match(html,/Financeiro · Bling/);
 assert.match(html,/bling_finance_overview/);
-assert.match(html,/Esta primeira rodada é somente leitura/);
+assert.match(html,/Bling é a fonte oficial/);
 assert.match(html,/Contas financeiras do Bling/);
 assert.match(html,/Prioridades financeiras/);
 

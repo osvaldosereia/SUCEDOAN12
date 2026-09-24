@@ -913,7 +913,12 @@
     const detail=[r.document_number?'Doc. '+r.document_number:'',r.origin_number?'Origem '+r.origin_number:'',r.boleto_url?'Boleto emitido':'',r.pix_url?'PIX disponível':''].filter(Boolean).join(' · ');
     return '<div class="closure-row">'+
       '<div><strong class="'+(isReceive?'ok-text':'warn-text')+'">'+(isReceive?'Receber':'Pagar')+'</strong><span class="sub">'+(overdue?'<span class="danger-text">Vencido</span>':'Em aberto')+'</span></div>'+
-      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small></div>'+
+      '<div class="history-main"><strong>'+esc(title)+'</strong><small>'+esc(detail||'Sem observação')+'</small><div class="dispatch-actions" style="justify-content:flex-start;margin-top:6px">'+
+        '<button class="text" type="button" data-finance-detail="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Detalhes</button>'+
+        '<button class="text" type="button" data-finance-edit="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Editar</button>'+
+        '<button class="text" type="button" data-finance-settle="'+esc(r.id)+'" data-finance-kind="'+esc(r.kind)+'">Dar baixa</button>'+
+        (isReceive&&r.origin_id?'<button class="text" type="button" data-finance-boleto="'+esc(r.origin_id)+'">Boletos</button>':'')+
+      '</div></div>'+
       '<div><strong>'+esc(dateOnly(r.due_date))+'</strong><span class="sub">'+(r.due_date===today?'Vence hoje':'Vencimento')+'</span></div>'+
       '<strong>'+money(r.amount_cents)+'</strong>'+
       '<span class="pill '+(overdue?'danger':'')+'">'+(r.boleto_url?'Boleto':r.pix_url?'PIX':'Aberto')+'</span>'+
@@ -940,14 +945,229 @@
         (priorities.length?priorities.map(r=>financePriorityRow(r,today)).join(''):'<div class="history-empty">Nenhuma conta em aberto no período consultado.</div>')+
       '</section>'+
       '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Contas financeiras do Bling</strong><span>bancos, caixas e integrações disponíveis</span></div><b>'+accounts.length+'</b></div>'+
-        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<span class="pill" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</span>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
+        (accounts.length?'<div style="padding:12px 14px">'+accounts.map(a=>'<button class="pill" type="button" data-financial-account-detail="'+esc(a.id)+'" style="margin:3px">'+esc(a.description||('Conta #'+a.id))+' · '+esc(a.type||'tipo não informado')+'</button>').join('')+'</div>':'<div class="history-empty">Nenhuma conta financeira retornada.</div>')+
       '</section>';
+    host.querySelectorAll('[data-finance-detail]').forEach(b=>b.onclick=()=>openFinanceDetail(b.dataset.financeKind,Number(b.dataset.financeDetail)));
+    host.querySelectorAll('[data-finance-edit]').forEach(b=>b.onclick=()=>openFinanceEditor(b.dataset.financeKind,Number(b.dataset.financeEdit)));
+    host.querySelectorAll('[data-finance-settle]').forEach(b=>b.onclick=()=>openFinanceSettlement(b.dataset.financeKind,Number(b.dataset.financeSettle)));
+    host.querySelectorAll('[data-finance-boleto]').forEach(b=>b.onclick=()=>openFinanceBoletos(Number(b.dataset.financeBoleto)));
+    host.querySelectorAll('[data-financial-account-detail]').forEach(b=>b.onclick=()=>openFinancialAccountDetail(Number(b.dataset.financialAccountDetail)));
   }
+  async function financeApi(operation,payload={}){
+    return await api('bling_finance_action',{},{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({operation,...payload})
+    });
+  }
+  function financeFieldValue(v){
+    return v==null?'':String(v);
+  }
+  function financeMoneyInput(v){
+    const n=Number(v);
+    return Number.isFinite(n)?n.toFixed(2).replace('.',','):'';
+  }
+  function financeFormPayload(form){
+    const value=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
+    const number=name=>{const raw=value(name).replace(/\./g,'').replace(',','.');const n=Number(raw);return Number.isFinite(n)&&n>0?n:null};
+    const payload={
+      vencimento:value('vencimento'),
+      valor:number('valor'),
+      contato_id:number('contato_id'),
+      forma_pagamento_id:number('forma_pagamento_id'),
+      dataEmissao:value('dataEmissao'),
+      numeroDocumento:value('numeroDocumento'),
+      competencia:value('competencia'),
+      historico:value('historico'),
+      portador_id:number('portador_id'),
+      categoria_id:number('categoria_id')
+    };
+    Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]===null)delete payload[k]});
+    return payload;
+  }
+  function financeExtractDetail(kind,account){
+    const a=account||{};
+    return {
+      vencimento:a.vencimento||'',
+      valor:a.valor??'',
+      contato_id:a.contato?.id||'',
+      forma_pagamento_id:a.formaPagamento?.id||'',
+      dataEmissao:a.dataEmissao||'',
+      numeroDocumento:a.numeroDocumento||'',
+      competencia:a.competencia||'',
+      historico:a.historico||'',
+      portador_id:a.portador?.id||a.contaContabil?.id||'',
+      categoria_id:a.categoria?.id||''
+    };
+  }
+  function financeOpenDialog(title,body,actions=''){
+    $('#editorTitle').textContent=title;
+    $('#editorBody').innerHTML=body;
+    $('#editorActions').innerHTML=actions||'<button class="secondary" id="financeClose" type="button">Fechar</button>';
+    if($('#financeClose'))$('#financeClose').onclick=()=>$('#editor').close();
+    $('#editor').showModal();
+  }
+  async function openFinanceEditor(kind,id=0){
+    const isReceive=kind==='receivable';
+    let current={};
+    if(id){
+      financeOpenDialog('Carregando…','<div class="loading">Consultando o Bling…</div>');
+      try{
+        const detail=await financeApi('detail',{kind,id});
+        current=financeExtractDetail(kind,detail.account);
+      }catch(e){financeOpenDialog('Financeiro','<div class="empty">Não consegui carregar esse lançamento.</div>');return}
+    }
+    const title=(id?'Editar ':'Novo ')+(isReceive?'conta a receber':'conta a pagar');
+    const today=cuiabaDayKey(new Date());
+    financeOpenDialog(title,
+      '<form id="financeForm" class="form-grid">'+
+        '<label><span>Vencimento *</span><input name="vencimento" type="date" required value="'+esc(current.vencimento||today)+'"></label>'+
+        '<label><span>Valor *</span><input name="valor" inputmode="decimal" required value="'+esc(financeMoneyInput(current.valor))+'"></label>'+
+        '<label><span>ID do contato no Bling *</span><input name="contato_id" inputmode="numeric" required value="'+esc(financeFieldValue(current.contato_id))+'"></label>'+
+        '<label><span>ID forma de pagamento</span><input name="forma_pagamento_id" inputmode="numeric" value="'+esc(financeFieldValue(current.forma_pagamento_id))+'"></label>'+
+        '<label><span>Data de emissão</span><input name="dataEmissao" type="date" value="'+esc(current.dataEmissao||today)+'"></label>'+
+        '<label><span>Nº documento</span><input name="numeroDocumento" value="'+esc(current.numeroDocumento||'')+'"></label>'+
+        '<label><span>Competência</span><input name="competencia" type="date" value="'+esc(current.competencia||'')+'"></label>'+
+        '<label><span>ID conta financeira / portador</span><input name="portador_id" inputmode="numeric" value="'+esc(financeFieldValue(current.portador_id))+'"></label>'+
+        '<label><span>ID categoria</span><input name="categoria_id" inputmode="numeric" value="'+esc(financeFieldValue(current.categoria_id))+'"></label>'+
+        '<label class="span-2"><span>Histórico</span><textarea name="historico">'+esc(current.historico||'')+'</textarea></label>'+
+      '</form>',
+      '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financePreview" type="button">Revisar antes de salvar</button>'
+    );
+    $('#financeCancel').onclick=()=>$('#editor').close();
+    $('#financePreview').onclick=async()=>{
+      const payload=financeFormPayload($('#financeForm'));
+      try{
+        const preview=await financeApi(id?'update_preview':'create_preview',{kind,id:id||undefined,payload});
+        openFinanceConfirmation(preview,id?'update_execute':'create_execute',{kind,id:id||undefined,payload});
+      }catch(e){toast(String(e?.message||'Não foi possível validar'))}
+    };
+  }
+  function financePreviewHtml(preview){
+    const p=preview?.payload||{};
+    const rows=[
+      ['Tipo',preview.kind==='receivable'?'Conta a receber':'Conta a pagar'],
+      ['Operação',preview.operation==='settle'?'Baixa':preview.operation==='update'?'Edição':'Criação'],
+      ['Vencimento',p.vencimento||'—'],
+      ['Valor',p.valor!=null?Number(p.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'],
+      ['Contato',p.contato?.id||'—'],
+      ['Conta financeira',p.portador?.id||'—'],
+      ['Categoria',p.categoria?.id||'—'],
+      ['Data da baixa',p.data||'—']
+    ];
+    return '<div class="rule-notice warn"><strong>Confirmação obrigatória</strong><div>Confira os dados. Esta ação será enviada ao Bling somente após você digitar CONFIRMAR.</div></div>'+
+      '<div class="panel" style="padding:12px">'+rows.filter(x=>x[1]!=='—').map(x=>'<div class="history-title"><span>'+esc(x[0])+'</span><strong>'+esc(x[1])+'</strong></div>').join('')+'</div>'+
+      (preview.warning?'<div class="rule-notice"><strong>Atenção</strong><div>'+esc(preview.warning)+'</div></div>':'')+
+      '<label style="display:block;margin-top:12px"><span>Digite CONFIRMAR</span><input id="financeConfirmText" autocomplete="off"></label>';
+  }
+  function openFinanceConfirmation(preview,executeOperation,context){
+    const idempotencyKey=crypto.randomUUID();
+    financeOpenDialog('Confirmar operação financeira',financePreviewHtml(preview),
+      '<button class="secondary" id="financeBack" type="button">Voltar</button><button class="primary" id="financeExecute" type="button" disabled>Confirmar no Bling</button>'
+    );
+    const input=$('#financeConfirmText'),button=$('#financeExecute');
+    input.oninput=()=>button.disabled=input.value.trim()!=='CONFIRMAR';
+    $('#financeBack').onclick=()=>$('#editor').close();
+    button.onclick=async()=>{
+      if(input.value.trim()!=='CONFIRMAR')return;
+      button.disabled=true;button.textContent='Enviando…';
+      try{
+        await financeApi(executeOperation,{...context,confirmation:'CONFIRMAR',idempotency_key:idempotencyKey});
+        $('#editor').close();toast('Operação registrada no Bling');await renderFinance();
+      }catch(e){
+        button.disabled=false;button.textContent='Confirmar no Bling';
+        const msg=String(e?.message||'Falha ao registrar');
+        toast(msg==='bling_finance_write_uncertain'?'Resultado incerto. Não tente novamente sem revisar.':msg);
+      }
+    };
+  }
+  async function openFinanceSettlement(kind,id){
+    financeOpenDialog('Baixa financeira','<div class="loading">Consultando o lançamento…</div>');
+    try{
+      const detail=await financeApi('detail',{kind,id});
+      const a=financeExtractDetail(kind,detail.account);
+      const today=cuiabaDayKey(new Date());
+      financeOpenDialog(kind==='receivable'?'Registrar recebimento':'Registrar pagamento',
+        '<div class="rule-notice warn"><strong>Baixa manual</strong><div>Isso registra a baixa no Bling. Não movimenta banco, PIX ou cartão.</div></div>'+
+        '<form id="financeSettleForm" class="form-grid">'+
+          '<label><span>Data da baixa *</span><input name="data" type="date" required value="'+esc(today)+'"></label>'+
+          '<label><span>Valor recebido/pago</span><input name="valorRecebido" inputmode="decimal" value="'+esc(financeMoneyInput(detail.account?.valor))+'"></label>'+
+          '<label><span>ID conta financeira / portador</span><input name="portador_id" inputmode="numeric" value="'+esc(financeFieldValue(a.portador_id))+'"></label>'+
+          '<label><span>ID categoria</span><input name="categoria_id" inputmode="numeric" value="'+esc(financeFieldValue(a.categoria_id))+'"></label>'+
+          '<label><span>Juros</span><input name="juros" inputmode="decimal"></label>'+
+          '<label><span>Desconto</span><input name="desconto" inputmode="decimal"></label>'+
+          '<label><span>Acréscimo</span><input name="acrescimo" inputmode="decimal"></label>'+
+          '<label><span>Tarifa</span><input name="tarifa" inputmode="decimal"></label>'+
+          '<label class="span-2"><span>Histórico</span><textarea name="historico">'+esc(a.historico||'')+'</textarea></label>'+
+        '</form>',
+        '<button class="secondary" id="financeCancel" type="button">Cancelar</button><button class="primary" id="financeSettlePreview" type="button">Revisar baixa</button>'
+      );
+      $('#financeCancel').onclick=()=>$('#editor').close();
+      $('#financeSettlePreview').onclick=async()=>{
+        const form=$('#financeSettleForm');
+        const get=name=>form.querySelector('[name="'+name+'"]')?.value?.trim()||'';
+        const decimal=name=>{const v=get(name).replace(/\./g,'').replace(',','.');const n=Number(v);return v!==''&&Number.isFinite(n)&&n>=0?n:undefined};
+        const payload={
+          data:get('data'),usarDataVencimento:false,portador_id:Number(get('portador_id'))||undefined,categoria_id:Number(get('categoria_id'))||undefined,
+          historico:get('historico'),valorRecebido:decimal('valorRecebido'),juros:decimal('juros'),desconto:decimal('desconto'),acrescimo:decimal('acrescimo'),tarifa:decimal('tarifa')
+        };
+        Object.keys(payload).forEach(k=>payload[k]===undefined&&delete payload[k]);
+        try{
+          const preview=await financeApi('settle_preview',{kind,id,payload});
+          openFinanceConfirmation(preview,'settle_execute',{kind,id,payload});
+        }catch(e){toast(String(e?.message||'Não foi possível validar a baixa'))}
+      };
+    }catch(e){financeOpenDialog('Baixa financeira','<div class="empty">Não consegui carregar esse lançamento.</div>')}
+  }
+  async function openFinanceDetail(kind,id){
+    financeOpenDialog('Detalhes financeiros','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('detail',{kind,id});
+      const a=d.account||{};
+      financeOpenDialog(kind==='receivable'?'Conta a receber':'Conta a pagar',
+        '<div class="panel" style="padding:14px">'+
+          '<div class="history-title"><span>ID</span><strong>'+esc(a.id||id)+'</strong></div>'+
+          '<div class="history-title"><span>Vencimento</span><strong>'+esc(dateOnly(a.vencimento))+'</strong></div>'+
+          '<div class="history-title"><span>Valor</span><strong>'+esc(Number(a.valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}))+'</strong></div>'+
+          '<div class="history-title"><span>Contato</span><strong>'+esc(a.contato?.nome||a.contato?.id||'—')+'</strong></div>'+
+          '<div class="history-title"><span>Documento</span><strong>'+esc(a.numeroDocumento||'—')+'</strong></div>'+
+          '<div class="history-title"><span>Histórico</span><strong>'+esc(a.historico||'—')+'</strong></div>'+
+        '</div>',
+        '<button class="secondary" id="financeClose" type="button">Fechar</button><button class="secondary" id="financeEditFromDetail" type="button">Editar</button><button class="primary" id="financeSettleFromDetail" type="button">Dar baixa</button>'
+      );
+      $('#financeClose').onclick=()=>$('#editor').close();
+      $('#financeEditFromDetail').onclick=()=>openFinanceEditor(kind,id);
+      $('#financeSettleFromDetail').onclick=()=>openFinanceSettlement(kind,id);
+    }catch(e){financeOpenDialog('Detalhes financeiros','<div class="empty">Não consegui carregar os detalhes.</div>')}
+  }
+  async function openFinanceBoletos(originId){
+    financeOpenDialog('Boletos','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('boletos',{kind:'receivable',origin_id:originId});
+      const rows=Array.isArray(d.boletos)?d.boletos:[];
+      financeOpenDialog('Boletos vinculados',
+        rows.length?'<div class="panel" style="padding:14px">'+rows.map((b,i)=>'<div class="history-title"><span>Boleto '+(i+1)+'</span><strong>'+esc(b?.situacao?.descricao||b?.situacao||b?.id||'Encontrado')+'</strong></div>').join('')+'</div>':'<div class="empty">Nenhum boleto retornado para essa origem.</div>'
+      );
+    }catch(e){financeOpenDialog('Boletos','<div class="empty">Não consegui consultar os boletos.</div>')}
+  }
+  async function openFinancialAccountDetail(id){
+    financeOpenDialog('Conta financeira','<div class="loading">Consultando o Bling…</div>');
+    try{
+      const d=await financeApi('financial_account_detail',{id});
+      const a=d.financial_account||{};
+      financeOpenDialog('Conta financeira do Bling',
+        '<div class="panel" style="padding:14px"><div class="history-title"><span>ID</span><strong>'+esc(a.id||id)+'</strong></div><div class="history-title"><span>Descrição</span><strong>'+esc(a.descricao||'—')+'</strong></div><div class="history-title"><span>Tipo</span><strong>'+esc(a.tipo||'—')+'</strong></div></div>'
+      );
+    }catch(e){financeOpenDialog('Conta financeira','<div class="empty">Não consegui carregar essa conta financeira.</div>')}
+  }
+
   async function renderFinance(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Visão direta das contas a pagar e receber. Esta primeira rodada é somente leitura.</p></div><button class="secondary" id="refreshFinance">Atualizar</button></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Financeiro · Bling</h1><p>Bling é a fonte oficial. Inclusões, edições e baixas exigem prévia e confirmação humana.</p></div><div class="dispatch-actions"><button class="secondary" id="newPayable" type="button">+ A pagar</button><button class="secondary" id="newReceivable" type="button">+ A receber</button><button class="secondary" id="refreshFinance">Atualizar</button></div></div>'+
+      '<div class="rule-notice"><strong>Operação controlada</strong><div>Baixa apenas registra pagamento/recebimento no Bling. O sistema não faz transferência bancária e não cancela boletos automaticamente.</div></div>'+
       '<div id="financeBody"><div class="loading">Consultando financeiro no Bling…</div></div>';
     $('#refreshFinance').onclick=renderFinance;
+    $('#newPayable').onclick=()=>openFinanceEditor('payable');
+    $('#newReceivable').onclick=()=>openFinanceEditor('receivable');
     try{
       const data=await api('bling_finance_overview',{},{
         method:'POST',headers:{'Content-Type':'application/json'},body:'{}'
