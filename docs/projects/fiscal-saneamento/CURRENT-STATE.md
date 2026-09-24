@@ -56,6 +56,25 @@ Migration:
 
 O WARN correspondente do Supabase Advisor foi eliminado.
 
+## R0.17b — Cobertura textual de regras já verificadas
+
+Migration aplicada no Supabase e versionada no GitHub:
+`20260924202949_product_fiscal_rule_text_coverage_r0_17.sql`
+
+Sem alterar NCM ou CEST legal, foram ampliados somente os qualificadores de descrição de duas regras oficiais MT:
+
+- 20.014.00 / 3304.99.10 — aceita também nomenclatura comercial `hidratante facial` / `creme hidratante`;
+- 20.037.00 / 3401.30.00 — aceita também `água micelar` / `solução de limpeza`.
+
+Resultado da reclassificação:
+
+- Água Micelar 7 em 1 NIVEA 200 ml passou a `candidate` para CEST 20.037.00, sem blocker;
+- Hidratante Facial Antissinais Garnier 85 g passou a `candidate` para CEST 20.014.00, sem blocker;
+- 2 alertas `cest_evidence_unmapped` foram resolvidos;
+- nenhum candidato ambíguo foi criado.
+
+Os candidatos continuam sem escrita no Bling enquanto não houver os gates independentes exigidos.
+
 ## XMLs pessoais ingeridos
 
 O ledger usa `evidence_type='user_purchase_nfe_xml'`.
@@ -119,7 +138,16 @@ Manter fail-closed quando descrição/evidências deixam dúvida entre:
 - 20.020.00 — outras preparações capilares;
 - 20.021.00 — condicionadores.
 
-Não decidir só pelo XML.
+Os XMLs novos reforçaram que vendedores podem informar 20.021.00 para máscaras/cremes de tratamento. A regra MT vigente mantém máscaras/finalizadores em 20.020.00. Esses casos permanecem bloqueados; o XML não sobrescreve a regra legal.
+
+### Massas 1902.11.00
+
+Há XMLs informando 17.049.00 para macarrões com NCM 1902.11.00. A regra MT vigente separa:
+
+- 17.049.00 — massa comum não derivada do trigo;
+- 17.049.06 — massa comum com ovos derivada de farinha de trigo.
+
+Por isso os macarrões com evidência 17.049.00 permanecem `cest_evidence_unmapped` e não são promovidos automaticamente.
 
 ## Estado fiscal atual
 
@@ -129,7 +157,23 @@ Não decidir só pelo XML.
 - 50 `blocked`;
 - 1.480 `pending`.
 
-`product_fiscal_bling_diff_v1`:
+Produtos ativos:
+
+- 1.673 perfis fiscais ativos;
+- 369 já possuem CEST no perfil;
+- 284 estão `auto_validated`;
+- 50 estão bloqueados;
+- 1.339 permanecem pendentes.
+
+Fila aberta relevante:
+
+- 34 `origin_evidence_conflict` blockers;
+- 9 `gtin_invalid` blockers;
+- 5 `cest_rule_mismatch` blockers;
+- 3 `ncm_evidence_conflict` blockers;
+- 2 `cest_evidence_unmapped` warnings.
+
+`product_fiscal_bling_diff_v1` no último checkpoint:
 
 - 18 `aligned`;
 - 266 `cest_missing`;
@@ -159,4 +203,3 @@ Não abrir policies públicas para resolver isso.
 6. Não escrever CEST no Bling quando existir qualquer conflito NCM/CEST/origem.
 7. Para famílias totalmente verdes, continuar canário/lote pequeno e verificado.
 8. Só depois avançar da R0 fiscal para pagamentos/recebimentos, tela do entregador e conciliação.
-
