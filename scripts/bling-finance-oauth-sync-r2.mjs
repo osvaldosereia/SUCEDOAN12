@@ -38,5 +38,6 @@ for(const [name,path] of probes){
   const r=await fetch(API+path,{headers:{Authorization:`Bearer ${accessToken}`,Accept:'application/json','enable-jwt':'1'}});
   results[name]={ok:r.ok,http_status:r.status,scope_missing:r.status===403};
 }
-console.log(JSON.stringify({ok:Object.values(results).every(x=>x.ok),probes:results}));
-if(!Object.values(results).every(x=>x.ok))process.exitCode=2;
+const outcome={ok:Object.values(results).every(x=>x.ok),probes:results};
+console.log(JSON.stringify(outcome));
+if(process.env.FINANCE_PROBE_FILE)writeFileSync(process.env.FINANCE_PROBE_FILE,JSON.stringify(outcome),{encoding:'utf8',mode:0o600});
