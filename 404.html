@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <title>Abrindo sua vitrine · Dona Antônia</title>
+  <style>
+    html,body{height:100%;margin:0;font-family:Arial,sans-serif;background:#fff;color:#18221c}
+    body{display:grid;place-items:center}
+    main{text-align:center;padding:28px}
+    .spinner{width:34px;height:34px;margin:0 auto 14px;border:3px solid #e7ebe8;border-top-color:#285f44;border-radius:50%;animation:s .8s linear infinite}
+    @keyframes s{to{transform:rotate(360deg)}}
+    p{margin:0;color:#66716a;font-size:14px}
+  </style>
+</head>
+<body>
+  <main><div class="spinner"></div><p>Abrindo sua vitrine…</p></main>
+  <script>
+    (async function(){
+      var match=location.pathname.match(/^\/catalogo_(\d{4})\/?$/i);
+      if(!match){ location.replace('/'); return; }
+      var code=match[1];
+      try{
+        var url='https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=resolve_identity_code&code='+encodeURIComponent(code);
+        var response=await fetch(url,{cache:'no-store'});
+        var data=await response.json().catch(function(){return {}});
+        if(!response.ok || data.ok===false || !data.phone_e164) throw new Error('invalid_catalog_code');
+        try{sessionStorage.setItem('da_vitrine_whatsapp_phone_v1',String(data.phone_e164))}catch(e){}
+        location.replace('/');
+      }catch(e){
+        location.replace('/');
+      }
+    })();
+  </script>
+</body>
+</html>
