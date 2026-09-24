@@ -2045,6 +2045,8 @@ async function sha256Short(value:string){
   return [...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,"0")).join("").slice(0,24);
 }
 async function queueBlingOrderSnapshot(orderId:string,reason:string){
+  const guard=await legacyOrderMutationGuard(orderId);
+  if(!guard.ok)return false;
   const snapshot=await buildBlingOrderSnapshot(orderId);
   const digest=await sha256Short(JSON.stringify(snapshot));
   const key="vitrine_qx:order:"+orderId+":v2:"+digest;
