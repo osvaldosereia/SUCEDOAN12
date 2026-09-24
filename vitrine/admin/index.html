@@ -188,6 +188,7 @@
         <button class="tab" data-tab="today" type="button">Hoje</button>
         <button class="tab" data-tab="orders" type="button">Pedidos</button>
         <button class="tab" data-tab="crosssell" type="button">Pós-cesta</button>
+        <button class="tab" data-tab="ai-control" type="button">Atendimento IA</button>
         <button class="tab" data-tab="expedition" type="button">Expedição</button>
         <button class="tab" data-tab="closure" type="button">Fechamento</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
@@ -219,7 +220,7 @@
   const fmtQty=n=>Number.isInteger(Number(n))?String(Number(n)):String(Number(n).toFixed(3)).replace(/\.?0+$/,'');
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,crossSell:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,crossSell:null,papoAiControl:null,customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -254,6 +255,7 @@
     if(tab==='bling')renderBling();
     if(tab==='orders')renderOrders();
     if(tab==='crosssell')renderCrossSell();
+    if(tab==='ai-control')renderAiControl();
     if(tab==='expedition')renderExpedition();
     if(tab==='closure')renderClosure();
     if(tab==='more')renderMore();
@@ -1735,6 +1737,101 @@
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar cliente'}
   }
 
+
+  async function renderAiControl(){
+    const content=$('#content');
+    content.innerHTML='<div class="page-head"><div><h1>Atendimento IA</h1><p>Somente controles que realmente influenciam o atendimento da Dona Antônia.</p></div><button class="secondary" id="refreshAiControl" type="button">Atualizar</button></div>'+
+      '<div id="aiControlBody"><div class="loading">Carregando controles…</div></div>';
+    $('#refreshAiControl').onclick=loadAiControl;
+    await loadAiControl();
+  }
+  async function loadAiControl(){
+    const host=$('#aiControlBody');if(!host)return;
+    host.innerHTML='<div class="loading">Carregando…</div>';
+    try{
+      const [papo,cross]=await Promise.all([
+        api('papoai_control'),
+        api('cross_sell_shadow_list',{limit:1})
+      ]);
+      state.papoAiControl={papo:papo.papoai||{},cross:cross.config||{}};
+      paintAiControl();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não foi possível carregar o controle do atendimento: '+esc(errorMessage(e.message))+'</div>';
+    }
+  }
+  function paintAiControl(){
+    const host=$('#aiControlBody');if(!host)return;
+    const data=state.papoAiControl||{},p=data.papo||{},c=data.cross||{},h=p.health||{};
+    const bridgeRecent=h.last_event_at && (Date.now()-new Date(h.last_event_at).getTime())<24*60*60*1000;
+    host.innerHTML=
+      '<div class="bling-grid">'+
+        '<div class="bling-card"><small>Ponte PapoAI</small><strong class="'+(bridgeRecent?'ok-text':'warn-text')+'">'+(bridgeRecent?'ATIVA':'SEM EVENTO RECENTE')+'</strong><span class="sub">Último evento: '+dateTime(h.last_event_at)+'</span></div>'+
+        '<div class="bling-card"><small>Último link confirmado</small><strong>'+esc(h.last_link_success_at?'OK':'—')+'</strong><span class="sub">'+dateTime(h.last_link_success_at)+'</span></div>'+
+        '<div class="bling-card"><small>Eventos 24h</small><strong>'+esc(h.event_count_24h||0)+'</strong><span class="sub">mensagens observadas</span></div>'+
+        '<div class="bling-card"><small>Erros de link 24h</small><strong class="'+(Number(h.sync_errors_24h||0)>0?'danger-text':'ok-text')+'">'+esc(h.sync_errors_24h||0)+'</strong><span class="sub">sincronização com a vitrine</span></div>'+
+      '</div>'+
+      '<div class="panel" style="padding:14px;margin-bottom:14px">'+
+        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Vitrine contextual no WhatsApp</div>'+
+        '<div class="form-grid">'+
+          '<label class="check span-2"><input id="aiStorefrontEnabled" type="checkbox" '+(p.storefront_link_enabled!==false?'checked':'')+'><span><strong>Permitir geração automática do Link da Vitrine</strong><small class="sub">Só em intenção comercial. Pós-venda e suporte continuam bloqueados por regra fixa.</small></span></label>'+
+          '<div class="span-2" style="display:flex;justify-content:flex-end"><button class="primary" id="saveAiStorefront" type="button">Salvar vitrine contextual</button></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="panel" style="padding:14px;margin-bottom:14px">'+
+        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Oferta após cesta</div>'+
+        '<div class="form-grid">'+
+          '<label class="check span-2"><input id="aiCrossSellEnabled" type="checkbox" '+(c.enabled!==false?'checked':'')+'><span><strong>Analisar pedidos para oferta pós-cesta</strong><small class="sub">Modo atual: '+esc(String(c.mode||'shadow').toUpperCase())+'. No Shadow nada é enviado ao cliente.</small></span></label>'+
+          '<label><span>Produtos por validade/oferta</span><input id="aiExpiryCount" type="number" min="0" max="10" value="'+esc(c.expiry_offer_count??5)+'"></label>'+
+          '<label><span>Produtos normais</span><input id="aiRegularCount" type="number" min="0" max="10" value="'+esc(c.regular_count??5)+'"></label>'+
+          '<div class="span-2 offer-note">Máximo de 10 produtos no total. A similaridade da cesta, filtros de estoque, vencimento e bloqueios de suporte ficam protegidos pelo sistema e não são expostos como configuração.</div>'+
+          '<div class="span-2" style="display:flex;gap:8px;justify-content:flex-end"><button class="secondary" id="openCrossSell" type="button">Ver Shadow</button><button class="primary" id="saveAiCrossSell" type="button">Salvar pós-cesta</button></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="panel" style="padding:14px">'+
+        '<div class="section-title" style="margin-top:0;padding-top:0;border-top:0">Configurações nativas do PapoAI</div>'+
+        '<div class="history-list">'+
+          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Transferência humana</strong><span class="sub">Quem assume e quando a IA para</span></div><span class="pill off">Gerenciado no PapoAI</span></div>'+
+          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Follow-up nativo</strong><span class="sub">Temporização e execução da mensagem</span></div><span class="pill off">Gerenciado no PapoAI</span></div>'+
+          '<div class="list-row" style="grid-template-columns:minmax(180px,1fr) minmax(180px,1.2fr)"><div><strong>Modelo, raciocínio e prompt-base</strong><span class="sub">Não duplicamos controles que não conseguimos sincronizar por API</span></div><span class="pill off">Gerenciado no PapoAI</span></div>'+
+        '</div>'+
+      '</div>';
+    $('#saveAiStorefront').onclick=saveAiStorefrontControl;
+    $('#saveAiCrossSell').onclick=saveAiCrossSellControl;
+    $('#openCrossSell').onclick=()=>setTab('crosssell');
+  }
+  async function saveAiStorefrontControl(){
+    const btn=$('#saveAiStorefront');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      const data=await api('papoai_control_save',{},{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({storefront_link_enabled:$('#aiStorefrontEnabled').checked})
+      });
+      state.papoAiControl.papo=data.papoai||state.papoAiControl.papo;
+      toast('Controle da vitrine atualizado');
+      paintAiControl();
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar vitrine contextual'}
+  }
+  async function saveAiCrossSellControl(){
+    const expiry=Math.max(0,Math.min(10,Number($('#aiExpiryCount').value||0)));
+    const regular=Math.max(0,Math.min(10,Number($('#aiRegularCount').value||0)));
+    if(expiry+regular<1||expiry+regular>10){toast('A soma deve ficar entre 1 e 10 produtos');return}
+    const btn=$('#saveAiCrossSell');btn.disabled=true;btn.textContent='Salvando…';
+    try{
+      const data=await api('cross_sell_config_save',{},{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          enabled:$('#aiCrossSellEnabled').checked,
+          expiry_offer_count:Math.floor(expiry),
+          regular_count:Math.floor(regular)
+        })
+      });
+      state.papoAiControl.cross=data.config||state.papoAiControl.cross;
+      toast('Configuração pós-cesta atualizada');
+      paintAiControl();
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Salvar pós-cesta'}
+  }
 
   function crossSellReasonLabel(reason){
     const map={
