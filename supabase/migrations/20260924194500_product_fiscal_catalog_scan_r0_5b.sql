@@ -44,11 +44,6 @@ select
   p.name,
   p.is_active,
   p.gtin,
-  case
-    when nullif(regexp_replace(coalesce(p.gtin,''),'\D','','g'),'') is null then 'missing'
-    when public.fiscal_valid_gtin_v1(p.gtin) then 'valid'
-    else 'invalid'
-  end as gtin_status,
   pf.ncm,
   pf.cest,
   pf.origin_code,
@@ -102,7 +97,7 @@ select
     else 20
   end as risk_score,
   case
-    when nullif(regexp_replace(coalesce(p.gtin,''),'\\D','','g'),'') is null then 'missing'
+    when nullif(regexp_replace(coalesce(p.gtin,''),'\D','','g'),'') is null then 'missing'
     when public.fiscal_valid_gtin_v1(p.gtin) then 'valid'
     else 'invalid'
   end as gtin_status
