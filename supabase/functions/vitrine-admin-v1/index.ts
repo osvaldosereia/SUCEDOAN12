@@ -1178,6 +1178,20 @@ async function orderStockReadinessMap(orderIdsRaw:any[]){
   for(const id of orderIds)result.set(id,{ok:true,shortage_count:0,shortages:[],demand_lines:0,reserved_lines:0});
   if(!orderIds.length)return result;
 
+  const orderMeta:any[]=[];
+  for(let i=0;i<orderIds.length;i+=200){
+    const q=await db.from("orders")
+      .select("id,payment_method_snapshot")
+      .eq("organization_id",ORG_ID)
+      .in("id",orderIds.slice(i,i+200));
+    if(q.error)throw q.error;
+    orderMeta.push(...(q.data||[]));
+  }
+  const protectedLegacy=new Set(orderMeta.filter((o:any)=>{
+    const p=o.payment_method_snapshot&&typeof o.payment_method_snapshot==="object"?o.payment_method_snapshot:{};
+    return p.stock_reserved===true&&p.stock_released!==true&&p.stock_model!=="reservation_v2";
+  }).map((o:any)=>o.id));
+
   const items:any[]=[];
   for(let i=0;i<orderIds.length;i+=150){
     const q=await db.from("order_items")
@@ -1245,6 +1259,18 @@ async function orderStockReadinessMap(orderIdsRaw:any[]){
 
   for(const orderId of orderIds){
     const lines=demand.get(orderId)||new Map<string,number>();
+    if(protectedLegacy.has(orderId)){
+      result.set(orderId,{
+        ok:lines.size>0,
+        shortage_count:0,
+        shortages:[],
+        demand_lines:lines.size,
+        reserved_lines:0,
+        protected_legacy:true,
+        error:lines.size?"":"empty_order_stock"
+      });
+      continue;
+    }
     const shortages:any[]=[];
     let reservedLines=0;
     for(const [productId,requested] of lines.entries()){
@@ -2040,6 +2066,7 @@ async function updateOrder(payload:any) {
       return {error:"order_operational_data_incomplete",status:409,blockers,current_status:currentOrder.status,requested_status:requestedStatus};
     }
   }
+  let confirmationReservationCreated=false;
   if(requestedStatus==="confirmed"&&currentOrder.status==="created"){
     const stockReadiness=(await orderStockReadinessMap([id])).get(id);
     if(!stockReadiness?.ok){
@@ -2051,6 +2078,37 @@ async function updateOrder(payload:any) {
         stock_readiness:stockReadiness??null
       };
     }
+
+    const candidatePayment=patch.payment_method_snapshot??currentPayment;
+    const alreadyProtected=candidatePayment.stock_reserved===true&&candidatePayment.stock_released!==true;
+    if(!alreadyProtected){
+      const stockItems=await orderStockReservationItems(id);
+      if(!stockItems.length)return {error:"empty_order_stock",status:409};
+      const {data:reserved,error:rErr}=await db.rpc("reserve_storefront_order_stock_v2",{
+        p_organization_id:ORG_ID,p_order_id:id,p_items:stockItems
+      });
+      if(rErr)throw rErr;
+      if(!reserved?.ok){
+        const refreshed=(await orderStockReadinessMap([id])).get(id);
+        return {
+          error:String(reserved?.error||"insufficient_stock"),
+          status:409,
+          current_status:currentOrder.status,
+          requested_status:requestedStatus,
+          stock_readiness:refreshed??stockReadiness??null,
+          ...reserved
+        };
+      }
+      confirmationReservationCreated=true;
+      patch.payment_method_snapshot={
+        ...candidatePayment,
+        stock_reserved:true,
+        stock_consumed:false,
+        stock_released:false,
+        stock_model:"reservation_v2",
+        stock_reserved_at:new Date().toISOString()
+      };
+    }
   }
 
   const { data,error }=await db.from("orders")
@@ -2059,8 +2117,18 @@ async function updateOrder(payload:any) {
     .eq("id",id)
     .select("id")
     .maybeSingle();
-  if (error) throw error;
-  if (!data) return {error:"order_not_found",status:404};
+  if (error) {
+    if(confirmationReservationCreated){
+      try{await db.rpc("release_storefront_order_stock_v2",{p_organization_id:ORG_ID,p_order_id:id})}catch{}
+    }
+    throw error;
+  }
+  if (!data) {
+    if(confirmationReservationCreated){
+      try{await db.rpc("release_storefront_order_stock_v2",{p_organization_id:ORG_ID,p_order_id:id})}catch{}
+    }
+    return {error:"order_not_found",status:404};
+  }
   if(stockReleasedChange===true){
     try{
       const stockItems=await orderStockReservationItems(data.id);
@@ -2116,6 +2184,7 @@ async function updateOrder(payload:any) {
   }
   return {
     order_id:data.id,
+    stock_reserved_on_confirm:confirmationReservationCreated,
     stock_released:stockReleasedChange,
     history_synced:Boolean(historySync.ok),
     bling_order_queued:blingOrderQueued,
