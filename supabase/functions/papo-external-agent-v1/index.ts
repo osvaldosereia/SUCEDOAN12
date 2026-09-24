@@ -1121,8 +1121,10 @@ function storefrontLinkIntent(messageValue:any){
   }
 
   const basketIntent=
-    /\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|escolher|comprar|tem|quais|opcoes?|precos?)\b.{0,55}\b(cesta|cestas|cesta basica|cestas basicas)\b/.test(text)
-    || /\b(cesta|cestas|cesta basica|cestas basicas)\b.{0,55}\b(quero|queria|gostaria|manda|mande|mostrar|mostra|ver|olhar|escolher|comprar|tem|quais|opcoes?|precos?)\b/.test(text);
+    /\b(quero|queria|gostaria|manda|mande|mandar|passe|passa|mostrar|mostra|ver|olhar|escolher|comprar|tem|quais|opcoes?|precos?|preco|valor|valores|vende|vendem|voces vendem|você vende)\b.{0,80}\b(cesta|cestas|cesta basica|cestas basicas)\b/.test(text)
+    || /\b(cesta|cestas|cesta basica|cestas basicas)\b.{0,80}\b(quero|queria|gostaria|manda|mande|mandar|passe|passa|mostrar|mostra|ver|olhar|escolher|comprar|tem|quais|opcoes?|precos?|preco|valor|valores|vende|vendem)\b/.test(text)
+    || /\b(cesta|cestas|cesta basica|cestas basicas)\b.{0,80}\b(quanto|custa|custam|sai|saem)\b/.test(text)
+    || /\b(quanto|qual|quais)\b.{0,35}\b(valor|preco|precos|valores)\b.{0,50}\b(cesta|cestas|cesta basica|cestas basicas)\b/.test(text);
   if(basketIntent){
     return {eligible:true,reason:'basket_browse_intent',kind:'baskets'};
   }
@@ -1146,6 +1148,34 @@ function storefrontLinkIntent(messageValue:any){
   }
 
   return {eligible:false,reason:'no_storefront_intent',kind:'none'};
+}
+
+async function contextualStorefrontFollowupIntent(sb:any,phone:string,messageValue:any,current:any){
+  if(current?.eligible===true||!phone)return current;
+  const raw=String(messageValue??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  if(!/^(sim|s|quero|pode|pode sim|manda|mande|me mostra|mostra|claro|ok|certo)[.!]?$/.test(raw))return current;
+  try{
+    const since=new Date(Date.now()-5*60*1000).toISOString();
+    const q=await sb.from('papoai_flow_customer_webhook_events')
+      .select('parsed_data,received_at')
+      .eq('contact_phone_e164',phone)
+      .eq('status','outbound_probe')
+      .gte('received_at',since)
+      .order('received_at',{ascending:false})
+      .limit(8);
+    if(q.error)return current;
+    for(const row of q.data||[]){
+      const previous=String(row?.parsed_data?.message_text||'');
+      if(!previous)continue;
+      const decision=storefrontLinkIntent(previous);
+      if(decision?.eligible===true&&['baskets','offers','catalog','products','purchase'].includes(String(decision.kind||''))){
+        return {eligible:true,reason:'contextual_affirmative_followup',kind:decision.kind,previous_reason:decision.reason};
+      }
+    }
+  }catch(error){
+    console.error('papoai_contextual_storefront_followup_failed',String((error as Error)?.message||error));
+  }
+  return current;
 }
 
 async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlationId:string){
@@ -1181,6 +1211,9 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
     let storefrontDecision:any=flowLike
       ? {eligible:false,reason:'flow_payload',kind:'none'}
       : storefrontLinkIntent(messageText);
+    if(!flowLike){
+      storefrontDecision=await contextualStorefrontFollowupIntent(sb,phone,messageText,storefrontDecision);
+    }
     const storefrontRuntime=await papoAiStorefrontRuntimeControl(sb);
     if(storefrontDecision.eligible && storefrontRuntime.storefront_link_enabled===false){
       storefrontDecision={
@@ -1274,18 +1307,15 @@ async function handlePapoAiOutboundProbe(sb:any,req:Request,body:any,correlation
         return storefrontLinkSync;
       };
 
-      const edgeRuntime=(globalThis as any)?.EdgeRuntime;
-      if(edgeRuntime?.waitUntil){
-        edgeRuntime.waitUntil(syncAndPersist());
-      }else{
-        await syncAndPersist();
-      }
+      // Wait for the contact field to be updated before PapoAI continues its native reply.
+      // This avoids returning a placeholder/stale field such as "shopping_url".
+      await syncAndPersist();
     }
 
     return jsonResponse({
       ok:true,
       probe:true,
-      storefront_link_sync:storefrontDecision.eligible?'scheduled':'skipped',
+      storefront_link_sync:storefrontDecision.eligible?'completed_before_reply':'skipped',
       storefront_link_reason:storefrontDecision.reason,
       ignored_non_flow:true,
       correlation_id:correlationId
