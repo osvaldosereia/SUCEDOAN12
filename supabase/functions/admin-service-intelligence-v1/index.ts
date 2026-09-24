@@ -4380,39 +4380,6 @@ async function papoAiVitrineControlSave(sb:any,body:any){
   return {ok:true,control:await papoAiVitrineControlState(sb)};
 }
 
-async function vitrinePapoAiOperationalPreload(sb:any,body:any){
-  const phone=clean(body?.phone,40);
-  const name=clean(body?.name,180)||"Cliente";
-  const message=String(body?.system_message||"").trim().slice(0,8000);
-  const kind=clean(body?.system_message_kind,80)||"post_order_cross_sell_offer";
-  const sessionId=clean(body?.system_message_session_id,100);
-  if(!phone||!message)return {ok:false,error:"missing_operational_payload",status:400};
-
-  const secretQ=await sb.from("internal_integration_secrets")
-    .select("secret_value")
-    .eq("integration_key","papoai_storefront_inbound_webhook_v1")
-    .maybeSingle();
-  if(secretQ.error)throw secretQ.error;
-  if(!secretQ.data?.secret_value)return {ok:false,error:"papoai_inbound_secret_missing",status:503};
-
-  const response=await fetch(String(secretQ.data.secret_value),{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      customer:{phone,name},
-      system_message:message,
-      system_message_kind:kind,
-      system_message_session_id:sessionId
-    }),
-    signal:AbortSignal.timeout(15000)
-  });
-  const responseText=(await response.text()).slice(0,500);
-  if(!response.ok){
-    return {ok:false,error:"papoai_preload_http_"+response.status,status:502,detail:responseText};
-  }
-  return {ok:true,http_status:response.status,response:responseText};
-}
-
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
   if(req.method==="GET")return Response.redirect("https://donaantonia.com.br/admin/commerce-os/",302);
@@ -4449,16 +4416,6 @@ Deno.serve(async(req:Request)=>{
       }});
     }catch(e){
       return json({ok:false,error:"product_extra_unavailable",detail:clean((e as Error)?.message,300)},500);
-    }
-  }
-
-  if(action==="vitrine_papoai_operational_preload_internal"){
-    if(!(await vitrineHistoryAuthorized(sb,req)))return json({ok:false,error:"unauthorized"},401);
-    try{
-      const result=await vitrinePapoAiOperationalPreload(sb,body);
-      return json(result,result.ok?200:Number(result.status||400));
-    }catch(e){
-      return json({ok:false,error:"papoai_operational_preload_failed",detail:clean((e as Error)?.message||e,300)},500);
     }
   }
 
