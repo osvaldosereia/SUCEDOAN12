@@ -51,6 +51,8 @@
     .money{font-weight:900;font-size:15px}.muted{color:var(--muted)}
     .pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 8px;background:#edf5f0;color:#135938;font-size:11px;font-weight:900}
     .pill.off{background:#f1f1f1;color:#6f6f6f}.pill.warn{background:#fff5dd;color:#7c5407}.pill.danger{background:#fff0f2;color:#912035}
+    .product-active-toggle{border:0;cursor:pointer;justify-content:center;min-height:30px;padding:5px 10px}
+    .product-active-toggle:disabled{opacity:.5;cursor:wait}
     .empty{padding:32px 18px;text-align:center;color:var(--muted)}
     .loading{padding:24px;text-align:center;color:var(--muted)}
     .more{padding:12px;text-align:center}
@@ -1496,6 +1498,7 @@
       state.productNext=data.next_offset;
       host.innerHTML=state.products.length?state.products.map(productRow).join(''):'<div class="empty">Nenhum produto encontrado com esses filtros.</div>';
       host.querySelectorAll('[data-edit-product]').forEach(b=>b.onclick=()=>openProductEditor(state.products.find(p=>p.id===b.dataset.editProduct)));
+      host.querySelectorAll('[data-product-active]').forEach(b=>b.onclick=()=>toggleProductActive(b.dataset.productActive,b));
       const more=$('#productMore');more.innerHTML=state.productNext!=null?'<button class="secondary" id="moreProducts">Mostrar mais</button>':'';
       if($('#moreProducts'))$('#moreProducts').onclick=()=>loadProducts(q,true);
     }catch(e){
@@ -1517,8 +1520,24 @@
       '<div><span class="row-title">'+esc(p.name)+'</span><span class="sub">'+esc(classification)+'</span>'+(identity?'<span class="sub">'+esc(identity)+'</span>':'')+'</div>'+
       '<span class="money mobile-wide">'+money(p.sale_price_cents)+'</span>'+
       '<span class="desktop-extra">'+esc(fmtQty(p.stock_quantity||0))+'</span>'+
-      '<span class="desktop-extra">'+(p.active?'<span class="pill">Ativo</span>':'<span class="pill off">Inativo</span>')+'</span>'+
+      '<span class="desktop-extra"><button class="pill product-active-toggle '+(p.active?'':'off')+'" type="button" data-product-active="'+esc(p.id)+'" title="'+(p.active?'Clique para desativar':'Clique para ativar')+'">'+(p.active?'Ativo':'Inativo')+'</button></span>'+
       '<button class="text" data-edit-product="'+esc(p.id)+'">Editar</button></div>';
+  }
+
+  async function toggleProductActive(id,btn){
+    const product=state.products.find(p=>p.id===id);
+    if(!product)return;
+    const next=product.active===false;
+    if(!next&&!confirm('Desativar "'+product.name+'"?\n\nEle sairá da vitrine e a validade deixará de entrar nos controles e ofertas automáticas enquanto estiver inativo.'))return;
+    btn.disabled=true;
+    try{
+      await api('product_active',{},{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:id,active:next})});
+      toast(next?'Produto ativado':'Produto desativado · fora da vitrine e das validades');
+      await loadProducts($('#productSearch')?.value.trim()||'',false);
+    }catch(e){
+      toast(errorMessage(e.message));
+      btn.disabled=false;
+    }
   }
 
   function openProductEditor(p=null){
@@ -1667,9 +1686,9 @@
   }
   async function renderExpirations(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Validades</h1><p>Produtos com vencimento até 90 dias, do mais próximo para o mais distante.</p></div><button class="secondary" id="refreshExpiry">Atualizar</button></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Validades</h1><p>Produtos ativos com vencimento até 90 dias, do mais próximo para o mais distante.</p></div><button class="secondary" id="refreshExpiry">Atualizar</button></div>'+
       '<div id="expirySummary">'+renderExpirySummary({})+'</div>'+
-      '<div class="expiry-help"><strong>Oferta automática:</strong> 60–90 dias = 10% · 30–59 dias = 20% · menos de 30 dias = 40%. Produto vencido tem o estoque zerado e a oferta desligada automaticamente.</div>'+
+      '<div class="expiry-help"><strong>Oferta automática:</strong> 60–90 dias = 10% · 30–59 dias = 20% · menos de 30 dias = 40%. Produto vencido ativo tem o estoque zerado e a oferta desligada automaticamente. Produtos inativos ficam fora dos cálculos de validade.</div>'+
       '<div class="panel"><div id="expiryRows"><div class="loading">Carregando validades…</div></div></div>';
     $('#refreshExpiry').onclick=loadExpirations;
     await loadExpirations();
