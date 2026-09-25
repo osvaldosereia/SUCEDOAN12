@@ -1320,11 +1320,14 @@ async function blingHubOrderStatusCatalog(sb:any){
   const moduleId=Number(candidates[0]?.id||0);
   if(!moduleId)return {ok:false,error:"sales_order_status_module_invalid",status:409,external_write:false};
 
-  const [statuses,transitions]=await Promise.all([
+  const [statuses,transitions,actions]=await Promise.all([
     blingHubGet(sb,token,"/situacoes/modulos/"+encodeURIComponent(String(moduleId))),
-    blingHubGet(sb,token,"/situacoes/modulos/"+encodeURIComponent(String(moduleId))+"/transicoes")
+    blingHubGet(sb,token,"/situacoes/modulos/"+encodeURIComponent(String(moduleId))+"/transicoes"),
+    blingHubGet(sb,token,"/situacoes/modulos/"+encodeURIComponent(String(moduleId))+"/acoes")
   ]);
   if(!statuses.ok)return {ok:false,error:"sales_order_statuses_http_"+statuses.status,status:statuses.status,external_write:false};
+  if(!transitions.ok)return {ok:false,error:"sales_order_transitions_http_"+transitions.status,status:transitions.status,external_write:false};
+  if(!actions.ok)return {ok:false,error:"sales_order_actions_http_"+actions.status,status:actions.status,external_write:false};
 
   const statusRows=(Array.isArray(statuses.data?.data)?statuses.data.data:[]).map((x:any)=>({
     id:Number(x?.id||0)||null,
@@ -1333,7 +1336,7 @@ async function blingHubOrderStatusCatalog(sb:any){
     cor:clean(x?.cor,40)
   })).filter((x:any)=>x.id);
 
-  const transitionRows=(transitions.ok&&Array.isArray(transitions.data?.data)?transitions.data.data:[]).map((x:any)=>({
+  const transitionRows=(Array.isArray(transitions.data?.data)?transitions.data.data:[]).map((x:any)=>({
     id:Number(x?.id||0)||null,
     origem:{
       id:Number(x?.situacaoOrigem?.id||0)||null,
@@ -1346,6 +1349,11 @@ async function blingHubOrderStatusCatalog(sb:any){
     ativo:x?.ativo!==false,
     acoes:Array.isArray(x?.acoes)?x.acoes.slice(0,50):[]
   }));
+  const actionRows=(Array.isArray(actions.data?.data)?actions.data.data:[]).map((x:any)=>({
+    id:Number(x?.id||0)||null,
+    nome:clean(x?.nome,160),
+    descricao:clean(x?.descricao,240)
+  })).filter((x:any)=>x.id);
 
   const now=new Date().toISOString();
   const snapshot={
@@ -1358,6 +1366,7 @@ async function blingHubOrderStatusCatalog(sb:any){
     module_name:clean(candidates[0]?.nome,160),
     statuses:statusRows,
     transitions:transitionRows,
+    actions:actionRows,
     refreshed_at:now
   };
   const update=await sb.rpc("merge_bling_hub_runtime_metadata_v2",{
@@ -1374,6 +1383,7 @@ async function blingHubOrderStatusCatalog(sb:any){
       module_name:snapshot.module_name,
       status_count:statusRows.length,
       transition_count:transitionRows.length,
+      action_count:actionRows.length,
       external_write:false,
       make_used:false
     }
@@ -1384,6 +1394,7 @@ async function blingHubOrderStatusCatalog(sb:any){
     module:{id:moduleId,nome:snapshot.module_name},
     statuses:statusRows,
     transitions:transitionRows,
+    actions:actionRows,
     external_write:false
   };
 }
