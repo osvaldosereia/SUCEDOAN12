@@ -1,9 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
-const URL=Deno.env.get("SUPABASE_URL")||"";
+const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"";
 const KEY=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
-const db=createClient(URL,KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+const db=createClient(SUPABASE_URL,KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 const MINIMUM_ORDER_CENTS=7500;
 const TZ="America/Cuiaba";
 const CATEGORIES=[
