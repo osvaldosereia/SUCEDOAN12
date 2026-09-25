@@ -1399,6 +1399,122 @@ async function blingHubOrderStatusCatalog(sb:any){
   };
 }
 
+
+function blingHubStatusByName(rows:any[],name:string){
+  const n=clean(name,180).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+  return (rows||[]).find((x:any)=>clean(x?.nome,180).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()===n)||null;
+}
+async function blingHubCreateStatusOnce(sb:any,token:string,moduleId:number,name:string,color:string){
+  const r=await blingHubPostOnce(sb,token,"/situacoes",{idModuloSistema:moduleId,nome:name,cor:color});
+  if(r.ok)return {ok:true,created:true,response:r};
+  const refreshed=await blingHubOrderStatusCatalog(sb);
+  const found=refreshed?.ok?blingHubStatusByName(refreshed.statuses||[],name):null;
+  if(found)return {ok:true,created:false,reconciled:true,status:found};
+  return {ok:false,error:"status_create_failed",status:r.status||409,detail:r.error||null,provider_details:r.provider_details||[]};
+}
+async function blingHubCreateTransitionOnce(sb:any,token:string,moduleId:number,fromId:number,toId:number){
+  const current=await blingHubOrderStatusCatalog(sb);
+  if(!current?.ok)return {ok:false,error:"status_catalog_unavailable",status:Number(current?.status||409)};
+  const existing=(current.transitions||[]).find((x:any)=>x?.ativo!==false&&Number(x?.origem?.id)===fromId&&Number(x?.destino?.id)===toId);
+  if(existing){
+    if(Array.isArray(existing.acoes)&&existing.acoes.length){
+      return {ok:false,error:"transition_has_actions",status:409,transition:existing};
+    }
+    return {ok:true,created:false,transition:existing};
+  }
+  const payload={ativo:true,acoes:[],modulo:{id:moduleId},situacaoOrigem:{id:fromId},situacaoDestino:{id:toId}};
+  const r=await blingHubPostOnce(sb,token,"/situacoes/transicoes",payload);
+  if(r.ok)return {ok:true,created:true,response:r};
+  const refreshed=await blingHubOrderStatusCatalog(sb);
+  const found=refreshed?.ok?(refreshed.transitions||[]).find((x:any)=>x?.ativo!==false&&Number(x?.origem?.id)===fromId&&Number(x?.destino?.id)===toId):null;
+  if(found&&!Array.isArray(found.acoes)||found?.acoes?.length===0)return {ok:true,created:false,reconciled:true,transition:found};
+  return {ok:false,error:"transition_create_failed",status:r.status||409,detail:r.error||null,provider_details:r.provider_details||[]};
+}
+async function blingHubOps2PrepareOrderWorkflow(sb:any){
+  const token=await blingHubOauth(sb);
+  let catalog=await blingHubOrderStatusCatalog(sb);
+  if(!catalog?.ok)return catalog;
+  const moduleId=Number(catalog.module?.id||0);
+  if(!moduleId)return {ok:false,error:"sales_order_module_missing",status:409,external_write:false};
+
+  const wanted=[
+    {key:"awaiting_confirmation",name:"Aguardando confirmação",color:"#E9DC40"},
+    {key:"approved_separation",name:"Aprovado / Separar",color:"#0065F9"}
+  ];
+  const created:any[]=[];
+  for(const w of wanted){
+    let row=blingHubStatusByName(catalog.statuses||[],w.name);
+    if(!row){
+      const cr=await blingHubCreateStatusOnce(sb,token,moduleId,w.name,w.color);
+      if(!cr.ok)return {...cr,external_write:true};
+      created.push({type:"status",name:w.name});
+      catalog=await blingHubOrderStatusCatalog(sb);
+      row=blingHubStatusByName(catalog.statuses||[],w.name);
+    }
+    if(!row)return {ok:false,error:"status_not_resolved_after_create",status:409,name:w.name,external_write:true};
+  }
+
+  const waiting=blingHubStatusByName(catalog.statuses||[],"Aguardando confirmação");
+  const approved=blingHubStatusByName(catalog.statuses||[],"Aprovado / Separar");
+  const verified=blingHubStatusByName(catalog.statuses||[],"Verificado");
+  const attended=blingHubStatusByName(catalog.statuses||[],"Atendido");
+  const cancelled=blingHubStatusByName(catalog.statuses||[],"Cancelado");
+  if(!waiting||!approved||!verified||!attended||!cancelled){
+    return {ok:false,error:"required_status_missing",status:409,external_write:Boolean(created.length)};
+  }
+
+  const transitionSpecs=[
+    [Number(waiting.id),Number(approved.id),"awaiting_to_approved"],
+    [Number(waiting.id),Number(cancelled.id),"awaiting_to_cancelled"],
+    [Number(approved.id),Number(verified.id),"approved_to_verified"],
+    [Number(approved.id),Number(cancelled.id),"approved_to_cancelled"]
+  ];
+  const transitionResults:any[]=[];
+  for(const [fromId,toId,label] of transitionSpecs){
+    const tr=await blingHubCreateTransitionOnce(sb,token,moduleId,Number(fromId),Number(toId));
+    transitionResults.push({label,...tr});
+    if(!tr.ok)return {ok:false,error:tr.error||"transition_prepare_failed",status:tr.status||409,transition:label,details:tr,external_write:true};
+    if(tr.created)created.push({type:"transition",label});
+  }
+
+  catalog=await blingHubOrderStatusCatalog(sb);
+  const mapping={
+    state:"prepared",
+    module_id:moduleId,
+    awaiting_confirmation_id:Number(waiting.id),
+    approved_separation_id:Number(approved.id),
+    verified_id:Number(verified.id),
+    attended_id:Number(attended.id),
+    cancelled_id:Number(cancelled.id),
+    local_to_bling:{
+      storefront_received:Number(waiting.id),
+      created:Number(waiting.id),
+      confirmed:Number(approved.id),
+      processing:Number(approved.id),
+      ready:Number(verified.id),
+      out_for_delivery:Number(verified.id),
+      delivered:Number(attended.id),
+      cancelled:Number(cancelled.id)
+    },
+    reservation_policy:{
+      awaiting_confirmation_should_reserve:false,
+      approved_separation_should_reserve:true,
+      verified_should_reserve:true,
+      requires_bling_stock_setting_check:true
+    },
+    prepared_at:new Date().toISOString()
+  };
+  const saved=await sb.rpc("merge_bling_hub_runtime_metadata_v2",{p_patch:{ops2_order_status_mapping:mapping}});
+  if(saved.error)throw saved.error;
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"ops2_order_status_workflow_prepared",
+    severity:"info",
+    domain:"order",
+    details:{created,mapping,transition_results:transitionResults.map((x:any)=>({label:x.label,created:Boolean(x.created),reconciled:Boolean(x.reconciled)})),make_used:false,external_write:Boolean(created.length)}
+  });
+  return {ok:true,created,mapping,catalog,external_write:Boolean(created.length)};
+}
+
 async function blingHubVitrineOrderLinkStatus(sb:any,sourceOrderIdRaw:any){
   const sourceOrderId=uuid(sourceOrderIdRaw);
   if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400};
@@ -5859,6 +5975,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="order_status_catalog"){
         const result=await blingHubOrderStatusCatalog(sb);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_prepare_order_workflow"){
+        const result=await blingHubOps2PrepareOrderWorkflow(sb);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="preview_order_sync"){
