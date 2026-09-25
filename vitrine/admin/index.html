@@ -355,6 +355,27 @@
       .toast{left:10px;right:10px;bottom:max(12px,env(safe-area-inset-bottom));transform:translateY(20px);width:auto;text-align:center}
       .toast.show{transform:translateY(0)}
     }
+    .separation-tablet{max-width:720px;margin:0 auto}
+    .separation-tablet .page-head{position:sticky;top:58px;z-index:3;background:var(--bg);padding:8px 0}
+    .separation-tablet-toolbar{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:12px}
+    .separation-tablet-list{display:grid;gap:12px}
+    .separation-tablet-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow-card)}
+    .separation-tablet-card.problem{border-color:#e4b7b2}
+    .separation-tablet-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .separation-tablet-top strong{font-size:22px;line-height:1.1}
+    .separation-tablet-card .customer{font-size:16px;font-weight:700;margin-top:6px}
+    .separation-tablet-card .meta{display:flex;flex-wrap:wrap;gap:6px 12px;color:var(--muted);font-size:12px;margin-top:5px}
+    .separation-tablet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+    .separation-tablet-actions button{min-height:58px;font-size:15px;font-weight:800;border-radius:12px}
+    .separation-tablet-actions .wide{grid-column:1/-1}
+    @media(max-width:620px){
+      .separation-tablet .page-head{top:60px}
+      .separation-tablet-toolbar{grid-template-columns:1fr}
+      .separation-tablet-actions{grid-template-columns:1fr}
+      .separation-tablet-actions .wide{grid-column:auto}
+      .separation-tablet-card{padding:12px}
+      .separation-tablet-top strong{font-size:20px}
+    }
     @media(prefers-reduced-motion:reduce){
       *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
     }
@@ -373,6 +394,7 @@
       <nav class="tabs wrap" aria-label="Admin">
         <button class="tab" data-tab="today" type="button">Central</button>
         <button class="tab" data-tab="orders" type="button">Pedidos</button>
+        <button class="tab" data-tab="separation" type="button">Separação</button>
         <button class="tab" data-tab="expedition" type="button">Expedição</button>
         <button class="tab" data-tab="closure" type="button">Fechamento</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
@@ -490,6 +512,7 @@
     if(tab==='customers')renderCustomers();
     if(tab==='bling')renderBling();
     if(tab==='orders')renderOrders();
+    if(tab==='separation')renderSeparationTablet();
     if(tab==='expedition')renderExpedition();
     if(tab==='closure')renderClosure();
     if(tab==='more')renderMore();
@@ -3047,6 +3070,85 @@
       const data=await api('manual_order_create',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,payment_method:payment,items,customer_snapshot,delivery:{},operator:currentOperator()||'Operação'})});
       $('#editor').close();state.manualSale=null;state.orderFilter='new';await renderOrders();await openOrder(data.order_id);toast('Pedido WhatsApp criado · aguardando confirmação');
     }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Criar pedido'}}
+  }
+
+  async function loadSeparationTabletQueue(){
+    const data=await api('orders');
+    state.orders=data.orders||[];
+    paintSeparationTabletQueue();
+  }
+  function separationTabletRows(){
+    return sortOperationalOrders(state.orders.filter(o=>['confirmed','processing'].includes(o.status)));
+  }
+  function paintSeparationTabletQueue(){
+    const host=$('#separationTabletList');if(!host)return;
+    const q=normalize($('#separationTabletSearch')?.value||'');
+    let rows=separationTabletRows();
+    if(q)rows=rows.filter(o=>orderSearchMatch(o,q));
+    host.innerHTML=rows.length?rows.map(o=>{
+      const problems=orderProblemReasons(o),consumed=o?.payment_method_snapshot?.stock_consumed===true;
+      const action=o.status==='processing'&&consumed?'SEPARADO':(consumed?'CONTINUAR':'INICIAR');
+      return '<article class="separation-tablet-card '+(problems.length?'problem':'')+'">'+
+        '<div class="separation-tablet-top"><div><strong>#'+esc(shortOrder(o.order_number))+'</strong><div class="customer">'+esc(o.customer_name||'Sem cliente')+'</div></div>'+statusPill(o.status)+'</div>'+
+        '<div class="meta"><span>'+esc(relativeAge(o.created_at))+'</span><span>'+money(o.total_cents)+'</span><span>'+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</span></div>'+
+        (problems.length?'<div class="rule-notice warn" style="margin-top:10px"><strong>Não avance</strong><div>'+esc(problems.join(' · '))+'</div></div>':'')+
+        '<div class="separation-tablet-actions">'+
+          (problems.length
+            ? '<button class="primary wide" type="button" data-sep-open="'+esc(o.id)+'">CORRIGIR PEDIDO</button>'
+            : (o.status==='processing'&&consumed
+              ? '<button class="primary wide" type="button" data-sep-finish="'+esc(o.id)+'">✓ '+action+'</button>'
+              : '<button class="primary wide" type="button" data-sep-start="'+esc(o.id)+'">'+action+' SEPARAÇÃO</button>'))+
+          (consumed?'<button class="secondary" type="button" data-sep-reprint="'+esc(o.id)+'">Reimprimir</button>':'')+
+          '<button class="secondary" type="button" data-sep-open="'+esc(o.id)+'">Abrir pedido</button>'+
+        '</div></article>';
+    }).join(''):'<div class="empty">Nenhum pedido aguardando separação.</div>';
+
+    host.querySelectorAll('[data-sep-open]').forEach(b=>b.onclick=()=>openOrder(b.dataset.sepOpen));
+    host.querySelectorAll('[data-sep-start]').forEach(b=>b.onclick=()=>startSeparationFromTablet(b.dataset.sepStart,b));
+    host.querySelectorAll('[data-sep-finish]').forEach(b=>b.onclick=()=>finishSeparationFromTablet(b.dataset.sepFinish,b));
+    host.querySelectorAll('[data-sep-reprint]').forEach(b=>b.onclick=()=>reprintSeparationFromTablet(b.dataset.sepReprint,b));
+  }
+  async function startSeparationFromTablet(id,btn){
+    const w=window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir a separação');return}
+    if(btn){btn.disabled=true;btn.textContent='VALIDANDO…'}
+    try{
+      w.document.open();w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Separação</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Preparando separação…</strong></body></html>');w.document.close();
+      const detail=await api('order',{id});
+      const preview=await api('bling_preview_order_sync',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+      const blockers=blingPreflightOperationalBlockers(preview);
+      if(blockers.length){try{w.close()}catch{};toast('Pedido precisa de revisão antes da separação');openOrder(id);return}
+      const consumed=await api('order_consume_stock',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,operator:currentOperator()||'Operação'})});
+      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'processing',operator:currentOperator()||'Operação'})});
+      printSeparationOnly(detail,w);
+      toast(consumed.already_consumed?'Separação retomada':'Separação iniciada');
+      await loadSeparationTabletQueue();
+    }catch(e){try{w.close()}catch{};toast(errorMessage(e.message))}
+    finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='INICIAR SEPARAÇÃO'}}
+  }
+  async function finishSeparationFromTablet(id,btn){
+    if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}
+    try{
+      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status:'ready',operator:currentOperator()||'Operação'})});
+      toast('Separação concluída · pedido pronto');
+      await loadSeparationTabletQueue();
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='✓ SEPARADO'}}
+  }
+  async function reprintSeparationFromTablet(id,btn){
+    if(btn){btn.disabled=true;btn.textContent='ABRINDO…'}
+    try{const detail=await api('order',{id});printSeparationOnly(detail);toast('Separação aberta para reimpressão')}
+    catch(e){toast(errorMessage(e.message))}
+    finally{if(btn&&document.contains(btn)){btn.disabled=false;btn.textContent='Reimprimir'}}
+  }
+  async function renderSeparationTablet(){
+    const content=$('#content');
+    content.innerHTML='<div class="separation-tablet"><div class="page-head"><div><h1>Separação</h1><p>Tela simples para o tablet do barracão.</p></div><button class="secondary" id="refreshSeparationTablet" type="button">Atualizar</button></div>'+
+      '<div class="separation-tablet-toolbar"><input id="separationTabletSearch" type="search" inputmode="search" autocomplete="off" placeholder="Pedido, cliente ou telefone"><button class="secondary" id="clearSeparationTablet" type="button">Limpar</button></div>'+
+      '<div class="separation-tablet-list" id="separationTabletList"><div class="loading">Carregando pedidos…</div></div></div>';
+    $('#refreshSeparationTablet').onclick=loadSeparationTabletQueue;
+    $('#separationTabletSearch').oninput=paintSeparationTabletQueue;
+    $('#clearSeparationTablet').onclick=()=>{$('#separationTabletSearch').value='';paintSeparationTabletQueue();$('#separationTabletSearch').focus()};
+    try{await loadSeparationTabletQueue()}catch(e){$('#separationTabletList').innerHTML='<div class="empty">Não consegui carregar a fila. <button class="text" id="retrySeparationTablet">Tentar novamente</button></div>';if($('#retrySeparationTablet'))$('#retrySeparationTablet').onclick=loadSeparationTabletQueue}
   }
 
   async function renderOrders(){
