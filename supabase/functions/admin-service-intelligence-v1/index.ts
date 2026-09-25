@@ -1456,14 +1456,16 @@ async function blingHubOps2PrepareOrderWorkflow(sb:any){
 
   const waiting=blingHubStatusByName(catalog.statuses||[],"Aguardando confirmação");
   const approved=blingHubStatusByName(catalog.statuses||[],"Aprovado / Separar");
+  const open=blingHubStatusByName(catalog.statuses||[],"Em aberto");
   const verified=blingHubStatusByName(catalog.statuses||[],"Verificado");
   const attended=blingHubStatusByName(catalog.statuses||[],"Atendido");
   const cancelled=blingHubStatusByName(catalog.statuses||[],"Cancelado");
-  if(!waiting||!approved||!verified||!attended||!cancelled){
+  if(!open||!waiting||!approved||!verified||!attended||!cancelled){
     return {ok:false,error:"required_status_missing",status:409,external_write:Boolean(created.length)};
   }
 
   const transitionSpecs=[
+    [Number(open.id),Number(waiting.id),"open_to_awaiting"],
     [Number(waiting.id),Number(approved.id),"awaiting_to_approved"],
     [Number(waiting.id),Number(cancelled.id),"awaiting_to_cancelled"],
     [Number(approved.id),Number(verified.id),"approved_to_verified"],
@@ -1482,6 +1484,7 @@ async function blingHubOps2PrepareOrderWorkflow(sb:any){
   const mapping={
     state:"prepared",
     module_id:moduleId,
+    default_open_id:Number(open.id),
     awaiting_confirmation_id:Number(waiting.id),
     approved_separation_id:Number(approved.id),
     verified_id:Number(verified.id),
