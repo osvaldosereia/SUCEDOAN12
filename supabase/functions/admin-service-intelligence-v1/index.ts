@@ -1517,6 +1517,81 @@ async function blingHubOps2PrepareOrderWorkflow(sb:any){
 }
 
 
+
+async function blingHubPatchOrderStatusOnce(sb:any,token:string,blingOrderId:number,targetStatusId:number){
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(
+      BLING_API_BASE+"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId))+"/situacoes/"+encodeURIComponent(String(targetStatusId)),
+      {method:"PATCH",headers:{Authorization:"Bearer "+token,Accept:"application/json","enable-jwt":"1"},signal:AbortSignal.timeout(15000)}
+    );
+    const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    return {
+      ok:r.ok,status:r.status,data,
+      error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,500),
+      provider_details:blingHubProviderDetails(data),
+      uncertain:r.status>=500
+    };
+  }catch(e){
+    return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
+  }
+}
+async function blingHubOps2CanaryOrderStatus(sb:any,sourceOrderIdRaw:any,targetKeyRaw:any){
+  const sourceOrderId=uuid(sourceOrderIdRaw);
+  const targetKey=clean(targetKeyRaw,80);
+  if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400};
+  if(!["awaiting_confirmation","approved_separation"].includes(targetKey)){
+    return {ok:false,error:"invalid_canary_target",status:400};
+  }
+  const [runtime,link]=await Promise.all([
+    sb.from("bling_hub_runtime_v2").select("mode,hub_enabled,metadata").eq("id",1).maybeSingle(),
+    sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",sourceOrderId).maybeSingle()
+  ]);
+  if(runtime.error)throw runtime.error;
+  if(link.error)throw link.error;
+  if(runtime.data?.mode!=="homologation")return {ok:false,error:"homologation_required",status:409};
+  if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id))return {ok:false,error:"order_not_linked",status:409};
+  const mapping=runtime.data?.metadata?.ops2_order_status_mapping||{};
+  if(mapping.state!=="prepared")return {ok:false,error:"ops2_status_mapping_not_prepared",status:409};
+  const targetStatusId=Number(targetKey==="awaiting_confirmation"?mapping.awaiting_confirmation_id:mapping.approved_separation_id)||0;
+  if(!targetStatusId)return {ok:false,error:"target_status_missing",status:409};
+
+  const token=await blingHubOauth(sb);
+  const before=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(link.data.bling_id)));
+  if(!before.ok)return {ok:false,error:"order_detail_http_"+before.status,status:before.status};
+  const currentId=Number(before.data?.data?.situacao?.id||before.data?.data?.situacao||0)||0;
+  if(currentId===targetStatusId){
+    return {ok:true,changed:false,source_order_id:sourceOrderId,bling_order_id:Number(link.data.bling_id),from_status_id:currentId,to_status_id:targetStatusId,external_write:false};
+  }
+
+  const catalog=runtime.data?.metadata?.order_status_catalog||{};
+  const transition=(Array.isArray(catalog.transitions)?catalog.transitions:[]).find((x:any)=>
+    x?.ativo!==false&&Number(x?.origem?.id)===currentId&&Number(x?.destino?.id)===targetStatusId
+  );
+  if(!transition)return {ok:false,error:"approved_transition_missing",status:409,from_status_id:currentId,to_status_id:targetStatusId};
+  if(Array.isArray(transition.acoes)&&transition.acoes.length){
+    return {ok:false,error:"transition_has_actions",status:409,transition_id:transition.id,actions:transition.acoes};
+  }
+
+  const write=await blingHubPatchOrderStatusOnce(sb,token,Number(link.data.bling_id),targetStatusId);
+  if(!write.ok){
+    return {ok:false,error:write.uncertain?"status_change_uncertain":"status_change_http_"+write.status,status:write.status||502,detail:write.error||null,provider_details:write.provider_details||[],external_write:"unknown_possible"};
+  }
+  await sleep(500);
+  const after=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(link.data.bling_id)));
+  if(!after.ok)return {ok:false,error:"post_status_verify_http_"+after.status,status:409,external_write:true};
+  const observed=Number(after.data?.data?.situacao?.id||after.data?.data?.situacao||0)||0;
+  if(observed!==targetStatusId){
+    return {ok:false,error:"post_status_verify_mismatch",status:409,expected_status_id:targetStatusId,observed_status_id:observed,external_write:true};
+  }
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"ops2_canary_order_status_changed",severity:"info",domain:"order",
+    source_system:"vitrine_qx",source_id:String(sourceOrderId),provider_id:String(link.data.bling_id),
+    details:{from_status_id:currentId,to_status_id:targetStatusId,target_key:targetKey,transition_id:transition.id,transition_actions:[],external_write:true,make_used:false}
+  });
+  return {ok:true,changed:true,source_order_id:sourceOrderId,bling_order_id:Number(link.data.bling_id),from_status_id:currentId,to_status_id:targetStatusId,transition_id:transition.id,external_write:true};
+}
+
 async function blingHubOps2OrderRemoteProbe(sb:any,sourceOrderIdRaw:any){
   const sourceOrderId=uuid(sourceOrderIdRaw);
   if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400};
@@ -6109,6 +6184,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_order_remote_probe"){
         const result=await blingHubOps2OrderRemoteProbe(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_canary_order_status"){
+        const result=await blingHubOps2CanaryOrderStatus(sb,body?.source_order_id,body?.target_key);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="order_link_status"){
