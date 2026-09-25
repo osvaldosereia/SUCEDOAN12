@@ -90,7 +90,7 @@ BLING
 ## Estado técnico conhecido
 - Repositório principal: osvaldosereia/SUCEDOAN12.
 - Supabase canônico ativo: ssbesxgaijknwsjbsbcz.
-- Projeto legado Chat Commerce OS qxstkwshuvplmmftrctj está inativo.
+- Projeto legado Chat Commerce OS está inativo e retirado do runtime; não deve voltar a ser usado.
 - Há diversas Edge Functions históricas/duplicadas relacionadas a Bling e operação; NÃO remover até auditoria e homologação.
 - A documentação existente registra runtimes antigos de Bling Hub/fiscal desativados, embora jobs pg_cron tenham existido.
 - O Vitrine/Admin atual possui ações intermediárias de Bling/fiscal/financeiro que precisam ser confrontadas com capacidades nativas do Bling/MCP.

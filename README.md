@@ -8,6 +8,6 @@ Este repositório contém somente o sistema em produção da Dona Antônia:
 ## Supabase
 
 - canônico do site, clientes, Bling e fiscal: `ssbesxgaijknwsjbsbcz`
-- backend operacional temporariamente dedicado ao Vitrine Admin: `qxstkwshuvplmmftrctj`
+- Vitrine Admin e site público usam exclusivamente o Supabase canônico `ssbesxgaijknwsjbsbcz`; o antigo Chat Commerce OS foi retirado do runtime.
 
 Não adicionar projetos paralelos neste repositório. Qualquer função nova deve pertencer diretamente ao site público ou ao Vitrine Admin.

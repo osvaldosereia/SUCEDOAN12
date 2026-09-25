@@ -27,13 +27,11 @@ Estado observado nesta rodada:
 - `fiscal-ai-autonomous-worker-v1`: registrado a cada 1 minuto. O controle `fiscal_ai_worker_control.enabled` já está `false`, portanto o job retorna sem disparar o worker OpenAI.
 - A conexão atual não possui permissão operacional para desregistrar os jobs do `pg_cron`; a remoção física continua obrigatória quando houver acesso permitido.
 
-## Supabase legado — `qxstkwshuvplmmftrctj`
+## Supabase legado — retirado do runtime
 
-- 6 Edge Functions implantadas.
-- 20 tabelas públicas.
-- `simple-storefront-v1` já está aposentada.
-- `vitrine-admin-v1` ainda atende ações que precisam ser portadas.
-- Existe `dona-antonia-expiry-offers` diariamente às 04:05; desaparecerá com o projeto legado após a migração do admin.
+- O antigo Chat Commerce OS está inativo e não é mais dependência do site público nem do Vitrine Admin.
+- `storefront-v2` e as APIs administrativas operacionais estão no Supabase canônico.
+- Nenhuma nova função, tabela ou automação deve voltar a depender do projeto aposentado.
 
 ## Classificação
 
