@@ -180,6 +180,9 @@ A ferramenta de Balanço é requisito crítico. O frontend atual tem boa UX para
 ## Rota e eficiência — 2026-09-25
 Roteirização própria e tela do entregador permanecem como função Dona Antônia; o Bling cobre logística documental/transportadoras, mas não foi encontrado recurso nativo oficial equivalente à rota local com pins WhatsApp + pagamento na porta. Também foi formalizada a regra arquitetural "se nada aconteceu, nada deve rodar": webhooks/eventos, read models pequenos, IA sob demanda e crons apenas como rede de segurança. Ver `DELIVERY-ROUTES-DRAFT.md` e `ARCHITECTURE-EFFICIENCY-DRAFT.md`.
 
+## Cliente e cobertura da análise — 2026-09-25
+Foi consolidada a estratégia de identidade: telefone identifica canal; CPF/CNPJ é identidade forte fiscal/ERP; Bling é o cadastro ERP consolidado; pedido mantém snapshot do endereço usado. Estado observado: 490 clientes, 227 sem documento e 57 sem telefone principal. Também foi criado `ANALYSIS-COVERAGE-DRAFT.md` para impedir que o Projeto Final seja escrito antes de fechar os bloqueadores restantes.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
