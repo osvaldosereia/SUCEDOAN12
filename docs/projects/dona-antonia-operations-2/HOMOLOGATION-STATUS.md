@@ -127,3 +127,41 @@ Mesmo depois da reautorização:
 - não ativar `webhooks_enabled`;
 - não mover pedidos para o novo fluxo;
 até passarem os testes de catálogo de situações, reserva e webhook.
+
+
+## Avanços adicionais — 2026-09-25
+
+### OAuth / Bling
+- `admin-service-intelligence-v1` v136: troca OAuth ajustada para JWT (`enable-jwt: 1`);
+- `admin-products-live-v1` v18;
+- `storefront-v2` v15;
+- Hub permanece em `mode=homologation`, `hub_enabled=false`, `webhooks_enabled=false`;
+- bloqueio externo continua: `situacoes/modulos` HTTP 403 até reautorização com novos escopos.
+
+### Shadow readiness
+Foi criada a projeção read-only `get_ops2_order_shadow_readiness_v1`.
+
+A primeira leitura dos pedidos novos/abertos mostrou:
+- 12 pedidos avaliados;
+- 7 prontos para ERP;
+- 5 bloqueados;
+- 0 com produto sem vínculo Bling;
+- 5 com cliente/vínculo pendente;
+- 4 com endereço incompleto;
+- 0 sem pagamento.
+
+Conclusão: produtos já estão em condição muito melhor que clientes/endereço para o early-order no Bling.
+
+### Reserva de estoque
+Mudança de produção concluída:
+- checkout NÃO reserva mais ao enviar o pedido;
+- pedido aguarda confirmação sem reserva;
+- a reserva local temporária ocorre somente em `created -> confirmed`;
+- 122 linhas antigas de reserva de pedidos ainda não confirmados, totalizando 198 unidades, foram liberadas;
+- nenhuma dessas liberações restaurou estoque físico, pois eram somente reservas;
+- a política está registrada no ledger.
+
+Esse modelo é intermediário. Depois do gate Bling, a reserva local será substituída pela reserva oficial por situação no Bling.
+
+### Próximo bloco
+Preparar fila de impressão de picking após aprovação, sem acoplar impressão à baixa de estoque. A impressão física automática só será ativada depois da POC com impressora/tablets.
