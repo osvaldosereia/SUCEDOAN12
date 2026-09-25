@@ -433,7 +433,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null,deliveryRuns:[],driverVehicle:'all'};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -1165,6 +1165,26 @@
     w.document.close();
   }
 
+  async function loadDeliveryRuns(){
+    try{const data=await api('ops_delivery_runs');state.deliveryRuns=data.delivery?.runs||[];return state.deliveryRuns}catch{state.deliveryRuns=[];return []}
+  }
+  function activeDeliveryRun(vehicle){return (state.deliveryRuns||[]).find(r=>r.vehicle_key===vehicle&&['planned','dispatched'].includes(r.status))||null}
+  function deliveryStopAddress(stop){const a=stop?.address||{};return [a.street,a.number,a.district,a.city,a.state].filter(Boolean).join(', ')||a.raw_text||''}
+  function runMapsHref(run){
+    const stops=(run?.stops||[]).filter(s=>!['delivered','failed','cancelled'].includes(s.status)).slice(0,9);if(!stops.length)return '';
+    if(stops.length===1){const a=deliveryStopAddress(stops[0]);return a?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(a):String(stops[0].maps_url||'')}
+    const destination=deliveryStopAddress(stops[stops.length-1]);if(!destination)return '';
+    const waypoints=stops.slice(0,-1).map(deliveryStopAddress).filter(Boolean);let url='https://www.google.com/maps/dir/?api=1&travelmode=driving&destination='+encodeURIComponent(destination);
+    if(waypoints.length)url+='&waypoints='+encodeURIComponent(waypoints.join('|'));return url;
+  }
+  async function planSelectedDeliveryRun(vehicle){
+    const selected=state.expeditionSelected.map(id=>state.orders.find(o=>o.id===id)).filter(o=>o&&o.status==='ready'&&fiscalAuthorizedForDispatch(o)&&!o.delivery_return?.dispatch_blocked);
+    if(!selected.length){toast('Selecione os pedidos fiscalmente liberados');return}
+    const label=vehicle==='car_1'?'Carro 1':'Carro 2';
+    if(!confirm('Preparar '+label+' com '+selected.length+' pedido(s)?\n\nA ordem atual da seleção será usada como sequência inicial. Isso não marca a saída ainda.'))return;
+    try{await api('ops_delivery_plan',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vehicle_key:vehicle,order_ids:selected.map(o=>o.id),operator:currentOperator()||'Operação'})});await loadDeliveryRuns();toast(label+' preparado · '+selected.length+' parada(s)');paintExpeditionBody()}catch(e){toast(errorMessage(e.message))}
+  }
+
   async function bulkDispatchSelected(){
     const selected=state.orders.filter(o=>o.status==='ready'&&fiscalAuthorizedForDispatch(o)&&state.expeditionSelected.includes(o.id));
     if(!selected.length){toast('Selecione ao menos um pedido pronto');return}
@@ -1206,7 +1226,7 @@
         const selected=selectedDispatchOrders(dispatchableReady);
         const selectedTotal=selected.reduce((sum,o)=>sum+Number(o.total_cents||0),0);
         const paymentSummary=dispatchPaymentSummaryText(selected);
-        return '<div class="dispatch-bulk"><label class="check"><input id="selectAllReady" type="checkbox" '+(dispatchableReady.length&&selected.length===dispatchableReady.length?'checked':'')+' '+(dispatchableReady.length?'':'disabled')+'><span>Selecionar os fiscalmente liberados desta lista</span></label><div class="dispatch-bulk-actions"><div><strong>'+selected.length+' selecionado(s) · '+money(selectedTotal)+'</strong>'+(paymentSummary?'<span class="sub">A receber: '+esc(paymentSummary)+'</span>':'')+(fiscalPendingReady.length?'<span class="sub warn-text">'+fiscalPendingReady.length+' com fiscal pendente</span>':'')+'</div><button class="secondary" id="printDispatchManifest" type="button" '+(selected.length?'':'disabled')+'>Imprimir romaneio</button><button class="primary" id="bulkDispatchBtn" type="button" '+(selected.length?'':'disabled')+'>Marcar saída</button></div></div>';
+        return '<div class="dispatch-bulk"><label class="check"><input id="selectAllReady" type="checkbox" '+(dispatchableReady.length&&selected.length===dispatchableReady.length?'checked':'')+' '+(dispatchableReady.length?'':'disabled')+'><span>Selecionar os fiscalmente liberados desta lista</span></label><div class="dispatch-bulk-actions"><div><strong>'+selected.length+' selecionado(s) · '+money(selectedTotal)+'</strong>'+(paymentSummary?'<span class="sub">A receber: '+esc(paymentSummary)+'</span>':'')+(fiscalPendingReady.length?'<span class="sub warn-text">'+fiscalPendingReady.length+' com fiscal pendente</span>':'')+'</div><button class="secondary" id="planCar1" type="button" '+(selected.length?'':'disabled')+'>Carro 1</button><button class="secondary" id="planCar2" type="button" '+(selected.length?'':'disabled')+'>Carro 2</button><button class="secondary" id="printDispatchManifest" type="button" '+(selected.length?'':'disabled')+'>Imprimir romaneio</button><button class="primary" id="bulkDispatchBtn" type="button" '+(selected.length?'':'disabled')+'>Marcar saída</button></div></div>';
       })():'')+
       '<div class="dispatch-grid">'+
         expeditionSection('Aguardando saída','prontos para expedir',ready,'Nenhum pedido aguardando saída.')+
@@ -1225,6 +1245,8 @@
     document.querySelectorAll('[data-resolve-return]').forEach(b=>b.onclick=()=>resolveDeliveryReturnReview(b.dataset.resolveReturn));
     document.querySelectorAll('[data-dispatch-select]').forEach(el=>el.onchange=e=>toggleDispatchSelection(el.dataset.dispatchSelect,e.target.checked));
     if($('#selectAllReady'))$('#selectAllReady').onchange=e=>toggleAllReady(dispatchableReady,e.target.checked);
+    if($('#planCar1'))$('#planCar1').onclick=()=>planSelectedDeliveryRun('car_1');
+    if($('#planCar2'))$('#planCar2').onclick=()=>planSelectedDeliveryRun('car_2');
     if($('#printDispatchManifest'))$('#printDispatchManifest').onclick=printDispatchManifest;
     if($('#bulkDispatchBtn'))$('#bulkDispatchBtn').onclick=bulkDispatchSelected;
   }
@@ -1247,28 +1269,27 @@
         '<button class="secondary" type="button" data-driver-open="'+esc(o.id)+'">Abrir pedido</button>'+
       '</div></article>';
   }
+  function driverVehicleToolbar(){
+    const selected=state.driverVehicle||'all',r1=activeDeliveryRun('car_1'),r2=activeDeliveryRun('car_2'),run=selected==='all'?null:activeDeliveryRun(selected),maps=runMapsHref(run);
+    return '<div class="dispatch-bulk" style="margin-bottom:12px"><div class="dispatch-bulk-actions"><button class="secondary '+(selected==='all'?'active':'')+'" type="button" data-driver-vehicle="all">Todos</button><button class="secondary '+(selected==='car_1'?'active':'')+'" type="button" data-driver-vehicle="car_1">Carro 1'+(r1?' · '+(r1.stops||[]).length:'')+'</button><button class="secondary '+(selected==='car_2'?'active':'')+'" type="button" data-driver-vehicle="car_2">Carro 2'+(r2?' · '+(r2.stops||[]).length:'')+'</button>'+(maps?'<a class="primary" href="'+esc(maps)+'" target="_blank" rel="noopener">ABRIR ROTA NO MAPS</a>':'')+'</div></div>';
+  }
+  function driverOrders(){
+    const all=state.orders.filter(o=>o.status==='out_for_delivery'),vehicle=state.driverVehicle||'all';if(vehicle==='all')return all;
+    const run=activeDeliveryRun(vehicle);if(!run)return [];const byId=new Map(all.map(o=>[o.id,o]));return (run.stops||[]).map(s=>byId.get(s.order_id)).filter(Boolean);
+  }
   function paintDriverQueue(){
-    const host=$('#driverQueue');if(!host)return;
-    const q=normalize($('#driverSearch')?.value||'');
-    let rows=state.orders.filter(o=>o.status==='out_for_delivery');
-    if(q)rows=rows.filter(o=>orderSearchMatch(o,q));
-    host.innerHTML=rows.length?rows.map(driverRow).join(''):'<div class="empty">Nenhuma entrega em rota agora.</div>';
+    const host=$('#driverQueue');if(!host)return;const q=normalize($('#driverSearch')?.value||'');let rows=driverOrders();if(q)rows=rows.filter(o=>orderSearchMatch(o,q));
+    const shell=$('#driverRouteToolbar');if(shell){shell.innerHTML=driverVehicleToolbar();shell.querySelectorAll('[data-driver-vehicle]').forEach(b=>b.onclick=()=>{state.driverVehicle=b.dataset.driverVehicle;paintDriverQueue()})}
+    host.innerHTML=rows.length?rows.map(driverRow).join(''):'<div class="empty">Nenhuma entrega em rota para esta seleção.</div>';
     host.querySelectorAll('[data-driver-delivered]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.driverDelivered));
     host.querySelectorAll('[data-driver-failed]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.driverFailed,false));
     host.querySelectorAll('[data-driver-returned]').forEach(b=>b.onclick=()=>confirmPhysicalDeliveryReturn(b.dataset.driverReturned));
     host.querySelectorAll('[data-driver-open]').forEach(b=>b.onclick=()=>openOrder(b.dataset.driverOpen));
   }
-  async function loadDriverQueue(){
-    const data=await api('orders');state.orders=data.orders||[];paintDriverQueue();
-  }
+  async function loadDriverQueue(){const [data]=await Promise.all([api('orders'),loadDeliveryRuns()]);state.orders=data.orders||[];paintDriverQueue()}
   async function renderDriver(){
-    const content=$('#content');
-    content.innerHTML='<div class="separation-tablet"><div class="page-head"><div><h1>Entregador</h1><p>Somente o necessário para concluir as entregas.</p></div><button class="secondary" id="refreshDriver" type="button">Atualizar</button></div>'+
-      '<div class="separation-tablet-toolbar"><input id="driverSearch" type="search" inputmode="search" autocomplete="off" placeholder="Pedido, cliente, telefone ou endereço"><button class="secondary" id="clearDriver" type="button">Limpar</button></div>'+
-      '<div class="separation-tablet-list" id="driverQueue"><div class="loading">Carregando rota…</div></div></div>';
-    $('#refreshDriver').onclick=loadDriverQueue;
-    $('#driverSearch').oninput=paintDriverQueue;
-    $('#clearDriver').onclick=()=>{$('#driverSearch').value='';paintDriverQueue();$('#driverSearch').focus()};
+    const content=$('#content');content.innerHTML='<div class="separation-tablet"><div class="page-head"><div><h1>Entregador</h1><p>Somente o necessário para concluir as entregas.</p></div><button class="secondary" id="refreshDriver" type="button">Atualizar</button></div><div id="driverRouteToolbar"></div><div class="separation-tablet-toolbar"><input id="driverSearch" type="search" inputmode="search" autocomplete="off" placeholder="Pedido, cliente, telefone ou endereço"><button class="secondary" id="clearDriver" type="button">Limpar</button></div><div class="separation-tablet-list" id="driverQueue"><div class="loading">Carregando rota…</div></div></div>';
+    $('#refreshDriver').onclick=loadDriverQueue;$('#driverSearch').oninput=paintDriverQueue;$('#clearDriver').onclick=()=>{$('#driverSearch').value='';paintDriverQueue();$('#driverSearch').focus()};
     try{await loadDriverQueue()}catch(e){$('#driverQueue').innerHTML='<div class="empty">Não consegui carregar as entregas. <button class="text" id="retryDriver">Tentar novamente</button></div>';if($('#retryDriver'))$('#retryDriver').onclick=loadDriverQueue}
   }
 
@@ -1281,7 +1302,7 @@
     $('#expeditionSearch').oninput=e=>{state.expeditionQuery=e.target.value;paintExpeditionBody()};
     $('#clearExpeditionSearch').onclick=()=>{state.expeditionQuery='';$('#expeditionSearch').value='';paintExpeditionBody()};
     try{
-      const data=await api('orders');state.orders=data.orders||[];
+      const [data]=await Promise.all([api('orders'),loadDeliveryRuns()]);state.orders=data.orders||[];
       const readyRows=state.orders.filter(o=>o.status==='ready');
       await loadFiscalForOrders(readyRows);
       paintExpeditionBody();
