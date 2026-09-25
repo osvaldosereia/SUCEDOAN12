@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "../_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "../_shared/papoai-commerce-intent-v1.mjs";
 
-const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-vitrine-history-key,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
+const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
 const clean=(v:unknown,max=2000)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(v,80))?clean(v,80):"";
@@ -4332,18 +4332,6 @@ async function blingHubProbeReadonly(sb:any){
   return {ok:allCore,readonly:true,external_write:false,probes:results,deposit_candidates:deposits,readiness};
 }
 
-async function vitrineHistoryAuthorized(sb:any,req:Request){
-  const supplied=clean(req.headers.get("x-vitrine-history-key"),200);
-  if(!supplied)return false;
-  const q=await sb.from("internal_integration_secrets").select("secret_value")
-    .eq("integration_key","vitrine_history_bridge").maybeSingle();
-  if(q.error||!q.data?.secret_value)return false;
-  const a=new TextEncoder().encode(supplied),b=new TextEncoder().encode(String(q.data.secret_value));
-  if(a.length!==b.length)return false;
-  let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];
-  return diff===0;
-}
-function vitrineMoneyCents(v:any){const n=Number(v||0);return Number.isFinite(n)?Math.round(n*100):0}
 async function vitrineCustomerHistory(sb:any,body:any){
   const customerId=uuid(body?.id);
   if(!customerId)return {ok:false,error:"invalid_customer",status:400};
@@ -5924,19 +5912,6 @@ Deno.serve(async(req:Request)=>{
       const message=clean((e as Error)?.message||e,300);
       await sb.from("bling_hub_runtime_v2").update({last_readonly_error:message,updated_at:new Date().toISOString()}).eq("id",1);
       return json({ok:false,error:message,readonly:true,external_write:false},502);
-    }
-  }
-
-  if(action==="vitrine_history_ingest"){
-    if(!(await vitrineHistoryAuthorized(sb,req)))return json({ok:false,error:"unauthorized"},401);
-    const payload=body?.payload;
-    if(!payload||typeof payload!=="object"||Array.isArray(payload))return json({ok:false,error:"payload_required"},400);
-    try{
-      const result=await sb.rpc("ingest_vitrine_order_history_v1",{p_payload:payload});
-      if(result.error)return json({ok:false,error:"ingest_failed",detail:clean(result.error.message,400)},500);
-      return json(result.data||{ok:false,error:"ingest_failed"},result.data?.ok===true?200:400);
-    }catch(e){
-      return json({ok:false,error:"ingest_failed",detail:clean((e as Error)?.message,400)},500);
     }
   }
 
