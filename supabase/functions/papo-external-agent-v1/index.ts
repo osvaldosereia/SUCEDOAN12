@@ -108,9 +108,9 @@ async function capture(req:Request,url:URL){
     payload_bytes:new TextEncoder().encode(raw).length,
     user_agent:userAgent,
     payload,
-    metadata:{capture_only:true,source:"papoai",adapter_version:1},
+    metadata:{capture_only:true,source:"papoai",adapter_version:2},
     status:"captured",
-    adapter_version:1
+    adapter_version:2
   };
 
   const inserted=await db.from("papoai_webhook_inbox_v2").insert(row).select("id,event_key").single();
@@ -126,19 +126,34 @@ async function capture(req:Request,url:URL){
     }
   }else id=inserted.data?.id||null;
 
+  let normalized:any=null;
+  if(id){
+    try{
+      const n=await db.rpc("papoai_normalize_capture_v2",{p_capture_id:id});
+      if(!n.error)normalized=n.data||null;
+    }catch(e){
+      console.error("papoai_normalize",clean((e as Error)?.message||e,240));
+    }
+  }
+
   await db.from("papoai_webhook_runtime_v2").update({
     last_seen_at:new Date().toISOString(),last_event_key:eventKey,last_error:null,updated_at:new Date().toISOString()
   }).eq("id",1);
 
-  return json({ok:true,accepted:true,capture_only:true,duplicate,event_ref:id?String(id).slice(0,8):null},200);
+  return json({
+    ok:true,accepted:true,capture_only:true,duplicate,
+    event_ref:id?String(id).slice(0,8):null,
+    normalized:normalized?.status==="normalized",
+    adapter_version:2
+  },200);
 }
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});
   const url=new URL(req.url);
   if(req.method==="GET"){
-    if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:105});
-    return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:105},200);
+    if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:106});
+    return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:106},200);
   }
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   if(!U||!K)return json({ok:false,error:"server_config"},500);
