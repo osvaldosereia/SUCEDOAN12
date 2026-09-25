@@ -335,3 +335,24 @@ A criação de rascunho de pedido continua separada e exige evento estruturado/d
 ### Hardware ainda pendente
 A fila automática já existe, mas impressão física silenciosa continua desligada até POC do equipamento.
 O Bling consegue automatizar impressão de DANFE/DANFE Simplificado no Checkout e usa QZ Tray para comunicação com impressoras. Nossa lista de picking personalizada exige POC equivalente com a impressora local antes de habilitar impressão silenciosa.
+
+
+## Estoque Bling em shadow mirror — 2026-09-25
+
+### Preparado
+- tabela `bling_stock_mirror_v2` criada;
+- Bling continua sendo a fonte oficial;
+- o mirror guarda somente físico total, virtual total, saldos por depósito e horário observado;
+- eventos `stock` / `virtual_stock` vinculados poderão atualizar o mirror quando webhooks forem habilitados;
+- eventos originados pela própria integração também atualizam o mirror antes do anti-loop;
+- alteração no mirror não altera produto, pedido nem Bling;
+- Control Tower/Bling técnico mostra saúde do espelho;
+- `admin-service-intelligence-v1` v138;
+- `admin-products-live-v1` v25.
+
+### Estado atual
+- mirror vazio por desenho;
+- `webhooks_enabled=false`;
+- site ainda NÃO usa o mirror;
+- estoque local atual continua sendo transição;
+- cutover só ocorre depois do gate Bling e do backfill/reconciliação.
