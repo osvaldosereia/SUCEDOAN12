@@ -410,7 +410,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,manualSale:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,manualSale:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -763,12 +763,14 @@
 
   function renderOps2Summary(){
     const s=state.opsSummary||{};
-    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{};
+    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{},pa=state.opsPapoAi||{};
     const printNeeds=Number(pr.pending||0)+Number(pr.failed||0);
+    const papoSeen=Number(pa.captured_24h||0);
     const cards=[
       ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
       ['Atenções',Number(a.open||0),'Fila da Central'],
       ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
+      ['PapoAI',papoSeen,pa.capture_enabled?'eventos capturados · POC':'captura desligada'],
       ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
       ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
       ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
@@ -782,19 +784,21 @@
     $('#refreshToday').onclick=renderToday;
     loadOperationalIntegrationAlert();
     try{
-      const [data,closureData,expiryAlerts,opsData,attentionData,printData]=await Promise.all([
+      const [data,closureData,expiryAlerts,opsData,attentionData,printData,papoData]=await Promise.all([
         api('orders'),
         api('closure_orders').catch(()=>null),
         api('expiry_alerts').catch(()=>null),
         api('ops_summary').catch(()=>null),
         api('ops_attention',{limit:20}).catch(()=>null),
-        api('ops_print_queue',{limit:20}).catch(()=>null)
+        api('ops_print_queue',{limit:20}).catch(()=>null),
+        api('ops_papoai_capture_status').catch(()=>null)
       ]);
       state.orders=data.orders||[];
       state.expiryAlerts=expiryAlerts||null;
       state.opsSummary=opsData?.summary||null;
       state.opsAttention=attentionData?.attention||[];
       state.opsPrintQueue=printData?.queue||null;
+      state.opsPapoAi=papoData?.papoai||null;
       if(closureData){
         state.closureOrders=closureData.orders||[];
         state.closurePendingCount=Number(closureData.pending_count||0);
