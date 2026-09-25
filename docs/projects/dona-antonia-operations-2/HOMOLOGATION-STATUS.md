@@ -165,3 +165,56 @@ Esse modelo é intermediário. Depois do gate Bling, a reserva local será subst
 
 ### Próximo bloco
 Preparar fila de impressão de picking após aprovação, sem acoplar impressão à baixa de estoque. A impressão física automática só será ativada depois da POC com impressora/tablets.
+
+
+## Implementação multicanal e PapoAI — 2026-09-25
+
+### Separação / impressão
+- fila `ops_print_jobs` implantada;
+- picking 85 mm é enfileirado após aprovação;
+- navegador registra apenas `presented`, não `printed`;
+- claim/finish para futuro agente físico já existem;
+- impressão foi desacoplada da baixa de estoque;
+- impressão física automática continua desligada até POC de hardware.
+
+### Motor de pedido multicanal
+- `create_canonical_cart_order_v2` implantado;
+- fontes canônicas novas: `vitrine`, `manual_whatsapp`, `papoai`, `reorder`;
+- site já usa o wrapper canônico;
+- mesma regra determinística de cesta, preço, estoque e pedido mínimo;
+- Admin operacional deixou de pressupor que todo pedido novo vem do site.
+
+### Venda WhatsApp
+- tela **+ Venda WhatsApp** implantada em Pedidos;
+- busca cliente;
+- endereço;
+- produtos;
+- cestas;
+- personalização de cesta;
+- cotação pelo mesmo motor do site;
+- pedido nasce Novo e sem reserva;
+- origem registrada como `manual_whatsapp`;
+- resolver fiscal já aceita as novas fontes canônicas.
+
+### PapoAI
+- endpoint `papo-external-agent-v1` deixou de responder 410 e foi substituído por receiver **capture-only**;
+- receiver v105;
+- valida chave existente por SHA-256;
+- payload é sanitizado antes de persistir;
+- máximo 256 KB;
+- inbox idempotente com RLS;
+- retenção lógica 7 dias;
+- nenhuma ação em cliente/pedido/estoque/Bling/IA durante a POC;
+- Control Tower expõe somente o status/contagem da captura.
+
+### Versões
+- `storefront-v2`: v16;
+- `admin-products-live-v1`: v22;
+- `admin-service-intelligence-v1`: v137;
+- `papo-external-agent-v1`: v105.
+
+### Gates ainda abertos
+1. Bling `situacoes/modulos` continua dependendo de reautorização humana no aplicativo.
+2. Ainda não chegou amostra real nova no receiver PapoAI v105; o adapter normalizador será escrito somente depois de observar payload real.
+3. Impressão física automática depende de hardware.
+4. Reserva oficial no Bling depende do gate de situações.
