@@ -130,13 +130,27 @@ Ações:
 
 Observação: `virtual_stock` é habilitado automaticamente junto com `stock`.
 
-### Próximo teste
-1. salvar a configuração no Bling;
-2. gerar uma atualização real controlada no pedido canário;
-3. provar recebimento real assinado;
-4. confirmar que o evento real fica `held`;
-5. reconciliar somente esse evento;
-6. só depois avaliar `webhooks_enabled=true` em canário.
+### Entrega real — concluída em 2026-09-25
+1. configuração salva no Bling;
+2. alteração controlada no pedido canário executada;
+3. `order.updated` real recebido e assinado;
+4. evento real ficou `held` com processamento desligado;
+5. drift intencional foi detectado sem mutação;
+6. rollback gerou segundo `order.updated` real;
+7. segundo evento reconciliou sem divergência;
+8. 56 `virtual_stock.updated` reais comprovaram reserva/liberação dos 28 itens;
+9. eventos de canário foram limpos.
+
+### Próximo gate — espelho de estoque orientado a evento
+Antes de habilitar processamento geral:
+1. receber `virtual_stock.updated`;
+2. vincular o produto Bling ao produto canônico;
+3. usar o depósito Geral;
+4. atualizar somente o espelho local de saldo vendável;
+5. nunca escrever estoque de volta no Bling a partir do webhook;
+6. garantir idempotência e evento fora de ordem;
+7. testar produto vinculado, não vinculado e evento duplicado;
+8. só depois considerar `hub_enabled/webhooks_enabled` em canário.
 
 ## Regra de segurança
 Salvar/editar configuração no Bling não deve ativar automaticamente o Hub da Dona Antônia.
