@@ -1291,35 +1291,45 @@
     }
   }
 
-  function fiscalClosureLabel(f){
-    if(!f||f.error)return {title:'Verificar',detail:'Controle fiscal indisponível',kind:'warn'};
-    if(f.payment_status!=='confirmed')return {title:'Pagamento pendente',detail:'Confirmar recebimento',kind:'warn'};
+  function fiscalClosureLabel(f,o){
+    const actual=o?.payment_method_snapshot?.actual||null;
+    if(!f||f.error)return actual?.received
+      ? {title:'Recebido · revisar Bling',detail:'Pagamento real registrado; controle fiscal indisponível',kind:'warn'}
+      : {title:'Verificar',detail:'Controle fiscal indisponível',kind:'warn'};
+    if(f.payment_status!=='confirmed'){
+      if(actual?.received){
+        const parts=actualPaymentText(o)||money(actual.captured_total_cents||o?.total_cents||0);
+        return {title:'Recebido · Bling pendente',detail:parts,kind:'warn'};
+      }
+      return {title:'Pagamento pendente',detail:'Confirmar recebimento legado',kind:'warn'};
+    }
     if(f.fiscal_status==='issued'||f.bling_invoice_id)return {title:'Concluído',detail:f.bling_invoice_number?'NF-e '+f.bling_invoice_number:'Fiscal concluído',kind:'ok'};
     if(f.fiscal_status==='review_required')return {title:'Precisa de revisão',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Revisar fiscal',kind:'warn'};
     if(f.fiscal_status==='ready')return {title:'Fiscal pronto',detail:f.config?.send_enabled?'Pronto para emissão':'Emissão permanece desligada',kind:'ok'};
     return {title:'Fiscal bloqueado',detail:f.fiscal_block_reason?fiscalBlockReasonLabel(f.fiscal_block_reason):'Aguardando requisitos',kind:'warn'};
   }
   function closureBucket(o){
-    const f=state.fiscalByOrder[o.id];
+    const f=state.fiscalByOrder[o.id],actual=o?.payment_method_snapshot?.actual||null;
     if(!f||f.error)return 'fiscal';
-    if(f.payment_status!=='confirmed')return 'payment';
+    if(f.payment_status!=='confirmed')return actual?.received?'fiscal':'payment';
     if(f.fiscal_status==='issued'||f.bling_invoice_id)return 'complete';
     return 'fiscal';
   }
   function closurePriority(o){
-    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f);
+    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f,o);
     if(label.title==='Pagamento pendente')return 0;
     if(label.title==='Precisa de revisão'||label.title==='Verificar')return 1;
     if(label.title==='Fiscal pronto'||label.title==='Fiscal bloqueado')return 2;
     return 3;
   }
   function closureRow(o){
-    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f);
+    const f=state.fiscalByOrder[o.id],label=fiscalClosureLabel(f,o);
     const cls=label.kind==='ok'?'ok-text':'warn-text';
-    const canConfirmPayment=o.status==='delivered'&&f&&!f.error&&f.payment_status!=='confirmed';
+    const actual=o?.payment_method_snapshot?.actual||null;
+    const canConfirmPayment=o.status==='delivered'&&!actual?.received&&f&&!f.error&&f.payment_status!=='confirmed';
     return '<div class="closure-row">'+
       '<div><strong>#'+esc(shortOrder(o.order_number))+'</strong><span class="sub">'+esc(dateTime(o.delivered_at))+'</span></div>'+
-      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado')+'</small></div>'+
+      '<div class="history-main"><strong>'+esc(o.customer_name||'Sem cliente')+'</strong><small>'+esc(actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado'))+'</small></div>'+
       '<strong>'+money(o.total_cents)+'</strong>'+
       '<div class="closure-status"><strong class="'+cls+'">'+esc(label.title)+'</strong><small>'+esc(label.detail)+'</small></div>'+
       '<div class="dispatch-actions">'+
@@ -1331,8 +1341,8 @@
   async function confirmClosurePayment(id){
     const o=state.closureOrders.find(x=>x.id===id)||state.orders.find(x=>x.id===id);
     const f=state.fiscalByOrder[id];
-    if(!o||o.status!=='delivered'||!f||f.error||f.payment_status==='confirmed'){
-      toast('Este recebimento não está mais pendente');return;
+    if(!o||o.status!=='delivered'||o.payment_method_snapshot?.actual?.received||!f||f.error||f.payment_status==='confirmed'){
+      toast(o?.payment_method_snapshot?.actual?.received?'O pagamento real já foi registrado; falta conciliar com o Bling.':'Este recebimento não está mais pendente');return;
     }
     const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
     if(!confirm('Confirmar recebimento de '+money(o.total_cents)+' via '+payment+'?\n\nPedido #'+shortOrder(o.order_number)))return;
@@ -1383,12 +1393,12 @@
       const fiscalPending=delivered.filter(o=>closureBucket(o)==='fiscal');
       const complete=delivered.filter(o=>closureBucket(o)==='complete');
       $('#closureBody').innerHTML='<div class="ops-cards">'+
-        '<div class="ops-card warn"><small>Recebimento pendente</small><strong>'+paymentPending.length+'</strong><span>Confirmar o que foi recebido</span></div>'+
+        '<div class="ops-card warn"><small>Recebimento legado</small><strong>'+paymentPending.length+'</strong><span>Entregas antigas sem captura real</span></div>'+
         '<div class="ops-card warn"><small>Fiscal / revisão</small><strong>'+fiscalPending.length+'</strong><span>Pagamento já tratado · revisar fiscal</span></div>'+
         '<div class="ops-card"><small>Concluídos</small><strong>'+complete.length+'</strong><span>Fechamento encerrado</span></div>'+
       '</div><div class="closure-grid">'+
-        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Recebimento pendente</strong><span>entregue, mas pagamento ainda não confirmado</span></div><b>'+paymentPending.length+'</b></div>'+(paymentPending.length?paymentPending.map(closureRow).join(''):'<div class="history-empty">Nenhum recebimento pendente.</div>')+'</section>'+
-        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Fiscal / revisão</strong><span>pagamento confirmado; falta concluir ou revisar o fiscal</span></div><b>'+fiscalPending.length+'</b></div>'+(fiscalPending.length?fiscalPending.map(closureRow).join(''):'<div class="history-empty">Nenhuma revisão fiscal pendente.</div>')+'</section>'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Recebimento legado</strong><span>somente pedidos sem captura do pagamento real</span></div><b>'+paymentPending.length+'</b></div>'+(paymentPending.length?paymentPending.map(closureRow).join(''):'<div class="history-empty">Nenhum recebimento pendente.</div>')+'</section>'+
+        '<section class="panel"><div class="history-title dispatch-head"><div><strong>Fiscal / revisão</strong><span>pagamento real registrado ou confirmado; falta conciliar/revisar o fiscal</span></div><b>'+fiscalPending.length+'</b></div>'+(fiscalPending.length?fiscalPending.map(closureRow).join(''):'<div class="history-empty">Nenhuma revisão fiscal pendente.</div>')+'</section>'+
         '<section class="panel"><div class="history-title dispatch-head"><div><strong>Concluídos recentes</strong><span>pagamento e fiscal conferidos</span></div><b>'+complete.length+'</b></div>'+(complete.length?complete.slice(0,10).map(closureRow).join(''):'<div class="history-empty">Nenhum fechamento concluído recente.</div>')+'</section>'+
       '</div>';
       document.querySelectorAll('[data-closure-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.closureOrder));
@@ -3628,7 +3638,7 @@
     const fiscalBtn=$('#confirmFiscalPayment');
     if(fiscalBtn){
       const fiscal=state.currentOrderFiscal||{};
-      const canConfirm=o.status==='delivered'&&fiscal.payment_status!=='confirmed'&&!fiscal.error;
+      const canConfirm=o.status==='delivered'&&!o.payment_method_snapshot?.actual?.received&&fiscal.payment_status!=='confirmed'&&!fiscal.error;
       fiscalBtn.style.display=canConfirm?'block':'none';
       if(canConfirm){
         const method=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento';
