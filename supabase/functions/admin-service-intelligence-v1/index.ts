@@ -1254,7 +1254,7 @@ async function blingHubResolveVitrineFiscalOrder(sb:any,sourceOrderIdRaw:any){
   let q=await sb.from("orders")
     .select("id,status,total,payment_method,delivered_at,idempotency_key,order_number")
     .eq("id",sourceOrderId)
-    .eq("source","vitrine")
+    .in("source",["vitrine","manual_whatsapp","papoai","reorder"])
     .maybeSingle();
   if(q.error)throw q.error;
 
@@ -1435,7 +1435,7 @@ async function blingHubVitrinePendingClosures(sb:any,limitRaw:any=5000){
   const orders=sourceRows.map((o:any)=>{
     const c:any=byCanonical.get(o.id)||{};
     const legacyKey=String(o.idempotency_key||"");
-    const sourceOrderId=o.source==="vitrine"
+    const sourceOrderId=["vitrine","manual_whatsapp","papoai","reorder"].includes(String(o.source||""))
       ? String(o.id)
       : (legacyKey.startsWith("vitrine:")?legacyKey.slice(8):"");
     return {
