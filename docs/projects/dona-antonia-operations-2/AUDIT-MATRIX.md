@@ -99,3 +99,76 @@ C. pedido final preserva a composição correta e baixa estoque dos componentes;
 D. confirmação/lista do pedido retorna ao WhatsApp;
 E. preço comercial da cesta permanece independente da soma dos componentes;
 F. pedido chega ao Bling sem duplicidade e compatível com fiscal/expedição.
+
+
+## Rodada de auditoria operacional — 2026-09-25
+
+### Pedido do site -> Bling
+- O `storefront-v2` cria o pedido em `orders/order_items` via `create_vitrine_cart_order_v1` e em seguida reserva estoque com `reserve_vitrine_order_stock_v1`.
+- O pedido recém-criado fica como `storefront_received` e `sync_status=local`.
+- O envio atual ao Bling NÃO acontece imediatamente na criação. O Admin só enfileira `sync_order` quando ocorre `order_consume_stock`, isto é, no início da separação (`queue_reason=first_separation`).
+- O preview de sincronização bloqueia escrita se a primeira separação ainda não começou ou se o estoque ainda não foi consumido.
+- Para o projeto Operations 2.0 isso deve ser revisto: a arquitetura desejada é registrar o pedido no Bling cedo, sem depender da baixa física, mantendo estoque/reserva como etapa própria.
+
+### Situação dos pedidos e vínculos
+- Banco observado: 85 pedidos.
+- 27 registros possuem `orders.bling_order_id`, mas nenhum possui `bling_synced_at` preenchido.
+- No mecanismo novo `bling_hub_entity_links_v2`, somente 2 vínculos de pedido estão como `matched`.
+- Há 6 jobs `sync_order` concluídos e 1 em `review_required`.
+- Isso mostra coexistência de metadados legados e do Hub atual. Não usar apenas `orders.bling_order_id` como prova de sincronização; consolidar uma única fonte de vínculo.
+
+### Produtos e clientes no Bling
+- O Hub atual possui 1.668 vínculos de produto `matched` e 3 `not_found`.
+- Clientes: 270 `matched` e 217 `review_required`.
+- O preview de pedido exige cliente e produtos resolvidos no Bling antes da criação do pedido.
+- A identificação do cliente deve convergir para CPF/documento como regra de vínculo, mantendo telefone como contato, não como identidade suficiente.
+
+### Estoque
+- O checkout faz reserva local de estoque.
+- No início da separação, `consume_vitrine_order_stock_v1` baixa fisicamente o estoque local e só então enfileira o pedido para o Bling.
+- Cancelamento libera/restaura reservas/estoque conforme estado.
+- Este desenho funciona como proteção local, mas hoje duplica parte da responsabilidade de estoque do ERP. Na arquitetura alvo, decidir explicitamente: reserva de checkout fica local; saldo operacional oficial passa a ser Bling.
+
+### Cestas personalizáveis
+- A função `create_vitrine_cart_order_v1` já implementa nativamente a regra especial Dona Antônia:
+  - componentes de cesta;
+  - itens removíveis;
+  - quantidade editável;
+  - limites mínimo/máximo;
+  - `add_unit_delta` e `remove_unit_delta`;
+  - preço comercial da cesta independente da soma fiscal dos componentes;
+  - diferença positiva em `other_expenses` e diferença negativa em `discount`;
+  - componentes individualizados em `order_items`.
+- Esta lógica é diferencial real do negócio e deve permanecer determinística fora do ChatGPT, mesmo com Bling como ERP.
+
+### Fiscal / expedição
+- Existe gate `check_order_dispatch_fiscal_gate_v1` para impedir expedição quando configurado em modo `enforce` e sem autorização fiscal.
+- Há `order_fiscal_controls` e `dispatch_fiscal_jobs`; 2 jobs observados estão autorizados.
+- Estado observado dos controles: maioria ainda bloqueada/pending; apenas um fluxo aparece como ready + pagamento confirmado + entregue.
+- O Admin possui ações para status fiscal, execução canário, DANFE/PDF e confirmação de pagamento.
+- Destino: reduzir gradualmente esse orquestrador e aproveitar fluxo nativo do Bling onde possível, preservando gates e auditoria.
+
+### XML de entrada
+- O código `purchase-xml-v1` existe no GitHub, mas NÃO está implantado como Edge Function independente.
+- Ele é importado dentro de `admin-service-intelligence-v1`; portanto o runtime real de XML passa atualmente pelo monólito do Admin.
+- Existe cron ativo `purchase-xml-daily-v1` às `0 10 * * *`, equivalente a 06:00 em Cuiabá no cenário atual, chamando `purchase_xml_daily_sync` no `admin-service-intelligence-v1`.
+- Configuração observada: `daily_enabled=true`, lookback 3 dias, criação de produto inativo habilitada, sincronização fornecedor/produto habilitada, contas a pagar automáticas habilitadas.
+- Importação manual aceita até 100 XMLs por lote.
+- O código diferencia destinatário CPF/CNPJ e já contém gate explícito: CPF retorna `blocked_personal` / `cpf_never_financial`; somente CNPJ exatamente igual ao documento da empresa é elegível ao financeiro.
+- Contas a pagar são conciliadas antes da criação para reduzir duplicidade.
+- Entrada física no estoque NÃO ocorre automaticamente: `confirm_receipt` exige usuário humano e frase `CONFIRMAR_ENTRADA`; `apply_purchase_stock_receipt_v1` é idempotente.
+- Conversão caixa->unidade possui inferência inicial e revisão; `set_conversion` grava fator confirmado por produto/fornecedor/embalagem e recalcula custo unitário.
+
+### Jobs periódicos
+- `bling-hub-v2-cycle`: cron físico ativo a cada 2 minutos, mas `hub_enabled=false`, então retorna sem chamada externa.
+- `fiscal-ai-autonomous-worker-v1`: cron físico ativo a cada minuto, porém worker `enabled=false`.
+- `purchase-xml-daily-v1`: cron físico ativo diariamente e funcional quando `daily_enabled=true`.
+- Após homologação, cron inerte do Hub e fiscal AI deve ser fisicamente removido para reduzir ruído operacional.
+
+### Logs de runtime
+Nas últimas 24h observadas, as funções mais chamadas incluem `admin-service-intelligence-v1`, `storefront-v2` e `admin-products-live-v1`. Portanto o monólito `admin-service-intelligence-v1` ainda é dependência ativa e NÃO pode ser apagado nesta fase.
+
+### ChatGPT <-> Bling
+- O projeto já possui acesso programático próprio ao Bling via OAuth/API dentro do Supabase e probes atuais mostram acesso a produtos, contatos, pedidos, NF-e, depósitos e financeiro.
+- A busca no diretório de plugins deste ChatGPT não retornou um plugin Bling disponível; retornou apenas alternativa de outro ERP. Portanto, nesta sessão, não existe ainda um conector Bling direto exposto ao ChatGPT.
+- Até existir um conector/MCP Bling diretamente utilizável no ChatGPT, a forma segura de dar controle ao ChatGPT será por uma camada mínima e auditável nossa, não fingindo acesso direto inexistente.
