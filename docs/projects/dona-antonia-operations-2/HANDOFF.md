@@ -209,6 +209,24 @@ Novos documentos:
 
 Nenhuma programação/produção deve ser alterada até o Projeto Final aprovado.
 
+## Variantes reais, perdas e devoluções — 2026-09-25
+Foi feita uma última análise ampla das exceções físicas/fiscais.
+
+Achados críticos:
+- NF-e autorizada + mercadoria já saiu + cliente recusa/não paga => não tratar como cancelamento simples; no retorno ao estabelecimento há NF-e de entrada/retorno referenciando a original.
+- avarias, vencimentos, extravios e diferenças negativas reais de estoque exigem tratamento fiscal de baixa; consultas SEFAZ/MT 148/2026 e 151/2026 apontam CFOP 5.927, sem destaque, com estorno de crédito quando apropriado.
+- sobra de balanço sem origem NÃO deve virar entrada automática; deve ser investigada.
+- isso corrige o desenho do Balanço: a contagem continua rápida, mas divergências passam por reconciliação antes de regularizar estoque.
+- usar somente dois depósitos lógicos: Geral + Quarentena (desconsiderada do saldo vendável).
+- compra em CPF NÃO pode ser presumida como "fora da SEFAZ". XML CPF continua sem gerar conta a pagar empresarial, mas entrada/estoque fiscal precisam de política do contador antes da automação.
+
+Documentos:
+- `SALES-CANCELLATIONS-RETURNS-DRAFT.md`
+- `STOCK-LOSS-DISCARD-FISCAL-ORIGIN-DRAFT.md`
+- `OPERATIONAL-VARIANT-MATRIX-DRAFT.md`
+
+Nenhuma implementação foi feita.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
