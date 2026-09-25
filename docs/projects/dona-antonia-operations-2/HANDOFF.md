@@ -319,3 +319,14 @@ Próximo passo PapoAI: observar eventos de botões/flows/ações estruturadas e 
 - picking 85 mm agora inclui foto, nome, EAN, quantidade e localização;
 - impressão silenciosa ainda depende da POC física;
 - próximo grande bloqueio externo continua sendo reautorizar o Bling para Situações/Módulos/Transições.
+
+
+### Estoque mobile auditável
+- `ops_inventory_counts` registra contagem física, saldo anterior, diferença, operador e estado de reconciliação;
+- `ops_inventory_incidents` registra avaria, vencido, perda, retorno e outras ocorrências;
+- Balanço não perde mais a causa/auditoria da diferença;
+- durante a transição, a contagem atualiza o espelho local para manter o site coerente, mas diferença segue aberta para reconciliação no Bling/fiscal;
+- avaria/vencido/perda saem imediatamente do estoque vendável local;
+- retorno fica fora do vendável até inspeção;
+- tela `Estoque mobile` no Admin usa leitor EAN + teclado na tela;
+- próximo passo deste domínio: após homologar estoque/depósitos no Bling, trocar o efeito local por movimento oficial Geral -> Quarentena / reconciliação de Balanço.

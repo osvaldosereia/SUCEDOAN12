@@ -335,3 +335,22 @@ A criação de rascunho de pedido continua separada e exige evento estruturado/d
 ### Hardware ainda pendente
 A fila automática já existe, mas impressão física silenciosa continua desligada até POC do equipamento.
 O Bling consegue automatizar impressão de DANFE/DANFE Simplificado no Checkout e usa QZ Tray para comunicação com impressoras. Nossa lista de picking personalizada exige POC equivalente com a impressora local antes de habilitar impressão silenciosa.
+
+
+## Estoque mobile auditável — 2026-09-25
+
+### Implementado
+- nova base `ops_inventory_counts` para registrar cada contagem física;
+- nova base `ops_inventory_incidents` para avaria, vencido, perda, retorno e outras ocorrências;
+- Balanço continua atualizando o estoque local durante a transição, mas agora a diferença fica explicitamente pendente de reconciliação ERP/fiscal;
+- diferenças de balanço abrem `ops_attention`;
+- avaria/vencido/perda retiram imediatamente a quantidade do estoque vendável local;
+- retorno NÃO volta automaticamente ao estoque vendável; fica aguardando inspeção;
+- toda ocorrência gera ledger + fila de atenção;
+- a tela mobile de Estoque reúne Balanço e Avaria/Vencido/Retorno usando o mesmo leitor EAN;
+- Control Tower passa a contar ocorrências e diferenças de balanço.
+
+### Importante
+O ajuste local de estoque é transitório enquanto Bling ainda não está homologado como autoridade online de estoque. A ocorrência mantém `needs_bling_reconciliation=true` para não confundir disponibilidade comercial com regularização ERP/fiscal.
+
+Nenhuma ocorrência fictícia foi criada para teste.
