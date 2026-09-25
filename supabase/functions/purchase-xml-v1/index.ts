@@ -279,6 +279,18 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_xml_processed",severity:review?"warning":"info",domain:"fiscal",source_system:"canonical",source_id:documentId,details:{document_key:p.document_key,source,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:finance.status,items:p.items.length,matched,review,new_products:created,raw_xml_stored:true,make_used:false}});
   return {duplicate:false,document_id:documentId,items:p.items.length,matched,review,new_products:created,finance_status:finance.status};
 }
+
+async function linkedXml(urlRaw:any){
+  const url=clean(urlRaw,3000);
+  if(!/^https?:\/\//i.test(url))return {ok:false,status:0,xml:""};
+  try{
+    const r=await fetch(url,{redirect:"follow",signal:AbortSignal.timeout(30000)});
+    const raw=await r.text();
+    if(!r.ok)return {ok:false,status:r.status,xml:""};
+    if(/<(?:\w+:)?(?:nfeProc|NFe)\b/i.test(raw))return {ok:true,status:r.status,xml:raw};
+    return {ok:false,status:502,xml:""};
+  }catch{return {ok:false,status:0,xml:""}}
+}
 async function blingXml(token:string,key:string){
   const r=await bg(token,"/nfe/documento/"+encodeURIComponent(key)+"?formato=xml");
   if(!r.ok)return {ok:false,status:r.status,xml:""};
@@ -320,6 +332,8 @@ async function purchaseXmlPreviewLatest(){
         const det=await bg(token,"/nfe/"+bid);
         if(det.ok){
           const d=det.data?.data||{},sample=Array.isArray(d?.itens)?d.itens.slice(0,5):[];
+          const linked=await linkedXml(d?.xml);
+          if(linked.ok){const px:any=parseXml(linked.xml);out.push({bling_nfe_id:bid,key_suffix:key.slice(-10),source_mode:"detail_xml_url",recipient_kind:px.recipient_kind,recipient_matches_company:company.doc.length===14&&px.recipient_document===company.doc,total_amount:px.total_amount,items:px.items.slice(0,10).map((it:any)=>({description:it.description,gtin:it.commercial_gtin||it.tax_gtin,purchase_unit:it.purchase_unit,purchase_quantity:it.purchase_quantity,tax_unit:it.tax_unit,tax_quantity:it.tax_quantity,inferred_factor:Number(it.purchase_quantity)>0&&Number(it.tax_quantity)>0?Number(it.tax_quantity)/Number(it.purchase_quantity):null,purchase_unit_price:it.purchase_unit_price}))});continue}
           out.push({bling_nfe_id:bid,key_suffix:key.slice(-10),source_mode:"registered_detail",xml_http_status:x.status,detail_keys:Object.keys(d).sort(),xml_info:{present:Boolean(d?.xml),length:String(d?.xml||"").length,looks_xml:/^\s*</.test(String(d?.xml||"")),looks_url:/^https?:\/\//i.test(String(d?.xml||""))},contact:{id:d?.contato?.id||null,nome:d?.contato?.nome||null,numeroDocumento:d?.contato?.numeroDocumento||d?.contato?.cpfCnpj||null},parcelas:(Array.isArray(d?.parcelas)?d.parcelas.slice(0,8):[]).map((x:any)=>({keys:Object.keys(x||{}).sort(),data:x?.data||x?.vencimento||null,valor:x?.valor??null,numero:x?.numero||null})),items:sample.map((it:any)=>({keys:Object.keys(it||{}).sort(),codigo:it?.codigo||null,descricao:it?.descricao||null,gtin:it?.gtin||null,unidade:it?.unidade||null,unidadeTributavel:it?.unidadeTributavel||null,quantidade:it?.quantidade??null,valor:it?.valor??it?.valorUnitario??null,valorTotal:it?.valorTotal??null,classificacaoFiscal:it?.classificacaoFiscal||null,cest:it?.cest||null,cfop:it?.cfop||null}))});continue;
         }
       }
