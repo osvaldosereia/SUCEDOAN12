@@ -13,7 +13,7 @@ const CATEGORIES=[
   {key:"casa_pet",label:"Casa e pet"}
 ];
 const ALLOWED_ORIGINS=new Set(["https://donaantonia.com.br","https://www.donaantonia.com.br"]);
-const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-vitrine-history-key","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
+const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"Access-Control-Allow-Origin":ALLOWED_ORIGINS.has(origin)?origin:"https://donaantonia.com.br","Vary":"Origin","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET, POST, OPTIONS"}};
 const json=(req:Request,v:any,s=200,h:Record<string,string>={})=>new Response(JSON.stringify(v),{status:s,headers:{...cors(req),"Content-Type":"application/json; charset=utf-8",...h}});
 const txt=(v:any,n=180)=>String(v??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,n);
 const uid=(v:any)=>{const s=txt(v,80);return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""};
@@ -88,25 +88,11 @@ async function quote(payload:any){
   for(const r of rules||[]){const product:any=Array.isArray(r.product)?r.product[0]:r.product;const base=Number(r.quantity||0),qty=req.has(r.product_id)?Number(req.get(r.product_id)):base,stock=Math.max(0,(product?.is_active===false?0:Number(product?.stock||0))-(res.get(r.product_id)||0)),min=Math.max(0,Number(r.min_quantity??(r.removable?0:base))),max=Math.min(stock,Number(r.max_quantity??Math.max(base,Math.floor(stock))));if(!Number.isFinite(qty)||qty<0||Math.trunc(qty)!==qty)return {error:"invalid_basket_quantity",status:400};if(qty>stock)return {error:"insufficient_stock",status:409,product_id:r.product_id,available:stock,requested:qty};if(qty===0&&!r.removable)return {error:"item_not_removable",status:409};if(qty<min||qty>max)return {error:"basket_quantity_out_of_range",status:409};const price=Number(product?.price||0);if(qty<base)total+=Math.abs(qty-base)*Number(r.remove_unit_delta??-price);else if(qty>base)total+=(qty-base)*Number(r.add_unit_delta??price)}
   return {ok:true,total_cents:Math.max(0,cents(total))};
 }
-async function bridgeOk(req:Request){const s=txt(req.headers.get("x-vitrine-history-key"),500);if(!s)return false;const {data,error}=await db.from("internal_integration_secrets").select("secret_value").eq("integration_key","vitrine_history_bridge").maybeSingle();return !error&&Boolean(data?.secret_value)&&s===String(data?.secret_value||"")}
-async function issueLink(p:any){
-  const ph=phone(p?.phone);if(!ph)return {error:"invalid_phone",status:400};const now=new Date().toISOString(),expires=new Date(Date.now()+30*60*1000).toISOString(),cut=new Date(Date.now()-24*60*60*1000).toISOString();
-  await db.from("storefront_identity_tokens").delete().lt("created_at",cut);await db.from("storefront_identity_resolve_attempts").delete().lt("attempted_at",cut);
-  const q=await db.from("storefront_identity_tokens").select("short_code,expires_at").eq("phone_e164",ph).is("redeemed_at",null).gt("expires_at",now).not("short_code","is",null).order("created_at",{ascending:false}).limit(1).maybeSingle();if(q.error)throw q.error;if(q.data?.short_code)return {phone_e164:ph,shopping_url:"https://donaantonia.com.br/catalogo_"+q.data.short_code,expires_at:q.data.expires_at,reused:true};
-  for(let i=0;i<40;i++){const c=code4(),h=await sha(c),ins=await db.from("storefront_identity_tokens").insert({token_hash:h,short_code:c,phone_e164:ph,contact_name:txt(p?.name,180)||null,source:"papoai_short_code_v3",expires_at:expires});if(!ins.error)return {phone_e164:ph,shopping_url:"https://donaantonia.com.br/catalogo_"+c,expires_at:expires,reused:false};if(String(ins.error.code||"")!=="23505")throw ins.error}return {error:"short_code_pool_busy",status:503};
-}
 async function resolveCode(req:Request,v:any){
   const c=String(v??"").trim();if(!/^\d{4}$/.test(c))return {error:"invalid_code",status:400};const raw=ip(req),ih=raw?await sha(raw):"";if(ih){const since=new Date(Date.now()-600000).toISOString(),n=await db.from("storefront_identity_resolve_attempts").select("id",{count:"exact",head:true}).eq("ip_hash",ih).gte("attempted_at",since);if(n.error)throw n.error;if(Number(n.count||0)>=12)return {error:"too_many_attempts",status:429}}
   const h=await sha(c),now=new Date().toISOString(),q=await db.from("storefront_identity_tokens").update({redeemed_at:now,last_used_at:now,use_count:1}).eq("token_hash",h).eq("short_code",c).is("redeemed_at",null).gt("expires_at",now).select("phone_e164,expires_at").maybeSingle();if(q.error)throw q.error;if(ih)await db.from("storefront_identity_resolve_attempts").insert({ip_hash:ih,success:Boolean(q.data)});if(!q.data)return {error:"code_expired_or_invalid",status:404};return {phone_e164:q.data.phone_e164,expires_at:q.data.expires_at};
 }
 async function resolveToken(v:any){const t=String(v??"").trim();if(!/^[A-Za-z0-9_-]{24,160}$/.test(t))return {error:"invalid_token",status:400};const h=await sha(t),now=new Date().toISOString(),q=await db.from("storefront_identity_tokens").update({redeemed_at:now,last_used_at:now,use_count:1}).eq("token_hash",h).is("redeemed_at",null).gt("expires_at",now).select("phone_e164,expires_at").maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"token_expired_or_invalid",status:404};return {phone_e164:q.data.phone_e164,expires_at:q.data.expires_at}}
-async function reconcile(p:any){
-  const sid=uid(p?.source_order_id),cid=uid(p?.crm_customer_id);if(!sid||!cid)return {error:"invalid_reconciliation_payload",status:400};
-  let q=await db.from("orders").select("id,delivery_address,customer_snapshot,phone_e164,checkout_snapshot").eq("id",sid).maybeSingle();
-  if(q.error)throw q.error;if(!q.data){q=await db.from("orders").select("id,delivery_address,customer_snapshot,phone_e164,checkout_snapshot").contains("checkout_snapshot",{source_order_id:sid}).limit(1).maybeSingle();if(q.error)throw q.error}
-  const o=q.data;if(!o)return {error:"order_not_found",status:404};const c=p?.customer&&typeof p.customer==="object"?p.customer:{},a=p?.address&&typeof p.address==="object"?p.address:{},deliveryAddress={...(o.delivery_address||{}),...a,customer_name:txt(c.name,180)||o.delivery_address?.customer_name||null,source_customer_id:cid,phone:o.phone_e164||phone(c.phone)||null,cpf:String(c.cpf||"").replace(/\D+/g,"").slice(0,14)||null},customer={...(o.customer_snapshot||{}),customer_id:cid,name:txt(c.name,180)||o.customer_snapshot?.name||null,phone_e164:o.phone_e164||phone(c.phone)||null,status:"registered"};
-  const up=await db.from("orders").update({customer_id:cid,delivery_address:deliveryAddress,customer_snapshot:customer,updated_at:new Date().toISOString()}).eq("id",o.id);if(up.error)throw up.error;return {order_id:o.id,crm_customer_id:cid,customer_name:customer.name||null};
-}
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),ph=phone(p?.whatsapp_phone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];if(!ph)return {error:"invalid_phone",status:400};if(!items.length)return {error:"empty_cart",status:400};
   const ik=await sha(ip(req)||"unknown"),pk=await sha(ph),[a,b]=await Promise.all([db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600}),db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600})]);if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
@@ -122,7 +108,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:8},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:13},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
@@ -135,8 +121,8 @@ Deno.serve(async(req:Request)=>{
     const body=req.method==="POST"?await req.json().catch(()=>({})):{};
     if(req.method==="POST"&&action==="basket_quote"){const r=await quote(body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,r,200,{"Cache-Control":"no-store"})}
     if(req.method==="POST"&&action==="submit_order"){const r=await submit(req,body);return r.error?json(req,{ok:false,...r},r.status||400,{"Cache-Control":"no-store"}):json(req,{ok:true,...r},200,{"Cache-Control":"no-store"})}
-    if(req.method==="POST"&&action==="issue_identity_link"){if(!(await bridgeOk(req)))return json(req,{ok:false,error:"unauthorized"},401);const r=await issueLink(body);return r.error?json(req,{ok:false,...r},r.status||400):json(req,{ok:true,...r})}
-    if(req.method==="POST"&&action==="reconcile_customer"){if(!(await bridgeOk(req)))return json(req,{ok:false,error:"unauthorized"},401);const r=await reconcile(body);return r.error?json(req,{ok:false,...r},r.status||400):json(req,{ok:true,...r})}
+    if(req.method==="POST"&&action==="issue_identity_link")return json(req,{ok:false,error:"retired"},410)
+    if(req.method==="POST"&&action==="reconcile_customer")return json(req,{ok:false,error:"retired"},410)
 
     // Compatibility with the previous canonical storefront-v2 contract.
     if(req.method==="POST"&&action==="list_baskets"){const h=await home();return json(req,{ok:true,baskets:h.baskets.map((b:any)=>({id:b.id,name:b.name,image_url:b.image_url,base_price:Number(b.display_price_cents||0)/100,ready:true}))})}
