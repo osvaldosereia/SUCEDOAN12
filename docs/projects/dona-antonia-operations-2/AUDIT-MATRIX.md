@@ -66,3 +66,36 @@ Status: Fase 1 em andamento. Nenhuma remoção de produção autorizada por esta
 4. levantar funções Supabase realmente chamadas nos logs;
 5. confrontar cada bloco com capacidades nativas atuais do Bling;
 6. fechar a matriz de fonte de verdade por entidade.
+
+
+## Avaliação Bling Loja Virtual — 2026-09-25
+
+Pesquisa aprofundada em documentação oficial atualizada do Bling e, separadamente, da Tray.
+
+### Conclusão provisória
+Não substituir o site público atual pela Bling Loja Virtual antes de uma prova de conceito. Dois requisitos centrais da Dona Antônia não estão comprovados como recursos nativos da Bling Loja Virtual: (1) pagamento exclusivamente na entrega/offline, incluindo dinheiro/cartão/benefício na entrega; (2) cliente editar dinamicamente os componentes de uma cesta/kit, removendo/aumentando/trocando itens com recálculo do valor.
+
+### O que a Bling Loja Virtual resolve bem
+- catálogo, categorias, domínio próprio, carrinho/checkout, pedidos, estoque e integração com o ERP;
+- frete fixo/motoboy por faixas de CEP;
+- kits/composições no cadastro do Bling e baixa/controle dos componentes conforme configuração;
+- preço comercial do kit independente da soma dos componentes: a atualização automática do preço por soma vem desativada por padrão e deve permanecer desativada para as cestas Dona Antônia;
+- código-fonte/editor visual são anunciados nos planos atuais, mas isso não comprova liberdade para alterar regras de backend/checkout/meios de pagamento.
+
+### Bloqueadores atuais
+1. A documentação da Bling Loja Virtual lista apenas cartão, PIX, boleto e transferência online, processados por gateway homologado. Não foi encontrado método nativo documentado de pagamento na entrega/offline.
+2. Variações com composição são exibidas na loja como variações comuns; a composição é controle interno do Bling. Não foi encontrado configurador nativo para o comprador editar componentes do kit.
+3. Não foi encontrado recurso nativo documentado da Bling Loja Virtual para devolver automaticamente ao mesmo WhatsApp do cliente a lista completa do pedido. A Tray standalone possui ferramentas de WhatsApp, mas isso não deve ser confundido com disponibilidade garantida na Loja Virtual nativa do Bling.
+
+### Regra do projeto
+- Site atual permanece em produção.
+- Não migrar catálogo/domínio até passar uma POC dos requisitos críticos.
+- Se a loja nativa falhar nos gates de pagamento na entrega ou cesta editável, comparar Tray standalone integrada ao Bling antes de decidir manter/desenvolver mais código próprio.
+
+### Gates da POC
+A. pagamento 100% na entrega/offline;
+B. cesta editável por componente com recálculo;
+C. pedido final preserva a composição correta e baixa estoque dos componentes;
+D. confirmação/lista do pedido retorna ao WhatsApp;
+E. preço comercial da cesta permanece independente da soma dos componentes;
+F. pedido chega ao Bling sem duplicidade e compatível com fiscal/expedição.
