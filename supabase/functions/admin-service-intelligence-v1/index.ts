@@ -1211,12 +1211,24 @@ async function blingHubResolveVitrineFiscalOrder(sb:any,sourceOrderIdRaw:any){
   const sourceOrderId=uuid(sourceOrderIdRaw);
   if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400};
 
-  const key="vitrine:"+sourceOrderId;
-  const q=await sb.from("orders")
+  // Pedidos novos da Vitrine já vivem neste banco canônico.
+  // O lookup antigo por idempotency_key permanece só para histórico QX.
+  let q=await sb.from("orders")
     .select("id,status,total,payment_method,delivered_at,idempotency_key,order_number")
-    .eq("idempotency_key",key)
+    .eq("id",sourceOrderId)
+    .eq("source","vitrine")
     .maybeSingle();
   if(q.error)throw q.error;
+
+  if(!q.data){
+    const key="vitrine:"+sourceOrderId;
+    q=await sb.from("orders")
+      .select("id,status,total,payment_method,delivered_at,idempotency_key,order_number")
+      .eq("idempotency_key",key)
+      .maybeSingle();
+    if(q.error)throw q.error;
+  }
+
   if(!q.data)return {ok:false,error:"canonical_order_not_synced",status:409,source_order_id:sourceOrderId};
   return {ok:true,source_order_id:sourceOrderId,order:q.data};
 }
@@ -1376,18 +1388,18 @@ async function blingHubVitrinePendingClosures(sb:any,limitRaw:any=5000){
   for(let i=0;i<canonicalIds.length;i+=200){
     const chunk=canonicalIds.slice(i,i+200);
     const q=await sb.from("orders")
-      .select("id,idempotency_key,status,order_number,delivered_at")
-      .in("id",chunk)
-      .like("idempotency_key","vitrine:%");
+      .select("id,idempotency_key,status,order_number,delivered_at,source")
+      .in("id",chunk);
     if(q.error)throw q.error;
     sourceRows.push(...(q.data||[]));
   }
 
   const orders=sourceRows.map((o:any)=>{
     const c:any=byCanonical.get(o.id)||{};
-    const sourceOrderId=String(o.idempotency_key||"").startsWith("vitrine:")
-      ? String(o.idempotency_key).slice(8)
-      : "";
+    const legacyKey=String(o.idempotency_key||"");
+    const sourceOrderId=o.source==="vitrine"
+      ? String(o.id)
+      : (legacyKey.startsWith("vitrine:")?legacyKey.slice(8):"");
     return {
       source_order_id:uuid(sourceOrderId)||null,
       canonical_order_id:o.id,
@@ -2540,6 +2552,72 @@ async function blingHubGet(sb:any,token:string,path:string){
   return {ok:r.ok,status:r.status,data};
 }
 
+
+function blingHubNfeB64(s:string){const b=atob(s),o=new Uint8Array(b.length);for(let i=0;i<b.length;i++)o[i]=b.charCodeAt(i);return o}
+async function blingHubNfeGunzip(s:string){const ds=new DecompressionStream("gzip");return await new Response(new Blob([blingHubNfeB64(s)]).stream().pipeThrough(ds)).text()}
+function blingHubNfeDec(s:string){return s.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#x([0-9a-f]+);/gi,(_:string,h:string)=>String.fromCodePoint(parseInt(h,16))).replace(/&#(\d+);/g,(_:string,d:string)=>String.fromCodePoint(parseInt(d,10)))}
+function blingHubNfeTag(b:string,n:string){const m=b.match(new RegExp("<(?:\\w+:)?"+n+"\\b[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?"+n+">","i"));return m?blingHubNfeDec(m[1]).trim():""}
+function blingHubNfeBlock(b:string,n:string){const m=b.match(new RegExp("<(?:\\w+:)?"+n+"\\b[^>]*>[\\s\\S]*?<\\/(?:\\w+:)?"+n+">","i"));return m?m[0]:""}
+function blingHubNfeBlocks(b:string,n:string){return [...b.matchAll(new RegExp("<(?:\\w+:)?"+n+"\\b[^>]*>[\\s\\S]*?<\\/(?:\\w+:)?"+n+">","gi"))].map((m:any)=>m[0])}
+function blingHubNfeAttr(b:string,n:string){const h=b.match(/^<[^>]+>/)?.[0]||"",m=h.match(new RegExp("\\b"+n+"=[\"']([^\"']+)[\"']","i"));return m?blingHubNfeDec(m[1]):""}
+function blingHubNfeGtin(v:any){const d=blingHubDigits(v);return [8,12,13,14].includes(d.length)?d:""}
+function blingHubNfeParse(xml:string){
+  const inf=blingHubNfeBlock(xml,"infNFe")||xml,ide=blingHubNfeBlock(inf,"ide"),emit=blingHubNfeBlock(inf,"emit"),dest=blingHubNfeBlock(inf,"dest"),prot=blingHubNfeBlock(xml,"protNFe");
+  const dk=blingHubDigits(blingHubNfeTag(prot,"chNFe")||blingHubNfeAttr(inf,"Id").replace(/^NFe/i,"")),cs=Number(blingHubNfeTag(blingHubNfeBlock(prot,"infProt")||prot,"cStat")||0),rc=blingHubDigits(blingHubNfeTag(dest,"CNPJ")),rf=blingHubDigits(blingHubNfeTag(dest,"CPF"));
+  const items=blingHubNfeBlocks(inf,"det").map((det:string)=>{const p=blingHubNfeBlock(det,"prod"),ic=blingHubNfeBlock(blingHubNfeBlock(det,"imposto"),"ICMS"),n=blingHubDigits(blingHubNfeTag(p,"NCM")).slice(0,8),c=blingHubDigits(blingHubNfeTag(p,"CEST")).slice(0,7),ot=blingHubNfeTag(ic,"orig"),o=/^\d$/.test(ot)?Number(ot):null,ct=blingHubDigits(blingHubNfeTag(ic,"CST")).slice(0,3),sn=blingHubDigits(blingHubNfeTag(ic,"CSOSN")).slice(0,4);return {item_number:clean(blingHubNfeAttr(det,"nItem"),20),commercial_gtin:blingHubNfeGtin(blingHubNfeTag(p,"cEAN")),tax_gtin:blingHubNfeGtin(blingHubNfeTag(p,"cEANTrib")),description:clean(blingHubNfeTag(p,"xProd"),500),ncm:n.length===8?n:null,cest:c.length===7?c:null,origin_code:o,cfop:blingHubDigits(blingHubNfeTag(p,"CFOP")).slice(0,4)||null,tax_code:ct?"CST:"+ct:sn?"CSOSN:"+sn:null}});
+  return {document_key:dk.length===44?dk:"",cstat:cs,issued_at:clean(blingHubNfeTag(ide,"dhEmi")||blingHubNfeTag(ide,"dEmi"),50)||null,supplier_document:blingHubDigits(blingHubNfeTag(emit,"CNPJ")||blingHubNfeTag(emit,"CPF"))||null,supplier_name:clean(blingHubNfeTag(emit,"xNome"),180)||null,recipient_kind:rc?"CNPJ":rf?"CPF":"unknown",items};
+}
+async function blingHubNfeSha(v:string){const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v));return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function blingHubNfeMonth(v:any){const p=String(v).slice(0,7).split("-").map(Number),y=p[0],m=p[1],s=String(y).padStart(4,"0")+"-"+String(m).padStart(2,"0")+"-01",nx=m===12?new Date(Date.UTC(y+1,0,1)):new Date(Date.UTC(y,m,1)),e=new Date(nx.getTime()-86400000);return {start:s,end:String(e.getUTCFullYear()).padStart(4,"0")+"-"+String(e.getUTCMonth()+1).padStart(2,"0")+"-"+String(e.getUTCDate()).padStart(2,"0")}}
+function blingHubNfePrev(v:any){const p=String(v).slice(0,7).split("-").map(Number),d=new Date(Date.UTC(p[0],p[1]-2,1));return String(d.getUTCFullYear()).padStart(4,"0")+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-01"}
+async function blingHubNfeXml(sb:any,t:string,k:string){await blingHubReserveSlot(sb);const r=await fetch(BLING_API_BASE+"/nfe/documento/"+encodeURIComponent(k)+"?formato=xml",{headers:{Authorization:"Bearer "+t,Accept:"application/json","enable-jwt":"1"},signal:AbortSignal.timeout(25000)}),raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}return {ok:r.ok,status:r.status,data}}
+async function blingHubNfeRefresh(sb:any){const ns=["refresh_product_fiscal_candidates_r0_3","refresh_product_fiscal_evidence_quality_v1","refresh_product_fiscal_rule_integrity_v1","refresh_product_fiscal_observed_conflicts_v1","refresh_product_fiscal_origin_consensus_v1","refresh_product_fiscal_review_state_v1","reconcile_product_fiscal_strict_validation_v1"],out:any={};for(const n of ns){const q=await sb.rpc(n);out[n]=q.error?{ok:false,error:clean(q.error.message,300)}:{ok:true,result:q.data}}return out}
+
+async function blingHubNfeIngestDetail(sb:any,row:any,detail:any){
+  const S="bling_nfe_entry_xml",sid=clean(row?.id,80)||null,d=detail?.data&&typeof detail.data==="object"?detail.data:{},dk=blingHubDigits(d?.chaveAcesso||row?.chaveAcesso);
+  if(dk.length!==44)throw new Error("detail_access_key_missing");
+  const items=Array.isArray(d?.itens)?d.itens:[],gtins=[...new Set(items.map((i:any)=>blingHubNfeGtin(i?.gtin)).filter(Boolean))] as string[],pm=new Map<string,any>();
+  if(gtins.length){const q=await sb.from("products").select("id,gtin,name").eq("is_active",true).in("gtin",gtins);if(q.error)throw q.error;for(const x of q.data||[])pm.set(String(x.gtin),x)}
+  const groups=new Map<string,any>();let matched=0,unmatched=0;
+  for(const i of items){
+    const gtin=blingHubNfeGtin(i?.gtin),pr=pm.get(gtin);if(!pr){unmatched++;continue}matched++;
+    const ncm=blingHubDigits(i?.classificacaoFiscal).slice(0,8)||null,cest=blingHubDigits(i?.cest).slice(0,7)||null,originRaw=Number(i?.origem),origin=Number.isInteger(originRaw)&&originRaw>=0&&originRaw<=8?originRaw:null,cfop=blingHubDigits(i?.cfop).slice(0,4)||null;
+    const key=[pr.id,ncm||"",cest||"",origin??"",cfop||""].join("|"),g=groups.get(key)||{product_id:pr.id,gtin:pr.gtin,ncm,cest,origin_code:origin,cfop,description:clean(i?.descricao,500),codes:[]};g.codes.push(clean(i?.codigo,120));groups.set(key,g);
+  }
+  const issued=clean(d?.dataEmissao||d?.dataOperacao,50)||null,supplierDoc=blingHubDigits(d?.contato?.numeroDocumento||d?.contato?.documento||d?.contato?.cpfCnpj)||null,supplierName=clean(d?.contato?.nome,180)||null;
+  const ev=[...groups.values()].map((g:any)=>({evidence_key:["company_purchase_bling_nfe_detail",dk,g.product_id,g.ncm||"none",g.cest||"none",g.origin_code??"none"].join(":"),product_id:g.product_id,evidence_type:"company_purchase_bling_nfe_detail",source_name:"NF-e de entrada cadastrada no Bling",document_key:dk,supplier_document:supplierDoc,gtin:g.gtin,ncm:g.ncm,cest:g.cest,origin_code:g.origin_code,cfop:g.cfop,tax_code:null,fiscal_description:g.description,evidence_confidence:0.93,observed_at:issued,evidence_payload:{source:"bling_api_nfe_detail",bling_nfe_id:sid,recipient_scope:"company_cnpj_registered_entry",matched_via:"gtin_exact",source_item_codes:g.codes,raw_xml_stored:false,external_write:false,usage_policy:"Fiscal fields from registered Bling entry document; validate against current MT legal rule before external write"}}));
+  if(ev.length){const q=await sb.from("product_fiscal_evidence").upsert(ev,{onConflict:"evidence_key"});if(q.error)throw q.error}
+  await sb.from("fiscal_source_documents").upsert({source:S,source_document_id:sid,document_key:dk,issued_at:issued,status:"processed",item_count:items.length,matched_product_count:new Set([...groups.values()].map((x:any)=>x.product_id)).size,unmatched_item_count:unmatched,content_sha256:null,last_error:"xml_endpoint_unavailable_used_registered_detail",metadata:{bling_nfe_id:sid,supplier_name:supplierName,evidence_rows:ev.length,matched_items:matched,unmatched_items:unmatched,source_mode:"registered_nfe_detail",external_write:false,raw_xml_storage:false},processed_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"source,document_key"});
+  return {skipped:false,evidence_rows:ev.length,matched_items:matched,unmatched_items:unmatched,source_mode:"registered_nfe_detail"};
+}
+async function blingHubNfeOne(sb:any,t:string,row:any){
+  const S="bling_nfe_entry_xml";let k=blingHubDigits(row?.chaveAcesso);const sid=clean(row?.id,80)||null;
+  if(k.length!==44&&sid){const d=await blingHubGet(sb,t,"/nfe/"+encodeURIComponent(sid));if(d.ok)k=blingHubDigits(d.data?.data?.chaveAcesso)}
+  if(k.length!==44)return {skipped:true,reason:"missing_access_key"};
+  const ex=await sb.from("fiscal_source_documents").select("status").eq("source",S).eq("document_key",k).maybeSingle();if(ex.error)throw ex.error;if(["processed","skipped"].includes(ex.data?.status))return {skipped:true,reason:"already_processed"};
+  const dl=await blingHubNfeXml(sb,t,k);if(!dl.ok){
+    if(sid){
+      const detail=await blingHubGet(sb,t,"/nfe/"+encodeURIComponent(sid));
+      if(detail.ok&&Array.isArray(detail.data?.data?.itens))return await blingHubNfeIngestDetail(sb,row,detail.data);
+    }
+    await sb.from("fiscal_source_documents").upsert({source:S,source_document_id:sid,document_key:k,status:dl.status===404?"unavailable":"error",last_error:"bling_document_http_"+dl.status,metadata:{bling_nfe_id:sid,external_write:false,raw_xml_storage:false},processed_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"source,document_key"});return {skipped:true,reason:"document_http_"+dl.status}
+  }
+  const doc=Array.isArray(dl.data?.data)?dl.data.data.find((x:any)=>x?.conteudo):null;if(!doc?.conteudo)throw new Error("document_content_missing");let xml="";try{xml=await blingHubNfeGunzip(String(doc.conteudo))}catch{throw new Error("document_decode_failed")}
+  const p=blingHubNfeParse(xml),dk=p.document_key||k,auth=[0,100,150].includes(p.cstat);if(!auth||p.recipient_kind!=="CNPJ"){await sb.from("fiscal_source_documents").upsert({source:S,source_document_id:sid,document_key:dk,issued_at:p.issued_at,status:"skipped",item_count:p.items.length,matched_product_count:0,unmatched_item_count:p.items.length,content_sha256:await blingHubNfeSha(xml),last_error:!auth?"nfe_not_authorized":"recipient_not_cnpj",metadata:{bling_nfe_id:sid,recipient_kind:p.recipient_kind,supplier_name:p.supplier_name,external_write:false,raw_xml_storage:false},processed_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"source,document_key"});return {skipped:true,reason:!auth?"nfe_not_authorized":"recipient_not_cnpj"}}
+  const gs=[...new Set(p.items.flatMap((i:any)=>[i.commercial_gtin,i.tax_gtin]).filter(Boolean))] as string[],pm=new Map<string,any>();if(gs.length){const q=await sb.from("products").select("id,gtin,name").eq("is_active",true).in("gtin",gs);if(q.error)throw q.error;for(const x of q.data||[])pm.set(String(x.gtin),x)}
+  const gr=new Map<string,any>();let mi=0,ui=0;for(const i of p.items){const pr=pm.get(i.commercial_gtin)||pm.get(i.tax_gtin);if(!pr){ui++;continue}mi++;const kk=[pr.id,i.ncm||"",i.cest||"",i.origin_code??"",i.cfop||"",i.tax_code||""].join("|"),g=gr.get(kk)||{product_id:pr.id,catalog_gtin:pr.gtin,ncm:i.ncm,cest:i.cest,origin_code:i.origin_code,cfop:i.cfop,tax_code:i.tax_code,fiscal_description:i.description,item_numbers:[],source_gtins:[]};g.item_numbers.push(i.item_number);g.source_gtins.push({commercial:i.commercial_gtin||null,tax:i.tax_gtin||null});gr.set(kk,g)}
+  const ev=[...gr.values()].map((g:any)=>({evidence_key:["company_purchase_nfe_xml",dk,g.product_id,g.ncm||"none",g.cest||"none",g.origin_code??"none"].join(":"),product_id:g.product_id,evidence_type:"company_purchase_nfe_xml",source_name:"NF-e de entrada Bling / compra da empresa",document_key:dk,supplier_document:p.supplier_document,gtin:g.catalog_gtin,ncm:g.ncm,cest:g.cest,origin_code:g.origin_code,cfop:g.cfop,tax_code:g.tax_code,fiscal_description:g.fiscal_description,evidence_confidence:0.96,observed_at:p.issued_at,evidence_payload:{source:"bling_api_nfe_entry_xml",bling_nfe_id:sid,recipient_scope:"company_cnpj",source_item_gtins:g.source_gtins,matched_via:"gtin_exact",item_numbers:g.item_numbers,supplier_name:p.supplier_name,usage_policy:g.cest?"NCM_CEST evidence; validate against current MT legal rule before external write; CFOP is source-operation context only":"NCM evidence; missing CEST is not negative evidence; validate against current MT legal rule before external write",raw_xml_stored:false,external_write:false}}));if(ev.length){const q=await sb.from("product_fiscal_evidence").upsert(ev,{onConflict:"evidence_key"});if(q.error)throw q.error}
+  await sb.from("fiscal_source_documents").upsert({source:S,source_document_id:sid,document_key:dk,issued_at:p.issued_at,status:"processed",item_count:p.items.length,matched_product_count:new Set([...gr.values()].map((x:any)=>x.product_id)).size,unmatched_item_count:ui,content_sha256:await blingHubNfeSha(xml),metadata:{bling_nfe_id:sid,recipient_kind:p.recipient_kind,supplier_name:p.supplier_name,evidence_rows:ev.length,matched_items:mi,unmatched_items:ui,external_write:false,raw_xml_storage:false},processed_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"source,document_key"});return {skipped:false,evidence_rows:ev.length,matched_items:mi,unmatched_items:ui};
+}
+async function blingHubNfeEntryBackfill(sb:any,stepsRaw:any){
+  const S="bling_nfe_entry_xml",PS=20,steps=Math.max(1,Math.min(8,Number(stepsRaw||4)||4)),sq=await sb.from("fiscal_source_scan_state").select("*").eq("source",S).maybeSingle();if(sq.error)throw sq.error;let st=sq.data;if(!st)throw new Error("scan_state_missing");if(st.status!=="running")return {ok:true,skipped:true,reason:"scan_not_running",state:st,external_write:false};
+  const t=await blingHubOauth(sb),sum:any={ok:true,external_write:false,steps_requested:steps,steps_completed:0,documents_seen:0,documents_downloaded:0,evidence_rows:0,matched_items:0,unmatched_items:0,skipped_documents:0,unavailable_documents:0,errors:[]};
+  for(let z=0;z<steps;z++){const cm=String(st.cursor_month);if(cm<String(st.earliest_month)){st.status="done";await sb.from("fiscal_source_scan_state").update({status:"done",updated_at:new Date().toISOString(),last_success_at:new Date().toISOString()}).eq("source",S);break}const b=blingHubNfeMonth(cm),pg=Math.max(1,Number(st.cursor_page||1)),pa=new URLSearchParams({tipo:"0",pagina:String(pg),limite:String(PS),dataEmissaoInicial:b.start+" 00:00:00",dataEmissaoFinal:b.end+" 23:59:59"}),ls=await blingHubGet(sb,t,"/nfe?"+pa.toString());if(!ls.ok){const er=ls.status===403?"bling_nfe_scope_missing":"bling_nfe_list_http_"+ls.status;await sb.from("fiscal_source_scan_state").update({status:ls.status===403?"paused":"error",last_error:er,last_scan_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("source",S);return {...sum,ok:false,status:ls.status,error:er}}
+    const rows=Array.isArray(ls.data?.data)?ls.data.data:[];sum.documents_seen+=rows.length;let dl=0,ev=0,mi=0,ui=0;for(const row of rows){try{const r=await blingHubNfeOne(sb,t,row);if(r?.reason==="already_processed")sum.skipped_documents++;else if(String(r?.reason||"").startsWith("document_http_404"))sum.unavailable_documents++;else if(r?.skipped)sum.skipped_documents++;else{dl++;ev+=Number(r?.evidence_rows||0);mi+=Number(r?.matched_items||0);ui+=Number(r?.unmatched_items||0)}}catch(e){sum.errors.push({source_id:clean(row?.id,80)||null,error:clean((e as Error)?.message||e,300)})}}sum.documents_downloaded+=dl;sum.evidence_rows+=ev;sum.matched_items+=mi;sum.unmatched_items+=ui;sum.steps_completed++;
+    const adv=rows.length<PS,nm=adv?blingHubNfePrev(cm):cm,np=adv?1:pg+1,uq=await sb.from("fiscal_source_scan_state").update({cursor_month:nm,cursor_page:np,months_scanned:Number(st.months_scanned||0)+(adv?1:0),pages_scanned:Number(st.pages_scanned||0)+1,documents_seen:Number(st.documents_seen||0)+rows.length,documents_downloaded:Number(st.documents_downloaded||0)+dl,evidence_rows:Number(st.evidence_rows||0)+ev,matched_items:Number(st.matched_items||0)+mi,unmatched_items:Number(st.unmatched_items||0)+ui,last_scan_at:new Date().toISOString(),last_success_at:new Date().toISOString(),last_error:sum.errors.length?clean(sum.errors.at(-1)?.error,500):null,updated_at:new Date().toISOString(),metadata:{...(st.metadata||{}),last_period:{start:b.start,end:b.end,page:pg,rows:rows.length},last_run:{documents_downloaded:dl,evidence_rows:ev,matched_items:mi,unmatched_items:ui,errors:sum.errors.length}}}).eq("source",S).select("*").single();if(uq.error)throw uq.error;st=uq.data}
+  let refresh:any=null;if(sum.evidence_rows>0)refresh=await blingHubNfeRefresh(sb);await sb.from("bling_hub_audit_v2").insert({event_type:"fiscal_nfe_entry_backfill_run",severity:sum.errors.length?"warning":"info",domain:"fiscal",details:{...sum,cursor_month:st.cursor_month,cursor_page:st.cursor_page,scan_status:st.status,refresh_performed:Boolean(refresh),make_used:false}});return {...sum,state:{status:st.status,cursor_month:st.cursor_month,cursor_page:st.cursor_page,earliest_month:st.earliest_month,months_scanned:st.months_scanned,pages_scanned:st.pages_scanned,total_documents_seen:st.documents_seen,total_documents_downloaded:st.documents_downloaded,total_evidence_rows:st.evidence_rows,total_matched_items:st.matched_items,total_unmatched_items:st.unmatched_items},refresh};
+}
+
 function blingHubFinanceCuiabaDay(offsetDays=0){
   const d=new Date(Date.now()+offsetDays*86400000);
   const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d);
@@ -3676,8 +3754,11 @@ async function blingHubProductFiscalCestCanary(sb:any,body:any,tokenOverride:any
       read_only:false
     }
   },{onConflict:"evidence_key"});
-  const qualityRefresh=await sb.rpc("refresh_product_fiscal_evidence_quality_v1");
-  const integrityRefresh=await sb.rpc("refresh_product_fiscal_rule_integrity_v1");
+  let qualityRefresh:any={error:null},integrityRefresh:any={error:null};
+  if(body?.skip_refresh!==true){
+    qualityRefresh=await sb.rpc("refresh_product_fiscal_evidence_quality_v1");
+    integrityRefresh=await sb.rpc("refresh_product_fiscal_rule_integrity_v1");
+  }
 
   return {
     ok:true,
@@ -3705,13 +3786,27 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
     };
   }
 
-  const limit=Math.max(1,Math.min(10,Number(body?.limit||5)||5));
+  const limit=Math.max(1,Math.min(25,Number(body?.limit||10)||10));
   const requireSupplierXml=body?.require_supplier_xml!==false;
   const cestFilter=blingHubDigits(body?.cest);
+  const requestedIds=(Array.isArray(body?.product_ids)?body.product_ids:[]).map((x:any)=>uuid(x)).filter(Boolean).slice(0,20);
 
   let rows:any[]=[];
   try{
-    if(requireSupplierXml){
+    if(requestedIds.length){
+      let diffQuery=sb.from("product_fiscal_bling_diff_v1")
+        .select("product_id,name,proposed_cest,canary_eligible,diff_status")
+        .in("product_id",requestedIds)
+        .eq("canary_eligible",true)
+        .eq("diff_status","cest_missing");
+      if(cestFilter)diffQuery=diffQuery.eq("proposed_cest",cestFilter);
+      const diff=await diffQuery.order("product_id",{ascending:true}).limit(limit);
+      if(diff.error)return {
+        ok:false,status:500,error:"batch_direct_diff_query_failed",
+        detail:clean(diff.error.message,300),external_write:false,bling_mutations:0
+      };
+      rows=diff.data||[];
+    }else if(requireSupplierXml){
       let scanQuery=sb.from("product_fiscal_catalog_scan_v1")
         .select("product_id,supplier_xml_cest_count")
         .eq("is_active",true)
@@ -3775,7 +3870,8 @@ async function blingHubProductFiscalCestBatch(sb:any,body:any){
     try{
       const result=await blingHubProductFiscalCestCanary(sb,{
         product_id:productId,
-        confirmation:"APLICAR_CEST_CANARIO:"+productId
+        confirmation:"APLICAR_CEST_CANARIO:"+productId,
+        skip_refresh:true
       },sharedToken);
       results.push(result);
       mutated+=Number(result?.bling_mutations||0);
@@ -5595,6 +5691,11 @@ Deno.serve(async(req:Request)=>{
         const financeUser=await blingHubFinanceAuthorizedUser(sb,req);
         if(!financeUser.ok)return json({ok:false,error:financeUser.error},Number(financeUser.status||401));
         const result=await blingHubFinanceAction(sb,body,financeUser.user_id||null);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+
+      if(subaction==="fiscal_nfe_entry_backfill"){
+        const result=await blingHubNfeEntryBackfill(sb,body?.steps);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="product_fiscal_audit_readonly"){
