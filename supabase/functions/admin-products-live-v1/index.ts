@@ -334,7 +334,7 @@ async function opsDeliveryPlan(p:any,auth:any){
   if(!["car_1","car_2"].includes(vehicle))return {error:"invalid_vehicle",status:400};
   if(!ids.length)return {error:"empty_route",status:400};
   const q=await db.rpc("ops_plan_delivery_run_v1",{p_vehicle_key:vehicle,p_order_ids:ids,p_operator_label:tx(p?.operator,80)||"Operação"});
-  if(q.error){const m=String(q.error.message||"");if(m.includes("order_not_ready"))return {error:"order_not_ready",status:409};throw q.error}
+  if(q.error){const m=String(q.error.message||"");if(m.includes("order_not_ready"))return {error:"order_not_ready",status:409};if(m.includes("vehicle_already_dispatched"))return {error:"vehicle_already_dispatched",status:409};if(m.includes("order_already_dispatched"))return {error:"order_already_dispatched",status:409};if(m.includes("delivery_return_review_open"))return {error:"delivery_return_review_open",status:409};if(m.includes("duplicate_order_in_route"))return {error:"duplicate_order_in_route",status:400};throw q.error}
   const runId=id(q.data);
   await opsEvent("delivery.run_planned","Rota de entrega preparada.","delivery_run",runId,{vehicle_key:vehicle,order_count:ids.length,order_ids:ids},tx(p?.operator,80)||"Operação","human","dona_antonia","delivery-run:"+runId);
   return {run_id:runId,vehicle_key:vehicle,order_count:ids.length};
