@@ -74,6 +74,18 @@ function blocks(b:string,n:string){return [...b.matchAll(new RegExp("<(?:\\w+:)?
 function attr(b:string,n:string){const h=b.match(/^<[^>]+>/)?.[0]||"",m=h.match(new RegExp("\\b"+n+"=[\"']([^\"']+)[\"']","i"));return m?dec(m[1]):""}
 function num(v:any){const n=Number(String(v??"").replace(",","."));return Number.isFinite(n)?n:null}
 function unit(v:any){const s=clean(v,20).toUpperCase().replace(/[^A-Z0-9]/g,"");const m:any={UNIDADE:"UN",UN:"UN",UND:"UN",CAIXA:"CX",CX:"CX",FARDO:"FD",FD:"FD",PACOTE:"PCT",PCT:"PCT",DISPLAY:"DP",DP:"DP",QUILO:"KG",KILO:"KG",KG:"KG",LITRO:"L",LT:"L",L:"L"};return m[s]||s.slice(0,6)}
+
+function preliminaryBaseUnit(item:any,productUnit:any=""){
+  const pu=unit(item?.purchase_unit),tu=unit(item?.tax_unit),catalog=unit(productUnit);
+  const qc=Number(item?.purchase_quantity||0),qt=Number(item?.tax_quantity||0),ratio=qc>0&&qt>0?qt/qc:0;
+  const packaging=new Set(["CX","FD","PCT","DP"]);
+  if(ratio>1){
+    if(catalog&&!packaging.has(catalog))return catalog;
+    if(tu&&tu!==pu&&!packaging.has(tu))return tu;
+    return "UN";
+  }
+  return catalog||tu||pu||"UN";
+}
 function gtin(v:any){const d=digits(v);return [8,12,13,14].includes(d.length)?d:""}
 function validGtin(v:any){const g=digits(v);if(![8,12,13,14].includes(g.length))return false;const e=Number(g.at(-1));let s=0;for(let i=g.length-2,o=0;i>=0;i--,o++)s+=Number(g[i])*(o%2===0?3:1);return (10-s%10)%10===e}
 function day(v:any){const s=clean(v,40),m=s.match(/^(\d{4}-\d{2}-\d{2})/);return m?m[1]:""}
@@ -168,7 +180,7 @@ async function ensureProduct(token:string,p:any,item:any){
   if(!local&&!gs.length)return {ok:false,review:"valid_gtin_required",product:null,bling_id:null,created:false};
   if(!remote&&gs.length){
     const g=gs[0];
-    const payload:any={nome:item.description,codigo:g,tipo:"P",formato:"S",situacao:"A",unidade:unit(item.tax_unit||item.purchase_unit)||"UN",gtin:g};
+    const payload:any={nome:item.description,codigo:g,tipo:"P",formato:"S",situacao:"A",unidade:preliminaryBaseUnit(item)||"UN",gtin:g};
     const w=await bw(token,"/produtos","POST",payload);
     if(w.ok){remote={id:Number(w.data?.data?.id||0),gtin:g,nome:item.description,codigo:g,unidade:payload.unidade}}
     else{remote=await remoteProductByGtin(token,g);if(!remote)return {ok:false,review:"bling_product_create_http_"+w.status,product:null,bling_id:null,created:false}}
@@ -176,7 +188,7 @@ async function ensureProduct(token:string,p:any,item:any){
   const bid=Number(remote?.id||local?.bling_product_id||0)||null;
   if(!local){
     const g=gs[0];
-    const ins=await sb.from("products").insert({bling_product_id:bid,sku:g,name:item.description,gtin:g,ncm:item.ncm||null,price:null,cost:null,stock:0,is_active:false,is_whatsapp_active:false,is_offer:false,supplier:p.supplier_name||null,unit:unit(item.tax_unit||item.purchase_unit)||"UN",packaging:item.purchase_unit||null,source_system:"operational",sync_status:"local",desired_bling_status:"A",metadata:{purchase_xml_created:true,purchase_xml_document_key:p.document_key,new_product_review_required:true}}).select("id,bling_product_id,sku,name,gtin,ncm,cost,stock,unit,supplier,metadata,is_active").single();
+    const ins=await sb.from("products").insert({bling_product_id:bid,sku:g,name:item.description,gtin:g,ncm:item.ncm||null,price:null,cost:null,stock:0,is_active:false,is_whatsapp_active:false,is_offer:false,supplier:p.supplier_name||null,unit:preliminaryBaseUnit(item)||"UN",packaging:item.purchase_unit||null,source_system:"operational",sync_status:"local",desired_bling_status:"A",metadata:{purchase_xml_created:true,purchase_xml_document_key:p.document_key,new_product_review_required:true}}).select("id,bling_product_id,sku,name,gtin,ncm,cost,stock,unit,supplier,metadata,is_active").single();
     if(ins.error)throw ins.error;local=ins.data;
     if(bid)await sb.from("bling_hub_entity_links_v2").upsert({source_system:"canonical_ssbes",entity_type:"product",source_id:local.id,bling_id:bid,identity_kind:"gtin",identity_value:g,status:"matched",last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString(),metadata:{method:"purchase_xml_gtin",verified:true}},{onConflict:"source_system,entity_type,source_id"});
     return {ok:true,product:local,bling_id:bid,created:true};
@@ -184,17 +196,19 @@ async function ensureProduct(token:string,p:any,item:any){
   if(bid&&!local.bling_product_id)await sb.from("products").update({bling_product_id:bid,updated_at:new Date().toISOString()}).eq("id",local.id).is("bling_product_id",null);
   return {ok:true,product:local,bling_id:bid,created:false};
 }
-async function conversionFor(productId:string,p:any,item:any){
-  const pu=unit(item.purchase_unit),tu=unit(item.tax_unit);
-  if(pu&&tu&&pu===tu)return {status:"not_needed",factor:1,base_unit:tu,chain:[{unit:pu,quantity:1}],confidence:1};
+async function conversionFor(product:any,p:any,item:any){
+  const pu=unit(item.purchase_unit),tu=unit(item.tax_unit),catalog=unit(product?.unit),packaging=new Set(["CX","FD","PCT","DP"]);
   const qc=Number(item.purchase_quantity||0),qt=Number(item.tax_quantity||0),ratio=qc>0&&qt>0?qt/qc:0;
-  if(pu&&tu&&ratio>=1&&ratio<=100000&&Math.abs(ratio-Math.round(ratio))<0.000001){
-    const f=Math.round(ratio);return {status:"inferred_xml",factor:f,base_unit:tu,chain:[{unit:pu,contains:f,next_unit:tu},{unit:tu,quantity:1}],confidence:.98};
+  if(ratio>=1&&ratio<=100000&&Math.abs(ratio-Math.round(ratio))<0.000001){
+    const f=Math.round(ratio),base=preliminaryBaseUnit(item,catalog);
+    if(f>1)return {status:"inferred_xml",factor:f,base_unit:base,chain:[{unit:pu||"EMB",contains:f,next_unit:base},{unit:base,quantity:1}],confidence:.99};
+    if(f===1)return {status:"not_needed",factor:1,base_unit:catalog||tu||pu||"UN",chain:[{unit:catalog||tu||pu||"UN",quantity:1}],confidence:1};
   }
-  const q=await sb.from("product_supplier_packaging").select("*").eq("product_id",productId).eq("purchase_unit",pu).in("status",["confirmed","inferred_xml"]).or("supplier_document.eq."+digits(p.supplier_document)+",supplier_document.is.null").order("confidence",{ascending:false}).limit(1);
+  if(pu&&tu&&pu===tu&&!packaging.has(pu))return {status:"not_needed",factor:1,base_unit:catalog||tu,chain:[{unit:catalog||tu,quantity:1}],confidence:1};
+  const q=await sb.from("product_supplier_packaging").select("*").eq("product_id",product.id).eq("purchase_unit",pu).in("status",["confirmed","inferred_xml"]).or("supplier_document.eq."+digits(p.supplier_document)+",supplier_document.eq.").order("confidence",{ascending:false}).limit(1);
   if(q.error)throw q.error;
   const m=(q.data||[])[0];if(m)return {status:"known",factor:Number(m.conversion_factor),base_unit:m.base_unit,chain:m.conversion_chain||[],confidence:Number(m.confidence||1)};
-  return {status:"review_required",factor:null,base_unit:tu||"UN",chain:[],confidence:0};
+  return {status:"review_required",factor:null,base_unit:preliminaryBaseUnit(item,catalog),chain:[],confidence:0};
 }
 async function syncSupplierLink(token:string,blingProductId:number,supplierId:number,item:any,c:any){
   if(!blingProductId||!supplierId)return {ok:false,skipped:true};
@@ -219,7 +233,7 @@ async function createPayables(token:string,p:any,supplierId:number){
   const accounts:any[]=[];
   for(let i=0;i<p.installments.length;i++){
     const x=p.installments[i],number=[p.invoice_number||p.document_key.slice(-9),x.number||String(i+1)].filter(Boolean).join("-");
-    const dup=rows.find((r:any)=>clean(r?.numeroDocumento,120)===number);
+    const targetCents=Math.round(Number(x.amount||0)*100);const dup=rows.find((r:any)=>clean(r?.numeroDocumento,120)===number||(clean(r?.vencimento,20).slice(0,10)===x.due_date&&Math.round(Number(r?.valor||0)*100)===targetCents));
     if(dup){accounts.push({id:Number(dup.id),number,existing:true});continue}
     const payload={vencimento:x.due_date,valor:Number(x.amount),contato:{id:supplierId},dataEmissao:issue||undefined,numeroDocumento:number,historico:"Compra NF-e "+(p.invoice_number||"")+" · chave "+p.document_key};
     const w=await bw(token,"/contas/pagar","POST",payload);
@@ -249,7 +263,7 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
     try{
       const ep=await ensureProduct(token,p,item);
       if(!ep.ok||!ep.product){review++;await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,...item,base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",conversion_status:"review_required",processing_status:"review_required",match_method:ep.review||"unmatched",metadata:{reason:ep.review||"unmatched"}},{onConflict:"document_id,item_number"});continue}
-      const conv:any=await conversionFor(ep.product.id,p,item);
+      const conv:any=await conversionFor(ep.product,p,item);
       const bq=conv.factor?Number(item.purchase_quantity||0)*Number(conv.factor):null;
       const buc=conv.factor&&Number.isFinite(Number(item.purchase_unit_price))?Number(item.purchase_unit_price)/Number(conv.factor):null;
       const st=conv.status==="review_required"?"review_required":"matched";
@@ -370,7 +384,12 @@ async function runBlingSync(source="bling_daily"){
           let key=digits(row?.chaveAcesso);const bid=Number(row?.id||0)||null;
           if(key.length!==44&&bid){const d=await bg(token,"/nfe/"+bid);if(d.ok)key=digits(d.data?.data?.chaveAcesso)}
           if(key.length!==44){failed++;continue}
-          const x=await blingXml(token,key);if(!x.ok){failed++;continue}
+          let x=await blingXml(token,key);
+          if(!x.ok&&bid){
+            const det=await bg(token,"/nfe/"+bid);
+            if(det.ok)x=await linkedXml(det.data?.data?.xml);
+          }
+          if(!x.ok){failed++;continue}
           const rr=await processXml(token,x.xml,source,id,String(row?.id||""),bid);
           items+=rr.items||0;matched+=rr.matched||0;review+=rr.review||0;if(rr.duplicate)dup++;else processed++;
         }catch{failed++}
