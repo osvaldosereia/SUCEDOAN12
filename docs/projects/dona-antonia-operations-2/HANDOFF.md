@@ -298,3 +298,15 @@ Próximos gates:
 - reautorizar escopos de Situações no Bling e provar reserva/webhook;
 - depois canário de early-order no Bling;
 - POC de impressora física.
+
+
+### Ponte PapoAI de conversa operacional
+- payload real já é normalizado pelo adapter v2;
+- `papoai_ensure_conversation_v2` faz o vínculo do inbound com `conversations`;
+- receiver PapoAI v107 chama normalização + ponte inline, sem cron;
+- conversa local é espelho operacional, não fonte do canal;
+- cliente não é criado automaticamente;
+- texto livre não cria pedido;
+- rascunho versionado só deve receber eventos estruturados e determinísticos.
+
+Próximo passo PapoAI: observar eventos de botões/flows/ações estruturadas e mapear somente os que permitirem montar/revisar o draft com segurança.
