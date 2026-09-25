@@ -430,3 +430,62 @@ Reserva de estoque configurada para considerar:
 Gate **Situações + Reserva** = HOMOLOGADO.
 
 O Hub geral continua em homologação e webhooks ainda não foram liberados para processamento. Próximo gate: homologar webhook real do Bling e reconciliação sem polling.
+
+
+## Bling — receiver e reconciliação de webhooks homologados internamente — 2026-09-25
+
+### Código/runtime
+- o código em produção estava 18,6 KB à frente do GitHub; o drift foi eliminado antes de novos deploys;
+- `admin-service-intelligence-v1` sincronizada no `SUCEDOAN12`;
+- v148 adicionou canário interno do receiver;
+- v149 adicionou reconciliação de pedido orientada a evento, somente leitura;
+- commits principais:
+  - `e3378907` — sincronização do runtime + canário do receiver;
+  - `ff680757` — reconciliação de webhook de pedido por evento.
+
+### Receiver canário
+Evento sintético assinado internamente:
+- assinatura HMAC válida -> HTTP 200;
+- evento armazenado com `signature_verified=true`;
+- como `hub_enabled=false` e `webhooks_enabled=false`, evento ficou `held`;
+- envio duplicado do mesmo `eventId/hash` -> HTTP 200 e `duplicate=true`, sem segunda linha;
+- assinatura inválida -> HTTP 401;
+- nenhum efeito externo e nenhuma mutação de pedido.
+
+### Reconciliação canário
+Evento: `c1acf430-cfd8-4018-b103-b0589025e05e`.
+Pedido Bling: `26967482613`.
+Pedido canônico: `2e464c9f-f5df-4d75-baa4-f6455addd6d4`.
+
+Resultado:
+- vínculo Bling <-> pedido local resolvido;
+- status local `storefront_received` mapeia para Bling `915901`;
+- leitura remota observou `915901`;
+- classificação `order_reconciled_noop`;
+- evento finalizado como `processed`;
+- `local_mutation=false`;
+- anti-loop preservado.
+
+### Gate atual
+Receiver + idempotência + assinatura + reconciliação de pedido = **PASSARAM internamente**.
+
+Ainda falta a prova de **entrega real pelo Bling**. A inbox estava vazia antes do canário, então o aplicativo ainda não está enviando webhooks para o endpoint.
+
+Ação manual necessária no aplicativo **GitHub - Sincronização de Produtos**:
+1. abrir aba **Webhooks**;
+2. cadastrar servidor:
+   `https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1?source=bling-webhook-v2`
+3. habilitar versão `v1` para:
+   - Pedido de Venda (`order`);
+   - Produto (`product`);
+   - Estoque (`stock`);
+   - Nota Fiscal (`invoice`);
+4. habilitar ações disponíveis `created`, `updated`, `deleted`;
+5. salvar.
+
+O Bling habilita `virtual_stock` automaticamente junto com `stock`.
+
+Segurança:
+- manter `hub_enabled=false`;
+- manter `webhooks_enabled=false`;
+- eventos reais recebidos ficam `held` até a homologação final.
