@@ -469,3 +469,47 @@ Se houver avaria, falta ou item impróprio:
 
 ### Ação manual ainda necessária
 No cadastro do aplicativo Dona Antônia no Bling, liberar o acesso aos recursos de Situações/Módulos/Transições, salvar e reautorizar o aplicativo pelo botão **Reconectar Bling** do Vitrine/Admin. Depois disso a verificação é automática.
+
+
+## Situações e reserva de estoque — HOMOLOGADO em 2026-09-25
+
+### Situações/Módulos
+- OAuth válido;
+- `/situacoes/modulos` = HTTP 200;
+- módulo **Vendas** = 98310;
+- `status_updates_enabled=true`;
+- `Aguardando confirmação` = 915901;
+- `Aprovado / Separar` = 915902;
+- `Verificado` = 24;
+- `Atendido` = 9;
+- `Cancelado` = 12.
+
+### Transições do fluxo Operations 2.0
+- `Aguardando confirmação -> Aprovado / Separar` = 504837238;
+- `Aprovado / Separar -> Aguardando confirmação` = 504838770;
+- transições criadas/validadas sem ações implícitas de estoque.
+
+### Reserva
+Canário Bling `26967482613` validado com leitura de saldo antes/depois.
+
+Em `Aguardando confirmação`:
+- saldo físico = saldo virtual.
+
+Em `Aprovado / Separar`:
+- saldo físico não muda;
+- saldo virtual é reduzido pela quantidade reservada.
+
+Rollback para `Aguardando confirmação`:
+- saldo virtual é liberado;
+- saldo físico permanece inalterado.
+
+Amostra comprovada:
+- Açafrão 10 físico / 10 virtual -> 9 virtual -> 10 virtual;
+- Achocolatado 3 / 3 -> 2 -> 3;
+- Arroz 97 / 97 -> 96 -> 97.
+
+### Gate
+**PASSOU.**
+
+Pendência correspondente na Control Tower/Supabase foi resolvida.
+Próxima homologação: webhooks Bling + reconciliação de eventos, mantendo processamento geral desligado até o canário ficar verde.
