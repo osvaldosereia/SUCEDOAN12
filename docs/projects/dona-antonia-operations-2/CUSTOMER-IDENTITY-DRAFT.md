@@ -11,153 +11,57 @@ Ter uma identidade única de cliente entre site, WhatsApp/PapoAI, Admin e Bling,
 - 263 com CPF/CNPJ;
 - 227 sem documento;
 - 57 sem telefone principal;
-- 245 endereços cadastrados;
-- há pedidos atuais sem customer_id e pedidos sem forma de pagamento.
-
-Conclusão: CPF é importante, mas não pode ser requisito para que uma conversa/pedido sequer exista. O dado deve ser coletado antes do ponto fiscal/ERP em que realmente se torna necessário.
+- 245 endereços cadastrados.
 
 ## Bling
-Documentação oficial confirma:
-- contatos têm tipo de pessoa, endereço e tipo de contato;
-- busca pode ser feita por nome, e-mail, CPF/CNPJ e telefone;
-- CPF/CNPJ duplicado pode causar conflito no pedido quando dados divergem;
-- o Bling oferece configuração para permitir documento duplicado, mas isso NÃO é desejável como padrão para Dona Antônia;
-- histórico de vendas/financeiro do contato fica disponível no pedido;
-- para emissão de NF-e, dados obrigatórios do destinatário podem ser necessários.
+O Bling mantém contatos com tipo de pessoa, endereço e tipo de contato. A busca pode usar nome, e-mail, CPF/CNPJ e telefone. Documento duplicado pode gerar conflito quando os dados divergem.
 
-Fontes:
+Fontes oficiais:
 - https://ajuda.bling.com.br/hc/pt-br/articles/360035913053-Cadastrar-clientes-fornecedores-e-transportadoras
 - https://ajuda.bling.com.br/hc/pt-br/articles/360036443093-Erro-ao-salvar-a-venda-CNPJ-CPF-j%C3%A1-cadastrado-no-contato
 - https://ajuda.bling.com.br/hc/pt-br/articles/360036358474-Inserir-um-pedido-de-venda
-- https://ajuda.bling.com.br/hc/pt-br/articles/27626984856471-Meu-neg%C3%B3cio-Clientes-e-produtos
 
 ## Identidade recomendada
+1. Telefone identifica conversa/canal, não a pessoa de forma definitiva.
+2. Cadastro operacional pode existir temporariamente sem CPF.
+3. CPF/CNPJ válido é a identidade forte para reconciliação fiscal/ERP.
+4. Bling ID já vinculado tem prioridade sobre nova busca.
+5. Nunca fundir clientes apenas por nome livre.
 
-### Nível 1 — conversa
-Telefone WhatsApp identifica o canal/conversa, não a pessoa de forma definitiva.
-
-### Nível 2 — cliente operacional
-Cadastro local pode existir com:
-- nome;
-- telefone;
-- endereço;
-- histórico de pedidos;
-- sem CPF temporariamente.
-
-### Nível 3 — identidade fiscal/ERP
-CPF/CNPJ válido e reconciliado com Bling.
-
-Quando CPF existir:
-- deve ser chave forte de correspondência;
-- não criar outro contato Bling se já existe um com aquele documento;
-- divergência de nome/endereço deve virar revisão, não duplicação silenciosa.
-
-## Regra de matching
-Ordem proposta:
+## Matching proposto
 1. bling_contact_id já vinculado;
 2. CPF/CNPJ exato;
 3. telefone + evidências;
 4. nome/endereço apenas como sugestão;
 5. revisão humana se ambíguo.
 
-Nunca usar somente nome livre para fusão automática.
+## Pedido WhatsApp
+Conversa -> telefone -> resolver cliente -> carregar histórico/endereço -> montar pedido -> coletar CPF somente quando necessário -> reconciliar Bling.
 
-## Pedido pelo WhatsApp
-Fluxo:
-1. conversa chega com telefone;
-2. resolver cliente por telefone;
-3. se houver 1 correspondência segura, carregar histórico/endereço;
-4. se não houver, criar identidade operacional mínima;
-5. montar pedido;
-6. antes da etapa fiscal/ERP que exigir documento, coletar CPF;
-7. reconciliar com Bling;
-8. não pedir novamente se já existe dado válido.
-
-## Flow/PapoAI
-PapoAI pode coletar:
-- nome;
-- telefone;
-- CPF quando necessário;
-- endereço;
-- localização.
-
-Mas PapoAI não é fonte oficial do cliente.
-
-Ele envia dados -> motor de identidade valida -> Bling/local são reconciliados.
-
-## Endereços
-Cliente pode ter mais de um endereço.
-
-Não sobrescrever automaticamente endereço antigo quando o cliente usa outro local.
-Guardar:
-- endereço salvo;
-- endereço do pedido como snapshot;
-- coordenada validada;
-- referência;
-- origem da coordenada.
-
-O pedido deve manter snapshot para preservar o endereço efetivamente usado naquela venda.
-
-## Localização WhatsApp
-Pin/localização é forte evidência logística, mas não substitui os campos fiscais do endereço.
-
-Fluxo:
-- guardar coordenada;
-- associar ao endereço/pedido;
-- usar para rota;
-- manter texto de rua/número/bairro para documento/atendimento.
+## Endereço
+Cliente pode ter vários endereços. O pedido guarda snapshot do endereço realmente usado. Coordenada WhatsApp pode ser associada ao endereço/pedido, mas não substitui campos fiscais.
 
 ## Recompra
-Histórico Bling + histórico local permite:
-- "repetir última compra";
-- usar última cesta;
-- preencher endereço;
-- sugerir pagamento previsto.
-
-Sempre gerar um novo rascunho e recalcular preços/estoque atuais.
-
-## Evitar duplicidade
-Control Tower deve mostrar:
-- CPF já existe em outro cliente;
-- mesmo telefone em múltiplos cadastros;
-- contato Bling sem vínculo;
-- cliente local sem Bling;
-- divergência CPF/nome.
-
-Fusão de cadastros é ação de supervisor/owner.
-
-## Política de coleta de CPF
-Não pedir CPF em toda conversa.
-
-Pedir quando:
-- cliente ainda não possui;
-- venda vai avançar para etapa que exige identificação fiscal/ERP;
-- regra fiscal exigir.
-
-Isso reduz atrito no WhatsApp.
+Usar histórico como base, sempre criando novo rascunho e recalculando preço/estoque atual.
 
 ## Fonte de verdade
 - Bling: cadastro ERP/fiscal consolidado;
-- Supabase: identidade operacional/canal, snapshots de pedido e ponte;
-- PapoAI: conversa/dados coletados;
-- pedido: snapshot do que foi usado na venda.
+- Supabase: identidade operacional, snapshots e ponte;
+- PapoAI: canal e dados coletados;
+- pedido: snapshot da venda.
 
 ## Control Tower
-Cards:
-- clientes sem CPF que possuem pedido aguardando avanço;
-- contatos Bling em revisão;
-- duplicidades;
+Mostrar:
+- cliente com pedido e sem documento quando isso bloquear o avanço;
+- contato Bling em revisão;
+- possível duplicidade;
 - endereço incompleto;
-- localização ausente em rota;
-- cadastro novo do WhatsApp aguardando consolidação.
+- cliente WhatsApp ainda não consolidado.
 
-## Gate
-Antes da implementação:
-1. deduplicar estratégia de CPF;
-2. definir política para clientes sem CPF;
-3. homologar criação/atualização de contatos Bling;
-4. testar alteração de endereço;
-5. testar cliente com dois endereços;
-6. testar mesmo telefone em dois contatos;
-7. integrar PapoAI Flow;
-8. garantir snapshot do pedido.
+## Gates
+- política para cliente sem CPF;
+- POC de criação/atualização de contato Bling;
+- cliente com múltiplos endereços;
+- telefone repetido;
+- integração PapoAI Flow;
+- snapshot imutável do pedido.
