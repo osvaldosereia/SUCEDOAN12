@@ -371,7 +371,7 @@
         <a class="store-link" href="/vitrine/" target="_blank" rel="noopener">Abrir vitrine ↗</a>
       </div>
       <nav class="tabs wrap" aria-label="Admin">
-        <button class="tab" data-tab="today" type="button">Hoje</button>
+        <button class="tab" data-tab="today" type="button">Central</button>
         <button class="tab" data-tab="orders" type="button">Pedidos</button>
         <button class="tab" data-tab="expedition" type="button">Expedição</button>
         <button class="tab" data-tab="closure" type="button">Fechamento</button>
@@ -409,7 +409,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -701,19 +701,34 @@
     return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
   }
 
+  function renderOps2Summary(){
+    const s=state.opsSummary||{};
+    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{};
+    const cards=[
+      ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
+      ['Atenções',Number(a.open||0),'Fila da Central'],
+      ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
+      ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
+      ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
+    ];
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Central de Controle</strong><span class="muted">visão rápida · sem consultas externas extras</span></div><div class="ops-cards" style="padding:14px">'+cards.map(c=>'<div class="ops-card"><small>'+esc(c[0])+'</small><strong>'+esc(c[1])+'</strong><span>'+esc(c[2])+'</span></div>').join('')+'</div></section>';
+  }
+
   async function renderToday(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Hoje</h1><p>O que precisa ser feito agora, em ordem operacional.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div><div id="integrationOperationalAlert"></div><div id="todayBody"><div class="loading">Carregando operação…</div></div>';
+    content.innerHTML='<div class="page-head"><div><h1>Central</h1><p>O que está acontecendo e o que precisa da sua atenção.</p></div><button class="secondary" id="refreshToday">Atualizar</button></div><div id="integrationOperationalAlert"></div><div id="todayBody"><div class="loading">Carregando operação…</div></div>';
     $('#refreshToday').onclick=renderToday;
     loadOperationalIntegrationAlert();
     try{
-      const [data,closureData,expiryAlerts]=await Promise.all([
+      const [data,closureData,expiryAlerts,opsData]=await Promise.all([
         api('orders'),
         api('closure_orders').catch(()=>null),
-        api('expiry_alerts').catch(()=>null)
+        api('expiry_alerts').catch(()=>null),
+        api('ops_summary').catch(()=>null)
       ]);
       state.orders=data.orders||[];
       state.expiryAlerts=expiryAlerts||null;
+      state.opsSummary=opsData?.summary||null;
       if(closureData){
         state.closureOrders=closureData.orders||[];
         state.closurePendingCount=Number(closureData.pending_count||0);
@@ -722,7 +737,7 @@
         state.closurePendingCount=0;
       }
       const host=$('#todayBody');
-      host.innerHTML=renderTodayExpiryAlert()+renderTodayCards()+
+      host.innerHTML=renderOps2Summary()+renderTodayExpiryAlert()+renderTodayCards()+
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
       host.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
       host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
