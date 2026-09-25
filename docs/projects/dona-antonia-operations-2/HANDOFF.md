@@ -183,6 +183,9 @@ Roteirização própria e tela do entregador permanecem como função Dona Antô
 ## Cliente e cobertura da análise — 2026-09-25
 Foi consolidada a estratégia de identidade: telefone identifica canal; CPF/CNPJ é identidade forte fiscal/ERP; Bling é o cadastro ERP consolidado; pedido mantém snapshot do endereço usado. Estado observado: 490 clientes, 227 sem documento e 57 sem telefone principal. Também foi criado `ANALYSIS-COVERAGE-DRAFT.md` para impedir que o Projeto Final seja escrito antes de fechar os bloqueadores restantes.
 
+## Cestas e representação fiscal — 2026-09-25
+Para cestas personalizadas, a direção preferida é enviar ao Bling os componentes reais do pedido, não depender de uma composição fixa. O uso atual de `other_expenses` para a diferença comercial deve ser reavaliado fiscalmente: foi aberto um candidato de rateio determinístico do preço comercial entre os componentes para que a soma dos itens coincida com a cesta, mantendo NCM/tributação individual. Não implementar sem homologação fiscal. Ver `BASKETS-COMMERCIAL-FISCAL-DRAFT.md`.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
