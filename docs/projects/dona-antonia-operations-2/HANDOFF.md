@@ -159,6 +159,12 @@ O Bling deve ser o único consumidor da distribuição SEFAZ/NSU do CNPJ. A roti
 ## Achado — separação/expedição
 Bling Checkout cobre grande parte de Picking/Packing, leitura EAN, checkout parcial, usuário em separação, geração fiscal/documentos e impressão QZ. O Admin deve manter principalmente fila simplificada, rota/entregador, venda manual/WhatsApp e fechamento de pagamento. Ver `OPERATIONS-EXPEDITION-DRAFT.md`.
 
+
+## Fluxo máximo de automação
+O usuário reforçou que o projeto deve reduzir ao mínimo a interação humana. A direção agora é: pedido nasce em `Aguardando confirmação`; cliente confirma preferencialmente pelo PapoAI/WhatsApp; aprovação muda automaticamente para `Aprovado / Separar`, ativa reserva no Bling e dispara impressão térmica custom 85 mm com foto/EAN/quantidade/localização; separador só marca `SEPARADO`; conferência usa preferencialmente Bling Checkout; após Verificado, estoque/documentos seguem automações homologadas; entregador só registra entrega e pagamento efetivo. Ver `WORKFLOW-MAX-AUTOMATION-DRAFT.md`.
+
+Achado de dados: 1.634 produtos ativos, ~99,8% com imagem, ~98,6% com GTIN, mas apenas ~38,2% com gôndola+prateleira; localização física é o principal gate para picking automático ordenado.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
