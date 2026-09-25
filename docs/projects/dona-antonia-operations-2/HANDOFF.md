@@ -177,6 +177,9 @@ O Bling está acessível em leitura nos principais domínios, mas o runtime glob
 ## Balanço de estoque — 2026-09-25
 A ferramenta de Balanço é requisito crítico. O frontend atual tem boa UX para leitor EAN + teclado numérico, mas o backend atual grava `products.stock` diretamente e não é compatível com Bling como fonte oficial. O Bling possui módulo nativo `Estoque > Conferência de estoque` com leitura de código, imagem, localização, saldo atual, diferença, log, sessão em nuvem e geração de Balanço. Direção: POC nativa primeiro; se os leitores/tablets não entregarem a UX necessária, manter a tela Dona Antônia como frontend fino escrevendo operação B no Bling. Ver `INVENTORY-COUNT-BALANCE-DRAFT.md`.
 
+## Rota e eficiência — 2026-09-25
+Roteirização própria e tela do entregador permanecem como função Dona Antônia; o Bling cobre logística documental/transportadoras, mas não foi encontrado recurso nativo oficial equivalente à rota local com pins WhatsApp + pagamento na porta. Também foi formalizada a regra arquitetural "se nada aconteceu, nada deve rodar": webhooks/eventos, read models pequenos, IA sob demanda e crons apenas como rede de segurança. Ver `DELIVERY-ROUTES-DRAFT.md` e `ARCHITECTURE-EFFICIENCY-DRAFT.md`.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
