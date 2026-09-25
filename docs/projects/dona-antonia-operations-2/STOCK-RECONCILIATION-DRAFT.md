@@ -126,3 +126,20 @@ Usar:
 - webhook;
 - reconciliação incremental;
 - varredura completa eventual/off-hours apenas como segurança.
+
+
+## Implementação/homologação — 2026-09-25
+A política deste documento começou a ser implantada em shadow mode.
+
+Concluído:
+- `bling_stock_mirror_v2` cobre 1.630/1.630 produtos ativos vinculados;
+- backfill completo a partir do Bling;
+- saldo vendável-alvo é o virtual do depósito Geral;
+- `virtual_stock.updated` assinado atualiza o mirror diretamente;
+- eventos antigos não sobrescrevem snapshots novos;
+- nenhum webhook altera `products.stock`;
+- nenhum webhook escreve de volta no Bling;
+- 28 eventos reais de liberação foram processados automaticamente com HTTP 200;
+- quatro produtos ativos seguem sem vínculo exato e permanecem fora do cutover automático.
+
+O cutover do site ainda NÃO ocorreu porque checkout, readiness e confirmação possuem dependências do modelo legado `products.stock + vitrine_stock_reservations`.
