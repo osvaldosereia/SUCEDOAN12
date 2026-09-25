@@ -701,6 +701,20 @@
     return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
   }
 
+  async function retryBlingStatusCatalog(){
+    const btn=document.querySelector('[data-retry-bling-status]');
+    if(btn){btn.disabled=true;btn.textContent='Testando…'}
+    try{
+      const data=await api('bling_status_catalog_probe',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      toast('Permissão do Bling validada');
+      await renderToday();
+      return data;
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='Testar novamente'}
+    }
+  }
+
   function attentionTargetTab(a){
     if(a?.type==='product_location_incomplete')return 'gondolas';
     if(a?.type==='bling_scope_missing')return 'bling';
@@ -754,6 +768,7 @@
       const host=$('#todayBody');
       host.innerHTML=renderOps2Summary()+renderOpsAttention()+renderTodayExpiryAlert()+renderTodayCards()+
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
+      host.querySelectorAll('[data-retry-bling-status]').forEach(b=>b.onclick=retryBlingStatusCatalog);
       host.querySelectorAll('[data-attention-open]').forEach(b=>b.onclick=()=>setTab(b.dataset.attentionTab||'today'));
       host.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
       host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
