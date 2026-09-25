@@ -409,7 +409,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[]};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -701,6 +701,19 @@
     return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
   }
 
+  function attentionTargetTab(a){
+    if(a?.type==='product_location_incomplete')return 'gondolas';
+    if(a?.type==='bling_scope_missing')return 'bling';
+    if(a?.type==='papoai_legacy_endpoint')return 'more';
+    return 'today';
+  }
+  function renderOpsAttention(){
+    const items=Array.isArray(state.opsAttention)?state.opsAttention:[];
+    const rankLabel={critical:'Crítica',high:'Alta',normal:'Normal',low:'Baixa'};
+    if(!items.length)return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px"><strong>Precisa de você</strong><span class="muted">Nenhuma pendência aberta.</span></div></section>';
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Precisa de você</strong><span class="muted">'+items.length+' pendência'+(items.length===1?'':'s')+' aberta'+(items.length===1?'':'s')+'</span></div><div style="padding:8px 14px 14px">'+items.slice(0,8).map(a=>'<div class="history-row" style="align-items:center"><div><span class="pill '+(a.priority==='critical'||a.priority==='high'?'danger':'')+'">'+esc(rankLabel[a.priority]||a.priority)+'</span></div><div class="history-main"><strong>'+esc(a.summary)+'</strong><small>'+esc(a.recommended_action||'Abrir para revisar')+'</small></div><button class="quick-link" type="button" data-attention-open="'+esc(a.id)+'" data-attention-tab="'+esc(attentionTargetTab(a))+'">Abrir</button></div>').join('')+'</div></section>';
+  }
+
   function renderOps2Summary(){
     const s=state.opsSummary||{};
     const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{};
@@ -720,15 +733,17 @@
     $('#refreshToday').onclick=renderToday;
     loadOperationalIntegrationAlert();
     try{
-      const [data,closureData,expiryAlerts,opsData]=await Promise.all([
+      const [data,closureData,expiryAlerts,opsData,attentionData]=await Promise.all([
         api('orders'),
         api('closure_orders').catch(()=>null),
         api('expiry_alerts').catch(()=>null),
-        api('ops_summary').catch(()=>null)
+        api('ops_summary').catch(()=>null),
+        api('ops_attention',{limit:20}).catch(()=>null)
       ]);
       state.orders=data.orders||[];
       state.expiryAlerts=expiryAlerts||null;
       state.opsSummary=opsData?.summary||null;
+      state.opsAttention=attentionData?.attention||[];
       if(closureData){
         state.closureOrders=closureData.orders||[];
         state.closurePendingCount=Number(closureData.pending_count||0);
@@ -737,8 +752,9 @@
         state.closurePendingCount=0;
       }
       const host=$('#todayBody');
-      host.innerHTML=renderOps2Summary()+renderTodayExpiryAlert()+renderTodayCards()+
+      host.innerHTML=renderOps2Summary()+renderOpsAttention()+renderTodayExpiryAlert()+renderTodayCards()+
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
+      host.querySelectorAll('[data-attention-open]').forEach(b=>b.onclick=()=>setTab(b.dataset.attentionTab||'today'));
       host.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
       host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
       host.querySelectorAll('[data-today-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.todayTab));
