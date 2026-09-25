@@ -800,7 +800,7 @@
       ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
       ['Atenções',Number(a.open||0),'Fila da Central'],
       ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
-      ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão · adapter v'+Number(pa.adapter_version||0):Number(pa.normalized_pending||0)+' normalizado(s) · adapter v'+Number(pa.adapter_version||0)):'captura desligada'],
+      ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
       ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
       ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
       ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
