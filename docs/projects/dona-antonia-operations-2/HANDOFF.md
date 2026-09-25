@@ -165,6 +165,9 @@ O usuário reforçou que o projeto deve reduzir ao mínimo a interação humana.
 
 Achado de dados: 1.634 produtos ativos, ~99,8% com imagem, ~98,6% com GTIN, mas apenas ~38,2% com gôndola+prateleira; localização física é o principal gate para picking automático ordenado.
 
+## Revisão de acesso operacional — 2026-09-25
+Foi concluída uma revisão do modelo de acesso para proprietário, supervisão, operação, entrega e automação. O desenho está documentado em `SECURITY-PERMISSIONS-AUTOMATION-DRAFT.md`. O modelo final não deve usar um único perfil compartilhado nos tablets.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
