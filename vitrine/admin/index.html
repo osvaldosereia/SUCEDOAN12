@@ -432,7 +432,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -800,6 +800,8 @@
       ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
       ['Atenções',Number(a.open||0),'Fila da Central'],
       ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
+      ['Ocorrências estoque',Number(i.incidents_open||0),'Avaria / vencido / retorno'],
+      ['Diferenças balanço',Number(i.count_differences_pending||0),'Aguardando reconciliação'],
       ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
       ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
       ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
@@ -2215,24 +2217,48 @@
     '</div>';
   }
 
+  function inventoryIncidentLabel(v){
+    return ({damage:'Avaria',expired:'Vencido',loss:'Perda / extravio',return:'Retorno',other:'Outro'})[v]||v||'Ocorrência';
+  }
+  function setBalanceMode(mode){
+    state.balanceMode=mode==='incident'?'incident':'count';
+    state.balanceProduct=null;state.balanceQty='';
+    renderBalance();
+  }
+  async function loadInventoryIncidents(){
+    try{
+      const data=await api('inventory_incidents',{limit:30});
+      state.inventoryIncidentSummary=data.inventory||{};
+      state.inventoryIncidents=data.inventory?.incidents||[];
+      paintBalance();
+    }catch{}
+  }
   async function renderBalance(){
-    const content=$('#content');
+    const content=$('#content'),incident=state.balanceMode==='incident';
     content.innerHTML=
-      '<div class="page-head"><div><h1>Balanço</h1><p>Leia o EAN, informe a quantidade no teclado da tela e confirme.</p></div><span class="pill">Leitor ativo</span></div>'+
+      '<div class="page-head"><div><h1>Estoque mobile</h1><p>'+(incident?'Registre avaria, vencimento, perda ou retorno sem usar o painel completo do ERP.':'Faça o balanço rapidamente com leitor EAN e teclado na tela.')+'</p></div><span class="pill">Leitor ativo</span></div>'+
+      '<div class="order-filters" style="margin-bottom:12px"><button class="filter-chip '+(!incident?'active':'')+'" id="balanceModeCount" type="button">Balanço</button><button class="filter-chip '+(incident?'active':'')+'" id="balanceModeIncident" type="button">Avaria / Vencido / Retorno</button></div>'+
       '<div class="tool-grid">'+
         '<section class="panel tool-card">'+
-          '<div id="balanceScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">O teclado do tablet não será aberto.</div></div>'+
-          '<div class="qty-label">Quantidade contada</div><div class="qty-display" id="balanceQty">—</div>'+
+          (incident?'<div class="form-grid" style="margin-bottom:12px"><label><span>Tipo</span><select id="inventoryIncidentType"><option value="damage">Avaria</option><option value="expired">Vencido</option><option value="loss">Perda / extravio</option><option value="return">Retorno para inspeção</option><option value="other">Outro</option></select></label><label><span>Observação opcional</span><input id="inventoryIncidentNote" maxlength="500" placeholder="Ex.: embalagem rasgada"></label></div>':'')+
+          '<div id="balanceScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'O teclado do tablet não será aberto.')+'</div></div>'+
+          '<div class="qty-label">'+(incident?'Quantidade afetada':'Quantidade contada')+'</div><div class="qty-display" id="balanceQty">—</div>'+
           numericPadHtml('balance')+
-          '<button class="confirm-wide" id="balanceConfirm" type="button" disabled>Confirmar e ler próximo</button>'+
+          '<button class="confirm-wide" id="balanceConfirm" type="button" disabled>'+(incident?'Registrar ocorrência':'Confirmar e ler próximo')+'</button>'+
         '</section>'+
-        '<section class="panel"><div class="list-head" style="display:block">Contagens desta sessão</div><div id="balanceHistory"></div></section>'+
+        '<section class="panel"><div class="list-head" style="display:block">'+(incident?'Ocorrências abertas':'Contagens desta sessão')+'</div><div id="balanceHistory"></div></section>'+
       '</div>'+
-      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos confirmáveis</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>';
-    bindBalancePad();
-    paintBalance();
-    $('#refreshStockShortages').onclick=loadOrderStockShortages;
-    loadOrderStockShortages();
+      (!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos confirmáveis</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Como funciona agora</strong><div>Avaria, vencido e perda saem imediatamente do estoque vendável local. O sistema abre uma reconciliação para Bling/fiscal. Retorno não volta a vender até ser inspecionado.</div></div>');
+    $('#balanceModeCount').onclick=()=>setBalanceMode('count');
+    $('#balanceModeIncident').onclick=()=>setBalanceMode('incident');
+    if(incident){
+      $('#inventoryIncidentType').value=state.inventoryIncidentType||'damage';
+      $('#inventoryIncidentType').onchange=e=>state.inventoryIncidentType=e.currentTarget.value;
+      $('#inventoryIncidentNote').value=state.inventoryIncidentNote||'';
+      $('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value;
+    }
+    bindBalancePad();paintBalance();
+    if(!incident){$('#refreshStockShortages').onclick=loadOrderStockShortages;loadOrderStockShortages()}else loadInventoryIncidents();
   }
 
   async function loadOrderStockShortages(){
@@ -2251,81 +2277,51 @@
   function paintOrderStockShortages(){
     const host=$('#stockShortageRows');if(!host)return;
     const rows=state.stockShortages||[],s=state.stockShortageSummary||{};
-    if(!rows.length){
-      host.innerHTML='<div class="history-empty">Nenhuma falta de estoque está bloqueando pedidos.</div>';
-      return;
-    }
-    host.innerHTML='<div class="bling-banner" style="margin:12px"><strong>'+esc(s.products||rows.length)+' produto(s) em falta · '+esc(s.pending_orders||0)+' pedido(s) aguardando</strong><small>Reposição mínima calculada: '+esc(fmtQty(s.shortage_units||0))+' unidade(s). Reservas já protegidas foram descontadas.</small></div>'+
-      rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>Faltam '+esc(fmtQty(x.shortage))+' · livre '+esc(fmtQty(x.free_stock))+' · físico '+esc(fmtQty(x.physical_stock))+' · reservado '+esc(fmtQty(x.reserved_stock))+' · demanda '+esc(fmtQty(x.pending_demand))+' · '+esc(x.pending_orders)+' pedido(s)'+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+(x.shelf_label?' · prateleira '+esc(x.shelf_label):'')+'</small></div><button class="secondary" type="button" data-count-shortage="'+esc(x.product_id)+'">Contar</button></div>').join('');
+    if(!rows.length){host.innerHTML='<div class="history-empty">Nenhuma falta de estoque está bloqueando pedidos.</div>';return}
+    host.innerHTML='<div class="bling-banner" style="margin:12px"><strong>'+esc(s.products||rows.length)+' produto(s) em falta · '+esc(s.pending_orders||0)+' pedido(s) aguardando</strong><small>Reposição mínima calculada: '+esc(fmtQty(s.shortage_units||0))+' unidade(s). Reservas já protegidas foram descontadas.</small></div>'+rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>Faltam '+esc(fmtQty(x.shortage))+' · livre '+esc(fmtQty(x.free_stock))+' · físico '+esc(fmtQty(x.physical_stock))+' · reservado '+esc(fmtQty(x.reserved_stock))+' · demanda '+esc(fmtQty(x.pending_demand))+' · '+esc(x.pending_orders)+' pedido(s)'+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+(x.shelf_label?' · prateleira '+esc(x.shelf_label):'')+'</small></div><button class="secondary" type="button" data-count-shortage="'+esc(x.product_id)+'">Contar</button></div>').join('');
     host.querySelectorAll('[data-count-shortage]').forEach(b=>b.onclick=()=>selectShortageForBalance(b.dataset.countShortage));
   }
   function selectShortageForBalance(productId){
     const x=(state.stockShortages||[]).find(r=>r.product_id===productId);if(!x)return;
-    state.balanceProduct={
-      id:x.product_id,name:x.name,gtin:x.gtin||'',stock_quantity:x.physical_stock,
-      gondola_number:x.gondola_number??null
-    };
-    state.balanceQty='';
-    paintBalance();
-    $('#balanceScanner')?.scrollIntoView({behavior:'smooth',block:'center'});
-    toast('Produto selecionado · informe a quantidade física contada');
+    state.balanceProduct={id:x.product_id,name:x.name,gtin:x.gtin||'',stock_quantity:x.physical_stock,gondola_number:x.gondola_number??null};state.balanceQty='';paintBalance();$('#balanceScanner')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Produto selecionado · informe a quantidade física contada');
   }
-
-  function bindBalancePad(){
-    document.querySelectorAll('[data-balance-key]').forEach(b=>b.onclick=()=>balanceKey(b.dataset.balanceKey));
-    $('#balanceConfirm').onclick=confirmBalance;
-  }
-
-  function balanceKey(key){
-    if(!state.balanceProduct)return;
-    if(key==='clear') state.balanceQty='';
-    else if(key==='back') state.balanceQty=state.balanceQty.slice(0,-1);
-    else if(/^\d$/.test(key) && state.balanceQty.length<7) state.balanceQty=(state.balanceQty==='0'?'':state.balanceQty)+key;
-    paintBalance();
-  }
-
+  function bindBalancePad(){document.querySelectorAll('[data-balance-key]').forEach(b=>b.onclick=()=>balanceKey(b.dataset.balanceKey));$('#balanceConfirm').onclick=confirmBalance}
+  function balanceKey(key){if(!state.balanceProduct)return;if(key==='clear')state.balanceQty='';else if(key==='back')state.balanceQty=state.balanceQty.slice(0,-1);else if(/^\d$/.test(key)&&state.balanceQty.length<7)state.balanceQty=(state.balanceQty==='0'?'':state.balanceQty)+key;paintBalance()}
   function paintBalance(){
     if(state.tab!=='balance')return;
-    const hero=$('#balanceScanner'),qty=$('#balanceQty'),confirm=$('#balanceConfirm'),history=$('#balanceHistory');
+    const hero=$('#balanceScanner'),qty=$('#balanceQty'),confirm=$('#balanceConfirm'),history=$('#balanceHistory');if(!hero||!qty||!confirm||!history)return;
+    const incident=state.balanceMode==='incident';
     if(state.balanceProduct){
-      hero.className='scanner-hero ready';
-      hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO</div><div class="scan-value">'+esc(state.balanceProduct.name)+'</div><div class="scan-sub">EAN '+esc(state.balanceProduct.gtin||'—')+' · estoque atual '+esc(fmtQty(state.balanceProduct.stock_quantity||0))+(state.balanceProduct.gondola_number?' · Gôndola '+esc(state.balanceProduct.gondola_number):'')+'</div>';
-      qty.textContent=state.balanceQty||'0';
-      confirm.disabled=state.balanceQty==='';
+      hero.className='scanner-hero ready';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO</div><div class="scan-value">'+esc(state.balanceProduct.name)+'</div><div class="scan-sub">EAN '+esc(state.balanceProduct.gtin||'—')+' · estoque atual '+esc(fmtQty(state.balanceProduct.stock_quantity||0))+(state.balanceProduct.gondola_number?' · Gôndola '+esc(state.balanceProduct.gondola_number):'')+'</div>';qty.textContent=state.balanceQty||'0';confirm.disabled=state.balanceQty==='';
+    }else{hero.className='scanner-hero';hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">'+(incident?'Depois informe a quantidade afetada.':'Depois use somente o teclado numérico abaixo.')+'</div>';qty.textContent='—';confirm.disabled=true}
+    if(incident){
+      const rows=state.inventoryIncidents||[];
+      history.innerHTML=rows.length?rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.product_name)+'</strong><small>'+esc(inventoryIncidentLabel(x.incident_type))+' · '+esc(dateTime(x.created_at))+(x.note?' · '+esc(x.note):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhuma ocorrência aberta.</div>';
     }else{
-      hero.className='scanner-hero';
-      hero.innerHTML='<div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">Depois use somente o teclado numérico abaixo.</div>';
-      qty.textContent='—';confirm.disabled=true;
+      history.innerHTML=state.balanceHistory.length?state.balanceHistory.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>'+esc(x.gtin||'')+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+(x.difference!=null&&Number(x.difference)!==0?' · diferença '+esc(fmtQty(x.difference)):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.stock_quantity))+'</div></div>').join(''):'<div class="history-empty">Nenhum produto contado nesta sessão.</div>';
     }
-    history.innerHTML=state.balanceHistory.length?state.balanceHistory.map(x=>
-      '<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>'+esc(x.gtin||'')+(x.gondola_number?' · Gôndola '+esc(x.gondola_number):'')+'</small></div><div class="simple-number">'+esc(fmtQty(x.stock_quantity))+'</div></div>'
-    ).join(''):'<div class="history-empty">Nenhum produto contado nesta sessão.</div>';
   }
-
   async function handleBalanceScan(ean){
     if(state.tab!=='balance')return;
-    try{
-      const data=await api('ean_lookup',{ean});
-      state.balanceProduct=data.product;state.balanceQty='';
-      paintBalance();
-    }catch(e){
-      state.balanceProduct=null;state.balanceQty='';paintBalance();toast(errorMessage(e.message));
-    }
+    try{const data=await api('ean_lookup',{ean});state.balanceProduct=data.product;state.balanceQty='';paintBalance()}catch(e){state.balanceProduct=null;state.balanceQty='';paintBalance();toast(errorMessage(e.message))}
   }
-
   async function confirmBalance(){
     if(!state.balanceProduct||state.balanceQty==='')return;
-    const btn=$('#balanceConfirm');btn.disabled=true;btn.textContent='Salvando…';
+    const btn=$('#balanceConfirm'),operator=requireOperator();if(!operator)return;btn.disabled=true;btn.textContent='Salvando…';
     try{
-      const data=await api('balance_confirm',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({product_id:state.balanceProduct.id,ean:state.balanceProduct.gtin,quantity:Number(state.balanceQty)})
-      });
-      state.balanceHistory.unshift(data.product);state.balanceHistory=state.balanceHistory.slice(0,40);
-      toast(data.product.name+' · '+fmtQty(data.product.stock_quantity)+' unidades');
-      state.balanceProduct=null;state.balanceQty='';paintBalance();
-      loadOrderStockShortages();
-    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Confirmar e ler próximo'}
+      if(state.balanceMode==='incident'){
+        const data=await api('inventory_incident_create',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:state.balanceProduct.id,incident_type:state.inventoryIncidentType,quantity:Number(state.balanceQty),operator,note:state.inventoryIncidentNote||''})});
+        const applied=data.incident?.local_stock_applied===true;
+        toast(inventoryIncidentLabel(data.incident?.incident_type)+' registrada'+(applied?' · fora do estoque vendável':' · aguardando inspeção'));
+        state.balanceProduct=null;state.balanceQty='';state.inventoryIncidentNote='';paintBalance();await loadInventoryIncidents();loadOrderStockShortages();
+      }else{
+        const data=await api('balance_confirm',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:state.balanceProduct.id,ean:state.balanceProduct.gtin,quantity:Number(state.balanceQty),operator})});
+        const item={...data.product,difference:data.count?.difference??0,reconciliation_state:data.count?.reconciliation_state||'matched'};
+        state.balanceHistory.unshift(item);state.balanceHistory=state.balanceHistory.slice(0,40);
+        const diff=Number(data.count?.difference||0);toast(diff===0?data.product.name+' · conferido':data.product.name+' · diferença '+fmtQty(diff)+' registrada para revisão');
+        state.balanceProduct=null;state.balanceQty='';paintBalance();loadOrderStockShortages();
+      }
+    }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent=state.balanceMode==='incident'?'Registrar ocorrência':'Confirmar e ler próximo'}
   }
 
   async function renderGondolas(){
