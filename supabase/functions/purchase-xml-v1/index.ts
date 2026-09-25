@@ -367,12 +367,12 @@ async function setConversion(body:any){
   return {ok:true,item_id:id,conversion_factor:factor,base_unit:base,base_quantity:baseQty,base_unit_cost:baseCost};
 }
 
-Deno.serve(async(req:Request)=>{
+export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedInternal=false){
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
-  const a:any=await auth(req);if(!a.ok)return js(req,{ok:false,error:a.error},a.status);
+  const a:any=trustedInternal?{ok:true,internal:true,user_id:null,role:"system"}:await auth(req);if(!a.ok)return js(req,{ok:false,error:a.error},a.status);
   try{
-    const u=new URL(req.url);let body:any={};if(req.method==="POST")try{body=await req.json()}catch{}
-    const action=clean(body?.action||u.searchParams.get("action")||(req.method==="GET"?"summary":""),80).toLowerCase();
+    const u=new URL(req.url);
+    const action=clean(body?.purchase_action||body?.subaction||u.searchParams.get("action")||(req.method==="GET"?"summary":""),80).toLowerCase();
     if(action==="health")return js(req,{ok:true,service:"purchase-xml-v1",version:1});
     if(action==="daily_sync"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await runBlingSync("bling_daily"))}
     if(action==="bling_sync")return js(req,await runBlingSync("bling_manual"));
@@ -388,4 +388,4 @@ Deno.serve(async(req:Request)=>{
     }
     return js(req,{ok:false,error:"not_found"},404);
   }catch(e){console.error("purchase_xml_error",String((e as Error)?.message||e));return js(req,{ok:false,error:"service_error",detail:clean((e as Error)?.message||e,800)},500)}
-});
+}
