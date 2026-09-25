@@ -1028,7 +1028,26 @@ async function blingOauthCallback(sb:any,req:Request){
   await sb.rpc("merge_bling_hub_runtime_metadata_v2",{p_patch:{oauth_exchange_v1:{expires_at:null,consumed_at:now,last_result:"success",nonce_sha256:null}}});
   await sb.from("bling_hub_runtime_v2").update({last_oauth_check_at:now,last_oauth_ok_at:now,last_oauth_error:null,updated_at:now}).eq("id",1);
   try{await sb.rpc("ops_record_event_v1",{p_domain:"integration",p_event_type:"bling.oauth_reauthorized",p_summary:"Bling reautorizado com novo token OAuth.",p_actor_type:"human",p_entity_type:"integration",p_entity_id:"bling",p_correlation_id:null,p_actor_id:null,p_actor_label:"Owner",p_source_system:"bling",p_severity:"info",p_payload:{oauth:true},p_external_ref:null,p_idempotency_key:"bling-oauth:"+now.slice(0,16),p_occurred_at:now})}catch{}
-  return redirect("success");
+
+  // Immediately verify the one remaining Operations 2.0 scope after OAuth.
+  // This is read-only and never enables Hub/Webhooks or writes orders.
+  let statusCatalogVerified=false;
+  try{
+    const catalog:any=await blingHubOrderStatusCatalog(sb);
+    if(catalog?.ok===true){
+      statusCatalogVerified=true;
+      const a=await sb.from("ops_attention").select("id").eq("idempotency_key","ops2:attention:bling_status_scope").in("status",["open","acknowledged"]).maybeSingle();
+      if(!a.error&&a.data?.id){
+        await sb.rpc("ops_resolve_attention_v1",{p_attention_id:a.data.id,p_resolution:"Permissão Situações/Módulos homologada automaticamente após reautorização.",p_resolution_ref:"bling:oauth:status_catalog"});
+      }
+      try{await sb.rpc("ops_record_event_v1",{p_domain:"integration",p_event_type:"bling.order_status_catalog_verified",p_summary:"Situações/Módulos do Bling homologadas após OAuth.",p_actor_type:"automation",p_entity_type:"integration",p_entity_id:"bling",p_correlation_id:null,p_actor_id:null,p_actor_label:"OAuth pós-validação",p_source_system:"bling",p_severity:"info",p_payload:{module:catalog.module||null,status_count:Array.isArray(catalog.statuses)?catalog.statuses.length:0,transition_count:Array.isArray(catalog.transitions)?catalog.transitions.length:0},p_external_ref:null,p_idempotency_key:"bling-status-catalog:"+now.slice(0,16),p_occurred_at:new Date().toISOString()})}catch{}
+    }else{
+      await sb.rpc("merge_bling_hub_runtime_metadata_v2",{p_patch:{order_status_catalog:{state:"scope_missing",checked_at:new Date().toISOString(),http_status:Number(catalog?.status||0)||null,required_resource:"situacoes/modulos",status_updates_enabled:false}}});
+    }
+  }catch(e){
+    console.error("bling_status_catalog_post_oauth",clean((e as Error)?.message||e,300));
+  }
+  return redirect("success",statusCatalogVerified?"status_catalog_ok":"status_catalog_pending");
 }
 
 async function blingWebhookHmacHex(secret:string,raw:string){
@@ -1330,6 +1349,11 @@ async function blingHubOrderStatusCatalog(sb:any){
 
   const now=new Date().toISOString();
   const snapshot={
+    state:"ready",
+    checked_at:now,
+    http_status:200,
+    required_resource:"situacoes/modulos",
+    status_updates_enabled:true,
     module_id:moduleId,
     module_name:clean(candidates[0]?.nome,160),
     statuses:statusRows,
