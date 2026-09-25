@@ -100,15 +100,43 @@ Concluída em 2026-09-25:
 8. liberação da reserva comprovada;
 9. saldo físico permaneceu intacto.
 
-## 7. Próxima POC — Webhooks
-1. confirmar configuração/assinatura do webhook no aplicativo Bling;
-2. receber 1 evento real de pedido;
-3. validar HMAC SHA-256;
-4. provar idempotência por eventId/hash;
-5. manter evento `held` enquanto `hub_enabled=false` / `webhooks_enabled=false`;
-6. reconciliar o evento com pedido vinculado sem polling;
-7. testar duplicata;
-8. só depois liberar processamento em canário.
+## 7. POC — Webhooks
+
+### Já homologado internamente
+1. HMAC SHA-256 válido;
+2. assinatura inválida -> 401;
+3. idempotência por eventId/hash -> duplicata responde 2xx;
+4. evento fica `held` com processamento desligado;
+5. reconciliação de pedido por evento, sem polling;
+6. comparação local x Bling sem mutação automática;
+7. canário reconciliado como `order_reconciled_noop`.
+
+### Configuração manual no aplicativo Bling
+Aplicativo: **GitHub - Sincronização de Produtos**.
+
+Servidor:
+`https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1?source=bling-webhook-v2`
+
+Recursos v1:
+- Pedido de Venda;
+- Produto;
+- Estoque;
+- Nota Fiscal.
+
+Ações:
+- created;
+- updated;
+- deleted.
+
+Observação: `virtual_stock` é habilitado automaticamente junto com `stock`.
+
+### Próximo teste
+1. salvar a configuração no Bling;
+2. gerar uma atualização real controlada no pedido canário;
+3. provar recebimento real assinado;
+4. confirmar que o evento real fica `held`;
+5. reconciliar somente esse evento;
+6. só depois avaliar `webhooks_enabled=true` em canário.
 
 ## Regra de segurança
 Salvar/editar configuração no Bling não deve ativar automaticamente o Hub da Dona Antônia.
