@@ -130,6 +130,13 @@ Fechar a Fase 1 com a matriz de fonte de verdade por entidade e o desenho TO-BE 
 - Confirmada ausência, nesta sessão, de plugin Bling direto no diretório de plugins do ChatGPT.
 - Detalhes em CURRENT-STATE.md e AUDIT-MATRIX.md.
 
+
+## Regra adicional de continuidade
+O usuário determinou que não deve haver programação nem alteração de produção até toda a análise estar concluída, revisada e consolidada no Projeto Final detalhado. Documentação de análise pode ser atualizada para preservar continuidade.
+
+## Novo requisito multicanal
+Clientes podem comprar diretamente pelo WhatsApp/PapoAI sem usar o site. O projeto final deve incluir venda manual e rascunho assistido pelo PapoAI, ambos convergindo para o mesmo motor canônico de pedido do site. Ver `ANALYSIS-NOTES.md` e `SOURCE-OF-TRUTH-DRAFT.md`.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
