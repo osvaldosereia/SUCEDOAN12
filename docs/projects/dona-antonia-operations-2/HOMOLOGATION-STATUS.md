@@ -90,3 +90,40 @@ O runtime atual continua marcando `situacoes/modulos` como `scope_missing` (HTTP
 5. reserva somente após aprovação;
 6. webhook de atualização;
 7. reconciliação sem polling.
+
+
+## OAuth Bling preparado — 2026-09-25
+
+### Concluído
+- PR #551 integrado ao `main`;
+- fluxo Owner -> Reconectar Bling -> autorização Bling -> callback -> Admin preparado;
+- callback reutiliza `admin-service-intelligence-v1`;
+- nenhum novo Edge Function foi criado;
+- state OAuth possui hash e expiração;
+- refresh token continua armazenado apenas pelo cofre/RPC existente;
+- `admin-service-intelligence-v1` implantado em v135;
+- `admin-products-live-v1` implantado em v17;
+- runbook `BLING-HOMOLOGATION-RUNBOOK.md` criado;
+- runtime Bling está em `mode=homologation`, mas `hub_enabled=false` e `webhooks_enabled=false`.
+
+### Restrição encontrada
+O projeto Supabase atingiu o limite atual de Edge Functions. Em vez de aumentar plano ou criar mais uma função, o callback OAuth foi consolidado dentro da função administrativa existente.
+
+Essa decisão segue o princípio do Operations 2.0: menos funções e responsabilidades claras.
+
+### Gate humano Bling
+Agora existe uma etapa externa inevitável no painel do Bling:
+1. adicionar os escopos de Situações/Módulos/Transições ao aplicativo Dona Antônia;
+2. configurar/salvar o redirect OAuth para `admin-service-intelligence-v1`;
+3. salvar o aplicativo;
+4. no Vitrine/Admin > Bling técnico, usar **Reconectar Bling**;
+5. voltar à Central e usar **Testar novamente**.
+
+O Bling revoga a autorização anterior quando os escopos do aplicativo são alterados, portanto a reautorização é necessária.
+
+### Não ativar ainda
+Mesmo depois da reautorização:
+- não ativar `hub_enabled`;
+- não ativar `webhooks_enabled`;
+- não mover pedidos para o novo fluxo;
+até passarem os testes de catálogo de situações, reserva e webhook.
