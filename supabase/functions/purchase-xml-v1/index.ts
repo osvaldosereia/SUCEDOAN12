@@ -306,8 +306,8 @@ async function purchaseXmlProbe(){
   return {ok:Object.values(probes).every((x:any)=>x.ok===true),readonly:true,company_document_resolved:company.doc.length===14,probes};
 }
 async function purchaseXmlPreviewLatest(){
-  const token=await oauth(),company=await companyDocument(token),start=cuiabaDate(-6),end=cuiabaDate(0);
-  const q=new URLSearchParams({tipo:"0",pagina:"1",limite:"10",dataEmissaoInicial:start+" 00:00:00",dataEmissaoFinal:end+" 23:59:59"});
+  const token=await oauth(),company=await companyDocument(token);
+  const q=new URLSearchParams({tipo:"0",pagina:"1",limite:"10"});
   const ls=await bg(token,"/nfe?"+q.toString());
   if(!ls.ok)return {ok:false,status:ls.status,error:"bling_nfe_list_http_"+ls.status,readonly:true};
   const out:any[]=[];
@@ -328,7 +328,7 @@ async function purchaseXmlPreviewLatest(){
       })
     });
   }
-  return {ok:true,readonly:true,window:{start,end},company_document_resolved:company.doc.length===14,documents:out};
+  return {ok:true,readonly:true,company_document_resolved:company.doc.length===14,documents:out};
 }
 
 async function runBlingSync(source="bling_daily"){
