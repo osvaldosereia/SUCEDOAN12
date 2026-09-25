@@ -228,22 +228,32 @@ async function createPayables(token:string,p:any,supplierId:number){
   if(p.recipient_kind!=="CNPJ")return {status:"blocked_personal",accounts:[],reason:"cpf_never_financial"};
   if(!supplierId)return {status:"pending_company_match",accounts:[],reason:"supplier_contact_missing"};
   if(!p.installments.length)return {status:"review",accounts:[],reason:"installments_missing"};
-  const issue=day(p.issued_at);const existing=await bg(token,"/contas/pagar?pagina=1&limite=100&idContato="+supplierId+(issue?"&dataEmissaoInicial="+issue+"&dataEmissaoFinal="+issue:""));
-  const rows=existing.ok&&Array.isArray(existing.data?.data)?existing.data.data:[];
-  const accounts:any[]=[];
+  const installmentTotal=p.installments.reduce((a:number,x:any)=>a+Number(x.amount||0),0);
+  if(Number.isFinite(Number(p.total_amount))&&Math.abs(installmentTotal-Number(p.total_amount))>0.05){
+    return {status:"review",accounts:[],reason:"installment_total_mismatch",installment_total:installmentTotal,invoice_total:Number(p.total_amount)};
+  }
+  const dueDates=p.installments.map((x:any)=>x.due_date).filter(Boolean).sort();
+  const minDue=dueDates[0],maxDue=dueDates[dueDates.length-1];
+  if(!minDue||!maxDue)return {status:"review",accounts:[],reason:"installment_due_date_missing"};
+  const existing=await bg(token,"/contas/pagar?pagina=1&limite=100&situacao=1&dataVencimentoInicial="+encodeURIComponent(minDue)+"&dataVencimentoFinal="+encodeURIComponent(maxDue));
+  if(!existing.ok)return {status:"review",accounts:[],reason:"payable_reconcile_http_"+existing.status};
+  const rows=(Array.isArray(existing.data?.data)?existing.data.data:[]).filter((r:any)=>Number(r?.contato?.id||0)===supplierId);
+  const issue=day(p.issued_at),accounts:any[]=[];
   for(let i=0;i<p.installments.length;i++){
     const x=p.installments[i],number=[p.invoice_number||p.document_key.slice(-9),x.number||String(i+1)].filter(Boolean).join("-");
-    const targetCents=Math.round(Number(x.amount||0)*100);const dup=rows.find((r:any)=>clean(r?.numeroDocumento,120)===number||(clean(r?.vencimento,20).slice(0,10)===x.due_date&&Math.round(Number(r?.valor||0)*100)===targetCents));
+    const targetCents=Math.round(Number(x.amount||0)*100);
+    const dup=rows.find((r:any)=>clean(r?.numeroDocumento,120)===number||(clean(r?.vencimento,20).slice(0,10)===x.due_date&&Math.round(Number(r?.valor||0)*100)===targetCents));
     if(dup){accounts.push({id:Number(dup.id),number,existing:true});continue}
     const payload={vencimento:x.due_date,valor:Number(x.amount),contato:{id:supplierId},dataEmissao:issue||undefined,numeroDocumento:number,historico:"Compra NF-e "+(p.invoice_number||"")+" · chave "+p.document_key};
     const w=await bw(token,"/contas/pagar","POST",payload);
     if(!w.ok)return {status:"review",accounts,reason:"payable_create_http_"+w.status,detail:w.error};
     accounts.push({id:Number(w.data?.data?.id||0)||null,number,existing:false});
   }
-  return {status:"posted",accounts};
+  return {status:"posted",accounts,installment_total:installmentTotal};
 }
-async function processXml(token:string,xml:string,source:string,runId:string|null,sourceId:string|null=null,blingId:number|null=null){
-  const p:any=parseXml(xml);if(p.document_key.length!==44)throw new Error("invalid_nfe_access_key");
+async function processXml(token:string,xml:string,source:string,runId:string|null,sourceId:string|null=null,blingId:number|null=null,detailSupplement:any=null){
+  const p:any=parseXml(xml);
+  if(!p.installments.length&&Array.isArray(detailSupplement?.parcelas))p.installments=detailSupplement.parcelas.map((x:any,i:number)=>({number:String(i+1),due_date:day(x?.data||x?.vencimento),amount:num(x?.valor)})).filter((x:any)=>x.due_date&&Number(x.amount)>0);if(p.document_key.length!==44)throw new Error("invalid_nfe_access_key");
   if(p.cstat&&![100,150].includes(p.cstat))throw new Error("nfe_not_authorized_"+p.cstat);
   const hash=await sha256(xml);
   const ex=await sb.from("purchase_xml_documents").select("id,processing_status").eq("document_key",p.document_key).maybeSingle();
@@ -384,13 +394,13 @@ async function runBlingSync(source="bling_daily"){
           let key=digits(row?.chaveAcesso);const bid=Number(row?.id||0)||null;
           if(key.length!==44&&bid){const d=await bg(token,"/nfe/"+bid);if(d.ok)key=digits(d.data?.data?.chaveAcesso)}
           if(key.length!==44){failed++;continue}
-          let x=await blingXml(token,key);
-          if(!x.ok&&bid){
+          let x=await blingXml(token,key),detail:any=null;
+          if(bid){
             const det=await bg(token,"/nfe/"+bid);
-            if(det.ok)x=await linkedXml(det.data?.data?.xml);
+            if(det.ok){detail=det.data?.data||null;if(!x.ok)x=await linkedXml(detail?.xml)}
           }
           if(!x.ok){failed++;continue}
-          const rr=await processXml(token,x.xml,source,id,String(row?.id||""),bid);
+          const rr=await processXml(token,x.xml,source,id,String(row?.id||""),bid,detail);
           items+=rr.items||0;matched+=rr.matched||0;review+=rr.review||0;if(rr.duplicate)dup++;else processed++;
         }catch{failed++}
       }
