@@ -305,3 +305,33 @@ Os eventos normalizados já existentes foram reconciliados:
 - nenhum erro ficou na amostra conciliada.
 
 A criação de rascunho de pedido continua separada e exige evento estruturado/determinístico.
+
+
+## Separação tablet + PapoAI homologado — 2026-09-25
+
+### PapoAI
+- receiver v107 em produção;
+- adapter v2;
+- ponte de conversa v2;
+- eventos reais posteriores ao deploy foram vinculados automaticamente;
+- estado observado: 9 eventos nas últimas 24h, 9 normalizados e vinculados, 0 sem conversa, 0 em revisão;
+- a antiga pendência de “aguardar primeiro payload real” foi resolvida;
+- texto livre continua sem permissão para criar pedidos.
+
+### Picking
+- detalhe do pedido agora leva GTIN/EAN até o ticket;
+- ticket térmico ajustado para bobina de 85 mm;
+- folha mostra foto, nome, EAN, quantidade, gôndola e prateleira;
+- rodapé mostra produtos diferentes + unidades totais;
+- `admin-products-live-v1` v24.
+
+### Tablet
+- nova aba `Separação` no Vitrine/Admin;
+- layout vertical com poucas ações;
+- fila somente Confirmados/Separando;
+- ações: iniciar, separado, reimprimir, abrir/corrigir;
+- nenhuma API ou worker novo foi criado.
+
+### Hardware ainda pendente
+A fila automática já existe, mas impressão física silenciosa continua desligada até POC do equipamento.
+O Bling consegue automatizar impressão de DANFE/DANFE Simplificado no Checkout e usa QZ Tray para comunicação com impressoras. Nossa lista de picking personalizada exige POC equivalente com a impressora local antes de habilitar impressão silenciosa.
