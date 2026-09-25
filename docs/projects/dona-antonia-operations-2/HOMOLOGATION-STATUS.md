@@ -232,3 +232,40 @@ Preparar fila de impressão de picking após aprovação, sem acoplar impressão
 - cancelamento de rascunho é versionado.
 
 Estado: infraestrutura pronta, mas **não ligada ao receiver** enquanto não existir amostra real do payload PapoAI v105.
+
+
+## PapoAI adapter v2 — payload real observado
+
+### Captura real
+O receiver PapoAI recebeu uma amostra real de `message.received` em 2026-09-25.
+
+Estrutura observada:
+- `event.type`;
+- `event.occurred_at`;
+- `data.session.uid`;
+- `data.contact.id` / `name`;
+- `data.message.id`;
+- `data.message.external_id` (WhatsApp/WAMID);
+- `data.message.direction`;
+- `data.message.type`;
+- `data.message.phone_number_from`;
+- `data.message.phone_number_to`;
+- `data.message.created_at`.
+
+Nenhum conteúdo pessoal da amostra foi copiado para a documentação.
+
+### Implementado
+- migration `papoai_capture_normalizer_v2`;
+- normalização central em `papoai_normalize_capture_v2`;
+- backlog capturado normalizado sem cron;
+- receiver v106 normaliza inline após persistir o payload sanitizado;
+- adapter_version agora é 2;
+- `external_message_id`, `conversation_ref` e `phone_candidate` passam a ser preenchidos pelo schema real observado;
+- WAMID fica somente em metadata operacional;
+- tentativa de vínculo de cliente é determinística por telefone, sem criar cliente automaticamente;
+- eventos incompletos/desconhecidos ficam `review_required`;
+- Control Tower passa a mostrar quantidade normalizada/revisão.
+
+### Regra de segurança
+Uma mensagem livre recebida NÃO cria pedido e NÃO altera carrinho automaticamente.
+O rascunho PapoAI versionado só será alimentado por eventos/ações que consigam produzir itens estruturados e determinísticos.
