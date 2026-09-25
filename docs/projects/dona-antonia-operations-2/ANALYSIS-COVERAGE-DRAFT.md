@@ -42,11 +42,14 @@ Nenhuma programação de produção antes de todos os domínios estarem analisad
 | Estado do pedido | avançada | ORDER-STATE-MACHINE | mapear Bling |
 | Limpeza legado | pausada | RUNTIME-INVENTORY | após substituição |
 | Documentação | avançada | HANDOFF / CURRENT-STATE | consolidar PROJECT-MASTER |
+| Pós-venda/CDC/recall | avançada | POSTSALE-CONSUMER-RECALL | homologação de política |
+| Recebimento/fornecedor | avançada | RECEIVING-SUPPLIER-RETURNS | POC Check-in |
+| Reconciliação estoque | avançada | STOCK-RECONCILIATION | POC saldo virtual/webhooks |
 
 ## Situação após revisão ampla
 A arquitetura conceitual está praticamente fechada. Os itens restantes são majoritariamente homologações, não lacunas de desenho.
 
-### Gates antes do Projeto Final definitivo
+### Gates antes da implementação após o Projeto Final
 1. validar com contador a aplicação concreta da Portaria 262/2023 à empresa, campos de pagamento da NF-e, política fiscal das cestas, CFOP 5.927/perdas, devoluções/retornos e regularização das compras em CPF;
 2. confirmar no Bling o escopo de Situações/usuários;
 3. POC física de tablet/leitores/impressora/POS;
@@ -60,3 +63,7 @@ Ver também:
 - COST-CAPACITY-DRAFT.md
 - POC-CUTOVER-PLAN-DRAFT.md
 - FINAL-CROSS-REVIEW-DRAFT.md
+
+
+## Status final da análise
+A arquitetura está pronta para consolidação em PROJECT-MASTER.md. Os pontos restantes são homologações contábeis, Bling, hardware e PapoAI; não existem lacunas arquiteturais grandes conhecidas neste momento.
