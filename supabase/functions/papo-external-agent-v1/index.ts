@@ -871,7 +871,7 @@ async function syncPapoAiStorefrontIdentityLink(sb:any,papoPhone:string,contactN
     const papoWebhookUrl=String(secrets.get('papoai_storefront_inbound_webhook_v1')||'');
     if(!bridgeKey||!papoWebhookUrl)return {ok:false,reason:'integration_secret_missing'};
 
-    const issueResponse=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=issue_identity_link',{
+    const issueResponse=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2?action=issue_identity_link',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
@@ -1240,7 +1240,7 @@ async function reconcileVitrineOrderAfterFlow(sb:any,customerId:string,phone:str
       return result;
     }
 
-    const response=await fetch('https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=reconcile_customer',{
+    const response=await fetch('https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2?action=reconcile_customer',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
