@@ -5039,7 +5039,6 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   if(orderStatus==="cancelled")operationalBlockers.push("order_cancelled");
   if(Number.isFinite(orderTotal)&&orderTotal<7500)operationalBlockers.push("minimum_order_not_met");
 
-  const writeBlockers=[...new Set([...uniqueBlockers,...operationalBlockers])];
   const otherExpenses=Math.max(0,Number.isFinite(delta)?delta:0);
   const discount=Math.max(0,Number.isFinite(delta)?-delta:0);
   const externalKey="VITRINE-"+sourceOrderId.replace(/-/g,"").slice(0,28);
@@ -5054,6 +5053,7 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
     initialBlingStatusId=Number(earlyAwaiting?mapping.awaiting_confirmation_id:mapping.approved_separation_id)||null;
     if(mapping.state!=="prepared"||!initialBlingStatusId)operationalBlockers.push("ops2_status_mapping_not_prepared");
   }
+  const writeBlockers=[...new Set([...uniqueBlockers,...operationalBlockers])];
 
   const orderPayload={
     contato:contactId?{id:contactId}:null,
