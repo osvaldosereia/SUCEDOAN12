@@ -45,7 +45,7 @@ Status: Fase 1 em andamento. Nenhuma remoção de produção autorizada por esta
 5. O projeto de XML já existe no canônico: `purchase-xml-v1` e tabelas `purchase_xml_*`, `product_supplier_packaging`, `product_purchase_history`, `purchase_stock_receipts`.
 6. A configuração atual de XML está com consulta diária habilitada, janela de 3 dias, horário 06h Cuiabá, criação de produtos inativos, sincronização produto-fornecedor e criação automática de contas a pagar habilitadas.
 7. O parser XML já diferencia destinatário CPF/CNPJ e contém lógica inicial para unidade comercial/tributável e embalagens. A regra financeira CPF deve permanecer um gate obrigatório e testável.
-8. O Admin ainda contém referência a `qxstkwshuvplmmftrctj.supabase.co`; é obrigatório provar se é apenas preconnect/resíduo ou chamada funcional antes de remover.
+8. O Admin não contém mais referência ao projeto legado; o runtime aponta apenas para o Supabase canônico.
 
 ## Gates antes de qualquer exclusão
 - nenhuma referência ativa no site/Admin;
