@@ -1146,6 +1146,64 @@ async function blingWebhookReceive(sb:any,req:Request,rawBody:string){
     processing_enabled:processingEnabled
   },200);
 }
+async function blingHubMirrorStockEvent(sb:any,event:any,sourceIdRaw:any,providerIdRaw:any){
+  const sourceId=uuid(sourceIdRaw),providerId=Number(providerIdRaw||0);
+  if(!sourceId||!providerId)return {updated:false,reason:"invalid_identity"};
+
+  const resource=clean(event?.resource,40).toLowerCase();
+  if(!["stock","virtual_stock"].includes(resource))return {updated:false,reason:"not_stock"};
+
+  const payload=event?.payload&&typeof event.payload==="object"?event.payload:{};
+  const data=payload?.data&&typeof payload.data==="object"?payload.data:{};
+  const current=await sb.from("bling_stock_mirror_v2")
+    .select("physical_total,virtual_total,deposit_balances")
+    .eq("product_id",sourceId).maybeSingle();
+  if(current.error)throw current.error;
+
+  const finite=(v:any,fallback:number)=>{
+    const n=Number(v);
+    return Number.isFinite(n)?n:fallback;
+  };
+  const previousPhysical=Number(current.data?.physical_total||0);
+  const previousVirtual=Number(current.data?.virtual_total||0);
+  const balances:any=current.data?.deposit_balances&&typeof current.data.deposit_balances==="object"
+    ? structuredClone(current.data.deposit_balances):{};
+
+  const storeDeposit=(d:any)=>{
+    const did=Number(d?.id||0);
+    if(!did)return;
+    balances[String(did)]={
+      physical:finite(d?.saldoFisico,Number(balances[String(did)]?.physical||0)),
+      virtual:finite(d?.saldoVirtual,Number(balances[String(did)]?.virtual||0))
+    };
+  };
+
+  if(resource==="stock")storeDeposit(data?.deposito);
+  if(resource==="virtual_stock"&&Array.isArray(data?.depositos)){
+    for(const d of data.depositos.slice(0,500))storeDeposit(d);
+  }
+
+  const observedRaw=event?.event_at||event?.received_at||payload?.date||new Date().toISOString();
+  const observedAt=Number.isNaN(Date.parse(String(observedRaw)))?new Date().toISOString():new Date(String(observedRaw)).toISOString();
+  const physical=finite(data?.saldoFisicoTotal,previousPhysical);
+  const virtual=finite(data?.saldoVirtualTotal,previousVirtual);
+
+  const up=await sb.from("bling_stock_mirror_v2").upsert({
+    product_id:sourceId,
+    bling_product_id:providerId,
+    physical_total:physical,
+    virtual_total:virtual,
+    deposit_balances:balances,
+    observed_at:observedAt,
+    source_event_id:clean(event?.event_id,180)||null,
+    source_resource:resource,
+    updated_at:new Date().toISOString()
+  },{onConflict:"product_id"});
+  if(up.error)throw up.error;
+
+  return {updated:true,physical_total:physical,virtual_total:virtual,deposit_count:Object.keys(balances).length};
+}
+
 async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
   const worker="bling-webhook-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(25,Number(limitRaw||10)||10));
@@ -1154,7 +1212,7 @@ async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
   });
   if(claim.error)throw claim.error;
   const events=claim.data||[];
-  const summary:any={ok:true,claimed:events.length,processed:0,review_required:0,ignored:0,retry:0,self_generated:0};
+  const summary:any={ok:true,claimed:events.length,processed:0,review_required:0,ignored:0,retry:0,self_generated:0,stock_mirrored:0};
   for(const event of events){
     try{
       const resource=clean(event.resource,40).toLowerCase();
@@ -1177,6 +1235,12 @@ async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
         }
       }
 
+      let stockMirror:any={updated:false};
+      if(linked&&["stock","virtual_stock"].includes(resource)){
+        stockMirror=await blingHubMirrorStockEvent(sb,event,sourceId,providerId);
+        if(stockMirror?.updated)summary.stock_mirrored++;
+      }
+
       let selfGenerated=false;
       if(providerId&&domain!=="webhook"){
         const eventTime=event.event_at?Date.parse(event.event_at):Date.parse(event.received_at);
@@ -1195,7 +1259,7 @@ async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
       if(selfGenerated){
         await sb.rpc("finish_bling_webhook_inbox_v2",{
           p_event_id:event.event_id,p_status:"processed",
-          p_result:{classification:"self_generated_observed",linked,source_id:sourceId,local_mutation:false,anti_loop:true},
+          p_result:{classification:"self_generated_observed",linked,source_id:sourceId,stock_mirror_updated:Boolean(stockMirror?.updated),erp_mutation:false,anti_loop:true},
           p_error:null,p_retry_seconds:120,p_self_generated:true
         });
         summary.processed++;summary.self_generated++;continue;
@@ -1217,6 +1281,22 @@ async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
           p_error:"provider_entity_not_linked",p_retry_seconds:120,p_self_generated:false
         });
         summary.review_required++;continue;
+      }
+
+      if(["stock","virtual_stock"].includes(resource)&&stockMirror?.updated){
+        await sb.rpc("finish_bling_webhook_inbox_v2",{
+          p_event_id:event.event_id,p_status:"processed",
+          p_result:{
+            classification:"stock_mirror_updated",
+            linked:true,source_id:sourceId,action:event.action,
+            physical_total:stockMirror.physical_total,
+            virtual_total:stockMirror.virtual_total,
+            deposit_count:stockMirror.deposit_count,
+            mirror_mutation:true,erp_mutation:false,anti_loop:true
+          },
+          p_error:null,p_retry_seconds:120,p_self_generated:false
+        });
+        summary.processed++;continue;
       }
 
       await sb.rpc("finish_bling_webhook_inbox_v2",{
