@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { planPapoAiTurn } from "../_shared/papoai-ai-planner-v1.mjs";
 import { deterministicCommerceIntent, contextualCommerceIntent } from "../_shared/papoai-commerce-intent-v1.mjs";
+import { handlePurchaseXmlRequest } from "../purchase-xml-v1/index.ts";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -5651,6 +5652,10 @@ Deno.serve(async(req:Request)=>{
   let body:any={};try{body=await req.json()}catch{return json({ok:false,error:"invalid_json"},400)}
   const action=clean(body?.action||"dashboard",60).toLowerCase();
 
+  if(action==="purchase_xml"){
+    return await handlePurchaseXmlRequest(req,body,false);
+  }
+
   if(action==="vitrine_product_extra"){
     const id=uuid(body?.id);
     if(!id)return json({ok:false,error:"invalid_product"},400);
@@ -5696,6 +5701,9 @@ Deno.serve(async(req:Request)=>{
         return json(result,result.ok?200:Number(result.status||409));
       }
 
+      if(subaction==="purchase_xml_daily_sync"){
+        return await handlePurchaseXmlRequest(req,{purchase_action:"daily_sync"},true);
+      }
       if(subaction==="fiscal_nfe_entry_backfill"){
         const result=await blingHubNfeEntryBackfill(sb,body?.steps);
         return json(result,result.ok?200:Number(result.status||409));
