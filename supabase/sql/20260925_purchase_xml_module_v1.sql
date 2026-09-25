@@ -170,6 +170,8 @@ create table if not exists public.purchase_xml_settings (
 );
 insert into public.purchase_xml_settings(id) values (1) on conflict (id) do nothing;
 
+create index if not exists purchase_xml_documents_import_run_idx on public.purchase_xml_documents(import_run_id) where import_run_id is not null;
+create index if not exists product_purchase_history_document_idx on public.product_purchase_history(document_id);
 create index if not exists purchase_xml_documents_issued_idx on public.purchase_xml_documents(issued_at desc);
 create index if not exists purchase_xml_documents_status_idx on public.purchase_xml_documents(processing_status,created_at desc);
 create index if not exists purchase_xml_documents_supplier_idx on public.purchase_xml_documents(supplier_document,issued_at desc);
