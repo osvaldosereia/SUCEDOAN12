@@ -5631,6 +5631,20 @@ async function vitrineSaveCustomer(sb:any,body:any){
   return {ok:true,customer_id:customerId,customer:savedCustomer};
 }
 
+async function vitrineAdminAuth(sb:any,req:Request){
+  const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"").trim();
+  if(!token)return {ok:false,status:401,error:"admin_auth_required"};
+  const {data:userData,error:userError}=await sb.auth.getUser(token);
+  if(userError||!userData?.user?.id)return {ok:false,status:401,error:"admin_session_invalid"};
+  const {data:admin,error:adminError}=await sb.from("admin_users")
+    .select("role,is_active")
+    .eq("user_id",userData.user.id)
+    .maybeSingle();
+  if(adminError)return {ok:false,status:500,error:"admin_lookup_failed"};
+  if(!admin?.is_active)return {ok:false,status:403,error:"admin_not_authorized"};
+  return {ok:true,status:200,user_id:userData.user.id,role:admin.role||"viewer"};
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
   if(req.method==="GET")return Response.redirect("https://donaantonia.com.br/admin/commerce-os/",302);
@@ -5967,6 +5981,14 @@ Deno.serve(async(req:Request)=>{
       },matches:rows.length});
     }catch(e){
       return json({ok:false,error:"customer_lookup_failed",detail:clean((e as Error)?.message,300)},500);
+    }
+  }
+
+  if(new Set(["vitrine_customers_list","vitrine_customer_get","vitrine_customer_save","vitrine_customer_history","vitrine_customer_order_detail"]).has(action)){
+    const auth=await vitrineAdminAuth(sb,req);
+    if(!auth.ok)return json({ok:false,error:auth.error},Number(auth.status||401));
+    if(action==="vitrine_customer_save"&&!["owner","admin","manager"].includes(String(auth.role||""))){
+      return json({ok:false,error:"editor_required"},403);
     }
   }
 
