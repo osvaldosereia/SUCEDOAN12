@@ -2984,8 +2984,8 @@
       const cfg=state.manualSale.basketConfig;
       host.innerHTML='<div class="panel" style="padding:12px"><div class="history-title"><div><strong>'+esc(cfg.basket.name)+'</strong><span class="muted">Ajuste as quantidades permitidas</span></div><button class="text" id="manualBasketClose" type="button">Fechar</button></div><div>'+cfg.items.map((x,i)=>{
         const editable=x.quantity_editable===true||x.removable===true;
-        const max=Math.max(Number(x.quantity||0),Math.min(Number(x.max_quantity??x.stock_quantity??x.quantity||0),Number(x.stock_quantity??9999)));
-        const min=Math.max(0,Number(x.min_quantity??(x.removable?0:x.quantity)||0));
+        const max=Math.max(Number(x.quantity||0),Math.min(Number((x.max_quantity??x.stock_quantity??x.quantity)||0),Number(x.stock_quantity??9999)));
+        const min=Math.max(0,Number((x.min_quantity??(x.removable?0:x.quantity))||0));
         return '<div class="replacement-option"><div><strong>'+esc(x.name)+'</strong><small>Base '+esc(fmtQty(x.quantity))+' · estoque '+esc(fmtQty(x.stock_quantity||0))+(x.removable?' · removível':'')+'</small></div><input style="width:86px" type="number" inputmode="numeric" min="'+esc(min)+'" max="'+esc(max)+'" step="1" value="'+esc(x.selected_quantity)+'" data-manual-basket-qty="'+i+'" '+(editable?'':'disabled')+'></div>';
       }).join('')+'</div><div class="dispatch-actions" style="justify-content:flex-end;margin-top:12px"><button class="primary" id="manualBasketAdd" type="button">Adicionar cesta</button></div></div>';
       $('#manualBasketClose').onclick=()=>{state.manualSale.basketConfig=null;host.innerHTML=''};
