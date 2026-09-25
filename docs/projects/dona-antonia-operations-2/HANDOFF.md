@@ -310,3 +310,12 @@ Próximos gates:
 - rascunho versionado só deve receber eventos estruturados e determinísticos.
 
 Próximo passo PapoAI: observar eventos de botões/flows/ações estruturadas e mapear somente os que permitirem montar/revisar o draft com segurança.
+
+
+### Estado de implantação — separação/PapoAI
+- PapoAI receiver v107 + normalizer v2 + conversation bridge v2 estão recebendo tráfego real;
+- 9/9 eventos observados em 24h ficaram vinculados a conversas, sem revisão pendente;
+- nova aba Separação atende tablet vertical com fluxo mínimo;
+- picking 85 mm agora inclui foto, nome, EAN, quantidade e localização;
+- impressão silenciosa ainda depende da POC física;
+- próximo grande bloqueio externo continua sendo reautorizar o Bling para Situações/Módulos/Transições.
