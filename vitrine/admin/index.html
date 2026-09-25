@@ -399,6 +399,7 @@
 (()=>{
   const API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-products-live-v1';
   const CUSTOMER_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1';
+  const STOREFRONT_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2';
   const FINANCE_AUTH_API='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-pin-auth-v1';
   const FINANCE_VERIFY_API='https://ssbesxgaijknwsjbsbcz.supabase.co/auth/v1/verify';
   const FINANCE_PUBLIC_KEY='sb_publishable_tFXHtH0HCXZepVtwgKElIg_DxS76Gu8';
@@ -409,7 +410,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,manualSale:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -464,6 +465,15 @@
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
     return data;
   }
+  async function storefrontApi(action,params={},options={}){
+    const u=new URL(STOREFRONT_API);u.searchParams.set('action',action);
+    Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
+    const response=await fetch(u,{...options,cache:'no-store'});
+    const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
+    if(!response.ok||data.ok===false)throw new Error(data.error||'storefront_error');
+    return data;
+  }
+
   const OAUTH_RESULT=new URLSearchParams(location.search).get('bling_oauth');
   if(OAUTH_RESULT==='success'){history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Bling reconectado. Agora valide as permissões.'),500)}
   if(OAUTH_RESULT==='error'){const d=new URLSearchParams(location.search).get('detail')||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
@@ -2907,14 +2917,134 @@
   }
 
 
+  function manualSaleTotalCents(){
+    return (state.manualSale?.cart||[]).reduce((s,x)=>s+Number(x.price_cents||0)*Number(x.qty||0),0);
+  }
+  function manualSaleFormValue(id){return String($(id)?.value||'').trim()}
+  function manualSaleFillCustomer(customer){
+    if(!customer)return;state.manualSale.customer=customer;
+    const a=customer.address||{};
+    if($('#manualName'))$('#manualName').value=customer.display_name||'';
+    if($('#manualPhone'))$('#manualPhone').value=formatPhone(customer.phone||'');
+    if($('#manualStreet'))$('#manualStreet').value=a.street||'';
+    if($('#manualNumber'))$('#manualNumber').value=a.number||'';
+    if($('#manualDistrict'))$('#manualDistrict').value=a.district||a.neighborhood||'';
+    if($('#manualComplement'))$('#manualComplement').value=a.complement||'';
+    if($('#manualCity'))$('#manualCity').value=a.city||'Cuiabá';
+    if($('#manualState'))$('#manualState').value=a.state||'MT';
+    if($('#manualCustomerResults'))$('#manualCustomerResults').innerHTML='<div class="rule-notice"><strong>Cliente selecionado: '+esc(customer.display_name||'Sem nome')+'</strong><div>'+esc(formatPhone(customer.phone||''))+(customer.cpf?' · CPF '+esc(formatCpf(customer.cpf)):'')+'</div></div>';
+  }
+  function paintManualSaleCart(){
+    const host=$('#manualSaleCart');if(!host||!state.manualSale)return;
+    const cart=state.manualSale.cart||[];
+    host.innerHTML=cart.length?cart.map((x,i)=>'<div class="replacement-option"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.type==='basket'?'Cesta personalizada':'Produto')+' · '+money(x.price_cents)+' cada</small></div><div class="dispatch-actions"><button class="secondary" type="button" data-manual-dec="'+i+'">−</button><span class="pill">'+esc(x.qty)+'</span><button class="secondary" type="button" data-manual-inc="'+i+'">+</button><button class="text danger" type="button" data-manual-remove="'+i+'">Remover</button></div></div>').join(''):'<div class="history-empty">Nenhum item adicionado.</div>';
+    const total=manualSaleTotalCents();
+    if($('#manualSaleTotal'))$('#manualSaleTotal').textContent=money(total);
+    if($('#manualSaleMinimum'))$('#manualSaleMinimum').textContent=total>=7500?'Pedido mínimo atingido':'Faltam '+money(7500-total)+' para o mínimo';
+    host.querySelectorAll('[data-manual-inc]').forEach(b=>b.onclick=()=>{const x=state.manualSale.cart[Number(b.dataset.manualInc)];if(x&&x.qty<30){x.qty++;paintManualSaleCart()}});
+    host.querySelectorAll('[data-manual-dec]').forEach(b=>b.onclick=()=>{const x=state.manualSale.cart[Number(b.dataset.manualDec)];if(x&&x.qty>1){x.qty--;paintManualSaleCart()}});
+    host.querySelectorAll('[data-manual-remove]').forEach(b=>b.onclick=()=>{state.manualSale.cart.splice(Number(b.dataset.manualRemove),1);paintManualSaleCart()});
+  }
+  async function searchManualCustomers(){
+    const q=manualSaleFormValue('#manualCustomerSearch'),host=$('#manualCustomerResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite pelo menos 2 caracteres.</div>';return}
+    host.innerHTML='<div class="loading">Buscando cliente…</div>';
+    try{
+      const data=await customerApi('vitrine_customers_list',{q,limit:12});
+      const rows=data.customers||[];state.manualSale.customerResults=rows;
+      host.innerHTML=rows.length?rows.map((x,i)=>'<button class="history-row" type="button" data-manual-customer="'+i+'" style="grid-template-columns:1fr 140px"><div class="history-main"><strong>'+esc(x.display_name||'Sem nome')+'</strong><small>'+esc(formatPhone(x.phone||''))+(x.cpf?' · CPF '+esc(formatCpf(x.cpf)):'')+'</small></div><span>Selecionar</span></button>').join(''):'<div class="history-empty">Cliente não encontrado. Preencha os dados abaixo e o pedido será criado sem cadastro vinculado.</div>';
+      host.querySelectorAll('[data-manual-customer]').forEach(b=>b.onclick=()=>manualSaleFillCustomer(rows[Number(b.dataset.manualCustomer)]));
+    }catch{host.innerHTML='<div class="history-empty">Não consegui buscar clientes agora.</div>'}
+  }
+  async function searchManualItems(){
+    const q=manualSaleFormValue('#manualItemSearch'),host=$('#manualItemResults');if(!host)return;
+    if(q.length<2){host.innerHTML='<div class="sub">Digite nome, EAN ou código.</div>';return}
+    host.innerHTML='<div class="loading">Buscando produtos e cestas…</div>';
+    try{
+      const products=await api('products',{q,limit:16,active:'true'});
+      const pn=normalize(q),baskets=(state.manualSale.baskets||[]).filter(b=>normalize(b.name).includes(pn)).slice(0,8);
+      const rows=(products.products||[]).filter(p=>Number(p.stock_quantity||0)>0);
+      host.innerHTML=(baskets.length?'<div class="section-title">Cestas</div>'+baskets.map(b=>'<div class="replacement-option"><div><strong>'+esc(b.name)+'</strong><small>'+money(b.display_price_cents)+' · personalizável</small></div><button class="secondary" type="button" data-manual-basket="'+esc(b.id)+'">Configurar</button></div>').join(''):'')+
+        (rows.length?'<div class="section-title">Produtos</div>'+rows.map(p=>'<div class="replacement-option"><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.gtin||p.sku||'Sem código')+' · '+money(p.sale_price_cents)+' · estoque '+esc(fmtQty(p.stock_quantity||0))+'</small></div><button class="secondary" type="button" data-manual-product="'+esc(p.id)+'">Adicionar</button></div>').join(''):'')+
+        (!baskets.length&&!rows.length?'<div class="history-empty">Nenhum item encontrado.</div>':'');
+      host.querySelectorAll('[data-manual-product]').forEach(b=>b.onclick=()=>{
+        const p=rows.find(x=>x.id===b.dataset.manualProduct);if(!p)return;
+        const existing=state.manualSale.cart.find(x=>x.type==='product'&&x.id===p.id);
+        if(existing)existing.qty=Math.min(30,existing.qty+1);else state.manualSale.cart.push({type:'product',id:p.id,name:p.name,qty:1,price_cents:Number(p.sale_price_cents||0)});
+        paintManualSaleCart();toast('Produto adicionado');
+      });
+      host.querySelectorAll('[data-manual-basket]').forEach(b=>b.onclick=()=>openManualBasketConfig(b.dataset.manualBasket));
+    }catch{host.innerHTML='<div class="history-empty">Não consegui buscar itens agora.</div>'}
+  }
+  async function openManualBasketConfig(basketId){
+    const host=$('#manualBasketConfig');if(!host)return;host.innerHTML='<div class="loading">Carregando cesta…</div>';
+    try{
+      const data=await storefrontApi('basket',{basket_id:basketId});
+      state.manualSale.basketConfig={basket:data.basket,items:(data.items||[]).map(x=>({...x,selected_quantity:Number(x.quantity||0)}))};
+      const cfg=state.manualSale.basketConfig;
+      host.innerHTML='<div class="panel" style="padding:12px"><div class="history-title"><div><strong>'+esc(cfg.basket.name)+'</strong><span class="muted">Ajuste as quantidades permitidas</span></div><button class="text" id="manualBasketClose" type="button">Fechar</button></div><div>'+cfg.items.map((x,i)=>{
+        const editable=x.quantity_editable===true||x.removable===true;
+        const max=Math.max(Number(x.quantity||0),Math.min(Number((x.max_quantity??x.stock_quantity??x.quantity)||0),Number(x.stock_quantity??9999)));
+        const min=Math.max(0,Number((x.min_quantity??(x.removable?0:x.quantity))||0));
+        return '<div class="replacement-option"><div><strong>'+esc(x.name)+'</strong><small>Base '+esc(fmtQty(x.quantity))+' · estoque '+esc(fmtQty(x.stock_quantity||0))+(x.removable?' · removível':'')+'</small></div><input style="width:86px" type="number" inputmode="numeric" min="'+esc(min)+'" max="'+esc(max)+'" step="1" value="'+esc(x.selected_quantity)+'" data-manual-basket-qty="'+i+'" '+(editable?'':'disabled')+'></div>';
+      }).join('')+'</div><div class="dispatch-actions" style="justify-content:flex-end;margin-top:12px"><button class="primary" id="manualBasketAdd" type="button">Adicionar cesta</button></div></div>';
+      $('#manualBasketClose').onclick=()=>{state.manualSale.basketConfig=null;host.innerHTML=''};
+      $('#manualBasketAdd').onclick=addConfiguredManualBasket;
+    }catch(e){host.innerHTML='<div class="history-empty">Não consegui abrir a cesta.</div>'}
+  }
+  async function addConfiguredManualBasket(){
+    const cfg=state.manualSale?.basketConfig;if(!cfg)return;
+    const inputs=[...document.querySelectorAll('[data-manual-basket-qty]')];
+    for(const input of inputs){const i=Number(input.dataset.manualBasketQty),x=cfg.items[i];if(x)x.selected_quantity=Math.max(0,Math.floor(Number(input.value||0)))}
+    const components=cfg.items.map(x=>({product_id:x.product_id,quantity:x.selected_quantity}));
+    const btn=$('#manualBasketAdd');if(btn){btn.disabled=true;btn.textContent='Calculando…'}
+    try{
+      const quote=await storefrontApi('basket_quote',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({basket_id:cfg.basket.id,items:components})});
+      state.manualSale.cart.push({type:'basket',id:cfg.basket.id,name:cfg.basket.name,qty:1,price_cents:Number(quote.total_cents||0),components});
+      state.manualSale.basketConfig=null;$('#manualBasketConfig').innerHTML='';paintManualSaleCart();toast('Cesta adicionada');
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Adicionar cesta'}}
+  }
+  async function openManualSale(){
+    state.manualSale={customer:null,customerResults:[],cart:[],baskets:[],basketConfig:null};
+    $('#editorTitle').textContent='Nova venda WhatsApp';
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Mesmo motor do site</strong><div>Cadastre o pedido recebido no WhatsApp. Ele entra como Novo, sem reservar estoque até a confirmação.</div></div>'+
+      '<div class="section-title">Cliente</div><div class="toolbar"><input id="manualCustomerSearch" type="search" placeholder="Buscar nome, telefone ou CPF"><button class="secondary" id="manualCustomerSearchBtn" type="button">Buscar</button></div><div id="manualCustomerResults"></div>'+
+      '<div class="form-grid" style="margin-top:12px"><label><span>Nome</span><input id="manualName" required></label><label><span>WhatsApp</span><input id="manualPhone" inputmode="tel" required></label><label><span>Rua</span><input id="manualStreet" required></label><label><span>Número</span><input id="manualNumber" required></label><label><span>Bairro</span><input id="manualDistrict"></label><label><span>Complemento</span><input id="manualComplement"></label><label><span>Cidade</span><input id="manualCity" value="Cuiabá" required></label><label><span>UF</span><input id="manualState" value="MT" maxlength="2" required></label><label class="span-2"><span>Pagamento na entrega</span><select id="manualPayment"><option>PIX</option><option>Dinheiro</option><option>Cartão de crédito</option><option>Cartão alimentação/refeição</option></select></label></div>'+
+      '<div class="section-title">Produtos e cestas</div><div class="toolbar"><input id="manualItemSearch" type="search" placeholder="Buscar produto, EAN ou cesta"><button class="secondary" id="manualItemSearchBtn" type="button">Buscar</button></div><div id="manualItemResults"></div><div id="manualBasketConfig" style="margin-top:10px"></div>'+
+      '<div class="section-title">Pedido</div><div id="manualSaleCart"></div><div class="order-summary" style="margin-top:12px"><div class="summary-box"><small>Total estimado</small><strong id="manualSaleTotal">'+money(0)+'</strong></div><div class="summary-box"><small>Mínimo</small><strong>R$ 75,00</strong></div><div class="summary-box"><small>Status</small><strong id="manualSaleMinimum">Adicione itens</strong></div></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="manualSaleCancel" type="button">Cancelar</button><button class="primary" id="manualSaleCreate" type="button">Criar pedido</button>';
+    $('#manualSaleCancel').onclick=()=>$('#editor').close();
+    $('#manualSaleCreate').onclick=createManualSale;
+    $('#manualCustomerSearchBtn').onclick=searchManualCustomers;$('#manualCustomerSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchManualCustomers()}};
+    $('#manualItemSearchBtn').onclick=searchManualItems;$('#manualItemSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();searchManualItems()}};
+    paintManualSaleCart();$('#editor').showModal();
+    try{const home=await storefrontApi('home');if(state.manualSale)state.manualSale.baskets=home.baskets||[]}catch{}
+  }
+  async function createManualSale(){
+    if(!state.manualSale)return;
+    const name=manualSaleFormValue('#manualName'),phone=manualSaleFormValue('#manualPhone'),street=manualSaleFormValue('#manualStreet'),number=manualSaleFormValue('#manualNumber'),city=manualSaleFormValue('#manualCity'),uf=manualSaleFormValue('#manualState').toUpperCase(),payment=manualSaleFormValue('#manualPayment');
+    if(!name||!phone||!street||!number||!city||uf.length!==2){toast('Preencha nome, WhatsApp e endereço completo');return}
+    if(!state.manualSale.cart.length){toast('Adicione pelo menos um item');return}
+    if(manualSaleTotalCents()<7500){toast('O pedido mínimo é R$ 75,00');return}
+    const items=state.manualSale.cart.map(x=>({type:x.type,id:x.id,qty:x.qty,...(x.type==='basket'?{components:x.components}: {})}));
+    const customer=state.manualSale.customer;
+    const customer_snapshot={id:customer?.id||null,display_name:name,phone,address:{street,number,district:manualSaleFormValue('#manualDistrict'),complement:manualSaleFormValue('#manualComplement'),city,state:uf}};
+    const btn=$('#manualSaleCreate');if(btn){btn.disabled=true;btn.textContent='Criando…'}
+    try{
+      const data=await api('manual_order_create',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone,payment_method:payment,items,customer_snapshot,delivery:{},operator:currentOperator()||'Operação'})});
+      $('#editor').close();state.manualSale=null;state.orderFilter='new';await renderOrders();await openOrder(data.order_id);toast('Pedido WhatsApp criado · aguardando confirmação');
+    }catch(e){toast(errorMessage(e.message));if(btn){btn.disabled=false;btn.textContent='Criar pedido'}}
+  }
+
   async function renderOrders(){
     const content=$('#content');
-    content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Trabalhe pela próxima ação. O sistema cuida das integrações por trás.</p></div><div class="dispatch-actions"><button class="secondary" id="confirmReadyOrders" type="button">Confirmar aptos</button><button class="secondary" id="refreshOrders">Atualizar</button></div></div>'+
+    content.innerHTML='<div class="page-head"><div><h1>Pedidos</h1><p>Trabalhe pela próxima ação. O sistema cuida das integrações por trás.</p></div><div class="dispatch-actions"><button class="primary" id="newWhatsappSale" type="button">+ Venda WhatsApp</button><button class="secondary" id="confirmReadyOrders" type="button">Confirmar aptos</button><button class="secondary" id="refreshOrders">Atualizar</button></div></div>'+
       '<div class="toolbar"><input id="orderSearch" type="search" placeholder="Buscar pedido, cliente, telefone ou endereço…" value="'+esc(state.orderQuery)+'"><button class="secondary" id="clearOrderSearch" type="button">Limpar</button></div>'+
       '<div class="order-filters" id="orderFilters"></div>'+
       '<div class="order-filters" id="orderIssueFilters" style="display:none"></div>'+
       '<div class="panel"><div class="list-head orders-layout"><span>Pedido</span><span>Data</span><span>Cliente</span><span>Total</span><span>Pagamento</span><span>Próxima ação</span><span></span></div><div id="orderRows"><div class="loading">Carregando…</div></div></div>';
     $('#refreshOrders').onclick=loadOrders;
+    $('#newWhatsappSale').onclick=openManualSale;
     $('#confirmReadyOrders').onclick=confirmAllReadyOrders;
     $('#orderSearch').oninput=e=>{state.orderQuery=e.target.value;paintOrderRows()};
     $('#clearOrderSearch').onclick=()=>{state.orderQuery='';$('#orderSearch').value='';paintOrderRows()};
