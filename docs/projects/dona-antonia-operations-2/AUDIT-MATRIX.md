@@ -33,7 +33,7 @@ Status: Fase 1 em andamento. Nenhuma remoção de produção autorizada por esta
 | ChatGPT gestor | Ainda não é camada operacional formal | CHATGPT | Criar rotinas e alertas após conexão/permissões homologadas |
 | Bling Hub v2 | Tabelas/jobs/auditoria ainda existem; runtime documentado como desativado | CANDIDATO A REMOVER | Não apagar até substituição e prova de ausência de dependência |
 | Fiscal AI autônomo | Worker documentado como desativado | CANDIDATO A REMOVER/ON-DEMAND | Manter apenas se houver necessidade fiscal não atendida pelo Bling |
-| Legado qxst... | Arquitetura o classifica como legado temporário; Admin ainda contém referência textual/preconnect | REMOVER APÓS GATE | Confirmar zero chamadas reais e retirar referência |
+| Chat Commerce OS legado | Inativo e sem dependência de runtime do site/Admin | RETIRADO DO RUNTIME | Não reintroduzir dependências |
 | Funções antigas | Inventário registra grande quantidade de Edge Functions históricas | REMOVER APÓS GATE | Logs + dependências SQL + busca GitHub + smoke test antes de cada remoção |
 
 ## Achados importantes da rodada
