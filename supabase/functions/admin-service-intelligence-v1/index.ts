@@ -3570,6 +3570,71 @@ async function blingHubReadStock(sb:any,token:string,blingProductId:number,depos
   const dep=(Array.isArray(row?.depositos)?row.depositos:[]).find((d:any)=>Number(d?.id||0)===depositId);
   return {ok:true,status:r.status,stock:Number(dep?.saldoFisico??0)};
 }
+
+function blingHubScalarView(obj:any){
+  if(!obj||typeof obj!=="object")return {};
+  const out:any={};
+  for(const [k,v] of Object.entries(obj)){
+    if(v===null||["string","number","boolean"].includes(typeof v))out[k]=v;
+  }
+  return out;
+}
+async function blingHubOps2OrderStockProbe(sb:any,sourceOrderIdRaw:any,limitRaw:any=3){
+  const sourceOrderId=uuid(sourceOrderIdRaw);
+  if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400};
+  const limit=Math.max(1,Math.min(5,Number(limitRaw||3)||3));
+  const items=await sb.from("order_items")
+    .select("product_id,name_snapshot,sku_snapshot")
+    .eq("order_id",sourceOrderId)
+    .not("product_id","is",null)
+    .order("created_at",{ascending:true})
+    .limit(50);
+  if(items.error)throw items.error;
+  const unique:any[]=[];const seen=new Set<string>();
+  for(const it of items.data||[]){
+    const pid=uuid(it.product_id);if(!pid||seen.has(pid))continue;
+    seen.add(pid);unique.push({...it,product_id:pid});if(unique.length>=limit)break;
+  }
+  if(!unique.length)return {ok:false,error:"order_without_products",status:409};
+  const ids=unique.map(x=>x.product_id);
+  const links=await sb.from("bling_hub_entity_links_v2")
+    .select("source_id,bling_id,status")
+    .eq("source_system","vitrine_qx").eq("entity_type","product")
+    .in("source_id",ids);
+  if(links.error)throw links.error;
+  const linkMap=new Map<string,any>((links.data||[]).map((x:any)=>[String(x.source_id),x]));
+  const token=await blingHubOauth(sb);
+  const depositId=await blingHubResolveDepositId(sb,token);
+  const rows:any[]=[];
+  for(const it of unique){
+    const link=linkMap.get(it.product_id);
+    if(!link||link.status!=="matched"||!Number(link.bling_id)){
+      rows.push({product_id:it.product_id,name:clean(it.name_snapshot,180),sku:clean(it.sku_snapshot,120),error:"product_not_linked"});
+      continue;
+    }
+    const q=new URLSearchParams();q.append("idsProdutos[]",String(link.bling_id));
+    const r=await blingHubGet(sb,token,"/estoques/saldos?"+q.toString());
+    if(!r.ok){
+      rows.push({product_id:it.product_id,bling_product_id:Number(link.bling_id),name:clean(it.name_snapshot,180),error:"stock_http_"+r.status});
+      continue;
+    }
+    const dataRows=Array.isArray(r.data?.data)?r.data.data:[];
+    const row=dataRows.find((x:any)=>Number(x?.produto?.id||0)===Number(link.bling_id))||dataRows[0]||{};
+    const deps=Array.isArray(row?.depositos)?row.depositos:[];
+    const dep=deps.find((x:any)=>Number(x?.id||0)===depositId)||null;
+    rows.push({
+      product_id:it.product_id,
+      bling_product_id:Number(link.bling_id),
+      name:clean(it.name_snapshot,180),
+      sku:clean(it.sku_snapshot,120),
+      deposit_id:depositId,
+      row_scalars:blingHubScalarView(row),
+      deposit_scalars:blingHubScalarView(dep)
+    });
+  }
+  return {ok:true,source_order_id:sourceOrderId,deposit_id:depositId,products:rows,external_write:false};
+}
+
 async function blingHubPreviewStockSync(sb:any,item:any){
   const sourceId=uuid(item?.source_id);if(!sourceId)return {ok:false,error:"invalid_product"};
   const target=Number(item?.stock_quantity);if(!Number.isFinite(target)||target<0)return {ok:false,error:"invalid_stock"};
@@ -6064,6 +6129,10 @@ Deno.serve(async(req:Request)=>{
         results.orders=await blingHubProcessOrderJobs(sb,Math.min(limit,3));
         results.webhooks=await blingHubProcessWebhookInbox(sb,limit);
         return json({ok:true,cycle:true,results},200);
+      }
+      if(subaction==="ops2_order_stock_probe"){
+        const result=await blingHubOps2OrderStockProbe(sb,body?.source_order_id,body?.limit);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
