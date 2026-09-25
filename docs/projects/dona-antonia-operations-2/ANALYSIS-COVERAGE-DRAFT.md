@@ -37,6 +37,8 @@ Nenhuma programação de produção antes de todos os domínios estarem analisad
 | Segurança/perfis | avançada | SECURITY-PERMISSIONS | POC usuários |
 | Webhooks | avançada | RELIABILITY-WEBHOOKS | ativação/homologação |
 | Exceções | avançada | EXCEPTION-RECOVERY | revisão cruzada |
+| Cancelamentos/devoluções/perdas | avançada | SALES-CANCELLATIONS-RETURNS / STOCK-LOSS-DISCARD-FISCAL-ORIGIN | homologação contábil |
+| Origem fiscal CPF/CNPJ | avançada | STOCK-LOSS-DISCARD-FISCAL-ORIGIN | política do contador |
 | Estado do pedido | avançada | ORDER-STATE-MACHINE | mapear Bling |
 | Limpeza legado | pausada | RUNTIME-INVENTORY | após substituição |
 | Documentação | avançada | HANDOFF / CURRENT-STATE | consolidar PROJECT-MASTER |
@@ -45,7 +47,7 @@ Nenhuma programação de produção antes de todos os domínios estarem analisad
 A arquitetura conceitual está praticamente fechada. Os itens restantes são majoritariamente homologações, não lacunas de desenho.
 
 ### Gates antes do Projeto Final definitivo
-1. validar com contador a aplicação concreta da Portaria 262/2023 à empresa, campos de pagamento da NF-e e política fiscal das cestas;
+1. validar com contador a aplicação concreta da Portaria 262/2023 à empresa, campos de pagamento da NF-e, política fiscal das cestas, CFOP 5.927/perdas, devoluções/retornos e regularização das compras em CPF;
 2. confirmar no Bling o escopo de Situações/usuários;
 3. POC física de tablet/leitores/impressora/POS;
 4. POC do payload real PapoAI;
