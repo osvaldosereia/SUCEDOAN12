@@ -218,3 +218,17 @@ Preparar fila de impressão de picking após aprovação, sem acoplar impressão
 2. Ainda não chegou amostra real nova no receiver PapoAI v105; o adapter normalizador será escrito somente depois de observar payload real.
 3. Impressão física automática depende de hardware.
 4. Reserva oficial no Bling depende do gate de situações.
+
+
+### Rascunho PapoAI versionado
+- tabela `papoai_order_drafts_v2`;
+- deduplicação por `papoai_draft_events_v2`;
+- uma revisão ativa por conversa;
+- resumo enviado ao cliente é preso a `revision + summary_hash`;
+- confirmação de revisão antiga é rejeitada;
+- confirmação repetida é idempotente;
+- confirmação cria `source=papoai` pelo motor canônico;
+- total confirmado precisa ser exatamente o total cotado; divergência reverte a transação;
+- cancelamento de rascunho é versionado.
+
+Estado: infraestrutura pronta, mas **não ligada ao receiver** enquanto não existir amostra real do payload PapoAI v105.
