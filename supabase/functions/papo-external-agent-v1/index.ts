@@ -126,13 +126,21 @@ async function capture(req:Request,url:URL){
     }
   }else id=inserted.data?.id||null;
 
-  let normalized:any=null;
+  let normalized:any=null,conversation:any=null;
   if(id){
     try{
       const n=await db.rpc("papoai_normalize_capture_v2",{p_capture_id:id});
       if(!n.error)normalized=n.data||null;
     }catch(e){
       console.error("papoai_normalize",clean((e as Error)?.message||e,240));
+    }
+    if(normalized?.status==="normalized"){
+      try{
+        const b=await db.rpc("papoai_ensure_conversation_v2",{p_capture_id:id});
+        if(!b.error)conversation=b.data||null;
+      }catch(e){
+        console.error("papoai_conversation_bridge",clean((e as Error)?.message||e,240));
+      }
     }
   }
 
@@ -144,6 +152,8 @@ async function capture(req:Request,url:URL){
     ok:true,accepted:true,capture_only:true,duplicate,
     event_ref:id?String(id).slice(0,8):null,
     normalized:normalized?.status==="normalized",
+    conversation_linked:Boolean(conversation?.conversation_id),
+    conversation_created:Boolean(conversation?.created),
     adapter_version:2
   },200);
 }
@@ -152,8 +162,8 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});
   const url=new URL(req.url);
   if(req.method==="GET"){
-    if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:106});
-    return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:106},200);
+    if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:107});
+    return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:107},200);
   }
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   if(!U||!K)return json({ok:false,error:"server_config"},500);
