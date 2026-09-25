@@ -144,7 +144,7 @@ async function blingOauthBegin(auth:any){
   if(saved.error)return {error:"oauth_state_persist_failed",status:500};
   const url=new URL("https://www.bling.com.br/Api/v3/oauth/authorize");
   url.searchParams.set("response_type","code");url.searchParams.set("client_id",clientId);url.searchParams.set("state",state);
-  return {ok:true,authorization_url:url.toString(),expires_at:expires,redirect_url:"https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/bling-oauth-callback-v1"};
+  return {ok:true,authorization_url:url.toString(),expires_at:expires,redirect_url:"https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/admin-service-intelligence-v1"};
 }
 
 async function blingStatusCatalogProbe(auth:any){
