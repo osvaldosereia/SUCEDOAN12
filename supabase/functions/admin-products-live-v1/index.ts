@@ -168,6 +168,8 @@ async function confirmDeliveryReturn(p:any,auth:any){
 async function captureDeliveryPayment(p:any,auth:any){
   if(auth?.role==="viewer")return {error:"forbidden",status:403};
   const oid=id(p?.id);if(!oid)return {error:"invalid_order",status:400};
+  const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).in("status",["returning","returned_review"]).limit(1).maybeSingle();
+  if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_open",status:409,delivery_return_case_id:ret.data.id};
   const parts=Array.isArray(p?.parts)?p.parts:[];
   if(!parts.length||parts.length>8)return {error:"invalid_payment_parts",status:400};
   const normalized=parts.map((x:any)=>({method:tx(x?.method,40).toLowerCase(),amount_cents:Math.round(Number(x?.amount_cents||0))}));
@@ -187,7 +189,7 @@ async function updateOrderCanonical(p:any){
     if(next==="confirmed"&&cur==="created"){const r=await db.rpc("reserve_vitrine_order_stock_v1",{p_order_id:oid});if(r.error)throw r.error;if(r.data?.ok!==true)return {error:String(r.data?.error||"insufficient_stock"),status:409,...r.data};patch.confirmed_at=new Date().toISOString()}
     if(next==="cancelled"&&cur!=="cancelled"){const r=await db.rpc("release_vitrine_order_stock_v1",{p_order_id:oid});if(r.error)throw r.error;if(r.data?.ok===false)return {error:String(r.data?.error||"stock_release_failed"),status:409};patch.cancelled_at=new Date().toISOString()}
     if(next==="out_for_delivery"&&cur==="ready"){const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).eq("status","returned_review").limit(1).maybeSingle();if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_review_open",status:409,delivery_return_case_id:ret.data.id};const h=await hub("fiscal_dispatch_gate",{source_order_id:oid});if(h.error)return {error:"fiscal_dispatch_gate_unavailable",status:h.status||503,detail:h.detail||null};if(h.data?.allowed!==true)return {error:"fiscal_dispatch_not_authorized",status:409,fiscal_dispatch_gate:h.data}}
-    if(next==="delivered")patch.delivered_at=new Date().toISOString();patch.status=next;
+    if(next==="delivered"){const ret=await db.from("order_delivery_return_cases").select("id,status").eq("order_id",oid).in("status",["returning","returned_review"]).limit(1).maybeSingle();if(ret.error)throw ret.error;if(ret.data?.id)return {error:"delivery_return_open",status:409,delivery_return_case_id:ret.data.id};patch.delivered_at=new Date().toISOString()}patch.status=next;
   }
   const u=await db.from("orders").update(patch).eq("id",oid).select("id,updated_at").single();if(u.error)throw u.error;if(next&&next!==cur)await opsEvent("order.status_changed","Pedido alterado de "+cur+" para "+next+".","order",oid,{from:cur,to:next,source:o.source||null},tx(p?.operator,80)||"Operação", "human","dona_antonia","order-status:"+oid+":"+next+":"+String(u.data.updated_at));let print_queued:null|boolean=null;if(next==="confirmed"&&cur==="created")print_queued=await enqueuePickingPrint(oid,o,String(patch.confirmed_at||u.data.updated_at));if(next==="cancelled"&&cur!=="cancelled")await cancelPendingPrints(oid);if(next==="delivered"||next==="cancelled"){try{await hub("fiscal_status",{source_order_id:oid})}catch{}}return {order_id:oid,history_synced:true,print_queued};
 }
