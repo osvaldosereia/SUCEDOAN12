@@ -1165,6 +1165,188 @@ async function blingWebhookReceive(sb:any,req:Request,rawBody:string){
     processing_enabled:processingEnabled
   },200);
 }
+async function blingHubReconcileOrderWebhookEvent(sb:any,event:any){
+  const providerId=clean(event?.provider_entity_id,120);
+  if(!providerId||!/^[0-9]+$/.test(providerId)){
+    return {
+      finish_status:"review_required",
+      result:{classification:"order_event_without_provider_id",local_mutation:false},
+      error:"order_provider_id_missing"
+    };
+  }
+
+  const links=await sb.from("bling_hub_entity_links_v2")
+    .select("source_id,status")
+    .eq("entity_type","order")
+    .eq("bling_id",Number(providerId))
+    .eq("status","matched")
+    .limit(2);
+  if(links.error)throw links.error;
+  if((links.data||[]).length!==1){
+    return {
+      finish_status:"review_required",
+      result:{
+        classification:"order_event_link_ambiguous",
+        provider_entity_id:providerId,
+        match_count:(links.data||[]).length,
+        local_mutation:false
+      },
+      error:"provider_entity_not_linked"
+    };
+  }
+
+  const sourceId=String(links.data![0].source_id);
+  const local=await blingHubResolveVitrineFiscalOrder(sb,sourceId);
+  if(!local.ok){
+    return {
+      finish_status:"review_required",
+      result:{
+        classification:"canonical_order_not_resolved",
+        provider_entity_id:providerId,
+        source_id:sourceId,
+        local_mutation:false
+      },
+      error:local.error||"canonical_order_not_resolved"
+    };
+  }
+
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("metadata")
+    .eq("id",1)
+    .maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const mapping=runtime.data?.metadata?.ops2_order_status_mapping||{};
+  const localStatus=clean(local.order?.status,80);
+  const expectedStatusId=Number(mapping?.local_to_bling?.[localStatus]||0)||0;
+  if(!expectedStatusId){
+    return {
+      finish_status:"review_required",
+      result:{
+        classification:"local_status_without_bling_mapping",
+        provider_entity_id:providerId,
+        source_id:sourceId,
+        local_status:localStatus||null,
+        local_mutation:false
+      },
+      error:"local_status_mapping_missing"
+    };
+  }
+
+  const token=await blingHubOauth(sb);
+  const remote=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(providerId));
+  if(!remote.ok){
+    const retry=remote.status===429||remote.status>=500||remote.status===0;
+    return {
+      finish_status:retry?"retry":"review_required",
+      result:{
+        classification:"remote_order_read_failed",
+        provider_entity_id:providerId,
+        source_id:sourceId,
+        local_status:localStatus,
+        expected_status_id:expectedStatusId,
+        http_status:remote.status,
+        local_mutation:false
+      },
+      error:"order_detail_http_"+remote.status
+    };
+  }
+
+  const order=remote.data?.data||{};
+  const observedStatusId=Number(order?.situacao?.id||order?.situacao||0)||0;
+  if(observedStatusId===expectedStatusId){
+    return {
+      finish_status:"processed",
+      result:{
+        classification:"order_reconciled_noop",
+        provider_entity_id:providerId,
+        source_id:sourceId,
+        canonical_order_id:local.order?.id||null,
+        local_status:localStatus,
+        expected_status_id:expectedStatusId,
+        observed_status_id:observedStatusId,
+        local_mutation:false,
+        anti_loop:true
+      },
+      error:null
+    };
+  }
+
+  return {
+    finish_status:"review_required",
+    result:{
+      classification:"order_status_drift",
+      provider_entity_id:providerId,
+      source_id:sourceId,
+      canonical_order_id:local.order?.id||null,
+      local_status:localStatus,
+      expected_status_id:expectedStatusId,
+      observed_status_id:observedStatusId,
+      local_mutation:false
+    },
+    error:"order_status_drift"
+  };
+}
+
+async function blingHubOps2WebhookReconcileCanary(sb:any,eventIdRaw:any){
+  const eventId=clean(eventIdRaw,180);
+  if(!eventId)return {ok:false,error:"event_id_required",status:400};
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("mode,hub_enabled,webhooks_enabled")
+    .eq("id",1)
+    .maybeSingle();
+  if(runtime.error)throw runtime.error;
+  if(runtime.data?.mode!=="homologation")return {ok:false,error:"homologation_required",status:409};
+  if(runtime.data?.hub_enabled===true||runtime.data?.webhooks_enabled===true){
+    return {ok:false,error:"safe_mode_required",status:409};
+  }
+
+  const event=await sb.from("bling_webhook_inbox_v2")
+    .select("*")
+    .eq("event_id",eventId)
+    .maybeSingle();
+  if(event.error)throw event.error;
+  if(!event.data)return {ok:false,error:"webhook_event_not_found",status:404};
+  if(event.data.resource!=="order")return {ok:false,error:"order_event_required",status:409};
+  if(event.data.status!=="held")return {ok:false,error:"held_event_required",status:409,current_status:event.data.status};
+
+  const rec=await blingHubReconcileOrderWebhookEvent(sb,event.data);
+  const finishStatus=String(rec.finish_status||"review_required");
+  const done=await sb.rpc("finish_bling_webhook_inbox_v2",{
+    p_event_id:eventId,
+    p_status:finishStatus,
+    p_result:rec.result||{},
+    p_error:rec.error||null,
+    p_retry_seconds:120,
+    p_self_generated:false
+  });
+  if(done.error)throw done.error;
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"ops2_webhook_reconcile_canary",
+    severity:finishStatus==="processed"?"info":"warning",
+    domain:"webhook",
+    source_system:"bling",
+    source_id:eventId,
+    details:{
+      finish_status:finishStatus,
+      result:rec.result||{},
+      error:rec.error||null,
+      safe_mode:true,
+      external_write:false,
+      make_used:false
+    }
+  });
+
+  return {
+    ok:finishStatus==="processed",
+    event_id:eventId,
+    finish_status:finishStatus,
+    result:rec.result||{},
+    error:rec.error||null,
+    external_write:false
+  };
+}
+
 async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
   const worker="bling-webhook-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(25,Number(limitRaw||10)||10));
@@ -1236,6 +1418,23 @@ async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
           p_error:"provider_entity_not_linked",p_retry_seconds:120,p_self_generated:false
         });
         summary.review_required++;continue;
+      }
+
+      if(resource==="order"&&linked){
+        const rec=await blingHubReconcileOrderWebhookEvent(sb,event);
+        const finishStatus=String(rec.finish_status||"review_required");
+        await sb.rpc("finish_bling_webhook_inbox_v2",{
+          p_event_id:event.event_id,
+          p_status:finishStatus,
+          p_result:rec.result||{},
+          p_error:rec.error||null,
+          p_retry_seconds:120,
+          p_self_generated:false
+        });
+        if(finishStatus==="processed")summary.processed++;
+        else if(finishStatus==="retry")summary.retry++;
+        else summary.review_required++;
+        continue;
       }
 
       await sb.rpc("finish_bling_webhook_inbox_v2",{
@@ -6276,6 +6475,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_webhook_receiver_canary"){
         const result=await blingHubOps2WebhookReceiverCanary(sb);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_webhook_reconcile_canary"){
+        const result=await blingHubOps2WebhookReconcileCanary(sb,body?.event_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="ops2_prepare_order_workflow"){
