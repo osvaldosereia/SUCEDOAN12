@@ -386,3 +386,45 @@ A ordem agora é:
 **receber -> registrar forma/valores -> validar total -> marcar Entregue**.
 
 Isso evita marcar entrega concluída e depois descobrir que não houve pagamento.
+
+
+## Não entrega e retorno físico — 2026-09-25
+
+### Implementado
+- nova entidade `order_delivery_return_cases`;
+- ao tocar `Não entregou`, o pedido NÃO volta imediatamente para Pronto;
+- motivo da falha vira uma tentativa auditável;
+- mercadoria permanece fora do estoque vendável enquanto está retornando;
+- entregador passa a ver `CONFIRMAR RETORNO AO DEPÓSITO`;
+- somente depois do retorno físico o sistema toma a próxima decisão.
+
+### Fluxo
+**não entregou -> retornando -> retorno físico confirmado**
+
+Motivos normalmente aptos a reentrega:
+- cliente ausente;
+- endereço não encontrado;
+- reagendamento;
+- veículo/rota.
+
+Após retorno físico:
+- pedido volta para `ready`;
+- estoque continua consumido/alocado ao mesmo pedido;
+- nenhuma reposição ao estoque geral é feita.
+
+Motivos que exigem revisão:
+- pagamento falhou;
+- cliente recusou/desistiu;
+- outro ambíguo.
+
+Após retorno físico:
+- pedido fica bloqueado para nova saída;
+- abre atenção de supervisor;
+- estoque NÃO é restaurado automaticamente;
+- fiscal/devolução/inspeção serão resolvidos antes de cancelar ou recolocar mercadoria à venda.
+
+### Proteções
+- enquanto existir retorno aberto, pagamento efetivo não pode ser capturado;
+- enquanto existir retorno aberto, pedido não pode virar Entregue;
+- retorno em revisão bloqueia nova expedição também no backend;
+- nenhuma ocorrência fictícia foi criada.

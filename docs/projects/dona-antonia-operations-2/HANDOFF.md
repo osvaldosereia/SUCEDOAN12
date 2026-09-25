@@ -344,3 +344,16 @@ Próximo passo PapoAI: observar eventos de botões/flows/ações estruturadas e 
 - não chamar mais o antigo `order_fiscal_confirm_payment` como confirmação simples da entrega.
 
 Próximo passo deste domínio: implementar retorno físico/não entrega como ocorrência explícita e depois, após homologação Bling, sincronizar recebimentos reais ao financeiro.
+
+
+### Não entrega / retorno físico
+- `order_delivery_return_cases` controla tentativas não concluídas e retorno da mercadoria;
+- `Não entregou` não volta mais o pedido diretamente para Pronto;
+- pedido permanece em entrega com overlay `returning` até a mercadoria voltar fisicamente;
+- no tablet do entregador aparece `CONFIRMAR RETORNO AO DEPÓSITO`;
+- ausente/endereço/reagendamento/veículo -> retorno confirmado -> `ready` para reentrega, sem restaurar estoque;
+- pagamento falhou/cliente recusou/outro -> retorno confirmado -> `returned_review`, bloqueado para nova saída e atenção do supervisor;
+- backend bloqueia captura de pagamento/Entregue enquanto houver retorno aberto;
+- backend bloqueia saída de pedido `ready` com retorno em revisão.
+
+Próximo passo: criar a resolução do retorno em revisão (mercadoria íntegra x avaria/falta) e só depois executar cancelamento/restauração de estoque/fluxo fiscal correspondente.
