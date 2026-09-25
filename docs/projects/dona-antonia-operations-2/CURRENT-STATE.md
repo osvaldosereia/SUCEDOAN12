@@ -1,3 +1,5 @@
+> **Atualização 2026-09-25 — Operations 2.0:** a análise arquitetural foi consolidada em `PROJECT-MASTER.md`, `SOURCE-OF-TRUTH.md` e `IMPLEMENTATION-ROADMAP.md`. Este arquivo descreve o runtime legado/atual; ele não deve ser confundido com o desenho alvo. Nenhuma migração para o novo projeto foi executada ainda.
+
 # Dona Antônia Operations 2.0 — Current State
 
 Última atualização: 2026-09-25.
