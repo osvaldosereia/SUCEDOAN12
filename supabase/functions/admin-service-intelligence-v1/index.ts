@@ -1013,7 +1013,7 @@ async function blingOauthCallback(sb:any,req:Request){
   const basic=btoa(clientId+":"+clientSecret);let response:Response|null=null,data:any={};
   for(const endpoint of BLING_OAUTH_URLS){
     const body=new URLSearchParams({grant_type:"authorization_code",code});
-    const attempt=await fetch(endpoint,{method:"POST",headers:{Authorization:"Basic "+basic,"Content-Type":"application/x-www-form-urlencoded",Accept:"application/json"},body,signal:AbortSignal.timeout(12000)});
+    const attempt=await fetch(endpoint,{method:"POST",headers:{Authorization:"Basic "+basic,"Content-Type":"application/x-www-form-urlencoded",Accept:"1.0","enable-jwt":"1"},body,signal:AbortSignal.timeout(12000)});
     const raw=await attempt.text();let parsed:any={};try{parsed=raw?JSON.parse(raw):{}}catch{}response=attempt;data=parsed;
     if(attempt.ok&&clean(parsed?.refresh_token,5000))break;
     if(![403,404,405].includes(attempt.status))break;
