@@ -1606,6 +1606,156 @@ async function blingHubOps2StockMirrorEventCanary(sb:any,eventIdRaw:any){
   };
 }
 
+
+async function blingHubOps2StockMirrorBackfillBatch(sb:any,afterRaw:any,limitRaw:any){
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("mode,hub_enabled,webhooks_enabled,metadata")
+    .eq("id",1)
+    .maybeSingle();
+  if(runtime.error)throw runtime.error;
+  if(runtime.data?.mode!=="homologation")return {ok:false,error:"homologation_required",status:409};
+  if(runtime.data?.hub_enabled===true||runtime.data?.webhooks_enabled===true){
+    return {ok:false,error:"safe_mode_required",status:409};
+  }
+
+  const after=Math.max(0,Number(afterRaw||0)||0);
+  const limit=Math.max(1,Math.min(100,Number(limitRaw||20)||20));
+  let q=sb.from("bling_hub_entity_links_v2")
+    .select("source_id,bling_id,status")
+    .eq("source_system","vitrine_qx")
+    .eq("entity_type","product")
+    .eq("status","matched")
+    .order("bling_id",{ascending:true})
+    .limit(limit);
+  if(after>0)q=q.gt("bling_id",after);
+  const links=await q;
+  if(links.error)throw links.error;
+  const page=links.data||[];
+  if(!page.length){
+    return {ok:true,done:true,after,limit,scanned:0,active_targets:0,applied:0,stale_ignored:0,missing:0,invalid:0,external_write:false};
+  }
+
+  const nextAfter=Math.max(...page.map((x:any)=>Number(x.bling_id||0)).filter((x:number)=>Number.isFinite(x)&&x>0));
+  const sourceIds=page.map((x:any)=>String(x.source_id||"")).filter(Boolean);
+  const products=await sb.from("products")
+    .select("id,name,stock,is_active")
+    .in("id",sourceIds);
+  if(products.error)throw products.error;
+  const productMap=new Map<string,any>((products.data||[]).map((x:any)=>[String(x.id),x]));
+  const targets=page.filter((x:any)=>productMap.get(String(x.source_id))?.is_active===true&&Number(x.bling_id)>0);
+
+  if(!targets.length){
+    return {
+      ok:true,done:page.length<limit,after,next_after_bling_id:nextAfter,limit,
+      scanned:page.length,active_targets:0,applied:0,stale_ignored:0,missing:0,invalid:0,
+      external_write:false
+    };
+  }
+
+  const token=await blingHubOauth(sb);
+  const params=new URLSearchParams();
+  for(const t of targets)params.append("idsProdutos[]",String(t.bling_id));
+  const remote=await blingHubGet(sb,token,"/estoques/saldos?"+params.toString());
+  if(!remote.ok){
+    return {
+      ok:false,error:"stock_backfill_http_"+remote.status,status:remote.status,
+      after,next_after_bling_id:nextAfter,limit,scanned:page.length,active_targets:targets.length,
+      external_write:false
+    };
+  }
+
+  const rows=Array.isArray(remote.data?.data)?remote.data.data:[];
+  const byBling=new Map<number,any>();
+  for(const row of rows){
+    const id=Number(row?.produto?.id||0);
+    if(id>0)byBling.set(id,row);
+  }
+
+  const selectedDepositId=Number(runtime.data?.metadata?.selected_deposit_id||0)||null;
+  const observedAt=new Date().toISOString();
+  let applied=0,staleIgnored=0,missing=0,invalid=0,mismatches=0;
+  const samples:any[]=[];
+
+  for(const target of targets){
+    const sourceId=String(target.source_id);
+    const blingId=Number(target.bling_id);
+    const row=byBling.get(blingId);
+    if(!row){missing++;continue}
+    const physicalTotal=Number(row?.saldoFisicoTotal);
+    const virtualTotal=Number(row?.saldoVirtualTotal);
+    if(!Number.isFinite(physicalTotal)||!Number.isFinite(virtualTotal)){invalid++;continue}
+    const deposits=blingHubStockDepositObject(row?.depositos);
+    const apply=await sb.rpc("apply_bling_stock_mirror_event_v2",{
+      p_product_id:sourceId,
+      p_bling_product_id:blingId,
+      p_physical_total:physicalTotal,
+      p_virtual_total:virtualTotal,
+      p_deposit_balances:deposits,
+      p_observed_at:observedAt,
+      p_source_event_id:"backfill:"+observedAt+":"+blingId,
+      p_source_resource:"backfill",
+      p_replace_deposits:true
+    });
+    if(apply.error)throw apply.error;
+    if(apply.data?.applied===true)applied++;else staleIgnored++;
+
+    const selected=selectedDepositId?deposits[String(selectedDepositId)]||null:null;
+    const sellableVirtual=selected?Number(selected.virtual||0):virtualTotal;
+    const localStock=Number(productMap.get(sourceId)?.stock||0);
+    const mismatch=Math.abs(localStock-sellableVirtual)>0.0001;
+    if(mismatch)mismatches++;
+    if(samples.length<8){
+      samples.push({
+        source_id:sourceId,
+        bling_product_id:blingId,
+        name:clean(productMap.get(sourceId)?.name,120),
+        local_stock:localStock,
+        sellable_virtual:sellableVirtual,
+        mismatch
+      });
+    }
+  }
+
+  const status=await sb.rpc("get_bling_stock_mirror_status_v2");
+  if(status.error)throw status.error;
+  await sb.rpc("merge_bling_hub_runtime_metadata_v2",{
+    p_patch:{
+      ops2_stock_mirror_backfill:{
+        state:"running",
+        last_batch_at:new Date().toISOString(),
+        last_after_bling_id:nextAfter,
+        last_batch_limit:limit,
+        last_batch_scanned:page.length,
+        last_batch_active_targets:targets.length,
+        last_batch_applied:applied,
+        last_batch_stale_ignored:staleIgnored,
+        last_batch_missing:missing,
+        last_batch_invalid:invalid,
+        last_batch_mismatches:mismatches,
+        mirror_status:status.data||{}
+      }
+    }
+  });
+
+  return {
+    ok:true,
+    done:page.length<limit,
+    after,
+    next_after_bling_id:nextAfter,
+    limit,
+    scanned:page.length,
+    active_targets:targets.length,
+    applied,
+    stale_ignored:staleIgnored,
+    missing,
+    invalid,
+    mismatches,
+    mirror_status:status.data||{},
+    samples,
+    external_write:false
+  };
+}
+
 async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
   const worker="bling-webhook-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(25,Number(limitRaw||10)||10));
@@ -6759,6 +6909,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_stock_mirror_event_canary"){
         const result=await blingHubOps2StockMirrorEventCanary(sb,body?.event_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_stock_mirror_backfill_batch"){
+        const result=await blingHubOps2StockMirrorBackfillBatch(sb,body?.after_bling_id,body?.limit);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="ops2_prepare_order_workflow"){
