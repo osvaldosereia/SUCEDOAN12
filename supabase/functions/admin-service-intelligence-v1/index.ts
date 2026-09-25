@@ -1467,7 +1467,8 @@ async function blingHubOps2PrepareOrderWorkflow(sb:any){
     [Number(waiting.id),Number(approved.id),"awaiting_to_approved"],
     [Number(waiting.id),Number(cancelled.id),"awaiting_to_cancelled"],
     [Number(approved.id),Number(verified.id),"approved_to_verified"],
-    [Number(approved.id),Number(cancelled.id),"approved_to_cancelled"]
+    [Number(approved.id),Number(cancelled.id),"approved_to_cancelled"],
+    [Number(approved.id),Number(waiting.id),"approved_to_awaiting_rollback"]
   ];
   const transitionResults:any[]=[];
   for(const [fromId,toId,label] of transitionSpecs){
@@ -1513,6 +1514,40 @@ async function blingHubOps2PrepareOrderWorkflow(sb:any){
     details:{created,mapping,transition_results:transitionResults.map((x:any)=>({label:x.label,created:Boolean(x.created),reconciled:Boolean(x.reconciled)})),make_used:false,external_write:Boolean(created.length)}
   });
   return {ok:true,created,mapping,catalog,external_write:Boolean(created.length)};
+}
+
+
+async function blingHubOps2OrderRemoteProbe(sb:any,sourceOrderIdRaw:any){
+  const sourceOrderId=uuid(sourceOrderIdRaw);
+  if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400};
+  const link=await sb.from("bling_hub_entity_links_v2")
+    .select("bling_id,status,identity_value")
+    .eq("source_system","vitrine_qx")
+    .eq("entity_type","order")
+    .eq("source_id",sourceOrderId)
+    .maybeSingle();
+  if(link.error)throw link.error;
+  if(!link.data||link.data.status!=="matched"||!Number(link.data.bling_id)){
+    return {ok:false,error:"order_not_linked",status:409,external_write:false};
+  }
+  const token=await blingHubOauth(sb);
+  const r=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(link.data.bling_id)));
+  if(!r.ok)return {ok:false,error:"order_detail_http_"+r.status,status:r.status,external_write:false};
+  const o=r.data?.data||{};
+  const sit=o?.situacao&&typeof o.situacao==="object"?o.situacao:{id:o?.situacao};
+  return {
+    ok:true,
+    source_order_id:sourceOrderId,
+    bling_order_id:Number(link.data.bling_id),
+    external_key:clean(o?.numeroLoja||link.data.identity_value,160)||null,
+    total:Number(o?.total||0),
+    situacao:{
+      id:Number(sit?.id||0)||null,
+      nome:clean(sit?.nome||sit?.valor||sit?.descricao,180)||null
+    },
+    nota_fiscal_id:Number(o?.notaFiscal?.id||0)||null,
+    external_write:false
+  };
 }
 
 async function blingHubVitrineOrderLinkStatus(sb:any,sourceOrderIdRaw:any){
@@ -6071,6 +6106,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="preview_order_sync"){
         const result=await blingHubPreviewOrderSync(sb,body?.payload);
         return json(result,result.ok?200:409);
+      }
+      if(subaction==="ops2_order_remote_probe"){
+        const result=await blingHubOps2OrderRemoteProbe(sb,body?.source_order_id);
+        return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="order_link_status"){
         const result=await blingHubVitrineOrderLinkStatus(sb,body?.source_order_id);
