@@ -464,6 +464,10 @@
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
     return data;
   }
+  const OAUTH_RESULT=new URLSearchParams(location.search).get('bling_oauth');
+  if(OAUTH_RESULT==='success'){history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Bling reconectado. Agora valide as permissões.'),500)}
+  if(OAUTH_RESULT==='error'){const d=new URLSearchParams(location.search).get('detail')||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
+
   function setTab(tab){
     state.tab=tab;
     document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
@@ -699,6 +703,16 @@
     if(Number(s.days_8_15||0))parts.push(s.days_8_15+' em 8–15 dias');
     if(Number(s.days_16_30||0))parts.push(s.days_16_30+' em 16–30 dias');
     return '<div class="bling-banner expiry-alert-banner'+cls+'"><strong>Validades exigem atenção · '+esc(total)+' produto(s) vencem em até 30 dias</strong><small>'+esc(parts.join(' · '))+'</small><div class="bling-actions"><button class="secondary" type="button" data-today-expiry>Ver validades</button></div></div>';
+  }
+
+  async function reconnectBlingOauth(){
+    const ok=confirm('Reconectar o Bling agora?\n\nUse este botão depois de salvar os novos escopos no aplicativo do Bling. Você será enviado ao Bling para autorizar novamente e depois voltará automaticamente para este Admin.');
+    if(!ok)return;
+    try{
+      const data=await api('bling_oauth_begin',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      if(!data.authorization_url)throw new Error('oauth_url_missing');
+      window.location.href=data.authorization_url;
+    }catch(e){toast(errorMessage(e.message))}
   }
 
   async function retryBlingStatusCatalog(){
@@ -2603,9 +2617,9 @@
       '<div class="panel"><div class="history-title"><strong>Permissões e leitura da API</strong><span class="muted">teste sem alterar dados</span></div>'+
         '<div class="bling-scopes">'+scope('products','Produtos')+scope('contacts','Clientes')+scope('sales_orders','Pedidos')+scope('deposits','Depósitos')+scope('invoice','NF-e')+'</div>'+
         (Array.isArray(probe.deposit_candidates)&&probe.deposit_candidates.length?'<div class="rule-notice"><strong>Depósitos encontrados</strong>'+probe.deposit_candidates.map(d=>esc((d.default?'★ ':'')+(d.name||'Depósito')+' #'+d.id)).join(' · ')+'</div>':'')+
-        '<div class="bling-actions"><button class="secondary" id="reconcileBlingCatalog">Reconciliar produtos</button><button class="secondary" id="reconcileBlingCustomers">Reconciliar clientes</button><button class="primary" id="probeBling">Verificar conexão com o Bling</button></div>'+
+        '<div class="bling-actions"><button class="secondary" id="reconcileBlingCatalog">Reconciliar produtos</button><button class="secondary" id="reconcileBlingCustomers">Reconciliar clientes</button><button class="secondary" id="reconnectBlingOauth">Reconectar Bling</button><button class="primary" id="probeBling">Verificar conexão com o Bling</button></div>'+
       '</div>';
-    if($('#probeBling'))$('#probeBling').onclick=probeBlingReadonly;
+    if($('#probeBling'))$('#probeBling').onclick=probeBlingReadonly;if($('#reconnectBlingOauth'))$('#reconnectBlingOauth').onclick=reconnectBlingOauth;
     if($('#reconcileBlingCatalog'))$('#reconcileBlingCatalog').onclick=reconcileBlingCatalogReadonly;
     if($('#reconcileBlingCustomers'))$('#reconcileBlingCustomers').onclick=reconcileBlingCustomersReadonly;
   }
