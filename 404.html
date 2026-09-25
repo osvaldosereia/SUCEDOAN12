@@ -23,7 +23,7 @@
       if(!match){ location.replace('/'); return; }
       var code=match[1];
       try{
-        var url='https://qxstkwshuvplmmftrctj.supabase.co/functions/v1/simple-storefront-v1?action=resolve_identity_code&code='+encodeURIComponent(code);
+        var url='https://ssbesxgaijknwsjbsbcz.supabase.co/functions/v1/storefront-v2?action=resolve_identity_code&code='+encodeURIComponent(code);
         var response=await fetch(url,{cache:'no-store'});
         var data=await response.json().catch(function(){return {}});
         if(!response.ok || data.ok===false || !data.phone_e164) throw new Error('invalid_catalog_code');
