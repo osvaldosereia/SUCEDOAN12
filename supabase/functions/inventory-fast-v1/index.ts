@@ -6,7 +6,6 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const FIREBASE_PRODUCTS = "https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -18,17 +17,6 @@ const text = (value: unknown, max = 240) => String(value ?? "")
   .trim()
   .slice(0, max);
 const digits = (value: unknown, max = 32) => String(value ?? "").replace(/\D/g, "").slice(0, max);
-const finite = (value: unknown) => {
-  if (value === null || value === undefined || value === "") return null;
-  const n = Number(String(value).replace(",", "."));
-  return Number.isFinite(n) ? n : null;
-};
-const isoDate = (value: unknown) => {
-  const raw = text(value, 40);
-  if (!raw) return null;
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/)?.[0] || null;
-  return iso;
-};
 
 const PRODUCT_FIELDS = "id,firebase_key,sku,name,gtin,ncm,price,cost,stock,image_url,brand,category,subcategory,subsubcategory,packaging,supplier,unit,validity_date,gondola,shelf,is_active,is_whatsapp_active,physically_verified,updated_at";
 
@@ -63,68 +51,6 @@ function variants(value: string) {
     if (noZero) out.push(noZero);
   }
   return [...new Set(out.filter(Boolean))];
-}
-
-async function firebaseGet(url: string) {
-  const r = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!r.ok) return null;
-  return r.json().catch(() => null);
-}
-
-async function findLegacyProduct(code: string) {
-  const candidates = variants(code);
-
-  for (const candidate of candidates) {
-    const data = await firebaseGet(`${FIREBASE_PRODUCTS}/${encodeURIComponent(candidate)}.json`);
-    if (data && typeof data === "object") return { key: candidate, product: data };
-  }
-
-  const fields = ["gtin", "ean", "codigo", "sku"];
-  for (const field of fields) {
-    for (const candidate of candidates) {
-      const orderBy = encodeURIComponent(JSON.stringify(field));
-      const equalTo = encodeURIComponent(JSON.stringify(candidate));
-      const data = await firebaseGet(`${FIREBASE_PRODUCTS}.json?orderBy=${orderBy}&equalTo=${equalTo}&limitToFirst=1`);
-      if (!data || typeof data !== "object") continue;
-      const entry = Object.entries(data)[0];
-      if (entry && entry[1] && typeof entry[1] === "object") return { key: entry[0], product: entry[1] };
-    }
-  }
-  return null;
-}
-
-function normalizeLegacy(key: string, source: any, scannedCode: string) {
-  const gtin = digits(source?.gtin || source?.ean || scannedCode);
-  const active = typeof source?.ativo === "boolean"
-    ? source.ativo
-    : !["I", "INATIVO", "INACTIVE"].includes(text(source?.situacao || source?.status, 30).toUpperCase());
-  return {
-    id: null,
-    firebase_key: text(key, 160) || null,
-    sku: text(source?.sku || source?.codigo, 120) || null,
-    name: text(source?.nome || source?.name || source?.titulo || source?.codigo, 300) || `EAN ${gtin || scannedCode}`,
-    gtin: gtin || null,
-    ncm: digits(source?.ncm, 16) || null,
-    price: finite(source?.preco ?? source?.price),
-    cost: finite(source?.preco_custo ?? source?.custo ?? source?.cost),
-    stock: null,
-    image_url: text(source?.url_imagem || source?.imagem_url || source?.imagem, 1200) || null,
-    brand: text(source?.marca || source?.brand, 160) || null,
-    category: text(source?.categoria || source?.category, 160) || null,
-    subcategory: text(source?.subcategoria || source?.subcategory, 160) || null,
-    subsubcategory: text(source?.subsubcategoria || source?.subsubcategory, 160) || null,
-    packaging: text(source?.embalagem || source?.packaging, 120) || null,
-    supplier: text(source?.fornecedor || source?.supplier, 200) || null,
-    unit: text(source?.unidade || source?.unit, 40) || null,
-    validity_date: isoDate(source?.validade || source?.data_validade),
-    gondola: text(source?.gondola ?? source?.["gôndola"], 80) || null,
-    shelf: text(source?.prateleira || source?.shelf, 80) || null,
-    is_active: active,
-    is_whatsapp_active: false,
-    physically_verified: false,
-    updated_at: null,
-    fast_source: "firebase_legacy",
-  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -177,10 +103,6 @@ Deno.serve(async (req: Request) => {
     }
     if (product) return json({ ok: true, product, source: "supabase" });
 
-    const legacy = await findLegacyProduct(code || firebaseKey);
-    if (legacy?.product) {
-      return json({ ok: true, product: normalizeLegacy(legacy.key, legacy.product, code), source: "firebase_legacy", will_register_on_save: true });
-    }
     return json({ ok: true, product: null, source: "none" });
   }
 

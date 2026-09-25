@@ -1,6 +1,3 @@
-import {firebaseProductActive} from './policy.mjs';
-
-const FIREBASE_HOST='cedar-chemist-310801-default-rtdb.firebaseio.com';
 const GH_OWNER='osvaldosereia',GH_REPO='SUCEDOAN12',SOURCE_BUCKET='product-images';
 export class TerminalError extends Error{}
 export const clean=(v,max=1000)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
@@ -27,9 +24,22 @@ function parseRawGithub(raw){try{const u=new URL(raw);if(u.hostname!=='raw.githu
 async function immutableGithubImage(raw,host){const p=parseRawGithub(raw);if(!p)return null;if(/^[0-9a-f]{40}$/i.test(p.ref)){try{return{...await fetchImage(raw,host),url:raw,recovered:false};}catch{return null;}}try{const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?path=${encodeURIComponent(p.path)}&per_page=12`,r=await fetch(api,{headers:{Accept:'application/vnd.github+json','User-Agent':'DonaAntonia-Grid18/2.0'},signal:AbortSignal.timeout(15000)});if(r.ok)for(const c of arr(await r.json()))for(const ref of[clean(c?.sha,80),clean(c?.parents?.[0]?.sha,80)].filter(Boolean)){const candidate=`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${ref}/${p.path}`;try{return{...await fetchImage(candidate,host),url:candidate,recovered:candidate!==raw};}catch(e){if(!(e instanceof Error)||!String(e.message).startsWith('source_http_404'))throw e;}}}catch(e){if(e instanceof TerminalError)throw e;}try{return{...await fetchImage(raw,host),url:raw,recovered:false};}catch{return null;}}
 async function fetchTrustedCandidate(raw,host){const url=normalizeLegacyPath(raw);if(!url)return null;if(parseRawGithub(url))return immutableGithubImage(url,host);try{return{...await fetchImage(url,host),url,recovered:false};}catch(e){const m=e instanceof Error?String(e.message):'';if(m.startsWith('source_http_400')||m.startsWith('source_http_404'))return null;throw e;}}
 
-async function firebaseByKey(key){if(!key)return null;const r=await fetch(`https://${FIREBASE_HOST}/produtos/${encodeURIComponent(key)}.json`,{headers:{Accept:'application/json','User-Agent':'DonaAntonia-Grid18/2.0'},signal:AbortSignal.timeout(15000)});if(r.status===404)return null;if(!r.ok)throw new Error(`firebase_http_${r.status}`);const d=await r.json().catch(()=>null);return d&&typeof d==='object'&&!Array.isArray(d)?d:null;}
-async function firebaseQuery(field,value){if(!value)return null;const orderBy=encodeURIComponent(JSON.stringify(field)),equalTo=encodeURIComponent(JSON.stringify(String(value)));const url=`https://${FIREBASE_HOST}/produtos.json?orderBy=${orderBy}&equalTo=${equalTo}&limitToFirst=1`;const r=await fetch(url,{headers:{Accept:'application/json','User-Agent':'DonaAntonia-Grid18/2.0'},signal:AbortSignal.timeout(15000)});if(!r.ok)return null;const d=await r.json().catch(()=>null);if(!d||typeof d!=='object'||Array.isArray(d))return null;const e=Object.entries(d)[0];return e&&e[1]&&typeof e[1]==='object'?{key:e[0],product:e[1]}:null;}
-function identity(p,f){const pg=clean(p?.gtin,40),fg=clean(f?.gtin||f?.ean,40);if(pg&&fg)return pg===fg;const ps=clean(p?.sku,80),fs=clean(f?.codigo||f?.sku,80);if(ps&&fs)return ps===fs;return clean(p?.name,240).toLowerCase()===clean(f?.nome||f?.name,240).toLowerCase();}
-export async function resolveFirebaseProduct(p){const key=clean(p?.firebase_key,180);if(key){const f=await firebaseByKey(key);if(f&&identity(p,f))return{key,product:f,active:firebaseProductActive(f)};}const gtin=clean(p?.gtin,40);for(const field of ['gtin','ean']){const found=await firebaseQuery(field,gtin);if(found&&identity(p,found.product))return{...found,active:firebaseProductActive(found.product)};}const sku=clean(p?.sku,80);for(const field of ['codigo','sku']){const found=await firebaseQuery(field,sku);if(found&&identity(p,found.product))return{...found,active:firebaseProductActive(found.product)};}return{key:null,product:null,active:false};}
-
-export async function resolveTrustedSource(base,host,p,firebaseResolved=null){const saved=clean(p?.image_source_url,1800);if(saved){const f=await fetchTrustedCandidate(saved,host);if(f)return{...f,field:'products.image_source_url',origin:f.recovered?'verified_saved_source_git_history':(clean(p?.image_source_origin,120)||'verified_saved_source')};}const fb=firebaseResolved?.product||(await resolveFirebaseProduct(p)).product;if(fb){const prev=normalizeLegacyPath(fb?.imagem_anterior),cur=normalizeLegacyPath(fb?.imagem||fb?.imagem_url||fb?.url_imagem);for(const [value,field] of [[prev,'firebase.imagem_anterior'],[cur,'firebase.imagem']]){if(value&&!/openai\/grid18/i.test(value)){const f=await fetchTrustedCandidate(value,host);if(f)return{...f,field,origin:f.recovered?`${field}_git_history`:field};}}}const cat=`${base}/storage/v1/object/public/${SOURCE_BUCKET}/catalog-products/${p.id}.webp`,f=await fetchTrustedCandidate(cat,host);if(f)return{...f,field:'storage.catalog-products',origin:'supabase_catalog_products_original'};throw new TerminalError('trusted_source_missing');}
+export async function resolveTrustedSource(base,host,p){
+  const candidates=[
+    [clean(p?.image_source_url,1800),'products.image_source_url',clean(p?.image_source_origin,120)||'verified_saved_source'],
+    [clean(p?.image_original_url,1800),'products.image_original_url','supabase_original_image'],
+    [clean(p?.image_firebase_source_url,1800),'products.image_firebase_source_url','legacy_cached_source']
+  ];
+  const seen=new Set();
+  for(const [raw,field,origin] of candidates){
+    const value=normalizeLegacyPath(raw);
+    if(!value||seen.has(value)||/openai\/grid18/i.test(value))continue;
+    seen.add(value);
+    const f=await fetchTrustedCandidate(value,host);
+    if(f)return{...f,field,origin:f.recovered?`${origin}_git_history`:origin};
+  }
+  const cat=`${base}/storage/v1/object/public/${SOURCE_BUCKET}/catalog-products/${p.id}.webp`;
+  const f=await fetchTrustedCandidate(cat,host);
+  if(f)return{...f,field:'storage.catalog-products',origin:'supabase_catalog_products_original'};
+  throw new TerminalError('trusted_source_missing');
+}

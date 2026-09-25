@@ -86,7 +86,7 @@
         <div id="editorMessage" class="editor-message"></div>
         <div class="editor-actions">
           <button id="resetButton" class="btn secondary" type="button">Limpar</button>
-          <button id="saveButton" class="btn primary" type="button">Salvar e publicar cesta</button>
+          <button id="saveButton" class="btn primary" type="button">Salvar cesta</button>
         </div>
       </div>
     </section>
@@ -95,7 +95,7 @@
   <section id="listWorkspace" class="basket-workspace" hidden>
     <section class="card list-card">
       <div class="list-toolbar">
-        <div><strong>Todas as cestas</strong><small>Ativas e inativas do mesmo arquivo usado pelo Produção Admin.</small></div>
+        <div><strong>Todas as cestas</strong><small>Ativas e inativas salvas no Supabase.</small></div>
         <input id="basketFilter" class="field" type="search" placeholder="Pesquisar cesta">
       </div>
       <div id="basketList" class="basket-list"></div>
@@ -105,13 +105,10 @@
 
 <div id="settingsBackdrop" class="drawer-backdrop" hidden></div>
 <aside id="settingsDrawer" class="settings-drawer" aria-hidden="true">
-  <header><div><strong>Configurações</strong><small>Compartilhadas com o Produção Admin e o Criador de Kits.</small></div><button id="closeSettingsButton" type="button" aria-label="Fechar">×</button></header>
+  <header><div><strong>Fonte de dados</strong><small>Supabase é a única fonte operacional das cestas.</small></div><button id="closeSettingsButton" type="button" aria-label="Fechar">×</button></header>
   <div class="settings-body">
-    <label>Token GitHub<input id="githubToken" class="field" type="password" autocomplete="off"></label>
-    <label>Firebase URL<input id="firebaseUrl" class="field" type="url"></label>
-    <label>Nó de produtos<input id="productsNode" class="field"></label>
-    <label>Arquivo oficial das cestas<input id="basketsPath" class="field"></label>
-    <button id="saveSettingsButton" class="btn primary" type="button">Salvar configurações</button>
+    <p>Catálogo, composição e estado das cestas são gravados no Supabase com sessão administrativa. Não é necessário Firebase, GitHub token ou Make.</p>
+    <button id="saveSettingsButton" class="btn primary" type="button">Fechar</button>
   </div>
 </aside>
 
@@ -120,6 +117,6 @@
 
 <script src="../admin/config.js?v=20260920-r3-context"></script>
 <script type="module" src="../admin/admin-global-shell-v3.js?v=20260921-2"></script>
-<script type="module" src="./cesta-mobile.js?v=20260921-tabfix-1"></script>
+<script type="module" src="./cesta-mobile.js?v=20260921-supabase-only-2"></script>
 </body>
 </html>

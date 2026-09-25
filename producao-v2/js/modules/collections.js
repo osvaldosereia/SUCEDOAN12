@@ -2,9 +2,7 @@ import {
   auditCollection, auditCollections, collectionSearch, normalizeCollectionForPublish, resolveCollectionItem,
 } from '../core/collections.js?admin_build=20260814-cestas-limites-v1';
 import { clone, debounce, escapeHtml, money, number, productCode, productKey, productName, text } from '../core/utils.js';
-import { saveCollectionList } from '../services/collections.js?admin_build=20260814-cestas-limites-v1';
-import { upsertBase64File } from '../services/github-binary.js';
-import { callMake, compactKitForMake, extractMakeImage, unwrapMakeResult } from '../services/make.js';
+import { adminProductsApi, ensureAdminAuthenticated } from '../../../admin/admin-secure-api-v1.js';
 
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="100%" height="100%" fill="#f1f2ef"/><text x="50%" y="53%" text-anchor="middle" fill="#899087" font-family="Arial" font-size="12">sem imagem</text></svg>')}`;
 const LOW_STOCK_LIMIT = 30;
@@ -417,127 +415,47 @@ export class CollectionsModule {
   }
 
   async runKitAutomation(action) {
-    if (!this.draft || this.type !== 'kit' || this.makeBusy) return;
-    const config = this.reloadConfig();
-    const kit = compactKitForMake(this.draft, this.store.state.products);
-    if (!kit.produtos.length) throw new Error('Adicione produtos ao kit antes de executar a automação.');
-    if (action === 'instagram') {
-      const audit = auditCollection(this.draft, 'kit', this.store.state.products, this.store.state.queue);
-      if (audit.errors.length) throw new Error(`Revise o kit antes de gerar a fila: ${audit.errors.join(' · ')}.`);
-      if (!confirm(`Gerar o carrossel do kit “${this.draft.nome}” e enviar para a fila do Instagram?`)) return;
-    }
-    this.makeBusy = true;
-    this.elements.collectionForm.innerHTML = this.formHtml();
-    try {
-      if (action === 'description') {
-        this.onToast('Make: gerando nome e descrição do kit…');
-        const result = unwrapMakeResult(await callMake(config, 'text', { acao: 'gerar_descricao_kit', kit }));
-        const description = result.descricao || result.description || result.texto;
-        const name = result.nome_sugerido || result.nome_curto || result.nome || result.name;
-        if (!text(description) && !text(name)) throw new Error('O Make não retornou nome ou descrição para o kit.');
-        if (text(description)) this.draft.descricao = text(description);
-        if (text(name)) this.draft.nome = text(name).slice(0, 80);
-        this.onToast('Descrição do kit aplicada. Revise e salve.', 'success');
-      }
-      if (action === 'cover') {
-        if (!kit.referencias_imagens.length) throw new Error('Os produtos do kit precisam ter imagens públicas para gerar a capa.');
-        this.onToast('Make: gerando a capa do kit…');
-        const result = await callMake(config, 'image', {
-          acao: 'gerar_capa_kit',
-          quantidade_imagens: 1,
-          kit,
-          imagem_path: `${text(config.githubKitImagesPath || 'site/img/kits').replace(/\/+$/, '')}/${slug(this.draft.codigo || this.draft.nome)}.webp`,
-          storage_destino: 'github',
-          instrucoes: 'Criar uma única capa quadrada de e-commerce com as fotos reais dos produtos, nome do kit, preço anterior, preço promocional e economia. Não inventar embalagens.',
-        });
-        let image = extractMakeImage(result);
-        if (!image) throw new Error('O Make não retornou a capa do kit.');
-        if (/^data:image\//i.test(image)) {
-          const path = `${text(config.githubKitImagesPath || 'site/img/kits').replace(/^\/+|\/+$/g, '')}/${slug(this.draft.codigo || this.draft.nome)}-${Date.now()}.webp`;
-          const uploaded = await upsertBase64File(config, path, image, `Atualiza capa IA do kit ${this.draft.nome} pelo Admin V2`);
-          image = uploaded.url;
-          this.draft.imagem_path = path;
-        }
-        this.draft.imagem = image;
-        this.draft.imagem_url = image;
-        this.draft.imagem_origem = 'ia_make';
-        this.draft.imagem_gerada_em = new Date().toISOString();
-        this.onToast('Capa do kit aplicada. Revise e salve.', 'success');
-      }
-      if (action === 'instagram') {
-        this.onToast('Make: gerando carrossel e fila do Instagram…');
-        const result = unwrapMakeResult(await callMake(config, 'instagram-kit', {
-          acao: 'gerar_kit_instagram_fila',
-          modo_publicacao: 'fila_github',
-          origem: 'admin_v2_dona_antonia',
-          criado_em: new Date().toISOString(),
-          formato: 'instagram_carrossel_4_5',
-          total_paginas: 2 + kit.produtos.length,
-          regra_paginas: 'capa + uma página por produto + CTA final',
-          kit,
-          produtos: kit.produtos,
-        }));
-        this.draft.instagram_status = text(result.status || result.fila_status || 'novo');
-        this.draft.instagram_enviado_em = new Date().toISOString();
-        this.draft.instagram_post_id = text(result.instagram_id || result.instagram_post_id || result.id);
-        this.draft.instagram_carrossel_id = text(result.id_carrossel || result.carrossel_id);
-        this.draft.instagram_imagens = result.imagens || result.urls_imagens || [];
-        this.draft.instagram_dados_json = text(result.dados_json);
-        this.draft.instagram_fila_json = text(result.fila_json);
-        this.onToast('Carrossel criado e enviado para a fila. Salve o kit para registrar o status.', 'success');
-      }
-    } finally {
-      this.makeBusy = false;
-      if (this.draft) {
-        this.elements.collectionEditorTitle.textContent = this.draft.nome || 'Kit promocional';
-        this.elements.collectionForm.innerHTML = this.formHtml();
-        this.renderItems();
-        this.renderAudit();
-      }
-    }
+    if (this.type !== 'kit') return;
+    const labels = { description: 'Descrição por IA', cover: 'Capa por IA', instagram: 'Carrossel do Instagram' };
+    this.onToast(`${labels[action] || 'Automação'} está pausada. O kit continua editável e salvável no Supabase.`, 'warning');
   }
 
   async saveDraft() {
     if (!this.draft) return;
-    const config = this.reloadConfig();
     const result = normalizeCollectionForPublish(this.draft, this.type, this.store.state.products, this.store.state.queue);
     if (result.audit.errors.length) {
       this.onToast(result.audit.errors.join(' · '), 'error');
       return;
     }
-    const list = clone(this.currentList());
-    const index = this.originalId ? list.findIndex(collection => text(collection.id) === this.originalId) : -1;
-    if (index >= 0) list[index] = result.normalized;
-    else list.push(result.normalized);
     this.elements.collectionSave.disabled = true;
     this.elements.collectionSave.textContent = 'Salvando…';
     try {
-      const saved = await saveCollectionList(config, this.type, list, this.store.state.products, this.store.state.queue);
-      this.setCurrentList(saved.list);
-      this.onToast(`${this.type === 'kit' ? 'Kit' : 'Cesta'} salvo(a) no GitHub.`, 'success');
+      await ensureAdminAuthenticated();
+      const action = this.type === 'kit' ? 'save_kit' : 'save_basket';
+      const payload = this.type === 'kit' ? { kit: result.normalized } : { basket: result.normalized };
+      const saved = await adminProductsApi(action, payload);
+      this.setCurrentList(this.type === 'kit' ? (saved.kits || []) : (saved.baskets || []));
+      this.onToast(`${this.type === 'kit' ? 'Kit' : 'Cesta'} salvo(a) no Supabase.`, 'success');
       this.closeEditor();
       await this.onReload();
     } catch (error) {
       console.error(error);
       this.onToast(error?.message || String(error), 'error');
     } finally {
-      this.elements.collectionSave.textContent = 'Salvar e publicar';
+      this.elements.collectionSave.textContent = 'Salvar';
       this.render();
     }
   }
 
   async deleteCollection(id) {
     const target = this.currentList().find(collection => text(collection.id) === String(id));
-    if (!target || !confirm(`Excluir ${target.nome || target.codigo}?`)) return;
-    const config = this.reloadConfig();
-    const list = this.currentList().filter(collection => text(collection.id) !== String(id));
+    if (!target || !confirm(`Arquivar/inativar ${target.nome || target.codigo}? O histórico será preservado no Supabase.`)) return;
     try {
-      const saved = await saveCollectionList(config, this.type, list, this.store.state.products, this.store.state.queue, {
-        deletedId: text(id),
-        preserveInvalidExisting: true,
-      });
-      this.setCurrentList(saved.list);
-      this.onToast('Cadastro removido e arquivo atualizado.', 'success');
+      await ensureAdminAuthenticated();
+      const action = this.type === 'kit' ? 'archive_kit' : 'archive_basket';
+      const saved = await adminProductsApi(action, { id: text(id) });
+      this.setCurrentList(this.type === 'kit' ? (saved.kits || []) : (saved.baskets || []));
+      this.onToast('Cadastro arquivado no Supabase.', 'success');
       await this.onReload();
     } catch (error) {
       this.onToast(error?.message || String(error), 'error');
@@ -545,25 +463,18 @@ export class CollectionsModule {
   }
 
   async toggleCollection(id) {
-    if (this.type !== 'basket') return;
     const target = this.currentList().find(collection => text(collection.id) === String(id));
     if (!target) return;
-    const nextActive = target.ativo === false;
-    const list = clone(this.currentList());
-    const index = list.findIndex(collection => text(collection.id) === String(id));
-    list[index] = { ...list[index], ativo: nextActive, atualizado_em: new Date().toISOString() };
+    const next = { ...clone(target), ativo: target.ativo === false, atualizado_em: new Date().toISOString() };
     try {
-      const saved = await saveCollectionList(this.reloadConfig(), this.type, list, this.store.state.products, this.store.state.queue, {
-        changedId: text(id),
-        previousId: text(id),
-        originalCollection: target,
-        preserveInvalidExisting: true,
-      });
-      this.setCurrentList(saved.list);
-      this.onToast(`Cesta ${nextActive ? 'ativada' : 'desativada'} e publicada.`, 'success');
+      await ensureAdminAuthenticated();
+      const action = this.type === 'kit' ? 'save_kit' : 'save_basket';
+      const payload = this.type === 'kit' ? { kit: next } : { basket: next };
+      const saved = await adminProductsApi(action, payload);
+      this.setCurrentList(this.type === 'kit' ? (saved.kits || []) : (saved.baskets || []));
+      this.onToast(`${this.type === 'kit' ? 'Kit' : 'Cesta'} ${next.ativo ? 'ativado(a)' : 'desativado(a)'} no Supabase.`, 'success');
       await this.onReload();
     } catch (error) {
       this.onToast(error?.message || String(error), 'error');
     }
-  }
-}
+  }}

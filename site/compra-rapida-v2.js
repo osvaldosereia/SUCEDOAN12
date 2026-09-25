@@ -6,8 +6,8 @@
   const PROFILE_KEY = 'da_compra_rapida_perfil_v1';
   const OPEN_CART_KEY = 'da_compra_rapida_abrir_carrinho_v1';
   const CONFIG_URLS = [
-    'https://cedar-chemist-310801-default-rtdb.firebaseio.com/config_compra_rapida.json',
-    'site/compra-rapida.json'
+    'site/compra-rapida.json',
+    'compra-rapida.json'
   ];
   const CATALOG_URLS = ['site/produtos-home.json', 'produtos-home.json'];
   const app = document.getElementById('app');

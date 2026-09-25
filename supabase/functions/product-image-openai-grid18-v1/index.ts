@@ -1,21 +1,20 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import {createClient} from 'npm:@supabase/supabase-js@2.112.3';
 import {
-  TerminalError,arr,clean,resolveTrustedSource,resolveFirebaseProduct,sha256Text,
+  TerminalError,arr,clean,resolveTrustedSource,sha256Text,
 } from './source.mjs';
 import {
   MODEL,VALIDATOR_MODEL,composeSheet,cropCell,generateGrid,generationCost,
   prepareCell,proratedGenerationUsage,inspectSource,validateGenerated,
 } from './image.mjs';
 import {
-  PIPELINE_VERSION,firebaseProductActive,sourceRecoverableForGrid,
+  PIPELINE_VERSION,sourceRecoverableForGrid,
 } from './policy.mjs';
 import {findReplacementSource} from './research.mjs';
 
 const PROJECT_HOST='ssbesxgaijknwsjbsbcz.supabase.co';
 const PUBLIC_BUCKET='product-images';
 const BATCH_BUCKET='product-image-batches';
-const FIREBASE_PRODUCTS='https://cedar-chemist-310801-default-rtdb.firebaseio.com/produtos.json';
 const STAGE_CHUNK=6;
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
 const extFor=t=>t==='image/png'?'png':t==='image/jpeg'?'jpg':'webp';
@@ -74,7 +73,7 @@ async function loadItems(sb,batchId){
 }
 async function loadProducts(sb,ids){
   if(!ids.length)return new Map();
-  const q=await sb.from('products').select('id,name,brand,packaging,gtin,sku,firebase_key,image_url,image_original_url,image_source_url,image_source_origin,image_ai_status,image_ai_attempts,image_ai_pipeline_version,is_active').in('id',ids);
+  const q=await sb.from('products').select('id,name,brand,packaging,gtin,sku,image_url,image_original_url,image_firebase_source_url,image_source_url,image_source_origin,image_ai_status,image_ai_attempts,image_ai_pipeline_version,is_active').in('id',ids);
   if(q.error)throw new Error(`products_${clean(q.error.message,150)}`);
   return new Map(arr(q.data).map(p=>[String(p.id),p]));
 }
@@ -90,7 +89,7 @@ async function requeueWithoutConsumingAttempt(sb,item,errorMessage=null){
   }).eq('id',item.job_id);
 }
 
-async function releaseBatchForMember(sb,batch,items,bad,message,{firebaseInactive=false}={}){
+async function releaseBatchForMember(sb,batch,items,bad,message){
   const now=new Date().toISOString();
   for(const item of items){
     const filler=item.is_filler===true;
@@ -109,7 +108,6 @@ async function releaseBatchForMember(sb,batch,items,bad,message,{firebaseInactiv
         image_ai_status:terminal?'rejected':'source_rejected',
         image_ai_error:terminal?`manual_review:${message}`:message,updated_at:now,
       };
-      if(firebaseInactive){update.is_active=false;update.image_ai_status='error';update.image_ai_error='firebase_inactive';}
       await sb.from('products').update(update).eq('id',item.product_id);
     }else{
       await requeueWithoutConsumingAttempt(sb,item,null);
@@ -146,12 +144,12 @@ async function ensureBatch(sb){
   return q.data;
 }
 
-async function bestSource(sb,supabaseUrl,key,product,fb){
+async function bestSource(sb,supabaseUrl,key,product){
   let source=null,inspection=null;
   const forceResearch=product.image_ai_status==='source_rejected';
   if(!forceResearch){
     try{
-      source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product,fb);
+      source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product);
       const checked=await inspectSource(key,product,source);
       inspection=checked.inspection;
       if(checked.accepted)return{...source,inspection};
@@ -172,12 +170,10 @@ async function bestSource(sb,supabaseUrl,key,product,fb){
 }
 
 async function prepareOne(sb,supabaseUrl,key,batch,item,product){
-  if(!product)return{ok:false,item,error:'product_not_found',firebaseInactive:false};
+  if(!product)return{ok:false,item,error:'product_not_found'};
+  if(product.is_active!==true)return{ok:false,item,product,error:'product_inactive'};
   try{
-    const fb=await resolveFirebaseProduct(product);
-    if(!fb.active)return{ok:false,item,product,error:'firebase_inactive',firebaseInactive:true};
-    if(product.is_active!==true)await sb.from('products').update({is_active:true,updated_at:new Date().toISOString()}).eq('id',product.id);
-    const source=await bestSource(sb,supabaseUrl,key,product,fb);
+    const source=await bestSource(sb,supabaseUrl,key,product);
     await persistSource(sb,product,source,String(item.job_id),String(item.id),item.is_filler===true);
     const cell=await prepareCell(source);
     const path=`grid18/v2/prepared/${batch.id}/p${String(item.position).padStart(2,'0')}.png`;
@@ -189,7 +185,7 @@ async function prepareOne(sb,supabaseUrl,key,batch,item,product){
     }).eq('id',item.id);
     return{ok:true,item,product,result:{position:item.position,ok:true,filler:item.is_filler===true,source_origin:source.origin}};
   }catch(e){
-    return{ok:false,item,product,error:clean(e instanceof Error?e.message:e,260),firebaseInactive:false};
+    return{ok:false,item,product,error:clean(e instanceof Error?e.message:e,260)};
   }
 }
 
@@ -203,7 +199,7 @@ async function prepareStage(sb,supabaseUrl,key,batch,items){
   const outcomes=await Promise.all(todo.map(item=>prepareOne(sb,supabaseUrl,key,batch,item,products.get(String(item.product_id)))));
   const failed=outcomes.find(x=>!x.ok);
   if(failed){
-    await releaseBatchForMember(sb,batch,items,failed.item,failed.error,{firebaseInactive:failed.firebaseInactive===true});
+    await releaseBatchForMember(sb,batch,items,failed.item,failed.error);
     return{stage:'error',error:failed.error,product_id:failed.product?.id||failed.item.product_id};
   }
   const q=await sb.from('product_image_batch_items').select('id',{count:'exact',head:true}).eq('batch_id',batch.id).eq('status','prepared');
@@ -275,15 +271,14 @@ async function validateOne(sb,supabaseUrl,key,batch,item,product,grid,shared){
     return{position:item.position,filler:true,accepted:true};
   }
   try{
-    const fb=await resolveFirebaseProduct(product);
-    if(!fb.active){
+    if(product.is_active!==true){
       const now=new Date().toISOString();
-      await sb.from('product_image_batch_items').update({status:'error',error_message:'firebase_inactive',updated_at:now}).eq('id',item.id);
-      await sb.from('product_image_jobs').update({status:'rejected',force_individual:false,error_message:'firebase_inactive',processed_at:now,updated_at:now}).eq('id',item.job_id);
-      await sb.from('products').update({is_active:false,image_ai_status:'error',image_ai_error:'firebase_inactive',updated_at:now}).eq('id',product.id);
-      return{position:item.position,accepted:false,error:'firebase_inactive'};
+      await sb.from('product_image_batch_items').update({status:'error',error_message:'product_inactive',updated_at:now}).eq('id',item.id);
+      await sb.from('product_image_jobs').update({status:'rejected',force_individual:false,error_message:'product_inactive',processed_at:now,updated_at:now}).eq('id',item.job_id);
+      await sb.from('products').update({image_ai_status:'error',image_ai_error:'product_inactive',updated_at:now}).eq('id',product.id);
+      return{position:item.position,accepted:false,error:'product_inactive'};
     }
-    const source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product,fb);
+    const source=await resolveTrustedSource(supabaseUrl,PROJECT_HOST,product);
     const crop=await cropCell(grid,item.position);
     const check=await validateGenerated(key,source,crop);
     const now=new Date().toISOString();
@@ -363,43 +358,12 @@ async function advance(sb,supabaseUrl,key){
   return{stage:batch.status};
 }
 
-function firebaseSourceUrl(p){return clean(p?.imagem||p?.imagem_url||p?.url_imagem||p?.imagem_anterior,1800)||null;}
-function firebaseGtin(p){return clean(p?.gtin||p?.ean,40).replace(/\D/g,'');}
-async function syncFirebaseCatalog(sb){
-  const r=await fetch(FIREBASE_PRODUCTS,{headers:{Accept:'application/json','User-Agent':'DonaAntonia-Grid18/2.0'},signal:AbortSignal.timeout(45000)});
-  if(!r.ok)throw new Error(`firebase_catalog_http_${r.status}`);
-  const raw=await r.json().catch(()=>null);
-  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('firebase_catalog_invalid');
-  const byKey=new Map(Object.entries(raw)),byGtin=new Map();
-  for(const [key,p] of byKey){
-    if(!p||typeof p!=='object')continue;
-    const g=firebaseGtin(p);if(g&&!byGtin.has(g))byGtin.set(g,{key,product:p});
-  }
-  const rows=[];
-  for(let from=0;from<5000;from+=1000){
-    const q=await sb.from('products').select('id,firebase_key,gtin,is_active,image_firebase_source_url,image_ai_pipeline_version').order('id').range(from,from+999);
-    if(q.error)throw new Error(`product_sync_read_${clean(q.error.message,140)}`);
-    rows.push(...arr(q.data));if((q.data||[]).length<1000)break;
-  }
-  const changes=[];let matched=0,active=0;
-  for(const p of rows){
-    let key=clean(p.firebase_key,180),fb=key?byKey.get(key):null;
-    if(!fb){const g=clean(p.gtin,40).replace(/\D/g,'');const m=g?byGtin.get(g):null;if(m){key=m.key;fb=m.product;}}
-    const isActive=fb?firebaseProductActive(fb):false,sourceUrl=fb?firebaseSourceUrl(fb):null;
-    if(fb)matched++;if(isActive)active++;
-    if(Boolean(p.is_active)!==isActive||clean(p.image_firebase_source_url,1800)!==clean(sourceUrl,1800)){
-      changes.push({id:p.id,firebase_key:key||null,active:isActive,source_url:sourceUrl});
-    }
-  }
-  let changed=0;
-  if(changes.length){
-    const q=await sb.rpc('sync_product_image_firebase_v2',{p_changes:changes});
-    if(q.error)throw new Error(`firebase_sync_rpc_${clean(q.error.message,180)}`);
-    changed=Number(q.data||0);
-  }
+async function maintainSupabaseCatalog(sb){
+  const activeResult=await sb.from('products').select('id',{count:'exact',head:true}).eq('is_active',true);
+  if(activeResult.error)throw new Error(`product_maintenance_read_${clean(activeResult.error.message,140)}`);
   const enq=await sb.rpc('enqueue_product_image_jobs_v3',{p_limit:500});
   if(enq.error)throw new Error(`enqueue_v3_${clean(enq.error.message,180)}`);
-  return{firebase_records:byKey.size,supabase_products:rows.length,matched,active,changed,enqueued:Number(enq.data||0)};
+  return{source:'supabase',active_products:Number(activeResult.count||0),enqueued:Number(enq.data||0)};
 }
 
 async function authorized(sb,supplied){
@@ -415,7 +379,7 @@ Deno.serve(async req=>{
   const sb=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
   if(!(await authorized(sb,req.headers.get('x-da-product-image-key')||'')))return json({ok:false,error:'unauthorized'},401);
   let body={};try{body=await req.json();}catch{return json({ok:false,error:'invalid_json'},400);}
-  if(body?.event==='healthcheck')return json({ok:true,pipeline_version:PIPELINE_VERSION,model:MODEL,validator_model:VALIDATOR_MODEL,grid:'3x6/18',individual_generation:false,stage_chunk:STAGE_CHUNK});
+  if(body?.event==='healthcheck')return json({ok:true,pipeline_version:PIPELINE_VERSION,model:MODEL,validator_model:VALIDATOR_MODEL,grid:'3x6/18',individual_generation:false,stage_chunk:STAGE_CHUNK,product_source:'supabase_only'});
   if(body?.event==='fallback')return json({ok:false,error:'individual_generation_disabled',pipeline_version:PIPELINE_VERSION},409);
   if(!['advance','maintenance'].includes(body?.event))return json({ok:false,error:'unknown_event'},400);
 
@@ -428,7 +392,7 @@ Deno.serve(async req=>{
     let key=Deno.env.get('OPENAI_API_KEY')||'';
     if(!key){try{const q=await sb.rpc('get_conversation_worker_provider_secret_v1');if(typeof q.data==='string')key=q.data;}catch{}}
     if(body?.event==='maintenance'){
-      const result=await syncFirebaseCatalog(sb);
+      const result=await maintainSupabaseCatalog(sb);
       return json({ok:true,event:'maintenance',pipeline_version:PIPELINE_VERSION,...result});
     }
     if(!key)return json({ok:false,error:'openai_key_missing'},500);

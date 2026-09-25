@@ -1,29 +1,13 @@
 import { normalizeCollectionForPublish } from '../producao-v2/js/core/collections.js';
 import { money, number, productCode, productImage, productKey, productName, text } from '../producao-v2/js/core/utils.js';
-import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js';
-import { callMake, compactKitForMake, extractMakeImage, unwrapMakeResult } from '../producao-v2/js/services/make.js?build=20260805-kit-editor-v4';
-import { upsertBase64File } from '../producao-v2/js/services/github-binary.js';
+import { adminProductsApi, ensureAdminAuthenticated } from '../admin/admin-secure-api-v1.js';
 
 const STORAGE_KEY = 'da_admin_v2_config';
 const CONTRACT_VERSION = '2026-08-05-kit-editor-v4';
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%" height="100%" fill="#f1f3f0"/><text x="50%" y="52%" text-anchor="middle" fill="#879087" font-family="Arial" font-size="28">capa ainda não gerada</text></svg>')}`;
 const DEFAULT_CONFIG = {
-  firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
-  productsNode: 'produtos',
   writeMode: true,
   collectionsWriteMode: true,
-  githubToken: '',
-  githubOwner: 'osvaldosereia',
-  githubRepo: 'SUCEDOAN12',
-  githubBranch: 'main',
-  kitsPath: 'site/kits.json',
-  basketsPath: 'site/produtos-cesta-basica.json',
-  kitQueuePath: 'carrosseis-kits/fila.json',
-  catalogVersionPath: 'catalog-version.json',
-  githubKitImagesPath: 'site/img/kits',
-  makeTextWebhookUrl: '',
-  makeImageWebhookUrl: '',
-  makeAiWebhookUrl: '',
 };
 
 const $ = selector => document.querySelector(selector);
@@ -50,6 +34,32 @@ function saveConfig(next) {
   state.config = { ...getConfig(), ...next };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
 }
+function adaptSupabaseProduct(p = {}) {
+  return {
+    ...p,
+    firebaseKey: '',
+    codigo: text(p.sku || p.gtin || p.id),
+    nome: text(p.name),
+    preco: number(p.price),
+    preco_custo: number(p.cost),
+    estoque: number(p.stock),
+    url_imagem: text(p.image_url),
+    marca: text(p.brand),
+    categoria: text(p.category),
+    subcategoria: text(p.subcategory),
+    embalagem: text(p.packaging),
+    gondola: text(p.gondola),
+    prateleira: text(p.shelf),
+    validade: text(p.validity_date),
+    situacao: p.is_active === false ? 'I' : 'A',
+    ativo: p.is_active !== false,
+  };
+}
+async function loadProductsFromSupabase() {
+  const data = await adminProductsApi('catalog', { limit: 2500 });
+  return (data.products || []).map(adaptSupabaseProduct);
+}
+
 function round(value) { return Math.round(number(value) * 100) / 100; }
 function brl(value) { return round(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace(/\u00a0/g, ' '); }
 function localDate() {
@@ -86,9 +96,7 @@ function availableKits() {
   if (!state.items.length) return 0;
   return Math.max(0, Math.min(...state.items.map(row => Math.floor(Math.max(0, number(row.product.estoque)) / Math.max(1, row.qty)))));
 }
-function configReady() {
-  return Boolean(text(state.config.githubToken) && text(state.config.makeTextWebhookUrl || state.config.makeAiWebhookUrl) && text(state.config.makeImageWebhookUrl || state.config.makeAiWebhookUrl));
-}
+function configReady() { return true; }
 function ensureIdentity() {
   if (!state.content.id) state.content.id = `kit${Date.now()}${Math.floor(100 + Math.random() * 900)}`;
   if (!state.content.code) state.content.code = uniqueCode();
@@ -165,19 +173,14 @@ async function loadData() {
   $('#connectionChip').textContent = 'Atualizando dados…';
   $('#connectionChip').className = 'chip warn';
   try {
-    const firebaseBase = text(state.config.firebaseUrl).replace(/\/+$/, '');
-    const response = await fetch(`${firebaseBase}/${encodeURIComponent(state.config.productsNode || 'produtos')}.json?_=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`Firebase retornou ${response.status}`);
-    const raw = await response.json();
-    state.products = Object.entries(raw || {}).map(([firebaseKey, value]) => ({ ...(value || {}), firebaseKey, _key: firebaseKey }));
-    if (text(state.config.githubToken)) {
-      const collections = await loadCollections(state.config);
-      state.kits = collections.kits || [];
-      state.queue = collections.queue || [];
-    } else {
-      state.kits = [];
-      state.queue = [];
-    }
+    await ensureAdminAuthenticated();
+    const [products, collections] = await Promise.all([
+      loadProductsFromSupabase(),
+      adminProductsApi('kit_catalog'),
+    ]);
+    state.products = products;
+    state.kits = collections.kits || [];
+    state.queue = [];
     $('#connectionChip').textContent = 'Dados atualizados';
     $('#connectionChip').className = 'chip ok';
     $('#productsChip').textContent = `${state.products.length} produtos`;
@@ -377,7 +380,7 @@ function buildKitContext() {
     raw,
     normalized,
     audit: normalizedResult.audit,
-    kit: compactKitForMake(normalized, state.products),
+    kit: normalized,
     financials: f,
   };
 }
@@ -400,34 +403,7 @@ function textInstructions(context) {
   return `Crie um nome curto, criativo, comercial e chamativo para um kit de supermercado. Analise os produtos reais e identifique a ocasião de uso ou benefício comum. O nome deve ter de 2 a 6 palavras além da palavra Kit, no máximo 48 caracteres, ser fácil de entender e não pode ser genérico. Não use preço, percentual, emoji, aspas, código ou a expressão Novo Kit Promocional. Produtos: ${productLines}. Para a descrição, escreva somente uma introdução comercial curta de 1 ou 2 frases. Não calcule nem mencione preços na introdução. Os valores oficiais, que não podem ser alterados, são: valor separado ${f.preco_original_formatado}; preço promocional ${f.preco_promocional_formatado}; economia ${f.economia_formatada}; desconto ${f.desconto_formatado}. Responda em JSON válido com os campos nome e descricao.`;
 }
 async function generateText() {
-  const errors = operationalErrors({ requireGithub: false, requireTextWebhook: true, requireImageWebhook: false });
-  if (errors.length) throw new Error(errors.join(' · '));
-  const context = buildKitContext();
-  const payload = {
-    acao: 'gerar_descricao_kit',
-    origem: 'kit_mobile_dona_antonia',
-    versao_contrato: CONTRACT_VERSION,
-    kit: context.kit,
-    kit_detalhado: context.normalized,
-    dados_financeiros: context.financials,
-    produtos_identificados: productBrief(),
-    regras_nome: {
-      obrigatorio: true, curto: true, criativo: true, comercial: true,
-      maximo_caracteres: 48, maximo_palavras_sem_kit: 6,
-      proibidos: ['Novo kit promocional', 'Kit promocional', 'preços', 'percentuais', 'emojis'],
-    },
-    instrucoes: textInstructions(context),
-    resposta_obrigatoria: { formato: 'json', campos: ['nome', 'descricao'] },
-  };
-  const result = unwrapMakeResult(await callMake(state.config, 'text', payload));
-  const returnedDescription = result.descricao || result.description || result.texto || result.copy || '';
-  const returnedName = result.nome_sugerido || result.nome_curto || result.nome || result.name || result.titulo || '';
-  state.content.name = cleanAiName(returnedName);
-  state.content.description = canonicalDescription(returnedDescription);
-  state.textSignature = compositionSignature();
-  invalidateImage();
-  syncStateToEditor();
-  renderAll();
+  throw new Error('A geração automática de texto está pausada. Escreva o título e a descrição manualmente; o kit pode ser salvo normalmente no Supabase.');
 }
 
 function syncEditorToState() {
@@ -447,72 +423,31 @@ function coverInstructions(context) {
   return `Crie a imagem FINAL quadrada de e-commerce para este kit promocional da Dona Antônia. Use as fotos reais dos produtos e não invente embalagens. Produtos: ${products}. Título obrigatório e exato: "${state.content.name}". A descrição abaixo serve como contexto visual e não deve ser impressa inteira na arte: "${state.content.description}". Escreva na imagem exatamente, sem recalcular e sem alterar nenhum caractere dos valores: DE ${f.preco_original_formatado}; POR ${f.preco_promocional_formatado}; ECONOMIZE ${f.economia_formatada}; ${f.desconto_formatado} OFF. O preço promocional deve ser o maior destaque. Não use nenhum outro preço ou percentual. Não adicione textos promocionais além do título e desses quatro dados financeiros. Resultado final limpo, profissional, legível no celular, sem moldura ou máscara adicionada posteriormente.`;
 }
 async function generateCover() {
-  syncEditorToState();
-  if (!contentReady()) throw new Error('Gere ou preencha o título e a descrição antes de criar a capa.');
-  const errors = operationalErrors({ requireGithub: true, requireTextWebhook: false, requireImageWebhook: true });
-  if (errors.length) throw new Error(errors.join(' · '));
-  const context = buildKitContext();
-  if (!context.kit.referencias_imagens.length) throw new Error('Os produtos precisam ter imagens públicas para gerar a capa.');
-  const finalPath = `${text(state.config.githubKitImagesPath || 'site/img/kits').replace(/\/+$/, '')}/${slug(context.normalized.codigo)}.webp`;
-  const prompt = coverInstructions(context);
-  const result = await callMake(state.config, 'image', {
-    acao: 'gerar_capa_kit',
-    origem: 'kit_mobile_dona_antonia',
-    versao_contrato: CONTRACT_VERSION,
-    quantidade_imagens: 1,
-    kit: context.kit,
-    kit_detalhado: { ...context.normalized, nome: state.content.name, descricao: state.content.description },
-    dados_financeiros: context.financials,
-    titulo_final: state.content.name,
-    descricao_final: state.content.description,
-    imagem_path: finalPath,
-    storage_destino: 'github',
-    layout_sem_texto: false,
-    renderizar_precos: true,
-    renderizar_textos: true,
-    usar_imagem_ia_sem_mascara: true,
-    instrucoes: prompt,
-    prompt,
-  });
-  const aiImage = extractMakeImage(result);
-  if (!aiImage) throw new Error('O Make não retornou a imagem final do kit.');
-  if (/^data:image\//i.test(aiImage)) {
-    const uploaded = await upsertBase64File(state.config, finalPath, aiImage, `Cria capa por IA do kit ${state.content.name} pelo Kit Mobile`);
-    state.content.image = uploaded.url;
-    state.content.imagePath = finalPath;
-  } else {
-    state.content.image = aiImage;
-    state.content.imagePath = text(result.imagem_path || result.image_path || result.path || finalPath);
-  }
-  state.imageSignature = coverSignature();
-  renderAll();
+  throw new Error('A geração automática de capa está pausada. O kit pode ser salvo no Supabase sem executar Make ou IA.');
 }
 
-function operationalErrors({ requireGithub = true, requireTextWebhook = true, requireImageWebhook = true } = {}) {
+function operationalErrors() {
   const errors = [];
   if (!state.items.length) errors.push('Adicione ao menos um produto');
   state.items.forEach(row => {
     if (number(row.product.preco) <= 0) errors.push(`${productName(row.product)} está sem preço`);
     if (number(row.product.estoque) < row.qty) errors.push(`${productName(row.product)} sem estoque suficiente`);
   });
-  if (requireGithub && !text(state.config.githubToken)) errors.push('Configure o token GitHub');
-  if (requireTextWebhook && !text(state.config.makeTextWebhookUrl || state.config.makeAiWebhookUrl)) errors.push('Configure o webhook de textos do Make');
-  if (requireImageWebhook && !text(state.config.makeImageWebhookUrl || state.config.makeAiWebhookUrl)) errors.push('Configure o webhook de imagens do Make');
   return [...new Set(errors)];
 }
 function publishErrors() {
-  const errors = operationalErrors({ requireGithub: true, requireTextWebhook: false, requireImageWebhook: false });
-  if (!contentReady()) errors.push('Gere ou preencha o título e a descrição');
-  if (!text(state.content.image)) errors.push('Gere a capa pela IA');
-  if (state.imageSignature && state.imageSignature !== coverSignature()) errors.push('A capa está desatualizada; gere novamente');
+  const errors = operationalErrors();
+  if (!text(state.content.name)) errors.push('Preencha o título do kit');
+  if (!text(state.content.description)) errors.push('Preencha a descrição do kit');
   return [...new Set(errors)];
 }
 async function publish() {
   syncEditorToState();
   const errors = publishErrors();
   if (errors.length) throw new Error(errors.join(' · '));
-  setBusy(true, 'Publicando o kit pronto…', 'Salvando exatamente o título, a descrição e a imagem exibidos nesta tela.');
+  setBusy(true, 'Salvando kit…', 'Gravando composição e valores no Supabase.');
   try {
+    await ensureAdminAuthenticated();
     const context = buildKitContext();
     const current = {
       ...context.normalized,
@@ -522,7 +457,7 @@ async function publish() {
       imagem_path: state.content.imagePath,
       atualizado_em: new Date().toISOString(),
     };
-    const normalizedResult = normalizeCollectionForPublish(current, 'kit', state.products, state.queue);
+    const normalizedResult = normalizeCollectionForPublish(current, 'kit', state.products, []);
     if (normalizedResult.audit.errors.length) throw new Error(normalizedResult.audit.errors.join(' · '));
     const normalized = {
       ...normalizedResult.normalized,
@@ -530,16 +465,10 @@ async function publish() {
       produtos: normalizedResult.normalized.produtos,
       dados_financeiros: financials(),
     };
-    const list = state.kits.filter(kit => text(kit.id) !== text(normalized.id));
-    list.push(normalized);
-    const saved = await saveCollectionList(state.config, 'kit', list, state.products, state.queue, {
-      preserveInvalidExisting: true,
-      changedId: normalized.id,
-      changedFields: Object.keys(normalized),
-    });
-    state.kits = saved.list || list;
+    const saved = await adminProductsApi('save_kit', { kit: normalized });
+    state.kits = saved.kits || [];
     $('#kitsChip').textContent = `${state.kits.length} kits`;
-    toast(`Kit “${normalized.nome}” publicado com sucesso.`, 'success');
+    toast(`Kit “${normalized.nome}” salvo no Supabase.`, 'success');
     reset();
   } finally {
     setBusy(false);
@@ -613,23 +542,23 @@ function renderStaleNotice() {
   else if (imageStale) notice.textContent = 'O título ou a descrição mudou. Gere a capa novamente para usar os textos editados.';
 }
 function renderActions() {
-  const textErrors = operationalErrors({ requireGithub: false, requireTextWebhook: true, requireImageWebhook: false });
-  $('#generateText').disabled = Boolean(state.busy || textErrors.length);
-  const coverErrors = operationalErrors({ requireGithub: true, requireTextWebhook: false, requireImageWebhook: true });
-  $('#generateCover').disabled = Boolean(state.busy || coverErrors.length || !contentReady());
-  $('#generateCover').textContent = state.content.image ? 'Gerar nova capa com os textos atuais' : 'Gerar capa com os textos atuais';
+  $('#generateText').disabled = true;
+  $('#generateCover').disabled = true;
+  $('#generateText').title = 'Automação pausada';
+  $('#generateCover').title = 'Automação pausada';
+  $('#generateCover').textContent = 'Geração de capa pausada';
 }
 function renderPublish() {
   const errors = publishErrors();
   const button = $('#publishButton');
   button.disabled = Boolean(errors.length || state.busy);
-  button.textContent = state.busy ? 'Processando…' : 'Publicar kit pronto';
+  button.textContent = state.busy ? 'Processando…' : 'Salvar kit no Supabase';
   const notice = $('#publishNotice');
   if (errors.length) {
     notice.textContent = errors.join(' · ');
     notice.className = 'notice danger';
   } else {
-    notice.textContent = `Tudo pronto para publicar. Estoque atual permite ${availableKits()} kit(s).`;
+    notice.textContent = `Pronto para salvar no Supabase. Estoque atual permite ${availableKits()} kit(s).`;
     notice.className = 'notice';
   }
 }
@@ -643,13 +572,6 @@ function renderAll() {
 }
 
 function openSettings() {
-  const config = getConfig();
-  $('#cfgToken').value = config.githubToken || '';
-  $('#cfgTextWebhook').value = config.makeTextWebhookUrl || config.makeAiWebhookUrl || '';
-  $('#cfgImageWebhook').value = config.makeImageWebhookUrl || config.makeAiWebhookUrl || '';
-  $('#cfgOwner').value = config.githubOwner || 'osvaldosereia';
-  $('#cfgRepo').value = config.githubRepo || 'SUCEDOAN12';
-  $('#cfgBranch').value = config.githubBranch || 'main';
   $('#settingsDrawer').classList.add('open');
   $('#settingsDrawer').setAttribute('aria-hidden', 'false');
 }
@@ -657,24 +579,12 @@ function closeSettings() {
   $('#settingsDrawer').classList.remove('open');
   $('#settingsDrawer').setAttribute('aria-hidden', 'true');
 }
-
 $('#settingsOpen').addEventListener('click', openSettings);
 $('#settingsClose').addEventListener('click', closeSettings);
 $('#settingsDrawer').addEventListener('click', event => { if (event.target.id === 'settingsDrawer') closeSettings(); });
-$('#settingsSave').addEventListener('click', async () => {
-  saveConfig({
-    githubToken: $('#cfgToken').value.trim(),
-    makeTextWebhookUrl: $('#cfgTextWebhook').value.trim(),
-    makeImageWebhookUrl: $('#cfgImageWebhook').value.trim(),
-    githubOwner: $('#cfgOwner').value.trim() || 'osvaldosereia',
-    githubRepo: $('#cfgRepo').value.trim() || 'SUCEDOAN12',
-    githubBranch: $('#cfgBranch').value.trim() || 'main',
-    writeMode: true,
-    collectionsWriteMode: true,
-  });
+$('#settingsSave').addEventListener('click', () => {
   closeSettings();
-  toast('Configurações salvas.', 'success');
-  await loadData();
+  toast('Kits usam somente o Supabase; não há credenciais locais para configurar.', 'success');
 });
 $('#photoButton').addEventListener('click', () => $('#photoInput').click());
 $('#photoInput').addEventListener('change', event => detectPhoto(event.target.files?.[0]).catch(error => toast(error?.message || String(error), 'error')));
@@ -757,4 +667,5 @@ state.config = getConfig();
 syncStateToEditor();
 renderAll();
 await initDetector();
+await ensureAdminAuthenticated();
 await loadData();

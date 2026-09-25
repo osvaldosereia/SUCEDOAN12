@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - admin-geral-r1-r16-autonomous-20260919
+      - supabase-only-admin-migration-20260921
     paths:
       - 'admin/**'
       - 'video/**'
@@ -12,6 +13,10 @@ on:
       - 'cesta-mobile/**'
       - 'validades/**'
       - 'cadastro/**'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'scripts/test-supabase-only-phase1.mjs'
+      - 'docs/projects/supabase-only/**'
       - 'tests/admin-*.test.mjs'
       - 'docs/projects/admin-geral/**'
       - '.github/workflows/admin-geral-contracts.yml'
@@ -24,6 +29,10 @@ on:
       - 'cesta-mobile/**'
       - 'validades/**'
       - 'cadastro/**'
+      - 'supabase/functions/**'
+      - 'supabase/migrations/**'
+      - 'scripts/test-supabase-only-phase1.mjs'
+      - 'docs/projects/supabase-only/**'
       - 'tests/admin-*.test.mjs'
       - 'docs/projects/admin-geral/**'
       - '.github/workflows/admin-geral-contracts.yml'
@@ -66,3 +75,5 @@ jobs:
         run: node tests/admin-global-shell-v3-contract.test.mjs
       - name: Order separation print
         run: node tests/admin-order-separation-print-v1-contract.test.mjs
+      - name: Supabase-only phase 1
+        run: node scripts/test-supabase-only-phase1.mjs

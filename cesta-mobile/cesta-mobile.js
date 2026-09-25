@@ -1,23 +1,11 @@
 import { clone, money, number, productCode, productImage, productKey, productName, text } from '../producao-v2/js/core/utils.js';
 import { normalizeCollectionForPublish } from '../producao-v2/js/core/collections.js?admin_build=20260814-cestas-limites-v1';
-import { loadProducts } from '../producao-v2/js/services/firebase.js';
-import { loadCollections, saveCollectionList } from '../producao-v2/js/services/collections.js?admin_build=20260814-cestas-limites-v1';
+import { adminProductsApi, ensureAdminAuthenticated } from '../admin/admin-secure-api-v1.js';
 
 const STORAGE_KEY = 'da_admin_v2_config';
 const DEFAULT_CONFIG = {
-  firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
-  productsNode: 'produtos',
   writeMode: true,
   collectionsWriteMode: true,
-  githubToken: '',
-  githubOwner: 'osvaldosereia',
-  githubRepo: 'SUCEDOAN12',
-  githubBranch: 'main',
-  productsHomePath: 'site/produtos-home.json',
-  basketsPath: 'site/produtos-cesta-basica.json',
-  kitsPath: 'site/kits.json',
-  kitQueuePath: 'carrosseis-kits/fila.json',
-  catalogVersionPath: 'catalog-version.json',
 };
 
 const $ = selector => document.querySelector(selector);
@@ -36,6 +24,33 @@ function loadConfig() {
 function saveConfig(patch) {
   state.config = { ...loadConfig(), ...(patch || {}), writeMode: true, collectionsWriteMode: true };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.config));
+}
+
+function adaptSupabaseProduct(p = {}) {
+  return {
+    ...p,
+    firebaseKey: '',
+    codigo: text(p.sku || p.gtin || p.id),
+    nome: text(p.name),
+    preco: number(p.price),
+    preco_custo: number(p.cost),
+    estoque: number(p.stock),
+    url_imagem: text(p.image_url),
+    marca: text(p.brand),
+    categoria: text(p.category),
+    subcategoria: text(p.subcategory),
+    subsubcategoria: text(p.subsubcategory),
+    embalagem: text(p.packaging),
+    gondola: text(p.gondola),
+    prateleira: text(p.shelf),
+    validade: text(p.validity_date),
+    situacao: p.is_active === false ? 'I' : 'A',
+    ativo: p.is_active !== false,
+  };
+}
+async function loadProductsFromSupabase() {
+  const data = await adminProductsApi('catalog', { limit: 2500 });
+  return (data.products || []).map(adaptSupabaseProduct);
 }
 
 function escapeHtml(value = '') {
@@ -235,32 +250,18 @@ async function saveDraft() {
     $('#editorMessage').className = 'editor-message error';
     return;
   }
-  if (!text(state.config.githubToken)) {
-    openSettings();
-    showToast('Configure o token GitHub para publicar a cesta.', 'error');
-    return;
-  }
+  await ensureAdminAuthenticated();
   const normalizedResult = normalizeCollectionForPublish(draft, 'basket', state.products, state.queue);
   if (normalizedResult.audit.errors.length) {
     $('#editorMessage').textContent = normalizedResult.audit.errors.join(' · ');
     $('#editorMessage').className = 'editor-message error';
     return;
   }
-  const list = clone(state.baskets);
-  const previousId = text(state.editingId || normalizedResult.normalized.id);
-  const index = state.editingId ? list.findIndex(item => text(item.id) === state.editingId) : -1;
-  if (index >= 0) list[index] = normalizedResult.normalized;
-  else list.push(normalizedResult.normalized);
-  setBusy(true, 'Salvando cesta…', 'Atualizando o mesmo arquivo usado pelo Produção Admin e pelo site.');
+  setBusy(true, 'Salvando cesta…', 'Gravando a cesta no Supabase.');
   try {
-    const saved = await saveCollectionList(state.config, 'basket', list, state.products, state.queue, {
-      changedId: text(normalizedResult.normalized.id),
-      previousId,
-      originalCollection: state.original,
-      preserveInvalidExisting: true,
-    });
-    state.baskets = saved.list || list;
-    showToast(state.editingId ? 'Cesta atualizada e publicada.' : 'Cesta criada e publicada.', 'success');
+    const saved = await adminProductsApi('save_basket', { basket: normalizedResult.normalized });
+    state.baskets = saved.baskets || [];
+    showToast(state.editingId ? 'Cesta atualizada no Supabase.' : 'Cesta criada no Supabase.', 'success');
     resetEditor();
     renderBasketList();
     updateCounts();
@@ -286,7 +287,7 @@ function resetEditor() {
   $('#basketLimit').value = '';
   $('#editorMessage').textContent = '';
   $('#editorMessage').className = 'editor-message';
-  $('#saveButton').textContent = 'Salvar e publicar cesta';
+  $('#saveButton').textContent = 'Salvar cesta';
   renderItems();
 }
 
@@ -304,7 +305,7 @@ function editBasket(id) {
   const unlimited = basket.limite_ilimitado !== false && number(basket.limite_cestas) <= 0;
   $('#unlimitedLimit').checked = unlimited;
   $('#basketLimit').value = unlimited ? '' : Math.max(1, Math.floor(number(basket.limite_cestas)));
-  $('#saveButton').textContent = 'Atualizar e publicar cesta';
+  $('#saveButton').textContent = 'Atualizar cesta';
   $('#editorMessage').textContent = `Editando ${basket.nome}.`;
   $('#editorMessage').className = 'editor-message';
   renderItems();
@@ -314,11 +315,7 @@ function editBasket(id) {
 
 async function updateBasket(target, patch, actionLabel) {
   if (state.busy) return;
-  if (!text(state.config.githubToken)) {
-    openSettings();
-    showToast('Configure o token GitHub para alterar a cesta.', 'error');
-    return;
-  }
+  await ensureAdminAuthenticated();
   const list = clone(state.baskets);
   const index = list.findIndex(item => text(item.id) === text(target.id));
   if (index < 0) return;
@@ -326,10 +323,8 @@ async function updateBasket(target, patch, actionLabel) {
   list[index] = { ...list[index], ...(patch || {}), atualizado_em: new Date().toISOString() };
   setBusy(true, `${actionLabel}…`, 'Atualizando cestas oficiais.');
   try {
-    const saved = await saveCollectionList(state.config, 'basket', list, state.products, state.queue, {
-      changedId: text(target.id), previousId: text(target.id), originalCollection: original, preserveInvalidExisting: true,
-    });
-    state.baskets = saved.list || list;
+    const saved = await adminProductsApi('save_basket', { basket: list[index] });
+    state.baskets = saved.baskets || list;
     renderBasketList();
     updateCounts();
     showToast(`${actionLabel} concluído.`, 'success');
@@ -341,22 +336,15 @@ async function updateBasket(target, patch, actionLabel) {
 }
 
 async function deleteBasket(target) {
-  if (!window.confirm(`Excluir definitivamente a cesta “${target.nome || target.codigo}”?`)) return;
-  if (!text(state.config.githubToken)) {
-    openSettings();
-    showToast('Configure o token GitHub para excluir a cesta.', 'error');
-    return;
-  }
-  const list = state.baskets.filter(item => text(item.id) !== text(target.id));
-  setBusy(true, 'Excluindo cesta…', 'A cesta será removida do arquivo oficial.');
+  if (!window.confirm(`Arquivar/inativar a cesta “${target.nome || target.codigo}”? Ela continuará no histórico do Supabase.`)) return;
+  await ensureAdminAuthenticated();
+  setBusy(true, 'Arquivando cesta…', 'A cesta será inativada no Supabase, sem exclusão destrutiva.');
   try {
-    const saved = await saveCollectionList(state.config, 'basket', list, state.products, state.queue, {
-      deletedId: text(target.id), preserveInvalidExisting: true,
-    });
-    state.baskets = saved.list || list;
+    const saved = await adminProductsApi('archive_basket', { id: text(target.id) });
+    state.baskets = saved.baskets || [];
     renderBasketList();
     updateCounts();
-    showToast('Cesta excluída do Produção Admin e do site.', 'success');
+    showToast('Cesta arquivada no Supabase.', 'success');
   } catch (error) {
     showToast(error?.message || String(error), 'error');
   } finally {
@@ -384,7 +372,7 @@ function renderBasketList() {
     return `<article class="basket-list-card" data-basket-card="${escapeHtml(basket.id)}">
       <div class="basket-list-head"><div><h3>${escapeHtml(basket.nome || 'Sem nome')}</h3><small>${escapeHtml(basket.codigo || basket.id)}</small></div><span class="basket-badge ${active ? 'active' : 'inactive'}">${active ? 'Ativa' : 'Inativa'}</span></div>
       <div class="basket-card-metrics"><div><strong>${money(basket.preco)}</strong><span>Valor final</span></div><div><strong>${summary.items}</strong><span>Produtos</span></div><div><strong>${summary.available}</strong><span>Disponíveis</span></div><div><strong>${summary.unlimited ? 'Ilimitado' : Math.floor(number(basket.limite_cestas))}</strong><span>Limite</span></div></div>
-      <div class="basket-card-actions"><button type="button" data-basket-edit="${escapeHtml(basket.id)}">Editar</button><button type="button" data-basket-toggle="${escapeHtml(basket.id)}">${active ? 'Desativar' : 'Ativar'}</button><button class="danger" type="button" data-basket-delete="${escapeHtml(basket.id)}">Excluir</button></div>
+      <div class="basket-card-actions"><button type="button" data-basket-edit="${escapeHtml(basket.id)}">Editar</button><button type="button" data-basket-toggle="${escapeHtml(basket.id)}">${active ? 'Desativar' : 'Ativar'}</button><button class="danger" type="button" data-basket-delete="${escapeHtml(basket.id)}">Arquivar</button></div>
     </article>`;
   }).join('') : '<div class="empty-state">Nenhuma cesta encontrada.</div>';
 }
@@ -400,18 +388,19 @@ async function loadData() {
   state.config = loadConfig();
   setConnection('Atualizando dados…', 'warn');
   try {
+    await ensureAdminAuthenticated();
     const [products, collections] = await Promise.all([
-      loadProducts(state.config),
-      loadCollections(state.config),
+      loadProductsFromSupabase(),
+      adminProductsApi('basket_catalog'),
     ]);
     state.products = products || [];
     state.baskets = collections.baskets || [];
-    state.queue = collections.queue || [];
+    state.queue = [];
     setConnection('Dados atualizados', 'ok');
     updateCounts();
     renderItems();
     renderBasketList();
-    if (!text(state.config.githubToken)) showToast('Para publicar, abra as configurações e informe o token GitHub.');
+
   } catch (error) {
     console.error(error);
     setConnection('Falha ao carregar', 'danger');
@@ -475,11 +464,6 @@ async function scanPhoto(file) {
 }
 
 function openSettings() {
-  const config = loadConfig();
-  $('#githubToken').value = config.githubToken || '';
-  $('#firebaseUrl').value = config.firebaseUrl || DEFAULT_CONFIG.firebaseUrl;
-  $('#productsNode').value = config.productsNode || 'produtos';
-  $('#basketsPath').value = config.basketsPath || DEFAULT_CONFIG.basketsPath;
   $('#settingsBackdrop').hidden = false;
   $('#settingsDrawer').classList.add('open');
   $('#settingsDrawer').setAttribute('aria-hidden', 'false');
@@ -550,16 +534,9 @@ function bind() {
   $('#settingsButton').addEventListener('click', openSettings);
   $('#closeSettingsButton').addEventListener('click', closeSettings);
   $('#settingsBackdrop').addEventListener('click', closeSettings);
-  $('#saveSettingsButton').addEventListener('click', async () => {
-    saveConfig({
-      githubToken: text($('#githubToken').value),
-      firebaseUrl: text($('#firebaseUrl').value) || DEFAULT_CONFIG.firebaseUrl,
-      productsNode: text($('#productsNode').value) || 'produtos',
-      basketsPath: text($('#basketsPath').value) || DEFAULT_CONFIG.basketsPath,
-    });
+  $('#saveSettingsButton').addEventListener('click', () => {
     closeSettings();
-    showToast('Configurações salvas.', 'success');
-    await loadData();
+    showToast('Cestas usam somente o Supabase; nenhuma configuração local é necessária.', 'success');
   });
 }
 
@@ -568,6 +545,7 @@ async function start() {
   bind();
   renderItems();
   await initDetector();
+  await ensureAdminAuthenticated();
   await loadData();
 }
 

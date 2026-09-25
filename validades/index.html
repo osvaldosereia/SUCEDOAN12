@@ -22,7 +22,7 @@
         <div class="ops-brand-mark">DA</div>
         <div class="ops-brand-copy">
           <strong class="ops-brand-title">Validades e estoque</strong>
-          <small class="ops-brand-subtitle">Produtos que vão vencer · Firebase</small>
+          <small class="ops-brand-subtitle">Produtos que vão vencer · Supabase</small>
         </div>
       </div>
       <div class="ops-actions">
@@ -41,7 +41,7 @@
 </header>
 
 <main class="validity-main">
-  <div id="status" class="status warn">Carregando produtos diretamente do Firebase…</div>
+  <div id="status" class="status warn">Carregando produtos do Supabase…</div>
 
   <section class="card filters-card">
     <div class="filters-grid">
@@ -83,10 +83,20 @@
   </div>
 </div>
 
+<dialog id="adminAuthDialog" class="validity-auth-dialog">
+  <form id="adminAuthForm" method="dialog" class="validity-auth-card">
+    <strong>Acesso administrativo</strong>
+    <p>Digite o PIN de 6 dígitos para consultar e alterar produtos no Supabase.</p>
+    <input id="adminAuthPin" class="input" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="PIN de 6 dígitos" required>
+    <div id="adminAuthStatus" class="auth-status" aria-live="polite"></div>
+    <div class="auth-actions"><a class="btn" href="../admin/">Voltar ao Admin</a><button id="adminAuthSubmit" class="btn green" type="submit">Entrar</button></div>
+  </form>
+</dialog>
+
 <div id="busy" class="busy"><div id="busyText">Carregando…</div></div>
 <script src="../admin/config.js?v=20260920-r3-context"></script>
 <script type="module" src="../admin/admin-global-shell-v3.js?v=20260921-2"></script>
-<script src="./validades.js?v=20260813-v2"></script>
+<script type="module" src="./validades-supabase-v1.js?v=20260921-1"></script>
 <script src="./upcoming-only.js?v=20260813-v1"></script>
 </body>
 </html>

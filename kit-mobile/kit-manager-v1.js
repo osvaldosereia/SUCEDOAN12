@@ -2,14 +2,11 @@ import '../producao-v2/js/kit-lifecycle-admin.js?mobile_build=20260805-kit-manag
 import '../producao-v2/js/collection-concurrency.js?mobile_build=20260805-kit-manager-v1';
 import { installCollectionImageResolver } from '../producao-v2/js/collection-image-resolver.js';
 import { CollectionsModule } from '../producao-v2/js/modules/collections.js';
-import { loadProducts } from '../producao-v2/js/services/firebase.js';
-import { loadCollections } from '../producao-v2/js/services/collections.js';
+import { adminProductsApi, ensureAdminAuthenticated } from '../admin/admin-secure-api-v1.js';
 
 const STORAGE_KEY = 'da_admin_v2_config';
 const BUILD = '2026-08-05-kit-manager-v1';
 const DEFAULT_CONFIG = {
-  firebaseUrl: 'https://cedar-chemist-310801-default-rtdb.firebaseio.com',
-  productsNode: 'produtos',
   writeMode: true,
   collectionsWriteMode: true,
   githubToken: '',
@@ -34,10 +31,45 @@ let loadingPromise = null;
 
 function loadConfig() {
   try {
-    return { ...DEFAULT_CONFIG, ...(JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}) };
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {};
+    delete saved.firebaseUrl;
+    delete saved.productsNode;
+    delete saved.makeTextWebhookUrl;
+    delete saved.makeImageWebhookUrl;
+    delete saved.makeInstagramKitWebhookUrl;
+    delete saved.makeAiWebhookUrl;
+    return { ...DEFAULT_CONFIG, ...saved };
   } catch {
     return { ...DEFAULT_CONFIG };
   }
+}
+
+function adaptSupabaseProduct(p = {}) {
+  return {
+    ...p,
+    firebaseKey: '',
+    codigo: text(p.sku || p.gtin || p.id),
+    nome: text(p.name),
+    preco: number(p.price),
+    preco_custo: number(p.cost),
+    estoque: number(p.stock),
+    url_imagem: text(p.image_url),
+    marca: text(p.brand),
+    categoria: text(p.category),
+    subcategoria: text(p.subcategory),
+    embalagem: text(p.packaging),
+    gondola: text(p.gondola),
+    prateleira: text(p.shelf),
+    validade: text(p.validity_date),
+    situacao: p.is_active === false ? 'I' : 'A',
+    ativo: p.is_active !== false,
+  };
+}
+
+async function loadProductsFromSupabase() {
+  await ensureAdminAuthenticated();
+  const data = await adminProductsApi('catalog', { limit: 2500 });
+  return (data.products || []).map(adaptSupabaseProduct);
 }
 
 function toast(message, type = '') {
@@ -56,7 +88,7 @@ function toast(message, type = '') {
 function managerMarkup() {
   return `<section class="kit-manager-shell collections-workspace" data-build="${BUILD}">
     <header class="kit-manager-head">
-      <div><span class="eyebrow">Gerenciamento completo</span><h2>Todos os kits promocionais</h2><p>Edite os mesmos campos, produtos, substitutos, preços, validade, estoque, IA e Instagram disponíveis no Admin Produção V2.</p></div>
+      <div><span class="eyebrow">Gerenciamento completo</span><h2>Todos os kits promocionais</h2><p>Edite composição, preços, validade e estoque usando o cadastro canônico do Supabase. IA e Instagram permanecem pausados.</p></div>
       <span class="badge warning" id="collectionDataStatus">Carregando…</span>
     </header>
     <div class="collection-tabs" id="collectionTabs" aria-label="Tipo de coleção">
@@ -105,12 +137,12 @@ async function reload() {
   loadingPromise = (async () => {
     try {
       const config = loadConfig();
-      const [products, data] = await Promise.all([loadProducts(config), loadCollections(config)]);
+      const [products, data] = await Promise.all([loadProductsFromSupabase(), adminProductsApi('kit_catalog')]);
       const store = moduleInstance.store;
       store.state.products = products;
-      store.state.baskets = data.baskets || [];
+      store.state.baskets = [];
       store.state.kits = data.kits || [];
-      store.state.queue = data.queue || [];
+      store.state.queue = [];
       moduleInstance.type = 'kit';
       moduleInstance.render();
       loadedOnce = true;

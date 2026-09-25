@@ -2,7 +2,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
 const PROJECT_HOST = "ssbesxgaijknwsjbsbcz.supabase.co";
-const FIREBASE_HOST = "cedar-chemist-310801-default-rtdb.firebaseio.com";
 const GH_OWNER = "osvaldosereia";
 const GH_REPO = "SUCEDOAN12";
 const BUCKET = "product-images";
@@ -141,39 +140,19 @@ async function fetchTrustedCandidate(url: string) {
     throw e;
   }
 }
-async function fetchFirebaseProduct(firebaseKey: string) {
-  if (!firebaseKey) return null;
-  const r = await fetch(`https://${FIREBASE_HOST}/produtos/${encodeURIComponent(firebaseKey)}.json`, { headers: { Accept: "application/json", "User-Agent": "DonaAntonia-ProductImageWorker/3.1" }, signal: AbortSignal.timeout(15000) });
-  if (r.status === 404) return null;
-  if (!r.ok) throw new Error(`firebase_http_${r.status}`);
-  const data = await r.json().catch(() => null);
-  return data && typeof data === "object" && !Array.isArray(data) ? data as Record<string, any> : null;
-}
-function identityMatches(product: any, fb: any) {
-  const pGtin = clean(product?.gtin, 40), fGtin = clean(fb?.gtin || fb?.ean, 40);
-  if (pGtin && fGtin) return pGtin === fGtin;
-  const pSku = clean(product?.sku, 80), fSku = clean(fb?.codigo || fb?.sku, 80);
-  if (pSku && fSku) return pSku === fSku;
-  return clean(product?.name, 240).toLowerCase() === clean(fb?.nome || fb?.name, 240).toLowerCase();
-}
 async function resolveTrustedSource(supabaseUrl: string, product: any) {
-  const saved = clean(product?.image_source_url, 1800);
-  if (saved) {
-    const f = await fetchTrustedCandidate(saved);
-    if (f) return { ...f, field: "products.image_source_url", origin: f.recovered ? "verified_saved_source_git_history" : (clean(product?.image_source_origin, 120) || "verified_saved_source") };
-  }
-  const firebaseKey = clean(product?.firebase_key, 180);
-  if (firebaseKey) {
-    const fb = await fetchFirebaseProduct(firebaseKey);
-    if (fb) {
-      if (!identityMatches(product, fb)) throw new TerminalError("firebase_identity_mismatch");
-      const previous = clean(fb?.imagem_anterior, 1800);
-      const current = clean(fb?.imagem || fb?.imagem_url || fb?.url_imagem, 1800);
-      if (previous && previous !== current && !/foto-atual-otimizada/i.test(previous)) {
-        const f = await fetchTrustedCandidate(previous);
-        if (f) return { ...f, field: "firebase.imagem_anterior", origin: f.recovered ? "legacy_firebase_imagem_anterior_git_history" : "legacy_firebase_imagem_anterior" };
-      }
-    }
+  const candidates = [
+    [clean(product?.image_source_url, 1800), "products.image_source_url", clean(product?.image_source_origin, 120) || "verified_saved_source"],
+    [clean(product?.image_original_url, 1800), "products.image_original_url", "supabase_original_image"],
+    [clean(product?.image_firebase_source_url, 1800), "products.image_firebase_source_url", "legacy_cached_source"],
+  ];
+  const seen = new Set<string>();
+  for (const [raw, field, origin] of candidates) {
+    const value = String(raw || "");
+    if (!value || seen.has(value) || /openai\/grid18/i.test(value)) continue;
+    seen.add(value);
+    const f = await fetchTrustedCandidate(value);
+    if (f) return { ...f, field, origin: f.recovered ? `${origin}_git_history` : origin };
   }
   const catalogUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/catalog-products/${product.id}.webp`;
   const catalog = await fetchTrustedCandidate(catalogUrl);
@@ -283,9 +262,9 @@ Deno.serve(async (req: Request) => {
   let openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
   if (!openaiKey) { try { const k = await sb.rpc("get_conversation_worker_provider_secret_v1"); if (typeof k.data === "string") openaiKey = k.data; } catch {} }
   let body: any = {}; try { body = await req.json(); } catch { return json({ ok: false, error: "invalid_json" }, 400); }
-  if (body?.event === "healthcheck") return json({ ok: true, event: "healthcheck", provider_configured: Boolean(openaiKey), model: MODEL, validator_model: VALIDATOR_MODEL, source_policy: "saved verified > firebase.imagem_anterior (immutable Git history) > storage.catalog-products; never current optimized image", historical_recovery: true, bucket: BUCKET });
+  if (body?.event === "healthcheck") return json({ ok: true, event: "healthcheck", provider_configured: Boolean(openaiKey), model: MODEL, validator_model: VALIDATOR_MODEL, source_policy: "Supabase product source > cached legacy Git source > Supabase Storage catalog-products", product_source: "supabase_only", historical_recovery: true, bucket: BUCKET });
   if (!openaiKey) return json({ ok: false, error: "openai_key_missing" }, 500);
-  const selectProduct = async (productId: string) => sb.from("products").select("id,name,brand,packaging,gtin,sku,firebase_key,image_url,image_original_url,image_source_url,image_source_origin,image_ai_attempts").eq("id", productId).maybeSingle();
+  const selectProduct = async (productId: string) => sb.from("products").select("id,name,brand,packaging,gtin,sku,image_url,image_original_url,image_firebase_source_url,image_source_url,image_source_origin,image_ai_attempts").eq("id", productId).maybeSingle();
   if (body?.event === "inspect_source" || body?.event === "test_product") {
     const productId = clean(body?.product_id, 80); if (!productId) return json({ ok: false, error: "product_id_required" }, 400);
     const q = await selectProduct(productId); if (q.error || !q.data) return json({ ok: false, error: "product_not_found" }, 404);
