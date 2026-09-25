@@ -1,2 +1,0 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';
-const help=fs.readFileSync('comprar/help.js','utf8');for(const file of ['index.html','comprar/index.html']){const html=fs.readFileSync(file,'utf8');assert.match(html,/id="helpClose"/)}assert.doesNotMatch(help,/help\.textContent\s*=.*Fechar ajuda/);assert.match(help,/help\.classList\.toggle\('hidden',open\|\|checkoutMode\)/);console.log('OK: ajuda integrada');

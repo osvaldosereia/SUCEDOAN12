@@ -1,162 +1,19 @@
-# Configuração explícita de autenticação das Edge Functions Dona Antônia.
-# Mantém o comportamento já implantado e evita alterações acidentais em deploys futuros.
+project_id = "ssbesxgaijknwsjbsbcz"
 
-[functions.whatsapp-ingest]
-verify_jwt = false
-
-[functions.whatsapp-ingest-make-v1]
-verify_jwt = false
-
-[functions.whatsapp-outbound-v1]
-verify_jwt = false
-
-# Compatibilidade histórica. O dispatcher/cron canônicos já usam conversation-worker-v3.
-[functions.conversation-worker-v2]
-verify_jwt = false
-
-[functions.conversation-worker-v3]
-verify_jwt = false
-
-# Agent Core usa segredos server-to-server próprios no corpo da função.
-[functions.dona-antonia-agent-core-v1]
-verify_jwt = false
-
-[functions.dona-antonia-agent-learning-v1]
-verify_jwt = false
-
-[functions.admin-agent-learning-v1]
-verify_jwt = true
-
-[functions.bling-products-ingest]
-verify_jwt = false
-
-[functions.bling-products-import-once]
-verify_jwt = false
-
-[functions.inventory-count-v2]
-verify_jwt = true
-
-# Balanço rápido: acesso direto sem login/senha. A função aceita somente ações do fluxo de leitura rápida.
-[functions.inventory-fast-balance-v3]
-verify_jwt = false
-
-# Porta pública mínima antiga; será removida na limpeza final do legado.
-[functions.admin-pin-auth-v1]
-verify_jwt = false
-
-[functions.admin-ops-v1]
-verify_jwt = true
-
-[functions.admin-baskets-v1]
-verify_jwt = true
-
-# Backend de produtos do Admin oficial: abertura direta, sem login/PIN/sessão, por decisão explícita do proprietário.
-[functions.admin-simple-v2]
-verify_jwt = false
-
-# API pública mínima da Vitrine V2. Não usa Meta API; pedido é persistido antes do link externo.
 [functions.storefront-v2]
 verify_jwt = false
 
-# Catálogo público V3: somente leitura GET, CORS restrito e cache curto.
-[functions.catalog-v3]
+[functions.admin-service-intelligence-v1]
 verify_jwt = false
 
-
-# Gôndolas do Admin: usa a mesma política do Admin oficial, com service role somente no servidor e CORS restrito.
-[functions.admin-gondolas-v1]
+[functions.admin-pin-auth-v1]
 verify_jwt = false
 
-
-# Gestão de nomes do Admin oficial: CORS restrito e service role apenas no servidor.
-[functions.admin-product-names-v1]
+# Fonte preservada porque o Vitrine Admin em produção ainda usa esta função
+# no projeto qxstkwshuvplmmftrctj durante a migração para o canônico.
+[functions.vitrine-admin-v1]
 verify_jwt = false
 
-# Gestão individual de imagens do cadastro de produtos. JWT é validado dentro da função contra auth.users + admin_users.
-[functions.admin-product-image-editor-v1]
-verify_jwt = false
-
-[functions.admin-whatsapp-ops-v1]
-verify_jwt = true
-
-[functions.admin-experience-orchestrator-v1]
-verify_jwt = true
-
-[functions.admin-whatsapp-flow-v1]
-verify_jwt = true
-
-[functions.admin-automation-builder-v1]
-verify_jwt = true
-
-[functions.automation-dispatcher-v1]
-verify_jwt = true
-
-[functions.admin-logistics-v1]
-verify_jwt = true
-
-[functions.driver-logistics-v1]
-verify_jwt = true
-
-[functions.admin-commercial-truth-v1]
-verify_jwt = true
-
-# Etapa 12: operação de armazém/fulfillment. JWT obrigatório + warehouse_staff no handler.
-[functions.warehouse-ops-v1]
-verify_jwt = true
-
-[functions.whatsapp-flow-data-exchange-v1]
-verify_jwt = false
-
-[functions.meta-instagram-webhook-v1]
-verify_jwt = false
-
-[functions.bootstrap-owner-v1]
-verify_jwt = true
-
-[functions.mini-catalog-v1]
-verify_jwt = false
-
-[functions.customer-intelligence-v1]
-verify_jwt = true
-
-[functions.shopping-room-v1]
-verify_jwt = false
-
-[functions.shopping-room-sales-v1]
-verify_jwt = false
-
-# Chat público leve: autenticação própria por token aleatório da sessão + CORS estrito.
-[functions.shopping-chat-v1]
-verify_jwt = false
-
-# Checkout público v2: token aleatório da sessão + CORS estrito, sem JWT de usuário.
-[functions.shopping-checkout-v2]
-verify_jwt = false
-
-# Feed público de produtos do chat: catálogo vendável + token válido da sessão + CORS estrito.
-[functions.shopping-chat-products-v1]
-verify_jwt = false
-
-# Consulta de cliente e políticas da cesta: token válido da sessão, CORS estrito e limite de tentativas por sala.
-[functions.shopping-chat-customer-v1]
-verify_jwt = false
-
-# Menu flutuante público: somente leitura, token válido da sessão + CORS estrito.
-[functions.shopping-chat-menu-v1]
-verify_jwt = false
-
-# Admin do Menu do Chat: autenticação é validada dentro da função contra auth.users + admin_users.
-[functions.admin-chat-menu-v1]
-verify_jwt = false
-
-# Confirmação dry-run exclusiva da aba Testar. JWT do Admin é validado no handler; nunca cria orders.
-[functions.shopping-chat-admin-test-v1]
-verify_jwt = false
-
-# Ame Mais é público, sem login/PIN; a função aplica suas próprias regras de origem e rate limit.
-[functions.ame-mais-analyze-v1]
-verify_jwt = false
-
-# Ame Mais 2 é uma rota evolutiva pública e isolada da v1.
-[functions.ame-mais-analyze-v2]
+# Classificador fiscal usado pelo fluxo fiscal do Vitrine Admin.
+[functions.product-image-openai-v1]
 verify_jwt = false

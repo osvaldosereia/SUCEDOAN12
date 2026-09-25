@@ -1,3 +1,0 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';
-const b=fs.readFileSync('comprar/baskets.js','utf8'),css=fs.readFileSync('comprar/styles.css','utf8');
-assert.match(b,/Quero esta cesta/);assert.match(b,/renderSelectedBasketSummary/);assert.match(b,/Ver composição/);assert.match(b,/Alterar/);assert.match(css,/\.basket-grid\{/);assert.doesNotMatch(css,/\.basket-picker\{[^}]*grid-auto-flow:column/);console.log('OK: cestas conversacionais');

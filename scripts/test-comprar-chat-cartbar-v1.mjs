@@ -1,2 +1,0 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';
-for(const file of ['index.html','comprar/index.html']){const h=fs.readFileSync(file,'utf8');assert.doesNotMatch(h,/id="cartAddProducts"/);assert.match(h,/id="cartSummaryText"/);assert.match(h,/id="checkoutButton"/)}console.log('OK: barra compacta');

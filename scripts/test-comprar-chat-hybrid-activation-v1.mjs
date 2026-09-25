@@ -1,2 +1,0 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';
-for(const file of ['index.html','comprar/index.html']){const h=fs.readFileSync(file,'utf8');assert.match(h,/upsell\.js\?v=/);assert.ok(h.indexOf('products.js')<h.indexOf('upsell.js'));assert.ok(h.indexOf('upsell.js')<h.indexOf('checkout.js'));assert.match(h,/20260915-05-chat-01/)}console.log('OK: ativação do chat híbrido');

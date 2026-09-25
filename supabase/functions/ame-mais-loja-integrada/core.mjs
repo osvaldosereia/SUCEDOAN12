@@ -1,6 +1,0 @@
-export const normalizeEan=v=>String(v??'').replace(/\D/g,'').slice(0,14);
-export function normalizePrice(v){let s=String(v??'').trim().replace(/[^\d,.-]/g,'');if(!s)return 0;if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');const n=Number(s);return Number.isFinite(n)&&n>0?Math.round(n*100)/100:0}
-export function normalizeQuantity(v){const n=Math.trunc(Number(String(v??'').replace(',','.')));return Number.isFinite(n)&&n>0?n:0}
-const BLOCKED=new Set(['id','resource_uri','created_at','modified_at']);
-export function mergeProductUpdate(current,changes){const out={...(current||{})};for(const [k,v] of Object.entries(changes||{})){if(!BLOCKED.has(k)&&v!==undefined)out[k]=v}return out}
-export function buildProductCard(product={},price={},stock={}){return {id:product.id??null,name:product.nome||product.name||'',sku:product.sku||'',ean:normalizeEan(product.gtin||product.ean),active:Boolean(product.ativo),price:normalizePrice(price.preco??price.cheio??price.price),stock:normalizeQuantity(stock.quantidade??stock.stock)}}

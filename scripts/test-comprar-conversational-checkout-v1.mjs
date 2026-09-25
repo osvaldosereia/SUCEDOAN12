@@ -1,3 +1,0 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';
-const c=fs.readFileSync('comprar/checkout.js','utf8');
-assert.doesNotMatch(c,/sectionTitle\(1,/);assert.doesNotMatch(c,/sectionTitle\(2,/);assert.match(c,/Digite seu WhatsApp com DDD/);assert.match(c,/Encontrei seu cadastro|Confira seus dados/);assert.match(c,/Como você prefere pagar na entrega/);console.log('OK: checkout conversacional');

@@ -1,1 +1,0 @@
-window.DA_WAREHOUSE_CONFIG=Object.freeze({enabled:false,apiPath:'/functions/v1/warehouse-ops-v1',supabaseUrl:'',supabasePublishableKey:'',offlineQueueKey:'da_warehouse_queue_v2',deviceLabel:'',offlineQueueEnabled:true,build:'20260908-stage12-wms-hardening-v2'});

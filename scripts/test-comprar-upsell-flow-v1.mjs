@@ -1,3 +1,0 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';
-const b=fs.readFileSync('comprar/baskets.js','utf8'),a=fs.readFileSync('comprar/app.js','utf8'),c=fs.readFileSync('comprar/checkout.js','utf8'),v2=fs.readFileSync('comprar/conversation.js','utf8');
-assert.match(b,/afterBasketSelected/,'pós-cesta deve delegar para a sequência conversacional');assert.doesNotMatch(b,/Sua cesta já está no pedido\. Quer acrescentar alguma coisa\?/,'pós-cesta não deve despejar confirmação e upsell juntos');assert.match(v2,/renderAfterBasket\s*=\s*\(\)\s*=>\s*false/,'upsell automático pós-cesta deve permanecer neutralizado');assert.match(a,/renderBeforeCheckout/);assert.match(c,/modules\.upsell\?\.stop/);console.log('OK: fluxo de upsell conversacional');
