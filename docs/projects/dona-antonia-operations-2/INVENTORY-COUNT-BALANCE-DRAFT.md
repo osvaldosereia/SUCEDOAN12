@@ -255,3 +255,30 @@ Supabase/site:
 10. confirmar webhook stock refletindo no site;
 11. comparar velocidade Bling nativo x tela Dona Antônia;
 12. escolher Plano A ou Plano B com evidência.
+
+
+## Correção fiscal importante — contagem ≠ regularização
+A análise posterior de SEFAZ/MT mudou um ponto deste draft.
+
+O módulo de Conferência/Balanço continua excelente para **contar fisicamente**. Porém, diferenças não devem ser lançadas cegamente como novo saldo oficial sem identificar a causa.
+
+SEFAZ/MT:
+- falta por perecimento, deterioração, extravio, roubo/furto ou redução sem causa conhecida -> documento fiscal de baixa com CFOP 5.927, sem destaque de ICMS, com estorno de crédito quando apropriado;
+- sobra física sem origem não deve ser regularizada pela simples emissão de documento fictício; precisa de investigação/regularização.
+
+Referências:
+- https://www.sefaz.mt.gov.br/legislacao/SubIndice.aspx?ID=471
+- https://www.sefaz.mt.gov.br/legislacao/subindice.aspx?id=402
+
+### Fluxo revisado
+1. leitor EAN registra quantidade física;
+2. se quantidade = saldo oficial -> fecha automaticamente;
+3. se houver diferença -> cria divergência;
+4. sistema procura causa documental;
+5. falta real/perda -> fluxo 5.927;
+6. sobra -> revisão da origem;
+7. somente depois o saldo fiscal/ERP é regularizado.
+
+Portanto a ferramenta de Balanço continuará rápida para o operador, mas **as diferenças relevantes vão para reconciliação**, não para um UPDATE cego.
+
+Ver `STOCK-LOSS-DISCARD-FISCAL-ORIGIN-DRAFT.md`.
