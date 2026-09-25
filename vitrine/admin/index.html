@@ -91,6 +91,7 @@
     .dispatch-grid{display:grid;gap:14px}.dispatch-section{overflow:hidden}.dispatch-head{padding:13px 14px;margin:0;border-bottom:1px solid var(--line)}.dispatch-head>div{min-width:0}.dispatch-head span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-head>b{font-size:20px}.dispatch-row{grid-template-columns:110px minmax(0,1.5fr) minmax(120px,.6fr) 105px minmax(190px,.8fr);cursor:default}.dispatch-row:hover{background:#f8fbff}.dispatch-select{display:flex;align-items:center;gap:7px;font-weight:700}.dispatch-select input{width:18px;height:18px;min-height:0;margin:0}.dispatch-bulk{border:1px solid #d2e3fc;background:#f8fbff;border-radius:8px;padding:10px 12px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}.dispatch-bulk .check{min-height:38px}.dispatch-bulk-actions{display:flex;align-items:center;gap:8px}
     .closure-grid{display:grid;gap:14px}.closure-row{display:grid;grid-template-columns:90px minmax(0,1.4fr) 130px minmax(180px,.8fr) 90px;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}.closure-row:last-child{border-bottom:0}.closure-status strong{display:block;font-size:12px}.closure-status small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.dispatch-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}.quick-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#1967d2;text-decoration:none;font-weight:700;font-size:12px}.quick-link:hover{background:#f1f3f4}.quick-link.primary-link{background:#e8f0fe;border-color:#d2e3fc}.age-text{font-size:11px;color:var(--muted);font-weight:600}
     .today-order-row{grid-template-columns:90px minmax(0,1fr) 150px 80px}
+    .purchase-doc-row{display:grid;grid-template-columns:105px minmax(180px,1.3fr) 90px 95px 120px 120px 210px;gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line)}.purchase-doc-row:last-child{border-bottom:0}.purchase-actions{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap}.purchase-review{display:grid;grid-template-columns:minmax(190px,1.4fr) 90px 90px 110px 130px;gap:10px;align-items:center;padding:11px 12px;border-bottom:1px solid var(--line)}.purchase-review:last-child{border-bottom:0}.purchase-file-note{font-size:11px;color:var(--muted);margin-top:5px}.purchase-safe{border:1px solid #c7dccd;background:#f7fbf8;border-radius:8px;padding:10px 12px;margin-bottom:12px}.purchase-safe strong{display:block}.purchase-safe small{display:block;color:var(--muted);margin-top:3px}.purchase-danger{border-color:#f0b7b3;background:#fff8f7}
     .toast{position:fixed;left:50%;bottom:22px;z-index:80;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#18221c;color:#fff;border-radius:999px;padding:11px 16px;font-weight:800;transition:.18s}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:780px){
       .wrap{padding-inline:10px}.top-row{height:58px}.logo{width:72px;height:34px}.store-link{font-size:12px}
@@ -350,6 +351,7 @@
       .expiry-card{padding:12px}
       .expiry-card strong{font-size:21px}
       .quick-link{min-height:42px}
+      .purchase-doc-row,.purchase-review{grid-template-columns:1fr;gap:4px}.purchase-actions{justify-content:flex-start}.purchase-doc-row .purchase-actions{margin-top:5px}
       .toast{left:10px;right:10px;bottom:max(12px,env(safe-area-inset-bottom));transform:translateY(20px);width:auto;text-align:center}
       .toast.show{transform:translateY(0)}
     }
@@ -375,6 +377,7 @@
         <button class="tab" data-tab="closure" type="button">Fechamento</button>
         <button class="tab" data-tab="products" type="button">Produtos</button>
         <button class="tab" data-tab="expiry" type="button">Validades</button>
+        <button class="tab" data-tab="purchases" type="button">Compras/XML</button>
         <button class="tab" data-tab="balance" type="button">Balanço</button>
         <button class="tab" data-tab="gondolas" type="button">Gôndolas</button>
         <button class="tab" data-tab="customers" type="button">Clientes</button>
@@ -406,7 +409,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -467,6 +470,7 @@
     if(tab==='today')renderToday();
     if(tab==='products')renderProducts();
     if(tab==='expiry')renderExpirations();
+    if(tab==='purchases')renderPurchases();
     if(tab==='balance')renderBalance();
     if(tab==='gondolas')renderGondolas();
     if(tab==='customers')renderCustomers();
@@ -2320,6 +2324,161 @@
         body:JSON.stringify({gondola_id:state.gondola.id,product_id:productId})
       });
       state.gondolaProducts=state.gondolaProducts.filter(p=>p.id!==productId);paintGondolas();toast('Produto removido da gôndola');
+    }catch(e){toast(errorMessage(e.message))}
+  }
+
+
+  function purchaseFinanceLabel(v){
+    const map={blocked_personal:'CPF · fora do financeiro',pending_company_match:'Aguardando fornecedor',eligible:'Elegível',posted:'Contas a pagar OK',review:'Revisar financeiro',not_applicable:'Não aplicável'};
+    const cls=v==='posted'?'':v==='blocked_personal'?'off':v==='review'||v==='pending_company_match'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseStatusLabel(v){
+    const map={processed:'Processada',review_required:'Revisar',failed:'Falhou',duplicate:'Duplicada',processing:'Processando',pending:'Pendente'};
+    const cls=v==='review_required'||v==='failed'?'warn':'';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseReceiptLabel(v){
+    const map={ready:'Pronta para entrada',received:'Estoque recebido',review:'Revisar antes da entrada',not_received:'Não recebido'};
+    const cls=v==='ready'?'':v==='received'?'':v==='review'?'warn':'off';
+    return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
+  }
+  function purchaseMoney(v){
+    const n=Number(v||0);
+    return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+  }
+  async function purchaseApi(purchase_action,payload={}){
+    return customerApi('purchase_xml',{purchase_action,...payload});
+  }
+  async function renderPurchases(){
+    const content=$('#content');
+    content.innerHTML=
+      '<div class="page-head"><div><h1>Compras e XML</h1><p>Notas de entrada, fornecedores, custos, embalagens e recebimento de estoque.</p></div><button class="secondary" id="refreshPurchases" type="button">Atualizar</button></div>'+
+      '<div class="purchase-safe"><strong>Proteções ativas</strong><small>Notas em CPF nunca geram contas a pagar. Estoque só entra após confirmação humana e conversão segura da embalagem.</small></div>'+
+      '<div class="bling-actions" style="justify-content:flex-start;margin:0 0 12px">'+
+        '<button class="primary" id="purchaseBlingSync" type="button">Buscar agora no Bling</button>'+
+        '<button class="secondary" id="purchaseXmlSingle" type="button">Enviar XML</button>'+
+        '<button class="secondary" id="purchaseXmlBatch" type="button">Enviar vários XMLs</button>'+
+        '<input id="purchaseXmlInput" type="file" accept=".xml,application/xml,text/xml" multiple hidden>'+
+      '</div>'+
+      '<div id="purchaseBody"><div class="loading">Carregando compras…</div></div>';
+    $('#refreshPurchases').onclick=loadPurchases;
+    $('#purchaseBlingSync').onclick=runPurchaseBlingSync;
+    $('#purchaseXmlSingle').onclick=()=>{$('#purchaseXmlInput').multiple=false;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlBatch').onclick=()=>{$('#purchaseXmlInput').multiple=true;$('#purchaseXmlInput').click()};
+    $('#purchaseXmlInput').onchange=e=>importPurchaseXmlFiles([...e.target.files]);
+    await loadPurchases();
+  }
+  async function loadPurchases(){
+    const host=$('#purchaseBody');if(!host)return;
+    host.innerHTML='<div class="loading">Carregando compras…</div>';
+    try{
+      state.purchaseXml=await purchaseApi('summary');
+      paintPurchases();
+    }catch(e){
+      host.innerHTML='<div class="empty">Não consegui carregar Compras/XML. <button class="text" id="retryPurchases">Tentar novamente</button></div>';
+      if($('#retryPurchases'))$('#retryPurchases').onclick=loadPurchases;
+    }
+  }
+  function paintPurchases(){
+    const host=$('#purchaseBody');if(!host)return;
+    const d=state.purchaseXml||{},docs=Array.isArray(d.documents)?d.documents:[],reviews=Array.isArray(d.review_items)?d.review_items:[],runs=Array.isArray(d.runs)?d.runs:[],settings=d.settings||{};
+    const cpf=docs.filter(x=>x.recipient_kind==='CPF').length,posted=docs.filter(x=>x.finance_status==='posted').length,ready=docs.filter(x=>x.receipt_status==='ready').length;
+    const last=runs[0]||null;
+    host.innerHTML=
+      '<div class="bling-grid">'+
+        '<div class="bling-card"><small>Notas recentes</small><strong>'+docs.length+'</strong><span class="sub">últimas notas processadas</span></div>'+
+        '<div class="bling-card"><small>Financeiro</small><strong>'+posted+'</strong><span class="sub">com contas a pagar registradas</span></div>'+
+        '<div class="bling-card"><small>CPF protegido</small><strong>'+cpf+'</strong><span class="sub">sem envio para o financeiro</span></div>'+
+        '<div class="bling-card"><small>Prontas para receber</small><strong>'+ready+'</strong><span class="sub">estoque aguarda confirmação</span></div>'+
+        '<div class="bling-card"><small>Revisões</small><strong class="'+(reviews.length?'warn-text':'ok-text')+'">'+reviews.length+'</strong><span class="sub">embalagem ou vínculo pendente</span></div>'+
+        '<div class="bling-card"><small>Rotina diária</small><strong>'+esc(settings.daily_enabled===false?'Pausada':'06:00')+'</strong><span class="sub">Cuiabá · olha '+esc(settings.daily_lookback_days||3)+' dia(s)</span></div>'+
+      '</div>'+
+      (last?'<div class="bling-banner"><strong>Última execução: '+esc(last.source||'')+' · '+esc(last.status||'')+'</strong><small>'+dateTime(last.started_at)+' · '+esc(last.documents_processed||0)+' processada(s) · '+esc(last.documents_duplicate||0)+' duplicada(s) · '+esc(last.items_review||0)+' revisão(ões)</small></div>':'')+
+      '<section class="panel"><div class="history-title dispatch-head"><div><strong>Notas recebidas</strong><span>XML original privado · sem duplicar pela chave da NF-e</span></div><b>'+docs.length+'</b></div>'+
+        (docs.length?docs.map(x=>'<div class="purchase-doc-row">'+
+          '<div><strong>'+esc(dateOnly(String(x.issued_at||'').slice(0,10)))+'</strong><span class="sub">'+esc(String(x.document_key||'').slice(-10))+'</span></div>'+
+          '<div class="history-main"><strong>'+esc(x.supplier_name||'Fornecedor não identificado')+'</strong><small>'+purchaseMoney(x.total_amount)+' · '+esc(x.item_count||0)+' item(ns)</small></div>'+
+          '<div><span class="pill '+(x.recipient_kind==='CPF'?'off':'')+'">'+esc(x.recipient_kind||'—')+'</span></div>'+
+          '<div>'+purchaseStatusLabel(x.processing_status)+'</div>'+
+          '<div>'+purchaseFinanceLabel(x.finance_status)+'</div>'+
+          '<div>'+purchaseReceiptLabel(x.receipt_status)+'</div>'+
+          '<div class="purchase-actions"><button class="text" type="button" data-purchase-open="'+esc(x.id)+'">Abrir</button><button class="text" type="button" data-purchase-xml="'+esc(x.id)+'">XML</button>'+(x.receipt_status==='ready'?'<button class="text" type="button" data-purchase-receive="'+esc(x.id)+'">Dar entrada</button>':'')+'</div>'+
+        '</div>').join(''):'<div class="empty">Nenhuma nota importada nesta área ainda.</div>')+
+      '</section>'+
+      '<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Pendências de embalagem/vínculo</strong><span>Ex.: fardo → display → unidade. Informe o fator total quando o XML não trouxer uma conversão segura.</span></div><b>'+reviews.length+'</b></div>'+
+        (reviews.length?reviews.map(x=>'<div class="purchase-review"><div class="history-main"><strong>'+esc(x.description||'Produto')+'</strong><small>'+esc(x.processing_status||'')+'</small></div><div><strong>'+esc(fmtQty(x.purchase_quantity||0))+'</strong><span class="sub">'+esc(x.purchase_unit||'')+'</span></div><div><strong>'+esc(x.conversion_factor||'—')+'</strong><span class="sub">fator</span></div><div><strong>'+purchaseMoney(x.purchase_unit_price)+'</strong><span class="sub">compra</span></div><div><button class="secondary" type="button" data-purchase-conversion="'+esc(x.id)+'">Definir conversão</button></div></div>').join(''):'<div class="empty">Nenhuma pendência de embalagem.</div>')+
+      '</section>';
+    host.querySelectorAll('[data-purchase-open]').forEach(b=>b.onclick=()=>openPurchaseDocument(b.dataset.purchaseOpen));
+    host.querySelectorAll('[data-purchase-xml]').forEach(b=>b.onclick=()=>downloadPurchaseXml(b.dataset.purchaseXml));
+    host.querySelectorAll('[data-purchase-receive]').forEach(b=>b.onclick=()=>receivePurchaseDocument(b.dataset.purchaseReceive));
+    host.querySelectorAll('[data-purchase-conversion]').forEach(b=>b.onclick=()=>setPurchaseConversion(b.dataset.purchaseConversion));
+  }
+  async function runPurchaseBlingSync(){
+    const b=$('#purchaseBlingSync');if(b){b.disabled=true;b.textContent='Buscando…'}
+    try{
+      const r=await purchaseApi('bling_sync');
+      toast('Bling: '+String(r.processed||0)+' nota(s) processada(s)');
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(b){b.disabled=false;b.textContent='Buscar agora no Bling'}}
+  }
+  async function importPurchaseXmlFiles(files){
+    if(!files?.length)return;
+    const input=$('#purchaseXmlInput');if(input)input.value='';
+    const valid=files.filter(f=>/\.xml$/i.test(f.name)||/xml/i.test(f.type||''));
+    if(!valid.length){toast('Selecione arquivos XML');return}
+    let ok=0,fail=0;
+    try{
+      for(let i=0;i<valid.length;i+=10){
+        const chunk=valid.slice(i,i+10),payload=[];
+        for(const file of chunk)payload.push({name:file.name,xml:await file.text()});
+        const r=await purchaseApi('manual_import',{files:payload});
+        ok+=Number(r.processed||0)+Number(r.duplicates||0);fail+=Number(r.failed||0);
+      }
+      toast('XML: '+ok+' concluído(s)'+(fail?' · '+fail+' falha(s)':''));
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function openPurchaseDocument(id){
+    try{
+      const r=await purchaseApi('document',{id});state.purchaseXmlDetail=r;
+      const d=r.document||{},items=r.items||[];
+      $('#editorTitle').textContent='NF-e de compra · '+String(d.document_key||'').slice(-10);
+      $('#editorBody').innerHTML=
+        '<div class="order-summary"><div class="summary-box"><small>Fornecedor</small><strong>'+esc(d.supplier_name||'—')+'</strong></div><div class="summary-box"><small>Total</small><strong>'+purchaseMoney(d.total_amount)+'</strong></div><div class="summary-box"><small>Destinatário</small><strong>'+esc(d.recipient_kind||'—')+'</strong></div></div>'+
+        '<div class="purchase-safe '+(d.recipient_kind==='CPF'?'purchase-danger':'')+'"><strong>'+(d.recipient_kind==='CPF'?'Financeiro bloqueado para CPF':'Financeiro: '+esc(d.finance_status||'—'))+'</strong><small>'+(d.recipient_kind==='CPF'?'Esta nota pode atualizar cadastro, custo e fornecedor, mas nunca cria conta a pagar.':'A NF-e em CNPJ pode alimentar contas a pagar quando houver parcelas válidas.')+'</small></div>'+
+        '<div class="history-list">'+items.map(x=>'<div class="history-item"><div class="history-item-line"><div><strong class="history-item-name">'+esc(x.description||'Produto')+'</strong><div class="history-item-meta">'+esc(x.commercial_gtin||x.tax_gtin||'Sem EAN')+' · '+esc(x.purchase_unit||'')+' '+esc(fmtQty(x.purchase_quantity||0))+'</div></div><strong>'+purchaseMoney(x.base_unit_cost)+'</strong></div><div class="history-item-meta">Conversão: '+esc(x.conversion_factor||'—')+' → '+esc(x.base_unit||'UN')+' · '+esc(x.processing_status||'')+'</div></div>').join('')+'</div>';
+      $('#editorActions').innerHTML='<button class="secondary" id="purchaseDialogXml" type="button">Abrir XML</button>'+(d.receipt_status==='ready'?'<button class="primary" id="purchaseDialogReceive" type="button">Confirmar entrada</button>':'');
+      $('#purchaseDialogXml').onclick=()=>downloadPurchaseXml(id);
+      if($('#purchaseDialogReceive'))$('#purchaseDialogReceive').onclick=()=>receivePurchaseDocument(id);
+      $('#editor').showModal();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function downloadPurchaseXml(id){
+    try{const r=await purchaseApi('xml_url',{id});if(r.url)window.open(r.url,'_blank','noopener')}catch(e){toast(errorMessage(e.message))}
+  }
+  async function receivePurchaseDocument(id){
+    if(!confirm('Confirmar a entrada física desta nota no estoque? Esta ação soma as quantidades convertidas uma única vez.'))return;
+    try{
+      await purchaseApi('confirm_receipt',{document_id:id,confirmation:'CONFIRMAR_ENTRADA'});
+      toast('Entrada de estoque confirmada');
+      if($('#editor').open)$('#editor').close();
+      await loadPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+  }
+  async function setPurchaseConversion(id){
+    const row=(state.purchaseXml?.review_items||[]).find(x=>x.id===id)||{};
+    const factorRaw=prompt('Quantas unidades de venda existem em 1 '+String(row.purchase_unit||'embalagem')+'? Ex.: fardo com 10 displays de 10 unidades = 100','');
+    if(factorRaw===null)return;
+    const factor=Number(String(factorRaw).replace(',','.'));
+    if(!Number.isFinite(factor)||factor<1){toast('Fator inválido');return}
+    const base=prompt('Unidade final de venda (ex.: UN, PCT, KG, L):',row.base_unit||'UN');
+    if(base===null)return;
+    try{
+      await purchaseApi('set_conversion',{item_id:id,conversion_factor:factor,base_unit:base});
+      toast('Conversão salva');
+      await loadPurchases();
     }catch(e){toast(errorMessage(e.message))}
   }
 
