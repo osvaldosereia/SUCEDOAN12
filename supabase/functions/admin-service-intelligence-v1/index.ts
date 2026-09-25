@@ -2164,6 +2164,253 @@ async function blingHubPatchOrderStatusOnce(sb:any,token:string,blingOrderId:num
     return {ok:false,status:0,data:{},error:clean((e as Error)?.message||e,500),provider_details:[],uncertain:true};
   }
 }
+
+async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:any,canaryRaw:any=false){
+  const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
+  const sourceOrderId=uuid(payload?.source_order_id);
+  const targetKey=clean(targetKeyRaw,80);
+  const canary=canaryRaw===true;
+  if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400,external_write:false};
+  if(!["awaiting_confirmation","approved_separation"].includes(targetKey)){
+    return {ok:false,error:"invalid_target_state",status:400,external_write:false};
+  }
+
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("mode,orders_enabled,metadata")
+    .eq("id",1)
+    .maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const mode=String(runtime.data?.mode||"");
+  if(!["homologation","live"].includes(mode)){
+    return {ok:false,error:"hub_mode_not_ready",status:409,external_write:false};
+  }
+  const meta=runtime.data?.metadata||{};
+  if(!canary&&meta?.ops2_direct_order_state_enabled!==true){
+    return {ok:false,error:"ops2_direct_order_state_disabled",status:409,external_write:false};
+  }
+  if(canary&&mode!=="homologation"){
+    return {ok:false,error:"canary_requires_homologation",status:409,external_write:false};
+  }
+
+  const mapping=meta?.ops2_order_status_mapping||{};
+  if(mapping.state!=="prepared"){
+    return {ok:false,error:"ops2_status_mapping_not_prepared",status:409,external_write:false};
+  }
+  if(targetKey==="approved_separation"&&meta?.ops2_stock_mirror_event_mode?.state!=="verified"){
+    return {ok:false,error:"stock_mirror_gate_not_verified",status:409,external_write:false};
+  }
+  const targetStatusId=Number(
+    targetKey==="awaiting_confirmation"
+      ?mapping.awaiting_confirmation_id
+      :mapping.approved_separation_id
+  )||0;
+  if(!targetStatusId)return {ok:false,error:"target_status_missing",status:409,external_write:false};
+
+  const customerId=uuid(payload?.customer?.source_customer_id);
+  let customerEnsured:any=null;
+  if(customerId){
+    const cq=await sb.from("customers")
+      .select("id,bling_contact_id,cpf_cnpj")
+      .eq("id",customerId)
+      .maybeSingle();
+    if(cq.error)throw cq.error;
+    if(cq.data&&!Number(cq.data.bling_contact_id||0)&&blingHubValidCpfCnpj(cq.data.cpf_cnpj)){
+      customerEnsured=await blingHubEnsureCustomerNow(sb,customerId);
+    }
+  }
+
+  const preparedPayload={
+    ...payload,
+    source_order_id:sourceOrderId,
+    queue_reason:targetKey==="awaiting_confirmation"?"awaiting_confirmation":"approved_early_order",
+    status:targetKey==="awaiting_confirmation"?"storefront_received":"confirmed"
+  };
+  const preview=await blingHubPreviewOrderSync(sb,preparedPayload);
+  if(!preview.ok||!preview.write_eligible){
+    return {
+      ok:false,error:"order_not_write_eligible",status:409,
+      source_order_id:sourceOrderId,
+      blockers:preview.blockers||[],
+      write_blockers:preview.write_blockers||[],
+      unresolved_products:preview.unresolved_products||[],
+      customer_ensure:customerEnsured,
+      external_write:Boolean(customerEnsured?.external_write)
+    };
+  }
+
+  const token=await blingHubOauth(sb);
+  const externalKey=String(preview.external_key);
+  const found=await blingHubFindOrderByExternalKey(sb,token,externalKey);
+  if(!found.ok){
+    return {ok:false,error:"order_reconcile_http_"+found.status,status:found.status||502,external_write:false};
+  }
+  if(found.matches.length>1){
+    return {ok:false,error:"duplicate_external_order_key",status:409,match_count:found.matches.length,external_write:false};
+  }
+
+  let blingOrderId=Number(found.match?.id||0)||0;
+  let created=false,updated=false,statusChanged=false;
+  let externalWrite=Boolean(customerEnsured?.external_write);
+  if(!blingOrderId){
+    const createdOrder=await blingHubCreateOrderOnce(sb,token,preview.create_order||preview.desired_order);
+    externalWrite=true;
+    if(createdOrder.ok)blingOrderId=Number(createdOrder.data?.data?.id||0)||0;
+    if(!blingOrderId){
+      await sleep(1200);
+      const recovery=await blingHubFindOrderByExternalKey(sb,token,externalKey);
+      if(recovery.ok&&recovery.matches.length===1)blingOrderId=Number(recovery.match?.id||0)||0;
+      if(!blingOrderId){
+        return {
+          ok:false,
+          error:createdOrder.uncertain||createdOrder.status>=500?"order_creation_uncertain":"order_create_http_"+createdOrder.status,
+          status:createdOrder.status||502,
+          provider_details:createdOrder.provider_details||[],
+          requires_reconciliation:Boolean(createdOrder.uncertain||createdOrder.status>=500),
+          external_write:true
+        };
+      }
+    }
+    created=true;
+  }
+
+  let detail=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+  if(!detail.ok){
+    return {ok:false,error:"order_detail_http_"+detail.status,status:detail.status,bling_order_id:blingOrderId,external_write:externalWrite};
+  }
+  let remote=detail.data?.data||{};
+
+  const changes=blingHubOrderManagedDiff(remote,preview.desired_order);
+  if(Object.keys(changes).length){
+    if(Number(remote?.notaFiscal?.id||0)){
+      return {ok:false,error:"order_has_invoice",status:409,bling_order_id:blingOrderId,changes,external_write:externalWrite};
+    }
+    const putPayload=blingHubOrderPutPayload(remote,preview.desired_order);
+    const write=await blingHubWriteIdempotent(
+      sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)),"PUT",putPayload
+    );
+    externalWrite=true;
+    if(!write.ok){
+      return {
+        ok:false,error:"order_put_http_"+write.status,status:write.status||502,
+        bling_order_id:blingOrderId,changes,provider_details:write.provider_details||[],
+        external_write:true
+      };
+    }
+    const afterPut=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+    if(!afterPut.ok){
+      return {ok:false,error:"post_update_order_verify_http_"+afterPut.status,status:afterPut.status,bling_order_id:blingOrderId,external_write:true};
+    }
+    remote=afterPut.data?.data||{};
+    const remaining=blingHubOrderManagedDiff(remote,preview.desired_order);
+    if(Object.keys(remaining).length){
+      return {ok:false,error:"post_update_order_mismatch",status:409,bling_order_id:blingOrderId,remaining,external_write:true};
+    }
+    updated=true;
+  }
+
+  let currentStatusId=Number(remote?.situacao?.id||remote?.situacao||0)||0;
+  if(currentStatusId!==targetStatusId){
+    const catalog=meta?.order_status_catalog||{};
+    const transition=(catalog.transitions||[]).find((x:any)=>
+      x?.ativo!==false
+      && Number(x?.origem?.id)===currentStatusId
+      && Number(x?.destino?.id)===targetStatusId
+    );
+    if(!transition){
+      return {
+        ok:false,error:"required_transition_missing",status:409,
+        bling_order_id:blingOrderId,from_status_id:currentStatusId,to_status_id:targetStatusId,
+        external_write:externalWrite
+      };
+    }
+    if(Array.isArray(transition.acoes)&&transition.acoes.length){
+      return {
+        ok:false,error:"transition_has_actions",status:409,
+        bling_order_id:blingOrderId,transition_id:transition.id,transition_actions:transition.acoes,
+        external_write:externalWrite
+      };
+    }
+    const patch=await blingHubPatchOrderStatusOnce(sb,token,blingOrderId,targetStatusId);
+    externalWrite=true;
+    if(!patch.ok){
+      return {
+        ok:false,error:"order_status_patch_http_"+patch.status,status:patch.status||502,
+        bling_order_id:blingOrderId,from_status_id:currentStatusId,to_status_id:targetStatusId,
+        provider_details:patch.provider_details||[],requires_reconciliation:Boolean(patch.uncertain),
+        external_write:true
+      };
+    }
+    statusChanged=true;
+  }
+
+  const verify=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+  if(!verify.ok){
+    return {ok:false,error:"post_state_verify_http_"+verify.status,status:verify.status,bling_order_id:blingOrderId,external_write:externalWrite};
+  }
+  remote=verify.data?.data||{};
+  currentStatusId=Number(remote?.situacao?.id||remote?.situacao||0)||0;
+  const remoteKey=clean(remote?.numeroLoja,120);
+  const remoteTotal=Math.round(Number(remote?.total||0)*100);
+  const expectedTotal=Number(preview.totals?.order_total_cents||0);
+  if(remoteKey!==externalKey||Math.abs(remoteTotal-expectedTotal)>1||currentStatusId!==targetStatusId){
+    return {
+      ok:false,error:"post_state_order_mismatch",status:409,
+      bling_order_id:blingOrderId,
+      key_matches:remoteKey===externalKey,
+      total_matches:Math.abs(remoteTotal-expectedTotal)<=1,
+      expected_status_id:targetStatusId,
+      observed_status_id:currentStatusId,
+      external_write:externalWrite
+    };
+  }
+
+  const now=new Date().toISOString();
+  const link=await sb.from("bling_hub_entity_links_v2").upsert({
+    source_system:"vitrine_qx",
+    entity_type:"order",
+    source_id:sourceOrderId,
+    bling_id:blingOrderId,
+    identity_kind:"numeroLoja",
+    identity_value:externalKey,
+    status:"matched",
+    last_verified_at:now,
+    updated_at:now,
+    metadata:{
+      verified:true,total_cents:expectedTotal,
+      created_by_hub:created,updated_by_hub:updated,
+      ops2_target_key:targetKey,ops2_target_status_id:targetStatusId,
+      make_used:false
+    }
+  },{onConflict:"source_system,entity_type,source_id"});
+  if(link.error)throw link.error;
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"ops2_order_state_ensured",
+    severity:"info",
+    domain:"order",
+    source_system:"dona_antonia",
+    source_id:sourceOrderId,
+    details:{
+      bling_order_id:blingOrderId,target_key:targetKey,target_status_id:targetStatusId,
+      created,updated,status_changed:statusChanged,canary,
+      external_write:externalWrite,make_used:false
+    }
+  });
+
+  return {
+    ok:true,
+    source_order_id:sourceOrderId,
+    bling_order_id:blingOrderId,
+    external_key:externalKey,
+    target_key:targetKey,
+    target_status_id:targetStatusId,
+    created,updated,status_changed:statusChanged,
+    customer_ensure:customerEnsured,
+    verified:true,
+    external_write:externalWrite
+  };
+}
+
 async function blingHubOps2CanaryOrderStatus(sb:any,sourceOrderIdRaw:any,targetKeyRaw:any){
   const sourceOrderId=uuid(sourceOrderIdRaw);
   const targetKey=clean(targetKeyRaw,80);
@@ -6929,6 +7176,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_canary_order_status"){
         const result=await blingHubOps2CanaryOrderStatus(sb,body?.source_order_id,body?.target_key);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_ensure_order_state"){
+        const result=await blingHubOps2EnsureOrderState(sb,body?.payload,body?.target_key,body?.canary===true);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="order_link_status"){
