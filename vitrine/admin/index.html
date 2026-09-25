@@ -496,9 +496,17 @@
     return data;
   }
 
-  const OAUTH_RESULT=new URLSearchParams(location.search).get('bling_oauth');
-  if(OAUTH_RESULT==='success'){history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Bling reconectado. Agora valide as permissões.'),500)}
-  if(OAUTH_RESULT==='error'){const d=new URLSearchParams(location.search).get('detail')||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
+  const OAUTH_PARAMS=new URLSearchParams(location.search);
+  const OAUTH_RESULT=OAUTH_PARAMS.get('bling_oauth');
+  const OAUTH_DETAIL=OAUTH_PARAMS.get('detail')||'';
+  if(OAUTH_RESULT==='success'){
+    history.replaceState({},'',location.pathname+location.hash);
+    const msg=OAUTH_DETAIL==='status_catalog_ok'
+      ?'Bling reconectado e Situações validadas.'
+      :'Bling reconectado, mas o acesso a Situações ainda precisa ser liberado.';
+    setTimeout(()=>toast(msg),500)
+  }
+  if(OAUTH_RESULT==='error'){const d=OAUTH_DETAIL||'erro';history.replaceState({},'',location.pathname+location.hash);setTimeout(()=>toast('Falha ao reconectar Bling: '+d),500)}
 
   function setTab(tab){
     state.tab=tab;
