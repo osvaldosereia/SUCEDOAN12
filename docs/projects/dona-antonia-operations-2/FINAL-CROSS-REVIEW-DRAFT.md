@@ -87,3 +87,13 @@ Alvo: consolidar após homologação; nenhum polling vazio.
 A análise arquitetural está próxima do fechamento.
 
 Depois da validação desses gates, o Projeto Final pode ser escrito sem depender de descobrir novas funções durante a programação.
+
+## Complemento final — pós-venda, recebimento e recall
+A rodada final adicionou cinco pontos que devem constar do Projeto Master:
+1. vendas por site/WhatsApp precisam de fluxo claro de cancelamento/arrependimento e pós-venda;
+2. devolução/refund é processo próprio, não exclusão retroativa da venda;
+3. Check-in de Recebimentos Bling deve tratar falta/dano/incorreto/recusa antes do estoque;
+4. estoque vendável deve seguir saldo virtual do depósito Geral, refletido por webhook;
+5. recall/interdição por lote precisa bloquear venda, segregar em Quarentena e permitir rastrear clientes afetados.
+
+O escopo continua simples: uma operação física, delivery próprio, dois depósitos lógicos (Geral e Quarentena), sem WMS ou multi-loja.
