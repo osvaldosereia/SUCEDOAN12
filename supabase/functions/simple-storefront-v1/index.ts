@@ -106,9 +106,11 @@ async function availableStockMap(productIds:string[]) {
       .eq("organization_id",ORG_ID)
       .in("id",ids),
     db.from("order_stock_reservations")
-      .select("product_id,quantity")
+      .select("product_id,quantity,orders!inner(status,created_at)")
       .eq("organization_id",ORG_ID)
       .eq("status","reserved")
+      .eq("orders.status","created")
+      .gte("orders.created_at",new Date(Date.now()-2*60*60*1000).toISOString())
       .in("product_id",ids)
   ]);
   if(pErr)throw pErr;
