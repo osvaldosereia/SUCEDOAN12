@@ -2266,6 +2266,385 @@ function blingHubOps2NegativeVirtualRows(snapshot:any){
   );
 }
 
+
+async function blingHubPostOrderActionOnce(sb:any,token:string,path:string){
+  await blingHubReserveSlot(sb);
+  try{
+    const r=await fetch(BLING_API_BASE+path,{
+      method:"POST",
+      headers:{Authorization:"Bearer "+token,Accept:"application/json","enable-jwt":"1"},
+      signal:AbortSignal.timeout(15000)
+    });
+    const raw=await r.text();
+    let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+    return {
+      ok:r.ok,status:r.status,data,
+      error:r.ok?"":clean(data?.error?.message||data?.error?.description||data?.error||raw,700),
+      provider_details:blingHubProviderDetails(data),
+      uncertain:r.status>=500
+    };
+  }catch(e){
+    return {
+      ok:false,status:0,data:{},
+      error:clean((e as Error)?.message||e,700),
+      provider_details:[],uncertain:true
+    };
+  }
+}
+
+function blingHubOps2PhysicalDeltaCheck(before:any,after:any,direction:"launch"|"reverse"){
+  const afterMap=new Map<number,any>(
+    (Array.isArray(after?.rows)?after.rows:[])
+      .map((x:any)=>[Number(x?.bling_product_id||0),x])
+      .filter((x:any)=>x[0]>0)
+  );
+  const rows:any[]=[];
+  let ok=true;
+  for(const b of Array.isArray(before?.rows)?before.rows:[]){
+    const id=Number(b?.bling_product_id||0);
+    const a=afterMap.get(id);
+    const required=Number(b?.required||0);
+    const beforePhysical=Number(b?.physical);
+    const afterPhysical=Number(a?.physical);
+    const expected=direction==="launch"?beforePhysical-required:beforePhysical+required;
+    const matched=Number.isFinite(beforePhysical)&&Number.isFinite(afterPhysical)&&Math.abs(afterPhysical-expected)<=0.0001;
+    if(!matched)ok=false;
+    rows.push({
+      product_id:b?.product_id||null,
+      bling_product_id:id||null,
+      required,
+      before_physical:Number.isFinite(beforePhysical)?beforePhysical:null,
+      expected_physical:Number.isFinite(expected)?expected:null,
+      after_physical:Number.isFinite(afterPhysical)?afterPhysical:null,
+      after_virtual:Number.isFinite(Number(a?.virtual))?Number(a.virtual):null,
+      matched
+    });
+  }
+  return {ok,checked:rows.length,mismatches:rows.filter((x:any)=>!x.matched),rows};
+}
+
+async function blingHubOps2WaitPhysicalDelta(
+  sb:any,token:string,payload:any,depositId:number,before:any,direction:"launch"|"reverse"
+){
+  let last:any=null,comparison:any=null;
+  for(let attempt=1;attempt<=4;attempt++){
+    last=await blingHubOps2VirtualStockSnapshot(sb,token,payload,depositId);
+    comparison=blingHubOps2PhysicalDeltaCheck(before,last,direction);
+    if(comparison.ok)return {ok:true,attempt,snapshot:last,comparison};
+    if(attempt<4)await sleep(attempt*400);
+  }
+  return {ok:false,attempt:4,snapshot:last,comparison};
+}
+
+async function blingHubOps2PatchSafeStatus(
+  sb:any,token:string,catalog:any,blingOrderId:number,currentStatusId:number,targetStatusId:number
+){
+  if(currentStatusId===targetStatusId)return {ok:true,changed:false,status_id:targetStatusId};
+  const transition=(Array.isArray(catalog?.transitions)?catalog.transitions:[]).find((x:any)=>
+    x?.ativo!==false
+    && Number(x?.origem?.id)===currentStatusId
+    && Number(x?.destino?.id)===targetStatusId
+  );
+  if(!transition){
+    return {ok:false,error:"required_transition_missing",status:409,from_status_id:currentStatusId,to_status_id:targetStatusId};
+  }
+  if(Array.isArray(transition?.acoes)&&transition.acoes.length){
+    return {
+      ok:false,error:"transition_has_actions",status:409,
+      transition_id:transition.id,actions:transition.acoes,
+      from_status_id:currentStatusId,to_status_id:targetStatusId
+    };
+  }
+  const write=await blingHubPatchOrderStatusOnce(sb,token,blingOrderId,targetStatusId);
+  if(!write.ok){
+    return {
+      ok:false,error:write.uncertain?"status_change_uncertain":"status_change_http_"+write.status,
+      status:write.status||502,detail:write.error||null,provider_details:write.provider_details||[],
+      from_status_id:currentStatusId,to_status_id:targetStatusId,
+      external_write:"unknown_possible"
+    };
+  }
+  const verify=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+  if(!verify.ok)return {ok:false,error:"post_status_verify_http_"+verify.status,status:verify.status,external_write:true};
+  const observed=Number(verify.data?.data?.situacao?.id||verify.data?.data?.situacao||0)||0;
+  if(observed!==targetStatusId){
+    return {ok:false,error:"post_status_verify_mismatch",status:409,expected_status_id:targetStatusId,observed_status_id:observed,external_write:true};
+  }
+  return {ok:true,changed:true,status_id:observed,transition_id:transition.id,external_write:true};
+}
+
+async function blingHubOps2PhysicalStockCanary(sb:any,payloadRaw:any){
+  const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
+  const sourceOrderId=uuid(payload?.source_order_id);
+  if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400,external_write:false};
+
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("mode,hub_enabled,webhooks_enabled,metadata")
+    .eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  if(runtime.data?.mode!=="homologation"){
+    return {ok:false,error:"homologation_required",status:409,external_write:false};
+  }
+  if(runtime.data?.hub_enabled===true||runtime.data?.webhooks_enabled===true){
+    return {ok:false,error:"safe_mode_required",status:409,external_write:false};
+  }
+  const meta=runtime.data?.metadata||{};
+  if(meta?.ops2_stock_mirror_event_mode?.state!=="verified"){
+    return {ok:false,error:"stock_mirror_gate_not_verified",status:409,external_write:false};
+  }
+  const mapping=meta?.ops2_order_status_mapping||{};
+  if(mapping.state!=="prepared")return {ok:false,error:"ops2_status_mapping_not_prepared",status:409,external_write:false};
+
+  const waitingId=Number(mapping.awaiting_confirmation_id||0)||0;
+  const approvedId=Number(mapping.approved_separation_id||0)||0;
+  const verifiedId=Number(mapping.verified_id||0)||0;
+  const attendedId=Number(mapping.attended_id||0)||0;
+  const openId=Number(mapping.default_open_id||0)||0;
+  const depositId=Number(meta?.selected_deposit_id||0)||0;
+  if(!waitingId||!approvedId||!verifiedId||!attendedId||!openId||!depositId){
+    return {ok:false,error:"ops2_physical_canary_mapping_incomplete",status:409,external_write:false};
+  }
+
+  const approved=await blingHubOps2EnsureOrderState(sb,payload,"approved_separation",true);
+  if(!approved.ok)return {...approved,stage:"ensure_approved"};
+
+  const blingOrderId=Number(approved.bling_order_id||0);
+  const token=await blingHubOauth(sb);
+  const catalog=meta?.order_status_catalog||{};
+
+  const detail0=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+  if(!detail0.ok)return {ok:false,error:"order_detail_http_"+detail0.status,status:detail0.status,stage:"before_verified",external_write:true};
+  let currentId=Number(detail0.data?.data?.situacao?.id||detail0.data?.data?.situacao||0)||0;
+
+  const toVerified=await blingHubOps2PatchSafeStatus(sb,token,catalog,blingOrderId,currentId,verifiedId);
+  if(!toVerified.ok){
+    await blingHubOps2EnsureOrderState(sb,payload,"awaiting_confirmation",true);
+    return {...toVerified,stage:"to_verified",external_write:true};
+  }
+  currentId=verifiedId;
+
+  const beforeLaunch=await blingHubOps2VirtualStockSnapshot(sb,token,payload,depositId);
+  if(!(beforeLaunch?.rows||[]).length){
+    await blingHubOps2PatchSafeStatus(sb,token,catalog,blingOrderId,currentId,openId);
+    await blingHubOps2PatchSafeStatus(sb,token,catalog,blingOrderId,openId,waitingId);
+    return {ok:false,error:"before_launch_snapshot_missing",status:409,stage:"before_launch",external_write:true};
+  }
+
+  const claimLaunch=await sb.rpc("claim_bling_order_stock_action_v2",{
+    p_source_order_id:sourceOrderId,
+    p_bling_order_id:blingOrderId,
+    p_deposit_id:depositId,
+    p_action:"launch",
+    p_snapshot:beforeLaunch
+  });
+  if(claimLaunch.error)throw claimLaunch.error;
+  if(claimLaunch.data?.already_done===true){
+    return {ok:false,error:"canary_stock_already_launched",status:409,control:claimLaunch.data,external_write:true};
+  }
+  if(claimLaunch.data?.claimed!==true){
+    return {ok:false,error:"canary_stock_launch_not_claimed",status:409,control:claimLaunch.data,external_write:true};
+  }
+
+  const launchWrite=await blingHubPostOrderActionOnce(
+    sb,token,
+    "/pedidos/vendas/"+encodeURIComponent(String(blingOrderId))+
+    "/lancar-estoque/"+encodeURIComponent(String(depositId))
+  );
+  const launched=await blingHubOps2WaitPhysicalDelta(sb,token,payload,depositId,beforeLaunch,"launch");
+  const launchObserved=launched.ok;
+  const finishLaunch=await sb.rpc("finish_bling_order_stock_action_v2",{
+    p_source_order_id:sourceOrderId,
+    p_action:"launch",
+    p_success:launchObserved,
+    p_snapshot:launched.snapshot||{},
+    p_error:launchObserved?null:(launchWrite.error||"launch_physical_delta_not_verified"),
+    p_metadata:{
+      canary:true,
+      provider_http_status:launchWrite.status||null,
+      provider_ok:launchWrite.ok===true,
+      provider_uncertain:launchWrite.uncertain===true,
+      physical_delta:launched.comparison||{}
+    }
+  });
+  if(finishLaunch.error)throw finishLaunch.error;
+
+  if(!launchObserved){
+    await sb.from("ops_attention").upsert({
+      type:"stock_control",
+      entity_type:"order",
+      entity_id:sourceOrderId,
+      priority:"critical",
+      owner_role:"owner",
+      status:"open",
+      summary:"Canário Operations 2.0: lançamento físico de estoque não pôde ser reconciliado.",
+      recommended_action:"Não repetir o lançamento. Verificar o pedido no Bling e o controle bling_order_stock_controls_v2.",
+      evidence:{
+        bling_order_id:blingOrderId,deposit_id:depositId,
+        provider_http_status:launchWrite.status||null,
+        provider_error:launchWrite.error||null,
+        comparison:launched.comparison||{}
+      },
+      source_system:"bling",
+      idempotency_key:"ops2:attention:physical_stock_canary:"+sourceOrderId
+    },{onConflict:"idempotency_key"});
+    return {
+      ok:false,error:"physical_stock_launch_unverified",status:409,stage:"launch",
+      provider:launchWrite,comparison:launched.comparison||{},external_write:true
+    };
+  }
+
+  const toAttended=await blingHubOps2PatchSafeStatus(sb,token,catalog,blingOrderId,verifiedId,attendedId);
+  if(!toAttended.ok){
+    // The physical write is known. Recover it before leaving the canary.
+    const beforeReverse=launched.snapshot;
+    const claimReverse=await sb.rpc("claim_bling_order_stock_action_v2",{
+      p_source_order_id:sourceOrderId,p_bling_order_id:blingOrderId,p_deposit_id:depositId,
+      p_action:"reverse",p_snapshot:beforeReverse||{}
+    });
+    if(claimReverse.error)throw claimReverse.error;
+    if(claimReverse.data?.claimed===true){
+      const reverseWrite=await blingHubPostOrderActionOnce(
+        sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId))+"/estornar-estoque"
+      );
+      const reversed=await blingHubOps2WaitPhysicalDelta(sb,token,payload,depositId,beforeReverse,"reverse");
+      await sb.rpc("finish_bling_order_stock_action_v2",{
+        p_source_order_id:sourceOrderId,p_action:"reverse",p_success:reversed.ok,
+        p_snapshot:reversed.snapshot||{},p_error:reversed.ok?null:(reverseWrite.error||"reverse_delta_not_verified"),
+        p_metadata:{canary:true,recovery_after:"to_attended_failed",provider_http_status:reverseWrite.status||null}
+      });
+    }
+    return {...toAttended,stage:"to_attended",physical_stock_was_launched:true,recovery_attempted:true,external_write:true};
+  }
+
+  const afterAttended=await blingHubOps2VirtualStockSnapshot(sb,token,payload,depositId);
+  const beforeReverse=afterAttended;
+  const claimReverse=await sb.rpc("claim_bling_order_stock_action_v2",{
+    p_source_order_id:sourceOrderId,
+    p_bling_order_id:blingOrderId,
+    p_deposit_id:depositId,
+    p_action:"reverse",
+    p_snapshot:beforeReverse
+  });
+  if(claimReverse.error)throw claimReverse.error;
+  if(claimReverse.data?.claimed!==true){
+    return {ok:false,error:"canary_stock_reverse_not_claimed",status:409,control:claimReverse.data,stage:"reverse_claim",external_write:true};
+  }
+
+  const reverseWrite=await blingHubPostOrderActionOnce(
+    sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId))+"/estornar-estoque"
+  );
+  const reversed=await blingHubOps2WaitPhysicalDelta(sb,token,payload,depositId,beforeReverse,"reverse");
+  const reverseObserved=reversed.ok;
+  const finishReverse=await sb.rpc("finish_bling_order_stock_action_v2",{
+    p_source_order_id:sourceOrderId,
+    p_action:"reverse",
+    p_success:reverseObserved,
+    p_snapshot:reversed.snapshot||{},
+    p_error:reverseObserved?null:(reverseWrite.error||"reverse_physical_delta_not_verified"),
+    p_metadata:{
+      canary:true,
+      provider_http_status:reverseWrite.status||null,
+      provider_ok:reverseWrite.ok===true,
+      provider_uncertain:reverseWrite.uncertain===true,
+      physical_delta:reversed.comparison||{}
+    }
+  });
+  if(finishReverse.error)throw finishReverse.error;
+
+  if(!reverseObserved){
+    await sb.from("ops_attention").upsert({
+      type:"stock_control",
+      entity_type:"order",
+      entity_id:sourceOrderId,
+      priority:"critical",
+      owner_role:"owner",
+      status:"open",
+      summary:"Canário Operations 2.0: estorno do lançamento físico não pôde ser comprovado.",
+      recommended_action:"Não repetir automaticamente. Verificar o pedido e os saldos físicos no Bling.",
+      evidence:{
+        bling_order_id:blingOrderId,deposit_id:depositId,
+        provider_http_status:reverseWrite.status||null,
+        provider_error:reverseWrite.error||null,
+        comparison:reversed.comparison||{}
+      },
+      source_system:"bling",
+      idempotency_key:"ops2:attention:physical_stock_canary:"+sourceOrderId
+    },{onConflict:"idempotency_key"});
+    return {
+      ok:false,error:"physical_stock_reverse_unverified",status:409,stage:"reverse",
+      provider:reverseWrite,comparison:reversed.comparison||{},external_write:true
+    };
+  }
+
+  const backOpen=await blingHubOps2PatchSafeStatus(sb,token,catalog,blingOrderId,attendedId,openId);
+  if(!backOpen.ok)return {...backOpen,stage:"recovery_to_open",stock_reversed:true,external_write:true};
+  const backWaiting=await blingHubOps2PatchSafeStatus(sb,token,catalog,blingOrderId,openId,waitingId);
+  if(!backWaiting.ok)return {...backWaiting,stage:"recovery_to_waiting",stock_reversed:true,external_write:true};
+
+  const finalSnapshot=await blingHubOps2VirtualStockSnapshot(sb,token,payload,depositId);
+  const finalVsInitial=blingHubOps2PhysicalDeltaCheck(beforeLaunch,finalSnapshot,"reverse");
+  // finalVsInitial uses +qty and is not the intended comparison; compare equality explicitly.
+  const finalMap=new Map<number,any>((finalSnapshot.rows||[]).map((x:any)=>[Number(x.bling_product_id||0),x]));
+  const restoreRows=(beforeLaunch.rows||[]).map((b:any)=>{
+    const a=finalMap.get(Number(b.bling_product_id||0));
+    const beforePhysical=Number(b.physical),afterPhysical=Number(a?.physical);
+    const matched=Number.isFinite(beforePhysical)&&Number.isFinite(afterPhysical)&&Math.abs(beforePhysical-afterPhysical)<=0.0001;
+    return {
+      product_id:b.product_id,bling_product_id:b.bling_product_id,
+      before_physical:beforePhysical,after_physical:afterPhysical,matched
+    };
+  });
+  const fullyRestored=restoreRows.length>0&&restoreRows.every((x:any)=>x.matched);
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"ops2_physical_stock_canary_completed",
+    severity:fullyRestored?"info":"error",
+    domain:"stock",source_system:"bling",source_id:sourceOrderId,
+    details:{
+      bling_order_id:blingOrderId,deposit_id:depositId,
+      launch_http_status:launchWrite.status||null,launch_delta_ok:launched.ok,
+      reverse_http_status:reverseWrite.status||null,reverse_delta_ok:reversed.ok,
+      final_status_id:waitingId,fully_restored:fullyRestored,
+      restored_rows:restoreRows,make_used:false,external_write:true
+    }
+  });
+
+  if(fullyRestored){
+    await sb.from("ops_attention")
+      .update({
+        status:"resolved",resolved_at:new Date().toISOString(),updated_at:new Date().toISOString(),
+        resolution:"Canário físico concluído e estoque restaurado automaticamente.",
+        resolution_ref:"bling:ops2:physical-stock-canary:"+blingOrderId
+      })
+      .eq("idempotency_key","ops2:attention:physical_stock_canary:"+sourceOrderId)
+      .in("status",["open","acknowledged"]);
+  }
+
+  return {
+    ok:fullyRestored,
+    source_order_id:sourceOrderId,
+    bling_order_id:blingOrderId,
+    deposit_id:depositId,
+    launch:{
+      provider_http_status:launchWrite.status||null,
+      provider_ok:launchWrite.ok===true,
+      delta_verified:launched.ok,
+      checked:launched.comparison?.checked||0
+    },
+    attended:true,
+    reverse:{
+      provider_http_status:reverseWrite.status||null,
+      provider_ok:reverseWrite.ok===true,
+      delta_verified:reversed.ok,
+      checked:reversed.comparison?.checked||0
+    },
+    final_status_id:waitingId,
+    fully_restored:fullyRestored,
+    restored_rows:restoreRows,
+    external_write:true
+  };
+}
+
 async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:any,canaryRaw:any=false){
   const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
   const sourceOrderId=uuid(payload?.source_order_id);
@@ -7356,6 +7735,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_ensure_order_state"){
         const result=await blingHubOps2EnsureOrderState(sb,body?.payload,body?.target_key,body?.canary===true);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_physical_stock_canary"){
+        const result=await blingHubOps2PhysicalStockCanary(sb,body?.payload);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="order_link_status"){
