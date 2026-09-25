@@ -534,3 +534,62 @@ Estado de segurança preservado:
 - Make não foi usado.
 
 Próximo passo: homologar o processamento de `virtual_stock.updated` para atualizar de forma segura o espelho local usado pelo site, antes de liberar webhooks gerais.
+
+
+
+## Espelho de estoque Bling por webhook — HOMOLOGADO em 2026-09-25
+
+### Backfill
+O shadow mirror `bling_stock_mirror_v2` foi preenchido por leitura do Bling, sem escrita externa:
+- 1.634 produtos ativos;
+- 1.630 ativos com vínculo Bling exato;
+- 1.630/1.630 vinculados cobertos pelo mirror;
+- 4 ativos sem correspondência exata por GTIN/SKU no catálogo Bling;
+- 0 vinculados sem snapshot.
+
+Comparação do legado `products.stock` com o saldo virtual do depósito Geral:
+- 1.087 iguais;
+- 543 divergentes;
+- 168 com local acima do Bling;
+- 375 com local abaixo do Bling;
+- 11 vendáveis localmente enquanto o Bling estava zerado;
+- 3 zerados localmente enquanto o Bling tinha saldo.
+
+Os 4 sem vínculo ficaram em atenção; nenhum vínculo aproximado foi criado.
+
+### Atualização orientada a evento
+Foi implantada aplicação idempotente de `virtual_stock.updated` no mirror:
+- fonte: webhook Bling assinado;
+- depósito vendável: Geral;
+- proteção contra evento fora de ordem por `observed_at`;
+- nunca altera `products.stock`;
+- nunca escreve estoque de volta no Bling;
+- sem cron/worker de sincronização contínua.
+
+Durante a primeira ativação do trigger houve um erro de implementação: uso de `min(uuid)` no PostgreSQL causou respostas HTTP 500 para eventos de estoque. A flag shadow foi desligada imediatamente, o erro foi localizado nos logs e corrigido pela migration `ops2_virtual_stock_shadow_trigger_v1_fix`.
+
+Após a correção:
+- flag shadow reativada;
+- rollback real do pedido canário gerou 28 `virtual_stock.updated`;
+- 28/28 foram processados automaticamente;
+- receiver respondeu HTTP 200 em todos;
+- maior tempo observado: 2.214 ms;
+- mirror do Achocolatado fechou em físico 3 / virtual 3;
+- pedido canário voltou para `Aguardando confirmação`;
+- reserva ficou liberada;
+- 0 eventos `virtual_stock` canários permaneceram presos em `held`.
+
+Estado do gate: **PASSOU**.
+
+O Hub geral continua desligado:
+- `hub_enabled=false`;
+- `webhooks_enabled=false`;
+- somente o shadow mirror de `virtual_stock.updated` está ativo.
+
+### Próximo gate
+Antes de o site consumir o mirror, remover a dependência operacional do modelo legado:
+- checkout ainda valida `products.stock`;
+- confirmação ainda cria reserva local;
+- trigger legado ainda consome `products.stock` ao confirmar;
+- Admin ainda calcula readiness com `products.stock`;
+- esse ciclo precisa ser substituído de forma atômica para impedir dupla contagem com a reserva oficial do Bling.
