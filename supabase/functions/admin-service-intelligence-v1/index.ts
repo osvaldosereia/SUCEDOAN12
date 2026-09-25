@@ -5021,12 +5021,21 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   const operationalBlockers:string[]=[];
   const queueReason=clean(payload?.queue_reason,80);
   const payment=payload?.payment&&typeof payload.payment==="object"?payload.payment:{};
+  const earlyAwaiting=["awaiting_confirmation","awaiting_confirmation_canary"].includes(queueReason);
+  const earlyApproved=queueReason==="approved_early_order";
+  const earlyOrder=earlyAwaiting||earlyApproved;
   const separationStarted=queueReason==="first_separation" || payment?.stock_consumed===true;
   const physicalStockHandled=payment?.stock_consumed===true || (separationStarted && payment?.stock_reserved===true);
   const orderStatus=clean(payload?.status,40).toLowerCase();
 
-  if(!separationStarted)operationalBlockers.push("first_separation_required");
-  if(!physicalStockHandled)operationalBlockers.push("stock_not_consumed");
+  if(earlyAwaiting){
+    if(!["created","storefront_received"].includes(orderStatus))operationalBlockers.push("awaiting_confirmation_status_required");
+  }else if(earlyApproved){
+    if(!["confirmed","processing"].includes(orderStatus))operationalBlockers.push("approved_order_status_required");
+  }else{
+    if(!separationStarted)operationalBlockers.push("first_separation_required");
+    if(!physicalStockHandled)operationalBlockers.push("stock_not_consumed");
+  }
   if(orderStatus==="cancelled")operationalBlockers.push("order_cancelled");
   if(Number.isFinite(orderTotal)&&orderTotal<7500)operationalBlockers.push("minimum_order_not_met");
 
@@ -5036,6 +5045,15 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
   const externalKey="VITRINE-"+sourceOrderId.replace(/-/g,"").slice(0,28);
   const createdAt=payload?.created_at?new Date(payload.created_at):new Date();
   const dateCuiaba=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).format(createdAt);
+
+  let initialBlingStatusId:number|null=null;
+  if(earlyOrder){
+    const runtime=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
+    if(runtime.error)throw runtime.error;
+    const mapping=runtime.data?.metadata?.ops2_order_status_mapping||{};
+    initialBlingStatusId=Number(earlyAwaiting?mapping.awaiting_confirmation_id:mapping.approved_separation_id)||null;
+    if(mapping.state!=="prepared"||!initialBlingStatusId)operationalBlockers.push("ops2_status_mapping_not_prepared");
+  }
 
   const orderPayload={
     contato:contactId?{id:contactId}:null,
@@ -5064,6 +5082,7 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
     }},
     observacoes:"Pedido Vitrine Dona Antônia · "+externalKey+" · Pagamento: "+clean(payload?.payment?.label||payload?.payment?.method,100)
   };
+  const createOrderPayload=initialBlingStatusId?{...orderPayload,situacao:{id:initialBlingStatusId}}:orderPayload;
 
   return {
     ok:true,
@@ -5087,7 +5106,10 @@ async function blingHubPreviewOrderSync(sb:any,payloadRaw:any){
       discount_cents:Math.round(discount),
       balances:Boolean(Number.isFinite(orderTotal)&&Math.abs((lineSum+otherExpenses-discount)-orderTotal)<=1)
     },
-    desired_order:orderPayload
+    desired_order:orderPayload,
+    create_order:createOrderPayload,
+    initial_bling_status_id:initialBlingStatusId,
+    early_order:earlyOrder
   };
 }
 
@@ -5311,7 +5333,7 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
       let creationResult:any=null;
 
       if(!blingOrderId){
-        creationResult=await blingHubCreateOrderOnce(sb,token,preview.desired_order);
+        creationResult=await blingHubCreateOrderOnce(sb,token,preview.create_order||preview.desired_order);
         if(!creationResult.ok){
           if(creationResult.status===429){
             await sb.rpc("finish_bling_hub_job_v2",{
