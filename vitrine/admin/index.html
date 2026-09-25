@@ -409,7 +409,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[]};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -2548,11 +2548,27 @@
       '<div class="bling-banner" id="blingRuntimeBanner"><strong>Carregando estado do Hub…</strong><small>Consultando quais domínios estão ativos e quais continuam bloqueados.</small></div>'+
       '<div id="blingStatus"><div class="loading">Carregando status…</div></div>';
     $('#refreshBling').onclick=()=>loadBlingStatus();
-    await loadBlingStatus();
+    await Promise.all([loadBlingStatus(),loadOpsShadowReadiness()]);
+    if($('#blingStatus')&&state.opsShadow)$('#blingStatus').insertAdjacentHTML('beforebegin',renderOpsShadowReadiness());
   }
 
   function yesNo(value,yes='OK',no='Pendente'){
     return value?'<span class="ok-text">'+esc(yes)+'</span>':'<span class="warn-text">'+esc(no)+'</span>';
+  }
+
+  async function loadOpsShadowReadiness(){
+    try{const data=await api('ops_shadow_readiness');state.opsShadow=data.readiness||{};return state.opsShadow}catch{state.opsShadow=null;return null}
+  }
+  function renderOpsShadowReadiness(){
+    const s=state.opsShadow;if(!s)return '';
+    const total=Number(s.total||0),ready=Number(s.erp_ready||0),blocked=Number(s.blocked||0);
+    return '<div class="panel" style="margin-bottom:14px"><div class="history-title dispatch-head"><div><strong>Prontidão do novo fluxo</strong><span>shadow mode · nenhuma escrita externa</span></div><b>'+ready+' / '+total+'</b></div><div class="bling-grid" style="padding:14px">'+
+      '<div class="bling-card"><small>Prontos para ERP</small><strong class="ok-text">'+ready+'</strong><span class="sub">cliente + endereço + pagamento + produtos vinculados</span></div>'+
+      '<div class="bling-card"><small>Bloqueados</small><strong class="'+(blocked?'warn-text':'ok-text')+'">'+blocked+'</strong><span class="sub">antes do canário</span></div>'+
+      '<div class="bling-card"><small>Cliente/vínculo</small><strong>'+Number(s.unresolved_customer||0)+'</strong><span class="sub">precisam consolidação</span></div>'+
+      '<div class="bling-card"><small>Endereço</small><strong>'+Number(s.incomplete_address||0)+'</strong><span class="sub">incompletos</span></div>'+
+      '<div class="bling-card"><small>Produtos</small><strong>'+Number(s.unresolved_products||0)+'</strong><span class="sub">sem vínculo Bling</span></div>'+
+    '</div></div>';
   }
 
   async function loadBlingStatus(){
