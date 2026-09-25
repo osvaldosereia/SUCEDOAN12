@@ -142,6 +142,7 @@ async function remoteProductByGtin(token:string,g:string){
   const q=new URLSearchParams({pagina:"1",limite:"20"});q.append("gtins[]",g);
   const r=await bg(token,"/produtos?"+q.toString());if(!r.ok)return null;
   const exact=(Array.isArray(r.data?.data)?r.data.data:[]).filter((x:any)=>[x?.gtin,x?.gtinEmbalagem].map(digits).includes(g));
+  if(exact.length>1)throw new Error("multiple_bling_gtin");
   return exact.length===1?exact[0]:null;
 }
 async function ensureProduct(token:string,p:any,item:any){
@@ -154,6 +155,12 @@ async function ensureProduct(token:string,p:any,item:any){
   }
   let remote:any=null;
   for(const g of gs){remote=await remoteProductByGtin(token,g);if(remote)break}
+  if(!remote&&local?.bling_product_id){
+    const d=await bg(token,"/produtos/"+Number(local.bling_product_id));
+    if(!d.ok)return {ok:false,review:"existing_bling_product_http_"+d.status,product:null,bling_id:null,created:false};
+    remote=d.data?.data||null;
+  }
+  if(local?.bling_product_id&&remote?.id&&Number(local.bling_product_id)!==Number(remote.id))return {ok:false,review:"bling_gtin_binding_conflict",product:null,bling_id:null,created:false};
   if(!local&&remote){
     const q=await sb.from("products").select("id,bling_product_id,sku,name,gtin,ncm,cost,stock,unit,supplier,metadata,is_active").eq("bling_product_id",Number(remote.id)).maybeSingle();
     if(q.error)throw q.error;local=q.data||null;
@@ -229,13 +236,13 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
   if(ex.error)throw ex.error;
   if(ex.data?.id&&["processed","duplicate"].includes(ex.data.processing_status))return {duplicate:true,document_id:ex.data.id,items:p.items.length,matched:0,review:0};
   const co=await companyDocument(token);const company=co.doc,settings=co.settings;
-  const eligible=p.recipient_kind==="CNPJ"&&(!company||p.recipient_document===company);
+  const eligible=p.recipient_kind==="CNPJ"&&company.length===14&&p.recipient_document===company;
   const y=day(p.issued_at)||new Date().toISOString().slice(0,10),parts=y.split("-");
   const storagePath=[parts[0],parts[1],p.document_key+".xml"].join("/");
   const upf=await sb.storage.from("purchase-xml").upload(storagePath,new Blob([xml],{type:"application/xml"}),{upsert:true,contentType:"application/xml"});
   if(upf.error)throw new Error("xml_storage_failed:"+upf.error.message);
   const contact=await ensureContact(token,p);
-  const docUp=await sb.from("purchase_xml_documents").upsert({import_run_id:runId,source,source_document_id:sourceId,bling_nfe_id:blingId,document_key:p.document_key,content_sha256:hash,storage_path:storagePath,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,recipient_document:p.recipient_document,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":"not_applicable",receipt_status:"not_received",processing_status:"processing",total_amount:p.total_amount,item_count:p.items.length,metadata:{invoice_number:p.invoice_number,series:p.series,company_document:company||null,contact_created:Boolean(contact.created),installments:p.installments,source_mode:source},updated_at:new Date().toISOString()},{onConflict:"document_key"}).select("id").single();
+  const docUp=await sb.from("purchase_xml_documents").upsert({import_run_id:runId,source,source_document_id:sourceId,bling_nfe_id:blingId,document_key:p.document_key,content_sha256:hash,storage_path:storagePath,issued_at:p.issued_at,supplier_document:p.supplier_document,supplier_name:p.supplier_name,supplier_bling_contact_id:contact.id||null,recipient_document:p.recipient_document,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",receipt_status:"not_received",processing_status:"processing",total_amount:p.total_amount,item_count:p.items.length,metadata:{invoice_number:p.invoice_number,series:p.series,company_document:company||null,contact_created:Boolean(contact.created),installments:p.installments,source_mode:source},updated_at:new Date().toISOString()},{onConflict:"document_key"}).select("id").single();
   if(docUp.error)throw docUp.error;const documentId=docUp.data.id;
   let matched=0,review=0,created=0;
   for(const item of p.items){
@@ -264,7 +271,7 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
       review++;await sb.from("purchase_xml_items").upsert({document_id:documentId,item_number:item.item_number,supplier_item_code:item.supplier_item_code,description:item.description,commercial_gtin:item.commercial_gtin,tax_gtin:item.tax_gtin,ncm:item.ncm,cest:item.cest,cfop:item.cfop,tax_code:item.tax_code,origin_code:item.origin_code,purchase_unit:item.purchase_unit,purchase_quantity:item.purchase_quantity,purchase_unit_price:item.purchase_unit_price,line_total:item.line_total,base_unit:unit(item.tax_unit||item.purchase_unit)||"UN",conversion_status:"review_required",processing_status:"failed",metadata:{error:clean((e as Error)?.message||e,500)}},{onConflict:"document_id,item_number"});
     }
   }
-  let finance:any={status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":"not_applicable",accounts:[]};
+  let finance:any={status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",accounts:[]};
   if(p.recipient_kind==="CPF")finance={status:"blocked_personal",accounts:[],reason:"cpf_never_financial"};
   else if(eligible&&settings.auto_create_payables!==false)finance=await createPayables(token,p,Number(contact.id||0));
   const finalStatus=review?"review_required":"processed";
