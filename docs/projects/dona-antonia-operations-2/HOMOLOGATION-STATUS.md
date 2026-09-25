@@ -457,3 +457,15 @@ Se houver avaria, falta ou item impróprio:
 - retorno com pagamento já capturado não pode ser cancelado por este atalho;
 - nenhuma NF-e é cancelada automaticamente;
 - nenhuma venda histórica é apagada.
+
+
+## Gate Bling automatizado pós-OAuth — 2026-09-25
+- `admin-service-intelligence-v1` publicado em v139;
+- após uma reautorização OAuth bem-sucedida, o backend testa automaticamente `/situacoes/modulos`;
+- catálogo autorizado passa a gravar `state=ready` e `status_updates_enabled=true`;
+- a pendência `bling_scope_missing` é resolvida automaticamente quando o teste passa;
+- Hub, Webhooks e fiscal continuam desligados; nenhuma escrita de pedido é ativada automaticamente;
+- enquanto o Bling responder 403, o runtime permanece em homologação e o canário não avança.
+
+### Ação manual ainda necessária
+No cadastro do aplicativo Dona Antônia no Bling, liberar o acesso aos recursos de Situações/Módulos/Transições, salvar e reautorizar o aplicativo pelo botão **Reconectar Bling** do Vitrine/Admin. Depois disso a verificação é automática.
