@@ -1,5 +1,8 @@
 # Dona Antônia — Inventário de Runtime
 
+> **ATENÇÃO — revisão Operations 2.0 (2026-09-25):** PapoAI/WhatsApp continuam sendo parte necessária da operação comercial da Dona Antônia, inclusive para clientes que compram diretamente pelo WhatsApp. Qualquer classificação antiga de "PapoAI / WhatsApp" como DELETE deve ser entendida somente como remoção de implementações legadas/órfãs após substituição comprovada. Não remover a capacidade PapoAI/WhatsApp nem suas integrações úteis sem o Projeto Final aprovado.
+
+
 ## GitHub
 
 - `main` contém o site público, Vitrine Admin e fontes de algumas Edge Functions.
