@@ -8,7 +8,7 @@ Este repositório e o Supabase canônico existem somente para o site público e 
 
 - Código: `osvaldosereia/SUCEDOAN12`.
 - Supabase canônico: `ssbesxgaijknwsjbsbcz`.
-- `qxstkwshuvplmmftrctj` é legado temporário e deve ser eliminado após a migração das últimas ações do admin.
+- O antigo projeto Chat Commerce OS foi retirado do runtime; site público e Admin devem usar somente o Supabase canônico.
 
 ## Arquitetura alvo
 
