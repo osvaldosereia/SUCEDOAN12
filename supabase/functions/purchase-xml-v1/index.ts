@@ -289,6 +289,48 @@ async function blingXml(token:string,key:string){
 function cuiabaDate(offset=0){
   const d=new Date(Date.now()+offset*86400000),p=new Intl.DateTimeFormat("en-CA",{timeZone:"America/Cuiaba",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(d),m:any={};for(const x of p)m[x.type]=x.value;return m.year+"-"+m.month+"-"+m.day;
 }
+
+async function purchaseXmlProbe(){
+  const token=await oauth();
+  const company=await companyDocument(token);
+  const probes:any={};
+  for(const [key,path] of [
+    ["company","/empresas/me/dados-basicos"],
+    ["nfe","/nfe?pagina=1&limite=1&tipo=0"],
+    ["product_suppliers","/produtos/fornecedores?pagina=1&limite=1"],
+    ["payables","/contas/pagar?pagina=1&limite=1&situacao=1"]
+  ]){
+    const r=await bg(token,path);
+    probes[key]={ok:r.ok,http_status:r.status,scope_missing:r.status===403};
+  }
+  return {ok:Object.values(probes).every((x:any)=>x.ok===true),readonly:true,company_document_resolved:company.doc.length===14,probes};
+}
+async function purchaseXmlPreviewLatest(){
+  const token=await oauth(),company=await companyDocument(token),start=cuiabaDate(-6),end=cuiabaDate(0);
+  const q=new URLSearchParams({tipo:"0",pagina:"1",limite:"10",dataEmissaoInicial:start+" 00:00:00",dataEmissaoFinal:end+" 23:59:59"});
+  const ls=await bg(token,"/nfe?"+q.toString());
+  if(!ls.ok)return {ok:false,status:ls.status,error:"bling_nfe_list_http_"+ls.status,readonly:true};
+  const out:any[]=[];
+  for(const row of (Array.isArray(ls.data?.data)?ls.data.data:[]).slice(0,5)){
+    let key=digits(row?.chaveAcesso),bid=Number(row?.id||0)||null;
+    if(key.length!==44&&bid){const d=await bg(token,"/nfe/"+bid);if(d.ok)key=digits(d.data?.data?.chaveAcesso)}
+    if(key.length!==44){out.push({bling_nfe_id:bid,error:"missing_access_key"});continue}
+    const x=await blingXml(token,key);if(!x.ok){out.push({bling_nfe_id:bid,key_suffix:key.slice(-10),error:"xml_http_"+x.status});continue}
+    const p:any=parseXml(x.xml);
+    out.push({
+      bling_nfe_id:bid,key_suffix:p.document_key.slice(-10),issued_at:p.issued_at,
+      supplier_name:p.supplier_name,recipient_kind:p.recipient_kind,
+      recipient_matches_company:company.doc.length===14&&p.recipient_document===company.doc,
+      total_amount:p.total_amount,
+      items:p.items.slice(0,30).map((it:any)=>{
+        const qc=Number(it.purchase_quantity||0),qt=Number(it.tax_quantity||0),ratio=qc>0&&qt>0?qt/qc:null;
+        return {description:it.description,gtin:it.commercial_gtin||it.tax_gtin,purchase_unit:it.purchase_unit,purchase_quantity:qc,tax_unit:it.tax_unit,tax_quantity:qt,inferred_factor:ratio&&ratio>=1?ratio:null,purchase_unit_price:it.purchase_unit_price};
+      })
+    });
+  }
+  return {ok:true,readonly:true,window:{start,end},company_document_resolved:company.doc.length===14,documents:out};
+}
+
 async function runBlingSync(source="bling_daily"){
   const token=await oauth(),settings=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();if(settings.error)throw settings.error;
   await companyDocument(token);
@@ -381,6 +423,8 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     const u=new URL(req.url);
     const action=clean(body?.purchase_action||body?.subaction||u.searchParams.get("action")||(req.method==="GET"?"summary":""),80).toLowerCase();
     if(action==="health")return js(req,{ok:true,service:"purchase-xml-v1",version:1});
+    if(action==="probe")return js(req,await purchaseXmlProbe());
+    if(action==="preview_latest"){const r=await purchaseXmlPreviewLatest();return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="daily_sync"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await runBlingSync("bling_daily"))}
     if(action==="bling_sync")return js(req,await runBlingSync("bling_manual"));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
