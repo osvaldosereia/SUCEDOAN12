@@ -40,3 +40,53 @@ Novas estruturas não destrutivas:
 - `ops_approvals`.
 
 RLS habilitado sem acesso direto do cliente. Uso inicialmente somente por backend/service role.
+
+
+## Execução registrada — 2026-09-25
+
+### Concluído
+- branch de homologação criada e integrada ao `main`;
+- migration `ops2_foundation_v1` aplicada no Supabase;
+- migration `ops2_foundation_api_v1` aplicada no Supabase;
+- tabelas `ops_events`, `ops_attention`, `ops_approvals` criadas com RLS;
+- helpers idempotentes de evento, atenção e aprovação criados;
+- resumo leve da Control Tower criado;
+- cron `bling-hub-v2-cycle` pausado porque `hub_enabled=false`;
+- cron `fiscal-ai-autonomous-worker-v1` pausado porque o runtime fiscal está `off`;
+- cron diário de XML mantido;
+- `admin-products-live-v1` atualizado para v14;
+- aba `Hoje` evoluída para `Central`;
+- painel `Precisa de você` ligado à fila real de `ops_attention`;
+- três pendências iniciais registradas:
+  - permissão Bling para Situações/Módulos;
+  - endpoint PapoAI legado ainda configurado externamente;
+  - localização física de produtos incompleta.
+
+### Pull requests
+- PR #547 — Fase 0 — merged;
+- PR #548 — Control Tower / atenção — merged.
+
+### Sem mudança ainda
+- fluxo de criação/aprovação de pedidos;
+- reserva oficial no Bling;
+- webhooks Bling;
+- PapoAI novo;
+- estoque oficial do site;
+- fiscal;
+- pagamento;
+- rota;
+- balanço oficial no Bling.
+
+Esses domínios continuam no fluxo atual até passarem pela respectiva POC.
+
+## Próximo gate
+**Bling — Situações/Módulos + reserva + webhooks.**
+
+O runtime atual continua marcando `situacoes/modulos` como `scope_missing` (HTTP 403). Antes de ativar o workflow automático de pedidos, precisamos homologar essa permissão e provar:
+1. leitura das situações;
+2. atualização de situação;
+3. situação `Aguardando confirmação`;
+4. situação `Aprovado / Separar`;
+5. reserva somente após aprovação;
+6. webhook de atualização;
+7. reconciliação sem polling.
