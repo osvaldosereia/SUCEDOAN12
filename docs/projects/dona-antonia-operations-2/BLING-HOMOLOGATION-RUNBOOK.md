@@ -8,11 +8,15 @@ Liberar o fluxo de situações/reserva/webhooks sem voltar a polling.
 ## Estado atual
 - OAuth dos recursos principais funciona;
 - produtos, contatos, pedidos, depósitos, NF-e e financeiro respondem;
-- `situacoes/modulos` retorna 403;
+- `situacoes/modulos` responde HTTP 200;
+- módulo Vendas, situações e transições foram homologados;
+- `status_updates_enabled=true`;
+- `Aguardando confirmação` e `Aprovado / Separar` estão criados/identificados;
+- reserva de estoque foi comprovada por canário real: somente saldo virtual cai em `Aprovado / Separar` e volta ao retornar para `Aguardando confirmação`;
 - Hub está em `homologation`;
 - `hub_enabled=false`;
 - `webhooks_enabled=false`;
-- nenhum workflow novo deve ser ativado antes do gate ficar verde.
+- próximo gate é webhook real + reconciliação sem polling.
 
 ## 1. Escopos do aplicativo Bling
 Na Central de Extensões > Área do Integrador > aplicativo usado pela Dona Antônia:
@@ -84,16 +88,27 @@ Recursos alvo mínimos:
 
 Não habilitar processamento ainda.
 
-## 6. Próxima POC após escopos
-1. criar/identificar situação **Aguardando confirmação**;
-2. criar/identificar **Aprovado / Separar**;
-3. configurar reserva somente após aprovação;
-4. criar 1 pedido canário;
-5. confirmar;
-6. provar queda no saldo virtual;
-7. provar webhook;
-8. cancelar e provar liberação da reserva;
-9. só depois habilitar pedidos novos em shadow/canary.
+## 6. POC de situações/reserva
+Concluída em 2026-09-25:
+1. situação **Aguardando confirmação** homologada;
+2. situação **Aprovado / Separar** homologada;
+3. reserva configurada somente após aprovação;
+4. pedido canário Bling `26967482613` utilizado;
+5. mudança de situação confirmada;
+6. queda do saldo virtual comprovada;
+7. rollback para Aguardando confirmação executado;
+8. liberação da reserva comprovada;
+9. saldo físico permaneceu intacto.
+
+## 7. Próxima POC — Webhooks
+1. confirmar configuração/assinatura do webhook no aplicativo Bling;
+2. receber 1 evento real de pedido;
+3. validar HMAC SHA-256;
+4. provar idempotência por eventId/hash;
+5. manter evento `held` enquanto `hub_enabled=false` / `webhooks_enabled=false`;
+6. reconciliar o evento com pedido vinculado sem polling;
+7. testar duplicata;
+8. só depois liberar processamento em canário.
 
 ## Regra de segurança
 Salvar/editar configuração no Bling não deve ativar automaticamente o Hub da Dona Antônia.
