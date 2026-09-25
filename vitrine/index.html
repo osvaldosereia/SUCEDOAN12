@@ -376,7 +376,16 @@
       try{localStorage.setItem(key,JSON.stringify({saved_at:Date.now(),data}))}catch{}
     }
     function saveCart(){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.cart));
+      const payload=JSON.stringify(state.cart);
+      try{
+        localStorage.setItem(STORAGE_KEY,payload);
+      }catch{
+        try{
+          localStorage.removeItem(HOME_CACHE_KEY);
+          localStorage.removeItem(OFFERS_CACHE_KEY);
+          localStorage.setItem(STORAGE_KEY,payload);
+        }catch{}
+      }
       paintCart();
       refreshAllProductControls();
     }
@@ -1057,7 +1066,7 @@
       if(!state.cart.length){renderCart();return}
       state.checkoutPayment=document.querySelector('input[name="payment"]:checked')?.value||state.checkoutPayment||'';
       openSheet('Seu pedido','<div class="loading">Preparando seu pedido…</div>','');
-      await hydrateCheckoutBaskets();
+      try{await hydrateCheckoutBaskets()}catch{}
       paintCheckout();
     }
 
