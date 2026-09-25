@@ -189,6 +189,26 @@ Para cestas personalizadas, a direção preferida é enviar ao Bling os componen
 ## Validade e ofertas por lote — 2026-09-25
 Foi identificado que desconto por validade não pode continuar baseado em uma única data do produto quando existirem vários lotes. Bling deve ser fonte de lote/saldo/validade; Dona Antônia mantém a regra comercial por faixa e um pool promocional limitado à quantidade dos lotes elegíveis. Vencimento de um lote não implica desativar o produto inteiro se houver outro lote vendável. Ver `VALIDITY-OFFERS-DRAFT.md`.
 
+## Rodada ampla pré-final — 2026-09-25
+A análise arquitetural foi cruzada ponta a ponta. Principal descoberta fiscal: a Consulta 008/2026 da SEFAZ/MT conclui que venda não presencial com entrega e pagamento no domicílio pode ficar dispensada da vinculação tecnológica do comprovante ao documento fiscal quando cumpridas as condições da Portaria 262/2023. Isso permite desenhar NF-e antes da saída e fechamento do pagamento após a entrega, sujeito à homologação do contador sobre CNAE, XML e campos de pagamento.
+
+Também foram fechados em draft:
+- ponte PapoAI mínima e event-driven;
+- modelo mínimo de ledger/attention/approvals;
+- política anti-sobrecarga/custos;
+- sequência de POCs/cutover;
+- revisão cruzada de 14 contradições atuais.
+
+Novos documentos:
+- `FISCAL-HOME-DELIVERY-RESOLUTION-DRAFT.md`
+- `PAPOAI-BRIDGE-FINAL-DRAFT.md`
+- `CONTROL-TOWER-DATA-MODEL-DRAFT.md`
+- `COST-CAPACITY-DRAFT.md`
+- `POC-CUTOVER-PLAN-DRAFT.md`
+- `FINAL-CROSS-REVIEW-DRAFT.md`
+
+Nenhuma programação/produção deve ser alterada até o Projeto Final aprovado.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
