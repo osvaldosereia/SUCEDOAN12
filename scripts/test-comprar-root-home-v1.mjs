@@ -6,7 +6,7 @@ const vitrine=readFileSync('vitrine/index.html','utf8');
 
 assert.equal(root,vitrine,'a raiz e /vitrine devem publicar a mesma Vitrine rápida');
 assert.match(root,/<title>Dona Antônia · Vitrine rápida<\/title>/);
-assert.match(root,/simple-storefront-v1/);
+assert.match(root,/storefront-v2/);
 assert.match(root,/id="globalSearchForm"/);
 assert.match(root,/id="openCart"/);
 assert.match(root,/id="overlay"/);
