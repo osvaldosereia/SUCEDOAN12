@@ -3027,7 +3027,7 @@
       await openOrder(id);
       const detail=state.currentOrder;
       if(!detail?.order||detail.order.id!==id)throw new Error('order_not_found');
-      await printSeparation(detail,true,w);
+      await startSeparationFlow(detail,w);
     }catch(e){
       try{w.close()}catch{}
       toast(errorMessage(e?.message||'order_not_found'));
@@ -4019,8 +4019,8 @@
     markPickingPresented(o.id);
     return true;
   }
-  async function startSeparationFlow(detail){
-    const o=detail.order,w=window.open('','_blank','width=420,height=700');
+  async function startSeparationFlow(detail,existingWindow=null){
+    const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
     if(!w){toast('Libere pop-ups para imprimir');return}
     try{
       w.document.open();
