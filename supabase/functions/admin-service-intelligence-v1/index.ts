@@ -1404,8 +1404,8 @@ function blingHubStatusByName(rows:any[],name:string){
   const n=clean(name,180).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
   return (rows||[]).find((x:any)=>clean(x?.nome,180).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()===n)||null;
 }
-async function blingHubCreateStatusOnce(sb:any,token:string,moduleId:number,name:string,color:string){
-  const r=await blingHubPostOnce(sb,token,"/situacoes",{idModuloSistema:moduleId,nome:name,cor:color});
+async function blingHubCreateStatusOnce(sb:any,token:string,moduleId:number,name:string,color:string,inheritedId:number){
+  const r=await blingHubPostOnce(sb,token,"/situacoes",{idModuloSistema:moduleId,nome:name,cor:color,idHerdado:inheritedId});
   if(r.ok)return {ok:true,created:true,response:r};
   const refreshed=await blingHubOrderStatusCatalog(sb);
   const found=refreshed?.ok?blingHubStatusByName(refreshed.statuses||[],name):null;
@@ -1438,14 +1438,14 @@ async function blingHubOps2PrepareOrderWorkflow(sb:any){
   if(!moduleId)return {ok:false,error:"sales_order_module_missing",status:409,external_write:false};
 
   const wanted=[
-    {key:"awaiting_confirmation",name:"Aguardando confirmação",color:"#E9DC40"},
-    {key:"approved_separation",name:"Aprovado / Separar",color:"#0065F9"}
+    {key:"awaiting_confirmation",name:"Aguardando confirmação",color:"#E9DC40",inheritedId:21},
+    {key:"approved_separation",name:"Aprovado / Separar",color:"#0065F9",inheritedId:15}
   ];
   const created:any[]=[];
   for(const w of wanted){
     let row=blingHubStatusByName(catalog.statuses||[],w.name);
     if(!row){
-      const cr=await blingHubCreateStatusOnce(sb,token,moduleId,w.name,w.color);
+      const cr=await blingHubCreateStatusOnce(sb,token,moduleId,w.name,w.color,w.inheritedId);
       if(!cr.ok)return {...cr,external_write:true};
       created.push({type:"status",name:w.name});
       catalog=await blingHubOrderStatusCatalog(sb);
