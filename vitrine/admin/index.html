@@ -808,6 +808,7 @@
       ['Pagamentos p/ Bling',Number(pay.captured_unsynced||0),'Recebidos · sincronização pendente'],
       ['Retornando',Number(del.returning||0),'Mercadoria voltando ao depósito'],
       ['Retorno em revisão',Number(del.return_review||0),'Bloqueado para nova saída'],
+      ['Rotas hoje',Number(del.active_runs||0)+Number(del.planned_runs||0),Number(del.active_runs||0)+' em entrega · '+Number(del.planned_runs||0)+' planejada(s)'],
       ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
       ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
       ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
