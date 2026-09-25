@@ -248,6 +248,17 @@ Novos documentos:
 - `MINIMAL-PROFESSIONAL-OPERATION-DRAFT.md`
 - `PROJECT-FINAL-READINESS.md`
 
+## Projeto Final Consolidado — 2026-09-25
+A fase de análise foi consolidada em documentos canônicos:
+
+1. `PROJECT-MASTER.md` — arquitetura e operação final;
+2. `SOURCE-OF-TRUTH.md` — autoridade final por domínio;
+3. `IMPLEMENTATION-ROADMAP.md` — ordem de homologação e implantação.
+
+Os arquivos `*-DRAFT.md` permanecem como evidência e pesquisa de apoio, mas decisões novas devem partir do PROJECT-MASTER e SOURCE-OF-TRUTH final.
+
+**Importante:** ainda não houve implementação de produção desta nova arquitetura. Próximo passo só deve começar após aprovação explícita do Projeto Final.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
