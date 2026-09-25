@@ -515,7 +515,7 @@ Pendência correspondente na Control Tower/Supabase foi resolvida.
 Próxima homologação: webhooks Bling + reconciliação de eventos, mantendo processamento geral desligado até o canário ficar verde.
 
 
-## Webhooks Bling — receiver/reconciliação interna PASSOU; entrega real pendente
+## Webhooks Bling — HOMOLOGADO em 2026-09-25
 
 ### Passou
 - HMAC SHA-256 com `X-Bling-Signature-256`;
@@ -526,10 +526,18 @@ Próxima homologação: webhooks Bling + reconciliação de eventos, mantendo pr
 - quando local e remoto coincidem, evento fecha como `processed` sem mutação local;
 - canário `c1acf430-cfd8-4018-b103-b0589025e05e` reconciliou pedido `26967482613` em situação `915901`.
 
-### Pendente
-Nenhum evento real do Bling havia chegado à inbox antes do canário.
+### Entrega real comprovada
+- `order.updated` real recebido para o pedido `26967482613`;
+- situação `915902` recebida após aprovação;
+- drift intencional detectado sem mutação;
+- rollback gerou novo `order.updated` com `915901`;
+- segundo evento reconciliou como `order_reconciled_noop`;
+- 56 eventos reais `virtual_stock.updated` recebidos: 28 na reserva + 28 na liberação;
+- todas as assinaturas reais verificadas;
+- eventos do canário foram limpos;
+- reserva final liberada e saldo físico intacto.
 
 Estado do gate:
-**REAL DELIVERY PENDING**.
+**PASSOU.**
 
-A configuração de Webhooks no aplicativo Bling deve ser feita manualmente; o processamento interno permanece desligado até a primeira entrega real assinada ser comprovada.
+O processamento geral permanece desligado enquanto o próximo gate, atualização segura do espelho de estoque por webhook, é homologado.
