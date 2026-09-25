@@ -198,7 +198,7 @@ jobs:
           grep -q "tokenOk" supabase/functions/shopping-chat-v1/index.ts
           grep -q "ORIGINS" supabase/functions/shopping-chat-products-v1/index.ts
           grep -q "tokenOk" supabase/functions/shopping-chat-products-v1/index.ts
-          grep -q "physically_verified" supabase/functions/shopping-chat-products-v1/index.ts
+          grep -q "is_active" supabase/functions/shopping-chat-products-v1/index.ts
           grep -q "ORIGINS" supabase/functions/shopping-chat-menu-v1/index.ts
           grep -q "tokenOk" supabase/functions/shopping-chat-menu-v1/index.ts
           grep -q "ORIGINS" supabase/functions/shopping-chat-customer-v1/index.ts
