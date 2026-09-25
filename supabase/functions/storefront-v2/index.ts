@@ -93,6 +93,16 @@ async function resolveCode(req:Request,v:any){
   const h=await sha(c),now=new Date().toISOString(),q=await db.from("storefront_identity_tokens").update({redeemed_at:now,last_used_at:now,use_count:1}).eq("token_hash",h).eq("short_code",c).is("redeemed_at",null).gt("expires_at",now).select("phone_e164,expires_at").maybeSingle();if(q.error)throw q.error;if(ih)await db.from("storefront_identity_resolve_attempts").insert({ip_hash:ih,success:Boolean(q.data)});if(!q.data)return {error:"code_expired_or_invalid",status:404};return {phone_e164:q.data.phone_e164,expires_at:q.data.expires_at};
 }
 async function resolveToken(v:any){const t=String(v??"").trim();if(!/^[A-Za-z0-9_-]{24,160}$/.test(t))return {error:"invalid_token",status:400};const h=await sha(t),now=new Date().toISOString(),q=await db.from("storefront_identity_tokens").update({redeemed_at:now,last_used_at:now,use_count:1}).eq("token_hash",h).is("redeemed_at",null).gt("expires_at",now).select("phone_e164,expires_at").maybeSingle();if(q.error)throw q.error;if(!q.data)return {error:"token_expired_or_invalid",status:404};return {phone_e164:q.data.phone_e164,expires_at:q.data.expires_at}}
+async function recordOpsEvent(eventType:string,summary:string,orderId:any,payload:any={},idempotencyKey:string|null=null){
+  const oid=uid(orderId);if(!oid)return;
+  try{await db.rpc("ops_record_event_v1",{
+    p_domain:"order",p_event_type:eventType,p_summary:summary,p_actor_type:"external",
+    p_entity_type:"order",p_entity_id:oid,p_correlation_id:oid,p_actor_id:null,p_actor_label:"Cliente / Site",
+    p_source_system:"storefront",p_severity:"info",p_payload:payload&&typeof payload==="object"?payload:{},
+    p_external_ref:null,p_idempotency_key:idempotencyKey,p_occurred_at:new Date().toISOString()
+  })}catch(e){console.error("ops_event_failed",eventType,txt((e as any)?.message,120))}
+}
+
 async function submit(req:Request,p:any){
   const pay=txt(p?.payment_method,80),ph=phone(p?.whatsapp_phone),items=Array.isArray(p?.items)?p.items.slice(0,80):[];if(!ph)return {error:"invalid_phone",status:400};if(!items.length)return {error:"empty_cart",status:400};
   const ik=await sha(ip(req)||"unknown"),pk=await sha(ph),[a,b]=await Promise.all([db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:ip:"+ik,p_bucket:"create_order",p_limit:12,p_window_seconds:600}),db.rpc("consume_public_rate_limit",{p_rate_key:"vitrine-direct:phone:"+pk,p_bucket:"create_order",p_limit:5,p_window_seconds:600})]);if(a.error||b.error)return {error:"rate_limit_unavailable",status:503};if(a.data!==true||b.data!==true)return {error:"rate_limited",status:429};
@@ -100,6 +110,7 @@ async function submit(req:Request,p:any){
   if(created.error){const e=txt(created.error.message,160).split("\n")[0];return {error:e||"order_failed",status:["insufficient_stock","product_unavailable","basket_unavailable","basket_product_unavailable"].includes(e)?409:400,minimum_order_cents:MINIMUM_ORDER_CENTS}}
   const orderId=created.data?.order_id,res=await db.rpc("reserve_vitrine_order_stock_v1",{p_order_id:orderId});
   if(res.error||res.data?.ok!==true){if(orderId)await db.from("orders").delete().eq("id",orderId);return {error:txt(res.data?.error||res.error?.message||"insufficient_stock",120),status:409,minimum_order_cents:MINIMUM_ORDER_CENTS}}
+  await recordOpsEvent("order.received","Pedido recebido pelo site e aguardando confirmação.",orderId,{source:"vitrine",customer_status:created.data?.customer_id?"registered":"new",payment_method:pay||null,legacy_local_reservation:true},"order-received:"+orderId);
   return {...created.data,phone_attached:true,customer_status:created.data?.customer_id?"registered":"new",minimum_order_cents:MINIMUM_ORDER_CENTS,delivery:del,history_synced:true};
 }
 async function lookupCustomer(v:any){const ph=phone(v);if(!ph)return {ok:true,found:false};let q=await db.from("customers").select("id,name").eq("primary_whatsapp_e164",ph).limit(1).maybeSingle();if(q.error)throw q.error;if(!q.data){const i=await db.from("customer_phones").select("customer_id").eq("phone_e164",ph).order("is_primary",{ascending:false}).limit(1).maybeSingle();if(i.error)throw i.error;if(i.data?.customer_id)q=await db.from("customers").select("id,name").eq("id",i.data.customer_id).maybeSingle()}return {ok:true,found:Boolean(q.data),first_name:q.data?.name?txt(q.data.name,120).split(/\s+/)[0]:null}}
@@ -108,7 +119,7 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
   try{
     const u=new URL(req.url),action=txt(u.searchParams.get("action")||(req.method==="POST"?"basket_quote":"home"),60);
-    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:13},200,{"Cache-Control":"no-store"});
+    if(action==="health")return json(req,{ok:true,service:"storefront-v2",mode:"canonical-vitrine",version:14},200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="home")return json(req,await home(),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
     if(req.method==="GET"&&action==="offers")return json(req,await offerList(),200,{"Cache-Control":"no-store"});
     if(req.method==="GET"&&action==="subcategories")return json(req,await subcats(u),200,{"Cache-Control":"public, max-age=120, stale-while-revalidate=600"});
