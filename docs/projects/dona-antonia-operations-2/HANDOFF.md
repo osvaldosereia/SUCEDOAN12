@@ -227,6 +227,27 @@ Documentos:
 
 Nenhuma implementação foi feita.
 
+## Rodada máxima final de análise — 2026-09-25
+A análise foi ampliada para pós-venda, CDC/e-commerce, recall de alimentos, recebimento profissional, devolução ao fornecedor, saldo virtual/reserva e reconciliação de estoque.
+
+Principais decisões:
+- usar Check-in de Recebimentos Bling antes de lançar estoque;
+- danificado/faltante/incorreto no recebimento vira pendência/crédito/devolução no próprio Bling;
+- site deve espelhar saldo virtual do depósito Geral, atualizado por webhooks;
+- Geral + Quarentena são suficientes;
+- pós-venda precisa tratar arrependimento, vício, troca, refund e devolução sem apagar a venda original;
+- recall por lote entra como fluxo simples de bloqueio + Quarentena + rastreabilidade;
+- operação custom fica limitada a cinco superfícies: Central, Pedidos/Nova venda WhatsApp, Tablet Separação, Balanço/Avaria/Retorno e Entregador;
+- compras/check-in/checkout/fiscal/financeiro ficam preferencialmente no Bling;
+- análise marcada como pronta para consolidação do PROJECT-MASTER; ainda não implementar.
+
+Novos documentos:
+- `POSTSALE-CONSUMER-RECALL-DRAFT.md`
+- `RECEIVING-SUPPLIER-RETURNS-DRAFT.md`
+- `STOCK-RECONCILIATION-DRAFT.md`
+- `MINIMAL-PROFESSIONAL-OPERATION-DRAFT.md`
+- `PROJECT-FINAL-READINESS.md`
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
