@@ -1347,6 +1347,265 @@ async function blingHubOps2WebhookReconcileCanary(sb:any,eventIdRaw:any){
   };
 }
 
+
+function blingHubStockDepositObject(rows:any[]){
+  const out:any={};
+  for(const dep of Array.isArray(rows)?rows:[]){
+    const id=Number(dep?.id||0);
+    if(!Number.isFinite(id)||id<=0)continue;
+    const physical=Number(dep?.saldoFisico);
+    const virtual=Number(dep?.saldoVirtual);
+    out[String(id)]={
+      physical:Number.isFinite(physical)?physical:0,
+      virtual:Number.isFinite(virtual)?virtual:0
+    };
+  }
+  return out;
+}
+
+async function blingHubReadStockSnapshotFull(sb:any,blingProductId:number){
+  const token=await blingHubOauth(sb);
+  const q=new URLSearchParams();
+  q.append("idsProdutos[]",String(blingProductId));
+  const r=await blingHubGet(sb,token,"/estoques/saldos?"+q.toString());
+  if(!r.ok)return {ok:false,status:r.status,error:"stock_snapshot_http_"+r.status};
+  const rows=Array.isArray(r.data?.data)?r.data.data:[];
+  const row=rows.find((x:any)=>Number(x?.produto?.id||0)===blingProductId)||rows[0]||null;
+  if(!row)return {ok:false,status:404,error:"stock_snapshot_missing"};
+  const physicalTotal=Number(row?.saldoFisicoTotal);
+  const virtualTotal=Number(row?.saldoVirtualTotal);
+  if(!Number.isFinite(physicalTotal)||!Number.isFinite(virtualTotal)){
+    return {ok:false,status:502,error:"stock_snapshot_invalid"};
+  }
+  return {
+    ok:true,
+    status:r.status,
+    physical_total:physicalTotal,
+    virtual_total:virtualTotal,
+    deposit_balances:blingHubStockDepositObject(row?.depositos),
+    via:"api"
+  };
+}
+
+async function blingHubReconcileStockWebhookEvent(sb:any,event:any){
+  const resource=clean(event?.resource,40).toLowerCase();
+  if(!["stock","virtual_stock"].includes(resource)){
+    return {
+      finish_status:"review_required",
+      result:{classification:"stock_resource_required",local_mutation:false},
+      error:"stock_resource_required"
+    };
+  }
+
+  const providerId=clean(event?.provider_entity_id,120);
+  if(!providerId||!/^[0-9]+$/.test(providerId)){
+    return {
+      finish_status:"review_required",
+      result:{classification:"stock_event_without_provider_id",local_mutation:false},
+      error:"stock_provider_id_missing"
+    };
+  }
+  const blingProductId=Number(providerId);
+
+  const links=await sb.from("bling_hub_entity_links_v2")
+    .select("source_id,status")
+    .eq("source_system","vitrine_qx")
+    .eq("entity_type","product")
+    .eq("bling_id",blingProductId)
+    .eq("status","matched")
+    .limit(2);
+  if(links.error)throw links.error;
+  if((links.data||[]).length!==1){
+    return {
+      finish_status:"review_required",
+      result:{
+        classification:"stock_event_product_unlinked",
+        provider_entity_id:providerId,
+        match_count:(links.data||[]).length,
+        local_mutation:false
+      },
+      error:"provider_product_not_linked"
+    };
+  }
+  const sourceId=String(links.data![0].source_id);
+
+  const current=await sb.from("bling_stock_mirror_v2")
+    .select("observed_at")
+    .eq("product_id",sourceId)
+    .maybeSingle();
+  if(current.error)throw current.error;
+
+  const data=event?.payload?.data||{};
+  let physicalTotal=Number(data?.saldoFisicoTotal);
+  let virtualTotal=Number(data?.saldoVirtualTotal);
+  let depositBalances:any={};
+  let replaceDeposits=false;
+  let snapshotVia="webhook";
+
+  const needsApiSnapshot=
+    (resource==="virtual_stock"&&data?.vinculoComplexo===true)
+    || (resource==="stock"&&!current.data);
+
+  if(needsApiSnapshot){
+    const snapshot=await blingHubReadStockSnapshotFull(sb,blingProductId);
+    if(!snapshot.ok){
+      const retry=snapshot.status===0||snapshot.status===429||snapshot.status>=500;
+      return {
+        finish_status:retry?"retry":"review_required",
+        result:{
+          classification:"stock_snapshot_read_failed",
+          provider_entity_id:providerId,
+          source_id:sourceId,
+          http_status:snapshot.status,
+          local_mutation:false
+        },
+        error:snapshot.error||"stock_snapshot_read_failed"
+      };
+    }
+    physicalTotal=Number(snapshot.physical_total);
+    virtualTotal=Number(snapshot.virtual_total);
+    depositBalances=snapshot.deposit_balances||{};
+    replaceDeposits=true;
+    snapshotVia="api";
+  }else if(resource==="virtual_stock"){
+    depositBalances=blingHubStockDepositObject(data?.depositos);
+    replaceDeposits=true;
+  }else{
+    depositBalances=blingHubStockDepositObject(data?.deposito?[data.deposito]:[]);
+    replaceDeposits=false;
+  }
+
+  if(!Number.isFinite(physicalTotal)||!Number.isFinite(virtualTotal)){
+    return {
+      finish_status:"review_required",
+      result:{
+        classification:"stock_event_invalid_totals",
+        provider_entity_id:providerId,
+        source_id:sourceId,
+        local_mutation:false
+      },
+      error:"stock_totals_invalid"
+    };
+  }
+
+  const observedAtRaw=event?.event_at||event?.received_at||new Date().toISOString();
+  const observedAt=Number.isNaN(Date.parse(String(observedAtRaw)))
+    ?new Date().toISOString()
+    :new Date(observedAtRaw).toISOString();
+
+  const apply=await sb.rpc("apply_bling_stock_mirror_event_v2",{
+    p_product_id:sourceId,
+    p_bling_product_id:blingProductId,
+    p_physical_total:physicalTotal,
+    p_virtual_total:virtualTotal,
+    p_deposit_balances:depositBalances,
+    p_observed_at:observedAt,
+    p_source_event_id:clean(event?.event_id,200)||null,
+    p_source_resource:resource,
+    p_replace_deposits:replaceDeposits
+  });
+  if(apply.error)throw apply.error;
+
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("metadata")
+    .eq("id",1)
+    .maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const selectedDepositId=Number(runtime.data?.metadata?.selected_deposit_id||0)||null;
+  const selected=selectedDepositId
+    ?(apply.data?.deposit_balances?.[String(selectedDepositId)]||null)
+    :null;
+
+  return {
+    finish_status:"processed",
+    result:{
+      classification:apply.data?.applied===true?"stock_mirror_applied":"stock_mirror_stale_ignored",
+      provider_entity_id:providerId,
+      source_id:sourceId,
+      physical_total:Number(apply.data?.physical_total??physicalTotal),
+      virtual_total:Number(apply.data?.virtual_total??virtualTotal),
+      selected_deposit_id:selectedDepositId,
+      sellable_physical:selected?Number(selected.physical||0):null,
+      sellable_virtual:selected?Number(selected.virtual||0):null,
+      observed_at:apply.data?.observed_at||observedAt,
+      source_event_id:apply.data?.source_event_id||null,
+      source_resource:apply.data?.source_resource||resource,
+      stale_ignored:apply.data?.stale_ignored===true,
+      snapshot_via:snapshotVia,
+      shadow_only:true,
+      local_product_stock_mutation:false,
+      external_write:false
+    },
+    error:null
+  };
+}
+
+async function blingHubOps2StockMirrorEventCanary(sb:any,eventIdRaw:any){
+  const eventId=clean(eventIdRaw,180);
+  if(!eventId)return {ok:false,error:"event_id_required",status:400};
+
+  const runtime=await sb.from("bling_hub_runtime_v2")
+    .select("mode,hub_enabled,webhooks_enabled")
+    .eq("id",1)
+    .maybeSingle();
+  if(runtime.error)throw runtime.error;
+  if(runtime.data?.mode!=="homologation")return {ok:false,error:"homologation_required",status:409};
+  if(runtime.data?.hub_enabled===true||runtime.data?.webhooks_enabled===true){
+    return {ok:false,error:"safe_mode_required",status:409};
+  }
+
+  const event=await sb.from("bling_webhook_inbox_v2")
+    .select("*")
+    .eq("event_id",eventId)
+    .maybeSingle();
+  if(event.error)throw event.error;
+  if(!event.data)return {ok:false,error:"webhook_event_not_found",status:404};
+  if(!["stock","virtual_stock"].includes(String(event.data.resource||""))){
+    return {ok:false,error:"stock_event_required",status:409};
+  }
+  if(event.data.status!=="held"){
+    return {ok:false,error:"held_event_required",status:409,current_status:event.data.status};
+  }
+
+  const rec=await blingHubReconcileStockWebhookEvent(sb,event.data);
+  const finishStatus=String(rec.finish_status||"review_required");
+  const done=await sb.rpc("finish_bling_webhook_inbox_v2",{
+    p_event_id:eventId,
+    p_status:finishStatus,
+    p_result:rec.result||{},
+    p_error:rec.error||null,
+    p_retry_seconds:120,
+    p_self_generated:false
+  });
+  if(done.error)throw done.error;
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"ops2_stock_mirror_event_canary",
+    severity:finishStatus==="processed"?"info":"warning",
+    domain:"stock",
+    source_system:"bling",
+    source_id:eventId,
+    details:{
+      finish_status:finishStatus,
+      result:rec.result||{},
+      error:rec.error||null,
+      safe_mode:true,
+      shadow_only:true,
+      external_write:false,
+      make_used:false
+    }
+  });
+
+  return {
+    ok:finishStatus==="processed",
+    event_id:eventId,
+    finish_status:finishStatus,
+    result:rec.result||{},
+    error:rec.error||null,
+    external_write:false
+  };
+}
+
 async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
   const worker="bling-webhook-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(25,Number(limitRaw||10)||10));
@@ -1422,6 +1681,23 @@ async function blingHubProcessWebhookInbox(sb:any,limitRaw:any){
 
       if(resource==="order"&&linked){
         const rec=await blingHubReconcileOrderWebhookEvent(sb,event);
+        const finishStatus=String(rec.finish_status||"review_required");
+        await sb.rpc("finish_bling_webhook_inbox_v2",{
+          p_event_id:event.event_id,
+          p_status:finishStatus,
+          p_result:rec.result||{},
+          p_error:rec.error||null,
+          p_retry_seconds:120,
+          p_self_generated:false
+        });
+        if(finishStatus==="processed")summary.processed++;
+        else if(finishStatus==="retry")summary.retry++;
+        else summary.review_required++;
+        continue;
+      }
+
+      if(["stock","virtual_stock"].includes(resource)&&linked){
+        const rec=await blingHubReconcileStockWebhookEvent(sb,event);
         const finishStatus=String(rec.finish_status||"review_required");
         await sb.rpc("finish_bling_webhook_inbox_v2",{
           p_event_id:event.event_id,
@@ -6479,6 +6755,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_webhook_reconcile_canary"){
         const result=await blingHubOps2WebhookReconcileCanary(sb,body?.event_id);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_stock_mirror_event_canary"){
+        const result=await blingHubOps2StockMirrorEventCanary(sb,body?.event_id);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="ops2_prepare_order_workflow"){
