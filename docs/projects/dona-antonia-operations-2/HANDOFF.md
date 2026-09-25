@@ -357,3 +357,12 @@ Próximo passo deste domínio: implementar retorno físico/não entrega como oco
 - backend bloqueia saída de pedido `ready` com retorno em revisão.
 
 Próximo passo: criar a resolução do retorno em revisão (mercadoria íntegra x avaria/falta) e só depois executar cancelamento/restauração de estoque/fluxo fiscal correspondente.
+
+
+### Resolução de retorno em revisão
+- supervisor pode liberar mercadoria íntegra para reentrega sem mexer no estoque;
+- supervisor pode cancelar apenas quando confirmar que TODO o retorno está íntegro;
+- nesse caso o estoque local consumido é restaurado e o pedido fica cancelado comercialmente;
+- sempre abre atenção fiscal `delivery_return_fiscal_review`; nenhuma NF-e é alterada automaticamente;
+- se existir pagamento capturado, o cancelamento íntegro é bloqueado até fluxo de reembolso;
+- se houver avaria/falta, usar Estoque mobile e não restaurar o pedido inteiro.

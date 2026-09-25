@@ -914,6 +914,7 @@
       '<div class="dispatch-actions">'+
         (wa?'<a class="quick-link primary-link" href="'+esc(wa)+'" target="_blank" rel="noopener">WhatsApp</a>':'')+
         (maps?'<a class="quick-link" href="'+esc(maps)+'" target="_blank" rel="noopener">Maps</a>':'')+
+        (ret?.status==='returned_review'?'<button class="quick-link primary-link" type="button" data-resolve-return="'+esc(o.id)+'">Resolver retorno</button>':'')+
         (o.status==='ready'&&!fiscal.authorized&&ret?.status!=='returned_review'?'<button class="quick-link primary-link" type="button" data-expedition-fiscal="'+esc(o.id)+'">Resolver fiscal</button>':'')+
         (o.status==='ready'&&fiscal.authorized?'<button class="quick-link" type="button" data-expedition-danfe="'+esc(o.id)+'">Imprimir DANFE</button>':'')+
         deliveryActions+
@@ -984,6 +985,42 @@
   }
   function returnCurrentOrderToExpedition(){
     const id=state.currentOrder?.order?.id;if(id)returnOrderToExpedition(id,true);
+  }
+
+  async function resolveDeliveryReturnReview(id){
+    const o=state.orders.find(x=>x.id===id)||state.currentOrder?.order,ret=o?.delivery_return;
+    if(!o||!ret||ret.status!=='returned_review'){toast('Este retorno não está mais aguardando revisão');return}
+    $('#editorTitle').textContent='Revisar retorno';
+    $('#editorBody').innerHTML='<div class="rule-notice warn"><strong>Pedido #'+esc(shortOrder(o.order_number))+'</strong><div>'+esc(ret.reason_label||'Não entregue')+(ret.note?' · '+esc(ret.note):'')+'<br>A mercadoria já voltou fisicamente, mas continua fora do estoque vendável.</div></div>'+
+      '<div class="section-title">O que aconteceu com a mercadoria?</div>'+
+      '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Tudo íntegro e haverá nova tentativa</strong><p class="sub">Mantém os itens alocados ao mesmo pedido e libera para reentrega.</p><button class="primary" id="returnResolveRedelivery" type="button">LIBERAR PARA REENTREGA</button></div>'+
+      '<div class="panel" style="padding:14px;margin-bottom:10px"><strong>Cliente desistiu e tudo voltou íntegro</strong><p class="sub">Cancela comercialmente e restaura todo o estoque local. O fiscal fica pendente de revisão no Bling.</p><button class="secondary" id="returnResolveCancel" type="button">CANCELAR E DEVOLVER AO ESTOQUE</button></div>'+
+      '<div class="panel" style="padding:14px"><strong>Há avaria, falta ou item impróprio</strong><p class="sub">Não faça restauração total. Registre os itens no Estoque mobile para revisão.</p><button class="secondary" id="returnResolveDamage" type="button">IR PARA ESTOQUE MOBILE</button></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="returnResolveClose" type="button">Fechar</button>';
+    $('#returnResolveClose').onclick=()=>$('#editor').close();
+    $('#returnResolveDamage').onclick=()=>{$('#editor').close();state.balanceMode='incident';setTab('balance');toast('Leia cada item avariado ou faltante antes de resolver o retorno')};
+    $('#returnResolveRedelivery').onclick=()=>submitDeliveryReturnResolution(o,'redelivery');
+    $('#returnResolveCancel').onclick=()=>{
+      if(!confirm('Confirme somente se TODOS os produtos voltaram fisicamente íntegros.\n\nO pedido será cancelado e o estoque local será restaurado por completo. O tratamento fiscal continuará pendente no Bling.'))return;
+      submitDeliveryReturnResolution(o,'cancel_intact');
+    };
+    $('#editor').showModal();
+  }
+  async function submitDeliveryReturnResolution(o,action){
+    const ret=o?.delivery_return;if(!ret)return;
+    const operator=requireOperator();if(!operator)return;
+    const buttons=[...document.querySelectorAll('#returnResolveRedelivery,#returnResolveCancel')];buttons.forEach(b=>b.disabled=true);
+    try{
+      const data=await api('delivery_return_resolve',{},{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({case_id:ret.id,resolution_action:action,operator})
+      });
+      $('#editor').close();
+      const rows=await api('orders');state.orders=rows.orders||[];
+      if(state.tab==='expedition')paintExpeditionBody();else if(state.tab==='today')renderToday();
+      toast(action==='redelivery'?'Retorno revisado · liberado para reentrega':'Pedido cancelado · estoque íntegro restaurado · fiscal pendente');
+      return data;
+    }catch(e){toast(errorMessage(e.message));buttons.forEach(b=>b.disabled=false)}
   }
 
   function deliveryPaymentMethodOptions(selected=''){
@@ -1185,6 +1222,7 @@
     document.querySelectorAll('[data-confirm-delivery]').forEach(b=>b.onclick=()=>confirmDeliveryFromExpedition(b.dataset.confirmDelivery));
     document.querySelectorAll('[data-return-expedition]').forEach(b=>b.onclick=()=>returnOrderToExpedition(b.dataset.returnExpedition,false));
     document.querySelectorAll('[data-confirm-return]').forEach(b=>b.onclick=()=>confirmPhysicalDeliveryReturn(b.dataset.confirmReturn));
+    document.querySelectorAll('[data-resolve-return]').forEach(b=>b.onclick=()=>resolveDeliveryReturnReview(b.dataset.resolveReturn));
     document.querySelectorAll('[data-dispatch-select]').forEach(el=>el.onchange=e=>toggleDispatchSelection(el.dataset.dispatchSelect,e.target.checked));
     if($('#selectAllReady'))$('#selectAllReady').onchange=e=>toggleAllReady(dispatchableReady,e.target.checked);
     if($('#printDispatchManifest'))$('#printDispatchManifest').onclick=printDispatchManifest;

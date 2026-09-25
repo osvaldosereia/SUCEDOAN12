@@ -428,3 +428,32 @@ Após retorno físico:
 - enquanto existir retorno aberto, pedido não pode virar Entregue;
 - retorno em revisão bloqueia nova expedição também no backend;
 - nenhuma ocorrência fictícia foi criada.
+
+
+## Resolução segura de retorno — 2026-09-25
+
+### Supervisor
+Quando a mercadoria já retornou fisicamente e o caso está em revisão, existem agora dois fechamentos seguros:
+
+1. **Liberar para reentrega**
+   - encerra a revisão;
+   - mantém o pedido em `ready`;
+   - não restaura estoque, pois os itens continuam alocados ao pedido.
+
+2. **Cliente desistiu + tudo retornou íntegro**
+   - exige confirmação explícita;
+   - cancela comercialmente o pedido;
+   - restaura o estoque local consumido;
+   - abre atenção fiscal obrigatória para verificar retorno/devolução no Bling;
+   - não executa nenhuma ação fiscal automática.
+
+Se houver avaria, falta ou item impróprio:
+- a tela orienta a ir para `Estoque mobile`;
+- não oferece restauração total;
+- o retorno continua bloqueado até tratamento item a item.
+
+### Proteção
+- resolução exige perfil owner/supervisor;
+- retorno com pagamento já capturado não pode ser cancelado por este atalho;
+- nenhuma NF-e é cancelada automaticamente;
+- nenhuma venda histórica é apagada.
