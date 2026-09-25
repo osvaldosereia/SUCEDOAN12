@@ -1,6 +1,6 @@
 # Dona Antônia Operations 2.0 — IMPLEMENTATION ROADMAP
 
-> Não executar sem aprovação explícita.
+> Aprovado para implantação segura em 2026-09-25. Executar por homologação, shadow/canary e rollback; não fazer big-bang.
 
 ## Fase 0 — Homologações
 - contador;
@@ -95,3 +95,20 @@ Cada fase precisa de:
 - rollback;
 - observabilidade;
 - aprovação para avançar.
+
+
+## Estado de implantação — 2026-09-25
+Já iniciados/concluídos parcialmente:
+- Fase 1: foundation, ledger, attention, Control Tower;
+- Fase 2: motor canônico multicanal + venda manual WhatsApp;
+- Fase 3: shadow readiness + OAuth preparado; reserva oficial Bling bloqueada por escopo de Situações;
+- Fase 4: fila de picking 85 mm preparada; agente físico ainda não homologado;
+- Fase 10: shadow/canary em uso como estratégia de implantação.
+
+Em POC:
+- PapoAI capture-only para descobrir o payload real.
+
+Bloqueios externos:
+- reautorização do aplicativo Bling para Situações/Módulos/Transições;
+- hardware de impressão;
+- homologação fiscal/contador antes de automação fiscal definitiva.
