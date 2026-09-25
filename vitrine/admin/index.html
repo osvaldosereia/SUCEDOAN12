@@ -433,20 +433,30 @@
   if($('#operatorBadge'))$('#operatorBadge').onclick=changeOperator;
   paintOperatorBadge();
   async function api(action,params={},options={}){
+    const token=await adminStepUp();
     const u=new URL(API);u.searchParams.set('action',action);
     Object.entries(params).forEach(([k,v])=>{if(v!==''&&v!=null)u.searchParams.set(k,String(v))});
-    const response=await fetch(u,{...options,headers:{...(options.headers||{})},cache:'no-store'});
+    const response=await fetch(u,{...options,headers:{...(options.headers||{}),'Authorization':'Bearer '+token},cache:'no-store'});
+    if(response.status===401){
+      clearFinanceSession();
+      throw new Error('Sessão administrativa expirada. Confirme o PIN novamente.');
+    }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
     return data;
   }
   async function customerApi(action,payload={}){
+    const token=await adminStepUp();
     const response=await fetch(CUSTOMER_API,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify({action,...payload}),
       cache:'no-store'
     });
+    if(response.status===401){
+      clearFinanceSession();
+      throw new Error('Sessão administrativa expirada. Confirme o PIN novamente.');
+    }
     const data=await response.json().catch(()=>({ok:false,error:'invalid_response'}));
     if(!response.ok||data.ok===false)throw new Error(data.error||'service_error');
     return data;
@@ -1225,18 +1235,19 @@
     sessionStorage.removeItem('da_finance_access_token_v1');
     state.financeCatalogs=null;
   }
+  async function adminStepUp(){return await financeStepUp()}
   async function financeStepUp(){
     const existing=financeSessionToken();
     if(existing)return existing;
     if(state.financeAuthPromise)return await state.financeAuthPromise;
     state.financeAuthPromise=new Promise((resolve,reject)=>{
-      financeOpenDialog('Acesso financeiro',
-        '<div class="rule-notice warn"><strong>Confirmação de segurança</strong><div>Para consultar detalhes ou alterar o financeiro, confirme o PIN administrativo. O restante do Admin continua abrindo normalmente.</div></div>'+
+      financeOpenDialog('Acesso administrativo',
+        '<div class="rule-notice warn"><strong>Confirmação de segurança</strong><div>Para acessar e alterar dados do Admin, confirme o PIN administrativo. A sessão fica restrita a esta aba e expira automaticamente.</div></div>'+
         '<form id="financePinForm" class="form-grid" autocomplete="off">'+
           '<label class="span-2"><span>PIN administrativo</span><input id="financePinInput" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="••••••" required></label>'+
           '<div class="span-2"><small class="sub" id="financePinStatus">A sessão fica somente nesta aba e expira automaticamente.</small></div>'+
         '</form>',
-        '<button class="secondary" id="financePinCancel" type="button">Cancelar</button><button class="primary" id="financePinSubmit" type="button">Liberar financeiro</button>'
+        '<button class="secondary" id="financePinCancel" type="button">Cancelar</button><button class="primary" id="financePinSubmit" type="button">Liberar Admin</button>'
       );
       const finish=(ok,value)=>{
         state.financeAuthPromise=null;
