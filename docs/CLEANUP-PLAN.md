@@ -10,9 +10,9 @@
 - Há dois jobs periódicos no `pg_cron`: Bling Hub a cada 2 minutos e worker fiscal a cada 1 minuto.
 - O conector atual bloqueou a alteração desses jobs; a desativação permanece pendência operacional prioritária e não será considerada concluída até ser verificada.
 
-## Rodada 1 — congelamento, custo e arquitetura
+## Rodada 1 — congelamento, custo e arquitetura — EXECUTADA
 
-Inventariar GitHub/Supabase, congelar novos módulos, registrar arquitetura canônica, classificar KEEP/MIGRATE/DELETE e cortar execução recorrente quando tecnicamente permitido. Não alterar pedidos históricos.
+Inventário e arquitetura registrados. O runtime automático do Bling Hub foi desativado em `bling_hub_runtime_v2.hub_enabled=false`; o worker fiscal já estava com `fiscal_ai_worker_control.enabled=false`. Os registros do `pg_cron` continuam existentes porque o conector bloqueou a alteração direta, mas os dois caminhos de processamento externo ficaram sem despacho ativo. Nenhum pedido histórico foi alterado.
 
 ## Rodada 2 — Vitrine Admin 100% canônico
 
