@@ -68,7 +68,7 @@ begin
   v_contact_id:=nullif(v_row.metadata->>'contact_id','');
   v_session_uid:=nullif(v_row.conversation_ref,'');
 
-  select count(*),min(id)
+  select count(*),(array_agg(id order by updated_at desc))[1]
     into v_account_count,v_account_id
   from public.whatsapp_accounts
   where is_active=true;
