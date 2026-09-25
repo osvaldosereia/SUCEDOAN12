@@ -432,7 +432,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],balanceMode:'count',inventoryIncidentType:'damage',inventoryIncidentNote:'',inventoryIncidents:[],inventoryIncidentSummary:null,stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null,opsPapoAi:null,opsTimeline:[],manualSale:null,deliveryPaymentDraft:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -793,7 +793,7 @@
 
   function renderOps2Summary(){
     const s=state.opsSummary||{};
-    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{},pa=state.opsPapoAi||{};
+    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{},pay=s.payments||{},pa=state.opsPapoAi||{};
     const printNeeds=Number(pr.pending||0)+Number(pr.failed||0);
     const papoSeen=Number(pa.captured_24h||0);
     const cards=[
@@ -802,6 +802,7 @@
       ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
       ['Ocorrências estoque',Number(i.incidents_open||0),'Avaria / vencido / retorno'],
       ['Diferenças balanço',Number(i.count_differences_pending||0),'Aguardando reconciliação'],
+      ['Pagamentos p/ Bling',Number(pay.captured_unsynced||0),'Recebidos · sincronização pendente'],
       ['PapoAI',papoSeen,pa.capture_enabled?(Number(pa.review_required||0)?Number(pa.review_required||0)+' precisa(m) revisão':Number(pa.conversation_unlinked_24h||0)?Number(pa.conversation_unlinked_24h||0)+' sem conversa':'ponte ok · '+Number(pa.conversation_linked_24h||0)+' vinculado(s)'):'captura desligada'],
       ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
       ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
@@ -886,7 +887,7 @@
   function expeditionRow(o){
     const a=o.delivery_address_snapshot||{};
     const address=[a.street,a.number,a.district,a.city].filter(Boolean).join(', ')||'Endereço não informado';
-    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
+    const payment=actualPaymentText(o)||(o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado');
     const fiscal=expeditionFiscalState(o);
     const attempts=Array.isArray(o.payment_method_snapshot?.delivery_attempts)?o.payment_method_snapshot.delivery_attempts:[];
     const lastFailure=o.payment_method_snapshot?.last_delivery_failure||attempts[attempts.length-1]||null;
@@ -959,42 +960,84 @@
     const id=state.currentOrder?.order?.id;if(id)returnOrderToExpedition(id,true);
   }
 
+  function deliveryPaymentMethodOptions(selected=''){
+    const rows=[['pix','PIX'],['cash','Dinheiro'],['credit_card','Cartão de crédito'],['food_card','Cartão alimentação'],['meal_card','Cartão refeição'],['other','Outro']];
+    return rows.map(([v,l])=>'<option value="'+v+'" '+(v===selected?'selected':'')+'>'+l+'</option>').join('');
+  }
+  function deliveryPaymentDefaultMethod(o){
+    const raw=String(o?.payment_method_snapshot?.method||'').toLowerCase();
+    const map={pix:'pix',cash:'cash',dinheiro:'cash',credit:'credit_card',credit_card:'credit_card',card:'credit_card',food_card:'food_card',meal_card:'meal_card'};
+    return map[raw]||'pix';
+  }
+  function paymentAmountInput(cents){return (Number(cents||0)/100).toFixed(2).replace('.',',')}
+  function parsePaymentAmountCents(value){
+    let s=String(value||'').trim().replace(/R\$/gi,'').replace(/\s+/g,'');
+    if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+    const n=Number(s);return Number.isFinite(n)?Math.round(n*100):0;
+  }
+  function actualPaymentText(o){
+    const parts=o?.payment_method_snapshot?.actual?.parts||[];
+    return parts.length?parts.map(p=>(p.label||p.method)+' '+money(p.amount_cents)).join(' + '):'';
+  }
+  function paintDeliveryPaymentDraft(){
+    const d=state.deliveryPaymentDraft;if(!d)return;
+    const host=$('#deliveryPaymentParts');if(!host)return;
+    host.innerHTML=d.parts.map((p,index)=>'<div class="form-grid delivery-payment-row" data-payment-index="'+index+'" style="align-items:end;margin-bottom:10px">'+
+      '<label><span>Forma '+(d.parts.length>1?index+1:'')+'</span><select data-payment-method>'+deliveryPaymentMethodOptions(p.method)+'</select></label>'+
+      '<label><span>Valor</span><input data-payment-amount inputmode="decimal" value="'+esc(paymentAmountInput(p.amount_cents))+'"></label>'+
+      (index>0?'<button class="text danger" type="button" data-remove-payment-part="'+index+'">Remover</button>':'')+
+    '</div>').join('');
+    const sum=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff=Number(d.order.total_cents||0)-sum;
+    $('#deliveryPaymentSum').innerHTML='<strong>'+money(sum)+'</strong><span class="'+(diff===0?'ok-text':'warn-text')+'">'+(diff===0?'Total confere':'Diferença '+money(Math.abs(diff))+(diff>0?' faltando':' a mais'))+'</span>';
+    host.querySelectorAll('[data-payment-method]').forEach((el,index)=>el.onchange=()=>{d.parts[index].method=el.value});
+    host.querySelectorAll('[data-payment-amount]').forEach((el,index)=>el.oninput=()=>{d.parts[index].amount_cents=parsePaymentAmountCents(el.value);const sum2=d.parts.reduce((s,p)=>s+Number(p.amount_cents||0),0),diff2=Number(d.order.total_cents||0)-sum2;$('#deliveryPaymentSum').innerHTML='<strong>'+money(sum2)+'</strong><span class="'+(diff2===0?'ok-text':'warn-text')+'">'+(diff2===0?'Total confere':'Diferença '+money(Math.abs(diff2))+(diff2>0?' faltando':' a mais'))+'</span>'});
+    host.querySelectorAll('[data-remove-payment-part]').forEach(b=>b.onclick=()=>{d.parts.splice(Number(b.dataset.removePaymentPart),1);paintDeliveryPaymentDraft()});
+    const split=$('#addDeliveryPaymentPart');if(split)split.disabled=d.parts.length>=2;
+  }
+  async function finalizeDeliveredOrder(o){
+    await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'delivered',operator:currentOperator()||'Entrega'})});
+    const data=await api('orders');state.orders=data.orders||[];paintExpeditionBody();
+  }
+  async function captureDeliveryPaymentAndFinish(){
+    const d=state.deliveryPaymentDraft;if(!d)return;
+    const rows=[...document.querySelectorAll('.delivery-payment-row')];
+    const parts=rows.map(row=>({method:row.querySelector('[data-payment-method]')?.value||'',amount_cents:parsePaymentAmountCents(row.querySelector('[data-payment-amount]')?.value||'')}));
+    const total=parts.reduce((s,p)=>s+p.amount_cents,0);
+    if(parts.some(p=>!p.method||p.amount_cents<=0)){toast('Informe a forma e o valor de cada pagamento');return}
+    if(total!==Number(d.order.total_cents||0)){toast('Os pagamentos precisam somar exatamente '+money(d.order.total_cents));return}
+    const operator=requireOperator();if(!operator)return;
+    const btn=$('#deliveryPaymentConfirm');if(btn){btn.disabled=true;btn.textContent='SALVANDO…'}
+    try{
+      await api('order_payment_capture',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:d.order.id,parts,operator})});
+      await finalizeDeliveredOrder(d.order);
+      $('#editor').close();state.deliveryPaymentDraft=null;
+      toast('Entrega e pagamento registrados');
+    }catch(e){
+      toast(errorMessage(e.message));
+      if(btn){btn.disabled=false;btn.textContent='CONFIRMAR ENTREGA E PAGAMENTO'}
+    }
+  }
   async function confirmDeliveryFromExpedition(id){
     const o=state.orders.find(x=>x.id===id);
     if(!o||o.status!=='out_for_delivery'){toast('Este pedido não está mais em entrega');return}
-    const name=o.customer_name||'Cliente';
-    const payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Pagamento não informado';
-    const ok=confirm('Confirmar entrega do pedido #'+shortOrder(o.order_number)+'?\n\n'+name+' · '+money(o.total_cents)+' · '+payment);
-    if(!ok)return;
-    const btn=document.querySelector('[data-confirm-delivery="'+CSS.escape(id)+'"]');
-    if(btn){btn.disabled=true;btn.textContent='Confirmando…'}
-    try{
-      await api('order_update',{},{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({id,status:'delivered'})
-      });
-      let paymentConfirmed=false;
-      const confirmPayment=confirm('Entrega confirmada.\n\nO pagamento de '+money(o.total_cents)+' via '+payment+' também foi recebido?\n\nOK = confirmar recebimento agora.\nCancelar = deixar pagamento pendente no Fechamento.');
-      if(confirmPayment){
-        try{
-          state.fiscalByOrder[id]=await api('order_fiscal_confirm_payment',{},{
-            method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({id,payment_method:payment})
-          });
-          paymentConfirmed=true;
-        }catch(e){
-          delete state.fiscalByOrder[id];
-        }
-      }else{
-        delete state.fiscalByOrder[id];
-      }
-      const data=await api('orders');state.orders=data.orders||[];
-      paintExpeditionBody();
-      toast(paymentConfirmed?'Entrega e recebimento confirmados':'Entrega confirmada · pagamento pendente no Fechamento');
-    }catch(e){
-      toast(errorMessage(e.message));
-      if(btn){btn.disabled=false;btn.textContent='Confirmar entrega'}
+    if(o.payment_method_snapshot?.actual?.received){
+      if(!confirm('O pagamento deste pedido já está registrado. Confirmar a entrega agora?'))return;
+      try{await finalizeDeliveredOrder(o);toast('Entrega confirmada')}catch(e){toast(errorMessage(e.message))}
+      return;
     }
+    const planned=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'Não informado';
+    state.deliveryPaymentDraft={order:o,parts:[{method:deliveryPaymentDefaultMethod(o),amount_cents:Number(o.total_cents||0)}]};
+    $('#editorTitle').textContent='Confirmar entrega';
+    $('#editorBody').innerHTML='<div class="rule-notice"><strong>Pedido #'+esc(shortOrder(o.order_number))+'</strong><div>'+esc(o.customer_name||'Cliente')+' · '+money(o.total_cents)+'<br>Previsto: '+esc(planned)+'</div></div>'+
+      '<div class="section-title">Pagamento realmente recebido</div><div id="deliveryPaymentParts"></div>'+
+      '<div class="dispatch-actions" style="justify-content:flex-start"><button class="secondary" id="addDeliveryPaymentPart" type="button">Dividir em 2 formas</button></div>'+
+      '<div class="order-summary" style="margin-top:12px"><div class="summary-box"><small>Total do pedido</small><strong>'+money(o.total_cents)+'</strong></div><div class="summary-box"><small>Pagamentos</small><div id="deliveryPaymentSum"></div></div></div>'+
+      '<div class="rule-notice" style="margin-top:12px"><strong>Se o pagamento falhou</strong><div>Não confirme a entrega. Feche esta janela e use “Não entregou” no pedido.</div></div>';
+    $('#editorActions').innerHTML='<button class="secondary" id="deliveryPaymentCancel" type="button">Cancelar</button><button class="primary" id="deliveryPaymentConfirm" type="button">CONFIRMAR ENTREGA E PAGAMENTO</button>';
+    $('#deliveryPaymentCancel').onclick=()=>{state.deliveryPaymentDraft=null;$('#editor').close()};
+    $('#deliveryPaymentConfirm').onclick=captureDeliveryPaymentAndFinish;
+    $('#addDeliveryPaymentPart').onclick=()=>{const d=state.deliveryPaymentDraft;if(!d||d.parts.length>=2)return;d.parts.push({method:'credit_card',amount_cents:0});paintDeliveryPaymentDraft()};
+    paintDeliveryPaymentDraft();$('#editor').showModal();
   }
 
   function selectedDispatchOrders(readyRows=null){
