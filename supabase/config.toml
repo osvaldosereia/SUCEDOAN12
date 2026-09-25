@@ -17,3 +17,7 @@ verify_jwt = false
 # Classificador fiscal usado pelo fluxo fiscal do Vitrine Admin.
 [functions.product-image-openai-v1]
 verify_jwt = false
+
+# Gateway canônico do vitrine/admin; mantém proxy temporário apenas para ações ainda não portadas.
+[functions.admin-products-live-v1]
+verify_jwt = false
