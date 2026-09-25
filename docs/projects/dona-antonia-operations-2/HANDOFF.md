@@ -171,6 +171,9 @@ Foi concluída uma revisão do modelo de acesso para proprietário, supervisão,
 ## Fluxo de exceções — 2026-09-25
 Foi concluído um primeiro desenho de exceções e recuperação. A regra é que falhas previsíveis virem filas claras na Control Tower, com retries idempotentes e escalonamento por papel. Foram documentados cancelamento, falta de estoque, impressão, conferência, webhook, Bling, NF-e, PapoAI, entrega, pagamento, XML e IA. Ver `EXCEPTION-RECOVERY-DRAFT.md` e `ORDER-STATE-MACHINE-DRAFT.md`.
 
+## Confiabilidade e webhooks — 2026-09-25
+O Bling está acessível em leitura nos principais domínios, mas o runtime global do Hub e webhooks estão desligados. A leitura de `situacoes/modulos` retorna 403 e `status_updates_enabled=false`, portanto automação por situações ainda não está homologada. Webhooks Bling precisam ser tratados com idempotência, entrega fora de ordem, resposta rápida e reconciliação. Ver `RELIABILITY-WEBHOOKS-DRAFT.md`.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
