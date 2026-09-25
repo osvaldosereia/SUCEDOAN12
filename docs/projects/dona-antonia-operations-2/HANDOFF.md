@@ -137,6 +137,16 @@ O usuário determinou que não deve haver programação nem alteração de produ
 ## Novo requisito multicanal
 Clientes podem comprar diretamente pelo WhatsApp/PapoAI sem usar o site. O projeto final deve incluir venda manual e rascunho assistido pelo PapoAI, ambos convergindo para o mesmo motor canônico de pedido do site. Ver `ANALYSIS-NOTES.md` e `SOURCE-OF-TRUTH-DRAFT.md`.
 
+
+## Nova frente de análise — Control Tower
+Foi aprovada para análise uma Central de Controle no Vitrine/Admin com dashboard, fila "Precisa de você", supervisão de automações, timeline operacional e copiloto OpenAI. Não é implementação ainda.
+
+Direção registrada em:
+- `CONTROL-TOWER-DRAFT.md`
+- `AI-OBSERVABILITY-CONTINUITY-DRAFT.md`
+
+Princípio: dashboard responde proativamente o que precisa de atenção; chat é camada de investigação/comando. Estado real vem de Bling/Supabase/PapoAI e ledger, nunca da memória de uma conversa.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
