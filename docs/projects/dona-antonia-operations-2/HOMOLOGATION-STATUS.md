@@ -541,3 +541,37 @@ Estado do gate:
 **PASSOU.**
 
 O processamento geral permanece desligado enquanto o próximo gate, atualização segura do espelho de estoque por webhook, é homologado.
+
+
+## Espelho de estoque Bling por webhook — HOMOLOGADO
+
+### Cobertura
+- ativos: 1.634;
+- ativos vinculados ao Bling: 1.630;
+- mirror coberto: 1.630;
+- ativos sem correspondência exata: 4;
+- vinculados sem mirror: 0.
+
+### Divergência encontrada no modelo legado
+- 1.087 iguais;
+- 543 divergentes;
+- 168 local > Bling;
+- 375 local < Bling;
+- 11 local positivo com Bling virtual zero;
+- 3 local zero com Bling virtual positivo.
+
+### Evento real
+- `virtual_stock.updated` dirige o shadow mirror;
+- proteção contra evento fora de ordem;
+- 28 eventos reais de liberação processados automaticamente;
+- 28/28 HTTP 200;
+- maior tempo observado no receiver: 2.214 ms;
+- mirror final do canário: físico 3 / virtual 3;
+- pedido canário final: `Aguardando confirmação`.
+
+### Incidente de homologação
+Primeira versão do trigger usou `min(uuid)`, inexistente no PostgreSQL, e causou respostas 500 temporárias. A flag shadow foi pausada, a função foi corrigida e o canário real foi repetido com sucesso.
+
+Estado: **PASSOU**.
+
+Próximo gate: substituir validação/reserva/consumo local de `products.stock` antes do cutover público para o saldo virtual do Bling.
