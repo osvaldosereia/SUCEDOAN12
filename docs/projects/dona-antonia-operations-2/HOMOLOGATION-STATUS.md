@@ -354,3 +354,35 @@ O Bling consegue automatizar impressão de DANFE/DANFE Simplificado no Checkout 
 O ajuste local de estoque é transitório enquanto Bling ainda não está homologado como autoridade online de estoque. A ocorrência mantém `needs_bling_reconciliation=true` para não confundir disponibilidade comercial com regularização ERP/fiscal.
 
 Nenhuma ocorrência fictícia foi criada para teste.
+
+
+## Pagamento efetivo na entrega — 2026-09-25
+
+### Implementado
+- tabela `order_payment_settlements` para representar o recebimento real do pedido;
+- tabela `order_payment_parts` para múltiplas formas de pagamento;
+- meios operacionais: PIX, dinheiro, crédito, alimentação, refeição e outro;
+- soma das partes precisa ser exatamente igual ao total do pedido;
+- captura é idempotente e não permite sobrescrever silenciosamente um recebimento já registrado;
+- a tela de entrega agora registra o pagamento REAL antes de marcar o pedido como Entregue;
+- pagamento previsto continua separado do pagamento efetivo;
+- se cartão/pagamento falhar, o operador deve usar `Não entregou`, e não confirmar a entrega;
+- Control Tower passa a mostrar pagamentos recebidos ainda não conciliados com o Bling.
+
+### Gate Bling/fiscal preservado
+A captura local NÃO cria baixa financeira nem altera NF-e no Bling neste estágio.
+
+Cada settlement nasce com:
+`bling_sync_state=blocked_homologation`.
+
+A sincronização automática só será liberada depois de:
+1. homologar fiscal/pagamento de delivery com contador;
+2. fechar escopos e fluxo de pedido no Bling;
+3. testar múltiplas formas/parcelas no Bling;
+4. confirmar que o documento fiscal e financeiro refletem o meio efetivamente recebido.
+
+### Segurança operacional
+A ordem agora é:
+**receber -> registrar forma/valores -> validar total -> marcar Entregue**.
+
+Isso evita marcar entrega concluída e depois descobrir que não houve pagamento.

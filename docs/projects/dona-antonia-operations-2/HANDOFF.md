@@ -330,3 +330,17 @@ Próximo passo PapoAI: observar eventos de botões/flows/ações estruturadas e 
 - retorno fica fora do vendável até inspeção;
 - tela `Estoque mobile` no Admin usa leitor EAN + teclado na tela;
 - próximo passo deste domínio: após homologar estoque/depósitos no Bling, trocar o efeito local por movimento oficial Geral -> Quarentena / reconciliação de Balanço.
+
+
+### Pagamento efetivo na entrega
+- `order_payment_settlements` e `order_payment_parts` foram adicionadas;
+- o pagamento previsto no pedido não é mais tratado como pagamento efetivo;
+- entregador/operador registra o que realmente recebeu;
+- split de até 2 formas já está disponível na UI operacional, enquanto o backend suporta até 8 partes;
+- a soma precisa fechar exatamente o total;
+- somente depois da captura o pedido é marcado como Entregue;
+- se o pagamento falhar, usar `Não entregou`;
+- settlement fica `blocked_homologation` para Bling até o gate fiscal/financeiro;
+- não chamar mais o antigo `order_fiscal_confirm_payment` como confirmação simples da entrega.
+
+Próximo passo deste domínio: implementar retorno físico/não entrega como ocorrência explícita e depois, após homologação Bling, sincronizar recebimentos reais ao financeiro.
