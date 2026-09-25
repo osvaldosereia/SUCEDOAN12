@@ -9,15 +9,11 @@ verify_jwt = false
 [functions.admin-pin-auth-v1]
 verify_jwt = false
 
-# Fonte preservada porque o Vitrine Admin em produção ainda usa esta função
-# no projeto qxstkwshuvplmmftrctj durante a migração para o canônico.
-[functions.vitrine-admin-v1]
-verify_jwt = false
 
 # Classificador fiscal usado pelo fluxo fiscal do Vitrine Admin.
 [functions.product-image-openai-v1]
 verify_jwt = false
 
-# Gateway canônico do vitrine/admin; mantém proxy temporário apenas para ações ainda não portadas.
+# Gateway canônico do vitrine/admin; sem dependência do projeto legado.
 [functions.admin-products-live-v1]
 verify_jwt = false
