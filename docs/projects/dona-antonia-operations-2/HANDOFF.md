@@ -270,3 +270,31 @@ Ao terminar cada rodada importante:
 3. registrar pendências/bloqueios;
 4. atualizar Próximo passo;
 5. nunca depender apenas do histórico do chat.
+
+
+## Implantação em andamento — 2026-09-25
+A análise foi aprovada e a implantação segura já começou. A frase antiga de "não implementar" neste HANDOFF ficou histórica e não deve bloquear o trabalho atual.
+
+Concluído na onda atual:
+- fundação Control Tower/ledger/attention/approvals;
+- polling ocioso pausado;
+- Bling em modo homologação com Hub/Webhooks ainda OFF;
+- OAuth de reautorização Bling preparado;
+- reserva do checkout movida para a confirmação;
+- shadow readiness de early-order;
+- fila de impressão de picking;
+- motor canônico multicanal;
+- Nova venda WhatsApp;
+- PapoAI receiver capture-only no lugar do 410.
+
+Versões atuais:
+- admin-products-live-v1 v22;
+- storefront-v2 v16;
+- admin-service-intelligence-v1 v137;
+- papo-external-agent-v1 v105.
+
+Próximos gates:
+- capturar payload real do PapoAI e normalizar eventos;
+- reautorizar escopos de Situações no Bling e provar reserva/webhook;
+- depois canário de early-order no Bling;
+- POC de impressora física.
