@@ -489,3 +489,48 @@ Segurança:
 - manter `hub_enabled=false`;
 - manter `webhooks_enabled=false`;
 - eventos reais recebidos ficam `held` até a homologação final.
+
+
+## Bling — entrega real de webhooks homologada — 2026-09-25
+
+### Prova real
+Depois da configuração manual no aplicativo **GitHub - Sincronização de Produtos**, o Bling começou a entregar webhooks reais no receiver do Operations 2.0.
+
+Pedido canário:
+- Bling: `26967482613`;
+- canônico: `2e464c9f-f5df-4d75-baa4-f6455addd6d4`.
+
+Ao mudar `Aguardando confirmação -> Aprovado / Separar`:
+- chegou `order.updated` real com situação `915902`;
+- assinatura real foi validada;
+- evento ficou `held` porque processamento geral permanece desligado;
+- a reconciliação detectou corretamente drift entre local `storefront_received`/esperado `915901` e Bling `915902`;
+- nenhuma mutação local foi feita.
+
+Ao devolver `Aprovado / Separar -> Aguardando confirmação`:
+- chegou segundo `order.updated` real com situação `915901`;
+- assinatura válida;
+- reconciliação terminou como `order_reconciled_noop`;
+- local e Bling ficaram consistentes.
+
+### Estoque virtual
+A aprovação e o rollback geraram **56 eventos reais `virtual_stock.updated`**:
+- 28 produtos ao entrar a reserva;
+- os mesmos 28 produtos ao liberar a reserva;
+- todas as assinaturas verificadas;
+- saldo físico permaneceu intacto;
+- saldo virtual foi reservado e depois liberado.
+
+Os 56 eventos do canário foram classificados como teste e limpos da fila `held`, sem alterar estoque local.
+
+### Resultado
+Gate **Webhook real + assinatura + idempotência + reconciliação de pedido = HOMOLOGADO**.
+
+Estado de segurança preservado:
+- `mode=homologation`;
+- `hub_enabled=false`;
+- `webhooks_enabled=false`;
+- nenhum processamento geral foi ativado;
+- Make não foi usado.
+
+Próximo passo: homologar o processamento de `virtual_stock.updated` para atualizar de forma segura o espelho local usado pelo site, antes de liberar webhooks gerais.
