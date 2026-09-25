@@ -315,7 +315,16 @@ async function purchaseXmlPreviewLatest(){
     let key=digits(row?.chaveAcesso),bid=Number(row?.id||0)||null;
     if(key.length!==44&&bid){const d=await bg(token,"/nfe/"+bid);if(d.ok)key=digits(d.data?.data?.chaveAcesso)}
     if(key.length!==44){out.push({bling_nfe_id:bid,error:"missing_access_key"});continue}
-    const x=await blingXml(token,key);if(!x.ok){out.push({bling_nfe_id:bid,key_suffix:key.slice(-10),error:"xml_http_"+x.status});continue}
+    const x=await blingXml(token,key);if(!x.ok){
+      if(bid){
+        const det=await bg(token,"/nfe/"+bid);
+        if(det.ok){
+          const d=det.data?.data||{},sample=Array.isArray(d?.itens)?d.itens.slice(0,5):[];
+          out.push({bling_nfe_id:bid,key_suffix:key.slice(-10),source_mode:"registered_detail",xml_http_status:x.status,detail_keys:Object.keys(d).sort(),contact:{id:d?.contato?.id||null,nome:d?.contato?.nome||null,numeroDocumento:d?.contato?.numeroDocumento||d?.contato?.cpfCnpj||null},items:sample.map((it:any)=>({keys:Object.keys(it||{}).sort(),codigo:it?.codigo||null,descricao:it?.descricao||null,gtin:it?.gtin||null,unidade:it?.unidade||null,quantidade:it?.quantidade??null,valor:it?.valor??it?.valorUnitario??null,classificacaoFiscal:it?.classificacaoFiscal||null,cest:it?.cest||null,cfop:it?.cfop||null}))});continue;
+        }
+      }
+      out.push({bling_nfe_id:bid,key_suffix:key.slice(-10),error:"xml_http_"+x.status});continue
+    }
     const p:any=parseXml(x.xml);
     out.push({
       bling_nfe_id:bid,key_suffix:p.document_key.slice(-10),issued_at:p.issued_at,
