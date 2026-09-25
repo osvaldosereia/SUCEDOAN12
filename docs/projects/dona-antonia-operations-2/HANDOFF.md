@@ -378,3 +378,55 @@ Próximo passo: criar a resolução do retorno em revisão (mercadoria íntegra 
 
 ### Ação manual ainda necessária
 No cadastro do aplicativo Dona Antônia no Bling, liberar o acesso aos recursos de Situações/Módulos/Transições, salvar e reautorizar o aplicativo pelo botão **Reconectar Bling** do Vitrine/Admin. Depois disso a verificação é automática.
+
+
+## Bling — Situações + reserva de estoque homologadas — 2026-09-25
+
+### Escopos e catálogo
+- reconexão OAuth concluída com o aplicativo correto **GitHub - Sincronização de Produtos**;
+- `GET /situacoes/modulos` passou a responder HTTP 200;
+- módulo **Vendas** identificado de forma determinística;
+- catálogo de situações e transições gravado no runtime;
+- `status_updates_enabled=true`;
+- situações customizadas resolvidas:
+  - `Aguardando confirmação` = 915901;
+  - `Aprovado / Separar` = 915902;
+- transição `Aguardando confirmação -> Aprovado / Separar` = 504837238;
+- transição de rollback `Aprovado / Separar -> Aguardando confirmação` = 504838770.
+
+### Canário real
+Pedido Bling usado para homologação: `26967482613`.
+
+Estado inicial:
+- situação `Aguardando confirmação`;
+- sem NF-e;
+- saldo físico e saldo virtual iguais nos produtos amostrados.
+
+Após mudança para `Aprovado / Separar`:
+- situação alterada e confirmada por leitura da API;
+- saldo físico permaneceu inalterado;
+- saldo virtual caiu 1 unidade nos três produtos amostrados;
+- reserva de estoque portanto foi comprovada.
+
+Produtos amostrados:
+- Açafrão-da-terra Itapero 30 g: físico 10 / virtual 10 -> 9;
+- Achocolatado Apti 200 g: físico 3 / virtual 3 -> 2;
+- Arroz Tio Bonini 5 kg: físico 97 / virtual 97 -> 96.
+
+Rollback:
+- pedido voltou para `Aguardando confirmação`;
+- saldo virtual retornou a 10 / 3 / 97;
+- saldo físico continuou intacto;
+- liberação da reserva também foi comprovada.
+
+### Configuração Bling homologada
+Reserva de estoque configurada para considerar:
+- `Aprovado / Separar`;
+- `Verificado`.
+
+`Aguardando confirmação` não deve reservar.
+
+### Resultado
+Gate **Situações + Reserva** = HOMOLOGADO.
+
+O Hub geral continua em homologação e webhooks ainda não foram liberados para processamento. Próximo gate: homologar webhook real do Bling e reconciliação sem polling.
