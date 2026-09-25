@@ -994,6 +994,43 @@ const BLING_API_BASE="https://api.bling.com.br/Api/v3";
 const BLING_OAUTH_URLS=["https://api.bling.com.br/oauth/token","https://api.bling.com.br/Api/v3/oauth/token"];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 
+async function blingOauthCallback(sb:any,req:Request){
+  const ADMIN_URL="https://donaantonia.com.br/vitrine/admin/";
+  const redirect=(status:string,detail="")=>{const u=new URL(ADMIN_URL);u.searchParams.set("bling_oauth",status);if(detail)u.searchParams.set("detail",detail.slice(0,80));u.hash="today";return Response.redirect(u.toString(),302)};
+  const u=new URL(req.url),code=clean(u.searchParams.get("code"),2000),state=clean(u.searchParams.get("state"),500),oauthError=clean(u.searchParams.get("error"),120);
+  if(oauthError)return redirect("error","authorization_denied");
+  if(!code||!state)return redirect("error","missing_code_or_state");
+  const runtime=await sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const exchange=runtime.data?.metadata?.oauth_exchange_v1||{},expected=clean(exchange?.nonce_sha256,128),expiresAt=clean(exchange?.expires_at,80);
+  if(!expected||!expiresAt)return redirect("error","oauth_not_started");
+  if(Date.parse(expiresAt)<Date.now())return redirect("error","oauth_expired");
+  if(await r8Sha256Hex(state)!==expected)return redirect("error","oauth_state_mismatch");
+  const creds=await sb.rpc("get_bling_api_credentials_v1");
+  if(creds.error)throw creds.error;
+  const clientId=clean(creds.data?.client_id,500),clientSecret=clean(creds.data?.client_secret,1000);
+  if(!clientId||!clientSecret)return redirect("error","credentials_missing");
+  const basic=btoa(clientId+":"+clientSecret);let response:Response|null=null,data:any={};
+  for(const endpoint of BLING_OAUTH_URLS){
+    const body=new URLSearchParams({grant_type:"authorization_code",code});
+    const attempt=await fetch(endpoint,{method:"POST",headers:{Authorization:"Basic "+basic,"Content-Type":"application/x-www-form-urlencoded",Accept:"application/json"},body,signal:AbortSignal.timeout(12000)});
+    const raw=await attempt.text();let parsed:any={};try{parsed=raw?JSON.parse(raw):{}}catch{}response=attempt;data=parsed;
+    if(attempt.ok&&clean(parsed?.refresh_token,5000))break;
+    if(![403,404,405].includes(attempt.status))break;
+  }
+  const refresh=clean(data?.refresh_token,5000);
+  if(!response?.ok||!refresh){
+    await sb.rpc("merge_bling_hub_runtime_metadata_v2",{p_patch:{oauth_exchange_v1:{expires_at:null,consumed_at:new Date().toISOString(),last_result:"token_exchange_failed",nonce_sha256:null,http_status:response?.status||0}}});
+    return redirect("error","token_exchange_failed");
+  }
+  const saved=await sb.rpc("set_bling_api_refresh_token_v1",{p_refresh_token:refresh});if(saved.error)throw saved.error;
+  const now=new Date().toISOString();
+  await sb.rpc("merge_bling_hub_runtime_metadata_v2",{p_patch:{oauth_exchange_v1:{expires_at:null,consumed_at:now,last_result:"success",nonce_sha256:null}}});
+  await sb.from("bling_hub_runtime_v2").update({last_oauth_check_at:now,last_oauth_ok_at:now,last_oauth_error:null,updated_at:now}).eq("id",1);
+  try{await sb.rpc("ops_record_event_v1",{p_domain:"integration",p_event_type:"bling.oauth_reauthorized",p_summary:"Bling reautorizado com novo token OAuth.",p_actor_type:"human",p_entity_type:"integration",p_entity_id:"bling",p_correlation_id:null,p_actor_id:null,p_actor_label:"Owner",p_source_system:"bling",p_severity:"info",p_payload:{oauth:true},p_external_ref:null,p_idempotency_key:"bling-oauth:"+now.slice(0,16),p_occurred_at:now})}catch{}
+  return redirect("success");
+}
+
 async function blingWebhookHmacHex(secret:string,raw:string){
   const key=await crypto.subtle.importKey(
     "raw",
@@ -5636,11 +5673,16 @@ async function vitrineAdminAuth(sb:any,req:Request){
 
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
-  if(req.method==="GET")return Response.redirect("https://donaantonia.com.br/admin/commerce-os/",302);
-  if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");if(!url||!key)return json({ok:false,error:"server_config"},500);
   const sb=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
   const requestUrl=new URL(req.url);
+  if(req.method==="GET"){
+    if(requestUrl.searchParams.has("code")||requestUrl.searchParams.has("state")||requestUrl.searchParams.has("error")){
+      try{return await blingOauthCallback(sb,req)}catch(e){console.error("bling_oauth_callback",clean((e as Error)?.message||e,300));return Response.redirect("https://donaantonia.com.br/vitrine/admin/?bling_oauth=error&detail=callback_failed#today",302)}
+    }
+    return Response.redirect("https://donaantonia.com.br/vitrine/admin/",302);
+  }
+  if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   if(requestUrl.searchParams.get("source")==="bling-webhook-v2"){
     const rawBody=await req.text();
     try{return await blingWebhookReceive(sb,req,rawBody)}
