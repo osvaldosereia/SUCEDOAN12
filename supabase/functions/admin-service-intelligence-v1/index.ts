@@ -2165,6 +2165,107 @@ async function blingHubPatchOrderStatusOnce(sb:any,token:string,blingOrderId:num
   }
 }
 
+
+async function blingHubOps2VirtualStockSnapshot(sb:any,token:string,payloadRaw:any,depositId:number){
+  const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
+  const items=Array.isArray(payload?.items)?payload.items:[];
+  const demand=new Map<string,number>();
+  for(const item of items){
+    const productId=uuid(item?.product_id);
+    const qty=Number(item?.quantity);
+    if(!productId||!Number.isFinite(qty)||qty<=0)continue;
+    demand.set(productId,(demand.get(productId)||0)+qty);
+  }
+  if(!demand.size)return {ok:false,error:"order_without_stock_demand",status:409,rows:[],shortages:[]};
+
+  const sourceIds=[...demand.keys()];
+  const links=await sb.from("bling_hub_entity_links_v2")
+    .select("source_id,bling_id,status")
+    .eq("source_system","vitrine_qx")
+    .eq("entity_type","product")
+    .in("source_id",sourceIds);
+  if(links.error)throw links.error;
+  const linkMap=new Map<string,any>((links.data||[]).map((x:any)=>[String(x.source_id),x]));
+
+  const unresolved:any[]=[];
+  const blingIds:number[]=[];
+  const sourceByBling=new Map<number,string>();
+  for(const sourceId of sourceIds){
+    const link=linkMap.get(sourceId);
+    const blingId=Number(link?.bling_id||0);
+    if(!link||link.status!=="matched"||!blingId){
+      unresolved.push({product_id:sourceId,required:demand.get(sourceId)||0,reason:"product_not_linked"});
+      continue;
+    }
+    blingIds.push(blingId);
+    sourceByBling.set(blingId,sourceId);
+  }
+  if(unresolved.length){
+    return {ok:false,error:"stock_products_unlinked",status:409,rows:[],shortages:unresolved,checked:0};
+  }
+
+  const remoteMap=new Map<number,any>();
+  for(let i=0;i<blingIds.length;i+=50){
+    const q=new URLSearchParams();
+    for(const id of blingIds.slice(i,i+50))q.append("idsProdutos[]",String(id));
+    const r=await blingHubGet(sb,token,"/estoques/saldos?"+q.toString());
+    if(!r.ok){
+      return {ok:false,error:"stock_snapshot_http_"+r.status,status:r.status||502,rows:[],shortages:[],checked:remoteMap.size};
+    }
+    for(const row of Array.isArray(r.data?.data)?r.data.data:[]){
+      const id=Number(row?.produto?.id||0);
+      if(id>0)remoteMap.set(id,row);
+    }
+  }
+
+  const rows:any[]=[];
+  const shortages:any[]=[];
+  for(const blingId of blingIds){
+    const sourceId=sourceByBling.get(blingId)||"";
+    const required=Number(demand.get(sourceId)||0);
+    const remote=remoteMap.get(blingId);
+    if(!remote){
+      const miss={product_id:sourceId,bling_product_id:blingId,required,available:0,reason:"stock_row_missing"};
+      rows.push(miss);shortages.push(miss);continue;
+    }
+    const deps=Array.isArray(remote?.depositos)?remote.depositos:[];
+    const dep=deps.find((x:any)=>Number(x?.id||0)===depositId)||null;
+    const physical=Number(dep?.saldoFisico);
+    const virtual=Number(dep?.saldoVirtual);
+    const row={
+      product_id:sourceId,
+      bling_product_id:blingId,
+      required,
+      deposit_id:depositId,
+      physical:Number.isFinite(physical)?physical:null,
+      virtual:Number.isFinite(virtual)?virtual:null,
+      physical_total:Number(remote?.saldoFisicoTotal),
+      virtual_total:Number(remote?.saldoVirtualTotal)
+    };
+    rows.push(row);
+    if(!Number.isFinite(virtual)){
+      shortages.push({...row,available:0,reason:"deposit_virtual_missing"});
+    }else if(virtual+0.0001<required){
+      shortages.push({...row,available:Math.max(0,virtual),reason:"insufficient_virtual_stock"});
+    }
+  }
+
+  return {
+    ok:shortages.length===0,
+    status:shortages.length?409:200,
+    deposit_id:depositId,
+    checked:rows.length,
+    shortages,
+    rows
+  };
+}
+
+function blingHubOps2NegativeVirtualRows(snapshot:any){
+  return (Array.isArray(snapshot?.rows)?snapshot.rows:[]).filter((x:any)=>
+    Number.isFinite(Number(x?.virtual))&&Number(x.virtual)<-0.0001
+  );
+}
+
 async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:any,canaryRaw:any=false){
   const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
   const sourceOrderId=uuid(payload?.source_order_id);
@@ -2205,6 +2306,10 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
       :mapping.approved_separation_id
   )||0;
   if(!targetStatusId)return {ok:false,error:"target_status_missing",status:409,external_write:false};
+  const selectedDepositId=Number(meta?.selected_deposit_id||0)||0;
+  if(targetKey==="approved_separation"&&!selectedDepositId){
+    return {ok:false,error:"selected_deposit_missing",status:409,external_write:false};
+  }
 
   const customerId=uuid(payload?.customer?.source_customer_id);
   let customerEnsured:any=null;
@@ -2251,6 +2356,23 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
   let blingOrderId=Number(found.match?.id||0)||0;
   let created=false,updated=false,statusChanged=false;
   let externalWrite=Boolean(customerEnsured?.external_write);
+  let stockPreflight:any=null;
+
+  if(targetKey==="approved_separation"&&!blingOrderId){
+    stockPreflight=await blingHubOps2VirtualStockSnapshot(sb,token,preparedPayload,selectedDepositId);
+    if(!stockPreflight.ok){
+      await sb.from("bling_hub_audit_v2").insert({
+        event_type:"ops2_order_approval_stock_blocked",
+        severity:"warning",domain:"stock",source_system:"dona_antonia",source_id:sourceOrderId,
+        details:{stage:"before_create",deposit_id:selectedDepositId,shortages:stockPreflight.shortages||[],external_write:false,make_used:false}
+      });
+      return {
+        ok:false,error:"insufficient_virtual_stock",status:409,source_order_id:sourceOrderId,
+        stock:stockPreflight,external_write:Boolean(customerEnsured?.external_write)
+      };
+    }
+  }
+
   if(!blingOrderId){
     const createdOrder=await blingHubCreateOrderOnce(sb,token,preview.create_order||preview.desired_order);
     externalWrite=true;
@@ -2309,6 +2431,20 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
   }
 
   let currentStatusId=Number(remote?.situacao?.id||remote?.situacao||0)||0;
+  if(targetKey==="approved_separation"&&currentStatusId!==targetStatusId&&!stockPreflight){
+    stockPreflight=await blingHubOps2VirtualStockSnapshot(sb,token,preparedPayload,selectedDepositId);
+    if(!stockPreflight.ok){
+      await sb.from("bling_hub_audit_v2").insert({
+        event_type:"ops2_order_approval_stock_blocked",
+        severity:"warning",domain:"stock",source_system:"dona_antonia",source_id:sourceOrderId,
+        details:{stage:"before_status_change",bling_order_id:blingOrderId,deposit_id:selectedDepositId,shortages:stockPreflight.shortages||[],external_write:false,make_used:false}
+      });
+      return {
+        ok:false,error:"insufficient_virtual_stock",status:409,source_order_id:sourceOrderId,
+        bling_order_id:blingOrderId,stock:stockPreflight,external_write:externalWrite
+      };
+    }
+  }
   if(currentStatusId!==targetStatusId){
     const catalog=meta?.order_status_catalog||{};
     const transition=(catalog.transitions||[]).find((x:any)=>
@@ -2364,6 +2500,42 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
     };
   }
 
+  let stockPostcheck:any=null;
+  if(targetKey==="approved_separation"){
+    stockPostcheck=await blingHubOps2VirtualStockSnapshot(sb,token,preparedPayload,selectedDepositId);
+    const negative=blingHubOps2NegativeVirtualRows(stockPostcheck);
+    if(!stockPostcheck?.rows?.length||negative.length){
+      let rollback:any=null;
+      const waitingId=Number(mapping.awaiting_confirmation_id||0)||0;
+      if(waitingId&&currentStatusId===targetStatusId){
+        const catalog=meta?.order_status_catalog||{};
+        const back=(catalog.transitions||[]).find((x:any)=>
+          x?.ativo!==false
+          && Number(x?.origem?.id)===currentStatusId
+          && Number(x?.destino?.id)===waitingId
+          && (!Array.isArray(x?.acoes)||x.acoes.length===0)
+        );
+        if(back)rollback=await blingHubPatchOrderStatusOnce(sb,token,blingOrderId,waitingId);
+      }
+      await sb.from("bling_hub_audit_v2").insert({
+        event_type:"ops2_order_approval_postcheck_failed",
+        severity:"error",domain:"stock",source_system:"dona_antonia",source_id:sourceOrderId,
+        details:{
+          bling_order_id:blingOrderId,deposit_id:selectedDepositId,
+          negative_virtual:negative,stock_postcheck:stockPostcheck,
+          rollback_attempted:Boolean(rollback),rollback_ok:Boolean(rollback?.ok),
+          external_write:true,make_used:false
+        }
+      });
+      return {
+        ok:false,error:"post_reservation_stock_invalid",status:409,
+        source_order_id:sourceOrderId,bling_order_id:blingOrderId,
+        negative_virtual:negative,rollback_ok:Boolean(rollback?.ok),
+        stock:stockPostcheck,external_write:true
+      };
+    }
+  }
+
   const now=new Date().toISOString();
   const link=await sb.from("bling_hub_entity_links_v2").upsert({
     source_system:"vitrine_qx",
@@ -2393,6 +2565,8 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
     details:{
       bling_order_id:blingOrderId,target_key:targetKey,target_status_id:targetStatusId,
       created,updated,status_changed:statusChanged,canary,
+      stock_preflight:stockPreflight?{checked:stockPreflight.checked,deposit_id:stockPreflight.deposit_id,shortage_count:(stockPreflight.shortages||[]).length}:null,
+      stock_postcheck:stockPostcheck?{checked:stockPostcheck.checked,deposit_id:stockPostcheck.deposit_id,negative_count:blingHubOps2NegativeVirtualRows(stockPostcheck).length}:null,
       external_write:externalWrite,make_used:false
     }
   });
@@ -2406,6 +2580,8 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
     target_status_id:targetStatusId,
     created,updated,status_changed:statusChanged,
     customer_ensure:customerEnsured,
+    stock_preflight:stockPreflight?{checked:stockPreflight.checked,deposit_id:stockPreflight.deposit_id,shortage_count:(stockPreflight.shortages||[]).length}:null,
+    stock_postcheck:stockPostcheck?{checked:stockPostcheck.checked,deposit_id:stockPostcheck.deposit_id,negative_count:blingHubOps2NegativeVirtualRows(stockPostcheck).length}:null,
     verified:true,
     external_write:externalWrite
   };
