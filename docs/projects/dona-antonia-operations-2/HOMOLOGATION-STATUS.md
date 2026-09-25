@@ -269,3 +269,17 @@ Nenhum conteúdo pessoal da amostra foi copiado para a documentação.
 ### Regra de segurança
 Uma mensagem livre recebida NÃO cria pedido e NÃO altera carrinho automaticamente.
 O rascunho PapoAI versionado só será alimentado por eventos/ações que consigam produzir itens estruturados e determinísticos.
+
+
+## Control Tower timeline — 2026-09-25
+
+### Concluído
+- `ops_timeline` read-only no gateway operacional;
+- `admin-products-live-v1` v23;
+- Central exibe até 12 eventos recentes de negócio;
+- não expõe payload técnico bruto;
+- mostra origem, resumo, ator e horário;
+- timeline usa o ledger já existente, sem nova tabela e sem polling.
+
+Objetivo:
+o proprietário consegue entender o que mudou recentemente sem precisar perguntar primeiro ao ChatGPT.
