@@ -283,3 +283,25 @@ O rascunho PapoAI versionado só será alimentado por eventos/ações que consig
 
 Objetivo:
 o proprietário consegue entender o que mudou recentemente sem precisar perguntar primeiro ao ChatGPT.
+
+
+## Ponte PapoAI -> Conversa local v2
+
+### Concluído
+- `papoai_ensure_conversation_v2` implantada;
+- receiver `papo-external-agent-v1` v107;
+- mensagem inbound normalizada passa a vincular/criar o espelho operacional da conversa;
+- chave de correlação operacional: conta WhatsApp ativa + telefone;
+- sessão/contact id do PapoAI ficam em `referral`;
+- conversa existente é reutilizada;
+- cliente só é vinculado quando já existe correspondência determinística;
+- nenhuma mensagem cria cliente, carrinho, pedido ou escrita no Bling;
+- duplicidade é protegida por captura idempotente + lock transacional de conta/telefone.
+
+### Validação
+Os eventos normalizados já existentes foram reconciliados:
+- conversas antigas conhecidas foram reutilizadas;
+- contatos novos criaram somente a conversa operacional;
+- nenhum erro ficou na amostra conciliada.
+
+A criação de rascunho de pedido continua separada e exige evento estruturado/determinístico.
