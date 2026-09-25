@@ -409,7 +409,7 @@
   const dateTime=v=>v?new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'—';
   const dateOnly=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:(v||'—')};
   const normalize=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null};
+  const state={tab:'today',orderFilter:'all',orderIssueFilter:'all',orderQuery:'',expeditionQuery:'',expeditionSelected:[],orderCustomerSearchTimer:null,orderCustomerSuggestion:null,orderFocusIssue:null,componentReplacement:null,fiscalByOrder:{},closureOrders:[],closurePendingCount:0,products:[],productOffset:0,productNext:null,productFilters:{category:'',subcategory:'',active:''},productFacets:{categories:[],subcategories:[]},expiryProducts:[],expirySummary:null,expiredDeactivated:[],expiryAlerts:null,productAudit:[],customers:[],customerProfile:null,customerHistoryOffset:0,orders:[],currentOrder:null,currentOrderBlingPreview:null,currentOrderFiscal:null,balanceProduct:null,balanceQty:'',balanceHistory:[],stockShortages:[],stockShortageSummary:null,gondolas:[],gondola:null,gondolaProducts:[],gondolaCreateNumber:'',bling:null,blingProbe:null,finance:null,financeCatalogs:null,financeContactSearchTimer:null,financeSelectedContact:null,financeAuthPromise:null,purchaseXml:null,purchaseXmlDetail:null,opsSummary:null,opsAttention:[],opsShadow:null,opsPrintQueue:null};
   function toast(msg){
     const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800);
   }
@@ -742,13 +742,24 @@
     return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Precisa de você</strong><span class="muted">'+items.length+' pendência'+(items.length===1?'':'s')+' aberta'+(items.length===1?'':'s')+'</span></div><div style="padding:8px 14px 14px">'+items.slice(0,8).map(a=>'<div class="history-row" style="align-items:center"><div><span class="pill '+(a.priority==='critical'||a.priority==='high'?'danger':'')+'">'+esc(rankLabel[a.priority]||a.priority)+'</span></div><div class="history-main"><strong>'+esc(a.summary)+'</strong><small>'+esc(a.recommended_action||'Abrir para revisar')+'</small></div><button class="quick-link" type="button" data-attention-open="'+esc(a.id)+'" data-attention-tab="'+esc(attentionTargetTab(a))+'">Abrir</button></div>').join('')+'</div></section>';
   }
 
+  function renderOpsPrintQueue(){
+    const q=state.opsPrintQueue||{},jobs=Array.isArray(q.jobs)?q.jobs:[];
+    if(!jobs.length)return '';
+    const active=jobs.filter(j=>['pending','failed','claimed'].includes(j.status));
+    if(!active.length)return '';
+    const label={pending:'Aguardando',failed:'Falhou',claimed:'Em impressão'};
+    return '<section class="panel" style="margin-bottom:14px"><div class="history-title" style="padding:14px 14px 0"><strong>Fila de impressão</strong><span class="muted">a impressão automática ainda está em homologação</span></div><div style="padding:8px 14px 14px">'+active.slice(0,8).map(j=>'<div class="history-row" style="align-items:center"><span class="pill '+(j.status==='failed'?'danger':'')+'">'+esc(label[j.status]||j.status)+'</span><div class="history-main"><strong>Separação · #'+esc(shortOrder(j.payload?.order_number||j.entity_id))+'</strong><small>'+esc(j.printer_profile||'85 mm')+(j.last_error?' · '+esc(j.last_error):'')+'</small></div><button class="quick-link" type="button" data-print-order="'+esc(j.entity_id)+'">Abrir pedido</button></div>').join('')+'</div></section>';
+  }
+
   function renderOps2Summary(){
     const s=state.opsSummary||{};
-    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{};
+    const w=s.whatsapp||{},a=s.attention||{},ap=s.approvals||{},i=s.inventory||{},pr=s.printing||{};
+    const printNeeds=Number(pr.pending||0)+Number(pr.failed||0);
     const cards=[
       ['Precisa de humano',Number(w.human_required||0),'Conversas WhatsApp'],
       ['Atenções',Number(a.open||0),'Fila da Central'],
       ['Aprovações',Number(ap.pending||0),'Ações aguardando decisão'],
+      ['Impressões',printNeeds,printNeeds?'Fila de separação':'Fila em dia'],
       ['Sem estoque',Number(i.zero_or_negative||0),'Produtos ativos'],
       ['Vencem em 90 dias',Number(i.expires_90d||0),'Revisar lotes/validade']
     ];
@@ -761,17 +772,19 @@
     $('#refreshToday').onclick=renderToday;
     loadOperationalIntegrationAlert();
     try{
-      const [data,closureData,expiryAlerts,opsData,attentionData]=await Promise.all([
+      const [data,closureData,expiryAlerts,opsData,attentionData,printData]=await Promise.all([
         api('orders'),
         api('closure_orders').catch(()=>null),
         api('expiry_alerts').catch(()=>null),
         api('ops_summary').catch(()=>null),
-        api('ops_attention',{limit:20}).catch(()=>null)
+        api('ops_attention',{limit:20}).catch(()=>null),
+        api('ops_print_queue',{limit:20}).catch(()=>null)
       ]);
       state.orders=data.orders||[];
       state.expiryAlerts=expiryAlerts||null;
       state.opsSummary=opsData?.summary||null;
       state.opsAttention=attentionData?.attention||[];
+      state.opsPrintQueue=printData?.queue||null;
       if(closureData){
         state.closureOrders=closureData.orders||[];
         state.closurePendingCount=Number(closureData.pending_count||0);
@@ -780,10 +793,11 @@
         state.closurePendingCount=0;
       }
       const host=$('#todayBody');
-      host.innerHTML=renderOps2Summary()+renderOpsAttention()+renderTodayExpiryAlert()+renderTodayCards()+
+      host.innerHTML=renderOps2Summary()+renderOpsAttention()+renderOpsPrintQueue()+renderTodayExpiryAlert()+renderTodayCards()+
         '<div class="panel"><div class="history-title" style="padding:14px 14px 0"><strong>Próximos pedidos</strong><span class="muted">pendências primeiro · depois os mais antigos</span></div><div id="todayOrders"></div></div>';
       host.querySelectorAll('[data-retry-bling-status]').forEach(b=>b.onclick=retryBlingStatusCatalog);
       host.querySelectorAll('[data-attention-open]').forEach(b=>b.onclick=()=>setTab(b.dataset.attentionTab||'today'));
+      host.querySelectorAll('[data-print-order]').forEach(b=>b.onclick=()=>openOrder(b.dataset.printOrder));
       host.querySelectorAll('[data-today-expiry]').forEach(b=>b.onclick=()=>setTab('expiry'));
       host.querySelectorAll('[data-today-filter]').forEach(b=>b.onclick=()=>{state.orderFilter=b.dataset.todayFilter;if(state.orderFilter!=='problems')state.orderIssueFilter='all';setTab('orders')});
       host.querySelectorAll('[data-today-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.todayTab));
@@ -3210,8 +3224,8 @@
     };
     if($('#advanceOrder'))$('#advanceOrder').onclick=()=>advanceCurrentOrder($('#advanceOrder').dataset.next);
     if($('#returnToExpedition'))$('#returnToExpedition').onclick=returnCurrentOrderToExpedition;
-    if($('#startSeparation'))$('#startSeparation').onclick=()=>printSeparation(d,true);
-    if($('#reprintSeparation'))$('#reprintSeparation').onclick=()=>printSeparation(d,false);
+    if($('#startSeparation'))$('#startSeparation').onclick=()=>startSeparationFlow(d);
+    if($('#reprintSeparation'))$('#reprintSeparation').onclick=()=>printSeparationOnly(d);
     if($('#printDelivery'))$('#printDelivery').onclick=()=>printDelivery(d);
     if($('#cancelOrder'))$('#cancelOrder').onclick=cancelCurrentOrder;
     $('#previewBlingOrder').onclick=previewCurrentOrderBling;
@@ -3981,32 +3995,8 @@
     }
   }
 
-  async function printSeparation(detail,consumeStock=false,existingWindow=null){
-    const o=detail.order;
-    const w=existingWindow||window.open('','_blank','width=420,height=700');
-    if(!w){toast('Libere pop-ups para imprimir');return}
-    try{
-      w.document.open();
-      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando separação</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Preparando separação…</strong><p>'+(consumeStock?'Iniciando a separação e atualizando o estoque.':'Preparando a reimpressão sem alterar o estoque.')+'</p></body></html>');
-      w.document.close();
-
-      let consumed={already_consumed:true};
-      if(consumeStock){
-        await persistCurrentOrder();
-        const blingReady=await validateBlingBeforeSeparation(o.id);
-        if(!blingReady){
-          try{w.close()}catch{}
-          return;
-        }
-        consumed=await api('order_consume_stock',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id})
-        });
-        await api('order_update',{},{
-          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing'})
-        });
-      }
-      const items=separationItems(detail);
-      const groups=[];
+  function separationTicketBody(detail){
+    const o=detail.order,items=separationItems(detail),groups=[];
     for(const item of items){
       const key=item.gondola_number??'none';
       let group=groups.find(g=>g.key===key);
@@ -4017,18 +4007,36 @@
       shelf.items.push(item);
     }
     const sections=groups.map(g=>'<div class="gondola-title">'+esc(g.label)+'</div>'+g.shelves.map(s=>'<div class="shelf-title-print">'+esc(s.label)+'</div><div class="sep-grid">'+s.items.map(i=>'<div class="sep-card"><img src="'+esc(i.image_url||'/img/logoantonia5.png')+'" alt=""><div class="sep-name">'+esc(i.name)+'</div><div class="sep-qty">'+esc(fmtQty(i.quantity))+'×</div></div>').join('')+'</div>').join('')).join('');
-      const body='<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+sections+'<div class="foot">'+items.length+' produtos diferentes</div>';
-      openPrint('Separação #'+shortOrder(o.order_number),body,'separation',w);
-      if(consumeStock&&!consumed.already_consumed)toast('Separação iniciada · estoque atualizado');
-      else if(consumeStock)toast('Separação retomada · estoque já estava atualizado');
-      else toast('Separação reimpressa · nenhum estoque alterado');
+    return '<div class="ticket-head"><strong>DONA ANTÔNIA</strong><span>SEPARAÇÃO · Pedido #'+esc(shortOrder(o.order_number))+'</span><small>'+esc(dateTime(o.created_at))+'</small></div>'+sections+'<div class="foot">'+items.length+' produtos diferentes</div>';
+  }
+  async function markPickingPresented(orderId){
+    try{await api('ops_print_presented',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:orderId})})}catch{}
+  }
+  function printSeparationOnly(detail,existingWindow=null){
+    const o=detail.order,w=existingWindow||window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return false}
+    openPrint('Separação #'+shortOrder(o.order_number),separationTicketBody(detail),'separation',w);
+    markPickingPresented(o.id);
+    return true;
+  }
+  async function startSeparationFlow(detail){
+    const o=detail.order,w=window.open('','_blank','width=420,height=700');
+    if(!w){toast('Libere pop-ups para imprimir');return}
+    try{
+      w.document.open();
+      w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando separação</title></head><body style="font:16px system-ui;padding:30px;text-align:center"><strong>Preparando separação…</strong><p>Validando pedido e estoque antes de imprimir.</p></body></html>');
+      w.document.close();
+      await persistCurrentOrder();
+      const blingReady=await validateBlingBeforeSeparation(o.id);
+      if(!blingReady){try{w.close()}catch{};return}
+      const consumed=await api('order_consume_stock',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,operator:currentOperator()||'Operação'})});
+      await api('order_update',{}, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:o.id,status:'processing',operator:currentOperator()||'Operação'})});
+      printSeparationOnly(detail,w);
+      toast(consumed.already_consumed?'Separação retomada · estoque já estava atualizado':'Separação iniciada · estoque atualizado');
       const fresh=await api('order',{id:o.id});state.currentOrder=fresh;
       await loadCurrentOrderFiscal(false);
       paintOrderDetail();loadOrders();
-    }catch(e){
-      try{w.close()}catch{}
-      toast(errorMessage(e.message));
-    }
+    }catch(e){try{w.close()}catch{};toast(errorMessage(e.message))}
   }
   function printDelivery(detail){
     const o=detail.order,c=detail.customer||{},a=o.delivery_address_snapshot||c.address||{},payment=o.payment_method_snapshot?.label||o.payment_method_snapshot?.method||'—';
