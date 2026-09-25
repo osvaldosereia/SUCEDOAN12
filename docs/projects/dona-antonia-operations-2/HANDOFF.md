@@ -151,6 +151,10 @@ Princípio: dashboard responde proativamente o que precisa de atenção; chat é
 ## Achado crítico — pagamento/fiscal
 A análise detectou um ciclo impossível no fluxo atual: o readiness fiscal exige pedido entregue + pagamento confirmado, enquanto o gate de expedição exige autorização fiscal antes da saída. Isso deve ser redesenhado antes de qualquer implementação. Também foi confirmado que o Bling suporta dinheiro, crédito, vale alimentação, vale refeição, PIX e múltiplas formas, mas o Admin atual só confirma um meio único pelo total. Ver `FINANCE-PAYMENT-DELIVERY-DRAFT.md`.
 
+
+## Achado — compras/XML/estoque
+O Bling deve ser o único consumidor da distribuição SEFAZ/NSU do CNPJ. A rotina custom atual lê NF-e já registradas no Bling; não consulta a SEFAZ diretamente. O projeto final deve preferir busca automática SEFAZ nativa + Check-in + DUN + lotes no Bling e reduzir o custom a XML CPF, conversão caixa->unidade, fila de revisão e auditoria. Ver `PURCHASES-XML-INVENTORY-DRAFT.md`.
+
 ## Como retomar em qualquer novo chat
 Dizer:
 "Retome Dona Antônia Operations 2.0. Leia docs/projects/dona-antonia-operations-2/HANDOFF.md no SUCEDOAN12, confirme o estado real no GitHub/Supabase antes de agir e continue do Próximo passo. Não altere produção sem homologação."
