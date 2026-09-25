@@ -118,8 +118,17 @@ Rotinas agendadas, alertas por exceção, panorama diário, estoque crítico, co
 Remover somente componentes comprovadamente substituídos e sem dependências de produção.
 
 ## Próximo passo
-Executar a Fase 1: auditoria ampla e criar a matriz:
-FUNÇÃO ATUAL | ONDE ESTÁ | COMO FUNCIONA | DESTINO | MOTIVO | RISCO | DEPENDÊNCIAS | AÇÃO.
+Fechar a Fase 1 com a matriz de fonte de verdade por entidade e o desenho TO-BE do fluxo pedido -> Bling -> impressão -> separação -> conferência -> fiscal -> expedição -> entrega. Depois definir o gateway mínimo e auditável para gestão via ChatGPT.
+
+## Progresso da auditoria em 2026-09-25
+- Confirmado que o pedido hoje só é enfileirado ao Bling no início da separação, após consumo do estoque local.
+- Confirmado que o Hub automático está desabilitado globalmente, embora o cron físico exista.
+- Confirmado que XML diário está ativo às 06:00 Cuiabá e passa pelo monólito admin-service-intelligence-v1.
+- Confirmado gate CPF: XML pessoal nunca cria financeiro empresarial.
+- Confirmada confirmação humana obrigatória para entrada física de estoque de XML.
+- Confirmada lógica determinística de personalização de cesta e diferença comercial/fiscal.
+- Confirmada ausência, nesta sessão, de plugin Bling direto no diretório de plugins do ChatGPT.
+- Detalhes em CURRENT-STATE.md e AUDIT-MATRIX.md.
 
 ## Como retomar em qualquer novo chat
 Dizer:
