@@ -47,10 +47,15 @@ async function home(){
   const {data,error}=await db.from("basket_templates").select("id,name,base_price,image_url,sort_order").eq("is_active",true).order("sort_order").order("base_price").order("name");
   if(error)throw error;return {ok:true,version:"canonical-vitrine-v1",baskets:(data||[]).map((b:any)=>({id:b.id,name:b.name,display_price_cents:cents(b.base_price),image_url:b.image_url||""})),categories:CATEGORIES};
 }
+async function sellableMap(ids:string[]){
+  const out=new Map<string,number>();if(!ids.length)return out;
+  const {data,error}=await db.from("ops2_sellable_stock_v1").select("product_id,effective_sellable_stock").in("product_id",ids);
+  if(error)throw error;for(const r of data||[])out.set(String(r.product_id),Math.max(0,Number(r.effective_sellable_stock||0)));return out;
+}
 async function offerList(){
-  const {data,error}=await db.from("products").select("id,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).gt("stock",0).order("name").limit(80);
-  if(error)throw error;const rows=data||[],res=await reservedMap(rows.map((p:any)=>p.id));
-  return {ok:true,offers:rows.map((p:any)=>({...pub(p,Number(p.stock||0)-(res.get(p.id)||0)),product_id:p.id})).filter((p:any)=>p.stock_quantity>0)};
+  const {data,error}=await db.from("products").select("id,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true).eq("is_offer",true).not("offer_price","is",null).order("name").limit(160);
+  if(error)throw error;const rows=data||[],sm=await sellableMap(rows.map((p:any)=>p.id));
+  return {ok:true,offers:rows.map((p:any)=>({...pub(p,sm.get(p.id)||0),product_id:p.id})).filter((p:any)=>p.stock_quantity>0).slice(0,80)};
 }
 async function subcats(url:URL){
   const c=txt(url.searchParams.get("category"),48);if(!c)return {ok:true,subcategories:[]};
@@ -69,7 +74,7 @@ async function productList(url:URL){
 }
 async function oneProduct(id:string){
   const {data:p,error}=await db.from("products").select("id,sku,gtin,name,description_short,description_long,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("id",id).eq("is_active",true).maybeSingle();
-  if(error)throw error;if(!p)return null;const r=await reservedMap([id]),o=pub(p,Number(p.stock||0)-(r.get(id)||0));
+  if(error)throw error;if(!p)return null;const sm=await sellableMap([id]),o=pub(p,sm.get(id)||0);
   const characteristics=[["Marca",p.brand],["Embalagem",p.packaging],["Unidade",p.unit],["Categoria",p.category],["Subcategoria",p.subcategory],["Tipo",p.customer_subsubcategory||p.subsubcategory]].filter((x:any)=>txt(x[1],200)).map((x:any)=>({label:x[0],value:String(x[1])}));
   return {...o,sku:p.sku||"",gtin:p.gtin||"",description:p.description_long||p.description_short||"",characteristics};
 }
