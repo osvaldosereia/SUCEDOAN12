@@ -118,3 +118,49 @@ Acumulado:
 - 15 produtos reais confirmados;
 - 524 stock_update ainda planejados;
 - 156 deles ainda são delta 1.
+
+
+## Rodada ampla delta 1 — 20 produtos — PASS
+Executada em 2026-09-26.
+
+Canários:
+- ea8fc8d1-a5fc-4560-8713-277ab998b272
+- 119359dd-ec79-4a42-b388-3ad3ec7b2817
+- 6ec47be7-3331-45bc-bd45-09b1e55f4371
+- 134ebaf9-fbb4-4e3a-9076-aee3f31aeee3
+
+Resultado:
+- 20/20 produtos synced;
+- 20/20 com read-after-write verified=true;
+- 0 review_required;
+- 0 failed;
+- 0 pending ao fechamento;
+- Hub desligado entre os blocos e ao final;
+- homologation preservado;
+- write_canary_limit=1 preservado;
+- nenhum delta > 1 entrou nesta rodada.
+
+Acumulado:
+- 35 produtos reais confirmados no Bling;
+- 504 stock_update ainda planejados;
+- 136 deles ainda são delta absoluto 1.
+
+## Hardening após rodada ampla
+Foi auditado se o estoque atual do Supabase havia mudado em relação ao target do snapshot entre preparação e execução.
+Resultado: 35/35 confirmados sem drift.
+
+Novo gate obrigatório:
+- banco: ops2_arm_catalog_stock_canary_v1 bloqueia com live_supabase_stock_drift se products.stock divergir do desired_stock;
+- Hub: ops2_catalog_stock_canary_execute relê products.stock imediatamente antes de enfileirar e bloqueia o write em qualquer drift;
+- admin-service-intelligence-v1 atualizado para v159 ACTIVE;
+- nenhum write global habilitado.
+
+Advisors após hardening:
+- security: somente INFO rls_enabled_no_policy no padrão interno fechado já conhecido;
+- performance: somente unused_index INFO; nenhum novo FK sem índice.
+
+Estado ao fechar:
+- hub_enabled=false;
+- mode=homologation;
+- write_canary_limit=1;
+- stock authority global não alterada.
