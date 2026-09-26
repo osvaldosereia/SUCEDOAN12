@@ -53,3 +53,18 @@ Novas tabelas com RLS e sem grants anon/authenticated. Views security_invoker e 
 
 ## Próximo passo
 Adicionar ao Hub uma ação específica e estreita para este canário de baseline, em vez de expor enqueue genérico ao operador. A ação deve validar run/canary/flag e só então enfileirar set_stock; verificação posterior pelo mirror.
+
+
+## 2026-09-26 — Gate restrito implantado
+- migration `ops2_arm_catalog_stock_canary_v1` aplicada;
+- canário 38213b37-fa60-4627-89c7-14b144a843ee armado com confirmação literal;
+- 5/5 itens continuam prepared e nenhum possui |delta| > 1;
+- `external_write_enabled=true` somente neste canário;
+- `admin-service-intelligence-v1` v158 ACTIVE;
+- nova subaction interna `ops2_catalog_stock_canary_execute`;
+- a ação revalida status, tamanho <=5, delta <=1 e binding exato antes de enfileirar;
+- idempotency key inclui canary + product + desired_stock;
+- o worker existente lê o saldo Bling antes, escreve, relê e exige igualdade;
+- `ops2_stock_authority` não foi alterado.
+
+Nenhum job do canário foi disparado nesta etapa. O próximo passo é execução controlada do canário pelo endpoint interno e verificação do mirror; qualquer mismatch interrompe expansão.
