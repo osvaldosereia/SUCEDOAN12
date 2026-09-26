@@ -767,3 +767,13 @@ Estado: **DB + ADMIN PASS / BLING FINANCE SYNC AINDA BLOQUEADO**.
 - teste rollback R$100: sem pagamento bloqueado; R$60 PIX + R$40 crédito permitido; zero resíduos;
 - Admin v47;
 - `bling_sync_state` permanece `blocked_homologation`: nenhuma baixa financeira Bling foi executada.
+
+
+## 2026-09-25/26 — Pedido ↔ rota/parada DB invariant
+Estado: **TESTE TRANSACIONAL PASS**.
+- `orders.status` passou a sincronizar automaticamente a parada ativa;
+- última parada concluída fecha a rota;
+- writers fora da Edge não deixam mais pedido entregue com parada ainda aberta;
+- teste rollback confirmou `delivered/delivered/completed`;
+- SQL commit `95e43c00`;
+- nenhum pedido/rota real foi usado como mutação.
