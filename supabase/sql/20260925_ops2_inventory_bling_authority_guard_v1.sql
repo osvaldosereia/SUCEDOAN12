@@ -1,0 +1,9 @@
+-- Dona Antonia Operations 2.0
+-- Inventory Mobile guard for Bling authority.
+-- 1) Recount validation uses CURRENT Bling physical mirror, not the old attention snapshot.
+-- 2) When ops2_stock_authority=bling, inventory count records evidence but does not write products.stock.
+-- Canonical live definitions can be inspected with pg_get_functiondef for:
+-- public.ops_apply_stock_recount_result_v1(uuid,uuid,numeric,text)
+-- public.ops_record_inventory_count_v1(uuid,numeric,text)
+-- Applied and rollback-tested on 2026-09-25. This file documents the versioned behavior;
+-- full function bodies are retained in PostgreSQL and HANDOFF evidence.
