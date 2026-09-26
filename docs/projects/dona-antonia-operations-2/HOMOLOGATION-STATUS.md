@@ -744,3 +744,15 @@ Estado: **BACKEND/DB GATE PASS / EMISSÃO AUTOMÁTICA OFF**.
 - DANFE permanece somente após autorização;
 - fiscal runtime continua OFF para geração/autorização automática;
 - nenhuma NF-e real emitida nesta rodada.
+
+
+## 2026-09-25 — Baixa física no ponto de expedição
+Estado: **CODE + DB GATE PASS / LIVE WRITE DORMANT ATÉ CUTOVER**.
+- ação operacional idempotente `ops2_launch_physical_stock` criada;
+- exige autoridade Bling + gate físico homologado + fiscal autorizado + pedido ready/Verificado;
+- Admin integra a ação antes de `out_for_delivery`;
+- DB também exige `state='launched'` quando autoridade=bling;
+- teste rollback: sem baixa = bloqueado; launched = permitido;
+- Hub v157; Admin v46;
+- autoridade real permanece `legacy_shadow`, portanto zero nova baixa física real nesta rodada;
+- nenhuma NF-e emitida nesta rodada.
