@@ -621,3 +621,24 @@ Sequência:
 7. somente após PASS, ativação controlada das flags de produção.
 
 O roadmap completo contém os blocos seguintes: Separação/Checkout, Estoque operacional, Rota/Entrega/Pagamento, Fiscal/Financeiro, Compras/XML, PapoAI, Control Tower, Segurança e Cleanup.
+
+
+## Runbook executável do Bloco A — 2026-09-25
+Foi criado `BLOCO-A-RUNBOOK.md` no commit `9230a505`.
+
+Este arquivo passa a ser o procedimento obrigatório para o próximo bloco de implantação: **Pedido + Estoque Bling**.
+
+Rodadas:
+- A0 baseline congelado;
+- A1 cobertura determinística do catálogo;
+- A2 cutover de leitura para saldo vendável Bling;
+- A3 eliminação de dupla reserva/baixa;
+- A4 early-order Bling em canário;
+- A5 canário ponta a ponta;
+- A6 ativação controlada;
+- A7 fechamento e documentação do Bloco A.
+
+Cada rodada possui PASS/FAIL, rollback e checkpoint obrigatório. Não pular rodada sem registrar evidência da anterior.
+
+### Próximo passo exato
+Iniciar pela **A0 — Baseline congelado**, somente leitura/documentação. Nenhuma flag de produção deve ser alterada nessa rodada. Depois, avançar para A1 somente se o baseline estiver reproduzível e o rollback do futuro cutover estiver documentado.
