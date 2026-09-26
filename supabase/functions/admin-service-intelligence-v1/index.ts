@@ -2651,7 +2651,7 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
   const targetKey=clean(targetKeyRaw,80);
   const canary=canaryRaw===true;
   if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400,external_write:false};
-  if(!["awaiting_confirmation","approved_separation"].includes(targetKey)){
+  if(!["awaiting_confirmation","approved_separation","verified"].includes(targetKey)){
     return {ok:false,error:"invalid_target_state",status:400,external_write:false};
   }
 
@@ -2682,9 +2682,19 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
   const targetStatusId=Number(
     targetKey==="awaiting_confirmation"
       ?mapping.awaiting_confirmation_id
-      :mapping.approved_separation_id
+      :targetKey==="approved_separation"
+        ?mapping.approved_separation_id
+        :mapping.verified_id
   )||0;
   if(!targetStatusId)return {ok:false,error:"target_status_missing",status:409,external_write:false};
+  if(targetKey==="verified"){
+    const local=await sb.from("orders").select("id,status").eq("id",sourceOrderId).maybeSingle();
+    if(local.error)throw local.error;
+    if(!local.data||local.data.status!=="ready")return {ok:false,error:"local_order_not_ready",status:409,external_write:false};
+    const checked=await sb.from("ops_order_check_sessions").select("id,verified_at").eq("order_id",sourceOrderId).eq("status","verified").not("verified_at","is",null).order("verified_at",{ascending:false}).limit(1).maybeSingle();
+    if(checked.error)throw checked.error;
+    if(!checked.data?.id)return {ok:false,error:"order_check_required_before_bling_verified",status:409,external_write:false};
+  }
   const selectedDepositId=Number(meta?.selected_deposit_id||0)||0;
   if(targetKey==="approved_separation"&&!selectedDepositId){
     return {ok:false,error:"selected_deposit_missing",status:409,external_write:false};
@@ -2706,8 +2716,8 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
   const preparedPayload={
     ...payload,
     source_order_id:sourceOrderId,
-    queue_reason:targetKey==="awaiting_confirmation"?"awaiting_confirmation":"approved_early_order",
-    status:targetKey==="awaiting_confirmation"?"storefront_received":"confirmed"
+    queue_reason:targetKey==="awaiting_confirmation"?"awaiting_confirmation":targetKey==="approved_separation"?"approved_early_order":"ean_verified",
+    status:targetKey==="awaiting_confirmation"?"storefront_received":targetKey==="approved_separation"?"confirmed":"ready"
   };
   const preview=await blingHubPreviewOrderSync(sb,preparedPayload);
   if(!preview.ok||!preview.write_eligible){
