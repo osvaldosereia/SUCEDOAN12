@@ -300,3 +300,24 @@ Só marcar como concluída quando houver:
 
 ## Comando padrão de retomada
 > Retome Dona Antônia Operations 2.0. Leia `docs/projects/dona-antonia-operations-2/HANDOFF.md`, `IMPLEMENTATION-ROADMAP.md` e `HOMOLOGATION-STATUS.md`. Confirme o estado real no GitHub e Supabase e compare os commits posteriores à última anotação. Continue exatamente do próximo gate registrado. Não confie apenas no histórico do chat e não faça limpeza antes de homologar o substituto.
+
+
+## PLANO AUTÔNOMO DE FECHAMENTO — 12 RODADAS LONGAS — 2026-09-26
+
+Regra desta sequência: R1 inicia imediatamente; R2–R12 avançam em cadência horária por agendamento/encadeamento automático. Bloqueios que exijam presença, decisão ou evidência física do proprietário não interrompem o trabalho seguro: devem ser acumulados nos documentos canônicos e consolidados em uma única lista operacional ao final da R12. Não usar Make. Não mutar pedidos legados. Não inventar evidência física/fiscal/financeira.
+
+1. **R1 — baseline + invariantes Entregador/rota:** consolidar os gates já implementados de pagamento exato antes de delivered e sincronização pedido↔parada↔rota; revisar continuidade, documentação e lacunas seguras antes das próximas ondas.
+2. **R2 — pagamento real/split → Bling em shadow:** formas, contas, recebimentos, idempotência, reconciliação, retry e anti-duplicidade; nenhum lançamento real não homologado.
+3. **R3 — falha de entrega/retorno/reentrega/cancelamento:** retorno físico, inspeção, avaria/perda, reversões e proteção contra dupla restauração de estoque.
+4. **R4 — fiscal operacional NF-e/DANFE:** gate de expedição, autorização SEFAZ, DANFE, erros/retry, vínculo pedido/NF, pagamento efetivo e representação de cesta/diferença; emissão automática continua OFF até homologação.
+5. **R5 — estoque Bling/cutover readiness:** writers, triggers, read models, estoque físico/virtual, baixa/reversão idempotente, 14 blockers de recontagem e recuperação do SQL canônico/reprodutível; sem cutover global.
+6. **R6 — lotes/validade/FEFO/ofertas:** saldo elegível por lote, faixas 10%/20%/40%, vencidos e integração vitrine/admin sem desativar produto com outro lote vendável.
+7. **R7 — compras/XML/fornecedores/caixa→unidade:** rotina diária + manual, CPF sem financeiro, CNPJ financeiro apenas validado, conversões determinísticas, custos, idempotência e aproveitamento Bling/Check-in quando comprovado.
+8. **R8 — PapoAI/WhatsApp operacional:** identidade, link personalizado, Flow, cliente, pedido, histórico e eventos estruturados; robustez/idempotência sem reintroduzir inteligência de atendimento no Admin.
+9. **R9 — UX operacional das cinco superfícies:** Central, Pedidos/Nova Venda WhatsApp, Tablet Separação, Estoque Mobile e Entregador; mobile, acessibilidade, estados, mensagens e redução de cliques sem duplicar ERP.
+10. **R10 — hardening técnico:** GitHub↔Supabase/runtime, RLS/advisors, segurança, performance, custo, Edge Functions, RPCs, triggers, jobs, flags, duplicações e reprodutibilidade.
+11. **R11 — ensaio integrado amplo:** site→checkout→pedido→Bling→EAN→fiscal→estoque→expedição→rota→entregador→pagamento→entrega/retorno; corrigir lacunas seguras e regressões.
+12. **R12 — auditoria final/readiness:** fechar correções seguras restantes, smoke tests/advisors, estado final e lista única ordenada de todas as ações humanas necessárias para a próxima fase de homologação/cutover.
+
+### Gate pós-R12
+Após a R12, pausar novas ondas de implementação que dependam de evidência humana. O proprietário executa a lista consolidada (contagens, equipamento físico, autorizações/canários/cutovers que realmente exijam presença). Só então uma nova sequência de rodadas deve ser planejada com base nas evidências obtidas.
