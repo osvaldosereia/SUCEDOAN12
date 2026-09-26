@@ -1074,3 +1074,29 @@ A recontagem **não escreve estoque no Bling**.
 
 ### Próximo passo exato
 Executar as 14 recontagens físicas no Estoque Mobile. A programação seguinte deve tratar somente os itens cuja nova contagem ainda divergir do físico Bling, exigindo causa antes de qualquer movimento/regularização oficial.
+
+
+## BLOCO A — classificação obrigatória de divergência de estoque — 2026-09-25
+
+### Implementado
+- tabela auditável `ops_stock_reconciliation_reviews` com RLS e acesso direto revogado;
+- divergência após recontagem cria revisão `classification_required`;
+- causas permitidas: entrada documentada, perda/avaria/vencimento, erro de contagem, movimento ERP faltante, sobra sem origem ou outro;
+- nota de causa obrigatória; referência de evidência opcional;
+- classificação muda somente para `ready_for_erp_review`;
+- não existe nesta etapa rotina automática de ajuste de saldo Bling;
+- `automatic_stock_write=false` persistido na revisão e na atenção;
+- gateway `admin-products-live-v1` publicado em **v40** com ação autenticada `stock_reconciliation_classify`.
+
+### Evidência
+- blockers físicos continuam 14, pois nenhuma contagem real foi inventada;
+- reviews atuais = 0, como esperado antes das recontagens;
+- RPC de classificação: anon=false, authenticated=false, service_role=true;
+- advisor de segurança executado; a nova tabela aparece com RLS sem policy, coerente com o padrão interno service-role-only. O advisor também mantém avisos preexistentes do projeto, incluindo leaked-password protection desabilitada; não foi alterado nesta rodada.
+
+### Código
+- `4aa1c672` — gateway de classificação;
+- `c869f42b` — persistência do gate SQL.
+
+### Próximo passo exato
+Aguardar/executar as 14 contagens físicas. Para cada divergência real, usar a classificação obrigatória. Só depois projetar/executar o movimento Bling correspondente, com revisão humana e evidência.
