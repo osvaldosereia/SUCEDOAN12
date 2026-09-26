@@ -68,3 +68,25 @@ Adicionar ao Hub uma ação específica e estreita para este canário de baselin
 - `ops2_stock_authority` não foi alterado.
 
 Nenhum job do canário foi disparado nesta etapa. O próximo passo é execução controlada do canário pelo endpoint interno e verificação do mirror; qualquer mismatch interrompe expansão.
+
+
+## Primeiro canário real — PASS
+Autorizado e executado em 2026-09-26.
+
+Resultado:
+- 5/5 jobs `set_stock` = synced;
+- todos os writes retornaram HTTP 201;
+- worker fez read-before + write + read-after e marcou `verified=true`;
+- saldos: 4→3, 3→2, 2→1, 5→4, 7→6, exatamente iguais ao baseline Supabase;
+- segunda leitura independente confirmou 5/5 `current_stock == target_stock`;
+- 0 divergências, 0 review_required, 0 failed;
+- canário final = verified;
+- external_write_enabled voltou a false;
+- allowlist temporária desabilitada;
+- Hub voltou a hub_enabled=false;
+- modo permanece homologation e write_canary_limit=1;
+- stock authority não foi alterada.
+
+Observação: leituras independentes disparadas inicialmente em paralelo encontraram `oauth_busy` em 4/5 por lock intencional do OAuth. Repetidas sequencialmente, 4/4 passaram; somadas à primeira leitura, 5/5 confirmadas. Isso não representou falha de estoque.
+
+Gate para expansão: tecnicamente aprovado para preparar próximo lote controlado; não habilitar batch global nem mudar stock authority.
