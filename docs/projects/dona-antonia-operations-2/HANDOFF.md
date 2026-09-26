@@ -1467,3 +1467,22 @@ Modelar e provar em shadow a representação do recebimento real no Bling (inclu
 
 ### Próximo passo exato
 R2: modelar/provar em shadow o recebimento real/split no Bling, com idempotência, reconciliação e anti-duplicidade, sem POST financeiro real não homologado.
+
+
+## R2/12 — pagamento real/split -> Bling em shadow — 2026-09-26
+- Runtime revalidado: leitura de contas a receber e contas financeiras do Bling respondeu HTTP 200.
+- Não havia settlements reais persistidos; nenhum recebimento financeiro externo foi executado.
+- Migration Supabase `ops2_payment_bling_shadow_v1` aplicada.
+- Criados `ops_payment_bling_method_map_v1` e `ops_payment_bling_shadow_plans_v1`.
+- `ops_prepare_delivery_payment_bling_shadow_v1` valida settlement/partes/total, gera fingerprint idempotente e plano por parte do split, sempre com `external_write=false` e `automatic_retry=false`.
+- PIX, dinheiro, crédito, alimentação, refeição e outro começam `unmapped`; nenhum ID Bling foi inventado. O plano fica `blocked_mapping` até forma + conta + categoria serem comprovadas.
+- `ops_payment_bling_shadow_status_v1` expõe readiness do shadow.
+- Teste negativo com settlement inexistente PASS; 0 planos residuais. A ferramenta bloqueou o teste sintético que exigia INSERT de pedido e não houve contorno.
+- Advisors pós-DDL executados; nenhum write financeiro Bling e nenhum uso de Make.
+
+### Ações humanas acumuladas para pós-R12
+1. Homologar IDs exatos no Bling de forma de pagamento + conta financeira + categoria para PIX, dinheiro, crédito, alimentação e refeição.
+2. Depois da R12, executar canário financeiro real controlado somente após revisar a lista final.
+
+### Próximo passo exato
+R3: falha de entrega/retorno/reentrega/cancelamento, com reversões e proteção contra dupla restauração de estoque.
