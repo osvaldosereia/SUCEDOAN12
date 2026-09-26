@@ -575,3 +575,18 @@ Primeira versão do trigger usou `min(uuid)`, inexistente no PostgreSQL, e causo
 Estado: **PASSOU**.
 
 Próximo gate: substituir validação/reserva/consumo local de `products.stock` antes do cutover público para o saldo virtual do Bling.
+
+
+## 2026-09-25 — Gate: motor de pedido usando estoque vendável
+Estado: **PASSOU em legacy_shadow**.
+
+- `create_vitrine_cart_order_v1` valida disponibilidade pelo `ops2_sellable_stock_v1`;
+- 1.630/1.630 produtos ativos equivalentes ao saldo legado durante shadow;
+- produto simples: PASS;
+- insuficiência: PASS (`insufficient_stock`);
+- cesta real com 27 componentes: PASS;
+- testes transacionais com rollback e zero pedidos de teste persistidos;
+- migration: `20260925_ops2_order_sellable_stock_read_v1.sql`;
+- commit: `1276debb`.
+
+Próximo gate: eliminar dupla reserva/consumo/release local antes de `stock_authority=bling`.
