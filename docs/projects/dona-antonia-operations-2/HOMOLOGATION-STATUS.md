@@ -638,3 +638,14 @@ Estado: **PROGRAMADO E VALIDADO / execução física pendente**.
 - divergência permanece aberta para classificação;
 - escrita automática no Bling continua proibida;
 - teste com rollback preservou a fila e nenhum saldo foi alterado.
+
+
+## 2026-09-25 — Gate de classificação de divergência
+Estado: **PROGRAMADO E VALIDADO / depende de contagem física**.
+
+- divergência de recontagem agora gera revisão auditável;
+- causa + nota são obrigatórias antes de ficar pronta para revisão ERP;
+- nenhum movimento Bling é disparado pela classificação;
+- acesso direto anon/authenticated bloqueado; service_role permitido;
+- Admin gateway v40;
+- 14 blockers preservados; 0 revisões artificiais criadas.
