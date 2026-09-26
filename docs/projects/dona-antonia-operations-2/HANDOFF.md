@@ -1352,3 +1352,20 @@ Preparar o encadeamento idempotente pós-conferência para Bling Verificado em m
 
 ### Próxima prioridade autônoma
 Manter o sync EAN->Bling desligado até existir pedido novo elegível para canário. Enquanto isso, avançar o próximo elo que pode ser validado sem pedido real: gate pós-Verificado para fiscal/DANFE e expedição, sem emitir NF-e automaticamente antes da homologação fiscal.
+
+
+## BLOCO C — gate fiscal de expedição fechado no banco — 2026-09-25
+- Revisado fluxo existente Verificado/ready -> fiscal -> DANFE -> expedição.
+- Configuração fiscal live permanece deliberadamente segura: `enabled=false`, `execution_mode=off`, `dispatch_gate_mode=enforce`, `require_fiscal_authorization_before_dispatch=true`, geração/autorização automáticas=false.
+- O Admin já consultava `fiscal_dispatch_gate` antes de `ready -> out_for_delivery`, porém existia bypass possível por escrita direta no status.
+- Criado trigger DB `trg_ops_enforce_fiscal_before_dispatch_v1` / função `ops_enforce_fiscal_before_dispatch_v1`.
+- Invariante: `ready -> out_for_delivery` só é aceito quando `order_fiscal_controls.dispatch_fiscal_status in ('authorized','not_required')`.
+- Teste sintético rollback: saída sem autorização bloqueada; controle `authorized` permite saída; zero resíduos.
+- Migration canônica: `20260925_ops2_fiscal_dispatch_db_guard_v1.sql`, commit `4f56f20b`.
+- Admin ganhou mensagens explícitas para bloqueio fiscal/DANFE e foi publicado em **v45**, commit `6f3e301d`.
+- DANFE continua obtido do documento oficial Bling e só abre quando fiscal autorizado + chave de acesso válida.
+- Nenhuma NF-e foi gerada/enviada nesta rodada; nenhuma escrita fiscal externa ocorreu.
+- Advisor executado após DDL.
+
+### Próxima prioridade autônoma
+Consolidar o estado operacional pós-fiscal para que a fila de Expedição derive somente de pedidos `ready` + fiscal autorizado, e revisar o momento exato da baixa física/saída Bling para evitar dupla baixa entre Verificado, NF-e e saída para entrega. Depois seguir para Entregador/pagamento.
