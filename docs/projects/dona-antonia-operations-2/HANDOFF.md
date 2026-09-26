@@ -954,3 +954,52 @@ Cutover global: **BLOQUEADO por reconciliação de 543 divergências**.
 
 ### Próximo passo exato
 Classificar as 543 divergências por risco e causa provável, começando pelos 71 casos extremos/zero (51 >=5x Bling, 6 >=5x legado, 11 local>0/Bling=0, 3 local=0/Bling>0; grupos podem se sobrepor). Cruzar GTIN/SKU, bindings, embalagem/conversão e dados de compra/XML existentes. Não corrigir saldos automaticamente. Produzir lote determinístico de reconciliação e só depois considerar canário real de autoridade.
+
+
+## BLOCO A — reconciliação de estoque por risco — 2026-09-25
+
+### Priorização escolhida
+A reconciliação começou pelos casos de maior risco comercial:
+1. local > 0 e Bling = 0;
+2. local = 0 e Bling > 0;
+3. razões extremas >=5x;
+4. demais diferenças.
+
+### Evidência dos 14 casos de cruzamento por zero
+Foram encontrados:
+- 11 produtos com estoque local positivo e saldo Bling físico/virtual zero;
+- desses 11, **9 possuem verificação física local recente** e **2 não possuem**;
+- 3 produtos com local zero e Bling físico/virtual = 1;
+- os 3 do sentido inverso **não possuem verificação física local**;
+- nenhum dos 14 possui histórico de compra/conversão já consolidado em `product_purchase_history` ou `product_supplier_packaging`.
+
+Conclusão operacional:
+- os 9 `local>0 / Bling=0` com verificação física são forte candidato a saldo inicial/movimentação ausente no Bling, mas ainda não foram corrigidos automaticamente;
+- os 2 `local>0 / Bling=0` sem verificação exigem nova contagem antes de qualquer ajuste;
+- os 3 `local=0 / Bling>0` exigem contagem física antes do cutover.
+
+### Novo read model
+Criada a view read-only `ops2_stock_reconciliation_v1`, com `security_invoker=true`, sem acesso anon/authenticated e leitura apenas via service_role.
+
+Classificação atual das 543 divergências:
+- 472 `quantity_difference`;
+- 51 `bling_extreme_high`;
+- 9 `bling_zero_local_verified`;
+- 6 `legacy_extreme_high`;
+- 3 `local_zero_recount_required`;
+- 2 `bling_zero_recount_required`.
+
+Migration:
+- `supabase/sql/20260925_ops2_stock_reconciliation_read_model_v1.sql`;
+- commit `fed9ce65`.
+
+### Segurança
+Advisors executados após DDL. Nenhuma nova finding específica da view apareceu. Permanecem avisos históricos do projeto (RLS sem policy em tabelas internas, índices não usados e 4 FKs sem índice), não tratados nesta rodada para evitar misturar escopo.
+
+### Gate
+Classificação determinística da fila de reconciliação: **PASS**.
+Alteração automática de saldos: **NÃO EXECUTADA**.
+Cutover Bling: **continua bloqueado**.
+
+### Próximo passo exato
+Tratar primeiro os 9 `bling_zero_local_verified`: confirmar que os vínculos GTIN/SKU estão corretos e preparar ajuste controlado do saldo físico no depósito Geral do Bling com base na última contagem física local, um lote pequeno por vez e com snapshot/rollback. Depois recontar fisicamente os 5 casos sem evidência local suficiente (2 local>0/Bling=0 e 3 local=0/Bling>0).
