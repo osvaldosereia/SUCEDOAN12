@@ -1267,3 +1267,55 @@ Commit do gate: `606d79ed`.
 A rotina antiga de validade ainda trabalha com `products.validity_date`/ativação de produto. A escrita de saldo foi neutralizada, portanto não contorna a autoridade Bling. A substituição definitiva da lógica de validade por lotes/FEFO do Bling permanece uma etapa própria e não é necessária para inventar saldo no cutover.
 
 Estado final: `legacy_shadow`; nenhum saldo real alterado.
+
+
+## BLOCO B — separação com conferência obrigatória por EAN — 2026-09-25
+
+### Problema fechado
+A tela Tablet Separação permitia `processing -> ready` pelo botão SEPARADO sem conferência unitária. Isso foi removido do caminho da tela.
+
+### Implementação
+Criadas tabelas internas auditáveis:
+- `ops_order_check_sessions`;
+- `ops_order_check_items`.
+RLS habilitado, acesso direto anon/authenticated revogado; RPCs service-role-only:
+- `ops_start_order_check_v1`;
+- `ops_scan_order_check_v1`;
+- `ops_get_order_check_v1`;
+- `ops_finish_order_check_v1`.
+
+Regras:
+- só inicia com pedido em `processing`;
+- snapshot consolida quantidade esperada por produto + EAN;
+- EAN fora do pedido é rejeitado;
+- quantidade acima da esperada é rejeitada;
+- conclusão é rejeitada enquanto existir item incompleto;
+- somente após conferência exata o gateway muda pedido para `ready`;
+- evento `order.check_verified` é auditado.
+
+Admin:
+- Tablet Separação agora mostra **CONFERIR**;
+- diálogo mobile recebe leitor/entrada EAN, mostra conferido/esperado e mantém foco;
+- botão de conclusão só aparece habilitado quando a sessão está completa;
+- `admin-products-live-v1` publicado em **v43**.
+Commits: gateway `4f7b099c`; UI `6f8dc369`; SQL checkpoint `84dee6dc`.
+
+### Testes
+Teste sintético dentro de transação/rollback:
+- pedido processing com produto qty=2;
+- sessão criada;
+- primeira leitura -> 1/2;
+- tentativa de concluir incompleta bloqueada;
+- segunda leitura -> 2/2;
+- conclusão -> verified=true;
+- rollback;
+- zero pedido/sessão de teste persistido.
+Permissões RPC: anon/authenticated=false; service_role=true.
+Advisor de segurança executado; novas tabelas aparecem como RLS sem policy, coerente com o padrão interno service-role-only.
+
+### Limite desta rodada
+Não foi feito canário em pedido real nem teste de hardware de leitor/tablet. Pedidos antigos não foram alterados.
+Integração com o Checkout nativo do Bling continua como POC separado; o Admin agora já garante a regra mínima de conferência sem depender desse POC.
+
+### Próximo passo
+Fechar a proteção backend para impedir qualquer outro caminho `processing -> ready` sem sessão verificada e depois validar sincronização do estado Verificado com Bling em canário controlado.
