@@ -59,17 +59,17 @@ async function offerList(){
 }
 async function subcats(url:URL){
   const c=txt(url.searchParams.get("category"),48);if(!c)return {ok:true,subcategories:[]};
-  const {data,error}=await db.from("products").select("customer_subsubcategory,subsubcategory").eq("is_active",true).gt("stock",0).eq("sales_category",c).limit(5000);
+  const {data,error}=await db.from("products").select("customer_subsubcategory,subsubcategory").eq("is_active",true).eq("sales_category",c).limit(5000);
   if(error)throw error;const m=new Map<string,number>();for(const p of data||[]){const n=txt(p.customer_subsubcategory||p.subsubcategory,100);if(n)m.set(n,(m.get(n)||0)+1)}
   return {ok:true,subcategories:[...m.entries()].map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,"pt-BR"))};
 }
 async function productList(url:URL){
   const c=txt(url.searchParams.get("category"),48),sc=txt(url.searchParams.get("subcategory"),100),q=safeQ(url.searchParams.get("q")),limit=Math.floor(clamp(url.searchParams.get("limit")||24,1,36)),offset=Math.floor(clamp(url.searchParams.get("offset")||0,0,5000));
-  let x=db.from("products").select("id,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true).gt("stock",0);
+  let x=db.from("products").select("id,name,image_url,price,offer_price,stock,packaging,is_offer,brand,category,subcategory,subsubcategory,customer_subcategory,customer_subsubcategory,unit").eq("is_active",true);
   if(c)x=x.eq("sales_category",c);if(sc)x=x.eq("customer_subsubcategory",sc);
   if(q){for(const t of q.split(/\s+/).filter(Boolean).slice(0,4))x=x.or("name.ilike.%"+t+"%,gtin.ilike.%"+t+"%,sku.ilike.%"+t+"%,brand.ilike.%"+t+"%")}
   const {data,error}=await x.order("sort_order").order("name").range(offset,offset+limit-1);if(error)throw error;
-  const rows=data||[],res=await reservedMap(rows.map((p:any)=>p.id)),publicRows=rows.map((p:any)=>pub(p,Number(p.stock||0)-(res.get(p.id)||0))).filter((p:any)=>p.stock_quantity>0);
+  const rows=data||[],sm=await sellableMap(rows.map((p:any)=>p.id)),publicRows=rows.map((p:any)=>pub(p,sm.get(p.id)||0)).filter((p:any)=>p.stock_quantity>0);
   return {ok:true,products:publicRows,next_offset:rows.length===limit?offset+limit:null};
 }
 async function oneProduct(id:string){
@@ -81,16 +81,16 @@ async function oneProduct(id:string){
 async function basket(id:string){
   const {data:b,error}=await db.from("basket_templates").select("id,name,base_price,image_url").eq("id",id).eq("is_active",true).maybeSingle();if(error)throw error;if(!b)return null;
   const {data:items,error:ie}=await db.from("basket_template_items").select("product_id,quantity,removable,quantity_editable,min_quantity,max_quantity,sort_order,product:products(id,name,image_url,stock,packaging,is_active)").eq("basket_id",id).order("sort_order");if(ie)throw ie;
-  const ids=(items||[]).map((i:any)=>i.product_id),res=await reservedMap(ids);
-  return {basket:{id:b.id,name:b.name,display_price_cents:cents(b.base_price),image_url:b.image_url||""},items:(items||[]).map((i:any)=>({product_id:i.product_id,name:i.product?.name||"Produto",image_url:i.product?.image_url||"",packaging:i.product?.packaging||"",stock_quantity:i.product?.is_active===false?0:Math.max(0,Number(i.product?.stock||0)-(res.get(i.product_id)||0)),quantity:Number(i.quantity||0),removable:i.removable===true,quantity_editable:i.quantity_editable===true,min_quantity:Number(i.min_quantity||0),max_quantity:i.max_quantity==null?null:Number(i.max_quantity)}))};
+  const ids=(items||[]).map((i:any)=>i.product_id),sm=await sellableMap(ids);
+  return {basket:{id:b.id,name:b.name,display_price_cents:cents(b.base_price),image_url:b.image_url||""},items:(items||[]).map((i:any)=>({product_id:i.product_id,name:i.product?.name||"Produto",image_url:i.product?.image_url||"",packaging:i.product?.packaging||"",stock_quantity:i.product?.is_active===false?0:(sm.get(i.product_id)||0),quantity:Number(i.quantity||0),removable:i.removable===true,quantity_editable:i.quantity_editable===true,min_quantity:Number(i.min_quantity||0),max_quantity:i.max_quantity==null?null:Number(i.max_quantity)}))};
 }
 async function quote(payload:any){
   const id=uid(payload?.basket_id);if(!id)return {error:"invalid_basket",status:400};
   const {data:b,error:be}=await db.from("basket_templates").select("id,base_price").eq("id",id).eq("is_active",true).maybeSingle();if(be)throw be;if(!b)return {error:"basket_not_found",status:404};
   const {data:rules,error}=await db.from("basket_template_items").select("product_id,quantity,removable,quantity_editable,min_quantity,max_quantity,remove_unit_delta,add_unit_delta,product:products(id,price,stock,is_active)").eq("basket_id",id);if(error)throw error;
-  const ids=(rules||[]).map((r:any)=>r.product_id),res=await reservedMap(ids),req=new Map<string,number>((Array.isArray(payload?.items)?payload.items:[]).map((x:any)=>[uid(x?.product_id),Number(x?.quantity||0)]).filter((x:any)=>x[0]));
+  const ids=(rules||[]).map((r:any)=>r.product_id),sm=await sellableMap(ids),req=new Map<string,number>((Array.isArray(payload?.items)?payload.items:[]).map((x:any)=>[uid(x?.product_id),Number(x?.quantity||0)]).filter((x:any)=>x[0]));
   let total=Number(b.base_price||0);
-  for(const r of rules||[]){const product:any=Array.isArray(r.product)?r.product[0]:r.product;const base=Number(r.quantity||0),qty=req.has(r.product_id)?Number(req.get(r.product_id)):base,stock=Math.max(0,(product?.is_active===false?0:Number(product?.stock||0))-(res.get(r.product_id)||0)),min=Math.max(0,Number(r.min_quantity??(r.removable?0:base))),max=Math.min(stock,Number(r.max_quantity??Math.max(base,Math.floor(stock))));if(!Number.isFinite(qty)||qty<0||Math.trunc(qty)!==qty)return {error:"invalid_basket_quantity",status:400};if(qty>stock)return {error:"insufficient_stock",status:409,product_id:r.product_id,available:stock,requested:qty};if(qty===0&&!r.removable)return {error:"item_not_removable",status:409};if(qty<min||qty>max)return {error:"basket_quantity_out_of_range",status:409};const price=Number(product?.price||0);if(qty<base)total+=Math.abs(qty-base)*Number(r.remove_unit_delta??-price);else if(qty>base)total+=(qty-base)*Number(r.add_unit_delta??price)}
+  for(const r of rules||[]){const product:any=Array.isArray(r.product)?r.product[0]:r.product;const base=Number(r.quantity||0),qty=req.has(r.product_id)?Number(req.get(r.product_id)):base,stock=product?.is_active===false?0:(sm.get(r.product_id)||0),min=Math.max(0,Number(r.min_quantity??(r.removable?0:base))),max=Math.min(stock,Number(r.max_quantity??Math.max(base,Math.floor(stock))));if(!Number.isFinite(qty)||qty<0||Math.trunc(qty)!==qty)return {error:"invalid_basket_quantity",status:400};if(qty>stock)return {error:"insufficient_stock",status:409,product_id:r.product_id,available:stock,requested:qty};if(qty===0&&!r.removable)return {error:"item_not_removable",status:409};if(qty<min||qty>max)return {error:"basket_quantity_out_of_range",status:409};const price=Number(product?.price||0);if(qty<base)total+=Math.abs(qty-base)*Number(r.remove_unit_delta??-price);else if(qty>base)total+=(qty-base)*Number(r.add_unit_delta??price)}
   return {ok:true,total_cents:Math.max(0,cents(total))};
 }
 async function resolveCode(req:Request,v:any){
