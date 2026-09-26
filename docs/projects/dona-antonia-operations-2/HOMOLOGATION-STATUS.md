@@ -663,3 +663,15 @@ Estado: **PASS TÉCNICO / BLOQUEADO SOMENTE POR 14 RECONTAGENS FÍSICAS**.
 - reserve/consume/release testados em branch Bling com rollback: nenhum `products.stock` ou `vitrine_stock_reservations` foi alterado;
 - autoridade permaneceu `legacy_shadow`;
 - preflight automático criado e protegido (service_role only).
+
+
+## 2026-09-25 — Inventory/activation guard do cutover
+Estado: **PASS**.
+- Inventory Mobile não escreve `products.stock` quando autoridade=`bling`;
+- recontagem compara com saldo físico Bling atual, não snapshot histórico;
+- teste rollback confirmou estoque local inalterado e zero resíduos;
+- ativação Bling agora é fail-closed pelo preflight;
+- rollback explícito exige motivo;
+- funções de ativação/rollback são service_role-only;
+- tentativa de ativação com 14 blockers foi recusada como esperado;
+- autoridade final: `legacy_shadow`.
