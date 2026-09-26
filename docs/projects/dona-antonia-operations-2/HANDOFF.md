@@ -636,3 +636,60 @@ Regra reforçada:
 
 ### Próximo passo exato
 Seguir o **BLOCO A — Fechar pedido + estoque Bling** já existente no `IMPLEMENTATION-ROADMAP.md`, começando por **A1 — Atualizar documentação e baseline**, sem criar uma estrutura documental nova.
+
+
+## BLOCO A — A1 baseline atualizado — 2026-09-25
+
+Rodada executada somente em leitura/documentação. Nenhuma flag, estoque, pedido ou runtime foi alterado.
+
+### GitHub
+HEAD observado antes deste checkpoint: `c538766a`.
+Último commit funcional do Operations 2.0 antes das atualizações documentais: `af5fbc25` — homologação de lançamento/estorno físico de pedido.
+
+### Runtime Supabase/Bling
+- projeto canônico: `ssbesxgaijknwsjbsbcz`;
+- `mode=homologation`;
+- `hub_enabled=false`;
+- `webhooks_enabled=false`;
+- `ops2_direct_order_state_enabled=false`;
+- `stock_authority=legacy_shadow`;
+- `stock_cutover_at=null`;
+- physical stock gate: `verified`;
+- webhook gate: `real_delivery_verified`;
+- stock mirror gate: `verified`.
+
+Versões observadas:
+- `admin-service-intelligence-v1` v154;
+- `admin-products-live-v1` v36;
+- `storefront-v2` v16;
+- `papo-external-agent-v1` v107.
+
+### Baseline do estoque vendável
+- produtos ativos: 1.634;
+- prontos no mirror Bling: 1.630;
+- não prontos: 4;
+- iguais legado x Bling: 1.087;
+- divergentes: 543;
+- legado positivo / Bling zero: 11;
+- legado zero / Bling positivo: 3;
+- última observação do mirror no baseline: 2026-09-25T22:47:21Z.
+
+### 4 produtos ativos sem mirror Bling
+1. Desodorante antitranspirante roll-on NIVEA Dry Comfort Feminino — GTIN `4005808257584` — estoque local 3 — WhatsApp inativo.
+2. Flocão de Milho Urbano 500 g — GTIN `787896038300136` — estoque local 3 — WhatsApp inativo.
+3. Gel Dental Infantil Avengers Kids+ Morango Condor 50 g — GTIN `7891055394878` — estoque local 3 — WhatsApp inativo.
+4. Papel Higiênico Branquíssimo e Fofíssimo Folha Simples Personal 16 rolos — SKU/GTIN `7896110005874` — estoque local 10 — **WhatsApp ativo**.
+
+### Evidência / gate
+A1 baseline documental: **PASS**.
+Nenhuma tentativa de corrigir vínculo foi feita nesta rodada.
+
+### Observação técnica
+A consulta inicial tratou `status_updates_enabled` como coluna física, mas o runtime atual não possui essa coluna; esse estado deve ser lido do metadata/estrutura correspondente. Nenhuma alteração resultou dessa consulta.
+
+### Rollback
+Não aplicável: rodada sem escrita em produção.
+
+### Próximo passo exato
+Continuar o BLOCO A com **A2 — Resolver cobertura do catálogo** do `IMPLEMENTATION-ROADMAP.md`.
+Primeiro investigar deterministicamente os quatro produtos acima no catálogo Bling. Não criar vínculo aproximado. O produto Personal 16 rolos merece prioridade porque ainda está ativo no canal. Se não houver identidade exata comprovável, bloquear da venda antes do futuro cutover.
