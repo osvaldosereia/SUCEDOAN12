@@ -201,3 +201,26 @@ Runtime ao final:
 Advisors:
 - security: somente INFO rls_enabled_no_policy do padrão interno fechado;
 - performance: somente unused_index INFO; nenhum novo blocker estrutural.
+
+
+## Continuidade delta 1 — +10 confirmados e circuit breaker validado
+Executada em 2026-09-26.
+
+Resultado:
+- primeiro bloco 5/5 verified;
+- segundo bloco teve 4/5 verified e 1 job permaneceu processing além da janela curta;
+- circuit breaker interrompeu a rodada e desligou o Hub;
+- auditoria readonly direta no Bling confirmou que o item pendente ainda estava em estoque 2, alvo 1, portanto nenhum write incerto havia ocorrido;
+- o MESMO job foi liberado para retry, sem criar job duplicado;
+- retry escreveu 2 -> 1 e read-after-write retornou verified=true;
+- canário consolidado 5/5 verified.
+
+Acumulado:
+- 85 produtos reais confirmados;
+- 86 delta absoluto 1 ainda planejados.
+
+Decisão de segurança:
+- rodada encerrada após recuperação do worker lento;
+- hub_enabled=false ao final;
+- antes de continuar os 86 delta 1, ampliar tolerância/observação para jobs em processing e nunca classificar latência como falha;
+- para job processing/stale, usar leitura readonly do Bling antes de qualquer retry para impedir duplicação.
