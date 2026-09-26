@@ -1452,3 +1452,18 @@ Fechar a consistência da parada/rota após `delivered` e preparar o vínculo do
 
 ### Próxima prioridade autônoma
 Modelar e provar em shadow a representação do recebimento real no Bling (inclusive split), sem POST financeiro real até a homologação determinar endpoints/contas/formas e idempotência/reconciliação.
+
+
+## R1/12 — baseline do fechamento autônomo — 2026-09-26
+- Novo plano de 12 rodadas longas aprovado e registrado no `IMPLEMENTATION-ROADMAP.md`.
+- R1 toma como baseline os dois últimos gates homologados:
+  - `out_for_delivery -> delivered` exige pagamento delivery capturado exato, inclusive split;
+  - mudança do pedido sincroniza parada/rota no banco e pode concluir a rota quando não restam paradas abertas.
+- Evidências já válidas desta base: testes sintéticos/rollback PASS, SQL canônico versionado e nenhum pedido real usado para mutação.
+- A tentativa de uma consulta operacional agregada adicional via conector foi bloqueada pela camada de segurança da ferramenta; não houve contorno, repetição insegura nem escrita.
+- Regra para R1–R12: dependências humanas não interrompem trabalho seguro; registrar e acumular para uma lista única ao final da R12.
+- As próximas rodadas devem decidir tecnicamente a sequência interna, preservar gates fail-closed, não usar Make e não alterar pedidos legados.
+- Plano canônico registrado no commit `35f9db13dd9ad91e5c2ca28b945184b464a4443a`.
+
+### Próximo passo exato
+R2: modelar/provar em shadow o recebimento real/split no Bling, com idempotência, reconciliação e anti-duplicidade, sem POST financeiro real não homologado.
