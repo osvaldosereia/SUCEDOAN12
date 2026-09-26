@@ -710,3 +710,13 @@ Estado: **PROGRAMADO + TESTE TRANSACIONAL PASS / HARDWARE E CANÁRIO REAL PENDEN
 - Admin Edge v43;
 - zero resíduos do teste;
 - RPCs somente service_role.
+
+
+## 2026-09-25 — Gate backend da conferência + Verificado Bling
+Estado: **BACKEND PASS / BLING VERIFIED CODE READY / CANÁRIO REAL PENDENTE**.
+- bypass `processing -> ready` fechado no PostgreSQL;
+- teste rollback confirmou bloqueio sem check e liberação com check verified;
+- transição Bling 915902 -> 24 = 504837240, ativa, sem ações;
+- Hub v155 aceita canário `verified` somente se pedido local está ready e possui conferência EAN verified;
+- nenhuma escrita externa executada;
+- rollout global permanece OFF.
