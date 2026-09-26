@@ -1154,3 +1154,36 @@ Cutover: **NÃO EXECUTADO**.
 
 ### Próximo passo exato
 Realizar as 14 recontagens no Estoque Mobile. Se todas coincidirem com Bling, o preflight deve ficar `ready=true`. As que divergirem entram no gate de causa já implementado; somente depois de regularização controlada e revalidação o primeiro canário real de `ops2_stock_authority=bling` poderá ser executado.
+
+
+## BLOCO A — hardening final antes da contagem física — 2026-09-25
+
+### Inventory Mobile corrigido para a futura autoridade Bling
+Foi identificado e corrigido um risco pré-cutover: `ops_record_inventory_count_v1` ainda escrevia `products.stock` incondicionalmente.
+Agora:
+- em `legacy_shadow`, preserva o comportamento atual;
+- em `bling`, registra contagem/evidência e marca verificação física, mas `local_stock_applied=false` e NÃO altera `products.stock`;
+- `ops_apply_stock_recount_result_v1` deixou de comparar a contagem com o snapshot antigo da pendência e passa a buscar `sellable_physical` atual em `ops2_sellable_stock_v1`;
+- se o saldo Bling atual não estiver disponível, a pendência permanece aberta e falha fechada.
+
+Teste em subtransação/rollback sob `ops2_stock_authority=bling`:
+- produto blocker com local=5 e Bling físico=0;
+- contagem simulada=0;
+- retorno `local_stock_applied=false`;
+- `products.stock` antes=5 e depois=5;
+- zero contagens/reviews de teste vazaram;
+- autoridade após rollback=`legacy_shadow`.
+Checkpoint: `5510b95d`.
+
+### Ativação protegida + rollback
+Criadas funções internas service_role-only:
+- `ops2_activate_bling_stock_authority_v1()`: só ativa se `get_ops2_stock_cutover_preflight_v1().ready=true`; grava timestamp de cutover;
+- `ops2_rollback_bling_stock_authority_v1(reason)`: volta para `legacy_shadow` e exige motivo, registrando timestamp/motivo.
+Commit: `3a514fb0`.
+
+Teste negativo executado agora: tentativa de ativação foi corretamente recusada com `stock_cutover_preflight_failed`, mantendo `legacy_shadow`, porque existem 14 recontagens físicas abertas.
+Permissões confirmadas: anon/authenticated sem EXECUTE; service_role com EXECUTE.
+
+### Estado
+Não houve cutover. Nenhum saldo real foi alterado nesta rodada.
+O único blocker do preflight continua sendo `physical_recount_pending=14`.
