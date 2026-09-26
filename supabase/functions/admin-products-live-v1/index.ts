@@ -39,7 +39,13 @@ async function bal(p:any){
   const r=await db.rpc("ops_record_inventory_count_v1",{p_product_id:pid,p_counted_quantity:q,p_operator_label:operator});
   if(r.error)throw r.error;
   const product=await one(pid);if(!product)return {error:"product_not_found",status:404};
-  return {product:mp(product),count:r.data};
+  let recount:any=null;
+  if(r.data?.count_id){
+    const rq=await db.rpc("ops_apply_stock_recount_result_v1",{p_product_id:pid,p_count_id:r.data.count_id,p_counted_quantity:q,p_operator_label:operator});
+    if(rq.error)throw rq.error;
+    recount=rq.data||null;
+  }
+  return {product:mp(product),count:r.data,recount};
 }
 async function stockRecountQueue(){
   const r=await db.rpc("get_ops_stock_recount_queue_v1");
