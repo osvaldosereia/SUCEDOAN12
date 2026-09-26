@@ -1334,3 +1334,21 @@ Fechar a proteção backend para impedir qualquer outro caminho `processing -> r
 
 ### Próxima prioridade autônoma
 Preparar o encadeamento idempotente pós-conferência para Bling Verificado em modo protegido, mantendo falha fechada e sem ativar rollout global; depois executar canário somente quando existir pedido novo elegível, nunca em pedido legado.
+
+
+## BLOCO B — encadeamento protegido EAN -> Verificado Bling — 2026-09-25
+- `order_check_finish` agora possui encadeamento pós-conferência para o Hub, porém protegido por flag própria `ops2_ean_verified_sync_enabled`.
+- Flag criada explicitamente como **false**; publicar a versão não altera pedidos.
+- Quando futuramente habilitada, a conclusão EAN monta snapshot canônico e solicita `ops2_ensure_order_state(target=verified)`.
+- O Hub também revalida independentemente: pedido local precisa estar `ready` e possuir sessão `ops_order_check_sessions.status=verified` com `verified_at`.
+- O caminho direto do Hub foi ampliado para `verified` e usa `mapping.verified_id=24`; a transição real conhecida é 915902 -> 24.
+- Admin Edge publicado em **v44**, commit `4cf1fc48`.
+- Hub publicado em **v156**, commit `11470a35`.
+- Estado da flag: `ops2_ean_verified_sync_enabled=false`.
+- Não há pedido novo em `processing` ou `ready` disponível para canário neste momento; nenhum pedido legado foi usado.
+- Nenhuma escrita externa Bling executada nesta rodada.
+- Preflight de estoque continua bloqueado somente por `physical_recount_pending`.
+- Advisor de segurança executado: permanecem INFOs históricos de RLS sem policy no padrão interno service-role-only; nenhuma exposição pública nova foi criada.
+
+### Próxima prioridade autônoma
+Manter o sync EAN->Bling desligado até existir pedido novo elegível para canário. Enquanto isso, avançar o próximo elo que pode ser validado sem pedido real: gate pós-Verificado para fiscal/DANFE e expedição, sem emitir NF-e automaticamente antes da homologação fiscal.
