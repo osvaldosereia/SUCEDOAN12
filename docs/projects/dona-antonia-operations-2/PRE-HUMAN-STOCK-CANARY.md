@@ -164,3 +164,40 @@ Estado ao fechar:
 - mode=homologation;
 - write_canary_limit=1;
 - stock authority global não alterada.
+
+
+## Rodada ampla delta 1 — +40 produtos — PASS
+Executada em 2026-09-26 após o hardening de live stock.
+
+Resultado da rodada:
+- 40/40 novos produtos synced;
+- 40/40 read-after-write verified=true;
+- 0 review_required;
+- 0 failed de negócio;
+- 0 divergências;
+- write_canary_limit=1 mantido;
+- Hub fechado entre os blocos e ao final;
+- nenhum delta > 1 processado.
+
+Acumulado geral:
+- 75 produtos reais confirmados Supabase -> Bling;
+- 464 stock_update ainda planejados;
+- 96 deles ainda são delta absoluto 1;
+- 0 drift entre target confirmado e products.stock atual nos 75 já concluídos.
+
+Resíduo técnico tratado:
+- uma tentativa de orquestração ampla foi bloqueada antes de qualquer write;
+- um canário duplicado ficou armado sem jobs por causa do limite técnico de tool calls;
+- esse canário foi auditado com jobs=0 e marcado rolled_back;
+- não há canário armado restante.
+
+Runtime ao final:
+- hub_enabled=false;
+- mode=homologation;
+- write_canary_limit=1;
+- stock_enabled=true;
+- admin-service-intelligence-v1 v159 com live_supabase_stock_drift guard ativo.
+
+Advisors:
+- security: somente INFO rls_enabled_no_policy do padrão interno fechado;
+- performance: somente unused_index INFO; nenhum novo blocker estrutural.
