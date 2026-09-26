@@ -71,3 +71,36 @@ end; $$;
 
 revoke all on function public.ops_apply_stock_recount_result_v1(uuid,uuid,numeric,text) from public,anon,authenticated;
 grant execute on function public.ops_apply_stock_recount_result_v1(uuid,uuid,numeric,text) to service_role;
+
+
+-- Divergent recounts require documented classification before any ERP review.
+create table if not exists public.ops_stock_reconciliation_reviews (
+ id uuid primary key default gen_random_uuid(), created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+ attention_id uuid not null references public.ops_attention(id) on delete restrict, product_id uuid not null references public.products(id) on delete restrict,
+ count_id uuid references public.ops_inventory_counts(id) on delete restrict, counted_quantity numeric(14,3) not null check(counted_quantity>=0),
+ bling_physical_snapshot numeric(14,3) not null, difference_to_bling numeric(14,3) not null,
+ cause_code text, cause_note text, evidence_ref text, operator_label text,
+ status text not null default 'classification_required' check(status in ('classification_required','classified','ready_for_erp_review','closed')),
+ automatic_stock_write boolean not null default false, unique(attention_id,count_id)
+);
+alter table public.ops_stock_reconciliation_reviews enable row level security;
+revoke all on public.ops_stock_reconciliation_reviews from public,anon,authenticated;
+grant select,insert,update on public.ops_stock_reconciliation_reviews to service_role;
+
+create or replace function public.ops_classify_stock_reconciliation_v1(
+ p_attention_id uuid,p_cause_code text,p_cause_note text,p_evidence_ref text default null,p_operator_label text default null
+) returns jsonb language plpgsql security definer set search_path=public as $$
+declare v public.ops_stock_reconciliation_reviews%rowtype; c text:=lower(trim(coalesce(p_cause_code,'')));
+begin
+ if c not in ('documented_entry','loss_damage_expiry','counting_error','erp_movement_missing','surplus_unknown','other') then raise exception 'invalid_cause_code'; end if;
+ if length(trim(coalesce(p_cause_note,'')))<5 then raise exception 'cause_note_required'; end if;
+ select * into v from public.ops_stock_reconciliation_reviews where attention_id=p_attention_id order by created_at desc limit 1 for update;
+ if not found then raise exception 'reconciliation_review_not_found'; end if;
+ update public.ops_stock_reconciliation_reviews set cause_code=c,cause_note=left(trim(p_cause_note),500),evidence_ref=left(nullif(trim(coalesce(p_evidence_ref,'')),''),300),operator_label=left(nullif(trim(coalesce(p_operator_label,'')),''),80),status='ready_for_erp_review',updated_at=now() where id=v.id;
+ update public.ops_attention set evidence=coalesce(evidence,'{}'::jsonb)||jsonb_build_object('cause_code',c,'cause_note',left(trim(p_cause_note),500),'evidence_ref',left(nullif(trim(coalesce(p_evidence_ref,'')),''),300),'classification_at',now(),'automatic_stock_write',false),recommended_action='Causa classificada. Revisar evidência e somente então executar o movimento oficial adequado no Bling.',updated_at=now() where id=p_attention_id;
+ return jsonb_build_object('review_id',v.id,'status','ready_for_erp_review','cause_code',c,'automatic_stock_write',false);
+end $$;
+revoke all on function public.ops_classify_stock_reconciliation_v1(uuid,text,text,text,text) from public,anon,authenticated;
+grant execute on function public.ops_classify_stock_reconciliation_v1(uuid,text,text,text,text) to service_role;
+
+-- Live definition of ops_apply_stock_recount_result_v1 also creates the review row when count != Bling physical.
