@@ -104,3 +104,17 @@ Canário ade84ad2-436d-4e91-8c14-3c3b5d3178b4:
 - homologation/write_canary_limit=1 preservados.
 
 Acumulado: 10 produtos reais sincronizados com sucesso em dois canários.
+
+
+## Expansão progressiva — canário 3 PASS
+Canário 2bc77355-0531-477a-82f1-d298aa56225f:
+- 5 novos produtos delta absoluto 1;
+- 5/5 jobs synced e verified=true;
+- alterações: 3→2, 19→18, 5→4, 4→5, 2→3;
+- 0 falhas/divergências;
+- Hub/allowlist desligados ao final.
+
+Acumulado:
+- 15 produtos reais confirmados;
+- 524 stock_update ainda planejados;
+- 156 deles ainda são delta 1.
