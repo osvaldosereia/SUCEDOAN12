@@ -914,3 +914,43 @@ Autoridade Bling continua **não ativada**.
 
 ### Próximo passo exato
 Revisar os chamadores `storefront-v2` e `admin-products-live-v1` para que mensagens/eventos não afirmem “estoque local consumido” quando o retorno for `bling_authority`. Depois executar canário controlado de leitura com `stock_authority=bling` sem ativar ainda o fluxo geral de pedidos.
+
+
+## BLOCO A — canário de leitura Bling + semântica do Admin — 2026-09-25
+
+### Admin
+`admin-products-live-v1` foi ajustado para reconhecer o retorno `bling_authority` de `consume_vitrine_order_stock_v1`. Sob autoridade Bling:
+- não registra falsamente “estoque local consumido”;
+- evento informa que nenhuma baixa local foi executada;
+- retorno expõe `stock_status=bling_authority` e `local_consume_skipped=true`.
+
+Deploy:
+- `admin-products-live-v1` **v37**;
+- commit `bec25a53`.
+
+### Canário somente leitura
+Foi feita simulação transacional de `ops2_stock_authority=bling`, sem pedido e sem movimentação, usando produtos deliberadamente divergentes. O read model passou a devolver exatamente `sellable_virtual`:
+- Desinfetante Desaflora: legado 50 -> Bling 364;
+- Papel Higiênico Soberano 4 rolos: legado 3 -> Bling 300;
+- Arroz Koblenz 5 kg: legado 101 -> Bling 265.
+
+Assertions: **PASS**.
+Rollback executado; autoridade final confirmada `legacy_shadow`.
+
+### Barreira encontrada antes do cutover
+Entre 1.630 produtos ativos/cobertos:
+- 1.087 saldos iguais;
+- 543 divergentes;
+- 51 com Bling >= 5x o legado;
+- 6 com legado >= 5x o Bling;
+- 11 com legado positivo e Bling zero;
+- 3 com legado zero e Bling positivo.
+
+Essas diferenças tornam inseguro ativar `stock_authority=bling` globalmente sem reconciliação. Parte pode representar conversão caixa->unidade/cadastro histórico e deve ser comprovada, não normalizada por heurística.
+
+### Gate
+Canário técnico de troca da fonte de leitura: **PASS**.
+Cutover global: **BLOQUEADO por reconciliação de 543 divergências**.
+
+### Próximo passo exato
+Classificar as 543 divergências por risco e causa provável, começando pelos 71 casos extremos/zero (51 >=5x Bling, 6 >=5x legado, 11 local>0/Bling=0, 3 local=0/Bling>0; grupos podem se sobrepor). Cruzar GTIN/SKU, bindings, embalagem/conversão e dados de compra/XML existentes. Não corrigir saldos automaticamente. Produzir lote determinístico de reconciliação e só depois considerar canário real de autoridade.
