@@ -590,3 +590,17 @@ Estado: **PASSOU em legacy_shadow**.
 - commit: `1276debb`.
 
 Próximo gate: eliminar dupla reserva/consumo/release local antes de `stock_authority=bling`.
+
+
+## 2026-09-25 — Gate: impedir dupla movimentação local sob autoridade Bling
+Estado: **PASSOU**.
+
+- reserva local: skip explícito quando `ops2_stock_authority=bling`;
+- consumo de `products.stock`: skip explícito;
+- restauração local: skip explícito;
+- simulação Bling executada em transação e revertida;
+- autoridade final: `legacy_shadow`;
+- migration: `20260925_ops2_disable_legacy_stock_mutations_on_bling_v1.sql`;
+- commit: `2ebff6d8`.
+
+Observação: um teste legado renovou timestamps de 15 reservas de pedido existente; os timestamps foram restaurados imediatamente e nenhum saldo/status de pedido foi alterado. Não usar pedido real em próximos testes.
