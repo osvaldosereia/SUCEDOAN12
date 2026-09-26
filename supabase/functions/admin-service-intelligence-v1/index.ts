@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { planPapoAiTurn } from "../_shared/papoai-ai-planner-v1.mjs";
-import { deterministicCommerceIntent, contextualCommerceIntent } from "../_shared/papoai-commerce-intent-v1.mjs";
-import { handlePurchaseXmlRequest } from "../purchase-xml-v1/index.ts";
+import { planPapoAiTurn } from "./_shared/papoai-ai-planner-v1.mjs";
+import { deterministicCommerceIntent, contextualCommerceIntent } from "./_shared/papoai-commerce-intent-v1.mjs";
+import { handlePurchaseXmlRequest } from "./purchase-xml-v1/index.ts";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type,x-dona-antonia-bling-hub-key,x-bling-signature-256","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...CORS,"Content-Type":"application/json","Cache-Control":"no-store"}});
@@ -5380,38 +5380,29 @@ async function blingHubOps2OrderStockProbe(sb:any,sourceOrderIdRaw:any,limitRaw:
 
 async function blingHubOps2CatalogStockCanaryExecute(sb:any,canaryRaw:any){
   const canaryId=uuid(canaryRaw);if(!canaryId)return {ok:false,error:"invalid_canary_id",external_write:false};
-  const cq=await sb.from("ops2_catalog_sync_canaries").select("id,run_id,status,item_count,external_write_enabled").eq("id",canaryId).maybeSingle();
-  if(cq.error)throw cq.error;
-  const canary=cq.data;
-  if(!canary)return {ok:false,error:"canary_not_found",external_write:false};
+  const cq=await sb.from("ops2_catalog_sync_canaries").select("id,run_id,status,item_count,external_write_enabled").eq("id",canaryId).maybeSingle();if(cq.error)throw cq.error;
+  const canary=cq.data;if(!canary)return {ok:false,error:"canary_not_found",external_write:false};
   if(canary.status!=="armed"||canary.external_write_enabled!==true)return {ok:false,error:"canary_not_armed",status:canary.status,external_write:false};
   if(Number(canary.item_count)<1||Number(canary.item_count)>5)return {ok:false,error:"invalid_canary_size",external_write:false};
-  const iq=await sb.from("ops2_catalog_sync_canary_items").select("product_id,bling_product_id,desired_stock,bling_physical_before,delta,state").eq("canary_id",canaryId).order("product_id");
-  if(iq.error)throw iq.error;
-  const items=iq.data||[];
-  if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared"||Math.abs(Number(x.delta))>1))return {ok:false,error:"canary_items_invalid",external_write:false};
+  const iq=await sb.from("ops2_catalog_sync_canary_items").select("product_id,bling_product_id,desired_stock,delta,state").eq("canary_id",canaryId).order("product_id");if(iq.error)throw iq.error;
+  const items=iq.data||[];if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared"||Math.abs(Number(x.delta))>1))return {ok:false,error:"canary_items_invalid",external_write:false};
+  const live=await sb.from("products").select("id,stock").in("id",items.map((x:any)=>x.product_id));if(live.error)throw live.error;
+  const lm=new Map((live.data||[]).map((x:any)=>[String(x.id),Number(x.stock)]));
+  const drift=items.find((x:any)=>!lm.has(String(x.product_id))||Number(lm.get(String(x.product_id)))!==Number(x.desired_stock));
+  if(drift)return {ok:false,error:"live_supabase_stock_drift",product_id:drift.product_id,desired_stock:Number(drift.desired_stock),live_stock:lm.get(String(drift.product_id))??null,external_write:false};
   const jobIds:any[]=[];
   for(const it of items){
-    const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system","vitrine_qx").eq("entity_type","product").eq("source_id",it.product_id).maybeSingle();
-    if(link.error)throw link.error;
+    const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system","vitrine_qx").eq("entity_type","product").eq("source_id",it.product_id).maybeSingle();if(link.error)throw link.error;
     if(link.data?.status!=="matched"||Number(link.data?.bling_id)!==Number(it.bling_product_id))return {ok:false,error:"binding_drift",product_id:it.product_id,external_write:false};
     const key="ops2-catalog-canary:"+canaryId+":"+it.product_id+":"+String(it.desired_stock);
-    const q=await sb.rpc("enqueue_bling_hub_job_v2",{p_domain:"stock",p_operation:"set_stock",p_source_system:"vitrine_qx",p_source_id:it.product_id,p_idempotency_key:key,p_payload:{stock_quantity:Number(it.desired_stock),ops2_canary_id:canaryId},p_payload_version:1});
-    if(q.error)throw q.error;
-    jobIds.push(q.data);
-    const u=await sb.from("ops2_catalog_sync_canary_items").update({state:"queued",job_id:q.data}).eq("canary_id",canaryId).eq("product_id",it.product_id).eq("state","prepared");
-    if(u.error)throw u.error;
+    const q=await sb.rpc("enqueue_bling_hub_job_v2",{p_domain:"stock",p_operation:"set_stock",p_source_system:"vitrine_qx",p_source_id:it.product_id,p_idempotency_key:key,p_payload:{stock_quantity:Number(it.desired_stock),ops2_canary_id:canaryId},p_payload_version:1});if(q.error)throw q.error;
+    jobIds.push(q.data);const u=await sb.from("ops2_catalog_sync_canary_items").update({state:"queued",job_id:q.data}).eq("canary_id",canaryId).eq("product_id",it.product_id).eq("state","prepared");if(u.error)throw u.error;
   }
   await sb.from("ops2_catalog_sync_canaries").update({status:"queued"}).eq("id",canaryId).eq("status","armed");
   const processed=await blingHubProcessStockJobs(sb,items.length);
-  const jq=await sb.from("bling_hub_jobs_v2").select("id,status,result,error_code,error_message").in("id",jobIds);
-  if(jq.error)throw jq.error;
+  const jq=await sb.from("bling_hub_jobs_v2").select("id,status,error_code,error_message").in("id",jobIds);if(jq.error)throw jq.error;
   const jm=new Map((jq.data||[]).map((x:any)=>[String(x.id),x]));
-  for(const it of items){
-    const j=jm.get(String(jobIds[items.indexOf(it)]));
-    const state=j?.status==="synced"?"sent":(j?.status==="review_required"||j?.status==="failed"?"failed":"queued");
-    await sb.from("ops2_catalog_sync_canary_items").update({state,error:j?.error_code||j?.error_message||null}).eq("canary_id",canaryId).eq("product_id",it.product_id);
-  }
+  for(let n=0;n<items.length;n++){const it=items[n],j=jm.get(String(jobIds[n]));const state=j?.status==="synced"?"sent":(j?.status==="review_required"||j?.status==="failed"?"failed":"queued");await sb.from("ops2_catalog_sync_canary_items").update({state,error:j?.error_code||j?.error_message||null}).eq("canary_id",canaryId).eq("product_id",it.product_id);}
   await sb.from("ops2_catalog_sync_canaries").update({status:"sent"}).eq("id",canaryId);
   return {ok:true,canary_id:canaryId,queued:jobIds.length,job_ids:jobIds,processed,external_write:true};
 }
@@ -7951,10 +7942,7 @@ Deno.serve(async(req:Request)=>{
         const result=await blingHubOps2OrderStockProbe(sb,body?.source_order_id,body?.limit);
         return json(result,result.ok?200:Number(result.status||409));
       }
-      if(subaction==="ops2_catalog_stock_canary_execute"){
-        const result=await blingHubOps2CatalogStockCanaryExecute(sb,body?.canary_id);
-        return json(result,result.ok?200:409);
-      }
+      if(subaction==="ops2_catalog_stock_canary_execute"){const result=await blingHubOps2CatalogStockCanaryExecute(sb,body?.canary_id);return json(result,result.ok?200:409);}
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
         return json(result,result.ok?200:409);
