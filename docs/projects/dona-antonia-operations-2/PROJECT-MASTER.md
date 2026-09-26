@@ -952,3 +952,7 @@ Será:
 - IA como copiloto;
 - documentação contínua;
 - poucos componentes próprios, cada um com função clara.
+
+
+## Regra permanente de condução técnica
+O proprietário delegou ao executor técnico a decisão sobre **ordem, prioridade, sequência e solução de programação**. Em cada rodada, escolher autonomamente o próximo passo que reduza risco/dependências e aproxime o fluxo final, sem pedir ao proprietário que escolha entre alternativas técnicas já decidíveis. Interromper somente para decisão humana realmente indispensável, credencial/ação externa que só o proprietário possa executar, homologação física/fiscal ou mudança irreversível de negócio. Preservar as regras de negócio já aprovadas e registrar cada rodada no HANDOFF/HOMOLOGATION.
