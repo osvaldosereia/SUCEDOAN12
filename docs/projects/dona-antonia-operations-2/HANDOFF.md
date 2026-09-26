@@ -622,23 +622,17 @@ Sequência:
 
 O roadmap completo contém os blocos seguintes: Separação/Checkout, Estoque operacional, Rota/Entrega/Pagamento, Fiscal/Financeiro, Compras/XML, PapoAI, Control Tower, Segurança e Cleanup.
 
+## Continuidade do próximo bloco — 2026-09-25
+O próximo bloco oficial permanece **Pedido + Estoque Bling**, seguindo exclusivamente o planejamento já registrado em `IMPLEMENTATION-ROADMAP.md`.
 
-## Runbook executável do Bloco A — 2026-09-25
-Foi criado `BLOCO-A-RUNBOOK.md` no commit `9230a505`.
-
-Este arquivo passa a ser o procedimento obrigatório para o próximo bloco de implantação: **Pedido + Estoque Bling**.
-
-Rodadas:
-- A0 baseline congelado;
-- A1 cobertura determinística do catálogo;
-- A2 cutover de leitura para saldo vendável Bling;
-- A3 eliminação de dupla reserva/baixa;
-- A4 early-order Bling em canário;
-- A5 canário ponta a ponta;
-- A6 ativação controlada;
-- A7 fechamento e documentação do Bloco A.
-
-Cada rodada possui PASS/FAIL, rollback e checkpoint obrigatório. Não pular rodada sem registrar evidência da anterior.
+Regra reforçada:
+- manter o padrão documental já existente nesta pasta;
+- não criar documentos paralelos de planejamento sem necessidade;
+- atualizar `HANDOFF.md` ao final de cada rodada relevante;
+- atualizar `HOMOLOGATION-STATUS.md` quando um gate for testado/homologado;
+- atualizar `IMPLEMENTATION-ROADMAP.md` somente quando houver mudança real de plano, ordem ou critério;
+- registrar commits, migrations, versões, flags, testes, PASS/FAIL, rollback, pendências e próximo passo exato;
+- nunca depender apenas do histórico do chat.
 
 ### Próximo passo exato
-Iniciar pela **A0 — Baseline congelado**, somente leitura/documentação. Nenhuma flag de produção deve ser alterada nessa rodada. Depois, avançar para A1 somente se o baseline estiver reproduzível e o rollback do futuro cutover estiver documentado.
+Seguir o **BLOCO A — Fechar pedido + estoque Bling** já existente no `IMPLEMENTATION-ROADMAP.md`, começando por **A1 — Atualizar documentação e baseline**, sem criar uma estrutura documental nova.
