@@ -693,3 +693,26 @@ Não aplicável: rodada sem escrita em produção.
 ### Próximo passo exato
 Continuar o BLOCO A com **A2 — Resolver cobertura do catálogo** do `IMPLEMENTATION-ROADMAP.md`.
 Primeiro investigar deterministicamente os quatro produtos acima no catálogo Bling. Não criar vínculo aproximado. O produto Personal 16 rolos merece prioridade porque ainda está ativo no canal. Se não houver identidade exata comprovável, bloquear da venda antes do futuro cutover.
+
+
+## BLOCO A — A2 cobertura do catálogo — investigação — 2026-09-25
+
+Continuação executada sem criar vínculo aproximado e sem alterar flags de produção.
+
+### Resultado
+Os quatro produtos ativos fora do mirror continuam sem `bling_product_id` também na visão fiscal `product_fiscal_bling_diff_v1`. O banco local ainda não contém evidência suficiente para afirmar uma identidade Bling exata para nenhum deles.
+
+### Decisão de segurança
+Nenhum vínculo foi criado. A regra A2 exige identidade determinística por GTIN/SKU/ID confirmado; nome semelhante não é suficiente. O item Personal 16 rolos permanece como prioridade porque no baseline foi observado ativo no canal.
+
+### Gate
+A2: **EM ANDAMENTO / BLOQUEADO PARA VÍNCULO** até consulta exata ao catálogo Bling ou bloqueio comercial comprovado dos itens sem fonte de saldo.
+
+### Flags
+Sem alteração:
+- `ops2_direct_order_state_enabled=false`;
+- `stock_authority=legacy_shadow`;
+- `stock_cutover_at=null`.
+
+### Próximo passo exato
+Usar a integração Bling já existente para consultar os quatro identificadores diretamente no catálogo ERP. Vincular somente correspondências exatas. Para qualquer item sem correspondência inequívoca, bloquear da venda antes do cutover de leitura de estoque. Depois reexecutar `get_ops2_sellable_stock_status_v1()` e exigir cobertura segura antes de avançar ao cutover.
