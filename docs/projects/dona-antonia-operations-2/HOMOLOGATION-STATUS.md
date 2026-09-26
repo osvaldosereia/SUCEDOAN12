@@ -626,3 +626,15 @@ Estado: **BLOQUEADO CORRETAMENTE até recontagem física atual**.
 - regra canônica: contagem != regularização; causa da diferença deve ser classificada;
 - 14 atenções de recontagem abertas (9 high + 5 normal);
 - nenhuma escrita de saldo executada.
+
+
+## 2026-09-25 — Estoque Mobile: fila de recontagem do cutover
+Estado: **PROGRAMADO E VALIDADO / execução física pendente**.
+
+- 14 blockers expostos no Balanço: 9 high + 5 normal;
+- gateway Admin v39;
+- RPCs restritas a service_role;
+- recontagem que coincide com Bling resolve o blocker sem escrita ERP;
+- divergência permanece aberta para classificação;
+- escrita automática no Bling continua proibida;
+- teste com rollback preservou a fila e nenhum saldo foi alterado.
