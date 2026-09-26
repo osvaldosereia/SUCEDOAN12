@@ -90,3 +90,17 @@ Resultado:
 Observação: leituras independentes disparadas inicialmente em paralelo encontraram `oauth_busy` em 4/5 por lock intencional do OAuth. Repetidas sequencialmente, 4/4 passaram; somadas à primeira leitura, 5/5 confirmadas. Isso não representou falha de estoque.
 
 Gate para expansão: tecnicamente aprovado para preparar próximo lote controlado; não habilitar batch global nem mudar stock authority.
+
+
+## Expansão progressiva — canário 2 PASS
+Canário ade84ad2-436d-4e91-8c14-3c3b5d3178b4:
+- 5 novos produtos, todos delta absoluto 1;
+- 5/5 jobs synced;
+- 5/5 read-after-write verified=true;
+- alterações observadas: 3→4, 2→1, 6→7, 3→4, 3→2;
+- 0 falhas e 0 divergências;
+- itens confirmados no plano para não serem reselecionados;
+- Hub desligado novamente após o lote;
+- homologation/write_canary_limit=1 preservados.
+
+Acumulado: 10 produtos reais sincronizados com sucesso em dois canários.
