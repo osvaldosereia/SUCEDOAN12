@@ -2438,7 +2438,7 @@
         '</section>'+
         '<section class="panel"><div class="list-head" style="display:block">'+(incident?'Ocorrências abertas':'Contagens desta sessão')+'</div><div id="balanceHistory"></div></section>'+
       '</div>'+
-      (!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos confirmáveis</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Como funciona agora</strong><div>Avaria, vencido e perda saem imediatamente do estoque vendável local. O sistema abre uma reconciliação para Bling/fiscal. Retorno não volta a vender até ser inspecionado.</div></div>');
+      (!incident?'<section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Recontagem para Bling</strong><span>Confirme fisicamente estes itens antes de qualquer regularização no ERP</span></div><button class="secondary" id="refreshStockRecount" type="button">Atualizar</button></div><div id="stockRecountRows"><div class="loading">Carregando recontagens…</div></div></section><section class="panel" style="margin-top:14px"><div class="history-title dispatch-head"><div><strong>Faltas dos pedidos</strong><span>Priorize o que está travando pedidos confirmáveis</span></div><button class="secondary" id="refreshStockShortages" type="button">Atualizar</button></div><div id="stockShortageRows"><div class="loading">Calculando faltas…</div></div></section>':'<div class="rule-notice" style="margin-top:14px"><strong>Como funciona agora</strong><div>Avaria, vencido e perda saem imediatamente do estoque vendável local. O sistema abre uma reconciliação para Bling/fiscal. Retorno não volta a vender até ser inspecionado.</div></div>');
     $('#balanceModeCount').onclick=()=>setBalanceMode('count');
     $('#balanceModeIncident').onclick=()=>setBalanceMode('incident');
     if(incident){
@@ -2448,9 +2448,25 @@
       $('#inventoryIncidentNote').oninput=e=>state.inventoryIncidentNote=e.currentTarget.value;
     }
     bindBalancePad();paintBalance();
-    if(!incident){$('#refreshStockShortages').onclick=loadOrderStockShortages;loadOrderStockShortages()}else loadInventoryIncidents();
+    if(!incident){$('#refreshStockRecount').onclick=loadStockRecountQueue;$('#refreshStockShortages').onclick=loadOrderStockShortages;loadStockRecountQueue();loadOrderStockShortages()}else loadInventoryIncidents();
   }
 
+  async function loadStockRecountQueue(){
+    const host=$('#stockRecountRows');if(!host)return;
+    host.innerHTML='<div class="loading">Carregando recontagens…</div>';
+    try{
+      const data=await api('stock_recount_queue');
+      const q=data.recount||{},rows=q.items||[];
+      if(!rows.length){host.innerHTML='<div class="history-empty">Nenhuma recontagem pendente para o cutover.</div>';return}
+      host.innerHTML='<div class="bling-banner" style="margin:12px"><strong>'+esc(q.count||rows.length)+' produto(s) para recontar · '+esc(q.high||0)+' prioridade alta</strong><small>Esta etapa só registra a quantidade física. Nenhum saldo é enviado automaticamente ao Bling.</small></div>'+rows.map(x=>'<div class="simple-row"><div class="simple-main"><strong>'+esc(x.name)+'</strong><small>'+(x.priority==='high'?'PRIORIDADE ALTA · ':'')+'EAN '+esc(x.gtin||'—')+' · local '+esc(fmtQty(x.legacy_stock))+' · Bling físico '+esc(fmtQty(x.bling_physical))+' · virtual '+esc(fmtQty(x.bling_virtual))+(x.shelf_label?' · prateleira '+esc(x.shelf_label):'')+'</small></div><button class="secondary" type="button" data-count-reconcile="'+esc(x.product_id)+'">Contar</button></div>').join('');
+      host.querySelectorAll('[data-count-reconcile]').forEach(b=>b.onclick=()=>selectRecountForBalance(b.dataset.countReconcile,rows));
+    }catch(e){host.innerHTML='<div class="history-empty">Não consegui carregar as recontagens agora.</div>'}
+  }
+  function selectRecountForBalance(productId,rows){
+    const x=(rows||[]).find(r=>r.product_id===productId);if(!x)return;
+    state.balanceProduct={id:x.product_id,name:x.name,gtin:x.gtin||'',stock_quantity:x.legacy_stock,gondola_number:x.gondola_number??null};
+    state.balanceQty='';paintBalance();$('#balanceScanner')?.scrollIntoView({behavior:'smooth',block:'center'});toast('Recontagem selecionada · informe a quantidade física atual');
+  }
   async function loadOrderStockShortages(){
     const host=$('#stockShortageRows');if(!host)return;
     host.innerHTML='<div class="loading">Calculando faltas…</div>';
@@ -2509,7 +2525,7 @@
         const item={...data.product,difference:data.count?.difference??0,reconciliation_state:data.count?.reconciliation_state||'matched'};
         state.balanceHistory.unshift(item);state.balanceHistory=state.balanceHistory.slice(0,40);
         const diff=Number(data.count?.difference||0);toast(diff===0?data.product.name+' · conferido':data.product.name+' · diferença '+fmtQty(diff)+' registrada para revisão');
-        state.balanceProduct=null;state.balanceQty='';paintBalance();loadOrderStockShortages();
+        state.balanceProduct=null;state.balanceQty='';paintBalance();loadStockRecountQueue();loadOrderStockShortages();
       }
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent=state.balanceMode==='incident'?'Registrar ocorrência':'Confirmar e ler próximo'}
   }
