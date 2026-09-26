@@ -675,3 +675,13 @@ Estado: **PASS**.
 - funções de ativação/rollback são service_role-only;
 - tentativa de ativação com 14 blockers foi recusada como esperado;
 - autoridade final: `legacy_shadow`.
+
+
+## 2026-09-25 — Canário de cutover + escritores locais
+Estado: **PASS / CANÁRIO PREPARADO, NÃO ATIVADO**.
+- auditoria encontrou e protegeu incidentes e recebimento XML contra escrita local após autoridade Bling;
+- teste rollback de incidente confirmou estoque local inalterado;
+- canário persistente preparado com run id `b22e416d-9b3d-432c-b76a-7a7ebcbf2b17`;
+- check atual: 0 bad active rows, 0 mirror >24h, 0 physical review, 14 recount blockers;
+- Admin gateway v41 mostra preflight, mas não oferece ativação pública;
+- cutover segue fail-closed em `legacy_shadow`.
