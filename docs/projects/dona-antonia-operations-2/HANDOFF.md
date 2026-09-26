@@ -1100,3 +1100,57 @@ Executar as 14 recontagens físicas no Estoque Mobile. A programação seguinte 
 
 ### Próximo passo exato
 Aguardar/executar as 14 contagens físicas. Para cada divergência real, usar a classificação obrigatória. Só depois projetar/executar o movimento Bling correspondente, com revisão humana e evidência.
+
+
+## BLOCO A — pré-cutover amplo de estoque Bling — 2026-09-25
+
+### Gate determinístico
+Criada `get_ops2_stock_cutover_preflight_v1()`, read-only e restrita a service_role.
+Migration: `supabase/sql/20260925_ops2_stock_cutover_preflight_v1.sql`.
+Commit: `810e9e9f`.
+
+Estado medido:
+- authority: `legacy_shadow`;
+- depósito selecionado: Geral / 14887252169;
+- ativos: 1630;
+- ativos sem Bling stock ready: 0;
+- mirror gate: verified;
+- physical stock gate: verified;
+- controles físicos `review_required`: 0;
+- reservas locais **vivas**: 0;
+- reservas locais expiradas históricas: 15 linhas de 1 pedido `storefront_received`; expiração 25/09 18:31 UTC; não entram mais no cálculo de disponibilidade e não bloqueiam o cutover;
+- blockers de recontagem: 14;
+- resultado preflight: `ready=false`, único motivo: `physical_recount_pending`.
+
+### Validação dos 14 blockers
+- 14/14 `bling_stock_ready=true`;
+- 14 Bling product ids distintos;
+- 0 GTIN ausente;
+- 0 mirrors com mais de 24h na medição;
+- nenhuma vinculação foi inventada ou alterada.
+
+### Gate reserve/consume/release
+As funções legadas já possuem branch explícito para `ops2_stock_authority=bling`.
+Foi executado teste isolado em subtransação com rollback:
+- reserve -> `local_reservation_skipped=true`;
+- consume -> `local_consume_skipped=true`;
+- release -> `local_release_skipped=true`, `restored_physical_stock=false`;
+- hash completo de `products.stock`: inalterado;
+- hash completo de `vitrine_stock_reservations`: inalterado;
+- authority após rollback: `legacy_shadow`.
+A função temporária de teste foi removida após a prova.
+
+Conclusão: quando Bling virar autoridade, essas três rotinas não fazem dupla reserva nem baixa/restauração local.
+
+### Segurança
+`get_ops2_stock_cutover_preflight_v1`: anon=false, authenticated=false, service_role=true.
+Advisor executado. Nenhuma nova exposição executável anon/authenticated foi criada. Avisos históricos do projeto permanecem fora deste escopo.
+
+### Gate desta rodada
+Compatibilidade de reserve/consume/release com autoridade Bling: **PASS**.
+Pré-cutover técnico: **PASS exceto evidência física**.
+Cutover: **NÃO EXECUTADO**.
+Único blocker determinístico atual: **14 recontagens físicas**.
+
+### Próximo passo exato
+Realizar as 14 recontagens no Estoque Mobile. Se todas coincidirem com Bling, o preflight deve ficar `ready=true`. As que divergirem entram no gate de causa já implementado; somente depois de regularização controlada e revalidação o primeiro canário real de `ops2_stock_authority=bling` poderá ser executado.
