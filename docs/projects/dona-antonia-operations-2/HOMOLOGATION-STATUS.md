@@ -756,3 +756,14 @@ Estado: **CODE + DB GATE PASS / LIVE WRITE DORMANT ATÉ CUTOVER**.
 - Hub v157; Admin v46;
 - autoridade real permanece `legacy_shadow`, portanto zero nova baixa física real nesta rodada;
 - nenhuma NF-e emitida nesta rodada.
+
+
+## 2026-09-25/26 — Entregador: gate de pagamento para entrega
+Estado: **DB + ADMIN PASS / BLING FINANCE SYNC AINDA BLOQUEADO**.
+- pagamento efetivo já suportava até 8 partes; UI operacional usa até 2;
+- novo gate DB impede `out_for_delivery -> delivered` sem settlement de entrega exato;
+- soma das partes também é revalidada no banco;
+- retorno ativo bloqueia entrega;
+- teste rollback R$100: sem pagamento bloqueado; R$60 PIX + R$40 crédito permitido; zero resíduos;
+- Admin v47;
+- `bling_sync_state` permanece `blocked_homologation`: nenhuma baixa financeira Bling foi executada.
