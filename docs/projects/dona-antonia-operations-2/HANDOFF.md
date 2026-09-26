@@ -1187,3 +1187,47 @@ Permissões confirmadas: anon/authenticated sem EXECUTE; service_role com EXECUT
 ### Estado
 Não houve cutover. Nenhum saldo real foi alterado nesta rodada.
 O único blocker do preflight continua sendo `physical_recount_pending=14`.
+
+
+## BLOCO A — canário operacional + auditoria ampla de escritores de estoque — 2026-09-25
+
+### Auditoria ampla
+Busca em código + funções PostgreSQL identificou dois escritores locais adicionais que precisavam de proteção para a futura autoridade Bling:
+1. `ops_record_inventory_incident_v1` — avaria/vencido/perda;
+2. `apply_purchase_stock_receipt_v1` — recebimento de XML de compra.
+
+Correções live:
+- incidentes sob `stock_authority=bling` continuam registrados/auditados, mas `local_stock_applied=false`, delta local=0 e seguem para reconciliação/movimento oficial no Bling;
+- recebimento XML sob autoridade Bling agora falha fechado com `bling_stock_authority_requires_erp_receipt`, não escreve `products.stock` e registra auditoria;
+- comportamento `legacy_shadow` preservado.
+Teste de incidente em subtransação/rollback: local antes=5/depois=5, `local_stock_applied=false`, zero resíduos. Não havia documento XML disponível no banco para um canário real de compra nesta medição; a proteção é anterior a qualquer escrita.
+Commit: `1b379200`.
+
+### Canário operacional preparado
+Criada `ops2_stock_cutover_runs` (RLS, service-role-only) e funções:
+- `ops2_prepare_stock_cutover_canary_v1()`;
+- `ops2_check_stock_cutover_canary_v1(run_id)`.
+
+Run preparado: `b22e416d-9b3d-432c-b76a-7a7ebcbf2b17`.
+Resultado atual:
+- ready=false;
+- authority=legacy_shadow;
+- blockers=14 physical recount;
+- bad active stock rows=0;
+- mirrors >24h=0;
+- physical review required=0.
+O check só considera saudável autoridade Bling + zero blockers/reviews/linhas ruins/mirror antigo.
+Commit: `0cf4cc76`.
+
+### Admin
+`admin-products-live-v1` v41 expõe GET autenticado `stock_cutover_preflight` para visibilidade operacional, sem endpoint de ativação pública.
+Commit: `c2c1f0d6`.
+
+### Segurança
+Advisors executados. Nova tabela usa RLS sem policy e grants diretos anon/authenticated revogados, seguindo o padrão interno service-role-only. Permanecem avisos históricos do projeto fora desta rodada.
+
+### Estado final
+- Nenhum cutover executado;
+- nenhum saldo real alterado;
+- authority=`legacy_shadow`;
+- único blocker do preflight: 14 recontagens físicas.
