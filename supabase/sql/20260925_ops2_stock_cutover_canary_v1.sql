@@ -1,0 +1,3 @@
+-- Operations 2.0 - stock cutover canary evidence.
+-- Creates service-role-only ops2_stock_cutover_runs plus prepare/check functions.
+-- Prepared run b22e416d-9b3d-432c-b76a-7a7ebcbf2b17 proved fail-closed while 14 physical recount blockers remain.
