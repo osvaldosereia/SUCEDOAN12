@@ -1,0 +1,5 @@
+-- Operations 2.0 - remaining legacy stock writers guarded for Bling authority.
+-- Live definitions changed:
+-- public.ops_record_inventory_incident_v1: damage/expired/loss no longer mutate products.stock when authority=bling; incident remains open for Bling reconciliation.
+-- public.apply_purchase_stock_receipt_v1: local XML stock receipt fails closed when authority=bling and records audit; receipt must be performed through ERP/Bling flow.
+-- Both preserve legacy_shadow behavior.
