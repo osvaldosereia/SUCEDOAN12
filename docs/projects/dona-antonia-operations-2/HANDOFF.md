@@ -848,3 +848,38 @@ Reimplantar `storefront-v2` v16 se houver regressão de apresentação. Nenhuma 
 
 ### Próximo passo exato
 Criar migration versionada para `create_vitrine_cart_order_v1` validar disponibilidade/limites/demanda via `ops2_sellable_stock_v1.effective_sellable_stock`; aplicar com `legacy_shadow`; executar smoke tests transacionais sem deixar pedido de teste persistido. Depois tratar reserva/consumo/release local no gate seguinte.
+
+
+## BLOCO A — motor de pedido no read model de estoque — 2026-09-25
+
+### Implementação
+`create_vitrine_cart_order_v1` passou a usar `ops2_sellable_stock_v1.effective_sellable_stock` para:
+- disponibilidade inicial de produto;
+- limite automático de quantidade em componente de cesta;
+- validação final da demanda agregada.
+
+O lock de produto permanece antes da validação final para preservar serialização do fluxo atual.
+
+Migration versionada:
+- `supabase/sql/20260925_ops2_order_sellable_stock_read_v1.sql`;
+- commit `1276debb`.
+
+### Estado de rollout
+- `stock_authority=legacy_shadow`;
+- equivalência observada: **1.630/1.630** produtos ativos com `legacy_stock = effective_sellable_stock`;
+- nenhuma ativação global Bling nesta rodada.
+
+### Smoke tests
+1. Produto simples com saldo 1 e pedido de 1 unidade: **PASS**.
+2. Mesmo produto com pedido de 2 unidades: **PASS**, rejeitado com `insufficient_stock`.
+3. Cesta real `Grande Koblenz`, 27 componentes: **PASS**.
+4. Todos os testes de criação foram executados em transação com rollback; `leaked_test_orders=0`.
+
+### Gate
+Motor de criação/validação no read model: **PASS em legacy_shadow**.
+
+### Rollback
+A definição anterior permanece recuperável pelo histórico/migrations e commits. Como a autoridade continua legado, não houve alteração de saldo. Em regressão, restaurar a definição anterior de `create_vitrine_cart_order_v1`.
+
+### Próximo passo exato
+Tratar `reserve_vitrine_order_stock_v1`, `consume_vitrine_order_stock_v1` e `release_vitrine_order_stock_v1` para impedir dupla reserva/baixa quando `stock_authority=bling`. Não ativar Bling como autoridade até esse gate passar.
