@@ -1369,3 +1369,41 @@ Manter o sync EAN->Bling desligado até existir pedido novo elegível para caná
 
 ### Próxima prioridade autônoma
 Consolidar o estado operacional pós-fiscal para que a fila de Expedição derive somente de pedidos `ready` + fiscal autorizado, e revisar o momento exato da baixa física/saída Bling para evitar dupla baixa entre Verificado, NF-e e saída para entrega. Depois seguir para Entregador/pagamento.
+
+
+## BLOCO C — baixa física idempotente no ponto de expedição — 2026-09-25
+- Auditada a sequência real `Verificado/ready -> fiscal -> baixa física -> out_for_delivery`.
+- Confirmado que a baixa física Bling já tinha canário real homologado (28 linhas, lançamento/estorno restaurados), mas ainda não existia ação operacional ligada ao fluxo normal.
+- Criada no Bling Hub a ação `ops2_launch_physical_stock`:
+  - só opera quando `ops2_stock_authority='bling'`;
+  - exige `ops2_physical_stock_gate.state='verified'`;
+  - exige fiscal autorizado;
+  - exige pedido local `ready`;
+  - exige vínculo único com pedido Bling;
+  - exige situação remota Bling `Verificado`;
+  - usa `claim_bling_order_stock_action_v2` para idempotência;
+  - executa `lancar-estoque/{depositId}` uma única vez;
+  - comprova delta físico antes de marcar `launched`;
+  - resultado incerto/falha vira `review_required` + atenção crítica e NÃO deve ser repetido automaticamente.
+- Admin passa a chamar a baixa física antes de `ready -> out_for_delivery` somente sob autoridade Bling.
+- O trigger DB de expedição foi reforçado: sob autoridade Bling, além do fiscal autorizado, exige `bling_order_stock_controls_v2.state='launched'`. Escrita direta no banco não contorna a baixa.
+- Teste sintético transacional:
+  - autoridade temporária Bling + fiscal autorizado + sem baixa física => bloqueio correto;
+  - controle `launched` => transição para `out_for_delivery` aceita;
+  - rollback completo; nenhum pedido/controle sintético persistiu.
+- Estado real permanece seguro: autoridade continua `legacy_shadow`; portanto nenhuma baixa física real nova foi disparada nesta rodada.
+- Commits:
+  - `24a940e6` — ação operacional idempotente de baixa física no Hub;
+  - `edc828f8` — Admin aciona baixa física no ponto de expedição quando autoridade=bling;
+  - `605a6a55` — trigger DB exige baixa física lançada após cutover.
+- Deploys:
+  - `admin-service-intelligence-v1` **v157**;
+  - `admin-products-live-v1` **v46**.
+- O Hub v157 foi publicado com suas dependências compartilhadas existentes; nenhuma dependência foi removida para facilitar deploy.
+- Security Advisor após DDL: somente achados históricos já conhecidos (RLS sem policy no modelo service-role interno e configuração histórica); nenhum novo bypass identificado nesta rodada.
+
+### Sequência operacional consolidada
+`Conferência EAN -> ready/Verificado -> NF-e autorizada -> baixa física Bling comprovada/idempotente -> out_for_delivery -> Entregador -> pagamento/entrega`.
+
+### Próxima prioridade
+Revisar e fechar o Entregador para que pagamento real, entrega e retorno físico respeitem essa sequência, incluindo split payment e impedimento de `delivered` sem pagamento capturado exato.
