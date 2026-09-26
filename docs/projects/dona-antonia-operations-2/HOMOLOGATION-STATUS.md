@@ -697,3 +697,16 @@ Estado: **PASS**.
 - preflight agora exige esse gate;
 - único blocker restante: 14 recontagens físicas;
 - autoridade final `legacy_shadow`.
+
+
+## 2026-09-25 — Separação: conferência EAN obrigatória
+Estado: **PROGRAMADO + TESTE TRANSACIONAL PASS / HARDWARE E CANÁRIO REAL PENDENTES**.
+- sessão e itens de conferência auditáveis;
+- EAN estranho bloqueado;
+- excesso bloqueado;
+- conclusão incompleta bloqueada;
+- conferência exata libera `ready`;
+- Tablet Separação trocou SEPARADO por CONFERIR;
+- Admin Edge v43;
+- zero resíduos do teste;
+- RPCs somente service_role.
