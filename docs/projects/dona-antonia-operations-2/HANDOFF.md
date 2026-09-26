@@ -1231,3 +1231,39 @@ Advisors executados. Nova tabela usa RLS sem policy e grants diretos anon/authen
 - nenhum saldo real alterado;
 - authority=`legacy_shadow`;
 - único blocker do preflight: 14 recontagens físicas.
+
+
+## BLOCO A — gate de integridade de entradas/saídas de estoque — 2026-09-25
+
+Revisão transversal executada em funções PostgreSQL, triggers e Edge Functions para todos os caminhos conhecidos que podem alterar disponibilidade/saldo.
+
+### Escritores mapeados e protegidos
+- pedido: reserve/consume/release — já guardados;
+- balanço: `ops_record_inventory_count_v1` — já guardado;
+- avaria/vencido/perda: `ops_record_inventory_incident_v1` — guardado;
+- compra/XML: `apply_purchase_stock_receipt_v1` — fail-closed sob Bling;
+- Admin product_save — corrigido para não sobrescrever `products.stock` ao editar produto sob Bling;
+- Admin expiry reconcile/expiration_save — corrigido para não zerar `products.stock` sob Bling;
+- trigger `enforce_zero_stock_inactive` — corrigido para não desativar produto por saldo legado <=0 sob Bling.
+
+O trigger foi testado em subtransação: estoque foi temporariamente zerado com autoridade Bling, produto não foi desativado e rollback restaurou saldo original=1.
+
+Admin atualizado/deploy: `admin-products-live-v1` v42.
+Commits Admin: `85fb8f39`, `093a98f5`.
+
+### Gate permanente
+Runtime ganhou `ops2_stock_writer_guard.state=verified` com escopo explícito dos sete caminhos acima.
+`get_ops2_stock_cutover_preflight_v1` agora exige também `writer_guard_verified=true`; se o gate deixar de estar verificado, cutover fica bloqueado automaticamente.
+Preflight atual:
+- writer_guard_verified=true;
+- active_not_bling_ready=0;
+- live local reservations=0;
+- physical review required=0;
+- único blocking_reason=`physical_recount_pending` (14).
+
+Commit do gate: `606d79ed`.
+
+### Observação arquitetural
+A rotina antiga de validade ainda trabalha com `products.validity_date`/ativação de produto. A escrita de saldo foi neutralizada, portanto não contorna a autoridade Bling. A substituição definitiva da lógica de validade por lotes/FEFO do Bling permanece uma etapa própria e não é necessária para inventar saldo no cutover.
+
+Estado final: `legacy_shadow`; nenhum saldo real alterado.
