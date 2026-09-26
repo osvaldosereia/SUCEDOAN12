@@ -720,3 +720,15 @@ Estado: **BACKEND PASS / BLING VERIFIED CODE READY / CANÁRIO REAL PENDENTE**.
 - Hub v155 aceita canário `verified` somente se pedido local está ready e possui conferência EAN verified;
 - nenhuma escrita externa executada;
 - rollout global permanece OFF.
+
+
+## 2026-09-25 — Encadeamento EAN -> Verificado Bling
+Estado: **CODE READY / FAIL-CLOSED / CANÁRIO REAL PENDENTE**.
+- Admin v44;
+- Hub v156;
+- dupla validação local ready + sessão EAN verified;
+- flag dedicada `ops2_ean_verified_sync_enabled=false`;
+- 0 pedidos novos processing/ready disponíveis para canário;
+- nenhum pedido legado alterado;
+- nenhuma escrita externa Bling;
+- estoque continua `legacy_shadow`, com blocker físico independente.
