@@ -2645,6 +2645,94 @@ async function blingHubOps2PhysicalStockCanary(sb:any,payloadRaw:any){
   };
 }
 
+async function blingHubOps2LaunchPhysicalStock(sb:any,payloadRaw:any){
+  const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
+  const sourceOrderId=uuid(payload?.source_order_id);
+  if(!sourceOrderId)return {ok:false,error:"invalid_source_order_id",status:400,external_write:false};
+
+  const runtime=await sb.from("bling_hub_runtime_v2").select("mode,metadata").eq("id",1).maybeSingle();
+  if(runtime.error)throw runtime.error;
+  const meta=runtime.data?.metadata||{};
+  if(meta?.ops2_stock_authority!=="bling"){
+    return {ok:false,error:"bling_stock_authority_not_active",status:409,external_write:false};
+  }
+  if(meta?.ops2_physical_stock_gate?.state!=="verified"){
+    return {ok:false,error:"physical_stock_gate_not_verified",status:409,external_write:false};
+  }
+  const depositId=Number(meta?.selected_deposit_id||0)||0;
+  if(!depositId)return {ok:false,error:"selected_deposit_missing",status:409,external_write:false};
+
+  const fiscal=await sb.rpc("check_order_dispatch_fiscal_gate_v1",{p_order_id:sourceOrderId});
+  if(fiscal.error)throw fiscal.error;
+  if(fiscal.data?.allowed!==true||fiscal.data?.authorized!==true){
+    return {ok:false,error:"fiscal_dispatch_not_authorized",status:409,fiscal_dispatch_gate:fiscal.data,external_write:false};
+  }
+
+  const order=await sb.from("orders").select("id,status").eq("id",sourceOrderId).maybeSingle();
+  if(order.error)throw order.error;
+  if(!order.data)return {ok:false,error:"order_not_found",status:404,external_write:false};
+  if(order.data.status!=="ready"){
+    return {ok:false,error:"order_not_ready_for_dispatch",status:409,current_status:order.data.status,external_write:false};
+  }
+
+  const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system","vitrine_qx").eq("entity_type","order").eq("source_id",sourceOrderId).maybeSingle();
+  if(link.error)throw link.error;
+  const blingOrderId=Number(link.data?.bling_id||0)||0;
+  if(link.data?.status!=="matched"||!blingOrderId){
+    return {ok:false,error:"order_not_linked",status:409,external_write:false};
+  }
+
+  const token=await blingHubOauth(sb);
+  const remote=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+  if(!remote.ok)return {ok:false,error:"order_detail_http_"+remote.status,status:remote.status||502,external_write:false};
+  const verifiedId=Number(meta?.ops2_order_status_mapping?.verified_id||0)||0;
+  const remoteStatus=Number(remote.data?.data?.situacao?.id||remote.data?.data?.situacao||0)||0;
+  if(!verifiedId||remoteStatus!==verifiedId){
+    return {ok:false,error:"bling_order_not_verified",status:409,remote_status_id:remoteStatus,expected_status_id:verifiedId,external_write:false};
+  }
+
+  const before=await blingHubOps2VirtualStockSnapshot(sb,token,payload,depositId);
+  if(!(before?.rows||[]).length)return {ok:false,error:"before_launch_snapshot_missing",status:409,external_write:false};
+
+  const claim=await sb.rpc("claim_bling_order_stock_action_v2",{
+    p_source_order_id:sourceOrderId,p_bling_order_id:blingOrderId,p_deposit_id:depositId,p_action:"launch",p_snapshot:before
+  });
+  if(claim.error)throw claim.error;
+  if(claim.data?.already_done===true){
+    return {ok:true,already_done:true,state:claim.data?.state||"launched",source_order_id:sourceOrderId,bling_order_id:blingOrderId,external_write:false};
+  }
+  if(claim.data?.claimed!==true){
+    return {ok:false,error:claim.data?.in_progress?"physical_stock_launch_in_progress":"physical_stock_launch_not_claimed",status:409,control:claim.data,external_write:false};
+  }
+
+  const write=await blingHubPostOrderActionOnce(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId))+"/lancar-estoque/"+encodeURIComponent(String(depositId)));
+  const observed=await blingHubOps2WaitPhysicalDelta(sb,token,payload,depositId,before,"launch");
+  const success=observed.ok===true;
+  const finish=await sb.rpc("finish_bling_order_stock_action_v2",{
+    p_source_order_id:sourceOrderId,p_action:"launch",p_success:success,p_snapshot:observed.snapshot||{},
+    p_error:success?null:(write.error||"launch_physical_delta_not_verified"),
+    p_metadata:{operational:true,provider_http_status:write.status||null,provider_ok:write.ok===true,provider_uncertain:write.uncertain===true,physical_delta:observed.comparison||{}}
+  });
+  if(finish.error)throw finish.error;
+
+  if(!success){
+    await sb.from("ops_attention").upsert({
+      type:"stock_control",entity_type:"order",entity_id:sourceOrderId,priority:"critical",owner_role:"owner",status:"open",
+      summary:"Saída bloqueada: baixa física no Bling não pôde ser comprovada.",
+      recommended_action:"Não repetir manualmente. Conferir o pedido e o saldo físico no Bling antes de liberar a expedição.",
+      evidence:{bling_order_id:blingOrderId,deposit_id:depositId,provider_http_status:write.status||null,provider_error:write.error||null,comparison:observed.comparison||{}},
+      source_system:"bling",idempotency_key:"ops2:attention:physical_stock_dispatch:"+sourceOrderId
+    },{onConflict:"idempotency_key"});
+    return {ok:false,error:"physical_stock_launch_unverified",status:409,provider:write,comparison:observed.comparison||{},external_write:true};
+  }
+
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"ops2_dispatch_physical_stock_launched",severity:"info",domain:"stock",source_system:"bling",source_id:sourceOrderId,
+    details:{bling_order_id:blingOrderId,deposit_id:depositId,provider_http_status:write.status||null,delta_verified:true,make_used:false,external_write:true}
+  });
+  return {ok:true,launched:true,source_order_id:sourceOrderId,bling_order_id:blingOrderId,deposit_id:depositId,checked:observed.comparison?.checked||0,external_write:true};
+}
+
 async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:any,canaryRaw:any=false){
   const payload=payloadRaw&&typeof payloadRaw==="object"?payloadRaw:{};
   const sourceOrderId=uuid(payload?.source_order_id);
@@ -7757,6 +7845,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_physical_stock_canary"){
         const result=await blingHubOps2PhysicalStockCanary(sb,body?.payload);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_launch_physical_stock"){
+        const result=await blingHubOps2LaunchPhysicalStock(sb,body?.payload);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="order_link_status"){
