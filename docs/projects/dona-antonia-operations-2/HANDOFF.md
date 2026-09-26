@@ -1003,3 +1003,39 @@ Cutover Bling: **continua bloqueado**.
 
 ### Próximo passo exato
 Tratar primeiro os 9 `bling_zero_local_verified`: confirmar que os vínculos GTIN/SKU estão corretos e preparar ajuste controlado do saldo físico no depósito Geral do Bling com base na última contagem física local, um lote pequeno por vez e com snapshot/rollback. Depois recontar fisicamente os 5 casos sem evidência local suficiente (2 local>0/Bling=0 e 3 local=0/Bling>0).
+
+
+## BLOCO A — gate de regularização antes do canário de escrita — 2026-09-25
+
+### Decisão de segurança operacional/fiscal
+Antes de executar POST `/estoques` com operação `B`, o código atual do Hub e o draft canônico de balanço foram revisados.
+
+O Hub já suporta:
+- leitura de saldo Bling por produto/depósito;
+- POST `/estoques` com `operacao=B`;
+- depósito Geral resolvido;
+- leitura pós-escrita e verificação exata do target;
+- tratamento de entrega incerta sem repetição cega.
+
+Porém, `INVENTORY-COUNT-BALANCE-DRAFT.md` registra a regra revisada: **contagem física != regularização automática**. Divergência precisa de causa antes de virar saldo fiscal/ERP.
+
+As 9 evidências locais anteriormente classificadas como “verificadas” têm datas entre 07/09 e 18/09/2026. Em 25/09 elas não são prova suficiente do saldo físico atual. Portanto **nenhum POST de balanço foi feito nesta rodada**.
+
+### Fila operacional criada
+Foram abertas 14 atenções idempotentes em `ops_attention`:
+- 9 prioridade `high`: local > 0 / Bling = 0 com verificação histórica;
+- 2 prioridade normal: local > 0 / Bling = 0 sem verificação;
+- 3 prioridade normal: local = 0 / Bling > 0 sem verificação.
+
+Cada atenção contém GTIN, SKU, Bling product id, saldo legado, físico/virtual Bling, data da verificação anterior e `automatic_stock_write=false`.
+
+### Gate
+Canário de escrita de saldo: **ADIADO CORRETAMENTE / BLOQUEADO por recontagem física atual e classificação da causa**.
+Nenhum saldo Bling ou local foi alterado.
+
+### Próximo passo exato
+Integrar essa fila à ferramenta Balanço/Estoque Mobile para que o operador leia os 14 EANs e registre a quantidade física atual. Para cada diferença:
+1. quantidade física = Bling -> resolver atenção sem escrita;
+2. quantidade física != Bling -> classificar origem documental/perda/sobra;
+3. somente após classificação, executar regularização adequada no Bling;
+4. revalidar espelho físico/virtual e fechar o blocker.
