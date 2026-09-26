@@ -1,0 +1,6 @@
+-- Operations 2.0 — audited EAN order checking.
+-- Applied live 2026-09-25.
+-- Tables: ops_order_check_sessions, ops_order_check_items (RLS, service-role only).
+-- RPCs: ops_start_order_check_v1, ops_scan_order_check_v1, ops_get_order_check_v1, ops_finish_order_check_v1.
+-- Rules: order must be processing; scans must belong to order; over-count blocked; finish requires exact expected quantities.
+-- Admin gateway v43 transitions to ready only after ops_finish_order_check_v1 returns verified.
