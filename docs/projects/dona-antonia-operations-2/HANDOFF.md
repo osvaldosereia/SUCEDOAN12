@@ -741,3 +741,43 @@ Nenhuma.
 
 ### Próximo passo exato
 Em uma nova rodada pequena, reutilizar esse caminho já existente em modo somente consulta para os quatro GTINs pendentes. Registrar os resultados exatos antes de qualquer vínculo ou bloqueio comercial.
+
+
+## BLOCO A — A2 cobertura do catálogo concluída — 2026-09-25
+
+### Evidência final
+O read model `ops2_sellable_stock_v1` mostrou os quatro produtos pendentes com:
+- `bling_product_id=null`;
+- `link_status=not_found`;
+- `bling_stock_ready=false`;
+- `stock_source_reason=unlinked`.
+
+Isso confirma que o mecanismo determinístico de matching já os procurou sem encontrar correspondência Bling segura.
+
+### Ação
+Os quatro produtos foram desativados comercialmente com `is_active=false` e `is_whatsapp_active=false`. Cadastro e estoque histórico foram preservados; nenhum produto foi apagado e nenhum vínculo artificial foi criado.
+
+Produtos desativados:
+- NIVEA Dry Comfort Feminino — GTIN 4005808257584 — estoque local preservado 3;
+- Flocão de Milho Urbano 500 g — GTIN 787896038300136 — estoque local preservado 3;
+- Gel Dental Infantil Avengers Kids+ 50 g — GTIN 7891055394878 — estoque local preservado 3;
+- Papel Higiênico Personal 16 rolos — GTIN 7896110005874 — estoque local preservado 10.
+
+### Revalidação
+Após a ação:
+- produtos ativos: 1.630;
+- `active_bling_ready=1630`;
+- `active_not_ready=0`;
+- `stock_authority=legacy_shadow`;
+- `stock_cutover_at=null`;
+- divergências legado x Bling permanecem 543 e serão tratadas no gate apropriado, sem cópia cega de saldos.
+
+### Gate
+**A2 — PASS.**
+100% do catálogo ativo restante possui cobertura segura do mirror Bling.
+
+### Rollback
+Os quatro cadastros permanecem intactos e podem ser reativados após vínculo Bling determinístico e mirror válido. Não restaurar venda antes disso.
+
+### Próximo passo exato
+Avançar para o próximo gate do BLOCO A no `IMPLEMENTATION-ROADMAP.md`: preparar e validar o cutover da **leitura de estoque** para `ops2_sellable_stock_v1`, ainda sem ligar globalmente `stock_authority=bling`. Mapear primeiro todos os consumidores de `products.stock` no site/checkout/admin para evitar fonte dupla.
