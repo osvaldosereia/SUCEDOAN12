@@ -883,3 +883,34 @@ A definição anterior permanece recuperável pelo histórico/migrations e commi
 
 ### Próximo passo exato
 Tratar `reserve_vitrine_order_stock_v1`, `consume_vitrine_order_stock_v1` e `release_vitrine_order_stock_v1` para impedir dupla reserva/baixa quando `stock_authority=bling`. Não ativar Bling como autoridade até esse gate passar.
+
+
+## BLOCO A — guard contra dupla reserva/baixa local — 2026-09-25
+
+### Implementação
+As funções legadas receberam guard explícito por `ops2_stock_authority`:
+- `reserve_vitrine_order_stock_v1`: em autoridade `bling`, retorna `local_reservation_skipped=true`;
+- `consume_vitrine_order_stock_v1`: em autoridade `bling`, retorna `local_consume_skipped=true` e não baixa `products.stock`;
+- `release_vitrine_order_stock_v1`: em autoridade `bling`, retorna `local_release_skipped=true` e não restaura `products.stock`.
+
+Em `legacy_shadow`, o comportamento anterior é preservado.
+
+Migration:
+- `supabase/sql/20260925_ops2_disable_legacy_stock_mutations_on_bling_v1.sql`;
+- commit `2ebff6d8`.
+
+### Teste do modo Bling
+Foi feita simulação transacional alterando temporariamente `ops2_stock_authority=bling` e executando as três funções. Assertions confirmaram os três retornos de skip. A transação foi revertida e a autoridade final confirmada como `legacy_shadow`.
+
+### Ocorrência de teste e recuperação
+Uma chamada adicional em `legacy_shadow` usou um pedido existente apenas para validar o caminho legado e renovou `updated_at/expires_at` de 15 reservas. Não houve consumo/baixa de estoque nem mudança de status do pedido. Os 15 registros foram restaurados imediatamente para:
+- `updated_at = created_at = 2026-09-25 16:31:16.625974+00`;
+- `expires_at = created_at + 2h = 2026-09-25 18:31:16.625974+00`.
+Não reutilizar pedidos reais para testes futuros.
+
+### Gate
+Guard de dupla reserva/baixa local: **PASS**.
+Autoridade Bling continua **não ativada**.
+
+### Próximo passo exato
+Revisar os chamadores `storefront-v2` e `admin-products-live-v1` para que mensagens/eventos não afirmem “estoque local consumido” quando o retorno for `bling_authority`. Depois executar canário controlado de leitura com `stock_authority=bling` sem ativar ainda o fluxo geral de pedidos.
