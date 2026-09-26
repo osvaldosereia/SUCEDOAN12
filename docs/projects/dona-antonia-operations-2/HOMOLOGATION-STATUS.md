@@ -685,3 +685,15 @@ Estado: **PASS / CANÁRIO PREPARADO, NÃO ATIVADO**.
 - check atual: 0 bad active rows, 0 mirror >24h, 0 physical review, 14 recount blockers;
 - Admin gateway v41 mostra preflight, mas não oferece ativação pública;
 - cutover segue fail-closed em `legacy_shadow`.
+
+
+## 2026-09-25 — Gate de integridade de escritores de estoque
+Estado: **PASS**.
+- todos os escritores locais conhecidos foram mapeados;
+- Admin product_save e rotinas de validade não escrevem saldo sob autoridade Bling;
+- trigger zero-stock não usa saldo legado para desativar produto sob Bling;
+- teste transacional do trigger PASS e rollback limpo;
+- `ops2_stock_writer_guard=verified`;
+- preflight agora exige esse gate;
+- único blocker restante: 14 recontagens físicas;
+- autoridade final `legacy_shadow`.
