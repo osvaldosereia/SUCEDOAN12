@@ -732,3 +732,15 @@ Estado: **CODE READY / FAIL-CLOSED / CANÁRIO REAL PENDENTE**.
 - nenhum pedido legado alterado;
 - nenhuma escrita externa Bling;
 - estoque continua `legacy_shadow`, com blocker físico independente.
+
+
+## 2026-09-25 — Fiscal antes da expedição
+Estado: **BACKEND/DB GATE PASS / EMISSÃO AUTOMÁTICA OFF**.
+- `ready -> out_for_delivery` agora é protegido também no PostgreSQL;
+- sem autorização fiscal: bloqueia;
+- `authorized`/not_required: permite;
+- teste transacional PASS e rollback limpo;
+- Admin v45;
+- DANFE permanece somente após autorização;
+- fiscal runtime continua OFF para geração/autorização automática;
+- nenhuma NF-e real emitida nesta rodada.
