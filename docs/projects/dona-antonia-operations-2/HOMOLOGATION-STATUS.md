@@ -649,3 +649,17 @@ Estado: **PROGRAMADO E VALIDADO / depende de contagem física**.
 - acesso direto anon/authenticated bloqueado; service_role permitido;
 - Admin gateway v40;
 - 14 blockers preservados; 0 revisões artificiais criadas.
+
+
+## 2026-09-25 — Pré-cutover determinístico do estoque Bling
+Estado: **PASS TÉCNICO / BLOQUEADO SOMENTE POR 14 RECONTAGENS FÍSICAS**.
+
+- 1630/1630 produtos ativos prontos no espelho Bling;
+- depósito Geral selecionado;
+- mirror gate e physical stock gate verificados;
+- 0 controles físicos em review_required;
+- 0 reservas locais vivas; 15 linhas expiradas de 1 pedido histórico/vivo não bloqueiam disponibilidade;
+- 14 blockers, todos com GTIN e Bling product id distintos e mirror recente;
+- reserve/consume/release testados em branch Bling com rollback: nenhum `products.stock` ou `vitrine_stock_reservations` foi alterado;
+- autoridade permaneceu `legacy_shadow`;
+- preflight automático criado e protegido (service_role only).
