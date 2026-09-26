@@ -810,3 +810,41 @@ Cutover de leitura: **AINDA NÃO EXECUTADO**.
 
 ### Próximo passo exato
 Implementar uma migration versionada para fazer `create_vitrine_cart_order_v1` validar disponibilidade e limites através de `ops2_sellable_stock_v1.effective_sellable_stock`; em seguida adaptar `storefront-v2` para a mesma fonte. Manter `stock_authority=legacy_shadow`, executar smoke tests de produto simples, cesta e insuficiência, e só então avaliar o canário de autoridade Bling.
+
+
+## BLOCO A — leitura de estoque / storefront — 2026-09-25
+
+### Implementação
+`storefront-v2` foi migrado para consultar `ops2_sellable_stock_v1.effective_sellable_stock` nos pontos públicos de disponibilidade:
+- ofertas;
+- lista de produtos;
+- detalhe do produto;
+- composição de cesta;
+- cotação de cesta.
+
+A leitura de `vitrine_stock_reservations` foi removida desses caminhos públicos para evitar descontar duas vezes quando a autoridade passar a ser o saldo virtual Bling.
+
+### Deploy
+- `storefront-v2` publicado como **v17**;
+- commits de código: `7d02b300`, `fdbd3bd8`, `b0e92966`.
+
+### Segurança do rollout
+`stock_authority` continua `legacy_shadow`. Portanto, `effective_sellable_stock` ainda resolve para `products.stock`; a mudança desta rodada centraliza a leitura sem mudar a autoridade efetiva do saldo.
+
+### Validação
+- filtros diretos `.gt("stock",0)` removidos do storefront;
+- chamadas de `reservedMap` removidas do storefront;
+- catálogo ativo continua com cobertura Bling completa: 1.630/1.630, conforme gate A2.
+
+### Pendente nesta etapa
+O motor SQL `create_vitrine_cart_order_v1` ainda valida `products.stock` diretamente. Reserva/consumo/release locais também continuam legados. Não ativar `stock_authority=bling` antes de corrigir o motor e separar o gate de dupla reserva/baixa.
+
+### Gate
+Storefront read-model rollout: **PASS em legacy_shadow**.
+Cutover global: **NÃO AUTORIZADO AINDA**.
+
+### Rollback
+Reimplantar `storefront-v2` v16 se houver regressão de apresentação. Nenhuma alteração de saldo ou autoridade foi feita nesta rodada.
+
+### Próximo passo exato
+Criar migration versionada para `create_vitrine_cart_order_v1` validar disponibilidade/limites/demanda via `ops2_sellable_stock_v1.effective_sellable_stock`; aplicar com `legacy_shadow`; executar smoke tests transacionais sem deixar pedido de teste persistido. Depois tratar reserva/consumo/release local no gate seguinte.
