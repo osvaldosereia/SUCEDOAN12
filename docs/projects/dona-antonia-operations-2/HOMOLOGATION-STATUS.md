@@ -615,3 +615,14 @@ Estado técnico: **PASSOU**. Cutover global: **BLOQUEADO**.
 - 1.087/1.630 iguais e 543 divergentes;
 - extremos: 51 Bling >=5x legado; 6 legado >=5x Bling; 11 local positivo/Bling zero; 3 local zero/Bling positivo;
 - não ativar globalmente até reconciliação determinística.
+
+
+## 2026-09-25 — Gate: escrita de reconciliação no Bling
+Estado: **BLOQUEADO CORRETAMENTE até recontagem física atual**.
+
+- caminho de POST `/estoques` operação `B` confirmado no Hub;
+- pós-escrita/verificação já existem;
+- 9 contagens históricas são de 07–18/09 e não justificam saldo oficial em 25/09;
+- regra canônica: contagem != regularização; causa da diferença deve ser classificada;
+- 14 atenções de recontagem abertas (9 high + 5 normal);
+- nenhuma escrita de saldo executada.
