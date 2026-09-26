@@ -716,3 +716,28 @@ Sem alteração:
 
 ### Próximo passo exato
 Usar a integração Bling já existente para consultar os quatro identificadores diretamente no catálogo ERP. Vincular somente correspondências exatas. Para qualquer item sem correspondência inequívoca, bloquear da venda antes do cutover de leitura de estoque. Depois reexecutar `get_ops2_sellable_stock_status_v1()` e exigir cobertura segura antes de avançar ao cutover.
+
+
+## BLOCO A — A2 rodada pequena: caminho oficial de consulta Bling — 2026-09-25
+
+### Escopo
+Somente localizar e validar o mecanismo já existente no código para consulta determinística de produto no Bling. Nenhuma escrita de produto, vínculo, estoque ou flag nesta rodada.
+
+### Evidência
+O caminho já existe em `supabase/functions/purchase-xml-v1/index.ts`, função `remoteProductByGtin`:
+- consulta `GET /produtos` com `gtins[]`;
+- normaliza e compara o GTIN retornado;
+- aceita somente uma correspondência exata;
+- se houver mais de uma correspondência exata, gera `multiple_bling_gtin`.
+
+A função `ensureProduct` já utiliza esse mecanismo antes de qualquer criação/vínculo e também rejeita conflito entre `local.bling_product_id` e o produto encontrado por GTIN.
+
+### Gate
+A2 / mecanismo de identificação: **PASS**.
+O projeto já possui regra adequada para identidade determinística; não é necessário inventar novo mecanismo.
+
+### Alterações de produção
+Nenhuma.
+
+### Próximo passo exato
+Em uma nova rodada pequena, reutilizar esse caminho já existente em modo somente consulta para os quatro GTINs pendentes. Registrar os resultados exatos antes de qualquer vínculo ou bloqueio comercial.
