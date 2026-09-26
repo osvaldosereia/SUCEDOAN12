@@ -1039,3 +1039,38 @@ Integrar essa fila à ferramenta Balanço/Estoque Mobile para que o operador lei
 2. quantidade física != Bling -> classificar origem documental/perda/sobra;
 3. somente após classificação, executar regularização adequada no Bling;
 4. revalidar espelho físico/virtual e fechar o blocker.
+
+
+## BLOCO A — fila de recontagem integrada ao Estoque Mobile — 2026-09-25
+
+### Implementado
+- RPC read-only `get_ops_stock_recount_queue_v1()`;
+- RPC interna `ops_apply_stock_recount_result_v1(...)`;
+- nova ação autenticada `stock_recount_queue` no `admin-products-live-v1`;
+- `admin-products-live-v1` publicado em **v39**;
+- Balanço/Estoque Mobile ganhou seção **Recontagem para Bling** antes das faltas de pedidos;
+- lista mostra prioridade, EAN, saldo local, físico Bling e virtual Bling;
+- botão **Contar** carrega o item no leitor/teclado já existente;
+- após uma contagem, a fila é recarregada.
+
+### Regra de segurança
+A recontagem **não escreve estoque no Bling**.
+- se a quantidade física atual coincidir com o físico Bling, o blocker é resolvido sem escrita ERP;
+- se diferir, a atenção permanece aberta e exige classificação da causa antes de regularização;
+- `automatic_stock_write=false` permanece explícito.
+
+### Evidência
+- fila: 14 itens = 9 high + 5 normal;
+- permissões RPC: anon=false, authenticated=false, service_role=true;
+- teste transacional/rollback não deixou alteração: fila continuou em 14;
+- nenhum POST de estoque Bling executado.
+
+### Código
+- `45281ee8` — read model da fila;
+- `502dfe99` — rota da fila no Admin;
+- `79a7cca8` — interface Estoque Mobile;
+- `fe4d28d1` — aplicar resultado da recontagem;
+- `b5efb401` — persistir SQL canônico.
+
+### Próximo passo exato
+Executar as 14 recontagens físicas no Estoque Mobile. A programação seguinte deve tratar somente os itens cuja nova contagem ainda divergir do físico Bling, exigindo causa antes de qualquer movimento/regularização oficial.
