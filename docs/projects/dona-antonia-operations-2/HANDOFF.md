@@ -781,3 +781,32 @@ Os quatro cadastros permanecem intactos e podem ser reativados após vínculo Bl
 
 ### Próximo passo exato
 Avançar para o próximo gate do BLOCO A no `IMPLEMENTATION-ROADMAP.md`: preparar e validar o cutover da **leitura de estoque** para `ops2_sellable_stock_v1`, ainda sem ligar globalmente `stock_authority=bling`. Mapear primeiro todos os consumidores de `products.stock` no site/checkout/admin para evitar fonte dupla.
+
+
+## BLOCO A — cutover de leitura: mapeamento de dependências — 2026-09-25
+
+### Escopo
+Rodada média de preparação. Nenhuma mudança de `stock_authority` e nenhum cutover global.
+
+### Dependências encontradas
+O estoque legado ainda participa diretamente de pontos críticos:
+- `storefront-v2`: listagem de ofertas e detalhe de produto consultam `products.stock`;
+- `create_vitrine_cart_order_v1`: disponibilidade de produto, limite de componente de cesta e validação final de demanda usam `products.stock`;
+- `reserve_vitrine_order_stock_v1`: calcula disponibilidade sobre `products.stock` menos reservas locais;
+- `consume_vitrine_order_stock_v1` e `release_vitrine_order_stock_v1`: ainda pertencem ao ciclo legado de baixa/restauração;
+- `admin-products-live-v1`: exibe e permite editar `products.stock`, portanto deve permanecer tratado como interface transitória até o gate de estoque operacional.
+
+### Evidência
+No banco atual, as quatro funções `create_vitrine_cart_order_v1`, `reserve_vitrine_order_stock_v1`, `consume_vitrine_order_stock_v1` e `release_vitrine_order_stock_v1` ainda contêm dependência direta de estoque legado.
+
+### Decisão
+Não alterar somente a vitrine isoladamente. O próximo patch deve manter catálogo + criação do pedido + validação de demanda coerentes com `ops2_sellable_stock_v1`. Reserva/consumo/release legado será desligado no gate específico de dupla reserva/baixa, não misturado silenciosamente nesta etapa.
+
+Enquanto `stock_authority=legacy_shadow`, o read model devolve o mesmo saldo legado, permitindo implantar a troca de leitura sem alterar a autoridade real.
+
+### Gate
+Mapeamento de consumidores críticos: **PASS**.
+Cutover de leitura: **AINDA NÃO EXECUTADO**.
+
+### Próximo passo exato
+Implementar uma migration versionada para fazer `create_vitrine_cart_order_v1` validar disponibilidade e limites através de `ops2_sellable_stock_v1.effective_sellable_stock`; em seguida adaptar `storefront-v2` para a mesma fonte. Manter `stock_authority=legacy_shadow`, executar smoke tests de produto simples, cesta e insuficiência, e só então avaliar o canário de autoridade Bling.
