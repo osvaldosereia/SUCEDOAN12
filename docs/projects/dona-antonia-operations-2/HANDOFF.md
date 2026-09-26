@@ -1437,3 +1437,18 @@ Falha antes do pagamento segue para `delivery_return_cases`, sem restauração a
 
 ### Próxima prioridade autônoma
 Fechar a consistência da parada/rota após `delivered` e preparar o vínculo do pagamento real com o financeiro do Bling em modo de homologação, sem sincronizar recebimento externo até a representação fiscal/financeira estar comprovada.
+
+
+## BLOCO D — Pedido canônico ↔ parada/rota: sincronização DB — 2026-09-25/26
+- Identificado que a Edge tentava sincronizar a parada após mudanças operacionais, mas o vínculo não era uma invariante do banco; outro writer poderia deixar pedido e rota divergentes.
+- Criado trigger AFTER UPDATE `trg_ops_sync_delivery_stop_from_order_v1` em `orders.status`.
+- Função `ops_sync_delivery_stop_from_order_trigger_v1` delega para o read/write model já existente `ops_sync_delivery_stop_v1`.
+- Estados sincronizados: `out_for_delivery`, `delivered`, `ready`, `cancelled`.
+- A função existente mantém `failed` protegido e conclui a rota quando não restam paradas abertas.
+- Teste transacional PASS: pedido sintético em rota dispatched + pagamento exato -> pedido `delivered`, parada `delivered`, rota `completed`, `completed_at` preenchido.
+- Tudo em rollback; nenhuma rota/pedido real alterado.
+- SQL canônico: `supabase/sql/20260925_ops2_delivery_route_order_sync_guard_v1.sql`; commit `95e43c00`.
+- Security Advisor: somente achados históricos já conhecidos (RLS/no-policy INFO e leaked-password protection WARN); nenhuma nova exposição identificada.
+
+### Próxima prioridade autônoma
+Modelar e provar em shadow a representação do recebimento real no Bling (inclusive split), sem POST financeiro real até a homologação determinar endpoints/contas/formas e idempotência/reconciliação.
