@@ -5378,6 +5378,44 @@ async function blingHubOps2OrderStockProbe(sb:any,sourceOrderIdRaw:any,limitRaw:
   return {ok:true,source_order_id:sourceOrderId,deposit_id:depositId,products:rows,external_write:false};
 }
 
+async function blingHubOps2CatalogStockCanaryExecute(sb:any,canaryRaw:any){
+  const canaryId=uuid(canaryRaw);if(!canaryId)return {ok:false,error:"invalid_canary_id",external_write:false};
+  const cq=await sb.from("ops2_catalog_sync_canaries").select("id,run_id,status,item_count,external_write_enabled").eq("id",canaryId).maybeSingle();
+  if(cq.error)throw cq.error;
+  const canary=cq.data;
+  if(!canary)return {ok:false,error:"canary_not_found",external_write:false};
+  if(canary.status!=="armed"||canary.external_write_enabled!==true)return {ok:false,error:"canary_not_armed",status:canary.status,external_write:false};
+  if(Number(canary.item_count)<1||Number(canary.item_count)>5)return {ok:false,error:"invalid_canary_size",external_write:false};
+  const iq=await sb.from("ops2_catalog_sync_canary_items").select("product_id,bling_product_id,desired_stock,bling_physical_before,delta,state").eq("canary_id",canaryId).order("product_id");
+  if(iq.error)throw iq.error;
+  const items=iq.data||[];
+  if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared"||Math.abs(Number(x.delta))>1))return {ok:false,error:"canary_items_invalid",external_write:false};
+  const jobIds:any[]=[];
+  for(const it of items){
+    const link=await sb.from("bling_hub_entity_links_v2").select("bling_id,status").eq("source_system","vitrine_qx").eq("entity_type","product").eq("source_id",it.product_id).maybeSingle();
+    if(link.error)throw link.error;
+    if(link.data?.status!=="matched"||Number(link.data?.bling_id)!==Number(it.bling_product_id))return {ok:false,error:"binding_drift",product_id:it.product_id,external_write:false};
+    const key="ops2-catalog-canary:"+canaryId+":"+it.product_id+":"+String(it.desired_stock);
+    const q=await sb.rpc("enqueue_bling_hub_job_v2",{p_domain:"stock",p_operation:"set_stock",p_source_system:"vitrine_qx",p_source_id:it.product_id,p_idempotency_key:key,p_payload:{stock_quantity:Number(it.desired_stock),ops2_canary_id:canaryId},p_payload_version:1});
+    if(q.error)throw q.error;
+    jobIds.push(q.data);
+    const u=await sb.from("ops2_catalog_sync_canary_items").update({state:"queued",job_id:q.data}).eq("canary_id",canaryId).eq("product_id",it.product_id).eq("state","prepared");
+    if(u.error)throw u.error;
+  }
+  await sb.from("ops2_catalog_sync_canaries").update({status:"queued"}).eq("id",canaryId).eq("status","armed");
+  const processed=await blingHubProcessStockJobs(sb,items.length);
+  const jq=await sb.from("bling_hub_jobs_v2").select("id,status,result,error_code,error_message").in("id",jobIds);
+  if(jq.error)throw jq.error;
+  const jm=new Map((jq.data||[]).map((x:any)=>[String(x.id),x]));
+  for(const it of items){
+    const j=jm.get(String(jobIds[items.indexOf(it)]));
+    const state=j?.status==="synced"?"sent":(j?.status==="review_required"||j?.status==="failed"?"failed":"queued");
+    await sb.from("ops2_catalog_sync_canary_items").update({state,error:j?.error_code||j?.error_message||null}).eq("canary_id",canaryId).eq("product_id",it.product_id);
+  }
+  await sb.from("ops2_catalog_sync_canaries").update({status:"sent"}).eq("id",canaryId);
+  return {ok:true,canary_id:canaryId,queued:jobIds.length,job_ids:jobIds,processed,external_write:true};
+}
+
 async function blingHubPreviewStockSync(sb:any,item:any){
   const sourceId=uuid(item?.source_id);if(!sourceId)return {ok:false,error:"invalid_product"};
   const target=Number(item?.stock_quantity);if(!Number.isFinite(target)||target<0)return {ok:false,error:"invalid_stock"};
@@ -7912,6 +7950,10 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="ops2_order_stock_probe"){
         const result=await blingHubOps2OrderStockProbe(sb,body?.source_order_id,body?.limit);
         return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="ops2_catalog_stock_canary_execute"){
+        const result=await blingHubOps2CatalogStockCanaryExecute(sb,body?.canary_id);
+        return json(result,result.ok?200:409);
       }
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
