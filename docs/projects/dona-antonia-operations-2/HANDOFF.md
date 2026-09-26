@@ -1319,3 +1319,18 @@ Integração com o Checkout nativo do Bling continua como POC separado; o Admin 
 
 ### Próximo passo
 Fechar a proteção backend para impedir qualquer outro caminho `processing -> ready` sem sessão verificada e depois validar sincronização do estado Verificado com Bling em canário controlado.
+
+
+## BLOCO B — backend fechado + preparação do Verificado Bling — 2026-09-25
+- Regra permanente registrada no PROJECT-MASTER: sequência/prioridade/solução técnica ficam a cargo do executor.
+- Criado trigger `trg_ops_enforce_order_check_before_ready_v1`: qualquer `processing -> ready` sem sessão EAN `verified` falha com `order_check_required_before_ready`.
+- Teste transacional: bypass sem sessão bloqueado; com sessão verified permitido; rollback limpo.
+- SQL canônico atualizado: `20260925_ops2_order_ean_check_v1.sql`, commit `a7d297f0`.
+- Bling: confirmado no catálogo live que `Aprovado / Separar (915902) -> Verificado (24)` usa transição `504837240`, ativa e sem ações acopladas.
+- `admin-service-intelligence-v1` ganhou suporte canário a target `verified`, mas exige pedido local `ready` + sessão EAN verificada antes de qualquer escrita externa.
+- Hub publicado em **v155**; commit `d1d2f887`.
+- Nenhum pedido real foi usado e nenhum status Bling foi alterado nesta rodada.
+- `ops2_direct_order_state_enabled` continua fechado; integração automática continua deliberadamente OFF até canário controlado em pedido novo elegível.
+
+### Próxima prioridade autônoma
+Preparar o encadeamento idempotente pós-conferência para Bling Verificado em modo protegido, mantendo falha fechada e sem ativar rollout global; depois executar canário somente quando existir pedido novo elegível, nunca em pedido legado.
