@@ -34,11 +34,6 @@ function closed(d:D){const k=String(d.month).padStart(2,"0")+"-"+String(d.day).p
 function nextOpen(d:D){let x=d;for(let i=0;i<14;i++){if(!closed(x))return x;x=add(x,1)}return x}
 function delivery(){const p=local(),t={year:p.year,month:p.month,day:p.day};let target=t,reason="same_day";if(closed(t)){target=nextOpen(add(t,1));reason="closed_day"}else if(p.hour>=12){target=nextOpen(add(t,1));reason="after_cutoff"}const label=new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(Date.UTC(target.year,target.month-1,target.day,12)));return {date:iso(target),label,reason,time_zone:TZ,cutoff_hour:12}}
 
-async function reservedMap(ids:string[]){
-  const out=new Map<string,number>();if(!ids.length)return out;
-  const {data,error}=await db.from("vitrine_stock_reservations").select("product_id,quantity").in("product_id",ids).eq("status","reserved").gt("expires_at",new Date().toISOString());
-  if(error)throw error;for(const r of data||[])out.set(r.product_id,(out.get(r.product_id)||0)+Number(r.quantity||0));return out;
-}
 function pub(p:any,available?:number){
   const offer=p?.is_offer===true&&p?.offer_price!=null&&Number(p.offer_price)>=0;
   return {id:p.id,name:p.name,image_url:p.image_url||"",price_cents:cents(offer?p.offer_price:p.price),regular_price_cents:offer?cents(p.price):null,packaging:p.packaging||"",subcategory:p.customer_subcategory||p.subcategory||"",stock_quantity:Math.max(0,available??Number(p.stock||0)),brand:p.brand||"",category:p.category||"",subsubcategory:p.customer_subsubcategory||p.subsubcategory||"",unit:p.unit||""};
