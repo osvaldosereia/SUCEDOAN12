@@ -604,3 +604,14 @@ Estado: **PASSOU**.
 - commit: `2ebff6d8`.
 
 Observação: um teste legado renovou timestamps de 15 reservas de pedido existente; os timestamps foram restaurados imediatamente e nenhum saldo/status de pedido foi alterado. Não usar pedido real em próximos testes.
+
+
+## 2026-09-25 — Gate: canário de leitura com autoridade Bling
+Estado técnico: **PASSOU**. Cutover global: **BLOQUEADO**.
+
+- simulação transacional de `ops2_stock_authority=bling`;
+- read model retornou exatamente o saldo virtual Bling em três casos divergentes;
+- rollback confirmado; autoridade final `legacy_shadow`;
+- 1.087/1.630 iguais e 543 divergentes;
+- extremos: 51 Bling >=5x legado; 6 legado >=5x Bling; 11 local positivo/Bling zero; 3 local zero/Bling positivo;
+- não ativar globalmente até reconciliação determinística.
