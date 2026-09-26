@@ -593,3 +593,31 @@ Antes de o site consumir o mirror, remover a dependência operacional do modelo 
 - trigger legado ainda consome `products.stock` ao confirmar;
 - Admin ainda calcula readiness com `products.stock`;
 - esse ciclo precisa ser substituído de forma atômica para impedir dupla contagem com a reserva oficial do Bling.
+
+
+## Regra reforçada de continuidade — 2026-09-25
+
+O planejamento operacional detalhado foi atualizado em `IMPLEMENTATION-ROADMAP.md` no commit `ef3b60a0`.
+
+A partir desta rodada, é regra obrigatória:
+- nenhuma rodada importante termina sem atualizar o HANDOFF;
+- conferir GitHub + Supabase/runtime antes de retomar;
+- registrar commits, migrations, versões de Edge Functions, flags, testes, evidências, PASS/FAIL, rollback, pendências e próximo passo exato;
+- atualizar também `HOMOLOGATION-STATUS.md` quando um gate for testado/homologado;
+- não depender do histórico do chat para continuidade;
+- código escrito sem teste/evidência/documentação não conta como etapa concluída;
+- se houver interrupção, a retomada deve ser possível somente pelo repositório, Supabase/runtime e documentos canônicos.
+
+### Próximo bloco oficial
+Prioridade: fechar **pedido + estoque Bling** antes de limpeza ou expansão lateral.
+
+Sequência:
+1. baseline/documentação e 4 produtos sem vínculo;
+2. cobertura determinística do catálogo;
+3. cutover da leitura de estoque para saldo vendável Bling;
+4. remoção da dupla reserva/baixa local;
+5. early-order Bling em canário;
+6. canário ponta a ponta com reserva virtual, separação, Verificado, saída e baixa física;
+7. somente após PASS, ativação controlada das flags de produção.
+
+O roadmap completo contém os blocos seguintes: Separação/Checkout, Estoque operacional, Rota/Entrega/Pagamento, Fiscal/Financeiro, Compras/XML, PapoAI, Control Tower, Segurança e Cleanup.
