@@ -1,0 +1,8 @@
+-- Operations 2.0 - final local stock writer integrity gate.
+-- Live changes applied 2026-09-25:
+-- enforce_zero_stock_inactive() ignores legacy products.stock when authority=bling.
+-- admin-products-live-v1 v42 preserves stock on product edits/expiry under authority=bling.
+-- runtime metadata ops2_stock_writer_guard.state=verified covers:
+-- order reserve/consume/release, inventory count, inventory incident, purchase XML receipt,
+-- admin product save, admin expiry stock zero, zero-stock deactivation trigger.
+-- get_ops2_stock_cutover_preflight_v1 now requires writer_guard_verified=true.
