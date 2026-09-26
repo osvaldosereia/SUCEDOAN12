@@ -1407,3 +1407,33 @@ Consolidar o estado operacional pós-fiscal para que a fila de Expedição deriv
 
 ### Próxima prioridade
 Revisar e fechar o Entregador para que pagamento real, entrega e retorno físico respeitem essa sequência, incluindo split payment e impedimento de `delivered` sem pagamento capturado exato.
+
+
+## BLOCO D — Entregador: pagamento obrigatório antes de concluir entrega — 2026-09-25/26
+- Auditados pagamento efetivo, split payment, falha de entrega e retorno físico já existentes.
+- Identificado que o Admin validava pagamento antes de `delivered`, porém faltava a mesma invariante diretamente no PostgreSQL.
+- Criado trigger `trg_ops_enforce_delivery_payment_before_delivered_v1` / função `ops_enforce_delivery_payment_before_delivered_v1`.
+- Regra DB para `out_for_delivery -> delivered`:
+  - não pode existir retorno ativo `returning/returned_review`;
+  - precisa existir exatamente um settlement válido de origem `delivery`;
+  - settlement precisa estar `captured/synced/needs_review`;
+  - `expected_total_cents == captured_total_cents == total do pedido`;
+  - soma real de `order_payment_parts` também precisa ser exatamente o total.
+- Isso protege inclusive escrita direta no banco, não apenas o Admin.
+- Admin foi endurecido para aceitar `delivered` somente a partir de `out_for_delivery` e ganhou mensagem explícita para ausência de pagamento.
+- Teste sintético rollback:
+  - pedido R$100 sem pagamento -> `delivered` bloqueado;
+  - split R$60 PIX + R$40 cartão -> captura aceita;
+  - depois do split exato -> `delivered` permitido;
+  - zero pedido/settlement/parts sintéticos persistidos.
+- Fluxo de falha continua correto: `Não entregou` é recusado se pagamento já foi capturado; mercadoria em retorno não volta automaticamente ao estoque vendável.
+- Migration: `supabase/sql/20260925_ops2_delivery_payment_db_guard_v1.sql`, commit `f96d1c37`.
+- Admin commit `86f5b43b`; `admin-products-live-v1` publicado em **v47**.
+- Security Advisor executado; permanecem achados históricos já conhecidos, sem nova exposição criada.
+
+### Sequência consolidada até aqui
+`Conferência EAN -> Verificado -> NF-e autorizada -> baixa física Bling comprovada -> out_for_delivery -> captura do pagamento real (1 ou split) -> delivered`.
+Falha antes do pagamento segue para `delivery_return_cases`, sem restauração automática do estoque.
+
+### Próxima prioridade autônoma
+Fechar a consistência da parada/rota após `delivered` e preparar o vínculo do pagamento real com o financeiro do Bling em modo de homologação, sem sincronizar recebimento externo até a representação fiscal/financeira estar comprovada.
