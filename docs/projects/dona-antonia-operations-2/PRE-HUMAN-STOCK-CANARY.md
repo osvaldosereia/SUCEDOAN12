@@ -235,3 +235,11 @@ Decisão de segurança:
 - 0 drift confirmado;
 - Hub desligado ao final;
 - próximo gate: encerrar delta 1 e somente então abrir delta 2 em amostra pequena.
+
+
+## R6/20 — delta 1 encerrado
+- +60 produtos synced/verified; acumulado 170.
+- delta 1 = 0.
+- 1 target stale foi bloqueado antes do write e reconciliado 19→0 após preview readonly confirmar Bling=20.
+- delta 2: 121 itens; gate DB separado criado e validado sem write.
+- executor Edge permanece fail-closed em delta 1 até patch explícito da R7.
