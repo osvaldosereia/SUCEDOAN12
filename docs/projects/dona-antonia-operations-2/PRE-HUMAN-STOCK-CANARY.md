@@ -224,3 +224,14 @@ Decisão de segurança:
 - hub_enabled=false ao final;
 - antes de continuar os 86 delta 1, ampliar tolerância/observação para jobs em processing e nunca classificar latência como falha;
 - para job processing/stale, usar leitura readonly do Bling antes de qualquer retry para impedir duplicação.
+
+
+## Esteira R5/20 — +25 delta 1 — PASS
+- health gate de worker persistente criado;
+- 5 canários x 5 produtos;
+- 25/25 synced e verified;
+- acumulado 110 confirmados;
+- 61 delta 1 restantes;
+- 0 drift confirmado;
+- Hub desligado ao final;
+- próximo gate: encerrar delta 1 e somente então abrir delta 2 em amostra pequena.
