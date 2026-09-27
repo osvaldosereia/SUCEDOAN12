@@ -1486,3 +1486,59 @@ R2: modelar/provar em shadow o recebimento real/split no Bling, com idempotênci
 
 ### Próximo passo exato
 R3: falha de entrega/retorno/reentrega/cancelamento, com reversões e proteção contra dupla restauração de estoque.
+
+
+## Esteira autônoma de fechamento — R1/20 — 2026-09-27
+O usuário autorizou 20 rodadas amplas autônomas, sem depender de escolhas técnicas humanas. R1 executada imediatamente; 19 execuções horárias subsequentes foram programadas. Cada rodada deve reler este HANDOFF, IMPLEMENTATION-ROADMAP.md, HOMOLOGATION-STATUS.md e o runtime real antes de agir.
+
+### Baseline real na abertura
+- Supabase canônico: ssbesxgaijknwsjbsbcz.
+- catálogo baseline run: 9db0ee8c-6954-4b21-8a54-4a273a9ce069.
+- 85 stock_update confirmados Supabase -> Bling.
+- 454 stock_update ainda planejados.
+- 86 restantes com delta absoluto 1.
+- Hub: hub_enabled=false, mode=homologation, write_canary_limit=1.
+- products/stock/customers/orders habilitados no domínio; webhooks_enabled=false; fiscal_enabled=false.
+- crons antigos Bling Hub e fiscal AI inativos; purchase-xml-daily-v1 ativo.
+- jobs atuais: 146 synced, 3 cancelled, 2 review_required históricos; nenhum pending/processing/retry aberto ao baseline.
+- advisors: security apenas INFO rls_enabled_no_policy no desenho interno fechado; performance apenas unused_index INFO.
+
+### Achado e correção R1
+O canário anterior mostrou que um worker de estoque pode permanecer processing além da janela curta do orquestrador. A recuperação manual segura foi comprovada por leitura readonly do Bling antes do retry.
+Nesta R1:
+- admin-service-intelligence-v1 alterado para lease de stock worker de 90s (antes 300s);
+- versão publicada: v160 ACTIVE;
+- commit de código: 5c0e0afe5dacc779f64f6e05dbcb52eca90aca1d;
+- proteção permanece: writes serializados, live_supabase_stock_drift, idempotency key e read-before/write/read-after;
+- qualquer recuperação de processing/stale deve observar o Bling readonly antes de retry;
+- nenhum cutover global foi feito.
+
+### Backlog autônomo priorizado para as rodadas seguintes
+1. concluir os 86 delta 1 restantes, com circuit breaker e recuperação segura;
+2. criar/validar observabilidade explícita de stale stock workers para não depender de inspeção manual;
+3. iniciar delta 2 em canário pequeno e ampliar apenas com PASS;
+4. avançar demais divergências de estoque por faixas de risco, sempre usando estoque atual do Supabase como target durante esta migração;
+5. reconciliar o plano/snapshot após writes e impedir target antigo;
+6. auditar e sincronizar preço de venda Supabase -> Bling separadamente de estoque, com dry-run e canário;
+7. auditar cadastro/identidade/status dos 1.630 produtos vinculados; não reativar legado Bling-only;
+8. construir saneamento seguro de produtos Bling obsoletos sem apagar histórico fiscal;
+9. revisar os 2 review_required históricos e classificar se são legado/resolvido/bug atual, sem alterar pedido legado;
+10. completar observabilidade Control Tower para catálogo/Bling/jobs/canários;
+11. revisar webhooks held/processing e preparar ativação sem ligá-la globalmente;
+12. revisar early-order/direct state e gates, mantendo desligados até evidência;
+13. revisar estoque mobile/balanço e preparar reconciliação para o futuro balanço físico;
+14. revisar compras/XML, conversão caixa->unidade, fornecedores e rotina diária;
+15. revisar lotes/validade/FEFO/ofertas e implementar o que for seguro sem ação humana;
+16. revisar PapoAI/Flow/link/associação cliente-pedido e logs operacionais;
+17. revisar rota/entregador/pagamento split/retorno em modo não destrutivo;
+18. revisar fiscal/DANFE/financeiro e implementar apenas infraestrutura/gates não destrutivos;
+19. hardening amplo: RLS, grants, functions, triggers, jobs, flags, Edge Functions e código morto com prova de substituição;
+20. reensaio integrado e reavaliação geral; se algum item estiver bloqueado por humano, registrar para a lista final e executar a próxima melhoria autônoma disponível.
+
+### Regra das rodadas
+- NÃO usar Make.
+- NÃO alterar pedidos legados.
+- NÃO fazer cutover global de estoque antes do balanço físico/homologação.
+- NÃO habilitar automação fiscal/financeira destrutiva.
+- Sempre preferir evidência real, canário, idempotência e rollback.
+- Sempre salvar progresso no GitHub.
