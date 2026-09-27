@@ -1580,3 +1580,39 @@ R5 executada manualmente sob autorização para continuar imediatamente.
 
 ### Próximo passo exato — R6/20
 Concluir os 61 delta 1 restantes em blocos controlados com health gate. Se o grupo chegar a zero sem divergência, preparar e executar apenas um primeiro canário pequeno de delta 2, preservando homologation e circuit breaker.
+
+
+## Esteira autônoma — R6/20 — 2026-09-27 — PASS
+### Delta 1 concluído
+- baseline R6: 110 confirmados / 61 delta 1;
+- 12 canários completos de 5 = 60 novos produtos synced + verified;
+- acumulado: 170 confirmados;
+- delta 1 restante: 0;
+- 0 drift nos confirmados ao fechamento;
+- Hub desligado e homologation preservado.
+
+### Drift real corretamente bloqueado
+- um canário preparado foi recusado por live_supabase_stock_drift antes de qualquer write;
+- produto b22e8f53-bad5-440c-8b74-b72851c1e21a mudou no Supabase de target snapshot 19 para estoque atual 0;
+- leitura readonly do Bling mostrou current_stock=20 e target atual=0, external_write=false;
+- plano foi reconciliado para desired_stock=0/current_bling_physical=20;
+- canário antigo foi rolled_back, sem write incorreto;
+- este item saiu corretamente de delta 1 e será tratado na faixa de risco correspondente.
+
+### Delta 2 preparado com gate próprio
+- migration ops2_arm_catalog_stock_canary_delta2_v1 aplicada;
+- gate delta 1 original não foi relaxado;
+- novo gate exige confirmação literal própria, lote <=5, abs(delta)<=2 e live stock sem drift;
+- amostra de 5 itens delta -2 passou no gate DB;
+- canário foi rolled_back sem external write porque a Edge ainda conserva o limite delta 1; não foi contornado.
+
+### Estado
+- 170 confirmed;
+- 369 stock_update planejados;
+- delta1=0;
+- delta2=121;
+- stock authority global não alterada;
+- nenhum pedido legado alterado; Make não usado.
+
+### Próximo passo exato — R7/20
+Atualizar de forma estreita o executor interno da Edge para reconhecer explicitamente canário delta2 armado pelo novo gate, mantendo <=5, live-stock guard, binding exato, idempotência, read-before/write/read-after e write_canary_limit=1. Publicar/testar sem write; depois executar primeiro canário real delta2 de 5. Expandir somente após PASS.
