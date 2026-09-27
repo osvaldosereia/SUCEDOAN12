@@ -1542,3 +1542,41 @@ Nesta R1:
 - NÃO habilitar automação fiscal/financeira destrutiva.
 - Sempre preferir evidência real, canário, idempotência e rollback.
 - Sempre salvar progresso no GitHub.
+
+
+## Esteira autônoma — R5/20 — 2026-09-27 — PASS
+R5 executada manualmente sob autorização para continuar imediatamente.
+
+### Hardening de worker
+- migration Supabase `ops2_bling_stock_worker_health_v1`;
+- view interna `ops2_bling_stock_worker_health_v1` security_invoker e sem grants public/anon/authenticated;
+- função interna `ops2_bling_stock_worker_health_summary_v1()` security_invoker e sem grants public/anon/authenticated;
+- health model mede processing, stale_90s, retry, review_required, oldest_processing_at e last_stock_job_at;
+- baseline e fechamento: healthy=true, processing=0, stale_90s=0, retry=0, review_required=0.
+
+### Estoque Supabase -> Bling
+- 5 canários de 5 produtos, todos delta absoluto 1;
+- 25/25 novos jobs synced;
+- 25/25 read-after-write verified=true;
+- nenhum worker lento/stale nesta rodada;
+- nenhum review/failure;
+- live_supabase_stock_drift guard preservado;
+- acumulado: 110 stock_update confirmed;
+- 429 stock_update planejados restantes;
+- 61 delta absoluto 1 restantes;
+- drift dos 110 confirmados contra products.stock atual: 0.
+
+### Runtime ao fechar
+- hub_enabled=false;
+- mode=homologation;
+- write_canary_limit=1;
+- sem cutover global;
+- pedidos legados não alterados;
+- Make não usado.
+
+### Advisors
+- security: 75 INFO rls_enabled_no_policy no padrão interno fechado conhecido;
+- performance: 46 INFO unused_index; sem blocker novo.
+
+### Próximo passo exato — R6/20
+Concluir os 61 delta 1 restantes em blocos controlados com health gate. Se o grupo chegar a zero sem divergência, preparar e executar apenas um primeiro canário pequeno de delta 2, preservando homologation e circuit breaker.
