@@ -5430,7 +5430,9 @@ async function blingHubPostStockOnce(sb:any,token:string,body:any){
 async function blingHubProcessStockJobs(sb:any,limitRaw:any){
   const worker="bling-stock-edge-"+crypto.randomUUID();
   const limit=Math.max(1,Math.min(10,Number(limitRaw||1)||1));
-  const claim=await sb.rpc("claim_bling_hub_jobs_v2",{p_worker:worker,p_domains:["stock"],p_limit:limit,p_lease_seconds:300});
+  // Stock writes are intentionally serialized. A shorter lease bounds recovery time;
+  // recovery still requires a readonly Bling observation before any retry.
+  const claim=await sb.rpc("claim_bling_hub_jobs_v2",{p_worker:worker,p_domains:["stock"],p_limit:limit,p_lease_seconds:90});
   if(claim.error)throw claim.error;
   const jobs=claim.data||[];
   const summary:any={ok:true,claimed:jobs.length,processed:0,synced:0,review_required:0,retry:0,failed:0};
