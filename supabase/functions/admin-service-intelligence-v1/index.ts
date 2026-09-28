@@ -8305,8 +8305,16 @@ async function blingHubCatalogTaxonomyCleanupExtras(sb:any){
 
 async function blingHubCatalogTaxonomyRehomeLegacyExtras(sb:any){
   const mappings=[
-    {bling_product_id:16598402343,source_category_id:13947757,target_category_id:14544201,label:"Bala de Gelatina Fini Amoras 15g -> BALAS E CHICLETES / CHICLETES"},
-    {bling_product_id:16678772194,source_category_id:14008462,target_category_id:14544282,label:"Azeite Allegro 500 ml legado -> MOLHOS E CONDIMENTOS / AZEITES"}
+    {bling_product_id:16638535913,source_category_id:13947757,target_category_id:14544201,label:"Fini Tubes Morango -> BALAS E CHICLETES / CHICLETES"},
+    {bling_product_id:16638535918,source_category_id:13947757,target_category_id:14544201,label:"Fini Tubes 3 Cores -> BALAS E CHICLETES / CHICLETES"},
+    {bling_product_id:16598402357,source_category_id:13947757,target_category_id:14544201,label:"Fini Tubes Morango Ácido -> BALAS E CHICLETES / CHICLETES"},
+    {bling_product_id:16638535296,source_category_id:13947757,target_category_id:14544298,label:"Dori Amendoim -> SALGADINHOS E PETISCOS / AMENDOIM"},
+    {bling_product_id:16601899273,source_category_id:13947757,target_category_id:14544219,label:"Gaklik Café -> CAFÉ DA MANHÃ / CAFÉ"},
+    {bling_product_id:16657960392,source_category_id:13947757,target_category_id:14544259,label:"Remmus Desinfetante -> LIMPEZA / DESINFETANTE"},
+    {bling_product_id:16678772201,source_category_id:14008462,target_category_id:14544312,label:"Sal Amoníaco Diodoro -> TEMPEROS / TEMPERO"},
+    {bling_product_id:16678772202,source_category_id:14008462,target_category_id:14544311,label:"Pimenta-do-reino Diodoro -> TEMPEROS / PIMENTA"},
+    {bling_product_id:16681397693,source_category_id:14008462,target_category_id:14544207,label:"Shampoo Lola Densidade -> BELEZA / CABELO"},
+    {bling_product_id:16678772209,source_category_id:14008462,target_category_id:14544312,label:"Chimichurri Diodoro -> TEMPEROS / TEMPERO"}
   ];
   const token=await blingHubOauth(sb),actions:any[]=[];
   for(const m of mappings){
@@ -8331,6 +8339,7 @@ async function blingHubCatalogTaxonomyRehomeLegacyExtras(sb:any){
   });
   return {ok,status:ok?200:409,actions,external_write:actions.some((x:any)=>x.http_status&&x.ok)};
 }
+
 async function blingHubCatalogTaxonomyReadonly(sb:any){
   const localRows=await blingHubLoadActiveProductsForTaxonomy(sb);
   const products=localRows.filter((p:any)=>blingHubTaxText(p?.category));
