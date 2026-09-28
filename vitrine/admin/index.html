@@ -3368,14 +3368,24 @@
     }
   }
 
-  function purchaseStockBlockHtml(d){
-    if(d?.receipt_status==='received'){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Entrada no estoque concluída</strong><small>Esta NF-e já teve a entrada física confirmada.</small></div>';
+  function purchaseStockBlockHtml(d,plan=null){
+    if(d?.receipt_status==='received'||plan?.status==='verified'){
+      return '<div class="purchase-safe" style="margin:14px 0 0"><strong>Entrada confirmada no Bling</strong><small>O aumento do estoque físico foi verificado depois da preparação desta NF-e. O Admin não alterou o estoque local.</small></div>';
+    }
+    if(plan?.status==='awaiting_bling_receipt'||plan?.status==='review_required'){
+      const review=plan?.status==='review_required';
+      const reason=String(plan?.review_reason||'');
+      const detail=review
+        ?(reason==='bling_stock_mirror_not_refreshed_after_plan'
+          ?'O espelho do Bling ainda não trouxe uma leitura posterior à preparação.'
+          :'O aumento esperado ainda não foi confirmado integralmente no estoque físico do Bling.')
+        :'Plano preparado. Faça ou confirme o recebimento/check-in no Bling; depois verifique aqui.';
+      return '<div class="purchase-safe '+(review?'purchase-danger':'')+'" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>'+(review?'Entrada ainda não confirmada':'Aguardando entrada no Bling')+'</strong><small>'+esc(detail)+'</small></div><button class="primary" type="button" data-purchase-verify-receipt="'+esc(d.id)+'">Verificar entrada no Bling</button></div></div>';
     }
     if(d?.receipt_status==='ready'){
-      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Entrada no estoque</strong><small>Os itens estão prontos. Confira as quantidades acima e confirme somente quando a mercadoria tiver sido recebida fisicamente.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Dar entrada no estoque</button></div></div>';
+      return '<div class="purchase-safe" style="margin:14px 0 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><strong>Recebimento físico</strong><small>Os itens estão prontos. Preparar cria um marco de conferência; não soma estoque local. O recebimento deve aparecer no estoque físico do Bling antes de ser concluído.</small></div><button class="primary" type="button" data-purchase-inline-receive="'+esc(d.id)+'">Preparar entrada</button></div></div>';
     }
-    return '<div class="purchase-safe '+(d?.receipt_status==='review'?'purchase-danger':'')+'" style="margin:14px 0 0"><strong>Entrada no estoque</strong><small>'+(d?.receipt_status==='review'?'Finalize primeiro as revisões de embalagem, conversão ou vínculo dos produtos.':'A entrada física ainda não está liberada para esta nota.')+'</small></div>';
+    return '<div class="purchase-safe '+(d?.receipt_status==='review'?'purchase-danger':'')+'" style="margin:14px 0 0"><strong>Recebimento físico</strong><small>'+(d?.receipt_status==='review'?'Finalize primeiro as revisões de embalagem, conversão ou vínculo dos produtos.':'A entrada física ainda não está liberada para esta nota.')+'</small></div>';
   }
   function renderPurchaseDocumentInline(id,data){
     const host=document.querySelector('[data-purchase-detail="'+CSS.escape(id)+'"]');if(!host)return;
@@ -3388,11 +3398,12 @@
       '<div class="purchase-items">'+(items.length?items.map(purchaseItemCardHtml).join(''):'<div class="empty">Nenhum item encontrado na nota.</div>')+'</div>'+
       '<div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="primary" type="button" data-purchase-approve-ready="'+esc(id)+'">Autorizar itens prontos</button></div>'+
       purchaseFinanceBlockHtml(d)+
-      purchaseStockBlockHtml(d);
+      purchaseStockBlockHtml(d,data?.receipt_plan||null);
     host.querySelectorAll('[data-purchase-factor]').forEach(inp=>inp.oninput=()=>recalcPurchaseItemCard(inp.closest('.purchase-item-card'),true));
     host.querySelectorAll('[data-purchase-approve-item]').forEach(b=>b.onclick=()=>applyPurchaseItemUpdate(b.dataset.purchaseApproveItem));
     const xmlBtn=host.querySelector('[data-purchase-inline-xml]');if(xmlBtn)xmlBtn.onclick=()=>downloadPurchaseXml(id);
     const recv=host.querySelector('[data-purchase-inline-receive]');if(recv)recv.onclick=()=>receivePurchaseDocument(id);
+    const verifyReceipt=host.querySelector('[data-purchase-verify-receipt]');if(verifyReceipt)verifyReceipt.onclick=()=>verifyPurchaseReceipt(id);
     const bulk=host.querySelector('[data-purchase-approve-ready]');if(bulk)bulk.onclick=()=>approveReadyPurchaseItems(id);
     const fin=host.querySelector('[data-purchase-finance-resolve]');if(fin)fin.onclick=()=>resolvePurchaseFinance(id);
     host.querySelectorAll('[data-purchase-open-payables]').forEach(b=>b.onclick=()=>window.open('https://www.bling.com.br/contas.pagar.php','_blank','noopener'));
@@ -3698,13 +3709,38 @@
     try{const r=await purchaseApi('xml_url',{id});if(r.url)window.open(r.url,'_blank','noopener')}catch(e){toast(errorMessage(e.message))}
   }
   async function receivePurchaseDocument(id){
-    if(!confirm('Confirmar a entrada física desta nota no estoque? Esta ação soma as quantidades convertidas uma única vez.'))return;
+    if(!confirm('Preparar esta nota para conferência de entrada no Bling? O Admin não soma estoque local. Confirme somente depois de revisar produtos, embalagens e quantidades.'))return;
     try{
-      await purchaseApi('confirm_receipt',{document_id:id,confirmation:'CONFIRMAR_ENTRADA'});
-      toast('Entrada de estoque confirmada');
-      if($('#editor').open)$('#editor').close();
-      await loadPurchases();
+      const r=await purchaseApi('confirm_receipt',{document_id:id,confirmation:'CONFIRMAR_ENTRADA'});
+      if(r?.result?.status==='awaiting_bling_receipt'){
+        toast('Entrada preparada. Faça ou confirme o recebimento no Bling e depois clique em “Verificar entrada no Bling”.');
+      }else{
+        toast(r?.message||'Recebimento preparado');
+      }
+      state.purchaseDetailCache[id]=await purchaseApi('document',{id});
+      state.purchaseExpandedId=id;
+      state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+      paintPurchases();
     }catch(e){toast(errorMessage(e.message))}
+  }
+  async function verifyPurchaseReceipt(id){
+    const btn=document.querySelector('[data-purchase-verify-receipt="'+CSS.escape(id)+'"]');
+    if(btn){btn.disabled=true;btn.textContent='Verificando Bling…'}
+    try{
+      const r=await purchaseApi('verify_receipt_plan',{document_id:id,confirmation:'VERIFICAR_ENTRADA_BLING'});
+      if(r?.result?.verified===true){
+        toast('Entrada confirmada pelo estoque físico do Bling');
+      }else if(Number(r?.result?.stale_items||0)>0){
+        toast('O Bling ainda não atualizou o saldo depois da preparação. Atualize novamente após o recebimento.');
+      }else{
+        toast('A entrada ainda não apareceu integralmente no estoque físico do Bling.');
+      }
+      state.purchaseDetailCache[id]=await purchaseApi('document',{id});
+      state.purchaseExpandedId=id;
+      state.purchaseXml=await purchaseApi('summary',purchaseFilterPayload());
+      paintPurchases();
+    }catch(e){toast(errorMessage(e.message))}
+    finally{if(btn){btn.disabled=false;btn.textContent='Verificar entrada no Bling'}}
   }
   async function setPurchaseConversion(id){
     const row=(state.purchaseXml?.review_items||[]).find(x=>x.id===id)||{};
