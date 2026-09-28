@@ -975,11 +975,12 @@ async function summary(windowInput:any=null){
   return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,stale_runs_closed:Number(stale_cleanup?.runs_closed||0),stale_documents_repaired:Number(stale_cleanup?.documents_repaired||0),integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
 }
 async function docDetail(id:string){
-  let [d,it]=await Promise.all([
+  let [d,it,plan]=await Promise.all([
     sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle(),
-    sb.from("purchase_xml_items").select("*,products(id,name,gtin,bling_product_id,cost,price,stock,unit,is_active,category,subcategory,packaging,metadata)").eq("document_id",id).order("item_number")
+    sb.from("purchase_xml_items").select("*,products(id,name,gtin,bling_product_id,cost,price,stock,unit,is_active,category,subcategory,packaging,metadata)").eq("document_id",id).order("item_number"),
+    sb.from("purchase_stock_receipt_plans_v1").select("id,status,stock_authority,deposit_id,expected_items,baseline_snapshot,verification_snapshot,lot_evidence_summary,verified_at,review_reason,created_at,updated_at").eq("document_id",id).maybeSingle()
   ]);
-  if(d.error)throw d.error;if(it.error)throw it.error;if(!d.data)return {ok:false,status:404,error:"document_not_found"};
+  if(d.error)throw d.error;if(it.error)throw it.error;if(plan.error)throw plan.error;if(!d.data)return {ok:false,status:404,error:"document_not_found"};
   const meta=obj(d.data.metadata);
   if(!meta.payment_summary||!Object.keys(obj(meta.payment_summary)).length){
     try{const er=await enrichPaymentMetadata(id,d.data);if(er?.changed){d=await sb.from("purchase_xml_documents").select("*").eq("id",id).maybeSingle()}}catch{}
@@ -1017,7 +1018,7 @@ async function docDetail(id:string){
       can_apply:Boolean(x.product_id&&proposedCost!==null&&(!pack.packaged||Number(proposedFactor)>1))
     }};
   });
-  return {ok:true,document:d.data,items,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true}};
+  return {ok:true,document:d.data,items,receipt_plan:plan.data||null,pricing_policy:{default_markup_percent:40,sale_unit:"UN",catalog_updates_require_human_approval:true,stock_receipt_separate:true,stock_authority:"bling",receipt_requires_bling_verification:true}};
 }
 async function signedXml(id:string){
   const d=await sb.from("purchase_xml_documents").select("storage_path").eq("id",id).maybeSingle();if(d.error)throw d.error;if(!d.data?.storage_path)return {ok:false,status:404,error:"xml_not_found"};
