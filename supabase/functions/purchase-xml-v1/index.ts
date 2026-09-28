@@ -60,11 +60,14 @@ async function bg(token:string,path:string){
   const raw=await r.text();let d:any={};try{d=raw?JSON.parse(raw):{}}catch{}
   return {ok:r.ok,status:r.status,data:d,raw};
 }
-async function bw(token:string,path:string,method:string,payload:any){
+async function bw(token:string,path:string,method:string,payload:any=undefined){
   await reserve();
-  const r=await fetch(BLING+path,{method,headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},body:JSON.stringify(payload),signal:AbortSignal.timeout(25000)});
+  const init:any={method,headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json","enable-jwt":"1"},signal:AbortSignal.timeout(25000)};
+  if(payload!==undefined)init.body=JSON.stringify(payload);
+  const r=await fetch(BLING+path,init);
   const raw=await r.text();let d:any={};try{d=raw?JSON.parse(raw):{}}catch{}
-  return {ok:r.ok,status:r.status,data:d,error:clean(d?.error?.message||d?.error?.description||d?.error||raw,800)};
+  const detail=clean(d?.error?.message||d?.error?.description||d?.error?.type||d?.error||d?.message||raw,1200);
+  return {ok:r.ok,status:r.status,data:d,error:detail,raw};
 }
 
 function dec(s:string){return s.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#x([0-9a-f]+);/gi,(_:string,h:string)=>String.fromCodePoint(parseInt(h,16))).replace(/&#(\d+);/g,(_:string,d:string)=>String.fromCodePoint(parseInt(d,10)))}
@@ -255,41 +258,131 @@ async function evidence(p:any,item:any,productId:string){
   const ev={evidence_key:["purchase_xml",p.document_key,productId,item.item_number,item.ncm||"-",item.cest||"-"].join(":"),product_id:productId,evidence_type:"company_purchase_nfe_xml",source_name:"NF-e de compra",document_key:p.document_key,supplier_document:p.supplier_document||null,gtin:item.commercial_gtin||item.tax_gtin||null,ncm:item.ncm||null,cest:item.cest||null,origin_code:item.origin_code,cfop:item.cfop||null,tax_code:item.tax_code||null,fiscal_description:item.description,evidence_confidence:.97,observed_at:p.issued_at,evidence_payload:{source:"purchase_xml_v1",recipient_kind:p.recipient_kind,purchase_unit:item.purchase_unit,tax_unit:item.tax_unit,raw_xml_stored:true}};
   const q=await sb.from("product_fiscal_evidence").upsert(ev,{onConflict:"evidence_key"});if(q.error)throw q.error;
 }
-async function createPayables(token:string,p:any,supplierId:number){
-  if(p.recipient_kind!=="CNPJ")return {status:"blocked_personal",accounts:[],reason:"cpf_never_financial"};
-  if(!supplierId)return {status:"pending_company_match",accounts:[],reason:"supplier_contact_missing"};
-  if(!p.installments.length)return {status:"review",accounts:[],reason:"installments_missing"};
-  const installmentTotal=p.installments.reduce((a:number,x:any)=>a+Number(x.amount||0),0);
+async function reconcilePayables(token:string,p:any,supplierId:number){
+  if(p.recipient_kind!=="CNPJ")return {ok:true,complete:false,status:"blocked_personal",accounts:[],missing:[],reason:"cpf_never_financial"};
+  if(!supplierId)return {ok:true,complete:false,status:"pending_company_match",accounts:[],missing:[],reason:"supplier_contact_missing"};
+  const installments=(Array.isArray(p.installments)?p.installments:[]).map((x:any,i:number)=>({
+    number:clean(x?.number||String(i+1),80)||String(i+1),
+    due_date:day(x?.due_date||x?.vencimento||x?.data),
+    amount:Number(x?.amount??x?.valor??0)
+  })).filter((x:any)=>x.due_date&&Number.isFinite(x.amount)&&x.amount>0);
+  if(!installments.length)return {ok:true,complete:false,status:"review",accounts:[],missing:[],reason:"installments_missing"};
+  const installmentTotal=installments.reduce((a:number,x:any)=>a+x.amount,0);
   if(Number.isFinite(Number(p.total_amount))&&Math.abs(installmentTotal-Number(p.total_amount))>0.05){
-    return {status:"review",accounts:[],reason:"installment_total_mismatch",installment_total:installmentTotal,invoice_total:Number(p.total_amount)};
+    return {ok:true,complete:false,status:"review",accounts:[],missing:installments,reason:"installment_total_mismatch",installment_total:installmentTotal,invoice_total:Number(p.total_amount)};
   }
-  const dueDates=p.installments.map((x:any)=>x.due_date).filter(Boolean).sort();
-  const minDue=dueDates[0],maxDue=dueDates[dueDates.length-1];
-  if(!minDue||!maxDue)return {status:"review",accounts:[],reason:"installment_due_date_missing"};
-  const existing=await bg(token,"/contas/pagar?pagina=1&limite=100&situacao=1&dataVencimentoInicial="+encodeURIComponent(minDue)+"&dataVencimentoFinal="+encodeURIComponent(maxDue));
-  if(!existing.ok)return {status:"review",accounts:[],reason:"payable_reconcile_http_"+existing.status};
-  const rows=(Array.isArray(existing.data?.data)?existing.data.data:[]).filter((r:any)=>Number(r?.contato?.id||0)===supplierId);
-  const issue=day(p.issued_at),accounts:any[]=[];
-  for(let i=0;i<p.installments.length;i++){
-    const x=p.installments[i],number=[p.invoice_number||p.document_key.slice(-9),x.number||String(i+1)].filter(Boolean).join("-");
-    const targetCents=Math.round(Number(x.amount||0)*100);
-    const dup=rows.find((r:any)=>clean(r?.numeroDocumento,120)===number||(clean(r?.vencimento,20).slice(0,10)===x.due_date&&Math.round(Number(r?.valor||0)*100)===targetCents));
-    if(dup){accounts.push({id:Number(dup.id),number,existing:true});continue}
-    const payload={vencimento:x.due_date,valor:Number(x.amount),contato:{id:supplierId},dataEmissao:issue||undefined,numeroDocumento:number,historico:"Compra NF-e "+(p.invoice_number||"")+" · chave "+p.document_key};
-    const w=await bw(token,"/contas/pagar","POST",payload);
-    if(!w.ok)return {status:"review",accounts,reason:"payable_create_http_"+w.status,detail:w.error};
-    accounts.push({id:Number(w.data?.data?.id||0)||null,number,existing:false});
+  const dates=installments.map((x:any)=>x.due_date).sort(),minDue=dates[0],maxDue=dates[dates.length-1];
+  const q=new URLSearchParams({pagina:"1",limite:"100",dataVencimentoInicial:minDue,dataVencimentoFinal:maxDue,idContato:String(supplierId)});
+  const existing=await bg(token,"/contas/pagar?"+q.toString());
+  if(!existing.ok)return {ok:false,complete:false,status:"review",accounts:[],missing:installments,reason:"payable_reconcile_http_"+existing.status,detail:clean(existing.raw,800)};
+  const rows=Array.isArray(existing.data?.data)?existing.data.data:[],used=new Set<number>(),accounts:any[]=[],missing:any[]=[],ambiguous:any[]=[];
+  const invoiceNo=clean(p.invoice_number||"",60),keyTail=clean(String(p.document_key||"").slice(-12),20);
+  for(let i=0;i<installments.length;i++){
+    const x=installments[i],amountCents=Math.round(x.amount*100);
+    const candidates=rows.map((r:any,idx:number)=>({r,idx})).filter((y:any)=>{
+      if(used.has(y.idx))return false;
+      const due=clean(y.r?.vencimento,20).slice(0,10),cents=Math.round(Number(y.r?.valor||0)*100);
+      return due===x.due_date&&cents===amountCents;
+    });
+    const docCandidates=candidates.filter((y:any)=>{
+      const n=clean(y.r?.numeroDocumento,160);
+      return Boolean(n&&((invoiceNo&&n.includes(invoiceNo))||(keyTail&&n.includes(keyTail))));
+    });
+    const pool=docCandidates.length?docCandidates:candidates;
+    if(pool.length===1){
+      const y=pool[0];used.add(y.idx);
+      accounts.push({id:Number(y.r?.id||0)||null,number:clean(y.r?.numeroDocumento,160)||null,due_date:x.due_date,amount:x.amount,situation:y.r?.situacao??null,existing:true});
+    }else if(pool.length>1){
+      ambiguous.push({installment:x,candidate_ids:pool.map((y:any)=>Number(y.r?.id||0)).filter(Boolean)});
+    }else missing.push(x);
   }
-  return {status:"posted",accounts,installment_total:installmentTotal};
+  const complete=accounts.length===installments.length&&missing.length===0&&ambiguous.length===0;
+  return {ok:true,complete,status:complete?"posted":"review",accounts,missing,ambiguous,installment_total:installmentTotal,rows_scanned:rows.length,reason:complete?"reconciled_existing":"payables_missing_or_ambiguous"};
+}
+async function createPayables(token:string,p:any,supplierId:number,blingNfeId:number|null,allowWrite=true){
+  if(p.recipient_kind!=="CNPJ")return {status:"blocked_personal",accounts:[],reason:"cpf_never_financial",method:"none"};
+  if(!supplierId)return {status:"pending_company_match",accounts:[],reason:"supplier_contact_missing",method:"none"};
+  const pre=await reconcilePayables(token,p,supplierId);
+  if(!pre.ok)return {status:"review",accounts:pre.accounts||[],reason:pre.reason||"payable_reconcile_failed",detail:pre.detail||null,method:"reconcile",reconciliation:pre};
+  if(pre.complete)return {status:"posted",accounts:pre.accounts,reason:"reconciled_existing",method:"reconcile_existing",reconciled:true,reconciliation:pre};
+  if(!allowWrite)return {status:"review",accounts:pre.accounts||[],reason:pre.reason||"payables_missing_in_bling",method:"reconcile_only",reconciled:false,reconciliation:pre};
+  if(!blingNfeId)return {status:"review",accounts:pre.accounts||[],reason:"bling_nfe_id_missing_for_native_payables",method:"native_nfe",reconciled:false,reconciliation:pre};
+  const launch=await bw(token,"/nfe/"+Number(blingNfeId)+"/lancar-contas","POST");
+  if(launch.ok){
+    let post:any=pre;
+    try{await new Promise(r=>setTimeout(r,350));post=await reconcilePayables(token,p,supplierId)}catch{}
+    return {status:"posted",accounts:post?.accounts||[],reason:"native_nfe_accounts_launched",method:"bling_nfe_lancar_contas",native_http_status:launch.status,reconciled:Boolean(post?.complete),reconciliation:post};
+  }
+  let after:any=pre;
+  try{after=await reconcilePayables(token,p,supplierId)}catch{}
+  if(after?.complete)return {status:"posted",accounts:after.accounts||[],reason:"native_launch_error_but_reconciled",method:"reconcile_existing",native_http_status:launch.status,reconciled:true,reconciliation:after};
+  return {status:"review",accounts:after?.accounts||pre.accounts||[],reason:"nfe_lancar_contas_http_"+launch.status,detail:launch.error||"Bling recusou o lançamento das contas da NF-e.",method:"bling_nfe_lancar_contas",native_http_status:launch.status,reconciled:false,reconciliation:after};
+}
+function financeDocPayload(d:any){
+  const meta=obj(d?.metadata),installments=Array.isArray(meta.installments)?meta.installments:[];
+  return {recipient_kind:d?.recipient_kind,total_amount:Number(d?.total_amount||0),document_key:clean(d?.document_key,60),invoice_number:clean(meta.invoice_number,60),issued_at:d?.issued_at,installments};
+}
+async function financeAttention(documentId:string,d:any,finance:any){
+  try{
+    const key="purchase_finance:"+documentId,now=new Date().toISOString();
+    if(finance?.status==="posted"||finance?.status==="blocked_personal"||finance?.status==="not_applicable"){
+      const q=await sb.from("ops_attention").select("id,status").eq("idempotency_key",key).maybeSingle();
+      if(!q.error&&q.data?.id&&["open","acknowledged"].includes(q.data.status)){
+        await sb.from("ops_attention").update({status:"resolved",resolved_at:now,updated_at:now,resolution:"Financeiro conciliado com o Bling.",resolution_ref:clean(finance?.method||finance?.reason,180)}).eq("id",q.data.id);
+      }
+      return;
+    }
+    if(d?.financial_eligible!==true)return;
+    const total=Number(d?.total_amount||0),p=financeDocPayload(d),due=(p.installments.map((x:any)=>day(x?.due_date)).filter(Boolean).sort()[0]||"");
+    const priority=total>=5000?"high":"normal";
+    const row:any={opened_at:now,updated_at:now,type:"purchase_finance",entity_type:"purchase_xml_document",entity_id:documentId,priority,owner_role:"owner",status:"open",summary:"Financeiro da NF-e não sincronizado: "+clean(d?.supplier_name||"Fornecedor",120)+" · R$ "+total.toFixed(2),recommended_action:"Abra Compras e XML, reconcilie com o Bling e, se continuar ausente, use “Lançar contas no Bling”.",evidence:{document_key:d?.document_key,bling_nfe_id:d?.bling_nfe_id,supplier_name:d?.supplier_name,total_amount:total,finance_status:finance?.status,reason:finance?.reason,detail:finance?.detail||null,method:finance?.method||null,attempt_count:Number(d?.finance_attempt_count||0)},source_system:"purchase_xml_v1",idempotency_key:key,due_at:due?due+"T23:59:59-04:00":null,resolved_at:null,resolution:null,resolution_ref:null};
+    const ex=await sb.from("ops_attention").select("id").eq("idempotency_key",key).maybeSingle();
+    if(ex.error)throw ex.error;
+    if(ex.data?.id)await sb.from("ops_attention").update(row).eq("id",ex.data.id);
+    else await sb.from("ops_attention").insert(row);
+  }catch(e){console.error("purchase_finance_attention",clean((e as Error)?.message||e,500))}
+}
+async function syncFinanceDocument(documentId:string,opts:any={}){
+  const q=await sb.from("purchase_xml_documents").select("*").eq("id",documentId).maybeSingle();
+  if(q.error)throw q.error;if(!q.data)return {ok:false,status:404,error:"document_not_found"};
+  const d:any=q.data,p=financeDocPayload(d),allowWrite=opts?.allowWrite===true,token=opts?.token||await oauth();
+  let finance:any;
+  if(d.recipient_kind==="CPF")finance={status:"blocked_personal",accounts:[],reason:"cpf_never_financial",method:"none",reconciled:true};
+  else if(d.financial_eligible!==true)finance={status:"not_applicable",accounts:[],reason:"not_financially_eligible",method:"none",reconciled:true};
+  else finance=await createPayables(token,p,Number(d.supplier_bling_contact_id||0),Number(d.bling_nfe_id||0)||null,allowWrite);
+  const now=new Date().toISOString(),attempts=Number(d.finance_attempt_count||0)+(allowWrite?1:0);
+  const upd:any={finance_status:finance.status,finance_reference:finance,finance_last_attempt_at:now,finance_last_error:finance.status==="review"||finance.status==="pending_company_match"?clean(finance.detail||finance.reason,1000):null,finance_method:clean(finance.method,120)||null,finance_attempt_count:attempts,updated_at:now};
+  if(finance.status==="posted"&&!d.finance_posted_at)upd.finance_posted_at=now;
+  if(finance.reconciled===true)upd.finance_reconciled_at=now;
+  const u=await sb.from("purchase_xml_documents").update(upd).eq("id",documentId).select("*").single();if(u.error)throw u.error;
+  await financeAttention(documentId,u.data,finance);
+  await sb.from("bling_hub_audit_v2").insert({event_type:finance.status==="posted"?"purchase_finance_synced":"purchase_finance_attention",severity:finance.status==="posted"?"info":"warning",domain:"finance",source_system:clean(opts?.source,80)||"purchase_xml_v1",source_id:documentId,details:{document_key:d.document_key,bling_nfe_id:d.bling_nfe_id,financial_eligible:d.financial_eligible,finance_status:finance.status,reason:finance.reason,method:finance.method,write_attempted:allowWrite,attempt_count:attempts,reconciled:Boolean(finance.reconciled),accounts:Array.isArray(finance.accounts)?finance.accounts:[]}});  
+  return {ok:true,document_id:documentId,finance,document:u.data};
+}
+async function reconcilePendingFinance(limit=50){
+  const q=await sb.from("purchase_xml_documents").select("id").eq("financial_eligible",true).neq("finance_status","posted").order("issued_at",{ascending:false}).limit(Math.max(1,Math.min(100,Number(limit||50))));
+  if(q.error)throw q.error;const token=await oauth(),results:any[]=[];
+  for(const row of q.data||[]){
+    try{const r=await syncFinanceDocument(row.id,{allowWrite:false,source:"purchase_finance_reconcile_batch",token});results.push({id:row.id,ok:true,status:r.finance?.status,reason:r.finance?.reason})}
+    catch(e){results.push({id:row.id,ok:false,error:clean((e as Error)?.message||e,300)})}
+  }
+  return {ok:true,write_external:false,count:results.length,results};
 }
 async function processXml(token:string,xml:string,source:string,runId:string|null,sourceId:string|null=null,blingId:number|null=null,detailSupplement:any=null){
   const p:any=parseXml(xml);
   if(!p.installments.length&&Array.isArray(detailSupplement?.parcelas))p.installments=detailSupplement.parcelas.map((x:any,i:number)=>({number:String(i+1),due_date:day(x?.data||x?.vencimento),amount:num(x?.valor)})).filter((x:any)=>x.due_date&&Number(x.amount)>0);if(p.document_key.length!==44)throw new Error("invalid_nfe_access_key");
   if(p.cstat&&![100,150].includes(p.cstat))throw new Error("nfe_not_authorized_"+p.cstat);
   const hash=await sha256(xml);
-  const ex=await sb.from("purchase_xml_documents").select("id,processing_status").eq("document_key",p.document_key).maybeSingle();
+  const ex=await sb.from("purchase_xml_documents").select("id,processing_status,financial_eligible,finance_status,bling_nfe_id").eq("document_key",p.document_key).maybeSingle();
   if(ex.error)throw ex.error;
-  if(ex.data?.id&&["processed","duplicate"].includes(ex.data.processing_status))return {duplicate:true,document_id:ex.data.id,items:p.items.length,matched:0,review:0};
+  if(ex.data?.id&&["processed","duplicate"].includes(ex.data.processing_status)){
+    if(blingId&&!ex.data.bling_nfe_id)await sb.from("purchase_xml_documents").update({bling_nfe_id:blingId,updated_at:new Date().toISOString()}).eq("id",ex.data.id);
+    let financeStatus=ex.data.finance_status;
+    if(ex.data.financial_eligible===true&&financeStatus!=="posted"){
+      try{const rr=await syncFinanceDocument(ex.data.id,{allowWrite:false,source:"purchase_duplicate_reconcile",token});financeStatus=rr.finance?.status||financeStatus}catch{}
+    }
+    return {duplicate:true,document_id:ex.data.id,items:p.items.length,matched:0,review:0,finance_status:financeStatus};
+  }
   const co=await companyDocument(token);const company=co.doc,settings=co.settings;
   const eligible=p.recipient_kind==="CNPJ"&&company.length===14&&p.recipient_document===company;
   const y=day(p.issued_at)||new Date().toISOString().slice(0,10),parts=y.split("-");
@@ -326,8 +419,11 @@ async function processXml(token:string,xml:string,source:string,runId:string|nul
     }
   }
   let finance:any={status:p.recipient_kind==="CPF"?"blocked_personal":eligible?"eligible":p.recipient_kind==="CNPJ"&&!company?"pending_company_match":"not_applicable",accounts:[]};
-  if(p.recipient_kind==="CPF")finance={status:"blocked_personal",accounts:[],reason:"cpf_never_financial"};
-  else if(eligible&&settings.auto_create_payables!==false)finance=await createPayables(token,p,Number(contact.id||0));
+  if(p.recipient_kind==="CPF")finance={status:"blocked_personal",accounts:[],reason:"cpf_never_financial",method:"none",reconciled:true};
+  else if(eligible&&settings.auto_create_payables!==false){
+    const fr=await syncFinanceDocument(documentId,{allowWrite:true,source:"purchase_xml_auto",token});
+    finance=fr.finance;
+  }else if(eligible)finance={status:"eligible",accounts:[],reason:"automatic_payables_disabled",method:"none"};
   const finalStatus=review?"review_required":"processed";
   const dfin=await sb.from("purchase_xml_documents").update({matched_item_count:matched,review_item_count:review,processing_status:finalStatus,finance_status:finance.status,finance_reference:finance,receipt_status:matched&&review===0?"ready":"review",processed_at:new Date().toISOString(),updated_at:new Date().toISOString(),last_error:review?String(review)+" item(ns) requer(em) revisão":null}).eq("id",documentId);if(dfin.error)throw dfin.error;
   await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_xml_processed",severity:review?"warning":"info",domain:"fiscal",source_system:"canonical",source_id:documentId,details:{document_key:p.document_key,source,recipient_kind:p.recipient_kind,financial_eligible:eligible,finance_status:finance.status,items:p.items.length,matched,review,new_products:created,raw_xml_stored:true,make_used:false}});
@@ -525,7 +621,7 @@ async function browseBlingNfe(windowInput:any=null){
 async function summary(windowInput:any=null){
   const window=purchaseWindow(windowInput,90);
   const docsQ=sb.from("purchase_xml_documents")
-    .select("id,document_key,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,created_at")
+    .select("id,document_key,bling_nfe_id,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,finance_attempt_count,finance_last_attempt_at,finance_last_error,finance_posted_at,finance_reconciled_at,finance_method,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,created_at")
     .gte("issued_at",window.start+"T00:00:00")
     .lte("issued_at",window.end+"T23:59:59.999")
     .order("issued_at",{ascending:false})
@@ -672,6 +768,14 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
     if(action==="summary")return js(req,await summary(body));
+    if(action==="finance_reconcile"){const r=await syncFinanceDocument(clean(body?.document_id||body?.id||u.searchParams.get("id"),80),{allowWrite:false,source:"vitrine_admin_reconcile"});return js(req,r,r.ok?200:Number(r.status||400))}
+    if(action==="finance_post"||action==="finance_retry"){
+      if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
+      if(clean(body?.confirmation,80)!=="CONFIRMAR_CONTAS")return js(req,{ok:false,error:"confirmation_required"},409);
+      const r=await syncFinanceDocument(clean(body?.document_id||body?.id,80),{allowWrite:true,source:"vitrine_admin_finance_post"});
+      return js(req,r,r.ok?200:Number(r.status||400));
+    }
+    if(action==="finance_reconcile_pending"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await reconcilePendingFinance(body?.limit||50))}
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="set_conversion"){const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
