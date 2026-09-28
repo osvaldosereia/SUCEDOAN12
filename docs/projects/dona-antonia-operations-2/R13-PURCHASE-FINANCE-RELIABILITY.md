@@ -55,10 +55,30 @@ O lançamento manual exige confirmação explícita e executa reconciliação an
 ## Deploy
 
 - módulo `purchase-xml-v1` atualizado no GitHub;
-- `admin-service-intelligence-v1` publicado como v184 ACTIVE;
+- `admin-service-intelligence-v1` publicado como **v185 ACTIVE**;
 - migration `purchase_xml_finance_reliability_v2` aplicada no Supabase canônico;
 - cron diário `purchase-xml-daily-v1` mantido às 06:00 de Cuiabá.
 
 ## Regra de segurança para legado
 
 As 13 NF-e antigas não devem ser lançadas em lote sem reconciliação. Algumas podem já possuir contas criadas/pagas manualmente no Bling. O sistema deve primeiro reconciliar; apenas ausência comprovada permite lançamento.
+
+
+## Validação produtiva
+
+O ciclo diário foi disparado manualmente após o deploy e retornou HTTP 200.
+
+Validação do reconciliador:
+- `write_external=false` durante a varredura de pendências;
+- notas antigas não foram relançadas em lote;
+- o ciclo passou a rever também lançamentos aceitos pelo Bling que ainda não possuem conciliação confirmada;
+- quando a conta não é encontrada com segurança, a NF-e fica/regride para `review` e mantém alerta aberto.
+
+Validação do novo caminho nativo:
+- NF-e novas/importadas durante a rodada usaram `POST /nfe/{idNotaFiscal}/lancar-contas`;
+- também houve caso em que a conta já existia e foi reconhecida por `reconcile_existing`, sem nova escrita;
+- snapshot de 2026-09-28 após a validação: **18 NF-e conciliadas**, total **R$ 34.682,17**, sendo 16 pelo lançamento nativo e 2 encontradas por reconciliação;
+- **15 NF-e permanecem em revisão**, total **R$ 31.273,76**, com alerta aberto e sem lançamento automático pelo ciclo de reconciliação;
+- duas notas cujo POST nativo havia sido aceito, mas cuja conta ainda não pôde ser confirmada, foram corretamente mantidas/reabertas para revisão em vez de serem consideradas sucesso definitivo.
+
+Há uma importação manual iniciada por outra execução em andamento no momento deste snapshot; portanto os totais podem crescer à medida que ela concluir. O critério de segurança permanece o mesmo: somente `posted + finance_reconciled_at` é considerado financeiro confirmado.
