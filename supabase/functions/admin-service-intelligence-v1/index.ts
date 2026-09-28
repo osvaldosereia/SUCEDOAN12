@@ -8252,6 +8252,55 @@ async function blingHubCatalogTaxonomyProductSyncFast(sb:any,offsetRaw:any,limit
   });
   return {ok,status:ok?200:409,offset,limit,total:local.length,batch:batch.length,patched:planned.length,verified,verified_webhook:check.verified.length,verified_detail:fallback.filter((x:any)=>x.verified).length,drift,next_offset:nextOffset,done:nextOffset===null&&ok,external_write:true,failures:all.filter((x:any)=>!x.verified).slice(0,10)};
 }
+
+async function blingHubCategoryUsageReadonly(sb:any,token:string,categoryId:number){
+  const checks:any[]=[];
+  for(const criterio of [5,4]){
+    const q=new URLSearchParams({pagina:"1",limite:"1",criterio:String(criterio),idCategoria:String(categoryId)});
+    const r=await blingHubGet(sb,token,"/produtos?"+q.toString());
+    checks.push({criterio,ok:r.ok,status:r.status,count:Array.isArray(r.data?.data)?r.data.data.length:0});
+    if(!r.ok)return {ok:false,status:r.status,error:"category_usage_http_"+r.status,checks};
+  }
+  return {ok:true,used:checks.some((x:any)=>x.count>0),checks};
+}
+async function blingHubDeleteProductCategory(sb:any,token:string,categoryId:number){
+  await blingHubReserveSlot(sb);
+  const r=await fetch(BLING_API_BASE+"/categorias/produtos/"+categoryId,{
+    method:"DELETE",
+    headers:{Authorization:"Bearer "+token,Accept:"application/json","enable-jwt":"1"},
+    signal:AbortSignal.timeout(15000)
+  });
+  const raw=await r.text();let data:any={};try{data=raw?JSON.parse(raw):{}}catch{}
+  return {ok:r.ok,status:r.status,data,error:r.ok?null:clean(data?.error?.message||data?.error?.description||data?.error||raw,500)};
+}
+async function blingHubCatalogTaxonomyCleanupExtras(sb:any){
+  const before=await blingHubCatalogTaxonomyReadonly(sb);
+  if(!before.ok)return before;
+  if((before.missing?.parents||[]).length||(before.missing?.children||[]).length||(before.ambiguous?.parents||[]).length||(before.ambiguous?.children||[]).length){
+    return {ok:false,status:409,error:"taxonomy_not_exact_before_cleanup",before,external_write:false};
+  }
+  const extras=[...(before.extra?.roots||[])];
+  const extraChildren=[...(before.extra?.children||[])];
+  if(extraChildren.length)return {ok:false,status:409,error:"extra_children_require_review",extra_children:extraChildren,external_write:false};
+  const token=await blingHubOauth(sb),actions:any[]=[];
+  for(const x of extras){
+    const id=Number(x.id||0);
+    const usage=await blingHubCategoryUsageReadonly(sb,token,id);
+    if(!usage.ok){actions.push({...x,ok:false,action:"preserved",reason:usage.error,usage});continue}
+    if(usage.used){actions.push({...x,ok:true,action:"preserved",reason:"category_in_use",usage});continue}
+    const del=await blingHubDeleteProductCategory(sb,token,id);
+    actions.push({...x,ok:del.ok,action:del.ok?"deleted":"preserved",reason:del.ok?"orphan_extra_removed":"delete_failed",usage,http_status:del.status,error:del.error||null});
+  }
+  const after=await blingHubCatalogTaxonomyReadonly(sb);
+  const deleted=actions.filter((x:any)=>x.action==="deleted").length,preserved=actions.filter((x:any)=>x.action==="preserved").length;
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"catalog_taxonomy_cleanup_extras",
+    severity:after.ok&&(after.extra?.roots||[]).length===0&&(after.extra?.children||[]).length===0?"info":"warning",
+    domain:"catalog",source_system:"canonical",source_id:"supabase_active_taxonomy",
+    details:{actions,deleted,preserved,after_extra_roots:after.extra?.roots||[],after_extra_children:after.extra?.children||[],external_write:deleted>0}
+  });
+  return {ok:after.ok&&(after.extra?.roots||[]).length===0&&(after.extra?.children||[]).length===0,status:200,actions,deleted,preserved,after,external_write:deleted>0};
+}
 async function blingHubCatalogTaxonomyReadonly(sb:any){
   const localRows=await blingHubLoadActiveProductsForTaxonomy(sb);
   const products=localRows.filter((p:any)=>blingHubTaxText(p?.category));
@@ -8380,6 +8429,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="catalog_taxonomy_product_sync_fast"){
         const result=await blingHubCatalogTaxonomyProductSyncFast(sb,body?.offset,body?.limit);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="catalog_taxonomy_cleanup_extras"){
+        const result=await blingHubCatalogTaxonomyCleanupExtras(sb);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="finance_overview"){
