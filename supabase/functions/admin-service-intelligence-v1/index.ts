@@ -7918,6 +7918,67 @@ async function blingHubCatalogTaxonomyStructureSync(sb:any,limitRaw:any){
   });
   return {ok:actions.every((x:any)=>x.ok),actions,after,external_write:actions.some((x:any)=>x.created===true),done:(after.missing?.parents||[]).length===0&&(after.missing?.children||[]).length===0};
 }
+
+async function blingHubReadProductsByIds(sb:any,token:string,ids:number[]){
+  const uniq=[...new Set(ids.filter((x:any)=>Number.isFinite(Number(x))&&Number(x)>0).map(Number))].slice(0,100);
+  if(!uniq.length)return {ok:true,status:200,products:[]};
+  const q=new URLSearchParams({pagina:"1",limite:"100",criterio:"5"});
+  for(const id of uniq)q.append("idsProdutos[]",String(id));
+  const r=await blingHubGet(sb,token,"/produtos?"+q.toString());
+  return {ok:r.ok,status:r.status,products:Array.isArray(r.data?.data)?r.data.data:[],error:r.ok?null:"products_by_ids_http_"+r.status};
+}
+async function blingHubCatalogTaxonomyProductSync(sb:any,offsetRaw:any,limitRaw:any){
+  const offset=Math.max(0,Math.floor(Number(offsetRaw||0)||0)),limit=Math.max(1,Math.min(100,Math.floor(Number(limitRaw||80)||80)));
+  const tax=await blingHubCatalogTaxonomyReadonly(sb);
+  if(!tax.ok)return tax;
+  if((tax.missing?.parents||[]).length||(tax.missing?.children||[]).length||(tax.ambiguous?.parents||[]).length||(tax.ambiguous?.children||[]).length){
+    return {ok:false,status:409,error:"taxonomy_structure_not_ready",taxonomy:{missing:tax.missing,ambiguous:tax.ambiguous},external_write:false};
+  }
+  const local=(await blingHubLoadActiveProductsForTaxonomy(sb)).filter((p:any)=>blingHubTaxText(p?.category));
+  const batch=local.slice(offset,offset+limit),parentBy=new Map((tax.matches?.parents||[]).map((x:any)=>[x.name,Number(x.id)]));
+  const childBy=new Map((tax.matches?.children||[]).map((x:any)=>[x.parent+"\u0000"+x.description,Number(x.id)]));
+  const planned=batch.map((p:any)=>{
+    const parent=blingHubTaxText(p.category),sub=blingHubTaxText(p.subcategory),desired=sub?childBy.get(parent+"\u0000"+sub):parentBy.get(parent);
+    return {source_id:p.id,name:p.name,parent,subcategory:sub||null,bling_product_id:Number(p.bling_product_id||0)||0,desired_category_id:Number(desired||0)||0};
+  });
+  const invalid=planned.filter((x:any)=>!x.bling_product_id||!x.desired_category_id);
+  if(invalid.length)return {ok:false,status:409,error:"taxonomy_product_binding_invalid",invalid:invalid.slice(0,20),external_write:false};
+  const token=await blingHubOauth(sb);
+  const before=await blingHubReadProductsByIds(sb,token,planned.map((x:any)=>x.bling_product_id));
+  if(!before.ok)return {...before,external_write:false};
+  const remoteBy=new Map((before.products||[]).map((x:any)=>[Number(x.id),x]));
+  const actions:any[]=[];
+  for(const p of planned){
+    const current=remoteBy.get(p.bling_product_id);
+    if(!current){actions.push({...p,ok:false,error:"bling_product_missing"});break}
+    const currentCategoryId=Number(current?.categoria?.id||0)||0;
+    if(currentCategoryId===p.desired_category_id){
+      actions.push({...p,ok:true,changed:false,before_category_id:currentCategoryId});
+      continue;
+    }
+    const w=await blingHubWriteIdempotent(sb,token,"/produtos/"+p.bling_product_id,"PATCH",{categoria:{id:p.desired_category_id}});
+    actions.push({...p,ok:w.ok,changed:w.ok,before_category_id:currentCategoryId,http_status:w.status,error:w.ok?null:w.error,provider_details:w.provider_details||[]});
+    if(!w.ok)break;
+  }
+  const verify=await blingHubReadProductsByIds(sb,token,planned.map((x:any)=>x.bling_product_id));
+  const verifiedBy=new Map((verify.products||[]).map((x:any)=>[Number(x.id),Number(x?.categoria?.id||0)||0]));
+  let verified=0,drift=0;
+  for(const p of planned){
+    const got=verifiedBy.get(p.bling_product_id);
+    if(got===p.desired_category_id)verified++;else drift++;
+  }
+  const ok=actions.every((x:any)=>x.ok)&&verify.ok&&drift===0&&actions.length===planned.length;
+  const nextOffset=offset+batch.length<local.length?offset+batch.length:null;
+  await sb.from("bling_hub_audit_v2").insert({
+    event_type:"catalog_taxonomy_product_sync",
+    severity:ok?"info":"warning",
+    domain:"catalog",
+    source_system:"canonical",
+    source_id:"supabase_active_taxonomy",
+    details:{offset,limit,batch:batch.length,changed:actions.filter((x:any)=>x.changed).length,noop:actions.filter((x:any)=>x.ok&&x.changed===false).length,verified,drift,next_offset:nextOffset,external_write:actions.some((x:any)=>x.changed),failures:actions.filter((x:any)=>!x.ok).slice(0,10)}
+  });
+  return {ok,status:ok?200:409,offset,limit,total:local.length,batch:batch.length,changed:actions.filter((x:any)=>x.changed).length,noop:actions.filter((x:any)=>x.ok&&x.changed===false).length,verified,drift,next_offset:nextOffset,done:nextOffset===null&&ok,external_write:actions.some((x:any)=>x.changed),failures:actions.filter((x:any)=>!x.ok).slice(0,10)};
+}
 async function blingHubCatalogTaxonomyReadonly(sb:any){
   const localRows=await blingHubLoadActiveProductsForTaxonomy(sb);
   const products=localRows.filter((p:any)=>blingHubTaxText(p?.category));
@@ -8038,6 +8099,10 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="catalog_taxonomy_structure_sync"){
         const result=await blingHubCatalogTaxonomyStructureSync(sb,body?.limit);
+        return json(result,result.ok?200:Number(result.status||409));
+      }
+      if(subaction==="catalog_taxonomy_product_sync"){
+        const result=await blingHubCatalogTaxonomyProductSync(sb,body?.offset,body?.limit);
         return json(result,result.ok?200:Number(result.status||409));
       }
       if(subaction==="finance_overview"){
