@@ -1723,7 +1723,8 @@ async function blingHubOps2StockMirrorBackfillBatch(sb:any,afterRaw:any,limitRaw
   await sb.rpc("merge_bling_hub_runtime_metadata_v2",{
     p_patch:{
       ops2_stock_mirror_backfill:{
-        state:"running",
+        state:page.length<limit?"completed":"running",
+        completed_at:page.length<limit?new Date().toISOString():null,
         last_batch_at:new Date().toISOString(),
         last_after_bling_id:nextAfter,
         last_batch_limit:limit,
