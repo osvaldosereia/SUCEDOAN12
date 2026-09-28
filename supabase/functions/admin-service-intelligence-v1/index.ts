@@ -7404,40 +7404,6 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
     try{
       if(job.operation==="sync_order_status"){
         const localStatus=clean(job.payload?.local_status,40);
-        const targetKey=clean(job.payload?.target_key,80);
-        const retryableTarget=["awaiting_confirmation","approved_separation","verified"].includes(targetKey);
-        if(retryableTarget&&uuid(job.source_id)){
-          const retryPayload={...(job.payload||{}),source_order_id:job.source_id};
-          const ensured=await blingHubOps2EnsureOrderState(sb,retryPayload,targetKey,false);
-          if(ensured.ok){
-            await sb.rpc("finish_bling_hub_job_v2",{
-              p_job_id:job.id,p_status:"synced",
-              p_result:{local_status:localStatus,target_key:targetKey,bling_order_id:ensured.bling_order_id||null,recovered:true,external_write:Boolean(ensured.external_write)},
-              p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:ensured.bling_order_id?String(ensured.bling_order_id):null
-            });
-            if(targetKey==="verified"){
-              try{
-                const a=await sb.from("ops_attention").select("id").eq("idempotency_key","ops2:order_bling_verified:"+job.source_id).in("status",["open","acknowledged"]).maybeSingle();
-                if(!a.error&&a.data?.id)await sb.rpc("ops_resolve_attention_v1",{p_attention_id:a.data.id,p_resolution:"Recuperação automática concluiu o status Verificado no Bling.",p_resolution_ref:ensured.bling_order_id?"bling-order:"+String(ensured.bling_order_id):null});
-              }catch{}
-            }
-            summary.synced++;
-            continue;
-          }
-          const httpStatus=Number(ensured.status||0)||null;
-          const transient=httpStatus===429||httpStatus===0||Number(httpStatus)>=500||ensured.requires_reconciliation===true;
-          const st=transient?"retry":"review_required";
-          await sb.rpc("finish_bling_hub_job_v2",{
-            p_job_id:job.id,p_status:st,
-            p_result:{local_status:localStatus,target_key:targetKey,error:ensured.error||"order_state_recovery_failed",detail:ensured,external_write:Boolean(ensured.external_write)},
-            p_error_code:clean(ensured.error||"order_state_recovery_failed",120),
-            p_error_message:"Could not ensure the requested Bling order state safely",
-            p_http_status:httpStatus,p_retry_seconds:120,p_provider_id:ensured.bling_order_id?String(ensured.bling_order_id):null
-          });
-          summary[st]++;
-          continue;
-        }
-
         const [runtime,link]=await Promise.all([
           sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle(),
           sb.from("bling_hub_entity_links_v2")
@@ -7480,7 +7446,7 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
           p_job_id:job.id,p_status:"review_required",
           p_result:{local_status:localStatus,bling_order_id:Number(link.data.bling_id),external_write:false},
           p_error_code:"order_status_mapping_not_approved",
-          p_error_message:"Legacy status job has no explicit Operations 2.0 target and was not executed",
+          p_error_message:"Order status catalog is available but no approved local-to-Bling mapping is active",
           p_http_status:null,p_retry_seconds:120,p_provider_id:String(link.data.bling_id)
         });
         summary.review_required++;
