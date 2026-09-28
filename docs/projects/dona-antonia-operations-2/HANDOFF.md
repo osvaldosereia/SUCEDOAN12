@@ -2024,3 +2024,68 @@ Deploy/commits:
 - Admin: `7fecc103`, `d7886346`;
 - Edge `admin-service-intelligence-v1`: **v189 ACTIVE**;
 - JavaScript do Admin validado sintaticamente: OK.
+
+
+## Compras do Bling — contas financeiras e baixa assistida — 2026-09-28
+
+Implementado o próximo estágio do financeiro de compras.
+
+### API/arquitetura
+- contas financeiras/portadores do Bling são consultadas por `GET /contas-contabeis`;
+- baixa de conta a pagar preparada para `POST /contas/pagar/{id}/baixar`;
+- mapeamento forma de pagamento -> conta financeira fica local em `purchase_xml_settings.metadata.payment_account_mappings`;
+- nenhum mapeamento é presumido automaticamente.
+
+### Admin
+Nova seção **Contas financeiras para baixa**:
+- Cartão de crédito;
+- Cartão de débito;
+- PIX;
+- Dinheiro;
+- Vale alimentação/refeição;
+- Transferência/depósito.
+
+A tela consulta as contas existentes no Bling e permite salvar o vínculo. Salvar o vínculo não movimenta dinheiro.
+
+### Prévia da baixa
+O botão **Preparar baixa** é read-only e só fica pronto quando:
+- NF-e indica provável pagamento no ato;
+- conta a pagar está conciliada;
+- existe exatamente 1 conta a pagar elegível;
+- existe uma única forma de pagamento;
+- existe conta financeira mapeada;
+- saldo da conta a pagar = valor pago (tolerância R$ 0,05);
+- situação da conta permite baixa.
+
+Pagamento dividido, várias contas a pagar ou divergência de valor permanecem em revisão.
+
+### Baixa assistida
+A ação final foi programada, mas exige confirmação humana explícita `CONFIRMAR_BAIXA`.
+Proteções:
+- chamadas internas/automáticas são bloqueadas;
+- saldo e situação são reconsultados imediatamente antes da escrita;
+- mudança de saldo cancela a baixa;
+- após o POST, a conta é consultada novamente;
+- somente baixa verificada é registrada como `metadata.settlement.verified=true`;
+- auditoria `purchase_payable_settled`.
+
+### Estado real do Bling
+Consulta read-only retornou **1 conta financeira: Caixa (ID 14889129939)**.
+Por segurança:
+- Caixa não foi automaticamente associado a cartão, débito ou PIX;
+- nenhum mapeamento foi salvo automaticamente;
+- nenhuma baixa foi executada nesta rodada.
+
+Testes:
+- débito sem mapeamento -> `financial_account_mapping_missing`;
+- crédito sem mapeamento -> `financial_account_mapping_missing`;
+- pagamento dividido com 6 contas -> `requires_single_payable`;
+- JavaScript do Admin: sintaxe OK.
+
+Commits:
+- `595a13d5` — contas financeiras + prévia;
+- `7f1e0eee` — configuração visual;
+- `5705cefb` — baixa protegida;
+- `a3188900` — confirmação humana na UI.
+
+Edge: `admin-service-intelligence-v1` **v191 ACTIVE**.
