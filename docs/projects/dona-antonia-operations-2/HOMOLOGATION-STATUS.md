@@ -902,3 +902,61 @@ Pedido `DA-260928-D6432EB3`:
 - `2099fc20`: Admin mostra bloqueios do preflight antes de emitir.
 
 Nenhuma NF-e nova foi gerada, enviada ou autorizada nesta R4.
+
+
+## 2026-09-28 — R5: estoque Bling pós-cutover
+Estado: **PASS / DIAGNÓSTICO PÓS-CUTOVER CORRIGIDO**.
+
+O plano antigo tratava a R5 como readiness pré-cutover, porém o cutover já ocorreu na R1. A rodada foi adaptada para auditoria pós-cutover.
+
+### Estado real
+- `stock_authority=bling`;
+- Hub live;
+- depósito selecionado: `14887252169`;
+- physical stock gate = verified;
+- mirror gate = verified;
+- writer guard = verified;
+- 1.610 produtos ativos;
+- 1.610/1.610 com saldo Bling pronto;
+- 0 ativos sem cobertura;
+- 0 mirrors ativos >24h;
+- 0 controles físicos em `review_required`.
+
+### Correção do preflight
+O preflight legado ainda reportava `ready=false` porque carregava regras de ativação pré-cutover:
+- 14 atenções históricas de recontagem;
+- reservas locais de proteção.
+
+Após o cutover esses itens são informativos e não devem declarar o runtime indisponível.
+
+`get_ops2_stock_cutover_preflight_v1()` agora distingue:
+- `pre_cutover`: mantém os gates antigos;
+- `post_cutover_live`: readiness depende de cobertura Bling, freshness do mirror, gates físico/mirror/writer, depósito e ausência de `review_required`.
+
+Resultado atual:
+- `phase=post_cutover_live`;
+- `ready=true`;
+- `blocking_reasons=[]`;
+- 14 recount blockers continuam visíveis como `informational`;
+- reservas locais continuam visíveis como `informational`.
+
+### Writer test
+Teste sintético transacional executou:
+`reserve_vitrine_order_stock_v1 -> consume_vitrine_order_stock_v1 -> release_vitrine_order_stock_v1`
+sob autoridade Bling.
+
+Resultado:
+- `products.stock` não mudou;
+- rollback completo;
+- 0 pedido sintético residual;
+- 0 reserva sintética residual.
+
+### Baixa/reversão
+- controle físico continua idempotente por `bling_order_stock_controls_v2`;
+- estado observado real: 1 controle `reversed`, 0 `review_required`;
+- R3 já reforçou que cancelamento após saída exige reversão oficial Bling.
+
+### Commit
+- `13ec5c66` — preflight pós-cutover correto.
+
+Nenhum estoque real foi alterado nesta R5.
