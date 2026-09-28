@@ -2756,6 +2756,16 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
   if(!canary&&meta?.ops2_direct_order_state_enabled!==true){
     return {ok:false,error:"ops2_direct_order_state_disabled",status:409,external_write:false};
   }
+  if(!canary&&mode==="live"){
+    const cutoverAt=clean(meta?.ops2_live_cutover_at,80);
+    const cutoverMs=Date.parse(cutoverAt||"");
+    const local=await sb.from("orders").select("id,created_at").eq("id",sourceOrderId).maybeSingle();
+    if(local.error)throw local.error;
+    const createdMs=Date.parse(local.data?.created_at||"");
+    if(!Number.isFinite(cutoverMs)||!Number.isFinite(createdMs)||createdMs<cutoverMs){
+      return {ok:false,error:"pre_cutover_order_ignored",status:409,source_order_id:sourceOrderId,cutover_at:cutoverAt||null,external_write:false};
+    }
+  }
   if(canary&&mode!=="homologation"){
     return {ok:false,error:"canary_requires_homologation",status:409,external_write:false};
   }
@@ -3032,6 +3042,14 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
     }
   },{onConflict:"source_system,entity_type,source_id"});
   if(link.error)throw link.error;
+
+  const canonicalUpdate=await sb.from("orders").update({
+    bling_order_id:blingOrderId,
+    bling_synced_at:now,
+    sync_status:"sent_to_bling",
+    updated_at:now
+  }).eq("id",sourceOrderId);
+  if(canonicalUpdate.error)throw canonicalUpdate.error;
 
   await sb.from("bling_hub_audit_v2").insert({
     event_type:"ops2_order_state_ensured",
