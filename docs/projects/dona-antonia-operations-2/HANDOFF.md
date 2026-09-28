@@ -1690,3 +1690,37 @@ Próximo passo:
 - continuar R7 pelos 101 delta 2 restantes em canários de até 5, usando o verificador v2;
 - após delta 2, abrir delta 3 em amostra pequena com gate separado; não ampliar silenciosamente o limite de risco;
 - manter Hub OFF entre janelas e parar em qualquer processing/retry/review_required ou live-stock drift.
+
+
+## Compras/XML — Notas recebidas SEFAZ x API Bling — 2026-09-28
+
+### Diagnóstico confirmado em conta real
+- busca automática de NF-e recebidas na SEFAZ: habilitada no Bling;
+- certificado A1 no servidor do Bling: válido;
+- aba **Notas recebidas**, loja **Nenhuma**, lista NF-e emitidas contra o CNPJ matriz;
+- API pública v3 usada pelo Admin lista NF-e já registradas/importadas no Bling; a fila pré-importação de **Notas recebidas** não é tratada como fonte equivalente pelo módulo;
+- regra de segurança preservada: o Admin **não manifesta** NF-e automaticamente e não força **Confirmação da Operação** apenas para alimentar integração.
+
+### Ajustes aplicados
+- commit `a36225d2`: sincronização manual `bling_sync` ampliada para **90 dias**; rotina diária continua usando o lookback configurado (3 dias);
+- resposta do módulo passou a declarar explicitamente `source_scope=bling_imported_entry_nfe` e que a fila SEFAZ recebida não é exposta pela integração pública usada;
+- commit `cff476a6`: Vitrine/Admin passou a separar visualmente **Notas recebidas SEFAZ** de **Notas importadas**;
+- botão principal agora é **Importar do Bling (90 dias)**;
+- novo botão **Abrir notas recebidas SEFAZ** abre a tela oficial do Bling;
+- mensagem de zero resultados não é mais interpretada como ausência de NF-e na SEFAZ;
+- Edge `admin-service-intelligence-v1` publicada como **v165 ACTIVE**, preservando os demais arquivos da v164 e substituindo somente o módulo Compras/XML.
+
+### Verificação
+Probe somente-leitura após deploy:
+- HTTP 200;
+- `company_document_resolved=true`;
+- empresa: 200;
+- NF-e: 200;
+- produto/fornecedor: 200;
+- contas a pagar: 200;
+- nenhum write externo executado no teste.
+
+### Limite oficial mantido
+Sem endpoint público oficial para consumir diretamente a fila pré-importação de **Notas recebidas** do Bling, não implementar scraping, endpoint interno ou segundo consumidor SEFAZ/NSU. Fluxo suportado:
+`SEFAZ -> Bling Notas recebidas -> manifestação/importação no Bling -> Admin reconcilia/importa XML`.
+Upload manual de XML no Admin continua disponível para exceções.
