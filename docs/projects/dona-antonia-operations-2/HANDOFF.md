@@ -2175,3 +2175,22 @@ Desde o corte:
 ### Próximo passo
 Não reabrir histórico. Observar o primeiro pedido pós-corte quando houver confirmação humana e validar ponta a ponta:
 `Confirmado -> Aprovado/Separar -> Verificado -> Expedição/baixa física`.
+
+
+## R2 live — fechamento programável 2026-09-28
+
+A cadeia pós-cutover está programada de ponta a ponta e fail-closed:
+`confirmed/Aprovado-Separar -> processing -> EAN/Verificado -> NF-e autorizada -> baixa física -> out_for_delivery -> settlement real -> delivered -> Atendido`.
+
+Novos reforços:
+- NF-e autorizada manualmente no Bling é reconciliada passivamente pelo ciclo;
+- captura de pagamento gera plano Bling shadow automaticamente;
+- settlement real alimenta `order_fiscal_controls`;
+- entrega concluída fecha `Verificado -> Atendido` somente após pagamento + fiscal + baixa física comprovados;
+- falhas finais entram em `review_bling` e recuperação automática, sem desfazer entrega nem repetir estoque.
+
+Deploy:
+- Hub v201;
+- Admin Edge v56.
+
+Único gate restante desta R2 é humano/físico: separar e bipar o pedido canário real `DA-260928-D6432EB3`, depois emitir a NF-e com confirmação humana e seguir a entrega real.
