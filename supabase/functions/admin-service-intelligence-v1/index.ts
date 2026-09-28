@@ -5626,6 +5626,89 @@ async function blingHubOps2RunHighRiskStockBand(sb:any,runRaw:any,bandRaw:any,ma
   return {ok:true,run_id:runId,risk_band:band,processed:results.length,written,rebased,confirmed_readonly:confirmedReadonly,exhausted,results,planned_stock_remaining:Number(remainQ.count||0),external_write:written>0,fail_closed:false};
 }
 
+async function blingHubOps2AuditHighRiskStock(sb:any,runRaw:any,limitRaw:any,forceRaw:any){
+  const runId=uuid(runRaw),limit=Math.max(1,Math.min(25,Math.trunc(Number(limitRaw||20)||20))),force=forceRaw===true;
+  if(!runId)return {ok:false,error:"invalid_run_id",external_write:false};
+
+  const pq=await sb.from("ops2_catalog_sync_plan_items")
+    .select("product_id,bling_product_id,desired_stock,current_bling_physical,state,operation")
+    .eq("run_id",runId).eq("state","planned").eq("operation","stock_update")
+    .order("product_id",{ascending:true}).limit(200);
+  if(pq.error)throw pq.error;
+  let candidates=(pq.data||[]).filter((x:any)=>Math.abs(Number(x.desired_stock)-Number(x.current_bling_physical||0))>20);
+
+  if(!force&&candidates.length){
+    const ids=candidates.map((x:any)=>x.product_id);
+    const rq=await sb.from("ops2_catalog_stock_highrisk_reviews").select("product_id,observed_at").eq("run_id",runId).in("product_id",ids);
+    if(rq.error)throw rq.error;
+    const seen=new Set((rq.data||[]).filter((x:any)=>x.observed_at).map((x:any)=>String(x.product_id)));
+    candidates=candidates.filter((x:any)=>!seen.has(String(x.product_id)));
+  }
+  candidates=candidates.slice(0,limit);
+  if(!candidates.length)return {ok:true,run_id:runId,audited:0,exhausted:true,results:[],external_write:false};
+
+  const productIds=candidates.map((x:any)=>x.product_id);
+  const [liveQ,linksQ]=await Promise.all([
+    sb.from("products").select("id,stock,name,gtin,bling_product_id").in("id",productIds),
+    sb.from("bling_hub_entity_links_v2").select("source_id,bling_id,status").eq("source_system","vitrine_qx").eq("entity_type","product").in("source_id",productIds)
+  ]);
+  if(liveQ.error)throw liveQ.error;if(linksQ.error)throw linksQ.error;
+  const liveMap=new Map((liveQ.data||[]).map((x:any)=>[String(x.id),x]));
+  const linkMap=new Map((linksQ.data||[]).map((x:any)=>[String(x.source_id),x]));
+  const token=await blingHubOauth(sb),depositId=await blingHubResolveDepositId(sb,token);
+
+  const results:any[]=[];
+  const bucket=(d:number)=>d<=50?"elevated_21_50":(d<=100?"high_51_100":"critical_over_100");
+
+  for(const p of candidates){
+    const pid=String(p.product_id),target=Number(p.desired_stock),snapshot=Number(p.current_bling_physical||0);
+    const originalAbs=Math.abs(target-snapshot),live=liveMap.get(pid),link=linkMap.get(pid);
+    let status="pending_review",observed:any=null,details:any={deposit_id:depositId,original_abs_delta:originalAbs,external_write:false,read_only:true};
+
+    if(!live||Number(live.stock)!==target){
+      status="target_drift";details={...details,live_supabase_stock:live?.stock??null};
+    }else if(link?.status!=="matched"||Number(link?.bling_id)!==Number(p.bling_product_id)){
+      status="binding_drift";details={...details,linked_bling_id:link?.bling_id??null,planned_bling_id:p.bling_product_id};
+    }else{
+      const remote=await blingHubReadStock(sb,token,Number(p.bling_product_id),depositId);
+      if(!remote.ok){
+        status="readonly_failed";details={...details,http_status:remote.status};
+      }else{
+        observed=Number(remote.stock);
+        const newAbs=Math.abs(target-observed);
+        details={...details,previous_snapshot:snapshot,new_abs_delta:newAbs};
+        if(observed===target){
+          status="confirmed_readonly";
+          const up=await sb.from("ops2_catalog_sync_plan_items").update({current_bling_physical:observed,state:"confirmed",updated_at:new Date().toISOString()})
+            .eq("run_id",runId).eq("product_id",pid);
+          if(up.error)throw up.error;
+        }else if(observed!==snapshot){
+          status="snapshot_rebased";
+          const up=await sb.from("ops2_catalog_sync_plan_items").update({current_bling_physical:observed,state:"planned",updated_at:new Date().toISOString()})
+            .eq("run_id",runId).eq("product_id",pid);
+          if(up.error)throw up.error;
+        }
+      }
+    }
+
+    const effectiveAbs=observed===null?originalAbs:Math.abs(target-observed);
+    const row={
+      run_id:runId,product_id:pid,bling_product_id:Number(p.bling_product_id)||null,
+      desired_stock:target,planned_bling_stock:snapshot,observed_bling_stock:observed,
+      abs_delta:effectiveAbs,risk_bucket:bucket(Math.max(originalAbs,effectiveAbs)),
+      status,observed_at:new Date().toISOString(),details,updated_at:new Date().toISOString()
+    };
+    const rv=await sb.from("ops2_catalog_stock_highrisk_reviews").upsert(row,{onConflict:"run_id,product_id"});
+    if(rv.error)throw rv.error;
+    results.push({product_id:pid,status,target_stock:target,planned_stock:snapshot,observed_stock:observed,abs_delta:effectiveAbs,risk_bucket:row.risk_bucket,external_write:false});
+  }
+
+  const left=await sb.from("ops2_catalog_sync_plan_items").select("product_id",{count:"exact",head:true})
+    .eq("run_id",runId).eq("state","planned").eq("operation","stock_update");
+  if(left.error)throw left.error;
+  return {ok:true,run_id:runId,audited:results.length,results,planned_stock_remaining:Number(left.count||0),external_write:false,bling_mutations:0};
+}
+
 async function blingHubOps2RecoverStockJob(sb:any,jobRaw:any){
   const jobId=uuid(jobRaw);if(!jobId)return {ok:false,error:"invalid_job_id",external_write:false};
   const jq=await sb.from("bling_hub_jobs_v2").select("id,domain,operation,source_system,source_id,status,payload,locked_at").eq("id",jobId).maybeSingle();if(jq.error)throw jq.error;
@@ -8505,6 +8588,7 @@ Deno.serve(async(req:Request)=>{
       if(subaction==="ops2_catalog_stock_canary_drain"){const result=await blingHubOps2DrainStockCanary(sb,body?.canary_id);return json(result,result.ok?200:409);}
       if(subaction==="ops2_catalog_stock_risk_band_run"){const result=await blingHubOps2RunStockRiskBand(sb,body?.run_id,body?.risk_band,body?.max_canaries);return json(result,result.ok?200:409);}
       if(subaction==="ops2_catalog_stock_highrisk_band_run"){const result=await blingHubOps2RunHighRiskStockBand(sb,body?.run_id,body?.risk_band,body?.max_canaries);return json(result,result.ok?200:409);}
+      if(subaction==="ops2_catalog_stock_highrisk_audit"){const result=await blingHubOps2AuditHighRiskStock(sb,body?.run_id,body?.limit,body?.force);return json(result,result.ok?200:409);}
       if(subaction==="ops2_recover_stock_job"){const result=await blingHubOps2RecoverStockJob(sb,body?.job_id);return json(result,result.ok?200:409);}
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
