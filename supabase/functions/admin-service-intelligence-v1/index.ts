@@ -7944,30 +7944,29 @@ async function blingHubCatalogTaxonomyProductSync(sb:any,offsetRaw:any,limitRaw:
   const invalid=planned.filter((x:any)=>!x.bling_product_id||!x.desired_category_id);
   if(invalid.length)return {ok:false,status:409,error:"taxonomy_product_binding_invalid",invalid:invalid.slice(0,20),external_write:false};
   const token=await blingHubOauth(sb);
-  const before=await blingHubReadProductsByIds(sb,token,planned.map((x:any)=>x.bling_product_id));
-  if(!before.ok)return {...before,external_write:false};
-  const remoteBy=new Map((before.products||[]).map((x:any)=>[Number(x.id),x]));
   const actions:any[]=[];
+  let verified=0,drift=0;
   for(const p of planned){
-    const current=remoteBy.get(p.bling_product_id);
-    if(!current){actions.push({...p,ok:false,error:"bling_product_missing"});break}
-    const currentCategoryId=Number(current?.categoria?.id||0)||0;
+    const detail=await blingHubGet(sb,token,"/produtos/"+p.bling_product_id);
+    if(!detail.ok){actions.push({...p,ok:false,error:"bling_product_detail_http_"+detail.status});break}
+    const current=detail.data?.data||{},currentCategoryId=Number(current?.categoria?.id||0)||0;
     if(currentCategoryId===p.desired_category_id){
-      actions.push({...p,ok:true,changed:false,before_category_id:currentCategoryId});
+      actions.push({...p,ok:true,changed:false,verified:true,before_category_id:currentCategoryId,after_category_id:currentCategoryId});
+      verified++;
       continue;
     }
     const w=await blingHubWriteIdempotent(sb,token,"/produtos/"+p.bling_product_id,"PATCH",{categoria:{id:p.desired_category_id}});
-    actions.push({...p,ok:w.ok,changed:w.ok,before_category_id:currentCategoryId,http_status:w.status,error:w.ok?null:w.error,provider_details:w.provider_details||[]});
-    if(!w.ok)break;
+    if(!w.ok){
+      actions.push({...p,ok:false,changed:false,verified:false,before_category_id:currentCategoryId,http_status:w.status,error:w.error,provider_details:w.provider_details||[]});
+      break;
+    }
+    const after=await blingHubGet(sb,token,"/produtos/"+p.bling_product_id);
+    const afterCategoryId=after.ok?(Number(after.data?.data?.categoria?.id||0)||0):0,isVerified=after.ok&&afterCategoryId===p.desired_category_id;
+    actions.push({...p,ok:isVerified,changed:true,verified:isVerified,before_category_id:currentCategoryId,after_category_id:afterCategoryId,http_status:w.status,error:isVerified?null:(after.ok?"category_postwrite_drift":"category_verify_http_"+after.status)});
+    if(isVerified)verified++;else{drift++;break}
   }
-  const verify=await blingHubReadProductsByIds(sb,token,planned.map((x:any)=>x.bling_product_id));
-  const verifiedBy=new Map((verify.products||[]).map((x:any)=>[Number(x.id),Number(x?.categoria?.id||0)||0]));
-  let verified=0,drift=0;
-  for(const p of planned){
-    const got=verifiedBy.get(p.bling_product_id);
-    if(got===p.desired_category_id)verified++;else drift++;
-  }
-  const ok=actions.every((x:any)=>x.ok)&&verify.ok&&drift===0&&actions.length===planned.length;
+  drift+=Math.max(0,planned.length-actions.length);
+  const ok=actions.every((x:any)=>x.ok)&&drift===0&&actions.length===planned.length;
   const nextOffset=offset+batch.length<local.length?offset+batch.length:null;
   await sb.from("bling_hub_audit_v2").insert({
     event_type:"catalog_taxonomy_product_sync",
