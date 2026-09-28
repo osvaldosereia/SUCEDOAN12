@@ -2036,13 +2036,13 @@
     $('#newProduct').onclick=()=>openProductEditor();
     $('#printInventorySheet').onclick=openInventoryPrintSelector;
     $('#productSearch').value=q;
-    await loadProductFacets(state.productFilters.category);
+    await loadProductFacets(state.productFilters.category,state.productFilters.active);
     $('#productSearchBtn').onclick=()=>loadProducts($('#productSearch').value.trim(),false);
     $('#productSearch').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadProducts(e.currentTarget.value.trim(),false)}};
     $('#productCategory').onchange=async e=>{
       state.productFilters.category=e.currentTarget.value;
       state.productFilters.subcategory='';
-      await loadProductFacets(state.productFilters.category);
+      await loadProductFacets(state.productFilters.category,state.productFilters.active);
       await loadProducts($('#productSearch').value.trim(),false);
     };
     $('#productSubcategory').onchange=e=>{
@@ -2050,16 +2050,17 @@
       loadProducts($('#productSearch').value.trim(),false);
     };
     $('#productActive').value=state.productFilters.active||'';
-    $('#productActive').onchange=e=>{
+    $('#productActive').onchange=async e=>{
       state.productFilters.active=e.currentTarget.value;
-      loadProducts($('#productSearch').value.trim(),false);
+      await loadProductFacets(state.productFilters.category,state.productFilters.active);
+      await loadProducts($('#productSearch').value.trim(),false);
     };
     await loadProducts(q,false);
   }
 
-  async function loadProductFacets(category=''){
+  async function loadProductFacets(category='',active=state.productFilters.active||''){
     try{
-      const data=await api('product_facets',{category});
+      const data=await api('product_facets',{category,active});
       state.productFacets=data;
       const cat=$('#productCategory'),sub=$('#productSubcategory');
       if(cat){
