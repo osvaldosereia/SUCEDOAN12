@@ -2194,3 +2194,28 @@ Deploy:
 - Admin Edge v56.
 
 Único gate restante desta R2 é humano/físico: separar e bipar o pedido canário real `DA-260928-D6432EB3`, depois emitir a NF-e com confirmação humana e seguir a entrega real.
+
+
+## R2 live — revalidação pós-fechamento programável — 2026-09-28
+
+Revalidação executada após commits paralelos do Admin (gôndolas), sem alteração do fluxo R2.
+
+Estado real confirmado no Supabase:
+- pedido-canário `DA-260928-D6432EB3`: `status=confirmed`, `sync_status=sent_to_bling`;
+- Bling order id: `26983249693`;
+- total: R$ 175,19;
+- job corretivo `sync_order_status -> approved_separation`: `synced`, 1 tentativa, HTTP 200, sem erro;
+- controle fiscal permanece corretamente bloqueado antes da entrega: `delivery_status=pending`, `payment_status=pending`, `dispatch_fiscal_status=pending`;
+- nenhum `dispatch_fiscal_job` foi criado antecipadamente para o canário;
+- Edge `admin-service-intelligence-v1`: v201 ACTIVE;
+- Edge `admin-products-live-v1`: v56 ACTIVE.
+
+Conclusão desta revalidação:
+- nenhuma regressão observada nos gates R2;
+- nenhum efeito externo adicional foi disparado;
+- o canário continua parado no ponto correto, antes da separação física;
+- não simular EAN, NF-e, pagamento ou entrega.
+
+Próximo gate exato:
+`confirmed/Aprovado-Separar -> iniciar separação real -> bipagem EAN real -> ready/Verificado`.
+Depois desse gate, validar fiscal/baixa física/entrega no mesmo pedido real.
