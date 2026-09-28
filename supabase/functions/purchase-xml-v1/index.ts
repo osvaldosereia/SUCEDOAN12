@@ -538,7 +538,31 @@ async function purchaseXmlPreviewLatest(){
   return {ok:true,readonly:true,company_document_resolved:company.doc.length===14,documents:out};
 }
 
+async function closeStalePurchaseRuns(){
+  const cutoff=new Date(Date.now()-15*60*1000).toISOString(),now=new Date().toISOString();
+  const q=await sb.from("purchase_xml_import_runs").select("id,source,started_at").eq("status","running").lt("started_at",cutoff).limit(100);
+  if(q.error)throw q.error;
+  const ids=(q.data||[]).map((x:any)=>x.id);
+  if(ids.length){
+    const u=await sb.from("purchase_xml_import_runs").update({
+      status:"failed",
+      finished_at:now,
+      last_error:"execucao_interrompida_ou_timeout",
+      updated_at:now
+    }).in("id",ids);
+    if(u.error)throw u.error;
+    await sb.from("bling_hub_audit_v2").insert({
+      event_type:"purchase_xml_stale_runs_closed",
+      severity:"warning",
+      domain:"fiscal",
+      source_system:"purchase_xml_v1",
+      details:{count:ids.length,run_ids:ids}
+    });
+  }
+  return ids.length;
+}
 async function runBlingSync(source="bling_daily",windowInput:any=null){
+  await closeStalePurchaseRuns();
   const token=await oauth(),settings=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();if(settings.error)throw settings.error;
   await companyDocument(token);
   const run=await sb.from("purchase_xml_import_runs").insert({source,status:"running"}).select("id").single();if(run.error)throw run.error;
@@ -576,6 +600,7 @@ async function runBlingSync(source="bling_daily",windowInput:any=null){
   }
 }
 async function manualImport(files:any[]){
+  await closeStalePurchaseRuns();
   if(!Array.isArray(files)||!files.length)return {ok:false,status:400,error:"xml_files_required"};
   if(files.length>100)return {ok:false,status:400,error:"max_100_files"};
   const token=await oauth(),source=files.length>1?"bulk_xml":"manual_xml";
@@ -619,6 +644,7 @@ async function browseBlingNfe(windowInput:any=null){
   return {ok:true,readonly:true,window,count:out.length,truncated,documents:out,source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false};
 }
 async function summary(windowInput:any=null){
+  const stale_runs_closed=await closeStalePurchaseRuns();
   const window=purchaseWindow(windowInput,90);
   const docsQ=sb.from("purchase_xml_documents")
     .select("id,document_key,bling_nfe_id,issued_at,supplier_name,recipient_kind,financial_eligible,finance_status,finance_attempt_count,finance_last_attempt_at,finance_last_error,finance_posted_at,finance_reconciled_at,finance_method,receipt_status,processing_status,total_amount,item_count,matched_item_count,review_item_count,created_at")
@@ -633,7 +659,7 @@ async function summary(windowInput:any=null){
     sb.from("purchase_xml_settings").select("*").eq("id",1).single()
   ]);
   if(docs.error)throw docs.error;if(runs.error)throw runs.error;if(items.error)throw items.error;if(settings.error)throw settings.error;
-  return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
+  return {ok:true,filter:window,documents:docs.data||[],runs:runs.data||[],review_items:items.data||[],settings:settings.data,stale_runs_closed,integration:{manual_max_range_days:365,daily_lookback_days:Number(settings.data?.daily_lookback_days||3),source_scope:"bling_imported_entry_nfe",sefaz_received_queue_exposed_by_public_api:false,received_notes_url:"https://www.bling.com.br/notas.entrada.php#list",manifestation_automated:false,stock_receipt_requires_human_confirmation:true}};
 }
 async function docDetail(id:string){
   const [d,it]=await Promise.all([
