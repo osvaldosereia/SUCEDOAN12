@@ -539,7 +539,7 @@ async function purchaseXmlPreviewLatest(){
 }
 
 async function closeStalePurchaseRuns(){
-  const cutoff=new Date(Date.now()-15*60*1000).toISOString(),now=new Date().toISOString();
+  const cutoff=new Date(Date.now()-5*60*1000).toISOString(),now=new Date().toISOString();
   const q=await sb.from("purchase_xml_import_runs").select("id,source,started_at").eq("status","running").lt("started_at",cutoff).limit(100);
   if(q.error)throw q.error;
   const ids=(q.data||[]).map((x:any)=>x.id);
@@ -547,7 +547,7 @@ async function closeStalePurchaseRuns(){
     const u=await sb.from("purchase_xml_import_runs").update({
       status:"failed",
       finished_at:now,
-      last_error:"execucao_interrompida_ou_timeout",
+      metadata:{stale_closed:true,reason:"execucao_interrompida_ou_timeout",closed_at:now},
       updated_at:now
     }).in("id",ids);
     if(u.error)throw u.error;
