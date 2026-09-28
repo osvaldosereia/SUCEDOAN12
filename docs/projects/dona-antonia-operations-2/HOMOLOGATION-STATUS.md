@@ -960,3 +960,93 @@ Resultado:
 - `13ec5c66` — preflight pós-cutover correto.
 
 Nenhum estoque real foi alterado nesta R5.
+
+
+## 2026-09-28 — R6: lotes / validade / FEFO / ofertas
+Estado: **PROGRAMÁVEL FECHADO / ADOÇÃO DE LOTES GRADUAL**.
+
+### Problema corrigido
+O modelo anterior tinha apenas `products.validity_date`. Uma validade vencida podia desativar o produto inteiro, mesmo que existisse outro lote válido.
+
+### Modelo novo
+Criado `product_inventory_lots` com:
+- produto;
+- lote;
+- validade;
+- quantidade física;
+- quantidade reservada;
+- status;
+- origem;
+- referência externa;
+- recebimento;
+- metadata.
+
+Views:
+- `ops2_product_lot_summary_v1`;
+- `ops2_expiry_offer_policy_v1`.
+
+RPCs:
+- `ops2_upsert_product_lot_v1`;
+- `ops2_set_lot_tracking_complete_v1`;
+- `ops2_fefo_preview_v1`;
+- `ops2_reconcile_lot_expiry_status_v1`.
+
+### Segurança de adoção
+O modo lote é fail-safe e gradual:
+- enquanto `lot_tracking_complete=false`, vale a regra legada de `products.validity_date`;
+- `lot_tracking_complete=true` só pode ser ativado se todos os lotes estiverem quantificados;
+- a soma física dos lotes precisa conferir com `sellable_physical` do Bling;
+- divergência bloqueia a ativação;
+- nenhum produto real foi convertido automaticamente para o novo modo.
+
+### FEFO
+Quando o tracking está completo:
+- validade efetiva = lote vendável mais próximo;
+- FEFO ignora lote vencido/quarentena/depletado;
+- produto não é desativado se existir qualquer outro lote vendável;
+- se produto havia sido desativado somente por vencimento e aparece lote válido, pode ser reativado;
+- `products.validity_date` vira compatibilidade visual com a validade FEFO efetiva.
+
+### Ofertas automáticas
+Faixas confirmadas:
+- 0–29 dias: 40%;
+- 30–59 dias: 20%;
+- 60–90 dias: 10%;
+- 91+ dias: sem oferta automática.
+
+A automação usa o lote FEFO quando tracking completo e a validade legada quando ainda não estiver completo.
+
+### Admin
+`admin-products-live-v1` v60 ACTIVE:
+- endpoints para listar lotes;
+- salvar lote;
+- ativar/desativar tracking completo;
+- preview FEFO;
+- tela de vencimentos usa validade efetiva e mostra origem `lot_fefo` ou `legacy`;
+- edição direta da validade legada é bloqueada quando tracking de lotes está completo.
+
+### Testes transacionais
+1. Produto real usado somente dentro de rollback, estoque físico Bling = 2:
+   - lote vencido qty 1;
+   - lote válido +20 dias qty 1;
+   - tracking completo aceito porque 1+1 = físico 2;
+   - produto permaneceu vendável;
+   - validade efetiva = lote +20;
+   - desconto = 40%;
+   - FEFO alocou o lote válido.
+2. Fronteiras testadas:
+   - 29 => 40%;
+   - 30 => 20%;
+   - 59 => 20%;
+   - 60 => 10%;
+   - 90 => 10%;
+   - 91 => null.
+3. Tracking com soma dos lotes 1 e físico Bling 2 foi bloqueado por `lot_tracking_physical_mismatch`.
+4. Todos os testes terminaram com rollback e 0 resíduos.
+
+### Commits
+- `00f5414d` — modelo lotes/FEFO;
+- `6e34c20e` — Admin lot-aware v60;
+- `8bfe6ced` — reconciliação obrigatória com físico Bling.
+
+Nenhum lote real foi criado e nenhum produto real foi alterado permanentemente nesta R6.
