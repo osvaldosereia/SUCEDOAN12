@@ -39,7 +39,7 @@ Regras:
 - qualquer mudança inesperada fecha com erro e não continua.
 
 Deploy:
-- `admin-service-intelligence-v1` v197;
+- `admin-service-intelligence-v1` v197 nessa correção;
 - commit principal: `c1415ec2`.
 
 ### 2. Retry de confirmação com alvo explícito
@@ -78,7 +78,7 @@ No modo `ops2_stock_authority=bling`:
 - falha retorna `bling_approval_required_before_separation`;
 - nenhuma baixa física local é executada.
 
-Deploy final:
+Deploy final de separação:
 - `admin-products-live-v1` v53;
 - commit: `357a0f17`.
 
@@ -139,3 +139,32 @@ Continuam avisos preexistentes:
 - índices ainda não utilizados.
 
 Tratar em hardening separado, sem misturar com o canário operacional.
+
+
+## 5. Gate fiscal pós-EAN
+
+A revisão pós-canário encontrou um atalho potencial:
+- o pedido local passa a `ready` antes da confirmação final da mudança remota para `Verificado`;
+- a expedição física já exigia `Verificado` no Bling, mas a prévia fiscal não validava explicitamente o alvo Ops2 do link.
+
+Correção:
+- para pedidos pós-corte, `fiscal_dispatch_preview` agora exige:
+  - `ops2_target_key=verified`;
+  - `ops2_target_status_id` igual ao status `Verificado` configurado no runtime;
+- se não cumprir, retorna blocker `bling_order_not_verified`;
+- histórico pré-corte não é afetado.
+
+Deploy:
+- `admin-service-intelligence-v1` v198;
+- commit: `30a90ccb`.
+
+## Smoke/observabilidade após R2
+
+Logs recentes:
+- ciclo do Hub: HTTP 200;
+- recuperação EAN: HTTP 200 em ciclos sucessivos;
+- webhooks Bling do pedido-canário: HTTP 200;
+- único 409 observado foi a primeira tentativa real que revelou a ausência do bridge de status, antes da correção.
+
+Estado final seguro:
+`confirmed + Bling Aprovado/Separar -> ação física humana -> processing -> EAN -> ready + Bling Verificado -> emissão fiscal humana -> baixa física/expedição -> pagamento real -> delivered`.
