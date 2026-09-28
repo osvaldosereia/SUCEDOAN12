@@ -2367,9 +2367,9 @@ Persistência:
 - `inventory_sheet_item_results`.
 
 Backend:
-- `admin-products-live-v1` v63 ACTIVE;
+- `admin-products-live-v1` v64 ACTIVE;
 - ações `inventory_sheet_create`, `inventory_sheet_analyze`, `inventory_sheet_apply`;
-- não foi criada nova Edge Function porque o projeto atingiu o limite de funções; o módulo foi incorporado ao gateway canônico existente, sem upgrade de plano.
+- `admin-service-intelligence-v1` v206 ACTIVE atualiza o espelho Supabase logo após verificar a escrita de estoque no Bling;\n- não foi criada nova Edge Function porque o projeto atingiu o limite de funções; o módulo foi incorporado ao gateway canônico existente, sem upgrade de plano.
 
 Validação pendente exclusivamente física:
 1. imprimir uma página real;
