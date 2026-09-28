@@ -2937,36 +2937,97 @@ async function blingHubOps2EnsureOrderState(sb:any,payloadRaw:any,targetKeyRaw:a
   }
   if(currentStatusId!==targetStatusId){
     const catalog=meta?.order_status_catalog||{};
-    const transition=(catalog.transitions||[]).find((x:any)=>
+    const transitions=Array.isArray(catalog.transitions)?catalog.transitions:[];
+    const direct=transitions.find((x:any)=>
       x?.ativo!==false
       && Number(x?.origem?.id)===currentStatusId
       && Number(x?.destino?.id)===targetStatusId
+      && (!Array.isArray(x?.acoes)||x.acoes.length===0)
     );
-    if(!transition){
+
+    let statusPath:number[]=[];
+    if(direct){
+      statusPath=[targetStatusId];
+    }else if(targetKey==="approved_separation"){
+      const waitingId=Number(mapping.awaiting_confirmation_id||0)||0;
+      const defaultOpenId=Number(mapping.default_open_id||0)||0;
+      const toWaiting=transitions.find((x:any)=>
+        x?.ativo!==false
+        && Number(x?.origem?.id)===currentStatusId
+        && Number(x?.destino?.id)===waitingId
+        && (!Array.isArray(x?.acoes)||x.acoes.length===0)
+      );
+      const waitingToApproved=transitions.find((x:any)=>
+        x?.ativo!==false
+        && Number(x?.origem?.id)===waitingId
+        && Number(x?.destino?.id)===targetStatusId
+        && (!Array.isArray(x?.acoes)||x.acoes.length===0)
+      );
+      if(waitingId&&waitingToApproved&&(currentStatusId===waitingId||toWaiting)&&(currentStatusId===defaultOpenId||currentStatusId===waitingId)){
+        statusPath=currentStatusId===waitingId?[targetStatusId]:[waitingId,targetStatusId];
+      }
+    }
+
+    if(!statusPath.length){
+      const unsafeDirect=transitions.find((x:any)=>
+        x?.ativo!==false
+        && Number(x?.origem?.id)===currentStatusId
+        && Number(x?.destino?.id)===targetStatusId
+      );
       return {
-        ok:false,error:"required_transition_missing",status:409,
-        bling_order_id:blingOrderId,from_status_id:currentStatusId,to_status_id:targetStatusId,
+        ok:false,
+        error:unsafeDirect&&Array.isArray(unsafeDirect.acoes)&&unsafeDirect.acoes.length
+          ?"transition_has_actions"
+          :"required_transition_missing",
+        status:409,
+        bling_order_id:blingOrderId,
+        from_status_id:currentStatusId,
+        to_status_id:targetStatusId,
+        transition_id:unsafeDirect?.id||null,
+        transition_actions:Array.isArray(unsafeDirect?.acoes)?unsafeDirect.acoes:[],
         external_write:externalWrite
       };
     }
-    if(Array.isArray(transition.acoes)&&transition.acoes.length){
-      return {
-        ok:false,error:"transition_has_actions",status:409,
-        bling_order_id:blingOrderId,transition_id:transition.id,transition_actions:transition.acoes,
-        external_write:externalWrite
-      };
+
+    for(const stepStatusId of statusPath){
+      const stepTransition=transitions.find((x:any)=>
+        x?.ativo!==false
+        && Number(x?.origem?.id)===currentStatusId
+        && Number(x?.destino?.id)===stepStatusId
+        && (!Array.isArray(x?.acoes)||x.acoes.length===0)
+      );
+      if(!stepTransition){
+        return {
+          ok:false,error:"safe_transition_path_changed",status:409,
+          bling_order_id:blingOrderId,from_status_id:currentStatusId,to_status_id:stepStatusId,
+          external_write:externalWrite
+        };
+      }
+      const patch=await blingHubPatchOrderStatusOnce(sb,token,blingOrderId,stepStatusId);
+      externalWrite=true;
+      if(!patch.ok){
+        return {
+          ok:false,error:"order_status_patch_http_"+patch.status,status:patch.status||502,
+          bling_order_id:blingOrderId,from_status_id:currentStatusId,to_status_id:stepStatusId,
+          provider_details:patch.provider_details||[],requires_reconciliation:Boolean(patch.uncertain),
+          external_write:true
+        };
+      }
+      const stepVerify=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
+      if(!stepVerify.ok){
+        return {ok:false,error:"order_status_step_verify_http_"+stepVerify.status,status:stepVerify.status,bling_order_id:blingOrderId,external_write:true};
+      }
+      remote=stepVerify.data?.data||{};
+      currentStatusId=Number(remote?.situacao?.id||remote?.situacao||0)||0;
+      if(currentStatusId!==stepStatusId){
+        return {
+          ok:false,error:"order_status_step_mismatch",status:409,
+          bling_order_id:blingOrderId,expected_status_id:stepStatusId,observed_status_id:currentStatusId,
+          external_write:true
+        };
+      }
+      statusChanged=true;
     }
-    const patch=await blingHubPatchOrderStatusOnce(sb,token,blingOrderId,targetStatusId);
-    externalWrite=true;
-    if(!patch.ok){
-      return {
-        ok:false,error:"order_status_patch_http_"+patch.status,status:patch.status||502,
-        bling_order_id:blingOrderId,from_status_id:currentStatusId,to_status_id:targetStatusId,
-        provider_details:patch.provider_details||[],requires_reconciliation:Boolean(patch.uncertain),
-        external_write:true
-      };
-    }
-    statusChanged=true;
   }
 
   const verify=await blingHubGet(sb,token,"/pedidos/vendas/"+encodeURIComponent(String(blingOrderId)));
@@ -7404,6 +7465,31 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
     try{
       if(job.operation==="sync_order_status"){
         const localStatus=clean(job.payload?.local_status,40);
+        const targetKey=clean(job.payload?.target_key,80);
+        if(["awaiting_confirmation","approved_separation","verified"].includes(targetKey)&&uuid(job.source_id)){
+          const ensured=await blingHubOps2EnsureOrderState(sb,{...(job.payload||{}),source_order_id:job.source_id},targetKey,false);
+          if(ensured.ok){
+            await sb.rpc("finish_bling_hub_job_v2",{
+              p_job_id:job.id,p_status:"synced",
+              p_result:{local_status:localStatus,target_key:targetKey,bling_order_id:ensured.bling_order_id||null,recovered:true,external_write:Boolean(ensured.external_write)},
+              p_error_code:null,p_error_message:null,p_http_status:200,p_retry_seconds:120,p_provider_id:ensured.bling_order_id?String(ensured.bling_order_id):null
+            });
+            summary.synced++;
+            continue;
+          }
+          const httpStatus=Number(ensured.status||0)||null;
+          const transient=httpStatus===429||httpStatus===0||Number(httpStatus)>=500||ensured.requires_reconciliation===true;
+          const st=transient?"retry":"review_required";
+          await sb.rpc("finish_bling_hub_job_v2",{
+            p_job_id:job.id,p_status:st,
+            p_result:{local_status:localStatus,target_key:targetKey,error:ensured.error||"order_state_recovery_failed",detail:ensured,external_write:Boolean(ensured.external_write)},
+            p_error_code:clean(ensured.error||"order_state_recovery_failed",120),
+            p_error_message:"Could not ensure the requested Bling order state safely",
+            p_http_status:httpStatus,p_retry_seconds:120,p_provider_id:ensured.bling_order_id?String(ensured.bling_order_id):null
+          });
+          summary[st]++;
+          continue;
+        }
         const [runtime,link]=await Promise.all([
           sb.from("bling_hub_runtime_v2").select("metadata").eq("id",1).maybeSingle(),
           sb.from("bling_hub_entity_links_v2")
