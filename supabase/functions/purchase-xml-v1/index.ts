@@ -195,6 +195,73 @@ async function backfillPaymentMetadata(limit=100){
   }
   return {ok:true,changed,skipped,failed,paid_at_purchase_likely:likely,results};
 }
+async function listFinancialAccounts(token:string){
+  const out:any[]=[];
+  for(let page=1;page<=10;page++){
+    const r=await bg(token,"/contas-contabeis?pagina="+page+"&limite=100");
+    if(!r.ok)return {ok:false,status:r.status,error:"financial_accounts_http_"+r.status,accounts:out};
+    const rows=Array.isArray(r.data?.data)?r.data.data:[];
+    for(const x of rows)out.push({id:Number(x?.id||0)||null,description:clean(x?.descricao||x?.nome||"",180)||("Conta "+String(x?.id||""))});
+    if(rows.length<100)break;
+  }
+  return {ok:true,accounts:out.filter((x:any)=>x.id),count:out.filter((x:any)=>x.id).length};
+}
+async function paymentAccountConfig(token:string|null=null){
+  const s=await sb.from("purchase_xml_settings").select("id,metadata,updated_at").eq("id",1).single();
+  if(s.error)throw s.error;
+  const meta=obj(s.data.metadata),mappings=obj(meta.payment_account_mappings);
+  let accounts:any[]=[];
+  if(token){
+    const r=await listFinancialAccounts(token);
+    if(r.ok)accounts=r.accounts;
+  }
+  return {ok:true,mappings,accounts,updated_at:s.data.updated_at};
+}
+async function savePaymentAccountConfig(body:any,userId:string|null){
+  const allowed=["credit_card","debit_card","pix","cash","voucher","bank_transfer","other"],incoming=obj(body?.mappings);
+  const s=await sb.from("purchase_xml_settings").select("id,metadata").eq("id",1).single();if(s.error)throw s.error;
+  const token=await oauth(),remote=await listFinancialAccounts(token);
+  if(!remote.ok)return {ok:false,status:remote.status||502,error:remote.error};
+  const validIds=new Set((remote.accounts||[]).map((x:any)=>Number(x.id))),next:any={};
+  for(const key of allowed){
+    const raw=obj(incoming[key]),id=Number(raw?.bling_account_id||0);
+    if(!id)continue;
+    if(!validIds.has(id))return {ok:false,status:409,error:"financial_account_not_found",key,bling_account_id:id};
+    const found=(remote.accounts||[]).find((x:any)=>Number(x.id)===id);
+    next[key]={bling_account_id:id,description:clean(found?.description||raw?.description,180),updated_at:new Date().toISOString()};
+  }
+  const meta={...obj(s.data.metadata),payment_account_mappings:next,payment_account_mappings_updated_at:new Date().toISOString(),payment_account_mappings_updated_by:userId};
+  const u=await sb.from("purchase_xml_settings").update({metadata:meta,updated_at:new Date().toISOString()}).eq("id",1).select("metadata,updated_at").single();
+  if(u.error)throw u.error;
+  await sb.from("bling_hub_audit_v2").insert({event_type:"purchase_payment_account_mapping_updated",severity:"info",domain:"finance",source_system:"vitrine_admin",details:{mappings:next,user_id:userId}});
+  return {ok:true,mappings:next,accounts:remote.accounts,updated_at:u.data.updated_at};
+}
+async function paymentSettlementPreview(documentId:string){
+  const q=await sb.from("purchase_xml_documents").select("*").eq("id",documentId).maybeSingle();
+  if(q.error)throw q.error;if(!q.data)return {ok:false,status:404,error:"document_not_found"};
+  const d:any=q.data,meta=obj(d.metadata),ps=obj(meta.payment_summary),payments=Array.isArray(meta.payments)?meta.payments:[];
+  if(!ps.paid_at_purchase_likely)return {ok:true,ready:false,reason:"not_paid_at_purchase_likely",document_id:documentId};
+  if(d.finance_status!=="posted"||!d.finance_reconciled_at)return {ok:true,ready:false,reason:"payable_not_reconciled",document_id:documentId};
+  const refs=Array.isArray(d.finance_reference?.accounts)?d.finance_reference.accounts:[];
+  const payableIds=[...new Set(refs.map((x:any)=>Number(x?.id||0)).filter(Boolean))];
+  if(payableIds.length!==1)return {ok:true,ready:false,reason:"requires_single_payable",payable_count:payableIds.length,document_id:documentId};
+  const codes=[...new Set(payments.map((x:any)=>clean(x?.code,2)).filter(Boolean))];
+  const methods=[...new Set(payments.map((x:any)=>clean(x?.label,120)).filter(Boolean))];
+  if(codes.length!==1)return {ok:true,ready:false,reason:"split_payment_requires_review",payment_methods:methods,document_id:documentId};
+  const cfg=await paymentAccountConfig(null),guidance=clean(ps.guidance,40)||"other",mapping=obj(cfg.mappings?.[guidance]);
+  const accountId=Number(mapping?.bling_account_id||0);
+  if(!accountId)return {ok:true,ready:false,reason:"financial_account_mapping_missing",guidance,payment_methods:methods,document_id:documentId};
+  const token=await oauth(),payable=await bg(token,"/contas/pagar/"+payableIds[0]);
+  if(!payable.ok)return {ok:false,status:payable.status,error:"payable_detail_http_"+payable.status,document_id:documentId};
+  const p:any=payable.data?.data||{},situation=Number(p?.situacao||0),saldo=Number(p?.saldo??p?.valor??0);
+  if(situation===2||saldo<=0.005)return {ok:true,ready:false,reason:"already_settled",already_settled:true,payable_id:payableIds[0],situation,saldo,document_id:documentId};
+  if(situation!==1&&situation!==3)return {ok:true,ready:false,reason:"payable_status_not_settleable",payable_id:payableIds[0],situation,saldo,document_id:documentId};
+  const paymentTotal=Number(ps.payment_total||0),difference=Math.round((paymentTotal-saldo)*100)/100;
+  if(!Number.isFinite(paymentTotal)||Math.abs(difference)>0.05)return {ok:true,ready:false,reason:"payment_and_payable_amount_mismatch",payment_total:paymentTotal,payable_balance:saldo,difference,document_id:documentId};
+  const paymentDate=clean(payments[0]?.payment_date||day(d.issued_at),10);
+  const payload={data:paymentDate,usarDataVencimento:false,portador:{id:accountId},historico:"Baixa de compra conforme pagamento informado na NF-e "+clean(meta.invoice_number,40),juros:0,desconto:0,acrescimo:0,valorRecebido:Math.round(saldo*100)/100};
+  return {ok:true,ready:true,write_external:false,document_id:documentId,payable_id:payableIds[0],payment_method:methods[0]||null,guidance,financial_account:{id:accountId,description:mapping.description||null},payable:{situation,saldo,vencimento:p?.vencimento||null,valor:Number(p?.valor||0)},preview:payload};
+}
 async function companyDocument(token:string){
   const st=await sb.from("purchase_xml_settings").select("*").eq("id",1).single();
   if(st.error)throw st.error;
@@ -926,6 +993,15 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     }
     if(action==="finance_reconcile_pending"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await reconcilePendingFinance(body?.limit||50))}
     if(action==="payment_backfill"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await backfillPaymentMetadata(body?.limit||100))}
+    if(action==="payment_accounts"){const token=await oauth();return js(req,await paymentAccountConfig(token))}
+    if(action==="payment_accounts_save"){
+      if(a.internal)return js(req,{ok:false,error:"human_confirmation_required"},409);
+      if(a.role==="viewer")return js(req,{ok:false,error:"admin_write_required"},403);
+      const r=await savePaymentAccountConfig(body,a.user_id||null);return js(req,r,r.ok?200:Number(r.status||400));
+    }
+    if(action==="payment_settlement_preview"){
+      const r=await paymentSettlementPreview(clean(body?.document_id||body?.id,80));return js(req,r,r.ok?200:Number(r.status||400));
+    }
     if(action==="document"){const r=await docDetail(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="xml_url"){const r=await signedXml(clean(body?.id||u.searchParams.get("id"),80));return js(req,r,r.ok?200:Number(r.status||404))}
     if(action==="set_conversion"){const r=await setConversion(body);return js(req,r,r.ok?200:Number(r.status||400))}
