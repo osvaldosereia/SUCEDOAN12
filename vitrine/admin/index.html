@@ -148,7 +148,7 @@
     .confirm-wide{width:100%;height:58px;margin-top:10px;border:0;border-radius:8px;background:#188038;color:#fff;font-size:17px;font-weight:600}.confirm-wide:disabled,.keypad button:disabled{opacity:.4}
     .simple-list{display:grid}.simple-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #eceff1}.simple-row:last-child{border-bottom:0}.simple-main{min-width:0;flex:1}.simple-main strong{display:block;font-size:14px;font-weight:600}.simple-main small{display:block;color:#5f6368;margin-top:3px}.simple-number{font-variant-numeric:tabular-nums;font-weight:600}.shelf-control{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.shelf-control input{width:112px;min-height:38px;padding:7px 9px;border:1px solid #dadce0;border-radius:8px}.shelf-control button{min-height:38px}
     .gondola-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:12px}.gondola-card{border:1px solid #dadce0;background:#fff;border-radius:8px;padding:16px;text-align:left;min-height:112px}.gondola-card:hover{border-color:#a8c7fa;background:#f8fbff}.gondola-card strong{display:block;font-size:22px;font-weight:600}.gondola-card span{display:block;color:#5f6368;margin-top:7px;font-size:12px}
-    .gondola-workspace{margin-bottom:16px}.gondola-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.gondola-badge{display:inline-flex;align-items:center;background:#e8f0fe;color:#1967d2;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;margin-bottom:10px}.gondola-toolbar .gondola-badge{margin-bottom:0}.danger-action{color:#b3261e!important;border-color:#f0b7b3!important;background:#fff8f7!important}.danger-action:hover{background:#fce8e6!important}
+    .gondola-workspace{margin-bottom:16px}.gondola-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.gondola-badge{display:inline-flex;align-items:center;background:#e8f0fe;color:#1967d2;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;margin-bottom:10px}.gondola-toolbar .gondola-badge{margin-bottom:0}.danger-action{color:#b3261e!important;border-color:#f0b7b3!important;background:#fff8f7!important}.danger-action:hover{background:#fce8e6!important}.gondola-scanner-input{width:100%;min-height:56px;margin:10px 0 8px;padding:10px 14px;border:2px solid #1a73e8;border-radius:10px;background:#fff;font-size:22px;font-weight:600;letter-spacing:.04em}.gondola-scanner-input:focus{outline:3px solid rgba(26,115,232,.18);outline-offset:1px}.gondola-scan-help{font-size:12px;color:#5f6368;margin:0 0 12px}
     .big-number{height:76px;border:1px solid #dadce0;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding:0 22px;font-size:38px;font-weight:500;margin:10px 0 12px}
     .history-empty{padding:26px;text-align:center;color:#5f6368}
     .gondola-title-print{font-weight:900;font-size:13px;border:2px solid #000;padding:1.5mm;margin:2mm 0 1.5mm;text-align:center}.shelf-title-print{font-weight:800;font-size:10px;border-bottom:1px solid #000;padding:1mm 0 .8mm;margin:1.5mm 0 1mm}
@@ -2569,7 +2569,7 @@
     const p=state.gondolaCountProduct;
     const scanner=p
       ? '<div id="gondolaScanner" class="scanner-hero ready"><div class="scan-title"><span class="scan-dot"></span>PRODUTO LIDO · BALANÇO</div><div class="scan-value">'+esc(p.name)+'</div><div class="scan-sub">EAN '+esc(p.gtin||'—')+' · estoque atual '+esc(fmtQty(p.stock_quantity||0))+(p.gondola_number?' · hoje na Gôndola '+esc(p.gondola_number):' · ainda sem gôndola')+'</div></div>'
-      : '<div id="gondolaScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">A localização só será salva depois de confirmar a quantidade física.</div></div>';
+      : '<div id="gondolaScanner" class="scanner-hero"><div class="scan-title"><span class="scan-dot"></span>AGUARDANDO EAN</div><div class="scan-value">Leia um produto</div><div class="scan-sub">A localização só será salva depois de confirmar a quantidade física.</div></div><input id="gondolaScannerInput" class="gondola-scanner-input" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Leitor EAN da gôndola" placeholder="Leia o EAN aqui"><div class="gondola-scan-help">Leitor pronto · aceita Enter ou Tab no final do código.</div>';
     return scanner+
       '<div class="qty-label">Quantidade física contada</div><div class="qty-display" id="gondolaCountQty">'+(p?esc(state.gondolaCountQty||'0'):'—')+'</div>'+
       numericPadHtml('gondolacount')+
@@ -2583,7 +2583,7 @@
       '<div class="gondola-toolbar"><div class="gondola-badge">GÔNDOLA '+esc(state.gondola.number)+'</div><button class="secondary danger-action" id="clearGondola" type="button" '+(state.gondolaProducts.length?'':'disabled')+'>Limpar gôndola</button></div>'+
       '<div class="order-filters" style="margin:12px 0"><button class="filter-chip '+(!countMode?'active':'')+'" id="gondolaModeAssign" type="button">Só localizar</button><button class="filter-chip '+(countMode?'active':'')+'" id="gondolaModeCount" type="button">Localizar + balanço</button></div>'+
       (countMode?gondolaCountWorkspaceHtml():
-        '<div class="scanner-hero ready" id="gondolaScanner"><div class="scan-title"><span class="scan-dot"></span>LEITOR ATIVO</div><div class="scan-value">Leia os produtos da Gôndola '+esc(state.gondola.number)+'</div><div class="scan-sub">Cada leitura salva somente a localização. Não altera o estoque.</div></div>')+
+        '<div class="scanner-hero ready" id="gondolaScanner"><div class="scan-title"><span class="scan-dot"></span>LEITOR ATIVO</div><div class="scan-value">Leia os produtos da Gôndola '+esc(state.gondola.number)+'</div><div class="scan-sub">Cada leitura salva somente a localização. Não altera o estoque.</div></div><input id="gondolaScannerInput" class="gondola-scanner-input" type="text" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Leitor EAN da gôndola" placeholder="Leia o EAN aqui"><div class="gondola-scan-help">Leitor pronto · o foco volta automaticamente depois de cada produto.</div>')+
       '<div class="section-title">Produtos nesta gôndola · '+esc(state.gondolaProducts.length)+'</div>'+
       '<div class="panel" id="gondolaProducts">'+(state.gondolaProducts.length?state.gondolaProducts.map(gondolaProductRow).join(''):'<div class="history-empty">Nenhum produto nesta gôndola.</div>')+'</div>'+
     '</section>':'';
@@ -2602,6 +2602,7 @@
         host.querySelectorAll('[data-gondolacount-key]').forEach(b=>b.onclick=()=>gondolaCountKey(b.dataset.gondolacountKey));
         $('#gondolaCountConfirm').onclick=confirmGondolaCount;
       }
+      bindGondolaScannerInput();
     }
   }
 
@@ -2649,6 +2650,43 @@
       toast('Gôndola '+data.gondola.number+' pronta');
       await renderGondolas();
     }catch(e){toast(errorMessage(e.message));btn.disabled=false;btn.textContent='Criar gôndola'}
+  }
+
+  let gondolaScanTimer=null;
+  function focusGondolaScanner(){
+    if(state.tab!=='gondolas'||!state.gondola||state.gondolaCountProduct)return;
+    setTimeout(()=>{
+      const input=$('#gondolaScannerInput');
+      if(input&&!document.querySelector('dialog[open]')){
+        try{input.focus({preventScroll:true})}catch{input.focus()}
+        input.select();
+      }
+    },50);
+  }
+  function submitGondolaScannerValue(raw){
+    clearTimeout(gondolaScanTimer);
+    const input=$('#gondolaScannerInput');
+    const ean=String(raw??input?.value??'').replace(/\D+/g,'').slice(0,30);
+    if(input)input.value='';
+    if(ean.length<4){if(ean)toast('EAN inválido');focusGondolaScanner();return}
+    handleGondolaScan(ean);
+  }
+  function bindGondolaScannerInput(){
+    const input=$('#gondolaScannerInput');if(!input)return;
+    input.onkeydown=e=>{
+      if(e.key==='Enter'||e.key==='Tab'){
+        e.preventDefault();e.stopPropagation();submitGondolaScannerValue(input.value);
+      }
+    };
+    input.oninput=()=>{
+      input.value=String(input.value||'').replace(/\D+/g,'').slice(0,30);
+      clearTimeout(gondolaScanTimer);
+      const digits=input.value.length;
+      if([8,12,13,14].includes(digits))gondolaScanTimer=setTimeout(()=>submitGondolaScannerValue(input.value),220);
+    };
+    input.onpaste=()=>setTimeout(()=>{const digits=String(input.value||'').replace(/\D+/g,'');if(digits.length>=4)submitGondolaScannerValue(digits)},0);
+    input.onblur=()=>{const digits=String(input.value||'').replace(/\D+/g,'');if(digits.length>=4)setTimeout(()=>submitGondolaScannerValue(digits),0)};
+    focusGondolaScanner();
   }
 
   async function handleGondolaScan(ean){
@@ -5193,7 +5231,7 @@
       e.preventDefault();
       return;
     }
-    if(e.key==='Enter'){
+    if(e.key==='Enter'||e.key==='Tab'){
       const ean=scanner.buffer;scanner.buffer='';clearTimeout(scanner.timer);
       if(ean.length>=4){
         if(state.tab==='balance')handleBalanceScan(ean);
