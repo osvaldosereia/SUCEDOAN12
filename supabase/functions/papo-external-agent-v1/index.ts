@@ -108,9 +108,9 @@ async function capture(req:Request,url:URL){
     payload_bytes:new TextEncoder().encode(raw).length,
     user_agent:userAgent,
     payload,
-    metadata:{capture_only:true,source:"papoai",adapter_version:2},
+    metadata:{capture_only:mode!=="customer_flow_v1",source:"papoai",adapter_version:3},
     status:"captured",
-    adapter_version:2
+    adapter_version:3
   };
 
   const inserted=await db.from("papoai_webhook_inbox_v2").insert(row).select("id,event_key").single();
@@ -126,8 +126,55 @@ async function capture(req:Request,url:URL){
     }
   }else id=inserted.data?.id||null;
 
-  let normalized:any=null,conversation:any=null;
-  if(id){
+  let normalized:any=null,conversation:any=null,structured:any=null,identityLink:any=null;
+  if(id&&mode==="customer_flow_v1"){
+    const flowName=clean(findFirst(parsed,["name","nome","full_name","customer_name","contact_name"]),180);
+    const flowPhone=phoneCandidate(parsed);
+    const flowConversation=clean(findFirst(parsed,["conversation_id","conversationId","session_uid","sessionUid","chat_id","chatId"]),180)||conversationRef;
+    if(!flowPhone||!flowName){
+      await db.from("papoai_webhook_inbox_v2").update({
+        status:"review_required",last_error:"customer_flow_name_or_phone_missing",
+        metadata:{...row.metadata,structured_mode:"customer_flow_v1",structured_processed:false},
+        processed_at:new Date().toISOString()
+      }).eq("id",id);
+      structured={ok:false,error:"customer_flow_name_or_phone_missing"};
+    }else{
+      const flow=await db.rpc("ops2_apply_papoai_customer_flow_v1",{
+        p_event_key:eventKey,p_phone:flowPhone,p_name:flowName,p_conversation_ref:flowConversation||null
+      });
+      if(flow.error){
+        await db.from("papoai_webhook_inbox_v2").update({
+          status:"review_required",last_error:clean(flow.error.message,400),
+          metadata:{...row.metadata,structured_mode:"customer_flow_v1",structured_processed:false},
+          processed_at:new Date().toISOString()
+        }).eq("id",id);
+        structured={ok:false,error:"customer_flow_failed"};
+      }else{
+        structured=flow.data||{};
+        if(structured?.ok===true){
+          const link=await db.rpc("ops2_issue_papoai_catalog_link_v1",{
+            p_phone:flowPhone,
+            p_conversation_id:structured?.conversation_id||null,
+            p_source_event_key:eventKey
+          });
+          if(!link.error)identityLink=link.data||null;
+        }
+        await db.from("papoai_webhook_inbox_v2").update({
+          status:structured?.ok===true?"processed":"review_required",
+          last_error:structured?.ok===true?null:clean(structured?.error||"customer_flow_review_required",400),
+          metadata:{
+            ...row.metadata,structured_mode:"customer_flow_v1",structured_processed:structured?.ok===true,
+            customer_id:structured?.customer_id||null,conversation_id:structured?.conversation_id||null,
+            customer_created:Boolean(structured?.customer_created),orders_linked:Number(structured?.orders_linked||0),
+            catalog_token_id:identityLink?.token_id||null,catalog_short_code:identityLink?.short_code||null,
+            catalog_path:identityLink?.catalog_path||null
+          },
+          processed_at:new Date().toISOString()
+        }).eq("id",id);
+      }
+    }
+  }
+  if(id&&mode!=="customer_flow_v1"){
     try{
       const n=await db.rpc("papoai_normalize_capture_v2",{p_capture_id:id});
       if(!n.error)normalized=n.data||null;
@@ -149,12 +196,19 @@ async function capture(req:Request,url:URL){
   }).eq("id",1);
 
   return json({
-    ok:true,accepted:true,capture_only:true,duplicate,
+    ok:true,accepted:true,capture_only:mode!=="customer_flow_v1",duplicate,
     event_ref:id?String(id).slice(0,8):null,
     normalized:normalized?.status==="normalized",
-    conversation_linked:Boolean(conversation?.conversation_id),
+    conversation_linked:Boolean(conversation?.conversation_id||structured?.conversation_id),
     conversation_created:Boolean(conversation?.created),
-    adapter_version:2
+    structured_mode:mode==="customer_flow_v1"?"customer_flow_v1":null,
+    structured_processed:Boolean(structured?.ok),
+    customer_id:mode==="customer_flow_v1"?(structured?.customer_id||null):undefined,
+    orders_linked:mode==="customer_flow_v1"?Number(structured?.orders_linked||0):undefined,
+    catalog_path:mode==="customer_flow_v1"?(identityLink?.catalog_path||null):undefined,
+    catalog_short_code:mode==="customer_flow_v1"?(identityLink?.short_code||null):undefined,
+    catalog_expires_at:mode==="customer_flow_v1"?(identityLink?.expires_at||null):undefined,
+    adapter_version:3
   },200);
 }
 
@@ -162,8 +216,8 @@ Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});
   const url=new URL(req.url);
   if(req.method==="GET"){
-    if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:107});
-    return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:107},200);
+    if(url.searchParams.get("health")==="1")return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:108});
+    return json({ok:true,service:"papo-external-agent-v1",mode:"capture_only",version:108},200);
   }
   if(req.method!=="POST")return json({ok:false,error:"method_not_allowed"},405);
   if(!U||!K)return json({ok:false,error:"server_config"},500);
