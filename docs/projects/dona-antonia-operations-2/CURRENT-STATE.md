@@ -207,3 +207,13 @@ Implantado em 2026-09-28:
 - backend ativo: `admin-products-live-v1` v64; `admin-service-intelligence-v1` v206 atualiza o espelho Supabase após a verificação do Bling.
 
 Próxima prova: canário físico com uma folha real, sem reprocessar pedidos/histórico.
+
+
+### Cobertura do catálogo no balanço por foto
+Validação de leitura em 2026-09-28:
+- 1.610 produtos ativos;
+- 81 páginas A4 se o catálogo inteiro for impresso de uma vez (20 por página);
+- 1.587 com EAN e 23 sem EAN;
+- 0 grupos de EAN duplicados entre ativos;
+- 1.610/1.610 produtos ativos possuem vínculo seguro `matched` com produto no Bling.
+Os 23 sem EAN permanecem identificáveis com segurança por lote + página + posição + REF do manifesto impresso.
