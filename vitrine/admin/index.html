@@ -2666,7 +2666,7 @@
 
 
   function purchaseFinanceLabel(v){
-    const map={blocked_personal:'CPF · fora do financeiro',pending_company_match:'Aguardando fornecedor',eligible:'Elegível',posted:'Contas a pagar OK',review:'Revisar financeiro',not_applicable:'Não aplicável'};
+    const map={blocked_personal:'CPF · fora do financeiro',pending_company_match:'Aguardando fornecedor',eligible:'Elegível',posted:'Financeiro OK',review:'Financeiro pendente',not_applicable:'Não aplicável'};
     const cls=v==='posted'?'':v==='blocked_personal'?'off':v==='review'||v==='pending_company_match'?'warn':'';
     return '<span class="pill '+cls+'">'+esc(map[v]||v||'—')+'</span>';
   }
