@@ -1977,3 +1977,50 @@ Validação técnica:
 Commits:
 - `fa5b3dcb` — simplificação da nota expandida;
 - `d4cc2cd2` — rótulos financeiros em linguagem humana.
+
+
+## Compras do Bling — identificação de pagamento no ato — 2026-09-28
+
+Implementada leitura do grupo de pagamentos da NF-e (`pag/detPag`), preservando:
+- código `tPag`;
+- valor `vPag`;
+- data de pagamento;
+- troco `vTroco`;
+- dados de cartão quando presentes;
+- resumo normalizado em `metadata.payment_summary`.
+
+Classificação operacional:
+- dinheiro, cartão de crédito, cartão de débito, vales, depósito, PIX, transferência/carteira e crédito virtual podem ser classificados como **pagamento no ato provável** quando o valor líquido fecha com a NF-e;
+- boleto, duplicata e pagamento posterior continuam tratados como pagamento a prazo;
+- classificação serve apenas para alerta e orientação; **nenhuma baixa automática foi implementada**.
+
+Admin:
+- `finance_status=posted` deixou de ser exibido como “Financeiro OK” e passou a significar **Conta no Bling**;
+- quando a NF-e indicar pagamento no ato, a linha mostra **Confirmar baixa**;
+- a nota aberta mostra forma de pagamento, valor e orientação de qual conta financeira usar;
+- cartão de crédito orienta baixa na conta financeira do cartão e controle separado da fatura;
+- PIX/débito/transferência orientam baixa na conta bancária correspondente;
+- dinheiro orienta baixa em caixa;
+- botão **Ver contas a pagar no Bling** abre o financeiro sem executar alteração.
+
+Backfill produtivo:
+- 33 XMLs históricos reprocessados somente para metadados de pagamento;
+- 33/33 atualizados, 0 falhas;
+- 19 NF-e classificadas como provável pagamento no ato;
+- distribuição observada: cartão de débito, cartão de crédito, vale alimentação, combinações débito+PIX, PIX e dinheiro;
+- 8 dessas 19 já possuem contas registradas/conciliadas no Bling; 11 continuam em revisão financeira.
+
+Caso validado da NF-e Bling `26980521526`:
+- total NF-e: R$ 249,00;
+- XML: Dinheiro R$ 250,00;
+- troco: R$ 1,00;
+- pagamento efetivo: R$ 249,00;
+- portanto o pagamento fecha com a NF-e;
+- a antiga divergência de R$ 1,00 vem da parcela/cobrança de R$ 250,00, e não do pagamento;
+- UI ajustada para explicar essa diferença e impedir criação de outra conta enquanto houver divergência.
+
+Deploy/commits:
+- backend: `3c43bd9f`;
+- Admin: `7fecc103`, `d7886346`;
+- Edge `admin-service-intelligence-v1`: **v189 ACTIVE**;
+- JavaScript do Admin validado sintaticamente: OK.
