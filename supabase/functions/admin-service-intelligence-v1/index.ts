@@ -7689,6 +7689,30 @@ async function blingHubProcessOrderJobs(sb:any,limitRaw:any){
       },{onConflict:"source_system,entity_type,source_id"});
       if(link.error)throw link.error;
 
+      if(uuid(job.source_id)){
+        const canonical=await sb.from("orders").update({
+          bling_order_id:blingOrderId,
+          bling_synced_at:now,
+          sync_status:"sent_to_bling",
+          updated_at:now
+        }).eq("id",job.source_id);
+        if(canonical.error)throw canonical.error;
+        try{
+          const att=await sb.from("ops_attention")
+            .select("id")
+            .eq("idempotency_key","ops2:order_bling_sync:"+job.source_id)
+            .in("status",["open","acknowledged"])
+            .maybeSingle();
+          if(!att.error&&att.data?.id){
+            await sb.rpc("ops_resolve_attention_v1",{
+              p_attention_id:att.data.id,
+              p_resolution:"Pedido recuperado automaticamente e sincronizado com o Bling.",
+              p_resolution_ref:"bling-order:"+String(blingOrderId)
+            });
+          }
+        }catch{}
+      }
+
       await sb.rpc("finish_bling_hub_job_v2",{
         p_job_id:job.id,p_status:"synced",
         p_result:{bling_order_id:blingOrderId,external_key:externalKey,verified:true,created:!existing.match,updated:updatedExisting,changes:managedChanges},
