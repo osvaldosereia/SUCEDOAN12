@@ -5450,6 +5450,67 @@ async function blingHubOps2DrainStockCanary(sb:any,canaryRaw:any){
   return {ok,canary_id:canaryId,status:final.data?.status||null,verify:verify.data,phases,external_write:true,fail_closed:!ok};
 }
 
+async function blingHubOps2RunStockRiskBand(sb:any,runRaw:any,bandRaw:any,maxCanariesRaw:any){
+  const runId=uuid(runRaw),band=Math.trunc(Number(bandRaw||0)),maxCanaries=Math.max(1,Math.min(8,Math.trunc(Number(maxCanariesRaw||4)||4)));
+  if(!runId)return {ok:false,error:"invalid_run_id",external_write:false};
+  if(band<2||band>10)return {ok:false,error:"unsupported_auto_band",risk_band:band,external_write:false};
+
+  const out:any[]=[];
+  let exhausted=false;
+  for(let n=0;n<maxCanaries;n++){
+    const prep=await sb.rpc("ops2_prepare_catalog_stock_canary_band_v1",{p_run:runId,p_abs_delta:band,p_limit:band<=5?5:3});
+    if(prep.error)throw prep.error;
+    const canaryId=uuid(prep.data);
+    if(!canaryId)return {ok:false,error:"prepare_failed",risk_band:band,results:out,external_write:out.length>0};
+
+    const cq=await sb.from("ops2_catalog_sync_canaries").select("id,status,item_count").eq("id",canaryId).maybeSingle();
+    if(cq.error)throw cq.error;
+    const itemCount=Number(cq.data?.item_count||0);
+    if(cq.data?.status==="rolled_back"||itemCount===0){exhausted=true;break;}
+
+    const itemsQ=await sb.from("ops2_catalog_sync_canary_items").select("product_id,delta").eq("canary_id",canaryId);
+    if(itemsQ.error)throw itemsQ.error;
+    const items=itemsQ.data||[];
+    if(items.length!==itemCount||items.some((x:any)=>Math.abs(Number(x.delta))!==band)){
+      return {ok:false,error:"prepared_band_mismatch",canary_id:canaryId,risk_band:band,results:out,external_write:out.length>0,fail_closed:true};
+    }
+
+    const arm=await sb.rpc("ops2_arm_catalog_stock_canary_band_v1",{
+      p_canary:canaryId,p_band:band,p_confirmation:"ARMAR_CANARIO_ESTOQUE_BLING_DELTA_"+String(band)
+    });
+    if(arm.error)throw arm.error;
+
+    const allowRows=items.map((x:any)=>({
+      domain:"stock",source_system:"vitrine_qx",source_id:String(x.product_id),
+      enabled:true,expires_at:new Date(Date.now()+15*60*1000).toISOString(),
+      note:"Ops2 exact risk-band "+String(band)+" canary "+canaryId,updated_at:new Date().toISOString()
+    }));
+    const au=await sb.from("bling_hub_canary_allowlist_v2").upsert(allowRows,{onConflict:"domain,source_system,source_id"});
+    if(au.error)throw au.error;
+
+    const on=await sb.from("bling_hub_runtime_v2").update({hub_enabled:true,updated_at:new Date().toISOString()}).eq("id",1);
+    if(on.error)throw on.error;
+
+    let drained:any=null;
+    try{
+      drained=await blingHubOps2DrainStockCanary(sb,canaryId);
+    }finally{
+      await sb.from("bling_hub_runtime_v2").update({hub_enabled:false,updated_at:new Date().toISOString()}).eq("id",1);
+      await sb.from("bling_hub_canary_allowlist_v2").update({enabled:false,updated_at:new Date().toISOString()})
+        .eq("domain","stock").eq("source_system","vitrine_qx").in("source_id",items.map((x:any)=>String(x.product_id)));
+    }
+
+    out.push({canary_id:canaryId,item_count:itemCount,result:drained});
+    if(!drained?.ok){
+      return {ok:false,error:drained?.error||"canary_failed",risk_band:band,results:out,external_write:true,fail_closed:true};
+    }
+  }
+  const remaining=await sb.from("ops2_catalog_sync_plan_items").select("product_id",{count:"exact",head:true})
+    .eq("run_id",runId).eq("operation","stock_update").eq("state","planned");
+  if(remaining.error)throw remaining.error;
+  return {ok:true,run_id:runId,risk_band:band,canaries:out.length,items:out.reduce((s:number,x:any)=>s+Number(x.item_count||0),0),exhausted,results:out,planned_stock_remaining:Number(remaining.count||0),external_write:out.length>0,fail_closed:false};
+}
+
 async function blingHubOps2RecoverStockJob(sb:any,jobRaw:any){
   const jobId=uuid(jobRaw);if(!jobId)return {ok:false,error:"invalid_job_id",external_write:false};
   const jq=await sb.from("bling_hub_jobs_v2").select("id,domain,operation,source_system,source_id,status,payload,locked_at").eq("id",jobId).maybeSingle();if(jq.error)throw jq.error;
@@ -8183,6 +8244,7 @@ Deno.serve(async(req:Request)=>{
       }
       if(subaction==="ops2_catalog_stock_canary_execute"){const result=await blingHubOps2CatalogStockCanaryExecute(sb,body?.canary_id);return json(result,result.ok?200:409);}
       if(subaction==="ops2_catalog_stock_canary_drain"){const result=await blingHubOps2DrainStockCanary(sb,body?.canary_id);return json(result,result.ok?200:409);}
+      if(subaction==="ops2_catalog_stock_risk_band_run"){const result=await blingHubOps2RunStockRiskBand(sb,body?.run_id,body?.risk_band,body?.max_canaries);return json(result,result.ok?200:409);}
       if(subaction==="ops2_recover_stock_job"){const result=await blingHubOps2RecoverStockJob(sb,body?.job_id);return json(result,result.ok?200:409);}
       if(subaction==="preview_stock_sync"){
         const result=await blingHubPreviewStockSync(sb,body);
