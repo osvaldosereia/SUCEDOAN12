@@ -763,7 +763,12 @@ export async function handlePurchaseXmlRequest(req:Request,body:any={},trustedIn
     if(action==="health")return js(req,{ok:true,service:"purchase-xml-v1",version:1});
     if(action==="probe")return js(req,await purchaseXmlProbe());
     if(action==="preview_latest"){const r=await purchaseXmlPreviewLatest();return js(req,r,r.ok?200:Number(r.status||400))}
-    if(action==="daily_sync"){if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);return js(req,await runBlingSync("bling_daily"))}
+    if(action==="daily_sync"){
+      if(!a.internal)return js(req,{ok:false,error:"internal_only"},403);
+      const sync=await runBlingSync("bling_daily");
+      const finance_reconcile=await reconcilePendingFinance(50);
+      return js(req,{...sync,finance_reconcile});
+    }
     if(action==="bling_sync")return js(req,await runBlingSync("bling_manual",body));
     if(action==="browse_bling")return js(req,await browseBlingNfe(body));
     if(action==="manual_import"){const r=await manualImport(body?.files);return js(req,r,r.ok?200:Number(r.status||400))}
