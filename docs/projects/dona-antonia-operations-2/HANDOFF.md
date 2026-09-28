@@ -2089,3 +2089,89 @@ Commits:
 - `a3188900` — confirmação humana na UI.
 
 Edge: `admin-service-intelligence-v1` **v191 ACTIVE**.
+
+
+## R1 LIVE — cutover Bling para pedidos/estoque — 2026-09-28
+
+R1 executada e encerrada.
+
+### Marco de corte
+- UTC: `2026-09-28T14:44:46.627499Z`
+- política: `future_only`
+- pedidos anteriores ao marco: ignorados pelo novo fluxo automático.
+
+### Runtime
+- Hub: `mode=live`, `hub_enabled=true`;
+- products/stock/customers/orders/webhooks: ativos;
+- `fiscal_enabled=false`;
+- `ops2_stock_authority=bling`;
+- `ops2_direct_order_state_enabled=true`;
+- `ops2_ean_verified_sync_enabled=true`;
+- cron `bling-hub-v2-cycle`: ativo a cada 2 minutos;
+- Edge `admin-products-live-v1`: v50 ACTIVE;
+- Edge `admin-service-intelligence-v1`: v196 ACTIVE.
+
+### Fluxo novo
+- checkout continua local até confirmação;
+- confirmar pedido novo pós-corte:
+  - reserva local transitória;
+  - criação/atualização imediata no Bling;
+  - situação `Aprovado / Separar`;
+  - Bling passa a carregar a reserva virtual;
+- falha transitória:
+  - `review_bling`;
+  - atenção operacional;
+  - fallback `sync_order` na fila;
+  - worker atualiza `bling_order_id/bling_synced_at` ao recuperar;
+- separação não baixa estoque local sob autoridade Bling;
+- conferência EAN mantém caminho `Verificado`;
+- baixa física permanece no gate de expedição já homologado.
+
+### Estoque
+Refresh integral executado no corte:
+- 1.668 vínculos de produto percorridos;
+- 1.610 produtos ativos;
+- 1.610/1.610 ativos prontos;
+- 1.610/1.610 ativos com leitura fresca;
+- 0 ativos sem cobertura;
+- 0 ativos com espelho >24h.
+
+O storefront foi testado contra o espelho recém-atualizado e retornou o mesmo saldo virtual do Bling.
+
+### Histórico
+- 2.723 webhooks antigos pendentes foram marcados `ignored`;
+- consumidor R1 live aceita apenas `order`, `stock`, `virtual_stock`;
+- teste com pedido antigo:
+  - HTTP 409;
+  - `pre_cutover_order_ignored`;
+  - `external_write=false`.
+
+### Pedido real pós-corte
+Foi observado 1 pedido novo real ainda aguardando confirmação.
+
+Preview somente leitura:
+- `ready=true`;
+- `write_eligible=true`;
+- 30 itens resolvidos;
+- 0 unresolved;
+- cliente vinculado;
+- R$ 171,28 em produtos;
+- R$ 3,91 em outras despesas;
+- R$ 175,19 total;
+- `balances=true`.
+
+Nenhuma escrita foi antecipada.
+
+### Logs
+Desde o corte:
+- único HTTP >=400 nos serviços R1 foi o 409 deliberado do teste de pedido pré-corte;
+- nenhum outro 4xx/5xx observado.
+
+### Referências
+- checkpoint: `R1-LIVE-CUTOVER-2026-09-28.md`;
+- current state atualizado: `CURRENT-STATE.md`;
+- commits principais: `0acd5d81`, `afb8921a`, `3c6811e8`, `eb236d91`, `a48dd4dc`, `90c8077a`, `d074a69a`, `77362ef2`, `42264ecf`, `7f25a3e7`.
+
+### Próximo passo
+Não reabrir histórico. Observar o primeiro pedido pós-corte quando houver confirmação humana e validar ponta a ponta:
+`Confirmado -> Aprovado/Separar -> Verificado -> Expedição/baixa física`.
