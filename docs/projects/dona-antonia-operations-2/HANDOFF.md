@@ -1859,3 +1859,44 @@ Snapshot após validação:
 - uma importação manual paralela ainda estava em andamento no snapshot, então contagens podem evoluir.
 
 Critério final: somente financeiro `posted` com `finance_reconciled_at` preenchido é tratado como confirmado.
+
+
+## Compras do Bling — simplificação de uso + teste — 2026-09-28
+
+Revisada a experiência do módulo Compras/XML no Vitrine/Admin.
+
+### UX
+A tela foi reorganizada para um fluxo operacional de 3 passos:
+1. **Escolha o período**;
+2. **Buscar e importar notas**;
+3. **Revisar as notas importadas**.
+
+Mudanças:
+- título simplificado para **Compras do Bling**;
+- botão principal renomeado para **Buscar e importar notas**;
+- upload manual de XML movido para **Outras formas de importar XML**, recolhido por padrão;
+- a lista de notas retornadas pelo Bling deixou de competir visualmente com a lista de trabalho e foi movida para **Comparar com as notas do Bling**, recolhida por padrão;
+- cards principais agora mostram: No Bling, Já importadas, Ainda não importadas, Precisam de atenção, Financeiro confirmado e Prontas para estoque;
+- quando houver notas do Bling ainda ausentes no Admin, a tela explica diretamente qual botão usar;
+- última execução passou a usar textos humanos (Rotina automática / Importação manual / Concluída / Falhou);
+- mensagens do botão principal passaram a informar novas, já existentes e falhas com linguagem operacional.
+
+### Confiabilidade
+- execuções `running` abandonadas são encerradas automaticamente após 5 minutos;
+- o encerramento é registrado no metadata como `stale_closed=true`;
+- não há mais importação antiga presa indefinidamente como “em andamento”.
+
+### Testes
+- JavaScript inline do Admin validado sintaticamente: OK;
+- Edge `admin-service-intelligence-v1` publicada **v187 ACTIVE**;
+- ciclo real da rotina de importação disparado após o deploy: HTTP 200;
+- período testado: últimos 3 dias;
+- resultado do teste: 0 novas notas, 0 duplicadas, 0 falhas;
+- reconciliação financeira do teste: `write_external=false`, 15 pendências revisadas sem criação de contas;
+- execução antiga presa em `running` foi encerrada automaticamente com sucesso;
+- após o saneamento: 0 importações presas em `running`.
+
+Commits:
+- `63c48a81` — simplificação da tela;
+- `ba8a5efa` — saneamento inicial de runs;
+- `07a7feec` — correção final do saneamento seguro.
