@@ -5385,7 +5385,14 @@ async function blingHubOps2CatalogStockCanaryExecute(sb:any,canaryRaw:any){
   if(canary.status!=="armed"||canary.external_write_enabled!==true)return {ok:false,error:"canary_not_armed",status:canary.status,external_write:false};
   if(Number(canary.item_count)<1||Number(canary.item_count)>5)return {ok:false,error:"invalid_canary_size",external_write:false};
   const iq=await sb.from("ops2_catalog_sync_canary_items").select("product_id,bling_product_id,desired_stock,delta,state").eq("canary_id",canaryId).order("product_id");if(iq.error)throw iq.error;
-  const items=iq.data||[];if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared"||Math.abs(Number(x.delta))>1))return {ok:false,error:"canary_items_invalid",external_write:false};
+  const items=iq.data||[];
+  const absDeltas=items.map((x:any)=>Math.abs(Number(x.delta)));
+  const maxAbsDelta=absDeltas.length?Math.max(...absDeltas):0;
+  // Fail closed by risk band. Delta 1 keeps the original path. Delta 2 is accepted
+  // only when every item is exactly in the separately armed <=2 band; DB arming
+  // already enforces live-stock drift and batch-size guards.
+  const deltaBand=maxAbsDelta<=1?1:(maxAbsDelta<=2&&absDeltas.every((d:number)=>d>=1&&d<=2)?2:0);
+  if(items.length!==Number(canary.item_count)||items.some((x:any)=>x.state!=="prepared")||deltaBand===0)return {ok:false,error:"canary_items_invalid",max_abs_delta:maxAbsDelta,external_write:false};
   const live=await sb.from("products").select("id,stock").in("id",items.map((x:any)=>x.product_id));if(live.error)throw live.error;
   const lm=new Map((live.data||[]).map((x:any)=>[String(x.id),Number(x.stock)]));
   const drift=items.find((x:any)=>!lm.has(String(x.product_id))||Number(lm.get(String(x.product_id)))!==Number(x.desired_stock));
