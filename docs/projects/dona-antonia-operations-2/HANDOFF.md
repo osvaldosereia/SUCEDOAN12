@@ -1819,3 +1819,43 @@ Implementação:
 - migration Supabase aplicada: purchase_xml_unit_pricing_approval_v2;
 - Edge admin-service-intelligence-v1 publicada **v182 ACTIVE**;
 - JavaScript do Admin validado sintaticamente após a alteração.
+
+
+## Compras/XML — contas a pagar Bling v2 — 2026-09-28
+
+Corrigido o fluxo financeiro das NF-e de entrada.
+
+### Achado
+O XML era processado corretamente, mas a criação manual de parcelas por `POST /contas/pagar` retornava HTTP 400. O erro não impedia o restante do XML de ficar como processado, o que também dificultava a retentativa financeira.
+
+### Implementação
+- fonte oficial do contas a pagar continua sendo o Bling;
+- lançamento passou a usar a ação nativa da própria NF-e: `POST /nfe/{idNotaFiscal}/lancar-contas`;
+- `/contas/pagar` ficou para leitura/conciliação;
+- conciliação ocorre antes da escrita e novamente depois;
+- produtos/estoque e financeiro têm estados independentes;
+- notas duplicadas podem reconciliar o financeiro sem reprocessar produtos;
+- XML CPF continua sem financeiro empresarial;
+- entrada de estoque continua separada e humana;
+- falha financeira cria `ops_attention.type=purchase_finance`;
+- Admin ganhou Reconciliar com Bling, Lançar contas/Tentar novamente, tentativas, último erro, NF-e Bling e contas conciliadas;
+- ciclo diário das 06:00 também faz reconciliação somente leitura das pendências;
+- lançamentos aceitos mas ainda não confirmados continuam sendo rechecados até `finance_reconciled_at` existir.
+
+### Banco / deploy
+- migration: `purchase_xml_finance_reliability_v2`;
+- migration versionada: `supabase/sql/20260928_purchase_xml_finance_reliability_v2.sql`;
+- backend commits: `38232149`, `ee6db5c9`, `fa91c445`;
+- Admin: `166eceed`;
+- Edge `admin-service-intelligence-v1`: **v185 ACTIVE**.
+
+### Validação
+Dois ciclos internos retornaram HTTP 200 e a reconciliação declarou `write_external=false`.
+Snapshot após validação:
+- 18 NF-e conciliadas / confirmadas: R$ 34.682,17;
+- 15 NF-e em revisão financeira: R$ 31.273,76;
+- as pendentes permanecem com alerta aberto;
+- nenhuma NF-e antiga foi lançada em lote pela rotina de reconciliação;
+- uma importação manual paralela ainda estava em andamento no snapshot, então contagens podem evoluir.
+
+Critério final: somente financeiro `posted` com `finance_reconciled_at` preenchido é tratado como confirmado.
